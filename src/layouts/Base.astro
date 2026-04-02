@@ -76,6 +76,20 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       rel="stylesheet"
     />
 
+    <!-- Language detection (first visit only, root page only) -->
+    <script is:inline>
+      (function() {
+        if (location.pathname !== '/') return;
+        if (sessionStorage.getItem('canopi-lang-checked')) return;
+        sessionStorage.setItem('canopi-lang-checked', '1');
+        var locales = ['fr','es','pt','it','zh','de','ja','ko','nl','ru'];
+        var lang = (navigator.language || '').split('-')[0].toLowerCase();
+        if (locales.indexOf(lang) !== -1) {
+          location.replace('/' + lang + '/');
+        }
+      })();
+    </script>
+
     <!-- Theme initialization (synchronous — prevents flash) -->
     <script is:inline>
       (function() {
