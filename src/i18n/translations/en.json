@@ -1,0 +1,48 @@
+{
+  "meta.title": "Canopi — Agroecological Design Tool",
+  "meta.description": "Plan food forests, gardens, and agroecological systems with a database of 175,000+ plant species. A free, open-source desktop app for Linux, macOS, and Windows.",
+
+  "header.home": "Canopi — home",
+  "header.features": "Features",
+  "header.download": "Download",
+  "header.github": "Canopi on GitHub",
+  "header.themeDark": "Switch to dark theme",
+  "header.themeLight": "Switch to light theme",
+  "header.themeToggle": "Toggle theme",
+  "header.language": "Language",
+
+  "hero.badge": "Beta v0.1.0 — Free & Open Source",
+  "hero.headlineTop": "Design the food systems",
+  "hero.headlineAccent": "your community needs",
+  "hero.subtext": "Our food travels long distances through supply chains that depend on oil — for fertilizer, transport, and machinery. When those chains break, cities go hungry. Canopi is a free tool to plan the alternative: food forests, gardens, and agroecological systems that work with your local soil and climate. It comes with a database of over 175,000 plant species and a proper design canvas.",
+  "hero.downloadBtn": "Download Canopi",
+  "hero.githubBtn": "View on GitHub",
+  "hero.statPlantsValue": "175,000+",
+  "hero.statPlants": "Plant species",
+  "hero.statLangsValue": "11",
+  "hero.statLangs": "Languages",
+  "hero.statPlatformsValue": "3",
+  "hero.statPlatforms": "Platforms",
+  "hero.statLicenseValue": "AGPL v3",
+  "hero.statLicense": "Licensed",
+
+  "features.label": "What you get",
+  "features.title": "A real tool for food system design",
+  "features.desc": "Canopi isn't a toy garden planner. It's built for the kind of detailed work that agroecology demands, while staying simple enough for anyone getting started.",
+  "features.plants.title": "175,000+ plant species",
+  "features.plants.desc": "Look up plants by climate zone, soil type, sun needs, edibility, nitrogen fixation, and much more. Each species has 173 data points covering its ecology.",
+  "features.canvas.title": "A real design canvas",
+  "features.canvas.desc": "Draw zones, drop in plants, plan succession layers, measure distances. Think of it as a drafting table built specifically for food forests.",
+  "features.share.title": "Your designs, your files",
+  "features.share.desc": "Everything is saved locally in .canopi files. Share them with other designers, or use community templates as a starting point. Open format, no lock-in.",
+  "features.platform.title": "Works everywhere",
+  "features.platform.desc": "Runs on Linux, macOS, and Windows. The interface is translated into 11 languages so far: English, French, Spanish, Portuguese, German, Italian, Dutch, Japanese, Korean, Chinese, and Russian.",
+
+  "download.label": "Get started",
+  "download.title": "Download Canopi",
+  "download.desc": "Free and open source under the AGPL v3 license. Currently in beta — things are still being polished.",
+  "download.forPlatform": "Download Canopi for {platform}",
+
+  "download.allReleases": "All releases on GitHub",
+  "footer.license": "AGPL v3"
+}

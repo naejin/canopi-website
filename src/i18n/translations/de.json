@@ -1,0 +1,48 @@
+{
+  "meta.title": "Canopi — Agrarökologisches Planungswerkzeug",
+  "meta.description": "Plane Waldgärten, Gemüsegärten und agrarökologische Systeme mit einer Datenbank von über 175.000 Arten. Kostenlose Open-Source-Desktop-App für Linux, macOS und Windows.",
+
+  "header.home": "Canopi — Startseite",
+  "header.features": "Funktionen",
+  "header.download": "Herunterladen",
+  "header.github": "Canopi auf GitHub",
+  "header.themeDark": "Zum dunklen Thema wechseln",
+  "header.themeLight": "Zum hellen Thema wechseln",
+  "header.themeToggle": "Thema umschalten",
+  "header.language": "Sprache",
+
+  "hero.badge": "Beta v0.1.0 — Kostenlos & Open Source",
+  "hero.headlineTop": "Gestalte die Ernährungssysteme,",
+  "hero.headlineAccent": "die deine Gemeinschaft braucht",
+  "hero.subtext": "Unser Essen legt weite Wege zurück durch Lieferketten, die auf Erdöl angewiesen sind — für Dünger, Transport und Maschinen. Wenn diese Ketten reißen, hungern Städte. Canopi ist ein kostenloses Werkzeug, um die Alternative zu planen: Waldgärten, Gemüsegärten und agrarökologische Systeme, die mit deinem Boden und Klima funktionieren. Mit einer Datenbank von über 175.000 Arten und einem richtigen Planungsbereich.",
+  "hero.downloadBtn": "Canopi herunterladen",
+  "hero.githubBtn": "Auf GitHub ansehen",
+  "hero.statPlantsValue": "175.000+",
+  "hero.statPlants": "Arten",
+  "hero.statLangsValue": "11",
+  "hero.statLangs": "Sprachen",
+  "hero.statPlatformsValue": "3",
+  "hero.statPlatforms": "Plattformen",
+  "hero.statLicenseValue": "AGPL v3",
+  "hero.statLicense": "Lizenz",
+
+  "features.label": "Was es bietet",
+  "features.title": "Ein echtes Werkzeug für die Planung von Ernährungssystemen",
+  "features.desc": "Canopi ist kein Spielzeug-Gartenplaner. Es ist für die gründliche Arbeit gebaut, die Agrarökologie verlangt — und trotzdem einfach genug für den Einstieg.",
+  "features.plants.title": "175.000+ Arten",
+  "features.plants.desc": "Suche nach Klimazone, Bodenart, Sonnenbedarf, Essbarkeit, Stickstofffixierung und vielen weiteren Kriterien. Jede Art hat 173 ökologische Datenpunkte.",
+  "features.canvas.title": "Ein richtiger Planungsbereich",
+  "features.canvas.desc": "Zeichne Zonen, setze Pflanzen ein, plane Sukzessionsschichten, miss Abstände. Wie ein Zeichentisch, der speziell für Waldgärten gemacht ist.",
+  "features.share.title": "Deine Entwürfe, deine Dateien",
+  "features.share.desc": "Alles wird lokal als .canopi-Dateien gespeichert. Teile sie mit anderen Planern oder nutze Vorlagen aus der Gemeinschaft. Offenes Format, kein Einschluss.",
+  "features.platform.title": "Läuft überall",
+  "features.platform.desc": "Verfügbar für Linux, macOS und Windows. Die Oberfläche ist bisher in 11 Sprachen übersetzt: Englisch, Französisch, Spanisch, Portugiesisch, Deutsch, Italienisch, Niederländisch, Japanisch, Koreanisch, Chinesisch und Russisch.",
+
+  "download.label": "Loslegen",
+  "download.title": "Canopi herunterladen",
+  "download.desc": "Kostenlos und Open Source unter der AGPL-v3-Lizenz. Derzeit in der Beta — wir feilen noch.",
+  "download.forPlatform": "Canopi für {platform} herunterladen",
+
+  "download.allReleases": "Alle Versionen auf GitHub",
+  "footer.license": "AGPL v3"
+}

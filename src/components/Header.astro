@@ -1,0 +1,294 @@
+---
+import { t, locales, languageNames, localizedUrl, type Locale } from '../i18n/utils';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+---
+
+<header class="header">
+  <div class="header-inner">
+    <a href={localizedUrl('/', lang)} class="logo" aria-label={t('header.home', lang)}>
+      <img src="/canopi-logo.svg" alt="" width="32" height="32" class="logo-mark" />
+      <span class="logo-text">Canopi</span>
+    </a>
+
+    <nav class="header-nav">
+      <a href="#features" class="nav-link">{t('header.features', lang)}</a>
+      <a href="#download" class="nav-link">{t('header.download', lang)}</a>
+
+      <!-- Language switcher -->
+      <details class="lang-switcher" data-lang-switcher>
+        <summary class="lang-toggle" aria-label={t('header.language', lang)}>
+          {lang.toUpperCase()}
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="lang-chevron">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </summary>
+        <div class="lang-menu">
+          {locales.map((locale) => (
+            <a
+              href={localizedUrl('/', locale)}
+              class:list={['lang-option', { active: locale === lang }]}
+              aria-current={locale === lang ? 'page' : undefined}
+            >
+              <span class="lang-code">{locale.toUpperCase()}</span>
+              <span class="lang-name">{languageNames[locale]}</span>
+            </a>
+          ))}
+        </div>
+      </details>
+
+      <a
+        href="https://liberapay.com/Naejin/donate"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="nav-link donate-link"
+      >
+        <svg width="16" height="16" viewBox="0 0 80 80" fill="currentColor" aria-hidden="true">
+          <g transform="translate(0,80) scale(0.1,-0.1)">
+            <path d="M317 713 c-13 -12 -7 -41 12 -60 15 -16 21 -35 23 -78 l2 -57 -42 7 c-59 9 -90 -10 -90 -56 0 -40 22 -65 77 -87 l33 -13 0 -65 c0 -55 -3 -66 -20 -76 -24 -12 -26 -28 -4 -28 22 0 74 50 74 72 0 10 -9 22 -20 28 -17 9 -20 21 -20 76 l0 65 33 13 c55 22 77 47 77 87 0 46 -31 65 -90 56 l-42 -7 2 57 c2 43 8 62 23 78 19 19 25 48 12 60 -3 4 -12 3 -19 -3z"/>
+          </g>
+        </svg>
+        Donate
+      </a>
+
+      <a
+        href="https://github.com/naejin/canopi"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="nav-link"
+        aria-label={t('header.github', lang)}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+      </a>
+      <button
+        class="theme-toggle"
+        data-theme-toggle
+        aria-label={t('header.themeDark', lang)}
+        title={t('header.themeToggle', lang)}
+      >
+        <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<script>
+  // Theme toggle
+  const toggle = document.querySelector('[data-theme-toggle]') as HTMLButtonElement | null;
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const next = isDark ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('canopi-theme', next);
+    });
+  }
+
+  // Language switcher: close on outside click
+  const switcher = document.querySelector('[data-lang-switcher]') as HTMLDetailsElement | null;
+  if (switcher) {
+    document.addEventListener('click', (e) => {
+      if (!switcher.contains(e.target as Node)) {
+        switcher.removeAttribute('open');
+      }
+    });
+  }
+</script>
+
+<style>
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+    backdrop-filter: blur(12px);
+    height: var(--header-height);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 0 var(--space-6);
+    height: 100%;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    transition: opacity var(--transition-fast);
+  }
+
+  .logo:hover { opacity: 0.8; }
+
+  .logo-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+  }
+
+  .logo-text {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .header-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    border-radius: var(--radius-md);
+    transition: color var(--transition-fast), background var(--transition-fast);
+  }
+
+  .nav-link:hover {
+    color: var(--color-text);
+    background: var(--color-control-hover);
+  }
+
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    transition: color var(--transition-fast), background var(--transition-fast);
+  }
+
+  .theme-toggle:hover {
+    color: var(--color-text);
+    background: var(--color-control-hover);
+  }
+
+  .icon-moon { display: none; }
+  .icon-sun { display: block; }
+  [data-theme="dark"] .icon-moon { display: block; }
+  [data-theme="dark"] .icon-sun { display: none; }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .icon-moon { display: block; }
+    :root:not([data-theme="light"]) .icon-sun { display: none; }
+  }
+
+  .donate-link {
+    color: var(--color-primary) !important;
+  }
+
+  /* ── Language Switcher ── */
+  .lang-switcher {
+    position: relative;
+  }
+
+  .lang-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    list-style: none;
+    transition: color var(--transition-fast), background var(--transition-fast);
+  }
+
+  .lang-toggle::-webkit-details-marker { display: none; }
+
+  .lang-toggle:hover {
+    color: var(--color-text);
+    background: var(--color-control-hover);
+  }
+
+  .lang-chevron {
+    transition: transform var(--transition-normal);
+  }
+
+  .lang-switcher[open] .lang-chevron {
+    transform: rotate(180deg);
+  }
+
+  .lang-menu {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    right: 0;
+    min-width: 180px;
+    max-height: 320px;
+    overflow-y: auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-1);
+    z-index: 200;
+    animation: menuIn 120ms ease-out;
+  }
+
+  @keyframes menuIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .lang-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+
+  .lang-option:hover {
+    background: var(--color-control-hover);
+    color: var(--color-text);
+  }
+
+  .lang-option.active {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .lang-code {
+    font-weight: 600;
+    min-width: 28px;
+  }
+
+  .lang-name {
+    font-weight: 400;
+  }
+
+  @media (max-width: 639px) {
+    .nav-link:not([aria-label]) {
+      display: none;
+    }
+
+    .header-nav {
+      gap: var(--space-1);
+    }
+  }
+</style>

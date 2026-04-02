@@ -1,0 +1,48 @@
+{
+  "meta.title": "Canopi — 農業生態学デザインツール",
+  "meta.description": "175,000種以上の植物データベースを使って、食物の森、菜園、農業生態学的なシステムを設計。Linux、macOS、Windows対応の無料オープンソースアプリ。",
+
+  "header.home": "Canopi — ホーム",
+  "header.features": "機能",
+  "header.download": "ダウンロード",
+  "header.github": "GitHubのCanopi",
+  "header.themeDark": "ダークテーマに切り替え",
+  "header.themeLight": "ライトテーマに切り替え",
+  "header.themeToggle": "テーマ切り替え",
+  "header.language": "言語",
+
+  "hero.badge": "ベータ v0.1.0 — 無料・オープンソース",
+  "hero.headlineTop": "あなたのコミュニティに必要な",
+  "hero.headlineAccent": "食料システムをデザインしよう",
+  "hero.subtext": "私たちの食べ物は、石油に頼った長い供給チェーンを通ってやってきます。肥料も、輸送も、農機もすべて石油次第です。そのチェーンが途切れれば、街は食料を失います。Canopiは、その代わりを自分で設計するための無料ツールです。食物の森、菜園、自分の土地と気候に合った農業生態学的システム。175,000種以上の植物データベースと、本格的な設計スペースがついています。",
+  "hero.downloadBtn": "Canopiをダウンロード",
+  "hero.githubBtn": "GitHubで見る",
+  "hero.statPlantsValue": "175,000+",
+  "hero.statPlants": "植物種",
+  "hero.statLangsValue": "11",
+  "hero.statLangs": "言語",
+  "hero.statPlatformsValue": "3",
+  "hero.statPlatforms": "プラットフォーム",
+  "hero.statLicenseValue": "AGPL v3",
+  "hero.statLicense": "ライセンス",
+
+  "features.label": "機能紹介",
+  "features.title": "食料システムの設計に本気で使えるツール",
+  "features.desc": "Canopiはおもちゃの庭プランナーではありません。農業生態学が求める緻密な作業に対応しつつ、始めたばかりの人にも使いやすく作られています。",
+  "features.plants.title": "175,000種以上の植物",
+  "features.plants.desc": "気候帯、土壌タイプ、日照条件、食用可否、窒素固定能力など、さまざまな条件で検索できます。各種に173項目の生態データがあります。",
+  "features.canvas.title": "本格的な設計スペース",
+  "features.canvas.desc": "ゾーンを描き、植物を配置し、遷移の層を計画し、距離を測る。食物の森の設計に特化した製図台のようなものです。",
+  "features.share.title": "あなたの設計、あなたのファイル",
+  "features.share.desc": "すべて.canopiファイルとしてローカルに保存されます。他のデザイナーと共有したり、コミュニティのテンプレートを出発点にしたり。オープンフォーマットで、囲い込みはありません。",
+  "features.platform.title": "どこでも動きます",
+  "features.platform.desc": "Linux、macOS、Windowsに対応。インターフェースは現在11言語に翻訳されています：英語、フランス語、スペイン語、ポルトガル語、ドイツ語、イタリア語、オランダ語、日本語、韓国語、中国語、ロシア語。",
+
+  "download.label": "はじめよう",
+  "download.title": "Canopiをダウンロード",
+  "download.desc": "AGPL v3ライセンスの無料オープンソースソフトウェア。現在ベータ版です。まだ磨いているところです。",
+  "download.forPlatform": "{platform}版Canopiをダウンロード",
+
+  "download.allReleases": "GitHubで全リリースを見る",
+  "footer.license": "AGPL v3"
+}

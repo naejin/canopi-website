@@ -1,0 +1,48 @@
+{
+  "meta.title": "Canopi — 농생태 설계 도구",
+  "meta.description": "175,000종 이상의 식물 데이터베이스로 먹거리 숲, 텃밭, 농생태 시스템을 설계하세요. Linux, macOS, Windows용 무료 오픈소스 데스크톱 앱.",
+
+  "header.home": "Canopi — 홈",
+  "header.features": "기능",
+  "header.download": "다운로드",
+  "header.github": "GitHub의 Canopi",
+  "header.themeDark": "다크 테마로 전환",
+  "header.themeLight": "라이트 테마로 전환",
+  "header.themeToggle": "테마 전환",
+  "header.language": "언어",
+
+  "hero.badge": "베타 v0.1.0 — 무료 & 오픈소스",
+  "hero.headlineTop": "우리 마을에 필요한",
+  "hero.headlineAccent": "먹거리 시스템을 직접 설계하세요",
+  "hero.subtext": "우리가 먹는 음식은 석유에 의존하는 긴 공급망을 통해 옵니다 — 비료, 운송, 농기계 모두 마찬가지입니다. 그 사슬이 끊어지면 도시는 굶주립니다. Canopi는 대안을 직접 설계할 수 있는 무료 도구입니다. 먹거리 숲, 텃밭, 우리 땅과 기후에 맞는 농생태 시스템을. 175,000종 이상의 식물 데이터베이스와 본격적인 설계 공간이 포함되어 있습니다.",
+  "hero.downloadBtn": "Canopi 다운로드",
+  "hero.githubBtn": "GitHub에서 보기",
+  "hero.statPlantsValue": "175,000+",
+  "hero.statPlants": "식물 종",
+  "hero.statLangsValue": "11",
+  "hero.statLangs": "개 언어",
+  "hero.statPlatformsValue": "3",
+  "hero.statPlatforms": "개 플랫폼",
+  "hero.statLicenseValue": "AGPL v3",
+  "hero.statLicense": "라이선스",
+
+  "features.label": "제공 기능",
+  "features.title": "먹거리 시스템 설계를 위한 진짜 도구",
+  "features.desc": "Canopi는 장난감 정원 플래너가 아닙니다. 농생태학이 요구하는 세밀한 작업을 위해 만들어졌으면서도, 처음 시작하는 분들이 쓰기에도 충분히 간단합니다.",
+  "features.plants.title": "175,000종 이상의 식물",
+  "features.plants.desc": "기후대, 토양 유형, 일조량, 식용 여부, 질소 고정 능력 등 다양한 조건으로 검색할 수 있습니다. 각 종마다 173가지 생태 데이터가 있습니다.",
+  "features.canvas.title": "진짜 설계 공간",
+  "features.canvas.desc": "구역을 그리고, 식물을 배치하고, 천이 층을 계획하고, 거리를 측정하세요. 먹거리 숲 설계에 특화된 제도판이라고 생각하시면 됩니다.",
+  "features.share.title": "당신의 설계, 당신의 파일",
+  "features.share.desc": "모든 것은 .canopi 파일로 로컬에 저장됩니다. 다른 설계자와 공유하거나, 커뮤니티 템플릿에서 시작할 수도 있습니다. 개방형 포맷으로 종속 없이 사용할 수 있습니다.",
+  "features.platform.title": "어디서든 작동합니다",
+  "features.platform.desc": "Linux, macOS, Windows를 지원합니다. 인터페이스는 현재 11개 언어로 번역되어 있습니다: 영어, 프랑스어, 스페인어, 포르투갈어, 독일어, 이탈리아어, 네덜란드어, 일본어, 한국어, 중국어, 러시아어.",
+
+  "download.label": "시작하기",
+  "download.title": "Canopi 다운로드",
+  "download.desc": "AGPL v3 라이선스의 무료 오픈소스 소프트웨어입니다. 현재 베타 버전이라 아직 다듬는 중입니다.",
+  "download.forPlatform": "{platform}용 Canopi 다운로드",
+
+  "download.allReleases": "GitHub에서 모든 릴리스 보기",
+  "footer.license": "AGPL v3"
+}

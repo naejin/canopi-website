@@ -1,0 +1,12 @@
+# Cloudflare Pages language-based redirects
+# Redirects visitors based on Accept-Language header
+/  /fr/  302  Language=fr
+/  /es/  302  Language=es
+/  /pt/  302  Language=pt
+/  /it/  302  Language=it
+/  /zh/  302  Language=zh
+/  /de/  302  Language=de
+/  /ja/  302  Language=ja
+/  /ko/  302  Language=ko
+/  /nl/  302  Language=nl
+/  /ru/  302  Language=ru

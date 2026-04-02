@@ -1,0 +1,48 @@
+{
+  "meta.title": "Canopi — Agro-ecologisch ontwerptool",
+  "meta.description": "Ontwerp voedselbossen, moestuinen en agro-ecologische systemen met een database van meer dan 175.000 soorten. Gratis open-source desktopapp voor Linux, macOS en Windows.",
+
+  "header.home": "Canopi — home",
+  "header.features": "Functies",
+  "header.download": "Downloaden",
+  "header.github": "Canopi op GitHub",
+  "header.themeDark": "Overschakelen naar donker thema",
+  "header.themeLight": "Overschakelen naar licht thema",
+  "header.themeToggle": "Thema wisselen",
+  "header.language": "Taal",
+
+  "hero.badge": "Bèta v0.1.0 — Gratis & Open Source",
+  "hero.headlineTop": "Ontwerp de voedselsystemen",
+  "hero.headlineAccent": "die jouw gemeenschap nodig heeft",
+  "hero.subtext": "Ons eten legt lange afstanden af via ketens die afhankelijk zijn van olie — kunstmest, transport, machines. Als die ketens breken, hebben steden honger. Canopi is een gratis tool om het alternatief te ontwerpen: voedselbossen, moestuinen en agro-ecologische systemen die passen bij jouw bodem en klimaat. Met een database van meer dan 175.000 soorten en een volwaardige ontwerptool.",
+  "hero.downloadBtn": "Canopi downloaden",
+  "hero.githubBtn": "Bekijk op GitHub",
+  "hero.statPlantsValue": "175.000+",
+  "hero.statPlants": "Soorten",
+  "hero.statLangsValue": "11",
+  "hero.statLangs": "Talen",
+  "hero.statPlatformsValue": "3",
+  "hero.statPlatforms": "Platforms",
+  "hero.statLicenseValue": "AGPL v3",
+  "hero.statLicense": "Licentie",
+
+  "features.label": "Wat het biedt",
+  "features.title": "Een serieuze tool voor het ontwerpen van voedselsystemen",
+  "features.desc": "Canopi is geen speelgoedtuinplanner. Het is gebouwd voor het grondige werk dat agro-ecologie vraagt, maar wel eenvoudig genoeg voor wie net begint.",
+  "features.plants.title": "175.000+ soorten",
+  "features.plants.desc": "Zoek op klimaatzone, bodemtype, zonbehoefte, eetbaarheid, stikstofbinding en nog veel meer. Elke soort heeft 173 ecologische datapunten.",
+  "features.canvas.title": "Een echte ontwerptool",
+  "features.canvas.desc": "Teken zones, plaats planten, plan successielagen, meet afstanden. Denk aan een tekentafel die speciaal voor voedselbossen is gemaakt.",
+  "features.share.title": "Jouw ontwerpen, jouw bestanden",
+  "features.share.desc": "Alles wordt lokaal opgeslagen als .canopi-bestanden. Deel ze met andere ontwerpers of begin met sjablonen uit de gemeenschap. Open formaat, geen vendor lock-in.",
+  "features.platform.title": "Werkt overal",
+  "features.platform.desc": "Beschikbaar voor Linux, macOS en Windows. De interface is tot nu toe vertaald in 11 talen: Engels, Frans, Spaans, Portugees, Duits, Italiaans, Nederlands, Japans, Koreaans, Chinees en Russisch.",
+
+  "download.label": "Aan de slag",
+  "download.title": "Canopi downloaden",
+  "download.desc": "Gratis en open source onder de AGPL v3-licentie. Momenteel in bèta — we schaven nog bij.",
+  "download.forPlatform": "Canopi voor {platform} downloaden",
+
+  "download.allReleases": "Alle versies op GitHub",
+  "footer.license": "AGPL v3"
+}

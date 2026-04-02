@@ -1,0 +1,48 @@
+{
+  "meta.title": "Canopi — 农业生态设计工具",
+  "meta.description": "利用超过175,000种植物的数据库，规划食物森林、菜园和农业生态系统。免费开源桌面应用，支持Linux、macOS和Windows。",
+
+  "header.home": "Canopi — 首页",
+  "header.features": "功能",
+  "header.download": "下载",
+  "header.github": "GitHub上的Canopi",
+  "header.themeDark": "切换到深色主题",
+  "header.themeLight": "切换到浅色主题",
+  "header.themeToggle": "切换主题",
+  "header.language": "语言",
+
+  "hero.badge": "Beta v0.1.0 — 免费且开源",
+  "hero.headlineTop": "为你的社区设计",
+  "hero.headlineAccent": "它需要的食物系统",
+  "hero.subtext": "我们的食物经过漫长的路程，依赖以石油为基础的供应链——化肥、运输、农机。一旦这些链条断裂，城市就会挨饿。Canopi是一个免费工具，帮助你规划替代方案：食物森林、菜园和适应当地土壤气候的农业生态系统。它带有超过175,000种植物的数据库和一个完整的设计空间。",
+  "hero.downloadBtn": "下载Canopi",
+  "hero.githubBtn": "在GitHub上查看",
+  "hero.statPlantsValue": "175,000+",
+  "hero.statPlants": "植物种类",
+  "hero.statLangsValue": "11",
+  "hero.statLangs": "种语言",
+  "hero.statPlatformsValue": "3",
+  "hero.statPlatforms": "个平台",
+  "hero.statLicenseValue": "AGPL v3",
+  "hero.statLicense": "开源协议",
+
+  "features.label": "功能介绍",
+  "features.title": "为食物系统设计而生的正经工具",
+  "features.desc": "Canopi不是那种玩具级别的花园规划软件。它为农业生态实践所需的细致工作而设计，同时对新手也足够友好。",
+  "features.plants.title": "175,000+种植物",
+  "features.plants.desc": "按气候带、土壤类型、光照需求、可食性、固氮能力等多种条件搜索。每个物种有173项生态数据。",
+  "features.canvas.title": "正经的设计画布",
+  "features.canvas.desc": "画分区、放置植物、规划演替层、量距离。就像一张专门为食物森林设计的绘图桌。",
+  "features.share.title": "你的设计，你的文件",
+  "features.share.desc": "所有内容都以.canopi文件保存在本地。可以和其他设计者分享，也可以基于社区模板开始。开放格式，没有锁定。",
+  "features.platform.title": "哪里都能用",
+  "features.platform.desc": "支持Linux、macOS和Windows。界面目前已翻译成11种语言：英语、法语、西班牙语、葡萄牙语、德语、意大利语、荷兰语、日语、韩语、中文和俄语。",
+
+  "download.label": "开始使用",
+  "download.title": "下载Canopi",
+  "download.desc": "基于AGPL v3协议的免费开源软件。目前还在测试阶段，还在打磨中。",
+  "download.forPlatform": "下载{platform}版Canopi",
+
+  "download.allReleases": "GitHub上的所有版本",
+  "footer.license": "AGPL v3"
+}

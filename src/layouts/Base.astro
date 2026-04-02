@@ -1,0 +1,98 @@
+---
+import { locales, defaultLocale, localizedUrl, type Locale } from '../i18n/utils';
+
+interface Props {
+  title: string;
+  description: string;
+  lang: Locale;
+}
+
+const { title, description, lang } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/canopi-logo.svg" />
+    <link rel="icon" type="image/png" sizes="128x128" href="/canopi-icon-128.png" />
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- hreflang tags for all locales -->
+    {locales.map((locale) => (
+      <link
+        rel="alternate"
+        hreflang={locale}
+        href={new URL(localizedUrl('/', locale), Astro.site)}
+      />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={new URL('/', Astro.site)} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content="Canopi" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL('/canopi-icon-128.png', Astro.site)} />
+    <meta property="og:site_name" content="Canopi" />
+    <meta property="og:locale" content={lang} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL('/canopi-icon-128.png', Astro.site)} />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Canopi",
+      "description": description,
+      "url": "https://projectcanopi.com",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Linux, macOS, Windows",
+      "inLanguage": locales,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+      "downloadUrl": "https://github.com/naejin/canopi/releases"
+    })} />
+
+    <!-- Fonts: Lora (display) + Inter (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Theme initialization (synchronous — prevents flash) -->
+    <script is:inline>
+      (function() {
+        var saved = localStorage.getItem('canopi-theme');
+        if (saved === 'dark' || saved === 'light') {
+          document.documentElement.setAttribute('data-theme', saved);
+        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+
+    <style is:global>
+      @import '../styles/global.css';
+    </style>
+  </head>
+  <body class="grain">
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,48 @@
+{
+  "meta.title": "Canopi — Ferramenta de design agroecológico",
+  "meta.description": "Planeje florestas alimentares, hortas e sistemas agroecológicos com uma base de dados de mais de 175.000 espécies. Aplicativo de desktop gratuito e de código aberto para Linux, macOS e Windows.",
+
+  "header.home": "Canopi — início",
+  "header.features": "Funcionalidades",
+  "header.download": "Baixar",
+  "header.github": "Canopi no GitHub",
+  "header.themeDark": "Mudar para tema escuro",
+  "header.themeLight": "Mudar para tema claro",
+  "header.themeToggle": "Alternar tema",
+  "header.language": "Idioma",
+
+  "hero.badge": "Beta v0.1.0 — Gratuito e livre",
+  "hero.headlineTop": "Projete os sistemas alimentares",
+  "hero.headlineAccent": "que a sua comunidade precisa",
+  "hero.subtext": "A nossa comida percorre longas distâncias por cadeias que dependem do petróleo — adubos, transporte, máquinas. Quando essas cadeias se rompem, as cidades passam fome. O Canopi é uma ferramenta gratuita para planejar a alternativa: florestas alimentares, hortas e sistemas agroecológicos que funcionam com o seu solo e o seu clima. Vem com uma base de dados de mais de 175.000 espécies e um espaço de projeto completo.",
+  "hero.downloadBtn": "Baixar Canopi",
+  "hero.githubBtn": "Ver no GitHub",
+  "hero.statPlantsValue": "175.000+",
+  "hero.statPlants": "Espécies",
+  "hero.statLangsValue": "11",
+  "hero.statLangs": "Idiomas",
+  "hero.statPlatformsValue": "3",
+  "hero.statPlatforms": "Plataformas",
+  "hero.statLicenseValue": "AGPL v3",
+  "hero.statLicense": "Licença",
+
+  "features.label": "O que oferece",
+  "features.title": "Uma ferramenta séria para projetar sistemas alimentares",
+  "features.desc": "O Canopi não é um planejador de jardim de brinquedo. Foi pensado para o trabalho detalhado que a agroecologia exige, sem complicar a vida de quem está começando.",
+  "features.plants.title": "175.000+ espécies",
+  "features.plants.desc": "Pesquise por zona climática, tipo de solo, necessidade de sol, comestibilidade, fixação de nitrogênio e muitos outros critérios. Cada espécie tem 173 dados ecológicos.",
+  "features.canvas.title": "Um verdadeiro espaço de projeto",
+  "features.canvas.desc": "Desenhe zonas, posicione plantas, planeje camadas de sucessão, meça distâncias. É como uma prancheta de desenho feita especificamente para florestas alimentares.",
+  "features.share.title": "Seus projetos, seus arquivos",
+  "features.share.desc": "Tudo é salvo localmente em arquivos .canopi. Compartilhe com outros projetistas ou parta de modelos da comunidade. Formato aberto, sem amarras.",
+  "features.platform.title": "Funciona em qualquer lugar",
+  "features.platform.desc": "Disponível para Linux, macOS e Windows. A interface está traduzida em 11 idiomas: inglês, francês, espanhol, português, alemão, italiano, neerlandês, japonês, coreano, chinês e russo.",
+
+  "download.label": "Começar",
+  "download.title": "Baixar Canopi",
+  "download.desc": "Gratuito e de código aberto sob licença AGPL v3. Em beta por enquanto — ainda estamos polindo.",
+  "download.forPlatform": "Baixar Canopi para {platform}",
+
+  "download.allReleases": "Todas as versões no GitHub",
+  "footer.license": "AGPL v3"
+}

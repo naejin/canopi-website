@@ -1,0 +1,217 @@
+---
+import { t, type Locale } from '../i18n/utils';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+
+const VERSION = '0.1.0';
+const BASE = `https://github.com/naejin/canopi/releases/download/v${VERSION}`;
+
+const platforms = [
+  { name: 'Linux', formats: '.deb (amd64)', icon: 'linux', href: `${BASE}/Canopi_${VERSION}_amd64.deb` },
+  { name: 'macOS', formats: '.dmg (Apple Silicon)', icon: 'macos', href: `${BASE}/Canopi_${VERSION}_aarch64.dmg`, alt: { label: 'Intel Mac', href: `${BASE}/Canopi_${VERSION}_x64.dmg` } },
+  { name: 'Windows', formats: '.exe (x64)', icon: 'windows', href: `${BASE}/Canopi_${VERSION}_x64-setup.exe` },
+];
+---
+
+<section id="download" class="download">
+  <div class="download-inner">
+    <div class="download-header">
+      <span class="section-label">{t('download.label', lang)}</span>
+      <h2 class="section-title">{t('download.title', lang)}</h2>
+      <p class="section-desc">{t('download.desc', lang)}</p>
+    </div>
+
+    <div class="download-grid">
+      {platforms.map((platform) => (
+        <div class="download-card-wrap">
+        <a
+          href={platform.href}
+          class="download-card"
+          aria-label={t('download.forPlatform', lang, { platform: platform.name })}
+        >
+          <div class="platform-icon">
+            {platform.icon === 'linux' && (
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.504 0c-.155 0-.311.003-.467.009C8.878.102 6.244 2.451 6.025 5.786c-.152 2.32.665 3.39 1.397 4.576.29.47.609 1.002.903 1.632a53 53 0 0 1 .433.966c.14.326.272.65.39.957.107.277.196.532.254.762.057.225.074.393.043.508-.085.316-.384.465-.682.602-.167.076-.343.151-.505.24-.587.32-1.068.791-1.326 1.504-.243.671-.248 1.467-.056 2.223.145.57.396 1.117.749 1.537.358.426.838.724 1.405.828a3.1 3.1 0 0 0 1.633-.115c.478-.17.93-.465 1.29-.907.36-.441.598-.978.716-1.548.126-.607.103-1.222-.046-1.696-.11-.35-.298-.64-.517-.868a2.7 2.7 0 0 0-.543-.43 6 6 0 0 0-.394-.225c-.118-.062-.205-.109-.251-.14a.1.1 0 0 1-.032-.034c-.008-.016-.013-.06.013-.154.053-.188.183-.443.385-.756.273-.422.598-.8.924-1.176.33-.38.66-.755.937-1.166.558-.83.92-1.777.92-2.894v-.072a3.5 3.5 0 0 0-.006-.206c.034-.093.076-.178.124-.26.097-.166.223-.314.369-.448.31-.285.72-.507 1.15-.666.425-.157.868-.248 1.25-.307a6 6 0 0 0 .64-.116c.188-.05.336-.113.434-.204a.4.4 0 0 0 .134-.283.52.52 0 0 0-.065-.27c-.048-.088-.12-.173-.214-.254-.166-.144-.4-.284-.697-.403-.3-.12-.654-.22-1.047-.287a6.5 6.5 0 0 0-1.261-.108c-.294.001-.534.031-.696.093a.6.6 0 0 0-.283.192 1 1 0 0 0-.103.186c-.051-.148-.141-.29-.266-.418-.279-.286-.708-.468-1.234-.468-.528 0-.957.182-1.236.469-.125.128-.215.27-.266.418a1 1 0 0 0-.103-.186.6.6 0 0 0-.283-.192c-.162-.062-.402-.092-.696-.093a6.5 6.5 0 0 0-1.261.108c-.393.067-.748.167-1.047.287-.297.12-.531.26-.697.403a1.1 1.1 0 0 0-.214.254.52.52 0 0 0-.065.27c0 .11.05.205.134.283.098.09.246.154.434.204.178.048.395.084.64.116.382.06.825.15 1.25.307.43.16.84.38 1.15.666.146.134.272.282.37.448.047.082.089.167.123.26a3.5 3.5 0 0 0-.006.206v.072c0 1.117.362 2.064.92 2.894.277.411.607.787.937 1.166.326.375.651.754.924 1.176.202.313.332.568.385.756.026.094.021.138.013.154a.1.1 0 0 1-.032.034c-.046.031-.133.078-.25.14-.12.064-.26.139-.395.225a2.7 2.7 0 0 0-.543.43c-.219.228-.407.518-.517.868-.15.474-.172 1.089-.046 1.696.118.57.357 1.107.716 1.548.36.442.812.737 1.29.907a3.1 3.1 0 0 0 1.633.115c.567-.104 1.047-.402 1.405-.828.353-.42.604-.966.749-1.537.192-.756.187-1.552-.056-2.223-.258-.713-.74-1.184-1.326-1.504-.162-.089-.338-.164-.505-.24-.298-.137-.597-.286-.682-.602-.031-.115-.014-.283.043-.508.058-.23.147-.485.254-.762.118-.307.25-.631.39-.957a53 53 0 0 1 .433-.966c.294-.63.613-1.162.903-1.632.732-1.186 1.549-2.256 1.397-4.576C17.756 2.451 15.122.102 11.963.01A7 7 0 0 0 11.496 0z"/>
+              </svg>
+            )}
+            {platform.icon === 'macos' && (
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+              </svg>
+            )}
+            {platform.icon === 'windows' && (
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
+              </svg>
+            )}
+          </div>
+          <span class="platform-name">{platform.name}</span>
+          <span class="platform-formats">{platform.formats}</span>
+          <span class="download-arrow" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 17l9.2-9.2M17 17V7.8H7.8"/>
+            </svg>
+          </span>
+        </a>
+        {'alt' in platform && platform.alt && (
+          <a href={platform.alt.href} class="download-alt">{platform.alt.label} (.dmg)</a>
+        )}
+        </div>
+      ))}
+    </div>
+    <p class="download-all-link">
+      <a href="https://github.com/naejin/canopi/releases" target="_blank" rel="noopener noreferrer">
+        {t('download.allReleases', lang)}
+      </a>
+    </p>
+  </div>
+</section>
+
+<style>
+  .download {
+    background: var(--canvas-bg);
+    padding: var(--space-20) var(--space-6);
+  }
+
+  .download-inner {
+    max-width: var(--content-width);
+    margin: 0 auto;
+  }
+
+  .download-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .section-label {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    font-weight: 400;
+    line-height: var(--leading-snug);
+    color: var(--color-text);
+    margin-bottom: var(--space-4);
+    letter-spacing: -0.01em;
+  }
+
+  .section-desc {
+    font-size: var(--text-md);
+    line-height: var(--leading-relaxed);
+    color: var(--color-text-muted);
+  }
+
+  .download-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .download-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-normal);
+  }
+
+  .download-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-lg), 0 0 0 3px var(--color-primary-bg);
+    transform: translateY(-2px);
+  }
+
+  .download-card:hover .download-arrow {
+    opacity: 1;
+    transform: translate(2px, -2px);
+  }
+
+  .platform-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-bg);
+    color: var(--color-primary);
+  }
+
+  .platform-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .platform-formats {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  .download-arrow {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    color: var(--color-primary);
+    opacity: 0;
+    transition: all var(--transition-normal);
+  }
+
+  .download-alt {
+    display: block;
+    text-align: center;
+    padding: var(--space-1) 0;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    transition: color var(--transition-fast);
+  }
+
+  .download-alt:hover {
+    color: var(--color-primary);
+  }
+
+  .download-all-link {
+    text-align: center;
+    margin-top: var(--space-6);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .download-all-link a {
+    color: var(--color-primary);
+    transition: color var(--transition-fast);
+  }
+
+  .download-all-link a:hover {
+    color: var(--color-primary-hover);
+  }
+
+  @media (min-width: 640px) {
+    .download-grid { grid-template-columns: repeat(3, 1fr); max-width: none; }
+    .download-card { flex-direction: column; text-align: center; padding: var(--space-8) var(--space-6); }
+    .platform-formats { margin-left: 0; }
+  }
+
+  @media (min-width: 960px) {
+    .section-title { font-size: var(--text-4xl); }
+  }
+</style>

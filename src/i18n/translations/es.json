@@ -1,0 +1,48 @@
+{
+  "meta.title": "Canopi — Herramienta de diseño agroecológico",
+  "meta.description": "Planifica bosques comestibles, huertos y sistemas agroecológicos con una base de datos de más de 175.000 especies. Aplicación de escritorio gratuita y de código abierto para Linux, macOS y Windows.",
+
+  "header.home": "Canopi — inicio",
+  "header.features": "Funciones",
+  "header.download": "Descargar",
+  "header.github": "Canopi en GitHub",
+  "header.themeDark": "Cambiar a tema oscuro",
+  "header.themeLight": "Cambiar a tema claro",
+  "header.themeToggle": "Cambiar tema",
+  "header.language": "Idioma",
+
+  "hero.badge": "Beta v0.1.0 — Gratuito y libre",
+  "hero.headlineTop": "Diseña los sistemas alimentarios",
+  "hero.headlineAccent": "que tu comunidad necesita",
+  "hero.subtext": "Nuestra comida recorre largas distancias a través de cadenas que dependen del petróleo — fertilizantes, transporte, maquinaria. Cuando esas cadenas fallan, las ciudades pasan hambre. Canopi es una herramienta gratuita para planificar la alternativa: bosques comestibles, huertos y sistemas agroecológicos que funcionan con tu suelo y tu clima. Incluye una base de datos con más de 175.000 especies y un espacio de diseño completo.",
+  "hero.downloadBtn": "Descargar Canopi",
+  "hero.githubBtn": "Ver en GitHub",
+  "hero.statPlantsValue": "175.000+",
+  "hero.statPlants": "Especies",
+  "hero.statLangsValue": "11",
+  "hero.statLangs": "Idiomas",
+  "hero.statPlatformsValue": "3",
+  "hero.statPlatforms": "Plataformas",
+  "hero.statLicenseValue": "AGPL v3",
+  "hero.statLicense": "Licencia",
+
+  "features.label": "Qué ofrece",
+  "features.title": "Una herramienta seria para diseñar sistemas alimentarios",
+  "features.desc": "Canopi no es un planificador de jardines de juguete. Está pensado para el trabajo de fondo que la agroecología exige, pero sin complicar las cosas para quien está empezando.",
+  "features.plants.title": "175.000+ especies",
+  "features.plants.desc": "Busca por zona climática, tipo de suelo, necesidades de sol, comestibilidad, fijación de nitrógeno y muchos más criterios. Cada especie tiene 173 datos ecológicos.",
+  "features.canvas.title": "Un verdadero lienzo de diseño",
+  "features.canvas.desc": "Dibuja zonas, coloca plantas, planifica capas de sucesión, mide distancias. Es como una mesa de dibujo hecha específicamente para bosques comestibles.",
+  "features.share.title": "Tus diseños, tus archivos",
+  "features.share.desc": "Todo se guarda localmente en archivos .canopi. Compártelos con otros diseñadores o parte de plantillas de la comunidad. Formato abierto, sin ataduras.",
+  "features.platform.title": "Funciona en todas partes",
+  "features.platform.desc": "Disponible en Linux, macOS y Windows. La interfaz está traducida a 11 idiomas: inglés, francés, español, portugués, alemán, italiano, neerlandés, japonés, coreano, chino y ruso.",
+
+  "download.label": "Empezar",
+  "download.title": "Descargar Canopi",
+  "download.desc": "Gratuito y de código abierto bajo licencia AGPL v3. Actualmente en beta — todavía estamos puliendo cosas.",
+  "download.forPlatform": "Descargar Canopi para {platform}",
+
+  "download.allReleases": "Todas las versiones en GitHub",
+  "footer.license": "AGPL v3"
+}
