@@ -16,14 +16,12 @@ const { lang } = Astro.props;
     </div>
 
     <div class="footer-right">
-      <div class="footer-donate">
-        <script src="https://liberapay.com/Naejin/widgets/button.js"></script>
-        <noscript>
-          <a href="https://liberapay.com/Naejin/donate">
-            <img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg" />
-          </a>
-        </noscript>
-      </div>
+      <a
+        href="https://liberapay.com/Naejin/donate"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="footer-donate-link"
+      >Donate</a>
       <a
         href="https://github.com/naejin/canopi"
         target="_blank"
@@ -90,6 +88,15 @@ const { lang } = Astro.props;
     color: var(--color-text-muted);
     transition: color var(--transition-fast);
   }
+
+  .footer-donate-link {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-primary);
+    transition: color var(--transition-fast);
+  }
+
+  .footer-donate-link:hover { color: var(--color-primary-hover); }
 
   .footer-github:hover { color: var(--color-text); }
 
