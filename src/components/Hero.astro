@@ -29,6 +29,25 @@ const platforms = [
       {t('hero.subtext', lang)}
     </p>
 
+    <div class="hero-screenshot">
+      <img
+        src="/screenshot-light.png"
+        alt="Canopi app — design canvas with plant database"
+        class="screenshot screenshot-light"
+        width="2299"
+        height="1614"
+        loading="eager"
+      />
+      <img
+        src="/screenshot-dark.png"
+        alt="Canopi app — design canvas with plant database"
+        class="screenshot screenshot-dark"
+        width="2299"
+        height="1614"
+        loading="eager"
+      />
+    </div>
+
     <div class="hero-downloads">
       {platforms.map((platform) => (
         <div class="dl-wrap">
@@ -155,6 +174,34 @@ const platforms = [
   .hero-headline-accent {
     color: var(--color-primary);
     font-style: italic;
+  }
+
+  /* ── Screenshot ── */
+  .hero-screenshot {
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: var(--space-12);
+    animation: fadeUp 600ms var(--transition-slow) both;
+    animation-delay: 400ms;
+  }
+
+  .screenshot {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .screenshot-dark { display: none; }
+  .screenshot-light { display: block; }
+
+  [data-theme="dark"] .screenshot-dark { display: block; }
+  [data-theme="dark"] .screenshot-light { display: none; }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .screenshot-dark { display: block; }
+    :root:not([data-theme="light"]) .screenshot-light { display: none; }
   }
 
   .hero-subtext {
