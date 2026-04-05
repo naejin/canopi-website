@@ -35,13 +35,8 @@ const platforms = [
           <a href={platform.href} class="dl-card" aria-label={t('download.forPlatform', lang, { platform: platform.name })}>
             <div class="dl-icon">
               {platform.icon === 'linux' && (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2C9.5 2 7.5 4.5 7.5 7.5c0 1.5.5 3 1.5 4l1 1.5c.3.5.5 1 .5 1.5v1c0 .5-.2 1-.5 1.3L9 18c-.5.5-.7 1.2-.5 1.8.2.7.8 1.2 1.5 1.2h4c.7 0 1.3-.5 1.5-1.2.2-.6 0-1.3-.5-1.8l-1-1.2c-.3-.3-.5-.8-.5-1.3v-1c0-.5.2-1 .5-1.5l1-1.5c1-1 1.5-2.5 1.5-4C16.5 4.5 14.5 2 12 2z"/>
-                  <circle cx="10" cy="7" r="0.5" fill="currentColor" stroke="none"/>
-                  <circle cx="14" cy="7" r="0.5" fill="currentColor" stroke="none"/>
-                  <path d="M10 9.5s.7 1 2 1 2-1 2-1"/>
-                  <path d="M7 14c-1.5.5-2.5 1.5-2.5 3 0 1 .5 2 1.5 2.5"/>
-                  <path d="M17 14c1.5.5 2.5 1.5 2.5 3 0 1-.5 2-1.5 2.5"/>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 18.616v.534c0 .469-.38.85-.85.85h-.3c-.469 0-.85-.38-.85-.85v-.084c-1.054.15-2.403.284-4 .317v.617c0 .469-.38.85-.85.85h-.3c-.469 0-.85-.38-.85-.85v-.617c-1.597-.033-2.946-.167-4-.317v.084c0 .469-.38.85-.85.85h-.3c-.469 0-.85-.38-.85-.85v-.534c-1.164-.36-1.9-.816-1.9-1.316 0-.263.18-.516.5-.744v-3.556c0-3.866 3.134-7 7-7h.4c3.866 0 7 3.134 7 7v3.556c.32.228.5.481.5.744 0 .5-.736.956-1.9 1.316zM10 10a1 1 0 100-2 1 1 0 000 2zm4 0a1 1 0 100-2 1 1 0 000 2zm-4.5 3c0 .828 1.119 1.5 2.5 1.5s2.5-.672 2.5-1.5h-5z"/>
                 </svg>
               )}
               {platform.icon === 'macos' && (
