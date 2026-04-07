@@ -1,0 +1,580 @@
+---
+import { t, type Locale } from '../i18n/utils';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+
+const events = [
+  { id: 'oil1973', year: 1973 },
+  { id: 'ethiopia1984', year: 1984 },
+  { id: 'foodcrisis2008', year: 2008 },
+  { id: 'russia2010', year: 2010 },
+  { id: 'arabspring2011', year: 2011 },
+  { id: 'eastafrica2011', year: 2011.5 },
+  { id: 'locusts2020', year: 2020 },
+  { id: 'covid2020', year: 2020.5 },
+  { id: 'ukraine2022', year: 2022 },
+  { id: 'indiarice2023', year: 2023 },
+  { id: 'redsea2024', year: 2024 },
+  { id: 'hormuz2026', year: 2026 },
+];
+
+const MIN_YEAR = 1973;
+const MAX_YEAR = 2026;
+const RANGE = MAX_YEAR - MIN_YEAR;
+const PADDING = 80;
+const MIN_GAP = 100;
+
+const ideal = events.map(e => ((e.year - MIN_YEAR) / RANGE));
+const BASE_WIDTH = 1400;
+const positions: number[] = [];
+for (let i = 0; i < ideal.length; i++) {
+  const proportional = ideal[i] * BASE_WIDTH;
+  if (i === 0) {
+    positions.push(proportional);
+  } else {
+    positions.push(Math.max(proportional, positions[i - 1] + MIN_GAP));
+  }
+}
+const trackEffective = Math.max(positions[positions.length - 1], BASE_WIDTH);
+const TRACK_WIDTH = trackEffective + PADDING * 2;
+const eventPositions = positions.map(p => p + PADDING);
+---
+
+<section class="timeline" data-timeline aria-label={t('timeline.label', lang)}>
+  <div class="timeline-header">
+    <span class="timeline-label">{t('timeline.label', lang)}</span>
+    <span class="timeline-hint">{t('timeline.hint', lang)}</span>
+  </div>
+
+  <div class="timeline-scroll" data-timeline-scroll tabindex="0" role="region" aria-label={t('timeline.label', lang)}>
+    <div class="timeline-track" style={`width: ${TRACK_WIDTH}px`}>
+      <div class="timeline-axis" style={`left: ${PADDING}px; right: ${PADDING}px`}></div>
+
+      {events.map((event, i) => (
+        <div
+          class="timeline-event"
+          style={`left: ${eventPositions[i]}px`}
+          data-event-index={i}
+        >
+          <button
+            class="event-marker"
+            aria-expanded="false"
+            data-event-btn={i}
+            data-title={t(`timeline.${event.id}.title`, lang)}
+            data-stat={t(`timeline.${event.id}.stat`, lang)}
+            style={`--stagger: ${i}`}
+          >
+            <span class="event-year">{t(`timeline.${event.id}.year`, lang)}</span>
+            <span class="event-dot" aria-hidden="true"></span>
+          </button>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- Card rendered outside the scroll area to avoid overflow clipping -->
+  <div class="timeline-card-anchor" data-card-anchor>
+    <div class="event-card" data-event-card hidden>
+      <div class="card-pointer" aria-hidden="true"></div>
+      <h3 class="card-title" data-card-title></h3>
+      <p class="card-stat" data-card-stat></p>
+    </div>
+  </div>
+
+  <div class="timeline-fade timeline-fade-left" aria-hidden="true"></div>
+  <div class="timeline-fade timeline-fade-right" aria-hidden="true"></div>
+</section>
+
+<script define:vars={{ events }}>
+  // Pass event data to client-side JS
+  window.__timelineEvents = events;
+</script>
+
+<script>
+  const section = document.querySelector('[data-timeline]') as HTMLElement | null;
+  const scrollArea = document.querySelector('[data-timeline-scroll]') as HTMLElement | null;
+  const buttons = document.querySelectorAll('[data-event-btn]') as NodeListOf<HTMLButtonElement>;
+  const cardAnchor = document.querySelector('[data-card-anchor]') as HTMLElement | null;
+  const card = document.querySelector('[data-event-card]') as HTMLElement | null;
+  const cardTitle = document.querySelector('[data-card-title]') as HTMLElement | null;
+  const cardStat = document.querySelector('[data-card-stat]') as HTMLElement | null;
+
+  // Retrieve event data and translations from the rendered buttons
+  interface TimelineEvent { id: string; year: number; }
+  const events: TimelineEvent[] = (window as any).__timelineEvents || [];
+
+  // Pre-read translations from the DOM (they were rendered server-side in the buttons)
+  // We need the title and stat for each event. Read them from hidden data attributes.
+  // Actually, since we have the translation function only server-side, let's embed
+  // the card content as data attributes on each button.
+
+  if (section && scrollArea && card && cardTitle && cardStat && cardAnchor) {
+    // --- Scroll to rightmost on load ---
+    scrollArea.scrollLeft = scrollArea.scrollWidth;
+
+    // --- IntersectionObserver: fade-in ---
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          section.classList.add('is-visible');
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(section);
+
+    // --- Click to expand/collapse cards ---
+    let activeIndex: number = -1;
+
+    function positionCard(btnEl: HTMLElement) {
+      const sectionRect = section!.getBoundingClientRect();
+      const btnRect = btnEl.getBoundingClientRect();
+      const cardWidth = card!.offsetWidth;
+
+      // Center the card on the button, relative to the section
+      let centerX = btnRect.left + btnRect.width / 2 - sectionRect.left;
+
+      // Clamp so the card doesn't overflow the viewport edges
+      const minLeft = cardWidth / 2 + 12;
+      const maxLeft = sectionRect.width - cardWidth / 2 - 12;
+      centerX = Math.max(minLeft, Math.min(maxLeft, centerX));
+
+      card!.style.left = `${centerX}px`;
+    }
+
+    function openCard(index: number, btnEl: HTMLElement) {
+      const btn = btnEl.closest('[data-event-btn]') ? btnEl : btnEl.closest('button')!;
+      const eventEl = btn.closest('.timeline-event') as HTMLElement;
+
+      // Read content from data attributes
+      cardTitle!.textContent = btn.getAttribute('data-title') || '';
+      cardStat!.textContent = btn.getAttribute('data-stat') || '';
+
+      // Show card first so offsetWidth is available for positioning
+      card!.hidden = false;
+      positionCard(eventEl);
+      card!.style.animation = 'none';
+      card!.offsetHeight; // force reflow
+      card!.style.animation = '';
+
+      eventEl.classList.add('is-active');
+      btn.setAttribute('aria-expanded', 'true');
+      activeIndex = index;
+    }
+
+    function closeCard() {
+      if (activeIndex < 0) return;
+      const prevBtn = document.querySelector(`[data-event-btn="${activeIndex}"]`) as HTMLElement | null;
+      if (prevBtn) {
+        prevBtn.setAttribute('aria-expanded', 'false');
+        prevBtn.closest('.timeline-event')?.classList.remove('is-active');
+      }
+      card!.hidden = true;
+      activeIndex = -1;
+    }
+
+    buttons.forEach((btn) => {
+      const idx = parseInt(btn.getAttribute('data-event-btn') || '0', 10);
+
+      btn.addEventListener('click', () => {
+        if (activeIndex === idx) {
+          closeCard();
+        } else {
+          closeCard();
+          openCard(idx, btn);
+        }
+      });
+    });
+
+    // --- Reposition card on scroll ---
+    scrollArea.addEventListener('scroll', () => {
+      if (activeIndex >= 0) {
+        const activeBtn = document.querySelector(`[data-event-btn="${activeIndex}"]`) as HTMLElement;
+        if (activeBtn) {
+          positionCard(activeBtn.closest('.timeline-event') as HTMLElement);
+        }
+      }
+    });
+
+    // --- Horizontal scroll with mouse wheel ---
+    scrollArea.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        scrollArea.scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
+
+    // --- Drag to scroll ---
+    let isDragging = false;
+    let startX = 0;
+    let startScroll = 0;
+
+    scrollArea.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.pageX;
+      startScroll = scrollArea.scrollLeft;
+      scrollArea.style.cursor = 'grabbing';
+      scrollArea.style.userSelect = 'none';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      scrollArea.scrollLeft = startScroll - (e.pageX - startX);
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        scrollArea.style.cursor = '';
+        scrollArea.style.userSelect = '';
+      }
+    });
+
+    // --- Keyboard navigation ---
+    scrollArea.addEventListener('keydown', (e) => {
+      const btnArr = Array.from(buttons);
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        let nextIdx: number;
+        if (e.key === 'ArrowRight') {
+          nextIdx = activeIndex < btnArr.length - 1 ? activeIndex + 1 : 0;
+        } else {
+          nextIdx = activeIndex > 0 ? activeIndex - 1 : btnArr.length - 1;
+        }
+        btnArr[nextIdx].click();
+        btnArr[nextIdx].focus();
+        const eventEl = btnArr[nextIdx].closest('.timeline-event') as HTMLElement;
+        if (eventEl) {
+          const rect = eventEl.getBoundingClientRect();
+          const scrollRect = scrollArea.getBoundingClientRect();
+          if (rect.left < scrollRect.left + 60 || rect.right > scrollRect.right - 60) {
+            eventEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
+        }
+      }
+
+      if (e.key === 'Escape') closeCard();
+    });
+  }
+</script>
+
+<style>
+  /* ── Section ── */
+  .timeline {
+    position: relative;
+    background: #1C1915;
+    padding: 2.5rem 0 2rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .timeline.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── Header ── */
+  .timeline-header {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 0 1.5rem 1.5rem;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .timeline-label {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #C89B4A;
+  }
+
+  .timeline-hint {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    color: #6B5F4E;
+    font-style: italic;
+  }
+
+  /* ── Scrollable area ── */
+  .timeline-scroll {
+    overflow-x: auto;
+    cursor: grab;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(200, 155, 74, 0.3) transparent;
+    padding-bottom: 0.5rem;
+  }
+
+  .timeline-scroll::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .timeline-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .timeline-scroll::-webkit-scrollbar-thumb {
+    background: rgba(200, 155, 74, 0.3);
+    border-radius: 4px;
+  }
+
+  .timeline-scroll:focus-visible {
+    outline: 2px solid #C89B4A;
+    outline-offset: -2px;
+    border-radius: 2px;
+  }
+
+  /* ── Track ── */
+  .timeline-track {
+    position: relative;
+    height: 70px;
+  }
+
+  /* ── Axis line ── */
+  .timeline-axis {
+    position: absolute;
+    top: 56px;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(200, 155, 74, 0.15) 3%,
+      rgba(200, 155, 74, 0.35) 15%,
+      rgba(200, 155, 74, 0.5) 50%,
+      rgba(200, 155, 74, 0.6) 100%
+    );
+  }
+
+  .timeline-axis::after {
+    content: '';
+    position: absolute;
+    inset: -3px 0;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(200, 155, 74, 0.03) 15%,
+      rgba(200, 155, 74, 0.06) 100%
+    );
+    filter: blur(4px);
+  }
+
+  /* ── Event ── */
+  .timeline-event {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1;
+  }
+
+  .timeline-event.is-active {
+    z-index: 10;
+  }
+
+  /* ── Marker button ── */
+  .event-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    min-width: 44px;
+    min-height: 44px;
+    position: relative;
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  .timeline.is-visible .event-marker {
+    animation: markerIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--stagger) * 60ms + 200ms);
+  }
+
+  @keyframes markerIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .event-year {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #B0A292;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+    letter-spacing: 0.01em;
+  }
+
+  .event-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #C89B4A;
+    border: 2px solid #1C1915;
+    box-shadow: 0 0 0 1px rgba(200, 155, 74, 0.3);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    flex-shrink: 0;
+  }
+
+  .event-marker:hover .event-dot {
+    transform: scale(1.4);
+    box-shadow: 0 0 0 2px rgba(200, 155, 74, 0.4), 0 0 12px rgba(200, 155, 74, 0.2);
+  }
+
+  .event-marker:hover .event-year {
+    color: #E8E2D8;
+  }
+
+  .is-active .event-dot {
+    transform: scale(1.6);
+    background: #D4A85A;
+    box-shadow: 0 0 0 2px rgba(200, 155, 74, 0.5), 0 0 20px rgba(200, 155, 74, 0.25);
+  }
+
+  .is-active .event-year {
+    color: #C89B4A;
+  }
+
+  /* ── Card anchor (outside scroll area) ── */
+  .timeline-card-anchor {
+    position: relative;
+    height: 0;
+    z-index: 20;
+  }
+
+  .event-card {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    transform: translateX(-50%);
+    width: 300px;
+    background: #262220;
+    border: 1px solid rgba(200, 180, 150, 0.12);
+    border-radius: 6px;
+    padding: 1rem 1.125rem;
+    animation: cardIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 1px rgba(200, 155, 74, 0.1);
+  }
+
+  @keyframes cardIn {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  .card-pointer {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 6px;
+    overflow: hidden;
+  }
+
+  .card-pointer::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    background: #262220;
+    border: 1px solid rgba(200, 180, 150, 0.12);
+    transform: translateX(-50%) rotate(45deg);
+    border-bottom: none;
+    border-right: none;
+  }
+
+  .card-title {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #E8E2D8;
+    line-height: 1.3;
+    margin-bottom: 0.375rem;
+  }
+
+  .card-stat {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    color: #B0A292;
+    line-height: 1.55;
+  }
+
+  /* ── Edge fades ── */
+  .timeline-fade {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 48px;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .timeline-fade-left {
+    left: 0;
+    background: linear-gradient(90deg, #1C1915 0%, transparent 100%);
+  }
+
+  .timeline-fade-right {
+    right: 0;
+    background: linear-gradient(270deg, #1C1915 0%, transparent 100%);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 639px) {
+    .timeline {
+      padding: 2rem 0 1.5rem;
+    }
+
+    .timeline-header {
+      padding: 0 1rem 1rem;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .event-card {
+      width: 240px;
+      padding: 0.875rem 1rem;
+    }
+
+    .card-title {
+      font-size: 0.8125rem;
+    }
+
+    .card-stat {
+      font-size: 0.75rem;
+    }
+
+    .timeline-fade {
+      width: 24px;
+    }
+  }
+
+  @media (min-width: 960px) {
+    .timeline {
+      padding: 3rem 0 2.5rem;
+    }
+
+    .event-card {
+      width: 340px;
+    }
+  }
+</style>

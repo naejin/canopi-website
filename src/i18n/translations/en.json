@@ -44,5 +44,57 @@
   "download.forPlatform": "Download Canopi for {platform}",
 
   "download.allReleases": "All releases on GitHub",
+
+  "timeline.label": "Global food security timeline",
+  "timeline.hint": "Click an event to learn more",
+
+  "timeline.oil1973.year": "1973",
+  "timeline.oil1973.title": "Oil Embargo & Food Price Spiral",
+  "timeline.oil1973.stat": "OPEC embargo quadruples oil prices — $3 to $12/barrel in under 3 months. Wheat prices triple by early 1974.",
+
+  "timeline.ethiopia1984.year": "1983–85",
+  "timeline.ethiopia1984.title": "Ethiopian Famine",
+  "timeline.ethiopia1984.stat": "Drought and civil war affect 7.75 million people. An estimated 1 million deaths.",
+
+  "timeline.foodcrisis2008.year": "2007–08",
+  "timeline.foodcrisis2008.title": "Global Food Price Crisis",
+  "timeline.foodcrisis2008.stat": "Rice prices rise 217%, wheat 136%, corn 125%. Food riots erupt across 37 countries.",
+
+  "timeline.russia2010.year": "2010",
+  "timeline.russia2010.title": "Russian Wheat Export Ban",
+  "timeline.russia2010.stat": "Record heatwave destroys one-third of Russia's wheat harvest. Wheat prices surge 42% in a single month.",
+
+  "timeline.arabspring2011.year": "2010–11",
+  "timeline.arabspring2011.title": "Arab Spring",
+  "timeline.arabspring2011.stat": "Surging food prices help ignite uprisings across the Middle East and North Africa. FAO Food Price Index hits record high.",
+
+  "timeline.eastafrica2011.year": "2011",
+  "timeline.eastafrica2011.title": "East Africa Famine",
+  "timeline.eastafrica2011.stat": "Worst drought in 60 years across the Horn of Africa. 260,000 dead in Somalia — more than half children under five.",
+
+  "timeline.locusts2020.year": "2019–20",
+  "timeline.locusts2020.title": "East Africa Locust Swarms",
+  "timeline.locusts2020.stat": "Worst desert locust outbreak in decades ravages cropland. Over 25 million people face severe food insecurity.",
+
+  "timeline.covid2020.year": "2020–21",
+  "timeline.covid2020.title": "COVID-19 Pandemic",
+  "timeline.covid2020.stat": "Lockdowns and economic collapse disrupt global food supply chains. People facing acute hunger nearly doubles: 135 to 265 million.",
+
+  "timeline.ukraine2022.year": "2022",
+  "timeline.ukraine2022.title": "Russia-Ukraine War",
+  "timeline.ukraine2022.stat": "Russia and Ukraine supply 28% of global wheat and 75% of sunflower oil. Ukrainian grain exports fall over 90%.",
+
+  "timeline.indiarice2023.year": "2023",
+  "timeline.indiarice2023.title": "India Rice Export Ban",
+  "timeline.indiarice2023.stat": "World's largest rice exporter — 40% of global trade — bans non-basmati white rice exports. Rice prices hit highest in a decade.",
+
+  "timeline.redsea2024.year": "2023–24",
+  "timeline.redsea2024.title": "Red Sea Shipping Crisis",
+  "timeline.redsea2024.stat": "Houthi attacks force rerouting of global shipping. Suez Canal trade volume drops 42%. Container traffic falls up to 90%.",
+
+  "timeline.hormuz2026.year": "2026",
+  "timeline.hormuz2026.title": "Strait of Hormuz Crisis",
+  "timeline.hormuz2026.stat": "Military conflict closes the world's most critical energy chokepoint. 20% of global oil, 20% of LNG, and 30% of fertilizer trade transits the strait.",
+
   "footer.license": "AGPL v3"
 }

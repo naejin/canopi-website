@@ -36,20 +36,6 @@ const { lang } = Astro.props;
         </div>
       </details>
 
-      <a
-        href="https://liberapay.com/Naejin/donate"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="nav-link donate-link"
-        aria-label="Donate"
-      >
-        <svg width="16" height="16" viewBox="0 0 80 80" fill="currentColor" aria-hidden="true">
-          <g transform="translate(0,80) scale(0.1,-0.1)">
-            <path d="M317 713 c-13 -12 -7 -41 12 -60 15 -16 21 -35 23 -78 l2 -57 -42 7 c-59 9 -90 -10 -90 -56 0 -40 22 -65 77 -87 l33 -13 0 -65 c0 -55 -3 -66 -20 -76 -24 -12 -26 -28 -4 -28 22 0 74 50 74 72 0 10 -9 22 -20 28 -17 9 -20 21 -20 76 l0 65 33 13 c55 22 77 47 77 87 0 46 -31 65 -90 56 l-42 -7 2 57 c2 43 8 62 23 78 19 19 25 48 12 60 -3 4 -12 3 -19 -3z"/>
-          </g>
-        </svg>
-        <span class="donate-text">Donate</span>
-      </a>
       <button
         class="theme-toggle"
         data-theme-toggle
@@ -181,10 +167,6 @@ const { lang } = Astro.props;
     :root:not([data-theme="light"]) .icon-sun { display: none; }
   }
 
-  .donate-link {
-    color: var(--color-primary) !important;
-  }
-
   /* ── Language Switcher ── */
   .lang-switcher {
     position: relative;
@@ -270,16 +252,8 @@ const { lang } = Astro.props;
     font-weight: 400;
   }
 
-  .donate-text {
-    display: inline;
-  }
-
   @media (max-width: 639px) {
     .nav-link:not([aria-label]) {
-      display: none;
-    }
-
-    .donate-text {
       display: none;
     }
 
