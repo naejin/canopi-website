@@ -7,8 +7,8 @@ const VERSION = '0.4.0';
 const BASE = `https://github.com/naejin/canopi/releases/download/v${VERSION}`;
 
 const platforms = [
-  { name: 'Linux', formats: '.deb (amd64)', icon: 'linux', href: `${BASE}/Canopi_${VERSION}_amd64.deb` },
-  { name: 'macOS', formats: '.dmg (Apple Silicon)', icon: 'macos', href: `${BASE}/Canopi_${VERSION}_aarch64.dmg`, alt: { label: 'Intel Mac', href: `${BASE}/Canopi_${VERSION}_x64.dmg` } },
+  { name: 'Linux', formats: '.AppImage (amd64)', icon: 'linux', href: `${BASE}/Canopi_${VERSION}_amd64.AppImage`, alt: { label: 'Debian/Ubuntu', format: '.deb', href: `${BASE}/Canopi_${VERSION}_amd64.deb` } },
+  { name: 'macOS', formats: '.dmg (Apple Silicon)', icon: 'macos', href: `${BASE}/Canopi_${VERSION}_aarch64.dmg`, alt: { label: 'Intel Mac', format: '.dmg', href: `${BASE}/Canopi_${VERSION}_x64.dmg` } },
   { name: 'Windows', formats: '.exe (x64)', icon: 'windows', href: `${BASE}/Canopi_${VERSION}_x64-setup.exe` },
 ];
 ---
@@ -55,7 +55,7 @@ const platforms = [
           </span>
         </a>
         {'alt' in platform && platform.alt && (
-          <a href={platform.alt.href} class="download-alt">{platform.alt.label} (.dmg)</a>
+          <a href={platform.alt.href} class="download-alt">{platform.alt.label} ({platform.alt.format})</a>
         )}
         </div>
       ))}
