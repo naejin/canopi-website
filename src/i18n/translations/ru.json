@@ -11,6 +11,8 @@
   "header.themeToggle": "Сменить тему",
   "header.language": "Язык",
 
+  "hero.masthead": "Полевой журнал · v0.4.0 · Открытый код",
+  "hero.screenshotCaption": "Рис. 1 — Холст проектирования с базой видов.",
   "hero.badge": "Бета v0.4.0 — Бесплатно и с открытым кодом",
   "hero.headlineTop": "Спроектируйте продовольственные системы,",
   "hero.headlineAccent": "которые нужны вашему сообществу",
@@ -42,6 +44,9 @@
   "download.title": "Скачать Canopi",
   "download.desc": "Бесплатный и с открытым кодом, лицензия AGPL v3. Сейчас в стадии беты — ещё доводим до ума.",
   "download.forPlatform": "Скачать Canopi для {platform}",
+  "download.detected": "Определено: {platform}",
+  "download.showAll": "Показать все варианты",
+  "download.recommended": "для вашей системы",
 
   "download.allReleases": "Все выпуски на GitHub",
   "footer.license": "AGPL v3"

@@ -11,6 +11,8 @@
   "header.themeToggle": "Alternar tema",
   "header.language": "Idioma",
 
+  "hero.masthead": "Caderno de campo · v0.4.0 · Código Aberto",
+  "hero.screenshotCaption": "Fig. 1 — Tela de design com base de dados de espécies.",
   "hero.badge": "Beta v0.4.0 — Gratuito e livre",
   "hero.headlineTop": "Projete os sistemas alimentares",
   "hero.headlineAccent": "que a sua comunidade precisa",
@@ -42,6 +44,9 @@
   "download.title": "Baixar Canopi",
   "download.desc": "Gratuito e de código aberto sob licença AGPL v3. Em beta por enquanto — ainda estamos polindo.",
   "download.forPlatform": "Baixar Canopi para {platform}",
+  "download.detected": "Detectado: {platform}",
+  "download.showAll": "Ver todas as opções",
+  "download.recommended": "para o seu sistema",
 
   "download.allReleases": "Todas as versões no GitHub",
   "footer.license": "AGPL v3"

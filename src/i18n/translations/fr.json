@@ -11,6 +11,8 @@
   "header.themeToggle": "Changer de thème",
   "header.language": "Langue",
 
+  "hero.masthead": "Carnet de terrain · v0.4.0 · Open Source",
+  "hero.screenshotCaption": "Fig. 1 — Canevas de conception avec base de données des espèces.",
   "hero.badge": "Bêta v0.4.0 — Gratuit & Libre",
   "hero.headlineTop": "Concevez les systèmes alimentaires",
   "hero.headlineAccent": "dont votre communauté a besoin",
@@ -42,6 +44,9 @@
   "download.title": "Télécharger Canopi",
   "download.desc": "Gratuit et libre sous licence AGPL v3. En bêta pour le moment — on peaufine encore.",
   "download.forPlatform": "Télécharger Canopi pour {platform}",
+  "download.detected": "Détecté : {platform}",
+  "download.showAll": "Voir toutes les options",
+  "download.recommended": "pour votre système",
 
   "download.allReleases": "Toutes les versions sur GitHub",
   "footer.license": "AGPL v3"

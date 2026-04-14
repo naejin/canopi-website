@@ -11,6 +11,8 @@
   "header.themeToggle": "테마 전환",
   "header.language": "언어",
 
+  "hero.masthead": "현장 노트 · v0.4.0 · 오픈 소스",
+  "hero.screenshotCaption": "그림 1 — 종 데이터베이스 설계 캔버스.",
   "hero.badge": "베타 v0.4.0 — 무료 & 오픈소스",
   "hero.headlineTop": "우리 마을에 필요한",
   "hero.headlineAccent": "먹거리 시스템을 직접 설계하세요",
@@ -42,6 +44,9 @@
   "download.title": "Canopi 다운로드",
   "download.desc": "AGPL v3 라이선스의 무료 오픈소스 소프트웨어입니다. 현재 베타 버전이라 아직 다듬는 중입니다.",
   "download.forPlatform": "{platform}용 Canopi 다운로드",
+  "download.detected": "감지됨: {platform}",
+  "download.showAll": "모든 옵션 보기",
+  "download.recommended": "사용 중인 시스템용",
 
   "download.allReleases": "GitHub에서 모든 릴리스 보기",
   "footer.license": "AGPL v3"

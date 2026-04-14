@@ -7,29 +7,75 @@ const VERSION = '0.4.0';
 const BASE = `https://github.com/naejin/canopi/releases/download/v${VERSION}`;
 
 const platforms = [
-  { name: 'Linux', formats: '.AppImage (amd64)', icon: 'linux', href: `${BASE}/Canopi_${VERSION}_amd64.AppImage`, alt: { label: 'Debian/Ubuntu', format: '.deb', href: `${BASE}/Canopi_${VERSION}_amd64.deb` } },
-  { name: 'macOS', formats: '.dmg (Apple Silicon)', icon: 'macos', href: `${BASE}/Canopi_${VERSION}_aarch64.dmg`, alt: { label: 'Intel Mac', format: '.dmg', href: `${BASE}/Canopi_${VERSION}_x64.dmg` } },
-  { name: 'Windows', formats: '.exe (x64)', icon: 'windows', href: `${BASE}/Canopi_${VERSION}_x64-setup.exe` },
+  { key: 'linux',   name: 'Linux',   formats: '.AppImage (amd64)',    icon: 'linux',   href: `${BASE}/Canopi_${VERSION}_amd64.AppImage`, alt: { label: 'Debian/Ubuntu', format: '.deb', href: `${BASE}/Canopi_${VERSION}_amd64.deb` } },
+  { key: 'macos',   name: 'macOS',   formats: '.dmg (Apple Silicon)', icon: 'macos',   href: `${BASE}/Canopi_${VERSION}_aarch64.dmg`,    alt: { label: 'Intel Mac',      format: '.dmg', href: `${BASE}/Canopi_${VERSION}_x64.dmg` } },
+  { key: 'windows', name: 'Windows', formats: '.exe (x64)',           icon: 'windows', href: `${BASE}/Canopi_${VERSION}_x64-setup.exe` },
 ];
+
+const detectedPrefix = t('download.detected', lang, { platform: '' }).replace(/[:：\s]+$/u, '').trim();
 ---
 
 <section class="hero">
   <div class="hero-inner">
-    <div class="hero-badge">
-      <span class="badge-dot"></span>
-      {t('hero.badge', lang)}
+    <div class="masthead" aria-label={t('hero.masthead', lang)}>
+      <svg class="mast-rule" aria-hidden="true" viewBox="0 0 60 2" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="mast-rule-fade" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="currentColor" stop-opacity="0"/>
+            <stop offset="1" stop-color="currentColor" stop-opacity="0.7"/>
+          </linearGradient>
+        </defs>
+        <line x1="0" y1="1" x2="60" y2="1" stroke="url(#mast-rule-fade)" stroke-width="1"/>
+      </svg>
+      <span class="mast-sprout" aria-hidden="true">
+        <svg viewBox="0 0 10 12" width="10" height="12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 11 V5"/>
+          <path d="M5 5.5 C 2 5.5, 1 3.5, 1 1.5 C 3 1.5, 5 2.5, 5 5.5"/>
+          <path d="M5 5.5 C 8 5.5, 9 3.5, 9 1.5 C 7 1.5, 5 2.5, 5 5.5"/>
+        </svg>
+      </span>
+      <span class="mast-text">{t('hero.masthead', lang)}</span>
+      <svg class="mast-rule mast-rule-r" aria-hidden="true" viewBox="0 0 60 2" preserveAspectRatio="none">
+        <line x1="0" y1="1" x2="60" y2="1" stroke="url(#mast-rule-fade)" stroke-width="1" transform="scale(-1,1) translate(-60,0)"/>
+      </svg>
+    </div>
+
+    <div class="chapter-rule" aria-hidden="true">
+      <svg viewBox="0 0 180 18" preserveAspectRatio="none" width="180" height="18">
+        <defs>
+          <linearGradient id="chapter-fade" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="currentColor" stop-opacity="0"/>
+            <stop offset="0.55" stop-color="currentColor" stop-opacity="1"/>
+            <stop offset="1" stop-color="currentColor" stop-opacity="1"/>
+          </linearGradient>
+          <linearGradient id="chapter-fade-r" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="currentColor" stop-opacity="1"/>
+            <stop offset="0.45" stop-color="currentColor" stop-opacity="1"/>
+            <stop offset="1" stop-color="currentColor" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <line x1="0" y1="9" x2="78" y2="9" stroke="url(#chapter-fade)" stroke-width="0.9"/>
+        <text x="90" y="14" text-anchor="middle" font-size="14" class="chapter-mark">❧</text>
+        <line x1="102" y1="9" x2="180" y2="9" stroke="url(#chapter-fade-r)" stroke-width="0.9"/>
+      </svg>
     </div>
 
     <h1 class="hero-headline">
       {t('hero.headlineTop', lang)}<br />
-      <span class="hero-headline-accent">{t('hero.headlineAccent', lang)}</span>
+      <span class="hero-headline-accent">
+        {t('hero.headlineAccent', lang)}<svg class="swash" aria-hidden="true" viewBox="0 0 60 24" width="52" height="20">
+          <path d="M2 18 Q 12 4, 30 12 T 58 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </span>
     </h1>
 
     <p class="hero-subtext">
       {t('hero.subtext', lang)}
     </p>
 
-    <div class="hero-screenshot">
+    <figure class="specimen">
+      <span class="washi washi-l" aria-hidden="true"></span>
+      <span class="washi washi-r" aria-hidden="true"></span>
       <img
         src="/screenshot-light.png"
         alt="Canopi app — design canvas with plant database"
@@ -46,12 +92,30 @@ const platforms = [
         height="1614"
         loading="eager"
       />
-    </div>
+      <figcaption class="specimen-caption">{t('hero.screenshotCaption', lang)}</figcaption>
+    </figure>
+
+    <p class="hero-detect" data-detection-banner hidden>
+      <span class="hero-detect-mark" aria-hidden="true">❧</span>
+      <span class="hero-detect-prefix">{detectedPrefix}<span class="hero-detect-colon">:</span></span>
+      <span class="hero-detect-label-wrap">
+        <strong class="hero-detect-label" data-detection-label></strong>
+        <svg class="hero-detect-underline" aria-hidden="true" viewBox="0 0 120 6" preserveAspectRatio="none">
+          <path d="M1 3.2 Q 20 0.8, 40 3.2 T 80 3.2 T 119 3.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="hero-detect-sep" aria-hidden="true">—</span>
+      <button type="button" class="hero-detect-dismiss" data-detection-dismiss>{t('download.showAll', lang)}</button>
+    </p>
 
     <div class="hero-downloads">
       {platforms.map((platform) => (
-        <div class="dl-wrap">
+        <div class="dl-wrap" data-platform={platform.key}>
           <a href={platform.href} class="dl-card" aria-label={t('download.forPlatform', lang, { platform: platform.name })}>
+            <svg class="dl-corner" aria-hidden="true" width="34" height="34" viewBox="0 0 34 34">
+              <path d="M34 0 L34 34 L0 0 Z" fill="currentColor"/>
+              <line x1="0" y1="0" x2="34" y2="34" stroke="rgba(0,0,0,0.22)" stroke-width="0.8" stroke-linecap="round"/>
+            </svg>
             <div class="dl-icon">
               {platform.icon === 'linux' && (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -70,12 +134,17 @@ const platforms = [
               )}
             </div>
             <div class="dl-info">
-              <span class="dl-name">{platform.name}</span>
-              <span class="dl-format">{platform.formats}</span>
+              <span class="dl-name-wrap">
+                <span class="dl-name">{platform.name}</span>
+                <svg class="dl-underline" aria-hidden="true" viewBox="0 0 80 6" preserveAspectRatio="none">
+                  <path d="M1 3.2 Q 14 0.8, 27 3.2 T 53 3.2 T 79 3.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span class="dl-format" data-platform-formats>{platform.formats}</span>
             </div>
           </a>
           {'alt' in platform && platform.alt && (
-            <a href={platform.alt.href} class="dl-alt">{platform.alt.label} ({platform.alt.format})</a>
+            <a href={platform.alt.href} class="dl-alt" data-alt-label={`${platform.alt.label} (${platform.alt.format})`}>{platform.alt.label} ({platform.alt.format})</a>
           )}
         </div>
       ))}
@@ -87,28 +156,90 @@ const platforms = [
       </a>
     </p>
 
-    <div class="hero-stats">
-      <div class="stat">
-        <span class="stat-value">{t('hero.statPlantsValue', lang)}</span>
-        <span class="stat-label">{t('hero.statPlants', lang)}</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <span class="stat-value">{t('hero.statLangsValue', lang)}</span>
-        <span class="stat-label">{t('hero.statLangs', lang)}</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <span class="stat-value">{t('hero.statPlatformsValue', lang)}</span>
-        <span class="stat-label">{t('hero.statPlatforms', lang)}</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <span class="stat-value">{t('hero.statLicenseValue', lang)}</span>
-        <span class="stat-label">{t('hero.statLicense', lang)}</span>
-      </div>
-    </div>
+    <p class="inventory" aria-label={`${t('hero.statPlantsValue', lang)} ${t('hero.statPlants', lang)}, ${t('hero.statLangsValue', lang)} ${t('hero.statLangs', lang)}, ${t('hero.statPlatformsValue', lang)} ${t('hero.statPlatforms', lang)}, ${t('hero.statLicenseValue', lang)} ${t('hero.statLicense', lang)}`}>
+      <span class="inv-item"><span class="inv-num">{t('hero.statPlantsValue', lang)}</span><span class="inv-label">{t('hero.statPlants', lang)}</span></span>
+      <span class="inv-sep" aria-hidden="true">∙</span>
+      <span class="inv-item"><span class="inv-num">{t('hero.statLangsValue', lang)}</span><span class="inv-label">{t('hero.statLangs', lang)}</span></span>
+      <span class="inv-sep" aria-hidden="true">∙</span>
+      <span class="inv-item"><span class="inv-num">{t('hero.statPlatformsValue', lang)}</span><span class="inv-label">{t('hero.statPlatforms', lang)}</span></span>
+      <span class="inv-sep" aria-hidden="true">∙</span>
+      <span class="inv-item"><span class="inv-num">{t('hero.statLicenseValue', lang)}</span><span class="inv-label">{t('hero.statLicense', lang)}</span></span>
+    </p>
   </div>
+
+  <script>
+    (async function initPlatformDetection() {
+      const scope = document.querySelector<HTMLElement>('.hero-downloads')?.parentElement;
+      if (!scope) return;
+
+      type Detected = { os: 'linux' | 'macos' | 'windows'; arch: 'arm64' | 'x64'; label: string } | null;
+
+      async function detect(): Promise<Detected> {
+        const uad = (navigator as any).userAgentData;
+        if (uad && typeof uad.getHighEntropyValues === 'function') {
+          try {
+            const data = await uad.getHighEntropyValues(['architecture', 'platform']);
+            const platform = String(data.platform || uad.platform || '').toLowerCase();
+            const arch = String(data.architecture || '').toLowerCase();
+            if (platform.includes('windows')) return { os: 'windows', arch: 'x64', label: 'Windows' };
+            if (platform.includes('mac') || platform === 'macos') {
+              const isArm = arch.includes('arm');
+              return { os: 'macos', arch: isArm ? 'arm64' : 'x64', label: isArm ? 'macOS (Apple Silicon)' : 'macOS (Intel)' };
+            }
+            if (platform.includes('linux')) return { os: 'linux', arch: 'x64', label: 'Linux' };
+          } catch {}
+        }
+
+        const ua = navigator.userAgent || '';
+        if (/Android|iPhone|iPad|iPod/i.test(ua)) return null;
+        if (/Windows NT/i.test(ua)) return { os: 'windows', arch: 'x64', label: 'Windows' };
+        if (/Mac OS X|Macintosh/i.test(ua)) return { os: 'macos', arch: 'arm64', label: 'macOS' };
+        if (/Linux|X11|CrOS/i.test(ua)) return { os: 'linux', arch: 'x64', label: 'Linux' };
+        return null;
+      }
+
+      const result = await detect();
+      if (!result) return;
+
+      const wrap = scope.querySelector<HTMLElement>(`.dl-wrap[data-platform="${result.os}"]`);
+      if (!wrap) return;
+
+      if (result.os === 'macos' && result.arch === 'x64') {
+        const card = wrap.querySelector<HTMLAnchorElement>('.dl-card');
+        const alt = wrap.querySelector<HTMLAnchorElement>('.dl-alt');
+        const formats = wrap.querySelector<HTMLElement>('[data-platform-formats]');
+        if (card && alt && formats) {
+          const primaryHref = card.getAttribute('href') || '';
+          const altHref = alt.getAttribute('href') || '';
+          card.setAttribute('href', altHref);
+          formats.textContent = '.dmg (Intel)';
+          alt.setAttribute('href', primaryHref);
+          alt.textContent = 'Apple Silicon (.dmg)';
+        }
+      }
+
+      wrap.setAttribute('data-featured', '');
+      scope.setAttribute('data-detected', `${result.os}-${result.arch}`);
+
+      const banner = scope.querySelector<HTMLElement>('[data-detection-banner]');
+      const labelEl = scope.querySelector<HTMLElement>('[data-detection-label]');
+      if (banner && labelEl) {
+        labelEl.textContent = result.label;
+        banner.hidden = false;
+        requestAnimationFrame(() => banner.classList.add('is-visible'));
+      }
+
+      const dismiss = scope.querySelector<HTMLButtonElement>('[data-detection-dismiss]');
+      dismiss?.addEventListener('click', () => {
+        scope.removeAttribute('data-detected');
+        wrap.removeAttribute('data-featured');
+        if (banner) {
+          banner.classList.remove('is-visible');
+          banner.addEventListener('transitionend', () => { banner.hidden = true; }, { once: true });
+        }
+      });
+    })();
+  </script>
 
   <div class="hero-border" aria-hidden="true">
     <svg viewBox="0 0 1200 24" preserveAspectRatio="none" fill="none" stroke="var(--color-border-strong)" stroke-width="1">
@@ -123,6 +254,17 @@ const platforms = [
     position: relative;
     background: var(--canvas-bg);
     overflow: hidden;
+    /* Ink-reveal cascade — one place to tune the whole page-load choreography */
+    --t-mast: 80ms;
+    --t-rule: 180ms;
+    --t-head: 260ms;
+    --t-swash: 560ms;
+    --t-lede: 360ms;
+    --t-plate: 460ms;
+    --t-detect: 620ms;
+    --t-downloads: 540ms;
+    --t-releases: 720ms;
+    --t-inv: 800ms;
   }
 
   .hero-inner {
@@ -135,30 +277,62 @@ const platforms = [
     text-align: center;
   }
 
-  .hero-badge {
+  /* ── Masthead (replaces pill badge) ── */
+  .masthead {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-1) var(--space-4);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--color-text-muted);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-full);
+    gap: var(--space-3);
+    color: var(--color-primary);
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-variant-numeric: lining-nums;
     margin-bottom: var(--space-10);
     animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: 100ms;
+    animation-delay: var(--t-mast);
+    white-space: nowrap;
   }
 
-  .badge-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--color-success);
-    animation: pulse 2s ease-in-out infinite;
+  .mast-rule {
+    width: 48px;
+    height: 2px;
+    flex-shrink: 0;
   }
 
+  .mast-sprout {
+    display: inline-flex;
+    color: var(--color-success);
+    transform: translateY(-1px);
+  }
+
+  .mast-text {
+    /* The text itself; the sprout and rules flank it */
+  }
+
+  /* ── Chapter rule + ❧ ornament ── */
+  .chapter-rule {
+    width: 180px;
+    height: 18px;
+    margin: 0 auto var(--space-4);
+    color: var(--color-border-strong);
+    animation: fadeUp 600ms var(--transition-slow) both;
+    animation-delay: var(--t-rule);
+  }
+
+  .chapter-rule svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .chapter-mark {
+    fill: var(--color-primary);
+    font-family: var(--font-display);
+  }
+
+  /* ── Headline + swash ── */
   .hero-headline {
     font-family: var(--font-display);
     font-size: var(--text-4xl);
@@ -168,29 +342,41 @@ const platforms = [
     margin-bottom: var(--space-8);
     letter-spacing: -0.02em;
     animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: 200ms;
+    animation-delay: var(--t-head);
   }
 
   .hero-headline-accent {
     color: var(--color-primary);
     font-style: italic;
+    display: inline;
   }
+
+  .swash {
+    display: inline-block;
+    margin-left: 6px;
+    vertical-align: -0.15em;
+    color: var(--color-primary);
+  }
+
+  .swash path {
+    stroke-dasharray: 90;
+    stroke-dashoffset: 90;
+    animation: inkDraw 900ms var(--transition-slow) forwards;
+    animation-delay: var(--t-swash);
+  }
+
+  @keyframes inkDraw { to { stroke-dashoffset: 0; } }
 
   /* ── Screenshot ── */
-  .hero-screenshot {
-    width: 100%;
-    max-width: 900px;
-    margin-bottom: var(--space-12);
-    animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: 400ms;
-  }
-
   .screenshot {
     width: 100%;
     height: auto;
     border-radius: var(--radius-xl);
     border: 1px solid var(--color-border);
-    box-shadow: var(--shadow-xl);
+    box-shadow:
+      0 2px 4px rgba(44, 36, 24, 0.06),
+      0 24px 60px -20px rgba(44, 36, 24, 0.22);
+    position: relative;
   }
 
   .screenshot-dark { display: none; }
@@ -199,19 +385,203 @@ const platforms = [
   [data-theme="dark"] .screenshot-dark { display: block; }
   [data-theme="dark"] .screenshot-light { display: none; }
 
+  [data-theme="dark"] .screenshot {
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      0 24px 60px -20px rgba(0, 0, 0, 0.55);
+  }
+
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .screenshot-dark { display: block; }
     :root:not([data-theme="light"]) .screenshot-light { display: none; }
   }
 
+  /* ── Specimen plate (the pressed-in screenshot) ── */
+  .specimen {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto var(--space-12);
+    transform: rotate(-0.8deg);
+    transform-origin: 50% 20%;
+    animation: fadeUp 700ms var(--transition-slow) both;
+    animation-delay: var(--t-plate);
+  }
+
+  .washi {
+    position: absolute;
+    top: -14px;
+    z-index: 2;
+    width: 96px;
+    height: 26px;
+    background: linear-gradient(180deg, rgba(160, 107, 31, 0.30), rgba(160, 107, 31, 0.18));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      0 2px 6px rgba(44, 36, 24, 0.08);
+    border-left: 1px dashed rgba(160, 107, 31, 0.42);
+    border-right: 1px dashed rgba(160, 107, 31, 0.42);
+  }
+
+  .washi-l { left: 10%; transform: rotate(-6deg); }
+  .washi-r { right: 10%; transform: rotate(5deg); }
+
+  [data-theme="dark"] .washi {
+    background: linear-gradient(180deg, rgba(200, 155, 74, 0.28), rgba(200, 155, 74, 0.16));
+    border-left-color: rgba(200, 155, 74, 0.36);
+    border-right-color: rgba(200, 155, 74, 0.36);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 2px 6px rgba(0, 0, 0, 0.35);
+  }
+
+  .specimen-caption {
+    display: block;
+    margin-top: var(--space-4);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    letter-spacing: 0.01em;
+    text-align: center;
+    transform: rotate(0.8deg); /* counter-rotate so caption reads flat */
+  }
+
+  /* ── Subtext as editorial lead ── */
   .hero-subtext {
     font-size: var(--text-md);
     line-height: var(--leading-relaxed);
     color: var(--color-text-muted);
-    max-width: 640px;
-    margin-bottom: var(--space-12);
+    max-width: 520px;
+    margin: 0 auto var(--space-12);
+    text-align: left;
     animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: 350ms;
+    animation-delay: var(--t-lede);
+  }
+
+  .hero-subtext::first-letter {
+    font-family: var(--font-display);
+    font-size: 3.1em;
+    float: left;
+    line-height: 0.88;
+    padding: 0.08em 0.14em 0 0;
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+
+  /* ── Detection banner — a notebook-margin annotation above the download grid ── */
+  .hero-detect {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.45em;
+    margin: 0 auto var(--space-4);
+    max-width: 560px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--text-base);
+    color: var(--color-text-muted);
+    letter-spacing: 0.005em;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 400ms ease, transform 400ms ease;
+  }
+
+  .hero-detect.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .hero-detect-mark {
+    display: inline-block;
+    color: var(--color-primary);
+    font-style: normal;
+    font-size: 1.1em;
+    line-height: 1;
+    margin-right: 0.15em;
+    transform: translateY(0.1em);
+    opacity: 0.85;
+  }
+
+  .hero-detect-prefix {
+    font-style: italic;
+  }
+
+  .hero-detect-colon {
+    font-style: normal;
+    margin-right: 0.15em;
+  }
+
+  .hero-detect-sep {
+    color: var(--color-border-strong);
+    font-style: normal;
+    margin: 0 0.2em 0 0.5em;
+  }
+
+  .hero-detect-label-wrap {
+    position: relative;
+    display: inline-block;
+    padding: 0 0.12em;
+  }
+
+  .hero-detect-label {
+    font-weight: 600;
+    font-style: normal;
+    color: var(--color-text);
+  }
+
+  .hero-detect-underline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    width: 100%;
+    height: 6px;
+    color: var(--color-primary);
+    overflow: visible;
+  }
+
+  .hero-detect-underline path {
+    stroke-dasharray: 140;
+    stroke-dashoffset: 140;
+    transition: stroke-dashoffset 650ms cubic-bezier(0.3, 0.7, 0.4, 1.0) 250ms;
+  }
+
+  .hero-detect.is-visible .hero-detect-underline path {
+    stroke-dashoffset: 0;
+  }
+
+  .hero-detect-dismiss {
+    background: none;
+    border: 0;
+    padding: 0;
+    margin-left: 0.3em;
+    font: inherit;
+    font-style: italic;
+    color: var(--color-primary);
+    cursor: pointer;
+    text-underline-offset: 3px;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-thickness: 1px;
+    text-decoration-color: rgba(160, 107, 31, 0.35);
+    transition: color var(--transition-fast), text-decoration-color var(--transition-fast);
+  }
+
+  .hero-detect-dismiss:hover,
+  .hero-detect-dismiss:focus-visible {
+    color: var(--color-primary-hover);
+    text-decoration-color: currentColor;
+  }
+
+  .hero-detect-dismiss:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  [data-theme="dark"] .hero-detect-dismiss {
+    text-decoration-color: rgba(200, 155, 74, 0.4);
   }
 
   /* ── Download cards ── */
@@ -223,7 +593,11 @@ const platforms = [
     max-width: 560px;
     margin-bottom: var(--space-4);
     animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: 500ms;
+    animation-delay: var(--t-downloads);
+  }
+
+  .dl-wrap {
+    position: relative;
   }
 
   .dl-card {
@@ -236,12 +610,85 @@ const platforms = [
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
   }
 
   .dl-card:hover {
     border-color: var(--color-primary);
     box-shadow: var(--shadow-md), 0 0 0 3px var(--color-primary-bg);
     transform: translateY(-2px);
+  }
+
+  [data-featured] > .dl-card {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md), 0 0 0 2px var(--color-primary-bg);
+    transform: translateY(-3px);
+  }
+
+  [data-featured] > .dl-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px var(--color-primary);
+    pointer-events: none;
+    opacity: 0.55;
+  }
+
+  [data-featured] .dl-icon {
+    background: var(--color-primary);
+    color: var(--color-primary-contrast);
+  }
+
+  .dl-corner {
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: var(--color-primary);
+    opacity: 0;
+    transform: translate(4px, -4px) scale(0.7);
+    transform-origin: top right;
+    transition: opacity 300ms ease 150ms, transform 500ms cubic-bezier(0.2, 0.7, 0.3, 1.1) 150ms;
+    pointer-events: none;
+    z-index: 2;
+    filter: drop-shadow(-1.5px 1.5px 0.5px rgba(44, 36, 24, 0.18));
+  }
+
+  [data-theme="dark"] .dl-corner {
+    filter: drop-shadow(-1.5px 1.5px 0.5px rgba(0, 0, 0, 0.5));
+  }
+
+  [data-featured] .dl-corner {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+
+  .dl-name-wrap {
+    position: relative;
+    display: inline-block;
+    padding: 0 2px;
+  }
+
+  .dl-underline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -5px;
+    width: 100%;
+    height: 6px;
+    color: var(--color-primary);
+    overflow: visible;
+  }
+
+  .dl-underline path {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    transition: stroke-dashoffset 700ms cubic-bezier(0.3, 0.7, 0.4, 1.0) 300ms;
+  }
+
+  [data-featured] .dl-underline path {
+    stroke-dashoffset: 0;
   }
 
   .dl-icon {
@@ -292,7 +739,7 @@ const platforms = [
     color: var(--color-text-muted);
     margin-bottom: var(--space-12);
     animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: 550ms;
+    animation-delay: var(--t-releases);
   }
 
   .hero-releases a {
@@ -304,41 +751,49 @@ const platforms = [
     color: var(--color-primary-hover);
   }
 
-  /* ── Stats ── */
-  .hero-stats {
+  /* ── Inventory strip (replaces stats row) ── */
+  .inventory {
     display: flex;
-    align-items: center;
-    gap: var(--space-6);
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    gap: 0.4em 0.95em;
+    max-width: 720px;
+    width: 100%;
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
     animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: 650ms;
+    animation-delay: var(--t-inv);
   }
 
-  .stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-1);
+  .inv-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4em;
   }
 
-  .stat-value {
+  .inv-num {
     font-family: var(--font-display);
-    font-size: var(--text-xl);
-    font-weight: 600;
+    font-variant-numeric: tabular-nums lining-nums;
     color: var(--color-text);
+    font-size: var(--text-lg);
+    font-weight: 600;
   }
 
-  .stat-label {
-    font-size: var(--text-sm);
-    font-weight: 400;
-    color: var(--color-text-muted);
+  .inv-label {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
   }
 
-  .stat-divider {
-    width: 1px;
-    height: 32px;
-    background: var(--color-border-strong);
+  .inv-sep {
+    color: var(--color-primary);
+    opacity: 0.75;
+    font-size: 1em;
+    user-select: none;
   }
 
   /* ── Decorative border ── */
@@ -362,26 +817,74 @@ const platforms = [
     to { opacity: 1; transform: translateY(0); }
   }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-
   /* ── Responsive ── */
   @media (max-width: 639px) {
     .hero-inner { padding: var(--space-16) var(--space-6) var(--space-12); }
+
+    .masthead { font-size: 0.72rem; gap: var(--space-2); letter-spacing: 0.12em; }
+    .mast-rule { width: 28px; }
+
+    .chapter-rule { width: 120px; }
+
     .hero-headline { font-size: var(--text-3xl); }
-    .hero-subtext { font-size: var(--text-base); }
+    .swash { width: 40px; height: 16px; margin-left: 4px; }
+
+    .hero-subtext {
+      max-width: none;
+      font-size: var(--text-base);
+      text-align: center;
+    }
+    .hero-subtext::first-letter {
+      font-size: 1em;
+      float: none;
+      line-height: inherit;
+      padding: 0;
+      color: inherit;
+      font-family: inherit;
+      font-weight: inherit;
+    }
+
+    .specimen { transform: none; }
+    .specimen-caption { transform: none; font-size: 0.78rem; }
+    .washi { width: 64px; height: 20px; top: -10px; }
+    .washi-l { left: 12%; } .washi-r { right: 12%; }
+
     .hero-downloads { grid-template-columns: 1fr; max-width: 280px; }
     .dl-card { flex-direction: row; padding: var(--space-3) var(--space-4); }
     .dl-info { align-items: flex-start; }
-    .hero-stats { flex-wrap: wrap; justify-content: center; gap: var(--space-4); }
-    .stat-divider { display: none; }
-    .stat { min-width: 80px; }
+    .dl-corner { transform-origin: top right; }
+    [data-featured] .dl-corner { transform: scale(0.85); }
+
+    .inventory {
+      gap: 0.4em 0.55em;
+      padding: var(--space-3) var(--space-4);
+    }
+    .inv-num { font-size: var(--text-base); }
   }
 
   @media (min-width: 960px) {
     .hero-headline { font-size: var(--text-5xl); }
     .hero-subtext { font-size: var(--text-lg); }
+  }
+
+  /* ── Reduced motion ── */
+  @media (prefers-reduced-motion: reduce) {
+    .hero *,
+    .hero *::before,
+    .hero *::after {
+      animation-duration: 1ms !important;
+      animation-delay: 0ms !important;
+      transition: none !important;
+    }
+    .hero svg path[stroke-dasharray] {
+      stroke-dasharray: none !important;
+      stroke-dashoffset: 0 !important;
+    }
+    .hero-detect-underline path,
+    .dl-underline path,
+    .swash path {
+      stroke-dasharray: none !important;
+      stroke-dashoffset: 0 !important;
+    }
   }
 </style>

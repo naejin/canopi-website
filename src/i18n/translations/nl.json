@@ -11,6 +11,8 @@
   "header.themeToggle": "Thema wisselen",
   "header.language": "Taal",
 
+  "hero.masthead": "Veldnotities · v0.4.0 · Open Source",
+  "hero.screenshotCaption": "Fig. 1 — Ontwerpcanvas met soortendatabase.",
   "hero.badge": "Bèta v0.4.0 — Gratis & Open Source",
   "hero.headlineTop": "Ontwerp de voedselsystemen",
   "hero.headlineAccent": "die jouw gemeenschap nodig heeft",
@@ -42,6 +44,9 @@
   "download.title": "Canopi downloaden",
   "download.desc": "Gratis en open source onder de AGPL v3-licentie. Momenteel in bèta — we schaven nog bij.",
   "download.forPlatform": "Canopi voor {platform} downloaden",
+  "download.detected": "Gedetecteerd: {platform}",
+  "download.showAll": "Alle opties tonen",
+  "download.recommended": "voor jouw systeem",
 
   "download.allReleases": "Alle versies op GitHub",
   "footer.license": "AGPL v3"

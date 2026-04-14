@@ -11,6 +11,8 @@
   "header.themeToggle": "Thema umschalten",
   "header.language": "Sprache",
 
+  "hero.masthead": "Feldnotizen · v0.4.0 · Open Source",
+  "hero.screenshotCaption": "Abb. 1 — Entwurfsfläche mit Artendatenbank.",
   "hero.badge": "Beta v0.4.0 — Kostenlos & Open Source",
   "hero.headlineTop": "Gestalte die Ernährungssysteme,",
   "hero.headlineAccent": "die deine Gemeinschaft braucht",
@@ -42,6 +44,9 @@
   "download.title": "Canopi herunterladen",
   "download.desc": "Kostenlos und Open Source unter der AGPL-v3-Lizenz. Derzeit in der Beta — wir feilen noch.",
   "download.forPlatform": "Canopi für {platform} herunterladen",
+  "download.detected": "Erkannt: {platform}",
+  "download.showAll": "Alle Optionen anzeigen",
+  "download.recommended": "für dein System",
 
   "download.allReleases": "Alle Versionen auf GitHub",
   "footer.license": "AGPL v3"

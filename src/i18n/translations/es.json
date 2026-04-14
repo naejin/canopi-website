@@ -11,6 +11,8 @@
   "header.themeToggle": "Cambiar tema",
   "header.language": "Idioma",
 
+  "hero.masthead": "Cuaderno de campo · v0.4.0 · Código Abierto",
+  "hero.screenshotCaption": "Fig. 1 — Lienzo de diseño con base de datos de especies.",
   "hero.badge": "Beta v0.4.0 — Gratuito y libre",
   "hero.headlineTop": "Diseña los sistemas alimentarios",
   "hero.headlineAccent": "que tu comunidad necesita",
@@ -42,6 +44,9 @@
   "download.title": "Descargar Canopi",
   "download.desc": "Gratuito y de código abierto bajo licencia AGPL v3. Actualmente en beta — todavía estamos puliendo cosas.",
   "download.forPlatform": "Descargar Canopi para {platform}",
+  "download.detected": "Detectado: {platform}",
+  "download.showAll": "Ver todas las opciones",
+  "download.recommended": "para tu sistema",
 
   "download.allReleases": "Todas las versiones en GitHub",
   "footer.license": "AGPL v3"

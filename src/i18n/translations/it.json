@@ -11,6 +11,8 @@
   "header.themeToggle": "Cambia tema",
   "header.language": "Lingua",
 
+  "hero.masthead": "Taccuino · v0.4.0 · Open Source",
+  "hero.screenshotCaption": "Fig. 1 — Tavola di progettazione con database delle specie.",
   "hero.badge": "Beta v0.4.0 — Gratuito e open source",
   "hero.headlineTop": "Progetta i sistemi alimentari",
   "hero.headlineAccent": "di cui la tua comunità ha bisogno",
@@ -42,6 +44,9 @@
   "download.title": "Scarica Canopi",
   "download.desc": "Gratuito e open source con licenza AGPL v3. Al momento in beta — stiamo ancora perfezionando.",
   "download.forPlatform": "Scarica Canopi per {platform}",
+  "download.detected": "Rilevato: {platform}",
+  "download.showAll": "Mostra tutte le opzioni",
+  "download.recommended": "per il tuo sistema",
 
   "download.allReleases": "Tutte le versioni su GitHub",
   "footer.license": "AGPL v3"

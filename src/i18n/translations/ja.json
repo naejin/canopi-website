@@ -11,6 +11,8 @@
   "header.themeToggle": "テーマ切り替え",
   "header.language": "言語",
 
+  "hero.masthead": "フィールドノート · v0.4.0 · オープンソース",
+  "hero.screenshotCaption": "図 1 — 種データベース付き設計キャンバス。",
   "hero.badge": "ベータ v0.4.0 — 無料・オープンソース",
   "hero.headlineTop": "あなたのコミュニティに必要な",
   "hero.headlineAccent": "食料システムをデザインしよう",
@@ -42,6 +44,9 @@
   "download.title": "Canopiをダウンロード",
   "download.desc": "AGPL v3ライセンスの無料オープンソースソフトウェア。現在ベータ版です。まだ磨いているところです。",
   "download.forPlatform": "{platform}版Canopiをダウンロード",
+  "download.detected": "検出：{platform}",
+  "download.showAll": "すべてのオプションを表示",
+  "download.recommended": "お使いのシステム向け",
 
   "download.allReleases": "GitHubで全リリースを見る",
   "footer.license": "AGPL v3"
