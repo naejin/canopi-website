@@ -1,15 +1,34 @@
 ---
 import { t, type Locale } from '../i18n/utils';
+import { CANOPI_DOWNLOADS, CANOPI_RELEASES_URL } from '../data/release';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
 
-const VERSION = '0.4.0';
-const BASE = `https://github.com/naejin/canopi/releases/download/v${VERSION}`;
-
 const platforms = [
-  { key: 'linux',   name: 'Linux',   formats: '.AppImage (amd64)',    icon: 'linux',   href: `${BASE}/Canopi_${VERSION}_amd64.AppImage`, alt: { label: 'Debian/Ubuntu', format: '.deb', href: `${BASE}/Canopi_${VERSION}_amd64.deb` } },
-  { key: 'macos',   name: 'macOS',   formats: '.dmg (Apple Silicon)', icon: 'macos',   href: `${BASE}/Canopi_${VERSION}_aarch64.dmg`,    alt: { label: 'Intel Mac',      format: '.dmg', href: `${BASE}/Canopi_${VERSION}_x64.dmg` } },
-  { key: 'windows', name: 'Windows', formats: '.exe (x64)',           icon: 'windows', href: `${BASE}/Canopi_${VERSION}_x64-setup.exe` },
+  {
+    key: 'linux',
+    name: 'Linux',
+    formats: '.AppImage (amd64)',
+    icon: 'linux',
+    href: CANOPI_DOWNLOADS.linuxAppImage,
+    alt: { label: 'Debian/Ubuntu', format: '.deb', href: CANOPI_DOWNLOADS.linuxDeb },
+  },
+  {
+    key: 'macos',
+    name: 'macOS',
+    formats: '.dmg (Apple Silicon)',
+    icon: 'macos',
+    href: CANOPI_DOWNLOADS.macAppleSiliconDmg,
+    alt: { label: 'Intel Mac', format: '.dmg', href: CANOPI_DOWNLOADS.macIntelDmg },
+  },
+  {
+    key: 'windows',
+    name: 'Windows',
+    formats: '.exe (x64)',
+    icon: 'windows',
+    href: CANOPI_DOWNLOADS.windowsSetupExe,
+    alt: { label: 'MSI installer', format: '.msi', href: CANOPI_DOWNLOADS.windowsMsi },
+  },
 ];
 
 const detectedPrefix = t('download.detected', lang, { platform: '' }).replace(/[:：\s]+$/u, '').trim();
@@ -123,7 +142,7 @@ const detectedPrefix = t('download.detected', lang, { platform: '' }).replace(/[
     </div>
 
     <p class="hero-releases">
-      <a href="https://github.com/naejin/canopi/releases" target="_blank" rel="noopener noreferrer">
+      <a href={CANOPI_RELEASES_URL} target="_blank" rel="noopener noreferrer">
         {t('download.allReleases', lang)}
       </a>
     </p>

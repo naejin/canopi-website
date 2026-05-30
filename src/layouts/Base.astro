@@ -1,5 +1,6 @@
 ---
 import { locales, defaultLocale, localizedUrl, type Locale } from '../i18n/utils';
+import { CANOPI_RELEASE_URL, CANOPI_VERSION } from '../data/release';
 
 interface Props {
   title: string;
@@ -58,6 +59,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       "url": "https://projectcanopi.com",
       "applicationCategory": "DesignApplication",
       "operatingSystem": "Linux, macOS, Windows",
+      "softwareVersion": CANOPI_VERSION,
       "inLanguage": locales,
       "offers": {
         "@type": "Offer",
@@ -65,7 +67,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         "priceCurrency": "USD"
       },
       "license": "https://www.gnu.org/licenses/agpl-3.0.html",
-      "downloadUrl": "https://github.com/naejin/canopi/releases"
+      "downloadUrl": CANOPI_RELEASE_URL
     })} />
 
     <!-- Fonts: Lora (display) + Inter (body) -->
