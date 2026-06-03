@@ -1,6 +1,6 @@
 ---
 import { t, type Locale } from '../i18n/utils';
-import { CANOPI_DOWNLOADS, CANOPI_RELEASES_URL } from '../data/release';
+import { CANOPI_DOWNLOADS, CANOPI_RELEASE_URL } from '../data/release';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
 
@@ -77,8 +77,8 @@ const platforms = [
       ))}
     </div>
     <p class="download-all-link">
-      <a href={CANOPI_RELEASES_URL} target="_blank" rel="noopener noreferrer">
-        {t('download.allReleases', lang)}
+      <a href={CANOPI_RELEASE_URL} target="_blank" rel="noopener noreferrer">
+        {t('download.releaseNotes', lang)}
       </a>
     </p>
   </div>
