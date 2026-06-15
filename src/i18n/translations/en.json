@@ -11,8 +11,8 @@
   "header.themeToggle": "Toggle theme",
   "header.language": "Language",
 
-  "hero.badge": "Beta v0.6.0 — Free & Open Source",
-  "hero.masthead": "v0.6.0 · Open Source",
+  "hero.badge": "Beta v0.7.0 — Free & Open Source",
+  "hero.masthead": "v0.7.0 · Open Source",
   "hero.screenshotCaption": "Fig. 1 — Design canvas with zone tools and species database.",
   "hero.headlineTop": "Design the food systems",
   "hero.headlineAccent": "your community needs",
@@ -53,7 +53,7 @@
   "download.recommended": "for your system",
 
   "download.allReleases": "All releases on GitHub",
-  "download.releaseNotes": "Canopi v0.6.0 release notes on GitHub",
+  "download.releaseNotes": "Canopi v0.7.0 release notes on GitHub",
 
   "timeline.label": "Global food security timeline",
   "timeline.hint": "Click an event to learn more",

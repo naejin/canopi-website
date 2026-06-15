@@ -11,9 +11,9 @@
   "header.themeToggle": "Thema umschalten",
   "header.language": "Sprache",
 
-  "hero.masthead": "v0.6.0 · Open Source",
+  "hero.masthead": "v0.7.0 · Open Source",
   "hero.screenshotCaption": "Abb. 1 — Entwurfsfläche mit Zonenwerkzeugen und Artendatenbank.",
-  "hero.badge": "Beta v0.6.0 — Kostenlos & Open Source",
+  "hero.badge": "Beta v0.7.0 — Kostenlos & Open Source",
   "hero.headlineTop": "Gestalte die Ernährungssysteme,",
   "hero.headlineAccent": "die deine Gemeinschaft braucht",
   "hero.subtext": "Canopi ist eine kostenlose Desktop-App, um Waldgärten, Gemüsegärten und agrarökologische Systeme zu planen, die zu deinem Boden und Klima passen. Version 0.6.0 schärft die Entwurfsfläche mit besserem Zonenziehen, Objekt-Stempeln, Pflanzabstands-Vorschauen, Rückgängig und Wiederholen in der Werkzeugleiste, gemerkten Arbeitsbereich-Panels und lokalen Problemberichten mit bereinigten Diagnosen.",
@@ -53,6 +53,6 @@
   "download.recommended": "für dein System",
 
   "download.allReleases": "Alle Versionen auf GitHub",
-  "download.releaseNotes": "Versionshinweise zu Canopi v0.6.0 auf GitHub",
+  "download.releaseNotes": "Versionshinweise zu Canopi v0.7.0 auf GitHub",
   "footer.license": "AGPL v3"
 }

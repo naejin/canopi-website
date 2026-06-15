@@ -11,9 +11,9 @@
   "header.themeToggle": "切换主题",
   "header.language": "语言",
 
-  "hero.masthead": "v0.6.0 · 开源",
+  "hero.masthead": "v0.7.0 · 开源",
   "hero.screenshotCaption": "图 1 — 带分区工具和物种数据库的设计画布。",
-  "hero.badge": "Beta v0.6.0 — 免费且开源",
+  "hero.badge": "Beta v0.7.0 — 免费且开源",
   "hero.headlineTop": "为你的社区设计",
   "hero.headlineAccent": "它需要的食物系统",
   "hero.subtext": "Canopi是一款免费桌面应用，用来规划适合本地土壤和气候的食物森林、菜园和农业生态系统。0.6.0版本改进了画布体验：更好的分区绘制、对象盖章、植物间距预览、工具栏撤销和重做、可记住的工作区面板，以及带脱敏诊断信息的本地问题报告。",
@@ -53,6 +53,6 @@
   "download.recommended": "适用于您的系统",
 
   "download.allReleases": "GitHub上的所有版本",
-  "download.releaseNotes": "在GitHub上查看Canopi v0.6.0发布说明",
+  "download.releaseNotes": "在GitHub上查看Canopi v0.7.0发布说明",
   "footer.license": "AGPL v3"
 }

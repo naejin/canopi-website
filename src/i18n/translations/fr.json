@@ -11,9 +11,9 @@
   "header.themeToggle": "Changer de thème",
   "header.language": "Langue",
 
-  "hero.masthead": "v0.6.0 · Open Source",
+  "hero.masthead": "v0.7.0 · Open Source",
   "hero.screenshotCaption": "Fig. 1 — Canevas de conception avec outils de zones et base de données des espèces.",
-  "hero.badge": "Bêta v0.6.0 — Gratuit & Libre",
+  "hero.badge": "Bêta v0.7.0 — Gratuit & Libre",
   "hero.headlineTop": "Concevez les systèmes alimentaires",
   "hero.headlineAccent": "dont votre communauté a besoin",
   "hero.subtext": "Canopi est une application de bureau gratuite pour planifier des forêts nourricières, jardins et systèmes agroécologiques adaptés à votre sol et votre climat. La version 0.6.0 affine le canevas avec un meilleur dessin des zones, l'estampillage d'objets, les aperçus d'espacement des plantes, annuler et rétablir dans la barre d'outils, les panneaux de travail mémorisés et des rapports de problème locaux avec diagnostics expurgés.",
@@ -53,6 +53,6 @@
   "download.recommended": "pour votre système",
 
   "download.allReleases": "Toutes les versions sur GitHub",
-  "download.releaseNotes": "Notes de version Canopi v0.6.0 sur GitHub",
+  "download.releaseNotes": "Notes de version Canopi v0.7.0 sur GitHub",
   "footer.license": "AGPL v3"
 }

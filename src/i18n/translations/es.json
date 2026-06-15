@@ -11,9 +11,9 @@
   "header.themeToggle": "Cambiar tema",
   "header.language": "Idioma",
 
-  "hero.masthead": "v0.6.0 · Código Abierto",
+  "hero.masthead": "v0.7.0 · Código Abierto",
   "hero.screenshotCaption": "Fig. 1 — Lienzo de diseño con herramientas de zonas y base de datos de especies.",
-  "hero.badge": "Beta v0.6.0 — Gratuito y libre",
+  "hero.badge": "Beta v0.7.0 — Gratuito y libre",
   "hero.headlineTop": "Diseña los sistemas alimentarios",
   "hero.headlineAccent": "que tu comunidad necesita",
   "hero.subtext": "Canopi es una aplicación de escritorio gratuita para planificar bosques comestibles, huertos y sistemas agroecológicos que funcionan con tu suelo y tu clima. La versión 0.6.0 mejora el lienzo con dibujo de zonas más preciso, estampado de objetos, vistas previas de espaciado de plantas, deshacer y rehacer en la barra de herramientas, paneles de trabajo recordados e informes locales de problemas con diagnósticos redactados.",
@@ -53,6 +53,6 @@
   "download.recommended": "para tu sistema",
 
   "download.allReleases": "Todas las versiones en GitHub",
-  "download.releaseNotes": "Notas de la versión Canopi v0.6.0 en GitHub",
+  "download.releaseNotes": "Notas de la versión Canopi v0.7.0 en GitHub",
   "footer.license": "AGPL v3"
 }
