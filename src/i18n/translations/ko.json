@@ -11,9 +11,9 @@
   "header.themeToggle": "테마 전환",
   "header.language": "언어",
 
-  "hero.masthead": "v0.7.0 · 오픈 소스",
+  "hero.masthead": "v0.7.1 · 오픈 소스",
   "hero.screenshotCaption": "그림 1 — 구역 도구와 종 데이터베이스가 있는 설계 캔버스.",
-  "hero.badge": "베타 v0.7.0 — 무료 & 오픈소스",
+  "hero.badge": "베타 v0.7.1 — 무료 & 오픈소스",
   "hero.headlineTop": "우리 마을에 필요한",
   "hero.headlineAccent": "먹거리 시스템을 직접 설계하세요",
   "hero.subtext": "Canopi는 우리 땅과 기후에 맞는 먹거리 숲, 텃밭, 농생태 시스템을 설계하는 무료 데스크톱 앱입니다. 0.6.0 버전은 개선된 구역 그리기, 오브젝트 스탬프, 식물 간격 미리보기, 툴바 실행 취소와 다시 실행, 기억되는 작업 패널, 민감 정보를 제거한 진단이 포함된 로컬 문제 보고서로 캔버스를 더 다듬었습니다.",
@@ -53,6 +53,6 @@
   "download.recommended": "사용 중인 시스템용",
 
   "download.allReleases": "GitHub에서 모든 릴리스 보기",
-  "download.releaseNotes": "GitHub에서 Canopi v0.7.0 릴리스 노트 보기",
+  "download.releaseNotes": "GitHub에서 Canopi v0.7.1 릴리스 노트 보기",
   "footer.license": "AGPL v3"
 }

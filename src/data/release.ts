@@ -1,4 +1,4 @@
-export const CANOPI_VERSION = '0.7.0';
+export const CANOPI_VERSION = '0.7.1';
 export const CANOPI_RELEASE_DATE = '2026-06-16';
 export const CANOPI_RELEASE_TAG = `v${CANOPI_VERSION}`;
 export const CANOPI_RELEASE_URL = `https://github.com/naejin/canopi/releases/tag/${CANOPI_RELEASE_TAG}`;

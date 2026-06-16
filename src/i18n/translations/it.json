@@ -11,9 +11,9 @@
   "header.themeToggle": "Cambia tema",
   "header.language": "Lingua",
 
-  "hero.masthead": "v0.7.0 · Open Source",
+  "hero.masthead": "v0.7.1 · Open Source",
   "hero.screenshotCaption": "Fig. 1 — Tavola di progettazione con strumenti per zone e database delle specie.",
-  "hero.badge": "Beta v0.7.0 — Gratuito e open source",
+  "hero.badge": "Beta v0.7.1 — Gratuito e open source",
   "hero.headlineTop": "Progetta i sistemi alimentari",
   "hero.headlineAccent": "di cui la tua comunità ha bisogno",
   "hero.subtext": "Canopi è un'app desktop gratuita per progettare food forest, orti e sistemi agroecologici adatti al tuo suolo e al tuo clima. La versione 0.6.0 rende il canvas più preciso con disegno delle zone migliorato, timbro degli oggetti, anteprime di spaziatura delle piante, annulla e ripeti nella barra strumenti, pannelli di lavoro ricordati e segnalazioni locali con diagnostica oscurata.",
@@ -53,6 +53,6 @@
   "download.recommended": "per il tuo sistema",
 
   "download.allReleases": "Tutte le versioni su GitHub",
-  "download.releaseNotes": "Note di rilascio Canopi v0.7.0 su GitHub",
+  "download.releaseNotes": "Note di rilascio Canopi v0.7.1 su GitHub",
   "footer.license": "AGPL v3"
 }

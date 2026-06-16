@@ -11,9 +11,9 @@
   "header.themeToggle": "テーマ切り替え",
   "header.language": "言語",
 
-  "hero.masthead": "v0.7.0 · オープンソース",
+  "hero.masthead": "v0.7.1 · オープンソース",
   "hero.screenshotCaption": "図 1 — ゾーンツールと種データベース付き設計キャンバス。",
-  "hero.badge": "ベータ v0.7.0 — 無料・オープンソース",
+  "hero.badge": "ベータ v0.7.1 — 無料・オープンソース",
   "hero.headlineTop": "あなたのコミュニティに必要な",
   "hero.headlineAccent": "食料システムをデザインしよう",
   "hero.subtext": "Canopiは、あなたの土地と気候に合った食物の森、菜園、農業生態学的システムを設計するための無料デスクトップアプリです。バージョン0.6.0では、ゾーン描画、オブジェクトスタンプ、植物間隔プレビュー、ツールバーの取り消しとやり直し、記憶される作業パネル、個人情報を除いた診断付きのローカル問題レポートが強化されました。",
@@ -53,6 +53,6 @@
   "download.recommended": "お使いのシステム向け",
 
   "download.allReleases": "GitHubで全リリースを見る",
-  "download.releaseNotes": "GitHubでCanopi v0.7.0のリリースノートを見る",
+  "download.releaseNotes": "GitHubでCanopi v0.7.1のリリースノートを見る",
   "footer.license": "AGPL v3"
 }

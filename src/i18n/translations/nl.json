@@ -11,9 +11,9 @@
   "header.themeToggle": "Thema wisselen",
   "header.language": "Taal",
 
-  "hero.masthead": "v0.7.0 · Open Source",
+  "hero.masthead": "v0.7.1 · Open Source",
   "hero.screenshotCaption": "Fig. 1 — Ontwerpcanvas met zonetools en soortendatabase.",
-  "hero.badge": "Bèta v0.7.0 — Gratis & Open Source",
+  "hero.badge": "Bèta v0.7.1 — Gratis & Open Source",
   "hero.headlineTop": "Ontwerp de voedselsystemen",
   "hero.headlineAccent": "die jouw gemeenschap nodig heeft",
   "hero.subtext": "Canopi is een gratis desktopapp om voedselbossen, moestuinen en agro-ecologische systemen te ontwerpen die passen bij jouw bodem en klimaat. Versie 0.6.0 scherpt het canvas aan met beter tekenen van zones, objectstempels, plantafstandvoorbeelden, ongedaan maken en opnieuw uitvoeren in de werkbalk, onthouden werkpanelen en lokale probleemrapporten met geredigeerde diagnostiek.",
@@ -53,6 +53,6 @@
   "download.recommended": "voor jouw systeem",
 
   "download.allReleases": "Alle versies op GitHub",
-  "download.releaseNotes": "Release notes voor Canopi v0.7.0 op GitHub",
+  "download.releaseNotes": "Release notes voor Canopi v0.7.1 op GitHub",
   "footer.license": "AGPL v3"
 }
