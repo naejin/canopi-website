@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { gunzipSync } from "node:zlib";
 
 const MANIFEST_NAME = "canopi-web-edition-manifest.json";
@@ -18,16 +18,19 @@ const DEFAULT_MAX_ASSET_BYTES = 25 * 1024 * 1024;
 const DEFAULT_MAX_FILES = 20_000;
 const FORBIDDEN_DUCKDB_WASM_RE = /(?:^|\/)duckdb-.*\.wasm$/i;
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const distRoot = resolve(root, "dist");
-const staticRoot = resolveStaticRoot(distRoot);
-const appRoot = resolve(staticRoot, "app");
-const tempRoot = resolve(root, ".tmp", "web-edition");
+const DEFAULT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-async function main() {
-  const archivePath = process.env.CANOPI_WEB_EDITION_ARCHIVE;
-  const required = process.env.CANOPI_WEB_EDITION_REQUIRED !== "0"
-    && process.env.CANOPI_WEB_EDITION_REQUIRED !== "false";
+export async function installWebEdition(options = {}) {
+  const archivePath = options.archivePath ?? process.env.CANOPI_WEB_EDITION_ARCHIVE;
+  const required = options.required ?? (
+    process.env.CANOPI_WEB_EDITION_REQUIRED !== "0"
+    && process.env.CANOPI_WEB_EDITION_REQUIRED !== "false"
+  );
+  const root = resolve(options.rootDir ?? DEFAULT_ROOT);
+  const distRoot = resolve(root, "dist");
+  const staticRoot = resolveStaticRoot(distRoot);
+  const appRoot = resolve(staticRoot, "app");
+  const tempRoot = resolve(root, ".tmp", "web-edition");
 
   if (!archivePath) {
     if (!required) {
@@ -98,16 +101,13 @@ function verifyArtifact(extractRoot, manifest) {
     manifest.limits?.cloudflarePagesMaxFiles,
     DEFAULT_MAX_FILES,
   );
-  if (manifest.files.length > maxFiles) {
-    throw new Error(`Web Edition artifact contains ${manifest.files.length} files, above limit ${maxFiles}.`);
-  }
-
   const listed = new Set();
   for (const file of manifest.files) {
     verifyManifestFile(extractRoot, file, maxAssetBytes);
     listed.add(file.path);
   }
 
+  verifyActualFileSet(extractRoot, listed, maxAssetBytes, maxFiles);
   if (!listed.has("index.html")) {
     throw new Error("Web Edition artifact manifest must include index.html.");
   }
@@ -144,6 +144,29 @@ function verifyManifestFile(extractRoot, file, maxAssetBytes) {
   }
   if (FORBIDDEN_DUCKDB_WASM_RE.test(file.path)) {
     throw new Error(`${file.path} must not bundle DuckDB raw WASM.`);
+  }
+}
+
+function verifyActualFileSet(extractRoot, listed, maxAssetBytes, maxFiles) {
+  const actualFiles = filesUnder(extractRoot)
+    .map((filePath) => portable(relative(extractRoot, filePath)))
+    .sort();
+  const allowedFiles = new Set([...listed, MANIFEST_NAME]);
+  const unlistedFiles = actualFiles.filter((filePath) => !allowedFiles.has(filePath));
+  if (unlistedFiles.length > 0) {
+    throw new Error(`Web Edition artifact contains unlisted files: ${unlistedFiles.join(", ")}`);
+  }
+  if (actualFiles.length > maxFiles) {
+    throw new Error(`Web Edition artifact contains ${actualFiles.length} files, above limit ${maxFiles}.`);
+  }
+
+  const manifestPath = resolve(extractRoot, MANIFEST_NAME);
+  const manifestStat = statSync(manifestPath);
+  if (!manifestStat.isFile()) {
+    throw new Error(`Web Edition artifact entry is not a file: ${MANIFEST_NAME}.`);
+  }
+  if (manifestStat.size > maxAssetBytes) {
+    throw new Error(`${MANIFEST_NAME} exceeds the Cloudflare Pages per-asset limit of ${maxAssetBytes} bytes.`);
   }
 }
 
@@ -267,7 +290,15 @@ function portable(path) {
   return path.split(sep).join("/");
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+function isCli() {
+  return process.argv[1] !== undefined
+    && import.meta.url.startsWith("file:")
+    && pathToFileURL(resolve(process.argv[1])).href === import.meta.url;
+}
+
+if (isCli()) {
+  installWebEdition().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}

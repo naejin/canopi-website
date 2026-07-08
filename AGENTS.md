@@ -132,6 +132,7 @@ For more details, see README.md and docs/QUICKSTART.md.
 npm run dev             # dev server
 npm run build           # marketing site only
 npm run build:with-web  # marketing site plus installed Web Edition artifact
+npm test                # installer regression tests
 npm run preview         # build with Web Edition artifact, then preview
 ```
 

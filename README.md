@@ -10,6 +10,7 @@ prebuilt artifact produced by the main Canopi repository.
 npm install
 npm run dev
 npm run build
+npm test
 npm run build:with-web
 npm run preview
 npm run deploy
