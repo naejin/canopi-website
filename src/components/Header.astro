@@ -16,6 +16,7 @@ const discordUrl = lang === 'fr'
 
     <nav class="header-nav">
       <span class="donation-widget">
+        <a href="https://liberapay.com/Naejin/donate" class="donation-fallback" target="_blank" rel="noopener noreferrer">{t('header.donate', lang)}</a>
         <script src="https://liberapay.com/Naejin/widgets/button.js"></script>
         <noscript><a href="https://liberapay.com/Naejin/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
       </span>
@@ -146,14 +147,38 @@ const discordUrl = lang === 'fr'
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 86px;
     min-height: 36px;
+  }
+
+  .donation-fallback {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+  }
+
+  .donation-fallback:hover,
+  .donation-fallback:focus-visible {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    background: var(--color-control-hover);
   }
 
   .donation-widget img,
   .donation-widget iframe {
     display: block;
     max-height: 30px;
+  }
+
+  .donation-widget iframe {
+    display: none;
   }
 
   .theme-toggle {
@@ -294,10 +319,6 @@ const discordUrl = lang === 'fr'
 
     .logo-text {
       display: none;
-    }
-
-    .donation-widget {
-      min-width: 76px;
     }
   }
 </style>

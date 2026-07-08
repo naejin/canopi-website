@@ -76,5 +76,6 @@
   "network.label": "Rete",
   "network.title": "Rete agroecologica",
   "network.country.france": "Francia",
-  "network.country.brazil": "Brasile"
+  "network.country.brazil": "Brasile",
+  "header.donate": "Dona"
 }

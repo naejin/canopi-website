@@ -76,5 +76,6 @@
   "network.label": "Сеть",
   "network.title": "Агроэкологическая сеть",
   "network.country.france": "Франция",
-  "network.country.brazil": "Бразилия"
+  "network.country.brazil": "Бразилия",
+  "header.donate": "Пожертвовать"
 }

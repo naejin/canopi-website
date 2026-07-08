@@ -76,5 +76,6 @@
   "network.label": "Réseau",
   "network.title": "Réseau agroécologique",
   "network.country.france": "France",
-  "network.country.brazil": "Brésil"
+  "network.country.brazil": "Brésil",
+  "header.donate": "Faire un don"
 }

@@ -114,5 +114,6 @@
   "network.label": "Network",
   "network.title": "Agroecology network",
   "network.country.france": "France",
-  "network.country.brazil": "Brazil"
+  "network.country.brazil": "Brazil",
+  "header.donate": "Donate"
 }

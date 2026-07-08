@@ -1,3 +1,4 @@
 # Cloudflare Pages redirects
 # Language detection is handled client-side in Base.astro
-/app/* /app/index.html 200
+# Keep /app/assets/ and /app/canopi-catalog/ files direct.
+/app/:route /app/ 200

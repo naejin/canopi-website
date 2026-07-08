@@ -76,5 +76,6 @@
   "network.label": "ネットワーク",
   "network.title": "アグロエコロジー・ネットワーク",
   "network.country.france": "フランス",
-  "network.country.brazil": "ブラジル"
+  "network.country.brazil": "ブラジル",
+  "header.donate": "寄付"
 }
