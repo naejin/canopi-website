@@ -41,77 +41,70 @@ const installers = [
 ---
 
 <section class="hero">
-  <div class="hero-intro">
-    <div class="masthead" aria-label={t('hero.masthead', lang)}>
-      <span class="mast-sprout" aria-hidden="true">
-        <svg viewBox="0 0 10 12" width="10" height="12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 11 V5"/>
-          <path d="M5 5.5 C 2 5.5, 1 3.5, 1 1.5 C 3 1.5, 5 2.5, 5 5.5"/>
-          <path d="M5 5.5 C 8 5.5, 9 3.5, 9 1.5 C 7 1.5, 5 2.5, 5 5.5"/>
-        </svg>
-      </span>
-      <span class="mast-text">{t('hero.masthead', lang)}</span>
-    </div>
-
+  <div class="hero-shell">
     <h1 class="hero-headline">
-      {t('hero.headlineTop', lang)}<br />
+      {t('hero.headlineTop', lang)}
       <span class="hero-headline-accent">{t('hero.headlineAccent', lang)}</span>
     </h1>
-  </div>
 
-  <figure class="demo-bleed">
-    <video
-      src="/demo-canopi-720.mp4"
-      class="demo-video"
-      autoplay
-      muted
-      loop
-      playsinline
-      preload="metadata"
-      aria-label={t('hero.videoLabel', lang)}
-    ></video>
-  </figure>
+    <div class="hero-lower">
+      <figure class="demo-panel">
+        <video
+          src="/demo-canopi-720.mp4"
+          poster="/screenshot-light.png"
+          class="demo-video"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="metadata"
+          aria-label={t('hero.videoLabel', lang)}
+        ></video>
+      </figure>
 
-  <section class="edition-dock" aria-label={t('edition.label', lang)}>
-    <div class="edition-dock-inner">
-      <div class="edition-actions">
-        <a
-          href={CANOPI_RELEASES_URL}
-          class="edition-button edition-button-primary"
-          data-desktop-primary
-          data-default-label={t('edition.desktop.defaultChoice', lang)}
-          data-linux-href={CANOPI_DOWNLOADS.linuxAppImage}
-          data-linux-label={t('edition.installer.linuxAppImage', lang)}
-          data-macos-arm-href={CANOPI_DOWNLOADS.macAppleSiliconDmg}
-          data-macos-arm-label={t('edition.installer.macApple', lang)}
-          data-macos-x64-href={CANOPI_DOWNLOADS.macIntelDmg}
-          data-macos-x64-label={t('edition.installer.macIntel', lang)}
-          data-windows-href={CANOPI_DOWNLOADS.windowsSetupExe}
-          data-windows-label={t('edition.installer.windowsExe', lang)}
-        >
-          <span class="edition-button-title">{t('edition.desktop.cta', lang)}</span>
-          <span class="edition-button-note" data-desktop-primary-label>{t('edition.desktop.defaultChoice', lang)}</span>
-        </a>
-
-        <a href={CANOPI_WEB_URL} class="edition-button edition-button-secondary">
-          <span class="edition-button-title">{t('edition.web.cta', lang)}</span>
-          <span class="edition-button-note">{t('edition.web.note', lang)}</span>
-        </a>
-      </div>
-
-      <details class="installer-details">
-        <summary>{t('edition.desktop.moreChoices', lang)}</summary>
-        <div class="installer-list">
-          {installers.map((installer) => (
-            <a href={installer.href} class="installer-link" data-installer={installer.key}>
-              {t(installer.labelKey, lang)}
+      <section class="edition-dock" aria-label={t('edition.label', lang)}>
+        <div class="edition-dock-inner">
+          <h2 class="edition-title">{t('edition.title', lang)}</h2>
+          <div class="edition-actions">
+            <a
+              href={CANOPI_RELEASES_URL}
+              class="edition-button edition-button-primary"
+              data-desktop-primary
+              data-default-label={t('edition.desktop.defaultChoice', lang)}
+              data-linux-href={CANOPI_DOWNLOADS.linuxAppImage}
+              data-linux-label={t('edition.installer.linuxAppImage', lang)}
+              data-macos-arm-href={CANOPI_DOWNLOADS.macAppleSiliconDmg}
+              data-macos-arm-label={t('edition.installer.macApple', lang)}
+              data-macos-x64-href={CANOPI_DOWNLOADS.macIntelDmg}
+              data-macos-x64-label={t('edition.installer.macIntel', lang)}
+              data-windows-href={CANOPI_DOWNLOADS.windowsSetupExe}
+              data-windows-label={t('edition.installer.windowsExe', lang)}
+            >
+              <span class="edition-button-title">{t('edition.desktop.cta', lang)}</span>
+              <span class="edition-button-note" data-desktop-primary-label>{t('edition.desktop.defaultChoice', lang)}</span>
             </a>
-          ))}
-          <a href={CANOPI_RELEASES_URL} class="installer-link">{t('download.allReleases', lang)}</a>
+
+            <a href={CANOPI_WEB_URL} class="edition-button edition-button-secondary">
+              <span class="edition-button-title">{t('edition.web.cta', lang)}</span>
+              <span class="edition-button-note">{t('edition.web.note', lang)}</span>
+            </a>
+          </div>
+
+          <details class="installer-details">
+            <summary>{t('edition.desktop.moreChoices', lang)}</summary>
+            <div class="installer-list">
+              {installers.map((installer) => (
+                <a href={installer.href} class="installer-link" data-installer={installer.key}>
+                  {t(installer.labelKey, lang)}
+                </a>
+              ))}
+              <a href={CANOPI_RELEASES_URL} class="installer-link">{t('download.allReleases', lang)}</a>
+            </div>
+          </details>
         </div>
-      </details>
+      </section>
     </div>
-  </section>
+  </div>
 
   <script>
     (async function initDesktopDownload() {
@@ -168,45 +161,18 @@ const installers = [
     position: relative;
     background: var(--canvas-bg);
     overflow: hidden;
-    --t-mast: 80ms;
     --t-head: 260ms;
-    --t-video: 420ms;
+    --t-video: 360ms;
     --t-editions: 560ms;
   }
 
-  .hero-intro {
-    max-width: 980px;
+  .hero-shell {
+    max-width: var(--content-width);
     margin: 0 auto;
     padding-left: var(--space-6);
     padding-right: var(--space-6);
-  }
-
-  .hero-intro {
     padding-top: var(--space-16);
-    padding-bottom: var(--space-10);
-    text-align: center;
-  }
-
-  .masthead {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    color: var(--color-text-muted);
-    font-family: var(--font-body);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    letter-spacing: 0;
-    font-variant-numeric: lining-nums;
-    margin-bottom: var(--space-6);
-    animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: var(--t-mast);
-    white-space: nowrap;
-  }
-
-  .mast-sprout {
-    display: inline-flex;
-    color: var(--color-success);
-    transform: translateY(-1px);
+    padding-bottom: var(--space-16);
   }
 
   .hero-headline {
@@ -216,53 +182,69 @@ const installers = [
     line-height: var(--leading-tight);
     color: var(--color-text);
     letter-spacing: 0;
-    animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: var(--t-head);
+    max-width: 920px;
+    margin: 0 0 var(--space-10);
   }
 
   .hero-headline-accent {
     color: var(--color-primary);
-    font-style: italic;
     display: inline;
   }
 
-  .demo-bleed {
-    width: 100%;
+  .hero-lower {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    align-items: stretch;
+  }
+
+  .demo-panel {
     margin: 0;
     background: #1C1915;
-    border-top: 1px solid var(--color-border-strong);
-    border-bottom: 1px solid var(--color-border-strong);
-    animation: fadeUp 700ms var(--transition-slow) both;
-    animation-delay: var(--t-video);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
   }
 
   .demo-video {
     display: block;
     width: 100%;
     height: auto;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 16 / 9;
     object-fit: contain;
     object-position: center;
   }
 
   .edition-dock {
-    background: var(--canvas-bg);
-    padding: var(--space-8) var(--space-6) var(--space-16);
-    animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: var(--t-editions);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    min-width: 0;
   }
 
   .edition-dock-inner {
     display: grid;
-    gap: var(--space-3);
-    max-width: var(--content-width);
-    margin: 0 auto;
+    align-content: start;
+    gap: var(--space-4);
+    min-height: 100%;
+    padding: var(--space-6);
+  }
+
+  .edition-title {
+    max-width: 14ch;
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: 400;
+    line-height: var(--leading-tight);
+    color: var(--color-text);
+    letter-spacing: 0;
   }
 
   .edition-actions {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-3);
+    gap: var(--space-2);
   }
 
   .edition-button {
@@ -270,19 +252,20 @@ const installers = [
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    min-height: 68px;
-    padding: var(--space-4) var(--space-6);
+    min-height: 64px;
+    padding: var(--space-4);
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-md);
     transition:
       background var(--transition-fast),
       border-color var(--transition-fast),
-      color var(--transition-fast);
+      color var(--transition-fast),
+      transform var(--transition-normal);
   }
 
   .edition-button:hover,
   .edition-button:focus-visible {
-    transform: none;
+    transform: translateY(-1px);
   }
 
   .edition-button-primary {
@@ -314,6 +297,7 @@ const installers = [
     line-height: var(--leading-snug);
     letter-spacing: 0;
     min-width: 0;
+    white-space: nowrap;
   }
 
   .edition-button-note {
@@ -324,8 +308,7 @@ const installers = [
   }
 
   .installer-details {
-    justify-self: center;
-    width: min(100%, 620px);
+    width: 100%;
     border: 0;
     overflow: hidden;
   }
@@ -333,10 +316,10 @@ const installers = [
   .installer-details summary {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: var(--space-2);
-    min-height: 34px;
-    padding: 0 var(--space-3);
+    min-height: 36px;
+    padding: 0;
     color: var(--color-text-muted);
     cursor: pointer;
     font-size: var(--text-sm);
@@ -363,7 +346,7 @@ const installers = [
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-2);
-    padding-top: var(--space-2);
+    padding-top: var(--space-3);
   }
 
   .installer-link {
@@ -378,12 +361,16 @@ const installers = [
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--canvas-bg);
-    transition: color var(--transition-fast), background var(--transition-fast);
+    transition:
+      border-color var(--transition-fast),
+      color var(--transition-fast),
+      background var(--transition-fast);
   }
 
   .installer-link:hover,
   .installer-link:focus-visible {
     color: var(--color-primary);
+    border-color: var(--color-primary);
     background: var(--color-control-hover);
   }
 
@@ -393,19 +380,17 @@ const installers = [
   }
 
   @media (max-width: 639px) {
-    .hero-intro {
-      padding-top: var(--space-16);
-      padding-bottom: var(--space-8);
+    .hero-shell {
+      padding: var(--space-12) var(--space-6);
     }
 
-    .masthead {
-      white-space: normal;
+    .hero-headline {
+      font-size: var(--text-3xl);
+      margin-bottom: var(--space-8);
     }
 
-    .hero-headline { font-size: var(--text-3xl); }
-
-    .demo-video {
-      aspect-ratio: 16 / 10;
+    .edition-dock-inner {
+      padding: var(--space-4);
     }
 
     .edition-button {
@@ -422,17 +407,49 @@ const installers = [
   }
 
   @media (min-width: 640px) {
-    .edition-actions {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .installer-list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
   @media (min-width: 960px) {
-    .hero-headline { font-size: var(--text-5xl); }
+    .hero-shell {
+      padding-top: var(--space-20);
+      padding-bottom: var(--space-20);
+    }
+
+    .hero-headline {
+      font-size: var(--text-5xl);
+      line-height: 1.08;
+    }
+
+    .hero-lower {
+      grid-template-columns: minmax(0, 1fr) 360px;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .hero-headline {
+      font-size: 5rem;
+      max-width: 1020px;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-headline {
+      animation: fadeUp 600ms var(--transition-slow) both;
+      animation-delay: var(--t-head);
+    }
+
+    .demo-panel {
+      animation: fadeUp 700ms var(--transition-slow) both;
+      animation-delay: var(--t-video);
+    }
+
+    .edition-dock {
+      animation: fadeUp 600ms var(--transition-slow) both;
+      animation-delay: var(--t-editions);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

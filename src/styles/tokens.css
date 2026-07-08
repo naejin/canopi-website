@@ -1,5 +1,5 @@
 /* ============================================
-   Canopi Website — Design Tokens
+   Canopi Website - Design Tokens
 
    Shares the app's color palette and aesthetic DNA
    but scaled for a marketing page: larger type,
@@ -7,7 +7,7 @@
    ============================================ */
 
 :root {
-  /* ── Color Palette (from app — verbatim) ── */
+  /* ── Color Palette (from app - verbatim) ── */
   --color-primary: #A06B1F;
   --color-primary-hover: #8B5C18;
   --color-primary-bg: rgba(160, 107, 31, 0.08);
@@ -28,13 +28,13 @@
   --color-warning: #B8860B;
   --color-danger: #B5432A;
 
-  /* Shadows — warm, minimal */
+  /* Shadows - warm, minimal */
   --shadow-sm: 0 1px 3px rgba(44, 36, 24, 0.06);
   --shadow-md: 0 4px 12px rgba(44, 36, 24, 0.08);
   --shadow-lg: 0 8px 24px rgba(44, 36, 24, 0.10);
   --shadow-xl: 0 16px 48px rgba(44, 36, 24, 0.12);
 
-  /* ── Typography — Website Scale ── */
+  /* ── Typography - Website Scale ── */
   --font-display: 'Lora', 'Georgia', serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
@@ -53,7 +53,7 @@
   --leading-normal: 1.6;
   --leading-relaxed: 1.75;
 
-  /* ── Spacing — Generous for Marketing ── */
+  /* ── Spacing - Generous for Marketing ── */
   --space-1: 0.25rem;   /* 4px */
   --space-2: 0.5rem;    /* 8px */
   --space-3: 0.75rem;   /* 12px */
@@ -66,7 +66,7 @@
   --space-20: 5rem;     /* 80px */
   --space-24: 6rem;     /* 96px */
 
-  /* ── Radius (from app — works at any scale) ── */
+  /* ── Radius (from app - works at any scale) ── */
   --radius-sm: 3px;
   --radius-md: 5px;
   --radius-lg: 7px;

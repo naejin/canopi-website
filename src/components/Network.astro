@@ -57,12 +57,10 @@ const countries = [
     </header>
 
     <div class="network-atlas">
-      {countries.map((country, index) => (
+      {countries.map((country) => (
         <section class="country-panel" aria-labelledby={`network-${country.key}`}>
           <header class="country-cardinal">
-            <span class="country-number">{String(index + 1).padStart(2, '0')}</span>
             <h3 id={`network-${country.key}`} class="country-title">{t(country.labelKey, lang)}</h3>
-            <span class="country-total">{String(country.organisations.length).padStart(2, '0')}</span>
           </header>
 
           <div class="org-cluster">
@@ -84,9 +82,9 @@ const countries = [
 
 <style>
   .network {
-    background: var(--canvas-bg);
+    background: var(--color-bg);
     border-top: 1px solid var(--color-border);
-    padding: var(--space-16) var(--space-6) var(--space-20);
+    padding: var(--space-20) var(--space-6);
   }
 
   .network-inner {
@@ -95,12 +93,12 @@ const countries = [
   }
 
   .network-header {
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-10);
   }
 
   .section-title {
     font-family: var(--font-display);
-    font-size: var(--text-2xl);
+    font-size: var(--text-3xl);
     font-weight: 400;
     line-height: var(--leading-tight);
     color: var(--color-text);
@@ -110,28 +108,25 @@ const countries = [
   .network-atlas {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-10);
+    gap: var(--space-12);
   }
 
   .country-panel {
     display: grid;
     grid-template-columns: 1fr;
-    border-top: 1px solid var(--color-border-strong);
+    gap: var(--space-5);
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-6);
   }
 
   .country-cardinal {
-    display: grid;
-    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    display: flex;
     align-items: center;
-    border-bottom: 1px solid var(--color-border);
     color: var(--color-text);
   }
 
   .country-title {
-    display: flex;
-    align-items: center;
     min-width: 0;
-    padding: var(--space-3) var(--space-4);
     font-family: var(--font-display);
     font-size: var(--text-xl);
     font-weight: 400;
@@ -139,30 +134,17 @@ const countries = [
     color: currentColor;
   }
 
-  .country-number,
-  .country-total {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 56px;
-    color: var(--color-primary);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
   .org-cluster {
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-3);
-    padding-top: var(--space-4);
   }
 
   .org-node {
     display: grid;
-    grid-template-columns: 76px minmax(0, 1fr) 36px;
+    grid-template-columns: 84px minmax(0, 1fr) 42px;
     align-items: center;
-    min-height: 72px;
+    min-height: 84px;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -199,8 +181,8 @@ const countries = [
   .org-logo {
     display: block;
     width: 100%;
-    max-width: 58px;
-    max-height: 48px;
+    max-width: 62px;
+    max-height: 54px;
     object-fit: contain;
   }
 
@@ -234,23 +216,17 @@ const countries = [
       font-size: var(--text-2xl);
     }
 
-    .country-cardinal {
-      grid-template-columns: 40px minmax(0, 1fr) 40px;
-    }
-
-    .country-number,
-    .country-total {
-      min-height: 52px;
+    .network-header {
+      margin-bottom: var(--space-8);
     }
 
     .country-title {
       font-size: var(--text-lg);
-      padding: var(--space-3);
     }
 
     .org-node {
-      grid-template-columns: 70px minmax(0, 1fr) 34px;
-      min-height: 72px;
+      grid-template-columns: 72px minmax(0, 1fr) 36px;
+      min-height: 76px;
     }
 
     .org-name {
@@ -260,8 +236,18 @@ const countries = [
   }
 
   @media (min-width: 960px) {
+    .country-panel {
+      grid-template-columns: 220px minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .country-cardinal {
+      position: sticky;
+      top: calc(var(--header-height) + var(--space-6));
+    }
+
     .org-cluster {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 </style>
