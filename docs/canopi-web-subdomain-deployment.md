@@ -596,7 +596,7 @@ Fix:
 Once `https://web.projectcanopi.com/` passes smoke checks:
 
 - Keep the Canopi Web CTA pointed at `https://web.projectcanopi.com/`.
-- Remove or change the "Work in progress" label only after the product owner agrees it is production-ready.
+- Keep the Canopi Web CTA free of work-in-progress labeling once the product owner confirms the Web edition is working.
 - Consider changing any legacy `https://projectcanopi.com/app/` route to redirect to `https://web.projectcanopi.com/` if users may have seen the old path.
 - Do not reintroduce website-side `/app/` installation unless the product decision changes.
 

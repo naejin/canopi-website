@@ -85,7 +85,8 @@ const countries = [
 <style>
   .network {
     background: var(--canvas-bg);
-    padding: var(--space-20) var(--space-6);
+    border-top: 1px solid var(--color-border);
+    padding: var(--space-16) var(--space-6) var(--space-20);
   }
 
   .network-inner {
@@ -94,12 +95,12 @@ const countries = [
   }
 
   .network-header {
-    margin-bottom: var(--space-8);
+    margin-bottom: var(--space-6);
   }
 
   .section-title {
     font-family: var(--font-display);
-    font-size: var(--text-3xl);
+    font-size: var(--text-2xl);
     font-weight: 400;
     line-height: var(--leading-tight);
     color: var(--color-text);
@@ -109,33 +110,28 @@ const countries = [
   .network-atlas {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-6);
+    gap: var(--space-10);
   }
 
   .country-panel {
     display: grid;
     grid-template-columns: 1fr;
-    overflow: hidden;
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
+    border-top: 1px solid var(--color-border-strong);
   }
 
   .country-cardinal {
     display: grid;
-    grid-template-columns: 52px minmax(0, 1fr) 52px;
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
     align-items: center;
-    background: #1C1915;
-    color: #E8E2D8;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text);
   }
 
   .country-title {
     display: flex;
     align-items: center;
     min-width: 0;
-    padding: var(--space-4);
-    border-left: 1px solid rgba(232, 226, 216, 0.18);
-    border-right: 1px solid rgba(232, 226, 216, 0.18);
+    padding: var(--space-3) var(--space-4);
     font-family: var(--font-display);
     font-size: var(--text-xl);
     font-weight: 400;
@@ -148,8 +144,8 @@ const countries = [
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 64px;
-    color: #C89B4A;
+    min-height: 56px;
+    color: var(--color-primary);
     font-size: var(--text-sm);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
@@ -159,18 +155,15 @@ const countries = [
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-3);
-    padding: var(--space-4);
-    background:
-      linear-gradient(135deg, rgba(160, 107, 31, 0.08), transparent 56%),
-      var(--color-surface);
+    padding-top: var(--space-4);
   }
 
   .org-node {
     display: grid;
-    grid-template-columns: 82px minmax(0, 1fr) 38px;
+    grid-template-columns: 76px minmax(0, 1fr) 36px;
     align-items: center;
-    min-height: 78px;
-    background: var(--canvas-bg);
+    min-height: 72px;
+    background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -206,8 +199,8 @@ const countries = [
   .org-logo {
     display: block;
     width: 100%;
-    max-width: 62px;
-    max-height: 52px;
+    max-width: 58px;
+    max-height: 48px;
     object-fit: contain;
   }
 
@@ -234,7 +227,7 @@ const countries = [
 
   @media (max-width: 639px) {
     .network {
-      padding: var(--space-12) var(--space-6);
+      padding: var(--space-12) var(--space-6) var(--space-16);
     }
 
     .section-title {
@@ -242,12 +235,12 @@ const countries = [
     }
 
     .country-cardinal {
-      grid-template-columns: 44px minmax(0, 1fr) 44px;
+      grid-template-columns: 40px minmax(0, 1fr) 40px;
     }
 
     .country-number,
     .country-total {
-      min-height: 56px;
+      min-height: 52px;
     }
 
     .country-title {
@@ -255,13 +248,9 @@ const countries = [
       padding: var(--space-3);
     }
 
-    .org-cluster {
-      padding: var(--space-3);
-    }
-
     .org-node {
-      grid-template-columns: 72px minmax(0, 1fr) 34px;
-      min-height: 76px;
+      grid-template-columns: 70px minmax(0, 1fr) 34px;
+      min-height: 72px;
     }
 
     .org-name {
@@ -271,21 +260,8 @@ const countries = [
   }
 
   @media (min-width: 960px) {
-    .network-atlas {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      align-items: start;
-    }
-
-    .country-panel:first-child {
-      grid-column: span 2;
-    }
-
-    .country-panel:first-child .org-cluster {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
     .org-cluster {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 </style>
