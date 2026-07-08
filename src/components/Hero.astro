@@ -3,6 +3,7 @@ import { t, type Locale } from '../i18n/utils';
 import { CANOPI_DOWNLOADS, CANOPI_RELEASES_URL } from '../data/release';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
+const CANOPI_WEB_URL = 'https://web.projectcanopi.com/';
 
 const installers = [
   {
@@ -37,8 +38,11 @@ const installers = [
   },
 ];
 
-const desktopFeatures = [
+const sharedFeatures = [
   'edition.feature.canvasTools',
+];
+
+const desktopOnlyFeatures = [
   'edition.feature.fullPlantDatabase',
   'edition.feature.stamps',
   'edition.feature.location',
@@ -48,8 +52,7 @@ const desktopFeatures = [
   'edition.feature.layers',
 ];
 
-const webFeatures = [
-  'edition.feature.canvasTools',
+const webOnlyFeatures = [
   'edition.feature.limitedPlantCatalog',
 ];
 ---
@@ -108,8 +111,8 @@ const webFeatures = [
 
   <div class="edition-inner">
     <div class="edition-grid">
-      <section class="edition-card edition-card-desktop">
-        <div class="edition-card-header">
+      <section class="edition-panel edition-panel-desktop">
+        <div class="edition-panel-header">
           <span class="section-label">{t('edition.desktop.cta', lang)}</span>
         </div>
         <a
@@ -142,27 +145,54 @@ const webFeatures = [
           </div>
         </details>
 
-        <ul class="edition-features">
-          {desktopFeatures.map((featureKey) => (
-            <li>{t(featureKey, lang)}</li>
-          ))}
-        </ul>
+        <div class="feature-ledger" aria-label={t('edition.desktop.cta', lang)}>
+          <div class="feature-group">
+            <span class="feature-group-label">{t('edition.group.shared', lang)}</span>
+            <ul class="edition-features">
+              {sharedFeatures.map((featureKey) => (
+                <li>{t(featureKey, lang)}</li>
+              ))}
+            </ul>
+          </div>
+          <div class="feature-group">
+            <span class="feature-group-label">{t('edition.group.desktopOnly', lang)}</span>
+            <ul class="edition-features edition-features-grid">
+              {desktopOnlyFeatures.map((featureKey) => (
+                <li>{t(featureKey, lang)}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </section>
 
-      <section class="edition-card edition-card-web">
-        <div class="edition-card-header">
+      <section class="edition-panel edition-panel-web">
+        <div class="edition-panel-header">
           <span class="section-label">{t('edition.web.cta', lang)}</span>
+          <span class="edition-status">{t('edition.web.status', lang)}</span>
         </div>
-        <a href="/app/" class="edition-cta edition-cta-secondary">
+        <a href={CANOPI_WEB_URL} class="edition-cta edition-cta-secondary">
           <span class="edition-cta-title">{t('edition.web.cta', lang)}</span>
           <span class="edition-cta-note">{t('edition.web.note', lang)}</span>
         </a>
 
-        <ul class="edition-features">
-          {webFeatures.map((featureKey) => (
-            <li>{t(featureKey, lang)}</li>
-          ))}
-        </ul>
+        <div class="feature-ledger" aria-label={t('edition.web.cta', lang)}>
+          <div class="feature-group">
+            <span class="feature-group-label">{t('edition.group.shared', lang)}</span>
+            <ul class="edition-features">
+              {sharedFeatures.map((featureKey) => (
+                <li>{t(featureKey, lang)}</li>
+              ))}
+            </ul>
+          </div>
+          <div class="feature-group">
+            <span class="feature-group-label">{t('edition.group.web', lang)}</span>
+            <ul class="edition-features">
+              {webOnlyFeatures.map((featureKey) => (
+                <li>{t(featureKey, lang)}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </section>
     </div>
   </div>
@@ -350,24 +380,46 @@ const webFeatures = [
   .edition-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-4);
+    gap: var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    background:
+      linear-gradient(90deg, transparent, transparent calc(100% - 1px), var(--color-border) calc(100% - 1px)),
+      var(--color-surface);
+    overflow: hidden;
   }
 
-  .edition-card {
+  .edition-panel {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
     padding: var(--space-4);
   }
 
-  .edition-card-header {
+  .edition-panel + .edition-panel {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .edition-panel-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--space-3);
     min-height: 28px;
+  }
+
+  .edition-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 var(--space-2);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-full);
+    color: var(--color-primary);
+    background: var(--color-primary-bg);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    white-space: nowrap;
   }
 
   .edition-cta {
@@ -399,7 +451,7 @@ const webFeatures = [
   }
 
   .edition-cta-secondary {
-    background: var(--color-surface);
+    background: var(--canvas-bg);
     color: var(--color-text);
     border: 1px solid var(--color-border-strong);
   }
@@ -428,7 +480,7 @@ const webFeatures = [
   .installer-details {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    background: var(--color-bg);
+    background: var(--canvas-bg);
     overflow: hidden;
   }
 
@@ -484,26 +536,62 @@ const webFeatures = [
     background: var(--color-control-hover);
   }
 
+  .feature-ledger {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .feature-group {
+    display: grid;
+    grid-template-columns: minmax(116px, 0.34fr) 1fr;
+    min-height: 44px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .feature-group:first-child {
+    border-top: 0;
+  }
+
+  .feature-group-label {
+    display: flex;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    border-right: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
   .edition-features {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: 1px;
     list-style: none;
     margin: 0;
     padding: 0;
+    background: var(--color-border);
   }
 
   .edition-features li {
     display: inline-flex;
     align-items: center;
-    min-height: 34px;
+    flex: 1 1 150px;
+    min-height: 42px;
     padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
     background: var(--canvas-bg);
-    color: var(--color-text-muted);
+    color: var(--color-text);
     font-size: var(--text-sm);
     font-weight: 600;
+  }
+
+  .edition-features-grid li {
+    flex-basis: 132px;
   }
 
   .hero-border {
@@ -546,11 +634,20 @@ const webFeatures = [
 
     .edition-inner {
       padding-top: var(--space-8);
-      padding-bottom: var(--space-14);
+      padding-bottom: var(--space-12);
     }
 
-    .edition-card {
+    .edition-panel {
       padding: var(--space-4);
+    }
+
+    .feature-group {
+      grid-template-columns: 1fr;
+    }
+
+    .feature-group-label {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border);
     }
 
     .edition-cta {
@@ -577,7 +674,15 @@ const webFeatures = [
 
   @media (min-width: 960px) {
     .hero-headline { font-size: var(--text-5xl); }
-    .edition-grid { grid-template-columns: 1.2fr 0.8fr; }
+    .edition-grid {
+      grid-template-columns: minmax(0, 1.22fr) minmax(320px, 0.78fr);
+      gap: 0;
+    }
+
+    .edition-panel + .edition-panel {
+      border-top: 0;
+      border-left: 1px solid var(--color-border);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
