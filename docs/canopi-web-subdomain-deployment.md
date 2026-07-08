@@ -116,6 +116,11 @@ cd /home/daylon/projects/canopi/desktop/web
 CANOPI_WEB_BASE_PATH=/ npm run package:web
 ```
 
+Keep the existing `/app/` artifact shape as the default for the marketing-site
+deployment path. The root `/` artifact shape is an explicit subdomain deploy
+mode and must not be produced accidentally by a normal `npm run package:web`
+run.
+
 The exact environment variable name can differ, but the behavior must be explicit. Avoid rewriting built HTML and JS after Vite emits them; configure the Vite base path before build.
 
 The produced archive root should contain:
