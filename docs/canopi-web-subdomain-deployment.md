@@ -109,11 +109,11 @@ npm run package:web
 
 Before the subdomain can work, the Web Edition packaging flow must support a root base path.
 
-The app-side build should provide a production mode equivalent to:
+The app-side build provides an explicit root-subdomain package mode:
 
 ```bash
 cd /home/daylon/projects/canopi/desktop/web
-CANOPI_WEB_BASE_PATH=/ npm run package:web
+npm run package:web:root
 ```
 
 Keep the existing `/app/` artifact shape as the default for the marketing-site
@@ -121,7 +121,7 @@ deployment path. The root `/` artifact shape is an explicit subdomain deploy
 mode and must not be produced accidentally by a normal `npm run package:web`
 run.
 
-The exact environment variable name can differ, but the behavior must be explicit. Avoid rewriting built HTML and JS after Vite emits them; configure the Vite base path before build.
+That script sets `CANOPI_WEB_BASE_PATH=/` before Vite emits assets and writes a distinct `canopi-web-edition-root-v<version>-<commit>.tar.gz` archive. Avoid rewriting built HTML and JS after Vite emits them; configure the Vite base path before build.
 
 The produced archive root should contain:
 
@@ -414,7 +414,7 @@ After the app repo can produce a root-base artifact:
 
 ```bash
 cd /home/daylon/projects/canopi/desktop/web
-CANOPI_WEB_BASE_PATH=/ npm run package:web
+npm run package:web:root
 ```
 
 Then preview the deploy output from the deployment repo:
@@ -615,4 +615,3 @@ Canopi Web works on `web.projectcanopi.com` when:
 - Catalog assets are not hidden behind the SPA fallback.
 - Browser smoke checks pass without missing assets or Tauri IPC errors.
 - The marketing website CTA opens the subdomain.
-
