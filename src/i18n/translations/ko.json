@@ -1,7 +1,6 @@
 {
   "meta.title": "Canopi — 농생태 설계 도구",
   "meta.description": "Canopi 0.9.2를 다운로드해 Web Edition 패키징, Design Notebook, PDF 보고서, 더 빠른 종 검색, Linux 시작 수정과 함께 식용 숲, 정원, agroecological 시스템을 계획하세요. Linux, macOS, Windows에서 무료 오픈 소스로 사용할 수 있습니다.",
-
   "header.home": "Canopi — 홈",
   "header.features": "기능",
   "header.download": "다운로드",
@@ -10,7 +9,6 @@
   "header.themeLight": "라이트 테마로 전환",
   "header.themeToggle": "테마 전환",
   "header.language": "언어",
-
   "hero.masthead": "v0.9.2 · Open Source",
   "hero.screenshotCaption": "그림 1 — 구역 도구와 종 데이터베이스가 있는 설계 캔버스.",
   "hero.badge": "Beta v0.9.2 — 무료 오픈 소스",
@@ -27,7 +25,6 @@
   "hero.statPlatforms": "개 플랫폼",
   "hero.statLicenseValue": "AGPL v3",
   "hero.statLicense": "라이선스",
-
   "features.label": "제공 기능",
   "features.title": "Canopi 0.9.2에 웹, 노트북, 보고서 추가",
   "features.desc": "이번 릴리스는 /app/ 아래 브라우저 게시를 준비하고, 계획 및 문서화 도구를 추가하며, 종 검색을 빠르게 하고, Linux와 저장 위치 로딩 안정성을 높입니다.",
@@ -43,7 +40,6 @@
   "features.reports.desc": "캔버스, 타임라인, 예산, 컨소시엄, 현지화된 보고서 화면을 포함한 PDF를 내보내 앱 밖에서도 설계 작업을 공유할 수 있습니다.",
   "features.workspace.title": "Linux와 위치 안정성",
   "features.workspace.desc": "WebKitGTK DMABuf 렌더러 경로로 인한 Linux 시작 멈춤을 수정했고, 저장된 위치 로딩이 더 안정적입니다.",
-
   "download.label": "시작하기",
   "download.title": "Canopi 다운로드",
   "download.desc": "Canopi 0.9.2는 AGPL v3 라이선스의 무료 오픈 소스입니다. 현재 beta 단계이며 아직 다듬는 중입니다.",
@@ -51,9 +47,34 @@
   "download.detected": "감지됨: {platform}",
   "download.showAll": "모든 옵션 보기",
   "download.recommended": "사용 중인 시스템용",
-
   "download.allReleases": "GitHub에서 모든 릴리스 보기",
   "download.releaseNotes": "GitHub의 Canopi v0.9.2 릴리스 노트",
-
-  "footer.license": "AGPL v3"
+  "footer.license": "AGPL v3",
+  "hero.videoLabel": "Canopi 디자인 데모 동영상",
+  "edition.label": "에디션",
+  "edition.title": "Canopi 사용 방식 선택",
+  "edition.desktop.cta": "Canopi Desktop",
+  "edition.desktop.defaultChoice": "설치 파일 선택",
+  "edition.desktop.moreChoices": "더 많은 선택지",
+  "edition.web.cta": "Canopi Web",
+  "edition.web.note": "브라우저에서 열기",
+  "edition.installer.linuxAppImage": "Linux AppImage",
+  "edition.installer.linuxDeb": "Debian/Ubuntu .deb",
+  "edition.installer.macApple": "macOS Apple Silicon",
+  "edition.installer.macIntel": "macOS Intel",
+  "edition.installer.windowsExe": "Windows .exe",
+  "edition.installer.windowsMsi": "Windows MSI",
+  "edition.feature.canvasTools": "캔버스 도구",
+  "edition.feature.fullPlantDatabase": "전체 식물 데이터베이스",
+  "edition.feature.stamps": "스탬프",
+  "edition.feature.location": "위치",
+  "edition.feature.calendar": "캘린더",
+  "edition.feature.budget": "예산",
+  "edition.feature.consortium": "컨소시엄",
+  "edition.feature.layers": "레이어",
+  "edition.feature.limitedPlantCatalog": "제한된 식물 카탈로그",
+  "network.label": "네트워크",
+  "network.title": "농생태 네트워크",
+  "network.country.france": "프랑스",
+  "network.country.brazil": "브라질"
 }

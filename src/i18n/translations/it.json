@@ -1,7 +1,6 @@
 {
   "meta.title": "Canopi — Strumento di progettazione agroecologica",
   "meta.description": "Scarica Canopi 0.9.2 per pianificare foreste alimentari, giardini e sistemi agroecologici con packaging Web Edition, Design Notebook, report PDF, ricerca specie più rapida e correzioni all'avvio su Linux. Gratuito e open source per Linux, macOS e Windows.",
-
   "header.home": "Canopi — home",
   "header.features": "Funzionalità",
   "header.download": "Scarica",
@@ -10,7 +9,6 @@
   "header.themeLight": "Passa al tema chiaro",
   "header.themeToggle": "Cambia tema",
   "header.language": "Lingua",
-
   "hero.masthead": "v0.9.2 · Open Source",
   "hero.screenshotCaption": "Fig. 1 — Tavola di progettazione con strumenti per zone e database delle specie.",
   "hero.badge": "Beta v0.9.2 — gratuito e open source",
@@ -27,7 +25,6 @@
   "hero.statPlatforms": "Piattaforme",
   "hero.statLicenseValue": "AGPL v3",
   "hero.statLicense": "Licenza",
-
   "features.label": "Cosa offre",
   "features.title": "Canopi 0.9.2 aggiunge web, quaderni e report",
   "features.desc": "Questa versione prepara Canopi alla pubblicazione nel browser sotto /app/, aggiunge strumenti di pianificazione e documentazione, accelera la ricerca specie e rafforza la stabilità su Linux e nel caricamento delle località.",
@@ -43,7 +40,6 @@
   "features.reports.desc": "Esporta report con canvas, timeline, budget, consorzio e cornice localizzata per condividere il lavoro fuori dall'app.",
   "features.workspace.title": "Stabilità Linux e località",
   "features.workspace.desc": "Sono stati corretti i blocchi di avvio Linux causati dal percorso renderer WebKitGTK DMABuf, e il caricamento delle località salvate è più stabile.",
-
   "download.label": "Inizia",
   "download.title": "Scarica Canopi",
   "download.desc": "Canopi 0.9.2 è gratuito e open source con licenza AGPL v3. Attualmente in beta — alcune parti sono ancora in rifinitura.",
@@ -51,9 +47,34 @@
   "download.detected": "Rilevato: {platform}",
   "download.showAll": "Mostra tutte le opzioni",
   "download.recommended": "per il tuo sistema",
-
   "download.allReleases": "Tutte le versioni su GitHub",
   "download.releaseNotes": "Note di rilascio Canopi v0.9.2 su GitHub",
-
-  "footer.license": "AGPL v3"
+  "footer.license": "AGPL v3",
+  "hero.videoLabel": "Video dimostrativo di Canopi",
+  "edition.label": "Edizioni",
+  "edition.title": "Scegli come usare Canopi",
+  "edition.desktop.cta": "Canopi Desktop",
+  "edition.desktop.defaultChoice": "Scegli installer",
+  "edition.desktop.moreChoices": "Altre opzioni",
+  "edition.web.cta": "Canopi Web",
+  "edition.web.note": "Apri nel browser",
+  "edition.installer.linuxAppImage": "Linux AppImage",
+  "edition.installer.linuxDeb": "Debian/Ubuntu .deb",
+  "edition.installer.macApple": "macOS Apple Silicon",
+  "edition.installer.macIntel": "macOS Intel",
+  "edition.installer.windowsExe": "Windows .exe",
+  "edition.installer.windowsMsi": "Windows MSI",
+  "edition.feature.canvasTools": "Strumenti canvas",
+  "edition.feature.fullPlantDatabase": "Database piante completo",
+  "edition.feature.stamps": "Timbri",
+  "edition.feature.location": "Località",
+  "edition.feature.calendar": "Calendario",
+  "edition.feature.budget": "Budget",
+  "edition.feature.consortium": "Consorzio",
+  "edition.feature.layers": "Livelli",
+  "edition.feature.limitedPlantCatalog": "Catalogo piante limitato",
+  "network.label": "Rete",
+  "network.title": "Rete agroecologica",
+  "network.country.france": "Francia",
+  "network.country.brazil": "Brasile"
 }

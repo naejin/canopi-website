@@ -1,7 +1,6 @@
 {
   "meta.title": "Canopi — инструмент агроэкологического проектирования",
   "meta.description": "Скачайте Canopi 0.9.2, чтобы планировать пищевые леса, сады и агроэкологические системы с упаковкой Web Edition, Design Notebook, PDF-отчетами, более быстрым поиском видов и исправлениями запуска Linux. Бесплатно и с открытым исходным кодом для Linux, macOS и Windows.",
-
   "header.home": "Canopi — главная",
   "header.features": "Возможности",
   "header.download": "Скачать",
@@ -10,7 +9,6 @@
   "header.themeLight": "Переключить на светлую тему",
   "header.themeToggle": "Сменить тему",
   "header.language": "Язык",
-
   "hero.masthead": "v0.9.2 · Open Source",
   "hero.screenshotCaption": "Рис. 1 — Холст проектирования с инструментами зон и базой видов.",
   "hero.badge": "Beta v0.9.2 — бесплатно и open source",
@@ -27,7 +25,6 @@
   "hero.statPlatforms": "Платформы",
   "hero.statLicenseValue": "AGPL v3",
   "hero.statLicense": "Лицензия",
-
   "features.label": "Что внутри",
   "features.title": "Canopi 0.9.2 добавляет web-упаковку, блокноты и отчеты",
   "features.desc": "Этот релиз готовит Canopi к публикации в браузере под /app/, добавляет инструменты планирования и документации, ускоряет поиск видов и улучшает стабильность Linux и загрузки местоположений.",
@@ -43,7 +40,6 @@
   "features.reports.desc": "Экспортируйте отчеты с холстом, временной шкалой, бюджетом, консорциумом и локализованным оформлением, чтобы делиться дизайном вне приложения.",
   "features.workspace.title": "Стабильность Linux и местоположений",
   "features.workspace.desc": "Исправлены зависания запуска Linux, вызванные путем рендерера WebKitGTK DMABuf, а загрузка сохраненных местоположений стала стабильнее.",
-
   "download.label": "Начать",
   "download.title": "Скачать Canopi",
   "download.desc": "Canopi 0.9.2 бесплатен и распространяется с открытым исходным кодом по лицензии AGPL v3. Сейчас это beta — детали еще дорабатываются.",
@@ -51,9 +47,34 @@
   "download.detected": "Определено: {platform}",
   "download.showAll": "Показать все варианты",
   "download.recommended": "для вашей системы",
-
   "download.allReleases": "Все выпуски на GitHub",
   "download.releaseNotes": "Примечания к релизу Canopi v0.9.2 на GitHub",
-
-  "footer.license": "AGPL v3"
+  "footer.license": "AGPL v3",
+  "hero.videoLabel": "Демонстрационное видео Canopi",
+  "edition.label": "Редакции",
+  "edition.title": "Выберите, как использовать Canopi",
+  "edition.desktop.cta": "Canopi Desktop",
+  "edition.desktop.defaultChoice": "Выбрать установщик",
+  "edition.desktop.moreChoices": "Больше вариантов",
+  "edition.web.cta": "Canopi Web",
+  "edition.web.note": "Открыть в браузере",
+  "edition.installer.linuxAppImage": "Linux AppImage",
+  "edition.installer.linuxDeb": "Debian/Ubuntu .deb",
+  "edition.installer.macApple": "macOS Apple Silicon",
+  "edition.installer.macIntel": "macOS Intel",
+  "edition.installer.windowsExe": "Windows .exe",
+  "edition.installer.windowsMsi": "Windows MSI",
+  "edition.feature.canvasTools": "Инструменты холста",
+  "edition.feature.fullPlantDatabase": "Полная база растений",
+  "edition.feature.stamps": "Штампы",
+  "edition.feature.location": "Местоположение",
+  "edition.feature.calendar": "Календарь",
+  "edition.feature.budget": "Бюджет",
+  "edition.feature.consortium": "Консорциум",
+  "edition.feature.layers": "Слои",
+  "edition.feature.limitedPlantCatalog": "Ограниченный каталог растений",
+  "network.label": "Сеть",
+  "network.title": "Агроэкологическая сеть",
+  "network.country.france": "Франция",
+  "network.country.brazil": "Бразилия"
 }

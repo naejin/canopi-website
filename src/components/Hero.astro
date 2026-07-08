@@ -1,41 +1,61 @@
 ---
 import { t, type Locale } from '../i18n/utils';
-import { CANOPI_DOWNLOADS, CANOPI_RELEASE_URL } from '../data/release';
+import { CANOPI_DOWNLOADS, CANOPI_RELEASES_URL } from '../data/release';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
 
-const platforms = [
+const installers = [
   {
-    key: 'linux',
-    name: 'Linux',
-    formats: '.AppImage (amd64)',
-    icon: 'linux',
+    key: 'linux-appimage',
+    labelKey: 'edition.installer.linuxAppImage',
     href: CANOPI_DOWNLOADS.linuxAppImage,
-    alt: { label: 'Debian/Ubuntu', format: '.deb', href: CANOPI_DOWNLOADS.linuxDeb },
   },
   {
-    key: 'macos',
-    name: 'macOS',
-    formats: '.dmg (Apple Silicon)',
-    icon: 'macos',
+    key: 'linux-deb',
+    labelKey: 'edition.installer.linuxDeb',
+    href: CANOPI_DOWNLOADS.linuxDeb,
+  },
+  {
+    key: 'macos-apple',
+    labelKey: 'edition.installer.macApple',
     href: CANOPI_DOWNLOADS.macAppleSiliconDmg,
-    alt: { label: 'Intel Mac', format: '.dmg', href: CANOPI_DOWNLOADS.macIntelDmg },
   },
   {
-    key: 'windows',
-    name: 'Windows',
-    formats: '.exe (x64)',
-    icon: 'windows',
+    key: 'macos-intel',
+    labelKey: 'edition.installer.macIntel',
+    href: CANOPI_DOWNLOADS.macIntelDmg,
+  },
+  {
+    key: 'windows-exe',
+    labelKey: 'edition.installer.windowsExe',
     href: CANOPI_DOWNLOADS.windowsSetupExe,
-    alt: { label: 'MSI installer', format: '.msi', href: CANOPI_DOWNLOADS.windowsMsi },
+  },
+  {
+    key: 'windows-msi',
+    labelKey: 'edition.installer.windowsMsi',
+    href: CANOPI_DOWNLOADS.windowsMsi,
   },
 ];
 
-const detectedPrefix = t('download.detected', lang, { platform: '' }).replace(/[:：\s]+$/u, '').trim();
+const desktopFeatures = [
+  'edition.feature.canvasTools',
+  'edition.feature.fullPlantDatabase',
+  'edition.feature.stamps',
+  'edition.feature.location',
+  'edition.feature.calendar',
+  'edition.feature.budget',
+  'edition.feature.consortium',
+  'edition.feature.layers',
+];
+
+const webFeatures = [
+  'edition.feature.canvasTools',
+  'edition.feature.limitedPlantCatalog',
+];
 ---
 
 <section class="hero">
-  <div class="hero-inner">
+  <div class="hero-intro">
     <div class="masthead" aria-label={t('hero.masthead', lang)}>
       <span class="mast-sprout" aria-hidden="true">
         <svg viewBox="0 0 10 12" width="10" height="12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
@@ -71,99 +91,88 @@ const detectedPrefix = t('download.detected', lang, { platform: '' }).replace(/[
       {t('hero.headlineTop', lang)}<br />
       <span class="hero-headline-accent">{t('hero.headlineAccent', lang)}</span>
     </h1>
+  </div>
 
-    <p class="hero-subtext">
-      {t('hero.subtext', lang)}
-    </p>
+  <figure class="demo-bleed">
+    <video
+      src="/demo-canopi-720.mp4"
+      class="demo-video"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      aria-label={t('hero.videoLabel', lang)}
+    ></video>
+  </figure>
 
-    <figure class="specimen">
-      <img
-        src="/screenshot-light.png"
-        alt="Canopi app — design canvas with plant database"
-        class="screenshot screenshot-light"
-        width="2299"
-        height="1614"
-        loading="eager"
-      />
-      <img
-        src="/screenshot-dark.png"
-        alt="Canopi app — design canvas with plant database"
-        class="screenshot screenshot-dark"
-        width="2299"
-        height="1614"
-        loading="eager"
-      />
-      <figcaption class="specimen-caption">{t('hero.screenshotCaption', lang)}</figcaption>
-    </figure>
-
-    <p class="hero-detect" data-detection-banner hidden>
-      <span class="hero-detect-mark" aria-hidden="true">❧</span>
-      <span class="hero-detect-prefix">{detectedPrefix}<span class="hero-detect-colon">:</span></span>
-      <strong class="hero-detect-label" data-detection-label></strong>
-      <span class="hero-detect-sep" aria-hidden="true">—</span>
-      <button type="button" class="hero-detect-dismiss" data-detection-dismiss>{t('download.showAll', lang)}</button>
-    </p>
-
-    <div class="hero-downloads">
-      {platforms.map((platform) => (
-        <div class="dl-wrap" data-platform={platform.key}>
-          <a href={platform.href} class="dl-card" aria-label={t('download.forPlatform', lang, { platform: platform.name })}>
-            <svg class="dl-corner" aria-hidden="true" width="34" height="34" viewBox="0 0 34 34">
-              <path d="M34 0 L34 34 L0 0 Z" fill="currentColor"/>
-              <line x1="0" y1="0" x2="34" y2="34" stroke="rgba(0,0,0,0.22)" stroke-width="0.8" stroke-linecap="round"/>
-            </svg>
-            <div class="dl-icon">
-              {platform.icon === 'linux' && (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19 18.616v.534c0 .469-.38.85-.85.85h-.3c-.469 0-.85-.38-.85-.85v-.084c-1.054.15-2.403.284-4 .317v.617c0 .469-.38.85-.85.85h-.3c-.469 0-.85-.38-.85-.85v-.617c-1.597-.033-2.946-.167-4-.317v.084c0 .469-.38.85-.85.85h-.3c-.469 0-.85-.38-.85-.85v-.534c-1.164-.36-1.9-.816-1.9-1.316 0-.263.18-.516.5-.744v-3.556c0-3.866 3.134-7 7-7h.4c3.866 0 7 3.134 7 7v3.556c.32.228.5.481.5.744 0 .5-.736.956-1.9 1.316zM10 10a1 1 0 100-2 1 1 0 000 2zm4 0a1 1 0 100-2 1 1 0 000 2zm-4.5 3c0 .828 1.119 1.5 2.5 1.5s2.5-.672 2.5-1.5h-5z"/>
-                </svg>
-              )}
-              {platform.icon === 'macos' && (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                </svg>
-              )}
-              {platform.icon === 'windows' && (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
-                </svg>
-              )}
-            </div>
-            <div class="dl-info">
-              <span class="dl-name">{platform.name}</span>
-              <span class="dl-format" data-platform-formats>{platform.formats}</span>
-            </div>
-          </a>
-          {'alt' in platform && platform.alt && (
-            <a href={platform.alt.href} class="dl-alt" data-alt-label={`${platform.alt.label} (${platform.alt.format})`}>{platform.alt.label} ({platform.alt.format})</a>
-          )}
-        </div>
-      ))}
+  <div class="edition-inner">
+    <div class="edition-heading">
+      <span class="section-label">{t('edition.label', lang)}</span>
+      <h2 class="section-title">{t('edition.title', lang)}</h2>
     </div>
 
-    <p class="hero-releases">
-      <a href={CANOPI_RELEASE_URL} target="_blank" rel="noopener noreferrer">
-        {t('download.releaseNotes', lang)}
-      </a>
-    </p>
+    <div class="edition-grid">
+      <section class="edition-card edition-card-desktop">
+        <a
+          href={CANOPI_RELEASES_URL}
+          class="edition-cta edition-cta-primary"
+          data-desktop-primary
+          data-default-label={t('edition.desktop.defaultChoice', lang)}
+          data-linux-href={CANOPI_DOWNLOADS.linuxAppImage}
+          data-linux-label={t('edition.installer.linuxAppImage', lang)}
+          data-macos-arm-href={CANOPI_DOWNLOADS.macAppleSiliconDmg}
+          data-macos-arm-label={t('edition.installer.macApple', lang)}
+          data-macos-x64-href={CANOPI_DOWNLOADS.macIntelDmg}
+          data-macos-x64-label={t('edition.installer.macIntel', lang)}
+          data-windows-href={CANOPI_DOWNLOADS.windowsSetupExe}
+          data-windows-label={t('edition.installer.windowsExe', lang)}
+        >
+          <span class="edition-cta-title">{t('edition.desktop.cta', lang)}</span>
+          <span class="edition-cta-note" data-desktop-primary-label>{t('edition.desktop.defaultChoice', lang)}</span>
+        </a>
 
-    <p class="inventory" aria-label={`${t('hero.statPlantsValue', lang)} ${t('hero.statPlants', lang)}, ${t('hero.statLangsValue', lang)} ${t('hero.statLangs', lang)}, ${t('hero.statPlatformsValue', lang)} ${t('hero.statPlatforms', lang)}, ${t('hero.statLicenseValue', lang)} ${t('hero.statLicense', lang)}`}>
-      <span class="inv-item"><span class="inv-num">{t('hero.statPlantsValue', lang)}</span><span class="inv-label">{t('hero.statPlants', lang)}</span></span>
-      <span class="inv-sep" aria-hidden="true">∙</span>
-      <span class="inv-item"><span class="inv-num">{t('hero.statLangsValue', lang)}</span><span class="inv-label">{t('hero.statLangs', lang)}</span></span>
-      <span class="inv-sep" aria-hidden="true">∙</span>
-      <span class="inv-item"><span class="inv-num">{t('hero.statPlatformsValue', lang)}</span><span class="inv-label">{t('hero.statPlatforms', lang)}</span></span>
-      <span class="inv-sep" aria-hidden="true">∙</span>
-      <span class="inv-item"><span class="inv-num">{t('hero.statLicenseValue', lang)}</span><span class="inv-label">{t('hero.statLicense', lang)}</span></span>
-    </p>
+        <details class="installer-details">
+          <summary>{t('edition.desktop.moreChoices', lang)}</summary>
+          <div class="installer-list">
+            {installers.map((installer) => (
+              <a href={installer.href} class="installer-link" data-installer={installer.key}>
+                {t(installer.labelKey, lang)}
+              </a>
+            ))}
+            <a href={CANOPI_RELEASES_URL} class="installer-link">{t('download.allReleases', lang)}</a>
+          </div>
+        </details>
+
+        <ul class="edition-features">
+          {desktopFeatures.map((featureKey) => (
+            <li>{t(featureKey, lang)}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="edition-card edition-card-web">
+        <a href="/app/" class="edition-cta edition-cta-secondary">
+          <span class="edition-cta-title">{t('edition.web.cta', lang)}</span>
+          <span class="edition-cta-note">{t('edition.web.note', lang)}</span>
+        </a>
+
+        <ul class="edition-features">
+          {webFeatures.map((featureKey) => (
+            <li>{t(featureKey, lang)}</li>
+          ))}
+        </ul>
+      </section>
+    </div>
   </div>
 
   <script>
-    (async function initPlatformDetection() {
-      const scope = document.querySelector<HTMLElement>('.hero-downloads')?.parentElement;
-      if (!scope) return;
+    (async function initDesktopDownload() {
+      const button = document.querySelector<HTMLAnchorElement>('[data-desktop-primary]');
+      const label = document.querySelector<HTMLElement>('[data-desktop-primary-label]');
+      if (!button || !label) return;
 
-      type Detected = { os: 'linux' | 'macos' | 'windows'; arch: 'arm64' | 'x64'; label: string } | null;
+      type Detected = { href?: string; label?: string } | null;
 
       async function detect(): Promise<Detected> {
         const uad = (navigator as any).userAgentData;
@@ -172,63 +181,36 @@ const detectedPrefix = t('download.detected', lang, { platform: '' }).replace(/[
             const data = await uad.getHighEntropyValues(['architecture', 'platform']);
             const platform = String(data.platform || uad.platform || '').toLowerCase();
             const arch = String(data.architecture || '').toLowerCase();
-            if (platform.includes('windows')) return { os: 'windows', arch: 'x64', label: 'Windows' };
+            if (platform.includes('windows')) {
+              return { href: button.dataset.windowsHref, label: button.dataset.windowsLabel };
+            }
             if (platform.includes('mac') || platform === 'macos') {
               const isArm = arch.includes('arm');
-              return { os: 'macos', arch: isArm ? 'arm64' : 'x64', label: isArm ? 'macOS (Apple Silicon)' : 'macOS (Intel)' };
+              return isArm
+                ? { href: button.dataset.macosArmHref, label: button.dataset.macosArmLabel }
+                : { href: button.dataset.macosX64Href, label: button.dataset.macosX64Label };
             }
-            if (platform.includes('linux')) return { os: 'linux', arch: 'x64', label: 'Linux' };
-          } catch {}
+            if (platform.includes('linux')) {
+              return { href: button.dataset.linuxHref, label: button.dataset.linuxLabel };
+            }
+          } catch {
+            // Some browsers expose userAgentData but deny high-entropy fields.
+          }
         }
 
         const ua = navigator.userAgent || '';
         if (/Android|iPhone|iPad|iPod/i.test(ua)) return null;
-        if (/Windows NT/i.test(ua)) return { os: 'windows', arch: 'x64', label: 'Windows' };
-        if (/Mac OS X|Macintosh/i.test(ua)) return { os: 'macos', arch: 'arm64', label: 'macOS' };
-        if (/Linux|X11|CrOS/i.test(ua)) return { os: 'linux', arch: 'x64', label: 'Linux' };
+        if (/Windows NT/i.test(ua)) return { href: button.dataset.windowsHref, label: button.dataset.windowsLabel };
+        if (/Mac OS X|Macintosh/i.test(ua)) return { href: button.dataset.macosArmHref, label: button.dataset.macosArmLabel };
+        if (/Linux|X11|CrOS/i.test(ua)) return { href: button.dataset.linuxHref, label: button.dataset.linuxLabel };
         return null;
       }
 
       const result = await detect();
-      if (!result) return;
-
-      const wrap = scope.querySelector<HTMLElement>(`.dl-wrap[data-platform="${result.os}"]`);
-      if (!wrap) return;
-
-      if (result.os === 'macos' && result.arch === 'x64') {
-        const card = wrap.querySelector<HTMLAnchorElement>('.dl-card');
-        const alt = wrap.querySelector<HTMLAnchorElement>('.dl-alt');
-        const formats = wrap.querySelector<HTMLElement>('[data-platform-formats]');
-        if (card && alt && formats) {
-          const primaryHref = card.getAttribute('href') || '';
-          const altHref = alt.getAttribute('href') || '';
-          card.setAttribute('href', altHref);
-          formats.textContent = '.dmg (Intel)';
-          alt.setAttribute('href', primaryHref);
-          alt.textContent = 'Apple Silicon (.dmg)';
-        }
-      }
-
-      wrap.setAttribute('data-featured', '');
-      scope.setAttribute('data-detected', `${result.os}-${result.arch}`);
-
-      const banner = scope.querySelector<HTMLElement>('[data-detection-banner]');
-      const labelEl = scope.querySelector<HTMLElement>('[data-detection-label]');
-      if (banner && labelEl) {
-        labelEl.textContent = result.label;
-        banner.hidden = false;
-        requestAnimationFrame(() => banner.classList.add('is-visible'));
-      }
-
-      const dismiss = scope.querySelector<HTMLButtonElement>('[data-detection-dismiss]');
-      dismiss?.addEventListener('click', () => {
-        scope.removeAttribute('data-detected');
-        wrap.removeAttribute('data-featured');
-        if (banner) {
-          banner.classList.remove('is-visible');
-          banner.addEventListener('transitionend', () => { banner.hidden = true; }, { once: true });
-        }
-      });
+      if (!result?.href || !result.label) return;
+      button.href = result.href;
+      label.textContent = result.label;
+      button.setAttribute('data-detected', '');
     })();
   </script>
 
@@ -245,29 +227,27 @@ const detectedPrefix = t('download.detected', lang, { platform: '' }).replace(/[
     position: relative;
     background: var(--canvas-bg);
     overflow: hidden;
-    /* Ink-reveal cascade — one place to tune the whole page-load choreography */
     --t-mast: 80ms;
     --t-rule: 180ms;
     --t-head: 260ms;
-    --t-lede: 360ms;
-    --t-plate: 460ms;
-    --t-detect: 620ms;
-    --t-downloads: 540ms;
-    --t-releases: 720ms;
-    --t-inv: 800ms;
+    --t-video: 420ms;
+    --t-editions: 560ms;
   }
 
-  .hero-inner {
+  .hero-intro,
+  .edition-inner {
     max-width: var(--content-width);
     margin: 0 auto;
-    padding: var(--space-24) var(--space-6) var(--space-20);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+
+  .hero-intro {
+    padding-top: var(--space-20);
+    padding-bottom: var(--space-8);
     text-align: center;
   }
 
-  /* ── Masthead (sprout + version) ── */
   .masthead {
     display: inline-flex;
     align-items: center;
@@ -291,7 +271,6 @@ const detectedPrefix = t('download.detected', lang, { platform: '' }).replace(/[
     transform: translateY(-1px);
   }
 
-  /* ── Chapter rule + ❧ ornament ── */
   .chapter-rule {
     width: 180px;
     height: 18px;
@@ -312,15 +291,13 @@ const detectedPrefix = t('download.detected', lang, { platform: '' }).replace(/[
     font-family: var(--font-display);
   }
 
-  /* ── Headline + swash ── */
   .hero-headline {
     font-family: var(--font-display);
     font-size: var(--text-4xl);
     font-weight: 400;
     line-height: var(--leading-tight);
     color: var(--color-text);
-    margin-bottom: var(--space-8);
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     animation: fadeUp 600ms var(--transition-slow) both;
     animation-delay: var(--t-head);
   }
@@ -331,343 +308,207 @@ const detectedPrefix = t('download.detected', lang, { platform: '' }).replace(/[
     display: inline;
   }
 
-  /* ── Screenshot ── */
-  .screenshot {
+  .demo-bleed {
     width: 100%;
-    height: auto;
-    border-radius: var(--radius-xl);
-    border: 1px solid var(--color-border);
+    margin: 0;
+    background: #1C1915;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
     box-shadow:
       0 2px 4px rgba(44, 36, 24, 0.06),
-      0 24px 60px -20px rgba(44, 36, 24, 0.22);
-    position: relative;
-  }
-
-  .screenshot-dark { display: none; }
-  .screenshot-light { display: block; }
-
-  [data-theme="dark"] .screenshot-dark { display: block; }
-  [data-theme="dark"] .screenshot-light { display: none; }
-
-  [data-theme="dark"] .screenshot {
-    box-shadow:
-      0 2px 4px rgba(0, 0, 0, 0.3),
-      0 24px 60px -20px rgba(0, 0, 0, 0.55);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .screenshot-dark { display: block; }
-    :root:not([data-theme="light"]) .screenshot-light { display: none; }
-  }
-
-  /* ── Specimen plate (the pressed-in screenshot) ── */
-  .specimen {
-    position: relative;
-    width: 100%;
-    max-width: 900px;
-    margin: 0 auto var(--space-12);
+      0 24px 60px -20px rgba(44, 36, 24, 0.24);
     animation: fadeUp 700ms var(--transition-slow) both;
-    animation-delay: var(--t-plate);
+    animation-delay: var(--t-video);
   }
 
-  .specimen-caption {
+  .demo-video {
     display: block;
-    margin-top: var(--space-4);
-    font-family: var(--font-display);
-    font-style: italic;
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
-    letter-spacing: 0.01em;
-    text-align: center;
-  }
-
-  /* ── Subtext as editorial lead ── */
-  .hero-subtext {
-    font-size: var(--text-md);
-    line-height: var(--leading-relaxed);
-    color: var(--color-text-muted);
-    max-width: 520px;
-    margin: 0 auto var(--space-12);
-    text-align: center;
-    animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: var(--t-lede);
-  }
-
-  /* ── Detection banner — a notebook-margin annotation above the download grid ── */
-  .hero-detect {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 0.45em;
-    margin: 0 auto var(--space-4);
-    max-width: 560px;
-    font-family: var(--font-display);
-    font-style: italic;
-    font-size: var(--text-base);
-    color: var(--color-text-muted);
-    letter-spacing: 0.005em;
-    opacity: 0;
-    transform: translateY(-4px);
-    transition: opacity 400ms ease, transform 400ms ease;
-  }
-
-  .hero-detect.is-visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .hero-detect-mark {
-    display: inline-block;
-    color: var(--color-primary);
-    font-style: normal;
-    font-size: 1.1em;
-    line-height: 1;
-    margin-right: 0.15em;
-    transform: translateY(0.1em);
-    opacity: 0.85;
-  }
-
-  .hero-detect-prefix {
-    font-style: italic;
-  }
-
-  .hero-detect-colon {
-    font-style: normal;
-    margin-right: 0.15em;
-  }
-
-  .hero-detect-sep {
-    color: var(--color-border-strong);
-    font-style: normal;
-    margin: 0 0.2em 0 0.5em;
-  }
-
-  .hero-detect-label {
-    font-weight: 600;
-    font-style: normal;
-    color: var(--color-text);
-  }
-
-  .hero-detect-dismiss {
-    background: none;
-    border: 0;
-    padding: 0;
-    margin-left: 0.3em;
-    font: inherit;
-    font-style: italic;
-    color: var(--color-primary);
-    cursor: pointer;
-    text-underline-offset: 3px;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-decoration-thickness: 1px;
-    text-decoration-color: rgba(160, 107, 31, 0.35);
-    transition: color var(--transition-fast), text-decoration-color var(--transition-fast);
-  }
-
-  .hero-detect-dismiss:hover,
-  .hero-detect-dismiss:focus-visible {
-    color: var(--color-primary-hover);
-    text-decoration-color: currentColor;
-  }
-
-  .hero-detect-dismiss:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 3px;
-    border-radius: 2px;
-  }
-
-  [data-theme="dark"] .hero-detect-dismiss {
-    text-decoration-color: rgba(200, 155, 74, 0.4);
-  }
-
-  /* ── Download cards ── */
-  .hero-downloads {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-3);
     width: 100%;
-    max-width: 560px;
-    margin-bottom: var(--space-4);
+    height: min(56.25vw, 45vh);
+    min-height: 260px;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .edition-inner {
+    padding-top: var(--space-10);
+    padding-bottom: var(--space-20);
     animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: var(--t-downloads);
+    animation-delay: var(--t-editions);
   }
 
-  .dl-wrap {
-    position: relative;
+  .edition-heading {
+    text-align: center;
+    margin-bottom: var(--space-8);
   }
 
-  .dl-card {
+  .section-label {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    font-weight: 400;
+    line-height: var(--leading-snug);
+    color: var(--color-text);
+    letter-spacing: 0;
+  }
+
+  .edition-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+
+  .edition-card {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-6) var(--space-4);
+    gap: var(--space-5);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
-    transition: all var(--transition-normal);
-    position: relative;
-    overflow: hidden;
+    padding: var(--space-6);
   }
 
-  .dl-card:hover {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-md), 0 0 0 3px var(--color-primary-bg);
+  .edition-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 64px;
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+    transition: border-color var(--transition-normal), box-shadow var(--transition-normal), transform var(--transition-normal);
+  }
+
+  .edition-cta:hover,
+  .edition-cta:focus-visible {
     transform: translateY(-2px);
   }
 
-  [data-featured] > .dl-card {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-md), 0 0 0 2px var(--color-primary-bg);
-    transform: translateY(-3px);
-  }
-
-  [data-featured] > .dl-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    box-shadow: inset 0 0 0 1px var(--color-primary);
-    pointer-events: none;
-    opacity: 0.55;
-  }
-
-  [data-featured] .dl-icon {
+  .edition-cta-primary {
     background: var(--color-primary);
     color: var(--color-primary-contrast);
+    box-shadow: var(--shadow-md);
   }
 
-  .dl-corner {
-    position: absolute;
-    top: 0;
-    right: 0;
-    color: var(--color-primary);
-    opacity: 0;
-    transform: translate(4px, -4px) scale(0.7);
-    transform-origin: top right;
-    transition: opacity 300ms ease 150ms, transform 500ms cubic-bezier(0.2, 0.7, 0.3, 1.1) 150ms;
-    pointer-events: none;
-    z-index: 2;
-    filter: drop-shadow(-1.5px 1.5px 0.5px rgba(44, 36, 24, 0.18));
+  .edition-cta-primary:hover,
+  .edition-cta-primary:focus-visible {
+    box-shadow: var(--shadow-lg), 0 0 0 3px var(--color-primary-bg);
   }
 
-  [data-theme="dark"] .dl-corner {
-    filter: drop-shadow(-1.5px 1.5px 0.5px rgba(0, 0, 0, 0.5));
-  }
-
-  [data-featured] .dl-corner {
-    opacity: 1;
-    transform: translate(0, 0) scale(1);
-  }
-
-  .dl-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-md);
-    background: var(--color-primary-bg);
-    color: var(--color-primary);
-  }
-
-  .dl-info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-
-  .dl-name {
-    font-family: var(--font-display);
-    font-size: var(--text-base);
-    font-weight: 600;
+  .edition-cta-secondary {
+    background: var(--color-bg);
     color: var(--color-text);
+    border: 1px solid var(--color-border-strong);
   }
 
-  .dl-format {
+  .edition-cta-secondary:hover,
+  .edition-cta-secondary:focus-visible {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md), 0 0 0 3px var(--color-primary-bg);
+  }
+
+  .edition-cta-title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  .edition-cta-note {
     font-size: var(--text-sm);
-    color: var(--color-text-muted);
+    font-weight: 600;
+    text-align: right;
+    opacity: 0.82;
   }
 
-  .dl-alt {
-    display: block;
-    text-align: center;
-    padding-top: var(--space-1);
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
-    transition: color var(--transition-fast);
+  .installer-details {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
   }
 
-  .dl-alt:hover {
+  .installer-details summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-4);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-weight: 600;
+    list-style: none;
+  }
+
+  .installer-details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .installer-details summary::after {
+    content: "+";
     color: var(--color-primary);
+    font-size: var(--text-lg);
+    line-height: 1;
   }
 
-  .hero-releases {
+  .installer-details[open] summary::after {
+    content: "-";
+  }
+
+  .installer-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .installer-link {
+    padding: var(--space-3) var(--space-4);
+    color: var(--color-text);
     font-size: var(--text-sm);
-    color: var(--color-text-muted);
-    margin-bottom: var(--space-12);
-    animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: var(--t-releases);
+    border-top: 1px solid var(--color-border);
+    transition: color var(--transition-fast), background var(--transition-fast);
   }
 
-  .hero-releases a {
+  .installer-link:first-child {
+    border-top: 0;
+  }
+
+  .installer-link:hover,
+  .installer-link:focus-visible {
     color: var(--color-primary);
-    transition: color var(--transition-fast);
+    background: var(--color-control-hover);
   }
 
-  .hero-releases a:hover {
-    color: var(--color-primary-hover);
-  }
-
-  /* ── Inventory strip (replaces stats row) ── */
-  .inventory {
+  .edition-features {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    align-items: baseline;
-    gap: 0.4em 0.95em;
-    max-width: 720px;
-    width: 100%;
-    padding: var(--space-4) var(--space-6);
-    border-top: 1px solid var(--color-border);
-    border-bottom: 1px solid var(--color-border);
-    animation: fadeUp 600ms var(--transition-slow) both;
-    animation-delay: var(--t-inv);
+    gap: var(--space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
 
-  .inv-item {
+  .edition-features li {
     display: inline-flex;
-    align-items: baseline;
-    gap: 0.4em;
-  }
-
-  .inv-num {
-    font-family: var(--font-display);
-    font-variant-numeric: tabular-nums lining-nums;
-    color: var(--color-text);
-    font-size: var(--text-lg);
+    align-items: center;
+    min-height: 34px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--canvas-bg);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
     font-weight: 600;
   }
 
-  .inv-label {
-    font-family: var(--font-body);
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-  }
-
-  .inv-sep {
-    color: var(--color-primary);
-    opacity: 0.75;
-    font-size: 1em;
-    user-select: none;
-  }
-
-  /* ── Decorative border ── */
   .hero-border {
     position: absolute;
     bottom: 0;
@@ -682,48 +523,68 @@ const detectedPrefix = t('download.detected', lang, { platform: '' }).replace(/[
     height: 100%;
   }
 
-  /* ── Animations ── */
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(16px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* ── Responsive ── */
   @media (max-width: 639px) {
-    .hero-inner { padding: var(--space-16) var(--space-6) var(--space-12); }
+    .hero-intro {
+      padding-top: var(--space-16);
+      padding-bottom: var(--space-8);
+    }
 
-    .masthead { font-size: 0.72rem; letter-spacing: 0.12em; }
+    .masthead {
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      margin-bottom: var(--space-6);
+    }
 
     .chapter-rule { width: 120px; }
-
     .hero-headline { font-size: var(--text-3xl); }
 
-    .hero-subtext {
-      max-width: none;
-      font-size: var(--text-base);
+    .demo-video {
+      min-height: 220px;
+      height: 60vw;
     }
 
-    .specimen-caption { font-size: 0.78rem; }
-
-    .hero-downloads { grid-template-columns: 1fr; max-width: 280px; }
-    .dl-card { flex-direction: row; padding: var(--space-3) var(--space-4); }
-    .dl-info { align-items: flex-start; }
-    .dl-corner { transform-origin: top right; }
-    [data-featured] .dl-corner { transform: scale(0.85); }
-
-    .inventory {
-      gap: 0.4em 0.55em;
-      padding: var(--space-3) var(--space-4);
+    .edition-inner {
+      padding-top: var(--space-10);
+      padding-bottom: var(--space-14);
     }
-    .inv-num { font-size: var(--text-base); }
+
+    .edition-card {
+      padding: var(--space-4);
+    }
+
+    .edition-cta {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: var(--space-1);
+      min-height: 0;
+    }
+
+    .edition-cta-note {
+      text-align: left;
+    }
+  }
+
+  @media (min-width: 640px) {
+    .installer-list {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .installer-link:nth-child(2) {
+      border-top: 0;
+    }
   }
 
   @media (min-width: 960px) {
     .hero-headline { font-size: var(--text-5xl); }
-    .hero-subtext { font-size: var(--text-lg); }
+    .section-title { font-size: var(--text-4xl); }
+    .edition-grid { grid-template-columns: 1.2fr 0.8fr; }
   }
 
-  /* ── Reduced motion ── */
   @media (prefers-reduced-motion: reduce) {
     .hero *,
     .hero *::before,
@@ -731,10 +592,6 @@ const detectedPrefix = t('download.detected', lang, { platform: '' }).replace(/[
       animation-duration: 1ms !important;
       animation-delay: 0ms !important;
       transition: none !important;
-    }
-    .hero svg path[stroke-dasharray] {
-      stroke-dasharray: none !important;
-      stroke-dashoffset: 0 !important;
     }
   }
 </style>

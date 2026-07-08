@@ -1,7 +1,6 @@
 {
   "meta.title": "Canopi — Agro-ecologisch ontwerptool",
   "meta.description": "Download Canopi 0.9.2 om voedselbossen, tuinen en agro-ecologische systemen te plannen met Web Edition-verpakking, het Design Notebook, PDF-rapporten, sneller zoeken naar soorten en oplossingen voor Linux-opstartproblemen. Gratis en open source voor Linux, macOS en Windows.",
-
   "header.home": "Canopi — home",
   "header.features": "Functies",
   "header.download": "Downloaden",
@@ -10,7 +9,6 @@
   "header.themeLight": "Overschakelen naar licht thema",
   "header.themeToggle": "Thema wisselen",
   "header.language": "Taal",
-
   "hero.masthead": "v0.9.2 · Open Source",
   "hero.screenshotCaption": "Fig. 1 — Ontwerpcanvas met zonetools en soortendatabase.",
   "hero.badge": "Beta v0.9.2 — gratis en open source",
@@ -27,7 +25,6 @@
   "hero.statPlatforms": "Platforms",
   "hero.statLicenseValue": "AGPL v3",
   "hero.statLicense": "Licentie",
-
   "features.label": "Wat het biedt",
   "features.title": "Canopi 0.9.2 voegt webverpakking, notitieboeken en rapporten toe",
   "features.desc": "Deze release bereidt Canopi voor op publicatie in de browser onder /app/, voegt plannings- en documentatietools toe, versnelt soortzoekopdrachten en verbetert Linux- en locatiestabiliteit.",
@@ -43,7 +40,6 @@
   "features.reports.desc": "Exporteer rapporten met canvas, tijdlijn, budget, consortium en gelokaliseerde rapportopmaak om ontwerpwerk buiten de app te delen.",
   "features.workspace.title": "Linux- en locatiestabiliteit",
   "features.workspace.desc": "Linux-opstartfreezes door het WebKitGTK DMABuf-renderpad zijn opgelost, en opgeslagen locaties laden stabieler.",
-
   "download.label": "Aan de slag",
   "download.title": "Canopi downloaden",
   "download.desc": "Canopi 0.9.2 is gratis en open source onder de AGPL v3-licentie. Momenteel in beta — er wordt nog gepolijst.",
@@ -51,9 +47,34 @@
   "download.detected": "Gedetecteerd: {platform}",
   "download.showAll": "Alle opties tonen",
   "download.recommended": "voor jouw systeem",
-
   "download.allReleases": "Alle versies op GitHub",
   "download.releaseNotes": "Canopi v0.9.2 release-opmerkingen op GitHub",
-
-  "footer.license": "AGPL v3"
+  "footer.license": "AGPL v3",
+  "hero.videoLabel": "Canopi ontwerpdemovideo",
+  "edition.label": "Edities",
+  "edition.title": "Kies hoe je Canopi gebruikt",
+  "edition.desktop.cta": "Canopi Desktop",
+  "edition.desktop.defaultChoice": "Installatieprogramma kiezen",
+  "edition.desktop.moreChoices": "Meer keuzes",
+  "edition.web.cta": "Canopi Web",
+  "edition.web.note": "Openen in browser",
+  "edition.installer.linuxAppImage": "Linux AppImage",
+  "edition.installer.linuxDeb": "Debian/Ubuntu .deb",
+  "edition.installer.macApple": "macOS Apple Silicon",
+  "edition.installer.macIntel": "macOS Intel",
+  "edition.installer.windowsExe": "Windows .exe",
+  "edition.installer.windowsMsi": "Windows MSI",
+  "edition.feature.canvasTools": "Canvastools",
+  "edition.feature.fullPlantDatabase": "Volledige plantendatabase",
+  "edition.feature.stamps": "Stempels",
+  "edition.feature.location": "Locatie",
+  "edition.feature.calendar": "Kalender",
+  "edition.feature.budget": "Budget",
+  "edition.feature.consortium": "Consortium",
+  "edition.feature.layers": "Lagen",
+  "edition.feature.limitedPlantCatalog": "Beperkte plantencatalogus",
+  "network.label": "Netwerk",
+  "network.title": "Agro-ecologisch netwerk",
+  "network.country.france": "Frankrijk",
+  "network.country.brazil": "Brazilië"
 }
