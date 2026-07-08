@@ -8,10 +8,12 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "npm run build && wrangler dev",
+    "install:web-edition": "node scripts/install-web-edition.mjs",
+    "build:with-web": "npm run build && npm run install:web-edition",
+    "preview": "npm run build:with-web && wrangler dev",
     "astro": "astro",
     "generate-types": "wrangler types",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build:with-web && wrangler deploy"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^13.1.7",

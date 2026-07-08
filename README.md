@@ -1,43 +1,47 @@
-# Astro Starter Kit: Minimal
+# Canopi Website
+
+Astro site for `projectcanopi.com`, deployed with the Cloudflare adapter and
+Wrangler. The Web Edition app is not generated here; this repository installs a
+prebuilt artifact produced by the main Canopi repository.
+
+## Commands
 
 ```sh
-npm create astro@latest -- --template minimal
+npm install
+npm run dev
+npm run build
+npm run build:with-web
+npm run preview
+npm run deploy
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+`npm run build` builds the marketing site only. `npm run build:with-web`,
+`npm run preview`, and `npm run deploy` require `CANOPI_WEB_EDITION_ARCHIVE` to
+point at a packaged Web Edition tarball, for example:
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+```sh
+CANOPI_WEB_EDITION_ARCHIVE=/path/to/canopi-web-edition-v0.9.2-<commit>.tar.gz npm run build:with-web
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+For a website-only build that intentionally skips the Web Edition install, set
+`CANOPI_WEB_EDITION_REQUIRED=0`.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## Web Edition Install
 
-Any static assets, like images, can be placed in the `public/` directory.
+The installer validates the artifact before copying it into the built static
+asset tree:
 
-## 🧞 Commands
+- the artifact must target `/app/`
+- catalog assets must be Parquet-backed and listed in the artifact manifest
+- catalog checksums and byte counts must match
+- supported filter metadata must be present
+- generated files must stay within the artifact's Cloudflare Pages limits
+- raw DuckDB WASM bundles are rejected
 
-All commands are run from the root of the project, from a terminal:
+Astro's Cloudflare build serves static assets from `dist/client`, so the
+installer writes the app to `dist/client/app/` when that directory exists. Plain
+static builds fall back to `dist/app/`.
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+The `/app` browser-route fallback is handled in `src/middleware.ts`. Catalog
+assets under `/app/canopi-catalog/` remain ordinary static files and missing app
+assets still return 404.
