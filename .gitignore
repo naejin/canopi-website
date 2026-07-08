@@ -36,6 +36,9 @@ pnpm-debug.log*
 .cache/
 .claude/
 
+# codex project skills
+.codex/skills/
+
 # wrangler files
 .wrangler
 .dev.vars*
