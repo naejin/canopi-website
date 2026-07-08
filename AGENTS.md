@@ -129,17 +129,23 @@ For more details, see README.md and docs/QUICKSTART.md.
 ## Build & Test
 
 ```bash
-npm run dev      # dev server
-npm run build    # static build to dist/
-npm run preview  # preview production build
+npm run dev             # dev server
+npm run build           # marketing site only
+npm run build:with-web  # marketing site plus installed Web Edition artifact
+npm run preview         # build with Web Edition artifact, then preview
 ```
+
+`npm run build:with-web`, `npm run preview`, and `npm run deploy` require
+`CANOPI_WEB_EDITION_ARCHIVE` to point at a packaged Canopi Web Edition tarball.
+Set `CANOPI_WEB_EDITION_REQUIRED=0` only for an intentional website-only build.
 
 ## Architecture Overview
 
 Landing page for projectcanopi.com, the Canopi agroecological design app.
 
 - Astro static output with pure CSS, no Tailwind.
-- Hosted on Cloudflare Pages; production build command is `npm run build`, output is `dist/`.
+- Hosted on Cloudflare Pages; marketing-only build output is `dist/`, while the Cloudflare adapter serves static assets from `dist/client/`.
+- Web Edition publishing installs the app-provided artifact into `dist/client/app/` when `dist/client/` exists, otherwise `dist/app/`.
 - 11 locales: `en` at `/`, plus `fr`, `es`, `pt`, `it`, `zh`, `de`, `ja`, `ko`, `nl`, and `ru` under `/{lang}/`.
 - Translation files live in `src/i18n/translations/{locale}.json`; add new translation keys to all 11 files.
 - `src/i18n/utils.ts` provides translation and locale helpers.
@@ -154,6 +160,8 @@ Landing page for projectcanopi.com, the Canopi agroecological design app.
 - `<body class="grain">` already provides the global SVG noise overlay in `global.css`; do not add page-level paper textures.
 - Responsive breakpoints are `max-width: 639px` for mobile and `min-width: 960px` for desktop; do not add a tablet tier without a specific reason.
 - Cloudflare Pages `_redirects` does not support `Language=` conditions.
+- Web Edition `/app/*` fallback is a static `_redirects` rule; do not add website-side catalog search, storage, DuckDB, Worker, Pages Function, R2, KV, D1, service-worker, or offline catalog behavior.
+- Web Edition catalog assets under `/app/canopi-catalog/` must remain directly served static files.
 - The Liberapay widget script fails on localhost due to CORS but works in production.
 
 ## Agent Skills
