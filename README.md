@@ -42,6 +42,6 @@ Astro's Cloudflare build serves static assets from `dist/client`, so the
 installer writes the app to `dist/client/app/` when that directory exists. Plain
 static builds fall back to `dist/app/`.
 
-The `/app` browser-route fallback is handled in `src/middleware.ts`. Catalog
-assets under `/app/canopi-catalog/` remain ordinary static files and missing app
-assets still return 404.
+The `/app` browser-route fallback is handled by `public/_redirects` in the
+published static asset tree. Catalog assets under `/app/canopi-catalog/` remain
+ordinary static files rather than website-side search, storage, or compute.
