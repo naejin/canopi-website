@@ -5,34 +5,116 @@ const { lang } = Astro.props;
 
 const countries = [
   {
+    key: 'global',
+    labelKey: 'network.country.global',
+    organisations: [
+      {
+        name: 'DeepSeed',
+        url: 'https://www.deepseed.eu/',
+        logo: '/network/deepseed.svg',
+        logoTone: 'brown',
+      },
+      {
+        name: 'Agroecology Fund',
+        url: 'https://agroecologyfund.org/',
+        logo: '/network/agroecology-fund.jpg',
+        logoTone: 'ivory',
+      },
+      {
+        name: 'Access Agriculture',
+        url: 'https://www.accessagriculture.org/',
+        logo: '/network/access-agriculture.png',
+        logoTone: 'surface',
+      },
+      {
+        name: 'Savory Institute',
+        url: 'https://savory.global/',
+        logo: '/network/savory-institute.png',
+        logoTone: 'ivory',
+      },
+    ],
+  },
+  {
+    key: 'europe',
+    labelKey: 'network.country.europe',
+    organisations: [
+      {
+        name: 'Agroecology Europe',
+        url: 'https://www.agroecology-europe.org/',
+        logo: '/network/agroecology-europe.png',
+        logoTone: 'ivory',
+      },
+    ],
+  },
+  {
     key: 'france',
     labelKey: 'network.country.france',
     organisations: [
       {
+        name: 'Joala Syntropie',
+        url: 'https://joala.fr/',
+        logo: '/network/joala.png',
+        logoTone: 'ivory',
+      },
+      {
         name: 'Destination Syntropie',
         url: 'https://destinationsyntropie.org/',
         logo: '/network/destination-syntropie.png',
+        logoTone: 'ivory',
       },
       {
         name: 'La Vache Heureuse',
         url: 'https://www.lvh-france.com/',
         logo: '/network/la-vache-heureuse.png',
+        logoTone: 'ivory',
       },
       {
         name: 'Ver de Terre Production',
         url: 'https://www.verdeterreprod.fr/',
         logo: '/network/ver-de-terre-production.png',
+        logoTone: 'brown',
       },
       {
         name: 'Maraîchage Sol Vivant',
         url: 'https://www.maraichagesolvivant.fr/',
         logo: '/network/maraichage-sol-vivant.png',
-        tone: 'light',
+        logoTone: 'surface',
       },
       {
         name: 'Centre for Living Agroecology and food Systems',
         url: 'https://www.centreagroecologie.fr/',
         logo: '/network/centre-living-agroecology.png',
+        logoTone: 'brown',
+      },
+    ],
+  },
+  {
+    key: 'switzerland',
+    labelKey: 'network.country.switzerland',
+    organisations: [
+      {
+        name: 'Biovision',
+        url: 'https://www.biovision.ch/en/',
+        logo: '/network/biovision.jpg',
+        logoTone: 'ivory',
+      },
+    ],
+  },
+  {
+    key: 'united-states',
+    labelKey: 'network.country.unitedStates',
+    organisations: [
+      {
+        name: 'Rodale Institute',
+        url: 'https://rodaleinstitute.org/',
+        logo: '/network/rodale-institute.png',
+        logoTone: 'ivory',
+      },
+      {
+        name: 'Regenerative Organic Alliance',
+        url: 'https://regenorganic.org/',
+        logo: '/network/regenerative-organic-alliance.svg',
+        logoTone: 'surface',
       },
     ],
   },
@@ -44,6 +126,19 @@ const countries = [
         name: 'Agenda Gotsch',
         url: 'https://agendagotsch.com/en/',
         logo: '/network/agenda-gotsch.jpg',
+        logoTone: 'surface',
+      },
+    ],
+  },
+  {
+    key: 'india',
+    labelKey: 'network.country.india',
+    organisations: [
+      {
+        name: 'Andhra Pradesh Community Managed Natural Farming',
+        url: 'https://apcnf.in/',
+        logo: '/network/apcnf-ryss.webp',
+        logoTone: 'ivory',
       },
     ],
   },
@@ -66,11 +161,10 @@ const countries = [
           <div class="org-cluster">
             {country.organisations.map((org) => (
               <a href={org.url} class="org-node" target="_blank" rel="noopener noreferrer">
-                <span class:list={['org-logo-frame', { 'org-logo-frame-light': org.tone === 'light' }]}>
+                <span class:list={['org-logo-frame', `org-logo-frame-${org.logoTone}`]}>
                   <img src={org.logo} alt="" class="org-logo" loading="lazy" decoding="async" />
                 </span>
                 <span class="org-name">{org.name}</span>
-                <span class="org-arrow" aria-hidden="true">↗</span>
               </a>
             ))}
           </div>
@@ -84,7 +178,7 @@ const countries = [
   .network {
     background: var(--color-bg);
     border-top: 1px solid var(--color-border);
-    padding: var(--space-20) var(--space-6);
+    padding: var(--space-24) var(--space-6);
   }
 
   .network-inner {
@@ -93,14 +187,14 @@ const countries = [
   }
 
   .network-header {
-    margin-bottom: var(--space-10);
+    margin-bottom: var(--space-12);
   }
 
   .section-title {
     font-family: var(--font-display);
-    font-size: var(--text-3xl);
-    font-weight: 400;
-    line-height: var(--leading-tight);
+    font-size: clamp(2.4rem, 5vw, 4.5rem);
+    font-weight: 600;
+    line-height: 1.02;
     color: var(--color-text);
     letter-spacing: 0;
   }
@@ -108,28 +202,37 @@ const countries = [
   .network-atlas {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-12);
+    gap: var(--space-14, 3.5rem);
   }
 
   .country-panel {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-5);
+    gap: var(--space-6);
     border-top: 1px solid var(--color-border);
-    padding-top: var(--space-6);
+    padding-top: var(--space-8);
   }
 
   .country-cardinal {
     display: flex;
     align-items: center;
+    gap: var(--space-4);
     color: var(--color-text);
+  }
+
+  .country-cardinal::before {
+    content: "";
+    display: block;
+    width: 42px;
+    height: 1px;
+    background: var(--color-primary);
   }
 
   .country-title {
     min-width: 0;
     font-family: var(--font-display);
-    font-size: var(--text-xl);
-    font-weight: 400;
+    font-size: var(--text-2xl);
+    font-weight: 600;
     line-height: var(--leading-snug);
     color: currentColor;
   }
@@ -137,14 +240,14 @@ const countries = [
   .org-cluster {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-3);
+    gap: var(--space-4);
   }
 
   .org-node {
     display: grid;
-    grid-template-columns: 84px minmax(0, 1fr) 42px;
+    grid-template-columns: 168px minmax(0, 1fr);
     align-items: center;
-    min-height: 84px;
+    min-height: 112px;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -169,20 +272,27 @@ const countries = [
     align-items: center;
     justify-content: center;
     align-self: stretch;
-    background: #1C1915;
-    padding: var(--space-2);
+    padding: var(--space-4);
     border-right: 1px solid var(--color-border);
   }
 
-  .org-logo-frame-light {
-    background: var(--color-bg);
+  .org-logo-frame-ivory {
+    background: #F8F4ED;
+  }
+
+  .org-logo-frame-surface {
+    background: var(--canvas-bg);
+  }
+
+  .org-logo-frame-brown {
+    background: #8B5C18;
   }
 
   .org-logo {
     display: block;
     width: 100%;
-    max-width: 62px;
-    max-height: 54px;
+    max-width: 128px;
+    max-height: 78px;
     object-fit: contain;
   }
 
@@ -190,21 +300,10 @@ const countries = [
     padding: var(--space-3) var(--space-4);
     color: currentColor;
     font-family: var(--font-body);
-    font-size: var(--text-base);
+    font-size: var(--text-md);
     font-weight: 600;
     line-height: var(--leading-snug);
     min-width: 0;
-  }
-
-  .org-arrow {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    align-self: stretch;
-    border-left: 1px solid var(--color-border);
-    color: var(--color-text-muted);
-    font-size: var(--text-sm);
-    font-weight: 600;
   }
 
   @media (max-width: 639px) {
@@ -212,21 +311,26 @@ const countries = [
       padding: var(--space-12) var(--space-6) var(--space-16);
     }
 
-    .section-title {
-      font-size: var(--text-2xl);
-    }
-
     .network-header {
       margin-bottom: var(--space-8);
     }
 
     .country-title {
-      font-size: var(--text-lg);
+      font-size: var(--text-xl);
     }
 
     .org-node {
-      grid-template-columns: 72px minmax(0, 1fr) 36px;
-      min-height: 76px;
+      grid-template-columns: 112px minmax(0, 1fr);
+      min-height: 92px;
+    }
+
+    .org-logo-frame {
+      padding: var(--space-3);
+    }
+
+    .org-logo {
+      max-width: 84px;
+      max-height: 60px;
     }
 
     .org-name {
@@ -237,7 +341,7 @@ const countries = [
 
   @media (min-width: 960px) {
     .country-panel {
-      grid-template-columns: 220px minmax(0, 1fr);
+      grid-template-columns: 240px minmax(0, 1fr);
       align-items: start;
     }
 

@@ -25,12 +25,21 @@ pnpm-debug.log*
 
 # playwright
 .playwright-mcp/
+.playwright/
+playwright-report/
+test-results/
 
 # screenshots (root only)
 /*.png
 
+# local coverage/typecheck outputs
+coverage/
+*.tsbuildinfo
+
 # vscode
 .vscode/
+.cursor/
+.zed/
 
 # claude
 .cache/

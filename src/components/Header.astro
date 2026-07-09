@@ -14,12 +14,20 @@ const discordUrl = lang === 'fr'
       <span class="logo-text">Canopi</span>
     </a>
 
-    <nav class="header-nav">
+    <span class="header-donate">
       <span class="donation-widget">
-        <a href="https://liberapay.com/Canopi/donate" class="donation-fallback" target="_blank" rel="noopener noreferrer">{t('header.donate', lang)}</a>
+        <a href="https://liberapay.com/Canopi/donate" class="donation-fallback" target="_blank" rel="noopener noreferrer">
+          <svg class="donation-heart" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 21.35 10.55 20.03C5.4 15.36 2 12.27 2 8.5 2 5.41 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.08C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.41 22 8.5c0 3.77-3.4 6.86-8.55 11.54L12 21.35z" />
+          </svg>
+          <span>{t('header.donate', lang)}</span>
+        </a>
         <script src="https://liberapay.com/Canopi/widgets/button.js"></script>
         <noscript><a href="https://liberapay.com/Canopi/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
       </span>
+    </span>
+
+    <nav class="header-nav">
       <a
         href={discordUrl}
         class="header-icon"
@@ -106,9 +114,10 @@ const discordUrl = lang === 'fr'
   }
 
   .header-inner {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
-    justify-content: space-between;
+    gap: var(--space-3);
     max-width: var(--content-width);
     margin: 0 auto;
     padding: 0 var(--space-6);
@@ -119,6 +128,7 @@ const discordUrl = lang === 'fr'
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    justify-self: start;
     transition: opacity var(--transition-fast);
   }
 
@@ -140,7 +150,16 @@ const discordUrl = lang === 'fr'
   .header-nav {
     display: flex;
     align-items: center;
+    justify-self: end;
     gap: var(--space-2);
+  }
+
+  .header-donate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: center;
+    min-width: 0;
   }
 
   .donation-widget {
@@ -153,12 +172,13 @@ const discordUrl = lang === 'fr'
   .donation-fallback {
     display: inline-flex;
     align-items: center;
+    gap: var(--space-2);
     min-height: 32px;
     padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--color-border);
+    border: 1px solid rgba(144, 63, 50, 0.34);
     border-radius: var(--radius-md);
-    background: var(--color-surface);
-    color: var(--color-text);
+    background: rgba(144, 63, 50, 0.12);
+    color: #8F3F34;
     font-size: var(--text-sm);
     font-weight: 600;
     transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
@@ -166,9 +186,13 @@ const discordUrl = lang === 'fr'
 
   .donation-fallback:hover,
   .donation-fallback:focus-visible {
-    color: var(--color-primary);
-    border-color: var(--color-primary);
-    background: var(--color-control-hover);
+    color: #F8F4ED;
+    border-color: #A54A3A;
+    background: #A54A3A;
+  }
+
+  .donation-heart {
+    flex: 0 0 auto;
   }
 
   .donation-widget img,
@@ -314,11 +338,34 @@ const discordUrl = lang === 'fr'
     }
 
     .header-inner {
+      gap: var(--space-2);
       padding: 0 var(--space-4);
     }
 
     .logo-text {
       display: none;
+    }
+
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+    }
+
+    .donation-fallback {
+      min-height: 30px;
+      padding: var(--space-1) var(--space-2);
+      font-size: 0.8125rem;
+    }
+
+    .header-icon,
+    .theme-toggle {
+      width: 32px;
+      height: 32px;
+    }
+
+    .lang-toggle {
+      padding: var(--space-2);
+      font-size: 0.8125rem;
     }
   }
 </style>

@@ -5,114 +5,190 @@ interface Props { lang: Locale; }
 const { lang } = Astro.props;
 const CANOPI_WEB_URL = 'https://web.projectcanopi.com/';
 
-const installers = [
+const installerGroups = [
   {
-    key: 'linux-appimage',
-    labelKey: 'edition.installer.linuxAppImage',
-    href: CANOPI_DOWNLOADS.linuxAppImage,
+    platform: 'Linux',
+    icon: 'linux',
+    installers: [
+      {
+        key: 'linux-appimage',
+        labelKey: 'edition.installer.linuxAppImage',
+        href: CANOPI_DOWNLOADS.linuxAppImage,
+      },
+      {
+        key: 'linux-deb',
+        labelKey: 'edition.installer.linuxDeb',
+        href: CANOPI_DOWNLOADS.linuxDeb,
+      },
+    ],
   },
   {
-    key: 'linux-deb',
-    labelKey: 'edition.installer.linuxDeb',
-    href: CANOPI_DOWNLOADS.linuxDeb,
+    platform: 'macOS',
+    icon: 'macos',
+    installers: [
+      {
+        key: 'macos-apple',
+        labelKey: 'edition.installer.macApple',
+        href: CANOPI_DOWNLOADS.macAppleSiliconDmg,
+      },
+      {
+        key: 'macos-intel',
+        labelKey: 'edition.installer.macIntel',
+        href: CANOPI_DOWNLOADS.macIntelDmg,
+      },
+    ],
   },
   {
-    key: 'macos-apple',
-    labelKey: 'edition.installer.macApple',
-    href: CANOPI_DOWNLOADS.macAppleSiliconDmg,
-  },
-  {
-    key: 'macos-intel',
-    labelKey: 'edition.installer.macIntel',
-    href: CANOPI_DOWNLOADS.macIntelDmg,
-  },
-  {
-    key: 'windows-exe',
-    labelKey: 'edition.installer.windowsExe',
-    href: CANOPI_DOWNLOADS.windowsSetupExe,
-  },
-  {
-    key: 'windows-msi',
-    labelKey: 'edition.installer.windowsMsi',
-    href: CANOPI_DOWNLOADS.windowsMsi,
+    platform: 'Windows',
+    icon: 'windows',
+    installers: [
+      {
+        key: 'windows-exe',
+        labelKey: 'edition.installer.windowsExe',
+        href: CANOPI_DOWNLOADS.windowsSetupExe,
+      },
+      {
+        key: 'windows-msi',
+        labelKey: 'edition.installer.windowsMsi',
+        href: CANOPI_DOWNLOADS.windowsMsi,
+      },
+    ],
   },
 ];
-
 ---
 
-<section class="hero">
+<section class="hero" aria-labelledby="hero-title">
   <div class="hero-shell">
-    <h1 class="hero-headline">
-      {t('hero.headlineTop', lang)}
-      <span class="hero-headline-accent">{t('hero.headlineAccent', lang)}</span>
-    </h1>
+    <div class="hero-copy">
+      <img src="/canopi-logo.svg" alt="" width="88" height="88" class="hero-logo" />
 
-    <div class="hero-lower">
-      <figure class="demo-panel">
-        <video
-          src="/demo-canopi-720.mp4"
-          poster="/screenshot-light.png"
-          class="demo-video"
-          autoplay
-          muted
-          loop
-          playsinline
-          preload="metadata"
-          aria-label={t('hero.videoLabel', lang)}
-        ></video>
-      </figure>
+      <h1 id="hero-title" class="hero-headline">
+        <span>{t('hero.headlineTop', lang)}</span>
+        <span class="hero-headline-accent">{t('hero.headlineAccent', lang)}</span>
+      </h1>
 
-      <section class="edition-dock" aria-label={t('edition.label', lang)}>
-        <div class="edition-dock-inner">
-          <h2 class="edition-title">{t('edition.title', lang)}</h2>
-          <div class="edition-actions">
-            <a
-              href={CANOPI_RELEASES_URL}
-              class="edition-button edition-button-primary"
-              data-desktop-primary
-              data-default-label={t('edition.desktop.defaultChoice', lang)}
-              data-linux-href={CANOPI_DOWNLOADS.linuxAppImage}
-              data-linux-label={t('edition.installer.linuxAppImage', lang)}
-              data-macos-arm-href={CANOPI_DOWNLOADS.macAppleSiliconDmg}
-              data-macos-arm-label={t('edition.installer.macApple', lang)}
-              data-macos-x64-href={CANOPI_DOWNLOADS.macIntelDmg}
-              data-macos-x64-label={t('edition.installer.macIntel', lang)}
-              data-windows-href={CANOPI_DOWNLOADS.windowsSetupExe}
-              data-windows-label={t('edition.installer.windowsExe', lang)}
-            >
-              <span class="edition-button-title">{t('edition.desktop.cta', lang)}</span>
-              <span class="edition-button-note" data-desktop-primary-label>{t('edition.desktop.defaultChoice', lang)}</span>
-            </a>
-
-            <a href={CANOPI_WEB_URL} class="edition-button edition-button-secondary">
-              <span class="edition-button-title">{t('edition.web.cta', lang)}</span>
-              <span class="edition-button-note">{t('edition.web.note', lang)}</span>
-            </a>
-          </div>
+      <div class="hero-actions" aria-label={t('edition.label', lang)}>
+        <div class="desktop-download">
+          <a
+            href={CANOPI_RELEASES_URL}
+            class="hero-button hero-button-primary"
+            data-desktop-primary
+            data-linux-href={CANOPI_DOWNLOADS.linuxAppImage}
+            data-macos-arm-href={CANOPI_DOWNLOADS.macAppleSiliconDmg}
+            data-macos-x64-href={CANOPI_DOWNLOADS.macIntelDmg}
+            data-windows-href={CANOPI_DOWNLOADS.windowsSetupExe}
+          >
+            <span class="hero-button-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v11" />
+                <path d="m7 10 5 5 5-5" />
+                <path d="M5 20h14" />
+              </svg>
+            </span>
+            <span class="hero-button-copy">
+              <span class="hero-button-title">{t('edition.desktop.cta', lang)}</span>
+            </span>
+          </a>
 
           <details class="installer-details">
-            <summary>{t('edition.desktop.moreChoices', lang)}</summary>
-            <div class="installer-list">
-              {installers.map((installer) => (
-                <a href={installer.href} class="installer-link" data-installer={installer.key}>
-                  {t(installer.labelKey, lang)}
-                </a>
+            <summary>
+              <span>{t('edition.desktop.moreChoices', lang)}</span>
+              <svg class="summary-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div class="installer-panel">
+            <div class="installer-groups">
+              {installerGroups.map((group) => (
+                <section class="installer-group" aria-label={group.platform}>
+                  <span class="platform-logo" aria-hidden="true">
+                    {group.icon === 'linux' ? (
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 3.25c-3.25 0-5.55 3.1-5.55 7.15 0 2.05-.72 3.38-1.72 5.18-.67 1.2-.2 2.45 1.03 2.9 1.1.4 2.47-.02 3.23-.98.8.58 1.83.9 3.01.9s2.21-.32 3.01-.9c.76.96 2.13 1.38 3.23.98 1.23-.45 1.7-1.7 1.03-2.9-1-1.8-1.72-3.13-1.72-5.18 0-4.05-2.3-7.15-5.55-7.15Z" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round" />
+                        <path d="M9 16.9c.68.5 1.67.78 3 .78s2.32-.28 3-.78" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" />
+                        <circle cx="9.9" cy="8.85" r=".78" fill="currentColor" />
+                        <circle cx="14.1" cy="8.85" r=".78" fill="currentColor" />
+                        <path d="m11.05 11.15.95 1.05.95-1.05" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    ) : group.icon === 'macos' ? (
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M16.55 12.65c-.02-2.12 1.72-3.15 1.8-3.2-1-1.45-2.55-1.65-3.08-1.68-1.31-.13-2.55.77-3.22.77-.68 0-1.72-.75-2.83-.73-1.45.02-2.79.84-3.54 2.14-1.51 2.62-.39 6.5 1.08 8.63.72 1.04 1.58 2.2 2.7 2.16 1.08-.04 1.49-.7 2.8-.7s1.68.7 2.83.68c1.17-.02 1.91-1.06 2.62-2.1.83-1.2 1.17-2.36 1.19-2.42-.03-.01-2.33-.9-2.35-3.55Z" />
+                        <path d="M14.42 6.39c.59-.72.99-1.72.88-2.72-.85.03-1.89.57-2.5 1.29-.55.64-1.03 1.66-.9 2.64.95.07 1.92-.49 2.52-1.21Z" />
+                      </svg>
+                    ) : (
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 4.2 10.8 3v8.3H3V4.2Zm9.2-1.4L21 1.5v9.8h-8.8V2.8ZM3 12.7h7.8V21L3 19.8v-7.1Zm9.2 0H21v9.8l-8.8-1.3v-8.5Z" />
+                      </svg>
+                    )}
+                  </span>
+                  <span class="installer-platform">{group.platform}</span>
+                  <div class="installer-options">
+                    {group.installers.map((installer) => (
+                      <a href={installer.href} class="installer-link" data-installer={installer.key}>
+                        <span class="installer-link-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 4v10" />
+                            <path d="m8 10 4 4 4-4" />
+                            <path d="M6 20h12" />
+                          </svg>
+                        </span>
+                        <span>{t(installer.labelKey, lang)}</span>
+                      </a>
+                    ))}
+                  </div>
+                </section>
               ))}
-              <a href={CANOPI_RELEASES_URL} class="installer-link">{t('download.allReleases', lang)}</a>
+              <a href={CANOPI_RELEASES_URL} class="installer-release-link">
+                <span class="release-link-icon" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 .9C5.86.9.9 5.86.9 12c0 4.91 3.18 9.07 7.59 10.54.55.1.75-.24.75-.53 0-.26-.01-1.12-.02-2.03-3.09.67-3.74-1.32-3.74-1.32-.5-1.28-1.23-1.62-1.23-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.7 1.15 1.7 1.15.99 1.69 2.6 1.2 3.23.92.1-.72.39-1.2.7-1.48-2.47-.28-5.07-1.23-5.07-5.5 0-1.21.43-2.2 1.14-2.98-.11-.28-.49-1.41.11-2.94 0 0 .93-.3 3.05 1.13A10.55 10.55 0 0 1 12 6.28c.94 0 1.88.13 2.77.38 2.12-1.43 3.05-1.13 3.05-1.13.6 1.53.22 2.66.11 2.94.71.78 1.14 1.77 1.14 2.98 0 4.28-2.6 5.22-5.08 5.49.4.35.75 1.03.75 2.08 0 1.5-.01 2.71-.01 3.08 0 .29.2.64.76.53A11.11 11.11 0 0 0 23.1 12C23.1 5.86 18.14.9 12 .9Z" />
+                  </svg>
+                </span>
+                <span>{t('download.allReleases', lang)}</span>
+              </a>
+              </div>
             </div>
           </details>
         </div>
-      </section>
+
+        <a href={CANOPI_WEB_URL} class="hero-button hero-button-secondary">
+          <span class="hero-button-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3.6 9h16.8" />
+              <path d="M3.6 15h16.8" />
+              <path d="M12 3a14.7 14.7 0 0 1 0 18" />
+              <path d="M12 3a14.7 14.7 0 0 0 0 18" />
+            </svg>
+          </span>
+          <span class="hero-button-copy">
+            <span class="hero-button-title">{t('edition.web.cta', lang)}</span>
+          </span>
+        </a>
+      </div>
     </div>
+
+    <figure class="demo-panel">
+      <video
+        src="/demo-canopi-720.mp4"
+        poster="/screenshot-light.png"
+        class="demo-video"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        aria-label={t('hero.videoLabel', lang)}
+      ></video>
+    </figure>
   </div>
 
   <script>
     (async function initDesktopDownload() {
       const button = document.querySelector<HTMLAnchorElement>('[data-desktop-primary]');
-      const label = document.querySelector<HTMLElement>('[data-desktop-primary-label]');
-      if (!button || !label) return;
+      if (!button) return;
 
-      type Detected = { href?: string; label?: string } | null;
+      type Detected = { href?: string } | null;
 
       async function detect(): Promise<Detected> {
         const uad = (navigator as any).userAgentData;
@@ -122,16 +198,16 @@ const installers = [
             const platform = String(data.platform || uad.platform || '').toLowerCase();
             const arch = String(data.architecture || '').toLowerCase();
             if (platform.includes('windows')) {
-              return { href: button.dataset.windowsHref, label: button.dataset.windowsLabel };
+              return { href: button.dataset.windowsHref };
             }
             if (platform.includes('mac') || platform === 'macos') {
               const isArm = arch.includes('arm');
               return isArm
-                ? { href: button.dataset.macosArmHref, label: button.dataset.macosArmLabel }
-                : { href: button.dataset.macosX64Href, label: button.dataset.macosX64Label };
+                ? { href: button.dataset.macosArmHref }
+                : { href: button.dataset.macosX64Href };
             }
             if (platform.includes('linux')) {
-              return { href: button.dataset.linuxHref, label: button.dataset.linuxLabel };
+              return { href: button.dataset.linuxHref };
             }
           } catch {
             // Some browsers expose userAgentData but deny high-entropy fields.
@@ -140,20 +216,18 @@ const installers = [
 
         const ua = navigator.userAgent || '';
         if (/Android|iPhone|iPad|iPod/i.test(ua)) return null;
-        if (/Windows NT/i.test(ua)) return { href: button.dataset.windowsHref, label: button.dataset.windowsLabel };
-        if (/Mac OS X|Macintosh/i.test(ua)) return { href: button.dataset.macosArmHref, label: button.dataset.macosArmLabel };
-        if (/Linux|X11|CrOS/i.test(ua)) return { href: button.dataset.linuxHref, label: button.dataset.linuxLabel };
+        if (/Windows NT/i.test(ua)) return { href: button.dataset.windowsHref };
+        if (/Mac OS X|Macintosh/i.test(ua)) return { href: button.dataset.macosArmHref };
+        if (/Linux|X11|CrOS/i.test(ua)) return { href: button.dataset.linuxHref };
         return null;
       }
 
       const result = await detect();
-      if (!result?.href || !result.label) return;
+      if (!result?.href) return;
       button.href = result.href;
-      label.textContent = result.label;
       button.setAttribute('data-detected', '');
     })();
   </script>
-
 </section>
 
 <style>
@@ -161,217 +235,349 @@ const installers = [
     position: relative;
     background: var(--canvas-bg);
     overflow: hidden;
-    --t-head: 260ms;
-    --t-video: 360ms;
-    --t-editions: 560ms;
+    --t-copy: 180ms;
+    --t-video: 420ms;
   }
 
   .hero-shell {
     max-width: var(--content-width);
     margin: 0 auto;
-    padding-left: var(--space-6);
-    padding-right: var(--space-6);
-    padding-top: var(--space-16);
-    padding-bottom: var(--space-16);
+    padding: clamp(4rem, 9vw, 7rem) var(--space-6) var(--space-20);
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .hero-logo {
+    width: clamp(58px, 6vw, 78px);
+    height: clamp(58px, 6vw, 78px);
   }
 
   .hero-headline {
+    display: grid;
+    gap: var(--space-1);
+    max-width: 980px;
+    margin: var(--space-6) auto var(--space-8);
     font-family: var(--font-display);
-    font-size: var(--text-4xl);
-    font-weight: 400;
-    line-height: var(--leading-tight);
-    color: var(--color-text);
+    font-size: clamp(2.75rem, 5vw, 4.75rem);
+    font-weight: 600;
+    line-height: 1.04;
     letter-spacing: 0;
-    max-width: 920px;
-    margin: 0 0 var(--space-10);
+    color: var(--color-text);
   }
 
   .hero-headline-accent {
     color: var(--color-primary);
-    display: inline;
   }
 
-  .hero-lower {
+  .hero-actions {
+    position: relative;
+    z-index: 30;
     display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-6);
-    align-items: stretch;
+    grid-template-columns: minmax(0, 310px) minmax(0, 310px);
+    align-items: start;
+    justify-content: center;
+    gap: var(--space-3) var(--space-4);
+    width: min(100%, 720px);
   }
 
-  .demo-panel {
-    margin: 0;
-    background: #1C1915;
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
-    overflow: hidden;
-  }
-
-  .demo-video {
-    display: block;
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    object-fit: contain;
-    object-position: center;
-  }
-
-  .edition-dock {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+  .desktop-download {
+    position: relative;
+    z-index: 40;
+    grid-column: 1;
+    grid-row: 1;
+    display: grid;
+    gap: var(--space-3);
+    justify-items: center;
     min-width: 0;
   }
 
-  .edition-dock-inner {
-    display: grid;
-    align-content: start;
-    gap: var(--space-4);
-    min-height: 100%;
-    padding: var(--space-6);
-  }
-
-  .edition-title {
-    max-width: 14ch;
-    font-family: var(--font-display);
-    font-size: var(--text-2xl);
-    font-weight: 400;
-    line-height: var(--leading-tight);
-    color: var(--color-text);
-    letter-spacing: 0;
-  }
-
-  .edition-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-2);
-  }
-
-  .edition-button {
+  .hero-button {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: var(--space-3);
-    min-height: 64px;
-    padding: var(--space-4);
+    width: 100%;
+    height: 58px;
+    min-width: 0;
+    padding: var(--space-3) var(--space-5);
     border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-full);
+    box-sizing: border-box;
+    box-shadow: var(--shadow-sm);
     transition:
       background var(--transition-fast),
       border-color var(--transition-fast),
       color var(--transition-fast),
-      transform var(--transition-normal);
+      transform var(--transition-normal),
+      box-shadow var(--transition-normal);
   }
 
-  .edition-button:hover,
-  .edition-button:focus-visible {
+  .hero-button:hover,
+  .hero-button:focus-visible {
     transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
   }
 
-  .edition-button-primary {
+  .hero-button-primary {
     background: var(--color-primary);
     color: var(--color-primary-contrast);
     border-color: transparent;
+    box-shadow:
+      0 14px 28px rgba(139, 92, 24, 0.18),
+      var(--shadow-sm);
   }
 
-  .edition-button-primary:hover,
-  .edition-button-primary:focus-visible {
+  .hero-button-primary:hover,
+  .hero-button-primary:focus-visible {
     background: var(--color-primary-hover);
   }
 
-  .edition-button-secondary {
-    background: var(--canvas-bg);
+  .hero-button-secondary {
+    grid-column: 2;
+    grid-row: 1;
+    background: var(--color-surface);
     color: var(--color-text);
   }
 
-  .edition-button-secondary:hover,
-  .edition-button-secondary:focus-visible {
+  .hero-button-secondary:hover,
+  .hero-button-secondary:focus-visible {
     border-color: var(--color-primary);
     background: var(--color-control-hover);
   }
 
-  .edition-button-title {
-    font-family: var(--font-body);
-    font-size: var(--text-lg);
+  .hero-button-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-full);
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  .hero-button-secondary .hero-button-icon {
+    background: var(--color-primary-bg);
+    color: var(--color-primary);
+  }
+
+  .hero-button-copy {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .hero-button-title {
+    font-size: var(--text-base);
     font-weight: 600;
     line-height: var(--leading-snug);
     letter-spacing: 0;
-    min-width: 0;
     white-space: nowrap;
   }
 
-  .edition-button-note {
-    font-size: var(--text-sm);
-    font-weight: 600;
-    text-align: right;
-    opacity: 0.78;
-  }
-
   .installer-details {
+    position: static;
     width: 100%;
-    border: 0;
-    overflow: hidden;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .installer-details summary {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     gap: var(--space-2);
-    min-height: 36px;
-    padding: 0;
-    color: var(--color-text-muted);
+    width: min(100%, 300px);
+    min-height: 48px;
+    padding: var(--space-3) var(--space-5);
+    color: var(--color-primary);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
     cursor: pointer;
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     font-weight: 600;
+    line-height: 1;
     list-style: none;
+    box-shadow: var(--shadow-sm);
+    transition:
+      background var(--transition-fast),
+      border-color var(--transition-fast),
+      color var(--transition-fast),
+      box-shadow var(--transition-normal);
   }
 
   .installer-details summary::-webkit-details-marker {
     display: none;
   }
 
-  .installer-details summary::after {
-    content: "+";
+  .installer-details summary:hover,
+  .installer-details summary:focus-visible {
     color: var(--color-primary);
-    font-size: var(--text-lg);
-    line-height: 1;
+    background: var(--color-control-hover);
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
   }
 
-  .installer-details[open] summary::after {
-    content: "-";
+  .summary-chevron {
+    transition: transform var(--transition-normal);
   }
 
-  .installer-list {
+  .installer-details[open] .summary-chevron {
+    transform: rotate(180deg);
+  }
+
+  .installer-panel {
+    position: absolute;
+    z-index: 60;
+    top: calc(100% + var(--space-5));
+    left: 0;
+    width: min(760px, calc(100vw - var(--space-8)));
+    padding: 0;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--color-surface) 78%, var(--canvas-bg));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow:
+      0 24px 64px rgba(44, 36, 24, 0.14),
+      var(--shadow-lg);
+  }
+
+  .installer-groups {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-2);
-    padding-top: var(--space-3);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
   }
 
-  .installer-link {
-    display: flex;
+  .installer-group {
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: var(--space-4);
+    min-height: 232px;
+    padding: var(--space-8) var(--space-6) var(--space-6);
+  }
+
+  .installer-group + .installer-group {
+    border-left: 1px solid var(--color-border);
+  }
+
+  .platform-logo,
+  .installer-link-icon,
+  .release-link-icon {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 34px;
-    padding: var(--space-2) var(--space-3);
-    color: var(--color-text);
-    font-size: var(--text-sm);
-    font-weight: 600;
+    flex: 0 0 auto;
+    color: var(--color-primary);
+    background: var(--color-primary-bg);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--canvas-bg);
+    border-radius: var(--radius-full);
+  }
+
+  .platform-logo {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto var(--space-1);
+    justify-self: center;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.52), transparent 42%),
+      var(--color-primary-bg);
+  }
+
+  .installer-platform {
+    justify-self: center;
+    color: var(--color-primary);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 600;
+    line-height: var(--leading-tight);
+  }
+
+  .installer-options {
+    display: grid;
+    width: 100%;
+    gap: 0;
+  }
+
+  .installer-link,
+  .installer-release-link {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-4);
+    min-height: 48px;
+    padding: var(--space-2) 0;
+    text-align: left;
+    color: var(--color-text);
+    font-size: var(--text-base);
+    font-weight: 600;
+    line-height: var(--leading-snug);
     transition:
       border-color var(--transition-fast),
-      color var(--transition-fast),
-      background var(--transition-fast);
+      color var(--transition-fast);
+  }
+
+  .installer-link + .installer-link {
+    border-top: 1px solid var(--color-border);
   }
 
   .installer-link:hover,
-  .installer-link:focus-visible {
+  .installer-link:focus-visible,
+  .installer-release-link:hover,
+  .installer-release-link:focus-visible {
     color: var(--color-primary);
     border-color: var(--color-primary);
-    background: var(--color-control-hover);
+  }
+
+  .installer-link-icon {
+    width: 34px;
+    height: 34px;
+    background: var(--canvas-bg);
+  }
+
+  .installer-release-link {
+    grid-column: 1 / -1;
+    display: inline-flex;
+    justify-content: center;
+    gap: var(--space-3);
+    min-height: 68px;
+    padding: var(--space-4);
+    background: color-mix(in srgb, var(--canvas-bg) 76%, var(--color-surface));
+    border-top: 1px solid var(--color-border);
+  }
+
+  .release-link-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--color-primary-bg);
+  }
+
+  .demo-panel {
+    position: relative;
+    z-index: 1;
+    margin: clamp(3.5rem, 7vw, 5.5rem) auto 0;
+    max-width: 1060px;
+    overflow: hidden;
+    background: transparent;
+    border-radius: var(--radius-lg);
+  }
+
+  .demo-video {
+    display: block;
+    width: 100%;
+    height: auto;
+    transform: scale(1.012);
+    transform-origin: center;
+    object-fit: contain;
+    object-position: center;
   }
 
   @keyframes fadeUp {
@@ -381,74 +587,75 @@ const installers = [
 
   @media (max-width: 639px) {
     .hero-shell {
-      padding: var(--space-12) var(--space-6);
+      padding: var(--space-12) var(--space-4) var(--space-16);
     }
 
     .hero-headline {
-      font-size: var(--text-3xl);
-      margin-bottom: var(--space-8);
+      margin-top: var(--space-5);
+      font-size: clamp(2.35rem, 11.5vw, 3.25rem);
+      line-height: 1.02;
     }
 
-    .edition-dock-inner {
-      padding: var(--space-4);
+    .hero-actions {
+      grid-template-columns: 1fr;
+      width: 100%;
     }
 
-    .edition-button {
-      align-items: flex-start;
-      flex-direction: column;
-      gap: var(--space-1);
-      min-height: 0;
-      padding: var(--space-4);
+    .desktop-download,
+    .hero-button-secondary {
+      grid-column: 1;
+      grid-row: auto;
     }
 
-    .edition-button-note {
-      text-align: left;
-    }
-  }
-
-  @media (min-width: 640px) {
-    .installer-list {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 960px) {
-    .hero-shell {
-      padding-top: var(--space-20);
-      padding-bottom: var(--space-20);
+    .hero-button {
+      height: 64px;
+      padding: var(--space-3) var(--space-4);
     }
 
-    .hero-headline {
-      font-size: var(--text-5xl);
-      line-height: 1.08;
+    .hero-button-title {
+      font-size: var(--text-base);
+      white-space: normal;
     }
 
-    .hero-lower {
-      grid-template-columns: minmax(0, 1fr) 360px;
+    .installer-panel {
+      left: 50%;
+      width: calc(100vw - var(--space-8));
+      transform: translateX(-50%);
     }
-  }
 
-  @media (min-width: 1200px) {
-    .hero-headline {
-      font-size: 5rem;
-      max-width: 1020px;
+    .installer-details {
+      display: grid;
+      justify-items: center;
+    }
+
+    .installer-groups {
+      grid-template-columns: 1fr;
+    }
+
+    .installer-group {
+      min-height: auto;
+      padding: var(--space-6);
+    }
+
+    .installer-group + .installer-group {
+      border-top: 1px solid var(--color-border);
+      border-left: 0;
+    }
+
+    .demo-panel {
+      margin-top: var(--space-12);
     }
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    .hero-headline {
-      animation: fadeUp 600ms var(--transition-slow) both;
-      animation-delay: var(--t-head);
+    .hero-copy {
+      animation: fadeUp 650ms var(--transition-slow) both;
+      animation-delay: var(--t-copy);
     }
 
     .demo-panel {
-      animation: fadeUp 700ms var(--transition-slow) both;
+      animation: fadeUp 760ms var(--transition-slow) both;
       animation-delay: var(--t-video);
-    }
-
-    .edition-dock {
-      animation: fadeUp 600ms var(--transition-slow) both;
-      animation-delay: var(--t-editions);
     }
   }
 
