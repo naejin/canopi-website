@@ -368,4 +368,30 @@ const discordUrl = lang === 'fr'
       font-size: 0.8125rem;
     }
   }
+
+  @media (max-width: 360px) {
+    .header-inner {
+      padding: 0 var(--space-3);
+    }
+
+    .header-nav {
+      gap: 0;
+    }
+
+    .header-icon,
+    .theme-toggle {
+      width: 28px;
+    }
+
+    .lang-toggle {
+      gap: 2px;
+      padding: var(--space-1);
+      font-size: 0.75rem;
+    }
+
+    .lang-chevron {
+      width: 8px;
+      height: 8px;
+    }
+  }
 </style>

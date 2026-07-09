@@ -227,6 +227,24 @@ const installerGroups = [
       button.href = result.href;
       button.setAttribute('data-detected', '');
     })();
+
+    (function initInstallerPanelMobileScroll() {
+      const details = document.querySelector<HTMLDetailsElement>('.installer-details');
+      if (!details) return;
+
+      const mobileQuery = window.matchMedia('(max-width: 639px)');
+      const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      details.addEventListener('toggle', () => {
+        if (!details.open || !mobileQuery.matches) return;
+        requestAnimationFrame(() => {
+          details.scrollIntoView({
+            block: 'start',
+            behavior: reduceMotionQuery.matches ? 'auto' : 'smooth',
+          });
+        });
+      });
+    })();
   </script>
 </section>
 
@@ -618,14 +636,19 @@ const installerGroups = [
     }
 
     .installer-panel {
-      left: 50%;
-      width: calc(100vw - var(--space-8));
-      transform: translateX(-50%);
+      position: static;
+      width: 100%;
+      margin-top: var(--space-3);
+      transform: none;
+      box-shadow:
+        0 18px 44px rgba(44, 36, 24, 0.12),
+        var(--shadow-md);
     }
 
     .installer-details {
       display: grid;
       justify-items: center;
+      scroll-margin-top: calc(var(--header-height) + var(--space-4));
     }
 
     .installer-groups {
@@ -633,13 +656,73 @@ const installerGroups = [
     }
 
     .installer-group {
+      grid-template-columns: 42px minmax(68px, 0.55fr) minmax(0, 1fr);
+      align-items: center;
+      justify-items: start;
       min-height: auto;
-      padding: var(--space-6);
+      gap: var(--space-3);
+      padding: var(--space-4);
     }
 
     .installer-group + .installer-group {
       border-top: 1px solid var(--color-border);
       border-left: 0;
+    }
+
+    .platform-logo {
+      width: 42px;
+      height: 42px;
+      margin: 0;
+      justify-self: start;
+    }
+
+    .platform-logo svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .installer-platform {
+      justify-self: start;
+      font-size: var(--text-base);
+      line-height: var(--leading-snug);
+    }
+
+    .installer-options {
+      gap: var(--space-2);
+    }
+
+    .installer-link {
+      grid-template-columns: 30px minmax(0, 1fr);
+      min-height: 38px;
+      gap: var(--space-2);
+      padding: 0;
+      font-size: 0.95rem;
+    }
+
+    .installer-link + .installer-link {
+      border-top: 0;
+    }
+
+    .installer-link-icon {
+      width: 30px;
+      height: 30px;
+    }
+
+    .installer-link-icon svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .installer-release-link {
+      min-height: 54px;
+      padding: var(--space-3) var(--space-4);
+      gap: var(--space-2);
+      font-size: 0.95rem;
+    }
+
+    .release-link-icon {
+      width: 30px;
+      height: 30px;
     }
 
     .demo-panel {
