@@ -12,7 +12,7 @@ The main weakness is the allocation of attention. At a 1440 × 900 viewport, the
 
 The headline communicates purpose but does not explain the tool. A short sentence about plant information and the design canvas would make the offer concrete. The current page asks visitors to choose Desktop or Web without explaining the catalog difference documented in CONTEXT.md.
 
-The autoplay demo can initially show an almost empty canvas. The repository's existing screenshot, showing a planted bed and an elderberry profile, offers more immediate evidence. It also connects the warm visual identity to an actual plant rather than adding unrelated decorative imagery.
+The autoplay demo can initially show an almost empty canvas. The supplied screenshot, showing a detailed syntropic orchard plan and an apple tree profile, offers more immediate evidence. It also connects the warm visual identity to an actual plant rather than adding unrelated decorative imagery.
 
 At desktop size the network section occupies approximately 2,163px of the page, compared with approximately 1,331px for the entire hero and demo. That makes an ecosystem directory the dominant reading experience. These are relevant organizations, but they should not carry the burden of explaining or validating the product. They are not presented as customers or partners.
 
@@ -20,7 +20,7 @@ These are design judgments based on browser inspection, not measured conversion 
 
 ## Proposed direction
 
-Keep the existing brand and make the product the focal point. Use a two-line headline, a concrete explanation, and the existing app screenshot alongside each other. The screenshot begins at y=160 on desktop and links to the full-resolution source. At 1280 × 800, both hero actions remain visible.
+Keep the existing brand and make the product the focal point. Use a two-line headline, a concrete explanation, and the supplied app screenshot alongside each other. The screenshot begins at y=160 on desktop and links to the full-resolution source. At 1280 × 800, both hero actions remain visible.
 
 Follow with two short, observable capabilities: exploring plant information and arranging a planting plan. Keep the real demonstration as a user-controlled video further down. Explain the editions before sending visitors to the browser or installer releases. Retain all 17 organizations in seven native expandable country/region groups.
 
@@ -32,4 +32,4 @@ This is an English review prototype. Production localization, platform-detected 
 
 Desktop, laptop and mobile screenshots accompany the prototype. Browser checks cover image/font loading, horizontal overflow, the theme toggle, expandable directory, video controls and real link destinations. The page has keyboard focus styling and a skip link. No new dependencies or production translation keys are introduced.
 
-The proposal uses the current repository screenshot as supplied. A future product capture with a richer completed plan could strengthen the presentation further, but no invented interface or fabricated product outcome is used here.
+The proposal uses the user-supplied orchard screenshot unchanged in the hero and as the video poster. The demo recording itself is unchanged. No invented interface or fabricated product outcome is used here.
