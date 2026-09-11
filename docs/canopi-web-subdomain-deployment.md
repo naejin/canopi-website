@@ -218,7 +218,7 @@ The Pages build command would be a wrapper script that:
 2. Verifies the archive.
 3. Writes the verified files into `dist/`.
 4. Leaves `dist/index.html` at the root.
-5. Leaves `dist/_redirects` and `dist/_headers` in place.
+5. Adds `dist/_headers` and directory-specific `404.html` files as described below.
 
 Do not make Pages clone or build the full Canopi app repository unless the deployment pipeline explicitly accepts the longer build time and extra coupling.
 
@@ -264,7 +264,6 @@ The directory uploaded to Pages should look like this:
 ```text
 dist/
   index.html
-  _redirects
   _headers
   canopi-web-edition-manifest.json
   assets/
@@ -285,23 +284,21 @@ Those paths belong to the old marketing-site `/app/` deployment plan.
 
 ## SPA routing
 
-Canopi Web is a client-rendered app. Reloading an app route must return `index.html`.
+Use Cloudflare Pages' native SPA fallback: omit a top-level `404.html` and omit
+catch-all `_redirects` rules. Existing static files are served directly, while
+unknown client routes receive the root app shell.
 
-For the subdomain deployment, add this to `dist/_redirects`:
+Add a small deployment-owned `404.html` inside each static directory (`assets/`,
+`canopi-catalog/`, and `pdf-fonts/`). Pages uses the nearest directory error page,
+so missing JavaScript, catalog shards, and fonts return HTTP 404 instead of the
+app shell. Keep these hosting files separate from the verified artifact payload.
 
-```text
-/* /index.html 200
-```
+This configuration was verified on Pages with Web Edition v1.1.1: direct JSON,
+JavaScript, CSS, and Parquet requests retain their content types; missing nested
+assets return 404; unknown one-segment and nested client routes load `index.html`.
+Do not use `/:route /index.html 200`: it also rewrites the root artifact manifest.
 
-This is a relative `200` rewrite inside the same Pages site. Cloudflare Pages supports `_redirects` files and relative `200` proxying.
-
-Keep the rule count small. Do not add route-specific redirects unless the app actually needs public legacy routes.
-
-Important smoke-check rule: existing static files must still be served as files. If `/canopi-catalog/manifest.json` or `/assets/<file>` returns `index.html`, the deployment is wrong even if the HTTP status is `200`.
-
-Source:
-
-- <https://developers.cloudflare.com/pages/configuration/redirects/>
+Source: <https://developers.cloudflare.com/pages/configuration/serving-pages/>
 
 ## Cache headers
 
@@ -320,10 +317,13 @@ Recommended starting point:
   Cache-Control: public, max-age=31536000, immutable
 
 /canopi-catalog/*
-  Cache-Control: public, max-age=86400
+  Cache-Control: no-cache
+
+/pdf-fonts/*
+  Cache-Control: no-cache
 ```
 
-Use shorter cache lifetimes for catalog files unless the app manifest records content-hashed catalog paths. If catalog paths are content-hashed and immutable, they can use the same long cache policy as Vite assets.
+Revalidate catalog files unless the app manifest records content-hashed catalog paths. If catalog paths are content-hashed and immutable, they can use the same long cache policy as Vite assets.
 
 Do not cache `index.html` as immutable. A stale app shell can reference deleted assets after a new deploy.
 
@@ -349,7 +349,7 @@ The verifier should:
 8. Verify every listed file exists.
 9. Verify every listed file byte count.
 10. Verify every listed file SHA-256 checksum.
-11. Reject unlisted files except deployment-owned `_redirects` and `_headers` if those are created after verification.
+11. Reject unlisted files except deployment-owned `_headers` and directory-specific `404.html` files created after verification.
 12. Verify `index.html` exists at the artifact root.
 13. Verify `canopi-catalog/manifest.json` exists.
 14. Verify every manifest-listed catalog file exists.
@@ -559,7 +559,7 @@ Likely cause:
 
 Fix:
 
-- Add `/* /index.html 200` to `_redirects`.
+- Restore the native SPA fallback described above; omit a top-level `404.html` and catch-all `_redirects` rules.
 - Redeploy.
 
 ### Catalog requests return HTML
