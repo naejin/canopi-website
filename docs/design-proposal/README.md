@@ -22,14 +22,14 @@ These are design judgments based on browser inspection, not measured conversion 
 
 Keep the existing brand and make the product the focal point. Use a two-line headline, a concrete explanation, and the supplied app screenshot alongside each other. The screenshot begins at y=160 on desktop and links to the full-resolution source. At 1280 × 800, both hero actions remain visible.
 
-Follow with two short, observable capabilities: exploring plant information and arranging a planting plan. Keep the real demonstration as a user-controlled video further down. Explain the editions before sending visitors to the browser or installer releases. Retain all 17 organizations in seven native expandable country/region groups.
+Follow with two short, observable capabilities: exploring plant information and arranging a planting plan. Keep the real demonstration as a user-controlled video further down. Explain the editions before sending visitors to the browser or installer releases. Retain all 19 organizations in seven native expandable country/region groups.
 
 Design settings: variance 5, motion 2, density 3. Native HTML/CSS uses the established Canopi palette, Lora display and Inter body at weights 400/600. Motion only provides button feedback. Existing global grain is reused. The primary light-theme button uses the existing darker ochre hover shade to improve text contrast.
 
 ## Preview scope and validation
 
-This is an English review prototype. Production localization, platform-detected direct downloads, and the existing language menu remain in the live components. The prototype links to GitHub releases for installer selection and the current site for language selection. The light app screenshot intentionally remains an authentic screenshot when the surrounding page switches to dark mode.
+This is an English review prototype. Production localization and the existing language menu remain in the live components. The prototype offers direct installers for the repository’s 1.0.1 release, device-aware download buttons, a native on-page chooser, and installation guidance. Unknown devices and Macs without reliable chip detection keep the chooser. GitHub releases remain a footer resource. The current site provides language selection. The light app screenshot intentionally remains an authentic screenshot when the surrounding page switches to dark mode.
 
 Desktop, laptop and mobile screenshots accompany the prototype. Browser checks cover image/font loading, horizontal overflow, the theme toggle, expandable directory, video controls and real link destinations. The page has keyboard focus styling and a skip link. No new dependencies or production translation keys are introduced.
 
-The proposal uses the user-supplied orchard screenshot unchanged in the hero and as the video poster. The demo recording itself is unchanged. No invented interface or fabricated product outcome is used here.
+The proposal uses the user-supplied orchard screenshot unchanged in the hero and as the video poster. The demo recording itself is unchanged. The Global directory includes Ecosystem Restoration Communities and Friends of the Ecosystem Restoration Movement, using their official names and supplied URLs. No invented interface or fabricated product outcome is used here.
