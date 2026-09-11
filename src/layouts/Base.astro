@@ -72,20 +72,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       "downloadUrl": CANOPI_RELEASE_URL
     })} />
 
-    <!-- Fonts: Lora (display) + Inter (body) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap"
-      rel="stylesheet"
-    />
-
     <!-- Language detection (first visit only, root page only) -->
     <script is:inline>
       (function() {
         if (location.pathname !== '/') return;
-        if (sessionStorage.getItem('canopi-lang-checked')) return;
-        sessionStorage.setItem('canopi-lang-checked', '1');
+        try {
+          if (sessionStorage.getItem('canopi-lang-checked')) return;
+          sessionStorage.setItem('canopi-lang-checked', '1');
+        } catch { return; }
         var locales = ['fr','es','pt','it','zh','de','ja','ko','nl','ru'];
         var lang = (navigator.language || '').split('-')[0].toLowerCase();
         if (locales.indexOf(lang) !== -1) {
@@ -97,7 +91,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <!-- Theme initialization (synchronous - prevents flash) -->
     <script is:inline>
       (function() {
-        var saved = localStorage.getItem('canopi-theme');
+        var saved;
+        try { saved = localStorage.getItem('canopi-theme'); } catch {}
         if (saved === 'dark' || saved === 'light') {
           document.documentElement.setAttribute('data-theme', saved);
         } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -108,6 +103,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     <style is:global>
       @import '../styles/global.css';
+      @import '../styles/fonts.css';
+      @import '../styles/home.css';
     </style>
   </head>
   <body class="grain">

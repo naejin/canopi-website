@@ -4,7 +4,7 @@ Landing page for projectcanopi.com — the Canopi agroecological design app.
 
 ## Stack
 - Astro (static output) + pure CSS (no Tailwind)
-- Hosted on Cloudflare Pages (marketing build: `npm run build`; Web Edition publish: `npm run build:with-web`)
+- Hosted on Cloudflare Workers Builds (`projectcanopi`); pushes to `master` deploy the marketing build automatically.
 - Design: field notebook aesthetic from the Canopi app (ochre/parchment/ink palette)
 
 ## Commands
@@ -34,13 +34,11 @@ supported filter metadata before copying it under `dist/client/app/`.
 - Light/dark theme via `[data-theme="dark"]` + localStorage
 
 ## Release Links
-- Download URLs in `src/components/Hero.astro` — update `VERSION` const when new release ships
+- Download URLs in `src/data/release.ts` — update `CANOPI_VERSION` and `CANOPI_RELEASE_DATE` when a new release ships
 - Links point to `github.com/naejin/canopi/releases/download/v{VERSION}/...`
-- `src/components/Download.astro` exists but is UNUSED (not imported by any page) — do not edit
 
 ## Gotchas
 - Cloudflare Pages `_redirects` does NOT support `Language=` conditions (that's Netlify)
-- Liberapay widget script fails on localhost due to CORS — works in production
 - `public/canopi-logo.svg` and `canopi-icon-128.png` are copied from the app repo
 - `<body class="grain">` already provides a global SVG noise overlay (`global.css`) — do not add page-level paper textures
 - Responsive breakpoints across the project: `max-width: 639px` (mobile) and `min-width: 960px` (desktop); no tablet tier

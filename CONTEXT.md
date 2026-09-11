@@ -30,3 +30,11 @@ Domain expert: "No. Use Agroecology network unless a formal partnership is confi
 
 Developer: "Should the edition cards list every toolbar tool?"
 Domain expert: "No. Say Canvas tools under both editions."
+
+## Approved homepage (September 2026)
+
+The marketing page uses a centered download introduction, an on-demand video with the orchard thumbnail, and a compact network directory. Desktop downloads open a native dialog with a device recommendation and alternative installers. Do not send the primary download flow through GitHub release pages.
+
+Shared homepage CSS lives in `src/styles/home.css`, release metadata in `src/data/release.ts`, and device detection in `src/lib/installer.mjs`. All UI copy is localized. Fonts are self-hosted under `public/fonts/` with their licenses. The superseded design prototype and unused network logos have been removed.
+
+Cloudflare Workers Builds deploys the `projectcanopi` service automatically from `master`. Canopi Web remains a separate deployment at `web.projectcanopi.com`. The optional legacy `/app/` artifact installer is retained for its documented compatibility contract.

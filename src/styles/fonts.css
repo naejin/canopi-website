@@ -3,26 +3,26 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(fonts/inter-400.ttf) format('truetype');
+  src: url(/fonts/inter-400.ttf) format('truetype');
 }
 @font-face {
   font-family: 'Inter';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url(fonts/inter-600.ttf) format('truetype');
+  src: url(/fonts/inter-600.ttf) format('truetype');
 }
 @font-face {
   font-family: 'Lora';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(fonts/lora-400.ttf) format('truetype');
+  src: url(/fonts/lora-400.ttf) format('truetype');
 }
 @font-face {
   font-family: 'Lora';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url(fonts/lora-600.ttf) format('truetype');
+  src: url(/fonts/lora-600.ttf) format('truetype');
 }

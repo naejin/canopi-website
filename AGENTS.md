@@ -145,13 +145,12 @@ Set `CANOPI_WEB_EDITION_REQUIRED=0` only for an intentional website-only build.
 Landing page for projectcanopi.com, the Canopi agroecological design app.
 
 - Astro static output with pure CSS, no Tailwind.
-- Hosted on Cloudflare Pages; marketing-only build output is `dist/`, while the Cloudflare adapter serves static assets from `dist/client/`.
+- Hosted on Cloudflare Workers Builds (`projectcanopi`), deployed automatically from `master`; the Cloudflare adapter serves static assets from `dist/client/`.
 - Web Edition publishing installs the app-provided artifact into `dist/client/app/` when `dist/client/` exists, otherwise `dist/app/`.
 - 11 locales: `en` at `/`, plus `fr`, `es`, `pt`, `it`, `zh`, `de`, `ja`, `ko`, `nl`, and `ru` under `/{lang}/`.
 - Translation files live in `src/i18n/translations/{locale}.json`; add new translation keys to all 11 files.
 - `src/i18n/utils.ts` provides translation and locale helpers.
-- Download URLs live in `src/components/Hero.astro`; update the `VERSION` const when a new release ships.
-- `src/components/Download.astro` is unused and should not be edited.
+- Download URLs live in `src/data/release.ts`; update `CANOPI_VERSION` and `CANOPI_RELEASE_DATE` when a new release ships.
 
 ## Conventions & Patterns
 
@@ -163,7 +162,6 @@ Landing page for projectcanopi.com, the Canopi agroecological design app.
 - Cloudflare Pages `_redirects` does not support `Language=` conditions.
 - Web Edition `/app/*` fallback is a static `_redirects` rule; do not add website-side catalog search, storage, DuckDB, Worker, Pages Function, R2, KV, D1, service-worker, or offline catalog behavior.
 - Web Edition catalog assets under `/app/canopi-catalog/` must remain directly served static files.
-- The Liberapay widget script fails on localhost due to CORS but works in production.
 
 ## Agent Skills
 

@@ -1,8 +1,12 @@
 # Canopi Website
 
-Astro site for `projectcanopi.com`, deployed with the Cloudflare adapter and
-Wrangler. The Web Edition app is not generated here; this repository installs a
-prebuilt artifact produced by the main Canopi repository.
+Astro marketing site for `projectcanopi.com`. Cloudflare Workers Builds deploys
+the `projectcanopi` service automatically when `master` is pushed. The generated
+Cloudflare adapter serves the static site from `dist/client/`.
+
+Canopi Web is a separate application at `https://web.projectcanopi.com/`. This
+website links to it; it does not build or modify the app. The optional legacy
+`/app/` artifact installer remains available for compatibility.
 
 ## Commands
 
@@ -27,7 +31,7 @@ CANOPI_WEB_EDITION_ARCHIVE=/path/to/canopi-web-edition-v0.9.2-<commit>.tar.gz np
 For a website-only build that intentionally skips the Web Edition install, set
 `CANOPI_WEB_EDITION_REQUIRED=0`.
 
-## Web Edition Install
+## Optional legacy Web Edition install
 
 The installer validates the artifact before copying it into the built static
 asset tree:
@@ -46,3 +50,21 @@ static builds fall back to `dist/app/`.
 The `/app` browser-route fallback is handled by `public/_redirects` in the
 published static asset tree. Catalog assets under `/app/canopi-catalog/` remain
 ordinary static files rather than website-side search, storage, or compute.
+
+## Homepage and releases
+
+The approved homepage is implemented in the shared Astro components for all 11
+locales. `src/styles/home.css` holds the visual layout. Inter and Lora are served
+locally from `public/fonts/`, with their licenses alongside them.
+
+Update `CANOPI_VERSION` and `CANOPI_RELEASE_DATE` in `src/data/release.ts` after
+verifying the release assets. Installer links are generated from that one source.
+The download dialog recommends a compatible desktop installer and keeps other
+platforms available without navigating through GitHub.
+
+Before publishing, run `npm test`, `npm run build`, and
+`node scripts/check-built-site.mjs`. Push to `master`, wait for the GitHub
+“Workers Builds: projectcanopi” check, then verify the live homepage and downloads.
+`npm run deploy` is an optional manual Wrangler path and requires Cloudflare
+authentication; use `CANOPI_WEB_EDITION_REQUIRED=0` for an intentional
+marketing-only manual deployment.

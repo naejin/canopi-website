@@ -1,0 +1,49 @@
+---
+import { t, type Locale } from '../i18n/utils';
+import { CANOPI_DOWNLOADS } from '../data/release';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+const groups = [
+  { name: 'Windows', installers: [
+    { key: 'windows', href: CANOPI_DOWNLOADS.windowsSetupExe, label: 'edition.installer.windowsExe', detail: t('download.arch', lang), instruction: 'download.installWindows' },
+    { key: 'msi', href: CANOPI_DOWNLOADS.windowsMsi, label: 'edition.installer.windowsMsi', detail: t('download.arch', lang), instruction: 'download.installWindows' },
+  ] },
+  { name: 'macOS', installers: [
+    { key: 'mac-arm', href: CANOPI_DOWNLOADS.macAppleSiliconDmg, label: 'edition.installer.macApple', detail: 'Apple silicon', instruction: 'download.installMac' },
+    { key: 'mac-intel', href: CANOPI_DOWNLOADS.macIntelDmg, label: 'edition.installer.macIntel', detail: 'Intel', instruction: 'download.installMac' },
+  ] },
+  { name: 'Linux', installers: [
+    { key: 'linux', href: CANOPI_DOWNLOADS.linuxAppImage, label: 'edition.installer.linuxAppImage', detail: `${t('download.arch', lang)} · AppImage`, instruction: 'download.installLinux' },
+    { key: 'deb', href: CANOPI_DOWNLOADS.linuxDeb, label: 'edition.installer.linuxDeb', detail: t('download.arch', lang), instruction: 'download.installDeb' },
+  ] },
+];
+const messages = Object.fromEntries(['forPlatform', 'pickMac', 'helpMac', 'unknown', 'after', 'web'].map(key => [key, key === 'web' ? t('edition.web.cta', lang) : t(`download.${key}`, lang)]));
+---
+<div id="download-fallback" class="wrap">
+  <details id="download-options" class="download-options">
+    <summary>{t('edition.desktop.moreChoices', lang)}</summary>
+    <div class="installer-grid">
+      {groups.map(group => (
+        <section aria-label={group.name}>
+          <h3>{group.name}</h3>
+          {group.installers.map(installer => (
+            <a class="installer-link" data-installer={installer.key} data-platform={group.name}
+              data-detail={installer.detail} data-instruction={t(installer.instruction, lang)} href={installer.href}>
+              {t(installer.label, lang)} <span aria-hidden="true">↓</span>
+            </a>
+          ))}
+          {group.name === 'macOS' && <p>{t('download.helpMac', lang)}</p>}
+          {group.name !== 'macOS' && <p>{t('download.arch', lang)}</p>}
+        </section>
+      ))}
+    </div>
+  </details>
+  <p id="install-guidance" class="install-guidance" role="status" aria-live="polite"></p>
+</div>
+<dialog id="download-dialog" aria-labelledby="download-title">
+  <button class="dialog-close" aria-label={t('download.close', lang)} autofocus>×</button>
+  <img class="dialog-logo" src="/canopi-logo.svg" width="56" height="56" alt="" />
+  <h2 id="download-title">{t('download.title', lang)}</h2>
+  <div id="recommended-download"></div><div id="dialog-options"></div>
+</dialog>
+<script id="download-messages" type="application/json" set:html={JSON.stringify(messages).replace(/</g, '\\u003c')} />
