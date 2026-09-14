@@ -70,3 +70,10 @@ Before publishing, run `npm test`, `npm run build`, and
 `npm run deploy` is an optional manual Wrangler path and requires Cloudflare
 authentication; use `CANOPI_WEB_EDITION_REQUIRED=0` for an intentional
 marketing-only manual deployment.
+
+For a Canopi release that also publishes the dedicated Web Edition, follow the
+mandatory and conditional gates in
+[`docs/canopi-web-subdomain-deployment.md`](docs/canopi-web-subdomain-deployment.md#efficient-release-operating-profile).
+Decide whether the optional `/app/` surface is in scope before downloading its
+artifact, reuse one verified output through preview and production, and record
+compact structured evidence instead of repeating successful checks.

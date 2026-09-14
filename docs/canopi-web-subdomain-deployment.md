@@ -48,13 +48,91 @@ The deployment repository or deployment workflow owns:
 The marketing website owns:
 
 - The public CTA that opens `https://web.projectcanopi.com/`.
-- The "work in progress" label while the Web Edition deployment is not production-ready.
+- Any product-status label requested for the Web Edition.
 
 Do not import Canopi app source into `canopi-website`. Do not copy Preact components, Vite config, catalog generators, DuckDB adapters, or browser storage code into the marketing website.
 
-## Current mismatch to fix first
+## Efficient release operating profile
 
-The current website-side installer at `scripts/install-web-edition.mjs` is built for the old `/app/` deployment shape. It verifies:
+Test each risk at the layer that owns it. The app release pipeline certifies app
+behavior and produces immutable artifacts. This repository verifies the artifact
+contract, updates marketing links, deploys the artifact, and checks Cloudflare
+integration.
+
+Resolve the tag, full and manifest commits, release date, immutable artifact
+URLs, and SHA-256 values once from the public release. Reuse those inputs for the
+whole run.
+
+Decide scope before downloading. The root artifact is always required. Set
+`publishLegacyApp: true` only when the chosen marketing deployment installs
+`/app/` or an existing production `/app/` surface must be preserved. A
+marketing-only build and a `404` from
+`/app/canopi-web-edition-manifest.json` mean it is false; skip that archive and
+all of its gates.
+
+### Release gates
+
+| Gate | When | Minimum evidence |
+| --- | --- | --- |
+| Release identity | Always | Public tag resolves to the expected full commit; required assets exist. |
+| Root artifact verification | Always | Release checksum, safe archive paths, manifest identity and routing, every payload size and SHA-256, catalog manifest and all assets, platform limits, and no `/app/` references. |
+| Legacy `/app/` verification | Only when `publishLegacyApp` is true | Archive checksum and the existing installer/build tests for the `/app/` contract. |
+| Marketing source validation | When version, date, labels, or URLs change | `npm test`, one `npm run build`, and `node scripts/check-built-site.mjs`. |
+| Cloudflare dry run | When marketing output or Worker configuration changes | One successful Wrangler dry run against the canonical build output. |
+| Pages preview | Always for the root artifact | Full routing, content-type, cache, missing-asset, manifest, and representative deployed-hash checks. |
+| Pages production | Always | Deployment revision plus manifest identity, app-shell route, representative real assets, representative missing assets, and custom-domain TLS. |
+| Marketing production | When marketing source changes | Successful Workers build, live CTA/link inspection, and Latest URLs resolving to the intended release. |
+| Browser integration smoke | Always | Isolated profile, synthetic design, catalog count, one search and manifest-backed filter, persistence/export, route reload, and no application console, network, or Tauri IPC failures. |
+| Extended application regression | Conditional | Run only when app-release evidence is absent, the artifact contract changed, or the release specifically requests it. |
+
+Fail at the first broken mandatory gate. Then follow these rules:
+
+1. Produce one marketing build. If `/app/` is required, run
+   `npm run install:web-edition` against it instead of rebuilding.
+2. Fully inspect the Pages preview, then deploy the same directory without
+   changing packaged payloads. Add only deployment-owned `_headers` and nested
+   `404.html` files after verification.
+3. Sample production identity, routing, and asset classes instead of repeating
+   every preview probe.
+4. Batch independent URL checks and use one blocking CI watch after push.
+5. Write verbose logs outside the repository. On success, print one line per
+   stage; on failure, print only relevant values and the log tail.
+6. Select manifest and HTTP fields instead of printing full JSON, HTML, or
+   headers into the agent conversation.
+
+Write one JSON report containing the release identity, artifact URLs and hashes,
+`publishLegacyApp`, website commit, deployment revisions, gate results, browser
+engine, exact commands, warnings, and platform gaps. Keep the working report
+outside the repository unless release records become versioned project
+artifacts. Append its compact summary to the release bead; Cloudflare and GitHub
+retain full deployment logs.
+
+### Automation target
+
+The preferred future interface is one fail-fast, idempotent command:
+
+```bash
+scripts/publish-web-release.sh \
+  --tag vX.Y.Z \
+  --commit <full-app-commit> \
+  --deploy
+```
+
+Its internal stages should be:
+
+```text
+preflight -> download -> verify -> build -> preview -> preview-smoke
+          -> production -> production-smoke -> record
+```
+
+Until that wrapper exists, follow the stage order manually. It must stop before
+mutation when the checkout is dirty unless the operator supplied an isolated
+worktree, and it must never delete or overwrite user work.
+
+## Root and compatibility artifact shapes
+
+The website-side installer at `scripts/install-web-edition.mjs` verifies the
+optional `/app/` deployment shape:
 
 ```text
 manifest.basePath === "/app/"
@@ -62,7 +140,8 @@ manifest.spaFallback.source === "/app/*"
 manifest.spaFallback.destination === "/app/index.html"
 ```
 
-That contract is wrong for `web.projectcanopi.com`, where the app must run at the domain root. For the subdomain deployment, the artifact contract should become:
+That contract does not apply to `web.projectcanopi.com`, where the app runs at
+the domain root. The subdomain artifact contract is:
 
 ```text
 manifest.basePath === "/"
@@ -73,7 +152,7 @@ manifest.spaFallback.status === 200
 
 Do not deploy the existing `/app/` artifact unchanged to `web.projectcanopi.com`. It will usually produce a blank page or missing asset requests because built URLs will point at `/app/...` instead of `/...`.
 
-## Desired architecture
+## Production architecture
 
 Use three separate layers:
 
@@ -88,7 +167,8 @@ Cloudflare Pages project
   serves the app at https://web.projectcanopi.com/
 ```
 
-The cleanest implementation is a small dedicated deployment repo, for example `canopi-web-deploy`, with no app source. It can contain only:
+The deployment automation may eventually live in a small dedicated repository,
+for example `canopi-web-deploy`, with no app source. It would contain only:
 
 - `README.md`
 - `wrangler.toml` or CI deploy config
@@ -96,9 +176,11 @@ The cleanest implementation is a small dedicated deployment repo, for example `c
 - `.github/workflows/deploy.yml`
 - optional smoke-check scripts
 
-A deployment workflow in this website repo is also possible, but keep the boundary the same: the workflow may consume the built artifact, but it must not import app source or deploy the app under the marketing site's `/app/` path.
+A deployment workflow in this website repo is also possible. Keep the same
+boundary: the workflow may consume the built artifact, but it must not import
+app source or deploy the app under the marketing site's `/app/` path.
 
-## Required app-side artifact changes
+## Root artifact packaging contract
 
 The app repo currently documents and packages the Web Edition from:
 
@@ -106,8 +188,6 @@ The app repo currently documents and packages the Web Edition from:
 cd /home/daylon/projects/canopi/desktop/web
 npm run package:web
 ```
-
-Before the subdomain can work, the Web Edition packaging flow must support a root base path.
 
 The app-side build provides an explicit root-subdomain package mode:
 
@@ -123,7 +203,7 @@ run.
 
 That script sets `CANOPI_WEB_BASE_PATH=/` before Vite emits assets and writes a distinct `canopi-web-edition-root-v<version>-<commit>.tar.gz` archive. Avoid rewriting built HTML and JS after Vite emits them; configure the Vite base path before build.
 
-The produced archive root should contain:
+The produced archive root contains:
 
 ```text
 index.html
@@ -132,7 +212,7 @@ canopi-catalog/
 canopi-web-edition-manifest.json
 ```
 
-The archive should not contain a top-level `app/` directory for the subdomain deployment.
+The archive must not contain a top-level `app/` directory for the subdomain deployment.
 
 The manifest should record at least:
 
@@ -173,9 +253,9 @@ Source:
 
 - <https://developers.cloudflare.com/pages/platform/limits/>
 
-## Cloudflare Pages project setup
+## Cloudflare Pages project configuration
 
-Create a dedicated Pages project, for example:
+The dedicated Pages project is:
 
 ```text
 Project name: canopi-web
@@ -408,9 +488,11 @@ jobs:
 
 The exact workflow can be triggered from the Canopi app release pipeline instead of manual dispatch. The invariant is the same: deploy only a versioned, verified artifact.
 
-## Local preview flow
+## Local artifact-development preview
 
-After the app repo can produce a root-base artifact:
+Use this flow only while developing the app-side packaging contract. A
+production release consumes the immutable published archive and does not rebuild
+Canopi. Produce a local root-base artifact with:
 
 ```bash
 cd /home/daylon/projects/canopi/desktop/web
@@ -501,9 +583,27 @@ Expected:
 
 If the app has no public client routes yet, verify at least that `https://web.projectcanopi.com/` loads and browser navigation inside the app does not request `/app/`.
 
-### Browser behavior
+### Minimum browser integration smoke
 
-Use Playwright or a manual browser session:
+Use a fresh isolated browser profile and synthetic Design data:
+
+1. Open `https://web.projectcanopi.com/` and verify the shell renders.
+2. Verify the manifest-backed catalog count, a two-character search, and one
+   manifest-backed filter.
+3. Make one representative canvas edit, download the Design to a temporary
+   path, reload, and confirm Draft recovery preserves the edit.
+4. Hard-reload an unknown client route and confirm the app shell loads.
+5. Confirm there are no application asset failures, console errors, unexpected
+   network failures, or Tauri IPC requests.
+
+This checks the deployed integration without repeating the entire app release
+suite.
+
+### Extended application regression
+
+Run this longer Playwright or manual sequence only when the app release lacks
+equivalent passed browser evidence, the browser artifact contract changed, or
+the release request explicitly requires it:
 
 1. Open `https://web.projectcanopi.com/`.
 2. Confirm the Canopi Web shell renders.

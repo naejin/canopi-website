@@ -140,6 +140,12 @@ npm run preview         # build with Web Edition artifact, then preview
 `CANOPI_WEB_EDITION_ARCHIVE` to point at a packaged Canopi Web Edition tarball.
 Set `CANOPI_WEB_EDITION_REQUIRED=0` only for an intentional website-only build.
 
+For release work, follow the efficient operating profile in
+`docs/canopi-web-subdomain-deployment.md`. Decide whether the optional `/app/`
+surface is actually being published before downloading its archive. Run each
+mandatory gate once, reuse the verified Pages directory for preview and
+production, and keep successful command output compact.
+
 ## Architecture Overview
 
 Landing page for projectcanopi.com, the Canopi agroecological design app.
