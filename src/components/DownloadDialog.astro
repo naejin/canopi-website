@@ -1,6 +1,6 @@
 ---
 import { t, type Locale } from '../i18n/utils';
-import { CANOPI_DOWNLOADS } from '../data/release';
+import { CANOPI_CHECKSUMS_URL, CANOPI_DOWNLOADS } from '../data/release';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
 const groups = [
@@ -37,6 +37,7 @@ const messages = Object.fromEntries(['forPlatform', 'pickMac', 'helpMac', 'unkno
         </section>
       ))}
     </div>
+    <p><a class="text-link" href={CANOPI_CHECKSUMS_URL}>{t('download.checksums', lang)} <span aria-hidden="true">↗</span></a></p>
   </details>
   <p id="install-guidance" class="install-guidance" role="status" aria-live="polite"></p>
 </div>

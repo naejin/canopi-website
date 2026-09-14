@@ -5,13 +5,24 @@ import { join } from 'node:path';
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
 const version = release.match(/CANOPI_VERSION = '([^']+)'/)[1];
-const suffixes = ['x64-setup.exe', 'x64_en-US.msi', 'aarch64.dmg', 'x64.dmg', 'amd64.AppImage', 'amd64.deb'];
+const latestDownloadBase = 'https://github.com/naejin/canopi/releases/latest/download';
+const downloads = [
+  'canopi-windows-x64.exe',
+  'canopi-windows-x64.msi',
+  'canopi-macos-arm64.dmg',
+  'canopi-macos-x64.dmg',
+  'canopi-linux-x64.AppImage',
+  'canopi-linux-x64.deb',
+  'RELEASE-SHA256SUMS.txt',
+];
 for (const lang of ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru']) {
   const html = readFileSync(join(root, lang === 'en' ? '' : lang, 'index.html'), 'utf8');
   assert.ok(html.includes(`lang="${lang}"`), lang);
-  for (const suffix of suffixes) {
-    assert.ok(html.includes(`https://github.com/naejin/canopi/releases/download/v${version}/Canopi_${version}_${suffix}`), `${lang}: ${suffix}`);
+  for (const filename of downloads) {
+    assert.ok(html.includes(`${latestDownloadBase}/${filename}`), `${lang}: ${filename}`);
   }
+  assert.ok(html.includes('https://web.projectcanopi.com/'), `${lang}: Web Edition URL`);
+  assert.ok(!/github\.com\/naejin\/canopi\/releases\/download\/v[^/]+\/Canopi_/.test(html), `${lang}: stale versioned installer URL`);
   assert.ok(html.includes('id="download-dialog"'), lang);
   assert.ok(html.includes('poster="/orchard-screenshot.png"'), lang);
   assert.ok(html.includes('https://ecosystemrestorationcommunities.org/'), lang);
@@ -26,4 +37,4 @@ for (const lang of ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 
 for (const asset of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'canopi-logo.svg']) assert.ok(existsSync(join(root, asset)), asset);
 assert.ok(!existsSync(join(root, 'screenshot-light.png')));
 assert.ok(!existsSync(join(root, 'network')));
-console.log(`Verified 11 locale pages, v${version} installers, new network links and static assets.`);
+console.log(`Verified 11 locale pages, v${version} permanent installer links, Web Edition URL, network links and static assets.`);

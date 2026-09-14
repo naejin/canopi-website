@@ -1,15 +1,16 @@
-export const CANOPI_VERSION = '1.1.1';
-export const CANOPI_RELEASE_DATE = '2026-09-11';
+export const CANOPI_VERSION = '1.2.0';
+export const CANOPI_RELEASE_DATE = '2026-09-14';
 export const CANOPI_RELEASE_TAG = `v${CANOPI_VERSION}`;
 export const CANOPI_RELEASE_URL = `https://github.com/naejin/canopi/releases/tag/${CANOPI_RELEASE_TAG}`;
 export const CANOPI_RELEASES_URL = 'https://github.com/naejin/canopi/releases';
-export const CANOPI_DOWNLOAD_BASE_URL = `https://github.com/naejin/canopi/releases/download/${CANOPI_RELEASE_TAG}`;
+export const CANOPI_DOWNLOAD_BASE_URL = 'https://github.com/naejin/canopi/releases/latest/download';
+export const CANOPI_CHECKSUMS_URL = `${CANOPI_DOWNLOAD_BASE_URL}/RELEASE-SHA256SUMS.txt`;
 
 export const CANOPI_DOWNLOADS = {
-  linuxAppImage: `${CANOPI_DOWNLOAD_BASE_URL}/Canopi_${CANOPI_VERSION}_amd64.AppImage`,
-  linuxDeb: `${CANOPI_DOWNLOAD_BASE_URL}/Canopi_${CANOPI_VERSION}_amd64.deb`,
-  macAppleSiliconDmg: `${CANOPI_DOWNLOAD_BASE_URL}/Canopi_${CANOPI_VERSION}_aarch64.dmg`,
-  macIntelDmg: `${CANOPI_DOWNLOAD_BASE_URL}/Canopi_${CANOPI_VERSION}_x64.dmg`,
-  windowsSetupExe: `${CANOPI_DOWNLOAD_BASE_URL}/Canopi_${CANOPI_VERSION}_x64-setup.exe`,
-  windowsMsi: `${CANOPI_DOWNLOAD_BASE_URL}/Canopi_${CANOPI_VERSION}_x64_en-US.msi`,
+  linuxAppImage: `${CANOPI_DOWNLOAD_BASE_URL}/canopi-linux-x64.AppImage`,
+  linuxDeb: `${CANOPI_DOWNLOAD_BASE_URL}/canopi-linux-x64.deb`,
+  macAppleSiliconDmg: `${CANOPI_DOWNLOAD_BASE_URL}/canopi-macos-arm64.dmg`,
+  macIntelDmg: `${CANOPI_DOWNLOAD_BASE_URL}/canopi-macos-x64.dmg`,
+  windowsSetupExe: `${CANOPI_DOWNLOAD_BASE_URL}/canopi-windows-x64.exe`,
+  windowsMsi: `${CANOPI_DOWNLOAD_BASE_URL}/canopi-windows-x64.msi`,
 } as const;

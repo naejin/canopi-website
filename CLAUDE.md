@@ -35,7 +35,7 @@ supported filter metadata before copying it under `dist/client/app/`.
 
 ## Release Links
 - Download URLs in `src/data/release.ts` — update `CANOPI_VERSION` and `CANOPI_RELEASE_DATE` when a new release ships
-- Links point to `github.com/naejin/canopi/releases/download/v{VERSION}/...`
+- Desktop installers and checksums use the permanent `github.com/naejin/canopi/releases/latest/download/...` aliases declared in `src/data/release.ts`
 
 ## Gotchas
 - Cloudflare Pages `_redirects` does NOT support `Language=` conditions (that's Netlify)

@@ -58,8 +58,10 @@ locales. `src/styles/home.css` holds the visual layout. Inter and Lora are serve
 locally from `public/fonts/`, with their licenses alongside them.
 
 Update `CANOPI_VERSION` and `CANOPI_RELEASE_DATE` in `src/data/release.ts` after
-verifying the release assets. Installer links are generated from that one source.
-The download dialog recommends a compatible desktop installer and keeps other
+verifying the release assets. Desktop installers and their checksum list use the
+permanent GitHub `releases/latest/download/` aliases declared in that file; keep
+it as the single download-link authority when release asset names change. The
+download dialog recommends a compatible desktop installer and keeps other
 platforms available without navigating through GitHub.
 
 Before publishing, run `npm test`, `npm run build`, and
