@@ -1,144 +1,69 @@
-/* ============================================
-   Canopi Website - Design Tokens
-
-   Shares the app's color palette and aesthetic DNA
-   but scaled for a marketing page: larger type,
-   generous spacing, comfortable reading.
-   ============================================ */
+/* Design tokens: the Canopi 2.0 app's palette (desktop/web/src/styles/global.css). */
 
 :root {
-  /* ── Color Palette (from app - verbatim) ── */
-  --color-primary: #A06B1F;
-  --color-primary-hover: #8B5C18;
-  --color-primary-bg: rgba(160, 107, 31, 0.08);
-  --color-accent: #A06B1F;
-  --color-bg: #E6E0D4;
-  --color-surface: #EDE8DD;
-  --color-surface-alt: #E8E2D7;
-  --color-border: rgba(60, 45, 30, 0.16);
-  --color-border-strong: rgba(60, 45, 30, 0.26);
-  --color-text: #2C2418;
-  --color-text-muted: #6B5F4E;
-  --color-primary-contrast: #F8F4ED;
-  --color-control-hover: rgba(160, 107, 31, 0.12);
-  --canvas-bg: #F6F2EA;
+  color-scheme: light;
+  --bg: #EFE9DD;
+  --surface: #FBF8F2;
+  --surface-alt: #F3EEE3;
+  --text: #27231D;
+  --text-secondary: #4A4237;
+  --text-muted: #645A4C;
+  --accent: #9C5A16;
+  --accent-ink: #8A4E12;
+  --accent-hover: #87490F;
+  --on-accent: #FFF8EC;
+  --border: rgba(58, 46, 28, 0.14);
+  --border-strong: rgba(58, 46, 28, 0.55);
+  --focus: #1F5F8B;
+  --danger: #A23B2A;
+  --shadow: 0 1px 2px rgba(39, 35, 29, 0.06), 0 8px 24px rgba(39, 35, 29, 0.08);
+  --painting-opacity-static: 0.22;
 
-  /* Semantic */
-  --color-success: #5A7D3A;
-  --color-warning: #B8860B;
-  --color-danger: #B5432A;
-
-  /* Shadows - warm, minimal */
-  --shadow-sm: 0 1px 3px rgba(44, 36, 24, 0.06);
-  --shadow-md: 0 4px 12px rgba(44, 36, 24, 0.08);
-  --shadow-lg: 0 8px 24px rgba(44, 36, 24, 0.10);
-  --shadow-xl: 0 16px 48px rgba(44, 36, 24, 0.12);
-
-  /* ── Typography - Website Scale ── */
-  --font-display: 'Lora', 'Georgia', serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-
-  --text-sm: 0.875rem;    /* 14px */
-  --text-base: 1rem;      /* 16px */
-  --text-md: 1.125rem;    /* 18px */
-  --text-lg: 1.25rem;     /* 20px */
-  --text-xl: 1.375rem;    /* 22px */
-  --text-2xl: 1.75rem;    /* 28px */
-  --text-3xl: 2.25rem;    /* 36px */
-  --text-4xl: 3rem;       /* 48px */
-  --text-5xl: 3.75rem;    /* 60px */
-
-  --leading-tight: 1.15;
-  --leading-snug: 1.3;
-  --leading-normal: 1.6;
-  --leading-relaxed: 1.75;
-
-  /* ── Spacing - Generous for Marketing ── */
-  --space-1: 0.25rem;   /* 4px */
-  --space-2: 0.5rem;    /* 8px */
-  --space-3: 0.75rem;   /* 12px */
-  --space-4: 1rem;      /* 16px */
-  --space-6: 1.5rem;    /* 24px */
-  --space-8: 2rem;      /* 32px */
-  --space-10: 2.5rem;   /* 40px */
-  --space-12: 3rem;     /* 48px */
-  --space-16: 4rem;     /* 64px */
-  --space-20: 5rem;     /* 80px */
-  --space-24: 6rem;     /* 96px */
-
-  /* ── Radius (from app - works at any scale) ── */
-  --radius-sm: 3px;
-  --radius-md: 5px;
-  --radius-lg: 7px;
-  --radius-xl: 12px;
-  --radius-full: 9999px;
-
-  /* ── Transitions ── */
-  --transition-fast: 80ms ease;
-  --transition-normal: 150ms ease;
-  --transition-enter: 200ms ease-out;
-  --transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
-
-  /* ── Layout ── */
-  --content-width: 1080px;
-  --header-height: 64px;
+  --font-sans: 'Source Sans 3', 'Noto Sans', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Literata', 'Noto Serif', 'Noto Serif SC', Georgia, serif;
+  --radius: 7px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --max: 1200px;
 }
 
-/* ============================================
-   Dark Theme
-   ============================================ */
-
-[data-theme="dark"] {
-  --color-primary: #C89B4A;
-  --color-primary-hover: #D4A85A;
-  --color-primary-bg: rgba(200, 155, 74, 0.12);
-  --color-accent: #C89B4A;
-  --color-bg: #1C1915;
-  --color-surface: #262220;
-  --color-surface-alt: #2E2A26;
-  --color-border: rgba(200, 180, 150, 0.16);
-  --color-border-strong: rgba(200, 180, 150, 0.28);
-  --color-text: #E8E2D8;
-  --color-text-muted: #B0A292;
-  --color-primary-contrast: #1C1915;
-  --color-control-hover: rgba(200, 155, 74, 0.16);
-  --canvas-bg: #151210;
-
-  --color-success: #8BAA5E;
-  --color-warning: #D4A843;
-  --color-danger: #D4765A;
-
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4);
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #161510;
+  --surface: #201E19;
+  --surface-alt: #2A2721;
+  --text: #EFE8DA;
+  --text-secondary: #D6CEBF;
+  --text-muted: #B5AC9D;
+  --accent: #E3A04C;
+  --accent-ink: #F0B465;
+  --accent-hover: #EDB062;
+  --on-accent: #1D1A14;
+  --border: rgba(255, 248, 235, 0.12);
+  --border-strong: rgba(255, 248, 235, 0.40);
+  --focus: #7FB8E0;
+  --danger: #E58A76;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --painting-opacity-static: 0.16;
 }
 
-/* OS preference fallback (when user hasn't toggled manually) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-primary: #C89B4A;
-    --color-primary-hover: #D4A85A;
-    --color-primary-bg: rgba(200, 155, 74, 0.12);
-    --color-accent: #C89B4A;
-    --color-bg: #1C1915;
-    --color-surface: #262220;
-    --color-surface-alt: #2E2A26;
-    --color-border: rgba(200, 180, 150, 0.16);
-    --color-border-strong: rgba(200, 180, 150, 0.28);
-    --color-text: #E8E2D8;
-    --color-text-muted: #B0A292;
-    --color-primary-contrast: #1C1915;
-    --color-control-hover: rgba(200, 155, 74, 0.16);
-    --canvas-bg: #151210;
-
-    --color-success: #8BAA5E;
-    --color-warning: #D4A843;
-    --color-danger: #D4765A;
-
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
-    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+    --bg: #161510;
+    --surface: #201E19;
+    --surface-alt: #2A2721;
+    --text: #EFE8DA;
+    --text-secondary: #D6CEBF;
+    --text-muted: #B5AC9D;
+    --accent: #E3A04C;
+    --accent-ink: #F0B465;
+    --accent-hover: #EDB062;
+    --on-accent: #1D1A14;
+    --border: rgba(255, 248, 235, 0.12);
+    --border-strong: rgba(255, 248, 235, 0.40);
+    --focus: #7FB8E0;
+    --danger: #E58A76;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --painting-opacity-static: 0.16;
   }
 }
