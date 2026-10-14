@@ -49,3 +49,21 @@ test('every locale supplies the same keys and preserves interpolation placeholde
     }
   }
 });
+
+test('every English key is used by a page or a script, and every script string reaches the page', () => {
+  const read = (path) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
+  const dir = (path) => readdirSync(new URL(`../src/${path}`, import.meta.url)).map((file) => read(`${path}/${file}`));
+  const en = JSON.parse(read('i18n/translations/en.json'));
+  const source = [...dir('components'), ...dir('scripts'), read('layouts/Base.astro'), read('data/network.ts')].join('\n');
+  // Keys built from a prefix in components (installer names and details, strata, countries).
+  const dynamic = ['edition.installer.', 'download.detail.', 'design.stratum.', 'network.country.'];
+  for (const key of Object.keys(en)) {
+    const used = source.includes(`'${key}'`) || dynamic.some((prefix) => key.startsWith(prefix));
+    assert.ok(used, `unused translation key: ${key}`);
+  }
+  // Strings the scripts show come from the page data that Home.astro and PageData.astro write.
+  const pageKeys = read('components/Home.astro') + read('components/PageData.astro');
+  for (const script of dir('scripts')) {
+    for (const [, key] of script.matchAll(/\btext\('([\w.]+)'/g)) assert.ok(pageKeys.includes(`'${key}'`), `script string missing from page data: ${key}`);
+  }
+});

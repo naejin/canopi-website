@@ -58,3 +58,5 @@ coverage/
 .dolt/
 *.db
 .beads-credential-key
+public/vendor/
+scripts/featured-files.local.json

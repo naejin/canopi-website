@@ -1,0 +1,29 @@
+---
+// What a plain form post sees after /api/contact answers: sent, or not sent with a way back.
+import Base from '../layouts/Base.astro';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import DonateDialog from './DonateDialog.astro';
+import PageData from './PageData.astro';
+import { t, localizedUrl, type Locale } from '../i18n/utils';
+interface Props { lang: Locale; result: 'sent' | 'failed'; }
+const { lang, result } = Astro.props;
+const title = t(result === 'sent' ? 'contact.sentTitle' : 'contact.failedTitle', lang);
+---
+<Base title={`${title} · Canopi`} description={t('meta.description', lang)} lang={lang} noindex>
+  <Header lang={lang} />
+  <main id="main" class="section contact-result">
+    <div class="wrap">
+      <h1>{title}</h1>
+      <p>{t(result === 'sent' ? 'contact.sent' : 'contact.failed', lang)}</p>
+      <p><a class="button button-secondary" href={localizedUrl(result === 'sent' ? '/' : '/#contact', lang)}>{t('contact.back', lang)}</a></p>
+    </div>
+  </main>
+  <Footer lang={lang} />
+  <DonateDialog lang={lang} />
+  <PageData lang={lang} keys={[]} />
+  <script>
+    import { initChrome } from '../scripts/chrome.js';
+    initChrome();
+  </script>
+</Base>

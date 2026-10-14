@@ -1,0 +1,22 @@
+---
+// Featured designs on the app's basemap; src/scripts/places-map.js loads MapLibre near the section.
+import { t, type Locale } from '../i18n/utils';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+---
+<section class="section places" id="places" aria-labelledby="places-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="places-title">{t('places.title', lang)}</h2>
+      <p>{t('places.lede', lang)}</p>
+    </header>
+    <div class="places-layout">
+      <div class="places-map" data-places-map role="region" aria-label={t('places.mapLabel', lang)}></div>
+      <div class="places-index">
+        <ul class="places-list" role="list" data-places-list></ul>
+        <p class="places-note">{t('places.note', lang)}</p>
+        <p class="places-invite">{t('places.invite', lang)} <a href="#contact">{t('places.inviteLink', lang)}</a></p>
+      </div>
+    </div>
+  </div>
+</section>

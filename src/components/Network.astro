@@ -4,13 +4,21 @@ import { countries } from '../data/network';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
 ---
-<section class="network wrap" aria-labelledby="network-title">
-  <div class="section-heading"><h2 id="network-title">{t('network.title', lang)}</h2><p>{t('network.description', lang)}</p></div>
-  <div id="network-groups">
-    {countries.map(country => (
-      <details><summary>{t(country.labelKey, lang)}</summary><ul>
-        {country.organisations.map(org => (<li><a href={org.url}>{org.name} <span aria-hidden="true">↗</span></a></li>))}
-      </ul></details>
-    ))}
+<section class="section network" id="network" aria-labelledby="network-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="network-title">{t('network.title', lang)}</h2>
+      <p>{t('network.description', lang)}</p>
+    </header>
+    <div class="network-grid">
+      {countries.map((country) => (
+        <section class="network-group">
+          <h3>{t(country.labelKey, lang)}</h3>
+          <ul role="list">
+            {country.organisations.map((org) => (<li><a href={org.url}>{org.name} <span aria-hidden="true">↗</span></a></li>))}
+          </ul>
+        </section>
+      ))}
+    </div>
   </div>
 </section>

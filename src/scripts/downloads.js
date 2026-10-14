@@ -1,82 +1,82 @@
-import { detectInstaller, isMacDesktop } from "../lib/installer.mjs";
+// Hero actions and the installer dialog. The primary button names the visitor's system and
+// links straight to its installer; unknown devices get Canopi Web as the primary action.
+import { detectInstaller, isMacDesktop } from '../lib/installer.mjs';
+import { openDialog } from './dialogs.js';
+import { installers, text } from './page-data.js';
 
-(() => {
-  const dialog = document.querySelector('#download-dialog');
-  if (!dialog || typeof dialog.showModal !== 'function') return;
-  const chooser = document.querySelector('#download-options');
-  const recommendation = document.querySelector('#recommended-download');
-  const note = document.querySelector('#install-guidance');
+const WEB_URL = document.querySelector('[data-primary-action]').href;
+
+const primary = document.querySelector('[data-primary-action]');
+const secondary = document.querySelector('[data-secondary-action]');
+const macChooser = document.querySelector('[data-mac-chooser]');
+const installNote = document.querySelector('[data-install-note]');
+const dialog = document.querySelector('[data-downloads-dialog]');
+
+function setAction(link, { href, label, arrow, installer }) {
+  link.href = href;
+  link.textContent = `${label} `;
+  const mark = document.createElement('span');
+  mark.setAttribute('aria-hidden', 'true');
+  mark.textContent = arrow;
+  link.append(mark);
+  delete link.dataset.openDownloads;
+  delete link.dataset.macChoice;
+  if (installer) link.dataset.installer = installer;
+  else delete link.dataset.installer;
+}
+
+function render(platform = '', architecture = '', bitness = '') {
   const ua = navigator.userAgent;
-  let opener;
-  let interacted = false;
-  document.querySelector('#dialog-options').append(chooser);
-  dialog.append(note);
-  document.querySelector('#download-fallback').hidden = true;
-  const messages = JSON.parse(document.querySelector('#download-messages').textContent);
-  function recommend(platform = '', architecture = '', bitness = '') {
-    if (interacted) return;
-    const key = detectInstaller(ua, platform, architecture, navigator.maxTouchPoints, bitness);
-    recommendation.replaceChildren();
-    chooser.open = false;
-    if (key) {
-      const source = chooser.querySelector(`[data-installer="${key}"]`);
-      const name = source.dataset.platform;
-      const detail = source.dataset.detail;
-      const text = document.createElement('p');
-      text.textContent = `${name} · ${detail}`;
-      const link = chooser.querySelector(`[data-installer="${key}"]`).cloneNode(true);
-      link.className = 'button primary recommended-button';
-      link.textContent = `${messages.forPlatform.replace('{platform}', name)} ↓`;
-      recommendation.append(text, link);
-    } else if (isMacDesktop(ua, platform, navigator.maxTouchPoints)) {
-      const text = document.createElement('p');
-      text.textContent = messages.pickMac;
-      recommendation.append(text);
-      for (const chip of ['mac-arm', 'mac-intel']) {
-        const link = chooser.querySelector(`[data-installer="${chip}"]`).cloneNode(true);
-        link.className = 'button secondary chip-button';
-        recommendation.append(link);
-      }
-      const help = document.createElement('p');
-      help.className = 'caption';
-      help.textContent = messages.helpMac;
-      recommendation.append(help);
-    } else {
-      const text = document.createElement('p');
-      text.textContent = messages.unknown;
-      const web = document.createElement('a');
-      web.href = 'https://web.projectcanopi.com/';
-      web.className = 'button primary recommended-button';
-      web.textContent = `${messages.web} ↗`;
-      recommendation.append(text, web);
-      chooser.open = true;
-    }
+  const key = detectInstaller(ua, platform, architecture, navigator.maxTouchPoints, bitness);
+  const unsureMac = !key && isMacDesktop(ua, platform, navigator.maxTouchPoints);
+  macChooser.hidden = !unsureMac;
+  for (const chip of macChooser.querySelectorAll('[data-installer]')) chip.href = installers[chip.dataset.installer].url;
+
+  const web = { href: WEB_URL, label: text('edition.web.cta'), arrow: '↗' };
+  if (key) {
+    setAction(primary, { href: installers[key].url, label: installers[key].label, arrow: '↓', installer: key });
+    setAction(secondary, web);
+  } else if (unsureMac) {
+    // Safari and Firefox do not reveal the Mac's chip: the two chips under the buttons decide.
+    setAction(primary, { href: '#', label: text('download.forPlatform', { platform: 'Mac' }), arrow: '↓' });
+    primary.dataset.macChoice = '';
+    setAction(secondary, web);
+  } else {
+    setAction(primary, web);
+    setAction(secondary, { href: '#', label: text('edition.desktop.cta'), arrow: '↓' });
+    secondary.dataset.openDownloads = '';
   }
-  document.querySelector('[data-desktop-download]').setAttribute('aria-haspopup', 'dialog');
-  document.addEventListener('click', event => {
-    const link = event.target.closest('a');
-    if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (link.getAttribute('href') === '#download-options') {
+
+  // The dialog's list is rendered by the page; mark this computer's installer in it.
+  for (const link of dialog.querySelectorAll('.installer[data-installer]')) {
+    const item = installers[link.dataset.installer];
+    const mine = link.dataset.installer === key;
+    if (mine) link.dataset.recommended = 'true';
+    else delete link.dataset.recommended;
+    link.querySelector('[data-installer-name]').textContent = mine ? text('download.thisComputer', { name: item.name }) : item.name;
+  }
+}
+
+export function initDownloads() {
+  render();
+  navigator.userAgentData?.getHighEntropyValues?.(['platform', 'architecture', 'bitness'])
+    .then((data) => render(data.platform, data.architecture, data.bitness))
+    .catch(() => {});
+
+  document.addEventListener('click', (event) => {
+    const target = event.target.closest('a, button');
+    if (!target || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (target.matches('[data-open-downloads]')) {
       event.preventDefault();
-      opener = link;
-      dialog.showModal();
-      document.body.classList.add('download-window-open');
+      openDialog(dialog, target);
+    } else if (target.matches('[data-mac-choice]')) {
+      event.preventDefault();
+      macChooser.querySelector('a')?.focus();
+    } else if (target.dataset.installer) {
+      // The download starts; say what to do next, where the visitor is looking.
+      installNote.textContent = text('download.after', { instruction: installers[target.dataset.installer].after });
+      installNote.hidden = false;
+      if (dialog.open) dialog.close();
     }
-    if (link.dataset.installer) {
-      interacted = true;
-      note.textContent = messages.after.replace('{instruction}', link.dataset.instruction);
-    }
   });
-  chooser.addEventListener('toggle', () => { if (dialog.open) interacted = true; });
-  document.querySelector('.dialog-close').addEventListener('click', () => dialog.close());
-  dialog.addEventListener('click', event => {
-    const box = dialog.getBoundingClientRect();
-    if (event.target === dialog && (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom)) dialog.close();
-  });
-  dialog.addEventListener('close', () => {
-    document.body.classList.remove('download-window-open');
-    opener?.focus({ preventScroll: true });
-  });
-  recommend();
-  navigator.userAgentData?.getHighEntropyValues?.(['platform', 'architecture', 'bitness']).then(data => recommend(data.platform, data.architecture, data.bitness)).catch(() => {});
-})();
+}

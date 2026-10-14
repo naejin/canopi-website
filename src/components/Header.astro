@@ -1,48 +1,32 @@
 ---
 import { t, locales, languageNames, localizedUrl, type Locale } from '../i18n/utils';
+import { DOCS_URL, discordUrl } from '../data/site';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
-const discordUrl = lang === 'fr' ? 'https://discord.gg/7wq9HsBdsc' : 'https://discord.gg/k7bsyjD9b8';
 ---
-<a class="skip" href="#main">{t('header.skip', lang)}</a>
-<header class="wrap">
-  <a class="brand" href={localizedUrl('/', lang)} aria-label={t('header.home', lang)}><img src="/canopi-logo.svg" width="36" height="36" alt="" />Canopi</a>
-  <nav aria-label={t('header.navigation', lang)}>
-    <a href="https://liberapay.com/Canopi/donate">{t('header.donate', lang)}</a>
-    <a class="community-link" href={discordUrl}>Discord</a>
-    <details class="lang-switcher" data-lang-switcher>
-      <summary aria-label={t('header.language', lang)}>{lang.toUpperCase()}</summary>
-      <div class="lang-menu">
-        {locales.map(locale => (<a href={localizedUrl('/', locale)} lang={locale} aria-current={locale === lang ? 'page' : undefined}>{languageNames[locale]}</a>))}
-      </div>
-    </details>
-    <button data-theme-toggle data-dark-label={t('header.darkLabel', lang)} data-light-label={t('header.lightLabel', lang)} data-dark-aria={t('header.themeDark', lang)} data-light-aria={t('header.themeLight', lang)} aria-label={t('header.themeDark', lang)}>
-      <span class="theme-label">{t('header.darkLabel', lang)}</span><span class="theme-symbol" aria-hidden="true">☾</span>
-    </button>
-  </nav>
+<a class="skip-link" href="#main">{t('header.skip', lang)}</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href={localizedUrl('/', lang)} aria-label={t('header.home', lang)}>
+      <img src="/canopi-logo.svg" width="36" height="36" alt="" />
+      <span>Canopi</span>
+    </a>
+    <nav class="header-nav" aria-label={t('header.navigation', lang)}>
+      {DOCS_URL && <a class="nav-link" href={DOCS_URL}>{t('header.docs', lang)}</a>}
+      <button class="nav-link" type="button" data-open-donate>{t('header.donate', lang)}</button>
+      <a class="nav-link nav-discord" href={discordUrl(lang)}>Discord</a>
+      <details class="lang-menu" data-lang-menu>
+        <summary class="nav-link" aria-label={`${t('header.language', lang)}: ${languageNames[lang]}`}>{lang.toUpperCase()}</summary>
+        <ul class="menu-panel" role="list">
+          {locales.map((locale) => (
+            <li><a href={localizedUrl('/', locale)} lang={locale} hreflang={locale} aria-current={locale === lang ? 'true' : undefined}>{languageNames[locale]}</a></li>
+          ))}
+        </ul>
+      </details>
+      <button class="nav-link theme-toggle" type="button" data-theme-toggle aria-label={t('header.themeDark', lang)}>
+        <svg class="icon-moon" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M15.5 12.6A6.5 6.5 0 0 1 7.4 4.5a6.5 6.5 0 1 0 8.1 8.1Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <svg class="icon-sun" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 1.8v2.2M10 16v2.2M1.8 10H4M16 10h2.2M4.2 4.2l1.6 1.6M14.2 14.2l1.6 1.6M4.2 15.8l1.6-1.6M14.2 5.8l1.6-1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+  </div>
 </header>
-<script>
-  const toggle = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
-  if (toggle) {
-    const updateLabel = () => {
-      const dark = document.documentElement.dataset.theme === 'dark';
-      toggle.setAttribute('aria-label', (dark ? toggle.dataset.lightAria : toggle.dataset.darkAria)!);
-      toggle.querySelector('.theme-label')!.textContent = (dark ? toggle.dataset.lightLabel : toggle.dataset.darkLabel)!;
-      toggle.querySelector('.theme-symbol')!.textContent = dark ? '☀' : '☾';
-    };
-    updateLabel();
-    toggle.addEventListener('click', () => {
-      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = next;
-      try { localStorage.setItem('canopi-theme', next); } catch {}
-      updateLabel();
-    });
-  }
-  const switcher = document.querySelector<HTMLDetailsElement>('[data-lang-switcher]');
-  document.addEventListener('click', event => {
-    if (switcher && !switcher.contains(event.target as Node)) switcher.open = false;
-  });
-  switcher?.addEventListener('keydown', event => {
-    if (event.key === 'Escape') { switcher.open = false; switcher.querySelector('summary')?.focus(); }
-  });
-</script>

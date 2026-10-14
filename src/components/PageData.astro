@@ -1,0 +1,14 @@
+---
+// The strings and data the page's scripts show, in the page's language (src/scripts/page-data.js).
+import { t, type Locale } from '../i18n/utils';
+import { CANOPI_VERSION } from '../data/release';
+interface Props { lang: Locale; keys: string[]; installers?: Record<string, unknown>; }
+const { lang, keys, installers = {} } = Astro.props;
+const data = {
+  lang,
+  version: CANOPI_VERSION,
+  installers,
+  strings: Object.fromEntries(['header.themeDark', 'header.themeLight', 'donate.frameTitle', ...keys].map((key) => [key, t(key, lang)])),
+};
+---
+<script type="application/json" id="page-data" set:html={JSON.stringify(data)} />

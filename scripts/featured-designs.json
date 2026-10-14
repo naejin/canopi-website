@@ -1,0 +1,26 @@
+[
+  {
+    "id": "sanctuaire-aylin",
+    "name": "Le Sanctuaire d'Aylin",
+    "designer": "Aylin",
+    "projectUrl": "https://lesanctuairedaylin.square.site/",
+    "organisation": {
+      "name": "Destination Syntropie",
+      "url": "https://destinationsyntropie.org/"
+    },
+    "region": "Sarthe",
+    "country": "FR"
+  },
+  {
+    "id": "claire-sam",
+    "name": "Claire & Sam",
+    "designer": "Stéphane",
+    "projectUrl": "https://www.oasisgourmande.fr/",
+    "organisation": {
+      "name": "Destination Syntropie",
+      "url": "https://destinationsyntropie.org/"
+    },
+    "region": "Morbihan",
+    "country": "FR"
+  }
+]

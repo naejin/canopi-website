@@ -1,0 +1,21 @@
+---
+// Donations: HelloAsso's form inside our own dialog. src/scripts/donate.js creates the iframe on
+// first open, so nothing loads from HelloAsso before a visitor asks.
+import { t, type Locale } from '../i18n/utils';
+import { HELLOASSO_WIDGET_URL } from '../data/site';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+---
+<dialog class="dialog dialog-donate" data-donate-dialog aria-labelledby="donate-title">
+  <div class="dialog-head">
+    <div>
+      <h2 id="donate-title">{t('donate.title', lang)}</h2>
+      <p class="dialog-lede">{t('donate.lede', lang)}</p>
+    </div>
+    <button class="dialog-close" type="button" data-close-dialog aria-label={t('dialog.close', lang)}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="donate-frame" data-donate-frame data-src={HELLOASSO_WIDGET_URL}>
+    <p class="muted">{t('donate.loading', lang)}</p>
+  </div>
+  <p class="dialog-foot">{t('donate.foot', lang)}</p>
+</dialog>

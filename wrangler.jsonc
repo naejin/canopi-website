@@ -7,6 +7,17 @@
 		"directory": "./dist",
 		"binding": "ASSETS"
 	},
+	// The contact form (src/pages/api/contact.ts) mails the site's owner through Email Routing.
+	"send_email": [
+		{
+			"name": "EMAIL",
+			"destination_address": "projectcanopi@gmail.com",
+			"allowed_sender_addresses": ["contact@projectcanopi.com"]
+		}
+	],
+	"vars": {
+		"MAIL_TO": "projectcanopi@gmail.com"
+	},
 	"observability": {
 		"enabled": true
 	}

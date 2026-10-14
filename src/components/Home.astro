@@ -1,0 +1,55 @@
+---
+// The home page for one locale; src/pages/index.astro and src/pages/[lang]/index.astro render it.
+import Base from '../layouts/Base.astro';
+import Header from './Header.astro';
+import Hero from './Hero.astro';
+import FeaturedDesign from './FeaturedDesign.astro';
+import Places from './Places.astro';
+import Network from './Network.astro';
+import Contact from './Contact.astro';
+import Footer from './Footer.astro';
+import DownloadDialog from './DownloadDialog.astro';
+import DonateDialog from './DonateDialog.astro';
+import PageData from './PageData.astro';
+import { t, type Locale } from '../i18n/utils';
+import { CANOPI_DOWNLOADS } from '../data/release';
+
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+
+// The installers, as the hero's script offers them.
+const installers = {
+  windows: { name: t('edition.installer.windowsExe', lang), url: CANOPI_DOWNLOADS.windowsSetupExe, label: t('download.forPlatform', lang, { platform: 'Windows' }), after: t('download.installWindows', lang) },
+  'windows-msi': { name: t('edition.installer.windowsMsi', lang), url: CANOPI_DOWNLOADS.windowsMsi, after: t('download.installWindows', lang) },
+  'mac-arm': { name: t('edition.installer.macApple', lang), url: CANOPI_DOWNLOADS.macAppleSiliconDmg, label: t('download.forPlatform', lang, { platform: 'Mac' }), after: t('download.installMac', lang) },
+  'mac-intel': { name: t('edition.installer.macIntel', lang), url: CANOPI_DOWNLOADS.macIntelDmg, label: t('download.forPlatform', lang, { platform: 'Mac (Intel)' }), after: t('download.installMac', lang) },
+  linux: { name: t('edition.installer.linuxAppImage', lang), url: CANOPI_DOWNLOADS.linuxAppImage, label: t('download.forPlatform', lang, { platform: 'Linux' }), after: t('download.installLinux', lang) },
+  'linux-deb': { name: t('edition.installer.linuxDeb', lang), url: CANOPI_DOWNLOADS.linuxDeb, after: t('download.installDeb', lang) },
+};
+// Strings the scripts show; keys match src/scripts/*.js.
+const keys = [
+  'edition.web.cta', 'edition.desktop.cta', 'download.forPlatform', 'download.after', 'download.thisComputer',
+  'design.canvasLabel', 'design.hintPointer', 'design.hintTouch', 'design.by', 'design.stats', 'design.org',
+  'design.stratum.emergent', 'design.stratum.high', 'design.stratum.medium', 'design.stratum.low', 'design.stratum.none',
+  'places.meta', 'places.unavailable',
+  'contact.sending', 'contact.sent', 'contact.failed', 'contact.refused', 'contact.invalid',
+];
+---
+
+<Base title={t('meta.title', lang)} description={t('meta.description', lang)} lang={lang}>
+  <Header lang={lang} />
+  <main id="main">
+    <Hero lang={lang} />
+    <FeaturedDesign lang={lang} />
+    <Places lang={lang} />
+    <Network lang={lang} />
+    <Contact lang={lang} />
+  </main>
+  <Footer lang={lang} />
+  <DownloadDialog lang={lang} />
+  <DonateDialog lang={lang} />
+  <PageData lang={lang} keys={keys} installers={installers} />
+  <script>
+    import '../scripts/home.js';
+  </script>
+</Base>

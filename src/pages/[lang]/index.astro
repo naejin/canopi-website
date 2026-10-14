@@ -1,30 +1,12 @@
 ---
-import Base from '../../layouts/Base.astro';
-import Header from '../../components/Header.astro';
-import Hero from '../../components/Hero.astro';
-import Network from '../../components/Network.astro';
-import Footer from '../../components/Footer.astro';
-import { t, locales, defaultLocale, isLocale, type Locale } from '../../i18n/utils';
+import Home from '../../components/Home.astro';
+import { locales, defaultLocale, type Locale } from '../../i18n/utils';
 
 export function getStaticPaths() {
-  return locales
-    .filter((l) => l !== defaultLocale)
-    .map((lang) => ({ params: { lang } }));
+  return locales.filter((lang) => lang !== defaultLocale).map((lang) => ({ params: { lang } }));
 }
 
-const { lang: langParam } = Astro.params;
-const lang = (isLocale(langParam) ? langParam : defaultLocale) as Locale;
+const lang = Astro.params.lang as Locale;
 ---
 
-<Base
-  title={t('meta.title', lang)}
-  description={t('meta.description', lang)}
-  lang={lang}
->
-  <Header lang={lang} />
-  <main id="main">
-    <Hero lang={lang} />
-    <Network lang={lang} />
-  </main>
-  <Footer lang={lang} />
-</Base>
+<Home lang={lang} />

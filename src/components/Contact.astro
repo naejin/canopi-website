@@ -1,0 +1,44 @@
+---
+// The contact form keeps the address out of the page: it posts to /api/contact
+// (src/pages/api/contact.ts). Without JS the endpoint redirects to /contact/sent/ or /contact/failed/.
+import { t, type Locale } from '../i18n/utils';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+---
+<section class="section contact" id="contact" aria-labelledby="contact-title">
+  <div class="wrap contact-layout">
+    <header class="contact-intro">
+      <h2 id="contact-title">{t('contact.title', lang)}</h2>
+      <p>{t('contact.lede', lang)}</p>
+      <p class="muted small">{t('contact.privacy', lang)}</p>
+    </header>
+    <form class="contact-form" data-contact-form method="post" action="/api/contact" novalidate>
+      <input type="hidden" name="lang" value={lang} />
+      <div class="field-row">
+        <div class="field">
+          <label for="contact-name">{t('contact.name', lang)}</label>
+          <input id="contact-name" name="name" autocomplete="name" required maxlength="120" />
+          <p class="field-error" id="contact-name-error" hidden>{t('contact.nameError', lang)}</p>
+        </div>
+        <div class="field">
+          <label for="contact-email">{t('contact.email', lang)}</label>
+          <input id="contact-email" name="email" type="email" autocomplete="email" required maxlength="254" />
+          <p class="field-error" id="contact-email-error" hidden>{t('contact.emailError', lang)}</p>
+        </div>
+      </div>
+      <div class="field">
+        <label for="contact-message">{t('contact.message', lang)}</label>
+        <textarea id="contact-message" name="message" rows="6" required maxlength="5000"></textarea>
+        <p class="field-error" id="contact-message-error" hidden>{t('contact.messageError', lang)}</p>
+      </div>
+      <div class="honeypot" aria-hidden="true">
+        <label for="contact-website">{t('contact.honeypot', lang)}</label>
+        <input id="contact-website" name="website" tabindex="-1" autocomplete="off" />
+      </div>
+      <div class="form-actions">
+        <button class="button button-primary" type="submit">{t('contact.send', lang)}</button>
+        <p class="form-status" data-form-status role="status"></p>
+      </div>
+    </form>
+  </div>
+</section>

@@ -1,23 +1,6 @@
 ---
-import Base from '../layouts/Base.astro';
-import Header from '../components/Header.astro';
-import Hero from '../components/Hero.astro';
-import Network from '../components/Network.astro';
-import Footer from '../components/Footer.astro';
-import { t, defaultLocale } from '../i18n/utils';
-
-const lang = defaultLocale;
+import Home from '../components/Home.astro';
+import { defaultLocale } from '../i18n/utils';
 ---
 
-<Base
-  title={t('meta.title', lang)}
-  description={t('meta.description', lang)}
-  lang={lang}
->
-  <Header lang={lang} />
-  <main id="main">
-    <Hero lang={lang} />
-    <Network lang={lang} />
-  </main>
-  <Footer lang={lang} />
-</Base>
+<Home lang={defaultLocale} />

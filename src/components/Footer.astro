@@ -1,11 +1,22 @@
 ---
 import { t, localizedUrl, type Locale } from '../i18n/utils';
-import { CANOPI_RELEASES_URL } from '../data/release';
+import { DOCS_URL, SOURCE_URL, discordUrl } from '../data/site';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
 ---
-<footer class="wrap">
-  <a class="brand" href={localizedUrl('/', lang)} aria-label={t('header.home', lang)}><img src="/canopi-logo.svg" width="28" height="28" alt="" />Canopi</a>
-  <span>{t('footer.license', lang)}</span>
-  <a href={CANOPI_RELEASES_URL}>{t('download.allReleases', lang)} <span aria-hidden="true">↗</span></a>
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <a class="brand brand-small" href={`${localizedUrl('/', lang)}#top`} aria-label={t('footer.top', lang)}>
+      <img src="/canopi-logo.svg" width="28" height="28" alt="" />
+      <span>Canopi</span>
+    </a>
+    <ul class="footer-links" role="list">
+      {DOCS_URL && <li><a href={DOCS_URL}>{t('header.docs', lang)}</a></li>}
+      <li><a href={SOURCE_URL}>{t('footer.source', lang)}</a></li>
+      <li><a href={discordUrl(lang)}>Discord</a></li>
+      <li><button class="link-button" type="button" data-open-donate>{t('header.donate', lang)}</button></li>
+      <li><a href={`${localizedUrl('/', lang)}#contact`}>{t('footer.contact', lang)}</a></li>
+    </ul>
+    <p class="footer-legal">{t('footer.license', lang)}</p>
+  </div>
 </footer>

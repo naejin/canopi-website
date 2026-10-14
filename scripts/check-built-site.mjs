@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
@@ -15,8 +15,12 @@ const downloads = [
   'canopi-linux-x64.deb',
   'RELEASE-SHA256SUMS.txt',
 ];
-for (const lang of ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru']) {
-  const html = readFileSync(join(root, lang === 'en' ? '' : lang, 'index.html'), 'utf8');
+const locales = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
+const assetLinks = (html) => [...html.matchAll(/(?:src|href)="(\/(?:_astro|fonts|hero|og|data|vendor)\/[^"?#]+)"/g)].map((m) => m[1]);
+
+for (const lang of locales) {
+  const dir = lang === 'en' ? '' : lang;
+  const html = readFileSync(join(root, dir, 'index.html'), 'utf8');
   assert.ok(html.includes(`lang="${lang}"`), lang);
   for (const filename of downloads) {
     assert.ok(html.includes(`${latestDownloadBase}/${filename}`), `${lang}: ${filename}`);
@@ -24,17 +28,45 @@ for (const lang of ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 
   assert.ok(html.includes('https://web.projectcanopi.com/'), `${lang}: Web Edition URL`);
   assert.ok(!/github\.com\/naejin\/canopi\/releases\/download\/v[^/]+\/Canopi_/.test(html), `${lang}: stale versioned installer URL`);
   assert.ok(html.includes('id="download-dialog"'), lang);
-  assert.ok(html.includes('poster="/orchard-screenshot.png"'), lang);
+  assert.ok(html.includes('data-donate-dialog'), `${lang}: donate dialog`);
   assert.ok(html.includes('https://ecosystemrestorationcommunities.org/'), lang);
   assert.ok(html.includes('https://www.ecosystemrestorationfriends.com/'), lang);
-  assert.ok(!/design-proposal|screenshot-light\.png|fonts\.googleapis/.test(html), `${lang}: stale source`);
+  assert.ok(/<form[^>]*method="post"[^>]*action="\/api\/contact"/.test(html), `${lang}: contact form`);
+  assert.ok(!/<video|orchard-screenshot|demo-canopi|design-proposal|screenshot-light\.png|fonts\.googleapis/.test(html), `${lang}: stale source`);
+  // The painting for each theme and size, chosen by CSS from these variables.
+  for (const variant of ['', '-night', '-1200', '-night-1200']) {
+    const path = `/hero/hero-${lang}${variant}.jpg`;
+    assert.ok(html.includes(`url(${path})`), `${lang}: painting ${path}`);
+    assert.ok(existsSync(join(root, path)), `Missing painting: ${path}`);
+  }
+  assert.ok(html.includes(`/og/og-${lang}.jpg`), `${lang}: og:image`);
+  assert.ok(existsSync(join(root, 'og', `og-${lang}.jpg`)), `${lang}: og image file`);
   const visibleMarkup = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
-  assert.ok(!/\{(?:platform|instruction)\}/.test(visibleMarkup), `${lang}: unresolved placeholder`);
-  for (const [, path] of html.matchAll(/(?:src|href)="(\/(?:_astro|fonts)\/[^"?#]+)"/g)) {
-    assert.ok(existsSync(join(root, path)), `Missing asset: ${path}`);
+  assert.ok(!/\{\w+\}/.test(visibleMarkup), `${lang}: unresolved placeholder`);
+  for (const path of assetLinks(html)) assert.ok(existsSync(join(root, path)), `Missing asset: ${path}`);
+
+  for (const result of ['sent', 'failed']) {
+    const page = readFileSync(join(root, dir, 'contact', result, 'index.html'), 'utf8');
+    assert.ok(page.includes('<meta name="robots" content="noindex">'), `${lang}: ${result} page is noindex`);
+    for (const path of assetLinks(page)) assert.ok(existsSync(join(root, path)), `Missing asset: ${path}`);
   }
 }
-for (const asset of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'canopi-logo.svg']) assert.ok(existsSync(join(root, asset)), asset);
-assert.ok(!existsSync(join(root, 'screenshot-light.png')));
-assert.ok(!existsSync(join(root, 'network')));
-console.log(`Verified 11 locale pages, v${version} permanent installer links, Web Edition URL, network links and static assets.`);
+
+// The contact address and the retired donation platform appear in no served file.
+function* files(dir) {
+  for (const name of readdirSync(dir)) {
+    const path = join(dir, name);
+    if (statSync(path).isDirectory()) yield* files(path);
+    else if (/\.(html|js|mjs|css|json|xml|txt)$/.test(name)) yield path;
+  }
+}
+for (const path of files(root)) {
+  const text = readFileSync(path, 'utf8');
+  assert.ok(!text.includes('contact@projectcanopi.com'), `contact address in ${path}`);
+  assert.ok(!/liberapay/i.test(text), `liberapay in ${path}`);
+}
+assert.ok(!readFileSync(join(root, 'sitemap-0.xml'), 'utf8').includes('/contact/'), 'contact result pages stay out of the sitemap');
+
+for (const asset of ['canopi-logo.svg', 'data/featured-designs.json', 'data/plant-symbols.json']) assert.ok(existsSync(join(root, asset)), asset);
+for (const gone of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'screenshot-light.png', 'network']) assert.ok(!existsSync(join(root, gone)), `${gone} is retired`);
+console.log(`Verified 11 locale pages and their contact result pages, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links and static assets.`);

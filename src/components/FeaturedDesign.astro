@@ -1,0 +1,44 @@
+---
+// A real Canopi design drawn as the app draws it; src/scripts/design-canvas.js fills it in.
+import { t, type Locale } from '../i18n/utils';
+import { CANOPI_VERSION } from '../data/release';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+---
+<section class="section featured" id="design" aria-labelledby="design-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="design-title">{t('design.title', lang)}</h2>
+      <p>{t('design.lede', lang)}</p>
+    </header>
+    <div class="design-layout">
+      <figure class="design-stage">
+        <div class="design-canvas-wrap" data-design-stage>
+          <canvas class="design-canvas" data-design-canvas role="img" aria-label={t('design.title', lang)}></canvas>
+          <div class="plant-tooltip" data-plant-tooltip hidden></div>
+          <div class="design-controls" role="group" aria-label={t('design.view', lang)}>
+            <button type="button" data-zoom="in" aria-label={t('design.zoomIn', lang)}><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+            <button type="button" data-zoom="out" aria-label={t('design.zoomOut', lang)}><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+            <button type="button" data-zoom="fit">{t('design.fit', lang)}</button>
+          </div>
+          <p class="design-hint" data-design-hint></p>
+        </div>
+        <figcaption class="design-legend" data-design-legend></figcaption>
+      </figure>
+      <aside class="design-card" aria-live="polite">
+        <p class="card-kicker">{t('design.kicker', lang)}</p>
+        <h3 class="card-title" data-design-name></h3>
+        <p class="card-by" data-design-by></p>
+        <dl class="card-facts">
+          <div><dt>{t('design.place', lang)}</dt><dd data-design-place></dd></div>
+          <div><dt>{t('design.planting', lang)}</dt><dd data-design-stats></dd></div>
+        </dl>
+        <ul class="card-links" role="list">
+          <li><a data-design-project href="#design">{t('design.project', lang)} <span aria-hidden="true">↗</span></a></li>
+          <li><a data-design-org href="#design"></a></li>
+        </ul>
+        <p class="card-note">{t('design.madeWith', lang, { version: CANOPI_VERSION })}</p>
+      </aside>
+    </div>
+  </div>
+</section>
