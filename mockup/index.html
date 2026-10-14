@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Canopi · Agroecological design</title>
+  <meta name="description" content="Design food forests, orchards and agroecological gardens on a map with Canopi. Free and open source for Windows, macOS, Linux and your browser.">
+  <meta name="theme-color" content="#EFE9DD" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#161510" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="assets/canopi-logo.svg">
+  <link rel="preload" href="assets/fonts/literata-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/source-sans-3-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/site.css">
+  <script>
+    // Theme before first paint: a saved choice wins over the system preference.
+    try { const saved = localStorage.getItem('canopi-theme'); if (saved) document.documentElement.dataset.theme = saved; } catch {}
+  </script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body class="grain">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#top" aria-label="Canopi, home">
+        <img src="assets/canopi-logo.svg" width="36" height="36" alt="">
+        <span>Canopi</span>
+      </a>
+      <nav class="header-nav" aria-label="Main navigation">
+        <!-- Docs: reserved; shown when the documentation ships. -->
+        <a class="nav-link" href="/docs/" hidden>Docs</a>
+        <button class="nav-link" type="button" data-open-donate>Donate</button>
+        <a class="nav-link" href="https://discord.gg/k7bsyjD9b8">Discord</a>
+        <details class="lang-menu" data-lang-menu>
+          <summary class="nav-link" aria-label="Language: English"><span data-lang-code>EN</span></summary>
+          <ul class="menu-panel" role="list">
+            <li><a href="?lang=en" lang="en" data-lang="en" aria-current="true">English</a></li>
+            <li><a href="?lang=fr" lang="fr" data-lang="fr">Français</a></li>
+            <li><a href="?lang=es" lang="es" data-lang="es">Español</a></li>
+            <li><a href="?lang=pt" lang="pt" data-lang="pt">Português</a></li>
+            <li><a href="?lang=it" lang="it" data-lang="it">Italiano</a></li>
+            <li><a href="?lang=de" lang="de" data-lang="de">Deutsch</a></li>
+            <li><a href="?lang=nl" lang="nl" data-lang="nl">Nederlands</a></li>
+            <li><a href="?lang=ru" lang="ru" data-lang="ru">Русский</a></li>
+            <li><a href="?lang=zh" lang="zh" data-lang="zh">中文</a></li>
+            <li><a href="?lang=ja" lang="ja" data-lang="ja">日本語</a></li>
+            <li><a href="?lang=ko" lang="ko" data-lang="ko">한국어</a></li>
+          </ul>
+        </details>
+        <button class="nav-link theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme">
+          <svg class="icon-moon" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M15.5 12.6A6.5 6.5 0 0 1 7.4 4.5a6.5 6.5 0 1 0 8.1 8.1Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <svg class="icon-sun" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 1.8v2.2M10 16v2.2M1.8 10H4M16 10h2.2M4.2 4.2l1.6 1.6M14.2 14.2l1.6 1.6M4.2 15.8l1.6-1.6M14.2 5.8l1.6-1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero: the brand at first glance, the right download in one click. -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="hero-painting" aria-hidden="true"></div>
+      <canvas class="hero-mask" aria-hidden="true"></canvas>
+      <div class="wrap hero-inner">
+        <h1 id="hero-title" class="hero-title">Canopi</h1>
+        <p class="hero-tagline">Agroecological design, free and open to everyone</p>
+        <div class="hero-actions">
+          <a class="button button-primary" data-primary-action href="https://web.projectcanopi.com/">Open Canopi Web</a>
+          <a class="button button-secondary" data-secondary-action href="https://web.projectcanopi.com/">Open Canopi Web</a>
+        </div>
+        <div class="mac-chooser" data-mac-chooser hidden>
+          <p>Which chip does your Mac have? <span class="muted">Apple menu → About This Mac.</span></p>
+          <div class="mac-chips">
+            <a class="chip" data-installer="mac-arm">Apple silicon (M1 and later)</a>
+            <a class="chip" data-installer="mac-intel">Intel</a>
+          </div>
+        </div>
+        <p class="install-note" data-install-note hidden></p>
+        <p class="hero-meta">
+          <button class="link-button" type="button" data-open-downloads>All systems and versions</button>
+          <span class="meta-sep" aria-hidden="true">·</span>
+          <span>Version 2.0, free and open source</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- Featured design: a real Canopi design, as the app draws it. -->
+    <section class="section featured" id="design" aria-labelledby="design-title">
+      <div class="wrap">
+        <header class="section-head">
+          <h2 id="design-title">Designed with Canopi</h2>
+          <p>Real places, planned layer by layer. Point at a plant to see what grows there.</p>
+        </header>
+        <div class="design-layout">
+          <figure class="design-stage">
+            <div class="design-canvas-wrap" data-design-stage>
+              <canvas class="design-canvas" data-design-canvas role="img" aria-label="Planting plan"></canvas>
+              <div class="plant-tooltip" data-plant-tooltip hidden></div>
+              <div class="design-controls" role="group" aria-label="View">
+                <button type="button" data-zoom="in" aria-label="Zoom in"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+                <button type="button" data-zoom="out" aria-label="Zoom out"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+                <button type="button" data-zoom="fit">Whole plan</button>
+              </div>
+              <p class="design-hint" data-design-hint>Drag to explore</p>
+            </div>
+            <figcaption class="design-legend" data-design-legend></figcaption>
+          </figure>
+          <aside class="design-card" aria-live="polite">
+            <p class="card-kicker">Featured design</p>
+            <h3 class="card-title" data-design-name></h3>
+            <p class="card-by" data-design-by></p>
+            <dl class="card-facts">
+              <div><dt>Place</dt><dd data-design-place></dd></div>
+              <div><dt>Planting</dt><dd data-design-stats></dd></div>
+            </dl>
+            <ul class="card-links" role="list">
+              <li><a data-design-project href="#">Visit the project <span aria-hidden="true">↗</span></a></li>
+              <li><a data-design-org href="#"></a></li>
+            </ul>
+            <p class="card-note">Made with Canopi 2.0</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- Map: where featured designs are, to find one nearby. -->
+    <section class="section places" id="places" aria-labelledby="places-title">
+      <div class="wrap">
+        <header class="section-head">
+          <h2 id="places-title">Designs around the world</h2>
+          <p>Find a design near you and the people behind it. Choose one to see it above.</p>
+        </header>
+        <div class="places-layout">
+          <div class="places-map" data-places-map aria-label="Map of featured designs"></div>
+          <div class="places-index">
+            <ul class="places-list" role="list" data-places-list></ul>
+            <p class="places-note">Locations are approximate.</p>
+            <p class="places-invite">Designed something with Canopi? <a href="#contact">We’d love to feature it.</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Network: organisations across the wider agroecology movement. -->
+    <section class="section network" id="network" aria-labelledby="network-title">
+      <div class="wrap">
+        <header class="section-head">
+          <h2 id="network-title">Agroecology network</h2>
+          <p>Discover organizations working across the wider agroecology movement.</p>
+        </header>
+        <div class="network-grid" data-network></div>
+      </div>
+    </section>
+
+    <!-- Contact: the address stays hidden behind the form. -->
+    <section class="section contact" id="contact" aria-labelledby="contact-title">
+      <div class="wrap contact-layout">
+        <header class="contact-intro">
+          <h2 id="contact-title">Write to us</h2>
+          <p>A question, a design to share, an idea for Canopi? We read every message.</p>
+          <p class="muted small">Your message is only used to reply to you.</p>
+        </header>
+        <form class="contact-form" data-contact-form novalidate>
+          <div class="field-row">
+            <div class="field">
+              <label for="contact-name">Name</label>
+              <input id="contact-name" name="name" autocomplete="name" required maxlength="120">
+              <p class="field-error" id="contact-name-error" hidden>Please tell us your name.</p>
+            </div>
+            <div class="field">
+              <label for="contact-email">Email</label>
+              <input id="contact-email" name="email" type="email" autocomplete="email" required maxlength="200">
+              <p class="field-error" id="contact-email-error" hidden>Please enter an email address we can reply to.</p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="contact-message">Message</label>
+            <textarea id="contact-message" name="message" rows="6" required maxlength="5000"></textarea>
+            <p class="field-error" id="contact-message-error" hidden>Please write a message.</p>
+          </div>
+          <div class="honeypot" aria-hidden="true">
+            <label for="contact-website">Leave this field empty</label>
+            <input id="contact-website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+          <div class="form-actions">
+            <button class="button button-primary" type="submit">Send message</button>
+            <p class="form-status" data-form-status role="status"></p>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <a class="brand brand-small" href="#top" aria-label="Canopi, back to top">
+        <img src="assets/canopi-logo.svg" width="28" height="28" alt="">
+        <span>Canopi</span>
+      </a>
+      <ul class="footer-links" role="list">
+        <li><a href="/docs/" hidden>Docs</a></li>
+        <li><a href="https://github.com/naejin/canopi">Source code</a></li>
+        <li><a href="https://discord.gg/k7bsyjD9b8">Discord</a></li>
+        <li><button class="link-button" type="button" data-open-donate>Donate</button></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+      <p class="footer-legal">Free software under the AGPL-3.0 licence.</p>
+    </div>
+  </footer>
+
+  <!-- Every installer, for other systems or a different version. -->
+  <dialog class="dialog" data-downloads-dialog aria-labelledby="downloads-title">
+    <div class="dialog-head">
+      <h2 id="downloads-title">Get Canopi</h2>
+      <button class="dialog-close" type="button" data-close-dialog aria-label="Close"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="dialog-body">
+      <div class="edition">
+        <h3>Canopi Web</h3>
+        <p>Opens in your browser, nothing to install. A smaller plant catalog; your designs stay in this browser.</p>
+        <a class="button button-secondary" href="https://web.projectcanopi.com/">Open Canopi Web <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="edition">
+        <h3>Canopi Desktop</h3>
+        <p>The full plant catalog, terrain data and the Data library. Works offline.</p>
+        <div class="installer-groups" data-installer-list></div>
+      </div>
+      <p class="dialog-foot">
+        <a href="https://github.com/naejin/canopi/releases/latest/download/RELEASE-SHA256SUMS.txt">SHA-256 checksums</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/naejin/canopi/releases">All releases on GitHub</a>
+      </p>
+    </div>
+  </dialog>
+
+  <!-- Donations: HelloAsso's form inside our own dialog, loaded on demand. -->
+  <dialog class="dialog dialog-donate" data-donate-dialog aria-labelledby="donate-title">
+    <div class="dialog-head">
+      <div>
+        <h2 id="donate-title">Support Canopi</h2>
+        <p class="dialog-lede">Canopi is free for everyone. Donations fund its development and the plant catalog.</p>
+      </div>
+      <button class="dialog-close" type="button" data-close-dialog aria-label="Close"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="donate-frame" data-donate-frame>
+      <p class="muted">Loading the secure donation form…</p>
+    </div>
+    <p class="dialog-foot">Payments are handled by HelloAsso, a French platform for non-profits.</p>
+  </dialog>
+
+  <p class="mockup-badge" data-mockup-badge>Mockup · <span data-mockup-lang>English</span> painting</p>
+</body>
+</html>

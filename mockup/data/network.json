@@ -1,0 +1,113 @@
+[
+ {
+  "region": "Global",
+  "organisations": [
+   {
+    "name": "DeepSeed",
+    "url": "https://www.deepseed.eu/"
+   },
+   {
+    "name": "Agroecology Fund",
+    "url": "https://agroecologyfund.org/"
+   },
+   {
+    "name": "Access Agriculture",
+    "url": "https://www.accessagriculture.org/"
+   },
+   {
+    "name": "Savory Institute",
+    "url": "https://savory.global/"
+   },
+   {
+    "name": "Ecosystem Restoration Communities",
+    "url": "https://ecosystemrestorationcommunities.org/"
+   },
+   {
+    "name": "Friends of the Ecosystem Restoration Movement",
+    "url": "https://www.ecosystemrestorationfriends.com/"
+   }
+  ]
+ },
+ {
+  "region": "Europe",
+  "organisations": [
+   {
+    "name": "Agroecology Europe",
+    "url": "https://www.agroecology-europe.org/"
+   }
+  ]
+ },
+ {
+  "region": "France",
+  "organisations": [
+   {
+    "name": "Joala Syntropie",
+    "url": "https://joala.fr/"
+   },
+   {
+    "name": "Destination Syntropie",
+    "url": "https://destinationsyntropie.org/"
+   },
+   {
+    "name": "La Vache Heureuse",
+    "url": "https://www.lvh-france.com/"
+   },
+   {
+    "name": "Ver de Terre Production",
+    "url": "https://www.verdeterreprod.fr/"
+   },
+   {
+    "name": "Centre National d’Agroécologie",
+    "url": "https://centre-national-agroecologie.fr/"
+   },
+   {
+    "name": "Maraîchage Sol Vivant",
+    "url": "https://www.maraichagesolvivant.fr/"
+   },
+   {
+    "name": "Centre for Living Agroecology and food Systems",
+    "url": "https://www.centreagroecologie.fr/"
+   }
+  ]
+ },
+ {
+  "region": "Switzerland",
+  "organisations": [
+   {
+    "name": "Biovision",
+    "url": "https://www.biovision.ch/en/"
+   }
+  ]
+ },
+ {
+  "region": "United States",
+  "organisations": [
+   {
+    "name": "Rodale Institute",
+    "url": "https://rodaleinstitute.org/"
+   },
+   {
+    "name": "Regenerative Organic Alliance",
+    "url": "https://regenorganic.org/"
+   }
+  ]
+ },
+ {
+  "region": "Brazil",
+  "organisations": [
+   {
+    "name": "Agenda Gotsch",
+    "url": "https://agendagotsch.com/en/"
+   }
+  ]
+ },
+ {
+  "region": "India",
+  "organisations": [
+   {
+    "name": "Andhra Pradesh Community Managed Natural Farming",
+    "url": "https://apcnf.in/"
+   }
+  ]
+ }
+]

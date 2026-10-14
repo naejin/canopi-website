@@ -1,0 +1,6 @@
+# Large originals and review captures stay local (about 170 MB); the site ships compressed JPGs.
+assets/hero/*.png
+assets/hero/previous/
+assets/studies/
+screenshots/
+codex-v1/
