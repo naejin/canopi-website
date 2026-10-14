@@ -29,7 +29,7 @@ supported filter metadata before copying it under `dist/client/app/`.
 
 ## Design Rules (from app's design system)
 - Colors: exact palette from `canopi/desktop/web/src/styles/global.css`
-- Font: Inter (body) + Lora (display headlines), weights 400/600 only
+- Font: Source Sans 3 (body) + Literata (display headlines), weights 400/600 only
 - No green in UI chrome — green is for nature/plant content only
 - Light/dark theme via `[data-theme="dark"]` + localStorage
 

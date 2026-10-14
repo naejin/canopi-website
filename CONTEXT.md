@@ -31,10 +31,10 @@ Domain expert: "No. Use Agroecology network unless a formal partnership is confi
 Developer: "Should the edition cards list every toolbar tool?"
 Domain expert: "No. Say Canvas tools under both editions."
 
-## Approved homepage (September 2026)
+## Approved homepage (October 2026)
 
-The marketing page uses a centered download introduction, an on-demand video with the orchard thumbnail, and a compact network directory. Desktop downloads open a native dialog with a device recommendation and alternative installers. Do not send the primary download flow through GitHub release pages.
+The home page opens on the Canopi title over a painting in each locale's own tradition (day and night versions), revealed by the cursor, with an OS-aware download and Canopi Web. Below: a featured design drawn as the app draws it, a map of featured designs, the agroecology network, and a contact form that keeps the address private. Donations go through HelloAsso in our own dialog. Desktop downloads keep the native dialog with a device recommendation and alternative installers; do not send the primary download flow through GitHub release pages.
 
-Shared homepage CSS lives in `src/styles/home.css`, release metadata in `src/data/release.ts`, and device detection in `src/lib/installer.mjs`. All UI copy is localized. Fonts are self-hosted under `public/fonts/` with their licenses. The superseded design prototype and unused network logos have been removed.
+Release metadata lives in `src/data/release.ts`, site links in `src/data/site.ts` (including the hidden Docs slot) and device detection in `src/lib/installer.mjs`. All UI copy is localized. Fonts are self-hosted under `public/fonts/` with their licenses.
 
 Cloudflare Workers Builds deploys the `projectcanopi` service automatically from `master`. Canopi Web remains a separate deployment at `web.projectcanopi.com`. The optional legacy `/app/` artifact installer is retained for its documented compatibility contract.

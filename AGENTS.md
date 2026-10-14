@@ -160,7 +160,7 @@ Landing page for projectcanopi.com, the Canopi agroecological design app.
 
 ## Conventions & Patterns
 
-- Design follows the Canopi app's field-notebook aesthetic: ochre/parchment/ink palette, Inter body font, Lora display headlines, weights 400/600 only.
+- Design follows the Canopi app's field-notebook aesthetic: ochre/parchment/ink palette, Source Sans 3 body font, Literata display headlines, weights 400/600 only.
 - No green in UI chrome; green is reserved for nature or plant content.
 - Light/dark theme uses `[data-theme="dark"]` and localStorage.
 - `<body class="grain">` already provides the global SVG noise overlay in `global.css`; do not add page-level paper textures.

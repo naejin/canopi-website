@@ -53,9 +53,27 @@ ordinary static files rather than website-side search, storage, or compute.
 
 ## Homepage and releases
 
-The approved homepage is implemented in the shared Astro components for all 11
-locales. `src/styles/home.css` holds the visual layout. Inter and Lora are served
-locally from `public/fonts/`, with their licenses alongside them.
+One Astro component tree (`src/components/Home.astro`) renders the home page for all 11
+locales; `src/scripts/` holds its scripts, which take every string from the page. Styles are
+`src/styles/{tokens,fonts,global,home}.css` with the app's palette. Literata and Source Sans 3
+(Latin and Cyrillic subsets) are served from `public/fonts/` with their licences; CJK pages use
+system fonts. MapLibre is copied from `node_modules` into `public/vendor/` before each build
+(`scripts/copy-maplibre.mjs`).
+
+Generated assets and their scripts:
+
+- Hero paintings: `python3 scripts/compress-heroes.py <originals> public/hero` (the PNG
+  originals stay outside git).
+- Social images: `python3 scripts/make-og-images.py` writes `public/og/`.
+- Featured designs: `python3 scripts/export-featured-designs.py <catalog.db> public/data/featured-designs.json`
+  reads the `.canopi` files listed in `scripts/featured-designs.json`, opening the catalog
+  read-only. Add a design only with its owner's consent.
+
+The contact form posts to `/api/contact` (`src/pages/api/contact.ts`, logic in
+`src/lib/contact.mjs`), which mails `MAIL_TO` through the `EMAIL` send_email binding in
+`wrangler.jsonc`. It needs Cloudflare Email Routing on the domain with `MAIL_TO` verified as a
+destination address. Under `wrangler dev` the email simulator returns no message id, so a local
+send reports failure; the message itself is written to a temporary file named in the log.
 
 Update `CANOPI_VERSION` and `CANOPI_RELEASE_DATE` in `src/data/release.ts` after
 verifying the release assets. Desktop installers and their checksum list use the
