@@ -30,7 +30,7 @@ export function initHeroReveal() {
   const holes = document.createElement('canvas');
   const hctx = holes.getContext('2d');
   const weight = document.createElement('canvas');
-  const text = hero.querySelectorAll('.hero-title, .hero-tagline, .hero-actions, .hero-meta');
+  const text = hero.querySelectorAll('.hero-logo, .hero-title, .hero-tagline, .hero-actions, .hero-meta');
   const chrome = document.querySelectorAll('.header-inner > .brand, .header-nav');
   const canHover = matchMedia('(hover: hover) and (pointer: fine)');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');

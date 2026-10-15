@@ -7,7 +7,7 @@
   isolation: isolate;
   overflow: hidden;
   margin-top: -76px;              /* the painting runs under the header */
-  padding: calc(76px + clamp(72px, 14vh, 150px)) 0 clamp(72px, 13vh, 140px);
+  padding: calc(76px + clamp(48px, 9vh, 96px)) 0 clamp(88px, 16vh, 180px);
   min-height: min(860px, 92vh);
   display: grid;
   align-items: center;
@@ -35,8 +35,10 @@
 .hero.is-static .hero-mask { display: none; }
 
 .hero-inner { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.hero-logo { width: clamp(56px, 6.2vw, 88px); height: auto; }
 .hero-title {
-  font-size: clamp(76px, 15vw, 188px);
+  margin-top: clamp(2px, 0.5vw, 8px);
+  font-size: clamp(56px, 8.4vw, 116px);
   line-height: 0.92;
   letter-spacing: -0.035em;
   font-weight: 400;
