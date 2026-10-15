@@ -1,12 +1,15 @@
 ---
-// Donations: HelloAsso's form inside our own dialog. src/scripts/donate.js creates the iframe on
-// first open, so nothing loads from HelloAsso before a visitor asks.
+// Donations in three steps: the amount here, in the page's language; then HelloAsso's form for
+// the giver's details and card, with that amount already filled in; then our own thank-you once
+// HelloAsso reports the payment. src/scripts/donate.js runs the steps and creates HelloAsso's
+// iframe only when the dialog first opens, so nothing loads from HelloAsso before then.
 import { t, type Locale } from '../i18n/utils';
-import { HELLOASSO_WIDGET_URL } from '../data/site';
+import { HELLOASSO_WIDGET_URL, DONATION_AMOUNTS, DONATION_DEFAULT } from '../data/site';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
+const euros = new Intl.NumberFormat(lang, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 ---
-<dialog class="dialog dialog-donate" data-donate-dialog aria-labelledby="donate-title">
+<dialog class="dialog dialog-donate" data-donate-dialog data-step="amount" aria-labelledby="donate-title">
   <div class="dialog-head">
     <div>
       <h2 id="donate-title">{t('donate.title', lang)}</h2>
@@ -14,11 +17,41 @@ const { lang } = Astro.props;
     </div>
     <button class="dialog-close" type="button" data-close-dialog aria-label={t('dialog.close', lang)}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   </div>
-  {/* HelloAsso's form exists only in French and English and picks French for every other
-      browser language, so those pages say where to switch it. */}
-  {lang !== 'fr' && lang !== 'en' && <p class="donate-language">{t('donate.language', lang)}</p>}
-  <div class="donate-frame" data-donate-frame data-src={HELLOASSO_WIDGET_URL}>
-    <p class="muted">{t('donate.loading', lang)}</p>
+  <form class="donate-amount" data-donate-amount>
+    <fieldset>
+      <legend>{t('donate.amountLabel', lang)}</legend>
+      <div class="amount-choices">
+        {DONATION_AMOUNTS.map((amount) => (
+          <label class="amount-choice">
+            <input type="radio" name="amount" value={amount} checked={amount === DONATION_DEFAULT} />
+            <span>{euros.format(amount)}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+    <div class="field amount-other">
+      <label for="donate-other">{t('donate.otherAmount', lang)}</label>
+      <input id="donate-other" name="other" type="number" min="1" max="100000" step="any" inputmode="decimal" />
+    </div>
+    <p class="donate-hint">{t('donate.frequencyHint', lang)}</p>
+    <button class="button button-primary" type="submit">{t('donate.continue', lang)}</button>
+  </form>
+  <div class="donate-pay" data-donate-pay>
+    <div class="donate-bar">
+      <button class="link-button" type="button" data-donate-back>{t('donate.change', lang)}</button>
+      {/* HelloAsso's form exists only in French and English and picks French for every other
+          browser language; nothing a page can send changes that, so those pages say where to switch. */}
+      {lang !== 'fr' && lang !== 'en' && <p class="donate-language">{t('donate.language', lang)}</p>}
+    </div>
+    <div class="donate-frame" data-donate-frame data-src={HELLOASSO_WIDGET_URL}>
+      <p class="muted">{t('donate.loading', lang)}</p>
+    </div>
+  </div>
+  <div class="donate-thanks" data-donate-thanks tabindex="-1">
+    <img src="/canopi-logo.svg" width="56" height="56" alt="" />
+    <h3>{t('donate.thanksTitle', lang)}</h3>
+    <p>{t('donate.thanksText', lang)}</p>
+    <button class="button button-secondary" type="button" data-close-dialog>{t('dialog.close', lang)}</button>
   </div>
   <p class="dialog-foot">{t('donate.foot', lang)}</p>
 </dialog>
