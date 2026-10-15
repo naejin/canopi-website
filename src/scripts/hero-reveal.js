@@ -2,7 +2,9 @@
 // moving the pointer drops "ink dots" along its path, each carving a soft, irregular hole that
 // grows and closes again within about a second and a half, like a brushstroke drying back into paper.
 // The loop runs only while dots are alive, so a resting pointer costs nothing.
-// Touch devices and reduced motion get the painting faint and still instead. Which painting
+// Touch never paints while a finger drags, since that drag scrolls the page: the painting rests
+// faint, the welcome stroke still plays and a tap on the hero (not on its links or buttons)
+// blooms a reveal there. Reduced motion gets the painting faint and still. Which painting
 // shows (locale, day or night, size) is decided by CSS from the hero's variables.
 
 const STEP_PX = 12;            // distance between dots along the pointer path
@@ -11,6 +13,8 @@ const LIFETIME_MS = 1400;
 const START_RADIUS = 8;
 const END_RADIUS = 180;        // each dot's final radius varies between ~55% and 100% of this
 const SIZE_VARIATION = 0.45;
+const TAP_DOTS = 7;            // a tap blooms a small cluster, about 200 px across
+const TAP_SPREAD = 46;
 
 export function initHeroReveal() {
   const hero = document.querySelector('.hero');
@@ -27,12 +31,16 @@ export function initHeroReveal() {
   let running = false;
   const dots = [];
 
-  const isStatic = () => !canHover.matches || reducedMotion.matches;
+  let restingOpacity = 0.22;      // how much painting shows through on touch, from the theme
+  const isStatic = () => reducedMotion.matches;
+  const isTouch = () => !canHover.matches;
 
   function paintMask() {
     ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = isTouch() ? 1 - restingOpacity : 1;
     ctx.fillStyle = maskColour;
     ctx.fillRect(0, 0, width, height);
+    ctx.globalAlpha = 1;
   }
 
   function resize() {
@@ -112,7 +120,7 @@ export function initHeroReveal() {
   }
 
   function pointer(event) {
-    if (isStatic()) return;
+    if (isStatic() || isTouch()) return;
     const box = hero.getBoundingClientRect();
     addDotsTo(event.clientX - box.left, event.clientY - box.top);
     start();
@@ -121,13 +129,29 @@ export function initHeroReveal() {
   hero.addEventListener('pointerenter', (event) => { last = null; pointer(event); });
   hero.addEventListener('pointermove', pointer);
   hero.addEventListener('pointerleave', () => { last = null; });
+  hero.addEventListener('click', (event) => {
+    if (isStatic() || !isTouch() || event.target.closest('a, button, input, select, textarea, summary, [role="button"]')) return;
+    const box = hero.getBoundingClientRect();
+    const x = event.clientX - box.left;
+    const y = event.clientY - box.top;
+    for (let i = 0; i < TAP_DOTS; i += 1) {
+      const angle = (i / TAP_DOTS) * Math.PI * 2 + Math.random();
+      const distance = i === 0 ? 0 : TAP_SPREAD * (0.5 + Math.random() * 0.5);
+      last = null;
+      addDotsTo(x + Math.cos(angle) * distance, y + Math.sin(angle) * distance);
+    }
+    last = null;
+    start();
+  });
   new ResizeObserver(resize).observe(hero);
   canHover.addEventListener('change', resize);
   reducedMotion.addEventListener('change', resize);
 
   // Called when the theme changes.
   function refresh() {
-    maskColour = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || maskColour;
+    const styles = getComputedStyle(document.documentElement);
+    maskColour = styles.getPropertyValue('--bg').trim() || maskColour;
+    restingOpacity = Number.parseFloat(styles.getPropertyValue('--painting-opacity-static')) || restingOpacity;
     if (!isStatic()) paintMask();
   }
 
