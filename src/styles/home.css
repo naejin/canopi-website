@@ -44,7 +44,7 @@
   font-weight: 400;
 }
 .hero-tagline {
-  margin-top: clamp(14px, 2.4vw, 26px);
+  margin-top: clamp(14px, 1.7vw, 22px);
   font-family: var(--font-display);
   font-size: clamp(20px, 2.6vw, 30px);
   line-height: 1.25;
@@ -78,13 +78,18 @@
 
 /* ---------- Featured design ---------- */
 
-.featured { border-top: 1px solid var(--border); }
+.featured, .network { border-top: 1px solid var(--border); }
 /* A real plan first, full width, with one caption line; then the finder for others: locate and
    the map on the left, the nearest designs on the right. */
-.finder { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 20px; align-items: start; margin-top: 40px; }
-.finder-browse, .finder-index { display: flex; flex-direction: column; min-width: 0; }
-.finder-index { padding-top: 58px; }
-.finder-locate { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 14px; }
+/* The locate row sits above the map only; the list starts level with the map. */
+.finder {
+  display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 14px 20px; align-items: start; margin-top: 40px;
+  grid-template-areas: "locate ." "map index";
+}
+.finder-browse { display: contents; }
+.finder-index { grid-area: index; display: flex; flex-direction: column; min-width: 0; }
+.finder-locate { grid-area: locate; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.finder-map { grid-area: map; }
 .finder-locate .button { gap: 8px; }
 .finder-status { font-size: 14px; color: var(--text-muted); flex: 1 1 220px; }
 .finder-map {
@@ -94,6 +99,7 @@
   background: var(--surface);
 }
 .finder-map .maplibregl-ctrl-attrib { font: 12px var(--font-sans); }
+.finder-map.maplibregl-map { font: inherit; }
 .finder-map.is-unavailable { display: grid; place-items: center; padding: 24px; text-align: center; color: var(--text-muted); }
 .finder-hint {
   position: absolute; left: 12px; top: 12px; z-index: 2; pointer-events: none; max-width: calc(100% - 70px);
@@ -254,10 +260,10 @@
   .theme-toggle { width: 44px; }
   .hero-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 360px; }
   .hero-actions .button { min-width: 0; width: 100%; }
-  .finder, .contact-layout, .field-row { grid-template-columns: 1fr; }
+  .contact-layout, .field-row { grid-template-columns: 1fr; }
+  .finder { grid-template-columns: 1fr; grid-template-areas: "locate" "map" "index"; }
   .design-canvas-wrap { height: 420px; }
   .finder-map { height: 320px; }
-  .finder-index { padding-top: 0; }
   .finder { margin-top: 32px; }
   .design-hint { top: 12px; bottom: auto; }
   .place-button { padding: 11px 14px; }
@@ -273,8 +279,7 @@
 
 /* Between phones and desktops the list goes under the map. */
 @media (min-width: 640px) and (max-width: 959px) {
-  .finder { grid-template-columns: 1fr; }
-  .finder-index { padding-top: 0; }
+  .finder { grid-template-columns: 1fr; grid-template-areas: "locate" "map" "index"; }
 }
 
 /* ---------- Contact result pages (no-JS form posts) ---------- */

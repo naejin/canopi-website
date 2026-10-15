@@ -77,8 +77,10 @@ export function createDesignFinder({ container, list, more, hint, locate, status
   function fitAll(animate) {
     const lons = designs.map((d) => d.pin.lon);
     const lats = designs.map((d) => d.pin.lat);
+    // Pin labels sit right of their pins, so the right edge keeps room for one.
+    const right = Math.min(170, container.clientWidth * 0.4);
     map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
-      { padding: 60, maxZoom: 5.2, duration: animate ? 800 : 0 });
+      { padding: { top: 60, bottom: 60, left: 60, right }, maxZoom: 5.2, duration: animate ? 800 : 0 });
   }
 
   function dismissHint() { hint.classList.add('is-gone'); }
@@ -170,6 +172,8 @@ export function createDesignFinder({ container, list, more, hint, locate, status
       map.addLayer({ id: 'designs', type: 'circle', source: 'designs', paint: { 'circle-radius': 0, 'circle-opacity': 0 } });
       map.on('render', updateMarkers);
       fitAll(false);
+      // On phones the attribution starts folded behind its button, so it doesn't cover the map.
+      if (PAGE < 6) container.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
     });
     map.on('dragstart', dismissHint);
     map.on('moveend', () => {
