@@ -104,10 +104,15 @@
   "finder.mapHint": "选择一个标记",
   "finder.showMore": "显示更多设计",
   "finder.cluster": "此处有 {count} 个设计，放大",
-  "design.legendTitle": "植物形态",
-  "design.form.canopy": "乔木",
-  "design.form.shrub": "灌木",
-  "design.form.herb": "草本",
-  "design.form.climber": "藤本",
-  "design.form.groundcover": "地被"
+  "design.legendTitle": "植物功能",
+  "design.role.apple": "水果",
+  "design.role.berry": "浆果",
+  "design.role.nut": "坚果",
+  "design.role.pod": "固氮",
+  "design.role.carrot": "蔬菜",
+  "design.role.chili": "香料",
+  "design.role.medicinal": "药用",
+  "design.role.bee": "传粉",
+  "design.role.timber": "木材",
+  "design.role.biomass": "生物质"
 }

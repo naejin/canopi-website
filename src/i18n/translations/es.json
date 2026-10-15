@@ -104,10 +104,15 @@
   "finder.mapHint": "Elige un punto",
   "finder.showMore": "Ver más diseños",
   "finder.cluster": "{count} diseños aquí, acercar",
-  "design.legendTitle": "Formas de plantas",
-  "design.form.canopy": "Árbol",
-  "design.form.shrub": "Arbusto",
-  "design.form.herb": "Herbácea",
-  "design.form.climber": "Trepadora",
-  "design.form.groundcover": "Cubresuelos"
+  "design.legendTitle": "Funciones de las plantas",
+  "design.role.apple": "Fruta",
+  "design.role.berry": "Bayas",
+  "design.role.nut": "Fruto seco",
+  "design.role.pod": "Fijadora de nitrógeno",
+  "design.role.carrot": "Hortaliza",
+  "design.role.chili": "Especia",
+  "design.role.medicinal": "Medicinal",
+  "design.role.bee": "Polinizadores",
+  "design.role.timber": "Madera",
+  "design.role.biomass": "Biomasa"
 }

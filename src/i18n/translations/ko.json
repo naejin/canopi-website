@@ -104,10 +104,15 @@
   "finder.mapHint": "핀을 고르세요",
   "finder.showMore": "디자인 더 보기",
   "finder.cluster": "이곳에 디자인 {count}개, 확대",
-  "design.legendTitle": "식물 형태",
-  "design.form.canopy": "나무",
-  "design.form.shrub": "관목",
-  "design.form.herb": "초본",
-  "design.form.climber": "덩굴식물",
-  "design.form.groundcover": "지피식물"
+  "design.legendTitle": "식물의 역할",
+  "design.role.apple": "과일",
+  "design.role.berry": "베리",
+  "design.role.nut": "견과",
+  "design.role.pod": "질소 고정",
+  "design.role.carrot": "채소",
+  "design.role.chili": "향신료",
+  "design.role.medicinal": "약용",
+  "design.role.bee": "수분 매개",
+  "design.role.timber": "목재",
+  "design.role.biomass": "바이오매스"
 }

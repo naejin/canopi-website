@@ -30,12 +30,11 @@ test('the file and each design carry only the allowed fields', () => {
   }
 });
 
-test('plants keep the designer\'s colours, as the app shows them by default', () => {
-  // The app's stratum colours are only the fallback for species the designer left uncoloured.
-  const strata = new Set(['#E69F00', '#009E73', '#0072B2', '#CC79A7', '#5E5A52']);
+test('every plant shows its role in that role\'s colour, so the legend explains the plan', () => {
+  // The app's 2.0 role symbols and palette colours (scripts/export-featured-designs.py).
+  const roles = { apple: '#C44230', berry: '#8B3A6E', nut: '#7A5C30', pod: '#3E8E4E', carrot: '#D4822A', chili: '#C25B82', medicinal: '#7B5EA7', bee: '#C8A51E', timber: '#71716A', biomass: '#2E8B7A' };
   for (const design of data.designs) {
-    const own = design.species.filter((species) => !strata.has(species.color));
-    assert.ok(own.length > design.species.length / 2, `${design.id}: ${own.length} of ${design.species.length} in the designer's colours`);
+    for (const species of design.species) assert.equal(species.color, roles[species.symbol], `${design.id}: ${species.scientific} is ${species.symbol}`);
   }
 });
 

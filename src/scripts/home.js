@@ -24,9 +24,9 @@ const caption = document.querySelector('.design-caption');
 const field = (name) => caption.querySelector(`[data-design-${name}]`);
 const canvas = document.querySelector('[data-design-canvas]');
 const legend = document.querySelector('[data-design-legend]');
-// The legend names plant forms, which every design has, by the app's own symbols; colours are the
-// designer's, so each plant's name shows on hover or tap instead.
-const FORMS = ['canopy', 'shrub', 'herb', 'climber', 'groundcover'];
+// Each plant shows its role (what it gives or does) by the app's 2.0 symbol and colour for that
+// role; the legend lists the roles the design uses, in this order.
+const ROLES = ['apple', 'berry', 'nut', 'pod', 'carrot', 'chili', 'medicinal', 'bee', 'timber', 'biomass'];
 const number = new Intl.NumberFormat(lang);
 let symbolArt = {};
 
@@ -52,13 +52,14 @@ const map = createDesignFinder({
   onSelect: (id, { from }) => select(id, { from }),
 });
 
-function formIcon(symbol) {
+function roleIcon(symbol, colour) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '-1 -1 2 2');
   svg.setAttribute('class', 'legend-symbol');
   svg.setAttribute('aria-hidden', 'true');
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   path.setAttribute('d', symbolArt[symbol].compact.body);
+  path.setAttribute('fill', colour);
   svg.append(path);
   return svg;
 }
@@ -78,11 +79,11 @@ function describe(d) {
   org.append(arrow);
   canvas.setAttribute('aria-label', text('design.canvasLabel', { name: d.name, ...counts }));
 
-  const present = new Set(d.species.map((s) => s.symbol));
-  legend.replaceChildren(...FORMS.filter((form) => present.has(form) && symbolArt[form]).map((form) => {
+  const colours = new Map(d.species.map((s) => [s.symbol, s.color]));
+  legend.replaceChildren(...ROLES.filter((role) => colours.has(role) && symbolArt[role]).map((role) => {
     const item = document.createElement('span');
     item.className = 'legend-item';
-    item.append(formIcon(form), text(`design.form.${form}`));
+    item.append(roleIcon(role, colours.get(role)), text(`design.role.${role}`));
     return item;
   }));
   caption.classList.remove('is-swapping');

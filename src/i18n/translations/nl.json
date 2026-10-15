@@ -104,10 +104,15 @@
   "finder.mapHint": "Kies een speld",
   "finder.showMore": "Meer ontwerpen",
   "finder.cluster": "{count} ontwerpen hier, inzoomen",
-  "design.legendTitle": "Groeivormen",
-  "design.form.canopy": "Boom",
-  "design.form.shrub": "Struik",
-  "design.form.herb": "Kruid",
-  "design.form.climber": "Klimplant",
-  "design.form.groundcover": "Bodembedekker"
+  "design.legendTitle": "Rollen van planten",
+  "design.role.apple": "Fruit",
+  "design.role.berry": "Bessen",
+  "design.role.nut": "Noot",
+  "design.role.pod": "Stikstofbinder",
+  "design.role.carrot": "Groente",
+  "design.role.chili": "Specerij",
+  "design.role.medicinal": "Geneeskrachtig",
+  "design.role.bee": "Bestuivers",
+  "design.role.timber": "Hout",
+  "design.role.biomass": "Biomassa"
 }

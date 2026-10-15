@@ -154,7 +154,7 @@
 .legend-title { font-weight: 600; color: var(--text-secondary); }
 .design-legend [data-design-legend] { display: contents; }
 .legend-item { display: inline-flex; align-items: center; gap: 6px; }
-.legend-symbol { width: 16px; height: 16px; fill: currentColor; color: var(--text-secondary); }
+.legend-symbol { width: 18px; height: 18px; flex: none; }
 .design-caption.is-swapping > * { animation: caption-in 420ms ease both; }
 @keyframes caption-in { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { .design-caption.is-swapping > * { animation: none; } }

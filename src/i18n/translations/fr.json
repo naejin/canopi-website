@@ -104,10 +104,15 @@
   "finder.mapHint": "Choisissez un repère",
   "finder.showMore": "Voir plus de designs",
   "finder.cluster": "{count} designs ici, zoomer",
-  "design.legendTitle": "Formes de plantes",
-  "design.form.canopy": "Arbre",
-  "design.form.shrub": "Arbuste",
-  "design.form.herb": "Herbacée",
-  "design.form.climber": "Grimpante",
-  "design.form.groundcover": "Couvre-sol"
+  "design.legendTitle": "Rôles des plantes",
+  "design.role.apple": "Fruit",
+  "design.role.berry": "Baies",
+  "design.role.nut": "Noix",
+  "design.role.pod": "Fixatrice d’azote",
+  "design.role.carrot": "Légume",
+  "design.role.chili": "Épice",
+  "design.role.medicinal": "Médicinale",
+  "design.role.bee": "Pollinisateurs",
+  "design.role.timber": "Bois",
+  "design.role.biomass": "Biomasse"
 }

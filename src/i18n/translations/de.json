@@ -104,10 +104,15 @@
   "finder.mapHint": "Wähle eine Markierung",
   "finder.showMore": "Weitere Entwürfe",
   "finder.cluster": "{count} Entwürfe hier, hineinzoomen",
-  "design.legendTitle": "Wuchsformen",
-  "design.form.canopy": "Baum",
-  "design.form.shrub": "Strauch",
-  "design.form.herb": "Kraut",
-  "design.form.climber": "Kletterpflanze",
-  "design.form.groundcover": "Bodendecker"
+  "design.legendTitle": "Pflanzenrollen",
+  "design.role.apple": "Obst",
+  "design.role.berry": "Beeren",
+  "design.role.nut": "Nuss",
+  "design.role.pod": "Stickstoffsammler",
+  "design.role.carrot": "Gemüse",
+  "design.role.chili": "Gewürz",
+  "design.role.medicinal": "Heilpflanze",
+  "design.role.bee": "Bestäuber",
+  "design.role.timber": "Holz",
+  "design.role.biomass": "Biomasse"
 }

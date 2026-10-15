@@ -104,10 +104,15 @@
   "finder.mapHint": "Выберите метку",
   "finder.showMore": "Показать ещё",
   "finder.cluster": "Проектов здесь: {count}. Приблизить",
-  "design.legendTitle": "Жизненные формы",
-  "design.form.canopy": "Дерево",
-  "design.form.shrub": "Кустарник",
-  "design.form.herb": "Трава",
-  "design.form.climber": "Лиана",
-  "design.form.groundcover": "Почвопокровное"
+  "design.legendTitle": "Роли растений",
+  "design.role.apple": "Плоды",
+  "design.role.berry": "Ягоды",
+  "design.role.nut": "Орех",
+  "design.role.pod": "Азотфиксатор",
+  "design.role.carrot": "Овощ",
+  "design.role.chili": "Пряность",
+  "design.role.medicinal": "Лекарственное",
+  "design.role.bee": "Опылители",
+  "design.role.timber": "Древесина",
+  "design.role.biomass": "Биомасса"
 }

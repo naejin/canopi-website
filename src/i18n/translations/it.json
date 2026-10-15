@@ -104,10 +104,15 @@
   "finder.mapHint": "Scegli un segnaposto",
   "finder.showMore": "Mostra altri progetti",
   "finder.cluster": "{count} progetti qui, ingrandisci",
-  "design.legendTitle": "Forme delle piante",
-  "design.form.canopy": "Albero",
-  "design.form.shrub": "Arbusto",
-  "design.form.herb": "Erbacea",
-  "design.form.climber": "Rampicante",
-  "design.form.groundcover": "Tappezzante"
+  "design.legendTitle": "Ruoli delle piante",
+  "design.role.apple": "Frutto",
+  "design.role.berry": "Bacche",
+  "design.role.nut": "Frutta a guscio",
+  "design.role.pod": "Azotofissatrice",
+  "design.role.carrot": "Ortaggio",
+  "design.role.chili": "Spezia",
+  "design.role.medicinal": "Medicinale",
+  "design.role.bee": "Impollinatori",
+  "design.role.timber": "Legname",
+  "design.role.biomass": "Biomassa"
 }

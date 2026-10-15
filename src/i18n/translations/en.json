@@ -104,10 +104,15 @@
   "finder.mapHint": "Choose a pin",
   "finder.showMore": "Show more designs",
   "finder.cluster": "{count} designs here, zoom in",
-  "design.legendTitle": "Plant forms",
-  "design.form.canopy": "Tree",
-  "design.form.shrub": "Shrub",
-  "design.form.herb": "Herb",
-  "design.form.climber": "Climber",
-  "design.form.groundcover": "Ground cover"
+  "design.legendTitle": "Plant roles",
+  "design.role.apple": "Fruit",
+  "design.role.berry": "Berries",
+  "design.role.nut": "Nut",
+  "design.role.pod": "Nitrogen fixer",
+  "design.role.carrot": "Vegetable",
+  "design.role.chili": "Spice",
+  "design.role.medicinal": "Medicinal",
+  "design.role.bee": "Pollinator",
+  "design.role.timber": "Timber",
+  "design.role.biomass": "Biomass"
 }

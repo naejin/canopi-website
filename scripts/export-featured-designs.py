@@ -14,34 +14,36 @@ from pathlib import Path
 
 # The site's 11 locales; tooltips fall back to English, then to the scientific name alone.
 LANGS = ('en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru')
-# Plants keep the colour the designer gave them, as the app shows them by default; a species left
-# uncoloured takes its catalog stratum's colour, the app's fallback (canvas/runtime/plant-presentation.ts,
-# with the colours of canvas/runtime/plant-display.ts).
-STRATUM_COLORS = {"emergent": "#E69F00", "high": "#009E73", "medium": "#0072B2", "low": "#CC79A7", "none": "#5E5A52"}
-
-
-def symbol_for(habit, height):
-    if habit == "Tree":
-        return "canopy"
-    if habit == "Climber":
-        return "climber"
-    if habit == "Shrub":
-        return "groundcover" if (height or 1) < 0.4 else "shrub"
-    return "groundcover" if (height or 1) <= 0.3 else "herb"
+# Each plant shows its role: what it gives or does in the design, drawn with the app's 2.0 symbol
+# for that role and one colour of the app's named palette (canvas/plant-colors.ts), so one short
+# legend explains every plan. A designer's own role symbol wins; otherwise the role comes from
+# scripts/featured-roles.json, proposed from the catalog's traits and checked by hand, since the
+# catalog's fruit types are not reliable enough to show unchecked.
+ROLE_COLORS = {
+    "apple": "#C44230",      # Fruit, Poppy
+    "berry": "#8B3A6E",      # Berries, Elderberry
+    "nut": "#7A5C30",        # Nut, Walnut
+    "pod": "#3E8E4E",        # Nitrogen fixer, Clover
+    "carrot": "#D4822A",     # Vegetable, Calendula
+    "chili": "#C25B82",      # Spice, Peony
+    "medicinal": "#7B5EA7",  # Medicinal, Wisteria
+    "bee": "#C8A51E",        # Pollinator, Goldenrod
+    "timber": "#71716A",     # Timber, Flint
+    "biomass": "#2E8B7A",    # Biomass, Verdigris
+}
 
 
 FEATURED_LIST = Path(__file__).with_name('featured-designs.json')
 FEATURED_FILES = Path(__file__).with_name('featured-files.local.json')
+FEATURED_ROLES = Path(__file__).with_name('featured-roles.json')
 
 
 def main(db_path, out_path):
     files = json.loads(FEATURED_FILES.read_text())
     featured = [{**meta, "file": files[meta["id"]]} for meta in json.loads(FEATURED_LIST.read_text())]
     db = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-    designs, symbol_memory = [], {}
-    for meta in featured:
-        raw = json.loads(Path(meta["file"]).expanduser().read_text())
-        symbol_memory.update(raw.get("plant_species_symbols") or {})
+    roles = json.loads(FEATURED_ROLES.read_text())
+    designs = []
     for meta in featured:
         raw = json.loads(Path(meta["file"]).expanduser().read_text())
         lons = [p["position"]["lon"] for p in raw["plants"]]
@@ -52,25 +54,26 @@ def main(db_path, out_path):
         def plane(pt):
             return [round((pt["lon"] - lon0) * kx, 2), round(-(pt["lat"] - lat0) * ky, 2)]
 
-        own_colors = {p["canonical_name"]: p["color"].upper() for p in raw["plants"] if p.get("color")}
-        own_colors.update({k: v.upper() for k, v in (raw.get("plant_species_colors") or {}).items() if v})
         own_symbols = raw.get("plant_species_symbols") or {}
+        missing = sorted({p["canonical_name"] for p in raw["plants"]} - set(roles) - {k for k, v in own_symbols.items() if v in ROLE_COLORS})
+        if missing:
+            sys.exit(f"{meta['id']}: give these species a role in {FEATURED_ROLES.name}: {', '.join(missing)}")
         species, index = [], {}
         for name in sorted({p["canonical_name"] for p in raw["plants"]}):
-            row = db.execute("select id, habit, height_max_m, stratum from species where canonical_name = ?", (name,)).fetchone()
+            row = db.execute("select id, habit, height_max_m from species where canonical_name = ?", (name,)).fetchone()
             names = {}
             if row:
                 for lang, common in db.execute(f"select language, common_name from best_common_names where species_id = ? and language in ({','.join('?' * len(LANGS))})", (row[0], *LANGS)):
                     names[lang] = common
-            stratum = row[3] if row and row[3] in STRATUM_COLORS else "none"
+            role = own_symbols.get(name) if own_symbols.get(name) in ROLE_COLORS else roles[name]
             index[name] = len(species)
             species.append({
                 "scientific": name,
                 "common": names,
                 "habit": row[1] if row else None,
                 "heightMaxM": round(row[2], 1) if row and row[2] else None,
-                "color": own_colors.get(name) or STRATUM_COLORS[stratum],
-                "symbol": own_symbols.get(name) or symbol_memory.get(name) or symbol_for(row[1] if row else None, row[2] if row else None),
+                "color": ROLE_COLORS[role],
+                "symbol": role,
             })
         pts = [plane(p["position"]) for p in raw["plants"]]
         plants = []
