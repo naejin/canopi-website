@@ -61,6 +61,7 @@
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   font-size: 15px; color: var(--text-secondary);
 }
+.support-note { margin-top: 10px; font-size: 15px; color: var(--text-secondary); }
 .mac-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
 .chip {
   display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px;

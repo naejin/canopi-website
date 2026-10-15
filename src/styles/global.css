@@ -185,8 +185,10 @@ button { cursor: pointer; }
 .donate-hint { font-size: 14px; color: var(--text-muted); }
 .donate-pay { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .donate-bar { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; padding: 10px 24px; border-bottom: 1px solid var(--border); font-size: 14px; }
-.donate-language { color: var(--text-secondary); flex: 1 1 260px; }
-.donate-frame { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+.donate-open { color: var(--text-secondary); }
+.donate-language { color: var(--text-secondary); flex: 1 1 100%; }
+.donate-frame { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0 24px; text-align: center; background: var(--bg); }
+.donate-frame:has(iframe) { padding: 0; }
 .donate-frame iframe { flex: 1; align-self: stretch; min-width: 0; border: 0; background: #fff; }
 .donate-thanks { padding: 40px 24px 32px; display: grid; justify-items: center; gap: 12px; text-align: center; outline: none; }
 .donate-thanks h3 { font-size: 30px; }

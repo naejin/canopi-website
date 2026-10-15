@@ -8,7 +8,7 @@ const data = {
   lang,
   version: CANOPI_VERSION,
   installers,
-  strings: Object.fromEntries(['header.themeDark', 'header.themeLight', 'donate.frameTitle', ...keys].map((key) => [key, t(key, lang)])),
+  strings: Object.fromEntries(['header.themeDark', 'header.themeLight', 'donate.frameTitle', 'donate.slow', ...keys].map((key) => [key, t(key, lang)])),
 };
 ---
 <script type="application/json" id="page-data" set:html={JSON.stringify(data)} />

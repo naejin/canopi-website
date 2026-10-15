@@ -4,7 +4,8 @@ export const WEB_URL = 'https://web.projectcanopi.com/';
 export const SOURCE_URL = 'https://github.com/naejin/canopi';
 // The documentation slot: header and footer show a Docs link once this is set.
 export const DOCS_URL: string | null = null;
-// `view=form` is the bare form, without the campaign header.
+// The donation form's own page, and `view=form`, the bare form without the campaign header.
+export const HELLOASSO_FORM_URL = 'https://www.helloasso.com/associations/canopi/formulaires/1';
 export const HELLOASSO_WIDGET_URL = 'https://www.helloasso.com/associations/canopi/formulaires/1/widget?view=form';
 // The donation dialog's preset amounts in euros, the same as HelloAsso's form; the default is
 // HelloAsso's "favourite".

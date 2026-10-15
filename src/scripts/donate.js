@@ -3,11 +3,14 @@
 // nothing from HelloAsso before a visitor wants to give, and the form is ready by "Continue".
 // The amount reaches the form by postMessage, which HelloAsso accepts only on the form's first
 // step: going back to change it starts a fresh form. HelloAsso posts `payment_completed` (and
-// `purchase`) when its thank-you page shows, and that opens ours.
+// `purchase`) when its thank-you page shows, and that opens ours. If the form has not loaded
+// after a while (a blocker, a slow network), the dialog offers the form's own page instead.
+// /#donate opens the dialog, so the app and the README can link straight to it.
 import { openDialog } from './dialogs.js';
 import { text } from './page-data.js';
 
 const HELLOASSO = 'https://www.helloasso.com';
+const SLOW_MS = 10000;
 
 export function initDonate() {
   const dialog = document.querySelector('[data-donate-dialog]');
@@ -29,7 +32,15 @@ export function initDonate() {
     iframe.title = text('donate.frameTitle');
     iframe.src = frame.dataset.src;
     iframe.allow = "payment 'self' https://paymenthub.helloassopay.com https://helloasso.com";
-    iframe.addEventListener('load', () => { frame.querySelector('p')?.remove(); send(); });
+    const status = frame.querySelector('[data-donate-status]');
+    const slow = setTimeout(() => {
+      if (!status) return;
+      status.textContent = `${text('donate.slow')} `;
+      const link = dialog.querySelector('.donate-open').cloneNode(true);
+      status.append(link);
+    }, SLOW_MS);
+    iframe.addEventListener('load', () => { clearTimeout(slow); status?.remove(); iframe.hidden = false; send(); });
+    iframe.hidden = true;
     frame.append(iframe);
   }
 
@@ -86,10 +97,18 @@ export function initDonate() {
     step('amount');
   });
 
-  document.addEventListener('click', (event) => {
-    const opener = event.target.closest('[data-open-donate]');
-    if (!opener) return;
+  function open(opener) {
     if (!iframe) createFrame();
     openDialog(dialog, opener);
+  }
+  document.addEventListener('click', (event) => {
+    const opener = event.target.closest('[data-open-donate]');
+    if (opener) open(opener);
+  });
+  const fromLink = () => { if (location.hash === '#donate') open(document.querySelector('[data-open-donate]')); };
+  window.addEventListener('hashchange', fromLink);
+  fromLink();
+  dialog.addEventListener('close', () => {
+    if (location.hash === '#donate') history.replaceState(null, '', location.pathname + location.search);
   });
 }

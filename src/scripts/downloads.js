@@ -10,6 +10,7 @@ const primary = document.querySelector('[data-primary-action]');
 const secondary = document.querySelector('[data-secondary-action]');
 const macChooser = document.querySelector('[data-mac-chooser]');
 const installNote = document.querySelector('[data-install-note]');
+const supportNote = document.querySelector('[data-support-note]');
 const dialog = document.querySelector('[data-downloads-dialog]');
 
 function setAction(link, { href, label, arrow, installer }) {
@@ -76,6 +77,8 @@ export function initDownloads() {
       // The download starts; say what to do next, where the visitor is looking.
       installNote.textContent = text('download.after', { instruction: installers[target.dataset.installer].after });
       installNote.hidden = false;
+      // A download is when Canopi is most welcome, so a quiet word about donations follows.
+      supportNote.hidden = false;
       if (dialog.open) dialog.close();
     }
   });

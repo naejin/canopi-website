@@ -2,9 +2,10 @@
 // Donations in three steps: the amount here, in the page's language; then HelloAsso's form for
 // the giver's details and card, with that amount already filled in; then our own thank-you once
 // HelloAsso reports the payment. src/scripts/donate.js runs the steps and creates HelloAsso's
-// iframe only when the dialog first opens, so nothing loads from HelloAsso before then.
+// iframe only when the dialog first opens, so nothing loads from HelloAsso before then. If the
+// iframe is blocked or slow, the form's own page on HelloAsso is one click away.
 import { t, type Locale } from '../i18n/utils';
-import { HELLOASSO_WIDGET_URL, DONATION_AMOUNTS, DONATION_DEFAULT } from '../data/site';
+import { HELLOASSO_FORM_URL, HELLOASSO_WIDGET_URL, DONATION_AMOUNTS, DONATION_DEFAULT } from '../data/site';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
 const euros = new Intl.NumberFormat(lang, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
@@ -33,18 +34,19 @@ const euros = new Intl.NumberFormat(lang, { style: 'currency', currency: 'EUR', 
       <label for="donate-other">{t('donate.otherAmount', lang)}</label>
       <input id="donate-other" name="other" type="number" min="1" max="100000" step="any" inputmode="decimal" />
     </div>
-    <p class="donate-hint">{t('donate.frequencyHint', lang)}</p>
+    <p class="donate-hint">{t('donate.frequencyHint', lang)} {t('donate.tax', lang)}</p>
     <button class="button button-primary" type="submit">{t('donate.continue', lang)}</button>
   </form>
   <div class="donate-pay" data-donate-pay>
     <div class="donate-bar">
       <button class="link-button" type="button" data-donate-back>{t('donate.change', lang)}</button>
+      <a class="donate-open" href={HELLOASSO_FORM_URL} target="_blank" rel="noopener">{t('donate.open', lang)} <span aria-hidden="true">↗</span></a>
       {/* HelloAsso's form exists only in French and English and picks French for every other
           browser language; nothing a page can send changes that, so those pages say where to switch. */}
       {lang !== 'fr' && lang !== 'en' && <p class="donate-language">{t('donate.language', lang)}</p>}
     </div>
     <div class="donate-frame" data-donate-frame data-src={HELLOASSO_WIDGET_URL}>
-      <p class="muted">{t('donate.loading', lang)}</p>
+      <p class="muted" data-donate-status>{t('donate.loading', lang)}</p>
     </div>
   </div>
   <div class="donate-thanks" data-donate-thanks tabindex="-1">
