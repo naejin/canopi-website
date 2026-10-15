@@ -14,7 +14,9 @@ from pathlib import Path
 
 # The site's 11 locales; tooltips fall back to English, then to the scientific name alone.
 LANGS = ('en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru')
-# The app's stratum display colours (desktop/web/src/canvas/runtime/plant-display.ts).
+# Plants keep the colour the designer gave them, as the app shows them by default; a species left
+# uncoloured takes its catalog stratum's colour, the app's fallback (canvas/runtime/plant-presentation.ts,
+# with the colours of canvas/runtime/plant-display.ts).
 STRATUM_COLORS = {"emergent": "#E69F00", "high": "#009E73", "medium": "#0072B2", "low": "#CC79A7", "none": "#5E5A52"}
 
 
@@ -50,25 +52,24 @@ def main(db_path, out_path):
         def plane(pt):
             return [round((pt["lon"] - lon0) * kx, 2), round(-(pt["lat"] - lat0) * ky, 2)]
 
-        strata = {c["target"].get("canonical_name"): c["stratum"] for c in raw.get("consortiums", []) if c["target"].get("kind") == "species"}
+        own_colors = {p["canonical_name"]: p["color"].upper() for p in raw["plants"] if p.get("color")}
+        own_colors.update({k: v.upper() for k, v in (raw.get("plant_species_colors") or {}).items() if v})
         own_symbols = raw.get("plant_species_symbols") or {}
         species, index = [], {}
         for name in sorted({p["canonical_name"] for p in raw["plants"]}):
-            row = db.execute("select id, habit, height_max_m from species where canonical_name = ?", (name,)).fetchone()
+            row = db.execute("select id, habit, height_max_m, stratum from species where canonical_name = ?", (name,)).fetchone()
             names = {}
             if row:
                 for lang, common in db.execute(f"select language, common_name from best_common_names where species_id = ? and language in ({','.join('?' * len(LANGS))})", (row[0], *LANGS)):
                     names[lang] = common
-            stratum = strata.get(name)
-            stratum = stratum if stratum in STRATUM_COLORS else "none"
+            stratum = row[3] if row and row[3] in STRATUM_COLORS else "none"
             index[name] = len(species)
             species.append({
                 "scientific": name,
                 "common": names,
                 "habit": row[1] if row else None,
                 "heightMaxM": round(row[2], 1) if row and row[2] else None,
-                "stratum": stratum,
-                "color": STRATUM_COLORS[stratum],
+                "color": own_colors.get(name) or STRATUM_COLORS[stratum],
                 "symbol": own_symbols.get(name) or symbol_memory.get(name) or symbol_for(row[1] if row else None, row[2] if row else None),
             })
         pts = [plane(p["position"]) for p in raw["plants"]]
@@ -111,7 +112,6 @@ def main(db_path, out_path):
         })
     out = {
         "format": "plants are [xM, yM (south positive), speciesIndex, nearestNeighbourM]; zones are rings in metres, closed unless it is a line",
-        "stratumColors": STRATUM_COLORS,
         "designs": designs,
     }
     Path(out_path).write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))

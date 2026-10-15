@@ -455,7 +455,7 @@ export function createDesignCanvas({ stage, canvas, tooltip, hint, lang }) {
         fetch('/data/plant-symbols.json').then((r) => r.json()),
       ]);
       symbols = buildSymbols(symbolJson);
-      return designs;
+      return { designs: designs.designs, symbolArt: symbolJson.symbols };
     },
     show(next, { animate = true } = {}) {
       stopAnimation();

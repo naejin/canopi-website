@@ -9,7 +9,7 @@ const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru
 const keys = (object) => Object.keys(object).sort();
 
 test('the file and each design carry only the allowed fields', () => {
-  assert.deepEqual(keys(data), ['designs', 'format', 'stratumColors']);
+  assert.deepEqual(keys(data), ['designs', 'format']);
   assert.ok(data.designs.length > 0);
   for (const design of data.designs) {
     assert.deepEqual(keys(design), ['boundsM', 'country', 'designer', 'id', 'name', 'organisation', 'pin', 'plantCount', 'plants', 'projectUrl', 'region', 'species', 'speciesCount', 'zones'], design.id);
@@ -18,7 +18,8 @@ test('the file and each design carry only the allowed fields', () => {
     assert.equal(design.plants.length, design.plantCount, design.id);
     assert.equal(design.species.length, design.speciesCount, design.id);
     for (const species of design.species) {
-      assert.deepEqual(keys(species), ['color', 'common', 'habit', 'heightMaxM', 'scientific', 'stratum', 'symbol'], `${design.id}: ${species.scientific}`);
+      assert.deepEqual(keys(species), ['color', 'common', 'habit', 'heightMaxM', 'scientific', 'symbol'], `${design.id}: ${species.scientific}`);
+      assert.match(species.color, /^#[0-9A-F]{6}$/, `${design.id}: ${species.scientific}`);
       for (const lang of Object.keys(species.common)) assert.ok(LOCALES.includes(lang), `${design.id}: ${lang}`);
     }
     for (const plant of design.plants) {
@@ -26,6 +27,15 @@ test('the file and each design carry only the allowed fields', () => {
       assert.ok(plant.every((value) => typeof value === 'number'), design.id);
     }
     for (const zone of design.zones) assert.deepEqual(keys(zone), ['closed', 'points'], design.id);
+  }
+});
+
+test('plants keep the designer\'s colours, as the app shows them by default', () => {
+  // The app's stratum colours are only the fallback for species the designer left uncoloured.
+  const strata = new Set(['#E69F00', '#009E73', '#0072B2', '#CC79A7', '#5E5A52']);
+  for (const design of data.designs) {
+    const own = design.species.filter((species) => !strata.has(species.color));
+    assert.ok(own.length > design.species.length / 2, `${design.id}: ${own.length} of ${design.species.length} in the designer's colours`);
   }
 });
 

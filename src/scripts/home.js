@@ -20,12 +20,15 @@ initChrome({ onThemeChange: () => { hero.refresh(); design?.refreshTheme(); } })
 
 // ---------- featured design and map ----------
 
-const card = document.querySelector('.design-card');
-const field = (name) => card.querySelector(`[data-design-${name}]`);
+const caption = document.querySelector('.design-caption');
+const field = (name) => caption.querySelector(`[data-design-${name}]`);
 const canvas = document.querySelector('[data-design-canvas]');
 const legend = document.querySelector('[data-design-legend]');
-const STRATA = ['emergent', 'high', 'medium', 'low', 'none'];
+// The legend names plant forms, which every design has, by the app's own symbols; colours are the
+// designer's, so each plant's name shows on hover or tap instead.
+const FORMS = ['canopy', 'shrub', 'herb', 'climber', 'groundcover'];
 const number = new Intl.NumberFormat(lang);
+let symbolArt = {};
 
 design = createDesignCanvas({
   stage: document.querySelector('[data-design-stage]'),
@@ -43,20 +46,28 @@ const map = createDesignFinder({
   container: document.querySelector('[data-finder-map]'),
   list: document.querySelector('[data-finder-list]'),
   more: document.querySelector('[data-list-more]'),
-  listTitle: document.querySelector('[data-list-title]'),
   hint: document.querySelector('[data-map-hint]'),
   locate: document.querySelector('[data-locate]'),
   status: document.querySelector('[data-locate-status]'),
   onSelect: (id, { from }) => select(id, { from }),
 });
 
+function formIcon(symbol) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '-1 -1 2 2');
+  svg.setAttribute('class', 'legend-symbol');
+  svg.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', symbolArt[symbol].compact.body);
+  svg.append(path);
+  return svg;
+}
+
 let designs = [];
 function describe(d) {
   const counts = { plants: number.format(d.plantCount), species: number.format(d.speciesCount) };
   field('name').textContent = d.name;
-  field('by').textContent = text('design.by', { designer: d.designer });
-  field('place').textContent = placeName(d);
-  field('stats').textContent = text('design.stats', counts);
+  field('meta').textContent = [placeName(d), text('design.by', { designer: d.designer }), text('design.stats', counts)].join(' · ');
   field('project').href = d.projectUrl;
   const org = field('org');
   org.href = d.organisation.url;
@@ -67,19 +78,16 @@ function describe(d) {
   org.append(arrow);
   canvas.setAttribute('aria-label', text('design.canvasLabel', { name: d.name, ...counts }));
 
-  const present = new Set(d.species.map((s) => s.stratum));
-  legend.replaceChildren(...STRATA.filter((key) => present.has(key)).map((key) => {
+  const present = new Set(d.species.map((s) => s.symbol));
+  legend.replaceChildren(...FORMS.filter((form) => present.has(form) && symbolArt[form]).map((form) => {
     const item = document.createElement('span');
     item.className = 'legend-item';
-    const swatch = document.createElement('span');
-    swatch.className = 'legend-swatch';
-    swatch.style.background = d.species.find((s) => s.stratum === key).color;
-    item.append(swatch, text(`design.stratum.${key}`));
+    item.append(formIcon(form), text(`design.form.${form}`));
     return item;
   }));
-  card.classList.remove('is-swapping');
-  void card.offsetWidth;
-  card.classList.add('is-swapping');
+  caption.classList.remove('is-swapping');
+  void caption.offsetWidth;
+  caption.classList.add('is-swapping');
 }
 
 function select(id, { from } = {}) {
@@ -89,7 +97,7 @@ function select(id, { from } = {}) {
   design.show(next);
   map.setActive(id);
   if (from) {
-    const stage = document.querySelector('.finder-selected');
+    const stage = document.querySelector('.design-stage');
     const box = stage.getBoundingClientRect();
     if (box.bottom < 120 || box.top > innerHeight - 120) stage.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   }
@@ -97,6 +105,7 @@ function select(id, { from } = {}) {
 
 design.load().then((data) => {
   designs = data.designs;
+  symbolArt = data.symbolArt;
   map.setDesigns(designs);
   // ?design=<id> shows one design, for links and reviews; otherwise one at random.
   const first = designs.find((d) => d.id === params.get('design')) ?? designs[Math.floor(Math.random() * designs.length)];

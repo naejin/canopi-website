@@ -23,7 +23,7 @@ function loadStyles() {
   });
 }
 
-export function createDesignFinder({ container, list, more, listTitle, hint, locate, status, onSelect, lang, placeName, text }) {
+export function createDesignFinder({ container, list, more, hint, locate, status, onSelect, lang, placeName, text }) {
   let map = null;
   let maplibre = null;
   let designs = [];
@@ -72,7 +72,6 @@ export function createDesignFinder({ container, list, more, listTitle, hint, loc
     }));
     if (focused) list.querySelector(`[data-id="${CSS.escape(focused)}"]`)?.focus();
     more.hidden = ordered.length <= shown;
-    listTitle.textContent = text(visitor ? 'finder.nearYou' : 'finder.listTitle');
   }
 
   function fitAll(animate) {
@@ -148,7 +147,7 @@ export function createDesignFinder({ container, list, more, listTitle, hint, loc
       zoom: 5,
       maxZoom: MAX_ZOOM,
       cooperativeGestures: true,
-      attributionControl: { compact: true },
+      attributionControl: { compact: true, customAttribution: text('finder.note') },
       dragRotate: false,
       pitchWithRotate: false,
       touchPitch: false,

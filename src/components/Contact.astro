@@ -9,7 +9,6 @@ const { lang } = Astro.props;
   <div class="wrap contact-layout">
     <header class="contact-intro">
       <h2 id="contact-title">{t('contact.title', lang)}</h2>
-      <p>{t('contact.lede', lang)}</p>
       <p class="muted small">{t('contact.privacy', lang)}</p>
     </header>
     <form class="contact-form" data-contact-form method="post" action="/api/contact" novalidate>
