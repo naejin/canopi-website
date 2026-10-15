@@ -4,7 +4,7 @@
 // The loop runs only while dots are alive, so a resting pointer costs nothing.
 // Touch never paints while a finger drags, since that drag scrolls the page: the painting rests
 // faint, the welcome stroke still plays and a tap on the hero (not on its links or buttons)
-// blooms a reveal there. Behind the title, tagline and buttons every reveal opens only half
+// blooms a reveal there. Behind the title, tagline, buttons and header every reveal opens only half
 // way, so the text stays readable over the boldest painting. Reduced motion gets the painting
 // faint and still. Which painting
 // shows (locale, day or night, size) is decided by CSS from the hero's variables.
@@ -31,6 +31,7 @@ export function initHeroReveal() {
   const hctx = holes.getContext('2d');
   const weight = document.createElement('canvas');
   const text = hero.querySelectorAll('.hero-title, .hero-tagline, .hero-actions, .hero-meta');
+  const chrome = document.querySelectorAll('.header-inner > .brand, .header-nav');
   const canHover = matchMedia('(hover: hover) and (pointer: fine)');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -79,20 +80,26 @@ export function initHeroReveal() {
     w.globalCompositeOperation = 'source-over';
     w.fillStyle = '#000';
     w.fillRect(0, 0, width, height);
-    const rects = [...text].filter((el) => el.offsetParent).map((el) => el.getBoundingClientRect());
-    if (!rects.length) return;
-    const left = Math.min(...rects.map((r) => r.left)) - box.left - 12;
-    const top = Math.min(...rects.map((r) => r.top)) - box.top - 8;
-    const right = Math.max(...rects.map((r) => r.right)) - box.left + 12;
-    const bottom = Math.max(...rects.map((r) => r.bottom)) - box.top + 8;
-    // The block is drawn far off canvas and only its blurred shadow lands here: a soft edge in
+    // The hero's text block as one area, and the header's wordmark and links, which sit over the
+    // painting's top edge, each on their own.
+    const shown = (list) => [...list].filter((el) => el.offsetParent).map((el) => el.getBoundingClientRect());
+    const union = (rects) => rects.length && {
+      left: Math.min(...rects.map((r) => r.left)), top: Math.min(...rects.map((r) => r.top)),
+      right: Math.max(...rects.map((r) => r.right)), bottom: Math.max(...rects.map((r) => r.bottom)),
+    };
+    const areas = [union(shown(text)), ...shown(chrome)].filter(Boolean);
+    // Each area is drawn far off canvas and only its blurred shadow lands here: a soft edge in
     // every browser, without canvas filters.
     const away = width + height + 4 * TEXT_FEATHER;
     w.globalCompositeOperation = 'destination-out';
     w.shadowColor = `rgba(0,0,0,${1 - TEXT_REVEAL})`;
     w.shadowBlur = TEXT_FEATHER * dpr;
     w.shadowOffsetX = away * dpr;
-    w.fillRect(left - away, top, right - left, bottom - top);
+    for (const r of areas) {
+      const left = r.left - box.left - 12;
+      const top = r.top - box.top - 8;
+      w.fillRect(left - away, top, r.right - r.left + 24, r.bottom - r.top + 16);
+    }
     w.shadowColor = 'transparent';
   }
 
