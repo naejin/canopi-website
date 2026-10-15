@@ -5,7 +5,7 @@
 // iframe only when the dialog first opens, so nothing loads from HelloAsso before then. If the
 // iframe is blocked or slow, the form's own page on HelloAsso is one click away.
 import { t, type Locale } from '../i18n/utils';
-import { HELLOASSO_FORM_URL, HELLOASSO_WIDGET_URL, DONATION_AMOUNTS, DONATION_DEFAULT } from '../data/site';
+import { HELLOASSO_FORM_URL, HELLOASSO_WIDGET_URL, DONATION_AMOUNTS } from '../data/site';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
 const euros = new Intl.NumberFormat(lang, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
@@ -19,22 +19,29 @@ const euros = new Intl.NumberFormat(lang, { style: 'currency', currency: 'EUR', 
     <button class="dialog-close" type="button" data-close-dialog aria-label={t('dialog.close', lang)}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   </div>
   <form class="donate-amount" data-donate-amount>
-    <fieldset>
-      <legend>{t('donate.amountLabel', lang)}</legend>
-      <div class="amount-choices">
-        {DONATION_AMOUNTS.map((amount) => (
-          <label class="amount-choice">
-            <input type="radio" name="amount" value={amount} checked={amount === DONATION_DEFAULT} />
-            <span>{euros.format(amount)}</span>
-          </label>
-        ))}
-      </div>
+    <fieldset class="donate-frequency">
+      <legend class="visually-hidden">{t('donate.frequency', lang)}</legend>
+      <label><input type="radio" name="frequency" value="oneTime" checked /><span>{t('donate.oneTime', lang)}</span></label>
+      <label><input type="radio" name="frequency" value="monthly" /><span>{t('donate.monthly', lang)}</span></label>
     </fieldset>
+    {(['oneTime', 'monthly'] as const).map((frequency) => (
+      <fieldset class="amount-set" data-frequency={frequency}>
+        <legend>{t('donate.amountLabel', lang)}</legend>
+        <div class="amount-choices">
+          {DONATION_AMOUNTS[frequency].amounts.map((amount) => (
+            <label class="amount-choice">
+              <input type="radio" name={`amount-${frequency}`} value={amount} checked={amount === DONATION_AMOUNTS[frequency].default} />
+              <span>{frequency === 'monthly' ? t('donate.perMonth', lang, { amount: euros.format(amount) }) : euros.format(amount)}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+    ))}
     <div class="field amount-other">
       <label for="donate-other">{t('donate.otherAmount', lang)}</label>
       <input id="donate-other" name="other" type="number" min="1" max="100000" step="any" inputmode="decimal" />
     </div>
-    <p class="donate-hint">{t('donate.frequencyHint', lang)} {t('donate.tax', lang)}</p>
+    <p class="donate-hint">{t('donate.tax', lang)}</p>
     <button class="button button-primary" type="submit">{t('donate.continue', lang)}</button>
   </form>
   <div class="donate-pay" data-donate-pay>
@@ -44,6 +51,8 @@ const euros = new Intl.NumberFormat(lang, { style: 'currency', currency: 'EUR', 
       {/* HelloAsso's form exists only in French and English and picks French for every other
           browser language; nothing a page can send changes that, so those pages say where to switch. */}
       {lang !== 'fr' && lang !== 'en' && <p class="donate-language">{t('donate.language', lang)}</p>}
+      {/* HelloAsso's form cannot be told the frequency, so a monthly gift needs one more click there. */}
+      <p class="donate-monthly">{t('donate.pickMonthly', lang)}</p>
     </div>
     <div class="donate-frame" data-donate-frame data-src={HELLOASSO_WIDGET_URL}>
       <p class="muted" data-donate-status>{t('donate.loading', lang)}</p>

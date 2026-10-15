@@ -17,6 +17,7 @@ export function initDonate() {
   const form = dialog.querySelector('[data-donate-amount]');
   const frame = dialog.querySelector('[data-donate-frame]');
   const other = form.elements.other;
+  const sets = form.querySelectorAll('[data-frequency]');
   let iframe = null;
   let amount = null;
   let sending = 0;
@@ -55,21 +56,31 @@ export function initDonate() {
     sending = setInterval(post, 500);
   }
 
+  // One-time and monthly gifts have their own amounts; only the chosen frequency's set shows, and
+  // the payment step reminds a monthly giver to pick monthly in HelloAsso's form.
+  const amounts = () => form.elements[`amount-${form.elements.frequency.value}`];
+  function showFrequency() {
+    const frequency = form.elements.frequency.value;
+    dialog.dataset.frequency = frequency;
+    for (const set of sets) set.hidden = set.dataset.frequency !== frequency;
+  }
+
   function chosen() {
     const typed = Number(other.value);
     if (other.value.trim() && Number.isFinite(typed) && typed >= 1) return Math.round(typed * 100) / 100;
-    return Number(form.elements.amount.value);
+    return Number(amounts().value);
   }
 
   other.addEventListener('input', () => {
-    for (const radio of form.elements.amount) radio.checked = false;
+    for (const radio of amounts()) radio.checked = false;
   });
   form.addEventListener('change', (event) => {
-    if (event.target.name === 'amount') other.value = '';
+    if (event.target.name === 'frequency') showFrequency();
+    else if (event.target.name.startsWith('amount-')) other.value = '';
   });
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    if (!other.value.trim() && !form.elements.amount.value) return other.focus();
+    if (!other.value.trim() && !amounts().value) return other.focus();
     amount = chosen();
     step('pay', dialog.querySelector('[data-donate-back]'));
     send();
@@ -78,7 +89,7 @@ export function initDonate() {
     clearInterval(sending);
     amount = null;
     createFrame();
-    step('amount', form.querySelector('input:checked') ?? other);
+    step('amount', form.querySelector('fieldset:not([hidden]) [name^="amount-"]:checked') ?? other);
   });
 
   window.addEventListener('message', (event) => {
@@ -101,6 +112,7 @@ export function initDonate() {
     if (!iframe) createFrame();
     openDialog(dialog, opener);
   }
+  showFrequency();
   document.addEventListener('click', (event) => {
     const opener = event.target.closest('[data-open-donate]');
     if (opener) open(opener);

@@ -165,8 +165,15 @@ button { cursor: pointer; }
 .donate-amount { padding: 22px 24px 8px; display: grid; gap: 18px; justify-items: start; overflow: auto; }
 .donate-amount fieldset { margin: 0; padding: 0; border: 0; width: 100%; }
 .donate-amount legend { margin-bottom: 10px; font-size: 15px; font-weight: 600; }
+.donate-amount .donate-frequency { display: inline-flex; width: auto; padding: 3px; border: 1px solid var(--border); border-radius: 999px; }
+.donate-frequency label { position: relative; }
+.donate-frequency input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.donate-frequency span { display: block; padding: 6px 16px; border-radius: 999px; font-size: 15px; }
+.donate-frequency input:checked + span { background: var(--text); color: var(--bg); font-weight: 600; }
+.donate-frequency input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
 .amount-choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
-.amount-choice { position: relative; }
+.amount-set[data-frequency="monthly"] .amount-choices { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.amount-choice { position: relative; white-space: nowrap; }
 .amount-choice input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .amount-choice span {
   display: grid; place-items: center; min-height: 52px; padding: 0 12px;
@@ -186,7 +193,8 @@ button { cursor: pointer; }
 .donate-pay { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .donate-bar { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; padding: 10px 24px; border-bottom: 1px solid var(--border); font-size: 14px; }
 .donate-open { color: var(--text-secondary); }
-.donate-language { color: var(--text-secondary); flex: 1 1 100%; }
+.donate-language, .donate-monthly { color: var(--text-secondary); flex: 1 1 100%; }
+.dialog-donate:not([data-frequency="monthly"]) .donate-monthly { display: none; }
 .donate-frame { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0 24px; text-align: center; background: var(--bg); }
 .donate-frame:has(iframe) { padding: 0; }
 .donate-frame iframe { flex: 1; align-self: stretch; min-width: 0; border: 0; background: #fff; }
@@ -195,3 +203,5 @@ button { cursor: pointer; }
 .donate-thanks p { max-width: 30em; color: var(--text-secondary); }
 .donate-thanks .button { margin-top: 8px; }
 .dialog-donate .dialog-foot { padding-top: 12px; }
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
