@@ -1,5 +1,7 @@
 ---
-// A real Canopi design drawn as the app draws it; src/scripts/design-canvas.js fills it in.
+// The design finder: featured designs on a map and in a list nearest first, beside the one
+// selected, drawn as the app draws it. src/scripts/design-canvas.js draws the plan and
+// src/scripts/design-map.js loads MapLibre near the section; the list works without the map.
 import { t, type Locale } from '../i18n/utils';
 import { CANOPI_VERSION } from '../data/release';
 interface Props { lang: Locale; }
@@ -11,34 +13,49 @@ const { lang } = Astro.props;
       <h2 id="design-title">{t('design.title', lang)}</h2>
       <p>{t('design.lede', lang)}</p>
     </header>
-    <div class="design-layout">
-      <figure class="design-stage">
-        <div class="design-canvas-wrap" data-design-stage>
-          <canvas class="design-canvas" data-design-canvas role="img" aria-label={t('design.title', lang)}></canvas>
-          <div class="plant-tooltip" data-plant-tooltip hidden></div>
-          <div class="design-controls" role="group" aria-label={t('design.view', lang)}>
-            <button type="button" data-zoom="in" aria-label={t('design.zoomIn', lang)}><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-            <button type="button" data-zoom="out" aria-label={t('design.zoomOut', lang)}><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-            <button type="button" data-zoom="fit">{t('design.fit', lang)}</button>
-          </div>
-          <p class="design-hint" data-design-hint></p>
+    <div class="finder">
+      <div class="finder-browse">
+        <div class="finder-locate">
+          <button type="button" class="button button-secondary" data-locate>
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><path d="M8 1v2.5M8 12.5V15M1 8h2.5M12.5 8H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            {t('finder.locate', lang)}
+          </button>
+          <p class="finder-status" data-locate-status role="status">{t('finder.locateNote', lang)}</p>
         </div>
-        <figcaption class="design-legend" data-design-legend></figcaption>
-      </figure>
-      <aside class="design-card" aria-live="polite">
-        <p class="card-kicker">{t('design.kicker', lang)}</p>
-        <h3 class="card-title" data-design-name></h3>
-        <p class="card-by" data-design-by></p>
-        <dl class="card-facts">
-          <div><dt>{t('design.place', lang)}</dt><dd data-design-place></dd></div>
-          <div><dt>{t('design.planting', lang)}</dt><dd data-design-stats></dd></div>
-        </dl>
-        <ul class="card-links" role="list">
-          <li><a data-design-project href="#design">{t('design.project', lang)} <span aria-hidden="true">↗</span></a></li>
-          <li><a data-design-org href="#design"></a></li>
-        </ul>
-        <p class="card-note">{t('design.madeWith', lang, { version: CANOPI_VERSION })}</p>
-      </aside>
+        <div class="finder-map" data-finder-map role="region" aria-label={t('finder.mapLabel', lang)}>
+          <p class="finder-hint" data-map-hint>{t('finder.mapHint', lang)}</p>
+        </div>
+        <h3 class="finder-list-title" data-list-title>{t('finder.listTitle', lang)}</h3>
+        <ul class="finder-list" role="list" data-finder-list></ul>
+        <button type="button" class="link-button finder-more" data-list-more hidden>{t('finder.showMore', lang)}</button>
+        <p class="finder-note">{t('finder.note', lang)} {t('finder.invite', lang)} <a href="#contact">{t('finder.inviteLink', lang)}</a></p>
+      </div>
+      <div class="finder-selected">
+        <figure class="design-stage">
+          <div class="design-canvas-wrap" data-design-stage>
+            <canvas class="design-canvas" data-design-canvas role="img" aria-label={t('design.title', lang)}></canvas>
+            <div class="plant-tooltip" data-plant-tooltip hidden></div>
+            <div class="design-controls" role="group" aria-label={t('design.view', lang)}>
+              <button type="button" data-zoom="in" aria-label={t('design.zoomIn', lang)}><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+              <button type="button" data-zoom="out" aria-label={t('design.zoomOut', lang)}><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+              <button type="button" data-zoom="fit">{t('design.fit', lang)}</button>
+            </div>
+            <p class="design-hint" data-design-hint></p>
+          </div>
+          <figcaption class="design-legend" data-design-legend></figcaption>
+        </figure>
+        <div class="design-card" aria-live="polite">
+          <p class="card-kicker">{t('design.kicker', lang)}</p>
+          <h3 class="card-title" data-design-name></h3>
+          <p class="card-by"><span data-design-by></span> · <span data-design-place></span></p>
+          <p class="card-stats" data-design-stats></p>
+          <ul class="card-links" role="list">
+            <li><a data-design-project href="#design">{t('design.project', lang)} <span aria-hidden="true">↗</span></a></li>
+            <li><a data-design-org href="#design"></a></li>
+          </ul>
+          <p class="card-note">{t('design.madeWith', lang, { version: CANOPI_VERSION })}</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>

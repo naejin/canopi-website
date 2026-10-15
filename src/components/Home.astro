@@ -4,7 +4,6 @@ import Base from '../layouts/Base.astro';
 import Header from './Header.astro';
 import Hero from './Hero.astro';
 import FeaturedDesign from './FeaturedDesign.astro';
-import Places from './Places.astro';
 import Network from './Network.astro';
 import Contact from './Contact.astro';
 import Footer from './Footer.astro';
@@ -31,7 +30,8 @@ const keys = [
   'edition.web.cta', 'edition.desktop.cta', 'download.forPlatform', 'download.after', 'download.thisComputer',
   'design.canvasLabel', 'design.hintPointer', 'design.hintTouch', 'design.by', 'design.stats', 'design.org',
   'design.stratum.emergent', 'design.stratum.high', 'design.stratum.medium', 'design.stratum.low', 'design.stratum.none',
-  'places.meta', 'places.unavailable',
+  'finder.meta', 'finder.unavailable', 'finder.listTitle', 'finder.nearYou', 'finder.cluster',
+  'finder.locating', 'finder.located', 'finder.locateFailed',
   'contact.sending', 'contact.sent', 'contact.failed', 'contact.refused', 'contact.invalid',
 ];
 ---
@@ -41,7 +41,6 @@ const keys = [
   <main id="main">
     <Hero lang={lang} />
     <FeaturedDesign lang={lang} />
-    <Places lang={lang} />
     <Network lang={lang} />
     <Contact lang={lang} />
   </main>

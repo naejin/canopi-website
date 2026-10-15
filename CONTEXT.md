@@ -33,7 +33,7 @@ Domain expert: "No. Say Canvas tools under both editions."
 
 ## Approved homepage (October 2026)
 
-The home page opens on the Canopi title over a painting in each locale's own tradition (day and night versions), revealed by the cursor, with an OS-aware download and Canopi Web. Below: a featured design drawn as the app draws it, a map of featured designs, the agroecology network, and a contact form that keeps the address private. Donations go through HelloAsso in our own dialog. Desktop downloads keep the native dialog with a device recommendation and alternative installers; do not send the primary download flow through GitHub release pages.
+The home page opens on the Canopi title over a painting in each locale's own tradition (day and night versions), revealed by the cursor, with an OS-aware download and Canopi Web. Below: the design finder, where a map of featured designs (grouped into clusters as they grow) and a list nearest first, sorted by the visitor's location only when they ask, sit beside the selected design drawn as the app draws it; then the agroecology network, and a contact form that keeps the address private. Donations go through HelloAsso in our own dialog. Desktop downloads keep the native dialog with a device recommendation and alternative installers; do not send the primary download flow through GitHub release pages.
 
 Release metadata lives in `src/data/release.ts`, site links in `src/data/site.ts` (including the hidden Docs slot) and device detection in `src/lib/installer.mjs`. All UI copy is localized. Fonts are self-hosted under `public/fonts/` with their licenses.
 

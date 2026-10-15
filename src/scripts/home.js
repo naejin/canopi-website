@@ -4,7 +4,7 @@ import { initChrome } from './chrome.js';
 import { initDownloads } from './downloads.js';
 import { initHeroReveal } from './hero-reveal.js';
 import { createDesignCanvas } from './design-canvas.js';
-import { createPlacesMap } from './places-map.js';
+import { createDesignFinder } from './design-map.js';
 import { initContact } from './contact.js';
 import { lang, text } from './page-data.js';
 
@@ -36,12 +36,17 @@ design = createDesignCanvas({
 });
 document.querySelector('[data-design-hint]').textContent = text(matchMedia('(hover: hover)').matches ? 'design.hintPointer' : 'design.hintTouch');
 
-const map = createPlacesMap({
+const map = createDesignFinder({
   lang,
   placeName,
   text,
-  container: document.querySelector('[data-places-map]'),
-  list: document.querySelector('[data-places-list]'),
+  container: document.querySelector('[data-finder-map]'),
+  list: document.querySelector('[data-finder-list]'),
+  more: document.querySelector('[data-list-more]'),
+  listTitle: document.querySelector('[data-list-title]'),
+  hint: document.querySelector('[data-map-hint]'),
+  locate: document.querySelector('[data-locate]'),
+  status: document.querySelector('[data-locate-status]'),
   onSelect: (id, { from }) => select(id, { from }),
 });
 
@@ -84,7 +89,7 @@ function select(id, { from } = {}) {
   design.show(next);
   map.setActive(id);
   if (from) {
-    const stage = document.querySelector('#design');
+    const stage = document.querySelector('.finder-selected');
     const box = stage.getBoundingClientRect();
     if (box.bottom < 120 || box.top > innerHeight - 120) stage.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   }
