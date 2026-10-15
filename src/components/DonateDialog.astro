@@ -14,6 +14,9 @@ const { lang } = Astro.props;
     </div>
     <button class="dialog-close" type="button" data-close-dialog aria-label={t('dialog.close', lang)}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   </div>
+  {/* HelloAsso's form exists only in French and English and picks French for every other
+      browser language, so those pages say where to switch it. */}
+  {lang !== 'fr' && lang !== 'en' && <p class="donate-language">{t('donate.language', lang)}</p>}
   <div class="donate-frame" data-donate-frame data-src={HELLOASSO_WIDGET_URL}>
     <p class="muted">{t('donate.loading', lang)}</p>
   </div>
