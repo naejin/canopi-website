@@ -1,9 +1,9 @@
 export const CANOPI_VERSION = '2.0.0';
 export const CANOPI_RELEASE_DATE = '2026-10-15';
 export const CANOPI_RELEASE_TAG = `v${CANOPI_VERSION}`;
-export const CANOPI_RELEASE_URL = `https://github.com/naejin/canopi/releases/tag/${CANOPI_RELEASE_TAG}`;
-export const CANOPI_RELEASES_URL = 'https://github.com/naejin/canopi/releases';
-export const CANOPI_DOWNLOAD_BASE_URL = 'https://github.com/naejin/canopi/releases/latest/download';
+export const CANOPI_RELEASE_URL = `https://github.com/opencanopi/canopi/releases/tag/${CANOPI_RELEASE_TAG}`;
+export const CANOPI_RELEASES_URL = 'https://github.com/opencanopi/canopi/releases';
+export const CANOPI_DOWNLOAD_BASE_URL = 'https://github.com/opencanopi/canopi/releases/latest/download';
 export const CANOPI_CHECKSUMS_URL = `${CANOPI_DOWNLOAD_BASE_URL}/RELEASE-SHA256SUMS.txt`;
 
 export const CANOPI_DOWNLOADS = {
