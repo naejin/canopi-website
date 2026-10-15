@@ -3,7 +3,7 @@
 // app's 33 symbols as SVG paths in -1..1 units). The view opens on the whole plan and, once
 // the section is in view, eases into the planted heart where the symbols are legible.
 //
-// One deliberate difference from the app: the app caps a plant symbol near 13 px, so its
+// One deliberate difference from the app: the app caps a plant symbol near 14 px, so its
 // detailed artwork never shows at this density. Here a symbol grows with zoom, always staying
 // within its spacing to the nearest plant, so zooming in reveals the full symbols.
 
