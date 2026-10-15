@@ -1,15 +1,15 @@
 // The hero painting, revealed by the cursor. A canvas in the page colour covers the painting;
 // moving the pointer drops "ink dots" along its path, each carving a soft, irregular hole that
-// grows and closes again within about half a second, like a brushstroke drying back into paper.
+// grows and closes again within about a second and a half, like a brushstroke drying back into paper.
 // The loop runs only while dots are alive, so a resting pointer costs nothing.
 // Touch devices and reduced motion get the painting faint and still instead. Which painting
 // shows (locale, day or night, size) is decided by CSS from the hero's variables.
 
 const STEP_PX = 12;            // distance between dots along the pointer path
-const MAX_DOTS = 160;
-const LIFETIME_MS = 540;
+const MAX_DOTS = 400;
+const LIFETIME_MS = 1400;
 const START_RADIUS = 8;
-const END_RADIUS = 124;        // each dot's final radius varies between ~55% and 100% of this
+const END_RADIUS = 180;        // each dot's final radius varies between ~55% and 100% of this
 const SIZE_VARIATION = 0.45;
 
 export function initHeroReveal() {
