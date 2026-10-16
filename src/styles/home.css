@@ -123,7 +123,9 @@
 }
 /* Credits: an "i" in a paper circle that unfolds into one line to its left. */
 .finder-map .maplibregl-ctrl-bottom-right { left: 0; display: flex; justify-content: flex-end; }
-.map-credits { display: flex; align-items: flex-end; justify-content: flex-end; gap: 6px; min-width: 0; margin-left: 10px; }
+.map-credits { display: flex; align-items: flex-end; justify-content: flex-end; gap: 6px; min-width: 0; }
+/* MapLibre's corner rule sets the control's margins; the credits also keep clear of the map's left edge. */
+.finder-map .maplibregl-ctrl-bottom-right .map-credits { margin-left: 10px; }
 .map-credits-toggle {
   flex: none; width: 24px; height: 24px; padding: 0;
   display: grid; place-items: center;

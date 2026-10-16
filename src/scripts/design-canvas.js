@@ -346,7 +346,8 @@ export function createDesignCanvas({ stage, canvas, tooltip, hint, lang }) {
 
   stage.addEventListener('pointerdown', (event) => {
     if (event.target.closest('button')) return;
-    stopAnimation();
+    // One finger scrolls the page (touch-action: pan-y) and leaves the intro alone; a mouse or a pinch takes the view.
+    if (event.pointerType !== 'touch' || pointers.size > 0) stopAnimation();
     pointers.set(event.pointerId, local(event));
     if (event.pointerType === 'mouse' && event.button === 0) {
       const [sx, sy] = local(event);
