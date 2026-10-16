@@ -36,14 +36,15 @@ The Canopi app repository owns:
 - The versioned Web Edition artifact.
 - The artifact manifest, checksums, limits, and catalog file list.
 
-The deployment repository or deployment workflow owns:
+Its release script, `scripts/publish-web-release.sh`, also owns:
 
 - Downloading a versioned Web Edition artifact.
 - Verifying the artifact before deployment.
 - Adding Cloudflare Pages routing files if the artifact does not include them.
 - Deploying the verified static output to a dedicated Pages project.
-- Binding `web.projectcanopi.com` to that Pages project.
 - Production smoke checks.
+
+The Cloudflare dashboard binds `web.projectcanopi.com` to the Pages project.
 
 The marketing website owns:
 
@@ -107,27 +108,20 @@ outside the repository unless release records become versioned project
 artifacts. Append its compact summary to the release bead; Cloudflare and GitHub
 retain full deployment logs.
 
-### Automation target
+### Automation
 
-The preferred future interface is one fail-fast, idempotent command:
+The Canopi app repository runs the whole sequence as the last step of every release
+(its `docs/guides/native-and-release.md` and `editions.md` own the details):
 
 ```bash
-scripts/publish-web-release.sh \
-  --tag vX.Y.Z \
-  --commit <full-app-commit> \
-  --deploy
+scripts/publish-web-release.sh --tag vX.Y.Z [--artifact <archive>] [--verify-only]
 ```
 
-Its internal stages should be:
-
-```text
-preflight -> download -> verify -> build -> preview -> preview-smoke
-          -> production -> production-smoke -> record
-```
-
-Until that wrapper exists, follow the stage order manually. It must stop before
-mutation when the checkout is dirty unless the operator supplied an isolated
-worktree, and it must never delete or overwrite user work.
+It resolves the release, verifies the archive against the release's
+`WEB-RELEASE-SHA256SUMS.txt`, adds the deployment-owned files, deploys a Pages
+preview, checks it over HTTP and in Chromium and WebKit, then deploys production
+and waits for it to serve the release manifest. A production that already serves
+the release and passes its checks is left alone.
 
 ## Root and compatibility artifact shapes
 
@@ -263,44 +257,18 @@ Production URL: https://canopi-web.pages.dev/
 Custom domain: https://web.projectcanopi.com/
 ```
 
-Use one of these deployment modes.
-
-### Recommended: Direct Upload from CI
-
-Use Direct Upload when the deploy workflow downloads and verifies a release artifact, then uploads a prepared static directory.
-
-The deploy command shape is:
+Deploys are Direct Upload from the operator's machine with their own
+`wrangler login`; no Cloudflare token is stored in CI:
 
 ```bash
-npx wrangler pages deploy dist --project-name=canopi-web --branch=production
+npx wrangler pages deploy <dir> --project-name canopi-web --branch production --commit-hash <full-app-commit>
 ```
 
-For GitHub Actions, store these secrets:
-
-```text
-CLOUDFLARE_ACCOUNT_ID
-CLOUDFLARE_API_TOKEN
-```
-
-The API token needs permission to deploy to Cloudflare Pages for the account. If the workflow also manages DNS records, it also needs DNS edit permission for the `projectcanopi.com` zone. Prefer managing the custom domain in the Cloudflare dashboard unless there is a clear reason to automate DNS.
+Manage the custom domain in the Cloudflare dashboard.
 
 Source:
 
 - <https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/>
-
-### Alternative: Git integration
-
-Use Git integration only if the deployment repo can fetch the app release artifact during its build.
-
-The Pages build command would be a wrapper script that:
-
-1. Downloads the selected Canopi Web Edition archive.
-2. Verifies the archive.
-3. Writes the verified files into `dist/`.
-4. Leaves `dist/index.html` at the root.
-5. Adds `dist/_headers` and directory-specific `404.html` files as described below.
-
-Do not make Pages clone or build the full Canopi app repository unless the deployment pipeline explicitly accepts the longer build time and extra coupling.
 
 ## Custom domain and DNS setup
 
@@ -439,55 +407,6 @@ The verifier should:
 
 The existing website installer is a good starting point structurally, but it must be adapted for the root subdomain contract. Do not use it unchanged.
 
-## Deployment workflow outline
-
-A dedicated deployment repo can use a workflow like this:
-
-```yaml
-name: Deploy Canopi Web
-
-on:
-  workflow_dispatch:
-    inputs:
-      artifact_url:
-        description: Canopi Web Edition release archive URL
-        required: true
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-
-      - name: Install deploy dependencies
-        run: npm ci
-
-      - name: Download artifact
-        run: |
-          mkdir -p .tmp
-          curl -fsSL "${{ inputs.artifact_url }}" -o .tmp/canopi-web-edition.tar.gz
-
-      - name: Verify and prepare Pages directory
-        run: node scripts/install-web-edition-root.mjs .tmp/canopi-web-edition.tar.gz dist
-
-      - name: Deploy to Cloudflare Pages
-        run: npx wrangler pages deploy dist --project-name=canopi-web --branch=production
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-```
-
-The exact workflow can be triggered from the Canopi app release pipeline instead of manual dispatch. The invariant is the same: deploy only a versioned, verified artifact.
-
 ## Local artifact-development preview
 
 Use this flow only while developing the app-side packaging contract. A
@@ -499,7 +418,7 @@ cd /home/daylon/projects/canopi/desktop/web
 npm run package:web:root
 ```
 
-Then preview the deploy output from the deployment repo:
+Then preview the deploy output:
 
 ```bash
 node scripts/install-web-edition-root.mjs \
