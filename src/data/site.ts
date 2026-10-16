@@ -1,7 +1,7 @@
 import type { Locale } from '../i18n/utils';
 
 export const WEB_URL = 'https://web.projectcanopi.com/';
-export const SOURCE_URL = 'https://github.com/naejin/canopi';
+export const SOURCE_URL = 'https://github.com/opencanopi/canopi';
 // The documentation slot: header and footer show a Docs link once this is set.
 export const DOCS_URL: string | null = null;
 // The donation form's own page, and `view=form`, the bare form without the campaign header.

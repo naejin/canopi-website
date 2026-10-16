@@ -5,7 +5,7 @@ import { join } from 'node:path';
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
 const version = release.match(/CANOPI_VERSION = '([^']+)'/)[1];
-const latestDownloadBase = 'https://github.com/naejin/canopi/releases/latest/download';
+const latestDownloadBase = 'https://github.com/opencanopi/canopi/releases/latest/download';
 const downloads = [
   'canopi-windows-x64.exe',
   'canopi-windows-x64.msi',
@@ -26,7 +26,7 @@ for (const lang of locales) {
     assert.ok(html.includes(`${latestDownloadBase}/${filename}`), `${lang}: ${filename}`);
   }
   assert.ok(html.includes('https://web.projectcanopi.com/'), `${lang}: Web Edition URL`);
-  assert.ok(!/github\.com\/naejin\/canopi\/releases\/download\/v[^/]+\/Canopi_/.test(html), `${lang}: stale versioned installer URL`);
+  assert.ok(!/github\.com\/opencanopi\/canopi\/releases\/download\/v[^/]+\/Canopi_/.test(html), `${lang}: stale versioned installer URL`);
   assert.ok(html.includes('id="download-dialog"'), lang);
   assert.ok(html.includes('data-donate-dialog'), `${lang}: donate dialog`);
   assert.ok(html.includes('https://ecosystemrestorationcommunities.org/'), lang);
