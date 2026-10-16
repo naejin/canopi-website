@@ -1,7 +1,8 @@
 // The featured design, drawn as Canopi 2.0 draws plants and zones, on the page background.
 // Data: /data/featured-designs.json (metres, x east, y south) and /data/plant-symbols.json (the
 // app's 33 symbols as SVG paths in -1..1 units). The view opens on the whole plan and, once
-// the section is in view, eases into the planted heart where the symbols are legible.
+// the section is in view, holds it long enough to be read, then slowly eases into the planted
+// heart where the symbols are legible.
 //
 // One deliberate difference from the app: the app caps a plant symbol near 14 px, so its
 // detailed artwork never shows at this density. Here a symbol grows with zoom, always staying
@@ -15,8 +16,9 @@ const MIN_RADIUS_PX = 1.1;
 const HIT_SLOP_PX = 8;
 const MIN_PPM = 4;
 const MAX_PPM = 170;
-const INTRO_DELAY_MS = 500;
-const INTRO_MS = 1600;
+const INTRO_DELAY_MS = 1800;      // the whole plan, held before the zoom
+const INTRO_MS = 3400;
+const SWAP_DELAY_MS = 1200;       // a newly chosen design shows whole for a moment too
 
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
@@ -45,6 +47,7 @@ export function createDesignCanvas({ stage, canvas, tooltip, hint, lang }) {
   let frameRequested = false;
   let animation = null;
   let introPending = false;
+  let intros = 0;                   // bumped by any interaction, so a held intro never overrides it
   let theme = {};
 
   // ---------- data ----------
@@ -257,7 +260,12 @@ export function createDesignCanvas({ stage, canvas, tooltip, hint, lang }) {
     };
     requestAnimationFrame(step);
   }
-  const stopAnimation = () => { if (animation) animation.cancelled = true; animation = null; introPending = false; };
+  const stopAnimation = () => { if (animation) animation.cancelled = true; animation = null; introPending = false; intros += 1; };
+  // After `delay`, glide into the planted heart unless something moved the view meanwhile.
+  function introAfter(delay) {
+    const id = intros;
+    setTimeout(() => { if (id === intros && design && !drag) animateTo(detailView(), INTRO_MS); }, delay);
+  }
 
   function zoomAt(factor, sx = width / 2, sy = height / 2, duration = 260) {
     const [wx, wy] = toWorld(sx, sy);
@@ -444,7 +452,7 @@ export function createDesignCanvas({ stage, canvas, tooltip, hint, lang }) {
   const intro = new IntersectionObserver((entries) => {
     if (!entries.some((entry) => entry.isIntersecting) || !introPending) return;
     introPending = false;
-    setTimeout(() => { if (design && !animation && !drag) animateTo(detailView(), INTRO_MS); }, INTRO_DELAY_MS);
+    introAfter(INTRO_DELAY_MS);
   }, { threshold: 0.55 });
   intro.observe(stage);
 
@@ -472,7 +480,7 @@ export function createDesignCanvas({ stage, canvas, tooltip, hint, lang }) {
       // On first show the intro waits for the section to be seen; later swaps glide at once.
       const box = stage.getBoundingClientRect();
       const visible = box.top < innerHeight * 0.75 && box.bottom > innerHeight * 0.25;
-      if (visible) setTimeout(() => animateTo(detailView(), INTRO_MS), 350);
+      if (visible) introAfter(SWAP_DELAY_MS);
       else introPending = true;
     },
     refreshTheme() { readTheme(); requestDraw(); },

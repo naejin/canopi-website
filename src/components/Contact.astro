@@ -2,6 +2,7 @@
 // The contact form keeps the address out of the page: it posts to /api/contact
 // (src/pages/api/contact.ts). Without JS the endpoint redirects to /contact/sent/ or /contact/failed/.
 import { t, type Locale } from '../i18n/utils';
+import { SOURCE_URL } from '../data/site';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
 ---
@@ -9,6 +10,8 @@ const { lang } = Astro.props;
   <div class="wrap contact-layout">
     <header class="contact-intro">
       <h2 id="contact-title">{t('contact.title', lang)}</h2>
+      <p>{t('contact.lede', lang)}</p>
+      <p>{t('contact.bugs', lang)} <a href={`${SOURCE_URL}/issues`}>{t('contact.bugsLink', lang)} <span aria-hidden="true">↗</span></a></p>
       <p class="muted small">{t('contact.privacy', lang)}</p>
     </header>
     <form class="contact-form" data-contact-form method="post" action="/api/contact" novalidate>

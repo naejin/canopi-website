@@ -18,6 +18,9 @@
   background-position: center 62%;
   background-repeat: no-repeat;
   background-image: var(--hero-day);
+  /* The painting dissolves before the hero ends, so no reveal is ever cut by a straight edge. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 64%, rgba(0,0,0,0.62) 78%, rgba(0,0,0,0.2) 90%, transparent);
+  mask-image: linear-gradient(to bottom, #000 64%, rgba(0,0,0,0.62) 78%, rgba(0,0,0,0.2) 90%, transparent);
 }
 /* The page sets the four URLs for its locale; only the one that applies is downloaded. */
 :root[data-theme="dark"] .hero-painting { background-image: var(--hero-night); }
@@ -33,6 +36,20 @@
 /* Without hover (touch) or with reduced motion the painting shows faintly and still. */
 .hero.is-static .hero-painting { opacity: var(--painting-opacity-static); }
 .hero.is-static .hero-mask { display: none; }
+
+/* A paper halo around the type, as on a map label: the protection follows the letterforms, so the
+   revealed painting never meets an edge. Sizes scale with the text but stay wide enough on small type. */
+.hero, .site-header {
+  --halo:
+    0 0 max(1px, 0.03em) var(--bg),
+    0 0 max(4px, 0.1em) var(--bg),
+    0 0 max(10px, 0.24em) var(--bg),
+    0 0 max(22px, 0.5em) color-mix(in srgb, var(--bg) 75%, transparent);
+}
+.hero-title, .hero-tagline, .hero-meta, .support-note, .brand, .nav-link { text-shadow: var(--halo); }
+.hero-logo, .brand img, .theme-toggle svg {
+  filter: drop-shadow(0 0 3px var(--bg)) drop-shadow(0 0 10px var(--bg));
+}
 
 .hero-inner { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .hero-logo { width: clamp(56px, 6.2vw, 88px); height: auto; }
@@ -79,7 +96,12 @@
 
 /* ---------- Featured design ---------- */
 
-.featured, .network { border-top: 1px solid var(--border); }
+/* No dividers between sections: space and the paper grain separate them. The plan is the page's
+   centrepiece, so it runs wider than the text column; the sections after it are quieter. */
+.featured { padding-top: clamp(40px, 6vw, 72px); }
+/* Only the canvas widens; its caption stays on the text column, level with the finder below. */
+.design-canvas-wrap { margin-inline: calc(50% - min(50vw - var(--gutter), 740px)); }
+.network .section-head h2 { font-size: clamp(30px, 3.6vw, 42px); }
 /* A real plan first, full width, with one caption line; then the finder for others: locate and
    the map on the left, the nearest designs on the right. */
 /* The locate row sits above the map only; the list starts level with the map. */
@@ -99,7 +121,23 @@
   border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
   background: var(--surface);
 }
-.finder-map .maplibregl-ctrl-attrib { font: 12px var(--font-sans); }
+/* Credits: an "i" in a paper circle that unfolds into one line to its left. */
+.finder-map .maplibregl-ctrl-bottom-right { left: 0; display: flex; justify-content: flex-end; }
+.map-credits { display: flex; align-items: flex-end; justify-content: flex-end; gap: 6px; min-width: 0; margin-left: 10px; }
+.map-credits-toggle {
+  flex: none; width: 24px; height: 24px; padding: 0;
+  display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 50%; background: var(--surface);
+  font: italic 600 14px/1 var(--font-display); color: var(--text-secondary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.map-credits-toggle:hover, .map-credits-toggle[aria-expanded="true"] { color: var(--text); border-color: var(--border-strong); }
+.map-credits-text {
+  margin: 0; padding: 4px 10px; border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--border);
+  font-size: 12px; line-height: 1.4; color: var(--text-secondary); text-wrap: balance;
+}
+.map-credits-text a { color: inherit; }
 .finder-map.maplibregl-map { font: inherit; }
 .finder-map.is-unavailable { display: grid; place-items: center; padding: 24px; text-align: center; color: var(--text-muted); }
 .finder-hint {
@@ -154,19 +192,18 @@
 .plant-tooltip .common { display: block; font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.35; }
 .plant-tooltip .scientific { display: block; font-size: 12.5px; font-style: italic; color: var(--text-muted); line-height: 1.35; }
 
-.design-caption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 28px; padding: 16px 2px 0; }
+.design-caption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 28px; padding: 14px 2px 0; }
 .caption-text { flex: 1 1 320px; min-width: 0; }
 .caption-title { font-size: 26px; }
 .caption-meta { margin-top: 4px; color: var(--text-secondary); }
 .caption-links { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 22px; font-weight: 600; }
-.design-legend { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-top: 6px; font-size: 14px; color: var(--text-muted); }
-.legend-title { font-weight: 600; color: var(--text-secondary); }
-.design-legend [data-design-legend] { display: contents; }
+/* The roles the plan uses, right under it; the symbols name themselves, so no title. */
+.design-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; padding: 12px 2px 0; font-size: 14px; color: var(--text-muted); }
 .legend-item { display: inline-flex; align-items: center; gap: 6px; }
 .legend-symbol { width: 18px; height: 18px; flex: none; }
-.design-caption.is-swapping > * { animation: caption-in 420ms ease both; }
+.design-caption.is-swapping > *, .design-legend.is-swapping { animation: caption-in 420ms ease both; }
 @keyframes caption-in { from { opacity: 0; transform: translateY(6px); } }
-@media (prefers-reduced-motion: reduce) { .design-caption.is-swapping > * { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .design-caption.is-swapping > *, .design-legend.is-swapping { animation: none; } }
 
 /* Nearest designs and the map's pins and clusters. */
 
@@ -212,7 +249,9 @@
 
 /* ---------- Network ---------- */
 
-.network-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 36px 28px; }
+/* Regions flow down balanced columns like a book's index, so short regions leave no holes. */
+.network-grid { columns: 3 240px; column-gap: 48px; }
+.network-group { break-inside: avoid; padding-bottom: 32px; }
 .network-group h3 {
   padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--border);
   font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink);
@@ -224,11 +263,11 @@
 
 /* ---------- Contact ---------- */
 
-.contact { border-top: 1px solid var(--border); }
 .contact-layout { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 6vw, 96px); }
-.contact-intro h2 { font-size: clamp(34px, 4.6vw, 54px); }
+.contact-intro h2 { font-size: clamp(30px, 3.6vw, 42px); }
 .contact-intro p { margin-top: 12px; color: var(--text-secondary); font-size: 18px; }
-.contact-intro p.small { font-size: 14px; color: var(--text-muted); }
+.contact-intro p + p { margin-top: 8px; }
+.contact-intro p.small { margin-top: 20px; font-size: 14px; color: var(--text-muted); }
 .contact-form { display: grid; gap: 18px; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .field { display: grid; gap: 6px; }

@@ -14,7 +14,7 @@ const { lang } = Astro.props;
         <section class="network-group">
           <h3>{t(country.labelKey, lang)}</h3>
           <ul role="list">
-            {country.organisations.map((org) => (<li><a href={org.url}>{org.name} <span aria-hidden="true">↗</span></a></li>))}
+            {country.organisations.map((org) => (<li><a href={org.url}>{org.name}&nbsp;<span aria-hidden="true">↗</span></a></li>))}
           </ul>
         </section>
       ))}

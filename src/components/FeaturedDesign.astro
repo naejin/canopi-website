@@ -23,6 +23,7 @@ const { lang } = Astro.props;
         </div>
         <p class="design-hint" data-design-hint></p>
       </div>
+      <div class="design-legend" data-design-legend role="group" aria-label={t('design.legendTitle', lang)}></div>
       <figcaption class="design-caption" aria-live="polite">
         <div class="caption-text">
           <h3 class="caption-title" data-design-name></h3>
@@ -32,7 +33,6 @@ const { lang } = Astro.props;
           <li><a data-design-project href="#design">{t('design.project', lang)} <span aria-hidden="true">↗</span></a></li>
           <li><a data-design-org href="#design"></a></li>
         </ul>
-        <p class="design-legend"><span class="legend-title">{t('design.legendTitle', lang)}</span> <span data-design-legend></span></p>
       </figcaption>
     </figure>
     <div class="finder">

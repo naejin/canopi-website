@@ -14,9 +14,10 @@ const params = new URLSearchParams(location.search);
 const placeName = (d) => `${d.region}, ${new Intl.DisplayNames([lang], { type: 'region' }).of(d.country)}`;
 
 let design = null;
+let map = null;
 initDownloads();
 const hero = initHeroReveal();
-initChrome({ onThemeChange: () => { hero.refresh(); design?.refreshTheme(); } });
+initChrome({ onThemeChange: () => { hero.refresh(); design?.refreshTheme(); map?.refreshTheme(); } });
 
 // ---------- featured design and map ----------
 
@@ -39,7 +40,7 @@ design = createDesignCanvas({
 });
 document.querySelector('[data-design-hint]').textContent = text(matchMedia('(hover: hover)').matches ? 'design.hintPointer' : 'design.hintTouch');
 
-const map = createDesignFinder({
+map = createDesignFinder({
   lang,
   placeName,
   text,
@@ -86,9 +87,9 @@ function describe(d) {
     item.append(roleIcon(role, colours.get(role)), text(`design.role.${role}`));
     return item;
   }));
-  caption.classList.remove('is-swapping');
+  for (const element of [caption, legend]) element.classList.remove('is-swapping');
   void caption.offsetWidth;
-  caption.classList.add('is-swapping');
+  for (const element of [caption, legend]) element.classList.add('is-swapping');
 }
 
 function select(id, { from } = {}) {

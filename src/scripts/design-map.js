@@ -1,17 +1,84 @@
-// The design finder's map and list. Designs sit on the app's basemap (OpenFreeMap Liberty) and
-// group into clusters, so the same map serves two designs or hundreds; choosing a cluster zooms
-// into it. The list beside the map shows the designs nearest the map centre, or nearest the
-// visitor once they ask for their location, a page at a time. Pins are approximate on purpose
+// The design finder's map and list. Designs sit on the app's basemap (OpenFreeMap Liberty,
+// recoloured on the page's paper) and group into clusters, so the same map serves two designs or
+// hundreds; choosing a cluster zooms into it. The list beside the map shows the designs nearest
+// the map centre, or nearest the visitor once they ask for their location, a page at a time. Pins are approximate on purpose
 // (rounded to ~10 km) and the zoom stops at regional scale. The visitor's location is asked for
 // only when they press the button, stays in this page's memory and is never stored or sent.
 // MapLibre loads only when the section approaches the viewport; the list works without it.
 
 import { distanceKm, nearestFirst } from '../lib/nearest.mjs';
+import { isDark } from './chrome.js';
 
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 const MAX_ZOOM = 9;
 const PAGE = matchMedia('(max-width: 639px)').matches ? 4 : 6;
 const VENDOR = `/vendor/maplibre-gl-${MAPLIBRE_VERSION}`;
+// Liberty recoloured as a survey map on the page's paper, by day and by night: land on paper,
+// water in ink grey, only major roads as hairlines, no points of interest. false keeps Liberty as is.
+const PAPER_MAP = true;
+const PAPER = {
+  light: {
+    land: '#EFE9DD', grass: '#E9E3D3', wood: '#E3DCC8', urban: '#E7E0D1', water: '#CBD3D0', river: '#B7C3C0',
+    road: '#DCD1BD', major: '#D0C3A9', boundary: '#A39784', label: '#4A4237', minor: '#6E6455', waterLabel: '#5E6D6A',
+  },
+  dark: {
+    land: '#1C1A15', grass: '#1F1D17', wood: '#23211A', urban: '#24221C', water: '#12181A', river: '#1D2628',
+    road: '#2F2C25', major: '#3A362D', boundary: '#6E6659', label: '#D6CEBF', minor: '#A79E8F', waterLabel: '#8C9B99',
+  },
+};
+// Layers a quiet regional map does without.
+const HIDDEN = /natural_earth|park_outline|wetland|landuse_(pitch|track|cemetery|hospital|school)|aeroway|casing|path|rail|service|minor|street|pattern|one_way|tunnel|building|poi_|highway-|shield|airport/;
+
+function paintPaper(map) {
+  const c = PAPER[isDark() ? 'dark' : 'light'];
+  const set = (id, property, value) => { try { map.setPaintProperty(id, property, value); } catch {} };
+  for (const { id, type } of map.getStyle().layers) {
+    if (id === 'designs') continue;
+    if (HIDDEN.test(id)) { map.setLayoutProperty(id, 'visibility', 'none'); continue; }
+    if (id === 'background') set(id, 'background-color', c.land);
+    else if (id === 'park') { set(id, 'fill-color', c.grass); set(id, 'fill-outline-color', c.grass); }
+    else if (id === 'landcover_wood') set(id, 'fill-color', c.wood);
+    else if (id.startsWith('landcover_') || id === 'landuse_residential') set(id, 'fill-color', id === 'landuse_residential' ? c.urban : c.grass);
+    else if (id === 'water') set(id, 'fill-color', c.water);
+    else if (id.startsWith('waterway') && type === 'line') set(id, 'line-color', c.river);
+    else if (id.startsWith('boundary')) set(id, 'line-color', c.boundary);
+    else if (type === 'line') set(id, 'line-color', /motorway|trunk/.test(id) ? c.major : c.road);
+    else if (type === 'symbol') {
+      const water = id.startsWith('water');
+      set(id, 'text-color', water ? c.waterLabel : /village|other|state/.test(id) ? c.minor : c.label);
+      set(id, 'text-halo-color', c.land);
+      set(id, 'text-halo-width', 1.4);
+      set(id, 'text-halo-blur', 0);
+    }
+  }
+}
+
+// The map's credits fold behind a small "i"; a click unfolds them.
+function creditsControl(note, label) {
+  const element = document.createElement('div');
+  element.className = 'maplibregl-ctrl map-credits';
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'map-credits-toggle';
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-label', label);
+  toggle.textContent = 'i';
+  const panel = document.createElement('p');
+  panel.className = 'map-credits-text';
+  panel.id = 'map-credits-text';
+  panel.hidden = true;
+  toggle.setAttribute('aria-controls', panel.id);
+  const link = (href, name) => Object.assign(document.createElement('a'), { href, textContent: name, target: '_blank', rel: 'noopener' });
+  panel.append(`${note} © `, link('https://www.openstreetmap.org/copyright', 'OpenStreetMap'), ' · ',
+    link('https://openmaptiles.org/', 'OpenMapTiles'), ' · ', link('https://openfreemap.org/', 'OpenFreeMap'));
+  toggle.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') !== 'true';
+    toggle.setAttribute('aria-expanded', String(open));
+    panel.hidden = !open;
+  });
+  element.append(panel, toggle);
+  return { onAdd: () => element, onRemove: () => element.remove() };
+}
 
 function loadStyles() {
   return new Promise((resolve) => {
@@ -26,6 +93,7 @@ function loadStyles() {
 export function createDesignFinder({ container, list, more, hint, locate, status, onSelect, lang, placeName, text }) {
   let map = null;
   let maplibre = null;
+  let styled = false;             // the paper colours are applied, so theme changes repaint them
   let designs = [];
   let activeId = null;
   let centre = null;              // the map centre, once the map is up
@@ -149,13 +217,19 @@ export function createDesignFinder({ container, list, more, hint, locate, status
       zoom: 5,
       maxZoom: MAX_ZOOM,
       cooperativeGestures: true,
-      attributionControl: { compact: true, customAttribution: text('finder.note') },
+      attributionControl: false,
       dragRotate: false,
       pitchWithRotate: false,
       touchPitch: false,
     });
     map.touchZoomRotate.disableRotation();
     map.addControl(new maplibre.NavigationControl({ showCompass: false }), 'top-right');
+    map.addControl(creditsControl(text('finder.note'), text('finder.credits')), 'bottom-right');
+    // Recoloured as soon as the style is in, before its first tiles draw, so Liberty never flashes.
+    map.once('style.load', () => {
+      styled = PAPER_MAP;
+      if (styled) paintPaper(map);
+    });
     map.once('load', () => {
       map.addSource('designs', {
         type: 'geojson',
@@ -172,8 +246,6 @@ export function createDesignFinder({ container, list, more, hint, locate, status
       map.addLayer({ id: 'designs', type: 'circle', source: 'designs', paint: { 'circle-radius': 0, 'circle-opacity': 0 } });
       map.on('render', updateMarkers);
       fitAll(false);
-      // On phones the attribution starts folded behind its button, so it doesn't cover the map.
-      if (PAGE < 6) container.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
     });
     map.on('dragstart', dismissHint);
     map.on('moveend', () => {
@@ -226,5 +298,7 @@ export function createDesignFinder({ container, list, more, hint, locate, status
       observer.observe(container);
     },
     setActive,
+    // isStyleLoaded() stays false while tiles load, so the load handler's flag decides.
+    refreshTheme() { if (styled) paintPaper(map); },
   };
 }

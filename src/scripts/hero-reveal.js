@@ -4,8 +4,9 @@
 // The loop runs only while dots are alive, so a resting pointer costs nothing.
 // Touch never paints while a finger drags, since that drag scrolls the page: the painting rests
 // faint, the welcome stroke still plays and a tap on the hero (not on its links or buttons)
-// blooms a reveal there. Behind the title, tagline, buttons and header every reveal opens only half
-// way, so the text stays readable over the boldest painting. Reduced motion gets the painting
+// blooms a reveal there. Around the title, tagline and buttons every reveal opens a little less,
+// easing in over a wide ellipse, and the type carries a paper halo, so the text stays readable
+// over the boldest painting without any visible shape. Reduced motion gets the painting
 // faint and still. Which painting
 // shows (locale, day or night, size) is decided by CSS from the hero's variables.
 
@@ -17,8 +18,9 @@ const END_RADIUS = 180;        // each dot's final radius varies between ~55% an
 const SIZE_VARIATION = 0.45;
 const TAP_DOTS = 7;            // a tap blooms a small cluster, about 200 px across
 const TAP_SPREAD = 46;
-const TEXT_REVEAL = 0.5;       // how far a reveal opens behind the hero's text
-const TEXT_FEATHER = 28;       // soft edge, in px, around the text block
+const TEXT_REVEAL = 0.75;      // how far a reveal opens at the centre of the hero's text
+const FALLOFF_SPREAD = 1.7;    // the falloff's ellipse, relative to the text block's half size
+const FALLOFF_PLATEAU = 0.2;   // share of the ellipse held at TEXT_REVEAL before easing out
 
 export function initHeroReveal() {
   const hero = document.querySelector('.hero');
@@ -31,7 +33,6 @@ export function initHeroReveal() {
   const hctx = holes.getContext('2d');
   const weight = document.createElement('canvas');
   const text = hero.querySelectorAll('.hero-logo, .hero-title, .hero-tagline, .hero-actions, .hero-meta, .support-note');
-  const chrome = document.querySelectorAll('.header-inner > .brand, .header-nav');
   const canHover = matchMedia('(hover: hover) and (pointer: fine)');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -73,34 +74,38 @@ export function initHeroReveal() {
     paintMask();
   }
 
-  // Full strength everywhere except a feathered block behind the text, at TEXT_REVEAL.
+  // Full strength everywhere, easing to TEXT_REVEAL at the centre of the hero's text: one wide
+  // ellipse whose edge fades over hundreds of pixels, so no edge can be seen. The type's own
+  // paper halo (home.css) does the close-up work.
   function paintWeight(box, dpr) {
     const w = weight.getContext('2d');
     w.setTransform(dpr, 0, 0, dpr, 0, 0);
     w.globalCompositeOperation = 'source-over';
     w.fillStyle = '#000';
     w.fillRect(0, 0, width, height);
-    // The hero's text block as one area, and the header's wordmark and links, which sit over the
-    // painting's top edge, each on their own.
-    const shown = (list) => [...list].filter((el) => el.offsetParent).map((el) => el.getBoundingClientRect());
-    const union = (rects) => rects.length && {
-      left: Math.min(...rects.map((r) => r.left)), top: Math.min(...rects.map((r) => r.top)),
-      right: Math.max(...rects.map((r) => r.right)), bottom: Math.max(...rects.map((r) => r.bottom)),
-    };
-    const areas = [union(shown(text)), ...shown(chrome)].filter(Boolean);
-    // Each area is drawn far off canvas and only its blurred shadow lands here: a soft edge in
-    // every browser, without canvas filters.
-    const away = width + height + 4 * TEXT_FEATHER;
+    const rects = [...text].filter((el) => el.offsetParent).map((el) => el.getBoundingClientRect());
+    if (!rects.length) return;
+    const left = Math.min(...rects.map((r) => r.left));
+    const right = Math.max(...rects.map((r) => r.right));
+    const top = Math.min(...rects.map((r) => r.top));
+    const bottom = Math.max(...rects.map((r) => r.bottom));
+    const cx = (left + right) / 2 - box.left;
+    const cy = (top + bottom) / 2 - box.top;
+    const rx = Math.max(160, ((right - left) / 2) * FALLOFF_SPREAD);
+    const ry = Math.max(120, ((bottom - top) / 2) * FALLOFF_SPREAD);
+    // A circle of radius rx, squashed vertically into the ellipse.
     w.globalCompositeOperation = 'destination-out';
-    w.shadowColor = `rgba(0,0,0,${1 - TEXT_REVEAL})`;
-    w.shadowBlur = TEXT_FEATHER * dpr;
-    w.shadowOffsetX = away * dpr;
-    for (const r of areas) {
-      const left = r.left - box.left - 12;
-      const top = r.top - box.top - 8;
-      w.fillRect(left - away, top, r.right - r.left + 24, r.bottom - r.top + 16);
+    w.translate(cx, cy);
+    w.scale(1, ry / rx);
+    const gradient = w.createRadialGradient(0, 0, 0, 0, 0, rx);
+    // Smoothstep from the plateau to nothing, sampled so the ramp has no visible bands.
+    for (let i = 0; i <= 12; i += 1) {
+      const t = i / 12;
+      const fade = t < FALLOFF_PLATEAU ? 1 : 1 - ((s) => s * s * (3 - 2 * s))((t - FALLOFF_PLATEAU) / (1 - FALLOFF_PLATEAU));
+      gradient.addColorStop(t, `rgba(0,0,0,${(1 - TEXT_REVEAL) * fade})`);
     }
-    w.shadowColor = 'transparent';
+    w.fillStyle = gradient;
+    w.fillRect(-rx, -rx, rx * 2, rx * 2);
   }
 
   function addDot(x, y) {

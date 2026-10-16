@@ -65,6 +65,18 @@ export const countries = [
         name: 'Centre for Living Agroecology and food Systems',
         url: 'https://www.centreagroecologie.fr/',
       },
+      {
+        name: 'Pour une Hydrologie Régénérative',
+        url: 'https://hydrologie-regenerative.fr/',
+      },
+      {
+        name: 'Association Francis Hallé pour la forêt primaire',
+        url: 'https://www.foretprimaire-francishalle.org/',
+      },
+      {
+        name: 'U Sbirru',
+        url: 'https://usbirru.fr/',
+      },
     ],
   },
   {
