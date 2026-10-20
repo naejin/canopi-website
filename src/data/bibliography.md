@@ -34,6 +34,11 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - es: [Agroecología: procesos ecológicos en agricultura sostenible](https://www.sidalc.net/search/Record/KOHA-OAI-TEST:39885) — Stephen R. Gliessman · 1998
 - pt: [Agroecologia: processos ecológicos em agricultura sustentável](https://books.google.com/books?vid=ISBN9788538600381) — Stephen R. Gliessman · 1998
 
+### Bienvenue en syntropie
+- by: Anaëlle Théry
+- year: 2024
+- fr: [Bienvenue en syntropie ! : Un jardin d'abondance, des principes au terrain](https://www.terrevivante.org/boutique/livres/permaculture-jardin-bio/techniques-de-jardinage/bienvenue-en-syntropie/)
+
 ### The One-Straw Revolution
 - by: Masanobu Fukuoka
 - year: 1975
