@@ -135,5 +135,15 @@
   "design.role.medicinal": "Heilpflanze",
   "design.role.bee": "Bestäuber",
   "design.role.timber": "Holz",
-  "design.role.biomass": "Biomasse"
+  "design.role.biomass": "Biomasse",
+  "bibliography.title": "Bibliografie",
+  "bibliography.lede": "Bücher, die unsere Planungen prägen – in deiner Sprache, wenn es eine Ausgabe gibt.",
+  "bibliography.alsoIn": "Auch auf",
+  "bibliography.theme.agroecology": "Agrarökologie",
+  "bibliography.theme.soil": "Boden",
+  "bibliography.theme.forests": "Wälder",
+  "bibliography.theme.seeds": "Saatgut",
+  "bibliography.theme.water": "Wasser",
+  "bibliography.theme.biodiversity": "Biodiversität",
+  "bibliography.theme.growing-structures": "Anbaustrukturen"
 }

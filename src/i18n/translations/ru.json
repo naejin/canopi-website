@@ -135,5 +135,15 @@
   "design.role.medicinal": "Лекарственное",
   "design.role.bee": "Опылители",
   "design.role.timber": "Древесина",
-  "design.role.biomass": "Биомасса"
+  "design.role.biomass": "Биомасса",
+  "bibliography.title": "Библиография",
+  "bibliography.lede": "Книги, которые вдохновляют наши проекты, — на вашем языке, если есть издание.",
+  "bibliography.alsoIn": "Также на",
+  "bibliography.theme.agroecology": "Агроэкология",
+  "bibliography.theme.soil": "Почва",
+  "bibliography.theme.forests": "Леса",
+  "bibliography.theme.seeds": "Семена",
+  "bibliography.theme.water": "Вода",
+  "bibliography.theme.biodiversity": "Биоразнообразие",
+  "bibliography.theme.growing-structures": "Сооружения для выращивания"
 }

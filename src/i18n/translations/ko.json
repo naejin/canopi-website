@@ -135,5 +135,15 @@
   "design.role.medicinal": "약용",
   "design.role.bee": "수분 매개",
   "design.role.timber": "목재",
-  "design.role.biomass": "바이오매스"
+  "design.role.biomass": "바이오매스",
+  "bibliography.title": "참고 문헌",
+  "bibliography.lede": "우리의 설계에 영향을 준 책들. 한국어판이 있으면 한국어판을 보여 드립니다.",
+  "bibliography.alsoIn": "다른 언어",
+  "bibliography.theme.agroecology": "농생태학",
+  "bibliography.theme.soil": "토양",
+  "bibliography.theme.forests": "숲",
+  "bibliography.theme.seeds": "종자",
+  "bibliography.theme.water": "물",
+  "bibliography.theme.biodiversity": "생물다양성",
+  "bibliography.theme.growing-structures": "재배 시설"
 }

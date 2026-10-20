@@ -135,5 +135,15 @@
   "design.role.medicinal": "Geneeskrachtig",
   "design.role.bee": "Bestuivers",
   "design.role.timber": "Hout",
-  "design.role.biomass": "Biomassa"
+  "design.role.biomass": "Biomassa",
+  "bibliography.title": "Bibliografie",
+  "bibliography.lede": "Boeken die ons ontwerpen vormen, in je eigen taal als er een editie bestaat.",
+  "bibliography.alsoIn": "Ook in",
+  "bibliography.theme.agroecology": "Agro-ecologie",
+  "bibliography.theme.soil": "Bodem",
+  "bibliography.theme.forests": "Bossen",
+  "bibliography.theme.seeds": "Zaden",
+  "bibliography.theme.water": "Water",
+  "bibliography.theme.biodiversity": "Biodiversiteit",
+  "bibliography.theme.growing-structures": "Teeltconstructies"
 }

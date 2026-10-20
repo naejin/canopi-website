@@ -263,6 +263,30 @@
 .network-group a:hover { text-decoration: underline; }
 .network-group a span { color: var(--text-muted); font-size: 0.85em; }
 
+/* ---------- Bibliography ---------- */
+
+/* The network's index, one entry per book: the title in the reader's language when an edition
+   exists, then author and year, then its other editions. */
+.bibliography .section-head h2 { font-size: clamp(30px, 3.6vw, 42px); }
+.bibliography-grid { columns: 3 240px; column-gap: 48px; }
+.bibliography-group { break-inside: avoid; padding-bottom: 32px; }
+.bibliography-group h3 {
+  padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--border);
+  font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink);
+}
+.bibliography-group > ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 18px; }
+.book-link { display: block; text-decoration: none; }
+.book-title { font-family: var(--font-display); font-size: 19px; line-height: 1.25; text-wrap: pretty; }
+.book-title span { font-family: var(--font-sans); font-size: 0.75em; color: var(--text-muted); }
+.book-subtitle { display: block; margin-top: 2px; font-size: 15px; line-height: 1.35; color: var(--text-secondary); text-wrap: pretty; }
+.book-link:hover .book-title { text-decoration: underline; }
+.book-meta { margin-top: 4px; font-size: 14px; color: var(--text-muted); }
+.book-meta .nowrap { white-space: nowrap; }
+/* The other editions as language codes, like a catalogue's shelf marks; each names its language on hover. */
+.book-editions { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 9px; margin-top: 3px; font-size: 13px; color: var(--text-muted); }
+.book-editions a { padding: 2px 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-decoration: none; color: var(--text-secondary); }
+.book-editions a:hover { color: var(--accent-ink); text-decoration: underline; }
+
 /* ---------- Contact ---------- */
 
 .contact-layout { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 6vw, 96px); }
@@ -309,6 +333,9 @@
   .finder { margin-top: 32px; }
   .design-hint { top: 12px; bottom: auto; }
   .place-button { padding: 11px 14px; }
+  /* Finger-sized targets for the edition codes, without moving the line. */
+  .book-editions { gap: 0 4px; }
+  .book-editions a { padding: 8px 5px; margin: -6px 0; }
   .dialog { max-height: 100dvh; width: 100vw; max-width: 100vw; margin: 0; border-radius: 0; height: 100dvh; }
   .dialog-donate[data-step="pay"] { height: 100dvh; }
   .footer-legal { margin-left: 0; }

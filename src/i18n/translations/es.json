@@ -135,5 +135,15 @@
   "design.role.medicinal": "Medicinal",
   "design.role.bee": "Polinizadores",
   "design.role.timber": "Madera",
-  "design.role.biomass": "Biomasa"
+  "design.role.biomass": "Biomasa",
+  "bibliography.title": "Bibliografía",
+  "bibliography.lede": "Libros que inspiran nuestros diseños, en tu idioma cuando existe una edición.",
+  "bibliography.alsoIn": "También en",
+  "bibliography.theme.agroecology": "Agroecología",
+  "bibliography.theme.soil": "Suelo",
+  "bibliography.theme.forests": "Bosques",
+  "bibliography.theme.seeds": "Semillas",
+  "bibliography.theme.water": "Agua",
+  "bibliography.theme.biodiversity": "Biodiversidad",
+  "bibliography.theme.growing-structures": "Estructuras de cultivo"
 }

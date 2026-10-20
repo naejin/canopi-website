@@ -135,5 +135,15 @@
   "design.role.medicinal": "薬用",
   "design.role.bee": "送粉者",
   "design.role.timber": "木材",
-  "design.role.biomass": "バイオマス"
+  "design.role.biomass": "バイオマス",
+  "bibliography.title": "参考文献",
+  "bibliography.lede": "私たちの設計に影響を与えた本。日本語版があれば日本語版を表示します。",
+  "bibliography.alsoIn": "他の言語",
+  "bibliography.theme.agroecology": "アグロエコロジー",
+  "bibliography.theme.soil": "土壌",
+  "bibliography.theme.forests": "森林",
+  "bibliography.theme.seeds": "種子",
+  "bibliography.theme.water": "水",
+  "bibliography.theme.biodiversity": "生物多様性",
+  "bibliography.theme.growing-structures": "栽培施設"
 }

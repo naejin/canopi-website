@@ -135,5 +135,15 @@
   "design.role.medicinal": "药用",
   "design.role.bee": "传粉",
   "design.role.timber": "木材",
-  "design.role.biomass": "生物质"
+  "design.role.biomass": "生物质",
+  "bibliography.title": "参考书目",
+  "bibliography.lede": "启发我们设计的书籍；如有中文版，优先显示中文版。",
+  "bibliography.alsoIn": "其他语言",
+  "bibliography.theme.agroecology": "农业生态学",
+  "bibliography.theme.soil": "土壤",
+  "bibliography.theme.forests": "森林",
+  "bibliography.theme.seeds": "种子",
+  "bibliography.theme.water": "水",
+  "bibliography.theme.biodiversity": "生物多样性",
+  "bibliography.theme.growing-structures": "种植设施"
 }

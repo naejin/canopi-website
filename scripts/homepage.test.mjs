@@ -55,8 +55,8 @@ test('every English key is used by a page or a script, and every script string r
   const dir = (path) => readdirSync(new URL(`../src/${path}`, import.meta.url)).map((file) => read(`${path}/${file}`));
   const en = JSON.parse(read('i18n/translations/en.json'));
   const source = [...dir('components'), ...dir('scripts'), read('layouts/Base.astro'), read('data/network.ts')].join('\n');
-  // Keys built from a prefix in components (installer names and details, plant roles, countries).
-  const dynamic = ['edition.installer.', 'download.detail.', 'design.role.', 'network.country.'];
+  // Keys built from a prefix in components (installer names and details, plant roles, countries, bibliography themes).
+  const dynamic = ['edition.installer.', 'download.detail.', 'design.role.', 'network.country.', 'bibliography.theme.'];
   for (const key of Object.keys(en)) {
     const used = source.includes(`'${key}'`) || dynamic.some((prefix) => key.startsWith(prefix));
     assert.ok(used, `unused translation key: ${key}`);
@@ -65,5 +65,17 @@ test('every English key is used by a page or a script, and every script string r
   const pageKeys = read('components/Home.astro') + read('components/PageData.astro');
   for (const script of dir('scripts')) {
     for (const [, key] of script.matchAll(/\btext\('([\w.]+)'/g)) assert.ok(pageKeys.includes(`'${key}'`), `script string missing from page data: ${key}`);
+  }
+});
+
+test('every bibliography theme has a translated label, and every theme label names a theme', () => {
+  const read = (path) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
+  const en = JSON.parse(read('i18n/translations/en.json'));
+  // The slug rule of src/data/bibliography.ts.
+  const slugs = [...read('data/bibliography.md').matchAll(/^## (.+)$/gm)].map(([, heading]) =>
+    heading.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+  for (const slug of slugs) assert.ok(en[`bibliography.theme.${slug}`], `missing translation key: bibliography.theme.${slug}`);
+  for (const key of Object.keys(en).filter((key) => key.startsWith('bibliography.theme.'))) {
+    assert.ok(slugs.includes(key.slice('bibliography.theme.'.length)), `unused translation key: ${key}`);
   }
 });

@@ -1,0 +1,58 @@
+---
+import { t, type Locale } from '../i18n/utils';
+import { themes } from '../data/bibliography';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+
+// Each book shows its edition in the reader's language when there is one, else its original.
+const languageName = new Intl.DisplayNames([lang], { type: 'language' });
+const collator = new Intl.Collator(lang);
+const shelves = themes.map((theme) => ({
+  label: t(`bibliography.theme.${theme.key}`, lang),
+  books: theme.books
+    .map((book) => {
+      const shown = book.editions.find((edition) => edition.lang === lang) ?? book.editions[0];
+      // "Title: Subtitle" (or "Titre : sous-titre", "題：副題") sets the subtitle smaller.
+      const [title, subtitle] = shown.title.split(/\s*(?::\s+|：\s*)(.*)/s);
+      const others = book.editions.filter((edition) => edition !== shown);
+      return { ...book, shown, others, title, subtitle, by: shown.by ?? book.by, year: shown.year ?? book.year };
+    })
+    .sort((a, b) => collator.compare(a.shown.title, b.shown.title)),
+}));
+---
+<section class="section bibliography" id="bibliography" aria-labelledby="bibliography-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="bibliography-title">{t('bibliography.title', lang)}</h2>
+      <p>{t('bibliography.lede', lang)}</p>
+    </header>
+    <div class="bibliography-grid">
+      {shelves.map((shelf) => (
+        <section class="bibliography-group">
+          <h3>{shelf.label}</h3>
+          <ul role="list">
+            {shelf.books.map((book) => (
+              <li class="book">
+                <a class="book-link" href={book.shown.url} lang={book.shown.lang}>
+                  <span class="book-title">{book.title}&nbsp;<span aria-hidden="true">↗</span></span>
+                  {book.subtitle && <span class="book-subtitle">{book.subtitle}</span>}
+                </a>
+                <p class="book-meta">
+                  {book.by} · <span class="nowrap">{book.year}{book.shown.lang !== lang && ` · ${languageName.of(book.shown.lang)}`}</span>
+                </p>
+                {book.others.length > 0 && (
+                  <p class="book-editions">
+                    <span>{t('bibliography.alsoIn', lang)}</span>
+                    {book.others.map((edition) => (
+                      <a href={edition.url} hreflang={edition.lang} title={`${languageName.of(edition.lang)} · ${edition.title}`} aria-label={`${languageName.of(edition.lang)}: ${edition.title}`}>{edition.lang.toUpperCase()}</a>
+                    ))}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  </div>
+</section>

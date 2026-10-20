@@ -135,5 +135,15 @@
   "design.role.medicinal": "Medicinale",
   "design.role.bee": "Impollinatori",
   "design.role.timber": "Legname",
-  "design.role.biomass": "Biomassa"
+  "design.role.biomass": "Biomassa",
+  "bibliography.title": "Bibliografia",
+  "bibliography.lede": "Libri che ispirano i nostri progetti, nella tua lingua quando ne esiste un’edizione.",
+  "bibliography.alsoIn": "Anche in",
+  "bibliography.theme.agroecology": "Agroecologia",
+  "bibliography.theme.soil": "Suolo",
+  "bibliography.theme.forests": "Foreste",
+  "bibliography.theme.seeds": "Sementi",
+  "bibliography.theme.water": "Acqua",
+  "bibliography.theme.biodiversity": "Biodiversità",
+  "bibliography.theme.growing-structures": "Strutture di coltivazione"
 }
