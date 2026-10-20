@@ -4,23 +4,29 @@ export const countries = [
     labelKey: 'network.country.global',
     organisations: [
       {
-        name: 'DeepSeed',
-        url: 'https://www.deepseed.eu/',
+        name: 'Access Agriculture',
+        url: 'https://www.accessagriculture.org/',
       },
       {
         name: 'Agroecology Fund',
         url: 'https://agroecologyfund.org/',
       },
       {
-        name: 'Access Agriculture',
-        url: 'https://www.accessagriculture.org/',
+        name: 'DeepSeed',
+        url: 'https://www.deepseed.eu/',
+      },
+      {
+        name: 'Ecosystem Restoration Communities',
+        url: 'https://ecosystemrestorationcommunities.org/',
+      },
+      {
+        name: 'Friends of the Ecosystem Restoration Movement',
+        url: 'https://www.ecosystemrestorationfriends.com/',
       },
       {
         name: 'Savory Institute',
         url: 'https://savory.global/',
       },
-      { name: 'Ecosystem Restoration Communities', url: 'https://ecosystemrestorationcommunities.org/' },
-      { name: 'Friends of the Ecosystem Restoration Movement', url: 'https://www.ecosystemrestorationfriends.com/' },
     ],
   },
   {
@@ -38,44 +44,48 @@ export const countries = [
     labelKey: 'network.country.france',
     organisations: [
       {
-        name: 'Joala Syntropie',
-        url: 'https://joala.fr/',
-      },
-      {
-        name: 'Destination Syntropie',
-        url: 'https://destinationsyntropie.org/',
-      },
-      {
-        name: 'La Vache Heureuse',
-        url: 'https://www.lvh-france.com/',
-      },
-      {
-        name: 'Ver de Terre Production',
-        url: 'https://www.verdeterreprod.fr/',
-      },
-      {
-        name: 'Centre National d’Agroécologie',
-        url: 'https://centre-national-agroecologie.fr/',
-      },
-      {
-        name: 'Maraîchage Sol Vivant',
-        url: 'https://www.maraichagesolvivant.fr/',
+        name: 'Association Francis Hallé pour la forêt primaire',
+        url: 'https://www.foretprimaire-francishalle.org/',
       },
       {
         name: 'Centre for Living Agroecology and food Systems',
         url: 'https://www.centreagroecologie.fr/',
       },
       {
+        name: 'Centre National d’Agroécologie',
+        url: 'https://centre-national-agroecologie.fr/',
+      },
+      {
+        name: 'Destination Syntropie',
+        url: 'https://destinationsyntropie.org/',
+      },
+      {
+        name: 'Fédération Biogée',
+        url: 'https://www.biogee.org/',
+      },
+      {
+        name: 'Joala Syntropie',
+        url: 'https://joala.fr/',
+      },
+      {
+        name: 'La Vache Heureuse',
+        url: 'https://www.lvh-france.com/',
+      },
+      {
+        name: 'Maraîchage Sol Vivant',
+        url: 'https://www.maraichagesolvivant.fr/',
+      },
+      {
         name: 'Pour une Hydrologie Régénérative',
         url: 'https://hydrologie-regenerative.fr/',
       },
       {
-        name: 'Association Francis Hallé pour la forêt primaire',
-        url: 'https://www.foretprimaire-francishalle.org/',
-      },
-      {
         name: 'U Sbirru',
         url: 'https://usbirru.fr/',
+      },
+      {
+        name: 'Ver de Terre Production',
+        url: 'https://www.verdeterreprod.fr/',
       },
     ],
   },
@@ -94,12 +104,12 @@ export const countries = [
     labelKey: 'network.country.unitedStates',
     organisations: [
       {
-        name: 'Rodale Institute',
-        url: 'https://rodaleinstitute.org/',
-      },
-      {
         name: 'Regenerative Organic Alliance',
         url: 'https://regenorganic.org/',
+      },
+      {
+        name: 'Rodale Institute',
+        url: 'https://rodaleinstitute.org/',
       },
     ],
   },
