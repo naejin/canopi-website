@@ -68,6 +68,10 @@ export const countries = [
         url: 'https://joala.fr/',
       },
       {
+        name: 'La Robustesse',
+        url: 'https://larobustesse.org/',
+      },
+      {
         name: 'La Vache Heureuse',
         url: 'https://www.lvh-france.com/',
       },
