@@ -1,5 +1,5 @@
-export const CANOPI_VERSION = '2.0.1';
-export const CANOPI_RELEASE_DATE = '2026-10-16';
+export const CANOPI_VERSION = '2.0.2';
+export const CANOPI_RELEASE_DATE = '2026-10-21';
 export const CANOPI_RELEASE_TAG = `v${CANOPI_VERSION}`;
 export const CANOPI_RELEASE_URL = `https://github.com/opencanopi/canopi/releases/tag/${CANOPI_RELEASE_TAG}`;
 export const CANOPI_RELEASES_URL = 'https://github.com/opencanopi/canopi/releases';
