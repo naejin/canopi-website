@@ -39,6 +39,11 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - year: 2024
 - fr: [Bienvenue en syntropie ! : Un jardin d'abondance, des principes au terrain](https://www.terrevivante.org/boutique/livres/permaculture-jardin-bio/techniques-de-jardinage/bienvenue-en-syntropie/)
 
+### Le grand guide pour réinventer le potager
+- by: Johann Gis
+- year: 2026
+- fr: [Le grand guide pour réinventer le potager](https://www.editions-ulmer.fr/editions-ulmer/le-grand-guide-pour-reinventer-le-potager-1086-gis-cl.htm)
+
 ### The One-Straw Revolution
 - by: Masanobu Fukuoka
 - year: 1975
