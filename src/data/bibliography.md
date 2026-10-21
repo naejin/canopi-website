@@ -78,6 +78,13 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - year: 2017
 - fr: [Les clés d'un sol vivant : Comment améliorer la terre de son jardin ?](https://www.terrevivante.org/boutique/livres/permaculture-jardin-bio/potager/les-cles-dun-sol-vivant/)
 
+### Le sol, la terre et les champs
+- by: Claude Bourguignon, Lydia Bourguignon
+- year: 1989
+- fr: [Le sol, la terre et les champs : Pour retrouver une agriculture saine](https://books.google.com/books?vid=ISBN9782869854116)
+- en: [Regenerating the Soil: From Agronomy to Agrology](https://books.google.com/books?vid=ISBN8185569681) — Claude Bourguignon
+- it: [Il suolo: Un patrimonio da salvare](https://giunti.it/products/il-suolo-un-patrimonio-da-salvare-bourguignon-claude-9788884992772)
+
 ## Water
 
 ### Cultiver l'eau douce
