@@ -11,6 +11,10 @@ const { lang } = Astro.props;
     <header class="contact-intro">
       <h2 id="contact-title">{t('contact.title', lang)}</h2>
       <p>{t('contact.lede', lang)}</p>
+      <figure class="contact-person">
+        <img src="/people/jean-pierre-yin.webp" width="72" height="72" alt="" loading="lazy" decoding="async" />
+        <figcaption><strong>Jean-Pierre Yin</strong><span>{t('contact.founderRole', lang)}, Canopi</span></figcaption>
+      </figure>
       <p>{t('contact.bugs', lang)} <a href={`${SOURCE_URL}/issues`}>{t('contact.bugsLink', lang)} <span aria-hidden="true">↗</span></a></p>
       <p class="muted small">{t('contact.privacy', lang)}</p>
     </header>

@@ -75,6 +75,18 @@ const ogImage = new URL(`/og/og-${lang}.jpg`, Astro.site);
         "priceCurrency": "USD"
       },
       "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+      "publisher": {
+        "@type": "NGO",
+        "name": "Canopi",
+        "url": "https://projectcanopi.com",
+        "address": { "@type": "PostalAddress", "addressCountry": "FR" },
+        "founder": {
+          "@type": "Person",
+          "name": "Jean-Pierre Yin",
+          "jobTitle": "Founder & President",
+          "image": "https://projectcanopi.com/people/jean-pierre-yin.webp"
+        }
+      },
       "releaseNotes": CANOPI_RELEASE_URL,
       "downloadUrl": Object.values(CANOPI_DOWNLOADS)
     })} />

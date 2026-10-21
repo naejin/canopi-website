@@ -17,6 +17,6 @@ const { lang } = Astro.props;
       <li><button class="link-button" type="button" data-open-donate>{t('header.donate', lang)}</button></li>
       <li><a href={`${localizedUrl('/', lang)}#contact`}>{t('footer.contact', lang)}</a></li>
     </ul>
-    <p class="footer-legal">{t('footer.license', lang)}</p>
+    <p class="footer-legal">{t('footer.association', lang)} {t('footer.license', lang)}</p>
   </div>
 </footer>
