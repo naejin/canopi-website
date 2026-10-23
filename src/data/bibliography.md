@@ -8,6 +8,9 @@ The home page's Bibliography section is built from this file; edit it and rebuil
   case, accents dropped, words joined by "-"); npm test checks it.
 - "### Book" starts a book. The heading is only a name for this file; the page shows the edition titles.
 - "- by:" and "- year:" give the authors and the year the book was first published.
+- "- climate:" (optional) names the climates a book is written for, from the Canopi app's zones:
+  tropical, subtropical, mediterranean, arid, temperate, continental, boreal (several: "temperate, continental").
+  Leave it out when the book's advice holds in any climate; the page shows it only when present.
 - "- <language>: [Title](https://…)" is one edition, by language code (en, fr, ja, zh, hi…).
   The original edition comes first. A visitor sees the edition in their language when there is one,
   else the original, and the others under "Also in". "Title: Subtitle" sets the subtitle smaller.
@@ -20,7 +23,8 @@ The design grows in stages; when a count below is reached, the page changes befo
 2. From 16 books, or 6 in one theme: its own /bibliography/ page in every locale, a home preview of
    3–6 books marked "- featured: yes" with a "See all" link, a footer link, and a link checker.
 3. From 40 books, or 8 themes: a language filter (opening on the reader's language when it has at
-   least 6 books, else on all) and theme jump links with counts.
+   least 6 books, else on all) and theme jump links with counts. A climate filter joins it once at
+   least 2 climates have 5 books or more each; books with no "- climate:" show under every climate.
 Not tied to a count: ISBN fallback links (the first edition with no stable page), one-line notes
 (an editorial decision; they add translation work), one file per theme (only past ~150 books).
 -->
@@ -37,6 +41,7 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 ### Bienvenue en syntropie
 - by: Anaëlle Théry
 - year: 2024
+- climate: temperate
 - fr: [Bienvenue en syntropie ! : Un jardin d'abondance, des principes au terrain](https://www.terrevivante.org/boutique/livres/permaculture-jardin-bio/techniques-de-jardinage/bienvenue-en-syntropie/)
 
 ### The Carbon Farming Solution
@@ -108,6 +113,7 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 ### Pour une forêt primaire en Europe de l'Ouest
 - by: Francis Hallé
 - year: 2021
+- climate: temperate
 - fr: [Pour une forêt primaire en Europe de l'Ouest](https://actes-sud.fr/pour-une-foret-primaire-en-europe-de-louest)
 
 ## Biodiversity
@@ -127,5 +133,6 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 ### Kleine grüne Archen
 - by: Claudia Lorenz-Ladener
 - year: 2012
+- climate: temperate
 - de: [Kleine grüne Archen: Passivsolare (Erd-)Gewächshäuser selbst gebaut](https://oekobuch.de/buecher/kleine-gruene-archen/)
 - fr: [Construire une serre : Serres solaires passives, conception, exemples de réalisations](https://www.editions-ulmer.fr/editions-ulmer/construire-une-serre-serres-solaires-passives-conception-exemples-de-realisations-336-cl.htm)

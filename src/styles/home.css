@@ -282,6 +282,9 @@
 .book-link:hover .book-title { text-decoration: underline; }
 .book-meta { margin-top: 4px; font-size: 14px; color: var(--text-muted); }
 .book-meta .nowrap { white-space: nowrap; }
+/* Only on books written for particular climates, labelled as the "Also in" line is. */
+.book-climate { margin-top: 3px; font-size: 13px; color: var(--text-secondary); }
+.book-climate span { margin-right: 9px; color: var(--text-muted); }
 /* The other editions as language codes, like a catalogue's shelf marks; each names its language on hover. */
 .book-editions { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 9px; margin-top: 3px; font-size: 13px; color: var(--text-muted); }
 .book-editions a { padding: 2px 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-decoration: none; color: var(--text-secondary); }

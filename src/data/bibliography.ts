@@ -11,9 +11,14 @@ export interface Edition {
   year?: string;
 }
 
+// The Canopi app's climate zones, so a book here and a design in the app name a climate alike.
+export const climates = ['tropical', 'subtropical', 'mediterranean', 'arid', 'temperate', 'continental', 'boreal'];
+
 export interface Book {
   by: string;
   year: string;
+  // The climates the book is written for; empty when its advice holds in any climate.
+  climates: string[];
   // The original edition comes first.
   editions: Edition[];
 }
@@ -44,7 +49,7 @@ source.split('\n').forEach((text, index) => {
 
   if (trimmed.startsWith('### ')) {
     if (!themes.length) fail(line, 'a book comes before any "## Theme" heading');
-    book = { by: '', year: '', editions: [] };
+    book = { by: '', year: '', climates: [], editions: [] };
     themes.at(-1)!.books.push(book);
     return;
   }
@@ -57,10 +62,15 @@ source.split('\n').forEach((text, index) => {
   }
 
   const field = trimmed.match(/^-\s*([a-zA-Z-]+)\s*:\s*(.*)$/);
-  if (!field || !book) return fail(line, 'expected "- by:", "- year:" or "- <language>: [Title](https://…)" under a "### Book"');
+  if (!field || !book) return fail(line, 'expected "- by:", "- year:", "- climate:" or "- <language>: [Title](https://…)" under a "### Book"');
   const [, name, value] = field;
   if (name === 'by') book.by = value;
   else if (name === 'year') book.year = value;
+  else if (name === 'climate') {
+    book.climates = value.split(',').map((climate) => climate.trim().toLowerCase());
+    const unknown = book.climates.find((climate) => !climates.includes(climate));
+    if (unknown !== undefined) fail(line, `"${unknown}" is not a climate; use ${climates.join(', ')}`);
+  }
   else {
     const edition = value.match(/^\[(.+)\]\((https?:\/\/[^)\s]+)\)\s*(?:—\s*(.+))?$/);
     if (!edition) return fail(line, `the ${name} edition should read "[Title](https://…)", optionally followed by "— Author · Year"`);

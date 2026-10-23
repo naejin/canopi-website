@@ -55,8 +55,8 @@ test('every English key is used by a page or a script, and every script string r
   const dir = (path) => readdirSync(new URL(`../src/${path}`, import.meta.url)).map((file) => read(`${path}/${file}`));
   const en = JSON.parse(read('i18n/translations/en.json'));
   const source = [...dir('components'), ...dir('scripts'), read('layouts/Base.astro'), read('data/network.ts')].join('\n');
-  // Keys built from a prefix in components (installer names and details, plant roles, countries, bibliography themes).
-  const dynamic = ['edition.installer.', 'download.detail.', 'design.role.', 'network.country.', 'bibliography.theme.'];
+  // Keys built from a prefix in components (installer names and details, plant roles, countries, bibliography themes and climates).
+  const dynamic = ['edition.installer.', 'download.detail.', 'design.role.', 'network.country.', 'bibliography.theme.', 'bibliography.climate.'];
   for (const key of Object.keys(en)) {
     const used = source.includes(`'${key}'`) || dynamic.some((prefix) => key.startsWith(prefix));
     assert.ok(used, `unused translation key: ${key}`);
@@ -77,5 +77,16 @@ test('every bibliography theme has a translated label, and every theme label nam
   for (const slug of slugs) assert.ok(en[`bibliography.theme.${slug}`], `missing translation key: bibliography.theme.${slug}`);
   for (const key of Object.keys(en).filter((key) => key.startsWith('bibliography.theme.'))) {
     assert.ok(slugs.includes(key.slice('bibliography.theme.'.length)), `unused translation key: ${key}`);
+  }
+});
+
+test('every bibliography climate has a translated label, and every climate label names a climate', () => {
+  const read = (path) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
+  const en = JSON.parse(read('i18n/translations/en.json'));
+  const climates = [...read('data/bibliography.ts').match(/export const climates = \[(.*)\];/)[1].matchAll(/'([a-z]+)'/g)].map(([, climate]) => climate);
+  assert.ok(climates.length);
+  for (const climate of climates) assert.ok(en[`bibliography.climate.${climate}`], `missing translation key: bibliography.climate.${climate}`);
+  for (const key of Object.keys(en).filter((key) => key.startsWith('bibliography.climate.'))) {
+    assert.ok(climates.includes(key.slice('bibliography.climate.'.length)), `unused translation key: ${key}`);
   }
 });

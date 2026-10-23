@@ -40,6 +40,12 @@ const shelves = themes.map((theme) => ({
                 <p class="book-meta">
                   {book.by} · <span class="nowrap">{book.year}{book.shown.lang !== lang && ` · ${languageName.of(book.shown.lang)}`}</span>
                 </p>
+                {book.climates.length > 0 && (
+                  <p class="book-climate">
+                    <span>{t('bibliography.climate', lang)}</span>
+                    {book.climates.map((climate) => t(`bibliography.climate.${climate}`, lang)).join(' · ')}
+                  </p>
+                )}
                 {book.others.length > 0 && (
                   <p class="book-editions">
                     <span>{t('bibliography.alsoIn', lang)}</span>
