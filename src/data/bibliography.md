@@ -145,3 +145,35 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - de: [Kleine grüne Archen: Passivsolare (Erd-)Gewächshäuser selbst gebaut](https://oekobuch.de/buecher/kleine-gruene-archen/)
 - fr: [Construire une serre : Serres solaires passives, conception, exemples de réalisations](https://www.editions-ulmer.fr/editions-ulmer/construire-une-serre-serres-solaires-passives-conception-exemples-de-realisations-336-cl.htm)
 
+## Indigenous knowledge
+
+### Braiding Sweetgrass
+- by: Robin Wall Kimmerer
+- year: 2013
+- featured: yes
+- en: [Braiding Sweetgrass: Indigenous Wisdom, Scientific Knowledge, and the Teachings of Plants](https://milkweed.org/book/braiding-sweetgrass)
+- fr: [Tresser les herbes sacrées : Sagesse ancestrale, science et enseignements des plantes](https://www.hachette.fr/livre/tresser-les-herbes-sacrees-9782016283967/)
+- es: [Una trenza de hierba sagrada: Saber indígena, conocimiento científico y las enseñanzas de las plantas](https://capitanswing.com/catalogo/una-trenza-de-hierba-sagrada/)
+- pt: [A maravilhosa trama das coisas: Sabedoria indígena, conhecimento científico e os ensinamentos das plantas](https://loja.intrinseca.com.br/a-maravilhosa-trama-das-coisas-sabedoria-indigena-conhecimento-cientifico-e-os-ensinamentos-das-plantas/)
+- it: [La meravigliosa trama del tutto: Saggezza indigena, conoscenza scientifica e gli insegnamenti delle piante](https://www.mondadori.it/libri/la-meravigliosa-trama-del-tutto-robin-wall-kimmerer/)
+- zh: [编结茅香](https://book.douban.com/subject/36091143/) — 罗宾·沃尔·基默尔
+- de: [Geflochtenes Süßgras: Die Weisheit der Pflanzen](https://www.aufbau-verlage.de/aufbau/geflochtenes-sussgras/978-3-351-03873-1)
+- ja: [植物と叡智の守り人：ネイティブアメリカンの植物学者が語る科学・癒し・伝承](https://www.tsukiji-shokan.co.jp/mokuroku/ISBN978-4-8067-1564-1.html) — ロビン・ウォール・キマラー
+- ko: [향모를 땋으며: 토박이 지혜와 과학 그리고 식물이 가르쳐준 것들](https://product.kyobobook.co.kr/detail/S000001867145) — 로빈 월 키머러
+- nl: [Een vlecht van heilig gras: Hoe de natuur, wetenschap en traditionele kennis ons leren respectvol met de aarde om te gaan](https://books.google.com/books?vid=ISBN9789401305365)
+- ru: [Голос земли: Легендарный бестселлер десятилетия о сокровенных знаниях индейских племен, научных исследованиях и мистической связи человека с природой](https://eksmo.ru/book/pletenie-sladkoy-travy-mudrost-predkov-nauchnye-fakty-i-istina-iz-zhizni-rasteniy-ITD960428/) — Робин Уолл Киммерер
+
+### Plants Have So Much to Give Us
+- by: Mary Siisip Geniusz
+- year: 2015
+- en: [Plants Have So Much to Give Us, All We Have to Do Is Ask: Anishinaabe Botanical Teachings](https://www.upress.umn.edu/9780816696765/plants-have-so-much-to-give-us-all-we-have-to-do-is-ask/)
+
+### Ancient Wisdom, Modern Hope
+- by: James T. Powers
+- year: 2021
+- en: [Ancient Wisdom, Modern Hope: Relearning Environmental Connectiveness](https://books.google.com/books?vid=ISBN9781782792444)
+
+### Les Indiens kogis
+- by: Éric Julien, Muriel Fifils
+- year: 2009
+- fr: [Les Indiens kogis : La mémoire des possibles](https://actes-sud.fr/catalogue/les-indiens-kogis-001007)
