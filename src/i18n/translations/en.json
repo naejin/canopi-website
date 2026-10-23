@@ -141,6 +141,8 @@
   "bibliography.title": "Bibliography",
   "bibliography.lede": "Books that shape how we design, in your language when an edition exists.",
   "bibliography.alsoIn": "Also in",
+  "bibliography.themes": "Themes",
+  "bibliography.seeAll": "See the full bibliography",
   "bibliography.climate": "Climate zone",
   "bibliography.climate.tropical": "Tropical",
   "bibliography.climate.subtropical": "Subtropical",

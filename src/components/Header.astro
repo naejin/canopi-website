@@ -1,8 +1,9 @@
 ---
 import { t, locales, languageNames, localizedUrl, type Locale } from '../i18n/utils';
 import { DOCS_URL, discordUrl } from '../data/site';
-interface Props { lang: Locale; }
-const { lang } = Astro.props;
+// path: the page within a locale, so the language menu leads to the same page in another language.
+interface Props { lang: Locale; path?: string; }
+const { lang, path = '/' } = Astro.props;
 ---
 <a class="skip-link" href="#main">{t('header.skip', lang)}</a>
 <header class="site-header">
@@ -19,7 +20,7 @@ const { lang } = Astro.props;
         <summary class="nav-link" aria-label={`${t('header.language', lang)}: ${languageNames[lang]}`}>{lang.toUpperCase()}</summary>
         <ul class="menu-panel" role="list">
           {locales.map((locale) => (
-            <li><a href={localizedUrl('/', locale)} lang={locale} hreflang={locale} aria-current={locale === lang ? 'true' : undefined}>{languageNames[locale]}</a></li>
+            <li><a href={localizedUrl(path, locale)} lang={locale} hreflang={locale} aria-current={locale === lang ? 'true' : undefined}>{languageNames[locale]}</a></li>
           ))}
         </ul>
       </details>

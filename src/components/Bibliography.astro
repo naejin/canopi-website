@@ -1,35 +1,51 @@
 ---
-import { t, type Locale } from '../i18n/utils';
+// The bibliography: the whole list on /bibliography/ (full), or the books marked featured on the home page.
+import { t, localizedUrl, type Locale } from '../i18n/utils';
 import { themes } from '../data/bibliography';
-interface Props { lang: Locale; }
-const { lang } = Astro.props;
+interface Props { lang: Locale; full?: boolean; }
+const { lang, full = false } = Astro.props;
+const Title = full ? 'h1' : 'h2';
+const ShelfTitle = full ? 'h2' : 'h3';
 
 // Each book shows its edition in the reader's language when there is one, else its original.
 const languageName = new Intl.DisplayNames([lang], { type: 'language' });
 const collator = new Intl.Collator(lang);
-const shelves = themes.map((theme) => ({
-  label: t(`bibliography.theme.${theme.key}`, lang),
-  books: theme.books
-    .map((book) => {
-      const shown = book.editions.find((edition) => edition.lang === lang) ?? book.editions[0];
-      // "Title: Subtitle" (or "Titre : sous-titre", "題：副題") sets the subtitle smaller.
-      const [title, subtitle] = shown.title.split(/\s*(?::\s+|：\s*)(.*)/s);
-      const others = book.editions.filter((edition) => edition !== shown);
-      return { ...book, shown, others, title, subtitle, by: shown.by ?? book.by, year: shown.year ?? book.year };
-    })
-    .sort((a, b) => collator.compare(a.shown.title, b.shown.title)),
-}));
+const shelves = themes
+  .map((theme) => ({
+    key: theme.key,
+    label: t(`bibliography.theme.${theme.key}`, lang),
+    books: theme.books
+      .filter((book) => full || book.featured)
+      .map((book) => {
+        const shown = book.editions.find((edition) => edition.lang === lang) ?? book.editions[0];
+        // "Title: Subtitle" (or "Titre : sous-titre", "題：副題") sets the subtitle smaller.
+        const [title, subtitle] = shown.title.split(/\s*(?::\s+|：\s*)(.*)/s);
+        const others = book.editions.filter((edition) => edition !== shown);
+        return { ...book, shown, others, title, subtitle, by: shown.by ?? book.by, year: shown.year ?? book.year };
+      })
+      .sort((a, b) => collator.compare(a.shown.title, b.shown.title)),
+  }))
+  .filter((shelf) => shelf.books.length);
 ---
 <section class="section bibliography" id="bibliography" aria-labelledby="bibliography-title">
   <div class="wrap">
     <header class="section-head">
-      <h2 id="bibliography-title">{t('bibliography.title', lang)}</h2>
+      <Title id="bibliography-title">{t('bibliography.title', lang)}</Title>
       <p>{t('bibliography.lede', lang)}</p>
     </header>
+    {full && (
+      <nav class="bibliography-themes" aria-label={t('bibliography.themes', lang)}>
+        <ul role="list">
+          {shelves.map((shelf) => (
+            <li><a class="chip" href={`#${shelf.key}`}>{shelf.label}<span>{shelf.books.length}</span></a></li>
+          ))}
+        </ul>
+      </nav>
+    )}
     <div class="bibliography-grid">
       {shelves.map((shelf) => (
-        <section class="bibliography-group">
-          <h3>{shelf.label}</h3>
+        <section class="bibliography-group" id={full ? shelf.key : undefined}>
+          <ShelfTitle class="shelf-title">{shelf.label}</ShelfTitle>
           <ul role="list">
             {shelf.books.map((book) => (
               <li class="book">
@@ -60,5 +76,8 @@ const shelves = themes.map((theme) => ({
         </section>
       ))}
     </div>
+    {!full && (
+      <p class="bibliography-more"><a class="button button-secondary" href={localizedUrl('/bibliography/', lang)}>{t('bibliography.seeAll', lang)}</a></p>
+    )}
   </div>
 </section>

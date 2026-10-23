@@ -1,7 +1,8 @@
 # Bibliography
 
 <!--
-The home page's Bibliography section is built from this file; edit it and rebuild.
+The bibliography page (/bibliography/) and the home page's preview of it are built from this file;
+edit it and rebuild. Run "npm run check:bibliography" to visit every link (it needs the network).
 
 - "## Theme" starts a group; groups appear in this file's order. A new theme needs its label in all
   11 src/i18n/translations/*.json files, as "bibliography.theme.<slug>" (slug: the heading in lower
@@ -11,6 +12,7 @@ The home page's Bibliography section is built from this file; edit it and rebuil
 - "- climate:" (optional) names the climates a book is written for, from the Canopi app's zones:
   tropical, subtropical, mediterranean, arid, temperate, continental, boreal (several: "temperate, continental").
   Leave it out when the book's advice holds in any climate; the page shows it only when present.
+- "- featured: yes" puts a book in the home page's preview; keep 3 to 6 books marked (the build checks).
 - "- <language>: [Title](https://…)" is one edition, by language code (en, fr, ja, zh, hi…).
   The original edition comes first. A visitor sees the edition in their language when there is one,
   else the original, and the others under "Also in". "Title: Subtitle" sets the subtitle smaller.
@@ -19,12 +21,13 @@ The home page's Bibliography section is built from this file; edit it and rebuil
 - Books are sorted by title within each theme, so order here does not matter.
 
 The design grows in stages; when a count below is reached, the page changes before more books go in.
-1. Up to 15 books, and at most 5 in any theme: this section on the home page.
+1. Up to 15 books, and at most 5 in any theme: a section on the home page.
 2. From 16 books, or 6 in one theme: its own /bibliography/ page in every locale, a home preview of
-   3–6 books marked "- featured: yes" with a "See all" link, a footer link, and a link checker.
-3. From 40 books, or 8 themes: a language filter (opening on the reader's language when it has at
-   least 6 books, else on all) and theme jump links with counts. A climate filter joins it once at
-   least 2 climates have 5 books or more each; books with no "- climate:" show under every climate.
+   3–6 books marked "- featured: yes" with a "See all" link, a footer link, and a link checker. (Built.)
+3. From 8 themes: theme jump links with counts on the bibliography page. (Built.)
+4. From 40 books: a language filter (opening on the reader's language when it has at least 6 books,
+   else on all). A climate filter joins it once at least 2 climates have 5 books or more each; books
+   with no "- climate:" show under every climate.
 Not tied to a count: ISBN fallback links (the first edition with no stable page), one-line notes
 (an editorial decision; they add translation work), one file per theme (only past ~150 books).
 -->
@@ -34,6 +37,7 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 ### Agroecology (Gliessman)
 - by: Stephen R. Gliessman, V. Ernesto Méndez, Victor M. Izzo, Eric W. Engles
 - year: 2022
+- featured: yes
 - en: [Agroecology: Leading the Transformation to a Just and Sustainable Food System](https://www.routledge.com/Agroecology-Leading-the-Transformation-to-a-Just-and-Sustainable-Food-System/Gliessman-Mendez-Izzo-Engles/p/book/9781032187105)
 - es: [Agroecología: procesos ecológicos en agricultura sostenible](https://www.sidalc.net/search/Record/KOHA-OAI-TEST:39885) — Stephen R. Gliessman · 1998
 - pt: [Agroecologia: processos ecológicos em agricultura sustentável](https://books.google.com/books?vid=ISBN9788538600381) — Stephen R. Gliessman · 1998
@@ -57,6 +61,7 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 ### The One-Straw Revolution
 - by: Masanobu Fukuoka
 - year: 1975
+- featured: yes
 - ja: [自然農法 わら一本の革命](https://www.shunjusha.co.jp/book/9784393741412.html) — 福岡正信
 - en: [The One-Straw Revolution: An Introduction to Natural Farming](https://www.nyrb.com/products/the-one-straw-revolution)
 - fr: [La Révolution d'un seul brin de paille : Une introduction à l'agriculture sauvage](https://books.google.com/books?vid=ISBN9782844456243)
@@ -74,6 +79,7 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 ### Teaming with Microbes
 - by: Jeff Lowenfels, Wayne Lewis
 - year: 2006
+- featured: yes
 - en: [Teaming with Microbes: The Organic Gardener's Guide to the Soil Food Web](https://www.hachettebookgroup.com/titles/jeff-lowenfels/teaming-with-microbes/9781604691139/)
 - fr: [Collaborer avec les bactéries et autres micro-organismes : Guide du réseau alimentaire du sol à destination des jardiniers](https://books.google.com/books?vid=ISBN9782841569274)
 - de: [Gärtnern mit Mikroben: Der Leitfaden des Bio-Gärtners zum Bodennahrungsnetz](https://pfeil-verlag.de/publikationen/gaertnern-mit-mikroben/)
@@ -86,6 +92,7 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 ### Le sol, la terre et les champs
 - by: Claude Bourguignon, Lydia Bourguignon
 - year: 1989
+- featured: yes
 - fr: [Le sol, la terre et les champs : Pour retrouver une agriculture saine](https://books.google.com/books?vid=ISBN9782869854116)
 - en: [Regenerating the Soil: From Agronomy to Agrology](https://books.google.com/books?vid=ISBN8185569681) — Claude Bourguignon
 - it: [Il suolo: Un patrimonio da salvare](https://giunti.it/products/il-suolo-un-patrimonio-da-salvare-bourguignon-claude-9788884992772)
@@ -102,6 +109,7 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 ### Landrace Gardening
 - by: Joseph Lofthouse
 - year: 2021
+- featured: yes
 - en: [Landrace Gardening: Food Security Through Biodiversity and Promiscuous Pollination](https://lofthouse.com/landrace-gardening-joseph-lofthouse.phtml)
 - fr: [Semences paysannes métissées : La souveraineté alimentaire sans acheter ni semences ni engrais ni pesticides](https://lofthouse.com/semences-paysannes-m%C3%A9tiss%C3%A9es.phtml)
 - de: [Gärtnern mit Landsorten: Weltweite, lokale und private Ernährungssicherheit durch genetisch vielfältige, sich frei verkreuzende Pflanzen](https://lofthouse.com/g%C3%A4rtnern-mit-landsorten.phtml)
@@ -136,3 +144,4 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - climate: temperate
 - de: [Kleine grüne Archen: Passivsolare (Erd-)Gewächshäuser selbst gebaut](https://oekobuch.de/buecher/kleine-gruene-archen/)
 - fr: [Construire une serre : Serres solaires passives, conception, exemples de réalisations](https://www.editions-ulmer.fr/editions-ulmer/construire-une-serre-serres-solaires-passives-conception-exemples-de-realisations-336-cl.htm)
+

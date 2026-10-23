@@ -45,6 +45,19 @@ for (const lang of locales) {
   assert.ok(!/\{\w+\}/.test(visibleMarkup), `${lang}: unresolved placeholder`);
   for (const path of assetLinks(html)) assert.ok(existsSync(join(root, path)), `Missing asset: ${path}`);
 
+  // The home page previews the bibliography and links to its own page, which the footer also reaches.
+  const bibliographyPath = lang === 'en' ? '/bibliography/' : `/${lang}/bibliography/`;
+  assert.ok(html.includes(`href="${bibliographyPath}"`), `${lang}: link to the bibliography page`);
+  const bibliography = readFileSync(join(root, dir, 'bibliography', 'index.html'), 'utf8');
+  assert.ok(bibliography.includes(`lang="${lang}"`) && bibliography.includes('<h1 id="bibliography-title"'), `${lang}: bibliography page`);
+  assert.ok(bibliography.includes('class="bibliography-themes"'), `${lang}: bibliography theme links`);
+  assert.ok((bibliography.match(/class="book"/g) ?? []).length > (html.match(/class="book"/g) ?? []).length, `${lang}: the home page shows fewer books than the bibliography page`);
+  for (const other of locales) {
+    const href = `https://projectcanopi.com${other === 'en' ? '' : `/${other}`}/bibliography/`;
+    assert.ok(bibliography.includes(`hreflang="${other}" href="${href}"`), `${lang}: bibliography alternate ${other}`);
+  }
+  for (const path of assetLinks(bibliography)) assert.ok(existsSync(join(root, path)), `Missing asset: ${path}`);
+
   for (const result of ['sent', 'failed']) {
     const page = readFileSync(join(root, dir, 'contact', result, 'index.html'), 'utf8');
     assert.ok(page.includes('<meta name="robots" content="noindex">'), `${lang}: ${result} page is noindex`);
@@ -69,4 +82,4 @@ assert.ok(!readFileSync(join(root, 'sitemap-0.xml'), 'utf8').includes('/contact/
 
 for (const asset of ['canopi-logo.svg', 'data/featured-designs.json', 'data/plant-symbols.json']) assert.ok(existsSync(join(root, asset)), asset);
 for (const gone of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'screenshot-light.png', 'network']) assert.ok(!existsSync(join(root, gone)), `${gone} is retired`);
-console.log(`Verified 11 locale pages and their contact result pages, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links and static assets.`);
+console.log(`Verified 11 locale pages, their bibliography and contact result pages, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links and static assets.`);

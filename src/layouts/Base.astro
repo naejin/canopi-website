@@ -8,9 +8,11 @@ interface Props {
   lang: Locale;
   // Pages that only answer a form post stay out of search results.
   noindex?: boolean;
+  // The page's path within a locale, for the alternate-language links.
+  path?: string;
 }
 
-const { title, description, lang, noindex = false } = Astro.props;
+const { title, description, lang, noindex = false, path = '/' } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 // The locale's painting with the wordmark (scripts/make-og-images.py).
 const ogImage = new URL(`/og/og-${lang}.jpg`, Astro.site);
@@ -30,10 +32,10 @@ const ogImage = new URL(`/og/og-${lang}.jpg`, Astro.site);
       <link
         rel="alternate"
         hreflang={locale}
-        href={new URL(localizedUrl('/', locale), Astro.site)}
+        href={new URL(localizedUrl(path, locale), Astro.site)}
       />
     ))}
-    <link rel="alternate" hreflang="x-default" href={new URL('/', Astro.site)} />
+    <link rel="alternate" hreflang="x-default" href={new URL(path, Astro.site)} />
 
     <title>{title}</title>
     <meta name="description" content={description} />

@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "astro dev",
     "test": "node --test scripts/*.test.mjs",
+    "check:bibliography": "node scripts/check-bibliography-links.mjs",
     "prebuild": "node scripts/copy-maplibre.mjs",
     "predev": "node scripts/copy-maplibre.mjs",
     "build": "astro build",

@@ -12,6 +12,8 @@ Landing page for projectcanopi.com — the Canopi agroecological design app.
 - `npm run build` — marketing site only
 - `npm run build:with-web` — build and install a packaged Web Edition artifact
 - `npm test` — Web Edition installer regression tests
+- `npm run check:bibliography` — visit every link in `src/data/bibliography.md` (network; run by hand)
+- `node scripts/check-built-site.mjs` — check the built pages after `npm run build`
 - `npm run preview` — build with the Web Edition artifact, then preview
 
 `npm run build:with-web`, `npm run preview`, and `npm run deploy` require

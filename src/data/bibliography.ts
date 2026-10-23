@@ -19,6 +19,8 @@ export interface Book {
   year: string;
   // The climates the book is written for; empty when its advice holds in any climate.
   climates: string[];
+  // Whether the home page shows it among the few books that open the bibliography.
+  featured: boolean;
   // The original edition comes first.
   editions: Edition[];
 }
@@ -49,7 +51,7 @@ source.split('\n').forEach((text, index) => {
 
   if (trimmed.startsWith('### ')) {
     if (!themes.length) fail(line, 'a book comes before any "## Theme" heading');
-    book = { by: '', year: '', climates: [], editions: [] };
+    book = { by: '', year: '', climates: [], featured: false, editions: [] };
     themes.at(-1)!.books.push(book);
     return;
   }
@@ -62,10 +64,14 @@ source.split('\n').forEach((text, index) => {
   }
 
   const field = trimmed.match(/^-\s*([a-zA-Z-]+)\s*:\s*(.*)$/);
-  if (!field || !book) return fail(line, 'expected "- by:", "- year:", "- climate:" or "- <language>: [Title](https://…)" under a "### Book"');
+  if (!field || !book) return fail(line, 'expected "- by:", "- year:", "- climate:", "- featured:" or "- <language>: [Title](https://…)" under a "### Book"');
   const [, name, value] = field;
   if (name === 'by') book.by = value;
   else if (name === 'year') book.year = value;
+  else if (name === 'featured') {
+    if (!/^(yes|no)$/i.test(value)) fail(line, '"- featured:" takes "yes" or "no"');
+    book.featured = /^yes$/i.test(value);
+  }
   else if (name === 'climate') {
     book.climates = value.split(',').map((climate) => climate.trim().toLowerCase());
     const unknown = book.climates.find((climate) => !climates.includes(climate));
@@ -93,3 +99,7 @@ for (const theme of themes) {
     if (!by || !year || !editions.length) throw new Error(`src/data/bibliography.md: "${name}" needs "- by:", "- year:" and at least one edition`);
   }
 }
+
+// The home page opens the bibliography on a handful of books, whatever the size of the list.
+const featured = themes.flatMap((theme) => theme.books).filter((book) => book.featured).length;
+if (featured < 3 || featured > 6) throw new Error(`src/data/bibliography.md: mark 3 to 6 books "- featured: yes" for the home page (${featured} now)`);

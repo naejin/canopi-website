@@ -141,6 +141,8 @@
   "bibliography.title": "참고 문헌",
   "bibliography.lede": "우리의 설계에 영향을 준 책들. 한국어판이 있으면 한국어판을 보여 드립니다.",
   "bibliography.alsoIn": "다른 언어",
+  "bibliography.themes": "주제",
+  "bibliography.seeAll": "전체 참고 문헌 보기",
   "bibliography.climate": "기후대",
   "bibliography.climate.tropical": "열대",
   "bibliography.climate.subtropical": "아열대",
