@@ -58,6 +58,11 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - year: 2026
 - fr: [Le grand guide pour réinventer le potager](https://www.editions-ulmer.fr/editions-ulmer/le-grand-guide-pour-reinventer-le-potager-1086-gis-cl.htm)
 
+### Mon potager perpétuel
+- by: Terence Groos
+- year: 2025
+- fr: [Mon potager perpétuel : 90 vivaces comestibles pour des récoltes à l'infini et sans effort !](https://www.leslibraires.fr/livre/24304402-mon-potager-perpetuel-terence-groos-solar)
+
 ### The One-Straw Revolution
 - by: Masanobu Fukuoka
 - year: 1975
@@ -88,6 +93,11 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - by: Blaise Leclerc, Jean-Jacques Raynal
 - year: 2017
 - fr: [Les clés d'un sol vivant : Comment améliorer la terre de son jardin ?](https://www.terrevivante.org/boutique/livres/permaculture-jardin-bio/potager/les-cles-dun-sol-vivant/)
+
+### L'encyclopédie des plantes bio-indicatrices
+- by: Gérard Ducerf
+- year: 2005
+- fr: [L'encyclopédie des plantes bio-indicatrices alimentaires et médicinales : Guide de diagnostic des sols](https://www.promonature.com/produit/pack-4-volumes-encyclopedies-des-plantes-bio-indicatrices)
 
 ### Le sol, la terre et les champs
 - by: Claude Bourguignon, Lydia Bourguignon
@@ -130,6 +140,28 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - by: Marc-André Selosse
 - year: 2026
 - fr: [De la biodiversité comme un humanisme](https://www.seuil.com/ouvrage/de-la-biodiversite-comme-un-humanisme-marc-andre-selosse/9782021604337)
+
+### Découvrir et protéger nos abeilles sauvages
+- by: Nicolas Vereecken
+- year: 2017
+- fr: [Découvrir et protéger nos abeilles sauvages](https://www.glenat.com/glenat-livres/decouvrir-et-proteger-nos-abeilles-sauvages-9782344021521/)
+
+### Les auxiliaires au jardin
+- by: Vincent Albouy
+- year: 2018
+- fr: [Les auxiliaires au jardin : Une solution alternative aux pesticides](https://www.editions-ulmer.fr/editions-ulmer/les-auxiliaires-au-jardin-une-solution-alternative-aux-pesticides-614-cl.htm)
+
+## Plants
+
+### La vie sociale des plantes
+- by: Jean-Marie Pelt
+- year: 1984
+- fr: [La vie sociale des plantes](https://www.fayard.fr/livre/la-vie-sociale-des-plantes-9782213013718/)
+
+### Plantes sauvages comestibles
+- by: François Couplan
+- year: 2018
+- fr: [Plantes sauvages comestibles](https://www.editions-larousse.fr/livre/plantes-sauvages-comestibles-9782036012981/)
 
 ## Growing structures
 
