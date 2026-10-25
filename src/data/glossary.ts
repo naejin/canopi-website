@@ -234,13 +234,15 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
     fr: { term: 'Cotylédons', definition: 'Les premières feuilles de la plantule, déjà présentes dans la graine ; certaines cultures les sortent de terre, d’autres les gardent dessous.' },
   },
   'bitter-fruit': {
-    en: { term: 'Bitter fruit', definition: 'In squash, melon and cucumber, strong bitterness signals natural toxins, and the fruit should not be eaten.' },
-    fr: { term: 'Fruit amer', definition: 'Chez la courge, le melon et le concombre, une forte amertume signale des toxines naturelles : le fruit ne doit pas être mangé.' },
+    en: { term: 'Bitter fruit', definition: 'In squash, melon and cucumber, bitterness signals natural toxins: stop eating the fruit and do not save its seed.' },
+    fr: { term: 'Fruit amer', definition: 'Chez la courge, le melon et le concombre, l’amertume signale des toxines naturelles : arrêtez de manger le fruit et n’en gardez pas les graines.' },
   },
+  // Our own general wording, not from the book.
   'blossom-end-rot': {
     en: { term: 'Blossom end rot', definition: 'A dark, sunken patch that forms on a fruit at its flower end, opposite the stem, as seen on tomatoes and squash.' },
     fr: { term: 'Cul noir (nécrose apicale)', definition: 'Une tache sombre et creuse qui apparaît au bout du fruit, du côté opposé au pédoncule, chez la tomate ou la courge par exemple.' },
   },
+  // Our own general wording, not from the book.
   'late-blight': {
     en: { term: 'Late blight', definition: 'A disease of tomatoes and potatoes that thrives in damp weather and can kill leaves, stems and fruit.' },
     fr: { term: 'Mildiou', definition: 'Une maladie de la tomate et de la pomme de terre qui prospère par temps humide et peut détruire feuilles, tiges et fruits.' },

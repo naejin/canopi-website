@@ -441,3 +441,15 @@ test('French guide chrome puts a no-break space before : ; ? and !', () => {
     assert.ok(!/\}: \{|\}: \$\{/.test(read(`components/guides/${file}`)), `${file}: a hard-coded colon after a translated string (use a string with its own punctuation)`);
   }
 });
+
+test('guide text and guide strings carry no double-encoded characters', () => {
+  const files = [
+    ...readdirSync(guideRoot).flatMap((slug) => guideLangs.map((lang) => `content/guides/${slug}/${lang}.mdx`)),
+    ...guideLangs.map((lang) => `i18n/guides/${lang}.json`),
+    'data/glossary.ts',
+    'data/crops.ts',
+  ];
+  for (const file of files) {
+    assert.doesNotMatch(read(file), /[\u0080-\u009f]|â€|Ã[ -¿]/, `${file} has mojibake`);
+  }
+});
