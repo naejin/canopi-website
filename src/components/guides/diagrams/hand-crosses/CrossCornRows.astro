@@ -1,0 +1,41 @@
+---
+// Making crosses by hand: a corn crossing block seen from above. Three mother rows whose tassels have
+// been pulled (each plant shows only its silks) beside one father row whose plants keep their tassels;
+// pollen drifts from the father row over the mothers. mother and father label the rows; alt describes it.
+import { r1, rng } from '../../../../lib/svg';
+interface Props { mother: string; father: string; alt: string; }
+const { mother, father, alt } = Astro.props;
+const N = 9, X0 = 28, DX = 33;
+const rows = [
+  { y: 40, father: false },
+  { y: 72, father: false },
+  { y: 104, father: false },
+  { y: 146, father: true },
+].map((row) => ({ ...row, plants: Array.from({ length: N }, (_, i) => r1(X0 + i * DX)) }));
+// A tassel drawn as a small star of branches.
+const tassel = (x: number, y: number) => [0, 60, 120, 180, 240, 300].map((a) => {
+  const t = (a * Math.PI) / 180;
+  return `M${x} ${y}l${r1(Math.cos(t) * 7)} ${r1(Math.sin(t) * 7)}`;
+}).join('');
+const rand = rng(41);
+const pollen = Array.from({ length: 34 }, () => ({ x: r1(14 + rand() * 292), y: r1(30 + rand() * 104), r: r1(1.1 + rand() * 1) }));
+---
+<svg class="guide-cross-corn" viewBox="0 0 320 186" role="img" aria-label={alt}>
+  <text x="6" y="16" class="guide-cc-label">{mother}</text>
+  {rows.map((row) => <rect x="4" y={row.y - 13} width="312" height="26" rx="6" class="guide-bed" />)}
+  {pollen.map((p) => <circle cx={p.x} cy={p.y} r={p.r} class="guide-pollen-grain" />)}
+  {rows.map((row) => row.plants.map((x) => (
+    <g>
+      <circle cx={x} cy={row.y} r="8" class="guide-leaf" />
+      {row.father
+        ? <path d={tassel(x, row.y)} class="guide-tassel" style="stroke-width: 2" />
+        : <circle cx={x} cy={row.y} r="2.6" class="guide-pollen" />}
+    </g>
+  )))}
+  <text x="6" y="178" class="guide-cc-label">{father}</text>
+</svg>
+
+<style>
+  .guide-cross-corn { max-width: 24rem; }
+  .guide-cc-label { font-size: 13px; font-weight: 600; }
+</style>
