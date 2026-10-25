@@ -1,9 +1,10 @@
 ---
 // Squash guide: the three squash species side by side, a drawn fruit over each column, then one fact
 // per row (its label on a full-width line above the three cells, so the chart stays three columns
-// wide on a phone). Every word comes from the MDX, so English and French each pass their own.
+// wide on a phone). Each fact row is its own <tbody>, headed by a rowgroup header. The drawings are
+// decoration (the species names carry the content). Every word comes from the MDX, so English and French each pass their own.
 import { fruits, type Species } from './fruit-shapes';
-interface Column { species: Species; name: string; latin: string; alt: string }
+interface Column { species: Species; name: string; latin: string }
 interface Row { label: string; cells: [string, string, string] }
 interface Props { title: string; columns: Column[]; rows: Row[]; note?: string }
 const { title, columns, rows, note } = Astro.props;
@@ -20,7 +21,7 @@ for (const r of rows) if (r.cells.length !== 3) throw new Error(`<SquashSpecies>
           const f = fruits[c.species];
           return (
             <th scope="col" id={`guide-sq-${c.species}`}>
-              <svg viewBox="0 0 120 80" role="img" aria-label={c.alt}>
+              <svg viewBox="0 0 120 80" aria-hidden="true" focusable="false">
                 <path d={f.stem} class="guide-sq-stem" />
                 <path d={f.body} class={`${f.cls} guide-sq-body`} />
                 {f.lines.map((d) => <path d={d} class="guide-fruit-stripe" />)}
@@ -33,14 +34,12 @@ for (const r of rows) if (r.cells.length !== 3) throw new Error(`<SquashSpecies>
         })}
       </tr>
     </thead>
-    <tbody>
-      {rows.map((r, i) => (
-        <>
-          <tr class="guide-sq-label-row"><th colspan="3" scope="colgroup" id={`guide-sq-row-${i}`}>{r.label}</th></tr>
-          <tr>{r.cells.map((cell, k) => <td headers={`guide-sq-${columns[k].species} guide-sq-row-${i}`}>{cell}</td>)}</tr>
-        </>
-      ))}
-    </tbody>
+    {rows.map((r, i) => (
+      <tbody>
+        <tr class="guide-sq-label-row"><th colspan="3" scope="rowgroup" id={`guide-sq-row-${i}`}>{r.label}</th></tr>
+        <tr>{r.cells.map((cell, k) => <td headers={`guide-sq-${columns[k].species} guide-sq-row-${i}`}>{cell}</td>)}</tr>
+      </tbody>
+    ))}
   </table>
   {note && <figcaption class="guide-figure-caption">{note}</figcaption>}
 </figure>

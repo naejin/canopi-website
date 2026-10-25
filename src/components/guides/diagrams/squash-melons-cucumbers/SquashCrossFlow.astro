@@ -4,36 +4,35 @@
 // first selected for fertility, then split into two lines. Boxes are HTML so the words wrap on a
 // phone; the fruit drawings are decoration (the words carry the content). Labels come from the MDX.
 import { fruits, type Species } from './fruit-shapes';
-interface Box { title: string; text?: string }
-interface Props { title?: string; maxima: Box; moschata: Box; hybrid: Box; bees: string; offspring: Box; lines: [Box & { species: Species }, Box & { species: Species }] }
-const { title, maxima, moschata, hybrid, bees, offspring, lines } = Astro.props;
+interface Box { title: string; text: string }
+interface Props { title: string; maxima: string; moschata: string; crossed: string; hybrid: Box; bees: string; offspring: Box; lines: [Box & { species: Species }, Box & { species: Species }] }
+const { title, maxima, moschata, crossed, hybrid, bees, offspring, lines } = Astro.props;
 const draw = (s: Species) => fruits[s];
 ---
 <figure class="guide-figure guide-sqx">
-  {title && <p class="guide-figure-title">{title}</p>}
+  <p class="guide-figure-title">{title}</p>
   <div class="guide-sqx-parents">
-    {([['maxima', maxima], ['moschata', moschata]] as const).map(([s, box], i) => (
+    {([['maxima', maxima], ['moschata', moschata]] as const).map(([s, name], i) => (
       <>
-        {i === 1 && <span class="guide-sqx-times" aria-hidden="true">×</span>}
+        {i === 1 && <span class="guide-sqx-times"><span aria-hidden="true">×</span><span class="guide-visually-hidden">{crossed}</span></span>}
         <div class="guide-sqx-box">
           <svg viewBox="0 0 120 80" aria-hidden="true" focusable="false"><path d={draw(s).stem} class="guide-sqx-stem" /><path d={draw(s).body} class={`${draw(s).cls} guide-sqx-body`} />{draw(s).lines.map((d) => <path d={d} class="guide-fruit-stripe" />)}</svg>
-          <span class="guide-sqx-title">{box.title}</span>
-          {box.text && <span class="guide-sqx-text">{box.text}</span>}
+          <span class="guide-sqx-title">{name}</span>
         </div>
       </>
     ))}
   </div>
   <span class="guide-sqx-arrow" aria-hidden="true">↓</span>
-  <div class="guide-sqx-box guide-sqx-key"><span class="guide-sqx-title">{hybrid.title}</span>{hybrid.text && <span class="guide-sqx-text">{hybrid.text}</span>}</div>
+  <div class="guide-sqx-box guide-sqx-key"><span class="guide-sqx-title">{hybrid.title}</span><span class="guide-sqx-text">{hybrid.text}</span></div>
   <span class="guide-sqx-arrow guide-sqx-bees"><span aria-hidden="true">↓</span> {bees}</span>
-  <div class="guide-sqx-box"><span class="guide-sqx-title">{offspring.title}</span>{offspring.text && <span class="guide-sqx-text">{offspring.text}</span>}</div>
+  <div class="guide-sqx-box"><span class="guide-sqx-title">{offspring.title}</span><span class="guide-sqx-text">{offspring.text}</span></div>
   <span class="guide-sqx-arrow" aria-hidden="true">↙ ↘</span>
   <div class="guide-sqx-lines">
     {lines.map((box) => (
       <div class="guide-sqx-box">
         <svg viewBox="0 0 120 80" aria-hidden="true" focusable="false"><path d={draw(box.species).stem} class="guide-sqx-stem" /><path d={draw(box.species).body} class={`${draw(box.species).cls} guide-sqx-body`} />{draw(box.species).lines.map((d) => <path d={d} class="guide-fruit-stripe" />)}</svg>
         <span class="guide-sqx-title">{box.title}</span>
-        {box.text && <span class="guide-sqx-text">{box.text}</span>}
+        <span class="guide-sqx-text">{box.text}</span>
       </div>
     ))}
   </div>

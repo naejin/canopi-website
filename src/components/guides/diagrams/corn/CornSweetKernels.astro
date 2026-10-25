@@ -38,7 +38,7 @@ const head = ['S', 's'];
             <th scope="row">{head[j]}</th>
             {row.map((c) => (
               <td class:list={[{ 'guide-csk-sweet': c.isSweet }]}>
-                <svg viewBox="-6 -6 12 12" aria-hidden="true" focusable="false"><path d={c.isSweet ? WRINKLED : PLUMP} class={`${c.isSweet ? 'guide-c1' : 'guide-c6'} guide-csk-k`} />{c.isSweet && <path d="M-1 -1.6L0 1.8L1 -1.6" class="guide-csk-crease" />}</svg>
+                <svg viewBox="-6 -6 12 12" aria-hidden="true" focusable="false"><path d={c.isSweet ? WRINKLED : PLUMP} class={`${c.isSweet ? 'guide-c1 guide-csk-wr' : 'guide-c6'} guide-csk-k`} />{c.isSweet && <path d="M-1 -1.6L0 1.8L1 -1.6" class="guide-csk-crease" />}</svg>
                 <span class="guide-csk-genes">{c.genes}</span>
                 <span class="guide-csk-word">{c.word}</span>
               </td>
@@ -52,7 +52,7 @@ const head = ['S', 's'];
         <ellipse cx={CX} cy={CY} rx={RX} ry={RY} class="guide-csk-core" />
         {kernels.map((k) => (
           <g transform={`translate(${k.x} ${k.y})`}>
-            <path d={k.w ? WRINKLED : PLUMP} class={`${k.w ? 'guide-c1' : 'guide-c6'} guide-csk-k`} />
+            <path d={k.w ? WRINKLED : PLUMP} class={`${k.w ? 'guide-c1 guide-csk-wr' : 'guide-c6'} guide-csk-k`} />
             {k.w && <path d="M-1 -1.6L0 1.8L1 -1.6" class="guide-csk-crease" />}
           </g>
         ))}
@@ -78,6 +78,9 @@ const head = ['S', 's'];
   .guide-csk-word { display: block; color: var(--text-secondary); font-size: 0.8rem; }
   .guide-csk-k { stroke: var(--border-strong); stroke-width: 0.35; }
   .guide-csk-crease { fill: none; stroke: var(--seed-3); stroke-width: 0.5; stroke-linecap: round; }
+  /* Dark theme: seed-1 and seed-6 are close in lightness, so wrinkled kernels take the darker seed-2. */
+  :global(:root[data-theme="dark"]) .guide-csk-wr { fill: var(--seed-2); }
+  @media (prefers-color-scheme: dark) { :global(:root:not([data-theme="light"])) .guide-csk-wr { fill: var(--seed-2); } }
   .guide-csk-core { fill: var(--seed-3); stroke: var(--border-strong); stroke-width: 1; }
   .guide-csk-cob svg { width: 100%; overflow: visible; }
   @media (max-width: 639px) {

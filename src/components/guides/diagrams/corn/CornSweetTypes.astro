@@ -3,8 +3,8 @@
 // sugar mark, shrivelled). The last column is Lofthouse's garden, marked as such by its header.
 // Words come from the MDX: head (the column headers), rows ({ kernel, cells: one string per header }).
 type Kernel = 'plump' | 'sugary' | 'shrivelled' | 'mixed';
-interface Props { head: string[]; rows: { kernel: Kernel; cells: string[] }[]; caption?: string }
-const { head, rows, caption } = Astro.props;
+interface Props { head: string[]; rows: { kernel: Kernel; cells: string[] }[] }
+const { head, rows } = Astro.props;
 for (const r of rows) if (r.cells.length !== head.length) throw new Error(`<CornSweetTypes>: row "${r.cells[0]}" needs ${head.length} cells`);
 const shapes: Record<Kernel, string> = {
   plump: 'M4 6C4 2 8 1 11 1C14 1 18 2 18 6L17 15C16 19 13 21 11 21C9 21 6 19 5 15Z',
@@ -15,7 +15,6 @@ const shapes: Record<Kernel, string> = {
 ---
 <div class="guide-table-wrap">
   <table class="guide-table guide-cst">
-    {caption && <caption>{caption}</caption>}
     <thead><tr>{head.map((h) => <th scope="col">{h}</th>)}</tr></thead>
     <tbody>
       {rows.map((r) => (
