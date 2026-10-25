@@ -1,0 +1,63 @@
+---
+// Tomatoes: two ways to start a cross. Left, the usual pedigree: one wild pollen donor (flower) × one
+// domestic mother (fruit), then a single line of selfed generations F1, F2, F3. Right, many to many:
+// a row of wild pollen donors, each linked to several domestic mothers, whose seed is one mixed
+// population. usual and many are the two titles; alt describes the drawing.
+import { r1, rng } from '../../../../lib/svg';
+import { wrap } from './wrap';
+interface Props { usual: string; many: string; alt: string; }
+const { usual, many, alt } = Astro.props;
+const flowerAt = (x: number, y: number) => [0, 72, 144, 216, 288].map((a) => {
+  const t = ((a - 90) * Math.PI) / 180;
+  return { x: r1(x + Math.cos(t) * 4.2), y: r1(y + Math.sin(t) * 4.2) };
+});
+const left = { father: { x: 46, y: 62 }, mother: { x: 134, y: 62 }, gens: [{ y: 112, t: 'F1' }, { y: 150, t: 'F2' }, { y: 188, t: 'F3' }] };
+const donors = Array.from({ length: 7 }, (_, i) => ({ x: 224 + i * 27, y: 62 }));
+const mothers = [258, 305, 352].map((x) => ({ x, y: 116 }));
+const r = rng(41);
+const offspring = Array.from({ length: 16 }, (_, k) => ({
+  x: r1(232 + (k % 8) * 21 + (r() - 0.5) * 6), y: r1(166 + Math.floor(k / 8) * 18 + (r() - 0.5) * 5), c: [4, 6, 1, 4, 5, 6, 3, 4][k % 8],
+}));
+const titles = [
+  { x: 8, lines: wrap(usual, 20) },
+  { x: 214, lines: wrap(many, 20) },
+];
+---
+<svg class="guide-tomato-pedigree" viewBox="0 0 400 214" role="img" aria-label={alt}>
+  <line x1="202" y1="6" x2="202" y2="208" class="guide-tp-divider" />
+  {titles.map((t) => t.lines.map((line, i) => <text x={t.x} y={18 + i * 18} class="guide-tp-title">{line}</text>))}
+  {/* Left: one to one, then selfing. */}
+  <path d={`M${left.father.x} ${left.father.y}L90 ${left.gens[0].y}M${left.mother.x} ${left.mother.y}L90 ${left.gens[0].y}M90 ${left.gens[0].y}V${left.gens[2].y}`} class="guide-tp-line" />
+  {flowerAt(left.father.x, left.father.y).map((p) => <circle cx={p.x} cy={p.y} r="3.4" class="guide-petal" />)}
+  <circle cx={left.father.x} cy={left.father.y} r="2.2" class="guide-cone" />
+  <circle cx={left.mother.x} cy={left.mother.y} r="8" class="guide-c4 guide-tp-fruit" />
+  <text x="90" y={left.father.y + 4} text-anchor="middle" class="guide-tp-x">×</text>
+  {left.gens.map((g) => (
+    <g>
+      <circle cx="90" cy={g.y} r="6" class="guide-c4 guide-tp-fruit" />
+      <text x="102" y={g.y + 4} class="guide-tp-gen">{g.t}</text>
+    </g>
+  ))}
+  {/* Right: many donors to many mothers, one mixed population. */}
+  {donors.flatMap((d) => mothers.map((m) => <line x1={d.x} y1={d.y} x2={m.x} y2={m.y} class="guide-tp-web" />))}
+  {mothers.flatMap((m) => [236, 290, 340, 380].map((x) => <line x1={m.x} y1={m.y} x2={x} y2="164" class="guide-tp-web" />))}
+  {donors.map((d) => (
+    <g>
+      {flowerAt(d.x, d.y).map((p) => <circle cx={p.x} cy={p.y} r="3.4" class="guide-petal" />)}
+      <circle cx={d.x} cy={d.y} r="2.2" class="guide-cone" />
+    </g>
+  ))}
+  {mothers.map((m) => <circle cx={m.x} cy={m.y} r="8" class="guide-c4 guide-tp-fruit" />)}
+  {offspring.map((o) => <circle cx={o.x} cy={o.y} r="5" class={`guide-c${o.c} guide-tp-fruit`} />)}
+</svg>
+
+<style>
+  .guide-tomato-pedigree { max-width: 32rem; }
+  .guide-tp-title { font-family: var(--font-display); font-weight: 600; font-size: 16px; }
+  .guide-tp-divider { stroke: var(--border); stroke-width: 1; }
+  .guide-tp-line { stroke: var(--text-muted); stroke-width: 1.4; fill: none; }
+  .guide-tp-web { stroke: var(--text-muted); stroke-width: 0.7; opacity: 0.55; }
+  .guide-tp-fruit { stroke: var(--surface); stroke-width: 1; }
+  .guide-tp-x { font-size: 15px; fill: var(--text-muted); }
+  .guide-tp-gen { font-size: 14px; fill: var(--text-secondary); font-weight: 600; }
+</style>

@@ -1,0 +1,48 @@
+---
+// Tomatoes: the narrowings of domestication, drawn as a funnel of five bands, each narrower than the
+// last, with fewer fruits and fewer colours inside as the tomato travels (Andes, Mexico, Europe, the
+// world, then heirlooms kept pure). labels are the five stage names, top to bottom; alt describes the
+// drawing. No figures: the shrinking counts are a picture, not data.
+import { r1, rng } from '../../../../lib/svg';
+import { wrap } from './wrap';
+interface Props { labels: [string, string, string, string, string]; alt: string; }
+const { labels, alt } = Astro.props;
+const CX = 122, BH = 36, GAP = 9, Y0 = 6;
+const widths = [228, 168, 118, 78, 44];
+const counts = [24, 15, 9, 6, 3];
+const palettes = [[1, 2, 3, 4, 5, 6], [1, 4, 5, 6, 3], [4, 6, 1, 3], [4, 6, 3], [4, 4, 6]];
+const r = rng(23);
+const bands = widths.map((w, i) => {
+  const y = Y0 + i * (BH + GAP);
+  const dots = Array.from({ length: counts[i] }, (_, k) => {
+    const cols = Math.ceil(counts[i] / 2);
+    const col = k % cols, row = Math.floor(k / cols);
+    const step = (w - 16) / Math.max(cols, 1);
+    return { x: r1(CX - w / 2 + 8 + step * (col + 0.5) + (r() - 0.5) * 3), y: r1(y + 11 + row * 14 + (r() - 0.5) * 3), c: palettes[i][k % palettes[i].length] };
+  });
+  const next = widths[i + 1];
+  const neck = next ? `M${CX - w / 2 + 6} ${y + BH}L${CX - next / 2} ${y + BH + GAP}H${CX + next / 2}L${CX + w / 2 - 6} ${y + BH}Z` : null;
+  return { x: CX - w / 2, y, w, dots, neck, lines: wrap(labels[i], 17), last: i === widths.length - 1 };
+});
+const H = Y0 + widths.length * (BH + GAP);
+---
+<svg class="guide-tomato-funnel" viewBox={`0 0 400 ${H}`} role="img" aria-label={alt}>
+  {bands.map((b) => (
+    <g>
+      {b.neck && <path d={b.neck} class="guide-tf-neck" />}
+      <rect x={b.x} y={b.y} width={b.w} height={BH} rx="7" class:list={['guide-bed', { 'guide-tf-last': b.last }]} />
+      {b.dots.map((d) => <circle cx={d.x} cy={d.y} r="4.6" class={`guide-c${d.c} guide-tf-fruit`} />)}
+      {b.lines.map((line, i) => <text x="250" y={b.y + BH / 2 + 5 - (b.lines.length - 1) * 8 + i * 16} class:list={['guide-tf-label', { 'guide-tf-accent': b.last }]}>{line}</text>)}
+      <line x1={b.x + b.w + 4} y1={b.y + BH / 2} x2="244" y2={b.y + BH / 2} class="guide-lead guide-dotted" />
+    </g>
+  ))}
+</svg>
+
+<style>
+  .guide-tomato-funnel { max-width: 32rem; }
+  .guide-tf-neck { fill: var(--surface-alt); }
+  .guide-tf-last { stroke: var(--accent); stroke-width: 1.5; }
+  .guide-tf-fruit { stroke: var(--surface); stroke-width: 1; }
+  .guide-tf-label { font-size: 15.5px; }
+  .guide-tf-accent { fill: var(--accent-ink); font-weight: 600; }
+</style>

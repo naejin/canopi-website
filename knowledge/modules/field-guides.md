@@ -4,23 +4,23 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:39:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T11:08:01Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:b1cc1d50b3a2ec86
-    last_modified: 2026-10-25T10:32:57Z
+    digest: sha256:4d7536a0a006135d
+    last_modified: 2026-10-25T11:05:52Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:acc99262e667166b
-    last_modified: 2026-10-25T10:34:14Z
+    digest: sha256:a9cf1da6498ac1a8
+    last_modified: 2026-10-25T10:56:39Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
     digest: sha256:ac7d9ef021ef991c
-    last_modified: 2026-10-25T10:37:39Z
+    last_modified: 2026-10-25T10:40:17Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -45,7 +45,7 @@ sources:
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
     digest: sha256:9693c3a6ce74e302
-    last_modified: 2026-10-25T10:33:04Z
+    last_modified: 2026-10-25T10:40:17Z
 ---
 
 # Responsibility
@@ -56,7 +56,7 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 
 - `src/content/guides/<slug>/{en,fr}.mdx`: the guides. A guide is published when both files exist. Schema in [content.config.ts](../../src/content.config.ts).
 - [src/components/guides/](../../src/components/guides/index.ts): `index.ts` is the map of components every guide can use without imports; `GuideLayout.astro` (one guide page), `GuidesIndex.astro` (the index), `BookCite.astro`.
-- `src/components/guides/diagrams/`: build-time SVG diagrams (`BeanRow`, `YearsTimeline`, `PlotDiagram`, `FlowerDiagram`, `SeasonTimeline`); `diagrams/<slug>/<Name>.astro` are one guide's own diagrams, registered automatically under their file name.
+- `src/components/guides/diagrams/`: build-time SVG diagrams (`BeanRow`, `YearsTimeline`, `PlotDiagram`, `FlowerDiagram`, `SeasonTimeline`); `diagrams/<slug>/<Name>.astro` are one guide's own diagrams, registered automatically under their file name (published: `landrace-gardening/SeedKinds`; `beans-and-legumes/` LegumeSeasons, BeanBushPole, BeanFlowerPatch, BeanSeedlings; `tomatoes/` TomatoBottleneck, TomatoRows, TomatoPedigree). Their words arrive as props from the MDX (en and fr each pass their own), and a folder may hold plain `.ts` helpers (not registered).
 - [guides.css](../../src/styles/guides.css): every class starts with `guide-`; imported only by the two layouts.
 - [glossary.ts](../../src/data/glossary.ts), [crops.ts](../../src/data/crops.ts), [i18n/guides.ts](../../src/i18n/guides.ts) with `guides/{en,fr}.json`, [lib/guides.ts](../../src/lib/guides.ts), [svg.ts](../../src/lib/svg.ts), [rehype-guide-terms.mjs](../../src/lib/rehype-guide-terms.mjs), [rehype-guide-checklists.mjs](../../src/lib/rehype-guide-checklists.mjs), [food-risks.ts](../../src/data/food-risks.ts) (the one FoodCaution risk list), `planting-mix.ts` (PlantingMixBar shares and validation).
 
@@ -82,3 +82,5 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 - Guide styles use the site breakpoints only (639px, 960px); a test fails on any other.
 - `FlowerDiagram` variants: tomato-closed/open, squash-male/female, corn, carrot-fertile/sterile, spinach-male/female.
 - Diagrams are drawn at build time with a seeded random, so builds are identical; a guide's hero bean row is seeded by its slug.
+- A guide's own diagram does not add rules to the shared `guides.css`: it carries a scoped `<style>` with `guide-` classes and token colours only. Prefix its file name with the guide (e.g. `Tomato…`) so names never clash across guides.
+- `related` in frontmatter must name existing guide folders (`guides.test.mjs`), and prose links to unpublished guides fail `check-built-site.mjs`; link guides not yet built through `<NextGuides>`, which shows only published ones.
