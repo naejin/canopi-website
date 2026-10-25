@@ -18,6 +18,8 @@
   "term.close": "Fermer",
   "book.ourWords": "Cette fiche résume avec nos mots des idées du livre. Elle n’en cite aucun passage et n’en reprend aucune image.",
   "book.chapters": "Chapitres dont s’inspire cette fiche",
+  "book.chapter": "« {title} »",
+  "book.chaptersIn": "(titres de l’édition en {language})",
   "book.inBibliography": "Dans notre bibliographie",
   "book.page": "La page du livre",
   "quick.label": "La réponse courte",

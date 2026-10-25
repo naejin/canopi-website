@@ -26,7 +26,9 @@ const jars = gardens.map((label, i) => {
   };
 });
 const centreLines = wrap(centre, 34);
-const H = BOTTOM_JAR + 40 + 2 * LINE;
+// Room below the bottom jars for their longest label (last baseline plus the descenders).
+const bottomLines = Math.max(...jars.filter((j) => j.y > POOL_Y).map((j) => j.lines.length));
+const H = BOTTOM_JAR + 40 + (bottomLines - 1) * LINE + 6;
 ---
 <svg class="guide-landrace-pool" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={alt}>
   <rect x="24" y={POOL_Y} width={W - 48} height={POOL_H} rx={POOL_H / 2} class="guide-lp-pool" />

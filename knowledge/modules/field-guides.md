@@ -4,25 +4,25 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T12:58:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:25:41Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T11:07:53Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:883e1108d8a0cd0b
-    last_modified: 2026-10-25T12:57:35Z
+    digest: sha256:a3cd04dac94c351c
+    last_modified: 2026-10-25T13:05:14Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:0e74dbe5b1b3ccc8
-    last_modified: 2026-10-25T12:57:25Z
+    digest: sha256:d193769f02bee0c9
+    last_modified: 2026-10-25T13:18:40Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
-    digest: sha256:87aa7b2a3bd2e847
-    last_modified: 2026-10-25T12:57:25Z
+    digest: sha256:773a6c8d18ee3fb7
+    last_modified: 2026-10-25T13:17:15Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -41,8 +41,8 @@ sources:
   - id: glossary-ts
     resource: ../../src/data/glossary.ts
     title: src/data/glossary.ts
-    digest: sha256:0e37abe41861aa85
-    last_modified: 2026-10-25T12:57:25Z
+    digest: sha256:8515770a2b77fc01
+    last_modified: 2026-10-25T13:05:14Z
   - id: crops-ts
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
@@ -64,7 +64,7 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 
 # Interfaces
 
-- Frontmatter: `title`, one-sentence `description`, `domain` (seeds, crops, seasons, pests), `order`, `glance` (3 to 6 label/value pairs), `quick`, `sources` (`{ book: <bibliography id>, chapters: [titles] }`), `related`, `updated`.
+- Frontmatter: `title`, one-sentence `description`, `domain` (seeds, crops, seasons, pests), `order`, `glance` (3 to 6 label/value pairs; the hero box wraps its cells, and a value over 40 characters gets a wider cell), `quick`, `sources` (`{ book: <bibliography id>, chapters: [titles] }`; chapter titles are the English edition's, so `BookCite` quotes them and, when the card shows another edition, adds a note naming the English edition rather than guessing translated titles), `related`, `updated`.
 - Components (contract: `.local/field-guides/component-api.md`, which lists every prop and limit): QuickAnswer, Term, TermNote (placed by the plugin), Note, Safety, FoodCaution, HisGarden, Steps/Step, CropCards, CropCard, CropTable, CropExplorer, PollinationBadge, SeasonTimeline, YearsTimeline, PlotDiagram, FlowerDiagram, PlantingMixBar, Checklist/Item, Figure, Columns, Card, Points, NextGuides.
 - Ids are one per concept: `<Term id>` takes a glossary key, crop components a crop id; there are no alias maps. A crop cell the book does not give stays `null` and shows nothing.
 - `related` in frontmatter: two to four published guides (same list in en and fr); `NextGuides` links at section ends; in-text links to another guide's section use that page's heading id in the same language (French ids differ from English ones; `check-built-site.mjs` fails on a missing `#id`).

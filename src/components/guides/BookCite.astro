@@ -12,9 +12,18 @@ const cited = sources.map((source) => {
   if (!book) throw new Error(`guide source "${source.book}" is not a book id in src/data/bibliography.md`);
   const edition = editionFor(book, lang);
   const [title, subtitle] = edition.title.split(/\s*(?::\s+|：\s*)(.*)/s);
-  return { ...source, book, edition, title, subtitle, spine: title.split(/\s+/).slice(0, 3) };
+  // The guides were written from the English edition, so the chapter titles are that edition's.
+  const chaptersLang = (book.editions.find((e) => e.lang === 'en') ?? book.editions[0]).lang;
+  return { ...source, book, edition, chaptersLang, title, subtitle, spine: title.split(/\s+/).slice(0, 3) };
 });
 const listFormat = new Intl.ListFormat(lang, { type: 'conjunction' });
+const languageName = new Intl.DisplayNames(lang, { type: 'language' });
+// Chapter titles stay as printed in the edition the guide was written from, each quoted as a title.
+// When the card shows another edition (the reader's language), a short note names the chapters'
+// edition rather than guessing that edition's chapter titles.
+const chapterParts = (chapters: string[]) => listFormat.formatToParts(chapters.map((_, i) => String(i)))
+  .map((part) => (part.type === 'element' ? { chapter: chapters[Number(part.value)] } : { text: part.value }));
+const [quoteOpen, quoteClose] = gt('book.chapter', lang, { title: '\u0000' }).split('\u0000');
 ---
 {cited.map((c) => (
   <div class="guide-book">
@@ -23,7 +32,11 @@ const listFormat = new Intl.ListFormat(lang, { type: 'conjunction' });
       <h3 lang={c.edition.lang}>{c.title}{c.subtitle && <span class="guide-book-subtitle">{c.subtitle}</span>}</h3>
       <p class="guide-book-meta">{c.edition.by ?? c.book.by} · {c.book.year}</p>
       <p>{gt('book.ourWords', lang)}</p>
-      <p class="guide-book-chapters"><span class="guide-label">{gt('book.chapters', lang)}</span> {listFormat.format(c.chapters)}</p>
+      <p class="guide-book-chapters">
+        <span class="guide-label">{gt('book.chapters', lang)}</span>
+        {chapterParts(c.chapters).map((part) => (part.chapter !== undefined ? <>{quoteOpen}<cite lang={c.chaptersLang === lang ? undefined : c.chaptersLang}>{part.chapter}</cite>{quoteClose}</> : part.text))}
+        {c.chaptersLang !== c.edition.lang && <>{' '}{gt('book.chaptersIn', lang, { language: languageName.of(c.chaptersLang) ?? c.chaptersLang })}</>}
+      </p>
       <p class="guide-book-links">
         <a href={`${localizedUrl('/bibliography/', lang)}#${c.book.id}`}>{gt('book.inBibliography', lang)}</a>
         <a href={c.edition.url} hreflang={c.edition.lang} rel="noopener">{gt('book.page', lang)}&nbsp;<span aria-hidden="true">↗</span></a>

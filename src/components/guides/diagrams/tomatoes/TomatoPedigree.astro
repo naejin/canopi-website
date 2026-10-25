@@ -25,7 +25,7 @@ const titles = [
 ---
 <svg class="guide-tomato-pedigree" viewBox="0 0 400 214" role="img" aria-label={alt}>
   <line x1="202" y1="6" x2="202" y2="208" class="guide-tp-divider" />
-  {titles.map((t) => t.lines.map((line, i) => <text x={t.x} y={18 + i * 18} class="guide-tp-title">{line}</text>))}
+  {titles.map((t) => t.lines.map((line, i) => <text x={t.x} y={20 + i * 18} class="guide-tp-title">{line}</text>))}
   {/* Left: one to one, then selfing. */}
   <path d={`M${left.father.x} ${left.father.y}L90 ${left.gens[0].y}M${left.mother.x} ${left.mother.y}L90 ${left.gens[0].y}M90 ${left.gens[0].y}V${left.gens[2].y}`} class="guide-tp-line" />
   {flowerAt(left.father.x, left.father.y).map((p) => <circle cx={p.x} cy={p.y} r="3.4" class="guide-petal" />)}

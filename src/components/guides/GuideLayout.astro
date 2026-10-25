@@ -56,8 +56,8 @@ const tocList = toc.map((h) => ({ href: `#${h.slug}`, text: h.text }));
           <h1>{title}</h1>
           <p class="guide-lede">{description}</p>
           <BeanRow seed={slug} />
-          <dl class="guide-glance" style={`--guide-glance-n: ${glance.length}`} aria-label={gt('guide.glance', lang)}>
-            {glance.map((pair) => <div><dt class="guide-label">{pair.label}</dt><dd>{pair.value}</dd></div>)}
+          <dl class="guide-glance" aria-label={gt('guide.glance', lang)}>
+            {glance.map((pair) => <div class:list={{ 'guide-glance-long': pair.value.length > 40 }}><dt class="guide-label">{pair.label}</dt><dd>{pair.value}</dd></div>)}
           </dl>
           <p class="guide-langs">
             {gt('guide.readIn', lang)}{lang === 'fr' ? ' :' : ':'}

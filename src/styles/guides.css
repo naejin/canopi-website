@@ -38,15 +38,14 @@
 .guide-lede { font-size: 1.2rem; line-height: 1.5; color: var(--text-secondary); max-width: 36rem; text-wrap: pretty; }
 .guide-specimens { display: block; width: 100%; height: auto; }
 .guide-glance {
-  display: grid; grid-template-columns: repeat(var(--guide-glance-n, 5), minmax(0, 1fr)); margin: 0;
+  display: flex; flex-wrap: wrap; margin: 0;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden;
 }
-.guide-glance div { padding: 0.7rem 0.9rem; display: grid; gap: 0.15rem; align-content: start; box-shadow: 1px 0 0 var(--border), 0 1px 0 var(--border); }
+/* Cells wrap rather than squeeze: short values share a row, a long one (guide-glance-long) takes a
+   wider cell, and every row stretches to the full width. */
+.guide-glance div { flex: 1 1 8rem; padding: 0.7rem 0.9rem; display: grid; gap: 0.15rem; align-content: start; box-shadow: 1px 0 0 var(--border), 0 1px 0 var(--border); }
+.guide-glance div.guide-glance-long { flex-basis: 16rem; }
 .guide-glance dd { margin: 0; font-weight: 600; line-height: 1.3; }
-@media (max-width: 639px) {
-  .guide-glance { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .guide-glance div:last-child:nth-child(odd) { grid-column: 1 / -1; }
-}
 .guide-langs { font-size: 0.9rem; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 0.25rem 0.4rem; align-items: baseline; }
 .guide-langs strong { color: var(--text); font-weight: 600; }
 .guide-updated { margin-left: auto; }
@@ -433,15 +432,16 @@
 .guide-spine {
   aspect-ratio: 2 / 3; border-radius: 2px 4px 4px 2px; background: var(--seed-1); color: var(--on-accent);
   box-shadow: inset 4px 0 0 color-mix(in srgb, var(--seed-2) 35%, transparent);
-  display: grid; align-content: center; justify-items: center; gap: 0.2rem; font-family: var(--font-display); font-size: 0.62rem; line-height: 1.15; text-align: center; padding: 0.3rem; overflow: hidden;
+  display: grid; align-content: center; justify-items: center; gap: 0.2rem; font-family: var(--font-display); font-size: 0.66rem; font-weight: 600; line-height: 1.15; text-align: center; padding: 0.3rem; overflow: hidden;
 }
 .guide-book h3 { font-size: 1.1rem; }
 .guide-book-subtitle { display: block; font-family: var(--font-sans); font-weight: 400; font-size: 0.92rem; color: var(--text-secondary); margin-top: 0.15rem; line-height: 1.35; }
 .guide-book-meta { font-size: 0.9rem; color: var(--text-muted); }
 .guide-book p { font-size: 0.95rem; color: var(--text-secondary); }
 .guide-book-chapters .guide-label { display: block; margin-bottom: 0.1rem; }
+.guide-book-chapters cite { font-style: normal; }
 .guide-book-links { display: flex; gap: 0.4rem 1.2rem; flex-wrap: wrap; margin-top: 0.2rem; font-weight: 600; }
-@media (max-width: 639px) { .guide-book { grid-template-columns: 3.2rem minmax(0, 1fr); } .guide-spine { font-size: 0.5rem; } }
+@media (max-width: 639px) { .guide-book { grid-template-columns: 3.6rem minmax(0, 1fr); } .guide-spine { font-size: 0.56rem; padding: 0.2rem; } }
 .guide-related { display: grid; gap: 0.8rem; margin-top: 1.5rem; }
 .guide-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.6rem; }
 .guide-page .guide-cards a, .guide-page .guide-pager a {
