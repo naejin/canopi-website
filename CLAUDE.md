@@ -25,7 +25,7 @@ supported filter metadata before copying it under `dist/client/app/`.
 - 11 locales: en (default at `/`), fr, es, pt, it, zh, de, ja, ko, nl, ru (at `/{lang}/`)
 - Translation files: `src/i18n/translations/{locale}.json` — flat key structure
 - Utility: `src/i18n/utils.ts` — `t(key, lang)` function, locale helpers
-- All components receive a `lang` prop; pages pass it through
+- All components receive a `lang` prop; pages pass it through. Exception: the Field Guide components (`src/components/guides/`, en and fr only) read the language from `Astro.currentLocale` (`guideLangOf`), so guide MDX never passes `lang`
 - Language detection: client-side script in Base.astro (sessionStorage, first visit only)
 - Add new translation keys to ALL 11 files when adding text
 - Exception: Field Guides are en+fr only; guide-only strings live in `src/i18n/guides/{en,fr}.json` (not the 11 locale files)

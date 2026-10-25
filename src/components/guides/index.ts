@@ -1,5 +1,5 @@
 // The components every guide's MDX can use without importing them (the guide layout passes this map
-// to <Content components>). The contract for writers: .local/field-guides/component-api.md.
+// to <Content components>). The contract for writers: knowledge/references/field-guide-components.md.
 // Guide-specific diagrams in diagrams/<slug>/<Name>.astro join the map under their file name.
 import QuickAnswer from './QuickAnswer.astro';
 import Term from './Term.astro';

@@ -3,20 +3,20 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T12:58:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:35:09Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T11:07:53Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:883e1108d8a0cd0b
-    last_modified: 2026-10-25T12:57:35Z
+    digest: sha256:a3cd04dac94c351c
+    last_modified: 2026-10-25T13:05:14Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:039025a8f290d691
-    last_modified: 2026-10-25T12:57:35Z
+    digest: sha256:005aacd42f9794a1
+    last_modified: 2026-10-25T13:33:50Z
   - id: decisions-field-guides-user-decisions
     resource: /decisions/field-guides-user-decisions.md
 enforced_by: [scripts/guides.test.mjs]
@@ -24,7 +24,7 @@ enforced_by: [scripts/guides.test.mjs]
 
 # Rule
 
-Every Field Guide (`src/content/guides/<slug>/{en,fr}.mdx`) follows these rules, set by the owner ([user decisions](/decisions/field-guides-user-decisions.md)); the full component contract is `.local/field-guides/component-api.md`.
+Every Field Guide (`src/content/guides/<slug>/{en,fr}.mdx`) follows these rules, set by the owner ([user decisions](/decisions/field-guides-user-decisions.md)); the full component contract is [Field Guide components](/references/field-guide-components.md).
 
 - **Our own words.** No quotes from the book, no close paraphrase (no sentence following its wording or order), none of its images. Each guide lists its sources as bibliography book ids with chapter titles.
 - **No structural paraphrase.** Never follow the book's sentences, lists or anecdotes in its order with the words swapped. Build each section from the reader's question, keep an anecdote to one sentence, and pick two or three examples from a list in your own order.

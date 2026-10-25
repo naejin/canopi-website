@@ -4,18 +4,18 @@ title: Existing agent instructions
 description: The durable project rules given to coding agents in AGENTS.md and CLAUDE.md, summarised with where each is enforced.
 tags: [convention, agents]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T12:58:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:35:28Z }
 sources:
   - id: agents-md
     resource: ../../AGENTS.md
     title: AGENTS.md
     digest: sha256:629d011dd5766deb
-    last_modified: 2026-10-25T12:57:49Z
+    last_modified: 2026-10-25T12:59:09Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:41465fd2556cea03
-    last_modified: 2026-10-25T12:57:49Z
+    digest: sha256:eb745d32558061f9
+    last_modified: 2026-10-25T13:35:04Z
 ---
 
 # Rule
@@ -32,7 +32,7 @@ Instruction files: [AGENTS.md](../../AGENTS.md), [CLAUDE.md](../../CLAUDE.md). T
 
 - 11 locales; every new key goes into all 11 `src/i18n/translations/*.json` files (enforced by `scripts/homepage.test.mjs`). See [src/i18n](/modules/src-i18n.md).
 - Exception: Field Guides are English and French only; guide-only strings go in `src/i18n/guides/{en,fr}.json` (parity enforced by `scripts/guides.test.mjs`). See [Field Guides](/modules/field-guides.md).
-- Components take a `lang` prop; scripts take strings from the page, never hard-coded English.
+- Components take a `lang` prop; scripts take strings from the page, never hard-coded English. Exception: Field Guide components read the language from `Astro.currentLocale` (`guideLangOf`), so guide MDX never passes `lang`; the component contract is [Field Guide components](/references/field-guide-components.md).
 
 ## Design
 
