@@ -1,0 +1,69 @@
+---
+// Beans and other legumes: the two weather groups side by side. A cool-season panel (snowflake) and a
+// hot-season panel (sun), each listing species with a bean beside each name; species in `frost` get a
+// small snowflake, explained under the panels, and `footnote` closes the chart (runner beans). Every
+// word comes from the MDX, so en and fr each pass their own; `alt` is the whole chart as one sentence.
+import { r1 } from '../../../../lib/svg';
+import BeanG from '../Bean.astro';
+import { wrap } from './wrap';
+interface Group { title: string; crops: string[]; }
+interface Props { cool: Group; hot: Group; frost?: string[]; frostLabel?: string; footnote?: string; alt: string; }
+const { cool, hot, frost = [], frostLabel, footnote, alt } = Astro.props;
+const W = 360, PW = 174, ROW = 26;
+const panels = [
+  { ...cool, x: 4, icon: 'snow', colours: [3, 6, 1, 3, 6, 1] },
+  { ...hot, x: 182, icon: 'sun', colours: [4, 2, 5, 3, 1, 6] },
+].map((p) => ({ ...p, lines: wrap(p.title, 17) }));
+const headH = Math.max(...panels.map((p) => p.lines.length)) * 18 + 18;
+const rows = Math.max(cool.crops.length, hot.crops.length);
+const panelH = headH + rows * ROW + 12;
+const below = [...(frost.length && frostLabel ? [{ snow: true, lines: wrap(frostLabel, 44) }] : []), ...(footnote ? [{ snow: false, lines: wrap(footnote, 44) }] : [])];
+let y = panelH + 22;
+const notes = below.map((n) => { const at = y; y += n.lines.length * 17 + 6; return { ...n, y: at }; });
+const H = y + 2;
+const flake = (cx: number, cy: number, r: number) => [0, 60, 120].map((a) => {
+  const t = (a * Math.PI) / 180;
+  return `M${r1(cx - r * Math.cos(t))} ${r1(cy - r * Math.sin(t))}L${r1(cx + r * Math.cos(t))} ${r1(cy + r * Math.sin(t))}`;
+}).join('');
+const rays = Array.from({ length: 8 }, (_, k) => {
+  const t = (k * Math.PI) / 4;
+  return `M${r1(Math.cos(t) * 8.5)} ${r1(Math.sin(t) * 8.5)}L${r1(Math.cos(t) * 12)} ${r1(Math.sin(t) * 12)}`;
+}).join('');
+---
+<svg class="guide-legume-seasons" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={alt}>
+  {panels.map((p) => (
+    <g>
+      <rect x={p.x} y="4" width={PW} height={panelH} rx="7" class="guide-bed" />
+      {p.icon === 'snow'
+        ? <path d={flake(p.x + 20, 22, 8)} class="guide-ls-flake" />
+        : <g transform={`translate(${p.x + 20} 22)`}><circle r="6" class="guide-ls-sun" /><path d={rays} class="guide-ls-rays" /></g>}
+      {p.lines.map((line, i) => <text x={p.x + 38} y={28 + i * 18} class="guide-ls-head">{line}</text>)}
+      <line x1={p.x + 12} y1={headH} x2={p.x + PW - 12} y2={headH} class="guide-ls-rule" />
+      {p.crops.map((name, i) => (
+        <g>
+          <BeanG bean={{ x: p.x + 24, y: headH + 19 + i * ROW, c: p.colours[i % p.colours.length], s: 0.85 }} />
+          <text x={p.x + 40} y={headH + 24 + i * ROW} class="guide-ls-crop">{name}</text>
+          {frost.includes(name) && <path d={flake(p.x + PW - 16, headH + 19 + i * ROW, 5)} class="guide-ls-flake guide-ls-flake-sm" />}
+        </g>
+      ))}
+    </g>
+  ))}
+  {notes.map((n) => (
+    <g>
+      {n.snow && <path d={flake(12, n.y - 4, 4.5)} class="guide-ls-flake guide-ls-flake-sm" />}
+      {n.lines.map((line, i) => <text x={n.snow ? 24 : 6} y={n.y + i * 17} class="guide-ls-note">{line}</text>)}
+    </g>
+  ))}
+</svg>
+
+<style>
+  .guide-legume-seasons { max-width: 28rem; }
+  .guide-ls-head { font-family: var(--font-display); font-weight: 600; font-size: 15px; }
+  .guide-ls-crop { font-size: 15px; }
+  .guide-ls-note { font-size: 13.5px; fill: var(--text-secondary); }
+  .guide-ls-rule { stroke: var(--border); stroke-width: 1; }
+  .guide-ls-flake { stroke: var(--text-secondary); stroke-width: 1.8; stroke-linecap: round; fill: none; }
+  .guide-ls-flake-sm { stroke-width: 1.3; }
+  .guide-ls-sun { fill: var(--petal); }
+  .guide-ls-rays { stroke: var(--petal); stroke-width: 2; stroke-linecap: round; }
+</style>

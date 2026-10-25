@@ -1,0 +1,31 @@
+---
+// Tomatoes: two rows of ten plants seen from above, red and yellow varieties. In blocks, only the pair
+// where the blocks meet are neighbours of different varieties; alternated, every pair is. A link is
+// drawn between each such pair. blocks and alternated are the row labels; alt describes the drawing.
+interface Props { blocks: string; alternated: string; alt: string; }
+const { blocks, alternated, alt } = Astro.props;
+const N = 10, X0 = 26, DX = 38;
+const rows = [
+  { label: blocks, y: 46, colour: (i: number) => (i < N / 2 ? 4 : 6) },
+  { label: alternated, y: 120, colour: (i: number) => (i % 2 ? 6 : 4) },
+].map((row) => {
+  const plants = Array.from({ length: N }, (_, i) => ({ x: X0 + i * DX, c: row.colour(i) }));
+  const links = plants.slice(1).map((p, i) => (p.c !== plants[i].c ? [plants[i].x, p.x] : null)).filter((l): l is number[] => l !== null);
+  return { ...row, plants, links };
+});
+---
+<svg class="guide-tomato-rows" viewBox="0 0 400 148" role="img" aria-label={alt}>
+  {rows.map((row) => (
+    <g>
+      <text x="8" y={row.y - 21} class="guide-tr-label">{row.label}</text>
+      <rect x="6" y={row.y - 14} width="388" height="28" rx="7" class="guide-bed" />
+      {row.links.map(([a, b]) => <line x1={a} y1={row.y} x2={b} y2={row.y} class="guide-link" />)}
+      {row.plants.map((p) => <circle cx={p.x} cy={row.y} r="9" class={`guide-plant guide-c${p.c}`} />)}
+    </g>
+  ))}
+</svg>
+
+<style>
+  .guide-tomato-rows { max-width: 32rem; }
+  .guide-tr-label { font-size: 16px; font-weight: 600; }
+</style>
