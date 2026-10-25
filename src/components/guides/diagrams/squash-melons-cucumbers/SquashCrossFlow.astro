@@ -1,0 +1,59 @@
+---
+// Squash guide, advanced section: how Lofthouse bred from Tetsukabuto. Maxima × moschata gives the
+// Tetsukabuto hybrid (no working pollen), bees bring it pollen from other squash, its offspring are
+// first selected for fertility, then split into two lines. Boxes are HTML so the words wrap on a
+// phone; the fruit drawings are decoration (the words carry the content). Labels come from the MDX.
+import { fruits, type Species } from './fruit-shapes';
+interface Box { title: string; text?: string }
+interface Props { title?: string; maxima: Box; moschata: Box; hybrid: Box; bees: string; offspring: Box; lines: [Box & { species: Species }, Box & { species: Species }] }
+const { title, maxima, moschata, hybrid, bees, offspring, lines } = Astro.props;
+const draw = (s: Species) => fruits[s];
+---
+<figure class="guide-figure guide-sqx">
+  {title && <p class="guide-figure-title">{title}</p>}
+  <div class="guide-sqx-parents">
+    {([['maxima', maxima], ['moschata', moschata]] as const).map(([s, box], i) => (
+      <>
+        {i === 1 && <span class="guide-sqx-times" aria-hidden="true">×</span>}
+        <div class="guide-sqx-box">
+          <svg viewBox="0 0 120 80" aria-hidden="true" focusable="false"><path d={draw(s).stem} class="guide-sqx-stem" /><path d={draw(s).body} class={`${draw(s).cls} guide-sqx-body`} />{draw(s).lines.map((d) => <path d={d} class="guide-fruit-stripe" />)}</svg>
+          <span class="guide-sqx-title">{box.title}</span>
+          {box.text && <span class="guide-sqx-text">{box.text}</span>}
+        </div>
+      </>
+    ))}
+  </div>
+  <span class="guide-sqx-arrow" aria-hidden="true">↓</span>
+  <div class="guide-sqx-box guide-sqx-key"><span class="guide-sqx-title">{hybrid.title}</span>{hybrid.text && <span class="guide-sqx-text">{hybrid.text}</span>}</div>
+  <span class="guide-sqx-arrow guide-sqx-bees"><span aria-hidden="true">↓</span> {bees}</span>
+  <div class="guide-sqx-box"><span class="guide-sqx-title">{offspring.title}</span>{offspring.text && <span class="guide-sqx-text">{offspring.text}</span>}</div>
+  <span class="guide-sqx-arrow" aria-hidden="true">↙ ↘</span>
+  <div class="guide-sqx-lines">
+    {lines.map((box) => (
+      <div class="guide-sqx-box">
+        <svg viewBox="0 0 120 80" aria-hidden="true" focusable="false"><path d={draw(box.species).stem} class="guide-sqx-stem" /><path d={draw(box.species).body} class={`${draw(box.species).cls} guide-sqx-body`} />{draw(box.species).lines.map((d) => <path d={d} class="guide-fruit-stripe" />)}</svg>
+        <span class="guide-sqx-title">{box.title}</span>
+        {box.text && <span class="guide-sqx-text">{box.text}</span>}
+      </div>
+    ))}
+  </div>
+</figure>
+
+<style>
+  .guide-sqx { justify-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem 1rem; gap: 0.35rem; }
+  .guide-sqx > .guide-figure-title { justify-self: start; }
+  .guide-sqx-parents, .guide-sqx-lines { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 0.5rem; width: 100%; max-width: 30rem; }
+  .guide-sqx-lines { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; align-items: stretch; }
+  .guide-sqx-lines .guide-sqx-box { align-content: start; }
+  .guide-sqx-box { display: grid; gap: 0.15rem; justify-items: center; text-align: center; padding: 0.55rem 0.6rem; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface-alt); width: 100%; max-width: 30rem; }
+  .guide-sqx-box svg { width: 4.2rem; }
+  .guide-sqx-key { border-color: var(--accent); }
+  .guide-sqx-title { font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; line-height: 1.3; }
+  .guide-sqx-text { font-size: 0.86rem; line-height: 1.4; color: var(--text-secondary); }
+  .guide-sqx-times { font-size: 1.4rem; color: var(--text-muted); }
+  .guide-sqx-arrow { color: var(--accent); font-size: 1.1rem; line-height: 1.2; }
+  .guide-sqx-bees { font-size: 0.86rem; color: var(--text-secondary); text-align: center; }
+  .guide-sqx-bees span { color: var(--accent); font-size: 1.1rem; }
+  .guide-sqx-stem { fill: var(--leaf); stroke: var(--leaf); stroke-width: 2; stroke-linejoin: round; }
+  .guide-sqx-body { stroke: var(--border-strong); stroke-width: 0.8; }
+</style>
