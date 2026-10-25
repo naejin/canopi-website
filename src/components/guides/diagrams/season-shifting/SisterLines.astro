@@ -1,0 +1,86 @@
+---
+// Season shifting: two sister lines of one crop on a year that starts in autumn. A hatched cold zone
+// spans late autumn to early spring across both lines; the autumn-sown line is sown before it, grows
+// through it (survivors counted at its end) and saves seed in early summer; the spring-sown line is
+// sown after it and saves seed in late summer. Season names, row labels and the key come from the MDX;
+// the key is HTML so it wraps on phones. <title>/<desc> ids are numbered per page.
+interface Props {
+  title: string;
+  alt: string;
+  seasons: [string, string, string, string];
+  rows: [string, string];
+  labels: { sow: string; grow: string; count: string; save: string; cold: string };
+}
+const { title, alt, seasons, rows, labels } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-sister-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const X0 = 8, COL = 86, W = X0 * 2 + COL * 4;
+const at = (u: number) => Math.round((X0 + u * COL) * 10) / 10;
+// Positions in seasons from the start of autumn (0) to the end of summer (4).
+const cold = { from: 0.7, to: 2.25 };
+const lines = [
+  { label: rows[0], y: 62, sow: 0.3, count: 2.2, save: 3.2 },
+  { label: rows[1], y: 118, sow: 2.35, save: 3.8 },
+];
+const H = 142;
+---
+<div class="guide-sister">
+  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    <defs>
+      <pattern id={`${uid}-hatch`} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="6" class="guide-sister-hatch-line" />
+      </pattern>
+    </defs>
+    {seasons.map((s, i) => (
+      <>
+        <rect x={at(i)} y="4" width={COL} height="20" class:list={['guide-sister-head', { 'guide-sister-head-alt': i % 2 === 1 }]} />
+        <text x={at(i + 0.5)} y="18" text-anchor="middle" class="guide-sister-season">{s}</text>
+      </>
+    ))}
+    <rect x={at(cold.from)} y="28" width={at(cold.to) - at(cold.from)} height={H - 32} rx="4" fill={`url(#${uid}-hatch)`} class="guide-sister-cold" />
+    {lines.map((l) => (
+      <g>
+        <text x={X0 + 2} y={l.y - 12} class="guide-sister-label">{l.label}</text>
+        <line x1={at(l.sow)} y1={l.y} x2={at(l.save)} y2={l.y} class="guide-sister-bar" />
+        <circle cx={at(l.sow)} cy={l.y} r="6" class="guide-sister-sow" />
+        {l.count !== undefined && <circle cx={at(l.count)} cy={l.y} r="7" class="guide-sister-count" />}
+        <rect x={at(l.save) - 6} y={l.y - 6} width="12" height="12" rx="2" class="guide-sister-save" />
+      </g>
+    ))}
+    <line x1={X0} y1="88" x2={W - X0} y2="88" class="guide-sister-apart" />
+  </svg>
+  <ul class="guide-sister-key">
+    <li><i class="guide-sister-k-sow"></i>{labels.sow}</li>
+    <li><i class="guide-sister-k-grow"></i>{labels.grow}</li>
+    <li><i class="guide-sister-k-count"></i>{labels.count}</li>
+    <li><i class="guide-sister-k-save"></i>{labels.save}</li>
+    <li><i class="guide-sister-k-cold"></i>{labels.cold}</li>
+  </ul>
+</div>
+
+<style>
+  .guide-sister { display: grid; gap: 0.5rem; max-width: 34rem; }
+  .guide-sister svg { width: 100%; height: auto; }
+  .guide-sister-head { fill: var(--surface); stroke: var(--border); stroke-width: 1; }
+  .guide-sister-head-alt { fill: var(--surface-alt); }
+  .guide-sister-season { font-size: 12px; font-weight: 600; fill: var(--text-muted); }
+  .guide-sister-cold { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 3 3; }
+  .guide-sister-hatch-line { stroke: var(--border-strong); stroke-width: 1.4; opacity: 0.6; }
+  .guide-sister-label { font-size: 13px; font-weight: 600; fill: var(--text); paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+  .guide-sister-bar { stroke: var(--leaf); stroke-width: 6; stroke-linecap: round; opacity: 0.8; }
+  .guide-sister-sow { fill: var(--seed-1); stroke: var(--surface); stroke-width: 1.5; }
+  .guide-sister-count { fill: var(--surface); stroke: var(--leaf); stroke-width: 2.5; }
+  .guide-sister-save { fill: var(--seed-5); stroke: var(--surface); stroke-width: 1.5; }
+  .guide-sister-apart { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 1 4; stroke-linecap: round; }
+  .guide-sister-key { display: flex; flex-wrap: wrap; gap: 0.3rem 1.1rem; margin: 0; padding: 0; list-style: none; font-size: 0.85rem; color: var(--text-secondary); }
+  :global(.guide-body) .guide-sister-key { padding: 0; }
+  :global(.guide-body) .guide-sister-key li { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0; }
+  .guide-sister-key i { display: inline-block; width: 0.8rem; height: 0.8rem; flex: none; }
+  .guide-sister-k-sow { border-radius: 50%; background: var(--seed-1); }
+  .guide-sister-key i.guide-sister-k-grow { height: 0.35rem; border-radius: 0.2rem; background: var(--leaf); }
+  .guide-sister-k-count { border-radius: 50%; border: 2px solid var(--leaf); }
+  .guide-sister-k-save { border-radius: 2px; background: var(--seed-5); }
+  .guide-sister-k-cold { border: 1px dashed var(--border-strong); background: repeating-linear-gradient(45deg, var(--border-strong) 0 1px, transparent 1px 4px); opacity: 0.8; }
+</style>
