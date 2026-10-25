@@ -1,0 +1,57 @@
+---
+// Choosing seed parents: one panel of "narrow or liberal selection". A row of ten plants of varied size
+// and colour this year, the chosen ones ringed, arrows (thicker for more seed) into one jar, and the row
+// the jar gives next year. narrow: one star plant, next year ten copies of it. liberal: seven parents
+// weighted 3 / 3 / 1, next year a varied row leaning to the best. now and next label the two rows;
+// alt describes the panel.
+import { r1, rng } from '../../../../lib/svg';
+interface Props { kind: 'narrow' | 'liberal'; now: string; next: string; alt: string; }
+const { kind, now, next, alt } = Astro.props;
+if (kind !== 'narrow' && kind !== 'liberal') throw new Error(`<SelectPanel>: unknown kind "${kind}"`);
+const N = 10, X0 = 22, DX = 28.5, TOP = 38, BOTTOM = 196, JAR = { x: 130, y: 96, w: 40, h: 44 };
+// This year: size (radius) and colour (seed tone 1-6) of each plant; plant 6 is the star.
+const plants = [
+  { r: 7, c: 3 }, { r: 9.5, c: 1 }, { r: 6, c: 5 }, { r: 10, c: 4 }, { r: 8, c: 2 },
+  { r: 7.5, c: 6 }, { r: 11.5, c: 4 }, { r: 8.5, c: 3 }, { r: 6.5, c: 1 }, { r: 9, c: 5 },
+].map((p, i) => ({ ...p, x: r1(X0 + i * DX) }));
+// How much seed each chosen plant gives (stroke width of its arrow).
+const weight: Record<number, number> = kind === 'narrow' ? { 6: 6 } : { 6: 4.5, 3: 4.5, 1: 4.5, 9: 2.6, 4: 2.6, 7: 2.6, 5: 1.2 };
+const arrows = Object.entries(weight).map(([i, w]) => {
+  const p = plants[Number(i)];
+  const x2 = r1(JAR.x + JAR.w / 2 + (p.x - 150) * 0.12);
+  return { d: `M${p.x} ${TOP + p.r + 4}L${x2} ${JAR.y - 6}`, w, x: p.x, r: p.r };
+});
+// Next year: copies of the star, or a draw from the chosen plants by weight.
+const rand = rng(kind === 'narrow' ? 7 : 19);
+const pool = Object.entries(weight).flatMap(([i, w]) => Array(Math.round(w * 2)).fill(plants[Number(i)]));
+const children = Array.from({ length: N }, (_, i) => {
+  const p = kind === 'narrow' ? plants[6] : pool[Math.floor(rand() * pool.length)];
+  return { x: r1(X0 + i * DX), r: kind === 'narrow' ? p.r : r1(p.r * (0.85 + rand() * 0.25)), c: p.c };
+});
+const seeds = [[-9, 30], [0, 33], [9, 30], [-5, 22], [5, 23], [-10, 38], [1, 40], [10, 37]];
+---
+<svg class="guide-select-panel" viewBox="0 0 300 228" role="img" aria-label={alt}>
+  <text x="6" y="14" class="guide-t-muted">{now}</text>
+  <rect x="4" y={TOP - 16} width="292" height="32" rx="7" class="guide-bed" />
+  {arrows.map((a) => <path d={a.d} class="guide-sp-arrow" style={`stroke-width: ${a.w}`} />)}
+  {plants.map((p, i) => <circle cx={p.x} cy={TOP} r={p.r} class={`guide-plant guide-c${p.c}`} />)}
+  {arrows.map((a) => <circle cx={a.x} cy={TOP} r={a.r + 3.5} class="guide-sp-ring" />)}
+  <rect x={JAR.x + 4} y={JAR.y - 6} width={JAR.w - 8} height="7" rx="1.5" class="guide-paper" />
+  <rect x={JAR.x} y={JAR.y} width={JAR.w} height={JAR.h} rx="7" class="guide-glass" />
+  {seeds.map(([dx, dy], i) => {
+    const src = kind === 'narrow' ? plants[6] : pool[(i * 5) % pool.length];
+    return <ellipse cx={JAR.x + JAR.w / 2 + dx} cy={JAR.y + dy} rx="3.6" ry="2.6" class={`guide-c${src.c}`} />;
+  })}
+  <path d={`M150 ${JAR.y + JAR.h + 5}V${BOTTOM - 22}`} class="guide-sp-arrow" style="stroke-width: 2.4" />
+  <path d={`M144 ${BOTTOM - 28}l6 8l6 -8`} class="guide-sp-head" />
+  <text x="6" y={BOTTOM - 24} class="guide-t-muted">{next}</text>
+  <rect x="4" y={BOTTOM - 16} width="292" height="32" rx="7" class="guide-bed" />
+  {children.map((p) => <circle cx={p.x} cy={BOTTOM} r={p.r} class={`guide-plant guide-c${p.c}`} />)}
+</svg>
+
+<style>
+  .guide-select-panel { max-width: 22rem; }
+  .guide-sp-arrow { stroke: var(--accent); fill: none; stroke-linecap: round; opacity: 0.8; }
+  .guide-sp-head { stroke: var(--accent); stroke-width: 2.4; fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
+  .guide-sp-ring { fill: none; stroke: var(--accent-ink); stroke-width: 1.6; }
+</style>

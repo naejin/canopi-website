@@ -1,0 +1,48 @@
+---
+// Choosing seed parents: "your habits → what you select". A two-column table, five rows in a fixed
+// order (feeding, plastic, sprays, staking, direct sowing); the small line icon follows the position.
+// head gives the two column headings, rows the text, note the line under the table, label its name.
+interface Row { habit: string; result: string; }
+interface Props { label: string; head: [string, string]; rows: Row[]; note: string; }
+const { label, head, rows, note } = Astro.props;
+if (rows.length !== 5) throw new Error('<SelectHabits>: five rows, in order feeding, plastic, sprays, staking, direct sowing');
+---
+<figure class="guide-figure guide-habits" role="group" aria-label={label}>
+  <table>
+    <thead><tr><th scope="col">{head[0]}</th><th scope="col">{head[1]}</th></tr></thead>
+    <tbody>
+      {rows.map((row, i) => (
+        <tr>
+          <th scope="row"><span class="guide-habits-cell">
+            <svg viewBox="0 0 32 32" aria-hidden="true">
+              {i === 0 && <g><path d="M4 26q12 -16 24 0z" class="guide-c2" /><path d="M12 20l2 -3M18 18l1 -3M22 22l2 -2" class="guide-lead" /></g>}
+              {i === 1 && <g><path d="M3 24h26" class="guide-lead" style="stroke-width: 2" /><path d="M16 24v-8M16 18l-4 -3M16 18l4 -3" class="guide-stem guide-stem-hair" /><path d="M3 15q13 -12 26 0" class="guide-habits-sheet" /></g>}
+              {i === 2 && <g><rect x="5" y="14" width="10" height="14" rx="2" class="guide-glass" /><path d="M8 14v-4h6l3 -2" class="guide-lead" /><path d="M21 8l3 -1M21 12h4M21 16l3 1" class="guide-lead guide-dotted" /></g>}
+              {i === 3 && <g><path d="M9 4v24M23 4v24M9 10h14M9 17h14M9 24h14" class="guide-lead" /><path d="M16 28c-3 -6 3 -10 0 -18" class="guide-stem guide-stem-hair" /></g>}
+              {i === 4 && <g><path d="M3 18h26" class="guide-lead" style="stroke-width: 2" /><ellipse cx="16" cy="23" rx="3.4" ry="2.4" class="guide-c1" /><path d="M16 21v-9M16 14l-4 -3M16 14l4 -3" class="guide-stem guide-stem-hair" /></g>}
+            </svg>
+            <span>{row.habit}</span>
+          </span></th>
+          <td>{row.result}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+  <figcaption class="guide-figure-caption">{note}</figcaption>
+</figure>
+
+<style>
+  .guide-habits table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.95rem; }
+  .guide-habits thead th { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); font-weight: 600; text-align: left; padding: 0.55rem 0.75rem; background: var(--surface-alt); }
+  .guide-habits tbody th, .guide-habits td { padding: 0.5rem 0.75rem; border-top: 1px solid var(--border); text-align: left; vertical-align: middle; line-height: 1.35; }
+  .guide-habits tbody th { font-weight: 600; }
+  .guide-habits-cell { display: flex; align-items: center; gap: 0.55rem; }
+  .guide-habits tbody th svg { width: 1.7rem; flex: none; }
+  .guide-habits td { color: var(--text-secondary); }
+  .guide-habits-sheet { fill: none; stroke: var(--text-muted); stroke-width: 1.6; stroke-dasharray: 3 2; }
+  @media (max-width: 639px) {
+    .guide-habits table { font-size: 0.9rem; }
+    .guide-habits tbody th, .guide-habits td, .guide-habits thead th { padding-inline: 0.5rem; }
+    .guide-habits tbody th svg { width: 1.5rem; }
+  }
+</style>
