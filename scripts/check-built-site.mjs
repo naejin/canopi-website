@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { builtTarget } from './built-links.mjs';
+import { builtTarget, subdirectories } from './built-links.mjs';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -85,7 +85,7 @@ assert.ok(!readFileSync(join(root, 'sitemap-0.xml'), 'utf8').includes('/contact/
 // English at /guides/, French at /fr/guides/, no other locale (knowledge/decisions/field-guides-architecture.md).
 const guideLocales = ['en', 'fr'];
 const guidesDir = (lang) => join(root, lang === 'en' ? '' : lang, 'guides');
-const guideSlugs = readdirSync(join('src', 'content', 'guides'));
+const guideSlugs = subdirectories(join('src', 'content', 'guides'));
 assert.ok(guideSlugs.length, 'at least one guide');
 for (const lang of locales.filter((l) => !guideLocales.includes(l))) assert.ok(!existsSync(guidesDir(lang)), `no /${lang}/guides/`);
 

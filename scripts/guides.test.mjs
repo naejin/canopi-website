@@ -453,3 +453,28 @@ test('guide text and guide strings carry no double-encoded characters', () => {
     assert.doesNotMatch(read(file), /[\u0080-\u009f]|â€|Ã[ -¿]/, `${file} has mojibake`);
   }
 });
+
+test('an empty checklist shows 0 of 0, not a NaN% progress bar', async () => {
+  const { stripTypeScriptTypes } = await import('node:module');
+  const source = read('components/guides/Checklist.astro').match(/<script>([\s\S]*?)<\/script>/)[1];
+  const el = () => ({ textContent: '', hidden: true, style: { width: '' } });
+  const parts = { '[data-checklist-progress]': el(), '[data-checklist-fill]': el(), '[data-checklist-status]': el(), '[data-checklist-saved]': el() };
+  const list = {
+    dataset: { guideChecklist: 'empty', slug: 'test', progress: '{done} of {total}', allDone: 'All done' },
+    querySelectorAll: () => [],
+    querySelector: (selector) => parts[selector],
+    addEventListener: () => {},
+  };
+  const document = { querySelectorAll: () => [list] };
+  const localStorage = { getItem: () => null, setItem: () => {} };
+  new Function('document', 'localStorage', stripTypeScriptTypes(source))(document, localStorage);
+  assert.equal(parts['[data-checklist-fill]'].style.width, '0%');
+  assert.equal(parts['[data-checklist-progress]'].textContent, '0 of 0');
+});
+
+test('the crossing meter fills with a non-green token: green is for plants, not for chrome', () => {
+  const css = read('styles/guides.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  const rules = [...css.matchAll(/([^{}]*\.guide-meter[^{}]*)\{([^}]*)\}/g)];
+  assert.ok(rules.length, 'guides.css styles .guide-meter');
+  for (const [, selector, body] of rules) assert.doesNotMatch(body, /--leaf/, `guides.css: ${selector.trim()} uses --leaf`);
+});

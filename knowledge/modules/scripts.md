@@ -5,13 +5,13 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T12:58:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:35:28Z }
 sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:86d11610eb6d8008
-    last_modified: 2026-10-25T12:57:35Z
+    digest: sha256:bd56f30ecd84d3b6
+    last_modified: 2026-10-25T13:33:53Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -32,7 +32,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 | [check-built-site.mjs](../../scripts/check-built-site.mjs) | asserts every locale's built pages (downloads, Web URL, dialogs, assets, og images, bibliography, no leaked contact address) and each Field Guide in en and fr (hreflang en/fr/x-default only, Article JSON-LD, glance, bibliography link, internal links and #ids, no stray scripts on non-interactive guides, no unrendered components, crop-table cells labelled for phones and their note naming only shown columns) | by hand after build |
 | [check-bibliography-links.mjs](../../scripts/check-bibliography-links.mjs) | visits every bibliography link (network) | `npm run check:bibliography` |
 | `*.test.mjs` | contact, featured-designs privacy, homepage/i18n, installer, nearest, guides (content rules, related lists, glossary, crop table, safety wording and no mouth tests, checklist and glossary plugins, shared `wrap()`, mix bar, breakpoints, colours and fonts), built-links, package (declared static and dynamic imports, Node floor) | `npm test` |
-| [built-links.mjs](../../scripts/built-links.mjs) | `builtTarget(root, pathname)`: resolves an internal link to a built file; a path without trailing slash or extension is an error | `check-built-site.mjs` |
+| [built-links.mjs](../../scripts/built-links.mjs) | `builtTarget(root, pathname)`: resolves an internal link to a built file; a path without trailing slash or extension is an error. `subdirectories(dir)`: folder names only (the guide slugs; a stray `.DS_Store` is not a guide) | `check-built-site.mjs` |
 | [export-featured-designs.py](../../scripts/export-featured-designs.py) | `.canopi` files to privacy-safe `public/data/featured-designs.json` | by hand |
 | [compress-heroes.py](../../scripts/compress-heroes.py), [make-og-images.py](../../scripts/make-og-images.py) | hero JPGs (2400 and 1200 px), 1200x630 social images | by hand (Pillow) |
 

@@ -312,8 +312,9 @@
 /* ---------- Crops ---------- */
 
 .guide-meter { display: inline-block; width: 30px; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; flex: none; vertical-align: middle; }
-.guide-meter i { display: block; height: 100%; background: var(--leaf); }
-.guide-meter-word i { background: repeating-linear-gradient(90deg, var(--leaf) 0 3px, transparent 3px 5px); }
+/* Ochre, not --leaf: the meter is chrome, and green is kept for plants. */
+.guide-meter i { display: block; height: 100%; background: var(--accent); }
+.guide-meter-word i { background: repeating-linear-gradient(90deg, var(--accent) 0 3px, transparent 3px 5px); }
 .guide-flag { color: var(--danger); font-weight: 600; font-size: 0.8rem; line-height: 1; }
 .guide-warn { color: var(--danger); }
 .guide-poll { display: inline-flex; gap: 0.4rem; align-items: flex-start; }

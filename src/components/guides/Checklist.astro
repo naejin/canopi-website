@@ -30,10 +30,11 @@ const slug = Astro.url.pathname.match(/\/guides\/([^/]+)\//)?.[1] ?? 'guides';
     const fill = list.querySelector<HTMLElement>('[data-checklist-fill]')!;
     const update = (store: boolean) => {
       const done = boxes.filter((b) => b.checked).map((b) => b.dataset.item!);
-      progress.textContent = done.length === boxes.length
+      // An empty list reads "0 of 0" with an empty bar, never "All done" or NaN%.
+      progress.textContent = boxes.length && done.length === boxes.length
         ? list.dataset.allDone!
         : list.dataset.progress!.replace('{done}', String(done.length)).replace('{total}', String(boxes.length));
-      fill.style.width = `${(done.length / boxes.length) * 100}%`;
+      fill.style.width = `${boxes.length ? (done.length / boxes.length) * 100 : 0}%`;
       if (!store) return;
       try {
         const all = read();

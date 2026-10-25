@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { builtTarget } from './built-links.mjs';
+import { builtTarget, subdirectories } from './built-links.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'built-links-'));
 mkdirSync(join(root, 'guides', 'landrace-gardening'), { recursive: true });
@@ -26,4 +26,13 @@ test('a page link without its trailing slash is an error, even when the folder e
 test('a link to nothing built is an error', () => {
   assert.match(builtTarget(root, '/guides/nothing/').error, /no built page/);
   assert.match(builtTarget(root, '/missing.txt').error, /no built page/);
+});
+
+test('the guide folders are the subdirectories only: a stray file such as .DS_Store is not a guide', () => {
+  const guides = mkdtempSync(join(tmpdir(), 'guide-slugs-'));
+  mkdirSync(join(guides, 'corn'));
+  mkdirSync(join(guides, 'tomatoes'));
+  writeFileSync(join(guides, '.DS_Store'), '');
+  writeFileSync(join(guides, 'README.md'), '');
+  assert.deepEqual(subdirectories(guides).sort(), ['corn', 'tomatoes']);
 });

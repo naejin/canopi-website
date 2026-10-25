@@ -2,7 +2,7 @@
 // /a/b/ → a/b/index.html, /a.txt → a.txt. A path that is neither (no trailing slash, no file
 // extension) is an error even when the folder exists: the host would answer it with a redirect,
 // so the link should name the final URL.
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 export function builtTarget(root, pathname) {
@@ -12,4 +12,9 @@ export function builtTarget(root, pathname) {
   if (!isPage && !isFile) return { error: `link to ${pathname} lacks its trailing slash (use ${pathname}/)` };
   const file = join(root, path, isPage ? 'index.html' : '');
   return existsSync(file) && statSync(file).isFile() ? { file } : { error: `link to ${pathname} has no built page` };
+}
+
+// The folder names in dir, skipping stray files (.DS_Store, a README): each guide is a folder.
+export function subdirectories(dir) {
+  return readdirSync(dir, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
 }
