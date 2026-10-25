@@ -286,6 +286,16 @@ test('table-like diagrams never hide a cell with display: none, so screen reader
   }
 });
 
+test('guide styles use the site breakpoints only: 639px for phones, 960px for desktop', () => {
+  const css = read('styles/guides.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  const allowed = ['(max-width: 639px)', '(min-width: 960px)', '(width < 960px)'];
+  for (const [, query] of css.matchAll(/@media\s+([^{]*?)\s*\{/g)) {
+    for (const width of query.match(/\((?:(?:min|max)-width\s*:\s*\d+px|width\s*[<>]=?\s*\d+px)\)/g) ?? []) {
+      assert.ok(allowed.includes(width), `guides.css: @media ${query} (use ${allowed.join(' or ')})`);
+    }
+  }
+});
+
 test('guide styles are scoped: guides.css classes start with guide-, and only the guide layouts import it', () => {
   const css = read('styles/guides.css').replace(/\/\*[\s\S]*?\*\//g, '');
   for (const [, cls] of css.matchAll(/\.([a-zA-Z][\w-]*)/g)) assert.ok(cls.startsWith('guide-') || cls === 'is-done', `guides.css: .${cls}`);

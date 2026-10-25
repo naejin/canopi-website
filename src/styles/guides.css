@@ -69,19 +69,50 @@
 .guide-body li + li { margin-top: 0.35rem; }
 .guide-body strong { font-weight: 600; }
 .guide-body p { text-wrap: pretty; }
-.guide-term { text-decoration: underline dotted var(--accent); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+/* A glossary word's first use: a button (opens its note below 960px) that reads as a word. */
+.guide-term {
+  font: inherit; color: inherit; letter-spacing: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: help; text-align: inherit;
+  text-decoration: underline dotted var(--accent); text-decoration-thickness: 1.5px; text-underline-offset: 3px;
+}
+.guide-term:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
 
-/* Margin notes: in the flow on phones and tablets; in the margin column level with the next block at ≥960px. */
+/* Margin notes: in the flow on phones and tablets (glossary notes: popovers, below); in the margin column
+   level with the next block at ≥960px. */
 .guide-note { font-size: 0.92rem; line-height: 1.5; color: var(--text-secondary); background: var(--surface-alt); border-radius: var(--radius); padding: 0.7rem 0.9rem; }
 .guide-note p { margin: 0; }
 .guide-note p + p, .guide-note-body > * + * { margin-top: 0.5rem; }
 .guide-note-title { font-family: var(--font-display); color: var(--text); font-weight: 600; display: block; }
+/* Glossary notes below 960px: a card over the bottom of the screen, opened from the term (popover="auto"
+   closes on Escape or a tap outside). Without popover support they stay in the flow like other notes. */
+.guide-note-close { display: none; }
+@supports selector(:popover-open) {
+  @media (width < 960px) {
+    .guide-note-term[popover] {
+      position: fixed; inset: auto 0.75rem 0.75rem; margin: 0 auto; width: auto; max-width: 34rem; height: auto; max-height: 60vh; overflow: auto;
+      color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border-strong); border-left: 4px solid var(--accent);
+      border-radius: var(--radius); padding: 0.9rem 1rem; box-shadow: 0 8px 28px color-mix(in srgb, var(--text) 22%, transparent);
+    }
+    .guide-note-term[popover]::backdrop { background: color-mix(in srgb, var(--text) 12%, transparent); }
+    .guide-note-term .guide-note-close {
+      display: block; margin: 0.6rem 0 0 auto; font: inherit; font-size: 0.88rem; font-weight: 600; color: var(--accent-ink);
+      background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.3rem 0.8rem; cursor: pointer; min-height: 2rem;
+    }
+    .guide-note-term .guide-note-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  }
+}
 @media (min-width: 960px) {
   .guide-body > .guide-note {
     float: right; clear: right; width: var(--guide-margin);
     margin: 0.25rem calc(-1 * (var(--guide-margin) + var(--guide-gap))) 1rem 0;
     background: none; border-radius: 0; border-left: 2px solid var(--accent); padding: 0.1rem 0 0.1rem 0.8rem;
   }
+  /* The glossary note is a popover element: here it is a plain margin note, always shown, and its
+     term is not a control (no click, no tab stop). */
+  .guide-body > .guide-note-term[popover] {
+    display: block; position: static; inset: auto; height: auto; overflow: visible; color: var(--text-secondary);
+    border: 0; border-left: 2px solid var(--accent);
+  }
+  .guide-term { pointer-events: none; cursor: inherit; interactivity: inert; }
   .guide-body > .guide-note + .guide-note { margin-top: 0.25rem; }
   .guide-body > h2 { clear: none; }
 }
@@ -144,7 +175,7 @@
 .guide-figure-title { font-family: var(--font-display); font-weight: 600; font-size: 1rem; }
 .guide-figure-caption { font-size: 0.9rem; color: var(--text-secondary); }
 .guide-columns > .guide-figure:has(.guide-flower) { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem; }
-@media (max-width: 479px) { .guide-flower { max-width: 260px; margin-inline: auto; } }
+@media (max-width: 639px) { .guide-flower { max-width: 260px; margin-inline: auto; } }
 
 .guide-next-inline { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; align-items: baseline; font-size: 0.95rem; }
 .guide-next-inline a { font-weight: 600; }
@@ -326,7 +357,7 @@
 .guide-detail dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.35rem 1rem; margin: 0; font-size: 0.95rem; }
 .guide-detail dt { color: var(--text-muted); }
 .guide-detail dd { margin: 0; }
-@media (max-width: 479px) { .guide-detail dl { grid-template-columns: minmax(0, 1fr); gap: 0; } .guide-detail dd { margin-bottom: 0.45rem; } }
+@media (max-width: 639px) { .guide-detail dl { grid-template-columns: minmax(0, 1fr); gap: 0; } .guide-detail dd { margin-bottom: 0.45rem; } }
 
 /* ---------- Checklist ---------- */
 
@@ -367,7 +398,7 @@
 .guide-book p { font-size: 0.95rem; color: var(--text-secondary); }
 .guide-book-chapters .guide-label { display: block; margin-bottom: 0.1rem; }
 .guide-book-links { display: flex; gap: 0.4rem 1.2rem; flex-wrap: wrap; margin-top: 0.2rem; font-weight: 600; }
-@media (max-width: 479px) { .guide-book { grid-template-columns: 3.2rem minmax(0, 1fr); } .guide-spine { font-size: 0.5rem; } }
+@media (max-width: 639px) { .guide-book { grid-template-columns: 3.2rem minmax(0, 1fr); } .guide-spine { font-size: 0.5rem; } }
 .guide-related { display: grid; gap: 0.8rem; margin-top: 1.5rem; }
 .guide-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.6rem; }
 .guide-page .guide-cards a, .guide-page .guide-pager a {
