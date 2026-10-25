@@ -31,13 +31,16 @@ Crossing happens within a species. Garden names hide this: "pumpkin" can belong 
     search: "Find your crops",
     placeholder: "zucchini butternut",
     none: "Not in this list. Look up the species: as a rule, only plants of the same species cross.",
+    shown: "Crops shown: {n}",
     within: "Crosses with",
     kin: "other varieties of",
     others: "In his garden",
+    caution: "Take care",
     rate: "Seed from crossing",
     distance: "His distance",
     self: "3 m (10 ft): he treats self-pollinating crops as separate at this distance",
     outcross: "30 m (100 ft): his distance for outcrossing crops, where he still sees a few percent of crosses",
+    unknown: "Not given in the book for this crop",
   }}
   pairs={[
     { crops: ["squash-pepo", "squash-moschata", "squash-maxima"], text: "The three squash species rarely cross with each other: growing thousands of squash a year, he found one natural cross between them in twelve years." },
@@ -46,6 +49,9 @@ Crossing happens within a species. Garden names hide this: "pumpkin" can belong 
     { crops: ["pepper"], text: "Hot and sweet peppers cross. He keeps them apart." },
     { crops: ["carrot"], text: "When wild carrot gets into his seed crop, he weeds out the few percent of seedlings that come up looking wild." },
     { crops: ["common-bean", "runner-bean"], text: "Common and runner beans are two species. Crosses between them are mostly made by hand, but rows side by side can give an odd natural one." },
+  ]}
+  cautions={[
+    { crops: ["squash-pepo"], text: "Ornamental gourds belong to this species too. A cross with them can bring back very bitter fruit, which can be poisonous.", href: "#crosses-to-avoid", more: "See Crosses to avoid." },
   ]}
 />
 
@@ -65,7 +71,7 @@ Pollen mostly lands close to home: each flower tends to be fertilised by the nea
 Lofthouse's rule of thumb is that crossing falls with the square of the distance. Twice as far, a quarter of the crosses. Ten times as far, a hundredth. Take it as his intuition, not a promise: bees roam, and a storm can lift corn pollen for kilometres. He points out that those few stray grains count for little against the flood of pollen from plants nearby.
 
 <Figure title="Twice as far, a quarter of the crosses" caption="Lofthouse's rule of thumb, drawn to scale: each dot's size is the share of crosses at that distance. An intuition, not a guarantee.">
-<DistanceFalloff distance="Distance from the other variety" share="Share of crosses, compared with the closest spacing" alt="A flowering plant at the left. Along a line, dots at one, two, four and ten times a starting distance, shrinking from a large dot marked 1 to dots marked a quarter, one sixteenth and, far away, a tiny dot marked one hundredth." />
+<DistanceFalloff title="Twice as far, a quarter of the crosses" distance="Distance from the other variety" share="Share of crosses, compared with the closest spacing" alt="A flowering plant at the left. Along a line, dots at one, two, four and ten times a starting distance, shrinking from a large dot marked 1 to dots marked a quarter, one sixteenth and, far away, a tiny dot marked one hundredth." />
 </Figure>
 
 ## His distances
@@ -133,7 +139,7 @@ Grow wild relatives of a crop well away from the plants you save seed from. Cros
 
 <FoodCaution risk="bitter-cucurbits" />
 
-Wild genes brought him other surprises too. Wild watermelon gave fruit that burst open when knocked in the sun, and his first, half-wild tepary beans had <Term id="hard-seed">hard seed</Term> that would not take up water. Both traits were gone after a few years of selection.
+Wild genes brought him other surprises too. Wild watermelon gave fruit that burst open when knocked in the sun, and his first, half-wild tepary beans had <Term id="hard-seed">hard seed</Term> that would not take up water. He selected both out: the bursting fruit over a few years, the hard seed by sowing only the seeds that took up water.
 
 ## How much crossing can you accept?
 

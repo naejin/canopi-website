@@ -1,28 +1,43 @@
 ---
-// Hybrids, heirlooms and landraces: "Can I save from this hybrid?". Every crop of src/data/crops.ts
-// with a hybrid (CMS) value, in three groups from his lists: fine (low), check the flowers (flagged),
-// leave out shop-bought hybrids (high). The lists are readable without JavaScript; with it, a search
-// box narrows them to the crop on the reader's packet, matching names, examples ("zucchini",
-// "broccoli", "chard") and species. All words come from the MDX props and the crop table.
-import { crops, type Crop } from '../../../../data/crops';
+// Hybrids, heirlooms and landraces: "Can I save from this hybrid?". Crops of src/data/crops.ts in four
+// groups. Fine: only the crops of his stated list (Landrace Gardening, "Heirlooms, Hybrids, and
+// Landraces": tomato, cucumber, squash, corn, watermelon, melon, spinach). Check the flowers: his
+// flagged crops. Leave out shop-bought hybrids: his CMS list. Not on his lists: the other crops of
+// the table with a hybrid value, which he names in neither list. His project tomatoes are not seed
+// you buy, so they are left out. The lists are readable without JavaScript; with it, a search box
+// narrows them to the crops on the reader's packets (matching: ../will-they-cross/lookup-match.ts).
+// All words come from the MDX props and the crop table.
+import { crop as findCrop, crops, type Crop } from '../../../../data/crops';
 import { guideLangOf } from '../../../../i18n/guides';
+import { cropTerms } from '../will-they-cross/lookup-match';
 type Group = { title: string; text: string };
-interface Props { label: string; placeholder: string; none: string; fine: Group; check: Group; avoid: Group; }
-const { label, placeholder, none, fine, check, avoid } = Astro.props;
+interface Props { label: string; placeholder: string; none: string; shown: string; fine: Group; unlisted: Group; check: Group; avoid: Group; }
+const { label, placeholder, none, shown, fine, unlisted, check, avoid } = Astro.props;
 const lang = guideLangOf(Astro.currentLocale);
 const collator = new Intl.Collator(lang);
-const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
-const groups = ([['low', 'fine', fine, '✓'], ['flagged', 'check', check, '?'], ['high', 'avoid', avoid, '✕']] as const).map(([cms, tone, group, mark]) => ({
+const hisFine = ['tomato-garden', 'cucumber', 'squash-pepo', 'squash-moschata', 'squash-maxima', 'corn', 'watermelon', 'melon', 'spinach'];
+const projectRows = ['tomato-panamorous', 'tomato-promiscuous'];
+for (const id of [...hisFine, ...projectRows]) findCrop(id);
+const listed = crops.filter((c: Crop) => c.cms && !projectRows.includes(c.id));
+const inGroup: Record<string, (c: Crop) => boolean> = {
+  fine: (c) => hisFine.includes(c.id),
+  unlisted: (c) => c.cms === 'low' && !hisFine.includes(c.id),
+  check: (c) => c.cms === 'flagged',
+  avoid: (c) => c.cms === 'high',
+};
+const locals = Astro.locals as { guideLookups?: number };
+const uid = `guide-hybrid-${(locals.guideLookups = (locals.guideLookups ?? 0) + 1)}`;
+const groups = ([['fine', fine, '✓'], ['check', check, '?'], ['avoid', avoid, '✕'], ['unlisted', unlisted, '·']] as const).map(([tone, group, mark]) => ({
   tone, mark, ...group,
-  crops: crops.filter((c: Crop) => c.cms === cms)
-    .map((c) => ({ id: c.id, name: c.name[lang], examples: c.examples?.[lang], note: c.cmsNote?.[lang], terms: fold([c.name.en, c.name.fr, c.examples?.en, c.examples?.fr, c.species].filter(Boolean).join(' ')) }))
+  crops: listed.filter(inGroup[tone])
+    .map((c) => ({ id: c.id, name: c.name[lang], examples: c.examples?.[lang], note: c.cmsNote?.[lang], ...cropTerms(c) }))
     .sort((a, b) => collator.compare(a.name, b.name)),
 }));
 ---
-<div class="guide-lookup" data-guide-interactive data-guide-hybrid-lookup data-none={none}>
+<div class="guide-lookup" data-guide-interactive data-guide-hybrid-lookup data-none={none} data-shown={shown}>
   <div class="guide-lookup-search" hidden data-lookup-search>
-    <label for="guide-hybrid-search">{label}</label>
-    <input id="guide-hybrid-search" type="search" autocomplete="off" spellcheck="false" placeholder={placeholder} data-lookup-input />
+    <label for={uid}>{label}</label>
+    <input id={uid} type="search" autocomplete="off" spellcheck="false" placeholder={placeholder} data-lookup-input />
   </div>
   <p class="guide-lookup-none" role="status" data-lookup-status></p>
   {groups.map((group) => (
@@ -31,7 +46,7 @@ const groups = ([['low', 'fine', fine, '✓'], ['flagged', 'check', check, '?'],
       <p class="guide-lookup-text">{group.text}</p>
       <ul class="guide-lookup-crops">
         {group.crops.map((c) => (
-          <li data-lookup-item data-terms={c.terms}>
+          <li data-lookup-item data-terms={c.terms} data-phrases={c.phrases}>
             <strong>{c.name}</strong>{c.examples && <span class="guide-lookup-examples"> ({c.examples})</span>}
             {c.note && <span class="guide-lookup-note">{c.note}</span>}
           </li>
@@ -57,6 +72,7 @@ const groups = ([['low', 'fine', fine, '✓'], ['flagged', 'check', check, '?'],
   .guide-lookup-group[hidden] { display: none; }
   .guide-lookup-check { border-left-color: var(--accent); }
   .guide-lookup-avoid { border-left-color: var(--danger); }
+  .guide-lookup-unlisted { border-left-style: dashed; }
   .guide-lookup-group h3 { font-size: 1.02rem; margin: 0; }
   .guide-lookup-mark { display: inline-block; min-width: 1.1em; font-family: var(--font-sans); color: var(--text-muted); }
   .guide-lookup-check .guide-lookup-mark { color: var(--accent-ink); }
@@ -71,26 +87,21 @@ const groups = ([['low', 'fine', fine, '✓'], ['flagged', 'check', check, '?'],
 </style>
 
 <script>
-  const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+  import { matchLookup, parseEntry } from '../will-they-cross/lookup-match';
+  // Packets say "F1" or "hybrid": those words name no crop.
+  const ignore = ['f1', 'hybrid', 'hybrids', 'hybride', 'hybrides'];
   for (const root of document.querySelectorAll<HTMLElement>('[data-guide-hybrid-lookup]')) {
     const input = root.querySelector<HTMLInputElement>('[data-lookup-input]')!;
     const status = root.querySelector<HTMLElement>('[data-lookup-status]')!;
     const groups = [...root.querySelectorAll<HTMLElement>('[data-lookup-group]')];
+    const items = [...root.querySelectorAll<HTMLElement>('[data-lookup-item]')];
+    const entries = items.map((item) => parseEntry(item.dataset.terms ?? '', item.dataset.phrases ?? ''));
     const filter = () => {
-      const words = fold(input.value).split(/\s+/).filter(Boolean);
-      let shown = 0;
-      for (const group of groups) {
-        let inGroup = 0;
-        for (const item of group.querySelectorAll<HTMLElement>('[data-lookup-item]')) {
-          const terms = item.dataset.terms ?? '';
-          const match = words.every((w) => terms.includes(w));
-          item.hidden = !match;
-          if (match) inGroup++;
-        }
-        group.hidden = inGroup === 0;
-        shown += inGroup;
-      }
-      status.textContent = shown === 0 ? root.dataset.none ?? '' : '';
+      const result = matchLookup(input.value, entries, { ignore });
+      const shown = new Set(result.shown);
+      items.forEach((item, i) => { item.hidden = !shown.has(i); });
+      for (const group of groups) group.hidden = ![...group.querySelectorAll<HTMLElement>('[data-lookup-item]')].some((item) => !item.hidden);
+      status.textContent = result.empty ? '' : result.none ? root.dataset.none ?? '' : (root.dataset.shown ?? '').replace('{n}', String(result.shown.length));
     };
     input.addEventListener('input', filter);
     root.querySelector<HTMLElement>('[data-lookup-search]')!.hidden = false;

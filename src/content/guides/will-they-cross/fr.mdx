@@ -18,7 +18,7 @@ updated: 2026-10-25
 Deux courgettes différentes, un maïs doux à côté d’un maïs à éclater, trois sortes de haricots… et l’envie de garder vos graines. Vont-elles se mélanger ? La réponse tient en deux temps : ces deux plantes peuvent-elles se croiser, et si oui, à partir de quelle distance est-on tranquille ?
 
 <QuickAnswer>
-En règle générale, seules les plantes d’une même espèce se croisent. Une courgette et une citrouille d’Halloween sont de la même espèce et se croisent sans peine ; une courgette et une butternut appartiennent à deux espèces et se croisent rarement. L’essentiel du pollen tombe sur les fleurs les plus proches : les croisements chutent vite avec la distance. Lofthouse considère les autogames isolées à 3 m et les allogames à 30 m, et accepte les quelques pour cent de croisements qui subsistent ; pour une semence pure, suivez les distances, bien plus grandes, d’une association de conservation des semences. Deux variétés qui ne fleurissent pas en même temps ne se croisent pas.
+En règle générale, seules les plantes d’une même espèce se croisent. Une courgette et une citrouille d’Halloween sont de la même espèce et se croisent sans peine ; une courgette et une butternut appartiennent à deux espèces et se croisent rarement. L’essentiel du pollen tombe sur les fleurs les plus proches : les croisements chutent vite avec la distance. Lofthouse considère les autogames isolées à 3 m et les allogames à 30 m, et accepte les quelques pour cent de croisements qui subsistent ; pour une semence pure, suivez les distances, bien plus grandes, d’une association de conservation des semences. Deux variétés qui ne fleurissent pas en même temps ne se croisent pas.
 </QuickAnswer>
 
 ## Même espèce ou pas ?
@@ -31,13 +31,16 @@ Les croisements se font à l’intérieur d’une espèce. Les noms du jardin br
     search: "Trouvez vos cultures",
     placeholder: "courgette butternut",
     none: "Absente de cette liste. Cherchez l’espèce : en règle générale, seules les plantes d’une même espèce se croisent.",
+    shown: "Cultures affichées : {n}",
     within: "Se croise avec",
     kin: "les autres variétés de",
     others: "Dans son jardin",
+    caution: "Attention",
     rate: "Graines issues de croisement",
     distance: "Sa distance",
-    self: "3 m : la distance à laquelle il considère les autogames isolées",
-    outcross: "30 m : sa distance pour les allogames, où il voit encore quelques pour cent de croisements",
+    self: "3 m : la distance à laquelle il considère les autogames isolées",
+    outcross: "30 m : sa distance pour les allogames, où il voit encore quelques pour cent de croisements",
+    unknown: "Le livre ne la donne pas pour cette culture",
   }}
   pairs={[
     { crops: ["squash-pepo", "squash-moschata", "squash-maxima"], text: "Les trois espèces de courges se croisent rarement entre elles : sur des milliers de courges par an, il n’a trouvé en douze ans qu’un seul croisement naturel." },
@@ -46,6 +49,9 @@ Les croisements se font à l’intérieur d’une espèce. Les noms du jardin br
     { crops: ["pepper"], text: "Piments forts et poivrons doux se croisent. Il les tient à l’écart l’un de l’autre." },
     { crops: ["carrot"], text: "Quand la carotte sauvage s’invite dans sa culture porte-graine, il arrache les quelques pour cent de plantules à l’allure sauvage." },
     { crops: ["common-bean", "runner-bean"], text: "Haricot commun et haricot d’Espagne sont deux espèces. Leurs croisements se font surtout à la main, mais deux rangs voisins peuvent en donner un naturel de temps à autre." },
+  ]}
+  cautions={[
+    { crops: ["squash-pepo"], text: "Les coloquintes décoratives appartiennent aussi à cette espèce. Un croisement avec elles peut faire revenir des fruits très amers, parfois toxiques.", href: "#les-croisements-à-éviter", more: "Voir « Les croisements à éviter »." },
   ]}
 />
 
@@ -65,7 +71,7 @@ Les <Term id="self-pollinating">autogames</Term>, comme la tomate, le pois, la l
 La règle empirique de Lofthouse : les croisements diminuent avec le carré de la distance. Deux fois plus loin, quatre fois moins de croisements. Dix fois plus loin, cent fois moins. C’est son intuition, pas une garantie : les abeilles vont loin, et un orage peut emporter du pollen de maïs sur des kilomètres. Ces quelques grains égarés, souligne-t-il, ne pèsent pas lourd face à la masse de pollen des plantes voisines.
 
 <Figure title="Deux fois plus loin, quatre fois moins de croisements" caption="La règle empirique de Lofthouse, à l’échelle : la taille de chaque point donne la part des croisements à cette distance. Une intuition, pas une garantie.">
-<DistanceFalloff distance="Distance à l’autre variété" share="Part des croisements, par rapport à la distance la plus courte" alt="Une plante en fleur à gauche. Le long d’une ligne, des points à une, deux, quatre et dix fois une distance de départ, d’un gros point marqué 1 à des points marqués un quart, un seizième et, très loin, un point minuscule marqué un centième." />
+<DistanceFalloff title="Deux fois plus loin, quatre fois moins de croisements" distance="Distance à l’autre variété" share="Part des croisements, par rapport à la distance la plus courte" alt="Une plante en fleur à gauche. Le long d’une ligne, des points à une, deux, quatre et dix fois une distance de départ, d’un gros point marqué 1 à des points marqués un quart, un seizième et, très loin, un point minuscule marqué un centième." />
 </Figure>
 
 ## Ses distances
@@ -73,7 +79,7 @@ La règle empirique de Lofthouse : les croisements diminuent avec le carré de 
 Le groupe de votre culture, et sa distance, figurent dans la liste plus haut.
 
 <HisGarden
-  his="Il considère les autogames, comme le haricot commun et les céréales, isolées à 3 m, et les allogames à 30 m, distance à laquelle il voit encore 1 à 5 % de croisements. Avec son vent habituel, le pollen de maïs descend sous la hauteur des soies en 8 m environ, et la plupart des croisements de maïs se font à moins d’un mètre. Il tient son melon nain à une trentaine de mètres des melons coureurs pour garder les deux à peu près séparés. Pourtant, les abeilles ont un jour apporté une courge Hopi White dans ses buttercups depuis une parcelle située à bien plus de 100 m."
+  his="Il considère les autogames, comme le haricot commun et les céréales, isolées à 3 m, et les allogames à 30 m, distance à laquelle il voit encore 1 à 5 % de croisements. Avec son vent habituel, le pollen de maïs descend sous la hauteur des soies en 8 m environ, et la plupart des croisements de maïs se font à moins d’un mètre. Il tient son melon nain à une trentaine de mètres des melons coureurs pour garder les deux à peu près séparés. Pourtant, les abeilles ont un jour apporté une courge Hopi White dans ses buttercups depuis une parcelle située à bien plus de 100 m."
   you="Ses chiffres viennent d’un seul jardin, sec et en altitude. Plus d’abeilles, d’autres vents ou un terrain dégagé peuvent porter le pollen plus loin. Prenez ses distances comme point de départ pour une variété population, où quelques croisements sont les bienvenus, pas comme un moyen de garder une semence pure."
 />
 
@@ -133,7 +139,7 @@ Cultivez les parents sauvages d’une culture bien à l’écart des plantes don
 
 <FoodCaution risk="bitter-cucurbits" />
 
-Les gènes sauvages lui ont réservé d’autres surprises. Une pastèque sauvage a donné des fruits qui éclataient quand on les heurtait au soleil, et ses premiers haricots tépari, encore à demi sauvages, avaient des <Term id="hard-seed">graines dures</Term> qui refusaient de s’imbiber. Quelques années de sélection ont fait disparaître ces deux caractères.
+Les gènes sauvages lui ont réservé d’autres surprises. Une pastèque sauvage a donné des fruits qui éclataient quand on les heurtait au soleil, et ses premiers haricots tépari, encore à demi sauvages, avaient des <Term id="hard-seed">graines dures</Term> qui refusaient de s’imbiber. Il les a éliminés tous deux par sélection : les fruits qui éclataient en quelques années, les graines dures en ne semant que celles qui s’imbibaient.
 
 ## Combien de croisements pouvez-vous accepter ?
 

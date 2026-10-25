@@ -3,9 +3,11 @@
 // drawn to scale. A flowering plant on the left; dots at 1, 2, 4 and 10 times a starting distance,
 // each dot's area matching its share of crosses (1, 1/4, 1/16, 1/100). No curve and no slider: the
 // rule is his intuition, not a measurement. The two axis labels are HTML (they wrap on phones);
-// labels and alt text come from the MDX.
-interface Props { distance: string; share: string; alt: string; }
-const { distance, share, alt } = Astro.props;
+// title, labels and description come from the MDX; the <title>/<desc> ids are numbered per page.
+interface Props { title: string; distance: string; share: string; alt: string; }
+const { title, distance, share, alt } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-falloff-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
 const X0 = 30, UNIT = 27, Y = 50, R = 11;
 const steps = [
   { times: 1, label: '1' },
@@ -16,7 +18,9 @@ const steps = [
 ---
 <div class="guide-falloff">
   <p class="guide-falloff-key">{distance} →</p>
-  <svg viewBox="0 0 320 92" role="img" aria-label={alt}>
+  <svg viewBox="0 0 320 92" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
     <path d={`M${X0} 90C${X0 + 1} 74 ${X0 - 1} 58 ${X0} 40`} class="guide-falloff-stem" />
     <path d={`M${X0} 72q-12 -4 -14 -14q11 1 14 10z`} class="guide-falloff-leaf" />
     <path d={`M${X0} 64q12 -4 14 -14q-11 1 -14 10z`} class="guide-falloff-leaf" />

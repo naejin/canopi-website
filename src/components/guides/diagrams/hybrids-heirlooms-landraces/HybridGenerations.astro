@@ -1,10 +1,13 @@
 ---
 // Hybrids, heirlooms and landraces: why seed saved from an F1 hybrid "doesn't come true". Two unlike
 // parent squash, a row of identical F1 fruits, then a row of F2 fruits that reshuffle the parents'
-// shape and colour. Labels and alt text come from the MDX, so each language gets its own.
+// shape and colour. Title, labels and description come from the MDX, so each language gets its own;
+// the <title>/<desc> ids are numbered per page, so two drawings never share one.
 import { r1 } from '../../../../lib/svg';
-interface Props { parents: string; f1: string; f2: string; alt: string; }
-const { parents, f1, f2, alt } = Astro.props;
+interface Props { title: string; parents: string; f1: string; f2: string; alt: string; }
+const { title, parents, f1, f2, alt } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-gen-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
 
 type Shape = 'round' | 'long' | 'oval';
 type Tone = 'green' | 'orange' | 'fleck';
@@ -38,7 +41,9 @@ const rows = [
   { label: f2, y: 190, fruits: f2Row },
 ];
 ---
-<svg class="guide-gen" viewBox="0 0 320 248" role="img" aria-label={alt}>
+<svg class="guide-gen" viewBox="0 0 320 248" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+  <title id={`${uid}-t`}>{title}</title>
+  <desc id={`${uid}-d`}>{alt}</desc>
   {rows.map((row) => (
     <>
       <text x="4" y={row.y} class="guide-gen-label">{row.label}</text>
