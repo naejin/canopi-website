@@ -1,0 +1,74 @@
+---
+// Pests and diseases: Lofthouse's corn selected away from pheasants, raccoons and skunks. Three corn
+// plants, each taller and stiffer than the last, the cob higher on each. A dashed line near the ground
+// is the animals' reach (the first cob sits under it); a tick on the left marks chest height, where the
+// last cob now sits. Heights are a drawing, not measurements. Every word comes from the MDX.
+import { r1 } from '../../../../lib/svg';
+interface Props { title: string; alt: string; plants: [string, string, string]; reach: string; chest: string; }
+const { title, alt, plants, reach, chest } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-corn-reach-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+// Break a label at spaces into lines of at most `max` characters (SVG text does not wrap).
+const wrap = (text: string, max: number) => text.split(/ +/).reduce<string[]>((lines, word) => {
+  const last = lines[lines.length - 1];
+  if (last !== undefined && (last + ' ' + word).length <= max) lines[lines.length - 1] = `${last} ${word}`;
+  else lines.push(word);
+  return lines;
+}, []);
+const GROUND = 206, REACH = 172, CHEST = 92;
+const corn = [
+  { x: 136, top: 120, cob: 178, lean: 4 },
+  { x: 222, top: 74, cob: 136, lean: 1.5 },
+  { x: 308, top: 32, cob: CHEST, lean: 0 },
+].map((p, i) => {
+  const h = GROUND - p.top;
+  const leaves = [0.25, 0.45, 0.65, 0.82].map((f, k) => {
+    const y = GROUND - h * f, dir = k % 2 ? 1 : -1, len = 20 + h * 0.08;
+    return `M${p.x} ${r1(y)}q${r1(dir * len * 0.6)} ${r1(-len * 0.35)} ${r1(dir * len)} ${r1(len * 0.15)}q${r1(-dir * len * 0.5)} ${r1(-len * 0.1)} ${r1(-dir * len)} ${r1(-len * 0.15)}Z`;
+  });
+  return {
+    ...p,
+    stem: `M${p.x} ${GROUND}C${r1(p.x + p.lean)} ${r1(GROUND - h * 0.5)} ${r1(p.x + p.lean * 2)} ${r1(p.top + h * 0.2)} ${r1(p.x + p.lean * 2.5)} ${p.top}`,
+    tassel: `M${r1(p.x + p.lean * 2.5)} ${p.top}l-6 -10M${r1(p.x + p.lean * 2.5)} ${p.top}l0 -12M${r1(p.x + p.lean * 2.5)} ${p.top}l6 -10`,
+    leaves,
+    label: wrap(plants[i], 11),
+  };
+});
+const reachLines = wrap(reach, 10);
+const chestLines = wrap(chest, 10);
+---
+<div class="guide-corn-reach">
+  <svg viewBox="0 0 360 252" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    <rect x="96" y={REACH} width="260" height={GROUND - REACH} class="guide-corn-reach-zone" />
+    <line x1="6" y1={REACH} x2="356" y2={REACH} class="guide-corn-reach-line" />
+    {reachLines.map((line, i) => <text x="6" y={REACH + 16 + i * 15} class="guide-corn-reach-note">{line}</text>)}
+    <line x1="6" y1={CHEST} x2="296" y2={CHEST} class="guide-corn-reach-chest" />
+    {chestLines.map((line, i) => <text x="6" y={CHEST - 6 - (chestLines.length - 1 - i) * 15} class="guide-corn-reach-note guide-corn-reach-accent">{line}</text>)}
+    {corn.map((p) => (
+      <g>
+        {p.leaves.map((d) => <path d={d} class="guide-leaf" />)}
+        <path d={p.stem} class="guide-stem" />
+        <path d={p.tassel} class="guide-tassel" />
+        <ellipse cx={p.x + 7} cy={p.cob} rx="5" ry="12" transform={`rotate(18 ${p.x + 7} ${p.cob})`} class="guide-corn-reach-cob" />
+        <path d={`M${p.x + 11} ${p.cob - 11}q5 -5 3 -10`} class="guide-silk" />
+        {p.label.map((line, i) => <text x={p.x} y={GROUND + 17 + i * 15} text-anchor="middle" class="guide-corn-reach-label">{line}</text>)}
+      </g>
+    ))}
+    <line x1="96" y1={GROUND} x2="356" y2={GROUND} class="guide-corn-reach-ground" />
+  </svg>
+</div>
+
+<style>
+  .guide-corn-reach { max-width: 30rem; }
+  .guide-corn-reach svg { width: 100%; height: auto; }
+  .guide-corn-reach-zone { fill: var(--surface-alt); opacity: 0.7; }
+  .guide-corn-reach-line { stroke: var(--text-muted); stroke-width: 1.2; stroke-dasharray: 5 4; }
+  .guide-corn-reach-chest { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 1 4; stroke-linecap: round; }
+  .guide-corn-reach-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-corn-reach-cob { fill: var(--seed-6); stroke: var(--seed-2); stroke-width: 1; }
+  .guide-corn-reach-note { font-size: 14px; fill: var(--text-secondary); }
+  .guide-corn-reach-accent { fill: var(--accent-ink); font-weight: 600; }
+  .guide-corn-reach-label { font-size: 14px; fill: var(--text-secondary); }
+</style>

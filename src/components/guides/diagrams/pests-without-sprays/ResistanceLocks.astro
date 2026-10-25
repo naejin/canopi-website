@@ -1,0 +1,61 @@
+---
+// Pests and diseases: vertical vs horizontal resistance as locks. Left: a door held by one big padlock,
+// which one key has opened, so the door stands ajar. Right: a door held by eight small padlocks; the
+// same key has opened one of them and the door stays shut. Names and notes are HTML under the doors.
+import { r1 } from '../../../../lib/svg';
+interface Door { name: string; note: string; }
+interface Props { title: string; alt: string; doors: [Door, Door]; }
+const { title, alt, doors } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-locks-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+// A padlock centred on x, body top at y, scale s; open = shackle lifted and turned.
+const lock = (x: number, y: number, s: number, open: boolean) => ({
+  body: { x: r1(x - 9 * s), y: r1(y), w: r1(18 * s), h: r1(14 * s) },
+  shackle: open
+    ? `M${r1(x - 5 * s)} ${r1(y)}V${r1(y - 9 * s)}a${r1(5 * s)} ${r1(5 * s)} 0 0 1 ${r1(10 * s)} 0V${r1(y - 6 * s)}`
+    : `M${r1(x - 5 * s)} ${r1(y)}V${r1(y - 5 * s)}a${r1(5 * s)} ${r1(5 * s)} 0 0 1 ${r1(10 * s)} 0V${r1(y)}`,
+  hole: { cx: r1(x), cy: r1(y + 6 * s), r: r1(1.8 * s) },
+  open,
+  sw: r1(2.4 * s),
+});
+const big = lock(108, 70, 2, true);
+const small = [0, 1, 2, 3, 4, 5, 6, 7].map((k) => lock(240 + (k % 2) * 22, 36 + Math.floor(k / 2) * 30, 0.9, k === 5));
+const key = (x: number, y: number, s: number) => `M${x} ${y}m${r1(-6 * s)} 0a${r1(6 * s)} ${r1(6 * s)} 0 1 0 ${r1(12 * s)} 0a${r1(6 * s)} ${r1(6 * s)} 0 1 0 ${r1(-12 * s)} 0M${r1(x + 6 * s)} ${y}h${r1(16 * s)}m${r1(-5 * s)} 0v${r1(5 * s)}m${r1(-5 * s)} ${r1(-5 * s)}v${r1(4 * s)}`;
+---
+<div class="guide-locks">
+  <svg viewBox="0 0 360 160" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    <rect x="20" y="12" width="74" height="140" rx="3" class="guide-locks-frame" />
+    <path d="M20 12L60 24V142L20 152Z" class="guide-locks-door guide-locks-ajar" />
+    <rect x="200" y="12" width="74" height="140" rx="3" class="guide-locks-door" />
+    {[big, ...small].map((l) => (
+      <g>
+        <path d={l.shackle} class="guide-locks-shackle" stroke-width={l.sw} />
+        <rect x={l.body.x} y={l.body.y} width={l.body.w} height={l.body.h} rx="2" class:list={['guide-locks-body', { 'guide-locks-open': l.open }]} />
+        <circle cx={l.hole.cx} cy={l.hole.cy} r={l.hole.r} class="guide-locks-hole" />
+      </g>
+    ))}
+    <path d={key(126, 120, 1)} class="guide-locks-key" />
+    <path d={key(318, 120, 1)} class="guide-locks-key" />
+  </svg>
+  <ul class="guide-locks-names">
+    {doors.map((d) => <li><b>{d.name}</b><span>{d.note}</span></li>)}
+  </ul>
+</div>
+
+<style>
+  .guide-locks { display: grid; gap: 0.45rem; max-width: 30rem; }
+  .guide-locks svg { width: 100%; height: auto; }
+  .guide-locks-frame { fill: var(--surface-alt); stroke: var(--border-strong); stroke-width: 1.2; stroke-dasharray: 3 3; }
+  .guide-locks-door { fill: var(--surface); stroke: var(--border-strong); stroke-width: 1.5; }
+  .guide-locks-ajar { fill: var(--surface); }
+  .guide-locks-shackle { stroke: var(--text-muted); fill: none; stroke-linecap: round; }
+  .guide-locks-body { fill: var(--seed-4); stroke: var(--seed-2); stroke-width: 1; }
+  .guide-locks-open { fill: var(--surface-alt); stroke: var(--accent); stroke-width: 1.5; }
+  .guide-locks-hole { fill: var(--seed-2); }
+  .guide-locks-key { stroke: var(--accent); stroke-width: 2.2; fill: none; stroke-linecap: round; }
+  :global(.guide-body) .guide-locks-names { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; margin: 0; padding: 0; list-style: none; font-size: 0.88rem; line-height: 1.35; color: var(--text-secondary); }
+  :global(.guide-body) .guide-locks-names li { display: grid; gap: 0.1rem; margin: 0; }
+  .guide-locks-names b { color: var(--text); font-weight: 600; }
+</style>

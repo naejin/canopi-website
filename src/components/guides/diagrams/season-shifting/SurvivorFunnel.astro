@@ -1,0 +1,55 @@
+---
+// Season shifting: Lofthouse's frost-tolerant bean line in three panels. 1: a 10 × 10 grid of seedlings
+// after a late frost, 5 still green (his ~5%). 2: the seed of those few, sown a month early, most alive
+// (his "many survived": no count is drawn as a figure). 3: a full row years later. The three captions
+// are HTML under the panels (they wrap on phones); every word comes from the MDX.
+import { r1, rng, seedOf, shuffle } from '../../../../lib/svg';
+interface Props { title: string; alt: string; steps: [string, string, string]; }
+const { title, alt, steps } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-survivors-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const rand = rng(seedOf('season-shifting/survivors'));
+const alive1 = new Set(shuffle([...Array(100).keys()], rand).slice(0, 5));
+const dots = [...Array(100).keys()].map((k) => ({ x: r1(12 + (k % 10) * 9.4), y: r1(26 + Math.floor(k / 10) * 9.4), alive: alive1.has(k) }));
+const dead2 = new Set(shuffle([...Array(16).keys()], rand).slice(0, 4));
+const seedling = (x: number, y: number, s = 1) =>
+  `M${r1(x)} ${r1(y + 7 * s)}V${r1(y)}M${r1(x)} ${r1(y + 1 * s)}q${r1(-5 * s)} ${r1(-1 * s)} ${r1(-6 * s)} ${r1(-5 * s)}q${r1(5 * s)} 0 ${r1(6 * s)} ${r1(5 * s)}M${r1(x)} ${r1(y + 1 * s)}q${r1(5 * s)} ${r1(-1 * s)} ${r1(6 * s)} ${r1(-5 * s)}q${r1(-5 * s)} 0 ${r1(-6 * s)} ${r1(5 * s)}`;
+const p2 = [...Array(16).keys()].map((k) => ({ x: 140 + (k % 4) * 21, y: 30 + Math.floor(k / 4) * 22, alive: !dead2.has(k) }));
+const p3 = [...Array(20).keys()].map((k) => ({ x: 262 + (k % 4) * 21, y: 30 + Math.floor(k / 4) * 17.5 }));
+const flake = (cx: number, cy: number, r: number) => [0, 60, 120].map((a) => {
+  const t = (a * Math.PI) / 180;
+  return `M${r1(cx - r * Math.cos(t))} ${r1(cy - r * Math.sin(t))}L${r1(cx + r * Math.cos(t))} ${r1(cy + r * Math.sin(t))}`;
+}).join('');
+---
+<div class="guide-survivors">
+  <svg viewBox="0 0 360 124" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    <path d={flake(30, 11, 6) + flake(60, 9, 5) + flake(90, 12, 6)} class="guide-survivors-flake" />
+    {dots.map((d) => d.alive
+      ? <circle cx={d.x} cy={d.y} r="3.6" class="guide-survivors-alive" />
+      : <circle cx={d.x} cy={d.y} r="2.4" class="guide-survivors-dead" />)}
+    <path d="M113 70h13m-5 -5l5 5l-5 5" class="guide-survivors-arrow" />
+    {p2.map((p) => <path d={seedling(p.x, p.y, 1.2)} class:list={['guide-survivors-plant', { 'guide-survivors-gone': !p.alive }]} />)}
+    <path d="M235 70h13m-5 -5l5 5l-5 5" class="guide-survivors-arrow" />
+    {p3.map((p) => <path d={seedling(p.x, p.y, 1.2)} class="guide-survivors-plant" />)}
+    <line x1="4" y1="120" x2="356" y2="120" class="guide-survivors-ground" />
+  </svg>
+  <ol class="guide-survivors-steps">
+    {steps.map((s) => <li>{s}</li>)}
+  </ol>
+</div>
+
+<style>
+  .guide-survivors { display: grid; gap: 0.45rem; max-width: 34rem; }
+  .guide-survivors svg { width: 100%; height: auto; }
+  .guide-survivors-flake { stroke: var(--text-secondary); stroke-width: 1.5; stroke-linecap: round; fill: none; }
+  .guide-survivors-alive { fill: var(--leaf); }
+  .guide-survivors-dead { fill: var(--border-strong); opacity: 0.55; }
+  .guide-survivors-plant { stroke: var(--leaf); stroke-width: 1.6; fill: none; stroke-linecap: round; }
+  .guide-survivors-gone { stroke: var(--border-strong); opacity: 0.6; }
+  .guide-survivors-arrow { stroke: var(--accent); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-survivors-ground { stroke: var(--border-strong); stroke-width: 1; }
+  :global(.guide-body) .guide-survivors-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin: 0; padding: 0; list-style: none; font-size: 0.85rem; line-height: 1.35; color: var(--text-secondary); }
+  :global(.guide-body) .guide-survivors-steps li { margin: 0; }
+</style>

@@ -1,0 +1,25 @@
+---
+// Food all year: a printable "my cues" card, styled as a ruled notebook page. Two columns (what I
+// notice / what I do), one example line filled in, then `lines` blank ruled lines to write on (hidden from screen readers: they are only paper to write on). Static
+// HTML, no script: paper works better in the garden. All words come from the MDX.
+interface Props { title: string; heads: [string, string]; example: [string, string]; lines?: number; }
+const { title, heads, example, lines = 5 } = Astro.props;
+---
+<table class="guide-cues">
+  <caption>{title}</caption>
+  <thead><tr><th scope="col">{heads[0]}</th><th scope="col">{heads[1]}</th></tr></thead>
+  <tbody>
+    <tr class="guide-cues-example"><td>{example[0]}</td><td>{example[1]}</td></tr>
+    {Array.from({ length: lines }, () => <tr aria-hidden="true"><td>&nbsp;</td><td>&nbsp;</td></tr>)}
+  </tbody>
+</table>
+
+<style>
+  .guide-cues { width: 100%; max-width: 34rem; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.92rem; }
+  .guide-cues caption { caption-side: top; text-align: left; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; padding: 0 0 0.4rem; }
+  .guide-cues th { text-align: left; font-weight: 600; font-size: 0.82rem; color: var(--text-muted); padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border-strong); width: 50%; }
+  .guide-cues td { padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--border); height: 1.4rem; vertical-align: bottom; }
+  .guide-cues td + td, .guide-cues th + th { border-left: 1px dashed var(--border); }
+  .guide-cues-example td { color: var(--accent-ink); }
+  @media print { .guide-cues td { height: 2rem; } }
+</style>

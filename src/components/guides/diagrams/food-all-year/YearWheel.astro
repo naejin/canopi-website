@@ -1,0 +1,73 @@
+---
+// Food all year: a wheel of the year in four seasons (spring at the top right, clockwise, no months so
+// it reads in both hemispheres) with three rings, outer to inner: fresh, in the ground, stored. Each
+// season is cut into early / mid / late; a segment is full (food), pale (only some of the time) or empty.
+// The pattern follows the guide's text (Lofthouse's cold-winter garden). A marker at the turn of winter
+// and spring names the lean weeks. Season names, ring labels, crops and the marker come from the MDX;
+// the key is HTML so it wraps on phones.
+import { r1 } from '../../../../lib/svg';
+interface Ring { label: string; crops: string; }
+interface Props { title: string; alt: string; seasons: [string, string, string, string]; rings: [Ring, Ring, Ring]; gap: string; }
+const { title, alt, seasons, rings, gap } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-wheel-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const C = 150, CY = 160;
+// 12 segments from early spring (at 12 o'clock) clockwise. 2 = food, 1 = some of the time, 0 = none.
+const levels = [
+  [1, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0], // fresh
+  [2, 1, 0, 0, 0, 0, 0, 1, 2, 1, 1, 2], // in the ground
+  [1, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 1], // stored
+];
+const radii: [number, number][] = [[98, 122], [72, 96], [46, 70]];
+const pt = (r: number, deg: number) => {
+  const t = ((deg - 90) * Math.PI) / 180;
+  return `${r1(C + r * Math.cos(t))} ${r1(CY + r * Math.sin(t))}`;
+};
+const sector = (r0: number, r1_: number, a0: number, a1: number) =>
+  `M${pt(r1_, a0)}A${r1_} ${r1_} 0 0 1 ${pt(r1_, a1)}L${pt(r0, a1)}A${r0} ${r0} 0 0 0 ${pt(r0, a0)}Z`;
+const segments = levels.flatMap((row, ring) => row.map((lv, k) => ({
+  d: sector(radii[ring][0], radii[ring][1], k * 30 + 1, k * 30 + 29),
+  cls: `guide-wheel-r${ring} guide-wheel-l${lv}`,
+})));
+// Season names in the corners of the drawing, beside their quarter.
+const corners = [{ x: 296, y: 30, anchor: 'end' }, { x: 296, y: 304, anchor: 'end' }, { x: 4, y: 304, anchor: 'start' }, { x: 4, y: 30, anchor: 'start' }];
+const names = seasons.map((s, i) => ({ s, ...corners[i] }));
+const quarterLines = [0, 90, 180, 270].map((deg) => `M${pt(40, deg)}L${pt(126, deg)}`).join('');
+---
+<div class="guide-wheel">
+  <svg viewBox="0 0 300 312" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    {segments.map((s) => <path d={s.d} class={s.cls} />)}
+    <path d={quarterLines} class="guide-wheel-quarter" />
+    {names.map((n) => <text x={n.x} y={n.y} text-anchor={n.anchor} class="guide-wheel-season">{n.s}</text>)}
+    <path d={`M${C} ${CY - 128}L${C - 6} ${CY - 138}H${C + 6}Z`} class="guide-wheel-gap" />
+    <text x={C} y={CY - 144} text-anchor="middle" class="guide-wheel-gap-label">{gap}</text>
+  </svg>
+  <ul class="guide-wheel-key">
+    {rings.map((r, i) => <li><i class={`guide-wheel-k${i}`}></i><span><b>{r.label}</b> {r.crops}</span></li>)}
+  </ul>
+</div>
+
+<style>
+  .guide-wheel { display: grid; gap: 0.6rem; max-width: 24rem; margin-inline: auto; }
+  .guide-wheel svg { width: 100%; height: auto; }
+  .guide-wheel-l0 { fill: var(--surface-alt); }
+  .guide-wheel-r0.guide-wheel-l2 { fill: var(--leaf); }
+  .guide-wheel-r1.guide-wheel-l2 { fill: var(--seed-1); }
+  .guide-wheel-r2.guide-wheel-l2 { fill: var(--seed-4); }
+  .guide-wheel-r0.guide-wheel-l1 { fill: var(--leaf); opacity: 0.4; }
+  .guide-wheel-r1.guide-wheel-l1 { fill: var(--seed-1); opacity: 0.4; }
+  .guide-wheel-r2.guide-wheel-l1 { fill: var(--seed-4); opacity: 0.4; }
+  .guide-wheel-quarter { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-wheel-season { font-size: 14px; font-weight: 600; fill: var(--text-secondary); }
+  .guide-wheel-gap { fill: var(--accent); }
+  .guide-wheel-gap-label { font-size: 13px; font-weight: 600; fill: var(--accent-ink); }
+  :global(.guide-body) .guide-wheel-key { display: grid; gap: 0.35rem; margin: 0; padding: 0; list-style: none; font-size: 0.88rem; line-height: 1.4; color: var(--text-secondary); }
+  :global(.guide-body) .guide-wheel-key li { display: flex; gap: 0.5rem; align-items: baseline; margin: 0; }
+  .guide-wheel-key b { color: var(--text); font-weight: 600; }
+  .guide-wheel-key i { display: inline-block; width: 0.8rem; height: 0.8rem; flex: none; border-radius: 2px; transform: translateY(0.1rem); }
+  .guide-wheel-k0 { background: var(--leaf); }
+  .guide-wheel-k1 { background: var(--seed-1); }
+  .guide-wheel-k2 { background: var(--seed-4); }
+</style>
