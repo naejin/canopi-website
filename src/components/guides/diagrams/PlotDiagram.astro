@@ -68,7 +68,7 @@ const text = caption ?? count ?? gt(`plot.caption.${variant}`, lang);
     {plants.map((p) => (
       <g>
         <circle cx={p.x} cy={p.y} r="7.5" class={`guide-plant guide-c${p.c}`} />
-        {p.c2 && <path d={`M${p.x} ${p.y - 7.5}a7.5 7.5 0 0 1 0 15z`} class={`guide-c${p.c2}`} />}
+        {p.c2 ? <path d={`M${p.x} ${p.y - 7.5}a7.5 7.5 0 0 1 0 15z`} class={`guide-c${p.c2}`} /> : null}
       </g>
     ))}
   </svg>

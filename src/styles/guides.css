@@ -254,7 +254,8 @@
 @media (max-width: 639px) {
   .guide-timeline-row { grid-template-columns: repeat(var(--guide-seasons), minmax(0, 1fr)); }
   .guide-timeline-row .guide-timeline-label { grid-column: 1 / -1; padding-bottom: 0; }
-  .guide-timeline-head .guide-timeline-label { display: none; }
+  /* The empty corner cell stays in the table (same cell count per row), only out of sight. */
+  .guide-timeline-head .guide-timeline-label { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
   .guide-timeline-season { font-size: 0.66rem; padding-inline: 0; }
   .guide-timeline-cell:nth-child(2) { box-shadow: none; }
 }

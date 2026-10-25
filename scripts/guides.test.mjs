@@ -212,6 +212,15 @@ test('the crop table has the 40 crops of the guide map, each named in English an
   assert.throws(() => cropModule.crop('zucchini'), /not in src\/data\/crops\.ts/, 'a variant name is not a crop id');
 });
 
+test('the planting mix bar rejects parts that would draw nothing or NaN', async () => {
+  const { mixShares } = await import('../src/components/guides/planting-mix.ts');
+  assert.deepEqual(mixShares([{ label: 'own', value: 70, tone: 'own' }, { label: 'old', value: 25, tone: 'old' }, { label: 'new', value: 5, tone: 'new' }]), [70, 25, 5]);
+  assert.deepEqual(mixShares([{ label: 'a', value: 1, tone: 'own' }, { label: 'b', value: 2, tone: 'old' }]), [33, 67]);
+  for (const parts of [[], [{ label: 'a', value: 0, tone: 'own' }], [{ label: 'a', value: Number.NaN, tone: 'own' }], [{ label: 'a', value: -5, tone: 'own' }, { label: 'b', value: 10, tone: 'old' }], [{ label: 'a', value: 5, tone: 'mine' }]]) {
+    assert.throws(() => mixShares(parts), /PlantingMixBar/, JSON.stringify(parts));
+  }
+});
+
 test('the checklist plugin tells each item its list, so two lists can reuse an item id', async () => {
   const { rehypeGuideChecklists } = await import('../src/lib/rehype-guide-checklists.mjs');
   const el = (name, attributes, children = []) => ({ type: 'mdxJsxFlowElement', name, attributes: Object.entries(attributes).map(([k, v]) => ({ type: 'mdxJsxAttribute', name: k, value: v })), children });
@@ -267,6 +276,13 @@ test('guide files load no outside images or fonts, and colour only through the t
   const tokens = read('styles/tokens.css');
   for (const token of ['--leaf', '--petal', '--anther', '--seed-1', '--seed-6']) {
     assert.equal(tokens.split(`${token}:`).length - 1, 3, `${token} in the light, dark and system-dark blocks`);
+  }
+});
+
+test('table-like diagrams never hide a cell with display: none, so screen readers count the same cells per row', () => {
+  const css = read('styles/guides.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const [, selector, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (/guide-timeline-(?:label|season|cell)/.test(selector)) assert.ok(!/display\s*:\s*none/.test(body), `guides.css: ${selector.trim()} hides a table cell`);
   }
 });
 

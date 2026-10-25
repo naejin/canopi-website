@@ -133,6 +133,11 @@ for (const lang of guideLocales) {
       assert.deepEqual(scriptsOf(html), scriptsOf(index), `${path}: diagram-only guide ships extra scripts`);
       assert.deepEqual(inlineScripts(html), inlineScripts(index), `${path}: diagram-only guide ships extra inline scripts`);
     }
+    // Diagrams carry text only in <text> and <title>: a stray "0" from a falsy number in JSX shows up here.
+    for (const [svg] of html.matchAll(/<svg\b[\s\S]*?<\/svg>/g)) {
+      const stray = svg.replace(/<(text|title|desc)\b[\s\S]*?<\/\1>/g, '').match(/>\s*([^<\s][^<]*?)\s*</);
+      assert.ok(!stray, `${path}: stray text "${stray?.[1]}" inside an SVG diagram`);
+    }
     // Every glossary term note and step is rendered server-side (readable without JavaScript).
     assert.ok(!/<(?:Term|Note|Checklist)\b/.test(html), `${path}: unrendered MDX component`);
   }
