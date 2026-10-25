@@ -1,0 +1,70 @@
+---
+// Hybrids, heirlooms and landraces: "Can I save from this hybrid?". Crops of src/data/crops.ts in four
+// groups. Fine: only the crops of his stated list (crop-index.ts, hisFine). Check the flowers: his
+// flagged crops. Leave out shop-bought hybrids: his CMS list. Not on his lists: the other crops of
+// the table with a hybrid value, which he names in neither list. Above the groups, an A–Z index of
+// every name of each crop links to its line (CropIndex). Readable without JavaScript. All words come
+// from the MDX props and the crop table.
+import { crop as findCrop, crops, type Crop } from '../../../../data/crops';
+import { guideLangOf } from '../../../../i18n/guides';
+import { cropIndex, entryId, hisFine, hybridCrops, projectRows } from '../will-they-cross/crop-index';
+import CropIndex from '../will-they-cross/CropIndex.astro';
+type Group = { title: string; text: string };
+interface Props { index: string; fine: Group; unlisted: Group; check: Group; avoid: Group; }
+const { index, fine, unlisted, check, avoid } = Astro.props;
+const lang = guideLangOf(Astro.currentLocale);
+const collator = new Intl.Collator(lang);
+for (const id of [...hisFine, ...projectRows]) findCrop(id);
+const listed = hybridCrops(crops);
+const inGroup: Record<string, (c: Crop) => boolean> = {
+  fine: (c) => hisFine.includes(c.id),
+  unlisted: (c) => c.cms === 'low' && !hisFine.includes(c.id),
+  check: (c) => c.cms === 'flagged',
+  avoid: (c) => c.cms === 'high',
+};
+const groups = ([['fine', fine, '✓'], ['check', check, '?'], ['avoid', avoid, '✕'], ['unlisted', unlisted, '·']] as const).map(([tone, group, mark]) => ({
+  tone, mark, ...group,
+  crops: listed.filter(inGroup[tone])
+    .map((c) => ({ id: entryId('hybrid', c.id), name: c.name[lang], examples: c.examples?.[lang], note: c.cmsNote?.[lang] }))
+    .sort((a, b) => collator.compare(a.name, b.name)),
+}));
+const letters = cropIndex(listed, lang, 'hybrid');
+---
+<div class="guide-lookup">
+  <CropIndex label={index} letters={letters} />
+  {groups.map((group) => (
+    <section class={`guide-lookup-group guide-lookup-${group.tone}`}>
+      <h3><span class="guide-lookup-mark" aria-hidden="true">{group.mark}</span> {group.title}</h3>
+      <p class="guide-lookup-text">{group.text}</p>
+      <ul class="guide-lookup-crops">
+        {group.crops.map((c) => (
+          <li id={c.id}>
+            <strong>{c.name}</strong>{c.examples && <span class="guide-lookup-examples"> ({c.examples})</span>}
+            {c.note && <span class="guide-lookup-note">{c.note}</span>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</div>
+
+<style>
+  .guide-lookup { display: grid; gap: 0.8rem; }
+  .guide-lookup-group { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--border-strong); border-radius: var(--radius); padding: 0.75rem 1rem; display: grid; gap: 0.35rem; }
+  .guide-lookup-check { border-left-color: var(--accent); }
+  .guide-lookup-avoid { border-left-color: var(--danger); }
+  .guide-lookup-unlisted { border-left-style: dashed; }
+  .guide-lookup-group h3 { font-size: 1.02rem; margin: 0; }
+  .guide-lookup-mark { display: inline-block; min-width: 1.1em; font-family: var(--font-sans); color: var(--text-muted); }
+  .guide-lookup-check .guide-lookup-mark { color: var(--accent-ink); }
+  .guide-lookup-avoid .guide-lookup-mark { color: var(--danger); }
+  .guide-lookup-text { margin: 0; font-size: 0.92rem; color: var(--text-secondary); line-height: 1.45; }
+  .guide-lookup-crops { list-style: none; margin: 0.2rem 0 0; padding: 0; columns: 2 14rem; column-gap: 1.2rem; font-size: 0.95rem; }
+  .guide-lookup-crops li { break-inside: avoid; margin: 0 0 0.3rem; line-height: 1.35; }
+  .guide-lookup-crops li { scroll-margin-top: 1rem; }
+  .guide-lookup-crops li:target { background: var(--surface-alt); outline: 3px solid var(--surface-alt); }
+  .guide-lookup-crops strong { font-weight: 600; }
+  .guide-lookup-examples { color: var(--text-muted); font-size: 0.9rem; }
+  .guide-lookup-note { display: block; font-size: 0.88rem; color: var(--text-secondary); }
+</style>
+
