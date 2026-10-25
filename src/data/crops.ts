@@ -157,6 +157,7 @@ export const crops: Crop[] = [
   },
   {
     id: 'pepper', name: { en: 'Pepper', fr: 'Piment et poivron' },
+    examples: { en: 'hot peppers, sweet peppers', fr: 'piments forts, poivrons doux' },
     species: 'Capsicum', pollination: null, crossing: about(10), life: annual, seed: null, ease: 'easy', cms: null,
   },
   {
@@ -236,9 +237,19 @@ export const crops: Crop[] = [
     species: 'Avena', pollination: null, crossing: null, life: annual, seed: 'dry', ease: null, cms: null, guide: grainGuide,
   },
   {
+    // Named in the book only as dry seed threshed in a bin (Saving Seeds); flax also as mostly
+    // in-breeding (Heirlooms, Hybrids, and Landraces). Neither is in his ease table.
+    id: 'mustard', name: { en: 'Mustard', fr: 'Moutarde' },
+    species: null, pollination: null, crossing: null, life: null, seed: 'dry', ease: null, cms: null,
+  },
+  {
+    id: 'flax', name: { en: 'Flax', fr: 'Lin' },
+    species: 'Linum usitatissimum', pollination: { by: 'self' }, crossing: null, life: null, seed: 'dry', ease: null, cms: null,
+  },
+  {
     id: 'potato', name: { en: 'Potato', fr: 'Pomme de terre' },
     species: 'Solanum tuberosum', pollination: null, crossing: null,
-    life: perennial('grown as an annual, from tubers or true seed', 'cultivée comme une annuelle, à partir de tubercules ou de vraies graines'), seed: null, ease: 'hard', cms: 'flagged', guide: cloneGuide,
+    life: perennial('grown as an annual, from tubers or true seed', 'cultivée comme une annuelle, à partir de tubercules ou de vraies graines'), seed: null, ease: 'hard', cms: 'high', guide: cloneGuide,
   },
   {
     id: 'garlic', name: { en: 'Garlic', fr: 'Ail' },
