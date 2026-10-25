@@ -212,6 +212,19 @@ test('the crop table has the 40 crops of the guide map, each named in English an
   assert.throws(() => cropModule.crop('zucchini'), /not in src\/data\/crops\.ts/, 'a variant name is not a crop id');
 });
 
+test('FlowerDiagram draws every variant the guides need, each with alt text in English and French', () => {
+  const code = read('components/guides/diagrams/FlowerDiagram.astro');
+  const variants = JSON.parse(code.match(/const variants = (\[[^\]]*\])/)[1].replace(/'/g, '"'));
+  for (const needed of ['tomato-closed', 'tomato-open', 'squash-male', 'squash-female', 'corn', 'carrot-fertile', 'carrot-sterile', 'spinach-male', 'spinach-female']) {
+    assert.ok(variants.includes(needed), `FlowerDiagram variant "${needed}"`);
+  }
+  for (const lang of guideLangs) {
+    const strings = JSON.parse(read(`i18n/guides/${lang}.json`));
+    for (const v of variants) assert.ok(strings[`flower.alt.${v}`]?.trim(), `${lang}: flower.alt.${v}`);
+    for (const [, key] of code.matchAll(/label\('([\w.]+)'\)/g)) assert.ok(strings[`flower.${key}`]?.trim(), `${lang}: flower.${key}`);
+  }
+});
+
 test('the planting mix bar rejects parts that would draw nothing or NaN', async () => {
   const { mixShares } = await import('../src/components/guides/planting-mix.ts');
   assert.deepEqual(mixShares([{ label: 'own', value: 70, tone: 'own' }, { label: 'old', value: 25, tone: 'old' }, { label: 'new', value: 5, tone: 'new' }]), [70, 25, 5]);
