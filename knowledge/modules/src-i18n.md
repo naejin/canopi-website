@@ -5,20 +5,20 @@ description: The 11-locale translation tables and the t() lookup used by every c
 resource: ../../src/i18n
 tags: [module, i18n]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T12:58:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:03Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:46:26Z }
 sources:
   - id: i18n
     resource: ../../src/i18n
     title: src/i18n/
-    digest: sha256:5fd4aec68e993d1e
-    last_modified: 2026-10-25T13:44:29Z
+    digest: sha256:5879614afbfa71d3
+    last_modified: 2026-10-25T17:00:33Z
   - id: homepage-test
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:aa43adffc3a1f0ad
-    last_modified: 2026-10-25T09:49:07Z
+    digest: sha256:2390756fd500f690
+    last_modified: 2026-10-25T17:00:03Z
 ---
 
 # Responsibility
@@ -48,5 +48,5 @@ Build-time translation for the 11 locales (en default at `/`; fr, es, pt, it, zh
 - Add every new key to all 11 files: `npm test` (`homepage.test.mjs`) fails if locales differ in keys or placeholders, if an English key is unused, or if a script string is missing from the page.
 - Bibliography theme and climate labels (`bibliography.theme.<slug>`, climate keys) must exist for every theme/climate in `src/data/bibliography.md`.
 - `t()` replaces only the first occurrence of each placeholder.
-- Guide strings are not in the 11 locale files; `guides.test.mjs` checks en/fr key parity. The site-wide `header.guides` and `bibliography.fieldGuide` keys are in all 11.
+- Guide strings are not in the 11 locale files; `guides.test.mjs` checks en/fr key parity. The site-wide `header.guides`, `header.books`, `header.menu`, `bibliography.fieldGuide`, `bibliography.guides` and `start.*` (home Start here row) keys are in all 11; the guides index's `section.books` is in `guides/{en,fr}.json` (`homepage.test.mjs` checks both).
 - `guideDomains` lives in `guides.ts`, not `src/content.config.ts`: importing the content config at runtime pulls the glob loader's `node:fs` into the Cloudflare prerender worker and the build fails.

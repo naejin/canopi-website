@@ -5,13 +5,13 @@ description: Vanilla browser modules for the home and bibliography pages (chrome
 resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:57:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:04Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:c011b2559c1bf6dc
-    last_modified: 2026-10-16T10:46:59Z
+    digest: sha256:995e3668492c7049
+    last_modified: 2026-10-25T17:00:24Z
 ---
 
 # Responsibility
@@ -21,14 +21,14 @@ Client-side behaviour, no framework. Scripts hold no user-facing English: every 
 # Key files
 
 - [home.js](../../src/scripts/home.js): home entry; wires everything below.
-- [chrome.js](../../src/scripts/chrome.js): shared chrome (dialogs, donate, language menu, theme toggle); `initChrome({ onThemeChange })`, `isDark()`.
+- [chrome.js](../../src/scripts/chrome.js): shared chrome (dialogs, donate, the language menu and the phone Menu, theme toggle); `initChrome({ onThemeChange })`, `isDark()`. Both `<details>` menus close on outside click, Escape (focus back to the summary), focus leaving, and link or button activation.
 - [page-data.js](../../src/scripts/page-data.js): reads `#page-data` JSON (written by `PageData.astro`); exports `lang`, `version`, `installers`, `text(key, replacements)`.
 - [downloads.js](../../src/scripts/downloads.js): OS-aware primary action and installer dialog; falls back to Canopi Web for unknown devices.
 - [hero-reveal.js](../../src/scripts/hero-reveal.js): cursor "ink dot" reveal of the hero painting; touch taps bloom, reduced motion stays still.
 - [design-canvas.js](../../src/scripts/design-canvas.js): draws the featured design as the app does, from `/data/featured-designs.json` and `/data/plant-symbols.json`.
 - [design-map.js](../../src/scripts/design-map.js): MapLibre design finder with clusters and a nearest-first list.
 - [contact.js](../../src/scripts/contact.js): in-place validation, posts with `Accept: application/json`.
-- [donate.js](../../src/scripts/donate.js), [dialogs.js](../../src/scripts/dialogs.js): HelloAsso donation dialog and native `<dialog>` helpers.
+- [donate.js](../../src/scripts/donate.js), [dialogs.js](../../src/scripts/dialogs.js): HelloAsso donation dialog and native `<dialog>` helpers. Donate opened from the phone Menu returns focus to the Menu summary; from `#donate`, to the first visible Donate button.
 
 # Interfaces
 

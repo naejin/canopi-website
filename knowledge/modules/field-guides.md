@@ -4,7 +4,7 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:35:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:03Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T14:11:44Z }
 sources:
@@ -16,13 +16,13 @@ sources:
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:dd958d0994aca9a2
-    last_modified: 2026-10-25T14:08:27Z
+    digest: sha256:27faa78be61d00b0
+    last_modified: 2026-10-25T16:51:12Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
-    digest: sha256:000fc99c08328b23
-    last_modified: 2026-10-25T13:36:03Z
+    digest: sha256:d6211071e90d8dc7
+    last_modified: 2026-10-25T16:51:12Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -77,14 +77,14 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 
 # Dependencies
 
-- [src/data](/modules/src-data.md) (bibliography ids, glossary, crops), [src/i18n](/modules/src-i18n.md), `Base.astro` (`alternates`, `ogType`, `structuredData` props), `Header.astro` (`alternates`, `current`), `@astrojs/mdx` 5.
+- [src/data](/modules/src-data.md) (bibliography ids, glossary, crops), [src/i18n](/modules/src-i18n.md), `Base.astro` (`alternates`, `ogType`, `structuredData` props), `Header.astro` (`alternates`, `current: 'guides'`), `@astrojs/mdx` 5.
 - Checked by [scripts](/modules/scripts.md): `guides.test.mjs` and the Field Guides part of `check-built-site.mjs`. Writing rules: [Field Guide writing](/conventions/field-guide-writing.md).
 
 # Gotchas
 
 - Do not import `src/content.config.ts` from runtime code (it drags `node:fs` into the Cloudflare prerender worker); shared constants live in `src/i18n/guides.ts`.
 - Plant colours (`--leaf`, `--petal`, `--anther`, `--seed-1..6`) are defined in three blocks of `tokens.css` (light, dark, system dark) and colour plant content only; no colour literals in guide files.
-- The header's Field Guides link is hidden at 639px and below (long French and Russian labels); the footer link stays.
+- The header's Guides link is never hidden by width: below 640px it sits in the phone Menu (see [Site navigation](/decisions/site-navigation.md)). The guides index links to the bibliography (`section.books`) and the bibliography page links back to the guides.
 - Guide styles use the site breakpoints only (639px, 960px); a test fails on any other.
 - Guide-only strings live in `src/i18n/guides/{en,fr}.json` (both files, same keys; French with a no-break space before `:` and a narrow one before `;` `?` `!`); punctuation joining two strings is part of a string (`crop.guideLink`, `aria.labelled`), never hard-coded in a component.
 - `FlowerDiagram` variants: tomato-closed/open, squash-male/female, corn, carrot-fertile/sterile, spinach-male/female.

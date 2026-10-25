@@ -6,7 +6,7 @@ tags: [runbook, build, test]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T12:58:36Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:35:29Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:04Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -21,8 +21,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:f3a1ba7b9012fa46
-    last_modified: 2026-10-25T13:33:53Z
+    digest: sha256:c1b1b07d95597b57
+    last_modified: 2026-10-25T17:00:03Z
 ---
 
 # When to use
