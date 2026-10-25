@@ -4,23 +4,25 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:39:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T11:07:54Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T11:07:53Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:b1cc1d50b3a2ec86
-    last_modified: 2026-10-25T10:32:57Z
+    digest: sha256:666fae3c9b201fc8
+    last_modified: 2026-10-25T11:04:30Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:acc99262e667166b
-    last_modified: 2026-10-25T10:34:14Z
+    digest: sha256:f492c217d2e63304
+    last_modified: 2026-10-25T10:57:18Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
     digest: sha256:ac7d9ef021ef991c
-    last_modified: 2026-10-25T10:37:39Z
+    last_modified: 2026-10-25T10:40:17Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -45,7 +47,7 @@ sources:
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
     digest: sha256:9693c3a6ce74e302
-    last_modified: 2026-10-25T10:33:04Z
+    last_modified: 2026-10-25T10:40:17Z
 ---
 
 # Responsibility

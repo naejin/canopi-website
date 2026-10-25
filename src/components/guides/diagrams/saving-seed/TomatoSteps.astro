@@ -1,0 +1,71 @@
+---
+// Saving seed: tomato seed in four frames. Squeeze the seeds and juice into a jar; leave the jar until
+// the jelly breaks down; add water, the pulp floats and the good seed sinks; dry the seed spread thin.
+// Each frame's title, text and drawing description come from the MDX.
+import { rng, r1 } from '../../../../lib/svg';
+interface Step { title: string; text: string; alt: string; }
+interface Props { steps: Step[]; }
+const { steps } = Astro.props;
+if (steps.length !== 4) throw new Error('<TomatoSteps>: four steps (squeeze, wait, float, dry)');
+const r = rng(707);
+const scatter = (n: number, x0: number, x1: number, y0: number, y1: number) =>
+  Array.from({ length: n }, () => ({ x: r1(x0 + r() * (x1 - x0)), y: r1(y0 + r() * (y1 - y0)), a: Math.round((r() - 0.5) * 120) }));
+const juiceSeeds = scatter(9, 64, 96, 50, 72);
+const waitSeeds = scatter(10, 64, 96, 44, 72);
+const bubbles = scatter(4, 66, 94, 38, 46);
+const sunk = scatter(11, 63, 97, 70, 74);
+const pulp = scatter(5, 64, 94, 34, 40);
+const plate = Array.from({ length: 14 }, (_, k) => ({ x: r1(38 + (k % 7) * 14 + (r() - 0.5) * 4), y: r1(52 + Math.floor(k / 7) * 12 + (r() - 0.5) * 4), a: Math.round((r() - 0.5) * 120) }));
+const jar = 'M60 30h40v44a6 6 0 0 1 -6 6h-28a6 6 0 0 1 -6 -6z';
+---
+<figure class="guide-figure">
+  <ol class="guide-stages">
+    {steps.map((step, i) => (
+      <li class="guide-stage">
+        <svg viewBox="0 0 160 96" role="img" aria-label={step.alt}>
+          <rect x="2" y="2" width="156" height="92" rx="7" class="guide-paper" />
+          {i < 3 && <path d={jar} class="guide-glass" />}
+          {i === 0 && (
+            <g>
+              <path d="M22 26a20 20 0 0 1 40 0z" class="guide-c4" />
+              <path d="M26 26a16 16 0 0 1 32 0" class="guide-lead" style="fill: none;" />
+              <path d="M44 14l4 -6" class="guide-stem" />
+              <path d="M56 30Q66 34 70 44" class="guide-lead guide-dotted" style="fill: none;" />
+              <rect x="61" y="48" width="38" height="31" rx="5" class="guide-c4" style="opacity: 0.35;" />
+              {juiceSeeds.map((s) => <ellipse cx={s.x} cy={s.y} rx="2.6" ry="1.7" transform={`rotate(${s.a} ${s.x} ${s.y})`} class="guide-c3 guide-bean-o" />)}
+            </g>
+          )}
+          {i === 1 && (
+            <g>
+              <rect x="61" y="42" width="38" height="37" rx="5" class="guide-c4" style="opacity: 0.28;" />
+              <path d="M61 42h38v4h-38z" class="guide-c3" style="opacity: 0.9;" />
+              {bubbles.map((b) => <circle cx={b.x} cy={b.y} r="1.5" class="guide-lead" style="fill: none;" />)}
+              {waitSeeds.map((s) => <ellipse cx={s.x} cy={s.y} rx="2.6" ry="1.7" transform={`rotate(${s.a} ${s.x} ${s.y})`} class="guide-c3 guide-bean-o" />)}
+              <circle cx="128" cy="44" r="14" class="guide-glass" />
+              <path d="M128 34v10l7 5" class="guide-lead" style="fill: none;" />
+            </g>
+          )}
+          {i === 2 && (
+            <g>
+              <rect x="61" y="33" width="38" height="46" rx="5" class="guide-glass" style="stroke: none; opacity: 0.6;" />
+              <path d="M61 33h38" class="guide-lead" />
+              {pulp.map((p) => <ellipse cx={p.x} cy={p.y} rx="4" ry="2" class="guide-c4" style="opacity: 0.6;" />)}
+              {sunk.map((s) => <ellipse cx={s.x} cy={s.y} rx="2.6" ry="1.7" transform={`rotate(${s.a} ${s.x} ${s.y})`} class="guide-c3 guide-bean-o" />)}
+              <path d="M40 36v-12M36 28l4 -5l4 5" class="guide-lead" style="fill: none;" />
+              <path d="M120 58v12M116 66l4 5l4 -5" class="guide-lead" style="fill: none;" />
+            </g>
+          )}
+          {i === 3 && (
+            <g>
+              <ellipse cx="80" cy="60" rx="62" ry="22" class="guide-glass" />
+              <ellipse cx="80" cy="60" rx="48" ry="15" class="guide-lead" style="fill: none;" />
+              {plate.map((s) => <ellipse cx={s.x} cy={s.y} rx="2.8" ry="1.8" transform={`rotate(${s.a} ${s.x} ${s.y})`} class="guide-c3 guide-bean-o" />)}
+            </g>
+          )}
+        </svg>
+        <span class="guide-stage-when">{step.title}</span>
+        <span class="guide-stage-do">{step.text}</span>
+      </li>
+    ))}
+  </ol>
+</figure>

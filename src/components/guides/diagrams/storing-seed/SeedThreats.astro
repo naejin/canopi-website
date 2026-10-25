@@ -1,0 +1,15 @@
+---
+// Storing seed: what loses seed, most common first in Lofthouse's experience, and the fix for each.
+// head gives the two column titles; rows the threat and its fix; caption says whose ranking it is.
+interface Props { head: [string, string]; rows: { threat: string; fix: string }[]; caption: string; }
+const { head, rows, caption } = Astro.props;
+---
+<div class="guide-table-wrap" role="region" tabindex="0" aria-label={caption}>
+  <table class="guide-table">
+    <caption>{caption}</caption>
+    <thead><tr><th scope="col">{head[0]}</th><th scope="col">{head[1]}</th></tr></thead>
+    <tbody>
+      {rows.map((row) => <tr><th scope="row">{row.threat}</th><td>{row.fix}</td></tr>)}
+    </tbody>
+  </table>
+</div>
