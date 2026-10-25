@@ -5,8 +5,8 @@ import { gt, guideLangOf } from '../../../i18n/guides';
 const seasons = ['late-winter', 'spring', 'early-summer', 'summer', 'late-summer', 'autumn', 'winter'] as const;
 const kinds = ['sow', 'flower', 'harvest', 'save', 'select'] as const;
 type Mark = { at: (typeof seasons)[number]; kind: (typeof kinds)[number] };
-interface Props { rows: { label: string; marks: Mark[] }[]; label?: string; }
-const { rows, label } = Astro.props;
+interface Props { rows: { label: string; marks: Mark[] }[]; }
+const { rows } = Astro.props;
 const lang = guideLangOf(Astro.currentLocale);
 for (const row of rows) for (const m of row.marks) {
   if (!seasons.includes(m.at)) throw new Error(`<SeasonTimeline> at="${m.at}": use one of ${seasons.join(', ')}`);
@@ -15,7 +15,7 @@ for (const row of rows) for (const m of row.marks) {
 const used = kinds.filter((k) => rows.some((r) => r.marks.some((m) => m.kind === k)));
 ---
 <figure class="guide-figure guide-timeline" style={`--guide-seasons: ${seasons.length}`}>
-  <div class="guide-timeline-grid" role="table" aria-label={label ?? gt('timeline.label', lang)}>
+  <div class="guide-timeline-grid" role="table" aria-label={gt('timeline.label', lang)}>
     <div class="guide-timeline-row guide-timeline-head" role="row">
       <span role="columnheader" class="guide-timeline-label"></span>
       {seasons.map((s) => <span role="columnheader" class="guide-timeline-season">{gt(`when.${s}`, lang)}</span>)}

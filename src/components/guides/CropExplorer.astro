@@ -1,16 +1,15 @@
 ---
 // Which crops are easiest to make into a landrace: every crop of src/data/crops.ts with an ease tier,
 // grouped by tier (his judgement), as chips that open the crop's details. Without JavaScript the
-// details are listed under each group instead.
+// details are listed under each group instead. No props: the first very easy crop opens first.
 import { crops, easeTiers } from '../../data/crops';
 import { publishedGuides, slugOf } from '../../lib/guides';
 import { gt, guideLangOf, guidePath } from '../../i18n/guides';
 import { cropText } from './crop-text';
 import PollinationBadge from './PollinationBadge.astro';
 import CropMeter from './CropMeter.astro';
-interface Props { open?: string; }
 const lang = guideLangOf(Astro.currentLocale);
-const { open = crops.find((c) => c.ease === 'very-easy')!.id } = Astro.props;
+const open = crops.find((c) => c.ease === 'very-easy')!.id;
 const collator = new Intl.Collator(lang);
 const published = await publishedGuides(lang);
 const here = Astro.url.pathname;

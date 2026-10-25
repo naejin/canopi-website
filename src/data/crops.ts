@@ -261,27 +261,8 @@ export const crops: Crop[] = [
   },
 ];
 
-// Ids a guide may also use for a row.
-export const cropAliases: Record<string, string> = {
-  zucchini: 'squash-pepo',
-  pumpkin: 'squash-pepo',
-  butternut: 'squash-moschata',
-  muskmelon: 'melon',
-  cantaloupe: 'melon',
-  fava: 'fava-bean',
-  'broad-bean': 'fava-bean',
-  garbanzo: 'chickpea',
-  tomato: 'tomato-garden',
-  'garden-tomato': 'tomato-garden',
-  cabbage: 'cabbage-kale-broccoli',
-  kale: 'cabbage-kale-broccoli',
-  broccoli: 'cabbage-kale-broccoli',
-  chard: 'beet',
-  'jerusalem-artichoke': 'sunroot',
-};
-
 export function crop(id: string): Crop {
-  const row = crops.find((c) => c.id === (cropAliases[id] ?? id));
+  const row = crops.find((c) => c.id === id);
   if (!row) throw new Error(`crop "${id}" is not in src/data/crops.ts`);
   return row;
 }

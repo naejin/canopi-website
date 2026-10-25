@@ -1,6 +1,7 @@
 // The Field Guides glossary: one entry per term, in English and French, defined in our own words.
 // <Term id="…"> in a guide shows the entry as a margin note (first use per guide). Ids are kebab-case
-// English; glossaryAliases lets a guide use a common variant (cms, vernalization…).
+// English, one per concept: a guide uses the key itself (no variant ids, so a term's note and its
+// first-use mark always agree; scripts/guides.test.mjs rejects any other id).
 
 export interface GlossaryEntry {
   term: string;
@@ -238,28 +239,8 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
   },
 };
 
-// Variant ids a guide may use for the same entry.
-export const glossaryAliases: Record<string, string> = {
-  cms: 'cytoplasmic-male-sterility',
-  op: 'open-pollinated',
-  f1: 'f1-hybrid',
-  selfing: 'self-pollinating',
-  'self-pollinated': 'self-pollinating',
-  'hybrid-vigor': 'hybrid-vigour',
-  heterosis: 'hybrid-vigour',
-  vernalization: 'vernalisation',
-  'naked-grain': 'hull-less-grain',
-  backcross: 'back-cross',
-  'restorer-genes': 'restorer-gene',
-  winnowing: 'winnow',
-  threshing: 'thresh',
-  screening: 'screen',
-};
-
 export function glossaryEntry(id: string, lang: 'en' | 'fr'): GlossaryEntry {
-  const entry = glossary[glossaryAliases[id] ?? id];
+  const entry = glossary[id];
   if (!entry) throw new Error(`<Term id="${id}">: no such term in src/data/glossary.ts`);
   return entry[lang];
 }
-
-export const canonicalTermId = (id: string): string => glossaryAliases[id] ?? id;

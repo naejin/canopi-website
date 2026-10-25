@@ -79,20 +79,22 @@ test('every guide has a complete frontmatter, matched between English and French
 });
 
 test('guides use only known components, and their ids resolve to the glossary, the crop table and the plan', async () => {
-  const { glossary, glossaryAliases } = await import('../src/data/glossary.ts');
-  const { crops, cropAliases } = await import('../src/data/crops.ts');
+  const { glossary } = await import('../src/data/glossary.ts');
+  const { crops } = await import('../src/data/crops.ts');
   const known = [...read('components/guides/index.ts').matchAll(/^\s{2}([A-Z]\w+),?$/gm)].map((m) => m[1]);
   const diagrams = existsSync(join(src, 'components/guides/diagrams'))
     ? readdirSync(join(src, 'components/guides/diagrams'), { recursive: true }).filter((f) => /\/[A-Z]\w+\.astro$/.test(f)).map((f) => f.match(/([A-Z]\w+)\.astro$/)[1])
     : [];
   assert.ok(known.includes('Term') && known.includes('FoodCaution'), 'components/guides/index.ts lists the guide components');
-  const glossaryIds = Object.keys(glossary).concat(Object.keys(glossaryAliases));
-  const cropIds = crops.map((c) => c.id).concat(Object.keys(cropAliases));
+  // One id per concept: a guide uses the glossary key or the crop id itself, never a variant.
+  const glossaryIds = Object.keys(glossary);
+  const cropIds = crops.map((c) => c.id);
   for (const { body, file, data } of guides) {
     const used = new Set([...body.matchAll(/<([A-Z]\w*)/g)].map((m) => m[1]));
     for (const name of used) assert.ok(known.includes(name) || diagrams.includes(name), `${file}: <${name}> is not a guide component`);
     assert.ok(!/^import\s/m.test(body), `${file}: no imports (components are provided by the layout)`);
     for (const id of attrs(body, 'Term', 'id')) assert.ok(glossaryIds.includes(id), `${file}: term "${id}" is in src/data/glossary.ts`);
+    for (const id of attrs(body, 'CropCard', 'crop')) assert.ok(cropIds.includes(id), `${file}: crop "${id}" is in src/data/crops.ts`);
     for (const name of ['CropCards', 'CropTable']) for (const id of listAttr(body, name, 'crops')) assert.ok(cropIds.includes(id), `${file}: crop "${id}" is in src/data/crops.ts`);
     for (const risk of attrs(body, 'FoodCaution', 'risk')) assert.ok(risks.includes(risk), `${file}: FoodCaution risk "${risk}"`);
     for (const slug of listAttr(body, 'NextGuides', 'slugs')) assert.ok(planned.includes(slug), `${file}: next guide "${slug}" is in the plan`);
@@ -140,7 +142,8 @@ test('the guide chrome strings exist in English and French alike', () => {
 });
 
 test('the glossary defines every term in English and French', async () => {
-  const { glossary, glossaryAliases } = await import('../src/data/glossary.ts');
+  const glossaryModule = await import('../src/data/glossary.ts');
+  const { glossary } = glossaryModule;
   const ids = Object.keys(glossary);
   assert.ok(ids.length >= 57, `${ids.length} terms`);
   for (const id of ids) {
@@ -151,11 +154,14 @@ test('the glossary defines every term in English and French', async () => {
       assert.match(entry.definition.trim(), /[.!?]$/, `${id}: ${lang} definition is a sentence`);
     }
   }
-  for (const [alias, id] of Object.entries(glossaryAliases)) assert.ok(glossary[id] && !glossary[alias], `alias ${alias} → ${id}`);
+  // One id per concept: variants such as "cms" or "vernalization" are not accepted ids.
+  assert.ok(!('glossaryAliases' in glossaryModule), 'the glossary has no alias ids');
+  assert.throws(() => glossaryModule.glossaryEntry('no-such-term', 'en'), /no such term/);
 });
 
 test('the crop table has the 40 crops of the guide map, each named in English and French', async () => {
-  const { crops, cropAliases, easeTiers } = await import('../src/data/crops.ts');
+  const cropModule = await import('../src/data/crops.ts');
+  const { crops, easeTiers } = cropModule;
   assert.equal(crops.length, 40);
   const ids = crops.map((c) => c.id);
   assert.equal(new Set(ids).size, ids.length, 'unique ids');
@@ -167,7 +173,21 @@ test('the crop table has the 40 crops of the guide map, each named in English an
     assert.ok(crop.cms === null || ['low', 'flagged', 'high'].includes(crop.cms), `${crop.id}: cms`);
     for (const field of ['tip', 'note']) if (crop[field]) for (const lang of guideLangs) assert.ok(crop[field][lang]?.trim(), `${crop.id}: ${field}.${lang}`);
   }
-  for (const [alias, id] of Object.entries(cropAliases)) assert.ok(ids.includes(id) && !ids.includes(alias), `alias ${alias} → ${id}`);
+  assert.ok(!('cropAliases' in cropModule), 'the crop table has no alias ids');
+  assert.throws(() => cropModule.crop('zucchini'), /not in src\/data\/crops\.ts/, 'a variant name is not a crop id');
+});
+
+test('the glossary plugin gives each term id one note, beside the block of its first use', async () => {
+  const { rehypeGuideTerms } = await import('../src/lib/rehype-guide-terms.mjs');
+  const term = (id) => ({ type: 'mdxJsxTextElement', name: 'Term', attributes: [{ type: 'mdxJsxAttribute', name: 'id', value: id }], children: [{ type: 'text', value: id }] });
+  const para = (...ids) => ({ type: 'element', tagName: 'p', children: ids.map(term) });
+  const tree = { type: 'root', children: [para('landrace', 'heirloom'), para('landrace'), para('heirloom', 'grex')] };
+  rehypeGuideTerms()(tree, { path: '/x/src/content/guides/demo/en.mdx' });
+  const notes = tree.children.filter((n) => n.name === 'TermNote').map((n) => n.attributes[0].value);
+  assert.deepEqual(notes, ['landrace', 'heirloom', 'grex'], 'one note per id, in order of first use');
+  assert.deepEqual(tree.children.map((n) => n.name ?? n.tagName), ['TermNote', 'TermNote', 'p', 'p', 'TermNote', 'p']);
+  const firsts = tree.children.filter((n) => n.tagName === 'p').flatMap((p) => p.children.map((t) => t.attributes.some((a) => a.name === 'first')));
+  assert.deepEqual(firsts, [true, true, false, false, true]);
 });
 
 test('the bibliography gives each book an optional, unique id', () => {

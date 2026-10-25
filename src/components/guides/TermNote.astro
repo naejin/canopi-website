@@ -1,11 +1,11 @@
 ---
 // The margin note for a glossary term; placed by src/lib/rehype-guide-terms.mjs, not written by hand.
-import { canonicalTermId, glossaryEntry } from '../../data/glossary';
+import { glossaryEntry } from '../../data/glossary';
 import { guideLangOf } from '../../i18n/guides';
 interface Props { id: string; }
 const { id } = Astro.props;
 const entry = glossaryEntry(id, guideLangOf(Astro.currentLocale));
 ---
-<aside class="guide-note guide-note-term" id={`guide-note-${canonicalTermId(id)}`}>
+<aside class="guide-note guide-note-term" id={`guide-note-${id}`}>
   <p><b class="guide-note-title">{entry.term}</b>{entry.definition}</p>
 </aside>
