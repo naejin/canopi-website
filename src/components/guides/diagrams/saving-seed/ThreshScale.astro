@@ -1,10 +1,11 @@
 ---
 // Saving seed: how hard to thresh, from gentle to strong. A widening bar, then four ways in order:
 // tip a cup-shaped pod over a bowl, walk on easy pods, beat tough ones with a stick, bang dry plants
-// inside a bin. Each step's title, text and drawing description come from the MDX.
+// inside a bin. Each step's title, text and drawing description come from the MDX. The widening bar
+// is hidden from screen readers, so `order` says in words that the list runs from gentle to strong.
 interface Step { title: string; text: string; alt: string; }
-interface Props { from: string; to: string; steps: Step[]; }
-const { from, to, steps } = Astro.props;
+interface Props { from: string; to: string; order: string; steps: Step[]; }
+const { from, to, order, steps } = Astro.props;
 if (steps.length !== 4) throw new Error('<ThreshScale>: four steps, gentle to strong (bowl, feet, stick, bin)');
 const seeds: [number, number][] = [[38, 70], [46, 74], [55, 71], [63, 75], [71, 70], [80, 74]];
 ---
@@ -14,6 +15,7 @@ const seeds: [number, number][] = [[38, 70], [46, 74], [55, 71], [63, 75], [71, 
     <text x="64" y="17" text-anchor="end" font-size="11" class="guide-t-muted">{from}</text>
     <text x="276" y="17" font-size="11" class="guide-t-muted">{to}</text>
   </svg>
+  <p class="guide-visually-hidden">{order}</p>
   <ol class="guide-stages">
     {steps.map((step, i) => (
       <li class="guide-stage">

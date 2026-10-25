@@ -2,10 +2,11 @@
 // Saving seed: the two routes side by side. Dry seed (dry on the plant, thresh, screen, winnow) on
 // the left, wet seed (scoop, ferment or rinse, keep what sinks, dry, winnow) on the right; both lanes
 // end in one box, "dry, then store". Labels come from the MDX; boxes grow to fit wrapped lines.
-import { r1 } from '../../../../lib/svg';
+import { r1, seedOf } from '../../../../lib/svg';
 interface Lane { title: string; crops: string; steps: string[]; }
-interface Props { dry: Lane; wet: Lane; end: string; alt: string; }
-const { dry, wet, end, alt } = Astro.props;
+interface Props { dry: Lane; wet: Lane; end: string; title: string; alt: string; }
+const { dry, wet, end, title, alt } = Astro.props;
+const uid = `seed-lanes-${seedOf(title + alt).toString(36)}`;
 if (!dry.steps.length || !wet.steps.length) throw new Error('<SeedLanes>: each lane needs at least one step');
 
 // Rough wrap by character count (Source Sans 3 at 11.5px is about 5.6px per character).
@@ -40,7 +41,9 @@ const H = joinY + endH + 4;
 const arrowHead = (x: number, y: number) => `M${r1(x - 4)} ${r1(y - 6)}L${r1(x)} ${r1(y)}L${r1(x + 4)} ${r1(y - 6)}Z`;
 ---
 <figure class="guide-figure">
-  <svg viewBox={`0 0 ${W} ${r1(H)}`} role="img" aria-label={alt} style="max-width: 34rem; width: 100%; margin-inline: auto;">
+  <svg viewBox={`0 0 ${W} ${r1(H)}`} role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`} style="max-width: 34rem; width: 100%; margin-inline: auto;">
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
     {lanes.map((lane) => (
       <g>
         <text x={lane.x + LANE / 2} y="14" text-anchor="middle" font-size="14" font-weight="600" style="fill: var(--accent-ink);">{lane.title}</text>
