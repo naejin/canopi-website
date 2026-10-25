@@ -1,0 +1,65 @@
+---
+// Keeping a landrace: one landrace, many gardens. Five seed jars, three above and two below one shared
+// pool; each jar has an arrow into the pool and one back out. gardens are the five jar labels (top row
+// left to right, then bottom row), centre the pool's label, alt describes the drawing. Labels wrap.
+import { r1 } from '../../../../lib/svg';
+interface Props { gardens: string[]; centre: string; alt: string; }
+const { gardens, centre, alt } = Astro.props;
+if (gardens.length !== 5) throw new Error('<LandracePool>: five gardens');
+function wrap(text: string, max: number): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(/ +/)) {
+    if (line && (line + ' ' + word).length > max) { lines.push(line); line = word; } else line = line ? `${line} ${word}` : word;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+const W = 360, LINE = 16, TOP_JAR = 76, POOL_Y = 146, POOL_H = 64, BOTTOM_JAR = POOL_Y + POOL_H + 52;
+const tones = [6, 4, 1, 3, 5];
+const spots = [[60, TOP_JAR], [180, TOP_JAR], [300, TOP_JAR], [110, BOTTOM_JAR], [250, BOTTOM_JAR]];
+const jars = gardens.map((label, i) => {
+  const [x, y] = spots[i];
+  const top = y < POOL_Y;
+  const lines = wrap(label, 13);
+  // Arrow ends: from the jar's edge to the pool's edge, two side by side (in: accent, out: muted).
+  const a = top ? y + 22 : y - 22, b = top ? POOL_Y - 5 : POOL_Y + POOL_H + 5;
+  const arrow = (xx: number, from: number, to: number) => {
+    const d = Math.sign(to - from);
+    return `M${xx} ${from}V${to}M${xx - 4} ${r1(to - d * 6)}L${xx} ${to}L${xx + 4} ${r1(to - d * 6)}`;
+  };
+  return {
+    x, y, tone: tones[i],
+    lines, ly: top ? y - 26 - (lines.length - 1) * LINE : y + 40,
+    inPath: arrow(x - 6, a, b), outPath: arrow(x + 6, b, a),
+  };
+});
+const centreLines = wrap(centre, 34);
+const H = BOTTOM_JAR + 40 + 2 * LINE;
+---
+<svg class="guide-landrace-pool" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={alt}>
+  <rect x="24" y={POOL_Y} width={W - 48} height={POOL_H} rx={POOL_H / 2} class="guide-lp-pool" />
+  {centreLines.map((line, k) => <text x={W / 2} y={POOL_Y + POOL_H / 2 + 5 - ((centreLines.length - 1) * 17) / 2 + k * 17} text-anchor="middle" class="guide-lp-centre">{line}</text>)}
+  {jars.map((j) => (
+    <g>
+      <path d={j.inPath} class="guide-lp-arrow" />
+      <path d={j.outPath} class="guide-lp-arrow guide-lp-out" />
+      <rect x={j.x - 12} y={j.y - 23} width="24" height="7" rx="1.5" class="guide-paper" />
+      <rect x={j.x - 16} y={j.y - 16} width="32" height="38" rx="7" class="guide-glass" />
+      <ellipse cx={j.x - 6} cy={j.y + 12} rx="4.5" ry="3.2" class={`guide-c${j.tone}`} />
+      <ellipse cx={j.x + 6} cy={j.y + 13} rx="4.5" ry="3.2" class="guide-c2" />
+      <ellipse cx={j.x} cy={j.y + 5} rx="4.5" ry="3.2" class={`guide-c${j.tone}`} />
+      <ellipse cx={j.x + 7} cy={j.y + 3} rx="4.5" ry="3.2" class="guide-c3" />
+      {j.lines.map((line, k) => <text x={j.x} y={j.ly + k * LINE} text-anchor="middle" class="guide-lp-label">{line}</text>)}
+    </g>
+  ))}
+</svg>
+
+<style>
+  .guide-landrace-pool { max-width: 26rem; }
+  .guide-lp-pool { fill: var(--surface-alt); stroke: var(--accent); stroke-width: 1.6; }
+  .guide-lp-centre { font-size: 14px; font-weight: 600; }
+  .guide-lp-label { font-size: 14px; }
+  .guide-lp-arrow { stroke: var(--accent); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-lp-out { stroke: var(--text-muted); }
+</style>
