@@ -1,0 +1,53 @@
+---
+// Potato, garlic and sunroot from true seed: Lofthouse's sunroot breeding as four stages, each a small
+// drawing above its caption (four across, two by two on phones): a garden × wild cross, a bed of about
+// 50 seedlings, the same bed with the best few kept, then large smooth tubers grown on as clones.
+// steps are the four { when, text } captions; alts the four drawing descriptions.
+import { r1, rng, seedOf, grid } from '../../../../lib/svg';
+interface Props { steps: { when: string; text: string }[]; alts: string[]; }
+const { steps, alts } = Astro.props;
+if (steps.length !== 4 || alts.length !== 4) throw new Error('SunrootYears: give exactly four steps and four alts');
+const rand = rng(seedOf('true-seed:sunroot-years'));
+// A tuber as a lumpy outline: knobs > 0 adds bumps around a smooth ellipse.
+const tuber = (cx: number, cy: number, rx: number, ry: number, knobs: number, rot: number) => {
+  const phase = rand();
+  const pts = Array.from({ length: 48 }, (_, k) => {
+    const a = (k / 48) * Math.PI * 2;
+    const bump = knobs ? 1 + 0.12 * Math.sin(a * knobs + phase) + 0.08 * Math.sin(a * (knobs + 2) + 2 * phase) : 1;
+    return [cx + rx * bump * Math.cos(a), cy + ry * bump * Math.sin(a)];
+  });
+  return { d: `M${pts.map(([x, y]) => `${r1(x)} ${r1(y)}`).join('L')}Z`, transform: `rotate(${rot} ${cx} ${cy})` };
+};
+const seedlings = grid(10, 5, 18, 26, 14, 17, rand, 3);
+const kept = new Set([3, 11, 18, 24, 32, 37, 46]);
+const sprout = (x: number, y: number) => `M${x} ${y + 6}V${y}m0 0q-5 -1 -6 -5q5 0 6 5q1 -5 6 -5q-1 4 -6 5`;
+const drawings = [
+  { tubers: [tuber(48, 58, 26, 15, 5, -10), tuber(126, 60, 16, 8, 0, 14)], cross: true, seeds: [] as { d: string; faded: boolean }[], rings: [] as [number, number][] },
+  { tubers: [], cross: false, seeds: seedlings.map(([x, y]) => ({ d: sprout(x, y), faded: false })), rings: [] },
+  { tubers: [], cross: false, seeds: seedlings.map(([x, y], i) => ({ d: sprout(x, y), faded: !kept.has(i) })), rings: seedlings.filter((_, i) => kept.has(i)) },
+  { tubers: [tuber(46, 52, 24, 14, 0, -12), tuber(106, 48, 26, 15, 0, 10), tuber(78, 80, 22, 12, 0, 4)], cross: false, seeds: [], rings: [] },
+];
+---
+<ol class="guide-stages guide-sunroot-years">
+  {steps.map((step, i) => (
+    <li class="guide-stage">
+      <svg viewBox="0 0 160 112" role="img" aria-label={alts[i]}>
+        <rect x="2" y="2" width="156" height="108" rx="7" class="guide-paper" />
+        {drawings[i].tubers.map((t) => <path d={t.d} transform={t.transform} class="guide-sy-tuber" />)}
+        {drawings[i].cross && <path d="M91 52l8 8m0 -8l-8 8" class="guide-sy-cross" />}
+        {drawings[i].seeds.map((s) => <path d={s.d} class:list={['guide-sy-sprout', { 'guide-sy-faded': s.faded }]} />)}
+        {drawings[i].rings.map(([x, y]) => <circle cx={x} cy={y + 1} r="7.5" class="guide-sy-ring" />)}
+      </svg>
+      <span class="guide-stage-when">{step.when}</span>
+      <span class="guide-stage-do">{step.text}</span>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .guide-sy-tuber { fill: var(--seed-3); stroke: var(--seed-1); stroke-width: 1.4; }
+  .guide-sy-cross { stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; }
+  .guide-sy-sprout { stroke: var(--leaf); stroke-width: 1.3; fill: var(--leaf); fill-opacity: 0.35; stroke-linecap: round; }
+  .guide-sy-faded { opacity: 0.25; }
+  .guide-sy-ring { fill: none; stroke: var(--accent); stroke-width: 1.6; }
+</style>
