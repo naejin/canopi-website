@@ -1,0 +1,40 @@
+---
+type: Project
+title: Field Guides plan
+description: Build plan for the 17 Field Guides drawn from Landrace Gardening — steps, streams, file ownership and exit criteria.
+status: stable
+tags: [field-guides, plan]
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T09:08:04Z }
+---
+
+# Field Guides plan
+
+Rules: [user decisions](/decisions/field-guides-user-decisions.md), [architecture](/decisions/field-guides-architecture.md), process: [agentic delivery](/runbooks/agentic-delivery.md).
+Per-guide specs (book-derived, gitignored): `.local/field-guides/specs/NN-slug.md`; map, glossary, crop table, component list: `00-map.md`.
+
+## Guides (17)
+Seeds & landraces: 01 landrace-gardening (hub), 02 hybrids-heirlooms-landraces, 03 will-they-cross, 04 hand-crosses, 05 choosing-seed-parents, 06 keeping-a-landrace, 07 saving-seed, 08 storing-seed.
+Crops: 09 squash-melons-cucumbers, 10 corn, 11 beans-and-legumes, 12 tomatoes, 13 small-grains, 14 true-seed-potato-garlic-sunroot.
+Seasons: 15 season-shifting, 16 food-all-year. Pests & resilience: 17 pests-without-sprays.
+Dropped (2026-10-25, safety rule): nixtamalization and cooking-beans guides; a short FoodCaution (no doses, times, methods, no outside links) appears in the crop guides instead.
+
+## Step 1 — Foundation + hub (one stream, `foundation`)
+Owns: `package.json`, `package-lock.json`, `astro.config.mjs`, `src/content.config.ts`, `src/layouts|components/Base.astro`, `Header.astro`, `Footer.astro`, `src/components/guides/**`, `src/lib/svg.ts`, `src/data/crops.ts`, `src/data/glossary.ts`, `src/data/bibliography.md|.ts`, `src/components/Bibliography.astro`, `src/i18n/guides/*`, `src/i18n/translations/*.json` (nav + backlink keys only), `src/pages/guides/**`, `src/pages/[lang]/guides/**`, `src/styles/guides.css`, `src/styles/tokens.css`, `scripts/guides.test.mjs`, `scripts/homepage.test.mjs`, `scripts/check-built-site.mjs`, `src/content/guides/landrace-gardening/**`.
+Exit: every shared component in `00-map.md` exists with a demo use; hub guide en+fr published; index page lists guides by domain; gates green; screenshots at 390/1280, light/dark, reviewed.
+
+## Step 2 — Guide streams (parallel, max 4 at once)
+Each stream owns only `src/content/guides/<slug>/**` and `src/components/guides/diagrams/<slug>/**` for its guides. Needs in shared files (a component variant, a crop row, a glossary term) go in the stream's report and land in a shared-files hand-off branch, never in the stream.
+- S1 07 saving-seed + 08 storing-seed
+- S2 02 hybrids + 03 will-they-cross
+- S3 09 squash + 10 corn
+- S4 11 beans + 12 tomatoes
+- S5 05 choosing-seed-parents + 06 keeping-a-landrace + 04 hand-crosses
+- S6 13 small-grains + 14 true-seed
+- S7 15 season-shifting + 16 food-all-year + 17 pests
+Exit per stream: en+fr guides render; review (bugs, reader usefulness, safety rule, no close paraphrase of the book, French quality) with each finding verified; gates green.
+
+## Step 3 — Integrate
+Hand-off branch for shared-file requests; cross-guide link pass (related/next), glossary completeness; real-browser check of every guide at 390/1280 light/dark; pre-push review of the whole diff; push to `master` (deploys).
+
+## Tracker
+bd epic "Field Guides", one item per step and per stream, labels `guides-step-<n>`.

@@ -1,0 +1,48 @@
+---
+type: Module
+title: src/scripts
+description: Vanilla browser modules for the home and bibliography pages (chrome, hero reveal, downloads, featured design canvas and map, contact, donations).
+resource: ../../src/scripts
+tags: [module, frontend]
+status: stable
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:57:08Z }
+sources:
+  - id: scripts
+    resource: ../../src/scripts
+    title: src/scripts/
+    digest: sha256:c011b2559c1bf6dc
+    last_modified: 2026-10-16T10:46:59Z
+---
+
+# Responsibility
+
+Client-side behaviour, no framework. Scripts hold no user-facing English: every string comes from the page's JSON data block.
+
+# Key files
+
+- [home.js](../../src/scripts/home.js): home entry; wires everything below.
+- [chrome.js](../../src/scripts/chrome.js): shared chrome (dialogs, donate, language menu, theme toggle); `initChrome({ onThemeChange })`, `isDark()`.
+- [page-data.js](../../src/scripts/page-data.js): reads `#page-data` JSON (written by `PageData.astro`); exports `lang`, `version`, `installers`, `text(key, replacements)`.
+- [downloads.js](../../src/scripts/downloads.js): OS-aware primary action and installer dialog; falls back to Canopi Web for unknown devices.
+- [hero-reveal.js](../../src/scripts/hero-reveal.js): cursor "ink dot" reveal of the hero painting; touch taps bloom, reduced motion stays still.
+- [design-canvas.js](../../src/scripts/design-canvas.js): draws the featured design as the app does, from `/data/featured-designs.json` and `/data/plant-symbols.json`.
+- [design-map.js](../../src/scripts/design-map.js): MapLibre design finder with clusters and a nearest-first list.
+- [contact.js](../../src/scripts/contact.js): in-place validation, posts with `Accept: application/json`.
+- [donate.js](../../src/scripts/donate.js), [dialogs.js](../../src/scripts/dialogs.js): HelloAsso donation dialog and native `<dialog>` helpers.
+
+# Interfaces
+
+`initChrome`, `initDownloads`, `initHeroReveal`, `createDesignCanvas`, `createDesignFinder`, `initContact`, `initDonate`, `initDialogs`, `openDialog`, `text`.
+
+# Dependencies
+
+- [src/lib](/modules/src-lib.md): `installer.mjs`, `nearest.mjs`.
+- MapLibre GL served unbundled from `/vendor/maplibre-gl-<version>/` (copied by `scripts/copy-maplibre.mjs`); OpenFreeMap Liberty tiles; HelloAsso iframe.
+
+# Gotchas
+
+- No third-party request before the visitor asks: MapLibre loads only near the viewport, the HelloAsso iframe only when Donate opens. `/#donate` opens the dialog.
+- Geolocation is requested only on button press, kept in memory, never sent. Map pins are rounded (~10 km) and max zoom is 9.
+- Theme-dependent canvases redraw via `onThemeChange`.
+- `npm run build` wipes `public/vendor`; a running dev server then 404s the map until restarted.
+- `homepage.test.mjs` fails if a `text()` key used by a script is not passed to the page.

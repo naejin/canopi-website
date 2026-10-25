@@ -1,0 +1,49 @@
+---
+type: Module
+title: src/lib
+description: Framework-free logic shared by the Worker endpoint, the page scripts and node --test (contact handler, installer detection, nearest-design distances).
+resource: ../../src/lib
+tags: [module]
+status: stable
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:57:07Z }
+sources:
+  - id: lib
+    resource: ../../src/lib
+    title: src/lib/
+    digest: sha256:a8fd28420abb702e
+    last_modified: 2026-10-15T09:36:40Z
+  - id: contact-api
+    resource: ../../src/pages/api/contact.ts
+    title: src/pages/api/contact.ts
+    digest: sha256:d18d3ee4b6c03e07
+    last_modified: 2026-10-14T21:57:40Z
+---
+
+# Responsibility
+
+Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run them directly. Not UI code: DOM wiring lives in [src/scripts](/modules/src-scripts.md).
+
+# Key files
+
+- [contact.mjs](../../src/lib/contact.mjs): the `POST /api/contact` handler.
+- [installer.mjs](../../src/lib/installer.mjs): picks a desktop installer from the user agent.
+- [nearest.mjs](../../src/lib/nearest.mjs): great-circle distances for the design finder.
+
+# Interfaces
+
+- `handleContact(request, env, { timeoutMs, log })`: validates and mails the form through `env.EMAIL.send()` to `env.MAIL_TO`. Answers JSON `{ ok, code, fields? }` when `Accept: application/json`, else a 303 to `/{lang}/contact/sent/` or `/failed/`.
+- `normalise(form)`, `mailText(fields, lang)`, constants `LOCALES`, `FROM`, `MAX_BODY` (32 KiB), `LIMITS`, `TIMEOUT_MS` (10 s).
+- `detectInstaller(ua, platform, architecture, touchPoints, bitness)` returns `windows`, `mac-arm`, `mac-intel`, `linux` or `null`; `isMacDesktop(...)`.
+- `distanceKm(a, b)`, `nearestFirst(designs, point)`.
+
+# Dependencies
+
+- Used by [src/pages](/modules/src-pages.md) (`api/contact.ts` passes the Worker `env` from `cloudflare:workers`) and [src/scripts](/modules/src-scripts.md) (`downloads.js`, `design-map.js`).
+- Tested by [scripts](/modules/scripts.md): `contact.test.mjs`, `homepage.test.mjs`, `nearest.test.mjs`.
+- No external libraries.
+
+# Gotchas
+
+- Contact: foreign `Origin` gets 403 (missing or `"null"` Origin is tolerated); filled honeypot field `website` answers success without sending; missing `EMAIL` binding gives 503; a send result without `messageId` counts as failure (so `wrangler dev` local sends report failure).
+- Permanent mailer error codes map to `refused`, others to `failed`. Logs carry codes only, never message content or the address.
+- Installer detection returns `null` (keep the chooser) for mobile, ChromeOS, touch Macs, 32-bit, Windows/Linux ARM, and Macs without a known architecture: never guess.

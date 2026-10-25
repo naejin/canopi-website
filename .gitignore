@@ -60,3 +60,4 @@ coverage/
 .beads-credential-key
 public/vendor/
 scripts/featured-files.local.json
+.local/
