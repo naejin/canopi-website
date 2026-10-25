@@ -1,9 +1,13 @@
 ---
 import { t, locales, languageNames, localizedUrl, type Locale } from '../i18n/utils';
 import { DOCS_URL, discordUrl } from '../data/site';
+import { guidesPath } from '../i18n/guides';
 // path: the page within a locale, so the language menu leads to the same page in another language.
-interface Props { lang: Locale; path?: string; }
-const { lang, path = '/' } = Astro.props;
+// alternates: the locales the page exists in; the menu sends the others to the English page.
+// current: the section the page belongs to, marked in the navigation.
+interface Props { lang: Locale; path?: string; alternates?: readonly Locale[]; current?: 'guides'; }
+const { lang, path = '/', alternates = locales, current } = Astro.props;
+const menuTarget = (locale: Locale): Locale => (alternates.includes(locale) ? locale : 'en');
 ---
 <a class="skip-link" href="#main">{t('header.skip', lang)}</a>
 <header class="site-header">
@@ -14,13 +18,14 @@ const { lang, path = '/' } = Astro.props;
     </a>
     <nav class="header-nav" aria-label={t('header.navigation', lang)}>
       {DOCS_URL && <a class="nav-link" href={DOCS_URL}>{t('header.docs', lang)}</a>}
+      <a class="nav-link nav-guides" href={guidesPath(lang)} aria-current={current === 'guides' ? 'page' : undefined}>{t('header.guides', lang)}</a>
       <button class="nav-link" type="button" data-open-donate>{t('header.donate', lang)}</button>
       <a class="nav-link nav-discord" href={discordUrl(lang)}>Discord</a>
       <details class="lang-menu" data-lang-menu>
         <summary class="nav-link" aria-label={`${t('header.language', lang)}: ${languageNames[lang]}`}>{lang.toUpperCase()}</summary>
         <ul class="menu-panel" role="list">
           {locales.map((locale) => (
-            <li><a href={localizedUrl(path, locale)} lang={locale} hreflang={locale} aria-current={locale === lang ? 'true' : undefined}>{languageNames[locale]}</a></li>
+            <li><a href={localizedUrl(path, menuTarget(locale))} lang={locale} hreflang={menuTarget(locale)} aria-current={locale === lang ? 'true' : undefined}>{languageNames[locale]}</a></li>
           ))}
         </ul>
       </details>

@@ -1,6 +1,7 @@
 ---
 import { t, localizedUrl, type Locale } from '../i18n/utils';
 import { DOCS_URL, SOURCE_URL, discordUrl } from '../data/site';
+import { guidesPath } from '../i18n/guides';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
 ---
@@ -14,6 +15,7 @@ const { lang } = Astro.props;
       {DOCS_URL && <li><a href={DOCS_URL}>{t('header.docs', lang)}</a></li>}
       <li><a href={SOURCE_URL}>{t('footer.source', lang)}</a></li>
       <li><a href={discordUrl(lang)}>Discord</a></li>
+      <li><a href={guidesPath(lang)}>{t('header.guides', lang)}</a></li>
       <li><a href={localizedUrl('/bibliography/', lang)}>{t('bibliography.title', lang)}</a></li>
       <li><button class="link-button" type="button" data-open-donate>{t('header.donate', lang)}</button></li>
       <li><a href={`${localizedUrl('/', lang)}#contact`}>{t('footer.contact', lang)}</a></li>

@@ -8,6 +8,9 @@ edit it and rebuild. Run "npm run check:bibliography" to visit every link (it ne
   11 src/i18n/translations/*.json files, as "bibliography.theme.<slug>" (slug: the heading in lower
   case, accents dropped, words joined by "-"); npm test checks it.
 - "### Book" starts a book. The heading is only a name for this file; the page shows the edition titles.
+- "- id:" (optional) names the book for other pages: a Field Guide cites it by this id in its
+  "sources", and the bibliography links the book to every guide that does. Kebab-case, unique (the
+  build checks). It is also the book's #anchor on /bibliography/. An Indonesian edition is "- ind:".
 - "- by:" and "- year:" give the authors and the year the book was first published.
 - "- climate:" (optional) names the climates a book is written for, from the Canopi app's zones:
   tropical, subtropical, mediterranean, arid, temperate, continental, boreal (several: "temperate, continental").
@@ -117,6 +120,7 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 ## Seeds
 
 ### Landrace Gardening
+- id: landrace-gardening
 - by: Joseph Lofthouse
 - year: 2021
 - featured: yes

@@ -10,9 +10,16 @@ interface Props {
   noindex?: boolean;
   // The page's path within a locale, for the alternate-language links.
   path?: string;
+  // The locales the page exists in (hreflang links); every locale unless a page says otherwise
+  // (Field Guides: en and fr).
+  alternates?: readonly Locale[];
+  // "article" for a Field Guide; pages are "website" otherwise.
+  ogType?: 'website' | 'article';
+  // The page's JSON-LD; the Canopi app's SoftwareApplication unless a page gives its own.
+  structuredData?: Record<string, unknown>;
 }
 
-const { title, description, lang, noindex = false, path = '/' } = Astro.props;
+const { title, description, lang, noindex = false, path = '/', alternates = locales, ogType = 'website', structuredData } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 // The locale's painting with the wordmark (scripts/make-og-images.py).
 const ogImage = new URL(`/og/og-${lang}.jpg`, Astro.site);
@@ -27,8 +34,8 @@ const ogImage = new URL(`/og/og-${lang}.jpg`, Astro.site);
     <link rel="icon" type="image/png" sizes="128x128" href="/canopi-icon-128.png" />
     <link rel="canonical" href={canonicalURL} />
 
-    <!-- hreflang tags for all locales -->
-    {locales.map((locale) => (
+    <!-- hreflang tags for every locale the page exists in -->
+    {alternates.map((locale) => (
       <link
         rel="alternate"
         hreflang={locale}
@@ -43,7 +50,7 @@ const ogImage = new URL(`/og/og-${lang}.jpg`, Astro.site);
     {noindex && <meta name="robots" content="noindex" />}
 
     <!-- Open Graph -->
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -60,7 +67,7 @@ const ogImage = new URL(`/og/og-${lang}.jpg`, Astro.site);
     <meta name="twitter:image" content={ogImage} />
 
     <!-- JSON-LD Structured Data -->
-    <script type="application/ld+json" set:html={JSON.stringify({
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData ?? {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "Canopi",

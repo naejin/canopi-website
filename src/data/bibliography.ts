@@ -15,6 +15,8 @@ export interface Edition {
 export const climates = ['tropical', 'subtropical', 'mediterranean', 'arid', 'temperate', 'continental', 'boreal'];
 
 export interface Book {
+  // A stable name other pages cite the book by (a Field Guide's sources), and its #anchor on /bibliography/.
+  id?: string;
   by: string;
   year: string;
   // The climates the book is written for; empty when its advice holds in any climate.
@@ -64,9 +66,16 @@ source.split('\n').forEach((text, index) => {
   }
 
   const field = trimmed.match(/^-\s*([a-zA-Z-]+)\s*:\s*(.*)$/);
-  if (!field || !book) return fail(line, 'expected "- by:", "- year:", "- climate:", "- featured:" or "- <language>: [Title](https://…)" under a "### Book"');
+  if (!field || !book) return fail(line, 'expected "- id:", "- by:", "- year:", "- climate:", "- featured:" or "- <language>: [Title](https://…)" under a "### Book"');
   const [, name, value] = field;
-  if (name === 'by') book.by = value;
+  // "- id:" names the book, not an Indonesian edition (write one of those as "- ind:").
+  if (name === 'id') {
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) fail(line, '"- id:" takes a kebab-case name, such as "landrace-gardening"');
+    if (book.id) fail(line, 'a book has one "- id:"');
+    if (themes.some((theme) => theme.books.some((other) => other.id === value))) fail(line, `the id "${value}" is already used by another book`);
+    book.id = value;
+  }
+  else if (name === 'by') book.by = value;
   else if (name === 'year') book.year = value;
   else if (name === 'featured') {
     if (!/^(yes|no)$/i.test(value)) fail(line, '"- featured:" takes "yes" or "no"');

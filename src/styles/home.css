@@ -290,6 +290,10 @@
 .book-climate { margin-top: 3px; font-size: 13px; color: var(--text-secondary); }
 .book-climate span { margin-right: 9px; color: var(--text-muted); }
 /* The other editions as language codes, like a catalogue's shelf marks; each names its language on hover. */
+.book-guides { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 9px; margin-top: 3px; font-size: 13px; color: var(--text-muted); }
+.book-guides a { font-weight: 600; color: var(--accent-ink); text-underline-offset: 0.18em; }
+.book { scroll-margin-top: 24px; }
+.book:target .book-title { color: var(--accent-ink); }
 .book-editions { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 9px; margin-top: 3px; font-size: 13px; color: var(--text-muted); }
 .book-editions a { padding: 2px 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-decoration: none; color: var(--text-secondary); }
 .book-editions a:hover { color: var(--accent-ink); text-decoration: underline; }
