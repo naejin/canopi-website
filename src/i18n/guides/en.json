@@ -146,7 +146,7 @@
   "ease.why.very-hard": "Crops that rarely cross on their own, or that are hard to manage.",
   "ease.count": "{count} crops",
   "explorer.meter": "Share of seed from crossing, in his experience. Striped where he gives a word, not a figure.",
-  "explorer.flag": "Avoid shop-bought hybrids",
+  "explorer.flag": "Lofthouse flags these hybrids: check the flowers for pollen",
   "explorer.choose": "Choose a crop for details.",
   "explorer.unrated": "Not in his ease table: {list}.",
   "table.crop": "Crop",

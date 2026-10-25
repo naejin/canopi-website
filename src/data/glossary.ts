@@ -14,8 +14,8 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
     fr: { term: 'Variété population', definition: 'Une population cultivée, diverse, qui se croise librement et que ceux qui la cultivent adaptent à leur terroir (on dit aussi variété de pays).' },
   },
   heirloom: {
-    en: { term: 'Heirloom', definition: 'An old variety kept true to type by seed savers over many decades.' },
-    fr: { term: 'Variété ancienne', definition: 'Une variété ancienne que des générations de jardiniers ont gardée fidèle à son type.' },
+    en: { term: 'Heirloom', definition: 'An old open-pollinated variety, kept true to type by saving its seed apart from other varieties, often for decades.' },
+    fr: { term: 'Variété ancienne', definition: 'Une variété reproductible transmise depuis longtemps, gardée fidèle à son type en récoltant ses graines à l’écart des autres variétés, souvent depuis des décennies.' },
   },
   'open-pollinated': {
     en: { term: 'Open-pollinated (OP)', definition: 'A variety pollinated by wind, insects or itself, whose seed grows into plants like the parent if kept from crossing.' },
@@ -50,8 +50,8 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
     fr: { term: 'Auto-incompatible', definition: 'Se dit d’une plante qui ne peut pas faire de graines avec son propre pollen et a besoin d’un partenaire non apparenté.' },
   },
   monoecious: {
-    en: { term: 'Monoecious', definition: 'Having separate male and female flowers on the same plant, as squash and corn do.' },
-    fr: { term: 'Monoïque', definition: 'Qui porte des fleurs mâles et des fleurs femelles séparées sur le même pied, comme la courge et le maïs.' },
+    en: { term: 'Monoecious', definition: 'Bearing two kinds of flower on one plant, some that make pollen and some that make seed, as squash and corn do.' },
+    fr: { term: 'Monoïque', definition: 'Se dit d’une plante qui porte deux sortes de fleurs, les unes à pollen, les autres à graines, comme la courge et le maïs.' },
   },
   dioecious: {
     en: { term: 'Dioecious', definition: 'Having male and female flowers on separate plants, as spinach and asparagus do.' },

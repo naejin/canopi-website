@@ -67,7 +67,7 @@ const cloneGuide = 'true-seed-potato-garlic-sunroot';
 export const crops: Crop[] = [
   {
     id: 'squash-pepo', name: { en: 'Squash (pepo)', fr: 'Courge (pepo)' },
-    examples: { en: 'zucchini, acorn, Delicata, pumpkin, crookneck, ornamental gourds', fr: 'courgette, courge poivrée, Delicata, citrouille, courge à cou tors, coloquintes décoratives' },
+    examples: { en: 'zucchini, acorn, Delicata, pumpkin, crookneck, ornamental gourds', fr: 'courgette, courge poivrée, Delicata, citrouille, courge à cou tors, courges décoratives (coloquintes)' },
     species: 'Cucurbita pepo', pollination: { by: 'insects' }, crossing: high, life: annual, seed: 'wet-rinse', ease: 'very-easy', cms: 'low', tip: squashTip, guide: squashGuide,
   },
   {
@@ -107,7 +107,7 @@ export const crops: Crop[] = [
   {
     id: 'fava-bean', name: { en: 'Fava bean', fr: 'Fève' },
     species: 'Vicia faba', pollination: { by: 'insects', bumblebees: true }, crossing: about(30), life: annual, seed: 'dry', ease: 'very-easy', cms: 'low', guide: beanGuide,
-    tip: { en: 'Bumblebees do the crossing. Plant varieties in the same row.', fr: 'Les bourdons se chargent des croisements. Semez les variétés dans le même rang.' },
+    tip: { en: 'Bumblebees visit the flowers often, so varieties cross on their own and the crop stays diverse.', fr: 'Les bourdons visitent souvent les fleurs : les variétés se croisent d’elles-mêmes et la culture reste diverse.' },
   },
   {
     id: 'runner-bean', name: { en: 'Runner bean', fr: 'Haricot d’Espagne' },
@@ -132,7 +132,7 @@ export const crops: Crop[] = [
     id: 'chickpea', name: { en: 'Chickpea', fr: 'Pois chiche' },
     examples: { en: 'garbanzo', fr: 'garbanzo' },
     species: 'Cicer arietinum', pollination: { by: 'self' }, crossing: low, life: annual, seed: 'dry', ease: 'very-hard', cms: 'low', guide: beanGuide,
-    note: { en: 'Hard to cross by hand: tiny flowers, few seeds per try.', fr: 'Difficile à croiser à la main : fleurs minuscules, peu de graines par essai.' },
+    note: { en: 'Hard to cross by hand: the male and female parts sit close together in a small flower, and each try gives one or two seeds.', fr: 'Difficile à croiser à la main : organes mâles et femelles serrés dans une petite fleur, et une ou deux graines par essai.' },
   },
   {
     id: 'tomato-garden', name: { en: 'Garden tomato', fr: 'Tomate potagère' },
