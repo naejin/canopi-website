@@ -1,0 +1,98 @@
+---
+// Hybrids, heirlooms and landraces: "Can I save from this hybrid?". Every crop of src/data/crops.ts
+// with a hybrid (CMS) value, in three groups from his lists: fine (low), check the flowers (flagged),
+// leave out shop-bought hybrids (high). The lists are readable without JavaScript; with it, a search
+// box narrows them to the crop on the reader's packet, matching names, examples ("zucchini",
+// "broccoli", "chard") and species. All words come from the MDX props and the crop table.
+import { crops, type Crop } from '../../../../data/crops';
+import { guideLangOf } from '../../../../i18n/guides';
+type Group = { title: string; text: string };
+interface Props { label: string; placeholder: string; none: string; fine: Group; check: Group; avoid: Group; }
+const { label, placeholder, none, fine, check, avoid } = Astro.props;
+const lang = guideLangOf(Astro.currentLocale);
+const collator = new Intl.Collator(lang);
+const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+const groups = ([['low', 'fine', fine, '✓'], ['flagged', 'check', check, '?'], ['high', 'avoid', avoid, '✕']] as const).map(([cms, tone, group, mark]) => ({
+  tone, mark, ...group,
+  crops: crops.filter((c: Crop) => c.cms === cms)
+    .map((c) => ({ id: c.id, name: c.name[lang], examples: c.examples?.[lang], note: c.cmsNote?.[lang], terms: fold([c.name.en, c.name.fr, c.examples?.en, c.examples?.fr, c.species].filter(Boolean).join(' ')) }))
+    .sort((a, b) => collator.compare(a.name, b.name)),
+}));
+---
+<div class="guide-lookup" data-guide-interactive data-guide-hybrid-lookup data-none={none}>
+  <div class="guide-lookup-search" hidden data-lookup-search>
+    <label for="guide-hybrid-search">{label}</label>
+    <input id="guide-hybrid-search" type="search" autocomplete="off" spellcheck="false" placeholder={placeholder} data-lookup-input />
+  </div>
+  <p class="guide-lookup-none" role="status" data-lookup-status></p>
+  {groups.map((group) => (
+    <section class={`guide-lookup-group guide-lookup-${group.tone}`} data-lookup-group>
+      <h3><span class="guide-lookup-mark" aria-hidden="true">{group.mark}</span> {group.title}</h3>
+      <p class="guide-lookup-text">{group.text}</p>
+      <ul class="guide-lookup-crops">
+        {group.crops.map((c) => (
+          <li data-lookup-item data-terms={c.terms}>
+            <strong>{c.name}</strong>{c.examples && <span class="guide-lookup-examples"> ({c.examples})</span>}
+            {c.note && <span class="guide-lookup-note">{c.note}</span>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</div>
+
+<style>
+  .guide-lookup { display: grid; gap: 0.8rem; }
+  .guide-lookup-search { display: grid; gap: 0.3rem; }
+  .guide-lookup-search[hidden] { display: none; }
+  .guide-lookup-search label { font-weight: 600; font-size: 0.95rem; }
+  .guide-lookup-search input {
+    font: inherit; font-size: 1rem; color: var(--text); background: var(--surface); width: 100%;
+    border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 0.55rem 0.75rem;
+  }
+  .guide-lookup-search input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .guide-lookup-none { margin: 0; font-size: 0.95rem; color: var(--text-secondary); }
+  .guide-lookup-none:empty { display: none; }
+  .guide-lookup-group { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--border-strong); border-radius: var(--radius); padding: 0.75rem 1rem; display: grid; gap: 0.35rem; }
+  .guide-lookup-group[hidden] { display: none; }
+  .guide-lookup-check { border-left-color: var(--accent); }
+  .guide-lookup-avoid { border-left-color: var(--danger); }
+  .guide-lookup-group h3 { font-size: 1.02rem; margin: 0; }
+  .guide-lookup-mark { display: inline-block; min-width: 1.1em; font-family: var(--font-sans); color: var(--text-muted); }
+  .guide-lookup-check .guide-lookup-mark { color: var(--accent-ink); }
+  .guide-lookup-avoid .guide-lookup-mark { color: var(--danger); }
+  .guide-lookup-text { margin: 0; font-size: 0.92rem; color: var(--text-secondary); line-height: 1.45; }
+  .guide-lookup-crops { list-style: none; margin: 0.2rem 0 0; padding: 0; columns: 2 14rem; column-gap: 1.2rem; font-size: 0.95rem; }
+  .guide-lookup-crops li { break-inside: avoid; margin: 0 0 0.3rem; line-height: 1.35; }
+  .guide-lookup-crops li[hidden] { display: none; }
+  .guide-lookup-crops strong { font-weight: 600; }
+  .guide-lookup-examples { color: var(--text-muted); font-size: 0.9rem; }
+  .guide-lookup-note { display: block; font-size: 0.88rem; color: var(--text-secondary); }
+</style>
+
+<script>
+  const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+  for (const root of document.querySelectorAll<HTMLElement>('[data-guide-hybrid-lookup]')) {
+    const input = root.querySelector<HTMLInputElement>('[data-lookup-input]')!;
+    const status = root.querySelector<HTMLElement>('[data-lookup-status]')!;
+    const groups = [...root.querySelectorAll<HTMLElement>('[data-lookup-group]')];
+    const filter = () => {
+      const words = fold(input.value).split(/\s+/).filter(Boolean);
+      let shown = 0;
+      for (const group of groups) {
+        let inGroup = 0;
+        for (const item of group.querySelectorAll<HTMLElement>('[data-lookup-item]')) {
+          const terms = item.dataset.terms ?? '';
+          const match = words.every((w) => terms.includes(w));
+          item.hidden = !match;
+          if (match) inGroup++;
+        }
+        group.hidden = inGroup === 0;
+        shown += inGroup;
+      }
+      status.textContent = shown === 0 ? root.dataset.none ?? '' : '';
+    };
+    input.addEventListener('input', filter);
+    root.querySelector<HTMLElement>('[data-lookup-search]')!.hidden = false;
+  }
+</script>
