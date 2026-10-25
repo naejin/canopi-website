@@ -1,0 +1,50 @@
+---
+// Storing seed: the four words on one card, small enough to print for a seed-cupboard door.
+// rules give each tile's word and line, in a fixed order: cool, dark, dry, safe (the icon follows
+// the position: thermometer, sun kept off, drop kept off, closed jar).
+interface Rule { title: string; text: string; }
+interface Props { rules: Rule[]; label: string; }
+const { rules, label } = Astro.props;
+if (rules.length !== 4) throw new Error('<StoreRules>: four rules, in order cool, dark, dry, safe');
+const cross = 'M14 50L50 14';
+---
+<figure class="guide-figure" role="group" aria-label={label} style="border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 1rem; background: var(--surface);">
+  <ol class="guide-stages">
+    {rules.map((rule, i) => (
+      <li class="guide-stage">
+        <svg viewBox="0 0 64 64" aria-hidden="true" style="max-width: 3.4rem;">
+          {i === 0 && (
+            <g>
+              <path d="M27 10a5 5 0 0 1 10 0v28a10 10 0 1 1 -10 0z" class="guide-glass" />
+              <circle cx="32" cy="46" r="6" class="guide-c1" />
+              <path d="M32 46V24" class="guide-stem" style="stroke: var(--seed-1);" />
+              <path d="M40 16h6M40 23h4M40 30h6" class="guide-lead" />
+            </g>
+          )}
+          {i === 1 && (
+            <g>
+              <circle cx="32" cy="32" r="10" class="guide-c6" />
+              <path d="M32 12v-6M32 58v-6M12 32h-6M58 32h-6M18 18l-4 -4M46 46l4 4M18 46l-4 4M46 18l4 -4" class="guide-lead" />
+              <path d={cross} class="guide-lead" style="stroke-width: 3; stroke: var(--text);" />
+            </g>
+          )}
+          {i === 2 && (
+            <g>
+              <path d="M32 8C40 22 46 30 46 39a14 14 0 0 1 -28 0C18 30 24 22 32 8z" class="guide-glass" />
+              <path d={cross} class="guide-lead" style="stroke-width: 3; stroke: var(--text);" />
+            </g>
+          )}
+          {i === 3 && (
+            <g>
+              <rect x="20" y="8" width="24" height="7" rx="1.5" class="guide-c2" />
+              <rect x="16" y="15" width="32" height="42" rx="6" class="guide-glass" />
+              {[[25, 40], [32, 44], [39, 40], [28, 49], [36, 50], [24, 32], [40, 31], [32, 36]].map(([x, y]) => <ellipse cx={x} cy={y} rx="3" ry="2" class="guide-c1" />)}
+            </g>
+          )}
+        </svg>
+        <span class="guide-stage-when">{rule.title}</span>
+        <span class="guide-stage-do">{rule.text}</span>
+      </li>
+    ))}
+  </ol>
+</figure>

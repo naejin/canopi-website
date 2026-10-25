@@ -1,0 +1,33 @@
+---
+// Storing seed: Lofthouse's rule of thumb drawn as bars. Each bar's length counts doublings, so every
+// segment is "twice as long"; rows give each place and his example's number of years. A static drawing:
+// a slider would suggest a precision the rule does not have.
+import { r1 } from '../../../../lib/svg';
+interface Row { label: string; years: number; text: string; }
+interface Props { rows: Row[]; alt: string; tick: string; }
+const { rows, alt, tick } = Astro.props;
+for (const row of rows) if (!(row.years > 0)) throw new Error(`<SeedLife>: "${row.label}" needs a positive number of years`);
+const max = Math.max(...rows.map((r) => Math.log2(r.years)));
+const X0 = 92, LEN = 170, ROW = 30, Y0 = 18;
+const unit = LEN / max;
+const ticks = Array.from({ length: Math.floor(max) + 1 }, (_, k) => r1(X0 + k * unit));
+const H = Y0 + rows.length * ROW + 6;
+---
+<figure class="guide-figure">
+  <svg viewBox={`0 0 340 ${H}`} role="img" aria-label={alt} style="max-width: 34rem; width: 100%;">
+    <text x={X0} y="10" font-size="11" class="guide-t-muted">{tick}</text>
+    {rows.map((row, i) => {
+      const y = Y0 + i * ROW;
+      const steps = Math.log2(row.years);
+      const w = r1(Math.max(steps, 0.4) * unit);
+      return (
+        <g>
+          <text x={X0 - 8} y={y + 16} text-anchor="end" font-size="12.5">{row.label}</text>
+          <rect x={X0} y={y + 4} width={w} height="17" rx="3" style="fill: var(--accent); opacity: 0.85;" />
+          {ticks.filter((x) => x > X0 && x < X0 + w - 1).map((x) => <line x1={x} y1={y + 4} x2={x} y2={y + 21} style="stroke: var(--surface); stroke-width: 1.5;" />)}
+          <text x={r1(X0 + w + 6)} y={y + 17} font-size="12.5" font-weight="600">{row.text}</text>
+        </g>
+      );
+    })}
+  </svg>
+</figure>
