@@ -104,7 +104,7 @@ test('guides use only known components, and their ids resolve to the glossary, t
     for (const id of attrs(body, 'Term', 'id')) assert.ok(glossaryIds.includes(id), `${file}: term "${id}" is in src/data/glossary.ts`);
     for (const id of attrs(body, 'CropCard', 'crop')) assert.ok(cropIds.includes(id), `${file}: crop "${id}" is in src/data/crops.ts`);
     for (const name of ['CropCards', 'CropTable']) for (const id of listAttr(body, name, 'crops')) assert.ok(cropIds.includes(id), `${file}: crop "${id}" is in src/data/crops.ts`);
-    for (const risk of attrs(body, 'FoodCaution', 'risk')) assert.ok(foodRisks.includes(risk), `${file}: FoodCaution risk "${risk}"`);
+    for (const risk of listAttr(body, 'FoodCaution', 'risk')) assert.ok(foodRisks.includes(risk), `${file}: FoodCaution risk "${risk}"`);
     for (const slug of listAttr(body, 'NextGuides', 'slugs')) assert.ok(planned.includes(slug), `${file}: next guide "${slug}" is in the plan`);
     // Ticks are stored per list ({ <checklist id>: [item ids] }), so list ids are unique in a guide
     // and item ids unique in their list; every Item sits in a Checklist.
@@ -194,10 +194,10 @@ test('the glossary defines every term in English and French', async () => {
   assert.throws(() => glossaryModule.glossaryEntry('no-such-term', 'en'), /no such term/);
 });
 
-test('the crop table has the 40 crops of the guide map, each named in English and French', async () => {
+test('the crop table has the 40 crops of the guide map plus mustard and flax, each named in English and French', async () => {
   const cropModule = await import('../src/data/crops.ts');
   const { crops, easeTiers } = cropModule;
-  assert.equal(crops.length, 40);
+  assert.equal(crops.length, 42);
   const ids = crops.map((c) => c.id);
   assert.equal(new Set(ids).size, ids.length, 'unique ids');
   for (const crop of crops) {
@@ -334,5 +334,110 @@ test('checklist items never suggest tasting a crop', () => {
     for (const [item] of read(`content/guides/${slug}/${lang}.mdx`).matchAll(/<Item\b[\s\S]*?<\/Item>/g)) {
       assert.ok(!/\b(?:tast|flavou?r|cook)|go[uû]t|cuit/i.test(item), `${slug}/${lang}: ${item}`);
     }
+  }
+});
+
+// ---------- Hand-off checks (cross-links, safety wording, shared components) ----------
+
+test('every guide lists two to four related guides, and every related guide is published', () => {
+  for (const { data, file } of guides) {
+    assert.ok(data.related.length >= 2 && data.related.length <= 4, `${file}: ${data.related.length} related guides (2 to 4)`);
+    assert.equal(new Set(data.related).size, data.related.length, `${file}: related guides are listed once`);
+    for (const slug of data.related) assert.ok(existsSync(join(guideRoot, slug, 'en.mdx')) && existsSync(join(guideRoot, slug, 'fr.mdx')), `${file}: related guide "${slug}" is published`);
+  }
+});
+
+test('the index orders guides within each domain by a unique order number', () => {
+  for (const domain of domains) {
+    const orders = guides.filter((g) => g.lang === 'en' && g.data.domain === domain).map((g) => g.data.order).sort((a, b) => a - b);
+    assert.deepEqual(orders, orders.map((_, i) => i + 1), `${domain}: orders run 1 to ${orders.length} without gaps or ties`);
+  }
+});
+
+test('no guide tests anything by mouth (no teeth or bite checks)', () => {
+  // "Dent" is also an English corn type, so the French word is checked in French files only.
+  const en = /\b(?:teeth|tooth|bites?|biting|bitten|chew(?:s|ing)? (?:a|the|one) seeds?)\b/i;
+  const fr = /(?<!\p{L})(?:dents?|mordre|mordez|mordant|croqu\p{L}*|mâch\p{L}*)(?!\p{L})/iu;
+  for (const { body, file, lang } of guides) {
+    const prose = body.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+    const hit = prose.match(lang === 'fr' ? fr : en);
+    assert.ok(!hit, `${file}: "${hit?.[0]}" reads as a mouth test; nothing goes in the mouth`);
+  }
+});
+
+test('two food cautions in a row are one box: <FoodCaution risk={[…]}> lists them under one title', () => {
+  for (const { body, file } of guides) {
+    assert.ok(!/<FoodCaution\b[^>]*\/>\s*<FoodCaution\b/.test(body), `${file}: combine adjacent FoodCautions into one risk={[…]} list`);
+  }
+  const caution = read('components/guides/FoodCaution.astro');
+  assert.match(caution, /risk: FoodRisk \| FoodRisk\[\]/, 'FoodCaution takes one risk or a list');
+});
+
+test('diagrams share one wrap() helper from src/lib/svg.ts', async () => {
+  const diagrams = join(src, 'components/guides/diagrams');
+  for (const file of readdirSync(diagrams, { recursive: true }).filter((f) => /\.(astro|ts)$/.test(f))) {
+    const text = readFileSync(join(diagrams, file), 'utf8');
+    assert.ok(!/(?:function\s+wrap\s*\(|const\s+wrap\s*=)/.test(text), `diagrams/${file}: use wrap() from src/lib/svg.ts`);
+    assert.ok(!/from '\.\.?\/(?:[\w-]+\/)?wrap'/.test(text), `diagrams/${file}: imports a local wrap copy`);
+    assert.ok(!/(?:^|\/)wrap\.ts$/.test(file), `diagrams/${file}: a wrap() copy`);
+  }
+  const { wrap } = await import('../src/lib/svg.ts');
+  assert.deepEqual(wrap('one two three four', 9), ['one two', 'three', 'four']);
+  assert.deepEqual(wrap('Graines : sèches', 8), ['Graines :', 'sèches'], 'a no-break space is not a break point');
+  assert.deepEqual(wrap('', 5), []);
+});
+
+test('the glossary plugin keeps a term and the punctuation around it on one line', async () => {
+  const { rehypeGuideTerms } = await import('../src/lib/rehype-guide-terms.mjs');
+  const term = (id) => ({ type: 'mdxJsxTextElement', name: 'Term', attributes: [{ type: 'mdxJsxAttribute', name: 'id', value: id }], children: [{ type: 'text', value: id }] });
+  const text = (value) => ({ type: 'text', value });
+  const tree = { type: 'root', children: [
+    { type: 'element', tagName: 'p', children: [text('Save '), term('landrace'), text(', then sow.')] },
+    { type: 'element', tagName: 'p', children: [text('l’hybride '), term('f1-hybrid'), text(' ; à la suivante')] },
+    { type: 'element', tagName: 'p', children: [text('dit « '), term('grex'), text(' » ici')] },
+    { type: 'element', tagName: 'p', children: [term('heirloom'), text(' and more')] },
+  ] };
+  rehypeGuideTerms()(tree, { path: '/x/src/content/guides/demo/en.mdx' });
+  const paras = tree.children.filter((n) => n.tagName === 'p');
+  const keep = (p) => p.children.find((c) => c.tagName === 'span' && c.properties?.className?.includes('guide-term-keep'));
+  const flat = (n) => (n.type === 'text' ? n.value : n.name === 'Term' ? `[${n.attributes[0].value}]` : (n.children ?? []).map(flat).join(''));
+  assert.equal(flat(keep(paras[0])), '[landrace],');
+  assert.equal(flat(paras[0]), 'Save [landrace], then sow.');
+  assert.equal(flat(keep(paras[1])), '[f1-hybrid] ;');
+  assert.equal(flat(keep(paras[2])), '« [grex] »');
+  assert.equal(flat(paras[2]), 'dit « [grex] » ici');
+  assert.equal(keep(paras[3]), undefined, 'no wrapper when no punctuation touches the term');
+  const css = read('styles/guides.css');
+  assert.match(css, /\.guide-term-keep\s*\{[^}]*white-space\s*:\s*nowrap/, 'guides.css keeps the wrapper on one line');
+});
+
+test('crop tables stack into label and value rows on phones, so they never scroll sideways at 390px', () => {
+  const table = read('components/guides/CropTable.astro');
+  assert.match(table, /class="guide-table guide-crop-table"/, 'CropTable marks its table');
+  assert.match(table, /<td data-label=\{heads\[c\]\}/, 'every CropTable cell carries its column name');
+  const css = read('styles/guides.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  const phone = [...css.matchAll(/@media \(max-width: 639px\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]).join('\n');
+  assert.match(phone, /\.guide-crop-table thead\s*\{[^}]*(?:position\s*:\s*absolute|clip-path)/, 'the header row is visually hidden on phones (cells name themselves)');
+  assert.match(phone, /\.guide-crop-table (?:tr|tbody tr)\s*\{[^}]*display\s*:\s*block/, 'each crop is a block on phones');
+  assert.match(phone, /\.guide-crop-table td::before\s*\{[^}]*content\s*:\s*attr\(data-label\)/, 'each value shows its column name on phones');
+  assert.ok(!/\.guide-crop-table[^{]*\{[^}]*white-space\s*:\s*nowrap/.test(phone), 'no nowrap cell on phones');
+});
+
+test('guide steps keep the body spacing from the block above, and plain markdown tables are styled', () => {
+  const css = read('styles/guides.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const [, selector, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (selector.trim() === '.guide-steps') assert.ok(!/(?:^|;)\s*margin(?:-top|-block)?\s*:/.test(body), '.guide-steps sets no top margin (it would beat .guide-body > * + *)');
+  }
+  assert.match(css, /\.guide-body > table\s*\{/, 'plain markdown tables in a guide body get a style');
+});
+
+test('French guide chrome puts a no-break space before : ; ? and !', () => {
+  const fr = JSON.parse(read('i18n/guides/fr.json'));
+  for (const [key, value] of Object.entries(fr)) {
+    const text = value.replace(/\{\w+\}/g, 'x');
+    assert.ok(!/(?:^|[^\s  ])[:;?!](?=\s|$)/.test(text) && !/ [:;?!]/.test(text), `fr.json ${key}: ${JSON.stringify(value)}`);
+  }
+  for (const file of ['CropCard.astro', 'Safety.astro', 'PlantingMixBar.astro']) {
+    assert.ok(!/\}: \{|\}: \$\{/.test(read(`components/guides/${file}`)), `${file}: a hard-coded colon after a translated string (use a string with its own punctuation)`);
   }
 });
