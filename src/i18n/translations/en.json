@@ -164,5 +164,9 @@
   "bibliography.theme.biodiversity": "Biodiversity",
   "bibliography.theme.growing-structures": "Growing structures",
   "bibliography.theme.indigenous-knowledge": "Indigenous knowledge",
-  "bibliography.theme.plants": "Plants"
+  "bibliography.theme.plants": "Plants",
+  "start.title": "Start here",
+  "start.lede": "Three field guides to begin growing and saving your own seed.",
+  "start.all": "All field guides",
+  "start.inEnglish": "These guides are in English."
 }

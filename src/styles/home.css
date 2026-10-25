@@ -263,6 +263,34 @@
 .network-group a:hover { text-decoration: underline; }
 .network-group a span { color: var(--text-muted); font-size: 0.85em; }
 
+/* ---------- Start here ---------- */
+
+/* Three entry guides as numbered notebook cards, just before the bibliography they draw on. */
+.start-here { padding-bottom: 0; }
+.start-here .section-head h2 { font-size: clamp(30px, 3.6vw, 42px); }
+.section-head .start-here-note { margin-top: 8px; font-size: 14px; color: var(--text-muted); }
+.start-here-list {
+  margin: 0; padding: 0; list-style: none; counter-reset: start;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px;
+}
+.start-here-card {
+  counter-increment: start; position: relative; display: grid; gap: 8px; align-content: start;
+  padding: 18px 20px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.start-here-card::before {
+  content: counter(start, decimal-leading-zero);
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  font-size: 13px; font-weight: 600; letter-spacing: 0.06em; color: var(--accent-ink);
+}
+.start-here-card:hover { border-color: var(--border-strong); }
+.start-here-card h3 { font-size: 21px; line-height: 1.2; text-wrap: pretty; }
+.start-here-card a { text-decoration: none; }
+/* The whole card is the link's target. */
+.start-here-card a::after { content: ''; position: absolute; inset: 0; border-radius: var(--radius); }
+.start-here-card a:hover { color: var(--accent-ink); text-decoration: underline; }
+.start-here-card p { font-size: 15px; line-height: 1.45; color: var(--text-secondary); text-wrap: pretty; }
+.start-here-all { margin-top: 24px; }
+
 /* ---------- Bibliography ---------- */
 
 /* The network's index, one entry per book: the title in the reader's language when an edition

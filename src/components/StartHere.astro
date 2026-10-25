@@ -1,0 +1,36 @@
+---
+// "Start here" on the home page: the three entry guides, in the reader's language (English for the
+// locales without guides, marked as such), and the way to all the guides.
+import { t, type Locale } from '../i18n/utils';
+import { publishedGuides, slugOf } from '../lib/guides';
+import { guideLangOf, guidePath, guidesPath, isGuideLang } from '../i18n/guides';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+const entrySlugs = ['landrace-gardening', 'will-they-cross', 'saving-seed'];
+const guideLang = guideLangOf(lang);
+const published = await publishedGuides(guideLang);
+const guides = entrySlugs.map((slug) => {
+  const entry = published.find((e) => slugOf(e) === slug);
+  if (!entry) throw new Error(`StartHere: no published guide "${slug}" in ${guideLang}`);
+  return { href: guidePath(slug, lang), title: entry.data.title, description: entry.data.description };
+});
+const textLang = isGuideLang(lang) ? undefined : guideLang;
+---
+<section class="section start-here" aria-labelledby="start-here-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="start-here-title">{t('start.title', lang)}</h2>
+      <p>{t('start.lede', lang)}</p>
+      {textLang && <p class="start-here-note">{t('start.inEnglish', lang)}</p>}
+    </header>
+    <ol class="start-here-list" role="list">
+      {guides.map((guide) => (
+        <li class="start-here-card">
+          <h3><a href={guide.href} hreflang={guideLang} lang={textLang}>{guide.title}</a></h3>
+          <p lang={textLang}>{guide.description}</p>
+        </li>
+      ))}
+    </ol>
+    <p class="start-here-all"><a class="button button-secondary" href={guidesPath(lang)}>{t('start.all', lang)}</a></p>
+  </div>
+</section>

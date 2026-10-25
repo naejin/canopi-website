@@ -164,5 +164,9 @@
   "bibliography.theme.biodiversity": "生物多样性",
   "bibliography.theme.growing-structures": "种植设施",
   "bibliography.theme.indigenous-knowledge": "原住民知识",
-  "bibliography.theme.plants": "植物"
+  "bibliography.theme.plants": "植物",
+  "start.title": "从这里开始",
+  "start.lede": "三篇田间指南，帮你开始种植并留存自己的种子。",
+  "start.all": "全部田间指南",
+  "start.inEnglish": "这些指南为英文。"
 }

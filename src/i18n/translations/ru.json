@@ -164,5 +164,9 @@
   "bibliography.theme.biodiversity": "Биоразнообразие",
   "bibliography.theme.growing-structures": "Сооружения для выращивания",
   "bibliography.theme.indigenous-knowledge": "Знания коренных народов",
-  "bibliography.theme.plants": "Растения"
+  "bibliography.theme.plants": "Растения",
+  "start.title": "С чего начать",
+  "start.lede": "Три руководства, чтобы начать выращивать и сохранять свои семена.",
+  "start.all": "Все руководства",
+  "start.inEnglish": "Эти руководства на английском."
 }

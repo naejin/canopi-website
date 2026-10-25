@@ -164,5 +164,9 @@
   "bibliography.theme.biodiversity": "Biodiversità",
   "bibliography.theme.growing-structures": "Strutture di coltivazione",
   "bibliography.theme.indigenous-knowledge": "Saperi indigeni",
-  "bibliography.theme.plants": "Piante"
+  "bibliography.theme.plants": "Piante",
+  "start.title": "Da dove iniziare",
+  "start.lede": "Tre guide pratiche per iniziare a coltivare e conservare i tuoi semi.",
+  "start.all": "Tutte le guide pratiche",
+  "start.inEnglish": "Queste guide sono in inglese."
 }

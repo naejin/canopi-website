@@ -164,5 +164,9 @@
   "bibliography.theme.biodiversity": "Biodiversité",
   "bibliography.theme.growing-structures": "Abris de culture",
   "bibliography.theme.indigenous-knowledge": "Savoirs autochtones",
-  "bibliography.theme.plants": "Plantes"
+  "bibliography.theme.plants": "Plantes",
+  "start.title": "Par où commencer",
+  "start.lede": "Trois fiches de terrain pour commencer à cultiver et garder vos propres semences.",
+  "start.all": "Toutes les fiches de terrain",
+  "start.inEnglish": "Ces fiches sont en anglais."
 }

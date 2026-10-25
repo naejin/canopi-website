@@ -164,5 +164,9 @@
   "bibliography.theme.biodiversity": "Biodiversität",
   "bibliography.theme.growing-structures": "Anbaustrukturen",
   "bibliography.theme.indigenous-knowledge": "Indigenes Wissen",
-  "bibliography.theme.plants": "Pflanzen"
+  "bibliography.theme.plants": "Pflanzen",
+  "start.title": "Hier anfangen",
+  "start.lede": "Drei Leitfäden für den Einstieg: eigenes Saatgut anbauen und gewinnen.",
+  "start.all": "Alle Leitfäden",
+  "start.inEnglish": "Diese Leitfäden sind auf Englisch."
 }

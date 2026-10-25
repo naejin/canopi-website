@@ -164,5 +164,9 @@
   "bibliography.theme.biodiversity": "생물다양성",
   "bibliography.theme.growing-structures": "재배 시설",
   "bibliography.theme.indigenous-knowledge": "원주민의 지식",
-  "bibliography.theme.plants": "식물"
+  "bibliography.theme.plants": "식물",
+  "start.title": "여기서 시작하세요",
+  "start.lede": "직접 씨앗을 기르고 받기 시작하는 세 가지 현장 가이드.",
+  "start.all": "모든 현장 가이드",
+  "start.inEnglish": "가이드는 영어로 되어 있습니다."
 }

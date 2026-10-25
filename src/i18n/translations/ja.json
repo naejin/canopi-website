@@ -164,5 +164,9 @@
   "bibliography.theme.biodiversity": "生物多様性",
   "bibliography.theme.growing-structures": "栽培施設",
   "bibliography.theme.indigenous-knowledge": "先住民の知恵",
-  "bibliography.theme.plants": "植物"
+  "bibliography.theme.plants": "植物",
+  "start.title": "ここから始める",
+  "start.lede": "自分で種を育て、採り始めるための3つのフィールドガイド。",
+  "start.all": "フィールドガイド一覧",
+  "start.inEnglish": "ガイドは英語です。"
 }

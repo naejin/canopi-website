@@ -164,5 +164,9 @@
   "bibliography.theme.biodiversity": "Biodiversidad",
   "bibliography.theme.growing-structures": "Estructuras de cultivo",
   "bibliography.theme.indigenous-knowledge": "Saberes indígenas",
-  "bibliography.theme.plants": "Plantas"
+  "bibliography.theme.plants": "Plantas",
+  "start.title": "Por dónde empezar",
+  "start.lede": "Tres guías de campo para empezar a cultivar y guardar tus propias semillas.",
+  "start.all": "Todas las guías de campo",
+  "start.inEnglish": "Estas guías están en inglés."
 }

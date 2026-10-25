@@ -164,5 +164,9 @@
   "bibliography.theme.biodiversity": "Biodiversiteit",
   "bibliography.theme.growing-structures": "Teeltconstructies",
   "bibliography.theme.indigenous-knowledge": "Inheemse kennis",
-  "bibliography.theme.plants": "Planten"
+  "bibliography.theme.plants": "Planten",
+  "start.title": "Begin hier",
+  "start.lede": "Drie veldgidsen om je eigen zaad te telen en te bewaren.",
+  "start.all": "Alle veldgidsen",
+  "start.inEnglish": "Deze gidsen zijn in het Engels."
 }
