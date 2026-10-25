@@ -1,0 +1,45 @@
+---
+// Corn guide: the kinds of sweet corn as a table, a small kernel drawing per row (plump, plump with a
+// sugar mark, shrivelled). The last column is Lofthouse's garden, marked as such by its header.
+// Words come from the MDX: head (the column headers), rows ({ kernel, cells: one string per header }).
+type Kernel = 'plump' | 'sugary' | 'shrivelled' | 'mixed';
+interface Props { head: string[]; rows: { kernel: Kernel; cells: string[] }[] }
+const { head, rows } = Astro.props;
+for (const r of rows) if (r.cells.length !== head.length) throw new Error(`<CornSweetTypes>: row "${r.cells[0]}" needs ${head.length} cells`);
+const shapes: Record<Kernel, string> = {
+  plump: 'M4 6C4 2 8 1 11 1C14 1 18 2 18 6L17 15C16 19 13 21 11 21C9 21 6 19 5 15Z',
+  sugary: 'M4 6C4 2 8 1 11 1C14 1 18 2 18 6L17 15C16 19 13 21 11 21C9 21 6 19 5 15Z',
+  shrivelled: 'M5 7C5 3 8 3 9 4C10 2 12 2 13 4C14 3 17 3 17 7L15 13C16 15 14 18 11 19C8 18 6 15 7 13Z',
+  mixed: 'M4 6C4 2 8 1 11 1C14 1 18 2 18 6L17 15C16 19 13 21 11 21C9 21 6 19 5 15Z',
+};
+---
+<div class="guide-table-wrap">
+  <table class="guide-table guide-cst">
+    <thead><tr>{head.map((h) => <th scope="col">{h}</th>)}</tr></thead>
+    <tbody>
+      {rows.map((r) => (
+        <tr>
+          <th scope="row"><span class="guide-cst-type">
+            <svg viewBox="0 0 22 22" aria-hidden="true" focusable="false">
+              <path d={shapes[r.kernel]} class="guide-c6 guide-cst-k" />
+              {r.kernel === 'sugary' && <circle cx="11" cy="9" r="2.6" class="guide-c1" />}
+              {r.kernel === 'shrivelled' && <path d="M9 7L11 12L13 7" class="guide-cst-crease" />}
+              {r.kernel === 'mixed' && <path d="M11 1V21" class="guide-cst-crease" />}
+            </svg>
+            <span>{r.cells[0]}</span>
+          </span></th>
+          {r.cells.slice(1).map((c) => <td>{c}</td>)}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .guide-cst tbody th { white-space: normal; min-width: 6.5rem; }
+  .guide-cst-type { display: flex; gap: 0.5rem; align-items: flex-start; }
+  .guide-cst-type svg { width: 1.15rem; flex: none; margin-top: 0.1rem; }
+  .guide-cst-k { stroke: var(--border-strong); stroke-width: 0.6; }
+  .guide-cst-crease { fill: none; stroke: var(--seed-1); stroke-width: 1; stroke-linecap: round; }
+  @media (max-width: 639px) { .guide-cst th, .guide-cst td { padding: 0.45rem 0.5rem; } .guide-cst { font-size: 0.86rem; } }
+</style>

@@ -1,0 +1,166 @@
+---
+title: "Maïs"
+description: "Choisir des types de maïs adaptés à votre sol et à votre saison, les planter pour qu’ils restent distincts, cultiver assez de pieds, retenir les meilleurs épis et en garder la semence."
+domain: crops
+order: 2
+glance:
+  - { label: "Niveau", value: "Débutant" }
+  - { label: "Durée", value: "3 saisons ou plus" }
+  - { label: "Saison", value: "Saison chaude" }
+  - { label: "Place", value: "Un bloc de 200 pieds ou plus pour entretenir une variété" }
+  - { label: "Climat", value: "Un été chaud ; arrosage en climat sec" }
+quick: true
+sources:
+  - { book: landrace-gardening, chapters: ["Corn", "Promiscuous Pollination", "Creating Landraces", "Heirlooms, Hybrids, and Landraces", "Survival of the Fittest", "Pests and Diseases", "Saving Seeds"] }
+related: [landrace-gardening]
+updated: 2026-10-25
+---
+
+Votre maïs doux va-t-il se croiser avec le maïs à éclater d’à côté ? Combien de pieds faut-il pour garder sa semence ? Quel maïs doux lève dans un printemps froid ? Cette fiche répond à ces questions, puis suit le maïs cultivé en <Term id="landrace">variété population</Term>, du tracé des blocs à l’égrenage.
+
+<QuickAnswer>
+Le maïs est pollinisé par le vent et se croise facilement : il s’adapte donc vite. Mais il s’affaiblit quand on le ressème à partir de trop peu de pieds ; Lofthouse s’en tient à la vieille règle d’au moins 200. Un croisement se voit sur les grains dès la même saison : un maïs doux pollinisé par un maïs à farine ou à éclater donne des grains farineux. Séparez ces types, par la distance ou en les semant pour qu’ils fleurissent à des moments différents. Le maïs doux classique lève dans un sol plus froid que les maïs extra-sucrés.
+</QuickAnswer>
+
+## Comment le maïs se croise
+
+La panicule, qui coiffe le pied, libère le pollen ; les soies des jeunes épis le captent. Le vent fait le transport, et la plupart des grains ont un père venu d’un autre pied : le maïs est une plante <Term id="outcrossing">allogame</Term>.
+
+<FlowerDiagram variant="corn" />
+
+C’est un atout pour une variété population, puisque les gènes sont rebattus chaque année. Le revers : le maïs a la réputation de perdre sa vigueur quand on le ressème à partir de trop peu de parents, ce qu’on appelle la <Term id="inbreeding-depression">dépression de consanguinité</Term>. Lofthouse suit le conseil traditionnel d’au moins 200 pieds pour entretenir une variété.
+
+Le pollen de maïs est lourd. Dans ses champs, où le vent souffle en moyenne à 16 km/h environ, il descend sous la hauteur des soies en 8 m environ, et l’essentiel des croisements se fait dans un rayon d’à peu près 1 m. Un orage peut emporter quelques grains bien plus loin, mais ils pèsent peu face au pollen de votre propre parcelle.
+
+Le croisement se voit tout de suite. Qu’une graine de maïs coloré se glisse dans un carré de maïs blanc, et les épis blancs voisins porteront des grains colorés dès l’automne.
+
+<HisGarden
+  his="Dans sa vallée de l’Utah, au vent assez régulier, il constate que la plupart du pollen retombe près du pied qui l’a émis."
+  you="Dans un endroit balayé de rafales, ou avec le maïs du voisin de l’autre côté de la haie, attendez-vous à des croisements venus de plus loin. Ses distances décrivent ses champs ; elles ne garantissent pas une semence pure."
+/>
+
+## Garder les types distincts
+
+C’est le maïs doux qui pâtit le plus d’un croisement : le pollen d’un maïs à farine, corné ou à éclater donne des grains farineux sur ses épis. C’est pourquoi Lofthouse ne laisse pas se mêler maïs doux et maïs à farine. Trois moyens s’offrent à vous.
+
+**Les blocs.** Semez chaque type ou chaque couleur en bloc, les blocs côte à côte, plutôt qu’en longues lignes simples. Comme la plupart du pollen retombe tout près, chaque bloc se pollinise surtout lui-même, et les croisements n’apparaissent que le long des bordures communes. Il cultive ainsi maïs violet, blanc et jaune, et ne trouve que quelques grains égarés en bordure. Prenez vos épis porte-graines au cœur de chaque bloc.
+
+<PlotDiagram variant="colour-blocks" />
+
+**Le calendrier.** Deux variétés qui libèrent leur pollen à des moments différents ne peuvent pas se croiser, même voisines. C’est <Term id="isolation-by-time">l’isolement dans le temps</Term>, et c’est ainsi qu’il cultive maïs doux et maïs à farine dans le même champ : l’un précoce, l’autre tardif.
+
+**Des lots séparés.** Il a autrefois croisé ensemble des centaines de variétés, puis a ressorti chaque type du mélange. Aujourd’hui, chaque type a son lot. Un nouveau maïs à farine ne rejoint que le maïs à farine, si bien que le grain tendre reste au centre de cette population.
+
+Dessinez vos blocs dans Canopi avant de semer.
+
+<NextGuides slugs={["will-they-cross"]} />
+
+## Les types de maïs
+
+### Maïs doux
+
+Si vos printemps sont froids, choisissez votre maïs doux selon sa levée en sol froid.
+
+<CornSweetTypes
+  head={["Sorte", "En sol froid au printemps", "Dans le jardin de Lofthouse"]}
+  rows={[
+    { kernel: "plump", cells: ["Classique", "Lève sans problème", "Fiable"] },
+    { kernel: "sugary", cells: ["Sucre amélioré", "Peu fiable", "Semé une fois le sol réchauffé ; risque de gel"] },
+    { kernel: "shrivelled", cells: ["Super-doux (grain « ridé »)", "Peu fiable", "Pas cultivé : graine faible"] },
+    { kernel: "mixed", cells: ["Synergique (les trois réunis)", "—", "Peu fiable"] },
+  ]}
+/>
+
+Pour réunir le meilleur de deux sortes, il les a croisées. Son maïs doux « Paradise » a pour mère un maïs classique, qui lui donne une enveloppe de graine solide, et pour père un maïs à sucre amélioré, qui apporte la douceur. Un hybride de maïs se fait facilement : on arrache les panicules des pieds mères avant qu’elles libèrent leur pollen, ce qu’on appelle la <Term id="detasseling">castration du maïs</Term>.
+
+<NextGuides slugs={["hand-crosses"]} />
+
+### Maïs à grain sec
+
+- **Corné (flint) :** grains durs, vitreux, superbes, qui résistent le mieux aux insectes et aux animaux, mais malmènent le moulin et donnent une farine granuleuse.
+- **À farine :** grains tendres qui se moulent facilement en une farine fine et légère. Il a la réputation d’être le maïs de la sécurité alimentaire.
+- **À éclater :** proche parent du corné. Si vous croisez un maïs à éclater, prenez un corné comme partenaire : retrouver un bon éclatement est plus facile qu’après un croisement avec un maïs à farine.
+- **Denté :** l’un des types de son maïs grain en mélange.
+
+Une seule population mélangée peut alimenter toutes les autres. Lofthouse a tiré plusieurs de ses maïs, dont son maïs à farine et « Andean Sweet », d’« Harmony », un <Term id="hybrid-swarm">essaim hybride</Term> où denté, corné, doux, farine et éclater poussent sans tri, et qui s’adapte vite quand les conditions changent.
+
+## Choisir les épis
+
+À la récolte, choisissez vos épis porte-graines selon ce qui compte dans votre jardin. Trois caractères que Lofthouse a retenus :
+
+- **La résistance aux animaux.** Là où les faisans prenaient les épis des pieds courts, il a gardé la semence des grands ; là où mouffettes et ratons laveurs se servaient, il a gardé les épis qu’ils avaient laissés. Au fil des ans, les tiges sont devenues plus raides, les épis plus hauts, et les pertes ont cessé.
+- **L’éclatement.** Quand il travaillait son maïs à éclater, il faisait éclater chaque hiver 20 grains de chaque épi pour essai et ressemait les meilleurs épis, jugés au nombre de grains éclatés comme à leur volume.
+- **L’égrenage facile.** Pour le maïs sec, des grains qui se détachent bien de l’épi comptent parmi ses premiers critères.
+
+Vous pouvez choisir de deux façons. Il pratique la <Term id="mass-selection">sélection massale</Term>. La <Term id="sibling-group-selection">sélection par familles</Term> convient aux caractères qui se transmettent en famille, comme l’égrenage facile.
+
+<CornSelection
+  mass={{ title: "Sélection massale", text: "Semer en mélange, garder la semence des pieds qui réussissent, et recommencer chaque année.", alt: "Une planche de pieds de maïs, les meilleurs entourés, dont toute la semence va dans un même bocal." }}
+  sibling={{ title: "Sélection par familles", text: "Semer une poignée de grains de chaque épi en petit groupe, puis garder ou éliminer le groupe entier.", alt: "Quatre épis, de A à D, semés chacun en petit groupe de pieds ; les groupes B et D sont cochés et vont au bocal, A et C sont barrés." }}
+/>
+
+La précocité bouge aussi. Après une dizaine d’années chez lui, sa souche du maïs doux « Astronomy Domine » mûrit une dizaine de jours plus tôt que celle de l’obtenteur.
+
+<NextGuides slugs={["choosing-seed-parents", "pests-without-sprays"]} />
+
+## Les grains sucrés cachés
+
+Le sucré peut se cacher dans un maïs grain. C’est un <Term id="recessive-trait">caractère récessif</Term> : un grain n’est sucré que s’il reçoit le gène sucré de ses deux parents. Un seul gène sépare le maïs doux du maïs grain, si bien que le caractère se trie nettement.
+
+<CornSweetKernels
+  title="D’où vient un grain sucré"
+  parentA="Un parent (Ss)"
+  parentB="L’autre (Ss)"
+  starchy="farineux"
+  sweet="sucré, ridé"
+  legend="Les deux parents sont des plantes de première génération : farineuses, mais porteuses chacune d’un gène sucré. S : gène farineux ; s : gène sucré."
+  cobAlt="Un épi de grains jaunes bien pleins, dont environ un sur quatre est ridé et plus sombre."
+  cobCaption="Un épi de deuxième génération : environ un grain sur quatre est sucré et sèche ridé."
+/>
+
+Pour tirer un maïs doux de votre maïs grain :
+
+1. Cherchez des grains ridés sur vos épis secs de maïs à farine ou corné. S’il n’y en a pas, croisez-le avec un maïs doux : les grains de première génération ont tous l’air farineux, et sur les épis suivants, la <Term id="f2">F2</Term>, environ un grain sur quatre est sucré et sèche ridé.
+2. Prélevez les grains ridés et semez-les à l’écart des autres maïs.
+3. Ne ressemez ensuite que les grains ridés. Une fois sélectionné, le caractère sucré reste.
+
+Pour Lofthouse, un grain ridé isolé signale qu’au moins la moitié des grains de l’épi portent le caractère sucré sans le montrer, et c’est ainsi qu’il a tiré d’« Harmony » son « Andean Sweet », grand et résistant aux animaux.
+
+## Populations particulières
+
+Deux de ses projets, à prendre comme ses observations plutôt que comme des résultats prouvés :
+
+- **Maïs corné riche en carotène.** Il a tiré d’« Harmony » un maïs corné orange foncé. Cette couleur vient d’une race sud-américaine réputée bien plus riche en bêta-carotène que le maïs ordinaire.
+- **Maïs à racines aériennes.** Après que des scientifiques ont signalé des microbes fixateurs d’azote sur les racines aériennes de certains maïs, il a sélectionné une population riche en ces racines. Elle pousse haut dans ses champs, qu’il ne fertilise jamais. Reste à savoir si ces racines aident dans votre jardin.
+
+## Récolter la semence
+
+<Steps>
+  <Step title="Sécher sur pied">Laissez les épis porte-graines sur des pieds grands, sains et intacts jusqu’à ce qu’ils soient parfaitement secs.</Step>
+  <Step title="Prendre large">Prenez vos épis sur de nombreux pieds, pas seulement sur quelques préférés, pour garder une population large.</Step>
+  <Step title="Égrener">Détachez les grains à la main. Les épis qui s’égrènent bien rendent la tâche rapide.</Step>
+  <Step title="Ranger au sec">Gardez les grains au sec et au frais, avec une étiquette.</Step>
+</Steps>
+
+<NextGuides slugs={["saving-seed", "storing-seed"]} />
+
+## Le maïs à farine en cuisine
+
+Certains plats de maïs à farine ou corné demandent une préparation traditionnelle, que cette fiche n’aborde pas.
+
+<FoodCaution risk="corn-processing" />
+
+## À faire maintenant
+
+<SeasonTimeline rows={[
+  { label: "Maïs doux", marks: [{ at: "spring", kind: "sow" }, { at: "summer", kind: "flower" }, { at: "late-summer", kind: "harvest" }, { at: "autumn", kind: "save" }] },
+  { label: "Maïs à farine, corné et à éclater", marks: [{ at: "spring", kind: "sow" }, { at: "summer", kind: "flower" }, { at: "autumn", kind: "harvest" }, { at: "autumn", kind: "save" }, { at: "winter", kind: "select" }] }
+]} />
+
+<Checklist id="start-this-season">
+  <Item id="choose-types" when="winter">Décidez quels types de maïs vous garderez séparés. Si la place manque, prenez-en qui fleurissent à des moments différents.</Item>
+  <Item id="sow-blocks" when="spring">Semez en blocs, pas en lignes simples, et visez 200 pieds pour chaque type à entretenir.</Item>
+  <Item id="note-tassels" when="summer">Quand les panicules s’ouvrent, notez quels blocs fleurissent en même temps.</Item>
+  <Item id="dry-cobs" when="autumn">Laissez sécher les épis porte-graines sur les pieds grands et intacts.</Item>
+  <Item id="shell-store" when="winter">Choisissez les meilleurs épis, égrenez-les et rangez la semence au sec.</Item>
+</Checklist>
