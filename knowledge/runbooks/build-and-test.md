@@ -4,13 +4,13 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T09:48:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:26:51Z }
 sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:a5f5bbb202c12716
-    last_modified: 2026-10-25T09:10:54Z
+    digest: sha256:5d9131fcbc667bdb
+    last_modified: 2026-10-25T10:03:59Z
   - id: readme
     resource: ../../README.md
     title: README.md
@@ -19,8 +19,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:23fcfcbe4e7c78b5
-    last_modified: 2026-10-25T09:47:24Z
+    digest: sha256:43fb6cd1a8724cb7
+    last_modified: 2026-10-25T10:10:26Z
 ---
 
 # When to use
@@ -35,7 +35,7 @@ Node >= 22.12.0.
 |---|---|
 | install | `npm install` |
 | dev server (port 4321) | `npm run dev` |
-| unit/regression tests | `npm test` (`node --test scripts/*.test.mjs`) |
+| unit/regression tests | `npm test` (`node --experimental-strip-types --test scripts/*.test.mjs`, so it runs on Node 22.12) |
 | marketing build | `npm run build` (runs `copy-maplibre.mjs` first) |
 | built-site check | `node scripts/check-built-site.mjs` |
 | bibliography links (network, by hand) | `npm run check:bibliography` |

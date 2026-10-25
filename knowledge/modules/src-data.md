@@ -5,13 +5,13 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T09:48:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:26:51Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:803ba37cab9a5714
-    last_modified: 2026-10-25T09:24:06Z
+    digest: sha256:6b6ed02cc7576e05
+    last_modified: 2026-10-25T10:25:08Z
 ---
 
 # Responsibility
@@ -25,12 +25,14 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 - [network.ts](../../src/data/network.ts): `countries`, the agroecology network organisations grouped by region with i18n label keys.
 - [bibliography.md](../../src/data/bibliography.md): the hand-edited bibliography (format documented in its header comment).
 - [bibliography.ts](../../src/data/bibliography.ts): parses the markdown (`?raw` import) into `themes` and exports `climates`.
-- [glossary.ts](../../src/data/glossary.ts): the Field Guides glossary, en and fr (`glossary`, `glossaryAliases`, `glossaryEntry(id, lang)`).
-- [crops.ts](../../src/data/crops.ts): the 40-row crop table behind `CropCards`, `CropTable` and `CropExplorer` (ease, crossing, pollination, life, seed; `cropAliases`, `crop(id)`).
+- [glossary.ts](../../src/data/glossary.ts): the Field Guides glossary, en and fr (`glossary`, `glossaryEntry(id, lang)`; one id per concept, no aliases).
+- [crops.ts](../../src/data/crops.ts): the 40-row crop table behind `CropCards`, `CropTable` and `CropExplorer` (ease, crossing, pollination, life, seed; `crop(id)`; no aliases).
+- [food-risks.ts](../../src/data/food-risks.ts): `foodRisks`, the one list of `<FoodCaution risk>` values, used by the component and the tests.
 
 # Interfaces
 
 - `themes: Theme[]` of `{ key, label, books: Book[] }`; `Book = { id?, by, year, climates, featured, editions }` (`- id:` is a kebab-case anchor that guides cite and the bibliography page uses as the book's `id`); `Edition = { lang, title, url, by?, year? }`.
+- `editionFor(book, lang)`: the book's edition in a guide language (French edition on French pages when there is one), used by `BookCite` and the guide JSON-LD.
 - `climates`: tropical, subtropical, mediterranean, arid, temperate, continental, boreal (the app's zones).
 
 # Dependencies

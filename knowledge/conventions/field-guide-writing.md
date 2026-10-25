@@ -3,18 +3,18 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T09:48:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:26:51Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:9e3605116c04937a
-    last_modified: 2026-10-25T09:39:48Z
+    digest: sha256:8437f85bbed00820
+    last_modified: 2026-10-25T10:25:08Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:35e661688248d63a
-    last_modified: 2026-10-25T09:22:23Z
+    digest: sha256:3ff8b66841ecd693
+    last_modified: 2026-10-25T10:21:42Z
   - id: decisions-field-guides-user-decisions
     resource: /decisions/field-guides-user-decisions.md
 enforced_by: [scripts/guides.test.mjs]
@@ -26,7 +26,8 @@ Every Field Guide (`src/content/guides/<slug>/{en,fr}.mdx`) follows these rules,
 
 - **Our own words.** No quotes from the book, no close paraphrase (no sentence following its wording or order), none of its images. Each guide lists its sources as bibliography book ids with chapter titles.
 - **Do no harm.** Practices a spec tags [OMIT] are left out entirely. Food risks ([CAUTION]) appear only as `<FoodCaution risk>`, whose fixed text names the risk and sends readers to their food-safety authority. No doses, times, temperatures or methods for anything eaten or toxic.
-- **Attribute.** [ATTRIBUTE] and [HIS GARDEN] items are the author's view or his garden ("in Lofthouse's experience", `<HisGarden>`), never rules; no outside figures.
+- **Attribute.** [ATTRIBUTE] and [HIS GARDEN] items are the author's view or his garden ("in Lofthouse's experience", `<HisGarden>`), never rules; his estimates (shares, lists of crops) name him. No outside figures: a general tip that is not from the book gives no counts, times or rates and is tagged `{/* general tip, not from the book */}`.
+- **Select on growth.** Readers select on growth, shape, colour and storage; flavour is judged only on cooked produce, with the matching `<FoodCaution>` beside it.
 - **Portable.** Seasons, not months (both hemispheres); metric first, imperial in parentheses.
 - **Reader first.** Short sentences, second person, concrete actions, one idea per section; the first screen tells readers whether the guide answers their question.
 - **English and French alike.** Same components, terms, checklist and item ids, crop lists and cautions in both files. French is written for French gardeners, with the glossary's French terms, « » quotes, a no-break space before `:` and a narrow no-break space before `;` `?` `!` and `%`.
@@ -34,7 +35,7 @@ Every Field Guide (`src/content/guides/<slug>/{en,fr}.mdx`) follows these rules,
 
 # Enforcement
 
-`scripts/guides.test.mjs` (`npm test`): frontmatter and en/fr parity, known components only, Term/crop/FoodCaution/NextGuides ids resolve, same component sequence and ids in both languages, no digit followed by a time or temperature unit in cautions and safety text, no links in food texts, glossary and crop table completeness, no colour literals or outside assets, `guide-` class prefix. `scripts/check-built-site.mjs` checks the built pages. Own words, omissions and attribution are checked by review against the spec.
+`scripts/guides.test.mjs` (`npm test`): frontmatter and en/fr parity, known components only, Term/crop/FoodCaution/NextGuides ids resolve, same component sequence and ids in both languages, no amount of time (digits or words, e.g. "ten minutes"), temperature or method word (overnight, boil, soak and French forms) in cautions and safety text, no prose pairing boil/soak/ferment/cook with an amount of time (a heuristic with its own self-test; reviewers still read cautions), no glossary or crop alias maps, no links in food texts, glossary and crop table completeness, no colour literals or outside assets, `guide-` class prefix. `scripts/check-built-site.mjs` checks the built pages. Own words, omissions and attribution are checked by review against the spec.
 
 # Examples
 
