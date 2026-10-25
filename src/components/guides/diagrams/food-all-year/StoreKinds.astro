@@ -1,0 +1,80 @@
+---
+// Food all year: three ways to keep food through winter, qualitative only (no temperatures, no times).
+// 1: an indoor shelf with three winter squashes. 2: a pit in the ground, cut away to show buckets of
+// potatoes, a board across it and straw on top (his grandfather's cellar). 3: carrots and turnips left
+// in the soil under straw, a snowflake above. The names and notes are HTML under the panels.
+import { r1 } from '../../../../lib/svg';
+interface Place { name: string; note: string; }
+interface Props { title: string; alt: string; places: [Place, Place, Place]; }
+const { title, alt, places } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-store-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const SOIL = 62;
+const straw = (x0: number, x1: number, y: number) => {
+  let d = '';
+  for (let x = x0; x < x1; x += 4) d += `M${x} ${y + ((x / 4) % 2 ? 1.5 : -1)}l7 ${(x / 4) % 3 ? -2.5 : 2}`;
+  return d;
+};
+const flake = (cx: number, cy: number, r: number) => [0, 60, 120].map((a) => {
+  const t = (a * Math.PI) / 180;
+  return `M${r1(cx - r * Math.cos(t))} ${r1(cy - r * Math.sin(t))}L${r1(cx + r * Math.cos(t))} ${r1(cy + r * Math.sin(t))}`;
+}).join('');
+const squash = [{ x: 30, w: 15, h: 11 }, { x: 56, w: 12, h: 13 }, { x: 82, w: 15, h: 10 }];
+const roots = [252, 272, 292, 312, 332].map((x, i) => ({ x, turnip: i % 2 === 1 }));
+---
+<div class="guide-store">
+  <svg viewBox="0 0 360 120" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    {[4, 124, 244].map((x) => <rect x={x} y="4" width="112" height="112" rx="6" class="guide-bed" />)}
+    <line x1="16" y1="62" x2="100" y2="62" class="guide-store-shelf" />
+    <line x1="22" y1="62" x2="22" y2="74" class="guide-store-shelf" />
+    <line x1="94" y1="62" x2="94" y2="74" class="guide-store-shelf" />
+    {squash.map((s) => (
+      <g>
+        <ellipse cx={s.x} cy={62 - s.h} rx={s.w} ry={s.h} class="guide-store-squash" />
+        <path d={`M${s.x} ${62 - s.h * 2}l1 -4`} class="guide-store-stalk" />
+      </g>
+    ))}
+    <rect x="128" y={SOIL} width="104" height="50" rx="3" class="guide-store-soil" />
+    <rect x="142" y={SOIL + 4} width="76" height="40" rx="3" class="guide-store-pit" />
+    {[156, 180, 204].map((x) => (
+      <g>
+        <path d={`M${x - 9} ${SOIL + 22}l2 20h14l2 -20z`} class="guide-store-bucket" />
+        {[-4, 0, 4].map((dx) => <circle cx={x + dx} cy={SOIL + 20} r="3.4" class="guide-store-potato" />)}
+      </g>
+    ))}
+    <rect x="136" y={SOIL - 4} width="88" height="5" rx="1" class="guide-store-board" />
+    <path d={straw(134, 226, SOIL - 8)} class="guide-store-straw" />
+    <rect x="246" y={SOIL} width="104" height="50" rx="4" class="guide-store-soil" />
+    {roots.map((r) => r.turnip
+      ? <g><circle cx={r.x} cy={SOIL + 10} r="6" class="guide-store-turnip" /><path d={`M${r.x} ${SOIL + 16}v6`} class="guide-store-tip" /><path d={`M${r.x} ${SOIL + 4}l-3 -10M${r.x} ${SOIL + 4}l3 -10`} class="guide-stem guide-stem-hair" /></g>
+      : <g><path d={`M${r.x - 4} ${SOIL + 2}h8l-4 26z`} class="guide-store-carrot" /><path d={`M${r.x} ${SOIL + 2}l-3 -10M${r.x} ${SOIL + 2}l3 -10M${r.x} ${SOIL + 2}v-11`} class="guide-stem guide-stem-hair" /></g>)}
+    <path d={straw(244, 352, SOIL - 4)} class="guide-store-straw" />
+    <path d={flake(298, 24, 9)} class="guide-store-flake" />
+  </svg>
+  <ul class="guide-store-places">
+    {places.map((p) => <li><b>{p.name}</b><span>{p.note}</span></li>)}
+  </ul>
+</div>
+
+<style>
+  .guide-store { display: grid; gap: 0.45rem; max-width: 34rem; }
+  .guide-store svg { width: 100%; height: auto; }
+  .guide-store-shelf { stroke: var(--text-muted); stroke-width: 3; stroke-linecap: round; }
+  .guide-store-squash { fill: var(--seed-4); stroke: var(--seed-2); stroke-width: 1; }
+  .guide-store-stalk { stroke: var(--seed-2); stroke-width: 2.5; stroke-linecap: round; }
+  .guide-store-soil { fill: var(--surface-alt); stroke: var(--border); }
+  .guide-store-pit { fill: var(--surface); stroke: var(--border-strong); stroke-dasharray: 3 2; }
+  .guide-store-bucket { fill: var(--surface-alt); stroke: var(--text-muted); stroke-width: 1.2; }
+  .guide-store-potato { fill: var(--seed-3); stroke: var(--seed-2); stroke-width: 0.8; }
+  .guide-store-board { fill: var(--seed-2); }
+  .guide-store-straw { stroke: var(--seed-6); stroke-width: 2; stroke-linecap: round; fill: none; }
+  .guide-store-carrot { fill: var(--seed-5); }
+  .guide-store-turnip { fill: var(--seed-6); stroke: var(--petal); stroke-width: 1.2; }
+  .guide-store-tip { stroke: var(--seed-6); stroke-width: 1.5; }
+  .guide-store-flake { stroke: var(--text-secondary); stroke-width: 1.8; stroke-linecap: round; fill: none; }
+  :global(.guide-body) .guide-store-places { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin: 0; padding: 0; list-style: none; font-size: 0.85rem; line-height: 1.35; color: var(--text-secondary); }
+  :global(.guide-body) .guide-store-places li { display: grid; gap: 0.1rem; margin: 0; }
+  .guide-store-places b { color: var(--text); font-weight: 600; }
+</style>
