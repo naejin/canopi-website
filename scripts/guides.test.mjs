@@ -18,9 +18,16 @@ const planned = [
   'keeping-a-landrace', 'saving-seed', 'storing-seed', 'squash-melons-cucumbers', 'corn', 'beans-and-legumes',
   'tomatoes', 'small-grains', 'true-seed-potato-garlic-sunroot', 'season-shifting', 'food-all-year', 'pests-without-sprays',
 ];
-const risks = ['bitter-cucurbits', 'dry-beans', 'nightshades', 'potato-berries', 'corn-processing', 'treated-seed', 'fava', 'ergot', 'sprouted-or-surplus-seed'];
-// A digit followed by a time or temperature unit: the safety rule allows none in cautions.
-const timeOrTemperature = /\d\s*(?:°|º|degrees?|degr[ée]s?|seconds?|secondes?|sec\b|minutes?|mins?\b|min\b|hours?|heures?|hrs?\b|h\b|days?|jours?|j\b|weeks?|semaines?|months?|mois\b|K\b|C\b|F\b)/i;
+// Safety rule: no caution or safety box gives a time, a temperature or a method word, and no prose
+// pairs boiling, soaking, fermenting or cooking with an amount of time. This is a heuristic: it catches
+// the usual ways of writing these in English and French, not every one, so reviewers still read them.
+const amount = String.raw`(?:\d+(?:[.,]\d+)?|an?|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|forty|forty-eight|sixty|half(?:\s+an?)?|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|quinze|vingt|trente|quarante|soixante|demi(?:e)?)`;
+const timeUnit = String.raw`(?:seconds?|secondes?|secs?|minutes?|mins?|hours?|heures?|hrs?|h|days?|jours?|j|nights?|nuits?|weeks?|semaines?|months?|mois)`;
+const timeAmount = new RegExp(String.raw`\b${amount}[\s  -]*${timeUnit}\b`, 'i');
+const temperature = /\d\s*[°º]|\bdegrees?\b|\bdegr[ée]s?\b|\b\d+\s*(?:K|C|F)\b/i;
+const methodWord = /\bovernight\b|\b(?:toute la|pendant la|une) nuit\b|\bboil\w*|\bbouill\w*|\bsoak\w*|\btremp\w*/i;
+const cautionBreach = (text) => timeAmount.test(text) || temperature.test(text) || methodWord.test(text);
+const proseBreach = new RegExp(String.raw`\b(?:boil|soak|ferment|cook|bouill|tremp|ferment|cuis|cuit|cuire)\w*\b[^.]{0,80}?\b${amount}[\s  -]*${timeUnit}\b`, 'i');
 
 const slugs = existsSync(guideRoot) ? readdirSync(guideRoot, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name) : [];
 
@@ -81,6 +88,7 @@ test('every guide has a complete frontmatter, matched between English and French
 test('guides use only known components, and their ids resolve to the glossary, the crop table and the plan', async () => {
   const { glossary } = await import('../src/data/glossary.ts');
   const { crops } = await import('../src/data/crops.ts');
+  const { foodRisks } = await import('../src/data/food-risks.ts');
   const known = [...read('components/guides/index.ts').matchAll(/^\s{2}([A-Z]\w+),?$/gm)].map((m) => m[1]);
   const diagrams = existsSync(join(src, 'components/guides/diagrams'))
     ? readdirSync(join(src, 'components/guides/diagrams'), { recursive: true }).filter((f) => /\/[A-Z]\w+\.astro$/.test(f)).map((f) => f.match(/([A-Z]\w+)\.astro$/)[1])
@@ -96,7 +104,7 @@ test('guides use only known components, and their ids resolve to the glossary, t
     for (const id of attrs(body, 'Term', 'id')) assert.ok(glossaryIds.includes(id), `${file}: term "${id}" is in src/data/glossary.ts`);
     for (const id of attrs(body, 'CropCard', 'crop')) assert.ok(cropIds.includes(id), `${file}: crop "${id}" is in src/data/crops.ts`);
     for (const name of ['CropCards', 'CropTable']) for (const id of listAttr(body, name, 'crops')) assert.ok(cropIds.includes(id), `${file}: crop "${id}" is in src/data/crops.ts`);
-    for (const risk of attrs(body, 'FoodCaution', 'risk')) assert.ok(risks.includes(risk), `${file}: FoodCaution risk "${risk}"`);
+    for (const risk of attrs(body, 'FoodCaution', 'risk')) assert.ok(foodRisks.includes(risk), `${file}: FoodCaution risk "${risk}"`);
     for (const slug of listAttr(body, 'NextGuides', 'slugs')) assert.ok(planned.includes(slug), `${file}: next guide "${slug}" is in the plan`);
     // Ticks are stored per list ({ <checklist id>: [item ids] }), so list ids are unique in a guide
     // and item ids unique in their list; every Item sits in a Checklist.
@@ -120,22 +128,41 @@ test('guides use only known components, and their ids resolve to the glossary, t
   }
 });
 
-test('no caution or safety text gives a time or a temperature', () => {
+test('the safety heuristic catches times, temperatures and method words written out', () => {
+  for (const text of ['ten minutes', 'for 12 hours', 'overnight', 'deux heures', 'toute la nuit', 'at 100 °C', 'boil them', 'soak the beans', 'faites tremper', 'a day', 'trois jours', 'twenty-minute']) {
+    assert.ok(cautionBreach(text), `caution heuristic misses "${text}"`);
+  }
+  for (const text of ['Ferment them for three days.', 'Soak the seed for twelve hours before sowing.', 'Faites cuire vingt minutes.', 'boil for 10 min']) {
+    assert.ok(proseBreach.test(text), `prose heuristic misses "${text}"`);
+  }
+  for (const text of ['Ferment in a jar with a little water for a few days, until the gel breaks down.', 'Sow them in one bed. A label with the crop and the year is enough.', 'Cook what you grow.']) {
+    assert.ok(!proseBreach.test(text), `prose heuristic flags "${text}"`);
+  }
+});
+
+test('no caution or safety text gives a time, a temperature or a method, and no prose times a cooking step', async () => {
+  const { foodRisks: risks } = await import('../src/data/food-risks.ts');
   for (const lang of guideLangs) {
     const strings = JSON.parse(read(`i18n/guides/${lang}.json`));
     for (const risk of risks) {
       const text = strings[`food.${risk}`];
       assert.ok(text?.trim(), `${lang}: food.${risk}`);
-      assert.ok(!timeOrTemperature.test(text), `${lang}: food.${risk} gives a time or temperature`);
+      assert.ok(!cautionBreach(text), `${lang}: food.${risk} gives a time, temperature or method`);
       assert.ok(!/https?:|<a\b/.test(text), `${lang}: food.${risk} carries no link`);
     }
   }
   for (const { body, file } of guides) {
     for (const [, inner] of body.matchAll(/<(?:Safety|FoodCaution)\b[^>]*>([\s\S]*?)<\/(?:Safety|FoodCaution)>/g)) {
-      assert.ok(!timeOrTemperature.test(inner), `${file}: a Safety box gives a time or temperature: ${inner.trim().slice(0, 80)}`);
+      assert.ok(!cautionBreach(inner), `${file}: a Safety box gives a time, temperature or method: ${inner.trim().slice(0, 80)}`);
     }
-    for (const title of attrs(body, 'Safety', 'title')) assert.ok(!timeOrTemperature.test(title), `${file}: Safety title`);
+    for (const title of attrs(body, 'Safety', 'title')) assert.ok(!cautionBreach(title), `${file}: Safety title`);
+    const prose = body.match(proseBreach);
+    assert.ok(!prose, `${file}: prose gives a time for boiling, soaking, fermenting or cooking: "${prose?.[0]}"`);
   }
+  // FoodCaution takes its risk list from the same module as this test.
+  const caution = read('components/guides/FoodCaution.astro');
+  assert.match(caution, /import \{ foodRisks[^}]*\} from '\.\.\/\.\.\/data\/food-risks'/, 'FoodCaution imports src/data/food-risks.ts');
+  assert.ok(!caution.includes("'bitter-cucurbits'"), 'FoodCaution keeps no copy of the risk list');
 });
 
 test('the guide chrome strings exist in English and French alike', () => {

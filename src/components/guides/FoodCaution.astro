@@ -2,11 +2,11 @@
 // A fixed-wording caution about eating a crop or its seed: it names the risk and sends the reader to
 // their national food-safety authority. One text per risk (src/i18n/guides/*.json, "food.<risk>");
 // no doses, times, temperatures, methods or links, and nothing a guide can add to it.
+import { foodRisks, type FoodRisk } from '../../data/food-risks';
 import { gt, guideLangOf } from '../../i18n/guides';
-export const risks = ['bitter-cucurbits', 'dry-beans', 'nightshades', 'potato-berries', 'corn-processing', 'treated-seed', 'fava', 'ergot', 'sprouted-or-surplus-seed'] as const;
-interface Props { risk: (typeof risks)[number]; }
+interface Props { risk: FoodRisk; }
 const { risk } = Astro.props;
-if (!risks.includes(risk)) throw new Error(`<FoodCaution risk="${risk}">: use one of ${risks.join(', ')}`);
+if (!foodRisks.includes(risk)) throw new Error(`<FoodCaution risk="${risk}">: use one of ${foodRisks.join(', ')}`);
 const lang = guideLangOf(Astro.currentLocale);
 ---
 <aside class="guide-safety guide-food" role="note" aria-label={gt('food.title', lang)}>
