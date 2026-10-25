@@ -4,23 +4,23 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:39:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T11:02:48Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:b1cc1d50b3a2ec86
-    last_modified: 2026-10-25T10:32:57Z
+    digest: sha256:31d006a9190db830
+    last_modified: 2026-10-25T10:58:19Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:acc99262e667166b
-    last_modified: 2026-10-25T10:34:14Z
+    digest: sha256:014baac2426cd02e
+    last_modified: 2026-10-25T10:57:42Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
     digest: sha256:ac7d9ef021ef991c
-    last_modified: 2026-10-25T10:37:39Z
+    last_modified: 2026-10-25T10:40:17Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -45,7 +45,7 @@ sources:
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
     digest: sha256:9693c3a6ce74e302
-    last_modified: 2026-10-25T10:33:04Z
+    last_modified: 2026-10-25T10:40:17Z
 ---
 
 # Responsibility
@@ -56,7 +56,7 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 
 - `src/content/guides/<slug>/{en,fr}.mdx`: the guides. A guide is published when both files exist. Schema in [content.config.ts](../../src/content.config.ts).
 - [src/components/guides/](../../src/components/guides/index.ts): `index.ts` is the map of components every guide can use without imports; `GuideLayout.astro` (one guide page), `GuidesIndex.astro` (the index), `BookCite.astro`.
-- `src/components/guides/diagrams/`: build-time SVG diagrams (`BeanRow`, `YearsTimeline`, `PlotDiagram`, `FlowerDiagram`, `SeasonTimeline`); `diagrams/<slug>/<Name>.astro` are one guide's own diagrams, registered automatically under their file name.
+- `src/components/guides/diagrams/`: build-time SVG diagrams (`BeanRow`, `YearsTimeline`, `PlotDiagram`, `FlowerDiagram`, `SeasonTimeline`); `diagrams/<slug>/<Name>.astro` are one guide's own diagrams, registered automatically under their file name. Guide-own components so far: `SeedKinds` (landrace-gardening); `HybridGenerations` and the `HybridLookup` widget (hybrids-heirlooms-landraces); `DistanceFalloff` and the `CrossLookup` widget (will-they-cross). Guide-own components keep their styles in a scoped `<style>` (classes still `guide-`, colours only tokens). The two lookups are progressive enhancement: a server-rendered list from `crops.ts` (readable without JavaScript), plus a small `<script>` that adds a search box filtering it; their words come from MDX props and `data-*` attributes.
 - [guides.css](../../src/styles/guides.css): every class starts with `guide-`; imported only by the two layouts.
 - [glossary.ts](../../src/data/glossary.ts), [crops.ts](../../src/data/crops.ts), [i18n/guides.ts](../../src/i18n/guides.ts) with `guides/{en,fr}.json`, [lib/guides.ts](../../src/lib/guides.ts), [svg.ts](../../src/lib/svg.ts), [rehype-guide-terms.mjs](../../src/lib/rehype-guide-terms.mjs), [rehype-guide-checklists.mjs](../../src/lib/rehype-guide-checklists.mjs), [food-risks.ts](../../src/data/food-risks.ts) (the one FoodCaution risk list), `planting-mix.ts` (PlantingMixBar shares and validation).
 

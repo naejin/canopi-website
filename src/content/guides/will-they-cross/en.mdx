@@ -1,0 +1,152 @@
+---
+title: "Will they cross? Pollen, distance and timing"
+description: "Tell whether two crops can cross, how much crossing to expect at a given spacing, and how to use distance, flowering time or layout to get more crosses or fewer."
+domain: seeds
+order: 3
+glance:
+  - { label: "Skill", value: "Beginner" }
+  - { label: "When", value: "Plan before sowing" }
+  - { label: "Space", value: "Any; small gardens use timing and layout" }
+  - { label: "Distances", value: "From his dry, windy garden" }
+quick: true
+sources:
+  - { book: landrace-gardening, chapters: ["Promiscuous Pollination", "Creating Landraces", "Squash Family", "Legumes", "Continuous Improvement", "New Methods and Crops"] }
+related: [hybrids-heirlooms-landraces, landrace-gardening]
+updated: 2026-10-25
+---
+
+You grow two zucchini, or a sweet corn beside a popcorn, or three kinds of bean, and you want to save seed. Will they mix? The answer comes in two parts: can these two crops cross at all, and if they can, how close is too close.
+
+<QuickAnswer>
+Only plants of the same species cross, as a rule. A zucchini and a jack-o'-lantern pumpkin are one species and cross readily; a zucchini and a butternut are two species and rarely do. Most pollen lands on the nearest flowers, so crossing drops fast with distance. Lofthouse treats self-pollinating crops as separate at 3 m (10 ft) and outcrossing crops at 30 m (100 ft), and accepts the few percent of crosses that still happen; if you need pure seed, use the much larger distances of a seed-saving organisation. Varieties that flower at different times do not cross.
+</QuickAnswer>
+
+## Same species or not?
+
+Crossing happens within a species. Garden names hide this: "pumpkin" can belong to any of three squash species, while muskmelon, cantaloupe and honeydew are all one. Look up the species, not the name. Type your crops below, or open any entry.
+
+<CrossLookup
+  crops={["squash-pepo", "squash-moschata", "squash-maxima", "melon", "cucumber", "watermelon", "corn", "spinach", "fava-bean", "runner-bean", "common-bean", "pea", "chickpea", "tomato-garden", "pepper", "eggplant", "lettuce", "cabbage-kale-broccoli", "turnip", "radish", "beet", "carrot", "parsnip", "onion", "sunflower", "wheat", "barley"]}
+  labels={{
+    search: "Find your crops",
+    placeholder: "zucchini butternut",
+    none: "Not in this list. Look up the species: as a rule, only plants of the same species cross.",
+    within: "Crosses with",
+    kin: "other varieties of",
+    others: "In his garden",
+    rate: "Seed from crossing",
+    distance: "His distance",
+    self: "3 m (10 ft): he treats self-pollinating crops as separate at this distance",
+    outcross: "30 m (100 ft): his distance for outcrossing crops, where he still sees a few percent of crosses",
+  }}
+  pairs={[
+    { crops: ["squash-pepo", "squash-moschata", "squash-maxima"], text: "The three squash species rarely cross with each other: growing thousands of squash a year, he found one natural cross between them in twelve years." },
+    { crops: ["melon"], text: "Netted muskmelons and smooth honeydews cross. He grows his green-fleshed melons in another field to keep them apart from the orange ones." },
+    { crops: ["corn"], text: "All the corn types cross. His own popcorn came from an accidental cross with a decorative flour corn." },
+    { crops: ["pepper"], text: "Hot and sweet peppers cross. He keeps them apart." },
+    { crops: ["carrot"], text: "When wild carrot gets into his seed crop, he weeds out the few percent of seedlings that come up looking wild." },
+    { crops: ["common-bean", "runner-bean"], text: "Common and runner beans are two species. Crosses between them are mostly made by hand, but rows side by side can give an odd natural one." },
+  ]}
+/>
+
+### Does a cross change this year's crop?
+
+{/* general tip, not from the book */}
+In most crops, no. The squash or pepper you pick this year belongs to the mother plant; a cross only shows in plants grown from its seed. A sweet pepper grown next to a hot one is still a sweet pepper, but its seed may grow hot plants next year.
+
+Corn is the exception, because the kernels are the seeds. A cross shows on the cob in the same season. Lofthouse sees it whenever one coloured plant slips into a white patch: coloured kernels appear on the white cobs nearby. Sweetness works the same way: sweet corn pollinated by starchy corn can give starchy kernels.
+
+## How pollen moves
+
+Pollen mostly lands close to home: each flower tends to be fertilised by the nearest flower it can cross with. That holds at every scale, between flowers on one plant, between plants in a bed, between beds in a field. Crossing is local.
+
+<Term id="self-pollinating">Self-pollinating</Term> crops such as tomatoes, peas, lettuce, grains and common beans usually fertilise their own flowers, so crosses are rare. <Term id="outcrossing">Outcrossing</Term> crops depend on pollen from other plants. Squash and corn are <Term id="monoecious">monoecious</Term>, with separate male and female flowers on each plant; spinach is <Term id="dioecious">dioecious</Term>, with male and female plants, so every seed is a cross.
+
+Lofthouse's rule of thumb is that crossing falls with the square of the distance. Twice as far, a quarter of the crosses. Ten times as far, a hundredth. Take it as his intuition, not a promise: bees roam, and a storm can lift corn pollen for kilometres. He points out that those few stray grains count for little against the flood of pollen from plants nearby.
+
+<Figure title="Twice as far, a quarter of the crosses" caption="Lofthouse's rule of thumb, drawn to scale: each dot's size is the share of crosses at that distance. An intuition, not a guarantee.">
+<DistanceFalloff distance="Distance from the other variety" share="Share of crosses, compared with the closest spacing" alt="A flowering plant at the left. Along a line, dots at one, two, four and ten times a starting distance, shrinking from a large dot marked 1 to dots marked a quarter, one sixteenth and, far away, a tiny dot marked one hundredth." />
+</Figure>
+
+## His distances
+
+Your crop's group, and his distance for it, are in the list above.
+
+<HisGarden
+  his="He treats self-pollinating crops such as common beans and grains as separate at 3 m (10 ft), and outcrossing crops at 30 m (100 ft), where he still sees about 1 to 5% crossing. In his usual wind, corn pollen sinks below the height of the silks within about 8 m (25 ft), and most corn crosses happen within 1 m (3 ft). He keeps his bush muskmelon about 30 m (100 ft) from his vining ones to keep the two mostly apart. Yet bees once carried a Hopi White squash into his buttercups from a patch well over 100 m (several hundred feet) away."
+  you="His figures come from one dry, high garden. More bees, other winds or open ground can carry pollen further. Treat his distances as a starting point for a landrace, where a few crosses are welcome, not as a way to keep seed pure."
+/>
+
+Gardening books give much bigger distances. Lofthouse's view is that those were written for seed companies that sell pure seed to the whole world, not for a gardener feeding a household. If you plan to share seed under a variety name, follow the distances of a seed-saving organisation in your country.
+
+<Term id="isolation-distance">Isolation distance</Term> is only one tool. The next two sections show how to get more crosses when you want them, and fewer when space is short.
+
+## More crosses: mix them
+
+For a landrace you want crossing, so do the opposite of isolating.
+
+- Sow varieties jumbled together, not in separate rows.
+- Put plants that look different side by side, so their crosses are easy to spot.
+- In self-pollinating crops, close mixed planting and plenty of pollinators raise the crossing rate. Feed pollinators all season with many kinds of flowering plants.
+
+<PlotDiagram variant="mixed" />
+
+## Fewer crosses without much space
+
+### Flower at different times
+
+Varieties that are not in flower together cannot cross. This is <Term id="isolation-by-time">isolation by time</Term>. Lofthouse grows an early corn and a late corn side by side; that is how his flour corn and sweet corn share one field.
+
+<Figure caption="An example, not his dates: sown together, the two never flower at the same time.">
+<SeasonTimeline rows={[
+  { label: "Early corn", marks: [{ at: "spring", kind: "sow" }, { at: "early-summer", kind: "flower" }, { at: "late-summer", kind: "harvest" }] },
+  { label: "Late corn", marks: [{ at: "spring", kind: "sow" }, { at: "late-summer", kind: "flower" }, { at: "autumn", kind: "harvest" }] }
+]} />
+</Figure>
+
+### Colour blocks
+
+Plant each type in its own block, blocks touching. With purple, white and yellow corn side by side, nearly all the white cobs stay white. Only the rows along each shared edge pick up a sprinkling of purple or yellow kernels, and the purple and yellow blocks hardly meet. He uses this to keep <Term id="sister-lines">sister lines</Term> going in one field.
+
+<PlotDiagram variant="colour-blocks" />
+
+### Row ends
+
+Put one type at each end of a row: green squash at one end, orange at the other. Each end mostly pollinates itself, and the crosses gather in the middle. Save seed from the ends.
+
+<PlotDiagram variant="row-ends" />
+
+Planning on a garden map helps here: in [Canopi](/) you can place your varieties in blocks or at row ends and see the distances between beds before you sow.
+
+## Crosses to avoid
+
+Some crosses cost years of work to undo.
+
+- **Hot peppers with sweet peppers.** Once heat is in your sweet peppers, selecting it back out is slow. Lofthouse keeps them apart.
+- **Sweet corn with flour corn.** He does not mix them, and where they share a field he keeps them apart by flowering time.
+- **Ornamental gourds with food squash.** Gourds are close to a wild ancestor, and they share a species with zucchini and pumpkins.
+- **Wild relatives with any crop.** When he grows a wild ancestor of a crop, he first gives it a field of its own. Keeping it apart at the start is easier than removing a trait later.
+
+<Safety title="Keep wild relatives away from your seed crops">
+Grow wild relatives of a crop well away from the plants you save seed from. Crosses with wild types can bring back bitter, poisonous fruit.
+</Safety>
+
+<FoodCaution risk="bitter-cucurbits" />
+
+Wild genes brought him other surprises too. Wild watermelon gave fruit that burst open when knocked in the sun, and his first, half-wild tepary beans had <Term id="hard-seed">hard seed</Term> that would not take up water. Both traits were gone after a few years of selection.
+
+## How much crossing can you accept?
+
+Lofthouse does not mind a few percent of <Term id="off-type">off-types</Term>. He harvests by hand and looks at every fruit; the ones he does not like go to the compost or the animals. Crossing two fine varieties of one crop, he finds, gives fine offspring: a Hubbard crossed with a banana squash is no less a squash than its parents.
+
+If you want to keep one heirloom exactly as it is, grow it well apart from its relatives, or keep a packet of the original seed in reserve. To be sure a cross does happen, make it by hand. Before you save from a hybrid, read [Can I save seed from this?](/guides/hybrids-heirlooms-landraces/).
+
+<NextGuides slugs={["hand-crosses", "corn", "squash-melons-cucumbers", "beans-and-legumes", "tomatoes"]} />
+
+<Checklist id="plan-crossing">
+  <Item id="list-varieties" when="winter">List the crops you grow more than one variety of, and check which ones can cross.</Item>
+  <Item id="mix-or-separate" when="before-sowing">Decide for each crop: mix for a landrace, or separate to keep a variety.</Item>
+  <Item id="pick-timing" when="before-sowing">Short on space? For corn, pick varieties that flower at different times.</Item>
+  <Item id="plant-blocks" when="sowing">Plant colour blocks or row ends instead of random rows.</Item>
+  <Item id="check-edges" when="harvest">Look for off-types on the shared edges, then keep or cull them on purpose.</Item>
+</Checklist>

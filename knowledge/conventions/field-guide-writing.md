@@ -3,18 +3,20 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:39:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T11:02:48Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T11:02:47Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:b1cc1d50b3a2ec86
-    last_modified: 2026-10-25T10:32:57Z
+    digest: sha256:31d006a9190db830
+    last_modified: 2026-10-25T10:58:19Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
     digest: sha256:3fc9a922eb36fe9d
-    last_modified: 2026-10-25T10:34:00Z
+    last_modified: 2026-10-25T10:40:17Z
   - id: decisions-field-guides-user-decisions
     resource: /decisions/field-guides-user-decisions.md
 enforced_by: [scripts/guides.test.mjs]
