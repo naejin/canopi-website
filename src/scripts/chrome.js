@@ -11,18 +11,23 @@ export function initChrome({ onThemeChange = () => {} } = {}) {
   initDialogs();
   initDonate();
 
-  // The language menu and the phone Menu: an outside click or Escape closes them (Escape gives the
-  // focus back to the summary), and opening one closes the other.
+  // The language menu and the phone Menu (only one shows at any width) close on an outside click, on
+  // Escape (which gives the focus back to the summary), when the focus moves out of them, and when one
+  // of their links or buttons is used (Contact is a link within the page, Donate opens a dialog).
   const menus = [...document.querySelectorAll('[data-lang-menu], [data-nav-menu]')];
   document.addEventListener('click', (event) => {
     for (const menu of menus) if (!menu.contains(event.target)) menu.open = false;
   });
   for (const menu of menus) {
+    const summary = menu.querySelector('summary');
     menu.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && menu.open) { menu.open = false; menu.querySelector('summary').focus(); }
+      if (event.key === 'Escape' && menu.open) { menu.open = false; summary.focus(); }
     });
-    menu.addEventListener('toggle', () => {
-      if (menu.open) for (const other of menus) if (other !== menu) other.open = false;
+    menu.addEventListener('focusout', (event) => {
+      if (event.relatedTarget && !menu.contains(event.relatedTarget)) menu.open = false;
+    });
+    menu.addEventListener('click', (event) => {
+      if (event.target.closest('a, button')) menu.open = false;
     });
   }
 

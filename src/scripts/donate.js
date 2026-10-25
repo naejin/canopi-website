@@ -108,9 +108,11 @@ export function initDonate() {
     step('amount');
   });
 
+  // The dialog gives the focus back to the button that opened it, or, for the Donate button in the
+  // phone Menu (closed as the dialog opens), to the Menu's summary.
   function open(opener) {
     if (!iframe) createFrame();
-    openDialog(dialog, opener);
+    openDialog(dialog, opener?.closest('[data-nav-menu]')?.querySelector('summary') ?? opener);
   }
   showFrequency();
   document.addEventListener('click', (event) => {
