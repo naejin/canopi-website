@@ -5,15 +5,15 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:26:51Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T12:58:36Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:39:27Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:cef5ec8058fbb4d1
-    last_modified: 2026-10-25T10:33:04Z
+    digest: sha256:571ae6cf6a13fda7
+    last_modified: 2026-10-25T12:57:25Z
 ---
 
 # Responsibility
@@ -28,7 +28,7 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 - [bibliography.md](../../src/data/bibliography.md): the hand-edited bibliography (format documented in its header comment).
 - [bibliography.ts](../../src/data/bibliography.ts): parses the markdown (`?raw` import) into `themes` and exports `climates`.
 - [glossary.ts](../../src/data/glossary.ts): the Field Guides glossary, en and fr (`glossary`, `glossaryEntry(id, lang)`; one id per concept, no aliases).
-- [crops.ts](../../src/data/crops.ts): the 40-row crop table behind `CropCards`, `CropTable` and `CropExplorer` (ease, crossing, pollination, life, seed; `crop(id)`; no aliases).
+- [crops.ts](../../src/data/crops.ts): the 42-row crop table (the guide map's 40 crops plus mustard and flax) behind `CropCards`, `CropTable` and `CropExplorer` (ease, crossing, pollination, life, seed; `crop(id)`; no aliases).
 - [food-risks.ts](../../src/data/food-risks.ts): `foodRisks`, the one list of `<FoodCaution risk>` values, used by the component and the tests.
 
 # Interfaces

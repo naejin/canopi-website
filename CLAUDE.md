@@ -28,6 +28,7 @@ supported filter metadata before copying it under `dist/client/app/`.
 - All components receive a `lang` prop; pages pass it through
 - Language detection: client-side script in Base.astro (sessionStorage, first visit only)
 - Add new translation keys to ALL 11 files when adding text
+- Exception: Field Guides are en+fr only; guide-only strings live in `src/i18n/guides/{en,fr}.json` (not the 11 locale files)
 
 ## Design Rules (from app's design system)
 - Colors: exact palette from `canopi/desktop/web/src/styles/global.css`

@@ -4,25 +4,25 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T11:07:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T12:58:24Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T11:07:53Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:666fae3c9b201fc8
-    last_modified: 2026-10-25T11:04:30Z
+    digest: sha256:883e1108d8a0cd0b
+    last_modified: 2026-10-25T12:57:35Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:f492c217d2e63304
-    last_modified: 2026-10-25T10:57:18Z
+    digest: sha256:0e74dbe5b1b3ccc8
+    last_modified: 2026-10-25T12:57:25Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
-    digest: sha256:ac7d9ef021ef991c
-    last_modified: 2026-10-25T10:40:17Z
+    digest: sha256:87aa7b2a3bd2e847
+    last_modified: 2026-10-25T12:57:25Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -41,13 +41,13 @@ sources:
   - id: glossary-ts
     resource: ../../src/data/glossary.ts
     title: src/data/glossary.ts
-    digest: sha256:94bafc5956d0a5f9
-    last_modified: 2026-10-25T10:25:08Z
+    digest: sha256:0e37abe41861aa85
+    last_modified: 2026-10-25T12:57:25Z
   - id: crops-ts
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
-    digest: sha256:9693c3a6ce74e302
-    last_modified: 2026-10-25T10:40:17Z
+    digest: sha256:5bf94c6ec492fe6b
+    last_modified: 2026-10-25T12:57:25Z
 ---
 
 # Responsibility
@@ -58,7 +58,7 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 
 - `src/content/guides/<slug>/{en,fr}.mdx`: the guides. A guide is published when both files exist. Schema in [content.config.ts](../../src/content.config.ts).
 - [src/components/guides/](../../src/components/guides/index.ts): `index.ts` is the map of components every guide can use without imports; `GuideLayout.astro` (one guide page), `GuidesIndex.astro` (the index), `BookCite.astro`.
-- `src/components/guides/diagrams/`: build-time SVG diagrams (`BeanRow`, `YearsTimeline`, `PlotDiagram`, `FlowerDiagram`, `SeasonTimeline`); `diagrams/<slug>/<Name>.astro` are one guide's own diagrams, registered automatically under their file name.
+- `src/components/guides/diagrams/`: build-time SVG diagrams. Files at the top level are shared by every guide; `diagrams/<slug>/<Name>.astro` belong to one guide and are registered automatically under their file name (a name clash fails the build). Every label arrives as a prop from the MDX, so en and fr each get their own; geometry helpers (`rng`, `seedOf`, `grid`, `wrap` for SVG text lines) come from `src/lib/svg.ts`, never a local copy.
 - [guides.css](../../src/styles/guides.css): every class starts with `guide-`; imported only by the two layouts.
 - [glossary.ts](../../src/data/glossary.ts), [crops.ts](../../src/data/crops.ts), [i18n/guides.ts](../../src/i18n/guides.ts) with `guides/{en,fr}.json`, [lib/guides.ts](../../src/lib/guides.ts), [svg.ts](../../src/lib/svg.ts), [rehype-guide-terms.mjs](../../src/lib/rehype-guide-terms.mjs), [rehype-guide-checklists.mjs](../../src/lib/rehype-guide-checklists.mjs), [food-risks.ts](../../src/data/food-risks.ts) (the one FoodCaution risk list), `planting-mix.ts` (PlantingMixBar shares and validation).
 
@@ -66,8 +66,12 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 
 - Frontmatter: `title`, one-sentence `description`, `domain` (seeds, crops, seasons, pests), `order`, `glance` (3 to 6 label/value pairs), `quick`, `sources` (`{ book: <bibliography id>, chapters: [titles] }`), `related`, `updated`.
 - Components (contract: `.local/field-guides/component-api.md`, which lists every prop and limit): QuickAnswer, Term, TermNote (placed by the plugin), Note, Safety, FoodCaution, HisGarden, Steps/Step, CropCards, CropCard, CropTable, CropExplorer, PollinationBadge, SeasonTimeline, YearsTimeline, PlotDiagram, FlowerDiagram, PlantingMixBar, Checklist/Item, Figure, Columns, Card, Points, NextGuides.
-- Ids are one per concept: `<Term id>` takes a glossary key, crop components a crop id; there are no alias maps.
-- `<Term id>`: the first use per guide gets a `<TermNote>` (placed by the rehype plugin before the containing block). The term renders as a button plus a `hidden` plain-word twin. At >= 960px the note is a margin note, the button is `display: none` (no tab stop or popover in any engine) and the twin shows; below, the button opens the note as a `popover="auto"` card (Escape, outside tap or Close), described by the definition text alone. A note left open across a rotation to >= 960px stays a card until closed. Printed, notes show in the flow. Without popover support the note stays inline. `NextGuides` lists only published guides, so a section may name one not yet written.
+- Ids are one per concept: `<Term id>` takes a glossary key, crop components a crop id; there are no alias maps. A crop cell the book does not give stays `null` and shows nothing.
+- `related` in frontmatter: two to four published guides (same list in en and fr); `NextGuides` links at section ends; in-text links to another guide's section use that page's heading id in the same language (French ids differ from English ones; `check-built-site.mjs` fails on a missing `#id`).
+- `<FoodCaution risk>` takes one risk or a list (`risk={['ergot', 'treated-seed']}`): several risks in one place are one box with one title, never two boxes in a row.
+- `<CropTable>`: below 640px each crop is a block of label/value rows (cells carry `data-label`; a one-column table shows crop and value side by side), so no table scrolls sideways at 390px. Its "in Lofthouse's experience" note names only the crossing, ease or hybrid columns it shows.
+- Plain markdown tables in a guide body are styled like the crop table (`.guide-body > table`).
+- `<Term id>`: the rehype plugin wraps a term and the punctuation touching it (a following `,` `.` `;` `:` `?` `!` `»` with an optional no-break space, or an opening `«` / bracket) in `.guide-term-keep` (`white-space: nowrap`), so a line never starts with that punctuation. The first use per guide gets a `<TermNote>` (placed by the rehype plugin before the containing block). The term renders as a button plus a `hidden` plain-word twin. At >= 960px the note is a margin note, the button is `display: none` (no tab stop or popover in any engine) and the twin shows; below, the button opens the note as a `popover="auto"` card (Escape, outside tap or Close), described by the definition text alone. A note left open across a rotation to >= 960px stays a card until closed. Printed, notes show in the flow. Without popover support the note stays inline. `NextGuides` lists only published guides, so a section may name one not yet written.
 - Checklists: the checklist plugin gives each `<Item>` its `list`, so checkbox ids are `guide-check-<slug>-<list>-<item>` (unique on the page) and the build fails on a duplicate checklist id, a duplicate item in one list, or an Item outside a Checklist. Ticks: `localStorage["canopi-guide:<slug>:checks"]` = `{ <checklist id>: [item ids] }`. Interactive components mark themselves `data-guide-interactive`.
 - The bibliography page shows "Field guide" backlinks under each book a guide cites (`guidesCiting`), anchored by the book's `- id:`.
 
@@ -82,5 +86,6 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 - Plant colours (`--leaf`, `--petal`, `--anther`, `--seed-1..6`) are defined in three blocks of `tokens.css` (light, dark, system dark) and colour plant content only; no colour literals in guide files.
 - The header's Field Guides link is hidden at 639px and below (long French and Russian labels); the footer link stays.
 - Guide styles use the site breakpoints only (639px, 960px); a test fails on any other.
+- Guide-only strings live in `src/i18n/guides/{en,fr}.json` (both files, same keys; French with a no-break space before `:` and a narrow one before `;` `?` `!`); punctuation joining two strings is part of a string (`crop.guideLink`, `aria.labelled`), never hard-coded in a component.
 - `FlowerDiagram` variants: tomato-closed/open, squash-male/female, corn, carrot-fertile/sterile, spinach-male/female.
 - Diagrams are drawn at build time with a seeded random, so builds are identical; a guide's hero bean row is seeded by its slug.

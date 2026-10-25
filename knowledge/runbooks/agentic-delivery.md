@@ -4,7 +4,7 @@ title: Agentic delivery adapter
 description: Commands and places for running multi-agent work on this site with the phased-agentic-delivery skill.
 status: stable
 tags: [process]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:42:20Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T12:58:24Z }
 ---
 
 # Agentic delivery: canopi-website
@@ -12,7 +12,7 @@ generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:42:20Z }
 ## Places
 - User's checkout: `/home/daylon/projects/canopi-website` — agents never commit, stage, stash or build there (a build wipes `public/vendor` for the running dev server, which owns port 4321).
 - Integration worktree: `/home/daylon/projects/canopi-website-wt/integration`, branch `guides/integration` from `master`. Merged to `master` and pushed by the main agent only (push deploys production).
-- Stream worktrees: `git -C /home/daylon/projects/canopi-website worktree add /home/daylon/projects/canopi-website-wt/<stream> -b guides/<stream> guides/integration`, then `ln -s /home/daylon/projects/canopi-website-wt/integration/node_modules /home/daylon/projects/canopi-website-wt/<stream>/node_modules` (the integration worktree has its own `npm ci` install; never symlink the user checkout's node_modules). Agents never run `npm i` in a stream: a dependency change is a hand-off.
+- Stream worktrees: `git -C /home/daylon/projects/canopi-website worktree add /home/daylon/projects/canopi-website-wt/<stream> -b guides/<stream> guides/integration`, then give the stream its own node_modules: `cp -al /home/daylon/projects/canopi-website-wt/integration/node_modules /home/daylon/projects/canopi-website-wt/<stream>/node_modules` and delete `node_modules/.astro` and `node_modules/.vite` in the copy. Never symlink node_modules: a shared one shares Astro's content cache, and other streams' guides leak into the build. The integration worktree has its own `npm ci` install; never use the user checkout's node_modules. Agents never run `npm i` in a stream: a dependency change is a hand-off.
 - Source notes (gitignored, book-derived): `/home/daylon/projects/canopi-website/.local/field-guides/`. Guide specs: `.local/field-guides/specs/`.
 - Screenshots: `<worktree>/.local/shots/` (gitignored).
 
@@ -20,10 +20,11 @@ generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:42:20Z }
 - Affected / quick: `npm test`.
 - Full: `npm test && npm run build && node scripts/check-built-site.mjs`.
 - Ownership: each stream's brief lists its files; the reviewer checks `git diff --name-only guides/integration...HEAD` against it.
+- Merging streams: a conflict only in `knowledge/` source digest lines is resolved by taking either side, then `python3 .okf/okf.pyz sync` recomputes the digests.
 
 ## Real-environment check
-- `npx astro preview --port 4400` from the worktree after a build (never 4321).
-- Screenshots: `google-chrome --headless=new --window-size=<w>,<h> --screenshot=<file> http://localhost:4400/guides/<slug>/` at 390 and 1280 widths, light and dark (`?theme=` not supported: set `data-theme` via a wrapper page or `--force-dark-mode`).
+- `npx astro preview --port <port>` from the worktree after a build (never 4321; each agent gets its own port and kills only its own pid). After a rebuild, restart preview: a running preview answers 500 for the rebuilt pages.
+- Screenshots: `google-chrome --headless=new --window-size=<w>,<h> --screenshot=<file> http://localhost:<port>/guides/<slug>/` at 390 and 1280 widths, light and dark. The theme comes from `localStorage['canopi-theme']` (`light` or `dark`), so `--force-dark-mode` and `?theme=` do not switch it: drive Chrome over the DevTools protocol (`--remote-debugging-port`) and set the key with `Page.addScriptToEvaluateOnNewDocument` before navigating; `Page.captureScreenshot` with `captureBeyondViewport` takes the full page.
 - DOM checks: `google-chrome --headless=new --dump-dom <url>`.
 
 ## Tracker

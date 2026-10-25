@@ -4,7 +4,7 @@ title: canopi-website
 description: Astro marketing site for projectcanopi.com, the home of the Canopi agroecological design app, deployed by Cloudflare Workers Builds on push to master.
 tags: [project]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:26:51Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T12:58:24Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:26:50Z }
 sources:
@@ -21,8 +21,8 @@ sources:
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:686e63081a8f86d7
-    last_modified: 2026-10-25T09:08:27Z
+    digest: sha256:41465fd2556cea03
+    last_modified: 2026-10-25T12:57:49Z
   - id: context-md
     resource: ../../CONTEXT.md
     title: CONTEXT.md
@@ -40,7 +40,7 @@ The public website of Canopi, an open-source agroecological design app run by a 
 - MapLibre GL (unbundled, copied to `public/vendor/`), OpenFreeMap tiles, HelloAsso donations.
 - One Cloudflare Worker `projectcanopi`: serves `dist/client/` and the on-demand `POST /api/contact` (send_email binding).
 - Node >= 22.12 for tooling and `node --test`; Python (Pillow) for asset generators.
-- 11 locales (en at `/`, others at `/{lang}/`); field-notebook design with the app's palette and fonts.
+- 11 locales (en at `/`, others at `/{lang}/`); the Field Guides are en and fr only (`/guides/`, `/fr/guides/`); field-notebook design with the app's palette and fonts.
 
 # Layout
 

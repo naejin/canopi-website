@@ -5,13 +5,13 @@ description: Framework-free logic shared by the Worker endpoint, the page script
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:26:51Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T12:58:36Z }
 sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:bbf4b5743ec42f09
-    last_modified: 2026-10-25T10:06:45Z
+    digest: sha256:5f31c324cdff5700
+    last_modified: 2026-10-25T12:57:25Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -28,7 +28,7 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 - [contact.mjs](../../src/lib/contact.mjs): the `POST /api/contact` handler.
 - [installer.mjs](../../src/lib/installer.mjs): picks a desktop installer from the user agent.
 - [nearest.mjs](../../src/lib/nearest.mjs): great-circle distances for the design finder.
-- Field Guides (build time only): [guides.ts](../../src/lib/guides.ts) (`publishedGuides(lang)`, `guidesCiting(bookId, lang)`, `slugOf`), [svg.ts](../../src/lib/svg.ts) (seeded `rng`, `grid`, `shuffle`, bean drawing), [rehype-guide-terms.mjs](../../src/lib/rehype-guide-terms.mjs) (places each first `<Term>`'s glossary note), [rehype-guide-checklists.mjs](../../src/lib/rehype-guide-checklists.mjs) (gives each `<Item>` its checklist id; fails on duplicate ids).
+- Field Guides (build time only): [guides.ts](../../src/lib/guides.ts) (`publishedGuides(lang)`, `guidesCiting(bookId, lang)`, `slugOf`), [svg.ts](../../src/lib/svg.ts) (seeded `rng`, `grid`, `shuffle`, bean drawing, `wrap` for SVG text lines), [rehype-guide-terms.mjs](../../src/lib/rehype-guide-terms.mjs) (places each first `<Term>`'s glossary note and keeps a term with the punctuation touching it), [rehype-guide-checklists.mjs](../../src/lib/rehype-guide-checklists.mjs) (gives each `<Item>` its checklist id; fails on duplicate ids).
 
 # Interfaces
 

@@ -155,6 +155,7 @@ Landing page for projectcanopi.com, the Canopi agroecological design app.
 - Web Edition publishing installs the app-provided artifact into `dist/client/app/` when `dist/client/` exists, otherwise `dist/app/`.
 - 11 locales: `en` at `/`, plus `fr`, `es`, `pt`, `it`, `zh`, `de`, `ja`, `ko`, `nl`, and `ru` under `/{lang}/`.
 - Translation files live in `src/i18n/translations/{locale}.json`; add new translation keys to all 11 files.
+- Exception: Field Guides (`/guides/`, `/fr/guides/`) are English and French only; guide-only strings live in `src/i18n/guides/{en,fr}.json`, not in the 11 locale files.
 - `src/i18n/utils.ts` provides translation and locale helpers.
 - Download URLs live in `src/data/release.ts`; update `CANOPI_VERSION` and `CANOPI_RELEASE_DATE` when a new release ships.
 
