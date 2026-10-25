@@ -6,12 +6,14 @@ resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:04Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:10:45Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:995e3668492c7049
-    last_modified: 2026-10-25T17:00:24Z
+    digest: sha256:097d6510d663cab2
+    last_modified: 2026-10-25T17:10:38Z
 ---
 
 # Responsibility
