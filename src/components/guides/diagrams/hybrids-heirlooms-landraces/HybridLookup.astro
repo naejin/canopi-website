@@ -1,52 +1,44 @@
 ---
 // Hybrids, heirlooms and landraces: "Can I save from this hybrid?". Crops of src/data/crops.ts in four
-// groups. Fine: only the crops of his stated list (Landrace Gardening, "Heirlooms, Hybrids, and
-// Landraces": tomato, cucumber, squash, corn, watermelon, melon, spinach). Check the flowers: his
+// groups. Fine: only the crops of his stated list (crop-index.ts, hisFine). Check the flowers: his
 // flagged crops. Leave out shop-bought hybrids: his CMS list. Not on his lists: the other crops of
-// the table with a hybrid value, which he names in neither list. His project tomatoes are not seed
-// you buy, so they are left out. The lists are readable without JavaScript; with it, a search box
-// narrows them to the crops on the reader's packets (matching: ../will-they-cross/lookup-match.ts).
-// All words come from the MDX props and the crop table.
+// the table with a hybrid value, which he names in neither list. Above the groups, an A–Z index of
+// every name of each crop links to its line (CropIndex). Readable without JavaScript. All words come
+// from the MDX props and the crop table.
 import { crop as findCrop, crops, type Crop } from '../../../../data/crops';
 import { guideLangOf } from '../../../../i18n/guides';
-import { cropTerms } from '../will-they-cross/lookup-match';
+import { cropIndex, entryId, hisFine, hybridCrops, projectRows } from '../will-they-cross/crop-index';
+import CropIndex from '../will-they-cross/CropIndex.astro';
 type Group = { title: string; text: string };
-interface Props { label: string; placeholder: string; none: string; shown: string; fine: Group; unlisted: Group; check: Group; avoid: Group; }
-const { label, placeholder, none, shown, fine, unlisted, check, avoid } = Astro.props;
+interface Props { index: string; fine: Group; unlisted: Group; check: Group; avoid: Group; }
+const { index, fine, unlisted, check, avoid } = Astro.props;
 const lang = guideLangOf(Astro.currentLocale);
 const collator = new Intl.Collator(lang);
-const hisFine = ['tomato-garden', 'cucumber', 'squash-pepo', 'squash-moschata', 'squash-maxima', 'corn', 'watermelon', 'melon', 'spinach'];
-const projectRows = ['tomato-panamorous', 'tomato-promiscuous'];
 for (const id of [...hisFine, ...projectRows]) findCrop(id);
-const listed = crops.filter((c: Crop) => c.cms && !projectRows.includes(c.id));
+const listed = hybridCrops(crops);
 const inGroup: Record<string, (c: Crop) => boolean> = {
   fine: (c) => hisFine.includes(c.id),
   unlisted: (c) => c.cms === 'low' && !hisFine.includes(c.id),
   check: (c) => c.cms === 'flagged',
   avoid: (c) => c.cms === 'high',
 };
-const locals = Astro.locals as { guideLookups?: number };
-const uid = `guide-hybrid-${(locals.guideLookups = (locals.guideLookups ?? 0) + 1)}`;
 const groups = ([['fine', fine, '✓'], ['check', check, '?'], ['avoid', avoid, '✕'], ['unlisted', unlisted, '·']] as const).map(([tone, group, mark]) => ({
   tone, mark, ...group,
   crops: listed.filter(inGroup[tone])
-    .map((c) => ({ id: c.id, name: c.name[lang], examples: c.examples?.[lang], note: c.cmsNote?.[lang], ...cropTerms(c) }))
+    .map((c) => ({ id: entryId('hybrid', c.id), name: c.name[lang], examples: c.examples?.[lang], note: c.cmsNote?.[lang] }))
     .sort((a, b) => collator.compare(a.name, b.name)),
 }));
+const letters = cropIndex(listed, lang, 'hybrid');
 ---
-<div class="guide-lookup" data-guide-interactive data-guide-hybrid-lookup data-none={none} data-shown={shown}>
-  <div class="guide-lookup-search" hidden data-lookup-search>
-    <label for={uid}>{label}</label>
-    <input id={uid} type="search" autocomplete="off" spellcheck="false" placeholder={placeholder} data-lookup-input />
-  </div>
-  <p class="guide-lookup-none" role="status" data-lookup-status></p>
+<div class="guide-lookup">
+  <CropIndex label={index} letters={letters} />
   {groups.map((group) => (
-    <section class={`guide-lookup-group guide-lookup-${group.tone}`} data-lookup-group>
+    <section class={`guide-lookup-group guide-lookup-${group.tone}`}>
       <h3><span class="guide-lookup-mark" aria-hidden="true">{group.mark}</span> {group.title}</h3>
       <p class="guide-lookup-text">{group.text}</p>
       <ul class="guide-lookup-crops">
         {group.crops.map((c) => (
-          <li data-lookup-item data-terms={c.terms} data-phrases={c.phrases}>
+          <li id={c.id}>
             <strong>{c.name}</strong>{c.examples && <span class="guide-lookup-examples"> ({c.examples})</span>}
             {c.note && <span class="guide-lookup-note">{c.note}</span>}
           </li>
@@ -58,18 +50,7 @@ const groups = ([['fine', fine, '✓'], ['check', check, '?'], ['avoid', avoid, 
 
 <style>
   .guide-lookup { display: grid; gap: 0.8rem; }
-  .guide-lookup-search { display: grid; gap: 0.3rem; }
-  .guide-lookup-search[hidden] { display: none; }
-  .guide-lookup-search label { font-weight: 600; font-size: 0.95rem; }
-  .guide-lookup-search input {
-    font: inherit; font-size: 1rem; color: var(--text); background: var(--surface); width: 100%;
-    border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 0.55rem 0.75rem;
-  }
-  .guide-lookup-search input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
-  .guide-lookup-none { margin: 0; font-size: 0.95rem; color: var(--text-secondary); }
-  .guide-lookup-none:empty { display: none; }
   .guide-lookup-group { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--border-strong); border-radius: var(--radius); padding: 0.75rem 1rem; display: grid; gap: 0.35rem; }
-  .guide-lookup-group[hidden] { display: none; }
   .guide-lookup-check { border-left-color: var(--accent); }
   .guide-lookup-avoid { border-left-color: var(--danger); }
   .guide-lookup-unlisted { border-left-style: dashed; }
@@ -80,30 +61,10 @@ const groups = ([['fine', fine, '✓'], ['check', check, '?'], ['avoid', avoid, 
   .guide-lookup-text { margin: 0; font-size: 0.92rem; color: var(--text-secondary); line-height: 1.45; }
   .guide-lookup-crops { list-style: none; margin: 0.2rem 0 0; padding: 0; columns: 2 14rem; column-gap: 1.2rem; font-size: 0.95rem; }
   .guide-lookup-crops li { break-inside: avoid; margin: 0 0 0.3rem; line-height: 1.35; }
-  .guide-lookup-crops li[hidden] { display: none; }
+  .guide-lookup-crops li { scroll-margin-top: 1rem; }
+  .guide-lookup-crops li:target { background: var(--surface-alt); outline: 3px solid var(--surface-alt); }
   .guide-lookup-crops strong { font-weight: 600; }
   .guide-lookup-examples { color: var(--text-muted); font-size: 0.9rem; }
   .guide-lookup-note { display: block; font-size: 0.88rem; color: var(--text-secondary); }
 </style>
 
-<script>
-  import { matchLookup, parseEntry } from '../will-they-cross/lookup-match';
-  // Packets say "F1" or "hybrid": those words name no crop.
-  const ignore = ['f1', 'hybrid', 'hybrids', 'hybride', 'hybrides'];
-  for (const root of document.querySelectorAll<HTMLElement>('[data-guide-hybrid-lookup]')) {
-    const input = root.querySelector<HTMLInputElement>('[data-lookup-input]')!;
-    const status = root.querySelector<HTMLElement>('[data-lookup-status]')!;
-    const groups = [...root.querySelectorAll<HTMLElement>('[data-lookup-group]')];
-    const items = [...root.querySelectorAll<HTMLElement>('[data-lookup-item]')];
-    const entries = items.map((item) => parseEntry(item.dataset.terms ?? '', item.dataset.phrases ?? ''));
-    const filter = () => {
-      const result = matchLookup(input.value, entries, { ignore });
-      const shown = new Set(result.shown);
-      items.forEach((item, i) => { item.hidden = !shown.has(i); });
-      for (const group of groups) group.hidden = ![...group.querySelectorAll<HTMLElement>('[data-lookup-item]')].some((item) => !item.hidden);
-      status.textContent = result.empty ? '' : result.none ? root.dataset.none ?? '' : (root.dataset.shown ?? '').replace('{n}', String(result.shown.length));
-    };
-    input.addEventListener('input', filter);
-    root.querySelector<HTMLElement>('[data-lookup-search]')!.hidden = false;
-  }
-</script>

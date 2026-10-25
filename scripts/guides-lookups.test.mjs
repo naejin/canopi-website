@@ -1,81 +1,55 @@
-// Field Guides lookups: the search matching of CrossLookup (will-they-cross) and HybridLookup
-// (hybrids-heirlooms-landraces), run against the real crop rows each guide lists.
+// Field Guides crop indexes: the "Find your crop" A–Z index of CrossLookup (will-they-cross) and
+// HybridLookup (hybrids-heirlooms-landraces), built from the real crop rows each guide lists. Every
+// link must go to an entry the component renders, and every example name in crops.ts must be listed.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 const { crop, crops } = await import('../src/data/crops.ts');
-const { cropTerms, matchLookup, parseEntry } = await import('../src/components/guides/diagrams/will-they-cross/lookup-match.ts');
+const { cropIndex, entryId, exampleNames, hybridCrops } = await import('../src/components/guides/diagrams/will-they-cross/crop-index.ts');
 
-// The crops the will-they-cross MDX passes to <CrossLookup>.
-const crossIds = ['squash-pepo', 'squash-moschata', 'squash-maxima', 'melon', 'cucumber', 'watermelon', 'corn', 'spinach', 'fava-bean', 'runner-bean', 'common-bean', 'pea', 'chickpea', 'tomato-garden', 'pepper', 'eggplant', 'lettuce', 'cabbage-kale-broccoli', 'turnip', 'radish', 'beet', 'carrot', 'parsnip', 'onion', 'sunflower', 'wheat', 'barley'];
-const entriesOf = (ids) => ids.map((id) => {
-  const { terms, phrases } = cropTerms(crop(id));
-  return parseEntry(terms, phrases);
-});
-const cross = entriesOf(crossIds);
-const ids = (indexes, list) => indexes.map((i) => list[i]).sort();
-const crossRun = (query) => {
-  const r = matchLookup(query, cross);
-  return { shown: ids(r.shown, crossIds), open: ids(r.open, crossIds), none: r.none };
+// The crops each will-they-cross MDX passes to <CrossLookup crops={[...]}>.
+const crossIdsOf = (lang) => {
+  const mdx = readFileSync(new URL(`../src/content/guides/will-they-cross/${lang}.mdx`, import.meta.url), 'utf8');
+  return JSON.parse(mdx.match(/<CrossLookup\s+crops=\{(\[[^\]]*\])\}/)[1]);
 };
+const lookups = ['en', 'fr'].flatMap((lang) => [
+  { name: `cross ${lang}`, lang, prefix: 'cross', rows: crossIdsOf(lang).map((id) => crop(id)) },
+  { name: `hybrid ${lang}`, lang, prefix: 'hybrid', rows: hybridCrops(crops) },
+]);
 
-test('cross lookup: two crops typed open both, and a generic word adds nothing', () => {
-  assert.deepEqual(crossRun('zucchini butternut squash').open, ['squash-moschata', 'squash-pepo']);
-  assert.deepEqual(crossRun('zucchini butternut').open, ['squash-moschata', 'squash-pepo']);
-  assert.deepEqual(crossRun('butternut squash').open, ['squash-moschata']);
-  assert.deepEqual(crossRun('courgette butternut').open, ['squash-moschata', 'squash-pepo']);
-});
+for (const { name, lang, prefix, rows } of lookups) {
+  const letters = cropIndex(rows, lang, prefix);
+  const entries = letters.flatMap((l) => l.entries);
+  const ids = new Set(rows.map((c) => `#${entryId(prefix, c.id)}`));
 
-test('cross lookup: words match at word starts, not inside other words', () => {
-  const corn = crossRun('sweet corn popcorn');
-  assert.deepEqual(corn.open, ['corn']);
-  assert.deepEqual(corn.shown, ['corn']);
-  const pepper = crossRun('hot pepper sweet pepper');
-  assert.deepEqual(pepper.open, ['pepper']);
-  assert.deepEqual(pepper.shown, ['pepper']);
-  assert.deepEqual(crossRun('melon').shown, ['melon'], 'melongena is not melon');
-  assert.deepEqual(crossRun('piment fort, poivron doux').shown, ['pepper']);
-});
+  test(`${name}: every index link goes to an entry, and every entry has a name in the index`, () => {
+    assert.ok(entries.length > rows.length);
+    for (const e of entries) assert.ok(ids.has(e.href), `${e.name} -> ${e.href}`);
+    for (const id of ids) assert.ok(entries.some((e) => e.href === id), `no index name for ${id}`);
+  });
 
-test('cross lookup: a generic word alone lists its crops without opening them', () => {
-  const squash = crossRun('squash');
-  assert.deepEqual(squash.shown, ['squash-maxima', 'squash-moschata', 'squash-pepo']);
-  assert.deepEqual(squash.open, []);
-  assert.deepEqual(crossRun('bean').open, []);
-  assert.equal(crossRun('bean').shown.length, 3);
-  assert.deepEqual(crossRun('fava bean').open, ['fava-bean']);
-});
+  test(`${name}: every crops.ts example is in the index, linked to its crop`, () => {
+    for (const c of rows) {
+      for (const example of exampleNames(c, lang)) {
+        assert.ok(entries.some((e) => e.name === example && e.href === `#${entryId(prefix, c.id)}`), `${c.id}: ${example}`);
+      }
+    }
+  });
 
-test('cross lookup: accents fold, an empty query shows everything, an unknown crop says none', () => {
-  assert.deepEqual(crossRun('Maïs').open, ['corn']);
-  assert.deepEqual(crossRun('mais').open, ['corn']);
-  assert.deepEqual(crossRun('épinard').open, ['spinach']);
-  assert.deepEqual(crossRun('EPINARD').open, ['spinach']);
-  const empty = matchLookup('  ', cross);
-  assert.equal(empty.shown.length, crossIds.length);
-  assert.deepEqual(empty.open, []);
-  assert.equal(empty.none, false);
-  assert.equal(crossRun('okra').none, true);
-  assert.deepEqual(crossRun('zuc').open, ['squash-pepo'], 'a word being typed matches by prefix');
-});
+  test(`${name}: names are sorted with ${lang} collation, under their initial`, () => {
+    const collator = new Intl.Collator(lang, { sensitivity: 'base' });
+    for (let i = 1; i < entries.length; i++) assert.ok(collator.compare(entries[i - 1].name, entries[i].name) <= 0, `${entries[i - 1].name} before ${entries[i].name}`);
+    for (const { letter, entries: group } of letters) {
+      for (const e of group) assert.equal(e.name.normalize('NFD').replace(/[^\p{L}\p{N}]/gu, '').charAt(0).toLocaleUpperCase(), letter);
+    }
+    assert.equal(new Set(letters.map((l) => l.letter)).size, letters.length, 'each letter once');
+  });
+}
 
-// HybridLookup lists his groups (fine, unlisted, check, avoid); the matcher sees one flat list.
-const hybridIds = crops.filter((c) => c.cms && !c.id.startsWith('tomato-p')).map((c) => c.id);
-const hybrid = entriesOf(hybridIds);
-const hybridRun = (query) => {
-  const r = matchLookup(query, hybrid, { ignore: ['f1', 'hybrid', 'hybrids', 'hybride', 'hybrides'] });
-  return { shown: ids(r.shown, hybridIds), none: r.none };
-};
-
-test('hybrid lookup: several crops, commas and the words F1 or hybrid all work', () => {
-  assert.deepEqual(hybridRun('broccoli onion').shown, ['cabbage-kale-broccoli', 'onion']);
-  assert.deepEqual(hybridRun('broccoli, onion').shown, ['cabbage-kale-broccoli', 'onion']);
-  assert.deepEqual(hybridRun('broccoli; onion & carrot').shown, ['cabbage-kale-broccoli', 'carrot', 'onion']);
-  assert.deepEqual(hybridRun('F1 zucchini').shown, ['squash-pepo']);
-  assert.deepEqual(hybridRun('courgette hybride F1').shown, ['squash-pepo']);
-  assert.deepEqual(hybridRun('onion,').shown, ['onion']);
-  assert.deepEqual(hybridRun('tomato').shown, ['tomato-garden']);
-  assert.equal(hybridRun('F1').none, false, 'only ignored words: show everything');
-  assert.equal(hybridRun('okra').none, true);
-  assert.equal(hybridRun('okra onion').none, false);
+test('index names: rows naming several crops are listed under each', () => {
+  const en = cropIndex([crop('cabbage-kale-broccoli'), crop('beet'), crop('squash-pepo')], 'en', 'x').flatMap((l) => l.entries).map((e) => e.name);
+  for (const name of ['Cabbage', 'kale', 'broccoli', 'Beet', 'chard', 'zucchini', 'pumpkin', 'Squash (pepo)']) assert.ok(en.includes(name), name);
+  const fr = cropIndex([crop('pepper'), crop('wheat'), crop('squash-maxima')], 'fr', 'x').flatMap((l) => l.entries).map((e) => e.name);
+  for (const name of ['Piment', 'poivron', 'Blé', 'potiron']) assert.ok(fr.includes(name), name);
 });

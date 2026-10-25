@@ -3,14 +3,15 @@
 // MDX lists), each a native <details>: the crop's species and examples, whether its varieties cross,
 // his share of seed from crossing, his distance for its pollination group (or a plain line when the
 // book gives none for the crop), the cross-species pairs the book names (`pairs`, his observations)
-// and safety pointers (`cautions`). Readable without JavaScript; with it, a search box narrows the
-// list to the reader's crops and opens the best match for each crop typed (lookup-match.ts). Words
-// come from the MDX props and the crop table.
+// and safety pointers (`cautions`). Above the list, an A–Z index of every name of each crop links to
+// its entry (CropIndex, crop-index.ts). Readable without JavaScript. Words come from the MDX props
+// and the crop table.
 import { crop as findCrop } from '../../../../data/crops';
 import { guideLangOf } from '../../../../i18n/guides';
 import { cropText } from '../../crop-text';
-import { cropTerms } from './lookup-match';
-interface Labels { search: string; placeholder: string; none: string; shown: string; within: string; kin: string; others: string; caution: string; rate: string; distance: string; self: string; outcross: string; unknown: string; }
+import { cropIndex, entryId } from './crop-index';
+import CropIndex from './CropIndex.astro';
+interface Labels { index: string; within: string; kin: string; others: string; caution: string; rate: string; distance: string; self: string; outcross: string; unknown: string; }
 interface Pair { crops: string[]; text: string; }
 interface Caution extends Pair { href: string; more: string; }
 interface Props { crops: string[]; labels: Labels; pairs: Pair[]; cautions?: Caution[]; }
@@ -18,9 +19,6 @@ const { crops, labels, pairs, cautions = [] } = Astro.props;
 const lang = guideLangOf(Astro.currentLocale);
 const collator = new Intl.Collator(lang);
 for (const pair of [...pairs, ...cautions]) for (const id of pair.crops) findCrop(id);
-// One id per lookup on the page, so two lookups never share a label target.
-const locals = Astro.locals as { guideLookups?: number };
-const uid = `guide-cross-${(locals.guideLookups = (locals.guideLookups ?? 0) + 1)}`;
 // French elides "de" before a vowel or h: "variétés d’Allium cepa".
 const kinOf = (species: string) => lang === 'fr' && / de$/.test(labels.kin) && /^[aeiouyh]/i.test(species) ? `${labels.kin.slice(0, -2)}d’` : `${labels.kin} `;
 const rows = crops.map((id) => {
@@ -28,25 +26,21 @@ const rows = crops.map((id) => {
   const text = cropText(c, lang);
   const by = c.pollination?.by;
   return {
-    id, text, species: c.species,
+    id, anchor: entryId('cross', id), text, species: c.species,
     kin: c.species ? kinOf(c.species) : '',
     distance: by === 'self' ? labels.self : by ? labels.outcross : labels.unknown,
     others: pairs.filter((p) => p.crops.includes(id)).map((p) => p.text),
     cautions: cautions.filter((p) => p.crops.includes(id)),
-    ...cropTerms(c),
   };
 }).sort((a, b) => collator.compare(a.text.name, b.text.name));
+const letters = cropIndex(crops.map((id) => findCrop(id)), lang, 'cross');
 ---
-<div class="guide-cross" data-guide-interactive data-guide-cross-lookup data-none={labels.none} data-shown={labels.shown}>
-  <div class="guide-cross-search" hidden data-lookup-search>
-    <label for={uid}>{labels.search}</label>
-    <input id={uid} type="search" autocomplete="off" spellcheck="false" placeholder={labels.placeholder} data-lookup-input />
-  </div>
-  <p class="guide-cross-none" role="status" data-lookup-status></p>
+<div class="guide-cross">
+  <CropIndex label={labels.index} letters={letters} />
   <ul class="guide-cross-list">
     {rows.map((row) => (
-      <li data-lookup-item data-terms={row.terms} data-phrases={row.phrases}>
-        <details>
+      <li>
+        <details id={row.anchor}>
           <summary>
             <span class="guide-cross-name">{row.text.name}</span>
             {row.species && <i class="guide-cross-species">{row.species}</i>}
@@ -68,26 +62,17 @@ const rows = crops.map((id) => {
 
 <style>
   .guide-cross { display: grid; gap: 0.7rem; }
-  .guide-cross-search { display: grid; gap: 0.3rem; }
-  .guide-cross-search[hidden] { display: none; }
-  .guide-cross-search label { font-weight: 600; font-size: 0.95rem; }
-  .guide-cross-search input {
-    font: inherit; font-size: 1rem; color: var(--text); background: var(--surface); width: 100%;
-    border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 0.55rem 0.75rem;
-  }
-  .guide-cross-search input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
-  .guide-cross-none { margin: 0; font-size: 0.95rem; color: var(--text-secondary); }
-  .guide-cross-none:empty { display: none; }
   .guide-cross-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
   .guide-cross-list li { margin: 0; }
   .guide-cross-list li + li { border-top: 1px solid var(--border); }
-  .guide-cross-list li[hidden] { display: none; }
   .guide-cross-list summary { cursor: pointer; padding: 0.5rem 0.9rem 0.5rem 1.9rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.6rem; line-height: 1.35; position: relative; list-style: none; }
   .guide-cross-list summary::-webkit-details-marker { display: none; }
   .guide-cross-list summary::before { content: '+'; content: '+' / ''; position: absolute; left: 0.8rem; top: 0.45rem; color: var(--accent-ink); font-weight: 600; }
   .guide-cross-list details[open] > summary::before { content: '−'; content: '−' / ''; }
   .guide-cross-species { font-size: 0.9rem; color: var(--text-secondary); }
   .guide-cross-examples { flex-basis: 100%; }
+  .guide-cross-list details { scroll-margin-top: 1rem; }
+  .guide-cross-list details:target > summary { background: var(--surface-alt); }
   .guide-cross-list summary:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
   .guide-cross-name { font-weight: 600; }
   .guide-cross-examples { font-size: 0.88rem; color: var(--text-muted); }
@@ -104,29 +89,3 @@ const rows = crops.map((id) => {
   }
 </style>
 
-<script>
-  import { matchLookup, parseEntry } from './lookup-match';
-  for (const root of document.querySelectorAll<HTMLElement>('[data-guide-cross-lookup]')) {
-    const input = root.querySelector<HTMLInputElement>('[data-lookup-input]')!;
-    const status = root.querySelector<HTMLElement>('[data-lookup-status]')!;
-    const items = [...root.querySelectorAll<HTMLElement>('[data-lookup-item]')];
-    const entries = items.map((item) => parseEntry(item.dataset.terms ?? '', item.dataset.phrases ?? ''));
-    // Entries the search opened. One the reader opens or closes by hand is theirs: typing never touches it.
-    const opened = new Set<HTMLDetailsElement>();
-    for (const item of items) {
-      const details = item.querySelector('details')!;
-      details.querySelector('summary')!.addEventListener('click', () => opened.delete(details));
-    }
-    const filter = () => {
-      const result = matchLookup(input.value, entries);
-      const shown = new Set(result.shown);
-      const open = new Set(result.open.map((i) => items[i].querySelector('details')!));
-      items.forEach((item, i) => { item.hidden = !shown.has(i); });
-      for (const details of opened) if (!open.has(details)) { details.open = false; opened.delete(details); }
-      for (const details of open) if (!details.open) { details.open = true; opened.add(details); }
-      status.textContent = result.empty ? '' : result.none ? root.dataset.none ?? '' : (root.dataset.shown ?? '').replace('{n}', String(result.shown.length));
-    };
-    input.addEventListener('input', filter);
-    root.querySelector<HTMLElement>('[data-lookup-search]')!.hidden = false;
-  }
-</script>

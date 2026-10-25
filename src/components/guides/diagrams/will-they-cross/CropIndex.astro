@@ -1,0 +1,57 @@
+---
+// "Find your crop": an A–Z index of every name a reader may know a crop by (crop-index.ts), each a
+// link to the crop's entry below. Used inside CrossLookup and HybridLookup, not from MDX. Plain links
+// without JavaScript; with it, following a link opens the target entry's <details>, and nothing else.
+import type { IndexLetter } from './crop-index';
+interface Props { label: string; letters: IndexLetter[]; }
+const { label, letters } = Astro.props;
+const locals = Astro.locals as { guideCropIndexes?: number };
+const uid = `guide-crop-index-${(locals.guideCropIndexes = (locals.guideCropIndexes ?? 0) + 1)}`;
+---
+<nav class="guide-crop-index" aria-labelledby={uid} data-guide-interactive data-guide-crop-index>
+  <p class="guide-crop-index-label" id={uid}>{label}</p>
+  <ul class="guide-crop-index-letters">
+    {letters.map((group) => (
+      <li>
+        <span class="guide-crop-index-letter" aria-hidden="true">{group.letter}</span>
+        <ul class="guide-crop-index-names">
+          {group.entries.map((entry) => (
+            <li><a href={entry.href}>{entry.name}{entry.crop && <span class="guide-crop-index-crop"> ({entry.crop})</span>}</a></li>
+          ))}
+        </ul>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  .guide-crop-index { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.9rem 0.7rem; }
+  .guide-crop-index-label { margin: 0 0 0.35rem; font-weight: 600; font-size: 0.95rem; }
+  .guide-crop-index ul { list-style: none; margin: 0; padding: 0; }
+  .guide-crop-index-letters > li { display: flex; align-items: baseline; gap: 0.6rem; margin: 0; padding: 0.15rem 0; line-height: 1.5; }
+  .guide-crop-index-letters > li + li { border-top: 1px dotted var(--border); }
+  .guide-crop-index-letter { flex: 0 0 1.1em; font-family: var(--font-display); font-weight: 600; color: var(--accent-ink); }
+  .guide-crop-index-names { display: flex; flex-wrap: wrap; gap: 0 0.9rem; font-size: 0.93rem; min-width: 0; }
+  .guide-crop-index-names li { margin: 0; }
+  .guide-crop-index-names a { color: var(--text); text-decoration-color: var(--border-strong); text-underline-offset: 0.15em; }
+  .guide-crop-index-names a:hover { color: var(--accent-ink); }
+  .guide-crop-index-names a:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; border-radius: 2px; }
+  .guide-crop-index-crop { color: var(--text-muted); font-size: 0.86rem; }
+</style>
+
+<script>
+  // Open the entry a link (or the address bar) points to, if it is a closed <details>.
+  const openTarget = (hash: string) => {
+    if (!hash || hash === '#') return;
+    const target = document.getElementById(decodeURIComponent(hash.slice(1)));
+    if (target instanceof HTMLDetailsElement) target.open = true;
+  };
+  for (const nav of document.querySelectorAll<HTMLElement>('[data-guide-crop-index]')) {
+    nav.addEventListener('click', (event) => {
+      const link = (event.target as Element).closest<HTMLAnchorElement>('a[href^="#"]');
+      if (link) openTarget(link.getAttribute('href')!);
+    });
+  }
+  addEventListener('hashchange', () => openTarget(location.hash));
+  openTarget(location.hash);
+</script>
