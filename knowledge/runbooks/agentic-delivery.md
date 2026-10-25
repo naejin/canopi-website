@@ -4,7 +4,7 @@ title: Agentic delivery adapter
 description: Commands and places for running multi-agent work on this site with the phased-agentic-delivery skill.
 status: stable
 tags: [process]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:59:33Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:42:20Z }
 ---
 
 # Agentic delivery: canopi-website
@@ -12,7 +12,7 @@ generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:59:33Z }
 ## Places
 - User's checkout: `/home/daylon/projects/canopi-website` — agents never commit, stage, stash or build there (a build wipes `public/vendor` for the running dev server, which owns port 4321).
 - Integration worktree: `/home/daylon/projects/canopi-website-wt/integration`, branch `guides/integration` from `master`. Merged to `master` and pushed by the main agent only (push deploys production).
-- Stream worktrees: `git -C /home/daylon/projects/canopi-website worktree add /home/daylon/projects/canopi-website-wt/<stream> -b guides/<stream> guides/integration`, then `ln -s /home/daylon/projects/canopi-website/node_modules /home/daylon/projects/canopi-website-wt/<stream>/node_modules`. Builds inside a worktree with symlinked node_modules can touch `node_modules/.vite`; harmless, restart dev if odd.
+- Stream worktrees: `git -C /home/daylon/projects/canopi-website worktree add /home/daylon/projects/canopi-website-wt/<stream> -b guides/<stream> guides/integration`, then `ln -s /home/daylon/projects/canopi-website-wt/integration/node_modules /home/daylon/projects/canopi-website-wt/<stream>/node_modules` (the integration worktree has its own `npm ci` install; never symlink the user checkout's node_modules). Agents never run `npm i` in a stream: a dependency change is a hand-off.
 - Source notes (gitignored, book-derived): `/home/daylon/projects/canopi-website/.local/field-guides/`. Guide specs: `.local/field-guides/specs/`.
 - Screenshots: `<worktree>/.local/shots/` (gitignored).
 
