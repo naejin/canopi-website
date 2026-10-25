@@ -15,7 +15,7 @@ related: [storing-seed, choosing-seed-parents, tomatoes, small-grains]
 updated: 2026-10-25
 ---
 
-Au potager, chaque graine mûrit soit dans une enveloppe sèche (gousse, épi, capsule), soit au cœur d’un fruit charnu. Une fois que vous savez de quel côté se range votre culture, le reste tient en quelques gestes. Cette fiche les reprend culture par culture, de la cueillette jusqu’au moment où la graine est assez sèche pour être rangée.
+Au potager, chaque graine mûrit soit dans une enveloppe sèche (gousse, épi, capsule), soit au cœur d’un fruit charnu. Repérez de quel côté se range votre culture, vérifiez s’il est temps de cueillir, puis suivez la méthode courte qui lui correspond. La fiche s’arrête quand la graine est assez sèche pour être rangée.
 
 <QuickAnswer>
 Graines dans des gousses ou des épis secs (haricots, pois, maïs, céréales, laitue, choux) : on laisse sécher sur pied, on bat, on tamise, on vanne. Les graines de tomate et de concombre restent dans leur jus, en bocal, jusqu’à ce que la gelée qui les entoure se défasse ; chez Lofthouse, il faut environ trois jours pour la tomate. On ajoute ensuite de l’eau et on garde ce qui tombe au fond. Les graines de melon et de pastèque se rincent simplement, celles de courge se passent de bocal. Dans tous les cas, on termine par un séchage rapide, en couche fine.
@@ -31,115 +31,97 @@ Graines dans des gousses ou des épis secs (haricots, pois, maïs, céréales, l
 
 ## Voie sèche ou voie humide ?
 
-Regardez où se trouve la graine quand la plante a fini son cycle.
+Regardez la plante quand elle a fini son cycle, trouvez votre ligne, puis passez à la méthode correspondante plus bas.
 
-- **Voie sèche** : la graine est dans une gousse, une balle ou un épi qui brunit et devient cassant sur pied. Haricots, pois, fèves, maïs, blé, orge, seigle, avoine, laitue, épinard, tournesol, chou et toute la famille des choux, moutarde, lin.
-- **Voie humide** : la graine baigne dans la chair ou le jus du fruit. Tomates, concombres, melons, pastèques, courges.
+<SeedRoutes
+  head={["Ce que vous voyez", "Cultures", "Méthode"]}
+  caption="La méthode qui convient à votre graine."
+  rows={[
+    { what: "Gousses, balles ou épis bruns et cassants", crops: "Haricots, pois, fèves, maïs, céréales, laitue, épinard, tournesol, la famille des choux", route: "Voie sèche : casser, tamiser, vanner." },
+    { what: "Graines prises dans une gelée au cœur du fruit", crops: "Tomates, concombres", route: "Voie humide, bocal : laisser la gelée se défaire, puis trier à l’eau." },
+    { what: "Graines presque sans gelée", crops: "Melons, pastèques", route: "Voie humide, rinçage : laver à fond dans une passoire." },
+    { what: "Graines plates dans une chair filandreuse", crops: "Courges", route: "Voie humide, rinçage : le reste de gelée part une fois sec." },
+  ]}
+/>
 
-Pour la voie sèche, on travaille avec les mains, les pieds et le vent. Pour la voie humide, avec de l’eau. Les deux finissent pareil : on étale, on sèche à fond, on range.
+Toutes les méthodes finissent pareil : on étale la graine, on la sèche à fond, on la range.
+
+## Quand cueillir
+
+Trouvez la ligne qui correspond à votre jardin cette année.
+
+<Points>
+
+- **Le gel approche.** Avant la première forte gelée, rentrez tous les fruits dont vous voulez la graine, mûrs ou non. Une graine qui gèle encore humide dans le fruit peut être sérieusement abîmée. D’après l’expérience de Lofthouse, la graine bien sèche des cultures de climat tempéré supporte le gel sans dommage.
+- **Votre saison est courte.** Cueillez les fruits que vous avez. D’après l’expérience de Lofthouse, la graine peut germer bien avant que le fruit soit parfaitement mûr, même si les plantes lèvent parfois moins vigoureuses, et elle continue de mûrir un moment dans un fruit cueilli.
+- **Les gousses s’ouvrent avant que la plante ait séché.** C’est l’<Term id="shattering">égrenage</Term>. Prenez les plantes tout de suite et finissez de les sécher sur une bâche, à couvert, hors d’atteinte de la pluie et de la rosée.
+- **La météo annonce des semaines de pluie.** Une averse ne fait pas de tort à la graine sèche sur pied, mais une longue période humide la fait moisir. Rentrez les plantes dans un endroit sec et aéré, et battez-les plus tard.
+- **Rien de tout cela.** Laissez gousses et épis sur pied jusqu’à ce qu’ils craquent, et laissez les fruits mûrir complètement.
+
+</Points>
+
+{/* "A few months" indoors is the moschata squash only (Squash Family chapter). */}
+<HisGarden
+  his="Ses premières années, dans une saison courte de l’Utah, ses melons et ses courges musquées (moschata) étaient encore très immatures à la fin de l’été. Il en a gardé la graine malgré tout, et elle a levé ; les courges avaient d’abord fini de mûrir quelques mois à l’intérieur."
+  you="Avec une saison longue et chaude, laissez le fruit mûrir complètement sur pied. Là où les gelées arrivent tôt, cueillez avant le froid et laissez le fruit finir à l’abri."
+/>
+
+{/* General tip, not from the book (which mentions germination tests without a method): no counts, times or rates. */}
+Un doute sur un lot ? Faites un <Term id="germination-test">test de germination</Term> : mettez à germer un nombre connu de graines sur un linge humide et comptez celles qui lèvent.
 
 ## La voie sèche
 
 <Steps>
-  <Step title="Sécher">Laissez les plantes sur pied jusqu’à ce que gousses et épis soient bien secs. Tout ce qui suit marche mieux sur une matière qui craque.</Step>
+  <Step title="Sécher">Ne commencez que sur une matière cassante, qui craque. Une gousse humide s’écrase au lieu de se rompre.</Step>
   <Step title="Battre">Cassez les gousses ou les épis pour libérer la graine : c’est le <Term id="thresh">battage</Term>.</Step>
-  <Step title="Tamiser">Passez la graine dans une grille ou un grillage fin pour retenir les tiges et les gros débris : c’est le <Term id="screen">tamisage</Term>.</Step>
-  <Step title="Vanner">Versez lentement la graine dans le vent ou devant un ventilateur : la <Term id="chaff">balle</Term> légère s’envole. Cette dernière étape, c’est le <Term id="winnow">vannage</Term>.</Step>
+  <Step title="Tamiser">Secouez la graine dans une grille ou un grillage fin qui retient les tiges et les gros débris : c’est le <Term id="screen">tamisage</Term>.</Step>
+  <Step title="Vanner">Versez lentement la graine dans le vent ou devant un ventilateur pour que la <Term id="chaff">balle</Term> légère s’envole : c’est le <Term id="winnow">vannage</Term>.</Step>
 </Steps>
 
-### Cueillir au bon moment
+Ne mettez que la force dont les gousses ont besoin. Lofthouse, lui, cogne des brassées de plantes sèches contre la paroi intérieure d’une poubelle jusqu’à ce que plus rien ne tombe.
 
-Certaines plantes lâchent leurs graines avant d’avoir séché entièrement : c’est l'<Term id="shattering">égrenage</Term>. Quand Lofthouse le voit commencer, il arrache les plantes sans attendre, les étale sur une bâche à l’abri de la pluie et de la rosée, et les bat une fois sèches.
+Le tamis et le vent retirent aussi beaucoup de graines d’adventices, qui n’ont ni la taille ni le poids de celles du potager. Chacune retirée maintenant, c’est une de moins semée au printemps.
 
-Sur pied, une graine qui sèche supporte une averse. Une longue période humide, c’est autre chose : si la météo annonce des semaines de pluie, rentrez les plantes avant et gardez-les au sec, dans un endroit aéré, jusqu’au battage. L’humidité est l’ennemie : elle fait moisir la graine sèche.
-
-Coupez les plantes au sécateur un peu au-dessus du sol plutôt que de les arracher. La terre qui vient avec les racines se mélange aux graines, et on a bien du mal à l’enlever ensuite.
-
-### Taper plus ou moins fort
-
-Adaptez la force à la gousse : plus elle est coriace, plus vous pouvez taper.
-
-<ThreshScale
-  from="Doux"
-  to="Fort"
-  order="Les méthodes vont de la plus douce à la plus forte."
-  steps={[
-    { title: "Renverser au-dessus d’un bol", text: "Capsules en forme de coupe, comme le pavot : rien à écraser, la graine coule toute seule.", alt: "Une capsule de pavot tenue à l’envers au-dessus d’un bol, les graines tombent dedans." },
-    { title: "Marcher dessus", text: "Gousses fragiles : étalez-les sur une bâche et piétinez-les.", alt: "Une botte qui écrase des gousses sèches étalées au sol." },
-    { title: "Battre au bâton", text: "Les gousses plus coriaces demandent quelques coups.", alt: "Un bâton qui s’abat sur un tas de gousses coriaces." },
-    { title: "Cogner dans une poubelle", text: "La méthode préférée de Lofthouse, pour les haricots, la laitue, la moutarde, le chou et le lin.", alt: "Une brassée de tiges sèches cognée contre l’intérieur d’une poubelle, les graines s’amassent au fond." },
-  ]}
-/>
-
-Pour la poubelle, prenez une brassée de plantes sèches et cognez-la contre la paroi intérieure jusqu’à ce que plus rien ne tombe.
-
-### Dehors les adventices, la balle se garde
-
-Un tamis à la bonne maille, ou un vannage soigné, sépare aussi beaucoup de graines d’adventices de celles du potager, parce qu’elles n’ont ni la même taille ni le même poids. Lofthouse cite la sétaire, qui se détache facilement des haricots nains secs, au tamis comme au vent. Chaque graine d’adventice retirée maintenant, c’est une de moins semée au printemps.
-
-La balle qui contient encore un peu de graines n’est pas perdue : il la donne aux animaux ou la répand sur un coin de jardin ou de friche.
-
-### Céréales et tournesols
-
-Blé, orge, seigle et avoine suivent les mêmes quatre étapes, en plus grand.
-
-Un capitule de tournesol entier sèche lentement, et dans les automnes frais et humides Lofthouse les a perdus à la moisissure. La graine en vrac, étalée en couche fine sur un drap, sèche bien plus vite : égrenez donc le capitule d’abord. Il le fait au champ, d’une main gantée, et privilégie les plantes dont la graine se détache facilement.
+Les céréales passent par les mêmes étapes, en plus grand. Un capitule de tournesol séché entier peut moisir dans un automne humide, Lofthouse en a fait l’expérience ; la graine égrenée et étalée en couche fine sèche bien plus vite.
 
 <NextGuides slugs={["small-grains"]} />
 
 ## La voie humide
 
-La graine humide se récolte souvent en même temps qu’on prépare le fruit pour le repas : gardez un bocal ou une passoire près de la planche à découper.
-
-Certaines graines sont entourées d’une <Term id="gel-coat">gangue gélatineuse</Term> qui les empêche de germer dans le fruit. Pour ces cultures, on laisse cette gelée pourrir en bocal : c’est la <Term id="seed-fermentation">fermentation des graines</Term>. Chez Lofthouse, selon les cultures, le passage en bocal va de rien du tout à environ cinq jours.
+La graine humide se récolte souvent pendant qu’on prépare le fruit pour le repas : gardez un bocal étiqueté ou une passoire près de la planche à découper.
 
 <Note>Ce bocal contient des semences, pas un aliment. Étiquetez-le, sortez-le de la cuisine, et que personne ne le prenne pour une boisson ou une sauce.</Note>
 
-### Tomate
+### Tomate et concombre : le bocal
+
+Leurs graines sont entourées d’une <Term id="gel-coat">gangue gélatineuse</Term>, une gelée qui les empêche de germer dans le fruit. La laisser pourrir en bocal, c’est la <Term id="seed-fermentation">fermentation des graines</Term>.
 
 <TomatoSteps steps={[
-  { title: "Presser", text: "Entaillez la tomate côté fleur, à l’opposé du pédoncule, et pressez graines et jus dans un bocal étiqueté.", alt: "Une demi-tomate au-dessus d’un bocal, graines et jus coulent dedans." },
+  { title: "Presser", text: "Ouvrez la tomate et pressez graines et jus dans un bocal étiqueté.", alt: "Une demi-tomate au-dessus d’un bocal, graines et jus coulent dedans." },
   { title: "Attendre", text: "Laissez le bocal jusqu’à ce que la gelée autour de chaque graine se soit défaite : environ trois jours chez lui, moins s’il fait chaud, plus s’il fait frais.", alt: "Le bocal au repos, une fine peau et de petites bulles en surface." },
   { title: "Trier à l’eau", text: "Remplissez d’eau et remuez. Les bonnes graines coulent ; videz la pulpe et les graines vides qui remontent. Recommencez jusqu’à ce que ce soit propre.", alt: "Le bocal rempli d’eau, la pulpe flotte en haut et les graines reposent au fond." },
   { title: "Sécher", text: "Étalez la graine en couche fine et faites-la sécher vite.", alt: "Des graines propres étalées en une seule couche sur une assiette." },
 ]} />
 
-### Concombre
-
-La graine de concombre a elle aussi sa gangue. Traitez-la comme la tomate : quelques jours en bocal et la gelée se détache. Rincez, gardez ce qui coule, séchez.
+La graine de concombre suit le même chemin : une fois sa gelée décollée dans le bocal, rincez, gardez ce qui coule, séchez.
 
 ### Melon, pastèque et courge : un simple rinçage
 
-Ici, pas de bocal. Versez les graines dans une passoire et passez-les sous un jet d’eau vigoureux jusqu’à ce que la pulpe soit partie. La graine de melon et de pastèque n’a presque pas de gelée. Celle de courge en garde parfois un peu, que Lofthouse laisse : une fois sèche, elle part au vannage.
+Pas de bocal. Mettez les graines dans une passoire et chassez la pulpe sous un jet d’eau vigoureux. La graine de courge garde parfois un peu de gelée, que Lofthouse laisse : une fois sèche, elle part au vannage.
 
-### Pour finir : sécher vite, puis vanner
+### Sécher vite, puis vanner
 
 Une graine humide doit sécher vite et à cœur, sinon elle moisit. Étalez-la en une seule couche et remuez de temps en temps. Une fois sèche, vannez-la : les enveloppes vides, légères, s’envolent et la bonne graine reste.
 
 <NextGuides slugs={["tomatoes", "squash-melons-cucumbers"]} />
 
-## Quand la graine est-elle mûre ?
-
-Plus tôt qu’on ne le croit. D’après l’expérience de Lofthouse, la graine peut germer bien avant que le fruit soit parfaitement mûr, même si la plante sera parfois moins vigoureuse, et dans un fruit cueilli, la graine continue de mûrir un moment.
-
-{/* "A few months" indoors is the moschata squash only (Squash Family chapter); the book gives no time for the melons (Saving Seeds). */}
-<HisGarden
-  his="Les premières années où il a cultivé melons et courges musquées (moschata), dans une saison courte de l’Utah, les fruits étaient encore très immatures à la fin de l’été. Il en a gardé la graine malgré tout, et elle a levé. Les courges ont fini de mûrir quelques mois à l’intérieur avant qu’il en sorte les graines."
-  you="Avec une saison longue et chaude, vous pouvez en général laisser le fruit mûrir complètement sur pied. Là où la saison est courte ou les gelées précoces, cueillez ce que vous avez avant le froid et laissez-le finir à l’abri."
-/>
-
-Le vrai danger, c’est le gel. Une graine humide qui gèle dans le fruit peut être sérieusement abîmée : rentrez tous les fruits dont vous voulez la graine avant la première forte gelée, mûrs ou non. La graine bien sèche des cultures de climat tempéré, elle, supporte le gel sans dommage.
-
-{/* General tip, not from the book (which mentions germination tests without a method): no counts, times or rates. */}
-Un doute sur un lot ? Faites un <Term id="germination-test">test de germination</Term> : mettez à germer un nombre connu de graines sur un linge humide et comptez celles qui lèvent.
-
 ## Propre, mais pas trop
 
-Vos graines n’ont pas besoin de ressembler à celles d’un sachet du commerce. Pour Lofthouse, la graine est robuste et la méthode de nettoyage compte peu : quelques bouts de balle semés avec elle ne gênent pas. L’important, c’est qu’elle soit sèche, sans moisissure, et à peu près débarrassée des graines d’adventices.
+Une graine récoltée chez soi n’a pas besoin de ressembler à celle d’un sachet du commerce. Pour Lofthouse, la graine est robuste, et un peu de balle semée avec elle ne gêne pas. Visez une graine sèche, sans moisissure et à peu près débarrassée des graines d’adventices.
 
 ## Culture par culture
 
-La voie que prend chaque culture :
+La méthode qui convient à chaque culture :
 
 <CropTable
   crops={["common-bean", "pea", "fava-bean", "corn", "wheat", "barley", "rye", "oats", "lettuce", "cabbage-kale-broccoli", "spinach", "sunflower", "mustard", "flax", "tomato-garden", "cucumber", "melon", "watermelon", "squash-pepo", "squash-moschata", "squash-maxima"]}
