@@ -1,0 +1,65 @@
+---
+// Potato, garlic and sunroot from true seed: why clones are fragile. Two rows of eight potato plants meet
+// the same beetle. Top row: identical clones, every one wilts. Bottom row: seedlings that differ in size
+// and shape; three wilt, five stand. clones and seedlings are the row labels; alt describes the drawing.
+import { r1, rng, seedOf } from '../../../../lib/svg';
+interface Props { clones: string; seedlings: string; alt: string; }
+const { clones, seedlings, alt } = Astro.props;
+const N = 8, X0 = 30, DX = 48;
+const rand = rng(seedOf('true-seed:clone-rows'));
+const leaf = (len: number) => `M0 0Q${r1(len * 0.5)} ${r1(-len * 0.38)} ${len} 0Q${r1(len * 0.5)} ${r1(len * 0.38)} 0 0Z`;
+// One plant standing on the soil line `ground`: h tall, leaves of size `s`, wilted or not.
+const plant = (x: number, ground: number, h: number, s: number, pairs: number, wilted: boolean, tone: number) => {
+  const tipX = wilted ? x + h * 0.35 : x;
+  const tipY = wilted ? ground - h * 0.6 : ground - h;
+  const stem = wilted ? `M${x} ${ground}C${x} ${r1(ground - h * 0.7)} ${r1(x + h * 0.15)} ${r1(ground - h * 0.9)} ${r1(tipX)} ${r1(tipY)}` : `M${x} ${ground}V${r1(tipY)}`;
+  const leaves = Array.from({ length: pairs }, (_, k) => {
+    const t = (k + 1) / (pairs + 0.4);
+    const px = wilted ? x + (tipX - x) * t * t : x;
+    const py = ground - (ground - tipY) * t;
+    // Upright leaves point up and out; wilted ones hang down and out.
+    const angle = (side: number) => (wilted ? (side < 0 ? 140 : 40) : (side < 0 ? -155 : -25));
+    return [-1, 1].map((side) => ({ d: leaf(s * (1 - k * 0.12)), transform: `translate(${r1(px)} ${r1(py)}) rotate(${angle(side)})` }));
+  }).flat();
+  return { stem, leaves, wilted, tone, beetle: { x: r1(tipX - 2), y: r1(tipY + (wilted ? 6 : 10)) } };
+};
+const rows = [
+  { label: clones, y: 24, ground: 114, plants: Array.from({ length: N }, (_, i) => ({ ...plant(X0 + i * DX, 114, 64, 15, 3, true, 0.9), pest: true })) },
+  {
+    label: seedlings, y: 148, ground: 238,
+    plants: Array.from({ length: N }, (_, i) => {
+      const hit = [1, 4, 6].includes(i);
+      return { ...plant(X0 + i * DX, 238, 46 + rand() * 30, 11 + rand() * 8, 2 + Math.floor(rand() * 3), hit, 0.6 + rand() * 0.4), pest: hit };
+    }),
+  },
+];
+---
+<svg class="guide-clone-rows" viewBox="0 0 400 252" role="img" aria-label={alt}>
+  {rows.map((row) => (
+    <g>
+      <text x="8" y={row.y - 4} class="guide-cr-label">{row.label}</text>
+      <rect x="6" y={row.ground} width="388" height="8" rx="3" class="guide-cr-soil" />
+      {row.plants.map((p) => (
+        <g class:list={[{ 'guide-cr-wilted': p.wilted }]}>
+          <path d={p.stem} class="guide-stem guide-stem-thin" />
+          {p.leaves.map((l) => <path d={l.d} transform={l.transform} class="guide-leaf" style={`opacity:${r1(p.tone)}`} />)}
+          {p.pest && (
+            <g transform={`translate(${p.beetle.x} ${p.beetle.y})`}>
+              <ellipse rx="6" ry="4.4" class="guide-cr-beetle" />
+              <line x1="-4" y1="0" x2="4" y2="0" class="guide-cr-stripe" />
+            </g>
+          )}
+        </g>
+      ))}
+    </g>
+  ))}
+</svg>
+
+<style>
+  .guide-clone-rows { max-width: 32rem; }
+  .guide-cr-label { font-size: 17px; font-weight: 600; }
+  .guide-cr-soil { fill: var(--seed-3); opacity: 0.7; }
+  .guide-cr-wilted { opacity: 0.5; }
+  .guide-cr-beetle { fill: var(--seed-6); stroke: var(--seed-2); stroke-width: 1.2; }
+  .guide-cr-stripe { stroke: var(--seed-2); stroke-width: 1.2; }
+</style>

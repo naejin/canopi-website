@@ -1,0 +1,58 @@
+---
+// Potato, garlic and sunroot from true seed: an open garlic flower head. A tight cluster of bulbils at
+// the centre, star-shaped flowers on thin stalks around it, and an arrow at the bulbils: take them out
+// just after the flowers open. bulbils, flowers and remove are the labels; alt describes the drawing.
+import { r1, rng, seedOf } from '../../../../lib/svg';
+import { wrap } from '../tomatoes/wrap';
+interface Props { bulbils: string; flowers: string; remove: string; alt: string; }
+const { bulbils, flowers, remove, alt } = Astro.props;
+const CX = 180, CY = 124, R = 86, H = 300;
+const rand = rng(seedOf('true-seed:garlic-head'));
+// Bulbils: a centre one and two rings, packed tight.
+const bulbs = [[0, 0, 10], ...[0, 1, 2, 3, 4, 5].map((k) => [k * 60 + 15, 19, 9.5]), ...Array.from({ length: 11 }, (_, k) => [k * 32.7, 36, 9])]
+  .map(([a, d, r]) => ({ x: r1(CX + d * Math.cos((a * Math.PI) / 180)), y: r1(CY + d * Math.sin((a * Math.PI) / 180)), r }));
+// Flowers on stalks fanning out above and to the sides of the cluster.
+const blooms = Array.from({ length: 13 }, (_, k) => {
+  const a = ((-200 + k * 18.3 + (rand() - 0.5) * 6) * Math.PI) / 180;
+  const len = R * (0.88 + rand() * 0.18);
+  const x = CX + len * Math.cos(a), y = CY + len * Math.sin(a);
+  const petals = Array.from({ length: 6 }, (_, p) => {
+    const pa = (p * 60 * Math.PI) / 180 + rand() * 0.2;
+    return `M${r1(x)} ${r1(y)}L${r1(x + 9 * Math.cos(pa))} ${r1(y + 9 * Math.sin(pa))}`;
+  }).join('');
+  return { stalk: `M${r1(CX + 40 * Math.cos(a))} ${r1(CY + 40 * Math.sin(a))}L${r1(x)} ${r1(y)}`, x: r1(x), y: r1(y), petals };
+});
+const fl = blooms[2];
+const flowerLines = wrap(flowers, 14);
+const bulbilLines = wrap(bulbils, 10);
+const removeLines = wrap(remove, 17);
+---
+<svg class="guide-garlic-head" viewBox={`0 0 360 ${H}`} role="img" aria-label={alt}>
+  <path d={`M${CX} ${H}C${CX - 2} ${H - 50} ${CX + 3} ${CY + 80} ${CX} ${CY + 40}`} class="guide-stem guide-stem-thick" />
+  {blooms.map((b) => <path d={b.stalk} class="guide-gh-stalk" />)}
+  {blooms.map((b) => (
+    <g>
+      <path d={b.petals} class="guide-gh-petal" />
+      <circle cx={b.x} cy={b.y} r="2.8" class="guide-gh-eye" />
+    </g>
+  ))}
+  {bulbs.map((b) => <circle cx={b.x} cy={b.y} r={b.r} class="guide-gh-bulbil" />)}
+  <path d={`M60 ${10 + flowerLines.length * 19}L${fl.x - 10} ${fl.y}`} class="guide-lead" />
+  {flowerLines.map((line, k) => <text x="6" y={20 + k * 19} class="guide-gh-label">{line}</text>)}
+  <path d={`M276 ${CY + 18}L${CX + 46} ${CY + 8}`} class="guide-lead" />
+  {bulbilLines.map((line, k) => <text x="280" y={CY + 24 + k * 19} class="guide-gh-label">{line}</text>)}
+  <path d={`M70 ${H - 76}Q110 ${CY + 70} ${CX - 40} ${CY + 30}`} class="guide-gh-arrow" />
+  <path d={`M${CX - 40} ${CY + 30}l-12 0m12 0l-5 11`} class="guide-gh-arrow" />
+  {removeLines.map((line, k) => <text x="6" y={H - 52 + k * 19} class="guide-gh-label guide-gh-accent">{line}</text>)}
+</svg>
+
+<style>
+  .guide-garlic-head { max-width: 26rem; }
+  .guide-gh-stalk { stroke: var(--leaf); stroke-width: 1.4; opacity: 0.8; }
+  .guide-gh-petal { stroke: var(--petal); stroke-width: 2.8; stroke-linecap: round; }
+  .guide-gh-eye { fill: var(--anther); }
+  .guide-gh-bulbil { fill: var(--seed-3); stroke: var(--seed-5); stroke-width: 1.4; }
+  .guide-gh-arrow { stroke: var(--accent); stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-gh-label { font-size: 16px; font-weight: 600; }
+  .guide-gh-accent { fill: var(--accent-ink); }
+</style>

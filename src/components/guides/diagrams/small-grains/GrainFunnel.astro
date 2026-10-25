@@ -1,0 +1,48 @@
+---
+// Small grains: how far-off seed is filtered by a new climate. Two bars of equal length: the seed sown
+// (coastal seed 60%, mountain mix 40%) and the harvest (15% and 85%), Lofthouse's figures for one season,
+// with a band joining the coastal share of each bar. sown, harvest, coastal and mountain are labels;
+// shares can be changed; alt describes the drawing.
+import { r1 } from '../../../../lib/svg';
+interface Props { sown: string; harvest: string; coastal: string; mountain: string; alt: string; sownShare?: number; harvestShare?: number; }
+const { sown, harvest, coastal, mountain, alt, sownShare = 60, harvestShare = 15 } = Astro.props;
+for (const v of [sownShare, harvestShare]) if (!(v > 0 && v < 100)) throw new Error(`GrainFunnel: share ${v} must be between 0 and 100`);
+const X = 8, LEN = 384, BH = 30, Y1 = 26, Y2 = 118;
+const w1 = r1((LEN * sownShare) / 100), w2 = r1((LEN * harvestShare) / 100);
+const bars = [
+  { label: sown, y: Y1, w: w1, share: sownShare },
+  { label: harvest, y: Y2, w: w2, share: harvestShare },
+];
+const band = `M${X} ${Y1 + BH}H${X + w1}L${X + w2} ${Y2}H${X}Z`;
+---
+<svg class="guide-grain-funnel" viewBox="0 0 400 196" role="img" aria-label={alt}>
+  <path d={band} class="guide-gf-band" />
+  {bars.map((b) => (
+    <g>
+      <text x={X} y={b.y - 8} class="guide-gf-label">{b.label}</text>
+      <rect x={X} y={b.y} width={b.w} height={BH} class="guide-gf-coastal" />
+      <rect x={X + b.w} y={b.y} width={LEN - b.w} height={BH} class="guide-gf-mountain" />
+      <rect x={X} y={b.y} width={LEN} height={BH} rx="3" class="guide-gf-frame" />
+      <text x={X + b.w / 2} y={b.y + 21} text-anchor="middle" class="guide-gf-pct">{b.share}%</text>
+      <text x={X + b.w + (LEN - b.w) / 2} y={b.y + 21} text-anchor="middle" class="guide-gf-pct guide-gf-pct-dark">{100 - b.share}%</text>
+    </g>
+  ))}
+  <rect x={X} y="172" width="12" height="12" class="guide-gf-coastal" />
+  <text x={X + 18} y="182" class="guide-gf-key">{coastal}</text>
+  <rect x="200" y="172" width="12" height="12" class="guide-gf-mountain" />
+  <text x="218" y="182" class="guide-gf-key">{mountain}</text>
+</svg>
+
+<style>
+  .guide-grain-funnel { max-width: 32rem; }
+  .guide-gf-coastal { fill: var(--seed-1); }
+  .guide-gf-mountain { fill: var(--seed-6); }
+  .guide-gf-frame { fill: none; stroke: var(--border-strong); stroke-width: 1; }
+  .guide-gf-band { fill: var(--seed-1); opacity: 0.18; }
+  .guide-gf-label { font-size: 17px; font-weight: 600; }
+  .guide-gf-pct { font-size: 16px; font-weight: 600; fill: var(--on-accent); }
+  .guide-gf-pct-dark { fill: var(--text); }
+  :global(:root[data-theme="dark"]) .guide-gf-pct-dark { fill: var(--on-accent); }
+  @media (prefers-color-scheme: dark) { :global(:root:not([data-theme="light"])) .guide-gf-pct-dark { fill: var(--on-accent); } }
+  .guide-gf-key { font-size: 16px; }
+</style>
