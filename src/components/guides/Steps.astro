@@ -1,0 +1,6 @@
+---
+// A numbered list of <Step title="…">. compact: small numbers and titles, for short steps in a card.
+interface Props { compact?: boolean; }
+const { compact = false } = Astro.props;
+---
+<ol class:list={['guide-steps', { 'guide-steps-compact': compact }]}><slot /></ol>

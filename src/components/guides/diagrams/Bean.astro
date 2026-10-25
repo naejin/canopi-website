@@ -1,0 +1,8 @@
+---
+// One bean (src/lib/svg.ts Bean), for the seed diagrams. Colours are the --seed-N plant tokens.
+import { BEAN_PATH, BEAN_SPECKS, beanTransform, type Bean } from '../../../lib/svg';
+interface Props { bean: Bean; }
+const { bean: b } = Astro.props;
+const speck = b.c === 2 ? 3 : 2;
+---
+<g transform={beanTransform(b)} class={b.gone ? 'guide-gone' : undefined}><path d={BEAN_PATH} class={`guide-c${b.c} guide-bean-o`} />{b.c2 && b.c2 !== b.c && <path d={BEAN_PATH} class={`guide-c${b.c2}`} clip-path="url(#guide-half)" />}{b.speck && BEAN_SPECKS.map(([x, y]) => <circle cx={x} cy={y} r="0.9" class={`guide-c${speck} guide-speck`} />)}<ellipse cx="0" cy="-3.9" rx="1.6" ry="0.6" class="guide-hilum" /></g>

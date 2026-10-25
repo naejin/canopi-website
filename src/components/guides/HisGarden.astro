@@ -1,0 +1,19 @@
+---
+// Lofthouse's practice or result in his garden, beside what changes where the reader lives
+// (qualitative only: humid, mild, hot, short season…).
+import { gt, guideLangOf } from '../../i18n/guides';
+interface Props { his: string; you: string; }
+const { his, you } = Astro.props;
+const lang = guideLangOf(Astro.currentLocale);
+---
+<div class="guide-his" role="group" aria-label={`${gt('hisGarden.his', lang)} · ${gt('hisGarden.you', lang)}`}>
+  <div class="guide-his-col">
+    <p class="guide-label">{gt('hisGarden.his', lang)}</p>
+    <p class="guide-his-where">{gt('hisGarden.where', lang)}</p>
+    <p>{his}</p>
+  </div>
+  <div class="guide-his-col guide-his-you">
+    <p class="guide-label">{gt('hisGarden.you', lang)}</p>
+    <p>{you}</p>
+  </div>
+</div>

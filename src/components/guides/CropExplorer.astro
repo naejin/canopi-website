@@ -1,0 +1,91 @@
+---
+// Which crops are easiest to make into a landrace: every crop of src/data/crops.ts with an ease tier,
+// grouped by tier (his judgement), as chips that open the crop's details. Without JavaScript the
+// details are listed under each group instead.
+import { crops, easeTiers } from '../../data/crops';
+import { publishedGuides, slugOf } from '../../lib/guides';
+import { gt, guideLangOf, guidePath } from '../../i18n/guides';
+import { cropText } from './crop-text';
+import PollinationBadge from './PollinationBadge.astro';
+import CropMeter from './CropMeter.astro';
+interface Props { open?: string; }
+const lang = guideLangOf(Astro.currentLocale);
+const { open = crops.find((c) => c.ease === 'very-easy')!.id } = Astro.props;
+const collator = new Intl.Collator(lang);
+const published = await publishedGuides(lang);
+const here = Astro.url.pathname;
+const guideFor = (slug?: string) => slug && published.find((e) => slugOf(e) === slug && !here.includes(`/guides/${slug}/`));
+const bands = easeTiers.map((tier) => ({
+  tier,
+  crops: crops.filter((c) => c.ease === tier).map((crop) => ({ crop, text: cropText(crop, lang), guide: guideFor(crop.guide) }))
+    .sort((a, b) => collator.compare(a.text.name, b.text.name)),
+}));
+const unrated = crops.filter((c) => c.ease === null).map((c) => c.name[lang]).sort(collator.compare);
+const listFormat = new Intl.ListFormat(lang, { type: 'conjunction' });
+---
+<div class="guide-explorer" data-guide-interactive data-guide-explorer>
+  <div class="guide-legend">
+    <span><span class="guide-meter" aria-hidden="true"><i style="width: 60%"></i></span>{gt('explorer.meter', lang)}</span>
+    <span><span class="guide-flag" aria-hidden="true">{gt('crop.flag', lang)}</span>{gt('explorer.flag', lang)}</span>
+  </div>
+  <p class="guide-explorer-hint" hidden data-explorer-hint>{gt('explorer.choose', lang)}</p>
+  {bands.map(({ tier, crops: list }) => (
+    <section class="guide-band" aria-labelledby={`guide-band-${tier}`}>
+      <div class="guide-band-head">
+        <h3 id={`guide-band-${tier}`}>{gt(`ease.${tier}`, lang)} <span>{gt('ease.count', lang, { count: list.length })}</span></h3>
+        <p>{gt(`ease.why.${tier}`, lang)}</p>
+      </div>
+      <ul class="guide-chips" role="list" hidden data-explorer-chips>
+        {list.map(({ crop, text }) => (
+          <li>
+            <button type="button" class="guide-chip" data-crop={crop.id} aria-expanded="false" aria-controls={`guide-crop-${crop.id}`}>
+              {text.name}
+              <CropMeter crossing={crop.crossing} />
+              {text.flagged && <span class="guide-flag" aria-label={gt('crop.flagLabel', lang)}>{gt('crop.flag', lang)}</span>}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div class="guide-band-details">
+        {list.map(({ crop, text, guide }) => (
+          <div class="guide-detail" id={`guide-crop-${crop.id}`} data-detail={crop.id} data-open={crop.id === open ? '' : undefined}>
+            <div class="guide-detail-top">
+              <h4>{text.name}{crop.species && <> <i>{crop.species}</i></>}</h4>
+              <span class="guide-label">{gt(`ease.${tier}`, lang)}</span>
+            </div>
+            {text.examples && <p class="guide-crop-examples">{text.examples}</p>}
+            <dl>
+              {text.crossing && <><dt>{gt('crop.crossing', lang)}</dt><dd>{text.crossing}</dd></>}
+              {crop.pollination && <><dt>{gt('crop.pollination', lang)}</dt><dd><PollinationBadge pollination={crop.pollination} /></dd></>}
+              {text.life && <><dt>{gt('crop.life', lang)}</dt><dd>{text.life}</dd></>}
+              {text.seed && <><dt>{gt('crop.seed', lang)}</dt><dd>{text.seed}</dd></>}
+              {text.flagged && <><dt>{gt('crop.hybrids', lang)}</dt><dd class="guide-warn">{text.hybrids}</dd></>}
+              {text.note && <><dt>{gt('crop.tip', lang)}</dt><dd>{text.note}{text.tip && <> {text.tip}</>}</dd></>}
+              {!text.note && text.tip && <><dt>{gt('crop.tip', lang)}</dt><dd>{text.tip}</dd></>}
+              {guide && <><dt>{gt('crop.guide', lang)}</dt><dd><a href={guidePath(slugOf(guide), lang)}>{guide.data.title}</a></dd></>}
+            </dl>
+            <p class="guide-crop-his">{gt('crop.his', lang)}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  ))}
+  {unrated.length > 0 && <p class="guide-small">{gt('explorer.unrated', lang, { list: listFormat.format(unrated) })}</p>}
+</div>
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-guide-explorer]')) {
+    const chips = [...root.querySelectorAll<HTMLButtonElement>('[data-crop]')];
+    const details = [...root.querySelectorAll<HTMLElement>('[data-detail]')];
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    const select = (id: string, fromClick: boolean) => {
+      for (const chip of chips) chip.setAttribute('aria-expanded', String(chip.dataset.crop === id));
+      for (const detail of details) detail.toggleAttribute('data-open', detail.dataset.detail === id);
+      const shown = details.find((d) => d.dataset.detail === id);
+      if (fromClick && shown && shown.getBoundingClientRect().bottom > innerHeight) shown.scrollIntoView({ block: 'nearest', behavior: reduce.matches ? 'auto' : 'smooth' });
+    };
+    for (const chip of chips) chip.addEventListener('click', () => select(chip.dataset.crop!, true));
+    for (const list of root.querySelectorAll<HTMLElement>('[data-explorer-chips], [data-explorer-hint]')) list.hidden = false;
+    root.dataset.ready = '';
+    select(details.find((d) => d.hasAttribute('data-open'))?.dataset.detail ?? chips[0].dataset.crop!, false);
+  }
+</script>

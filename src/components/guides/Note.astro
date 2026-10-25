@@ -1,0 +1,9 @@
+---
+// A free margin note: in the margin at ≥960px, level with the block that follows it; inline below.
+interface Props { title?: string; }
+const { title } = Astro.props;
+---
+<aside class="guide-note">
+  {title && <b class="guide-note-title">{title}</b>}
+  <div class="guide-note-body"><slot /></div>
+</aside>

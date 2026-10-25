@@ -1,0 +1,18 @@
+---
+// A fixed-wording caution about eating a crop or its seed: it names the risk and sends the reader to
+// their national food-safety authority. One text per risk (src/i18n/guides/*.json, "food.<risk>");
+// no doses, times, temperatures, methods or links, and nothing a guide can add to it.
+import { gt, guideLangOf } from '../../i18n/guides';
+export const risks = ['bitter-cucurbits', 'dry-beans', 'nightshades', 'potato-berries', 'corn-processing', 'treated-seed', 'fava', 'ergot', 'sprouted-or-surplus-seed'] as const;
+interface Props { risk: (typeof risks)[number]; }
+const { risk } = Astro.props;
+if (!risks.includes(risk)) throw new Error(`<FoodCaution risk="${risk}">: use one of ${risks.join(', ')}`);
+const lang = guideLangOf(Astro.currentLocale);
+---
+<aside class="guide-safety guide-food" role="note" aria-label={gt('food.title', lang)}>
+  <svg class="guide-safety-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9.5v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.1" fill="currentColor"/></svg>
+  <div>
+    <p class="guide-safety-title">{gt('food.title', lang)}</p>
+    <p>{gt(`food.${risk}`, lang)}</p>
+  </div>
+</aside>

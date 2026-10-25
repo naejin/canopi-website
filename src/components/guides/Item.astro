@@ -1,0 +1,21 @@
+---
+// One checklist item. when: the moment it belongs to (a season or a stage of the crop's year).
+import { gt, guideLangOf } from '../../i18n/guides';
+export const whens = ['late-winter', 'spring', 'early-summer', 'summer', 'late-summer', 'autumn', 'winter', 'before-sowing', 'sowing', 'growing', 'flowering', 'harvest', 'after-harvest', 'any'] as const;
+interface Props { id: string; when?: (typeof whens)[number]; hint?: string; }
+const { id, when, hint } = Astro.props;
+if (when && !whens.includes(when)) throw new Error(`<Item when="${when}">: use one of ${whens.join(', ')}`);
+const lang = guideLangOf(Astro.currentLocale);
+const inputId = `guide-check-${id}`;
+---
+<li class="guide-item">
+  <label for={inputId}>
+    <input type="checkbox" id={inputId} data-item={id} />
+    <span class="guide-item-text">
+      <span class="guide-item-main"><slot /></span>
+      {(when || hint) && (
+        <small>{when && <span class="guide-item-when">{gt(`when.${when}`, lang)}</span>}{hint}</small>
+      )}
+    </span>
+  </label>
+</li>

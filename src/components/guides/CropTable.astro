@@ -1,0 +1,44 @@
+---
+// A table of crops from src/data/crops.ts. columns: any of pollination, crossing, seed, ease, cms,
+// life, species. Crossing, ease and hybrid columns are his estimates; the caption says so.
+import { crop as findCrop } from '../../data/crops';
+import { gt, guideLangOf } from '../../i18n/guides';
+import { cropText } from './crop-text';
+import PollinationBadge from './PollinationBadge.astro';
+import CropMeter from './CropMeter.astro';
+const columnKeys = ['species', 'pollination', 'crossing', 'life', 'seed', 'ease', 'cms'] as const;
+type Column = (typeof columnKeys)[number];
+interface Props { crops: string[]; columns?: Column[]; caption?: string; }
+const { crops, columns = ['pollination', 'crossing', 'seed', 'ease', 'cms'], caption } = Astro.props;
+for (const c of columns) if (!columnKeys.includes(c)) throw new Error(`<CropTable columns>: "${c}" is not one of ${columnKeys.join(', ')}`);
+const lang = guideLangOf(Astro.currentLocale);
+const heads: Record<Column, string> = {
+  species: gt('crop.species', lang), pollination: gt('crop.pollination', lang), crossing: gt('crop.crossing', lang),
+  life: gt('crop.life', lang), seed: gt('crop.seed', lang), ease: gt('crop.ease', lang), cms: gt('crop.hybrids', lang),
+};
+const rows = crops.map((id) => { const crop = findCrop(id); return { crop, text: cropText(crop, lang) }; });
+---
+<div class="guide-table-wrap" role="region" tabindex="0" aria-label={caption ?? gt('table.crop', lang)}>
+  <table class="guide-table">
+    <caption>{caption && <span>{caption} </span>}<span class="guide-table-note">{gt('table.note', lang)}</span></caption>
+    <thead><tr><th scope="col">{gt('table.crop', lang)}</th>{columns.map((c) => <th scope="col">{heads[c]}</th>)}</tr></thead>
+    <tbody>
+      {rows.map(({ crop, text }) => (
+        <tr>
+          <th scope="row">{text.name}</th>
+          {columns.map((c) => (
+            <td>
+              {c === 'species' && crop.species && <i>{crop.species}</i>}
+              {c === 'pollination' && <PollinationBadge pollination={crop.pollination} />}
+              {c === 'crossing' && text.crossing && <><CropMeter crossing={crop.crossing} /> {text.crossing}</>}
+              {c === 'life' && text.life}
+              {c === 'seed' && text.seed}
+              {c === 'ease' && text.ease}
+              {c === 'cms' && (text.flagged ? <span class="guide-warn">{gt('crop.flag', lang)} <span class="guide-visually-hidden">{gt('crop.flagLabel', lang)}</span></span> : '')}
+            </td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

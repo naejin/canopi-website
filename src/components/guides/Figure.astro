@@ -1,0 +1,14 @@
+---
+// A figure around any diagram, with an optional title and caption.
+interface Props { caption?: string; title?: string; }
+const { caption, title } = Astro.props;
+---
+<figure class="guide-figure">
+  <slot />
+  {(title || caption) && (
+    <figcaption>
+      {title && <span class="guide-figure-title">{title}</span>}
+      {caption && <span class="guide-figure-caption">{caption}</span>}
+    </figcaption>
+  )}
+</figure>

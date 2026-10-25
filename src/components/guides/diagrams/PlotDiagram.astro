@@ -1,0 +1,76 @@
+---
+// How a planting layout lets varieties cross. blocks / mixed: four varieties on an 8 × 6 bed, with a
+// link between every pair of neighbours of different varieties, counted. row-ends: one variety at each
+// end of a row, crosses where they meet. colour-blocks: three blocks side by side, crossed plants only
+// along the shared edges. title and caption replace the defaults.
+import { rng, shuffle } from '../../../lib/svg';
+import { gt, guideLangOf } from '../../../i18n/guides';
+const variants = ['blocks', 'mixed', 'row-ends', 'colour-blocks'] as const;
+interface Props { variant: (typeof variants)[number]; title?: string; caption?: string; }
+const { variant, title, caption } = Astro.props;
+if (!variants.includes(variant)) throw new Error(`<PlotDiagram variant="${variant}">: use one of ${variants.join(', ')}`);
+const lang = guideLangOf(Astro.currentLocale);
+const D = 24;
+
+type Plant = { x: number; y: number; c: number; c2?: number };
+let plants: Plant[] = [];
+let links: [number, number, number, number][] = [];
+let viewBox = '0 0 212 164';
+let bed = { x: 4, y: 4, w: 204, h: 156 };
+let count: string | null = null;
+
+if (variant === 'blocks' || variant === 'mixed') {
+  const COLS = 8, ROWS = 6, X0 = 22, Y0 = 22;
+  const vars = [6, 4, 5, 1];
+  const cells: number[] = [];
+  if (variant === 'blocks') {
+    for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) cells.push(vars[(j < 3 ? 0 : 2) + (i < 4 ? 0 : 1)]);
+  } else {
+    cells.push(...shuffle(vars.flatMap((v) => Array(12).fill(v)), rng(9)));
+  }
+  const at = (i: number, j: number) => cells[j * COLS + i];
+  for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
+    const x = X0 + i * D, y = Y0 + j * D;
+    if (i < COLS - 1 && at(i, j) !== at(i + 1, j)) links.push([x, y, x + D, y]);
+    if (j < ROWS - 1 && at(i, j) !== at(i, j + 1)) links.push([x, y, x, y + D]);
+    plants.push({ x, y, c: at(i, j) });
+  }
+  const total = (COLS - 1) * ROWS + COLS * (ROWS - 1);
+  count = gt('plot.count', lang, { links: links.length, total });
+} else if (variant === 'row-ends') {
+  // Two rows of 12: variety A from the left, B from the right; the middle four plants are crosses.
+  viewBox = '0 0 316 88';
+  bed = { x: 4, y: 4, w: 308, h: 80 };
+  for (let j = 0; j < 2; j++) for (let i = 0; i < 12; i++) {
+    const x = 26 + i * D, y = 30 + j * 28;
+    plants.push(i < 4 ? { x, y, c: 6 } : i > 7 ? { x, y, c: 1 } : { x, y, c: 6, c2: 1 });
+  }
+} else {
+  // Three blocks of 4 × 5, colours 5 | 3 | 6; the columns touching another block are crossed.
+  viewBox = '0 0 316 148';
+  bed = { x: 4, y: 4, w: 308, h: 140 };
+  const colours = [5, 3, 6];
+  for (let b = 0; b < 3; b++) for (let j = 0; j < 5; j++) for (let i = 0; i < 4; i++) {
+    const x = 22 + b * 100 + i * D, y = 24 + j * D;
+    const c = colours[b];
+    const c2 = i === 0 && b > 0 ? colours[b - 1] : i === 3 && b < 2 ? colours[b + 1] : undefined;
+    plants.push({ x, y, c, c2 });
+  }
+}
+const heading = title ?? gt(`plot.title.${variant}`, lang);
+const text = caption ?? count ?? gt(`plot.caption.${variant}`, lang);
+---
+<figure class="guide-figure guide-plot">
+  <p class="guide-figure-title">{heading}</p>
+  <svg viewBox={viewBox} role="img" aria-label={gt(`plot.alt.${variant}`, lang)}>
+    <rect x={bed.x} y={bed.y} width={bed.w} height={bed.h} rx="7" class="guide-bed" />
+    {links.map(([x1, y1, x2, y2]) => <line x1={x1} y1={y1} x2={x2} y2={y2} class="guide-link" />)}
+    {plants.map((p) => (
+      <g>
+        <circle cx={p.x} cy={p.y} r="7.5" class={`guide-plant guide-c${p.c}`} />
+        {p.c2 && <path d={`M${p.x} ${p.y - 7.5}a7.5 7.5 0 0 1 0 15z`} class={`guide-c${p.c2}`} />}
+      </g>
+    ))}
+  </svg>
+  <figcaption class="guide-plot-count">{count ? <span set:html={text.replace(/^(\d+)/, '<b>$1</b>')} /> : text}</figcaption>
+</figure>

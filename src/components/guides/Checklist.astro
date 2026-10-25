@@ -1,0 +1,49 @@
+---
+// A to-do list whose ticks are kept in this browser: localStorage "canopi-guide:<slug>:checks" holds
+// { "<checklist id>": ["<item id>", …] }. The items are plain checkboxes without JavaScript; the
+// script restores and saves them and shows the progress. Strings come from data-* attributes.
+import { gt, guideLangOf } from '../../i18n/guides';
+interface Props { id: string; }
+const { id } = Astro.props;
+const lang = guideLangOf(Astro.currentLocale);
+const slug = Astro.url.pathname.match(/\/guides\/([^/]+)\//)?.[1] ?? 'guides';
+---
+<div class="guide-checklist" data-guide-interactive data-guide-checklist={id} data-slug={slug}
+  data-progress={gt('checklist.progress', lang)} data-all-done={gt('checklist.allDone', lang)}>
+  <div class="guide-checklist-head" hidden data-checklist-status>
+    <span class="guide-checklist-progress" aria-live="polite" data-checklist-progress></span>
+    <span class="guide-checklist-bar" aria-hidden="true"><i data-checklist-fill></i></span>
+  </div>
+  <ul class="guide-checklist-items" role="list"><slot /></ul>
+  <p class="guide-checklist-saved" hidden data-checklist-saved>{gt('checklist.saved', lang)}</p>
+</div>
+<script>
+  const KEY = (slug: string) => `canopi-guide:${slug}:checks`;
+  for (const list of document.querySelectorAll<HTMLElement>('[data-guide-checklist]')) {
+    const id = list.dataset.guideChecklist!;
+    const key = KEY(list.dataset.slug!);
+    const boxes = [...list.querySelectorAll<HTMLInputElement>('input[data-item]')];
+    const read = (): Record<string, string[]> => { try { return JSON.parse(localStorage.getItem(key) || '{}') ?? {}; } catch { return {}; } };
+    const saved = new Set(read()[id] ?? []);
+    for (const box of boxes) box.checked = saved.has(box.dataset.item!);
+    const progress = list.querySelector<HTMLElement>('[data-checklist-progress]')!;
+    const fill = list.querySelector<HTMLElement>('[data-checklist-fill]')!;
+    const update = (store: boolean) => {
+      const done = boxes.filter((b) => b.checked).map((b) => b.dataset.item!);
+      progress.textContent = done.length === boxes.length
+        ? list.dataset.allDone!
+        : list.dataset.progress!.replace('{done}', String(done.length)).replace('{total}', String(boxes.length));
+      fill.style.width = `${(done.length / boxes.length) * 100}%`;
+      if (!store) return;
+      try {
+        const all = read();
+        all[id] = done;
+        localStorage.setItem(key, JSON.stringify(all));
+      } catch {}
+    };
+    list.addEventListener('change', () => update(true));
+    list.querySelector<HTMLElement>('[data-checklist-status]')!.hidden = false;
+    list.querySelector<HTMLElement>('[data-checklist-saved]')!.hidden = false;
+    update(false);
+  }
+</script>

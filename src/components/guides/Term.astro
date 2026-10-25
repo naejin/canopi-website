@@ -1,0 +1,12 @@
+---
+// A glossary word in the text. The first use of each id in a guide gets its margin note
+// (rehype-guide-terms adds `first` and places a <TermNote> beside the block); later uses are plain.
+import { canonicalTermId, glossaryEntry } from '../../data/glossary';
+import { guideLangOf } from '../../i18n/guides';
+interface Props { id: string; first?: boolean; }
+const { id, first = false } = Astro.props;
+glossaryEntry(id, guideLangOf(Astro.currentLocale));
+---
+{first
+  ? <span class="guide-term" aria-describedby={`guide-note-${canonicalTermId(id)}`}><slot /></span>
+  : <slot />}

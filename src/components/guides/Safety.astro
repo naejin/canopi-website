@@ -1,0 +1,14 @@
+---
+// One safety rule and a one-line why. Never collapsible. No doses, times, temperatures or methods.
+import { gt, guideLangOf } from '../../i18n/guides';
+interface Props { title: string; }
+const { title } = Astro.props;
+const lang = guideLangOf(Astro.currentLocale);
+---
+<aside class="guide-safety" role="note" aria-label={`${gt('safety.label', lang)}: ${title}`}>
+  <svg class="guide-safety-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9.5v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.1" fill="currentColor"/></svg>
+  <div>
+    <p class="guide-safety-title">{title}</p>
+    <div class="guide-safety-body"><slot /></div>
+  </div>
+</aside>

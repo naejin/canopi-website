@@ -1,0 +1,33 @@
+---
+// One crop from src/data/crops.ts: pollination, crossing, life cycle, seed, ease and the hybrid flag,
+// with a link to its crop guide once that guide is published. Blank cells show nothing.
+import { crop as findCrop } from '../../data/crops';
+import { publishedGuides, slugOf } from '../../lib/guides';
+import { gt, guideLangOf, guidePath } from '../../i18n/guides';
+import { cropText } from './crop-text';
+import PollinationBadge from './PollinationBadge.astro';
+import CropMeter from './CropMeter.astro';
+interface Props { crop: string; }
+const lang = guideLangOf(Astro.currentLocale);
+const crop = findCrop(Astro.props.crop);
+const text = cropText(crop, lang);
+const guide = crop.guide && (await publishedGuides(lang)).find((e) => slugOf(e) === crop.guide && !Astro.url.pathname.includes(`/guides/${crop.guide}/`));
+---
+<article class="guide-crop">
+  <header class="guide-crop-head">
+    <h3>{text.name}</h3>
+    {crop.species && <p class="guide-crop-species"><i>{crop.species}</i></p>}
+    {text.examples && <p class="guide-crop-examples">{text.examples}</p>}
+  </header>
+  <dl class="guide-crop-facts">
+    {crop.pollination && <div><dt>{gt('crop.pollination', lang)}</dt><dd><PollinationBadge pollination={crop.pollination} /></dd></div>}
+    {text.crossing && <div><dt>{gt('crop.crossing', lang)}</dt><dd><CropMeter crossing={crop.crossing} /> {text.crossing}</dd></div>}
+    {text.life && <div><dt>{gt('crop.life', lang)}</dt><dd>{text.life}</dd></div>}
+    {text.seed && <div><dt>{gt('crop.seed', lang)}</dt><dd>{text.seed}</dd></div>}
+    {text.ease && <div><dt>{gt('crop.ease', lang)}</dt><dd>{text.ease}</dd></div>}
+    {text.flagged && <div><dt>{gt('crop.hybrids', lang)}</dt><dd class="guide-warn">{text.hybrids}</dd></div>}
+  </dl>
+  {text.note && <p class="guide-crop-note">{text.note}</p>}
+  <p class="guide-crop-his">{gt('crop.his', lang)}</p>
+  {guide && <p class="guide-crop-link"><a href={guidePath(slugOf(guide), lang)}>{gt('crop.guide', lang)}: {guide.data.title}</a></p>}
+</article>

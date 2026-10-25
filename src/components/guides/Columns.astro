@@ -1,0 +1,6 @@
+---
+// Two (or more) blocks side by side, one column on phones: pairs of figures, cards or diagrams.
+interface Props { min?: string; }
+const { min = '15rem' } = Astro.props;
+---
+<div class="guide-columns" style={`--guide-col-min: ${min}`}><slot /></div>

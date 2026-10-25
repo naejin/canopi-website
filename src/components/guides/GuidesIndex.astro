@@ -1,0 +1,60 @@
+---
+// The Field Guides index: every published guide, grouped by domain, with its promise and glance.
+// Pages: src/pages/guides/index.astro (en) and src/pages/[lang]/guides/index.astro (fr).
+import '../../styles/guides.css';
+import Base from '../../layouts/Base.astro';
+import Header from '../Header.astro';
+import Footer from '../Footer.astro';
+import DonateDialog from '../DonateDialog.astro';
+import PageData from '../PageData.astro';
+import { guideDomains, publishedGuides, slugOf } from '../../lib/guides';
+import { gt, guideLocales, guidePath, guidesPath, type GuideLang } from '../../i18n/guides';
+interface Props { lang: GuideLang; }
+const { lang } = Astro.props;
+const guides = await publishedGuides(lang);
+const groups = guideDomains.map((domain) => ({ domain, guides: guides.filter((e) => e.data.domain === domain) })).filter((g) => g.guides.length);
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: gt('section.title', lang),
+  description: gt('section.lede', lang),
+  inLanguage: lang,
+  url: new URL(guidesPath(lang), Astro.site).href,
+  hasPart: guides.map((e) => ({ '@type': 'Article', headline: e.data.title, url: new URL(guidePath(slugOf(e), lang), Astro.site).href })),
+};
+---
+<Base title={`${gt('section.title', lang)} · Canopi`} description={gt('section.lede', lang)} lang={lang} path="/guides/" alternates={guideLocales} structuredData={structuredData}>
+  <Header lang={lang} path="/guides/" alternates={guideLocales} current="guides" />
+  <main id="main" class="guide-page">
+    <div class="wrap guide-index">
+      <header class="guide-index-head">
+        <h1>{gt('section.title', lang)}</h1>
+        <p class="guide-lede">{gt('section.lede', lang)}</p>
+        <p class="guide-small">{gt('section.languages', lang)}</p>
+      </header>
+      {groups.map(({ domain, guides: list }) => (
+        <section class="guide-domain" id={domain} aria-labelledby={`guide-domain-${domain}`}>
+          <h2 id={`guide-domain-${domain}`}>{gt(`domain.${domain}`, lang)}</h2>
+          <ul class="guide-index-list" role="list">
+            {list.map((e) => (
+              <li class="guide-index-item">
+                <h3><a href={guidePath(slugOf(e), lang)}>{e.data.title}</a></h3>
+                <p>{e.data.description}</p>
+                <dl class="guide-index-glance">
+                  {e.data.glance.map((pair) => <div><dt>{pair.label}</dt><dd>{pair.value}</dd></div>)}
+                </dl>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  </main>
+  <Footer lang={lang} />
+  <DonateDialog lang={lang} />
+  <PageData lang={lang} keys={[]} />
+  <script>
+    import { initChrome } from '../../scripts/chrome.js';
+    initChrome();
+  </script>
+</Base>

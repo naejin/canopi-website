@@ -1,0 +1,112 @@
+---
+// One Field Guide page: hero (title, promise, glance, languages), table of contents in the margin,
+// the MDX body with margin notes, then the books it draws on, related guides and previous/next.
+// Pages: src/pages/guides/[slug].astro (en) and src/pages/[lang]/guides/[slug].astro (fr).
+import '../../styles/guides.css';
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Header from '../Header.astro';
+import Footer from '../Footer.astro';
+import DonateDialog from '../DonateDialog.astro';
+import PageData from '../PageData.astro';
+import BookCite from './BookCite.astro';
+import BeanRow from './diagrams/BeanRow.astro';
+import { guideComponents } from './index';
+import { publishedGuides, slugOf, type GuideEntry } from '../../lib/guides';
+import { themes } from '../../data/bibliography';
+import { languageNames } from '../../i18n/utils';
+import { formatDate, gt, guideLocales, guidePath, guidesPath, type GuideLang } from '../../i18n/guides';
+interface Props { entry: GuideEntry; lang: GuideLang; }
+const { entry, lang } = Astro.props;
+const { Content, headings } = await render(entry);
+const slug = slugOf(entry);
+const { title, description, domain, glance, sources, related, updated } = entry.data;
+const toc = headings.filter((h) => h.depth === 2);
+const all = await publishedGuides(lang);
+const at = all.findIndex((e) => slugOf(e) === slug);
+const prev = all[at - 1];
+const next = all[at + 1];
+const relatedGuides = related.map((s) => all.find((e) => slugOf(e) === s)).filter((e) => e !== undefined);
+const books = themes.flatMap((theme) => theme.books);
+const url = new URL(guidePath(slug, lang), Astro.site).href;
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: title,
+  description,
+  inLanguage: lang,
+  url,
+  dateModified: updated.toISOString().slice(0, 10),
+  isPartOf: { '@type': 'CollectionPage', name: gt('section.title', lang), url: new URL(guidesPath(lang), Astro.site).href },
+  publisher: { '@type': 'NGO', name: 'Canopi', url: 'https://projectcanopi.com' },
+  citation: sources.map((s) => books.find((b) => b.id === s.book)).filter((b) => b !== undefined)
+    .map((b) => ({ '@type': 'Book', name: b.editions[0].title, author: { '@type': 'Person', name: b.by }, datePublished: b.year })),
+};
+const tocList = toc.map((h) => ({ href: `#${h.slug}`, text: h.text }));
+---
+<Base title={`${title} · ${gt('section.title', lang)} · Canopi`} description={description} lang={lang} path={`/guides/${slug}/`} alternates={guideLocales} ogType="article" structuredData={structuredData}>
+  <Header lang={lang} path={`/guides/${slug}/`} alternates={guideLocales} current="guides" />
+  <main id="main" class="guide-page">
+    <svg class="guide-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs><clipPath id="guide-half" clipPathUnits="objectBoundingBox"><rect x="0.5" y="0" width="0.5" height="1" /></clipPath></defs></svg>
+    <div class="wrap">
+      <div class="guide-grid">
+        <header class="guide-hero">
+          <p class="guide-crumbs"><a href={guidesPath(lang)}>{gt('section.title', lang)}</a> <span aria-hidden="true">›</span> <a href={`${guidesPath(lang)}#${domain}`}>{gt(`domain.${domain}`, lang)}</a></p>
+          <h1>{title}</h1>
+          <p class="guide-lede">{description}</p>
+          <BeanRow seed={slug} />
+          <dl class="guide-glance" style={`--guide-glance-n: ${glance.length}`} aria-label={gt('guide.glance', lang)}>
+            {glance.map((pair) => <div><dt class="guide-label">{pair.label}</dt><dd>{pair.value}</dd></div>)}
+          </dl>
+          <p class="guide-langs">
+            {gt('guide.readIn', lang)}{lang === 'fr' ? ' :' : ':'}
+            {guideLocales.map((l, i) => (
+              <>{i > 0 && <span aria-hidden="true"> · </span>}{l === lang ? <strong>{languageNames[l]}</strong> : <a href={guidePath(slug, l)} hreflang={l} lang={l}>{languageNames[l]}</a>}</>
+            ))}
+            <span class="guide-updated">{gt('guide.updated', lang, { date: formatDate(updated, lang) })}</span>
+          </p>
+          {tocList.length > 0 && (
+            <details class="guide-toc-mobile">
+              <summary>{gt('guide.toc', lang)}</summary>
+              <ol>{tocList.map((item) => <li><a href={item.href}>{item.text}</a></li>)}</ol>
+            </details>
+          )}
+        </header>
+        {tocList.length > 0 && (
+          <nav class="guide-toc" aria-label={gt('guide.toc', lang)}>
+            <p class="guide-label">{gt('guide.toc', lang)}</p>
+            <ol>{tocList.map((item) => <li><a href={item.href}>{item.text}</a></li>)}</ol>
+          </nav>
+        )}
+        <article class="guide-body">
+          <Content components={guideComponents} />
+        </article>
+        <footer class="guide-end">
+          <h2 id="guide-deeper">{gt('guide.deeper', lang)}</h2>
+          <BookCite sources={sources} lang={lang} />
+          {relatedGuides.length > 0 && (
+            <section class="guide-related" aria-labelledby="guide-related">
+              <h2 id="guide-related">{gt('guide.related', lang)}</h2>
+              <ul class="guide-cards" role="list">
+                {relatedGuides.map((e) => <li><a href={guidePath(slugOf(e), lang)}><strong>{e.data.title}</strong><span>{e.data.description}</span></a></li>)}
+              </ul>
+            </section>
+          )}
+          {(prev || next) && (
+            <nav class="guide-pager" aria-label={`${gt('guide.prev', lang)} · ${gt('guide.next', lang)}`}>
+              {prev && <a class="guide-pager-prev" href={guidePath(slugOf(prev), lang)} rel="prev"><span>← {gt('guide.prev', lang)}</span><strong>{prev.data.title}</strong></a>}
+              {next && <a class="guide-pager-next" href={guidePath(slugOf(next), lang)} rel="next"><span>{gt('guide.next', lang)} →</span><strong>{next.data.title}</strong></a>}
+            </nav>
+          )}
+        </footer>
+      </div>
+    </div>
+  </main>
+  <Footer lang={lang} />
+  <DonateDialog lang={lang} />
+  <PageData lang={lang} keys={[]} />
+  <script>
+    import { initChrome } from '../../scripts/chrome.js';
+    initChrome();
+  </script>
+</Base>

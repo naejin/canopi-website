@@ -1,0 +1,9 @@
+---
+// The short answer at the top of a long guide (over 1,200 words): 2 to 4 sentences.
+import { gt, guideLangOf } from '../../i18n/guides';
+const lang = guideLangOf(Astro.currentLocale);
+---
+<aside class="guide-quick" aria-label={gt('quick.label', lang)}>
+  <p class="guide-label">{gt('quick.label', lang)}</p>
+  <div class="guide-quick-body"><slot /></div>
+</aside>

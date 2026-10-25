@@ -1,0 +1,37 @@
+---
+// Landrace gardening: what you sow and what you save, for an heirloom, an F1 hybrid and a landrace,
+// drawn as a packet and a jar of beans. rows give each kind's name, verdict and image descriptions.
+import { grid, pick, rng, type Bean } from '../../../../lib/svg';
+import { gt, guideLangOf } from '../../../../i18n/guides';
+import BeanG from '../Bean.astro';
+type Kind = 'heirloom' | 'f1' | 'landrace';
+interface Props { rows: { kind: Kind; title: string; verdict: string; sowAlt: string; saveAlt: string }[]; }
+const { rows } = Astro.props;
+const lang = guideLangOf(Astro.currentLocale);
+const draw: Record<Kind, [string, string]> = { heirloom: ['uniform-4', 'uniform-4'], f1: ['uniform-6', 'split'], landrace: ['mix', 'mix-jar'] };
+let k = 0;
+function beans(kind: string): Bean[] {
+  const r = rng(31 + k++ * 7);
+  return grid(6, 3, 27, 28, 19.5, 19, r, 3).map(([x, y]) => {
+    if (kind.startsWith('uniform')) return { x, y, c: Number(kind.split('-')[1]), s: 0.95, r: (r() - 0.5) * 14 };
+    if (kind === 'split') return { x, y, c: pick([6, 6, 3, 1, 6, 2], r), s: 0.75 + r() * 0.4, r: (r() - 0.5) * 60, shrivel: r() < 0.18 };
+    if (kind === 'mix') return { x, y, c: 1 + Math.floor(r() * 6), s: 0.8 + r() * 0.35, r: (r() - 0.5) * 70, speck: r() < 0.3 };
+    const c = pick([1, 1, 3, 3, 4, 5], r);
+    const other = pick([1, 3, 4], r);
+    return { x, y, c, c2: r() < 0.3 ? other : 0, s: 0.85 + r() * 0.3, r: (r() - 0.5) * 70, speck: r() < 0.2 };
+  });
+}
+const drawn = rows.map((row) => ({ ...row, sow: beans(draw[row.kind][0]), save: beans(draw[row.kind][1]) }));
+---
+<div class="guide-kinds" role="group" aria-label={gt('seedKinds.label', lang)}>
+  <div class="guide-kinds-head" aria-hidden="true"><span class="guide-label">{gt('seedKinds.kind', lang)}</span><span class="guide-label">{gt('seedKinds.sow', lang)}</span><span class="guide-label">{gt('seedKinds.save', lang)}</span></div>
+  {drawn.map((row) => (
+    <div class:list={['guide-kinds-row', { 'guide-kinds-landrace': row.kind === 'landrace' }]}>
+      <h3>{row.title}</h3>
+      <svg class="guide-kinds-sow" viewBox="0 0 150 84" role="img" aria-label={row.sowAlt}><path d="M8 10h134v70h-134zM8 10l8 -7h118l8 7" class="guide-paper" />{row.sow.map((b) => <BeanG bean={b} />)}</svg>
+      <span class="guide-kinds-arrow" aria-hidden="true">→</span>
+      <svg class="guide-kinds-save" viewBox="0 0 150 84" role="img" aria-label={row.saveAlt}><rect x="14" y="4" width="122" height="8" rx="2" class="guide-paper" /><rect x="8" y="12" width="134" height="68" rx="10" class="guide-glass" />{row.save.map((b) => <BeanG bean={b} />)}</svg>
+      <p>{row.verdict}</p>
+    </div>
+  ))}
+</div>

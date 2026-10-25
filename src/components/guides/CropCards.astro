@@ -1,0 +1,7 @@
+---
+// Cards for a few crops from src/data/crops.ts, by id.
+import CropCard from './CropCard.astro';
+interface Props { crops: string[]; }
+const { crops } = Astro.props;
+---
+<div class="guide-crops">{crops.map((id) => <CropCard crop={id} />)}</div>

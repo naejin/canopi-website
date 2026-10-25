@@ -1,0 +1,6 @@
+---
+// A markdown list set as a grid of short points, each opening with a **bold** lead.
+interface Props { ruled?: 'top' | 'accent'; }
+const { ruled = 'top' } = Astro.props;
+---
+<div class:list={['guide-points', { 'guide-points-accent': ruled === 'accent' }]}><slot /></div>

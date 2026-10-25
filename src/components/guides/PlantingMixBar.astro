@@ -1,0 +1,22 @@
+---
+// One year's sowing as a stacked bar: parts of own (last year's) seed, older seed and new seed.
+import { gt, guideLangOf } from '../../i18n/guides';
+const tones = { own: 6, old: 1, new: 5 } as const;
+interface Props { parts: { label: string; value: number; tone: keyof typeof tones }[]; title?: string; }
+const { parts, title } = Astro.props;
+for (const p of parts) if (!(p.tone in tones)) throw new Error(`<PlantingMixBar> tone="${p.tone}": use own, old or new`);
+const lang = guideLangOf(Astro.currentLocale);
+const total = parts.reduce((sum, p) => sum + p.value, 0);
+const pct = (v: number) => Math.round((v / total) * 100);
+const nb = lang === 'fr' ? ' ' : '';
+const described = parts.map((p) => `${pct(p.value)}${nb}% ${p.label}`).join(', ');
+---
+<figure class="guide-figure guide-mix" role="img" aria-label={`${title ?? gt('mix.title', lang)}: ${described}`}>
+  <p class="guide-label">{title ?? gt('mix.title', lang)}</p>
+  <div class="guide-mix-bar" aria-hidden="true">
+    {parts.map((p) => <span class={`guide-mix-${p.tone}`} style={`flex: ${p.value}`}>{pct(p.value) >= 12 ? `${pct(p.value)}${nb}%` : ''}</span>)}
+  </div>
+  <div class="guide-mix-keys" aria-hidden="true">
+    {parts.map((p) => <span><i class={`guide-mix-${p.tone}`}></i>{p.label}{pct(p.value) < 12 && ` (${pct(p.value)}${nb}%)`}</span>)}
+  </div>
+</figure>

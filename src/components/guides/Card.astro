@@ -1,0 +1,10 @@
+---
+// A boxed block with an optional small label and a title; used inside <Columns>.
+interface Props { title?: string; label?: string; }
+const { title, label } = Astro.props;
+---
+<div class="guide-card">
+  {label && <p class="guide-label guide-card-label">{label}</p>}
+  {title && <h3 class="guide-card-title">{title}</h3>}
+  <div class="guide-card-body"><slot /></div>
+</div>

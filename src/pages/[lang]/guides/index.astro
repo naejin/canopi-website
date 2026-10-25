@@ -1,0 +1,10 @@
+---
+// Field Guides exist in English (/guides/) and French only (knowledge/decisions/field-guides-user-decisions.md).
+import GuidesIndex from '../../../components/guides/GuidesIndex.astro';
+
+export function getStaticPaths() {
+  return [{ params: { lang: 'fr' } }];
+}
+---
+
+<GuidesIndex lang="fr" />

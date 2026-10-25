@@ -1,0 +1,13 @@
+---
+// Field Guides exist in English (/guides/<slug>/) and French only.
+import GuideLayout from '../../../components/guides/GuideLayout.astro';
+import { publishedGuides, slugOf } from '../../../lib/guides';
+
+export async function getStaticPaths() {
+  return (await publishedGuides('fr')).map((entry) => ({ params: { lang: 'fr', slug: slugOf(entry) }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+---
+
+<GuideLayout entry={entry} lang="fr" />

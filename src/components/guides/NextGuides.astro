@@ -1,0 +1,17 @@
+---
+// "Read next" links at the end of a section. Lists only the guides already published, so a section
+// can name a guide before it is written.
+import { publishedGuides, slugOf } from '../../lib/guides';
+import { gt, guideLangOf, guidePath } from '../../i18n/guides';
+interface Props { slugs: string[]; }
+const { slugs } = Astro.props;
+const lang = guideLangOf(Astro.currentLocale);
+const published = await publishedGuides(lang);
+const guides = slugs.map((slug) => published.find((e) => slugOf(e) === slug)).filter((e) => e !== undefined);
+---
+{guides.length > 0 && (
+  <p class="guide-next-inline">
+    <span class="guide-label">{gt('guide.nextGuides', lang)}</span>
+    {guides.map((entry) => <a href={guidePath(slugOf(entry), lang)}>{entry.data.title}</a>)}
+  </p>
+)}

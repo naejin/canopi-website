@@ -1,0 +1,20 @@
+---
+// How a crop is pollinated, as an icon and a word: itself, insects or wind, with its modifiers
+// (bees can cross it, needs a partner, male and female plants). Nothing when the book does not say.
+import type { Pollination } from '../../data/crops';
+import { gt, guideLangOf } from '../../i18n/guides';
+interface Props { pollination: Pollination | null; }
+const { pollination: p } = Astro.props;
+const lang = guideLangOf(Astro.currentLocale);
+const notes = p ? [p.bees && 'bees', p.bumblebees && 'bumblebees', p.partner && 'partner', p.sexes && 'sexes'].filter(Boolean).map((k) => gt(`poll.${k}`, lang)) : [];
+---
+{p && (
+  <span class="guide-poll">
+    <svg class="guide-poll-icon" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      {p.by === 'self' && <><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M10 2.5v3.2M13.2 4l-3.2 1.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /><circle cx="10" cy="10" r="1.8" fill="currentColor" /></>}
+      {p.by === 'insects' && <><ellipse cx="10.5" cy="11" rx="5.5" ry="3.6" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M9 7.6V14.4M12 7.5v7" stroke="currentColor" stroke-width="1.3" /><ellipse cx="8.5" cy="5.6" rx="3.2" ry="2" fill="none" stroke="currentColor" stroke-width="1.2" transform="rotate(-25 8.5 5.6)" /></>}
+      {p.by === 'wind' && <path d="M2.5 7h9a2.5 2.5 0 1 0-2.5-2.5M2.5 11h12a2.5 2.5 0 1 1-2.5 2.5M2.5 15h6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />}
+    </svg>
+    <span><strong>{gt(`poll.${p.by}`, lang)}</strong>{notes.map((n) => <span class="guide-poll-note">{n}</span>)}</span>
+  </span>
+)}

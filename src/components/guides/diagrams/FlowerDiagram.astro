@@ -1,0 +1,122 @@
+---
+// A labelled flower, side view, in one drawing system: tomato closed (fused anther cone hides the
+// stigma) or open (stigma sticks out, a bee visits), squash male (anthers on a long stalk) or female
+// (small fruit under the flower), and corn (tassel sheds pollen, the ear's silks catch it).
+import { gt, guideLangOf } from '../../../i18n/guides';
+const variants = ['tomato-closed', 'tomato-open', 'squash-male', 'squash-female', 'corn'] as const;
+interface Props { variant: (typeof variants)[number]; }
+const { variant } = Astro.props;
+if (!variants.includes(variant)) throw new Error(`<FlowerDiagram variant="${variant}">: use one of ${variants.join(', ')}`);
+const lang = guideLangOf(Astro.currentLocale);
+const label = (key: string) => gt(`flower.${key}`, lang);
+const petal = (cx: number, by: number, angle: number, len: number, w: number) =>
+  ({ d: `M0 ${-w}Q${len * 0.55} ${-w * 1.5} ${len} 0Q${len * 0.55} ${w * 1.5} 0 ${w}Z`, transform: `translate(${cx} ${by}) rotate(${angle})` });
+
+const open = variant === 'tomato-open';
+const T = { cx: 104, by: 150, L: open ? 58 : 44, W: open ? 7 : 5.5 };
+const tomatoPetals = [
+  { ...petal(T.cx, T.by, 168, T.L * 0.8, T.W), cls: 'guide-petal-back' },
+  { ...petal(T.cx, T.by, 12, T.L * 0.8, T.W), cls: 'guide-petal-back' },
+  { ...petal(T.cx, T.by, 140, 26, 3), cls: 'guide-sepal' },
+  { ...petal(T.cx, T.by, 40, 26, 3), cls: 'guide-sepal' },
+  { ...petal(T.cx, T.by, 150, T.L, T.W), cls: 'guide-petal' },
+  { ...petal(T.cx, T.by, 30, T.L, T.W), cls: 'guide-petal' },
+  { ...petal(T.cx, T.by, 90, T.L * 0.7, T.W), cls: 'guide-petal' },
+];
+const S = { cx: 112, by: 118 };
+const squashPetals = [
+  { ...petal(S.cx, S.by - 18, -150, 66, 17), cls: 'guide-petal-back' },
+  { ...petal(S.cx, S.by - 18, -30, 66, 17), cls: 'guide-petal-back' },
+  { ...petal(S.cx, S.by - 4, 150, 22, 4), cls: 'guide-sepal' },
+  { ...petal(S.cx, S.by - 4, 30, 22, 4), cls: 'guide-sepal' },
+  { ...petal(S.cx, S.by - 18, -122, 70, 19), cls: 'guide-petal' },
+  { ...petal(S.cx, S.by - 18, -58, 70, 19), cls: 'guide-petal' },
+];
+const viewBox = variant.startsWith('tomato') ? '0 24 240 186' : variant === 'corn' ? '0 0 270 240' : '0 0 280 230';
+---
+<svg class="guide-flower" viewBox={viewBox} role="img" aria-label={label(`alt.${variant}`)}>
+  {variant.startsWith('tomato') && (
+    <>
+      <path d={`M${T.cx} ${T.by + 6}C${T.cx - 2} ${T.by + 30} ${T.cx - 20} ${T.by + 44} ${T.cx - 44} ${T.by + 56}`} class="guide-stem" />
+      {tomatoPetals.map((p) => <path d={p.d} transform={p.transform} class={p.cls} />)}
+      {!open && (
+        <>
+          <path d={`M${T.cx - 13} ${T.by}L${T.cx - 4.5} ${T.by - 74}Q${T.cx} ${T.by - 80} ${T.cx + 4.5} ${T.by - 74}L${T.cx + 13} ${T.by}Z`} class="guide-cone" />
+          {[-6, 0, 6].map((d) => <line x1={T.cx + d} y1={T.by - 2} x2={T.cx + d * 0.3} y2={T.by - 72} class="guide-seam" />)}
+          <line x1={T.cx} y1={T.by - 4} x2={T.cx} y2={T.by - 60} class="guide-ghost" />
+          <circle cx={T.cx} cy={T.by - 64} r="3.5" class="guide-ghost" />
+          <line x1={T.cx + 9} y1={T.by - 64} x2={T.cx + 44} y2={T.by - 64} class="guide-lead" />
+          <text x={T.cx + 48} y={T.by - 60} class="guide-t-muted">{label('stigmaHidden')}</text>
+          <line x1={T.cx + 12} y1={T.by - 26} x2={T.cx + 44} y2={T.by - 26} class="guide-lead" />
+          <text x={T.cx + 48} y={T.by - 22} class="guide-t-muted">{label('fusedAnthers')}</text>
+        </>
+      )}
+      {open && (
+        <>
+          {[-16, -8, 0, 8, 16].map((a) => <path d={`M${T.cx - 3} ${T.by}L${T.cx - 2.2} ${T.by - 60}Q${T.cx} ${T.by - 64} ${T.cx + 2.2} ${T.by - 60}L${T.cx + 3} ${T.by}Z`} class="guide-cone" transform={`rotate(${a} ${T.cx} ${T.by})`} />)}
+          <line x1={T.cx} y1={T.by - 4} x2={T.cx} y2={T.by - 92} class="guide-style" />
+          <circle cx={T.cx} cy={T.by - 96} r="5.5" class="guide-stigma" />
+          <line x1={T.cx - 9} y1={T.by - 96} x2={T.cx - 40} y2={T.by - 96} class="guide-lead" />
+          <text x={T.cx - 44} y={T.by - 92} class="guide-t-muted" text-anchor="end">{label('stigma')}</text>
+          <line x1={T.cx + 20} y1={T.by - 46} x2={T.cx + 44} y2={T.by - 46} class="guide-lead" />
+          <text x={T.cx + 48} y={T.by - 42} class="guide-t-muted">{label('looseAnthers')}</text>
+          <g transform={`translate(${T.cx + 52} ${T.by - 112}) rotate(-18)`}>
+            <ellipse cx="2" cy="-9" rx="9" ry="5" class="guide-bee-wing" transform="rotate(-25 2 -9)" />
+            <ellipse cx="0" cy="0" rx="13" ry="7.5" class="guide-bee-body" />
+            {[-4, 1, 6].map((x) => <line x1={x} y1="-6.5" x2={x} y2="6.5" class="guide-bee-stripe" />)}
+          </g>
+          <path d={`M${T.cx + 34} ${T.by - 104}q-10 4 -20 6`} class="guide-lead guide-dotted" />
+        </>
+      )}
+    </>
+  )}
+  {variant.startsWith('squash') && (
+    <>
+      {variant === 'squash-male'
+        ? <path d={`M${S.cx} ${S.by}C${S.cx + 2} ${S.by + 40} ${S.cx - 10} ${S.by + 80} ${S.cx - 50} ${S.by + 104}`} class="guide-stem guide-stem-thin" />
+        : <>
+            <path d={`M${S.cx} ${S.by + 46}C${S.cx + 2} ${S.by + 70} ${S.cx - 12} ${S.by + 90} ${S.cx - 40} ${S.by + 104}`} class="guide-stem" />
+            <ellipse cx={S.cx} cy={S.by + 22} rx="14" ry="24" class="guide-fruit" />
+            {[-6, 0, 6].map((d) => <path d={`M${S.cx + d} ${S.by + 1}Q${S.cx + d * 1.6} ${S.by + 22} ${S.cx + d} ${S.by + 44}`} class="guide-fruit-stripe" />)}
+          </>}
+      {squashPetals.map((p) => <path d={p.d} transform={p.transform} class={p.cls} />)}
+      <path d={`M${S.cx - 15} ${S.by - 20}Q${S.cx} ${S.by + 8} ${S.cx + 15} ${S.by - 20}Z`} class="guide-petal" />
+      {variant === 'squash-male' && (
+        <>
+          <rect x={S.cx - 4.5} y={S.by - 64} width="9" height="48" rx="4.5" class="guide-cone" />
+          <line x1={S.cx + 8} y1={S.by - 58} x2={S.cx + 56} y2={S.by - 58} class="guide-lead" />
+          <text x={S.cx + 60} y={S.by - 54} class="guide-t-muted">{label('anthers')}</text>
+        </>
+      )}
+      {variant === 'squash-female' && (
+        <>
+          <line x1={S.cx} y1={S.by - 18} x2={S.cx} y2={S.by - 44} class="guide-style" />
+          {[[-5, -48], [5, -48], [0, -54]].map(([dx, dy]) => <circle cx={S.cx + dx} cy={S.by + dy} r="4.5" class="guide-stigma" />)}
+          <line x1={S.cx + 10} y1={S.by - 52} x2={S.cx + 56} y2={S.by - 52} class="guide-lead" />
+          <text x={S.cx + 60} y={S.by - 48} class="guide-t-muted">{label('stigma')}</text>
+          <line x1={S.cx + 16} y1={S.by + 24} x2={S.cx + 40} y2={S.by + 24} class="guide-lead" />
+          <text x={S.cx + 44} y={S.by + 28} class="guide-t-muted">{label('smallFruit')}</text>
+        </>
+      )}
+    </>
+  )}
+  {variant === 'corn' && (
+    <>
+      {[[200, -1], [168, 1], [132, -1], [96, 1]].map(([y, side]) => (
+        <path d={`M110 ${y}Q${110 + side * 38} ${y - 30} ${110 + side * 76} ${y - 8}Q${110 + side * 40} ${y - 16} 110 ${y + 8}Z`} class="guide-leaf" />
+      ))}
+      <line x1="110" y1="238" x2="110" y2="44" class="guide-stem guide-stem-thick" />
+      {[[110, 44, 110, 10], [110, 36, 86, 14], [110, 36, 134, 14], [110, 44, 80, 30], [110, 44, 140, 30]].map(([x1, y1, x2, y2]) => <line x1={x1} y1={y1} x2={x2} y2={y2} class="guide-tassel" />)}
+      <path d="M128 22Q150 50 146 104" class="guide-lead guide-dotted" />
+      {[[134, 30], [142, 48], [146, 66], [146, 84]].map(([x, y]) => <circle cx={x} cy={y} r="1.8" class="guide-pollen" />)}
+      <ellipse cx="124" cy="132" rx="9" ry="22" transform="rotate(18 124 132)" class="guide-fruit" />
+      {['M131 112q6 -8 4 -14', 'M128 111q2 -10 -2 -16', 'M133 114q10 -4 12 -12', 'M130 112q8 -14 16 -12'].map((d) => <path d={d} class="guide-silk" />)}
+      <line x1="140" y1="24" x2="152" y2="24" class="guide-lead" />
+      <text x="156" y="28" class="guide-t-muted">{label('tassel')}</text>
+      <line x1="150" y1="104" x2="160" y2="104" class="guide-lead" />
+      <text x="164" y="108" class="guide-t-muted">{label('silks')}</text>
+      <line x1="134" y1="140" x2="160" y2="140" class="guide-lead" />
+      <text x="164" y="144" class="guide-t-muted">{label('ear')}</text>
+    </>
+  )}
+</svg>
