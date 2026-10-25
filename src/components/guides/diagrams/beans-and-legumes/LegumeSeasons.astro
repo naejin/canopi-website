@@ -5,7 +5,7 @@
 // word comes from the MDX, so en and fr each pass their own; `alt` is the whole chart as one sentence.
 import { r1 } from '../../../../lib/svg';
 import BeanG from '../Bean.astro';
-import { wrap } from './wrap';
+import { wrap } from '../../../../lib/svg';
 interface Group { title: string; crops: string[]; }
 interface Props { cool: Group; hot: Group; frost?: string[]; frostLabel?: string; footnote?: string; alt: string; }
 const { cool, hot, frost = [], frostLabel, footnote, alt } = Astro.props;

@@ -4,7 +4,7 @@
 // a row of wild pollen donors, each linked to several domestic mothers, whose seed is one mixed
 // population. usual and many are the two titles; alt describes the drawing.
 import { r1, rng } from '../../../../lib/svg';
-import { wrap } from './wrap';
+import { wrap } from '../../../../lib/svg';
 interface Props { usual: string; many: string; alt: string; }
 const { usual, many, alt } = Astro.props;
 const flowerAt = (x: number, y: number) => [0, 72, 144, 216, 288].map((a) => {

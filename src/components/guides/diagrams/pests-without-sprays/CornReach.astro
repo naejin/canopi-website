@@ -3,18 +3,11 @@
 // plants, each taller and stiffer than the last, the cob higher on each. A dashed line near the ground
 // is the animals' reach (the first cob sits under it); a tick on the left marks chest height, where the
 // last cob now sits. Heights are a drawing, not measurements. Every word comes from the MDX.
-import { r1 } from '../../../../lib/svg';
+import { r1, wrap } from '../../../../lib/svg';
 interface Props { title: string; alt: string; plants: [string, string, string]; reach: string; chest: string; }
 const { title, alt, plants, reach, chest } = Astro.props;
 const locals = Astro.locals as { guideSvgs?: number };
 const uid = `guide-corn-reach-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
-// Break a label at spaces into lines of at most `max` characters (SVG text does not wrap).
-const wrap = (text: string, max: number) => text.split(/ +/).reduce<string[]>((lines, word) => {
-  const last = lines[lines.length - 1];
-  if (last !== undefined && (last + ' ' + word).length <= max) lines[lines.length - 1] = `${last} ${word}`;
-  else lines.push(word);
-  return lines;
-}, []);
 const GROUND = 206, REACH = 172, CHEST = 92;
 const corn = [
   { x: 136, top: 120, cob: 178, lean: 4 },

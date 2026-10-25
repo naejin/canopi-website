@@ -2,23 +2,14 @@
 // Saving seed: the two routes side by side. Dry seed (dry on the plant, thresh, screen, winnow) on
 // the left, wet seed (scoop, ferment or rinse, keep what sinks, dry, winnow) on the right; both lanes
 // end in one box, "dry, then store". Labels come from the MDX; boxes grow to fit wrapped lines.
-import { r1, seedOf } from '../../../../lib/svg';
+import { r1, seedOf, wrap } from '../../../../lib/svg';
 interface Lane { title: string; crops: string; steps: string[]; }
 interface Props { dry: Lane; wet: Lane; end: string; title: string; alt: string; }
 const { dry, wet, end, title, alt } = Astro.props;
 const uid = `seed-lanes-${seedOf(title + alt).toString(36)}`;
 if (!dry.steps.length || !wet.steps.length) throw new Error('<SeedLanes>: each lane needs at least one step');
 
-// Rough wrap by character count (Source Sans 3 at 11.5px is about 5.6px per character).
-function wrap(text: string, max: number): string[] {
-  const lines: string[] = [];
-  let line = '';
-  for (const word of text.split(/\s+/)) {
-    if (line && (line + ' ' + word).length > max) { lines.push(line); line = word; } else line = line ? `${line} ${word}` : word;
-  }
-  if (line) lines.push(line);
-  return lines;
-}
+// Labels wrap by character count (Source Sans 3 at 11.5px is about 5.6px per character).
 const W = 340, LANE = 158, GAP = W - 2 * LANE, LINE = 14, PAD = 9, ARROW = 16;
 const lanes = [dry, wet].map((lane, i) => {
   const x = i * (LANE + GAP);

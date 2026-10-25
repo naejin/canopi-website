@@ -2,19 +2,10 @@
 // Keeping a landrace: one landrace, many gardens. Five seed jars, three above and two below one shared
 // pool; each jar has an arrow into the pool and one back out. gardens are the five jar labels (top row
 // left to right, then bottom row), centre the pool's label, alt describes the drawing. Labels wrap.
-import { r1 } from '../../../../lib/svg';
+import { r1, wrap } from '../../../../lib/svg';
 interface Props { gardens: string[]; centre: string; alt: string; }
 const { gardens, centre, alt } = Astro.props;
 if (gardens.length !== 5) throw new Error('<LandracePool>: five gardens');
-function wrap(text: string, max: number): string[] {
-  const lines: string[] = [];
-  let line = '';
-  for (const word of text.split(/ +/)) {
-    if (line && (line + ' ' + word).length > max) { lines.push(line); line = word; } else line = line ? `${line} ${word}` : word;
-  }
-  if (line) lines.push(line);
-  return lines;
-}
 const W = 360, LINE = 16, TOP_JAR = 76, POOL_Y = 146, POOL_H = 64, BOTTOM_JAR = POOL_Y + POOL_H + 52;
 const tones = [6, 4, 1, 3, 5];
 const spots = [[60, TOP_JAR], [180, TOP_JAR], [300, TOP_JAR], [110, BOTTOM_JAR], [250, BOTTOM_JAR]];
