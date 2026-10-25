@@ -88,8 +88,8 @@ button { cursor: pointer; }
   .brand { gap: 8px; font-size: 20px; }
   .brand img { width: 30px; height: 30px; }
   .header-nav { gap: 0; }
-  .nav-link { padding: 0 7px; font-size: 14px; }
-  .theme-toggle { width: 36px; }
+  .nav-link { min-height: 44px; padding: 0 9px; font-size: 14px; }
+  .theme-toggle { width: 44px; }
   .nav-inline { display: none; }
   .nav-menu { display: block; }
 }
