@@ -1,0 +1,59 @@
+---
+// Saving seed: how hard to thresh, from gentle to strong. A widening bar, then four ways in order:
+// tip a cup-shaped pod over a bowl, walk on easy pods, beat tough ones with a stick, bang dry plants
+// inside a bin. Each step's title, text and drawing description come from the MDX.
+interface Step { title: string; text: string; alt: string; }
+interface Props { from: string; to: string; steps: Step[]; }
+const { from, to, steps } = Astro.props;
+if (steps.length !== 4) throw new Error('<ThreshScale>: four steps, gentle to strong (bowl, feet, stick, bin)');
+const seeds: [number, number][] = [[38, 70], [46, 74], [55, 71], [63, 75], [71, 70], [80, 74]];
+---
+<figure class="guide-figure">
+  <svg viewBox="0 0 340 26" aria-hidden="true">
+    <path d="M70 13L270 4V22Z" class="guide-c1" style="opacity: 0.55;" />
+    <text x="64" y="17" text-anchor="end" font-size="11" class="guide-t-muted">{from}</text>
+    <text x="276" y="17" font-size="11" class="guide-t-muted">{to}</text>
+  </svg>
+  <ol class="guide-stages">
+    {steps.map((step, i) => (
+      <li class="guide-stage">
+        <svg viewBox="0 0 120 84" role="img" aria-label={step.alt}>
+          <rect x="2" y="2" width="116" height="80" rx="7" class="guide-paper" />
+          {i === 0 && (
+            <g>
+              <path d="M30 60Q60 84 90 60Z" class="guide-glass" />
+              <g transform="rotate(160 64 26)"><ellipse cx="64" cy="26" rx="11" ry="13" class="guide-fruit" /><path d="M55 14h18l-3 -5h-12z" class="guide-fruit" /></g>
+              {[[60, 44], [64, 50], [58, 54], [66, 57]].map(([x, y]) => <circle cx={x} cy={y} r="1.6" class="guide-c2" />)}
+            </g>
+          )}
+          {i === 1 && (
+            <g>
+              <line x1="12" y1="72" x2="108" y2="72" class="guide-lead" />
+              {[[30, 68], [50, 66], [72, 68], [92, 66]].map(([x, y], k) => <ellipse cx={x} cy={y} rx="9" ry="3" transform={`rotate(${k % 2 ? 12 : -10} ${x} ${y})`} class="guide-c6" />)}
+              <path d="M48 12H68V40C78 42 90 46 92 52V58H46V40Z" class="guide-glass" /><path d="M46 58H92" class="guide-lead" style="stroke-width: 3;" />
+            </g>
+          )}
+          {i === 2 && (
+            <g>
+              <line x1="12" y1="72" x2="108" y2="72" class="guide-lead" />
+              {[[34, 67], [46, 64], [58, 68], [70, 64], [82, 67]].map(([x, y], k) => <ellipse cx={x} cy={y} rx="8" ry="3.2" transform={`rotate(${k % 2 ? 20 : -15} ${x} ${y})`} class="guide-c1" />)}
+              <line x1="30" y1="18" x2="78" y2="56" class="guide-stem guide-stem-thick" style="stroke: var(--seed-2);" />
+              <path d="M84 50l8 -4M86 58l9 0M82 42l5 -7" class="guide-lead" />
+            </g>
+          )}
+          {i === 3 && (
+            <g>
+              <path d="M30 30L36 78H84L90 30Z" class="guide-glass" />
+              <line x1="27" y1="30" x2="93" y2="30" class="guide-lead" />
+              <path d="M48 8L62 52M54 6L64 50M60 8L66 52" class="guide-stem guide-stem-thin" />
+              {seeds.map(([x, y]) => <circle cx={x} cy={y} r="1.8" class="guide-c2" />)}
+              <path d="M72 46l7 -3M70 54l8 1" class="guide-lead" />
+            </g>
+          )}
+        </svg>
+        <span class="guide-stage-when">{step.title}</span>
+        <span class="guide-stage-do">{step.text}</span>
+      </li>
+    ))}
+  </ol>
+</figure>
