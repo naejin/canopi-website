@@ -1,12 +1,14 @@
 ---
 // One checklist item. when: the moment it belongs to (a season or a stage of the crop's year).
+// list: the id of its <Checklist>, added by src/lib/rehype-guide-checklists.mjs (not written by hand).
 import { gt, guideLangOf } from '../../i18n/guides';
 export const whens = ['late-winter', 'spring', 'early-summer', 'summer', 'late-summer', 'autumn', 'winter', 'before-sowing', 'sowing', 'growing', 'flowering', 'harvest', 'after-harvest', 'any'] as const;
-interface Props { id: string; when?: (typeof whens)[number]; hint?: string; }
-const { id, when, hint } = Astro.props;
+interface Props { id: string; list: string; when?: (typeof whens)[number]; hint?: string; }
+const { id, list, when, hint } = Astro.props;
 if (when && !whens.includes(when)) throw new Error(`<Item when="${when}">: use one of ${whens.join(', ')}`);
 const lang = guideLangOf(Astro.currentLocale);
-const inputId = `guide-check-${id}`;
+const slug = Astro.url.pathname.match(/\/guides\/([^/]+)\//)?.[1] ?? 'guides';
+const inputId = `guide-check-${slug}-${list}-${id}`;
 ---
 <li class="guide-item">
   <label for={inputId}>

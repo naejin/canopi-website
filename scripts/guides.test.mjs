@@ -98,8 +98,16 @@ test('guides use only known components, and their ids resolve to the glossary, t
     for (const name of ['CropCards', 'CropTable']) for (const id of listAttr(body, name, 'crops')) assert.ok(cropIds.includes(id), `${file}: crop "${id}" is in src/data/crops.ts`);
     for (const risk of attrs(body, 'FoodCaution', 'risk')) assert.ok(risks.includes(risk), `${file}: FoodCaution risk "${risk}"`);
     for (const slug of listAttr(body, 'NextGuides', 'slugs')) assert.ok(planned.includes(slug), `${file}: next guide "${slug}" is in the plan`);
-    const checklistItems = attrs(body, 'Item', 'id');
-    assert.equal(new Set(checklistItems).size, checklistItems.length, `${file}: checklist item ids are unique`);
+    // Ticks are stored per list ({ <checklist id>: [item ids] }), so list ids are unique in a guide
+    // and item ids unique in their list; every Item sits in a Checklist.
+    const lists = [...body.matchAll(/<Checklist\b[^>]*?\bid="([^"]+)"[^>]*>([\s\S]*?)<\/Checklist>/g)];
+    const listIds = lists.map((m) => m[1]);
+    assert.equal(new Set(listIds).size, listIds.length, `${file}: checklist ids are unique in the guide`);
+    assert.equal(lists.reduce((n, m) => n + attrs(m[2], 'Item', 'id').length, 0), attrs(body, 'Item', 'id').length, `${file}: every <Item> is inside a <Checklist>`);
+    for (const [, list, inner] of lists) {
+      const items = attrs(inner, 'Item', 'id');
+      assert.equal(new Set(items).size, items.length, `${file}: item ids are unique in checklist "${list}"`);
+    }
     if (data.quick) assert.ok(used.has('QuickAnswer'), `${file}: quick: true needs a <QuickAnswer>`);
   }
   for (const slug of slugs) {
@@ -175,6 +183,20 @@ test('the crop table has the 40 crops of the guide map, each named in English an
   }
   assert.ok(!('cropAliases' in cropModule), 'the crop table has no alias ids');
   assert.throws(() => cropModule.crop('zucchini'), /not in src\/data\/crops\.ts/, 'a variant name is not a crop id');
+});
+
+test('the checklist plugin tells each item its list, so two lists can reuse an item id', async () => {
+  const { rehypeGuideChecklists } = await import('../src/lib/rehype-guide-checklists.mjs');
+  const el = (name, attributes, children = []) => ({ type: 'mdxJsxFlowElement', name, attributes: Object.entries(attributes).map(([k, v]) => ({ type: 'mdxJsxAttribute', name: k, value: v })), children });
+  const list = (id, ...items) => el('Checklist', { id }, items.map((item) => el('Item', { id: item })));
+  const file = { path: '/x/src/content/guides/demo/en.mdx' };
+  const tree = { type: 'root', children: [list('spring', 'save', 'sow'), list('autumn', 'save')] };
+  rehypeGuideChecklists()(tree, file);
+  const listOf = (item) => item.attributes.find((a) => a.name === 'list')?.value;
+  assert.deepEqual(tree.children.map((c) => c.children.map(listOf)), [['spring', 'spring'], ['autumn']]);
+  assert.throws(() => rehypeGuideChecklists()({ type: 'root', children: [list('a', 'x'), list('a', 'y')] }, file), /checklist id "a" is used twice/);
+  assert.throws(() => rehypeGuideChecklists()({ type: 'root', children: [list('a', 'x', 'x')] }, file), /item id "x" is used twice/);
+  assert.throws(() => rehypeGuideChecklists()({ type: 'root', children: [el('Item', { id: 'x' })] }, file), /outside a <Checklist>/);
 });
 
 test('the glossary plugin gives each term id one note, beside the block of its first use', async () => {
