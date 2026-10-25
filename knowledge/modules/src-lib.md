@@ -5,13 +5,13 @@ description: Framework-free logic shared by the Worker endpoint, the page script
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:57:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T09:48:48Z }
 sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:a8fd28420abb702e
-    last_modified: 2026-10-15T09:36:40Z
+    digest: sha256:f10ef6b86b6620e3
+    last_modified: 2026-10-25T09:36:38Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -28,6 +28,7 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 - [contact.mjs](../../src/lib/contact.mjs): the `POST /api/contact` handler.
 - [installer.mjs](../../src/lib/installer.mjs): picks a desktop installer from the user agent.
 - [nearest.mjs](../../src/lib/nearest.mjs): great-circle distances for the design finder.
+- Field Guides (build time only): [guides.ts](../../src/lib/guides.ts) (`publishedGuides(lang)`, `guidesCiting(bookId, lang)`, `slugOf`), [svg.ts](../../src/lib/svg.ts) (seeded `rng`, `grid`, `shuffle`, bean drawing), [rehype-guide-terms.mjs](../../src/lib/rehype-guide-terms.mjs) (places each first `<Term>`'s glossary note).
 
 # Interfaces
 
@@ -46,4 +47,5 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 
 - Contact: foreign `Origin` gets 403 (missing or `"null"` Origin is tolerated); filled honeypot field `website` answers success without sending; missing `EMAIL` binding gives 503; a send result without `messageId` counts as failure (so `wrangler dev` local sends report failure).
 - Permanent mailer error codes map to `refused`, others to `failed`. Logs carry codes only, never message content or the address.
+- `guides.ts` is the exception to "no Astro imports": it reads `astro:content` and runs only at build time.
 - Installer detection returns `null` (keep the chooser) for mobile, ChromeOS, touch Macs, 32-bit, Windows/Linux ARM, and Macs without a known architecture: never guess.

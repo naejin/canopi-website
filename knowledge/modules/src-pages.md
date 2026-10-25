@@ -5,13 +5,13 @@ description: Astro routes; thin per-locale wrappers around components, plus the 
 resource: ../../src/pages
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:57:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T09:48:48Z }
 sources:
   - id: pages
     resource: ../../src/pages
     title: src/pages/
-    digest: sha256:2ed666be70151a0b
-    last_modified: 2026-10-23T19:07:39Z
+    digest: sha256:6f0d79f8be90b0f1
+    last_modified: 2026-10-25T09:30:45Z
 ---
 
 # Responsibility
@@ -25,6 +25,8 @@ Map URLs to components for all 11 locales. Pages hold no markup or logic of thei
 | `/`, `/{lang}/` | [index.astro](../../src/pages/index.astro), `[lang]/index.astro` | `Home.astro` |
 | `/bibliography/`, `/{lang}/bibliography/` | [bibliography.astro](../../src/pages/bibliography.astro), `[lang]/bibliography.astro` | `BibliographyPage.astro` |
 | `/contact/sent/`, `/contact/failed/` (+ `/{lang}/`) | `contact/*.astro`, `[lang]/contact/*.astro` | `ContactResult.astro` |
+| `/guides/`, `/fr/guides/` | [guides/index.astro](../../src/pages/guides/index.astro), `[lang]/guides/index.astro` | `GuidesIndex.astro` |
+| `/guides/<slug>/`, `/fr/guides/<slug>/` | `guides/[slug].astro`, `[lang]/guides/[slug].astro` | `GuideLayout.astro` |
 | `POST /api/contact` | `api/contact.ts` | `handleContact(request, env)` |
 
 # Interfaces
@@ -41,3 +43,4 @@ Map URLs to components for all 11 locales. Pages hold no markup or logic of thei
 - Everything is static except `/api/contact`, which runs in the `projectcanopi` Worker.
 - Contact result pages are `noindex` and kept out of the sitemap (checked by `scripts/check-built-site.mjs`).
 - Adding a page means adding both the root file and the `[lang]/` twin.
+- Exception: Field Guide routes exist in English and French only; the `[lang]/guides/` pages return `fr` alone from `getStaticPaths()` and pass `alternates` so hreflang lists en, fr and x-default.

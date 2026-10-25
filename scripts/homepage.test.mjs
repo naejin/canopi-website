@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { detectInstaller, isMacDesktop } from '../src/lib/installer.mjs';
 
 test('Mac chip chooser excludes iOS user agents that mention Mac OS X', () => {
@@ -52,7 +53,10 @@ test('every locale supplies the same keys and preserves interpolation placeholde
 
 test('every English key is used by a page or a script, and every script string reaches the page', () => {
   const read = (path) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
-  const dir = (path) => readdirSync(new URL(`../src/${path}`, import.meta.url)).map((file) => read(`${path}/${file}`));
+  // Every file under the folder, subfolders included (src/components/guides/…).
+  const dir = (path) => readdirSync(new URL(`../src/${path}`, import.meta.url), { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => readFileSync(join(entry.parentPath, entry.name), 'utf8'));
   const en = JSON.parse(read('i18n/translations/en.json'));
   const source = [...dir('components'), ...dir('scripts'), read('layouts/Base.astro'), read('data/network.ts')].join('\n');
   // Keys built from a prefix in components (installer names and details, plant roles, countries, bibliography themes and climates).

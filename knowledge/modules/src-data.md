@@ -5,13 +5,13 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:57:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T09:48:48Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:70ee420a621d1fdb
-    last_modified: 2026-10-24T09:30:47Z
+    digest: sha256:803ba37cab9a5714
+    last_modified: 2026-10-25T09:24:06Z
 ---
 
 # Responsibility
@@ -25,10 +25,12 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 - [network.ts](../../src/data/network.ts): `countries`, the agroecology network organisations grouped by region with i18n label keys.
 - [bibliography.md](../../src/data/bibliography.md): the hand-edited bibliography (format documented in its header comment).
 - [bibliography.ts](../../src/data/bibliography.ts): parses the markdown (`?raw` import) into `themes` and exports `climates`.
+- [glossary.ts](../../src/data/glossary.ts): the Field Guides glossary, en and fr (`glossary`, `glossaryAliases`, `glossaryEntry(id, lang)`).
+- [crops.ts](../../src/data/crops.ts): the 40-row crop table behind `CropCards`, `CropTable` and `CropExplorer` (ease, crossing, pollination, life, seed; `cropAliases`, `crop(id)`).
 
 # Interfaces
 
-- `themes: Theme[]` of `{ key, label, books: Book[] }`; `Book = { by, year, climates, featured, editions }`; `Edition = { lang, title, url, by?, year? }`.
+- `themes: Theme[]` of `{ key, label, books: Book[] }`; `Book = { id?, by, year, climates, featured, editions }` (`- id:` is a kebab-case anchor that guides cite and the bibliography page uses as the book's `id`); `Edition = { lang, title, url, by?, year? }`.
 - `climates`: tropical, subtropical, mediterranean, arid, temperate, continental, boreal (the app's zones).
 
 # Dependencies
@@ -41,4 +43,5 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 - Desktop downloads use `releases/latest/download/...` aliases; only version and date change per release. `check-built-site.mjs` asserts these URLs and rejects stale versioned ones.
 - The bibliography parser throws with `file:line` on malformed fields, unknown climates, empty themes, books missing by/year/edition, or fewer than 3 / more than 6 `featured: yes` books, so a bad edit fails the build.
 - A new bibliography theme needs `bibliography.theme.<slug>` in all 11 translation files.
+- `- id:` is a book id; the Indonesian edition line is `- ind:`. Ids are unique; a guide citing an unknown id fails the build.
 - "Agroecology network" never implies partnership (see CONTEXT.md).

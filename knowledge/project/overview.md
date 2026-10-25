@@ -4,7 +4,7 @@ title: canopi-website
 description: Astro marketing site for projectcanopi.com, the home of the Canopi agroecological design app, deployed by Cloudflare Workers Builds on push to master.
 tags: [project]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:57:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T09:48:48Z }
 sources:
   - id: readme
     resource: ../../README.md
@@ -14,13 +14,13 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:93e69eb461e36037
-    last_modified: 2026-10-23T19:07:39Z
+    digest: sha256:a5f5bbb202c12716
+    last_modified: 2026-10-25T09:10:54Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
     digest: sha256:686e63081a8f86d7
-    last_modified: 2026-10-25T08:52:23Z
+    last_modified: 2026-10-25T09:08:27Z
   - id: context-md
     resource: ../../CONTEXT.md
     title: CONTEXT.md
@@ -30,11 +30,11 @@ sources:
 
 # Purpose
 
-The public website of Canopi, an open-source agroecological design app run by a non-profit association. Visitors (growers, designers, the agroecology community) learn what Canopi is, download Canopi Desktop for their OS, open Canopi Web at `web.projectcanopi.com`, browse featured designs on a map, read a curated bibliography, and contact or donate to the project. [^readme]
+The public website of Canopi, an open-source agroecological design app run by a non-profit association. Visitors (growers, designers, the agroecology community) learn what Canopi is, download Canopi Desktop for their OS, open Canopi Web at `web.projectcanopi.com`, browse featured designs on a map, read a curated bibliography and practical Field Guides (English and French), and contact or donate to the project. [^readme]
 
 # Tech stack
 
-- Astro 6 static output with `@astrojs/cloudflare` and `@astrojs/sitemap`; plain CSS; vanilla JS modules.
+- Astro 6 static output with `@astrojs/cloudflare`, `@astrojs/sitemap` and `@astrojs/mdx` 5 (Field Guides); plain CSS; vanilla JS modules.
 - MapLibre GL (unbundled, copied to `public/vendor/`), OpenFreeMap tiles, HelloAsso donations.
 - One Cloudflare Worker `projectcanopi`: serves `dist/client/` and the on-demand `POST /api/contact` (send_email binding).
 - Node >= 22.12 for tooling and `node --test`; Python (Pillow) for asset generators.
@@ -44,7 +44,8 @@ The public website of Canopi, an open-source agroecological design app run by a 
 
 - `src/components/`, `src/layouts/Base.astro`, `src/styles/`: markup and styles.
 - [src/pages](/modules/src-pages.md): routes.
-- [src/data](/modules/src-data.md): release links, site links, network, bibliography.
+- [src/data](/modules/src-data.md): release links, site links, network, bibliography, guide glossary and crop table.
+- [Field Guides](/modules/field-guides.md): `src/content/guides/`, `src/components/guides/`, `src/styles/guides.css`.
 - [src/i18n](/modules/src-i18n.md): translations and `t()`.
 - [src/lib](/modules/src-lib.md): framework-free logic (contact, installer detection, distances).
 - [src/scripts](/modules/src-scripts.md): browser behaviour.

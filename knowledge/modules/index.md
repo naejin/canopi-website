@@ -1,5 +1,6 @@
 # Module
 
+* [Field Guides](field-guides.md) - The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data.
 * [mockup](mockup.md) - The approved October 2026 static HTML mockup and its implementation contract; a tracked design reference, not shipped by the build.
 * [scripts](scripts.md) - Node build helpers, tests, post-build checks, the legacy Web Edition installer, and Python asset generators.
 * [src/data](src-data.md) - Build-time content and link authorities for the site (release URLs, site links, network organisations, the bibliography).

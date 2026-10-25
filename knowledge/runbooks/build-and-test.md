@@ -4,13 +4,13 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:57:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T09:48:48Z }
 sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:93e69eb461e36037
-    last_modified: 2026-10-23T19:07:39Z
+    digest: sha256:a5f5bbb202c12716
+    last_modified: 2026-10-25T09:10:54Z
   - id: readme
     resource: ../../README.md
     title: README.md
@@ -19,8 +19,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d4ac68a88ae8a4af
-    last_modified: 2026-10-23T19:07:39Z
+    digest: sha256:23fcfcbe4e7c78b5
+    last_modified: 2026-10-25T09:47:24Z
 ---
 
 # When to use
@@ -52,5 +52,8 @@ Node >= 22.12.0.
 - `build:with-web`, `preview` or `deploy` fail with "CANOPI_WEB_EDITION_ARCHIVE is required": set it, or `CANOPI_WEB_EDITION_REQUIRED=0` for an intentional marketing-only build.
 - Map 404s in dev after a build: `npm run build` wiped `public/vendor`; restart the dev server (do not kill processes by port).
 - Build throws `src/data/bibliography.md:<line>`: fix the bibliography entry as the message says (see [src/data](/modules/src-data.md)).
-- `npm test` key mismatch: add the key to all 11 translation files (see [src/i18n](/modules/src-i18n.md)).
+- `npm test` key mismatch: add the key to all 11 translation files (see [src/i18n](/modules/src-i18n.md)); guide strings go in `src/i18n/guides/{en,fr}.json` only.
+- `guides.test.mjs` fails: the message names the guide file and rule (see [Field Guide writing](/conventions/field-guide-writing.md)).
+- Build fails with `No such module "node:fs"` from the prerender server: a page imported something that imports `src/content.config.ts` or a Node built-in; keep shared constants out of the content config.
+- `astro preview` answers 500 after a rebuild: restart the preview you started (by its pid, never by port).
 - Local contact send reports failure under `wrangler dev`: expected, the email simulator returns no message id.

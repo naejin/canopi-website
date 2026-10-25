@@ -80,6 +80,79 @@ for (const path of files(root)) {
 }
 assert.ok(!readFileSync(join(root, 'sitemap-0.xml'), 'utf8').includes('/contact/'), 'contact result pages stay out of the sitemap');
 
+// ---------- Field Guides ----------
+// English at /guides/, French at /fr/guides/, no other locale (knowledge/decisions/field-guides-architecture.md).
+const guideLocales = ['en', 'fr'];
+const guidesDir = (lang) => join(root, lang === 'en' ? '' : lang, 'guides');
+const guideSlugs = readdirSync(join('src', 'content', 'guides'));
+assert.ok(guideSlugs.length, 'at least one guide');
+for (const lang of locales.filter((l) => !guideLocales.includes(l))) assert.ok(!existsSync(guidesDir(lang)), `no /${lang}/guides/`);
+
+// A built page for an internal link: /a/b/ → a/b/index.html, /a.txt → a.txt; #ids must exist on the target.
+const pageFor = (pathname) => join(root, decodeURIComponent(pathname), pathname.endsWith('/') ? 'index.html' : '');
+const ids = (html) => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+function checkLinks(html, from) {
+  for (const [, href] of html.matchAll(/<a\b[^>]*?\shref="([^"]+)"/g)) {
+    if (/^(?:https?:|mailto:|tel:)/.test(href)) continue;
+    const [path, hash] = href.split('#');
+    const target = path ? pageFor(path) : null;
+    if (target) assert.ok(existsSync(target), `${from}: link to ${href} has no built page`);
+    if (hash) assert.ok(ids(target ? readFileSync(target, 'utf8') : html).has(decodeURIComponent(hash)), `${from}: link to ${href} has no #${hash}`);
+    assert.ok(!new RegExp(`^/(?:${locales.filter((l) => !guideLocales.includes(l)).join('|')})/guides/`).test(path), `${from}: link to ${href}, a guide locale that does not exist`);
+  }
+}
+const scriptsOf = (html) => [...html.matchAll(/<script\b[^>]*\ssrc="([^"]+)"/g)].map((m) => m[1]).sort();
+const inlineScripts = (html) => [...html.matchAll(/<script(?![^>]*type="application\/(?:ld\+)?json")(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).sort();
+
+for (const lang of guideLocales) {
+  const prefix = lang === 'en' ? '' : `/${lang}`;
+  const index = readFileSync(join(guidesDir(lang), 'index.html'), 'utf8');
+  assert.ok(index.includes(`lang="${lang}"`) && /<h1\b/.test(index), `${lang}: guides index`);
+  checkLinks(index, `${lang} guides index`);
+  for (const slug of guideSlugs) {
+    const path = `${prefix}/guides/${slug}/`;
+    const html = readFileSync(pageFor(path), 'utf8');
+    assert.ok(index.includes(`href="${path}"`), `${lang}: the index lists ${slug}`);
+    // hreflang: exactly en, fr and x-default.
+    const alternates = [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => `${m[1]} ${m[2]}`).sort();
+    assert.deepEqual(alternates, [
+      `en https://projectcanopi.com/guides/${slug}/`,
+      `fr https://projectcanopi.com/fr/guides/${slug}/`,
+      `x-default https://projectcanopi.com/guides/${slug}/`,
+    ], `${path}: hreflang`);
+    assert.ok(html.includes('<meta property="og:type" content="article">'), `${path}: og:type article`);
+    assert.ok(!html.includes('"SoftwareApplication"'), `${path}: no SoftwareApplication JSON-LD`);
+    assert.ok(html.includes('"@type":"Article"'), `${path}: Article JSON-LD`);
+    assert.ok(!/fonts\.googleapis|fonts\.gstatic/.test(html), `${path}: outside fonts`);
+    assert.ok(/<h1\b/.test(html) && html.includes('class="guide-glance"'), `${path}: title and glance`);
+    assert.ok(html.includes(`href="/bibliography/#`) || html.includes(`href="/fr/bibliography/#`), `${path}: cites a bibliography entry`);
+    for (const asset of assetLinks(html)) assert.ok(existsSync(join(root, asset)), `Missing asset: ${asset}`);
+    checkLinks(html, path);
+    // A guide without an interactive component ships no script beyond the site chrome the index page has.
+    if (!html.includes('data-guide-interactive')) {
+      assert.deepEqual(scriptsOf(html), scriptsOf(index), `${path}: diagram-only guide ships extra scripts`);
+      assert.deepEqual(inlineScripts(html), inlineScripts(index), `${path}: diagram-only guide ships extra inline scripts`);
+    }
+    // Every glossary term note and step is rendered server-side (readable without JavaScript).
+    assert.ok(!/<(?:Term|Note|Checklist)\b/.test(html), `${path}: unrendered MDX component`);
+  }
+}
+
+// The bibliography links each cited book to its guides: English and French guides, else the English one.
+for (const lang of locales) {
+  const bibliography = readFileSync(join(root, lang === 'en' ? '' : lang, 'bibliography', 'index.html'), 'utf8');
+  const prefix = lang === 'fr' ? '/fr' : '';
+  assert.ok(bibliography.includes(`href="${prefix}/guides/landrace-gardening/"`), `${lang}: the bibliography links Landrace Gardening to its guide`);
+  assert.ok(bibliography.includes('id="landrace-gardening"'), `${lang}: the bibliography has an anchor per book id`);
+  checkLinks(bibliography, `${lang} bibliography`);
+}
+// The header and the footer reach the guides on every locale's home page.
+for (const lang of locales) {
+  const html = readFileSync(join(root, lang === 'en' ? '' : lang, 'index.html'), 'utf8');
+  const href = lang === 'fr' ? '/fr/guides/' : '/guides/';
+  assert.ok((html.match(new RegExp(`href="${href}"`, 'g')) ?? []).length >= 2, `${lang}: header and footer link to ${href}`);
+}
+
 for (const asset of ['canopi-logo.svg', 'data/featured-designs.json', 'data/plant-symbols.json']) assert.ok(existsSync(join(root, asset)), asset);
 for (const gone of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'screenshot-light.png', 'network']) assert.ok(!existsSync(join(root, gone)), `${gone} is retired`);
-console.log(`Verified 11 locale pages, their bibliography and contact result pages, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links and static assets.`);
+console.log(`Verified 11 locale pages, their bibliography and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links and static assets.`);
