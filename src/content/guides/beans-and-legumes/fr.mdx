@@ -1,0 +1,174 @@
+---
+title: "Haricots et autres légumineuses"
+description: "Choisir ses légumineuses selon la saison, semer les fèves tôt, repérer les croisements naturels des haricots et entretenir un bocal de haricots mélangés d’année en année."
+domain: crops
+order: 3
+glance:
+  - { label: "Niveau", value: "Débutant" }
+  - { label: "Durée", value: "1 saison pour récolter la graine ; plusieurs pour voir des croisements" }
+  - { label: "Saison", value: "Espèces de saison fraîche et de saison chaude" }
+  - { label: "Place", value: "Un petit rang par espèce" }
+  - { label: "Climat", value: "Tous : choisissez les espèces en conséquence" }
+quick: true
+sources:
+  - { book: landrace-gardening, chapters: ["Legumes", "Creating Landraces", "New Methods and Crops", "Promiscuous Pollination", "Food Security", "Landrace Maintenance", "Heirlooms, Hybrids, and Landraces", "Saving Seeds", "Ease of Developing Landrace Crops"] }
+related: [landrace-gardening]
+updated: 2026-10-25
+---
+
+Deux variétés de haricots côte à côte, est-ce que cela empêche de garder ses graines ? Quand semer les fèves ? Les haricots secs du magasin lèvent-ils ? Cette fiche répond aux trois questions, du choix des espèces au nettoyage des graines.
+
+<QuickAnswer>
+La plupart des haricots fécondent leurs propres fleurs : deux variétés voisines se croisent donc rarement. Joseph Lofthouse estime le croisement du haricot commun entre 0,5 et 5 % environ. Un bocal de haricots mélangés se garde donc facilement, et l’on peut en sortir n’importe quel type pour en faire une variété à part. La fève et le haricot d’Espagne, eux, se croisent bien davantage, car les insectes transportent leur pollen. Semez les fèves dès que la terre se travaille : la chaleur les empêche de grener. Et cultivez plusieurs espèces, pour qu’une mauvaise année ne les emporte jamais toutes.
+</QuickAnswer>
+
+## Plusieurs espèces, plusieurs saisons
+
+Les légumineuses forment toute une famille, et chaque espèce a son climat. Certaines poussent dans la fraîcheur du printemps et ne craignent pas le gel ; d’autres ont besoin de la chaleur de l’été. Le haricot d’Espagne aime la douceur et l’humidité.
+
+<LegumeSeasons
+  alt="Deux groupes de légumineuses. Saison fraîche, résistantes au gel : pois, lentille, fève, lupin, pois chiche. Saison chaude : haricot commun, tépari, niébé, haricot de Lima, soja ; certaines variétés de haricot et de tépari supportent une petite gelée. Le haricot d’Espagne préfère les climats côtiers doux et devient vivace par endroits."
+  cool={{ title: "Saison fraîche, supporte le gel", crops: ["Pois", "Lentille", "Fève", "Lupin", "Pois chiche"] }}
+  hot={{ title: "Saison chaude", crops: ["Haricot commun", "Tépari", "Niébé", "Haricot de Lima", "Soja"] }}
+  frost={["Haricot commun", "Tépari"]}
+  frostLabel="certaines variétés supportent une petite gelée"
+  footnote="Haricot d’Espagne : climats côtiers doux, vivace par endroits"
+/>
+
+Lofthouse cultive autant d’espèces de légumineuses que possible. Un ravageur, une maladie ou un été bizarre touchent rarement toutes les espèces la même année : il y en a toujours une qui s’en sort. Peu de place ? Faites un petit rang d’une espèce de saison fraîche et un autre d’une espèce de saison chaude.
+
+<SeasonTimeline rows={[
+  { label: "Fève, pois, lentille", marks: [{ at: "spring", kind: "sow" }, { at: "early-summer", kind: "flower" }, { at: "summer", kind: "save" }] },
+  { label: "Fève, hivers doux", marks: [{ at: "spring", kind: "flower" }, { at: "autumn", kind: "sow" }] },
+  { label: "Haricot commun, tépari", marks: [{ at: "early-summer", kind: "sow" }, { at: "summer", kind: "flower" }, { at: "autumn", kind: "save" }] }
+]} />
+
+## Les haricots se croisent-ils ?
+
+Peu. Les légumineuses sont surtout <Term id="self-pollinating">autogames</Term>, mais pas complètement : selon l’espèce et le jardin, Lofthouse observe de 1 à 30 % de graines croisées environ.
+
+<CropTable crops={["runner-bean", "fava-bean", "common-bean", "pea", "chickpea"]} columns={["pollination", "crossing", "seed", "ease"]} caption="À quelle fréquence les légumineuses se croisent." />
+
+La fève et le haricot d’Espagne font exception. Les insectes portent leur pollen d’une plante à l’autre, surtout les bourdons sur la fève : elles se comportent presque comme des plantes <Term id="outcrossing">allogames</Term>. Haricot commun et pois restent en bas de l’échelle.
+
+Concrètement :
+
+- **À quelques pas l’un de l’autre, les haricots restent presque toujours fidèles.** Un jardinier de l’Oregon qui envoie des graines à Lofthouse cultive ses variétés en planches séparées de quelques pas. Environ 1 graine sur 100 qu’il récolte a une couleur inattendue.
+- **Mélangés dans le même rang, ils se croisent davantage.** Des plantes serrées et un jardin vivant, plein de fleurs et d’insectes, font monter le taux.
+
+<NextGuides slugs={["will-they-cross"]} />
+
+## Repérer un croisement naturel
+
+Les croisements sont rares chez le haricot commun : semez donc un repère, un caractère qui trahit l’hybride. En voici trois.
+
+**Un nain à côté d’un grimpant.** Semez un haricot nain juste à côté d’un haricot à rames, et gardez les graines des nains. Si l’un de leurs descendants se met à grimper, c’est un croisement avec le grimpant. Ressemez-le : à la génération suivante, d’après Lofthouse, environ un quart des plantes redeviennent naines.
+
+**Des fleurs blanches à côté de fleurs colorées.** Semez un haricot à fleurs blanches près d’un haricot à fleurs colorées. L’année suivante, une fleur colorée dans le carré blanc appartient à un hybride.
+
+**Haricot commun × haricot d’Espagne.** Un ami de Lofthouse a fait ce croisement à la main, le haricot commun servant de mère. Les hybrides avaient les fleurs écarlates du haricot d’Espagne, en plus pâle, et ils se reconnaissaient dès la levée. Le haricot commun sort ses <Term id="cotyledons">cotylédons</Term> bien au-dessus du sol, le haricot d’Espagne les garde enterrés, et les hybrides les laissaient au ras du sol ou juste en dessous.
+
+<Columns min="13rem">
+<Figure title="Un nain à côté d’un grimpant" caption="Un descendant de haricot nain qui grimpe est un hybride. Parmi ses propres descendants, environ 1 sur 4 redevient nain.">
+<BeanBushPole alt="Un haricot nain à côté d’un haricot à rames ; l’année suivante, un descendant du nain grimpe ; l’année d’après, trois de ses quatre descendants grimpent et un est nain." bush="nain" pole="à rames" hybrid="hybride" />
+</Figure>
+<Figure title="Blanc à côté de coloré" caption="L’année suivante, une fleur colorée dans le carré blanc signale un croisement.">
+<BeanFlowerPatch alt="Un carré de haricots à fleurs blanches à côté de haricots à fleurs colorées ; l’année suivante, une plante du carré blanc porte des fleurs colorées." first="cette année" next="l’année suivante" cross="croisement" />
+</Figure>
+<Figure title="Les cotylédons" caption="La position des cotylédons trahit un hybride haricot commun × haricot d’Espagne.">
+<BeanSeedlings alt="Trois plantules sur une ligne de sol : un haricot commun aux cotylédons bien au-dessus du sol, un haricot d’Espagne aux cotylédons sous terre, et un hybride aux cotylédons au ras du sol." labels={["commun", "hybride", "d’Espagne"]} />
+</Figure>
+</Columns>
+
+Vous en avez trouvé un ? Mettez ses graines à part, donnez-lui une bonne place l’année suivante et semez beaucoup de ses descendants. Chez Lofthouse, les haricots hybrides comptent parmi les plantes les plus vigoureuses du jardin pendant quelques générations. À partir de la <Term id="f2">F2</Term>, un croisement récent continue de rebattre les caractères de ses parents pendant deux à quatre générations : c’est là que vous avez le plus de chances de trouver un type qui se plaît chez vous.
+
+<NextGuides slugs={["hand-crosses"]} />
+
+## Le bocal de haricots
+
+Le projet le plus simple qui soit avec les légumineuses : cultiver beaucoup de haricots mélangés et les garder dans un seul bocal.
+
+### Démarrer sans frais
+
+- **Un sachet de haricots secs en mélange, acheté au magasin.** Certains ne lèveront peut-être pas : semez large.
+- **Un sachet issu d’une variété population de haricots.** Lofthouse estime qu’un seul sachet de ses haricots nains peut contenir une quarantaine de types différents.
+- **Des échanges** avec les voisins et d’autres jardiniers qui gardent leurs graines.
+
+Attendez-vous à des pertes la première année. Chez lui, environ 9 variétés de haricot commun venues d’ailleurs sur 10 ne laissent aucune graine bonne à ressemer. C’est justement le but : ce qui survit est ce qui convient à votre terrain.
+
+### Chaque automne : diversité ou rendement ?
+
+Videz la récolte sur la table et regardez-la. Puis choisissez.
+
+<Columns>
+<Card label="Pour la diversité" title="À parts égales">
+
+Comptez à peu près autant de graines de chaque type, et semez celles-là. Lofthouse procède ainsi parce qu’il cultive ses haricots pour la sélection et le partage ; sinon, un petit haricot rose et les pintos, qui se plaisent chez lui, envahiraient son bocal.
+
+</Card>
+<Card label="Pour la récolte" title="En vrac">
+
+Semez le bocal tel quel. Les types les plus productifs chez vous prennent peu à peu le dessus, ce qu’on attend d’une culture vivrière.
+
+</Card>
+</Columns>
+
+Trier à l’œil n’oriente que ce qui se voit sur la graine, son <Term id="phenotype">phénotype</Term>. Un tas de gros haricots blancs redonne de gros haricots blancs, mais les plantes peuvent varier sur tout le reste.
+
+### Chaque haricot peut devenir une variété
+
+Comme le haricot est autogame, n’importe quel type qui vous plaît peut être sorti du bocal, semé à part et maintenu comme une variété stable. Lofthouse l’a fait avec un haricot issu d’un croisement naturel trouvé par un ami.
+
+## Les fèves : semer tôt
+
+L’erreur classique, c’est de semer les fèves avec les haricots d’été. Lofthouse l’a faite la première fois : floraison abondante, invasion de pucerons, et pas une graine. Par temps chaud, les fleurs de fève ne nouent pas.
+
+- **Semez dès que la terre dégèle.** Plus la floraison dure au frais, plus la récolte de graines est belle. Il fait souvent tremper les graines avant le semis, pour qu’elles lèvent plus vite.
+- **Hivers doux : semez à l’automne.** D’après lui, la fève supporte l’hiver jusqu’à la zone 8 de l’USDA environ, et il conseille le semis d’automne là où l’hiver est aussi doux.
+
+<HisGarden
+  his="Dans sa vallée froide, il essaie le semis d’automne, avec des graines mises en terre juste avant que la neige ne s’installe pour l’hiver. Les jeunes plants meurent de froid, mais la graine attend dans le sol et lève quelques semaines avant les fèves semées au printemps."
+  you="Là où l’hiver est doux, les fèves semées à l’automne poussent pendant la saison froide. Votre hiver n’est pas le sien : essayez d’abord un petit rang d’automne avant d’y consacrer toute la culture."
+/>
+
+## Des haricots qui résistent au gel
+
+Les haricots communs tolérants au gel de Lofthouse sont nés d’une gelée tardive de printemps qui avait tué presque tous ses semis. Environ 5 % ont survécu. Il a semé leurs graines un mois plus tôt l’année suivante, et a continué ainsi. Au fil des ans, ses semis de haricots ont avancé de trois à quatre semaines. Un petit taux de survie suffit pour démarrer.
+
+<NextGuides slugs={["season-shifting"]} />
+
+## Les graines dures
+
+Certains téparis donnent des <Term id="hard-seed">graines dures</Term> : elles ne prennent pas l’eau et lèvent avec des semaines, voire des mois de retard. Lofthouse faisait tremper ses graines avant le semis et ne semait que celles qui avaient gonflé. Le caractère a ainsi disparu de ses téparis.
+
+## Récolter les graines
+
+Le haricot est une graine sèche, la plus simple à récolter.
+
+<Steps>
+  <Step title="Sécher sur pied">Laissez les gousses sur les plantes jusqu’à ce qu’elles soient sèches et que les graines sonnent dedans.</Step>
+  <Step title="Battre">Arrachez les plantes et <Term id="thresh">battez-les</Term> : écrasez les gousses sèches pour libérer les graines.</Step>
+  <Step title="Vanner">Versez les graines dans un courant d’air pour les <Term id="winnow">vanner</Term> et chasser les débris de gousses.</Step>
+  <Step title="Trier">Triez le bocal par type, puis choisissez : à parts égales ou en vrac.</Step>
+</Steps>
+
+<NextGuides slugs={["saving-seed", "storing-seed"]} />
+
+## Avant de les manger
+
+Les haricots secs et beaucoup d’autres légumes secs sont nocifs s’ils ne sont pas correctement préparés, et certains, comme le lupin, demandent une préparation traditionnelle particulière. Certaines personnes doivent éviter totalement la fève.
+
+<FoodCaution risk="dry-beans" />
+<FoodCaution risk="fava" />
+
+## À faire cette saison
+
+<Checklist id="start-this-season">
+  <Item id="sow-cool" when="spring">Dès que la terre dégèle, semez fèves, pois et lentilles.</Item>
+  <Item id="sow-mixed" when="early-summer">Après les dernières gelées, semez vos haricots communs mélangés dans un même rang, avec un nain à côté d’un grimpant comme repère.</Item>
+  <Item id="watch-flowers" when="summer">À la floraison, cherchez des fleurs colorées dans le carré à fleurs blanches et marquez-les.</Item>
+  <Item id="harvest-sort" when="autumn">Arrachez les plantes sèches, battez, triez le bocal par type et choisissez : parts égales ou vrac.</Item>
+  <Item id="autumn-fava" when="autumn">Si votre hiver est doux, semez un rang de fèves.</Item>
+</Checklist>
+
+<NextGuides slugs={["keeping-a-landrace"]} />

@@ -1,0 +1,59 @@
+---
+// Beans and other legumes: the flower-colour marker, in two rows. This year a patch of white-flowered
+// beans grows beside a coloured-flowered one; next year, grown from the white patch's seed, one plant
+// in the white patch flowers in colour, ringed: a cross. first, next and cross are the short labels;
+// alt describes the whole drawing.
+import { r1 } from '../../../../lib/svg';
+interface Props { first: string; next: string; cross: string; alt: string; }
+const { first, next, cross, alt } = Astro.props;
+const leaf = (x: number, y: number, angle: number, len = 8) =>
+  ({ d: `M0 0Q${r1(len * 0.45)} ${r1(-len * 0.42)} ${len} 0Q${r1(len * 0.45)} ${r1(len * 0.42)} 0 0Z`, transform: `translate(${r1(x)} ${r1(y)}) rotate(${angle})` });
+function plant(x: number, g: number, coloured: boolean) {
+  return {
+    stem: `M${x} ${g}L${x} ${g - 20}`,
+    leaves: [leaf(x, g - 8, -160), leaf(x, g - 8, -20), leaf(x, g - 15, -140, 7), leaf(x, g - 15, -40, 7)],
+    flowers: [[x - 4, g - 23], [x + 4, g - 24], [x, g - 28]] as [number, number][],
+    coloured,
+  };
+}
+const rows = [
+  { g: 62, label: first, label_y: 16, odd: -1 },
+  { g: 146, label: next, label_y: 100, odd: 2 },
+];
+const drawn = rows.map((row) => ({
+  ...row,
+  plants: [
+    ...[0, 1, 2, 3, 4].map((i) => plant(18 + i * 20, row.g, i === row.odd)),
+    ...[0, 1, 2, 3].map((i) => plant(152 + i * 20, row.g, true)),
+  ],
+}));
+const ring = { x: 58, y: 146 - 18 };
+---
+<svg class="guide-bean-flowers" viewBox="0 0 240 168" role="img" aria-label={alt}>
+  {drawn.map((row) => (
+    <g>
+      <text x="4" y={row.label_y} class="guide-bf-label">{row.label}</text>
+      <line x1="4" y1={row.g} x2="236" y2={row.g} class="guide-bf-ground" />
+      {row.plants.map((p) => (
+        <g>
+          <path d={p.stem} class="guide-stem guide-stem-thin" />
+          {p.leaves.map((l) => <path d={l.d} transform={l.transform} class="guide-leaf" />)}
+          {p.flowers.map(([x, y]) => <circle cx={x} cy={y} r="3" class={p.coloured ? 'guide-c5' : 'guide-bf-white'} />)}
+        </g>
+      ))}
+    </g>
+  ))}
+  <path d="M120 70V86M116 81L120 86L124 81" class="guide-lead guide-bf-arrow" />
+  <circle cx={ring.x} cy={ring.y} r="15" class="guide-bf-ring" />
+  <text x={ring.x} y="161" text-anchor="middle" class="guide-bf-cross">{cross}</text>
+</svg>
+
+<style>
+  .guide-bean-flowers { max-width: 20rem; }
+  .guide-bf-label { font-size: 11px; fill: var(--text-secondary); font-weight: 600; }
+  .guide-bf-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-bf-white { fill: var(--seed-3); stroke: var(--border-strong); stroke-width: 0.8; }
+  .guide-bf-ring { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .guide-bf-cross { font-size: 11px; font-weight: 600; fill: var(--accent-ink); }
+  .guide-bf-arrow { stroke-width: 1.4; }
+</style>

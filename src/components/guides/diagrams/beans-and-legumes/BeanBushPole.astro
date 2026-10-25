@@ -1,0 +1,55 @@
+---
+// Beans and other legumes: the bush-beside-pole marker, in three steps from left to right. A bush bean
+// grows beside a pole bean; next year one child of the bush bean climbs (a hybrid); among that
+// hybrid's children three climb and one is a bush again. bush, pole and hybrid are the short labels
+// under the plants; alt describes the whole drawing.
+import { r1 } from '../../../../lib/svg';
+interface Props { bush: string; pole: string; hybrid: string; alt: string; }
+const { bush, pole, hybrid, alt } = Astro.props;
+const G = 122; // ground line
+const leaf = (x: number, y: number, angle: number, len = 9) =>
+  ({ d: `M0 0Q${r1(len * 0.45)} ${r1(-len * 0.42)} ${len} 0Q${r1(len * 0.45)} ${r1(len * 0.42)} 0 0Z`, transform: `translate(${r1(x)} ${r1(y)}) rotate(${angle})` });
+function bushPlant(x: number) {
+  return { stem: `M${x} ${G}L${x} ${G - 18}`, leaves: [leaf(x, G - 16, -150), leaf(x, G - 16, -30), leaf(x, G - 22, -95), leaf(x, G - 9, -165, 8), leaf(x, G - 9, -15, 8)], stake: null as string | null };
+}
+function polePlant(x: number, h: number) {
+  const top = G - h;
+  let vine = `M${x} ${G}`;
+  for (let y = G; y > top + 6; y -= 12) vine += `Q${x + (((G - y) / 12) % 2 ? -5 : 5)} ${y - 6} ${x} ${y - 12}`;
+  const leaves = [];
+  for (let k = 0, y = G - 16; y > top + 4; y -= 17, k++) leaves.push(leaf(x, y, k % 2 ? -160 : -20));
+  leaves.push(leaf(x, top + 4, -90, 8));
+  return { stem: vine, leaves, stake: `M${x} ${G + 2}L${x} ${top - 2}` };
+}
+const plants = [
+  { ...bushPlant(22), label: bush, x: 22 },
+  { ...polePlant(56, 92), label: pole, x: 56 },
+  { ...polePlant(116, 92), label: hybrid, x: 116, accent: true },
+  { ...polePlant(168, 80), x: 168 },
+  { ...polePlant(186, 80), x: 186 },
+  { ...bushPlant(204), label: bush, x: 204, accent: true },
+  { ...polePlant(222, 80), x: 222 },
+];
+const arrows = [[76, 96], [136, 154]];
+---
+<svg class="guide-bean-bushpole" viewBox="0 0 240 146" role="img" aria-label={alt}>
+  <line x1="4" y1={G} x2="236" y2={G} class="guide-bp-ground" />
+  {plants.map((p) => (
+    <g>
+      {p.stake && <path d={p.stake} class="guide-bp-stake" />}
+      <path d={p.stem} class="guide-stem guide-stem-thin" />
+      {p.leaves.map((l) => <path d={l.d} transform={l.transform} class="guide-leaf" />)}
+      {p.label && <text x={p.x} y={G + 16} text-anchor="middle" class:list={['guide-bp-label', { 'guide-bp-accent': p.accent }]}>{p.label}</text>}
+    </g>
+  ))}
+  {arrows.map(([a, b]) => <path d={`M${a} 70H${b}M${b - 5} 66L${b} 70L${b - 5} 74`} class="guide-lead guide-bp-arrow" />)}
+</svg>
+
+<style>
+  .guide-bean-bushpole { max-width: 20rem; }
+  .guide-bp-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-bp-stake { stroke: var(--seed-1); stroke-width: 2.2; stroke-linecap: round; opacity: 0.7; }
+  .guide-bp-label { font-size: 11px; fill: var(--text-secondary); }
+  .guide-bp-accent { fill: var(--accent-ink); font-weight: 600; }
+  .guide-bp-arrow { stroke-width: 1.4; }
+</style>

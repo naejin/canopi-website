@@ -1,0 +1,50 @@
+---
+// Beans and other legumes: where the seed leaves sit as a seedling comes up, the marker for a common ×
+// runner hybrid. Three seedlings on one soil line: a common bean with its cotyledons lifted high, a
+// hybrid with them at the surface, a runner bean with them left under the soil. labels are the three
+// names in that order; alt describes the whole drawing.
+import { r1 } from '../../../../lib/svg';
+interface Props { labels: [string, string, string]; alt: string; }
+const { labels, alt } = Astro.props;
+const SOIL = 92;
+const leaf = (x: number, y: number, angle: number, len = 15) =>
+  ({ d: `M0 0Q${r1(len * 0.45)} ${r1(-len * 0.42)} ${len} 0Q${r1(len * 0.45)} ${r1(len * 0.42)} 0 0Z`, transform: `translate(${r1(x)} ${r1(y)}) rotate(${angle})` });
+// cot: the height of the cotyledons (seed leaves); top: the tip of the shoot.
+const seedlings = [
+  { x: 40, cot: 46, top: 26 },
+  { x: 120, cot: SOIL - 2, top: 40 },
+  { x: 200, cot: 116, top: 40 },
+].map((s, i) => ({
+  ...s,
+  label: labels[i],
+  stem: `M${s.x} ${SOIL + 34}C${s.x - 2} ${SOIL + 10} ${s.x + 2} ${s.top + 30} ${s.x} ${s.top}`,
+  roots: `M${s.x} ${SOIL + 30}l-9 14M${s.x} ${SOIL + 32}l8 13M${s.x} ${SOIL + 34}l0 14`,
+  leaves: [leaf(s.x, s.top, -150), leaf(s.x, s.top, -30)],
+  buried: s.cot > SOIL,
+}));
+---
+<svg class="guide-bean-seedlings" viewBox="0 0 240 178" role="img" aria-label={alt}>
+  <rect x="4" y={SOIL} width="232" height="62" rx="4" class="guide-bs-soil" />
+  <line x1="4" y1={SOIL} x2="236" y2={SOIL} class="guide-bs-surface" />
+  {seedlings.map((s) => (
+    <g>
+      <path d={s.roots} class="guide-bs-root" />
+      <path d={s.stem} class="guide-stem guide-stem-thin" />
+      {s.leaves.map((l) => <path d={l.d} transform={l.transform} class="guide-leaf" />)}
+      <ellipse cx={s.x - 7} cy={s.cot} rx="7.5" ry="5" transform={`rotate(-12 ${s.x - 7} ${s.cot})`} class:list={['guide-bs-cot', { 'guide-bs-buried': s.buried }]} />
+      <ellipse cx={s.x + 7} cy={s.cot} rx="7.5" ry="5" transform={`rotate(12 ${s.x + 7} ${s.cot})`} class:list={['guide-bs-cot', { 'guide-bs-buried': s.buried }]} />
+      <text x={s.x} y="170" text-anchor="middle" class:list={['guide-bs-label', { 'guide-bs-accent': s.cot === SOIL - 2 }]}>{s.label}</text>
+    </g>
+  ))}
+</svg>
+
+<style>
+  .guide-bean-seedlings { max-width: 20rem; }
+  .guide-bs-soil { fill: var(--surface-alt); }
+  .guide-bs-surface { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-bs-root { stroke: var(--text-muted); stroke-width: 1; fill: none; opacity: 0.7; }
+  .guide-bs-cot { fill: var(--seed-3); stroke: var(--border-strong); stroke-width: 0.9; }
+  .guide-bs-buried { opacity: 0.85; stroke-dasharray: 2 1.5; }
+  .guide-bs-label { font-size: 11px; fill: var(--text-secondary); }
+  .guide-bs-accent { fill: var(--accent-ink); font-weight: 600; }
+</style>
