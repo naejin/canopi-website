@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { builtTarget } from './built-links.mjs';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -88,16 +89,22 @@ const guideSlugs = readdirSync(join('src', 'content', 'guides'));
 assert.ok(guideSlugs.length, 'at least one guide');
 for (const lang of locales.filter((l) => !guideLocales.includes(l))) assert.ok(!existsSync(guidesDir(lang)), `no /${lang}/guides/`);
 
-// A built page for an internal link: /a/b/ → a/b/index.html, /a.txt → a.txt; #ids must exist on the target.
-const pageFor = (pathname) => join(root, decodeURIComponent(pathname), pathname.endsWith('/') ? 'index.html' : '');
+// A built page for an internal link (scripts/built-links.mjs): /a/b/ → a/b/index.html, /a.txt → a.txt,
+// and a slash-less /a/b is an error; #ids must exist on the target.
+const pageFor = (pathname) => {
+  const { file, error } = builtTarget(root, pathname);
+  assert.ok(file, error);
+  return file;
+};
 const ids = (html) => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
 function checkLinks(html, from) {
   for (const [, href] of html.matchAll(/<a\b[^>]*?\shref="([^"]+)"/g)) {
     if (/^(?:https?:|mailto:|tel:)/.test(href)) continue;
     const [path, hash] = href.split('#');
-    const target = path ? pageFor(path) : null;
-    if (target) assert.ok(existsSync(target), `${from}: link to ${href} has no built page`);
-    if (hash) assert.ok(ids(target ? readFileSync(target, 'utf8') : html).has(decodeURIComponent(hash)), `${from}: link to ${href} has no #${hash}`);
+    if (path && !path.startsWith('/')) assert.fail(`${from}: link to ${href} is relative; use a path from the site root`);
+    const target = path ? builtTarget(root, path) : null;
+    if (target) assert.ok(target.file, `${from}: ${target.error}`);
+    if (hash) assert.ok(ids(target ? readFileSync(target.file, 'utf8') : html).has(decodeURIComponent(hash)), `${from}: link to ${href} has no #${hash}`);
     assert.ok(!new RegExp(`^/(?:${locales.filter((l) => !guideLocales.includes(l)).join('|')})/guides/`).test(path), `${from}: link to ${href}, a guide locale that does not exist`);
   }
 }
@@ -123,6 +130,16 @@ for (const lang of guideLocales) {
     assert.ok(html.includes('<meta property="og:type" content="article">'), `${path}: og:type article`);
     assert.ok(!html.includes('"SoftwareApplication"'), `${path}: no SoftwareApplication JSON-LD`);
     assert.ok(html.includes('"@type":"Article"'), `${path}: Article JSON-LD`);
+    // The JSON-LD cites the same edition the page shows under "Go deeper" (the French one on /fr/).
+    const article = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1])).find((d) => d['@type'] === 'Article');
+    for (const book of article.citation) {
+      const shown = book.name.split(/\s*(?::\s+|：\s*)/)[0];
+      assert.ok(html.includes(`>${shown}<`), `${path}: JSON-LD cites "${book.name}", not the edition the page shows`);
+    }
+    // Every id on the page is unique (checkboxes, glossary notes, headings).
+    const allIds = [...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
+    const twice = allIds.find((id, i) => allIds.indexOf(id) !== i);
+    assert.ok(!twice, `${path}: id "${twice}" is used twice`);
     assert.ok(!/fonts\.googleapis|fonts\.gstatic/.test(html), `${path}: outside fonts`);
     assert.ok(/<h1\b/.test(html) && html.includes('class="guide-glance"'), `${path}: title and glance`);
     assert.ok(html.includes(`href="/bibliography/#`) || html.includes(`href="/fr/bibliography/#`), `${path}: cites a bibliography entry`);

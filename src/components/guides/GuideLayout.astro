@@ -13,7 +13,7 @@ import BookCite from './BookCite.astro';
 import BeanRow from './diagrams/BeanRow.astro';
 import { guideComponents } from './index';
 import { publishedGuides, slugOf, type GuideEntry } from '../../lib/guides';
-import { themes } from '../../data/bibliography';
+import { editionFor, themes } from '../../data/bibliography';
 import { languageNames } from '../../i18n/utils';
 import { formatDate, gt, guideLocales, guidePath, guidesPath, type GuideLang } from '../../i18n/guides';
 interface Props { entry: GuideEntry; lang: GuideLang; }
@@ -40,7 +40,8 @@ const structuredData = {
   isPartOf: { '@type': 'CollectionPage', name: gt('section.title', lang), url: new URL(guidesPath(lang), Astro.site).href },
   publisher: { '@type': 'NGO', name: 'Canopi', url: 'https://projectcanopi.com' },
   citation: sources.map((s) => books.find((b) => b.id === s.book)).filter((b) => b !== undefined)
-    .map((b) => ({ '@type': 'Book', name: b.editions[0].title, author: { '@type': 'Person', name: b.by }, datePublished: b.year })),
+    .map((b) => ({ book: b, edition: editionFor(b, lang) }))
+    .map(({ book, edition }) => ({ '@type': 'Book', name: edition.title, inLanguage: edition.lang, url: edition.url, author: { '@type': 'Person', name: edition.by ?? book.by }, datePublished: book.year })),
 };
 const tocList = toc.map((h) => ({ href: `#${h.slug}`, text: h.text }));
 ---

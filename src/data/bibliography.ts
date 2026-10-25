@@ -112,3 +112,7 @@ for (const theme of themes) {
 // The home page opens the bibliography on a handful of books, whatever the size of the list.
 const featured = themes.flatMap((theme) => theme.books).filter((book) => book.featured).length;
 if (featured < 3 || featured > 6) throw new Error(`src/data/bibliography.md: mark 3 to 6 books "- featured: yes" for the home page (${featured} now)`);
+
+// The edition a page in `lang` shows for a book: its own language when there is one, else the
+// original. A Field Guide's "Go deeper" block and its JSON-LD citation both use it.
+export const editionFor = (book: Book, lang: string): Edition => book.editions.find((e) => e.lang === lang) ?? book.editions[0];

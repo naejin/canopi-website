@@ -1,7 +1,7 @@
 ---
 // "Go deeper": each book a guide draws on (frontmatter sources), with the chapters it uses, a link
 // to its bibliography entry and the book's own page.
-import { themes } from '../../data/bibliography';
+import { editionFor, themes } from '../../data/bibliography';
 import { localizedUrl } from '../../i18n/utils';
 import { gt, type GuideLang } from '../../i18n/guides';
 interface Props { sources: { book: string; chapters: string[] }[]; lang: GuideLang; }
@@ -10,7 +10,7 @@ const books = themes.flatMap((theme) => theme.books);
 const cited = sources.map((source) => {
   const book = books.find((b) => b.id === source.book);
   if (!book) throw new Error(`guide source "${source.book}" is not a book id in src/data/bibliography.md`);
-  const edition = book.editions.find((e) => e.lang === lang) ?? book.editions[0];
+  const edition = editionFor(book, lang);
   const [title, subtitle] = edition.title.split(/\s*(?::\s+|：\s*)(.*)/s);
   return { ...source, book, edition, title, subtitle, spine: title.split(/\s+/).slice(0, 3) };
 });
