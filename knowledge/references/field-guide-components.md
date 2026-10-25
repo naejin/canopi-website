@@ -3,20 +3,20 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:34:49Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:46:25Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:35:30Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:46:27Z }
 sources:
   - id: index-ts
     resource: ../../src/components/guides/index.ts
     title: src/components/guides/index.ts
     digest: sha256:623104d77897e033
-    last_modified: 2026-10-25T13:35:04Z
+    last_modified: 2026-10-25T13:36:03Z
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:5eaeb380c0c372e3
-    last_modified: 2026-10-25T13:35:04Z
+    digest: sha256:28400a33717b48f6
+    last_modified: 2026-10-25T13:45:36Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -41,7 +41,7 @@ sources:
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
     digest: sha256:005aacd42f9794a1
-    last_modified: 2026-10-25T13:33:50Z
+    last_modified: 2026-10-25T13:36:03Z
 enforced_by: [scripts/guides.test.mjs]
 ---
 
@@ -162,16 +162,7 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   shared component or another guide's diagram fails the build. Writers mark where one goes with
   `{/* DIAGRAM: what it shows, data, labels */}`. SVG text does not wrap: break labels with `wrap(text,
   max)` from `src/lib/svg.ts` (keeps no-break spaces); never copy a helper into a diagram (test).
-  Existing (props: see each file's `interface Props`): landrace-gardening SeedKinds;
-  hybrids-heirlooms-landraces HybridGenerations, HybridLookup; will-they-cross CropIndex, CrossLookup,
-  DistanceFalloff; hand-crosses CrossCornRows; choosing-seed-parents SelectHabits, SelectPanel;
-  keeping-a-landrace LandracePool, SeedPacketLabel; saving-seed SeedLanes, ThreshScale, TomatoSteps;
-  storing-seed SeedLife, SeedThreats, StoreRules; squash-melons-cucumbers SquashCrossFlow,
-  SquashSpecies; corn CornSelection, CornSweetKernels, CornSweetTypes; beans-and-legumes BeanBushPole,
-  BeanFlowerPatch, BeanSeedlings (reusable), LegumeSeasons; tomatoes TomatoBottleneck, TomatoPedigree,
-  TomatoRows; small-grains GrainFunnel, RyeYear; true-seed-potato-garlic-sunroot CloneRows, GarlicHead,
-  SunrootYears; season-shifting SisterLines, SurvivorFunnel; food-all-year CuesCard, StoreKinds,
-  YearWheel; pests-without-sprays CornReach, FieldOutbreak, ResistanceLocks.
+  Each guide's diagrams are the files in its folder; their props are in each file's `interface Props`.
 
 # Safety heuristic (`scripts/guides.test.mjs`)
 - No `<Safety>` box and no `food.<risk>` text gives an amount of time (digits or words: "ten

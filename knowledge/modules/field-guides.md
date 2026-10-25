@@ -6,23 +6,23 @@ resource: ../../src/components/guides
 tags: [module, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:35:09Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T11:07:53Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:46:26Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:a3cd04dac94c351c
-    last_modified: 2026-10-25T13:05:14Z
+    digest: sha256:faaea88c4f8237e9
+    last_modified: 2026-10-25T13:45:36Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:5eaeb380c0c372e3
-    last_modified: 2026-10-25T13:35:04Z
+    digest: sha256:28400a33717b48f6
+    last_modified: 2026-10-25T13:45:36Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
     digest: sha256:000fc99c08328b23
-    last_modified: 2026-10-25T13:33:50Z
+    last_modified: 2026-10-25T13:36:03Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
