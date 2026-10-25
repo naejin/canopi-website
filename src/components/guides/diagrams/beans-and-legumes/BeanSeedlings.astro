@@ -11,9 +11,9 @@ const leaf = (x: number, y: number, angle: number, len = 15) =>
   ({ d: `M0 0Q${r1(len * 0.45)} ${r1(-len * 0.42)} ${len} 0Q${r1(len * 0.45)} ${r1(len * 0.42)} 0 0Z`, transform: `translate(${r1(x)} ${r1(y)}) rotate(${angle})` });
 // cot: the height of the cotyledons (seed leaves); top: the tip of the shoot.
 const seedlings = [
-  { x: 40, cot: 46, top: 26 },
-  { x: 120, cot: SOIL - 2, top: 40 },
-  { x: 200, cot: 116, top: 40 },
+  { x: 40, cot: 46, top: 26, accent: false },
+  { x: 120, cot: SOIL - 2, top: 40, accent: true },
+  { x: 200, cot: 116, top: 40, accent: false },
 ].map((s, i) => ({
   ...s,
   label: labels[i],
@@ -33,7 +33,7 @@ const seedlings = [
       {s.leaves.map((l) => <path d={l.d} transform={l.transform} class="guide-leaf" />)}
       <ellipse cx={s.x - 7} cy={s.cot} rx="7.5" ry="5" transform={`rotate(-12 ${s.x - 7} ${s.cot})`} class:list={['guide-bs-cot', { 'guide-bs-buried': s.buried }]} />
       <ellipse cx={s.x + 7} cy={s.cot} rx="7.5" ry="5" transform={`rotate(12 ${s.x + 7} ${s.cot})`} class:list={['guide-bs-cot', { 'guide-bs-buried': s.buried }]} />
-      <text x={s.x} y="170" text-anchor="middle" class:list={['guide-bs-label', { 'guide-bs-accent': s.cot === SOIL - 2 }]}>{s.label}</text>
+      <text x={s.x} y="170" text-anchor="middle" class:list={['guide-bs-label', { 'guide-bs-accent': s.accent }]}>{s.label}</text>
     </g>
   ))}
 </svg>
