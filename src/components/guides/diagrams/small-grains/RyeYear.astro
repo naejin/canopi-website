@@ -1,0 +1,73 @@
+---
+// Small grains: one autumn-sown rye bed through its year, as four panels in a 2 × 2 grid (so the labels
+// stay readable on a phone): rain on fresh soil, shoots under snow, a rake between the rye and tiny
+// weeds, ripe heads in summer. scenes are the four labels in that order; alt describes the drawing.
+import { r1, rng, seedOf } from '../../../../lib/svg';
+import { wrap } from '../tomatoes/wrap';
+interface Props { scenes: [string, string, string, string]; alt: string; }
+const { scenes, alt } = Astro.props;
+const W = 172, H = 128, GAP = 10, SOIL = 96;
+// Room under each row of panels for the longest label (labels wrap at 21 characters).
+const LABEL = 10 + 16 * Math.max(...scenes.map((label) => wrap(label, 21).length));
+const rand = rng(seedOf('small-grains:rye-year'));
+const xs = [22, 44, 66, 88, 110, 132, 152];
+// One rye plant: a few blades from the soil; `head` adds a ripe ear on a tall stalk.
+const plant = (x: number, h: number, head: boolean) => {
+  const lean = (rand() - 0.5) * 6;
+  const blades = [-1, 1].map((side) => `M${x} ${SOIL}q${r1(side * 3)} ${r1(-h * 0.45)} ${r1(side * 7 + lean)} ${r1(-h * 0.7)}`);
+  const stalk = head ? `M${x} ${SOIL}C${x} ${SOIL - h * 0.5} ${r1(x + lean)} ${SOIL - h * 0.8} ${r1(x + lean)} ${SOIL - h}` : null;
+  const ear = head ? Array.from({ length: 5 }, (_, i) => ({ x: r1(x + lean + (i % 2 ? 1.6 : -1.6)), y: r1(SOIL - h - 3 - i * 4.2) })) : [];
+  return { blades, stalk, ear };
+};
+const panels = scenes.map((label, i) => {
+  const height = [0, 16, 30, 70][i];
+  return {
+    label: wrap(label, 21),
+    x: (i % 2) * (W + GAP),
+    y: Math.floor(i / 2) * (H + LABEL + GAP),
+    plants: i === 0 ? [] : xs.map((x) => plant(x, height * (0.85 + rand() * 0.3), i === 3)),
+    seeds: i === 0 ? xs.map((x) => ({ x: r1(x + (rand() - 0.5) * 6), y: SOIL + 6 })) : [],
+    rain: i === 0 ? Array.from({ length: 26 }, (_, k) => ({ x: r1(14 + (k % 13) * 11.5 + rand() * 4), y: r1(16 + (k < 13 ? 0 : 34) + rand() * 30) })) : [],
+    snow: i === 1,
+    weeds: i === 2 ? [33, 55, 77, 99, 121, 143].map((x) => ({ x: r1(x + (rand() - 0.5) * 4) })) : [],
+    rake: i === 2,
+  };
+});
+---
+<svg class="guide-rye-year" viewBox={`0 0 ${2 * W + GAP} ${2 * (H + LABEL) + GAP}`} role="img" aria-label={alt}>
+  {panels.map((p) => (
+    <g transform={`translate(${p.x} ${p.y})`}>
+      <rect x="1" y="1" width={W - 2} height={H - 2} rx="7" class="guide-paper" />
+      <rect x="6" y={SOIL} width={W - 12} height={H - SOIL - 6} rx="3" class="guide-ry-soil" />
+      {p.rain.map((d) => <line x1={d.x} y1={d.y} x2={d.x - 3} y2={d.y + 10} class="guide-ry-rain" />)}
+      {p.seeds.map((s) => <ellipse cx={s.x} cy={s.y} rx="2.6" ry="1.5" class="guide-c6" />)}
+      {p.plants.map((pl) => (
+        <g>
+          {pl.blades.map((d) => <path d={d} class="guide-stem guide-stem-thin" />)}
+          {pl.stalk && <path d={pl.stalk} class="guide-stem guide-stem-thin" />}
+          {pl.ear.map((e) => <ellipse cx={e.x} cy={e.y} rx="2.2" ry="3.4" class="guide-c6" />)}
+        </g>
+      ))}
+      {p.snow && <path d={`M6 ${SOIL - 24}q20 -6 40 -2t40 -1t40 1t40 -2V${SOIL}H6Z`} class="guide-ry-snow" />}
+      {p.weeds.map((w) => <path d={`M${w.x} ${SOIL}v-6m0 0l-4 -3m4 3l4 -3`} class="guide-ry-weed" />)}
+      {p.rake && (
+        <g class="guide-ry-rake">
+          <line x1="150" y1="22" x2="92" y2={SOIL - 6} />
+          <line x1="78" y1={SOIL - 6} x2="106" y2={SOIL - 6} />
+          {[80, 86, 92, 98, 104].map((x) => <line x1={x} y1={SOIL - 6} x2={x} y2={SOIL - 1} />)}
+        </g>
+      )}
+      {p.label.map((line, k) => <text x={W / 2} y={H + 17 + k * 16} text-anchor="middle" class="guide-ry-label">{line}</text>)}
+    </g>
+  ))}
+</svg>
+
+<style>
+  .guide-rye-year { max-width: 26rem; }
+  .guide-ry-soil { fill: var(--seed-3); opacity: 0.55; }
+  .guide-ry-rain { stroke: var(--text-muted); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-ry-snow { fill: var(--surface); stroke: var(--border-strong); stroke-width: 1; opacity: 0.92; }
+  .guide-ry-weed { stroke: var(--leaf); stroke-width: 1.6; fill: none; stroke-linecap: round; }
+  .guide-ry-rake line { stroke: var(--text-secondary); stroke-width: 2; stroke-linecap: round; }
+  .guide-ry-label { font-size: 14px; font-weight: 600; }
+</style>
