@@ -114,7 +114,8 @@
 .finder-index { grid-area: index; display: flex; flex-direction: column; min-width: 0; }
 .finder-locate { grid-area: locate; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .finder-map { grid-area: map; }
-.finder-locate .button { gap: 8px; }
+/* The locate label may wrap: in French it is wider than a 320px phone. */
+.finder-locate .button { gap: 8px; max-width: 100%; padding-block: 6px; white-space: normal; text-align: center; line-height: 1.25; }
 .finder-status { font-size: 14px; color: var(--text-muted); flex: 1 1 220px; }
 .finder-map {
   position: relative;
@@ -371,7 +372,7 @@
   .hero-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 360px; }
   .hero-actions .button { min-width: 0; width: 100%; }
   .contact-layout, .field-row { grid-template-columns: 1fr; }
-  .finder { grid-template-columns: 1fr; grid-template-areas: "locate" "map" "index"; }
+  .finder { grid-template-columns: minmax(0, 1fr); grid-template-areas: "locate" "map" "index"; }
   .design-canvas-wrap { height: 420px; }
   .finder-map { height: 320px; }
   .finder { margin-top: 32px; }
@@ -387,7 +388,7 @@
 
 /* Between phones and desktops the list goes under the map. */
 @media (min-width: 640px) and (max-width: 959px) {
-  .finder { grid-template-columns: 1fr; grid-template-areas: "locate" "map" "index"; }
+  .finder { grid-template-columns: minmax(0, 1fr); grid-template-areas: "locate" "map" "index"; }
 }
 
 /* ---------- Contact result pages (no-JS form posts) ---------- */
