@@ -72,6 +72,7 @@ button { cursor: pointer; }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--font-display); font-size: 22px; }
 .brand:hover { color: inherit; }
 .header-nav { display: flex; align-items: center; gap: 4px; }
+.nav-inline { display: flex; align-items: center; gap: 4px; }
 .nav-link {
   display: inline-flex; align-items: center; min-height: 40px; padding: 0 10px;
   border: 0; border-radius: var(--radius); background: none;
@@ -79,7 +80,9 @@ button { cursor: pointer; }
 }
 .nav-link:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
 .theme-toggle { width: 40px; justify-content: center; padding: 0; }
-/* Phones: the longest labels ("Faire un don", "Пожертвовать") stay on one line beside the wordmark. */
+/* The one width swap in the header: from 640px the links sit inline (.nav-inline); below, the logo,
+   the Menu and the theme toggle stay, and the Menu panel (.nav-menu) holds every link. */
+.nav-menu { display: none; }
 @media (max-width: 639px) {
   .header-inner { gap: 8px; }
   .brand { gap: 8px; font-size: 20px; }
@@ -87,11 +90,9 @@ button { cursor: pointer; }
   .header-nav { gap: 0; }
   .nav-link { padding: 0 7px; font-size: 14px; }
   .theme-toggle { width: 36px; }
+  .nav-inline { display: none; }
+  .nav-menu { display: block; }
 }
-/* Narrow phones: Discord stays in the footer only. Phones: so do the Field Guides, whose label is
-   long in French and Russian ("Fiches de terrain", "Руководства") and would push the theme toggle out. */
-@media (max-width: 479px) { .nav-discord { display: none; } }
-@media (max-width: 639px) { .nav-guides { display: none; } }
 .nav-link[aria-current="page"] { color: var(--accent-ink); box-shadow: inset 0 -2px 0 var(--accent); border-radius: 0; }
 .theme-toggle .icon-sun { display: none; }
 :root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
@@ -113,6 +114,35 @@ button { cursor: pointer; }
 .menu-panel a { display: block; padding: 7px 10px; border-radius: 5px; text-decoration: none; font-size: 15px; }
 .menu-panel a:hover { background: var(--surface-alt); color: var(--text); }
 .menu-panel a[aria-current="true"] { font-weight: 600; color: var(--accent-ink); }
+
+/* The phone Menu: a <details>, open without script; chrome.js closes it on Escape and outside clicks.
+   Its panel spans the header's width (not anchored to the button), so it fits a 320px screen. */
+.nav-menu summary { list-style: none; cursor: pointer; gap: 8px; }
+.nav-menu summary::-webkit-details-marker { display: none; }
+.nav-menu summary::after { content: ''; width: 6px; height: 6px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: translateY(-2px) rotate(45deg); transition: transform 120ms ease; }
+.nav-menu[open] summary { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
+.nav-menu[open] summary::after { transform: translateY(2px) rotate(-135deg); }
+@media (prefers-reduced-motion: reduce) { .nav-menu summary::after { transition: none; } }
+.nav-panel {
+  position: absolute; left: var(--gutter); right: var(--gutter); top: calc(100% - 6px); z-index: 30;
+  max-height: calc(100dvh - 72px); overflow-y: auto; overscroll-behavior: contain; padding: 8px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.nav-panel ul { margin: 0; padding: 0; list-style: none; }
+.nav-panel-links a, .nav-panel-links button, .nav-panel-langs a {
+  display: flex; align-items: center; width: 100%; min-height: 44px; padding: 0 12px;
+  border: 0; border-radius: 5px; background: none; text-align: start; text-decoration: none;
+}
+.nav-panel-links a, .nav-panel-links button { font-size: 16px; font-weight: 600; color: var(--text); }
+.nav-panel-links a:hover, .nav-panel-links button:hover, .nav-panel-langs a:hover { background: var(--surface-alt); color: var(--text); }
+.nav-panel-links a[aria-current="page"] { color: var(--accent-ink); box-shadow: inset 2px 0 0 var(--accent); border-radius: 0 5px 5px 0; }
+.nav-panel-label {
+  margin: 8px 12px 4px; padding-top: 12px; border-top: 1px solid var(--border);
+  font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted);
+}
+.nav-panel-langs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.nav-panel-langs a { font-size: 15px; color: var(--text-secondary); }
+.nav-panel-langs a[aria-current="true"] { font-weight: 600; color: var(--accent-ink); }
 
 /* ---------- Footer ---------- */
 

@@ -1,4 +1,4 @@
-// What every page shares: dialogs, donations, the language menu and the theme toggle.
+// What every page shares: dialogs, donations, the language and phone menus and the theme toggle.
 import { initDialogs } from './dialogs.js';
 import { initDonate } from './donate.js';
 import { text } from './page-data.js';
@@ -11,11 +11,20 @@ export function initChrome({ onThemeChange = () => {} } = {}) {
   initDialogs();
   initDonate();
 
-  const langMenu = document.querySelector('[data-lang-menu]');
-  document.addEventListener('click', (event) => { if (!langMenu.contains(event.target)) langMenu.open = false; });
-  langMenu.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') { langMenu.open = false; langMenu.querySelector('summary').focus(); }
+  // The language menu and the phone Menu: an outside click or Escape closes them (Escape gives the
+  // focus back to the summary), and opening one closes the other.
+  const menus = [...document.querySelectorAll('[data-lang-menu], [data-nav-menu]')];
+  document.addEventListener('click', (event) => {
+    for (const menu of menus) if (!menu.contains(event.target)) menu.open = false;
   });
+  for (const menu of menus) {
+    menu.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && menu.open) { menu.open = false; menu.querySelector('summary').focus(); }
+    });
+    menu.addEventListener('toggle', () => {
+      if (menu.open) for (const other of menus) if (other !== menu) other.open = false;
+    });
+  }
 
   const toggle = document.querySelector('[data-theme-toggle]');
   const apply = () => {

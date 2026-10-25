@@ -5,9 +5,13 @@ import { guidesPath } from '../i18n/guides';
 // path: the page within a locale, so the language menu leads to the same page in another language.
 // alternates: the locales the page exists in; the menu sends the others to the English page.
 // current: the section the page belongs to, marked in the navigation.
-interface Props { lang: Locale; path?: string; alternates?: readonly Locale[]; current?: 'guides'; }
+// From 640px the links sit inline; below, one Menu panel holds every link, so nothing is hidden by width.
+interface Props { lang: Locale; path?: string; alternates?: readonly Locale[]; current?: 'guides' | 'books'; }
 const { lang, path = '/', alternates = locales, current } = Astro.props;
 const menuTarget = (locale: Locale): Locale => (alternates.includes(locale) ? locale : 'en');
+const guides = guidesPath(lang);
+const books = localizedUrl('/bibliography/', lang);
+const page = (section: 'guides' | 'books') => (current === section ? 'page' : undefined);
 ---
 <a class="skip-link" href="#main">{t('header.skip', lang)}</a>
 <header class="site-header">
@@ -17,17 +21,37 @@ const menuTarget = (locale: Locale): Locale => (alternates.includes(locale) ? lo
       <span>Canopi</span>
     </a>
     <nav class="header-nav" aria-label={t('header.navigation', lang)}>
-      {DOCS_URL && <a class="nav-link" href={DOCS_URL}>{t('header.docs', lang)}</a>}
-      <a class="nav-link nav-guides" href={guidesPath(lang)} aria-current={current === 'guides' ? 'page' : undefined}>{t('header.guides', lang)}</a>
-      <button class="nav-link" type="button" data-open-donate>{t('header.donate', lang)}</button>
-      <a class="nav-link nav-discord" href={discordUrl(lang)}>Discord</a>
-      <details class="lang-menu" data-lang-menu>
-        <summary class="nav-link" aria-label={`${t('header.language', lang)}: ${languageNames[lang]}`}>{lang.toUpperCase()}</summary>
-        <ul class="menu-panel" role="list">
-          {locales.map((locale) => (
-            <li><a href={localizedUrl(path, menuTarget(locale))} lang={locale} hreflang={menuTarget(locale)} aria-current={locale === lang ? 'true' : undefined}>{languageNames[locale]}</a></li>
-          ))}
-        </ul>
+      <div class="nav-inline">
+        <a class="nav-link" href={guides} aria-current={page('guides')}>{t('header.guides', lang)}</a>
+        <a class="nav-link" href={books} aria-current={page('books')}>{t('header.books', lang)}</a>
+        <button class="nav-link" type="button" data-open-donate>{t('header.donate', lang)}</button>
+        <details class="lang-menu" data-lang-menu>
+          <summary class="nav-link" aria-label={`${t('header.language', lang)}: ${languageNames[lang]}`}>{lang.toUpperCase()}</summary>
+          <ul class="menu-panel" role="list">
+            {locales.map((locale) => (
+              <li><a href={localizedUrl(path, menuTarget(locale))} lang={locale} hreflang={menuTarget(locale)} aria-current={locale === lang ? 'true' : undefined}>{languageNames[locale]}</a></li>
+            ))}
+          </ul>
+        </details>
+      </div>
+      <details class="nav-menu" data-nav-menu>
+        <summary class="nav-link">{t('header.menu', lang)}</summary>
+        <div class="nav-panel">
+          <ul class="nav-panel-links" role="list">
+            <li><a href={guides} aria-current={page('guides')}>{t('header.guides', lang)}</a></li>
+            <li><a href={books} aria-current={page('books')}>{t('header.books', lang)}</a></li>
+            <li><button type="button" data-open-donate>{t('header.donate', lang)}</button></li>
+            <li><a href={discordUrl(lang)}>Discord</a></li>
+            {DOCS_URL && <li><a href={DOCS_URL}>{t('header.docs', lang)}</a></li>}
+            <li><a href={`${localizedUrl('/', lang)}#contact`}>{t('footer.contact', lang)}</a></li>
+          </ul>
+          <p class="nav-panel-label" id="nav-panel-languages">{t('header.language', lang)}</p>
+          <ul class="nav-panel-langs" role="list" aria-labelledby="nav-panel-languages">
+            {locales.map((locale) => (
+              <li><a href={localizedUrl(path, menuTarget(locale))} lang={locale} hreflang={menuTarget(locale)} aria-current={locale === lang ? 'true' : undefined}>{languageNames[locale]}</a></li>
+            ))}
+          </ul>
+        </div>
       </details>
       <button class="nav-link theme-toggle" type="button" data-theme-toggle aria-label={t('header.themeDark', lang)}>
         <svg class="icon-moon" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M15.5 12.6A6.5 6.5 0 0 1 7.4 4.5a6.5 6.5 0 1 0 8.1 8.1Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>

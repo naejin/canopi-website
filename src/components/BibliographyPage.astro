@@ -11,7 +11,7 @@ interface Props { lang: Locale; }
 const { lang } = Astro.props;
 ---
 <Base title={`${t('bibliography.title', lang)} · Canopi`} description={t('bibliography.lede', lang)} lang={lang} path="/bibliography/">
-  <Header lang={lang} path="/bibliography/" />
+  <Header lang={lang} path="/bibliography/" current="books" />
   <main id="main">
     <Bibliography lang={lang} full />
   </main>

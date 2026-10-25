@@ -40,6 +40,8 @@
   "header.skip": "Naar inhoud",
   "header.navigation": "Hoofdnavigatie",
   "header.docs": "Documentatie",
+  "header.books": "Boeken",
+  "header.menu": "Menu",
   "dialog.close": "Sluiten",
   "hero.allSystems": "Andere systemen",
   "hero.version": "Versie {version}",

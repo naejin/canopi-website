@@ -40,6 +40,8 @@
   "header.skip": "跳转到正文",
   "header.navigation": "主导航",
   "header.docs": "文档",
+  "header.books": "书目",
+  "header.menu": "菜单",
   "dialog.close": "关闭",
   "hero.allSystems": "其他系统",
   "hero.version": "版本 {version}",

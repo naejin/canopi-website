@@ -117,7 +117,10 @@ export function initDonate() {
     const opener = event.target.closest('[data-open-donate]');
     if (opener) open(opener);
   });
-  const fromLink = () => { if (location.hash === '#donate') open(document.querySelector('[data-open-donate]')); };
+  // From a #donate link the dialog gives the focus back, on closing, to the first Donate button on
+  // screen (the header's below 640px is inside the closed Menu, so the footer's).
+  const shownOpener = () => [...document.querySelectorAll('[data-open-donate]')].find((button) => button.getClientRects().length);
+  const fromLink = () => { if (location.hash === '#donate') open(shownOpener()); };
   window.addEventListener('hashchange', fromLink);
   fromLink();
   dialog.addEventListener('close', () => {

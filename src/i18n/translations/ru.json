@@ -40,6 +40,8 @@
   "header.skip": "Перейти к содержимому",
   "header.navigation": "Основная навигация",
   "header.docs": "Документация",
+  "header.books": "Книги",
+  "header.menu": "Меню",
   "dialog.close": "Закрыть",
   "hero.allSystems": "Другие системы",
   "hero.version": "Версия {version}",

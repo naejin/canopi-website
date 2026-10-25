@@ -40,6 +40,8 @@
   "header.skip": "Saltar al contenido",
   "header.navigation": "Navegación principal",
   "header.docs": "Documentación",
+  "header.books": "Libros",
+  "header.menu": "Menú",
   "dialog.close": "Cerrar",
   "hero.allSystems": "Otros sistemas",
   "hero.version": "Versión {version}",

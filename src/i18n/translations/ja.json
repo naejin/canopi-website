@@ -40,6 +40,8 @@
   "header.skip": "本文へ移動",
   "header.navigation": "メインナビゲーション",
   "header.docs": "ドキュメント",
+  "header.books": "書籍",
+  "header.menu": "メニュー",
   "dialog.close": "閉じる",
   "hero.allSystems": "その他のシステム",
   "hero.version": "バージョン {version}",

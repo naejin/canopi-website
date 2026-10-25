@@ -360,11 +360,6 @@
   .footer-legal { margin-left: 0; }
 }
 
-/* The narrowest phones keep the wordmark by tightening the nav. */
-@media (max-width: 359px) {
-  .nav-link { padding: 0 6px; font-size: 14px; }
-}
-
 /* Between phones and desktops the list goes under the map. */
 @media (min-width: 640px) and (max-width: 959px) {
   .finder { grid-template-columns: 1fr; grid-template-areas: "locate" "map" "index"; }

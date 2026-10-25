@@ -40,6 +40,8 @@
   "header.skip": "본문으로 건너뛰기",
   "header.navigation": "주요 탐색",
   "header.docs": "문서",
+  "header.books": "도서",
+  "header.menu": "메뉴",
   "dialog.close": "닫기",
   "hero.allSystems": "다른 시스템",
   "hero.version": "버전 {version}",
