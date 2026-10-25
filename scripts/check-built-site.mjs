@@ -196,6 +196,79 @@ for (const lang of locales) {
   assert.ok((html.match(new RegExp(`href="${href}"`, 'g')) ?? []).length >= 2, `${lang}: header and footer link to ${href}`);
 }
 
+// ---------- Navigation ----------
+// The header: inline links from 640px (Guides, Books, Donate, language, theme), and below 640px a Menu
+// panel with every link (Guides, Books, Donate, Discord, Contact, the 11 languages). Docs shows only when
+// DOCS_URL is set; Discord is never inline.
+const site = readFileSync('src/data/site.ts', 'utf8');
+const docsSet = !/DOCS_URL: string \| null = null/.test(site);
+const discordFor = (lang) => (lang === 'fr' ? 'https://discord.gg/7wq9HsBdsc' : 'https://discord.gg/k7bsyjD9b8');
+const localized = (path, lang) => (lang === 'en' ? path : `/${lang}${path}`);
+const guidesFor = (lang) => (guideLocales.includes(lang) ? localized('/guides/', lang) : '/guides/');
+const guideFor = (slug, lang) => (guideLocales.includes(lang) ? localized(`/guides/${slug}/`, lang) : `/guides/${slug}/`);
+const headerOf = (html, from) => {
+  const header = html.match(/<header class="site-header">[\s\S]*?<\/header>/)?.[0];
+  assert.ok(header, `${from}: site header`);
+  const panel = header.match(/<details class="nav-menu" data-nav-menu>[\s\S]*?<\/details>/)?.[0];
+  assert.ok(panel, `${from}: the phone Menu panel`);
+  return { header, panel, inline: header.replace(panel, '') };
+};
+const mainOf = (html) => html.match(/<main\b[\s\S]*?<\/main>/)?.[0] ?? '';
+const linkTo = (html, href) => new RegExp(`<a\\b[^>]*\\shref="${href.replace(/[.?*+^$()[\]{}|\\]/g, '\\$&')}"`).test(html);
+const currentLink = (html, href) => new RegExp(`<a\\b[^>]*\\shref="${href}"[^>]*\\saria-current="page"|<a\\b[^>]*\\saria-current="page"[^>]*\\shref="${href}"`).test(html);
+function checkHeader(html, lang, path, from, alternates = locales) {
+  const { panel, inline } = headerOf(html, from);
+  const books = localized('/bibliography/', lang);
+  for (const [part, where] of [[inline, 'inline'], [panel, 'menu']]) {
+    assert.ok(linkTo(part, guidesFor(lang)), `${from}: ${where} Guides link`);
+    assert.ok(linkTo(part, books), `${from}: ${where} Books link`);
+    assert.ok(/<button[^>]*data-open-donate/.test(part), `${from}: ${where} Donate button`);
+    // The language list: the same page in each locale, else the English page.
+    for (const other of locales) {
+      const target = localized(path, alternates.includes(other) ? other : 'en');
+      assert.ok(new RegExp(`<a\\b[^>]*\\shref="${target}"[^>]*\\slang="${other}"`).test(part), `${from}: ${where} language link ${other} → ${target}`);
+    }
+  }
+  assert.ok(linkTo(panel, discordFor(lang)), `${from}: menu Discord link`);
+  assert.ok(linkTo(panel, `${localized('/', lang)}#contact`), `${from}: menu Contact link`);
+  assert.ok(!inline.includes('discord.gg'), `${from}: Discord is not inline in the header`);
+  const docs = `>${JSON.parse(readFileSync(`src/i18n/translations/${lang}.json`, 'utf8'))['header.docs']}<`;
+  assert.ok(!inline.includes(docs), `${from}: Docs is not inline`);
+  if (!docsSet) assert.ok(!panel.includes(docs), `${from}: no Docs link while DOCS_URL is unset`);
+  assert.ok(/data-theme-toggle/.test(inline), `${from}: theme toggle`);
+  return { inline, panel };
+}
+for (const lang of locales) {
+  const dir = lang === 'en' ? '' : lang;
+  const home = readFileSync(join(root, dir, 'index.html'), 'utf8');
+  checkHeader(home, lang, '/', `${lang} home`);
+  // "Start here": the three entry guides and the guides index.
+  const start = home.match(/<section class="section start-here"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(start, `${lang}: the Start here section`);
+  for (const slug of ['landrace-gardening', 'will-they-cross', 'saving-seed']) assert.ok(linkTo(start, guideFor(slug, lang)), `${lang}: Start here links to ${guideFor(slug, lang)}`);
+  assert.ok(linkTo(start, guidesFor(lang)), `${lang}: Start here links to the guides index`);
+  if (!guideLocales.includes(lang)) assert.ok(/\slang="en"/.test(start), `${lang}: the English guide text is marked lang="en"`);
+  const bibliography = readFileSync(join(root, dir, 'bibliography', 'index.html'), 'utf8');
+  const { inline, panel } = checkHeader(bibliography, lang, '/bibliography/', `${lang} bibliography`);
+  for (const part of [inline, panel]) {
+    assert.ok(currentLink(part, localized('/bibliography/', lang)), `${lang} bibliography: Books is aria-current="page"`);
+    assert.ok(!currentLink(part, guidesFor(lang)), `${lang} bibliography: Guides is not current`);
+  }
+  assert.ok(linkTo(mainOf(bibliography), guidesFor(lang)), `${lang} bibliography: links to the guides`);
+}
+for (const lang of guideLocales) {
+  const index = readFileSync(join(guidesDir(lang), 'index.html'), 'utf8');
+  const pages = [[index, '/guides/', `${lang} guides index`], ...guideSlugs.map((slug) => [readFileSync(pageFor(guideFor(slug, lang)), 'utf8'), `/guides/${slug}/`, `${lang} guide ${slug}`])];
+  for (const [html, path, from] of pages) {
+    const { inline, panel } = checkHeader(html, lang, path, from, guideLocales);
+    for (const part of [inline, panel]) {
+      assert.ok(currentLink(part, guidesFor(lang)), `${from}: Guides is aria-current="page"`);
+      assert.ok(!currentLink(part, localized('/bibliography/', lang)), `${from}: Books is not current`);
+    }
+  }
+  assert.ok(linkTo(mainOf(index), localized('/bibliography/', lang)), `${lang} guides index: links to the bibliography`);
+}
+
 for (const asset of ['canopi-logo.svg', 'data/featured-designs.json', 'data/plant-symbols.json']) assert.ok(existsSync(join(root, asset)), asset);
 for (const gone of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'screenshot-light.png', 'network']) assert.ok(!existsSync(join(root, gone)), `${gone} is retired`);
 console.log(`Verified 11 locale pages, their bibliography and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links and static assets.`);

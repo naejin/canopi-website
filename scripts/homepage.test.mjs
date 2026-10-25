@@ -94,3 +94,47 @@ test('every bibliography climate has a translated label, and every climate label
     assert.ok(climates.includes(key.slice('bibliography.climate.'.length)), `unused translation key: ${key}`);
   }
 });
+
+test('the header labels exist in every locale: Books (the bibliography) and the phone Menu', () => {
+  const root = new URL('../src/i18n/translations/', import.meta.url);
+  for (const file of readdirSync(root).filter((name) => name.endsWith('.json'))) {
+    const strings = JSON.parse(readFileSync(new URL(file, root), 'utf8'));
+    for (const key of ['header.books', 'header.menu']) assert.ok(strings[key]?.trim(), `${file}: ${key}`);
+  }
+  for (const lang of ['en', 'fr']) {
+    const guides = JSON.parse(readFileSync(new URL(`../src/i18n/guides/${lang}.json`, import.meta.url), 'utf8'));
+    assert.ok(guides['section.books']?.trim(), `guides/${lang}.json: section.books`);
+  }
+});
+
+test('no nav item is hidden by width, and every width query uses the 639/960 breakpoints', () => {
+  // Every stylesheet and every component's scoped <style>.
+  const files = [
+    ...readdirSync(new URL('../src/styles/', import.meta.url)).filter((name) => name.endsWith('.css')).map((name) => `styles/${name}`),
+    ...readdirSync(new URL('../src/components/', import.meta.url), { recursive: true }).filter((name) => name.endsWith('.astro')).map((name) => `components/${name}`),
+  ];
+  // 1200px picks the hero painting's file size (which image downloads), not a layout breakpoint.
+  const allowed = new Set(['639px', '640px', '959px', '960px', '1200px']);
+  for (const file of files) {
+    const css = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');
+    assert.ok(!/\.nav-(?:guides|discord)\b/.test(css), `${file}: a width-hidden nav item class`);
+    for (const [, width] of css.matchAll(/\((?:max|min)-width:\s*([\d.]+px)\)/g)) assert.ok(allowed.has(width), `${file}: width query ${width}`);
+  }
+  const global = readFileSync(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  // The one swap: below 640px the Menu panel, from 640px the inline links.
+  assert.match(global, /\.nav-menu\b/, 'global.css styles the phone menu');
+  assert.match(global, /\.nav-inline\b/, 'global.css styles the inline links');
+});
+
+test('the header has the phone menu, Books, and chrome.js closes both menus', () => {
+  const read = (path) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
+  const header = read('components/Header.astro');
+  assert.match(header, /current\?: 'guides' \| 'books'/);
+  assert.match(header, /<details class="nav-menu" data-nav-menu>/);
+  assert.match(header, /t\('header\.menu', lang\)/);
+  assert.match(header, /t\('header\.books', lang\)/);
+  assert.match(read('components/BibliographyPage.astro'), /current="books"/);
+  const chrome = read('scripts/chrome.js');
+  assert.match(chrome, /\[data-nav-menu\]/);
+  assert.match(chrome, /\[data-lang-menu\]/);
+});
