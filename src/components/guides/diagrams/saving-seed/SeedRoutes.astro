@@ -1,0 +1,29 @@
+---
+// Saving seed: the decision table. One row per kind of seed, keyed by what the reader sees when the
+// plant is done (dry pods, jelly-coated seed in fruit, seed with little jelly, squash); the cells give
+// the crops and the route. Words come from the MDX: head (three column titles), rows (what, crops,
+// route) and caption. On phones the rows stack like the crop tables (shared guide-crop-table rules).
+interface Row { what: string; crops: string; route: string; }
+interface Props { head: [string, string, string]; rows: Row[]; caption: string; }
+const { head, rows, caption } = Astro.props;
+if (!rows.length) throw new Error('<SeedRoutes>: needs at least one row');
+---
+<div class="guide-table-wrap" role="region" tabindex="0" aria-label={caption}>
+  <table class="guide-table guide-crop-table guide-sr">
+    <caption>{caption}</caption>
+    <thead><tr><th scope="col">{head[0]}</th><th scope="col">{head[1]}</th><th scope="col">{head[2]}</th></tr></thead>
+    <tbody>
+      {rows.map((row) => (
+        <tr>
+          <th scope="row">{row.what}</th>
+          <td data-label={head[1]}>{row.crops}</td>
+          <td data-label={head[2]}>{row.route}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .guide-sr tbody th { white-space: normal; min-width: 8rem; }
+</style>
