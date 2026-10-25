@@ -201,7 +201,7 @@ for (const lang of locales) {
 // panel with every link (Guides, Books, Donate, Discord, Contact, the 11 languages). Docs shows only when
 // DOCS_URL is set; Discord is never inline.
 const site = readFileSync('src/data/site.ts', 'utf8');
-const docsSet = !/DOCS_URL: string \| null = null/.test(site);
+const docsUrl = site.match(/DOCS_URL: string \| null = '([^']+)'/)?.[1];
 const discordFor = (lang) => (lang === 'fr' ? 'https://discord.gg/7wq9HsBdsc' : 'https://discord.gg/k7bsyjD9b8');
 const localized = (path, lang) => (lang === 'en' ? path : `/${lang}${path}`);
 const guidesFor = (lang) => (guideLocales.includes(lang) ? localized('/guides/', lang) : '/guides/');
@@ -234,7 +234,8 @@ function checkHeader(html, lang, path, from, alternates = locales) {
   assert.ok(!inline.includes('discord.gg'), `${from}: Discord is not inline in the header`);
   const docs = `>${JSON.parse(readFileSync(`src/i18n/translations/${lang}.json`, 'utf8'))['header.docs']}<`;
   assert.ok(!inline.includes(docs), `${from}: Docs is not inline`);
-  if (!docsSet) assert.ok(!panel.includes(docs), `${from}: no Docs link while DOCS_URL is unset`);
+  if (docsUrl) assert.ok(linkTo(panel, docsUrl) && panel.includes(docs), `${from}: menu Docs link to ${docsUrl}`);
+  else assert.ok(!panel.includes(docs), `${from}: no Docs link while DOCS_URL is unset`);
   assert.ok(/data-theme-toggle/.test(inline), `${from}: theme toggle`);
   return { inline, panel };
 }
@@ -247,7 +248,10 @@ for (const lang of locales) {
   assert.ok(start, `${lang}: the Start here section`);
   for (const slug of ['landrace-gardening', 'will-they-cross', 'saving-seed']) assert.ok(linkTo(start, guideFor(slug, lang)), `${lang}: Start here links to ${guideFor(slug, lang)}`);
   assert.ok(linkTo(start, guidesFor(lang)), `${lang}: Start here links to the guides index`);
-  if (!guideLocales.includes(lang)) assert.ok(/\slang="en"/.test(start), `${lang}: the English guide text is marked lang="en"`);
+  // The guides are English outside en and fr: a note says so, and the English text is marked lang="en".
+  const note = start.includes('class="start-here-note"');
+  if (guideLocales.includes(lang)) assert.ok(!note, `${lang}: no "in English" note where the guides are in ${lang}`);
+  else assert.ok(note && /\slang="en"/.test(start), `${lang}: the "in English" note and lang="en" on the English text`);
   const bibliography = readFileSync(join(root, dir, 'bibliography', 'index.html'), 'utf8');
   const { inline, panel } = checkHeader(bibliography, lang, '/bibliography/', `${lang} bibliography`);
   for (const part of [inline, panel]) {

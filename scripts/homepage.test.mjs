@@ -107,34 +107,51 @@ test('the header labels exist in every locale: Books (the bibliography) and the 
   }
 });
 
-test('no nav item is hidden by width, and every width query uses the 639/960 breakpoints', () => {
+// The rules inside each width @media block: [selector, declarations].
+function widthRules(css) {
+  const rules = [];
+  for (const match of css.matchAll(/@media[^{]*width[^{]*\{/g)) {
+    let depth = 1, i = match.index + match[0].length;
+    const from = i;
+    while (depth && i < css.length) depth += css[i] === '{' ? 1 : css[i] === '}' ? -1 : 0, i++;
+    const block = css.slice(from, i - 1).replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const [, selector, body] of block.matchAll(/([^{}]+)\{([^{}]*)\}/g)) rules.push([selector.trim(), body]);
+  }
+  return rules;
+}
+
+test('no header item is hidden by width except the one inline/Menu swap, and width queries use 639/960', () => {
   // Every stylesheet and every component's scoped <style>.
   const files = [
     ...readdirSync(new URL('../src/styles/', import.meta.url)).filter((name) => name.endsWith('.css')).map((name) => `styles/${name}`),
     ...readdirSync(new URL('../src/components/', import.meta.url), { recursive: true }).filter((name) => name.endsWith('.astro')).map((name) => `components/${name}`),
   ];
+  // Every class the header's markup uses (its links, the language menu, the Menu panel), except the page-wide .wrap.
+  const header = readFileSync(new URL('../src/components/Header.astro', import.meta.url), 'utf8');
+  const classes = [...new Set([...header.matchAll(/class="([^"]+)"/g)].flatMap((m) => m[1].split(/\s+/)))].filter((name) => name !== 'wrap');
+  const headerItem = new RegExp(`\\.(?:${classes.join('|')})(?![\\w-])`);
   // 1200px picks the hero painting's file size (which image downloads), not a layout breakpoint.
   const allowed = new Set(['639px', '640px', '959px', '960px', '1200px']);
+  let swaps = 0;
   for (const file of files) {
     const css = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');
-    assert.ok(!/\.nav-(?:guides|discord)\b/.test(css), `${file}: a width-hidden nav item class`);
     for (const [, width] of css.matchAll(/\((?:max|min)-width:\s*([\d.]+px)\)/g)) assert.ok(allowed.has(width), `${file}: width query ${width}`);
+    for (const [selector, body] of widthRules(css)) {
+      if (!/display:\s*none/.test(body) || !headerItem.test(selector)) continue;
+      // The one swap: below 640px the inline links give way to the Menu (hidden by default from 640px).
+      assert.equal(selector, '.nav-inline', `${file}: "${selector}" hides a header item by width`);
+      swaps++;
+    }
   }
-  const global = readFileSync(new URL('../src/styles/global.css', import.meta.url), 'utf8');
-  // The one swap: below 640px the Menu panel, from 640px the inline links.
-  assert.match(global, /\.nav-menu\b/, 'global.css styles the phone menu');
-  assert.match(global, /\.nav-inline\b/, 'global.css styles the inline links');
+  assert.equal(swaps, 1, 'global.css swaps the inline links for the Menu below 640px');
 });
 
-test('the header has the phone menu, Books, and chrome.js closes both menus', () => {
+test('the menus chrome.js closes are the ones the header renders', () => {
   const read = (path) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
   const header = read('components/Header.astro');
-  assert.match(header, /current\?: 'guides' \| 'books'/);
-  assert.match(header, /<details class="nav-menu" data-nav-menu>/);
-  assert.match(header, /t\('header\.menu', lang\)/);
-  assert.match(header, /t\('header\.books', lang\)/);
-  assert.match(read('components/BibliographyPage.astro'), /current="books"/);
   const chrome = read('scripts/chrome.js');
-  assert.match(chrome, /\[data-nav-menu\]/);
-  assert.match(chrome, /\[data-lang-menu\]/);
+  for (const attribute of ['data-lang-menu', 'data-nav-menu']) {
+    assert.ok(chrome.includes(`[${attribute}]`), `chrome.js handles [${attribute}]`);
+    assert.match(header, new RegExp(`<details[^>]*\\s${attribute}[\\s>]`), `Header.astro renders <details ${attribute}>`);
+  }
 });
