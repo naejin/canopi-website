@@ -11,6 +11,33 @@ function walk(node, visit) {
   for (const child of node.children ?? []) walk(child, visit);
 }
 
+// Punctuation that must stay on the line of the term it touches: a closing mark after it (with an
+// optional no-break space, as in French « ; » or « : »), or an opening quote or bracket before it.
+// Below 960px the term's first use is an inline-block button, which the browser may break around.
+const after = /^[\u00a0\u202f]?[,.;:!?…)\]»”’]+(?:[\u00a0\u202f]?[»”’)])?/;
+const before = /[«“‘(\[][\u00a0\u202f]?$/;
+
+function keepWithPunctuation(node) {
+  const kids = node.children;
+  if (!kids) return;
+  for (let i = 0; i < kids.length; i++) {
+    const kid = kids[i];
+    if (!isTerm(kid)) { keepWithPunctuation(kid); continue; }
+    const next = kids[i + 1];
+    const prev = kids[i - 1];
+    const tail = next?.type === 'text' ? next.value.match(after)?.[0] : undefined;
+    const head = prev?.type === 'text' ? prev.value.match(before)?.[0] : undefined;
+    if (!tail && !head) continue;
+    const inner = [];
+    if (head) { prev.value = prev.value.slice(0, -head.length); inner.push({ type: 'text', value: head }); }
+    inner.push(kid);
+    if (tail) { next.value = next.value.slice(tail.length); inner.push({ type: 'text', value: tail }); }
+    kids[i] = { type: 'element', tagName: 'span', properties: { className: ['guide-term-keep'] }, children: inner };
+    if (next && next.type === 'text' && next.value === '') kids.splice(i + 1, 1);
+    if (prev && prev.type === 'text' && prev.value === '') { kids.splice(i - 1, 1); i--; }
+  }
+}
+
 export function rehypeGuideTerms() {
   return (tree, file) => {
     // Only guides use <Term>; other MDX passes through untouched.
@@ -34,5 +61,6 @@ export function rehypeGuideTerms() {
       children.push(block);
     }
     tree.children = children;
+    for (const block of children) keepWithPunctuation(block);
   };
 }

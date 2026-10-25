@@ -164,6 +164,18 @@ for (const lang of guideLocales) {
       assert.match(html, new RegExp(`</button><span class="guide-term guide-term-word" hidden>`), `${path}: term "${id}" has no plain-word twin`);
     }
     assert.ok(!/<button[^>]*class="guide-term"/.test(html), `${path}: a glossary term button without its plain-word twin`);
+    // Crop tables: every cell names its column (phones show label/value rows, no sideways scroll), and
+    // the "in Lofthouse's experience" note names only columns the table shows.
+    const chrome = JSON.parse(readFileSync(new URL(`../src/i18n/guides/${lang}.json`, import.meta.url), 'utf8'));
+    for (const [table] of html.matchAll(/<table class="guide-table guide-crop-table"[\s\S]*?<\/table>/g)) {
+      const heads = [...table.match(/<thead[\s\S]*?<\/thead>/)[0].matchAll(/<th\b[^>]*>([^<]*)<\/th>/g)].map((m) => m[1]);
+      assert.ok(!/<td(?![^>]*\sdata-label=")/.test(table), `${path}: a crop table cell without data-label`);
+      const note = table.match(/<span class="guide-table-note">([^<]*)<\/span>/)?.[1] ?? '';
+      for (const key of ['crop.crossing', 'crop.ease', 'crop.hybrids']) {
+        const head = chrome[key];
+        if (note.toLowerCase().includes(head.toLowerCase())) assert.ok(heads.includes(head), `${path}: the crop table note names "${head}", a column it does not show`);
+      }
+    }
     // Every glossary term note and step is rendered server-side (readable without JavaScript).
     assert.ok(!/<(?:Term|Note|Checklist)\b/.test(html), `${path}: unrendered MDX component`);
   }

@@ -1,18 +1,22 @@
 ---
 // A fixed-wording caution about eating a crop or its seed: it names the risk and sends the reader to
 // their national food-safety authority. One text per risk (src/i18n/guides/*.json, "food.<risk>");
-// no doses, times, temperatures, methods or links, and nothing a guide can add to it.
+// no doses, times, temperatures, methods or links, and nothing a guide can add to it. Several risks
+// in one place are one box with one title: risk={['ergot', 'treated-seed']}.
 import { foodRisks, type FoodRisk } from '../../data/food-risks';
 import { gt, guideLangOf } from '../../i18n/guides';
-interface Props { risk: FoodRisk; }
+interface Props { risk: FoodRisk | FoodRisk[]; }
 const { risk } = Astro.props;
-if (!foodRisks.includes(risk)) throw new Error(`<FoodCaution risk="${risk}">: use one of ${foodRisks.join(', ')}`);
+const risks = Array.isArray(risk) ? risk : [risk];
+if (!risks.length) throw new Error('<FoodCaution risk={[]}>: name at least one risk');
+for (const r of risks) if (!foodRisks.includes(r)) throw new Error(`<FoodCaution risk="${r}">: use one of ${foodRisks.join(', ')}`);
+if (new Set(risks).size !== risks.length) throw new Error(`<FoodCaution risk={[${risks.join(', ')}]}>: a risk is listed twice`);
 const lang = guideLangOf(Astro.currentLocale);
 ---
 <aside class="guide-safety guide-food" role="note" aria-label={gt('food.title', lang)}>
   <svg class="guide-safety-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9.5v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.1" fill="currentColor"/></svg>
-  <div>
+  <div class="guide-safety-body">
     <p class="guide-safety-title">{gt('food.title', lang)}</p>
-    <p>{gt(`food.${risk}`, lang)}</p>
+    {risks.map((r) => <p>{gt(`food.${r}`, lang)}</p>)}
   </div>
 </aside>

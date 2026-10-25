@@ -117,6 +117,7 @@
   "crop.hybrids": "Hybrids",
   "crop.tip": "Tip",
   "crop.guide": "Crop guide",
+  "crop.guideLink": "Crop guide: {title}",
   "crop.his": "in Lofthouse’s experience",
   "crop.flag": "F1!",
   "crop.flagLabel": "Shop-bought hybrids are often pollen-sterile",
@@ -150,9 +151,10 @@
   "explorer.choose": "Choose a crop for details.",
   "explorer.unrated": "Not in his ease table: {list}.",
   "table.crop": "Crop",
-  "table.note": "Crossing, ease and hybrid columns: in Lofthouse’s experience, in his garden.",
+  "table.note": "{columns}: in Lofthouse’s experience, in his garden.",
   "seedKinds.kind": "Kind",
   "seedKinds.sow": "Seed you sow",
   "seedKinds.save": "Seed you save",
-  "seedKinds.label": "What happens when you save seed from each kind of variety"
+  "seedKinds.label": "What happens when you save seed from each kind of variety",
+  "aria.labelled": "{label}: {text}"
 }

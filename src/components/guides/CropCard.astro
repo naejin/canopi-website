@@ -29,5 +29,5 @@ const guide = crop.guide && (await publishedGuides(lang)).find((e) => slugOf(e) 
   </dl>
   {text.note && <p class="guide-crop-note">{text.note}</p>}
   <p class="guide-crop-his">{gt('crop.his', lang)}</p>
-  {guide && <p class="guide-crop-link"><a href={guidePath(slugOf(guide), lang)}>{gt('crop.guide', lang)}: {guide.data.title}</a></p>}
+  {guide && <p class="guide-crop-link"><a href={guidePath(slugOf(guide), lang)}>{gt('crop.guideLink', lang, { title: guide.data.title })}</a></p>}
 </article>

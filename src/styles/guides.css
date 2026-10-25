@@ -75,6 +75,8 @@
   text-decoration: underline dotted var(--accent); text-decoration-thickness: 1.5px; text-underline-offset: 3px;
 }
 .guide-term:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+/* A term and the punctuation touching it (rehype-guide-terms.mjs) never break apart: "landrace," or « grex ». */
+.guide-term-keep { white-space: nowrap; }
 
 /* Margin notes: in the flow on phones and tablets (glossary notes: popovers, below); in the margin column
    level with the next block at ≥960px. */
@@ -139,6 +141,7 @@
 .guide-safety-icon { color: var(--danger); margin-top: 0.1rem; }
 .guide-safety-title { font-weight: 600; color: var(--danger); margin-bottom: 0.2rem; }
 .guide-safety-body > * + * { margin-top: 0.4rem; }
+.guide-safety-body > .guide-safety-title + * { margin-top: 0; }
 .guide-his { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
 .guide-his-col { padding: 0.9rem 1.1rem; display: grid; gap: 0.3rem; align-content: start; box-shadow: 1px 0 0 var(--border), 0 1px 0 var(--border); }
 .guide-his-col .guide-label { color: var(--accent-ink); }
@@ -163,7 +166,9 @@
 .guide-points-accent li { border-top: 2px solid var(--accent); padding-top: 0.4rem; font-size: 0.92rem; }
 .guide-points-accent li strong { font-family: var(--font-display); }
 
-.guide-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1rem; counter-reset: guide-step; }
+/* No margin here: .guide-body > * + * spaces steps from the block above, like any other block. */
+:where(.guide-steps) { margin: 0; }
+.guide-steps { list-style: none; padding: 0; display: grid; gap: 1.1rem; counter-reset: guide-step; }
 .guide-body .guide-steps { padding-left: 0; }
 .guide-step { counter-increment: guide-step; display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 0.75rem; margin: 0; }
 .guide-body .guide-step + .guide-step { margin-top: 0; }
@@ -337,6 +342,30 @@
 .guide-table th, .guide-table td { text-align: left; vertical-align: top; padding: 0.5rem 0.8rem; border-top: 1px solid var(--border); }
 .guide-table thead th { border-top: 0; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); font-weight: 600; background: var(--surface-alt); }
 .guide-table tbody th { font-weight: 600; white-space: nowrap; }
+/* Crop tables on phones: one block per crop, each value under its column name (data-label), so a
+   table of any width fits 390px without scrolling. The header row stays for screen readers. */
+@media (max-width: 639px) {
+  .guide-crop-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .guide-crop-table, .guide-crop-table tbody { display: block; }
+  .guide-crop-table caption { display: block; }
+  .guide-crop-table tbody tr { display: block; padding: 0.55rem 0.8rem; border-top: 1px solid var(--border); }
+  .guide-crop-table tbody tr:first-child { border-top: 0; }
+  .guide-crop-table tbody th { display: block; padding: 0; border: 0; white-space: normal; }
+  .guide-crop-table td { display: grid; grid-template-columns: minmax(0, 8rem) minmax(0, 1fr); gap: 0.6rem; padding: 0.25rem 0 0; border: 0; }
+  .guide-crop-table td::before { content: attr(data-label); color: var(--text-muted); font-size: 0.85rem; }
+  /* An empty cell stays in the row (same cell count for screen readers), with no height. */
+  .guide-crop-table td:empty { padding: 0; }
+  .guide-crop-table td:empty::before { content: none; }
+  /* One value per crop: crop and value side by side on one line, no repeated label. */
+  .guide-crop-table[data-columns="1"] tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.6rem; align-items: baseline; }
+  .guide-crop-table[data-columns="1"] td { display: block; padding: 0; }
+  .guide-crop-table[data-columns="1"] td::before { content: none; }
+}
+
+/* Plain markdown tables in a guide body (GFM): the same look as the crop table. */
+.guide-body > table { border-collapse: collapse; width: 100%; font-size: 0.92rem; display: block; overflow-x: auto; }
+.guide-body > table th, .guide-body > table td { text-align: left; vertical-align: top; padding: 0.5rem 0.8rem; border-top: 1px solid var(--border); }
+.guide-body > table thead th { border-top: 0; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); font-weight: 600; background: var(--surface-alt); }
 
 .guide-explorer { display: grid; gap: 1.1rem; }
 .guide-legend { font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 0.4rem 1.2rem; flex-wrap: wrap; align-items: center; }
