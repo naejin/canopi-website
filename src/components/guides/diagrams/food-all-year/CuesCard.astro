@@ -1,6 +1,6 @@
 ---
 // Food all year: a printable "my cues" card, styled as a ruled notebook page. Two columns (what I
-// notice / what I do), one example line filled in, then `lines` blank ruled lines to write on. Static
+// notice / what I do), one example line filled in, then `lines` blank ruled lines to write on (hidden from screen readers: they are only paper to write on). Static
 // HTML, no script: paper works better in the garden. All words come from the MDX.
 interface Props { title: string; heads: [string, string]; example: [string, string]; lines?: number; }
 const { title, heads, example, lines = 5 } = Astro.props;
@@ -10,7 +10,7 @@ const { title, heads, example, lines = 5 } = Astro.props;
   <thead><tr><th scope="col">{heads[0]}</th><th scope="col">{heads[1]}</th></tr></thead>
   <tbody>
     <tr class="guide-cues-example"><td>{example[0]}</td><td>{example[1]}</td></tr>
-    {Array.from({ length: lines }, () => <tr><td>&nbsp;</td><td>&nbsp;</td></tr>)}
+    {Array.from({ length: lines }, () => <tr aria-hidden="true"><td>&nbsp;</td><td>&nbsp;</td></tr>)}
   </tbody>
 </table>
 
