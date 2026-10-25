@@ -83,21 +83,29 @@
 .guide-note p + p, .guide-note-body > * + * { margin-top: 0.5rem; }
 .guide-note-title { font-family: var(--font-display); color: var(--text); font-weight: 600; display: block; }
 /* Glossary notes below 960px: a card over the bottom of the screen, opened from the term (popover="auto"
-   closes on Escape or a tap outside). Without popover support they stay in the flow like other notes. */
+   closes on Escape or a tap outside). Without popover support they stay in the flow like other notes.
+   The card styles key on :popover-open at any width, so a note left open across a rotation to >=960px
+   stays a whole card (with its Close button) until closed, then returns to the margin. */
 .guide-note-close { display: none; }
 @supports selector(:popover-open) {
-  @media (width < 960px) {
-    .guide-note-term[popover] {
-      position: fixed; inset: auto 0.75rem 0.75rem; margin: 0 auto; width: auto; max-width: 34rem; height: auto; max-height: 60vh; overflow: auto;
-      color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border-strong); border-left: 4px solid var(--accent);
-      border-radius: var(--radius); padding: 0.9rem 1rem; box-shadow: 0 8px 28px color-mix(in srgb, var(--text) 22%, transparent);
+  .guide-note.guide-note-term:popover-open {
+    position: fixed; inset: auto 0.75rem 0.75rem; float: none; margin: 0 auto; width: auto; max-width: 34rem; height: auto; max-height: 60vh; overflow: auto;
+    color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border-strong); border-left: 4px solid var(--accent);
+    border-radius: var(--radius); padding: 0.9rem 1rem; box-shadow: 0 8px 28px color-mix(in srgb, var(--text) 22%, transparent);
+  }
+  .guide-note-term:popover-open::backdrop { background: color-mix(in srgb, var(--text) 12%, transparent); }
+  .guide-note-term:popover-open .guide-note-close {
+    display: block; margin: 0.6rem 0 0 auto; font: inherit; font-size: 0.88rem; font-weight: 600; color: var(--accent-ink);
+    background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.3rem 0.8rem; cursor: pointer; min-height: 2rem;
+  }
+  .guide-note-term .guide-note-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* Printed, a closed glossary note shows in the reading flow like any other note (at >=960px the margin
+     rule below takes over). */
+  @media print {
+    .guide-note-term[popover]:not(:popover-open) {
+      display: block; position: static; inset: auto; margin-inline: 0; width: auto; height: auto; max-height: none; overflow: visible;
+      color: var(--text-secondary); border: 0; break-inside: avoid;
     }
-    .guide-note-term[popover]::backdrop { background: color-mix(in srgb, var(--text) 12%, transparent); }
-    .guide-note-term .guide-note-close {
-      display: block; margin: 0.6rem 0 0 auto; font: inherit; font-size: 0.88rem; font-weight: 600; color: var(--accent-ink);
-      background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.3rem 0.8rem; cursor: pointer; min-height: 2rem;
-    }
-    .guide-note-term .guide-note-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   }
 }
 @media (min-width: 960px) {
@@ -106,13 +114,15 @@
     margin: 0.25rem calc(-1 * (var(--guide-margin) + var(--guide-gap))) 1rem 0;
     background: none; border-radius: 0; border-left: 2px solid var(--accent); padding: 0.1rem 0 0.1rem 0.8rem;
   }
-  /* The glossary note is a popover element: here it is a plain margin note, always shown, and its
-     term is not a control (no click, no tab stop). */
-  .guide-body > .guide-note-term[popover] {
+  /* The glossary note is a popover element: here it is a plain margin note, always shown. Its term is
+     plain text: the button is display: none (no tab stop, no click, in every engine) and its twin shows. */
+  .guide-body > .guide-note-term[popover]:not(:popover-open) {
     display: block; position: static; inset: auto; height: auto; overflow: visible; color: var(--text-secondary);
     border: 0; border-left: 2px solid var(--accent);
   }
-  .guide-term { pointer-events: none; cursor: inherit; interactivity: inert; }
+  .guide-term-control { display: none; }
+  /* !important, and more specific, to beat global.css's [hidden] { display: none !important }. */
+  .guide-term-word[hidden] { display: inline !important; cursor: inherit; }
   .guide-body > .guide-note + .guide-note { margin-top: 0.25rem; }
   .guide-body > h2 { clear: none; }
 }

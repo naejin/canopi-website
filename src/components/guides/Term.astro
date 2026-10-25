@@ -1,14 +1,17 @@
 ---
 // A glossary word in the text. The first use of each id in a guide gets its note (rehype-guide-terms
 // adds `first` and places a <TermNote> before the block); later uses are plain words. The first use
-// is a button that opens the note as a popover below 960px; at >=960px the note sits in the margin
-// and the button is inert (see the guide stylesheet). No JavaScript: the popover attribute does the work.
+// renders twice: a button that opens the note as a popover below 960px, and the same word as plain
+// text, shown instead at >=960px where the note sits in the margin. The button is display: none there,
+// so no engine can focus it or open the margin note as a popover. The word is `hidden` in the markup,
+// so it shows once even without the stylesheet. No JavaScript: the popover attribute does the work.
 import { glossaryEntry } from '../../data/glossary';
 import { guideLangOf } from '../../i18n/guides';
 interface Props { id: string; first?: boolean; }
 const { id, first = false } = Astro.props;
 glossaryEntry(id, guideLangOf(Astro.currentLocale));
+const word = first ? await Astro.slots.render('default') : '';
 ---
 {first
-  ? <button type="button" class="guide-term" popovertarget={`guide-note-${id}`} aria-describedby={`guide-note-${id}`}><slot /></button>
+  ? <><button type="button" class="guide-term guide-term-control" popovertarget={`guide-note-${id}`} aria-describedby={`guide-note-${id}-def`} set:html={word} /><span class="guide-term guide-term-word" hidden set:html={word} /></>
   : <slot />}

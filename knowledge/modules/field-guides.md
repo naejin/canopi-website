@@ -4,23 +4,23 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:26:51Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:39:26Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:8437f85bbed00820
-    last_modified: 2026-10-25T10:25:08Z
+    digest: sha256:b1cc1d50b3a2ec86
+    last_modified: 2026-10-25T10:32:57Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:9ebfaeffd2d61856
-    last_modified: 2026-10-25T10:21:42Z
+    digest: sha256:acc99262e667166b
+    last_modified: 2026-10-25T10:34:14Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
-    digest: sha256:c0fb571c2e01e31b
-    last_modified: 2026-10-25T10:21:42Z
+    digest: sha256:ac7d9ef021ef991c
+    last_modified: 2026-10-25T10:37:39Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -44,8 +44,8 @@ sources:
   - id: crops-ts
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
-    digest: sha256:fa7f28713945c93c
-    last_modified: 2026-10-25T10:25:08Z
+    digest: sha256:9693c3a6ce74e302
+    last_modified: 2026-10-25T10:33:04Z
 ---
 
 # Responsibility
@@ -65,7 +65,7 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 - Frontmatter: `title`, one-sentence `description`, `domain` (seeds, crops, seasons, pests), `order`, `glance` (3 to 6 label/value pairs), `quick`, `sources` (`{ book: <bibliography id>, chapters: [titles] }`), `related`, `updated`.
 - Components (contract: `.local/field-guides/component-api.md`, which lists every prop and limit): QuickAnswer, Term, TermNote (placed by the plugin), Note, Safety, FoodCaution, HisGarden, Steps/Step, CropCards, CropCard, CropTable, CropExplorer, PollinationBadge, SeasonTimeline, YearsTimeline, PlotDiagram, FlowerDiagram, PlantingMixBar, Checklist/Item, Figure, Columns, Card, Points, NextGuides.
 - Ids are one per concept: `<Term id>` takes a glossary key, crop components a crop id; there are no alias maps.
-- `<Term id>`: the first use per guide gets a `<TermNote>` (placed by the rehype plugin before the containing block). At >= 960px it is a margin note and the term is plain text; below, the term is a button opening the note as a `popover="auto"` card (Escape, outside tap or Close); without popover support the note stays inline. `NextGuides` lists only published guides, so a section may name one not yet written.
+- `<Term id>`: the first use per guide gets a `<TermNote>` (placed by the rehype plugin before the containing block). The term renders as a button plus a `hidden` plain-word twin. At >= 960px the note is a margin note, the button is `display: none` (no tab stop or popover in any engine) and the twin shows; below, the button opens the note as a `popover="auto"` card (Escape, outside tap or Close), described by the definition text alone. A note left open across a rotation to >= 960px stays a card until closed. Printed, notes show in the flow. Without popover support the note stays inline. `NextGuides` lists only published guides, so a section may name one not yet written.
 - Checklists: the checklist plugin gives each `<Item>` its `list`, so checkbox ids are `guide-check-<slug>-<list>-<item>` (unique on the page) and the build fails on a duplicate checklist id, a duplicate item in one list, or an Item outside a Checklist. Ticks: `localStorage["canopi-guide:<slug>:checks"]` = `{ <checklist id>: [item ids] }`. Interactive components mark themselves `data-guide-interactive`.
 - The bibliography page shows "Field guide" backlinks under each book a guide cites (`guidesCiting`), anchored by the book's `- id:`.
 

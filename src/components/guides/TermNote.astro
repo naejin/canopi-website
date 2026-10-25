@@ -1,7 +1,8 @@
 ---
 // The note for a glossary term; placed by src/lib/rehype-guide-terms.mjs, not written by hand.
 // A popover="auto" below 960px (opened by its <Term> button; Escape or a tap outside closes it),
-// a static margin note at >=960px. Where popover is not supported it stays in the reading flow.
+// a static margin note at >=960px. Where popover is not supported it stays in the reading flow. The
+// term button is described by the definition span alone (not the title or the Close button).
 import { glossaryEntry } from '../../data/glossary';
 import { gt, guideLangOf } from '../../i18n/guides';
 interface Props { id: string; }
@@ -10,6 +11,6 @@ const lang = guideLangOf(Astro.currentLocale);
 const entry = glossaryEntry(id, lang);
 ---
 <aside class="guide-note guide-note-term" id={`guide-note-${id}`} popover="auto">
-  <p><b class="guide-note-title">{entry.term}</b>{entry.definition}</p>
+  <p><b class="guide-note-title">{entry.term}</b><span id={`guide-note-${id}-def`}>{entry.definition}</span></p>
   <button type="button" class="guide-note-close" popovertarget={`guide-note-${id}`} popovertargetaction="hide">{gt('term.close', lang)}</button>
 </aside>

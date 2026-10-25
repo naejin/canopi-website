@@ -6,12 +6,14 @@ resource: ../../src/data
 tags: [module, data]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:26:51Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:39:27Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:6b6ed02cc7576e05
-    last_modified: 2026-10-25T10:25:08Z
+    digest: sha256:cef5ec8058fbb4d1
+    last_modified: 2026-10-25T10:33:04Z
 ---
 
 # Responsibility

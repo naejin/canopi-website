@@ -318,3 +318,21 @@ test('guide styles are scoped: guides.css classes start with guide-, and only th
   }
   assert.deepEqual(importers.sort(), ['components/guides/GuideLayout.astro', 'components/guides/GuidesIndex.astro']);
 });
+
+test('glossary terms do not rely on Chromium-only CSS, and their notes print in the flow', () => {
+  const css = read('styles/guides.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.ok(!/\binteractivity\s*:/.test(css), 'guides.css: interactivity is Chromium-only; hide the term button with display: none instead');
+  const desktop = css.slice(css.indexOf('@media (min-width: 960px)'));
+  assert.match(desktop, /\.guide-term-control\s*\{[^}]*display\s*:\s*none/, 'the term button is display: none at >=960px');
+  assert.match(css, /@media print[\s\S]*?\.guide-note-term\[popover\]:not\(:popover-open\)\s*\{[^}]*display\s*:\s*block/, 'glossary notes show when printed');
+  // An open note left open across a rotation to >=960px stays a card, not a misplaced margin note.
+  assert.match(css, /\.guide-note\.guide-note-term:popover-open\s*\{[^}]*position\s*:\s*fixed/, 'an open glossary note is a fixed card at any width');
+});
+
+test('checklist items never suggest tasting a crop', () => {
+  for (const { slug, lang } of guides) {
+    for (const [item] of read(`content/guides/${slug}/${lang}.mdx`).matchAll(/<Item\b[\s\S]*?<\/Item>/g)) {
+      assert.ok(!/\b(?:tast|flavou?r|cook)|go[uû]t|cuit/i.test(item), `${slug}/${lang}: ${item}`);
+    }
+  }
+});

@@ -5,6 +5,8 @@ description: How to install, build, test, and verify the marketing site before p
 tags: [runbook, build, test]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:26:51Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:39:27Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -19,8 +21,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:43fb6cd1a8724cb7
-    last_modified: 2026-10-25T10:10:26Z
+    digest: sha256:3275d12607dbabf8
+    last_modified: 2026-10-25T10:34:00Z
 ---
 
 # When to use

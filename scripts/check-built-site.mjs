@@ -155,6 +155,15 @@ for (const lang of guideLocales) {
       const stray = svg.replace(/<(text|title|desc)\b[\s\S]*?<\/\1>/g, '').match(/>\s*([^<\s][^<]*?)\s*</);
       assert.ok(!stray, `${path}: stray text "${stray?.[1]}" inside an SVG diagram`);
     }
+    // A glossary term's first use is a button (shown below 960px) described by its definition text, not by
+    // the whole popover with its Close button; beside it, the same word as plain text (shown at >=960px,
+    // where the button is display: none, so no engine can focus it or open the margin note as a popover).
+    for (const [button, id] of html.matchAll(/<button[^>]*class="guide-term guide-term-control"[^>]*popovertarget="guide-note-([^"]+)"[^>]*>/g)) {
+      assert.ok(button.includes(`aria-describedby="guide-note-${id}-def"`), `${path}: term "${id}" is not described by its definition text`);
+      assert.ok(html.includes(`id="guide-note-${id}-def"`), `${path}: term "${id}" has no definition text element`);
+      assert.match(html, new RegExp(`</button><span class="guide-term guide-term-word" hidden>`), `${path}: term "${id}" has no plain-word twin`);
+    }
+    assert.ok(!/<button[^>]*class="guide-term"/.test(html), `${path}: a glossary term button without its plain-word twin`);
     // Every glossary term note and step is rendered server-side (readable without JavaScript).
     assert.ok(!/<(?:Term|Note|Checklist)\b/.test(html), `${path}: unrendered MDX component`);
   }

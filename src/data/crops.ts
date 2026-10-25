@@ -132,7 +132,7 @@ export const crops: Crop[] = [
     id: 'chickpea', name: { en: 'Chickpea', fr: 'Pois chiche' },
     examples: { en: 'garbanzo', fr: 'garbanzo' },
     species: 'Cicer arietinum', pollination: { by: 'self' }, crossing: low, life: annual, seed: 'dry', ease: 'very-hard', cms: 'low', guide: beanGuide,
-    note: { en: 'Hard to cross by hand: the male and female parts sit close together in a small flower, and each try gives one or two seeds.', fr: 'Difficile à croiser à la main : organes mâles et femelles serrés dans une petite fleur, et une ou deux graines par essai.' },
+    note: { en: 'A tiny flower with its parts packed tight makes hand-crossing fiddly, and each success yields very few seeds.', fr: 'Croisement manuel minutieux : la fleur est minuscule, ses organes très rapprochés, et chaque réussite donne très peu de graines.' },
   },
   {
     id: 'tomato-garden', name: { en: 'Garden tomato', fr: 'Tomate potagère' },
