@@ -9,6 +9,7 @@ import DonateDialog from '../DonateDialog.astro';
 import PageData from '../PageData.astro';
 import { guideDomains, publishedGuides, slugOf } from '../../lib/guides';
 import { gt, guideLocales, guidePath, guidesPath, type GuideLang } from '../../i18n/guides';
+import { localizedUrl } from '../../i18n/utils';
 interface Props { lang: GuideLang; }
 const { lang } = Astro.props;
 const guides = await publishedGuides(lang);
@@ -30,6 +31,7 @@ const structuredData = {
       <header class="guide-index-head">
         <h1>{gt('section.title', lang)}</h1>
         <p class="guide-small">{gt('section.languages', lang)}</p>
+        <p class="guide-index-books"><a href={localizedUrl('/bibliography/', lang)}>{gt('section.books', lang)}</a></p>
       </header>
       {groups.map(({ domain, guides: list }) => (
         <section class="guide-domain" id={domain} aria-labelledby={`guide-domain-${domain}`}>

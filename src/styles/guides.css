@@ -459,6 +459,7 @@
 .guide-page .guide-index { max-width: calc(var(--guide-measure) + var(--guide-margin) + var(--guide-gap) + 2 * var(--gutter)); }
 .guide-index-head { display: grid; gap: 0.8rem; padding-top: 1.5rem; }
 .guide-index-head h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); }
+.guide-page .guide-index-books a { font-weight: 600; color: var(--accent-ink); }
 .guide-domain { padding-top: 2.8rem; display: grid; gap: 1rem; scroll-margin-top: 1rem; }
 .guide-domain h2 { font-size: 1.6rem; }
 .guide-index-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 1rem; }

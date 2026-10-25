@@ -3,7 +3,7 @@
 import { t, localizedUrl, type Locale } from '../i18n/utils';
 import { themes } from '../data/bibliography';
 import { guidesCiting, slugOf } from '../lib/guides';
-import { guidePath, guideLangOf } from '../i18n/guides';
+import { guidePath, guidesPath, guideLangOf } from '../i18n/guides';
 interface Props { lang: Locale; full?: boolean; }
 const { lang, full = false } = Astro.props;
 const Title = full ? 'h1' : 'h2';
@@ -39,6 +39,7 @@ const shelves = themes
     <header class="section-head">
       <Title id="bibliography-title">{t('bibliography.title', lang)}</Title>
       <p>{t('bibliography.lede', lang)}</p>
+      {full && <p class="bibliography-guides"><a href={guidesPath(lang)} hreflang={guideLang}>{t('bibliography.guides', lang)}</a></p>}
     </header>
     {full && (
       <nav class="bibliography-themes" aria-label={t('bibliography.themes', lang)}>
