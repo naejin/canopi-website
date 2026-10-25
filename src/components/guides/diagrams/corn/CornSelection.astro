@@ -1,0 +1,70 @@
+---
+// Corn guide: the two ways to choose seed, side by side. Mass selection: one bulk planting, the plants
+// that do well are ringed, all their seed goes into one jar. Sibling groups: four cobs (A to D), a few
+// seeds of each sown as a small group; groups B and D are kept whole, A and C culled whole. Titles,
+// texts and alt texts come from the MDX.
+import { rng } from '../../../../lib/svg';
+interface Panel { title: string; text: string; alt: string }
+interface Props { mass: Panel; sibling: Panel }
+const { mass, sibling } = Astro.props;
+const r = rng(77);
+const bulk = Array.from({ length: 24 }, (_, i) => ({ x: 18 + (i % 6) * 17, y: 18 + Math.floor(i / 6) * 17, keep: r() < 0.3 }));
+const groups = ['A', 'B', 'C', 'D'].map((name, j) => ({ name, y: 16 + j * 20, keep: j === 1 || j === 3 }));
+const COB = 'M-9 0C-9-4-5-5 0-5C5-5 9-4 9 0C9 4 5 5 0 5C-5 5-9 4-9 0Z';
+---
+<figure class="guide-figure guide-csel">
+  <div class="guide-csel-panel">
+    <svg viewBox="0 0 190 90" role="img" aria-label={mass.alt}>
+      <rect x="4" y="4" width="114" height="82" rx="6" class="guide-bed" />
+      {bulk.map((p) => (
+        <g>
+          <circle cx={p.x + 4} cy={p.y + 3} r="5" class="guide-plant guide-csel-plant" />
+          {p.keep && <circle cx={p.x + 4} cy={p.y + 3} r="7.5" class="guide-csel-ring" />}
+        </g>
+      ))}
+      <path d="M124 45H146" class="guide-csel-arrow" /><path d="M142 40L148 45L142 50" class="guide-csel-arrow" />
+      <rect x="156" y="24" width="26" height="6" rx="1.5" class="guide-paper" />
+      <rect x="153" y="30" width="32" height="40" rx="6" class="guide-glass" />
+      {[[161, 44], [169, 40], [177, 46], [163, 56], [173, 54], [168, 63], [179, 61], [160, 64]].map(([x, y]) => <ellipse cx={x} cy={y} rx="3" ry="3.6" class="guide-c6" />)}
+    </svg>
+    <p class="guide-csel-title">{mass.title}</p>
+    <p class="guide-csel-text">{mass.text}</p>
+  </div>
+  <div class="guide-csel-panel">
+    <svg viewBox="0 0 190 90" role="img" aria-label={sibling.alt}>
+      {groups.map((g) => (
+        <g class:list={[{ 'guide-gone': !g.keep }]}>
+          <path d={COB} transform={`translate(18 ${g.y + 5})`} class="guide-c6 guide-csel-cob" />
+          <text x="34" y={g.y + 9} class="guide-csel-letter">{g.name}</text>
+          <path d={`M46 ${g.y + 5}H56`} class="guide-csel-thin" />
+          {[0, 1, 2, 3, 4].map((k) => <circle cx={64 + k * 11} cy={g.y + 5} r="4.2" class="guide-plant guide-csel-plant" />)}
+        </g>
+      ))}
+      {groups.map((g) => g.keep
+        ? <path d={`M118 ${g.y + 5}l3 3l6 -7`} class="guide-csel-tick" />
+        : <path d={`M118 ${g.y + 1}l8 8M126 ${g.y + 1}l-8 8`} class="guide-csel-cross" />)}
+      <path d="M134 41L146 45M134 81L146 50" class="guide-csel-arrow" /><path d="M142 40L148 45L142 50" class="guide-csel-arrow" />
+      <rect x="156" y="24" width="26" height="6" rx="1.5" class="guide-paper" />
+      <rect x="153" y="30" width="32" height="40" rx="6" class="guide-glass" />
+      {[[161, 44], [169, 40], [177, 46], [163, 56], [173, 54], [168, 63], [179, 61], [160, 64]].map(([x, y]) => <ellipse cx={x} cy={y} rx="3" ry="3.6" class="guide-c6" />)}
+    </svg>
+    <p class="guide-csel-title">{sibling.title}</p>
+    <p class="guide-csel-text">{sibling.text}</p>
+  </div>
+</figure>
+
+<style>
+  .guide-csel { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .guide-csel-panel { display: grid; gap: 0.3rem; align-content: start; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.8rem 0.9rem; }
+  .guide-csel-title { font-family: var(--font-display); font-weight: 600; font-size: 1rem; margin: 0.2rem 0 0; }
+  .guide-csel-text { font-size: 0.9rem; line-height: 1.45; color: var(--text-secondary); margin: 0; }
+  .guide-csel-plant { fill: var(--leaf); }
+  .guide-csel-ring { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+  .guide-csel-arrow { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-csel-thin { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 2 2; }
+  .guide-csel-cob { stroke: var(--border-strong); stroke-width: 0.6; }
+  .guide-csel-tick { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-csel-cross { fill: none; stroke: var(--text-muted); stroke-width: 1.8; stroke-linecap: round; }
+  :global(.guide-page) svg text.guide-csel-letter { font-size: 11px; font-weight: 600; fill: var(--text-secondary); }
+  @media (max-width: 639px) { .guide-csel { grid-template-columns: minmax(0, 1fr); } }
+</style>

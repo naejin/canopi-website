@@ -1,0 +1,87 @@
+---
+// Corn guide: why sweetness hides. Left, a 2 × 2 square: two starchy parents that each carry one sweet
+// gene (S starchy, s sweet) give three starchy kernels to one sweet. Right, a second-generation cob
+// with exactly one kernel in four drawn wrinkled (seeded, so every build is the same). Words come
+// from the MDX: title, the two parent headers, the cell words, a key, the cob's caption and alt text.
+import { rng, shuffle, r1 } from '../../../../lib/svg';
+interface Props { title: string; parentA: string; parentB: string; starchy: string; sweet: string; legend: string; cobAlt: string; cobCaption: string }
+const { title, parentA, parentB, starchy, sweet, legend, cobAlt, cobCaption } = Astro.props;
+
+// The cob: kernels on a grid, kept inside a long rounded outline, one in four wrinkled.
+const CX = 130, CY = 46, RX = 118, RY = 34;
+const slots: { x: number; y: number }[] = [];
+for (let j = 0; j < 7; j++) for (let i = 0; i < 24; i++) {
+  const x = 22 + i * 9.4 + (j % 2) * 4.7, y = 18 + j * 9.4;
+  const e = ((x - CX) / (RX - 9)) ** 2 + ((y - CY) / (RY - 6)) ** 2;
+  if (e <= 1) slots.push({ x: r1(x), y: r1(y) });
+}
+const order = shuffle(slots.map((_, i) => i), rng(1924));
+const wrinkled = new Set(order.slice(0, Math.round(slots.length / 4)));
+const kernels = slots.map((s, i) => ({ ...s, w: wrinkled.has(i) }));
+const PLUMP = 'M-3.8-3C-3.8-4.4-2-4.8 0-4.8C2-4.8 3.8-4.4 3.8-3L3.4 2.6C3 4.2 1.6 4.8 0 4.8C-1.6 4.8-3 4.2-3.4 2.6Z';
+const WRINKLED = 'M-3.2-2.6C-3.2-4-1.4-4.2-0.6-3.4C0-4.2 1.4-4.2 2-3.4C3-4 3.6-3.2 3.2-2.2L2.6 2C2.8 3.4 1.4 4.2 0 4.2C-1.4 4.2-2.8 3.4-2.4 2Z';
+const cell = (genes: string, isSweet: boolean) => ({ genes, word: isSweet ? sweet : starchy, isSweet });
+const grid = [[cell('SS', false), cell('Ss', false)], [cell('Ss', false), cell('ss', true)]];
+const head = ['S', 's'];
+---
+<figure class="guide-figure guide-csk">
+  <p class="guide-figure-title">{title}</p>
+  <div class="guide-csk-parts">
+    <table class="guide-csk-square">
+      <thead>
+        <tr><td class="guide-csk-corner"></td><th scope="colgroup" colspan="2">{parentA}</th></tr>
+        <tr><th scope="col" class="guide-csk-corner">{parentB}</th>{head.map((h) => <th scope="col">{h}</th>)}</tr>
+      </thead>
+      <tbody>
+        {grid.map((row, j) => (
+          <tr>
+            <th scope="row">{head[j]}</th>
+            {row.map((c) => (
+              <td class:list={[{ 'guide-csk-sweet': c.isSweet }]}>
+                <svg viewBox="-6 -6 12 12" aria-hidden="true" focusable="false"><path d={c.isSweet ? WRINKLED : PLUMP} class={`${c.isSweet ? 'guide-c1' : 'guide-c6'} guide-csk-k`} />{c.isSweet && <path d="M-1 -1.6L0 1.8L1 -1.6" class="guide-csk-crease" />}</svg>
+                <span class="guide-csk-genes">{c.genes}</span>
+                <span class="guide-csk-word">{c.word}</span>
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div class="guide-csk-cob">
+      <svg viewBox="0 0 260 92" role="img" aria-label={cobAlt}>
+        <ellipse cx={CX} cy={CY} rx={RX} ry={RY} class="guide-csk-core" />
+        {kernels.map((k) => (
+          <g transform={`translate(${k.x} ${k.y})`}>
+            <path d={k.w ? WRINKLED : PLUMP} class={`${k.w ? 'guide-c1' : 'guide-c6'} guide-csk-k`} />
+            {k.w && <path d="M-1 -1.6L0 1.8L1 -1.6" class="guide-csk-crease" />}
+          </g>
+        ))}
+      </svg>
+      <p class="guide-figure-caption">{cobCaption}</p>
+    </div>
+  </div>
+  <figcaption class="guide-figure-caption">{legend}</figcaption>
+</figure>
+
+<style>
+  .guide-csk { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem 0.8rem; }
+  .guide-csk-parts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem 1.4rem; align-items: center; }
+  .guide-csk-square { border-collapse: collapse; font-size: 0.85rem; line-height: 1.25; }
+  .guide-csk-square th { font-weight: 600; padding: 0.25rem 0.4rem; text-align: center; color: var(--text-secondary); }
+  .guide-csk-square thead th[colspan] { font-size: 0.8rem; color: var(--text-muted); }
+  .guide-csk-square th.guide-csk-corner { font-size: 0.8rem; color: var(--text-muted); text-align: right; }
+  .guide-csk-square td { border: 1px solid var(--border-strong); background: var(--surface-alt); padding: 0.4rem 0.5rem; text-align: center; min-width: 4.6rem; }
+  .guide-csk-square td.guide-csk-corner { border: 0; background: none; }
+  .guide-csk-square td.guide-csk-sweet { background: var(--surface); outline: 2px solid var(--accent); outline-offset: -2px; }
+  .guide-csk-square td svg { width: 1.3rem; margin: 0 auto 0.15rem; }
+  .guide-csk-genes { display: block; font-weight: 600; }
+  .guide-csk-word { display: block; color: var(--text-secondary); font-size: 0.8rem; }
+  .guide-csk-k { stroke: var(--border-strong); stroke-width: 0.35; }
+  .guide-csk-crease { fill: none; stroke: var(--seed-3); stroke-width: 0.5; stroke-linecap: round; }
+  .guide-csk-core { fill: var(--seed-3); stroke: var(--border-strong); stroke-width: 1; }
+  .guide-csk-cob svg { width: 100%; overflow: visible; }
+  @media (max-width: 639px) {
+    .guide-csk { padding-inline: 0.7rem; }
+    .guide-csk-parts { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+  }
+</style>
