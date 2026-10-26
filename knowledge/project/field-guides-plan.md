@@ -4,7 +4,7 @@ title: Field Guides plan
 description: Build plan for the 17 Field Guides drawn from Landrace Gardening — steps, streams, file ownership and exit criteria.
 status: stable
 tags: [field-guides, plan]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T21:26:50Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:00:54Z }
 ---
 
 # Field Guides plan
@@ -41,7 +41,7 @@ Hand-off branch for shared-file requests; cross-guide link pass (related/next), 
 ## Step 4 — Trees and kitchen (done 2026-10-26, pushed bf9f27c)
 Added 18 trees-with-edible-leaves (Trees & perennials), 19 nixtamalization and 20 cooking-dry-beans (Harvest to kitchen), and reopened every earlier [OMIT] item in guides 01-17 under the warn-don't-remove rule. Specs 18-20 are in `.local/field-guides/specs/`; the re-audit brief is `.local/field-guides/reaudit-brief.md`.
 
-## Step 5 — Soil (from 2026-10-26)
+## Step 5 — Soil (done 2026-10-26, pushed 1f543f2)
 Guide map and owner decisions: `.local/field-guides/teaming-with-microbes/00-map.md` and the 2026-10-26 rows of the [user decisions](/decisions/field-guides-user-decisions.md); hub mockup approved (`teaming-with-microbes/field-guide-living-soil.html`). Specs 21-29 in `.local/field-guides/specs/`; stream addendum `.local/field-guides/stream-brief-soil.md`.
 - Shared files first on `guides/integration`: the `soil` domain and its hero motif with `--soil-*` tokens, 33 glossary terms, the `teaming-with-microbes` bibliography id, the `compost-tea` food caution.
 - Streams: soil-hub (21, 23), soil-compost (24, 25), soil-tea (26, 27), soil-read (22, 28, 29); at most three building at once.
