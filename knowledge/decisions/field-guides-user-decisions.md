@@ -4,7 +4,7 @@ title: Field Guides — user decisions
 description: Dated decisions the project owner made about the Field Guides section; they change only when the owner changes them.
 status: stable
 tags: [field-guides, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:41Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:46:45Z }
 ---
 
 # Field Guides — user decisions
@@ -35,6 +35,7 @@ any of them; a change is a question to the owner.
 | 2026-10-26 | **Compost tea gets a full guide**, warn-don't-remove: it explains aerated tea versus soaked extracts and manure tea, with the E. coli / food-crop warning first; no sugar amounts, rates or brewing times, never "spray before harvest", no fish-hydrolysate or "protozoa soup" recipes; the authors' disease claims are attributed. |
 | 2026-10-26 | **Compost temperatures are published** as the authors' figures for managing a hot pile and killing weed seeds, beside a warning that a home pile heats unevenly so compost is never treated as germ-free (why pet and human faeces stay out and the authors avoid manure), and that a hot pile's centre can scald. Compost is not eaten, so the no-figures rule does not apply. |
 | 2026-10-26 | **Soil hero motif:** rounded soil crumbs in ochre and brown, threaded with fine cream fungal threads, with one small earthworm. No green. |
+| 2026-10-26 | The soil motif's fungal threads are **tan in light mode** (cream is lost on the parchment background) and pale cream in dark mode. |
 
 ## Where the source notes live
 
