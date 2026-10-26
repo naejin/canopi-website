@@ -279,6 +279,139 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
     en: { term: 'Allelopathy', definition: 'A plant releasing substances that hold back the sprouting or growth of other plants nearby.' },
     fr: { term: 'Allélopathie', definition: 'Le fait qu’une plante libère des substances qui freinent la germination ou la croissance des plantes voisines.' },
   },
+  // Soil (Teaming with Microbes guides).
+  'soil-food-web': {
+    en: { term: 'Soil food web', definition: 'All the living things in a soil, linked by who eats whom.' },
+    fr: { term: 'Réseau trophique du sol', definition: 'L’ensemble des êtres vivants d’un sol, reliés par qui mange qui.' },
+  },
+  'root-exudates': {
+    en: { term: 'Root exudates', definition: 'Sugars, proteins and other substances that roots release into the soil to feed and attract microbes.' },
+    fr: { term: 'Exsudats racinaires', definition: 'Sucres, protéines et autres substances que les racines libèrent dans le sol pour nourrir et attirer les microbes.' },
+  },
+  'rhizosphere': {
+    en: { term: 'Rhizosphere', definition: 'The thin layer of soil, a couple of millimetres thick, around each root, where exudates and microbes meet.' },
+    fr: { term: 'Rhizosphère', definition: 'La fine couche de sol, de quelques millimètres, qui entoure chaque racine, où se rencontrent exsudats et microbes.' },
+  },
+  'mineralisation': {
+    en: { term: 'Mineralisation', definition: 'Nutrients leaving living bodies or dead matter in a simple form that roots can take up.' },
+    fr: { term: 'Minéralisation', definition: 'La libération des éléments nutritifs contenus dans les êtres vivants ou la matière morte, sous une forme simple que les racines peuvent absorber.' },
+  },
+  'hyphae': {
+    en: { term: 'Hyphae', definition: 'The fine threads a fungus grows through soil and rotting matter; a mass of them shows as white fluff.' },
+    fr: { term: 'Hyphes', definition: 'Les fins filaments qu’un champignon étend dans le sol et la matière en décomposition ; en masse, ils forment un duvet blanc.' },
+  },
+  'protozoa': {
+    en: { term: 'Protozoa', definition: 'Single-celled organisms that hunt bacteria and other microbes in the films of water around soil particles.' },
+    fr: { term: 'Protozoaires', definition: 'Organismes d’une seule cellule qui chassent bactéries et autres microbes dans les films d’eau autour des particules du sol.' },
+  },
+  'nematode': {
+    en: { term: 'Nematode', definition: 'A tiny unsegmented worm, mostly too small to see; most eat bacteria, fungi or each other, and a few attack roots.' },
+    fr: { term: 'Nématode', definition: 'Minuscule ver non segmenté, le plus souvent invisible à l’œil nu ; la plupart mangent bactéries, champignons ou d’autres nématodes, quelques-uns s’attaquent aux racines.' },
+  },
+  'springtail': {
+    en: { term: 'Springtail', definition: 'A tiny wingless soil animal that leaps away by flicking a spring folded under its body.' },
+    fr: { term: 'Collembole', definition: 'Minuscule animal du sol, sans ailes, qui bondit en détendant une sorte de ressort replié sous son corps.' },
+  },
+  'soil-structure': {
+    en: { term: 'Soil structure', definition: 'How soil particles clump into crumbs, leaving spaces between them for air, water and roots.' },
+    fr: { term: 'Structure du sol', definition: 'La façon dont les particules du sol s’assemblent en agrégats, en laissant entre eux de la place pour l’air, l’eau et les racines.' },
+  },
+  'soil-texture': {
+    en: { term: 'Soil texture', definition: 'How much sand, silt and clay a soil holds, judged by particle size alone.' },
+    fr: { term: 'Texture du sol', definition: 'La part de sable, de limon et d’argile d’un sol, selon la seule taille des particules.' },
+  },
+  'loam': {
+    en: { term: 'Loam', definition: 'A soil with roughly equal parts of sand, silt and clay, that holds water and still drains.' },
+    fr: { term: 'Terre franche', definition: 'Une terre à parts à peu près égales de sable, de limon et d’argile, qui retient l’eau tout en drainant.' },
+  },
+  'humus': {
+    en: { term: 'Humus', definition: 'The dark, stable matter left when plant and animal remains have fully decayed; it holds water and nutrients.' },
+    fr: { term: 'Humus', definition: 'La matière sombre et stable qui reste quand les débris végétaux et animaux ont fini de se décomposer ; elle retient l’eau et les éléments nutritifs.' },
+  },
+  'aerobic': {
+    en: { term: 'Aerobic', definition: 'Needing air (oxygen) to live, like most helpful soil life.' },
+    fr: { term: 'Aérobie', definition: 'Qui a besoin d’air (d’oxygène) pour vivre, comme la plupart des organismes utiles du sol.' },
+  },
+  'anaerobic': {
+    en: { term: 'Anaerobic', definition: 'Living without air; in soil or compost it brings sour, rotten smells.' },
+    fr: { term: 'Anaérobie', definition: 'Qui vit sans air ; dans le sol ou le compost, il s’accompagne d’odeurs aigres ou de pourri.' },
+  },
+  'berlese-funnel': {
+    en: { term: 'Berlese funnel', definition: 'A funnel of soil under a lamp that drives tiny animals down through a mesh into a pot to be counted.' },
+    fr: { term: 'Entonnoir de Berlese', definition: 'Un entonnoir de terre sous une lampe, qui pousse les petits animaux à travers un grillage jusqu’à un pot où les compter.' },
+  },
+  'succession': {
+    en: { term: 'Succession', definition: 'The slow change of a piece of ground from bare soil through weeds, grasses and shrubs to forest.' },
+    fr: { term: 'Succession écologique', definition: 'La lente évolution d’un terrain, du sol nu aux herbes, aux graminées, aux arbustes puis à la forêt.' },
+  },
+  'fungal-bacterial-ratio': {
+    en: { term: 'Fungal-to-bacterial ratio', definition: 'The weight of living fungi in a soil compared with the weight of living bacteria, written F:B.' },
+    fr: { term: 'Rapport champignons/bactéries', definition: 'Le poids des champignons vivants d’un sol comparé à celui des bactéries vivantes, noté F/B.' },
+  },
+  'mycorrhiza': {
+    en: { term: 'Mycorrhiza', definition: 'A partnership between a fungus and a plant’s roots, trading water and nutrients for the plant’s sugars.' },
+    fr: { term: 'Mycorhize', definition: 'Association entre un champignon et les racines d’une plante, qui échange eau et éléments nutritifs contre les sucres de la plante.' },
+  },
+  'ectomycorrhiza': {
+    en: { term: 'Ectomycorrhiza', definition: 'A root partnership in which the fungus wraps the root and grows between its outer cells; common on conifers and on trees such as oak and birch.' },
+    fr: { term: 'Ectomycorhize', definition: 'Une mycorhize où le champignon enveloppe la racine et pousse entre ses cellules externes ; fréquente chez les conifères et des arbres comme le chêne ou le bouleau.' },
+  },
+  'arbuscular-mycorrhiza': {
+    en: { term: 'Arbuscular mycorrhiza (endomycorrhiza)', definition: 'A root partnership in which the fungus grows inside root cells; used by most vegetables, grasses, shrubs and perennials.' },
+    fr: { term: 'Mycorhize à arbuscules (endomycorhize)', definition: 'Une mycorhize où le champignon pénètre dans les cellules de la racine ; c’est celle de la plupart des légumes, graminées, arbustes et vivaces.' },
+  },
+  'inoculant': {
+    en: { term: 'Inoculant', definition: 'A product that adds living organisms, such as root fungi or bacteria, to seed, roots or soil.' },
+    fr: { term: 'Inoculum', definition: 'Un produit qui apporte des organismes vivants, comme des champignons ou des bactéries des racines, aux graines, aux racines ou au sol.' },
+  },
+  'rhizobia': {
+    en: { term: 'Rhizobia', definition: 'Soil bacteria that live in nodules on the roots of peas, beans and other legumes and turn nitrogen from the air into a form the plant can use.' },
+    fr: { term: 'Rhizobiums', definition: 'Bactéries du sol qui vivent dans des nodosités sur les racines des pois, haricots et autres légumineuses et transforment l’azote de l’air en une forme utilisable par la plante.' },
+  },
+  'carbon-nitrogen-ratio': {
+    en: { term: 'Carbon-to-nitrogen ratio', definition: 'How much carbon a material holds for each part of nitrogen; it sets how fast it rots and whether it borrows nitrogen.' },
+    fr: { term: 'Rapport carbone/azote', definition: 'La quantité de carbone d’une matière pour une part d’azote ; il règle la vitesse de décomposition et l’emprunt d’azote.' },
+  },
+  'nitrogen-tie-up': {
+    en: { term: 'Nitrogen tie-up', definition: 'Soil nitrogen held for a while by microbes rotting carbon-rich material, so plants rooted right there cannot use it yet.' },
+    fr: { term: 'Faim d’azote', definition: 'Azote du sol retenu un temps par les microbes qui décomposent une matière riche en carbone, et donc pas encore disponible pour les plantes enracinées juste là.' },
+  },
+  'mesophilic': {
+    en: { term: 'Mesophilic', definition: 'Thriving at moderate warmth; the first, warm phase of a compost pile.' },
+    fr: { term: 'Mésophile', definition: 'Qui prospère à chaleur modérée ; la première phase, tiède, d’un tas de compost.' },
+  },
+  'thermophilic': {
+    en: { term: 'Thermophilic', definition: 'Thriving in heat; the hot phase of a compost pile.' },
+    fr: { term: 'Thermophile', definition: 'Qui prospère à la chaleur ; la phase chaude d’un tas de compost.' },
+  },
+  'vermicompost': {
+    en: { term: 'Vermicompost', definition: 'Compost made by worms eating scraps and leaves in a bin, without a hot phase.' },
+    fr: { term: 'Lombricompost', definition: 'Compost produit par des vers qui digèrent épluchures et feuilles dans un bac, sans phase chaude.' },
+  },
+  'drip-line': {
+    en: { term: 'Drip line', definition: 'The ground under the outer edge of a tree’s or shrub’s crown, where rain drips off the leaves.' },
+    fr: { term: 'Aplomb du feuillage', definition: 'Le sol situé sous le bord extérieur de la couronne d’un arbre ou d’un arbuste, là où l’eau de pluie s’égoutte des feuilles.' },
+  },
+  'actively-aerated-compost-tea': {
+    en: { term: 'Actively aerated compost tea', definition: 'Compost held in water with air bubbled through it all the time, so its microbes move into the liquid.' },
+    fr: { term: 'Thé de compost oxygéné', definition: 'Compost maintenu dans l’eau sous un bullage d’air continu, pour que ses microbes passent dans le liquide.' },
+  },
+  'phyllosphere': {
+    en: { term: 'Phyllosphere', definition: 'The surface of leaves and the thin layer of air around them, where microbes live.' },
+    fr: { term: 'Phyllosphère', definition: 'La surface des feuilles et la mince couche d’air qui les entoure, où vivent des microbes.' },
+  },
+  'biofilm': {
+    en: { term: 'Biofilm', definition: 'A slimy layer of bacteria stuck to a surface, such as the inside of a brewing bucket.' },
+    fr: { term: 'Biofilm', definition: 'Une couche visqueuse de bactéries collée à une surface, comme l’intérieur d’un seau de brassage.' },
+  },
+  'no-dig': {
+    en: { term: 'No-dig', definition: 'Growing without turning the soil, adding organic matter on top and letting soil life mix it in.' },
+    fr: { term: 'Non-travail du sol', definition: 'Cultiver sans retourner la terre, en apportant la matière organique en surface et en laissant la vie du sol l’incorporer.' },
+  },
+  'dibber': {
+    en: { term: 'Dibber', definition: 'A pointed hand tool for making a planting hole without turning the soil.' },
+    fr: { term: 'Plantoir', definition: 'Un outil à main pointu qui ouvre un trou de plantation sans retourner la terre.' },
+  },
 };
 
 export function glossaryEntry(id: string, lang: 'en' | 'fr'): GlossaryEntry {
