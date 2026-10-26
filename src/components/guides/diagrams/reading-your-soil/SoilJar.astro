@@ -25,8 +25,8 @@ const silt = dots(SILT, SAND, 150, 0.5, 0.9);
 const flecks = Array.from({ length: 9 }, (_, i) => ({ x: r1(JX0 + 10 + i * 11 + rand() * 4), y: r1(WATER + 3 + rand() * 4), r: Math.round(rand() * 120 - 60) }));
 const ticks = Array.from({ length: 10 }, (_, i) => JB - i * CM);
 const RX = JX1 + 8;
-const LX = 196;
-const lines = (text: string, max = 24) => wrap(text, max);
+const LX = 184;
+const lines = (text: string, max = 30) => wrap(text, max);
 const mid = (a: number, b: number) => (a + b) / 2;
 const rows = [
   { name: labels.sand, share: shares[0], y: mid(SAND, JB) },
@@ -34,10 +34,10 @@ const rows = [
   { name: labels.clay, share: shares[2], y: mid(CLAY, SILT) },
 ].map((r) => {
   const l = lines(r.name);
-  const top = r.y - ((l.length + 1) * 13) / 2 + 10;
+  const top = r.y - ((l.length + 1) * 16) / 2 + 11;
   return { ...r, lines: l, top };
 });
-const organic = lines(labels.organic, 26);
+const organic = lines(labels.organic, 30);
 ---
 <div class="guide-soiljar">
   <svg viewBox="0 0 400 312" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
@@ -62,12 +62,12 @@ const organic = lines(labels.organic, 26);
     {rows.map((r) => (
       <>
         <path d={`M${LX - 4} ${r.y}H${RX + 22}`} class="guide-soiljar-leader" />
-        {r.lines.map((t, i) => <text x={LX} y={r.top + i * 13} class="guide-soiljar-label guide-soiljar-strong">{t}</text>)}
-        <text x={LX} y={r.top + r.lines.length * 13} class="guide-soiljar-label guide-soiljar-share">{r.share}</text>
+        {r.lines.map((t, i) => <text x={LX} y={r.top + i * 16} class="guide-soiljar-label guide-soiljar-strong">{t}</text>)}
+        <text x={LX} y={r.top + r.lines.length * 16} class="guide-soiljar-label guide-soiljar-share">{r.share}</text>
       </>
     ))}
     <path d={`M${LX - 4} ${WATER - 2}H${JX1 - 30}`} class="guide-soiljar-leader" />
-    {organic.map((t, i) => <text x={LX} y={WATER + 2 - (organic.length - 1) * 13 + i * 13} class="guide-soiljar-label">{t}</text>)}
+    {organic.map((t, i) => <text x={LX} y={WATER + 2 - (organic.length - 1) * 16 + i * 16} class="guide-soiljar-label">{t}</text>)}
     <text x={JX0 - 4} y="300" class="guide-soiljar-sum">{labels.sum}</text>
   </svg>
 </div>
@@ -86,9 +86,9 @@ const organic = lines(labels.organic, 26);
   .guide-soiljar-ruler { fill: var(--surface); stroke: var(--text-muted); stroke-width: 1; }
   .guide-soiljar-tick { stroke: var(--text-muted); stroke-width: 1; }
   .guide-soiljar-leader { fill: none; stroke: var(--text-muted); stroke-width: 0.9; }
-  .guide-soiljar .guide-soiljar-label { font-size: 12px; fill: var(--text); }
+  .guide-soiljar .guide-soiljar-label { font-size: 14px; fill: var(--text); }
   .guide-soiljar .guide-soiljar-strong { font-weight: 600; }
   .guide-soiljar .guide-soiljar-share { fill: var(--accent-ink); font-weight: 600; }
-  .guide-soiljar .guide-soiljar-example { font-size: 12px; font-weight: 600; fill: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
-  .guide-soiljar .guide-soiljar-sum { font-size: 13px; font-weight: 600; fill: var(--accent-ink); }
+  .guide-soiljar .guide-soiljar-example { font-size: 13px; font-weight: 600; fill: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+  .guide-soiljar .guide-soiljar-sum { font-size: 14px; font-weight: 600; fill: var(--accent-ink); }
 </style>

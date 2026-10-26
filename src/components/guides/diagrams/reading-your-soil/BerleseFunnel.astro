@@ -12,7 +12,7 @@ interface Props {
 const { title, alt, labels } = Astro.props;
 const locals = Astro.locals as { guideSvgs?: number };
 const uid = `guide-berlese-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
-const C = 150; // centre line of the stack
+const C = 160; // centre line of the stack
 // Lamp shade and bulb.
 const LY = 36;
 // Bottle: wide body from BT to BS, shoulder narrowing to the neck at NK, neck down to NB.
@@ -32,13 +32,13 @@ const PT = 270, PB = 326, PW = 46;
 const caught = [[-22, 312], [-6, 318], [10, 314], [24, 318], [2, 306]];
 // Animals on their way down: in the soil, in the neck and falling.
 const falling = [[-24, 168], [20, 182], [-4, 214], [0, 262]];
-const LX = 234;
-const labelAt = (text: string, y: number, max = 22) => wrap(text, max).map((t, i) => ({ t, y: y + i * 13 }));
+const LX = 242;
+const labelAt = (text: string, y: number, max = 20) => wrap(text, max).map((t, i) => ({ t, y: y + i * 16 }));
 const lampL = labelAt(labels.lamp, LY - 4);
 const soilL = labelAt(labels.soil, 150);
 const meshL = labelAt(labels.mesh, 238);
 const potL = labelAt(labels.pot, 300);
-const moveL = wrap(labels.move, 12);
+const moveL = wrap(labels.move, 10);
 ---
 <div class="guide-berlese">
   <svg viewBox="0 0 400 340" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
@@ -62,7 +62,7 @@ const moveL = wrap(labels.move, 12);
     {falling.map(([x, y]) => <g transform={`translate(${C + x} ${y})`}><path d="M-2.5 -2l-1.5 -2M2.5 -2l1.5 -2M-2.5 2l-1.5 2M2.5 2l1.5 2" class="guide-berlese-leg" /><ellipse rx="3" ry="2" class="guide-berlese-animal" /></g>)}
     {/* Downward arrows on the left of the stack. */}
     <path d={`M${C - BW - 8} 132V${PT + 10}m-5 -7l5 7l5 -7`} class="guide-berlese-arrow" />
-    {moveL.map((t, i) => <text x="4" y={150 + i * 13} class="guide-berlese-label guide-berlese-accent">{t}</text>)}
+    {moveL.map((t, i) => <text x="4" y={150 + i * 16} class="guide-berlese-label guide-berlese-accent">{t}</text>)}
     {/* Labels on the right with leaders. */}
     {lampL.map((l) => <text x={LX} y={l.y} class="guide-berlese-label guide-berlese-strong">{l.t}</text>)}
     <path d={`M${LX - 4} ${LY - 8}H${C + 36}`} class="guide-berlese-leader" />
@@ -93,7 +93,7 @@ const moveL = wrap(labels.move, 12);
   .guide-berlese-leg { fill: none; stroke: var(--seed-2); stroke-width: 0.9; }
   .guide-berlese-arrow { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   .guide-berlese-leader { fill: none; stroke: var(--text-muted); stroke-width: 0.9; }
-  .guide-berlese .guide-berlese-label { font-size: 12px; fill: var(--text); }
+  .guide-berlese .guide-berlese-label { font-size: 14px; fill: var(--text); }
   .guide-berlese .guide-berlese-strong { font-weight: 600; }
   .guide-berlese .guide-berlese-accent { font-weight: 600; fill: var(--accent-ink); }
 </style>
