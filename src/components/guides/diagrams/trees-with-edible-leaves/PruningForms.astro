@@ -1,0 +1,86 @@
+---
+// Trees with edible leaves: the three ways to keep a leaf tree low, side by side. Coppice: a stump at
+// the ground with a crown of new shoots. Pollard: a short trunk topped by a knob, shoots from the knob.
+// Hedge: a row of stems clipped to a flat top. In each panel the permanent wood is brown, the regrowth
+// green, and a dashed line marks where the cut is made. forms gives the title, the short note under the
+// drawing and the alt text of each panel, in that order (coppice, pollard, hedge). Titles and notes are
+// HTML text, so they wrap in the reader's language.
+import { r1 } from '../../../../lib/svg';
+interface Form { title: string; note: string; alt: string; }
+interface Props { forms: [Form, Form, Form]; }
+const { forms } = Astro.props;
+const W = 120, G = 132; // panel width, ground line
+const leaf = (x: number, y: number, angle: number, len = 8) =>
+  ({ d: `M0 0Q${r1(len * 0.45)} ${r1(-len * 0.42)} ${len} 0Q${r1(len * 0.45)} ${r1(len * 0.42)} 0 0Z`, transform: `translate(${r1(x)} ${r1(y)}) rotate(${angle})` });
+// A shoot from (x0, y0) bending to (x1, y1), with leaves along it.
+function shoot(x0: number, y0: number, x1: number, y1: number) {
+  const d = `M${x0} ${y0}Q${r1((x0 + x1) / 2)} ${r1(y0 - (y0 - y1) * 0.6)} ${x1} ${y1}`;
+  const leaves = [0.35, 0.6, 0.85].map((t, i) => {
+    const x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t;
+    return leaf(x, y, i % 2 ? -25 + (x1 - x0) : -155 + (x1 - x0));
+  });
+  leaves.push(leaf(x1, y1, -90 + (x1 - x0) * 1.5, 9));
+  return { d, leaves };
+}
+// Coppice: a low stool, shoots fanning up from it.
+const coppice = {
+  wood: [`M44 ${G}Q42 ${G - 12} 50 ${G - 14}H70Q78 ${G - 12} 76 ${G}Z`],
+  cut: G - 14,
+  shoots: [[50, 26, 42], [55, 40, 30], [60, 58, 26], [65, 76, 30], [70, 92, 44]].map(([x0, x1, y1]) => shoot(x0, G - 14, x1, y1)),
+};
+// Pollard: a trunk to the cut height, a knob, shoots from the knob.
+const P = 72;
+const pollard = {
+  wood: [`M54 ${G}V${P + 6}Q52 ${P - 4} 60 ${P - 6}Q68 ${P - 4} 66 ${P + 6}V${G}Z`],
+  cut: P - 6,
+  shoots: [[56, 34, 30], [59, 48, 18], [61, 70, 16], [64, 86, 28]].map(([x0, x1, y1]) => shoot(x0, P - 6, x1, y1)),
+};
+// Hedge: five stems clipped to a flat top; leaves fill the clipped block.
+const H = 74;
+const hedge = {
+  wood: [22, 41, 60, 79, 98].map((x) => `M${x - 2} ${G}V${G - 30}H${x + 2}V${G}Z`),
+  cut: H,
+  block: { x: 12, y: H, w: 96, h: G - 30 - H + 6 },
+  leaves: Array.from({ length: 30 }, (_, i) => leaf(16 + (i % 10) * 9.6, H + 7 + Math.floor(i / 10) * 9, i % 2 ? -30 : -150, 7)),
+};
+const panels = [
+  { ...coppice, block: null, leaves: [] as ReturnType<typeof leaf>[] },
+  { ...pollard, block: null, leaves: [] as ReturnType<typeof leaf>[] },
+  { ...hedge, shoots: [] as ReturnType<typeof shoot>[] },
+];
+---
+<div class="guide-pf">
+  {panels.map((p, i) => (
+    <div class="guide-pf-item">
+      <svg viewBox={`0 0 ${W} ${G + 8}`} role="img" aria-label={forms[i].alt}>
+        <line x1="4" y1={G} x2={W - 4} y2={G} class="guide-pf-ground" />
+        {p.block && <rect x={p.block.x} y={p.block.y} width={p.block.w} height={p.block.h} rx="4" class="guide-pf-block" />}
+        {p.wood.map((d) => <path d={d} class="guide-pf-wood" />)}
+        {p.shoots.map((s) => (
+          <g>
+            <path d={s.d} class="guide-stem guide-stem-thin" />
+            {s.leaves.map((l) => <path d={l.d} transform={l.transform} class="guide-leaf" />)}
+          </g>
+        ))}
+        {p.leaves.map((l) => <path d={l.d} transform={l.transform} class="guide-leaf" />)}
+        <line x1="6" y1={p.cut} x2={W - 6} y2={p.cut} class="guide-pf-cut" />
+      </svg>
+      <p class="guide-pf-title">{forms[i].title}</p>
+      <p class="guide-pf-note">{forms[i].note}</p>
+    </div>
+  ))}
+</div>
+
+<style>
+  .guide-pf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; align-items: start; }
+  .guide-pf-item { display: grid; gap: 0.25rem; }
+  .guide-pf-item svg { width: 100%; max-width: 11rem; justify-self: center; }
+  .guide-body .guide-pf-item p { margin: 0; }
+  .guide-pf-title { font-family: var(--font-display); font-weight: 600; font-size: 1rem; line-height: 1.3; text-align: center; }
+  .guide-pf-note { font-size: 0.88rem; line-height: 1.4; color: var(--text-secondary); text-align: center; }
+  .guide-pf-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-pf-wood { fill: var(--seed-1); opacity: 0.85; }
+  .guide-pf-block { fill: var(--leaf); opacity: 0.18; }
+  .guide-pf-cut { stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 4 3; }
+  @media (max-width: 639px) { .guide-pf { gap: 0.5rem; } .guide-pf-note { font-size: 0.82rem; } }
+</style>
