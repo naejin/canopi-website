@@ -1,0 +1,84 @@
+---
+// Mulch: the authors' three dials (what it is, where it lies, its state) folded into a 2 × 2 grid.
+// Rows: fresh green or aged brown material. Columns: fine, wet and worked in, or coarse, dry and on top.
+// Each card draws the material over a soil line (plant colours on the material only) and places a mark
+// on a bacteria-to-fungi scale. The grid is HTML, so it falls to one column on phones; each card names
+// its row and column, so it reads alone. Labels come from the MDX.
+interface Props {
+  title: string;
+  alt: string;
+  rows: [string, string];
+  cols: [string, string];
+  ends: [string, string];
+  verdicts: { bacteria: string; between: string; fungi: string };
+}
+const { title, alt, rows, cols, ends, verdicts } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-steer-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+// Cards in reading order: fresh/fine, fresh/coarse, aged/fine, aged/coarse.
+const cards = [
+  { row: 0, col: 0, at: 0.1, verdict: verdicts.bacteria },
+  { row: 0, col: 1, at: 0.5, verdict: verdicts.between },
+  { row: 1, col: 0, at: 0.5, verdict: verdicts.between },
+  { row: 1, col: 1, at: 0.9, verdict: verdicts.fungi },
+];
+// Material bits: fine = many small specks mixed below the soil line; coarse = a few long pieces on top.
+const fine = [[12, 30], [22, 36], [34, 32], [46, 38], [58, 31], [70, 36], [82, 33], [94, 38], [18, 42], [40, 44], [64, 43], [88, 44], [28, 46], [52, 46], [76, 46]];
+const coarse = [[14, 18, -8], [38, 16, 6], [62, 19, -4], [86, 16, 10], [26, 11, 14], [74, 11, -10]];
+const drops = [[20, 12], [50, 9], [80, 13]];
+---
+<div class="guide-steer" role="group" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+  <p id={`${uid}-t`} class="guide-visually-hidden">{title}</p>
+  <p id={`${uid}-d`} class="guide-visually-hidden">{alt}</p>
+  <ul class="guide-steer-grid">
+    {cards.map((c) => (
+      <li class="guide-steer-card">
+        <svg viewBox="0 0 106 50" aria-hidden="true">
+          <rect x="0" y="26" width="106" height="24" rx="3" class="guide-steer-soil" />
+          {c.col === 0
+            ? <>
+                {fine.map(([x, y]) => <rect x={x - 2.5} y={y - 1} width="5" height="2" rx="1" class={c.row === 0 ? 'guide-steer-green' : 'guide-steer-brown'} />)}
+                {drops.map(([x, y]) => <path d={`M${x} ${y}q-3 5 0 7q3 -2 0 -7z`} class="guide-steer-drop" />)}
+              </>
+            : coarse.map(([x, y, r]) => c.row === 0
+              ? <path d={`M${x - 10} ${y + 6}q10 -6 20 -2`} transform={`rotate(${r} ${x} ${y})`} class="guide-steer-blade" />
+              : <ellipse cx={x} cy={y + 4} rx="10" ry="3.4" transform={`rotate(${r} ${x} ${y + 4})`} class="guide-steer-brown" />)}
+        </svg>
+        <p class="guide-steer-name"><b>{rows[c.row]}</b><span>{cols[c.col]}</span></p>
+        <div class="guide-steer-scale">
+          <svg viewBox="0 0 100 12" aria-hidden="true">
+            <line x1="4" y1="6" x2="96" y2="6" class="guide-steer-track" />
+            <circle cx={4 + c.at * 92} cy="6" r="4.5" class="guide-steer-mark" />
+          </svg>
+          <span class="guide-steer-ends"><span>{ends[0]}</span><span>{ends[1]}</span></span>
+        </div>
+        <p class="guide-steer-verdict">{c.verdict}</p>
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  .guide-steer { max-width: 36rem; }
+  :global(.guide-body) .guide-steer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; margin: 0; padding: 0; list-style: none; }
+  :global(.guide-body) .guide-steer-card { display: grid; gap: 0.35rem; align-content: start; margin: 0; padding: 0.6rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+  .guide-steer-card > svg { width: 100%; max-width: 12rem; height: auto; }
+  :global(.guide-body) .guide-steer-name { display: grid; margin: 0; font-size: 0.86rem; line-height: 1.3; color: var(--text-secondary); }
+  .guide-steer-name b { color: var(--text); font-weight: 600; }
+  .guide-steer-scale { display: grid; gap: 0.1rem; max-width: 12rem; }
+  .guide-steer-scale svg { width: 100%; height: auto; }
+  .guide-steer-ends { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); }
+  :global(.guide-body) .guide-steer-verdict { margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--accent-ink); }
+  .guide-steer-soil { fill: var(--soil-1); }
+  .guide-steer-green { fill: var(--leaf-young); }
+  .guide-steer-brown { fill: var(--leaf-ochre); stroke: var(--text); stroke-width: 0.5; stroke-opacity: 0.6; }
+  .guide-steer-blade { fill: none; stroke: var(--leaf-young); stroke-width: 2.4; stroke-linecap: round; }
+  .guide-steer-drop { fill: var(--focus); opacity: 0.7; }
+  .guide-steer-track { stroke: var(--border-strong); stroke-width: 1.4; }
+  .guide-steer-mark { fill: var(--accent); }
+  @media (max-width: 639px) {
+    :global(.guide-body) .guide-steer-grid { grid-template-columns: minmax(0, 1fr); }
+    :global(.guide-body) .guide-steer-card { grid-template-columns: 6.5rem minmax(0, 1fr); column-gap: 0.8rem; }
+    .guide-steer-card > svg { grid-row: 1 / span 3; align-self: center; }
+  }
+</style>

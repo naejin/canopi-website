@@ -1,0 +1,99 @@
+---
+// Mulch: a mulched bed in cross-section, as the authors picture nitrogen tie-up. Chips and leaves on
+// top (plant colours), a thin compost layer under them, then a narrow band at the soil surface (ochre
+// hatching, not green) where microbes hold nitrogen. A weed seedling's short roots stop in that band;
+// a crop's roots reach well below it; bare soil is left round the crop's stem. Labels come from the MDX.
+import { r1, rng, seedOf, wrap } from '../../../../lib/svg';
+interface Props {
+  title: string;
+  alt: string;
+  labels: { mulch: string; compost: string; band: string; weed: string; crop: string; gap: string };
+}
+const { title, alt, labels } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-mulchlayers-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+// Bed from x 8 to 262; mulch from MT to MB, compost to CB, tie-up band to TB, soil below.
+const BX0 = 8, BX1 = 262, MT = 70, MB = 94, CB = 101, TB = 109, SB = 236;
+const STEM = 196, GAP = 16;
+const rand = rng(seedOf('mulch-layers'));
+// Chips (small rotated rectangles) and leaves (ellipses) scattered through the mulch, not in the gap.
+const bits = Array.from({ length: 46 }, (_, i) => {
+  let x = BX0 + 4 + rand() * (BX1 - BX0 - 8);
+  if (Math.abs(x - STEM) < GAP + 2) x = x < STEM ? STEM - GAP - 6 : STEM + GAP + 6;
+  return { x: r1(x), y: r1(MT + 4 + rand() * (MB - MT - 8)), r: Math.round(rand() * 160 - 80), leaf: i % 3 === 0, tone: i % 4 };
+});
+const grains = Array.from({ length: 40 }, () => ({ x: r1(BX0 + 4 + rand() * (BX1 - BX0 - 8)), y: r1(TB + 6 + rand() * (SB - TB - 12)), r: r1(1 + rand() * 1.6) }));
+const WEED = 70;
+const cropRoots = [`M${STEM} ${CB}C${STEM - 4} 140 ${STEM - 26} 170 ${STEM - 40} 222`, `M${STEM} ${CB}C${STEM + 2} 150 ${STEM + 4} 190 ${STEM + 2} 228`, `M${STEM} ${CB}C${STEM + 8} 136 ${STEM + 30} 170 ${STEM + 44} 214`, `M${STEM - 2} 150q-14 8 -22 22`, `M${STEM + 3} 176q12 8 18 22`];
+const LX = 276;
+const labelLines = (text: string, yy: number, max = 17) => wrap(text, max).map((t, i) => ({ t, y: yy + i * 13 }));
+---
+<div class="guide-mulchlayers">
+  <svg viewBox="0 0 400 244" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    <defs>
+      <pattern id={`${uid}-hatch`} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="5" class="guide-mulchlayers-hatch" />
+      </pattern>
+    </defs>
+    <rect x={BX0} y={TB} width={BX1 - BX0} height={SB - TB} rx="3" class="guide-mulchlayers-soil" />
+    {grains.map((g) => <circle cx={g.x} cy={g.y} r={g.r} class="guide-mulchlayers-grain" />)}
+    <rect x={BX0} y={CB} width={BX1 - BX0} height={TB - CB} class="guide-mulchlayers-soil" />
+    <rect x={BX0} y={CB} width={BX1 - BX0} height={TB - CB} fill={`url(#${uid}-hatch)`} class="guide-mulchlayers-band" />
+    <rect x={BX0} y={MB} width={BX1 - BX0} height={CB - MB} class="guide-mulchlayers-compost" />
+    <rect x={BX0} y={MT} width={STEM - GAP - BX0} height={MB - MT} class="guide-mulchlayers-mulch" />
+    <rect x={STEM + GAP} y={MT} width={BX1 - STEM - GAP} height={MB - MT} class="guide-mulchlayers-mulch" />
+    <rect x={STEM - GAP} y={MB} width={GAP * 2} height={CB - MB} class="guide-mulchlayers-soil" />
+    {bits.map((b) => b.leaf
+      ? <ellipse cx={b.x} cy={b.y} rx="7" ry="2.6" transform={`rotate(${b.r} ${b.x} ${b.y})`} class={`guide-mulchlayers-leaf guide-mulchlayers-t${b.tone}`} />
+      : <rect x={b.x - 4} y={b.y - 2} width="8" height="4" rx="1" transform={`rotate(${b.r} ${b.x} ${b.y})`} class={`guide-mulchlayers-chip guide-mulchlayers-t${b.tone}`} />)}
+    {/* The crop: roots well below the band, a stem standing in its bare gap, leaves above. */}
+    {cropRoots.map((d) => <path d={d} class="guide-mulchlayers-root" />)}
+    <path d={`M${STEM} ${CB}V${MT - 44}`} class="guide-mulchlayers-stem" />
+    <path d={`M${STEM} ${MT - 14}q-24 -2 -32 -18q20 -2 32 12zM${STEM} ${MT - 28}q24 -4 30 -20q-20 0 -30 14zM${STEM} ${MT - 44}q-4 -14 0 -22q6 10 0 22z`} class="guide-mulchlayers-crop" />
+    {/* The weed seedling on top of the mulch, roots only into the band. */}
+    <path d={`M${WEED} ${MT}V${MT - 12}`} class="guide-mulchlayers-stem guide-mulchlayers-thin" />
+    <path d={`M${WEED} ${MT - 10}q-9 -1 -12 -8q8 0 12 6zM${WEED} ${MT - 10}q9 -1 12 -8q-8 0 -12 6z`} class="guide-mulchlayers-crop" />
+    <path d={`M${WEED} ${MT}V${CB + 6}M${WEED} ${MB}l-5 ${CB - MB + 4}M${WEED} ${MB + 2}l5 ${CB - MB + 3}`} class="guide-mulchlayers-root guide-mulchlayers-thin" />
+    {/* Depth bracket on the mulch. */}
+    <path d={`M${BX1 + 4} ${MT}h5V${MB}h-5`} class="guide-mulchlayers-dim" />
+    {/* Labels on the right, with leaders. */}
+    {labelLines(labels.mulch, MT - 2).map((l) => <text x={LX} y={l.y} class="guide-mulchlayers-label guide-mulchlayers-strong">{l.t}</text>)}
+    {labelLines(labels.compost, MB + 6).map((l) => <text x={LX} y={l.y} class="guide-mulchlayers-label">{l.t}</text>)}
+    <path d={`M${LX - 3} ${MB + 2}H${BX1 - 6}`} class="guide-mulchlayers-leader" />
+    {labelLines(labels.band, TB + 12).map((l) => <text x={LX} y={l.y} class="guide-mulchlayers-label guide-mulchlayers-accent">{l.t}</text>)}
+    <path d={`M${LX - 3} ${TB + 8}L${BX1 - 6} ${CB + 4}`} class="guide-mulchlayers-leader" />
+    {labelLines(labels.crop, 196).map((l) => <text x={LX} y={l.y} class="guide-mulchlayers-label">{l.t}</text>)}
+    <path d={`M${LX - 3} ${192}L${STEM + 40} 206`} class="guide-mulchlayers-leader" />
+    {labelLines(labels.gap, 22).map((l) => <text x={LX} y={l.y} class="guide-mulchlayers-label">{l.t}</text>)}
+    <path d={`M${LX - 3} 22Q${STEM + 30} 30 ${STEM + 8} ${MT + 8}`} class="guide-mulchlayers-leader" />
+    {labelLines(labels.weed, 14, 22).map((l) => <text x="10" y={l.y} class="guide-mulchlayers-label">{l.t}</text>)}
+    <path d={`M40 ${14 + 13 * (wrap(labels.weed, 22).length - 1) + 4}L${WEED - 4} ${MT - 18}`} class="guide-mulchlayers-leader" />
+  </svg>
+</div>
+
+<style>
+  .guide-mulchlayers { max-width: 36rem; }
+  .guide-mulchlayers svg { width: 100%; height: auto; }
+  .guide-mulchlayers-soil { fill: var(--soil-1); }
+  .guide-mulchlayers-grain { fill: var(--soil-grain); opacity: 0.55; }
+  .guide-mulchlayers-band { stroke: none; }
+  .guide-mulchlayers-hatch { stroke: var(--accent); stroke-width: 2.4; opacity: 0.9; }
+  .guide-mulchlayers-compost { fill: var(--soil-2); }
+  .guide-mulchlayers-mulch { fill: var(--soil-3); opacity: 0.55; }
+  .guide-mulchlayers-chip, .guide-mulchlayers-leaf { stroke: var(--soil-2); stroke-width: 0.5; }
+  .guide-mulchlayers-t0 { fill: var(--leaf-brown); }
+  .guide-mulchlayers-t1 { fill: var(--leaf-ochre); }
+  .guide-mulchlayers-t2 { fill: var(--leaf-gold); }
+  .guide-mulchlayers-t3 { fill: var(--seed-3); }
+  .guide-mulchlayers-root { fill: none; stroke: var(--seed-3); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-mulchlayers-stem { fill: none; stroke: var(--leaf); stroke-width: 3; stroke-linecap: round; }
+  .guide-mulchlayers-thin { stroke-width: 1.4; }
+  .guide-mulchlayers-crop { fill: var(--leaf); }
+  .guide-mulchlayers-dim { fill: none; stroke: var(--text-muted); stroke-width: 1.2; }
+  .guide-mulchlayers-leader { fill: none; stroke: var(--text-muted); stroke-width: 0.9; }
+  .guide-mulchlayers .guide-mulchlayers-label { font-size: 12px; fill: var(--text); }
+  .guide-mulchlayers .guide-mulchlayers-strong { font-weight: 600; }
+  .guide-mulchlayers .guide-mulchlayers-accent { font-weight: 600; fill: var(--accent-ink); }
+</style>
