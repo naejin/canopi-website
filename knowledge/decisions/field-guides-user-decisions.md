@@ -4,7 +4,7 @@ title: Field Guides — user decisions
 description: Dated decisions the project owner made about the Field Guides section; they change only when the owner changes them.
 status: stable
 tags: [field-guides, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T18:19:12Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:41Z }
 ---
 
 # Field Guides — user decisions
@@ -30,6 +30,11 @@ any of them; a change is a question to the owner.
 | 2026-10-26 | **Reopen every earlier [OMIT] item "for coherence".** Each comes back under the warn-don't-remove rule: dangerous practices (the book's raw-tasting and "nibble and spit" tests, seeds in the mouth, sharing soil, wild greens and mushrooms, lupini, grasspea, eating surplus seed) are reported as the author's practice with a clear warning, never as a step the reader is told to do; doubtful claims are attributed to him as his view; still no figures for anything eaten, toxic or caustic, and nothing the book does not say (e.g. no seed-law statements). |
 | 2026-10-25 | Excluded until other sources back them: the book's last chapter on chickens, bees, mushrooms and trees. Canning mashed squash is never reproduced. |
 | 2026-10-26 | **The hero row under a guide's title shows its section**, replacing the same bean row on every guide: seeds, beans as before; crops, that crop's own seed (corn kernels for corn, squash seeds for squash, melons and cucumbers, beans for beans and legumes, grains for small grains, tomato seeds for tomatoes, garlic cloves for true-seed potato, garlic and sunroot); perennials, green leaves in mixed shapes (simple, lobed, compound); seasons, leaves turning from fresh green through yellow and ochre to brown, left to right; pests, beneficial insects (ladybird, hoverfly, ground beetle); kitchen, a mixed handful of dry corn kernels and beans. Every future section gets its own motif. |
+| 2026-10-26 | *Teaming with Microbes* (Lowenfels & Lewis, revised edition, Timber Press 2010) gets Field Guides: eight in a new index domain **Soil** (fr « Sol », matching the bibliography's theme) and one soil-care calendar in Seasons. The hub is titled "Living soil" (fr « Un sol vivant : la vie du sol au jardin »). Guides use the revised edition's chapters. |
+| 2026-10-26 | **No lawn guide** for now: the book's lawn chapter is US-turf heavy; its useful points (leave clippings and leaves, no clippings from treated or dog-used lawns, lawn weeds as soil signals) go into the mulch, compost and soil-reading guides. Revisit if readers ask. |
+| 2026-10-26 | **Compost tea gets a full guide**, warn-don't-remove: it explains aerated tea versus soaked extracts and manure tea, with the E. coli / food-crop warning first; no sugar amounts, rates or brewing times, never "spray before harvest", no fish-hydrolysate or "protozoa soup" recipes; the authors' disease claims are attributed. |
+| 2026-10-26 | **Compost temperatures are published** as the authors' figures for managing a hot pile and killing weed seeds, beside a warning that a home pile heats unevenly so compost is never treated as germ-free (why pet and human faeces stay out and the authors avoid manure), and that a hot pile's centre can scald. Compost is not eaten, so the no-figures rule does not apply. |
+| 2026-10-26 | **Soil hero motif:** rounded soil crumbs in ochre and brown, threaded with fine cream fungal threads, with one small earthworm. No green. |
 
 ## Where the source notes live
 

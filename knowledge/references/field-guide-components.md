@@ -3,9 +3,9 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:30:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:31Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T19:30:44Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:29Z }
 sources:
   - id: index-ts
     resource: ../../src/components/guides/index.ts
@@ -15,8 +15,8 @@ sources:
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:352698529ec6e820
-    last_modified: 2026-10-26T20:08:11Z
+    digest: sha256:a0e75814fab14a5b
+    last_modified: 2026-10-26T22:10:13Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -25,8 +25,8 @@ sources:
   - id: food-risks-ts
     resource: ../../src/data/food-risks.ts
     title: src/data/food-risks.ts
-    digest: sha256:fb238afeb1de9b3d
-    last_modified: 2026-10-26T14:04:58Z
+    digest: sha256:18c0d28ee993b4ed
+    last_modified: 2026-10-26T21:22:58Z
   - id: rehype-guide-terms-mjs
     resource: ../../src/lib/rehype-guide-terms.mjs
     title: src/lib/rehype-guide-terms.mjs
@@ -40,18 +40,18 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:ebbde3fcff499102
-    last_modified: 2026-10-26T18:22:29Z
+    digest: sha256:1ed12ce057385002
+    last_modified: 2026-10-26T21:47:34Z
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
-    digest: sha256:c9c9922d5f6f718a
-    last_modified: 2026-10-26T20:08:11Z
+    digest: sha256:59f40512e8a1e750
+    last_modified: 2026-10-26T21:16:11Z
   - id: guideherorow-astro
     resource: ../../src/components/guides/diagrams/GuideHeroRow.astro
     title: src/components/guides/diagrams/GuideHeroRow.astro
-    digest: sha256:13ff8bf6408c75be
-    last_modified: 2026-10-26T20:08:11Z
+    digest: sha256:5af272e10a819c80
+    last_modified: 2026-10-26T21:16:11Z
   - id: svg-ts
     resource: ../../src/lib/svg.ts
     title: src/lib/svg.ts
@@ -72,7 +72,7 @@ files exist. The slug must be one of the plan's slugs (`scripts/guides.test.mjs`
 ```yaml
 title: "Saving seed: dry and wet"          # required, non-empty
 description: "One sentence: what the reader can do after reading."   # 1-200 characters; meta description too
-domain: seeds        # seeds | crops | perennials | seasons | pests | kitchen
+domain: seeds        # seeds | crops | soil | perennials | seasons | pests | kitchen
 order: 7             # integer, sort within domain
 glance:              # 3 to 6 { label, value } pairs, shown in the hero strip
   - { label: "Skill", value: "Beginner" }
@@ -112,7 +112,7 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
 - `<FoodCaution risk="…" />` or `<FoodCaution risk={["ergot", "treated-seed"]} />` — `risk` required: one
   risk or a list, from `src/data/food-risks.ts`: bitter-cucurbits, dry-beans, nightshades,
   potato-berries, corn-processing, treated-seed, fava, ergot, sprouted-or-surplus-seed, toxic-leaves,
-  home-canning, raw-tasting, wild-foods, home-fermentation. Fixed wording
+  home-canning, raw-tasting, wild-foods, home-fermentation, compost-tea. Fixed wording
   per language (`food.<risk>` in `src/i18n/guides/{en,fr}.json`); an unknown or repeated risk fails the
   build. A list is one box with one title and one paragraph per risk, and every box ends with one
   `food.authority` paragraph (the national food-safety authority pointer; risk texts never repeat
@@ -184,7 +184,7 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
 - Hero row (not used in MDX): `GuideLayout` renders `<GuideHeroRow domain slug />`, a decorative
   640 × 64 SVG (`aria-hidden`) seeded by the slug. Motif by section (`diagrams/hero-row.ts`): seeds
   beans · crops the guide's own seed (`cropSeeds`: kernels, squash-seeds, beans, grains, tomato-seeds,
-  cloves) · perennials green leaves · seasons autumn leaves · pests ladybird, hoverfly, ground beetle ·
+  cloves) · soil ochre and brown crumbs threaded with cream fungal threads and one earthworm · perennials green leaves · seasons autumn leaves · pests ladybird, hoverfly, ground beetle ·
   kitchen corn kernels and beans. A new section needs an entry in `domainMotifs` and a new crops guide
   one in `cropSeeds`, or `npm test` fails; `npm run check` also fails a missing section, and the build a crops guide with no seed kind. Shapes (`KERNEL_PATH`,
   `SQUASH_SEED_PATH`, `GRAIN_PATH`, `TOMATO_SEED_PATH`, `CLOVE_PATH`, `leafPath`, `lobedLeafPath`)

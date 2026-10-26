@@ -3,32 +3,32 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:30:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:31Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T19:30:42Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:29Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:410cd39fa13eb0bb
-    last_modified: 2026-10-26T14:30:06Z
+    digest: sha256:dadba1dc41069cbf
+    last_modified: 2026-10-26T22:10:13Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:ebbde3fcff499102
-    last_modified: 2026-10-26T18:22:29Z
+    digest: sha256:1ed12ce057385002
+    last_modified: 2026-10-26T21:47:34Z
   - id: decisions-field-guides-user-decisions
     resource: /decisions/field-guides-user-decisions.md
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
-    digest: sha256:c9c9922d5f6f718a
-    last_modified: 2026-10-26T20:08:11Z
+    digest: sha256:59f40512e8a1e750
+    last_modified: 2026-10-26T21:16:11Z
   - id: guides-ts
     resource: ../../src/i18n/guides.ts
     title: src/i18n/guides.ts
-    digest: sha256:7e7acd2c7daf35eb
-    last_modified: 2026-10-26T18:16:30Z
+    digest: sha256:3fe9afdb113d9c1a
+    last_modified: 2026-10-26T21:16:11Z
 enforced_by: [scripts/guides.test.mjs]
 ---
 
