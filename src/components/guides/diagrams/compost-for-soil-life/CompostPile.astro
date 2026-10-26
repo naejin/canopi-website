@@ -1,0 +1,95 @@
+---
+// Compost for soil life: a hot heap in cross-section. Thin green and brown layers (plant colours: the
+// layers are plant material) with sticks across them, on a pallet raised on blocks; air arrows come in
+// from below and the sides; the core is drawn warmer and the edges paler; a long metal rod reaches the
+// centre. Only "about 1 m" is measured, on the width and the height. Labels come from the MDX.
+import { r1, wrap } from '../../../../lib/svg';
+interface Props {
+  title: string;
+  alt: string;
+  labels: { green: string; brown: string; sticks: string; floor: string; hot: string; edges: string; rod: string; size: string };
+}
+const { title, alt, labels } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-pile-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+// The heap: base from X0 to X1 on the pallet at BASE, rounded top at TOP.
+const X0 = 122, X1 = 286, BASE = 196, TOP = 62, MID = (X0 + X1) / 2;
+const heap = `M${X0} ${BASE}C${X0 + 4} ${TOP + 40} ${X0 + 30} ${TOP} ${MID} ${TOP}C${X1 - 30} ${TOP} ${X1 - 4} ${TOP + 40} ${X1} ${BASE}Z`;
+// Layers from the bottom up, alternating brown and green, each a little wavy.
+const LAYER = 13;
+const layers = Array.from({ length: Math.ceil((BASE - TOP) / LAYER) }, (_, i) => {
+  const yb = BASE - i * LAYER, yt = yb - LAYER;
+  const wave = (yy: number, k: number) => `${X0 - 10} ${r1(yy)}Q${r1(X0 + 50)} ${r1(yy - 2 + (k % 2) * 3)} ${MID} ${r1(yy)}T${X1 + 10} ${r1(yy)}`;
+  return { d: `M${wave(yb, i)}L${X1 + 10} ${r1(yt)}L${X0 - 10} ${r1(yt)}Z`, green: i % 2 === 1 };
+});
+// Sticks: short tilted lines across the heap, inside the outline.
+const sticks = [[150, 170, 196, 162], [218, 176, 258, 168], [166, 132, 206, 140], [214, 120, 244, 112], [184, 96, 214, 92]];
+---
+<div class="guide-pile">
+  <svg viewBox="0 0 400 252" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    <defs>
+      <clipPath id={`${uid}-clip`}><path d={heap} /></clipPath>
+    </defs>
+    <g clip-path={`url(#${uid}-clip)`}>
+      {layers.map((l) => <path d={l.d} class={l.green ? 'guide-pile-green' : 'guide-pile-brown'} />)}
+      <ellipse cx={MID} cy={BASE - 54} rx="70" ry="54" class="guide-pile-warm" />
+      <ellipse cx={MID} cy={BASE - 54} rx="38" ry="30" class="guide-pile-core" />
+      {sticks.map(([a, b, c, d]) => <line x1={a} y1={b} x2={c} y2={d} class="guide-pile-stick" />)}
+      <path d={heap} class="guide-pile-rim" />
+    </g>
+    <path d={heap} class="guide-pile-outline" />
+    {/* The raised floor: slats on three blocks. */}
+    <rect x={X0 - 8} y={BASE} width={X1 - X0 + 16} height="6" class="guide-pile-slat" />
+    {[X0 - 4, MID - 8, X1 - 12].map((bx) => <rect x={bx} y={BASE + 6} width="16" height="12" class="guide-pile-block" />)}
+    {/* Air: arrows in from below and from both sides. */}
+    {[X0 + 28, MID, X1 - 28].map((ax) => <path d={`M${ax} ${BASE + 30}V${BASE + 10}m-4 5l4 -5l4 5`} class="guide-pile-air" />)}
+    <path d={`M${X0 - 26} ${BASE - 40}h20m-5 -4l5 4l-5 4`} class="guide-pile-air" />
+    <path d={`M${X1 + 26} ${BASE - 40}h-20m5 -4l-5 4l5 4`} class="guide-pile-air" />
+    {/* The metal rod, pushed in from the top right to the centre. */}
+    <line x1={MID + 4} y1={BASE - 56} x2={X1 + 12} y2="34" class="guide-pile-rod" />
+    <circle cx={X1 + 15} cy="31" r="4.5" class="guide-pile-rod-ring" />
+    {/* Size: about 1 m across and high. */}
+    <path d={`M${X0} 236H${X1}M${X0} 231v10M${X1} 231v10`} class="guide-pile-dim" />
+    <text x={MID} y="250" text-anchor="middle" class="guide-pile-size">{labels.size}</text>
+    <path d={`M100 ${TOP}V${TOP + 2}M100 ${TOP + 60}V${BASE}M95 ${TOP}h10M95 ${BASE}h10`} class="guide-pile-dim" />
+    <text x="95" y={TOP + 30} text-anchor="middle" transform={`rotate(-90 95 ${TOP + 30})`} class="guide-pile-size">{labels.size}</text>
+    {/* Labels with leaders. Left: green, brown, sticks. Right: rod, hottest, cooler edges, floor. */}
+    <text x="6" y="18" class="guide-pile-label">{wrap(labels.green, 16).map((t, i) => <tspan x="6" dy={i ? 13 : 0}>{t}</tspan>)}</text>
+    <path d={`M70 26Q120 40 ${X0 + 34} ${TOP + 40}`} class="guide-pile-leader" />
+    <text x="6" y={TOP + 132} class="guide-pile-label">{wrap(labels.brown, 13).map((t, i) => <tspan x="6" dy={i ? 13 : 0}>{t}</tspan>)}</text>
+    <path d={`M70 ${TOP + 142}Q100 ${TOP + 122} ${X0 + 10} ${BASE - 18}`} class="guide-pile-leader" />
+    <text x={X1 + 26} y="16" class="guide-pile-label">{wrap(labels.rod, 15).map((t, i) => <tspan x={X1 + 26} dy={i ? 13 : 0}>{t}</tspan>)}</text>
+    <text x={X1 + 30} y={TOP + 44} class="guide-pile-label guide-pile-label-hot">{wrap(labels.hot, 13).map((t, i) => <tspan x={X1 + 30} dy={i ? 13 : 0}>{t}</tspan>)}</text>
+    <path d={`M${X1 + 26} ${TOP + 52}Q${MID + 60} ${TOP + 70} ${MID + 18} ${BASE - 58}`} class="guide-pile-leader" />
+    <text x={X1 + 30} y={TOP + 100} class="guide-pile-label">{wrap(labels.edges, 13).map((t, i) => <tspan x={X1 + 30} dy={i ? 13 : 0}>{t}</tspan>)}</text>
+    <path d={`M${X1 + 26} ${TOP + 104}L${X1 - 12} ${TOP + 80}`} class="guide-pile-leader" />
+    <text x={X1 + 30} y={BASE + 18} class="guide-pile-label">{wrap(labels.floor, 13).map((t, i) => <tspan x={X1 + 30} dy={i ? 13 : 0}>{t}</tspan>)}</text>
+    <path d={`M${X1 + 26} ${BASE + 14}L${X1 + 6} ${BASE + 6}`} class="guide-pile-leader" />
+    <text x="6" y={TOP + 62} class="guide-pile-label">{wrap(labels.sticks, 12).map((t, i) => <tspan x="6" dy={i ? 13 : 0}>{t}</tspan>)}</text>
+    <path d={`M62 ${TOP + 66}Q${X0} ${TOP + 70} 166 132`} class="guide-pile-leader" />
+  </svg>
+</div>
+
+<style>
+  .guide-pile { max-width: 34rem; }
+  .guide-pile svg { width: 100%; height: auto; }
+  .guide-pile-green { fill: var(--leaf-young); }
+  .guide-pile-brown { fill: var(--leaf-brown); }
+  .guide-pile-warm { fill: var(--accent); opacity: 0.28; }
+  .guide-pile-core { fill: var(--accent); opacity: 0.45; }
+  .guide-pile-rim { fill: none; stroke: var(--surface); stroke-width: 18; opacity: 0.35; }
+  .guide-pile-outline { fill: none; stroke: var(--leaf-brown); stroke-width: 1.4; }
+  .guide-pile-stick { stroke: var(--seed-2); stroke-width: 2.6; stroke-linecap: round; }
+  .guide-pile-slat { fill: var(--surface-alt); stroke: var(--text-muted); stroke-width: 1.2; }
+  .guide-pile-block { fill: var(--surface); stroke: var(--text-muted); stroke-width: 1.2; }
+  .guide-pile-air { fill: none; stroke: var(--focus); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-pile-rod { stroke: var(--text-muted); stroke-width: 3; stroke-linecap: round; }
+  .guide-pile-rod-ring { fill: none; stroke: var(--text-muted); stroke-width: 2; }
+  .guide-pile-dim { fill: none; stroke: var(--text-muted); stroke-width: 1; }
+  .guide-pile-leader { fill: none; stroke: var(--text-muted); stroke-width: 0.9; }
+  .guide-pile .guide-pile-label { font-size: 12px; fill: var(--text); }
+  .guide-pile .guide-pile-label-hot { font-weight: 600; fill: var(--accent-ink); }
+  .guide-pile .guide-pile-size { font-size: 11px; fill: var(--text-muted); }
+</style>
