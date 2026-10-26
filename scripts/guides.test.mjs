@@ -152,7 +152,12 @@ test('no caution or safety text gives a time, a temperature or a method, and no 
       assert.ok(text?.trim(), `${lang}: food.${risk}`);
       assert.ok(!cautionBreach(text), `${lang}: food.${risk} gives a time, temperature or method`);
       assert.ok(!/https?:|<a\b/.test(text), `${lang}: food.${risk} carries no link`);
+      // The pointer to the food-safety authority is said once per box, by food.authority, not per risk.
+      assert.ok(!/authorit|autorit/i.test(text), `${lang}: food.${risk} names the authority; leave that to food.authority`);
     }
+    const authority = strings['food.authority'];
+    assert.ok(authority?.trim() && /authorit|autorit/i.test(authority), `${lang}: food.authority points to the food-safety authority`);
+    assert.ok(!cautionBreach(authority) && !/https?:|<a\b/.test(authority), `${lang}: food.authority gives no method and no link`);
   }
   for (const { body, file } of guides) {
     for (const [, , inner] of body.matchAll(/<(Safety|FoodCaution)\b[^>]*(?<!\/)>([\s\S]*?)<\/\1>/g)) {
@@ -166,6 +171,10 @@ test('no caution or safety text gives a time, a temperature or a method, and no 
   const caution = read('components/guides/FoodCaution.astro');
   assert.match(caution, /import \{ foodRisks[^}]*\} from '\.\.\/\.\.\/data\/food-risks'/, 'FoodCaution imports src/data/food-risks.ts');
   assert.ok(!caution.includes("'bitter-cucurbits'"), 'FoodCaution keeps no copy of the risk list');
+  // Every box ends with the authority pointer, once, after the risk texts (not inside their loop).
+  assert.equal(caution.match(/gt\('food\.authority'/g)?.length ?? 0, 1, 'FoodCaution renders food.authority once');
+  assert.ok(caution.indexOf("gt('food.authority'") > caution.indexOf('risks.map('), 'FoodCaution renders food.authority after the risk texts');
+  assert.ok(!/risks\.map\([^\n]*food\.authority/.test(caution), 'FoodCaution renders food.authority outside the risk loop');
 });
 
 test('the guide chrome strings exist in English and French alike', () => {

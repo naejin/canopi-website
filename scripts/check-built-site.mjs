@@ -176,6 +176,12 @@ for (const lang of guideLocales) {
         if (note.toLowerCase().includes(head.toLowerCase())) assert.ok(heads.includes(head), `${path}: the crop table note names "${head}", a column it does not show`);
       }
     }
+    // Every food caution box points to the food-safety authority exactly once, at its end.
+    const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const authority = escapeHtml(chrome['food.authority'] ?? '');
+    for (const [box] of html.matchAll(/<aside class="guide-safety guide-food"[\s\S]*?<\/aside>/g)) {
+      assert.ok(authority && box.split(authority).length === 2, `${path}: a food caution box does not name the food-safety authority exactly once`);
+    }
     // Every glossary term note and step is rendered server-side (readable without JavaScript).
     assert.ok(!/<(?:Term|Note|Checklist)\b/.test(html), `${path}: unrendered MDX component`);
   }

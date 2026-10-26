@@ -1,6 +1,6 @@
 ---
-// A fixed-wording caution about eating a crop or its seed: it names the risk and sends the reader to
-// their national food-safety authority. One text per risk (src/i18n/guides/*.json, "food.<risk>");
+// A fixed-wording caution about eating a crop or its seed: it names the risk, then sends the reader to
+// their national food-safety authority once per box ("food.authority"). One text per risk (src/i18n/guides/*.json, "food.<risk>");
 // no doses, times, temperatures, methods or links, and nothing a guide can add to it. Several risks
 // in one place are one box with one title: risk={['ergot', 'treated-seed']}.
 import { foodRisks, type FoodRisk } from '../../data/food-risks';
@@ -18,5 +18,6 @@ const lang = guideLangOf(Astro.currentLocale);
   <div class="guide-safety-body">
     <p class="guide-safety-title">{gt('food.title', lang)}</p>
     {risks.map((r) => <p>{gt(`food.${r}`, lang)}</p>)}
+    <p>{gt('food.authority', lang)}</p>
   </div>
 </aside>
