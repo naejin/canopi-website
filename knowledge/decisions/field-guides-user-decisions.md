@@ -4,7 +4,7 @@ title: Field Guides — user decisions
 description: Dated decisions the project owner made about the Field Guides section; they change only when the owner changes them.
 status: stable
 tags: [field-guides, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:43:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:47:41Z }
 ---
 
 # Field Guides — user decisions
@@ -27,6 +27,7 @@ any of them; a change is a question to the owner.
 | 2026-10-26 | *Trees with Edible Leaves* (Toensmeier with Klopf, Perennial Agriculture Institute, 2022, CC BY-NC-ND) joins the bibliography (en, fr, es, de editions) and gets a Field Guide; it partly backs the excluded trees topic. The Land Institute joins the agroecology network (United States). |
 | 2026-10-26 | **Reopened under the warn-don't-remove rule:** the "Harvest to kitchen" domain returns with a Nixtamalization guide and a Cooking dry beans guide, and the squash guide covers the book's canning of squash purée. **Warnings and kitchen texts give no figures**: they say what is done and why, name the danger plainly (caustic lime, toxins in undercooked beans or leaves, botulism), attribute the book's practice to its author, give no ratios, doses, times or temperatures, and point to the national food-safety authority. The caution tests stay as they are. |
 | 2026-10-26 | *Trees with Edible Leaves* sits in a new index domain **Trees & perennials** (fr « Arbres et vivaces »), which later perennial sources (Crawford) can join. |
+| 2026-10-26 | **Reopen every earlier [OMIT] item "for coherence".** Each comes back under the warn-don't-remove rule: dangerous practices (the book's raw-tasting and "nibble and spit" tests, seeds in the mouth, sharing soil, wild greens and mushrooms, lupini, grasspea, eating surplus seed) are reported as the author's practice with a clear warning, never as a step the reader is told to do; doubtful claims are attributed to him as his view; still no figures for anything eaten, toxic or caustic, and nothing the book does not say (e.g. no seed-law statements). |
 | 2026-10-25 | Excluded until other sources back them: the book's last chapter on chickens, bees, mushrooms and trees. Canning mashed squash is never reproduced. |
 
 ## Where the source notes live
