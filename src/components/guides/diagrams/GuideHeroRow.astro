@@ -1,0 +1,112 @@
+---
+// The row of drawings under a guide's title, showing what its section is about (hero-row.ts picks the
+// motif): beans for seeds, each crops guide's own seed, green leaves, leaves turning through autumn,
+// beneficial insects, a kitchen handful of corn and beans. Seeded by the slug, so each guide has its
+// own arrangement and every build is the same. Decorative: the title says it all.
+import { BEAN_PATH, CLOVE_PATH, CLOVE_SEAM, GRAIN_CREASE, GRAIN_PATH, KERNEL_PATH, SQUASH_SEED_PATH, SQUASH_SEED_RIM, TOMATO_SEED_PATH, leafPath, lobedLeafPath, pick, r1, rng, seedOf, shuffle, type Bean } from '../../../lib/svg';
+import type { GuideDomain } from '../../../i18n/guides';
+import BeanG from './Bean.astro';
+import { heroMotif } from './hero-row';
+interface Props { domain: GuideDomain; slug: string; }
+interface Part { d: string; cls: string; }
+type Item = { bean: Bean } | { t: string; parts: Part[]; style?: string };
+const { domain, slug } = Astro.props;
+const motif = heroMotif(domain, slug);
+const r = rng(seedOf(slug));
+
+const place = (x: number, y: number, turn: number, s: number) => `translate(${r1(x)} ${r1(y)}) rotate(${Math.round(turn)}) scale(${r1(s * 100) / 100})`;
+// A circle or ellipse as a path, so every part of a drawing is one <path>.
+const oval = (cx: number, cy: number, rx: number, ry = rx) => `M${r1(cx - rx)} ${r1(cy)}a${rx} ${ry} 0 1 0 ${r1(2 * rx)} 0a${rx} ${ry} 0 1 0 ${r1(-2 * rx)} 0Z`;
+// The random numbers are drawn in BeanRow's old order, so the seeds guides keep their rows.
+const bean = (x: number, spread: number): Bean => {
+  const c = 1 + Math.floor(r() * 6);
+  return { x, y: 32 + (r() - 0.5) * spread, c, c2: r() < 0.22 ? 1 + Math.floor(r() * 6) : 0, s: 1.25 + r() * 0.6, r: (r() - 0.5) * 80, speck: r() < 0.35 };
+};
+// One seed of a crop: its shape in a tone (1–6, the --seed-N tokens), plus its rim, crease or seam.
+const seedShapes = {
+  kernels: { d: KERNEL_PATH, line: '', tones: [6, 6, 6, 3, 1, 4, 5], n: 28, s: [1.9, 2.4] },
+  'squash-seeds': { d: SQUASH_SEED_PATH, line: SQUASH_SEED_RIM, tones: [3, 3, 3, 6], n: 19, s: [1.4, 1.7] },
+  grains: { d: GRAIN_PATH, line: GRAIN_CREASE, tones: [6, 6, 1, 3], n: 38, s: [1.6, 1.9] },
+  'tomato-seeds': { d: TOMATO_SEED_PATH, line: '', tones: [3, 3, 6], n: 38, s: [1.6, 2] },
+  cloves: { d: CLOVE_PATH, line: CLOVE_SEAM, tones: [3, 3, 3, 5], n: 21, s: [1.6, 2] },
+} as const;
+const seed = (kind: keyof typeof seedShapes, x: number, y: number): Item => {
+  const k = seedShapes[kind];
+  const c = pick(k.tones, r);
+  const parts: Part[] = [{ d: k.d, cls: `guide-c${c} guide-bean-o` }];
+  if (k.line) parts.push({ d: k.line, cls: 'guide-hero-line' });
+  return { t: place(x, y, (r() - 0.5) * 140, k.s[0] + r() * (k.s[1] - k.s[0])), parts };
+};
+const across = (n: number, i: number) => 18 + (i * 604) / (n - 1);
+
+// Leaves lie along the row, base to tip, centred on their slot; compound ones carry leaflet pairs.
+// A leaf's colour is one custom property, so its stalk and blade match.
+const greens = ['var(--leaf)', 'var(--leaf-young)', 'var(--leaf-deep)'];
+const leaf = (kind: 'simple' | 'lobed' | 'compound', x: number, colour: string): Item => {
+  const len = 30 + r() * 10;
+  const turn = (r() - 0.5) * 60 + (r() < 0.5 ? 180 : 0);
+  const t = `${place(x, 32 + (r() - 0.5) * 6, turn, 1)} translate(${r1(-len / 2)} 0)`;
+  const style = `--guide-hero-leaf: ${colour}`;
+  const stalk: Part = { d: `M-4 0H${kind === 'compound' ? r1(len * 0.84) : 0}`, cls: 'guide-hero-stalk' };
+  const vein: Part = { d: `M0 0H${r1(len * 0.9)}`, cls: 'guide-hero-vein' };
+  if (kind === 'simple') return { t, style, parts: [{ d: leafPath(len), cls: 'guide-hero-leaf' }, stalk, vein] };
+  if (kind === 'lobed') return { t, style, parts: [{ d: lobedLeafPath(len), cls: 'guide-hero-leaf' }, stalk, vein] };
+  const leaflets = [0.3, 0.52, 0.74].flatMap((at) => [-55, 55].map((a) => leafPath(len * 0.3, r1(at * len), 0, a))).concat(leafPath(len * 0.32, r1(len * 0.8), 0, 0));
+  return { t, style, parts: [stalk, { d: leaflets.join(''), cls: 'guide-hero-leaf' }] };
+};
+// Fresh green on the left to brown on the right, through yellow and ochre.
+const autumn = ['--leaf-young', '--leaf-gold', '--leaf-ochre', '--leaf-brown'];
+const turning = (at: number) => {
+  const seg = Math.min(Math.floor(at * 3), 2);
+  const p = Math.round((at * 3 - seg) * 10) * 10;
+  return `color-mix(in srgb, var(${autumn[seg]}) ${100 - p}%, var(${autumn[seg + 1]}))`;
+};
+
+// Beneficial insects, head up, about 20 × 24 units: a ladybird, a hoverfly and a ground beetle.
+const legs = (pairs: [number, number, number, number][]): Part => ({ d: pairs.map(([x, y, dx, dy]) => `M${x} ${y}l${dx} ${dy}M${-x} ${y}l${-dx} ${dy}`).join(''), cls: 'guide-hero-leg' });
+const band = (y: number) => { const w = r1(3.4 * Math.sqrt(1 - ((y - 5.4) / 6.2) ** 2)); return `M${-w} ${y}H${w}`; };
+const insects = {
+  ladybird: [
+    legs([[-5, -2, -4, -2], [-5.6, 1.5, -4.4, 0.6], [-5, 4.6, -3.6, 2.6]]),
+    { d: oval(0, -6.4, 3), cls: 'guide-c2' },
+    { d: oval(0, 1, 7), cls: 'guide-hero-red guide-bean-o' },
+    { d: 'M0-5.8V7.8', cls: 'guide-hero-seam' },
+    { d: [[-3.4, -1.6, 1.4], [3.4, -1.6, 1.4], [-4, 3.2, 1.5], [4, 3.2, 1.5], [-1.7, 6, 1.1], [1.7, 6, 1.1]].map(([x, y, s]) => oval(x, y, s)).join(''), cls: 'guide-c2' },
+    { d: oval(-1.5, -7.2, 0.8) + oval(1.5, -7.2, 0.8), cls: 'guide-c3' },
+  ],
+  hoverfly: [
+    legs([[-2.6, -2, -3, 2.4], [-2.8, -0.6, -3.4, 4.6]]),
+    { d: oval(0, 5.4, 3.4, 6.2), cls: 'guide-hero-yellow guide-bean-o' },
+    { d: [3, 5.8, 8.6].map(band).join(''), cls: 'guide-hero-band' },
+    { d: oval(0, -3, 3.2, 3.4), cls: 'guide-c2' },
+    { d: oval(0, -7.4, 3, 2.2), cls: 'guide-c1' },
+    { d: 'M-1.4-3.4C-6-6.4-12-4.6-11.4-1.6C-10.8 1-5 0.4-1.4-2.4ZM1.4-3.4C6-6.4 12-4.6 11.4-1.6C10.8 1 5 0.4 1.4-2.4Z', cls: 'guide-hero-wing' },
+  ],
+  beetle: [
+    legs([[-3, -4.6, -4.4, -3.6], [-3.6, -0.8, -5, 1], [-3.4, 3, -4.4, 5]]),
+    { d: 'M-1.2-10Q-3.6-12.8-5.6-13.2M1.2-10Q3.6-12.8 5.6-13.2', cls: 'guide-hero-leg' },
+    { d: oval(0, -8.8, 2.2, 2), cls: 'guide-c2' },
+    { d: oval(0, -4.8, 3.6, 2.6), cls: 'guide-c2 guide-hero-sheen' },
+    { d: 'M-4.2-1.6C-4.6 3-4 8 0 10.4C4 8 4.6 3 4.2-1.6C2.8-2.6-2.8-2.6-4.2-1.6Z', cls: 'guide-c2 guide-hero-sheen' },
+    { d: 'M-2.4-0.8V7M0-1.4V10M2.4-0.8V7', cls: 'guide-hero-ridge' },
+  ],
+} satisfies Record<string, Part[]>;
+
+let items: Item[];
+if (motif === 'beans') items = Array.from({ length: 22 }, (_, i) => ({ bean: bean(18 + i * 28.5, 10) }));
+else if (motif === 'leaves' || motif === 'autumn-leaves') {
+  const kinds = shuffle(Array.from({ length: 13 }, (_, i) => (['simple', 'lobed', 'compound'] as const)[i % 3]), r);
+  items = kinds.map((kind, i) => {
+    const x = 26 + i * 49;
+    return leaf(kind, x, motif === 'leaves' ? pick(greens, r) : turning(i / 12));
+  });
+} else if (motif === 'insects') {
+  const kinds = shuffle(Array.from({ length: 11 }, (_, i) => (['ladybird', 'hoverfly', 'beetle'] as const)[i % 3]), r);
+  items = kinds.map((kind, i) => ({ t: place(30 + i * 58, 33 + (r() - 0.5) * 4, (r() - 0.5) * 100, 1.65 + r() * 0.25), parts: insects[kind] }));
+} else if (motif === 'kernels-and-beans') items = Array.from({ length: 24 }, (_, i) => (r() < 0.5 ? { bean: bean(across(24, i), 12) } : seed('kernels', across(24, i), 32 + (r() - 0.5) * 12)));
+else {
+  const n = seedShapes[motif].n;
+  items = Array.from({ length: n }, (_, i) => seed(motif, across(n, i), 32 + (r() - 0.5) * 16));
+}
+---
+<svg class="guide-specimens" viewBox="0 0 640 64" aria-hidden="true" focusable="false">{items.map((item) => ('bean' in item ? <BeanG bean={item.bean} /> : <g transform={item.t} style={item.style}>{item.parts.map((p) => <path d={p.d} class={p.cls} />)}</g>))}</svg>

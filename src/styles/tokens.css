@@ -22,6 +22,12 @@
   --leaf: #5E7A3A;
   --petal: #E2B33A;
   --anther: #C98A1E;
+  /* Leaves for the guide hero rows: a fresh and a deep green beside --leaf, then autumn's yellow, ochre and brown. */
+  --leaf-young: #7F9A45;
+  --leaf-deep: #3E5A2B;
+  --leaf-gold: #C29A22;
+  --leaf-ochre: #B06A26;
+  --leaf-brown: #6B4A2E;
   --seed-1: #9C5A16;
   --seed-2: #3B2F25;
   --seed-3: #E6D7B8;
@@ -57,6 +63,11 @@
   --leaf: #93B06A;
   --petal: #E9C25A;
   --anther: #D99A34;
+  --leaf-young: #B0C77E;
+  --leaf-deep: #6E8F4C;
+  --leaf-gold: #E0BF4E;
+  --leaf-ochre: #D58E48;
+  --leaf-brown: #A47C57;
   --seed-1: #D0893A;
   --seed-2: #8C7A66;
   --seed-3: #EADCC0;
@@ -87,6 +98,11 @@
     --leaf: #93B06A;
     --petal: #E9C25A;
     --anther: #D99A34;
+    --leaf-young: #B0C77E;
+    --leaf-deep: #6E8F4C;
+    --leaf-gold: #E0BF4E;
+    --leaf-ochre: #D58E48;
+    --leaf-brown: #A47C57;
     --seed-1: #D0893A;
     --seed-2: #8C7A66;
     --seed-3: #EADCC0;

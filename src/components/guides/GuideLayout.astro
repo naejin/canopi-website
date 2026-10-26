@@ -10,7 +10,7 @@ import Footer from '../Footer.astro';
 import DonateDialog from '../DonateDialog.astro';
 import PageData from '../PageData.astro';
 import BookCite from './BookCite.astro';
-import BeanRow from './diagrams/BeanRow.astro';
+import GuideHeroRow from './diagrams/GuideHeroRow.astro';
 import { guideComponents } from './index';
 import { publishedGuides, slugOf, type GuideEntry } from '../../lib/guides';
 import { editionFor, themes } from '../../data/bibliography';
@@ -55,7 +55,7 @@ const tocList = toc.map((h) => ({ href: `#${h.slug}`, text: h.text }));
           <p class="guide-crumbs"><a href={guidesPath(lang)}>{gt('section.title', lang)}</a> <span aria-hidden="true">›</span> <a href={`${guidesPath(lang)}#${domain}`}>{gt(`domain.${domain}`, lang)}</a></p>
           <h1>{title}</h1>
           <p class="guide-lede">{description}</p>
-          <BeanRow seed={slug} />
+          <GuideHeroRow domain={domain} slug={slug} />
           <dl class="guide-glance" aria-label={gt('guide.glance', lang)}>
             {glance.map((pair) => <div class:list={{ 'guide-glance-long': pair.value.length > 40 }}><dt class="guide-label">{pair.label}</dt><dd>{pair.value}</dd></div>)}
           </dl>

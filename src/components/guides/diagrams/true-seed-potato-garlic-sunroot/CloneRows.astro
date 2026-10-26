@@ -2,12 +2,11 @@
 // Potato, garlic and sunroot from true seed: why clones are fragile. Two rows of eight potato plants meet
 // the same beetle. Top row: identical clones, every one wilts. Bottom row: seedlings that differ in size
 // and shape; three wilt, five stand. clones and seedlings are the row labels; alt describes the drawing.
-import { r1, rng, seedOf } from '../../../../lib/svg';
+import { leafPath as leaf, r1, rng, seedOf } from '../../../../lib/svg';
 interface Props { clones: string; seedlings: string; alt: string; }
 const { clones, seedlings, alt } = Astro.props;
 const N = 8, X0 = 30, DX = 48;
 const rand = rng(seedOf('true-seed:clone-rows'));
-const leaf = (len: number) => `M0 0Q${r1(len * 0.5)} ${r1(-len * 0.38)} ${len} 0Q${r1(len * 0.5)} ${r1(len * 0.38)} 0 0Z`;
 // One plant standing on the soil line `ground`: h tall, leaves of size `s`, wilted or not.
 const plant = (x: number, ground: number, h: number, s: number, pairs: number, wilted: boolean, tone: number) => {
   const tipX = wilted ? x + h * 0.35 : x;
