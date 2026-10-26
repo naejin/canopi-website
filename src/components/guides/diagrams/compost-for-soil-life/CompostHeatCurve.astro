@@ -1,0 +1,111 @@
+---
+// Compost for soil life: the centre temperature of a hot pile over time, from the authors' figures.
+// The x axis has three unequal phases and no ticks (first days, weeks, months); the y axis is in °C.
+// Behind the curve: the warm-up and hot ranges as pale horizontal bands, a hatched target band, a band
+// to keep to after the peak, and a dashed ceiling. The curve dips twice where the pile is turned. Band
+// figures, labels and phase names come from the MDX (°F in the HTML key only); the key wraps on phones.
+interface Range { from: number; to: number; label: string; }
+interface Phase { name: string; span: string; }
+interface Props {
+  title: string;
+  alt: string;
+  axis: { temp: string; time: string };
+  phases: [Phase, Phase, Phase];
+  warm: Range;
+  hot: Range;
+  target: Range;
+  after: Range;
+  ceiling: { at: number; label: string };
+  turned: string;
+}
+const { title, alt, axis, phases, warm, hot, target, after, ceiling, turned } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-heat-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+// Plot area and scales: 10 °C at the bottom, 75 °C at the top.
+const L = 38, R = 392, T = 12, B = 176, LO = 10, HI = 75;
+const y = (c: number) => Math.round((B - ((c - LO) / (HI - LO)) * (B - T)) * 10) / 10;
+// Phase edges along x: a short warm-up, a longer hot phase, the longest maturing phase.
+const edges = [L, 96, 236, R];
+// The curve as [x, °C]: rise, peak, two dips where the pile is turned, a slow fall.
+const pts: [number, number][] = [
+  [L, 14], [70, 26], [90, 40], [104, 57], [118, 64], [134, 65], [146, 64],
+  [152, 47], [166, 60], [180, 61], [186, 45], [200, 53], [222, 50], [246, 44],
+  [280, 37], [320, 29], [360, 23], [R, 20],
+];
+const curve = pts.map(([px, c], i) => `${i ? 'L' : 'M'}${px} ${y(c)}`).join('');
+const turns = [150, 184];
+const ticks = [warm.from, hot.from, after.to, hot.to];
+---
+<div class="guide-heat">
+  <svg viewBox="0 0 400 214" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    <defs>
+      <pattern id={`${uid}-hatch`} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="6" class="guide-heat-hatch" />
+      </pattern>
+    </defs>
+    <rect x={L} y={y(warm.to)} width={R - L} height={y(warm.from) - y(warm.to)} class="guide-heat-band" />
+    <rect x={L} y={y(hot.to)} width={R - L} height={y(hot.from) - y(hot.to)} class="guide-heat-band guide-heat-band-hot" />
+    <rect x={edges[1] + 14} y={y(target.to)} width={edges[2] - edges[1] - 14} height={y(target.from) - y(target.to)} fill={`url(#${uid}-hatch)`} class="guide-heat-target" />
+    <rect x={edges[1] + 56} y={y(after.to)} width={edges[3] - edges[1] - 56 - 60} height={y(after.from) - y(after.to)} class="guide-heat-after" />
+    <line x1={L} y1={y(ceiling.at)} x2={R} y2={y(ceiling.at)} class="guide-heat-ceiling" />
+    {edges.slice(1, 3).map((ex) => <line x1={ex} y1={T} x2={ex} y2={B} class="guide-heat-divider" />)}
+    <line x1={L} y1={B} x2={R} y2={B} class="guide-heat-axis" />
+    <line x1={L} y1={T} x2={L} y2={B} class="guide-heat-axis" />
+    {ticks.map((c) => (
+      <>
+        <line x1={L - 4} y1={y(c)} x2={L} y2={y(c)} class="guide-heat-axis" />
+        <text x={L - 6} y={y(c) + 4} text-anchor="end" class="guide-heat-tick">{c}</text>
+      </>
+    ))}
+    <path d={curve} class="guide-heat-curve" />
+    {turns.map((tx) => {
+      const near = pts.reduce((a, b) => (Math.abs(b[0] - tx) < Math.abs(a[0] - tx) ? b : a));
+      const ty = y(near[1]) + 12;
+      return <path d={`M${tx - 5} ${ty + 8}L${tx} ${ty}L${tx + 5} ${ty + 8}Z`} class="guide-heat-turn" />;
+    })}
+    {phases.map((p, i) => {
+      const cx = (edges[i] + edges[i + 1]) / 2;
+      return (
+        <>
+          <text x={cx} y={B + 15} text-anchor="middle" class="guide-heat-phase">{p.name}</text>
+          <text x={cx} y={B + 28} text-anchor="middle" class="guide-heat-span">{p.span}</text>
+        </>
+      );
+    })}
+    <text x={L + 4} y={T - 2} class="guide-heat-unit">°C</text>
+  </svg>
+  <p class="guide-heat-axes"><span>↑ {axis.temp}</span><span>{axis.time} →</span></p>
+  <ul class="guide-heat-key">
+    <li><svg viewBox="0 0 24 12" aria-hidden="true"><rect x="1" y="1" width="22" height="10" fill={`url(#${uid}-hatch)`} class="guide-heat-target" /></svg><span>{target.label}</span></li>
+    <li><svg viewBox="0 0 24 12" aria-hidden="true"><line x1="1" y1="6" x2="23" y2="6" class="guide-heat-ceiling" /></svg><span>{ceiling.label}</span></li>
+    <li><svg viewBox="0 0 24 12" aria-hidden="true"><rect x="1" y="1" width="22" height="10" class="guide-heat-after" /></svg><span>{after.label}</span></li>
+    <li><svg viewBox="0 0 24 12" aria-hidden="true"><rect x="1" y="1" width="22" height="10" class="guide-heat-band guide-heat-band-hot" /></svg><span>{hot.label}</span></li>
+    <li><svg viewBox="0 0 24 12" aria-hidden="true"><rect x="1" y="1" width="22" height="10" class="guide-heat-band" /></svg><span>{warm.label}</span></li>
+    <li><svg viewBox="0 0 24 12" aria-hidden="true"><path d="M7 11L12 3L17 11Z" class="guide-heat-turn" /></svg><span>{turned}</span></li>
+  </ul>
+</div>
+
+<style>
+  .guide-heat { display: grid; gap: 0.4rem; max-width: 38rem; }
+  .guide-heat > svg { width: 100%; height: auto; }
+  .guide-heat-band { fill: var(--surface-alt); stroke: var(--border-strong); stroke-width: 0.6; }
+  .guide-heat-band-hot { fill: var(--accent); fill-opacity: 0.1; }
+  .guide-heat-hatch { stroke: var(--accent); stroke-width: 1.6; }
+  .guide-heat-target { stroke: var(--accent); stroke-width: 0.8; }
+  .guide-heat-after { fill: var(--surface); stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 4 2; fill-opacity: 0.6; }
+  .guide-heat-ceiling { stroke: var(--text); stroke-width: 1.4; stroke-dasharray: 6 3; }
+  .guide-heat-divider { stroke: var(--border-strong); stroke-width: 0.8; stroke-dasharray: 2 3; }
+  .guide-heat-axis { stroke: var(--text-muted); stroke-width: 1; }
+  .guide-heat-curve { fill: none; stroke: var(--accent-ink); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+  .guide-heat-turn { fill: var(--text); }
+  .guide-heat .guide-heat-tick { font-size: 11px; fill: var(--text-muted); }
+  .guide-heat .guide-heat-unit { font-size: 11px; fill: var(--text-muted); }
+  .guide-heat .guide-heat-phase { font-size: 12px; font-weight: 600; fill: var(--text); }
+  .guide-heat .guide-heat-span { font-size: 11px; fill: var(--text-muted); }
+  :global(.guide-body) .guide-heat-axes { display: flex; justify-content: space-between; gap: 1rem; margin: 0; font-size: 0.82rem; color: var(--text-muted); }
+  :global(.guide-body) .guide-heat-key { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0.35rem 1rem; margin: 0; padding: 0; list-style: none; font-size: 0.86rem; line-height: 1.35; color: var(--text-secondary); }
+  :global(.guide-body) .guide-heat-key li { display: grid; grid-template-columns: 1.6rem 1fr; gap: 0.5rem; align-items: start; margin: 0; }
+  .guide-heat-key svg { width: 1.6rem; height: 0.8rem; margin-top: 0.25rem; }
+</style>
