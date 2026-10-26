@@ -21,7 +21,7 @@ function polePlant(x: number, h: number) {
   leaves.push(leaf(x, top + 4, -90, 8));
   return { stem: vine, leaves, stake: `M${x} ${G + 2}L${x} ${top - 2}` };
 }
-const plants = [
+const plants: (ReturnType<typeof bushPlant> & { x: number; label?: string; accent?: boolean })[] = [
   { ...bushPlant(18), label: bush, x: 18 },
   { ...polePlant(60, 92), label: pole, x: 60 },
   { ...polePlant(116, 92), label: hybrid, x: 116, accent: true },

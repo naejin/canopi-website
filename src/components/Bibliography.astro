@@ -2,7 +2,7 @@
 // The bibliography: the whole list on /bibliography/ (full), or the books marked featured on the home page.
 import { t, localizedUrl, type Locale } from '../i18n/utils';
 import { themes } from '../data/bibliography';
-import { guidesCiting, slugOf } from '../lib/guides';
+import { guidesCiting, slugOf, type GuideEntry } from '../lib/guides';
 import { guidePath, guidesPath, guideLangOf } from '../i18n/guides';
 interface Props { lang: Locale; full?: boolean; }
 const { lang, full = false } = Astro.props;
@@ -14,7 +14,7 @@ const languageName = new Intl.DisplayNames([lang], { type: 'language' });
 const collator = new Intl.Collator(lang);
 // Field Guides that cite a book (by its "- id:"), in French for French readers and in English otherwise.
 const guideLang = guideLangOf(lang);
-const citing = Object.fromEntries(await Promise.all(themes.flatMap((theme) => theme.books).filter((book) => book.id)
+const citing: Record<string, GuideEntry[]> = Object.fromEntries(await Promise.all(themes.flatMap((theme) => theme.books).filter((book) => book.id)
   .map(async (book) => [book.id, await guidesCiting(book.id!, guideLang)] as const)));
 const shelves = themes
   .map((theme) => ({
