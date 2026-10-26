@@ -3,11 +3,13 @@
 // root below with a pale halo round the tip (the rhizosphere), bacteria (short rods) and fungal
 // threads in the halo, two protozoa and a nematode grazing on them, and three nitrogen dots heading
 // back to the root. Five numbered arrows follow the loop; `steps` are the five numbered lines under
-// the drawing, `surface` and `zone` the two labels in it. All words come from the MDX.
+// the drawing (each may mark its lead phrase in bold with **…**), `surface` and `zone` the two
+// labels in it. All words come from the MDX.
 import { rng, r1 } from '../../../../lib/svg';
 import { crumbPath, threadPath } from './soil-shapes';
 interface Props { title: string; alt: string; steps: [string, string, string, string, string]; surface: string; zone: string; }
 const { title, alt, steps, surface, zone } = Astro.props;
+const parts = (step: string) => step.split(/\*\*(.+?)\*\*/).map((text, i) => ({ text, bold: i % 2 === 1 }));
 const locals = Astro.locals as { guideSvgs?: number };
 const uid = `guide-loop-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
 const r = rng(7);
@@ -55,7 +57,7 @@ const numbers = [[90, 24], [128, 214], [246, 236], [392, 186], [300, 130]];
     <text x="436" y="260" text-anchor="end" class="guide-loop-label">{zone}</text>
   </svg>
   <ol class="guide-loop-steps">
-    {steps.map((s) => <li>{s}</li>)}
+    {steps.map((s) => <li><span>{parts(s).map((p) => (p.bold ? <strong>{p.text}</strong> : p.text))}</span></li>)}
   </ol>
 </div>
 
@@ -82,5 +84,6 @@ const numbers = [[90, 24], [128, 214], [246, 236], [392, 186], [300, 130]];
   .guide-loop-label { fill: var(--text-muted); font-size: 15px; }
   :global(.guide-body) .guide-loop-steps { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.6rem 1.2rem; counter-reset: guide-loop; }
   :global(.guide-body) .guide-loop-steps li { counter-increment: guide-loop; display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: 0.4rem; margin: 0; font-size: 0.92rem; line-height: 1.4; color: var(--text-secondary); }
+  .guide-loop-steps strong { font-weight: 600; color: var(--text); }
   .guide-loop-steps li::before { content: counter(guide-loop); font-family: var(--font-display); font-weight: 600; color: var(--accent-ink); }
 </style>
