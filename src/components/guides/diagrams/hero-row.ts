@@ -1,7 +1,7 @@
 // What the row of drawings under a guide's title shows, by its section (guideDomains in
-// src/i18n/guides.ts): a crops guide shows its own crop's seed. Typed over every section, so a new
-// section needs a motif here; scripts/guides.test.mjs checks the same at run time, and heroMotif()
-// fails the build for a crops guide with no seed kind. Drawn by GuideHeroRow.astro.
+// src/i18n/guides.ts): a crops guide shows its own crop's seed. Typed over every section, so an editor
+// flags a section with no motif; scripts/guides.test.mjs (npm test) is what enforces it, and
+// heroMotif() fails the build for a crops guide with no seed kind. Drawn by GuideHeroRow.astro.
 import type { GuideDomain } from '../../../i18n/guides';
 
 export const heroMotifs = ['beans', 'kernels', 'squash-seeds', 'grains', 'tomato-seeds', 'cloves', 'leaves', 'autumn-leaves', 'insects', 'kernels-and-beans'] as const;

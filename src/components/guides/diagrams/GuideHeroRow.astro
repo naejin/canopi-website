@@ -105,6 +105,7 @@ else if (motif === 'leaves' || motif === 'autumn-leaves') {
   items = kinds.map((kind, i) => ({ t: place(30 + i * 58, 33 + (r() - 0.5) * 4, (r() - 0.5) * 100, 1.65 + r() * 0.25), parts: insects[kind] }));
 } else if (motif === 'kernels-and-beans') items = Array.from({ length: 24 }, (_, i) => (r() < 0.5 ? { bean: bean(across(24, i), 12) } : seed('kernels', across(24, i), 32 + (r() - 0.5) * 12)));
 else {
+  if (!(motif in seedShapes)) throw new Error(`GuideHeroRow: no drawing for the "${motif}" motif (hero-row.ts)`);
   const n = seedShapes[motif].n;
   items = Array.from({ length: n }, (_, i) => seed(motif, across(n, i), 32 + (r() - 0.5) * 16));
 }

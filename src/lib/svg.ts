@@ -78,8 +78,9 @@ export function leafPath(len: number, x = 0, y = 0, angle = 0): string {
   return `M${r1(x)} ${r1(y)}Q${at(0.5, 0.38)} ${at(1, 0)}Q${at(0.5, -0.38)} ${r1(x)} ${r1(y)}Z`;
 }
 
-// A lobed leaf (an oak's) from its base at 0,0 pointing +x, `len` long, with `lobes` lobes a side.
-export function lobedLeafPath(len: number, lobes = 3): string {
+// A lobed leaf (an oak's) from its base at 0,0 pointing +x, `len` long, with three lobes a side.
+export function lobedLeafPath(len: number): string {
+  const lobes = 3;
   const steps = lobes * 4;
   const side = (sign: number) => Array.from({ length: steps + 1 }, (_, i) => {
     const t = i / steps;

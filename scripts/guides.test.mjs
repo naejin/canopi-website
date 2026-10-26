@@ -386,7 +386,7 @@ test('no guide falls back to the bean row unless its section is seeds or its cro
   for (const { slug, data, file } of guides) {
     const motif = heroMotif(data.domain, slug);
     assert.equal(motif, data.domain === 'crops' ? cropSeeds[slug] : expected[data.domain], `${file}: ${data.domain} motif`);
-    if (motif === 'beans') assert.ok(data.domain === 'seeds' || slug === 'beans-and-legumes', `${file}: beans in a ${data.domain} guide`);
+    if (motif === 'beans') assert.ok(data.domain === 'seeds' || (data.domain === 'crops' && cropSeeds[slug] === 'beans'), `${file}: beans in a ${data.domain} guide`);
   }
 });
 
