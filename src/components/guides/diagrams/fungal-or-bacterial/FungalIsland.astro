@@ -1,0 +1,61 @@
+---
+// Fungal or bacterial: a fungal island round a tree in a lawn, seen from above. A lawn (fine hatch,
+// chrome token), the tree's crown outline (dashed) marking the drip line, a disc of fungal compost
+// and brown mulch filling it, laced with cream fungal threads, and a clear ring round the trunk.
+// `labels` are, in order: the lawn, the drip line, the compost and mulch, the clear trunk; they sit
+// to the right of the drawing with leader lines. All words come from the MDX.
+import { rng, r1, wrap } from '../../../../lib/svg';
+import { threadPath } from '../living-soil/soil-shapes';
+interface Props { labels: [string, string, string, string]; title: string; alt: string; }
+const { labels, title, alt } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-island-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const r = rng(41);
+const CX = 120, CY = 112, R = 78;
+const hatch = Array.from({ length: 30 }, (_, i) => `M${4 + i * 9} 4L${4 + i * 9 - 60} 216`).join('');
+const threads = Array.from({ length: 18 }, () => {
+  const a = r() * Math.PI * 2, d = 22 + r() * 46, b = a + (r() - 0.5) * 1.4, e = 22 + r() * 46;
+  return threadPath(r, CX + Math.cos(a) * d, CY + Math.sin(a) * d, CX + Math.cos(b) * e, CY + Math.sin(b) * e);
+}).join('');
+const LX = 236;
+const at = (deg: number, rad: number) => [r1(CX + Math.cos((deg * Math.PI) / 180) * rad), r1(CY + Math.sin((deg * Math.PI) / 180) * rad)];
+const marks = [
+  { y: 20, to: [214, 26] },
+  { y: 70, to: at(-28, R) },
+  { y: 126, to: at(8, 50) },
+  { y: 182, to: at(40, 13) },
+].map((m, i) => ({ ...m, lines: wrap(labels[i], 16) }));
+---
+<svg class="guide-island" viewBox="0 0 360 220" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+  <title id={`${uid}-t`}>{title}</title>
+  <desc id={`${uid}-d`}>{alt}</desc>
+  <defs><clipPath id={`${uid}-c`}><rect x="4" y="4" width="220" height="212" rx="6" /></clipPath></defs>
+  <rect x="4" y="4" width="220" height="212" rx="6" class="guide-island-lawn" />
+  <path d={hatch} clip-path={`url(#${uid}-c)`} class="guide-island-hatch" />
+  <circle cx={CX} cy={CY} r={R} class="guide-island-mulch" />
+  <path d={threads} class="guide-island-hypha" />
+  <circle cx={CX} cy={CY} r={R} class="guide-island-crown" />
+  <circle cx={CX} cy={CY} r="13" class="guide-island-clear" />
+  <circle cx={CX} cy={CY} r="6" class="guide-island-trunk" />
+  {marks.map((m) => (
+    <g>
+      <path d={`M${LX - 4} ${m.y - 4}L${m.to[0]} ${m.to[1]}`} class="guide-island-lead" />
+      <circle cx={m.to[0]} cy={m.to[1]} r="2" class="guide-island-dot" />
+      <text x={LX} y={m.y} class="guide-island-label">{m.lines.map((line, k) => <tspan x={LX} dy={k ? 15 : 0}>{line}</tspan>)}</text>
+    </g>
+  ))}
+</svg>
+
+<style>
+  .guide-island { display: block; width: 100%; max-width: 32rem; height: auto; }
+  .guide-island-lawn { fill: var(--surface-alt); stroke: var(--border); }
+  .guide-island-hatch { fill: none; stroke: var(--border-strong); stroke-width: 0.6; opacity: 0.5; }
+  .guide-island-mulch { fill: var(--soil-2); }
+  .guide-island-hypha { fill: none; stroke: var(--soil-hypha); stroke-width: 1; stroke-linecap: round; opacity: 0.9; }
+  .guide-island-crown { fill: none; stroke: var(--leaf-deep); stroke-width: 2; stroke-dasharray: 6 4; }
+  .guide-island-clear { fill: var(--surface); stroke: var(--border-strong); stroke-dasharray: 2 2; }
+  .guide-island-trunk { fill: var(--leaf-brown); }
+  .guide-island-lead { fill: none; stroke: var(--text-muted); stroke-width: 1; }
+  .guide-island-dot { fill: var(--text-muted); }
+  .guide-island-label { font-size: 14px; fill: var(--text-secondary); }
+</style>

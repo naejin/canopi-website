@@ -1,0 +1,85 @@
+---
+// Fungal or bacterial: the authors' F:B ranges by plant group, as horizontal bars on a log scale
+// from 0.1 to 1000 (fungi : bacteria by weight), with a bold line at 1:1. Each row is HTML (its
+// label, and an optional note under it) beside a small SVG bar, so the label can sit above its bar
+// on phones; every bar uses the same scale. A `young` row draws a hollow, dashed arrow from the
+// bacterial side to its bar (trees that start bacterial and turn fungal). Numbers are written in the
+// page's language (0,3 in French). The chart is one image named by `alt`.
+import { guideLangOf } from '../../../../i18n/guides';
+import { r1 } from '../../../../lib/svg';
+interface Row { label: string; from: number; to: number; young?: boolean; note?: string; }
+interface Props { rows: Row[]; even: string; left: string; right: string; title: string; alt: string; }
+const { rows, even, left, right, title, alt } = Astro.props;
+const lang = guideLangOf(Astro.currentLocale);
+const fmt = new Intl.NumberFormat(lang === 'fr' ? 'fr-FR' : 'en-GB', { maximumFractionDigits: 1, useGrouping: false });
+const W = 400, PAD = 26, H = 26;
+const x = (v: number) => r1(PAD + ((Math.log10(v) + 1) / 4) * (W - 2 * PAD));
+const ticks = [0.1, 1, 10, 100, 1000];
+// The scale's gridlines are a background on each row's plot cell, so they run unbroken through rows
+// of any height (a label may wrap to three lines); the 1:1 line is bold.
+const band = (t: number) => {
+  const p = r1((x(t) / W) * 100), w = t === 1 ? 1 : 0.5, c = t === 1 ? 'var(--text)' : 'var(--border)';
+  return `linear-gradient(90deg, transparent calc(${p}% - ${w}px), ${c} calc(${p}% - ${w}px), ${c} calc(${p}% + ${w}px), transparent calc(${p}% + ${w}px))`;
+};
+const grid = `background-image: ${ticks.map(band).join(', ')}`;
+const drawn = rows.map((row) => {
+  const a = x(row.from), b = x(row.to);
+  const text = `${fmt.format(row.from)}–${fmt.format(row.to)}`;
+  const labelRight = b + 6 + text.length * 8.5 < W;
+  return { ...row, a, b, text, tx: labelRight ? b + 6 : a - 6, anchor: labelRight ? 'start' : 'end' };
+});
+---
+<div class="guide-fb" role="img" aria-label={alt}>
+  <div class="guide-fb-head" aria-hidden="true">
+    <span class="guide-fb-title">{title}</span>
+  </div>
+  <div class="guide-fb-row guide-fb-even" aria-hidden="true">
+    <span></span>
+    <svg viewBox={`0 0 ${W} 20`}><text x={x(1)} y="15" text-anchor="middle" class="guide-fb-even-t">{even}</text></svg>
+  </div>
+  {drawn.map((row) => (
+    <div class="guide-fb-row" aria-hidden="true">
+      <span class="guide-fb-label">{row.label}{row.note && <small>{row.note}</small>}</span>
+      <div class="guide-fb-plot" style={grid}><svg viewBox={`0 0 ${W} ${H}`}>
+        {row.young && <path d={`M${x(0.3)} 13H${row.a - 7}M${row.a - 12} 8.5L${row.a - 6} 13L${row.a - 12} 17.5`} class="guide-fb-young" />}
+        <rect x={row.a} y="7" width={Math.max(3, r1(row.b - row.a))} height="12" rx="3" class:list={['guide-fb-bar', { 'guide-fb-fungal': row.from >= 1 }]} />
+        <text x={row.tx} y="18.5" text-anchor={row.anchor} class="guide-fb-range">{row.text}</text>
+      </svg></div>
+    </div>
+  ))}
+  <div class="guide-fb-row" aria-hidden="true">
+    <span></span>
+    <svg viewBox={`0 0 ${W} 20`}>
+      <line x1={PAD} y1="1" x2={W - PAD} y2="1" class="guide-fb-axis" />
+      {ticks.map((t) => <text x={x(t)} y="17" text-anchor="middle" class="guide-fb-tick">{fmt.format(t)}</text>)}
+    </svg>
+  </div>
+  <div class="guide-fb-row" aria-hidden="true">
+    <span></span>
+    <div class="guide-fb-ends"><span>← {left}</span><span>{right} →</span></div>
+  </div>
+</div>
+
+<style>
+  .guide-fb { display: grid; gap: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem; }
+  .guide-fb-head { margin-bottom: 0.4rem; }
+  .guide-fb-title { font-family: var(--font-display); font-weight: 600; }
+  .guide-fb-row { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: 0 0.8rem; align-items: center; }
+  .guide-fb-row svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .guide-fb-label { font-size: 0.88rem; line-height: 1.25; color: var(--text-secondary); padding: 0.2rem 0; }
+  .guide-fb-label small { display: block; font-size: 0.8rem; color: var(--text-muted); }
+  .guide-fb-plot { align-self: stretch; display: grid; align-items: center; }
+  .guide-fb-bar { fill: var(--soil-3); }
+  .guide-fb-fungal { fill: var(--soil-2); }
+  .guide-fb-young { fill: none; stroke: var(--soil-3); stroke-width: 1.6; stroke-dasharray: 4 3; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-fb-range { font-size: 15px; fill: var(--text-secondary); font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+  .guide-fb-even-t { font-size: 14px; font-weight: 600; fill: var(--text); }
+  .guide-fb-axis { stroke: var(--border-strong); stroke-width: 1; }
+  .guide-fb-tick { font-size: 14px; fill: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .guide-fb-ends { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.85rem; color: var(--text-muted); }
+  @media (max-width: 639px) {
+    .guide-fb-row { grid-template-columns: minmax(0, 1fr); }
+    .guide-fb-row > span:empty { display: none; }
+    .guide-fb-label { padding-top: 0.45rem; }
+  }
+</style>
