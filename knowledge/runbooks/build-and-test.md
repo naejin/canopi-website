@@ -4,7 +4,7 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:26:15Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:30:08Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:30:12Z }
 sources:
@@ -27,7 +27,7 @@ sources:
     resource: ../../tsconfig.json
     title: tsconfig.json
     digest: sha256:1a8a854b16eadbd9
-    last_modified: 2026-10-26T20:26:01Z
+    last_modified: 2026-10-26T20:27:21Z
 enforced_by: [scripts/package.test.mjs]
 ---
 
@@ -44,7 +44,7 @@ Node >= 22.12.0.
 | install | `npm install` |
 | dev server (port 4321) | `npm run dev` |
 | unit/regression tests | `npm test` (`node --experimental-strip-types --test scripts/*.test.mjs`, so it runs on Node 22.12) |
-| type check | `npm run check` (`wrangler types` writes the gitignored `worker-configuration.d.ts`, then `astro check` type-checks `.ts` files and `.astro` frontmatter; MDX is not checked) |
+| type check | `npm run check` (`wrangler types` writes the gitignored `worker-configuration.d.ts`, then `astro check` type-checks `.ts`, `.js` and `.astro` files; MDX is not checked) |
 | marketing build | `npm run build` (runs `copy-maplibre.mjs` first) |
 | built-site check | `node scripts/check-built-site.mjs` |
 | bibliography links (network, by hand) | `npm run check:bibliography` |

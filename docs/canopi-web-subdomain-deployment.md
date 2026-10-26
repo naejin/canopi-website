@@ -78,7 +78,7 @@ all of its gates.
 | Release identity | Always | Public tag resolves to the expected full commit; required assets exist. |
 | Root artifact verification | Always | Release checksum, safe archive paths, manifest identity and routing, every payload size and SHA-256, catalog manifest and all assets, platform limits, and no `/app/` references. |
 | Legacy `/app/` verification | Only when `publishLegacyApp` is true | Archive checksum and the existing installer/build tests for the `/app/` contract. |
-| Marketing source validation | When version, date, labels, or URLs change | `npm test`, one `npm run build`, and `node scripts/check-built-site.mjs`. |
+| Marketing source validation | When version, date, labels, or URLs change | `npm test`, `npm run check`, one `npm run build`, and `node scripts/check-built-site.mjs`. |
 | Cloudflare dry run | When marketing output or Worker configuration changes | One successful Wrangler dry run against the canonical build output. |
 | Pages preview | Always for the root artifact | Full routing, content-type, cache, missing-asset, manifest, and representative deployed-hash checks. |
 | Pages production | Always | Deployment revision plus manifest identity, app-shell route, representative real assets, representative missing assets, and custom-domain TLS. |

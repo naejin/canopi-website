@@ -5,13 +5,13 @@ description: How Canopi Web is deployed as its own Cloudflare Pages app at web.p
 resource: ../../docs/canopi-web-subdomain-deployment.md
 tags: [docs]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:57:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:30:07Z }
 sources:
   - id: canopi-web-subdomain-deployment-md
     resource: ../../docs/canopi-web-subdomain-deployment.md
     title: docs/canopi-web-subdomain-deployment.md
-    digest: sha256:efce567c9ccbce46
-    last_modified: 2026-10-16T12:52:30Z
+    digest: sha256:eca26246b9826cd0
+    last_modified: 2026-10-26T20:30:07Z
 ---
 
 # Summary
@@ -23,4 +23,4 @@ Source document: [docs/canopi-web-subdomain-deployment.md](../../docs/canopi-web
 - Root artifact contract: `basePath "/"`, SPA fallback `/* -> /index.html` 200; the `/app/` artifact must not be deployed to the subdomain (blank page).
 - SPA routing: no top-level `404.html` or catch-all `_redirects`; nested `404.html` in `assets/`, `canopi-catalog/`, `pdf-fonts/`.
 - Cache: `index.html` and the manifest `no-cache`; `/assets/*` immutable.
-- Release gates: run marketing `npm test`, one build and `check-built-site.mjs` only when version, date, labels or URLs change; `publishLegacyApp` is true only if `/app/` must be installed or preserved.
+- Release gates: run marketing `npm test`, `npm run check`, one build and `check-built-site.mjs` only when version, date, labels or URLs change; `publishLegacyApp` is true only if `/app/` must be installed or preserved.

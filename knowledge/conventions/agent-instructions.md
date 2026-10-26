@@ -6,18 +6,18 @@ tags: [convention, agents]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:04Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:04Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:30:38Z }
 sources:
   - id: agents-md
     resource: ../../AGENTS.md
     title: AGENTS.md
     digest: sha256:eb22b22167a780e6
-    last_modified: 2026-10-26T20:05:29Z
+    last_modified: 2026-10-26T20:08:11Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:b93580292134ee00
-    last_modified: 2026-10-26T20:05:29Z
+    digest: sha256:d72c6a09aa29c21c
+    last_modified: 2026-10-26T20:30:07Z
 ---
 
 # Rule
