@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:34Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T17:53:05Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:04Z }
 sources:
@@ -41,8 +41,8 @@ sources:
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
     digest: sha256:e888d0595a2776c8
-    last_modified: 2026-10-26T14:29:22Z
-enforced_by: [scripts/guides.test.mjs]
+    last_modified: 2026-10-26T14:30:06Z
+enforced_by: [scripts/guides.test.mjs, scripts/check-built-site.mjs]
 ---
 
 The contract between the guide components and the people writing guides. Source of truth: `src/components/guides/index.ts`
