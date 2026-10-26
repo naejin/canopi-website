@@ -1,0 +1,89 @@
+---
+// Living soil: the nutrient loop between a plant and its soil life. A plant above the soil line, its
+// root below with a pale halo round the tip (the rhizosphere), bacteria (short rods) and fungal
+// threads in the halo, two protozoa and a nematode grazing on them, and three nitrogen dots heading
+// back to the root. Five numbered arrows follow the loop; `steps` are the five numbered lines under
+// the drawing (each may mark its lead phrase in bold with **…**), `surface` and `zone` the two
+// labels in it. All words come from the MDX.
+import { rng, r1 } from '../../../../lib/svg';
+import { crumbPath, threadPath } from './soil-shapes';
+interface Props { title: string; alt: string; steps: [string, string, string, string, string]; surface: string; zone: string; }
+const { title, alt, steps, surface, zone } = Astro.props;
+const parts = (step: string) => step.split(/\*\*(.+?)\*\*/).map((text, i) => ({ text, bold: i % 2 === 1 }));
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-loop-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const r = rng(7);
+const bacteria = Array.from({ length: 26 }, () => ({ x: r1(196 + r() * 100), y: r1(168 + r() * 52), a: Math.round(r() * 180) }));
+const threads = [[206, 238, 270, 214], [218, 150, 292, 176], [270, 214, 312, 230]].map(([ax, ay, bx, by]) => threadPath(r, ax, ay, bx, by));
+const protozoa = [crumbPath(r, 338, 196, 9), crumbPath(r, 358, 214, 6)];
+const nitrogen = [[258, 150], [240, 132], [222, 118]];
+const flows = ['M166 44C190 70 176 100 166 118', 'M196 214C204 206 212 202 222 200', 'M298 196C308 194 316 194 324 194', 'M332 160C312 140 290 140 270 148', 'M216 116C200 112 186 116 176 124'];
+const numbers = [[90, 24], [128, 214], [246, 236], [392, 186], [300, 130]];
+---
+<div class="guide-loop">
+  <svg viewBox="76 0 364 266" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    <defs>
+      <marker id={`${uid}-ah`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" class="guide-loop-head" /></marker>
+    </defs>
+    <rect x="76" y="70" width="364" height="196" class="guide-loop-ground" />
+    <line x1="76" y1="70" x2="440" y2="70" class="guide-loop-surface" />
+    <path d="M150 70C150 50 152 34 150 14" class="guide-loop-stem" />
+    <path d="M150 36C128 22 112 28 106 36C120 44 138 44 150 36Z" class="guide-loop-leaf" />
+    <path d="M151 24C170 8 188 12 194 20C180 30 162 30 151 24Z" class="guide-loop-leaf" />
+    <path d="M150 70C152 110 160 150 178 200C186 220 196 232 206 238" class="guide-loop-root" />
+    <path d="M156 120C136 140 120 168 112 200" class="guide-loop-root guide-loop-root-fine" />
+    <path d="M168 168C190 170 206 160 218 150" class="guide-loop-root guide-loop-root-fine" />
+    <ellipse cx="250" cy="196" rx="118" ry="44" class="guide-loop-halo" />
+    {bacteria.map((b) => <rect x={b.x} y={b.y} width="5" height="2.4" rx="1.2" transform={`rotate(${b.a} ${b.x} ${b.y})`} class="guide-loop-bact" />)}
+    <path d={threads.join('')} class="guide-loop-hypha" />
+    {protozoa.map((d) => <path d={d} class="guide-loop-proto" />)}
+    <path d="M330 170c6-6 12 6 18 0s12 6 18 0" class="guide-loop-nema" />
+    {nitrogen.map(([x, y]) => (
+      <g>
+        <circle cx={x} cy={y} r="6.5" class="guide-loop-n" />
+        <text x={x} y={y + 3} text-anchor="middle" class="guide-loop-n-t">N</text>
+      </g>
+    ))}
+    {flows.map((d) => <path d={d} marker-end={`url(#${uid}-ah)`} class="guide-loop-flow" />)}
+    {numbers.map(([x, y], i) => (
+      <g>
+        <circle cx={x} cy={y} r="10" class="guide-loop-num" />
+        <text x={x} y={y + 4} text-anchor="middle" class="guide-loop-num-t">{i + 1}</text>
+      </g>
+    ))}
+    <text x="436" y="64" text-anchor="end" class="guide-loop-label">{surface}</text>
+    <text x="436" y="260" text-anchor="end" class="guide-loop-label">{zone}</text>
+  </svg>
+  <ol class="guide-loop-steps">
+    {steps.map((s) => <li><span>{parts(s).map((p) => (p.bold ? <strong>{p.text}</strong> : p.text))}</span></li>)}
+  </ol>
+</div>
+
+<style>
+  .guide-loop { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; display: grid; gap: 0.9rem; }
+  .guide-loop svg { display: block; width: 100%; max-width: 30rem; height: auto; margin-inline: auto; }
+  .guide-loop-ground { fill: var(--surface-alt); }
+  .guide-loop-surface { stroke: var(--border-strong); stroke-width: 1; }
+  .guide-loop-stem { stroke: var(--leaf); stroke-width: 3; fill: none; stroke-linecap: round; }
+  .guide-loop-leaf { fill: var(--leaf); }
+  .guide-loop-root { stroke: var(--soil-2); stroke-width: 3; fill: none; stroke-linecap: round; }
+  .guide-loop-root-fine { stroke-width: 1.4; }
+  .guide-loop-halo { fill: var(--soil-3); fill-opacity: 0.13; stroke: var(--soil-3); stroke-dasharray: 3 3; stroke-opacity: 0.8; }
+  .guide-loop-bact { fill: var(--soil-3); }
+  .guide-loop-hypha { fill: none; stroke: var(--soil-hypha); stroke-width: 1.2; stroke-linecap: round; }
+  .guide-loop-proto { fill: var(--soil-worm); opacity: 0.85; }
+  .guide-loop-nema { fill: none; stroke: var(--text-secondary); stroke-width: 2; stroke-linecap: round; }
+  .guide-loop-n { fill: var(--accent); }
+  .guide-loop-n-t { fill: var(--on-accent); font-size: 8px; font-weight: 600; }
+  .guide-loop-flow { fill: none; stroke: var(--accent); stroke-width: 1.6; }
+  .guide-loop-head { fill: var(--accent); }
+  .guide-loop-num { fill: var(--surface); stroke: var(--accent); stroke-width: 1.4; }
+  .guide-loop-num-t { fill: var(--accent-ink); font-size: 12px; font-weight: 600; font-family: var(--font-display); }
+  .guide-loop-label { fill: var(--text-muted); font-size: 15px; }
+  :global(.guide-body) .guide-loop-steps { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.6rem 1.2rem; counter-reset: guide-loop; }
+  :global(.guide-body) .guide-loop-steps li { counter-increment: guide-loop; display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: 0.4rem; margin: 0; font-size: 0.92rem; line-height: 1.4; color: var(--text-secondary); }
+  .guide-loop-steps strong { font-weight: 600; color: var(--text); }
+  .guide-loop-steps li::before { content: counter(guide-loop); font-family: var(--font-display); font-weight: 600; color: var(--accent-ink); }
+</style>

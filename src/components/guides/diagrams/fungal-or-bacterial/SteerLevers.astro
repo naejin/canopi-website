@@ -1,0 +1,72 @@
+---
+// Fungal or bacterial (reusable by the compost, mulch and compost tea guides): the four levers the
+// authors use to steer a bed, each a bar from bacteria (left) to fungi (right) with a small drawing
+// at each end. 1 what you add: fresh green clippings ↔ brown leaves and wood chips. 2 where you put
+// it: bits mixed into the soil ↔ laid on top. 3 how fine and wet: fine bits with droplets ↔ coarse,
+// dry chunks. 4 which compost or tea: a heap dotted with bacteria ↔ a heap laced with fungal threads.
+// Material drawings use plant tokens (it is plant matter), soil uses the soil tokens. `levers` give
+// each lever's name and its two end words, `ends` what each side favours. One image named by `alt`.
+import { rng, r1, leafPath } from '../../../../lib/svg';
+import { crumbPath, threadPath } from '../living-soil/soil-shapes';
+interface Lever { name: string; left: string; right: string; }
+interface Props { levers: [Lever, Lever, Lever, Lever]; ends: [string, string]; title: string; alt: string; }
+const { levers, ends, title, alt } = Astro.props;
+const r = rng(23);
+const blades = [[10, 33, -78, 22], [15, 34, -95, 25], [20, 33, -70, 20], [25, 34, -102, 24], [30, 33, -84, 21]].map(([x, y, a, l]) => leafPath(l, x, y, a));
+const brownLeaves = [leafPath(15, 6, 26, -20), leafPath(14, 20, 31, -160), leafPath(13, 18, 20, -60)];
+const chips = [[24, 30, 9, 4, 18], [8, 33, 8, 3.5, -12], [29, 22, 7, 3.5, 40]];
+const bitsBelow = Array.from({ length: 9 }, () => [r1(6 + r() * 28), r1(24 + r() * 12)]);
+const bitsAbove = Array.from({ length: 9 }, () => [r1(6 + r() * 28), r1(10 + r() * 9)]);
+const fine = Array.from({ length: 16 }, () => [r1(6 + r() * 28), r1(20 + r() * 14)]);
+const coarse = [crumbPath(r, 11, 28, 7), crumbPath(r, 27, 29, 8), crumbPath(r, 19, 16, 6)];
+const heapDots = Array.from({ length: 12 }, () => [r1(9 + r() * 22), r1(23 + r() * 10)]);
+const heapThreads = [threadPath(r, 8, 32, 22, 20), threadPath(r, 14, 34, 32, 26), threadPath(r, 20, 22, 30, 33), threadPath(r, 10, 26, 26, 31)].join('');
+const heap = 'M3 37C6 24 13 17 20 17C27 17 34 24 37 37Z';
+---
+<div class="guide-steer" role="img" aria-label={alt}>
+  <span class="guide-steer-title" aria-hidden="true">{title}</span>
+  <div class="guide-steer-ends" aria-hidden="true"><span>← {ends[0]}</span><span>{ends[1]} →</span></div>
+  {levers.map((lever, i) => (
+    <div class="guide-steer-lever" aria-hidden="true">
+      <b>{lever.name}</b>
+      <div class="guide-steer-line">
+        <svg viewBox="0 0 40 40" class="guide-steer-icon">
+          {i === 0 && blades.map((d) => <path d={d} class="guide-steer-green" />)}
+          {i === 1 && <><line x1="2" y1="20" x2="38" y2="20" class="guide-steer-soil-line" />{bitsBelow.map(([cx, cy]) => <circle cx={cx} cy={cy} r="1.8" class="guide-steer-brown" />)}</>}
+          {i === 2 && <>{fine.map(([cx, cy]) => <circle cx={cx} cy={cy} r="1.3" class="guide-steer-brown" />)}<path d="M10 6q-3 5 0 7q3-2 0-7zM26 4q-3 5 0 7q3-2 0-7zM18 10q-2.4 4 0 5.6q2.4-1.6 0-5.6z" class="guide-steer-drop" /></>}
+          {i === 3 && <><path d={heap} class="guide-steer-heap" />{heapDots.map(([cx, cy]) => <rect x={cx} y={cy} width="2.6" height="1.3" rx="0.6" class="guide-steer-bact" />)}</>}
+        </svg>
+        <span class="guide-steer-bar"></span>
+        <svg viewBox="0 0 40 40" class="guide-steer-icon">
+          {i === 0 && <>{brownLeaves.map((d, k) => <path d={d} class={k === 1 ? 'guide-steer-ochre' : 'guide-steer-brown'} />)}{chips.map(([cx, cy, w, h, a]) => <rect x={cx - w / 2} y={cy - h / 2} width={w} height={h} rx="1" transform={`rotate(${a} ${cx} ${cy})`} class="guide-steer-chip" />)}</>}
+          {i === 1 && <><line x1="2" y1="26" x2="38" y2="26" class="guide-steer-soil-line" />{bitsAbove.map(([cx, cy]) => <circle cx={cx} cy={cy} r="1.8" class="guide-steer-brown" />)}</>}
+          {i === 2 && coarse.map((d) => <path d={d} class="guide-steer-chip" />)}
+          {i === 3 && <><path d={heap} class="guide-steer-heap" /><path d={heapThreads} class="guide-steer-hypha" /></>}
+        </svg>
+      </div>
+      <div class="guide-steer-words"><span>{lever.left}</span><span>{lever.right}</span></div>
+    </div>
+  ))}
+</div>
+
+<style>
+  .guide-steer { display: grid; gap: 0.7rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem; }
+  .guide-steer-title { font-family: var(--font-display); font-weight: 600; }
+  .guide-steer-ends { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.82rem; color: var(--text-muted); letter-spacing: 0.02em; }
+  .guide-steer-lever { display: grid; gap: 0.15rem; }
+  .guide-steer-lever b { font-weight: 600; font-size: 0.95rem; }
+  .guide-steer-line { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr) 2.6rem; gap: 0.5rem; align-items: center; }
+  .guide-steer-icon { display: block; width: 100%; height: auto; }
+  .guide-steer-bar { display: block; height: 0.7rem; border-radius: 999px; border: 1px solid var(--border); background: linear-gradient(90deg, var(--soil-3), var(--soil-2)); }
+  .guide-steer-words { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.88rem; color: var(--text-secondary); }
+  .guide-steer-words span:last-child { text-align: right; }
+  .guide-steer-green { fill: var(--leaf-young); }
+  .guide-steer-brown { fill: var(--leaf-brown); }
+  .guide-steer-ochre { fill: var(--leaf-ochre); }
+  .guide-steer-chip { fill: var(--soil-3); stroke: var(--leaf-brown); stroke-width: 0.6; }
+  .guide-steer-soil-line { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-steer-drop { fill: var(--surface-alt); stroke: var(--text-secondary); stroke-width: 0.8; }
+  .guide-steer-heap { fill: var(--soil-2); opacity: 0.85; }
+  .guide-steer-bact { fill: var(--soil-grain); }
+  .guide-steer-hypha { fill: none; stroke: var(--soil-hypha); stroke-width: 1; stroke-linecap: round; }
+</style>

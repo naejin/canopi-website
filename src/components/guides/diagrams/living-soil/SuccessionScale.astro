@@ -1,0 +1,42 @@
+---
+// Living soil (reused by fungal-or-bacterial): the authors' bacteria-to-fungi scale along plant
+// succession. A bar shades from the bacterial end to the fungal end in soil tokens, `stops` sit
+// beside it in order, the stops listed in `marked` (indexes) are picked out and ringed on the bar,
+// and `ends` caption the two ends. From 640 px the bar runs left to right with the stops above it;
+// on phones it stands upright, bacteria at the top, so each stop gets a full line. The whole scale
+// is one image named by `alt`.
+interface End { title: string; text: string; }
+interface Props { stops: string[]; marked: number[]; ends: [End, End]; alt: string; }
+const { stops, marked, ends, alt } = Astro.props;
+---
+<div class="guide-scale" style={`--guide-scale-n: ${stops.length}`} role="img" aria-label={alt}>
+  <div class="guide-scale-stops" aria-hidden="true">
+    {stops.map((s, i) => <span class:list={{ 'guide-scale-here': marked.includes(i) }}>{s}</span>)}
+  </div>
+  <div class="guide-scale-bar" aria-hidden="true">
+    {stops.map((_, i) => <i class:list={{ 'guide-scale-ring': marked.includes(i) }}></i>)}
+  </div>
+  {ends.map((e, i) => <div class:list={['guide-scale-end', i ? 'guide-scale-fungi' : 'guide-scale-bacteria']} aria-hidden="true"><b>{e.title}</b>{e.text}</div>)}
+</div>
+
+<style>
+  .guide-scale { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'stops stops' 'bar bar' 'bacteria fungi'; gap: 0.5rem 1rem; }
+  .guide-scale-stops { grid-area: stops; display: grid; grid-template-columns: repeat(var(--guide-scale-n), minmax(0, 1fr)); gap: 0.4rem; font-size: 0.82rem; line-height: 1.25; color: var(--text-secondary); }
+  .guide-scale-stops span { border-left: 1px solid var(--border-strong); padding-left: 0.35rem; }
+  .guide-scale-stops .guide-scale-here { color: var(--accent-ink); font-weight: 600; }
+  .guide-scale-bar { grid-area: bar; display: grid; grid-template-columns: repeat(var(--guide-scale-n), minmax(0, 1fr)); gap: 0.4rem; height: 0.9rem; border-radius: 999px; border: 1px solid var(--border); background: linear-gradient(90deg, var(--soil-3), var(--soil-2)); }
+  .guide-scale-ring { position: relative; }
+  .guide-scale-ring::after { content: ''; position: absolute; left: -0.45rem; top: 50%; width: 0.9rem; height: 0.9rem; transform: translateY(-50%); box-sizing: border-box; border-radius: 50%; border: 2px solid var(--accent-ink); background: var(--surface); }
+  .guide-scale-end { font-size: 0.85rem; line-height: 1.35; color: var(--text-muted); }
+  .guide-scale-end b { display: block; color: var(--text); font-weight: 600; }
+  .guide-scale-bacteria { grid-area: bacteria; }
+  .guide-scale-fungi { grid-area: fungi; text-align: right; }
+  @media (max-width: 639px) {
+    .guide-scale { grid-template-columns: 0.9rem minmax(0, 1fr); grid-template-areas: 'bacteria bacteria' 'bar stops' 'fungi fungi'; column-gap: 0.8rem; }
+    .guide-scale-stops { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(var(--guide-scale-n), minmax(2rem, auto)); gap: 0; font-size: 0.9rem; }
+    .guide-scale-stops span { border-left: 0; padding-left: 0; display: flex; align-items: center; }
+    .guide-scale-bar { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(var(--guide-scale-n), minmax(2rem, auto)); gap: 0; height: auto; background: linear-gradient(180deg, var(--soil-3), var(--soil-2)); }
+    .guide-scale-ring::after { left: 50%; transform: translate(-50%, -50%); }
+    .guide-scale-fungi { text-align: left; }
+  }
+</style>

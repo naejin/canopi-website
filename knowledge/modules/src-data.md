@@ -5,15 +5,15 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:48:17Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:31Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:04:57Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:30Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:adf6ac456d5df34b
-    last_modified: 2026-10-26T14:04:48Z
+    digest: sha256:d36354598b9ef064
+    last_modified: 2026-10-26T21:22:58Z
 ---
 
 # Responsibility

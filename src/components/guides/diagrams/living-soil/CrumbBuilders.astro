@@ -1,0 +1,61 @@
+---
+// Living soil: the three builders of soil structure, as three small panels in a row (one column on
+// phones). 1 glue: mineral grains held in a pale film of bacterial slime. 2 bind: five crumbs tied
+// together by fine fungal threads. 3 open: crumbs above and below an open tunnel, with a short
+// earthworm. Each panel's title, line of text and image description come from the MDX.
+import { rng, r1 } from '../../../../lib/svg';
+import { crumbPath, threadPath } from './soil-shapes';
+interface Item { title: string; text: string; alt: string; }
+interface Props { items: [Item, Item, Item]; }
+const { items } = Astro.props;
+const r = rng(11);
+const slime = crumbPath(r, 100, 56, 40);
+const grains = Array.from({ length: 14 }, (_, i) => ({ cx: r1(72 + r() * 56), cy: r1(34 + r() * 44), r: r1(3 + r() * 4), c: 1 + (i % 3) }));
+const bound: [number, number, number][] = [[60, 40, 14], [96, 66, 16], [138, 44, 13], [120, 84, 10], [72, 82, 11]];
+const boundCrumbs = bound.map(([x, y, rad], i) => ({ d: crumbPath(r, x, y, rad), c: 1 + (i % 3) }));
+const ties: string[] = [];
+for (let i = 0; i < bound.length; i++) for (let j = i + 1; j < bound.length; j++) if (r() < 0.6) ties.push(threadPath(r, bound[i][0], bound[i][1], bound[j][0], bound[j][1]));
+bound.forEach(([x, y]) => ties.push(threadPath(r, x, y, x + 26, y - 18)));
+const open: [number, number, number][] = [[30, 30, 14], [34, 80, 13], [166, 28, 13], [170, 82, 14], [100, 18, 9], [102, 96, 9]];
+const openCrumbs = open.map(([x, y, rad], i) => ({ d: crumbPath(r, x, y, rad), c: 1 + (i % 3) }));
+---
+<ul class="guide-builders">
+  <li>
+    <svg viewBox="0 0 200 110" role="img" aria-label={items[0].alt}>
+      <path d={slime} class="guide-builders-slime" />
+      {grains.map((g) => <circle cx={g.cx} cy={g.cy} r={g.r} class={`guide-soil-${g.c}`} />)}
+    </svg>
+    <b>{items[0].title}</b><span>{items[0].text}</span>
+  </li>
+  <li>
+    <svg viewBox="0 0 200 110" role="img" aria-label={items[1].alt}>
+      {boundCrumbs.map((c) => <path d={c.d} class={`guide-soil-${c.c}`} />)}
+      <path d={ties.join('')} class="guide-builders-hypha" />
+    </svg>
+    <b>{items[1].title}</b><span>{items[1].text}</span>
+  </li>
+  <li>
+    <svg viewBox="0 0 200 110" role="img" aria-label={items[2].alt}>
+      {openCrumbs.map((c) => <path d={c.d} class={`guide-soil-${c.c}`} />)}
+      <path d="M18 56C60 44 90 66 130 54S176 52 196 58L196 68C170 62 150 66 130 66C92 78 58 56 18 68Z" class="guide-builders-tunnel" />
+      <path d="M150 60C160 54 170 58 182 60" class="guide-builders-worm" />
+    </svg>
+    <b>{items[2].title}</b><span>{items[2].text}</span>
+  </li>
+</ul>
+
+<style>
+  :global(.guide-body) .guide-builders { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; }
+  :global(.guide-body) .guide-builders li { display: grid; gap: 0.35rem; align-content: start; margin: 0; }
+  .guide-builders svg { display: block; width: 100%; height: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .guide-builders b { font-family: var(--font-display); font-weight: 600; }
+  .guide-builders span { font-size: 0.92rem; line-height: 1.4; color: var(--text-secondary); }
+  .guide-builders-slime { fill: var(--soil-3); opacity: 0.35; }
+  .guide-builders-hypha { fill: none; stroke: var(--soil-hypha); stroke-width: 1.2; stroke-linecap: round; }
+  .guide-builders-tunnel { fill: var(--surface-alt); stroke: var(--border-strong); stroke-dasharray: 2 2; }
+  .guide-builders-worm { fill: none; stroke: var(--soil-worm); stroke-width: 6; stroke-linecap: round; }
+  @media (max-width: 639px) {
+    :global(.guide-body) .guide-builders { grid-template-columns: minmax(0, 1fr); }
+    .guide-builders svg { max-width: 260px; }
+  }
+</style>

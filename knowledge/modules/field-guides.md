@@ -4,25 +4,25 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:04Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:31Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:03Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:28Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:410cd39fa13eb0bb
-    last_modified: 2026-10-26T14:30:06Z
+    digest: sha256:dadba1dc41069cbf
+    last_modified: 2026-10-26T22:10:13Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:352698529ec6e820
-    last_modified: 2026-10-26T20:05:29Z
+    digest: sha256:a0e75814fab14a5b
+    last_modified: 2026-10-26T22:10:13Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
-    digest: sha256:ceac317ffef9fbff
-    last_modified: 2026-10-26T19:32:05Z
+    digest: sha256:0b16540a701d7c3f
+    last_modified: 2026-10-26T21:16:11Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -36,13 +36,13 @@ sources:
   - id: guides-ts-2
     resource: ../../src/i18n/guides.ts
     title: src/i18n/guides.ts
-    digest: sha256:7e7acd2c7daf35eb
-    last_modified: 2026-10-26T18:16:30Z
+    digest: sha256:3fe9afdb113d9c1a
+    last_modified: 2026-10-26T21:16:11Z
   - id: glossary-ts
     resource: ../../src/data/glossary.ts
     title: src/data/glossary.ts
-    digest: sha256:fef5202104bbd25c
-    last_modified: 2026-10-26T14:04:58Z
+    digest: sha256:9958deec58ce7e5b
+    last_modified: 2026-10-26T21:22:58Z
   - id: crops-ts
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
@@ -51,13 +51,13 @@ sources:
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
-    digest: sha256:c9c9922d5f6f718a
-    last_modified: 2026-10-26T20:05:29Z
+    digest: sha256:59f40512e8a1e750
+    last_modified: 2026-10-26T21:16:11Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:4ef030f62b7e52ab
-    last_modified: 2026-10-26T18:16:30Z
+    digest: sha256:3bfc60ed2e984a2e
+    last_modified: 2026-10-26T21:16:11Z
 ---
 
 # Responsibility
@@ -74,7 +74,7 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 
 # Interfaces
 
-- Frontmatter: `title`, one-sentence `description`, `domain` (seeds, crops, perennials, seasons, pests, kitchen), `order`, `glance` (3 to 6 label/value pairs; the hero box wraps its cells, and a value over 40 characters gets a wider cell), `quick`, `sources` (`{ book: <bibliography id>, chapters: [titles] }`; chapter titles are the English edition's, so `BookCite` quotes them and, when the card shows another edition, adds a note naming the English edition rather than guessing translated titles), `related`, `updated`.
+- Frontmatter: `title`, one-sentence `description`, `domain` (seeds, crops, soil, perennials, seasons, pests, kitchen), `order`, `glance` (3 to 6 label/value pairs; the hero box wraps its cells, and a value over 40 characters gets a wider cell), `quick`, `sources` (`{ book: <bibliography id>, chapters: [titles] }`; chapter titles are the English edition's, so `BookCite` quotes them and, when the card shows another edition, adds a note naming the English edition rather than guessing translated titles), `related`, `updated`.
 - Components (contract: [Field Guide components](/references/field-guide-components.md), which lists every prop and limit): QuickAnswer, Term, TermNote (placed by the plugin), Note, Safety, FoodCaution, HisGarden, Steps/Step, CropCards, CropCard, CropTable, CropExplorer, PollinationBadge, SeasonTimeline, YearsTimeline, PlotDiagram, FlowerDiagram, PlantingMixBar, Checklist/Item, Figure, Columns, Card, Points, NextGuides.
 - Ids are one per concept: `<Term id>` takes a glossary key, crop components a crop id; there are no alias maps. A crop cell the book does not give stays `null` and shows nothing.
 - `related` in frontmatter: two to four published guides (same list in en and fr); `NextGuides` links at section ends; in-text links to another guide's section use that page's heading id in the same language (French ids differ from English ones; `check-built-site.mjs` fails on a missing `#id`).
@@ -98,4 +98,4 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 - Guide styles use the site breakpoints only (639px, 960px); a test fails on any other.
 - Guide-only strings live in `src/i18n/guides/{en,fr}.json` (both files, same keys; French with a no-break space before `:` and a narrow one before `;` `?` `!`); punctuation joining two strings is part of a string (`crop.guideLink`, `aria.labelled`), never hard-coded in a component.
 - `FlowerDiagram` variants: tomato-closed/open, squash-male/female, corn, carrot-fertile/sterile, spinach-male/female.
-- Diagrams are drawn at build time with a seeded random, so builds are identical. A guide's hero row (`GuideHeroRow.astro`) shows its section's motif, chosen in `diagrams/hero-row.ts` (`domainMotifs`, typed over every section; `cropSeeds`, one seed per crops guide), and is seeded by its slug; a crops guide with no seed kind fails the build. Shared seed and leaf shapes live in `src/lib/svg.ts`; the hero leaves use `--leaf-young`, `--leaf-deep`, `--leaf-gold`, `--leaf-ochre`, `--leaf-brown` (plant tokens).
+- Diagrams are drawn at build time with a seeded random, so builds are identical. A guide's hero row (`GuideHeroRow.astro`) shows its section's motif, chosen in `diagrams/hero-row.ts` (`domainMotifs`, typed over every section; `cropSeeds`, one seed per crops guide), and is seeded by its slug; a crops guide with no seed kind fails the build. Shared seed and leaf shapes live in `src/lib/svg.ts`; the hero leaves use `--leaf-young`, `--leaf-deep`, `--leaf-gold`, `--leaf-ochre`, `--leaf-brown` (plant tokens); the soil row (crumbs, fungal threads, one worm, no green) uses the `--soil-*` tokens in `tokens.css`.
