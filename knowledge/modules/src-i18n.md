@@ -5,15 +5,15 @@ description: The 11-locale translation tables and the t() lookup used by every c
 resource: ../../src/i18n
 tags: [module, i18n]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:45Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T18:19:28Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:44Z }
 sources:
   - id: i18n
     resource: ../../src/i18n
     title: src/i18n/
-    digest: sha256:c41bdb6b4a4e6a31
-    last_modified: 2026-10-26T14:29:12Z
+    digest: sha256:3b2be9f06f6050ed
+    last_modified: 2026-10-26T18:16:30Z
   - id: homepage-test
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
@@ -36,7 +36,7 @@ Build-time translation for the 11 locales (en default at `/`; fr, es, pt, it, zh
 - `locales`, `type Locale`, `defaultLocale = 'en'`, `languageNames`.
 - `t(key, lang, replacements?)`: falls back to English, then to the key itself; replaces `{name}` placeholders.
 - `isLocale(value)`, `localizedUrl(path, lang)` (no prefix for `en`).
-- Guides: `guideLocales` (en, fr), `guideDomains`, `gt(key, lang, replacements?)` (throws on a missing key, no fallback), `guideLangOf(Astro.currentLocale)`, `guidesPath(lang)` and `guidePath(slug, lang)` (other locales get the English URL), `formatDate`.
+- Guides: `guideLocales` (en, fr), `guideDomains` and `type GuideDomain` (the index sections; each needs a hero motif, see [Field Guides](/modules/field-guides.md)), `gt(key, lang, replacements?)` (throws on a missing key, no fallback), `guideLangOf(Astro.currentLocale)`, `guidesPath(lang)` and `guidePath(slug, lang)` (other locales get the English URL), `formatDate`.
 
 # Dependencies
 

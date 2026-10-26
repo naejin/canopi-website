@@ -3,7 +3,7 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:34Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T18:19:11Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:04:57Z }
 sources:
@@ -11,14 +11,24 @@ sources:
     resource: ../../src/content/guides
     title: src/content/guides/
     digest: sha256:410cd39fa13eb0bb
-    last_modified: 2026-10-26T14:29:22Z
+    last_modified: 2026-10-26T14:30:06Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:e888d0595a2776c8
-    last_modified: 2026-10-26T14:29:22Z
+    digest: sha256:f38aaaf2bc5dbbd6
+    last_modified: 2026-10-26T18:12:11Z
   - id: decisions-field-guides-user-decisions
     resource: /decisions/field-guides-user-decisions.md
+  - id: hero-row-ts
+    resource: ../../src/components/guides/diagrams/hero-row.ts
+    title: src/components/guides/diagrams/hero-row.ts
+    digest: sha256:0db73da890b4d80c
+    last_modified: 2026-10-26T18:16:30Z
+  - id: guides-ts
+    resource: ../../src/i18n/guides.ts
+    title: src/i18n/guides.ts
+    digest: sha256:7e7acd2c7daf35eb
+    last_modified: 2026-10-26T18:16:30Z
 enforced_by: [scripts/guides.test.mjs]
 ---
 
@@ -38,10 +48,11 @@ Every Field Guide (`src/content/guides/<slug>/{en,fr}.mdx`) follows these rules,
 - **Reader first.** Short sentences, second person, concrete actions, one idea per section; the first screen tells readers whether the guide answers their question.
 - **English and French alike.** Same components, terms, checklist and item ids, crop lists and cautions in both files. French is written for French gardeners, with the glossary's French terms, « » quotes with a no-break space inside, a no-break space before `:` and a narrow no-break space before `;` `?` `!` and `%`.
 - **Design.** Only tokens for colour (plant tokens for plant content only), no outside fonts, images or `url()`; `guides.css` classes start with `guide-`.
+- **A new section needs a hero motif** (owner, 2026-10-26). Adding a section to `guideDomains` (`src/i18n/guides.ts`) means adding its hero row motif to `domainMotifs` in `src/components/guides/diagrams/hero-row.ts`, drawn in `GuideHeroRow.astro`; a new crops guide adds its own seed to `cropSeeds`. Only seeds guides (and the beans crop) show the bean row.
 
 # Enforcement
 
-`scripts/guides.test.mjs` (`npm test`): frontmatter and en/fr parity, known components only, Term/crop/FoodCaution/NextGuides ids resolve, same component sequence and ids in both languages, no amount of time (digits or words, e.g. "ten minutes"), temperature or method word (overnight, boil, soak and French forms) in cautions and safety text, no prose pairing boil/soak/ferment/cook with an amount of time (a heuristic with its own self-test; reviewers still read cautions), no glossary or crop alias maps, no tasting, flavour or cooking words in checklist items, no double-encoded characters (mojibake) in guide text or guide strings, mouth words only inside a `<Safety>` box (en: teeth, tooth, bite, chew a seed, spit, suck or nibble a seed, pod or leaf; fr: dent, mordre, croquer, mâcher, recracher, sucer or grignoter une graine, cosse ou feuille; pest prose such as "slugs nibble seedlings" stays allowed), one food-safety authority pointer per FoodCaution box, no two `<FoodCaution>` boxes in a row, no links in food texts, glossary and crop table completeness, no colour literals or outside assets, `guide-` class prefix. `scripts/check-built-site.mjs` checks the built pages. Own words, omissions and attribution are checked by review against the spec.
+`scripts/guides.test.mjs` (`npm test`): frontmatter and en/fr parity, known components only, Term/crop/FoodCaution/NextGuides ids resolve, same component sequence and ids in both languages, no amount of time (digits or words, e.g. "ten minutes"), temperature or method word (overnight, boil, soak and French forms) in cautions and safety text, no prose pairing boil/soak/ferment/cook with an amount of time (a heuristic with its own self-test; reviewers still read cautions), no glossary or crop alias maps, no tasting, flavour or cooking words in checklist items, no double-encoded characters (mojibake) in guide text or guide strings, mouth words only inside a `<Safety>` box (en: teeth, tooth, bite, chew a seed, spit, suck or nibble a seed, pod or leaf; fr: dent, mordre, croquer, mâcher, recracher, sucer or grignoter une graine, cosse ou feuille; pest prose such as "slugs nibble seedlings" stays allowed), one food-safety authority pointer per FoodCaution box, no two `<FoodCaution>` boxes in a row, no links in food texts, glossary and crop table completeness, no colour literals or outside assets, `guide-` class prefix, a hero motif for every section and a seed kind for every crops guide. `scripts/check-built-site.mjs` checks the built pages. Own words, omissions and attribution are checked by review against the spec.
 
 # Examples
 

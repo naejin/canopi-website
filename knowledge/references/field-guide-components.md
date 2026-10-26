@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T17:53:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T18:19:11Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:04Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:f31e3424dd692109
-    last_modified: 2026-10-26T14:24:02Z
+    digest: sha256:3a87242b7a67c2b6
+    last_modified: 2026-10-26T18:18:42Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -40,8 +40,23 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:e888d0595a2776c8
-    last_modified: 2026-10-26T14:30:06Z
+    digest: sha256:f38aaaf2bc5dbbd6
+    last_modified: 2026-10-26T18:12:11Z
+  - id: hero-row-ts
+    resource: ../../src/components/guides/diagrams/hero-row.ts
+    title: src/components/guides/diagrams/hero-row.ts
+    digest: sha256:0db73da890b4d80c
+    last_modified: 2026-10-26T18:16:30Z
+  - id: guideherorow-astro
+    resource: ../../src/components/guides/diagrams/GuideHeroRow.astro
+    title: src/components/guides/diagrams/GuideHeroRow.astro
+    digest: sha256:fa8d493fd001b175
+    last_modified: 2026-10-26T18:18:42Z
+  - id: svg-ts
+    resource: ../../src/lib/svg.ts
+    title: src/lib/svg.ts
+    digest: sha256:45893703af184044
+    last_modified: 2026-10-26T18:16:30Z
 enforced_by: [scripts/guides.test.mjs, scripts/check-built-site.mjs]
 ---
 
@@ -166,6 +181,14 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   `{/* DIAGRAM: what it shows, data, labels */}`. SVG text does not wrap: break labels with `wrap(text,
   max)` from `src/lib/svg.ts` (keeps no-break spaces); never copy a helper into a diagram (test).
   Each guide's diagrams are the files in its folder; their props are in each file's `interface Props`.
+- Hero row (not used in MDX): `GuideLayout` renders `<GuideHeroRow domain slug />`, a decorative
+  640 × 64 SVG (`aria-hidden`) seeded by the slug. Motif by section (`diagrams/hero-row.ts`): seeds
+  beans · crops the guide's own seed (`cropSeeds`: kernels, squash-seeds, beans, grains, tomato-seeds,
+  cloves) · perennials green leaves · seasons autumn leaves · pests ladybird, hoverfly, ground beetle ·
+  kitchen corn kernels and beans. A new section needs an entry in `domainMotifs` and a new crops guide
+  one in `cropSeeds`, or `npm test` fails (and the build, for a crops guide). Shapes (`KERNEL_PATH`,
+  `SQUASH_SEED_PATH`, `GRAIN_PATH`, `TOMATO_SEED_PATH`, `CLOVE_PATH`, `leafPath`, `lobedLeafPath`)
+  are in `src/lib/svg.ts` beside `BEAN_PATH`, for any diagram to reuse.
 
 # Safety heuristic (`scripts/guides.test.mjs`)
 - No `<Safety>` box and no `food.<risk>` text gives an amount of time (digits or words: "ten

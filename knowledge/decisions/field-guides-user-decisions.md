@@ -4,7 +4,7 @@ title: Field Guides — user decisions
 description: Dated decisions the project owner made about the Field Guides section; they change only when the owner changes them.
 status: stable
 tags: [field-guides, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:47:41Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T18:19:12Z }
 ---
 
 # Field Guides — user decisions
@@ -29,6 +29,7 @@ any of them; a change is a question to the owner.
 | 2026-10-26 | *Trees with Edible Leaves* sits in a new index domain **Trees & perennials** (fr « Arbres et vivaces »), which later perennial sources (Crawford) can join. |
 | 2026-10-26 | **Reopen every earlier [OMIT] item "for coherence".** Each comes back under the warn-don't-remove rule: dangerous practices (the book's raw-tasting and "nibble and spit" tests, seeds in the mouth, sharing soil, wild greens and mushrooms, lupini, grasspea, eating surplus seed) are reported as the author's practice with a clear warning, never as a step the reader is told to do; doubtful claims are attributed to him as his view; still no figures for anything eaten, toxic or caustic, and nothing the book does not say (e.g. no seed-law statements). |
 | 2026-10-25 | Excluded until other sources back them: the book's last chapter on chickens, bees, mushrooms and trees. Canning mashed squash is never reproduced. |
+| 2026-10-26 | **The hero row under a guide's title shows its section**, replacing the same bean row on every guide: seeds, beans as before; crops, that crop's own seed (corn kernels for corn, squash seeds for squash, melons and cucumbers, beans for beans and legumes, grains for small grains, tomato seeds for tomatoes, garlic cloves for true-seed potato, garlic and sunroot); perennials, green leaves in mixed shapes (simple, lobed, compound); seasons, leaves turning from fresh green through yellow and ochre to brown, left to right; pests, beneficial insects (ladybird, hoverfly, ground beetle); kitchen, a mixed handful of dry corn kernels and beans. Every future section gets its own motif. |
 
 ## Where the source notes live
 

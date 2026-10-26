@@ -4,7 +4,7 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:44Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T18:19:12Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:44Z }
 sources:
@@ -12,17 +12,17 @@ sources:
     resource: ../../src/content/guides
     title: src/content/guides/
     digest: sha256:410cd39fa13eb0bb
-    last_modified: 2026-10-26T14:29:22Z
+    last_modified: 2026-10-26T14:30:06Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:f31e3424dd692109
-    last_modified: 2026-10-26T14:24:02Z
+    digest: sha256:3a87242b7a67c2b6
+    last_modified: 2026-10-26T18:18:42Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
-    digest: sha256:d6211071e90d8dc7
-    last_modified: 2026-10-25T16:51:12Z
+    digest: sha256:85c978e357beda75
+    last_modified: 2026-10-26T18:16:30Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -36,8 +36,8 @@ sources:
   - id: guides-ts-2
     resource: ../../src/i18n/guides.ts
     title: src/i18n/guides.ts
-    digest: sha256:332627fd392f356b
-    last_modified: 2026-10-26T13:43:28Z
+    digest: sha256:7e7acd2c7daf35eb
+    last_modified: 2026-10-26T18:16:30Z
   - id: glossary-ts
     resource: ../../src/data/glossary.ts
     title: src/data/glossary.ts
@@ -48,6 +48,16 @@ sources:
     title: src/data/crops.ts
     digest: sha256:5bf94c6ec492fe6b
     last_modified: 2026-10-25T12:57:25Z
+  - id: hero-row-ts
+    resource: ../../src/components/guides/diagrams/hero-row.ts
+    title: src/components/guides/diagrams/hero-row.ts
+    digest: sha256:0db73da890b4d80c
+    last_modified: 2026-10-26T18:16:30Z
+  - id: tokens-css
+    resource: ../../src/styles/tokens.css
+    title: src/styles/tokens.css
+    digest: sha256:4ef030f62b7e52ab
+    last_modified: 2026-10-26T18:16:30Z
 ---
 
 # Responsibility
@@ -83,9 +93,9 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 # Gotchas
 
 - Do not import `src/content.config.ts` from runtime code (it drags `node:fs` into the Cloudflare prerender worker); shared constants live in `src/i18n/guides.ts`.
-- Plant colours (`--leaf`, `--petal`, `--anther`, `--seed-1..6`) are defined in three blocks of `tokens.css` (light, dark, system dark) and colour plant content only; no colour literals in guide files.
+- Plant colours (`--leaf`, `--leaf-*`, `--petal`, `--anther`, `--seed-1..6`) are defined in three blocks of `tokens.css` (light, dark, system dark) and colour plant content only; no colour literals in guide files.
 - The header's Guides link is never hidden by width: below 640px it sits in the phone Menu (see [Site navigation](/decisions/site-navigation.md)). The guides index links to the bibliography (`section.books`) and the bibliography page links back to the guides.
 - Guide styles use the site breakpoints only (639px, 960px); a test fails on any other.
 - Guide-only strings live in `src/i18n/guides/{en,fr}.json` (both files, same keys; French with a no-break space before `:` and a narrow one before `;` `?` `!`); punctuation joining two strings is part of a string (`crop.guideLink`, `aria.labelled`), never hard-coded in a component.
 - `FlowerDiagram` variants: tomato-closed/open, squash-male/female, corn, carrot-fertile/sterile, spinach-male/female.
-- Diagrams are drawn at build time with a seeded random, so builds are identical; a guide's hero bean row is seeded by its slug.
+- Diagrams are drawn at build time with a seeded random, so builds are identical. A guide's hero row (`GuideHeroRow.astro`) shows its section's motif, chosen in `diagrams/hero-row.ts` (`domainMotifs`, typed over every section; `cropSeeds`, one seed per crops guide), and is seeded by its slug; a crops guide with no seed kind fails the build. Shared seed and leaf shapes live in `src/lib/svg.ts`; the hero leaves use `--leaf-young`, `--leaf-deep`, `--leaf-gold`, `--leaf-ochre`, `--leaf-brown` (plant tokens).
