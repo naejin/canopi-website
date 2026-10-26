@@ -127,8 +127,9 @@ test('guides use only known components, and their ids resolve to the glossary, t
     for (const [name, attr] of [['Term', 'id'], ['Checklist', 'id'], ['Item', 'id'], ['FoodCaution', 'risk'], ['CropCards', 'crops'], ['CropTable', 'crops']]) {
       assert.deepEqual(new Set(listAttr(fr, name, attr)), new Set(listAttr(en, name, attr)), `${slug}: <${name} ${attr}> the same in en and fr`);
     }
-    const components = (body) => [...body.matchAll(/<([A-Z]\w*)/g)].map((m) => m[1]).filter((n) => n !== 'Term').join(' ');
-    assert.equal(components(fr), components(en), `${slug}: the same components in the same order in en and fr`);
+    // Opening and closing tags both count, so a French page that drops a </Safety> or </Points> fails.
+    const components = (body) => [...body.matchAll(/<(\/?)([A-Z]\w*)/g)].filter((m) => m[2] !== 'Term').map((m) => m[1] + m[2]).join(' ');
+    assert.equal(components(fr), components(en), `${slug}: the same components, opened and closed in the same order, in en and fr`);
   }
 });
 
@@ -299,9 +300,9 @@ test('guide files load no outside images or fonts, and colour only through the t
     assert.ok(!/\b(?:rgba?|hsla?|oklch|lab|lch)\(/i.test(code), `${file}: colour function`);
     assert.ok(!/(?:color|fill|stroke|background(?:-color)?|border(?:-color)?)\s*[:=]\s*["']?(?:red|green|blue|black|white|gr[ae]y|orange|yellow|purple|brown)\b/i.test(code), `${file}: named colour`);
   }
-  // Plant colours exist in every theme block of tokens.css.
+  // Plant and soil colours exist in every theme block of tokens.css.
   const tokens = read('styles/tokens.css');
-  for (const token of ['--leaf', '--leaf-young', '--leaf-deep', '--leaf-gold', '--leaf-ochre', '--leaf-brown', '--petal', '--anther', '--seed-1', '--seed-6']) {
+  for (const token of ['--leaf', '--leaf-young', '--leaf-deep', '--leaf-gold', '--leaf-ochre', '--leaf-brown', '--petal', '--anther', '--seed-1', '--seed-6', '--soil-1', '--soil-2', '--soil-3', '--soil-grain', '--soil-hypha', '--soil-worm', '--soil-worm-band']) {
     assert.equal(tokens.split(`${token}:`).length - 1, 3, `${token} in the light, dark and system-dark blocks`);
   }
 });
