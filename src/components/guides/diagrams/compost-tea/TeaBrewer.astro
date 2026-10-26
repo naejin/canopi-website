@@ -1,0 +1,107 @@
+---
+// Compost tea: the authors' bucket brewer seen from the side, described, not a recipe (no sizes,
+// volumes, amounts or times anywhere). A bucket of brown liquid with a porous bag of compost hanging
+// from the rim; an air pump on a shelf above and beside the bucket, its cable and plug clear of the
+// spill zone; air tubing over the rim down to a bubbler on the bottom; bubble trails rising to a little
+// foam; a crossed-out sun at the side. Numbered marks on the drawing match the numbered labels below
+// it, which are HTML so they wrap in the reader's language. labels, in order: pump, tubing, bubbler,
+// bag, bubbling, foam, out of the sun.
+import { rng, seedOf, r1 } from '../../../../lib/svg';
+interface Props { title: string; alt: string; labels: [string, string, string, string, string, string, string]; }
+const { title, alt, labels } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-teabrew-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const rand = rng(seedOf('compost-tea/TeaBrewer'));
+// Bucket: a tapered tub from y 70 (rim) to y 200 (base), liquid surface at y 86.
+const RIM = 70, BASE = 200, SURF = 86;
+const bucket = `M118 ${RIM}L128 ${BASE}Q128 ${BASE + 4} 132 ${BASE + 4}H228Q232 ${BASE + 4} 232 ${BASE}L242 ${RIM}`;
+const liquid = `M119.3 ${SURF}L128.6 ${BASE - 1}Q129 ${BASE + 2} 132 ${BASE + 2}H228Q231 ${BASE + 2} 231.4 ${BASE - 1}L240.7 ${SURF}Z`;
+// Bubble trails from the bubbler (y 194) to the surface, around the bag.
+const bubbles = Array.from({ length: 34 }, () => {
+  const x = 150 + rand() * 70, y = SURF + 8 + rand() * (BASE - SURF - 18);
+  return { x: r1(x + Math.sin(y / 9) * 2), y: r1(y), r: r1(1.2 + rand() * 1.8) };
+});
+const foam = Array.from({ length: 16 }, (_, i) => ({ x: r1(132 + i * 6.4 + (rand() - 0.5) * 3), y: r1(SURF - 1 - rand() * 3), r: r1(2.4 + rand() * 1.6) }));
+// Compost crumbs inside the bag.
+const crumbs = Array.from({ length: 22 }, () => ({ x: r1(170 + rand() * 30), y: r1(102 + rand() * 44), r: r1(2 + rand() * 2.4) }));
+// Numbered marks: [x, y] of each label's dot.
+const marks: [number, number][] = [[56, 22], [96, 46], [214, 178], [214, 120], [150, 160], [140, 70], [294, 60]];
+---
+<div class="guide-teabrew">
+  <svg viewBox="0 0 320 232" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    {/* floor and shelf */}
+    <line x1="8" y1="210" x2="312" y2="210" class="guide-teabrew-floor" />
+    <path d="M14 46H96M22 46V60M88 46V60" class="guide-teabrew-shelf" />
+    {/* pump on the shelf, cable to a plug on the wall, high and dry */}
+    <rect x="30" y="24" width="44" height="22" rx="5" class="guide-teabrew-pump" />
+    <circle cx="44" cy="35" r="3" class="guide-teabrew-port" />
+    <circle cx="58" cy="35" r="3" class="guide-teabrew-port" />
+    <path d="M30 32Q16 30 14 18" class="guide-teabrew-cable" />
+    <rect x="9" y="8" width="10" height="10" rx="2" class="guide-teabrew-plug" />
+    {/* air tubing: from the pump over the rim down to the bubbler */}
+    <path d="M74 30Q112 26 126 56Q132 66 136 80L140 192" class="guide-teabrew-tube" />
+    {/* bucket and brown liquid */}
+    <path d={liquid} class="guide-teabrew-liquid" />
+    <path d={bucket} class="guide-teabrew-bucket" />
+    <line x1="114" y1={RIM} x2="246" y2={RIM} class="guide-teabrew-rim" />
+    {/* bubbler on the bottom */}
+    <rect x="138" y="191" width="84" height="6" rx="3" class="guide-teabrew-bubbler" />
+    {bubbles.map((b) => <circle cx={b.x} cy={b.y} r={b.r} class="guide-teabrew-bubble" />)}
+    {/* the porous bag of compost, hung from the rim */}
+    <path d="M176 70V92M196 70V92" class="guide-teabrew-string" />
+    <path d="M168 92Q166 130 172 148Q185 158 198 148Q204 130 202 92Z" class="guide-teabrew-bag" />
+    {crumbs.map((c) => <circle cx={c.x} cy={c.y} r={c.r} class="guide-teabrew-crumb" />)}
+    {/* foam on top */}
+    {foam.map((f) => <circle cx={f.x} cy={f.y} r={f.r} class="guide-teabrew-foam" />)}
+    {/* out of direct sun */}
+    <circle cx="282" cy="34" r="10" class="guide-teabrew-sun" />
+    {Array.from({ length: 8 }, (_, i) => {
+      const a = (i * Math.PI) / 4;
+      return <line x1={r1(282 + Math.cos(a) * 14)} y1={r1(34 + Math.sin(a) * 14)} x2={r1(282 + Math.cos(a) * 19)} y2={r1(34 + Math.sin(a) * 19)} class="guide-teabrew-sun" />;
+    })}
+    <line x1="264" y1="16" x2="300" y2="52" class="guide-teabrew-no" />
+    {/* numbered marks */}
+    {marks.map(([x, y], i) => (
+      <g class="guide-teabrew-mark">
+        <circle cx={x} cy={y} r="7" />
+        <text x={x} y={r1(y + 3.4)} text-anchor="middle">{i + 1}</text>
+      </g>
+    ))}
+  </svg>
+  <ol class="guide-teabrew-key">
+    {labels.map((l) => <li>{l}</li>)}
+  </ol>
+</div>
+
+<style>
+  .guide-teabrew { display: grid; gap: 0.5rem; margin: 0; max-width: 34rem; }
+  .guide-teabrew svg { width: 100%; height: auto; }
+  .guide-teabrew-floor { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-teabrew-shelf { stroke: var(--text-muted); stroke-width: 2; fill: none; stroke-linecap: round; }
+  .guide-teabrew-pump { fill: var(--surface); stroke: var(--text-secondary); stroke-width: 1.6; }
+  .guide-teabrew-port { fill: var(--surface-alt); stroke: var(--text-muted); stroke-width: 1; }
+  .guide-teabrew-cable { stroke: var(--text-secondary); stroke-width: 1.4; fill: none; stroke-linecap: round; }
+  .guide-teabrew-plug { fill: var(--surface-alt); stroke: var(--text-secondary); stroke-width: 1.2; }
+  .guide-teabrew-tube { stroke: var(--text-muted); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-teabrew-liquid { fill: var(--soil-1); opacity: 0.45; }
+  .guide-teabrew-bucket { fill: none; stroke: var(--text-secondary); stroke-width: 2; stroke-linejoin: round; }
+  .guide-teabrew-rim { stroke: var(--text-secondary); stroke-width: 3; stroke-linecap: round; }
+  .guide-teabrew-bubbler { fill: var(--surface-alt); stroke: var(--text-secondary); stroke-width: 1.2; }
+  .guide-teabrew-bubble { fill: var(--surface); stroke: var(--soil-2); stroke-width: 0.6; opacity: 0.9; }
+  .guide-teabrew-string { stroke: var(--text-muted); stroke-width: 1.2; }
+  .guide-teabrew-bag { fill: var(--soil-grain); stroke: var(--soil-2); stroke-width: 1.2; stroke-dasharray: 2 1.6; opacity: 0.95; }
+  .guide-teabrew-crumb { fill: var(--soil-2); opacity: 0.85; }
+  .guide-teabrew-foam { fill: var(--surface); stroke: var(--soil-3); stroke-width: 0.8; }
+  .guide-teabrew-sun { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-teabrew-no { stroke: var(--danger); stroke-width: 2.4; stroke-linecap: round; }
+  .guide-teabrew-mark circle { fill: var(--accent); }
+  .guide-teabrew-mark text { fill: var(--on-accent); font: 600 9px var(--font-sans); }
+  :global(.guide-body) .guide-teabrew-key { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.2rem 1.2rem; margin: 0; padding-inline-start: 1.4rem; font-size: 0.88rem; line-height: 1.35; color: var(--text-secondary); }
+  :global(.guide-body) .guide-teabrew-key li { margin: 0; }
+  .guide-teabrew-key li::marker { color: var(--accent-ink); font-weight: 600; }
+  @media (max-width: 639px) {
+    :global(.guide-body) .guide-teabrew-key { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
