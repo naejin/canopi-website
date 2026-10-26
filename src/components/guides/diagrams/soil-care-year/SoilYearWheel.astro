@@ -1,0 +1,83 @@
+---
+// A year of soil care: a wheel in four quarters that follow the trees, not the calendar (leaf-out at the
+// top right, then clockwise summer, leaf-fall, winter), so it reads in both hemispheres. Each quarter
+// has its season name in the outer corner, a small leaf glyph (bud, full leaf, falling leaf, bare twig,
+// in plant tokens: they are the trees' leaves) and two or three short jobs inside, split at " · ", spaced apart and
+// wrapped. Its own file: food-all-year's YearWheel draws fixed food rings.
+import { leafPath, r1, wrap } from '../../../../lib/svg';
+interface Props {
+  title: string;
+  alt: string;
+  seasons: [string, string, string, string];
+  notes: [string, string, string, string];
+}
+const { title, alt, seasons, notes } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-soilyear-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const C = 170, CY = 176, R = 140, RING = 12;
+const pt = (r: number, deg: number) => {
+  const t = ((deg - 90) * Math.PI) / 180;
+  return `${r1(C + r * Math.cos(t))} ${r1(CY + r * Math.sin(t))}`;
+};
+const arc = (r0: number, r1_: number, a0: number, a1: number) =>
+  `M${pt(r1_, a0)}A${r1_} ${r1_} 0 0 1 ${pt(r1_, a1)}L${pt(r0, a1)}A${r0} ${r0} 0 0 0 ${pt(r0, a0)}Z`;
+// Quarter k spans k*90..k*90+90 degrees clockwise from 12 o'clock. Text sits on its bisector.
+const quarters = notes.map((note, k) => {
+  const mid = ((k * 90 + 45 - 90) * Math.PI) / 180;
+  const cx = C + 72 * Math.cos(mid), cy = CY + 72 * Math.sin(mid);
+  // Jobs split at " · "; lines of one job sit 14 apart, jobs 20 apart.
+  let y = 0;
+  const lines = note.split(' · ').flatMap((part, j) => wrap(part, 14).map((t, i) => ({ t, y: (y += i === 0 && j > 0 ? 20 : i === 0 ? 0 : 14) })));
+  const top = cy - y / 2 + 4;
+  return { k, band: arc(R - RING, R, k * 90 + 1, k * 90 + 89), lines: lines.map((l) => ({ t: l.t, x: r1(cx), y: r1(top + l.y) })) };
+});
+const corners = [{ x: 336, y: 22, anchor: 'end' }, { x: 336, y: 344, anchor: 'end' }, { x: 4, y: 344, anchor: 'start' }, { x: 4, y: 22, anchor: 'start' }];
+const glyphAt = [[318, 46], [318, 314], [22, 314], [22, 46]];
+const quarterLines = [0, 90, 180, 270].map((deg) => `M${pt(0, deg)}L${pt(R, deg)}`).join('');
+---
+<div class="guide-soilyear">
+  <svg viewBox="0 0 340 352" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    <circle cx={C} cy={CY} r={R} class="guide-soilyear-disc" />
+    {quarters.map((q) => <path d={q.band} class={`guide-soilyear-band guide-soilyear-b${q.k}`} />)}
+    <path d={quarterLines} class="guide-soilyear-quarter" />
+    {quarters.map((q) => q.lines.map((l) => <text x={l.x} y={l.y} text-anchor="middle" class="guide-soilyear-note">{l.t}</text>))}
+    {seasons.map((s, i) => <text x={corners[i].x} y={corners[i].y} text-anchor={corners[i].anchor} class="guide-soilyear-season">{s}</text>)}
+    {/* Leaf-out: a swelling bud on a twig. */}
+    <g transform={`translate(${glyphAt[0][0]} ${glyphAt[0][1]})`}>
+      <path d="M-8 8L6 -6" class="guide-soilyear-twig" />
+      <path d={leafPath(9, 2, -2, -60)} class="guide-soilyear-g0" />
+    </g>
+    {/* Summer: a full leaf. */}
+    <g transform={`translate(${glyphAt[1][0]} ${glyphAt[1][1]})`}>
+      <path d="M-9 8L-4 3" class="guide-soilyear-twig" />
+      <path d={leafPath(18, -4, 3, -50)} class="guide-soilyear-g1" />
+    </g>
+    {/* Leaf-fall: a turned leaf tumbling down. */}
+    <g transform={`translate(${glyphAt[2][0]} ${glyphAt[2][1]}) rotate(150)`}>
+      <path d={leafPath(16, -8, 0, 0)} class="guide-soilyear-g2" />
+    </g>
+    {/* Winter: a bare twig. */}
+    <g transform={`translate(${glyphAt[3][0]} ${glyphAt[3][1]})`}>
+      <path d="M-10 10L8 -8M-1 1L-1 -9M3 -3L10 -1" class="guide-soilyear-twig" />
+    </g>
+  </svg>
+</div>
+
+<style>
+  .guide-soilyear { max-width: 26rem; margin-inline: auto; }
+  .guide-soilyear svg { width: 100%; height: auto; }
+  .guide-soilyear-disc { fill: var(--surface-alt); }
+  .guide-soilyear-quarter { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-soilyear-b0 { fill: var(--leaf-young); }
+  .guide-soilyear-b1 { fill: var(--leaf); }
+  .guide-soilyear-b2 { fill: var(--leaf-ochre); }
+  .guide-soilyear-b3 { fill: var(--leaf-brown); opacity: 0.6; }
+  .guide-soilyear-twig { fill: none; stroke: var(--leaf-brown); stroke-width: 2; stroke-linecap: round; }
+  .guide-soilyear-g0 { fill: var(--leaf-young); }
+  .guide-soilyear-g1 { fill: var(--leaf); }
+  .guide-soilyear-g2 { fill: var(--leaf-ochre); }
+  .guide-soilyear .guide-soilyear-season { font-size: 14px; font-weight: 600; fill: var(--text-secondary); }
+  .guide-soilyear .guide-soilyear-note { font-size: 12.5px; fill: var(--text); }
+</style>
