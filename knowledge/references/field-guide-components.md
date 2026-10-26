@@ -5,7 +5,7 @@ description: Every component, prop, allowed value and limit a Field Guide's MDX 
 tags: [guides, reference]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T18:19:11Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:04Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T19:30:44Z }
 sources:
   - id: index-ts
     resource: ../../src/components/guides/index.ts
@@ -15,8 +15,8 @@ sources:
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:3a87242b7a67c2b6
-    last_modified: 2026-10-26T18:18:42Z
+    digest: sha256:6cf025581a1c4fbf
+    last_modified: 2026-10-26T18:22:29Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -40,23 +40,23 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:f38aaaf2bc5dbbd6
-    last_modified: 2026-10-26T18:12:11Z
+    digest: sha256:ebbde3fcff499102
+    last_modified: 2026-10-26T18:22:29Z
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
-    digest: sha256:0db73da890b4d80c
-    last_modified: 2026-10-26T18:16:30Z
+    digest: sha256:3e43d083f5095132
+    last_modified: 2026-10-26T18:22:29Z
   - id: guideherorow-astro
     resource: ../../src/components/guides/diagrams/GuideHeroRow.astro
     title: src/components/guides/diagrams/GuideHeroRow.astro
-    digest: sha256:fa8d493fd001b175
-    last_modified: 2026-10-26T18:18:42Z
+    digest: sha256:ac623bcd6324b15f
+    last_modified: 2026-10-26T18:22:29Z
   - id: svg-ts
     resource: ../../src/lib/svg.ts
     title: src/lib/svg.ts
-    digest: sha256:45893703af184044
-    last_modified: 2026-10-26T18:16:30Z
+    digest: sha256:c084395e4376c8af
+    last_modified: 2026-10-26T18:22:29Z
 enforced_by: [scripts/guides.test.mjs, scripts/check-built-site.mjs]
 ---
 

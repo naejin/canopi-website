@@ -5,7 +5,7 @@ description: The writing, safety, attribution and language rules every Field Gui
 tags: [convention, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T18:19:11Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:04:57Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T19:30:42Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -15,15 +15,15 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:f38aaaf2bc5dbbd6
-    last_modified: 2026-10-26T18:12:11Z
+    digest: sha256:ebbde3fcff499102
+    last_modified: 2026-10-26T18:22:29Z
   - id: decisions-field-guides-user-decisions
     resource: /decisions/field-guides-user-decisions.md
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
-    digest: sha256:0db73da890b4d80c
-    last_modified: 2026-10-26T18:16:30Z
+    digest: sha256:3e43d083f5095132
+    last_modified: 2026-10-26T18:22:29Z
   - id: guides-ts
     resource: ../../src/i18n/guides.ts
     title: src/i18n/guides.ts

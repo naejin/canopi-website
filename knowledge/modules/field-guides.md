@@ -6,7 +6,7 @@ resource: ../../src/components/guides
 tags: [module, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T18:19:12Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:44Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T19:30:42Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -16,13 +16,13 @@ sources:
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:3a87242b7a67c2b6
-    last_modified: 2026-10-26T18:18:42Z
+    digest: sha256:6cf025581a1c4fbf
+    last_modified: 2026-10-26T18:22:29Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
-    digest: sha256:85c978e357beda75
-    last_modified: 2026-10-26T18:16:30Z
+    digest: sha256:8327413bd9201981
+    last_modified: 2026-10-26T18:22:29Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -51,8 +51,8 @@ sources:
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
-    digest: sha256:0db73da890b4d80c
-    last_modified: 2026-10-26T18:16:30Z
+    digest: sha256:3e43d083f5095132
+    last_modified: 2026-10-26T18:22:29Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
