@@ -4,20 +4,20 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:43:22Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:28Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:dadba1dc41069cbf
-    last_modified: 2026-10-26T22:10:13Z
+    digest: sha256:bdc76850091a0277
+    last_modified: 2026-10-26T22:38:12Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:a0e75814fab14a5b
-    last_modified: 2026-10-26T22:10:13Z
+    digest: sha256:6a4839ef4d4b55cb
+    last_modified: 2026-10-26T22:42:16Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
@@ -41,8 +41,8 @@ sources:
   - id: glossary-ts
     resource: ../../src/data/glossary.ts
     title: src/data/glossary.ts
-    digest: sha256:9958deec58ce7e5b
-    last_modified: 2026-10-26T21:22:58Z
+    digest: sha256:a21758463bf09626
+    last_modified: 2026-10-26T22:38:12Z
   - id: crops-ts
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
@@ -56,8 +56,8 @@ sources:
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:3bfc60ed2e984a2e
-    last_modified: 2026-10-26T21:16:11Z
+    digest: sha256:f4f21af2766d5760
+    last_modified: 2026-10-26T22:42:52Z
 ---
 
 # Responsibility
@@ -93,7 +93,7 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 # Gotchas
 
 - Do not import `src/content.config.ts` from runtime code (it drags `node:fs` into the Cloudflare prerender worker); shared constants live in `src/i18n/guides.ts`.
-- Plant colours (`--leaf`, `--leaf-*`, `--petal`, `--anther`, `--seed-1..6`) are defined in three blocks of `tokens.css` (light, dark, system dark) and colour plant content only; no colour literals in guide files.
+- Plant colours (`--leaf`, `--leaf-*`, `--petal`, `--anther`, `--seed-1..6`) are defined in three blocks of `tokens.css` (light, dark, system dark) and colour plant content only. Soil colours (`--soil-1..3`, `--soil-grain`, `--soil-hypha`, `--soil-worm`, `--soil-worm-band`) are in the same three blocks and colour soil drawings only, never chrome; no colour literals in guide files.
 - The header's Guides link is never hidden by width: below 640px it sits in the phone Menu (see [Site navigation](/decisions/site-navigation.md)). The guides index links to the bibliography (`section.books`) and the bibliography page links back to the guides.
 - Guide styles use the site breakpoints only (639px, 960px); a test fails on any other.
 - Guide-only strings live in `src/i18n/guides/{en,fr}.json` (both files, same keys; French with a no-break space before `:` and a narrow one before `;` `?` `!`); punctuation joining two strings is part of a string (`crop.guideLink`, `aria.labelled`), never hard-coded in a component.

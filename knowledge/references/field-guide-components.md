@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:43:22Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:29Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:a0e75814fab14a5b
-    last_modified: 2026-10-26T22:10:13Z
+    digest: sha256:6a4839ef4d4b55cb
+    last_modified: 2026-10-26T22:42:16Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -40,8 +40,8 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:1ed12ce057385002
-    last_modified: 2026-10-26T21:47:34Z
+    digest: sha256:fcf5202d99873069
+    last_modified: 2026-10-26T22:42:52Z
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
@@ -50,13 +50,13 @@ sources:
   - id: guideherorow-astro
     resource: ../../src/components/guides/diagrams/GuideHeroRow.astro
     title: src/components/guides/diagrams/GuideHeroRow.astro
-    digest: sha256:5af272e10a819c80
-    last_modified: 2026-10-26T21:16:11Z
+    digest: sha256:e8d7dbe75932d9a6
+    last_modified: 2026-10-26T22:42:16Z
   - id: svg-ts
     resource: ../../src/lib/svg.ts
     title: src/lib/svg.ts
-    digest: sha256:c084395e4376c8af
-    last_modified: 2026-10-26T18:22:29Z
+    digest: sha256:9633fcd98755c6ac
+    last_modified: 2026-10-26T22:42:16Z
 enforced_by: [scripts/guides.test.mjs, scripts/check-built-site.mjs]
 ---
 
@@ -187,8 +187,12 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   cloves) · soil ochre and brown crumbs threaded with cream fungal threads and one earthworm · perennials green leaves · seasons autumn leaves · pests ladybird, hoverfly, ground beetle ·
   kitchen corn kernels and beans. A new section needs an entry in `domainMotifs` and a new crops guide
   one in `cropSeeds`, or `npm test` fails; `npm run check` also fails a missing section, and the build a crops guide with no seed kind. Shapes (`KERNEL_PATH`,
-  `SQUASH_SEED_PATH`, `GRAIN_PATH`, `TOMATO_SEED_PATH`, `CLOVE_PATH`, `leafPath`, `lobedLeafPath`)
-  are in `src/lib/svg.ts` beside `BEAN_PATH`, for any diagram to reuse.
+  `SQUASH_SEED_PATH`, `GRAIN_PATH`, `TOMATO_SEED_PATH`, `CLOVE_PATH`, `leafPath`, `lobedLeafPath`,
+  and the seeded soil `crumbPath(rand, cx, cy, rad)` and `threadPath(rand, ax, ay, bx, by)`) are in
+  `src/lib/svg.ts` beside `BEAN_PATH`, for any diagram to reuse.
+- Diagram colour: tokens only. Plant tokens for plant parts only; soil tokens (`--soil-1`..`-3`,
+  `--soil-grain`, `--soil-hypha`, `--soil-worm`, `--soil-worm-band`) for soil drawings only, never
+  chrome. Each is defined in the light, dark and system-dark blocks of `tokens.css` (test).
 
 # Safety heuristic (`scripts/guides.test.mjs`)
 - No `<Safety>` box and no `food.<risk>` text gives an amount of time (digits or words: "ten
