@@ -299,7 +299,7 @@ test('guide files load no outside images or fonts, and colour only through the t
   }
   // Plant colours exist in every theme block of tokens.css.
   const tokens = read('styles/tokens.css');
-  for (const token of ['--leaf', '--petal', '--anther', '--seed-1', '--seed-6']) {
+  for (const token of ['--leaf', '--leaf-young', '--leaf-deep', '--leaf-gold', '--leaf-ochre', '--leaf-brown', '--petal', '--anther', '--seed-1', '--seed-6']) {
     assert.equal(tokens.split(`${token}:`).length - 1, 3, `${token} in the light, dark and system-dark blocks`);
   }
 });
@@ -357,6 +357,45 @@ test('every guide lists two to four related guides, and every related guide is p
     assert.equal(new Set(data.related).size, data.related.length, `${file}: related guides are listed once`);
     for (const slug of data.related) assert.ok(existsSync(join(guideRoot, slug, 'en.mdx')) && existsSync(join(guideRoot, slug, 'fr.mdx')), `${file}: related guide "${slug}" is published`);
   }
+});
+
+// The hero row above every guide shows its section: seeds guides keep the beans, each crops guide
+// its own seed, and a new section fails here until it has a motif (src/components/guides/diagrams/hero-row.ts).
+const guideDomainsInSource = () => [...read('i18n/guides.ts').match(/guideDomains = \[([^\]]*)\]/)[1].matchAll(/'([\w-]+)'/g)].map((m) => m[1]);
+
+test('every guide section has a hero motif', async () => {
+  const { domainMotifs, heroMotifs } = await import('../src/components/guides/diagrams/hero-row.ts');
+  const sections = guideDomainsInSource();
+  assert.deepEqual(sections, domains, 'the test knows every section in src/i18n/guides.ts');
+  assert.deepEqual(Object.keys(domainMotifs).sort(), [...sections].sort(), 'one motif per section, no more');
+  for (const [domain, motif] of Object.entries(domainMotifs)) assert.ok(motif === 'crop-seed' || heroMotifs.includes(motif), `${domain}: known motif "${motif}"`);
+});
+
+test('every crops guide has its own seed kind for the hero row', async () => {
+  const { cropSeeds, heroMotif } = await import('../src/components/guides/diagrams/hero-row.ts');
+  const crops = [...new Set(guides.filter((g) => g.data.domain === 'crops').map((g) => g.slug))].sort();
+  assert.ok(crops.length, 'there are crops guides');
+  assert.deepEqual(Object.keys(cropSeeds).sort(), crops, 'a seed kind for each crops guide, and none for a guide that is not one');
+  for (const slug of crops) assert.equal(heroMotif('crops', slug), cropSeeds[slug], `${slug}: its own seed`);
+  assert.throws(() => heroMotif('crops', 'a-new-crop'), /a-new-crop/, 'a new crops guide without a seed kind fails the build');
+});
+
+test('no guide falls back to the bean row unless its section is seeds or its crop is beans', async () => {
+  const { heroMotif, cropSeeds } = await import('../src/components/guides/diagrams/hero-row.ts');
+  const expected = { seeds: 'beans', perennials: 'leaves', seasons: 'autumn-leaves', pests: 'insects', kitchen: 'kernels-and-beans' };
+  for (const { slug, data, file } of guides) {
+    const motif = heroMotif(data.domain, slug);
+    assert.equal(motif, data.domain === 'crops' ? cropSeeds[slug] : expected[data.domain], `${file}: ${data.domain} motif`);
+    if (motif === 'beans') assert.ok(data.domain === 'seeds' || slug === 'beans-and-legumes', `${file}: beans in a ${data.domain} guide`);
+  }
+});
+
+test('the guide hero draws its row through GuideHeroRow, decorative and 640 by 64', () => {
+  const layout = read('components/guides/GuideLayout.astro');
+  assert.match(layout, /<GuideHeroRow domain=\{domain\} slug=\{slug\} \/>/);
+  assert.ok(!existsSync(join(src, 'components/guides/diagrams/BeanRow.astro')), 'BeanRow.astro is replaced, not kept beside');
+  const row = read('components/guides/diagrams/GuideHeroRow.astro');
+  assert.match(row, /<svg class="guide-specimens" viewBox="0 0 640 64" aria-hidden="true" focusable="false">/);
 });
 
 test('the index orders guides within each domain by a unique order number', () => {
