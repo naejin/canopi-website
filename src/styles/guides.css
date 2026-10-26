@@ -1,7 +1,8 @@
 /* Field Guides: imported by the guide layouts only (GuideLayout.astro, GuidesIndex.astro); every class
    starts with guide-. A field-notebook page: one reading column, and at ≥960px a margin column for the
    table of contents and the notes, which fall into the reading flow below 960px. Colours are tokens;
-   the plant tokens (--leaf, --leaf-*, --petal, --anther, --seed-N) only ever colour plant content. */
+   the plant tokens (--leaf, --leaf-*, --petal, --anther, --seed-N) only ever colour plant content
+   (and the hero row's garden insects), never chrome. */
 
 .guide-page { --guide-measure: 40rem; --guide-margin: 15rem; --guide-gap: 3rem; padding-bottom: 4rem; }
 .guide-page h1, .guide-page h2, .guide-page h3, .guide-page h4 { font-weight: 600; text-wrap: balance; line-height: 1.2; letter-spacing: 0; }
