@@ -361,12 +361,28 @@ test('a mouth test appears only inside a <Safety> warning, as the author\'s prac
   // Owner, 2026-10-26: the book's mouth tests are reported with a warning, never as a step. Outside
   // a <Safety> box no prose may read as one. "Dent" is also an English corn type, so the French word
   // is checked in French files only.
-  const en = /\b(?:teeth|tooth|bites?|biting|bitten|chew(?:s|ing)? (?:a|the|one) seeds?)\b/i;
-  const fr = /(?<!\p{L})(?:dents?|mordre|mordez|mordant|croqu\p{L}*|mâch\p{L}*)(?!\p{L})/iu;
+  const en = /\b(?:teeth|tooth|bites?|biting|bitten|chew(?:s|ing)? (?:a|the|one) seeds?|spits?|spat|spitting|suck(?:s|ed|ing)?|nibbl\w*)\b/i;
+  const fr = /(?<!\p{L})(?:dents?|mordre|mordez|mordant|croqu\p{L}*|mâch\p{L}*|recrach\p{L}*|suç\p{L}*|suc[eé]\p{L}*|grignot\p{L}*)(?!\p{L})/iu;
+  // A self-closing <Safety … /> has no body, so the box pattern must not run from it to the next </Safety>.
+  const mouthHit = (body, lang) => body
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    .replace(/<Safety\b[^>]*(?<!\/)>[\s\S]*?<\/Safety>/g, '')
+    .match(lang === 'fr' ? fr : en)?.[0];
+  const box = (text) => `<Safety title="x">${text}</Safety>`;
+  const samples = {
+    en: ['He spits it out.', 'He spat it out.', 'He will nibble a leaf.', 'He nibbles each pod.', 'He likes to suck on the seed.', 'He sucks each seed.', 'He bites a pod.'],
+    fr: ['Il le recrache.', 'Il faut recracher.', 'Il aime sucer la graine.', 'Il suce chaque graine.', 'Il suçait les graines.', 'Il va grignoter une feuille.', 'Il grignote une cosse.', 'Il croque une cosse.'],
+  };
+  for (const [lang, texts] of Object.entries(samples)) {
+    for (const text of texts) {
+      assert.ok(mouthHit(text, lang), `${lang}: mouth-test check misses "${text}" outside a box`);
+      assert.ok(!mouthHit(box(text), lang), `${lang}: mouth-test check flags "${text}" inside a box`);
+      assert.ok(mouthHit(`<Safety title="x" />\n${text}\n${box('ok')}`, lang), `${lang}: a self-closing <Safety /> hides "${text}"`);
+    }
+  }
   for (const { body, file, lang } of guides) {
-    const prose = body.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/<Safety\b[\s\S]*?<\/Safety>/g, '');
-    const hit = prose.match(lang === 'fr' ? fr : en);
-    assert.ok(!hit, `${file}: "${hit?.[0]}" reads as a mouth test; report it only inside a <Safety> warning`);
+    const hit = mouthHit(body, lang);
+    assert.ok(!hit, `${file}: "${hit}" reads as a mouth test; report it only inside a <Safety> warning`);
   }
 });
 
