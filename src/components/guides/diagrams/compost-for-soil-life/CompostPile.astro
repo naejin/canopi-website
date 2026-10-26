@@ -13,7 +13,11 @@ const { title, alt, labels } = Astro.props;
 const locals = Astro.locals as { guideSvgs?: number };
 const uid = `guide-pile-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
 // The heap: base from X0 to X1 on the pallet at BASE, rounded top at TOP.
-const X0 = 122, X1 = 286, BASE = 196, TOP = 62, MID = (X0 + X1) / 2;
+// Labels are 14px (about 12px on a 390px phone), so the heap is narrow enough to leave label columns.
+const X0 = 128, X1 = 268, BASE = 196, TOP = 62, MID = (X0 + X1) / 2;
+// Height dimension line, left of the raised floor; the left air arrow starts to its right.
+const DX = 108;
+const LH = 16;
 const heap = `M${X0} ${BASE}C${X0 + 4} ${TOP + 40} ${X0 + 30} ${TOP} ${MID} ${TOP}C${X1 - 30} ${TOP} ${X1 - 4} ${TOP + 40} ${X1} ${BASE}Z`;
 // Layers from the bottom up, alternating brown and green, each a little wavy.
 const LAYER = 13;
@@ -23,10 +27,12 @@ const layers = Array.from({ length: Math.ceil((BASE - TOP) / LAYER) }, (_, i) =>
   return { d: `M${wave(yb, i)}L${X1 + 10} ${r1(yt)}L${X0 - 10} ${r1(yt)}Z`, green: i % 2 === 1 };
 });
 // Sticks: short tilted lines across the heap, inside the outline.
-const sticks = [[150, 170, 196, 162], [218, 176, 258, 168], [166, 132, 206, 140], [214, 120, 244, 112], [184, 96, 214, 92]];
+const sx = (x: number) => r1(X0 + ((x - 122) * (X1 - X0)) / 164);
+const sticks = [[150, 170, 196, 162], [218, 176, 258, 168], [166, 132, 206, 140], [214, 120, 244, 112], [184, 96, 214, 92]].map(([a, b, c, d]) => [sx(a), b, sx(c), d]);
+const lines = (text: string, max: number) => wrap(text, max);
 ---
 <div class="guide-pile">
-  <svg viewBox="0 0 400 252" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+  <svg viewBox="0 0 400 258" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
     <title id={`${uid}-t`}>{title}</title>
     <desc id={`${uid}-d`}>{alt}</desc>
     <defs>
@@ -45,30 +51,30 @@ const sticks = [[150, 170, 196, 162], [218, 176, 258, 168], [166, 132, 206, 140]
     {[X0 - 4, MID - 8, X1 - 12].map((bx) => <rect x={bx} y={BASE + 6} width="16" height="12" class="guide-pile-block" />)}
     {/* Air: arrows in from below and from both sides. */}
     {[X0 + 28, MID, X1 - 28].map((ax) => <path d={`M${ax} ${BASE + 30}V${BASE + 10}m-4 5l4 -5l4 5`} class="guide-pile-air" />)}
-    <path d={`M${X0 - 26} ${BASE - 40}h20m-5 -4l5 4l-5 4`} class="guide-pile-air" />
-    <path d={`M${X1 + 26} ${BASE - 40}h-20m5 -4l-5 4l5 4`} class="guide-pile-air" />
+    <path d={`M${DX + 6} ${BASE - 40}H${X0 - 2}m-5 -4l5 4l-5 4`} class="guide-pile-air" />
+    <path d={`M${X1 + 16} ${BASE - 40}H${X1 + 2}m5 -4l-5 4l5 4`} class="guide-pile-air" />
     {/* The metal rod, pushed in from the top right to the centre. */}
     <line x1={MID + 4} y1={BASE - 56} x2={X1 + 12} y2="34" class="guide-pile-rod" />
     <circle cx={X1 + 15} cy="31" r="4.5" class="guide-pile-rod-ring" />
     {/* Size: about 1 m across and high. */}
     <path d={`M${X0} 236H${X1}M${X0} 231v10M${X1} 231v10`} class="guide-pile-dim" />
-    <text x={MID} y="250" text-anchor="middle" class="guide-pile-size">{labels.size}</text>
-    <path d={`M100 ${TOP}V${TOP + 2}M100 ${TOP + 60}V${BASE}M95 ${TOP}h10M95 ${BASE}h10`} class="guide-pile-dim" />
-    <text x="95" y={TOP + 30} text-anchor="middle" transform={`rotate(-90 95 ${TOP + 30})`} class="guide-pile-size">{labels.size}</text>
-    {/* Labels with leaders. Left: green, brown, sticks. Right: rod, hottest, cooler edges, floor. */}
-    <text x="6" y="18" class="guide-pile-label">{wrap(labels.green, 16).map((t, i) => <tspan x="6" dy={i ? 13 : 0}>{t}</tspan>)}</text>
-    <path d={`M70 26Q120 40 ${X0 + 34} ${TOP + 40}`} class="guide-pile-leader" />
-    <text x="6" y={TOP + 132} class="guide-pile-label">{wrap(labels.brown, 13).map((t, i) => <tspan x="6" dy={i ? 13 : 0}>{t}</tspan>)}</text>
-    <path d={`M70 ${TOP + 142}Q100 ${TOP + 122} ${X0 + 10} ${BASE - 18}`} class="guide-pile-leader" />
-    <text x={X1 + 26} y="16" class="guide-pile-label">{wrap(labels.rod, 15).map((t, i) => <tspan x={X1 + 26} dy={i ? 13 : 0}>{t}</tspan>)}</text>
-    <text x={X1 + 30} y={TOP + 44} class="guide-pile-label guide-pile-label-hot">{wrap(labels.hot, 13).map((t, i) => <tspan x={X1 + 30} dy={i ? 13 : 0}>{t}</tspan>)}</text>
-    <path d={`M${X1 + 26} ${TOP + 52}Q${MID + 60} ${TOP + 70} ${MID + 18} ${BASE - 58}`} class="guide-pile-leader" />
-    <text x={X1 + 30} y={TOP + 100} class="guide-pile-label">{wrap(labels.edges, 13).map((t, i) => <tspan x={X1 + 30} dy={i ? 13 : 0}>{t}</tspan>)}</text>
-    <path d={`M${X1 + 26} ${TOP + 104}L${X1 - 12} ${TOP + 80}`} class="guide-pile-leader" />
-    <text x={X1 + 30} y={BASE + 18} class="guide-pile-label">{wrap(labels.floor, 13).map((t, i) => <tspan x={X1 + 30} dy={i ? 13 : 0}>{t}</tspan>)}</text>
-    <path d={`M${X1 + 26} ${BASE + 14}L${X1 + 6} ${BASE + 6}`} class="guide-pile-leader" />
-    <text x="6" y={TOP + 62} class="guide-pile-label">{wrap(labels.sticks, 12).map((t, i) => <tspan x="6" dy={i ? 13 : 0}>{t}</tspan>)}</text>
-    <path d={`M62 ${TOP + 66}Q${X0} ${TOP + 70} 166 132`} class="guide-pile-leader" />
+    <text x={MID} y="252" text-anchor="middle" class="guide-pile-size">{labels.size}</text>
+    <path d={`M${DX} ${TOP}V${BASE}M${DX - 5} ${TOP}h10M${DX - 5} ${BASE}h10`} class="guide-pile-dim" />
+    <text x={DX - 9} y={(TOP + BASE) / 2} text-anchor="middle" transform={`rotate(-90 ${DX - 9} ${(TOP + BASE) / 2})`} dy="-0.2em" class="guide-pile-size">{labels.size}</text>
+    {/* Labels with leaders, kept clear of the height label. Left: green, sticks, brown. Right: rod, hottest, cooler edges, floor. */}
+    <text x="4" y="18" class="guide-pile-label">{lines(labels.green, 13).map((t, i) => <tspan x="4" dy={i ? LH : 0}>{t}</tspan>)}</text>
+    <path d={`M56 ${22 + LH * (lines(labels.green, 13).length - 1)}Q110 44 ${X0 + 30} ${TOP + 40}`} class="guide-pile-leader" />
+    <text x="4" y={TOP + 14} class="guide-pile-label">{lines(labels.sticks, 11).map((t, i) => <tspan x="4" dy={i ? LH : 0}>{t}</tspan>)}</text>
+    <path d={`M78 ${TOP + 10}Q${X0 + 10} ${TOP + 24} ${sticks[2][0]} ${sticks[2][1]}`} class="guide-pile-leader" />
+    <text x="4" y={TOP + 132} class="guide-pile-label">{lines(labels.brown, 11).map((t, i) => <tspan x="4" dy={i ? LH : 0}>{t}</tspan>)}</text>
+    <path d={`M78 ${TOP + 128}Q100 ${TOP + 122} ${X0 + 10} ${BASE - 18}`} class="guide-pile-leader" />
+    <text x={X1 + 26} y="16" class="guide-pile-label">{lines(labels.rod, 15).map((t, i) => <tspan x={X1 + 26} dy={i ? LH : 0}>{t}</tspan>)}</text>
+    <text x={X1 + 26} y={TOP + 40} class="guide-pile-label guide-pile-label-hot">{lines(labels.hot, 15).map((t, i) => <tspan x={X1 + 26} dy={i ? LH : 0}>{t}</tspan>)}</text>
+    <path d={`M${X1 + 22} ${TOP + 46}Q${MID + 50} ${TOP + 66} ${MID + 18} ${BASE - 58}`} class="guide-pile-leader" />
+    <text x={X1 + 26} y={TOP + 100} class="guide-pile-label">{lines(labels.edges, 15).map((t, i) => <tspan x={X1 + 26} dy={i ? LH : 0}>{t}</tspan>)}</text>
+    <path d={`M${X1 + 22} ${TOP + 96}L${X1 - 12} ${TOP + 80}`} class="guide-pile-leader" />
+    <text x={X1 + 26} y={BASE + 20} class="guide-pile-label">{lines(labels.floor, 15).map((t, i) => <tspan x={X1 + 26} dy={i ? LH : 0}>{t}</tspan>)}</text>
+    <path d={`M${X1 + 22} ${BASE + 16}L${X1 + 6} ${BASE + 6}`} class="guide-pile-leader" />
   </svg>
 </div>
 
@@ -89,7 +95,7 @@ const sticks = [[150, 170, 196, 162], [218, 176, 258, 168], [166, 132, 206, 140]
   .guide-pile-rod-ring { fill: none; stroke: var(--text-muted); stroke-width: 2; }
   .guide-pile-dim { fill: none; stroke: var(--text-muted); stroke-width: 1; }
   .guide-pile-leader { fill: none; stroke: var(--text-muted); stroke-width: 0.9; }
-  .guide-pile .guide-pile-label { font-size: 12px; fill: var(--text); }
+  .guide-pile .guide-pile-label { font-size: 14px; fill: var(--text); }
   .guide-pile .guide-pile-label-hot { font-weight: 600; fill: var(--accent-ink); }
-  .guide-pile .guide-pile-size { font-size: 11px; fill: var(--text-muted); }
+  .guide-pile .guide-pile-size { font-size: 13px; fill: var(--text-muted); }
 </style>
