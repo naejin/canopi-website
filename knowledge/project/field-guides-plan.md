@@ -4,7 +4,7 @@ title: Field Guides plan
 description: Build plan for the 17 Field Guides drawn from Landrace Gardening — steps, streams, file ownership and exit criteria.
 status: stable
 tags: [field-guides, plan]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:34Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T17:48:54Z }
 ---
 
 # Field Guides plan
@@ -37,11 +37,11 @@ Exit per stream: en+fr guides render; review (bugs, reader usefulness, safety ru
 ## Step 3 — Integrate
 Hand-off branch for shared-file requests; cross-guide link pass (related/next), glossary completeness; real-browser check of every guide at 390/1280 light/dark; pre-push review of the whole diff; push to `master` (deploys).
 
-## Step 4 — Trees and kitchen (2026-10-26)
-Shared commit (main agent): domains `perennials` and `kitchen`, FoodCaution risks `toxic-leaves` and `home-canning`, bibliography id `trees-with-edible-leaves`, network entries.
-- S8 `trees`: 18 trees-with-edible-leaves. Source text: `.local/field-guides/trees-with-edible-leaves/` (CC BY-NC-ND: own words only, never translated or excerpted).
-- S9 `kitchen`: 19 nixtamalization + 20 cooking-dry-beans, plus the canning section of 09 squash and links from 10 corn and 11 beans.
-Exit: as step 2, plus every hazard in the sources stays in the guide with a warning (no figures).
+## Step 4 — Trees and kitchen (done 2026-10-26, pushed bf9f27c)
+Added 18 trees-with-edible-leaves (Trees & perennials), 19 nixtamalization and 20 cooking-dry-beans (Harvest to kitchen), and reopened every earlier [OMIT] item in guides 01-17 under the warn-don't-remove rule. Specs 18-20 are in `.local/field-guides/specs/`; the re-audit brief is `.local/field-guides/reaudit-brief.md`.
+
+## Next candidates (owner's call)
+- Martin Crawford's *Creating a Forest Garden*, *How to Grow Perennial Vegetables*, *Trees for Gardens, Orchards, and Permaculture* and *How to Grow Your Own Nuts* (in the owner's Calibre library) for the Trees & perennials domain; they would also back the trees topic still excluded from *Landrace Gardening*'s last chapter.
 
 ## Tracker
 bd epic "Field Guides", one item per step and per stream, labels `guides-step-<n>`.

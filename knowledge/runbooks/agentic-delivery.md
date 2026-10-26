@@ -4,7 +4,7 @@ title: Agentic delivery adapter
 description: Commands and places for running multi-agent work on this site with the phased-agentic-delivery skill.
 status: stable
 tags: [process]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:35:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T17:48:54Z }
 ---
 
 # Agentic delivery: canopi-website
@@ -24,7 +24,7 @@ generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:35:09Z }
 - Merging streams: a conflict only in `knowledge/` source digest lines is resolved by taking either side, then `python3 .okf/okf.pyz sync` recomputes the digests.
 
 ## Real-environment check
-- `npx astro preview --port <port>` from the worktree after a build (never 4321; each agent gets its own port and kills only its own pid). After a rebuild, restart preview: a running preview answers 500 for the rebuilt pages.
+- `npx astro preview --port <port>` from the worktree after a build (never 4321; each agent gets its own port and kills only its own pid, and stops its preview before it reports: a preview left running took another stream's port in step 4). Before removing worktrees the main agent kills any listener whose `readlink /proc/<pid>/cwd` is inside them (`ss -ltnp`). After a rebuild, restart preview: a running preview answers 500 for the rebuilt pages.
 - Screenshots: `google-chrome --headless=new --window-size=<w>,<h> --screenshot=<file> http://localhost:<port>/guides/<slug>/` at 390 and 1280 widths, light and dark. The theme comes from `localStorage['canopi-theme']` (`light` or `dark`), so `--force-dark-mode` and `?theme=` do not switch it: drive Chrome over the DevTools protocol (`--remote-debugging-port`) and set the key with `Page.addScriptToEvaluateOnNewDocument` before navigating; `Page.captureScreenshot` with `captureBeyondViewport` takes the full page.
 - DOM checks: `google-chrome --headless=new --dump-dom <url>`.
 
