@@ -11,12 +11,13 @@ const read = (path) => readFileSync(join(src, path), 'utf8');
 const guideRoot = join(src, 'content/guides');
 const guideLangs = ['en', 'fr'];
 const domains = ['seeds', 'crops', 'perennials', 'seasons', 'pests', 'kitchen'];
-// The 17 guides of the plan (knowledge/project/field-guides-plan.md). An in-text "next guides" link
+// The guides of the plan (knowledge/project/field-guides-plan.md). An in-text "next guides" link
 // may name one before it is written; the page shows it once it exists.
 const planned = [
   'landrace-gardening', 'hybrids-heirlooms-landraces', 'will-they-cross', 'hand-crosses', 'choosing-seed-parents',
   'keeping-a-landrace', 'saving-seed', 'storing-seed', 'squash-melons-cucumbers', 'corn', 'beans-and-legumes',
   'tomatoes', 'small-grains', 'true-seed-potato-garlic-sunroot', 'season-shifting', 'food-all-year', 'pests-without-sprays',
+  'trees-with-edible-leaves', 'nixtamalization', 'cooking-dry-beans',
 ];
 // Safety rule: no caution or safety box gives a time, a temperature or a method word, and no prose
 // pairs boiling, soaking, fermenting or cooking with an amount of time. This is a heuristic: it catches
@@ -25,7 +26,8 @@ const amount = String.raw`(?:\d+(?:[.,]\d+)?|an?|one|two|three|four|five|six|sev
 const timeUnit = String.raw`(?:seconds?|secondes?|secs?|minutes?|mins?|hours?|heures?|hrs?|h|days?|jours?|j|nights?|nuits?|weeks?|semaines?|months?|mois)`;
 const timeAmount = new RegExp(String.raw`\b${amount}[\s  -]*${timeUnit}\b`, 'i');
 const temperature = /\d\s*[°º]|\bdegrees?\b|\bdegr[ée]s?\b|\b\d+\s*(?:K|C|F)\b/i;
-const methodWord = /\bovernight\b|\b(?:toute la|pendant la|une) nuit\b|\bboil\w*|\bbouill\w*|\bsoak\w*|\btremp\w*/i;
+// (?<!\p{L}) is a word start that counts accented letters as letters (\b would match inside "détrempé").
+const methodWord = /\bovernight\b|\b(?:toute la|pendant la|une) nuit\b|\bboil\w*|\bbouill\w*|\bsoak\w*|(?<!\p{L})tremp\p{L}*/iu;
 const cautionBreach = (text) => timeAmount.test(text) || temperature.test(text) || methodWord.test(text);
 const proseBreach = new RegExp(String.raw`\b(?:boil|soak|ferment|cook|bouill|tremp|ferment|cuis|cuit|cuire)\w*\b[^.]{0,80}?\b${amount}[\s  -]*${timeUnit}\b`, 'i');
 
@@ -132,6 +134,7 @@ test('the safety heuristic catches times, temperatures and method words written 
   for (const text of ['ten minutes', 'for 12 hours', 'overnight', 'deux heures', 'toute la nuit', 'at 100 °C', 'boil them', 'soak the beans', 'faites tremper', 'a day', 'trois jours', 'twenty-minute']) {
     assert.ok(cautionBreach(text), `caution heuristic misses "${text}"`);
   }
+  assert.ok(!cautionBreach('un sol détrempé'), 'caution heuristic flags "détrempé"');
   for (const text of ['Ferment them for three days.', 'Soak the seed for twelve hours before sowing.', 'Faites cuire vingt minutes.', 'boil for 10 min']) {
     assert.ok(proseBreach.test(text), `prose heuristic misses "${text}"`);
   }
@@ -152,7 +155,7 @@ test('no caution or safety text gives a time, a temperature or a method, and no 
     }
   }
   for (const { body, file } of guides) {
-    for (const [, inner] of body.matchAll(/<(?:Safety|FoodCaution)\b[^>]*>([\s\S]*?)<\/(?:Safety|FoodCaution)>/g)) {
+    for (const [, , inner] of body.matchAll(/<(Safety|FoodCaution)\b[^>]*(?<!\/)>([\s\S]*?)<\/\1>/g)) {
       assert.ok(!cautionBreach(inner), `${file}: a Safety box gives a time, temperature or method: ${inner.trim().slice(0, 80)}`);
     }
     for (const title of attrs(body, 'Safety', 'title')) assert.ok(!cautionBreach(title), `${file}: Safety title`);

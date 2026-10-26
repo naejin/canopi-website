@@ -5,18 +5,18 @@ description: The writing, safety, attribution and language rules every Field Gui
 tags: [convention, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:48:11Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T14:11:43Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:04:57Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:3e2624235874581e
-    last_modified: 2026-10-25T14:08:27Z
+    digest: sha256:d74731b42acaac17
+    last_modified: 2026-10-26T14:04:40Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:231929b8d883359e
-    last_modified: 2026-10-26T13:48:10Z
+    digest: sha256:d5beb7555fec1beb
+    last_modified: 2026-10-26T14:04:17Z
   - id: decisions-field-guides-user-decisions
     resource: /decisions/field-guides-user-decisions.md
 enforced_by: [scripts/guides.test.mjs]
