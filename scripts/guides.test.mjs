@@ -354,14 +354,16 @@ test('the index orders guides within each domain by a unique order number', () =
   }
 });
 
-test('no guide tests anything by mouth (no teeth or bite checks)', () => {
-  // "Dent" is also an English corn type, so the French word is checked in French files only.
+test('a mouth test appears only inside a <Safety> warning, as the author\'s practice', () => {
+  // Owner, 2026-10-26: the book's mouth tests are reported with a warning, never as a step. Outside
+  // a <Safety> box no prose may read as one. "Dent" is also an English corn type, so the French word
+  // is checked in French files only.
   const en = /\b(?:teeth|tooth|bites?|biting|bitten|chew(?:s|ing)? (?:a|the|one) seeds?)\b/i;
   const fr = /(?<!\p{L})(?:dents?|mordre|mordez|mordant|croqu\p{L}*|mâch\p{L}*)(?!\p{L})/iu;
   for (const { body, file, lang } of guides) {
-    const prose = body.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+    const prose = body.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/<Safety\b[\s\S]*?<\/Safety>/g, '');
     const hit = prose.match(lang === 'fr' ? fr : en);
-    assert.ok(!hit, `${file}: "${hit?.[0]}" reads as a mouth test; nothing goes in the mouth`);
+    assert.ok(!hit, `${file}: "${hit?.[0]}" reads as a mouth test; report it only inside a <Safety> warning`);
   }
 });
 

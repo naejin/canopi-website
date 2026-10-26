@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:43:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:48:11Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:04Z }
 sources:
@@ -25,8 +25,8 @@ sources:
   - id: food-risks-ts
     resource: ../../src/data/food-risks.ts
     title: src/data/food-risks.ts
-    digest: sha256:1d42c7bd59b0069a
-    last_modified: 2026-10-26T13:42:36Z
+    digest: sha256:b1e257d86329dd06
+    last_modified: 2026-10-26T13:48:10Z
   - id: rehype-guide-terms-mjs
     resource: ../../src/lib/rehype-guide-terms.mjs
     title: src/lib/rehype-guide-terms.mjs
@@ -40,8 +40,8 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:038c6a3db0f76945
-    last_modified: 2026-10-26T13:42:36Z
+    digest: sha256:231929b8d883359e
+    last_modified: 2026-10-26T13:48:10Z
 enforced_by: [scripts/guides.test.mjs]
 ---
 
@@ -97,7 +97,7 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
 - `<FoodCaution risk="…" />` or `<FoodCaution risk={["ergot", "treated-seed"]} />` — `risk` required: one
   risk or a list, from `src/data/food-risks.ts`: bitter-cucurbits, dry-beans, nightshades,
   potato-berries, corn-processing, treated-seed, fava, ergot, sprouted-or-surplus-seed, toxic-leaves,
-  home-canning. Fixed wording
+  home-canning, raw-tasting, wild-foods. Fixed wording
   per language (`food.<risk>` in `src/i18n/guides/{en,fr}.json`); an unknown or repeated risk fails the
   build. A list is one box with one title and one paragraph per risk; two FoodCautions in a row fail
   `npm test` (combine them).

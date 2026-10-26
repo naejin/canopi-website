@@ -39,6 +39,8 @@
   "food.sprouted-or-surplus-seed": "Seed kept for sowing is not always fit to eat or to sprout as food: it may have been treated, mixed or stored in ways food is not. Follow your national food-safety authority’s guidance before eating surplus seed or sprouts.",
   "food.toxic-leaves": "Some trees grown for their leaves are poisonous raw or undercooked, and a few stay harmful even when cooked. Eat leaves only from a species you have identified with certainty and know to be food, never eat them raw unless they are known to be safe raw, and follow your national food-safety authority’s guidance.",
   "food.home-canning": "Home canning of low-acid foods, such as squash, beans or corn, can cause botulism, a poisoning that can kill. Some foods, such as mashed squash, are not considered safe to can at home at all. Follow your national food-safety authority’s guidance before canning anything.",
+  "food.raw-tasting": "Tasting raw or unfamiliar plant parts, even a small piece spat out, can poison you: crosses and wild relatives can carry toxins you cannot see or smell. Do not use your mouth as a test, keep it away from children, and follow your national food-safety authority’s guidance.",
+  "food.wild-foods": "Wild plants and mushrooms are easily confused with poisonous or deadly look-alikes. Never eat one you have not identified with certainty, ideally with an expert in person, and follow your national food-safety authority’s guidance.",
   "hisGarden.his": "In his garden",
   "hisGarden.where": "Northern Utah: dry air, high altitude, a short season",
   "hisGarden.you": "Where you are",
