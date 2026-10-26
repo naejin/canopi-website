@@ -1,0 +1,99 @@
+---
+// What's in your soil: a Berlese funnel in exploded view, top to bottom: a lamp (shade and bulb, with
+// light rays), an upturned plastic bottle filled with soil and litter, a square of mesh in its neck, and
+// the collecting pot below. Small animals (dots with legs) move down the arrows into the pot. Labels come
+// from the MDX and wrap; no person, no wattage or distance in the drawing.
+import { r1, rng, seedOf, wrap } from '../../../../lib/svg';
+interface Props {
+  title: string;
+  alt: string;
+  labels: { lamp: string; soil: string; mesh: string; pot: string; move: string };
+}
+const { title, alt, labels } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-berlese-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const C = 150; // centre line of the stack
+// Lamp shade and bulb.
+const LY = 36;
+// Bottle: wide body from BT to BS, shoulder narrowing to the neck at NK, neck down to NB.
+const BT = 96, BS = 196, NK = 232, NB = 252, BW = 64, NW = 13;
+const bottle = `M${C - BW} ${BT}V${BS}Q${C - BW} ${NK - 14} ${C - NW} ${NK}V${NB}M${C + NW} ${NB}V${NK}Q${C + BW} ${NK - 14} ${C + BW} ${BS}V${BT}`;
+// Soil fills from ST down into the shoulder; litter bits on its surface.
+const ST = 112;
+const soil = `M${C - BW + 2} ${ST}H${C + BW - 2}V${BS}Q${C + BW - 2} ${NK - 15} ${C + NW - 2} ${NK - 1}H${C - NW + 2}Q${C - BW + 2} ${NK - 15} ${C - BW + 2} ${BS}Z`;
+const rand = rng(seedOf('berlese-funnel'));
+const grains = Array.from({ length: 60 }, () => {
+  const y = ST + 8 + rand() * (BS - ST - 4);
+  return { x: r1(C - BW + 8 + rand() * (2 * BW - 16)), y: r1(y), r: r1(0.9 + rand() * 1.5) };
+});
+const litter = Array.from({ length: 12 }, (_, i) => ({ x: r1(C - BW + 10 + i * 10 + rand() * 3), y: r1(ST + 2 + rand() * 4), r: Math.round(rand() * 140 - 70) }));
+// Pot below the neck (exploded: a small gap), with animals already caught.
+const PT = 270, PB = 326, PW = 46;
+const caught = [[-22, 312], [-6, 318], [10, 314], [24, 318], [2, 306]];
+// Animals on their way down: in the soil, in the neck and falling.
+const falling = [[-24, 168], [20, 182], [-4, 214], [0, 262]];
+const LX = 234;
+const labelAt = (text: string, y: number, max = 22) => wrap(text, max).map((t, i) => ({ t, y: y + i * 13 }));
+const lampL = labelAt(labels.lamp, LY - 4);
+const soilL = labelAt(labels.soil, 150);
+const meshL = labelAt(labels.mesh, 238);
+const potL = labelAt(labels.pot, 300);
+const moveL = wrap(labels.move, 12);
+---
+<div class="guide-berlese">
+  <svg viewBox="0 0 400 340" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    {/* Lamp: cord, shade, bulb, rays. */}
+    <path d={`M${C} 0V${LY - 18}`} class="guide-berlese-cord" />
+    <path d={`M${C - 34} ${LY + 6}L${C - 12} ${LY - 18}H${C + 12}L${C + 34} ${LY + 6}Z`} class="guide-berlese-shade" />
+    <circle cx={C} cy={LY + 12} r="11" class="guide-berlese-bulb" />
+    <path d={`M${C - 26} ${LY + 22}l-10 14M${C} ${LY + 28}v18M${C + 26} ${LY + 22}l10 14`} class="guide-berlese-ray" />
+    {/* Bottle with soil, litter and mesh. */}
+    <path d={soil} class="guide-berlese-soil" />
+    {grains.map((g) => <circle cx={g.x} cy={g.y} r={g.r} class="guide-berlese-grain" />)}
+    {litter.map((l) => <ellipse cx={l.x} cy={l.y} rx="5" ry="1.8" transform={`rotate(${l.r} ${l.x} ${l.y})`} class="guide-berlese-litter" />)}
+    <path d={`M${C - NW + 1} ${NK - 2}H${C + NW - 1}M${C - NW + 1} ${NK - 5}H${C + NW - 1}M${C - 8} ${NK - 7}V${NK}M${C - 2} ${NK - 7}V${NK}M${C + 4} ${NK - 7}V${NK}M${C + 9} ${NK - 7}V${NK}`} class="guide-berlese-mesh" />
+    <path d={bottle} class="guide-berlese-bottle" />
+    <path d={`M${C - BW} ${BT}H${C + BW}`} class="guide-berlese-cut" />
+    {/* Collecting pot. */}
+    <path d={`M${C - PW} ${PT}L${C - PW + 6} ${PB}H${C + PW - 6}L${C + PW} ${PT}`} class="guide-berlese-pot" />
+    {caught.map(([x, y]) => <g transform={`translate(${C + x} ${y})`}><path d="M-3 0h6M-2.5 -2l-1.5 -2M2.5 -2l1.5 -2M-2.5 2l-1.5 2M2.5 2l1.5 2" class="guide-berlese-leg" /><ellipse rx="3" ry="2" class="guide-berlese-animal" /></g>)}
+    {falling.map(([x, y]) => <g transform={`translate(${C + x} ${y})`}><path d="M-2.5 -2l-1.5 -2M2.5 -2l1.5 -2M-2.5 2l-1.5 2M2.5 2l1.5 2" class="guide-berlese-leg" /><ellipse rx="3" ry="2" class="guide-berlese-animal" /></g>)}
+    {/* Downward arrows on the left of the stack. */}
+    <path d={`M${C - BW - 8} 132V${PT + 10}m-5 -7l5 7l5 -7`} class="guide-berlese-arrow" />
+    {moveL.map((t, i) => <text x="4" y={150 + i * 13} class="guide-berlese-label guide-berlese-accent">{t}</text>)}
+    {/* Labels on the right with leaders. */}
+    {lampL.map((l) => <text x={LX} y={l.y} class="guide-berlese-label guide-berlese-strong">{l.t}</text>)}
+    <path d={`M${LX - 4} ${LY - 8}H${C + 36}`} class="guide-berlese-leader" />
+    {soilL.map((l) => <text x={LX} y={l.y} class="guide-berlese-label">{l.t}</text>)}
+    <path d={`M${LX - 4} ${146}H${C + BW - 10}`} class="guide-berlese-leader" />
+    {meshL.map((l) => <text x={LX} y={l.y} class="guide-berlese-label">{l.t}</text>)}
+    <path d={`M${LX - 4} ${234}L${C + NW + 3} ${NK - 3}`} class="guide-berlese-leader" />
+    {potL.map((l) => <text x={LX} y={l.y} class="guide-berlese-label">{l.t}</text>)}
+    <path d={`M${LX - 4} ${296}H${C + PW - 2}`} class="guide-berlese-leader" />
+  </svg>
+</div>
+
+<style>
+  .guide-berlese { max-width: 32rem; }
+  .guide-berlese svg { width: 100%; height: auto; }
+  .guide-berlese-cord { stroke: var(--text-muted); stroke-width: 1.5; }
+  .guide-berlese-shade { fill: var(--text-secondary); }
+  .guide-berlese-bulb { fill: var(--accent); opacity: 0.85; }
+  .guide-berlese-ray { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 3 3; }
+  .guide-berlese-soil { fill: var(--soil-1); }
+  .guide-berlese-grain { fill: var(--soil-grain); opacity: 0.55; }
+  .guide-berlese-litter { fill: var(--leaf-brown); stroke: var(--soil-2); stroke-width: 0.4; }
+  .guide-berlese-mesh { fill: none; stroke: var(--text); stroke-width: 0.9; }
+  .guide-berlese-bottle { fill: none; stroke: var(--text-muted); stroke-width: 2; stroke-linejoin: round; }
+  .guide-berlese-cut { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 4 3; }
+  .guide-berlese-pot { fill: var(--surface-alt); stroke: var(--text); stroke-width: 2; stroke-linejoin: round; }
+  .guide-berlese-animal { fill: var(--seed-2); }
+  .guide-berlese-leg { fill: none; stroke: var(--seed-2); stroke-width: 0.9; }
+  .guide-berlese-arrow { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-berlese-leader { fill: none; stroke: var(--text-muted); stroke-width: 0.9; }
+  .guide-berlese .guide-berlese-label { font-size: 12px; fill: var(--text); }
+  .guide-berlese .guide-berlese-strong { font-weight: 600; }
+  .guide-berlese .guide-berlese-accent { font-weight: 600; fill: var(--accent-ink); }
+</style>
