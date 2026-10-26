@@ -1,0 +1,94 @@
+---
+// What's in your soil: a jar test in profile. Three settled bands, bottom to top: sand (coarse dots),
+// silt (fine dots), clay (smooth), with organic bits floating on the water above. A ruler beside the jar
+// has one tick per centimetre. The example jar (4, 3 and 2 cm, so 44, 33 and 22 %) is ours, not the
+// book's, and is marked as an example. Labels, shares and the sum come from the MDX; the labels wrap.
+import { r1, rng, seedOf, wrap } from '../../../../lib/svg';
+interface Props {
+  title: string;
+  alt: string;
+  labels: { sand: string; silt: string; clay: string; organic: string; example: string; sum: string };
+  shares: [string, string, string]; // sand, silt, clay: "4 cm → 44 %"
+}
+const { title, alt, labels, shares } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-soiljar-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+// Jar from x JX0 to JX1, glass bottom at JB. 18 units per centimetre: sand 4, silt 3, clay 2.
+const JX0 = 34, JX1 = 144, JB = 262, CM = 18;
+const SAND = JB - 4 * CM, SILT = SAND - 3 * CM, CLAY = SILT - 2 * CM, WATER = CLAY - 34;
+const rand = rng(seedOf('soil-jar'));
+const dots = (y0: number, y1: number, n: number, rMin: number, rMax: number) => Array.from({ length: n }, () => ({
+  x: r1(JX0 + 5 + rand() * (JX1 - JX0 - 10)), y: r1(y0 + 3 + rand() * (y1 - y0 - 6)), r: r1(rMin + rand() * (rMax - rMin)),
+}));
+const sand = dots(SAND, JB, 70, 1.6, 2.6);
+const silt = dots(SILT, SAND, 150, 0.5, 0.9);
+const flecks = Array.from({ length: 9 }, (_, i) => ({ x: r1(JX0 + 10 + i * 11 + rand() * 4), y: r1(WATER + 3 + rand() * 4), r: Math.round(rand() * 120 - 60) }));
+const ticks = Array.from({ length: 10 }, (_, i) => JB - i * CM);
+const RX = JX1 + 8;
+const LX = 184;
+const lines = (text: string, max = 30) => wrap(text, max);
+const mid = (a: number, b: number) => (a + b) / 2;
+const rows = [
+  { name: labels.sand, share: shares[0], y: mid(SAND, JB) },
+  { name: labels.silt, share: shares[1], y: mid(SILT, SAND) },
+  { name: labels.clay, share: shares[2], y: mid(CLAY, SILT) },
+].map((r) => {
+  const l = lines(r.name);
+  const top = r.y - ((l.length + 1) * 16) / 2 + 11;
+  return { ...r, lines: l, top };
+});
+const organic = lines(labels.organic, 30);
+---
+<div class="guide-soiljar">
+  <svg viewBox="0 0 400 312" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    <text x={LX} y="20" class="guide-soiljar-example">{labels.example}</text>
+    {/* Water, then the three bands. */}
+    <rect x={JX0} y={WATER} width={JX1 - JX0} height={CLAY - WATER} class="guide-soiljar-water" />
+    <rect x={JX0} y={CLAY} width={JX1 - JX0} height={SILT - CLAY} class="guide-soiljar-clay" />
+    <rect x={JX0} y={SILT} width={JX1 - JX0} height={SAND - SILT} class="guide-soiljar-silt" />
+    {silt.map((d) => <circle cx={d.x} cy={d.y} r={d.r} class="guide-soiljar-dot" />)}
+    <rect x={JX0} y={SAND} width={JX1 - JX0} height={JB - SAND} class="guide-soiljar-sand" />
+    {sand.map((d) => <circle cx={d.x} cy={d.y} r={d.r} class="guide-soiljar-dot" />)}
+    {flecks.map((f) => <rect x={f.x - 3.5} y={f.y - 1.2} width="7" height="2.4" rx="1" transform={`rotate(${f.r} ${f.x} ${f.y})`} class="guide-soiljar-fleck" />)}
+    {/* The glass: shoulders, neck and lid. */}
+    <path d={`M${JX0} ${WATER - 22}V${JB}H${JX1}V${WATER - 22}Q${JX1} ${WATER - 36} ${JX1 - 18} ${WATER - 40}H${JX0 + 18}Q${JX0} ${WATER - 36} ${JX0} ${WATER - 22}Z`} class="guide-soiljar-glass" />
+    <rect x={JX0 + 14} y={WATER - 54} width={JX1 - JX0 - 28} height="14" rx="2" class="guide-soiljar-lid" />
+    {/* Ruler: one tick per centimetre. */}
+    <rect x={RX} y={JB - 9 * CM - 4} width="18" height={9 * CM + 8} rx="2" class="guide-soiljar-ruler" />
+    {ticks.map((y, i) => <path d={`M${RX} ${y}h${i % 5 === 0 ? 10 : 6}`} class="guide-soiljar-tick" />)}
+    {/* Band labels with leaders, and each band's share. */}
+    {rows.map((r) => (
+      <>
+        <path d={`M${LX - 4} ${r.y}H${RX + 22}`} class="guide-soiljar-leader" />
+        {r.lines.map((t, i) => <text x={LX} y={r.top + i * 16} class="guide-soiljar-label guide-soiljar-strong">{t}</text>)}
+        <text x={LX} y={r.top + r.lines.length * 16} class="guide-soiljar-label guide-soiljar-share">{r.share}</text>
+      </>
+    ))}
+    <path d={`M${LX - 4} ${WATER - 2}H${JX1 - 30}`} class="guide-soiljar-leader" />
+    {organic.map((t, i) => <text x={LX} y={WATER + 2 - (organic.length - 1) * 16 + i * 16} class="guide-soiljar-label">{t}</text>)}
+    <text x={JX0 - 4} y="300" class="guide-soiljar-sum">{labels.sum}</text>
+  </svg>
+</div>
+
+<style>
+  .guide-soiljar { max-width: 32rem; }
+  .guide-soiljar svg { width: 100%; height: auto; }
+  .guide-soiljar-water { fill: var(--surface-alt); }
+  .guide-soiljar-clay { fill: var(--soil-2); }
+  .guide-soiljar-silt { fill: var(--soil-1); }
+  .guide-soiljar-sand { fill: var(--soil-3); }
+  .guide-soiljar-dot { fill: var(--soil-grain); opacity: 0.8; }
+  .guide-soiljar-fleck { fill: var(--leaf-brown); }
+  .guide-soiljar-glass { fill: none; stroke: var(--text-muted); stroke-width: 2; }
+  .guide-soiljar-lid { fill: var(--border-strong); }
+  .guide-soiljar-ruler { fill: var(--surface); stroke: var(--text-muted); stroke-width: 1; }
+  .guide-soiljar-tick { stroke: var(--text-muted); stroke-width: 1; }
+  .guide-soiljar-leader { fill: none; stroke: var(--text-muted); stroke-width: 0.9; }
+  .guide-soiljar .guide-soiljar-label { font-size: 14px; fill: var(--text); }
+  .guide-soiljar .guide-soiljar-strong { font-weight: 600; }
+  .guide-soiljar .guide-soiljar-share { fill: var(--accent-ink); font-weight: 600; }
+  .guide-soiljar .guide-soiljar-example { font-size: 13px; font-weight: 600; fill: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+  .guide-soiljar .guide-soiljar-sum { font-size: 14px; font-weight: 600; fill: var(--accent-ink); }
+</style>

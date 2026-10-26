@@ -1,0 +1,79 @@
+---
+// What's in your soil: a pitfall trap in cross-section. A cup is sunk so its rim is level with the
+// soil surface; a small roof on two sticks keeps rain out; a beetle walks toward the rim. The cup is
+// empty (no killing agent: the guide advises against it). Labels come from the MDX and wrap.
+import { r1, rng, seedOf, wrap } from '../../../../lib/svg';
+interface Props {
+  title: string;
+  alt: string;
+  labels: { rim: string; cover: string; cup: string };
+}
+const { title, alt, labels } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-pitfall-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+// Ground surface at G; soil from x 8 to SX down to SB (labels sit to its right). The cup from CX0 to CX1 at the rim, narrower at its base CB.
+const G = 128, SB = 230, SX = 280, CX0 = 150, CX1 = 216, CB = 204;
+const rand = rng(seedOf('pitfall-trap'));
+const grains = Array.from({ length: 70 }, () => {
+  let x = 12 + rand() * (SX - 16);
+  const y = G + 6 + rand() * (SB - G - 12);
+  if (x > CX0 - 6 && x < CX1 + 6 && y < CB + 6) x = x < (CX0 + CX1) / 2 ? CX0 - 10 - rand() * 30 : CX1 + 10 + rand() * 30;
+  return { x: r1(x), y: r1(y), r: r1(1 + rand() * 1.8) };
+});
+const cup = `M${CX0} ${G}L${CX0 + 7} ${CB}Q${CX0 + 8} ${CB + 6} ${CX0 + 14} ${CB + 6}H${CX1 - 14}Q${CX1 - 8} ${CB + 6} ${CX1 - 7} ${CB}L${CX1} ${G}`;
+// The roof: a board on two sticks, wider than the cup.
+const ROOF = 66;
+const BX = 92;
+const labelAt = (text: string, x: number, y: number, max: number) => wrap(text, max).map((t, i) => ({ t, x, y: y + i * 16 }));
+const rimLines = labelAt(labels.rim, 12, 38, 16);
+const coverLines = labelAt(labels.cover, 290, 40, 14);
+const cupLines = labelAt(labels.cup, 290, 176, 14);
+---
+<div class="guide-pitfall">
+  <svg viewBox="0 0 400 236" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    <rect x="8" y={G} width={SX - 8} height={SB - G} rx="3" class="guide-pitfall-soil" />
+    {grains.map((g) => <circle cx={g.x} cy={g.y} r={g.r} class="guide-pitfall-grain" />)}
+    <path d={`${cup}Z`} class="guide-pitfall-hole" />
+    <path d={cup} class="guide-pitfall-cup" />
+    <path d={`M8 ${G}H${SX}`} class="guide-pitfall-surface" />
+    {/* Roof on two sticks. */}
+    <path d={`M${CX0 - 14} ${G}L${CX0 - 8} ${ROOF + 4}M${CX1 + 14} ${G}L${CX1 + 8} ${ROOF + 4}`} class="guide-pitfall-stick" />
+    <rect x={CX0 - 30} y={ROOF - 4} width={CX1 - CX0 + 60} height="8" rx="2" class="guide-pitfall-roof" />
+    {/* A beetle walking toward the rim. */}
+    <g transform={`translate(${BX} ${G - 6})`}>
+      <path d="M-9 4l-3 3M-3 5l-1 4M3 5l1 4M9 4l3 3M-6 -2l-4 -3M8 -2l4 -4" class="guide-pitfall-leg" />
+      <ellipse cx="0" cy="0" rx="11" ry="6" class="guide-pitfall-beetle" />
+      <circle cx="12" cy="-1" r="3.4" class="guide-pitfall-beetle" />
+      <path d="M0 -6V5" class="guide-pitfall-split" />
+    </g>
+    <path d={`M${BX + 22} ${G - 10}h18m-5 -4l5 4l-5 4`} class="guide-pitfall-arrow" />
+    {/* Labels and leaders. */}
+    {rimLines.map((l) => <text x={l.x} y={l.y} class="guide-pitfall-label guide-pitfall-strong">{l.t}</text>)}
+    <path d={`M${44} ${rimLines[rimLines.length - 1].y + 5}Q${100} ${G - 34} ${CX0 - 2} ${G - 2}`} class="guide-pitfall-leader" />
+    {coverLines.map((l) => <text x={l.x} y={l.y} class="guide-pitfall-label">{l.t}</text>)}
+    <path d={`M${286} ${44}L${CX1 + 26} ${ROOF}`} class="guide-pitfall-leader" />
+    {cupLines.map((l) => <text x={l.x} y={l.y} class="guide-pitfall-label">{l.t}</text>)}
+    <path d={`M${286} ${172}L${CX1 - 10} ${CB - 14}`} class="guide-pitfall-leader" />
+  </svg>
+</div>
+
+<style>
+  .guide-pitfall { max-width: 34rem; }
+  .guide-pitfall svg { width: 100%; height: auto; }
+  .guide-pitfall-soil { fill: var(--soil-1); }
+  .guide-pitfall-grain { fill: var(--soil-grain); opacity: 0.55; }
+  .guide-pitfall-hole { fill: var(--surface-alt); }
+  .guide-pitfall-cup { fill: none; stroke: var(--text); stroke-width: 2; stroke-linejoin: round; }
+  .guide-pitfall-surface { stroke: var(--soil-2); stroke-width: 2; }
+  .guide-pitfall-stick { stroke: var(--soil-2); stroke-width: 3; stroke-linecap: round; }
+  .guide-pitfall-roof { fill: var(--text-muted); }
+  .guide-pitfall-beetle { fill: var(--seed-2); }
+  .guide-pitfall-leg { fill: none; stroke: var(--seed-2); stroke-width: 1.3; stroke-linecap: round; }
+  .guide-pitfall-split { stroke: var(--soil-grain); stroke-width: 0.8; }
+  .guide-pitfall-arrow { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-pitfall-leader { fill: none; stroke: var(--text-muted); stroke-width: 0.9; }
+  .guide-pitfall .guide-pitfall-label { font-size: 14px; fill: var(--text); }
+  .guide-pitfall .guide-pitfall-strong { font-weight: 600; }
+</style>

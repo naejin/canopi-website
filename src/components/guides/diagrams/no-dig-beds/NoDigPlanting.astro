@@ -1,0 +1,82 @@
+---
+// Vegetable beds without digging: three small cross-sections of one bed, numbered 1-3 to match an HTML
+// key (so labels wrap in either language). (1) a dibber opening one hole, a seedling beside it; (2) a
+// shallow scratch along a row with seeds in it and compost backfilled over them; (3) the crop growing
+// under mulch with a bare ring at each stem. In every panel the soil below keeps its crumbs and a worm
+// burrow, marked by the key's fourth line. Soil tokens; plants in plant tokens only.
+import { r1, rng, seedOf } from '../../../../lib/svg';
+interface Props {
+  title: string;
+  alt: string;
+  labels: { hole: string; row: string; mulch: string; below: string };
+}
+const { title, alt, labels } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-nodig-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const PW = 128, GAP = 8, G = 82, SB = 168; // panel width, gap, soil surface, soil bottom
+const xs = [0, 1, 2].map((i) => 4 + i * (PW + GAP));
+const rand = rng(seedOf('no-dig-planting'));
+const crumbs = xs.map((x0) => Array.from({ length: 22 }, () => ({ x: r1(x0 + 6 + rand() * (PW - 12)), y: r1(G + 10 + rand() * (SB - G - 16)), r: r1(1.2 + rand() * 1.8) })));
+// A worm burrow winding down through each panel, and a short worm in it.
+const burrow = (x0: number) => `M${x0 + 92} ${G + 6}C${x0 + 80} ${G + 30} ${x0 + 110} ${G + 44} ${x0 + 96} ${G + 70}S${x0 + 84} ${SB - 6} ${x0 + 100} ${SB - 2}`;
+const worm = (x0: number) => `M${x0 + 99} ${G + 52}C${x0 + 104} ${G + 60} ${x0 + 98} ${G + 66} ${x0 + 96} ${G + 72}`;
+const seedling = (x: number, h: number) => `M${x} ${G}V${G - h}M${x} ${G - h + 2}q-9 -1 -12 -8q8 0 12 6zM${x} ${G - h + 2}q9 -1 12 -8q-8 0 -12 6z`;
+const [p1, p2, p3] = xs;
+---
+<div class="guide-nodig">
+  <svg viewBox="0 0 404 176" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    {xs.map((x0, i) => (
+      <>
+        <rect x={x0} y={G} width={PW} height={SB - G} rx="3" class="guide-nodig-soil" />
+        {crumbs[i].map((c) => <circle cx={c.x} cy={c.y} r={c.r} class="guide-nodig-crumb" />)}
+        <path d={burrow(x0)} class="guide-nodig-burrow" />
+        <path d={worm(x0)} class="guide-nodig-worm" />
+        <circle cx={x0 + 12} cy="14" r="9" class="guide-nodig-num" />
+        <text x={x0 + 12} y="18" text-anchor="middle" class="guide-nodig-numtext">{i + 1}</text>
+      </>
+    ))}
+    {/* 1: a dibber in its hole, a seedling waiting beside it. */}
+    <path d={`M${p1 + 50} ${G + 20}V${G + 2}`} class="guide-nodig-hole" />
+    <path d={`M${p1 + 50} ${G + 18}L${p1 + 45} ${G}V${G - 44}H${p1 + 55}V${G}Z`} class="guide-nodig-tool" />
+    <rect x={p1 + 42} y={G - 58} width="16" height="16" rx="5" class="guide-nodig-tool" />
+    <path d={seedling(p1 + 24, 22)} class="guide-nodig-plant" />
+    {/* 2: a shallow scratch with seeds, compost over them. */}
+    <path d={`M${p2 + 14} ${G}Q${p2 + 64} ${G + 16} ${p2 + 114} ${G}Z`} class="guide-nodig-compost" />
+    {[30, 50, 70, 90].map((dx) => <ellipse cx={p2 + dx} cy={G + 7} rx="3" ry="2" class="guide-nodig-seed" />)}
+    {/* 3: crop under mulch, a bare ring at each stem. */}
+    <rect x={p3} y={G - 8} width="20" height="8" class="guide-nodig-mulch" />
+    <rect x={p3 + 32} y={G - 8} width="48" height="8" class="guide-nodig-mulch" />
+    <rect x={p3 + 92} y={G - 8} width={PW - 92} height="8" class="guide-nodig-mulch" />
+    <path d={seedling(p3 + 26, 34)} class="guide-nodig-plant" />
+    <path d={seedling(p3 + 86, 40)} class="guide-nodig-plant" />
+  </svg>
+  <ol class="guide-nodig-key">
+    <li><b>1</b> {labels.hole}</li>
+    <li><b>2</b> {labels.row}</li>
+    <li><b>3</b> {labels.mulch}</li>
+    <li class="guide-nodig-below"><i></i> {labels.below}</li>
+  </ol>
+</div>
+
+<style>
+  .guide-nodig { display: grid; gap: 0.6rem; max-width: 36rem; }
+  .guide-nodig svg { width: 100%; height: auto; }
+  .guide-nodig-soil { fill: var(--soil-1); }
+  .guide-nodig-crumb { fill: var(--soil-grain); opacity: 0.55; }
+  .guide-nodig-burrow { fill: none; stroke: var(--soil-2); stroke-width: 5; stroke-linecap: round; }
+  .guide-nodig-worm { fill: none; stroke: var(--soil-worm); stroke-width: 3; stroke-linecap: round; }
+  .guide-nodig-num { fill: var(--accent); }
+  .guide-nodig .guide-nodig-numtext { font-size: 12px; font-weight: 600; fill: var(--on-accent); }
+  .guide-nodig-hole { stroke: var(--soil-2); stroke-width: 9; }
+  .guide-nodig-tool { fill: var(--text-muted); }
+  .guide-nodig-plant { fill: var(--leaf); stroke: var(--leaf); stroke-width: 2; stroke-linejoin: round; }
+  .guide-nodig-compost { fill: var(--soil-2); }
+  .guide-nodig-seed { fill: var(--seed-3); }
+  .guide-nodig-mulch { fill: var(--leaf-gold); opacity: 0.85; }
+  :global(.guide-body) .guide-nodig-key { display: grid; gap: 0.35rem; margin: 0; padding: 0; list-style: none; font-size: 0.88rem; line-height: 1.4; color: var(--text-secondary); }
+  :global(.guide-body) .guide-nodig-key li { display: flex; gap: 0.5rem; align-items: baseline; margin: 0; }
+  .guide-nodig-key b { display: inline-grid; place-items: center; flex: none; width: 1.2rem; height: 1.2rem; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 0.75rem; font-weight: 600; }
+  .guide-nodig-key i { display: inline-block; flex: none; width: 1.2rem; height: 0.35rem; border-radius: 2px; background: var(--soil-2); transform: translateY(-0.15rem); }
+</style>
