@@ -167,6 +167,15 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - year: 2018
 - fr: [Plantes sauvages comestibles](https://www.editions-larousse.fr/livre/plantes-sauvages-comestibles-9782036012981/)
 
+### Trees with Edible Leaves
+- id: trees-with-edible-leaves
+- by: Eric Toensmeier, Erica Klopf
+- year: 2022
+- en: [Trees with Edible Leaves: A Global Manual](https://perennialagricultureinstitute.wordpress.com/wp-content/uploads/2023/01/trees-with-edible-leaves.pdf)
+- fr: [Arbres à feuilles comestibles : Un manuel mondial](https://perennialagricultureinstitute.wordpress.com/2023/10/20/arbres-a-feuilles-comestibles-un-manuel-mondial/)
+- es: [Árboles con hojas comestibles](https://perennialagricultureinstitute.wordpress.com/2023/08/23/arboles-con-hojos-comestibles/)
+- de: [Bäume mit essbaren Blättern](https://perennialagricultureinstitute.wordpress.com/wp-content/uploads/2024/04/baume-mit-essbaren-blattern.pdf)
+
 ## Growing structures
 
 ### Walipini Design and Construction

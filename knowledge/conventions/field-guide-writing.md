@@ -3,7 +3,7 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T14:56:16Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:43:25Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T14:11:43Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:005aacd42f9794a1
-    last_modified: 2026-10-25T13:36:03Z
+    digest: sha256:038c6a3db0f76945
+    last_modified: 2026-10-26T13:42:36Z
   - id: decisions-field-guides-user-decisions
     resource: /decisions/field-guides-user-decisions.md
 enforced_by: [scripts/guides.test.mjs]
@@ -29,7 +29,7 @@ Every Field Guide (`src/content/guides/<slug>/{en,fr}.mdx`) follows these rules,
 - **Our own words.** No quotes from the book, no close paraphrase (no sentence following its wording or order), none of its images. Each guide lists its sources as bibliography book ids with chapter titles.
 - **No structural paraphrase.** Never follow the book's sentences, lists or anecdotes in its order with the words swapped. Build each section from the reader's question, keep an anecdote to one sentence, and pick two or three examples from a list in your own order.
 - **No chapter substitute.** A guide, or two guides together, must not keep most of one chapter's points even when each section is reordered: keep what the reader needs to act, and leave the author's incidental specifics (his containers, his recipes, his rankings, his lists of crops) in the book. Check coverage per chapter, not only per sentence.
-- **Do no harm.** Practices a spec tags [OMIT] are left out entirely. Food risks ([CAUTION]) appear only as `<FoodCaution risk>`, whose fixed text names the risk and sends readers to their food-safety authority; a guide never writes its own food warning. No doses, times, temperatures or methods for anything eaten, toxic or caustic.
+- **Warn, don't remove** (owner, 2026-10-26). Useful information stays even when it is dangerous: the guide keeps it and puts a clear warning beside it, so the site carries no liability. Food risks appear as `<FoodCaution risk>`, whose fixed text names the danger plainly and sends readers to their food-safety authority; a kitchen guide may also say in prose what a practice is, why it is done and what makes it dangerous, attributing the source's practice to its author. Never any figures for anything eaten, toxic or caustic: no ratios, doses, times or temperatures. Specs written before 2026-10-26 tag some items [OMIT]; those not yet re-audited stay out until the owner reviews them.
 - **Nothing in the mouth.** No test, check or selection puts anything in the mouth: no seeds, no raw plant parts, no berries, no unknown crosses, no teeth or bite tests (dryness is checked another way, such as the sun-jar check).
 - **House tasting rule.** Choosing by flavour happens at the table, never in the garden: only fruit of a crop the reader already eats, prepared the way they always prepare it, with the matching `<FoodCaution>` beside it. Nothing raw that is normally cooked, no unripe fruit, no leaves from plants going to seed, no seeds; a bitter fruit is not eaten and its seed is thrown out. The full wording is in Choosing seed parents ("Judge what you harvest"); other guides link to it rather than restate it.
 - **Attribute.** [ATTRIBUTE] and [HIS GARDEN] items are the author's view or his garden ("in Lofthouse's experience", `<HisGarden>`), never rules; his estimates (shares, lists of crops) name him. No outside figures: a general tip that is not from the book gives no counts, times or rates and is tagged `{/* general tip, not from the book */}`.

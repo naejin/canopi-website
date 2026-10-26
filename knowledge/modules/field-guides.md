@@ -4,7 +4,7 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:03Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:43:25Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T14:11:44Z }
 sources:
@@ -36,8 +36,8 @@ sources:
   - id: guides-ts-2
     resource: ../../src/i18n/guides.ts
     title: src/i18n/guides.ts
-    digest: sha256:9efdab5f460dc77c
-    last_modified: 2026-10-25T09:49:07Z
+    digest: sha256:332627fd392f356b
+    last_modified: 2026-10-26T13:42:36Z
   - id: glossary-ts
     resource: ../../src/data/glossary.ts
     title: src/data/glossary.ts
@@ -64,7 +64,7 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 
 # Interfaces
 
-- Frontmatter: `title`, one-sentence `description`, `domain` (seeds, crops, seasons, pests), `order`, `glance` (3 to 6 label/value pairs; the hero box wraps its cells, and a value over 40 characters gets a wider cell), `quick`, `sources` (`{ book: <bibliography id>, chapters: [titles] }`; chapter titles are the English edition's, so `BookCite` quotes them and, when the card shows another edition, adds a note naming the English edition rather than guessing translated titles), `related`, `updated`.
+- Frontmatter: `title`, one-sentence `description`, `domain` (seeds, crops, perennials, seasons, pests, kitchen), `order`, `glance` (3 to 6 label/value pairs; the hero box wraps its cells, and a value over 40 characters gets a wider cell), `quick`, `sources` (`{ book: <bibliography id>, chapters: [titles] }`; chapter titles are the English edition's, so `BookCite` quotes them and, when the card shows another edition, adds a note naming the English edition rather than guessing translated titles), `related`, `updated`.
 - Components (contract: [Field Guide components](/references/field-guide-components.md), which lists every prop and limit): QuickAnswer, Term, TermNote (placed by the plugin), Note, Safety, FoodCaution, HisGarden, Steps/Step, CropCards, CropCard, CropTable, CropExplorer, PollinationBadge, SeasonTimeline, YearsTimeline, PlotDiagram, FlowerDiagram, PlantingMixBar, Checklist/Item, Figure, Columns, Card, Points, NextGuides.
 - Ids are one per concept: `<Term id>` takes a glossary key, crop components a crop id; there are no alias maps. A crop cell the book does not give stays `null` and shows nothing.
 - `related` in frontmatter: two to four published guides (same list in en and fr); `NextGuides` links at section ends; in-text links to another guide's section use that page's heading id in the same language (French ids differ from English ones; `check-built-site.mjs` fails on a missing `#id`).

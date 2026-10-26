@@ -10,7 +10,7 @@ const src = new URL('../src/', import.meta.url).pathname;
 const read = (path) => readFileSync(join(src, path), 'utf8');
 const guideRoot = join(src, 'content/guides');
 const guideLangs = ['en', 'fr'];
-const domains = ['seeds', 'crops', 'seasons', 'pests'];
+const domains = ['seeds', 'crops', 'perennials', 'seasons', 'pests', 'kitchen'];
 // The 17 guides of the plan (knowledge/project/field-guides-plan.md). An in-text "next guides" link
 // may name one before it is written; the page shows it once it exists.
 const planned = [

@@ -108,12 +108,20 @@ export const countries = [
     labelKey: 'network.country.unitedStates',
     organisations: [
       {
+        name: 'Perennial Agriculture Institute',
+        url: 'https://perennialagricultureinstitute.wordpress.com/',
+      },
+      {
         name: 'Regenerative Organic Alliance',
         url: 'https://regenorganic.org/',
       },
       {
         name: 'Rodale Institute',
         url: 'https://rodaleinstitute.org/',
+      },
+      {
+        name: 'The Land Institute',
+        url: 'https://landinstitute.org/',
       },
     ],
   },

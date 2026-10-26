@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:46:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:43:25Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:04Z }
 sources:
@@ -25,8 +25,8 @@ sources:
   - id: food-risks-ts
     resource: ../../src/data/food-risks.ts
     title: src/data/food-risks.ts
-    digest: sha256:f38329bcba6a64f5
-    last_modified: 2026-10-25T10:07:51Z
+    digest: sha256:1d42c7bd59b0069a
+    last_modified: 2026-10-26T13:42:36Z
   - id: rehype-guide-terms-mjs
     resource: ../../src/lib/rehype-guide-terms.mjs
     title: src/lib/rehype-guide-terms.mjs
@@ -40,8 +40,8 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:005aacd42f9794a1
-    last_modified: 2026-10-25T13:36:03Z
+    digest: sha256:038c6a3db0f76945
+    last_modified: 2026-10-26T13:42:36Z
 enforced_by: [scripts/guides.test.mjs]
 ---
 
@@ -57,7 +57,7 @@ files exist. The slug must be one of the plan's slugs (`scripts/guides.test.mjs`
 ```yaml
 title: "Saving seed: dry and wet"          # required, non-empty
 description: "One sentence: what the reader can do after reading."   # 1-200 characters; meta description too
-domain: seeds        # seeds | crops | seasons | pests
+domain: seeds        # seeds | crops | perennials | seasons | pests | kitchen
 order: 7             # integer, sort within domain
 glance:              # 3 to 6 { label, value } pairs, shown in the hero strip
   - { label: "Skill", value: "Beginner" }
@@ -96,7 +96,8 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
 - `<Safety title="…">` one rule, one-line why `</Safety>` — `title` required.
 - `<FoodCaution risk="…" />` or `<FoodCaution risk={["ergot", "treated-seed"]} />` — `risk` required: one
   risk or a list, from `src/data/food-risks.ts`: bitter-cucurbits, dry-beans, nightshades,
-  potato-berries, corn-processing, treated-seed, fava, ergot, sprouted-or-surplus-seed. Fixed wording
+  potato-berries, corn-processing, treated-seed, fava, ergot, sprouted-or-surplus-seed, toxic-leaves,
+  home-canning. Fixed wording
   per language (`food.<risk>` in `src/i18n/guides/{en,fr}.json`); an unknown or repeated risk fails the
   build. A list is one box with one title and one paragraph per risk; two FoodCautions in a row fail
   `npm test` (combine them).

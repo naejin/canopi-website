@@ -4,7 +4,7 @@ title: Field Guides — user decisions
 description: Dated decisions the project owner made about the Field Guides section; they change only when the owner changes them.
 status: stable
 tags: [field-guides, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:56:55Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:43:00Z }
 ---
 
 # Field Guides — user decisions
@@ -23,6 +23,10 @@ any of them; a change is a question to the owner.
 | 2026-10-25 | Build **all the guides** in the guide map; judge every guide from the reader's side. |
 | 2026-10-25 | Organize docs and code with **OKF** (`knowledge/`, tool `python3 .okf/okf.pyz`). |
 | 2026-10-25 | **No safety or accuracy research.** Guides never write anything that could harm the reader, and phrase risky topics so the site carries no liability: leave out a practice rather than correct it with outside sources; where a topic touches food safety or toxicity, give no doses, times or methods, and point the reader to their local food-safety authority. The book's Utah-specific practices are framed as the author's garden, not universal rules. (Replaces the earlier plan to correct claims with mainstream sources.) |
+| 2026-10-26 | **Never remove useful information.** When something is dangerous (toxic species, risky practices), keep it and put a clear warning beside it so the site carries no liability. This replaces "leave out a practice" in the 2026-10-25 safety row; the rest of that row (no safety or accuracy research, the author's Utah practices framed as his garden) still holds. First use: toxic species in the *Trees with Edible Leaves* guide stay in, with a clear warning. |
+| 2026-10-26 | *Trees with Edible Leaves* (Toensmeier with Klopf, Perennial Agriculture Institute, 2022, CC BY-NC-ND) joins the bibliography (en, fr, es, de editions) and gets a Field Guide; it partly backs the excluded trees topic. The Land Institute joins the agroecology network (United States). |
+| 2026-10-26 | **Reopened under the warn-don't-remove rule:** the "Harvest to kitchen" domain returns with a Nixtamalization guide and a Cooking dry beans guide, and the squash guide covers the book's canning of squash purée. **Warnings and kitchen texts give no figures**: they say what is done and why, name the danger plainly (caustic lime, toxins in undercooked beans or leaves, botulism), attribute the book's practice to its author, give no ratios, doses, times or temperatures, and point to the national food-safety authority. The caution tests stay as they are. |
+| 2026-10-26 | *Trees with Edible Leaves* sits in a new index domain **Trees & perennials** (fr « Arbres et vivaces »), which later perennial sources (Crawford) can join. |
 | 2026-10-25 | Excluded until other sources back them: the book's last chapter on chickens, bees, mushrooms and trees. Canning mashed squash is never reproduced. |
 
 ## Where the source notes live

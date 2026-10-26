@@ -4,7 +4,7 @@ title: Field Guides plan
 description: Build plan for the 17 Field Guides drawn from Landrace Gardening — steps, streams, file ownership and exit criteria.
 status: stable
 tags: [field-guides, plan]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T09:08:04Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:43:00Z }
 ---
 
 # Field Guides plan
@@ -16,7 +16,8 @@ Per-guide specs (book-derived, gitignored): `.local/field-guides/specs/NN-slug.m
 Seeds & landraces: 01 landrace-gardening (hub), 02 hybrids-heirlooms-landraces, 03 will-they-cross, 04 hand-crosses, 05 choosing-seed-parents, 06 keeping-a-landrace, 07 saving-seed, 08 storing-seed.
 Crops: 09 squash-melons-cucumbers, 10 corn, 11 beans-and-legumes, 12 tomatoes, 13 small-grains, 14 true-seed-potato-garlic-sunroot.
 Seasons: 15 season-shifting, 16 food-all-year. Pests & resilience: 17 pests-without-sprays.
-Dropped (2026-10-25, safety rule): nixtamalization and cooking-beans guides; a short FoodCaution (no doses, times, methods, no outside links) appears in the crop guides instead.
+Trees & perennials: 18 trees-with-edible-leaves (source: *Trees with Edible Leaves*, Toensmeier with Klopf, 2022).
+Harvest to kitchen: 19 nixtamalization, 20 cooking-dry-beans (reopened 2026-10-26 under the warn-don't-remove rule; no figures).
 
 ## Step 1 — Foundation + hub (one stream, `foundation`)
 Owns: `package.json`, `package-lock.json`, `astro.config.mjs`, `src/content.config.ts`, `src/layouts|components/Base.astro`, `Header.astro`, `Footer.astro`, `src/components/guides/**`, `src/lib/svg.ts`, `src/data/crops.ts`, `src/data/glossary.ts`, `src/data/bibliography.md|.ts`, `src/components/Bibliography.astro`, `src/i18n/guides/*`, `src/i18n/translations/*.json` (nav + backlink keys only), `src/pages/guides/**`, `src/pages/[lang]/guides/**`, `src/styles/guides.css`, `src/styles/tokens.css`, `scripts/guides.test.mjs`, `scripts/homepage.test.mjs`, `scripts/check-built-site.mjs`, `src/content/guides/landrace-gardening/**`.
@@ -35,6 +36,12 @@ Exit per stream: en+fr guides render; review (bugs, reader usefulness, safety ru
 
 ## Step 3 — Integrate
 Hand-off branch for shared-file requests; cross-guide link pass (related/next), glossary completeness; real-browser check of every guide at 390/1280 light/dark; pre-push review of the whole diff; push to `master` (deploys).
+
+## Step 4 — Trees and kitchen (2026-10-26)
+Shared commit (main agent): domains `perennials` and `kitchen`, FoodCaution risks `toxic-leaves` and `home-canning`, bibliography id `trees-with-edible-leaves`, network entries.
+- S8 `trees`: 18 trees-with-edible-leaves. Source text: `.local/field-guides/trees-with-edible-leaves/` (CC BY-NC-ND: own words only, never translated or excerpted).
+- S9 `kitchen`: 19 nixtamalization + 20 cooking-dry-beans, plus the canning section of 09 squash and links from 10 corn and 11 beans.
+Exit: as step 2, plus every hazard in the sources stays in the guide with a warning (no figures).
 
 ## Tracker
 bd epic "Field Guides", one item per step and per stream, labels `guides-step-<n>`.
