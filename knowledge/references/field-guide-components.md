@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:04:56Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:34Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:04Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:2d49ed304707d9b1
-    last_modified: 2026-10-26T14:03:02Z
+    digest: sha256:f31e3424dd692109
+    last_modified: 2026-10-26T14:24:02Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -26,7 +26,7 @@ sources:
     resource: ../../src/data/food-risks.ts
     title: src/data/food-risks.ts
     digest: sha256:fb238afeb1de9b3d
-    last_modified: 2026-10-26T14:04:17Z
+    last_modified: 2026-10-26T14:04:58Z
   - id: rehype-guide-terms-mjs
     resource: ../../src/lib/rehype-guide-terms.mjs
     title: src/lib/rehype-guide-terms.mjs
@@ -40,8 +40,8 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:d5beb7555fec1beb
-    last_modified: 2026-10-26T14:04:17Z
+    digest: sha256:e888d0595a2776c8
+    last_modified: 2026-10-26T14:29:22Z
 enforced_by: [scripts/guides.test.mjs]
 ---
 
@@ -93,13 +93,15 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   inline in the flow. Readable without JavaScript in every case.
 - `<TermNote id="…" />` — placed automatically by the plugin; do not write it by hand.
 - `<Note title="…">` text `</Note>` — `title` optional. Free margin note at >= 960 px, inline below.
-- `<Safety title="…">` one rule, one-line why `</Safety>` — `title` required.
+- `<Safety title="…">` a danger and its rule, or the author's dangerous practice reported with the danger named (owner, 2026-10-26) `</Safety>` — `title` required; the only place a mouth word may appear.
 - `<FoodCaution risk="…" />` or `<FoodCaution risk={["ergot", "treated-seed"]} />` — `risk` required: one
   risk or a list, from `src/data/food-risks.ts`: bitter-cucurbits, dry-beans, nightshades,
   potato-berries, corn-processing, treated-seed, fava, ergot, sprouted-or-surplus-seed, toxic-leaves,
   home-canning, raw-tasting, wild-foods, home-fermentation. Fixed wording
   per language (`food.<risk>` in `src/i18n/guides/{en,fr}.json`); an unknown or repeated risk fails the
-  build. A list is one box with one title and one paragraph per risk; two FoodCautions in a row fail
+  build. A list is one box with one title and one paragraph per risk, and every box ends with one
+  `food.authority` paragraph (the national food-safety authority pointer; risk texts never repeat
+  it, and `npm test` and the built-site check enforce once per box); two FoodCautions in a row fail
   `npm test` (combine them).
 - `<HisGarden his="…" you="…" />` — both required: Lofthouse's practice or result in his garden,
   and what changes where the reader lives (qualitative only).

@@ -4,7 +4,7 @@ title: Field Guides plan
 description: Build plan for the 17 Field Guides drawn from Landrace Gardening — steps, streams, file ownership and exit criteria.
 status: stable
 tags: [field-guides, plan]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:43:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:34Z }
 ---
 
 # Field Guides plan
@@ -12,7 +12,7 @@ generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:43:00Z }
 Rules: [user decisions](/decisions/field-guides-user-decisions.md), [architecture](/decisions/field-guides-architecture.md), process: [agentic delivery](/runbooks/agentic-delivery.md).
 Per-guide specs (book-derived, gitignored): `.local/field-guides/specs/NN-slug.md`; map, glossary, crop table, component list: `00-map.md`.
 
-## Guides (17)
+## Guides (20)
 Seeds & landraces: 01 landrace-gardening (hub), 02 hybrids-heirlooms-landraces, 03 will-they-cross, 04 hand-crosses, 05 choosing-seed-parents, 06 keeping-a-landrace, 07 saving-seed, 08 storing-seed.
 Crops: 09 squash-melons-cucumbers, 10 corn, 11 beans-and-legumes, 12 tomatoes, 13 small-grains, 14 true-seed-potato-garlic-sunroot.
 Seasons: 15 season-shifting, 16 food-all-year. Pests & resilience: 17 pests-without-sprays.

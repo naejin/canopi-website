@@ -4,20 +4,20 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:43:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:44Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:04:57Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:44Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:d74731b42acaac17
-    last_modified: 2026-10-26T14:04:40Z
+    digest: sha256:410cd39fa13eb0bb
+    last_modified: 2026-10-26T14:29:22Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:2d49ed304707d9b1
-    last_modified: 2026-10-26T14:03:02Z
+    digest: sha256:f31e3424dd692109
+    last_modified: 2026-10-26T14:24:02Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
@@ -42,7 +42,7 @@ sources:
     resource: ../../src/data/glossary.ts
     title: src/data/glossary.ts
     digest: sha256:fef5202104bbd25c
-    last_modified: 2026-10-26T14:04:48Z
+    last_modified: 2026-10-26T14:04:58Z
   - id: crops-ts
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
@@ -68,7 +68,7 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 - Components (contract: [Field Guide components](/references/field-guide-components.md), which lists every prop and limit): QuickAnswer, Term, TermNote (placed by the plugin), Note, Safety, FoodCaution, HisGarden, Steps/Step, CropCards, CropCard, CropTable, CropExplorer, PollinationBadge, SeasonTimeline, YearsTimeline, PlotDiagram, FlowerDiagram, PlantingMixBar, Checklist/Item, Figure, Columns, Card, Points, NextGuides.
 - Ids are one per concept: `<Term id>` takes a glossary key, crop components a crop id; there are no alias maps. A crop cell the book does not give stays `null` and shows nothing.
 - `related` in frontmatter: two to four published guides (same list in en and fr); `NextGuides` links at section ends; in-text links to another guide's section use that page's heading id in the same language (French ids differ from English ones; `check-built-site.mjs` fails on a missing `#id`).
-- `<FoodCaution risk>` takes one risk or a list (`risk={['ergot', 'treated-seed']}`): several risks in one place are one box with one title, never two boxes in a row.
+- `<FoodCaution risk>` takes one risk or a list (`risk={['ergot', 'treated-seed']}`): several risks in one place are one box with one title, never two boxes in a row. Each box ends with the food-safety authority pointer once (`food.authority`).
 - `<CropTable>`: below 640px each crop is a block of label/value rows (cells carry `data-label`; a one-column table shows crop and value side by side), so no table scrolls sideways at 390px. Its "in Lofthouse's experience" note names only the crossing, ease or hybrid columns it shows.
 - Plain markdown tables in a guide body are styled like the crop table (`.guide-body > table`).
 - `<Term id>`: the rehype plugin wraps a term and the punctuation touching it (a following `,` `.` `;` `:` `?` `!` `»` with an optional no-break space, or an opening `«` / bracket) in `.guide-term-keep` (`white-space: nowrap`), so a line never starts with that punctuation. The first use per guide gets a `<TermNote>` (placed by the rehype plugin before the containing block). The term renders as a button plus a `hidden` plain-word twin. At >= 960px the note is a margin note, the button is `display: none` (no tab stop or popover in any engine) and the twin shows; below, the button opens the note as a `popover="auto"` card (Escape, outside tap or Close), described by the definition text alone. A note left open across a rotation to >= 960px stays a card until closed. Printed, notes show in the flow. Without popover support the note stays inline. `NextGuides` lists only published guides, so a section may name one not yet written.

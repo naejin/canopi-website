@@ -370,8 +370,8 @@ test('a mouth test appears only inside a <Safety> warning, as the author\'s prac
   // Owner, 2026-10-26: the book's mouth tests are reported with a warning, never as a step. Outside
   // a <Safety> box no prose may read as one. "Dent" is also an English corn type, so the French word
   // is checked in French files only.
-  const en = /\b(?:teeth|tooth|bites?|biting|bitten|chew(?:s|ing)? (?:a|the|one) seeds?|spits?|spat|spitting|suck(?:s|ed|ing)?|nibbl\w*)\b/i;
-  const fr = /(?<!\p{L})(?:dents?|mordre|mordez|mordant|croqu\p{L}*|mâch\p{L}*|recrach\p{L}*|suç\p{L}*|suc[eé]\p{L}*|grignot\p{L}*)(?!\p{L})/iu;
+  const en = /\b(?:teeth|tooth|bites?|biting|bitten|chew(?:s|ing)? (?:a|the|one) seeds?|spits?|spat|spitting|suck(?:s|ed|ing)? (?:on )?(?:(?:a|the|each) )?(?:seeds?|pods?|beans?)|nibbl\w* (?:on )?(?:(?:a|the|each) )?(?:leaf|leaves|seeds?|pods?|fruit|beans?|pieces?))\b/i;
+  const fr = /(?<!\p{L})(?:dents?|mordre|mordez|mordant|croqu\p{L}*|mâch\p{L}*|recrach\p{L}*|(?:suç\p{L}*|suc(?:e|er|ez|ent|é)) (?:la|les|une|des|chaque) (?:graines?|cosses?|feuilles?)|grignot\p{L}* (?:la|les|une|des|chaque) (?:graines?|cosses?|feuilles?))(?!\p{L})/iu;
   // A self-closing <Safety … /> has no body, so the box pattern must not run from it to the next </Safety>.
   const mouthHit = (body, lang) => body
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
@@ -380,6 +380,7 @@ test('a mouth test appears only inside a <Safety> warning, as the author\'s prac
   const box = (text) => `<Safety title="x">${text}</Safety>`;
   const samples = {
     en: ['He spits it out.', 'He spat it out.', 'He will nibble a leaf.', 'He nibbles each pod.', 'He likes to suck on the seed.', 'He sucks each seed.', 'He bites a pod.'],
+    // Pest prose stays allowed (asserted below).
     fr: ['Il le recrache.', 'Il faut recracher.', 'Il aime sucer la graine.', 'Il suce chaque graine.', 'Il suçait les graines.', 'Il va grignoter une feuille.', 'Il grignote une cosse.', 'Il croque une cosse.'],
   };
   for (const [lang, texts] of Object.entries(samples)) {
@@ -389,6 +390,8 @@ test('a mouth test appears only inside a <Safety> warning, as the author\'s prac
       assert.ok(mouthHit(`<Safety title="x" />\n${text}\n${box('ok')}`, lang), `${lang}: a self-closing <Safety /> hides "${text}"`);
     }
   }
+  for (const text of ['Slugs nibble seedlings.', 'Sap-sucking insects.']) assert.ok(!mouthHit(text, 'en'), `en: pest prose "${text}" is not a mouth test`);
+  for (const text of ['Les limaces grignotent les semis.', 'Des insectes suceurs.', 'Le suçoir du puceron.']) assert.ok(!mouthHit(text, 'fr'), `fr: pest prose "${text}" is not a mouth test`);
   for (const { body, file, lang } of guides) {
     const hit = mouthHit(body, lang);
     assert.ok(!hit, `${file}: "${hit}" reads as a mouth test; report it only inside a <Safety> warning`);
