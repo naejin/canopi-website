@@ -4,18 +4,20 @@ title: Existing agent instructions
 description: The durable project rules given to coding agents in AGENTS.md and CLAUDE.md, summarised with where each is enforced.
 tags: [convention, agents]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:35:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:04Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:04Z }
 sources:
   - id: agents-md
     resource: ../../AGENTS.md
     title: AGENTS.md
-    digest: sha256:629d011dd5766deb
-    last_modified: 2026-10-25T12:59:09Z
+    digest: sha256:eb22b22167a780e6
+    last_modified: 2026-10-26T20:05:29Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:eb745d32558061f9
-    last_modified: 2026-10-25T13:35:04Z
+    digest: sha256:b93580292134ee00
+    last_modified: 2026-10-26T20:05:29Z
 ---
 
 # Rule

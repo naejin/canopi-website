@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T18:19:11Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:07:50Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T19:30:44Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:6cf025581a1c4fbf
-    last_modified: 2026-10-26T18:22:29Z
+    digest: sha256:352698529ec6e820
+    last_modified: 2026-10-26T20:05:29Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -45,13 +45,13 @@ sources:
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
-    digest: sha256:3e43d083f5095132
-    last_modified: 2026-10-26T18:22:29Z
+    digest: sha256:c9c9922d5f6f718a
+    last_modified: 2026-10-26T20:05:29Z
   - id: guideherorow-astro
     resource: ../../src/components/guides/diagrams/GuideHeroRow.astro
     title: src/components/guides/diagrams/GuideHeroRow.astro
-    digest: sha256:ac623bcd6324b15f
-    last_modified: 2026-10-26T18:22:29Z
+    digest: sha256:13ff8bf6408c75be
+    last_modified: 2026-10-26T19:57:17Z
   - id: svg-ts
     resource: ../../src/lib/svg.ts
     title: src/lib/svg.ts
@@ -186,7 +186,7 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   beans · crops the guide's own seed (`cropSeeds`: kernels, squash-seeds, beans, grains, tomato-seeds,
   cloves) · perennials green leaves · seasons autumn leaves · pests ladybird, hoverfly, ground beetle ·
   kitchen corn kernels and beans. A new section needs an entry in `domainMotifs` and a new crops guide
-  one in `cropSeeds`, or `npm test` fails (and the build, for a crops guide). Shapes (`KERNEL_PATH`,
+  one in `cropSeeds`, or `npm test` and `npm run check` fail (and the build, for a crops guide). Shapes (`KERNEL_PATH`,
   `SQUASH_SEED_PATH`, `GRAIN_PATH`, `TOMATO_SEED_PATH`, `CLOVE_PATH`, `leafPath`, `lobedLeafPath`)
   are in `src/lib/svg.ts` beside `BEAN_PATH`, for any diagram to reuse.
 

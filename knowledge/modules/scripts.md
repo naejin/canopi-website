@@ -5,7 +5,7 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:29:34Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:03Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T19:30:43Z }
 sources:
@@ -17,8 +17,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:5d9131fcbc667bdb
-    last_modified: 2026-10-25T10:03:59Z
+    digest: sha256:8dabfa58ee33f2fa
+    last_modified: 2026-10-26T20:05:29Z
 ---
 
 # Responsibility
@@ -45,7 +45,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 
 # Dependencies
 
-- [src/lib](/modules/src-lib.md) and [src/data](/modules/src-data.md) (tests and checks read them); Node built-ins plus `js-yaml` (declared devDependency; guide frontmatter in `guides.test.mjs`); Python scripts need Pillow and SQLite. Tests import `.ts` data files directly, so `npm test` passes `--experimental-strip-types` (Node 22.12, the engines floor, does not strip types by default).
+- [src/lib](/modules/src-lib.md) and [src/data](/modules/src-data.md) (tests and checks read them); Node built-ins plus `js-yaml` (declared devDependency; guide frontmatter in `guides.test.mjs`); `npm run check` uses the devDependencies `typescript` and `@astrojs/check`, after `wrangler types`; Python scripts need Pillow and SQLite. Tests import `.ts` data files directly, so `npm test` passes `--experimental-strip-types` (Node 22.12, the engines floor, does not strip types by default).
 
 # Gotchas
 

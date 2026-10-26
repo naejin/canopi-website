@@ -4,9 +4,9 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T18:19:12Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:04Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T19:30:42Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:03Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -16,13 +16,13 @@ sources:
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:6cf025581a1c4fbf
-    last_modified: 2026-10-26T18:22:29Z
+    digest: sha256:352698529ec6e820
+    last_modified: 2026-10-26T20:05:29Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
-    digest: sha256:8327413bd9201981
-    last_modified: 2026-10-26T18:22:29Z
+    digest: sha256:ceac317ffef9fbff
+    last_modified: 2026-10-26T19:32:05Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -51,8 +51,8 @@ sources:
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
-    digest: sha256:3e43d083f5095132
-    last_modified: 2026-10-26T18:22:29Z
+    digest: sha256:c9c9922d5f6f718a
+    last_modified: 2026-10-26T20:05:29Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css

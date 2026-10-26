@@ -15,6 +15,7 @@ npm install
 npm run dev
 npm run build
 npm test
+npm run check
 npm run build:with-web
 npm run preview
 npm run deploy
@@ -82,7 +83,7 @@ it as the single download-link authority when release asset names change. The
 download dialog recommends a compatible desktop installer and keeps other
 platforms available without navigating through GitHub.
 
-Before publishing, run `npm test`, `npm run build`, and
+Before publishing, run `npm test`, `npm run check`, `npm run build`, and
 `node scripts/check-built-site.mjs`. Push to `master`, wait for the GitHub
 “Workers Builds: projectcanopi” check, then verify the live homepage and downloads.
 `npm run deploy` is an optional manual Wrangler path and requires Cloudflare

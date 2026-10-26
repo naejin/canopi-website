@@ -4,25 +4,25 @@ title: canopi-website
 description: Astro marketing site for projectcanopi.com, the home of the Canopi agroecological design app, deployed by Cloudflare Workers Builds on push to master.
 tags: [project]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T12:58:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:05Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T13:35:29Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:04Z }
 sources:
   - id: readme
     resource: ../../README.md
     title: README.md
-    digest: sha256:e81e871c562b557c
-    last_modified: 2026-10-14T21:57:40Z
+    digest: sha256:22edd4bb3671389f
+    last_modified: 2026-10-26T20:05:29Z
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:5d9131fcbc667bdb
-    last_modified: 2026-10-25T10:03:59Z
+    digest: sha256:8dabfa58ee33f2fa
+    last_modified: 2026-10-26T20:05:29Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:eb745d32558061f9
-    last_modified: 2026-10-25T13:35:04Z
+    digest: sha256:b93580292134ee00
+    last_modified: 2026-10-26T20:05:29Z
   - id: context-md
     resource: ../../CONTEXT.md
     title: CONTEXT.md

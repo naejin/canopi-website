@@ -4,7 +4,7 @@ title: Agentic delivery adapter
 description: Commands and places for running multi-agent work on this site with the phased-agentic-delivery skill.
 status: stable
 tags: [process]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T17:48:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:07:50Z }
 ---
 
 # Agentic delivery: canopi-website
@@ -18,8 +18,8 @@ generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T17:48:54Z }
 - Screenshots: `<worktree>/.local/shots/` (gitignored).
 
 ## Gates (run inside the worktree)
-- Affected / quick: `npm test`.
-- Full: `npm test && npm run build && node scripts/check-built-site.mjs`.
+- Affected / quick: `npm test && npm run check`.
+- Full: `npm test && npm run check && npm run build && node scripts/check-built-site.mjs`.
 - Ownership: each stream's brief lists its files; the reviewer checks `git diff --name-only guides/integration...HEAD` against it.
 - Merging streams: a conflict only in `knowledge/` source digest lines is resolved by taking either side, then `python3 .okf/okf.pyz sync` recomputes the digests.
 

@@ -133,6 +133,7 @@ npm run dev             # dev server
 npm run build           # marketing site only
 npm run build:with-web  # marketing site plus installed Web Edition artifact
 npm test                # installer regression tests
+npm run check           # type check (wrangler types, then astro check)
 npm run preview         # build with Web Edition artifact, then preview
 ```
 

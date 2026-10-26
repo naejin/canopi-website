@@ -4,20 +4,20 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:30:12Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:07:50Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:30:12Z }
 sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:5d9131fcbc667bdb
-    last_modified: 2026-10-25T10:03:59Z
+    digest: sha256:8dabfa58ee33f2fa
+    last_modified: 2026-10-26T20:05:29Z
   - id: readme
     resource: ../../README.md
     title: README.md
-    digest: sha256:e81e871c562b557c
-    last_modified: 2026-10-14T21:57:40Z
+    digest: sha256:22edd4bb3671389f
+    last_modified: 2026-10-26T20:05:29Z
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
@@ -38,6 +38,7 @@ Node >= 22.12.0.
 | install | `npm install` |
 | dev server (port 4321) | `npm run dev` |
 | unit/regression tests | `npm test` (`node --experimental-strip-types --test scripts/*.test.mjs`, so it runs on Node 22.12) |
+| type check | `npm run check` (`wrangler types` writes the gitignored `worker-configuration.d.ts`, then `astro check` type-checks `.ts` files and `.astro` frontmatter; MDX is not checked) |
 | marketing build | `npm run build` (runs `copy-maplibre.mjs` first) |
 | built-site check | `node scripts/check-built-site.mjs` |
 | bibliography links (network, by hand) | `npm run check:bibliography` |
@@ -46,7 +47,7 @@ Node >= 22.12.0.
 
 # Verification
 
-- `npm test`, `npm run build` and `node scripts/check-built-site.mjs` all pass with no assertion errors.
+- `npm test`, `npm run check` (0 errors; hints are allowed), `npm run build` and `node scripts/check-built-site.mjs` all pass.
 - After pushing `master`, the GitHub "Workers Builds: projectcanopi" check succeeds; then inspect the live homepage and downloads.
 
 # Troubleshooting

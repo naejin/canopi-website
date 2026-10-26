@@ -3,7 +3,7 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T18:19:11Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:03Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T19:30:42Z }
 sources:
@@ -22,14 +22,14 @@ sources:
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
-    digest: sha256:3e43d083f5095132
-    last_modified: 2026-10-26T18:22:29Z
+    digest: sha256:c9c9922d5f6f718a
+    last_modified: 2026-10-26T20:05:29Z
   - id: guides-ts
     resource: ../../src/i18n/guides.ts
     title: src/i18n/guides.ts
     digest: sha256:7e7acd2c7daf35eb
     last_modified: 2026-10-26T18:16:30Z
-enforced_by: [scripts/guides.test.mjs]
+enforced_by: [scripts/guides.test.mjs, package.json]
 ---
 
 # Rule
@@ -52,7 +52,7 @@ Every Field Guide (`src/content/guides/<slug>/{en,fr}.mdx`) follows these rules,
 
 # Enforcement
 
-`scripts/guides.test.mjs` (`npm test`): frontmatter and en/fr parity, known components only, Term/crop/FoodCaution/NextGuides ids resolve, same component sequence and ids in both languages, no amount of time (digits or words, e.g. "ten minutes"), temperature or method word (overnight, boil, soak and French forms) in cautions and safety text, no prose pairing boil/soak/ferment/cook with an amount of time (a heuristic with its own self-test; reviewers still read cautions), no glossary or crop alias maps, no tasting, flavour or cooking words in checklist items, no double-encoded characters (mojibake) in guide text or guide strings, mouth words only inside a `<Safety>` box (en: teeth, tooth, bite, chew a seed, spit, suck or nibble a seed, pod or leaf; fr: dent, mordre, croquer, mâcher, recracher, sucer or grignoter une graine, cosse ou feuille; pest prose such as "slugs nibble seedlings" stays allowed), one food-safety authority pointer per FoodCaution box, no two `<FoodCaution>` boxes in a row, no links in food texts, glossary and crop table completeness, no colour literals or outside assets, `guide-` class prefix, a hero motif for every section and a seed kind for every crops guide. `scripts/check-built-site.mjs` checks the built pages. Own words, omissions and attribution are checked by review against the spec.
+`npm run check` fails a section missing from `domainMotifs` (typed `Record<GuideDomain, …>`). `scripts/guides.test.mjs` (`npm test`): frontmatter and en/fr parity, known components only, Term/crop/FoodCaution/NextGuides ids resolve, same component sequence and ids in both languages, no amount of time (digits or words, e.g. "ten minutes"), temperature or method word (overnight, boil, soak and French forms) in cautions and safety text, no prose pairing boil/soak/ferment/cook with an amount of time (a heuristic with its own self-test; reviewers still read cautions), no glossary or crop alias maps, no tasting, flavour or cooking words in checklist items, no double-encoded characters (mojibake) in guide text or guide strings, mouth words only inside a `<Safety>` box (en: teeth, tooth, bite, chew a seed, spit, suck or nibble a seed, pod or leaf; fr: dent, mordre, croquer, mâcher, recracher, sucer or grignoter une graine, cosse ou feuille; pest prose such as "slugs nibble seedlings" stays allowed), one food-safety authority pointer per FoodCaution box, no two `<FoodCaution>` boxes in a row, no links in food texts, glossary and crop table completeness, no colour literals or outside assets, `guide-` class prefix, a hero motif for every section and a seed kind for every crops guide. `scripts/check-built-site.mjs` checks the built pages. Own words, omissions and attribution are checked by review against the spec.
 
 # Examples
 
