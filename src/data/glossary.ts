@@ -334,7 +334,7 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
   },
   'anaerobic': {
     en: { term: 'Anaerobic', definition: 'Living without air; in soil or compost it brings sour, rotten smells.' },
-    fr: { term: 'Anaérobie', definition: 'Qui vit sans air ; dans le sol ou le compost, il s’accompagne d’odeurs aigres ou de pourri.' },
+    fr: { term: 'Anaérobie', definition: 'Qui vit sans air ; dans le sol ou le compost, l’absence d’air donne des odeurs aigres ou de pourri.' },
   },
   'berlese-funnel': {
     en: { term: 'Berlese funnel', definition: 'A funnel of soil under a lamp that drives tiny animals down through a mesh into a pot to be counted.' },
@@ -402,7 +402,7 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
   },
   'biofilm': {
     en: { term: 'Biofilm', definition: 'A slimy layer of bacteria stuck to a surface, such as the inside of a brewing bucket.' },
-    fr: { term: 'Biofilm', definition: 'Une couche visqueuse de bactéries collée à une surface, comme l’intérieur d’un seau de brassage.' },
+    fr: { term: 'Biofilm', definition: 'Une couche visqueuse de bactéries collée à une surface, comme l’intérieur d’un seau où bulle le thé.' },
   },
   'no-dig': {
     en: { term: 'No-dig', definition: 'Growing without turning the soil, adding organic matter on top and letting soil life mix it in.' },
