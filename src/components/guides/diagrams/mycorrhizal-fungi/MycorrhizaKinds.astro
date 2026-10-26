@@ -1,0 +1,100 @@
+---
+// Mycorrhizal fungi: the two kinds side by side, as a root cut across. Left (ecto): a thick fungal sheath
+// around the root and a net of threads between its outer cells; above ground, a conifer, a broad-leaved
+// tree and a mushroom. Right (arbuscular): threads that enter the root and branch inside a few of its
+// cells; above ground, grass and a leafy vegetable and no mushroom. kinds gives each side's title, note
+// and plant list; none is the line about plants with no partner. All are HTML under the drawing, so
+// they wrap in the reader's language.
+import { r1 } from '../../../../lib/svg';
+interface Kind { title: string; note: string; plants: string; }
+interface Props { title: string; alt: string; kinds: [Kind, Kind]; none: string; }
+const { title, alt, kinds, none } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-mykinds-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const W = 150, GAP = 12, G = 50, CX = 75, CY = 118;
+const ring = (n: number, rad: number, r: number, off = 0) =>
+  Array.from({ length: n }, (_, i) => {
+    const a = ((i + off) / n) * Math.PI * 2;
+    return { x: r1(CX + Math.cos(a) * rad), y: r1(CY + Math.sin(a) * rad), r };
+  });
+const cells = [...ring(9, 17, 5.6), ...ring(14, 27.5, 5.4, 0.3), ...ring(20, 37, 3.9)];
+// Ecto: the net between outer cells (short radial strokes between epidermal cells).
+const hartig = Array.from({ length: 20 }, (_, i) => {
+  const a = ((i + 0.5) / 20) * Math.PI * 2;
+  return `M${r1(CX + Math.cos(a) * 32)} ${r1(CY + Math.sin(a) * 32)}L${r1(CX + Math.cos(a) * 41)} ${r1(CY + Math.sin(a) * 41)}`;
+});
+const ectoOut = Array.from({ length: 9 }, (_, i) => {
+  const a = (i / 9) * Math.PI * 2 + 0.2;
+  const p = (k: number, w: number) => `${r1(CX + Math.cos(a + w) * k)} ${r1(CY + Math.sin(a + w) * k)}`;
+  return `M${p(45, 0)}Q${p(52, 0.12)} ${p(58, -0.04)}T${p(66, 0.06)}`;
+});
+// Arbuscular: threads from the soil into the root, ending in small branched shapes inside cells.
+const amCells = [0, 4, 7, 11].map((i) => cells[9 + i]);
+const amThreads = amCells.map((c) => {
+  const a = Math.atan2(c.y - CY, c.x - CX);
+  const o = (k: number, w: number) => `${r1(CX + Math.cos(a + w) * k)} ${r1(CY + Math.sin(a + w) * k)}`;
+  return `M${o(66, 0.18)}Q${o(52, -0.1)} ${o(41, 0.05)}L${c.x} ${c.y}`;
+});
+const arbuscule = (x: number, y: number) => `M${x} ${r1(y + 3)}V${y}M${x} ${y}l-2.4 -2.4M${x} ${y}l2.4 -2.4M${r1(x - 1.2)} ${r1(y - 1.2)}l-0.6 -2M${r1(x + 1.2)} ${r1(y - 1.2)}l0.6 -2`;
+---
+<div class="guide-mykinds">
+  <svg viewBox={`0 0 ${W * 2 + GAP} 192`} role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    {[0, W + GAP].map((ox, side) => (
+      <g transform={`translate(${ox} 0)`}>
+        <rect x="0" y={G} width={W} height={192 - G} rx="6" class="guide-mykinds-soil" />
+        <line x1="0" y1={G} x2={W} y2={G} class="guide-mykinds-ground" />
+        {side === 0 ? (
+          <g>
+            <path d={`M24 ${G}V${G - 6}M14 ${G - 6}L24 ${G - 38}L34 ${G - 6}Z`} class="guide-mykinds-plant" />
+            <path d={`M118 ${G}V${G - 14}`} class="guide-mykinds-trunk" />
+            <circle cx="118" cy={G - 26} r="14" class="guide-mykinds-plant" />
+            <path d={`M70 ${G}V${G - 9}`} class="guide-mykinds-stalk" />
+            <path d={`M60 ${G - 9}Q70 ${G - 24} 80 ${G - 9}Z`} class="guide-mykinds-cap" />
+          </g>
+        ) : (
+          <g>
+            <path d={`M28 ${G}Q24 ${G - 18} 18 ${G - 26}M30 ${G}Q30 ${G - 20} 32 ${G - 30}M32 ${G}Q38 ${G - 16} 44 ${G - 22}`} class="guide-mykinds-blade" />
+            <path d={`M112 ${G}Q98 ${G - 8} 96 ${G - 22}Q108 ${G - 18} 112 ${G}ZM112 ${G}Q126 ${G - 8} 128 ${G - 22}Q116 ${G - 18} 112 ${G}ZM112 ${G}Q106 ${G - 20} 112 ${G - 30}Q118 ${G - 20} 112 ${G}Z`} class="guide-mykinds-plant" />
+          </g>
+        )}
+        {side === 0 && <circle cx={CX} cy={CY} r="45" class="guide-mykinds-sheath" />}
+        <circle cx={CX} cy={CY} r="41.5" class="guide-mykinds-skin" />
+        {cells.map((c) => <circle cx={c.x} cy={c.y} r={c.r} class="guide-mykinds-cell" />)}
+        <circle cx={CX} cy={CY} r="9" class="guide-mykinds-core" />
+        {side === 0 && hartig.map((d) => <path d={d} class="guide-mykinds-thread" />)}
+        {side === 0 && ectoOut.map((d) => <path d={d} class="guide-mykinds-thread" />)}
+        {side === 1 && amThreads.map((d) => <path d={d} class="guide-mykinds-thread" />)}
+        {side === 1 && amCells.map((c) => <path d={arbuscule(c.x, r1(c.y + 1))} class="guide-mykinds-arb" />)}
+      </g>
+    ))}
+  </svg>
+  <div class="guide-mykinds-key">
+    {kinds.map((k) => <p><b>{k.title}</b><span>{k.note}</span><span class="guide-mykinds-plants">{k.plants}</span></p>)}
+  </div>
+  <p class="guide-mykinds-none">{none}</p>
+</div>
+
+<style>
+  .guide-mykinds { display: grid; gap: 0.45rem; max-width: 32rem; }
+  .guide-mykinds svg { width: 100%; height: auto; }
+  .guide-mykinds-soil { fill: var(--soil-2); opacity: 0.2; }
+  .guide-mykinds-ground { stroke: var(--soil-2); stroke-width: 1.4; }
+  .guide-mykinds-plant { fill: var(--leaf); opacity: 0.85; stroke: var(--leaf); stroke-width: 1; stroke-linejoin: round; }
+  .guide-mykinds-trunk { stroke: var(--leaf-brown); stroke-width: 3; }
+  .guide-mykinds-blade { fill: none; stroke: var(--leaf); stroke-width: 2.2; stroke-linecap: round; }
+  .guide-mykinds-stalk { stroke: var(--soil-grain); stroke-width: 4; stroke-linecap: round; }
+  .guide-mykinds-cap { fill: var(--soil-3); stroke: var(--soil-2); stroke-width: 1; }
+  .guide-mykinds-sheath { fill: none; stroke: var(--soil-hypha); stroke-width: 7; opacity: 0.9; }
+  .guide-mykinds-skin { fill: var(--surface-alt); stroke: var(--text-muted); stroke-width: 1; }
+  .guide-mykinds-cell { fill: var(--surface); stroke: var(--text-muted); stroke-width: 0.8; }
+  .guide-mykinds-core { fill: var(--text-muted); opacity: 0.55; }
+  .guide-mykinds-thread { fill: none; stroke: var(--soil-hypha); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-mykinds-arb { fill: none; stroke: var(--soil-1); stroke-width: 0.9; stroke-linecap: round; }
+  :global(.guide-body) .guide-mykinds-key { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+  :global(.guide-body) .guide-mykinds-key p { display: grid; gap: 0.1rem; margin: 0; font-size: 0.88rem; line-height: 1.35; color: var(--text-secondary); text-align: center; }
+  .guide-mykinds-key b { color: var(--text); font-weight: 600; }
+  .guide-mykinds-plants { color: var(--text); }
+  :global(.guide-body) .guide-mykinds-none { margin: 0; padding-top: 0.4rem; border-top: 1px solid var(--border); font-size: 0.88rem; line-height: 1.35; color: var(--text-secondary); text-align: center; }
+</style>

@@ -1,0 +1,79 @@
+---
+// Mycorrhizal fungi: the same root tip in the same soil, twice. Left, the root alone, with a dashed
+// used-up zone around it. Right, the root with its fungus: fine threads run from the root far past
+// that zone, into the narrow gaps between soil crumbs. No numbers. panels gives each side's title and
+// note (HTML under the drawing, so they wrap in the reader's language); alt describes the whole figure.
+import { rng, seedOf, r1 } from '../../../../lib/svg';
+interface Panel { title: string; note: string; }
+interface Props { title: string; alt: string; panels: [Panel, Panel]; }
+const { title, alt, panels } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-hyreach-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const rand = rng(seedOf('mycorrhizal-fungi/HyphaeReach'));
+const W = 150, H = 170, GAP = 12;
+// Soil crumbs: the same layout in both panels, kept clear of the root's path (x 62 to 88).
+const crumbs: { x: number; y: number; rx: number; ry: number; a: number; c: number }[] = [];
+while (crumbs.length < 34) {
+  const x = 8 + rand() * (W - 16), y = 14 + rand() * (H - 22);
+  if (Math.abs(x - 75) < 22 && y < 150) continue;
+  if (crumbs.some((c) => Math.hypot(c.x - x, c.y - y) < 17)) continue;
+  crumbs.push({ x: r1(x), y: r1(y), rx: r1(5 + rand() * 4), ry: r1(4 + rand() * 3), a: Math.round(rand() * 180), c: 1 + Math.floor(rand() * 3) });
+}
+// The root: from the top down to a rounded tip, with a few short side roots.
+const root = 'M71 0C70 40 72 80 73 118Q75 134 77 118C78 80 80 40 79 0Z';
+const sideRoots = ['M73 54Q62 62 56 74', 'M77 88Q88 96 92 108'];
+// Threads (right panel): from points along the root, wandering out between the crumbs.
+const threads: string[] = [];
+const starts: [number, number, number][] = [[72, 30, -1], [78, 44, 1], [72, 70, -1], [78, 76, 1], [73, 100, -1], [77, 110, 1], [75, 128, -1], [76, 130, 1], [56, 74, -1], [92, 108, 1]];
+for (const [x0, y0, dir] of starts) {
+  let x = x0, y = y0, d = `M${x} ${y}`;
+  const angle0 = (dir < 0 ? Math.PI : 0) + (rand() - 0.5) * 1.2;
+  let a = angle0;
+  for (let k = 0; k < 7; k++) {
+    a += (rand() - 0.5) * 0.9;
+    x = Math.min(W - 3, Math.max(3, x + Math.cos(a) * 10));
+    y = Math.min(H - 3, Math.max(3, y + Math.sin(a) * 10));
+    d += `L${r1(x)} ${r1(y)}`;
+  }
+  threads.push(d);
+  // one branch off each thread
+  const bx = x0 + (x - x0) * 0.5, by = y0 + (y - y0) * 0.5;
+  threads.push(`M${r1(bx)} ${r1(by)}l${r1(Math.cos(a + 1) * 14)} ${r1(Math.sin(a + 1) * 14)}l${r1(Math.cos(a + 0.4) * 9)} ${r1(Math.sin(a + 0.4) * 9)}`);
+}
+---
+<div class="guide-hyreach">
+  <svg viewBox={`0 0 ${W * 2 + GAP} ${H}`} role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    {[0, W + GAP].map((ox, side) => (
+      <g transform={`translate(${ox} 0)`}>
+        <rect x="0" y="0" width={W} height={H} rx="6" class="guide-hyreach-soil" />
+        {crumbs.map((c) => <ellipse cx={c.x} cy={c.y} rx={c.rx} ry={c.ry} transform={`rotate(${c.a} ${c.x} ${c.y})`} class={`guide-hyreach-crumb guide-hyreach-crumb-${c.c}`} />)}
+        <path d="M75 -6C46 -6 44 40 46 90Q50 150 75 150Q100 150 104 90C106 40 104 -6 75 -6Z" class="guide-hyreach-halo" />
+        {side === 1 && threads.map((d) => <path d={d} class="guide-hyreach-thread" />)}
+        {sideRoots.map((d) => <path d={d} class="guide-hyreach-side" />)}
+        <path d={root} class="guide-hyreach-root" />
+      </g>
+    ))}
+  </svg>
+  <div class="guide-hyreach-key">
+    {panels.map((p) => <p><b>{p.title}</b><span>{p.note}</span></p>)}
+  </div>
+</div>
+
+<style>
+  .guide-hyreach { display: grid; gap: 0.45rem; max-width: 32rem; }
+  .guide-hyreach svg { width: 100%; height: auto; }
+  .guide-hyreach-soil { fill: var(--soil-2); opacity: 0.22; }
+  .guide-hyreach-crumb { stroke: none; }
+  .guide-hyreach-crumb-1 { fill: var(--soil-1); opacity: 0.7; }
+  .guide-hyreach-crumb-2 { fill: var(--soil-2); opacity: 0.7; }
+  .guide-hyreach-crumb-3 { fill: var(--soil-3); opacity: 0.7; }
+  .guide-hyreach-halo { fill: var(--surface); opacity: 0.6; stroke: var(--text-muted); stroke-width: 1.2; stroke-dasharray: 3 2; }
+  .guide-hyreach-thread { fill: none; stroke: var(--soil-hypha); stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-hyreach-root { fill: var(--text-muted); }
+  .guide-hyreach-side { fill: none; stroke: var(--text-muted); stroke-width: 3; stroke-linecap: round; }
+  :global(.guide-body) .guide-hyreach-key { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+  :global(.guide-body) .guide-hyreach-key p { display: grid; gap: 0.1rem; margin: 0; font-size: 0.88rem; line-height: 1.35; color: var(--text-secondary); text-align: center; }
+  .guide-hyreach-key b { color: var(--text); font-weight: 600; }
+</style>
