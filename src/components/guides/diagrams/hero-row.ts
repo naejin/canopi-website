@@ -4,13 +4,14 @@
 // heroMotif() fails the build for a crops guide with no seed kind. Drawn by GuideHeroRow.astro.
 import type { GuideDomain } from '../../../i18n/guides';
 
-export const heroMotifs = ['beans', 'kernels', 'squash-seeds', 'grains', 'tomato-seeds', 'cloves', 'leaves', 'autumn-leaves', 'insects', 'kernels-and-beans'] as const;
+export const heroMotifs = ['beans', 'kernels', 'squash-seeds', 'grains', 'tomato-seeds', 'cloves', 'leaves', 'autumn-leaves', 'insects', 'kernels-and-beans', 'soil-crumbs'] as const;
 export type HeroMotif = (typeof heroMotifs)[number];
 export type CropSeed = Extract<HeroMotif, 'kernels' | 'squash-seeds' | 'beans' | 'grains' | 'tomato-seeds' | 'cloves'>;
 
 export const domainMotifs: Record<GuideDomain, HeroMotif | 'crop-seed'> = {
   seeds: 'beans',
   crops: 'crop-seed',
+  soil: 'soil-crumbs',
   perennials: 'leaves',
   seasons: 'autumn-leaves',
   pests: 'insects',

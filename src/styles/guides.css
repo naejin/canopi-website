@@ -51,6 +51,12 @@
 .guide-hero-wing { fill: var(--seed-3); opacity: 0.6; stroke: var(--border-strong); stroke-width: 0.4; }
 .guide-hero-sheen { stroke: var(--seed-5); stroke-width: 0.6; }
 .guide-hero-ridge { fill: none; stroke: var(--surface); stroke-width: 0.5; opacity: 0.3; }
+.guide-soil-1 { fill: var(--soil-1); } .guide-soil-2 { fill: var(--soil-2); } .guide-soil-3 { fill: var(--soil-3); }
+.guide-hero-grain { fill: var(--soil-grain); }
+.guide-hero-hypha { fill: none; stroke: var(--soil-hypha); stroke-width: 1; stroke-linecap: round; }
+.guide-hero-worm { fill: none; stroke: var(--soil-worm); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.guide-hero-worm-band { fill: none; stroke: var(--soil-worm-band); stroke-width: 7.5; }
+.guide-hero-worm-ring { fill: none; stroke: var(--surface); stroke-width: 6; stroke-dasharray: 0.6 4.2; opacity: 0.55; }
 .guide-glance {
   display: flex; flex-wrap: wrap; margin: 0;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden;

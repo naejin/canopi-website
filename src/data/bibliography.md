@@ -85,6 +85,7 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 ## Soil
 
 ### Teaming with Microbes
+- id: teaming-with-microbes
 - by: Jeff Lowenfels, Wayne Lewis
 - year: 2006
 - featured: yes

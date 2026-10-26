@@ -9,7 +9,7 @@ export const guideLocales = ['en', 'fr'] as const;
 export type GuideLang = (typeof guideLocales)[number];
 // The groups of the index, in reading order ("domain.<id>" strings below). Kept here, not in
 // src/content.config.ts, so pages never import the content loader (node:fs) into the prerender worker.
-export const guideDomains = ['seeds', 'crops', 'perennials', 'seasons', 'pests', 'kitchen'] as const;
+export const guideDomains = ['seeds', 'crops', 'soil', 'perennials', 'seasons', 'pests', 'kitchen'] as const;
 export type GuideDomain = (typeof guideDomains)[number];
 const strings: Record<GuideLang, Record<string, string>> = { en, fr };
 

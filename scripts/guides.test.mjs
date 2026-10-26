@@ -10,7 +10,7 @@ const src = new URL('../src/', import.meta.url).pathname;
 const read = (path) => readFileSync(join(src, path), 'utf8');
 const guideRoot = join(src, 'content/guides');
 const guideLangs = ['en', 'fr'];
-const domains = ['seeds', 'crops', 'perennials', 'seasons', 'pests', 'kitchen'];
+const domains = ['seeds', 'crops', 'soil', 'perennials', 'seasons', 'pests', 'kitchen'];
 // The guides of the plan (knowledge/project/field-guides-plan.md). An in-text "next guides" link
 // may name one before it is written; the page shows it once it exists.
 const planned = [
@@ -18,6 +18,8 @@ const planned = [
   'keeping-a-landrace', 'saving-seed', 'storing-seed', 'squash-melons-cucumbers', 'corn', 'beans-and-legumes',
   'tomatoes', 'small-grains', 'true-seed-potato-garlic-sunroot', 'season-shifting', 'food-all-year', 'pests-without-sprays',
   'trees-with-edible-leaves', 'nixtamalization', 'cooking-dry-beans',
+  'living-soil', 'reading-your-soil', 'fungal-or-bacterial', 'compost-for-soil-life', 'mulch', 'compost-tea',
+  'mycorrhizal-fungi', 'no-dig-beds', 'soil-care-year',
 ];
 // Safety rule: no caution or safety box gives a time, a temperature or a method word, and no prose
 // pairs boiling, soaking, fermenting or cooking with an amount of time. This is a heuristic: it catches

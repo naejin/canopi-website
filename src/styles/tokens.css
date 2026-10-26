@@ -34,6 +34,14 @@
   --seed-4: #A23B2A;
   --seed-5: #7A5B8C;
   --seed-6: #C9A24A;
+  /* Soil content only (the Soil guides' drawings): crumbs, mineral grains, fungal threads, an earthworm. Never UI chrome. */
+  --soil-1: #8A5A2B;
+  --soil-2: #6B4A2E;
+  --soil-3: #A9773F;
+  --soil-grain: #D8C7A4;
+  --soil-hypha: #B8A27A;
+  --soil-worm: #B5705C;
+  --soil-worm-band: #9A5A48;
 
   --font-sans: 'Source Sans 3', 'Noto Sans', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Literata', 'Noto Serif', 'Noto Serif SC', Georgia, serif;
@@ -74,6 +82,13 @@
   --seed-4: #D9705C;
   --seed-5: #A88BBB;
   --seed-6: #D9B860;
+  --soil-1: #B07A44;
+  --soil-2: #8E6A4A;
+  --soil-3: #C9965A;
+  --soil-grain: #6E6250;
+  --soil-hypha: #EADCC0;
+  --soil-worm: #D08A74;
+  --soil-worm-band: #E3A08A;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -109,5 +124,12 @@
     --seed-4: #D9705C;
     --seed-5: #A88BBB;
     --seed-6: #D9B860;
+    --soil-1: #B07A44;
+    --soil-2: #8E6A4A;
+    --soil-3: #C9965A;
+    --soil-grain: #6E6250;
+    --soil-hypha: #EADCC0;
+    --soil-worm: #D08A74;
+    --soil-worm-band: #E3A08A;
   }
 }
