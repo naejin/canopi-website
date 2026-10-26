@@ -27,7 +27,7 @@ const seedShapes = {
   kernels: { d: KERNEL_PATH, line: '', tones: [6, 6, 6, 3, 1, 4, 5], n: 28, s: [1.9, 2.4] },
   'squash-seeds': { d: SQUASH_SEED_PATH, line: SQUASH_SEED_RIM, tones: [3, 3, 3, 6], n: 19, s: [1.4, 1.7] },
   grains: { d: GRAIN_PATH, line: GRAIN_CREASE, tones: [6, 6, 1, 3], n: 38, s: [1.6, 1.9] },
-  'tomato-seeds': { d: TOMATO_SEED_PATH, line: '', tones: [3, 3, 6], n: 38, s: [1.6, 2] },
+  'tomato-seeds': { d: TOMATO_SEED_PATH, line: '', tones: [3, 3, 6], n: 30, s: [2.2, 2.6] },
   cloves: { d: CLOVE_PATH, line: CLOVE_SEAM, tones: [3, 3, 3, 5], n: 21, s: [1.6, 2] },
 } as const;
 const seed = (kind: keyof typeof seedShapes, x: number, y: number): Item => {
