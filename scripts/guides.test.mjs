@@ -384,7 +384,7 @@ test('every crops guide has its own seed kind for the hero row', async () => {
 
 test('no guide falls back to the bean row unless its section is seeds or its crop is beans', async () => {
   const { heroMotif, cropSeeds } = await import('../src/components/guides/diagrams/hero-row.ts');
-  const expected = { seeds: 'beans', perennials: 'leaves', seasons: 'autumn-leaves', pests: 'insects', kitchen: 'kernels-and-beans' };
+  const expected = { seeds: 'beans', soil: 'soil-crumbs', perennials: 'leaves', seasons: 'autumn-leaves', pests: 'insects', kitchen: 'kernels-and-beans' };
   for (const { slug, data, file } of guides) {
     const motif = heroMotif(data.domain, slug);
     assert.equal(motif, data.domain === 'crops' ? cropSeeds[slug] : expected[data.domain], `${file}: ${data.domain} motif`);
