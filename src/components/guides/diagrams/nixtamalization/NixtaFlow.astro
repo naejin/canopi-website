@@ -1,0 +1,72 @@
+---
+// Nixtamalization: what happens to a kernel, qualitative only (no ratio, no time, no temperature).
+// 1: a dry kernel inside its skin. 2: kernels in a pot of alkaline liquid, with a hazard mark for the
+// caustic base. 3: the bare kernel, its skin washed away. 4: two uses, whole kernels in a bowl
+// (hominy, posole) and ground meal pressed into a round of dough (masa). Names and notes are HTML
+// under the panels, so each language gets its own text.
+interface Stage { name: string; note: string; }
+interface Props { title: string; alt: string; stages: [Stage, Stage, Stage, Stage]; }
+const { title, alt, stages } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-nixta-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+// A kernel about 22 × 30 units, centred on cx, cy: broad crown, narrow tip.
+const kernel = (cx: number, cy: number, s = 1) =>
+  `M${cx - 11 * s} ${cy - 8 * s}Q${cx} ${cy - 20 * s} ${cx + 11 * s} ${cy - 8 * s}L${cx + 6 * s} ${cy + 12 * s}Q${cx} ${cy + 17 * s} ${cx - 6 * s} ${cy + 12 * s}Z`;
+const potKernels: [number, number][] = [[110, 74], [124, 78], [138, 73], [152, 77], [117, 86], [131, 88], [145, 86]];
+const bowlKernels: [number, number][] = [[301, 52], [313, 50], [325, 52], [307, 44], [319, 43]];
+const arrow = (x: number) => `M${x} 64h6m-3 -3l3 3l-3 3`;
+---
+<div class="guide-nixta">
+  <svg viewBox="0 0 360 120" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    {[4, 94, 184, 274].map((x) => <rect x={x - 2} y="4" width="82" height="112" rx="6" class="guide-bed" />)}
+    {[85, 175, 265].map((x) => <path d={arrow(x)} class="guide-nixta-arrow" />)}
+
+    <path d={kernel(43, 60, 1.25)} class="guide-nixta-skin" />
+    <path d={kernel(43, 60, 1.05)} class="guide-nixta-kernel" />
+
+    <path d="M98 62h70l-6 42h-58z" class="guide-nixta-pot" />
+    <path d="M100 68h66l-5 34h-56z" class="guide-nixta-bath" />
+    {potKernels.map(([x, y]) => <path d={kernel(x, y, 0.32)} class="guide-nixta-kernel" />)}
+    <path d="M133 18l13 22h-26z" class="guide-nixta-hazard" />
+    <path d="M133 25v8" class="guide-nixta-hazard-mark" />
+    <circle cx="133" cy="36.5" r="1.2" class="guide-nixta-hazard-dot" />
+
+    <path d={kernel(223, 64, 1.05)} class="guide-nixta-kernel" />
+    {[[203, 30], [213, 24], [233, 26], [243, 32]].map(([x, y]) => <path d={`M${x} ${y}q-3 5 0 7q3 -2 0 -7z`} class="guide-nixta-drop" />)}
+    <path d="M206 86q-6 6 -2 14M240 86q6 6 2 14" class="guide-nixta-shed" />
+
+    <path d="M295 54q18 14 36 0z" class="guide-nixta-bowl" />
+    {bowlKernels.map(([x, y]) => <path d={kernel(x, y, 0.3)} class="guide-nixta-kernel" />)}
+    <ellipse cx="313" cy="94" rx="20" ry="6" class="guide-nixta-masa" />
+    <path d="M295 92q18 -8 36 0" class="guide-nixta-masa-edge" />
+  </svg>
+  <ol class="guide-nixta-stages">
+    {stages.map((s) => <li><b>{s.name}</b><span>{s.note}</span></li>)}
+  </ol>
+</div>
+
+<style>
+  .guide-nixta { display: grid; gap: 0.45rem; max-width: 36rem; }
+  .guide-nixta svg { width: 100%; height: auto; }
+  .guide-nixta-arrow { stroke: var(--text-muted); stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-nixta-kernel { fill: var(--seed-6); stroke: var(--seed-1); stroke-width: 1; }
+  .guide-nixta-skin { fill: var(--surface-alt); stroke: var(--seed-1); stroke-width: 1.2; stroke-dasharray: 3 2; }
+  .guide-nixta-pot { fill: var(--surface-alt); stroke: var(--text-muted); stroke-width: 1.4; stroke-linejoin: round; }
+  .guide-nixta-bath { fill: var(--surface); stroke: var(--border-strong); stroke-width: 0.8; }
+  .guide-nixta-hazard { fill: var(--surface); stroke: var(--danger); stroke-width: 1.8; stroke-linejoin: round; }
+  .guide-nixta-hazard-mark { stroke: var(--danger); stroke-width: 1.8; stroke-linecap: round; }
+  .guide-nixta-hazard-dot { fill: var(--danger); }
+  .guide-nixta-drop { fill: var(--surface); stroke: var(--text-secondary); stroke-width: 1; }
+  .guide-nixta-shed { stroke: var(--seed-1); stroke-width: 1.2; stroke-dasharray: 3 2; fill: none; }
+  .guide-nixta-bowl { fill: var(--surface-alt); stroke: var(--text-muted); stroke-width: 1.4; stroke-linejoin: round; }
+  .guide-nixta-masa { fill: var(--seed-3); stroke: var(--seed-1); stroke-width: 1; }
+  .guide-nixta-masa-edge { stroke: var(--seed-1); stroke-width: 0.8; fill: none; opacity: 0.6; }
+  :global(.guide-body) .guide-nixta-stages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.6rem; margin: 0; padding: 0; list-style: none; font-size: 0.85rem; line-height: 1.35; color: var(--text-secondary); }
+  :global(.guide-body) .guide-nixta-stages li { display: grid; gap: 0.1rem; margin: 0; align-content: start; }
+  .guide-nixta-stages b { color: var(--text); font-weight: 600; }
+  @media (max-width: 639px) {
+    :global(.guide-body) .guide-nixta-stages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>

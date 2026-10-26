@@ -6,18 +6,18 @@ resource: ../../src/components/guides
 tags: [module, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T13:43:25Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T14:11:44Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:04:57Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:3e2624235874581e
-    last_modified: 2026-10-25T14:08:27Z
+    digest: sha256:d74731b42acaac17
+    last_modified: 2026-10-26T14:04:40Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:27faa78be61d00b0
-    last_modified: 2026-10-25T16:51:12Z
+    digest: sha256:2d49ed304707d9b1
+    last_modified: 2026-10-26T14:03:02Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
@@ -37,12 +37,12 @@ sources:
     resource: ../../src/i18n/guides.ts
     title: src/i18n/guides.ts
     digest: sha256:332627fd392f356b
-    last_modified: 2026-10-26T13:42:36Z
+    last_modified: 2026-10-26T13:43:28Z
   - id: glossary-ts
     resource: ../../src/data/glossary.ts
     title: src/data/glossary.ts
-    digest: sha256:8515770a2b77fc01
-    last_modified: 2026-10-25T13:05:14Z
+    digest: sha256:fef5202104bbd25c
+    last_modified: 2026-10-26T14:04:48Z
   - id: crops-ts
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts

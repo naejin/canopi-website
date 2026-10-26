@@ -247,6 +247,38 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
     en: { term: 'Late blight', definition: 'A disease of tomatoes and potatoes that thrives in damp weather and can kill leaves, stems and fruit.' },
     fr: { term: 'Mildiou', definition: 'Une maladie de la tomate et de la pomme de terre qui prospère par temps humide et peut détruire feuilles, tiges et fruits.' },
   },
+  coppice: {
+    en: { term: 'Coppice', definition: 'Cutting a tree or shrub down to near the ground so that it sends up many new shoots, again and again.' },
+    fr: { term: 'Recépage', definition: 'Couper un arbre ou un arbuste près du sol pour qu’il rejette de nombreuses pousses, encore et encore (l’arbre ainsi conduit forme une cépée).' },
+  },
+  pollard: {
+    en: { term: 'Pollard', definition: 'Cutting a tree back to the top of a short trunk, above the reach of grazing animals, so that new shoots grow from that point.' },
+    fr: { term: 'Têtard', definition: 'Un arbre coupé régulièrement au sommet d’un tronc court, hors de portée des animaux, pour que de nouvelles pousses repartent de ce point.' },
+  },
+  'live-stake': {
+    en: { term: 'Live stake', definition: 'A length of freshly cut branch pushed into the soil, where it roots and grows into a new plant.' },
+    fr: { term: 'Plançon', definition: 'Un tronçon de branche fraîchement coupé, planté en terre, qui s’enracine et devient une nouvelle plante.' },
+  },
+  nixtamalization: {
+    en: { term: 'Nixtamalization', definition: 'Cooking dry corn in an alkaline liquid, made with lime or wood ash, which loosens the kernel skins and lets ground corn form a dough.' },
+    fr: { term: 'Nixtamalisation', definition: 'Cuisson du maïs sec dans un liquide alcalin, à la chaux ou à la cendre, qui détache la peau des grains et permet au maïs moulu de former une pâte.' },
+  },
+  hominy: {
+    en: { term: 'Hominy', definition: 'Whole corn kernels that have been nixtamalized, eaten as they are or in dishes such as posole.' },
+    fr: { term: 'Hominy', definition: 'Des grains de maïs entiers nixtamalisés, mangés tels quels ou dans des plats comme le pozole.' },
+  },
+  masa: {
+    en: { term: 'Masa', definition: 'Dough made from ground nixtamalized corn, used for tortillas and tamales; dried and ground, it is sold as masa harina.' },
+    fr: { term: 'Masa', definition: 'Une pâte de maïs nixtamalisé moulu, pour les tortillas et les tamales ; séchée et moulue, elle se vend sous le nom de masa harina.' },
+  },
+  'anti-nutrient': {
+    en: { term: 'Anti-nutrient', definition: 'A natural compound in seeds, beans especially, that lowers the value of food or harms when the seed is raw or undercooked.' },
+    fr: { term: 'Antinutriment', definition: 'Un composé naturel des graines, surtout des haricots, qui réduit la valeur de l’aliment ou nuit quand la graine est crue ou mal cuite.' },
+  },
+  allelopathy: {
+    en: { term: 'Allelopathy', definition: 'A plant releasing substances that hold back the sprouting or growth of other plants nearby.' },
+    fr: { term: 'Allélopathie', definition: 'Le fait qu’une plante libère des substances qui freinent la germination ou la croissance des plantes voisines.' },
+  },
 };
 
 export function glossaryEntry(id: string, lang: 'en' | 'fr'): GlossaryEntry {
