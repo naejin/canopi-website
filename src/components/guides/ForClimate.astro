@@ -1,0 +1,29 @@
+---
+// Advice for some climates only (which species, what spacing, when), from one book written for them;
+// the principles around the block hold everywhere. Adjacent blocks form a run: the reader's climate
+// comes first and opens, the others close but stay (src/scripts/climate.js); without JavaScript or a
+// chosen climate, all are open. zones: one zone or a list; source: a book id from the bibliography.
+import ClimateBadge from '../ClimateBadge.astro';
+import { editionFor, themes } from '../../data/bibliography';
+import { climates, isClimate, type Climate } from '../../data/climates';
+import { gt, guideLangOf } from '../../i18n/guides';
+interface Props { zones: string | string[]; source: string; }
+const { zones: given, source } = Astro.props;
+const lang = guideLangOf(Astro.currentLocale);
+const zones = [given].flat();
+const unknown = zones.find((zone) => !isClimate(zone));
+if (!zones.length || unknown !== undefined) throw new Error(`<ForClimate zones>: "${unknown ?? ''}" is not a climate; use ${climates.join(', ')}`);
+const named = zones as Climate[];
+const book = themes.flatMap((theme) => theme.books).find((b) => b.id === source);
+if (!book) throw new Error(`<ForClimate source>: "${source}" is not a book id in src/data/bibliography.md`);
+const edition = editionFor(book, lang);
+// The title without its subtitle ("Title: Subtitle", "Titre : sous-titre").
+const [title] = edition.title.split(/\s*(?::\s+|：\s*)/);
+---
+<details class="guide-climate" data-climate-block data-zones={named.join(' ')} data-missing={gt('climate.missing', lang)} open>
+  <summary class="guide-climate-head">
+    <span class="guide-climate-zones">{named.map((zone) => <ClimateBadge zone={zone} lang={lang} />)}</span>
+    <span class="guide-climate-source">{gt('climate.from', lang, { book: title, by: edition.by ?? book.by })}</span>
+  </summary>
+  <div class="guide-climate-body"><slot /></div>
+</details>

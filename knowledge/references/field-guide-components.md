@@ -3,25 +3,25 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:43:22Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:50Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:11:29Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:50Z }
 sources:
   - id: index-ts
     resource: ../../src/components/guides/index.ts
     title: src/components/guides/index.ts
-    digest: sha256:623104d77897e033
-    last_modified: 2026-10-25T13:36:03Z
+    digest: sha256:c3facde42cf0521e
+    last_modified: 2026-10-26T23:29:23Z
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:6a4839ef4d4b55cb
-    last_modified: 2026-10-26T22:42:16Z
+    digest: sha256:4a73db0c41e6f8cc
+    last_modified: 2026-10-26T23:29:30Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
-    digest: sha256:aed0018b452adfde
-    last_modified: 2026-10-25T09:49:07Z
+    digest: sha256:d504f4ebf9ee9035
+    last_modified: 2026-10-26T23:29:09Z
   - id: food-risks-ts
     resource: ../../src/data/food-risks.ts
     title: src/data/food-risks.ts
@@ -40,8 +40,8 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:fcf5202d99873069
-    last_modified: 2026-10-26T22:42:52Z
+    digest: sha256:e52061e79678b226
+    last_modified: 2026-10-26T23:30:01Z
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
@@ -77,6 +77,7 @@ order: 7             # integer, sort within domain
 glance:              # 3 to 6 { label, value } pairs, shown in the hero strip
   - { label: "Skill", value: "Beginner" }
 quick: true          # optional boolean
+climates: [tropical, temperate]   # optional; exactly the zones of the guide's <ForClimate> blocks (test), same in en and fr
 sources:             # at least one; book = an "- id:" in src/data/bibliography.md (build fails otherwise)
   - { book: landrace-gardening, chapters: ["Saving seeds", "Squash"] }   # chapter TITLES, at least one
 related: [storing-seed, landrace-gardening]   # 2 to 4 published guide slugs (test), same list in en and fr
@@ -120,6 +121,14 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   `npm test` (combine them).
 - `<HisGarden his="…" you="…" />` — both required: Lofthouse's practice or result in his garden,
   and what changes where the reader lives (qualitative only).
+- `<ForClimate zones="tropical" source="<book id>">` advice for those climates `</ForClimate>` —
+  `zones` required: one zone or a list (`zones={["temperate", "continental"]}`) from
+  `src/data/climates.ts`; `source` required: a bibliography book id that is also in the guide's
+  `sources` (test). An unknown zone or book fails the build. Species, spacings, timings and
+  quantities that hold only in some climates go inside one; principles stay outside. Adjacent blocks
+  form a run: the reader's zone comes first and opens, the others close but stay; when no block in a
+  run is for the reader's zone, a "not covered yet" note appears above it. Without JavaScript or a
+  chosen zone every block is open; printing opens all. Head: zone badges and "From <book>, by <author>".
 - `<Steps compact>` `<Step title="Thresh">` text `</Step>` … `</Steps>` — Steps: `compact` optional
   boolean (small numbers and titles, for short steps in a card). Step: `title` required.
 - `<Points ruled="accent">` markdown list, each item opening with a **bold** lead `</Points>` —

@@ -169,5 +169,7 @@
   "seedKinds.sow": "Graines semées",
   "seedKinds.save": "Graines récoltées",
   "seedKinds.label": "Ce que donnent les graines récoltées sur chaque type de variété",
-  "aria.labelled": "{label} : {text}"
+  "aria.labelled": "{label} : {text}",
+  "climate.from": "D’après {book}, de {by}",
+  "climate.missing": "Nos sources ne couvrent pas encore le climat {zone} ici. Les principes plus haut restent valables ; les encadrés ci-dessous valent pour d’autres climats."
 }

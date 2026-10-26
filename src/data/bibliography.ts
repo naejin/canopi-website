@@ -1,5 +1,6 @@
 // The bibliography as src/data/bibliography.md writes it; the build reads that file, so editing it updates the site.
 import source from './bibliography.md?raw';
+import { climates, isClimate, type Climate } from './climates';
 
 export interface Edition {
   lang: string;
@@ -11,16 +12,13 @@ export interface Edition {
   year?: string;
 }
 
-// The Canopi app's climate zones, so a book here and a design in the app name a climate alike.
-export const climates = ['tropical', 'subtropical', 'mediterranean', 'arid', 'temperate', 'continental', 'boreal'];
-
 export interface Book {
   // A stable name other pages cite the book by (a Field Guide's sources), and its #anchor on /bibliography/.
   id?: string;
   by: string;
   year: string;
   // The climates the book is written for; empty when its advice holds in any climate.
-  climates: string[];
+  climates: Climate[];
   // Whether the home page shows it among the few books that open the bibliography.
   featured: boolean;
   // The original edition comes first.
@@ -82,9 +80,10 @@ source.split('\n').forEach((text, index) => {
     book.featured = /^yes$/i.test(value);
   }
   else if (name === 'climate') {
-    book.climates = value.split(',').map((climate) => climate.trim().toLowerCase());
-    const unknown = book.climates.find((climate) => !climates.includes(climate));
+    const named = value.split(',').map((climate) => climate.trim().toLowerCase());
+    const unknown = named.find((climate) => !isClimate(climate));
     if (unknown !== undefined) fail(line, `"${unknown}" is not a climate; use ${climates.join(', ')}`);
+    book.climates = named as Climate[];
   }
   else {
     const edition = value.match(/^\[(.+)\]\((https?:\/\/[^)\s]+)\)\s*(?:—\s*(.+))?$/);

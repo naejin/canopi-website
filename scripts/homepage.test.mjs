@@ -59,8 +59,8 @@ test('every English key is used by a page or a script, and every script string r
     .map((entry) => readFileSync(join(entry.parentPath, entry.name), 'utf8'));
   const en = JSON.parse(read('i18n/translations/en.json'));
   const source = [...dir('components'), ...dir('scripts'), read('layouts/Base.astro'), read('data/network.ts')].join('\n');
-  // Keys built from a prefix in components (installer names and details, plant roles, countries, bibliography themes and climates).
-  const dynamic = ['edition.installer.', 'download.detail.', 'design.role.', 'network.country.', 'bibliography.theme.', 'bibliography.climate.'];
+  // Keys built from a prefix in components (installer names and details, plant roles, countries, bibliography themes, climate zones).
+  const dynamic = ['edition.installer.', 'download.detail.', 'design.role.', 'network.country.', 'bibliography.theme.', 'climate.'];
   for (const key of Object.keys(en)) {
     const used = source.includes(`'${key}'`) || dynamic.some((prefix) => key.startsWith(prefix));
     assert.ok(used, `unused translation key: ${key}`);
@@ -84,15 +84,32 @@ test('every bibliography theme has a translated label, and every theme label nam
   }
 });
 
-test('every bibliography climate has a translated label, and every climate label names a climate', () => {
+test('every climate zone has a name, a line about it and a few places in it, and no climate string names another zone', () => {
   const read = (path) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
   const en = JSON.parse(read('i18n/translations/en.json'));
-  const climates = [...read('data/bibliography.ts').match(/export const climates = \[(.*)\];/)[1].matchAll(/'([a-z]+)'/g)].map(([, climate]) => climate);
-  assert.ok(climates.length);
-  for (const climate of climates) assert.ok(en[`bibliography.climate.${climate}`], `missing translation key: bibliography.climate.${climate}`);
-  for (const key of Object.keys(en).filter((key) => key.startsWith('bibliography.climate.'))) {
-    assert.ok(climates.includes(key.slice('bibliography.climate.'.length)), `unused translation key: ${key}`);
+  const climates = [...read('data/climates.ts').match(/export const climates = \[(.*)\] as const;/)[1].matchAll(/'([a-z]+)'/g)].map(([, climate]) => climate);
+  assert.deepEqual(climates, ['tropical', 'subtropical', 'mediterranean', 'arid', 'temperate', 'continental', 'boreal'], 'the Canopi app\'s seven zones');
+  for (const climate of climates) {
+    for (const key of [`climate.${climate}`, `climate.${climate}.about`, `climate.${climate}.places`]) assert.ok(en[key], `missing translation key: ${key}`);
   }
+  const shared = ['zone', 'yours', 'chip', 'notSet', 'title', 'lede', 'none', 'none.about'];
+  for (const key of Object.keys(en).filter((key) => key.startsWith('climate.'))) {
+    const [zone, part] = key.slice('climate.'.length).split(/\.(.*)/);
+    assert.ok(shared.includes(key.slice('climate.'.length)) || (climates.includes(zone) && [undefined, 'about', 'places'].includes(part)), `unused translation key: ${key}`);
+  }
+  assert.ok(!Object.keys(en).some((key) => key.startsWith('bibliography.climate')), 'climate labels live under climate.*, shared by every page');
+});
+
+test('the climate badge marks each of the seven zones as the reader\'s, and the head script knows them', () => {
+  const read = (path) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
+  const css = read('styles/global.css');
+  for (const climate of ['tropical', 'subtropical', 'mediterranean', 'arid', 'temperate', 'continental', 'boreal']) {
+    assert.ok(css.includes(`:root[data-climate="${climate}"] .climate-badge[data-zone="${climate}"]`), `global.css fills the ${climate} badge`);
+    assert.ok(css.includes(`:root[data-climate="${climate}"] [data-zone="${climate}"] .climate-badge-yours`), `global.css names the ${climate} badge as the reader's`);
+  }
+  assert.match(read('layouts/Base.astro'), /localStorage\.getItem\('canopi-climate'\)[\s\S]*?JSON\.stringify\(climates\)/, 'Base.astro sets data-climate before the first paint, from the shared list');
+  assert.match(read('scripts/climate.js'), /localStorage\.setItem\(key, zone\)/, 'climate.js keeps the choice');
+  assert.match(read('scripts/climate.js'), /const key = 'canopi-climate'/, 'one storage key');
 });
 
 test('the header labels exist in every locale: Books (the bibliography) and the phone Menu', () => {

@@ -7,12 +7,16 @@ import Header from '../Header.astro';
 import Footer from '../Footer.astro';
 import DonateDialog from '../DonateDialog.astro';
 import PageData from '../PageData.astro';
+import ClimateBadge from '../ClimateBadge.astro';
+import ClimatePicker from '../ClimatePicker.astro';
 import { guideDomains, publishedGuides, slugOf } from '../../lib/guides';
 import { gt, guideLocales, guidePath, guidesPath, type GuideLang } from '../../i18n/guides';
 import { localizedUrl } from '../../i18n/utils';
 interface Props { lang: GuideLang; }
 const { lang } = Astro.props;
 const guides = await publishedGuides(lang);
+// The climate picker joins the index once a guide has blocks for some climates only.
+const climateGuides = guides.some((e) => e.data.climates);
 const groups = guideDomains.map((domain) => ({ domain, guides: guides.filter((e) => e.data.domain === domain) })).filter((g) => g.guides.length);
 const structuredData = {
   '@context': 'https://schema.org',
@@ -32,6 +36,7 @@ const structuredData = {
         <h1>{gt('section.title', lang)}</h1>
         <p class="guide-small">{gt('section.languages', lang)}</p>
         <p class="guide-index-books"><a href={localizedUrl('/bibliography/', lang)}>{gt('section.books', lang)}</a></p>
+        {climateGuides && <ClimatePicker lang={lang} />}
       </header>
       {groups.map(({ domain, guides: list }) => (
         <section class="guide-domain" id={domain} aria-labelledby={`guide-domain-${domain}`}>
@@ -41,6 +46,7 @@ const structuredData = {
               <li class="guide-index-item">
                 <h3><a href={guidePath(slugOf(e), lang)}>{e.data.title}</a></h3>
                 <p>{e.data.description}</p>
+                {e.data.climates && <p class="guide-index-climates">{e.data.climates.map((zone) => <ClimateBadge zone={zone} lang={lang} />)}</p>}
                 <dl class="guide-index-glance">
                   {e.data.glance.map((pair) => <div><dt>{pair.label}</dt><dd>{pair.value}</dd></div>)}
                 </dl>

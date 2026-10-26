@@ -315,8 +315,8 @@
 .book-meta { margin-top: 4px; font-size: 14px; color: var(--text-muted); }
 .book-meta .nowrap { white-space: nowrap; }
 /* Only on books written for particular climates, labelled as the "Also in" line is. */
-.book-climate { margin-top: 3px; font-size: 13px; color: var(--text-secondary); }
-.book-climate span { margin-right: 9px; color: var(--text-muted); }
+.book-climate { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; margin-top: 4px; font-size: 13px; color: var(--text-muted); }
+.book-climate > span:first-child { margin-right: 3px; }
 .book-guides { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 9px; margin-top: 3px; font-size: 13px; color: var(--text-muted); }
 .book-guides a { font-weight: 600; color: var(--accent-ink); text-underline-offset: 0.18em; }
 .book { scroll-margin-top: 24px; }

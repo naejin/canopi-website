@@ -5,6 +5,7 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { guideDomains } from './i18n/guides';
+import { climates } from './data/climates';
 
 const guides = defineCollection({
   loader: glob({ pattern: '*/{en,fr}.mdx', base: './src/content/guides' }),
@@ -18,6 +19,9 @@ const guides = defineCollection({
     quick: z.boolean().optional(),
     // Book ids from src/data/bibliography.md ("- id:"), with the chapter titles the guide draws on.
     sources: z.array(z.object({ book: z.string().min(1), chapters: z.array(z.string().min(1)).min(1) })).min(1),
+    // The climate zones the guide's <ForClimate> blocks cover, for the index badges and the climate
+    // picker; left out when no part of the guide is for some climates only.
+    climates: z.array(z.enum(climates)).min(1).optional(),
     related: z.array(z.string()).default([]),
     updated: z.coerce.date(),
   }),

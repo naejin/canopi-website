@@ -46,6 +46,7 @@ const guides = slugs.flatMap((slug) => guideLangs.filter((lang) => existsSync(jo
 const attrs = (body, name, attr) => [...body.matchAll(new RegExp(`<${name}\\b[^>]*?\\b${attr}=(?:"([^"]*)"|\\{([^}]*)\\})`, 'g'))].map((m) => m[1] ?? m[2]);
 const listAttr = (body, name, attr) => attrs(body, name, attr).flatMap((value) => [...value.matchAll(/["']([^"']+)["']/g)].map((m) => m[1]).concat(/^[\w-]+$/.test(value) ? [value] : []));
 const bookIds = [...read('data/bibliography.md').matchAll(/^- id:\s*(\S+)\s*$/gm)].map((m) => m[1]);
+const climateZones = [...read('data/climates.ts').match(/export const climates = \[(.*)\] as const;/)[1].matchAll(/'([a-z]+)'/g)].map((m) => m[1]);
 
 test('there is at least one guide, and every guide has an English and a French file and nothing else', () => {
   assert.ok(slugs.includes('landrace-gardening'), 'the hub guide exists');
@@ -78,11 +79,12 @@ test('every guide has a complete frontmatter, matched between English and French
     }
     assert.match(String(data.updated), /^\d{4}-\d{2}-\d{2}$/, `${file}: updated is a date`);
     if ('quick' in data) assert.equal(typeof data.quick, 'boolean', `${file}: quick is true or false`);
+    if ('climates' in data) assert.ok(Array.isArray(data.climates) && data.climates.length && data.climates.every((zone) => climateZones.includes(zone)), `${file}: climates lists zones from ${climateZones.join(', ')}`);
     assert.ok(lang === 'en' || lang === 'fr');
   }
   for (const slug of slugs) {
     const [en, fr] = guideLangs.map((lang) => guides.find((g) => g.slug === slug && g.lang === lang).data);
-    for (const key of ['domain', 'order', 'related', 'quick']) assert.deepEqual(fr[key], en[key], `${slug}: ${key} matches between en and fr`);
+    for (const key of ['domain', 'order', 'related', 'quick', 'climates']) assert.deepEqual(fr[key], en[key], `${slug}: ${key} matches between en and fr`);
     assert.equal(fr.glance.length, en.glance.length, `${slug}: as many glance pairs in en and fr`);
     assert.deepEqual(fr.sources.map((s) => [s.book, s.chapters.length]), en.sources.map((s) => [s.book, s.chapters.length]), `${slug}: same books and chapter counts`);
     assert.equal(fr.updated, en.updated, `${slug}: updated together`);
@@ -121,10 +123,20 @@ test('guides use only known components, and their ids resolve to the glossary, t
       assert.equal(new Set(items).size, items.length, `${file}: item ids are unique in checklist "${list}"`);
     }
     if (data.quick) assert.ok(used.has('QuickAnswer'), `${file}: quick: true needs a <QuickAnswer>`);
+    // Climate blocks: known zones, a cited book, and a frontmatter that lists exactly the zones they cover.
+    const blockZones = listAttr(body, 'ForClimate', 'zones');
+    for (const zone of blockZones) assert.ok(climateZones.includes(zone), `${file}: <ForClimate zones> "${zone}" is a climate`);
+    const blockSources = attrs(body, 'ForClimate', 'source');
+    assert.equal(blockSources.length, (body.match(/<ForClimate\b/g) ?? []).length, `${file}: every <ForClimate> names its source book`);
+    for (const book of blockSources) {
+      assert.ok(bookIds.includes(book), `${file}: <ForClimate source> "${book}" is a book id in src/data/bibliography.md`);
+      assert.ok(data.sources.some((s) => s.book === book), `${file}: <ForClimate source> "${book}" is among the guide's sources`);
+    }
+    assert.deepEqual([...new Set(blockZones)].sort(), [...(data.climates ?? [])].sort(), `${file}: frontmatter climates lists exactly the zones of its <ForClimate> blocks`);
   }
   for (const slug of slugs) {
     const [en, fr] = guideLangs.map((lang) => guides.find((g) => g.slug === slug && g.lang === lang).body);
-    for (const [name, attr] of [['Term', 'id'], ['Checklist', 'id'], ['Item', 'id'], ['FoodCaution', 'risk'], ['CropCards', 'crops'], ['CropTable', 'crops']]) {
+    for (const [name, attr] of [['Term', 'id'], ['Checklist', 'id'], ['Item', 'id'], ['FoodCaution', 'risk'], ['CropCards', 'crops'], ['CropTable', 'crops'], ['ForClimate', 'zones'], ['ForClimate', 'source']]) {
       assert.deepEqual(new Set(listAttr(fr, name, attr)), new Set(listAttr(en, name, attr)), `${slug}: <${name} ${attr}> the same in en and fr`);
     }
     // Opening and closing tags both count, so a French page that drops a </Safety> or </Points> fails.

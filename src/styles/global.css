@@ -238,4 +238,50 @@ button { cursor: pointer; }
 .donate-thanks .button { margin-top: 8px; }
 .dialog-donate .dialog-foot { padding-top: 12px; }
 
+/* ---------- Climate (knowledge/decisions/climate-ux.md) ---------- */
+
+/* One badge per zone everywhere; the reader's zone is filled in, with its name read out as theirs. */
+.climate-badge {
+  display: inline-block; padding: 0 9px; border: 1px solid var(--border-strong); border-radius: 999px;
+  font-size: 13px; font-weight: 600; line-height: 1.6; color: var(--text-secondary); white-space: nowrap;
+}
+.climate-badge-yours { display: none; }
+:root[data-climate="tropical"] .climate-badge[data-zone="tropical"],
+:root[data-climate="subtropical"] .climate-badge[data-zone="subtropical"],
+:root[data-climate="mediterranean"] .climate-badge[data-zone="mediterranean"],
+:root[data-climate="arid"] .climate-badge[data-zone="arid"],
+:root[data-climate="temperate"] .climate-badge[data-zone="temperate"],
+:root[data-climate="continental"] .climate-badge[data-zone="continental"],
+:root[data-climate="boreal"] .climate-badge[data-zone="boreal"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+:root[data-climate="tropical"] [data-zone="tropical"] .climate-badge-yours,
+:root[data-climate="subtropical"] [data-zone="subtropical"] .climate-badge-yours,
+:root[data-climate="mediterranean"] [data-zone="mediterranean"] .climate-badge-yours,
+:root[data-climate="arid"] [data-zone="arid"] .climate-badge-yours,
+:root[data-climate="temperate"] [data-zone="temperate"] .climate-badge-yours,
+:root[data-climate="continental"] [data-zone="continental"] .climate-badge-yours,
+:root[data-climate="boreal"] [data-zone="boreal"] .climate-badge-yours { display: inline; }
+
+.climate-picker { margin-top: 16px; }
+.climate-chip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px;
+  border: 1px solid var(--border-strong); border-radius: 999px; background: var(--bg);
+  font-size: 15px; color: var(--text-secondary);
+}
+.climate-chip strong { font-weight: 600; color: var(--text); }
+.climate-chip:hover { border-color: var(--text); }
+:root[data-climate] .climate-chip { border-color: var(--accent); }
+.dialog-climate { width: min(640px, calc(100vw - 32px)); }
+.climate-choices { margin: 0; padding: 16px 24px 24px; list-style: none; display: grid; gap: 8px; overflow: auto; }
+.climate-choice {
+  display: grid; gap: 2px; width: 100%; padding: 11px 14px; text-align: start;
+  border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg); color: var(--text);
+}
+.climate-choice:hover { border-color: var(--text); }
+.climate-choice strong { font-size: 17px; font-weight: 600; }
+.climate-choice span { font-size: 15px; line-height: 1.45; color: var(--text-secondary); }
+.climate-choice .climate-choice-places { font-size: 14px; color: var(--text-muted); }
+.climate-choice[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.climate-choice[aria-pressed="true"] strong { color: var(--accent-ink); }
+.climate-choice-none { margin-top: 4px; border-style: dashed; }
+
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

@@ -1,0 +1,91 @@
+---
+type: Architecture Decision
+title: Climate UX
+description: Every page that changes with the climate uses the app's seven zones, one stored choice set from an on-page chip, and one badge, and it reorders and marks content but never hides it.
+tags: [decision, climate, i18n]
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:49Z }
+sources:
+  - id: climates-ts
+    resource: ../../src/data/climates.ts
+    title: src/data/climates.ts
+    digest: sha256:42b3b2e5b9af2739
+    last_modified: 2026-10-26T23:25:08Z
+  - id: climate-js
+    resource: ../../src/scripts/climate.js
+    title: src/scripts/climate.js
+    digest: sha256:6fa135827fa5adf8
+    last_modified: 2026-10-26T23:28:32Z
+  - id: climatepicker-astro
+    resource: ../../src/components/ClimatePicker.astro
+    title: src/components/ClimatePicker.astro
+    digest: sha256:34db62854d83adfc
+    last_modified: 2026-10-26T23:28:21Z
+  - id: climatebadge-astro
+    resource: ../../src/components/ClimateBadge.astro
+    title: src/components/ClimateBadge.astro
+    digest: sha256:3a302bfb200a1460
+    last_modified: 2026-10-26T23:28:13Z
+  - id: forclimate-astro
+    resource: ../../src/components/guides/ForClimate.astro
+    title: src/components/guides/ForClimate.astro
+    digest: sha256:813d4b73a0681594
+    last_modified: 2026-10-26T23:29:23Z
+  - id: base-astro
+    resource: ../../src/layouts/Base.astro
+    title: src/layouts/Base.astro
+    digest: sha256:c92d050bc60e0ea3
+    last_modified: 2026-10-26T23:30:40Z
+  - id: global-css
+    resource: ../../src/styles/global.css
+    title: src/styles/global.css
+    digest: sha256:47c585d78f6c50ca
+    last_modified: 2026-10-26T23:28:54Z
+  - id: homepage-test-mjs
+    resource: ../../scripts/homepage.test.mjs
+    title: scripts/homepage.test.mjs
+    digest: sha256:8b1028b835ff417b
+    last_modified: 2026-10-26T23:30:40Z
+  - id: guides-test-mjs
+    resource: ../../scripts/guides.test.mjs
+    title: scripts/guides.test.mjs
+    digest: sha256:e52061e79678b226
+    last_modified: 2026-10-26T23:30:01Z
+enforced_by: [scripts/homepage.test.mjs, scripts/guides.test.mjs]
+---
+
+# Context
+
+Canopi is a worldwide tool (owner, 2026-10-27): readers garden from the tropics to the boreal
+north, and the books behind the site each write for one climate (Gietzen's *Abundance Agroforestry*
+for tropical Haiti, Théry's *Bienvenue en syntropie !* for temperate France). The site needed one
+coherent way to say which climate a piece of advice is for, everywhere it matters.
+
+# Decision
+
+- **One vocabulary.** The Canopi app's seven zones, in `src/data/climates.ts`: tropical (Köppen A),
+  subtropical (Cw, Cfa), mediterranean (Cs), arid (B), temperate (Cfb, Cfc), continental (Da, Db),
+  boreal (Dc, Dd); the mapping is canopi-data's `enrichment/climate_zones.py`. Labels are site-wide
+  `climate.*` keys in all 11 locales.
+- **One choice, one place to set it.** `localStorage["canopi-climate"]`, mirrored on
+  `html[data-climate]` by an inline head script before the first paint. It is set from a chip
+  ("Your climate: …") that appears only on pages the climate changes (the bibliography, the guides
+  index and guides with climate blocks), never in the header. The chip opens a dialog with each zone's
+  one-line description and three local example cities (Köppen-checked, chosen per locale), plus
+  "I'd rather not say". Hidden without JavaScript, where nothing could be kept.
+- **Reorder and mark, never hide.** Badges of the reader's zone are filled (`.climate-badge`); in a
+  guide, each run of adjacent `<ForClimate>` blocks puts the reader's block first and open and closes
+  the others, which stay on the page. Bibliography order is unchanged (a climate filter waits for
+  stage 4 of its growth plan).
+- **Honest gaps.** When a run has no block for the reader's zone, a "not covered yet" note says so
+  and every block stays open. Content with no climate tag shows no badge; there is no "all climates"
+  badge, which would be a claim nobody checked.
+- **Hemisphere is separate.** Guides say seasons, not months; the climate choice does not imply a hemisphere.
+- **Later:** the app could share the same preference; not done yet.
+
+# Consequences
+
+- Guides cite a book written for each climate block (`source`), so adding a climate means adding a
+  book to the bibliography first.
+- Tests: `homepage.test.mjs` checks the seven zones, their keys in every locale, the CSS selector for
+  every zone and the head script; `guides.test.mjs` checks `<ForClimate>` zones, sources, en/fr parity
+  and that frontmatter `climates` equals the blocks' zones.

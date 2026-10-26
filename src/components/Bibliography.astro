@@ -4,6 +4,8 @@ import { t, localizedUrl, type Locale } from '../i18n/utils';
 import { themes } from '../data/bibliography';
 import { guidesCiting, slugOf, type GuideEntry } from '../lib/guides';
 import { guidePath, guidesPath, guideLangOf } from '../i18n/guides';
+import ClimateBadge from './ClimateBadge.astro';
+import ClimatePicker from './ClimatePicker.astro';
 interface Props { lang: Locale; full?: boolean; }
 const { lang, full = false } = Astro.props;
 const Title = full ? 'h1' : 'h2';
@@ -33,6 +35,9 @@ const shelves = themes
       .sort((a, b) => collator.compare(a.shown.title, b.shown.title)),
   }))
   .filter((shelf) => shelf.books.length);
+// The climate picker joins the full list once a book names its climates; the order stays by title
+// (a climate filter is stage 4 of the growth plan in src/data/bibliography.md).
+const climateBooks = full && shelves.some((shelf) => shelf.books.some((book) => book.climates.length));
 ---
 <section class="section bibliography" id="bibliography" aria-labelledby="bibliography-title">
   <div class="wrap">
@@ -40,6 +45,7 @@ const shelves = themes
       <Title id="bibliography-title">{t('bibliography.title', lang)}</Title>
       <p>{t('bibliography.lede', lang)}</p>
       {full && <p class="bibliography-guides"><a href={guidesPath(lang)} hreflang={guideLang}>{t('bibliography.guides', lang)}</a></p>}
+      {climateBooks && <ClimatePicker lang={lang} />}
     </header>
     {full && (
       <nav class="bibliography-themes" aria-label={t('bibliography.themes', lang)}>
@@ -66,8 +72,8 @@ const shelves = themes
                 </p>
                 {book.climates.length > 0 && (
                   <p class="book-climate">
-                    <span>{t('bibliography.climate', lang)}</span>
-                    {book.climates.map((climate) => t(`bibliography.climate.${climate}`, lang)).join(' · ')}
+                    <span>{t('climate.zone', lang)}</span>
+                    {book.climates.map((climate) => <ClimateBadge zone={climate} lang={lang} />)}
                   </p>
                 )}
                 {book.guides.length > 0 && (

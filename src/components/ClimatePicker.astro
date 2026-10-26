@@ -1,0 +1,43 @@
+---
+// The reader's climate: a chip naming it, and the dialog that chooses it, with a line on each zone and
+// a few places in it so readers can tell which is theirs. A page shows it only where the climate
+// changes something (a book or a guide written for some climates), at most once; src/scripts/climate.js
+// keeps the choice and shows the chip (hidden without JavaScript, where nothing could be kept).
+import { t, type Locale } from '../i18n/utils';
+import { climates } from '../data/climates';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+const [before, after] = t('climate.chip', lang).split('{zone}');
+---
+<p class="climate-picker" data-climate-picker hidden>
+  <button class="climate-chip" type="button" data-open-climate aria-haspopup="dialog">
+    {before}<strong data-climate-current data-not-set={t('climate.notSet', lang)}>{t('climate.notSet', lang)}</strong>{after}
+    <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+</p>
+<dialog class="dialog dialog-climate" data-climate-dialog aria-labelledby="climate-title">
+  <div class="dialog-head">
+    <div>
+      <h2 id="climate-title">{t('climate.title', lang)}</h2>
+      <p class="dialog-lede">{t('climate.lede', lang)}</p>
+    </div>
+    <button class="dialog-close" type="button" data-close-dialog aria-label={t('dialog.close', lang)}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+  </div>
+  <ul class="climate-choices" role="list">
+    {climates.map((zone) => (
+      <li>
+        <button class="climate-choice" type="button" data-climate-choice={zone} aria-pressed="false">
+          <strong>{t(`climate.${zone}`, lang)}</strong>
+          <span>{t(`climate.${zone}.about`, lang)}</span>
+          <span class="climate-choice-places">{t(`climate.${zone}.places`, lang)}</span>
+        </button>
+      </li>
+    ))}
+    <li>
+      <button class="climate-choice climate-choice-none" type="button" data-climate-choice="" aria-pressed="false">
+        <strong>{t('climate.none', lang)}</strong>
+        <span>{t('climate.none.about', lang)}</span>
+      </button>
+    </li>
+  </ul>
+</dialog>

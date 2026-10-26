@@ -10,6 +10,7 @@ import Footer from '../Footer.astro';
 import DonateDialog from '../DonateDialog.astro';
 import PageData from '../PageData.astro';
 import BookCite from './BookCite.astro';
+import ClimatePicker from '../ClimatePicker.astro';
 import GuideHeroRow from './diagrams/GuideHeroRow.astro';
 import { guideComponents } from './index';
 import { publishedGuides, slugOf, type GuideEntry } from '../../lib/guides';
@@ -20,7 +21,7 @@ interface Props { entry: GuideEntry; lang: GuideLang; }
 const { entry, lang } = Astro.props;
 const { Content, headings } = await render(entry);
 const slug = slugOf(entry);
-const { title, description, domain, glance, sources, related, updated } = entry.data;
+const { title, description, domain, glance, sources, related, updated, climates } = entry.data;
 const toc = headings.filter((h) => h.depth === 2);
 const all = await publishedGuides(lang);
 const at = all.findIndex((e) => slugOf(e) === slug);
@@ -66,6 +67,7 @@ const tocList = toc.map((h) => ({ href: `#${h.slug}`, text: h.text }));
             ))}
             <span class="guide-updated">{gt('guide.updated', lang, { date: formatDate(updated, lang) })}</span>
           </p>
+          {climates && <ClimatePicker lang={lang} />}
           {tocList.length > 0 && (
             <details class="guide-toc-mobile">
               <summary>{gt('guide.toc', lang)}</summary>

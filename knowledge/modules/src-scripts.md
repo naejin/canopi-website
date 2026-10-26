@@ -5,15 +5,15 @@ description: Vanilla browser modules for the home and bibliography pages (chrome
 resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:09:04Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:50Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-25T17:10:45Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:51Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:097d6510d663cab2
-    last_modified: 2026-10-25T17:10:38Z
+    digest: sha256:8e94ef594c94e7ad
+    last_modified: 2026-10-26T23:28:40Z
 ---
 
 # Responsibility
@@ -30,6 +30,7 @@ Client-side behaviour, no framework. Scripts hold no user-facing English: every 
 - [design-canvas.js](../../src/scripts/design-canvas.js): draws the featured design as the app does, from `/data/featured-designs.json` and `/data/plant-symbols.json`.
 - [design-map.js](../../src/scripts/design-map.js): MapLibre design finder with clusters and a nearest-first list.
 - [contact.js](../../src/scripts/contact.js): in-place validation, posts with `Accept: application/json`.
+- [climate.js](../../src/scripts/climate.js): the reader's climate (`initClimate()`, called by `initChrome`): the picker dialog, `localStorage["canopi-climate"]` and `html[data-climate]`, ordering of `<ForClimate>` runs, the "not covered yet" note, sync across tabs, all blocks open for print. See [Climate UX](/decisions/climate-ux.md).
 - [donate.js](../../src/scripts/donate.js), [dialogs.js](../../src/scripts/dialogs.js): HelloAsso donation dialog and native `<dialog>` helpers. Donate opened from the phone Menu returns focus to the Menu summary; from `#donate`, to the first visible Donate button.
 
 # Interfaces

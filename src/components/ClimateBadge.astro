@@ -1,0 +1,9 @@
+---
+// One climate zone as a small label, the same on books, guides and guide blocks. The reader's own
+// zone is filled in (src/styles/global.css) from <html data-climate>, which src/scripts/climate.js keeps.
+import { t, type Locale } from '../i18n/utils';
+import type { Climate } from '../data/climates';
+interface Props { zone: Climate; lang: Locale; }
+const { zone, lang } = Astro.props;
+---
+<span class="climate-badge" data-zone={zone}>{t(`climate.${zone}`, lang)}<span class="visually-hidden climate-badge-yours"> · {t('climate.yours', lang)}</span></span>

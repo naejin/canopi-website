@@ -1,6 +1,8 @@
-// What every page shares: dialogs, donations, the language and phone menus and the theme toggle.
+// What every page shares: dialogs, donations, the language and phone menus, the theme toggle and the
+// reader's climate.
 import { initDialogs } from './dialogs.js';
 import { initDonate } from './donate.js';
+import { initClimate } from './climate.js';
 import { text } from './page-data.js';
 
 const root = document.documentElement;
@@ -10,6 +12,7 @@ export const isDark = () => root.dataset.theme === 'dark' || (!root.dataset.them
 export function initChrome({ onThemeChange = () => {} } = {}) {
   initDialogs();
   initDonate();
+  initClimate();
 
   // The language menu and the phone Menu (only one shows at any width) close on an outside click, on
   // Escape (which gives the focus back to the summary), when the focus moves out of them, and when one

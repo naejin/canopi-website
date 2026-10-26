@@ -1,6 +1,7 @@
 ---
 import { locales, defaultLocale, localizedUrl, type Locale } from '../i18n/utils';
 import { CANOPI_DOWNLOADS, CANOPI_RELEASE_DATE, CANOPI_RELEASE_URL, CANOPI_VERSION } from '../data/release';
+import { climates } from '../data/climates';
 
 interface Props {
   title: string;
@@ -123,6 +124,11 @@ const ogImage = new URL(`/og/og-${lang}.jpg`, Astro.site);
         if (saved === 'dark' || saved === 'light') document.documentElement.dataset.theme = saved;
       } catch {}
     </script>
+    <!-- The reader's climate before first paint, so their zone's badges are marked from the start (src/scripts/climate.js). -->
+    <script is:inline set:html={`try {
+        var climate = localStorage.getItem('canopi-climate');
+        if (${JSON.stringify(climates)}.indexOf(climate) !== -1) document.documentElement.dataset.climate = climate;
+      } catch {}`} />
     <meta name="theme-color" content="#EFE9DD" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#161510" media="(prefers-color-scheme: dark)" />
     <link rel="preload" href="/fonts/literata-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />

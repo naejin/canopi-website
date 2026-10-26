@@ -8,6 +8,7 @@ import Note from './Note.astro';
 import Safety from './Safety.astro';
 import FoodCaution from './FoodCaution.astro';
 import HisGarden from './HisGarden.astro';
+import ForClimate from './ForClimate.astro';
 import Steps from './Steps.astro';
 import Step from './Step.astro';
 import CropCard from './CropCard.astro';
@@ -36,6 +37,7 @@ const shared = {
   Safety,
   FoodCaution,
   HisGarden,
+  ForClimate,
   Steps,
   Step,
   CropCard,

@@ -166,6 +166,22 @@
 .guide-his-col .guide-label { color: var(--accent-ink); }
 .guide-his-where { font-size: 0.85rem; color: var(--text-muted); margin-top: -0.2rem; }
 .guide-his-you { background: var(--surface-alt); }
+/* Advice for some climates only: a box headed by its zones and its book; the reader's zone opens first. */
+.guide-climate { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.guide-climate + .guide-climate { margin-top: 0.6rem; }
+.guide-climate[data-yours] { border-color: var(--accent); }
+.guide-climate-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; padding: 0.7rem 1.1rem; cursor: pointer; list-style: none; }
+.guide-climate-head::-webkit-details-marker { display: none; }
+.guide-climate-head::before { content: ""; width: 0.45rem; height: 0.45rem; margin-right: 0.15rem; border: solid var(--text-muted); border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg); transition: transform 120ms ease; }
+.guide-climate[open] > .guide-climate-head::before { transform: rotate(45deg); }
+.guide-climate-zones { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.guide-climate-source { font-size: 0.88rem; color: var(--text-muted); }
+.guide-climate-body { padding: 0 1.1rem 1rem; }
+.guide-climate-body > * + * { margin-top: 0.6rem; }
+.guide-climate-missing { padding: 0.7rem 1.1rem; border: 1px dashed var(--border-strong); border-radius: var(--radius); font-size: 0.95rem; color: var(--text-secondary); }
+.guide-climate-missing + .guide-climate { margin-top: 0.6rem; }
+.guide-index-climates { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+@media (prefers-reduced-motion: reduce) { .guide-climate-head::before { transition: none; } }
 
 /* ---------- Blocks ---------- */
 

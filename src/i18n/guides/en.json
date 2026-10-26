@@ -169,5 +169,7 @@
   "seedKinds.sow": "Seed you sow",
   "seedKinds.save": "Seed you save",
   "seedKinds.label": "What happens when you save seed from each kind of variety",
-  "aria.labelled": "{label}: {text}"
+  "aria.labelled": "{label}: {text}",
+  "climate.from": "From {book}, by {by}",
+  "climate.missing": "Our sources do not cover the {zone} climate here yet. The principles above still hold; the blocks below are for other climates."
 }
