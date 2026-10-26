@@ -52,7 +52,7 @@ Digging pushes the other way. Tilled soil that is often bare leans bacterial; ol
     { title: 'More bacteria', text: 'Nitrogen mostly as nitrate' },
     { title: 'More fungi', text: 'More of it as ammonium' },
   ]}
-  alt="A bar shading from bacteria on the left to fungi on the right, with six stages: bare ground, weeds, vegetables and annuals, grasses and lawns, shrubs, then trees and forest."
+  alt="A bar shading from bacteria on the left to fungi on the right, with six stages: bare ground, weeds, vegetables and annuals, grasses and lawns, shrubs and perennials, then trees and forest. Vegetables and annuals, grasses and lawns, and trees and forest are marked. At the bacterial end nitrogen is mostly nitrate; at the fungal end more of it is ammonium."
 />
 </Figure>
 
@@ -105,7 +105,7 @@ F:B ranges the authors give (fungi : bacteria, by weight):
 | Alder, beech, aspen, cottonwood (trees of riversides) | bacterial when young; 5:1 to 100:1 when mature | change with age |
 | Conifers | 50:1 to 1000:1 | fungi far ahead |
 
-Without figures: a vegetable bed wants slightly more bacteria than fungi, and shrubs lean further toward fungi than perennials, rhododendrons very strongly, a lilac much less.
+Without figures: a vegetable bed wants slightly more bacteria than fungi, and shrubs lean further toward fungi than perennials, rhododendrons very strongly, a lilac less so.
 
 ## Which way does your bed lean now?
 
@@ -144,17 +144,15 @@ Digging is not a lever. The authors stop tilling established beds; their one exc
 
 The steering table below gives kinds, not amounts: recipes and depths are in the compost and mulch guides.
 
-{/* general tip, not from the book: herbs, rhubarb and asparagus are our examples of perennials; the book only says "perennials" */}
-
 <FbSteerTable
   columns={['Plant group', 'Compost', 'Mulch', 'Compost tea']}
   rows={[
-    ['Vegetables, annual flowers', 'Bacterial (more green; worm compost is bacterial too)', 'Green: clippings from untreated, dog-free lawns, or straw; fine, kept moist, not soggy', "Bacterial in the authors' method. **Keep it off anything you will eat** (see below)"],
+    ['Vegetables, annual flowers', 'Bacterial (more green; worm compost is bacterial too)', 'Green: clippings from untreated, dog-free lawns, or straw; fine, kept moist, not soggy', 'For annual flowers only. **Never on vegetables or the soil they grow in**'],
     ['Lawn and grass paths', 'Bacterial, a thin layer', 'Leave the clippings; mow fallen leaves where they lie', 'Slightly bacterial or balanced'],
-    ['Perennials (flowers, herbs, rhubarb, asparagus)', 'Fungal', 'Brown: autumn leaves, bark, chips; on top, coarse, not wetted', 'Fungal, on the soil; not on parts you eat'],
-    ['Shrubs and fruit bushes', 'Fungal, out to the drip line, off the stems', 'Brown, on top; leave their own fallen leaves', 'Fungal, on the soil'],
-    ['Trees, orchards, hedges', 'Fungal, out to the drip line, off the trunk', 'Leave fallen leaves; add brown mulch on top', 'Fungal, on the soil'],
-    ['Young birch, aspen, cottonwood', 'Cope with a bacterial soil while young; fungal once mature', 'As trees, once mature', 'As trees, once mature'],
+    ['Perennials', 'Fungal', 'Brown: autumn leaves, bark, chips; on top, coarse, not wetted', 'Fungal, for non-food perennials only. **Never on edible ones or their soil**'],
+    ['Shrubs and fruit bushes', 'Fungal, out to the drip line, off the stems', 'Brown, on top; leave their own fallen leaves', 'Fungal, for ornamental shrubs only. **Never on fruit bushes or their soil**'],
+    ['Trees, orchards, hedges', 'Fungal, out to the drip line, off the trunk', 'Leave fallen leaves; add brown mulch on top', 'Fungal, for non-food trees only. **Never on fruit or nut trees or the ground under them**'],
+    ['Young alder, aspen, beech, birch, cottonwood', 'Cope with a bacterial soil while young; fungal once mature', 'As trees, once mature', 'As trees, once mature'],
   ]}
 />
 
@@ -162,7 +160,9 @@ Recipes and depths: [Compost that feeds soil life](/guides/compost-for-soil-life
 
 <FoodCaution risk="compost-tea" />
 
-Rhododendrons, azaleas and blueberries need root fungi of their own, which are not sold; see [Mycorrhizal fungi](/guides/mycorrhizal-fungi/). In your Canopi design, mark each bed as bacterial, balanced or fungal, so the right compost and mulch go to the right place.
+Rhododendrons, azaleas and blueberries need root fungi of their own, which, the authors noted, were not yet on sale; see [Mycorrhizal fungi](/guides/mycorrhizal-fungi/).
+
+In your Canopi design, mark each bed as bacterial, balanced or fungal, so the right compost and mulch go to the right place.
 
 ## A tree in a lawn, a shrub in the vegetable plot
 
@@ -175,7 +175,7 @@ A lawn is bacterial ground. Where a long-lived plant stands in one, the authors 
 />
 
 {/* general tip, not from the book: the vegetable-plot case extends the authors' lawn example */}
-Do the same for a currant bush in a vegetable plot. The authors' warning cases are a lilac that never flowers and a spruce dying in a well-fed lawn. Birch, aspen and cottonwood are the exception: they cope with a bacterial soil while young.
+Do the same for a currant bush in a vegetable plot. The authors' warning cases are a lilac that never flowers and a spruce dying in a well-fed lawn. Alder, aspen, beech, birch and cottonwood are the exception: they cope with a bacterial soil while young.
 
 Soil under lawn trees and beside paths is often compacted; the authors find that aerating it helps only briefly unless compost, mulch and tea bring life back.
 
@@ -187,5 +187,7 @@ Soil under lawn trees and beside paths is often compacted; the authors find that
 <Item id="brown-under-trees" when="autumn" hint="Add brown mulch on top out to the drip line, clear of trunks.">Leave fallen leaves under trees and shrubs.</Item>
 <Item id="compost-by-kind" when="any" hint="Greens for the vegetables, browns for the trees and perennials.">Plan one bacterial and one fungal compost.</Item>
 <Item id="tree-island" when="autumn" hint="Fungal compost and brown mulch out to the drip line; no grass underneath.">Give a tree in the lawn its own island.</Item>
-<Item id="tea-off-food" when="any" hint="Read the compost tea guide first.">If you try compost tea, keep it off anything you will eat.</Item>
+<Item id="tea-off-food" when="any" hint="Read the compost tea guide first.">If you try compost tea, keep it off food plants and the soil they grow in.</Item>
 </Checklist>
+
+<NextGuides slugs={["compost-for-soil-life", "mulch", "compost-tea"]} />
