@@ -6,6 +6,10 @@
     "./worker-configuration.d.ts"
   ],
   "exclude": [
-    "dist"
+    "dist",
+    "node_modules",
+    "public",
+    "mockup",
+    ".local"
   ]
 }

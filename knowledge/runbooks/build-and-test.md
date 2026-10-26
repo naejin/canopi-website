@@ -4,7 +4,7 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:07:50Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:26:15Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:30:12Z }
 sources:
@@ -12,17 +12,23 @@ sources:
     resource: ../../package.json
     title: package.json
     digest: sha256:8dabfa58ee33f2fa
-    last_modified: 2026-10-26T20:05:29Z
+    last_modified: 2026-10-26T20:08:11Z
   - id: readme
     resource: ../../README.md
     title: README.md
     digest: sha256:22edd4bb3671389f
-    last_modified: 2026-10-26T20:05:29Z
+    last_modified: 2026-10-26T20:08:11Z
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:3cbc0f4161947c98
     last_modified: 2026-10-26T14:24:02Z
+  - id: tsconfig-json
+    resource: ../../tsconfig.json
+    title: tsconfig.json
+    digest: sha256:1a8a854b16eadbd9
+    last_modified: 2026-10-26T20:26:01Z
+enforced_by: [scripts/package.test.mjs]
 ---
 
 # When to use
@@ -53,6 +59,7 @@ Node >= 22.12.0.
 # Troubleshooting
 
 - `build:with-web`, `preview` or `deploy` fail with "CANOPI_WEB_EDITION_ARCHIVE is required": set it, or `CANOPI_WEB_EDITION_REQUIRED=0` for an intentional marketing-only build.
+- `npm run check` runs out of memory (it should peak under 1 GB): `tsconfig.json` must exclude `public`, `mockup`, `.local` and `node_modules`; the base config allows JS, so without them the check parses the MapLibre bundle in `public/vendor` and needs more than 4 GB, and the out-of-memory killer can take the terminal session with it. `scripts/package.test.mjs` fails if an exclude goes missing.
 - Map 404s in dev after a build: `npm run build` wiped `public/vendor`; restart the dev server (do not kill processes by port).
 - Build throws `src/data/bibliography.md:<line>`: fix the bibliography entry as the message says (see [src/data](/modules/src-data.md)).
 - `npm test` key mismatch: add the key to all 11 translation files (see [src/i18n](/modules/src-i18n.md)); guide strings go in `src/i18n/guides/{en,fr}.json` only.
