@@ -3,8 +3,7 @@
 // phones). 1 glue: mineral grains held in a pale film of bacterial slime. 2 bind: five crumbs tied
 // together by fine fungal threads. 3 open: crumbs above and below an open tunnel, with a short
 // earthworm. Each panel's title, line of text and image description come from the MDX.
-import { rng, r1 } from '../../../../lib/svg';
-import { crumbPath, threadPath } from './soil-shapes';
+import { rng, r1, crumbPath, threadPath } from '../../../../lib/svg';
 interface Item { title: string; text: string; alt: string; }
 interface Props { items: [Item, Item, Item]; }
 const { items } = Astro.props;

@@ -4,7 +4,7 @@
 // one earthworm, green leaves, leaves turning through autumn, beneficial insects, a kitchen handful of
 // corn and beans. Seeded by the slug, so each guide has its
 // own arrangement and every build is the same. Decorative: the title says it all.
-import { CLOVE_PATH, CLOVE_SEAM, GRAIN_CREASE, GRAIN_PATH, KERNEL_PATH, SQUASH_SEED_PATH, SQUASH_SEED_RIM, TOMATO_SEED_PATH, leafPath, lobedLeafPath, pick, r1, rng, seedOf, shuffle, type Bean } from '../../../lib/svg';
+import { CLOVE_PATH, CLOVE_SEAM, GRAIN_CREASE, crumbPath, threadPath, GRAIN_PATH, KERNEL_PATH, SQUASH_SEED_PATH, SQUASH_SEED_RIM, TOMATO_SEED_PATH, leafPath, lobedLeafPath, pick, r1, rng, seedOf, shuffle, type Bean } from '../../../lib/svg';
 import type { GuideDomain } from '../../../i18n/guides';
 import BeanG from './Bean.astro';
 import { heroMotif } from './hero-row';
@@ -95,13 +95,8 @@ const insects = {
 
 // Soil: irregular crumbs (a closed curve through jittered points), some with a pale mineral grain,
 // joined by fine fungal threads above and below them, and one earthworm crossing the row.
-const crumb = (cx: number, cy: number, rad: number) => {
-  const n = 9;
-  const pts = Array.from({ length: n }, (_, i) => { const a = (i / n) * Math.PI * 2, rr = rad * (0.78 + r() * 0.36); return [cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.86]; });
-  const mid = (p: number[], q: number[]) => `${r1((p[0] + q[0]) / 2)} ${r1((p[1] + q[1]) / 2)}`;
-  return `M${mid(pts[n - 1], pts[0])}` + pts.map((p, i) => `Q${r1(p[0])} ${r1(p[1])} ${mid(p, pts[(i + 1) % n])}`).join('') + 'Z';
-};
-const thread = (ax: number, ay: number, bx: number, by: number) => `M${r1(ax)} ${r1(ay)}Q${r1((ax + bx) / 2 + (r() - 0.5) * 14)} ${r1((ay + by) / 2 + (r() - 0.5) * 14)} ${r1(bx)} ${r1(by)}`;
+const crumb = (cx: number, cy: number, rad: number) => crumbPath(r, cx, cy, rad);
+const thread = (ax: number, ay: number, bx: number, by: number) => threadPath(r, ax, ay, bx, by);
 const soil = (): Item[] => {
   const wx = 120 + r() * 380; // the worm's left end
   const crumbs: [number, number, number][] = [];

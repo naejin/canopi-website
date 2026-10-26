@@ -6,8 +6,7 @@
 // dry chunks. 4 which compost or tea: a heap dotted with bacteria ↔ a heap laced with fungal threads.
 // Material drawings use plant tokens (it is plant matter), soil uses the soil tokens. `levers` give
 // each lever's name and its two end words, `ends` what each side favours. One image named by `alt`.
-import { rng, r1, leafPath } from '../../../../lib/svg';
-import { crumbPath, threadPath } from '../living-soil/soil-shapes';
+import { rng, r1, leafPath, crumbPath, threadPath } from '../../../../lib/svg';
 interface Lever { name: string; left: string; right: string; }
 interface Props { levers: [Lever, Lever, Lever, Lever]; ends: [string, string]; title: string; alt: string; }
 const { levers, ends, title, alt } = Astro.props;

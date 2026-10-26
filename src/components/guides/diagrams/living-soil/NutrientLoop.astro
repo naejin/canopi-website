@@ -5,8 +5,7 @@
 // back to the root. Five numbered arrows follow the loop; `steps` are the five numbered lines under
 // the drawing (each may mark its lead phrase in bold with **…**), `surface` and `zone` the two
 // labels in it. All words come from the MDX.
-import { rng, r1 } from '../../../../lib/svg';
-import { crumbPath, threadPath } from './soil-shapes';
+import { rng, r1, crumbPath, threadPath } from '../../../../lib/svg';
 interface Props { title: string; alt: string; steps: [string, string, string, string, string]; surface: string; zone: string; }
 const { title, alt, steps, surface, zone } = Astro.props;
 const parts = (step: string) => step.split(/\*\*(.+?)\*\*/).map((text, i) => ({ text, bold: i % 2 === 1 }));

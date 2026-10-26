@@ -4,8 +4,7 @@
 // and brown mulch filling it, laced with cream fungal threads, and a clear ring round the trunk.
 // `labels` are, in order: the lawn, the drip line, the compost and mulch, the clear trunk; they sit
 // to the right of the drawing with leader lines. All words come from the MDX.
-import { rng, r1, wrap } from '../../../../lib/svg';
-import { threadPath } from '../living-soil/soil-shapes';
+import { rng, r1, wrap, threadPath } from '../../../../lib/svg';
 interface Props { labels: [string, string, string, string]; title: string; alt: string; }
 const { labels, title, alt } = Astro.props;
 const locals = Astro.locals as { guideSvgs?: number };
