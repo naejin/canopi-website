@@ -5,15 +5,15 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T22:34:48Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:27Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:b2ac2b6e887f51a9
-    last_modified: 2026-10-27T21:38:30Z
+    digest: sha256:36c312a0e31ab88e
+    last_modified: 2026-10-27T22:26:44Z
 ---
 
 # Responsibility
@@ -30,7 +30,7 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 - [bibliography.ts](../../src/data/bibliography.ts): parses the markdown (`?raw` import) into `themes`; book climates are validated against `climates.ts`.
 - [glossary.ts](../../src/data/glossary.ts): the Field Guides glossary, en and fr (`glossary`, `glossaryEntry(id, lang)`; one id per concept, no aliases).
 - [crops.ts](../../src/data/crops.ts): the 42-row crop table (the guide map's 40 crops plus mustard and flax) behind `CropCards`, `CropTable` and `CropExplorer` (ease, crossing, pollination, life, seed; `crop(id)`; no aliases).
-- [consortium-guides.ts](../../src/data/consortium-guides.ts): the Field Guides the consortium tool links: `consortiumGuides` (plant canonical name to slugs), `jobGuides` (one guide per job) and `explainGuide`; see [Consortium page](/modules/consortium-page.md).
+- [consortium-guides.ts](../../src/data/consortium-guides.ts): the Field Guides the consortium tool links: `consortiumGuides` (plant canonical name to slugs), `jobGuides` (one guide per job, `null` when none covers it) and `explainGuide`; see [Consortium page](/modules/consortium-page.md).
 - [food-risks.ts](../../src/data/food-risks.ts): `foodRisks`, the one list of `<FoodCaution risk>` values, used by the component and the tests.
 
 # Interfaces
