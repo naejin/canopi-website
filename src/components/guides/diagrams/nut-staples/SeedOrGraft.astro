@@ -1,0 +1,78 @@
+---
+// Nuts as a staple: seedlings against grafts. Left panel, five seedlings of different heights, crown
+// shapes and leaf tones, one of them starred as the best local tree. Right panel, five identical grafted
+// trees, each with a graft mark low on the trunk. Captions are HTML text under each panel, so they wrap
+// in the reader's language; best is the line under both panels (the starred tree → cuttings or grafts).
+// alt describes both panels; the panels stack below 640 px.
+import { r1 } from '../../../../lib/svg';
+interface Props { fromSeed: string; grafted: string; best: string; alt: string; }
+const { fromSeed, grafted, best, alt } = Astro.props;
+const W = 200, G = 124;
+const xs = [24, 62, 100, 138, 176];
+interface Tree { x: number; h: number; rx: number; ry: number; lean: number; tone: string; star?: boolean; }
+const seedlings: Tree[] = [
+  { x: xs[0], h: 44, rx: 13, ry: 12, lean: -2, tone: 'guide-sog-young' },
+  { x: xs[1], h: 70, rx: 17, ry: 19, lean: 1, tone: 'guide-sog-leaf', star: true },
+  { x: xs[2], h: 36, rx: 10, ry: 9, lean: 3, tone: 'guide-sog-deep' },
+  { x: xs[3], h: 60, rx: 11, ry: 18, lean: -1, tone: 'guide-sog-leaf' },
+  { x: xs[4], h: 50, rx: 17, ry: 11, lean: 2, tone: 'guide-sog-young' },
+];
+const grafts: Tree[] = xs.map((x) => ({ x, h: 58, rx: 14, ry: 15, lean: 0, tone: 'guide-sog-leaf' }));
+// A trunk from the ground to the crown, slightly tapered, leaning a little.
+const trunk = (t: Tree) => {
+  const top = G - t.h, x2 = t.x + t.lean;
+  return `M${t.x - 2.4} ${G}Q${r1(t.x - 1.6)} ${r1(G - t.h / 2)} ${r1(x2 - 1.2)} ${top}H${r1(x2 + 1.2)}Q${r1(t.x + 1.6)} ${r1(G - t.h / 2)} ${t.x + 2.4} ${G}Z`;
+};
+// A five-pointed star centred on cx, cy.
+const star = (cx: number, cy: number, r: number) =>
+  Array.from({ length: 10 }, (_, i) => {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r;
+    return `${i ? 'L' : 'M'}${r1(cx + Math.cos(a) * rr)} ${r1(cy + Math.sin(a) * rr)}`;
+  }).join('') + 'Z';
+const panels = [
+  { trees: seedlings, caption: fromSeed, graft: false },
+  { trees: grafts, caption: grafted, graft: true },
+];
+---
+<div class="guide-sog">
+  {panels.map((p, i) => (
+    <div class="guide-sog-panel">
+      <svg viewBox={`0 0 ${W} ${G + 6}`} {...(i === 0 ? { role: 'img', 'aria-label': alt } : { 'aria-hidden': 'true' })}>
+        <line x1="4" y1={G} x2={W - 4} y2={G} class="guide-sog-ground" />
+        {p.trees.map((t) => (
+          <g>
+            <path d={trunk(t)} class="guide-sog-wood" />
+            <ellipse cx={t.x + t.lean} cy={G - t.h - t.ry * 0.55} rx={t.rx} ry={t.ry} class={t.tone} />
+            {p.graft && <ellipse cx={t.x} cy={G - 14} rx="3.6" ry="2" class="guide-sog-union" />}
+            {p.graft && <line x1={t.x - 4.5} y1={G - 12} x2={t.x + 4.5} y2={G - 16} class="guide-sog-mark" />}
+            {t.star && <path d={star(t.x + t.lean, G - t.h - t.ry * 1.55 - 9, 7)} class="guide-sog-star" />}
+          </g>
+        ))}
+      </svg>
+      <p class="guide-sog-caption">{p.caption}</p>
+    </div>
+  ))}
+  <p class="guide-sog-best">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path d={star(8, 8.6, 7)} class="guide-sog-star" /></svg>
+    <span>{best}</span>
+  </p>
+</div>
+
+<style>
+  .guide-sog { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem 1.2rem; }
+  .guide-sog-panel { display: grid; gap: 0.3rem; align-content: start; }
+  .guide-sog-panel svg { width: 100%; }
+  .guide-body .guide-sog p { margin: 0; }
+  .guide-sog-caption { font-size: 0.9rem; line-height: 1.4; color: var(--text-secondary); text-align: center; }
+  .guide-sog-best { grid-column: 1 / -1; display: flex; gap: 0.45rem; align-items: center; justify-content: center; font-size: 0.92rem; font-weight: 600; }
+  .guide-sog-best svg { width: 1.1rem; height: 1.1rem; flex: none; }
+  .guide-sog-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-sog-wood { fill: var(--leaf-brown); }
+  .guide-sog-leaf { fill: var(--leaf); opacity: 0.85; }
+  .guide-sog-young { fill: var(--leaf-young); opacity: 0.9; }
+  .guide-sog-deep { fill: var(--leaf-deep); opacity: 0.9; }
+  .guide-sog-union { fill: var(--leaf-brown); stroke: var(--surface); stroke-width: 0.8; }
+  .guide-sog-mark { stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-sog-star { fill: var(--accent); }
+  @media (max-width: 639px) { .guide-sog { grid-template-columns: minmax(0, 1fr); } }
+</style>
