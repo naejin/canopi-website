@@ -710,6 +710,7 @@
 .ct .photo img { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-alt); }
 .ct .confirm { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--warning-line); background: var(--warning-bg); border-radius: var(--radius); font-size: 15px; list-style: none; }
 .ct .confirm .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ct-drawer .drawer-foot .confirm { flex: 1 1 100%; }
 .ct .note-guide > svg { color: var(--text-secondary); }
 .ct .relax li > span { flex: 1 1 16em; }
 
@@ -743,9 +744,11 @@
 
 /* Print: only the sheet, built from the screen's words (app.js printHTML). */
 .ct .ct-print { display: none; }
+/* Print: a ready result prints its sheet alone; any other screen prints as the page it is (m8). */
 @media print {
-  body > :not(main), .ct > :not(.ct-print), .grain::after { display: none !important; }
-  .ct .ct-print { display: block; }
+  body:has(.ct-print:not(:empty)) > :not(main), .ct:has(.ct-print:not(:empty)) > :not(.ct-print), .grain::after { display: none !important; }
+  .ct .ct-print:not(:empty) { display: block; }
+  .ct .sheet-borrowed { border: 1px solid #1E1B16; padding: 8px 10px; margin-block: 8px; }
   .ct .sheet { box-shadow: none; padding: 0; max-width: none; }
   .ct .sheet table { page-break-inside: auto; } .ct .sheet tr { break-inside: avoid; }
   .ct .sheet-foot { word-break: break-all; }

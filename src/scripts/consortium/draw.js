@@ -22,7 +22,7 @@ function blob(cx, cy, rx, ry, seed, lumps) {
   return d + 'Z';
 }
 
-export const STRATUM_HEIGHT = { emergent: 250, high: 185, medium: 118, low: 52 };
+const STRATUM_HEIGHT = { emergent: 250, high: 185, medium: 118, low: 52 };
 
 function silhouette(t, cx, gy, colW) {
   const s = t.stratum.value, h = STRATUM_HEIGHT[s], seed = hash(t.id);

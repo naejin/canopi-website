@@ -55,7 +55,7 @@ export function makeWords(strings, lang) {
     return { plain, term };
   }
 
-  return { T, P, list, num, country, climate, region, cell, phaseKey, timeWords, lang };
+  return { T, P, list, num, country, climate, region, cell, phaseKey, timeWords };
 }
 
 // A plant's name in the page language, else English (marked lang="en"), else its scientific name.

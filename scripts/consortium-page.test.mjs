@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { pluralForms, makeWords, needsLook, searchText, fold, plantName } from '../src/scripts/consortium/words.js';
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
+import * as core from '../src/lib/consortium/index.ts';
+import { droppedPlants, trimGaps, mayPersist, photoSource, shown } from '../src/scripts/consortium/logic.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const locales = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
@@ -13,6 +15,8 @@ const strings = Object.fromEntries(locales.map((lang) => {
   return [lang, Object.fromEntries(Object.entries(all).filter(([k]) => k.startsWith('consortium.')).map(([k, v]) => [k.slice('consortium.'.length), v]))];
 }));
 const app = read('src/scripts/consortium/app.js') + read('src/scripts/consortium/words.js');
+const manifest = JSON.parse(read('public/data/consortium/manifest.json'));
+const siteOptions = { light: core.lights, soil: core.soils, water: core.waters, room: core.rooms };
 const page = read('src/components/consortium/ConsortiumPage.astro');
 const placeholders = (s) => [...new Set(s.match(/\{\w+\}/g) ?? [])].sort();
 const isPlural = (s) => /^(zero|one|two|few|many|other)\s*:/.test(s);
@@ -54,9 +58,25 @@ test('every key the tool asks for exists, and every key exists for a reason', ()
   const en = strings.en;
   const asked = new Set([...app.matchAll(/\b[TP]\(\s*'([^']+)'/g), ...page.matchAll(/tr\('([^']+)'\)/g)].map((m) => m[1]));
   for (const key of asked) if (!key.endsWith('.')) assert.ok(key in en, `missing string: ${key}`);
-  // Keys built at run time: a prefix plus an id from the data core.
-  const dynamic = /^(region|part|site|basis|stratum|band|phase|job|fn|tox|c|u|misfit|ctype|t|tab|sizeLine|nm|nc|oldLink|d|p|ex)\./;
-  for (const key of Object.keys(en)) assert.ok(dynamic.test(key) || app.includes(`'${key}'`) || page.includes(`'${key}'`), `unused string: ${key}`);
+  // copy-M8: keys built at run time are a prefix plus an id of the data core, and each such key
+  // names an id the core has; every other key is asked for literally.
+  const ids = {
+    region: [...core.regions], stratum: [...core.strata, 'none'], band: [...core.phaseBands], phase: [...core.phases], job: [...core.jobs],
+    fn: [...core.functionIds, 'crop'], tox: ['Slight', 'Moderate', 'Severe'], ctype: [...core.interactionTypes], tab: ['layers', 'time', 'jobs'],
+    sizeLine: [...core.rooms], site: Object.keys(siteOptions), basis: Object.keys(siteOptions), misfit: Object.keys(siteOptions),
+    part: Object.keys(manifest.country_regions),
+  };
+  const dynamicOk = (key) => {
+    const dot = key.indexOf('.');
+    const prefix = key.slice(0, dot), tail = key.slice(dot + 1);
+    if (dot < 0 || !ids[prefix]) return false;
+    const [id, rest = ''] = prefix === 'part' ? [tail.slice(0, 2), tail.slice(3)] : [tail.split('.')[0], tail.split('.').slice(1).join('.')];
+    assert.ok(ids[prefix].includes(id), `${key}: ${id} is not a ${prefix} id of the data core`);
+    if (prefix === 'part') assert.ok(manifest.country_regions[id].includes(rest), `${key}: ${id} is not in ${rest}`);
+    if (['site', 'basis', 'misfit'].includes(prefix) && rest) assert.ok(siteOptions[id].includes(rest.replace(/\.hint$/, '')), `${key}: ${rest}`);
+    return true;
+  };
+  for (const key of Object.keys(en)) assert.ok(dynamicOk(key) || app.includes(`'${key}'`) || page.includes(`'${key}'`), `unused string: ${key}`);
 });
 
 test('no builder notes reach the page (N3)', () => {
@@ -68,7 +88,7 @@ test('no builder notes reach the page (N3)', () => {
 });
 
 test('every Field Guide the tool links exists in English and French', () => {
-  const slugs = new Set([...Object.values(consortiumGuides).flat(), ...Object.values(jobGuides), explainGuide]);
+  const slugs = new Set([...Object.values(consortiumGuides).flat(), ...Object.values(jobGuides), explainGuide].filter(Boolean));
   for (const slug of slugs) {
     for (const lang of ['en', 'fr']) assert.ok(existsSync(new URL(`../src/content/guides/${slug}/${lang}.mdx`, import.meta.url)), `${slug}/${lang}.mdx`);
   }
@@ -93,7 +113,7 @@ test('words: plural forms, time words, lists', () => {
   assert.equal(en.timeWords(taxon('placenta_i', 'placenta_i')).plain, 'First 90 days');
   assert.equal(en.timeWords({ phases: null }).plain, 'Timing not checked yet');
   const fr = makeWords(strings.fr, 'fr');
-  assert.equal(fr.timeWords(taxon('placenta_iii', 'secondary_ii')).plain, 'Mène de la 1re année à la 25e année');
+  assert.equal(fr.timeWords(taxon('placenta_iii', 'secondary_ii')).plain, 'Domine de la 1re année à la 25e année');
   assert.equal(en.cell('tropical', 'southern_america'), 'Tropical · Southern America');
 });
 
@@ -111,4 +131,114 @@ test('words: what counts as "needs a look" (N4) and what the Add search reads (M
   assert.ok(searchText(t).includes('インガ'));
   assert.deepEqual(plantName(t, 'de'), { text: 'Ice-cream bean', lang: 'en' });
   assert.deepEqual(plantName(t, 'fr'), { text: 'Pois sucré', lang: null });
+});
+
+test('logic: an old link counts each lost plant once, from p and a only (m2)', () => {
+  const d = (key, value, reason = 'unknown') => ({ key, value, reason });
+  assert.equal(droppedPlants([d('p', 'deadbeef'), d('x', 'cafebabe'), d('a', 'deadbeef')]), 1);
+  assert.equal(droppedPlants([d('a', 'aaaaaaaa'), d('a', 'bbbbbbbb', 'ambiguous'), d('p', 'cccccccc', 'duplicate'), d('l', 'moon')]), 2);
+  assert.equal(droppedPlants([]), 0);
+});
+
+test('logic: gap rows never outnumber the free places, and an added plant takes its own layer\'s row (M4)', () => {
+  const gaps = [{ stratum: 'high', id: 'a' }, { stratum: 'low', id: 'b' }, { stratum: 'high', id: 'c' }];
+  assert.deepEqual(trimGaps(gaps, ['high'], 2).map((g) => g.id), ['b', 'c']);
+  assert.deepEqual(trimGaps(gaps, ['medium'], 2).map((g) => g.id), ['b', 'c'], 'another layer: the oldest row goes');
+  assert.deepEqual(trimGaps(gaps, ['low', 'high', 'high'], 0), []);
+  assert.deepEqual(trimGaps(gaps, [], 3), gaps);
+});
+
+test('logic: the address bar is left alone while a cell loads or fails (M2)', () => {
+  assert.equal(mayPersist({ status: 'ready', pending: null }), true);
+  assert.equal(mayPersist({ status: 'notcovered', pending: null }), true);
+  assert.equal(mayPersist({ status: 'loading', pending: null }), false);
+  assert.equal(mayPersist({ status: 'error', pending: null }), false);
+  assert.equal(mayPersist({ status: 'notcovered', pending: { state: {} } }), true, 'a waiting link is written from its own plants');
+});
+
+test('logic: a photo credits the site it came from (copy-M6)', () => {
+  assert.equal(photoSource('https://commons.wikimedia.org/wiki/File:X.jpg'), 'Wikimedia Commons');
+  assert.equal(photoSource('https://www.inaturalist.org/photos/123'), 'iNaturalist');
+  assert.equal(photoSource('https://example.org/x'), 'example.org');
+  assert.equal(photoSource('not a url'), null);
+  const cells = ['temperate-europe', 'mediterranean-europe', 'tropical-southern-america'];
+  for (const c of cells) {
+    for (const t of JSON.parse(read(`public/data/consortium/${c}.json`)).taxa) {
+      if (t.image?.source_page_url) assert.ok(['Wikimedia Commons', 'iNaturalist'].includes(photoSource(t.image.source_page_url)), `${t.canonical_name}: ${t.image.source_page_url}`);
+    }
+  }
+  assert.doesNotMatch(read('src/scripts/consortium/app.js'), />Wikimedia Commons</, 'the host is never hard-coded');
+});
+
+test('logic: a long list shows in steps (copy-m5)', () => {
+  const list = [...'abcdefghijk'];
+  assert.deepEqual(shown(list, 8), { items: [...'abcdefgh'], more: 3 });
+  assert.deepEqual(shown(list, 16), { items: list, more: 0 });
+});
+
+// copy-M4: a plant's guide talks about that plant. The guide's English text names it by its
+// scientific name, its English name in the cell, or the common word for its kind below, so a
+// keyword slip (peach for peach palm) fails here.
+const kind = {
+  Alnus: 'alder', Bambusa: 'bamboo', Dendrocalamus: 'bamboo', Guadua: 'bamboo', Phyllostachys: 'bamboo', Castanea: 'chestnut',
+  Corylus: 'hazel', Gleditsia: 'honey locust', Lupinus: 'lupin', Morus: 'mulberr', Quercus: 'acorn', Salix: 'willow', Tilia: 'linden',
+  Triticum: 'wheat', 'Vicia faba': 'fava',
+};
+// Names that contain a cell plant's name but are another plant.
+const falseFriends = { peach: ['peach palm'], pear: ['prickly pear', 'asian pear'], apple: ['apple-ring acacia'] };
+test('every guide a plant links names that plant (copy-M4, M5, m7)', () => {
+  const taxa = new Map();
+  for (const c of ['temperate-europe', 'mediterranean-europe', 'tropical-southern-america']) for (const t of JSON.parse(read(`public/data/consortium/${c}.json`)).taxa) taxa.set(t.canonical_name, t);
+  for (const [plant, list] of Object.entries(consortiumGuides)) {
+    const t = taxa.get(plant);
+    assert.ok(t, `${plant} is a plant of a cell`);
+    const words = [plant, t.names.en, kind[plant], kind[t.genus]].filter(Boolean).map((w) => w.toLowerCase());
+    for (const slug of list) {
+      const text = read(`src/content/guides/${slug}/en.mdx`).toLowerCase();
+      assert.ok(words.some((w) => (falseFriends[w] ?? []).reduce((x, f) => x.replaceAll(f, ''), text).includes(w)), `${plant} → ${slug}: the guide never names it (${words.join(', ')})`);
+    }
+  }
+  assert.equal(consortiumGuides['Robinia pseudoacacia'], undefined, 'no guide covers black locust, whose seeds and pods are toxic');
+  assert.equal(jobGuides.feeds_soil, 'food-forest');
+  assert.equal(jobGuides.helpers, null, 'no guide covers pollinators and pest-eaters yet');
+  assert.match(read('src/content/guides/food-forest/en.mdx'), /nitrogen.fixer/i);
+});
+
+// copy-M1, copy-B2: the strata labels and phase terms are the Canopi app's own
+// (canopi/desktop/web/src/i18n/<lang>.json: filters.stratum_*, canvas.consortium.phase_* and phaseGroup*).
+const appWords = {
+  en: [['Emergent', 'High', 'Mid', 'Low'], ['Placenta', 'Secondary', 'Climax']],
+  fr: [['Émergent', 'Haut', 'Moyen', 'Bas'], ['Placenta', 'Secondaire', 'Climax']],
+  es: [['Emergente', 'Alto', 'Medio', 'Bajo'], ['Placenta', 'Secundario', 'Clímax']],
+  pt: [['Emergente', 'Alto', 'Médio', 'Baixo'], ['Placenta', 'Secundário', 'Clímax']],
+  it: [['Emergente', 'Alto', 'Medio', 'Basso'], ['Placenta', 'Secondario', 'Climax']],
+  zh: [['突出层', '高层', '中层', '低层'], ['胎盘期', '次生期', '顶级群落']],
+  de: [['Aufragend', 'Hoch', 'Mittel', 'Niedrig'], ['Placenta', 'Sekundär', 'Klimax']],
+  ja: [['突出層', '高木層', '中木層', '低木層'], ['プラセンタ', '二次遷移', '極相']],
+  ko: [['돌출층', '교목층', '중간층', '저층'], ['플라센타', '2차 천이', '극상']],
+  nl: [['Emergent', 'Hoog', 'Midden', 'Laag'], ['Placenta', 'Secundair', 'Climax']],
+  ru: [['Эмергентный', 'Высокий', 'Средний', 'Низкий'], ['Плацента', 'Вторичный', 'Климакс']],
+};
+test('strata labels and phase terms are the app\'s, in every locale (copy-M1, copy-B2)', () => {
+  for (const lang of locales) {
+    const [layers, [placenta, secondary, climax]] = appWords[lang], s = strings[lang];
+    assert.deepEqual(['emergent', 'high', 'medium', 'low'].map((k) => s[`stratum.${k}`]), layers, lang);
+    assert.deepEqual(core.phases.map((p) => s[`phase.${p}.term`]), [1, 2, 3].map((n) => `${placenta} ${n}`).concat([1, 2, 3].map((n) => `${secondary} ${n}`), [climax]), lang);
+    for (const word of [placenta, secondary, climax]) assert.ok(s['ex.phase'].includes(word), `${lang}: ex.phase names ${word}`);
+  }
+});
+
+test('toasts never open on a plant name with a gendered participle after it (copy-M3)', () => {
+  for (const lang of ['fr', 'es', 'it', 'pt']) for (const key of ['removed', 'swapped', 'added', 'pinned', 'unpinned', 'fromGuide', 'fromGuidePlant']) {
+    assert.doesNotMatch(strings[lang][key], /(^|[.!?:]\s)\{(name|a|b|plant)\}\s+(est |está |è )?\p{L}+(ée|ada|ida|ata|uta|ita)\b/u, `${lang}: ${key}`);
+  }
+});
+
+test('the number of places comes from the manifest, never from the words (copy-m2)', () => {
+  for (const lang of locales) for (const key of ['betaNote', 'nc.text']) {
+    assert.ok(isPlural(strings[lang][key]) && strings[lang][key].includes('#'), `${lang}: ${key}`);
+    assert.doesNotMatch(strings[lang][key], /three|trois|tres|três|tre |drei|drie|три|三|세 /i, `${lang}: ${key}`);
+  }
+  assert.match(page, /manifest\.cells\.length/);
+  assert.match(app, /P\('nc\.text', manifest\.cells\.length\)/);
 });

@@ -6,11 +6,12 @@
 // own, the state lives in the address bar and in localStorage.
 import { initChrome } from '../chrome.js';
 import {
-  cellFor, regionsOf, strata, phases, jobs, jobsOf, jobOfFunction, suggest, evaluate, alternatives, flagsFor,
-  SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveState, invasiveCountries, isSerious, siteClimates, fits,
+  cellFor, regionsOf, regions, strata, phases, phaseBands, bandsOf, jobs, jobsOf, jobOfFunction, suggest, evaluate, alternatives, flagsFor,
+  SIZE_LIMIT, DEFAULT_SITE, lights, soils, waters, rooms, encodeState, decodeState, resolveState, taxonByName, invasiveCountries, isSerious, siteClimates, fits,
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadCell } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook } from './words.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, shown } from './logic.js';
 import { profileSVG } from './draw.js';
 
 const data = JSON.parse(document.getElementById('ct-data').textContent);
@@ -26,8 +27,11 @@ const printEl = document.getElementById('ct-print');
 const phoneMQ = matchMedia('(max-width: 639px)');
 const phone = () => phoneMQ.matches;
 const STORE = 'canopi-consortium';
-const REGIONS = ['africa', 'asia_temperate', 'asia_tropical', 'australasia', 'europe', 'northern_america', 'pacific', 'southern_america'];
-const SITE_OPTIONS = { light: ['sun', 'part', 'shade'], soil: ['acid', 'neutral', 'chalky', 'unsure'], water: ['dry', 'average', 'wet', 'unsure'], room: ['small', 'large', 'field'] };
+// The core's lists: regions in the page language's alphabetical order, the site answers as the core has them.
+const REGIONS = [...regions].sort((a, b) => W.region(a).localeCompare(W.region(b), data.lang));
+const SITE_OPTIONS = { light: lights, soil: soils, water: waters, room: rooms };
+// "No match": the one looser answer each site question offers.
+const relaxTo = (k) => ({ light: 'part', soil: 'unsure', water: 'unsure', room: S.site.room === 'small' ? 'large' : 'field' })[k];
 
 // ---------- Icons ----------
 const svg = (body, size = 16) => `<svg viewBox="0 0 16 16" width="${size}" height="${size}" aria-hidden="true">${body}</svg>`;
@@ -74,6 +78,8 @@ let O = null; // the open sheet: { type, id, filter, back, confirm }
 let addQuery = '', addJob = '', addLayer = '';
 let countryQuery = '';
 let focusNext = null, lastRemoved = null, undoStart = null, toastTimer = 0;
+const SWAP_STEP = 8;
+let swapMore = 0;
 
 const taxonOf = (id) => cell?.taxa.find((t) => t.id === id) ?? null;
 const stratumOf = (t) => t.stratum?.value ?? 'none';
@@ -101,11 +107,9 @@ const height = (t) => t.traits.height_m?.max ?? 0;
 const rank = (t) => (t.stratum ? strata.indexOf(t.stratum.value) : 9) * 1000 - height(t);
 const ordered = () => [...members()].sort((a, b) => rank(a) - rank(b) || a.canonical_name.localeCompare(b.canonical_name));
 const numbering = () => new Map(ordered().map((t, i) => [t.id, i + 1]));
-function coverage(list) {
-  const js = new Set(), ss = new Set();
-  for (const t of list) { for (const j of jobsOf(t)) js.add(j); if (t.stratum) ss.add(t.stratum.value); }
-  return { jobs: js, strata: ss };
-}
+// The jobs nobody does come from the core (evaluate's gaps); the layers in use from the members.
+const jobGaps = () => evaluated().gaps;
+const strataIn = (list) => new Set(list.filter((t) => t.stratum).map((t) => t.stratum.value));
 // How many plants "Fill the free places" would add now.
 function fillable() {
   if (!cell || S.members.length >= limit()) return 0;
@@ -126,7 +130,8 @@ const otherOf = (c, t) => (c.a.id === t.id ? c.b : c.a);
 function warnParts(t, flags) {
   const severe = [], soft = [], unk = [];
   const tox = t.warnings.toxicity;
-  if (tox && tox.level !== 'None') severe.push({ cls: 'danger', text: T('tox.' + tox.level), look: tox.level !== 'Slight' });
+  // copy-m18: slight toxicity is a caution (soft chip), not the red danger mark.
+  if (tox && tox.level !== 'None') severe.push({ cls: tox.level === 'Slight' ? 'soft' : 'danger', text: T('tox.' + tox.level), look: tox.level !== 'Slight' });
   if (flags.invasive === true) severe.push({ cls: 'warning', text: esc(T('invHere', { country: W.country(S.country) })), look: true });
   for (const c of flags.conflicts) severe.push({ cls: isSerious(c) ? 'warning' : 'soft', text: T('conflict', { other: name(otherOf(c, t)) }), look: isSerious(c), conflict: c });
   for (const k of flags.misfits) severe.push({ cls: 'warning', text: esc(misfitText(t, k)), look: true, misfit: k });
@@ -139,6 +144,8 @@ function warnParts(t, flags) {
   }
   if (!tox) unk.push(T('u.tox'));
   if (t.warnings.invasive_in == null) unk.push(T('u.inv'));
+  if (t.warnings.allelopathic == null) unk.push(T('u.allelo'));
+  if (t.warnings.weed_potential == null) unk.push(T('u.spreads'));
   if (t.functions == null) unk.push(jobsOf(t).length ? T('u.jobsOther') : T('u.jobs'));
   return { severe, soft, unk };
 }
@@ -220,14 +227,16 @@ function countryPicker() {
     ? `<button class="suggest-country" type="button" data-act="country" data-v="${browserCountry}" ${fk('suggest')}><span class="flagless" aria-hidden="true">${browserCountry}</span><span><strong>${esc(W.country(browserCountry))}</strong><small>${esc(T('fromBrowser'))}</small>${mark(regionsOf(manifest, browserCountry))}</span><span class="go">${esc(T('useIt'))}</span></button>` : '';
   return `${sug}<div class="field"><label for="ct-country-q">${esc(T('searchCountry'))}</label>
     <div class="search">${I.search}<input id="ct-country-q" type="search" autocomplete="off" spellcheck="false" placeholder="${esc(T('countryPlaceholder'))}" value="${esc(countryQuery)}" data-input="country" ${fk('country-q')}></div>
-    <div id="ct-country-list" aria-live="polite">${countryList()}</div></div>
+    <div id="ct-country-list">${countryList()}</div></div>
     <p class="or-line">${btn('link-button', 'rather-not', '1', esc(T('ratherNot')), fk('rather'))}</p>`;
 }
 const privacy = () => `<p class="privacy">${I.lock}<span>${esc(T('privacy'))}</span></p>`;
 function guideNote() {
   if (!S.guidePlant) return '';
   const t = S.guideId && taxonOf(S.guideId);
-  return `<div class="note note-guide">${I.book}<p>${T('fromGuide', { plant: t ? name(t) : `<i>${esc(S.guidePlant)}</i>`, climate: esc(W.climate(S.climate)) })}</p></div>`;
+  const plant = t ? name(t) : `<i>${esc(S.guidePlant)}</i>`;
+  // m4: the guide set the climate only when its link named one.
+  return `<div class="note note-guide">${I.book}<p>${S.climateSource === 'guide' && S.climate ? T('fromGuide', { plant, climate: esc(W.climate(S.climate)) }) : T('fromGuidePlant', { plant })}</p></div>`;
 }
 function setupHTML() {
   const editing = !S.climate || S.editClimate;
@@ -236,7 +245,7 @@ function setupHTML() {
     : `<section class="step step-collapsed" data-done="true" aria-labelledby="ct-st1"><div class="step-summary"><span class="step-num step-num-done">${I.check}</span>
         <div><h2 id="ct-st1" class="field-label">${esc(T('step1'))}</h2><strong>${esc(W.climate(S.climate))}</strong>${S.climateSource ? `<small>${esc(T(S.climateSource === 'guide' ? 'climateFromGuide' : 'climateFromSite'))}</small>` : ''}</div>
         ${btn('button button-secondary button-small', 'edit-climate', null, esc(T('change')), fk('edit-climate'))}</div></section>`;
-  return `<div class="setup">${S.climateSource === 'guide' ? guideNote() : ''}${step1}
+  return `<div class="setup">${guideNote()}${step1}
     <section class="step" data-done="${!!S.region}" aria-labelledby="ct-st2"><div class="step-head"><span class="step-num">2</span><h2 id="ct-st2">${esc(T('step2'))}</h2><p>${esc(T('step2.lede'))}</p></div>
       ${countryPicker()}${privacy()}</section></div>`;
 }
@@ -291,6 +300,11 @@ function freeRowHTML(can) {
     <div class="free-actions">${btn('button button-secondary button-small', 'open-add', 'grow', `${I.search}<span>${esc(T('findPlant'))}</span>`, fk('find-free'))}
     ${can ? btn('button button-primary button-small', 'fill', null, esc(T('fill')), fk('fill')) : ''}</div></div>`;
 }
+// A result from another region's cell: the same words on screen and on paper (M6). Without a
+// country there is no invasive check where the user gardens, and the label says so (M5).
+function borrowedWords() {
+  return { title: T('borrowed', { cell: cellLabel() }), text: `${T('borrowedText', { where: whereLabel() })} ${S.country ? T('borrowedInv', { country: W.country(S.country) }) : T('borrowedNoInv')}` };
+}
 function notices(can) {
   let out = '';
   if (S.notice === 'oldlink') out += `<div class="note note-old" role="status">${I.info}<div><p><strong>${esc(T('oldLink.title'))}</strong></p><p>${esc(P('oldLink.text', S.dropped))}</p><div class="note-actions">${can ? btn('button button-secondary button-small', 'fill', null, esc(T('fill'))) : ''}${btn('link-button', 'dismiss', null, esc(T('dismiss')))}</div></div></div>`;
@@ -300,20 +314,20 @@ function notices(can) {
   }
   if (S.notice === 'guide') out += guideNote();
   if (S.notice === 'guideMissing') out += `<div class="note note-old" role="status">${I.info}<div><p>${T('guideMissing', { plant: `<i>${esc(S.guidePlant)}</i>` })}</p><div class="note-actions">${btn('link-button', 'dismiss', null, esc(T('dismiss')))}</div></div></div>`;
-  if (S.cellRegion) out += `<div class="note note-borrowed">${I.warn}<div><p><strong>${esc(T('borrowed', { cell: cellLabel() }))}</strong> ${esc(T('borrowedText', { where: whereLabel() }))}</p><div class="note-actions">${btn('link-button', 'open-place', 'country', esc(T('change')))}</div></div></div>`;
+  if (S.cellRegion) { const b = borrowedWords(); out += `<div class="note note-borrowed">${I.warn}<div><p><strong>${esc(b.title)}</strong> ${esc(b.text)}</p><div class="note-actions">${btn('link-button', 'open-place', 'country', esc(T('change')))}</div></div></div>`; }
   return out;
 }
 function mainHTML() {
-  if (S.status === 'loading') return `<div class="skeleton" aria-busy="true"><p class="status-line" role="status"><span class="spinner" aria-hidden="true"></span>${esc(T('loading', { cell: cellLabel() }))}</p>
+  if (S.status === 'loading') return `<div class="skeleton" aria-busy="true"><p class="status-line" role="status" id="ct-result-title" tabindex="-1"><span class="spinner" aria-hidden="true"></span>${esc(T('loading', { cell: cellLabel() }))}</p>
     <div class="sk" style="height:46px;width:60%"></div><div class="sk" style="height:22px"></div><div class="sk" style="height:44px;max-width:300px;border-radius:999px"></div><div class="sk sk-draw"></div><div class="sk" style="height:84px"></div></div>`;
   if (S.status === 'error') return `<div class="callout" role="alert">${resultTitle(T('errorTitle'))}<p>${esc(T('errorText'))}</p><div class="actions">${btn('button button-primary', 'retry', null, esc(T('retry')), fk('retry'))}</div></div>`;
   if (S.status === 'notcovered') return notCoveredHTML();
-  if (S.status === 'nomatch') return `${phone() ? placeChips() : ''}${noMatchHTML()}${basisHTML()}`;
-  const ms = members(), flags = flagsById(), cov = coverage(ms), can = fillable();
+  if (S.status === 'nomatch') return `${notices(fillable())}${phone() ? placeChips() : ''}${noMatchHTML()}${basisHTML()}`;
+  const ms = members(), flags = flagsById(), can = fillable(), jobsDone = jobs.length - jobGaps().length;
   const lastEnd = Math.max(-1, ...ms.map((t) => (t.phases ? phases.indexOf(t.phases.end) : -1)));
   return `${notices(can)}
     <div class="result-head"><div>${resultTitle(T('yourConsortium'))}<p class="result-sub">${esc(cellLabel())}${S.country ? ' · ' + esc(W.country(S.country)) : ''}</p></div>${phone() ? placeChips() : ''}</div>
-    <p class="summary-strip"><span><b>${esc(P('sizeLine.' + S.site.room, ms.length))}</b></span><span>${esc(T('sumLayers', { n: cov.strata.size }))}</span><span>${esc(T('sumJobs', { n: cov.jobs.size }))}</span>${lastEnd >= 0 ? `<span>${esc(T('sumTime', { end: T(W.phaseKey(lastEnd, 'to')) }))}</span>` : ''}</p>
+    <p class="summary-strip"><span><b>${esc(P('sizeLine.' + S.site.room, ms.length))}</b></span><span>${esc(T('sumLayers', { n: strataIn(ms).size }))}</span><span>${esc(T('sumJobs', { n: jobsDone }))}</span>${lastEnd >= 0 ? `<span>${esc(T('sumTime', { end: T(W.phaseKey(lastEnd, 'to')) }))}</span>` : ''}</p>
     ${basisHTML()}${attentionHTML(flags)}${freeRowHTML(can)}
     <div class="tabs" role="tablist" aria-label="${esc(T('yourConsortium'))}">${['layers', 'time', 'jobs'].map((v) => `<button class="tab" role="tab" type="button" id="ct-tab-${v}" aria-selected="${S.view === v}" aria-controls="ct-panel" tabindex="${S.view === v ? 0 : -1}" data-act="view" data-v="${v}" ${fk('tab-' + v)}>${esc(T('tab.' + v))}</button>`).join('')}</div>
     <div role="tabpanel" id="ct-panel" aria-labelledby="ct-tab-${S.view}" class="tabpanel">${S.view === 'layers' ? layersHTML(flags) : S.view === 'time' ? timeHTML(flags) : jobsHTML()}</div>${growRowHTML()}
@@ -323,9 +337,9 @@ function notCoveredHTML() {
   const same = manifest.cells.filter((c) => c.climate_zone.toLowerCase() === S.climate);
   const where = whereLabel();
   return `<div class="callout">${resultTitle(T('nc.title', { climate: W.climate(S.climate), region: W.region(S.region) }))}
-    <p>${esc(T('nc.text'))}</p>
+    <p>${esc(P('nc.text', manifest.cells.length))}</p>
     <ul class="covered-plain">${manifest.cells.map((c) => `<li><strong>${esc(W.cell(c.climate_zone.toLowerCase(), c.region))}</strong></li>`).join('')}</ul>
-    ${same.length ? `<p class="place-note">${esc(T('nc.optNote', { where }))}</p><div class="actions">${same.map((c) => btn('button button-primary', 'opt-in', c.region, esc(T('nc.optIn', { cell: W.cell(S.climate, c.region) })), fk('optin-' + c.region))).join('')}</div>` : `<p class="place-note">${esc(T('nc.noneClimate'))}</p>`}
+    ${same.length ? `<p class="place-note">${esc(T('nc.optNote', { where }))} ${esc(S.country ? T('borrowedInv', { country: W.country(S.country) }) : T('borrowedNoInv'))}</p><div class="actions">${same.map((c) => btn('button button-primary', 'opt-in', c.region, esc(T('nc.optIn', { cell: W.cell(S.climate, c.region) })), fk('optin-' + c.region))).join('')}</div>` : `<p class="place-note">${esc(T('nc.noneClimate'))}</p>`}
     <div class="actions">${btn('button button-secondary', 'open-place', 'country', esc(T('nc.change')), fk('nc-change'))}<a class="text-link" href="${data.contact}">${esc(T('nc.ask'))}</a></div></div>`;
 }
 // For each site answer, how many plants it rules out on its own.
@@ -341,11 +355,10 @@ function siteCounts() {
   return out.sort((a, b) => b.n - a.n);
 }
 function noMatchHTML() {
-  const relaxTo = { light: 'part', soil: 'unsure', water: 'unsure', room: S.site.room === 'small' ? 'large' : 'field' };
   return `<div class="callout">${resultTitle(T('nm.title'))}<p>${esc(T('nm.text'))}</p>
     <ul class="relax" role="list">${siteCounts().map((c) => {
-      const value = T(`site.${c.key}.${relaxTo[c.key]}`);
-      return `<li><span>${esc(T('nm.rule', { label: T('site.' + c.key), value: T(`site.${c.key}.${S.site[c.key]}`), n: c.n, total: cell.taxa.length }))}</span>${btn('button button-secondary button-small', 'relax', c.key, esc(c.key === 'light' && S.site.light === 'shade' ? T('nm.tryLight', { value }) : T('nm.try', { value })), fk('relax-' + c.key))}</li>`;
+      const value = T(`site.${c.key}.${relaxTo(c.key)}`);
+      return `<li><span>${esc(T('nm.rule', { label: T('site.' + c.key), value: T(`site.${c.key}.${S.site[c.key]}`), n: W.num(c.n), total: W.num(cell.taxa.length) }))}</span>${btn('button button-secondary button-small', 'relax', c.key, esc(c.key === 'light' && S.site.light === 'shade' ? T('nm.tryLight', { value }) : T('nm.try', { value })), fk('relax-' + c.key))}</li>`;
     }).join('')}</ul>
     <div class="actions">${btn('button button-secondary', 'open-add', 'grow', `${I.search}${esc(T('growHint'))}`, fk('nm-add'))}</div></div>`;
 }
@@ -358,8 +371,11 @@ function explainPanel(id) {
   if (S.explain !== id) return '';
   const body = id === 'stratum'
     ? `<h4>${esc(T('ex.stratum.title'))}</h4><p>${esc(T('ex.stratum'))}</p><ul class="strata-mini" role="list">${strata.map((s) => `<li>${sw(s)}<span><b>${esc(stratumLabel(s))}</b> · ${esc(T('stratum.' + s + '.about'))}</span></li>`).join('')}</ul>`
-    : `<h4>${esc(T('ex.phase.title'))}</h4><p>${esc(T('ex.phase'))}</p>`;
-  return `<div class="explain-panel" id="ct-ex-${id}" role="region" aria-label="${esc(T(id === 'stratum' ? 'whatStratum' : 'whatPhase'))}">${body}${guideLink(data.explainGuide, 'guide-link', (title) => `${esc(T('readGuide'))}: ${title}`)}<button class="pop-close" type="button" data-act="explain" data-v="${id}" aria-label="${esc(T('close'))}">${I.close}</button></div>`;
+    : id === 'job'
+      ? `<h4>${esc(T('ex.job.title'))}</h4><p>${esc(T('ex.job'))}</p>`
+      : `<h4>${esc(T('ex.phase.title'))}</h4><p>${esc(T('ex.phase'))}</p>`;
+  const label = { stratum: 'whatStratum', phase: 'whatPhase', job: 'whatJob' }[id];
+  return `<div class="explain-panel" id="ct-ex-${id}" role="region" aria-label="${esc(T(label))}">${body}${guideLink(data.explainGuide, 'guide-link', (title) => `${esc(T('readGuide'))}: ${title}`)}<button class="pop-close" type="button" data-act="explain" data-v="${id}" aria-label="${esc(T('close'))}">${I.close}</button></div>`;
 }
 function profileHTML(flags, print = false) {
   const placed = ordered().filter((t) => t.stratum), nums = numbering();
@@ -455,7 +471,7 @@ function doers(job) {
   return out;
 }
 function jobsHTML() {
-  const nums = numbering(), cov = coverage(members()), unknown = members().filter((t) => t.functions == null);
+  const nums = numbering(), gaps = jobGaps(), unknown = members().filter((t) => t.functions == null);
   const cards = jobs.map((j) => {
     const list = doers(j), gap = !list.length;
     return `<article class="job" data-gap="${gap}"><div class="job-head"><span class="job-icon">${jobIcon(j)}</span><h4>${esc(T('job.' + j))}</h4></div>
@@ -465,8 +481,9 @@ function jobsHTML() {
       ${guideLink(data.jobGuides[j], 'guide-link', (title) => `${I.book}<span>${esc(T('readGuide'))}<span class="vh">: ${title}</span></span>`)}
     </article>`;
   }).join('');
-  return `<div class="view-head"><h3>${esc(T('jobsTitle'))}</h3></div>
-    <div class="jobs-meter"><ol aria-hidden="true">${jobs.map((j) => `<li data-gap="${!cov.jobs.has(j)}"></li>`).join('')}</ol><span>${esc(cov.jobs.size === jobs.length ? T('jobsAllDone') : T('jobsNote', { n: cov.jobs.size }))}</span></div>
+  return `<div class="view-head"><h3>${esc(T('jobsTitle'))} ${explainBtn('job', T('whatJob'))}</h3></div>
+    ${explainPanel('job')}
+    <div class="jobs-meter"><ol aria-hidden="true">${jobs.map((j) => `<li data-gap="${gaps.includes(j)}"></li>`).join('')}</ol><span>${esc(!gaps.length ? T('jobsAllDone') : T('jobsNote', { n: jobs.length - gaps.length }))}</span></div>
     ${unknown.length ? `<p class="note note-dashed">${I.unknown}<span>${T('unknownJobs', { names: W.list(unknown.map(name)) })}</span></p>` : ''}
     <div class="jobs-grid">${cards}</div>`;
 }
@@ -512,11 +529,17 @@ function detailsParts(t) {
   if (tox?.level === 'None') items.push(item('checked', I.check, `${esc(T('d.toxNone'))} <span class="muted">(${esc(T('d.checked'))})</span>`));
   if (!tox) items.push(item('unknown', I.unknown, esc(T('unkTox')), esc(T('d.toxUnk'))));
   if (t.functions == null) items.push(item('unknown', I.unknown, esc(T(jobsOf(t).length ? 'unkJobsOther' : 'unkJobs')), esc(T('d.jobsUnk'))));
+  // M7: false is checked, null is not checked yet; neither is shown as the other.
+  const al = t.warnings.allelopathic, wp = t.warnings.weed_potential;
+  if (al === false) items.push(item('checked', I.check, `${esc(T('d.alleloNone'))} <span class="muted">(${esc(T('d.checked'))})</span>`));
+  if (al == null) items.push(item('unknown', I.unknown, esc(T('unkAllelo')), esc(T('d.alleloUnk'))));
+  if (wp === false) items.push(item('checked', I.check, `${esc(T('d.spreadsNone'))} <span class="muted">(${esc(T('d.checked'))})</span>`));
+  if (wp == null) items.push(item('unknown', I.unknown, esc(T('unkSpreads')), esc(T('d.spreadsUnk'))));
   const srcIds = new Set([...(t.stratum?.sources ?? []), ...(t.phases?.sources ?? []), ...(t.functions ?? []).flatMap((x) => x.sources), ...(tox?.sources ?? []), ...(inv ?? []).flatMap((x) => x.sources), ...flags.conflicts.flatMap((c) => c.sources)]);
   const srcs = [...srcIds].map((id) => cell.sources[id]).filter(Boolean);
   const guides = (data.plantGuides[t.canonical_name] ?? []).filter(guide);
   const img = t.image;
-  const photo = img ? `<figure class="photo"><img src="${esc(img.url)}" alt="${esc(nameText(t))}" loading="lazy" decoding="async" width="480" height="320"><figcaption>${esc(T('photo', { credit: img.credit ?? '' }))}${img.licence ? ` · ${esc(img.licence)}` : ''}${img.source_page_url ? ` · <a href="${esc(img.source_page_url)}" rel="noopener">Wikimedia Commons</a>` : ''}</figcaption></figure>` : '';
+  const photo = img ? `<figure class="photo"><img src="${esc(img.url)}" alt="${esc(nameText(t))}" loading="lazy" decoding="async" width="480" height="320"><figcaption>${esc(T('photo', { credit: img.credit ?? '' }))}${img.licence ? ` · ${esc(img.licence)}` : ''}${img.source_page_url && photoSource(img.source_page_url) ? ` · <a href="${esc(img.source_page_url)}" rel="noopener">${esc(photoSource(img.source_page_url))}</a>` : ''}</figcaption></figure>` : '';
   const jobsList = jobsOf(t);
   const headHTML = `<div><h2 id="ct-dlg-title">${name(t)}</h2><p class="lede"><i>${esc(t.canonical_name)}</i> · ${esc(T('family', { family: t.family }))}</p></div>`;
   const body = `${photo}
@@ -530,7 +553,7 @@ function detailsParts(t) {
   const kept = S.kept.has(t.id), n = nameText(t);
   const foot = inMembers
     ? `${btn('button button-primary button-small', 'swap', t.id, `${I.swap}${esc(T('swap'))}`, fk('d-swap'))}${btn('button button-secondary button-small', 'keep', t.id, `${kept ? I.pinOn : I.pin}<span>${esc(T(kept ? 'unpin' : 'pin', { name: n }))}</span>`, `aria-pressed="${kept}" ${fk('d-keep')}`)}${btn('button button-secondary button-small', 'remove', t.id, `${I.remove}<span>${esc(T('remove', { name: n }))}</span>`, fk('d-remove'))}`
-    : btn('button button-primary button-small', 'add', t.id, esc(T('add')), fk('d-add'));
+    : (O.confirm === t.id ? confirmHTML(t.id, 'add') : '') + btn('button button-primary button-small', 'add', t.id, esc(T('add')), fk('d-add'));
   return { head: headHTML, body, foot };
 }
 function altRow(t, why, act, label, flags, opts = {}) {
@@ -545,9 +568,12 @@ function confirmHTML(id, act) {
 }
 function swapParts(m) {
   const all = alternatives(m.id, S.members, cell, { site: S.site, removed: [...S.removed], country: S.country });
-  const fit = all.filter((a) => !a.flags.flagged).slice(0, 8), flagged = all.filter((a) => a.flags.flagged).slice(0, 6);
+  // copy-m5: eight of each group at first, eight more per "Show more".
+  const fitAll = all.filter((a) => !a.flags.flagged), flaggedAll = all.filter((a) => a.flags.flagged);
+  const fitShown = shown(fitAll, SWAP_STEP * (1 + swapMore)), flaggedShown = shown(flaggedAll, SWAP_STEP * (1 + swapMore));
+  const fit = fitShown.items, flagged = flaggedShown.items, more = fitShown.more + flaggedShown.more;
   const others = members().filter((t) => t.id !== m.id), mJobs = jobsOf(m), s = stratumOf(m);
-  const othersJobs = coverage(others).jobs;
+  const othersJobs = new Set(others.flatMap(jobsOf));
   const row = (a, primary) => {
     const lost = mJobs.filter((j) => !othersJobs.has(j) && !jobsOf(a.taxon).includes(j)).map((j) => T('job.' + j));
     const shared = a.sharedJobs.map((j) => T('job.' + j));
@@ -558,7 +584,8 @@ function swapParts(m) {
   const headHTML = `<div><h2 id="ct-dlg-title">${T('swapTitle', { name: name(m) })}</h2><p class="lede">${esc(T('swapNow', { layer: stratumLabel(s), jobs: W.list(mJobs.map((j) => T('job.' + j))) }))}</p><p class="lede">${esc(T('swapLede'))}</p></div>`;
   const body = !all.length ? `<p class="muted">${esc(T('noAlt'))}</p>`
     : `${fit.length ? `<ul class="alt-list" role="list">${fit.map((a, i) => row(a, i === 0)).join('')}</ul>` : ''}
-      ${flagged.length ? `<h3 class="list-label">${esc(T('flaggedGroup'))}</h3><ul class="alt-list" role="list">${flagged.map((a) => row(a, false)).join('')}</ul>` : ''}`;
+      ${flagged.length ? `<h3 class="list-label">${esc(T('flaggedGroup'))}</h3><ul class="alt-list" role="list">${flagged.map((a) => row(a, false)).join('')}</ul>` : ''}
+      ${more ? `<p>${btn('button button-secondary button-small', 'swap-more', null, esc(P('showMore', more)), fk('swap-more'))}</p>` : ''}`;
   return { head: headHTML, body };
 }
 function addResults() {
@@ -615,15 +642,16 @@ function printHTML() {
     const s = stratumOf(t), tw = W.timeWords(t), w = warnPlain(t, flags.get(t.id));
     return `<tr><td>${sw(s)} ${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i></td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(jobsOf(t).map((j) => T('job.' + j)).join(', '))}</td><td>${w || `<span class="muted">${esc(T('printNone'))}</span>`}</td></tr>`;
   }).join('');
-  const bands = [[0, 2, 'early'], [3, 4, 'middle'], [5, 6, 'mature']].map(([a, b, k]) => {
-    const inBand = ms.filter((t) => t.phases && phases.indexOf(t.phases.start) <= b && phases.indexOf(t.phases.end) >= a);
+  const bands = phaseBands.map((k) => {
+    const inBand = ms.filter((t) => bandsOf(t).includes(k));
     return `<div><h3>${esc(T('band.' + k + '.print'))}</h3><ul>${inBand.map((t) => `<li>${name(t)}</li>`).join('')}</ul></div>`;
   }).join('');
-  const cov = coverage(ms), gapJobs = jobs.filter((j) => !cov.jobs.has(j)), free = Math.max(0, limit() - ms.length);
+  const gapJobs = jobGaps(), free = Math.max(0, limit() - ms.length);
   const date = new Intl.DateTimeFormat(lang, { dateStyle: 'long' }).format(new Date());
   return `<article class="sheet">
     <div class="sheet-head"><div><h2 class="sheet-title">${esc(T('printTitle'))}</h2><p class="muted">${esc(cellLabel())}${S.country ? ' · ' + esc(W.country(S.country)) : ''} · ${esc(date)}</p>
     <p class="muted">${esc(T('basis', { site: basisText() }))} ${esc(P('count', ms.length))}.</p></div><img src="/canopi-logo.svg" width="34" height="34" alt=""></div>
+    ${S.cellRegion ? (({ title, text }) => `<p class="sheet-borrowed"><strong>${esc(title)}</strong> ${esc(text)}</p>`)(borrowedWords()) : ''}
     <div class="sheet-draw">${profileHTML(flags, true)}</div>
     <section><h3>${esc(T('tab.layers'))}</h3><table><thead><tr><th>${esc(T('p.layer'))}</th><th>${esc(T('p.plant'))}</th><th>${esc(T('p.time'))}</th><th>${esc(T('p.jobs'))}</th><th>${esc(T('p.warn'))}</th></tr></thead><tbody>${rows}</tbody></table></section>
     <section><h3>${esc(T('tab.time'))}</h3><div class="sheet-phases">${bands}</div></section>
@@ -690,15 +718,29 @@ function openSheet(o, from) {
 }
 // closeSheet(true) gives the focus back to what opened the sheet; actions that move the focus
 // elsewhere (the swapped-in plant, Undo) close it with false.
-let returnFocus = true;
-function closeSheet(back = true) { returnFocus = back; if (dlg.open) dlg.close(); else O = null; }
-dlg.addEventListener('close', () => {
-  O = null; dlg.innerHTML = ''; addQuery = ''; addJob = ''; addLayer = '';
+// The sheet's state is cleared at once (B1): HTMLDialogElement fires `close` later, and an action's
+// render() in between must not see the old sheet and reopen it.
+let skipClose = 0;
+function resetSheet() {
+  O = null; dlg.innerHTML = ''; addQuery = ''; addJob = ''; addLayer = ''; swapMore = 0;
   document.documentElement.style.overflow = '';
-  if (returnFocus && opener) focusFk(opener, app);
-  returnFocus = true; opener = null;
+}
+function closeSheet(back = true) {
+  const from = opener; opener = null;
+  resetSheet();
+  if (dlg.open) { skipClose++; dlg.close(); }
+  if (back && from) focusFk(from, app);
+}
+// Escape closes the dialog without closeSheet(): clear it and give the focus back here.
+dlg.addEventListener('close', () => {
+  if (skipClose) { skipClose--; return; }
+  const from = opener; opener = null;
+  resetSheet();
+  if (from) focusFk(from, app);
 });
-dlg.addEventListener('cancel', (e) => { if (O?.confirm) { e.preventDefault(); O.confirm = null; renderSheet(); } else if (O?.back) { e.preventDefault(); O = O.back; renderSheet(); } });
+// Back to the button a confirmation came from.
+const confirmFrom = (id) => (O.type === 'details' ? 'd-add' : (O.type === 'swap' ? 'use-' : 'add-') + id);
+dlg.addEventListener('cancel', (e) => { if (O?.confirm) { e.preventDefault(); const id = O.confirm; O.confirm = null; renderSheet(confirmFrom(id)); } else if (O?.back) { e.preventDefault(); O = O.back; renderSheet(); } });
 
 function toast(text, undo = null) {
   clearTimeout(toastTimer);
@@ -708,20 +750,43 @@ function toast(text, undo = null) {
 }
 function hideToast() { toastEl.hidden = true; toastEl.innerHTML = ''; }
 function say(text) { sayEl.textContent = ''; setTimeout(() => { sayEl.textContent = text; }, 60); }
+// m9: a search announces how many it found once typing pauses, not every list it redraws.
+let sayTimer = 0;
+const sayLater = (text) => { clearTimeout(sayTimer); sayTimer = setTimeout(() => say(text), 500); };
 
 // The state in the address bar (a share link) and on this device (the last consortium).
+// A link still waiting for its cell (not covered yet, or before a place is chosen) keeps its own
+// plants, so a reload or a copied address loses nothing (M2).
 function stateNow() {
-  return { climate: S.climate, region: S.region, cellRegion: cellRegion(), country: S.country, site: S.site, kept: keptList(), removed: [...S.removed], members: S.status === 'ready' || S.status === 'nomatch' ? S.members : null };
+  const p = S.pending?.state;
+  const members = p ? p.members : S.status === 'ready' || S.status === 'nomatch' ? S.members : null;
+  return { climate: S.climate, region: S.region, cellRegion: cellRegion(), country: S.country, site: S.site, kept: p ? p.kept : keptList(), removed: p ? p.removed : [...S.removed], members, plants: p?.plants ?? [] };
+}
+// The link's own prefixes, written back exactly as they came (shortening them without the cell
+// could make two plants share one).
+function pendingQuery() {
+  const q = encodeState({ ...stateNow(), kept: [], removed: [], members: null });
+  const st = S.pending.state;
+  if (st.kept.length) q.set('p', st.kept.join('.'));
+  if (st.removed.length) q.set('x', st.removed.join('.'));
+  if (st.members) q.set('a', st.members.join('.'));
+  return q;
 }
 function persist() {
-  if (!S.climate || !S.region || !manifest) return;
-  const q = encodeState(stateNow(), cell).toString();
+  if (!S.climate || !S.region || !manifest || !mayPersist(S)) return;
+  const q = (S.pending ? pendingQuery() : encodeState(stateNow(), cell)).toString();
   try { history.replaceState(history.state, '', location.pathname + '?' + q); } catch {}
   if (S.status === 'ready') try { localStorage.setItem(STORE, JSON.stringify({ q, at: new Date().toISOString() })); } catch {}
 }
 
 // ---------- Actions ----------
+// An Undo offered for an earlier state no longer applies once the consortium is made again, refilled
+// or moved to another place (B2, m1): its toast goes.
+function dropUndo() {
+  if (lastRemoved || undoStart) { lastRemoved = null; undoStart = null; if (toastEl.querySelector('[data-act=undo]')) hideToast(); }
+}
 function recompute() {
+  dropUndo();
   const r = suggest(cell, { site: S.site, kept: keptList(), removed: [...S.removed], country: S.country });
   S.members = r.members.map((m) => m.taxon.id); S.gaps = [];
   S.status = S.members.length ? 'ready' : 'nomatch';
@@ -732,43 +797,65 @@ function setClimate(c) {
   document.documentElement.dataset.climate = c;
   dispatchEvent(new StorageEvent('storage', { key: 'canopi-climate', newValue: c }));
 }
+// Each call has a number; a cell that arrives after a later call started is dropped (M1), so the
+// plants shown are always the place shown.
+let loadSeq = 0;
 async function resolvePlace() {
+  const run = ++loadSeq;
   if (!S.climate || !S.region) { S.status = 'setup'; render(); return; }
   if (cellFor(manifest, S.climate, S.region) || (S.cellRegion && !cellFor(manifest, S.climate, S.cellRegion))) S.cellRegion = null;
   const mc = cellFor(manifest, S.climate, cellRegion());
   if (!mc) { cell = null; S.status = 'notcovered'; focusNext = 'result'; render(); return; }
-  S.status = 'loading'; render();
+  S.status = 'loading';
+  if (!app.contains(document.activeElement)) focusNext = 'result'; // a closed sheet: the focus stays in the tool
+  render();
+  let next, nextLabels;
   try {
-    [cell, labels] = await Promise.all([loadCell(mc.file), labels ?? loadLabels().catch(() => null)]);
+    [next, nextLabels] = await Promise.all([loadCell(mc.file), labels ?? loadLabels().catch(() => null)]);
   } catch {
+    if (run !== loadSeq) return;
     S.status = 'error'; focusNext = 'retry'; render(); return;
   }
+  if (run !== loadSeq) return;
+  cell = next; labels = nextLabels;
   const keep = (ids) => ids.filter((id) => cell.taxa.some((t) => t.id === id));
   S.kept = new Set(keep(keptList())); S.removed = new Set(keep([...S.removed]));
   if (S.pending) {
+    const asked = S.pending.state.members;
     const r = resolveState(S.pending, cell), st8 = r.state;
     S.pending = null;
     S.kept = new Set(st8.kept); S.removed = new Set(st8.removed);
-    const lost = r.dropped.filter((d) => ['p', 'x', 'a'].includes(d.key) && (d.reason === 'unknown' || d.reason === 'ambiguous'));
     if (S.guidePlant) {
-      const hit = cell.taxa.find((t) => fold(t.canonical_name) === fold(S.guidePlant));
-      S.guideId = hit?.id ?? null;
-      S.notice = hit ? 'guide' : 'guideMissing';
+      // m5: the plant the core pinned, by the core's own rule; "left out" only when it dropped it.
+      S.guideId = taxonByName(cell, S.guidePlant)?.id ?? null;
+      S.notice = r.dropped.some((d) => d.key === 'plant') ? 'guideMissing' : 'guide';
     }
-    if (lost.length) { S.dropped = lost.length; S.notice = 'oldlink'; }
-    if (st8.members) { S.members = keep(st8.members); S.status = 'ready'; } else recompute();
+    const lost = droppedPlants(r.dropped);
+    if (lost) { S.dropped = lost; S.notice = 'oldlink'; }
+    // m3: a link whose every member is gone gets a fresh suggestion; an emptied consortium stays empty.
+    if (st8.members && (st8.members.length || !asked?.length)) { S.members = keep(st8.members); S.status = 'ready'; } else recompute();
   } else recompute();
   focusNext = 'result';
   render();
   say(S.status === 'ready' ? T('announce', { summary: P('sizeLine.' + S.site.room, S.members.length) }) : T('nm.title'));
 }
+// A place or climate the user picks: a borrowed cell is opted into again for it (m6), and an Undo
+// for the old place no longer applies (B2).
+// A shared consortium belongs to its place: once the user picks another climate or place it is left
+// behind (M1, M2), and only a guide's plant goes on to the new place.
+function leaveLink() {
+  if (!S.pending) return;
+  const plants = S.pending.state.plants ?? [];
+  S.pending = plants.length ? decodeState(new URLSearchParams({ plant: plants[0] })) : null;
+}
 function choosePlace(country, region) {
   S.country = country; S.region = region; S.pickFor = null; S.ratherNot = !country && S.ratherNot; countryQuery = '';
+  S.cellRegion = null; dropUndo(); leaveLink();
   if (O) closeSheet(false);
   resolvePlace();
 }
 const act = {
-  climate(v) { setClimate(v); if (O) closeSheet(false); if (S.region) resolvePlace(); else { focusNext = S.ratherNot ? 'rg-' + REGIONS[0] : browserCountry ? 'suggest' : 'country-q'; render(); } },
+  climate(v) { setClimate(v); S.cellRegion = null; dropUndo(); leaveLink(); if (O) closeSheet(false); if (S.region) resolvePlace(); else { focusNext = S.ratherNot ? 'rg-' + REGIONS[0] : browserCountry ? 'suggest' : 'country-q'; render(); } },
   'edit-climate'() { S.editClimate = true; focusNext = 'cl-' + S.climate; render(); },
   country(v) {
     const rs = regionsOf(manifest, v);
@@ -788,14 +875,21 @@ const act = {
   explain(v) { S.explain = S.explain === v ? null : v; focusNext = 'ex-' + v; render(); },
   details(v, el) { openSheet({ type: 'details', id: v }, el); },
   'details-from'(v) { O = { type: 'details', id: v, back: O }; renderSheet('close'); },
-  swap(v, el) { if (O) { O = { type: 'swap', id: v }; renderSheet('close'); } else openSheet({ type: 'swap', id: v }, el); },
+  swap(v, el) { swapMore = 0; if (O) { O = { type: 'swap', id: v }; renderSheet('close'); } else openSheet({ type: 'swap', id: v }, el); },
+  // The focus goes to the first plant the step reveals.
+  'swap-more'() {
+    const before = new Set([...dlg.querySelectorAll('[data-act=use]')].map((b) => b.dataset.v));
+    swapMore++; renderSheet();
+    const next = [...dlg.querySelectorAll('[data-act=use]')].find((b) => !before.has(b.dataset.v));
+    (next ?? dlg.querySelector('.dialog-close')).focus();
+  },
   use(v) { const a = alternatives(O.id, S.members, cell, { site: S.site, removed: [...S.removed], country: S.country }).find((x) => x.taxon.id === v); if (a?.flags.flagged) { O.confirm = v; renderSheet('confirm-yes'); } else act['use-yes'](v); },
   'use-yes'(v) {
     const old = O.id, a = taxonOf(old), b = taxonOf(v);
     S.members = S.members.map((id) => (id === old ? v : id)); S.kept.delete(old); S.kept.add(v); S.removed.add(old);
     closeSheet(false); focusNext = 'pn-' + v; render(); flash(v); toast(T('swapped', { a: name(a), b: name(b) }));
   },
-  'confirm-no'() { const id = O.confirm; O.confirm = null; renderSheet((O.type === 'swap' ? 'use-' : 'add-') + id); },
+  'confirm-no'() { const id = O.confirm; O.confirm = null; renderSheet(confirmFrom(id)); },
   remove(v) {
     const t = taxonOf(v), idx = S.members.indexOf(v);
     S.members = S.members.filter((id) => id !== v); S.removed.add(v); const wasKept = S.kept.delete(v);
@@ -805,7 +899,10 @@ const act = {
   },
   undo(v) {
     hideToast();
-    if (v === 'start' && undoStart) { S = undoStart; undoStart = null; focusNext = 'start-over'; render(); return; }
+    if (v === 'start' && undoStart) {
+      // B2: the state, its cell and its own Undo come back together.
+      ({ S, cell, lastRemoved } = undoStart); undoStart = null; evalKey = ''; focusNext = 'start-over'; render(); return;
+    }
     const r = lastRemoved; if (!r) return;
     S.members.splice(r.idx, 0, r.id); S.removed.delete(r.id); if (r.wasKept) S.kept.add(r.id);
     S.gaps = S.gaps.filter((g) => g.id !== r.id); lastRemoved = null; focusNext = 'pn-' + r.id; render(); flash(r.id);
@@ -817,13 +914,13 @@ const act = {
   },
   'open-add'(v, el) { addQuery = ''; addJob = ''; addLayer = ''; if (O) { O = { type: 'add', filter: v || '' }; renderSheet('add-q'); } else openSheet({ type: 'add', filter: v || '' }, el); },
   add(v) { const f = flagsFor(cell, v, S.members, { site: S.site, country: S.country }); if (f?.flagged) { O.confirm = v; renderSheet('confirm-yes'); } else act['add-yes'](v); },
+  // M4: Add adds the one plant asked for; "Fill the free places" is the only refill.
   'add-yes'(v) {
-    const grow = O?.filter === 'grow';
     S.kept.add(v); S.removed.delete(v);
     if (S.status === 'nomatch') recompute();
     else if (!S.members.includes(v)) {
-      S.members.push(v); const t = taxonOf(v); S.gaps = S.gaps.filter((g) => g.stratum !== stratumOf(t));
-      if (grow && S.members.length < limit()) S.members = suggest(cell, { site: S.site, kept: [...new Set([...S.members, ...S.kept])], removed: [...S.removed], country: S.country }).members.map((m) => m.taxon.id);
+      dropUndo();
+      S.members.push(v); S.gaps = trimGaps(S.gaps, [stratumOf(taxonOf(v))], limit() - S.members.length);
     }
     S.view = 'layers'; closeSheet(false); focusNext = 'pn-' + v; render(); flash(v); toast(T('added', { name: name(taxonOf(v)) }));
   },
@@ -831,12 +928,13 @@ const act = {
     const before = S.members.length;
     S.members = suggest(cell, { site: S.site, kept: [...new Set([...S.members, ...S.kept])], removed: [...S.removed], country: S.country }).members.map((m) => m.taxon.id);
     const added = S.members.slice(before);
-    for (const id of added) { const t = taxonOf(id); S.gaps = S.gaps.filter((g) => g.stratum !== stratumOf(t)); }
+    if (added.length) dropUndo();
+    S.gaps = trimGaps(S.gaps, added.map((id) => stratumOf(taxonOf(id))), limit() - S.members.length);
     if (S.notice === 'oldlink') S.notice = null;
     focusNext = added.length ? 'pn-' + added[0] : 'result'; render(); if (added.length) flash(added[0]);
     toast(esc(P('filled', added.length)));
   },
-  relax(k) { const relaxTo = { light: 'part', soil: 'unsure', water: 'unsure', room: S.site.room === 'small' ? 'large' : 'field' }; S.site[k] = relaxTo[k]; recompute(); focusNext = 'result'; render(); },
+  relax(k) { S.site = { ...S.site, [k]: relaxTo(k) }; recompute(); focusNext = 'result'; render(); },
   close() { if (O?.back) { O = O.back; renderSheet(); } else closeSheet(); },
   async share() {
     persist();
@@ -844,7 +942,7 @@ const act = {
   },
   print() { printEl.innerHTML = printHTML(); print(); },
   'start-over'() {
-    undoStart = S; S = fresh(); S.status = 'setup'; cell = null;
+    undoStart = { S, cell, lastRemoved }; lastRemoved = null; S = fresh(); S.status = 'setup'; cell = null; loadSeq++;
     if (siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }
     try { localStorage.removeItem(STORE); history.replaceState(history.state, '', location.pathname); } catch {}
     render(); toast(esc(T('startOverDone')), 'start'); focusFk('undo', toastEl);
@@ -881,8 +979,14 @@ root.addEventListener('change', (e) => {
 });
 root.addEventListener('input', (e) => {
   const el = e.target;
-  if (el.dataset.input === 'country') { countryQuery = el.value; el.closest('.field').querySelector('#ct-country-list').innerHTML = countryList(); }
-  if (el.dataset.input === 'add') { addQuery = el.value; O.confirm = null; dlg.querySelector('#ct-add-results').innerHTML = addResults(); }
+  if (el.dataset.input === 'country') {
+    countryQuery = el.value; el.closest('.field').querySelector('#ct-country-list').innerHTML = countryList();
+    if (countryQuery.trim()) sayLater(P('countryCount', countryMatches().length));
+  }
+  if (el.dataset.input === 'add') {
+    addQuery = el.value; O.confirm = null; dlg.querySelector('#ct-add-results').innerHTML = addResults();
+    sayLater(dlg.querySelector('#ct-add-count')?.textContent ?? '');
+  }
 });
 root.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && e.target.dataset.input === 'country') { e.preventDefault(); e.target.closest('.field').querySelector('.option')?.click(); }
@@ -918,7 +1022,7 @@ async function start() {
     S.cellRegion = d.cellRegion && d.cellRegion !== d.region ? d.cellRegion : null;
     S.ratherNot = !!d.region && !d.country;
     S.pending = decoded;
-    if (d.plants?.length) { S.guidePlant = d.plants[0]; S.climateSource = 'guide'; }
+    if (d.plants?.length) { S.guidePlant = d.plants[0]; if (d.climate) S.climateSource = 'guide'; }
     if (S.restoredAt && d.climate && d.region) S.notice = 'restored';
   }
   if (!S.climate && siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }
