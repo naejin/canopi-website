@@ -1,0 +1,29 @@
+---
+// The consortium design tool (beta): /consortium/, /fr/guilde/ and /<lang>/consortium/.
+import Base from '../../layouts/Base.astro';
+import Header from '../Header.astro';
+import Footer from '../Footer.astro';
+import DonateDialog from '../DonateDialog.astro';
+import PageData from '../PageData.astro';
+import { t, consortiumPath, type Locale } from '../../i18n/utils';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+---
+<Base title={`${t('consortium.title', lang)} · Canopi`} description={t('consortium.description', lang)} lang={lang} path={consortiumPath}>
+  <Header lang={lang} path={consortiumPath} />
+  <main id="main" class="wrap">
+    <h1>{t('consortium.title', lang)}</h1>
+    <p data-probe></p>
+  </main>
+  <Footer lang={lang} />
+  <DonateDialog lang={lang} />
+  <PageData lang={lang} keys={[]} />
+  <script>
+    import { initChrome } from '../../scripts/chrome.js';
+    import { loadManifest, loadCell } from '../../scripts/consortium/data.ts';
+    initChrome();
+    const m = await loadManifest();
+    const c = await loadCell(m.cells[0].file);
+    document.querySelector('[data-probe]')!.textContent = `${c.climate_zone} ${c.region} ${c.taxa.length}`;
+  </script>
+</Base>
