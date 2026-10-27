@@ -2,18 +2,20 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:43:27Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:53:57Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:53:56Z }
 sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:ad2dce27f641d8a2
-    last_modified: 2026-10-27T23:26:45Z
+    digest: sha256:f3910211cf20ea01
+    last_modified: 2026-10-27T23:51:10Z
   - id: app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:5a4fbd2c20f6db27
-    last_modified: 2026-10-27T23:31:21Z
+    digest: sha256:59d5c42daca25f81
+    last_modified: 2026-10-27T23:50:38Z
   - id: words-js
     resource: ../../src/scripts/consortium/words.js
     title: src/scripts/consortium/words.js
@@ -33,7 +35,7 @@ sources:
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
     digest: sha256:50910945b5346a2b
-    last_modified: 2026-10-27T23:31:21Z
+    last_modified: 2026-10-27T23:43:29Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
@@ -42,8 +44,8 @@ sources:
   - id: consortium-page-test-mjs
     resource: ../../scripts/consortium-page.test.mjs
     title: scripts/consortium-page.test.mjs
-    digest: sha256:9da9ff458a120deb
-    last_modified: 2026-10-27T23:26:45Z
+    digest: sha256:01a35daa1450b399
+    last_modified: 2026-10-27T23:50:38Z
   - id: logic-js
     resource: ../../src/scripts/consortium/logic.js
     title: src/scripts/consortium/logic.js

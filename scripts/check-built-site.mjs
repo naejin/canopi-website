@@ -219,6 +219,10 @@ const headerOf = (html, from) => {
   assert.ok(panel, `${from}: the phone Menu panel`);
   return { header, panel, inline: header.replace(panel, '') };
 };
+// The consortium tool's page per locale (French at /fr/guilde/).
+const consortiumPath = (lang) => (lang === 'en' ? '/consortium/' : lang === 'fr' ? '/fr/guilde/' : `/${lang}/consortium/`);
+const consortiumCells = JSON.parse(readFileSync(join(root, 'data', 'consortium', 'manifest.json'), 'utf8')).cells.map((c) => ({ ...c, climate: c.climate_zone }));
+const consortiumTaxa = (file) => new Set(JSON.parse(readFileSync(join(root, 'data', 'consortium', file), 'utf8')).taxa.map((t) => t.canonical_name));
 const mainOf = (html) => html.match(/<main\b[\s\S]*?<\/main>/)?.[0] ?? '';
 const linkTo = (html, href) => new RegExp(`<a\\b[^>]*\\shref="${href.replace(/[.?*+^$()[\]{}|\\]/g, '\\$&')}"`).test(html);
 const currentLink = (html, href) => new RegExp(`<a\\b[^>]*\\shref="${href}"[^>]*\\saria-current="page"|<a\\b[^>]*\\saria-current="page"[^>]*\\shref="${href}"`).test(html);
@@ -229,6 +233,7 @@ function checkHeader(html, lang, path, from, alternates = locales) {
     assert.ok(linkTo(part, guidesFor(lang)), `${from}: ${where} Guides link`);
     assert.ok(linkTo(part, books), `${from}: ${where} Books link`);
     assert.ok(/<button[^>]*data-open-donate/.test(part), `${from}: ${where} Donate button`);
+    assert.ok(linkTo(part, consortiumPath(lang)), `${from}: ${where} consortium tool link`);
     // The language list: the same page in each locale, else the English page.
     for (const other of locales) {
       const target = localized(path, alternates.includes(other) ? other : 'en');
@@ -254,6 +259,11 @@ for (const lang of locales) {
   assert.ok(start, `${lang}: the Start here section`);
   for (const slug of ['landrace-gardening', 'will-they-cross', 'saving-seed']) assert.ok(linkTo(start, guideFor(slug, lang)), `${lang}: Start here links to ${guideFor(slug, lang)}`);
   assert.ok(linkTo(start, guidesFor(lang)), `${lang}: Start here links to the guides index`);
+  // The consortium tool: its home section, after Start here, links to it, and so does the footer.
+  const toolHome = home.match(/<section class="section consortium-home"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(toolHome && linkTo(toolHome, consortiumPath(lang)), `${lang}: the consortium home section links to ${consortiumPath(lang)}`);
+  assert.ok(home.indexOf('class="section start-here"') < home.indexOf('class="section consortium-home"'), `${lang}: the consortium section follows Start here`);
+  assert.ok(linkTo(home.match(/<footer\b[\s\S]*?<\/footer>/)?.[0] ?? '', consortiumPath(lang)), `${lang}: the footer links to the consortium tool`);
   // The guides are English outside en and fr: a note says so, and the English text is marked lang="en".
   const note = start.includes('class="start-here-note"');
   if (guideLocales.includes(lang)) assert.ok(!note, `${lang}: no "in English" note where the guides are in ${lang}`);
@@ -265,6 +275,7 @@ for (const lang of locales) {
     assert.ok(!currentLink(part, guidesFor(lang)), `${lang} bibliography: Guides is not current`);
   }
   assert.ok(linkTo(mainOf(bibliography), guidesFor(lang)), `${lang} bibliography: links to the guides`);
+  assert.ok(linkTo(mainOf(bibliography), consortiumPath(lang)), `${lang} bibliography: mentions the consortium tool`);
 }
 for (const lang of guideLocales) {
   const index = readFileSync(join(guidesDir(lang), 'index.html'), 'utf8');
@@ -277,12 +288,26 @@ for (const lang of guideLocales) {
     }
   }
   assert.ok(linkTo(mainOf(index), localized('/bibliography/', lang)), `${lang} guides index: links to the bibliography`);
+  assert.ok(linkTo(mainOf(index), consortiumPath(lang)), `${lang} guides index: mentions the consortium tool`);
+  // Guide presets open the tool with a plant of the cell their climate names.
+  let presets = 0;
+  for (const [html, , from] of pages) {
+    for (const [, href] of mainOf(html).matchAll(/<a\b[^>]*\shref="([^"]*\?[^"]*plant=[^"]*)"/g)) {
+      const { path: hrefPath, query } = splitHref(href);
+      assert.equal(hrefPath, consortiumPath(lang), `${from}: preset link goes to the tool`);
+      const params = new URLSearchParams(query), climate = params.get('climate');
+      const cell = consortiumCells.find((c) => c.climate.toLowerCase() === climate);
+      assert.ok(cell, `${from}: preset climate ${climate} has a beta cell`);
+      assert.ok(consortiumTaxa(cell.file).has(params.get('plant')), `${from}: ${params.get('plant')} is in ${cell.file}`);
+      presets++;
+    }
+  }
+  assert.ok(presets > 0, `${lang}: guides carry consortium preset links`);
 }
 
 for (const asset of ['canopi-logo.svg', 'data/featured-designs.json', 'data/plant-symbols.json']) assert.ok(existsSync(join(root, asset)), asset);
 for (const gone of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'screenshot-light.png', 'network']) assert.ok(!existsSync(join(root, gone)), `${gone} is retired`);
 // The consortium tool: one page per locale (French at /fr/guilde/), its alternates, and the installed plant data.
-const consortiumPath = (lang) => (lang === 'en' ? '/consortium/' : lang === 'fr' ? '/fr/guilde/' : `/${lang}/consortium/`);
 for (const lang of locales) {
   const path = consortiumPath(lang);
   const html = readFileSync(join(root, path, 'index.html'), 'utf8');
@@ -290,6 +315,7 @@ for (const lang of locales) {
   assert.ok(html.includes(`lang="${lang}"`), `${path}: lang`);
   assert.ok(html.includes(`<title>${title}`), `${path}: title ${title}`);
   assert.ok(html.includes('id="ct-app"') && html.includes('id="ct-data"'), `${path}: tool`);
+  assert.ok(currentLink(html.match(/<header\b[\s\S]*?<\/header>/)?.[0] ?? '', path), `${path}: the header marks the tool as the current page`);
   const alternates = [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => `${m[1]} ${m[2]}`).sort();
   assert.deepEqual(alternates, [...locales.map((l) => `${l} https://projectcanopi.com${consortiumPath(l)}`), 'x-default https://projectcanopi.com/consortium/'].sort(), `${path}: hreflang`);
 }

@@ -190,6 +190,11 @@ test('the consortium tool has one short header word and one full name per locale
   assert.equal(strings('en')['nav.consortium'], 'Consortium');
   assert.equal(strings('fr')['nav.consortium.full'], 'Composer une guilde', 'the owner\'s French title');
   assert.equal(strings('en')['nav.consortium.full'], 'Design a consortium', 'the owner\'s title');
+  // The header, the footer and the home section name the tool exactly as its own page's title does.
+  for (const file of readdirSync(root).filter((name) => name.endsWith('.json'))) {
+    const all = JSON.parse(readFileSync(new URL(file, root), 'utf8'));
+    assert.equal(all['nav.consortium.full'], all['consortium.title'], `${file}: nav.consortium.full is the tool page's title`);
+  }
 });
 
 test('the home section\'s note names exactly the beta cells the manifest lists', () => {

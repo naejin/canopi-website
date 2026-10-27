@@ -3,9 +3,9 @@ type: Architecture Decision
 title: Climate UX
 description: Every page that changes with the climate uses the app's seven zones, one stored choice set from an on-page chip, and one badge, and it reorders and marks content but never hides it.
 tags: [decision, climate, i18n]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:50:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:53:57Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T22:34:48Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:53:56Z }
 sources:
   - id: climates-ts
     resource: ../../src/data/climates.ts
@@ -45,8 +45,8 @@ sources:
   - id: homepage-test-mjs
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:a1ed64c4b36abb00
-    last_modified: 2026-10-27T23:50:41Z
+    digest: sha256:d38fde41df5c147c
+    last_modified: 2026-10-27T23:51:38Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
