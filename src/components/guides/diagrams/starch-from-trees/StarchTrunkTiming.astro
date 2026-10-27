@@ -1,0 +1,95 @@
+---
+// Breadfruit, bananas and other starch from trees: when to harvest a starchy trunk. Top row, three
+// scenes of one trunk (no species named): starch filling it partway; the trunk full, a bud just showing,
+// an accent arrow, and the `here` label under the scene; the trunk spent under a tall flower spike. Bottom row, two
+// panels (stacked below 640 px): a single trunk with a dashed cut, its crown faded (the plant dies);
+// a clump of three trunks where only one is cut and faded. stages are the three scene labels, single
+// and clump the two panel captions, alt describes it all.
+import { leafPath } from '../../../../lib/svg';
+interface Props { stages: [string, string, string]; here: string; single: string; clump: string; alt: string; }
+const { stages, here, single, clump, alt } = Astro.props;
+const W = 120, G = 150;
+// A trunk from the ground up to `top`, with its crown of fronds.
+const trunk = (x: number, top: number) => `M${x - 7} ${G}L${x - 5.5} ${top}H${x + 5.5}L${x + 7} ${G}Z`;
+const crown = (x: number, top: number, len = 30) => [-172, -145, -118, -90, -62, -35, -8].map((a) => leafPath(len, x, top, a));
+const fill = (x: number, top: number, part: number) => {
+  const h = (G - top - 4) * part;
+  return `M${x - 4.5} ${G - 2}V${G - 2 - h}H${x + 4.5}V${G - 2}Z`;
+};
+const TOP = 48;
+const scenes = [0.45, 0.95, 0.06];
+const spike = `M60 ${TOP}V8`;
+const blooms = [12, 20, 28, 36].flatMap((y) => [-1, 1].map((s) => ({ x: 60 + s * 5, y })));
+const clumpX = [34, 60, 86];
+---
+<div class="guide-stt" role="img" aria-label={alt}>
+  <ol class="guide-stt-row">
+    {stages.map((label, i) => (
+      <li class={i === 1 ? 'guide-stt-scene guide-stt-now' : 'guide-stt-scene'}>
+        <svg viewBox={`0 0 ${W} ${G + 6}`} aria-hidden="true">
+          <line x1="4" y1={G} x2={W - 4} y2={G} class="guide-stt-ground" />
+          {crown(60, TOP).map((d) => <path d={d} class={i === 2 ? 'guide-leaf guide-stt-faded' : 'guide-leaf'} />)}
+          <path d={trunk(60, TOP)} class="guide-stt-trunk" />
+          <path d={fill(60, TOP, scenes[i])} class="guide-stt-starch" />
+          {i === 1 && <circle cx="60" cy={TOP - 6} r="3.5" class="guide-stt-bloom" />}
+          {i === 2 && <path d={spike} class="guide-stt-spike" />}
+          {i === 2 && blooms.map((b) => <circle cx={b.x} cy={b.y} r="2.6" class="guide-stt-bloom" />)}
+          {i === 1 && <path d={`M108 ${G - 50}H74M81 ${G - 56}L74 ${G - 50}L81 ${G - 44}`} class="guide-stt-arrow" />}
+        </svg>
+        <p class="guide-stt-label">{label}</p>
+        {i === 1 && <p class="guide-stt-here">{here}</p>}
+      </li>
+    ))}
+  </ol>
+  <div class="guide-stt-pair">
+    <div class="guide-stt-panel">
+      <svg viewBox={`0 0 ${W} ${G + 6}`} aria-hidden="true">
+        <line x1="4" y1={G} x2={W - 4} y2={G} class="guide-stt-ground" />
+        {crown(60, TOP).map((d) => <path d={d} class="guide-leaf guide-stt-faded" />)}
+        <path d={trunk(60, TOP)} class="guide-stt-trunk guide-stt-faded" />
+        <line x1="48" y1={G - 10} x2="72" y2={G - 10} class="guide-stt-cut" />
+      </svg>
+      <p class="guide-stt-label">{single}</p>
+    </div>
+    <div class="guide-stt-panel">
+      <svg viewBox={`0 0 ${W} ${G + 6}`} aria-hidden="true">
+        <line x1="4" y1={G} x2={W - 4} y2={G} class="guide-stt-ground" />
+        {clumpX.map((x, k) => {
+          const top = [62, TOP, 76][k];
+          const cut = k === 1;
+          return (
+            <g>
+              {crown(x, top, 20).map((d) => <path d={d} class={cut ? 'guide-leaf guide-stt-faded' : 'guide-leaf'} />)}
+              <path d={trunk(x, top)} class={cut ? 'guide-stt-trunk guide-stt-faded' : 'guide-stt-trunk'} />
+              {cut && <line x1={x - 11} y1={G - 10} x2={x + 11} y2={G - 10} class="guide-stt-cut" />}
+            </g>
+          );
+        })}
+      </svg>
+      <p class="guide-stt-label">{clump}</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .guide-stt { display: grid; gap: 1.1rem; }
+  .guide-stt-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
+  .guide-body .guide-stt-row { padding: 0; }
+  .guide-stt-scene { display: grid; gap: 0.35rem; align-content: start; margin: 0; }
+  .guide-body .guide-stt-scene + .guide-stt-scene { margin-top: 0; }
+  .guide-stt svg { width: 100%; display: block; }
+  .guide-stt-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; border-top: 1px solid var(--border); padding-top: 0.9rem; }
+  .guide-stt-panel { display: grid; gap: 0.35rem; align-content: start; }
+  .guide-body .guide-stt p { margin: 0; }
+  .guide-stt-label { font-size: 0.9rem; line-height: 1.4; color: var(--text-secondary); text-align: center; }
+    .guide-stt-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-stt-trunk { fill: var(--leaf-brown); }
+  .guide-stt-starch { fill: var(--leaf-gold); }
+  .guide-stt-faded { opacity: 0.3; }
+  .guide-stt-spike { stroke: var(--leaf-deep); stroke-width: 2.4; stroke-linecap: round; }
+  .guide-stt-bloom { fill: var(--leaf-gold); }
+  .guide-stt-arrow { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-stt-here { font-size: 0.9rem; font-weight: 600; color: var(--accent-ink); text-align: center; }
+  .guide-stt-cut { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 4 3; }
+  @media (max-width: 639px) { .guide-stt-row { gap: 0.5rem; } }
+</style>

@@ -1,0 +1,85 @@
+---
+// Nuts as a staple: a hazel hedge through its cycle, four small scenes on one ground line: a close row of
+// young plants; the full hedge with nut clusters; the hedge cut to stumps (dashed cut line); a fan of new
+// shoots from each stump. A return arrow under the row (from 960 px wide layouts down to 640 px) runs
+// from the fourth scene back to the second. stages are the four labels in that order (HTML, so they
+// wrap); alt describes the whole cycle. Two scenes a row below 640 px.
+import { leafPath, r1 } from '../../../../lib/svg';
+interface Props { stages: [string, string, string, string]; alt: string; }
+const { stages, alt } = Astro.props;
+const W = 120, G = 88;
+const xs = [22, 41, 60, 79, 98];
+// 1: young plants, a short stem and two leaves each.
+const young = xs.map((x, i) => ({
+  stem: `M${x} ${G}Q${x - 1} ${G - 9} ${x + (i % 2 ? 1 : -1)} ${G - 16}`,
+  leaves: [leafPath(8, x, G - 12, -150), leafPath(8, x, G - 15, -30)],
+}));
+// 2: the full hedge, overlapping crowns with nut clusters.
+const crowns = xs.map((x, i) => ({ cx: x, cy: G - 38 - (i % 2) * 5, rx: 14, ry: 22 - (i % 2) * 3 }));
+const nuts = [[30, 36], [52, 30], [70, 44], [90, 34], [44, 52], [84, 54]].flatMap(([x, y]) =>
+  [[0, 0], [3.4, 1.2], [1.4, 3.6]].map(([dx, dy]) => ({ x: x + dx, y: y + dy })));
+// 3 and 4: stumps at the ground; 4 adds a fan of shoots with leaves.
+const stumps = xs.map((x) => `M${x - 3} ${G}V${G - 6}Q${x} ${G - 8} ${x + 3} ${G - 6}V${G}Z`);
+const shoots = xs.flatMap((x) => [-14, -4, 6, 15].map((dx, k) => {
+  const x1 = x + dx * 0.55, y1 = G - 30 - (k % 2) * 8;
+  return {
+    d: `M${x} ${G - 7}Q${r1(x + dx * 0.1)} ${r1(G - 20)} ${r1(x1)} ${y1}`,
+    leaf: leafPath(7, x1, y1, -90 + dx * 2.5),
+  };
+}));
+---
+<div class="guide-hh">
+  <ol class="guide-stages guide-hh-stages" role="img" aria-label={alt}>
+    {stages.map((label, i) => (
+      <li class="guide-stage">
+        <svg viewBox={`0 0 ${W} ${G + 6}`} aria-hidden="true">
+          <line x1="4" y1={G} x2={W - 4} y2={G} class="guide-hh-ground" />
+          <text x="8" y="16" class="guide-hh-num">{i + 1}</text>
+          {i === 0 && young.map((p) => (
+            <g>
+              <path d={p.stem} class="guide-stem guide-stem-thin" />
+              {p.leaves.map((d) => <path d={d} class="guide-leaf" />)}
+            </g>
+          ))}
+          {i === 1 && (
+            <g>
+              {xs.map((x) => <path d={`M${x} ${G}V${G - 30}`} class="guide-hh-wood-line" />)}
+              {crowns.map((c, k) => <ellipse cx={c.cx} cy={c.cy} rx={c.rx} ry={c.ry} class={k % 2 ? 'guide-hh-crown-deep' : 'guide-hh-crown'} />)}
+              {nuts.map((n) => <circle cx={n.x} cy={n.y} r="1.9" class="guide-hh-nut" />)}
+            </g>
+          )}
+          {i >= 2 && stumps.map((d) => <path d={d} class="guide-hh-wood" />)}
+          {i === 2 && <line x1="10" y1={G - 9} x2={W - 10} y2={G - 9} class="guide-hh-cut" />}
+          {i === 3 && shoots.map((s) => (
+            <g>
+              <path d={s.d} class="guide-stem guide-stem-thin" />
+              <path d={s.leaf} class="guide-leaf" />
+            </g>
+          ))}
+        </svg>
+        <p class="guide-stage-do">{label}</p>
+      </li>
+    ))}
+  </ol>
+  <svg class="guide-hh-return" viewBox="0 0 400 26" aria-hidden="true">
+    <path d="M350 2Q350 20 250 20H150Q150 20 150 6" class="guide-hh-arrow" />
+    <path d="M144 11L150 3L156 11" class="guide-hh-arrow" />
+  </svg>
+</div>
+
+<style>
+  .guide-hh { display: grid; gap: 0.2rem; }
+  .guide-hh-stages svg { width: 100%; }
+  .guide-hh .guide-stage-do { margin: 0; text-align: center; }
+  .guide-hh-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-hh-num { font-size: 12px; font-weight: 600; fill: var(--accent-ink); }
+  .guide-hh-wood { fill: var(--leaf-brown); }
+  .guide-hh-wood-line { stroke: var(--leaf-brown); stroke-width: 2.4; }
+  .guide-hh-crown { fill: var(--leaf); opacity: 0.85; }
+  .guide-hh-crown-deep { fill: var(--leaf-deep); opacity: 0.8; }
+  .guide-hh-nut { fill: var(--leaf-ochre); stroke: var(--leaf-brown); stroke-width: 0.6; }
+  .guide-hh-cut { stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 4 3; }
+  .guide-hh-return { width: 100%; }
+  .guide-hh-arrow { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @media (max-width: 639px) { .guide-hh-return { display: none; } }
+</style>
