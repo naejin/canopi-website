@@ -4,7 +4,7 @@ title: Consortium core
 description: Format 2 types and the pure, dependency-free functions of the consortium tool (cell lookup, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:53:13Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T20:11:03Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:32:12Z }
 sources:
@@ -21,8 +21,8 @@ sources:
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:05510d4c61a00f5b
-    last_modified: 2026-10-27T19:14:44Z
+    digest: sha256:4f10399cd9863a0a
+    last_modified: 2026-10-27T20:00:11Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -36,13 +36,13 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:8a044e9feccc38d7
-    last_modified: 2026-10-27T19:51:53Z
+    digest: sha256:dc4bfcf1a3f30c73
+    last_modified: 2026-10-27T20:01:09Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:abb7d497c9d2bb82
-    last_modified: 2026-10-27T19:14:44Z
+    digest: sha256:47cd62dbc4a6c1f6
+    last_modified: 2026-10-27T20:04:49Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -51,8 +51,8 @@ sources:
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
-    digest: sha256:e499936709519586
-    last_modified: 2026-10-27T19:46:12Z
+    digest: sha256:b2ec6c0f868356ae
+    last_modified: 2026-10-27T20:09:14Z
 enforced_by:
   - scripts/consortium.test.mjs
   - scripts/install-consortium.test.mjs
@@ -75,25 +75,29 @@ export under `public/data/consortium/`.
 | [site.ts](../../src/lib/consortium/site.ts) | `Site`, `DEFAULT_SITE` (sun, soil and water unsure, large garden), `fits(taxon, site)` → `{ ok, misfits, unknowns }` |
 | [jobs.ts](../../src/lib/consortium/jobs.ts) | `jobs` (six ids), `jobsOf(taxon)`, `jobOfFunction`, `phaseBands`, `bandOf(phase)`, `bandsOf(taxon)` |
 | [conflicts.ts](../../src/lib/consortium/conflicts.ts) | `conflicts(members, interactions)`, `conflictsOf(taxon, others, interactions)`, `matches(ref, taxon)`, `isSerious`, `invasiveIn(taxon, country)` → `true \| false \| null`, `invasiveCountries(taxon)` |
-| [suggest.ts](../../src/lib/consortium/suggest.ts) | `gain(taxon, members, site)` (term by term), `suggest(cell, { site, kept, removed, country })` → `{ members, limit, gaps }`, `alternatives(memberId, consortium, cell, { site, removed, country })`, `SIZE_LIMIT` |
-| [state.ts](../../src/lib/consortium/state.ts) | `encodeState(state, cell?)` → `URLSearchParams`, `decodeState(params, cell?)` → `{ state, dropped }`, `resolveIds(tokens, cell)`, `shortId(id, cell?)` |
+| [suggest.ts](../../src/lib/consortium/suggest.ts) | `gain(taxon, members, site)` (term by term), `suggest(cell, { site, kept, removed, country })` → `{ members, limit, gaps }` (the only function that fills), `evaluate(cell, ids, { site, kept, country })` → the same `{ members, limit, gaps }` for a fixed list, never refilled, `alternatives(memberId, consortium, cell, { site, removed, country })`, `SIZE_LIMIT` |
+| [state.ts](../../src/lib/consortium/state.ts) | `ConsortiumState` (`climate`, `region`, `cellRegion`, `country`, `site`, `kept`, `removed`, `members`, `plants`), `encodeState(state, cell?)` → `URLSearchParams`, `decodeState(params, cell?)` → `{ state, dropped }`, `resolveState(decoded, cell)`, `resolveIds(tokens, cell)`, `shortId(id, cell?)`, `MAX_LINK_IDS` = 256 |
 | [index.ts](../../src/lib/consortium/index.ts) | re-exports all of the above |
-| [install-consortium.mjs](../../scripts/install-consortium.mjs) | `npm run install:consortium -- <export-dir> [--fixture] [--no-images] [--out <dir>]`; `installConsortium(...)`, `verifyExport`, `shapeErrors`, `thumbnailUrl` |
+| [install-consortium.mjs](../../scripts/install-consortium.mjs) | `npm run install:consortium -- <export-dir> [--fixture [--no-images]] [--out <dir>]`; `installConsortium(...)`, `verifyExport`, `shapeErrors`, `cellShape`, `labelsShape`, `thumbnailUrl`, `LOCALES`, `PHOTO_HOSTS`, `STAGING_DIR`, `stagingDirFor(out)` |
 
 # Rules the code fixes (the plan left them open)
 
-- **Site fit.** Light: sun/part/shade need `sun`/`semi_shade`/`full_shade`. Soil vs `soil_ph`: acid < 6, neutral 6–7.5, chalky > 7.5; a misfit only when the known bound rules out overlap. Water: dry is a misfit for drought tolerance Low/None (or, when that is unknown, moisture use High); wet is a misfit for `well_drained` true with drought tolerance High. Room: small ≤ 6 m, large ≤ 12 m on height and width; field anything. An unknown trait is never a misfit, only an unknown.
+- **Site fit.** Light: sun/part/shade need `sun`/`semi_shade`/`full_shade`. Soil vs `soil_ph`: acid < 6, neutral 6–7.5, chalky > 7.5; a misfit only when the known bound rules out overlap. Water: dry is a misfit for drought tolerance Low/None (or, when that is unknown, moisture use High); wet is a misfit for `well_drained` true with drought tolerance High (or, when that is unknown, moisture use Low: the 2026-10-27 export's thyme, sage and *Asparagus acutifolius*). Room: small ≤ 6 m, large ≤ 12 m on height and width; field anything. An unknown trait is never a misfit, only an unknown.
 - **Gain.** `10·new jobs + 3·empty (stratum × band) cells + 1·cells with one member + 6·new stratum + 8·bands with no food yet (crops) + 4·second doer of feeds_soil/ground/mulch + 1·edibility − 3·weed potential − 0.5·unknowns`, where unknowns are the site checks `fits()` could not decide. Counted in integer tenths so ties are exact. Only plants that fill a gap (a new job, a cell with fewer than two members, a band with no food, a key job with one doer) are picked, until size = 6/9/12; ties go to the plant with more `names` (better known), then `canonical_name` in code-unit order (not `localeCompare`). On the 2026-10-27 export every cell and room fills to its limit, in under 30 ms.
+- **Evaluate.** `evaluate()` scores a fixed list (the page's state after a Remove, whose gap stays, or a restored link): members in the order given, repeats and ids not in the cell ignored, the same flags as `suggest()` (one shared code path), a gain of what each adds to those before it (null when kept), and the gaps. The ids of a suggestion give that suggestion back.
 - **Suggest.** Kept plants come first and always stay, flagged or not (kept wins over removed; ids not in the cell are ignored). Automatic picks skip misfits, plants invasive in the user's country (`invasive_in: null` is not a reason), medium/high conflicts with a member, and removed ids. Every member carries `flags` (`misfits`, `unknowns`, `invasive`, `conflicts`, `flagged`).
 - **Conflicts.** Rows match at species (canonical name), genus or family, in either member order; a same-genus row pairs two members once. `allelopathy_tolerant` rows are not conflicts.
 - **Alternatives.** Same stratum, then most shared jobs, then gain against the rest, then name. Flagged plants are listed with flags; members and removed plants are not.
-- **Share links.** Keys `v c r k l s w m p x`; site keys always written. Ids are shortened to the first 8 hex characters, lengthened at UUID segment boundaries (13, 18, 23, 36) when another taxon of the cell shares the prefix, joined with `.`. Decoding never throws; unknown, malformed, ambiguous and duplicate values go to `dropped`.
+- **Share links.** Keys `v c r b k l s w m p x a`; site keys always written. `r` is the user's region, `b` the region of the cell shown when the user opted into another region's cell (written only when it differs), `a` the members in order (absent: the page suggests; present: it calls `evaluate()`). Old links without `b` or `a` decode as before, so `v` stays 2. Ids are shortened to the first 8 hex characters, lengthened at UUID segment boundaries (13, 18, 23, 36) when another taxon of the cell shares the prefix, joined with `.`; at most `MAX_LINK_IDS` tokens are read per key, the rest reported once as `excess` with their count. Decoding never throws; unknown, malformed, ambiguous, duplicate and excess values go to `dropped`.
+- **Resolution.** The page decodes without the cell (`c`, `r` and `b` choose it), then calls `resolveState(decoded, cell)`: prefixes become full ids, and the list rules are applied again on full ids (kept wins over removed; a member is never removed; with `a`, every kept plant is a member). `decodeState(params, cell)` does the same in one call.
+- **Guide preset.** `?plant=<canonical_name>&climate=<id>`: `climate` is read when `c` is absent (`c` wins, `climate` dropped as a duplicate); `plant` waits in `state.plants` until `resolveState()`, which keeps it when the cell has that canonical name (exact, else case and spacing aside) and drops it as `unknown` otherwise. `encodeState` writes only the short keys.
 
 # Installer
 
-- Refuses: a file not matching `SHA256SUMS`, a listed file missing, an unlisted `.json`, `format_version` ≠ 2, `canopi_db_sha256` all zeros without `--fixture`, a cell's sha256 or taxa/interactions count differing from the manifest, a missing required key or wrong type (hand-written from the schema's required lists; extra keys allowed), duplicate taxon ids, undefined source ids.
-- Photos: once per taxon id, one request at a time with a 500 ms pause, `User-Agent: CanopiWebsite/1.0 (https://projectcanopi.com; contact form)`. Commons originals are fetched as **500 px** thumbnails: Commons answers HTTP 400 for non-standard widths such as 640 (https://w.wiki/GHai). SVG thumbnails get `.png`, TIFF `.jpg`. iNaturalist open-data `original.<ext>` photos are fetched as `medium.<ext>` (500 px). Rate limiting (429, 503) is waited out up to 4 retries (`Retry-After`, else 5 s doubling). Only a missing smaller copy (400, 403, 404: a Commons file narrower than 500 px; S3 answers 403 for a missing key) falls back to the original, never a rate-limited one; files over 3 MB, non-image types and SVG count as failed. A failed photo becomes `image: null` and is listed in the summary; more than 10% failing stops the install.
-- Changed cells are re-serialised minified with their sha256 recomputed in the installed manifest; an installed `SHA256SUMS` lists every file, images included. The output directory is written beside the target and renamed into place.
+- Refuses, before any work: `--no-images` without `--fixture` (a real install always copies its photos), and an `--out` that exists, is not empty and holds no previous install (a `manifest.json` with `format_version` 2).
+- Refuses: a file not matching `SHA256SUMS`, a listed file missing, an unlisted `.json`, `format_version` ≠ 2, `canopi_db_sha256` all zeros without `--fixture`, a cell's sha256 or taxa/interactions count differing from the manifest, a missing required key or wrong type (hand-written from the schema's required lists; extra keys allowed), an `edibility_rating` outside the integers 0–5, a `names`, `reason` or `note` key or a manifest locale outside the 11 site locales, a `labels.json` that is not trait → English value → locale → text, duplicate taxon ids, undefined source ids.
+- Photos: an image url that is not http(s) (protocol-relative, `data:`) becomes `image: null`. The rest are fetched once per taxon id, one request at a time with a 500 ms pause, `User-Agent: CanopiWebsite/1.0 (https://projectcanopi.com; contact form)`. Commons originals are fetched as **500 px** thumbnails: Commons answers HTTP 400 for non-standard widths such as 640 (https://w.wiki/GHai). SVG thumbnails get `.png`, TIFF `.jpg`. iNaturalist open-data `original.<ext>` photos are fetched as `medium.<ext>` (500 px). Rate limiting (429, 503) is waited out up to 4 retries (`Retry-After`, else 5 s doubling). Only a missing smaller copy (400, 403, 404: a Commons file narrower than 500 px; S3 answers 403 for a missing key) falls back to the original, never a rate-limited one; files over 3 MB (a larger `content-length` refused unread, a body without one cancelled once it passes 3 MB), non-image types and SVG count as failed. Redirects are followed by hand (at most 5) only to the host first asked or to `PHOTO_HOSTS` (upload.wikimedia.org, inaturalist-open-data.s3.amazonaws.com); any other is a failure. Every body not kept (redirects, 429/503 before a retry, errors) is cancelled before the next request. A failed photo becomes `image: null` and is listed in the summary; more than 10% failing stops the install.
+- Changed cells are re-serialised minified with their sha256 recomputed in the installed manifest; an installed `SHA256SUMS` lists every file, images included. The output is written in a staging directory, `.cache/consortium-install/` (git-ignored, outside `public/`, so `astro build` never ships leftovers; an `--out` outside the repository stages in `.consortium-install/` beside it, as a rename needs one file system), then renamed into place. Each run first removes the staging directory and any `consortium.tmp-<pid>`/`.old-<pid>` folders older versions left beside the output.
 
 # Gotchas
 
