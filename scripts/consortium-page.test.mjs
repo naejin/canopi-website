@@ -215,7 +215,14 @@ const kind = {
   Triticum: 'wheat', 'Vicia faba': 'fava', 'Phaseolus lunatus': 'lima',
 };
 // Names that contain a cell plant's name but are another plant, or a product rather than the plant.
-const falseFriends = { peach: ['peach palm'], pear: ['prickly pear', 'asian pear'], apple: ['apple-ring acacia'], walnut: ['black walnut'], alfalfa: ['alfalfa meal'] };
+// Names that contain a cell plant's word but name another plant.
+const falseFriends = {
+  peach: ['peach palm'], pear: ['prickly pear', 'asian pear'], apple: ['apple-ring acacia', 'bush apple'], walnut: ['black walnut'], alfalfa: ['alfalfa meal'],
+  acorn: ['acorn squash'], potato: ['potato tree', 'air potato'], cacao: ['madre de cacao'], banana: ['banana squash'], chestnut: ['tahitian chestnut'],
+  plum: ['black plum (*vitex'], 'black plum': ['black plum (*vitex'],
+};
+// Words that, in one guide, name a cultivar type or another plant, never the cell plant.
+const notAbout = { 'squash-melons-cucumbers': ['acorn', 'banana'], 'hand-crosses': ['acorn', 'banana'] };
 const cellTaxa = new Map();
 for (const c of ['temperate-europe', 'mediterranean-europe', 'tropical-southern-america']) for (const t of JSON.parse(read(`public/data/consortium/${c}.json`)).taxa) cellTaxa.set(t.canonical_name, t);
 const reEsc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -227,7 +234,7 @@ function covers(plant, slug) {
   const ids = [...body.matchAll(/crops=\{\[([^\]]*)\]\}/g)].flatMap((m) => [...m[1].matchAll(/["']([\w-]+)["']/g)].map((x) => x[1]));
   if (ids.some((id) => species.includes(crops.find((c) => c.id === id)?.species))) return 'crop list';
   const text = body.toLowerCase().replace(/<safety[\s\S]*?<\/safety>/g, ' ').replace(/\balt="[^"]*"/g, ' ');
-  const words = [plant, t.names.en, kind[plant], kind[t.genus]].flat().filter(Boolean).map((w) => w.toLowerCase());
+  const words = [plant, t.names.en, kind[plant], kind[t.genus]].flat().filter(Boolean).map((w) => w.toLowerCase()).filter((w) => !(notAbout[slug] ?? []).includes(w));
   const clean = (line, w) => (falseFriends[w] ?? []).reduce((x, f) => x.replaceAll(f, ' '), line);
   let prose = 0;
   for (const line of text.split('\n')) {
@@ -239,6 +246,14 @@ function covers(plant, slug) {
   }
   return prose >= 2 ? 'prose' : null;
 }
+test('a lookalike name is not coverage: acorn squash, potato tree, madre de cacao…', () => {
+  for (const [plant, slug] of [['Quercus robur', 'squash-melons-cucumbers'], ['Solanum tuberosum', 'trees-with-edible-leaves'],
+    ['Theobroma cacao', 'windbreaks-and-living-fences'], ['Musa acuminata', 'hand-crosses'], ['Castanea sativa', 'windbreaks-and-living-fences'],
+    ['Malus domestica', 'trees-with-edible-leaves'], ['Syzygium cumini', 'trees-with-edible-leaves']]) {
+    if (!cellTaxa.has(plant)) continue;
+    assert.equal(covers(plant, slug), null, `${plant} → ${slug}`);
+  }
+});
 test('every guide a plant links covers that plant (copy-M4, M5, m7, min-5, min-6)', () => {
   for (const [plant, list] of Object.entries(consortiumGuides)) {
     assert.ok(cellTaxa.get(plant), `${plant} is a plant of a cell`);
@@ -296,6 +311,8 @@ test('strata labels and phase terms are the app\'s, light first, in every locale
 test('the borrowed-list sentences need no article before a place name (min-3)', () => {
   for (const lang of locales.filter((l) => !['zh', 'ja', 'ko'].includes(l))) {
     for (const key of ['borrowedText', 'borrowedInv', 'nc.optNote']) assert.match(strings[lang][key], /: \{(where|country)\}/, `${lang}: ${key}`);
+    // …and the colon closes a whole phrase, never a bare preposition or verb ("для:", "for:", "учитывают:").
+    for (const key of ['borrowedText', 'borrowedInv', 'nc.optNote']) assert.doesNotMatch(strings[lang][key], /(?<!\p{L})(для|for|für|pour|para|per|voor|use|учитывают|usam|usan|utilisent|usano|gebruiken|verwenden):/iu, `${lang}: ${key}`);
   }
 });
 

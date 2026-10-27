@@ -841,7 +841,9 @@ async function resolvePlace() {
     // m3: a link whose every member is gone gets a fresh suggestion; an emptied consortium stays empty.
     if (st8.members && (st8.members.length || !asked?.length)) { S.members = keep(st8.members); S.status = 'ready'; } else recompute();
   } else recompute();
-  focusNext = 'result';
+  // The result takes the focus only from the loading line (or nothing): a user who moved on keeps their place.
+  const at = document.activeElement;
+  if (!at || at === document.body || at.id === 'ct-result-title') focusNext = 'result';
   render();
   say(S.status === 'ready' ? T('announce', { summary: P('sizeLine.' + S.site.room, S.members.length) }) : T('nm.title'));
 }
@@ -982,10 +984,14 @@ root.addEventListener('click', (e) => {
   fn(el.dataset.v, el);
 });
 // The sheet's backdrop closes it (the site's dialog helper leaves this dialog to the tool: min-10).
+// Only a press that starts on the backdrop closes it: a text selection dragged out of the sheet does not.
+const outside = (e) => { const box = dlg.getBoundingClientRect(); return e.clientX < box.left || e.clientX > box.right || e.clientY < box.top || e.clientY > box.bottom; };
+let pressOnBackdrop = false;
+dlg.addEventListener('pointerdown', (e) => { pressOnBackdrop = e.target === dlg && outside(e); });
 dlg.addEventListener('click', (e) => {
-  if (e.target !== dlg) return;
-  const box = dlg.getBoundingClientRect();
-  if (e.clientX < box.left || e.clientX > box.right || e.clientY < box.top || e.clientY > box.bottom) closeSheet();
+  const fromBackdrop = pressOnBackdrop;
+  pressOnBackdrop = false;
+  if (e.target === dlg && fromBackdrop && outside(e)) closeSheet();
 });
 root.addEventListener('change', (e) => {
   const el = e.target;
