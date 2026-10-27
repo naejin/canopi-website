@@ -255,10 +255,52 @@ export function verifyExport(dir, { fixture = false } = {}) {
   return { manifest, manifestBytes: readFileSync(join(dir, 'manifest.json')), labelsBytes: readFileSync(join(dir, 'labels.json')), cells };
 }
 
+// Hosts a photo may be fetched from after a redirect, besides the host first asked.
+export const PHOTO_HOSTS = ['upload.wikimedia.org', 'inaturalist-open-data.s3.amazonaws.com'];
+const MAX_REDIRECTS = 5;
+
+// Throws away a body we will not read, so its connection is freed before the next request.
+const discard = async (res) => { try { await res.body?.cancel(); } catch { /* already closed */ } };
+
+// One request, following redirects by hand: only to the same host or a photo host, at most
+// MAX_REDIRECTS times. Returns the final response.
+async function get(url, fetchImpl) {
+  const first = new URL(url).host;
+  let current = url;
+  for (let hop = 0; ; hop++) {
+    const res = await fetchImpl(current, { headers: { 'User-Agent': USER_AGENT }, redirect: 'manual', signal: AbortSignal.timeout(30_000) });
+    if (res.status < 300 || res.status > 399 || !res.headers.get('location')) return res;
+    await discard(res);
+    const next = new URL(res.headers.get('location'), current);
+    if (next.protocol !== 'https:' && next.protocol !== 'http:') throw new Error(`a redirect to ${next.protocol} for ${url}`);
+    if (next.host !== first && !PHOTO_HOSTS.includes(next.host)) throw new Error(`a redirect to another host (${next.host}) for ${url}`);
+    if (hop === MAX_REDIRECTS) throw new Error(`more than ${MAX_REDIRECTS} redirects for ${url}`);
+    current = next.href;
+  }
+}
+
+// A body read with a running byte cap: past MAX_IMAGE_BYTES the stream is cancelled and null is
+// returned, so a full-size original never sits in memory.
+async function readCapped(res) {
+  const declared = Number(res.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > MAX_IMAGE_BYTES) { await discard(res); return null; }
+  if (!res.body) return Buffer.alloc(0);
+  const reader = res.body.getReader(), chunks = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > MAX_IMAGE_BYTES) { await reader.cancel().catch(() => {}); return null; }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks, size);
+}
+
 // One photo: the Commons thumbnail first, then the original only when the thumbnail does not exist
 // (400, 403 or 404, as for a Commons file narrower than the thumbnail; S3 answers 403 for a missing key). Rate limiting (429, 503) is waited out,
-// up to RETRIES times: Retry-After when the server gives it, else backoffMs doubling. Returns
-// { bytes, ext } or throws.
+// up to RETRIES times: Retry-After when the server gives it, else backoffMs doubling. Every body we
+// do not keep is cancelled before the next request. Returns { bytes, ext } or throws.
 const RETRIES = 4;
 async function download(url, { fetchImpl, delayMs, backoffMs }) {
   const thumb = thumbnailUrl(url);
@@ -268,21 +310,23 @@ async function download(url, { fetchImpl, delayMs, backoffMs }) {
     if (n) await sleep(delayMs);
     let res;
     for (let attempt = 0; ; attempt++) {
-      res = await fetchImpl(candidate, { headers: { 'User-Agent': USER_AGENT }, redirect: 'follow', signal: AbortSignal.timeout(30_000) });
+      res = await get(candidate, fetchImpl);
       if ((res.status !== 429 && res.status !== 503) || attempt === RETRIES) break;
+      await discard(res);
       const after = Number(res.headers.get('retry-after'));
       await sleep(Number.isFinite(after) && after > 0 ? Math.min(after, 120) * 1000 : backoffMs * 2 ** attempt);
     }
     if (!res.ok) {
+      await discard(res);
       last = `HTTP ${res.status} for ${candidate}`;
       if (res.status === 400 || res.status === 403 || res.status === 404) continue; // no such thumbnail: try the original
       break;
     }
     const type = (res.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
     const ext = IMAGE_TYPES[type];
-    if (!ext) { last = `unsupported type "${type}" for ${candidate}`; break; }
-    const bytes = Buffer.from(await res.arrayBuffer());
-    if (!bytes.length || bytes.length > MAX_IMAGE_BYTES) { last = `${bytes.length} bytes for ${candidate}`; break; }
+    if (!ext) { await discard(res); last = `unsupported type "${type}" for ${candidate}`; break; }
+    const bytes = await readCapped(res);
+    if (!bytes?.length) { last = bytes ? `an empty body for ${candidate}` : `more than ${MAX_IMAGE_BYTES} bytes for ${candidate}`; break; }
     return { bytes, ext };
   }
   throw new Error(last ?? `no URL for ${url}`);
@@ -290,7 +334,7 @@ async function download(url, { fetchImpl, delayMs, backoffMs }) {
 
 // Downloads every photo once per taxon id and rewrites the cells in place. Returns the image files
 // and the failures.
-async function fetchImages(cells, { fetchImpl, delayMs, backoffMs, log }) {
+async function fetchImages(cells, { fetchImpl, delayMs, backoffMs, log, maxFailedShare }) {
   const wanted = new Map(); // id -> { url, name }
   for (const { cell } of cells) for (const t of cell.taxa) {
     if (t.image && /^https?:\/\//i.test(t.image.url) && !wanted.has(t.id)) wanted.set(t.id, { url: t.image.url, name: t.canonical_name });
@@ -308,8 +352,8 @@ async function fetchImages(cells, { fetchImpl, delayMs, backoffMs, log }) {
       log(`  no photo for ${name}: ${err.message}`);
     }
   }
-  if (wanted.size && failed.length / wanted.size > MAX_FAILED_SHARE)
-    refuse(`${failed.length} of ${wanted.size} photos failed (more than ${MAX_FAILED_SHARE * 100}%): ${failed.slice(0, 5).map((f) => f.name).join(', ')}…`);
+  if (wanted.size && failed.length / wanted.size > maxFailedShare)
+    refuse(`${failed.length} of ${wanted.size} photos failed (more than ${maxFailedShare * 100}%): ${failed.slice(0, 5).map((f) => f.name).join(', ')}…`);
   for (const c of cells) {
     for (const t of c.cell.taxa) {
       if (!t.image || !wanted.has(t.id)) continue;
@@ -321,11 +365,11 @@ async function fetchImages(cells, { fetchImpl, delayMs, backoffMs, log }) {
   return { files, failed, total: wanted.size };
 }
 
-export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, log = console.log } = {}) {
+export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, maxFailedShare = MAX_FAILED_SHARE, log = console.log } = {}) {
   if (!exportDir) refuse('no export directory given.');
   const dir = resolve(exportDir), out = resolve(outDir);
   const { manifest, manifestBytes, labelsBytes, cells } = verifyExport(dir, { fixture });
-  const photos = images ? await fetchImages(cells, { fetchImpl, delayMs, backoffMs, log }) : { files: new Map(), failed: [], total: 0 };
+  const photos = images ? await fetchImages(cells, { fetchImpl, delayMs, backoffMs, log, maxFailedShare }) : { files: new Map(), failed: [], total: 0 };
 
   // Installed bytes: unchanged cells byte for byte, changed ones minified (the export's own style)
   // with their checksum recomputed in the installed manifest.

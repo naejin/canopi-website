@@ -247,3 +247,52 @@ test('photos: rate limiting is waited out, and a limited thumbnail never falls b
   assert.equal(always.inga.length, 5, 'the first request and four retries');
   assert.ok(!always.inga.includes(inga), 'the original is not tried');
 });
+
+// A stub that behaves like fetch about redirects: with redirect 'follow' it follows them itself,
+// with 'manual' it answers the 3xx. Every response is recorded, to check its body was read or cancelled.
+const redirecting = (routes, seen) => async function fetchImpl(url, init) {
+  seen.urls.push(url);
+  const route = routes(url);
+  const res = route.location
+    ? new Response(null, { status: 302, headers: { location: route.location } })
+    : route.response();
+  seen.responses.push(res);
+  if (route.location && init.redirect === 'follow') return fetchImpl(new URL(route.location, url).href, init);
+  return res;
+};
+
+test('photos: a body over 3 MB is cut off while it streams, and a large content-length is refused unread', async (t) => {
+  const w = workspace(t);
+  withPhotos(w);
+  let pulled = 0;
+  const huge = () => new Response(new ReadableStream({
+    pull(c) { if (pulled >= 50 * 2 ** 20) return c.close(); pulled += 2 ** 16; c.enqueue(new Uint8Array(2 ** 16)); },
+  }), { status: 200, headers: { 'content-type': 'image/jpeg' } });
+  const seen = { urls: [], responses: [] };
+  const fetchImpl = redirecting((url) => ({ response: url.includes('Inga') ? huge : url.includes('Musa') ? () => new Response('x', { status: 200, headers: { 'content-type': 'image/png', 'content-length': String(4 * 2 ** 20) } }) : () => new Response(new Uint8Array([1, 2]), { status: 200, headers: { 'content-type': 'image/jpeg' } }) }), seen);
+  const result = await install(w, { images: true, fetchImpl, delayMs: 0, backoffMs: 0 }).catch((err) => err);
+  assert.match(result.message, /2 of 4 photos failed/);
+  assert.ok(pulled <= 3 * 2 ** 20 + 2 * 2 ** 16, `${pulled} bytes read`);
+  assert.ok(seen.responses.every((r) => r.bodyUsed || r.body === null), 'every body read or cancelled');
+});
+
+test('photos: redirects are followed only to the same host or the photo hosts; other bodies are cancelled before a retry', async (t) => {
+  const w = workspace(t);
+  withPhotos(w);
+  const ok = () => new Response(new Uint8Array([1, 2, 3]), { status: 200, headers: { 'content-type': 'image/jpeg' } });
+  let limited = 1;
+  const seen = { urls: [], responses: [] };
+  const fetchImpl = redirecting((url) => {
+    if (url.includes('500px-Inga')) return { location: 'https://evil.example/big.jpg' };
+    if (url.endsWith('500px-Musa.svg.png')) return { location: '/wikipedia/commons/thumb/b/b1/Musa.svg/500px-moved.png' };
+    if (url.endsWith('/photos/9/medium.jpeg')) return { location: 'https://upload.wikimedia.org/wikipedia/commons/9/99/Arachis.jpg' };
+    if (url.includes('Papaya') && limited-- > 0) return { response: () => new Response('slow down', { status: 429 }) };
+    return { response: ok };
+  }, seen);
+  const summary = await install(w, { images: true, fetchImpl, delayMs: 0, backoffMs: 0, maxFailedShare: 1 });
+  assert.ok(!seen.urls.some((u) => u.includes('evil.example')), 'another host is never requested');
+  assert.deepEqual(summary.photos.failed.map((f) => f.name), ['Inga edulis']);
+  assert.ok(seen.urls.includes('https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Musa.svg/500px-moved.png'), 'same host');
+  assert.ok(seen.urls.includes('https://upload.wikimedia.org/wikipedia/commons/9/99/Arachis.jpg'), 'a photo host');
+  assert.ok(seen.responses.every((r) => r.bodyUsed || r.body === null), 'every body read or cancelled');
+});
