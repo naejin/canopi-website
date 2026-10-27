@@ -22,7 +22,7 @@
 // then renamed into place. It must be absent, empty or a previous install (a manifest.json with
 // format_version 2): anything else is refused, so a mistyped --out never deletes a folder.
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -201,8 +201,11 @@ const INSTALL_MARK_TEXT = 'scripts/install-consortium.mjs (canopi-website)\n';
 
 // An --out that is absent, empty or a previous install; anything else is refused before any work.
 function checkOut(out, exportDir) {
+  // Compared where the paths lead (symlinks, case on macOS), the output as far as it exists.
+  const real = (p) => { let tail = ''; while (!existsSync(p)) { tail = join(basename(p), tail); p = dirname(p); } return join(realpathSync.native(p), tail).replace(/[\\/]$/, ''); };
   const inside = (a, b) => a === b || a.startsWith(b + sep);
-  if (inside(out, exportDir) || inside(exportDir, out)) refuse(`${out} is, holds or sits inside the export directory ${exportDir}.`);
+  const ro = real(out), re = real(exportDir);
+  if (inside(ro, re) || inside(re, ro)) refuse(`${out} is, holds or sits inside the export directory ${exportDir}.`);
   if (!existsSync(out)) return;
   if (!statSync(out).isDirectory()) refuse(`${out} is a file, not an install directory.`);
   if (!readdirSync(out).length) return;

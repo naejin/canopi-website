@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -326,6 +326,9 @@ test('--out refuses a canopi-data export, and the export directory itself, so ne
   assert.ok(existsSync(join(other, 'SHA256SUMS')));
   await assert.rejects(install({ ...w, out: w.src }), /export directory/);
   await assert.rejects(install({ ...w, out: join(w.src, 'inside') }), /export directory/);
+  await install(w);
+  symlinkSync(w.out, join(w.root, 'alias'));
+  await assert.rejects(install({ ...w, src: join(w.root, 'alias') }), /export directory/, 'a symlink to the output is the output');
   assert.ok(existsSync(join(w.src, 'manifest.json')));
 });
 
