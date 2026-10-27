@@ -1,0 +1,66 @@
+---
+// Trees among field crops: four small plan views of the same field, seen from above. 1 a few crowns
+// scattered over the crop rows; 2 two straight rows of tree crowns with crop rows between; 3 narrow
+// cut hedges (short stubs), a mulch strip laid on each side, crop rows in the alleys; 4 small young
+// crowns with dense crop rows filling the gaps. Crowns in plant tokens, crop rows as thin young-leaf
+// strokes, mulch in soil tokens. `patterns` gives each panel's title and note (HTML, so they wrap);
+// `alt` describes the four together.
+import { rng, seedOf, r1 } from '../../../../lib/svg';
+import { crownPath } from '../food-forest/tree-shapes';
+interface Pattern { title: string; note: string; }
+interface Props { alt: string; patterns: [Pattern, Pattern, Pattern, Pattern]; }
+const { alt, patterns } = Astro.props;
+const rand = rng(seedOf('field-patterns'));
+const W = 120, H = 90, X0 = 6, X1 = 114, Y0 = 6, Y1 = 84;
+// Crop rows: vertical strokes every `gap` units, skipping the bands in `skip`.
+const rows = (gap: number, skip: [number, number][] = []) => {
+  const out: string[] = [];
+  for (let x = X0 + gap / 2; x < X1; x += gap) {
+    if (skip.some(([a, b]) => x > a && x < b)) continue;
+    out.push(`M${r1(x)} ${Y0 + 4}V${Y1 - 4}`);
+  }
+  return out.join('');
+};
+const crowns = (pts: [number, number, number][]) => pts.map(([x, y, rr]) => crownPath(rand, x, y, rr, rr, 7));
+const panels = [
+  { crop: rows(7), crowns: crowns([[26, 24, 11], [78, 18, 9], [52, 52, 12], [96, 62, 10], [20, 70, 8]]), mulch: [] as string[], stubs: [] as string[] },
+  { crop: rows(7, [[30, 50], [70, 90]]), crowns: crowns([18, 39, 60].flatMap((y): [number, number, number][] => [[40, y + 6, 9], [80, y + 6, 9]])), mulch: [], stubs: [] },
+  {
+    crop: rows(6, [[30, 50], [70, 90]]),
+    crowns: [],
+    mulch: [[31, 4], [45, 4], [71, 4], [85, 4]].map(([x, w]) => `M${x} ${Y0 + 2}h${w}V${Y1 - 2}h${-w}Z`),
+    stubs: [40, 80].flatMap((x) => Array.from({ length: 9 }, (_, i) => `M${x - 2.6} ${r1(Y0 + 6 + i * 8.6)}h5.2v3.2h-5.2Z`)),
+  },
+  { crop: rows(5), crowns: crowns([[24, 24, 5], [60, 24, 5], [96, 24, 5], [24, 66, 5], [60, 66, 5], [96, 66, 5]]), mulch: [], stubs: [] },
+];
+---
+<div class="guide-fpatterns" role="group" aria-label={alt}>
+  {panels.map((p, i) => (
+    <div class="guide-fpatterns-item">
+      <svg viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+        <rect x={X0} y={Y0} width={X1 - X0} height={Y1 - Y0} rx="3" class="guide-fpatterns-field" />
+        {p.mulch.map((d) => <path d={d} class="guide-fpatterns-mulch" />)}
+        <path d={p.crop} class="guide-fpatterns-crop" />
+        {p.stubs.map((d) => <path d={d} class="guide-fpatterns-stub" />)}
+        {p.crowns.map((d) => <path d={d} class="guide-fpatterns-crown" />)}
+      </svg>
+      <p class="guide-fpatterns-title">{patterns[i].title}</p>
+      <p class="guide-fpatterns-note">{patterns[i].note}</p>
+    </div>
+  ))}
+</div>
+
+<style>
+  .guide-fpatterns { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.9rem; align-items: start; }
+  .guide-fpatterns-item { display: grid; gap: 0.25rem; }
+  .guide-fpatterns-item svg { width: 100%; max-width: 11rem; justify-self: center; }
+  .guide-body .guide-fpatterns-item p { margin: 0; }
+  .guide-fpatterns-title { font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; line-height: 1.3; text-align: center; }
+  .guide-fpatterns-note { font-size: 0.88rem; line-height: 1.4; color: var(--text-secondary); text-align: center; }
+  .guide-fpatterns-field { fill: var(--surface-alt); stroke: var(--border-strong); stroke-width: 1; }
+  .guide-fpatterns-crop { fill: none; stroke: var(--leaf-young); stroke-width: 1.6; stroke-dasharray: 3 2; stroke-linecap: round; }
+  .guide-fpatterns-crown { fill: var(--leaf); opacity: 0.85; }
+  .guide-fpatterns-stub { fill: var(--leaf-deep); }
+  .guide-fpatterns-mulch { fill: var(--soil-3); opacity: 0.7; }
+  @media (max-width: 639px) { .guide-fpatterns { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 0.6rem; } .guide-fpatterns-note { font-size: 0.82rem; } }
+</style>
