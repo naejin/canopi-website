@@ -172,3 +172,52 @@ test('the menus chrome.js closes are the ones the header renders', () => {
     assert.match(header, new RegExp(`<details[^>]*\\s${attribute}[\\s>]`), `Header.astro renders <details ${attribute}>`);
   }
 });
+
+test('the consortium tool has its entry points: a header item and a Menu line, a footer link, a home section after Start here, and the Learn mentions', () => {
+  const read = (path) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
+  const root = new URL('../src/i18n/translations/', import.meta.url);
+  const keys = ['nav.consortium', 'nav.consortium.menu', 'footer.consortium', 'learn.consortium.link',
+    'home.consortium.title', 'home.consortium.beta', 'home.consortium.lede', 'home.consortium.note', 'home.consortium.action'];
+  for (const file of readdirSync(root).filter((name) => name.endsWith('.json'))) {
+    const strings = JSON.parse(readFileSync(new URL(file, root), 'utf8'));
+    for (const key of keys) assert.ok(strings[key]?.trim(), `${file}: ${key}`);
+    // The header item is one short word, measured at 640px; the Menu line carries the full name.
+    assert.ok(!/\s/.test(strings['nav.consortium']) && [...strings['nav.consortium']].length <= 12, `${file}: nav.consortium is one short word`);
+  }
+  // The owner's term: "Guilde" in French, "Consortium" (or its own spelling of it) elsewhere.
+  const fr = JSON.parse(readFileSync(new URL('fr.json', root), 'utf8'));
+  assert.equal(fr['nav.consortium'], 'Guilde');
+  assert.equal(JSON.parse(readFileSync(new URL('en.json', root), 'utf8'))['nav.consortium'], 'Consortium');
+  // Every way in leads to consortiumPath(lang), the tool's per-locale address.
+  const header = read('components/Header.astro');
+  assert.match(header, /<div class="nav-inline">[\s\S]*?href=\{consortium\}[^>]*>\{t\('nav\.consortium', lang\)\}<\/a>[\s\S]*?<\/div>/, 'the inline header links name the tool');
+  assert.match(header, /<ul class="nav-panel-links"[\s\S]*?href=\{consortium\}[^>]*>\{t\('nav\.consortium\.menu', lang\)\}<\/a>[\s\S]*?<\/ul>/, 'the phone Menu names the tool');
+  assert.match(header, /const consortium = consortiumPath\(lang\)/);
+  assert.match(header, /current\?: [^;]*'consortium'/, 'the tool page can mark its header item as current');
+  // The 640–959px spacing that fits the row is a global style: a scoped one would stamp data-astro-cid
+  // on the header markup that check-built-site.mjs reads.
+  assert.doesNotMatch(header, /<style(?![^>]*is:global)/, 'Header.astro styles are global');
+  assert.match(header, /@media \(min-width: 640px\) and \(max-width: 959px\)/, 'Header.astro tightens the inline row between 640 and 959px');
+  assert.match(read('components/Footer.astro'), /href=\{consortiumPath\(lang\)\}>\{t\('footer\.consortium', lang\)\}/);
+  assert.match(read('components/ConsortiumSection.astro'), /href=\{consortiumPath\(lang\)\}/);
+  assert.match(read('components/Bibliography.astro'), /\{full && <p class="bibliography-guides"><a href=\{consortiumPath\(lang\)\}>\{t\('learn\.consortium\.link', lang\)\}/);
+  assert.match(read('components/guides/GuidesIndex.astro'), /href=\{consortiumPath\(lang\)\}>\{t\('learn\.consortium\.link', lang\)\}/);
+  // The home section comes right after Start here.
+  const home = read('components/Home.astro');
+  assert.match(home, /<StartHere lang=\{lang\} \/>\s*<ConsortiumSection lang=\{lang\} \/>/);
+  // No photos and no strata colours in the section: the tool's drawing keeps those.
+  const section = read('components/ConsortiumSection.astro');
+  assert.ok(!/<img|<picture|background-image|--leaf|#[0-9a-f]{3,6}\b/i.test(section), 'ConsortiumSection draws no plant and no green');
+});
+
+test('the consortium keys sit with their families, apart from the tool page\'s consortium.* keys at the end', () => {
+  const root = new URL('../src/i18n/translations/', import.meta.url);
+  for (const file of readdirSync(root).filter((name) => name.endsWith('.json'))) {
+    const keys = Object.keys(JSON.parse(readFileSync(new URL(file, root), 'utf8')));
+    const at = (key) => keys.indexOf(key);
+    assert.equal(at('nav.consortium'), at('header.menu') + 1, `${file}: nav.consortium follows the header keys`);
+    assert.equal(at('footer.consortium'), at('footer.top') + 1, `${file}: footer.consortium follows the footer keys`);
+    assert.equal(at('learn.consortium.link'), at('bibliography.guides') + 1, `${file}: learn.consortium.link follows bibliography.guides`);
+    assert.equal(at('home.consortium.action') + 1, at('start.title'), `${file}: home.consortium.* comes before start.title`);
+  }
+});

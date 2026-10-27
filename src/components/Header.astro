@@ -1,17 +1,20 @@
 ---
-import { t, locales, languageNames, localizedUrl, pageUrl, type Locale, type PagePath } from '../i18n/utils';
+import { t, locales, languageNames, localizedUrl, pageUrl, consortiumPath, type Locale, type PagePath } from '../i18n/utils';
 import { DOCS_URL, discordUrl } from '../data/site';
 import { guidesPath } from '../i18n/guides';
 // path: the page within a locale, so the language menu leads to the same page in another language.
 // alternates: the locales the page exists in; the menu sends the others to the English page.
 // current: the section the page belongs to, marked in the navigation.
 // From 640px the links sit inline; below, one Menu panel holds every link, so nothing is hidden by width.
-interface Props { lang: Locale; path?: PagePath; alternates?: readonly Locale[]; current?: 'guides' | 'books'; }
+// The consortium tool is one short word inline ("Consortium", « Guilde »), measured to fit at 640px in
+// every locale, and its full name ("Design a consortium") in the Menu panel.
+interface Props { lang: Locale; path?: PagePath; alternates?: readonly Locale[]; current?: 'guides' | 'books' | 'consortium'; }
 const { lang, path = '/', alternates = locales, current } = Astro.props;
 const menuTarget = (locale: Locale): Locale => (alternates.includes(locale) ? locale : 'en');
 const guides = guidesPath(lang);
 const books = localizedUrl('/bibliography/', lang);
-const page = (section: 'guides' | 'books') => (current === section ? 'page' : undefined);
+const consortium = consortiumPath(lang);
+const page = (section: 'guides' | 'books' | 'consortium') => (current === section ? 'page' : undefined);
 ---
 <a class="skip-link" href="#main">{t('header.skip', lang)}</a>
 <header class="site-header">
@@ -24,6 +27,7 @@ const page = (section: 'guides' | 'books') => (current === section ? 'page' : un
       <div class="nav-inline">
         <a class="nav-link" href={guides} aria-current={page('guides')}>{t('header.guides', lang)}</a>
         <a class="nav-link" href={books} aria-current={page('books')}>{t('header.books', lang)}</a>
+        <a class="nav-link" href={consortium} aria-current={page('consortium')}>{t('nav.consortium', lang)}</a>
         <button class="nav-link" type="button" data-open-donate>{t('header.donate', lang)}</button>
         <details class="lang-menu" data-lang-menu>
           <summary class="nav-link" aria-label={`${t('header.language', lang)}: ${languageNames[lang]}`}>{lang.toUpperCase()}</summary>
@@ -40,6 +44,7 @@ const page = (section: 'guides' | 'books') => (current === section ? 'page' : un
           <ul class="nav-panel-links" role="list">
             <li><a href={guides} aria-current={page('guides')}>{t('header.guides', lang)}</a></li>
             <li><a href={books} aria-current={page('books')}>{t('header.books', lang)}</a></li>
+            <li><a href={consortium} aria-current={page('consortium')}>{t('nav.consortium.menu', lang)}</a></li>
             <li><button type="button" data-open-donate>{t('header.donate', lang)}</button></li>
             <li><a href={discordUrl(lang)}>Discord</a></li>
             {DOCS_URL && <li><a href={DOCS_URL}>{t('header.docs', lang)}</a></li>}
@@ -60,3 +65,16 @@ const page = (section: 'guides' | 'books') => (current === section ? 'page' : un
     </nav>
   </div>
 </header>
+
+<style is:global>
+  /* Between 640 and 959px the inline row carries five links and the language menu in every locale
+     (Russian and Japanese are the longest); tighter spacing keeps it on one line inside the page
+     margins, measured at 640px in all 11 locales. From 960px the row keeps global.css. Global, not
+     scoped, so the header's markup stays free of data-astro-cid attributes. */
+  @media (min-width: 640px) and (max-width: 959px) {
+    .site-header .header-inner { gap: 8px; }
+    .site-header .header-nav, .site-header .nav-inline { gap: 2px; }
+    .site-header .nav-link { padding: 0 6px; }
+    .site-header .theme-toggle { padding: 0; }
+  }
+</style>

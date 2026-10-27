@@ -1,0 +1,43 @@
+---
+// "Design a consortium" on the home page, just after Start here: what the beta tool gives, where it
+// covers so far, and the one way in (consortiumPath: /consortium/, /fr/guilde/). No plant photos and
+// no strata colours here; the tool's own drawing keeps those.
+import { t, consortiumPath, type Locale } from '../i18n/utils';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+---
+<section class="section consortium-home" aria-labelledby="consortium-home-title">
+  <div class="wrap">
+    <div class="consortium-home-card">
+      <div class="consortium-home-text">
+        <h2 id="consortium-home-title">{t('home.consortium.title', lang)} <span class="consortium-home-beta">{t('home.consortium.beta', lang)}</span></h2>
+        <p class="consortium-home-lede">{t('home.consortium.lede', lang)}</p>
+        <p class="consortium-home-note">{t('home.consortium.note', lang)}</p>
+      </div>
+      <p class="consortium-home-action"><a class="button button-primary" href={consortiumPath(lang)}>{t('home.consortium.action', lang)}</a></p>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Follows Start here (no bottom padding there) and leaves the gap above the bibliography to it. */
+  .consortium-home { padding-bottom: 0; }
+  .consortium-home-card {
+    display: grid; gap: 20px 40px; align-items: end;
+    padding: clamp(22px, 3.4vw, 36px); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .consortium-home-text { display: grid; gap: 12px; max-width: 40em; }
+  .consortium-home h2 { font-size: clamp(30px, 3.6vw, 42px); text-wrap: balance; }
+  .consortium-home-beta {
+    display: inline-flex; align-items: center; min-height: 26px; padding: 0 10px; margin-left: 4px;
+    border: 1px solid var(--accent); border-radius: 999px; vertical-align: 0.35em;
+    font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink);
+  }
+  .consortium-home-lede { font-size: 18px; line-height: 1.5; color: var(--text-secondary); text-wrap: pretty; }
+  .consortium-home-note { font-size: 15px; color: var(--text-muted); text-wrap: pretty; }
+  .consortium-home-action { margin: 0; }
+  .consortium-home-action .button { white-space: normal; text-align: center; }
+  @media (min-width: 960px) {
+    .consortium-home-card { grid-template-columns: minmax(0, 1fr) auto; }
+  }
+</style>

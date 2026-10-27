@@ -1,6 +1,6 @@
 ---
 // The bibliography: the whole list on /bibliography/ (full), or the books marked featured on the home page.
-import { t, localizedUrl, type Locale } from '../i18n/utils';
+import { t, localizedUrl, consortiumPath, type Locale } from '../i18n/utils';
 import { themes } from '../data/bibliography';
 import { guidesCiting, slugOf, type GuideEntry } from '../lib/guides';
 import { guidePath, guidesPath, guideLangOf } from '../i18n/guides';
@@ -45,6 +45,7 @@ const climateBooks = full && shelves.some((shelf) => shelf.books.some((book) => 
       <Title id="bibliography-title">{t('bibliography.title', lang)}</Title>
       <p>{t('bibliography.lede', lang)}</p>
       {full && <p class="bibliography-guides"><a href={guidesPath(lang)} hreflang={guideLang}>{t('bibliography.guides', lang)}</a></p>}
+      {full && <p class="bibliography-guides"><a href={consortiumPath(lang)}>{t('learn.consortium.link', lang)}</a></p>}
       {climateBooks && <ClimatePicker lang={lang} />}
     </header>
     {full && (
