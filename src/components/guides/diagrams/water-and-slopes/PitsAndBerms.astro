@@ -6,7 +6,7 @@
 // Soil in soil tokens, plants in plant tokens, water as a pale muted fill. `works` gives each panel's
 // title and note (HTML, so they wrap); `alt` describes the four.
 import { rng, seedOf, r1 } from '../../../../lib/svg';
-import { crownPath, tuftPath, trunkPath } from '../food-forest/tree-shapes';
+import { crownPath, tuftPath, trunkPath } from '../../../../lib/tree-shapes';
 interface Work { title: string; note: string; }
 interface Props { alt: string; works: [Work, Work, Work, Work]; }
 const { alt, works } = Astro.props;
