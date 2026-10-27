@@ -1,0 +1,81 @@
+---
+// Keep rain and soil on your land: four small earthworks as side sections, no measures. 1 a shallow
+// planting pit with dark organic matter in the bottom and a clump of seedlings; 2 a sunken bed below
+// path level with raised edges and plants inside; 3 a low berm across a slope, water held in the basin
+// above it, a tree at its edge; 4 a line of stones across a slope with silt piled up on its uphill side.
+// Soil in soil tokens, plants in plant tokens, water as a pale muted fill. `works` gives each panel's
+// title and note (HTML, so they wrap); `alt` describes the four.
+import { rng, seedOf, r1 } from '../../../../lib/svg';
+import { crownPath, tuftPath, trunkPath } from '../food-forest/tree-shapes';
+interface Work { title: string; note: string; }
+interface Props { alt: string; works: [Work, Work, Work, Work]; }
+const { alt, works } = Astro.props;
+const rand = rng(seedOf('pits-and-berms'));
+const W = 120, B = 78;
+// Slope for panels 3 and 4: from (0, 30) down to (120, 56).
+const s = (x: number) => r1(30 + (x * 26) / 120);
+const panels = [
+  {
+    ground: `M0 40H28Q60 76 92 40H${W}V${B}H0Z`,
+    dark: 'M36 48Q60 72 84 48Z',
+    water: '', moved: '', stones: [] as [number, number, number][], tree: null as null | { trunk: string; crown: string },
+    plants: [50, 60, 70].map((x) => tuftPath(x, 53, 16, 4)).join(''),
+  },
+  {
+    ground: `M0 40H20l3 -4l3 4V54H94V40l3 -4l3 4H${W}V${B}H0Z`,
+    dark: '', water: '', moved: '', stones: [], tree: null,
+    plants: [36, 50, 64, 78].map((x) => tuftPath(x, 54, 12, 4)).join(''),
+  },
+  {
+    // Ground: slope, a shallow basin, the berm, then the slope again.
+    ground: `M0 ${s(0)}L40 ${s(40)}Q54 50 64 46Q72 26 86 ${s(86)}L${W} ${s(W)}V${B}H0Z`,
+    dark: '', moved: '', stones: [],
+    water: `M36 38L69 38Q66 43 64 46Q54 50 40 ${s(40)}Z`,
+    tree: { trunk: trunkPath(88, s(88) + 1, s(88) - 22, 4), crown: crownPath(rand, 88, s(88) - 28, 11, 9, 7) },
+    plants: '',
+  },
+  {
+    ground: `M0 ${s(0)}L${W} ${s(W)}V${B}H0Z`,
+    dark: '', water: '', tree: null,
+    moved: `M22 ${s(22)}L58 ${s(58) - 9}L58 ${s(58)}Z`,
+    stones: [[63, s(63) - 4.5, 5.4], [74, s(74) - 4.5, 5], [68.5, s(68.5) - 12.5, 4.8]] as [number, number, number][],
+    plants: '',
+  },
+];
+---
+<div class="guide-pits" role="group" aria-label={alt}>
+  {panels.map((p, i) => (
+    <div class="guide-pits-item">
+      <svg viewBox={`0 0 ${W} ${B}`} aria-hidden="true">
+        <path d={p.ground} class="guide-pits-soil" />
+        {p.dark && <path d={p.dark} class="guide-pits-dark" />}
+        {p.moved && <path d={p.moved} class="guide-pits-moved" />}
+        {p.water && <path d={p.water} class="guide-pits-water" />}
+        {p.stones.map(([x, y, rr]) => <circle cx={x} cy={y} r={rr} class="guide-pits-stone" />)}
+        {p.tree && <path d={p.tree.trunk} class="guide-pits-wood" />}
+        {p.tree && <path d={p.tree.crown} class="guide-pits-crown" />}
+        {p.plants && <path d={p.plants} class="guide-pits-plant" />}
+      </svg>
+      <p class="guide-pits-title">{works[i].title}</p>
+      <p class="guide-pits-note">{works[i].note}</p>
+    </div>
+  ))}
+</div>
+
+<style>
+  .guide-pits { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.9rem; align-items: start; }
+  .guide-pits-item { display: grid; gap: 0.25rem; }
+  .guide-pits-item svg { width: 100%; max-width: 11rem; justify-self: center; }
+  .guide-body .guide-pits-item p { margin: 0; }
+  .guide-pits-title { font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; line-height: 1.3; text-align: center; }
+  .guide-pits-note { font-size: 0.88rem; line-height: 1.4; color: var(--text-secondary); text-align: center; }
+  .guide-pits-soil { fill: var(--soil-1); opacity: 0.8; }
+  .guide-pits-dark { fill: var(--soil-2); }
+  .guide-pits-moved { fill: var(--soil-3); }
+  .guide-pits-water { fill: var(--text-muted); opacity: 0.35; }
+  .guide-pits-stone { fill: var(--surface-alt); stroke: var(--text-muted); stroke-width: 1; }
+  .guide-pits-wood { fill: var(--seed-1); opacity: 0.9; }
+  .guide-pits-crown { fill: var(--leaf); opacity: 0.88; }
+  .guide-pits-plant { fill: none; stroke: var(--leaf); stroke-width: 1.8; stroke-linecap: round; }
+  @media (max-width: 639px) { .guide-pits { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 0.6rem; } .guide-pits-note { font-size: 0.82rem; } }
+</style>
