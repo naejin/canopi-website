@@ -1,0 +1,55 @@
+---
+// Breadfruit, bananas and other starch from trees: one banana clump (mat) seen from the side. Three
+// stems of falling height rise from one rootstock drawn under the ground line: on the left, the tallest
+// with a hanging bunch and a dashed cut mark near its base; in the middle, a half-grown stem; on the
+// right, a young shoot. Each label sits under its own stem. fruiting, next and young are the three
+// labels, left to right; alt describes the whole clump.
+import { leafPath, r1, wrap } from '../../../../lib/svg';
+interface Props { fruiting: string; next: string; young: string; alt: string; }
+const { fruiting, next, young, alt } = Astro.props;
+const W = 320, G = 170;
+// A pseudostem tapering from the ground to its top.
+const stem = (x: number, top: number, base: number) =>
+  `M${x - base / 2} ${G}L${r1(x - base * 0.3)} ${top}H${r1(x + base * 0.3)}L${x + base / 2} ${G}Z`;
+const stems = [
+  { x: 70, top: 34, base: 16, leaves: [[-160, 64], [-128, 58], [-58, 60], [-22, 64]], label: fruiting },
+  { x: 160, top: 88, base: 12, leaves: [[-150, 42], [-112, 40], [-62, 40], [-30, 42]], label: next },
+  { x: 250, top: 136, base: 8, leaves: [[-118, 22], [-66, 22]], label: young },
+];
+const leaves = stems.flatMap((s) => s.leaves.map(([a, len]) => leafPath(len, s.x, s.top, a)));
+// The bunch: a stalk arching down from the top of the tall stem, rows of upturned fingers, a bud below.
+const stalk = `M70 36Q52 40 50 58V104`;
+const fingers = [0, 1, 2, 3, 4].flatMap((r) => [-1, 1].flatMap((side) => [0, 1].map((k) => {
+  const y = 60 + r * 9, x = 50 + side * (3 + k * 6);
+  return `M${x} ${y + 6}q${side * 2} -5 ${side * 6} -8`;
+})));
+const bud = `M50 104q-6 6 0 16q6 -10 0 -16Z`;
+const labels = stems.map((s) => ({ x: s.x, lines: wrap(s.label, 15) }));
+const H = G + 34 + Math.max(...labels.map((l) => l.lines.length)) * 14;
+---
+<svg class="guide-bm" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={alt}>
+  <path d={`M30 ${G}Q40 ${G + 22} 160 ${G + 22}Q282 ${G + 22} 290 ${G}Z`} class="guide-bm-root" />
+  <line x1="4" y1={G} x2={W - 4} y2={G} class="guide-bm-ground" />
+  {stems.map((s) => <path d={stem(s.x, s.top, s.base)} class="guide-bm-stem" />)}
+  {leaves.map((d) => <path d={d} class="guide-leaf" />)}
+  <path d={stalk} class="guide-bm-stalk" />
+  {fingers.map((d) => <path d={d} class="guide-bm-finger" />)}
+  <path d={bud} class="guide-bm-bud" />
+  <line x1="56" y1={G - 16} x2="84" y2={G - 16} class="guide-bm-cut" />
+  {labels.map((l, i) => l.lines.map((line, k) => (
+    <text x={l.x} y={G + 40 + k * 14} text-anchor="middle" class={i === 0 ? 'guide-bm-label guide-bm-label-cut' : 'guide-bm-label'}>{line}</text>
+  )))}
+</svg>
+
+<style>
+  .guide-bm { width: 100%; max-width: 30rem; display: block; margin: 0 auto; }
+  .guide-bm-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-bm-root { fill: var(--leaf-brown); opacity: 0.7; }
+  .guide-bm-stem { fill: var(--leaf-deep); }
+  .guide-bm-stalk { fill: none; stroke: var(--leaf-deep); stroke-width: 2.4; stroke-linecap: round; }
+  .guide-bm-finger { fill: none; stroke: var(--leaf-young); stroke-width: 3.6; stroke-linecap: round; }
+  .guide-bm-bud { fill: var(--leaf-brown); }
+  .guide-bm-cut { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 4 3; }
+  .guide-bm-label { font-size: 12px; fill: var(--text-secondary); }
+  .guide-bm-label-cut { fill: var(--accent-ink); font-weight: 600; }
+</style>
