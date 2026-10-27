@@ -17,7 +17,7 @@ const { lang } = Astro.props;
       <li><a href={discordUrl(lang)}>Discord</a></li>
       <li><a href={guidesPath(lang)}>{t('header.guides', lang)}</a></li>
       <li><a href={localizedUrl('/bibliography/', lang)}>{t('bibliography.title', lang)}</a></li>
-      <li><a href={consortiumPath(lang)}>{t('footer.consortium', lang)}</a></li>
+      <li><a href={consortiumPath(lang)}>{t('nav.consortium.full', lang)}</a></li>
       <li><button class="link-button" type="button" data-open-donate>{t('header.donate', lang)}</button></li>
       <li><a href={`${localizedUrl('/', lang)}#contact`}>{t('footer.contact', lang)}</a></li>
     </ul>

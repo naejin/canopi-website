@@ -44,7 +44,7 @@ const page = (section: 'guides' | 'books' | 'consortium') => (current === sectio
           <ul class="nav-panel-links" role="list">
             <li><a href={guides} aria-current={page('guides')}>{t('header.guides', lang)}</a></li>
             <li><a href={books} aria-current={page('books')}>{t('header.books', lang)}</a></li>
-            <li><a href={consortium} aria-current={page('consortium')}>{t('nav.consortium.menu', lang)}</a></li>
+            <li><a href={consortium} aria-current={page('consortium')}>{t('nav.consortium.full', lang)}</a></li>
             <li><button type="button" data-open-donate>{t('header.donate', lang)}</button></li>
             <li><a href={discordUrl(lang)}>Discord</a></li>
             {DOCS_URL && <li><a href={DOCS_URL}>{t('header.docs', lang)}</a></li>}
