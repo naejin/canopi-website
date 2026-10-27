@@ -230,6 +230,19 @@ export function evaluate(cell: Cell, ids: string[], options: EvaluateOptions): S
   return result(chosen, keptIds, gains, cell, site, country);
 }
 
+export interface FlagsOptions { site: Site; country?: string | null }
+
+// The flags a plant would carry beside these members (it is left out of them if it is one): the
+// same misfits, unknowns, invasive check and conflicts as a member of suggest() or evaluate(), for a
+// plant the page offers to add. Ids not in the cell are ignored; null for a taxon id the cell lacks.
+export function flagsFor(cell: Cell, id: string, memberIds: string[], options: FlagsOptions): Flags | null {
+  const taxon = cell.taxa.find((t) => t.id === id);
+  if (!taxon) return null;
+  const ids = new Set(memberIds);
+  const others = cell.taxa.filter((t) => ids.has(t.id) && t.id !== id);
+  return flagsOf(infoOf(taxon, options.site), others, cell, options.country);
+}
+
 export interface AlternativeOptions { site: Site; removed?: string[]; country?: string | null }
 
 // Plants that could take a member's place: plants without a flag before flagged ones (a misfit,

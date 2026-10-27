@@ -281,4 +281,24 @@ for (const lang of guideLocales) {
 
 for (const asset of ['canopi-logo.svg', 'data/featured-designs.json', 'data/plant-symbols.json']) assert.ok(existsSync(join(root, asset)), asset);
 for (const gone of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'screenshot-light.png', 'network']) assert.ok(!existsSync(join(root, gone)), `${gone} is retired`);
-console.log(`Verified 11 locale pages, their bibliography and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links and static assets.`);
+// The consortium tool: one page per locale (French at /fr/guilde/), its alternates, and the installed plant data.
+const consortiumPath = (lang) => (lang === 'en' ? '/consortium/' : lang === 'fr' ? '/fr/guilde/' : `/${lang}/consortium/`);
+for (const lang of locales) {
+  const path = consortiumPath(lang);
+  const html = readFileSync(join(root, path, 'index.html'), 'utf8');
+  const title = JSON.parse(readFileSync(`src/i18n/translations/${lang}.json`, 'utf8'))['consortium.title'];
+  assert.ok(html.includes(`lang="${lang}"`), `${path}: lang`);
+  assert.ok(html.includes(`<title>${title}`), `${path}: title ${title}`);
+  assert.ok(html.includes('id="ct-app"') && html.includes('id="ct-data"'), `${path}: tool`);
+  const alternates = [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => `${m[1]} ${m[2]}`).sort();
+  assert.deepEqual(alternates, [...locales.map((l) => `${l} https://projectcanopi.com${consortiumPath(l)}`), 'x-default https://projectcanopi.com/consortium/'].sort(), `${path}: hreflang`);
+}
+assert.ok(!existsSync(join(root, 'fr', 'consortium')), 'no /fr/consortium/: French is /fr/guilde/');
+const consortiumData = join(root, 'data', 'consortium');
+const consortiumManifest = JSON.parse(readFileSync(join(consortiumData, 'manifest.json'), 'utf8'));
+assert.ok(/^[0-9a-f]{64}$/.test(consortiumManifest.canopi_db_sha256) && !/^0+$/.test(consortiumManifest.canopi_db_sha256), 'consortium: canopi_db_sha256 is a real digest');
+assert.ok(consortiumManifest.cells.length > 0, 'consortium: cells');
+for (const cell of consortiumManifest.cells) assert.ok(existsSync(join(consortiumData, cell.file)), `consortium: ${cell.file}`);
+assert.ok(existsSync(join(consortiumData, 'labels.json')), 'consortium: labels.json');
+
+console.log(`Verified 11 locale pages, their bibliography and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);
