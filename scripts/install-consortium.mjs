@@ -74,8 +74,10 @@ const optional = (s) => ({ ...s, optional: true });
 const oneOf = (...values) => ({ kind: 'enum', values });
 const obj = (props) => ({ kind: 'object', props });
 const arr = (items, minItems = 0) => ({ kind: 'array', items, minItems });
-const map = (values) => ({ kind: 'map', values });
-const text = { kind: 'map', values: str, props: { en: str } };
+const map = (values, keys) => ({ kind: 'map', values, keys });
+// The 11 site locales: the keys of `names`, of every text (`reason`, `note`) and of labels.json.
+export const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
+const text = { kind: 'map', values: str, props: { en: str }, keys: LOCALES };
 const range = orNull(obj({ min: orNull(num), max: orNull(num) }));
 const sourceIds = arr(str, 1);
 const climateZone = oneOf('Tropical', 'Subtropical', 'Arid', 'Mediterranean', 'Temperate', 'Continental', 'Boreal');
@@ -90,7 +92,7 @@ const traits = obj({
   deciduous_evergreen: orNull(str), active_growth_period: orNull(str), bloom_period: orNull(str),
   harvest_period: orNull(str), lifespan: orNull(str), growth_rate: orNull(str), age_of_maturity_years: orNull(num),
   root_depth_min_cm: orNull(num), taproot_persistent: orNull(bool), root_system_type: orNull(str),
-  mycorrhizal_type: orNull(str), nitrogen_fixer: orNull(bool), edibility_rating: orNull(int), self_fertile: orNull(bool),
+  mycorrhizal_type: orNull(str), nitrogen_fixer: orNull(bool), edibility_rating: orNull({ ...int, min: 0, max: 5 }), self_fertile: orNull(bool),
   sexual_system: orNull(str), pollinators: orNull(arr(str)), vegetative_spread_rate: orNull(str),
   clonal_growth_form: orNull(str), is_annual: orNull(bool), is_perennial: orNull(bool), habit: orNull(str),
 });
@@ -98,7 +100,7 @@ const traits = obj({
 const taxon = obj({
   id: { kind: 'string', pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/ },
   canonical_name: str, genus: str, family: str,
-  names: map(str),
+  names: map(str, LOCALES),
   image: orNull(obj({ url: str, credit: orNull(str), licence: orNull(str), source_page_url: orNull(str) })),
   role: oneOf('crop', 'support'),
   reason: optional(orNull(text)),
@@ -142,9 +144,12 @@ const manifestShape = obj({
   generated_at: str,
   canopi_db_sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ },
   cells: arr(obj({ climate_zone: climateZone, region, file: { kind: 'string', pattern: SAFE_NAME }, taxa: int, interactions: int, sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ } }), 1),
-  locales: arr(str),
+  locales: arr(oneOf(...LOCALES)),
   country_regions: map(arr(region)),
 });
+
+// labels.json: trait → English value → locale → translation (canopi-data docs/consortium-export-format.md).
+export const labelsShape = map(map(map(str, LOCALES)));
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -162,7 +167,10 @@ export function shapeErrors(value, shape, path = '$', out = [], max = 20) {
       else if (shape.pattern && !shape.pattern.test(value)) fail(`"${value}" does not match ${shape.pattern}`);
       break;
     case 'number': if (typeof value !== 'number' || !Number.isFinite(value)) fail('is not a number'); break;
-    case 'integer': if (!Number.isInteger(value)) fail('is not an integer'); break;
+    case 'integer':
+      if (!Number.isInteger(value)) fail('is not an integer');
+      else if ((shape.min !== undefined && value < shape.min) || (shape.max !== undefined && value > shape.max)) fail(`${value} is outside ${shape.min}–${shape.max}`);
+      break;
     case 'boolean': if (typeof value !== 'boolean') fail('is not a boolean'); break;
     case 'enum': if (!shape.values.includes(value)) fail(`${JSON.stringify(value)} is not one of ${shape.values.join(', ')}`); break;
     case 'array':
@@ -175,6 +183,7 @@ export function shapeErrors(value, shape, path = '$', out = [], max = 20) {
     case 'map':
     case 'object':
       if (!isObject(value)) { fail('is not an object'); break; }
+      if (shape.keys) for (const key of Object.keys(value)) if (!shape.keys.includes(key)) fail(`has a key "${key}" outside ${shape.keys.join(', ')}`);
       for (const [key, s] of Object.entries(shape.props ?? {})) {
         if (!(key in value)) { if (!s.optional) fail(`misses required key "${key}"`); continue; }
         shapeErrors(value[key], s, `${path}.${key}`, out, max);
@@ -251,7 +260,8 @@ export function verifyExport(dir, { fixture = false } = {}) {
   const manifestProblems = shapeErrors(manifest, manifestShape, 'manifest.json');
   if (manifestProblems.length) refuse(manifestProblems.join('; '));
   if (manifest.canopi_db_sha256 === ZERO_SHA && !fixture) refuse('canopi_db_sha256 is all zeros: this is the invented fixture, never installed for real (tests pass --fixture).');
-  parse(dir, 'labels.json');
+  const labelProblems = shapeErrors(parse(dir, 'labels.json'), labelsShape, 'labels.json');
+  if (labelProblems.length) refuse(labelProblems.join('; '));
 
   const seen = new Set();
   const cells = manifest.cells.map((entry) => {

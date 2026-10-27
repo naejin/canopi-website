@@ -355,3 +355,36 @@ test('staging lives outside public/ (git-ignored .cache/), and what a killed run
   assert.ok(!readdirSync(w.root).some((d) => /\.(tmp|old)-/.test(d)), 'old sibling folders removed');
   assert.ok(existsSync(join(w.out, 'manifest.json')));
 });
+
+test('the shape check holds edibility to 0–5 and names, reasons and notes to the 11 site locales', () => {
+  const cell = JSON.parse(readFileSync(join(fixture, 'temperate-europe.json'), 'utf8'));
+  const broken = structuredClone(cell);
+  broken.taxa[0].traits.edibility_rating = 50;
+  broken.taxa[1].traits.edibility_rating = -1;
+  broken.taxa[2].names.la = 'Malus';
+  broken.taxa[3].reason = { en: 'Fine.', xx: 'No.' };
+  broken.interactions[0].note = { en: 'Fine.', klingon: 'No.' };
+  assert.deepEqual(shapeErrors(broken, cellShape).map((e) => e.split(':')[0]), [
+    '$.taxa[0].traits.edibility_rating', '$.taxa[1].traits.edibility_rating', '$.taxa[2].names', '$.taxa[3].reason', '$.interactions[0].note',
+  ]);
+  const fine = structuredClone(cell);
+  fine.taxa[0].traits.edibility_rating = 5;
+  fine.taxa[1].traits.edibility_rating = 0;
+  fine.taxa[2].names = { ru: 'Яблоня', zh: '苹果' };
+  assert.deepEqual(shapeErrors(fine, cellShape), []);
+});
+
+test('labels.json must be trait → English value → locale → text, as the format describes', async (t) => {
+  for (const [labels, problem] of [
+    ['[]', /labels\.json: is not an object/],
+    ['null', /labels\.json: is null/],
+    ['{"bloom_period":{"Late Spring":"Fin du printemps"}}', /labels\.json\.bloom_period\.Late Spring: is not an object/],
+    ['{"bloom_period":{"Late Spring":{"la":"Ver"}}}', /labels\.json\.bloom_period\.Late Spring: has a key "la"/],
+    ['{"bloom_period":{"Late Spring":{"fr":3}}}', /labels\.json\.bloom_period\.Late Spring\.fr: is not a string/],
+  ]) {
+    const w = workspace(t);
+    w.write('labels.json', labels);
+    await assert.rejects(install(w), problem, labels);
+    assert.equal(existsSync(w.out), false);
+  }
+});
