@@ -1,0 +1,69 @@
+---
+// Coppice and bamboo: two bamboos cut away to show the ground. Left, a clumping bamboo: short, curved
+// rhizomes, and the stems (culms) packed together. Right, a running bamboo: one long rhizome running
+// sideways under the soil, sending stems up far apart, until a barrier at the edge stops it. Culms
+// and leaves are plant tokens, rhizomes wood (seed tone), the cut-away earth a soil token. Panel
+// titles are HTML under each drawing; the barrier label and the alt text come from the MDX.
+import { r1 } from '../../../../lib/svg';
+interface Props { clumping: string; running: string; barrier: string; alt: string; }
+const { clumping, running, barrier, alt } = Astro.props;
+const G = 70; // ground line
+const leaf = (x: number, y: number, a: number, len = 9) =>
+  ({ d: `M0 0Q${r1(len * 0.45)} ${r1(-len * 0.3)} ${len} 0Q${r1(len * 0.45)} ${r1(len * 0.3)} 0 0Z`, transform: `translate(${r1(x)} ${r1(y)}) rotate(${a})` });
+function culm(x: number, top: number) {
+  const nodes = [] as number[];
+  for (let y = G - 12; y > top + 6; y -= 12) nodes.push(y);
+  const leaves = [leaf(x, top + 4, -140), leaf(x, top + 4, -40), leaf(x, top + 14, -160, 8), leaf(x, top + 14, -20, 8)];
+  return { x, top, nodes, leaves };
+}
+const clump = [64, 72, 80, 88, 96].map((x, i) => culm(x, 12 + ((i * 7) % 12)));
+const clumpRoots = [64, 72, 80, 88, 96].map((x, i) => `M${x} ${G}Q${x + (i % 2 ? 6 : -6)} ${G + 16} ${x + (i % 2 ? 12 : -10)} ${G + 12}`);
+const runs = [22, 72, 122].map((x, i) => culm(x, 14 + i * 4));
+const runner = `M8 ${G + 26}H140`;
+const risers = [22, 72, 122].map((x) => `M${x} ${G + 26}Q${x - 2} ${G + 12} ${x} ${G}`);
+const panels = [
+  { title: clumping, culms: clump, roots: clumpRoots, barrier: false },
+  { title: running, culms: runs, roots: [runner, ...risers], barrier: true },
+];
+---
+<div class="guide-br" role="img" aria-label={alt}>
+  {panels.map((p) => (
+    <div class="guide-br-item">
+      <svg viewBox="0 0 160 158" aria-hidden="true">
+        <rect x="0" y={G} width="160" height="76" class="guide-br-soil" />
+        <line x1="0" y1={G} x2="160" y2={G} class="guide-br-ground" />
+        {p.roots.map((d) => <path d={d} class="guide-br-rhizome" />)}
+        {p.culms.map((c) => (
+          <g>
+            <line x1={c.x} y1={G} x2={c.x} y2={c.top} class="guide-br-culm" />
+            {c.nodes.map((y) => <line x1={c.x - 2.5} y1={y} x2={c.x + 2.5} y2={y} class="guide-br-node" />)}
+            {c.leaves.map((l) => <path d={l.d} transform={l.transform} class="guide-leaf" />)}
+          </g>
+        ))}
+        {p.barrier && (
+          <g>
+            <line x1="147" y1={G - 8} x2="147" y2={G + 64} class="guide-br-barrier" />
+            <text x="152" y="156" text-anchor="end" class="guide-br-label">{barrier}</text>
+          </g>
+        )}
+      </svg>
+      <p class="guide-br-title">{p.title}</p>
+    </div>
+  ))}
+</div>
+
+<style>
+  .guide-br { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; align-items: start; max-width: 34rem; margin: 0 auto; }
+  .guide-br-item { display: grid; gap: 0.3rem; }
+  .guide-br-item svg { width: 100%; max-width: 14rem; justify-self: center; }
+  .guide-body .guide-br-item p { margin: 0; }
+  .guide-br-title { font-weight: 600; font-size: 0.95rem; line-height: 1.3; text-align: center; }
+  .guide-br-soil { fill: var(--soil-3); opacity: 0.22; }
+  .guide-br-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-br-rhizome { fill: none; stroke: var(--seed-1); stroke-width: 3.5; stroke-linecap: round; }
+  .guide-br-culm { stroke: var(--leaf); stroke-width: 3.5; stroke-linecap: round; }
+  .guide-br-node { stroke: var(--leaf-deep); stroke-width: 1.4; }
+  .guide-br-barrier { stroke: var(--text-secondary); stroke-width: 3; }
+  .guide-br-label { font-family: var(--font-sans); font-size: 11px; fill: var(--text); }
+  @media (max-width: 639px) { .guide-br-title { font-size: 0.85rem; } }
+</style>
