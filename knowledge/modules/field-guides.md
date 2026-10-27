@@ -4,20 +4,20 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T20:51:42Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:17:33Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:21:53Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:fcdfd291dcf3ab42
-    last_modified: 2026-10-27T20:50:52Z
+    digest: sha256:18bd49aaa37f7734
+    last_modified: 2026-10-27T21:08:20Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:51624498733c77a9
-    last_modified: 2026-10-27T20:43:45Z
+    digest: sha256:42b8131821d8f8af
+    last_modified: 2026-10-27T21:08:07Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
@@ -61,8 +61,13 @@ sources:
   - id: tryconsortium-astro
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
-    digest: sha256:580ebaa4f9ad8250
-    last_modified: 2026-10-27T20:43:45Z
+    digest: sha256:5a02bf699f26c9a8
+    last_modified: 2026-10-27T21:08:07Z
+  - id: try-consortium-ts
+    resource: ../../src/components/guides/try-consortium.ts
+    title: src/components/guides/try-consortium.ts
+    digest: sha256:ed71c00bce5e1469
+    last_modified: 2026-10-27T21:07:50Z
 ---
 
 # Responsibility
