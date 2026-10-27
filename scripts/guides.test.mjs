@@ -621,7 +621,9 @@ test('the invasive note is inline and self-closing, and a guide naming a flagged
   const css = read('styles/guides.css').replace(/\/\*[\s\S]*?\*\//g, '');
   const rule = css.match(/\.guide-invasive\s*\{([^}]*)\}/)?.[1] ?? '';
   assert.match(rule, /border\s*:\s*1px solid var\(--border-strong\)/, '.guide-invasive has a solid hairline (dashed is the "not covered yet" note)');
-  assert.match(rule, /display\s*:\s*inline-block/, '.guide-invasive moves to a new line whole on a phone (an inline pill left a stub after the name)');
+  assert.match(component, /class="guide-invasive-lead"/, 'Invasive binds its icon to the first word, so a break never leaves an empty piece after the name');
+  assert.match(css, /\.guide-invasive-lead\s*\{[^}]*white-space\s*:\s*nowrap/, '.guide-invasive-lead does not break');
+  assert.match(css, /\.guide-invasive \.guide-invasive-icon\s*\{[^}]*display\s*:\s*inline-block/, 'the icon rule outranks .guide-page svg { display: block }, which put the icon on a line of its own');
   assert.ok(!/nowrap|--leaf|--danger/.test(rule), '.guide-invasive wraps, and is neither green nor red');
   for (const { body, file, lang } of guides) {
     const problem = invasiveProblem(body, lang);
