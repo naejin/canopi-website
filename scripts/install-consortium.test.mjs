@@ -59,7 +59,7 @@ test('the fixture installs with --fixture --no-images --out, byte for byte, with
 
 test('without --fixture, the all-zeros canopi_db_sha256 of the fixture is refused', (t) => {
   const w = workspace(t);
-  const run = spawnSync(process.execPath, [script, w.src, '--no-images', '--out', w.out], { encoding: 'utf8' });
+  const run = spawnSync(process.execPath, [script, w.src, '--out', w.out], { encoding: 'utf8' });
   assert.equal(run.status, 1);
   assert.match(run.stderr, /canopi_db_sha256 is all zeros/);
   assert.equal(existsSync(w.out), false);
@@ -295,4 +295,32 @@ test('photos: redirects are followed only to the same host or the photo hosts; o
   assert.ok(seen.urls.includes('https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Musa.svg/500px-moved.png'), 'same host');
   assert.ok(seen.urls.includes('https://upload.wikimedia.org/wikipedia/commons/9/99/Arachis.jpg'), 'a photo host');
   assert.ok(seen.responses.every((r) => r.bodyUsed || r.body === null), 'every body read or cancelled');
+});
+
+test('photos: an image url that is not http(s) is installed as image: null, with or without downloads', async (t) => {
+  for (const images of [true, false]) {
+    const w = workspace(t);
+    const cell = withPhotos(w);
+    const odd = { 'Inga edulis': '//cdn.example/x.jpg', 'Musa acuminata': 'data:image/png;base64,AAAA', 'Carica papaya': 'ftp://example.org/p.jpg' };
+    for (const x of cell.taxa) if (odd[x.canonical_name]) x.image.url = odd[x.canonical_name];
+    w.write('tropical-southern-america.json', cell);
+    const seen = [];
+    await install(w, { images, fetchImpl: stubFetch(seen), delayMs: 0, backoffMs: 0 });
+    const installed = JSON.parse(readFileSync(join(w.out, 'tropical-southern-america.json'), 'utf8'));
+    for (const name of Object.keys(odd)) assert.equal(installed.taxa.find((x) => x.canonical_name === name).image, null, `${name}, images ${images}`);
+    assert.ok(!seen.some((c) => !/^https:/.test(c.url)));
+    const left = installed.taxa.filter((x) => x.image).map((x) => x.image.url);
+    assert.ok(left.every((u) => u.startsWith('/data/consortium/images/') || !images), 'downloads rewrite every remaining url');
+    const manifest = JSON.parse(readFileSync(join(w.out, 'manifest.json'), 'utf8'));
+    assert.equal(manifest.cells.find((c) => c.file === 'tropical-southern-america.json').sha256, sha(readFileSync(join(w.out, 'tropical-southern-america.json'))));
+  }
+});
+
+test('--no-images is allowed only with --fixture, so a real install never keeps remote photo urls', async (t) => {
+  const w = workspace(t);
+  const run = spawnSync(process.execPath, [script, w.src, '--no-images', '--out', w.out], { encoding: 'utf8' });
+  assert.equal(run.status, 1);
+  assert.match(run.stderr, /--no-images.*--fixture/);
+  await assert.rejects(installConsortium({ exportDir: w.src, outDir: w.out, images: false, log: quiet }), /--no-images.*--fixture/);
+  assert.equal(existsSync(w.out), false);
 });

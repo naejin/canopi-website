@@ -1,7 +1,7 @@
 // Installs a canopi-data consortium export (format 2) into public/data/consortium/, where the
 // consortium page fetches it as static JSON. Run by hand; the output is committed.
 //
-//   node scripts/install-consortium.mjs <export-dir> [--fixture] [--no-images] [--out <dir>]
+//   node scripts/install-consortium.mjs <export-dir> [--fixture [--no-images]] [--out <dir>]
 //
 // Checks, in order, and refuses on the first failure (nothing is written then):
 // - SHA256SUMS: every listed file exists and matches; no .json in the directory is unlisted.
@@ -15,8 +15,9 @@
 // /data/consortium/images/<id>.<ext>; credit, licence and source page stay as they are. Wikimedia
 // Commons and iNaturalist originals are fetched as 500 px copies. A photo that fails becomes image: null (no
 // photo) and is listed in the summary; more than 10% failing stops the install. Installed cells
-// that changed get their sha256 recomputed in the installed manifest and SHA256SUMS. --no-images
-// skips downloads and keeps the cells byte for byte (tests, offline runs).
+// that changed get their sha256 recomputed in the installed manifest and SHA256SUMS. An image url
+// that is not http(s) becomes image: null. --no-images (allowed only with --fixture, for tests)
+// skips downloads and keeps the other cells byte for byte.
 // The output directory is replaced as a whole: written next to it, then renamed into place.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
@@ -367,8 +368,14 @@ async function fetchImages(cells, { fetchImpl, delayMs, backoffMs, log, maxFaile
 
 export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, maxFailedShare = MAX_FAILED_SHARE, log = console.log } = {}) {
   if (!exportDir) refuse('no export directory given.');
+  if (!images && !fixture) refuse('--no-images is allowed only with --fixture: a real install copies its photos into the site.');
   const dir = resolve(exportDir), out = resolve(outDir);
   const { manifest, manifestBytes, labelsBytes, cells } = verifyExport(dir, { fixture });
+  // A photo that is not an http(s) url (protocol-relative, data:, another scheme) is never
+  // downloaded and never served from elsewhere: no photo.
+  for (const c of cells) for (const t of c.cell.taxa) {
+    if (t.image && !/^https?:\/\//i.test(t.image.url)) { t.image = null; c.changed = true; }
+  }
   const photos = images ? await fetchImages(cells, { fetchImpl, delayMs, backoffMs, log, maxFailedShare }) : { files: new Map(), failed: [], total: 0 };
 
   // Installed bytes: unchanged cells byte for byte, changed ones minified (the export's own style)
@@ -429,7 +436,8 @@ export function parseArgs(argv) {
     else if (opts.exportDir) refuse(`one export directory only (got ${basename(a)} too).`);
     else opts.exportDir = a;
   }
-  if (!opts.exportDir) refuse('usage: node scripts/install-consortium.mjs <export-dir> [--fixture] [--no-images] [--out <dir>]');
+  if (!opts.exportDir) refuse('usage: node scripts/install-consortium.mjs <export-dir> [--fixture [--no-images]] [--out <dir>]');
+  if (!opts.images && !opts.fixture) refuse('--no-images is allowed only with --fixture: a real install copies its photos into the site.');
   return opts;
 }
 
