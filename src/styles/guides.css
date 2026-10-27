@@ -166,13 +166,14 @@
 .guide-his-col .guide-label { color: var(--accent-ink); }
 .guide-his-where { font-size: 0.85rem; color: var(--text-muted); margin-top: -0.2rem; }
 .guide-his-you { background: var(--surface-alt); }
-/* A species the source flags as invasive: an inline ochre pill right after its name. Solid hairline
-   (the dashed box is the climate "not covered yet" note); it wraps like text at 390px. */
+/* A species the source flags as invasive: an ochre pill right after its name. Solid hairline (the
+   dashed box is the climate "not covered yet" note). Inline-block, so on a phone it moves to the next
+   line whole, icon and text together, and wraps inside itself if it must; an inline pill split into an
+   empty stub after the name. */
 .guide-invasive {
-  display: inline; padding: 0.05rem 0.45rem; margin-inline: 0.1rem;
-  font-size: 0.85rem; color: var(--accent-ink); background: var(--surface-alt);
-  border: 1px solid var(--border-strong); border-radius: 999px;
-  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  display: inline-block; max-width: 100%; padding: 0.05rem 0.55rem; margin-inline: 0.1rem;
+  font-size: 0.85rem; line-height: 1.45; color: var(--accent-ink); background: var(--surface-alt);
+  border: 1px solid var(--border-strong); border-radius: 0.8rem;
 }
 .guide-invasive-icon { display: inline-block; vertical-align: -0.12em; margin-right: 0.25rem; }
 /* Advice for some climates only: a box headed by its zones and its book; the reader's zone opens first. */

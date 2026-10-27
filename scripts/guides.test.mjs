@@ -621,6 +621,7 @@ test('the invasive note is inline and self-closing, and a guide naming a flagged
   const css = read('styles/guides.css').replace(/\/\*[\s\S]*?\*\//g, '');
   const rule = css.match(/\.guide-invasive\s*\{([^}]*)\}/)?.[1] ?? '';
   assert.match(rule, /border\s*:\s*1px solid var\(--border-strong\)/, '.guide-invasive has a solid hairline (dashed is the "not covered yet" note)');
+  assert.match(rule, /display\s*:\s*inline-block/, '.guide-invasive moves to a new line whole on a phone (an inline pill left a stub after the name)');
   assert.ok(!/nowrap|--leaf|--danger/.test(rule), '.guide-invasive wraps, and is neither green nor red');
   for (const { body, file, lang } of guides) {
     const problem = invasiveProblem(body, lang);
