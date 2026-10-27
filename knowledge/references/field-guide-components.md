@@ -3,9 +3,9 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:13:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:21:54Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:21:02Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:21:53Z }
 sources:
   - id: index-ts
     resource: ../../src/components/guides/index.ts
@@ -15,8 +15,8 @@ sources:
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:677d9e79b76b3f06
-    last_modified: 2026-10-27T09:09:35Z
+    digest: sha256:aaa8cee0dfb045fb
+    last_modified: 2026-10-27T09:16:21Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -40,8 +40,8 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:1cbc002d6fe3becf
-    last_modified: 2026-10-27T09:09:35Z
+    digest: sha256:a05883ed674e82bc
+    last_modified: 2026-10-27T09:21:52Z
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
