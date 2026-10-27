@@ -4,20 +4,20 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:21:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:51:00Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:21:53Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:ea002f5052e5eb5e
-    last_modified: 2026-10-27T09:21:52Z
+    digest: sha256:18bd49aaa37f7734
+    last_modified: 2026-10-27T23:50:41Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:aaa8cee0dfb045fb
-    last_modified: 2026-10-27T09:16:21Z
+    digest: sha256:42b8131821d8f8af
+    last_modified: 2026-10-27T23:50:41Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
@@ -56,8 +56,18 @@ sources:
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:f4f21af2766d5760
-    last_modified: 2026-10-26T22:42:52Z
+    digest: sha256:b82c42d51e230dda
+    last_modified: 2026-10-27T19:02:45Z
+  - id: tryconsortium-astro
+    resource: ../../src/components/guides/TryConsortium.astro
+    title: src/components/guides/TryConsortium.astro
+    digest: sha256:5a02bf699f26c9a8
+    last_modified: 2026-10-27T23:50:41Z
+  - id: try-consortium-ts
+    resource: ../../src/components/guides/try-consortium.ts
+    title: src/components/guides/try-consortium.ts
+    digest: sha256:ed71c00bce5e1469
+    last_modified: 2026-10-27T23:50:41Z
 ---
 
 # Responsibility
@@ -75,7 +85,7 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 # Interfaces
 
 - Frontmatter: `title`, one-sentence `description`, `domain` (seeds, crops, soil, perennials, seasons, pests, kitchen), `order`, `glance` (3 to 6 label/value pairs; the hero box wraps its cells, and a value over 40 characters gets a wider cell), `quick`, `climates` (optional; the zones of the guide's `<ForClimate>` blocks, which brings the climate picker to the guide and the index), `sources` (`{ book: <bibliography id>, chapters: [titles] }`; chapter titles are the English edition's, so `BookCite` quotes them and, when the card shows another edition, adds a note naming the English edition rather than guessing translated titles), `related`, `updated`.
-- Components (contract: [Field Guide components](/references/field-guide-components.md), which lists every prop and limit): QuickAnswer, Term, TermNote (placed by the plugin), Note, Safety, FoodCaution, HisGarden (optional `book`, whose garden), Invasive (inline invasive-species note), ForClimate, Steps/Step, CropCards, CropCard, CropTable, CropExplorer, PollinationBadge, SeasonTimeline, YearsTimeline, PlotDiagram, FlowerDiagram, PlantingMixBar, Checklist/Item, Figure, Columns, Card, Points, NextGuides.
+- Components (contract: [Field Guide components](/references/field-guide-components.md), which lists every prop and limit): QuickAnswer, Term, TermNote (placed by the plugin), Note, Safety, FoodCaution, HisGarden (optional `book`, whose garden), Invasive (inline invasive-species note), ForClimate, Steps/Step, CropCards, CropCard, CropTable, CropExplorer, PollinationBadge, SeasonTimeline, YearsTimeline, PlotDiagram, FlowerDiagram, PlantingMixBar, Checklist/Item, Figure, Columns, Card, Points, NextGuides, TryConsortium (preset link into the consortium tool: `?plant=<canonical_name>&climate=<id>`, the plant checked against the beta cells at build time and by `scripts/guides-consortium.test.mjs`).
 - Ids are one per concept: `<Term id>` takes a glossary key, crop components a crop id; there are no alias maps. A crop cell the book does not give stays `null` and shows nothing.
 - `related` in frontmatter: two to four published guides (same list in en and fr); `NextGuides` links at section ends; in-text links to another guide's section use that page's heading id in the same language (French ids differ from English ones; `check-built-site.mjs` fails on a missing `#id`).
 - `<FoodCaution risk>` takes one risk or a list (`risk={['ergot', 'treated-seed']}`): several risks in one place are one box with one title, never two boxes in a row. Each box ends with the food-safety authority pointer once (`food.authority`).

@@ -5,20 +5,20 @@ description: The 11-locale translation tables and the t() lookup used by every c
 resource: ../../src/i18n
 tags: [module, i18n]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:51:01Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:16:52Z }
 sources:
   - id: i18n
     resource: ../../src/i18n
     title: src/i18n/
-    digest: sha256:92a68967f2cd37fe
-    last_modified: 2026-10-27T23:11:49Z
+    digest: sha256:acb757f3dd2e9d70
+    last_modified: 2026-10-27T23:50:41Z
   - id: homepage-test
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:7b281a4e950cea54
-    last_modified: 2026-10-27T22:35:16Z
+    digest: sha256:a1ed64c4b36abb00
+    last_modified: 2026-10-27T23:50:41Z
 ---
 
 # Responsibility
@@ -49,5 +49,5 @@ Build-time translation for the 11 locales (en default at `/`; fr, es, pt, it, zh
 - Bibliography theme labels (`bibliography.theme.<slug>`) must exist for every theme in `src/data/bibliography.md`. Climate strings are site-wide under `climate.*`: `climate.<zone>`, `.about`, `.places` (example cities checked against Köppen, localized per locale) for every zone in `src/data/climates.ts`, plus the picker's `climate.zone`, `yours`, `chip`, `notSet`, `title`, `lede`, `none`, `none.about` (`homepage.test.mjs`).
 - The consortium tool's strings are the `consortium.*` keys at the end of each locale file; `homepage.test.mjs` treats the prefix as dynamic, and `consortium-page.test.mjs` checks their parity, placeholders and plural forms (see [Consortium page](/modules/consortium-page.md)). The French tool is "guilde", the others "consortium" or a local word.
 - `t()` replaces only the first occurrence of each placeholder.
-- Guide strings are not in the 11 locale files; `guides.test.mjs` checks en/fr key parity. The site-wide `header.guides`, `header.books`, `header.menu`, `bibliography.fieldGuide`, `bibliography.guides` and `start.*` (home Start here row) keys are in all 11; the guides index's `section.books` is in `guides/{en,fr}.json` (`homepage.test.mjs` checks both).
+- Guide strings are not in the 11 locale files; `guides.test.mjs` checks en/fr key parity. The site-wide `header.guides`, `header.books`, `header.menu`, `bibliography.fieldGuide`, `bibliography.guides` and `start.*` (home Start here row) keys are in all 11, as are the consortium tool's entry-point keys `nav.consortium` (one short word, after `header.menu`), `nav.consortium.full` (the tool's full name, for the Menu, the footer and the home title; right after it), `learn.consortium.link` (after `bibliography.guides`, starting with the full name) and `home.consortium.*` (before `start.*`), kept apart from the tool page's own `consortium.*` keys at the end of each file; the guide preset strings `consortium.label`, `consortium.link` and `consortium.cell.<climate>.<region>` are in `guides/{en,fr}.json`; the guides index's `section.books` is in `guides/{en,fr}.json` (`homepage.test.mjs` checks both).
 - `guideDomains` lives in `guides.ts`, not `src/content.config.ts`: importing the content config at runtime pulls the glob loader's `node:fs` into the Cloudflare prerender worker and the build fails.

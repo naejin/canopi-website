@@ -11,7 +11,7 @@ import ClimateBadge from '../ClimateBadge.astro';
 import ClimatePicker from '../ClimatePicker.astro';
 import { guideDomains, publishedGuides, slugOf } from '../../lib/guides';
 import { gt, guideLocales, guidePath, guidesPath, type GuideLang } from '../../i18n/guides';
-import { localizedUrl } from '../../i18n/utils';
+import { consortiumPath, localizedUrl, t } from '../../i18n/utils';
 interface Props { lang: GuideLang; }
 const { lang } = Astro.props;
 const guides = await publishedGuides(lang);
@@ -36,6 +36,7 @@ const structuredData = {
         <h1>{gt('section.title', lang)}</h1>
         <p class="guide-small">{gt('section.languages', lang)}</p>
         <p class="guide-index-books"><a href={localizedUrl('/bibliography/', lang)}>{gt('section.books', lang)}</a></p>
+        <p class="guide-index-books"><a href={consortiumPath(lang)}>{t('learn.consortium.link', lang)}</a></p>
         {climateGuides && <ClimatePicker lang={lang} />}
       </header>
       {groups.map(({ domain, guides: list }) => (
