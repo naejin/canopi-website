@@ -9,7 +9,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { installConsortium, thumbnailUrl, shapeErrors, cellShape, USER_AGENT } from './install-consortium.mjs';
+import { installConsortium, thumbnailUrl, shapeErrors, cellShape, USER_AGENT, DEFAULT_OUT, STAGING_DIR, stagingDirFor } from './install-consortium.mjs';
 
 const fixture = fileURLToPath(new URL('fixtures/consortium/', import.meta.url));
 const script = fileURLToPath(new URL('install-consortium.mjs', import.meta.url));
@@ -45,6 +45,7 @@ const install = (w, opts = {}) => installConsortium({ exportDir: w.src, outDir: 
 test('the fixture installs with --fixture --no-images --out, byte for byte, with its SHA256SUMS', (t) => {
   const w = workspace(t);
   mkdirSync(w.out);
+  writeFileSync(join(w.out, 'manifest.json'), '{"format_version":2}'); // a previous install
   writeFileSync(join(w.out, 'stale.json'), '{}');
   const stdout = execFileSync(process.execPath, [script, w.src, '--fixture', '--no-images', '--out', w.out], { encoding: 'utf8' });
   assert.match(stdout, /Installed 3 consortium cells/);
@@ -323,4 +324,34 @@ test('--no-images is allowed only with --fixture, so a real install never keeps 
   assert.match(run.stderr, /--no-images.*--fixture/);
   await assert.rejects(installConsortium({ exportDir: w.src, outDir: w.out, images: false, log: quiet }), /--no-images.*--fixture/);
   assert.equal(existsSync(w.out), false);
+});
+
+test('--out refuses a non-empty directory that holds no consortium install, and leaves it untouched', async (t) => {
+  const w = workspace(t);
+  mkdirSync(join(w.out, 'keepme'), { recursive: true });
+  writeFileSync(join(w.out, 'keepme', 'precious'), 'mine');
+  await assert.rejects(install(w), /is not empty and holds no consortium install/);
+  assert.equal(readFileSync(join(w.out, 'keepme', 'precious'), 'utf8'), 'mine');
+  writeFileSync(join(w.out, 'manifest.json'), '{"format_version":1}');
+  await assert.rejects(install(w), /holds no consortium install/, 'another format is not ours either');
+  rmSync(w.out, { recursive: true });
+  mkdirSync(w.out);
+  await install(w);
+  assert.ok(existsSync(join(w.out, 'manifest.json')), 'an empty directory is fine');
+});
+
+test('staging lives outside public/ (git-ignored .cache/), and what a killed run leaves is cleaned on the next run', async (t) => {
+  assert.equal(stagingDirFor(DEFAULT_OUT), STAGING_DIR);
+  assert.ok(!STAGING_DIR.includes(`${join('public', '')}`), STAGING_DIR);
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  assert.equal(spawnSync('git', ['check-ignore', '-q', join(STAGING_DIR, 'x')], { cwd: root }).status, 0, 'git-ignored');
+  const w = workspace(t);
+  const staging = join(w.root, 'staging');
+  mkdirSync(join(staging, 'new-999'), { recursive: true });
+  mkdirSync(join(w.root, 'out.tmp-999'));
+  mkdirSync(join(w.root, 'out.old-998'));
+  await install(w, { stagingDir: staging });
+  assert.deepEqual(existsSync(staging) ? readdirSync(staging) : [], [], 'stale staging removed');
+  assert.ok(!readdirSync(w.root).some((d) => /\.(tmp|old)-/.test(d)), 'old sibling folders removed');
+  assert.ok(existsSync(join(w.out, 'manifest.json')));
 });

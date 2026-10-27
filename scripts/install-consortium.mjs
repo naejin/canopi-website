@@ -18,15 +18,25 @@
 // that changed get their sha256 recomputed in the installed manifest and SHA256SUMS. An image url
 // that is not http(s) becomes image: null. --no-images (allowed only with --fixture, for tests)
 // skips downloads and keeps the other cells byte for byte.
-// The output directory is replaced as a whole: written next to it, then renamed into place.
+// The output directory is replaced as a whole: written in a staging directory (see STAGING_DIR),
+// then renamed into place. It must be absent, empty or a previous install (a manifest.json with
+// format_version 2): anything else is refused, so a mistyped --out never deletes a folder.
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DEFAULT_OUT = join(ROOT, 'public', 'data', 'consortium');
 export const IMAGE_BASE = '/data/consortium/images/';
+// Where an install is written before it is renamed into place: outside public/ (so astro build
+// never ships a half-written or leftover copy) and git-ignored (.cache/). An --out outside the
+// repository stages beside it instead, in .consortium-install/, as a rename needs one file system.
+export const STAGING_DIR = join(ROOT, '.cache', 'consortium-install');
+export function stagingDirFor(out) {
+  const rel = relative(ROOT, resolve(out));
+  return rel && !rel.startsWith('..') && !isAbsolute(rel) ? STAGING_DIR : join(dirname(resolve(out)), '.consortium-install');
+}
 // Commons serves only its standard thumbnail widths (https://w.wiki/GHai: 250, 330, 500, 960, 1280…);
 // 640 answers HTTP 400, so the photos use 500, the nearest standard width below it.
 export const THUMB_WIDTH = 500;
@@ -173,6 +183,16 @@ export function shapeErrors(value, shape, path = '$', out = [], max = 20) {
       break;
   }
   return out;
+}
+
+// An --out that is absent, empty or a previous install; anything else is refused before any work.
+function checkOut(out) {
+  if (!existsSync(out)) return;
+  if (!statSync(out).isDirectory()) refuse(`${out} is a file, not an install directory.`);
+  if (!readdirSync(out).length) return;
+  let manifest = null;
+  try { manifest = JSON.parse(readFileSync(join(out, 'manifest.json'), 'utf8')); } catch { /* none or unreadable */ }
+  if (!isObject(manifest) || manifest.format_version !== 2) refuse(`${out} is not empty and holds no consortium install (a manifest.json with format_version 2), so it is not replaced.`);
 }
 
 function refuse(message) {
@@ -366,10 +386,11 @@ async function fetchImages(cells, { fetchImpl, delayMs, backoffMs, log, maxFaile
   return { files, failed, total: wanted.size };
 }
 
-export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, maxFailedShare = MAX_FAILED_SHARE, log = console.log } = {}) {
+export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, maxFailedShare = MAX_FAILED_SHARE, stagingDir = null, log = console.log } = {}) {
   if (!exportDir) refuse('no export directory given.');
   if (!images && !fixture) refuse('--no-images is allowed only with --fixture: a real install copies its photos into the site.');
   const dir = resolve(exportDir), out = resolve(outDir);
+  checkOut(out);
   const { manifest, manifestBytes, labelsBytes, cells } = verifyExport(dir, { fixture });
   // A photo that is not an http(s) url (protocol-relative, data:, another scheme) is never
   // downloaded and never served from elsewhere: no photo.
@@ -393,9 +414,16 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
   const sums = [...written].sort(([a], [b]) => (a < b ? -1 : 1)).map(([name, bytes]) => `${sha256(bytes)}  ${name}\n`).join('');
   written.set('SHA256SUMS', Buffer.from(sums));
 
-  const tmp = `${out}.tmp-${process.pid}`, old = `${out}.old-${process.pid}`;
+  // What a killed run left: the whole staging directory, and the sibling folders older versions wrote.
+  const staging = resolve(stagingDir ?? stagingDirFor(out));
+  rmSync(staging, { recursive: true, force: true });
+  if (existsSync(dirname(out))) {
+    const leftover = new RegExp(`^${basename(out).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.(tmp|old)-\\d+$`);
+    for (const name of readdirSync(dirname(out))) if (leftover.test(name)) rmSync(join(dirname(out), name), { recursive: true, force: true });
+  }
+  const tmp = join(staging, `new-${process.pid}`), old = join(staging, `old-${process.pid}`);
   mkdirSync(dirname(out), { recursive: true });
-  rmSync(tmp, { recursive: true, force: true });
+  mkdirSync(staging, { recursive: true });
   try {
     for (const [name, bytes] of written) {
       mkdirSync(dirname(join(tmp, name)), { recursive: true });
@@ -410,8 +438,7 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
       throw err;
     }
   } finally {
-    rmSync(tmp, { recursive: true, force: true });
-    rmSync(old, { recursive: true, force: true });
+    rmSync(staging, { recursive: true, force: true });
   }
 
   const summary = {
