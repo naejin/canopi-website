@@ -569,12 +569,12 @@
   "consortium.nc.title": "Non ancora coperto: {climate} · {region}",
   "consortium.nc.text": "one: Per ora questa beta ha piante per # luogo: | other: Per ora questa beta ha piante per # luoghi:",
   "consortium.nc.optIn": "Usa invece l’elenco {cell}",
-  "consortium.nc.optNote": "Quelle piante non sono state controllate per {where}.",
+  "consortium.nc.optNote": "Quelle piante non sono state controllate per il luogo scelto: {where}.",
   "consortium.nc.noneClimate": "Ancora nessuna regione ha piante per questo clima.",
   "consortium.nc.change": "Cambia clima o paese",
   "consortium.nc.ask": "Chiedi questo luogo",
   "consortium.borrowed": "Piante dall’elenco {cell}.",
-  "consortium.borrowedText": "Queste piante non sono state controllate per {where}.",
+  "consortium.borrowedText": "Queste piante non sono state controllate per il luogo scelto: {where}.",
   "consortium.nm.title": "Ancora nessuna pianta di qui si adatta a tutto il tuo terreno",
   "consortium.nm.text": "Ogni risposta qui sotto esclude delle piante. Allentane una, o aggiungi comunque una pianta dalla ricerca.",
   "consortium.nm.rule": "{label}: «{value}» esclude {n} piante su {total}",
@@ -598,7 +598,7 @@
   "consortium.printFree": "Posti liberi: {n}",
   "consortium.printFoot": "Fatto con Canopi: {url}",
   "consortium.fromGuidePlant": "La pianta {plant} è fissata, come suggeriva la guida.",
-  "consortium.borrowedInv": "Gli avvisi di invasività valgono sempre per {country}.",
+  "consortium.borrowedInv": "Gli avvisi di invasività valgono sempre per il paese scelto: {country}.",
   "consortium.borrowedNoInv": "Senza paese, non si controlla se sono invasive dove coltivi.",
   "consortium.u.allelo": "effetto sulle vicine",
   "consortium.u.spreads": "diffusione",
@@ -612,5 +612,6 @@
   "consortium.showMore": "one: Mostra ancora # | other: Mostra ancora #",
   "consortium.whatJob": "Che cosa sono questi compiti?",
   "consortium.ex.job.title": "Ogni pianta ha un compito",
-  "consortium.ex.job": "Un consorzio si divide sei compiti, e una pianta può svolgerne diversi. Un compito che nessuno svolge è un vuoto: ogni scheda mostra chi lo svolge, o che cosa cercare."
+  "consortium.ex.job": "Un consorzio si divide sei compiti, e una pianta può svolgerne diversi. Un compito che nessuno svolge è un vuoto: ogni scheda mostra chi lo svolge, o che cosa cercare.",
+  "consortium.swapNowLayer": "Ora: {layer}"
 }

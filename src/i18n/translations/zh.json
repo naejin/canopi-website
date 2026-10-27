@@ -355,7 +355,7 @@
   "consortium.ex.stratum.title": "层关乎光照",
   "consortium.ex.stratum": "每种植物都有它的层：取决于它需要多少光，而不只是长多高。需要全日照的植物在上面，耐阴的植物住在下面。填满每一层，就能用尽光照，植物之间也不互相拥挤。",
   "consortium.ex.phase.title": "种植会慢慢长成",
-  "consortium.ex.phase": "长得快的植物先来：它们覆盖地面、庇护幼树，然后让位。乔木接手数十年。Canopi 应用把这些阶段称为胎盘期、次生期和顶级群落；这里先写时间。",
+  "consortium.ex.phase": "长得快的植物先来：它们覆盖地面、庇护幼树，然后让位。乔木接手数十年。Canopi 应用把这些阶段称为胎盘期、次生期和顶极群落；这里先写时间。",
   "consortium.readGuide": "阅读指南",
   "consortium.close": "关闭",
   "consortium.stratum.emergent": "突出层",
@@ -405,7 +405,7 @@
   "consortium.phase.secondary_i.term": "次生期 1",
   "consortium.phase.secondary_ii.term": "次生期 2",
   "consortium.phase.secondary_iii.term": "次生期 3",
-  "consortium.phase.climax.term": "顶级群落",
+  "consortium.phase.climax.term": "顶极群落",
   "consortium.phase.placenta_i.from": "种下时",
   "consortium.phase.placenta_ii.from": "第 3 个月",
   "consortium.phase.placenta_iii.from": "第 1 年",
@@ -612,5 +612,6 @@
   "consortium.showMore": "other: 再显示 # 种",
   "consortium.whatJob": "这些作用是什么？",
   "consortium.ex.job.title": "每种植物都有自己的作用",
-  "consortium.ex.job": "一个联合体分担六项作用，一种植物可以承担好几项。没有植物承担的作用就是空缺：下面每张卡片都显示由谁承担，或者该找什么。"
+  "consortium.ex.job": "一个联合体分担六项作用，一种植物可以承担好几项。没有植物承担的作用就是空缺：下面每张卡片都显示由谁承担，或者该找什么。",
+  "consortium.swapNowLayer": "当前：{layer}"
 }

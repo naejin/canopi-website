@@ -569,12 +569,12 @@
   "consortium.nc.title": "Pas encore couvert : {climate} · {region}",
   "consortium.nc.text": "one: Cette bêta a des plantes pour # lieu pour l’instant : | other: Cette bêta a des plantes pour # lieux pour l’instant :",
   "consortium.nc.optIn": "Utiliser plutôt la liste {cell}",
-  "consortium.nc.optNote": "Ces plantes n’ont pas été vérifiées pour {where}.",
+  "consortium.nc.optNote": "Ces plantes n’ont pas été vérifiées pour l’endroit choisi : {where}.",
   "consortium.nc.noneClimate": "Aucune région n’a encore de plantes pour ce climat.",
   "consortium.nc.change": "Changer de climat ou de pays",
   "consortium.nc.ask": "Demander ce lieu",
   "consortium.borrowed": "Plantes de la liste {cell}.",
-  "consortium.borrowedText": "Ces plantes n’ont pas été vérifiées pour {where}.",
+  "consortium.borrowedText": "Ces plantes n’ont pas été vérifiées pour l’endroit choisi : {where}.",
   "consortium.nm.title": "Aucune plante d’ici ne convient encore à tout votre terrain",
   "consortium.nm.text": "Chaque réponse ci-dessous écarte des plantes. Assouplissez-en une, ou ajoutez quand même une plante depuis la recherche.",
   "consortium.nm.rule": "{label} : « {value} » écarte {n} plantes sur {total}",
@@ -598,7 +598,7 @@
   "consortium.printFree": "Places libres : {n}",
   "consortium.printFoot": "Fait avec Canopi : {url}",
   "consortium.fromGuidePlant": "La plante {plant} est épinglée, comme le proposait la fiche.",
-  "consortium.borrowedInv": "Les alertes d’espèce envahissante valent toujours pour {country}.",
+  "consortium.borrowedInv": "Les alertes d’espèce envahissante valent toujours pour le pays choisi : {country}.",
   "consortium.borrowedNoInv": "Sans pays, on ne vérifie pas si elles sont envahissantes là où vous jardinez.",
   "consortium.u.allelo": "effet sur les voisines",
   "consortium.u.spreads": "propagation",
@@ -612,5 +612,6 @@
   "consortium.showMore": "one: Afficher # de plus | other: Afficher # de plus",
   "consortium.whatJob": "Que sont ces rôles ?",
   "consortium.ex.job.title": "Chaque plante a un rôle",
-  "consortium.ex.job": "Une guilde se partage six rôles, et une plante peut en tenir plusieurs. Un rôle que personne ne tient est un manque : chaque carte ci-dessous montre qui le tient, ou quoi chercher."
+  "consortium.ex.job": "Une guilde se partage six rôles, et une plante peut en tenir plusieurs. Un rôle que personne ne tient est un manque : chaque carte ci-dessous montre qui le tient, ou quoi chercher.",
+  "consortium.swapNowLayer": "Aujourd’hui : {layer}"
 }

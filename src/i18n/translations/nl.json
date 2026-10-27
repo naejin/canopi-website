@@ -569,12 +569,12 @@
   "consortium.nc.title": "Nog niet gedekt: {climate} · {region}",
   "consortium.nc.text": "one: Deze bèta heeft voorlopig planten voor # plek: | other: Deze bèta heeft voorlopig planten voor # plekken:",
   "consortium.nc.optIn": "In plaats daarvan de lijst {cell} gebruiken",
-  "consortium.nc.optNote": "Die planten zijn niet gecontroleerd voor {where}.",
+  "consortium.nc.optNote": "Die planten zijn niet gecontroleerd voor de gekozen plek: {where}.",
   "consortium.nc.noneClimate": "Nog geen regio heeft planten voor dit klimaat.",
   "consortium.nc.change": "Klimaat of land wijzigen",
   "consortium.nc.ask": "Vraag om deze plek",
   "consortium.borrowed": "Planten uit de lijst {cell}.",
-  "consortium.borrowedText": "Deze planten zijn niet gecontroleerd voor {where}.",
+  "consortium.borrowedText": "Deze planten zijn niet gecontroleerd voor de gekozen plek: {where}.",
   "consortium.nm.title": "Nog geen plant van hier past bij je hele terrein",
   "consortium.nm.text": "Elk antwoord hieronder sluit planten uit. Versoepel er een, of voeg toch een plant toe via het zoeken.",
   "consortium.nm.rule": "{label}: ‘{value}’ sluit {n} van {total} planten uit",
@@ -598,7 +598,7 @@
   "consortium.printFree": "Vrije plekken: {n}",
   "consortium.printFoot": "Gemaakt met Canopi: {url}",
   "consortium.fromGuidePlant": "{plant} is vastgezet, zoals de gids voorstelde.",
-  "consortium.borrowedInv": "De waarschuwingen over invasiviteit gelden nog steeds voor {country}.",
+  "consortium.borrowedInv": "De waarschuwingen over invasiviteit gelden nog steeds voor het gekozen land: {country}.",
   "consortium.borrowedNoInv": "Zonder land wordt niet gecontroleerd of ze invasief zijn waar jij tuiniert.",
   "consortium.u.allelo": "effect op buren",
   "consortium.u.spreads": "verspreiding",
@@ -612,5 +612,6 @@
   "consortium.showMore": "one: Nog # tonen | other: Nog # tonen",
   "consortium.whatJob": "Wat zijn deze taken?",
   "consortium.ex.job.title": "Elke plant heeft een taak",
-  "consortium.ex.job": "Een consortium verdeelt zes taken, en één plant kan er meerdere doen. Een taak die niemand doet is een gat: elke kaart hieronder toont wie haar doet, of waar je naar kunt zoeken."
+  "consortium.ex.job": "Een consortium verdeelt zes taken, en één plant kan er meerdere doen. Een taak die niemand doet is een gat: elke kaart hieronder toont wie haar doet, of waar je naar kunt zoeken.",
+  "consortium.swapNowLayer": "Nu: {layer}"
 }

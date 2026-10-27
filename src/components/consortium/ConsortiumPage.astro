@@ -77,7 +77,7 @@ const betaNote = makeWords(strings, lang).P('betaNote', manifest.cells.length);
       <script is:inline>(function () { try { var p = new URLSearchParams(location.search), q = p.has('c') ? p : null; if (!q && !p.has('climate') && !p.has('plant')) { var s = JSON.parse(localStorage.getItem('canopi-consortium') || 'null'); if (s && s.q) q = new URLSearchParams(s.q); } if (q && q.has('c') && (q.has('r') || q.has('k'))) document.getElementById('ct-head').classList.add('tool-head-compact'); } catch (e) {} })();</script>
       <div id="ct-app" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
     </div>
-    <dialog id="ct-dialog" class="ct-drawer" aria-labelledby="ct-dlg-title"></dialog>
+    <dialog id="ct-dialog" class="ct-drawer" aria-labelledby="ct-dlg-title" data-own-dialog></dialog>
     <div id="ct-toast" class="toast" role="status" hidden></div>
     <div id="ct-say" class="visually-hidden" aria-live="polite"></div>
     <div id="ct-print" class="ct-print"></div>

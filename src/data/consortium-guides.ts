@@ -1,11 +1,12 @@
 // Field Guides that cover a plant of the consortium tool, by canonical name (the cell files'
 // `canonical_name`). Hand-made from reading the guides under src/content/guides/ for the plants
 // of the three beta cells: a guide is listed only where it says something useful about that plant
-// (growing, eating, a use), most useful first, three at most. Guides exist in en and fr only; the
-// page links the English guide for every other locale. scripts/consortium-page.test.mjs checks that
-// every slug exists.
+// (growing, eating, a use), most useful first, three at most; one passing sentence is not enough
+// (min-6: no rubber tree for one clause about plantain, no alfalfa for alfalfa meal, no candlenut for
+// a safety line, no walnut for black walnut). Guides exist in en and fr only; the page links the
+// English guide for every other locale. scripts/consortium-page.test.mjs checks that every slug
+// exists and that each guide names its plant where it grows or uses it; the judgement stays human.
 export const consortiumGuides: Record<string, readonly string[]> = {
-  'Aleurites moluccanus': ['fibre-dye-and-soap'],
   'Allium cepa': ['will-they-cross'],
   'Allium sativum': ['true-seed-potato-garlic-sunroot'],
   'Alnus cordata': ['coppice-and-bamboo'],
@@ -32,9 +33,8 @@ export const consortiumGuides: Record<string, readonly string[]> = {
   'Cicer arietinum': ['cooking-dry-beans', 'beans-and-legumes'],
   'Citrullus lanatus': ['squash-melons-cucumbers'],
   'Cnidoscolus aconitifolius': ['trees-with-edible-leaves'],
-  'Cocos nucifera': ['perennial-staples', 'fibre-dye-and-soap'],
+  'Cocos nucifera': ['perennial-staples'],
   'Corylus avellana': ['nut-staples', 'coppice-and-bamboo'],
-  'Crambe maritima': ['perennial-staples'],
   'Cucumis melo': ['squash-melons-cucumbers'],
   'Cucurbita maxima': ['squash-melons-cucumbers'],
   'Cucurbita moschata': ['squash-melons-cucumbers'],
@@ -48,15 +48,13 @@ export const consortiumGuides: Record<string, readonly string[]> = {
   'Guazuma ulmifolia': ['trees-for-livestock'],
   'Helianthus annuus': ['will-they-cross'],
   'Helianthus tuberosus': ['true-seed-potato-garlic-sunroot'],
-  'Hevea brasiliensis': ['trees-in-the-field'],
   'Hordeum vulgare': ['small-grains'],
-  'Juglans regia': ['nut-staples', 'fibre-dye-and-soap'],
+  'Juglans regia': ['nut-staples'],
   'Lactuca sativa': ['will-they-cross'],
   'Lupinus albus': ['cooking-dry-beans', 'beans-and-legumes'],
   'Lupinus angustifolius': ['cooking-dry-beans', 'beans-and-legumes'],
   'Lupinus luteus': ['cooking-dry-beans', 'beans-and-legumes'],
   'Manihot esculenta': ['trees-with-edible-leaves'],
-  'Medicago sativa': ['mulch'],
   'Morus alba': ['trees-with-edible-leaves', 'trees-for-livestock'],
   'Morus nigra': ['trees-with-edible-leaves'],
   'Musa acuminata': ['starch-from-trees', 'perennial-staples'],

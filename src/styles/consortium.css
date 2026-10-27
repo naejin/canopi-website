@@ -752,6 +752,23 @@
   .ct .sheet { box-shadow: none; padding: 0; max-width: none; }
   .ct .sheet table { page-break-inside: auto; } .ct .sheet tr { break-inside: avoid; }
   .ct .sheet-foot { word-break: break-all; }
+  /* min-9: paper is white and the ink dark, whatever the theme: the light palette (tokens.css) on a
+     white page. :root:root:has(.ct) outranks both dark-theme rules of tokens.css. */
+  :root:root:has(.ct) {
+    color-scheme: light;
+    --bg: #FFFFFF; --surface: #FFFFFF; --surface-alt: #F3EEE3;
+    --text: #27231D; --text-secondary: #4A4237; --text-muted: #645A4C;
+    --accent: #9C5A16; --accent-ink: #8A4E12; --accent-hover: #87490F; --on-accent: #FFF8EC;
+    --border: rgba(58, 46, 28, 0.14); --border-strong: rgba(58, 46, 28, 0.55); --focus: #1F5F8B; --danger: #A23B2A;
+    --warning: #7A5A00; --warning-bg: rgba(214, 170, 40, 0.18); --warning-line: #A88410; --shadow: none;
+    --leaf: #5E7A3A; --petal: #E2B33A; --anther: #C98A1E;
+    background: #FFFFFF; color: #27231D;
+  }
+  :root:root:has(.ct) body { background: #FFFFFF; color: #27231D; }
+  :root:root:has(.ct) .ct {
+    --s-emergent-ink: #9A6400; --s-high-ink: #00805C; --s-medium-ink: #0072B2; --s-low-ink: #A8507F;
+    --sun-tint: #F2C66B; --soil: #8A5A2B; --ground-ink: #6B4A2E; --sky: rgba(255, 252, 244, 0.55); --danger-bg: rgba(162, 59, 42, 0.10);
+  }
 }
 .ct .sheet h2.sheet-title { font-size: 28px; border: 0; }
 .ct .sheet section > h3 { font-family: var(--font-display); font-size: 18px; border-bottom: 1px solid #1E1B16; padding-bottom: 4px; margin-bottom: 8px; }

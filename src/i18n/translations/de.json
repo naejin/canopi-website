@@ -569,12 +569,12 @@
   "consortium.nc.title": "Noch nicht abgedeckt: {climate} · {region}",
   "consortium.nc.text": "one: Diese Beta hat bisher Pflanzen für # Ort: | other: Diese Beta hat bisher Pflanzen für # Orte:",
   "consortium.nc.optIn": "Stattdessen die Liste {cell} nehmen",
-  "consortium.nc.optNote": "Diese Pflanzen wurden nicht für {where} geprüft.",
+  "consortium.nc.optNote": "Diese Pflanzen wurden nicht für den gewählten Ort geprüft: {where}.",
   "consortium.nc.noneClimate": "Noch hat keine Region Pflanzen für dieses Klima.",
   "consortium.nc.change": "Klima oder Land ändern",
   "consortium.nc.ask": "Diesen Ort anfragen",
   "consortium.borrowed": "Pflanzen aus der Liste {cell}.",
-  "consortium.borrowedText": "Diese Pflanzen wurden nicht für {where} geprüft.",
+  "consortium.borrowedText": "Diese Pflanzen wurden nicht für den gewählten Ort geprüft: {where}.",
   "consortium.nm.title": "Noch passt keine Pflanze von hier zu deinem ganzen Standort",
   "consortium.nm.text": "Jede Antwort unten schließt Pflanzen aus. Lockere eine, oder füge trotzdem eine Pflanze über die Suche hinzu.",
   "consortium.nm.rule": "{label}: „{value}“ schließt {n} von {total} Pflanzen aus",
@@ -598,7 +598,7 @@
   "consortium.printFree": "Freie Plätze: {n}",
   "consortium.printFoot": "Erstellt mit Canopi: {url}",
   "consortium.fromGuidePlant": "{plant} ist angeheftet, wie der Leitfaden vorschlägt.",
-  "consortium.borrowedInv": "Die Invasiv-Warnungen gelten weiter für {country}.",
+  "consortium.borrowedInv": "Die Invasiv-Warnungen gelten weiter für das gewählte Land: {country}.",
   "consortium.borrowedNoInv": "Ohne Land wird nicht geprüft, ob sie dort invasiv sind, wo du gärtnerst.",
   "consortium.u.allelo": "Wirkung auf Nachbarn",
   "consortium.u.spreads": "Ausbreitung",
@@ -612,5 +612,6 @@
   "consortium.showMore": "one: # weitere zeigen | other: # weitere zeigen",
   "consortium.whatJob": "Was sind diese Aufgaben?",
   "consortium.ex.job.title": "Jede Pflanze hat eine Aufgabe",
-  "consortium.ex.job": "Ein Konsortium teilt sich sechs Aufgaben, und eine Pflanze kann mehrere übernehmen. Eine Aufgabe, die niemand erledigt, ist eine Lücke: Jede Karte unten zeigt, wer sie erledigt oder wonach du suchen kannst."
+  "consortium.ex.job": "Ein Konsortium teilt sich sechs Aufgaben, und eine Pflanze kann mehrere übernehmen. Eine Aufgabe, die niemand erledigt, ist eine Lücke: Jede Karte unten zeigt, wer sie erledigt oder wonach du suchen kannst.",
+  "consortium.swapNowLayer": "Jetzt: {layer}"
 }

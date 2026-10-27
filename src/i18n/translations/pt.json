@@ -569,12 +569,12 @@
   "consortium.nc.title": "Ainda não coberto: {climate} · {region}",
   "consortium.nc.text": "one: Esta beta tem plantas para # lugar por enquanto: | other: Esta beta tem plantas para # lugares por enquanto:",
   "consortium.nc.optIn": "Usar antes a lista de {cell}",
-  "consortium.nc.optNote": "Essas plantas não foram verificadas para {where}.",
+  "consortium.nc.optNote": "Essas plantas não foram verificadas para o local escolhido: {where}.",
   "consortium.nc.noneClimate": "Ainda nenhuma região tem plantas para este clima.",
   "consortium.nc.change": "Alterar clima ou país",
   "consortium.nc.ask": "Pedir este lugar",
   "consortium.borrowed": "Plantas da lista de {cell}.",
-  "consortium.borrowedText": "Estas plantas não foram verificadas para {where}.",
+  "consortium.borrowedText": "Estas plantas não foram verificadas para o local escolhido: {where}.",
   "consortium.nm.title": "Ainda nenhuma planta daqui se adapta a todo o seu terreno",
   "consortium.nm.text": "Cada resposta abaixo exclui plantas. Alivie uma, ou adicione uma planta mesmo assim a partir da pesquisa.",
   "consortium.nm.rule": "{label}: “{value}” exclui {n} de {total} plantas",
@@ -598,7 +598,7 @@
   "consortium.printFree": "Lugares livres: {n}",
   "consortium.printFoot": "Feito com a Canopi: {url}",
   "consortium.fromGuidePlant": "A planta {plant} está fixada, como o guia sugeria.",
-  "consortium.borrowedInv": "Os avisos de invasoras continuam a ser os de {country}.",
+  "consortium.borrowedInv": "Os avisos de invasoras continuam a ser os do país escolhido: {country}.",
   "consortium.borrowedNoInv": "Sem país, não se verifica se são invasoras onde cultiva.",
   "consortium.u.allelo": "efeito nas vizinhas",
   "consortium.u.spreads": "propagação",
@@ -612,5 +612,6 @@
   "consortium.showMore": "one: Mostrar mais # | other: Mostrar mais #",
   "consortium.whatJob": "O que são estas funções?",
   "consortium.ex.job.title": "Cada planta tem uma função",
-  "consortium.ex.job": "Um consórcio reparte seis funções, e uma planta pode cumprir várias. Uma função que ninguém cumpre é uma lacuna: cada cartão mostra quem a cumpre, ou o que procurar."
+  "consortium.ex.job": "Um consórcio reparte seis funções, e uma planta pode cumprir várias. Uma função que ninguém cumpre é uma lacuna: cada cartão mostra quem a cumpre, ou o que procurar.",
+  "consortium.swapNowLayer": "Agora: {layer}"
 }

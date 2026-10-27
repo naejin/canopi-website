@@ -348,7 +348,7 @@
   "consortium.guideTag": "가이드에서",
   "consortium.layersTitle": "옆에서 본 모습",
   "consortium.whatStratum": "층이란?",
-  "consortium.lightCue": "빛은 위에서 옵니다. 위층은 햇빛을 온전히 받고, 아래층은 그 그늘에서 삽니다.",
+  "consortium.lightCue": "빛은 위에서 옵니다. 위쪽 층은 햇빛을 온전히 받고, 아래쪽 층은 그 그늘에서 삽니다.",
   "consortium.layersNote": "높이는 층을 나타낼 뿐, 정확한 크기는 아닙니다.",
   "consortium.drawingKey": "그림 속 식물, 왼쪽에서 오른쪽으로",
   "consortium.noLayerList": "층 아직 확인 안 됨: {names}",
@@ -359,9 +359,9 @@
   "consortium.readGuide": "가이드 읽기",
   "consortium.close": "닫기",
   "consortium.stratum.emergent": "돌출층",
-  "consortium.stratum.high": "교목층",
-  "consortium.stratum.medium": "중간층",
-  "consortium.stratum.low": "저층",
+  "consortium.stratum.high": "상층",
+  "consortium.stratum.medium": "중층",
+  "consortium.stratum.low": "하층",
   "consortium.stratum.none": "층 아직 확인 안 됨",
   "consortium.stratum.emergent.about": "양지, 모든 것 위",
   "consortium.stratum.high.about": "빛을 가장 많이 받음",
@@ -612,5 +612,6 @@
   "consortium.showMore": "other: #종 더 보기",
   "consortium.whatJob": "이 역할들은 무엇인가요?",
   "consortium.ex.job.title": "모든 식물에는 역할이 있습니다",
-  "consortium.ex.job": "컨소시엄은 여섯 가지 역할을 나누어 맡고, 한 식물이 여러 역할을 맡을 수 있습니다. 아무도 맡지 않은 역할은 빈자리입니다. 아래 각 카드에 누가 맡는지, 또는 무엇을 찾으면 되는지 나옵니다."
+  "consortium.ex.job": "컨소시엄은 여섯 가지 역할을 나누어 맡고, 한 식물이 여러 역할을 맡을 수 있습니다. 아무도 맡지 않은 역할은 빈자리입니다. 아래 각 카드에 누가 맡는지, 또는 무엇을 찾으면 되는지 나옵니다.",
+  "consortium.swapNowLayer": "지금: {layer}"
 }

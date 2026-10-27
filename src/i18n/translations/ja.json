@@ -359,9 +359,9 @@
   "consortium.readGuide": "ガイドを読む",
   "consortium.close": "閉じる",
   "consortium.stratum.emergent": "突出層",
-  "consortium.stratum.high": "高木層",
-  "consortium.stratum.medium": "中木層",
-  "consortium.stratum.low": "低木層",
+  "consortium.stratum.high": "上層",
+  "consortium.stratum.medium": "中層",
+  "consortium.stratum.low": "下層",
   "consortium.stratum.none": "階層は未確認",
   "consortium.stratum.emergent.about": "日なた、すべての上",
   "consortium.stratum.high.about": "光の大部分を受ける",
@@ -612,5 +612,6 @@
   "consortium.showMore": "other: さらに # 種を表示",
   "consortium.whatJob": "これらの役割とは？",
   "consortium.ex.job.title": "どの植物にも役割があります",
-  "consortium.ex.job": "コンソーシアムは6つの役割を分け合い、1つの植物がいくつも担えます。だれも担っていない役割は空きです。下の各カードに、担っている植物か、探すべき植物を示します。"
+  "consortium.ex.job": "コンソーシアムは6つの役割を分け合い、1つの植物がいくつも担えます。だれも担っていない役割は空きです。下の各カードに、担っている植物か、探すべき植物を示します。",
+  "consortium.swapNowLayer": "現在：{layer}"
 }

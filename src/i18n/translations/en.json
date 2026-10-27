@@ -569,12 +569,12 @@
   "consortium.nc.title": "Not covered yet: {climate} · {region}",
   "consortium.nc.text": "one: This beta has plants for # place so far: | other: This beta has plants for # places so far:",
   "consortium.nc.optIn": "Use the {cell} list instead",
-  "consortium.nc.optNote": "Those plants were not checked for {where}.",
+  "consortium.nc.optNote": "Those plants were not checked for your place: {where}.",
   "consortium.nc.noneClimate": "No region has plants for this climate yet.",
   "consortium.nc.change": "Change climate or country",
   "consortium.nc.ask": "Ask for this place",
   "consortium.borrowed": "Plants from the {cell} list.",
-  "consortium.borrowedText": "These plants were not checked for {where}.",
+  "consortium.borrowedText": "These plants were not checked for your place: {where}.",
   "consortium.nm.title": "No plant here fits all of your site yet",
   "consortium.nm.text": "Each answer below rules out plants. Loosen one, or add a plant anyway from the search.",
   "consortium.nm.rule": "{label}: “{value}” rules out {n} of {total} plants",
@@ -598,7 +598,7 @@
   "consortium.printFree": "Free places: {n}",
   "consortium.printFoot": "Made with Canopi: {url}",
   "consortium.fromGuidePlant": "{plant} is pinned, as the guide suggested.",
-  "consortium.borrowedInv": "Invasive warnings still use {country}.",
+  "consortium.borrowedInv": "Invasive warnings still use your country: {country}.",
   "consortium.borrowedNoInv": "Without a country, they are not checked for invasiveness where you garden.",
   "consortium.u.allelo": "effect on neighbours",
   "consortium.u.spreads": "spreading",
@@ -612,5 +612,6 @@
   "consortium.showMore": "one: Show # more | other: Show # more",
   "consortium.whatJob": "What are the jobs?",
   "consortium.ex.job.title": "Every plant has work to do",
-  "consortium.ex.job": "A consortium shares six jobs, and one plant can do several. A job nobody does is a gap: each card below shows who does it, or what to look for."
+  "consortium.ex.job": "A consortium shares six jobs, and one plant can do several. A job nobody does is a gap: each card below shows who does it, or what to look for.",
+  "consortium.swapNowLayer": "Now: {layer}"
 }

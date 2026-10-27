@@ -11,7 +11,7 @@ import {
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadCell } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook } from './words.js';
-import { droppedPlants, trimGaps, mayPersist, photoSource, shown } from './logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, shown, linkMembers, afterMove, repeatClick } from './logic.js';
 import { profileSVG } from './draw.js';
 
 const data = JSON.parse(document.getElementById('ct-data').textContent);
@@ -77,7 +77,7 @@ let S = fresh();
 let O = null; // the open sheet: { type, id, filter, back, confirm }
 let addQuery = '', addJob = '', addLayer = '';
 let countryQuery = '';
-let focusNext = null, lastRemoved = null, undoStart = null, toastTimer = 0;
+let focusNext = null, lastRemoved = null, undoStart = null, toastTimer = 0, lastRemoveAt = null;
 const SWAP_STEP = 8;
 let swapMore = 0;
 
@@ -553,13 +553,13 @@ function detailsParts(t) {
   const kept = S.kept.has(t.id), n = nameText(t);
   const foot = inMembers
     ? `${btn('button button-primary button-small', 'swap', t.id, `${I.swap}${esc(T('swap'))}`, fk('d-swap'))}${btn('button button-secondary button-small', 'keep', t.id, `${kept ? I.pinOn : I.pin}<span>${esc(T(kept ? 'unpin' : 'pin', { name: n }))}</span>`, `aria-pressed="${kept}" ${fk('d-keep')}`)}${btn('button button-secondary button-small', 'remove', t.id, `${I.remove}<span>${esc(T('remove', { name: n }))}</span>`, fk('d-remove'))}`
-    : (O.confirm === t.id ? confirmHTML(t.id, 'add') : '') + btn('button button-primary button-small', 'add', t.id, esc(T('add')), fk('d-add'));
+    : O.confirm === t.id ? confirmHTML(t.id, 'add') : btn('button button-primary button-small', 'add', t.id, esc(T('add')), fk('d-add'));
   return { head: headHTML, body, foot };
 }
 function altRow(t, why, act, label, flags, opts = {}) {
   return `<li class="alt" data-flagged="${flags.flagged}"><div class="alt-main"><span class="alt-name">${btn('link-button alt-link', 'details-from', t.id, name(t), fk('ad-' + t.id))} <span class="sci">${esc(t.canonical_name)}</span></span>
     <span class="alt-why">${why}</span>${chipsHTML(t, flags)}</div>
-    ${opts.disabled ? `<span class="seg-hint">${esc(T('inConsortium'))}</span>` : btn(`button button-small ${opts.primary ? 'button-primary' : 'button-secondary'}`, act, t.id, esc(label), `aria-label="${esc(label)}: ${esc(nameText(t))}" ${fk(act + '-' + t.id)}`)}</li>`;
+    ${opts.disabled ? `<span class="seg-hint">${esc(T('inConsortium'))}</span>` : O?.confirm === t.id ? '' : btn(`button button-small ${opts.primary ? 'button-primary' : 'button-secondary'}`, act, t.id, esc(label), `aria-label="${esc(label)}: ${esc(nameText(t))}" ${fk(act + '-' + t.id)}`)}</li>`;
 }
 function confirmHTML(id, act) {
   const t = taxonOf(id), flags = O.type === 'swap' ? alternatives(O.id, S.members, cell, { site: S.site, removed: [...S.removed], country: S.country }).find((a) => a.taxon.id === id)?.flags : flagsFor(cell, id, S.members, { site: S.site, country: S.country });
@@ -570,8 +570,9 @@ function swapParts(m) {
   const all = alternatives(m.id, S.members, cell, { site: S.site, removed: [...S.removed], country: S.country });
   // copy-m5: eight of each group at first, eight more per "Show more".
   const fitAll = all.filter((a) => !a.flags.flagged), flaggedAll = all.filter((a) => a.flags.flagged);
-  const fitShown = shown(fitAll, SWAP_STEP * (1 + swapMore)), flaggedShown = shown(flaggedAll, SWAP_STEP * (1 + swapMore));
-  const fit = fitShown.items, flagged = flaggedShown.items, more = fitShown.more + flaggedShown.more;
+  const fitShown = shown(fitAll, SWAP_STEP * (1 + swapMore), SWAP_STEP), flaggedShown = shown(flaggedAll, SWAP_STEP * (1 + swapMore), SWAP_STEP);
+  // min-4: the button counts what one press reveals, not everything left.
+  const fit = fitShown.items, flagged = flaggedShown.items, more = fitShown.next + flaggedShown.next;
   const others = members().filter((t) => t.id !== m.id), mJobs = jobsOf(m), s = stratumOf(m);
   const othersJobs = new Set(others.flatMap(jobsOf));
   const row = (a, primary) => {
@@ -581,7 +582,7 @@ function swapParts(m) {
     const why = `<span>${sw(as)} ${esc(a.sameStratum ? T('sameLayer') : stratumLabel(as))}</span>${shared.length ? `<span>${esc(T('alsoJobs', { jobs: W.list(shared) }))}</span>` : ''}<span class="${lost.length ? 'loses' : 'keeps'}">${esc(lost.length ? T('loses', { jobs: W.list(lost) }) : T('keepsAll'))}</span>`;
     return (O.confirm === a.taxon.id ? confirmHTML(a.taxon.id, 'use') : '') + altRow(a.taxon, why, 'use', T('use'), a.flags, { primary });
   };
-  const headHTML = `<div><h2 id="ct-dlg-title">${T('swapTitle', { name: name(m) })}</h2><p class="lede">${esc(T('swapNow', { layer: stratumLabel(s), jobs: W.list(mJobs.map((j) => T('job.' + j))) }))}</p><p class="lede">${esc(T('swapLede'))}</p></div>`;
+  const headHTML = `<div><h2 id="ct-dlg-title">${T('swapTitle', { name: name(m) })}</h2><p class="lede">${esc(mJobs.length ? T('swapNow', { layer: stratumLabel(s), jobs: W.list(mJobs.map((j) => T('job.' + j))) }) : T('swapNowLayer', { layer: stratumLabel(s) }))}</p><p class="lede">${esc(T('swapLede'))}</p></div>`;
   const body = !all.length ? `<p class="muted">${esc(T('noAlt'))}</p>`
     : `${fit.length ? `<ul class="alt-list" role="list">${fit.map((a, i) => row(a, i === 0)).join('')}</ul>` : ''}
       ${flagged.length ? `<h3 class="list-label">${esc(T('flaggedGroup'))}</h3><ul class="alt-list" role="list">${flagged.map((a) => row(a, false)).join('')}</ul>` : ''}
@@ -759,7 +760,7 @@ const sayLater = (text) => { clearTimeout(sayTimer); sayTimer = setTimeout(() =>
 // plants, so a reload or a copied address loses nothing (M2).
 function stateNow() {
   const p = S.pending?.state;
-  const members = p ? p.members : S.status === 'ready' || S.status === 'nomatch' ? S.members : null;
+  const members = p ? p.members : linkMembers(S.status, S.members);
   return { climate: S.climate, region: S.region, cellRegion: cellRegion(), country: S.country, site: S.site, kept: p ? p.kept : keptList(), removed: p ? p.removed : [...S.removed], members, plants: p?.plants ?? [] };
 }
 // The link's own prefixes, written back exactly as they came (shortening them without the cell
@@ -807,7 +808,9 @@ async function resolvePlace() {
   const mc = cellFor(manifest, S.climate, cellRegion());
   if (!mc) { cell = null; S.status = 'notcovered'; focusNext = 'result'; render(); return; }
   S.status = 'loading';
-  if (!app.contains(document.activeElement)) focusNext = 'result'; // a closed sheet: the focus stays in the tool
+  // min-8: the loading screen replaces whatever had the focus (Retry, a place, a closed sheet's opener),
+  // so the focus waits on its status line.
+  focusNext = 'result';
   render();
   let next, nextLabels;
   try {
@@ -848,14 +851,16 @@ function leaveLink() {
   const plants = S.pending.state.plants ?? [];
   S.pending = plants.length ? decodeState(new URLSearchParams({ plant: plants[0] })) : null;
 }
+// min-1: the notices of the link that opened the page go with it.
+function leavePlace() { Object.assign(S, afterMove(S)); leaveLink(); }
 function choosePlace(country, region) {
   S.country = country; S.region = region; S.pickFor = null; S.ratherNot = !country && S.ratherNot; countryQuery = '';
-  S.cellRegion = null; dropUndo(); leaveLink();
+  S.cellRegion = null; dropUndo(); leavePlace();
   if (O) closeSheet(false);
   resolvePlace();
 }
 const act = {
-  climate(v) { setClimate(v); S.cellRegion = null; dropUndo(); leaveLink(); if (O) closeSheet(false); if (S.region) resolvePlace(); else { focusNext = S.ratherNot ? 'rg-' + REGIONS[0] : browserCountry ? 'suggest' : 'country-q'; render(); } },
+  climate(v) { setClimate(v); S.cellRegion = null; dropUndo(); leavePlace(); if (O) closeSheet(false); if (S.region) resolvePlace(); else { focusNext = S.ratherNot ? 'rg-' + REGIONS[0] : browserCountry ? 'suggest' : 'country-q'; render(); } },
   'edit-climate'() { S.editClimate = true; focusNext = 'cl-' + S.climate; render(); },
   country(v) {
     const rs = regionsOf(manifest, v);
@@ -962,7 +967,22 @@ root.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
   if (!el) return;
   const fn = act[el.dataset.act];
-  if (fn) { e.preventDefault(); fn(el.dataset.v, el); }
+  if (!fn) return;
+  e.preventDefault();
+  // A double click on Remove removes one plant: the list shifts, and the second click would land on
+  // the next plant's Remove (appendix).
+  if (el.dataset.act === 'remove') {
+    const now = performance.now();
+    if (repeatClick(e.detail, now, lastRemoveAt)) return;
+    lastRemoveAt = e.detail ? now : null;
+  }
+  fn(el.dataset.v, el);
+});
+// The sheet's backdrop closes it (the site's dialog helper leaves this dialog to the tool: min-10).
+dlg.addEventListener('click', (e) => {
+  if (e.target !== dlg) return;
+  const box = dlg.getBoundingClientRect();
+  if (e.clientX < box.left || e.clientX > box.right || e.clientY < box.top || e.clientY > box.bottom) closeSheet();
 });
 root.addEventListener('change', (e) => {
   const el = e.target;

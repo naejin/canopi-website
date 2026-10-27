@@ -7,13 +7,13 @@ tags: [module, data]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T22:34:48Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:27Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:16:51Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:36c312a0e31ab88e
-    last_modified: 2026-10-27T22:26:44Z
+    digest: sha256:92415bd3c6f89441
+    last_modified: 2026-10-27T23:11:49Z
 ---
 
 # Responsibility

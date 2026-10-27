@@ -1,6 +1,7 @@
 // The consortium tool's pure rules about its own state (no DOM, no strings), so
 // scripts/consortium-page.test.mjs can test them: what a share link lost, which gap rows stay,
-// when the address bar may be rewritten, where a photo came from, and how much of a list shows.
+// when the address bar may be rewritten, where a photo came from, how much of a list shows, what a
+// place change leaves of a link's notices, and when a click is the tail of a double click.
 
 // How many plants an old link named that the cell no longer has: the distinct ids of `p` (kept)
 // and `a` (members) that matched no taxon or several. A kept plant is in both lists, so it counts
@@ -36,7 +37,28 @@ export function photoSource(url) {
   return hit ? hit[1] : host.replace(/^www\./, '');
 }
 
-// A long list shown in steps: the first `step` items, then `step` more each time.
-export function shown(list, count) {
-  return { items: list.slice(0, count), more: Math.max(0, list.length - count) };
+// A long list shown in steps: the first `count` items, how many are left, and how many the next
+// step of `step` reveals (the "Show # more" number, min-4).
+export function shown(list, count, step = Infinity) {
+  const more = Math.max(0, list.length - count);
+  return { items: list.slice(0, count), more, next: Math.min(step, more) };
+}
+
+// The plant list a link carries (its `a`): the members of a result, an empty list for a consortium
+// the user emptied, and none for a no-match, so a reload works the no-match out again (min-2).
+export const linkMembers = (status, members) => (status === 'ready' ? members : null);
+
+// A notice (guide plant pinned or left out, older link, restored list) speaks of the place the page
+// opened on. When the user picks another place or climate it goes; only a link still waiting for its
+// cell takes its guide plant on to the new place, and then the notice is worked out there (min-1).
+export function afterMove({ pending }) {
+  const plant = pending?.state?.plants?.[0] ?? null;
+  return { notice: null, guidePlant: plant, guideId: null };
+}
+
+// The second click of a double click, or a click right after the last one, lands on whatever slid
+// under the pointer: it is not a new request. Keyboard presses (detail 0) always count.
+export function repeatClick(detail, now, last, ms = 500) {
+  if (detail === 0) return false;
+  return detail > 1 || (last != null && now - last < ms);
 }

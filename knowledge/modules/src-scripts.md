@@ -5,15 +5,15 @@ description: Vanilla browser modules for the home and bibliography pages (chrome
 resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:16:51Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T22:34:49Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:16:53Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:ca1dc56d6944c8d8
-    last_modified: 2026-10-27T22:26:44Z
+    digest: sha256:ac535ea9a61b37b8
+    last_modified: 2026-10-27T23:11:49Z
 ---
 
 # Responsibility
@@ -32,7 +32,7 @@ Client-side behaviour, no framework. Scripts hold no user-facing English: every 
 - [contact.js](../../src/scripts/contact.js): in-place validation, posts with `Accept: application/json`.
 - [climate.js](../../src/scripts/climate.js): the reader's climate (`initClimate()`, called by `initChrome`): the picker dialog, `localStorage["canopi-climate"]` and `html[data-climate]`, ordering of `<ForClimate>` runs, the "not covered yet" note, sync across tabs, all blocks open for print. See [Climate UX](/decisions/climate-ux.md).
 - [consortium/](../../src/scripts/consortium): the consortium tool (`app.js`, `words.js`, `draw.js`, `data.ts`); it reads its strings from `#ct-data`, not `#page-data`. See [Consortium page](/modules/consortium-page.md).
-- [donate.js](../../src/scripts/donate.js), [dialogs.js](../../src/scripts/dialogs.js): HelloAsso donation dialog and native `<dialog>` helpers. Donate opened from the phone Menu returns focus to the Menu summary; from `#donate`, to the first visible Donate button.
+- [donate.js](../../src/scripts/donate.js), [dialogs.js](../../src/scripts/dialogs.js): HelloAsso donation dialog and native `<dialog>` helpers; `initDialogs` skips a dialog marked `data-own-dialog` (the consortium tool's sheet, which handles its own close, backdrop and scroll lock). Donate opened from the phone Menu returns focus to the Menu summary; from `#donate`, to the first visible Donate button.
 
 # Interfaces
 
