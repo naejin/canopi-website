@@ -77,4 +77,13 @@ const page = (section: 'guides' | 'books' | 'consortium') => (current === sectio
     .site-header .nav-link { padding: 0 6px; }
     .site-header .theme-toggle { padding: 0; }
   }
+  /* The fit above holds with the webfonts at the default text size. A wider fallback font (before
+     Source Sans 3 arrives, or where it never does) or larger text (a minimum font size, text-only zoom)
+     can make the row longer than the page: then the links move under the logo, and wrap again if they
+     must, right-aligned, rather than scroll sideways or drop an item. */
+  @media (min-width: 640px) {
+    .site-header .header-inner { flex-wrap: wrap; row-gap: 0; }
+    .site-header .header-nav { flex-wrap: wrap; justify-content: flex-end; margin-left: auto; max-width: 100%; }
+    .site-header .nav-inline { flex-wrap: wrap; justify-content: flex-end; }
+  }
 </style>
