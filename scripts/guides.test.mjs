@@ -585,8 +585,8 @@ test('the crossing meter fills with a non-green token: green is for plants, not 
 // rule: a guide naming one of the book's flagged species must carry the note at least once; reviewers
 // still check each name and its placement.
 const invasiveNames = {
-  en: /\b(?:prosopis|mesquites?|leucaenas?|kudzu|castor|osage oranges?|air potato(?:es)?|chinese tallow|miscanthus|pongam(?:ia)?s?|leafy spurge|cardoons?)\b/i,
-  fr: /(?<!\p{L})(?:prosopis|mesquites?|leucaenas?|kudzu|ricins?|orangers? des osages|ignames? bulbifères?|arbres? à suif|miscanthus|pongamias?|euphorbes? ésules?|cardons?)(?!\p{L})/iu,
+  en: /\b(?:prosopis|mesquites?|leucaenas?|kudzu|castor|osage oranges?|air potato(?:es)?|chinese tallow|miscanthus|pongam(?:ia)?s?|leafy spurge|cardoons?|honey locusts?|moringas?|petroleum plants?)\b/i,
+  fr: /(?<!\p{L})(?:prosopis|mesquites?|leucaenas?|kudzu|ricins?|orangers? des osages|ignames? bulbifères?|arbres? à suif|miscanthus|pongamias?|euphorbes? ésules?|cardons?|féviers?|moringas?)(?!\p{L})/iu,
 };
 const invasiveProblem = (body, lang) => {
   const text = body.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
