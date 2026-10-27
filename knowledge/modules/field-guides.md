@@ -4,25 +4,25 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:35:35Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:13:44Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:35:34Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:bdc76850091a0277
-    last_modified: 2026-10-26T22:38:12Z
+    digest: sha256:7c2869717a841c7d
+    last_modified: 2026-10-27T09:12:09Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:dc2ac211e152c3ac
-    last_modified: 2026-10-27T07:21:18Z
+    digest: sha256:677d9e79b76b3f06
+    last_modified: 2026-10-27T09:09:35Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
-    digest: sha256:edbfe9e059122bed
-    last_modified: 2026-10-27T07:21:18Z
+    digest: sha256:9eedb10c80527e89
+    last_modified: 2026-10-27T09:09:35Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -42,7 +42,7 @@ sources:
     resource: ../../src/data/glossary.ts
     title: src/data/glossary.ts
     digest: sha256:22f74ff58adf03d7
-    last_modified: 2026-10-27T07:33:36Z
+    last_modified: 2026-10-27T07:35:39Z
   - id: crops-ts
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
@@ -98,4 +98,4 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 - Guide styles use the site breakpoints only (639px, 960px); a test fails on any other.
 - Guide-only strings live in `src/i18n/guides/{en,fr}.json` (both files, same keys; French with a no-break space before `:` and a narrow one before `;` `?` `!`); punctuation joining two strings is part of a string (`crop.guideLink`, `aria.labelled`), never hard-coded in a component.
 - `FlowerDiagram` variants: tomato-closed/open, squash-male/female, corn, carrot-fertile/sterile, spinach-male/female.
-- Diagrams are drawn at build time with a seeded random, so builds are identical. A guide's hero row (`GuideHeroRow.astro`) shows its section's motif, chosen in `diagrams/hero-row.ts` (`domainMotifs`, typed over every section; `cropSeeds`, one seed per crops guide), and is seeded by its slug; a crops guide with no seed kind fails the build. Shared seed and leaf shapes live in `src/lib/svg.ts`; the hero leaves use `--leaf-young`, `--leaf-deep`, `--leaf-gold`, `--leaf-ochre`, `--leaf-brown` (plant tokens); the soil row (crumbs, fungal threads, one worm, no green) uses the `--soil-*` tokens in `tokens.css`.
+- Diagrams are drawn at build time with a seeded random, so builds are identical. Shared drawing helpers live in `src/lib/svg.ts` and `src/lib/tree-shapes.ts` (tree outlines used by the carbon farming guides), never inside one guide's diagram folder. A guide's hero row (`GuideHeroRow.astro`) shows its section's motif, chosen in `diagrams/hero-row.ts` (`domainMotifs`, typed over every section; `cropSeeds`, one seed per crops guide), and is seeded by its slug; a crops guide with no seed kind fails the build. Shared seed and leaf shapes live in `src/lib/svg.ts`; the hero leaves use `--leaf-young`, `--leaf-deep`, `--leaf-gold`, `--leaf-ochre`, `--leaf-brown` (plant tokens); the soil row (crumbs, fungal threads, one worm, no green) uses the `--soil-*` tokens in `tokens.css`.

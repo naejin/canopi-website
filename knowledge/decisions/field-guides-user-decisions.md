@@ -4,7 +4,7 @@ title: Field Guides — user decisions
 description: Dated decisions the project owner made about the Field Guides section; they change only when the owner changes them.
 status: stable
 tags: [field-guides, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T06:56:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:13:36Z }
 ---
 
 # Field Guides — user decisions
@@ -41,6 +41,7 @@ any of them; a change is a question to the owner.
 | 2026-10-27 | **New food cautions:** one generic `needs-processing` (staples poisonous raw or unripe) plus `akee` and `cashew`; existing risk ids reused where they fit. |
 | 2026-10-27 | **Invasive species get a fixed-text `<Invasive>` note** (one wording per language) beside every species the source flags as invasive or spreading; guides never echo an author's case for planting invasives outside their range. |
 | 2026-10-27 | **Carbon rates and yields:** the book's ratings in words plus at most a few figures per guide, each attributed to the author and never a promise; no tables, and no figure the book contradicts itself on. |
+| 2026-10-27 | **Carbon farming hub mockup approved** (`.local/field-guides/carbon-farming/field-guide-carbon-farming.html`): its tone, its climate blocks and its diagrams set the pattern for guides 30–41; the invasive note is inline with a solid hairline border. |
 
 ## Where the source notes live
 

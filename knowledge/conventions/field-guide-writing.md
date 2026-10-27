@@ -3,20 +3,20 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:20:47Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:13:36Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:21:04Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:bdc76850091a0277
-    last_modified: 2026-10-26T22:38:12Z
+    digest: sha256:7c2869717a841c7d
+    last_modified: 2026-10-27T09:12:09Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:593a3b7245180c54
-    last_modified: 2026-10-27T07:14:56Z
+    digest: sha256:1cbc002d6fe3becf
+    last_modified: 2026-10-27T09:09:35Z
   - id: decisions-field-guides-user-decisions
     resource: /decisions/field-guides-user-decisions.md
   - id: hero-row-ts
@@ -46,7 +46,7 @@ Every Field Guide (`src/content/guides/<slug>/{en,fr}.mdx`) follows these rules,
 - **Select on growth.** Readers select on growth, shape, colour and storage; flavour only under the house tasting rule. Nothing suggests cooking makes a crop safe, and checklist items never suggest tasting.
 - **Portable.** Seasons, not months (both hemispheres); metric first, imperial in parentheses.
 - **Worldwide, by climate** (owner, 2026-10-27). Canopi serves every climate, not only temperate gardens. Principles that hold everywhere stay in the main text; species, spacings, timings and quantities that hold only in some climates go inside `<ForClimate zones source>`, from a book written for those climates, and the frontmatter `climates` lists exactly those zones. Never present one climate's advice as universal; say which climate a source wrote for. See [Climate UX](/decisions/climate-ux.md).
-- **Flag invasive species** (owner, 2026-10-27). Every species the source or its chapter flags as invasive or spreading carries `<Invasive />` right after its name, inline in prose or in a list item (`Mesquite <Invasive />`), never at the start of a line and never in a heading; the fixed text says it is invasive in places and to check the local list. Same notes in the same order in en and fr.
+- **Flag invasive species** (owner, 2026-10-27). Every species the source or its chapter flags as invasive, weedy, aggressive, suckering, spreading or naturalising carries `<Invasive />` right after its name, and a species any cited book flags carries it in every guide that names it as one to plant (moringa, flagged by *The Carbon Farming Solution*, also in the leaf-tree guide); no note from outside sources (black locust and chinaberry carry none, sisal none: the book calls it a sterile hybrid), inline in prose or in a list item (`Mesquite <Invasive />`), never at the start of a line and never in a heading; the fixed text says it is invasive in places and to check the local list. Same notes in the same order in en and fr.
 - **Reader first.** Short sentences, second person, concrete actions, one idea per section; the first screen tells readers whether the guide answers their question.
 - **English and French alike.** Same components, terms, checklist and item ids, crop lists and cautions in both files. French is written for French gardeners, with the glossary's French terms, « » quotes with a no-break space inside, a no-break space before `:` and a narrow no-break space before `;` `?` `!` and `%`.
 - **Design.** Only tokens for colour (plant tokens for plant content only; soil tokens for soil drawings only, never chrome), no outside fonts, images or `url()`; `guides.css` classes start with `guide-`.

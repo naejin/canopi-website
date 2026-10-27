@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:20:50Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:13:36Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:21:02Z }
 sources:
@@ -11,12 +11,12 @@ sources:
     resource: ../../src/components/guides/index.ts
     title: src/components/guides/index.ts
     digest: sha256:c8469528282ef49c
-    last_modified: 2026-10-27T07:15:51Z
+    last_modified: 2026-10-27T07:21:18Z
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:dc2ac211e152c3ac
-    last_modified: 2026-10-27T07:15:51Z
+    digest: sha256:677d9e79b76b3f06
+    last_modified: 2026-10-27T09:09:35Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -26,7 +26,7 @@ sources:
     resource: ../../src/data/food-risks.ts
     title: src/data/food-risks.ts
     digest: sha256:8e638ee001e92a1b
-    last_modified: 2026-10-27T07:15:51Z
+    last_modified: 2026-10-27T07:21:18Z
   - id: rehype-guide-terms-mjs
     resource: ../../src/lib/rehype-guide-terms.mjs
     title: src/lib/rehype-guide-terms.mjs
@@ -40,8 +40,8 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:593a3b7245180c54
-    last_modified: 2026-10-27T07:14:56Z
+    digest: sha256:1cbc002d6fe3becf
+    last_modified: 2026-10-27T09:09:35Z
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
@@ -130,7 +130,10 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   places: check your local list"; fr "espèce envahissante par endroits : vérifiez la liste locale")
   placed right after the name of a species the source flags as invasive or spreading, in prose or a
   list item. It renders a `<span class="guide-invasive">` (phrasing content, so it stays inside the
-  paragraph). Never at the start of a line or list item, never in a heading; it counts in the en/fr
+  paragraph) that flows inline like text, each wrapped piece keeping its border; the icon and the
+  first word sit in a `nowrap` `.guide-invasive-lead`, so a break never leaves an empty piece after
+  the name, and the icon rule is `.guide-invasive .guide-invasive-icon` so `.guide-page svg
+  { display: block }` cannot put it on a line of its own (tests). Never at the start of a line or list item, never in a heading; it counts in the en/fr
   component sequence, so both files carry the same notes in the same order (tests).
 - `<ForClimate zones="tropical" source="<book id>">` advice for those climates `</ForClimate>` —
   `zones` required: one zone or a list (`zones={["temperate", "continental"]}`) from
