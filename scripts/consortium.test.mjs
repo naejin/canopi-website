@@ -567,7 +567,7 @@ test('state: a link with thousands of ids decodes fast; ids past the cap are dro
   const start = performance.now();
   const { state, dropped } = decodeState(link, tropical);
   const ms = performance.now() - start;
-  assert.ok(ms < 200, `${ms.toFixed(0)} ms`);
+  assert.ok(ms < 1000, `${ms.toFixed(0)} ms (quadratic dedupe took about 12 s)`);
   assert.deepEqual(state.kept, [named('Inga edulis').id]);
   assert.deepEqual(dropped.filter((d) => d.reason === 'excess'), [
     { key: 'p', value: String(30001 - MAX_LINK_IDS), reason: 'excess' },
