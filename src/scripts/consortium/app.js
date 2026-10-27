@@ -556,10 +556,13 @@ function detailsParts(t) {
     : O.confirm === t.id ? confirmHTML(t.id, 'add') : btn('button button-primary button-small', 'add', t.id, esc(T('add')), fk('d-add'));
   return { head: headHTML, body, foot };
 }
+// A flagged plant's confirmation takes the place of its button, inside its own row (a list holds
+// only items).
 function altRow(t, why, act, label, flags, opts = {}) {
-  return `<li class="alt" data-flagged="${flags.flagged}"><div class="alt-main"><span class="alt-name">${btn('link-button alt-link', 'details-from', t.id, name(t), fk('ad-' + t.id))} <span class="sci">${esc(t.canonical_name)}</span></span>
+  const confirming = O?.confirm === t.id && !opts.disabled;
+  return `<li class="alt" data-flagged="${flags.flagged}"${confirming ? ' data-confirming="true"' : ''}><div class="alt-main"><span class="alt-name">${btn('link-button alt-link', 'details-from', t.id, name(t), fk('ad-' + t.id))} <span class="sci">${esc(t.canonical_name)}</span></span>
     <span class="alt-why">${why}</span>${chipsHTML(t, flags)}</div>
-    ${opts.disabled ? `<span class="seg-hint">${esc(T('inConsortium'))}</span>` : O?.confirm === t.id ? '' : btn(`button button-small ${opts.primary ? 'button-primary' : 'button-secondary'}`, act, t.id, esc(label), `aria-label="${esc(label)}: ${esc(nameText(t))}" ${fk(act + '-' + t.id)}`)}</li>`;
+    ${opts.disabled ? `<span class="seg-hint">${esc(T('inConsortium'))}</span>` : confirming ? confirmHTML(t.id, act) : btn(`button button-small ${opts.primary ? 'button-primary' : 'button-secondary'}`, act, t.id, esc(label), `aria-label="${esc(label)}: ${esc(nameText(t))}" ${fk(act + '-' + t.id)}`)}</li>`;
 }
 function confirmHTML(id, act) {
   const t = taxonOf(id), flags = O.type === 'swap' ? alternatives(O.id, S.members, cell, { site: S.site, removed: [...S.removed], country: S.country }).find((a) => a.taxon.id === id)?.flags : flagsFor(cell, id, S.members, { site: S.site, country: S.country });
@@ -580,7 +583,7 @@ function swapParts(m) {
     const shared = a.sharedJobs.map((j) => T('job.' + j));
     const as = stratumOf(a.taxon);
     const why = `<span>${sw(as)} ${esc(a.sameStratum ? T('sameLayer') : stratumLabel(as))}</span>${shared.length ? `<span>${esc(T('alsoJobs', { jobs: W.list(shared) }))}</span>` : ''}<span class="${lost.length ? 'loses' : 'keeps'}">${esc(lost.length ? T('loses', { jobs: W.list(lost) }) : T('keepsAll'))}</span>`;
-    return (O.confirm === a.taxon.id ? confirmHTML(a.taxon.id, 'use') : '') + altRow(a.taxon, why, 'use', T('use'), a.flags, { primary });
+    return altRow(a.taxon, why, 'use', T('use'), a.flags, { primary });
   };
   const headHTML = `<div><h2 id="ct-dlg-title">${T('swapTitle', { name: name(m) })}</h2><p class="lede">${esc(mJobs.length ? T('swapNow', { layer: stratumLabel(s), jobs: W.list(mJobs.map((j) => T('job.' + j))) }) : T('swapNowLayer', { layer: stratumLabel(s) }))}</p><p class="lede">${esc(T('swapLede'))}</p></div>`;
   const body = !all.length ? `<p class="muted">${esc(T('noAlt'))}</p>`
@@ -601,7 +604,7 @@ function addResults() {
   list = [...list].sort((a, b) => nameText(a).localeCompare(nameText(b), lang));
   const flagOf = new Map(list.map((t) => [t.id, flagsFor(cell, t.id, S.members, { site: S.site, country: S.country })]));
   const fit = list.filter((t) => !flagOf.get(t.id).flagged), flagged = list.filter((t) => flagOf.get(t.id).flagged);
-  const row = (t) => (O.confirm === t.id ? confirmHTML(t.id, 'add') : '') + altRow(t, `<span>${sw(stratumOf(t))} ${esc(stratumLabel(stratumOf(t)))}</span><span>${esc(jobsOf(t).map((j) => T('job.' + j)).join(' · '))}</span>`, 'add', T('add'), flagOf.get(t.id), { disabled: S.members.includes(t.id) });
+  const row = (t) => altRow(t, `<span>${sw(stratumOf(t))} ${esc(stratumLabel(stratumOf(t)))}</span><span>${esc(jobsOf(t).map((j) => T('job.' + j)).join(' · '))}</span>`, 'add', T('add'), flagOf.get(t.id), { disabled: S.members.includes(t.id) });
   // M11: grouped by layer; plants with a warning last, in their own group.
   const byLayer = [...strata, 'none'].map((s) => {
     const g = fit.filter((t) => stratumOf(t) === s);

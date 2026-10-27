@@ -2,18 +2,18 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:16:44Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:43:27Z }
 sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
     digest: sha256:ad2dce27f641d8a2
-    last_modified: 2026-10-27T23:11:49Z
+    last_modified: 2026-10-27T23:26:45Z
   - id: app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:4f877639053cfd27
-    last_modified: 2026-10-27T23:11:49Z
+    digest: sha256:5a4fbd2c20f6db27
+    last_modified: 2026-10-27T23:31:21Z
   - id: words-js
     resource: ../../src/scripts/consortium/words.js
     title: src/scripts/consortium/words.js
@@ -32,23 +32,23 @@ sources:
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:211aa931ddfefd7f
-    last_modified: 2026-10-27T23:11:49Z
+    digest: sha256:50910945b5346a2b
+    last_modified: 2026-10-27T23:31:21Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
     digest: sha256:60ff818034cee424
-    last_modified: 2026-10-27T23:11:49Z
+    last_modified: 2026-10-27T23:26:45Z
   - id: consortium-page-test-mjs
     resource: ../../scripts/consortium-page.test.mjs
     title: scripts/consortium-page.test.mjs
     digest: sha256:9da9ff458a120deb
-    last_modified: 2026-10-27T23:11:49Z
+    last_modified: 2026-10-27T23:26:45Z
   - id: logic-js
     resource: ../../src/scripts/consortium/logic.js
     title: src/scripts/consortium/logic.js
     digest: sha256:1020168c1effc4af
-    last_modified: 2026-10-27T23:11:49Z
+    last_modified: 2026-10-27T23:26:45Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
@@ -58,7 +58,7 @@ sources:
     resource: ../../src/scripts/dialogs.js
     title: src/scripts/dialogs.js
     digest: sha256:3388adb6fe4750c9
-    last_modified: 2026-10-27T23:11:49Z
+    last_modified: 2026-10-27T23:26:45Z
   - id: crops-ts
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
@@ -94,7 +94,7 @@ Routes: `/consortium/`, `/fr/guilde/` (the French tool is a "guilde"), `/{lang}/
 - A fresh result never says "no better plant"; with free places and nothing to fill it uses `freeNone`.
 - Phone: the drawing shows numbers only, with a two-column key; Pin and Remove are icon buttons with labels; the "I want to grow…" search sits under the views when no place is free.
 - A link or saved state opens on the result: an inline script sets the compact head before paint, and `#ct-app` keeps `min-height: 100vh` while loading, so nothing shifts.
-- A confirmation for a flagged plant replaces that plant's Add or Use button (never two Add buttons); Cancel gives the focus back to the button.
+- A confirmation for a flagged plant replaces that plant's Add or Use button, inside its own list row (never two Add buttons, and a list holds only items); Cancel gives the focus back to the button.
 - A double click on Remove removes one plant (`repeatClick`: the second click of a double click, or a pointer click within 500 ms, is ignored; keyboard presses always count).
 - Closing a sheet from an action (Swap, Remove in details, Add, a new climate) closes the dialog at once and moves focus to the plant, Undo, or the result title.
 - Each place load has a number; a cell that arrives after a later choice is dropped. The address bar and saved state are left alone while loading or on error; a shared link still waiting for its cell is written back with its own prefixes. Picking another climate or place leaves the link behind (only a guide's plant carries over, while the link still waits for its cell) and drops its notices (guide pin, old link, restored). The loading screen always takes the focus on its status line. A no-match writes no `a=`, so a reload works it out again; an emptied consortium writes `a=` and stays empty.

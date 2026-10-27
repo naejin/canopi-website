@@ -710,6 +710,7 @@
 .ct .photo img { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-alt); }
 .ct .confirm { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--warning-line); background: var(--warning-bg); border-radius: var(--radius); font-size: 15px; list-style: none; }
 .ct .confirm .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ct .alt > .confirm { grid-column: 1 / -1; }
 .ct-drawer .drawer-foot .confirm { flex: 1 1 100%; }
 .ct .note-guide > svg { color: var(--text-secondary); }
 .ct .relax li > span { flex: 1 1 16em; }
