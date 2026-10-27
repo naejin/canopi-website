@@ -32,10 +32,14 @@ export interface ConsortiumState {
   members?: string[] | null; // every member in order; null when the link has none (suggest); decodeState always sets it
 }
 
-export interface Dropped { key: string; value: string; reason: 'unknown' | 'malformed' | 'ambiguous' | 'duplicate' }
+// `excess`: the ids past MAX_LINK_IDS in one key, reported once with their count as the value.
+export interface Dropped { key: string; value: string; reason: 'unknown' | 'malformed' | 'ambiguous' | 'duplicate' | 'excess' }
 export interface DecodedState { state: ConsortiumState; dropped: Dropped[] }
 
 const ID_SEPARATOR = '.';
+// Ids read per key: more than a whole cell (about 200 taxa) cannot come from the tool, and the cap
+// keeps a hostile link from blocking the page.
+export const MAX_LINK_IDS = 256;
 const PREFIX_LENGTHS = [8, 13, 18, 23, 36];
 const ID_PREFIX = /^[0-9a-f]{8}(-[0-9a-f]{4}(-[0-9a-f]{4}(-[0-9a-f]{4}(-[0-9a-f]{12})?)?)?)?$/;
 const COUNTRY = /^[A-Z]{2}$/;
@@ -72,13 +76,13 @@ export function encodeState(state: ConsortiumState, cell?: Cell | null): URLSear
 
 // Matches link prefixes against the cell's ids. Unknown and ambiguous prefixes are dropped.
 export function resolveIds(tokens: string[], cell: Cell, key = 'p'): { ids: string[]; dropped: Dropped[] } {
-  const ids: string[] = [], dropped: Dropped[] = [];
+  const ids = new Set<string>(), dropped: Dropped[] = [];
   for (const token of tokens) {
     const hits = cell.taxa.filter((t) => t.id.startsWith(token));
-    if (hits.length === 1) { if (!ids.includes(hits[0].id)) ids.push(hits[0].id); }
+    if (hits.length === 1) ids.add(hits[0].id);
     else dropped.push({ key, value: token, reason: hits.length ? 'ambiguous' : 'unknown' });
   }
-  return { ids, dropped };
+  return { ids: [...ids], dropped };
 }
 
 const oneOf = <T extends string>(list: readonly T[]) => (v: string): v is T => (list as readonly string[]).includes(v);
@@ -120,15 +124,18 @@ export function decodeState(params: URLSearchParams | string, cell?: Cell | null
   };
 
   const tokens = (key: string) => {
-    const out: string[] = [];
+    const out = new Set<string>();
+    let read = 0, excess = 0; // every token counts toward the cap, so malformed ones cannot flood `dropped`
     for (const raw of (first(key) ?? '').split(/[.,]/)) {
       const token = raw.trim().toLowerCase();
       if (!token) continue;
-      if (!ID_PREFIX.test(token)) dropped.push({ key, value: raw, reason: 'malformed' });
-      else if (out.includes(token)) dropped.push({ key, value: raw, reason: 'duplicate' });
-      else out.push(token);
+      if (read++ >= MAX_LINK_IDS) excess++;
+      else if (!ID_PREFIX.test(token)) dropped.push({ key, value: raw, reason: 'malformed' });
+      else if (out.has(token)) dropped.push({ key, value: raw, reason: 'duplicate' });
+      else out.add(token);
     }
-    return out;
+    if (excess) dropped.push({ key, value: String(excess), reason: 'excess' });
+    return [...out];
   };
   const decoded: DecodedState = {
     state: { climate, region, cellRegion, country, site, kept: tokens('p'), removed: tokens('x'), members: q.has('a') ? tokens('a') : null },

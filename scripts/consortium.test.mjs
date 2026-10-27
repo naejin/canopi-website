@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const { cellFor, regionsOf, fits, jobsOf, jobs, bandOf, bandsOf, phases, conflicts, invasiveIn, invasiveCountries } = core;
-const { gain, suggest, evaluate, alternatives, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveState, resolveIds, shortId } = core;
+const { gain, suggest, evaluate, alternatives, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveState, resolveIds, shortId, MAX_LINK_IDS } = core;
 
 const read = (name) => JSON.parse(readFileSync(new URL(`fixtures/consortium/${name}`, import.meta.url), 'utf8'));
 const manifest = read('manifest.json');
@@ -559,6 +559,21 @@ test('state: kept wins over removed once prefixes of different lengths are resol
   const withMembers = resolveState(decodeState(`p=${inga}&x=${named('Musa acuminata').id}&a=${named('Musa acuminata').id.slice(0, 8)}`), tropical);
   assert.deepEqual(withMembers.state.members, [named('Musa acuminata').id, inga], 'a kept plant is a member; a member is not removed');
   assert.deepEqual(withMembers.state.removed, []);
+});
+
+test('state: a link with thousands of ids decodes fast; ids past the cap are dropped as one notice', () => {
+  const many = Array.from({ length: 30000 }, (_, n) => n.toString(16).padStart(8, '0'));
+  const link = `p=${[named('Inga edulis').id.slice(0, 8), ...many].join('.')}&x=${many.join('.')}`;
+  const start = performance.now();
+  const { state, dropped } = decodeState(link, tropical);
+  const ms = performance.now() - start;
+  assert.ok(ms < 200, `${ms.toFixed(0)} ms`);
+  assert.deepEqual(state.kept, [named('Inga edulis').id]);
+  assert.deepEqual(dropped.filter((d) => d.reason === 'excess'), [
+    { key: 'p', value: String(30001 - MAX_LINK_IDS), reason: 'excess' },
+    { key: 'x', value: String(30000 - MAX_LINK_IDS), reason: 'excess' },
+  ]);
+  assert.ok(MAX_LINK_IDS >= 200, 'a whole cell still fits');
 });
 
 // performance
