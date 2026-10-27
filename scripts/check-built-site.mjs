@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { builtTarget, subdirectories } from './built-links.mjs';
+import { builtTarget, splitHref, subdirectories } from './built-links.mjs';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -100,7 +100,7 @@ const ids = (html) => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m
 function checkLinks(html, from) {
   for (const [, href] of html.matchAll(/<a\b[^>]*?\shref="([^"]+)"/g)) {
     if (/^(?:https?:|mailto:|tel:)/.test(href)) continue;
-    const [path, hash] = href.split('#');
+    const { path, hash } = splitHref(href);
     if (path && !path.startsWith('/')) assert.fail(`${from}: link to ${href} is relative; use a path from the site root`);
     const target = path ? builtTarget(root, path) : null;
     if (target) assert.ok(target.file, `${from}: ${target.error}`);

@@ -18,3 +18,18 @@ export function builtTarget(root, pathname) {
 export function subdirectories(dir) {
   return readdirSync(dir, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
 }
+
+// An href as written in the HTML, read the way a browser reads it: character references decoded
+// (Astro writes & as &#38;), then the path, the query and the #fragment taken apart.
+export function splitHref(href) {
+  const text = href.replace(/&(?:#(\d+)|#x([0-9a-f]+)|(amp|quot|apos|lt|gt));/gi, (_, dec, hex, name) =>
+    dec ? String.fromCodePoint(Number(dec)) : hex ? String.fromCodePoint(parseInt(hex, 16)) : { amp: '&', quot: '"', apos: "'", lt: '<', gt: '>' }[name.toLowerCase()]);
+  const hashAt = text.indexOf('#');
+  const beforeHash = hashAt < 0 ? text : text.slice(0, hashAt);
+  const queryAt = beforeHash.indexOf('?');
+  return {
+    path: queryAt < 0 ? beforeHash : beforeHash.slice(0, queryAt),
+    query: queryAt < 0 ? '' : beforeHash.slice(queryAt + 1),
+    hash: hashAt < 0 ? '' : text.slice(hashAt + 1),
+  };
+}
