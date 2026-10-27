@@ -2,8 +2,8 @@
 // the ranked alternatives of the Swap list. The plan (knowledge/project/consortium-tool-plan.md,
 // "Scoring module") fixes the formula:
 //
-//   gain = 10·new jobs + 3·new (stratum × phase band) cells + 6·new stratum
-//          + 0.3·edibility − 0.5·unknown traits
+//   gain = 10·new jobs + 3·empty (stratum × phase band) cells + 1·cells with one member
+//          + 6·new stratum + 1·edibility − 3·weed potential − 0.5·unknown traits
 //
 // "Unknown traits" are the site checks fits() could not decide (light, soil, water, room), so a
 // plant the catalog knows well wins over one it barely knows. Gains are counted in tenths, as
@@ -16,11 +16,13 @@ import { fits } from './site.ts';
 import { bandsOf, jobs as allJobs, jobsOf } from './jobs.ts';
 import { conflictsOf, invasiveIn, isSerious, matches } from './conflicts.ts';
 
-// A plant joins only while its gain is above this, and the consortium is smaller than its room's limit.
-export const GAIN_THRESHOLD = 5;
+// A plant joins only while it brings something the consortium lacks: a job nobody does yet, or a
+// stratum in a phase band that stands empty. Edibility and unknown traits only rank such plants,
+// so a consortium fills up to its room's limit while it has gaps. (The plan's first rule, gain > 5,
+// stopped real cells at 4 or 5 plants once the six jobs and four strata were covered.)
 export const SIZE_LIMIT: Record<Site['room'], number> = { small: 6, large: 8, field: 10 };
 
-export interface Gain { total: number; jobs: number; cells: number; strata: number; edibility: number; unknowns: number }
+export interface Gain { total: number; jobs: number; cells: number; strata: number; edibility: number; weedy: number; unknowns: number }
 
 export interface Flags {
   misfits: SiteKey[];
@@ -42,9 +44,9 @@ export interface SuggestOptions {
 }
 
 // What a taxon brings, worked out once per call.
-interface Info { taxon: Taxon; jobs: JobId[]; stratum: string | null; cells: string[]; edibility: number; fit: Fit }
+interface Info { taxon: Taxon; jobs: JobId[]; stratum: string | null; cells: string[]; edibility: number; weedy: boolean; fit: Fit }
 
-interface Coverage { jobs: Set<JobId>; strata: Set<string>; cells: Set<string> }
+interface Coverage { jobs: Set<JobId>; strata: Set<string>; cells: Map<string, number> } // cells: members per stratum × band
 
 // Infos are cached per taxon object and site, so the Swap lists of a whole consortium stay fast;
 // they are never changed after they are made.
@@ -67,12 +69,13 @@ function makeInfo(taxon: Taxon, site: Site): Info {
     stratum,
     cells: stratum ? bandsOf(taxon).map((b) => `${stratum} ${b}`) : [],
     edibility: taxon.traits.edibility_rating ?? 0,
+    weedy: taxon.warnings.weed_potential === true,
     fit: fits(taxon, site),
   };
 }
 
 function coverageOf(infos: Info[]): Coverage {
-  const cov: Coverage = { jobs: new Set(), strata: new Set(), cells: new Set() };
+  const cov: Coverage = { jobs: new Set(), strata: new Set(), cells: new Map() };
   for (const i of infos) add(cov, i);
   return cov;
 }
@@ -80,28 +83,35 @@ function coverageOf(infos: Info[]): Coverage {
 function add(cov: Coverage, i: Info) {
   for (const j of i.jobs) cov.jobs.add(j);
   if (i.stratum) cov.strata.add(i.stratum);
-  for (const c of i.cells) cov.cells.add(c);
+  for (const c of i.cells) cov.cells.set(c, (cov.cells.get(c) ?? 0) + 1);
 }
 
 // The gain's terms, in tenths.
 function tenths(i: Info, cov: Coverage) {
   const jobs = 100 * i.jobs.filter((j) => !cov.jobs.has(j)).length;
-  const cells = 30 * i.cells.filter((c) => !cov.cells.has(c)).length;
+  // An empty stratum × band cell is worth 3, one with a single member 1: once every cell has a
+  // plant, a field still fills by doubling the thinnest ones.
+  const cells = i.cells.reduce((sum, c) => sum + ({ 0: 30, 1: 10 }[cov.cells.get(c) ?? 0] ?? 0), 0);
   const strata = i.stratum && !cov.strata.has(i.stratum) ? 60 : 0;
-  const edibility = 3 * i.edibility;
+  const edibility = 10 * i.edibility;
+  const weedy = i.weedy ? -30 : 0; // a known weed comes after an equal plant that is not
   const unknowns = i.fit.unknowns.length ? -5 * i.fit.unknowns.length : 0; // never -0
-  return { jobs, cells, strata, edibility, unknowns, total: jobs + cells + strata + edibility + unknowns };
+  return { jobs, cells, strata, edibility, weedy, unknowns, total: jobs + cells + strata + edibility + weedy + unknowns };
 }
 
 const toGain = (t: ReturnType<typeof tenths>): Gain =>
-  ({ total: t.total / 10, jobs: t.jobs / 10, cells: t.cells / 10, strata: t.strata / 10, edibility: t.edibility / 10, unknowns: t.unknowns / 10 });
+  ({ total: t.total / 10, jobs: t.jobs / 10, cells: t.cells / 10, strata: t.strata / 10, edibility: t.edibility / 10, weedy: t.weedy / 10, unknowns: t.unknowns / 10 });
 
 // What the taxon would add to these members on this site, term by term.
 export function gain(taxon: Taxon, members: Taxon[], site: Site): Gain {
   return toGain(tenths(infoOf(taxon, site), coverageOf(members.map((m) => infoOf(m, site)))));
 }
 
-// Code-unit order, the same in every browser and in Node (localeCompare is not).
+// Ties go to the better-known plant (named in more of the site's languages: a widely grown one),
+// then by canonical name in code-unit order, the same in every browser and in Node (localeCompare is not).
+const known = (t: Taxon) => Object.keys(t.names).length;
+const byKnownThenName = (a: Taxon, b: Taxon) => known(b) - known(a) || byName(a, b);
+
 const byName = (a: Taxon, b: Taxon) =>
   a.canonical_name < b.canonical_name ? -1 : a.canonical_name > b.canonical_name ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 
@@ -141,7 +151,7 @@ export function suggest(cell: Cell, options: SuggestOptions): Suggestion {
   const keptIds = new Set(options.kept ?? []);
   const removedIds = new Set(options.removed ?? []);
   const limit = SIZE_LIMIT[site.room];
-  const sorted = [...cell.taxa].sort(byName);
+  const sorted = [...cell.taxa].sort(byKnownThenName);
   const infos = sorted.map((t) => infoOf(t, site));
   const partners = seriousPartners(cell);
 
@@ -160,10 +170,11 @@ export function suggest(cell: Cell, options: SuggestOptions): Suggestion {
       if (memberIds.has(i.taxon.id)) continue;
       const p = partners.get(i.taxon.id);
       if (p && [...p].some((id) => memberIds.has(id))) continue;
-      const g = tenths(i, cov).total;
-      if (g > bestGain) { best = i; bestGain = g; } // strict: the first in name order wins a tie
+      const t = tenths(i, cov);
+      if (t.jobs + t.cells <= 0) continue; // nothing new: a duplicate of what is there
+      if (t.total > bestGain) { best = i; bestGain = t.total; } // strict: the first in tie order wins
     }
-    if (!best || bestGain <= GAIN_THRESHOLD * 10) break;
+    if (!best) break;
     chosen.push(best);
     memberIds.add(best.taxon.id);
     gains.set(best.taxon.id, bestGain / 10);
@@ -209,5 +220,5 @@ export function alternatives(memberId: string, consortium: string[], cell: Cell,
       };
     });
   return out.sort((x, y) =>
-    Number(y.sameStratum) - Number(x.sameStratum) || y.sharedJobs.length - x.sharedJobs.length || y.gain - x.gain || byName(x.taxon, y.taxon));
+    Number(y.sameStratum) - Number(x.sameStratum) || y.sharedJobs.length - x.sharedJobs.length || y.gain - x.gain || byKnownThenName(x.taxon, y.taxon));
 }

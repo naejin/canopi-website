@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const { cellFor, regionsOf, fits, jobsOf, jobs, bandOf, bandsOf, phases, conflicts, invasiveIn, invasiveCountries } = core;
-const { gain, suggest, alternatives, SIZE_LIMIT, GAIN_THRESHOLD, DEFAULT_SITE, encodeState, decodeState, resolveIds, shortId } = core;
+const { gain, suggest, alternatives, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveIds, shortId } = core;
 
 const read = (name) => JSON.parse(readFileSync(new URL(`fixtures/consortium/${name}`, import.meta.url), 'utf8'));
 const manifest = read('manifest.json');
@@ -225,38 +225,52 @@ test('invasiveIn: true where recorded, false where checked and absent, null when
 
 // gain
 
-test('gain: 10 per new job, 3 per new stratum × band cell, 6 per new stratum, 0.3 per edibility point, −0.5 per unknown', () => {
+test('gain: 10 per new job, 3 per empty stratum × band cell, 1 per cell with one member, 6 per new stratum, 1 per edibility point, −3 for a weed, −0.5 per unknown', () => {
   const twoJobs = make({ role: 'crop', functions: fn('mulch') });
-  assert.deepEqual(gain(twoJobs, [], open), { total: 20, jobs: 20, cells: 0, strata: 0, edibility: 0, unknowns: 0 });
+  assert.deepEqual(gain(twoJobs, [], open), { total: 20, jobs: 20, cells: 0, strata: 0, edibility: 0, weedy: 0, unknowns: 0 });
   assert.equal(gain(twoJobs, [make({ role: 'crop' })], open).jobs, 10, 'feeds_you already covered');
 
   const lowAllBands = make(layer('low'));
-  assert.deepEqual(gain(lowAllBands, [], open), { total: 15, jobs: 0, cells: 9, strata: 6, edibility: 0, unknowns: 0 });
+  assert.deepEqual(gain(lowAllBands, [], open), { total: 15, jobs: 0, cells: 9, strata: 6, edibility: 0, weedy: 0, unknowns: 0 });
   const lowEarly = make(layer('low', 'placenta_i', 'placenta_iii'));
-  assert.deepEqual(gain(lowAllBands, [lowEarly], open), { total: 6, jobs: 0, cells: 6, strata: 0, edibility: 0, unknowns: 0 });
+  assert.deepEqual(gain(lowAllBands, [lowEarly], open), { total: 7, jobs: 0, cells: 7, strata: 0, edibility: 0, weedy: 0, unknowns: 0 },
+    'two empty cells, and one with a single member');
+  assert.equal(gain(lowAllBands, [lowEarly, make(layer('low', 'placenta_i', 'placenta_iii'))], open).cells, 6, 'a cell with two members is worth nothing');
 
-  assert.equal(gain(make({ traits: { edibility_rating: 4 } }), [], open).edibility, 1.2);
-  assert.equal(gain(make({ traits: { edibility_rating: 4 } }), [], open).total, 1.2);
+  assert.equal(gain(make({ traits: { edibility_rating: 4 } }), [], open).edibility, 4);
+  assert.equal(gain(make({ traits: { edibility_rating: 4 } }), [], open).total, 4);
+  assert.equal(gain(make({ warnings: { weed_potential: true } }), [], open).weedy, -3);
 
   const vague = make({ traits: { sun: null } });
   assert.equal(gain(vague, [], { light: 'sun', soil: 'acid', water: 'dry', room: 'small' }).unknowns, -2);
-  assert.equal(gain(named('Arachis pintoi'), [], open).total, 45.3);
-  assert.equal(gain(named('Arachis pintoi'), [], { ...open, water: 'dry' }).total, 44.8);
+  assert.equal(gain(named('Arachis pintoi'), [], open).total, 46);
+  assert.equal(gain(named('Arachis pintoi'), [], { ...open, water: 'dry' }).total, 45.5);
 });
 
 // suggest
 
-test('suggest adds a plant only while its gain is above 5', () => {
-  assert.equal(GAIN_THRESHOLD, 5);
-  const site = { light: 'sun', soil: 'acid', water: 'dry', room: 'field' };
-  // A new stratum (6) less two unknowns (soil and water): exactly 5, not enough.
-  const five = make({ stratum: { value: 'low', sources: ['pfaf'] } });
-  assert.equal(gain(five, [], site).total, 5);
-  assert.deepEqual(suggest(cellOf([five]), { site }).members, []);
-  // The same with a known drought tolerance: one unknown, 5.5, enough.
-  const fiveAndAHalf = make({ stratum: { value: 'low', sources: ['pfaf'] }, traits: { drought_tolerance: 'High' } });
-  assert.deepEqual(names(suggest(cellOf([fiveAndAHalf]), { site }).members), [fiveAndAHalf.canonical_name]);
-  assert.equal(suggest(cellOf([fiveAndAHalf]), { site }).members[0].gain, 5.5);
+test('suggest adds a plant only while it fills a gap: a new job or a thin stratum × band cell', () => {
+  const site = open;
+  // Edible but nothing new: no stratum, no job; never added, whatever its gain.
+  const snack = make({ traits: { edibility_rating: 5 } });
+  assert.equal(gain(snack, [], site).total, 5);
+  assert.deepEqual(suggest(cellOf([snack]), { site }).members, []);
+  // A low plant over every band, then its twin (each cell now has one member, worth 1), then a
+  // third (nothing left to fill): two plants, not three.
+  const [a, b, c] = [0, 1, 2].map(() => make(layer('low')));
+  assert.deepEqual(names(suggest(cellOf([a, b, c]), { site }).members), [a, b].map((t) => t.canonical_name));
+  // A weed comes after an equal plant that is not, but still fills a gap when nothing else does.
+  const weed = make({ ...layer('high'), warnings: { weed_potential: true } });
+  const tidy = make(layer('high'));
+  assert.deepEqual(names(suggest(cellOf([weed, tidy]), { site }).members), [tidy, weed].map((t) => t.canonical_name));
+});
+
+test('suggest breaks a tie in favour of the better-known plant (named in more languages)', () => {
+  const plain = make({ ...layer('high'), canonical_name: 'Aaa first', names: { en: 'Plain' } });
+  const famous = make({ ...layer('high'), canonical_name: 'Zzz last' });
+  assert.ok(Object.keys(famous.names).length > 1);
+  const s = suggest(cellOf([plain, famous]), { site: { ...open, room: 'small' } });
+  assert.equal(s.members[0].taxon.canonical_name, 'Zzz last');
 });
 
 // Ten plants that each pass the threshold in turn: four that open a stratum (12 each), then six

@@ -4,7 +4,7 @@ title: Consortium core
 description: Format 2 types and the pure, dependency-free functions of the consortium tool (cell lookup, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:46:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:51:01Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:32:12Z }
 sources:
@@ -36,8 +36,8 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:47853219261dc098
-    last_modified: 2026-10-27T19:14:44Z
+    digest: sha256:3f68f8b985db7480
+    last_modified: 2026-10-27T19:51:00Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
@@ -52,7 +52,7 @@ sources:
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
     digest: sha256:e499936709519586
-    last_modified: 2026-10-27T19:45:00Z
+    last_modified: 2026-10-27T19:46:12Z
 enforced_by:
   - scripts/consortium.test.mjs
   - scripts/install-consortium.test.mjs
@@ -75,7 +75,7 @@ export under `public/data/consortium/`.
 | [site.ts](../../src/lib/consortium/site.ts) | `Site`, `DEFAULT_SITE` (sun, soil and water unsure, large garden), `fits(taxon, site)` → `{ ok, misfits, unknowns }` |
 | [jobs.ts](../../src/lib/consortium/jobs.ts) | `jobs` (six ids), `jobsOf(taxon)`, `jobOfFunction`, `phaseBands`, `bandOf(phase)`, `bandsOf(taxon)` |
 | [conflicts.ts](../../src/lib/consortium/conflicts.ts) | `conflicts(members, interactions)`, `conflictsOf(taxon, others, interactions)`, `matches(ref, taxon)`, `isSerious`, `invasiveIn(taxon, country)` → `true \| false \| null`, `invasiveCountries(taxon)` |
-| [suggest.ts](../../src/lib/consortium/suggest.ts) | `gain(taxon, members, site)` (term by term), `suggest(cell, { site, kept, removed, country })` → `{ members, limit, gaps }`, `alternatives(memberId, consortium, cell, { site, removed, country })`, `GAIN_THRESHOLD`, `SIZE_LIMIT` |
+| [suggest.ts](../../src/lib/consortium/suggest.ts) | `gain(taxon, members, site)` (term by term), `suggest(cell, { site, kept, removed, country })` → `{ members, limit, gaps }`, `alternatives(memberId, consortium, cell, { site, removed, country })`, `SIZE_LIMIT` |
 | [state.ts](../../src/lib/consortium/state.ts) | `encodeState(state, cell?)` → `URLSearchParams`, `decodeState(params, cell?)` → `{ state, dropped }`, `resolveIds(tokens, cell)`, `shortId(id, cell?)` |
 | [index.ts](../../src/lib/consortium/index.ts) | re-exports all of the above |
 | [install-consortium.mjs](../../scripts/install-consortium.mjs) | `npm run install:consortium -- <export-dir> [--fixture] [--no-images] [--out <dir>]`; `installConsortium(...)`, `verifyExport`, `shapeErrors`, `thumbnailUrl` |
@@ -83,7 +83,7 @@ export under `public/data/consortium/`.
 # Rules the code fixes (the plan left them open)
 
 - **Site fit.** Light: sun/part/shade need `sun`/`semi_shade`/`full_shade`. Soil vs `soil_ph`: acid < 6, neutral 6–7.5, chalky > 7.5; a misfit only when the known bound rules out overlap. Water: dry is a misfit for drought tolerance Low/None (or, when that is unknown, moisture use High); wet is a misfit for `well_drained` true with drought tolerance High. Room: small ≤ 6 m, large ≤ 12 m on height and width; field anything. An unknown trait is never a misfit, only an unknown.
-- **Gain.** `10·new jobs + 3·new (stratum × band) cells + 6·new stratum + 0.3·edibility − 0.5·unknowns`, where unknowns are the site checks `fits()` could not decide. Counted in integer tenths so ties are exact; added while gain > 5 and size < 6/8/10; ties by `canonical_name` in code-unit order (not `localeCompare`).
+- **Gain.** `10·new jobs + 3·empty (stratum × band) cells + 1·cells with one member + 6·new stratum + 1·edibility − 3·weed potential − 0.5·unknowns`, where unknowns are the site checks `fits()` could not decide. Counted in integer tenths so ties are exact. Only plants that fill a gap (a new job, or a cell with fewer than two members) are picked, until size = 6/8/10; ties go to the plant with more `names` (better known), then `canonical_name` in code-unit order (not `localeCompare`). On the 2026-10-27 export every cell and room fills to its limit, in under 30 ms.
 - **Suggest.** Kept plants come first and always stay, flagged or not (kept wins over removed; ids not in the cell are ignored). Automatic picks skip misfits, plants invasive in the user's country (`invasive_in: null` is not a reason), medium/high conflicts with a member, and removed ids. Every member carries `flags` (`misfits`, `unknowns`, `invasive`, `conflicts`, `flagged`).
 - **Conflicts.** Rows match at species (canonical name), genus or family, in either member order; a same-genus row pairs two members once. `allelopathy_tolerant` rows are not conflicts.
 - **Alternatives.** Same stratum, then most shared jobs, then gain against the rest, then name. Flagged plants are listed with flags; members and removed plants are not.
