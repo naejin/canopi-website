@@ -1,0 +1,97 @@
+---
+// Fibre, dye and soap: five small sketches of the plant parts that give fibre. 1, an open seed pod
+// with floss puffing out; 2, a stem cut across, the bast ring between bark and wood drawn in
+// lengthwise hatching; 3, a long leaf with fibres running along it; 4, a banana-like trunk cut across
+// to show its layered sheaths; 5, a coconut cut in half, the fibrous husk around the hard nut. No
+// species names (they belong in the climate blocks). Plant and seed tokens only; the labels are HTML
+// under each sketch so they wrap in either language. Five in a row on wide screens, three then two
+// on phones. One alt text for the whole figure, from the MDX.
+interface Props { labels: [string, string, string, string, string]; alt: string; }
+const { labels, alt } = Astro.props;
+const fibreLines = Array.from({ length: 5 }, (_, i) => 30 + i * 5);
+const sheaths = [30, 25, 20, 15, 10];
+const husk = Array.from({ length: 16 }, (_, i) => {
+  const a = (i / 16) * Math.PI * 2;
+  return { x1: 40 + Math.cos(a) * 17, y1: 44 + Math.sin(a) * 17, x2: 40 + Math.cos(a) * 27, y2: 44 + Math.sin(a) * 27 };
+}).map((l) => Object.fromEntries(Object.entries(l).map(([k, v]) => [k, Math.round(v * 10) / 10])));
+---
+<div class="guide-wf" role="img" aria-label={alt}>
+  <div class="guide-wf-item">
+    <svg viewBox="0 0 80 80" aria-hidden="true">
+      <path d="M14 66Q10 40 34 26Q30 52 14 66Z" class="guide-wf-pod" />
+      <path d="M66 66Q70 40 46 26Q50 52 66 66Z" class="guide-wf-pod" />
+      <circle cx="40" cy="30" r="11" class="guide-wf-floss" />
+      <circle cx="30" cy="22" r="8" class="guide-wf-floss" />
+      <circle cx="50" cy="20" r="9" class="guide-wf-floss" />
+      <circle cx="40" cy="12" r="7" class="guide-wf-floss" />
+      <circle cx="38" cy="34" r="2.2" class="guide-wf-seed" />
+      <circle cx="44" cy="28" r="2.2" class="guide-wf-seed" />
+    </svg>
+    <p class="guide-wf-label">{labels[0]}</p>
+  </div>
+  <div class="guide-wf-item">
+    <svg viewBox="0 0 80 80" aria-hidden="true">
+      <circle cx="40" cy="42" r="30" class="guide-wf-bark" />
+      <circle cx="40" cy="42" r="25" class="guide-wf-bast" />
+      {Array.from({ length: 24 }, (_, i) => {
+        const a = (i / 24) * Math.PI * 2;
+        return <line x1={Math.round((40 + Math.cos(a) * 19) * 10) / 10} y1={Math.round((42 + Math.sin(a) * 19) * 10) / 10} x2={Math.round((40 + Math.cos(a) * 24) * 10) / 10} y2={Math.round((42 + Math.sin(a) * 24) * 10) / 10} class="guide-wf-hatch" />;
+      })}
+      <circle cx="40" cy="42" r="18" class="guide-wf-wood" />
+    </svg>
+    <p class="guide-wf-label">{labels[1]}</p>
+  </div>
+  <div class="guide-wf-item">
+    <svg viewBox="0 0 80 80" aria-hidden="true">
+      <path d="M12 72Q24 40 70 8Q46 48 12 72Z" class="guide-wf-leaf" />
+      {fibreLines.map((_, i) => <path d={`M${15 + i * 2} ${70 - i}Q${30 + i * 2} ${44 - i * 2} ${66 - i} ${10 + i}`} class="guide-wf-fibre" />)}
+    </svg>
+    <p class="guide-wf-label">{labels[2]}</p>
+  </div>
+  <div class="guide-wf-item">
+    <svg viewBox="0 0 80 80" aria-hidden="true">
+      {sheaths.map((r, i) => <ellipse cx="40" cy="44" rx={r} ry={r * 0.9} class={i % 2 ? 'guide-wf-sheath-b' : 'guide-wf-sheath-a'} />)}
+      <ellipse cx="40" cy="44" rx="5" ry="4.5" class="guide-wf-core" />
+    </svg>
+    <p class="guide-wf-label">{labels[3]}</p>
+  </div>
+  <div class="guide-wf-item">
+    <svg viewBox="0 0 80 80" aria-hidden="true">
+      <circle cx="40" cy="44" r="28" class="guide-wf-husk" />
+      {husk.map((l) => <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} class="guide-wf-coir" />)}
+      <circle cx="40" cy="44" r="16" class="guide-wf-shell" />
+      <circle cx="40" cy="44" r="12" class="guide-wf-meat" />
+    </svg>
+    <p class="guide-wf-label">{labels[4]}</p>
+  </div>
+</div>
+
+<style>
+  .guide-wf { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.5rem; align-items: start; }
+  .guide-wf-item { display: grid; gap: 0.25rem; justify-items: center; }
+  .guide-wf-item svg { width: 100%; max-width: 6.5rem; }
+  .guide-body .guide-wf-item p { margin: 0; }
+  .guide-wf-label { font-weight: 600; font-size: 0.9rem; line-height: 1.25; text-align: center; }
+  .guide-wf-pod { fill: var(--leaf-brown); stroke: var(--leaf-deep); stroke-width: 1; }
+  .guide-wf-floss { fill: var(--seed-3); stroke: var(--seed-2); stroke-width: 0.8; stroke-opacity: 0.5; }
+  .guide-wf-seed { fill: var(--seed-2); }
+  .guide-wf-bark { fill: var(--seed-1); }
+  .guide-wf-bast { fill: var(--leaf-young); }
+  .guide-wf-hatch { stroke: var(--leaf-deep); stroke-width: 1; }
+  .guide-wf-wood { fill: var(--seed-3); stroke: var(--seed-6); stroke-width: 1; }
+  .guide-wf-leaf { fill: var(--leaf); opacity: 0.85; }
+  .guide-wf-fibre { fill: none; stroke: var(--leaf-young); stroke-width: 0.9; }
+  .guide-wf-sheath-a { fill: var(--leaf-young); stroke: var(--leaf-deep); stroke-width: 0.8; }
+  .guide-wf-sheath-b { fill: var(--leaf); stroke: var(--leaf-deep); stroke-width: 0.8; }
+  .guide-wf-core { fill: var(--seed-3); }
+  .guide-wf-husk { fill: var(--seed-6); }
+  .guide-wf-coir { stroke: var(--seed-1); stroke-width: 1.2; }
+  .guide-wf-shell { fill: var(--seed-2); }
+  .guide-wf-meat { fill: var(--seed-3); }
+  @media (max-width: 639px) {
+    .guide-wf { grid-template-columns: repeat(6, minmax(0, 1fr)); row-gap: 0.8rem; }
+    .guide-wf-item { grid-column: span 2; }
+    .guide-wf-item:nth-child(4) { grid-column: 2 / span 2; }
+    .guide-wf-label { font-size: 0.82rem; }
+  }
+</style>

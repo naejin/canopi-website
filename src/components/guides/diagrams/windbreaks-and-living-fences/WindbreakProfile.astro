@@ -1,0 +1,78 @@
+---
+// Windbreaks: a side view across the wind. On the left, wind arrows over an unsheltered crop at the
+// open-field level (a dashed line carried across the whole drawing). In the middle, a mixed strip:
+// shrubs on the windward side, taller trees behind. On the right, the crop band dips just beside the
+// strip (where it competes for light and water), then rises above the open-field line across the
+// sheltered zone and settles back far downwind. A dashed snow drift lies on the sheltered side. No
+// distances, heights or percentages: the book gives none. Labels and alt text come from the MDX.
+import { r1, wrap } from '../../../../lib/svg';
+interface Labels { wind: string; windbreak: string; competes: string; sheltered: string; snow: string; open: string; }
+interface Props { labels: Labels; alt: string; }
+const { labels, alt } = Astro.props;
+const W = 420, G = 206, OPEN = 178; // width, ground line, open-field crop level
+// The crop band's top on the sheltered side: low beside the strip, high across the shelter, back to
+// the open-field level at the far edge.
+const top: [number, number][] = [[150, 194], [166, 192], [184, 182], [206, 166], [236, 156], [300, 154], [350, 160], [390, 170], [W, 176]];
+const curve = top.map(([x, y], i) => (i === 0 ? `M${x} ${y}` : `L${x} ${y}`)).join('');
+const band = `${curve}L${W} ${G}L150 ${G}Z`;
+const lee = `M0 ${OPEN}H74V${G}H0Z`;
+const drift = `M144 ${G}Q150 ${G - 20} 168 ${G - 22}Q204 ${G - 20} 238 ${G}`;
+const arrows = [112, 134, 156].map((y) => ({ d: `M6 ${y}H58`, head: `M50 ${y - 6}L60 ${y}L50 ${y + 6}` }));
+const ellipse = (cx: number, cy: number, rx: number, ry: number) => `M${r1(cx - rx)} ${cy}a${rx} ${ry} 0 1 0 ${2 * rx} 0a${rx} ${ry} 0 1 0 ${-2 * rx} 0Z`;
+const trunks = [[106, 84], [130, 76]].map(([x, t]) => `M${x - 3} ${G}L${x - 2} ${t}H${x + 2}L${x + 3} ${G}Z`);
+const crowns = [
+  { d: ellipse(106, 72, 20, 32), cls: 'guide-wb-leaf' },
+  { d: ellipse(131, 64, 22, 36), cls: 'guide-wb-leaf-deep' },
+  { d: ellipse(86, 182, 14, 22), cls: 'guide-wb-leaf-young' },
+  { d: ellipse(146, 186, 10, 18), cls: 'guide-wb-leaf' },
+];
+const lines = (text: string, max: number) => wrap(text, max);
+const sheltered = lines(labels.sheltered, 22);
+const snow = lines(labels.snow, 20);
+const windbreak = lines(labels.windbreak, 16);
+---
+<svg class="guide-wb" viewBox={`0 0 ${W} 250`} role="img" aria-label={alt}>
+  <path d={lee} class="guide-wb-crop" />
+  <path d={band} class="guide-wb-crop" />
+  <path d={curve} class="guide-wb-crop-edge" />
+  <line x1="0" y1={OPEN} x2={W} y2={OPEN} class="guide-wb-open" />
+  {trunks.map((d) => <path d={d} class="guide-wb-wood" />)}
+  {crowns.map((c) => <path d={c.d} class={c.cls} />)}
+  <path d={drift} class="guide-wb-snow" />
+  <line x1="0" y1={G} x2={W} y2={G} class="guide-wb-ground" />
+  {arrows.map((a) => (
+    <g class="guide-wb-wind">
+      <path d={a.d} />
+      <path d={a.head} />
+    </g>
+  ))}
+  <text x="32" y="96" text-anchor="middle" class="guide-wb-label">{labels.wind}</text>
+  <text x="120" y={24 - (windbreak.length - 1) * 15} text-anchor="middle" class="guide-wb-label guide-wb-strong">
+    {windbreak.map((l, i) => <tspan x="120" dy={i ? 15 : 0}>{l}</tspan>)}
+  </text>
+  <line x1="200" y1="112" x2="186" y2="186" class="guide-wb-lead" />
+  <text x="202" y="94" class="guide-wb-label">
+    {snow.map((l, i) => <tspan x="202" dy={i ? 15 : 0}>{l}</tspan>)}
+  </text>
+  <text x="326" y="128" text-anchor="middle" class="guide-wb-label">
+    {sheltered.map((l, i) => <tspan x="326" dy={i ? 15 : 0}>{l}</tspan>)}
+  </text>
+  <line x1="166" y1="210" x2="166" y2="222" class="guide-wb-lead" />
+  <text x="166" y="236" text-anchor="middle" class="guide-wb-label">{labels.competes}</text>
+  <text x="37" y="236" text-anchor="middle" class="guide-wb-label">{labels.open}</text>
+</svg>
+
+<style>
+  .guide-wb { display: block; width: 100%; max-width: 40rem; height: auto; margin: 0 auto; }
+  .guide-wb-crop { fill: var(--leaf-young); opacity: 0.45; }
+  .guide-wb-crop-edge { fill: none; stroke: var(--leaf); stroke-width: 2; stroke-linejoin: round; }
+  .guide-wb-open { stroke: var(--border-strong); stroke-width: 1.2; stroke-dasharray: 5 4; }
+  .guide-wb-ground { stroke: var(--border-strong); stroke-width: 1.4; }
+  .guide-wb-wood { fill: var(--seed-1); opacity: 0.85; }
+  .guide-wb-leaf { fill: var(--leaf); } .guide-wb-leaf-deep { fill: var(--leaf-deep); } .guide-wb-leaf-young { fill: var(--leaf-young); }
+  .guide-wb-snow { fill: var(--surface); fill-opacity: 0.75; stroke: var(--text-muted); stroke-width: 1.4; stroke-dasharray: 4 3; }
+  .guide-wb-wind path { fill: none; stroke: var(--text-secondary); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-wb-lead { stroke: var(--text-muted); stroke-width: 1; }
+  .guide-wb-label { font-family: var(--font-sans); font-size: 13.5px; fill: var(--text); }
+  .guide-wb-strong { font-weight: 600; }
+</style>

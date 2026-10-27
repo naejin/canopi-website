@@ -1,0 +1,73 @@
+---
+// Coppice and bamboo: a coppice split into five patches, side by side, each a year further into its
+// regrowth. The first is just cut (bare stools and a dashed cut line in the accent colour), then the
+// shoots grow taller patch by patch, until the last one is ready to cut next year. Five is only an
+// example (the caption says to use as many patches as years in the rotation). Stools are wood
+// (seed tone), shoots and leaves plant tokens. Labels are HTML under each drawing so they wrap in
+// either language; the whole figure has one alt text from the MDX.
+import { r1, rng } from '../../../../lib/svg';
+interface Props { labels: [string, string, string, string, string]; ready: string; alt: string; }
+const { labels, ready, alt } = Astro.props;
+const G = 108; // ground line in each 80 × 116 panel
+const rand = rng(40);
+const leaf = (x: number, y: number, a: number, len = 6) =>
+  ({ d: `M0 0Q${r1(len * 0.45)} ${r1(-len * 0.42)} ${len} 0Q${r1(len * 0.45)} ${r1(len * 0.42)} 0 0Z`, transform: `translate(${r1(x)} ${r1(y)}) rotate(${a})` });
+// One stool at x with shoots of height h (0 = just cut).
+function stool(x: number, h: number) {
+  const wood = `M${x - 7} ${G}Q${x - 8} ${G - 6} ${x - 4} ${G - 7}H${x + 4}Q${x + 8} ${G - 6} ${x + 7} ${G}Z`;
+  const shoots = h === 0 ? [] : [-6, -2, 2, 6].map((dx, i) => {
+    const top = G - 7 - h * (0.82 + rand() * 0.18);
+    const tx = x + dx * (1 + h / 40);
+    const d = `M${x + dx / 2} ${G - 7}Q${r1(x + dx)} ${r1(G - 7 - h / 2)} ${r1(tx)} ${r1(top)}`;
+    const n = Math.max(1, Math.round(h / 22));
+    const leaves = Array.from({ length: n }, (_, k) => {
+      const t = (k + 1) / (n + 0.5);
+      return leaf(x + dx / 2 + (tx - x - dx / 2) * t, G - 7 - (G - 7 - top) * t, (i % 2 ? -30 : -150) + (k % 2 ? 15 : -15));
+    });
+    leaves.push(leaf(tx, top, -90 + dx * 4, 7));
+    return { d, leaves };
+  });
+  return { wood, shoots };
+}
+const heights = [0, 22, 44, 66, 88];
+const panels = heights.map((h) => [stool(26, h), stool(54, h)]);
+---
+<div class="guide-cc" role="img" aria-label={alt}>
+  {panels.map((stools, i) => (
+    <div class={`guide-cc-item${i === 0 ? ' guide-cc-cut' : ''}`}>
+      <svg viewBox="0 0 80 116" aria-hidden="true">
+        <line x1="2" y1={G} x2="78" y2={G} class="guide-cc-ground" />
+        {stools.map((s) => (
+          <g>
+            {s.shoots.map((sh) => (
+              <g>
+                <path d={sh.d} class="guide-stem guide-cc-shoot" />
+                {sh.leaves.map((l) => <path d={l.d} transform={l.transform} class="guide-leaf" />)}
+              </g>
+            ))}
+            <path d={s.wood} class="guide-cc-wood" />
+          </g>
+        ))}
+        {i === 0 && <line x1="4" y1={G - 8} x2="76" y2={G - 8} class="guide-cc-line" />}
+      </svg>
+      <p class="guide-cc-label">{labels[i]}</p>
+      {i === panels.length - 1 && <p class="guide-cc-note">{ready}</p>}
+    </div>
+  ))}
+</div>
+
+<style>
+  .guide-cc { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.4rem; align-items: start; }
+  .guide-cc-item { display: grid; gap: 0.2rem; padding: 0.3rem 0.2rem 0.4rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-alt); }
+  .guide-cc-cut { border-color: var(--accent); }
+  .guide-cc-item svg { width: 100%; max-width: 7rem; justify-self: center; }
+  .guide-body .guide-cc-item p { margin: 0; }
+  .guide-cc-label { font-weight: 600; font-size: 0.9rem; line-height: 1.25; text-align: center; }
+  .guide-cc-cut .guide-cc-label { color: var(--accent-ink); }
+  .guide-cc-note { font-size: 0.8rem; line-height: 1.25; text-align: center; color: var(--text-secondary); }
+  .guide-cc-shoot { stroke-width: 1.6; }
+  .guide-cc-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-cc-wood { fill: var(--seed-1); opacity: 0.9; }
+  .guide-cc-line { stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 4 3; }
+  @media (max-width: 639px) { .guide-cc { gap: 0.25rem; } .guide-cc-label { font-size: 0.78rem; } .guide-cc-note { font-size: 0.72rem; } }
+</style>
