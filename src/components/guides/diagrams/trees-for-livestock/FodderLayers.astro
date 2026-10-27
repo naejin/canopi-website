@@ -1,0 +1,46 @@
+---
+// Trees for livestock: the book's three-layer fodder year from semi-arid Indonesia. A year strip runs
+// from the start of the rains to the next rains, split into a wet and a dry season (no months, so
+// both hemispheres read it). Under it, three bars: grass from the wet season into the early dry,
+// fodder shrubs from the early to the middle of the dry season, tall trees from the middle of the
+// dry season into the next rains (the bar wraps round to the strip's start, marked by a small
+// return arrow). Plant tokens for the bars, chrome tokens for the strip. Labels and alt from the MDX.
+import { wrap } from '../../../../lib/svg';
+interface Labels { wet: string; dry: string; grass: string; shrubs: string; trees: string; }
+interface Props { labels: Labels; alt: string; }
+const { labels, alt } = Astro.props;
+const X0 = 128, X1 = 412, WET = 246; // year strip from X0 to X1; the dry season starts at WET
+const rows = [
+  { label: labels.grass, cls: 'guide-fl-grass', spans: [[X0, 290]] },
+  { label: labels.shrubs, cls: 'guide-fl-shrubs', spans: [[278, 352]] },
+  { label: labels.trees, cls: 'guide-fl-trees', spans: [[340, X1], [X0, 168]] },
+].map((r, i) => ({ ...r, y: 66 + i * 40, lines: wrap(r.label, 15) }));
+---
+<svg class="guide-fl" viewBox="0 0 420 190" role="img" aria-label={alt}>
+  <rect x={X0} y="12" width={WET - X0} height="28" rx="4" class="guide-fl-wet" />
+  <rect x={WET} y="12" width={X1 - WET} height="28" rx="4" class="guide-fl-dry" />
+  <text x={(X0 + WET) / 2} y="31" text-anchor="middle" class="guide-fl-season">{labels.wet}</text>
+  <text x={(WET + X1) / 2} y="31" text-anchor="middle" class="guide-fl-season">{labels.dry}</text>
+  {[X0, WET, X1].map((x) => <line x1={x} y1="44" x2={x} y2="184" class="guide-fl-tick" />)}
+  {rows.map((r) => (
+    <g>
+      <text x="120" y={r.y + 14 - (r.lines.length - 1) * 7.5} text-anchor="end" class="guide-fl-label">
+        {r.lines.map((l, i) => <tspan x="120" dy={i ? 15 : 0}>{l}</tspan>)}
+      </text>
+      {r.spans.map(([a, b]) => <rect x={a} y={r.y} width={b - a} height="20" rx="10" class={r.cls} />)}
+    </g>
+  ))}
+  <path d="M404 168q10 0 10 5t-10 5H134" class="guide-fl-wrap" />
+  <path d="M140 173l-7 5 7 5" class="guide-fl-wrap" />
+</svg>
+
+<style>
+  .guide-fl { display: block; width: 100%; max-width: 36rem; height: auto; margin: 0 auto; }
+  .guide-fl-wet { fill: var(--surface-alt); stroke: var(--border-strong); stroke-width: 1; }
+  .guide-fl-dry { fill: var(--surface); stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 4 3; }
+  .guide-fl-season { font-family: var(--font-sans); font-size: 13px; font-weight: 600; fill: var(--text); }
+  .guide-fl-label { font-family: var(--font-sans); font-size: 13.5px; fill: var(--text); }
+  .guide-fl-tick { stroke: var(--border); stroke-width: 1; }
+  .guide-fl-grass { fill: var(--leaf-young); } .guide-fl-shrubs { fill: var(--leaf); } .guide-fl-trees { fill: var(--leaf-deep); }
+  .guide-fl-wrap { fill: none; stroke: var(--text-muted); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+</style>
