@@ -1,0 +1,92 @@
+---
+// The consortium design tool (beta): /consortium/, /fr/guilde/ and /<lang>/consortium/.
+// The head (title, what a consortium is, the three steps) is rendered here; the tool itself is
+// src/scripts/consortium/app.js, which renders into #ct-app from the strings in #ct-data (every
+// consortium.* key without its prefix, the climate words, and the Field Guides the tool links).
+import Base from '../../layouts/Base.astro';
+import Header from '../Header.astro';
+import Footer from '../Footer.astro';
+import DonateDialog from '../DonateDialog.astro';
+import PageData from '../PageData.astro';
+import { t, consortiumPath, localizedUrl, type Locale } from '../../i18n/utils';
+import en from '../../i18n/translations/en.json';
+import { publishedGuides, slugOf } from '../../lib/guides';
+import { consortiumGuides, jobGuides, explainGuide } from '../../data/consortium-guides';
+import '../../styles/consortium.css';
+// The installed manifest, read at build time only (the page ships its count, not the file).
+import manifest from '../../../public/data/consortium/manifest.json';
+import { makeWords } from '../../scripts/consortium/words.js';
+
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+const tr = (key: string) => t('consortium.' + key, lang);
+
+const prefix = 'consortium.';
+const strings: Record<string, string> = {};
+for (const key of Object.keys(en)) {
+  if (key.startsWith(prefix)) strings[key.slice(prefix.length)] = t(key, lang);
+  else if (key.startsWith('climate.') && /^climate\.[a-z]+(\.about|\.places)?$/.test(key)) strings[key] = t(key, lang);
+}
+// Guides exist in en and fr; every other locale links the English guide (marked lang="en").
+const guideLang = lang === 'fr' ? 'fr' : 'en';
+const wanted = new Set([...Object.values(consortiumGuides).flat(), ...Object.values(jobGuides), explainGuide]);
+const guides: Record<string, { title: string; url: string; lang: string }> = {};
+for (const entry of await publishedGuides(guideLang)) {
+  const slug = slugOf(entry);
+  if (wanted.has(slug)) guides[slug] = { title: entry.data.title, url: localizedUrl(`/guides/${slug}/`, guideLang), lang: guideLang };
+}
+const contact = localizedUrl('/', lang) + '#contact';
+const data = { lang, strings, guides, plantGuides: consortiumGuides, jobGuides, explainGuide, contact };
+const food = guides[explainGuide];
+// copy-m2: the number of places is the installed manifest's, read at build time.
+const betaNote = makeWords(strings, lang).P('betaNote', manifest.cells.length);
+---
+<Base title={`${tr('title')} · Canopi`} description={tr('description')} lang={lang} path={consortiumPath}>
+  <Header lang={lang} path={consortiumPath} />
+  <main id="main" class="ct">
+    <div class="wrap ct-wrap">
+      <div class="tool-head" id="ct-head" data-step="0">
+        <div class="tool-head-text">
+          <div class="tool-head-row"><h1 class="tool-title">{tr('title')}</h1><span class="badge-beta">{tr('beta')}</span></div>
+          <p class="tool-lede">{tr('lede')}</p>
+          <ol class="outline" aria-label={tr('outline')}>
+            <li aria-current="step" data-done="false"><span class="o-num">1</span>{tr('outline.climate')}</li>
+            <li data-done="false"><span class="o-num">2</span>{tr('outline.place')}</li>
+            <li data-done="false"><span class="o-num">3</span>{tr('outline.result')}</li>
+          </ol>
+          <p class="tool-meta">{betaNote} <a class="text-link" href={contact}>{tr('feedback')}</a></p>
+        </div>
+        <figure class="thumb">
+          <svg viewBox="0 0 220 132" role="img" aria-label={tr('thumbAlt')}>
+            <rect x="0.5" y="0.5" width="219" height="131" rx="8" fill="var(--surface)" stroke="var(--border-strong)" />
+            <line x1="10" x2="210" y1="92" y2="92" stroke="var(--ground-ink)" stroke-width="1.5" />
+            <path d="M38 92 v-34" stroke="var(--s-emergent-ink)" stroke-width="3" /><ellipse cx="38" cy="36" rx="24" ry="22" fill="var(--s-emergent)" fill-opacity="0.35" stroke="var(--s-emergent-ink)" stroke-width="1.4" />
+            <path d="M86 92 v-22" stroke="var(--s-high-ink)" stroke-width="2.5" /><ellipse cx="86" cy="54" rx="18" ry="17" fill="var(--s-high)" fill-opacity="0.35" stroke="var(--s-high-ink)" stroke-width="1.4" />
+            <ellipse cx="128" cy="72" rx="15" ry="16" fill="var(--s-medium)" fill-opacity="0.35" stroke="var(--s-medium-ink)" stroke-width="1.4" />
+            <path d="M152 92 q8 -16 16 0 q8 -16 16 0 q8 -14 16 0" fill="var(--s-low)" fill-opacity="0.35" stroke="var(--s-low-ink)" stroke-width="1.4" />
+            <rect x="14" y="104" width="86" height="6" rx="3" fill="var(--text-muted)" opacity="0.5" /><rect x="14" y="116" width="62" height="6" rx="3" fill="var(--text-muted)" opacity="0.3" />
+            <rect x="120" y="104" width="34" height="14" rx="7" fill="none" stroke="var(--border-strong)" /><rect x="160" y="104" width="44" height="14" rx="7" fill="none" stroke="var(--border-strong)" />
+          </svg>
+        </figure>
+      </div>
+      <noscript>
+        <div class="callout"><p>{tr('noscript')}</p>{food && <p><a class="text-link" href={food.url} hreflang={food.lang !== lang ? food.lang : undefined}>{tr('noscript.link')}</a></p>}</div>
+      </noscript>
+      {/* A link or a saved consortium opens on the result, which shows the compact head: set it before
+          the first paint so the tool does not jump up when it renders (no layout shift). */}
+      <script is:inline>(function () { try { var p = new URLSearchParams(location.search), q = p.has('c') ? p : null; if (!q && !p.has('climate') && !p.has('plant')) { var s = JSON.parse(localStorage.getItem('canopi-consortium') || 'null'); if (s && s.q) q = new URLSearchParams(s.q); } if (q && q.has('c') && (q.has('r') || q.has('k'))) document.getElementById('ct-head').classList.add('tool-head-compact'); } catch (e) {} })();</script>
+      <div id="ct-app" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
+    </div>
+    <dialog id="ct-dialog" class="ct-drawer" aria-labelledby="ct-dlg-title" data-own-dialog></dialog>
+    <div id="ct-toast" class="toast" role="status" hidden></div>
+    <div id="ct-say" class="visually-hidden" aria-live="polite"></div>
+    <div id="ct-print" class="ct-print"></div>
+  </main>
+  <Footer lang={lang} />
+  <DonateDialog lang={lang} />
+  <PageData lang={lang} keys={[]} />
+  <script type="application/json" id="ct-data" set:html={JSON.stringify(data).replace(/</g, '\\u003c')} />
+  <script>
+    import '../../scripts/consortium/app.js';
+  </script>
+</Base>

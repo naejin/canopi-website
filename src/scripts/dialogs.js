@@ -1,5 +1,6 @@
 // Native <dialog> helpers: open modally, close on Escape (native), the close button or a
-// click on the backdrop, and give focus back to whatever opened it.
+// click on the backdrop, and give focus back to whatever opened it. A dialog marked
+// `data-own-dialog` runs all of this itself (the consortium tool's sheet) and is left alone.
 const openers = new WeakMap();
 
 export function openDialog(dialog, opener) {
@@ -11,6 +12,7 @@ export function openDialog(dialog, opener) {
 
 export function initDialogs() {
   for (const dialog of document.querySelectorAll('dialog')) {
+    if (dialog.hasAttribute('data-own-dialog')) continue;
     dialog.addEventListener('click', (event) => {
       if (event.target.closest('[data-close-dialog]')) return dialog.close();
       if (event.target !== dialog) return;

@@ -5,15 +5,15 @@ description: Vanilla browser modules for the home and bibliography pages (chrome
 resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:50Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:16:51Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:51Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:43:28Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:8e94ef594c94e7ad
-    last_modified: 2026-10-26T23:28:40Z
+    digest: sha256:cd7480c851a7d603
+    last_modified: 2026-10-27T23:31:21Z
 ---
 
 # Responsibility
@@ -31,7 +31,8 @@ Client-side behaviour, no framework. Scripts hold no user-facing English: every 
 - [design-map.js](../../src/scripts/design-map.js): MapLibre design finder with clusters and a nearest-first list.
 - [contact.js](../../src/scripts/contact.js): in-place validation, posts with `Accept: application/json`.
 - [climate.js](../../src/scripts/climate.js): the reader's climate (`initClimate()`, called by `initChrome`): the picker dialog, `localStorage["canopi-climate"]` and `html[data-climate]`, ordering of `<ForClimate>` runs, the "not covered yet" note, sync across tabs, all blocks open for print. See [Climate UX](/decisions/climate-ux.md).
-- [donate.js](../../src/scripts/donate.js), [dialogs.js](../../src/scripts/dialogs.js): HelloAsso donation dialog and native `<dialog>` helpers. Donate opened from the phone Menu returns focus to the Menu summary; from `#donate`, to the first visible Donate button.
+- [consortium/](../../src/scripts/consortium): the consortium tool (`app.js`, `words.js`, `draw.js`, `data.ts`); it reads its strings from `#ct-data`, not `#page-data`. See [Consortium page](/modules/consortium-page.md).
+- [donate.js](../../src/scripts/donate.js), [dialogs.js](../../src/scripts/dialogs.js): HelloAsso donation dialog and native `<dialog>` helpers; `initDialogs` skips a dialog marked `data-own-dialog` (the consortium tool's sheet, which handles its own close, backdrop and scroll lock). Donate opened from the phone Menu returns focus to the Menu summary; from `#donate`, to the first visible Donate button.
 
 # Interfaces
 

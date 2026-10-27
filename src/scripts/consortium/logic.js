@@ -1,0 +1,64 @@
+// The consortium tool's pure rules about its own state (no DOM, no strings), so
+// scripts/consortium-page.test.mjs can test them: what a share link lost, which gap rows stay,
+// when the address bar may be rewritten, where a photo came from, how much of a list shows, what a
+// place change leaves of a link's notices, and when a click is the tail of a double click.
+
+// How many plants an old link named that the cell no longer has: the distinct ids of `p` (kept)
+// and `a` (members) that matched no taxon or several. A kept plant is in both lists, so it counts
+// once; removed plants (`x`) are not plants the link named.
+export function droppedPlants(dropped) {
+  const lost = dropped.filter((d) => (d.key === 'p' || d.key === 'a') && (d.reason === 'unknown' || d.reason === 'ambiguous'));
+  return new Set(lost.map((d) => d.value)).size;
+}
+
+// The "a place is free since you removed …" rows once plants are added: each added plant takes
+// the row of its own layer first; then rows beyond the places still free go, oldest first, so a
+// row never claims a place that is not free.
+export function trimGaps(gaps, addedStrata, free) {
+  let out = [...gaps];
+  for (const s of addedStrata) {
+    const i = out.findIndex((g) => g.stratum === s);
+    if (i >= 0) out.splice(i, 1);
+  }
+  while (out.length > Math.max(0, free)) out.shift();
+  return out;
+}
+
+// The address bar and the saved consortium describe what is shown, so they are left alone on the
+// loading and error screens: the link that led there stays whole for a reload (M2).
+export const mayPersist = (state) => state.status !== 'loading' && state.status !== 'error' && state.status !== 'boot';
+
+// The site a photo's source page is on, by name, for its credit line.
+const HOSTS = [['commons.wikimedia.org', 'Wikimedia Commons'], ['wikimedia.org', 'Wikimedia Commons'], ['inaturalist.org', 'iNaturalist']];
+export function photoSource(url) {
+  let host;
+  try { host = new URL(url).hostname.toLowerCase(); } catch { return null; }
+  const hit = HOSTS.find(([h]) => host === h || host.endsWith('.' + h));
+  return hit ? hit[1] : host.replace(/^www\./, '');
+}
+
+// A long list shown in steps: the first `count` items, how many are left, and how many the next
+// step of `step` reveals (the "Show # more" number, min-4).
+export function shown(list, count, step = Infinity) {
+  const more = Math.max(0, list.length - count);
+  return { items: list.slice(0, count), more, next: Math.min(step, more) };
+}
+
+// The plant list a link carries (its `a`): the members of a result, an empty list for a consortium
+// the user emptied, and none for a no-match, so a reload works the no-match out again (min-2).
+export const linkMembers = (status, members) => (status === 'ready' ? members : null);
+
+// A notice (guide plant pinned or left out, older link, restored list) speaks of the place the page
+// opened on. When the user picks another place or climate it goes; only a link still waiting for its
+// cell takes its guide plant on to the new place, and then the notice is worked out there (min-1).
+export function afterMove({ pending }) {
+  const plant = pending?.state?.plants?.[0] ?? null;
+  return { notice: null, guidePlant: plant, guideId: null };
+}
+
+// The second click of a double click, or a click right after the last one, lands on whatever slid
+// under the pointer: it is not a new request. Keyboard presses (detail 0) always count.
+export function repeatClick(detail, now, last, ms = 500) {
+  if (detail === 0) return false;
+  return detail > 1 || (last != null && now - last < ms);
+}

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const { cellFor, regionsOf, fits, jobsOf, jobs, bandOf, bandsOf, phases, conflicts, invasiveIn, invasiveCountries } = core;
-const { gain, suggest, evaluate, alternatives, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveState, resolveIds, shortId, MAX_LINK_IDS } = core;
+const { gain, suggest, evaluate, alternatives, flagsFor, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveState, resolveIds, shortId, MAX_LINK_IDS, taxonByName } = core;
 
 const read = (name) => JSON.parse(readFileSync(new URL(`fixtures/consortium/${name}`, import.meta.url), 'utf8'));
 const manifest = read('manifest.json');
@@ -466,6 +466,18 @@ test('alternatives on the fixture: flagged plants are listed with their warnings
   }
 });
 
+test('flagsFor: a plant beside the members carries the flags it would have as a member', () => {
+  const inga = named('Inga edulis'), potato = named('Ipomoea batatas'), tithonia = named('Tithonia diversifolia'), leucaena = named('Leucaena leucocephala');
+  const opts = { site: open, country: 'BR' };
+  const t = flagsFor(tropical, tithonia.id, [inga.id, potato.id], opts);
+  assert.equal(t.conflicts[0].b.canonical_name, 'Ipomoea batatas');
+  const asMember = evaluate(tropical, [inga.id, potato.id, tithonia.id], opts).members.at(-1).flags;
+  assert.deepEqual({ ...t, conflicts: t.conflicts.length }, { ...asMember, conflicts: asMember.conflicts.length });
+  assert.equal(flagsFor(tropical, leucaena.id, [], opts).invasive, true);
+  assert.equal(flagsFor(tropical, leucaena.id, [leucaena.id], opts).flagged, true, 'a member is left out of its own list');
+  assert.equal(flagsFor(tropical, 'ffffffff-0000-4000-8000-000000000000', [], opts), null);
+});
+
 // state
 
 const sampleState = () => ({
@@ -609,6 +621,19 @@ test('state: a guide preset (?plant=<canonical_name>&climate=<id>) keeps its pla
   assert.deepEqual(decodeState('c=temperate&climate=tropical').state.climate, 'temperate');
   assert.deepEqual(decodeState('c=temperate&climate=tropical').dropped, [{ key: 'climate', value: 'tropical', reason: 'duplicate' }]);
   assert.deepEqual(decodeState(`plant=${'a'.repeat(300)}`).dropped[0].reason, 'malformed');
+});
+
+test('state: taxonByName is the one rule a guide preset is matched by, so the page names the same plant', () => {
+  const inga = named('Inga edulis');
+  assert.equal(taxonByName(tropical, 'Inga edulis'), inga);
+  assert.equal(taxonByName(tropical, ' inga  EDULIS '), inga, 'case and spacing do not matter');
+  assert.equal(taxonByName(tropical, 'Olea europaea'), null);
+  for (const name of ['Inga edulis', 'inga  EDULIS', 'Olea europaea']) {
+    const r = resolveState(decodeState(`plant=${encodeURIComponent(name)}&climate=tropical`), tropical);
+    const hit = taxonByName(tropical, name);
+    assert.equal(r.state.kept.includes(hit?.id), !!hit, name);
+    assert.equal(r.dropped.some((d) => d.key === 'plant'), !hit, name);
+  }
 });
 
 // performance
