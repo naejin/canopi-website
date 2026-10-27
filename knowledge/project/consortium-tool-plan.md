@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T18:59:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T20:11:03Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -14,8 +14,8 @@ sources:
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
-    digest: sha256:c92d050bc60e0ea3
-    last_modified: 2026-10-26T23:34:11Z
+    digest: sha256:e063655df7532635
+    last_modified: 2026-10-27T19:02:45Z
   - id: climates-ts
     resource: ../../src/data/climates.ts
     title: src/data/climates.ts
@@ -87,16 +87,24 @@ Types mirror format 2. Pure functions, unit-tested with `node --test`:
 - `conflicts(consortium, interactions)`: pairs matched at rank (genus/family).
 - `suggest(cell, site, kept, removed, country)`: greedy, deterministic. Each
   round adds the candidate with the highest gain
-  `10·new jobs + 3·new (stratum × phase band) cells + 6·new stratum + 0.3·edibility − 0.5·unknown traits`,
-  while gain > 5 and size < limit (small 6, large 8, field 10); ties by
-  `canonical_name`. Excluded from automatic picks: misfits, invasive in the user's
+  `10·new jobs + 3·empty (stratum × phase band) cells + 1·cells with one member + 6·new stratum + 8·phase bands with no food yet (crops) + 4·second doer of feeds-soil, ground or mulch + 1·edibility − 3·weed potential − 0.5·unknown traits`,
+  among plants that fill a gap (a new job or a cell with fewer than two
+  members), until size = limit (small 6, large 9, field 12); ties go to the
+  plant named in more languages (a widely grown one), then `canonical_name`.
+  (Amended 2026-10-27: the first rule, gain > 5 with 0.3·edibility, stopped the
+  real cells at 4–7 plants, and name-order ties picked obscure plants; the
+  mockup reviewer asked for food in every phase band and backed-up key jobs.) Excluded from automatic picks: misfits, invasive in the user's
   country, a medium/high conflict with a member, removed plants. Kept plants are
   always members.
+- `evaluate(cell, ids, options)`: the same members, flags and gaps for a fixed
+  list, never refilled (Remove leaves its gap; a link restores its members).
 - `alternatives(member, …)`: same stratum first, then shared jobs, then gain;
   flagged ones included and marked.
-- `encodeState`/`decodeState`: URL query (`c`, `r`, `k` country, site keys,
-  `p` = taxon ids kept, `x` removed, `v` = format version); unknown ids are
-  dropped with a notice.
+- `encodeState`/`decodeState`/`resolveState`: URL query (`c`, `r` the user's
+  region, `b` the borrowed cell's region, `k` country, site keys,
+  `p` = taxon ids kept, `x` removed, `a` members in order, `v` = format
+  version; guide presets `plant`, `climate`); unknown ids are dropped with a
+  notice.
 Recompute < 50 ms for 200 taxa.
 
 ## UI states (each in the mockup and in browser checks)

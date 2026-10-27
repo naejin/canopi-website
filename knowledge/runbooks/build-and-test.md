@@ -4,15 +4,15 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:30:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:29:43Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T14:30:12Z }
 sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:8dabfa58ee33f2fa
-    last_modified: 2026-10-26T20:08:11Z
+    digest: sha256:f7393b32d2100393
+    last_modified: 2026-10-27T19:28:52Z
   - id: readme
     resource: ../../README.md
     title: README.md
@@ -48,6 +48,7 @@ Node >= 22.12.0.
 | marketing build | `npm run build` (runs `copy-maplibre.mjs` first) |
 | built-site check | `node scripts/check-built-site.mjs` |
 | bibliography links (network, by hand) | `npm run check:bibliography` |
+| consortium data (network, by hand; output committed) | `npm run install:consortium -- <canopi-data export dir>` (see [Consortium core](/modules/consortium-core.md); tests use `--fixture --no-images --out <tmp>`) |
 | with legacy `/app/` | `CANOPI_WEB_EDITION_ARCHIVE=/path/to/canopi-web-edition-*.tar.gz npm run build:with-web` |
 | preview / manual deploy | `npm run preview` (`wrangler dev`), `npm run deploy` (needs Cloudflare auth) |
 
