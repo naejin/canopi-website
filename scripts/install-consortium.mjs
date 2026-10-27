@@ -11,7 +11,7 @@
 //   checked by hand (no dependency); extra keys are allowed, as the format lets the export add
 //   fields; taxon ids unique; every source id it cites defined in `sources`.
 // Photos: each taxon's image.url (http or https) is downloaded once per taxon id, one at a time
-// with a short pause, into images/<id>.<ext>, and the installed cell points to
+// with a half-second pause (rate limiting waited out, see download()), into images/<id>.<ext>, and the installed cell points to
 // /data/consortium/images/<id>.<ext>; credit, licence and source page stay as they are. Wikimedia
 // Commons originals are fetched as 500 px thumbnails. A photo that fails becomes image: null (no
 // photo) and is listed in the summary; more than 10% failing stops the install. Installed cells
@@ -251,31 +251,42 @@ export function verifyExport(dir, { fixture = false } = {}) {
   return { manifest, manifestBytes: readFileSync(join(dir, 'manifest.json')), labelsBytes: readFileSync(join(dir, 'labels.json')), cells };
 }
 
-// One photo: the Commons thumbnail first (then the original, for a file narrower than the
-// thumbnail), retried once on 429/503. Returns { bytes, ext } or throws.
-async function download(url, fetchImpl, delayMs) {
-  const tries = [thumbnailUrl(url), url].filter(Boolean);
+// One photo: the Commons thumbnail first, then the original only when the thumbnail does not exist
+// (400 or 404, as for a file narrower than the thumbnail). Rate limiting (429, 503) is waited out,
+// up to RETRIES times: Retry-After when the server gives it, else backoffMs doubling. Returns
+// { bytes, ext } or throws.
+const RETRIES = 4;
+async function download(url, { fetchImpl, delayMs, backoffMs }) {
+  const thumb = thumbnailUrl(url);
+  const tries = thumb ? [thumb, url] : [url];
   let last = null;
   for (const [n, candidate] of tries.entries()) {
     if (n) await sleep(delayMs);
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const res = await fetchImpl(candidate, { headers: { 'User-Agent': USER_AGENT }, redirect: 'follow', signal: AbortSignal.timeout(30_000) });
-      if ((res.status === 429 || res.status === 503) && attempt === 0) { await sleep(Math.max(delayMs * 10, 2000)); continue; }
-      if (!res.ok) { last = `HTTP ${res.status} for ${candidate}`; break; }
-      const type = (res.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
-      const ext = IMAGE_TYPES[type];
-      if (!ext) { last = `unsupported type "${type}" for ${candidate}`; break; }
-      const bytes = Buffer.from(await res.arrayBuffer());
-      if (!bytes.length || bytes.length > MAX_IMAGE_BYTES) { last = `${bytes.length} bytes for ${candidate}`; break; }
-      return { bytes, ext };
+    let res;
+    for (let attempt = 0; ; attempt++) {
+      res = await fetchImpl(candidate, { headers: { 'User-Agent': USER_AGENT }, redirect: 'follow', signal: AbortSignal.timeout(30_000) });
+      if ((res.status !== 429 && res.status !== 503) || attempt === RETRIES) break;
+      const after = Number(res.headers.get('retry-after'));
+      await sleep(Number.isFinite(after) && after > 0 ? Math.min(after, 120) * 1000 : backoffMs * 2 ** attempt);
     }
+    if (!res.ok) {
+      last = `HTTP ${res.status} for ${candidate}`;
+      if (res.status === 400 || res.status === 404) continue; // no such thumbnail: try the original
+      break;
+    }
+    const type = (res.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
+    const ext = IMAGE_TYPES[type];
+    if (!ext) { last = `unsupported type "${type}" for ${candidate}`; break; }
+    const bytes = Buffer.from(await res.arrayBuffer());
+    if (!bytes.length || bytes.length > MAX_IMAGE_BYTES) { last = `${bytes.length} bytes for ${candidate}`; break; }
+    return { bytes, ext };
   }
   throw new Error(last ?? `no URL for ${url}`);
 }
 
 // Downloads every photo once per taxon id and rewrites the cells in place. Returns the image files
 // and the failures.
-async function fetchImages(cells, { fetchImpl, delayMs, log }) {
+async function fetchImages(cells, { fetchImpl, delayMs, backoffMs, log }) {
   const wanted = new Map(); // id -> { url, name }
   for (const { cell } of cells) for (const t of cell.taxa) {
     if (t.image && /^https?:\/\//i.test(t.image.url) && !wanted.has(t.id)) wanted.set(t.id, { url: t.image.url, name: t.canonical_name });
@@ -286,7 +297,7 @@ async function fetchImages(cells, { fetchImpl, delayMs, log }) {
     if (!first) await sleep(delayMs);
     first = false;
     try {
-      const { bytes, ext } = await download(url, fetchImpl, delayMs);
+      const { bytes, ext } = await download(url, { fetchImpl, delayMs, backoffMs });
       files.set(id, { name: `${id}.${ext}`, bytes });
     } catch (err) {
       failed.push({ id, name, url, error: err.message });
@@ -306,11 +317,11 @@ async function fetchImages(cells, { fetchImpl, delayMs, log }) {
   return { files, failed, total: wanted.size };
 }
 
-export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 250, log = console.log } = {}) {
+export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, log = console.log } = {}) {
   if (!exportDir) refuse('no export directory given.');
   const dir = resolve(exportDir), out = resolve(outDir);
   const { manifest, manifestBytes, labelsBytes, cells } = verifyExport(dir, { fixture });
-  const photos = images ? await fetchImages(cells, { fetchImpl, delayMs, log }) : { files: new Map(), failed: [], total: 0 };
+  const photos = images ? await fetchImages(cells, { fetchImpl, delayMs, backoffMs, log }) : { files: new Map(), failed: [], total: 0 };
 
   // Installed bytes: unchanged cells byte for byte, changed ones minified (the export's own style)
   // with their checksum recomputed in the installed manifest.

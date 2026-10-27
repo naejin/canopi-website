@@ -174,7 +174,7 @@ test('photos: thumbnails downloaded with the User-Agent, urls rewritten, checksu
   const w = workspace(t);
   withPhotos(w);
   const calls = [];
-  const summary = await install(w, { images: true, fetchImpl: stubFetch(calls), delayMs: 0 });
+  const summary = await install(w, { images: true, fetchImpl: stubFetch(calls), delayMs: 0, backoffMs: 0 });
   assert.equal(summary.photos.downloaded, 4);
   assert.ok(calls.every((c) => c.ua === USER_AGENT));
   assert.ok(calls.some((c) => c.url.endsWith('/thumb/a/a6/Inga.jpg/500px-Inga.jpg')));
@@ -197,13 +197,13 @@ test('photos: a failed photo becomes image: null and is listed; over 10% failing
   const w = workspace(t);
   withPhotos(w);
   // One of four fails on both its thumbnail and its original: 25%, too many.
-  await assert.rejects(install(w, { images: true, fetchImpl: stubFetch([], { fail: ['Papaya'] }), delayMs: 0 }), /1 of 4 photos failed/);
+  await assert.rejects(install(w, { images: true, fetchImpl: stubFetch([], { fail: ['Papaya'] }), delayMs: 0, backoffMs: 0 }), /1 of 4 photos failed/);
   assert.equal(existsSync(w.out), false);
   // Give 11 taxa a photo so one failure is under 10%.
   const cell = w.json('tropical-southern-america.json');
   cell.taxa.forEach((x, i) => { if (i < 11) x.image = { url: `https://upload.wikimedia.org/wikipedia/commons/d/d${i % 10}/P${i}.jpg`, credit: null, licence: null, source_page_url: null }; });
   w.write('tropical-southern-america.json', cell);
-  const summary = await install(w, { images: true, fetchImpl: stubFetch([], { fail: ['P3.jpg'] }), delayMs: 0 });
+  const summary = await install(w, { images: true, fetchImpl: stubFetch([], { fail: ['P3.jpg'] }), delayMs: 0, backoffMs: 0 });
   assert.deepEqual(summary.photos.failed.map((f) => f.name), [cell.taxa[3].canonical_name]);
   const installed = JSON.parse(readFileSync(join(w.out, 'tropical-southern-america.json'), 'utf8'));
   assert.equal(installed.taxa[3].image, null);
@@ -214,7 +214,32 @@ test('photos: a narrow original with no thumbnail falls back to the original', a
   const w = workspace(t);
   withPhotos(w);
   const calls = [];
-  const summary = await install(w, { images: true, fetchImpl: stubFetch(calls, { fail: ['500px-Papaya'] }), delayMs: 0 });
+  const summary = await install(w, { images: true, fetchImpl: stubFetch(calls, { fail: ['500px-Papaya'] }), delayMs: 0, backoffMs: 0 });
   assert.equal(summary.photos.failed.length, 0);
   assert.ok(calls.some((c) => c.url === 'https://upload.wikimedia.org/wikipedia/commons/c/c2/Papaya.jpg'));
+});
+
+test('photos: rate limiting is waited out, and a limited thumbnail never falls back to the full-size original', async (t) => {
+  const inga = 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Inga.jpg';
+  // The Inga thumbnail answers 429 `limit` times, then the photo.
+  const run = async (limit) => {
+    const w = workspace(t);
+    withPhotos(w);
+    const urls = [];
+    let left = limit;
+    const fetchImpl = async (url, init) => {
+      urls.push(url);
+      if (url.endsWith('500px-Inga.jpg') && left-- > 0) return new Response('slow down', { status: 429 });
+      return stubFetch([])(url, init);
+    };
+    const result = await install(w, { images: true, fetchImpl, delayMs: 0, backoffMs: 0 }).catch((err) => err);
+    return { result, inga: urls.filter((u) => u.includes('Inga')) };
+  };
+  const twice = await run(2);
+  assert.equal(twice.result.photos.failed.length, 0);
+  assert.equal(twice.inga.length, 3, 'two 429s, then the thumbnail');
+  const always = await run(Infinity);
+  assert.match(always.result.message, /1 of 4 photos failed/);
+  assert.equal(always.inga.length, 5, 'the first request and four retries');
+  assert.ok(!always.inga.includes(inga), 'the original is not tried');
 });
