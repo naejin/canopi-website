@@ -1,0 +1,71 @@
+---
+// Carbon farming: the two carbon stores. A tree above the soil line with its roots below, dark soil
+// crumbs thinning with depth, and on the right a dug patch (rough ground, few loose crumbs) with carbon
+// dioxide escaping. An ochre arrow brings CO₂ into the leaves; four numbered circles mark in, the woody
+// store, the soil store and out again. The numbered key is a markdown list in the MDX, right after
+// this drawing inside <Figure>; `alt` describes the drawing. Redrawn from the approved hub mockup, seed 30.
+import { rng, r1, crumbPath } from '../../../../lib/svg';
+interface Props { alt: string; }
+const { alt } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-cs-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const r = rng(30);
+const crumbs: { d: string; c: number; loose: boolean }[] = [];
+for (let i = 0; i < 120; i++) {
+  const x = r() * 480, depth = r() ** 1.8, y = 124 + depth * 92;
+  const loose = x > 340;
+  if (loose && r() < 0.7) continue;
+  crumbs.push({ d: crumbPath(r, r1(x), r1(y), r1(1.5 + r() * 3 * (1 - depth * 0.6))), c: 1 + Math.floor(r() * 3), loose });
+}
+const numbers: [number, number][] = [[46, 50], [176, 100], [262, 170], [452, 84]];
+---
+<svg class="guide-cs" viewBox="0 0 480 220" role="img" aria-label={alt}>
+  <defs>
+    <marker id={`${uid}-in`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" class="guide-cs-head-in" /></marker>
+    <marker id={`${uid}-out`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" class="guide-cs-head-out" /></marker>
+  </defs>
+  <rect x="0" y="118" width="480" height="102" class="guide-cs-bed" />
+  {crumbs.map((c) => <path d={c.d} class={`guide-cs-soil-${c.c}`} opacity={c.loose ? 0.45 : 0.9} />)}
+  <path d="M146 118C136 140 118 156 96 168M154 118C166 142 186 152 214 160M150 118C150 150 152 180 148 204" class="guide-cs-root" stroke-width="3.5" />
+  <path d="M120 150C110 160 104 176 100 192M190 152C200 168 214 176 232 182M150 170C138 182 130 194 126 206" class="guide-cs-root" stroke-width="1.4" />
+  <path d="M142 118C144 100 145 86 146 66L154 66C155 86 156 100 158 118Z" class="guide-cs-wood" />
+  <path d="M150 84L126 64M150 78L176 58" class="guide-cs-root" stroke-width="4" />
+  <ellipse cx="150" cy="46" rx="52" ry="32" class="guide-cs-leaf" />
+  <ellipse cx="116" cy="58" rx="24" ry="17" class="guide-cs-leaf-deep" />
+  <ellipse cx="186" cy="54" rx="26" ry="19" class="guide-cs-leaf-young" />
+  <ellipse cx="148" cy="28" rx="30" ry="18" class="guide-cs-leaf-young" />
+  <path d="M0 118H340L352 112L362 120L374 110L386 119L398 111L410 120L422 112L434 119L446 113L458 118H480" class="guide-cs-ground" />
+  <path d="M30 30C56 22 76 28 92 40" class="guide-cs-in" marker-end={`url(#${uid}-in)`} />
+  <text x="4" y="22" class="guide-cs-label">CO₂</text>
+  <path d="M378 140C372 116 370 96 374 70" class="guide-cs-out" marker-end={`url(#${uid}-out)`} />
+  <path d="M420 146C426 120 428 98 424 74" class="guide-cs-out" marker-end={`url(#${uid}-out)`} />
+  <text x="386" y="60" class="guide-cs-label">CO₂</text>
+  {numbers.map(([x, y], i) => (
+    <g>
+      <circle cx={x} cy={y} r="10" class="guide-cs-num" />
+      <text x={x} y={y + 4} text-anchor="middle" class="guide-cs-num-t">{i + 1}</text>
+    </g>
+  ))}
+</svg>
+
+<style>
+  .guide-cs { display: block; width: 100%; height: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .guide-cs-bed { fill: var(--surface-alt); }
+  .guide-cs-soil-1 { fill: var(--soil-1); } .guide-cs-soil-2 { fill: var(--soil-2); } .guide-cs-soil-3 { fill: var(--soil-3); }
+  .guide-cs-root { fill: none; stroke: var(--seed-1); stroke-linecap: round; opacity: 0.85; }
+  .guide-cs-wood { fill: var(--seed-1); opacity: 0.85; }
+  .guide-cs-leaf { fill: var(--leaf); } .guide-cs-leaf-young { fill: var(--leaf-young); } .guide-cs-leaf-deep { fill: var(--leaf-deep); }
+  .guide-cs-ground { fill: none; stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-cs-in { fill: none; stroke: var(--accent); stroke-width: 1.6; }
+  .guide-cs-head-in { fill: var(--accent); }
+  .guide-cs-out { fill: none; stroke: var(--text-muted); stroke-width: 1.4; stroke-dasharray: 4 3; }
+  .guide-cs-head-out { fill: var(--text-muted); }
+  .guide-cs-label { font-family: var(--font-sans); font-size: 15px; fill: var(--text-muted); }
+  .guide-cs-num { fill: var(--surface); stroke: var(--accent); stroke-width: 1.4; }
+  .guide-cs-num-t { font-family: var(--font-display); font-size: 12px; font-weight: 600; fill: var(--accent-ink); }
+  /* The numbered key: the markdown list that follows the drawing inside its <Figure>. */
+  :global(.guide-body .guide-figure:has(> .guide-cs) > ol) { margin: 0; padding: 0; list-style: none; counter-reset: guide-cs-key; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 0.6rem 1.2rem; }
+  :global(.guide-body .guide-figure:has(> .guide-cs) > ol > li) { counter-increment: guide-cs-key; position: relative; padding-left: 1.6rem; margin: 0; font-size: 0.95rem; color: var(--text-secondary); }
+  :global(.guide-body .guide-figure:has(> .guide-cs) > ol > li::before) { content: counter(guide-cs-key); position: absolute; left: 0; top: 0; font-family: var(--font-display); font-weight: 600; color: var(--accent-ink); }
+  :global(.guide-body .guide-figure:has(> .guide-cs) > ol > li strong) { color: var(--text); }
+</style>

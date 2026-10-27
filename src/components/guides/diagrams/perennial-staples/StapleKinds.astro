@@ -1,0 +1,92 @@
+---
+// Staple foods from perennials: Toensmeier's six kinds of perennial staple, as six tiles (three a row
+// on desktop, two on phones), each a small drawing, a bold title and one line. Starch: a hand of
+// bananas. Starch plus: two chestnuts. Protein: an open bean pod with three beans. Protein and oil: a
+// hazelnut in its leafy husk. Oil: a sprig with three olives. Sugar: a small cluster of dates. No
+// percentages. `kinds` gives each title, line and alt text in that order; `label` names the list. All
+// words come from the MDX; titles and lines are HTML, so they wrap.
+import { r1, leafPath, BEAN_PATH } from '../../../../lib/svg';
+interface Kind { title: string; text: string; alt: string; }
+interface Props { label: string; kinds: [Kind, Kind, Kind, Kind, Kind, Kind]; }
+const { label, kinds } = Astro.props;
+type Shape = { d: string; cls: string; t?: string };
+const ellipse = (cx: number, cy: number, rx: number, ry: number) => `M${r1(cx - rx)} ${cy}a${rx} ${ry} 0 1 0 ${r1(2 * rx)} 0a${rx} ${ry} 0 1 0 ${r1(-2 * rx)} 0Z`;
+
+// Starch: five curved fingers fanning from one crown.
+const bananas: Shape[] = [
+  ...[-34, -17, 0, 17, 34].map((a) => ({ d: 'M0 0C6-4 12-20 10-44C9-48 5-48 5-44C5-24 0-10-6-3Z', cls: 'guide-sk-banana', t: `translate(60 66) rotate(${a})` })),
+  { d: 'M54 66H66V72H54Z', cls: 'guide-sk-stalk' },
+];
+// Starch plus: two chestnuts, each with a pale base and a pointed tip.
+const chestnut = (x: number, a: number): Shape[] => [
+  { d: 'M-18 10C-20-4-10-18 0-24C10-18 20-4 18 10C10 14-10 14-18 10Z', cls: 'guide-sk-chestnut', t: `translate(${x} 50) rotate(${a})` },
+  { d: 'M-18 10C-10 14 10 14 18 10C16 16 10 18 0 18C-10 18-16 16-18 10Z', cls: 'guide-sk-hilum', t: `translate(${x} 50) rotate(${a})` },
+  { d: 'M0-24L1-30', cls: 'guide-sk-tip', t: `translate(${x} 50) rotate(${a})` },
+];
+// Protein: an open pod with three beans.
+const pod: Shape[] = [
+  { d: 'M14 44C30 26 90 26 106 40C92 54 30 58 14 44Z', cls: 'guide-sk-pod' },
+  { d: 'M22 44C38 34 84 34 98 41C84 49 38 52 22 44Z', cls: 'guide-sk-pod-in' },
+  ...[38, 60, 82].map((x) => ({ d: BEAN_PATH, cls: 'guide-sk-bean', t: `translate(${x} 42) scale(1.1)` })),
+  { d: 'M106 40Q112 38 114 32', cls: 'guide-sk-tip' },
+];
+// Protein and oil: a hazelnut in a frilled husk of two bracts.
+const hazel: Shape[] = [
+  { d: ellipse(60, 38, 17, 19), cls: 'guide-sk-nut' },
+  { d: 'M50 22Q60 16 70 22', cls: 'guide-sk-shine' },
+  { d: 'M36 48C40 62 52 70 60 70C68 70 80 62 84 48L78 52L76 44L70 52L66 44L60 52L54 44L50 52L44 44L42 52Z', cls: 'guide-sk-husk' },
+  { d: 'M60 70V76', cls: 'guide-sk-tip' },
+];
+// Oil: a sprig with narrow leaves and three olives.
+const olives: Shape[] = [
+  { d: 'M16 22Q60 30 104 18', cls: 'guide-sk-twig' },
+  { d: [[30, 25, 200], [52, 28, 150], [74, 27, 210], [92, 22, 160], [92, 22, 30]].map(([x, y, a]) => leafPath(22, x, y, a)).join(''), cls: 'guide-sk-olive-leaf' },
+  { d: 'M44 27V40M66 28V44M84 24V36', cls: 'guide-sk-twig' },
+  { d: ellipse(44, 50, 8, 10.5) + ellipse(66, 54, 8, 10.5) + ellipse(84, 46, 8, 10.5), cls: 'guide-sk-olive' },
+];
+// Sugar: dates hanging from a branched stalk.
+const dateSpots: [number, number][] = [[42, 40], [58, 36], [74, 40], [50, 56], [66, 54], [82, 56], [58, 70]];
+const dates: Shape[] = [
+  { d: 'M60 8V24M60 24L42 32M60 24L58 30M60 24L76 32M60 24L50 48M60 24L68 46', cls: 'guide-sk-strand' },
+  ...dateSpots.map(([x, y]) => ({ d: ellipse(x, y, 6.5, 9.5), cls: 'guide-sk-date' })),
+];
+const drawings = [bananas, chestnut(44, -12).concat(chestnut(78, 14)), pod, hazel, olives, dates];
+---
+<ul class="guide-sk" role="list" aria-label={label}>
+  {kinds.map((kind, i) => (
+    <li>
+      <svg viewBox="0 0 120 80" role="img" aria-label={kind.alt}>
+        {drawings[i].map((s) => <path d={s.d} class={s.cls} transform={s.t} />)}
+      </svg>
+      <strong>{kind.title}</strong>
+      <span>{kind.text}</span>
+    </li>
+  ))}
+</ul>
+
+<style>
+  :global(.guide-body) .guide-sk { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  :global(.guide-body) .guide-sk li { margin: 0; display: grid; gap: 0.3rem; align-content: start; }
+  .guide-sk svg { display: block; width: 100%; height: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .guide-sk strong { font-family: var(--font-display); font-weight: 600; line-height: 1.3; color: var(--text); }
+  .guide-sk span { font-size: 0.9rem; line-height: 1.4; color: var(--text-secondary); }
+  .guide-sk-banana { fill: var(--petal); stroke: var(--leaf-gold); stroke-width: 1; }
+  .guide-sk-stalk { fill: var(--leaf-deep); }
+  .guide-sk-chestnut { fill: var(--leaf-brown); }
+  .guide-sk-hilum { fill: var(--seed-3); }
+  .guide-sk-tip { fill: none; stroke: var(--leaf-brown); stroke-width: 2; stroke-linecap: round; }
+  .guide-sk-pod { fill: var(--leaf-young); }
+  .guide-sk-pod-in { fill: var(--seed-3); opacity: 0.6; }
+  .guide-sk-bean { fill: var(--seed-4); }
+  .guide-sk-nut { fill: var(--seed-1); }
+  .guide-sk-shine { fill: none; stroke: var(--seed-6); stroke-width: 1.5; stroke-linecap: round; opacity: 0.7; }
+  .guide-sk-husk { fill: var(--leaf-young); }
+  .guide-sk-twig { fill: none; stroke: var(--leaf-brown); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-sk-olive-leaf { fill: var(--leaf-deep); }
+  .guide-sk-olive { fill: var(--seed-5); }
+  .guide-sk-strand { fill: none; stroke: var(--leaf-gold); stroke-width: 2; stroke-linecap: round; }
+  .guide-sk-date { fill: var(--leaf-ochre); }
+  @media (max-width: 639px) {
+    :global(.guide-body) .guide-sk { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+  }
+</style>

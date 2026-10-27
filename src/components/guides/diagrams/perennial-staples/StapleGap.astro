@@ -1,0 +1,54 @@
+---
+// Staple foods from perennials: the gap before a tree staple bears, as a sketch with no numbers.
+// Harvest each year (up) over the years after planting (right). Three lines: annuals only (a steady
+// small harvest from the first year), a tree staple alone (nothing for some years, then rising above
+// the annuals) and trees with annuals between them (a harvest from the first year that dips as the
+// shade grows, then rises with the trees, ending where the tree staple alone ends: no lasting gain is claimed). The shaded band is the harvest the annuals add while the
+// trees are young. `axis` is [up, across], `lines` the three legend labels in that order, `start` and
+// `end` the two ends of the time axis, `alt` the description. All words come from the MDX.
+import { wrap } from '../../../../lib/svg';
+interface Props { alt: string; axis: [string, string]; lines: [string, string, string]; start: string; end: string; }
+const { alt, axis, lines, start, end } = Astro.props;
+const X0 = 56, X1 = 464, Y0 = 186, Y1 = 34; // plot box: left, right, zero line, top
+const annuals = `M${X0} 146H${X1}`;
+const tree = `M${X0} ${Y0}H178C236 ${Y0} 300 120 ${X1} 58`;
+const both = `M${X0} 146C110 146 150 156 186 156C232 156 290 118 ${X1} 58`;
+const band = `${both}L${X1} 58C300 120 236 ${Y0} 178 ${Y0}H${X0}Z`;
+const up = wrap(axis[0], 22), across = wrap(axis[1], 26), from = wrap(start, 14), to = wrap(end, 14);
+const kinds = ['annuals', 'tree', 'both'];
+---
+<div class="guide-sg">
+  <svg viewBox="0 0 480 236" role="img" aria-label={alt}>
+    <path d={band} class="guide-sg-band" />
+    <path d={`M${X0} ${Y1 - 6}V${Y0}H${X1 + 8}`} class="guide-sg-axis" />
+    <path d={annuals} class="guide-sg-line guide-sg-annuals" />
+    <path d={tree} class="guide-sg-line guide-sg-tree" />
+    <path d={both} class="guide-sg-line guide-sg-both" />
+    <text x={X0 + 8} y={Y1 - 14} class="guide-sg-text">{up.map((l, i) => <tspan x={X0 + 8} dy={i ? 16 : 0}>{l}</tspan>)}</text>
+    <text x={X0} y={Y0 + 20} class="guide-sg-text">{from.map((l, i) => <tspan x={X0} dy={i ? 16 : 0}>{l}</tspan>)}</text>
+    <text x={X1} y={Y0 + 20} text-anchor="end" class="guide-sg-text">{to.map((l, i) => <tspan x={X1} dy={i ? 16 : 0}>{l}</tspan>)}</text>
+    <text x={(X0 + X1) / 2} y={Y0 + 20} text-anchor="middle" class="guide-sg-text guide-sg-strong">{across.map((l, i) => <tspan x={(X0 + X1) / 2} dy={i ? 16 : 0}>{l}</tspan>)}</text>
+  </svg>
+  <ul class="guide-sg-key">
+    {lines.map((line, i) => <li><i class={`guide-sg-swatch guide-sg-swatch-${kinds[i]}`} aria-hidden="true"></i>{line}</li>)}
+  </ul>
+</div>
+
+<style>
+  .guide-sg { display: grid; gap: 0.6rem; padding: 0.9rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .guide-sg svg { display: block; width: 100%; height: auto; }
+  .guide-sg-axis { fill: none; stroke: var(--border-strong); stroke-width: 1.4; }
+  .guide-sg-band { fill: var(--accent); opacity: 0.14; }
+  .guide-sg-line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-sg-annuals { stroke: var(--text-muted); stroke-width: 2; stroke-dasharray: 2 5; }
+  .guide-sg-tree { stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 9 5; }
+  .guide-sg-both { stroke: var(--text); stroke-width: 3; }
+  .guide-sg-text { font-family: var(--font-sans); font-size: 15px; fill: var(--text-muted); }
+  .guide-sg-strong { fill: var(--text-secondary); font-weight: 600; }
+  :global(.guide-body) .guide-sg-key { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.3rem 1.3rem; font-size: 0.9rem; color: var(--text-secondary); }
+  :global(.guide-body) .guide-sg-key li { margin: 0; display: flex; align-items: center; gap: 0.45rem; }
+  .guide-sg-swatch { display: inline-block; width: 1.8rem; height: 0; flex: none; }
+  .guide-sg-swatch-annuals { border-top: 2px dotted var(--text-muted); }
+  .guide-sg-swatch-tree { border-top: 3px dashed var(--accent); }
+  .guide-sg-swatch-both { border-top: 3px solid var(--text); }
+</style>

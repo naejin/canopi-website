@@ -1,0 +1,33 @@
+---
+// Carbon farming: Toensmeier's ranking of farming systems by the carbon they add each year, as four
+// rungs from most to least. Each rung is a bold label, an optional plain detail after it, a level word
+// and a bar whose width shows the order only (no amounts). HTML, not SVG, so every word wraps in the
+// reader's language; all words come from the MDX. `label` names the list for screen readers.
+interface Rung { text: string; detail?: string; level: string; }
+interface Props { label: string; rungs: [Rung, Rung, Rung, Rung]; }
+const { label, rungs } = Astro.props;
+const widths = [100, 74, 48, 26];
+---
+<div class="guide-ladder" role="list" aria-label={label}>
+  {rungs.map((rung, i) => (
+    <div class="guide-ladder-rung" role="listitem">
+      <p class="guide-ladder-text"><strong>{rung.text}</strong>{rung.detail && <>, {rung.detail}</>}</p>
+      <span class="guide-ladder-level">{rung.level}</span>
+      <i class={`guide-ladder-bar guide-ladder-bar-${i + 1}`} style={`width: ${widths[i]}%`} aria-hidden="true"></i>
+    </div>
+  ))}
+</div>
+
+<style>
+  .guide-ladder { display: grid; gap: 0.7rem; padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .guide-ladder-rung { display: grid; grid-template-columns: minmax(0, 1fr) 6.5rem; gap: 0.25rem 1rem; align-items: center; }
+  :global(.guide-body) .guide-ladder-text { margin: 0; font-size: 0.97rem; line-height: 1.4; color: var(--text-secondary); }
+  .guide-ladder-text strong { color: var(--text); font-weight: 600; }
+  .guide-ladder-level { grid-row: span 2; font-size: 0.88rem; font-weight: 600; color: var(--accent-ink); text-align: right; }
+  .guide-ladder-bar { display: block; height: 0.5rem; border-radius: 999px; background: var(--accent); }
+  .guide-ladder-bar-2 { opacity: 0.75; } .guide-ladder-bar-3 { opacity: 0.55; } .guide-ladder-bar-4 { opacity: 0.38; }
+  @media (max-width: 639px) {
+    .guide-ladder { padding: 0.8rem; }
+    .guide-ladder-rung { grid-template-columns: minmax(0, 1fr) 5rem; column-gap: 0.6rem; }
+  }
+</style>
