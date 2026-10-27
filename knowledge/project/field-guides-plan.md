@@ -4,7 +4,7 @@ title: Field Guides plan
 description: Build plan for the 17 Field Guides drawn from Landrace Gardening — steps, streams, file ownership and exit criteria.
 status: stable
 tags: [field-guides, plan]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:13:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:31:43Z }
 ---
 
 # Field Guides plan
@@ -48,10 +48,10 @@ Guide map and owner decisions: `.local/field-guides/teaming-with-microbes/00-map
 - Streams: soil-hub (21, 23), soil-compost (24, 25), soil-tea (26, 27), soil-read (22, 28, 29); at most three building at once.
 - Then as step 3: hand-offs, browser check at 390/1280 light/dark, pre-push review, push on the owner's go.
 
-## Step 6 — Carbon farming (built, awaiting the owner's push)
+## Step 6 — Carbon farming (done, 2026-10-27)
 Guide map and owner decisions: `.local/field-guides/carbon-farming/00-map.md` and the 2026-10-27 rows of the [user decisions](/decisions/field-guides-user-decisions.md); chapter notes in `carbon-farming/notes/`. First real use of `<ForClimate>`.
 - Done on `guides/integration`: shared files (bibliography id, 41 glossary terms, the `needs-processing`, `akee` and `cashew` cautions, `<Invasive />`, `HisGarden book`), the twelve guides 30–41 from four reviewed streams, guide 18 moved to order 6, the seam fixes (« prosopis » in French, one owner per warning, anchored links, inline invasive note).
-- Left: browser check at 390/1280 light/dark with a climate chosen and with none, pre-push review of the whole diff, push on the owner's go.
+- Checked in the browser at 390/1280, light and dark, with a climate chosen and with none; pre-push review of the whole diff; pushed on the owner's go.
 
 ## Tracker
 bd epic "Field Guides", one item per step and per stream, labels `guides-step-<n>`.
