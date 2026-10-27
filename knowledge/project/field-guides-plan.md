@@ -4,7 +4,7 @@ title: Field Guides plan
 description: Build plan for the 17 Field Guides drawn from Landrace Gardening — steps, streams, file ownership and exit criteria.
 status: stable
 tags: [field-guides, plan]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:00:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T06:56:31Z }
 ---
 
 # Field Guides plan
@@ -12,13 +12,14 @@ generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:00:54Z }
 Rules: [user decisions](/decisions/field-guides-user-decisions.md), [architecture](/decisions/field-guides-architecture.md), process: [agentic delivery](/runbooks/agentic-delivery.md).
 Per-guide specs (book-derived, gitignored): `.local/field-guides/specs/NN-slug.md`; map, glossary, crop table, component list: `00-map.md`.
 
-## Guides (29)
+## Guides (41)
 Seeds & landraces: 01 landrace-gardening (hub), 02 hybrids-heirlooms-landraces, 03 will-they-cross, 04 hand-crosses, 05 choosing-seed-parents, 06 keeping-a-landrace, 07 saving-seed, 08 storing-seed.
 Crops: 09 squash-melons-cucumbers, 10 corn, 11 beans-and-legumes, 12 tomatoes, 13 small-grains, 14 true-seed-potato-garlic-sunroot.
 Seasons: 15 season-shifting, 16 food-all-year. Pests & resilience: 17 pests-without-sprays.
 Trees & perennials: 18 trees-with-edible-leaves (source: *Trees with Edible Leaves*, Toensmeier with Klopf, 2022).
 Harvest to kitchen: 19 nixtamalization, 20 cooking-dry-beans (reopened 2026-10-26 under the warn-don't-remove rule; no figures).
 Soil (source: *Teaming with Microbes*, Lowenfels & Lewis, revised edition 2010): 21 living-soil (hub), 22 reading-your-soil, 23 fungal-or-bacterial, 24 compost-for-soil-life, 25 mulch, 26 compost-tea, 27 mycorrhizal-fungi, 28 no-dig-beds; Seasons: 29 soil-care-year.
+Trees & perennials, carbon farming (source: *The Carbon Farming Solution*, Toensmeier 2016; step 6, in progress): 30 carbon-farming (hub), 31 perennial-staples, 32 nut-staples, 33 perennial-beans-and-pods, 34 starch-from-trees, 35 food-forest, 36 trees-in-the-field, 37 windbreaks-and-living-fences, 38 trees-for-livestock, 39 water-and-slopes, 40 coppice-and-bamboo, 41 fibre-dye-and-soap.
 
 ## Step 1 — Foundation + hub (one stream, `foundation`)
 Owns: `package.json`, `package-lock.json`, `astro.config.mjs`, `src/content.config.ts`, `src/layouts|components/Base.astro`, `Header.astro`, `Footer.astro`, `src/components/guides/**`, `src/lib/svg.ts`, `src/data/crops.ts`, `src/data/glossary.ts`, `src/data/bibliography.md|.ts`, `src/components/Bibliography.astro`, `src/i18n/guides/*`, `src/i18n/translations/*.json` (nav + backlink keys only), `src/pages/guides/**`, `src/pages/[lang]/guides/**`, `src/styles/guides.css`, `src/styles/tokens.css`, `scripts/guides.test.mjs`, `scripts/homepage.test.mjs`, `scripts/check-built-site.mjs`, `src/content/guides/landrace-gardening/**`.
@@ -46,6 +47,13 @@ Guide map and owner decisions: `.local/field-guides/teaming-with-microbes/00-map
 - Shared files first on `guides/integration`: the `soil` domain and its hero motif with `--soil-*` tokens, 33 glossary terms, the `teaming-with-microbes` bibliography id, the `compost-tea` food caution.
 - Streams: soil-hub (21, 23), soil-compost (24, 25), soil-tea (26, 27), soil-read (22, 28, 29); at most three building at once.
 - Then as step 3: hand-offs, browser check at 390/1280 light/dark, pre-push review, push on the owner's go.
+
+## Step 6 — Carbon farming (in progress)
+Guide map and owner decisions: `.local/field-guides/carbon-farming/00-map.md` and the 2026-10-27 rows of the [user decisions](/decisions/field-guides-user-decisions.md); chapter notes in `carbon-farming/notes/`. First real use of `<ForClimate>`.
+- Next: hub mockup for owner approval, then the spec brief and specs 30–41.
+- Shared files first on `guides/integration`: the `carbon-farming-solution` bibliography id, glossary terms, the `needs-processing`, `akee` and `cashew` food cautions, the `<Invasive>` note.
+- Streams: cf-hub (30, 31), cf-food (32–34), cf-systems (35, 36, 39), cf-boundaries (37, 38, 40, 41); at most three building at once.
+- Then as step 5: hand-offs, browser check at 390/1280 light/dark with a climate chosen and with none, pre-push review, push on the owner's go.
 
 ## Tracker
 bd epic "Field Guides", one item per step and per stream, labels `guides-step-<n>`.

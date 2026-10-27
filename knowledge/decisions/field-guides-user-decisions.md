@@ -4,7 +4,7 @@ title: Field Guides — user decisions
 description: Dated decisions the project owner made about the Field Guides section; they change only when the owner changes them.
 status: stable
 tags: [field-guides, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T22:46:45Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T06:56:31Z }
 ---
 
 # Field Guides — user decisions
@@ -36,6 +36,11 @@ any of them; a change is a question to the owner.
 | 2026-10-26 | **Compost temperatures are published** as the authors' figures for managing a hot pile and killing weed seeds, beside a warning that a home pile heats unevenly so compost is never treated as germ-free (why pet and human faeces stay out and the authors avoid manure), and that a hot pile's centre can scald. Compost is not eaten, so the no-figures rule does not apply. |
 | 2026-10-26 | **Soil hero motif:** rounded soil crumbs in ochre and brown, threaded with fine cream fungal threads, with one small earthworm. No green. |
 | 2026-10-26 | The soil motif's fungal threads are **tan in light mode** (cream is lost on the parchment background) and pale cream in dark mode. |
+| 2026-10-27 | *The Carbon Farming Solution* (Toensmeier, Chelsea Green 2016) gets **twelve Field Guides, 30–41**, all in **Trees & perennials** (no new section or motif); the carbon-farming hub is that section's hub. Guide map: `.local/field-guides/carbon-farming/00-map.md`. |
+| 2026-10-27 | **Book climates to site zones** for this book: tropical → tropical; highland tropical → subtropical (the block says "for the tropical highlands"); subtropical → subtropical; warm temperate → temperate only; mediterranean → mediterranean; cold temperate → continental; boreal → boreal; arid → arid; semi-arid → the temperature category decides, with `arid` added only where the book calls the crop a dryland or drought crop. |
+| 2026-10-27 | **New food cautions:** one generic `needs-processing` (staples poisonous raw or unripe) plus `akee` and `cashew`; existing risk ids reused where they fit. |
+| 2026-10-27 | **Invasive species get a fixed-text `<Invasive>` note** (one wording per language) beside every species the source flags as invasive or spreading; guides never echo an author's case for planting invasives outside their range. |
+| 2026-10-27 | **Carbon rates and yields:** the book's ratings in words plus at most a few figures per guide, each attributed to the author and never a promise; no tables, and no figure the book contradicts itself on. |
 
 ## Where the source notes live
 
