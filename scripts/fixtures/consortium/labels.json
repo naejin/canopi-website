@@ -1,0 +1,70 @@
+{
+  "moisture_use": {
+    "High": {
+      "fr": "Élevée"
+    },
+    "Medium": {
+      "fr": "Moyenne"
+    }
+  },
+  "drought_tolerance": {
+    "High": {
+      "fr": "Élevée"
+    },
+    "Medium": {
+      "fr": "Moyenne"
+    },
+    "Low": {
+      "fr": "Faible"
+    }
+  },
+  "deciduous_evergreen": {
+    "Deciduous": {
+      "fr": "Caduc",
+      "de": "Laubabwerfend"
+    },
+    "Evergreen": {
+      "fr": "Persistant",
+      "de": "Immergrün"
+    }
+  },
+  "habit": {
+    "Tree": {
+      "fr": "Arbre"
+    },
+    "Shrub": {
+      "fr": "Arbuste"
+    },
+    "Herbaceous": {
+      "fr": "Herbacée"
+    },
+    "Climber": {
+      "fr": "Grimpante"
+    }
+  },
+  "lifespan": {
+    "Long": {
+      "fr": "Longue"
+    },
+    "Medium": {
+      "fr": "Moyenne"
+    },
+    "Short": {
+      "fr": "Courte"
+    }
+  },
+  "toxicity.level": {
+    "None": {
+      "fr": "Aucune"
+    },
+    "Slight": {
+      "fr": "Légère"
+    },
+    "Moderate": {
+      "fr": "Modérée"
+    },
+    "Severe": {
+      "fr": "Grave"
+    }
+  }
+}

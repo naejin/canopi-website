@@ -5,15 +5,15 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:22:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T17:09:59Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:22:00Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T17:09:59Z }
 sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:775c3a74c3f7624e
-    last_modified: 2026-10-27T09:21:52Z
+    digest: sha256:226fa0eb385ec464
+    last_modified: 2026-10-27T17:09:58Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -35,6 +35,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 | [check-bibliography-links.mjs](../../scripts/check-bibliography-links.mjs) | visits every bibliography link (network) | `npm run check:bibliography` |
 | `*.test.mjs` | contact, featured-designs privacy, homepage/i18n (header keys, width queries only 639/640/959/960 plus the 1200px hero-image query, no header item hidden by width except the inline/Menu swap, the menus chrome.js closes), installer, nearest, guides (content rules, related lists, glossary, crop table, safety wording and mouth words only inside `<Safety>` boxes, checklist and glossary plugins, shared `wrap()`, mix bar, breakpoints, colours and fonts), built-links, package (declared static and dynamic imports, Node floor, the type check's tsconfig excludes and `check` script) | `npm test` |
 | [built-links.mjs](../../scripts/built-links.mjs) | `builtTarget(root, pathname)`: resolves an internal link to a built file; a path without trailing slash or extension is an error. `subdirectories(dir)`: folder names only (the guide slugs; a stray `.DS_Store` is not a guide) | `check-built-site.mjs` |
+| [fixtures/consortium/make_fixture.py](../../scripts/fixtures/consortium/make_fixture.py) | writes the invented consortium fixture (format 2, three cells, real `country_regions`) for building the tool before real data; never shipped | by hand, see its README |
 | [export-featured-designs.py](../../scripts/export-featured-designs.py) | `.canopi` files to privacy-safe `public/data/featured-designs.json` | by hand |
 | [compress-heroes.py](../../scripts/compress-heroes.py), [make-og-images.py](../../scripts/make-og-images.py) | hero JPGs (2400 and 1200 px), 1200x630 social images | by hand (Pillow) |
 
