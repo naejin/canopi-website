@@ -1,6 +1,10 @@
-// The tool's state in a share link: ?v=2&c=tropical&r=southern_america&k=BR&l=sun&s=acid&w=dry&m=large&p=…&x=…
-//   v format version, c climate (site id, lowercase), r region, k country (ISO alpha-2),
-//   l light, s soil, w water, m room, p kept taxon ids, x removed taxon ids.
+// The tool's state in a share link: ?v=2&c=tropical&r=southern_america&k=BR&l=sun&s=acid&w=dry&m=large&p=…&x=…&a=…
+//   v format version, c climate (site id, lowercase), r the user's region, b the region of the cell
+//   shown when it is another one (the user opted into a borrowed cell), k country (ISO alpha-2),
+//   l light, s soil, w water, m room, p kept taxon ids, x removed taxon ids, a the members in order.
+// Without `a` (links written before it), the page suggests around the kept plants; with it, the
+// page shows those members as they were (evaluate(), never refilled). Without `b`, the cell shown is
+// the user's region's. Old links decode the same, so `v` stays 2.
 // Site keys are always written, so a link means the same thing if the defaults change. Decoding
 // never throws: an unknown or malformed value is left out and listed in `dropped`, so the page can
 // say what an old link lost.
@@ -19,11 +23,13 @@ import { isRegion, isSiteClimate } from './cells.ts';
 
 export interface ConsortiumState {
   climate: SiteClimate | null;
-  region: Region | null;
+  region: Region | null; // the user's region
+  cellRegion?: Region | null; // the region of the cell shown, when it is not `region`; decodeState always sets it
   country: string | null;
   site: Site;
   kept: string[]; // taxon ids; before resolveIds(), the prefixes read from the link
   removed: string[];
+  members?: string[] | null; // every member in order; null when the link has none (suggest); decodeState always sets it
 }
 
 export interface Dropped { key: string; value: string; reason: 'unknown' | 'malformed' | 'ambiguous' | 'duplicate' }
@@ -54,10 +60,13 @@ export function encodeState(state: ConsortiumState, cell?: Cell | null): URLSear
   q.set('s', state.site.soil);
   q.set('w', state.site.water);
   q.set('m', state.site.room);
+  if (state.cellRegion && state.cellRegion !== state.region) q.set('b', state.cellRegion);
   const kept = new Set(state.kept);
   if (kept.size) q.set('p', ids([...kept]));
   const removed = state.removed.filter((id) => !kept.has(id));
   if (removed.length) q.set('x', ids(removed));
+  // Members keep their order (it is the order the page lists them in).
+  if (state.members?.length) q.set('a', [...new Set(state.members.map((id) => shortId(id, cell)))].join(ID_SEPARATOR));
   return q;
 }
 
@@ -100,6 +109,8 @@ export function decodeState(params: URLSearchParams | string, cell?: Cell | null
 
   const climate = pick('c', isSiteClimate, (v) => v.toLowerCase());
   const region = pick('r', isRegion, (v) => v.toLowerCase());
+  const borrowed = pick('b', isRegion, (v) => v.toLowerCase());
+  const cellRegion = borrowed !== region ? borrowed : null;
   const country = pick('k', (v: string): v is string => COUNTRY.test(v), (v) => v.toUpperCase());
   const site: Site = {
     light: pick('l', oneOf(lights)) ?? DEFAULT_SITE.light,
@@ -120,15 +131,21 @@ export function decodeState(params: URLSearchParams | string, cell?: Cell | null
     return out;
   };
   let kept = tokens('p'), removed = tokens('x');
+  let members: string[] | null = q.has('a') ? tokens('a') : null;
   if (cell) {
     const k = resolveIds(kept, cell, 'p'), x = resolveIds(removed, cell, 'x');
     kept = k.ids;
     removed = x.ids;
     dropped.push(...k.dropped, ...x.dropped);
+    if (members) {
+      const a = resolveIds(members, cell, 'a');
+      members = a.ids;
+      dropped.push(...a.dropped);
+    }
   }
   // A plant both kept and removed stays kept.
   for (const id of removed.filter((id) => kept.includes(id))) dropped.push({ key: 'x', value: id, reason: 'duplicate' });
   removed = removed.filter((id) => !kept.includes(id));
 
-  return { state: { climate, region, country, site, kept, removed }, dropped };
+  return { state: { climate, region, cellRegion, country, site, kept, removed, members }, dropped };
 }

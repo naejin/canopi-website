@@ -480,9 +480,38 @@ test('state: encode then decode with the cell restores the exact state', () => {
   assert.doesNotMatch(q.toString(), /%/, 'nothing escaped');
   const { state: back, dropped } = decodeState(q.toString(), tropical);
   assert.deepEqual(dropped, []);
-  assert.deepEqual({ ...back, kept: [...back.kept].sort() }, { ...state, kept: [...state.kept].sort() });
+  assert.deepEqual({ ...back, kept: [...back.kept].sort() }, { ...state, cellRegion: null, members: null, kept: [...state.kept].sort() });
   const empty = decodeState('');
-  assert.deepEqual(empty, { state: { climate: null, region: null, country: null, site: DEFAULT_SITE, kept: [], removed: [] }, dropped: [] });
+  assert.deepEqual(empty, { state: { climate: null, region: null, cellRegion: null, country: null, site: DEFAULT_SITE, kept: [], removed: [], members: null }, dropped: [] });
+});
+
+test('state: a link from another region keeps both regions, the user region and the region of the cell shown', () => {
+  const olive = mediterranean.taxa[0].id;
+  const state = { ...sampleState(), climate: 'mediterranean', region: 'southern_america', cellRegion: 'europe', country: null, kept: [olive], removed: [] };
+  const q = encodeState(state, mediterranean);
+  assert.equal(q.get('r'), 'southern_america');
+  assert.equal(q.get('b'), 'europe');
+  const { state: back, dropped } = decodeState(q.toString(), mediterranean);
+  assert.deepEqual(dropped, []);
+  assert.equal(back.region, 'southern_america');
+  assert.equal(back.cellRegion, 'europe');
+  assert.deepEqual(back.kept, [olive]);
+  assert.equal(encodeState({ ...state, cellRegion: 'southern_america' }).get('b'), null, 'written only when it differs');
+  assert.equal(decodeState('r=europe&b=europe').state.cellRegion, null);
+  assert.equal(decodeState('r=europe').state.cellRegion, null, 'an old link has none');
+  assert.deepEqual(decodeState('b=mars').dropped, [{ key: 'b', value: 'mars', reason: 'unknown' }]);
+});
+
+test('state: a link carries the members in order, so the page restores them without refilling', () => {
+  const ids = [named('Musa acuminata').id, named('Inga edulis').id, named('Arachis pintoi').id];
+  const state = { ...sampleState(), kept: [ids[1]], removed: [named('Leucaena leucocephala').id], members: ids };
+  const q = encodeState(state, tropical);
+  assert.equal(q.get('a'), ids.map((id) => id.slice(0, 8)).join('.'), 'in member order');
+  const { state: back, dropped } = decodeState(q, tropical);
+  assert.deepEqual(dropped, []);
+  assert.deepEqual(back.members, ids);
+  assert.deepEqual(evaluate(tropical, back.members, { site: back.site, kept: back.kept }).members.map((m) => m.taxon.id), ids);
+  assert.equal(decodeState(encodeState(sampleState(), tropical), tropical).state.members, null, 'an old link has none: the page suggests');
 });
 
 test('state: without the cell, decode keeps the prefixes for resolveIds()', () => {
@@ -497,7 +526,7 @@ test('state: without the cell, decode keeps the prefixes for resolveIds()', () =
 
 test('state: unknown and malformed values are dropped and reported, never thrown', () => {
   const { state, dropped } = decodeState('v=9&c=polar&r=mars&k=France&l=dim&s=clay&w=soggy&m=huge&p=xyz.deadbeef.d9242605&x=1234', tropical);
-  assert.deepEqual(state, { climate: null, region: null, country: null, site: DEFAULT_SITE, kept: [named('Arachis pintoi').id], removed: [] });
+  assert.deepEqual(state, { climate: null, region: null, cellRegion: null, country: null, site: DEFAULT_SITE, kept: [named('Arachis pintoi').id], removed: [], members: null });
   assert.deepEqual(dropped.map((d) => `${d.key}=${d.value}:${d.reason}`).sort(), [
     'c=polar:unknown', 'k=France:unknown', 'l=dim:unknown', 'm=huge:unknown', 'p=deadbeef:unknown', 'p=xyz:malformed',
     'r=mars:unknown', 's=clay:unknown', 'v=9:unknown', 'w=soggy:unknown', 'x=1234:malformed',
