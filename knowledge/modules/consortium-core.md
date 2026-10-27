@@ -4,7 +4,7 @@ title: Consortium core
 description: Format 2 types and the pure, dependency-free functions of the consortium tool (cell lookup, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T20:19:32Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T20:32:25Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:32:12Z }
 sources:
@@ -36,13 +36,13 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:dc4bfcf1a3f30c73
-    last_modified: 2026-10-27T20:01:09Z
+    digest: sha256:2e9329be47a803b4
+    last_modified: 2026-10-27T20:32:03Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
     digest: sha256:66b96c96bd407a96
-    last_modified: 2026-10-27T20:18:30Z
+    last_modified: 2026-10-27T20:19:33Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -51,8 +51,8 @@ sources:
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
-    digest: sha256:dba02a05b96b41e1
-    last_modified: 2026-10-27T20:18:30Z
+    digest: sha256:bf2ee7d81b6198d2
+    last_modified: 2026-10-27T20:23:45Z
 enforced_by:
   - scripts/consortium.test.mjs
   - scripts/install-consortium.test.mjs
@@ -87,7 +87,7 @@ export under `public/data/consortium/`.
 - **Evaluate.** `evaluate()` scores a fixed list (the page's state after a Remove, whose gap stays, or a restored link): members in the order given, repeats and ids not in the cell ignored, the same flags as `suggest()` (one shared code path), a gain of what each adds to those before it (null when kept), and the gaps. The ids of a suggestion give that suggestion back.
 - **Suggest.** Kept plants come first and always stay, flagged or not (kept wins over removed; ids not in the cell are ignored). Automatic picks skip misfits, plants invasive in the user's country (`invasive_in: null` is not a reason), medium/high conflicts with a member, and removed ids. Every member carries `flags` (`misfits`, `unknowns`, `invasive`, `conflicts`, `flagged`).
 - **Conflicts.** Rows match at species (canonical name), genus or family, in either member order; a same-genus row pairs two members once. `allelopathy_tolerant` rows are not conflicts.
-- **Alternatives.** Same stratum, then most shared jobs, then gain against the rest, then name. Flagged plants are listed with flags; members and removed plants are not.
+- **Alternatives.** Plants without a flag first, flagged ones (misfit, invasive here, medium/high conflict) last so the page can list them under a warning; within each, same stratum, then most shared jobs, then gain against the rest, then better known, then name. Members and removed plants are not listed.
 - **Share links.** Keys `v c r b k l s w m p x a`; site keys always written. `r` is the user's region, `b` the region of the cell shown when the user opted into another region's cell (written only when it differs), `a` the members in order (absent: the page suggests; present: it calls `evaluate()`). Old links without `b` or `a` decode as before, so `v` stays 2. Ids are shortened to the first 8 hex characters, lengthened at UUID segment boundaries (13, 18, 23, 36) when another taxon of the cell shares the prefix, joined with `.`; at most `MAX_LINK_IDS` tokens are read per key, the rest reported once as `excess` with their count. Decoding never throws; unknown, malformed, ambiguous, duplicate and excess values go to `dropped`.
 - **Resolution.** The page decodes without the cell (`c`, `r` and `b` choose it), then calls `resolveState(decoded, cell)`: prefixes become full ids, and the list rules are applied again on full ids (kept wins over removed; a member is never removed; with `a`, every kept plant is a member). `decodeState(params, cell)` does the same in one call.
 - **Guide preset.** `?plant=<canonical_name>&climate=<id>`: `climate` is read when `c` is absent (`c` wins, `climate` dropped as a duplicate); `plant` waits in `state.plants` until `resolveState()`, which keeps it when the cell has that canonical name (exact, else case and spacing aside) and drops it as `unknown` otherwise. `encodeState` writes only the short keys.

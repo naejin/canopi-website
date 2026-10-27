@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T20:11:03Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T20:32:25Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -98,7 +98,7 @@ Types mirror format 2. Pure functions, unit-tested with `node --test`:
   always members.
 - `evaluate(cell, ids, options)`: the same members, flags and gaps for a fixed
   list, never refilled (Remove leaves its gap; a link restores its members).
-- `alternatives(member, …)`: same stratum first, then shared jobs, then gain;
+- `alternatives(member, …)`: unflagged before flagged, then same stratum, shared jobs, gain;
   flagged ones included and marked.
 - `encodeState`/`decodeState`/`resolveState`: URL query (`c`, `r` the user's
   region, `b` the borrowed cell's region, `k` country, site keys,

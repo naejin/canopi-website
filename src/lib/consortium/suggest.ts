@@ -232,9 +232,10 @@ export function evaluate(cell: Cell, ids: string[], options: EvaluateOptions): S
 
 export interface AlternativeOptions { site: Site; removed?: string[]; country?: string | null }
 
-// Plants that could take a member's place: same stratum first, then the most jobs shared with the
-// member, then the highest gain to the rest of the consortium, then by name. Flagged plants are
-// listed too, with their flags; current members and removed plants are not.
+// Plants that could take a member's place: plants without a flag before flagged ones (a misfit,
+// invasive here, a serious conflict), then same stratum, then the most jobs shared with the member,
+// then the highest gain to the rest of the consortium, then by name. Flagged plants are listed, with
+// their flags, so the page can show them under a warning; current members and removed plants are not.
 export function alternatives(memberId: string, consortium: string[], cell: Cell, options: AlternativeOptions): Alternative[] {
   const member = cell.taxa.find((t) => t.id === memberId);
   if (!member) return [];
@@ -259,5 +260,5 @@ export function alternatives(memberId: string, consortium: string[], cell: Cell,
       };
     });
   return out.sort((x, y) =>
-    Number(y.sameStratum) - Number(x.sameStratum) || y.sharedJobs.length - x.sharedJobs.length || y.gain - x.gain || byKnownThenName(x.taxon, y.taxon));
+    Number(x.flags.flagged) - Number(y.flags.flagged) || Number(y.sameStratum) - Number(x.sameStratum) || y.sharedJobs.length - x.sharedJobs.length || y.gain - x.gain || byKnownThenName(x.taxon, y.taxon));
 }

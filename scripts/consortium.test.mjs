@@ -428,7 +428,7 @@ test('evaluate flags misfits, invasives and conflicts in a fixed list, and ignor
 
 // alternatives
 
-test('alternatives: same stratum first, then shared jobs, then gain, then name; members and removed left out', () => {
+test('alternatives: unflagged first, then same stratum, shared jobs, gain, name; members and removed left out', () => {
   const member = make({ canonical_name: 'M member', ...layer('high'), functions: fn('mulch', 'windbreak') });
   const other = make({ canonical_name: 'O other', role: 'crop', ...layer('low') });
   const sameTwoJobs = make({ canonical_name: 'Z same two', ...layer('high'), functions: fn('mulch', 'windbreak') });
@@ -440,12 +440,12 @@ test('alternatives: same stratum first, then shared jobs, then gain, then name; 
   const flagged = make({ canonical_name: 'F flagged', ...layer('high'), traits: { sun: false } });
   const cell = cellOf([member, other, sameTwoJobs, sameOneJob, sameOneJobLess, sameOneJobTie, elsewhere, removed, flagged]);
   const alts = alternatives(member.id, [member.id, other.id], cell, { site: open, removed: [removed.id] });
-  assert.deepEqual(alts.map((a) => a.taxon.canonical_name), ['Z same two', 'A same one', 'B same one less', 'C same one less', 'F flagged', 'D elsewhere']);
-  assert.deepEqual(alts.map((a) => a.sameStratum), [true, true, true, true, true, false]);
+  assert.deepEqual(alts.map((a) => a.taxon.canonical_name), ['Z same two', 'A same one', 'B same one less', 'C same one less', 'D elsewhere', 'F flagged']);
+  assert.deepEqual(alts.map((a) => a.sameStratum), [true, true, true, true, false, true]);
   assert.deepEqual(alts[0].sharedJobs, ['mulch', 'shelter']);
   assert.ok(alts[1].gain > alts[2].gain);
-  assert.deepEqual(alts[4].flags.misfits, ['light']);
-  assert.equal(alts[4].flags.flagged, true);
+  assert.deepEqual(alts[5].flags.misfits, ['light']);
+  assert.equal(alts[5].flags.flagged, true);
   assert.deepEqual(alternatives('ffffffff-0000-4000-8000-000000000000', [], cell, { site: open }), []);
 });
 
@@ -458,8 +458,12 @@ test('alternatives on the fixture: flagged plants are listed with their warnings
   const tithonia = alts.find((a) => a.taxon.canonical_name === 'Tithonia diversifolia');
   assert.equal(tithonia.flags.conflicts[0].b.canonical_name, 'Ipomoea batatas');
   assert.ok(!alts.some((a) => a.taxon.id === inga.id || a.taxon.id === potato.id));
-  const firstOther = alts.findIndex((a) => !a.sameStratum);
-  assert.ok(firstOther > 0 && alts.slice(firstOther).every((a) => !a.sameStratum), 'same stratum first');
+  const firstFlagged = alts.findIndex((a) => a.flags.flagged);
+  assert.ok(firstFlagged > 0 && alts.slice(firstFlagged).every((a) => a.flags.flagged), 'flagged plants come last, after every plant without a warning');
+  for (const group of [alts.slice(0, firstFlagged), alts.slice(firstFlagged)]) {
+    const firstOther = group.findIndex((a) => !a.sameStratum);
+    assert.ok(firstOther > 0 && group.slice(firstOther).every((a) => !a.sameStratum), 'same stratum first, within each group');
+  }
 });
 
 // state
