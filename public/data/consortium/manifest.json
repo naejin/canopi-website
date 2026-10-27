@@ -1,0 +1,788 @@
+{
+  "format_version": 2,
+  "generated_at": "2026-10-27T19:23:08Z",
+  "canopi_db_sha256": "49a54334d5d629d22f04171421f64939162d1c0913ae5a304a4440ac3a1f5537",
+  "cells": [
+    {
+      "climate_zone": "Tropical",
+      "region": "southern_america",
+      "file": "tropical-southern-america.json",
+      "taxa": 200,
+      "interactions": 25,
+      "sha256": "8b4719074a6c3ec78644da604a797200f55c5e53c3b97aa664811afaa9dc15d4"
+    },
+    {
+      "climate_zone": "Mediterranean",
+      "region": "europe",
+      "file": "mediterranean-europe.json",
+      "taxa": 200,
+      "interactions": 55,
+      "sha256": "d0179081035960cda6eb2bb0fd7b4a67c321692b59868cdac9a062c1c151452e"
+    },
+    {
+      "climate_zone": "Temperate",
+      "region": "europe",
+      "file": "temperate-europe.json",
+      "taxa": 200,
+      "interactions": 54,
+      "sha256": "8b7887552b206dcb63e6d5f5aa0af934a5775d8f02f7e375b9c5b3168985fd8b"
+    }
+  ],
+  "locales": [
+    "en",
+    "fr",
+    "es",
+    "pt",
+    "it",
+    "zh",
+    "de",
+    "ja",
+    "ko",
+    "nl",
+    "ru"
+  ],
+  "country_regions": {
+    "AD": [
+      "europe"
+    ],
+    "AE": [
+      "asia_temperate"
+    ],
+    "AF": [
+      "asia_temperate"
+    ],
+    "AG": [
+      "southern_america"
+    ],
+    "AI": [
+      "southern_america"
+    ],
+    "AL": [
+      "europe"
+    ],
+    "AM": [
+      "asia_temperate"
+    ],
+    "AO": [
+      "africa"
+    ],
+    "AR": [
+      "southern_america"
+    ],
+    "AS": [
+      "pacific"
+    ],
+    "AT": [
+      "europe"
+    ],
+    "AU": [
+      "australasia"
+    ],
+    "AW": [
+      "southern_america"
+    ],
+    "AX": [
+      "europe"
+    ],
+    "AZ": [
+      "asia_temperate"
+    ],
+    "BA": [
+      "europe"
+    ],
+    "BB": [
+      "southern_america"
+    ],
+    "BD": [
+      "asia_tropical"
+    ],
+    "BE": [
+      "europe"
+    ],
+    "BF": [
+      "africa"
+    ],
+    "BG": [
+      "europe"
+    ],
+    "BH": [
+      "asia_temperate"
+    ],
+    "BI": [
+      "africa"
+    ],
+    "BJ": [
+      "africa"
+    ],
+    "BL": [
+      "southern_america"
+    ],
+    "BM": [
+      "southern_america"
+    ],
+    "BN": [
+      "asia_tropical"
+    ],
+    "BO": [
+      "southern_america"
+    ],
+    "BQ": [
+      "southern_america"
+    ],
+    "BR": [
+      "southern_america"
+    ],
+    "BS": [
+      "southern_america"
+    ],
+    "BT": [
+      "asia_tropical"
+    ],
+    "BW": [
+      "africa"
+    ],
+    "BY": [
+      "europe"
+    ],
+    "BZ": [
+      "southern_america"
+    ],
+    "CA": [
+      "northern_america"
+    ],
+    "CC": [
+      "asia_tropical"
+    ],
+    "CD": [
+      "africa"
+    ],
+    "CF": [
+      "africa"
+    ],
+    "CG": [
+      "africa"
+    ],
+    "CH": [
+      "europe"
+    ],
+    "CI": [
+      "africa"
+    ],
+    "CK": [
+      "pacific"
+    ],
+    "CL": [
+      "southern_america",
+      "pacific"
+    ],
+    "CM": [
+      "africa"
+    ],
+    "CN": [
+      "asia_temperate"
+    ],
+    "CO": [
+      "southern_america"
+    ],
+    "CR": [
+      "southern_america"
+    ],
+    "CU": [
+      "southern_america"
+    ],
+    "CV": [
+      "africa"
+    ],
+    "CW": [
+      "southern_america"
+    ],
+    "CX": [
+      "asia_tropical"
+    ],
+    "CY": [
+      "asia_temperate"
+    ],
+    "CZ": [
+      "europe"
+    ],
+    "DE": [
+      "europe"
+    ],
+    "DJ": [
+      "africa"
+    ],
+    "DK": [
+      "europe"
+    ],
+    "DM": [
+      "southern_america"
+    ],
+    "DO": [
+      "southern_america"
+    ],
+    "DZ": [
+      "africa"
+    ],
+    "EC": [
+      "southern_america"
+    ],
+    "EE": [
+      "europe"
+    ],
+    "EG": [
+      "africa",
+      "asia_temperate"
+    ],
+    "EH": [
+      "africa"
+    ],
+    "ER": [
+      "africa"
+    ],
+    "ES": [
+      "europe",
+      "africa"
+    ],
+    "ET": [
+      "africa"
+    ],
+    "FI": [
+      "europe"
+    ],
+    "FJ": [
+      "pacific"
+    ],
+    "FM": [
+      "pacific"
+    ],
+    "FO": [
+      "europe"
+    ],
+    "FR": [
+      "europe"
+    ],
+    "GA": [
+      "africa"
+    ],
+    "GB": [
+      "europe"
+    ],
+    "GD": [
+      "southern_america"
+    ],
+    "GE": [
+      "asia_temperate"
+    ],
+    "GF": [
+      "southern_america"
+    ],
+    "GG": [
+      "europe"
+    ],
+    "GH": [
+      "africa"
+    ],
+    "GI": [
+      "europe"
+    ],
+    "GL": [
+      "northern_america"
+    ],
+    "GM": [
+      "africa"
+    ],
+    "GN": [
+      "africa"
+    ],
+    "GP": [
+      "southern_america"
+    ],
+    "GQ": [
+      "africa"
+    ],
+    "GR": [
+      "europe",
+      "asia_temperate"
+    ],
+    "GT": [
+      "southern_america"
+    ],
+    "GU": [
+      "pacific"
+    ],
+    "GW": [
+      "africa"
+    ],
+    "GY": [
+      "southern_america"
+    ],
+    "HK": [
+      "asia_temperate"
+    ],
+    "HN": [
+      "southern_america"
+    ],
+    "HR": [
+      "europe"
+    ],
+    "HT": [
+      "southern_america"
+    ],
+    "HU": [
+      "europe"
+    ],
+    "ID": [
+      "asia_tropical"
+    ],
+    "IE": [
+      "europe"
+    ],
+    "IL": [
+      "asia_temperate"
+    ],
+    "IM": [
+      "europe"
+    ],
+    "IN": [
+      "asia_tropical"
+    ],
+    "IO": [
+      "africa"
+    ],
+    "IQ": [
+      "asia_temperate"
+    ],
+    "IR": [
+      "asia_temperate"
+    ],
+    "IS": [
+      "europe"
+    ],
+    "IT": [
+      "europe"
+    ],
+    "JE": [
+      "europe"
+    ],
+    "JM": [
+      "southern_america"
+    ],
+    "JO": [
+      "asia_temperate"
+    ],
+    "JP": [
+      "asia_temperate"
+    ],
+    "KE": [
+      "africa"
+    ],
+    "KG": [
+      "asia_temperate"
+    ],
+    "KH": [
+      "asia_tropical"
+    ],
+    "KI": [
+      "pacific"
+    ],
+    "KM": [
+      "africa"
+    ],
+    "KN": [
+      "southern_america"
+    ],
+    "KP": [
+      "asia_temperate"
+    ],
+    "KR": [
+      "asia_temperate"
+    ],
+    "KW": [
+      "asia_temperate"
+    ],
+    "KY": [
+      "southern_america"
+    ],
+    "KZ": [
+      "asia_temperate"
+    ],
+    "LA": [
+      "asia_tropical"
+    ],
+    "LB": [
+      "asia_temperate"
+    ],
+    "LC": [
+      "southern_america"
+    ],
+    "LI": [
+      "europe"
+    ],
+    "LK": [
+      "asia_tropical"
+    ],
+    "LR": [
+      "africa"
+    ],
+    "LS": [
+      "africa"
+    ],
+    "LT": [
+      "europe"
+    ],
+    "LU": [
+      "europe"
+    ],
+    "LV": [
+      "europe"
+    ],
+    "LY": [
+      "africa"
+    ],
+    "MA": [
+      "africa"
+    ],
+    "MC": [
+      "europe"
+    ],
+    "MD": [
+      "europe"
+    ],
+    "ME": [
+      "europe"
+    ],
+    "MF": [
+      "southern_america"
+    ],
+    "MG": [
+      "africa"
+    ],
+    "MH": [
+      "pacific"
+    ],
+    "MK": [
+      "europe"
+    ],
+    "ML": [
+      "africa"
+    ],
+    "MM": [
+      "asia_tropical"
+    ],
+    "MN": [
+      "asia_temperate"
+    ],
+    "MO": [
+      "asia_temperate"
+    ],
+    "MP": [
+      "pacific"
+    ],
+    "MQ": [
+      "southern_america"
+    ],
+    "MR": [
+      "africa"
+    ],
+    "MS": [
+      "southern_america"
+    ],
+    "MT": [
+      "europe"
+    ],
+    "MU": [
+      "africa"
+    ],
+    "MV": [
+      "asia_tropical"
+    ],
+    "MW": [
+      "africa"
+    ],
+    "MX": [
+      "northern_america"
+    ],
+    "MY": [
+      "asia_tropical"
+    ],
+    "MZ": [
+      "africa"
+    ],
+    "NA": [
+      "africa"
+    ],
+    "NC": [
+      "pacific"
+    ],
+    "NE": [
+      "africa"
+    ],
+    "NF": [
+      "australasia"
+    ],
+    "NG": [
+      "africa"
+    ],
+    "NI": [
+      "southern_america"
+    ],
+    "NL": [
+      "europe"
+    ],
+    "NO": [
+      "europe"
+    ],
+    "NP": [
+      "asia_tropical"
+    ],
+    "NR": [
+      "pacific"
+    ],
+    "NU": [
+      "pacific"
+    ],
+    "NZ": [
+      "australasia"
+    ],
+    "OM": [
+      "asia_temperate"
+    ],
+    "PA": [
+      "southern_america"
+    ],
+    "PE": [
+      "southern_america"
+    ],
+    "PF": [
+      "pacific"
+    ],
+    "PG": [
+      "asia_tropical"
+    ],
+    "PH": [
+      "asia_tropical"
+    ],
+    "PK": [
+      "asia_tropical"
+    ],
+    "PL": [
+      "europe"
+    ],
+    "PM": [
+      "northern_america"
+    ],
+    "PN": [
+      "pacific"
+    ],
+    "PR": [
+      "southern_america"
+    ],
+    "PS": [
+      "asia_temperate"
+    ],
+    "PT": [
+      "europe",
+      "africa"
+    ],
+    "PW": [
+      "pacific"
+    ],
+    "PY": [
+      "southern_america"
+    ],
+    "QA": [
+      "asia_temperate"
+    ],
+    "RE": [
+      "africa"
+    ],
+    "RO": [
+      "europe"
+    ],
+    "RS": [
+      "europe"
+    ],
+    "RU": [
+      "europe",
+      "asia_temperate"
+    ],
+    "RW": [
+      "africa"
+    ],
+    "SA": [
+      "asia_temperate"
+    ],
+    "SB": [
+      "asia_tropical",
+      "pacific"
+    ],
+    "SC": [
+      "africa"
+    ],
+    "SD": [
+      "africa"
+    ],
+    "SE": [
+      "europe"
+    ],
+    "SG": [
+      "asia_tropical"
+    ],
+    "SH": [
+      "africa"
+    ],
+    "SI": [
+      "europe"
+    ],
+    "SJ": [
+      "europe"
+    ],
+    "SK": [
+      "europe"
+    ],
+    "SL": [
+      "africa"
+    ],
+    "SM": [
+      "europe"
+    ],
+    "SN": [
+      "africa"
+    ],
+    "SO": [
+      "africa"
+    ],
+    "SR": [
+      "southern_america"
+    ],
+    "SS": [
+      "africa"
+    ],
+    "ST": [
+      "africa"
+    ],
+    "SV": [
+      "southern_america"
+    ],
+    "SX": [
+      "southern_america"
+    ],
+    "SY": [
+      "asia_temperate"
+    ],
+    "SZ": [
+      "africa"
+    ],
+    "TC": [
+      "southern_america"
+    ],
+    "TD": [
+      "africa"
+    ],
+    "TG": [
+      "africa"
+    ],
+    "TH": [
+      "asia_tropical"
+    ],
+    "TJ": [
+      "asia_temperate"
+    ],
+    "TK": [
+      "pacific"
+    ],
+    "TL": [
+      "asia_tropical"
+    ],
+    "TM": [
+      "asia_temperate"
+    ],
+    "TN": [
+      "africa"
+    ],
+    "TO": [
+      "pacific"
+    ],
+    "TR": [
+      "asia_temperate",
+      "europe"
+    ],
+    "TT": [
+      "southern_america"
+    ],
+    "TV": [
+      "pacific"
+    ],
+    "TW": [
+      "asia_temperate"
+    ],
+    "TZ": [
+      "africa"
+    ],
+    "UA": [
+      "europe"
+    ],
+    "UG": [
+      "africa"
+    ],
+    "UM": [
+      "pacific"
+    ],
+    "US": [
+      "northern_america",
+      "pacific"
+    ],
+    "UY": [
+      "southern_america"
+    ],
+    "UZ": [
+      "asia_temperate"
+    ],
+    "VA": [
+      "europe"
+    ],
+    "VC": [
+      "southern_america"
+    ],
+    "VE": [
+      "southern_america"
+    ],
+    "VG": [
+      "southern_america"
+    ],
+    "VI": [
+      "southern_america"
+    ],
+    "VN": [
+      "asia_tropical"
+    ],
+    "VU": [
+      "pacific"
+    ],
+    "WF": [
+      "pacific"
+    ],
+    "WS": [
+      "pacific"
+    ],
+    "XK": [
+      "europe"
+    ],
+    "YE": [
+      "asia_temperate",
+      "africa"
+    ],
+    "YT": [
+      "africa"
+    ],
+    "ZA": [
+      "africa"
+    ],
+    "ZM": [
+      "africa"
+    ],
+    "ZW": [
+      "africa"
+    ]
+  }
+}
