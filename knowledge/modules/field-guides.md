@@ -4,9 +4,9 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:20:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:35:35Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:21:00Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:35:34Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -17,12 +17,12 @@ sources:
     resource: ../../src/components/guides
     title: src/components/guides/
     digest: sha256:dc2ac211e152c3ac
-    last_modified: 2026-10-27T07:15:51Z
+    last_modified: 2026-10-27T07:21:18Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
     digest: sha256:edbfe9e059122bed
-    last_modified: 2026-10-27T07:15:51Z
+    last_modified: 2026-10-27T07:21:18Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -41,8 +41,8 @@ sources:
   - id: glossary-ts
     resource: ../../src/data/glossary.ts
     title: src/data/glossary.ts
-    digest: sha256:a21758463bf09626
-    last_modified: 2026-10-26T22:38:12Z
+    digest: sha256:22f74ff58adf03d7
+    last_modified: 2026-10-27T07:33:36Z
   - id: crops-ts
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts

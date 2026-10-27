@@ -34,8 +34,8 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
     fr: { term: 'Grex', definition: 'Un mélange de nombreuses variétés d’une même culture, semées ensemble exprès pour qu’elles se croisent.' },
   },
   'hybrid-swarm': {
-    en: { term: 'Hybrid swarm', definition: 'A population descended from crosses among very many varieties.' },
-    fr: { term: 'Essaim hybride', definition: 'Une population issue de croisements entre un très grand nombre de variétés.' },
+    en: { term: 'Hybrid swarm', definition: 'A population descended from crosses among very many varieties, and sometimes among related species.' },
+    fr: { term: 'Essaim hybride', definition: 'Une population issue de croisements entre un très grand nombre de variétés, et parfois entre espèces voisines.' },
   },
   'self-pollinating': {
     en: { term: 'Self-pollinating', definition: 'Said of flowers that usually fertilise themselves, so that crosses are rare.' },
@@ -214,8 +214,8 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
     fr: { term: 'Semence botanique', definition: 'La vraie graine, issue d’une fleur, par opposition au tubercule, au caïeu ou à la bulbille.' },
   },
   bulbil: {
-    en: { term: 'Bulbil', definition: 'A small bulb that forms in a flower head instead of seed, as in garlic.' },
-    fr: { term: 'Bulbille', definition: 'Un petit bulbe qui se forme dans l’inflorescence à la place des graines, comme chez l’ail.' },
+    en: { term: 'Bulbil', definition: 'A small bulb or tuber that forms above ground, in a flower head instead of seed (as in garlic) or along a stem (as in air potato).' },
+    fr: { term: 'Bulbille', definition: 'Un petit bulbe ou tubercule qui se forme hors du sol, dans l’inflorescence à la place des graines (comme chez l’ail) ou le long d’une tige (comme chez l’igname bulbifère).' },
   },
   'season-shifting': {
     en: { term: 'Season shifting', definition: 'Selecting a crop to be sown and grown in a season other than its usual one.' },
@@ -411,6 +411,171 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
   'dibber': {
     en: { term: 'Dibber', definition: 'A pointed hand tool for making a planting hole without turning the soil.' },
     fr: { term: 'Plantoir', definition: 'Un outil à main pointu qui ouvre un trou de plantation sans retourner la terre.' },
+  },
+  // Carbon farming (The Carbon Farming Solution guides); our own wording, not the book's.
+  'carbon-farming': {
+    en: { term: 'Carbon farming', definition: 'Growing food and other crops in ways that draw carbon out of the air and store it in plants and soil.' },
+    fr: { term: 'Agriculture du carbone', definition: 'Produire de la nourriture et d’autres récoltes de façon à retirer du carbone de l’air et à le stocker dans les plantes et le sol.' },
+  },
+  'carbon-sequestration': {
+    en: { term: 'Carbon sequestration', definition: 'Taking carbon out of the air and keeping it for a long time in plants, soil or lasting products such as timber.' },
+    fr: { term: 'Séquestration du carbone', definition: 'Le fait de retirer du carbone de l’air et de le garder longtemps dans les plantes, le sol ou des produits durables comme le bois d’œuvre.' },
+  },
+  'soil-organic-matter': {
+    en: { term: 'Soil organic matter', definition: 'The living and dead material in soil that comes from plants and soil life, which holds water and feeds plants.' },
+    fr: { term: 'Matière organique du sol', definition: 'La matière vivante et morte du sol, issue des plantes et de la vie du sol, qui retient l’eau et nourrit les plantes.' },
+  },
+  saturation: {
+    en: { term: 'Saturation', definition: 'The point where a soil or a planting holds as much carbon as the way it is managed allows, and stores no more.' },
+    fr: { term: 'Saturation', definition: 'Le point où un sol ou une plantation garde autant de carbone que le permet sa conduite, et n’en stocke plus davantage.' },
+  },
+  homegarden: {
+    en: { term: 'Homegarden', definition: 'A dense, layered garden of trees, shrubs, smaller plants and often animals around a home (also called a food forest or forest garden).' },
+    fr: { term: 'Jardin-forêt', definition: 'Un jardin dense et étagé d’arbres, d’arbustes, de plantes plus basses et souvent d’animaux autour d’une maison (on dit aussi forêt comestible ou jardin de case).' },
+  },
+  agroforestry: {
+    en: { term: 'Agroforestry', definition: 'Growing trees together with crops or livestock, planned so that each helps the others.' },
+    fr: { term: 'Agroforesterie', definition: 'Associer des arbres à des cultures ou à des animaux, en les organisant pour qu’ils se rendent service.' },
+  },
+  multistrata: {
+    en: { term: 'Multistrata', definition: 'Planted in several layers, like a forest, from tall trees down to plants at ground level.' },
+    fr: { term: 'Multistrate', definition: 'Planté sur plusieurs étages, comme une forêt, des grands arbres jusqu’aux plantes du sol.' },
+  },
+  'managed-multistem': {
+    en: { term: 'Managed multistem', definition: 'A plant that grows as a clump of stems, such as bamboo or banana, harvested a few stems at a time while the clump lives on.' },
+    fr: { term: 'Touffe exploitée', definition: 'Une plante qui pousse en touffe de tiges, comme le bambou ou le bananier, dont on récolte quelques tiges à la fois sans détruire la touffe.' },
+  },
+  'nitrogen-fixer': {
+    en: { term: 'Nitrogen fixer', definition: 'A plant that, helped by bacteria in its roots, takes nitrogen from the air and leaves some of it in the soil.' },
+    fr: { term: 'Fixatrice d’azote', definition: 'Une plante qui, grâce à des bactéries logées dans ses racines, puise l’azote de l’air et en enrichit le sol.' },
+  },
+  'staple-crop': {
+    en: { term: 'Staple crop', definition: 'A crop eaten almost every day that gives people most of their energy or protein, such as grain, starchy fruit, beans or nuts.' },
+    fr: { term: 'Aliment de base', definition: 'Une culture mangée presque chaque jour qui fournit l’essentiel de l’énergie ou des protéines, comme les céréales, les fruits féculents, les haricots ou les noix.' },
+  },
+  albedo: {
+    en: { term: 'Albedo', definition: 'How much sunlight a surface reflects: snow sends most of it back, while a dark canopy absorbs most of it.' },
+    fr: { term: 'Albédo', definition: 'La part de la lumière du soleil qu’une surface renvoie : la neige en renvoie l’essentiel, une canopée sombre en absorbe la plus grande part.' },
+  },
+  graft: {
+    en: { term: 'Graft', definition: 'A shoot or bud cut from a chosen plant and joined onto the stem or roots of another, so that it grows into a copy of the chosen plant.' },
+    fr: { term: 'Greffe', definition: 'Un rameau ou un œil prélevé sur une plante choisie et fixé sur la tige ou les racines d’une autre, pour qu’il devienne une copie de la plante choisie.' },
+  },
+  'plus-tree': {
+    en: { term: 'Plus tree', definition: 'An outstanding tree, wild or planted, chosen so that copies can be made of it by cuttings or grafts.' },
+    fr: { term: 'Arbre élite', definition: 'Un arbre remarquable, sauvage ou planté, choisi pour être multiplié par boutures ou par greffes.' },
+  },
+  'alternate-bearing': {
+    en: { term: 'Alternate bearing', definition: 'A tree’s habit of cropping heavily one year and lightly, or not at all, the next.' },
+    fr: { term: 'Alternance', definition: 'L’habitude d’un arbre de beaucoup produire une année et peu, ou pas du tout, l’année suivante.' },
+  },
+  silvopasture: {
+    en: { term: 'Silvopasture', definition: 'Trees and pasture managed together on the same ground, with livestock grazing under the trees.' },
+    fr: { term: 'Sylvopastoralisme', definition: 'La conduite conjointe d’arbres et d’un pâturage sur la même parcelle, le bétail paissant sous les arbres.' },
+  },
+  'successional-intercropping': {
+    en: { term: 'Successional intercropping', definition: 'Growing short-lived crops in the light between young trees, for an early harvest, until the trees grow and shade them out.' },
+    fr: { term: 'Cultures intercalaires temporaires', definition: 'Cultiver des plantes de courte durée dans la lumière entre de jeunes arbres, pour une récolte précoce, jusqu’à ce que les arbres grandissent et leur fassent trop d’ombre.' },
+  },
+  'strip-intercropping': {
+    en: { term: 'Strip intercropping', definition: 'Growing rows of trees for their own harvest, such as fruit, nuts or timber, with bands of field crops between them.' },
+    fr: { term: 'Culture intercalaire en bandes', definition: 'Cultiver des rangs d’arbres pour leur propre récolte, fruits, noix ou bois, avec des bandes de grandes cultures entre eux.' },
+  },
+  'alley-cropping': {
+    en: { term: 'Alley cropping', definition: 'Growing field crops in the lanes between hedgerows that are cut back often, the cuttings usually going on the soil as mulch.' },
+    fr: { term: 'Culture en couloirs', definition: 'Cultiver des plantes annuelles dans les allées entre des haies souvent recépées, dont les coupes servent en général de paillis.' },
+  },
+  'farmer-managed-natural-regeneration': {
+    en: { term: 'Farmer-managed natural regeneration', definition: 'Letting the living stumps and roots in a field sprout again and tending the best shoots into trees, instead of planting new ones.' },
+    fr: { term: 'Régénération naturelle assistée', definition: 'Laisser repartir les souches et racines vivantes d’un champ et conduire les meilleurs rejets jusqu’à en faire des arbres, au lieu d’en planter de nouveaux.' },
+  },
+  parkland: {
+    en: { term: 'Parkland', definition: 'Farmland where crops grow among scattered, widely spaced trees kept for their fruit, fodder, wood or shade.' },
+    fr: { term: 'Parc arboré', definition: 'Des terres où les cultures poussent entre des arbres épars, gardés pour leurs fruits, leur fourrage, leur bois ou leur ombre.' },
+  },
+  'improved-fallow': {
+    en: { term: 'Improved fallow', definition: 'A rest period for a field during which fast-growing woody plants, often nitrogen fixers, are grown to rebuild the soil.' },
+    fr: { term: 'Jachère améliorée', definition: 'Une période de repos d’un champ pendant laquelle on y fait pousser des ligneux à croissance rapide, souvent fixateurs d’azote, pour refaire le sol.' },
+  },
+  windbreak: {
+    en: { term: 'Windbreak', definition: 'A long line of trees, shrubs or other perennials planted across the usual wind to shelter crops, animals and homes.' },
+    fr: { term: 'Brise-vent', definition: 'Une longue bande d’arbres, d’arbustes ou d’autres vivaces plantée en travers du vent dominant pour abriter les cultures, les animaux et les maisons.' },
+  },
+  'living-fence': {
+    en: { term: 'Living fence', definition: 'A row of living shrubs or trees, kept thick by cutting, that marks a boundary and keeps animals in or out.' },
+    fr: { term: 'Haie vive', definition: 'Un alignement d’arbustes ou d’arbres vivants, tenu épais par la taille, qui marque une limite et garde les animaux dedans ou dehors.' },
+  },
+  bocage: {
+    en: { term: 'Bocage', definition: 'A countryside of small fields, each closed in by hedges.' },
+    fr: { term: 'Bocage', definition: 'Un paysage de petits champs, chacun enclos de haies.' },
+  },
+  'green-corral': {
+    en: { term: 'Green corral', definition: 'A pen or fence of living woody plants that livestock will not get through, because the plants are thorny, toxic or too thick.' },
+    fr: { term: 'Enclos vivant', definition: 'Un enclos ou une clôture de ligneux vivants que le bétail ne franchit pas, parce qu’ils sont épineux, toxiques ou trop serrés.' },
+  },
+  'riparian-buffer': {
+    en: { term: 'Riparian buffer', definition: 'A band of trees, shrubs or other long-lived plants kept along a stream or river, between it and the fields, to catch runoff and hold the bank.' },
+    fr: { term: 'Bande riveraine', definition: 'Une bande d’arbres, d’arbustes ou d’autres vivaces gardée le long d’un cours d’eau, entre lui et les champs, pour retenir le ruissellement et tenir la berge.' },
+  },
+  'water-break': {
+    en: { term: 'Water-break', definition: 'A band of long-lived plants grown across a cropped floodplain to slow floodwater as it passes.' },
+    fr: { term: 'Haie anti-crue', definition: 'Une bande de vivaces plantée en travers d’une plaine inondable cultivée pour ralentir l’eau des crues.' },
+  },
+  'fodder-bank': {
+    en: { term: 'Fodder bank', definition: 'A dense planting of fodder shrubs or trees, kept low and cut to feed animals that are penned or tethered elsewhere.' },
+    fr: { term: 'Banque fourragère', definition: 'Une plantation dense d’arbustes ou d’arbres fourragers, tenue basse et coupée pour nourrir des animaux gardés ailleurs, à l’enclos ou au piquet.' },
+  },
+  'tree-hay': {
+    en: { term: 'Tree hay', definition: 'Leafy branches cut, dried and stored to feed animals in the season when pasture is short.' },
+    fr: { term: 'Foin d’arbre', definition: 'Des branches feuillues coupées, séchées et stockées pour nourrir les animaux à la saison où l’herbe manque.' },
+  },
+  'living-barn': {
+    en: { term: 'Living barn', definition: 'A planted shelter for livestock, such as a block of trees behind a windbreak, where animals can get out of the wind and bad weather.' },
+    fr: { term: 'Abri vivant', definition: 'Un abri planté pour le bétail, comme un bosquet derrière un brise-vent, où les animaux se protègent du vent et des intempéries.' },
+  },
+  'contour-hedgerow': {
+    en: { term: 'Contour hedgerow', definition: 'A hedge planted along the contour of a slope and cut back often, so that soil builds up behind it.' },
+    fr: { term: 'Haie en courbe de niveau', definition: 'Une haie plantée selon la courbe de niveau d’une pente et souvent recépée, derrière laquelle la terre s’accumule.' },
+  },
+  'zai-pit': {
+    en: { term: 'Zaï pit', definition: 'A small hole dug in hard, dry ground and filled with compost, where crops are sown so that rain gathers around their roots.' },
+    fr: { term: 'Zaï', definition: 'Un petit trou creusé dans un sol dur et sec et garni de compost, où l’on sème pour que la pluie se rassemble au pied des plantes.' },
+  },
+  keyline: {
+    en: { term: 'Keyline', definition: 'A way of planning a whole farm so that water is spread from the wetter valleys toward the drier ridges, using ponds and ripping and planting set slightly off the contour.' },
+    fr: { term: 'Keyline', definition: 'Une façon d’aménager toute une ferme pour répartir l’eau des vallons humides vers les crêtes plus sèches, par des mares, un sous-solage et des plantations légèrement décalés des courbes de niveau.' },
+  },
+  halophyte: {
+    en: { term: 'Halophyte', definition: 'A plant that grows in salty soil or salty water.' },
+    fr: { term: 'Halophyte', definition: 'Une plante qui pousse dans un sol ou une eau salés.' },
+  },
+  stool: {
+    en: { term: 'Stool', definition: 'The living stump of a coppiced tree or shrub, from which new shoots grow after each cut.' },
+    fr: { term: 'Souche', definition: 'La base vivante d’un arbre ou d’un arbuste recépé, d’où repartent de nouvelles pousses après chaque coupe.' },
+  },
+  coupe: {
+    en: { term: 'Coupe', definition: 'One plot of a coppice wood, cut in its turn while the other plots keep growing.' },
+    fr: { term: 'Coupe', definition: 'Une parcelle d’un taillis, coupée à son tour pendant que les autres parcelles continuent de pousser.' },
+  },
+  'short-rotation-coppice': {
+    en: { term: 'Short-rotation coppice', definition: 'A dense planting of fast-growing trees cut back every few years, mostly for fuel or other wood.' },
+    fr: { term: 'Taillis à courte rotation', definition: 'Une plantation dense d’arbres à croissance rapide, recépée à quelques années d’intervalle, surtout pour le bois de chauffe ou d’autres usages du bois.' },
+  },
+  'clumping-bamboo': {
+    en: { term: 'Clumping bamboo', definition: 'A bamboo whose short underground stems (rhizomes) keep its canes together in a tight clump.' },
+    fr: { term: 'Bambou cespiteux', definition: 'Un bambou dont les tiges souterraines courtes (rhizomes) gardent les cannes serrées en touffe.' },
+  },
+  'running-bamboo': {
+    en: { term: 'Running bamboo', definition: 'A bamboo that spreads by long underground stems (rhizomes), sending up canes far from where it was planted.' },
+    fr: { term: 'Bambou traçant', definition: 'Un bambou qui s’étend par de longues tiges souterraines (rhizomes) et fait sortir des cannes loin de l’endroit où il a été planté.' },
+  },
+  'bast-fibre': {
+    en: { term: 'Bast fibre', definition: 'Strong fibre from the inner layer of a plant’s stem, just under the bark or skin, as in nettle, ramie or flax.' },
+    fr: { term: 'Fibre libérienne', definition: 'Une fibre solide tirée de la couche interne de la tige d’une plante, juste sous l’écorce, comme chez l’ortie, la ramie ou le lin.' },
+  },
+  retting: {
+    en: { term: 'Retting', definition: 'Letting cut stems partly rot, in water or on damp ground, so that their fibres come away from the rest of the stem.' },
+    fr: { term: 'Rouissage', definition: 'Le fait de laisser pourrir en partie des tiges coupées, dans l’eau ou sur un pré humide, pour que leurs fibres se détachent du reste.' },
   },
 };
 
