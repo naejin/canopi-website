@@ -480,9 +480,9 @@ test('state: encode then decode with the cell restores the exact state', () => {
   assert.doesNotMatch(q.toString(), /%/, 'nothing escaped');
   const { state: back, dropped } = decodeState(q.toString(), tropical);
   assert.deepEqual(dropped, []);
-  assert.deepEqual({ ...back, kept: [...back.kept].sort() }, { ...state, cellRegion: null, members: null, kept: [...state.kept].sort() });
+  assert.deepEqual({ ...back, kept: [...back.kept].sort() }, { ...state, cellRegion: null, members: null, plants: [], kept: [...state.kept].sort() });
   const empty = decodeState('');
-  assert.deepEqual(empty, { state: { climate: null, region: null, cellRegion: null, country: null, site: DEFAULT_SITE, kept: [], removed: [], members: null }, dropped: [] });
+  assert.deepEqual(empty, { state: { climate: null, region: null, cellRegion: null, country: null, site: DEFAULT_SITE, kept: [], removed: [], members: null, plants: [] }, dropped: [] });
 });
 
 test('state: a link from another region keeps both regions, the user region and the region of the cell shown', () => {
@@ -526,7 +526,7 @@ test('state: without the cell, decode keeps the prefixes for resolveIds()', () =
 
 test('state: unknown and malformed values are dropped and reported, never thrown', () => {
   const { state, dropped } = decodeState('v=9&c=polar&r=mars&k=France&l=dim&s=clay&w=soggy&m=huge&p=xyz.deadbeef.d9242605&x=1234', tropical);
-  assert.deepEqual(state, { climate: null, region: null, cellRegion: null, country: null, site: DEFAULT_SITE, kept: [named('Arachis pintoi').id], removed: [], members: null });
+  assert.deepEqual(state, { climate: null, region: null, cellRegion: null, country: null, site: DEFAULT_SITE, kept: [named('Arachis pintoi').id], removed: [], members: null, plants: [] });
   assert.deepEqual(dropped.map((d) => `${d.key}=${d.value}:${d.reason}`).sort(), [
     'c=polar:unknown', 'k=France:unknown', 'l=dim:unknown', 'm=huge:unknown', 'p=deadbeef:unknown', 'p=xyz:malformed',
     'r=mars:unknown', 's=clay:unknown', 'v=9:unknown', 'w=soggy:unknown', 'x=1234:malformed',
@@ -574,6 +574,22 @@ test('state: a link with thousands of ids decodes fast; ids past the cap are dro
     { key: 'x', value: String(30000 - MAX_LINK_IDS), reason: 'excess' },
   ]);
   assert.ok(MAX_LINK_IDS >= 200, 'a whole cell still fits');
+});
+
+test('state: a guide preset (?plant=<canonical_name>&climate=<id>) keeps its plant; one not in the cell is dropped', () => {
+  const inga = named('Inga edulis').id;
+  const preset = decodeState('plant=Inga+edulis&climate=tropical', tropical);
+  assert.equal(preset.state.climate, 'tropical');
+  assert.deepEqual(preset.state.kept, [inga]);
+  assert.deepEqual(preset.dropped, []);
+  const early = decodeState('plant=inga%20%20EDULIS&climate=Tropical');
+  assert.deepEqual(early.state.plants, ['inga  EDULIS'], 'kept by name until the cell is loaded');
+  assert.deepEqual(resolveState(early, tropical).state.kept, [inga], 'case and spacing do not matter');
+  assert.deepEqual(resolveState(early, tropical).state.plants, []);
+  assert.deepEqual(decodeState('plant=Olea+europaea&climate=tropical', tropical).dropped, [{ key: 'plant', value: 'Olea europaea', reason: 'unknown' }]);
+  assert.deepEqual(decodeState('c=temperate&climate=tropical').state.climate, 'temperate');
+  assert.deepEqual(decodeState('c=temperate&climate=tropical').dropped, [{ key: 'climate', value: 'tropical', reason: 'duplicate' }]);
+  assert.deepEqual(decodeState(`plant=${'a'.repeat(300)}`).dropped[0].reason, 'malformed');
 });
 
 // performance

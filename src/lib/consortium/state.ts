@@ -2,6 +2,9 @@
 //   v format version, c climate (site id, lowercase), r the user's region, b the region of the cell
 //   shown when it is another one (the user opted into a borrowed cell), k country (ISO alpha-2),
 //   l light, s soil, w water, m room, p kept taxon ids, x removed taxon ids, a the members in order.
+// A guide opens the tool with a preset instead: ?plant=<canonical_name>&climate=<id>. `climate` is
+// read when `c` is absent; the plant becomes kept once the cell is known (resolveState), and a
+// plant the cell does not have is dropped. encodeState always writes the short keys.
 // Without `a` (links written before it), the page suggests around the kept plants; with it, the
 // page shows those members as they were (evaluate(), never refilled). Without `b`, the cell shown is
 // the user's region's. Old links decode the same, so `v` stays 2.
@@ -30,6 +33,7 @@ export interface ConsortiumState {
   kept: string[]; // taxon ids; before resolveIds(), the prefixes read from the link
   removed: string[];
   members?: string[] | null; // every member in order; null when the link has none (suggest); decodeState always sets it
+  plants?: string[]; // canonical names from a guide preset, until resolveState() makes them kept ids; decodeState always sets it
 }
 
 // `excess`: the ids past MAX_LINK_IDS in one key, reported once with their count as the value.
@@ -43,6 +47,8 @@ export const MAX_LINK_IDS = 256;
 const PREFIX_LENGTHS = [8, 13, 18, 23, 36];
 const ID_PREFIX = /^[0-9a-f]{8}(-[0-9a-f]{4}(-[0-9a-f]{4}(-[0-9a-f]{4}(-[0-9a-f]{12})?)?)?)?$/;
 const COUNTRY = /^[A-Z]{2}$/;
+const MAX_NAME_LENGTH = 200;
+const nameKey = (name: string) => name.trim().replace(/\s+/g, ' ').toLowerCase();
 
 // The shortest prefix of the id that no other taxon of the cell starts with (8 characters without a cell).
 export function shortId(id: string, cell?: Cell | null): string {
@@ -111,7 +117,17 @@ export function decodeState(params: URLSearchParams | string, cell?: Cell | null
   const version = first('v');
   if (version !== null && version !== String(FORMAT_VERSION)) dropped.push({ key: 'v', value: version, reason: 'unknown' });
 
-  const climate = pick('c', isSiteClimate, (v) => v.toLowerCase());
+  // A guide preset names the climate `climate`; a link's own `c` wins over it.
+  const climate = q.has('c') || !q.has('climate')
+    ? pick('c', isSiteClimate, (v) => v.toLowerCase())
+    : pick('climate', isSiteClimate, (v) => v.toLowerCase());
+  if (q.has('c')) for (const extra of q.getAll('climate')) dropped.push({ key: 'climate', value: extra, reason: 'duplicate' });
+  const plants: string[] = [];
+  const plant = first('plant');
+  if (plant !== null) {
+    if (plant.trim() && plant.length <= MAX_NAME_LENGTH) plants.push(plant.trim());
+    else dropped.push({ key: 'plant', value: plant.slice(0, MAX_NAME_LENGTH), reason: 'malformed' });
+  }
   const region = pick('r', isRegion, (v) => v.toLowerCase());
   const borrowed = pick('b', isRegion, (v) => v.toLowerCase());
   const cellRegion = borrowed !== region ? borrowed : null;
@@ -138,7 +154,7 @@ export function decodeState(params: URLSearchParams | string, cell?: Cell | null
     return [...out];
   };
   const decoded: DecodedState = {
-    state: { climate, region, cellRegion, country, site, kept: tokens('p'), removed: tokens('x'), members: q.has('a') ? tokens('a') : null },
+    state: { climate, region, cellRegion, country, site, kept: tokens('p'), removed: tokens('x'), members: q.has('a') ? tokens('a') : null, plants },
     dropped,
   };
   const read = consistent(decoded, false);
@@ -166,8 +182,15 @@ export function resolveState(decoded: DecodedState, cell: Cell): DecodedState {
   const { state } = decoded;
   const k = resolveIds(state.kept, cell, 'p'), x = resolveIds(state.removed, cell, 'x');
   const a = state.members ? resolveIds(state.members, cell, 'a') : null;
+  // A guide's plant, by canonical name (case and spacing aside), joins the kept plants.
+  const kept = new Set(k.ids), named: Dropped[] = [];
+  for (const name of state.plants ?? []) {
+    const hit = cell.taxa.find((t) => t.canonical_name === name) ?? cell.taxa.find((t) => nameKey(t.canonical_name) === nameKey(name));
+    if (hit) kept.add(hit.id);
+    else named.push({ key: 'plant', value: name, reason: 'unknown' });
+  }
   return consistent({
-    state: { ...state, kept: k.ids, removed: x.ids, members: a ? a.ids : null },
-    dropped: [...decoded.dropped, ...k.dropped, ...x.dropped, ...(a?.dropped ?? [])],
+    state: { ...state, kept: [...kept], removed: x.ids, members: a ? a.ids : null, plants: [] },
+    dropped: [...decoded.dropped, ...k.dropped, ...x.dropped, ...(a?.dropped ?? []), ...named],
   }, true);
 }
