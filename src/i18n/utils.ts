@@ -50,3 +50,16 @@ export function localizedUrl(path: string, lang: Locale): string {
   if (lang === defaultLocale) return path || '/';
   return `/${lang}${path}`;
 }
+
+// A page's path within a locale: the same path in every locale, or one per locale
+// (a page whose slug is translated, such as the consortium tool's /fr/guilde/).
+export type PagePath = string | ((lang: Locale) => string);
+
+export function pageUrl(path: PagePath, lang: Locale): string {
+  return typeof path === 'string' ? localizedUrl(path, lang) : path(lang);
+}
+
+// The consortium tool: "Consortium" in every language except French, "Guilde".
+export function consortiumPath(lang: Locale): string {
+  return localizedUrl(lang === 'fr' ? '/guilde/' : '/consortium/', lang);
+}

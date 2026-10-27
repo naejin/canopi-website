@@ -16,6 +16,10 @@
   --border-strong: rgba(58, 46, 28, 0.55);
   --focus: #1F5F8B;
   --danger: #A23B2A;
+  /* Warnings (invasive, misfit, conflict): not danger, not accent. */
+  --warning: #7A5A00;
+  --warning-bg: rgba(214, 170, 40, 0.18);
+  --warning-line: #A88410;
   --shadow: 0 1px 2px rgba(39, 35, 29, 0.06), 0 8px 24px rgba(39, 35, 29, 0.08);
   --painting-opacity-static: 0.22;
   /* Plant content only (Field Guides diagrams): leaves, petals, anthers and seed-coat colours. Never UI chrome. */
@@ -66,6 +70,9 @@
   --border-strong: rgba(255, 248, 235, 0.40);
   --focus: #7FB8E0;
   --danger: #E58A76;
+  --warning: #E8C766;
+  --warning-bg: rgba(232, 199, 102, 0.14);
+  --warning-line: #C9A640;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
   --painting-opacity-static: 0.16;
   --leaf: #93B06A;
@@ -108,6 +115,9 @@
     --border-strong: rgba(255, 248, 235, 0.40);
     --focus: #7FB8E0;
     --danger: #E58A76;
+    --warning: #E8C766;
+    --warning-bg: rgba(232, 199, 102, 0.14);
+    --warning-line: #C9A640;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
     --painting-opacity-static: 0.16;
     --leaf: #93B06A;

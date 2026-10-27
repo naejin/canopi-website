@@ -1,5 +1,5 @@
 ---
-import { locales, defaultLocale, localizedUrl, type Locale } from '../i18n/utils';
+import { locales, defaultLocale, pageUrl, type Locale, type PagePath } from '../i18n/utils';
 import { CANOPI_DOWNLOADS, CANOPI_RELEASE_DATE, CANOPI_RELEASE_URL, CANOPI_VERSION } from '../data/release';
 import { climates } from '../data/climates';
 
@@ -10,7 +10,7 @@ interface Props {
   // Pages that only answer a form post stay out of search results.
   noindex?: boolean;
   // The page's path within a locale, for the alternate-language links.
-  path?: string;
+  path?: PagePath;
   // The locales the page exists in (hreflang links); every locale unless a page says otherwise
   // (Field Guides: en and fr).
   alternates?: readonly Locale[];
@@ -40,10 +40,10 @@ const ogImage = new URL(`/og/og-${lang}.jpg`, Astro.site);
       <link
         rel="alternate"
         hreflang={locale}
-        href={new URL(localizedUrl(path, locale), Astro.site)}
+        href={new URL(pageUrl(path, locale), Astro.site)}
       />
     ))}
-    <link rel="alternate" hreflang="x-default" href={new URL(path, Astro.site)} />
+    <link rel="alternate" hreflang="x-default" href={new URL(pageUrl(path, defaultLocale), Astro.site)} />
 
     <title>{title}</title>
     <meta name="description" content={description} />

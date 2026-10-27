@@ -1,12 +1,12 @@
 ---
-import { t, locales, languageNames, localizedUrl, type Locale } from '../i18n/utils';
+import { t, locales, languageNames, localizedUrl, pageUrl, type Locale, type PagePath } from '../i18n/utils';
 import { DOCS_URL, discordUrl } from '../data/site';
 import { guidesPath } from '../i18n/guides';
 // path: the page within a locale, so the language menu leads to the same page in another language.
 // alternates: the locales the page exists in; the menu sends the others to the English page.
 // current: the section the page belongs to, marked in the navigation.
 // From 640px the links sit inline; below, one Menu panel holds every link, so nothing is hidden by width.
-interface Props { lang: Locale; path?: string; alternates?: readonly Locale[]; current?: 'guides' | 'books'; }
+interface Props { lang: Locale; path?: PagePath; alternates?: readonly Locale[]; current?: 'guides' | 'books'; }
 const { lang, path = '/', alternates = locales, current } = Astro.props;
 const menuTarget = (locale: Locale): Locale => (alternates.includes(locale) ? locale : 'en');
 const guides = guidesPath(lang);
@@ -29,7 +29,7 @@ const page = (section: 'guides' | 'books') => (current === section ? 'page' : un
           <summary class="nav-link" aria-label={`${t('header.language', lang)}: ${languageNames[lang]}`}>{lang.toUpperCase()}</summary>
           <ul class="menu-panel" role="list">
             {locales.map((locale) => (
-              <li><a href={localizedUrl(path, menuTarget(locale))} lang={locale} hreflang={menuTarget(locale)} aria-current={locale === lang ? 'true' : undefined}>{languageNames[locale]}</a></li>
+              <li><a href={pageUrl(path, menuTarget(locale))} lang={locale} hreflang={menuTarget(locale)} aria-current={locale === lang ? 'true' : undefined}>{languageNames[locale]}</a></li>
             ))}
           </ul>
         </details>
@@ -48,7 +48,7 @@ const page = (section: 'guides' | 'books') => (current === section ? 'page' : un
           <p class="nav-panel-label" id="nav-panel-languages">{t('header.language', lang)}</p>
           <ul class="nav-panel-langs" role="list" aria-labelledby="nav-panel-languages">
             {locales.map((locale) => (
-              <li><a href={localizedUrl(path, menuTarget(locale))} lang={locale} hreflang={menuTarget(locale)} aria-current={locale === lang ? 'true' : undefined}>{languageNames[locale]}</a></li>
+              <li><a href={pageUrl(path, menuTarget(locale))} lang={locale} hreflang={menuTarget(locale)} aria-current={locale === lang ? 'true' : undefined}>{languageNames[locale]}</a></li>
             ))}
           </ul>
         </div>
