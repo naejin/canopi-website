@@ -4,7 +4,7 @@ title: Consortium core
 description: Format 2 types and the pure, dependency-free functions of the consortium tool (cell lookup, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T20:11:03Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T20:19:32Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:32:12Z }
 sources:
@@ -41,8 +41,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:47cd62dbc4a6c1f6
-    last_modified: 2026-10-27T20:04:49Z
+    digest: sha256:66b96c96bd407a96
+    last_modified: 2026-10-27T20:18:30Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -51,8 +51,8 @@ sources:
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
-    digest: sha256:b2ec6c0f868356ae
-    last_modified: 2026-10-27T20:09:14Z
+    digest: sha256:dba02a05b96b41e1
+    last_modified: 2026-10-27T20:18:30Z
 enforced_by:
   - scripts/consortium.test.mjs
   - scripts/install-consortium.test.mjs
@@ -78,7 +78,7 @@ export under `public/data/consortium/`.
 | [suggest.ts](../../src/lib/consortium/suggest.ts) | `gain(taxon, members, site)` (term by term), `suggest(cell, { site, kept, removed, country })` → `{ members, limit, gaps }` (the only function that fills), `evaluate(cell, ids, { site, kept, country })` → the same `{ members, limit, gaps }` for a fixed list, never refilled, `alternatives(memberId, consortium, cell, { site, removed, country })`, `SIZE_LIMIT` |
 | [state.ts](../../src/lib/consortium/state.ts) | `ConsortiumState` (`climate`, `region`, `cellRegion`, `country`, `site`, `kept`, `removed`, `members`, `plants`), `encodeState(state, cell?)` → `URLSearchParams`, `decodeState(params, cell?)` → `{ state, dropped }`, `resolveState(decoded, cell)`, `resolveIds(tokens, cell)`, `shortId(id, cell?)`, `MAX_LINK_IDS` = 256 |
 | [index.ts](../../src/lib/consortium/index.ts) | re-exports all of the above |
-| [install-consortium.mjs](../../scripts/install-consortium.mjs) | `npm run install:consortium -- <export-dir> [--fixture [--no-images]] [--out <dir>]`; `installConsortium(...)`, `verifyExport`, `shapeErrors`, `cellShape`, `labelsShape`, `thumbnailUrl`, `LOCALES`, `PHOTO_HOSTS`, `STAGING_DIR`, `stagingDirFor(out)` |
+| [install-consortium.mjs](../../scripts/install-consortium.mjs) | `npm run install:consortium -- <export-dir> [--fixture [--no-images]] [--out <dir>]`; `installConsortium(...)`, `verifyExport`, `shapeErrors`, `cellShape`, `thumbnailUrl`, `STAGING_DIR`, `stagingDirFor(out)` |
 
 # Rules the code fixes (the plan left them open)
 
@@ -94,7 +94,7 @@ export under `public/data/consortium/`.
 
 # Installer
 
-- Refuses, before any work: `--no-images` without `--fixture` (a real install always copies its photos), and an `--out` that exists, is not empty and holds no previous install (a `manifest.json` with `format_version` 2).
+- Refuses, before any work: `--no-images` without `--fixture` (a real install always copies its photos), and an `--out` that exists, is not empty and holds no previous install (the `INSTALLED_BY` mark every install writes; a canopi-data export has a format 2 manifest too and is not in git), and an `--out` that is, holds or sits inside the export directory.
 - Refuses: a file not matching `SHA256SUMS`, a listed file missing, an unlisted `.json`, `format_version` ≠ 2, `canopi_db_sha256` all zeros without `--fixture`, a cell's sha256 or taxa/interactions count differing from the manifest, a missing required key or wrong type (hand-written from the schema's required lists; extra keys allowed), an `edibility_rating` outside the integers 0–5, a `names`, `reason` or `note` key or a manifest locale outside the 11 site locales, a `labels.json` that is not trait → English value → locale → text, duplicate taxon ids, undefined source ids.
 - Photos: an image url that is not http(s) (protocol-relative, `data:`) becomes `image: null`. The rest are fetched once per taxon id, one request at a time with a 500 ms pause, `User-Agent: CanopiWebsite/1.0 (https://projectcanopi.com; contact form)`. Commons originals are fetched as **500 px** thumbnails: Commons answers HTTP 400 for non-standard widths such as 640 (https://w.wiki/GHai). SVG thumbnails get `.png`, TIFF `.jpg`. iNaturalist open-data `original.<ext>` photos are fetched as `medium.<ext>` (500 px). Rate limiting (429, 503) is waited out up to 4 retries (`Retry-After`, else 5 s doubling). Only a missing smaller copy (400, 403, 404: a Commons file narrower than 500 px; S3 answers 403 for a missing key) falls back to the original, never a rate-limited one; files over 3 MB (a larger `content-length` refused unread, a body without one cancelled once it passes 3 MB), non-image types and SVG count as failed. Redirects are followed by hand (at most 5) only to the host first asked or to `PHOTO_HOSTS` (upload.wikimedia.org, inaturalist-open-data.s3.amazonaws.com); any other is a failure. Every body not kept (redirects, 429/503 before a retry, errors) is cancelled before the next request. A failed photo becomes `image: null` and is listed in the summary; more than 10% failing stops the install.
 - Changed cells are re-serialised minified with their sha256 recomputed in the installed manifest; an installed `SHA256SUMS` lists every file, images included. The output is written in a staging directory, `.cache/consortium-install/` (git-ignored, outside `public/`, so `astro build` never ships leftovers; an `--out` outside the repository stages in `.consortium-install/` beside it, as a rename needs one file system), then renamed into place. Each run first removes the staging directory and any `consortium.tmp-<pid>`/`.old-<pid>` folders older versions left beside the output.

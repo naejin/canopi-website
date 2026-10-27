@@ -23,7 +23,7 @@
 // format_version 2): anything else is refused, so a mistyped --out never deletes a folder.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -76,7 +76,7 @@ const obj = (props) => ({ kind: 'object', props });
 const arr = (items, minItems = 0) => ({ kind: 'array', items, minItems });
 const map = (values, keys) => ({ kind: 'map', values, keys });
 // The 11 site locales: the keys of `names`, of every text (`reason`, `note`) and of labels.json.
-export const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
+const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
 const text = { kind: 'map', values: str, props: { en: str }, keys: LOCALES };
 const range = orNull(obj({ min: orNull(num), max: orNull(num) }));
 const sourceIds = arr(str, 1);
@@ -149,7 +149,7 @@ const manifestShape = obj({
 });
 
 // labels.json: trait → English value → locale → translation (canopi-data docs/consortium-export-format.md).
-export const labelsShape = map(map(map(str, LOCALES)));
+const labelsShape = map(map(map(str, LOCALES)));
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -194,14 +194,21 @@ export function shapeErrors(value, shape, path = '$', out = [], max = 20) {
   return out;
 }
 
+// Written into every install, so --out replaces only a directory this script made (an export has a
+// format 2 manifest too, and canopi-data does not keep its exports in git).
+const INSTALL_MARK = 'INSTALLED_BY';
+const INSTALL_MARK_TEXT = 'scripts/install-consortium.mjs (canopi-website)\n';
+
 // An --out that is absent, empty or a previous install; anything else is refused before any work.
-function checkOut(out) {
+function checkOut(out, exportDir) {
+  const inside = (a, b) => a === b || a.startsWith(b + sep);
+  if (inside(out, exportDir) || inside(exportDir, out)) refuse(`${out} is, holds or sits inside the export directory ${exportDir}.`);
   if (!existsSync(out)) return;
   if (!statSync(out).isDirectory()) refuse(`${out} is a file, not an install directory.`);
   if (!readdirSync(out).length) return;
-  let manifest = null;
-  try { manifest = JSON.parse(readFileSync(join(out, 'manifest.json'), 'utf8')); } catch { /* none or unreadable */ }
-  if (!isObject(manifest) || manifest.format_version !== 2) refuse(`${out} is not empty and holds no consortium install (a manifest.json with format_version 2), so it is not replaced.`);
+  let mark = null;
+  try { mark = readFileSync(join(out, INSTALL_MARK), 'utf8'); } catch { /* none or unreadable */ }
+  if (mark !== INSTALL_MARK_TEXT) refuse(`${out} is not empty and holds no consortium install (no ${INSTALL_MARK} file from this script), so it is not replaced.`);
 }
 
 function refuse(message) {
@@ -287,7 +294,7 @@ export function verifyExport(dir, { fixture = false } = {}) {
 }
 
 // Hosts a photo may be fetched from after a redirect, besides the host first asked.
-export const PHOTO_HOSTS = ['upload.wikimedia.org', 'inaturalist-open-data.s3.amazonaws.com'];
+const PHOTO_HOSTS = ['upload.wikimedia.org', 'inaturalist-open-data.s3.amazonaws.com'];
 const MAX_REDIRECTS = 5;
 
 // Throws away a body we will not read, so its connection is freed before the next request.
@@ -400,7 +407,7 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
   if (!exportDir) refuse('no export directory given.');
   if (!images && !fixture) refuse('--no-images is allowed only with --fixture: a real install copies its photos into the site.');
   const dir = resolve(exportDir), out = resolve(outDir);
-  checkOut(out);
+  checkOut(out, dir);
   const { manifest, manifestBytes, labelsBytes, cells } = verifyExport(dir, { fixture });
   // A photo that is not an http(s) url (protocol-relative, data:, another scheme) is never
   // downloaded and never served from elsewhere: no photo.
@@ -420,6 +427,7 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
   const anyChanged = cells.some((c) => c.changed);
   written.set('manifest.json', anyChanged ? Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`) : manifestBytes);
   written.set('labels.json', labelsBytes);
+  written.set(INSTALL_MARK, Buffer.from(INSTALL_MARK_TEXT));
   for (const { name, bytes } of photos.files.values()) written.set(`images/${name}`, bytes);
   const sums = [...written].sort(([a], [b]) => (a < b ? -1 : 1)).map(([name, bytes]) => `${sha256(bytes)}  ${name}\n`).join('');
   written.set('SHA256SUMS', Buffer.from(sums));

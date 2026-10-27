@@ -76,7 +76,10 @@ export function encodeState(state: ConsortiumState, cell?: Cell | null): URLSear
   const removed = state.removed.filter((id) => !kept.has(id));
   if (removed.length) q.set('x', ids(removed));
   // Members keep their order (it is the order the page lists them in).
-  if (state.members?.length) q.set('a', [...new Set(state.members.map((id) => shortId(id, cell)))].join(ID_SEPARATOR));
+  // An empty list is written too: every member removed is a state, not "suggest".
+  if (state.members) q.set('a', [...new Set(state.members.map((id) => shortId(id, cell)))].join(ID_SEPARATOR));
+  // A guide's plant the page could not resolve yet (no cell loaded) is kept for the next load.
+  if (state.plants?.length) q.set('plant', state.plants[0]); // a preset names one plant
   return q;
 }
 

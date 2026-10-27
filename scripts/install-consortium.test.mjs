@@ -45,11 +45,12 @@ const install = (w, opts = {}) => installConsortium({ exportDir: w.src, outDir: 
 test('the fixture installs with --fixture --no-images --out, byte for byte, with its SHA256SUMS', (t) => {
   const w = workspace(t);
   mkdirSync(w.out);
-  writeFileSync(join(w.out, 'manifest.json'), '{"format_version":2}'); // a previous install
+  writeFileSync(join(w.out, 'manifest.json'), '{"format_version":2}'); // a previous install, by its mark
+  writeFileSync(join(w.out, 'INSTALLED_BY'), 'scripts/install-consortium.mjs (canopi-website)\n');
   writeFileSync(join(w.out, 'stale.json'), '{}');
   const stdout = execFileSync(process.execPath, [script, w.src, '--fixture', '--no-images', '--out', w.out], { encoding: 'utf8' });
   assert.match(stdout, /Installed 3 consortium cells/);
-  assert.deepEqual(readdirSync(w.out).sort(), ['SHA256SUMS', 'labels.json', 'manifest.json', 'mediterranean-europe.json', 'temperate-europe.json', 'tropical-southern-america.json']);
+  assert.deepEqual(readdirSync(w.out).sort(), ['INSTALLED_BY', 'SHA256SUMS', 'labels.json', 'manifest.json', 'mediterranean-europe.json', 'temperate-europe.json', 'tropical-southern-america.json']);
   for (const name of ['manifest.json', 'labels.json', 'temperate-europe.json']) assert.deepEqual(readFileSync(join(w.out, name)), readFileSync(join(fixture, name)), name);
   for (const line of readFileSync(join(w.out, 'SHA256SUMS'), 'utf8').trim().split('\n')) {
     const [hash, name] = line.split('  ');
@@ -315,6 +316,17 @@ test('photos: an image url that is not http(s) is installed as image: null, with
     const manifest = JSON.parse(readFileSync(join(w.out, 'manifest.json'), 'utf8'));
     assert.equal(manifest.cells.find((c) => c.file === 'tropical-southern-america.json').sha256, sha(readFileSync(join(w.out, 'tropical-southern-america.json'))));
   }
+});
+
+test('--out refuses a canopi-data export, and the export directory itself, so neither is ever replaced', async (t) => {
+  const w = workspace(t);
+  const other = join(w.out, '..', 'another-export');
+  cpSync(w.src, other, { recursive: true });
+  await assert.rejects(install({ ...w, out: other }), /holds no consortium install/, 'an export has a format 2 manifest too');
+  assert.ok(existsSync(join(other, 'SHA256SUMS')));
+  await assert.rejects(install({ ...w, out: w.src }), /export directory/);
+  await assert.rejects(install({ ...w, out: join(w.src, 'inside') }), /export directory/);
+  assert.ok(existsSync(join(w.src, 'manifest.json')));
 });
 
 test('--no-images is allowed only with --fixture, so a real install never keeps remote photo urls', async (t) => {

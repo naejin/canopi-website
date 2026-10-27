@@ -514,6 +514,21 @@ test('state: a link carries the members in order, so the page restores them with
   assert.equal(decodeState(encodeState(sampleState(), tropical), tropical).state.members, null, 'an old link has none: the page suggests');
 });
 
+test('state: a consortium with every member removed stays empty after a reload, it is not refilled', () => {
+  const state = { ...sampleState(), kept: [], removed: [named('Musa acuminata').id], members: [] };
+  const q = encodeState(state, tropical);
+  assert.equal(q.get('a'), '');
+  assert.deepEqual(decodeState(q, tropical).state.members, []);
+});
+
+test('state: a guide preset plant not yet resolved survives an encode, so a reload or a copied link keeps it', () => {
+  const { state } = decodeState('plant=Musa%20acuminata&climate=tropical');
+  assert.deepEqual(state.plants, ['Musa acuminata']);
+  const again = decodeState(encodeState(state));
+  assert.deepEqual(again.state.plants, ['Musa acuminata']);
+  assert.equal(again.state.climate, 'tropical');
+});
+
 test('state: without the cell, decode keeps the prefixes for resolveIds()', () => {
   const q = encodeState(sampleState());
   const { state } = decodeState(q);
