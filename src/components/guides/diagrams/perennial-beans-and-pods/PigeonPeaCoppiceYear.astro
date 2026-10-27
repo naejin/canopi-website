@@ -1,0 +1,80 @@
+---
+// Perennial beans and pods: one perennial pigeon pea shrub through its yearly cycle, four scenes in a
+// row (two a row below 640 px): a leafy shrub; the shrub flowering, with pods on the branches; short
+// stumps after the hard cut back, cut marks dashed; new shoots from the stumps. A return arrow under the
+// row (hidden below 640 px) runs from the fourth scene back to the first. No season names: tropical
+// seasons differ. stages are the four labels, note the line under the cycle, alt describes it all.
+import { leafPath, r1 } from '../../../../lib/svg';
+interface Props { stages: [string, string, string, string]; note: string; alt: string; }
+const { stages, note, alt } = Astro.props;
+const W = 120, G = 90, X = 60;
+// Branches of the full shrub: from the base, fanning out.
+const branches = [[-30, 30], [-18, 18], [-6, 10], [6, 12], [18, 20], [30, 34]].map(([dx, top]) => {
+  const x1 = X + dx, y1 = top;
+  return { d: `M${X + dx * 0.08} ${G}Q${r1(X + dx * 0.25)} ${r1(G - 40)} ${x1} ${y1}`, x1, y1 };
+});
+// Three-leaflet leaves along each branch.
+const leaflets = (x: number, y: number, angle: number) => [angle - 35, angle, angle + 35].map((a) => leafPath(7, x, y, a));
+const leaves = branches.flatMap((b, i) => [0.45, 0.75, 1].flatMap((t) => {
+  const x = X + (b.x1 - X) * t, y = G - (G - b.y1) * t;
+  return leaflets(x, y, -90 + (b.x1 - X) * 1.6 + (i % 2 ? 10 : -10));
+}));
+const flowers = branches.map((b) => ({ x: b.x1, y: b.y1 - 3 }));
+const pods = branches.flatMap((b) => [0.6, 0.85].map((t) => {
+  const x = X + (b.x1 - X) * t, y = G - (G - b.y1) * t + 4;
+  return `M${r1(x)} ${r1(y)}q1.4 6 -0.4 12q-1.2 -6 0.4 -12Z`;
+}));
+const stumps = [-9, -3, 3, 9].map((dx) => `M${X + dx - 2} ${G}V${G - 10}H${X + dx + 2}V${G}Z`);
+const cuts = [-9, -3, 3, 9].map((dx) => ({ x1: X + dx - 4, x2: X + dx + 4, y: G - 11 }));
+const shoots = [-9, -3, 3, 9].flatMap((dx, i) => [-1, 1].map((side) => {
+  const x0 = X + dx, x1 = x0 + side * (6 + i), y1 = G - 34 - (i % 2) * 6;
+  return { d: `M${x0} ${G - 10}Q${x0} ${G - 24} ${x1} ${y1}`, leaves: leaflets(x1, y1, -90 + side * 20) };
+}));
+---
+<div class="guide-pp">
+  <ol class="guide-stages" role="img" aria-label={alt}>
+    {stages.map((label, i) => (
+      <li class="guide-stage">
+        <svg viewBox={`0 0 ${W} ${G + 6}`} aria-hidden="true">
+          <line x1="4" y1={G} x2={W - 4} y2={G} class="guide-pp-ground" />
+          <text x="8" y="16" class="guide-pp-num">{i + 1}</text>
+          {i < 2 && branches.map((b) => <path d={b.d} class="guide-stem guide-stem-thin" />)}
+          {i < 2 && leaves.map((d) => <path d={d} class="guide-leaf" />)}
+          {i === 1 && pods.map((d) => <path d={d} class="guide-pp-pod" />)}
+          {i === 1 && flowers.map((f) => <circle cx={f.x} cy={f.y} r="3" class="guide-pp-flower" />)}
+          {i >= 2 && stumps.map((d) => <path d={d} class="guide-pp-wood" />)}
+          {i === 2 && cuts.map((c) => <line x1={c.x1} y1={c.y} x2={c.x2} y2={c.y} class="guide-pp-cut" />)}
+          {i === 3 && shoots.map((s) => (
+            <g>
+              <path d={s.d} class="guide-stem guide-stem-thin" />
+              {s.leaves.map((d) => <path d={d} class="guide-leaf" />)}
+            </g>
+          ))}
+        </svg>
+        <p class="guide-stage-do">{label}</p>
+      </li>
+    ))}
+  </ol>
+  <svg class="guide-pp-return" viewBox="0 0 400 26" aria-hidden="true">
+    <path d="M350 2Q350 20 250 20H50Q50 20 50 6" class="guide-pp-arrow" />
+    <path d="M44 11L50 3L56 11" class="guide-pp-arrow" />
+  </svg>
+  <p class="guide-pp-note">{note}</p>
+</div>
+
+<style>
+  .guide-pp { display: grid; gap: 0.2rem; }
+  .guide-pp .guide-stages svg { width: 100%; }
+  .guide-pp .guide-stage-do { margin: 0; text-align: center; }
+  .guide-body .guide-pp .guide-pp-note { margin: 0.3rem 0 0; }
+  .guide-pp-note { font-size: 0.88rem; line-height: 1.4; color: var(--text-secondary); text-align: center; }
+  .guide-pp-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-pp-num { font-size: 12px; font-weight: 600; fill: var(--accent-ink); }
+  .guide-pp-wood { fill: var(--leaf-brown); }
+  .guide-pp-pod { fill: var(--leaf-ochre); }
+  .guide-pp-flower { fill: var(--leaf-gold); }
+  .guide-pp-cut { stroke: var(--accent); stroke-width: 1.6; stroke-dasharray: 3 2; }
+  .guide-pp-return { width: 100%; }
+  .guide-pp-arrow { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @media (max-width: 639px) { .guide-pp-return { display: none; } }
+</style>

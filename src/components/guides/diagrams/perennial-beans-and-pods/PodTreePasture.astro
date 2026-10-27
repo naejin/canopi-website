@@ -1,0 +1,88 @@
+---
+// Perennial beans and pods: two pod trees of different varieties in a pasture, shown over two years.
+// Year 1: tree A heavy with pods, many fallen on the grass, an animal grazing under it; tree B light.
+// Year 2: the reverse. No species is named in the drawing. years are the two panel titles, varieties the
+// two tree names, heavy and light the crop labels, pods the legend line under both panels; alt
+// describes both panels. The panels sit side by side, stacked below 640 px.
+import { r1, wrap } from '../../../../lib/svg';
+interface Props { years: [string, string]; varieties: [string, string]; heavy: string; light: string; pods: string; alt: string; }
+const { years, varieties, heavy, light, pods, alt } = Astro.props;
+const W = 240, G = 112;
+const treeX = [66, 176];
+// A spreading legume tree: trunk and a broad, flat crown.
+const trunk = (x: number) => `M${x - 4} ${G}Q${x - 3} ${G - 24} ${x - 1.5} ${G - 44}H${x + 1.5}Q${x + 3} ${G - 24} ${x + 4} ${G}Z`;
+const crown = (x: number) => `M${x - 46} ${G - 44}Q${x - 44} ${G - 74} ${x - 10} ${G - 78}Q${x + 20} ${G - 84} ${x + 42} ${G - 66}Q${x + 52} ${G - 50} ${x + 38} ${G - 44}Q${x} ${G - 36} ${x - 46} ${G - 44}Z`;
+// A hanging pod, a curved strap about 13 units long.
+const pod = (x: number, y: number, bend: number) => `M${r1(x)} ${r1(y)}q${r1(bend)} 6 ${r1(bend * 0.4)} 13q${r1(-bend * 0.2 - 2.4)} -6 ${r1(-bend * 0.4 - 0.4)} -13Z`;
+const hanging = (x: number, n: number) => Array.from({ length: n }, (_, k) => {
+  const t = (k + 0.5) / n;
+  return pod(x - 40 + t * 78, G - 44 + Math.sin(t * Math.PI) * 4, k % 2 ? 2.2 : -2.2);
+});
+const fallen = (x: number) => [-30, -22, -11, -3, 8, 17, 27, 34].map((dx, k) =>
+  ({ d: `M${x + dx} ${G - 1}q5 ${k % 2 ? -3 : -1.5} 11 0`, }));
+const grass = Array.from({ length: 22 }, (_, k) => {
+  const x = 8 + k * 10.6;
+  return `M${r1(x)} ${G}l-2 -6M${r1(x)} ${G}l1 -7M${r1(x)} ${G}l3 -5`;
+});
+// A grazing goat, head down, in neutral ink.
+const goat = (x: number) => `M${x} ${G - 18}q10 -5 22 0q2 4 -1 7h-20q-3 -3 -1 -7Z` +
+  `M${x + 1} ${G - 14}l-6 9l2 1l6 -7Z` +
+  `M${x + 3} ${G - 12}v12M${x + 7} ${G - 11}v11M${x + 16} ${G - 11}v11M${x + 19} ${G - 12}v12`;
+const goatHorn = (x: number) => `M${x - 1} ${G - 15}q-4 -6 2 -9`;
+const panels = years.map((year, i) => ({
+  year,
+  trees: treeX.map((x, k) => {
+    const isHeavy = (i === 0) === (k === 0);
+    return { x, heavy: isHeavy, name: varieties[k], crop: wrap(isHeavy ? heavy : light, 16) };
+  }),
+}));
+---
+<div class="guide-ptp">
+  {panels.map((p, i) => (
+    <div class="guide-ptp-panel">
+      <p class="guide-ptp-year">{p.year}</p>
+      <svg viewBox={`0 0 ${W} ${G + 50}`} {...(i === 0 ? { role: 'img', 'aria-label': alt } : { 'aria-hidden': 'true' })}>
+        {grass.map((d) => <path d={d} class="guide-ptp-grass" />)}
+        <line x1="4" y1={G} x2={W - 4} y2={G} class="guide-ptp-ground" />
+        {p.trees.map((t) => (
+          <g>
+            <path d={trunk(t.x)} class="guide-ptp-wood" />
+            <path d={crown(t.x)} class="guide-ptp-crown" />
+            {hanging(t.x, t.heavy ? 12 : 3).map((d) => <path d={d} class="guide-ptp-pod" />)}
+            {t.heavy && fallen(t.x).map((f) => <path d={f.d} class="guide-ptp-fallen" />)}
+            {t.heavy && <path d={goat(t.x + 14)} class="guide-ptp-goat" />}
+            {t.heavy && <path d={goatHorn(t.x + 14)} class="guide-ptp-horn" />}
+            <text x={t.x} y={G + 18} text-anchor="middle" class="guide-ptp-name">{t.name}</text>
+            {t.crop.map((line, k) => <text x={t.x} y={G + 33 + k * 13} text-anchor="middle" class={t.heavy ? 'guide-ptp-crop guide-ptp-heavy' : 'guide-ptp-crop'}>{line}</text>)}
+          </g>
+        ))}
+      </svg>
+    </div>
+  ))}
+  <p class="guide-ptp-legend">
+    <svg viewBox="0 0 20 12" aria-hidden="true"><path d="M2 8q8 -6 16 0" class="guide-ptp-fallen" /></svg>
+    <span>{pods}</span>
+  </p>
+</div>
+
+<style>
+  .guide-ptp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem 1.2rem; }
+  .guide-ptp-panel { display: grid; gap: 0.2rem; align-content: start; }
+  .guide-ptp-panel svg { width: 100%; }
+  .guide-body .guide-ptp p { margin: 0; }
+  .guide-ptp-year { font-family: var(--font-display); font-weight: 600; font-size: 1rem; text-align: center; }
+  .guide-ptp-legend { grid-column: 1 / -1; display: flex; gap: 0.45rem; align-items: center; justify-content: center; font-size: 0.9rem; color: var(--text-secondary); }
+  .guide-ptp-legend svg { width: 1.4rem; height: 0.9rem; flex: none; }
+  .guide-ptp-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-ptp-grass { stroke: var(--leaf); stroke-width: 1.2; fill: none; stroke-linecap: round; opacity: 0.8; }
+  .guide-ptp-wood { fill: var(--leaf-brown); }
+  .guide-ptp-crown { fill: var(--leaf); opacity: 0.8; }
+  .guide-ptp-pod { fill: var(--leaf-ochre); stroke: var(--leaf-brown); stroke-width: 0.5; }
+  .guide-ptp-fallen { fill: none; stroke: var(--leaf-ochre); stroke-width: 2.6; stroke-linecap: round; }
+  .guide-ptp-goat { fill: var(--text-secondary); stroke: var(--text-secondary); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .guide-ptp-horn { fill: none; stroke: var(--text-secondary); stroke-width: 1.4; stroke-linecap: round; }
+  .guide-ptp-name { font-size: 12px; font-weight: 600; fill: var(--text); }
+  .guide-ptp-crop { font-size: 11px; fill: var(--text-secondary); }
+  .guide-ptp-heavy { fill: var(--accent-ink); font-weight: 600; }
+  @media (max-width: 639px) { .guide-ptp { grid-template-columns: minmax(0, 1fr); } }
+</style>
