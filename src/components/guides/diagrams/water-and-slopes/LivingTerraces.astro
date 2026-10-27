@@ -1,0 +1,71 @@
+---
+// Keep rain and soil on your land: one slope seen from the side in three stages, no dates. 1 bare: rain
+// falling, soil streaks washing down, a heap at the foot. 2 three cut hedges across the slope, a wedge
+// of soil piling up behind each, crops between. 3 the slope turned into level steps, a hedge on each
+// step's edge, crops on each step. Soil in soil tokens, plants in plant tokens, rain in a muted ink.
+// `stages` gives each panel's title and note (HTML, so they wrap); `alt` describes the three.
+import { rng, seedOf, r1 } from '../../../../lib/svg';
+import { moundPath, tuftPath } from '../food-forest/tree-shapes';
+interface Stage { title: string; note: string; }
+interface Props { alt: string; stages: [Stage, Stage, Stage]; }
+const { alt, stages } = Astro.props;
+const rand = rng(seedOf('living-terraces'));
+const W = 160, B = 106, XA = 4, YA = 24, XB = 156, YB = 98;
+const y = (x: number) => r1(YA + ((x - XA) * (YB - YA)) / (XB - XA));
+const HEDGES = [48, 90, 132];
+const slope = `M${XA} ${YA}L${XB} ${YB}V${B}H${XA}Z`;
+const rain = Array.from({ length: 16 }, () => { const x = r1(10 + rand() * 140), yy = r1(2 + rand() * (y(x) - 14)); return `M${x} ${yy}l-2.4 7`; }).join('');
+const streaks = [30, 58, 86, 114].map((x) => `M${x} ${y(x) - 1.5}L${x + 14} ${y(x + 14) - 1.5}`).join('');
+const heap = `M${XB - 30} ${y(XB - 30)}Q${XB - 12} ${y(XB - 12) - 9} ${XB} ${YB}Z`;
+// Stage 2: hedges on the slope, a soil wedge uphill of each, crops between.
+const hedges2 = HEDGES.map((x) => moundPath(rand, x, y(x), 12, 12, 3));
+const wedges = HEDGES.map((x) => `M${x - 30} ${y(x - 30)}L${x - 5} ${y(x - 5) - 8}L${x - 5} ${y(x - 5)}Z`);
+const crops2 = [24, 66, 108, 146].map((x) => tuftPath(x, y(x), 9, 3)).join('');
+// Stage 3: level treads ending at each hedge, risers below them.
+const treads = [XA, ...HEDGES, XB];
+let steps = `M${XA} ${y(HEDGES[0])}`;
+treads.slice(1).forEach((x, i) => { steps += `H${x}V${i < HEDGES.length ? y(treads[i + 2]) : YB}`; });
+steps += `V${B}H${XA}Z`;
+const hedges3 = HEDGES.map((x) => moundPath(rand, x - 5, y(x), 12, 12, 3));
+const crops3 = treads.slice(0, -1).map((x0, i) => tuftPath((x0 + treads[i + 1]) / 2 - 4, y(treads[i + 1]), 9, 3)).join('');
+---
+<div class="guide-lterr" role="group" aria-label={alt}>
+  {[0, 1, 2].map((i) => (
+    <div class="guide-lterr-item">
+      <svg viewBox={`0 0 ${W} ${B}`} aria-hidden="true">
+        {i < 2 && <path d={slope} class="guide-lterr-soil" />}
+        {i === 2 && <path d={steps} class="guide-lterr-soil" />}
+        {i === 0 && <path d={rain} class="guide-lterr-rain" />}
+        {i === 0 && <path d={streaks} class="guide-lterr-streak" />}
+        {i === 0 && <path d={heap} class="guide-lterr-moved" />}
+        {i === 1 && wedges.map((d) => <path d={d} class="guide-lterr-moved" />)}
+        {i === 1 && <path d={crops2} class="guide-lterr-crop" />}
+        {i === 1 && hedges2.map((d) => <path d={d} class="guide-lterr-hedge" />)}
+        {i === 2 && <path d={crops3} class="guide-lterr-crop" />}
+        {i === 2 && hedges3.map((d) => <path d={d} class="guide-lterr-hedge" />)}
+      </svg>
+      <p class="guide-lterr-title">{stages[i].title}</p>
+      <p class="guide-lterr-note">{stages[i].note}</p>
+    </div>
+  ))}
+</div>
+
+<style>
+  .guide-lterr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; align-items: start; }
+  .guide-lterr-item { display: grid; gap: 0.25rem; }
+  .guide-lterr-item svg { width: 100%; max-width: 13rem; justify-self: center; }
+  .guide-body .guide-lterr-item p { margin: 0; }
+  .guide-lterr-title { font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; line-height: 1.3; text-align: center; }
+  .guide-lterr-note { font-size: 0.88rem; line-height: 1.4; color: var(--text-secondary); text-align: center; }
+  .guide-lterr-soil { fill: var(--soil-1); opacity: 0.8; }
+  .guide-lterr-moved { fill: var(--soil-3); }
+  .guide-lterr-streak { fill: none; stroke: var(--soil-3); stroke-width: 3.2; stroke-linecap: round; }
+  .guide-lterr-rain { fill: none; stroke: var(--text-muted); stroke-width: 1.1; stroke-linecap: round; opacity: 0.7; }
+  .guide-lterr-hedge { fill: var(--leaf-deep); }
+  .guide-lterr-crop { fill: none; stroke: var(--leaf-young); stroke-width: 1.8; stroke-linecap: round; }
+  @media (max-width: 639px) {
+    .guide-lterr { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 0.6rem; }
+    .guide-lterr-item:last-child { grid-column: 1 / -1; max-width: 50%; justify-self: center; }
+    .guide-lterr-note { font-size: 0.82rem; }
+  }
+</style>

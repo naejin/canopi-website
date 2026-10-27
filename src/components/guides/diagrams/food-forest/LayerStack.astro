@@ -1,0 +1,99 @@
+---
+// A layered homegarden: one side section of a small garden on a ground line, generic shapes, no
+// species. Left to right a tall tree, a small tree with a climber up its trunk, a shrub, herbs and a
+// low ground cover between them; under the ground roots at two depths, a root crop, and mushrooms in
+// the tall tree's shade. Numbered circles 1-7 (accent) mark the layers; `layers` gives the seven
+// names, in that order, for the keyed list under the drawing. All words come from the MDX.
+import { rng, seedOf, r1, leafPath } from '../../../../lib/svg';
+import { crownPath, moundPath, tuftPath, trunkPath } from './tree-shapes';
+interface Props { title: string; alt: string; layers: [string, string, string, string, string, string, string]; }
+const { title, alt, layers } = Astro.props;
+const locals = Astro.locals as { guideSvgs?: number };
+const uid = `guide-layerstack-${(locals.guideSvgs = (locals.guideSvgs ?? 0) + 1)}`;
+const rand = rng(seedOf('layer-stack'));
+const G = 186; // ground line
+const tall = { x: 108, top: 74, crown: crownPath(rand, 112, 58, 90, 46, 11) };
+const small = { x: 228, top: 118, crown: crownPath(rand, 234, 106, 46, 28, 9) };
+const shrub = moundPath(rand, 320, G, 74, 42, 4);
+const shrub2 = moundPath(rand, 378, G, 34, 24, 2);
+// The climber: a wavy stem round the small tree's trunk, with leaves at the outer bends.
+const vine = Array.from({ length: 6 }, (_, i) => {
+  const y0 = G - 2 - i * 11, y1 = y0 - 11, side = i % 2 ? -1 : 1;
+  return { d: `M${r1(small.x - side * 5)} ${y0}Q${r1(small.x + side * 11)} ${r1(y0 - 5.5)} ${r1(small.x + side * 5)} ${y1}`, leaf: leafPath(8, small.x + side * 9, y0 - 5.5, side > 0 ? -20 : 200) };
+});
+// Herbs and ground cover between the trees.
+const tufts = [146, 162, 178, 268, 352].map((x, i) => tuftPath(x, G, 14 + (i % 3) * 5, 4));
+const cover = Array.from({ length: 40 }, (_, i) => leafPath(7, 60 + i * 8.4, G - 1, i % 2 ? -160 : -20));
+// Roots: deep under the trees, shallow under the herbs and shrub.
+const roots = [
+  `M${tall.x} ${G}C${tall.x - 8} 210 ${tall.x - 30} 226 ${tall.x - 46} 246`, `M${tall.x} ${G}C${tall.x + 2} 214 ${tall.x + 4} 232 ${tall.x + 2} 250`, `M${tall.x} ${G}C${tall.x + 12} 206 ${tall.x + 34} 222 ${tall.x + 52} 240`,
+  `M${small.x} ${G}C${small.x - 6} 204 ${small.x - 18} 216 ${small.x - 28} 230`, `M${small.x} ${G}C${small.x + 6} 206 ${small.x + 12} 220 ${small.x + 16} 236`,
+  'M320 186c-4 8 -12 14 -20 18M320 186c2 8 8 14 16 16M320 186v20',
+  'M146 186v12M162 186v10M178 186l-3 11M268 186v10M352 186v10',
+];
+const grains = Array.from({ length: 34 }, () => ({ x: r1(6 + rand() * 388), y: r1(G + 8 + rand() * 62), r: r1(0.9 + rand() * 1.3) }));
+// Points for the numbers: tall crown, small crown, shrub, herbs, climber, deep roots, mushrooms.
+const marks: [number, number][] = [[208, 20], [292, 80], [342, 124], [150, 146], [206, 152], [66, 232], [22, 156]];
+---
+<div class="guide-layerstack">
+  <svg viewBox="0 0 400 258" role="img" aria-labelledby={`${uid}-t`} aria-describedby={`${uid}-d`}>
+    <title id={`${uid}-t`}>{title}</title>
+    <desc id={`${uid}-d`}>{alt}</desc>
+    <rect x="0" y={G} width="400" height={258 - G} rx="3" class="guide-layerstack-soil" />
+    {grains.map((g) => <circle cx={g.x} cy={g.y} r={g.r} class="guide-layerstack-grain" />)}
+    {roots.map((d) => <path d={d} class="guide-layerstack-root" />)}
+    {/* Root crop: a tuber under the herbs. */}
+    <ellipse cx="170" cy="210" rx="13" ry="8" transform="rotate(-12 170 210)" class="guide-layerstack-tuber" />
+    <path d="M170 186v16" class="guide-layerstack-root" />
+    <path d={trunkPath(tall.x, G, tall.top, 14)} class="guide-layerstack-wood" />
+    <path d={tall.crown} class="guide-layerstack-crown guide-layerstack-deep" />
+    <path d={trunkPath(small.x, G, small.top, 9)} class="guide-layerstack-wood" />
+    <path d={small.crown} class="guide-layerstack-crown" />
+    <path d={shrub} class="guide-layerstack-crown guide-layerstack-young" />
+    <path d={shrub2} class="guide-layerstack-crown guide-layerstack-young" />
+    {vine.map((v) => <g><path d={v.d} class="guide-layerstack-vine" /><path d={v.leaf} class="guide-layerstack-leaf" /></g>)}
+    <path d={tufts.join('')} class="guide-layerstack-herb" />
+    {cover.map((d) => <path d={d} class="guide-layerstack-leaf guide-layerstack-young" />)}
+    {/* Mushrooms in the tall tree's shade. */}
+    {[[22, 9], [34, 7], [44, 5]].map(([x, s]) => (
+      <g>
+        <path d={`M${x - s * 0.25} ${G}V${G - s}h${s * 0.5}V${G}Z`} class="guide-layerstack-stalk" />
+        <path d={`M${x - s} ${G - s + 1}Q${x} ${G - s * 2.1} ${x + s} ${G - s + 1}Z`} class="guide-layerstack-cap" />
+      </g>
+    ))}
+    <line x1="0" y1={G} x2="400" y2={G} class="guide-layerstack-ground" />
+    {marks.map(([x, y], i) => (
+      <g>
+        <circle cx={x} cy={y} r="10" class="guide-layerstack-num" />
+        <text x={x} y={y + 4} text-anchor="middle" class="guide-layerstack-num-t">{i + 1}</text>
+      </g>
+    ))}
+  </svg>
+  <ol class="guide-layerstack-key">
+    {layers.map((l) => <li>{l}</li>)}
+  </ol>
+</div>
+
+<style>
+  .guide-layerstack { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; display: grid; gap: 0.9rem; }
+  .guide-layerstack svg { display: block; width: 100%; max-width: 34rem; height: auto; margin-inline: auto; }
+  .guide-layerstack-soil { fill: var(--soil-1); opacity: 0.8; }
+  .guide-layerstack-grain { fill: var(--soil-grain); opacity: 0.5; }
+  .guide-layerstack-ground { stroke: var(--border-strong); stroke-width: 1; }
+  .guide-layerstack-root { fill: none; stroke: var(--seed-3); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-layerstack-tuber { fill: var(--leaf-ochre); stroke: var(--seed-3); stroke-width: 1; }
+  .guide-layerstack-wood { fill: var(--seed-1); opacity: 0.9; }
+  .guide-layerstack-crown { fill: var(--leaf); opacity: 0.88; }
+  .guide-layerstack-deep { fill: var(--leaf-deep); }
+  .guide-layerstack-young { fill: var(--leaf-young); }
+  .guide-layerstack-vine { fill: none; stroke: var(--leaf-young); stroke-width: 1.8; stroke-linecap: round; }
+  .guide-layerstack-leaf { fill: var(--leaf); }
+  .guide-layerstack-herb { fill: none; stroke: var(--leaf); stroke-width: 2; stroke-linecap: round; }
+  .guide-layerstack-stalk { fill: var(--seed-3); }
+  .guide-layerstack-cap { fill: var(--leaf-brown); }
+  .guide-layerstack-num { fill: var(--surface); stroke: var(--accent); stroke-width: 1.4; }
+  .guide-layerstack-num-t { fill: var(--accent-ink); font-size: 12px; font-weight: 600; font-family: var(--font-display); }
+  :global(.guide-body) .guide-layerstack-key { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.4rem 1.2rem; counter-reset: guide-layerstack; }
+  :global(.guide-body) .guide-layerstack-key li { counter-increment: guide-layerstack; display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: 0.4rem; margin: 0; font-size: 0.92rem; line-height: 1.4; color: var(--text-secondary); }
+  .guide-layerstack-key li::before { content: counter(guide-layerstack); font-family: var(--font-display); font-weight: 600; color: var(--accent-ink); }
+</style>

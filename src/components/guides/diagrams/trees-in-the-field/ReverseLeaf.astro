@@ -1,0 +1,67 @@
+---
+// Trees among field crops: one tree over a field in two seasons, side by side. Rainy season: the tree
+// bare (trunk and branches only), rain falling, a green crop growing beneath and around it. Dry
+// season: the same tree in full leaf, stubble below, a few pods on the ground. Wood brown, leaves and
+// crop in plant tokens, rain in a muted ink. `seasons` gives each panel's title and note (HTML, so they
+// wrap); `alt` describes the pair.
+import { rng, seedOf, r1 } from '../../../../lib/svg';
+import { crownPath, tuftPath, trunkPath } from '../food-forest/tree-shapes';
+interface Season { title: string; note: string; }
+interface Props { alt: string; seasons: [Season, Season]; }
+const { alt, seasons } = Astro.props;
+const rand = rng(seedOf('reverse-leaf'));
+const W = 180, G = 112, X = 90;
+const trunk = trunkPath(X, G, 58, 10);
+// Branches: forked strokes from the top of the trunk.
+const branches = [
+  `M${X} 60Q${X - 14} 44 ${X - 40} 36`, `M${X - 22} 44Q${X - 30} 30 ${X - 32} 22`, `M${X} 60Q${X - 2} 40 ${X - 6} 20`,
+  `M${X} 60Q${X + 16} 42 ${X + 42} 34`, `M${X + 24} 44Q${X + 34} 30 ${X + 36} 20`, `M${X - 40} 36l-12 -4M${X + 42} 34l12 -6`,
+].join('');
+const crown = crownPath(rand, X, 36, 62, 28, 12);
+const rain = Array.from({ length: 22 }, () => {
+  const x = r1(8 + rand() * 164), y = r1(4 + rand() * 90);
+  return `M${x} ${y}l-3 8`;
+}).join('');
+const crop = Array.from({ length: 17 }, (_, i) => tuftPath(8 + i * 10, G, 18 + (i % 3) * 4, 4)).join('');
+const stubble = Array.from({ length: 34 }, (_, i) => `M${r1(6 + i * 5)} ${G}l${(i % 3) - 1} -5`).join('');
+const pods = [[54, G - 2, -8], [70, G - 1.5, 12], [112, G - 2, -4], [128, G - 1.5, 10], [100, G - 1.5, 4]].map(([x, y, a]) =>
+  ({ d: `M-7 0q7 -4 14 0q-7 2 -14 0Z`, t: `translate(${x} ${y}) rotate(${a})` }));
+---
+<div class="guide-rleaf" role="group" aria-label={alt}>
+  {[0, 1].map((i) => (
+    <div class="guide-rleaf-item">
+      <svg viewBox={`0 0 ${W} ${G + 6}`} aria-hidden="true">
+        <rect x="0" y={G} width={W} height="6" class="guide-rleaf-soil" />
+        {i === 0 && <path d={rain} class="guide-rleaf-rain" />}
+        {i === 0 && <path d={crop} class="guide-rleaf-crop" />}
+        {i === 1 && <path d={stubble} class="guide-rleaf-stubble" />}
+        <path d={trunk} class="guide-rleaf-wood" />
+        <path d={branches} class="guide-rleaf-branch" />
+        {i === 1 && <path d={crown} class="guide-rleaf-crown" />}
+        {i === 1 && pods.map((p) => <path d={p.d} transform={p.t} class="guide-rleaf-pod" />)}
+        <line x1="0" y1={G} x2={W} y2={G} class="guide-rleaf-ground" />
+      </svg>
+      <p class="guide-rleaf-title">{seasons[i].title}</p>
+      <p class="guide-rleaf-note">{seasons[i].note}</p>
+    </div>
+  ))}
+</div>
+
+<style>
+  .guide-rleaf { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; max-width: 34rem; }
+  .guide-rleaf-item { display: grid; gap: 0.25rem; }
+  .guide-rleaf-item svg { width: 100%; max-width: 15rem; justify-self: center; }
+  .guide-body .guide-rleaf-item p { margin: 0; }
+  .guide-rleaf-title { font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; line-height: 1.3; text-align: center; }
+  .guide-rleaf-note { font-size: 0.88rem; line-height: 1.4; color: var(--text-secondary); text-align: center; }
+  .guide-rleaf-soil { fill: var(--soil-1); opacity: 0.7; }
+  .guide-rleaf-ground { stroke: var(--border-strong); stroke-width: 1; }
+  .guide-rleaf-wood { fill: var(--seed-1); opacity: 0.9; }
+  .guide-rleaf-branch { fill: none; stroke: var(--seed-1); stroke-width: 3; stroke-linecap: round; opacity: 0.9; }
+  .guide-rleaf-crown { fill: var(--leaf); opacity: 0.85; }
+  .guide-rleaf-crop { fill: none; stroke: var(--leaf-young); stroke-width: 2; stroke-linecap: round; }
+  .guide-rleaf-stubble { fill: none; stroke: var(--leaf-gold); stroke-width: 1.4; stroke-linecap: round; }
+  .guide-rleaf-pod { fill: var(--leaf-brown); }
+  .guide-rleaf-rain { fill: none; stroke: var(--text-muted); stroke-width: 1.1; stroke-linecap: round; opacity: 0.7; }
+  @media (max-width: 639px) { .guide-rleaf { gap: 0.6rem; } .guide-rleaf-note { font-size: 0.82rem; } }
+</style>
