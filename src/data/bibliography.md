@@ -45,7 +45,20 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - es: [Agroecología: procesos ecológicos en agricultura sostenible](https://www.sidalc.net/search/Record/KOHA-OAI-TEST:39885) — Stephen R. Gliessman · 1998
 - pt: [Agroecologia: processos ecológicos em agricultura sustentável](https://books.google.com/books?vid=ISBN9788538600381) — Stephen R. Gliessman · 1998
 
+### Abundance Agroforestry
+- id: abundance-agroforestry
+- by: Roger Gietzen
+- year: 2019
+- climate: tropical
+- en: [Abundance Agroforestry: A syntropic farming guidebook](https://www.healthy-mind-body.com/humanitarian/syntropic_guide.pdf)
+- pt: [Abundância Agroflorestal: Guia de agricultura sintrópica](https://www.healthy-mind-body.com/humanitarian/abundancia_agroflorestal.pdf)
+- fr: [Agroforesterie Abondante : Un guide sur l'agriculture syntropique](https://www.healthy-mind-body.com/humanitarian/agroforesterie_abondante.pdf)
+- es: [Abundancia Agroforestal: Manual de Agricultura Sintrópica](https://www.healthy-mind-body.com/humanitarian/abundancia_agroforestal_espanhola.pdf)
+- zh: [富饶的农林：共生农业指南](https://www.healthy-mind-body.com/humanitarian/abundance_agroforestry_chinese.pdf)
+- de: [Agroforstwirtschaft im Überfluss: Ein Leitfaden für die syntropische Landwirtschaft](https://www.healthy-mind-body.com/humanitarian/syntropischer_leitfaden.pdf)
+
 ### Bienvenue en syntropie
+- id: bienvenue-en-syntropie
 - by: Anaëlle Théry
 - year: 2024
 - climate: temperate
