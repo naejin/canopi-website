@@ -135,7 +135,7 @@ test('the shape check: types, enums, nulls where allowed, extra keys accepted', 
   ]);
 });
 
-test('thumbnailUrl: Commons originals become 500 px thumbnails (a standard Commons width); svg and tif get their suffix; others are null', () => {
+test('thumbnailUrl: Commons and iNaturalist originals become 500 px thumbnails (a standard Commons width); svg and tif get their suffix; others are null', () => {
   const c = 'https://upload.wikimedia.org/wikipedia/commons';
   assert.equal(thumbnailUrl(`${c}/a/a6/2006-12-01Acanthus03.jpg`), `${c}/thumb/a/a6/2006-12-01Acanthus03.jpg/500px-2006-12-01Acanthus03.jpg`);
   assert.equal(thumbnailUrl(`${c}/2/2b/%28abelmoschus%29_leaf.JPEG`), `${c}/thumb/2/2b/%28abelmoschus%29_leaf.JPEG/500px-%28abelmoschus%29_leaf.JPEG`);
@@ -146,7 +146,11 @@ test('thumbnailUrl: Commons originals become 500 px thumbnails (a standard Commo
   assert.equal(thumbnailUrl(`${c}/a/a6/X.jpg`, 960), `${c}/thumb/a/a6/X.jpg/960px-X.jpg`);
   assert.equal(thumbnailUrl(`${c}/thumb/a/a6/X.jpg/500px-X.jpg`), null, 'already a thumbnail');
   assert.equal(thumbnailUrl(`${c}/a/b6/X.jpg`), null, 'the second directory starts with the first');
-  assert.equal(thumbnailUrl('https://inaturalist-open-data.s3.amazonaws.com/photos/1/medium.jpg'), null);
+  const inat = 'https://inaturalist-open-data.s3.amazonaws.com/photos';
+  assert.equal(thumbnailUrl(`${inat}/4669074/original.jpeg`), `${inat}/4669074/medium.jpeg`, 'iNaturalist: the 500 px medium size');
+  assert.equal(thumbnailUrl(`${inat}/37014/original.jpg`), `${inat}/37014/medium.jpg`);
+  assert.equal(thumbnailUrl(`${inat}/1/medium.jpg`), null, 'already small');
+  assert.equal(thumbnailUrl('https://example.org/photo.jpg'), null);
 });
 
 // Gives the fixture photos: two Commons originals and an iNaturalist one, on one taxon in two cells.

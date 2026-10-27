@@ -13,7 +13,7 @@
 // Photos: each taxon's image.url (http or https) is downloaded once per taxon id, one at a time
 // with a half-second pause (rate limiting waited out, see download()), into images/<id>.<ext>, and the installed cell points to
 // /data/consortium/images/<id>.<ext>; credit, licence and source page stay as they are. Wikimedia
-// Commons originals are fetched as 500 px thumbnails. A photo that fails becomes image: null (no
+// Commons and iNaturalist originals are fetched as 500 px copies. A photo that fails becomes image: null (no
 // photo) and is listed in the summary; more than 10% failing stops the install. Installed cells
 // that changed get their sha256 recomputed in the installed manifest and SHA256SUMS. --no-images
 // skips downloads and keeps the cells byte for byte (tests, offline runs).
@@ -39,9 +39,13 @@ const IMAGE_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'we
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// The thumbnail (500 px wide by default) of a Wikimedia Commons original, or null for any other URL. SVG thumbnails
-// are PNG and TIFF ones JPEG, so those get the extra suffix Commons gives them.
+// A smaller copy of a photo, or null when the host has none: a Wikimedia Commons original becomes
+// its thumbnail (500 px wide by default; SVG thumbnails are PNG and TIFF ones JPEG, so those get the
+// extra suffix Commons gives them), an iNaturalist open-data original its 500 px "medium" size
+// (same extension).
 export function thumbnailUrl(url, width = THUMB_WIDTH) {
+  const inat = /^https?:\/\/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/(\d+)\/original\.([A-Za-z]+)$/.exec(url);
+  if (inat) return `https://inaturalist-open-data.s3.amazonaws.com/photos/${inat[1]}/medium.${inat[2]}`;
   const m = /^https?:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/([0-9a-f])\/(\1[0-9a-f])\/([^/?#]+)$/.exec(url);
   if (!m) return null;
   const [, h, hh, file] = m;
@@ -252,7 +256,7 @@ export function verifyExport(dir, { fixture = false } = {}) {
 }
 
 // One photo: the Commons thumbnail first, then the original only when the thumbnail does not exist
-// (400 or 404, as for a file narrower than the thumbnail). Rate limiting (429, 503) is waited out,
+// (400, 403 or 404, as for a Commons file narrower than the thumbnail; S3 answers 403 for a missing key). Rate limiting (429, 503) is waited out,
 // up to RETRIES times: Retry-After when the server gives it, else backoffMs doubling. Returns
 // { bytes, ext } or throws.
 const RETRIES = 4;
@@ -271,7 +275,7 @@ async function download(url, { fetchImpl, delayMs, backoffMs }) {
     }
     if (!res.ok) {
       last = `HTTP ${res.status} for ${candidate}`;
-      if (res.status === 400 || res.status === 404) continue; // no such thumbnail: try the original
+      if (res.status === 400 || res.status === 403 || res.status === 404) continue; // no such thumbnail: try the original
       break;
     }
     const type = (res.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();

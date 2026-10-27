@@ -4,7 +4,7 @@ title: Consortium core
 description: Format 2 types and the pure, dependency-free functions of the consortium tool (cell lookup, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:31:20Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:46:07Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:32:12Z }
 sources:
@@ -51,8 +51,8 @@ sources:
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
-    digest: sha256:cd27c128542e480c
-    last_modified: 2026-10-27T19:31:59Z
+    digest: sha256:e499936709519586
+    last_modified: 2026-10-27T19:45:00Z
 enforced_by:
   - scripts/consortium.test.mjs
   - scripts/install-consortium.test.mjs
@@ -92,7 +92,7 @@ export under `public/data/consortium/`.
 # Installer
 
 - Refuses: a file not matching `SHA256SUMS`, a listed file missing, an unlisted `.json`, `format_version` ≠ 2, `canopi_db_sha256` all zeros without `--fixture`, a cell's sha256 or taxa/interactions count differing from the manifest, a missing required key or wrong type (hand-written from the schema's required lists; extra keys allowed), duplicate taxon ids, undefined source ids.
-- Photos: once per taxon id, one request at a time with a 500 ms pause, `User-Agent: CanopiWebsite/1.0 (https://projectcanopi.com; contact form)`. Commons originals are fetched as **500 px** thumbnails: Commons answers HTTP 400 for non-standard widths such as 640 (https://w.wiki/GHai). SVG thumbnails get `.png`, TIFF `.jpg`. Rate limiting (429, 503) is waited out up to 4 retries (`Retry-After`, else 5 s doubling). Only a missing thumbnail (400, 404: a file narrower than 500 px) falls back to the original, never a rate-limited one; files over 3 MB, non-image types and SVG count as failed. A failed photo becomes `image: null` and is listed in the summary; more than 10% failing stops the install.
+- Photos: once per taxon id, one request at a time with a 500 ms pause, `User-Agent: CanopiWebsite/1.0 (https://projectcanopi.com; contact form)`. Commons originals are fetched as **500 px** thumbnails: Commons answers HTTP 400 for non-standard widths such as 640 (https://w.wiki/GHai). SVG thumbnails get `.png`, TIFF `.jpg`. iNaturalist open-data `original.<ext>` photos are fetched as `medium.<ext>` (500 px). Rate limiting (429, 503) is waited out up to 4 retries (`Retry-After`, else 5 s doubling). Only a missing smaller copy (400, 403, 404: a Commons file narrower than 500 px; S3 answers 403 for a missing key) falls back to the original, never a rate-limited one; files over 3 MB, non-image types and SVG count as failed. A failed photo becomes `image: null` and is listed in the summary; more than 10% failing stops the install.
 - Changed cells are re-serialised minified with their sha256 recomputed in the installed manifest; an installed `SHA256SUMS` lists every file, images included. The output directory is written beside the target and renamed into place.
 
 # Gotchas
