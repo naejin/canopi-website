@@ -1,0 +1,45 @@
+---
+// A way from a guide into the consortium tool (beta) with the guide's plant kept and its climate set:
+// /consortium/?plant=<canonical_name>&climate=<id> (/fr/guilde/ in French; src/lib/consortium/state.ts
+// reads the preset). plant: the canonical name in public/data/consortium/*.json; name: the guide's own
+// name for it, in the guide's language. Inside a <ForClimate> block, climate is that block's zone;
+// in a guide for every climate, leave it out and each beta cell that has the plant gets a link, so no
+// climate is assumed. The build fails when the plant is not in the cell of the climate it links to.
+import { consortiumPath, t } from '../../i18n/utils';
+import { gt, guideLangOf } from '../../i18n/guides';
+import { climates, isClimate } from '../../data/climates';
+interface Props { plant: string; name: string; climate?: string; }
+const { plant, name, climate } = Astro.props;
+const lang = guideLangOf(Astro.currentLocale);
+
+// The beta's cells, read at build time: site climate id → the canonical names in its cell. (The
+// prerender runs in workerd, without node:fs, so the files come in through Vite.)
+type Cell = { taxa: { canonical_name: string }[] };
+const files = import.meta.glob<{ cells: { climate_zone: string; file: string }[] } | Cell>('../../../public/data/consortium/*.json', { eager: true, import: 'default' });
+const file = (base: string) => files[`../../../public/data/consortium/${base}`];
+const manifest = file('manifest.json') as { cells: { climate_zone: string; file: string }[] };
+const cells = manifest.cells.map((cell) => ({
+  climate: cell.climate_zone.toLowerCase(),
+  names: new Set((file(cell.file) as Cell).taxa.map((taxon) => taxon.canonical_name)),
+}));
+const order = (zone: string) => climates.indexOf(zone as (typeof climates)[number]);
+
+if (climate !== undefined && !isClimate(climate)) throw new Error(`<TryConsortium climate>: "${climate}" is not a climate; use ${climates.join(', ')}`);
+const offered = climate
+  ? [climate]
+  : cells.filter((cell) => cell.names.has(plant)).map((cell) => cell.climate).sort((a, b) => order(a) - order(b));
+if (!offered.length) throw new Error(`<TryConsortium plant>: "${plant}" is in no consortium cell`);
+for (const zone of offered) {
+  const cell = cells.find((c) => c.climate === zone);
+  if (!cell?.names.has(plant)) throw new Error(`<TryConsortium>: "${plant}" is not in the ${zone} cell (public/data/consortium/)`);
+}
+const links = offered.map((zone) => ({
+  href: `${consortiumPath(lang)}?${new URLSearchParams({ plant, climate: zone })}`,
+  text: gt('consortium.link', lang, { plant: name, climate: t(`climate.${zone}`, lang) }),
+}));
+const id = `try-consortium-${plant.toLowerCase().replace(/[^a-z]+/g, '-')}-${offered.join('-')}`;
+---
+<p class="guide-next-inline">
+  <span class="guide-label" id={id}>{gt('consortium.label', lang)}</span>
+  {links.map((link) => <a href={link.href} aria-describedby={id}>{link.text}</a>)}
+</p>

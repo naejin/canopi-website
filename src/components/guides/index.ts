@@ -25,6 +25,7 @@ import Columns from './Columns.astro';
 import Card from './Card.astro';
 import Points from './Points.astro';
 import NextGuides from './NextGuides.astro';
+import TryConsortium from './TryConsortium.astro';
 import SeasonTimeline from './diagrams/SeasonTimeline.astro';
 import YearsTimeline from './diagrams/YearsTimeline.astro';
 import PlotDiagram from './diagrams/PlotDiagram.astro';
@@ -55,6 +56,7 @@ const shared = {
   Card,
   Points,
   NextGuides,
+  TryConsortium,
   SeasonTimeline,
   YearsTimeline,
   PlotDiagram,

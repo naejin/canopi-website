@@ -3,20 +3,20 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:21:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T20:51:42Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:21:53Z }
 sources:
   - id: index-ts
     resource: ../../src/components/guides/index.ts
     title: src/components/guides/index.ts
-    digest: sha256:c8469528282ef49c
-    last_modified: 2026-10-27T07:21:18Z
+    digest: sha256:f699c81f1739bbc6
+    last_modified: 2026-10-27T20:40:25Z
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:aaa8cee0dfb045fb
-    last_modified: 2026-10-27T09:16:21Z
+    digest: sha256:51624498733c77a9
+    last_modified: 2026-10-27T20:43:45Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -57,7 +57,15 @@ sources:
     title: src/lib/svg.ts
     digest: sha256:9633fcd98755c6ac
     last_modified: 2026-10-26T22:42:16Z
-enforced_by: [scripts/guides.test.mjs, scripts/check-built-site.mjs]
+  - id: tryconsortium-astro
+    resource: ../../src/components/guides/TryConsortium.astro
+    title: src/components/guides/TryConsortium.astro
+    digest: sha256:580ebaa4f9ad8250
+    last_modified: 2026-10-27T20:43:45Z
+enforced_by:
+  - scripts/guides.test.mjs
+  - scripts/check-built-site.mjs
+  - scripts/guides-consortium.test.mjs
 ---
 
 The contract between the guide components and the people writing guides. Source of truth: `src/components/guides/index.ts`
@@ -166,6 +174,20 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
 - `<Figure title="…" caption="…">` any diagram `</Figure>` — both optional.
 - `<NextGuides slugs={["saving-seed"]} />` — `slugs` required; only published guides are listed,
   so a section may name a guide before it is written; nothing renders if none is published.
+- `<TryConsortium plant="Artocarpus altilis" climate="tropical" name="Breadfruit" />` — opens the
+  consortium tool (beta) with the guide's plant kept and its climate set:
+  `consortiumPath(lang)?plant=<canonical_name>&climate=<id>` (`/consortium/`, fr `/fr/guilde/`).
+  `plant` required: a `canonical_name` in a beta cell (`public/data/consortium/*.json`); `name`
+  required: the guide's own name for the plant in that file's language (en and fr differ); `climate`
+  optional: the zone of the `<ForClimate>` block it sits in, and the plant must be in that cell. Left
+  out (only outside climate blocks, in a guide for every climate), each beta cell that has the plant
+  gets a link, so no climate is assumed (never default to temperate). Renders a `.guide-next-inline`
+  line: the label "Design a consortium (beta)" (fr « Composer une guilde (bêta) »,
+  `consortium.label`) and one link per climate, "<name> · <climate>" (`consortium.link`), each
+  described by the label. A plant outside its cell fails the build; `scripts/guides-consortium.test.mjs`
+  checks every preset against the cells, its block and the en/fr pairing (same plant and climate, once
+  each per guide). Used in guides whose subject is a plant or a planting system of a beta cell: at the
+  end of a climate block's list, or after a plant guide's season checklist.
 
 # Crop components (data: `src/data/crops.ts`)
 - `<CropCard crop="corn" />` — `crop` required (crop id; unknown id fails the build).
