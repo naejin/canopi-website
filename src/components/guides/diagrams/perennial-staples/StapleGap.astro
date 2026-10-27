@@ -3,7 +3,7 @@
 // Harvest each year (up) over the years after planting (right). Three lines: annuals only (a steady
 // small harvest from the first year), a tree staple alone (nothing for some years, then rising above
 // the annuals) and trees with annuals between them (a harvest from the first year that dips as the
-// shade grows, then rises with the trees). The shaded band is the harvest the annuals add while the
+// shade grows, then rises with the trees, ending where the tree staple alone ends: no lasting gain is claimed). The shaded band is the harvest the annuals add while the
 // trees are young. `axis` is [up, across], `lines` the three legend labels in that order, `start` and
 // `end` the two ends of the time axis, `alt` the description. All words come from the MDX.
 import { wrap } from '../../../../lib/svg';
@@ -12,7 +12,7 @@ const { alt, axis, lines, start, end } = Astro.props;
 const X0 = 56, X1 = 464, Y0 = 186, Y1 = 34; // plot box: left, right, zero line, top
 const annuals = `M${X0} 146H${X1}`;
 const tree = `M${X0} ${Y0}H178C236 ${Y0} 300 120 ${X1} 58`;
-const both = `M${X0} 146C110 146 150 156 186 156C232 156 290 116 ${X1} 52`;
+const both = `M${X0} 146C110 146 150 156 186 156C232 156 290 118 ${X1} 58`;
 const band = `${both}L${X1} 58C300 120 236 ${Y0} 178 ${Y0}H${X0}Z`;
 const up = wrap(axis[0], 22), across = wrap(axis[1], 26), from = wrap(start, 14), to = wrap(end, 14);
 const kinds = ['annuals', 'tree', 'both'];

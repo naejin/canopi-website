@@ -101,7 +101,7 @@ const panels: { shapes: Shape[]; cut?: [number, number, number] }[] = [
   .guide-hf-key-cut { height: 0; border-top: 2px dashed var(--accent); }
   @media (max-width: 639px) {
     :global(.guide-body) .guide-hf-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    :global(.guide-body) .guide-hf-list li:last-child { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 0.8rem; }
+    :global(.guide-body) .guide-hf-list li:last-child { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr; align-content: start; column-gap: 0.8rem; }
     .guide-hf-list li:last-child svg { grid-row: span 2; }
   }
 </style>
