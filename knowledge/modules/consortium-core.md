@@ -4,9 +4,9 @@ title: Consortium core
 description: Format 2 types and the pure, dependency-free functions of the consortium tool (cell lookup, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T20:32:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:25Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:32:12Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:25Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -36,8 +36,8 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:2e9329be47a803b4
-    last_modified: 2026-10-27T20:32:03Z
+    digest: sha256:2aa2775a88b91829
+    last_modified: 2026-10-27T21:38:30Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
@@ -75,7 +75,7 @@ export under `public/data/consortium/`.
 | [site.ts](../../src/lib/consortium/site.ts) | `Site`, `DEFAULT_SITE` (sun, soil and water unsure, large garden), `fits(taxon, site)` → `{ ok, misfits, unknowns }` |
 | [jobs.ts](../../src/lib/consortium/jobs.ts) | `jobs` (six ids), `jobsOf(taxon)`, `jobOfFunction`, `phaseBands`, `bandOf(phase)`, `bandsOf(taxon)` |
 | [conflicts.ts](../../src/lib/consortium/conflicts.ts) | `conflicts(members, interactions)`, `conflictsOf(taxon, others, interactions)`, `matches(ref, taxon)`, `isSerious`, `invasiveIn(taxon, country)` → `true \| false \| null`, `invasiveCountries(taxon)` |
-| [suggest.ts](../../src/lib/consortium/suggest.ts) | `gain(taxon, members, site)` (term by term), `suggest(cell, { site, kept, removed, country })` → `{ members, limit, gaps }` (the only function that fills), `evaluate(cell, ids, { site, kept, country })` → the same `{ members, limit, gaps }` for a fixed list, never refilled, `alternatives(memberId, consortium, cell, { site, removed, country })`, `SIZE_LIMIT` |
+| [suggest.ts](../../src/lib/consortium/suggest.ts) | `gain(taxon, members, site)` (term by term), `suggest(cell, { site, kept, removed, country })` → `{ members, limit, gaps }` (the only function that fills), `evaluate(cell, ids, { site, kept, country })` → the same `{ members, limit, gaps }` for a fixed list, never refilled, `alternatives(memberId, consortium, cell, { site, removed, country })`, `flagsFor(cell, id, memberIds, { site, country })` (the flags of one plant against a list: what Add uses to sort and confirm), `SIZE_LIMIT` |
 | [state.ts](../../src/lib/consortium/state.ts) | `ConsortiumState` (`climate`, `region`, `cellRegion`, `country`, `site`, `kept`, `removed`, `members`, `plants`), `encodeState(state, cell?)` → `URLSearchParams`, `decodeState(params, cell?)` → `{ state, dropped }`, `resolveState(decoded, cell)`, `resolveIds(tokens, cell)`, `shortId(id, cell?)`, `MAX_LINK_IDS` = 256 |
 | [index.ts](../../src/lib/consortium/index.ts) | re-exports all of the above |
 | [install-consortium.mjs](../../scripts/install-consortium.mjs) | `npm run install:consortium -- <export-dir> [--fixture [--no-images]] [--out <dir>]`; `installConsortium(...)`, `verifyExport`, `shapeErrors`, `cellShape`, `thumbnailUrl`, `STAGING_DIR`, `stagingDirFor(out)` |
