@@ -1,0 +1,67 @@
+---
+// A layered homegarden over the years: four small side views of the same plot, no dates. 1 young
+// trees with rows of annuals in the sun between them; 2 taller trees with shrubs filling in and fewer
+// annuals; 3 crowns touching, low shade crops below; 4 the full stack, with a climber and ground
+// cover. `stages` gives each panel's title and its note (HTML, so they wrap in either language);
+// `alt` describes the four together. Plant tokens for plants, brown for wood.
+import { rng, seedOf, r1, leafPath } from '../../../../lib/svg';
+import { crownPath, moundPath, tuftPath, trunkPath } from './tree-shapes';
+interface Stage { title: string; note: string; }
+interface Props { alt: string; stages: [Stage, Stage, Stage, Stage]; }
+const { alt, stages } = Astro.props;
+const W = 120, G = 96;
+const rand = rng(seedOf('garden-years'));
+// Two trees at the same places in every panel; their size grows from stage to stage.
+const TREES = [32, 88];
+const sizes = [{ h: 22, rx: 9, ry: 7 }, { h: 40, rx: 17, ry: 13 }, { h: 56, rx: 29, ry: 20 }, { h: 60, rx: 30, ry: 21 }];
+const panels = sizes.map((s, i) => {
+  const trees = TREES.map((x) => ({ trunk: trunkPath(x, G, G - s.h, 3 + i * 1.4), crown: crownPath(rand, x, G - s.h - s.ry * 0.5, s.rx, s.ry, 8) }));
+  // Annual rows: many in stage 1, a few at the edges in stage 2, none after.
+  const annualX = i === 0 ? [10, 18, 46, 54, 62, 70, 104, 112] : i === 1 ? [8, 112] : [];
+  const annuals = annualX.map((x) => tuftPath(x, G, 9, 3)).join('');
+  const shrubs = i === 0 ? [] : i === 1 ? [moundPath(rand, 60, G, 22, 14, 3)] : [moundPath(rand, 60, G, 26, 16, 3), ...(i === 3 ? [moundPath(rand, 112, G, 16, 11, 2), moundPath(rand, 8, G, 16, 11, 2)] : [])];
+  // Shade crops: low broad leaves under the closed canopy.
+  const shade = i >= 2 ? [16, 44, 76, 102].map((x) => [leafPath(7, x, G - 1, -150), leafPath(7, x, G - 1, -30)]).flat() : [];
+  const cover = i === 3 ? Array.from({ length: 18 }, (_, k) => leafPath(4.5, 4 + k * 6.4, G - 0.5, k % 2 ? -165 : -15)) : [];
+  const vine = i === 3 ? `M${TREES[1] - 3} ${G}q8 -8 0 -16q-8 -8 0 -16q8 -8 0 -16` : '';
+  return { trees, annuals, shrubs, shade, cover, vine };
+});
+---
+<div class="guide-gyears" role="group" aria-label={alt}>
+  {panels.map((p, i) => (
+    <div class="guide-gyears-item">
+      <svg viewBox={`0 0 ${W} ${G + 6}`} aria-hidden="true">
+        <rect x="0" y={G} width={W} height="6" class="guide-gyears-soil" />
+        {p.trees.map((t) => <path d={t.trunk} class="guide-gyears-wood" />)}
+        {p.shrubs.map((d) => <path d={d} class="guide-gyears-shrub" />)}
+        {p.trees.map((t) => <path d={t.crown} class="guide-gyears-crown" />)}
+        {p.vine && <path d={p.vine} class="guide-gyears-vine" />}
+        {p.annuals && <path d={p.annuals} class="guide-gyears-annual" />}
+        {p.shade.map((d) => <path d={d} class="guide-gyears-shade" />)}
+        {p.cover.map((d) => <path d={d} class="guide-gyears-cover" />)}
+        <line x1="0" y1={G} x2={W} y2={G} class="guide-gyears-ground" />
+      </svg>
+      <p class="guide-gyears-title">{stages[i].title}</p>
+      <p class="guide-gyears-note">{stages[i].note}</p>
+    </div>
+  ))}
+</div>
+
+<style>
+  .guide-gyears { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.9rem; align-items: start; }
+  .guide-gyears-item { display: grid; gap: 0.25rem; }
+  .guide-gyears-item svg { width: 100%; max-width: 11rem; justify-self: center; }
+  .guide-body .guide-gyears-item p { margin: 0; }
+  .guide-gyears-title { font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; line-height: 1.3; text-align: center; }
+  .guide-gyears-note { font-size: 0.88rem; line-height: 1.4; color: var(--text-secondary); text-align: center; }
+  .guide-gyears-soil { fill: var(--soil-1); opacity: 0.7; }
+  .guide-gyears-ground { stroke: var(--border-strong); stroke-width: 1; }
+  .guide-gyears-wood { fill: var(--seed-1); opacity: 0.9; }
+  .guide-gyears-crown { fill: var(--leaf); opacity: 0.88; }
+  .guide-gyears-shrub { fill: var(--leaf-young); }
+  .guide-gyears-vine { fill: none; stroke: var(--leaf-young); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-gyears-annual { fill: none; stroke: var(--leaf-young); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-gyears-shade { fill: var(--leaf-deep); }
+  .guide-gyears-cover { fill: var(--leaf-young); }
+  @media (max-width: 639px) { .guide-gyears { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 0.6rem; } .guide-gyears-note { font-size: 0.82rem; } }
+</style>
