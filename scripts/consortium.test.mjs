@@ -128,6 +128,19 @@ test('fits: dry and wet water against drought tolerance, moisture use and draina
   for (const water of ['average', 'unsure']) assert.deepEqual(fits(named('Inga edulis'), at(water)), { ok: true, misfits: [], unknowns: [] }, water);
 });
 
+test('fits: a wet site is a misfit for a good-drainage plant of low moisture use when its drought tolerance is unknown', () => {
+  // The real export: thyme, sage and Asparagus acutifolius are well_drained true, drought_tolerance null, moisture_use Low.
+  const wet = { ...open, water: 'wet' };
+  const thyme = make({ role: 'crop', ...layer('medium'), traits: { well_drained: true, drought_tolerance: null, moisture_use: 'Low', edibility_rating: 5 } });
+  assert.deepEqual(fits(thyme, wet).misfits, ['water']);
+  assert.deepEqual(fits(make({ traits: { well_drained: null, drought_tolerance: null, moisture_use: 'Low' } }), wet).unknowns, ['water'], 'drainage unknown');
+  assert.deepEqual(fits(make({ traits: { well_drained: true, drought_tolerance: null, moisture_use: null } }), wet).unknowns, ['water'], 'moisture unknown');
+  assert.equal(fits(make({ traits: { well_drained: true, drought_tolerance: 'Medium', moisture_use: 'Low' } }), wet).ok, true, 'known drought tolerance decides');
+  assert.deepEqual(fits(thyme, { ...open, water: 'dry' }).unknowns, ['water'], 'dry unchanged');
+  const pool = [thyme, ...Array.from({ length: 3 }, (_, n) => make({ canonical_name: `Wet ${n}`, role: 'crop', ...layer('low'), traits: { well_drained: false } }))];
+  assert.ok(!suggest(cellOf(pool), { site: wet }).members.some((m) => m.taxon.id === thyme.id), 'never suggested for a wet site');
+});
+
 test('fits: room limits height and width at 6 m (small) and 12 m (large); a field takes anything', () => {
   const at = (room) => ({ ...open, room });
   assert.deepEqual(fits(named('Artocarpus altilis'), at('small')).misfits, ['room']);

@@ -9,7 +9,8 @@
 //   min > 7.5); unknown when the bound that decides is null.
 // - water: dry is a misfit for drought_tolerance Low or None, or, when drought tolerance is unknown,
 //   for moisture_use High. Wet is a misfit for a plant that wants good drainage and is drought
-//   adapted (well_drained true and drought_tolerance High); it fits when well_drained is false,
+//   adapted: well_drained true and drought_tolerance High or, when drought tolerance is unknown,
+//   moisture_use Low (the export's thyme and sage). It fits when well_drained is false,
 //   moisture_use is High or drought tolerance is known and not High.
 // - room: small garden ≤ 6 m, large garden ≤ 12 m, for both height (height_m.max) and width
 //   (width_max_m); a field takes any size.
@@ -62,7 +63,7 @@ function water(t: Taxon, site: Site): Verdict {
     return mu === 'High' ? 'misfit' : 'unknown';
   }
   if (site.water === 'wet') {
-    if (wd === true && dt === 'High') return 'misfit';
+    if (wd === true && (dt === 'High' || (dt === null && mu === 'Low'))) return 'misfit';
     if (wd === false || mu === 'High' || (dt !== null && dt !== 'High')) return 'fit';
     return 'unknown';
   }
