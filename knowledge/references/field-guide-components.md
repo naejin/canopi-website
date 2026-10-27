@@ -3,30 +3,30 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:50Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:20:50Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:50Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:21:02Z }
 sources:
   - id: index-ts
     resource: ../../src/components/guides/index.ts
     title: src/components/guides/index.ts
-    digest: sha256:c3facde42cf0521e
-    last_modified: 2026-10-26T23:29:23Z
+    digest: sha256:c8469528282ef49c
+    last_modified: 2026-10-27T07:15:51Z
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:4a73db0c41e6f8cc
-    last_modified: 2026-10-26T23:29:30Z
+    digest: sha256:dc2ac211e152c3ac
+    last_modified: 2026-10-27T07:15:51Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
     digest: sha256:d504f4ebf9ee9035
-    last_modified: 2026-10-26T23:29:09Z
+    last_modified: 2026-10-26T23:34:11Z
   - id: food-risks-ts
     resource: ../../src/data/food-risks.ts
     title: src/data/food-risks.ts
-    digest: sha256:18c0d28ee993b4ed
-    last_modified: 2026-10-26T21:22:58Z
+    digest: sha256:8e638ee001e92a1b
+    last_modified: 2026-10-27T07:15:51Z
   - id: rehype-guide-terms-mjs
     resource: ../../src/lib/rehype-guide-terms.mjs
     title: src/lib/rehype-guide-terms.mjs
@@ -40,8 +40,8 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:e52061e79678b226
-    last_modified: 2026-10-26T23:30:01Z
+    digest: sha256:593a3b7245180c54
+    last_modified: 2026-10-27T07:14:56Z
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
@@ -113,14 +113,25 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
 - `<FoodCaution risk="…" />` or `<FoodCaution risk={["ergot", "treated-seed"]} />` — `risk` required: one
   risk or a list, from `src/data/food-risks.ts`: bitter-cucurbits, dry-beans, nightshades,
   potato-berries, corn-processing, treated-seed, fava, ergot, sprouted-or-surplus-seed, toxic-leaves,
-  home-canning, raw-tasting, wild-foods, home-fermentation, compost-tea. Fixed wording
+  home-canning, raw-tasting, wild-foods, home-fermentation, compost-tea, needs-processing (perennial
+  staples poisonous raw or unripe, eaten only after traditional processing), akee, cashew. Fixed wording
   per language (`food.<risk>` in `src/i18n/guides/{en,fr}.json`); an unknown or repeated risk fails the
   build. A list is one box with one title and one paragraph per risk, and every box ends with one
   `food.authority` paragraph (the national food-safety authority pointer; risk texts never repeat
   it, and `npm test` and the built-site check enforce once per box); two FoodCautions in a row fail
   `npm test` (combine them).
-- `<HisGarden his="…" you="…" />` — both required: Lofthouse's practice or result in his garden,
-  and what changes where the reader lives (qualitative only).
+- `<HisGarden his="…" you="…" book="…" />` — `his` and `you` required: the author's practice or
+  result in his garden, and what changes where the reader lives (qualitative only). `book` optional,
+  default `landrace-gardening` (Lofthouse, northern Utah): the cited book whose author's garden it is,
+  which picks the "where" line `hisGarden.where.<book>` (now also `carbon-farming-solution`,
+  Toensmeier, Massachusetts). The book must be among the guide's `sources` and have that string in
+  en and fr (test); a book without one fails the build.
+- `Mesquite <Invasive />` — no props, no slot, always self-closing. A fixed inline note ("invasive in
+  places: check your local list"; fr "espèce envahissante par endroits : vérifiez la liste locale")
+  placed right after the name of a species the source flags as invasive or spreading, in prose or a
+  list item. It renders a `<span class="guide-invasive">` (phrasing content, so it stays inside the
+  paragraph). Never at the start of a line or list item, never in a heading; it counts in the en/fr
+  component sequence, so both files carry the same notes in the same order (tests).
 - `<ForClimate zones="tropical" source="<book id>">` advice for those climates `</ForClimate>` —
   `zones` required: one zone or a list (`zones={["temperate", "continental"]}`) from
   `src/data/climates.ts`; `source` required: a bibliography book id that is also in the guide's
@@ -128,7 +139,20 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   quantities that hold only in some climates go inside one; principles stay outside. Adjacent blocks
   form a run: the reader's zone comes first and opens, the others close but stay; when no block in a
   run is for the reader's zone, a "not covered yet" note appears above it. Without JavaScript or a
-  chosen zone every block is open; printing opens all. Head: zone badges and "From <book>, by <author>".
+  chosen zone every block is open; printing opens all. Head: zone badges and "From <book>, by
+  <author>" (fr "D'après <book> (<author>)"), the title in a `<cite lang>` of its edition's language.
+  Rules for writers:
+  - **One or two runs per guide**, with the same zone set in each run where possible: every run
+    without the reader's zone shows its own "not covered yet" note.
+  - **Nothing between blocks of a run**: a paragraph, a `<Note>`, a `<FoodCaution>` or an
+    auto-placed term note splits it in two.
+  - **A `<Term>`'s first use comes before the run** (in prose, or in the run's first block): its note
+    is placed before the top-level block of the first use, so a first use in a later block would
+    split the run (`npm test` fails it).
+  - **No headings inside a block** (they would enter the page TOC and point into a closed
+    `<details>`), **no nested `<ForClimate>`**, and **no `<Note>` inside** (it renders in the box, not
+    in the margin). Lists, `<FoodCaution>`, `<Safety>`, `<Points>`, `<Columns>`, `<Invasive />` and
+    `<Term>` are fine inside.
 - `<Steps compact>` `<Step title="Thresh">` text `</Step>` … `</Steps>` — Steps: `compact` optional
   boolean (small numbers and titles, for short steps in a card). Step: `title` required.
 - `<Points ruled="accent">` markdown list, each item opening with a **bold** lead `</Points>` —
@@ -209,3 +233,12 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   (overnight, toute la nuit, boil/bouill-, soak/tremp-).
 - No prose pairs boil, soak, ferment or cook (and French forms) with an amount of time in the same
   sentence. It is a heuristic for English and French; reviewers still read every caution.
+- Checklist items: no tasting, flavour or cooking word (en tast-, flavour, cook; fr goût, cuit, at a
+  word start, so "goutte-à-goutte" and "circuit" pass).
+- Mouth words only inside `<Safety>`. French "mordant" as the dye fixative passes after un, le, du, de
+  or comme, or before "naturel" ("sert de mordant", "un mordant"); "en mordant" still fails.
+- Invasive names (a heuristic): a body naming one of the carbon farming book's flagged species (en
+  mesquite, prosopis, leucaena, kudzu, castor, Osage orange, air potato, Chinese tallow, miscanthus,
+  pongam/pongamia, leafy spurge, cardoon; fr the French names: mesquite, prosopis, leucaena, kudzu,
+  ricin, oranger des Osages, igname bulbifère, arbre à suif, miscanthus, pongamia, euphorbe ésule,
+  cardon) must contain `<Invasive />` at least once. Reviewers still check each name.

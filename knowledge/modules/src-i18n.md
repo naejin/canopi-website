@@ -5,20 +5,20 @@ description: The 11-locale translation tables and the t() lookup used by every c
 resource: ../../src/i18n
 tags: [module, i18n]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:50Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:20:50Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:51Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:20:44Z }
 sources:
   - id: i18n
     resource: ../../src/i18n
     title: src/i18n/
-    digest: sha256:bb9b7ea44b699f73
-    last_modified: 2026-10-26T23:29:09Z
+    digest: sha256:bfd37e3cd7426d90
+    last_modified: 2026-10-27T07:15:35Z
   - id: homepage-test
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
     digest: sha256:8b1028b835ff417b
-    last_modified: 2026-10-26T23:30:40Z
+    last_modified: 2026-10-26T23:34:11Z
 ---
 
 # Responsibility

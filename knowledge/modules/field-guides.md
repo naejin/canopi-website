@@ -4,9 +4,9 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:49Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:20:48Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:51Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:21:00Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -16,13 +16,13 @@ sources:
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:4a73db0c41e6f8cc
-    last_modified: 2026-10-26T23:29:30Z
+    digest: sha256:dc2ac211e152c3ac
+    last_modified: 2026-10-27T07:15:51Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
-    digest: sha256:a82fd8a12c6b0779
-    last_modified: 2026-10-26T23:29:39Z
+    digest: sha256:edbfe9e059122bed
+    last_modified: 2026-10-27T07:15:51Z
   - id: guides-ts
     resource: ../../src/lib/guides.ts
     title: src/lib/guides.ts
@@ -32,7 +32,7 @@ sources:
     resource: ../../src/content.config.ts
     title: src/content.config.ts
     digest: sha256:d504f4ebf9ee9035
-    last_modified: 2026-10-26T23:29:09Z
+    last_modified: 2026-10-26T23:34:11Z
   - id: guides-ts-2
     resource: ../../src/i18n/guides.ts
     title: src/i18n/guides.ts
@@ -75,7 +75,7 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 # Interfaces
 
 - Frontmatter: `title`, one-sentence `description`, `domain` (seeds, crops, soil, perennials, seasons, pests, kitchen), `order`, `glance` (3 to 6 label/value pairs; the hero box wraps its cells, and a value over 40 characters gets a wider cell), `quick`, `climates` (optional; the zones of the guide's `<ForClimate>` blocks, which brings the climate picker to the guide and the index), `sources` (`{ book: <bibliography id>, chapters: [titles] }`; chapter titles are the English edition's, so `BookCite` quotes them and, when the card shows another edition, adds a note naming the English edition rather than guessing translated titles), `related`, `updated`.
-- Components (contract: [Field Guide components](/references/field-guide-components.md), which lists every prop and limit): QuickAnswer, Term, TermNote (placed by the plugin), Note, Safety, FoodCaution, HisGarden, ForClimate, Steps/Step, CropCards, CropCard, CropTable, CropExplorer, PollinationBadge, SeasonTimeline, YearsTimeline, PlotDiagram, FlowerDiagram, PlantingMixBar, Checklist/Item, Figure, Columns, Card, Points, NextGuides.
+- Components (contract: [Field Guide components](/references/field-guide-components.md), which lists every prop and limit): QuickAnswer, Term, TermNote (placed by the plugin), Note, Safety, FoodCaution, HisGarden (optional `book`, whose garden), Invasive (inline invasive-species note), ForClimate, Steps/Step, CropCards, CropCard, CropTable, CropExplorer, PollinationBadge, SeasonTimeline, YearsTimeline, PlotDiagram, FlowerDiagram, PlantingMixBar, Checklist/Item, Figure, Columns, Card, Points, NextGuides.
 - Ids are one per concept: `<Term id>` takes a glossary key, crop components a crop id; there are no alias maps. A crop cell the book does not give stays `null` and shows nothing.
 - `related` in frontmatter: two to four published guides (same list in en and fr); `NextGuides` links at section ends; in-text links to another guide's section use that page's heading id in the same language (French ids differ from English ones; `check-built-site.mjs` fails on a missing `#id`).
 - `<FoodCaution risk>` takes one risk or a list (`risk={['ergot', 'treated-seed']}`): several risks in one place are one box with one title, never two boxes in a row. Each box ends with the food-safety authority pointer once (`food.authority`).

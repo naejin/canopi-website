@@ -3,53 +3,55 @@ type: Architecture Decision
 title: Climate UX
 description: Every page that changes with the climate uses the app's seven zones, one stored choice set from an on-page chip, and one badge, and it reorders and marks content but never hides it.
 tags: [decision, climate, i18n]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:49Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:20:47Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:20:59Z }
 sources:
   - id: climates-ts
     resource: ../../src/data/climates.ts
     title: src/data/climates.ts
     digest: sha256:42b3b2e5b9af2739
-    last_modified: 2026-10-26T23:25:08Z
+    last_modified: 2026-10-26T23:34:11Z
   - id: climate-js
     resource: ../../src/scripts/climate.js
     title: src/scripts/climate.js
     digest: sha256:6fa135827fa5adf8
-    last_modified: 2026-10-26T23:28:32Z
+    last_modified: 2026-10-26T23:34:11Z
   - id: climatepicker-astro
     resource: ../../src/components/ClimatePicker.astro
     title: src/components/ClimatePicker.astro
     digest: sha256:34db62854d83adfc
-    last_modified: 2026-10-26T23:28:21Z
+    last_modified: 2026-10-26T23:34:11Z
   - id: climatebadge-astro
     resource: ../../src/components/ClimateBadge.astro
     title: src/components/ClimateBadge.astro
     digest: sha256:3a302bfb200a1460
-    last_modified: 2026-10-26T23:28:13Z
+    last_modified: 2026-10-26T23:34:11Z
   - id: forclimate-astro
     resource: ../../src/components/guides/ForClimate.astro
     title: src/components/guides/ForClimate.astro
-    digest: sha256:813d4b73a0681594
-    last_modified: 2026-10-26T23:29:23Z
+    digest: sha256:56993118a08f9ccb
+    last_modified: 2026-10-27T07:15:51Z
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
     digest: sha256:c92d050bc60e0ea3
-    last_modified: 2026-10-26T23:30:40Z
+    last_modified: 2026-10-26T23:34:11Z
   - id: global-css
     resource: ../../src/styles/global.css
     title: src/styles/global.css
     digest: sha256:47c585d78f6c50ca
-    last_modified: 2026-10-26T23:28:54Z
+    last_modified: 2026-10-26T23:34:11Z
   - id: homepage-test-mjs
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
     digest: sha256:8b1028b835ff417b
-    last_modified: 2026-10-26T23:30:40Z
+    last_modified: 2026-10-26T23:34:11Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:e52061e79678b226
-    last_modified: 2026-10-26T23:30:01Z
+    digest: sha256:593a3b7245180c54
+    last_modified: 2026-10-27T07:14:56Z
 enforced_by: [scripts/homepage.test.mjs, scripts/guides.test.mjs]
 ---
 
@@ -88,4 +90,6 @@ coherent way to say which climate a piece of advice is for, everywhere it matter
   book to the bibliography first.
 - Tests: `homepage.test.mjs` checks the seven zones, their keys in every locale, the CSS selector for
   every zone and the head script; `guides.test.mjs` checks `<ForClimate>` zones, sources, en/fr parity
-  and that frontmatter `climates` equals the blocks' zones.
+  that frontmatter `climates` equals the blocks' zones, and that no `<Term>` is first used in a later
+  block of a run (its note would split the run). The block head names the book in a `<cite lang>` of
+  its edition's language.

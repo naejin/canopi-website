@@ -3,9 +3,9 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:49Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:20:47Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:50Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T07:21:04Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -15,8 +15,8 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:e52061e79678b226
-    last_modified: 2026-10-26T23:30:01Z
+    digest: sha256:593a3b7245180c54
+    last_modified: 2026-10-27T07:14:56Z
   - id: decisions-field-guides-user-decisions
     resource: /decisions/field-guides-user-decisions.md
   - id: hero-row-ts
@@ -46,6 +46,7 @@ Every Field Guide (`src/content/guides/<slug>/{en,fr}.mdx`) follows these rules,
 - **Select on growth.** Readers select on growth, shape, colour and storage; flavour only under the house tasting rule. Nothing suggests cooking makes a crop safe, and checklist items never suggest tasting.
 - **Portable.** Seasons, not months (both hemispheres); metric first, imperial in parentheses.
 - **Worldwide, by climate** (owner, 2026-10-27). Canopi serves every climate, not only temperate gardens. Principles that hold everywhere stay in the main text; species, spacings, timings and quantities that hold only in some climates go inside `<ForClimate zones source>`, from a book written for those climates, and the frontmatter `climates` lists exactly those zones. Never present one climate's advice as universal; say which climate a source wrote for. See [Climate UX](/decisions/climate-ux.md).
+- **Flag invasive species** (owner, 2026-10-27). Every species the source or its chapter flags as invasive or spreading carries `<Invasive />` right after its name, inline in prose or in a list item (`Mesquite <Invasive />`), never at the start of a line and never in a heading; the fixed text says it is invasive in places and to check the local list. Same notes in the same order in en and fr.
 - **Reader first.** Short sentences, second person, concrete actions, one idea per section; the first screen tells readers whether the guide answers their question.
 - **English and French alike.** Same components, terms, checklist and item ids, crop lists and cautions in both files. French is written for French gardeners, with the glossary's French terms, « » quotes with a no-break space inside, a no-break space before `:` and a narrow no-break space before `;` `?` `!` and `%`.
 - **Design.** Only tokens for colour (plant tokens for plant content only; soil tokens for soil drawings only, never chrome), no outside fonts, images or `url()`; `guides.css` classes start with `guide-`.
@@ -53,7 +54,7 @@ Every Field Guide (`src/content/guides/<slug>/{en,fr}.mdx`) follows these rules,
 
 # Enforcement
 
-`npm run check` fails a section missing from `domainMotifs` (typed `Record<GuideDomain, …>`). `scripts/guides.test.mjs` (`npm test`): frontmatter and en/fr parity, known components only, Term/crop/FoodCaution/NextGuides ids resolve, same component sequence (opening and closing tags) and ids in both languages, no amount of time (digits or words, e.g. "ten minutes"), temperature or method word (overnight, boil, soak and French forms) in cautions and safety text, no prose pairing boil/soak/ferment/cook with an amount of time (a heuristic with its own self-test; reviewers still read cautions), no glossary or crop alias maps, no tasting, flavour or cooking words in checklist items, no double-encoded characters (mojibake) in guide text or guide strings, mouth words only inside a `<Safety>` box (en: teeth, tooth, bite, chew a seed, spit, suck or nibble a seed, pod or leaf; fr: dent, mordre, croquer, mâcher, recracher, sucer or grignoter une graine, cosse ou feuille; pest prose such as "slugs nibble seedlings" stays allowed), one food-safety authority pointer per FoodCaution box, no two `<FoodCaution>` boxes in a row, no links in food texts, glossary and crop table completeness, `<ForClimate>` zones and source books valid and `climates` frontmatter equal to the blocks' zones, no colour literals or outside assets, plant and soil tokens in all three theme blocks, `guide-` class prefix, a hero motif for every section and a seed kind for every crops guide. `scripts/check-built-site.mjs` checks the built pages. Own words, omissions and attribution are checked by review against the spec.
+`npm run check` fails a section missing from `domainMotifs` (typed `Record<GuideDomain, …>`). `scripts/guides.test.mjs` (`npm test`): frontmatter and en/fr parity, known components only, Term/crop/FoodCaution/NextGuides ids resolve, same component sequence (opening and closing tags) and ids in both languages, no amount of time (digits or words, e.g. "ten minutes"), temperature or method word (overnight, boil, soak and French forms) in cautions and safety text, no prose pairing boil/soak/ferment/cook with an amount of time (a heuristic with its own self-test; reviewers still read cautions), no glossary or crop alias maps, no tasting, flavour or cooking words in checklist items (French goût and cuit bounded at a word start, so goutte-à-goutte and circuit pass), no double-encoded characters (mojibake) in guide text or guide strings, mouth words only inside a `<Safety>` box (en: teeth, tooth, bite, chew a seed, spit, suck or nibble a seed, pod or leaf; fr: dent, mordre, croquer, mâcher, recracher, sucer or grignoter une graine, cosse ou feuille; pest prose such as "slugs nibble seedlings" and the dye noun "mordant" after un, le, du, de or comme stay allowed), one food-safety authority pointer per FoodCaution box, no two `<FoodCaution>` boxes in a row, no links in food texts, glossary and crop table completeness, `<ForClimate>` zones and source books valid and `climates` frontmatter equal to the blocks' zones, no `<Term>` first used in a later block of a `<ForClimate>` run, `<Invasive />` self-closing and inline (not at a line start, not in a heading) and present in any body naming one of the book's flagged species (a per-language name list, a heuristic with its own self-test), `<HisGarden book>` a cited book with its "where" string, no colour literals or outside assets, plant and soil tokens in all three theme blocks, `guide-` class prefix, a hero motif for every section and a seed kind for every crops guide. `scripts/check-built-site.mjs` checks the built pages. Own words, omissions and attribution are checked by review against the spec.
 
 # Examples
 
