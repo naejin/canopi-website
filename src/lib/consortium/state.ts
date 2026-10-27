@@ -83,8 +83,8 @@ export function resolveIds(tokens: string[], cell: Cell, key = 'p'): { ids: stri
 
 const oneOf = <T extends string>(list: readonly T[]) => (v: string): v is T => (list as readonly string[]).includes(v);
 
-// Reads a link's query. With the cell, kept and removed hold full ids; without it, the checked
-// prefixes, to pass to resolveIds() once the cell is loaded.
+// Reads a link's query. With the cell, kept, removed and members hold full ids; without it, the
+// checked prefixes, to pass to resolveState() once the cell is loaded.
 export function decodeState(params: URLSearchParams | string, cell?: Cell | null): DecodedState {
   const q = typeof params === 'string' ? new URLSearchParams(params) : params;
   const dropped: Dropped[] = [];
@@ -130,22 +130,37 @@ export function decodeState(params: URLSearchParams | string, cell?: Cell | null
     }
     return out;
   };
-  let kept = tokens('p'), removed = tokens('x');
-  let members: string[] | null = q.has('a') ? tokens('a') : null;
-  if (cell) {
-    const k = resolveIds(kept, cell, 'p'), x = resolveIds(removed, cell, 'x');
-    kept = k.ids;
-    removed = x.ids;
-    dropped.push(...k.dropped, ...x.dropped);
-    if (members) {
-      const a = resolveIds(members, cell, 'a');
-      members = a.ids;
-      dropped.push(...a.dropped);
-    }
-  }
-  // A plant both kept and removed stays kept.
-  for (const id of removed.filter((id) => kept.includes(id))) dropped.push({ key: 'x', value: id, reason: 'duplicate' });
-  removed = removed.filter((id) => !kept.includes(id));
+  const decoded: DecodedState = {
+    state: { climate, region, cellRegion, country, site, kept: tokens('p'), removed: tokens('x'), members: q.has('a') ? tokens('a') : null },
+    dropped,
+  };
+  const read = consistent(decoded, false);
+  return cell ? resolveState(read, cell) : read;
+}
 
-  return { state: { climate, region, cellRegion, country, site, kept, removed, members }, dropped };
+// The rules between the lists: a plant both kept and removed stays kept, and no member is removed;
+// once ids are resolved, every kept plant is a member too (when the link lists members).
+function consistent({ state, dropped }: DecodedState, resolved: boolean): DecodedState {
+  let members = state.members ?? null;
+  if (members && resolved) {
+    const inMembers = new Set(members);
+    members = [...members, ...state.kept.filter((id) => !inMembers.has(id))];
+  }
+  const keep = new Set([...state.kept, ...(members ?? [])]);
+  const out = [...dropped];
+  for (const id of state.removed) if (keep.has(id)) out.push({ key: 'x', value: id, reason: 'duplicate' });
+  return { state: { ...state, members, removed: state.removed.filter((id) => !keep.has(id)) }, dropped: out };
+}
+
+// A link decoded without its cell (the page reads `c` and `r` first to choose the cell), resolved
+// once the cell is loaded: prefixes become full ids, unknown and ambiguous ones are dropped, and the
+// kept-over-removed rule is applied again on the full ids (a link may carry one id at two lengths).
+export function resolveState(decoded: DecodedState, cell: Cell): DecodedState {
+  const { state } = decoded;
+  const k = resolveIds(state.kept, cell, 'p'), x = resolveIds(state.removed, cell, 'x');
+  const a = state.members ? resolveIds(state.members, cell, 'a') : null;
+  return consistent({
+    state: { ...state, kept: k.ids, removed: x.ids, members: a ? a.ids : null },
+    dropped: [...decoded.dropped, ...k.dropped, ...x.dropped, ...(a?.dropped ?? [])],
+  }, true);
 }

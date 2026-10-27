@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const { cellFor, regionsOf, fits, jobsOf, jobs, bandOf, bandsOf, phases, conflicts, invasiveIn, invasiveCountries } = core;
-const { gain, suggest, evaluate, alternatives, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveIds, shortId } = core;
+const { gain, suggest, evaluate, alternatives, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveState, resolveIds, shortId } = core;
 
 const read = (name) => JSON.parse(readFileSync(new URL(`fixtures/consortium/${name}`, import.meta.url), 'utf8'));
 const manifest = read('manifest.json');
@@ -547,6 +547,18 @@ test('state: ids that share a prefix get a longer one, and an ambiguous prefix i
   assert.deepEqual(decodeState('p=abcdef01', cell).dropped, [{ key: 'p', value: 'abcdef01', reason: 'ambiguous' }]);
   const conflict = decodeState(`p=${a.id}&x=${a.id}`, cell);
   assert.deepEqual([conflict.state.kept, conflict.state.removed], [[a.id], []], 'kept wins over removed');
+});
+
+test('state: kept wins over removed once prefixes of different lengths are resolved, with or without the cell at decode', () => {
+  const inga = named('Inga edulis').id;
+  const link = `p=${inga.slice(0, 8)}&x=${inga}`;
+  const later = resolveState(decodeState(link), tropical);
+  assert.deepEqual([later.state.kept, later.state.removed], [[inga], []]);
+  assert.deepEqual(later.dropped, [{ key: 'x', value: inga, reason: 'duplicate' }]);
+  assert.deepEqual(resolveState(decodeState(link), tropical), decodeState(link, tropical), 'the same as decoding with the cell');
+  const withMembers = resolveState(decodeState(`p=${inga}&x=${named('Musa acuminata').id}&a=${named('Musa acuminata').id.slice(0, 8)}`), tropical);
+  assert.deepEqual(withMembers.state.members, [named('Musa acuminata').id, inga], 'a kept plant is a member; a member is not removed');
+  assert.deepEqual(withMembers.state.removed, []);
 });
 
 // performance
