@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const { cellFor, regionsOf, fits, jobsOf, jobs, bandOf, bandsOf, phases, conflicts, invasiveIn, invasiveCountries } = core;
-const { gain, suggest, alternatives, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveIds, shortId } = core;
+const { gain, suggest, evaluate, alternatives, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveIds, shortId } = core;
 
 const read = (name) => JSON.parse(readFileSync(new URL(`fixtures/consortium/${name}`, import.meta.url), 'utf8'));
 const manifest = read('manifest.json');
@@ -394,6 +394,36 @@ test('suggest never picks a removed plant; kept wins over removed; unknown ids a
   const both = suggest(cell, { site: open, kept: [strata[0].id], removed: [strata[0].id] });
   assert.equal(both.members[0].taxon.id, strata[0].id);
   assert.equal(suggest(cell, { site: open, kept: ['ffffffff-0000-4000-8000-000000000000'] }).members.length, 10);
+});
+
+// evaluate: a fixed list, never refilled
+
+test('evaluate scores a fixed list without refilling: a removed member leaves its gap', () => {
+  const { strata, workers, idle } = tenGood();
+  const cell = cellOf([...strata, ...workers, ...idle]);
+  const site = { ...open, room: 'large' };
+  const s = suggest(cell, { site, kept: [strata[1].id] });
+  const ids = s.members.map((m) => m.taxon.id);
+  assert.deepEqual(evaluate(cell, ids, { site, kept: [strata[1].id] }), s, 'the same members, flags, gains and gaps as the suggestion');
+  const gone = s.members.find((m) => m.taxon.id === workers[0].id);
+  assert.ok(gone, 'the worker was suggested');
+  const left = evaluate(cell, ids.filter((id) => id !== gone.taxon.id), { site, kept: [strata[1].id] });
+  assert.equal(left.members.length, s.members.length - 1, 'the gap stays');
+  assert.ok(!left.members.some((m) => m.taxon.id === gone.taxon.id));
+  assert.ok(!s.gaps.includes('feeds_soil') && left.gaps.includes('feeds_soil'), 'the gap is named');
+  assert.equal(suggest(cell, { site, kept: ids.filter((id) => id !== gone.taxon.id), removed: [gone.taxon.id] }).members.length, s.members.length, 'suggest would refill it');
+  assert.equal(left.limit, 9);
+});
+
+test('evaluate flags misfits, invasives and conflicts in a fixed list, and ignores unknown and repeated ids', () => {
+  const inga = named('Inga edulis'), potato = named('Ipomoea batatas'), tithonia = named('Tithonia diversifolia'), leucaena = named('Leucaena leucocephala');
+  const e = evaluate(tropical, [tithonia.id, potato.id, leucaena.id, inga.id, inga.id, 'ffffffff-0000-4000-8000-000000000000'], { site: { ...open, water: 'dry' }, country: 'BR' });
+  assert.deepEqual(names(e.members), ['Tithonia diversifolia', 'Ipomoea batatas', 'Leucaena leucocephala', 'Inga edulis'], 'in the given order');
+  const by = (name) => e.members.find((m) => m.taxon.canonical_name === name).flags;
+  assert.equal(by('Leucaena leucocephala').invasive, true);
+  assert.equal(by('Tithonia diversifolia').conflicts[0].b.canonical_name, 'Ipomoea batatas');
+  assert.deepEqual(by('Inga edulis').misfits, ['water']);
+  assert.ok(e.members.every((m) => m.kept === false));
 });
 
 // alternatives

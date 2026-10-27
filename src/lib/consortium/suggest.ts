@@ -192,6 +192,11 @@ export function suggest(cell: Cell, options: SuggestOptions): Suggestion {
     add(cov, best);
   }
 
+  return result(chosen, keptIds, gains, cell, site, country);
+}
+
+// Members with their flags, and the jobs nobody does: what suggest() and evaluate() both return.
+function result(chosen: Info[], keptIds: Set<string>, gains: Map<string, number | null>, cell: Cell, site: Site, country: string | null | undefined): Suggestion {
   const taxa = chosen.map((i) => i.taxon);
   const members = chosen.map((i) => ({
     taxon: i.taxon,
@@ -199,7 +204,30 @@ export function suggest(cell: Cell, options: SuggestOptions): Suggestion {
     gain: gains.get(i.taxon.id) ?? null,
     flags: flagsOf(i, taxa.filter((t) => t.id !== i.taxon.id), cell, country),
   }));
-  return { members, limit, gaps: allJobs.filter((j) => !cov.jobs.has(j)) };
+  return { members, limit: SIZE_LIMIT[site.room], gaps: allJobs.filter((j) => !coverageOf(chosen).jobs.has(j)) };
+}
+
+export interface EvaluateOptions { site: Site; kept?: string[]; country?: string | null }
+
+// A fixed consortium, scored as it stands and never refilled: the page's state after a Remove (the
+// gap stays) or a restored share link. Members come in the order of `ids` (repeats and ids not in
+// the cell are ignored) with the same flags as suggest(); a member's gain is what it adds to the
+// members before it, null when it is kept, so the ids of a suggestion give that suggestion back.
+export function evaluate(cell: Cell, ids: string[], options: EvaluateOptions): Suggestion {
+  const { site, country } = options;
+  const keptIds = new Set(options.kept ?? []);
+  const byId = new Map(cell.taxa.map((t) => [t.id, t]));
+  const chosen: Info[] = [], gains = new Map<string, number | null>();
+  const cov = coverageOf([]);
+  for (const id of ids) {
+    const taxon = byId.get(id);
+    if (!taxon || gains.has(id)) continue;
+    const i = infoOf(taxon, site);
+    gains.set(id, keptIds.has(id) ? null : tenths(i, cov).total / 10);
+    chosen.push(i);
+    add(cov, i);
+  }
+  return result(chosen, keptIds, gains, cell, site, country);
 }
 
 export interface AlternativeOptions { site: Site; removed?: string[]; country?: string | null }
