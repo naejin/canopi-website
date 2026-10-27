@@ -166,6 +166,15 @@
 .guide-his-col .guide-label { color: var(--accent-ink); }
 .guide-his-where { font-size: 0.85rem; color: var(--text-muted); margin-top: -0.2rem; }
 .guide-his-you { background: var(--surface-alt); }
+/* A species the source flags as invasive: an inline ochre pill right after its name. Solid hairline
+   (the dashed box is the climate "not covered yet" note); it wraps like text at 390px. */
+.guide-invasive {
+  display: inline; padding: 0.05rem 0.45rem; margin-inline: 0.1rem;
+  font-size: 0.85rem; color: var(--accent-ink); background: var(--surface-alt);
+  border: 1px solid var(--border-strong); border-radius: 999px;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.guide-invasive-icon { display: inline-block; vertical-align: -0.12em; margin-right: 0.25rem; }
 /* Advice for some climates only: a box headed by its zones and its book; the reader's zone opens first. */
 .guide-climate { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
 .guide-climate + .guide-climate { margin-top: 0.6rem; }
@@ -176,6 +185,7 @@
 .guide-climate[open] > .guide-climate-head::before { transform: rotate(45deg); }
 .guide-climate-zones { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 .guide-climate-source { font-size: 0.88rem; color: var(--text-muted); }
+.guide-climate-source cite { font-style: normal; }
 .guide-climate-body { padding: 0 1.1rem 1rem; }
 .guide-climate-body > * + * { margin-top: 0.6rem; }
 .guide-climate-missing { padding: 0.7rem 1.1rem; border: 1px dashed var(--border-strong); border-radius: var(--radius); font-size: 0.95rem; color: var(--text-secondary); }

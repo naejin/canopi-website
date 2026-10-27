@@ -65,6 +65,7 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - fr: [Bienvenue en syntropie ! : Un jardin d'abondance, des principes au terrain](https://www.terrevivante.org/boutique/livres/permaculture-jardin-bio/techniques-de-jardinage/bienvenue-en-syntropie/)
 
 ### The Carbon Farming Solution
+- id: carbon-farming-solution
 - by: Eric Toensmeier
 - year: 2016
 - en: [The Carbon Farming Solution: A Global Toolkit of Perennial Crops and Regenerative Agriculture Practices for Climate Change Mitigation and Food Security](https://www.chelseagreen.com/product/the-carbon-farming-solution/)

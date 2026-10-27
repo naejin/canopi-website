@@ -45,8 +45,13 @@
   "food.wild-foods": "Les plantes et les champignons sauvages se confondent facilement avec des sosies toxiques, voire mortels. Ne mangez jamais une espèce que vous n’avez pas identifiée avec certitude, idéalement avec un spécialiste sur place.",
   "food.home-fermentation": "Un aliment fermenté à la maison peut développer des bactéries ou des moisissures nocives quand quelque chose tourne mal, sans que vous puissiez toujours le voir, le sentir ou le goûter. Apprenez auprès d’une source fiable avant de commencer, et jetez tout ce qui a un aspect ou une odeur anormale.",
   "food.compost-tea": "Les thés de compost, les macérations de fumier et les autres préparations à base de compost ou de fumier peuvent contenir des germes qui rendent malade, comme E. coli. N’en mettez jamais sur une partie de plante que vous mangerez ni sur la terre où elle pousse, et jetez toute préparation qui sent mauvais.",
+  "food.needs-processing": "Certains aliments de base tirés de plantes pérennes, dont des noix, des graines, des haricots et des fruits, sont toxiques crus ou avant maturité et ne se mangent qu’après une préparation traditionnelle. N’improvisez pas cette préparation : apprenez-la auprès de personnes qui consomment cette plante.",
+  "food.akee": "Les graines de l’akée, et son fruit tant qu’il n’est pas mûr, sont toxiques et peuvent tuer. Ne mangez ce fruit que préparé par des personnes qui le connaissent.",
+  "food.cashew": "La coque qui entoure la noix de cajou crue contient une huile qui brûle la peau, les yeux et la bouche. Les noix encore dans leur coque ne sont pas un aliment, et les décortiquer n’est pas une tâche à faire chez soi.",
   "hisGarden.his": "Dans son jardin",
-  "hisGarden.where": "Nord de l’Utah : air sec, altitude, saison courte",
+  "hisGarden.where.landrace-gardening": "Nord de l’Utah : air sec, altitude, saison courte",
+  "hisGarden.where.carbon-farming-solution": "Massachusetts : hivers froids, étés humides",
+  "invasive.text": "espèce envahissante par endroits : vérifiez la liste locale",
   "hisGarden.you": "Chez vous",
   "checklist.progress": "Fait : {done} sur {total}",
   "checklist.allDone": "Tout est fait. Bonne récolte !",
@@ -170,6 +175,6 @@
   "seedKinds.save": "Graines récoltées",
   "seedKinds.label": "Ce que donnent les graines récoltées sur chaque type de variété",
   "aria.labelled": "{label} : {text}",
-  "climate.from": "D’après {book}, de {by}",
+  "climate.from": "D’après {book} ({by})",
   "climate.missing": "Nos sources ne couvrent pas encore le climat {zone} ici. Les principes plus haut restent valables ; les encadrés ci-dessous valent pour d’autres climats."
 }

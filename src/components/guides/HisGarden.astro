@@ -1,15 +1,16 @@
 ---
-// Lofthouse's practice or result in his garden, beside what changes where the reader lives
-// (qualitative only: humid, mild, hot, short season…).
+// The author's practice or result in his garden, beside what changes where the reader lives
+// (qualitative only: humid, mild, hot, short season…). book: the cited book whose author's garden it
+// is (a bibliography id with a "hisGarden.where.<book>" string); Lofthouse's by default.
 import { gt, guideLangOf } from '../../i18n/guides';
-interface Props { his: string; you: string; }
-const { his, you } = Astro.props;
+interface Props { his: string; you: string; book?: string; }
+const { his, you, book = 'landrace-gardening' } = Astro.props;
 const lang = guideLangOf(Astro.currentLocale);
 ---
 <div class="guide-his" role="group" aria-label={`${gt('hisGarden.his', lang)} · ${gt('hisGarden.you', lang)}`}>
   <div class="guide-his-col">
     <p class="guide-label">{gt('hisGarden.his', lang)}</p>
-    <p class="guide-his-where">{gt('hisGarden.where', lang)}</p>
+    <p class="guide-his-where">{gt(`hisGarden.where.${book}`, lang)}</p>
     <p>{his}</p>
   </div>
   <div class="guide-his-col guide-his-you">

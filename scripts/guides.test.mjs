@@ -20,6 +20,9 @@ const planned = [
   'trees-with-edible-leaves', 'nixtamalization', 'cooking-dry-beans',
   'living-soil', 'reading-your-soil', 'fungal-or-bacterial', 'compost-for-soil-life', 'mulch', 'compost-tea',
   'mycorrhizal-fungi', 'no-dig-beds', 'soil-care-year',
+  'carbon-farming', 'perennial-staples', 'nut-staples', 'perennial-beans-and-pods', 'starch-from-trees', 'food-forest',
+  'trees-in-the-field', 'windbreaks-and-living-fences', 'trees-for-livestock', 'water-and-slopes', 'coppice-and-bamboo',
+  'fibre-dye-and-soap',
 ];
 // Safety rule: no caution or safety box gives a time, a temperature or a method word, and no prose
 // pairs boiling, soaking, fermenting or cooking with an amount of time. This is a heuristic: it catches
@@ -160,6 +163,7 @@ test('the safety heuristic catches times, temperatures and method words written 
 
 test('no caution or safety text gives a time, a temperature or a method, and no prose times a cooking step', async () => {
   const { foodRisks: risks } = await import('../src/data/food-risks.ts');
+  for (const risk of ['needs-processing', 'akee', 'cashew']) assert.ok(risks.includes(risk), `food-risks.ts lists "${risk}" (carbon farming guides)`);
   for (const lang of guideLangs) {
     const strings = JSON.parse(read(`i18n/guides/${lang}.json`));
     for (const risk of risks) {
@@ -290,6 +294,7 @@ test('the glossary plugin gives each term id one note, beside the block of its f
 
 test('the bibliography gives each book an optional, unique id', () => {
   assert.ok(bookIds.includes('landrace-gardening'));
+  assert.ok(bookIds.includes('carbon-farming-solution'), 'The Carbon Farming Solution has an id for the carbon farming guides');
   assert.equal(new Set(bookIds).size, bookIds.length, 'book ids are unique');
   for (const id of bookIds) assert.match(id, /^[a-z0-9]+(?:-[a-z0-9]+)*$/, id);
 });
@@ -357,9 +362,14 @@ test('glossary terms do not rely on Chromium-only CSS, and their notes print in 
 });
 
 test('checklist items never suggest tasting a crop', () => {
+  // French "goût" and "cuit" are bounded at a word start, and "goût" is not "goutte", so a drip line
+  // (goutte-à-goutte) or a circuit stays allowed.
+  const tasting = /\b(?:tast|flavou?r|cook)|(?<!\p{L})go[uû]t(?!t)|(?<!\p{L})cuit/iu;
+  for (const text of ['Taste the fruit', 'Note the flavour', 'Goûtez les fruits', 'Le goût des fruits', 'Gardez les plus cuites', 'bien cuit']) assert.ok(tasting.test(text), `checklist check misses "${text}"`);
+  for (const text of ['Posez un goutte-à-goutte', 'Un circuit d’eau', 'Gouttière nettoyée', 'Un biscuit']) assert.ok(!tasting.test(text), `checklist check flags "${text}"`);
   for (const { slug, lang } of guides) {
     for (const [item] of read(`content/guides/${slug}/${lang}.mdx`).matchAll(/<Item\b[\s\S]*?<\/Item>/g)) {
-      assert.ok(!/\b(?:tast|flavou?r|cook)|go[uû]t|cuit/i.test(item), `${slug}/${lang}: ${item}`);
+      assert.ok(!tasting.test(item), `${slug}/${lang}: ${item}`);
     }
   }
 });
@@ -425,7 +435,9 @@ test('a mouth test appears only inside a <Safety> warning, as the author\'s prac
   // a <Safety> box no prose may read as one. "Dent" is also an English corn type, so the French word
   // is checked in French files only.
   const en = /\b(?:teeth|tooth|bites?|biting|bitten|chew(?:s|ing)? (?:a|the|one) seeds?|spits?|spat|spitting|suck(?:s|ed|ing)? (?:on )?(?:(?:a|the|each) )?(?:seeds?|pods?|beans?)|nibbl\w* (?:on )?(?:(?:a|the|each) )?(?:leaf|leaves|seeds?|pods?|fruit|beans?|pieces?))\b/i;
-  const fr = /(?<!\p{L})(?:dents?|mordre|mordez|mordant|croqu\p{L}*|mâch\p{L}*|recrach\p{L}*|(?:suç\p{L}*|suc(?:e|er|ez|ent|é)) (?:la|les|une|des|chaque) (?:graines?|cosses?|feuilles?)|grignot\p{L}* (?:la|les|une|des|chaque) (?:graines?|cosses?|feuilles?))(?!\p{L})/iu;
+  // "Mordant" is also the dye word (a fixative): it passes after un, le, du, de or comme, or before
+  // "naturel"; "en mordant", "un froid mordant" and the like still fail, so write the dye noun that way.
+  const fr = /(?<!\p{L})(?:dents?|mordre|mordez|(?<!(?<!\p{L})(?:un|le|du|de|comme)\s)mordant(?!\s+naturels?(?!\p{L}))|croqu\p{L}*|mâch\p{L}*|recrach\p{L}*|(?:suç\p{L}*|suc(?:e|er|ez|ent|é)) (?:la|les|une|des|chaque) (?:graines?|cosses?|feuilles?)|grignot\p{L}* (?:la|les|une|des|chaque) (?:graines?|cosses?|feuilles?))(?!\p{L})/iu;
   // A self-closing <Safety … /> has no body, so the box pattern must not run from it to the next </Safety>.
   const mouthHit = (body, lang) => body
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
@@ -446,6 +458,8 @@ test('a mouth test appears only inside a <Safety> warning, as the author\'s prac
   }
   for (const text of ['Slugs nibble seedlings.', 'Sap-sucking insects.']) assert.ok(!mouthHit(text, 'en'), `en: pest prose "${text}" is not a mouth test`);
   for (const text of ['Les limaces grignotent les semis.', 'Des insectes suceurs.', 'Le suçoir du puceron.']) assert.ok(!mouthHit(text, 'fr'), `fr: pest prose "${text}" is not a mouth test`);
+  for (const text of ['L’alun sert de mordant.', 'Un mordant fixe la couleur.', 'Le mordant se prépare à part.', 'Comme mordant, l’alun.', 'Un tanin sert d’appui au mordant naturel.', 'Les mordants fixent la teinture.']) assert.ok(!mouthHit(text, 'fr'), `fr: dye prose "${text}" is not a mouth test`);
+  for (const text of ['Il teste la graine en mordant dedans.', 'En mordant une cosse, il juge.', 'Mordant la graine, il la juge.']) assert.ok(mouthHit(text, 'fr'), `fr: mouth-test check misses "${text}"`);
   for (const { body, file, lang } of guides) {
     const hit = mouthHit(body, lang);
     assert.ok(!hit, `${file}: "${hit}" reads as a mouth test; report it only inside a <Safety> warning`);
@@ -564,4 +578,103 @@ test('the crossing meter fills with a non-green token: green is for plants, not 
   const rules = [...css.matchAll(/([^{}]*\.guide-meter[^{}]*)\{([^}]*)\}/g)];
   assert.ok(rules.length, 'guides.css styles .guide-meter');
   for (const [, selector, body] of rules) assert.doesNotMatch(body, /--leaf/, `guides.css: ${selector.trim()} uses --leaf`);
+});
+
+// Invasive species (owner, 2026-10-27): <Invasive /> is a fixed inline note placed right after the name
+// of a species the book flags as invasive or spreading. The name lists are a heuristic, not the whole
+// rule: a guide naming one of the book's flagged species must carry the note at least once; reviewers
+// still check each name and its placement.
+const invasiveNames = {
+  en: /\b(?:prosopis|mesquites?|leucaenas?|kudzu|castor|osage oranges?|air potato(?:es)?|chinese tallow|miscanthus|pongam(?:ia)?s?|leafy spurge|cardoons?)\b/i,
+  fr: /(?<!\p{L})(?:prosopis|mesquites?|leucaenas?|kudzu|ricins?|orangers? des osages|ignames? bulbifères?|arbres? à suif|miscanthus|pongamias?|euphorbes? ésules?|cardons?)(?!\p{L})/iu,
+};
+const invasiveProblem = (body, lang) => {
+  const text = body.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+  if (/<Invasive(?!\s*\/>)/.test(text)) return 'write <Invasive /> self-closing, with no attributes';
+  if (/^[ \t]*(?:(?:[-*+]|\d+\.)[ \t]+)?<Invasive/m.test(text)) return '<Invasive /> follows the species name, never starts a line or a list item';
+  if (/^#{1,6}[ \t].*<Invasive/m.test(text)) return 'no <Invasive /> in a heading';
+  const named = text.match(invasiveNames[lang])?.[0];
+  if (named && !text.includes('<Invasive />')) return `names "${named}", a species the book flags as invasive, with no <Invasive />`;
+};
+
+test('the invasive note is inline and self-closing, and a guide naming a flagged species carries it', () => {
+  const samples = [
+    ['Mesquite <Invasive /> feeds livestock.', 'en', false],
+    ['- Kudzu <Invasive />, a fodder vine.', 'en', false],
+    ['Le ricin <Invasive /> donne une huile.', 'fr', false],
+    ['Sow beans and squash.', 'en', false],
+    ['Mesquite feeds livestock.', 'en', true],
+    ['L’oranger des Osages fait des haies.', 'fr', true],
+    ['Mesquite <Invasive></Invasive> feeds livestock.', 'en', true],
+    ['Mesquite <Invasive lang="en" /> feeds livestock.', 'en', true],
+    ['Mesquite\n<Invasive />', 'en', true],
+    ['- <Invasive /> Mesquite', 'en', true],
+    ['## Mesquite <Invasive />', 'en', true],
+    ['{/* mesquite, later */}Sow beans.', 'en', false],
+  ];
+  for (const [text, lang, bad] of samples) assert.equal(Boolean(invasiveProblem(text, lang)), bad, `${lang}: ${JSON.stringify(text)}`);
+  const component = read('components/guides/Invasive.astro');
+  assert.ok(!/interface Props\s*\{[^}]*\w/.test(component) && !/<slot/.test(component), 'Invasive takes no props and no slot');
+  assert.match(component, /<span class="guide-invasive"/, 'Invasive renders phrasing content (a span)');
+  assert.ok(!/<(?:div|p|aside|section)\b/.test(component), 'Invasive renders no block element (it sits inside a paragraph)');
+  for (const lang of guideLangs) assert.ok(JSON.parse(read(`i18n/guides/${lang}.json`))['invasive.text']?.trim(), `${lang}: invasive.text`);
+  const css = read('styles/guides.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  const rule = css.match(/\.guide-invasive\s*\{([^}]*)\}/)?.[1] ?? '';
+  assert.match(rule, /border\s*:\s*1px solid var\(--border-strong\)/, '.guide-invasive has a solid hairline (dashed is the "not covered yet" note)');
+  assert.ok(!/nowrap|--leaf|--danger/.test(rule), '.guide-invasive wraps, and is neither green nor red');
+  for (const { body, file, lang } of guides) {
+    const problem = invasiveProblem(body, lang);
+    assert.ok(!problem, `${file}: ${problem}`);
+  }
+});
+
+test('every <HisGarden book> names a cited book whose garden is described in English and French', () => {
+  const component = read('components/guides/HisGarden.astro');
+  assert.match(component, /book = 'landrace-gardening'/, 'HisGarden defaults to Lofthouse\'s garden');
+  const strings = Object.fromEntries(guideLangs.map((lang) => [lang, JSON.parse(read(`i18n/guides/${lang}.json`))]));
+  for (const book of ['landrace-gardening', 'carbon-farming-solution']) {
+    for (const lang of guideLangs) assert.ok(strings[lang][`hisGarden.where.${book}`]?.trim(), `${lang}: hisGarden.where.${book}`);
+  }
+  for (const { body, file, data, lang } of guides) {
+    for (const book of attrs(body, 'HisGarden', 'book')) {
+      assert.ok(bookIds.includes(book), `${file}: <HisGarden book> "${book}" is a book id`);
+      assert.ok(data.sources.some((s) => s.book === book), `${file}: <HisGarden book> "${book}" is among the guide's sources`);
+      assert.ok(strings[lang][`hisGarden.where.${book}`]?.trim(), `${file}: hisGarden.where.${book} in ${lang}.json`);
+    }
+  }
+});
+
+test('the climate block names its book in the book\'s language, in a phrase that suits any author', () => {
+  const fr = JSON.parse(read('i18n/guides/fr.json'))['climate.from'];
+  // "de Eric" is wrong French: a name starting with a vowel needs "d’". No article before {by}.
+  assert.ok(!/(?<!\p{L})(?:de|le|la|que) \{by\}/u.test(fr), `fr climate.from: ${fr}`);
+  const component = read('components/guides/ForClimate.astro');
+  assert.match(component, /<cite lang=\{edition\.lang\}>\{title\}<\/cite>/, 'ForClimate marks the title with its language');
+  assert.match(read('styles/guides.css'), /\.guide-climate-source cite\s*\{[^}]*font-style\s*:\s*normal/);
+});
+
+// A <Term>'s note is placed before the top-level block of its first use, so a first use inside the
+// second or later block of a run of <ForClimate> blocks puts a note between them and splits the run.
+const termSplittingRun = (body) => {
+  const text = body.replace(/\{\/\*[\s\S]*?\*\/\}/g, (m) => ' '.repeat(m.length));
+  const later = [...text.matchAll(/<ForClimate\b[\s\S]*?<\/ForClimate>/g)].filter((b) => /<\/ForClimate>\s*$/.test(text.slice(0, b.index)));
+  const seen = new Set();
+  for (const m of text.matchAll(/<Term\b[^>]*?\bid="([^"]+)"/g)) {
+    if (seen.has(m[1])) continue;
+    seen.add(m[1]);
+    if (later.some((b) => m.index > b.index && m.index < b.index + b[0].length)) return m[1];
+  }
+};
+
+test('no term is first used in the second or later block of a climate run', () => {
+  const block = (inner) => `<ForClimate zones="tropical" source="x">\n${inner}\n</ForClimate>`;
+  const term = '<Term id="coppice">coppice</Term>';
+  assert.equal(termSplittingRun(`${block('a')}\n\n${block(term)}`), 'coppice');
+  assert.equal(termSplittingRun(`Cut a ${term}.\n\n${block('a')}\n\n${block(term)}`), undefined, 'first use before the run');
+  assert.equal(termSplittingRun(`${block(term)}\n\n${block(term)}`), undefined, 'first use in the run\'s first block');
+  assert.equal(termSplittingRun(`${block('a')}\n\nBetween.\n\n${block(term)}`), undefined, 'a block after prose starts a new run');
+  for (const { body, file } of guides) {
+    const id = termSplittingRun(body);
+    assert.ok(!id, `${file}: <Term id="${id}"> is first used inside a later block of a <ForClimate> run; use it first in prose before the run`);
+  }
 });
