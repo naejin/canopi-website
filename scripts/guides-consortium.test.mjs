@@ -85,16 +85,56 @@ test('English and French guides open the tool with the same presets, once each',
   }
 });
 
-test('TryConsortium builds the preset link from the tool path, the canonical name and the climate', () => {
-  const component = read('src/components/guides/TryConsortium.astro');
-  assert.match(component, /consortiumPath\(lang\)\}\?\$\{new URLSearchParams\(\{ plant, climate: zone \}\)\}/, 'the link is consortiumPath(lang)?plant=…&climate=…');
-  assert.match(component, /throw new Error\(`<TryConsortium>: "\$\{plant\}" is not in the \$\{zone\} cell/, 'the build fails on a plant outside its cell');
-  assert.match(component, /Astro\.currentLocale/, 'the guide language comes from the page, like every guide component');
-  assert.match(read('src/components/guides/index.ts'), /^\s{2}TryConsortium,$/m, 'guides can use it without importing it');
+test('a preset in a climate block is the last thing in it, after the list and any caution', () => {
+  // A call to action between a plant list and its <FoodCaution> or <Safety> box would pull the warning
+  // away from what it warns about, and one between a list and the sentence that follows it breaks the prose.
+  for (const { file, body } of bodies) {
+    for (const m of body.matchAll(/<TryConsortium\b[^>]*?\/>/g)) {
+      const close = body.indexOf('</ForClimate>', m.index);
+      const open = body.indexOf('<ForClimate', m.index);
+      if (close === -1 || (open !== -1 && open < close)) continue; // outside a block
+      assert.equal(body.slice(m.index + m[0].length, close).trim(), '', `${file}: ${m[0]} ends its <ForClimate> block`);
+    }
+  }
+});
+
+const { presetCells, presetLinks } = await import('../src/components/guides/try-consortium.ts');
+const liveCells = presetCells(manifest, (name) => JSON.parse(read(`${dataDir}/${name}`)));
+const holders = (plant) => [...liveCells].filter((cell) => cell.names.has(plant));
+
+test('a preset without a climate links every beta cell that has the plant, in the site climate order', () => {
+  const links = presetLinks('/consortium/', 'Zea mays', undefined, liveCells);
+  const expected = siteClimates.filter((zone) => holders('Zea mays').some((cell) => cell.climate === zone));
+  assert.ok(expected.length > 1, 'corn is in more than one cell');
+  assert.deepEqual(links.map((link) => link.climate), expected);
+  assert.deepEqual(links.map((link) => link.href), expected.map((zone) => `/consortium/?plant=Zea+mays&climate=${zone}`));
+  for (const link of links) {
+    assert.deepEqual(link.regions, holders('Zea mays').filter((cell) => cell.climate === link.climate).map((cell) => cell.region), `${link.climate}: the link names the cell it opens`);
+  }
+});
+
+test('a preset with a climate links that climate only, in the French slug too, and names its cell', () => {
+  const [cell] = liveCells.filter((c) => c.climate === 'tropical');
+  const plant = [...cell.names][0];
+  assert.deepEqual(presetLinks('/fr/guilde/', plant, 'tropical', liveCells), [
+    { climate: 'tropical', regions: [cell.region], href: `/fr/guilde/?${new URLSearchParams({ plant, climate: 'tropical' })}` },
+  ]);
+});
+
+test('a preset fails the build on an unknown climate, a plant outside that climate\'s cell, or a plant in no cell', () => {
+  const inTemperateOnly = [...liveCells.find((c) => c.climate === 'temperate').names].find((name) => holders(name).every((c) => c.climate === 'temperate'));
+  assert.ok(inTemperateOnly, 'some plant is only in the temperate cell');
+  assert.throws(() => presetLinks('/consortium/', 'Zea mays', 'polar', liveCells), /not a climate/);
+  assert.throws(() => presetLinks('/consortium/', inTemperateOnly, 'tropical', liveCells), /not in the tropical cell/);
+  assert.throws(() => presetLinks('/consortium/', 'Plantus inventus', undefined, liveCells), /in no consortium cell/);
+});
+
+test('every beta cell has a name in the guides\' languages, and the link text names the plant and the cell', () => {
   for (const lang of ['en', 'fr']) {
     const strings = JSON.parse(read(`src/i18n/guides/${lang}.json`));
-    for (const key of ['consortium.label', 'consortium.link']) assert.ok(strings[key]?.trim(), `guides/${lang}.json: ${key}`);
-    assert.match(strings['consortium.link'], /\{plant\}[\s\S]*\{climate\}/);
+    for (const cell of liveCells) assert.ok(strings[`consortium.cell.${cell.climate}.${cell.region}`]?.trim(), `guides/${lang}.json: consortium.cell.${cell.climate}.${cell.region}`);
+    assert.ok(strings['consortium.label']?.trim(), `guides/${lang}.json: consortium.label`);
+    assert.match(strings['consortium.link'], /\{plant\}[\s\S]*\{cell\}/, `guides/${lang}.json: consortium.link names {plant} and {cell}`);
   }
   assert.match(JSON.parse(read('src/i18n/guides/fr.json'))['consortium.label'], /guilde/i, 'French says « guilde »');
 });
