@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:51:01Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:53:14Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -87,12 +87,13 @@ Types mirror format 2. Pure functions, unit-tested with `node --test`:
 - `conflicts(consortium, interactions)`: pairs matched at rank (genus/family).
 - `suggest(cell, site, kept, removed, country)`: greedy, deterministic. Each
   round adds the candidate with the highest gain
-  `10·new jobs + 3·empty (stratum × phase band) cells + 1·cells with one member + 6·new stratum + 1·edibility − 3·weed potential − 0.5·unknown traits`,
+  `10·new jobs + 3·empty (stratum × phase band) cells + 1·cells with one member + 6·new stratum + 8·phase bands with no food yet (crops) + 4·second doer of feeds-soil, ground or mulch + 1·edibility − 3·weed potential − 0.5·unknown traits`,
   among plants that fill a gap (a new job or a cell with fewer than two
-  members), until size = limit (small 6, large 8, field 10); ties go to the
+  members), until size = limit (small 6, large 9, field 12); ties go to the
   plant named in more languages (a widely grown one), then `canonical_name`.
   (Amended 2026-10-27: the first rule, gain > 5 with 0.3·edibility, stopped the
-  real cells at 4–7 plants, and name-order ties picked obscure plants.) Excluded from automatic picks: misfits, invasive in the user's
+  real cells at 4–7 plants, and name-order ties picked obscure plants; the
+  mockup reviewer asked for food in every phase band and backed-up key jobs.) Excluded from automatic picks: misfits, invasive in the user's
   country, a medium/high conflict with a member, removed plants. Kept plants are
   always members.
 - `alternatives(member, …)`: same stratum first, then shared jobs, then gain;

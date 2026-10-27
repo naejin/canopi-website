@@ -225,15 +225,27 @@ test('invasiveIn: true where recorded, false where checked and absent, null when
 
 // gain
 
-test('gain: 10 per new job, 3 per empty stratum × band cell, 1 per cell with one member, 6 per new stratum, 1 per edibility point, −3 for a weed, −0.5 per unknown', () => {
+test('gain: 10 per new job, 3 per empty stratum × band cell, 1 per cell with one member, 6 per new stratum, 8 per band with no food, 4 per second soil/ground/mulch doer, 1 per edibility point, −3 for a weed, −0.5 per unknown', () => {
+  // Food per band: a crop over the early band only, then one over every band.
+  const earlyCrop = make({ role: 'crop', phases: { start: 'placenta_i', end: 'placenta_iii', sources: ['pfaf'] } });
+  const lateCrop = make({ role: 'crop', phases: { start: 'placenta_i', end: 'climax', sources: ['pfaf'] } });
+  assert.equal(gain(earlyCrop, [], open).food, 8);
+  assert.equal(gain(lateCrop, [earlyCrop], open).food, 16, 'middle and mature still have no food');
+  assert.equal(gain(make({ phases: lateCrop.phases }), [], open).food, 0, 'a support plant is not food');
+  // A second soil feeder counts 4, a third nothing; a second helper nothing.
+  const fixer = () => make({ functions: fn('nitrogen_fixer') });
+  assert.equal(gain(fixer(), [fixer()], open).backup, 4);
+  assert.equal(gain(fixer(), [fixer(), fixer()], open).backup, 0);
+  assert.equal(gain(make({ functions: fn('insectary') }), [make({ functions: fn('insectary') })], open).backup, 0);
+
   const twoJobs = make({ role: 'crop', functions: fn('mulch') });
-  assert.deepEqual(gain(twoJobs, [], open), { total: 20, jobs: 20, cells: 0, strata: 0, edibility: 0, weedy: 0, unknowns: 0 });
+  assert.deepEqual(gain(twoJobs, [], open), { total: 20, jobs: 20, cells: 0, strata: 0, food: 0, backup: 0, edibility: 0, weedy: 0, unknowns: 0 });
   assert.equal(gain(twoJobs, [make({ role: 'crop' })], open).jobs, 10, 'feeds_you already covered');
 
   const lowAllBands = make(layer('low'));
-  assert.deepEqual(gain(lowAllBands, [], open), { total: 15, jobs: 0, cells: 9, strata: 6, edibility: 0, weedy: 0, unknowns: 0 });
+  assert.deepEqual(gain(lowAllBands, [], open), { total: 15, jobs: 0, cells: 9, strata: 6, food: 0, backup: 0, edibility: 0, weedy: 0, unknowns: 0 });
   const lowEarly = make(layer('low', 'placenta_i', 'placenta_iii'));
-  assert.deepEqual(gain(lowAllBands, [lowEarly], open), { total: 7, jobs: 0, cells: 7, strata: 0, edibility: 0, weedy: 0, unknowns: 0 },
+  assert.deepEqual(gain(lowAllBands, [lowEarly], open), { total: 7, jobs: 0, cells: 7, strata: 0, food: 0, backup: 0, edibility: 0, weedy: 0, unknowns: 0 },
     'two empty cells, and one with a single member');
   assert.equal(gain(lowAllBands, [lowEarly, make(layer('low', 'placenta_i', 'placenta_iii'))], open).cells, 6, 'a cell with two members is worth nothing');
 
@@ -282,17 +294,17 @@ function tenGood() {
   return { strata, workers: [...workers, grower], idle: [make(), make()] };
 }
 
-test('suggest stops at 6 plants in a small garden, 8 in a large one, 10 in a field, kept plants included', () => {
-  assert.deepEqual(SIZE_LIMIT, { small: 6, large: 8, field: 10 });
+test('suggest stops at 6 plants in a small garden, 9 in a large one, 12 in a field (or when nothing fills a gap), kept plants included', () => {
+  assert.deepEqual(SIZE_LIMIT, { small: 6, large: 9, field: 12 });
   const { strata, workers, idle } = tenGood();
   const cell = cellOf([...strata, ...workers, ...idle]);
   assert.equal(suggest(cell, { site: { ...open, room: 'small' } }).members.length, 6);
-  assert.equal(suggest(cell, { site: { ...open, room: 'large' } }).members.length, 8);
-  assert.equal(suggest(cell, { site: { ...open, room: 'field' } }).members.length, 10);
-  const withKept = suggest(cell, { site: open, kept: idle.map((t) => t.id) });
-  assert.equal(withKept.members.length, 10);
+  assert.equal(suggest(cell, { site: { ...open, room: 'large' } }).members.length, 9);
+  assert.equal(suggest(cell, { site: { ...open, room: 'field' } }).members.length, 10, 'the two idle plants fill no gap');
+  const withKept = suggest(cell, { site: { ...open, room: 'large' }, kept: idle.map((t) => t.id) });
+  assert.equal(withKept.members.length, 9);
   assert.deepEqual(withKept.members.slice(0, 2).map((m) => [m.taxon.id, m.kept, m.gain]), idle.map((t) => [t.id, true, null]));
-  assert.equal(withKept.members.filter((m) => !m.kept).length, 8, 'the two kept plants take two places');
+  assert.equal(withKept.members.filter((m) => !m.kept).length, 7, 'the two kept plants take two places');
 });
 
 test('suggest picks the highest gain first and breaks ties by canonical name', () => {
