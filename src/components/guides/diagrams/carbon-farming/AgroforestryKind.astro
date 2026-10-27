@@ -1,0 +1,61 @@
+---
+// Carbon farming: one small drawing for each of Toensmeier's three families of agroforestry, used at
+// the top of a card. `crops`: two trees with a row of low annual crops in the strip between them.
+// `animals`: a spreading tree over grass with a sheep grazing in its shade. `layers`: a tall tree with
+// a vine on its trunk, a smaller tree, shrubs and low herbs. `alt` comes from the MDX. Redrawn from the
+// approved hub mockup, seed 30.
+import { rng, r1, leafPath } from '../../../../lib/svg';
+interface Props { variant: 'crops' | 'animals' | 'layers'; alt: string; }
+const { variant, alt } = Astro.props;
+const G = 104; // ground line
+const r = rng(30);
+type Shape = { d: string; cls: string };
+const shapes: Shape[] = [];
+const ellipse = (cx: number, cy: number, rx: number, ry: number) => `M${cx - rx} ${cy}a${rx} ${ry} 0 1 0 ${2 * rx} 0a${rx} ${ry} 0 1 0 ${-2 * rx} 0Z`;
+const tree = (x: number, top: number, rx: number, ry: number, tone: string) => {
+  shapes.push({ d: `M${x - 3} ${G}L${x - 2} ${r1(top + ry * 0.5)}H${x + 2}L${x + 3} ${G}Z`, cls: 'guide-ak-wood' });
+  shapes.push({ d: ellipse(x, top, rx, ry), cls: tone });
+};
+const tuft = (x: number, h: number) => shapes.push({ d: `M${r1(x)} ${G}Q${r1(x - 2)} ${r1(G - h / 2)} ${r1(x - 5)} ${r1(G - h)}M${r1(x)} ${G}L${r1(x)} ${r1(G - h - 2)}M${r1(x)} ${G}Q${r1(x + 2)} ${r1(G - h / 2)} ${r1(x + 5)} ${r1(G - h)}`, cls: 'guide-ak-stem' });
+if (variant === 'crops') {
+  tree(32, 42, 24, 22, 'guide-ak-leaf');
+  tree(168, 46, 22, 20, 'guide-ak-leaf-deep');
+  for (let x = 62; x <= 138; x += 11) {
+    tuft(x, 12);
+    shapes.push({ d: leafPath(6, x, G - 13, 90) + leafPath(6, x, G - 9, 30) + leafPath(6, x, G - 9, 150), cls: 'guide-ak-leaf-young' });
+  }
+} else if (variant === 'animals') {
+  tree(58, 40, 32, 24, 'guide-ak-leaf');
+  tree(176, 64, 14, 12, 'guide-ak-leaf-young');
+  for (let x = 10; x < 196; x += 9) tuft(x + r() * 4, 4 + r() * 3);
+} else {
+  tree(46, 24, 30, 20, 'guide-ak-leaf-deep');
+  tree(124, 52, 22, 16, 'guide-ak-leaf');
+  shapes.push({ d: ellipse(84, 88, 15, 14), cls: 'guide-ak-leaf-young' });
+  shapes.push({ d: ellipse(166, 90, 14, 12), cls: 'guide-ak-leaf-young' });
+  [102, 144, 186].forEach((x) => tuft(x, 9));
+  shapes.push({ d: `M48 ${G}c-6 -8 6 -14 0 -22s6 -14 0 -22s6 -12 0 -18`, cls: 'guide-ak-stem' });
+  shapes.push({ d: [[46, 96, 200], [50, 80, -20], [46, 66, 200], [50, 52, -20]].map(([x, y, a]) => leafPath(7, x, y, a)).join(''), cls: 'guide-ak-leaf' });
+}
+---
+<svg class="guide-ak" viewBox="0 0 200 120" role="img" aria-label={alt}>
+  <line x1="4" y1={G} x2="196" y2={G} class="guide-ak-ground" />
+  {shapes.map((s) => <path d={s.d} class={s.cls} />)}
+  {variant === 'animals' && (
+    <g>
+      {[116, 124, 140, 148].map((x) => <line x1={x} y1="89" x2={x} y2="99" class="guide-ak-beast-leg" />)}
+      <ellipse cx="132" cy="84" rx="21" ry="11" class="guide-ak-beast" />
+      <ellipse cx="108" cy="82" rx="7" ry="5" class="guide-ak-beast" transform="rotate(-25 108 82)" />
+    </g>
+  )}
+</svg>
+
+<style>
+  .guide-ak { display: block; width: 100%; max-width: 18rem; height: auto; background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius); }
+  .guide-ak-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-ak-wood { fill: var(--seed-1); opacity: 0.85; }
+  .guide-ak-leaf { fill: var(--leaf); } .guide-ak-leaf-young { fill: var(--leaf-young); } .guide-ak-leaf-deep { fill: var(--leaf-deep); }
+  .guide-ak-stem { fill: none; stroke: var(--leaf); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-ak-beast { fill: var(--surface); stroke: var(--text-secondary); stroke-width: 1.2; }
+  .guide-ak-beast-leg { stroke: var(--text-secondary); stroke-width: 1.6; stroke-linecap: round; }
+</style>

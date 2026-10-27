@@ -1,0 +1,107 @@
+---
+// Carbon farming: Toensmeier's five ways to harvest a perennial without killing it, as five small
+// silhouettes in a row (two a line on phones). Standard tree: a full tree with fruit in its crown.
+// Standard herbaceous: a bean vine on a pole with pods. Coppice: a stump with a fan of young shoots.
+// Managed multistem: a clump of canes, one cut near the ground and a new shoot beside it. Hay cut: a
+// tuft of tall grass. Wood that stays is solid ochre; a dashed accent line marks where you cut. `forms`
+// gives each title, line and alt text in that order; `key` the two key labels (wood, cut). All words
+// come from the MDX; titles and lines are HTML, so they wrap. Redrawn from the approved hub mockup, seed 30.
+import { rng, r1, leafPath } from '../../../../lib/svg';
+interface Form { title: string; text: string; alt: string; }
+interface Props { forms: [Form, Form, Form, Form, Form]; key: [string, string]; }
+const { forms, key } = Astro.props;
+const G = 104; // ground line
+const r = rng(30);
+type Shape = { d: string; cls: string; w?: number };
+const ellipse = (cx: number, cy: number, rx: number, ry: number) => `M${cx - rx} ${cy}a${rx} ${ry} 0 1 0 ${2 * rx} 0a${rx} ${ry} 0 1 0 ${-2 * rx} 0Z`;
+const circle = (cx: number, cy: number, rad: number) => ellipse(cx, cy, rad, rad);
+
+const standard: Shape[] = [
+  { d: `M57 ${G}L58 61H62L63 ${G}Z`, cls: 'guide-hf-wood' },
+  { d: ellipse(60, 46, 36, 30), cls: 'guide-hf-leaf' },
+  { d: [[44, 40], [62, 30], [78, 46], [52, 58], [70, 62], [86, 34], [36, 54]].map(([x, y]) => circle(x, y, 3.2)).join(''), cls: 'guide-hf-fruit' },
+];
+const herb: Shape[] = [
+  { d: `M60 ${G}V16`, cls: 'guide-hf-pole' },
+  { d: `M58 ${G}c-8 -10 8 -14 4 -22s-8 -12 0 -22s8 -12 0 -20s-6 -10 0 -18`, cls: 'guide-hf-stem', w: 2 },
+  { d: [[60, 92, 200], [62, 80, -20], [58, 66, 200], [62, 52, -20], [58, 40, 200], [62, 28, -20]].map(([x, y, a]) => leafPath(13, x, y, a)).join(''), cls: 'guide-hf-leaf' },
+  { d: [[70, 70], [48, 56], [72, 44], [50, 84]].map(([x, y]) => `M${x} ${y}q2 8 0 16q-2 -8 0 -16Z`).join(''), cls: 'guide-hf-pod' },
+];
+const coppice: Shape[] = [];
+[[-34, 52], [-20, 62], [-6, 70], [6, 68], [20, 60], [32, 50]].forEach(([dx, h]) => {
+  const tx = 60 + dx, ty = G - 12 - h;
+  coppice.push({ d: `M${r1(60 + dx * 0.15)} ${G - 12}Q${r1(60 + dx * 0.4)} ${r1(ty + h * 0.5)} ${tx} ${ty}`, cls: 'guide-hf-stem', w: 2 });
+  for (let k = 0.35; k < 1; k += 0.25) {
+    const lx = 60 + dx * (0.15 + 0.85 * k * k), ly = G - 12 - h * k;
+    coppice.push({ d: leafPath(8, lx, ly, dx < 0 ? 150 : 30) + leafPath(8, lx, ly, dx < 0 ? 100 : 80), cls: 'guide-hf-leaf' });
+  }
+});
+coppice.push({ d: `M48 ${G}Q46 ${G - 10} 52 ${G - 12}H68Q74 ${G - 10} 72 ${G}Z`, cls: 'guide-hf-wood' });
+const multistem: Shape[] = [];
+[[34, 30], [46, 18], [58, 24], [82, 34]].forEach(([x, top]) => {
+  multistem.push({ d: `M${x} ${G}L${r1(x + (x - 60) * 0.08)} ${top}`, cls: 'guide-hf-cane' });
+  for (let y = G - 14; y > top + 6; y -= 14) multistem.push({ d: `M${x - 2.5} ${y}H${x + 2.5}`, cls: 'guide-hf-node' });
+  multistem.push({ d: leafPath(12, x, top + 2, 140) + leafPath(12, x, top + 2, 40) + leafPath(10, x, top + 8, 200), cls: 'guide-hf-leaf' });
+});
+multistem.push({ d: `M70 ${G}V${G - 8}`, cls: 'guide-hf-cane' });
+multistem.push({ d: `M70 ${G - 8}L71 26`, cls: 'guide-hf-ghost' });
+multistem.push({ d: `M96 ${G}V${G - 18}`, cls: 'guide-hf-cane', w: 3 });
+multistem.push({ d: leafPath(8, 96, G - 18, 120) + leafPath(8, 96, G - 18, 60), cls: 'guide-hf-leaf-young' });
+const hay: Shape[] = Array.from({ length: 16 }, (_, i) => {
+  const x = 38 + i * 3, h = 44 + r() * 26, lean = (i - 7.5) * 2.4 + (r() - 0.5) * 6;
+  return { d: `M${x} ${G}Q${r1(x + lean * 0.3)} ${r1(G - h * 0.6)} ${r1(x + lean)} ${r1(G - h)}`, cls: i % 3 ? 'guide-hf-stem' : 'guide-hf-stem-young', w: 1.8 };
+});
+const panels: { shapes: Shape[]; cut?: [number, number, number] }[] = [
+  { shapes: standard },
+  { shapes: herb },
+  { shapes: coppice, cut: [30, 90, G - 13] },
+  { shapes: multistem, cut: [62, 78, G - 8] },
+  { shapes: hay, cut: [14, 106, G - 12] },
+];
+---
+<div class="guide-hf">
+  <ul class="guide-hf-list">
+    {panels.map((p, i) => (
+      <li>
+        <svg viewBox="0 0 120 112" role="img" aria-label={forms[i].alt}>
+          <line x1="4" y1={G} x2="116" y2={G} class="guide-hf-ground" />
+          {p.shapes.map((s) => <path d={s.d} class={s.cls} stroke-width={s.w} />)}
+          {p.cut && <line x1={p.cut[0]} y1={p.cut[2]} x2={p.cut[1]} y2={p.cut[2]} class="guide-hf-cut" />}
+        </svg>
+        <strong>{forms[i].title}</strong>
+        <span>{forms[i].text}</span>
+      </li>
+    ))}
+  </ul>
+  <p class="guide-hf-key"><span><i class="guide-hf-key-wood" aria-hidden="true"></i>{key[0]}</span><span><i class="guide-hf-key-cut" aria-hidden="true"></i>{key[1]}</span></p>
+</div>
+
+<style>
+  .guide-hf { display: grid; gap: 0.7rem; }
+  :global(.guide-body) .guide-hf-list { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.8rem; }
+  :global(.guide-body) .guide-hf-list li { margin: 0; display: grid; gap: 0.3rem; align-content: start; }
+  .guide-hf-list svg { display: block; width: 100%; height: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .guide-hf-list strong { font-family: var(--font-display); font-weight: 600; line-height: 1.3; color: var(--text); }
+  .guide-hf-list span { font-size: 0.9rem; line-height: 1.4; color: var(--text-secondary); }
+  .guide-hf-ground { stroke: var(--border-strong); stroke-width: 1.2; }
+  .guide-hf-wood { fill: var(--seed-1); opacity: 0.85; }
+  .guide-hf-leaf { fill: var(--leaf); } .guide-hf-leaf-young { fill: var(--leaf-young); }
+  .guide-hf-fruit { fill: var(--seed-6); }
+  .guide-hf-pod { fill: var(--leaf-deep); stroke: var(--leaf-deep); stroke-width: 3; stroke-linejoin: round; }
+  .guide-hf-stem { fill: none; stroke: var(--leaf); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-hf-stem-young { fill: none; stroke: var(--leaf-young); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-hf-cane { fill: none; stroke: var(--leaf-young); stroke-width: 4; stroke-linecap: round; }
+  .guide-hf-node { stroke: var(--surface); stroke-width: 0.7; opacity: 0.9; }
+  .guide-hf-ghost { fill: none; stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+  .guide-hf-pole { stroke: var(--text-muted); stroke-width: 2; stroke-linecap: round; }
+  .guide-hf-cut { stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 4 3; }
+  :global(.guide-body) .guide-hf-key { margin: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; align-items: center; font-size: 0.88rem; color: var(--text-muted); }
+  .guide-hf-key i { display: inline-block; width: 1.4rem; margin-right: 0.35rem; vertical-align: middle; }
+  .guide-hf-key-wood { height: 0.7rem; background: var(--seed-1); opacity: 0.85; border-radius: 2px; }
+  .guide-hf-key-cut { height: 0; border-top: 2px dashed var(--accent); }
+  @media (max-width: 639px) {
+    :global(.guide-body) .guide-hf-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    :global(.guide-body) .guide-hf-list li:last-child { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 0.8rem; }
+    .guide-hf-list li:last-child svg { grid-row: span 2; }
+  }
+</style>
