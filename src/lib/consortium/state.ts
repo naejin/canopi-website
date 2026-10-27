@@ -17,7 +17,7 @@
 // segment boundary (13, 18, 23, then 36 characters) until no other taxon of the cell shares the
 // prefix; decoding matches a prefix against the cell's ids and drops one that matches none or
 // several. A full UUID is a valid prefix, so links that carry whole ids keep working.
-import type { Cell, Region } from './types.ts';
+import type { Cell, Region, Taxon } from './types.ts';
 import type { Site } from './site.ts';
 import type { SiteClimate } from './cells.ts';
 import { FORMAT_VERSION } from './types.ts';
@@ -178,6 +178,12 @@ function consistent({ state, dropped }: DecodedState, resolved: boolean): Decode
   return { state: { ...state, members, removed: state.removed.filter((id) => !keep.has(id)) }, dropped: out };
 }
 
+// The cell's taxon a guide names, by canonical name: exact first, then case and spacing aside;
+// null when the cell has none. resolveState() and the page's guide notice both use it.
+export function taxonByName(cell: Cell, name: string): Taxon | null {
+  return cell.taxa.find((t) => t.canonical_name === name) ?? cell.taxa.find((t) => nameKey(t.canonical_name) === nameKey(name)) ?? null;
+}
+
 // A link decoded without its cell (the page reads `c` and `r` first to choose the cell), resolved
 // once the cell is loaded: prefixes become full ids, unknown and ambiguous ones are dropped, and the
 // kept-over-removed rule is applied again on the full ids (a link may carry one id at two lengths).
@@ -188,7 +194,7 @@ export function resolveState(decoded: DecodedState, cell: Cell): DecodedState {
   // A guide's plant, by canonical name (case and spacing aside), joins the kept plants.
   const kept = new Set(k.ids), named: Dropped[] = [];
   for (const name of state.plants ?? []) {
-    const hit = cell.taxa.find((t) => t.canonical_name === name) ?? cell.taxa.find((t) => nameKey(t.canonical_name) === nameKey(name));
+    const hit = taxonByName(cell, name);
     if (hit) kept.add(hit.id);
     else named.push({ key: 'plant', value: name, reason: 'unknown' });
   }

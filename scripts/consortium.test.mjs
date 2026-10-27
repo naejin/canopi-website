@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const { cellFor, regionsOf, fits, jobsOf, jobs, bandOf, bandsOf, phases, conflicts, invasiveIn, invasiveCountries } = core;
-const { gain, suggest, evaluate, alternatives, flagsFor, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveState, resolveIds, shortId, MAX_LINK_IDS } = core;
+const { gain, suggest, evaluate, alternatives, flagsFor, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveState, resolveIds, shortId, MAX_LINK_IDS, taxonByName } = core;
 
 const read = (name) => JSON.parse(readFileSync(new URL(`fixtures/consortium/${name}`, import.meta.url), 'utf8'));
 const manifest = read('manifest.json');
@@ -621,6 +621,19 @@ test('state: a guide preset (?plant=<canonical_name>&climate=<id>) keeps its pla
   assert.deepEqual(decodeState('c=temperate&climate=tropical').state.climate, 'temperate');
   assert.deepEqual(decodeState('c=temperate&climate=tropical').dropped, [{ key: 'climate', value: 'tropical', reason: 'duplicate' }]);
   assert.deepEqual(decodeState(`plant=${'a'.repeat(300)}`).dropped[0].reason, 'malformed');
+});
+
+test('state: taxonByName is the one rule a guide preset is matched by, so the page names the same plant', () => {
+  const inga = named('Inga edulis');
+  assert.equal(taxonByName(tropical, 'Inga edulis'), inga);
+  assert.equal(taxonByName(tropical, ' inga  EDULIS '), inga, 'case and spacing do not matter');
+  assert.equal(taxonByName(tropical, 'Olea europaea'), null);
+  for (const name of ['Inga edulis', 'inga  EDULIS', 'Olea europaea']) {
+    const r = resolveState(decodeState(`plant=${encodeURIComponent(name)}&climate=tropical`), tropical);
+    const hit = taxonByName(tropical, name);
+    assert.equal(r.state.kept.includes(hit?.id), !!hit, name);
+    assert.equal(r.dropped.some((d) => d.key === 'plant'), !hit, name);
+  }
 });
 
 // performance
