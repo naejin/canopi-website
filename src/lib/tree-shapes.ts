@@ -2,7 +2,7 @@
 // water-and-slopes): a scalloped crown, a shrub mound, a tuft of small plants and a trunk. All take
 // plain numbers (and the seeded random from src/lib/svg.ts where they jitter), so every build draws
 // the same picture.
-import { r1 } from '../../../../lib/svg';
+import { r1 } from './svg';
 
 // A cloud-like crown: n bumps round an ellipse centred on cx, cy.
 export function crownPath(rand: () => number, cx: number, cy: number, rx: number, ry: number, n = 9): string {

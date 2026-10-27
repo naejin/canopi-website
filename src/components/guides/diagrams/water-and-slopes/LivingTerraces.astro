@@ -5,7 +5,7 @@
 // step's edge, crops on each step. Soil in soil tokens, plants in plant tokens, rain in a muted ink.
 // `stages` gives each panel's title and note (HTML, so they wrap); `alt` describes the three.
 import { rng, seedOf, r1 } from '../../../../lib/svg';
-import { moundPath, tuftPath } from '../food-forest/tree-shapes';
+import { moundPath, tuftPath } from '../../../../lib/tree-shapes';
 interface Stage { title: string; note: string; }
 interface Props { alt: string; stages: [Stage, Stage, Stage]; }
 const { alt, stages } = Astro.props;

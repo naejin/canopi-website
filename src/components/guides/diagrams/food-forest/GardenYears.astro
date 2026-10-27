@@ -5,7 +5,7 @@
 // cover. `stages` gives each panel's title and its note (HTML, so they wrap in either language);
 // `alt` describes the four together. Plant tokens for plants, brown for wood.
 import { rng, seedOf, r1, leafPath } from '../../../../lib/svg';
-import { crownPath, moundPath, tuftPath, trunkPath } from './tree-shapes';
+import { crownPath, moundPath, tuftPath, trunkPath } from '../../../../lib/tree-shapes';
 interface Stage { title: string; note: string; }
 interface Props { alt: string; stages: [Stage, Stage, Stage, Stage]; }
 const { alt, stages } = Astro.props;

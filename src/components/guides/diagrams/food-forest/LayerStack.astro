@@ -5,7 +5,7 @@
 // the tall tree's shade. Numbered circles 1-7 (accent) mark the layers; `layers` gives the seven
 // names, in that order, for the keyed list under the drawing. All words come from the MDX.
 import { rng, seedOf, r1, leafPath } from '../../../../lib/svg';
-import { crownPath, moundPath, tuftPath, trunkPath } from './tree-shapes';
+import { crownPath, moundPath, tuftPath, trunkPath } from '../../../../lib/tree-shapes';
 interface Props { title: string; alt: string; layers: [string, string, string, string, string, string, string]; }
 const { title, alt, layers } = Astro.props;
 const locals = Astro.locals as { guideSvgs?: number };
