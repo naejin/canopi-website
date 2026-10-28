@@ -22,7 +22,7 @@ SOURCES = {
     "rule-legume": {"label": "Canopi rule: legumes with known nodulation fix nitrogen", "url": None, "licence": None, "attribution": None},
     "extension-rust": {"label": "University extension: cedar-apple rust (illustrative)", "url": "https://example.org/cedar-apple-rust", "licence": None, "attribution": None},
     "extension-juglone": {"label": "University extension: walnut toxicity (illustrative)", "url": "https://example.org/juglone", "licence": None, "attribution": None},
-    "owner-review": {"label": "Owner review 2026-10 (illustrative)", "url": None, "licence": None, "attribution": None},
+    "sample-review": {"label": "Canopi consortium sample review (illustrative)", "url": None, "licence": None, "attribution": None},
     "extension-banana": {"label": "Plant pathology note: banana weevil and plantains (illustrative)", "url": "https://example.org/banana-weevil", "licence": None, "attribution": None},
 }
 
@@ -153,7 +153,7 @@ TROPICAL = [
           {"height_m": (1, 3), "width_max_m": 1.5, "frost_tender": True, "soil_ph": (4.5, 7.5), "well_drained": True, "drought_tolerance": "High",
            "lifespan": "Short", "growth_rate": "Fast", "edibility_rating": 4, "habit": "Shrub", "root_system_type": "Tuberous"},
           {"toxicity": tox("Severe", "Roots and leaves are poisonous raw; they must be processed before eating. Ask your local food-safety authority.", "Racines et feuilles sont toxiques crues ; elles doivent être transformées avant d’être mangées. Renseignez-vous auprès de l’autorité sanitaire locale."),
-           "invasive_in": None}),
+           "invasive_in": []}),
     taxon("Ipomoea batatas", "Ipomoea", "Convolvulaceae", {"en": "Sweet potato", "fr": "Patate douce", "es": "Batata", "pt": "Batata-doce", "ja": "サツマイモ"},
           "crop", R("Edible ground cover that shades out weeds while trees are small.", "Couvre-sol comestible qui étouffe les herbes pendant que les arbres sont petits."),
           ("low", ["syntropie"]), ("placenta_i", "placenta_ii", ["syntropie"]),
@@ -197,7 +197,7 @@ TROPICAL = [
           [],
           {"height_m": (0.6, 1.2), "width_max_m": 0.5, "sun": False, "semi_shade": True, "full_shade": True, "frost_tender": True,
            "moisture_use": "High", "edibility_rating": 4, "habit": "Herbaceous", "root_system_type": "Rhizome"},
-          {"invasive_in": None}),
+          {"invasive_in": []}),
 ]
 TROP_INTER = [
     {"subject": {"name": "Tithonia diversifolia", "rank": "species"}, "object": {"name": "Ipomoea batatas", "rank": "species"},
@@ -257,7 +257,7 @@ MEDITERRANEAN = [
           [("nitrogen_fixer", "rule", ["rule-legume"]), ("mulch", "curated", ["toensmeier-2016"]), ("pollinator_forage", "import", [P])],
           {"height_m": (1, 4), "width_max_m": 2, "soil_ph": (6.5, 8.5), "well_drained": True, "drought_tolerance": "High",
            "deciduous_evergreen": "Evergreen", "growth_rate": "Fast", "edibility_rating": 0, "habit": "Shrub", "nitrogen_fixer": True},
-          {"invasive_in": None}),
+          {"invasive_in": []}),
     taxon("Spartium junceum", "Spartium", "Fabaceae", {"en": "Spanish broom", "fr": "Genêt d’Espagne", "es": "Retama de olor", "it": "Ginestra"},
           "support", R("Nitrogen-fixing pioneer for bare dry ground; invasive outside its range.", "Pionnier fixateur d’azote pour sol nu et sec ; envahissant hors de son aire."),
           ("medium", ["jacke-2005"]), ("placenta_ii", "secondary_i", ["jacke-2005"]),
@@ -344,6 +344,14 @@ TEMPERATE = [
           {"height_m": (3, 5), "width_max_m": 4, "semi_shade": True, "hardiness_zone": (3, 7), "soil_ph": (5.0, 8.0), "drought_tolerance": "High",
            "deciduous_evergreen": "Deciduous", "growth_rate": "Fast", "edibility_rating": 4, "habit": "Shrub", "nitrogen_fixer": True},
           {"invasive_in": inv("US", "CA"), "weed_potential": True}),
+    taxon("Elaeagnus multiflora", "Elaeagnus", "Elaeagnaceae", {"en": "Goumi", "fr": "Chalef à fleurs nombreuses", "ja": "ナツグミ", "zh": "木半夏"},
+          "crop", R("Nitrogen-fixing fruit shrub of East Asia's temperate hedges.", "Arbuste fruitier fixateur d’azote des haies tempérées d’Asie de l’Est."),
+          ("medium", ["crawford-2010"]), ("placenta_iii", "secondary_ii", ["crawford-2010"]),
+          [("nitrogen_fixer", "import", ["try"]), ("pollinator_forage", "import", [P])],
+          {"height_m": (2, 3), "width_max_m": 2, "semi_shade": True, "hardiness_zone": (5, 8), "soil_ph": (5.5, 7.5), "drought_tolerance": "Medium",
+           "deciduous_evergreen": "Deciduous", "growth_rate": "Medium", "edibility_rating": 4, "habit": "Shrub", "nitrogen_fixer": True,
+           "self_fertile": True, "pollinators": ["Bees"]},
+          {"invasive_in": []}),
     taxon("Corylus avellana", "Corylus", "Betulaceae", {"en": "Hazel", "fr": "Noisetier", "de": "Haselnuss", "it": "Nocciolo", "es": "Avellano"},
           "crop", R("Nut shrub that coppices and fills the middle layer.", "Arbuste à noisettes qui se recèpe et remplit l’étage moyen."),
           ("medium", ["crawford-2010"]), ("secondary_i", "secondary_iii", ["crawford-2010"]),
@@ -371,7 +379,7 @@ TEMPERATE = [
           [("ground_cover", "curated", ["crawford-2010"]), ("nitrogen_fixer", "rule", ["rule-legume"]), ("pollinator_forage", "import", [P])],
           {"height_m": (0.1, 0.3), "width_max_m": 1, "semi_shade": True, "hardiness_zone": (3, 10), "moisture_use": "Medium", "edibility_rating": 2,
            "habit": "Herbaceous", "nitrogen_fixer": True, "vegetative_spread_rate": "Rapid"},
-          {"invasive_in": None}),
+          {"invasive_in": []}),
     taxon("Fragaria vesca", "Fragaria", "Rosaceae", {"en": "Wild strawberry", "fr": "Fraisier des bois", "de": "Walderdbeere"},
           "crop", R("Edible ground cover for part shade.", "Couvre-sol comestible pour la mi-ombre."),
           ("low", ["crawford-2010"]), ("placenta_ii", "secondary_ii", ["crawford-2010"]),
@@ -431,7 +439,8 @@ def used_sources(taxa, inter):
 REGION_ORDER = ["europe", "africa", "asia_temperate", "asia_tropical", "australasia", "pacific",
                 "northern_america", "southern_america"]
 # Format 3 unites a climate's cells. The fixture's Temperate climate has a second, invented
-# cell (Temperate x asia_temperate) that chose two of its taxa again, so a taxon shows two reasons.
+# cell (Temperate x asia_temperate) that chose two of its taxa again, so a taxon shows two reasons,
+# and chose one taxon alone (ONLY_IN), so a taxon's only reason is not the file's first region.
 EXTRA_REASONS = {
     "Temperate": {
         "Malus domestica": [{"region": "asia_temperate",
@@ -440,9 +449,16 @@ EXTRA_REASONS = {
                              "sources": ["jacke-2005"]}],
         "Allium schoenoprasum": [{"region": "asia_temperate",
                                   "text": R("Native perennial onion of temperate Asia's meadows."),
-                                  "sources": ["owner-review"]}],
+                                  "sources": ["sample-review"]}],
     },
 }
+
+
+# Taxa chosen by one cell only, not the climate's first: (zone, name) -> region.
+ONLY_IN = {("Temperate", "Elaeagnus multiflora"): "asia_temperate"}
+# Like the real export, most reasons cite the sample review and a few cite a book.
+REASON_SOURCES = {"Olea europaea": ["crawford-2010"], "Arachis pintoi": ["toensmeier-2016"],
+                  "Corylus avellana": ["crawford-2010"]}
 
 
 def climate_file(zone, region, taxa, inter):
@@ -451,7 +467,8 @@ def climate_file(zone, region, taxa, inter):
     out = []
     for t in sorted(taxa, key=lambda t: t["canonical_name"]):
         t = dict(t)
-        reasons = [{"region": region, "text": t["reasons"], "sources": ["owner-review"]}]
+        reasons = [{"region": ONLY_IN.get((zone, t["canonical_name"]), region), "text": t["reasons"],
+                    "sources": REASON_SOURCES.get(t["canonical_name"], ["sample-review"])}]
         reasons += extra.get(t["canonical_name"], [])
         t["reasons"] = sorted(reasons, key=lambda r: REGION_ORDER.index(r["region"]))
         for c in t["warnings"]["invasive_in"] or []:
@@ -503,14 +520,18 @@ open(os.path.join(OUT, "README.md"), "w").write(
     "outside `public/`, so it never reaches `dist/`. Built from the example in canopi-data `docs/consortium-export-format.md` and\n"
     "valid against its `docs/consortium-export.schema.json` (format 3: one file per climate).\n\n"
     "Climates: Tropical (southern_america, leads the mockups), Mediterranean (europe), Temperate (europe and an\n"
-    "invented asia_temperate cell, so Malus domestica and Allium schoenoprasum each show two `reasons`).\n"
+    "invented asia_temperate cell, so Malus domestica and Allium schoenoprasum each show two `reasons`, and\n"
+    "Elaeagnus multiflora has only an asia_temperate reason). Most reasons cite the sample review, a few a book,\n"
+    "as in the real export.\n"
     "`countries` in the manifest is the real list from canopi-data, with the real GRIIS coverage (`invasive_checked`),\n"
     "not invented; every `invasive_in` country is a checked one.\n\n"
-    "Covers: null versus `[]` (`invasive_in`, `toxicity`), `functions: null` and a taxon with no stratum or phases yet\n"
+    "Covers: null versus `[]` (`toxicity`), `functions: null` and a taxon with no stratum or phases yet\n"
     "(Zingiber officinale), invasive in a few or many countries, every toxicity level, genus, species and family-rank\n"
     "interactions, allelopathy with and without a recorded target, `allelopathy_tolerant`, missing names per locale,\n"
     "a climate with no interactions (`[]`, checked none), a reason per region with its source, countries GRIIS\n"
-    "does not cover (`invasive_checked: false`, for example TW, PR, PF and the six Antarctic codes).\n\n"
+    "does not cover (`invasive_checked: false`, for example TW, PR, PF and the six Antarctic codes).\n"
+    "`invasive_in` is never null here: the exporter writes null for every taxon, with every country unchecked,\n"
+    "only when the GRIIS compendium is missing, so a test that needs it sets it on a copy.\n\n"
     "Regenerate (needs ../canopi-data):\n\n"
     "```sh\n"
     "(cd ../canopi-data && uv run python -c 'import json; from pathlib import Path; "

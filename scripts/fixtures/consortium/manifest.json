@@ -11,7 +11,7 @@
       ],
       "taxa": 15,
       "interactions": 2,
-      "sha256": "6040c932d76ff268ebbd0d46b5db1480f06ffc1427f093f617fb390e98d24845"
+      "sha256": "0e2d92e972833f3e02a46dfd2cf0dfa10fcf3891133381166c3847db8810d87b"
     },
     {
       "climate_zone": "Mediterranean",
@@ -21,7 +21,7 @@
       ],
       "taxa": 12,
       "interactions": 0,
-      "sha256": "ed11cabb92eaaa28834aab5033558e7eac20d6a912583811d6503e5523a94151"
+      "sha256": "c1bf4aed808866364e3e7b63a7af10c791a412ab87300b07708c715648549e87"
     },
     {
       "climate_zone": "Temperate",
@@ -30,9 +30,9 @@
         "europe",
         "asia_temperate"
       ],
-      "taxa": 12,
+      "taxa": 13,
       "interactions": 3,
-      "sha256": "2961ebca2979a7a06a69b69e117fa0cfb76282aebcf65e9cd769811a75690637"
+      "sha256": "70aaddf04f77f4833ffdc37e8543f90f1916977fced063ef19d5166ae5bb31e2"
     }
   ],
   "locales": [

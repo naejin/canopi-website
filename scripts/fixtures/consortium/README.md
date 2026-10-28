@@ -6,15 +6,19 @@ outside `public/`, so it never reaches `dist/`. Built from the example in canopi
 valid against its `docs/consortium-export.schema.json` (format 3: one file per climate).
 
 Climates: Tropical (southern_america, leads the mockups), Mediterranean (europe), Temperate (europe and an
-invented asia_temperate cell, so Malus domestica and Allium schoenoprasum each show two `reasons`).
+invented asia_temperate cell, so Malus domestica and Allium schoenoprasum each show two `reasons`, and
+Elaeagnus multiflora has only an asia_temperate reason). Most reasons cite the sample review, a few a book,
+as in the real export.
 `countries` in the manifest is the real list from canopi-data, with the real GRIIS coverage (`invasive_checked`),
 not invented; every `invasive_in` country is a checked one.
 
-Covers: null versus `[]` (`invasive_in`, `toxicity`), `functions: null` and a taxon with no stratum or phases yet
+Covers: null versus `[]` (`toxicity`), `functions: null` and a taxon with no stratum or phases yet
 (Zingiber officinale), invasive in a few or many countries, every toxicity level, genus, species and family-rank
 interactions, allelopathy with and without a recorded target, `allelopathy_tolerant`, missing names per locale,
 a climate with no interactions (`[]`, checked none), a reason per region with its source, countries GRIIS
 does not cover (`invasive_checked: false`, for example TW, PR, PF and the six Antarctic codes).
+`invasive_in` is never null here: the exporter writes null for every taxon, with every country unchecked,
+only when the GRIIS compendium is missing, so a test that needs it sets it on a copy.
 
 Regenerate (needs ../canopi-data):
 
