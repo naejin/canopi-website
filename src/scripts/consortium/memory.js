@@ -15,29 +15,23 @@ export const STORE = 'canopi-consortium';
 // reload in any status and Start over keep it (m12). A guess is never written.
 export const COUNTRY_STORE = 'canopi-country';
 export const MINE = 'mine';
-// The main crops and "Add anyway" guests the reader chose on this device (B7): only those read "you
-// chose it" or "you added it"; a shared link's are described neutrally (parts.js builtKey). Kept in
-// storage and in this tab (history.state), so a reload or a language switch keeps them with storage
-// blocked; Start over forgets them.
-export const OWN_STORE = 'canopi-own';
 const TAB = 'canopiCountry';
-const OWN_TAB = 'canopiOwn';
-const ownOf = (v) => ({ crops: new Set(v?.crops ?? []), guests: new Set(v?.guests ?? []) });
+// F2: the fragment this page wrote into this tab's history entry, with where its country and climate
+// came from ({ hash, countrySource, climateSource }). Back to that entry, or a reload of it, reads the
+// fragment as the tab's own, never as someone else's link: only a real arrival is labelled "from the
+// shared link".
+export const WROTE = 'canopiWrote';
 const attempt = (f) => { try { return f(); } catch { return null; } };
 
 export function memoryOf({ storage, history, location }) {
-  const readOwn = () => attempt(() => history.state?.[OWN_TAB]) ?? attempt(() => JSON.parse(storage.getItem(OWN_STORE) ?? 'null'));
   return {
     // Whether the state was read from the fragment (arrive): only those links carry the end marker.
     fromFragment: false,
-    own: () => ownOf(readOwn()),
-    addOwn({ crops = [], guests = [] }) {
-      const o = ownOf(readOwn());
-      for (const id of crops) o.crops.add(id);
-      for (const id of guests) o.guests.add(id);
-      const v = { crops: [...o.crops], guests: [...o.guests] };
-      attempt(() => storage.setItem(OWN_STORE, JSON.stringify(v)));
-      attempt(() => history.replaceState({ ...(history.state ?? {}), [OWN_TAB]: v }, ''));
+    // The page's own mark on this entry when its fragment is the one the page wrote (arrive), else null.
+    written: null,
+    // The address bar's fragment, written by the page and marked as its own (F2).
+    write(path, hash, sources) {
+      attempt(() => history.replaceState({ ...(history.state ?? {}), [WROTE]: { hash, ...sources } }, '', path + hash));
     },
     // The last consortium on this device: { q, at, src } or null.
     saved: () => attempt(() => JSON.parse(storage.getItem(STORE) ?? 'null')),
@@ -57,28 +51,29 @@ export function memoryOf({ storage, history, location }) {
     arrive() {
       const { params, fragment, address } = arrivalParams({ search: location.search, hash: location.hash }, MINE);
       this.fromFragment = fragment;
+      const w = attempt(() => history.state?.[WROTE]);
+      this.written = w && fragment && address == null && w.hash === location.hash ? w : null;
       if (address != null) attempt(() => history.replaceState(history.state, '', location.pathname + address));
       return params;
     },
-    // Start over: the consortium and the reader's own picks go; the country (device and tab) stays.
+    // Start over: the consortium goes; the country (device and tab) stays.
     startOver(path) {
       attempt(() => storage.removeItem(STORE));
-      attempt(() => storage.removeItem(OWN_STORE));
-      attempt(() => history.replaceState({ ...(history.state ?? {}), [OWN_TAB]: undefined }, ''));
-      attempt(() => history.replaceState(history.state, '', path));
+      attempt(() => history.replaceState({ ...(history.state ?? {}), [WROTE]: undefined }, '', path));
     },
   };
 }
 
 // What the page opens with: a link (c, climate or plant) else the save, and the country
 // (pickCountry: the link's own k, the reader's choice, the save's with the source it was saved with,
-// the guess).
+// the guess). A fragment this tab wrote itself (memory.written: Back to an older entry, a reload)
+// passes the source its country had, so the reader's own country is never read as a link's (F2).
 export function startState({ params, memory, guess, known }) {
   const saved = memory.saved();
   const fromLink = params.has('c') || params.has('climate') || params.has('plant');
   const savedState = saved?.q ? decodeState(saved.q).state : null;
   const decoded = fromLink ? decodeState(params) : saved?.q ? decodeState(saved.q) : null;
   const pref = memory.pref();
-  const country = pickCountry({ link: fromLink ? decoded.state : null, pref, saved: savedState && { ...savedState, source: saved.src }, guess, known });
+  const country = pickCountry({ link: fromLink ? decoded.state : null, linkSource: fromLink ? memory.written?.countrySource ?? null : null, pref, saved: savedState && { ...savedState, source: saved.src }, guess, known });
   return { decoded, saved, fromLink, pref, country };
 }

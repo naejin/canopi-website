@@ -75,7 +75,13 @@ export function arrivalParams({ search, hash }, mine = 'mine') {
   const hadMine = h.has(mine) || s.has(mine);
   h.delete(mine); s.delete(mine);
   if (isToolState(h)) return { params: h, fragment: true, address: hadMine || [...s].length ? '#' + h : null };
-  if (isToolState(s)) return { params: s, fragment: false, address: '#' + s };
+  // A v3 query link was never held to the end marker (linkDamaged), so it moves with one: a reload
+  // or a language switch before the first persist then reads it as whole, as it was (F3).
+  if (isToolState(s)) {
+    const moved = new URLSearchParams(s);
+    if (moved.get('v') === '3' && !moved.has('e')) moved.set('e', '1');
+    return { params: s, fragment: false, address: '#' + moved };
+  }
   const rest = (q) => (q.toString() ? '?' + q : '');
   return { params: s, fragment: false, address: hadMine ? rest(s) + (hash && !h.has(mine) ? hash : '') : null };
 }
@@ -224,7 +230,11 @@ export function uncheckedOnCard(taxon, hasJobs) {
 // preset), a saved country reads 'saved' (n2), "from your last consortium", never "chosen by you"
 // (core-fix review 3, m-2). A stale code on the device is quiet.
 // `known(code)`: the manifest lists the code (upper case).
-export function pickCountry({ link, pref, saved, guess, known }) {
+// `linkSource`: where the link's k came from when this tab wrote the fragment itself (memory.js
+// WROTE: Back to an older entry, a reload), else null. A k that was the reader's own then ('user',
+// 'saved') gives way to their choice now (B5: Back never restores the country), and keeps its own
+// label without one; only a k from a real arrival ('link', or no mark) reads "from the shared link" (F2).
+export function pickCountry({ link, linkSource = null, pref, saved, guess, known }) {
   const out = { country: null, countrySource: null, noCountry: false, unknownCountry: null };
   const up = (c) => (typeof c === 'string' ? c.toUpperCase() : null);
   const own = up(pref) === '-' ? '-' : known(up(pref)) ? up(pref) : null;
@@ -232,6 +242,7 @@ export function pickCountry({ link, pref, saved, guess, known }) {
   if (link?.country) {
     const code = up(link.country);
     if (!known(code)) return { ...out, ...mine, unknownCountry: code };
+    if (linkSource && linkSource !== 'link') return own ? { ...out, ...mine } : { ...out, country: code, countrySource: linkSource };
     return { ...out, country: code, countrySource: own === code ? 'user' : 'link' };
   }
   if (own) return { ...out, ...mine };

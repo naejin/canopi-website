@@ -827,6 +827,8 @@
 .ct .crop-g { font-size: 13px; color: var(--text-muted); }
 .ct .crop-chip > svg { flex: none; color: var(--text-secondary); }
 .ct .others-failed { margin: 8px 0 0; font-size: 15px; color: var(--text-secondary); }
+.ct .others-retry { margin: 4px 0 0; font-size: 15px; }
+.ct .crop-retry:empty { display: none; }
 .ct .crop-x { flex: none; width: 44px; height: 44px; display: inline-grid; place-items: center; border: 0; background: none; color: var(--text); border-radius: 999px; }
 .ct .crop-x:hover { background: var(--bg); }
 .ct .crop-field { margin: 0; display: grid; gap: 6px; }

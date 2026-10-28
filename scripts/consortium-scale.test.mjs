@@ -9,9 +9,9 @@ import { readFileSync } from 'node:fs';
 import { makeWords } from '../src/scripts/consortium/words.js';
 import { foodPlants, cropMatches, cropHits, cropLabel, cropExamples, elsewhereHit, otherListMatches, inClimateOrder, loadLists, addFilterMatch, keptFilter, keptCounts, KEPT_FILTERS } from '../src/scripts/consortium/crops.js';
 import { fold } from '../src/scripts/consortium/words.js';
-import { droppedPlants, asksCrops, shareUrl, opensOnResult, linkDamaged, arrivalParams, withHash, langHash, printNoneKey, keepCountry, redoToastKey, siteChangeRebuilds, afterSwap, climateSourceAt } from '../src/scripts/consortium/logic.js';
-import { builtKey, mainCropKey, fromListKey, cardInvasive, detailsInvasive, roomHint } from '../src/scripts/consortium/parts.js';
-import { MINE, memoryOf, OWN_STORE } from '../src/scripts/consortium/memory.js';
+import { droppedPlants, asksCrops, shareUrl, opensOnResult, linkDamaged, arrivalParams, withHash, langHash, printNoneKey, keepCountry, redoToastKey, siteChangeRebuilds, afterSwap, climateSourceAt, pickCountry } from '../src/scripts/consortium/logic.js';
+import { builtKey, cardInvasive, detailsInvasive, roomHint } from '../src/scripts/consortium/parts.js';
+import { MINE, memoryOf, startState, WROTE } from '../src/scripts/consortium/memory.js';
 import * as core from '../src/lib/consortium/index.ts';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -182,10 +182,13 @@ test('words: the room hint names the height and width limit the check uses, and 
     for (const key of ['home.consortium.lede', 'consortium.description']) assert.match(home[lang][key], /6/, `${lang}: ${key} still names the suggestion`);
   }
   const en = makeWords(strings.en, 'en'), fr = makeWords(strings.fr, 'fr');
-  assert.equal(roomHint(en, 'small'), 'Plants up to 6 m tall and across · suggestions of 6');
-  assert.equal(roomHint(en, 'large'), 'Plants up to 12 m tall and across · suggestions of 9');
-  assert.equal(roomHint(en, 'field'), 'Plants of any size · suggestions of 12');
-  assert.equal(roomHint(fr, 'small'), 'Plantes jusqu’à 6 m de haut et de large · suggestions de 6');
+  assert.equal(roomHint(en, 'small'), 'Plants up to 6 m tall and across · suggests 6 plants');
+  assert.equal(roomHint(en, 'large'), 'Plants up to 12 m tall and across · suggests 9 plants');
+  assert.equal(roomHint(en, 'field'), 'Plants of any size · suggests 12 plants');
+  assert.equal(roomHint(fr, 'small'), 'Plantes jusqu’à 6 m de haut et de large · suggestions de 6 plantes');
+  // F6: the suggestion size says it counts plants, in every language.
+  const plantWord = { en: /6 plants/, fr: /6 plantes/, es: /6 plantas/, pt: /6 plantas/, it: /6 piante/, zh: /6 种植物/, de: /6 Pflanzen/, ja: /6種の植物/, ko: /식물 6가지/, nl: /6 planten/, ru: /6 растений/ };
+  for (const lang of locales) assert.match(roomHint(makeWords(strings[lang], lang), 'small').split(' · ')[1], plantWord[lang], lang);
   assert.equal(home.en['home.consortium.lede'], 'A consortium is a group of plants that help each other. Choose your climate: start from a suggestion of 6 to 12 plants, or build your own, up to hundreds.');
   assert.equal(strings.en.fill, 'Fill the gaps');
 });
@@ -228,8 +231,12 @@ test('C8: a link in the fragment is read from it; a query link (v2, an early que
     const r = arrivalParams({ search, hash: '' });
     assert.equal(r.fragment, false, search);
     assert.equal(r.params.toString(), search.slice(1), search);
-    assert.equal(r.address, '#' + search.slice(1), `${search}: moved to the fragment with replaceState`);
+    // F3: a v3 query link was never held to the end marker, so it moves with one.
+    assert.equal(r.address, '#' + search.slice(1) + (search.startsWith('?v=3') ? '&e=1' : ''), `${search}: moved to the fragment with replaceState`);
   }
+  const moved = arrivalParams({ search: '?v=3&c=temperate&a=AAAAAA', hash: '' }).address;
+  assert.equal(linkDamaged(core.decodeState(new URLSearchParams(moved.slice(1))), true), false, 'F3: read again from the fragment, it is whole');
+  assert.equal(arrivalParams({ search: '?v=2&c=temperate', hash: '' }).address, '#v=2&c=temperate', 'a v2 link keeps no marker');
   // An old link's `mine` never survives, in either place.
   assert.equal(arrivalParams({ search: `?c=tropical&${MINE}=FR&k=TW`, hash: '' }).address, '#c=tropical&k=TW');
   assert.equal(arrivalParams({ search: '', hash: `#c=tropical&${MINE}=FR` }).address, '#c=tropical');
@@ -293,6 +300,7 @@ test('B2, B9: other lists come back in the climates\' order whatever arrives fir
   const twice = new Map([['mediterranean', mediterranean], ['tropical', both]]);
   assert.equal(otherListMatches('fig', inClimateOrder(twice, ['tropical', 'mediterranean'], 'temperate'), temperate)[0].climate, 'tropical');
   for (const lang of locales) assert.ok(strings[lang].othersFailed, `${lang}: othersFailed`);
+  assert.equal(strings.en.othersFailed, 'Some other climates’ lists could not be loaded.', 'F6: only some may have failed');
 });
 
 test('B4: a plant from another list never prints "None found (all checked)": its fit here was never checked', () => {
@@ -344,29 +352,53 @@ test('B13: the Add search\'s other-list plants follow the same job, layer and st
   assert.equal(addFilterMatch({ ...fig, phases: null }, { phase: i }), false);
 });
 
-// B7: a sender's crops and guests are described neutrally, never as the reader's own choice.
-test('B7: only crops and guests the reader chose on this device read "you chose" or "you added"', () => {
+// B7, F1, F4: the main crops and other-list plants read the same for every reader; nothing remembers
+// who picked them (scripts/consortium-app.test.mjs runs this on the page).
+test('B7: main crops and plants from another list are described neutrally, in every language, with nothing stored', () => {
+  assert.equal(builtKey(1), 'builtOne');
+  assert.equal(builtKey(2), 'builtMany');
   const store = new Map();
   const storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) };
   const tab = { state: null, location: { pathname: '/consortium/', search: '', hash: '' }, replaceState(state) { tab.state = state; } };
   const m = memoryOf({ storage, history: tab, location: tab.location });
-  assert.deepEqual([...m.own().crops], []);
-  m.addOwn({ crops: ['garlic'], guests: ['fig'] });
-  const again = memoryOf({ storage, history: tab, location: tab.location }).own();
-  assert.ok(again.crops.has('garlic') && again.guests.has('fig'), 'a reload or a language switch keeps them');
-  assert.ok(JSON.parse(store.get(OWN_STORE)).crops.includes('garlic'));
-  const blocked = { getItem() { throw new Error('x'); }, setItem() { throw new Error('x'); } };
-  const tabOnly = memoryOf({ storage: blocked, history: tab, location: tab.location });
-  assert.ok(tabOnly.own().crops.has('garlic'), 'storage blocked: this tab still knows');
-  assert.equal(builtKey(1, true), 'builtOne');
-  assert.equal(builtKey(2, false), 'builtManyLink');
-  assert.equal(mainCropKey(false), 'mainCropTextLink');
-  assert.equal(fromListKey(true), 'fromListText');
-  for (const lang of locales) for (const key of ['builtOneLink', 'builtManyLink', 'mainCropTextLink', 'fromListTextLink']) assert.ok(strings[lang][key], `${lang}: ${key}`);
-  for (const key of ['builtOneLink', 'builtManyLink', 'mainCropTextLink', 'fromListTextLink']) {
-    assert.doesNotMatch(strings.en[key], /\byou(r)?\b/i, `en ${key}`);
-    assert.doesNotMatch(strings.fr[key], /\b(vous|votre|vos)\b/i, `fr ${key}`);
+  assert.equal('own' in m || 'addOwn' in m, false, 'no own-picks memory');
+  const keys = ['builtOne', 'builtMany', 'mainCropText', 'fromListText', 'mainCropRemoveNote', 'redoneCrops'];
+  for (const lang of locales) {
+    for (const key of keys) assert.ok(strings[lang][key], `${lang}: ${key}`);
+    for (const key of ['builtOneLink', 'builtManyLink', 'mainCropTextLink', 'fromListTextLink']) assert.equal(strings[lang][key], undefined, `${lang}: ${key} is gone`);
   }
+  const own = { en: /\byour?\b|\byou (chose|added)/i, fr: /\b(votre|vos)\b|vous l’avez/i, es: /\btus?\b|la (elegiste|añadiste)/i, pt: /\bsuas?\b|(escolheu|adicionou)-a/i, it: /\btue?\b|l’hai/i, de: /\bdeine?n?\b|du hast/i, nl: /\bje\b(?! het)/i, ru: /\bваш(и|ей|их)?\b|вы (выбрали|добавили)/i, zh: /你/ };
+  for (const [lang, re] of Object.entries(own)) for (const key of keys) assert.doesNotMatch(strings[lang][key], re, `${lang} ${key}: ${strings[lang][key]}`);
+  assert.equal(enW.T('builtMany', { names: 'Garlic and Apple' }), 'Built around the main crops: Garlic and Apple. They are kept, and the other plants were chosen to grow well with them.');
+});
+
+// F2: a fragment this tab wrote is the tab's own: its country never reads as someone else's link.
+test('F2: the page marks the fragment it writes; Back or a reload of it keeps the reader\'s country and its label', () => {
+  const known = (c) => ['FR', 'BR', 'DE'].includes(c);
+  const link = { country: 'FR' };
+  assert.deepEqual([pickCountry({ link, pref: 'BR', known }).countrySource], ['link'], 'a real arrival: the sender\'s');
+  const ownThen = pickCountry({ link, linkSource: 'user', pref: 'BR', known });
+  assert.deepEqual([ownThen.country, ownThen.countrySource], ['BR', 'user'], 'the reader\'s own then: their choice now wins');
+  const noPref = pickCountry({ link, linkSource: 'saved', pref: null, known });
+  assert.deepEqual([noPref.country, noPref.countrySource], ['FR', 'saved'], 'and keeps its own label without one');
+  const linkThen = pickCountry({ link, linkSource: 'link', pref: 'BR', known });
+  assert.deepEqual([linkThen.country, linkThen.countrySource], ['FR', 'link'], 'a sender\'s country written back stays the sender\'s');
+  // memory.write marks the entry; arrive reads the mark only when the fragment is the one written.
+  const store = new Map([['canopi-country', 'BR']]);
+  const storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) };
+  const loc = { pathname: '/consortium/', search: '', hash: '' };
+  const tab = { state: null, replaceState(state, _t, url) { tab.state = state; if (url != null) loc.hash = url.slice(url.indexOf('#')); } };
+  memoryOf({ storage, history: tab, location: loc }).write('/consortium/', '#v=3&c=temperate&k=FR&e=1', { countrySource: 'user', climateSource: 'site' });
+  assert.equal(tab.state[WROTE].hash, '#v=3&c=temperate&k=FR&e=1');
+  const m = memoryOf({ storage, history: tab, location: loc });
+  const params = m.arrive();
+  assert.equal(m.written.countrySource, 'user');
+  const { country } = startState({ params, memory: m, guess: null, known });
+  assert.deepEqual([country.country, country.countrySource], ['BR', 'user']);
+  loc.hash = '#v=3&c=temperate&k=FR&e=1&p=x';
+  const other = memoryOf({ storage, history: tab, location: loc });
+  other.arrive();
+  assert.equal(other.written, null, 'another fragment in the same entry (a paste) is a real arrival');
 });
 
 // B6: only the reader's own climate pick says "chosen by you".
@@ -402,8 +434,8 @@ test('C11, C12: the crop step and main-crop words read as the mockup and each la
     assert.match(strings[lang]['crops.elsewhere'], /\{grow\}/, `${lang}: crops.elsewhere names the "I want to grow…" control`);
   }
   assert.equal(strings.en['crops.fromGuide'], 'from the guide');
-  assert.equal(strings.fr.mainCropRemoveNote, 'Si vous la retirez, elle quitte aussi vos cultures principales.');
-  assert.equal(strings.fr.redoneCrops, 'Nouvelles plantes suggérées autour de vos cultures principales. Les plantes gardées restent.');
+  assert.equal(strings.fr.mainCropRemoveNote, 'Si vous la retirez, elle n’est plus une culture principale.');
+  assert.equal(strings.fr.redoneCrops, 'Nouvelles plantes suggérées autour des cultures principales. Les plantes gardées restent.');
   assert.equal(strings.de.suggestIt, 'Pflanzen dazu vorschlagen');
   assert.match(strings.es.builtOne, /con ella\.$/, 'es: la planta, as mainCropText');
 });

@@ -816,7 +816,7 @@ test('"No country" is kept on this device only (k=- in the save, never in a shar
   assert.equal(linkCountry(none, false).noCountry, false, 'never in the address bar');
   assert.equal(linkCountry(none, true).noCountry, true, 'in the save');
   assert.match(app, /memory\.save\(query\(true\), S\.countrySource\)/);
-  assert.match(app, /lastHash = '#' \+ q;\s*try \{ history\.replaceState\(history\.state, '', location\.pathname \+ lastHash\)/, 'the address bar\'s fragment (C8)');
+  assert.match(app, /lastHash = '#' \+ q;\s*memory\.write\(location\.pathname, lastHash, /, 'the address bar\'s fragment (C8), marked as this tab\'s own (F2)');
   assert.match(app, /const q = query\(false\);/);
   const site = { light: 'sun', soil: 'unsure', water: 'unsure', room: 'large' };
   const q = core.encodeState({ climate: 'temperate', country: null, noCountry: true, site, kept: [], removed: [], members: null, plants: [] });

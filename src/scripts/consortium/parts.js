@@ -113,9 +113,6 @@ export const detailsInvasive = (W, place, taxon) => invasiveDetails(W, { ...plac
 // B11). The room never limits how many plants a consortium has.
 export const roomHint = (W, room) => W.T(`site.room.${room}.hint`, { m: W.num(ROOM_LIMIT_M[room]), n: W.num(SIZE_LIMIT[room]) });
 
-// B7: "your main crop", "you chose it", "you added it" only for what the reader chose on this device
-// (memory.js own); a shared link's crops and guests are described neutrally.
-const BUILT = { own: ['builtOne', 'builtMany'], link: ['builtOneLink', 'builtManyLink'] };
-export const builtKey = (n, own) => BUILT[own ? 'own' : 'link'][n === 1 ? 0 : 1];
-export const mainCropKey = (own) => (own ? 'mainCropText' : 'mainCropTextLink');
-export const fromListKey = (own) => (own ? 'fromListText' : 'fromListTextLink');
+// B7: the main crops are described the same for every reader, whoever chose them: nothing from someone
+// else's link is shown as the reader's own, and nothing is remembered to tell them apart (F1, F4).
+export const builtKey = (n) => (n === 1 ? 'builtOne' : 'builtMany');

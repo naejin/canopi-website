@@ -17,7 +17,7 @@ import { loadManifest, loadLabels, loadClimate } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook, capFirst } from './words.js';
 import { cropHits, cropLabel, cropExamples, elsewhereHit, otherListMatches, isFood, inClimateOrder, loadLists, addFilterMatch } from './crops.js';
 import { asksCrops, shareUrl, droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, noLinkCode, keptCountry, repeatClick, withHash, swapTarget, relaxTo, licenceOf, uncheckedOnCard, guessCountry, linkCountry, langHash, chosenHere, printNoneKey, invasiveSourceIds, linkDamaged, isToolState, keepCountry, redoToastKey, siteChangeRebuilds, afterSwap, climateSourceAt } from './logic.js';
-import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, cardInvasive, detailsInvasive, countryAnnouncement, roomHint, builtKey, mainCropKey, fromListKey } from './parts.js';
+import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, cardInvasive, detailsInvasive, countryAnnouncement, roomHint, builtKey } from './parts.js';
 import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
@@ -96,10 +96,6 @@ const fresh = () => ({
   cutLink: false,
 });
 let S = fresh();
-// The main crops and guests the reader chose on this device (memory.js own: B7).
-let ownPicks = { crops: new Set(), guests: new Set() };
-const ownCrops = () => S.crops.length > 0 && S.crops.every((id) => ownPicks.crops.has(id));
-function addOwn(picks) { memory.addOwn(picks); ownPicks = memory.own(); }
 let O = null; // the open sheet: { type, id, filter, back, confirm }
 let addQuery = '', addJob = '', addLayer = '';
 let countryQuery = '', cropQuery = '';
@@ -146,7 +142,8 @@ function loadOthers() {
   return othersLoading;
 }
 function retryOthers() { othersLoading = null; return loadOthers(); }
-const othersFailedHTML = () => (othersState === 'failed' ? `<p class="others-failed">${esc(T('othersFailed'))} ${btn('link-button', 'others-retry', null, esc(T('othersRetry')), fk('others-retry'))}</p>` : '');
+const retryHTML = () => btn('link-button', 'others-retry', null, esc(T('othersRetry')), fk('others-retry'));
+const othersFailedHTML = () => (othersState === 'failed' ? `<p class="others-failed">${esc(T('othersFailed'))} ${retryHTML()}</p>` : '');
 const stratumOf = (t) => t.stratum?.value ?? 'none';
 const limit = () => SIZE_LIMIT[S.site.room];
 const climateLabel = () => W.climate(S.climate);
@@ -377,19 +374,43 @@ function cropStatus() {
     loadOthers();
     const hit = elsewhereHit(q, lang, othersList(), cell);
     const elsewhere = hit ? `<p>${esc(T('crops.elsewhere', { name: cropLabel(hit, lang, W.paren), other: listName(hit.climate), grow: T('grow'), anyway: T('addAnyway'), label: fromListLabel(hit.climate) }))}</p>` : '';
-    return `<div class="crop-none"><p><strong>${esc(T('crops.none', { list: listName(S.climate), q }))}</strong></p>${elsewhere}${hit ? '' : othersFailedHTML()}<p class="muted">${esc(T('crops.spelling'))}</p></div>`;
+    const failed = !hit && othersState === 'failed' ? `<p class="others-failed">${esc(T('othersFailed'))}</p>` : '';
+    return `<div class="crop-none"><p><strong>${esc(T('crops.none', { list: listName(S.climate), q }))}</strong></p>${elsewhere}${failed}<p class="muted">${esc(T('crops.spelling'))}</p></div>`;
   }
   return n ? esc(P('crops.chosen', n, { max: W.num(MAX_CROPS) })) : '';
 }
+// The crop step's Retry, outside the live status (F5: no control inside a role=status region): shown
+// while a search found nothing here or in the lists that loaded, and some list failed.
+function cropRetryHTML() {
+  const q = cropQuery.trim();
+  if (!q || cropFull() || othersState !== 'failed' || cropHitsNow().length || elsewhereHit(q, lang, othersList(), cell)) return '';
+  return `<p class="others-retry">${retryHTML()}</p>`;
+}
 let cropTimer = 0;
-// Typing redraws the options at once and the status once typing pauses (so it is read once).
+// Typing redraws the options at once and the status once typing pauses (so it is read once). A redraw
+// that removes the control holding the focus (Retry while its lists load, an option) puts it back on
+// that control when it is drawn again, else on the search (F5, as refreshAdd does: B13).
 function refreshCrops(now = false) {
   if (S.status !== 'crops') return;
   const l = document.getElementById('ct-crop-list'), eg = document.getElementById('ct-crop-eg');
+  const keep = () => {
+    const a = document.activeElement;
+    return a && a !== document.body && app.contains(a) ? fkOf(a) : null;
+  };
+  const back = (had) => { if (had && !app.contains(document.activeElement)) focusFk(had, app) || document.getElementById('ct-crop-q')?.focus(); };
+  let had = keep();
   if (l) l.innerHTML = cropOptionsHTML();
   if (eg) eg.innerHTML = cropExamplesHTML();
+  back(had);
   clearTimeout(cropTimer);
-  const put = () => { const st = document.getElementById('crop-st'); if (st && S.status === 'crops') st.innerHTML = cropStatus(); };
+  const put = () => {
+    const st = document.getElementById('crop-st'), r = document.getElementById('crop-retry');
+    if (!st || S.status !== 'crops') return;
+    had = keep();
+    st.innerHTML = cropStatus();
+    if (r) r.innerHTML = cropRetryHTML();
+    back(had);
+  };
   if (now) put(); else cropTimer = setTimeout(put, 400);
 }
 function cropsHTML() {
@@ -409,7 +430,7 @@ function cropsHTML() {
       <div class="field crop-field"><label for="ct-crop-q">${esc(T('crops.label', { climate: climateLabel() }))}</label>
         <div class="search">${I.search}<input id="ct-crop-q" type="search" autocomplete="off" spellcheck="false" placeholder="${esc(ph)}" value="${esc(cropQuery)}" data-input="crop" aria-describedby="crop-st"${cropFull() ? ' disabled' : ''} ${fk('crop-q')}></div>
         <div id="ct-crop-list">${cropOptionsHTML()}</div></div>
-      <div class="crop-st" id="crop-st" role="status">${cropStatus()}</div>
+      <div class="crop-st" id="crop-st" role="status">${cropStatus()}</div><div class="crop-retry" id="crop-retry">${cropRetryHTML()}</div>
       <p class="crop-eg" id="ct-crop-eg">${cropExamplesHTML()}</p>
       <div class="crop-acts">${go}${n ? `<p class="crop-hint">${esc(T(n === 1 ? 'withoutIt' : 'withoutThem'))}</p>` : ''}${S.cropsBack ? btn('link-button', 'crops-back', null, esc(T('backToResult')), fk('crops-back')) : ''}</div>
     </section></div>`;
@@ -418,7 +439,7 @@ function cropsHTML() {
 function builtHTML() {
   const crops = S.crops.map(taxonOf).filter(Boolean);
   if (!crops.length) return '';
-  return `<p class="note built">${I.pinOn}<span><span>${T(builtKey(crops.length, ownCrops()), { names: W.list(crops.map((t) => `<b>${name(t)}</b>`)) })}</span> ${btn('link-button', 'change-crops', null, esc(T('changeCrops')), fk('change-crops'))}</span></p>`;
+  return `<p class="note built">${I.pinOn}<span><span>${T(builtKey(crops.length), { names: W.list(crops.map((t) => `<b>${name(t)}</b>`)) })}</span> ${btn('link-button', 'change-crops', null, esc(T('changeCrops')), fk('change-crops'))}</span></p>`;
 }
 
 // ---------- Result ----------
@@ -517,7 +538,9 @@ function mainHTML() {
 // The country plays no part here.
 function notCoveredHTML() {
   const covered = CLIMATES.filter((c) => fileFor(manifest, c));
-  return `${guideNote(true)}<div class="callout">${resultTitle(T('nc.title', { climate: climateLabel() }))}
+  // F9: a cut link waiting for its climate says so here too.
+  const cut = S.cutLink ? `<div class="note note-old" role="status">${I.info}<div><p><strong>${esc(T('cutLink.title'))}</strong></p><p>${esc(T('cutLink.text'))}</p></div></div>` : '';
+  return `${guideNote(true)}${cut}<div class="callout">${resultTitle(T('nc.title', { climate: climateLabel() }))}
     <p>${esc(P('nc.text', covered.length, { list: W.list(covered.map(W.climate)) }))}</p>
     <div class="actions">${btn('button button-primary', 'open-place', 'climate', esc(T('nc.other')), `aria-haspopup="dialog" ${fk('nc-change')}`)}<a class="text-link" href="${data.contact}">${esc(T('nc.ask'))}</a></div></div>`;
 }
@@ -739,8 +762,8 @@ function detailsParts(t) {
   const headHTML = `<div><h2 id="ct-dlg-title">${name(t)}</h2><p class="lede"><i>${esc(t.canonical_name)}</i> · ${esc(T('family', { family: t.family }))}</p>${tags ? `<p class="d-tags">${tags}</p>` : ''}</div>`;
   // A main crop says why it is there and what it does (owner, 2026-10-28); a plant from another list
   // says which list, and that its fit here was not checked.
-  const mainSec = crop ? `<section class="d-section d-main"><h3>${esc(T('mainCrop'))}</h3><p>${esc(T(mainCropKey(ownPicks.crops.has(t.id))))}</p>${btn('link-button', 'change-crops', null, esc(T('changeCrops')), fk('d-crops'))}</section>` : '';
-  const fromSec = from ? `<section class="d-section d-from"><h3>${esc(capFirst(fromListLabel(from), lang))}</h3><p>${esc(guest ? T(fromListKey(ownPicks.guests.has(t.id)), { anyway: T('addAnyway'), list: listName(from), here: listName(S.climate) }) : T('inOtherList', { list: listName(from), here: listName(S.climate) }))}</p></section>` : '';
+  const mainSec = crop ? `<section class="d-section d-main"><h3>${esc(T('mainCrop'))}</h3><p>${esc(T('mainCropText'))}</p>${btn('link-button', 'change-crops', null, esc(T('changeCrops')), fk('d-crops'))}</section>` : '';
+  const fromSec = from ? `<section class="d-section d-from"><h3>${esc(capFirst(fromListLabel(from), lang))}</h3><p>${esc(guest ? T('fromListText', { anyway: T('addAnyway'), list: listName(from), here: listName(S.climate) }) : T('inOtherList', { list: listName(from), here: listName(S.climate) }))}</p></section>` : '';
   const body = `${photo}${mainSec}${fromSec}
     <div class="d-layer"><span>${esc(stratumLabel(s))}${s !== 'none' ? ' · ' + esc(T('stratum.' + s + '.about')) : ''}</span><span>${esc(tw.plain)}${tw.term ? ' · ' + esc(tw.term) : ''}</span></div>
     ${t.reasons?.length ? `<section class="d-section"><h3>${esc(T(from ? 'whyInList' : crop ? 'whatItDoes' : 'why'))}</h3>${reasonsHTML(t, W, lang, sources)}</section>` : ''}
@@ -1017,7 +1040,8 @@ function stateNow(saved = false) {
 // could make two plants share one): a v3 link's tokens come back the same from encodeState; a v2
 // link is written back as v2.
 function pendingQuery(saved = false) {
-  if (S.pending.version === 3) return encodeState(stateNow(saved));
+  // F9: a link that came cut stays cut (no end marker) while it waits, so a later visit still says so.
+  if (S.pending.version === 3) { const q = encodeState(stateNow(saved)); if (S.cutLink) q.delete('e'); return q; }
   const q = encodeState({ ...stateNow(saved), kept: [], removed: [], members: null, crops: [], guests: [] });
   q.set('v', '2'); q.delete('e');
   const st = S.pending.state;
@@ -1037,7 +1061,7 @@ function persist() {
   const query = (saved) => linkQuery(saved).toString();
   const q = query(false);
   lastHash = '#' + q;
-  try { history.replaceState(history.state, '', location.pathname + lastHash); } catch {}
+  memory.write(location.pathname, lastHash, { countrySource: S.countrySource, climateSource: S.climateSource });
   syncLangLinks();
   if (S.status === 'ready') memory.save(query(true), S.countrySource);
 }
@@ -1206,7 +1230,6 @@ const act = {
   },
   suggest() {
     for (const id of S.crops) { S.kept.add(id); S.removed.delete(id); }
-    if (S.crops.length) addOwn({ crops: S.crops });
     S.askCrops = false; S.cropsBack = false; cropQuery = '';
     recompute(); focusNext = 'result'; render(); offerRedo();
     say(S.status === 'ready' ? T('announce', { summary: P('count', S.members.length) }) : T('nm.title'));
@@ -1309,7 +1332,6 @@ const act = {
     const [c, id] = String(v).split(':'), f = others.get(c), t = f?.taxa.find((x) => x.id === id);
     if (!t || inCell(id)) return;
     S.guests.set(id, { climate: c, taxon: t, sources: f.sources });
-    addOwn({ guests: [id] });
     act['add-yes'](id);
   },
   'others-retry'() { retryOthers(); refreshCrops(true); refreshAdd(); },
@@ -1338,6 +1360,8 @@ const act = {
     Object.assign(S, kept);
     if (siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }
     memory.startOver(location.pathname);
+    // F7: lastHash is always the fragment the page last wrote, so the link that was open, pasted back, opens.
+    lastHash = location.hash;
     syncLangLinks(); render(); toast(esc(T('startOverDone')), 'start'); focusFk('undo', toastEl);
   },
   dismiss() { S.notice = null; focusNext = 'result'; render(); },
@@ -1434,8 +1458,6 @@ async function start() {
   const { decoded, saved, fromLink, country } = startState({ params: arrival, memory, guess: browserCountry, known: (c) => isCountry(manifest, c) });
   if (!fromLink && decoded) S.restoredAt = saved.at;
   S.cutLink = fromLink && linkDamaged(decoded, memory.fromFragment);
-  // B7: the crops and guests the reader chose on this device; a link's others are described neutrally.
-  ownPicks = memory.own();
   Object.assign(S, country, { linkCode: country.unknownCountry });
   syncLangLinks();
   // A fresh climate (or a guide's plant) asks the crop question; a shared or saved consortium opens as it was.
@@ -1445,7 +1467,8 @@ async function start() {
     S.climate = d.climate; S.site = { ...d.site };
     S.pending = decoded;
     if (d.plants?.length) S.guidePlant = d.plants[0];
-    S.climateSource = climateSourceAt({ fromLink, climate: d.climate, guide: !!(d.plants?.length && d.climate), siteClimate: siteClimate() });
+    // F2: a fragment this tab wrote keeps the climate's label from then; only a real arrival reads "from the shared link".
+    S.climateSource = (fromLink && memory.written?.climateSource) || climateSourceAt({ fromLink, climate: d.climate, guide: !!(d.plants?.length && d.climate), siteClimate: siteClimate() });
     if (S.restoredAt && d.climate) S.notice = 'restored';
   }
   if (!S.climate && siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }
