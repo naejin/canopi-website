@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium tool — user decisions
 description: Dated decisions the project owner made about the consortium design tool; they change only when the owner changes them.
 tags: [consortium, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T10:01:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T10:16:08Z }
 ---
 
 # Consortium tool — user decisions
@@ -52,6 +52,7 @@ Data side (sibling repository `canopi-data`, read 2026-10-27): `docs/adr/0007-cu
 | 2026-10-28 | **The helpers job gets real Field Guides:** written from *The Pollinator Victory Garden* (Kim Eierman, 2020, now in the owner's library), which also joins the bibliography. |
 | 2026-10-28 | **"Consortium" means each language's own form of the word** (Konsortium, Consorcio, コンソーシアム, 植物联合体…), « Guilde » in French. |
 | 2026-10-28 | **Helpers data is fixed in canopi-data, reproducibly:** the cells' `pollinator_forage` rows are reviewed against *The Pollinator Victory Garden* (wind-pollinated and sterile plants out, where "sterile" means without nectar or pollen for pollinators, not without seed: owner, 2026-10-28, so seedless Tahiti lime and saffron stay; invasives kept and flagged per country) and sourced `insectary` rows are added from the book. Every step is a committed script or data file in canopi-data, so a re-run gives the same rows; then re-export and install. |
+| 2026-10-28 | **Climate first, region no longer a filter** (replaces the cell-per-region choice of plants in the rows "Samples are cells" and "Region from an optional country" for what the tool offers; invasiveness stays per country): the tool asks one question, the climate, and suggests at once from plants grown in that climate in every region (assisted migration of plants and soil life is a legitimate design choice: bananas now planted in the south of France; Hervé Coves). The country is optional, prefilled from the browser as an editable guess, and adds per-country invasive warnings; it never removes a plant. canopi-data changes the export first (one file per climate, invasive status per country inside it), then the website. Guide 43 gets a short counterpoint to "natives first". A "warming climate" option (plants of the next warmer climate) is left out of the beta. |
 
 ## Open questions for the owner (not decisions)
 
