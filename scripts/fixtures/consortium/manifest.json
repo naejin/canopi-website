@@ -9,9 +9,9 @@
       "regions": [
         "southern_america"
       ],
-      "taxa": 15,
-      "interactions": 2,
-      "sha256": "605ce1928d05a833856111e3cd52d6112cfd00daeab1a5038c37d693657cec47"
+      "taxa": 16,
+      "interactions": 3,
+      "sha256": "b3e036238848856217ec3fd0060f025772a0b34e59e0752d75643f02e444724b"
     },
     {
       "climate_zone": "Mediterranean",

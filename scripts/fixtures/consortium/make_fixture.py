@@ -31,6 +31,9 @@ SOURCES = {
     "extension-juglone": {"label": "University extension: walnut toxicity (illustrative)", "url": "https://example.org/juglone", "licence": None, "attribution": None},
     "sample-review": {"label": "Canopi consortium sample review (illustrative)", "url": None, "licence": None, "attribution": None},
     "extension-banana": {"label": "Plant pathology note: banana weevil and plantains (illustrative)", "url": "https://example.org/banana-weevil", "licence": None, "attribution": None},
+    # Real ids, labels and URLs, copied from the canopi-data export of 2026-10-28 (tropical.json).
+    "eppo-global-database-anastrepha-fraterculus-anstfr-host": {"label": "EPPO Global Database: Anastrepha fraterculus (ANSTFR), host plants", "url": "https://gd.eppo.int/taxon/ANSTFR/hosts", "licence": None, "attribution": None},
+    "eppo-global-database-anastrepha-fraterculus-anstfr": {"label": "EPPO Global Database: Anastrepha fraterculus (ANSTFR), distribution", "url": "https://gd.eppo.int/taxon/ANSTFR/distribution", "licence": None, "attribution": None},
 }
 
 BASE_TRAITS = {
@@ -205,6 +208,14 @@ TROPICAL = [
           {"height_m": (0.6, 1.2), "width_max_m": 0.5, "sun": False, "semi_shade": True, "full_shade": True, "frost_tender": True,
            "moisture_use": "High", "edibility_rating": 4, "habit": "Herbaceous", "root_system_type": "Rhizome"},
           {"invasive_in": []}),
+    taxon("Psidium guajava", "Psidium", "Myrtaceae", {"en": "Guava", "fr": "Goyavier", "es": "Guayaba", "pt": "Goiabeira"},
+          "crop", R("Guava; fruit from year 2–3 and bird food; prune hard.", "Goyavier ; fruits dès la 2e ou 3e année et nourriture pour les oiseaux ; tailler fort."),
+          ("medium", ["sample-review"]), ("placenta_iii", "secondary_ii", ["sample-review"]),
+          [("pollinator_forage", "import", [P])],
+          {"height_m": (None, 7.6), "width_max_m": 10, "semi_shade": True, "frost_tender": True, "soil_ph": (5.5, 7.0), "well_drained": True,
+           "moisture_use": "Medium", "drought_tolerance": "Medium", "deciduous_evergreen": "Evergreen", "lifespan": "Long", "growth_rate": "Medium",
+           "edibility_rating": 5, "habit": "Tree", "self_fertile": True, "pollinators": ["Bees"], "mycorrhizal_type": "AM"},
+          {"toxicity": {"level": "None", "note": None, "sources": [P]}, "invasive_in": inv("AU"), "weed_potential": True}),
 ]
 TROP_INTER = [
     {"subject": {"name": "Tithonia diversifolia", "rank": "species"}, "object": {"name": "Ipomoea batatas", "rank": "species"},
@@ -215,6 +226,14 @@ TROP_INTER = [
      "type": "shared_pest", "agent": "Cosmopolites sordidus", "severity": "low",
      "note": R("Banana weevil spreads between banana and plantain stools planted close together.", "Le charançon du bananier passe d’une souche à l’autre quand bananiers et plantains sont serrés."),
      "sources": ["extension-banana"]},
+    # A real exported interaction (canopi-data export 2026-10-28, tropical.json), copied as is.
+    # Its agent is region-bound, so it cites two sources: the row's host page, then the
+    # distribution page the "only in the Americas" note rests on.
+    {"subject": {"name": "Psidium guajava", "rank": "species"}, "object": {"name": "Citrus", "rank": "genus"},
+     "type": "shared_pest", "agent": "Anastrepha fraterculus", "severity": "medium",
+     "note": R("Watch guava near citrus for fruit flies: guava is a major host of the South American fruit fly, which also attacks citrus. EPPO records this fly only in the Americas.",
+               "Surveillez les mouches des fruits sur goyavier près des agrumes : le goyavier est hôte majeur de la mouche sud-américaine, qui attaque aussi les agrumes. L'OEPP ne signale cette mouche que dans les Amériques."),
+     "sources": ["eppo-global-database-anastrepha-fraterculus-anstfr-host", "eppo-global-database-anastrepha-fraterculus-anstfr"]},
 ]
 
 MEDITERRANEAN = [
@@ -559,7 +578,9 @@ open(os.path.join(OUT, "README.md"), "w").write(
     "Covers: null versus `[]` (`toxicity`), `functions: null` and a taxon with no stratum or phases yet\n"
     "(Zingiber officinale), invasive in a few or many countries, every toxicity level, genus, species and family-rank\n"
     "interactions, allelopathy with and without a recorded target, `allelopathy_tolerant`, missing names per locale,\n"
-    "a climate with no interactions (`[]`, checked none), a reason per region with its source, countries GRIIS\n"
+    "a climate with no interactions (`[]`, checked none), a reason per region with its source, an interaction of a\n"
+    "region-bound agent with two sources (Psidium guajava x Citrus, copied from the real export of 2026-10-28: the\n"
+    "EPPO host page, then the distribution page its \"only in the Americas\" note rests on), countries GRIIS\n"
     "does not cover (`invasive_checked: false`, for example TW, PR, PF and the six Antarctic codes).\n"
     "`invasive_in` is never null here: the exporter writes null for every taxon, with every country unchecked,\n"
     "only when the GRIIS compendium is missing, so a test that needs it sets it on a copy.\n\n"
