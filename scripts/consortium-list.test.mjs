@@ -67,6 +67,12 @@ test('warning kinds on the real Temperate list with France: invasive here, toxic
   assert.equal(soft, 138, 'design-scale.md: 138 of the 200 are invasive somewhere');
   const pear = ev.members.find((m) => m.taxon.canonical_name === 'Pyrus communis');
   assert.ok(S.pestsOf(pear.flags).length >= 1);
+  // design-scale.md §2.6 (m10): at 200 plants in a field, the shade plants of the lower layers sit
+  // under a canopy, so "With a warning" counts 29 of 200 with France and 26 with no country.
+  const field = (country) => core.evaluate(temperate, ids, { site: { ...core.DEFAULT_SITE, room: 'field' }, kept: ids, country, countryChecked: !!country })
+    .members.filter((m) => S.warnKinds(m.taxon, m.flags, { country }).has('any')).length;
+  assert.equal(field('FR'), 29);
+  assert.equal(field(null), 26);
 });
 
 test('filters combine with AND, the text search reads every name, and the active ones come first', () => {

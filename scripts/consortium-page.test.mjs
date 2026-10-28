@@ -839,7 +839,7 @@ test('an invasive-here plant shows on its card and in the warning box, and Add a
   assert.match(app, /add\(v\) \{ const f = flagsFor\(.*?\); if \(f\?\.flagged\)/);
   assert.match(app, /use\(v\) \{ const from = swapTarget\(O\); if \(swapFlags\(from, v\)\?\.flagged\)/);
   const suggest = read('src/lib/consortium/suggest.ts');
-  assert.equal(suggest.match(/^\s+flagged: (.*),$/m)?.[1], '!i.fit.ok || found.some(isSerious)');
+  assert.equal(suggest.match(/^\s+flagged: (.*),$/m)?.[1], 'misfits.length > 0 || found.some(isSerious)', 'a misfit (a shaded lower layer is none) or a serious conflict');
 });
 
 // The locale keys are covered by "every key exists for a reason" and the key parity test.

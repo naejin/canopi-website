@@ -360,6 +360,36 @@ test('suggest never picks a misfit, but a kept misfit stays with its flag', () =
   assert.equal(kept[0].flags.flagged, true);
 });
 
+// Coordinator, 2026-10-28 (decision row "Scale build, coordinator choices"; design-scale.md §2.6 m10):
+// on a sunny site a plant of a lower layer that does not take full sun is shaded by the layers above
+// it, so it is not flagged for the light; it is when nothing above it shades it, and a top-layer one always is.
+test('a shade plant in a lower layer is not flagged for full sun while a layer above it shades it', () => {
+  const tree = make({ functions: fn('nitrogen_fixer'), ...layer('high') });
+  const shrub = make({ functions: fn('mulch'), ...layer('medium') });
+  const violet = make({ functions: fn('ground_cover'), traits: { sun: false }, ...layer('low') });
+  const fern = make({ functions: fn('mulch'), traits: { sun: false }, ...layer('medium') });
+  const tall = make({ functions: fn('edible_fruit'), traits: { sun: false }, ...layer('high') });
+  const cell = cellOf([tree, shrub, violet, fern, tall]);
+  const flagsIn = (ids, id, site = open) => evaluate(cell, ids, { site }).members.find((m) => m.taxon.id === id).flags;
+  // Under a High tree: neither the Low nor the Mid shade plant is flagged.
+  for (const id of [violet.id, fern.id]) {
+    const f = flagsIn([tree.id, violet.id, fern.id], id);
+    assert.deepEqual(f.misfits, [], 'shaded by the High layer');
+    assert.equal(f.flagged, false);
+  }
+  // A Mid shrub shades the Low layer, not its own.
+  assert.deepEqual(flagsIn([shrub.id, violet.id], violet.id).misfits, []);
+  assert.deepEqual(flagsIn([shrub.id, fern.id], fern.id).misfits, ['light'], 'nothing above the Mid layer');
+  // Alone, or in a top layer, it is flagged.
+  assert.deepEqual(flagsIn([violet.id], violet.id).misfits, ['light']);
+  assert.deepEqual(flagsIn([tree.id, tall.id], tall.id).misfits, ['light'], 'a top-layer plant is never shaded');
+  // Only a sunny site: in part shade the light check is the plant's own.
+  assert.deepEqual(flagsFor(cell, violet.id, [tree.id], { site: open }).misfits, [], 'flagsFor, beside a High tree');
+  assert.deepEqual(flagsFor(cell, violet.id, [], { site: open }).misfits, ['light']);
+  const swaps = alternatives(tree.id, [tree.id, shrub.id], cell, { site: open });
+  assert.deepEqual(swaps.find((a) => a.taxon.id === violet.id).flags.misfits, [], 'Swap: the Mid shrub still shades it');
+});
+
 // Owner, 2026-10-28: invasiveness is a warning, never a filter or a score.
 test('suggest picks the same plants with or without a country; invasive here is a warning, not a flag', () => {
   const invasive = make({ functions: fn('mulch'), warnings: { invasive_in: [{ country: 'BR', sources: ['griis'] }] } });

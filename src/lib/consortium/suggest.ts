@@ -14,6 +14,7 @@ import type { Fit, Site, SiteKey } from './site.ts';
 import type { Conflict } from './conflicts.ts';
 import type { JobId } from './jobs.ts';
 import { fits } from './site.ts';
+import { strata as layerOrder } from './types.ts';
 import type { PhaseBand } from './jobs.ts';
 import { bandsOf, jobs as allJobs, jobsOf } from './jobs.ts';
 import { conflicts, conflictsOf, invasiveIn, isSerious } from './conflicts.ts';
@@ -152,15 +153,27 @@ function guestsOf(cell: ClimateFile, guests: Taxon[] | undefined): Taxon[] {
   return guests.filter((t, i) => !own.has(t.id) && guests.findIndex((g) => g.id === t.id) === i);
 }
 
-function flagsOf(i: Info, others: Taxon[], cell: ClimateFile, where: Country): Flags {
+// A lower layer under a canopy (design-scale.md §2.6 m10; decision row "Scale build, coordinator
+// choices"): on a sunny site, a Mid or Low plant that does not take full sun is not a light misfit
+// while another member grows in a layer above it (Emergent or High over Mid; any of them over Low).
+// A plant of a top layer, or one with nothing above it, keeps the flag.
+const SHADED_LAYERS = new Set(['medium', 'low']);
+function shaded(i: Info, others: Taxon[], site: Site): boolean {
+  if (site.light !== 'sun' || !i.stratum || !SHADED_LAYERS.has(i.stratum)) return false;
+  const order: readonly string[] = layerOrder, own = order.indexOf(i.stratum);
+  return others.some((t) => { const at = order.indexOf(t.stratum?.value ?? ''); return at >= 0 && at < own; });
+}
+
+function flagsOf(i: Info, others: Taxon[], cell: ClimateFile, where: Country, site: Site): Flags {
   const invasive = invasiveIn(i.taxon, where.country, where.countryChecked);
   const found = conflictsOf(i.taxon, others, cell.interactions);
+  const misfits = shaded(i, others, site) ? i.fit.misfits.filter((k) => k !== 'light') : [...i.fit.misfits];
   return {
-    misfits: [...i.fit.misfits],
+    misfits,
     unknowns: [...i.fit.unknowns],
     invasive,
     conflicts: found,
-    flagged: !i.fit.ok || found.some(isSerious),
+    flagged: misfits.length > 0 || found.some(isSerious),
   };
 }
 
@@ -211,7 +224,7 @@ function result(chosen: Info[], keptIds: Set<string>, gains: Map<string, number 
     taxon: i.taxon,
     kept: keptIds.has(i.taxon.id),
     gain: gains.get(i.taxon.id) ?? null,
-    flags: flagsOf(i, taxa.filter((t) => t.id !== i.taxon.id), cell, where),
+    flags: flagsOf(i, taxa.filter((t) => t.id !== i.taxon.id), cell, where, site),
   }));
   return { members, limit: SIZE_LIMIT[site.room], gaps: allJobs.filter((j) => !coverageOf(chosen).jobs.has(j)) };
 }
@@ -250,7 +263,7 @@ export function flagsFor(cell: ClimateFile, id: string, memberIds: string[], opt
   if (!taxon) return null;
   const ids = new Set(memberIds);
   const others = pool.filter((t) => ids.has(t.id) && t.id !== id);
-  return flagsOf(infoOf(taxon, options.site), others, cell, options);
+  return flagsOf(infoOf(taxon, options.site), others, cell, options, options.site);
 }
 
 export type AlternativeOptions = Country & WithGuests & { site: Site; removed?: string[] };
@@ -280,7 +293,7 @@ export function alternatives(memberId: string, consortium: string[], cell: Clima
         sameStratum: memberStratum !== null && i.stratum === memberStratum,
         sharedJobs: i.jobs.filter((j) => memberJobs.has(j)),
         gain: tenths(i, cov).total / 10,
-        flags: flagsOf(i, others, cell, options),
+        flags: flagsOf(i, others, cell, options, site),
       };
     });
   return out.sort((x, y) =>
