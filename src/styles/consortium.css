@@ -1192,7 +1192,10 @@ html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
   .ct .sv-lab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
   .ct .sv-n { margin: 0 0 0 auto; }
   .ct .sv-line[data-m="5"] > span { display: none; }
-  .ct .sv[data-many] .sv-nums .num { width: 16px; height: 16px; font-size: 10px; border-width: 1px; }
+  /* 13 to 20 plants: columns narrower than a number, so every other number sits a row lower and
+     none overlaps, each still 19 px with 11 px digits (review V5). */
+  .ct .sv[data-many] .sv-nums .num { width: 19px; height: 19px; font-size: 11px; }
+  .ct .sv[data-many] .sv-numc:nth-child(even) { padding-top: 21px; }
   .ct .sv .pkey { grid-template-columns: minmax(0, 1fr); }
 }
 /* Print: the whole width of an A4 or Letter page, every band kept together. */

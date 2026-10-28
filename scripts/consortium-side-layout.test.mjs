@@ -65,7 +65,14 @@ function measure(theme) {
   return [...document.querySelectorAll('.case')].map((box) => {
     for (const m of box.querySelectorAll('.sv-marks')) { if (denseAt(m.clientWidth, m.children.length)) m.setAttribute('data-dense', 'true'); else m.removeAttribute('data-dense'); }
     const surface = getComputedStyle(box.querySelector('.probe')).backgroundColor;
-    const r = { width: parseInt(box.style.width, 10), size: box.querySelector('.sv').dataset.size, plotH: 0, svgs: 0, scale: [], bands: [], denseNote: false };
+    const r = { width: parseInt(box.style.width, 10), size: box.querySelector('.sv').dataset.size, plotH: 0, svgs: 0, scale: [], bands: [], denseNote: false, numOverlap: 0, minNum: 99 };
+    // The numbers under the drawing: none overlaps another, each one readable.
+    const nums = [...box.querySelectorAll('.sv-nums .num')].map((n) => n.getBoundingClientRect());
+    for (const n of nums) r.minNum = Math.min(r.minNum, n.width);
+    for (let i = 0; i < nums.length; i++) for (let j = i + 1; j < nums.length; j++) {
+      const a = nums[i], b = nums[j];
+      if (a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5) r.numOverlap++;
+    }
     for (const svg of box.querySelectorAll('.sv-col svg')) {
       const s = svg.getBoundingClientRect(), p = svg.closest('.sv-plot').getBoundingClientRect();
       r.plotH = Math.round(p.height); r.svgs++;
@@ -131,6 +138,9 @@ test('in Chrome, the side view is true to scale and readable at 320 px and on th
       assert.deepEqual(r.scale, [], `${where}: each drawing is the plot's height, on the ground, not shrunk to its column`);
       // V5: on a phone 4 m and 15 m clearly differ.
       if (r.width < 640) assert.ok(r.plotH >= 84 && r.plotH <= 96, `${where}: plot ${r.plotH} px`);
+      // V5: 20 numbers that never overlap, each at least 19 px.
+      assert.equal(r.numOverlap, 0, `${where}: numbers apart`);
+      assert.ok(r.minNum >= 19, `${where}: numbers ${r.minNum} px`);
       continue;
     }
     assert.equal(r.bands.reduce((a, b) => a + b.n, 0), 200, where);
