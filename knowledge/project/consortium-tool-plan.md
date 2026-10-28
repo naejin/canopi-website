@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T22:36:30Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T22:57:30Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T21:52:35Z }
 sources:
@@ -31,13 +31,13 @@ sources:
   - id: consortium-app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:984f582604328fd0
-    last_modified: 2026-10-28T22:26:03Z
+    digest: sha256:b80a3de63072418e
+    last_modified: 2026-10-28T22:57:17Z
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:9375b04a2c992d8e
-    last_modified: 2026-10-28T22:34:41Z
+    digest: sha256:05d85b6adc7c8c0d
+    last_modified: 2026-10-28T22:57:17Z
 ---
 
 Owner decisions: [Consortium tool — user decisions](/decisions/consortium-user-decisions.md).
@@ -69,7 +69,7 @@ the region-cell plan of format 2 is superseded where this page says so).
    chosen plants.
 4. **Read the consortium** in three views: **Layers** (one side view by stratum at
    every size: silhouettes with numbers up to 20 plants, one true-height mark
-   per plant above, with each band's typical heights, exceptions and climbers in
+   per plant above, with each band's typical heights, exceptions and climbing or trailing plants in
    words; print above 20 plants is At a glance then one table;
    plus a list by stratum), **Over time** (phase bands, plain
    time words first: "Years 1–3 · Placenta 3"), **Jobs** (six plain jobs: who does
