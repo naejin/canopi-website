@@ -1,13 +1,13 @@
-"""Build the illustrative consortium fixture (format 2) for canopi-website.
+"""Build the illustrative consortium fixture (format 3) for canopi-website.
 
 Values are plausible but invented for UI work. Never ship them.
-Usage: python3 -I make_fixture.py <out_dir> <country_regions.json>
-(country_regions.json: see README.md; the real table from canopi-data.)
+Usage: python3 -I make_fixture.py <out_dir> <countries.json>
+(countries.json: see README.md; the real country list and GRIIS coverage from canopi-data.)
 """
 import hashlib, json, os, sys, uuid
 
 OUT = sys.argv[1]
-COUNTRY_REGIONS = json.load(open(sys.argv[2], encoding="utf-8"))
+COUNTRIES = json.load(open(sys.argv[2], encoding="utf-8"))
 GEN = "2026-10-27T00:00:00Z"
 NS = uuid.UUID("00000000-0000-4000-8000-00000000c0de")
 
@@ -22,6 +22,7 @@ SOURCES = {
     "rule-legume": {"label": "Canopi rule: legumes with known nodulation fix nitrogen", "url": None, "licence": None, "attribution": None},
     "extension-rust": {"label": "University extension: cedar-apple rust (illustrative)", "url": "https://example.org/cedar-apple-rust", "licence": None, "attribution": None},
     "extension-juglone": {"label": "University extension: walnut toxicity (illustrative)", "url": "https://example.org/juglone", "licence": None, "attribution": None},
+    "owner-review": {"label": "Owner review 2026-10 (illustrative)", "url": None, "licence": None, "attribution": None},
     "extension-banana": {"label": "Plant pathology note: banana weevil and plantains (illustrative)", "url": "https://example.org/banana-weevil", "licence": None, "attribution": None},
 }
 
@@ -53,10 +54,10 @@ def taxon(name, genus, family, names, role, reason, stratum, phases, functions, 
     return {
         "id": str(uuid.uuid5(NS, name)),
         "canonical_name": name, "genus": genus, "family": family, "names": names,
-        "image": image, "role": role, "reason": reason,
+        "image": image, "role": role, "reasons": reason,  # a text here; climate_file() makes the list
         "stratum": None if stratum is None else {"value": stratum[0], "sources": stratum[1]},
         "phases": None if phases is None else {"start": phases[0], "end": phases[1], "sources": phases[2]},
-        # Format 2: null until a function is accepted; the exporter never writes [].
+        # null until a function is accepted; the exporter never writes [].
         "functions": [{"function": f, "method": m, "sources": s} for f, m, s in functions] or None,
         "traits": t, "warnings": w,
     }
@@ -119,7 +120,7 @@ TROPICAL = [
           {"height_m": (6, 15), "width_max_m": 8, "semi_shade": True, "frost_tender": True, "soil_ph": (4.5, 7.0), "moisture_use": "Medium",
            "drought_tolerance": "Low", "lifespan": "Medium", "growth_rate": "Fast", "edibility_rating": 3, "habit": "Tree", "nitrogen_fixer": True,
            "mycorrhizal_type": "AM"},
-          {"invasive_in": inv("PF")}),
+          {"invasive_in": inv("FJ")}),
     taxon("Gliricidia sepium", "Gliricidia", "Fabaceae", {"en": "Gliricidia", "fr": "Gliricidia", "es": "Madre de cacao"},
           "support", R("Living fence post and chop-and-drop nitrogen source.", "Piquet vivant et source d’azote taillée sur place."),
           ("high", ["syntropie"]), ("placenta_iii", "secondary_ii", ["syntropie"]),
@@ -136,7 +137,7 @@ TROPICAL = [
           {"height_m": (5, 15), "width_max_m": 6, "semi_shade": False, "frost_tender": True, "soil_ph": (5.5, 8.5), "drought_tolerance": "High",
            "growth_rate": "Fast", "edibility_rating": 2, "habit": "Tree", "nitrogen_fixer": True, "taproot_persistent": True, "root_system_type": "Taproot"},
           {"toxicity": tox("Moderate", "Leaves contain mimosine, harmful to livestock in large amounts.", "Les feuilles contiennent de la mimosine, nocive pour le bétail en grande quantité."),
-           "invasive_in": inv("AU", "BR", "CN", "IN", "PH", "US", "ZA", "TW", "JP", "MX"), "weed_potential": True}),
+           "invasive_in": inv("AU", "BR", "CN", "IN", "PH", "US", "ZA", "JP", "MX"), "weed_potential": True}),
     taxon("Cajanus cajan", "Cajanus", "Fabaceae", {"en": "Pigeon pea", "fr": "Pois d’Angole", "es": "Guandú", "pt": "Feijão-guandu", "zh": "木豆"},
           "crop", R("Quick shrub that feeds the soil and the cook in its first years.", "Arbuste rapide qui nourrit le sol et la cuisine dès les premières années."),
           ("medium", ["syntropie"]), ("placenta_i", "placenta_iii", ["syntropie"]),
@@ -181,7 +182,7 @@ TROPICAL = [
           [("dynamic_accumulator", "curated", ["syntropie"]), ("mulch", "curated", ["syntropie"]), ("insectary", "extraction", [P])],
           {"height_m": (2, 3), "width_max_m": 2, "semi_shade": False, "frost_tender": True, "drought_tolerance": "Medium", "growth_rate": "Fast",
            "edibility_rating": 0, "habit": "Shrub"},
-          {"invasive_in": inv("AU", "ZA", "CN", "KE", "TW"), "weed_potential": True, "allelopathic": True}),
+          {"invasive_in": inv("AU", "ZA", "CN", "KE"), "weed_potential": True, "allelopathic": True}),
     taxon("Moringa oleifera", "Moringa", "Moringaceae", {"en": "Moringa", "fr": "Moringa", "es": "Moringa"},
           "crop", R("Leaf tree that crops within months and coppices.", "Arbre à feuilles qui produit en quelques mois et se recèpe."),
           ("high", ["toensmeier-2016"]), ("placenta_ii", "secondary_ii", ["toensmeier-2016"]),
@@ -189,7 +190,7 @@ TROPICAL = [
           {"height_m": (5, 10), "width_max_m": 4, "semi_shade": False, "frost_tender": True, "soil_ph": (6.0, 8.0), "well_drained": True,
            "drought_tolerance": "High", "deciduous_evergreen": "Deciduous", "growth_rate": "Fast", "age_of_maturity_years": 1, "edibility_rating": 5,
            "habit": "Tree", "root_system_type": "Taproot", "taproot_persistent": True},
-          {"toxicity": tox("Slight", "Root bark is harmful to eat.", "L’écorce des racines est nocive si elle est consommée."), "invasive_in": inv("CU", "PR"), "weed_potential": True}),
+          {"toxicity": tox("Slight", "Root bark is harmful to eat.", "L’écorce des racines est nocive si elle est consommée."), "invasive_in": inv("CU"), "weed_potential": True}),
     taxon("Zingiber officinale", "Zingiber", "Zingiberaceae", {"en": "Ginger", "fr": "Gingembre", "es": "Jengibre", "zh": "姜", "ja": "ショウガ"},
           "crop", R("Shade-tolerant spice for the understory.", "Épice tolérant l’ombre, pour le sous-bois."),
           None, None,
@@ -410,6 +411,8 @@ TEMP_INTER = [
 def used_sources(taxa, inter):
     ids = set()
     for t in taxa:
+        for r in t["reasons"]:
+            ids.update(r["sources"])
         for k in ("stratum", "phases"):
             if t[k]:
                 ids.update(t[k]["sources"])
@@ -425,18 +428,47 @@ def used_sources(taxa, inter):
     return {k: SOURCES[k] for k in sorted(ids)}
 
 
-def cell_file(zone, region, taxa, inter):
-    taxa = sorted(taxa, key=lambda t: t["canonical_name"])
+REGION_ORDER = ["europe", "africa", "asia_temperate", "asia_tropical", "australasia", "pacific",
+                "northern_america", "southern_america"]
+# Format 3 unites a climate's cells. The fixture's Temperate climate has a second, invented
+# cell (Temperate x asia_temperate) that chose two of its taxa again, so a taxon shows two reasons.
+EXTRA_REASONS = {
+    "Temperate": {
+        "Malus domestica": [{"region": "asia_temperate",
+                             "text": R("Grown across temperate Asia, where the apple was domesticated.",
+                                       "Cultivé dans toute l’Asie tempérée, où le pommier a été domestiqué."),
+                             "sources": ["jacke-2005"]}],
+        "Allium schoenoprasum": [{"region": "asia_temperate",
+                                  "text": R("Native perennial onion of temperate Asia's meadows."),
+                                  "sources": ["owner-review"]}],
+    },
+}
+
+
+def climate_file(zone, region, taxa, inter):
+    """One climate file: the first cell's reasons, then the extra cells' (region order)."""
+    extra = EXTRA_REASONS.get(zone, {})
+    out = []
+    for t in sorted(taxa, key=lambda t: t["canonical_name"]):
+        t = dict(t)
+        reasons = [{"region": region, "text": t["reasons"], "sources": ["owner-review"]}]
+        reasons += extra.get(t["canonical_name"], [])
+        t["reasons"] = sorted(reasons, key=lambda r: REGION_ORDER.index(r["region"]))
+        for c in t["warnings"]["invasive_in"] or []:
+            assert COUNTRIES[c["country"]]["invasive_checked"], c  # GRIIS has a checklist there
+        out.append(t)
+    regions = sorted({r["region"] for t in out for r in t["reasons"]}, key=REGION_ORDER.index)
     inter = sorted(inter, key=lambda i: (i["subject"]["name"], i["object"]["name"], i["type"]))
-    return {"format_version": 2, "climate_zone": zone, "region": region, "generated_at": GEN,
-            "sources": used_sources(taxa, inter), "taxa": taxa, "interactions": inter}
+    return {"format_version": 3, "climate_zone": zone, "regions": regions, "generated_at": GEN,
+            "sources": used_sources(out, inter), "taxa": out, "interactions": inter}
 
 
 os.makedirs(OUT, exist_ok=True)
+# In climate-zone order (Tropical, Subtropical, Arid, Mediterranean, Temperate, Continental, Boreal).
 files = {
-    "tropical-southern-america.json": cell_file("Tropical", "southern_america", TROPICAL, TROP_INTER),
-    "mediterranean-europe.json": cell_file("Mediterranean", "europe", MEDITERRANEAN, MED_INTER),
-    "temperate-europe.json": cell_file("Temperate", "europe", TEMPERATE, TEMP_INTER),
+    "tropical.json": climate_file("Tropical", "southern_america", TROPICAL, TROP_INTER),
+    "mediterranean.json": climate_file("Mediterranean", "europe", MEDITERRANEAN, MED_INTER),
+    "temperate.json": climate_file("Temperate", "europe", TEMPERATE, TEMP_INTER),
 }
 labels = {
     "moisture_use": {"High": {"fr": "Élevée"}, "Medium": {"fr": "Moyenne"}},
@@ -446,40 +478,47 @@ labels = {
     "lifespan": {"Long": {"fr": "Longue"}, "Medium": {"fr": "Moyenne"}, "Short": {"fr": "Courte"}},
     "toxicity.level": {"None": {"fr": "Aucune"}, "Slight": {"fr": "Légère"}, "Moderate": {"fr": "Modérée"}, "Severe": {"fr": "Grave"}},
 }
-manifest_cells = []
+manifest_climates = []
 blobs = {}
 for name, data in files.items():
     b = (json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
     blobs[name] = b
-    manifest_cells.append({"climate_zone": data["climate_zone"], "region": data["region"], "file": name, "taxa": len(data["taxa"]),
-                              "interactions": len(data["interactions"]), "sha256": hashlib.sha256(b).hexdigest()})
+    manifest_climates.append({"climate_zone": data["climate_zone"], "file": name, "regions": data["regions"],
+                              "taxa": len(data["taxa"]), "interactions": len(data["interactions"]),
+                              "sha256": hashlib.sha256(b).hexdigest()})
 blobs["labels.json"] = (json.dumps(labels, ensure_ascii=False, indent=2) + "\n").encode()
-manifest = {"format_version": 2, "generated_at": GEN, "canopi_db_sha256": "0" * 64,
-            "cells": sorted(manifest_cells, key=lambda c: c["file"]),
+manifest = {"format_version": 3, "generated_at": GEN, "canopi_db_sha256": "0" * 64,
+            "climates": manifest_climates,
             "locales": ["en", "fr", "es", "pt", "it", "zh", "de", "ja", "ko", "nl", "ru"],
-            "country_regions": {k: COUNTRY_REGIONS[k] for k in sorted(COUNTRY_REGIONS)}}
+            "countries": {k: {"invasive_checked": bool(COUNTRIES[k]["invasive_checked"])} for k in sorted(COUNTRIES)}}
 blobs["manifest.json"] = (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode()
 sums = "".join(f"{hashlib.sha256(b).hexdigest()}  {n}\n" for n, b in sorted(blobs.items()))
 for n, b in blobs.items():
     open(os.path.join(OUT, n), "wb").write(b)
 open(os.path.join(OUT, "SHA256SUMS"), "w").write(sums)
 open(os.path.join(OUT, "README.md"), "w").write(
-    "# Illustrative consortium fixture (format 2)\n\n"
+    "# Illustrative consortium fixture (format 3)\n\n"
     "Plausible but **invented** plant values for building and testing the consortium tool before real data exists.\n"
     "Never shipped: `canopi_db_sha256` is all zeros, which a real install must reject, and the directory sits\n"
     "outside `public/`, so it never reaches `dist/`. Built from the example in canopi-data `docs/consortium-export-format.md` and\n"
-    "valid against its `docs/consortium-export.schema.json` (format 2).\n\n"
-    "Cells: Tropical × southern_america (leads the mockups), Mediterranean × europe, Temperate × europe.\n"
-    "`country_regions` in the manifest is the real table from canopi-data, not invented.\n\n"
+    "valid against its `docs/consortium-export.schema.json` (format 3: one file per climate).\n\n"
+    "Climates: Tropical (southern_america, leads the mockups), Mediterranean (europe), Temperate (europe and an\n"
+    "invented asia_temperate cell, so Malus domestica and Allium schoenoprasum each show two `reasons`).\n"
+    "`countries` in the manifest is the real list from canopi-data, with the real GRIIS coverage (`invasive_checked`),\n"
+    "not invented; every `invasive_in` country is a checked one.\n\n"
     "Covers: null versus `[]` (`invasive_in`, `toxicity`), `functions: null` and a taxon with no stratum or phases yet\n"
     "(Zingiber officinale), invasive in a few or many countries, every toxicity level, genus, species and family-rank\n"
     "interactions, allelopathy with and without a recorded target, `allelopathy_tolerant`, missing names per locale,\n"
-    "a cell with no interactions (`[]`, checked none).\n\n"
+    "a climate with no interactions (`[]`, checked none), a reason per region with its source, countries GRIIS\n"
+    "does not cover (`invasive_checked: false`, for example TW, PR, PF and the six Antarctic codes).\n\n"
     "Regenerate (needs ../canopi-data):\n\n"
     "```sh\n"
-    "(cd ../canopi-data && uv run python -c 'import json; from canopi.curated.regions import COUNTRY_REGIONS as C; "
-    "print(json.dumps({k: list(v) for k, v in C.items()}))') > /tmp/country_regions.json\n"
-    "python3 -I scripts/fixtures/consortium/make_fixture.py scripts/fixtures/consortium /tmp/country_regions.json\n"
+    "(cd ../canopi-data && uv run python -c 'import json; from pathlib import Path; "
+    "from canopi.curated.regions import COUNTRIES; "
+    "from canopi.curated.consortium_export import DEFAULT_GRIIS_PATH, griis_checked_countries as g; "
+    "c = g(DEFAULT_GRIIS_PATH); print(json.dumps({k: {\"invasive_checked\": k in c} for k in COUNTRIES}))') "
+    "> /tmp/countries.json\n"
+    "python3 -I scripts/fixtures/consortium/make_fixture.py scripts/fixtures/consortium /tmp/countries.json\n"
     "```\n")
 for n, b in sorted(blobs.items()):
     print(f"{n:22s} {len(b):7d} bytes")
