@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { pluralForms, makeWords, needsLook, searchText, fold, plantName } from '../src/scripts/consortium/words.js';
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
 import * as core from '../src/lib/consortium/index.ts';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget, relaxTo } from '../src/scripts/consortium/logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget, relaxTo, licenceOf } from '../src/scripts/consortium/logic.js';
 import { profileSVG } from '../src/scripts/consortium/draw.js';
 import { crops } from '../src/data/crops.ts';
 
@@ -186,7 +186,7 @@ test('logic: only an http(s) url from the data becomes a link; any other is plai
   const appJs = read('src/scripts/consortium/app.js');
   const hrefs = [...appJs.matchAll(/href="\$\{([^}]+)\}"/g)].map((m) => m[1]);
   assert.ok(hrefs.length >= 4, 'hrefs found');
-  for (const h of hrefs) assert.ok(['g.url', 'data.contact', 'esc(href)', 'esc(pageHref)'].includes(h), `href from ${h}`);
+  for (const h of hrefs) assert.ok(['g.url', 'data.contact', 'esc(href)', 'esc(pageHref)', 'esc(l.url)'].includes(h), `href from ${h}`);
   assert.match(appJs, /const href = safeHref\(x\.url\)/);
   assert.match(appJs, /pageHref = safeHref\(img\?\.source_page_url\)/);
 });
@@ -681,4 +681,43 @@ test('logic: a "No match" relax button is offered only when it changes the answe
   // The page lists only the answers relaxTo can loosen.
   assert.match(app, /if \(!relaxTo\(key, S\.site\)\) continue;/);
   assert.doesNotMatch(app, /const relaxTo = /);
+});
+
+test('logic: licences read as their proper names, with the version the data gives, linked to their deed when known (prepush L3)', () => {
+  const cc = 'https://creativecommons.org/licenses/';
+  const cases = [
+    ['CC BY-SA 4.0', 'CC BY-SA 4.0', `${cc}by-sa/4.0/`],
+    ['CC BY 3.0 us', 'CC BY 3.0 US', `${cc}by/3.0/us/`],
+    ['CC BY-SA 2.5 ar', 'CC BY-SA 2.5 AR', `${cc}by-sa/2.5/ar/`],
+    ['CC BY-SA 3.0 de', 'CC BY-SA 3.0 DE', `${cc}by-sa/3.0/de/`],
+    ['CC BY 2.0', 'CC BY 2.0', `${cc}by/2.0/`],
+    ['cc-by', 'CC BY', null], // iNaturalist gives no version: none is invented, and no deed is guessed
+    ['cc-by-nc-sa', 'CC BY-NC-SA', null],
+    ['CC BY', 'CC BY', null],
+    ['CC0', 'CC0', 'https://creativecommons.org/publicdomain/zero/1.0/'], // one CC0 exists: its deed is known
+    ['cc0', 'CC0', 'https://creativecommons.org/publicdomain/zero/1.0/'],
+    ['CC0 1.0', 'CC0 1.0', 'https://creativecommons.org/publicdomain/zero/1.0/'],
+    ['GFDL 1.2', 'GFDL 1.2', null],
+  ];
+  for (const [raw, name, url] of cases) assert.deepEqual(licenceOf(raw), { name, url, publicDomain: false }, raw);
+  assert.deepEqual(licenceOf('Public domain'), { name: 'Public domain', url: null, publicDomain: true });
+  assert.deepEqual(licenceOf('public domain'), { name: 'Public domain', url: null, publicDomain: true });
+  assert.equal(licenceOf(null), null);
+  assert.equal(licenceOf('  '), null);
+  // Every licence in the shipped data gets a name with no version the data did not give.
+  const digits = (x) => (x.match(/\d/g) ?? []).join('');
+  for (const c of manifest.cells) {
+    const cellData = JSON.parse(read(`public/data/consortium/${c.file}`));
+    const all = [...cellData.taxa.map((t) => t.image?.licence), ...Object.values(cellData.sources).map((x) => x.licence)].filter(Boolean);
+    for (const raw of all) {
+      const l = licenceOf(raw);
+      assert.ok(l?.name, raw);
+      assert.equal(digits(l.name), digits(raw), `${raw}: version kept, never invented`);
+      if (l.url) assert.match(l.url, /^https:\/\/creativecommons\.org\//);
+    }
+  }
+  // The page shows photo and source licences through licenceOf.
+  assert.match(app, /licenceHTML\(img\.licence\)/);
+  assert.match(app, /licenceHTML\(x\.licence\)/);
+  for (const lang of locales) assert.ok(strings[lang].publicDomain, `${lang}: publicDomain`);
 });

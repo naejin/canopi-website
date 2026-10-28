@@ -625,5 +625,6 @@
   "consortium.redonePlace": "O seu consórcio para {where} foi posto de lado.",
   "consortium.nc.why": "Para este clima, a beta cobre a região “{region}”, e nos dados o país escolhido ({country}) faz parte da {north}.",
   "consortium.removeShort": "Retirar",
-  "consortium.useInstead": "Usar esta no lugar"
+  "consortium.useInstead": "Usar esta no lugar",
+  "consortium.publicDomain": "Domínio público"
 }

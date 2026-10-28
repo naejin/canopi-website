@@ -625,5 +625,6 @@
   "consortium.redonePlace": "Votre guilde pour {where} a été mise de côté.",
   "consortium.nc.why": "Pour ce climat, la bêta couvre la région « {region} », et dans les données, le pays choisi ({country}) fait partie de la région « {north} ».",
   "consortium.removeShort": "Retirer",
-  "consortium.useInstead": "Choisir à la place"
+  "consortium.useInstead": "Choisir à la place",
+  "consortium.publicDomain": "Domaine public"
 }

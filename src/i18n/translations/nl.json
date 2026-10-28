@@ -625,5 +625,6 @@
   "consortium.redonePlace": "Je consortium voor {where} is opzijgezet.",
   "consortium.nc.why": "Voor dit klimaat dekt de bèta {region}, en in de gegevens hoort het gekozen land ({country}) bij {north}.",
   "consortium.removeShort": "Weghalen",
-  "consortium.useInstead": "Deze in plaats daarvan nemen"
+  "consortium.useInstead": "Deze in plaats daarvan nemen",
+  "consortium.publicDomain": "Publiek domein"
 }

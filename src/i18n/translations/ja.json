@@ -625,5 +625,6 @@
   "consortium.redonePlace": "{where}向けのコンソーシアムはいったん外しました。",
   "consortium.nc.why": "この気候でベータ版が扱うのは{region}で、データでは{country}は{north}に含まれます。",
   "consortium.removeShort": "外す",
-  "consortium.useInstead": "代わりにこれにする"
+  "consortium.useInstead": "代わりにこれにする",
+  "consortium.publicDomain": "パブリックドメイン"
 }

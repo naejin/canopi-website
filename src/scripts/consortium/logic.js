@@ -111,3 +111,22 @@ export function relaxTo(key, site) {
   const to = LOOSER[key]?.(site[key]) ?? null;
   return to === site[key] ? null : to;
 }
+
+// A licence as the data writes it ("CC BY 3.0 us", "cc-by", "CC0", "Public domain"), as a proper
+// name with the version and jurisdiction the data gives (never one it does not), and the URL of its
+// deed when that is known: a Creative Commons licence with its version, or CC0 (there is one). A
+// licence without a version ("cc-by", from iNaturalist) gets no deed: which one is not known.
+// publicDomain: the page says "Public domain" in its own language. Other names are kept as given.
+const CC0_DEED = 'https://creativecommons.org/publicdomain/zero/1.0/';
+export function licenceOf(raw) {
+  const text = typeof raw === 'string' ? raw.trim() : '';
+  if (!text) return null;
+  if (/^public[\s-]+domain$/i.test(text)) return { name: 'Public domain', url: null, publicDomain: true };
+  const zero = /^cc[\s-]*0(?:[\s-]+(1\.0))?$/i.exec(text);
+  if (zero) return { name: zero[1] ? `CC0 ${zero[1]}` : 'CC0', url: CC0_DEED, publicDomain: false };
+  const m = /^cc[\s-]+(by(?:[\s-]+(?:nc|sa|nd)){0,2})(?:[\s-]+(\d\.\d))?(?:[\s-]+([a-z]{2}))?$/i.exec(text);
+  if (!m) return { name: text, url: null, publicDomain: false };
+  const code = m[1].toLowerCase().split(/[\s-]+/).join('-'), version = m[2] ?? null, place = m[3]?.toLowerCase() ?? null;
+  const name = ['CC', code.toUpperCase(), version, place?.toUpperCase()].filter(Boolean).join(' ');
+  return { name, url: version ? `https://creativecommons.org/licenses/${code}/${version}/${place ? place + '/' : ''}` : null, publicDomain: false };
+}

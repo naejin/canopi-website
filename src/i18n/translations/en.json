@@ -625,5 +625,6 @@
   "consortium.redonePlace": "Your consortium for {where} was set aside.",
   "consortium.nc.why": "For this climate the beta covers {region}, and in the data {country} counts as {north}.",
   "consortium.removeShort": "Remove",
-  "consortium.useInstead": "Use this instead"
+  "consortium.useInstead": "Use this instead",
+  "consortium.publicDomain": "Public domain"
 }

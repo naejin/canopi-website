@@ -625,5 +625,6 @@
   "consortium.redonePlace": "Консорциум для места «{where}» отложен.",
   "consortium.nc.why": "Для этого климата бета охватывает регион «{region}», а в данных {country} относится к региону «{north}».",
   "consortium.removeShort": "Удалить",
-  "consortium.useInstead": "Выбрать взамен"
+  "consortium.useInstead": "Выбрать взамен",
+  "consortium.publicDomain": "Общественное достояние"
 }

@@ -10,7 +10,7 @@ import {
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadCell } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook } from './words.js';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget, relaxTo } from './logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget, relaxTo, licenceOf } from './logic.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
 
@@ -176,6 +176,13 @@ function reasonHTML(t) {
   if (!t.reason) return '';
   if (t.reason[lang]) return esc(t.reason[lang]);
   return `<span lang="en">${esc(t.reason.en)}</span> <span class="muted">(${esc(T('inEnglish'))})</span>`;
+}
+// A licence by its proper name, linked to its deed when the licence is known (L3).
+function licenceHTML(raw) {
+  const l = licenceOf(raw);
+  if (!l) return '';
+  const text = esc(l.publicDomain ? T('publicDomain') : l.name);
+  return l.url ? `<a href="${esc(l.url)}" rel="license noopener">${text}</a>` : text;
 }
 const guide = (slug) => data.guides[slug];
 const guideLink = (slug, cls = '', inner) => { const g = guide(slug); return g ? `<a class="${cls}" href="${g.url}"${g.lang !== lang ? ` hreflang="${g.lang}"` : ''}>${inner(g.lang !== lang ? `<span lang="${g.lang}">${esc(g.title)}</span>` : esc(g.title))}</a>` : ''; };
@@ -577,7 +584,7 @@ function detailsParts(t) {
   const srcs = [...srcIds].map((id) => cell.sources[id]).filter(Boolean);
   const guides = (data.plantGuides[t.canonical_name] ?? []).filter(guide);
   const img = t.image, pageHref = safeHref(img?.source_page_url);
-  const photo = img ? `<figure class="photo"><img src="${esc(img.url)}" alt="${esc(nameText(t))}" loading="lazy" decoding="async" width="480" height="320"><figcaption>${esc(T('photo', { credit: img.credit ?? '' }))}${img.licence ? ` · ${esc(img.licence)}` : ''}${pageHref ? ` · <a href="${esc(pageHref)}" rel="noopener">${esc(photoSource(pageHref))}</a>` : ''}</figcaption></figure>` : '';
+  const photo = img ? `<figure class="photo"><img src="${esc(img.url)}" alt="${esc(nameText(t))}" loading="lazy" decoding="async" width="480" height="320"><figcaption>${esc(T('photo', { credit: img.credit ?? '' }))}${img.licence ? ` · ${licenceHTML(img.licence)}` : ''}${pageHref ? ` · <a href="${esc(pageHref)}" rel="noopener">${esc(photoSource(pageHref))}</a>` : ''}</figcaption></figure>` : '';
   const jobsList = jobsOf(t);
   const headHTML = `<div><h2 id="ct-dlg-title">${name(t)}</h2><p class="lede"><i>${esc(t.canonical_name)}</i> · ${esc(T('family', { family: t.family }))}</p></div>`;
   const body = `${photo}
@@ -587,7 +594,7 @@ function detailsParts(t) {
     <section class="d-section"><h3>${esc(T('checks'))}</h3><ul class="w-list" role="list">${items.join('')}</ul></section>
     <section class="d-section"><h3>${esc(T('traits'))}</h3><dl class="facts">${facts.map(([k, v]) => `<dt>${esc(T(k))}</dt><dd>${v || unknown}</dd>`).join('')}</dl></section>
     ${guides.length ? `<section class="d-section"><h3>${esc(T('guides'))}</h3><ul class="guides" role="list">${guides.map((g) => `<li>${guideLink(g, '', (title) => `${I.book}<span>${title}<small>${esc(T('readGuide'))}</small></span>`)}</li>`).join('')}</ul></section>` : ''}
-    <section class="d-section"><h3>${esc(T('sources'))}</h3>${srcs.length ? `<ol class="srcs">${srcs.map((x) => { const href = safeHref(x.url); return `<li>${href ? `<a href="${esc(href)}" rel="noopener">${esc(x.label)}</a>` : esc(x.label)}${x.licence ? ` <span class="muted">· ${esc(x.licence)}</span>` : ''}</li>`; }).join('')}</ol>` : `<p class="muted">${esc(T('noSource'))}</p>`}</section>`;
+    <section class="d-section"><h3>${esc(T('sources'))}</h3>${srcs.length ? `<ol class="srcs">${srcs.map((x) => { const href = safeHref(x.url); return `<li>${href ? `<a href="${esc(href)}" rel="noopener">${esc(x.label)}</a>` : esc(x.label)}${x.licence ? ` <span class="muted">· ${licenceHTML(x.licence)}</span>` : ''}</li>`; }).join('')}</ol>` : `<p class="muted">${esc(T('noSource'))}</p>`}</section>`;
   const kept = S.kept.has(t.id), n = nameText(t);
   const foot = inMembers
     ? `${btn('button button-primary button-small', 'swap', t.id, `${I.swap}${esc(T('swap'))}`, fk('d-swap'))}${btn('button button-secondary button-small', 'keep', t.id, `${kept ? I.pinOn : I.pin}<span>${esc(T(kept ? 'unkeep' : 'keep', { name: n }))}</span>`, `aria-pressed="${kept}" ${fk('d-keep')}`)}${btn('button button-secondary button-small', 'remove', t.id, `${I.remove}<span>${esc(T('remove', { name: n }))}</span>`, fk('d-remove'))}`
