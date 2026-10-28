@@ -20,8 +20,9 @@ import { asksCrops, shareUrl, droppedPlants, trimGaps, mayPersist, photoSource, 
 import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, cardInvasive, detailsInvasive, countryAnnouncement, roomHint, builtKey } from './parts.js';
 import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
-import { profileSVG } from './draw.js';
-import { viewMode, groupOpen, misfitSize, shownHeight, stageSpan, stageShort, warnKinds, pestLabels, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, pasteColumn, pasteDefault, PEST_TYPES, CARDS_UP_TO } from './scale.js';
+import { plantSVG } from './draw.js';
+import { heightFrac, heightOf, shapeOf, usualHeight, bandFacts, markOrder, SCALE_LINES } from './side.js';
+import { viewMode, groupOpen, roundHeight, misfitSize, shownHeight, stageSpan, stageShort, warnKinds, pestLabels, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, pasteColumn, pasteDefault, PEST_TYPES, CARDS_UP_TO } from './scale.js';
 
 const data = JSON.parse(document.getElementById('ct-data').textContent);
 const W = makeWords(data.strings, data.lang);
@@ -403,7 +404,7 @@ const cropHitsNow = () => (cropFull() ? [] : cropHits(cell, cropQuery, lang, S.c
 const hitName = (h) => (h.english ? `${name(h.taxon)}${W.paren(`<span lang="en">${esc(h.english)}</span>`)}` : name(h.taxon));
 function cropOptionsHTML() {
   const hits = cropHitsNow().slice(0, CROP_OPTIONS);
-  const height = (t) => (t.traits.height_m?.max != null ? T('meters', { v: W.num(t.traits.height_m.max) }) : '');
+  const height = (t) => (t.traits.height_m?.max != null ? heightText(t) : '');
   const label = (h) => [cropLabel(h, lang, W.paren), nameText(h.taxon) === h.taxon.canonical_name ? '' : h.taxon.canonical_name, stratumLabel(stratumOf(h.taxon)), height(h.taxon)].filter(Boolean).join(', ');
   return hits.length ? `<ul class="options crop-options" role="list" aria-label="${esc(T('crops.label', { climate: climateLabel() }))}">${hits.map((h) => `<li>${btn('option', 'crop-add', h.taxon.id, `<span><b>${hitName(h)}</b> ${sciHTML(h.taxon)}</span><small>${esc(stratumLabel(stratumOf(h.taxon)))}${height(h.taxon) ? ' · ' + esc(height(h.taxon)) : ''}</small>`, `aria-label="${esc(label(h))}" ${fk('co-' + h.taxon.id)}`)}</li>`).join('')}</ul>` : '';
 }
@@ -621,35 +622,123 @@ function explainPanel(id) {
   const label = { stratum: 'whatStratum', phase: 'whatPhase', job: 'whatJob' }[kind];
   return `<div class="explain-panel" id="ct-ex-${id}" role="region" aria-label="${esc(T(label))}">${body}${guideLink(data.explainGuide, 'guide-link', (title) => `${esc(T('readGuide'))}: ${title}`)}<button class="pop-close" type="button" data-act="explain" data-v="${id}" aria-label="${esc(T('close'))}">${I.close}</button></div>`;
 }
-function profileHTML(flags, print = false) {
-  const placed = ordered().filter((t) => t.stratum), nums = numbering();
-  const small = phone() && !print;
-  const title = `${T('layersTitle')}: ${W.list(placed.map((t) => `${nums.get(t.id)} ${nameText(t)} (${stratumLabel(t.stratum.value)})`))}`;
-  const p = profileSVG(placed, { phone: small || print, id: print ? 'ct-sun-p' : 'ct-sun', title, strataLabel: (s) => `${stratumLabel(s)} · ${T('stratum.' + s + '.short')}` });
-  // Desktop: names under their columns, two rows when columns are narrow. Phone and print: numbers
-  // under the columns, and a numbered key in reading order below (labels never overlap).
-  const stagger = placed.length > 8;
-  const lw = (stagger ? 2 : 1) * p.colPct;
-  const labels = p.columns.map(({ t, center }, i) => {
-    const look = needsLook(t, flags.get(t.id)), s = t.stratum.value;
-    if (small || print) return `<span class="plabel plabel-num" style="left:${(center - p.colPct / 2).toFixed(2)}%;width:${p.colPct.toFixed(2)}%" aria-hidden="true"><span class="num" data-s="${s}">${nums.get(t.id)}</span></span>`;
-    const left = Math.max(0, center - lw / 2), w = Math.min(100, center + lw / 2) - left;
-    return `<button class="plabel" type="button" data-act="details" data-v="${t.id}" ${fk('pl-' + t.id)} style="left:${left.toFixed(2)}%;width:${w.toFixed(2)}%;top:${stagger ? (i % 2) * 64 : 0}px"><span class="plabel-top"><span class="num" data-s="${s}" aria-hidden="true">${nums.get(t.id)}</span>${look ? `<span class="plook">${I.warn}<span class="vh">${esc(T('withWarning'))}</span></span>` : ''}</span><span class="pname">${name(t)}</span><span class="vh">, ${esc(stratumLabel(s))}</span></button>`;
+// ---------- Side view at every size (scale chunk C; design-scale.md §1b.3, §1c.3, §2.3) ----------
+// One frame: a band per layer, named by the light it needs, with the 1 m, 5 m and 20 m lines of one
+// log scale (side.js). Up to 20 plants, each plant drawn true to height as a tree, shrub or herb, numbered,
+// with a legend of names and heights; above 20, one mark per plant in its band on the same scale,
+// tallest first, a dot for a warning, and the band's heights spelled out with named exceptions (M1).
+// The text equivalent: each band's name and plants (or its summary) and the legend; above 20 a band
+// is one tab stop, the arrow keys and the pointer name its marks, and the list does the per-plant work.
+const DENSE_ABOVE = 90;
+const sentences = (parts) => parts.filter(Boolean).join(lang === 'zh' || lang === 'ja' ? '' : ' ');
+// "A, B, C and n more", or the whole list when 3 or fewer.
+function namedList(items) {
+  const first = items.slice(0, 3);
+  return items.length > 3 ? `${first.join(lang === 'zh' || lang === 'ja' ? '、' : ', ')} ${P('andMore', items.length - 3)}` : W.list(first);
+}
+const heightNamed = (t) => `${nameText(t)} ${heightText(t)}`;
+// A band's heights in words (M1): "Most 0.7–4 m. Also 16 tall plants …: A 40 m, B 40 m, C 30 m and 13 more. Height not known for 2."
+function bandSummary(f) {
+  if (!f.n) return T('sv.empty');
+  const [a, b] = f.typical ? f.typical.map((h) => roundHeight(h)) : [];
+  return sentences([
+    f.typical ? (a === b ? T('sv.mostOne', { a: W.num(a) }) : T('sv.most', { a: W.num(a), b: W.num(b) })) : '',
+    f.tall.length ? P('sv.tall', f.tall.length, { list: namedList(f.tall.map(heightNamed)) }) : '',
+    f.short.length ? P('sv.short', f.short.length, { list: namedList(f.short.map(heightNamed)) }) : '',
+    f.unknown ? P('sv.unknown', f.unknown) : '',
+  ]);
+}
+const bandLabel = (s, plants) => T('sv.bandLabel', { layer: stratumLabel(s), light: lightWords(s), plants });
+const svLines = () => SCALE_LINES.map((m) => `<span class="sv-line" data-m="${m}" style="bottom:${(heightFrac(m) * 100).toFixed(2)}%"><span>${esc(T('meters', { v: W.num(m) }))}</span></span>`).join('');
+// What the side view shows, as markup: the same for the screen and print, but print has no buttons,
+// no tab stops, no tooltip and no ids the screen uses.
+function sideMarkup(flags, print = false) {
+  const ms = ordered(), placed = ms.filter((t) => t.stratum), marks = ms.length > CARDS_UP_TO, nums = numbering();
+  const by = new Map(strata.map((s) => [s, placed.filter((t) => t.stratum.value === s)]));
+  const usual = new Map(strata.map((s) => [s, usualHeight(s, by.get(s), cell?.taxa ?? [])]));
+  const warned = (t) => kindsOf(t).has('any');
+  const frac = (t) => heightFrac(heightOf(t) ?? usual.get(t.stratum.value));
+  const pre = print ? 'ct-svp' : 'ct-sv';
+  let dashed = false;
+  const bands = strata.map((s) => {
+    const list = by.get(s), lab = `<strong>${esc(stratumLabel(s))}</strong> <span class="sv-light">${esc(lightWords(s))}</span>`;
+    if (!marks) {
+      const cols = placed.map((t) => {
+        if (t.stratum.value !== s) return '<span class="sv-col"></span>';
+        const unknown = !(heightOf(t) > 0); dashed ||= unknown;
+        return `<span class="sv-col" data-t="${t.id}">${plantSVG({ id: t.id, s, shape: shapeOf(t), frac: frac(t), dashed: unknown })}</span>`;
+      }).join('');
+      const numsRow = placed.map((t) => (t.stratum.value !== s ? '<span class="sv-numc"></span>' : `<span class="sv-numc"><span class="num" data-s="${s}"${warned(t) ? ' data-w' : ''}>${nums.get(t.id)}</span></span>`)).join('');
+      const said = list.length ? list.map((t) => `${nums.get(t.id)} ${nameText(t)}, ${heightText(t)}`).join('; ') : T('sv.empty').replace(/[.。]$/, '');
+      return `<li class="sv-band" data-s="${s}"><div class="sv-lab">${lab}</div>
+        <div class="sv-strip" role="img" aria-label="${esc(bandLabel(s, said))}"><div class="sv-plot">${svLines()}<div class="sv-cols">${cols}</div></div><div class="sv-nums">${numsRow}</div></div></li>`;
+    }
+    const f = bandFacts(s, list), w = list.filter(warned).length;
+    if (f.unknown) dashed = true;
+    const order = markOrder(list);
+    const iMarks = order.map((t) => { const h = heightOf(t); return `<i data-t="${t.id}" style="--h:${(frac(t) * 100).toFixed(2)}%"${warned(t) ? ' data-w' : ''}${h > 0 ? '' : ' data-u="true"'}></i>`; }).join('');
+    const count = `<span class="sv-n">${esc(P('count', list.length))}${w ? ` · ${I.warn}<span aria-hidden="true">${W.num(w)}</span><span class="vh">${esc(P('withWarnCount', w))}</span>` : ''}</span>`;
+    const said = list.length ? [P('count', list.length), w ? P('withWarnCount', w) : ''].filter(Boolean).join(', ') : T('sv.empty').replace(/[.。]$/, '');
+    const sumId = `${pre}-sum-${s}`;
+    const strip = print
+      ? `<div class="sv-strip" role="img" aria-label="${esc(bandLabel(s, said))}" aria-describedby="${sumId}">`
+      : `<div class="sv-strip" role="img" tabindex="0" aria-label="${esc(bandLabel(s, said) + (list.length ? ' ' + T('sv.keys') : ''))}" aria-describedby="${sumId}" ${fk('sv-' + s)}>`;
+    return `<li class="sv-band" data-s="${s}"><div class="sv-lab">${lab}${count}</div>
+      ${strip}<div class="sv-plot">${svLines()}<div class="sv-marks" data-s="${s}"${list.length > DENSE_ABOVE ? ' data-dense="true"' : ''}>${iMarks}</div>${print ? '' : '<span class="sv-tip" hidden></span>'}</div></div>
+      <p class="sv-sum" id="${sumId}">${esc(bandSummary(f))}</p>
+      ${print || !list.length ? '' : btn('button button-secondary button-small sv-show', 'fset', 'layer:' + s, `${esc(P('showN', list.length))}<span class="vh">, ${esc(stratumLabel(s))}</span>`, fk('sv-show-' + s))}</li>`;
   }).join('');
-  const key = small || print ? `<ol class="pkey" aria-label="${esc(T('drawingKey'))}">${placed.map((t) => `<li>${print ? `<span class="num" data-s="${t.stratum.value}" aria-hidden="true">${nums.get(t.id)}</span><span class="pkey-name"><span class="pkey-n">${name(t)}</span>${sciHTML(t, 'sci pkey-sci')}</span>` : btn('pkey-item', 'details', t.id, `<span class="num" data-s="${t.stratum.value}" aria-hidden="true">${nums.get(t.id)}</span><span class="pkey-name"><span class="pkey-n">${name(t)}</span>${sciHTML(t, 'sci pkey-sci')}</span>${needsLook(t, flags.get(t.id)) ? `<span class="plook">${I.warn}<span class="vh">${esc(T('withWarning'))}</span></span>` : ''}`, fk('pk-' + t.id))}</li>`).join('')}</ol>` : '';
-  const unplaced = members().filter((t) => !t.stratum);
-  return `<figure class="profile"${small || print ? '' : ` style="max-width:${Math.round(p.ratio * 320)}px"`}>
-    <div class="profile-draw">${p.svg}${p.lineLabels}</div>
-    <div class="profile-labels" style="height:${small || print ? 34 : stagger ? 128 : 66}px">${labels}</div>${key}
-    <figcaption class="profile-foot"><span>${esc(T('layersNote'))}</span>${unplaced.length ? `<span>${T('noLayerList', { names: W.list(unplaced.map(name)) })}</span>` : ''}</figcaption></figure>`;
+  const keyBody = (t) => `<span class="num" data-s="${t.stratum.value}" aria-hidden="true">${nums.get(t.id)}</span> <span class="pkey-name"><span class="pkey-n">${name(t)}</span> ${sciHTML(t, 'sci pkey-sci')}</span>${warned(t) ? ` <span class="plook">${I.warn}<span class="vh">${esc(T('withWarning'))}</span></span>` : ''}`;
+  const legend = marks ? '' : `<ol class="pkey" aria-label="${esc(T('drawingKey'))}">${placed.map((t) => `<li>${print ? `<span class="pkey-item">${keyBody(t)}</span>` : btn('pkey-item', 'details', t.id, keyBody(t), fk('pk-' + t.id))} <span class="pkey-h">${esc(heightText(t))}</span></li>`).join('')}</ol>`;
+  const unplaced = ms.filter((t) => !t.stratum);
+  const foot = [T(marks ? 'sv.marksNote' : 'sv.drawNote'), dashed ? T('sv.dashedNote') : '', unplaced.length ? T('noLayerList', { names: namedList(unplaced.map(nameText)) }) : ''];
+  return `<div class="profile sv"${print ? '' : ' id="ct-side"'} data-size="${marks ? 'marks' : 'draw'}"${!marks && placed.length > 12 ? ' data-many="true"' : ''}>
+    <ul class="sv-bands" role="list">${bands}</ul>
+    <p class="profile-foot">${foot.filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join(' ')}</p>${legend}</div>`;
+}
+// The side view on the screen is patched, not rebuilt: when what it shows has not changed (a Keep, a
+// tick, a Keep n), render() moves the side view already on the page back in place of a slot.
+let sideShown = '', sideReuse = null;
+function sideViewHTML(flags, print = false) {
+  const html = sideMarkup(flags, print);
+  if (print) return html;
+  const old = app.querySelector('#ct-side');
+  if (old && html === sideShown) { sideReuse = old; return '<div id="ct-side-slot"></div>'; }
+  sideShown = html; sideReuse = null;
+  return html;
+}
+function placeSide() {
+  if (!sideReuse) return;
+  const slot = app.querySelector('#ct-side-slot');
+  if (slot) slot.replaceWith(sideReuse);
+  sideReuse = null;
+}
+// Naming a mark: hover, a tap, or the arrow keys while its band has the focus.
+function svName(strip, i, announce = false) {
+  const marks = strip.querySelectorAll('.sv-marks i');
+  if (!marks.length) return;
+  const at = Math.max(0, Math.min(marks.length - 1, i)), m = marks[at], t = taxonOf(m.dataset.t);
+  for (const on of strip.querySelectorAll('.sv-marks i[data-on]')) on.removeAttribute('data-on');
+  m.setAttribute('data-on', 'true'); strip.dataset.i = String(at);
+  if (!t) return;
+  const words = [`${nameText(t)}, ${heightText(t)}`, kindsOf(t).has('any') ? T('withWarning') : ''].filter(Boolean).join(' · ');
+  const tip = strip.querySelector('.sv-tip');
+  tip.textContent = words; tip.hidden = false;
+  // Over its mark, kept inside the band.
+  const x = (m.offsetLeft ?? NaN) + (m.offsetWidth ?? 0) / 2, w = strip.clientWidth, tw = tip.offsetWidth;
+  if (Number.isFinite(x) && w && tw) tip.style.left = `${Math.round(Math.max(0, Math.min(w - tw, x - tw / 2)))}px`;
+  if (announce) say(words);
+}
+function svHide(strip) {
+  const tip = strip?.querySelector('.sv-tip');
+  if (tip) tip.hidden = true;
+  for (const on of strip?.querySelectorAll('.sv-marks i[data-on]') ?? []) on.removeAttribute('data-on');
 }
 // The Layers tab: the side view only; the plants are in "Your plants" below every tab (mockup v2).
 function layersHTML(flags) {
   return `<div class="view-head"><h3>${esc(T('layersTitle'))}</h3>${explainBtn('stratum', T('whatStratum'), true)}<p class="light-cue">${I.sun}<span>${esc(T('lightCue'))}</span></p></div>
     ${explainPanel('stratum')}${sideViewHTML(flags)}`;
 }
-// The seam for the side view at every size (scale chunk C): the result and print call only this.
-const sideViewHTML = (flags, print = false) => profileHTML(flags, print);
 // M19: one primary action (Swap) and two labelled icon buttons (Keep, Remove).
 function plantRow(t, nums, flags) {
   const kept = S.kept.has(t.id), fromGuide = S.guideId === t.id, n = nameText(t), crop = isCrop(t.id), from = otherClimateOf(t.id);
@@ -718,7 +807,14 @@ function listGroups() {
 }
 // The rows in view, in order: Shift ranges and "the next row" after Remove read them.
 const visibleOrder = () => listGroups().filter((g) => g.open).flatMap((g) => g.list.map((t) => t.id));
+// The one height helper (m11): every row, card, legend, band summary, details, paste and print says
+// a height through it, rounded the same way (scale.js shownHeight, roundHeight).
 const heightText = (t) => { const h = shownHeight(t, ROOM_LIMIT_M[S.site?.room] ?? Infinity); return h == null ? T('noHeight') : T('meters', { v: W.num(h) }); };
+// Details: the range when the data gives one ("3–8 m"), each end rounded as heightText rounds.
+function heightRangeText(t) {
+  const lo = roundHeight(t.traits.height_m?.min), hi = shownHeight(t, ROOM_LIMIT_M[S.site?.room] ?? Infinity);
+  return hi != null && lo != null && lo < hi ? T('meters', { v: `${W.num(lo)}–${W.num(hi)}` }) : heightText(t);
+}
 function stageShortText(t) {
   const s = stageShort(stageSpan(t));
   if (!s) return '';
@@ -911,8 +1007,7 @@ function resultsLine() {
 }
 // Up to three names, then "and n more" (never "and … and n more"): "A, B, C and 2 more".
 function namesLine(ids) {
-  const names = ids.slice(0, 3).map((id) => nameText(taxonOf(id)));
-  return ids.length > 3 ? `${names.join(lang === 'zh' || lang === 'ja' ? '、' : ', ')} ${P('andMore', ids.length - 3)}` : W.list(names);
+  return namedList(ids.map((id) => nameText(taxonOf(id))));
 }
 // "n selected · m not shown", the names of the ticked rows shown, then Keep k · Remove k for those k (H4, H7).
 function selBarHTML() {
@@ -1069,8 +1164,8 @@ function detailsParts(t) {
   const lightsUnk = lightKeys.filter(([k]) => tr[k] == null).map(([, v]) => T('site.light.' + v));
   const facts = [
     ['t.habit', tr.habit && label('habit', tr.habit)],
-    ['t.height', tr.height_m?.max != null && esc(T('meters', { v: (tr.height_m.min != null && tr.height_m.min !== tr.height_m.max ? W.num(tr.height_m.min) + '–' : '') + W.num(tr.height_m.max) }))],
-    ['t.width', tr.width_max_m != null && esc(T('meters', { v: W.num(tr.width_max_m) }))],
+    ['t.height', tr.height_m?.max != null && esc(heightRangeText(t))],
+    ['t.width', tr.width_max_m != null && esc(T('meters', { v: W.num(roundHeight(tr.width_max_m)) }))],
     ['t.light', lightsYes.length && esc(W.list(lightsYes)) + (lightsUnk.length ? ` <span class="unknown">· ${esc(T('lightUnk', { list: W.list(lightsUnk) }))}</span>` : '')],
     ['t.ph', tr.soil_ph?.min != null && tr.soil_ph?.max != null && `${W.num(tr.soil_ph.min)}–${W.num(tr.soil_ph.max)}`],
     ['t.drought', tr.drought_tolerance && label('drought_tolerance', tr.drought_tolerance)],
@@ -1409,6 +1504,7 @@ function printTableHTML(ms, flags, date, gapJobs) {
   return `<article class="sheet sheet-big">
     <div class="sheet-head"><div><h2 class="sheet-title">${esc(T('yourConsortium'))}</h2><p class="muted">${esc(climateLabel())} · ${esc(printWhere(W, place()))} · ${esc(date)}</p>
     <p class="muted">${esc(T('basis', { site: basisText() }))} · ${esc(P('count', ms.length))} · ${esc(P('keptCount', ms.filter((t) => S.kept.has(t.id)).length))}</p></div><img src="/canopi-logo.svg" width="34" height="34" alt=""></div>
+    <div class="sheet-draw">${sideViewHTML(flags, true)}</div>
     <table class="print-table"><thead><tr><th>${esc(T('p.plant'))}</th><th>${esc(T('t.height'))}</th><th>${esc(T('col.leads'))}</th><th>${esc(T('p.jobs'))}</th><th>${esc(T('col.kept'))}</th><th>${esc(T('withWarning'))}</th></tr></thead>${body}</table>
     ${gapJobs.length ? `<section><h3>${esc(T('printGaps'))}</h3><ul>${gapJobs.map((j) => `<li>${esc(T('job.' + j + '.gap'))}</li>`).join('')}</ul></section>` : ''}
     <p class="muted small">${esc(T('d.liab'))}</p>
@@ -1434,6 +1530,7 @@ function render() {
   if (S.status === 'boot') return;
   const asideTop = app.querySelector('.aside')?.scrollTop ?? 0;
   app.innerHTML = crops ? cropsHTML() : setup ? setupHTML() : `<div class="tool-grid${S.status === 'ready' && noAside() ? ' tool-grid-full' : ''}">${asideHTML()}<section class="result" aria-labelledby="ct-result-title">${mainHTML()}</section></div>`;
+  placeSide();
   const aside = app.querySelector('.aside');
   if (aside) aside.scrollTop = asideTop;
   markMixed(); measureTools();
@@ -2203,6 +2300,29 @@ root.addEventListener('keydown', (e) => {
     act.view(e.key === 'Home' ? v[0] : e.key === 'End' ? v[2] : v[(i + (e.key === 'ArrowRight' ? 1 : 2)) % 3]);
   }
 });
+// The side view's marks (above 20 plants): hover, a tap, or focus names a mark; the arrow keys, Home,
+// End and Page Up/Down move along the band, one tab stop per band.
+const svStrip = (el) => el?.closest?.('.sv-strip[tabindex]');
+const svIndex = (strip, m) => [...strip.querySelectorAll('.sv-marks i')].indexOf(m);
+root.addEventListener('pointerover', (e) => {
+  const m = e.target.closest?.('.sv-marks i'), strip = svStrip(m);
+  if (strip) svName(strip, svIndex(strip, m));
+});
+root.addEventListener('pointerout', (e) => {
+  const strip = svStrip(e.target);
+  if (strip && !strip.contains(e.relatedTarget ?? null) && document.activeElement !== strip) svHide(strip);
+});
+root.addEventListener('focusin', (e) => { if (e.target.matches?.('.sv-strip[tabindex]')) svName(e.target, Number(e.target.dataset.i ?? 0)); });
+root.addEventListener('focusout', (e) => { if (e.target.matches?.('.sv-strip[tabindex]')) svHide(e.target); });
+root.addEventListener('keydown', (e) => {
+  const strip = e.target.matches?.('.sv-strip[tabindex]') ? e.target : null;
+  if (!strip) return;
+  const n = strip.querySelectorAll('.sv-marks i').length, i = Number(strip.dataset.i ?? 0);
+  const to = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: n - 1, PageDown: i + 10, PageUp: i - 10 }[e.key];
+  if (to == null) { if (e.key === 'Escape') svHide(strip); return; }
+  e.preventDefault();
+  svName(strip, to, true);
+});
 phoneMQ.addEventListener('change', () => { if (S.status !== 'boot') render(); });
 addEventListener('beforeprint', () => { if (!printEl.innerHTML) printEl.innerHTML = printHTML(); });
 addEventListener('afterprint', () => { printEl.innerHTML = ''; });
@@ -2211,6 +2331,8 @@ addEventListener('afterprint', () => { printEl.innerHTML = ''; });
 // staleRows: the rows on the page whose cached markup is not the row as written now; freshListBody:
 // the list's body as a full render writes it, without touching the caches.
 export const __test = {
+  // The side view's markup as a render writes it (scale chunk C: under 50 ms at 200 plants).
+  sideViewHTML: () => sideMarkup(flagsById()),
   staleRows() {
     const body = document.getElementById('ct-lbody');
     if (!body) return [];

@@ -7,7 +7,7 @@ import { pluralForms, makeWords, needsLook, searchText, fold, plantName, capFirs
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
 import * as core from '../src/lib/consortium/index.ts';
 import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withHash, langHash, arrivalParams, redoToastKey, swapTarget, relaxTo, licenceOf, uncheckedOnCard, printNoneKey, linkCountry, opensOnResult } from '../src/scripts/consortium/logic.js';
-import { profileSVG } from '../src/scripts/consortium/draw.js';
+import { plantSVG, PLOT_H, MAX_REACH } from '../src/scripts/consortium/draw.js';
 import * as scale from '../src/scripts/consortium/scale.js';
 import { KEPT_FILTERS } from '../src/scripts/consortium/crops.js';
 import { crops } from '../src/data/crops.ts';
@@ -443,16 +443,16 @@ test('the header works even if the tool fails to start (seam m10)', () => {
   assert.doesNotMatch(read('src/scripts/consortium/app.js'), /initChrome/);
 });
 
-test('the drawing keeps every crown inside its frame (live m1)', () => {
-  const taxon = (id, s, habit) => ({ id, stratum: { value: s }, genus: 'X', family: 'Y', traits: { habit }, functions: [{ function: 'ground_cover' }] });
-  for (const phone of [false, true]) for (const n of [6, 9, 12]) {
-    const placed = Array.from({ length: n }, (_, i) => taxon(`t${i}-${n}`, ['emergent', 'high', 'medium', 'low'][Math.min(3, Math.floor(i / 3))], i < 6 ? 'Tree' : 'Herbaceous'));
-    const p = profileSVG(placed, { phone, id: 'x', title: 't', strataLabel: (s) => s });
-    const [x0, , w] = p.svg.match(/viewBox="([^"]+)"/)[1].split(' ').map(Number);
-    const xs = [...p.svg.matchAll(/d="M([^"]+)"/g)].flatMap((m) => [...m[1].matchAll(/[MCL ]?(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)].map((c) => Number(c[1])));
-    assert.ok(Math.min(...xs) >= x0 && Math.max(...xs) <= x0 + w, `${phone ? 'phone' : 'desktop'} ${n}: ${Math.min(...xs)}..${Math.max(...xs)} in ${x0}..${x0 + w}`);
-    // The HTML labels line up with the drawn columns.
-    assert.ok(Math.abs(p.columns[0].center - ((p.pad * p.colW + p.colW / 2 - x0) / w) * 100) < 0.01);
+test('the side view draws each plant true to height in its column: crowns stay within reach of their column (live m1, scale chunk C)', () => {
+  for (const shape of ['tree', 'shrub', 'herb']) for (const frac of [0.05, 0.3, 0.6, 1]) for (const dashed of [false, true]) {
+    const svg = plantSVG({ id: `t-${shape}-${frac}`, s: 'high', shape, frac, dashed });
+    const pts = [...svg.matchAll(/d="M([^"]+)"/g)].flatMap((m) => [...m[1].matchAll(/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)].map((c) => [Number(c[1]), Number(c[2])]));
+    const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+    assert.ok(Math.min(...xs) >= -MAX_REACH * 1.15 && Math.max(...xs) <= MAX_REACH * 1.15, `${shape} ${frac}: x ${Math.min(...xs)}..${Math.max(...xs)}`);
+    assert.ok(Math.max(...ys) <= PLOT_H + 0.01, 'nothing below the ground');
+    // The top of the plant is its height on the scale (within the crown's lumps).
+    assert.ok(Math.abs(PLOT_H - Math.min(...ys) - Math.max(3, frac * PLOT_H)) < Math.max(3, frac * PLOT_H) * 0.12 + 1, `${shape} ${frac}: top ${Math.min(...ys)}`);
+    assert.equal(/stroke-dasharray/.test(svg), dashed, 'dashed only when the height is not known');
   }
 });
 
@@ -748,7 +748,7 @@ test('every plant list shows the scientific name, smaller and in italics (prepus
   // Over time rows, the Jobs "who" list, the drawing's key (phone and print), the print phase lists.
   assert.match(appJs, /<small>\$\{sciHTML\(t\)\}/, 'Over time');
   assert.match(appJs, /<span>\$\{name\(d\.t\)\} <small>\$\{sciHTML\(d\.t\)\}/, 'Jobs');
-  assert.equal([...appJs.matchAll(/<span class="pkey-name"><span class="pkey-n">\$\{name\(t\)\}<\/span>\$\{sciHTML\(t, 'sci pkey-sci'\)\}<\/span>/g)].length, 2, 'drawing key, screen and print');
+  assert.equal([...appJs.matchAll(/<span class="pkey-name"><span class="pkey-n">\$\{name\(t\)\}<\/span> \$\{sciHTML\(t, 'sci pkey-sci'\)\}<\/span>/g)].length, 1, 'the side view\'s legend, one helper for the screen and print');
   assert.match(appJs, /<li>\$\{name\(t\)\}\$\{sciHTML\(t, 'muted'\) && ' ' \+ sciHTML\(t, 'muted'\)\}<\/li>/, 'print phases');
   // Rows, Swap, Add, details and the print table already had it.
   assert.match(appJs, /<span class="pn">\$\{name\(t\)\}<\/span> <span class="sci">\$\{esc\(t\.canonical_name\)\}<\/span>/);
@@ -789,7 +789,7 @@ test('one warning heading everywhere: consortium.withWarning, in every locale (o
   assert.deepEqual(labels, ['withWarning', 'withWarning', 'otherLists'], 'Swap and Add head their flagged plants alike; Add then lists the other climates\' plants');
   assert.match(appJs.match(/function attentionScaleHTML[\s\S]*?\n\}/)[0], /<strong>\$\{esc\(T\('withWarning'\)\)\}<\/strong>/, 'the warnings summary');
   assert.match(appJs.match(/function printHTML[\s\S]*?\n\}/)[0], /<th>\$\{esc\(T\('withWarning'\)\)\}<\/th>/, 'print');
-  assert.equal([...appJs.matchAll(/<span class="vh">\$\{esc\(T\('withWarning'\)\)\}<\/span>/g)].length, 3, 'the marks on the drawing, its key and the Over time rows');
+  assert.equal([...appJs.matchAll(/<span class="vh">\$\{esc\(T\('withWarning'\)\)\}<\/span>/g)].length, 2, 'the side view\'s legend and the Over time rows (above 20 a mark\'s name says it: app.js svName)');
 });
 
 test('words: a merged soft chip starts with a capital where the script has one', () => {

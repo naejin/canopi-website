@@ -892,6 +892,8 @@ test('pest chips name the data\'s sourced common names (agent_names) in en, fr a
   const i = all.find((x) => x.agent_names?.names?.en);
   const host = temperate.taxa.find((t) => t.canonical_name === i.subject.name || t.genus === i.subject.name);
   const { page } = await open200();
+  // Above 20 the side view has no button per plant (scale chunk C): the plant's row opens its details.
+  await page.act('group', host.stratum.value);
   await page.act('details', host.id);
   const d = page.$('#ct-dialog');
   assert.ok(textOf(d).includes(`Cause: ${i.agent}`), 'the details name the scientific name');

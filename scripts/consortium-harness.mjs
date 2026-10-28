@@ -179,6 +179,13 @@ function makeDocument(page) {
     setSelectionRange() {},
     showModal() { this.open = true; },
     close() { if (!this.open) return; this.open = false; page.later(() => this.dispatchEvent(new Event('close', { bubbles: false }))); },
+    // The side view moved back in place of its slot (app.js placeSide, scale chunk C).
+    replaceWith(...nodes) {
+      const up = this.parent;
+      if (!up) return;
+      for (const n of nodes) if (n.parent?.children?.includes(n)) adopt(n.parent, n.parent.children.filter((c) => c !== n));
+      adopt(up, up.children.flatMap((c) => (c === this ? nodes : [c]))); this.parent = null;
+    },
     remove() { if (!this.parent) return; const kids = this.parent.children.filter((c) => c !== this); adopt(this.parent, kids); this.parent = null; },
     // Moves each node to the end of this element (the toast and the live line move into an open sheet: H5).
     append(...nodes) {
