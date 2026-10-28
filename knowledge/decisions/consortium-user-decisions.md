@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium tool — user decisions
 description: Dated decisions the project owner made about the consortium design tool; they change only when the owner changes them.
 tags: [consortium, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:32:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T16:52:51Z }
 ---
 
 # Consortium tool — user decisions
@@ -62,6 +62,7 @@ Data side (sibling repository `canopi-data`, read 2026-10-27): `docs/adr/0007-cu
 | 2026-10-28 | **Scale, coordinator choices** (within the owner's rows, not owner-reviewed): Cards by default up to 20 plants, List above, with a Cards/List switch from the first plant; the share link moves to a compact encoding that survives data updates (needed for 200 plants; a guessed country still never goes in it); one side-view drawing at every size (one mark per plant above 20). |
 | 2026-10-28 | **Scale mockup approved** (owner): mockup v2 (`.local/consortium/climate-first/mockup-v2/`, critiqued over four rounds by a separate reviewer) is the design to build for 6 to 200 plants and the main-crops step. The crop step has one main button, "Suggest plants": with no crop chosen it gives the climate-only suggestion, and there is no separate Skip link (refines "Main crops first"). A main crop carries a "Main crop" tag, has a "Kept: Main crops" filter value, and is not swapped from its details. |
 | 2026-10-28 | **Unchecked country, coordinator choice** (within the owner's rows, not owner-reviewed): for a chosen country GRIIS does not cover, "not checked in {country}" is said once per view (country line, result sub-line, print head) and in a plant's details, never as a chip on every card or row (keeps the row that holds "not checked" statuses off cards); a plant with no invasive record reads "not recorded invasive in any country checked by GRIIS", with GRIIS among its sources, never "anywhere". |
+| 2026-10-28 | **Scale build, coordinator choices** (within the owner's rows, not owner-reviewed): "Add all" from a pasted list adds flagged plants (site misfit, serious conflict) without asking about each one, then says "n added with a warning" with a Show link, and every warning stays on its row (warn, never hide; a single Add still asks first); the approved design's rule holds in the core logic: a plant of a lower layer is not flagged "needs full sun" for a sunny site when layers above it shade it; main crops and plants added from another list are described neutrally for every reader ("Main crop", "From the Tropical list"), with no stored record of who chose them; share links keep their state in the fragment (`#v=3…`), so it never reaches server logs, and older query links still open. |
 
 ## Open questions for the owner (not decisions)
 
