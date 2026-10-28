@@ -23,6 +23,7 @@ const planned = [
   'carbon-farming', 'perennial-staples', 'nut-staples', 'perennial-beans-and-pods', 'starch-from-trees', 'food-forest',
   'trees-in-the-field', 'windbreaks-and-living-fences', 'trees-for-livestock', 'water-and-slopes', 'coppice-and-bamboo',
   'fibre-dye-and-soap',
+  'garden-helpers', 'flowers-for-pollinators', 'homes-for-pollinators', 'lawn-to-flowers',
 ];
 // Safety rule: no caution or safety box gives a time, a temperature or a method word, and no prose
 // pairs boiling, soaking, fermenting or cooking with an amount of time. This is a heuristic: it catches

@@ -5,7 +5,7 @@ description: Every page that changes with the climate uses the app's seven zones
 tags: [decision, climate, i18n]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:19:13Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:24:21Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:32:00Z }
 sources:
   - id: climates-ts
     resource: ../../src/data/climates.ts
@@ -50,13 +50,13 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:7ee2f4fb8c1fce43
-    last_modified: 2026-10-28T08:20:46Z
+    digest: sha256:2817fe32215561cf
+    last_modified: 2026-10-28T09:28:13Z
   - id: consortium-app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:ea12746ab3883201
-    last_modified: 2026-10-28T08:18:06Z
+    digest: sha256:7d820394d21b0e50
+    last_modified: 2026-10-28T08:25:21Z
 enforced_by: [scripts/homepage.test.mjs, scripts/guides.test.mjs]
 ---
 

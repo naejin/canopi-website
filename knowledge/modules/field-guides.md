@@ -4,20 +4,20 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:48:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:31:58Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:08:19Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:0f479426a3111007
-    last_modified: 2026-10-28T09:02:21Z
+    digest: sha256:e13851d8356776ca
+    last_modified: 2026-10-28T09:26:47Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:cdf407d1779fd10d
-    last_modified: 2026-10-28T09:07:32Z
+    digest: sha256:0db6cdc1c352b4ca
+    last_modified: 2026-10-28T09:23:52Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
@@ -42,7 +42,7 @@ sources:
     resource: ../../src/data/glossary.ts
     title: src/data/glossary.ts
     digest: sha256:ebfe70bcd80b622a
-    last_modified: 2026-10-28T09:00:31Z
+    last_modified: 2026-10-28T09:08:20Z
   - id: crops-ts
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
@@ -68,6 +68,16 @@ sources:
     title: src/components/guides/try-consortium.ts
     digest: sha256:ed71c00bce5e1469
     last_modified: 2026-10-27T21:22:08Z
+  - id: guides-test-mjs
+    resource: ../../scripts/guides.test.mjs
+    title: scripts/guides.test.mjs
+    digest: sha256:2817fe32215561cf
+    last_modified: 2026-10-28T09:28:13Z
+  - id: check-built-site-mjs
+    resource: ../../scripts/check-built-site.mjs
+    title: scripts/check-built-site.mjs
+    digest: sha256:d281f44b1981356f
+    last_modified: 2026-10-28T02:33:09Z
 ---
 
 # Responsibility
@@ -87,7 +97,7 @@ The Field Guides section: practical guides drawn from the bibliography, in Engli
 - Frontmatter: `title`, one-sentence `description`, `domain` (seeds, crops, soil, perennials, seasons, pests, kitchen), `order`, `glance` (3 to 6 label/value pairs; the hero box wraps its cells, and a value over 40 characters gets a wider cell), `quick`, `climates` (optional; the zones of the guide's `<ForClimate>` blocks, which brings the climate picker to the guide and the index), `sources` (`{ book: <bibliography id>, chapters: [titles] }`; chapter titles are the English edition's, so `BookCite` quotes them and, when the card shows another edition, adds a note naming the English edition rather than guessing translated titles), `related`, `updated`.
 - Components (contract: [Field Guide components](/references/field-guide-components.md), which lists every prop and limit): QuickAnswer, Term, TermNote (placed by the plugin), Note, Safety, FoodCaution, HisGarden (optional `book`, whose garden), Invasive (inline invasive-species note), ForClimate, Steps/Step, CropCards, CropCard, CropTable, CropExplorer, PollinationBadge, SeasonTimeline, YearsTimeline, PlotDiagram, FlowerDiagram, PlantingMixBar, Checklist/Item, Figure, Columns, Card, Points, NextGuides, TryConsortium (preset link into the consortium tool: `?plant=<canonical_name>&climate=<id>`, the plant checked against the beta cells at build time and by `scripts/guides-consortium.test.mjs`).
 - Ids are one per concept: `<Term id>` takes a glossary key, crop components a crop id; there are no alias maps. A crop cell the book does not give stays `null` and shows nothing.
-- `related` in frontmatter: two to four published guides (same list in en and fr); `NextGuides` links at section ends; in-text links to another guide's section use that page's heading id in the same language (French ids differ from English ones; `check-built-site.mjs` fails on a missing `#id`).
+- `related` in frontmatter: two to four published guides (same list in en and fr); `NextGuides` links at section ends; in-text links to another guide's section use that page's heading id in the same language (French ids differ from English ones and keep their accents, e.g. `#plantes-hôtes`; `check-built-site.mjs` fails on a missing `#id`). A link's text is the target guide's title (the part before any colon) or, for a section link, that heading's text, in the page's language. A hub lists its section's guides with `<NextGuides>`, and a guide usually ends with one after its checklist; `NextGuides` slugs must be in the plan list of `scripts/guides.test.mjs`.
 - `<FoodCaution risk>` takes one risk or a list (`risk={['ergot', 'treated-seed']}`): several risks in one place are one box with one title, never two boxes in a row. Each box ends with the food-safety authority pointer once (`food.authority`).
 - `<CropTable>`: below 640px each crop is a block of label/value rows (cells carry `data-label`; a one-column table shows crop and value side by side), so no table scrolls sideways at 390px. Its "in Lofthouse's experience" note names only the crossing, ease or hybrid columns it shows.
 - Plain markdown tables in a guide body are styled like the crop table (`.guide-body > table`).

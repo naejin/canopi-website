@@ -2,9 +2,20 @@
 type: Project
 title: Field Guides plan
 description: Build plan for the 17 Field Guides drawn from Landrace Gardening — steps, streams, file ownership and exit criteria.
-status: stable
 tags: [field-guides, plan]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:24:21Z }
+status: stable
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:31:26Z }
+sources:
+  - id: guides
+    resource: ../../src/content/guides
+    title: src/content/guides/
+    digest: sha256:e13851d8356776ca
+    last_modified: 2026-10-28T09:26:47Z
+  - id: consortium-guides-ts
+    resource: ../../src/data/consortium-guides.ts
+    title: src/data/consortium-guides.ts
+    digest: sha256:61f3dbcfde78adc1
+    last_modified: 2026-10-28T09:27:42Z
 ---
 
 # Field Guides plan
@@ -12,14 +23,15 @@ generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:24:21Z }
 Rules: [user decisions](/decisions/field-guides-user-decisions.md), [architecture](/decisions/field-guides-architecture.md), process: [agentic delivery](/runbooks/agentic-delivery.md).
 Per-guide specs (book-derived, gitignored): `.local/field-guides/specs/NN-slug.md`; map, glossary, crop table, component list: `00-map.md`.
 
-## Guides (41)
+## Guides (45)
 Seeds & landraces: 01 landrace-gardening (hub), 02 hybrids-heirlooms-landraces, 03 will-they-cross, 04 hand-crosses, 05 choosing-seed-parents, 06 keeping-a-landrace, 07 saving-seed, 08 storing-seed.
 Crops: 09 squash-melons-cucumbers, 10 corn, 11 beans-and-legumes, 12 tomatoes, 13 small-grains, 14 true-seed-potato-garlic-sunroot.
-Seasons: 15 season-shifting, 16 food-all-year. Helpers & pests (domain `pests`, labelled "Pests & resilience" until 2026-10-28): 17 pests-without-sprays.
+Seasons: 15 season-shifting, 16 food-all-year. Helpers & pests (domain `pests`, labelled "Pests & resilience" until 2026-10-28): 17 pests-without-sprays (section order 5 since step 7).
 Trees & perennials: 18 trees-with-edible-leaves (source: *Trees with Edible Leaves*, Toensmeier with Klopf, 2022).
 Harvest to kitchen: 19 nixtamalization, 20 cooking-dry-beans (reopened 2026-10-26 under the warn-don't-remove rule; no figures).
 Soil (source: *Teaming with Microbes*, Lowenfels & Lewis, revised edition 2010): 21 living-soil (hub), 22 reading-your-soil, 23 fungal-or-bacterial, 24 compost-for-soil-life, 25 mulch, 26 compost-tea, 27 mycorrhizal-fungi, 28 no-dig-beds; Seasons: 29 soil-care-year.
 Trees & perennials, carbon farming (source: *The Carbon Farming Solution*, Toensmeier 2016; step 6): 30 carbon-farming (hub), 31 perennial-staples, 32 nut-staples, 33 perennial-beans-and-pods, 34 starch-from-trees, 35 food-forest, 36 trees-in-the-field, 37 windbreaks-and-living-fences, 38 trees-for-livestock, 39 water-and-slopes, 40 coppice-and-bamboo, 41 fibre-dye-and-soap.
+Helpers & pests (source: *The Pollinator Victory Garden*, Eierman 2020; step 7): 42 garden-helpers (hub), 43 flowers-for-pollinators, 44 homes-for-pollinators, 45 lawn-to-flowers.
 
 ## Step 1 — Foundation + hub (one stream, `foundation`)
 Owns: `package.json`, `package-lock.json`, `astro.config.mjs`, `src/content.config.ts`, `src/layouts|components/Base.astro`, `Header.astro`, `Footer.astro`, `src/components/guides/**`, `src/lib/svg.ts`, `src/data/crops.ts`, `src/data/glossary.ts`, `src/data/bibliography.md|.ts`, `src/components/Bibliography.astro`, `src/i18n/guides/*`, `src/i18n/translations/*.json` (nav + backlink keys only), `src/pages/guides/**`, `src/pages/[lang]/guides/**`, `src/styles/guides.css`, `src/styles/tokens.css`, `scripts/guides.test.mjs`, `scripts/homepage.test.mjs`, `scripts/check-built-site.mjs`, `src/content/guides/landrace-gardening/**`.
@@ -53,10 +65,12 @@ Guide map and owner decisions: `.local/field-guides/carbon-farming/00-map.md` an
 - Done on `guides/integration`: shared files (bibliography id, 41 glossary terms, the `needs-processing`, `akee` and `cashew` cautions, `<Invasive />`, `HisGarden book`), the twelve guides 30–41 from four reviewed streams, guide 18 moved to order 6, the seam fixes (« prosopis » in French, one owner per warning, anchored links, inline invasive note).
 - Checked in the browser at 390/1280, light and dark, with a climate chosen and with none; pre-push review of the whole diff; pushed on the owner's go.
 
-## Step 7 — Pollinators (shared files landed 2026-10-28)
-Guide map: `.local/field-guides/pollinators/00-map.md` (source: *The Pollinator Victory Garden*, Eierman 2020); planned 42 garden-helpers (hub, section order 1), 43 flowers-for-pollinators, 44 homes-for-pollinators, 45 lawn-to-flowers.
+## Step 7 — Pollinators (written and merged 2026-10-28, not pushed)
+Guide map: `.local/field-guides/pollinators/00-map.md` (source: *The Pollinator Victory Garden*, Eierman 2020; Q3–Q7 settled by the coordinator from existing owner rules, Q8 deferred).
 - Shared files on `guides/pollinators-shared`: the section label `domain.pests` renamed ("Helpers & pests", « Auxiliaires et ravageurs »), 31 glossary terms, the book's invasive names in `invasiveNames`.
-- `pests-without-sprays` keeps order 1 until the section has five guides: the index test requires orders 1..n without gaps, so it moves to 5 in that commit. `jobGuides.helpers` lands with guide 42.
+- The four guides 42 garden-helpers (hub), 43 flowers-for-pollinators, 44 homes-for-pollinators and 45 lawn-to-flowers, written in three streams and merged on `consortium/integration`; `jobGuides.helpers` is `garden-helpers`.
+- Hand-offs (`guides/pollinators-handoffs`): section orders 42→1 … 45→4, `pests-without-sprays`→5; `related` lists from the specs; cross-guide anchors fixed to real heading ids, French link texts set to the target's French title; the hub's "Where to start" and the end of 43–45 use `<NextGuides>`; `consortiumGuides` rows only where the final text discusses the plant (see [consortium page](/modules/consortium-page.md)); the habitat-vs-soil-cover compromise recorded in [Field Guide writing](/conventions/field-guide-writing.md).
+- Not pushed. Still open: browser check at 390/1280 light/dark with a climate chosen and none, pre-push review, push on the owner's go; `related` entries in 12, 17, 25 and 29 pointing to the new guides on the owner's go.
 
 ## Tracker
 bd epic "Field Guides", one item per step and per stream, labels `guides-step-<n>`.

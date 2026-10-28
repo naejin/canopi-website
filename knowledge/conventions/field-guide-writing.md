@@ -3,20 +3,20 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:48:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:31:36Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:03:01Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:0f479426a3111007
-    last_modified: 2026-10-28T09:02:21Z
+    digest: sha256:e13851d8356776ca
+    last_modified: 2026-10-28T09:26:47Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:7ee2f4fb8c1fce43
-    last_modified: 2026-10-28T08:24:37Z
+    digest: sha256:2817fe32215561cf
+    last_modified: 2026-10-28T09:28:13Z
   - id: decisions-field-guides-user-decisions
     resource: /decisions/field-guides-user-decisions.md
   - id: hero-row-ts
@@ -34,6 +34,16 @@ sources:
     title: scripts/guides-consortium.test.mjs
     digest: sha256:3d2ca952f3a55d21
     last_modified: 2026-10-27T21:22:08Z
+  - id: en-mdx
+    resource: ../../src/content/guides/homes-for-pollinators/en.mdx
+    title: src/content/guides/homes-for-pollinators/en.mdx
+    digest: sha256:3e5ad1d83a776cac
+    last_modified: 2026-10-28T09:26:47Z
+  - id: en-mdx-2
+    resource: ../../src/content/guides/mulch/en.mdx
+    title: src/content/guides/mulch/en.mdx
+    digest: sha256:0b7f54d6d655a004
+    last_modified: 2026-10-26T22:09:45Z
 enforced_by: [scripts/guides.test.mjs, scripts/guides-consortium.test.mjs]
 ---
 
@@ -66,3 +76,11 @@ Every Field Guide (`src/content/guides/<slug>/{en,fr}.mdx`) follows these rules,
 - Allowed: `<FoodCaution risk="bitter-cucurbits" />` in a section on unwanted crosses.
 - Not allowed: telling readers to taste raw fruit to check for bitterness (the hub's spec marks it [OMIT]).
 - Allowed: "Most new varieties he brings in set no seed in their first year" inside `<HisGarden>`; not allowed: the same as a rule for every garden.
+
+# When two cited books disagree: habitat versus soil cover
+
+A coordinator choice (2026-10-28), applied in [homes-for-pollinators](/modules/field-guides.md); the owner has not reviewed it, so it is not yet a project rule.
+
+- **The tension.** The Soil guides (`mulch`, `living-soil`, `soil-care-year`; Lowenfels and Lewis) cover bare soil with mulch and run a mower over fallen leaves so they feed soil life faster. Eierman keeps a sunny patch bare, undug and unmulched for ground-nesting bees, and warns that raking, chopping or mowing all the leaves kills the insects wintering in them.
+- **The middle way.** The later guide states each view with its author and leaves the earlier guides' text unchanged: mulch the beds you grow in and keep one sunny patch, away from them, bare; leave whole leaves under shrubs, along a hedge and in one quiet corner, and chop or gather the rest for the beds.
+- **Not done without the owner's go.** One-line hints in `mulch` and `soil-care-year` pointing to the pollinator guide.
