@@ -7,13 +7,13 @@ tags: [module, frontend]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:33:07Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:32:56Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:08:33Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:52467bcac93835db
-    last_modified: 2026-10-28T12:22:55Z
+    digest: sha256:b204404d2b865b98
+    last_modified: 2026-10-28T13:02:48Z
 ---
 
 # Responsibility

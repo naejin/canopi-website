@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:32:32Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:08:30Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
@@ -14,13 +14,13 @@ sources:
   - id: app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:1e5bcb24674a7219
-    last_modified: 2026-10-28T12:22:55Z
+    digest: sha256:7bab146361dbcfcd
+    last_modified: 2026-10-28T13:02:34Z
   - id: words-js
     resource: ../../src/scripts/consortium/words.js
     title: src/scripts/consortium/words.js
-    digest: sha256:c009238646de2f39
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:25d33c97bd2b957e
+    last_modified: 2026-10-28T12:58:11Z
   - id: draw-js
     resource: ../../src/scripts/consortium/draw.js
     title: src/scripts/consortium/draw.js
@@ -34,8 +34,8 @@ sources:
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:49c68a7e30ab5289
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:8786f8fa6b1dcabf
+    last_modified: 2026-10-28T13:02:34Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
@@ -44,13 +44,13 @@ sources:
   - id: consortium-page-test-mjs
     resource: ../../scripts/consortium-page.test.mjs
     title: scripts/consortium-page.test.mjs
-    digest: sha256:ecfb5ba91f27c26e
-    last_modified: 2026-10-28T12:22:55Z
+    digest: sha256:ed5b28b2fa1ec9d1
+    last_modified: 2026-10-28T13:00:25Z
   - id: logic-js
     resource: ../../src/scripts/consortium/logic.js
     title: src/scripts/consortium/logic.js
-    digest: sha256:680eb01006816f5f
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:d4295a9a78e7f1a5
+    last_modified: 2026-10-28T13:02:48Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
@@ -66,7 +66,19 @@ sources:
     title: src/data/crops.ts
     digest: sha256:5bf94c6ec492fe6b
     last_modified: 2026-10-25T12:57:25Z
-enforced_by: [scripts/consortium-page.test.mjs]
+  - id: parts-js
+    resource: ../../src/scripts/consortium/parts.js
+    title: src/scripts/consortium/parts.js
+    digest: sha256:10885d71a4c4baca
+    last_modified: 2026-10-28T12:58:04Z
+  - id: consortium-country-test-mjs
+    resource: ../../scripts/consortium-country.test.mjs
+    title: scripts/consortium-country.test.mjs
+    digest: sha256:6a851f161ac2744d
+    last_modified: 2026-10-28T13:02:04Z
+enforced_by:
+  - scripts/consortium-page.test.mjs
+  - scripts/consortium-country.test.mjs
 ---
 
 # Responsibility
@@ -81,7 +93,8 @@ The consortium tool's page: the visitor picks a climate and gets 6 to 12 plants 
 | [app.js](../../src/scripts/consortium/app.js) | The whole tool: state `S`, `render()`, sheets (`O`, one dialog with `data-kind`), actions table, share-link and `localStorage["canopi-consortium"]` |
 | [words.js](../../src/scripts/consortium/words.js) | `makeWords(strings, lang)` → `T`, `P` (plural forms `one: … \| other: …` with `#`), lists, phase time words; `needsLook`, `searchText`, `fold`, `plantName` |
 | [draw.js](../../src/scripts/consortium/draw.js) | `profileSVG`: the side-view drawing of the layers, with a third of a column of margin each side so no crown is cut; returns `colPct` for the HTML labels |
-| [logic.js](../../src/scripts/consortium/logic.js) | Pure page rules tested in node: `withQuery` (the language links' query), `droppedPlants` (old-link count), `trimGaps`, `mayPersist`, `photoSource`, `shown` (with `next`, what one "Show more" reveals), `linkMembers` (the link's `a`), `afterMove` (notices dropped on a climate change), `repeatClick` (double-click guard), `safeHref` (only http(s) URLs become links), `licenceOf` (licence name and Creative Commons deed link, public domain flagged), `swapTarget` (the plant a details sheet opened from Swap would replace), `relaxTo` (the looser site answer, null when it is the current one) |
+| [logic.js](../../src/scripts/consortium/logic.js) | Pure page rules tested in node: `withQuery` (the language links' query), `droppedPlants` (old-link count), `trimGaps`, `mayPersist`, `photoSource`, `shown` (with `next`, what one "Show more" reveals), `linkMembers` (the link's `a`), `afterMove` (notices dropped on a climate change), `repeatClick` (double-click guard), `safeHref` (only http(s) URLs become links), `licenceOf` (licence name and Creative Commons deed link, public domain flagged), `swapTarget` (the plant a details sheet opened from Swap would replace), `relaxTo` (the looser site answer, null when it is the current one), `pickCountry` (the country at start, with where it came from), `guessCountry` (the browser's country from its time zone, else its languages) |
+| [parts.js](../../src/scripts/consortium/parts.js) | Pure words about reasons and the reader's country, rendered with the page's `makeWords`: `cardReasonHTML` (a card's reason, always with its region, "also chosen for # other regions"), `reasonsHTML` (details), `countryWhy` and `countryLineParts` (the country line), `warnWhere` (result sub-line), `printWhere` (print head), `invasiveCardNote` (card and print-row invasive mark), `invasiveDetails` (details' invasive items) |
 | [data.ts](../../src/scripts/consortium/data.ts) | `loadManifest`, `loadLabels`, `loadClimate` from `/data/consortium/` |
 | [consortium.css](../../src/styles/consortium.css) | Everything under `.ct`; strata colours only in the drawing (`.profile`, its numbered labels and key) and the strata legend (`.strata-mini`); number rings elsewhere and timeline bars in neutral ink; in print, the light palette on white whatever the theme |
 | [consortium-guides.ts](../../src/data/consortium-guides.ts) | Guides linked per plant, per job (one guide for each of the six jobs, never `null`; helpers is `garden-helpers`, the pollinator hub, whose quick answer the test ties to the job's line), and for the explanations; a plant links only guides that grow or use it, never one passing sentence (the pollinator guides add borage, lavender, phacelia, dog rose, purple willow, elder and white clover; goldenrod, tomato and mango were dropped on 2026-10-28 as single mentions). A guide that opens the tool with a plant (`<TryConsortium>`) is linked back from that plant when it really discusses it (runner bean, pigeon pea, walnut, chestnut and carob added 2026-10-28); the presets of olive in `coppice-and-bamboo` and breadfruit in `food-forest` stay one-way under the three-guide cap, and garden-helpers' tomato and mango presets stay one-way as single mentions. `consortium-page.test.mjs` knows lavender, elder and runner bean by their kind word |
@@ -108,9 +121,10 @@ Routes: `/consortium/`, `/fr/guilde/` (the French tool is a "guilde"), `/{lang}/
 - A details sheet opened from Swap offers "Use this instead" (`useInstead`) for the plant being swapped, never Add.
 - "Show more plants if I loosen…" lists only answers that can be loosened (`relaxTo`).
 - Unknown toxicity, invasive status, spread and jobs show as "not checked yet" on cards, rows, Swap, Add and print (`uncheckedOnCard` in `logic.js`). Unknown allelopathy shows in a plant's details only (owner, 2026-10-28). Neither is ever shown as none; a known allelopathic plant keeps its soft warning everywhere.
-- Country (owner, 2026-10-28; design `.local/consortium/climate-first/design-ui.md`): `countryLineHTML` shows "Invasive warnings for [France ▾]" above the climate cards and in the side panel, with why: guessed from your browser (`countryGuessed`, dashed chip, `data-src="guess"`), from the shared link, chosen, or no invasive list for that country (`countryNoList`). `guessCountry()` takes the one manifest country whose CLDR time zones include the browser's, else the region of `navigator.languages`. A guess is never written to a link or to the save (`stateNow` drops a `countrySource === 'guess'`); a chosen country goes in `k`; "No country" (`countryNone`) is `k=-` in the local save only. Start order: the link's country, else the saved one, else the guess; an unknown link `k` shows `countryUnknown`. The country sheet has the guess card, a search, "In use" and "No country".
-- Invasive warnings: with a country GRIIS checked, a plant invasive there shows `invHere` on its card, in the "With a warning" box (`needsLook` tests `flags.invasive === true` on its own), in details (`d.invHere` with the liability line) and in print (`printWarnings`); Add and Swap never ask a confirmation for it. With an unchecked country, details say `invNotChecked`/`d.invNotChecked` and cards show the invasive-count soft chip, as with no country. Country names follow a colon in fr, pt and it, so no article is needed.
-- Details list a plant's reasons, one per region (`reasonsHTML`: text, then `reasonFrom` "{region} · from {sources}"); `region.<id>` names stay only for these labels. Each interaction in details names all its sources (`d.conflictFrom`). The 2026-10-28 export has no plant with two reasons; the fixture has one interaction with two sources.
+- Country (owner, 2026-10-28; design `.local/consortium/climate-first/design-ui.md`; review fixes 2026-10-28): `countryLineHTML` (from `countryLineParts`) shows "Invasive warnings for [France ▾]" above the climate cards and in the side panel, always with where the country came from: guessed from your browser (`countryGuessed`, dashed chip, `data-src="guess"`), from the shared link (`countryLinked`) or chosen by you (`countryChosen`); for a country GRIIS has no list for, `countryNoList` ("not checked: there is no invasive list for this country") sits beside that label, never instead. With no country, the line holds the view's only "Add your country" (or the "No country ▾" chip the reader chose) and its only worldwide-counts line (`noCountryNote`); the result has no second one. `guessCountry` (logic.js) takes the one manifest country whose CLDR time zones include the browser's, else the region of `navigator.languages`. A guess is never written to a link or to the save (`stateNow` drops a `countrySource === 'guess'`); a chosen country goes in `k`; "No country" (`countryNone`) is `k=-` in the local save only.
+- Where the country comes from at start (`pickCountry`): a link's own `k`, labelled "chosen by you" when it equals the reader's own choice (so their reload or language switch never reads "from the shared link") and "from the shared link" otherwise; else the reader's choice stored on the device under `canopi-country` (a code or `-`, written by every country choice in any status, left alone by Start over); else the saved consortium's country with the source saved beside it (`src`); else the guess. An unknown link `k` is dropped and shows `countryUnknown` ("not a country code we know"); a stale stored code is quiet. The country sheet has the guess card, a search, "Choisi"/"In use" and "No country".
+- Invasive warnings: with a country GRIIS checked, a plant invasive there shows `invHere` on its card, in the "With a warning" box (`needsLook` tests `flags.invasive === true` on its own), in details (`d.invHere` with the liability line) and in print (`printWarnings`); Add and Swap never ask a confirmation for it. A country GRIIS did not check says "not checked in {country}" everywhere it is named or implied, never "warnings for" it or "all checked": the result sub-line (`warnWhere`: `invStatusNotChecked`), the print head (`printWhere`), each card and print row (`invasiveCardNote`: an unknown-style chip, so a print row is never empty and never reads `printNone`), and details (`invNotChecked`/`d.invNotChecked`). With a checked country a card shows only that country's warning; the count of countries is in details (`d.invList`). With no country, the card has the soft count chip. An empty `invasive_in` reads `d.invNone` "Not recorded invasive in any country GRIIS checked", with no "(checked)" mark. Country names follow a colon in fr, pt and it, so no article is needed.
+- Reasons are regional: a card shows the first with its region (`reasonCard` "Chosen for {region}: {reason}", the region in semibold) and `moreRegions` when other regions chose the plant too; details list every reason (`reasonsHTML`: text, then `reasonFrom` "Chosen for {region} · from {sources}", worded so it fits any number of sources); `region.<id>` names stay only for these labels. Each interaction in details names all its sources (`d.conflictFrom`). The 2026-10-28 export has no plant with two reasons; the fixture has one interaction with two sources.
 - Phones hide the climate cards' descriptions (`.climate-choice .about`) and offer them in one `<details class="climate-abouts">` ("What the climates mean", `climatesAbout`).
 - Strata labels and phase terms are the Canopi app's own (`canopi/desktop/web/src/i18n/`), except where the owner decision "strata are about light first" outranks them: ja 突出層 / 上層 / 中層 / 下層 and ko 돌출층 / 상층 / 중층 / 하층 name light positions (the app's 高木層, 低木層, 교목층 name tree and shrub layers), and zh writes 顶极群落 (the app has 顶级群落). The test pins them and forbids tree or shrub words in strata labels.
 - No requests outside the site; the tool JS is about 27 KB gzipped (minified bundle), each climate file about 60 to 66 KB gzipped (not re-measured for format 3).
@@ -126,5 +140,6 @@ Routes: `/consortium/`, `/fr/guilde/` (the French tool is a "guilde"), `/{lang}/
 - Words: the action is "Keep" (keys `keep`, `unkeep`, `keptTag`, `keptNow`, `unkeptNow`); French site field « Surface »; `southern_america` is named for what WGSRPD puts in it (Central and South America and the Caribbean), as a reason label.
 # Tests
 
-- [consortium-page.test.mjs](../../scripts/consortium-page.test.mjs): strings in 11 locales (every key used, dynamic prefixes checked against core ids), app strata and phase terms, plural climate counts, country sentences with no article before a country, the first-paint script against the app's start rules, a guess never in a link, `k=-` in the save only, invasive-here warnings without confirmation, the region-era keys gone, guides exist and cover their plants (crop list, heading, table, list item, bold or `<Term>`, or twice in prose; frontmatter, alt text and safety boxes ignored; a human check beyond that), `initDialogs` skipping `data-own-dialog`, `words.js`, `logic.js`.
+- [consortium-page.test.mjs](../../scripts/consortium-page.test.mjs): strings in 11 locales (every key used, dynamic prefixes checked against core ids), app strata and phase terms, plural climate counts, country sentences with no article before a country, the first-paint script against the app's start rules, a guess never in a link, `k=-` in the save only, invasive-here warnings without confirmation, the region-era guide keys gone, guides exist and cover their plants (crop list, heading, table, list item, bold or `<Term>`, or twice in prose; frontmatter, alt text and safety boxes ignored; a human check beyond that), `initDialogs` skipping `data-own-dialog`, `words.js`, `logic.js`.
+- [consortium-country.test.mjs](../../scripts/consortium-country.test.mjs): behaviour of the country and reason words with the real locale files: `pickCountry` (chosen survives reload and language switch, someone else's link, Start over, "No country", old saves), `guessCountry`, card and details reasons, the country line, the unchecked-country surfaces, `d.invNone`, `countryUnknown`, the core's required checked flag, and the review's wording fixes (m10, m11).
 - [check-built-site.mjs](../../scripts/check-built-site.mjs): the 11 built pages, their hreflang, header (current link through `consortiumPath`, from `src/i18n/consortium-path.js`), links and assets, and the installed data through `verifyInstall`.

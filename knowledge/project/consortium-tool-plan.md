@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:32:32Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:08:31Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:20:52Z }
 sources:
@@ -26,18 +26,18 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:f1cf0f7c11bd8e70
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:a76a16490a4f96c7
+    last_modified: 2026-10-28T13:02:34Z
   - id: consortium-app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:1e5bcb24674a7219
-    last_modified: 2026-10-28T12:22:55Z
+    digest: sha256:7bab146361dbcfcd
+    last_modified: 2026-10-28T13:02:34Z
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:49c68a7e30ab5289
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:8786f8fa6b1dcabf
+    last_modified: 2026-10-28T13:02:34Z
 ---
 
 Owner decisions: [Consortium tool — user decisions](/decisions/consortium-user-decisions.md).
@@ -81,7 +81,7 @@ the region-cell plan of format 2 is superseded where this page says so).
    open the tool preset (`?plant=<canonical_name>&climate=<id>`). A preset's
    climate applies to that consortium only and never changes the shared site
    climate (`canopi-climate`); only a climate the reader picks in the tool does.
-   A preset opens straight on the result; the country is the saved one or the guess.
+   A preset opens straight on the result; the country is the reader's own choice on this device, else the saved one, else the guess.
 
 ## Data path
 - `scripts/install-consortium.mjs <export-dir>`: verifies `SHA256SUMS`, the

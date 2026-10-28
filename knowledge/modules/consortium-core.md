@@ -4,7 +4,7 @@ title: Consortium core
 description: Format 3 types and the pure, dependency-free functions of the consortium tool (climate file lookup, country checks, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:32:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:08:31Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
@@ -16,8 +16,8 @@ sources:
   - id: climates-ts
     resource: ../../src/lib/consortium/climates.ts
     title: src/lib/consortium/climates.ts
-    digest: sha256:a282af6ba28808e0
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:8f5253475ea0a087
+    last_modified: 2026-10-28T13:02:34Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -31,13 +31,13 @@ sources:
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
-    digest: sha256:dd7c74da2d9d3b26
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:6cd9ea01fd21d687
+    last_modified: 2026-10-28T13:02:34Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:f1cf0f7c11bd8e70
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:a76a16490a4f96c7
+    last_modified: 2026-10-28T13:02:34Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
@@ -72,10 +72,10 @@ export under `public/data/consortium/`.
 | File | Exports |
 |---|---|
 | [types.ts](../../src/lib/consortium/types.ts) | `Manifest` (`climates`, `countries: Record<code, { invasive_checked }>`), `ManifestClimate`, `ClimateFile` (`regions[]`), `Taxon` (`reasons: Reason[]`), `Reason` (`region`, `text`, `sources`), `Traits`, `Warnings`, `Interaction`, `Source`, `Labels`; value lists `climateZones`, `regions`, `locales`, `phases`, `strata`, `functionIds`, `interactionTypes`; `FORMAT_VERSION` = 3 |
-| [climates.ts](../../src/lib/consortium/climates.ts) | `fileFor(manifest, climate)` → `ManifestClimate \| null`; `isCountry(manifest, code)`; `invasiveChecked(manifest, code)` (GRIIS checked that country); `climateZoneOf`, `siteClimates`, `isSiteClimate`, `isRegion` |
+| [climates.ts](../../src/lib/consortium/climates.ts) | `fileFor(manifest, climate)` → `ManifestClimate \| null`; `isCountry(manifest, code)`; `invasiveChecked(manifest, code)` (GRIIS checked that country); `climateZoneOf`, `siteClimates`, `isSiteClimate` |
 | [site.ts](../../src/lib/consortium/site.ts) | `Site`, `DEFAULT_SITE` (sun, soil and water unsure, large garden), `fits(taxon, site)` → `{ ok, misfits, unknowns }` |
 | [jobs.ts](../../src/lib/consortium/jobs.ts) | `jobs` (six ids), `jobsOf(taxon)`, `jobOfFunction`, `phaseBands`, `bandOf(phase)`, `bandsOf(taxon)` |
-| [conflicts.ts](../../src/lib/consortium/conflicts.ts) | `conflicts(members, interactions)`, `conflictsOf(taxon, others, interactions)`, `matches(ref, taxon)`, `isSerious`, `invasiveIn(taxon, country, checked = true)` → `true \| false \| null` (null when the country is unchecked or the record unknown), `invasiveCountries(taxon)` |
+| [conflicts.ts](../../src/lib/consortium/conflicts.ts) | `conflicts(members, interactions)`, `conflictsOf(taxon, others, interactions)`, `matches(ref, taxon)`, `isSerious`, `invasiveIn(taxon, country, checked)` → `true \| false \| null` (null when the country is unchecked, the record unknown, or `checked` is not given as true: a caller that forgets the flag never gets "none"), `invasiveCountries(taxon)` |
 | [suggest.ts](../../src/lib/consortium/suggest.ts) | `gain(taxon, members, site)` (term by term), `suggest(file, { site, kept, removed, country, countryChecked })` → `{ members, limit, gaps }` (the only function that fills), `evaluate(cell, ids, { site, kept, country })` → the same `{ members, limit, gaps }` for a fixed list, never refilled, `alternatives(memberId, consortium, cell, { site, removed, country })`, `flagsFor(cell, id, memberIds, { site, country })` (the flags of one plant against a list: what Add uses to sort and confirm), `SIZE_LIMIT` |
 | [state.ts](../../src/lib/consortium/state.ts) | `ConsortiumState` (`climate`, `country`, `noCountry`, `site`, `kept`, `removed`, `members`, `plants`), `encodeState(state, cell?)` → `URLSearchParams`, `decodeState(params, cell?)` → `{ state, dropped }`, `resolveState(decoded, cell)`, `taxonByName(cell, name)` (a guide's plant: exact canonical name, else case and spacing aside), `resolveIds(tokens, cell)`, `shortId(id, cell?)`, `MAX_LINK_IDS` = 256, `LINK_VERSION` = 2, `NO_COUNTRY` = `-` |
 | [index.ts](../../src/lib/consortium/index.ts) | re-exports all of the above |
@@ -86,7 +86,7 @@ export under `public/data/consortium/`.
 - **Site fit.** Light: sun/part/shade need `sun`/`semi_shade`/`full_shade`. Soil vs `soil_ph`: acid < 6, neutral 6–7.5, chalky > 7.5; a misfit only when the known bound rules out overlap. Water: dry is a misfit for drought tolerance Low/None (or, when that is unknown, moisture use High); wet is a misfit for `well_drained` true with drought tolerance High (or, when that is unknown, moisture use Low: the 2026-10-27 export's thyme, sage and *Asparagus acutifolius*). Room: small ≤ 6 m, large ≤ 12 m on height and width; field anything. An unknown trait is never a misfit, only an unknown.
 - **Gain.** `10·new jobs + 3·empty (stratum × band) cells + 1·cells with one member + 6·new stratum + 8·bands with no food yet (crops) + 4·second doer of feeds_soil/ground/mulch + 1·edibility − 3·weed potential − 0.5·unknowns`, where unknowns are the site checks `fits()` could not decide. Counted in integer tenths so ties are exact. Only plants that fill a gap (a new job, a cell with fewer than two members, a band with no food, a key job with one doer) are picked, until size = 6/9/12; ties go to the plant with more `names` (better known), then `canonical_name` in code-unit order (not `localeCompare`). On the 2026-10-28 format 3 export (three climate files, 200 plants each) the default site (full sun, soil and water not sure) fills every climate to its limit in each room, but 50 of the 432 site combinations (3 climates × 3 lights × 4 soils × 4 waters × 3 rooms) fill fewer places than the room allows, because too few plants fit; the slowest of the 432 took 42 ms (cold). A short consortium is expected, not a bug: the page reports the free places.
 - **Evaluate.** `evaluate()` scores a fixed list (the page's state after a Remove, whose gap stays, or a restored link): members in the order given, repeats and ids not in the file ignored, the same flags as `suggest()` (one shared code path), a gain of what each adds to those before it (null when kept), and the gaps. The ids of a suggestion give that suggestion back.
-- **Suggest.** Kept plants come first and always stay, flagged or not (kept wins over removed; ids not in the cell are ignored). Automatic picks skip misfits, medium/high conflicts with a member, and removed ids. The country never changes the plants (owner, 2026-10-28): a plant invasive in it is still picked, and carries `flags.invasive === true` as a warning. `flagged` (what keeps a plant out of automatic picks and makes Add or Swap ask first) is a misfit or a medium/high conflict only. Every member carries `flags` (`misfits`, `unknowns`, `invasive`, `conflicts`, `flagged`); `invasive` is null when the country is unset or `countryChecked` is false.
+- **Suggest.** Kept plants come first and always stay, flagged or not (kept wins over removed; ids not in the cell are ignored). Automatic picks skip misfits, medium/high conflicts with a member, and removed ids. The country never changes the plants (owner, 2026-10-28): a plant invasive in it is still picked, and carries `flags.invasive === true` as a warning. `flagged` (what keeps a plant out of automatic picks and makes Add or Swap ask first) is a misfit or a medium/high conflict only. Every member carries `flags` (`misfits`, `unknowns`, `invasive`, `conflicts`, `flagged`); `invasive` is null when the country is unset or `countryChecked` is not true; the `Country` option type requires `countryChecked` whenever `country` is a string.
 - **Conflicts.** Rows match at species (canonical name), genus or family, in either member order; a same-genus row pairs two members once. `allelopathy_tolerant` rows are not conflicts. `suggest()`'s exclusion of medium/high partners is built from `conflicts()` over the whole cell, so it matches exactly as the flags do.
 - **Alternatives.** Plants without a flag first, flagged ones (misfit, medium/high conflict) last so the page can list them under a warning; within each, same stratum, then most shared jobs, then gain against the rest, then better known, then name. Members and removed plants are not listed.
 - **Share links.** Keys `v c k l s w m p x a`; site keys always written. `k` is written only when the state has a country (the page leaves out a guessed one); `k=-` (`NO_COUNTRY`) is "No country", which the page writes only to its local save. `a` is the members in order (absent: the page suggests; present: it calls `evaluate()`). Links from the region era carry `r` and `b`: both are ignored silently. `LINK_VERSION` stays 2 (the link changed less than the files). Ids are shortened to the first 8 hex characters, lengthened at UUID segment boundaries (13, 18, 23, 36) when another taxon of the cell shares the prefix, joined with `.`; at most `MAX_LINK_IDS` tokens are read per key, the rest reported once as `excess` with their count. Decoding never throws; unknown, malformed, ambiguous, duplicate and excess values go to `dropped`.
