@@ -28,8 +28,10 @@ const shoots = xs.flatMap((x) => [-14, -4, 6, 15].map((dx, k) => {
   };
 }));
 ---
-<div class="guide-hh">
-  <ol class="guide-stages guide-hh-stages" role="img" aria-label={alt}>
+{/* One image for the whole cycle: the list inside is drawing, hidden from the accessibility tree (an
+    <ol role="img"> would leave its items without a list). */}
+<div class="guide-hh" role="img" aria-label={alt}>
+  <ol class="guide-stages guide-hh-stages" aria-hidden="true">
     {stages.map((label, i) => (
       <li class="guide-stage">
         <svg viewBox={`0 0 ${W} ${G + 6}`} aria-hidden="true">

@@ -324,6 +324,9 @@
 /* The other editions as language codes, like a catalogue's shelf marks; each names its language on hover. */
 .book-editions { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 9px; margin-top: 3px; font-size: 13px; color: var(--text-muted); }
 .book-editions a { padding: 2px 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-decoration: none; color: var(--text-secondary); }
+/* WCAG 2.2 target size: each edition badge and guide link is at least 24 × 24 px. */
+.book-editions a { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; }
+.book-guides a { display: inline-block; min-height: 24px; line-height: 24px; }
 .book-editions a:hover { color: var(--accent-ink); text-decoration: underline; }
 .bibliography-more { margin-top: 8px; }
 /* On /bibliography/, the way to the guides drawn from these books. */
