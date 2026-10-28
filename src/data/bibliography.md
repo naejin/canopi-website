@@ -165,6 +165,12 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - year: 2017
 - fr: [Découvrir et protéger nos abeilles sauvages](https://www.glenat.com/glenat-livres/decouvrir-et-proteger-nos-abeilles-sauvages-9782344021521/)
 
+### The Pollinator Victory Garden
+- id: pollinator-victory-garden
+- by: Kim Eierman
+- year: 2020
+- en: [The Pollinator Victory Garden: Win the War on Pollinator Decline with Ecological Gardening](https://www.quarto.com/books/9781631597503/the-pollinator-victory-garden)
+
 ### Les auxiliaires au jardin
 - by: Vincent Albouy
 - year: 2018
