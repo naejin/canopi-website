@@ -4,7 +4,7 @@
 // real Temperate list (public/data/consortium/, 200 plants).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import * as S from '../src/scripts/consortium/scale.js';
 import * as core from '../src/lib/consortium/index.ts';
 
@@ -292,4 +292,20 @@ test('K6: when the room flags a plant by its height, the height shown is the siz
   }
   assert.ok(seen > 0);
   assert.equal(S.shownHeight({ traits: { height_m: { max: 6.096 } } }, 6), 6.1);
+});
+
+test('pest names come only from the data: a chip names agent_names in the page language, else the scientific name', () => {
+  const sourced = { names: { en: 'agent one', nl: 'agent een' }, sources: ['eppo-x', 'usage-x'] };
+  const flags = { conflicts: [
+    { type: 'shared_pest', agent: 'Agentus primus', agent_names: sourced },
+    { type: 'alternate_host', agent: 'Agentus secundus', agent_names: null },
+    { type: 'shared_pest', agent: 'Agentus primus', agent_names: sourced },
+    { type: 'allelopathic_harm', agent: 'juglone', agent_names: null },
+  ] };
+  assert.deepEqual(S.pestLabels(flags, 'en'), ['agent one', 'Agentus secundus']);
+  assert.deepEqual(S.pestLabels(flags, 'nl'), ['agent een', 'Agentus secundus']);
+  assert.deepEqual(S.pestLabels(flags, 'fr'), ['Agentus primus', 'Agentus secundus']);
+  assert.deepEqual(S.pestsOf(flags), ['Agentus primus', 'Agentus secundus']);
+  // No list of names written by hand: the module that held one is gone.
+  assert.ok(!existsSync(new URL('../src/scripts/consortium/pests.js', import.meta.url)));
 });

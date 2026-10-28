@@ -1,6 +1,6 @@
 {
   "format_version": 3,
-  "generated_at": "2026-10-28T11:56:34Z",
+  "generated_at": "2026-10-28T19:07:37Z",
   "canopi_db_sha256": "49a54334d5d629d22f04171421f64939162d1c0913ae5a304a4440ac3a1f5537",
   "climates": [
     {
@@ -11,7 +11,7 @@
       ],
       "taxa": 200,
       "interactions": 25,
-      "sha256": "e869f3d4cbc14041f1ef58b59206e16a4e54b10ea922e39ce9a463906be892dc"
+      "sha256": "39575dc8044519ec9a7d166a741831c072f8c09119509ee51024179185ef1352"
     },
     {
       "climate_zone": "Mediterranean",
@@ -21,7 +21,7 @@
       ],
       "taxa": 200,
       "interactions": 55,
-      "sha256": "22f762c7c26cdee55eb7e4973516c7bffaec2f8d5d80496bdb39adebdd10295c"
+      "sha256": "d912043a8318fde750d721891ffd23fee7be8be68391bf99f6ad476bb369386f"
     },
     {
       "climate_zone": "Temperate",
@@ -31,7 +31,7 @@
       ],
       "taxa": 200,
       "interactions": 54,
-      "sha256": "bf1514953cc32d9527a88156a100ccfca157098241f63d2867e2ea32fd1122cf"
+      "sha256": "607b28db35099b0dc53af4d40f5084a430970773a7f6e920ad981ba8b2406f02"
     }
   ],
   "locales": [

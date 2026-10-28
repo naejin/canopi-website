@@ -562,3 +562,27 @@ function resum(w, name) {
   });
   writeFileSync(join(w.out, 'SHA256SUMS'), `${lines.join('\n')}\n`);
 }
+
+test('agent_names (format 3, added 2026-10-28): optional or null, names keyed by the 11 site locales, sources cited and defined', async (t) => {
+  const cell = JSON.parse(readFileSync(join(fixture, 'tropical.json'), 'utf8'));
+  const i = cell.interactions.findIndex((x) => x.agent_names);
+  assert.ok(i >= 0, 'the fixture carries one agent_names');
+  assert.deepEqual(shapeErrors(cell, cellShape), []);
+  const fine = structuredClone(cell);
+  fine.interactions[i].agent_names = null;
+  delete fine.interactions[(i + 1) % fine.interactions.length].agent_names;
+  assert.deepEqual(shapeErrors(fine, cellShape), []);
+  const broken = structuredClone(cell);
+  broken.interactions[i].agent_names = { names: { en: 'x', xx: 'y' }, sources: cell.interactions[i].agent_names.sources };
+  assert.match(shapeErrors(broken, cellShape).join('\n'), /agent_names\.names: has a key "xx"/);
+  broken.interactions[i].agent_names = { names: { en: 'x' }, sources: [] };
+  assert.match(shapeErrors(broken, cellShape).join('\n'), /agent_names\.sources/);
+  broken.interactions[i].agent_names = { names: { en: 42 }, sources: ['s'] };
+  assert.match(shapeErrors(broken, cellShape).join('\n'), /agent_names\.names\.en/);
+  // Its sources must be defined, as every other source the file cites.
+  const w = workspace(t);
+  const c = w.json('tropical.json');
+  c.interactions[i].agent_names.sources = ['nobody-agent-2099'];
+  w.write('tropical.json', c);
+  await assert.rejects(install(w), /tropical\.json cites undefined sources: nobody-agent-2099/);
+});

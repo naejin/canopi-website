@@ -80,6 +80,14 @@ export function warnKinds(t, flags, { country }) {
 }
 // The pests and diseases a plant shares, each named once, in the order of its conflicts.
 export const pestsOf = (flags) => [...new Set((flags?.conflicts ?? []).filter((c) => PEST_TYPES.has(c.type) && c.agent).map((c) => c.agent))];
+// What a pest chip names, one per agent: the agent's common name in the page language from the data
+// (agent_names, EPPO names chosen by a usage source), else its scientific name. Never a name written
+// here: an owner rule forbids model-written names.
+export function pestLabels(flags, lang) {
+  const by = new Map();
+  for (const c of flags?.conflicts ?? []) if (PEST_TYPES.has(c.type) && c.agent && !by.has(c.agent)) by.set(c.agent, c.agent_names?.names?.[lang] ?? c.agent);
+  return [...by.values()];
+}
 
 // The list's filters: layer, job, time (a stage index), warning (a WARN_KINDS value), kept (crops.js
 // KEPT_FILTERS) and the text typed; they combine with AND. An empty value lets everything through.

@@ -140,6 +140,9 @@ const interaction = obj({
   subject: taxonRef, object: taxonRef,
   type: oneOf('allelopathic_harm', 'allelopathy_tolerant', 'alternate_host', 'shared_pest'),
   agent: orNull(str),
+  // Added within format 3 (2026-10-28): the agent's common names by site locale, each an EPPO name
+  // chosen by a usage source (canopi-data docs/consortium-export-format.md); absent reads as null.
+  agent_names: optional(orNull(obj({ names: map(str, LOCALES), sources: sourceIds }))),
   severity: orNull(oneOf('low', 'medium', 'high')),
   note: optional(orNull(text)),
   sources: sourceIds,
@@ -277,7 +280,7 @@ function citedSources(cell) {
     add(t.warnings.toxicity?.sources);
     for (const r of t.warnings.invasive_in ?? []) add(r.sources);
   }
-  for (const i of cell.interactions) add(i.sources);
+  for (const i of cell.interactions) { add(i.sources); add(i.agent_names?.sources); }
   return ids;
 }
 

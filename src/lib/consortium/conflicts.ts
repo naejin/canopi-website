@@ -3,7 +3,7 @@
 // canonical name, genus, family), so a genus row matches every species of the genus.
 // `allelopathy_tolerant` rows record a plant that tolerates another's allelopathy; they are good
 // news, not conflicts, so conflicts() leaves them out.
-import type { Interaction, InteractionType, Severity, Taxon, TaxonRef, Text } from './types.ts';
+import type { AgentNames, Interaction, InteractionType, Severity, Taxon, TaxonRef, Text } from './types.ts';
 
 export interface Conflict {
   a: Taxon; // matches the row's subject
@@ -11,6 +11,7 @@ export interface Conflict {
   type: Exclude<InteractionType, 'allelopathy_tolerant'>;
   severity: Severity | null;
   agent: string | null;
+  agent_names: AgentNames | null; // the agent's sourced common names, null when none was chosen
   note: Text | null;
   sources: string[];
 }
@@ -37,7 +38,7 @@ export function conflicts(members: Taxon[], interactions: Interaction[]): Confli
         const key = a.id < b.id ? `${a.id} ${b.id}` : `${b.id} ${a.id}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        out.push({ a, b, type: row.type, severity: row.severity, agent: row.agent, note: row.note ?? null, sources: row.sources });
+        out.push({ a, b, type: row.type, severity: row.severity, agent: row.agent, agent_names: row.agent_names ?? null, note: row.note ?? null, sources: row.sources });
       }
     }
   }
@@ -55,7 +56,7 @@ export function conflictsOf(taxon: Taxon, others: Taxon[], interactions: Interac
     for (const o of others) {
       if (o.id === taxon.id) continue;
       const pair = asSubject && matches(row.object, o) ? [taxon, o] : asObject && matches(row.subject, o) ? [o, taxon] : null;
-      if (pair) out.push({ a: pair[0], b: pair[1], type: row.type, severity: row.severity, agent: row.agent, note: row.note ?? null, sources: row.sources });
+      if (pair) out.push({ a: pair[0], b: pair[1], type: row.type, severity: row.severity, agent: row.agent, agent_names: row.agent_names ?? null, note: row.note ?? null, sources: row.sources });
     }
   }
   return out;

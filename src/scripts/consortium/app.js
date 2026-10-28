@@ -21,8 +21,7 @@ import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, c
 import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
-import { pestName } from './pests.js';
-import { viewMode, groupOpen, roundHeight, misfitSize, shownHeight, stageSpan, stageShort, warnKinds, pestsOf, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, pasteColumn, pasteDefault, PEST_TYPES, CARDS_UP_TO } from './scale.js';
+import { viewMode, groupOpen, roundHeight, misfitSize, shownHeight, stageSpan, stageShort, warnKinds, pestLabels, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, pasteColumn, pasteDefault, PEST_TYPES, CARDS_UP_TO } from './scale.js';
 
 const data = JSON.parse(document.getElementById('ct-data').textContent);
 const W = makeWords(data.strings, data.lang);
@@ -746,9 +745,9 @@ function rowWarns(t, flags) {
   const out = [], tox = t.warnings.toxicity?.level;
   if (flags.invasive === true) out.push({ cls: 'warn-inv', icon: I.warn, text: T('invHere', { country: W.country(S.country) }) });
   if (tox === 'Moderate' || tox === 'Severe') out.push({ cls: 'warn-tox', icon: I.danger, text: T('tox.' + tox) });
-  const pests = pestsOf(flags);
-  // C6: the pests by their common names (pests.js); the details keep the scientific one.
-  if (pests.length) out.push({ cls: 'warn-pest', icon: BUG, text: capFirst(pests.slice(0, 2).map((a) => pestName(a, lang)).join(' · '), lang) });
+  const pests = pestLabels(flags, lang);
+  // C6: the pests by their sourced common names (agent_names, scale.js pestLabels); the details keep the scientific one.
+  if (pests.length) out.push({ cls: 'warn-pest', icon: BUG, text: capFirst(pests.slice(0, 2).join(' · '), lang) });
   for (const k of flags.misfits) out.push({ cls: 'warn-site', icon: SITE, text: misfitText(t, k) });
   for (const c of flags.conflicts) if (!PEST_TYPES.has(c.type) && isSerious(c)) out.push({ cls: 'warn-site', icon: SITE, text: T('conflict', { other: nameText(otherOf(c, t)) }) });
   if (tox === 'Slight') out.push({ cls: 'warn-soft', icon: I.warn, text: T('tox.Slight') });
@@ -1107,7 +1106,7 @@ function detailsParts(t) {
   if (al == null) items.push(item('unknown', I.unknown, esc(T('unkAllelo')), esc(T('d.alleloUnk'))));
   if (wp === false) items.push(item('checked', I.check, `${esc(T('d.spreadsNone'))} <span class="muted">(${esc(T('d.checked'))})</span>`));
   if (wp == null) items.push(item('unknown', I.unknown, esc(T('unkSpreads')), esc(T('d.spreadsUnk'))));
-  const srcIds = new Set([...(t.reasons ?? []).flatMap((r) => r.sources), ...(t.stratum?.sources ?? []), ...(t.phases?.sources ?? []), ...(t.functions ?? []).flatMap((x) => x.sources), ...(tox?.sources ?? []), ...invasiveSourceIds(inv, sources), ...flags.conflicts.flatMap((c) => c.sources)]);
+  const srcIds = new Set([...(t.reasons ?? []).flatMap((r) => r.sources), ...(t.stratum?.sources ?? []), ...(t.phases?.sources ?? []), ...(t.functions ?? []).flatMap((x) => x.sources), ...(tox?.sources ?? []), ...invasiveSourceIds(inv, sources), ...flags.conflicts.flatMap((c) => [...c.sources, ...(c.agent_names?.sources ?? [])])]);
   const srcs = [...srcIds].map((id) => sources[id] ?? cell.sources[id]).filter(Boolean);
   const guides = (data.plantGuides[t.canonical_name] ?? []).filter(guide);
   const img = t.image, pageHref = safeHref(img?.source_page_url);
@@ -1567,6 +1566,9 @@ const shareLink = () => shareUrl(location, linkQuery(false), MINE);
 function persist() {
   // The crop question is not written: a reload asks it again, or returns to the result it came from.
   if (!S.climate || !manifest || !mayPersist(S) || S.status === 'setup' || S.status === 'crops') return;
+  // A tool state in the address bar that this page did not write (a link pasted while the page was
+  // still starting, its hashchange not yet handled) is read with a reload, never written over.
+  if (location.hash !== lastHash && isToolState(new URLSearchParams(location.hash.slice(1)))) { location.reload(); return; }
   const query = (saved) => linkQuery(saved).toString();
   const q = query(false);
   lastHash = '#' + q;

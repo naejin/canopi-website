@@ -113,11 +113,16 @@ export interface Taxon {
 
 export interface TaxonRef { name: string; rank: Rank }
 
+export interface AgentNames { names: Partial<Record<Locale, string>>; sources: string[] }
+
 export interface Interaction {
   subject: TaxonRef;
   object: TaxonRef;
   type: InteractionType;
   agent: string | null;
+  // The agent's common names by site locale (EPPO names chosen by a usage source) and those sources;
+  // absent or null: none chosen, the page shows `agent` (added within format 3, 2026-10-28).
+  agent_names?: AgentNames | null;
   severity: Severity | null;
   note?: Text | null;
   sources: string[];
