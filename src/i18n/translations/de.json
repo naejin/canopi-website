@@ -624,5 +624,6 @@
   "consortium.redoneSite": "Neue Pflanzen für diesen Standort vorgeschlagen. Behaltene Pflanzen bleiben.",
   "consortium.redonePlace": "Dein Konsortium für {where} wurde beiseitegelegt.",
   "consortium.nc.why": "Für dieses Klima deckt die Beta {region} ab, und in den Daten zählt das gewählte Land ({country}) zu {north}.",
-  "consortium.removeShort": "Entfernen"
+  "consortium.removeShort": "Entfernen",
+  "consortium.useInstead": "Stattdessen diese nehmen"
 }

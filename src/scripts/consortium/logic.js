@@ -94,3 +94,11 @@ export function coverageHint(manifest, climate, country) {
   const has = (r) => manifest.cells.some((c) => c.climate_zone.toLowerCase() === climate && c.region === r);
   return has('southern_america') && !has('northern_america') ? { region: 'southern_america', north: 'northern_america' } : null;
 }
+
+// The member a Swap replaces: the Swap list's own, and the same from a plant's details opened from
+// that list, so those details offer "Use this instead" and never only Add (prepush m4). null for
+// details opened from a plant row or from Add.
+export function swapTarget(sheet) {
+  if (sheet?.type === 'swap') return sheet.id;
+  return sheet?.type === 'details' && sheet.back?.type === 'swap' ? sheet.back.id : null;
+}

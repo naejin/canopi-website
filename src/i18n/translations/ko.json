@@ -624,5 +624,6 @@
   "consortium.redoneSite": "이 터에 맞게 식물을 다시 골랐습니다. 남긴 식물은 그대로입니다.",
   "consortium.redonePlace": "{where}용 컨소시엄은 잠시 치워 두었습니다.",
   "consortium.nc.why": "이 기후에서 베타는 {region}을(를) 다루며, 데이터에서는 {country}이(가) {north}에 속합니다.",
-  "consortium.removeShort": "빼기"
+  "consortium.removeShort": "빼기",
+  "consortium.useInstead": "대신 이것으로"
 }

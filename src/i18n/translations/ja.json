@@ -624,5 +624,6 @@
   "consortium.redoneSite": "この敷地に合わせて植物を選び直しました。残している植物はそのままです。",
   "consortium.redonePlace": "{where}向けのコンソーシアムはいったん外しました。",
   "consortium.nc.why": "この気候でベータ版が扱うのは{region}で、データでは{country}は{north}に含まれます。",
-  "consortium.removeShort": "外す"
+  "consortium.removeShort": "外す",
+  "consortium.useInstead": "代わりにこれにする"
 }

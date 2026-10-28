@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { pluralForms, makeWords, needsLook, searchText, fold, plantName } from '../src/scripts/consortium/words.js';
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
 import * as core from '../src/lib/consortium/index.ts';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint } from '../src/scripts/consortium/logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget } from '../src/scripts/consortium/logic.js';
 import { profileSVG } from '../src/scripts/consortium/draw.js';
 import { crops } from '../src/data/crops.ts';
 
@@ -552,4 +552,20 @@ test('logic: Tropical in a Northern American country says why it is not covered 
   }
   assert.ok(names.en);
   assert.match(appJs, /coverageHint\(manifest, S\.climate, S\.country\)/);
+});
+
+test('details opened from the Swap list swap that plant in, never only add it; from Add they add (prepush m4)', () => {
+  const swap = { type: 'swap', id: 'member-1' };
+  assert.equal(swapTarget(swap), 'member-1');
+  assert.equal(swapTarget({ type: 'details', id: 'alt-1', back: swap }), 'member-1', 'details from Swap replace the member');
+  assert.equal(swapTarget({ type: 'details', id: 'alt-1', back: { type: 'add', filter: '' } }), null, 'details from Add add');
+  assert.equal(swapTarget({ type: 'details', id: 'alt-1' }), null, 'details from a plant row');
+  assert.equal(swapTarget(null), null);
+  // The footer of such details offers "Use this instead" (with its confirmation for a flagged plant),
+  // and use / use-yes replace the member the Swap list was for.
+  assert.match(app, /replacing = inMembers \? null : swapTarget\(O\)/);
+  assert.match(app, /replacing\s*\?\s*\(O\.confirm === t\.id \? confirmHTML\(t\.id, 'use'\) : btn\('button button-primary button-small', 'use', t\.id, `\$\{I\.swap\}\$\{esc\(T\('useInstead'\)\)\}`/);
+  assert.match(app, /use\(v\) \{ const from = swapTarget\(O\)/);
+  assert.match(app, /'use-yes'\(v\) \{\s*const old = swapTarget\(O\)/);
+  for (const lang of locales) assert.ok(strings[lang].useInstead, `${lang}: useInstead`);
 });

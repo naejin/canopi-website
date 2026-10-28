@@ -624,5 +624,6 @@
   "consortium.redoneSite": "Для этого участка подобраны новые растения. Оставленные остаются.",
   "consortium.redonePlace": "Консорциум для места «{where}» отложен.",
   "consortium.nc.why": "Для этого климата бета охватывает регион «{region}», а в данных {country} относится к региону «{north}».",
-  "consortium.removeShort": "Удалить"
+  "consortium.removeShort": "Удалить",
+  "consortium.useInstead": "Выбрать взамен"
 }

@@ -10,7 +10,7 @@ import {
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadCell } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook } from './words.js';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint } from './logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget } from './logic.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
 
@@ -527,8 +527,9 @@ function jobsHTML() {
 
 // ---------- Sheets ----------
 function detailsParts(t) {
-  const inMembers = S.members.includes(t.id);
-  const flags = inMembers ? flagsById().get(t.id) : flagsFor(cell, t.id, S.members, { site: S.site, country: S.country });
+  const inMembers = S.members.includes(t.id), replacing = inMembers ? null : swapTarget(O);
+  // From the Swap list, the flags it would carry in that member's place (the list's own), else beside the members.
+  const flags = inMembers ? flagsById().get(t.id) : (replacing && swapFlags(replacing, t.id)) || flagsFor(cell, t.id, S.members, { site: S.site, country: S.country });
   const tr = t.traits, s = stratumOf(t), tw = W.timeWords(t);
   const unknown = `<span class="unknown">${esc(T('unknown'))}</span>`;
   const label = (field, v) => esc(labels?.[field]?.[v]?.[lang] ?? v);
@@ -590,6 +591,7 @@ function detailsParts(t) {
   const kept = S.kept.has(t.id), n = nameText(t);
   const foot = inMembers
     ? `${btn('button button-primary button-small', 'swap', t.id, `${I.swap}${esc(T('swap'))}`, fk('d-swap'))}${btn('button button-secondary button-small', 'keep', t.id, `${kept ? I.pinOn : I.pin}<span>${esc(T(kept ? 'unkeep' : 'keep', { name: n }))}</span>`, `aria-pressed="${kept}" ${fk('d-keep')}`)}${btn('button button-secondary button-small', 'remove', t.id, `${I.remove}<span>${esc(T('remove', { name: n }))}</span>`, fk('d-remove'))}`
+    : replacing ? (O.confirm === t.id ? confirmHTML(t.id, 'use') : btn('button button-primary button-small', 'use', t.id, `${I.swap}${esc(T('useInstead'))}`, fk('d-use')))
     : O.confirm === t.id ? confirmHTML(t.id, 'add') : btn('button button-primary button-small', 'add', t.id, esc(T('add')), fk('d-add'));
   return { head: headHTML, body, foot };
 }
@@ -601,8 +603,10 @@ function altRow(t, why, act, label, flags, opts = {}) {
     <span class="alt-why">${why}</span>${chipsHTML(t, flags)}</div>
     ${opts.disabled ? `<span class="seg-hint">${esc(T('inConsortium'))}</span>` : confirming ? confirmHTML(t.id, act) : btn(`button button-small ${opts.primary ? 'button-primary' : 'button-secondary'}`, act, t.id, esc(label), `aria-label="${esc(label)}: ${esc(nameText(t))}" ${fk(act + '-' + t.id)}`)}</li>`;
 }
+// The flags of a plant in the Swap list of member `from`.
+const swapFlags = (from, id) => alternatives(from, S.members, cell, { site: S.site, removed: [...S.removed], country: S.country }).find((a) => a.taxon.id === id)?.flags ?? null;
 function confirmHTML(id, act) {
-  const t = taxonOf(id), flags = O.type === 'swap' ? alternatives(O.id, S.members, cell, { site: S.site, removed: [...S.removed], country: S.country }).find((a) => a.taxon.id === id)?.flags : flagsFor(cell, id, S.members, { site: S.site, country: S.country });
+  const t = taxonOf(id), from = act === 'use' ? swapTarget(O) : null, flags = from ? swapFlags(from, id) : flagsFor(cell, id, S.members, { site: S.site, country: S.country });
   return `<div class="confirm" role="alertdialog" aria-labelledby="ct-confirm-t" aria-describedby="ct-confirm-d"><p id="ct-confirm-t"><strong>${T('confirmTitle', { name: name(t) })}</strong></p><p id="ct-confirm-d">${T('confirmText', { warnings: W.list(warnPlain(t, flags, false)) })}</p>
     <div class="actions">${btn('button button-primary button-small', act + '-yes', id, esc(T(act === 'use' ? 'confirmUse' : 'confirmAdd')), fk('confirm-yes'))}${btn('button button-secondary button-small', 'confirm-no', null, esc(T('cancel')), fk('confirm-no'))}</div></div>`;
 }
@@ -786,7 +790,7 @@ dlg.addEventListener('close', () => {
   if (from) focusFk(from, app);
 });
 // Back to the button a confirmation came from.
-const confirmFrom = (id) => (O.type === 'details' ? 'd-add' : (O.type === 'swap' ? 'use-' : 'add-') + id);
+const confirmFrom = (id) => (O.type === 'details' ? (swapTarget(O) ? 'd-use' : 'd-add') : (O.type === 'swap' ? 'use-' : 'add-') + id);
 dlg.addEventListener('cancel', (e) => { if (O?.confirm) { e.preventDefault(); const id = O.confirm; O.confirm = null; renderSheet(confirmFrom(id)); } else if (O?.back) { e.preventDefault(); O = O.back; renderSheet(); } });
 
 function toast(text, undo = null) {
@@ -961,9 +965,9 @@ const act = {
     const next = [...dlg.querySelectorAll('[data-act=use]')].find((b) => !before.has(b.dataset.v));
     (next ?? dlg.querySelector('.dialog-close')).focus();
   },
-  use(v) { const a = alternatives(O.id, S.members, cell, { site: S.site, removed: [...S.removed], country: S.country }).find((x) => x.taxon.id === v); if (a?.flags.flagged) { O.confirm = v; renderSheet('confirm-yes'); } else act['use-yes'](v); },
+  use(v) { const from = swapTarget(O); if (swapFlags(from, v)?.flagged) { O.confirm = v; renderSheet('confirm-yes'); } else act['use-yes'](v); },
   'use-yes'(v) {
-    const old = O.id, a = taxonOf(old), b = taxonOf(v);
+    const old = swapTarget(O), a = taxonOf(old), b = taxonOf(v);
     S.members = S.members.map((id) => (id === old ? v : id)); S.kept.delete(old); S.kept.add(v); S.removed.add(old);
     closeSheet(false); focusNext = 'pn-' + v; render(); flash(v); toast(T('swapped', { a: name(a), b: name(b) }));
   },

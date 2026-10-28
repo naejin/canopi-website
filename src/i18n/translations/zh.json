@@ -624,5 +624,6 @@
   "consortium.redoneSite": "已按这个场地重新推荐植物。保留的植物不变。",
   "consortium.redonePlace": "你为{where}做的植物联合体已放到一边。",
   "consortium.nc.why": "这个气候在测试版中只覆盖{region}，而数据把{country}归入{north}。",
-  "consortium.removeShort": "移除"
+  "consortium.removeShort": "移除",
+  "consortium.useInstead": "改用这个"
 }
