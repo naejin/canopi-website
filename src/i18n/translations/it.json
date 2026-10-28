@@ -498,7 +498,7 @@
   "consortium.d.toxUnk": "La tossicità non è ancora stata controllata. Trattala con cautela fino ad allora.",
   "consortium.d.invHere": "Registrata come invasiva in: {country}. Può diffondersi dai giardini all’ambiente naturale. Controlla le norme locali prima di piantarla.",
   "consortium.d.invList": "one: Registrata come invasiva in # paese | other: Registrata come invasiva in # paesi",
-  "consortium.d.invNone": "Non registrata come invasiva in nessun paese controllato da GRIIS",
+  "consortium.d.invNone": "Non registrata come invasiva in nessun paese controllato dal registro mondiale delle specie invasive (GRIIS)",
   "consortium.d.invUnk": "Non è ancora stato controllato se è invasiva.",
   "consortium.invNotChecked": "Non verificata in: {country}",
   "consortium.invStatusNotChecked": "invasività non verificata in questo paese: {country}",

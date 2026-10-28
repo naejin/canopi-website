@@ -12,8 +12,9 @@ import {
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadClimate } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook, capFirst } from './words.js';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard, pickCountry, guessCountry } from './logic.js';
-import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, invasiveCardNote, invasiveDetails } from './parts.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard, guessCountry, linkCountry, langSearch, chosenHere, printNoneKey, invasiveSourceIds } from './logic.js';
+import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, invasiveCardNote, invasiveDetails, countryAnnouncement } from './parts.js';
+import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
 
@@ -29,10 +30,10 @@ const head = document.getElementById('ct-head');
 const printEl = document.getElementById('ct-print');
 const phoneMQ = matchMedia('(max-width: 639px)');
 const phone = () => phoneMQ.matches;
-const STORE = 'canopi-consortium';
-// The reader's own country choice ('FR', or '-' for "No country"), apart from the consortium, so a
-// reload in any status and Start over keep it (m12). A guess is never written.
-const COUNTRY_STORE = 'canopi-country';
+// The save, the reader's country choice (device and tab) and Start over's part of them (memory.js).
+const memory = memoryOf({ storage: (() => { try { return localStorage; } catch { return null; } })(), history, location });
+// The reader's own country choice ('FR', '-' for "No country", or null), carried by the language links.
+let myCountry = null;
 // The core's lists: the site answers as the core has them, and the climates in the site picker's
 // order (src/data/climates.ts, seam m5).
 const SITE_OPTIONS = { light: lights, soil: soils, water: waters, room: rooms };
@@ -77,7 +78,7 @@ let manifest = null, labels = null, cell = null;
 // cleared here), 'link' (a share link's k), 'saved' (this device's last consortium); null with no
 // country and no choice. noCountry: the user chose "No country" (k=- in the saved state only).
 const fresh = () => ({
-  climate: null, climateSource: null, country: null, countrySource: null, noCountry: false, unknownCountry: null,
+  climate: null, climateSource: null, country: null, countrySource: null, noCountry: false, unknownCountry: null, linkCode: null,
   site: { ...DEFAULT_SITE }, status: 'boot', members: [], kept: new Set(), removed: new Set(), gaps: [],
   view: 'layers', explain: null, notice: null, dropped: 0, guidePlant: null, guideId: null, restoredAt: null, pending: null,
 });
@@ -149,9 +150,8 @@ function warnParts(t, flags) {
   // copy-m18: slight toxicity is a caution (soft chip), not the red danger mark.
   if (tox && tox.level !== 'None') severe.push({ cls: tox.level === 'Slight' ? 'soft' : 'danger', text: T('tox.' + tox.level), look: tox.level !== 'Slight' });
   if (flags.invasive === true) severe.push({ cls: 'warning', text: esc(T('invHere', { country: W.country(S.country) })), look: true });
-  // A country GRIIS has no list for: "not checked in {country}" on its own chip (m2).
+  // A country GRIIS has no list for is said once per view and in details, not on every card (m-2).
   const invNote = invasiveCardNote(W, { ...place(), inv: invasiveCountries(t) });
-  if (invNote?.cls === 'unknown') severe.push({ cls: 'unknown', text: esc(invNote.text), look: false });
   for (const c of flags.conflicts) severe.push({ cls: isSerious(c) ? 'warning' : 'soft', text: T('conflict', { other: name(otherOf(c, t)) }), look: isSerious(c), conflict: c });
   for (const k of flags.misfits) severe.push({ cls: 'warning', text: esc(misfitText(t, k)), look: true, misfit: k });
   if (t.warnings.allelopathic === true) soft.push(T('c.allelo'));
@@ -231,7 +231,8 @@ function countryList() {
 }
 // The country sheet: the browser's guess as a one-tap card, the search, and "No country".
 function countryPicker() {
-  const g = browserCountry, inUse = g && S.country === g;
+  // The guess is marked as chosen only once the reader picks it (m-4).
+  const g = browserCountry, inUse = chosenHere({ guess: g, country: S.country, source: S.countrySource });
   const sug = g ? `<button class="suggest-country" type="button" data-act="country" data-v="${g}" aria-pressed="${!!inUse}" ${fk('suggest')}><span class="flagless" aria-hidden="true">${g}</span><span><strong>${esc(W.country(g))}</strong><small>${esc(T('fromBrowser'))}</small>${noListNote(g)}</span><span class="go">${inUse ? `${I.check}${esc(T('inUse'))}` : esc(T('useIt'))}</span></button>` : '';
   return `${sug}<div class="field"><label for="ct-country-q">${esc(T('searchCountry'))}</label>
     <div class="search">${I.search}<input id="ct-country-q" type="search" autocomplete="off" spellcheck="false" placeholder="${esc(T('countryPlaceholder'))}" value="${esc(countryQuery)}" data-input="country" ${fk('country-q')}></div>
@@ -577,7 +578,7 @@ function detailsParts(t) {
   if (al == null) items.push(item('unknown', I.unknown, esc(T('unkAllelo')), esc(T('d.alleloUnk'))));
   if (wp === false) items.push(item('checked', I.check, `${esc(T('d.spreadsNone'))} <span class="muted">(${esc(T('d.checked'))})</span>`));
   if (wp == null) items.push(item('unknown', I.unknown, esc(T('unkSpreads')), esc(T('d.spreadsUnk'))));
-  const srcIds = new Set([...(t.reasons ?? []).flatMap((r) => r.sources), ...(t.stratum?.sources ?? []), ...(t.phases?.sources ?? []), ...(t.functions ?? []).flatMap((x) => x.sources), ...(tox?.sources ?? []), ...(inv ?? []).flatMap((x) => x.sources), ...flags.conflicts.flatMap((c) => c.sources)]);
+  const srcIds = new Set([...(t.reasons ?? []).flatMap((r) => r.sources), ...(t.stratum?.sources ?? []), ...(t.phases?.sources ?? []), ...(t.functions ?? []).flatMap((x) => x.sources), ...(tox?.sources ?? []), ...invasiveSourceIds(inv, cell.sources), ...flags.conflicts.flatMap((c) => c.sources)]);
   const srcs = [...srcIds].map((id) => cell.sources[id]).filter(Boolean);
   const guides = (data.plantGuides[t.canonical_name] ?? []).filter(guide);
   const img = t.image, pageHref = safeHref(img?.source_page_url);
@@ -692,7 +693,7 @@ function printHTML() {
   const ms = ordered(), nums = numbering(), flags = flagsById();
   const rows = ms.map((t) => {
     const s = stratumOf(t), tw = W.timeWords(t), w = warnPlain(t, flags.get(t.id)).join('<br>');
-    return `<tr><td>${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i></td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${w || `<span class="muted">${esc(T(t.warnings.allelopathic == null ? 'printNoneYet' : 'printNone'))}</span>`}</td></tr>`;
+    return `<tr><td>${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i></td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${w || `<span class="muted">${esc(T(printNoneKey(t, place())))}</span>`}</td></tr>`;
   }).join('');
   const bands = phaseBands.map((k) => {
     const inBand = ms.filter((t) => bandsOf(t).includes(k));
@@ -814,8 +815,7 @@ const sayLater = (text) => { clearTimeout(sayTimer); sayTimer = setTimeout(() =>
 function stateNow(saved = false) {
   const p = S.pending?.state;
   const members = p ? p.members : linkMembers(S.status, S.members);
-  const country = S.countrySource === 'guess' ? null : S.country;
-  return { climate: S.climate, country, noCountry: saved && !S.country && S.noCountry, site: S.site, kept: p ? p.kept : keptList(), removed: p ? p.removed : [...S.removed], members, plants: p?.plants ?? [] };
+  return { climate: S.climate, ...linkCountry(S, saved), site: S.site, kept: p ? p.kept : keptList(), removed: p ? p.removed : [...S.removed], members, plants: p?.plants ?? [] };
 }
 // The link's own prefixes, written back exactly as they came (shortening them without the cell
 // could make two plants share one).
@@ -833,13 +833,14 @@ function persist() {
   const q = query(false);
   try { history.replaceState(history.state, '', location.pathname + '?' + q); } catch {}
   syncLangLinks();
-  if (S.status === 'ready') try { localStorage.setItem(STORE, JSON.stringify({ q: query(true), at: new Date().toISOString(), src: S.countrySource })); } catch {}
+  if (S.status === 'ready') memory.save(query(true), S.countrySource);
 }
 // seam M1: the header's language links (inline menu and phone Menu) lead to this page in another
 // language with the address bar's query, so a language switch keeps what is shown: a guide's preset,
 // a link still waiting for its place, or the consortium itself.
 const langLinks = [...document.querySelectorAll('[data-lang-menu] a, .nav-panel-langs a')].map((a) => [a, a.getAttribute('href')]);
-function syncLangLinks() { for (const [a, href] of langLinks) a.setAttribute('href', withQuery(href, location.search)); }
+// They also carry the reader's own country choice, so it stays "chosen by you" there without storage (m-3).
+function syncLangLinks() { const q = langSearch(location.search, myCountry, MINE); for (const [a, href] of langLinks) a.setAttribute('href', withQuery(href, q)); }
 
 // ---------- Actions ----------
 // An Undo offered for an earlier state no longer applies once the consortium is made again, refilled
@@ -932,12 +933,12 @@ function leaveLink() {
 function leaveClimate() { Object.assign(S, afterMove(S)); S.unknownCountry = null; leaveLink(); }
 // The country only changes the warnings: the members stay, and no Undo is needed or dropped.
 function chooseCountry(code) {
-  S.country = code; S.countrySource = 'user'; S.noCountry = !code; S.unknownCountry = null; countryQuery = '';
-  try { localStorage.setItem(COUNTRY_STORE, code ?? '-'); } catch {}
+  S.country = code; S.countrySource = 'user'; S.noCountry = !code; S.unknownCountry = null; S.linkCode = null; countryQuery = '';
+  myCountry = code ?? '-'; memory.choose(code);
   // Every caller acts from the country sheet.
   closeSheet(false);
-  render(); focusFk('pc-country', app);
-  say(code ? T('warningsNow', { country: W.country(code) }) : T('warningsNone'));
+  render(); syncLangLinks(); focusFk('pc-country', app);
+  say(countryAnnouncement(W, place()));
 }
 const act = {
   climate(v) { if (S.status !== 'setup') holdForRedo('pc-climate', true); setClimate(v); dropUndo(); leaveClimate(); if (O) closeSheet(false); resolveClimate(); },
@@ -1029,11 +1030,11 @@ const act = {
   print() { printEl.innerHTML = printHTML(); print(); },
   'start-over'() {
     // The country stays: it is the reader's, not the consortium's.
-    const { country, countrySource, noCountry } = S;
+    const { country, countrySource, noCountry, linkCode } = S;
     undoStart = { S, cell, lastRemoved }; lastRemoved = null; redoNext = null; S = fresh(); S.status = 'setup'; cell = null; loadSeq++;
-    Object.assign(S, { country, countrySource, noCountry });
+    Object.assign(S, { country, countrySource, noCountry, linkCode });
     if (siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }
-    try { localStorage.removeItem(STORE); history.replaceState(history.state, '', location.pathname); } catch {}
+    memory.startOver(location.pathname);
     syncLangLinks(); render(); toast(esc(T('startOverDone')), 'start'); focusFk('undo', toastEl);
   },
   dismiss() { S.notice = null; focusNext = 'result'; render(); },
@@ -1119,20 +1120,12 @@ async function start() {
     return;
   }
   browserCountry = browserGuess();
-  const params = new URLSearchParams(location.search);
-  let decoded = null, saved = null, fromLink = false;
-  try { saved = JSON.parse(localStorage.getItem(STORE) ?? 'null'); } catch {}
-  if (params.has('c') || params.has('climate') || params.has('plant')) { decoded = decodeState(params); fromLink = true; }
-  else if (saved?.q) { decoded = decodeState(saved.q); S.restoredAt = saved.at; }
-  // The country (logic.js pickCountry): a link's own k, else the reader's choice on this device, else a
-  // saved consortium's, else the guess.
-  let pref = null;
-  try { pref = localStorage.getItem(COUNTRY_STORE); } catch {}
-  const savedState = saved?.q ? decodeState(saved.q).state : null;
-  Object.assign(S, pickCountry({
-    link: fromLink ? decoded.state : null, pref, saved: savedState && { ...savedState, source: saved.src }, guess: browserCountry,
-    known: (c) => isCountry(manifest, c),
-  }));
+  // A link, else the save; the country (logic.js pickCountry): a link's own k, else the reader's
+  // choice (tab, device, language link), else a saved consortium's, else the guess (memory.js).
+  const { decoded, saved, fromLink, pref, country } = startState({ params: new URLSearchParams(location.search), memory, guess: browserCountry, known: (c) => isCountry(manifest, c) });
+  if (!fromLink && decoded) S.restoredAt = saved.at;
+  Object.assign(S, country, { linkCode: country.unknownCountry });
+  myCountry = pref; memory.settle(pref); syncLangLinks();
   if (decoded) {
     const d = decoded.state;
     S.climate = d.climate; S.site = { ...d.site };

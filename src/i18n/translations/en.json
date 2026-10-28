@@ -498,7 +498,7 @@
   "consortium.d.toxUnk": "Toxicity has not been checked yet. Treat it with care until it is.",
   "consortium.d.invHere": "Recorded invasive in {country}: it can spread from gardens into the wild. Check local rules before planting.",
   "consortium.d.invList": "one: Recorded invasive in # country | other: Recorded invasive in # countries",
-  "consortium.d.invNone": "Not recorded invasive in any country GRIIS checked",
+  "consortium.d.invNone": "Not recorded invasive in any country checked by the global register of invasive species (GRIIS)",
   "consortium.d.invUnk": "Whether it is invasive has not been checked yet.",
   "consortium.invNotChecked": "Not checked in {country}",
   "consortium.invStatusNotChecked": "invasive status not checked in {country}",

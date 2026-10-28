@@ -498,7 +498,7 @@
   "consortium.d.toxUnk": "毒性尚未核实。在核实之前请小心对待。",
   "consortium.d.invHere": "在{country}被记录为入侵植物：它可能从园中扩散到野外。种植前请查看当地规定。",
   "consortium.d.invList": "other: 在 # 个国家被记录为入侵植物",
-  "consortium.d.invNone": "在 GRIIS 核查过的国家中均未被记录为入侵植物",
+  "consortium.d.invNone": "在全球入侵物种名录（GRIIS）核查过的国家中均未被记录为入侵植物",
   "consortium.d.invUnk": "是否为入侵植物尚未核实。",
   "consortium.invNotChecked": "未在{country}核查",
   "consortium.invStatusNotChecked": "未在{country}核查入侵性",

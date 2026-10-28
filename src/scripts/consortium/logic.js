@@ -129,28 +129,68 @@ export function uncheckedOnCard(taxon, hasJobs) {
   return out;
 }
 
-// The country at start (M1, m12): a link's own k, else the reader's choice on this device (`pref`: a
-// code or '-' for "No country", written whenever they choose, in any status, and left alone by Start
-// over), else a saved consortium's (with the source it was saved with), else the browser's guess.
+// The country at start (M1, m12): a link's own k, else the reader's choice (`pref`: a code or '-' for
+// "No country", written whenever they choose, in any status, and left alone by Start over:
+// memory.js), else a saved consortium's (with the source it was saved with), else the browser's guess.
 // A link's country the reader chose themselves reads "chosen by you" ('user'), so their own reload or
 // language switch never turns it into "from the shared link"; only someone else's reads 'link'. A
-// link's unknown code is dropped and said (unknownCountry), with nothing put in its place; a stale
-// code on the device is quiet. `known(code)`: the manifest lists the code (upper case).
+// link's unknown code is said (unknownCountry) and the reader's own choice is used, never the guess
+// (m-5). A link's k=- (links never carry it) is read as no k (n1). Under a link with no k (a guide
+// preset), a saved country reads 'saved' (n2). A stale code on the device is quiet.
+// `known(code)`: the manifest lists the code (upper case).
 export function pickCountry({ link, pref, saved, guess, known }) {
   const out = { country: null, countrySource: null, noCountry: false, unknownCountry: null };
   const up = (c) => (typeof c === 'string' ? c.toUpperCase() : null);
   const own = up(pref) === '-' ? '-' : known(up(pref)) ? up(pref) : null;
+  const mine = own === '-' ? { countrySource: 'user', noCountry: true } : own ? { country: own, countrySource: 'user' } : {};
   if (link?.country) {
     const code = up(link.country);
-    if (!known(code)) return { ...out, unknownCountry: code };
+    if (!known(code)) return { ...out, ...mine, unknownCountry: code };
     return { ...out, country: code, countrySource: own === code ? 'user' : 'link' };
   }
-  if (link?.noCountry || own === '-') return { ...out, countrySource: 'user', noCountry: true };
-  if (own) return { ...out, country: own, countrySource: 'user' };
-  if (saved?.country && known(up(saved.country))) return { ...out, country: up(saved.country), countrySource: saved.source === 'link' ? 'link' : 'saved' };
+  if (own) return { ...out, ...mine };
+  if (saved?.country && known(up(saved.country))) return { ...out, country: up(saved.country), countrySource: saved.source === 'link' && !link ? 'link' : 'saved' };
   if (saved?.noCountry) return { ...out, countrySource: 'user', noCountry: true };
   if (guess && known(up(guess))) return { ...out, country: up(guess), countrySource: 'guess' };
   return out;
+}
+
+// The country part of the state the address bar (saved = false) and the save (saved = true) hold. A
+// guess is never written; "No country" only goes to the save; a link's unknown code (linkCode, kept
+// until the reader chooses) goes back into the address bar while no country is in use, so a reload
+// shows what the first view showed (m-5).
+export function linkCountry(S, saved) {
+  const country = S.countrySource === 'guess' ? null : S.country;
+  return { country: country ?? (saved || S.noCountry ? null : S.linkCode ?? null), noCountry: saved && !S.country && S.noCountry };
+}
+
+// The query of a language link: the address bar's, with the reader's own country choice (`mine`: a
+// code, '-' or null) as MINE, so a language switch keeps "chosen by you" without storage (m-3).
+export function langSearch(search, mine, key = 'mine') {
+  const q = new URLSearchParams(search);
+  q.delete(key);
+  if (mine) q.set(key, mine);
+  const s = q.toString();
+  return s ? '?' + s : '';
+}
+
+// The country sheet's guess card is marked as chosen only when the reader chose that country, never
+// while it is only the guess or someone else's link (m-4).
+export const chosenHere = ({ guess, country, source }) => !!guess && country === guess && (source === 'user' || source === 'saved');
+
+// A print row with no warning: "None found (all checked)" only when nothing about the plant is
+// unchecked; allelopathy not checked yet, or a country GRIIS has no list for, gives "None found so far".
+export function printNoneKey(taxon, { country, checked }) {
+  return taxon.warnings.allelopathic == null || (country && !checked) ? 'printNoneYet' : 'printNone';
+}
+
+// The sources of a plant's invasive status: its records' own, and GRIIS (the export's one source of
+// invasive status) for a plant recorded invasive nowhere, so "not recorded invasive" names it too
+// (m-6). None when nobody checked the plant.
+export function invasiveSourceIds(inv, sources) {
+  if (inv == null) return [];
+  const ids = [...new Set(inv.flatMap((x) => x.sources))];
+  return ids.length ? ids : sources.griis ? ['griis'] : [];
 }
 
 // The browser's country, from `codes` (the manifest's): the time zone first (the one country whose

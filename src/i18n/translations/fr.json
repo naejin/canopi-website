@@ -498,7 +498,7 @@
   "consortium.d.toxUnk": "La toxicité n’a pas encore été vérifiée. En attendant, manipulez-la et goûtez-la avec précaution.",
   "consortium.d.invHere": "Signalée envahissante : {country}. Elle peut s’échapper des jardins vers la nature. Vérifiez les règles locales avant de la planter.",
   "consortium.d.invList": "one: Signalée envahissante dans # pays | other: Signalée envahissante dans # pays",
-  "consortium.d.invNone": "Non signalée comme envahissante dans les pays vérifiés par GRIIS",
+  "consortium.d.invNone": "Non signalée comme envahissante dans les pays vérifiés par le registre mondial des espèces envahissantes (GRIIS)",
   "consortium.d.invUnk": "Son caractère envahissant n’a pas encore été vérifié.",
   "consortium.invNotChecked": "Non vérifiée pour ce pays : {country}",
   "consortium.invStatusNotChecked": "caractère envahissant non vérifié pour ce pays : {country}",

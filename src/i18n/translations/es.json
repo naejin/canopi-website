@@ -498,7 +498,7 @@
   "consortium.d.toxUnk": "Su toxicidad aún no se ha revisado. Trátala con cuidado hasta entonces.",
   "consortium.d.invHere": "Registrada como invasora en {country}: puede escaparse de los jardines a la naturaleza. Consulta las normas locales antes de plantarla.",
   "consortium.d.invList": "one: Registrada como invasora en # país | other: Registrada como invasora en # países",
-  "consortium.d.invNone": "No registrada como invasora en ningún país revisado por GRIIS",
+  "consortium.d.invNone": "No registrada como invasora en ningún país revisado por el registro mundial de especies invasoras (GRIIS)",
   "consortium.d.invUnk": "Aún no se ha revisado si es invasora.",
   "consortium.invNotChecked": "Sin comprobar en {country}",
   "consortium.invStatusNotChecked": "carácter invasor sin comprobar en {country}",

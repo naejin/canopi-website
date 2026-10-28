@@ -62,25 +62,39 @@ export function printWhere(W, { country, checked }) {
   return checked ? W.T('printWarnings', { country: W.country(country) }) : capFirst(W.T('invStatusNotChecked', { country: W.country(country) }), W.lang);
 }
 
+// The live announcement after the reader chooses a country: "Warnings now for {country}" only for a
+// country GRIIS has a list for; otherwise that its invasive status is not checked there (m-1).
+export function countryAnnouncement(W, { country, checked }) {
+  if (!country) return W.T('warningsNone');
+  return checked ? W.T('warningsNow', { country: W.country(country) }) : capFirst(W.T('invStatusNotChecked', { country: W.country(country) }), W.lang) + '.';
+}
+
+const countriesOf = (inv) => [...new Set(inv.map((x) => x.country))];
+
 // What a card (and its print row) says about invasiveness besides the chosen country's own flag
-// (invHere): nothing for a checked country, its count of countries moving to details (owner,
-// 2026-10-28); "not checked in {country}" for a country GRIIS has no list for (m2); with no country,
-// the soft count. A taxon nobody checked (inv null) is in the "Not checked yet" chip instead.
-export function invasiveCardNote(W, { country, checked, inv }) {
-  if (country && checked) return null;
-  if (country) return inv == null ? null : { cls: 'unknown', text: capFirst(W.T('invStatusNotChecked', { country: W.country(country) }), W.lang) };
-  return inv?.length ? { cls: 'soft', text: W.P('invCount', inv.length) } : null;
+// (invHere): nothing once a country is chosen (owner, 2026-10-28: a card shows only that country's
+// warning, and the counts move to details). For a country GRIIS has no list for, "not checked in
+// {country}" is the same for every plant, so it is said once per view (the country line, the result's
+// sub-line, the print head) and in details, never as a chip ahead of a plant's own warnings
+// (coordinator, m-2). With no country, the soft count of distinct countries (n3). A taxon nobody
+// checked (inv null) is in the "Not checked yet" chip instead.
+export function invasiveCardNote(W, { country, inv }) {
+  if (country) return null;
+  const n = inv ? countriesOf(inv).length : 0;
+  return n ? { cls: 'soft', text: W.P('invCount', n) } : null;
 }
 
 // The details' invasive items besides the chosen country's own warning: "Not checked in {country}"
 // for a country GRIIS has no list for; the countries it is recorded invasive in; "not recorded
-// invasive in any country GRIIS checked" (never "anywhere", never with "(checked)": m4); or not
+// invasive in any country checked by the global register (GRIIS)" (never "anywhere", never with
+// "(checked)": m4; GRIIS is then in the plant's sources: logic.js invasiveSourceIds, m-6); or not
 // checked at all. Each is null when it does not apply.
 export function invasiveDetails(W, { country, checked, inv }) {
   const name = country ? W.country(country) : '';
+  const list = inv?.length ? countriesOf(inv) : [];
   return {
     notChecked: country && !checked && inv != null ? { title: W.T('invNotChecked', { country: name }), text: W.T('d.invNotChecked', { country: name }) } : null,
-    list: inv?.length ? { title: W.P('d.invList', inv.length), countries: [...new Set(inv.map((x) => x.country))].map(W.country).sort((a, b) => a.localeCompare(b, W.lang)) } : null,
+    list: list.length ? { title: W.P('d.invList', list.length), countries: list.map(W.country).sort((a, b) => a.localeCompare(b, W.lang)) } : null,
     none: inv && !inv.length ? { title: W.T('d.invNone'), checkedMark: false } : null,
     unknown: inv == null ? { title: W.T('unkInv'), text: W.T('d.invUnk') } : null,
   };

@@ -498,7 +498,7 @@
   "consortium.d.toxUnk": "De giftigheid is nog niet gecontroleerd. Wees tot dan voorzichtig.",
   "consortium.d.invHere": "Bekend als invasief in {country}: ze kan vanuit tuinen de natuur in verwilderen. Kijk voor het planten wat de lokale regels zeggen.",
   "consortium.d.invList": "one: Bekend als invasief in # land | other: Bekend als invasief in # landen",
-  "consortium.d.invNone": "In geen enkel door GRIIS gecontroleerd land bekend als invasief",
+  "consortium.d.invNone": "In geen enkel door het wereldwijde register van invasieve soorten (GRIIS) gecontroleerd land bekend als invasief",
   "consortium.d.invUnk": "Of ze invasief is, is nog niet gecontroleerd.",
   "consortium.invNotChecked": "Niet gecontroleerd voor {country}",
   "consortium.invStatusNotChecked": "invasiviteit niet gecontroleerd voor {country}",

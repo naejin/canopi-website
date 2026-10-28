@@ -498,7 +498,7 @@
   "consortium.d.toxUnk": "毒性はまだ確認されていません。確認されるまで注意して扱ってください。",
   "consortium.d.invHere": "{country}で侵略的と記録されています。庭から野外へ広がるおそれがあります。植える前に地域の規則を確認してください。",
   "consortium.d.invList": "other: # か国で侵略的と記録",
-  "consortium.d.invNone": "GRIISが確認したどの国でも侵略的と記録されていない",
+  "consortium.d.invNone": "侵略的外来種の世界的な登録リスト（GRIIS）が確認したどの国でも侵略的と記録されていない",
   "consortium.d.invUnk": "侵略的かどうかはまだ確認されていません。",
   "consortium.invNotChecked": "{country}では未確認",
   "consortium.invStatusNotChecked": "{country}では侵略性は未確認",

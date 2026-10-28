@@ -498,7 +498,7 @@
   "consortium.d.toxUnk": "독성은 아직 확인하지 않았습니다. 확인될 때까지 조심해서 다루세요.",
   "consortium.d.invHere": "{country}에서 침입성으로 기록되었습니다. 정원에서 야생으로 퍼질 수 있습니다. 심기 전에 지역 규정을 확인하세요.",
   "consortium.d.invList": "other: #개 나라에서 침입성으로 기록됨",
-  "consortium.d.invNone": "GRIIS가 확인한 어느 나라에서도 침입성으로 기록되지 않음",
+  "consortium.d.invNone": "세계 침입종 등록 목록(GRIIS)이 확인한 어느 나라에서도 침입성으로 기록되지 않음",
   "consortium.d.invUnk": "침입성인지 아직 확인하지 않았습니다.",
   "consortium.invNotChecked": "{country}에서는 확인 안 됨",
   "consortium.invStatusNotChecked": "{country}에서는 침입성 확인 안 됨",

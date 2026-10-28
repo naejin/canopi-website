@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { pluralForms, makeWords, needsLook, searchText, fold, plantName, capFirst } from '../src/scripts/consortium/words.js';
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
 import * as core from '../src/lib/consortium/index.ts';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard } from '../src/scripts/consortium/logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard, printNoneKey, linkCountry } from '../src/scripts/consortium/logic.js';
 import { profileSVG } from '../src/scripts/consortium/draw.js';
 import { crops } from '../src/data/crops.ts';
 
@@ -16,7 +16,7 @@ const strings = Object.fromEntries(locales.map((lang) => {
   const all = JSON.parse(read(`src/i18n/translations/${lang}.json`));
   return [lang, Object.fromEntries(Object.entries(all).filter(([k]) => k.startsWith('consortium.')).map(([k, v]) => [k.slice('consortium.'.length), v]))];
 }));
-const app = read('src/scripts/consortium/app.js') + read('src/scripts/consortium/words.js') + read('src/scripts/consortium/parts.js');
+const app = read('src/scripts/consortium/app.js') + read('src/scripts/consortium/words.js') + read('src/scripts/consortium/parts.js') + read('src/scripts/consortium/logic.js');
 const manifest = JSON.parse(read('public/data/consortium/manifest.json'));
 const siteOptions = { light: core.lights, soil: core.soils, water: core.waters, room: core.rooms };
 const page = read('src/components/consortium/ConsortiumPage.astro');
@@ -503,7 +503,7 @@ test('a site or climate change that rebuilds unkept plants offers Undo; a countr
   // The country only changes the warnings: no rebuild, no Undo, an announcement instead.
   const choose = appJs.match(/function chooseCountry[\s\S]*?\n\}/)[0];
   assert.doesNotMatch(choose, /holdForRedo|recompute|resolveClimate|dropUndo|S\.members/);
-  assert.match(choose, /say\(code \? T\('warningsNow'/);
+  assert.match(choose, /say\(countryAnnouncement\(W, place\(\)\)\)/);
 });
 
 test('each warning item is one list item with its own actions (F3)', () => {
@@ -768,7 +768,9 @@ test('words: a merged soft chip starts with a capital where the script has one',
 // Print has no details view, so its warnings cell never claims "all checked" while allelopathy is unknown (tweaks review).
 test('print says "none found so far", not "all checked", while allelopathy is unknown', () => {
   const app = read('src/scripts/consortium/app.js');
-  assert.match(app, /T\(t\.warnings\.allelopathic == null \? 'printNoneYet' : 'printNone'\)/);
+  assert.match(app, /T\(printNoneKey\(t, place\(\)\)\)/);
+  assert.equal(printNoneKey({ warnings: { allelopathic: null } }, { country: null, checked: false }), 'printNoneYet');
+  assert.equal(printNoneKey({ warnings: { allelopathic: false } }, { country: null, checked: false }), 'printNone');
   for (const lang of locales) assert.ok(strings[lang].printNoneYet, `${lang}: printNoneYet`);
 });
 
@@ -776,7 +778,9 @@ test('print says "none found so far", not "all checked", while allelopathy is un
 // What the country line says is tested by behaviour in scripts/consortium-country.test.mjs.
 test('a guessed country has a dashed chip, and is never written to a link or a save', () => {
   const app = read('src/scripts/consortium/app.js');
-  assert.match(app, /const country = S\.countrySource === 'guess' \? null : S\.country;/, 'stateNow drops a guess');
+  assert.match(app, /\.\.\.linkCountry\(S, saved\)/, 'stateNow uses linkCountry');
+  for (const saved of [false, true]) assert.equal(linkCountry({ country: 'FR', countrySource: 'guess', noCountry: false, linkCode: null }, saved).country, null, 'a guess is dropped');
+  assert.equal(linkCountry({ country: 'FR', countrySource: 'user', noCountry: false, linkCode: null }, false).country, 'FR');
   assert.match(app, /data-src="\$\{S\.country \? S\.countrySource \?\? 'user' : 'none'\}"/);
   assert.match(css, /\.cl-chip\[data-src="guess"\][^{]*\{[^}]*dashed/, 'a guess has a dashed chip');
   assert.match(strings.en.countryGuessed, /browser/);
@@ -789,8 +793,10 @@ test('a guessed country has a dashed chip, and is never written to a link or a s
 
 test('"No country" is kept on this device only (k=- in the save, never in a share link)', () => {
   const app = read('src/scripts/consortium/app.js');
-  assert.match(app, /noCountry: saved && !S\.country && S\.noCountry/);
-  assert.match(app, /localStorage\.setItem\(STORE, JSON\.stringify\(\{ q: query\(true\)/);
+  const none = { country: null, countrySource: 'user', noCountry: true, linkCode: null };
+  assert.equal(linkCountry(none, false).noCountry, false, 'never in the address bar');
+  assert.equal(linkCountry(none, true).noCountry, true, 'in the save');
+  assert.match(app, /memory\.save\(query\(true\), S\.countrySource\)/);
   assert.match(app, /history\.replaceState\(history\.state, '', location\.pathname \+ '\?' \+ q\)/);
   assert.match(app, /const q = query\(false\);/);
   const site = { light: 'sun', soil: 'unsure', water: 'unsure', room: 'large' };
