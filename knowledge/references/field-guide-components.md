@@ -5,7 +5,7 @@ description: Every component, prop, allowed value and limit a Field Guide's MDX 
 tags: [guides, reference]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:48:05Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:47:57Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:08:20Z }
 sources:
   - id: index-ts
     resource: ../../src/components/guides/index.ts
@@ -15,8 +15,8 @@ sources:
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:b9e96f9f085c394d
-    last_modified: 2026-10-28T08:45:46Z
+    digest: sha256:cdf407d1779fd10d
+    last_modified: 2026-10-28T09:07:32Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts

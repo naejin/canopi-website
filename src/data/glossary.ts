@@ -683,7 +683,7 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
   },
   puddling: {
     en: { term: 'Puddling', definition: 'Butterflies and some other insects drinking from wet soil, mud or dung to take in salts and minerals.' },
-    fr: { term: 'Abreuvement sur sol humide', definition: 'Le fait, pour les papillons et quelques autres insectes, de boire sur une terre mouillée, de la boue ou des excréments pour y prendre des sels et des minéraux.' },
+    fr: { term: 'Puddling (abreuvement sur sol humide)', definition: 'Le fait, pour les papillons et quelques autres insectes, de boire sur une terre mouillée, de la boue ou des excréments pour y prendre des sels et des minéraux.' },
   },
   'systemic-pesticide': {
     en: { term: 'Systemic pesticide', definition: 'A pesticide that a plant takes up and carries through its tissues, nectar and pollen included, so it can harm insects that feed on the plant long after treatment. Neonicotinoids are the best known.' },

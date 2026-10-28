@@ -4,7 +4,8 @@
 // hollow stem); a fallen log with beetle holes (old wood); a tight pile of prunings (brush pile);
 // whole fallen leaves with a curled caterpillar on top and a bumble bee queen in a hollow beneath
 // (leaf litter); a flat stone under the sun with a basking butterfly (warming stone). Soil in soil
-// tokens, stems, wood and leaves in plant tokens, insects in ink and ochre. Labels alternate above
+// tokens, the dig patch a paler band of bare soil while plant debris covers the rest of the
+// ground; stems, wood and leaves in plant tokens, insects in ink and ochre. Labels alternate above
 // and below the drawing so each has room to wrap. No sizes or counts: the book gives none.
 import { leafPath, r1, rng, seedOf, wrap } from '../../../../lib/svg';
 interface Labels { dig: string; stem: string; wood: string; brush: string; litter: string; stone: string; }
@@ -47,6 +48,15 @@ const leaves = Array.from({ length: 20 }, (_, i) => ({
   d: leafPath(14 + rand() * 6, r1(334 + rand() * 64), r1(G - 2 - rand() * 10), Math.round(rand() * 360)),
   cls: tones[i % 3],
 }));
+// Everywhere but the dig patch, a thin cover of plant debris on the ground; the patch itself is
+// left bare, a paler band of open soil, so the drawing shows the one place kept uncovered. The
+// cover stops short of the stone, whose fill is translucent.
+const BARE = 86;
+const rand2 = rng(seedOf('nest-sites-cover'));
+const cover = Array.from({ length: 56 }, () => {
+  const x = BARE + 6 + rand2() * (408 - BARE - 6), y = G - 1 - rand2() * 3, a = (rand2() - 0.5) * 0.9, len = 4 + rand2() * 5;
+  return `M${r1(x - Math.cos(a) * len / 2)} ${r1(y - Math.sin(a) * len / 2)}L${r1(x + Math.cos(a) * len / 2)} ${r1(y + Math.sin(a) * len / 2)}`;
+});
 // The warming stone, with the sun above it.
 const stone = `M414 ${G}C414 ${G - 12} 428 ${G - 18} 446 ${G - 18}C464 ${G - 18} 476 ${G - 10} 476 ${G}Z`;
 const SUNX = 446, SUNY = 84;
@@ -73,7 +83,9 @@ const bottomBase = SB + 24;
   {/* Soil */}
   <rect x="0" y={G} width={W} height={SB - G} rx="3" class="guide-ns-soil" />
   {grains.map((g) => <circle cx={g.x} cy={g.y} r={g.r} class="guide-ns-grain" />)}
-  {/* Bees that dig */}
+  {/* Bees that dig: bare, open soil on top, no cover */}
+  <rect x="0" y={G} width={BARE} height="6" class="guide-ns-bare" />
+  {cover.map((d) => <path d={d} class="guide-ns-cover" />)}
   {mounds.map((d) => <path d={d} class="guide-ns-spoil" />)}
   {tunnels.map((d) => <path d={d} class="guide-ns-tunnel" />)}
   {cells.map(([x, y]) => <ellipse cx={x} cy={y} rx="5" ry="3.6" class="guide-ns-cell" />)}
@@ -149,6 +161,8 @@ const bottomBase = SB + 24;
   .guide-ns-soil { fill: var(--soil-1); }
   .guide-ns-grain { fill: var(--soil-grain); opacity: 0.7; }
   .guide-ns-spoil { fill: var(--soil-3); }
+  .guide-ns-bare { fill: var(--soil-3); }
+  .guide-ns-cover { stroke: var(--leaf-brown); stroke-width: 1.6; stroke-linecap: round; }
   .guide-ns-tunnel { fill: none; stroke: var(--soil-2); stroke-width: 5; stroke-linecap: round; }
   .guide-ns-cell { fill: var(--accent); stroke: var(--text); stroke-width: 0.8; }
   .guide-ns-ground { stroke: var(--border-strong); stroke-width: 1.4; }
