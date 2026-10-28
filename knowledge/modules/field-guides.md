@@ -6,18 +6,18 @@ resource: ../../src/components/guides
 tags: [module, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:51:00Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:47:52Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:02:42Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:b49e99d999edf8c7
-    last_modified: 2026-10-28T08:43:57Z
+    digest: sha256:cf42309a0bd98d88
+    last_modified: 2026-10-28T09:02:22Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
     digest: sha256:addb32417f6b9b10
-    last_modified: 2026-10-28T08:43:57Z
+    last_modified: 2026-10-28T08:48:04Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
