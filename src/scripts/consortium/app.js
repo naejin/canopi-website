@@ -21,7 +21,7 @@ import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, c
 import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
-import { viewMode, groupOpen, roundHeight, misfitSize, shownHeight, stageSpan, stageShort, warnKinds, pestLabels, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, pasteColumn, pasteDefault, PEST_TYPES, CARDS_UP_TO } from './scale.js';
+import { viewMode, groupOpen, misfitSize, shownHeight, stageSpan, stageShort, warnKinds, pestLabels, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, pasteColumn, pasteDefault, PEST_TYPES, CARDS_UP_TO } from './scale.js';
 
 const data = JSON.parse(document.getElementById('ct-data').textContent);
 const W = makeWords(data.strings, data.lang);
@@ -1571,12 +1571,15 @@ function persist() {
   if (location.hash !== lastHash && isToolState(new URLSearchParams(location.hash.slice(1)))) { location.reload(); return; }
   const query = (saved) => linkQuery(saved).toString();
   const q = query(false);
-  lastHash = '#' + q;
-  memory.write(location.pathname, lastHash, { countrySource: S.countrySource, climateSource: S.climateSource });
+  memory.write(location.pathname, '#' + q, { countrySource: S.countrySource, climateSource: S.climateSource });
+  // What the address bar holds now, read back: a write the browser dropped (past its rate limit, or a
+  // sandbox where it always throws) leaves the old fragment, which is then still the page's own, so
+  // it never reads as a pasted link (no reload, no loop); the next persist() writes again.
+  lastHash = location.hash;
   syncLangLinks();
   if (S.status === 'ready') memory.save(query(true), S.countrySource);
 }
-// The fragment persist() last wrote. Another tool state typed or pasted into the address bar (or
+// The fragment the address bar held after persist() last wrote it. Another tool state typed or pasted into the address bar (or
 // Back to an earlier one) opens it: the page reloads to read it. A page anchor (the skip link's
 // #main, #donate) is not a state: the consortium's fragment is written back (C8).
 let lastHash = location.hash;

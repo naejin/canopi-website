@@ -5,15 +5,15 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T20:09:15Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T21:25:41Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T20:09:04Z }
 sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:c4df44a7ecf74b7b
-    last_modified: 2026-10-28T20:01:57Z
+    digest: sha256:628d954d498e6ea5
+    last_modified: 2026-10-28T21:25:04Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -27,8 +27,8 @@ sources:
   - id: consortium-list-ui-test-mjs
     resource: ../../scripts/consortium-list-ui.test.mjs
     title: scripts/consortium-list-ui.test.mjs
-    digest: sha256:9356bd5d0d4e7560
-    last_modified: 2026-10-28T20:01:57Z
+    digest: sha256:9ddd461d023f1766
+    last_modified: 2026-10-28T21:25:04Z
 ---
 
 # Responsibility
@@ -44,7 +44,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 | [install-consortium.mjs](../../scripts/install-consortium.mjs) | verifies a canopi-data consortium export (format 3: sums, manifest, schema shape including the optional `agent_names`, http(s) source and photo-page URLs; refuses the all-zeros fixture without `--fixture`; `verifyInstall` re-checks an installed folder) and installs it with 500 px photos in `public/data/consortium/`; see [Consortium core](/modules/consortium-core.md) | `npm run install:consortium -- <export-dir>`, by hand |
 | [check-built-site.mjs](../../scripts/check-built-site.mjs) | asserts every locale's built pages (downloads, Web URL, dialogs, assets, og images, bibliography, no leaked contact address) and each Field Guide in en and fr (hreflang en/fr/x-default only, Article JSON-LD, glance, bibliography link, internal links and #ids, no stray scripts on non-interactive guides, no unrendered components, crop-table cells labelled for phones and their note naming only shown columns), the consortium tool (title and h1 per locale, hreflang with `/fr/guilde/`, no `/fr/consortium/`, the installed data re-checked by `verifyInstall` (sums, cells, photos present) with a real `canopi_db_sha256`, the header marking it current through `consortiumPath`, its links and assets), and the navigation (inline header and phone Menu links in every locale, the consortium tool among them, no inline Discord or Docs, `aria-current` on Guides/Books, the home Start here guides, the consortium home section after it and the footer link, guides and bibliography linking each other and mentioning the tool, every guide preset link opening the tool with a plant of its climate's beta cell) | by hand after build |
 | [check-bibliography-links.mjs](../../scripts/check-bibliography-links.mjs) | visits every bibliography link (network) | `npm run check:bibliography` |
-| `*.test.mjs` | contact, featured-designs privacy, homepage/i18n (header keys, width queries only 639/640/959/960 plus the 1200px hero-image query, no header item hidden by width except the inline/Menu swap, the menus chrome.js closes, the consortium tool's header word and full name per locale, the home note against the manifest's climates, the header's global styles, the consortium keys' places), installer, nearest, guides (content rules, related lists, glossary, crop table, safety wording and mouth words only inside `<Safety>` boxes, checklist and glossary plugins, shared `wrap()`, mix bar, breakpoints, colours and fonts), guides-consortium (the preset links of `try-consortium.ts` on the real climate files and their build failures; every `<TryConsortium>` preset: plant in the beta cell of its climate, climate from its `<ForClimate>` block and last in it, same presets in en and fr; a guide name for every cell), built-links, consortium (scoring module on the fixture, share-link state, 200-taxon timing, `flagsFor`), consortium-list and consortium-list-ui (the plant list at 200 real plants: `scale.js` rules, then the switch, groups, rows, filters, selection, bulk Keep and Remove, paste, print and share in the harness), consortium-page (the tool's `consortium.*` strings in 11 locales: titles, key and placeholder parity, plural forms, every key used, no builder notes; the guides it links exist; `words.js` helpers), install-consortium (refusals, `--out` and staging, photos through a stub fetch: byte cap, redirect hosts, cancelled bodies), package (declared static and dynamic imports, Node floor, the type check's tsconfig excludes and `check` script) | `npm test` |
+| `*.test.mjs` | consortium-layout (the plant list's real rows laid out in headless Chrome with the site's stylesheets and fonts at list widths 508–1185 px: nothing past its cell, row or chip, a long one-word pest name breaks inside its chip, Swap and the stage words from 850 px only; skipped, saying so, without Chrome or Chromium), contact, featured-designs privacy, homepage/i18n (header keys, width queries only 639/640/959/960 plus the 1200px hero-image query (the named `plants` container query of the plant list is the one exemption), no header item hidden by width except the inline/Menu swap, the menus chrome.js closes, the consortium tool's header word and full name per locale, the home note against the manifest's climates, the header's global styles, the consortium keys' places), installer, nearest, guides (content rules, related lists, glossary, crop table, safety wording and mouth words only inside `<Safety>` boxes, checklist and glossary plugins, shared `wrap()`, mix bar, breakpoints, colours and fonts), guides-consortium (the preset links of `try-consortium.ts` on the real climate files and their build failures; every `<TryConsortium>` preset: plant in the beta cell of its climate, climate from its `<ForClimate>` block and last in it, same presets in en and fr; a guide name for every cell), built-links, consortium (scoring module on the fixture, share-link state, 200-taxon timing, `flagsFor`), consortium-list and consortium-list-ui (the plant list at 200 real plants: `scale.js` rules, then the switch, groups, rows, filters, selection, bulk Keep and Remove, paste, print and share in the harness), consortium-page (the tool's `consortium.*` strings in 11 locales: titles, key and placeholder parity, plural forms, every key used, no builder notes; the guides it links exist; `words.js` helpers), install-consortium (refusals, `--out` and staging, photos through a stub fetch: byte cap, redirect hosts, cancelled bodies), package (declared static and dynamic imports, Node floor, the type check's tsconfig excludes and `check` script) | `npm test` |
 | [built-links.mjs](../../scripts/built-links.mjs) | `builtTarget(root, pathname)`: resolves an internal link to a built file; a path without trailing slash or extension is an error. `subdirectories(dir)`: folder names only (the guide slugs; a stray `.DS_Store` is not a guide) | `check-built-site.mjs` |
 | [fixtures/consortium/make_fixture.py](../../scripts/fixtures/consortium/make_fixture.py) | writes the invented consortium fixture (format 3, three climate files; Temperate adds an invented asia_temperate cell, with a taxon chosen there only; real `countries`; each invented `invasive_in` also holds every country where GRIIS really records the plant invasive, from a `griis.json` built in canopi-data) for building the tool before real data; never shipped | by hand, see its README |
 | [export-featured-designs.py](../../scripts/export-featured-designs.py) | `.canopi` files to privacy-safe `public/data/featured-designs.json` | by hand |

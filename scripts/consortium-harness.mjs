@@ -223,7 +223,9 @@ export function device({ blocked = false } = {}) {
     ? { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); }, removeItem() { throw new Error('blocked'); } }
     : { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => { store.set(k, String(v)); }, removeItem: (k) => { store.delete(k); } };
   // onFetch(file): called as a data file is asked for (a test changes the address mid-start with it).
-  return { store, storage, failing: new Set(), fetched: [], onFetch: null };
+  // historyFails: null, 'throw' (WebKit and Firefox past their rate limit, a sandboxed embed) or
+  // 'ignore' (Chrome past its limit): what history.replaceState does with a call.
+  return { store, storage, failing: new Set(), fetched: [], onFetch: null, historyFails: null };
 }
 
 // A tab: its history entries ({ url, state, doc: the page load that owns it }) and the page shown.
@@ -295,6 +297,9 @@ async function openPage(t, { lang = 'en', width = 1280, siteClimate = null, data
   const history = {
     get state() { return t.entry().state == null ? null : structuredClone(t.entry().state); },
     replaceState(state, _title, url) {
+      if (t.dev.historyFails === 'throw') throw new Error('SecurityError: too many calls');
+      if (t.dev.historyFails === 'ignore') return;
+      t.dev.historyWrites = (t.dev.historyWrites ?? 0) + 1;
       const e = t.entry();
       e.state = state == null ? null : structuredClone(state);
       if (url != null) e.url = new URL(url, e.url);

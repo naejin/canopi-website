@@ -301,11 +301,13 @@ test('pest names come only from the data: a chip names agent_names in the page l
     { type: 'alternate_host', agent: 'Agentus secundus', agent_names: null },
     { type: 'shared_pest', agent: 'Agentus primus', agent_names: sourced },
     { type: 'allelopathic_harm', agent: 'juglone', agent_names: null },
+    { type: 'shared_pest', agent: 'Agentus tertius', agent_names: { names: { en: '' }, sources: ['eppo-x'] } },
   ] };
-  assert.deepEqual(S.pestLabels(flags, 'en'), ['agent one', 'Agentus secundus']);
-  assert.deepEqual(S.pestLabels(flags, 'nl'), ['agent een', 'Agentus secundus']);
-  assert.deepEqual(S.pestLabels(flags, 'fr'), ['Agentus primus', 'Agentus secundus']);
-  assert.deepEqual(S.pestsOf(flags), ['Agentus primus', 'Agentus secundus']);
+  // An empty name (the installer refuses one) still falls back to the scientific name, never a blank chip.
+  assert.deepEqual(S.pestLabels(flags, 'en'), ['agent one', 'Agentus secundus', 'Agentus tertius']);
+  assert.deepEqual(S.pestLabels(flags, 'nl'), ['agent een', 'Agentus secundus', 'Agentus tertius']);
+  assert.deepEqual(S.pestLabels(flags, 'fr'), ['Agentus primus', 'Agentus secundus', 'Agentus tertius']);
+  assert.deepEqual(S.pestsOf(flags), ['Agentus primus', 'Agentus secundus', 'Agentus tertius']);
   // No list of names written by hand: the module that held one is gone.
   assert.ok(!existsSync(new URL('../src/scripts/consortium/pests.js', import.meta.url)));
 });

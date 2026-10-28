@@ -579,6 +579,11 @@ test('agent_names (format 3, added 2026-10-28): optional or null, names keyed by
   assert.match(shapeErrors(broken, cellShape).join('\n'), /agent_names\.sources/);
   broken.interactions[i].agent_names = { names: { en: 42 }, sources: ['s'] };
   assert.match(shapeErrors(broken, cellShape).join('\n'), /agent_names\.names\.en/);
+  // canopi-data's schema: at least one name, and no empty name.
+  broken.interactions[i].agent_names = { names: { fr: '' }, sources: ['s'] };
+  assert.match(shapeErrors(broken, cellShape).join('\n'), /agent_names\.names\.fr: is empty/);
+  broken.interactions[i].agent_names = { names: {}, sources: ['s'] };
+  assert.match(shapeErrors(broken, cellShape).join('\n'), /agent_names\.names: has no key/);
   // Its sources must be defined, as every other source the file cites.
   const w = workspace(t);
   const c = w.json('tropical.json');

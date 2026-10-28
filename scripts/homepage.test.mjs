@@ -127,10 +127,10 @@ test('the header labels exist in every locale: Books (the bibliography) and the 
   }
 });
 
-// The rules inside each width @media block: [selector, declarations].
+// The rules inside each width @media or @container block: [selector, declarations].
 function widthRules(css) {
   const rules = [];
-  for (const match of css.matchAll(/@media[^{]*width[^{]*\{/g)) {
+  for (const match of css.matchAll(/@(?:media|container)[^{]*width[^{]*\{/g)) {
     let depth = 1, i = match.index + match[0].length;
     const from = i;
     while (depth && i < css.length) depth += css[i] === '{' ? 1 : css[i] === '}' ? -1 : 0, i++;
@@ -155,9 +155,10 @@ test('no header item is hidden by width except the one inline/Menu swap, and wid
   let swaps = 0;
   for (const file of files) {
     const css = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');
-    // A window width query uses the two breakpoints. A container query (@container) sizes a part to
-    // its own box, not the window (the plant list beside the side panel), so it is not a breakpoint.
-    const windowQueries = css.replace(/@container[^{]*\{/g, '{');
+    // A window width query uses the two breakpoints. The one exemption is the plant list's own
+    // container (`plants`): it sizes the list's columns to the list's box, beside the side panel or
+    // not, never the window. Any other container query is checked like a window query.
+    const windowQueries = css.replace(/@container plants \((?:max|min)-width:\s*[\d.]+px\)\s*\{/g, '{');
     for (const [, width] of windowQueries.matchAll(/\((?:max|min)-width:\s*([\d.]+px)\)/g)) assert.ok(allowed.has(width), `${file}: width query ${width}`);
     for (const [selector, body] of widthRules(css)) {
       if (!/display:\s*none/.test(body) || !headerItem.test(selector)) continue;

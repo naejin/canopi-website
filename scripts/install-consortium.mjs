@@ -142,7 +142,8 @@ const interaction = obj({
   agent: orNull(str),
   // Added within format 3 (2026-10-28): the agent's common names by site locale, each an EPPO name
   // chosen by a usage source (canopi-data docs/consortium-export-format.md); absent reads as null.
-  agent_names: optional(orNull(obj({ names: map(str, LOCALES), sources: sourceIds }))),
+  // canopi-data's schema: names has at least one key and no name is empty.
+  agent_names: optional(orNull(obj({ names: { ...map({ ...str, minLength: 1 }, LOCALES), minProps: 1 }, sources: sourceIds }))),
   severity: orNull(oneOf('low', 'medium', 'high')),
   note: optional(orNull(text)),
   sources: sourceIds,
@@ -183,6 +184,7 @@ export function shapeErrors(value, shape, path = '$', out = [], max = 20) {
   switch (shape.kind) {
     case 'string':
       if (typeof value !== 'string') fail('is not a string');
+      else if (shape.minLength && value.length < shape.minLength) fail('is empty');
       else if (shape.pattern && !shape.pattern.test(value)) fail(`"${value}" does not match ${shape.pattern}`);
       else if (shape.url && !isHttpUrl(value)) fail(`${JSON.stringify(value)} is not an http(s) URL`);
       break;
@@ -203,6 +205,7 @@ export function shapeErrors(value, shape, path = '$', out = [], max = 20) {
     case 'map':
     case 'object':
       if (!isObject(value)) { fail('is not an object'); break; }
+      if (shape.minProps && Object.keys(value).length < shape.minProps) fail('has no key');
       if (shape.keys) for (const key of Object.keys(value)) if (!shape.keys.includes(key)) fail(`has a key "${key}" outside ${shape.keys.join(', ')}`);
       if (shape.keyPattern) for (const key of Object.keys(value)) if (!shape.keyPattern.test(key)) fail(`has a key "${key}" that does not match ${shape.keyPattern}`);
       for (const [key, s] of Object.entries(shape.props ?? {})) {

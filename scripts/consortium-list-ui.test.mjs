@@ -844,27 +844,31 @@ test('K3: when the Find text was the last filter, deleting it gives the count\'s
   assert.ok(cards(page).length > 0);
 });
 
-test('the list row grid fits the list at every width, so warning chips wrap and are never clipped (with the side panel too)', () => {
+test('the list row grid: one narrow tier sized by the list itself, and the full columns fit from 850 px (measured in Chrome by consortium-layout.test.mjs)', () => {
   const css = read('src/styles/consortium.css');
   assert.match(css, /\.ct \.plants-sec \{[^}]*container: plants \/ inline-size/, 'the list sizes its columns to its own width, not the window');
-  // The narrowest width each column set is used at: a row needs the sum of its columns' minimums,
-  // its gaps (10 px) and padding and border (26 px).
+  // A row needs the sum of its columns' minimums, its gaps (8 px) and its padding and border (26 px).
   const need = (cols) => {
     const tracks = cols.trim().split(/\s+(?![^(]*\))/);
     const min = tracks.reduce((s, tr) => s + Number((/^(\d+)px/.exec(tr) ?? /^minmax\((\d+)px/.exec(tr) ?? [0, 0])[1]), 0);
-    return min + 10 * (tracks.length - 1) + 26;
+    return min + 8 * (tracks.length - 1) + 26;
   };
+  assert.match(css, /\.ct \.lcols, \.ct \.lrow \{[^}]*column-gap: 8px/);
+  const tiers = [...css.matchAll(/@container plants \(max-width: (\d+)px\)/g)].map((m) => Number(m[1]));
+  assert.deepEqual(tiers, [849], 'one container tier, below the full list of a 960 px window (852 px) and above the side panel\'s list (840 px)');
   const block = (head) => { const i = css.indexOf(head); assert.ok(i >= 0, head); return css.slice(i, css.indexOf('\n}', i)); };
   const colsIn = (text) => [...text.matchAll(/--lcols: ([^;]+);/g)].map((m) => m[1]);
   const full = colsIn(css.slice(css.indexOf('/* The row grid'), css.indexOf('.ct .lcols {\n')));
-  const compact = colsIn(block('@container plants (max-width: 1159px)'));
-  const wrap = block('@container plants (max-width: 899px)');
-  for (const c of full) assert.ok(need(c) <= 1160, `full columns need ${need(c)} px`);
-  for (const c of compact) assert.ok(need(c) <= 900, `compact columns need ${need(c)} px`);
-  for (const c of colsIn(wrap)) assert.ok(need(c) <= 560, `narrow columns need ${need(c)} px`);
-  assert.match(wrap, /\.lwarns \{[^}]*grid-row: 2; grid-column: 3 \/ -1/, 'below 900 px the warnings take a line of their own');
+  const narrow = block('@container plants (max-width: 849px)');
+  assert.equal(full.length, 2);
+  for (const c of full) assert.ok(need(c) <= 850, `full columns need ${need(c)} px`);
+  // The side panel's narrowest list (a 960 px window) is 508 px wide.
+  for (const c of colsIn(narrow)) assert.ok(need(c) <= 508, `narrow columns need ${need(c)} px`);
+  assert.match(narrow, /\.lswap, \.ct \.lstage \{ display: none; \}/, 'only the narrow tier drops Swap and the stage words');
+  assert.equal([...css.matchAll(/\.lswap[^{]*\{[^}]*display: none/g)].length, 1);
+  assert.match(narrow, /\.lwarns \{[^}]*grid-row: 2; grid-column: 3 \/ -1/, 'in the narrow tier the warnings take a line of their own');
   assert.match(css, /\.ct \.warn-chip \{[^}]*max-width: 100%/, 'a chip never runs past its cell');
-  assert.match(css, /\.ct \.lwarns, \.ct \.lline3 \{[^}]*min-width: 0/);
+  assert.match(css, /\.ct \.warn-chip > span \{[^}]*overflow-wrap: anywhere/, 'its text breaks inside it');
   // The Kept head ("Gehouden", "Сохранено") is wider than its 44 px column: it spans the tick's column too.
   assert.match(css, /\.ct \.lcols > span:nth-child\(2\) \{ grid-column: 1 \/ 3;/);
 });

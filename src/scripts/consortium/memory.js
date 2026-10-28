@@ -33,9 +33,15 @@ export function memoryOf({ storage, history, location }) {
     fromFragment: false,
     // The page's own mark on this entry when its fragment is the one the page wrote (arrive), else null.
     written: null,
-    // The address bar's fragment, written by the page and marked as its own (F2).
+    // The address bar's fragment, written by the page and marked as its own (F2). An address and
+    // mark that already hold it are not written again: browsers drop replaceState calls past a rate
+    // limit, and persist() runs on every render.
     write(path, hash, sources) {
-      attempt(() => history.replaceState({ ...(history.state ?? {}), [WROTE]: { hash, ...sources } }, '', path + hash));
+      const mark = { hash, ...sources };
+      const had = attempt(() => history.state?.[WROTE]);
+      const same = had != null && [...new Set([...Object.keys(had), ...Object.keys(mark)])].every((k) => had[k] === mark[k]);
+      if (same && location.pathname + location.search + location.hash === path + hash) return;
+      attempt(() => history.replaceState({ ...(history.state ?? {}), [WROTE]: mark }, '', path + hash));
     },
     // The last consortium on this device: { q, at, src } or null.
     saved: () => attempt(() => JSON.parse(storage.getItem(STORE) ?? 'null')),

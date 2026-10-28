@@ -162,6 +162,54 @@ test('F7: after Start over, pasting back the link that was open reloads it', asy
   assert.equal(page.reloads, 1, 'the same link pasted again opens it');
 });
 
+// L1: the address the page compares with is the one the address bar holds, read back after a write.
+for (const fails of ['throw', 'ignore']) {
+  test(`a write to the address that the browser drops (${fails}) never reloads the page, and writes resume after`, async () => {
+    const { t, page, dev } = await appleResult();
+    const link = hashOf(t);
+    dev.historyFails = fails;
+    await chooseCountry(page, 'DE');
+    await chooseCountry(page, 'FR');
+    await page.act('change-crops');
+    await page.act('crops-back');
+    assert.equal(page.reloads, 0, 'no reload: the address still holds what the page last wrote');
+    assert.equal(hashOf(t), link);
+    dev.historyFails = null;
+    await chooseCountry(page, 'BR');
+    assert.equal(page.reloads, 0);
+    assert.equal(stateOf(t).state.country, 'BR', 'the next write goes through');
+  });
+}
+
+test('where every address write throws, an arrival link the page would write differently never loops', async () => {
+  const made = await appleResult();
+  await chooseCountry(made.page, 'DE');
+  // The same consortium with its parameters in another order: the page writes it back in its own order.
+  const params = [...new URLSearchParams(hashOf(made.t).slice(1))].reverse();
+  const reordered = '#' + new URLSearchParams(params).toString();
+  assert.notEqual(reordered, hashOf(made.t));
+  const dev = device();
+  dev.historyFails = 'throw';
+  const t = tab(dev, '/consortium/' + reordered, { siteClimate: 'temperate' });
+  const page = await t.load();
+  await chooseCountry(page, 'FR');
+  await page.act('change-crops');
+  await page.act('crops-back');
+  assert.equal(page.reloads, 0, 'never a reload');
+});
+
+test('an address that already holds the state is not written again', async () => {
+  const { t, page, dev } = await appleResult();
+  const link = hashOf(t);
+  const before = dev.historyWrites;
+  await page.act('change-crops');
+  await page.act('crops-back'); // the same consortium again: every render persists it
+  assert.equal(hashOf(t), link);
+  assert.equal(dev.historyWrites, before, 'no replaceState call for an unchanged state');
+  await chooseCountry(page, 'DE');
+  assert.ok(dev.historyWrites > before, 'a changed state is written');
+});
+
 // ---------- B5, F2: Back and Undo never bring back an earlier country ----------
 test('B5: Back to your consortium and Start over\'s Undo keep the country chosen since', async () => {
   const { t, page } = await appleResult();

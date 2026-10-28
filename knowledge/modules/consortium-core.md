@@ -4,7 +4,7 @@ title: Consortium core
 description: Format 3 types and the pure, dependency-free functions of the consortium tool (climate file lookup, country checks, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T20:09:03Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T21:25:41Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
@@ -12,7 +12,7 @@ sources:
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:6f8fe9de21d5685b
-    last_modified: 2026-10-28T19:37:21Z
+    last_modified: 2026-10-28T20:09:16Z
   - id: climates-ts
     resource: ../../src/lib/consortium/climates.ts
     title: src/lib/consortium/climates.ts
@@ -32,7 +32,7 @@ sources:
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
     digest: sha256:117fc519bf6936f4
-    last_modified: 2026-10-28T19:39:06Z
+    last_modified: 2026-10-28T20:09:16Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
@@ -51,8 +51,8 @@ sources:
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
-    digest: sha256:f2866a944a474b46
-    last_modified: 2026-10-28T19:37:21Z
+    digest: sha256:c67f90b55393b5c7
+    last_modified: 2026-10-28T20:27:00Z
 enforced_by:
   - scripts/consortium.test.mjs
   - scripts/install-consortium.test.mjs
@@ -79,7 +79,7 @@ export under `public/data/consortium/`.
 | [suggest.ts](../../src/lib/consortium/suggest.ts) | `gain(taxon, members, site)` (term by term), `suggest(file, { site, kept, removed, country, countryChecked })` → `{ members, limit, gaps }` (the only function that fills), `evaluate(cell, ids, { site, kept, country })` → the same `{ members, limit, gaps }` for a fixed list, never refilled, `alternatives(memberId, consortium, cell, { site, removed, country })`, `flagsFor(cell, id, memberIds, { site, country })` (the flags of one plant against a list: what Add uses to sort and confirm), `SIZE_LIMIT` |
 | [state.ts](../../src/lib/consortium/state.ts) | `ConsortiumState` (`climate`, `country`, `noCountry`, `site`, `kept`, `removed`, `members`, `plants`, `crops`, `guests`), `encodeState(state, cell?, others?)` → `URLSearchParams`, `decodeState(params, cell?, others?)` → `{ state, dropped, version }`, `resolveState(decoded, cell, others?)`, `taxonByName(cell, name)` (a guide's plant: exact canonical name, else case and spacing aside), `resolveIds(tokens, pool, key?, match?)` (one prefix `matcher(pool)` per pool), `END_KEY` = `e` (`encodeState` writes `e=1` last, `decodeState` reports `ended`, so a link cut between two tokens is seen as cut; an unknown `v` reads no plant keys; every `g` value shares one cap and a repeated guest code is dropped as `duplicate`), `shortId(id, cell?)`, `MAX_LINK_IDS` = 2000, `MAX_CROPS` = 3, `GUEST_CODES` (two letters per climate), `LINK_VERSION` = 3, `NO_COUNTRY` = `-` |
 | [index.ts](../../src/lib/consortium/index.ts) | re-exports all of the above |
-| [install-consortium.mjs](../../scripts/install-consortium.mjs) | `npm run install:consortium -- <export-dir> [--fixture [--no-images]] [--out <dir>]`; `installConsortium(...)`, `verifyExport`, `verifyInstall(dir, { fixture })` (re-checks an installed folder: manifest, labels, `SHA256SUMS`, each climate file's sha256, regions, shape, counts, sources and `ruleProblem`, every photo a local file that exists; `check-built-site.mjs` runs it on `dist/`), `shapeErrors`, `cellShape` (an interaction's optional `agent_names` is null or `{ names, sources }`, names keyed only by the 11 site locales, its sources defined like every other; `scripts/consortium-types.check.ts` holds the same rule for the `AgentNames` type under `npm run check`), `ruleProblem(file, climateFile, countries)`, `isHttpUrl`, `thumbnailUrl`, `STAGING_DIR`, `stagingDirFor(out)` |
+| [install-consortium.mjs](../../scripts/install-consortium.mjs) | `npm run install:consortium -- <export-dir> [--fixture [--no-images]] [--out <dir>]`; `installConsortium(...)`, `verifyExport`, `verifyInstall(dir, { fixture })` (re-checks an installed folder: manifest, labels, `SHA256SUMS`, each climate file's sha256, regions, shape, counts, sources and `ruleProblem`, every photo a local file that exists; `check-built-site.mjs` runs it on `dist/`), `shapeErrors`, `cellShape` (an interaction's optional `agent_names` is null or `{ names, sources }`, names keyed only by the 11 site locales, at least one name and none empty (canopi-data's schema; review L4), its sources defined like every other; `scripts/consortium-types.check.ts` holds the same rule for the `AgentNames` type under `npm run check`), `ruleProblem(file, climateFile, countries)`, `isHttpUrl`, `thumbnailUrl`, `STAGING_DIR`, `stagingDirFor(out)` |
 
 # Rules the code fixes (the plan left them open)
 
