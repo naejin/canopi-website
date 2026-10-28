@@ -9,7 +9,7 @@
 // "Unknown traits" are the site checks fits() could not decide (light, soil, water, room), so a
 // plant the catalog knows well wins over one it barely knows. Gains are counted in tenths, as
 // integers, so equal gains tie exactly and the threshold is not blurred by float rounding.
-import type { Cell, Taxon } from './types.ts';
+import type { ClimateFile, Taxon } from './types.ts';
 import type { Fit, Site, SiteKey } from './site.ts';
 import type { Conflict } from './conflicts.ts';
 import type { JobId } from './jobs.ts';
@@ -29,20 +29,24 @@ export interface Gain { total: number; jobs: number; cells: number; strata: numb
 export interface Flags {
   misfits: SiteKey[];
   unknowns: SiteKey[];
-  invasive: boolean | null; // invasiveIn() for the user's country
+  invasive: boolean | null; // invasiveIn() for the user's country: a warning only, never a filter or a score
   conflicts: Conflict[]; // with the other members, any severity
-  flagged: boolean; // what would keep it out of automatic picks: a misfit, invasive here, a medium/high conflict
+  flagged: boolean; // what keeps it out of automatic picks: a misfit or a medium/high conflict (not invasiveness)
 }
 
 export interface Member { taxon: Taxon; kept: boolean; gain: number | null; flags: Flags }
 export interface Suggestion { members: Member[]; limit: number; gaps: JobId[] }
 export interface Alternative { taxon: Taxon; sameStratum: boolean; sharedJobs: JobId[]; gain: number; flags: Flags }
 
-export interface SuggestOptions {
+// The user's country, for the invasive flag only: the plants picked never depend on it (owner,
+// 2026-10-28). country is ISO alpha-2; countryChecked is the manifest's countries[country]
+// .invasive_checked (default true), and false makes Flags.invasive null, "not checked".
+export interface Country { country?: string | null; countryChecked?: boolean }
+
+export interface SuggestOptions extends Country {
   site: Site;
   kept?: string[]; // taxon ids that are always members, flagged or not (kept wins over removed)
   removed?: string[]; // taxon ids never picked automatically
-  country?: string | null; // ISO alpha-2; turns on the invasive filter
 }
 
 // What a taxon brings, worked out once per call.
@@ -128,27 +132,27 @@ const byName = (a: Taxon, b: Taxon) =>
 
 // For each taxon id of the cell, the ids it has a medium or high conflict with (either side of the
 // row): conflicts() over the whole cell, so the matching rule is the one the flags use.
-function seriousPartners(cell: Cell): Map<string, Set<string>> {
+function seriousPartners(cell: ClimateFile): Map<string, Set<string>> {
   const out = new Map<string, Set<string>>();
   const link = (a: string, b: string) => { if (!out.has(a)) out.set(a, new Set()); out.get(a)!.add(b); };
   for (const c of conflicts(cell.taxa, cell.interactions)) if (isSerious(c)) { link(c.a.id, c.b.id); link(c.b.id, c.a.id); }
   return out;
 }
 
-function flagsOf(i: Info, others: Taxon[], cell: Cell, country: string | null | undefined): Flags {
-  const invasive = invasiveIn(i.taxon, country);
+function flagsOf(i: Info, others: Taxon[], cell: ClimateFile, where: Country): Flags {
+  const invasive = invasiveIn(i.taxon, where.country, where.countryChecked ?? true);
   const found = conflictsOf(i.taxon, others, cell.interactions);
   return {
     misfits: [...i.fit.misfits],
     unknowns: [...i.fit.unknowns],
     invasive,
     conflicts: found,
-    flagged: !i.fit.ok || invasive === true || found.some(isSerious),
+    flagged: !i.fit.ok || found.some(isSerious),
   };
 }
 
-export function suggest(cell: Cell, options: SuggestOptions): Suggestion {
-  const { site, country } = options;
+export function suggest(cell: ClimateFile, options: SuggestOptions): Suggestion {
+  const { site } = options;
   const keptIds = new Set(options.kept ?? []);
   const removedIds = new Set(options.removed ?? []);
   const limit = SIZE_LIMIT[site.room];
@@ -163,7 +167,7 @@ export function suggest(cell: Cell, options: SuggestOptions): Suggestion {
   const memberIds = new Set(chosen.map((i) => i.taxon.id));
 
   const candidates = infos.filter((i) =>
-    !memberIds.has(i.taxon.id) && !removedIds.has(i.taxon.id) && i.fit.ok && invasiveIn(i.taxon, country) !== true);
+    !memberIds.has(i.taxon.id) && !removedIds.has(i.taxon.id) && i.fit.ok);
 
   while (chosen.length < limit) {
     let best: Info | null = null, bestGain = -Infinity;
@@ -182,29 +186,29 @@ export function suggest(cell: Cell, options: SuggestOptions): Suggestion {
     add(cov, best);
   }
 
-  return result(chosen, keptIds, gains, cell, site, country);
+  return result(chosen, keptIds, gains, cell, site, options);
 }
 
 // Members with their flags, and the jobs nobody does: what suggest() and evaluate() both return.
-function result(chosen: Info[], keptIds: Set<string>, gains: Map<string, number | null>, cell: Cell, site: Site, country: string | null | undefined): Suggestion {
+function result(chosen: Info[], keptIds: Set<string>, gains: Map<string, number | null>, cell: ClimateFile, site: Site, where: Country): Suggestion {
   const taxa = chosen.map((i) => i.taxon);
   const members = chosen.map((i) => ({
     taxon: i.taxon,
     kept: keptIds.has(i.taxon.id),
     gain: gains.get(i.taxon.id) ?? null,
-    flags: flagsOf(i, taxa.filter((t) => t.id !== i.taxon.id), cell, country),
+    flags: flagsOf(i, taxa.filter((t) => t.id !== i.taxon.id), cell, where),
   }));
   return { members, limit: SIZE_LIMIT[site.room], gaps: allJobs.filter((j) => !coverageOf(chosen).jobs.has(j)) };
 }
 
-export interface EvaluateOptions { site: Site; kept?: string[]; country?: string | null }
+export interface EvaluateOptions extends Country { site: Site; kept?: string[] }
 
 // A fixed consortium, scored as it stands and never refilled: the page's state after a Remove (the
 // gap stays) or a restored share link. Members come in the order of `ids` (repeats and ids not in
 // the cell are ignored) with the same flags as suggest(); a member's gain is what it adds to the
 // members before it, null when it is kept, so the ids of a suggestion give that suggestion back.
-export function evaluate(cell: Cell, ids: string[], options: EvaluateOptions): Suggestion {
-  const { site, country } = options;
+export function evaluate(cell: ClimateFile, ids: string[], options: EvaluateOptions): Suggestion {
+  const { site } = options;
   const keptIds = new Set(options.kept ?? []);
   const byId = new Map(cell.taxa.map((t) => [t.id, t]));
   const chosen: Info[] = [], gains = new Map<string, number | null>();
@@ -217,32 +221,32 @@ export function evaluate(cell: Cell, ids: string[], options: EvaluateOptions): S
     chosen.push(i);
     add(cov, i);
   }
-  return result(chosen, keptIds, gains, cell, site, country);
+  return result(chosen, keptIds, gains, cell, site, options);
 }
 
-export interface FlagsOptions { site: Site; country?: string | null }
+export interface FlagsOptions extends Country { site: Site }
 
 // The flags a plant would carry beside these members (it is left out of them if it is one): the
 // same misfits, unknowns, invasive check and conflicts as a member of suggest() or evaluate(), for a
 // plant the page offers to add. Ids not in the cell are ignored; null for a taxon id the cell lacks.
-export function flagsFor(cell: Cell, id: string, memberIds: string[], options: FlagsOptions): Flags | null {
+export function flagsFor(cell: ClimateFile, id: string, memberIds: string[], options: FlagsOptions): Flags | null {
   const taxon = cell.taxa.find((t) => t.id === id);
   if (!taxon) return null;
   const ids = new Set(memberIds);
   const others = cell.taxa.filter((t) => ids.has(t.id) && t.id !== id);
-  return flagsOf(infoOf(taxon, options.site), others, cell, options.country);
+  return flagsOf(infoOf(taxon, options.site), others, cell, options);
 }
 
-export interface AlternativeOptions { site: Site; removed?: string[]; country?: string | null }
+export interface AlternativeOptions extends Country { site: Site; removed?: string[] }
 
-// Plants that could take a member's place: plants without a flag before flagged ones (a misfit,
-// invasive here, a serious conflict), then same stratum, then the most jobs shared with the member,
+// Plants that could take a member's place: plants without a flag before flagged ones (a misfit or a
+// serious conflict; invasive here is a warning, not a flag), then same stratum, then the most jobs shared with the member,
 // then the highest gain to the rest of the consortium, then by name. Flagged plants are listed, with
 // their flags, so the page can show them under a warning; current members and removed plants are not.
-export function alternatives(memberId: string, consortium: string[], cell: Cell, options: AlternativeOptions): Alternative[] {
+export function alternatives(memberId: string, consortium: string[], cell: ClimateFile, options: AlternativeOptions): Alternative[] {
   const member = cell.taxa.find((t) => t.id === memberId);
   if (!member) return [];
-  const { site, country } = options;
+  const { site } = options;
   const inConsortium = new Set([...consortium, memberId]);
   const removedIds = new Set(options.removed ?? []);
   const others = cell.taxa.filter((t) => inConsortium.has(t.id) && t.id !== memberId);
@@ -259,7 +263,7 @@ export function alternatives(memberId: string, consortium: string[], cell: Cell,
         sameStratum: memberStratum !== null && i.stratum === memberStratum,
         sharedJobs: i.jobs.filter((j) => memberJobs.has(j)),
         gain: tenths(i, cov).total / 10,
-        flags: flagsOf(i, others, cell, country),
+        flags: flagsOf(i, others, cell, options),
       };
     });
   return out.sort((x, y) =>

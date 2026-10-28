@@ -1,19 +1,19 @@
 // The consortium tool's data core (src/lib/consortium/), through its public functions, on the
-// invented format 2 fixture (scripts/fixtures/consortium/) and on small cells built from it. The
+// invented format 3 fixture (scripts/fixtures/consortium/) and on small climate files built from it. The
 // scoring contract is the plan's "Scoring module" (knowledge/project/consortium-tool-plan.md).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
-const { cellFor, regionsOf, fits, jobsOf, jobs, bandOf, bandsOf, phases, conflicts, invasiveIn, invasiveCountries } = core;
-const { gain, suggest, evaluate, alternatives, flagsFor, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveState, resolveIds, shortId, MAX_LINK_IDS, taxonByName } = core;
+const { fileFor, isCountry, invasiveChecked, fits, jobsOf, jobs, bandOf, bandsOf, phases, conflicts, invasiveIn, invasiveCountries } = core;
+const { gain, suggest, evaluate, alternatives, flagsFor, SIZE_LIMIT, DEFAULT_SITE, LINK_VERSION, FORMAT_VERSION, encodeState, decodeState, resolveState, resolveIds, shortId, MAX_LINK_IDS, taxonByName } = core;
 
 const read = (name) => JSON.parse(readFileSync(new URL(`fixtures/consortium/${name}`, import.meta.url), 'utf8'));
 const manifest = read('manifest.json');
-const tropical = read('tropical-southern-america.json');
-const mediterranean = read('mediterranean-europe.json');
-const temperate = read('temperate-europe.json');
+const tropical = read('tropical.json');
+const mediterranean = read('mediterranean.json');
+const temperate = read('temperate.json');
 const allTaxa = [...tropical.taxa, ...mediterranean.taxa, ...temperate.taxa];
 const named = (name) => {
   const t = allTaxa.find((x) => x.canonical_name === name);
@@ -56,29 +56,36 @@ const layer = (value, start = 'placenta_i', end = 'climax') => ({
 const cellOf = (taxa, interactions = []) => ({ ...structuredClone(tropical), taxa, interactions });
 const names = (list) => list.map((m) => m.taxon.canonical_name);
 
-// cellFor and regionsOf
+// fileFor, isCountry and invasiveChecked
 
-test('cellFor maps the site climate ids (lowercase) to the export climate zones', () => {
-  assert.equal(cellFor(manifest, 'tropical', 'southern_america')?.file, 'tropical-southern-america.json');
-  assert.equal(cellFor(manifest, 'mediterranean', 'europe')?.file, 'mediterranean-europe.json');
-  assert.equal(cellFor(manifest, 'temperate', 'europe')?.taxa, 12);
-  assert.equal(cellFor(manifest, 'Temperate', 'europe')?.file, 'temperate-europe.json', 'either case is read');
+test('fileFor maps the site climate ids (lowercase) to the climate files of the export', () => {
+  assert.equal(fileFor(manifest, 'tropical')?.file, 'tropical.json');
+  assert.equal(fileFor(manifest, 'mediterranean')?.file, 'mediterranean.json');
+  assert.equal(fileFor(manifest, 'temperate')?.taxa, 13);
+  assert.deepEqual(fileFor(manifest, 'temperate')?.regions, ['europe', 'asia_temperate']);
+  assert.equal(fileFor(manifest, 'Temperate')?.file, 'temperate.json', 'either case is read');
 });
 
-test('cellFor answers null for a cell not covered yet or an unknown id', () => {
-  assert.equal(cellFor(manifest, 'temperate', 'africa'), null);
-  assert.equal(cellFor(manifest, 'boreal', 'europe'), null);
-  assert.equal(cellFor(manifest, 'polar', 'europe'), null);
-  assert.equal(cellFor(manifest, 'tropical', 'Southern_America'), null, 'region ids are exact');
+test('fileFor answers null for a climate not covered yet or an unknown id', () => {
+  assert.equal(fileFor(manifest, 'boreal'), null);
+  assert.equal(fileFor(manifest, 'arid'), null);
+  assert.equal(fileFor(manifest, 'polar'), null);
+  assert.equal(fileFor(manifest, 'mars'), null);
 });
 
-test('regionsOf gives every region of a country, the default first, and [] for absent codes', () => {
-  assert.deepEqual(regionsOf(manifest, 'ES'), ['europe', 'africa']);
-  assert.deepEqual(regionsOf(manifest, 'es'), ['europe', 'africa']);
-  assert.deepEqual(regionsOf(manifest, 'FR'), ['europe']);
-  assert.deepEqual(regionsOf(manifest, 'TR'), ['asia_temperate', 'europe']);
-  assert.deepEqual(regionsOf(manifest, 'BR'), ['southern_america']);
-  for (const code of ['AQ', 'BV', 'FK', 'GS', 'HM', 'TF', 'ZZ']) assert.deepEqual(regionsOf(manifest, code), [], code);
+test('isCountry knows every manifest country; invasiveChecked only those GRIIS checked', () => {
+  for (const code of ['FR', 'fr', 'BR', 'TW', 'AQ']) assert.ok(isCountry(manifest, code), code);
+  for (const code of ['ZZ', '', null, undefined]) assert.ok(!isCountry(manifest, code), String(code));
+  assert.equal(invasiveChecked(manifest, 'BR'), true);
+  assert.equal(invasiveChecked(manifest, 'tw'), false);
+  assert.equal(invasiveChecked(manifest, 'ZZ'), false);
+  assert.equal(invasiveChecked(manifest, null), false);
+});
+
+test('the link version stays 2 while the export format is 3', () => {
+  assert.equal(LINK_VERSION, 2);
+  assert.equal(FORMAT_VERSION, 3);
+  assert.equal(manifest.format_version, FORMAT_VERSION);
 });
 
 // fits
@@ -224,15 +231,17 @@ test('conflicts: family rank, both directions, and a same-genus row pairs two me
 });
 
 test('invasiveIn: true where recorded, false where checked and absent, null when not checked or no country', () => {
-  const leucaena = named('Leucaena leucocephala'), cassava = named('Manihot esculenta'), lemongrass = named('Cymbopogon citratus');
+  const leucaena = named('Leucaena leucocephala'), lemongrass = named('Cymbopogon citratus'), cassava = make({ warnings: { invasive_in: null } });
   assert.equal(invasiveIn(leucaena, 'BR'), true);
   assert.equal(invasiveIn(leucaena, 'br'), true);
   assert.equal(invasiveIn(leucaena, 'FR'), false);
-  assert.equal(invasiveIn(lemongrass, 'BR'), false, '[] is checked, none');
+  assert.equal(invasiveIn(lemongrass, 'BR'), false, 'checked, not recorded in Brazil');
   assert.equal(invasiveIn(cassava, 'BR'), null, 'null is not checked');
   assert.equal(invasiveIn(leucaena, null), null);
-  assert.equal(invasiveCountries(leucaena).length, 10);
-  assert.deepEqual(invasiveCountries(lemongrass), []);
+  assert.equal(invasiveIn(leucaena, 'TW', false), null, 'a country GRIIS did not check is not checked, never none');
+  assert.equal(invasiveIn(lemongrass, 'TW', false), null);
+  assert.equal(invasiveCountries(leucaena).length, leucaena.warnings.invasive_in.length);
+  assert.deepEqual(invasiveCountries(named('Musa acuminata')), []);
   assert.equal(invasiveCountries(cassava), null);
 });
 
@@ -353,19 +362,26 @@ test('suggest never picks a misfit, but a kept misfit stays with its flag', () =
   assert.equal(kept[0].flags.flagged, true);
 });
 
-test('suggest leaves out plants invasive in the user country; null (not checked) is not a reason', () => {
+// Owner, 2026-10-28: invasiveness is a warning, never a filter or a score.
+test('suggest picks the same plants with or without a country; invasive here is a warning, not a flag', () => {
   const invasive = make({ functions: fn('mulch'), warnings: { invasive_in: [{ country: 'BR', sources: ['griis'] }] } });
   const unchecked = make({ functions: fn('ground_cover'), warnings: { invasive_in: null } });
   const cell = cellOf([invasive, unchecked]);
-  assert.deepEqual(names(suggest(cell, { site: open, country: 'BR' }).members), [unchecked.canonical_name]);
-  assert.deepEqual(names(suggest(cell, { site: open, country: 'FR' }).members), [invasive.canonical_name, unchecked.canonical_name]);
-  assert.equal(suggest(cell, { site: open }).members.length, 2, 'no country, no filter');
-  const kept = suggest(cell, { site: open, country: 'BR', kept: [invasive.id] }).members;
-  assert.equal(kept.find((m) => m.taxon.id === invasive.id).flags.invasive, true);
-  assert.equal(kept.find((m) => m.taxon.id === unchecked.id).flags.invasive, null);
-  // On the fixture: leucaena, recorded invasive in Brazil, is never suggested there.
-  for (const room of ['small', 'large', 'field'])
-    assert.ok(!names(suggest(tropical, { site: { ...open, room }, country: 'BR', kept: [named('Inga edulis').id] }).members).includes('Leucaena leucocephala'));
+  const both = [invasive.canonical_name, unchecked.canonical_name];
+  for (const country of ['BR', 'FR', 'TW', null]) assert.deepEqual(names(suggest(cell, { site: open, country }).members), both, String(country));
+  const br = suggest(cell, { site: open, country: 'BR' }).members;
+  assert.equal(br.find((m) => m.taxon.id === invasive.id).flags.invasive, true);
+  assert.equal(br.find((m) => m.taxon.id === invasive.id).flags.flagged, false, 'not held back');
+  assert.equal(br.find((m) => m.taxon.id === unchecked.id).flags.invasive, null);
+  assert.equal(suggest(cell, { site: open, country: 'FR' }).members.find((m) => m.taxon.id === invasive.id).flags.invasive, false);
+  assert.equal(suggest(cell, { site: open, country: 'BR', countryChecked: false }).members.find((m) => m.taxon.id === invasive.id).flags.invasive, null, 'unchecked country');
+  // On the fixture: the members never depend on the country.
+  for (const room of ['small', 'large', 'field']) {
+    const site = { ...open, room };
+    const ids = (country) => suggest(tropical, { site, country, kept: [named('Inga edulis').id] }).members.map((m) => m.taxon.id);
+    assert.deepEqual(ids('BR'), ids(null), room);
+    assert.deepEqual(ids('FR'), ids(null), room);
+  }
 });
 
 test('suggest leaves out a plant with a medium or high conflict with a member; a low one only warns', () => {
@@ -454,7 +470,7 @@ test('alternatives on the fixture: flagged plants are listed with their warnings
   const alts = alternatives(inga.id, [inga.id, potato.id], tropical, { site: open, country: 'BR' });
   const leucaena = alts.find((a) => a.taxon.canonical_name === 'Leucaena leucocephala');
   assert.equal(leucaena.flags.invasive, true);
-  assert.equal(leucaena.flags.flagged, true);
+  assert.equal(leucaena.flags.flagged, false, 'invasive here is told, not held back');
   const tithonia = alts.find((a) => a.taxon.canonical_name === 'Tithonia diversifolia');
   assert.equal(tithonia.flags.conflicts[0].b.canonical_name, 'Ipomoea batatas');
   assert.ok(!alts.some((a) => a.taxon.id === inga.id || a.taxon.id === potato.id));
@@ -462,7 +478,7 @@ test('alternatives on the fixture: flagged plants are listed with their warnings
   assert.ok(firstFlagged > 0 && alts.slice(firstFlagged).every((a) => a.flags.flagged), 'flagged plants come last, after every plant without a warning');
   for (const group of [alts.slice(0, firstFlagged), alts.slice(firstFlagged)]) {
     const firstOther = group.findIndex((a) => !a.sameStratum);
-    assert.ok(firstOther > 0 && group.slice(firstOther).every((a) => !a.sameStratum), 'same stratum first, within each group');
+    if (firstOther >= 0) assert.ok(group.slice(firstOther).every((a) => !a.sameStratum), 'same stratum first, within each group');
   }
 });
 
@@ -474,14 +490,15 @@ test('flagsFor: a plant beside the members carries the flags it would have as a 
   const asMember = evaluate(tropical, [inga.id, potato.id, tithonia.id], opts).members.at(-1).flags;
   assert.deepEqual({ ...t, conflicts: t.conflicts.length }, { ...asMember, conflicts: asMember.conflicts.length });
   assert.equal(flagsFor(tropical, leucaena.id, [], opts).invasive, true);
-  assert.equal(flagsFor(tropical, leucaena.id, [leucaena.id], opts).flagged, true, 'a member is left out of its own list');
+  assert.equal(flagsFor(tropical, leucaena.id, [], { ...opts, countryChecked: false }).invasive, null);
+  assert.equal(flagsFor(tropical, leucaena.id, [leucaena.id], opts).invasive, true, 'a member is left out of its own list');
   assert.equal(flagsFor(tropical, 'ffffffff-0000-4000-8000-000000000000', [], opts), null);
 });
 
 // state
 
 const sampleState = () => ({
-  climate: 'tropical', region: 'southern_america', country: 'BR',
+  climate: 'tropical', country: 'BR',
   site: { light: 'part', soil: 'acid', water: 'wet', room: 'small' },
   kept: [named('Inga edulis').id, named('Musa acuminata').id],
   removed: [named('Leucaena leucocephala').id],
@@ -496,26 +513,36 @@ test('state: encode then decode with the cell restores the exact state', () => {
   assert.doesNotMatch(q.toString(), /%/, 'nothing escaped');
   const { state: back, dropped } = decodeState(q.toString(), tropical);
   assert.deepEqual(dropped, []);
-  assert.deepEqual({ ...back, kept: [...back.kept].sort() }, { ...state, cellRegion: null, members: null, plants: [], kept: [...state.kept].sort() });
+  assert.deepEqual({ ...back, kept: [...back.kept].sort() }, { ...state, noCountry: false, members: null, plants: [], kept: [...state.kept].sort() });
   const empty = decodeState('');
-  assert.deepEqual(empty, { state: { climate: null, region: null, cellRegion: null, country: null, site: DEFAULT_SITE, kept: [], removed: [], members: null, plants: [] }, dropped: [] });
+  assert.deepEqual(empty, { state: { climate: null, country: null, noCountry: false, site: DEFAULT_SITE, kept: [], removed: [], members: null, plants: [] }, dropped: [] });
 });
 
-test('state: a link from another region keeps both regions, the user region and the region of the cell shown', () => {
+test('state: an old link with a region (r) and a borrowed cell (b) still opens; both are ignored without a notice', () => {
   const olive = mediterranean.taxa[0].id;
-  const state = { ...sampleState(), climate: 'mediterranean', region: 'southern_america', cellRegion: 'europe', country: null, kept: [olive], removed: [] };
-  const q = encodeState(state, mediterranean);
-  assert.equal(q.get('r'), 'southern_america');
-  assert.equal(q.get('b'), 'europe');
-  const { state: back, dropped } = decodeState(q.toString(), mediterranean);
+  const { state, dropped } = decodeState(`v=2&c=mediterranean&r=southern_america&b=europe&l=sun&s=acid&w=dry&m=large&p=${olive.slice(0, 8)}`, mediterranean);
   assert.deepEqual(dropped, []);
-  assert.equal(back.region, 'southern_america');
-  assert.equal(back.cellRegion, 'europe');
-  assert.deepEqual(back.kept, [olive]);
-  assert.equal(encodeState({ ...state, cellRegion: 'southern_america' }).get('b'), null, 'written only when it differs');
-  assert.equal(decodeState('r=europe&b=europe').state.cellRegion, null);
-  assert.equal(decodeState('r=europe').state.cellRegion, null, 'an old link has none');
-  assert.deepEqual(decodeState('b=mars').dropped, [{ key: 'b', value: 'mars', reason: 'unknown' }]);
+  assert.equal(state.climate, 'mediterranean');
+  assert.deepEqual(state.kept, [olive]);
+  assert.ok(!('region' in state) && !('cellRegion' in state));
+  assert.deepEqual(decodeState('r=mars&b=venus&r=x').dropped, [], 'not even a bad one');
+  const q = encodeState(state, mediterranean);
+  assert.equal(q.get('r'), null);
+  assert.equal(q.get('b'), null);
+});
+
+test('state: a country is written only when the state has one; k=- is "No country", chosen', () => {
+  const state = { ...sampleState(), country: null };
+  assert.equal(encodeState(state).get('k'), null, 'no country, no k');
+  assert.equal(encodeState({ ...state, noCountry: true }).get('k'), '-');
+  assert.equal(encodeState({ ...state, country: 'br', noCountry: true }).get('k'), 'BR', 'a country wins');
+  const none = decodeState('c=tropical&k=-');
+  assert.equal(none.state.country, null);
+  assert.equal(none.state.noCountry, true);
+  assert.deepEqual(none.dropped, []);
+  assert.equal(decodeState('k=BR').state.noCountry, false);
+  // A code of the right shape passes here; the page checks it against the manifest (countryUnknown).
+  assert.equal(decodeState('k=ZZ').state.country, 'ZZ');
 });
 
 test('state: a link carries the members in order, so the page restores them without refilling', () => {
@@ -557,10 +584,10 @@ test('state: without the cell, decode keeps the prefixes for resolveIds()', () =
 
 test('state: unknown and malformed values are dropped and reported, never thrown', () => {
   const { state, dropped } = decodeState('v=9&c=polar&r=mars&k=France&l=dim&s=clay&w=soggy&m=huge&p=xyz.deadbeef.d9242605&x=1234', tropical);
-  assert.deepEqual(state, { climate: null, region: null, cellRegion: null, country: null, site: DEFAULT_SITE, kept: [named('Arachis pintoi').id], removed: [], members: null, plants: [] });
+  assert.deepEqual(state, { climate: null, country: null, noCountry: false, site: DEFAULT_SITE, kept: [named('Arachis pintoi').id], removed: [], members: null, plants: [] });
   assert.deepEqual(dropped.map((d) => `${d.key}=${d.value}:${d.reason}`).sort(), [
     'c=polar:unknown', 'k=France:unknown', 'l=dim:unknown', 'm=huge:unknown', 'p=deadbeef:unknown', 'p=xyz:malformed',
-    'r=mars:unknown', 's=clay:unknown', 'v=9:unknown', 'w=soggy:unknown', 'x=1234:malformed',
+    's=clay:unknown', 'v=9:unknown', 'w=soggy:unknown', 'x=1234:malformed',
   ]);
   for (const g of ['%', 'c=%ZZ', 'p=..,,', '&&&=', `p=${'a'.repeat(5000)}`, 'c=tropical&c=arid', '?']) assert.doesNotThrow(() => decodeState(g, tropical), g);
   assert.deepEqual(decodeState('c=tropical&c=arid').dropped, [{ key: 'c', value: 'arid', reason: 'duplicate' }]);
@@ -604,7 +631,7 @@ test('state: a link with thousands of ids decodes fast; ids past the cap are dro
     { key: 'p', value: String(30001 - MAX_LINK_IDS), reason: 'excess' },
     { key: 'x', value: String(30000 - MAX_LINK_IDS), reason: 'excess' },
   ]);
-  assert.ok(MAX_LINK_IDS >= 200, 'a whole cell still fits');
+  assert.ok(MAX_LINK_IDS >= 200, 'a whole climate file still fits');
 });
 
 test('state: a guide preset (?plant=<canonical_name>&climate=<id>) keeps its plant; one not in the cell is dropped', () => {

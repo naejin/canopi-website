@@ -1,13 +1,18 @@
-// The tool's state in a share link: ?v=2&c=tropical&r=southern_america&k=BR&l=sun&s=acid&w=dry&m=large&p=…&x=…&a=…
-//   v format version, c climate (site id, lowercase), r the user's region, b the region of the cell
-//   shown when it is another one (the user opted into a borrowed cell), k country (ISO alpha-2),
-//   l light, s soil, w water, m room, p kept taxon ids, x removed taxon ids, a the members in order.
+// The tool's state in a share link: ?v=2&c=tropical&k=BR&l=sun&s=acid&w=dry&m=large&p=…&x=…&a=…
+//   v link version (LINK_VERSION, not the export's FORMAT_VERSION), c climate (site id, lowercase),
+//   k country (ISO alpha-2, for the invasive warnings only), l light, s soil, w water, m room,
+//   p kept taxon ids, x removed taxon ids, a the members in order.
+// k is written only when the state has a country; the page leaves out a country it guessed, so a
+// link carries a country only when the user chose it. `k=-` means "No country", chosen: the page
+// writes it only to its saved state (local storage), never to a share link.
+// Links from before the climate-first tool carry r (region) and b (borrowed cell region): both are
+// ignored, without a notice, since one climate file now serves every region.
 // A guide opens the tool with a preset instead: ?plant=<canonical_name>&climate=<id>. `climate` is
 // read when `c` is absent; the plant becomes kept once the cell is known (resolveState), and a
 // plant the cell does not have is dropped. encodeState always writes the short keys.
 // Without `a` (links written before it), the page suggests around the kept plants; with it, the
-// page shows those members as they were (evaluate(), never refilled). Without `b`, the cell shown is
-// the user's region's. Old links decode the same, so `v` stays 2.
+// page shows those members as they were (evaluate(), never refilled). Old links decode the same, so
+// `v` stays 2.
 // Site keys are always written, so a link means the same thing if the defaults change. Decoding
 // never throws: an unknown or malformed value is left out and listed in `dropped`, so the page can
 // say what an old link lost.
@@ -17,18 +22,22 @@
 // segment boundary (13, 18, 23, then 36 characters) until no other taxon of the cell shares the
 // prefix; decoding matches a prefix against the cell's ids and drops one that matches none or
 // several. A full UUID is a valid prefix, so links that carry whole ids keep working.
-import type { Cell, Region, Taxon } from './types.ts';
+import type { ClimateFile, Taxon } from './types.ts';
 import type { Site } from './site.ts';
-import type { SiteClimate } from './cells.ts';
-import { FORMAT_VERSION } from './types.ts';
+import type { SiteClimate } from './climates.ts';
 import { DEFAULT_SITE, lights, rooms, soils, waters } from './site.ts';
-import { isRegion, isSiteClimate } from './cells.ts';
+import { isSiteClimate } from './climates.ts';
+
+// The share link's own version, kept apart from the export's FORMAT_VERSION: format 3 changed the
+// files, not the link.
+export const LINK_VERSION = 2;
+// `k=-`: the user chose "No country" (saved state only).
+export const NO_COUNTRY = '-';
 
 export interface ConsortiumState {
   climate: SiteClimate | null;
-  region: Region | null; // the user's region
-  cellRegion?: Region | null; // the region of the cell shown, when it is not `region`; decodeState always sets it
-  country: string | null;
+  country: string | null; // ISO alpha-2, upper case; only the invasive warnings use it
+  noCountry?: boolean; // the user chose "No country" (k=-); decodeState always sets it
   site: Site;
   kept: string[]; // taxon ids; before resolveIds(), the prefixes read from the link
   removed: string[];
@@ -51,7 +60,7 @@ const MAX_NAME_LENGTH = 200;
 const nameKey = (name: string) => name.trim().replace(/\s+/g, ' ').toLowerCase();
 
 // The shortest prefix of the id that no other taxon of the cell starts with (8 characters without a cell).
-export function shortId(id: string, cell?: Cell | null): string {
+export function shortId(id: string, cell?: ClimateFile | null): string {
   for (const n of PREFIX_LENGTHS) {
     const prefix = id.slice(0, n);
     if (!cell || !cell.taxa.some((t) => t.id !== id && t.id.startsWith(prefix))) return prefix;
@@ -59,18 +68,17 @@ export function shortId(id: string, cell?: Cell | null): string {
   return id;
 }
 
-export function encodeState(state: ConsortiumState, cell?: Cell | null): URLSearchParams {
+export function encodeState(state: ConsortiumState, cell?: ClimateFile | null): URLSearchParams {
   const q = new URLSearchParams();
   const ids = (list: string[]) => [...new Set(list.map((id) => shortId(id, cell)))].sort().join(ID_SEPARATOR);
-  q.set('v', String(FORMAT_VERSION));
+  q.set('v', String(LINK_VERSION));
   if (state.climate) q.set('c', state.climate);
-  if (state.region) q.set('r', state.region);
   if (state.country) q.set('k', state.country.toUpperCase());
+  else if (state.noCountry) q.set('k', NO_COUNTRY);
   q.set('l', state.site.light);
   q.set('s', state.site.soil);
   q.set('w', state.site.water);
   q.set('m', state.site.room);
-  if (state.cellRegion && state.cellRegion !== state.region) q.set('b', state.cellRegion);
   const kept = new Set(state.kept);
   if (kept.size) q.set('p', ids([...kept]));
   const removed = state.removed.filter((id) => !kept.has(id));
@@ -84,7 +92,7 @@ export function encodeState(state: ConsortiumState, cell?: Cell | null): URLSear
 }
 
 // Matches link prefixes against the cell's ids. Unknown and ambiguous prefixes are dropped.
-export function resolveIds(tokens: string[], cell: Cell, key = 'p'): { ids: string[]; dropped: Dropped[] } {
+export function resolveIds(tokens: string[], cell: ClimateFile, key = 'p'): { ids: string[]; dropped: Dropped[] } {
   const ids = new Set<string>(), dropped: Dropped[] = [];
   for (const token of tokens) {
     const hits = cell.taxa.filter((t) => t.id.startsWith(token));
@@ -98,7 +106,7 @@ const oneOf = <T extends string>(list: readonly T[]) => (v: string): v is T => (
 
 // Reads a link's query. With the cell, kept, removed and members hold full ids; without it, the
 // checked prefixes, to pass to resolveState() once the cell is loaded.
-export function decodeState(params: URLSearchParams | string, cell?: Cell | null): DecodedState {
+export function decodeState(params: URLSearchParams | string, cell?: ClimateFile | null): DecodedState {
   const q = typeof params === 'string' ? new URLSearchParams(params) : params;
   const dropped: Dropped[] = [];
 
@@ -118,7 +126,7 @@ export function decodeState(params: URLSearchParams | string, cell?: Cell | null
   };
 
   const version = first('v');
-  if (version !== null && version !== String(FORMAT_VERSION)) dropped.push({ key: 'v', value: version, reason: 'unknown' });
+  if (version !== null && version !== String(LINK_VERSION)) dropped.push({ key: 'v', value: version, reason: 'unknown' });
 
   // A guide preset names the climate `climate`; a link's own `c` wins over it.
   const climate = q.has('c') || !q.has('climate')
@@ -131,10 +139,10 @@ export function decodeState(params: URLSearchParams | string, cell?: Cell | null
     if (plant.trim() && plant.length <= MAX_NAME_LENGTH) plants.push(plant.trim());
     else dropped.push({ key: 'plant', value: plant.slice(0, MAX_NAME_LENGTH), reason: 'malformed' });
   }
-  const region = pick('r', isRegion, (v) => v.toLowerCase());
-  const borrowed = pick('b', isRegion, (v) => v.toLowerCase());
-  const cellRegion = borrowed !== region ? borrowed : null;
-  const country = pick('k', (v: string): v is string => COUNTRY.test(v), (v) => v.toUpperCase());
+  // r and b (an old link's region and borrowed cell) are not read: no notice, nothing lost that matters.
+  const k = pick('k', (v: string): v is string => v === NO_COUNTRY || COUNTRY.test(v), (v) => v.toUpperCase());
+  const noCountry = k === NO_COUNTRY;
+  const country = noCountry ? null : k;
   const site: Site = {
     light: pick('l', oneOf(lights)) ?? DEFAULT_SITE.light,
     soil: pick('s', oneOf(soils)) ?? DEFAULT_SITE.soil,
@@ -157,7 +165,7 @@ export function decodeState(params: URLSearchParams | string, cell?: Cell | null
     return [...out];
   };
   const decoded: DecodedState = {
-    state: { climate, region, cellRegion, country, site, kept: tokens('p'), removed: tokens('x'), members: q.has('a') ? tokens('a') : null, plants },
+    state: { climate, country, noCountry, site, kept: tokens('p'), removed: tokens('x'), members: q.has('a') ? tokens('a') : null, plants },
     dropped,
   };
   const read = consistent(decoded, false);
@@ -180,14 +188,14 @@ function consistent({ state, dropped }: DecodedState, resolved: boolean): Decode
 
 // The cell's taxon a guide names, by canonical name: exact first, then case and spacing aside;
 // null when the cell has none. resolveState() and the page's guide notice both use it.
-export function taxonByName(cell: Cell, name: string): Taxon | null {
+export function taxonByName(cell: ClimateFile, name: string): Taxon | null {
   return cell.taxa.find((t) => t.canonical_name === name) ?? cell.taxa.find((t) => nameKey(t.canonical_name) === nameKey(name)) ?? null;
 }
 
-// A link decoded without its cell (the page reads `c` and `r` first to choose the cell), resolved
+// A link decoded without its climate file (the page reads `c` first to choose the file), resolved
 // once the cell is loaded: prefixes become full ids, unknown and ambiguous ones are dropped, and the
 // kept-over-removed rule is applied again on the full ids (a link may carry one id at two lengths).
-export function resolveState(decoded: DecodedState, cell: Cell): DecodedState {
+export function resolveState(decoded: DecodedState, cell: ClimateFile): DecodedState {
   const { state } = decoded;
   const k = resolveIds(state.kept, cell, 'p'), x = resolveIds(state.removed, cell, 'x');
   const a = state.members ? resolveIds(state.members, cell, 'a') : null;

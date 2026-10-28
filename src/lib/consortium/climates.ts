@@ -1,7 +1,7 @@
-// Which cell file serves a place. The site names climates in lowercase ('tropical', the shared
-// site choice of src/data/climates.ts); the export names them capitalised ('Tropical'). The mapping
-// happens here, at the module edge, and nowhere else.
-import type { ClimateZone, Manifest, ManifestCell, Region } from './types.ts';
+// Which climate file serves a climate, and which countries the invasive warnings know. The site names
+// climates in lowercase ('tropical', the shared site choice of src/data/climates.ts); the export
+// names them capitalised ('Tropical'). The mapping happens here, at the module edge, and nowhere else.
+import type { ClimateZone, Manifest, ManifestClimate, Region } from './types.ts';
 import { climateZones, regions } from './types.ts';
 
 export const siteClimates = climateZones.map((z) => z.toLowerCase() as Lowercase<ClimateZone>);
@@ -16,18 +16,19 @@ export function climateZoneOf(climate: string): ClimateZone | null {
   return zone ?? null;
 }
 
-// The manifest entry (its `file`, counts and checksum) of the accepted cell for a place, or null when
-// that cell is not covered yet.
-export function cellFor(manifest: Manifest, climate: string, region: string): ManifestCell | null {
+// The manifest entry (its `file`, regions, counts and checksum) of a climate, or null when that
+// climate is not covered yet.
+export function fileFor(manifest: Manifest, climate: string): ManifestClimate | null {
   const zone = climateZoneOf(climate);
   if (!zone) return null;
-  return manifest.cells.find((c) => c.climate_zone === zone && c.region === region) ?? null;
+  return manifest.climates.find((c) => c.climate_zone === zone) ?? null;
 }
 
-// A country's regions, the default (where most of its people live) first. [] for a code the table
-// lacks, such as the Antarctic and subantarctic codes (AQ, BV, FK, GS, HM, TF): the page then asks for
-// the region.
-export function regionsOf(manifest: Manifest, country: string): Region[] {
-  const list = manifest.country_regions[country.toUpperCase()];
-  return Array.isArray(list) ? list.filter(isRegion) : [];
-}
+// A country code the manifest lists (every ISO 3166-1 alpha-2 code, and XK).
+export const isCountry = (manifest: Manifest, code: string | null | undefined): boolean =>
+  !!code && Object.hasOwn(manifest.countries, code.toUpperCase());
+
+// Whether GRIIS checked the country: only then is a taxon with no record there "not recorded
+// invasive"; elsewhere it is "not checked", never "none".
+export const invasiveChecked = (manifest: Manifest, code: string | null | undefined): boolean =>
+  !!code && manifest.countries[code.toUpperCase()]?.invasive_checked === true;

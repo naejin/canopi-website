@@ -1,14 +1,15 @@
-// Types of the consortium export, format 2: the contract is canopi-data's
+// Types of the consortium export, format 3 (one file per climate): the contract is canopi-data's
 // docs/consortium-export-format.md and docs/consortium-export.schema.json, which this file mirrors
 // and never extends. null means unknown or not checked; [] means checked, nothing found. Fields the
 // schema allows as extras are ignored, so the export may add fields without a version bump.
 
-export const FORMAT_VERSION = 2;
+export const FORMAT_VERSION = 3;
 
 export const climateZones = ['Tropical', 'Subtropical', 'Arid', 'Mediterranean', 'Temperate', 'Continental', 'Boreal'] as const;
 export type ClimateZone = (typeof climateZones)[number];
 
-// WGSRPD level-1 continents (Antarctica excluded).
+// WGSRPD level-1 continents (Antarctica excluded), in the export's region order. A region no longer
+// filters plants: it only labels the reasons a taxon was chosen (one per accepted cell of its climate).
 export const regions = ['europe', 'africa', 'asia_temperate', 'asia_tropical', 'australasia', 'pacific', 'northern_america', 'southern_america'] as const;
 export type Region = (typeof regions)[number];
 
@@ -90,15 +91,19 @@ export interface Warnings {
   weed_potential: boolean | null;
 }
 
+// Why a taxon was chosen, for one region whose accepted cell chose it: the curator's text and the
+// sample row's sources.
+export interface Reason { region: Region; text: Text; sources: string[] }
+
 export interface Taxon {
-  id: string; // catalog UUID with dashes, the same in every cell
+  id: string; // catalog UUID with dashes, the same in every climate file
   canonical_name: string;
   genus: string;
   family: string;
   names: Partial<Record<Locale, string>>;
   image: Image | null;
   role: 'crop' | 'support';
-  reason?: Text | null;
+  reasons: Reason[]; // never empty, one per region, in region order
   stratum: { value: Stratum; sources: string[] } | null;
   phases: { start: Phase; end: Phase; sources: string[] } | null;
   functions: TaxonFunction[] | null; // null = none accepted yet (not curated)
@@ -118,27 +123,29 @@ export interface Interaction {
   sources: string[];
 }
 
-// One cell file: a climate zone within a region.
-export interface Cell {
-  format_version: 2;
+// One climate file: the union of the climate's accepted cells (a cell is a climate zone within a
+// region; it stays the data side's unit of curation).
+export interface ClimateFile {
+  format_version: 3;
   climate_zone: ClimateZone;
-  region: Region;
+  regions: Region[]; // the regions whose accepted cells make up the file, in region order
   generated_at: string;
   sources: Record<string, Source>;
   taxa: Taxon[]; // sorted by canonical_name
   interactions: Interaction[]; // [] = checked, none found
 }
 
-export interface ManifestCell { climate_zone: ClimateZone; region: Region; file: string; taxa: number; interactions: number; sha256: string }
+export interface ManifestClimate { climate_zone: ClimateZone; file: string; regions: Region[]; taxa: number; interactions: number; sha256: string }
 
 export interface Manifest {
-  format_version: 2;
+  format_version: 3;
   generated_at: string;
   canopi_db_sha256: string;
-  cells: ManifestCell[];
+  climates: ManifestClimate[];
   locales: Locale[];
-  // Every ISO 3166-1 alpha-2 code to its regions, the default first; Antarctic codes are absent.
-  country_regions: Record<string, Region[]>;
+  // Every ISO 3166-1 alpha-2 code (and XK). invasive_checked: GRIIS has a checklist for the country,
+  // so a taxon with no record there is "not recorded invasive"; otherwise it is "not checked".
+  countries: Record<string, { invasive_checked: boolean }>;
 }
 
 // labels.json: trait name → English value → locale → translation (missing = fall back to English).
