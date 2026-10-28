@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:10:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:44:14Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T02:08:47Z }
 sources:
@@ -14,13 +14,13 @@ sources:
   - id: app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:ea12746ab3883201
-    last_modified: 2026-10-28T07:59:20Z
+    digest: sha256:7d820394d21b0e50
+    last_modified: 2026-10-28T08:25:21Z
   - id: words-js
     resource: ../../src/scripts/consortium/words.js
     title: src/scripts/consortium/words.js
     digest: sha256:04d626d62cfea173
-    last_modified: 2026-10-28T07:59:20Z
+    last_modified: 2026-10-28T08:18:06Z
   - id: draw-js
     resource: ../../src/scripts/consortium/draw.js
     title: src/scripts/consortium/draw.js
@@ -35,22 +35,22 @@ sources:
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
     digest: sha256:8fd5b17b2c562304
-    last_modified: 2026-10-28T08:10:35Z
+    last_modified: 2026-10-28T08:18:06Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
-    digest: sha256:60ff818034cee424
-    last_modified: 2026-10-27T23:26:45Z
+    digest: sha256:657a4a0f71b27b79
+    last_modified: 2026-10-28T08:33:14Z
   - id: consortium-page-test-mjs
     resource: ../../scripts/consortium-page.test.mjs
     title: scripts/consortium-page.test.mjs
-    digest: sha256:ac90ea13d7015250
-    last_modified: 2026-10-28T07:59:15Z
+    digest: sha256:7a591cb18aa1c566
+    last_modified: 2026-10-28T08:33:20Z
   - id: logic-js
     resource: ../../src/scripts/consortium/logic.js
     title: src/scripts/consortium/logic.js
     digest: sha256:1b7d31dce1f190c3
-    last_modified: 2026-10-28T07:59:20Z
+    last_modified: 2026-10-28T08:18:06Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
@@ -84,7 +84,7 @@ The consortium tool's page: the visitor picks a climate and a place, and gets 6 
 | [logic.js](../../src/scripts/consortium/logic.js) | Pure page rules tested in node: `withQuery` (the language links' query), `presetPlace` (a guide preset borrows the saved place), `coverageHint` (why a Northern American country is not covered), `droppedPlants` (old-link count), `trimGaps`, `mayPersist`, `photoSource`, `shown` (with `next`, what one "Show more" reveals), `linkMembers` (the link's `a`), `afterMove` (notices dropped on a place change), `repeatClick` (double-click guard), `safeHref` (only http(s) URLs become links), `licenceOf` (licence name and Creative Commons deed link, public domain flagged), `swapTarget` (the plant a details sheet opened from Swap would replace), `relaxTo` (the looser site answer, null when it is the current one) |
 | [data.ts](../../src/scripts/consortium/data.ts) | `loadManifest`, `loadLabels`, `loadCell` from `/data/consortium/` |
 | [consortium.css](../../src/styles/consortium.css) | Everything under `.ct`; strata colours only in the drawing (`.profile`, its numbered labels and key) and the strata legend (`.strata-mini`); number rings elsewhere and timeline bars in neutral ink; in print, the light palette on white whatever the theme |
-| [consortium-guides.ts](../../src/data/consortium-guides.ts) | Guides linked per plant, per job (`null` when no guide covers the job: helpers), and for the explanations; a plant links only guides that grow or use it, never one passing sentence |
+| [consortium-guides.ts](../../src/data/consortium-guides.ts) | Guides linked per plant, per job (`null` when no guide covers a job; helpers is `garden-helpers`, the pollinator hub, whose quick answer the test ties to the job's line), and for the explanations; a plant links only guides that grow or use it, never one passing sentence |
 
 Routes: `/consortium/`, `/fr/guilde/` (the French tool is a "guilde"), `/{lang}/consortium/` for the other 9.
 

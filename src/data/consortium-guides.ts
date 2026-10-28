@@ -101,7 +101,7 @@ export const jobGuides = {
   feeds_soil: 'food-forest',
   mulch: 'mulch',
   ground: 'living-soil',
-  helpers: null, // no guide covers pollinators and pest-eaters yet
+  helpers: 'garden-helpers',
   shelter: 'windbreaks-and-living-fences',
 } as const;
 export const explainGuide = 'food-forest';

@@ -1,0 +1,112 @@
+---
+// Garden helpers: who visits a garden, as one row of seven small silhouettes in ink outlines with
+// ochre fills: a bee, a hoverfly, a lady beetle, a wasp, a butterfly, a nectar bird (side view, long
+// bill) and a bat. Each has its label under it (`labels`, in that order); the hoverfly, the beetle
+// and the wasp also carry a small badge (`badge`: their larvae eat pests). The row of seven wraps to
+// four and three on phones. `alt` describes the whole row; the drawings are aria-hidden.
+interface Props { labels: string[]; badge: string; alt: string; }
+const { labels, badge, alt } = Astro.props;
+const kinds = ['bee', 'hoverfly', 'beetle', 'wasp', 'butterfly', 'bird', 'bat'] as const;
+if (labels.length !== kinds.length) throw new Error(`HelperLineup: ${kinds.length} labels (${kinds.join(', ')}), got ${labels.length}`);
+const eatsPests = new Set(['hoverfly', 'beetle', 'wasp']);
+
+// Shapes, head up, centred on 0 0 inside -28 -22 56 44. `m` parts are drawn twice, the second time
+// mirrored across the body's axis.
+type Part = { d: string; cls: 'body' | 'wing' | 'dark' | 'line' | 'band'; m?: boolean };
+const oval = (cx: number, cy: number, rx: number, ry = rx) => `M${cx - rx} ${cy}a${rx} ${ry} 0 1 0 ${2 * rx} 0a${rx} ${ry} 0 1 0 ${-2 * rx} 0Z`;
+const shapes: Record<(typeof kinds)[number], Part[]> = {
+  bee: [
+    { d: 'M-2.5-6C-12-16-22-12-20-6C-18-1-9-2-2.5-4Z', cls: 'wing', m: true },
+    { d: 'M-2.5-2C-10-4-15 1-12 5C-9 7-5 3-2.5 0Z', cls: 'wing', m: true },
+    { d: 'M-4-3l-6 3M-4.4 0l-6 5M-3.6 2.6l-4 6', cls: 'line', m: true },
+    { d: 'M-1.4-14.4Q-3.6-18.6-6.6-19.6', cls: 'line', m: true },
+    { d: oval(0, 7, 6, 9.4), cls: 'body' },
+    { d: 'M-5.4 3.6H5.4M-5.9 7.6H5.9M-4.8 11.8H4.8', cls: 'band' },
+    { d: oval(0, -5, 4.8, 4.4), cls: 'body' },
+    { d: oval(0, -12, 3.6, 3), cls: 'dark' },
+  ],
+  hoverfly: [
+    { d: 'M-2.6-4.4C-12-8.6-24-6.4-23.6-1.6C-23.2 2.4-11.6 1.6-2.6-1.2Z', cls: 'wing', m: true },
+    { d: 'M-3.4-3l-5.4 4M-3.4-0.6l-4.6 7', cls: 'line', m: true },
+    { d: oval(0, 6, 6.6, 7.8), cls: 'body' },
+    { d: 'M-5.4 2.4H5.4M-6.4 6H6.4M-5 9.8H5', cls: 'band' },
+    { d: oval(0, -4, 4.4, 3.8), cls: 'body' },
+    { d: oval(0, -10.4, 5.2, 3.2), cls: 'body' },
+    { d: oval(-3, -10.6, 3, 3.2), cls: 'dark', m: true },
+  ],
+  beetle: [
+    { d: 'M-8-2l-6-3M-9.6 3l-5.6 1M-8.4 8.6l-4.6 4.6', cls: 'line', m: true },
+    { d: 'M-2.4-11.4Q-4-14.6-6.6-15.4', cls: 'line', m: true },
+    { d: oval(0, -9.4, 5.4, 3.2), cls: 'dark' },
+    { d: oval(0, 3, 10.4, 10.6), cls: 'body' },
+    { d: 'M0-7.4V13.6', cls: 'band' },
+    { d: [oval(-4.6, -1, 1.8), oval(-5.6, 5.4, 1.9), oval(-2.6, 9.4, 1.5)].join(''), cls: 'dark', m: true },
+  ],
+  wasp: [
+    { d: 'M-2-7.4C-10-13-20-12.4-20.4-9C-20.6-6-10-5.6-2-5.4Z', cls: 'wing', m: true },
+    { d: 'M-2-4.6C-8-5.6-14.4-3.4-13.6-0.6C-12.6 1.6-6.4-0.6-2-2.8Z', cls: 'wing', m: true },
+    { d: 'M-3.6-5l-6.6-2M-3.6-3.4l-8 4.8M-1.6 1l-6.4 10', cls: 'line', m: true },
+    { d: 'M-1.2-15.6Q-4-20.4-8.4-20.4', cls: 'line', m: true },
+    { d: 'M0 1.4C-4.8 2.2-5.6 9-3.8 13C-2.4 16.4 0 19 0 19C0 19 2.4 16.4 3.8 13C5.6 9 4.8 2.2 0 1.4Z', cls: 'body' },
+    { d: 'M-4.8 5.4H4.8M-4.8 9.4H4.8M-3.2 13.6H3.2', cls: 'band' },
+    { d: oval(0, -6, 3.6, 4.6), cls: 'body' },
+    { d: 'M0-1.6V1.8', cls: 'line' },
+    { d: oval(0, -13.2, 3.2, 2.8), cls: 'dark' },
+  ],
+  butterfly: [
+    { d: 'M-1-3C-6-14-19-19.4-22-13C-24-6.6-14-1-1 0Z', cls: 'body', m: true },
+    { d: 'M-1 1.4C-10 2-18.4 6.4-16 13.4C-13.6 18.6-5.4 14.4-1 5.4Z', cls: 'body', m: true },
+    { d: oval(-13.6, -10, 2.6, 2.2) + oval(-9.6, 9.6, 2, 2.2), cls: 'wing', m: true },
+    { d: 'M-0.8-8.4Q-3-15-5.4-17.4', cls: 'line', m: true },
+    { d: oval(-5.6, -17.6, 1.2), cls: 'dark', m: true },
+    { d: oval(0, 1, 1.8, 9.6), cls: 'dark' },
+  ],
+  bird: [
+    { d: 'M-11 2.4L-24 9.4L-22.4 2.4L-24.4-3.4Z', cls: 'body' },
+    { d: 'M11.4-7.4L26-11.6', cls: 'line' },
+    { d: 'M-12 3C-12-4-6-7.6 1-7C6-6.6 9-3.4 9-0.6C9 4.4 3 7.6-3 7.6C-8 7.6-12 6-12 3Z', cls: 'body' },
+    { d: oval(7.6, -7.4, 4.4), cls: 'body' },
+    { d: oval(9, -8.4, 1), cls: 'dark' },
+    { d: 'M2-5C-2-11-8-16-17-19.6C-15.6-15-12-10-6-6.4C-4-5.2-1-4.6 2-5Z', cls: 'wing' },
+    { d: 'M-1 7.4l-1.6 5M2 7l0.4 5', cls: 'line' },
+  ],
+  bat: [
+    { d: 'M-2.6-1.6C-9-7.4-17-8.4-26.4-4.4C-23.6-1-23.6 3-24.6 6.4C-21 3.4-17.6 4.4-15.6 8.4C-12.6 4.6-9.6 5.4-7.6 9.6C-6.4 6.4-4.6 4.4-2.6 4.4Z', cls: 'body', m: true },
+    { d: 'M-2-5.4L-3.6-10.6L-0.4-7Z', cls: 'dark', m: true },
+    { d: oval(0, 0.6, 3.4, 6.6), cls: 'dark' },
+  ],
+};
+---
+<div class="guide-hl" role="img" aria-label={alt}>
+  <ul class="guide-hl-row">
+    {kinds.map((kind, i) => (
+      <li class="guide-hl-cell">
+        <svg viewBox="-28 -22 56 44" aria-hidden="true" focusable="false">
+          {shapes[kind].map((p) => (
+            <g class={`guide-hl-${p.cls}`}>
+              <path d={p.d} />
+              {p.m && <path d={p.d} transform="scale(-1 1)" />}
+            </g>
+          ))}
+        </svg>
+        <span class="guide-hl-label">{labels[i]}</span>
+        {eatsPests.has(kind) && <span class="guide-hl-badge">{badge}</span>}
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  .guide-hl { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 0.6rem 0.8rem; }
+  .guide-hl-row { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.9rem 0.3rem; }
+  @media (max-width: 639px) { .guide-hl-row { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .guide-hl-cell { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; text-align: center; }
+  .guide-hl-cell svg { display: block; width: 100%; max-width: 5rem; height: auto; }
+  .guide-hl-label { font-size: 0.85rem; line-height: 1.25; color: var(--text); }
+  .guide-hl-badge { font-size: 0.7rem; max-width: 100%; line-height: 1.2; color: var(--accent-ink); border: 1px solid var(--accent); border-radius: 999px; padding: 0.1rem 0.45rem; }
+  .guide-hl-body path { fill: var(--accent); stroke: var(--text); stroke-width: 0.9; stroke-linejoin: round; }
+  .guide-hl-wing path { fill: var(--surface-alt); stroke: var(--text); stroke-width: 0.8; stroke-linejoin: round; }
+  .guide-hl-dark path { fill: var(--text); stroke: var(--text); stroke-width: 0.6; }
+  .guide-hl-line path { fill: none; stroke: var(--text); stroke-width: 1; stroke-linecap: round; }
+  .guide-hl-band path { fill: none; stroke: var(--text); stroke-width: 1.8; stroke-linecap: round; }
+</style>

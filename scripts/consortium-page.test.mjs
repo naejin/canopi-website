@@ -292,7 +292,8 @@ test('every guide a plant links covers that plant (copy-M4, M5, m7, min-5, min-6
   assert.ok(covers('Opuntia ficus-indica', 'water-and-slopes'), 'a false friend of pear is the plant itself here');
   assert.equal(consortiumGuides['Robinia pseudoacacia'], undefined, 'no guide covers black locust, whose seeds and pods are toxic');
   assert.equal(jobGuides.feeds_soil, 'food-forest');
-  assert.equal(jobGuides.helpers, null, 'no guide covers pollinators and pest-eaters yet');
+  assert.equal(jobGuides.helpers, 'garden-helpers', 'the pollinator hub covers the Brings helpers job');
+  assert.match(read('src/content/guides/garden-helpers/en.mdx'), /<QuickAnswer>[^<]*feeds bees and the hoverflies, wasps and beetles whose young eat aphids/, 'its quick answer answers the job line, "flowers that feed bees and the insects that eat pests"');
   assert.match(read('src/content/guides/food-forest/en.mdx'), /nitrogen.fixer/i);
 });
 
