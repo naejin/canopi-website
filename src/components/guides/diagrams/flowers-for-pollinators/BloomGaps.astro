@@ -1,0 +1,67 @@
+---
+// Flowers for pollinators: an invented bloom inventory, seasons as columns (spring, summer and autumn
+// each split into early and late, then winter), one row per unnamed plant ("Tree A", "Shrub B"…). A
+// bar marks when each plant flowers. Late summer has nothing in bloom: that column is shaded ochre
+// and labelled as the gap to plant for (written upright on phones, where the column is narrow). The
+// winter column is dashed: it counts only in warm regions, which a key line under the grid says, and
+// its one bar (a winter-flowering shrub) is dashed too. Seasons, not months; no species: the
+// book's own sample chart stays in the book. A CSS grid, not an SVG, so labels wrap at 390 px; the
+// grid is one image to assistive technology, described by `alt`; the key under it is plain text. Words come from the MDX.
+interface Props {
+  seasons: [string, string, string, string]; // spring, summer, autumn, winter
+  parts: [string, string]; // early, late
+  plants: [string, string, string, string, string, string];
+  gap: string; // label of the shaded gap
+  warm: string; // the key line for the dashed winter column
+  alt: string;
+}
+const { seasons, parts, plants, gap, warm, alt } = Astro.props;
+// Columns 0..6: early/late spring, early/late summer, early/late autumn, winter. [first, last] column
+// of each plant's bloom, in the order of `plants`.
+const spans: [number, number][] = [[0, 0], [0, 1], [1, 2], [2, 2], [4, 5], [6, 6]];
+const GAP = 3; // late summer
+const WINTER = 6;
+const col = (c: number) => c + 2; // grid column of season column c (column 1 holds the plant names)
+---
+<div class="guide-bg-wrap">
+<div class="guide-bg" role="img" aria-label={alt}>
+  {seasons.slice(0, 3).map((s, i) => <span class="guide-bg-season" style={`grid-row: 1; grid-column: ${col(i * 2)} / span 2`}>{s}</span>)}
+  <span class="guide-bg-season guide-bg-season-warm" style={`grid-row: 1; grid-column: ${col(WINTER)}`}>{seasons[3]}</span>
+  {[0, 1, 2, 3, 4, 5].map((c) => <span class="guide-bg-part" style={`grid-row: 2; grid-column: ${col(c)}`}>{parts[c % 2]}</span>)}
+  <span class="guide-bg-winter" style={`grid-row: 1 / span ${plants.length + 2}; grid-column: ${col(WINTER)}`}></span>
+  <span class="guide-bg-gap" style={`grid-row: 3 / span ${plants.length}; grid-column: ${col(GAP)}`}><span>{gap}</span></span>
+  {plants.map((name, r) => (
+    <>
+      <span class="guide-bg-name" style={`grid-row: ${r + 3}; grid-column: 1`}>{name}</span>
+      <span class="guide-bg-row" style={`grid-row: ${r + 3}; grid-column: 2 / -1`}></span>
+      <span class:list={['guide-bg-bar', { 'guide-bg-bar-warm': spans[r][0] === WINTER }]} style={`grid-row: ${r + 3}; grid-column: ${col(spans[r][0])} / ${col(spans[r][1]) + 1}`}></span>
+    </>
+  ))}
+</div>
+<p class="guide-bg-key"><i aria-hidden="true"></i>{warm}</p>
+</div>
+
+<style>
+  .guide-bg-wrap { display: grid; gap: 0.5rem; }
+  .guide-bg { display: grid; grid-template-columns: minmax(4.4rem, auto) repeat(7, minmax(0, 1fr)); grid-auto-rows: minmax(1.9rem, auto); align-items: center; column-gap: 0; padding: 0.6rem 0.7rem 0.7rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.88rem; line-height: 1.25; color: var(--text); }
+  .guide-bg > * { min-width: 0; }
+  .guide-bg-season { font-family: var(--font-display); font-weight: 600; text-align: center; padding: 0 0.15rem; border-bottom: 1px solid var(--border-strong); align-self: end; }
+  .guide-bg-part { font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 0.15rem 0.1rem; align-self: start; overflow-wrap: anywhere; }
+  .guide-bg-season-warm { position: relative; z-index: 1; padding-left: 0.3rem; }
+  :global(.guide-body) .guide-bg-key { margin: 0; font-size: 0.88rem; color: var(--text-muted); }
+  .guide-bg-key i { display: inline-block; width: 1.4rem; height: 0.8rem; margin-right: 0.4rem; vertical-align: middle; border: 1.5px dashed var(--border-strong); border-radius: 3px; }
+  .guide-bg-name { padding-right: 0.5rem; color: var(--text-secondary); }
+  .guide-bg-row { align-self: stretch; border-top: 1px solid var(--border); }
+  .guide-bg-bar { position: relative; z-index: 1; height: 0.8rem; margin: 0 0.2rem; background: var(--petal); border: 1.5px solid var(--anther); border-radius: 0.4rem; }
+  .guide-bg-bar-warm { background: none; border-style: dashed; }
+  .guide-bg-winter { align-self: stretch; margin-left: 0.25rem; border: 1.5px dashed var(--border-strong); border-radius: var(--radius); }
+  .guide-bg-gap { position: relative; align-self: stretch; display: grid; place-items: center; margin: 0 0.15rem; text-align: center; font-size: 0.8rem; font-weight: 600; color: var(--accent-ink); }
+  .guide-bg-gap::before { content: ''; position: absolute; inset: 0; background: var(--accent); opacity: 0.16; border-radius: var(--radius); }
+  .guide-bg-gap span { position: relative; padding: 0.2rem 0.15rem; overflow-wrap: anywhere; }
+  @media (max-width: 639px) {
+    .guide-bg { padding: 0.5rem 0.4rem 0.6rem; font-size: 0.8rem; grid-template-columns: minmax(3.6rem, auto) repeat(7, minmax(0, 1fr)); }
+    .guide-bg-part, .guide-bg-gap { font-size: 0.72rem; }
+    .guide-bg-name { padding-right: 0.3rem; }
+    .guide-bg-gap span { writing-mode: vertical-rl; transform: rotate(180deg); padding: 0.4rem 0; overflow-wrap: normal; }
+  }
+</style>

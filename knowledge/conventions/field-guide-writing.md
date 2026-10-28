@@ -5,13 +5,13 @@ description: The writing, safety, attribution and language rules every Field Gui
 tags: [convention, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:19:13Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:59:42Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:02:42Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:14e2ec3fbbcf8f0c
-    last_modified: 2026-10-28T08:54:22Z
+    digest: sha256:cf42309a0bd98d88
+    last_modified: 2026-10-28T09:02:22Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
