@@ -698,6 +698,11 @@ test('logic: licences read as their proper names, with the version the data give
     ['cc0', 'CC0', 'https://creativecommons.org/publicdomain/zero/1.0/'],
     ['CC0 1.0', 'CC0 1.0', 'https://creativecommons.org/publicdomain/zero/1.0/'],
     ['GFDL 1.2', 'GFDL 1.2', null],
+    // Spellings that name no real Creative Commons licence get no deed link (I-b).
+    ['CC BY SA NC 4.0', 'CC BY SA NC 4.0', null],
+    ['CC BY 4.0 us', 'CC BY 4.0 us', null],
+    ['CC BY 3.7', 'CC BY 3.7', null],
+    ['CC BY-ND-NC 2.0', 'CC BY-ND-NC 2.0', null],
   ];
   for (const [raw, name, url] of cases) assert.deepEqual(licenceOf(raw), { name, url, publicDomain: false }, raw);
   assert.deepEqual(licenceOf('Public domain'), { name: 'Public domain', url: null, publicDomain: true });

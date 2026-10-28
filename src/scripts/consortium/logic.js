@@ -118,6 +118,7 @@ export function relaxTo(key, site) {
 // licence without a version ("cc-by", from iNaturalist) gets no deed: which one is not known.
 // publicDomain: the page says "Public domain" in its own language. Other names are kept as given.
 const CC0_DEED = 'https://creativecommons.org/publicdomain/zero/1.0/';
+const CC_CODES = ['by', 'by-sa', 'by-nd', 'by-nc', 'by-nc-sa', 'by-nc-nd'], CC_VERSIONS = ['1.0', '2.0', '2.5', '3.0', '4.0'];
 export function licenceOf(raw) {
   const text = typeof raw === 'string' ? raw.trim() : '';
   if (!text) return null;
@@ -127,6 +128,9 @@ export function licenceOf(raw) {
   const m = /^cc[\s-]+(by(?:[\s-]+(?:nc|sa|nd)){0,2})(?:[\s-]+(\d\.\d))?(?:[\s-]+([a-z]{2}))?$/i.exec(text);
   if (!m) return { name: text, url: null, publicDomain: false };
   const code = m[1].toLowerCase().split(/[\s-]+/).join('-'), version = m[2] ?? null, place = m[3]?.toLowerCase() ?? null;
+  // Only the six real licences, their real versions, and country ports (which ended with 4.0) get a name and a deed.
+  const real = CC_CODES.includes(code) && (!version || CC_VERSIONS.includes(version)) && !(place && (!version || version === '4.0'));
+  if (!real) return { name: text, url: null, publicDomain: false };
   const name = ['CC', code.toUpperCase(), version, place?.toUpperCase()].filter(Boolean).join(' ');
   return { name, url: version ? `https://creativecommons.org/licenses/${code}/${version}/${place ? place + '/' : ''}` : null, publicDomain: false };
 }
