@@ -155,7 +155,10 @@ test('no header item is hidden by width except the one inline/Menu swap, and wid
   let swaps = 0;
   for (const file of files) {
     const css = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');
-    for (const [, width] of css.matchAll(/\((?:max|min)-width:\s*([\d.]+px)\)/g)) assert.ok(allowed.has(width), `${file}: width query ${width}`);
+    // A window width query uses the two breakpoints. A container query (@container) sizes a part to
+    // its own box, not the window (the plant list beside the side panel), so it is not a breakpoint.
+    const windowQueries = css.replace(/@container[^{]*\{/g, '{');
+    for (const [, width] of windowQueries.matchAll(/\((?:max|min)-width:\s*([\d.]+px)\)/g)) assert.ok(allowed.has(width), `${file}: width query ${width}`);
     for (const [selector, body] of widthRules(css)) {
       if (!/display:\s*none/.test(body) || !headerItem.test(selector)) continue;
       // The one swap: below 640px the inline links give way to the Menu (hidden by default from 640px).

@@ -222,7 +222,8 @@ export function device({ blocked = false } = {}) {
   const storage = blocked
     ? { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); }, removeItem() { throw new Error('blocked'); } }
     : { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => { store.set(k, String(v)); }, removeItem: (k) => { store.delete(k); } };
-  return { store, storage, failing: new Set(), fetched: [] };
+  // onFetch(file): called as a data file is asked for (a test changes the address mid-start with it).
+  return { store, storage, failing: new Set(), fetched: [], onFetch: null };
 }
 
 // A tab: its history entries ({ url, state, doc: the page load that owns it }) and the page shown.
@@ -317,6 +318,7 @@ async function openPage(t, { lang = 'en', width = 1280, siteClimate = null, data
       if (page.closed) return never();
       const file = String(url).replace(/^\/data\/consortium\//, '');
       t.dev.fetched.push(file);
+      t.dev.onFetch?.(file, t);
       if (t.dev.failing.has(file)) return { ok: false, status: 503, json: async () => null };
       return { ok: true, status: 200, json: async () => JSON.parse(read(dataSet === 'real' ? `public/data/consortium/${file}` : `scripts/fixtures/consortium/${file}`)) };
     },

@@ -284,3 +284,17 @@ test('F6: the room hint counts plants', async () => {
   assert.match(page.text(), /suggests 9 plants/);
 });
 
+
+test('a link pasted into the address bar while the page is still starting is opened, never written over', async () => {
+  const dev = device();
+  const t = tab(dev, '/consortium/', { siteClimate: 'temperate' });
+  const pasted = '#v=3&c=mediterranean&e=1';
+  // The reader pastes the link while the data loads; its hashchange reaches the page after the start.
+  dev.onFetch = (file, tb) => { if (dev.onFetch && file === 'manifest.json') { dev.onFetch = null; tb.entry().url.hash = pasted; } };
+  const page = await t.load();
+  await page.act('suggest').catch(() => {});
+  assert.notEqual(hashOf(t), '', 'the page wrote its state');
+  page.window.dispatchEvent(new page.Event('hashchange', { bubbles: false }));
+  await page.settle();
+  assert.ok(page.reloads === 1 || hashOf(t) === pasted, `the pasted link is read (reload) or kept, never replaced: ${hashOf(t)}`);
+});

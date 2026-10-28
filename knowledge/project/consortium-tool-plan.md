@@ -2,9 +2,9 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T19:36:33Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T20:09:16Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T18:54:48Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T20:09:04Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -12,7 +12,7 @@ sources:
     resource: ../../scripts/fixtures/consortium/README.md
     title: scripts/fixtures/consortium/README.md
     digest: sha256:d874dc32df70cbc0
-    last_modified: 2026-10-28T19:36:26Z
+    last_modified: 2026-10-28T19:06:36Z
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
@@ -31,13 +31,13 @@ sources:
   - id: consortium-app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:f0fc6974c3e83623
-    last_modified: 2026-10-28T19:36:00Z
+    digest: sha256:55cd173cfe0ebd96
+    last_modified: 2026-10-28T19:52:53Z
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:435ffb038c24f451
-    last_modified: 2026-10-28T19:00:25Z
+    digest: sha256:fb2609199e604118
+    last_modified: 2026-10-28T20:01:57Z
 ---
 
 Owner decisions: [Consortium tool — user decisions](/decisions/consortium-user-decisions.md).

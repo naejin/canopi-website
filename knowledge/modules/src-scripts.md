@@ -5,20 +5,20 @@ description: Vanilla browser modules for the home and bibliography pages (chrome
 resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T16:45:20Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T20:09:16Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T19:35:52Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T20:09:04Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:623b3bb4df45f923
-    last_modified: 2026-10-28T19:13:06Z
+    digest: sha256:4c519e8f2504da0e
+    last_modified: 2026-10-28T19:52:53Z
   - id: scale-js
     resource: ../../src/scripts/consortium/scale.js
     title: src/scripts/consortium/scale.js
-    digest: sha256:a4caffa5c9f4a2f0
-    last_modified: 2026-10-28T19:12:56Z
+    digest: sha256:e81502a340fd3523
+    last_modified: 2026-10-28T19:39:24Z
 ---
 
 # Responsibility

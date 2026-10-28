@@ -843,3 +843,54 @@ test('K3: when the Find text was the last filter, deleting it gives the count\'s
   assert.ok(!listOn(page), 'no filter left: the Cards again');
   assert.ok(cards(page).length > 0);
 });
+
+test('the list row grid fits the list at every width, so warning chips wrap and are never clipped (with the side panel too)', () => {
+  const css = read('src/styles/consortium.css');
+  assert.match(css, /\.ct \.plants-sec \{[^}]*container: plants \/ inline-size/, 'the list sizes its columns to its own width, not the window');
+  // The narrowest width each column set is used at: a row needs the sum of its columns' minimums,
+  // its gaps (10 px) and padding and border (26 px).
+  const need = (cols) => {
+    const tracks = cols.trim().split(/\s+(?![^(]*\))/);
+    const min = tracks.reduce((s, tr) => s + Number((/^(\d+)px/.exec(tr) ?? /^minmax\((\d+)px/.exec(tr) ?? [0, 0])[1]), 0);
+    return min + 10 * (tracks.length - 1) + 26;
+  };
+  const block = (head) => { const i = css.indexOf(head); assert.ok(i >= 0, head); return css.slice(i, css.indexOf('\n}', i)); };
+  const colsIn = (text) => [...text.matchAll(/--lcols: ([^;]+);/g)].map((m) => m[1]);
+  const full = colsIn(css.slice(css.indexOf('/* The row grid'), css.indexOf('.ct .lcols {\n')));
+  const compact = colsIn(block('@container plants (max-width: 1159px)'));
+  const wrap = block('@container plants (max-width: 899px)');
+  for (const c of full) assert.ok(need(c) <= 1160, `full columns need ${need(c)} px`);
+  for (const c of compact) assert.ok(need(c) <= 900, `compact columns need ${need(c)} px`);
+  for (const c of colsIn(wrap)) assert.ok(need(c) <= 560, `narrow columns need ${need(c)} px`);
+  assert.match(wrap, /\.lwarns \{[^}]*grid-row: 2; grid-column: 3 \/ -1/, 'below 900 px the warnings take a line of their own');
+  assert.match(css, /\.ct \.warn-chip \{[^}]*max-width: 100%/, 'a chip never runs past its cell');
+  assert.match(css, /\.ct \.lwarns, \.ct \.lline3 \{[^}]*min-width: 0/);
+  // The Kept head ("Gehouden", "Сохранено") is wider than its 44 px column: it spans the tick's column too.
+  assert.match(css, /\.ct \.lcols > span:nth-child\(2\) \{ grid-column: 1 \/ 3;/);
+});
+
+test('pest chips name the data\'s sourced common names (agent_names) in en, fr and nl, else the scientific name; details keep the scientific name and cite the name sources', async () => {
+  const rowsWith = (list) => list.interactions.filter((i) => ['shared_pest', 'alternate_host'].includes(i.type) && i.agent);
+  const all = rowsWith(temperate);
+  assert.ok(all.some((i) => i.agent_names), 'the installed export carries agent_names');
+  for (const lang of ['en', 'fr', 'nl']) {
+    const allowed = new Set(all.map((i) => (i.agent_names?.names?.[lang] ?? i.agent).toLocaleLowerCase(lang)));
+    const sourced = new Set(all.filter((i) => i.agent_names?.names?.[lang]).map((i) => i.agent_names.names[lang].toLocaleLowerCase(lang)));
+    const { page } = await open200({}, { lang });
+    for (const g of ['emergent', 'high', 'medium', 'low']) if (page.$(`[data-act="group"][data-v="${g}"][aria-expanded="false"]`)) await page.act('group', g);
+    const chips = [...page.$$('.lrow .warn-chip.warn-pest')].map((c) => textOf(c));
+    assert.ok(chips.length, `${lang}: pest chips`);
+    const parts = chips.flatMap((c) => c.split(' · ')).map((x) => x.toLocaleLowerCase(lang));
+    for (const x of parts) assert.ok(allowed.has(x), `${lang}: "${x}" comes from the data`);
+    if (sourced.size) assert.ok(parts.some((x) => sourced.has(x)), `${lang}: a sourced name shows`);
+  }
+  // Details: the scientific name and, in Sources, the EPPO page and the usage page.
+  const i = all.find((x) => x.agent_names?.names?.en);
+  const host = temperate.taxa.find((t) => t.canonical_name === i.subject.name || t.genus === i.subject.name);
+  const { page } = await open200();
+  await page.act('details', host.id);
+  const d = page.$('#ct-dialog');
+  assert.ok(textOf(d).includes(`Cause: ${i.agent}`), 'the details name the scientific name');
+  const cited = [...d.querySelectorAll('.srcs li')].map((li) => textOf(li));
+  for (const id of i.agent_names.sources) assert.ok(cited.some((c) => c.includes(temperate.sources[id].label)), `Sources cite ${id}`);
+});
