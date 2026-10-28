@@ -9,8 +9,8 @@ import {
   SIZE_LIMIT, DEFAULT_SITE, lights, soils, waters, rooms, encodeState, decodeState, resolveState, taxonByName, invasiveCountries, isSerious, siteClimates, fits,
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadCell } from './data.ts';
-import { makeWords, esc, plantName, searchText, fold, needsLook } from './words.js';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget, relaxTo, licenceOf } from './logic.js';
+import { makeWords, esc, plantName, searchText, fold, needsLook, capFirst } from './words.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget, relaxTo, licenceOf, uncheckedOnCard } from './logic.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
 
@@ -127,8 +127,10 @@ function misfitText(t, key) {
   const size = Math.max(tr.height_m?.max ?? 0, tr.width_max_m ?? 0);
   return T('misfit.room.' + v, { w: W.num(size) });
 }
+const uncheckedKey = { tox: 'u.tox', inv: 'u.inv', spreads: 'u.spreads', jobs: 'u.jobs', jobsOther: 'u.jobsOther' };
 const otherOf = (c, t) => (c.a.id === t.id ? c.b : c.a);
-// severe: their own chips (kind decides the colour); soft: merged cautions; unknown: merged unchecked.
+// severe: their own chips (kind decides the colour); soft: one merged chip, its list alone (no
+// "Cautions" label: the one warning heading is "With a warning", owner 2026-10-28); unknown: merged unchecked.
 function warnParts(t, flags) {
   const severe = [], soft = [], unk = [];
   const tox = t.warnings.toxicity;
@@ -144,17 +146,14 @@ function warnParts(t, flags) {
     const others = S.country ? inv.filter((c) => c !== S.country).length : inv.length;
     if (others) soft.push(S.country ? P('invElse', others) : P('invCount', others));
   }
-  if (!tox) unk.push(T('u.tox'));
-  if (t.warnings.invasive_in == null) unk.push(T('u.inv'));
-  if (t.warnings.allelopathic == null) unk.push(T('u.allelo'));
-  if (t.warnings.weed_potential == null) unk.push(T('u.spreads'));
-  if (t.functions == null) unk.push(jobsOf(t).length ? T('u.jobsOther') : T('u.jobs'));
+  // Allelopathy not checked yet is told in details only (owner, 2026-10-28): see uncheckedOnCard.
+  for (const k of uncheckedOnCard(t, jobsOf(t).length > 0)) unk.push(T(uncheckedKey[k]));
   return { severe, soft, unk };
 }
 function chipsHTML(t, flags) {
   const { severe, soft, unk } = warnParts(t, flags);
   const out = severe.map((w) => `<span class="warn warn-${w.cls}">${w.cls === 'danger' ? I.danger : I.warn}<span>${w.text}</span></span>`);
-  if (soft.length) out.push(`<span class="warn warn-soft">${I.warn}<span>${esc(T('cautions', { list: soft.join(' · ') }))}</span></span>`);
+  if (soft.length) out.push(`<span class="warn warn-soft">${I.warn}<span>${esc(capFirst(soft.join(' · '), lang))}</span></span>`);
   if (unk.length) out.push(`<span class="warn warn-unknown">${I.unknown}<span>${esc(T('unchecked', { list: W.list(unk) }))}</span></span>`);
   return out.length ? `<div class="warns">${out.join('')}</div>` : '';
 }
@@ -163,7 +162,7 @@ function chipsHTML(t, flags) {
 function warnPlain(t, flags, all = true) {
   const { severe, soft, unk } = warnParts(t, flags);
   const out = severe.filter((w) => all || w.cls !== 'soft').map((w) => w.text);
-  if (all && soft.length) out.push(esc(T('cautions', { list: soft.join(' · ') })));
+  if (all && soft.length) out.push(esc(capFirst(soft.join(' · '), lang)));
   if (all && unk.length) out.push(esc(T('unchecked', { list: W.list(unk) })));
   return out;
 }
@@ -323,7 +322,7 @@ function attentionHTML(flags) {
     return `<li class="att-item">${btn('link-button', 'goto', t.id, name(t))}${W.paren(W.list(why))}${acts}</li>`;
   });
   // F3: one item per line, each with its own actions.
-  return `<div class="attention">${I.warn}<div><p><strong>${esc(P('attention', look.length))}</strong></p><ul class="att-list" role="list">${items.join('')}</ul></div></div>`;
+  return `<div class="attention">${I.warn}<div><p><strong>${esc(T('withWarning'))}</strong></p><ul class="att-list" role="list">${items.join('')}</ul></div></div>`;
 }
 // Phone has no side panel: with no free place, the "I want to grow…" search sits under the views
 // (growRowHTML), so the first screen still reaches the plants (M4).
@@ -436,9 +435,9 @@ function profileHTML(flags, print = false) {
     const look = needsLook(t, flags.get(t.id)), s = t.stratum.value;
     if (small || print) return `<span class="plabel plabel-num" style="left:${(center - p.colPct / 2).toFixed(2)}%;width:${p.colPct.toFixed(2)}%" aria-hidden="true"><span class="num" data-s="${s}">${nums.get(t.id)}</span></span>`;
     const left = Math.max(0, center - lw / 2), w = Math.min(100, center + lw / 2) - left;
-    return `<button class="plabel" type="button" data-act="details" data-v="${t.id}" ${fk('pl-' + t.id)} style="left:${left.toFixed(2)}%;width:${w.toFixed(2)}%;top:${stagger ? (i % 2) * 64 : 0}px"><span class="plabel-top"><span class="num" data-s="${s}" aria-hidden="true">${nums.get(t.id)}</span>${look ? `<span class="plook">${I.warn}<span class="vh">${esc(T('needsLook'))}</span></span>` : ''}</span><span class="pname">${name(t)}</span><span class="vh">, ${esc(stratumLabel(s))}</span></button>`;
+    return `<button class="plabel" type="button" data-act="details" data-v="${t.id}" ${fk('pl-' + t.id)} style="left:${left.toFixed(2)}%;width:${w.toFixed(2)}%;top:${stagger ? (i % 2) * 64 : 0}px"><span class="plabel-top"><span class="num" data-s="${s}" aria-hidden="true">${nums.get(t.id)}</span>${look ? `<span class="plook">${I.warn}<span class="vh">${esc(T('withWarning'))}</span></span>` : ''}</span><span class="pname">${name(t)}</span><span class="vh">, ${esc(stratumLabel(s))}</span></button>`;
   }).join('');
-  const key = small || print ? `<ol class="pkey" aria-label="${esc(T('drawingKey'))}">${placed.map((t) => `<li>${print ? `<span class="num" data-s="${t.stratum.value}" aria-hidden="true">${nums.get(t.id)}</span><span class="pkey-name"><span class="pkey-n">${name(t)}</span>${sciHTML(t, 'sci pkey-sci')}</span>` : btn('pkey-item', 'details', t.id, `<span class="num" data-s="${t.stratum.value}" aria-hidden="true">${nums.get(t.id)}</span><span class="pkey-name"><span class="pkey-n">${name(t)}</span>${sciHTML(t, 'sci pkey-sci')}</span>${needsLook(t, flags.get(t.id)) ? `<span class="plook">${I.warn}<span class="vh">${esc(T('needsLook'))}</span></span>` : ''}`, fk('pk-' + t.id))}</li>`).join('')}</ol>` : '';
+  const key = small || print ? `<ol class="pkey" aria-label="${esc(T('drawingKey'))}">${placed.map((t) => `<li>${print ? `<span class="num" data-s="${t.stratum.value}" aria-hidden="true">${nums.get(t.id)}</span><span class="pkey-name"><span class="pkey-n">${name(t)}</span>${sciHTML(t, 'sci pkey-sci')}</span>` : btn('pkey-item', 'details', t.id, `<span class="num" data-s="${t.stratum.value}" aria-hidden="true">${nums.get(t.id)}</span><span class="pkey-name"><span class="pkey-n">${name(t)}</span>${sciHTML(t, 'sci pkey-sci')}</span>${needsLook(t, flags.get(t.id)) ? `<span class="plook">${I.warn}<span class="vh">${esc(T('withWarning'))}</span></span>` : ''}`, fk('pk-' + t.id))}</li>`).join('')}</ol>` : '';
   const unplaced = members().filter((t) => !t.stratum);
   return `<figure class="profile"${small || print ? '' : ` style="max-width:${Math.round(p.ratio * 320)}px"`}>
     <div class="profile-draw">${p.svg}${p.lineLabels}</div>
@@ -490,7 +489,7 @@ function timeHTML(flags) {
       const a = phases.indexOf(t.phases.start), b = phases.indexOf(t.phases.end);
       bar = `<span class="bar" data-open="${b === phases.length - 1}" style="left:calc(${((a / 7) * 100).toFixed(3)}% + 4px);width:calc(${(((b - a + 1) / 7) * 100).toFixed(3)}% - 8px)"></span>`;
     } else bar = `<span class="bar-none">${esc(T('timingUnknown'))}</span>`;
-    return `<div class="tl-row"><div class="tl-name">${btn('', 'details', t.id, `<span>${name(t)}</span>${needsLook(t, flags.get(t.id)) ? `<span class="plook">${I.warn}<span class="vh">${esc(T('needsLook'))}</span></span>` : ''}`, fk('tl-' + t.id))}<small>${sciHTML(t)}${sciHTML(t) && ' · '}${timeHTML1(t)} · ${esc(stratumLabel(s))}</small></div>
+    return `<div class="tl-row"><div class="tl-name">${btn('', 'details', t.id, `<span>${name(t)}</span>${needsLook(t, flags.get(t.id)) ? `<span class="plook">${I.warn}<span class="vh">${esc(T('withWarning'))}</span></span>` : ''}`, fk('tl-' + t.id))}<small>${sciHTML(t)}${sciHTML(t) && ' · '}${timeHTML1(t)} · ${esc(stratumLabel(s))}</small></div>
       <div class="tl-track"><div class="tl-cols" aria-hidden="true">${covered.map((c) => `<i data-gap="${!c}"></i>`).join('')}${bar}</div></div></div>`;
   }).join('');
   const gaps = covered.map((c, i) => (c ? '' : `<div class="gap-row"><span>${esc(T('timeGap', { stage: T(W.phaseKey(i, 'plain')) }))}</span>${btn('button button-secondary button-small', 'open-add', 'phase:' + i, esc(i <= 2 ? T('quickCrop') : T('findPlant')), fk('tgap-' + i))}</div>`)).join('');
@@ -638,7 +637,7 @@ function swapParts(m) {
   const headHTML = `<div><h2 id="ct-dlg-title">${T('swapTitle', { name: name(m) })}</h2><p class="lede">${esc(mJobs.length ? T('swapNow', { layer: stratumLabel(s), jobs: W.list(mJobs.map((j) => T('job.' + j))) }) : T('swapNowLayer', { layer: stratumLabel(s) }))}</p><p class="lede">${esc(T('swapLede'))}</p></div>`;
   const body = !all.length ? `<p class="muted">${esc(T('noAlt'))}</p>`
     : `${fit.length ? `<ul class="alt-list" role="list">${fit.map((a, i) => row(a, i === 0)).join('')}</ul>` : ''}
-      ${flagged.length ? `<h3 class="list-label">${esc(T('flaggedGroup'))}</h3><ul class="alt-list" role="list">${flagged.map((a) => row(a, false)).join('')}</ul>` : ''}
+      ${flagged.length ? `<h3 class="list-label">${esc(T('withWarning'))}</h3><p class="seg-hint">${esc(T('flaggedNote'))}</p><ul class="alt-list" role="list">${flagged.map((a) => row(a, false)).join('')}</ul>` : ''}
       ${more ? `<p>${btn('button button-secondary button-small', 'swap-more', null, esc(P('showMore', more)), fk('swap-more'))}</p>` : ''}`;
   return { head: headHTML, body };
 }
@@ -667,7 +666,7 @@ function addResults() {
   return `<p class="list-count" id="ct-add-count">${esc(P('count', list.length))}${fkind === 'phase' ? ' · ' + esc(T('phaseFilter', { stage: T(W.phaseKey(Number(fv), 'plain')) })) : ''}</p>
     ${!list.length ? `<p class="muted">${esc(T('emptyList'))}</p>` : ''}
     ${jobF && !fit.length && flagged.length ? `<p class="note note-dashed">${I.unknown}<span>${esc(T('noFitForJob'))}</span></p>` : ''}
-    ${byLayer}${flagged.length ? `<h3 class="list-label">${I.warn} ${esc(T('flaggedGroup'))}</h3><ul class="alt-list" role="list">${flagged.map(row).join('')}</ul>` : ''}`;
+    ${byLayer}${flagged.length ? `<h3 class="list-label">${I.warn} ${esc(T('withWarning'))}</h3><p class="seg-hint">${esc(T('flaggedNote'))}</p><ul class="alt-list" role="list">${flagged.map(row).join('')}</ul>` : ''}`;
 }
 function addParts() {
   const { fkind, jobF, layerF } = addFilter();
@@ -710,7 +709,7 @@ function printHTML() {
     <p class="muted">${esc(T('basis', { site: basisText() }))} · ${esc(P('count', ms.length))}</p></div><img src="/canopi-logo.svg" width="34" height="34" alt=""></div>
     ${S.cellRegion ? (({ title, text }) => `<p class="sheet-borrowed"><strong>${esc(title)}</strong> ${esc(text)}</p>`)(borrowedWords()) : ''}
     <div class="sheet-draw">${profileHTML(flags, true)}</div>
-    <section><h3>${esc(T('tab.layers'))}</h3><table><thead><tr><th>${esc(T('p.layer'))}</th><th>${esc(T('p.plant'))}</th><th>${esc(T('p.time'))}</th><th>${esc(T('p.jobs'))}</th><th>${esc(T('p.warn'))}</th></tr></thead><tbody>${rows}</tbody></table></section>
+    <section><h3>${esc(T('tab.layers'))}</h3><table><thead><tr><th>${esc(T('p.layer'))}</th><th>${esc(T('p.plant'))}</th><th>${esc(T('p.time'))}</th><th>${esc(T('p.jobs'))}</th><th>${esc(T('withWarning'))}</th></tr></thead><tbody>${rows}</tbody></table></section>
     <section><h3>${esc(T('tab.time'))}</h3><div class="sheet-phases">${bands}</div></section>
     ${gapJobs.length || free ? `<section><h3>${esc(T('printGaps'))}</h3><ul>${gapJobs.map((j) => `<li>${esc(T('job.' + j + '.gap'))}</li>`).join('')}${free ? `<li>${esc(T('printFree', { n: W.num(free) }))}</li>` : ''}</ul></section>` : ''}
     <p class="muted small">${esc(T('d.liab'))}</p>

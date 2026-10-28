@@ -134,3 +134,16 @@ export function licenceOf(raw) {
   const name = ['CC', code.toUpperCase(), version, place?.toUpperCase()].filter(Boolean).join(' ');
   return { name, url: version ? `https://creativecommons.org/licenses/${code}/${version}/${place ? place + '/' : ''}` : null, publicDomain: false };
 }
+
+// The facts a card, a row, the Swap and Add lists and print name as "not checked yet": toxicity,
+// invasive status, spreading and the plant's jobs (`jobsOther` when another source gives some).
+// Allelopathy not checked yet is told in the plant's details only (owner, 2026-10-28); a known
+// allelopathic plant still carries its warning wherever warnings show.
+export function uncheckedOnCard(taxon, hasJobs) {
+  const w = taxon.warnings, out = [];
+  if (!w.toxicity) out.push('tox');
+  if (w.invasive_in == null) out.push('inv');
+  if (w.weed_potential == null) out.push('spreads');
+  if (taxon.functions == null) out.push(hasJobs ? 'jobsOther' : 'jobs');
+  return out;
+}

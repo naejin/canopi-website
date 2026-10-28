@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T02:42:43Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:10:58Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T02:08:47Z }
 sources:
@@ -14,13 +14,13 @@ sources:
   - id: app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:3a4720245a79516c
-    last_modified: 2026-10-28T02:41:10Z
+    digest: sha256:ea12746ab3883201
+    last_modified: 2026-10-28T07:59:20Z
   - id: words-js
     resource: ../../src/scripts/consortium/words.js
     title: src/scripts/consortium/words.js
-    digest: sha256:5747a4463f119327
-    last_modified: 2026-10-28T01:05:25Z
+    digest: sha256:04d626d62cfea173
+    last_modified: 2026-10-28T07:59:20Z
   - id: draw-js
     resource: ../../src/scripts/consortium/draw.js
     title: src/scripts/consortium/draw.js
@@ -34,8 +34,8 @@ sources:
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:ca57a575200bb50d
-    last_modified: 2026-10-28T02:40:28Z
+    digest: sha256:8fd5b17b2c562304
+    last_modified: 2026-10-28T08:10:35Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
@@ -44,13 +44,13 @@ sources:
   - id: consortium-page-test-mjs
     resource: ../../scripts/consortium-page.test.mjs
     title: scripts/consortium-page.test.mjs
-    digest: sha256:5a1e1b6dcd42f715
-    last_modified: 2026-10-28T02:42:20Z
+    digest: sha256:ac90ea13d7015250
+    last_modified: 2026-10-28T07:59:15Z
   - id: logic-js
     resource: ../../src/scripts/consortium/logic.js
     title: src/scripts/consortium/logic.js
-    digest: sha256:e3883f8a9e74efaa
-    last_modified: 2026-10-28T02:39:44Z
+    digest: sha256:1b7d31dce1f190c3
+    last_modified: 2026-10-28T07:59:20Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
@@ -91,8 +91,9 @@ Routes: `/consortium/`, `/fr/guilde/` (the French tool is a "guilde"), `/{lang}/
 # Behaviour worth knowing
 
 - After a country is chosen, focus moves to `#ct-result-title` and `#ct-say` announces the summary; on phone the heading is scrolled to the top so the drawing and its numbered key show on the first screen.
-- "N plants need a look" counts moderate and severe toxicity plus whatever the core flags (`needsLook`); slight toxicity stays on the card.
-- Swap and Add list flagged plants last, under "With a warning"; choosing one asks one confirmation that names the warnings.
+- The warnings summary, headed "With a warning", lists moderate and severe toxicity plus whatever the core flags (`needsLook`); slight toxicity stays on the card.
+- One warning heading everywhere (owner, 2026-10-28): `consortium.withWarning` ("With a warning" and its translations) heads the flagged plants in Swap and Add (with `flaggedNote` under it), the warnings summary, the print table's warnings column and the hidden label of the warning mark on the drawing, its key and the Over time rows. No "Cautions" label: the merged soft chip shows its list alone, first letter capitalised (`capFirst`).
+- Swap and Add list flagged plants last, under "With a warning" (`withWarning`); choosing one asks one confirmation that names the warnings.
 - A fresh result never says "no better plant"; with free places and nothing to fill it uses `freeNone`.
 - Phone: the drawing shows numbers only, with a two-column key; Keep and Remove are icon buttons with labels; the "I want to grow…" search sits under the views when no place is free.
 - A link, saved state or guide preset opens on the result: the inline first-paint script in ConsortiumPage.astro follows the app's start rules (`c`, else the preset's `climate`, else `html[data-climate]`; `r`; the saved consortium; a preset borrowing the saved place, checked against `data-climates`/`data-regions` on `#ct-head`) and sets `data-step`, the outline's current step and the compact head before paint, and `#ct-app` keeps `min-height: 100vh` while loading, so nothing shifts.
@@ -106,14 +107,14 @@ Routes: `/consortium/`, `/fr/guilde/` (the French tool is a "guilde"), `/{lang}/
 - Source and photo links: only http(s) URLs are links (`safeHref`), anything else is plain text; licences link their Creative Commons deed with `rel="license noopener"` (`licenceHTML`), public domain is translated (`publicDomain`).
 - A details sheet opened from Swap offers "Use this instead" (`useInstead`) for the plant being swapped, never Add.
 - "Show more plants if I loosen…" lists only answers that can be loosened (`relaxTo`).
-- Unknown allelopathy and spread show as "not checked yet" on cards and in details, never as none.
+- Unknown toxicity, invasive status, spread and jobs show as "not checked yet" on cards, rows, Swap, Add and print (`uncheckedOnCard` in `logic.js`). Unknown allelopathy shows in a plant's details only (owner, 2026-10-28). Neither is ever shown as none; a known allelopathic plant keeps its soft warning everywhere.
 - The borrowed-list label ("Plants from the X list…") shows on result, no-match and print, and says whether invasiveness was checked for the user's country; place names follow a colon, so no language needs an article before them.
 - Strata labels and phase terms are the Canopi app's own (`canopi/desktop/web/src/i18n/`), except where the owner decision "strata are about light first" outranks them: ja 突出層 / 上層 / 中層 / 下層 and ko 돌출층 / 상층 / 중층 / 하층 name light positions (the app's 高木層, 低木層, 교목층 name tree and shrub layers), and zh writes 顶极群落 (the app has 顶级群落). The test pins them and forbids tree or shrub words in strata labels.
 - No requests outside the site; the tool JS is about 27 KB gzipped (minified bundle), each cell about 60 to 66 KB gzipped.
 
 - Language switch (seam M1): the header's language links (inline and phone Menu) carry `location.search`, kept current after every `replaceState` (`syncLangLinks`); other pages' links are unchanged. Typed guesses `/fr/consortium/` and `/guilde/` redirect to `/fr/guilde/` (`public/_redirects`).
 - A guide preset (`?plant=&climate=`) with no place uses the place of the consortium saved on this device (`S.placeFrom = 'device'`), and is never silent: the guide note shows on the result and on "Not covered yet" (there `fromGuideWait`: the plant is kept once a place with a list is chosen), with one line (`placeFrom`, `.place-from`) naming the place from this device and a Change button; choosing a place drops the line; before a place is chosen the tool loads the cell of that climate to name the plant as it will ("Pear (*Pyrus communis*)"). A guide's climate applies to this consortium only: the shared site climate (`canopi-climate`) changes only when the reader picks a climate in the tool (decision taken in the fixes round; the note says "This consortium uses the … climate").
-- The "need a look" banner is a list (`ul.att-list`), one plant per line with its actions inside its own item. A plant that misfits the site (often the guide's) states what it needs (its size against the room, its light…) and offers Swap and Remove (`removeShort`). The site answers are facts about the reader's garden: the tool never offers changing one to fit a plant (`nm.try` belongs to the no-match state only).
+- The "With a warning" banner is a list (`ul.att-list`), one plant per line with its actions inside its own item. A plant that misfits the site (often the guide's) states what it needs (its size against the room, its light…) and offers Swap and Remove (`removeShort`). The site answers are facts about the reader's garden: the tool never offers changing one to fit a plant (`nm.try` belongs to the no-match state only).
 - Each view has a written-out "?" explanation button; each plant row has a "?" beside its phase words that opens the phase explanation in the row (`S.explain = 'phase-<id>'`).
 - While a header menu is open, a result arriving takes the focus without scrolling (Safari leaves a tapped summary unfocused). On this page `.site-header` has `z-index: 45`, above the toast (40).
 - Desktop side panel: always sticky (`top: 16px`), at most `100dvh - 32px` tall, and scrolls inside itself; its order is Your place, I want to grow… with Fill, then Your site, so the main actions show at the top at every page scroll position and it never changes layout mid-scroll. `render()` keeps its scroll position.

@@ -409,6 +409,8 @@
   .ct .alt .button { min-height: 44px; justify-self: start; }
 }
 .ct .list-label { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-top: 4px; }
+.ct .list-label > svg { display: inline-block; vertical-align: -2px; margin-right: 2px; }
+.ct .list-label + .seg-hint { margin-top: -2px; }
 .ct .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 /* Toast */
 .ct .toast {
