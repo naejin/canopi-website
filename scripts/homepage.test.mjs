@@ -203,6 +203,28 @@ test('the home section\'s note names exactly the beta cells the manifest lists',
   const described = ['mediterranean × europe', 'temperate × europe', 'tropical × southern_america'];
   const manifest = JSON.parse(readFileSync(new URL('../public/data/consortium/manifest.json', import.meta.url), 'utf8'));
   assert.deepEqual(manifest.cells.map((cell) => `${cell.climate_zone.toLowerCase()} × ${cell.region}`).sort(), described);
+  // The note itself, in each locale: the number of places, the two European climates, the tropics, and
+  // the tool's own name for the tropical cell's region (prepush L7).
+  const words = {
+    en: [/three places/, /temperate/i, /Mediterranean/, /tropics/],
+    fr: [/trois endroits/, /tempérée/, /méditerranéenne/, /tropiques/],
+    es: [/tres lugares/, /templada/, /mediterránea/, /trópicos/],
+    pt: [/três lugares/, /temperada/, /mediterrânea/, /trópicos/],
+    it: [/tre luoghi/, /temperata/, /mediterranea/, /tropici/],
+    de: [/drei Gebieten/, /gemäßigte/, /mediterrane/, /Tropen/],
+    nl: [/drie gebieden/, /gematigd/, /mediterraan/, /tropen/],
+    ru: [/три области/, /умеренным/, /средиземноморским/, /тропики/],
+    zh: [/三个地区/, /温带/, /地中海/, /热带/],
+    ja: [/3つ/, /温帯/, /地中海/, /熱帯/],
+    ko: [/세 지역/, /온대/, /지중해/, /열대/],
+  };
+  for (const [lang, patterns] of Object.entries(words)) {
+    const all = JSON.parse(readFileSync(new URL(`../src/i18n/translations/${lang}.json`, import.meta.url), 'utf8'));
+    const note = all['home.consortium.note'], region = all['consortium.region.southern_america'];
+    for (const w of patterns) assert.match(note, w, `${lang}: ${note}`);
+    assert.ok(note.includes(region) || note.includes(region.replace(/^./, (c) => c.toLowerCase())), `${lang}: names ${region}`);
+    assert.match(note, /Europ|Европ|欧洲|ヨーロッパ|유럽/, `${lang}: Europe`);
+  }
 });
 
 test('the header\'s styles are global, and the home section draws no plant and no green', () => {

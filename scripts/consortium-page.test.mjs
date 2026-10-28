@@ -735,31 +735,3 @@ test('every plant list shows the scientific name, smaller and in italics (prepus
   assert.match(appJs, /<span class="pn">\$\{name\(t\)\}<\/span> <span class="sci">\$\{esc\(t\.canonical_name\)\}<\/span>/);
   assert.match(appJs, /<span class="alt-name">[^\n]*<span class="sci">\$\{esc\(t\.canonical_name\)\}<\/span>/);
 });
-
-// The home note names the beta's places in words (a sentence, not fragments), so it cannot be built
-// from the manifest; this test ties it to the manifest instead. When a cell goes live, the manifest
-// changes and this fails until the note is rewritten in all 11 locales and the words below follow.
-test('the home note names exactly the manifest\'s places, and their number (prepush L7)', () => {
-  const cells = manifest.cells.map((c) => `${c.climate_zone.toLowerCase()}/${c.region}`).sort();
-  assert.deepEqual(cells, ['mediterranean/europe', 'temperate/europe', 'tropical/southern_america'], 'the beta places the home note was written for');
-  const words = {
-    en: [/three places/, /temperate/i, /Mediterranean/, /tropics/],
-    fr: [/trois endroits/, /tempérée/, /méditerranéenne/, /tropiques/],
-    es: [/tres lugares/, /templada/, /mediterránea/, /trópicos/],
-    pt: [/três lugares/, /temperada/, /mediterrânea/, /trópicos/],
-    it: [/tre luoghi/, /temperata/, /mediterranea/, /tropici/],
-    de: [/drei Gebieten/, /gemäßigte/, /mediterrane/, /Tropen/],
-    nl: [/drie gebieden/, /gematigd/, /mediterraan/, /tropen/],
-    ru: [/три области/, /умеренным/, /средиземноморским/, /тропики/],
-    zh: [/三个地区/, /温带/, /地中海/, /热带/],
-    ja: [/3つ/, /温帯/, /地中海/, /熱帯/],
-    ko: [/세 지역/, /온대/, /지중해/, /열대/],
-  };
-  for (const lang of locales) {
-    const note = home[lang]['home.consortium.note'];
-    for (const w of words[lang]) assert.match(note, w, `${lang}: ${note}`);
-    // Europe for the two European cells, and the tool's own name for the tropical one.
-    assert.ok(note.includes(strings[lang]['region.southern_america']) || note.includes(strings[lang]['region.southern_america'].replace(/^./, (c) => c.toLowerCase())), `${lang}: southern_america`);
-    assert.ok(/Europ|Европ|欧洲|ヨーロッパ|유럽/.test(note), `${lang}: Europe`);
-  }
-});
