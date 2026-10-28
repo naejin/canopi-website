@@ -1143,10 +1143,14 @@ html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
 .ct .profile .sv-marks[data-s="high"] i { background: var(--s-high); }
 .ct .profile .sv-marks[data-s="medium"] i { background: var(--s-medium); }
 .ct .profile .sv-marks[data-s="low"] i { background: var(--s-low); }
-.ct .profile .sv-marks[data-dense] i:nth-child(even) { opacity: 0.62; }
-.ct .profile .sv-marks i[data-u] { background: none; border: 1px dashed var(--text-muted); border-bottom: 0; opacity: 1; }
+/* Dense: every other mark a lighter shade of its band (the warning dot keeps full ink). */
+.ct .profile .sv-marks[data-dense][data-s="emergent"] i:nth-child(even) { background: color-mix(in srgb, var(--s-emergent) 62%, var(--surface)); }
+.ct .profile .sv-marks[data-dense][data-s="high"] i:nth-child(even) { background: color-mix(in srgb, var(--s-high) 62%, var(--surface)); }
+.ct .profile .sv-marks[data-dense][data-s="medium"] i:nth-child(even) { background: color-mix(in srgb, var(--s-medium) 62%, var(--surface)); }
+.ct .profile .sv-marks[data-dense][data-s="low"] i:nth-child(even) { background: color-mix(in srgb, var(--s-low) 62%, var(--surface)); }
+.ct .profile .sv-marks i[data-u], .ct .profile .sv-marks[data-dense] i[data-u] { background: none; border: 1px dashed var(--text-muted); border-bottom: 0; }
 .ct .sv-marks i[data-w]::before { content: ''; position: absolute; left: 50%; top: -7px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--text); }
-.ct .sv-marks i[data-on] { outline: 2px solid var(--focus); outline-offset: 1px; opacity: 1; z-index: 1; }
+.ct .sv-marks i[data-on] { outline: 2px solid var(--focus); outline-offset: 1px; z-index: 1; }
 .ct .sv-tip { position: absolute; top: 0; left: 0; z-index: 3; transform: translateY(calc(-100% - 6px)); padding: 3px 8px; border-radius: 6px; background: var(--text); color: var(--bg); font-size: 13px; line-height: 1.3; white-space: nowrap; pointer-events: none; }
 .ct .sv-sum { grid-area: sum; margin: 0; font-size: 14.5px; color: var(--text-secondary); }
 .ct .sv-show { grid-area: show; align-self: start; min-height: 44px; }
