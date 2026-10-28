@@ -10,7 +10,9 @@ invented asia_temperate cell, so Malus domestica and Allium schoenoprasum each s
 Elaeagnus multiflora has only an asia_temperate reason). Most reasons cite the sample review, a few a book,
 as in the real export.
 `countries` in the manifest is the real list from canopi-data, with the real GRIIS coverage (`invasive_checked`),
-not invented; every `invasive_in` country is a checked one.
+not invented; every `invasive_in` country is a checked one. `invasive_in` lists are invented, but each one
+also holds every country where GRIIS really records the plant invasive (`griis.json`), so the fixture never
+shows "not recorded invasive" where GRIIS says otherwise.
 
 Covers: null versus `[]` (`toxicity`), `functions: null` and a taxon with no stratum or phases yet
 (Zingiber officinale), invasive in a few or many countries, every toxicity level, genus, species and family-rank
@@ -24,5 +26,7 @@ Regenerate (needs ../canopi-data):
 
 ```sh
 (cd ../canopi-data && uv run python -c 'import json; from pathlib import Path; from canopi.curated.regions import COUNTRIES; from canopi.curated.consortium_export import DEFAULT_GRIIS_PATH, griis_checked_countries as g; c = g(DEFAULT_GRIIS_PATH); print(json.dumps({k: {"invasive_checked": k in c} for k in COUNTRIES}))') > /tmp/countries.json
-python3 -I scripts/fixtures/consortium/make_fixture.py scripts/fixtures/consortium /tmp/countries.json
+python3 -I scripts/fixtures/consortium/make_fixture.py --names > /tmp/names.txt
+(cd ../canopi-data && uv run python -c 'import json, sys; from canopi.curated.consortium_export import DEFAULT_GRIIS_PATH, griis_invasive_countries as g; print(json.dumps(g(DEFAULT_GRIIS_PATH, set(filter(None, sys.stdin.read().splitlines()))), sort_keys=True))' < /tmp/names.txt) > /tmp/griis.json
+python3 -I scripts/fixtures/consortium/make_fixture.py scripts/fixtures/consortium /tmp/countries.json /tmp/griis.json
 ```

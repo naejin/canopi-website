@@ -1,13 +1,20 @@
 """Build the illustrative consortium fixture (format 3) for canopi-website.
 
 Values are plausible but invented for UI work. Never ship them.
-Usage: python3 -I make_fixture.py <out_dir> <countries.json>
-(countries.json: see README.md; the real country list and GRIIS coverage from canopi-data.)
+Usage: python3 -I make_fixture.py --names            (the fixture's taxon names, one per line)
+       python3 -I make_fixture.py <out_dir> <countries.json> <griis.json>
+(see README.md: countries.json is the real country list and GRIIS coverage from canopi-data;
+griis.json is GRIIS's real invasive countries for each fixture taxon, from canopi-data.)
 """
 import hashlib, json, os, sys, uuid
 
-OUT = sys.argv[1]
-COUNTRIES = json.load(open(sys.argv[2], encoding="utf-8"))
+NAMES_ONLY = sys.argv[1:] == ["--names"]
+if not NAMES_ONLY:
+    if len(sys.argv) != 4:
+        sys.exit(__doc__)
+    OUT = sys.argv[1]
+    COUNTRIES = json.load(open(sys.argv[2], encoding="utf-8"))
+    GRIIS = json.load(open(sys.argv[3], encoding="utf-8"))
 GEN = "2026-10-27T00:00:00Z"
 NS = uuid.UUID("00000000-0000-4000-8000-00000000c0de")
 
@@ -416,6 +423,27 @@ TEMP_INTER = [
 ]
 
 
+ALL_TAXA = TROPICAL + MEDITERRANEAN + TEMPERATE
+if NAMES_ONLY:
+    print("\n".join(sorted({t["canonical_name"] for t in ALL_TAXA})))
+    sys.exit(0)
+missing = sorted({t["canonical_name"] for t in ALL_TAXA} - set(GRIIS))
+assert not missing, f"griis.json has no entry for {missing}; regenerate it (README.md)"
+
+
+def with_griis(t):
+    """Invented invasive_in lists may add countries, but never hide a real GRIIS record: a plant
+    GRIIS records invasive in a country always lists that country, so the fixture never shows
+    "not recorded invasive" where GRIIS says otherwise."""
+    listed = [c["country"] for c in t["warnings"]["invasive_in"]]
+    real = [c for c in GRIIS[t["canonical_name"]] if c not in listed]
+    if not real:
+        return t
+    t = dict(t)
+    t["warnings"] = dict(t["warnings"], invasive_in=t["warnings"]["invasive_in"] + inv(*real))
+    return t
+
+
 def used_sources(taxa, inter):
     ids = set()
     for t in taxa:
@@ -466,7 +494,8 @@ def climate_file(zone, region, taxa, inter):
     extra = EXTRA_REASONS.get(zone, {})
     out = []
     for t in sorted(taxa, key=lambda t: t["canonical_name"]):
-        t = dict(t)
+        t = with_griis(dict(t))
+        assert set(GRIIS[t["canonical_name"]]) <= {c["country"] for c in t["warnings"]["invasive_in"]}
         reasons = [{"region": ONLY_IN.get((zone, t["canonical_name"]), region), "text": t["reasons"],
                     "sources": REASON_SOURCES.get(t["canonical_name"], ["sample-review"])}]
         reasons += extra.get(t["canonical_name"], [])
@@ -524,7 +553,9 @@ open(os.path.join(OUT, "README.md"), "w").write(
     "Elaeagnus multiflora has only an asia_temperate reason). Most reasons cite the sample review, a few a book,\n"
     "as in the real export.\n"
     "`countries` in the manifest is the real list from canopi-data, with the real GRIIS coverage (`invasive_checked`),\n"
-    "not invented; every `invasive_in` country is a checked one.\n\n"
+    "not invented; every `invasive_in` country is a checked one. `invasive_in` lists are invented, but each one\n"
+    "also holds every country where GRIIS really records the plant invasive (`griis.json`), so the fixture never\n"
+    "shows \"not recorded invasive\" where GRIIS says otherwise.\n\n"
     "Covers: null versus `[]` (`toxicity`), `functions: null` and a taxon with no stratum or phases yet\n"
     "(Zingiber officinale), invasive in a few or many countries, every toxicity level, genus, species and family-rank\n"
     "interactions, allelopathy with and without a recorded target, `allelopathy_tolerant`, missing names per locale,\n"
@@ -539,7 +570,13 @@ open(os.path.join(OUT, "README.md"), "w").write(
     "from canopi.curated.consortium_export import DEFAULT_GRIIS_PATH, griis_checked_countries as g; "
     "c = g(DEFAULT_GRIIS_PATH); print(json.dumps({k: {\"invasive_checked\": k in c} for k in COUNTRIES}))') "
     "> /tmp/countries.json\n"
-    "python3 -I scripts/fixtures/consortium/make_fixture.py scripts/fixtures/consortium /tmp/countries.json\n"
+    "python3 -I scripts/fixtures/consortium/make_fixture.py --names > /tmp/names.txt\n"
+    "(cd ../canopi-data && uv run python -c 'import json, sys; "
+    "from canopi.curated.consortium_export import DEFAULT_GRIIS_PATH, griis_invasive_countries as g; "
+    "print(json.dumps(g(DEFAULT_GRIIS_PATH, set(filter(None, sys.stdin.read().splitlines()))), sort_keys=True))' "
+    "< /tmp/names.txt) > /tmp/griis.json\n"
+    "python3 -I scripts/fixtures/consortium/make_fixture.py scripts/fixtures/consortium /tmp/countries.json "
+    "/tmp/griis.json\n"
     "```\n")
 for n, b in sorted(blobs.items()):
     print(f"{n:22s} {len(b):7d} bytes")
