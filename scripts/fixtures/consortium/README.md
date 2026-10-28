@@ -17,7 +17,9 @@ shows "not recorded invasive" where GRIIS says otherwise.
 Covers: null versus `[]` (`toxicity`), `functions: null` and a taxon with no stratum or phases yet
 (Zingiber officinale), invasive in a few or many countries, every toxicity level, genus, species and family-rank
 interactions, allelopathy with and without a recorded target, `allelopathy_tolerant`, missing names per locale,
-a climate with no interactions (`[]`, checked none), a reason per region with its source, countries GRIIS
+a climate with no interactions (`[]`, checked none), a reason per region with its source, an interaction of a
+region-bound agent with two sources (Psidium guajava x Citrus, copied from the real export of 2026-10-28: the
+EPPO host page, then the distribution page its "only in the Americas" note rests on), countries GRIIS
 does not cover (`invasive_checked: false`, for example TW, PR, PF and the six Antarctic codes).
 `invasive_in` is never null here: the exporter writes null for every taxon, with every country unchecked,
 only when the GRIIS compendium is missing, so a test that needs it sets it on a copy.

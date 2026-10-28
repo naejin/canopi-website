@@ -7,13 +7,13 @@ tags: [module, tooling]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T11:50:26Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:55Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:20:52Z }
 sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:830599356199bfe6
-    last_modified: 2026-10-28T11:49:46Z
+    digest: sha256:ea23b41ee3a2a0e4
+    last_modified: 2026-10-28T12:20:47Z
   - id: package-json
     resource: ../../package.json
     title: package.json
