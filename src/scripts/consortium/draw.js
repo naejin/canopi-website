@@ -104,14 +104,18 @@ export function profileSVG(placed, { phone, id, title, strataLabel }) {
   const colW = phone ? 62 : 100;
   const cols = Math.max(placed.length, phone ? 5 : 6), pad = Math.floor((cols - placed.length) / 2);
   const W = cols * colW, H = 300, gy = 276;
+  // live m1: a wide crown reaches about 0.8 of a column from its centre, past the first and last
+  // columns; the frame has a margin of a third of a column on each side so no plant is cut off.
+  const M = Math.ceil(colW / 3), x0 = -M, VW = W + 2 * M;
   const present = Object.keys(STRATUM_HEIGHT).filter((s) => placed.some((t) => t.stratum.value === s));
-  const lines = present.map((s) => `<line x1="0" x2="${W}" y1="${gy - STRATUM_HEIGHT[s]}" y2="${gy - STRATUM_HEIGHT[s]}" stroke="var(--border-strong)" stroke-dasharray="3 5" stroke-width="1" opacity="0.8"/>`).join('');
+  const lines = present.map((s) => `<line x1="${x0}" x2="${W + M}" y1="${gy - STRATUM_HEIGHT[s]}" y2="${gy - STRATUM_HEIGHT[s]}" stroke="var(--border-strong)" stroke-dasharray="3 5" stroke-width="1" opacity="0.8"/>`).join('');
   const lineLabels = present.map((s) => `<span class="sline" style="top:max(2px, calc(${(((gy - STRATUM_HEIGHT[s]) / H) * 100).toFixed(2)}% - 1.45em))"><span class="sw" data-s="${s}"></span>${esc(strataLabel(s))}</span>`).join('');
   const plants = placed.map((t, i) => silhouette(t, (pad + i) * colW + colW / 2, gy, colW)).join('');
-  const columns = placed.map((t, i) => ({ t, center: ((pad + i + 0.5) / cols) * 100 }));
-  const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">
+  // Column centres and width in % of the frame, for the HTML labels under the drawing.
+  const columns = placed.map((t, i) => ({ t, center: (((pad + i + 0.5) * colW + M) / VW) * 100 }));
+  const svg = `<svg viewBox="${x0} 0 ${VW} ${H}" role="img" aria-label="${esc(title)}">
     <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sun-tint);stop-opacity:0.75"/><stop offset="0.9" style="stop-color:var(--sun-tint);stop-opacity:0"/></linearGradient></defs>
-    <rect x="0" y="0" width="${W}" height="${gy}" fill="url(#${id})"/>${lines}${plants}
-    <rect x="0" y="${gy}" width="${W}" height="${H - gy}" fill="var(--soil)" fill-opacity="0.16"/><line x1="0" x2="${W}" y1="${gy}" y2="${gy}" stroke="var(--ground-ink)" stroke-width="1.5"/></svg>`;
-  return { svg, lineLabels, columns, cols, ratio: W / H };
+    <rect x="${x0}" y="0" width="${VW}" height="${gy}" fill="url(#${id})"/>${lines}${plants}
+    <rect x="${x0}" y="${gy}" width="${VW}" height="${H - gy}" fill="var(--soil)" fill-opacity="0.16"/><line x1="${x0}" x2="${W + M}" y1="${gy}" y2="${gy}" stroke="var(--ground-ink)" stroke-width="1.5"/></svg>`;
+  return { svg, lineLabels, columns, cols, colW, pad, colPct: (colW / VW) * 100, ratio: VW / H };
 }

@@ -2,30 +2,30 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:53:57Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T00:59:21Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:53:56Z }
 sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:f3910211cf20ea01
-    last_modified: 2026-10-27T23:51:10Z
+    digest: sha256:7ac89d9388d9639a
+    last_modified: 2026-10-28T00:56:38Z
   - id: app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:59d5c42daca25f81
-    last_modified: 2026-10-27T23:50:38Z
+    digest: sha256:3b5dd13c13a8d538
+    last_modified: 2026-10-28T00:56:38Z
   - id: words-js
     resource: ../../src/scripts/consortium/words.js
     title: src/scripts/consortium/words.js
-    digest: sha256:bfb52f86762a3d15
-    last_modified: 2026-10-27T22:35:16Z
+    digest: sha256:5747a4463f119327
+    last_modified: 2026-10-28T00:56:38Z
   - id: draw-js
     resource: ../../src/scripts/consortium/draw.js
     title: src/scripts/consortium/draw.js
-    digest: sha256:88d0c17075e400d6
-    last_modified: 2026-10-27T22:35:16Z
+    digest: sha256:c446a372513ce7a1
+    last_modified: 2026-10-28T00:56:38Z
   - id: data-ts
     resource: ../../src/scripts/consortium/data.ts
     title: src/scripts/consortium/data.ts
@@ -34,8 +34,8 @@ sources:
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:50910945b5346a2b
-    last_modified: 2026-10-27T23:43:29Z
+    digest: sha256:dca1ee417a355cdd
+    last_modified: 2026-10-28T00:58:53Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
@@ -44,13 +44,13 @@ sources:
   - id: consortium-page-test-mjs
     resource: ../../scripts/consortium-page.test.mjs
     title: scripts/consortium-page.test.mjs
-    digest: sha256:01a35daa1450b399
-    last_modified: 2026-10-27T23:50:38Z
+    digest: sha256:e1222c49d55805a6
+    last_modified: 2026-10-28T00:56:38Z
   - id: logic-js
     resource: ../../src/scripts/consortium/logic.js
     title: src/scripts/consortium/logic.js
-    digest: sha256:1020168c1effc4af
-    last_modified: 2026-10-27T23:26:45Z
+    digest: sha256:aa1942b9d2487d5e
+    last_modified: 2026-10-28T00:56:38Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
@@ -77,11 +77,11 @@ The consortium tool's page: the visitor picks a climate and a place, and gets 6 
 
 | File | Role |
 |---|---|
-| [ConsortiumPage.astro](../../src/components/consortium/ConsortiumPage.astro) | Server-rendered tool head (title, Beta with the number of places from `public/data/consortium/manifest.json`, lede, outline, feedback link), `noscript`, the `#ct-app` mount, one `<dialog id="ct-dialog" data-own-dialog>` (the site's `initDialogs` in `src/scripts/dialogs.js` skips it; the app handles Escape, backdrop and scroll lock itself), toast, `#ct-say` live region, print sheet; writes `#ct-data` (the `consortium.*` strings without prefix, climate names, guide titles and URLs) |
+| [ConsortiumPage.astro](../../src/components/consortium/ConsortiumPage.astro) | Its script runs `initChrome()` first, then `import()`s app.js, so a tool failure never breaks the header. Server-rendered tool head (title, Beta with the number of places from `public/data/consortium/manifest.json`, lede `home.consortium.lede` shared with the home section, outline, feedback link), `noscript`, the `#ct-app` mount, one `<dialog id="ct-dialog" data-own-dialog>` (the site's `initDialogs` in `src/scripts/dialogs.js` skips it; the app handles Escape, backdrop and scroll lock itself), toast, `#ct-say` live region, print sheet; writes `#ct-data` (the `consortium.*` strings without prefix, climate names, guide titles and URLs) |
 | [app.js](../../src/scripts/consortium/app.js) | The whole tool: state `S`, `render()`, sheets (`O`, one dialog with `data-kind`), actions table, share-link and `localStorage["canopi-consortium"]` |
 | [words.js](../../src/scripts/consortium/words.js) | `makeWords(strings, lang)` → `T`, `P` (plural forms `one: … \| other: …` with `#`), lists, phase time words; `needsLook`, `searchText`, `fold`, `plantName` |
-| [draw.js](../../src/scripts/consortium/draw.js) | `profileSVG`: the side-view drawing of the layers |
-| [logic.js](../../src/scripts/consortium/logic.js) | Pure page rules tested in node: `droppedPlants` (old-link count), `trimGaps`, `mayPersist`, `photoSource`, `shown` (with `next`, what one "Show more" reveals), `linkMembers` (the link's `a`), `afterMove` (notices dropped on a place change), `repeatClick` (double-click guard) |
+| [draw.js](../../src/scripts/consortium/draw.js) | `profileSVG`: the side-view drawing of the layers, with a third of a column of margin each side so no crown is cut; returns `colPct` for the HTML labels |
+| [logic.js](../../src/scripts/consortium/logic.js) | Pure page rules tested in node: `withQuery` (the language links' query), `presetPlace` (a guide preset borrows the saved place), `droppedPlants` (old-link count), `trimGaps`, `mayPersist`, `photoSource`, `shown` (with `next`, what one "Show more" reveals), `linkMembers` (the link's `a`), `afterMove` (notices dropped on a place change), `repeatClick` (double-click guard) |
 | [data.ts](../../src/scripts/consortium/data.ts) | `loadManifest`, `loadLabels`, `loadCell` from `/data/consortium/` |
 | [consortium.css](../../src/styles/consortium.css) | Everything under `.ct`; strata colours only in the drawing and legend; in print, the light palette on white whatever the theme |
 | [consortium-guides.ts](../../src/data/consortium-guides.ts) | Guides linked per plant, per job (`null` when no guide covers the job: helpers), and for the explanations; a plant links only guides that grow or use it, never one passing sentence |
@@ -94,18 +94,27 @@ Routes: `/consortium/`, `/fr/guilde/` (the French tool is a "guilde"), `/{lang}/
 - "N plants need a look" counts moderate and severe toxicity plus whatever the core flags (`needsLook`); slight toxicity stays on the card.
 - Swap and Add list flagged plants last, under "With a warning"; choosing one asks one confirmation that names the warnings.
 - A fresh result never says "no better plant"; with free places and nothing to fill it uses `freeNone`.
-- Phone: the drawing shows numbers only, with a two-column key; Pin and Remove are icon buttons with labels; the "I want to grow…" search sits under the views when no place is free.
+- Phone: the drawing shows numbers only, with a two-column key; Keep and Remove are icon buttons with labels; the "I want to grow…" search sits under the views when no place is free.
 - A link or saved state opens on the result: an inline script sets the compact head before paint, and `#ct-app` keeps `min-height: 100vh` while loading, so nothing shifts.
 - A confirmation for a flagged plant replaces that plant's Add or Use button, inside its own list row (never two Add buttons, and a list holds only items); Cancel gives the focus back to the button.
 - A double click on Remove removes one plant (`repeatClick`: the second click of a double click, or a pointer click within 500 ms, is ignored; keyboard presses always count).
 - Closing a sheet from an action (Swap, Remove in details, Add, a new climate) closes the dialog at once and moves focus to the plant, Undo, or the result title.
-- Each place load has a number; a cell that arrives after a later choice is dropped. The address bar and saved state are left alone while loading or on error; a shared link still waiting for its cell is written back with its own prefixes. Picking another climate or place leaves the link behind (only a guide's plant carries over, while the link still waits for its cell) and drops its notices (guide pin, old link, restored). The loading screen always takes the focus on its status line. A no-match writes no `a=`, so a reload works it out again; an emptied consortium writes `a=` and stays empty.
+- Each place load has a number; a cell that arrives after a later choice is dropped. The address bar and saved state are left alone while loading or on error; a shared link still waiting for its cell is written back with its own prefixes. Picking another climate or place leaves the link behind (only a guide's plant carries over, while the link still waits for its cell) and drops its notices (guide plant, old link, restored). The loading screen always takes the focus on its status line. A no-match writes no `a=`, so a reload works it out again; an emptied consortium writes `a=` and stays empty.
 - An Undo toast goes once the consortium is remade, refilled or moved; Start over's Undo restores the whole earlier state, cell included.
 - Unknown allelopathy and spread show as "not checked yet" on cards and in details, never as none.
 - The borrowed-list label ("Plants from the X list…") shows on result, no-match and print, and says whether invasiveness was checked for the user's country; place names follow a colon, so no language needs an article before them.
 - Strata labels and phase terms are the Canopi app's own (`canopi/desktop/web/src/i18n/`), except where the owner decision "strata are about light first" outranks them: ja 突出層 / 上層 / 中層 / 下層 and ko 돌출층 / 상층 / 중층 / 하층 name light positions (the app's 高木層, 低木層, 교목층 name tree and shrub layers), and zh writes 顶极群落 (the app has 顶级群落). The test pins them and forbids tree or shrub words in strata labels.
 - No requests outside the site; the tool JS is about 27 KB gzipped (minified bundle), each cell about 60 to 66 KB gzipped.
 
+- Language switch (seam M1): the header's language links (inline and phone Menu) carry `location.search`, kept current after every `replaceState` (`syncLangLinks`); other pages' links are unchanged. Typed guesses `/fr/consortium/` and `/guilde/` redirect to `/fr/guilde/` (`public/_redirects`).
+- A guide preset (`?plant=&climate=`) with no place uses the place of the consortium saved on this device; before a place is chosen the tool loads the cell of that climate to name the plant as it will ("Pear (*Pyrus communis*)"). A guide's climate applies to this consortium only: the shared site climate (`canopi-climate`) changes only when the reader picks a climate in the tool (decision taken in the fixes round; the note says "This consortium uses the … climate").
+- A plant that misfits the site (often the guide's) gets next steps in the "need a look" banner: the nearest site answer it fits ("Try “Field”", action `fit`) and Swap.
+- Each view has a written-out "?" explanation button; each plant row has a "?" beside its phase words that opens the phase explanation in the row (`S.explain = 'phase-<id>'`).
+- While a header menu is open, a result arriving takes the focus without scrolling (Safari leaves a tapped summary unfocused). On this page `.site-header` has `z-index: 45`, above the toast (40).
+- Desktop side panel: sticky only while it fits the window (`fitAside` sets `.aside-sticky`), else it scrolls with the page.
+- The not-covered title names the user's place (country), never a region name that contradicts the climate. Print: no ASCII punctuation glued to translated text (warnings one per line, jobs with `Intl.ListFormat`).
+- Climates are listed in `src/data/climates.ts` order, as in the site picker.
+- Words: the action is "Keep" (keys `keep`, `unkeep`, `keptTag`, `keptNow`, `unkeptNow`); French site field « Surface »; `southern_america` is named for what WGSRPD puts in it (Central and South America and the Caribbean, Mexico in Northern America), the same in the home note and the guide links.
 # Tests
 
 - [consortium-page.test.mjs](../../scripts/consortium-page.test.mjs): strings in 11 locales (every key used, dynamic prefixes checked against core ids), app strata and phase terms, plural place counts, borrowed sentences with no article before a place, guides exist and cover their plants (crop list, heading, table, list item, bold or `<Term>`, or twice in prose; frontmatter, alt text and safety boxes ignored; a human check beyond that), `initDialogs` skipping `data-own-dialog`, `words.js`, `logic.js`.

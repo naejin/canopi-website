@@ -36,6 +36,8 @@ export function makeWords(strings, lang) {
     return vars ? text.replace(/\{(\w+)\}/g, (m, name) => (name in vars ? String(vars[name]) : m)) : text;
   };
   const list = (items) => lists.format(items);
+  // A short aside after a name: full-width brackets in Chinese and Japanese, " (…)" elsewhere.
+  const paren = (x) => (/^(zh|ja)/.test(lang) ? `（${x}）` : ` (${x})`);
   const num = (n) => numbers.format(n);
   const country = (code) => { try { return regionNames?.of(code) ?? code; } catch { return code; } };
   const climate = (id) => strings['climate.' + id] ?? id;
@@ -55,7 +57,7 @@ export function makeWords(strings, lang) {
     return { plain, term };
   }
 
-  return { T, P, list, num, country, climate, region, cell, phaseKey, timeWords };
+  return { T, P, list, paren, num, country, climate, region, cell, phaseKey, timeWords };
 }
 
 // A plant's name in the page language, else English (marked lang="en"), else its scientific name.

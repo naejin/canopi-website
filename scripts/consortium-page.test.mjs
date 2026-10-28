@@ -6,7 +6,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { pluralForms, makeWords, needsLook, searchText, fold, plantName } from '../src/scripts/consortium/words.js';
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
 import * as core from '../src/lib/consortium/index.ts';
-import { droppedPlants, trimGaps, mayPersist, photoSource, shown, linkMembers, afterMove, repeatClick } from '../src/scripts/consortium/logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace } from '../src/scripts/consortium/logic.js';
+import { profileSVG } from '../src/scripts/consortium/draw.js';
 import { crops } from '../src/data/crops.ts';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -115,7 +116,7 @@ test('words: plural forms, time words, lists', () => {
   assert.equal(en.timeWords({ phases: null }).plain, 'Timing not checked yet');
   const fr = makeWords(strings.fr, 'fr');
   assert.equal(fr.timeWords(taxon('placenta_iii', 'secondary_ii')).plain, 'Domine de la 1re année à la 25e année');
-  assert.equal(en.cell('tropical', 'southern_america'), 'Tropical · Southern America');
+  assert.equal(en.cell('tropical', 'southern_america'), 'Tropical · Central and South America and the Caribbean');
 });
 
 test('words: what counts as "needs a look" (N4) and what the Add search reads (M11)', () => {
@@ -347,7 +348,7 @@ test('initDialogs skips a dialog marked data-own-dialog, and still runs every ot
 });
 
 test('toasts never open on a plant name with a gendered participle after it (copy-M3)', () => {
-  for (const lang of ['fr', 'es', 'it', 'pt']) for (const key of ['removed', 'swapped', 'added', 'pinned', 'unpinned', 'fromGuide', 'fromGuidePlant']) {
+  for (const lang of ['fr', 'es', 'it', 'pt']) for (const key of ['removed', 'swapped', 'added', 'keptNow', 'unkeptNow', 'fromGuide', 'fromGuidePlant']) {
     assert.doesNotMatch(strings[lang][key], /(^|[.!?:]\s)\{(name|a|b|plant)\}\s+(est |está |è )?\p{L}+(ée|ada|ida|ata|uta|ita)\b/u, `${lang}: ${key}`);
   }
 });
@@ -359,4 +360,111 @@ test('the number of places comes from the manifest, never from the words (copy-m
   }
   assert.match(page, /manifest\.cells\.length/);
   assert.match(app, /P\('nc\.text', manifest\.cells\.length\)/);
+});
+
+// ---------- consortium/fixes (seam-review.md, live-check.md) ----------
+const home = Object.fromEntries(locales.map((lang) => [lang, JSON.parse(read(`src/i18n/translations/${lang}.json`))]));
+
+test('logic: the language links carry the tool\'s query, and only it (seam M1)', () => {
+  assert.equal(withQuery('/de/consortium/', '?plant=Cocos+nucifera&climate=tropical'), '/de/consortium/?plant=Cocos+nucifera&climate=tropical');
+  assert.equal(withQuery('/de/consortium/?old=1', ''), '/de/consortium/');
+  assert.equal(withQuery('/fr/guilde/', '?'), '/fr/guilde/');
+  assert.match(app, /syncLangLinks\(\)/);
+});
+
+test('logic: a guide preset with no place takes the place saved on this device (seam m4)', () => {
+  const preset = { climate: 'temperate', region: null, country: null, plants: ['Pyrus communis'] };
+  assert.deepEqual(presetPlace(preset, { climate: 'tropical', region: 'europe', country: 'FR' }), { country: 'FR', region: 'europe' });
+  assert.deepEqual(presetPlace(preset, { region: 'africa', country: null }), { country: null, region: 'africa' });
+  assert.equal(presetPlace(preset, null), null);
+  assert.equal(presetPlace(preset, { region: null, country: null }), null);
+  assert.equal(presetPlace({ ...preset, region: 'europe' }, { region: 'africa' }), null, 'a link\'s own place wins');
+  assert.equal(presetPlace({ ...preset, plants: [] }, { region: 'africa' }), null, 'only a guide preset');
+});
+
+test('one name per locale for southern_america, on the tool, the home note and the guide links (seam m1, live m5)', () => {
+  const names = {
+    en: 'Central and South America and the Caribbean', fr: 'Amérique centrale, Amérique du Sud et Caraïbes', es: 'Centroamérica, Sudamérica y el Caribe',
+    pt: 'América Central, América do Sul e Caribe', it: 'America centrale, America meridionale e Caraibi', de: 'Mittel- und Südamerika, Karibik',
+    nl: 'Midden- en Zuid-Amerika, Caraïben', ru: 'Центральная и Южная Америка, Карибы', zh: '中美洲、南美洲和加勒比', ja: '中米・南米・カリブ海', ko: '중앙아메리카·남아메리카·카리브해',
+  };
+  const mexico = { en: 'Mexico', fr: 'Mexique', es: 'México', pt: 'México', it: 'Messico', de: 'Mexiko', nl: 'Mexico', ru: 'Мексика', zh: '墨西哥', ja: 'メキシコ', ko: '멕시코' };
+  for (const lang of locales) {
+    const s = strings[lang];
+    assert.equal(s['region.southern_america'], names[lang], lang);
+    assert.ok(home[lang]['home.consortium.note'].includes(names[lang]), `${lang}: the home note names the region as the tool does`);
+    // Mexico is in northern_america (the data's WGSRPD regions): both hints say so.
+    assert.ok(s['region.northern_america.hint'].includes(mexico[lang]) && s['region.southern_america.hint'].includes(mexico[lang]), `${lang}: hints place Mexico`);
+  }
+  for (const lang of ['en', 'fr']) {
+    const guides = JSON.parse(read(`src/i18n/guides/${lang}.json`));
+    assert.ok(guides['consortium.cell.tropical.southern_america'].includes(names[lang]), `${lang}: guide links name the region as the tool does`);
+  }
+  assert.equal(manifest.country_regions.MX.join(), 'northern_america');
+});
+
+test('the tool lists climates in the site picker\'s order (seam m5)', () => {
+  assert.match(app, /import \{ climates \} from '..\/..\/data\/climates.ts'/);
+  assert.doesNotMatch(app, /siteClimates\.map\(/);
+});
+
+test('the home section and the tool share one intro and one beta word (seam m6)', () => {
+  for (const lang of locales) {
+    assert.ok(!('consortium.lede' in home[lang]) && !('home.consortium.beta' in home[lang]), lang);
+    assert.ok(home[lang]['home.consortium.lede'], lang);
+  }
+  assert.match(page, /t\('home\.consortium\.lede', lang\)/);
+  assert.match(read('src/components/ConsortiumSection.astro'), /t\('consortium\.beta', lang\)/);
+});
+
+test('static redirects for guessed French and English paths (seam m11)', () => {
+  const rules = read('public/_redirects').split('\n').map((l) => l.trim().split(/\s+/)).filter((r) => r.length === 3);
+  const to = (from) => rules.find((r) => r[0] === from);
+  assert.deepEqual(to('/fr/consortium/'), ['/fr/consortium/', '/fr/guilde/', '301']);
+  assert.deepEqual(to('/guilde/'), ['/guilde/', '/fr/guilde/', '301']);
+  assert.doesNotMatch(read('public/_redirects'), /Language=/);
+});
+
+test('the header works even if the tool fails to start (seam m10)', () => {
+  const script = page.match(/<script>([\s\S]*?)<\/script>/)[1];
+  assert.ok(script.indexOf('initChrome()') >= 0 && script.indexOf('initChrome()') < script.indexOf("import('../../scripts/consortium/app.js')"), 'initChrome, then the tool');
+  assert.doesNotMatch(read('src/scripts/consortium/app.js'), /initChrome/);
+});
+
+test('the drawing keeps every crown inside its frame (live m1)', () => {
+  const taxon = (id, s, habit) => ({ id, stratum: { value: s }, genus: 'X', family: 'Y', traits: { habit }, functions: [{ function: 'ground_cover' }] });
+  for (const phone of [false, true]) for (const n of [6, 9, 12]) {
+    const placed = Array.from({ length: n }, (_, i) => taxon(`t${i}-${n}`, ['emergent', 'high', 'medium', 'low'][Math.min(3, Math.floor(i / 3))], i < 6 ? 'Tree' : 'Herbaceous'));
+    const p = profileSVG(placed, { phone, id: 'x', title: 't', strataLabel: (s) => s });
+    const [x0, , w] = p.svg.match(/viewBox="([^"]+)"/)[1].split(' ').map(Number);
+    const xs = [...p.svg.matchAll(/d="M([^"]+)"/g)].flatMap((m) => [...m[1].matchAll(/[MCL ]?(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)].map((c) => Number(c[1])));
+    assert.ok(Math.min(...xs) >= x0 && Math.max(...xs) <= x0 + w, `${phone ? 'phone' : 'desktop'} ${n}: ${Math.min(...xs)}..${Math.max(...xs)} in ${x0}..${x0 + w}`);
+    // The HTML labels line up with the drawn columns.
+    assert.ok(Math.abs(p.columns[0].center - ((p.pad * p.colW + p.colW / 2 - x0) / w) * 100) < 0.01);
+  }
+});
+
+test('the action is "Keep", as the plan says, in every locale (usability)', () => {
+  const pin = /\bpin|épingl|fijad|fijar|fixad|fixar|fissa|anheft|vastzet|закреп|固定|ピン|고정/i;
+  // (Nitrogen fixing is fissa / 固定 / 고정 too: not the action.)
+  for (const lang of locales) for (const [key, value] of Object.entries(strings[lang])) if (!/nitrogen_fixer|nfix/.test(key)) assert.doesNotMatch(value, pin, `${lang}: ${key}`);
+  assert.equal(strings.en.keep, 'Keep {name}');
+});
+
+test('French names the room « Surface », apart from the free « places » (usability)', () => {
+  assert.equal(strings.fr['site.room'], 'Surface');
+});
+
+test('every animation the tool\'s CSS runs has its keyframes (seam note)', () => {
+  const css = read('src/styles/consortium.css');
+  const frames = new Set([...css.matchAll(/@keyframes\s+([\w-]+)/g)].map((m) => m[1]));
+  for (const m of css.matchAll(/animation(?:-name)?:\s*([^;}]+)/g)) {
+    const name = m[1].split(/\s+/).find((w) => /^[a-z][\w-]*$/i.test(w) && !/^(ease|linear|infinite|none|ease-in-out|ease-in|ease-out|alternate|forwards|both)$/.test(w));
+    if (name) assert.ok(frames.has(name), `@keyframes ${name}`);
+  }
+});
+
+test('the guide note says the climate belongs to this consortium, not the site (seam m3)', () => {
+  assert.doesNotMatch(strings.en.fromGuide, /set to/);
+  assert.match(strings.en.fromGuide, /This consortium/);
 });

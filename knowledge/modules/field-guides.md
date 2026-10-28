@@ -6,18 +6,18 @@ resource: ../../src/components/guides
 tags: [module, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:51:00Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:21:53Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T00:59:27Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
     digest: sha256:18bd49aaa37f7734
-    last_modified: 2026-10-27T23:50:41Z
+    last_modified: 2026-10-27T21:22:08Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:42b8131821d8f8af
-    last_modified: 2026-10-27T23:50:41Z
+    digest: sha256:992f527de4046685
+    last_modified: 2026-10-28T00:57:32Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
@@ -62,12 +62,12 @@ sources:
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
     digest: sha256:5a02bf699f26c9a8
-    last_modified: 2026-10-27T23:50:41Z
+    last_modified: 2026-10-27T21:22:08Z
   - id: try-consortium-ts
     resource: ../../src/components/guides/try-consortium.ts
     title: src/components/guides/try-consortium.ts
     digest: sha256:ed71c00bce5e1469
-    last_modified: 2026-10-27T23:50:41Z
+    last_modified: 2026-10-27T21:22:08Z
 ---
 
 # Responsibility

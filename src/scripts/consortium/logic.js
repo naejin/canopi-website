@@ -1,7 +1,8 @@
 // The consortium tool's pure rules about its own state (no DOM, no strings), so
 // scripts/consortium-page.test.mjs can test them: what a share link lost, which gap rows stay,
 // when the address bar may be rewritten, where a photo came from, how much of a list shows, what a
-// place change leaves of a link's notices, and when a click is the tail of a double click.
+// place change leaves of a link's notices, when a click is the tail of a double click, the language
+// links' query and the place a guide preset borrows from the saved consortium.
 
 // How many plants an old link named that the cell no longer has: the distinct ids of `p` (kept)
 // and `a` (members) that matched no taxon or several. A kept plant is in both lists, so it counts
@@ -61,4 +62,16 @@ export function afterMove({ pending }) {
 export function repeatClick(detail, now, last, ms = 500) {
   if (detail === 0) return false;
   return detail > 1 || (last != null && now - last < ms);
+}
+
+// The language menu's link to this page in another language, with the tool's query (the address
+// bar's `search`), so a language switch keeps the plants, the place and a guide's preset (seam M1).
+export const withQuery = (href, search) => href.split('?')[0] + (search && search !== '?' ? search : '');
+
+// A guide preset names a plant and a climate but no place: the place saved on this device, if any,
+// is reused, so a returning gardener goes straight to the result (seam m4). A link with its own
+// place, or no guide plant, keeps what it says.
+export function presetPlace(preset, saved) {
+  if (!preset?.plants?.length || preset.region || preset.country || !saved?.region) return null;
+  return { country: saved.country ?? null, region: saved.region };
 }

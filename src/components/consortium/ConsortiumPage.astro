@@ -48,7 +48,7 @@ const betaNote = makeWords(strings, lang).P('betaNote', manifest.cells.length);
       <div class="tool-head" id="ct-head" data-step="0">
         <div class="tool-head-text">
           <div class="tool-head-row"><h1 class="tool-title">{tr('title')}</h1><span class="badge-beta">{tr('beta')}</span></div>
-          <p class="tool-lede">{tr('lede')}</p>
+          <p class="tool-lede">{t('home.consortium.lede', lang)}</p>
           <ol class="outline" aria-label={tr('outline')}>
             <li aria-current="step" data-done="false"><span class="o-num">1</span>{tr('outline.climate')}</li>
             <li data-done="false"><span class="o-num">2</span>{tr('outline.place')}</li>
@@ -86,7 +86,11 @@ const betaNote = makeWords(strings, lang).P('betaNote', manifest.cells.length);
   <DonateDialog lang={lang} />
   <PageData lang={lang} keys={[]} />
   <script type="application/json" id="ct-data" set:html={JSON.stringify(data).replace(/</g, '\\u003c')} />
+  {/* m10: the header (theme, Donate, menus, climate) starts first and on its own, so a failure in
+      the tool never takes the header down with it. */}
   <script>
-    import '../../scripts/consortium/app.js';
+    import { initChrome } from '../../scripts/chrome.js';
+    initChrome();
+    import('../../scripts/consortium/app.js');
   </script>
 </Base>

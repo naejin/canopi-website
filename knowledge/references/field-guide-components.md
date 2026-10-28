@@ -5,18 +5,18 @@ description: Every component, prop, allowed value and limit a Field Guide's MDX 
 tags: [guides, reference]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:51:01Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T09:21:53Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T00:59:27Z }
 sources:
   - id: index-ts
     resource: ../../src/components/guides/index.ts
     title: src/components/guides/index.ts
     digest: sha256:f699c81f1739bbc6
-    last_modified: 2026-10-27T23:50:41Z
+    last_modified: 2026-10-27T20:56:00Z
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:42b8131821d8f8af
-    last_modified: 2026-10-27T23:50:41Z
+    digest: sha256:992f527de4046685
+    last_modified: 2026-10-28T00:57:32Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -61,17 +61,17 @@ sources:
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
     digest: sha256:5a02bf699f26c9a8
-    last_modified: 2026-10-27T23:50:41Z
+    last_modified: 2026-10-27T21:22:08Z
   - id: try-consortium-ts
     resource: ../../src/components/guides/try-consortium.ts
     title: src/components/guides/try-consortium.ts
     digest: sha256:ed71c00bce5e1469
-    last_modified: 2026-10-27T23:50:41Z
+    last_modified: 2026-10-27T21:22:08Z
   - id: en-json
     resource: ../../src/i18n/guides/en.json
     title: src/i18n/guides/en.json
     digest: sha256:39afcab2f1342063
-    last_modified: 2026-10-27T23:50:41Z
+    last_modified: 2026-10-27T21:22:08Z
 enforced_by:
   - scripts/guides.test.mjs
   - scripts/check-built-site.mjs

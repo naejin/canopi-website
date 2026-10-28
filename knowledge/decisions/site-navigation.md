@@ -5,13 +5,13 @@ description: The header carries Guides, Books, Consortium, Donate, language and 
 tags: [decision, navigation]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:51:00Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-26T23:33:52Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T00:59:26Z }
 sources:
   - id: header-astro
     resource: ../../src/components/Header.astro
     title: src/components/Header.astro
     digest: sha256:8e235bbc6db78a9d
-    last_modified: 2026-10-27T23:50:41Z
+    last_modified: 2026-10-27T21:22:08Z
   - id: chrome-js
     resource: ../../src/scripts/chrome.js
     title: src/scripts/chrome.js
@@ -35,28 +35,28 @@ sources:
   - id: consortiumsection-astro
     resource: ../../src/components/ConsortiumSection.astro
     title: src/components/ConsortiumSection.astro
-    digest: sha256:91267627121c63e9
-    last_modified: 2026-10-27T23:50:41Z
+    digest: sha256:7c9623c5c2fa4b32
+    last_modified: 2026-10-28T00:56:38Z
   - id: footer-astro
     resource: ../../src/components/Footer.astro
     title: src/components/Footer.astro
     digest: sha256:6f4503755f7c5490
-    last_modified: 2026-10-27T23:50:41Z
+    last_modified: 2026-10-27T21:22:08Z
   - id: bibliography-astro
     resource: ../../src/components/Bibliography.astro
     title: src/components/Bibliography.astro
     digest: sha256:3e620cbabe963e2d
-    last_modified: 2026-10-27T23:50:41Z
+    last_modified: 2026-10-27T20:56:00Z
   - id: guidesindex-astro
     resource: ../../src/components/guides/GuidesIndex.astro
     title: src/components/guides/GuidesIndex.astro
     digest: sha256:409a1f09e0c4196f
-    last_modified: 2026-10-27T23:50:41Z
+    last_modified: 2026-10-27T20:56:00Z
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:3bf918c991119eb1
-    last_modified: 2026-10-27T23:50:41Z
+    digest: sha256:a4f29fa12b788fc5
+    last_modified: 2026-10-28T00:56:38Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
