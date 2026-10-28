@@ -185,7 +185,7 @@ test('words: the room hint names the height and width limit the check uses, and 
   assert.equal(roomHint(en, 'small'), 'Plants up to 6 m tall and across · suggests 6 plants');
   assert.equal(roomHint(en, 'large'), 'Plants up to 12 m tall and across · suggests 9 plants');
   assert.equal(roomHint(en, 'field'), 'Plants of any size · suggests 12 plants');
-  assert.equal(roomHint(fr, 'small'), 'Plantes jusqu’à 6 m de haut et de large · suggestions de 6 plantes');
+  assert.equal(roomHint(fr, 'small'), 'Plantes jusqu’à 6\u00a0m de haut et de large · suggestions de 6 plantes');
   // F6: the suggestion size says it counts plants, in every language.
   const plantWord = { en: /6 plants/, fr: /6 plantes/, es: /6 plantas/, pt: /6 plantas/, it: /6 piante/, zh: /6 种植物/, de: /6 Pflanzen/, ja: /6種の植物/, ko: /식물 6가지/, nl: /6 planten/, ru: /6 растений/ };
   for (const lang of locales) assert.match(roomHint(makeWords(strings[lang], lang), 'small').split(' · ')[1], plantWord[lang], lang);
@@ -427,7 +427,7 @@ test('C11, C12: the crop step and main-crop words read as the mockup and each la
   const enC = withClimates('en');
   assert.equal(enC.T('crops.label', { climate: enC.climate('temperate'), list: enC.T('list.temperate') }), 'Search the Temperate food plants');
   const frC = withClimates('fr');
-  assert.equal(frC.T('crops.label', { climate: frC.climate('temperate') }), 'Chercher parmi les plantes nourricières (climat : Tempéré)');
+  assert.equal(frC.T('crops.label', { climate: frC.climate('temperate') }), 'Chercher parmi les plantes nourricières (climat\u00a0: Tempéré)');
   for (const lang of locales) {
     assert.ok(strings[lang]['crops.fromGuide'], `${lang}: crops.fromGuide`);
     assert.doesNotMatch(strings[lang]['crops.elsewhere'], /plant search|recherche de plantes/i, `${lang}: names a control the page has`);

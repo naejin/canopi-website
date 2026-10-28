@@ -1,12 +1,13 @@
 // The side view's silhouettes (1 to 20 plants; app.js sideMarkup): one plant per column, drawn true
-// to height on the side view's log scale (side.js heightFrac), as a tree, a shrub or a herb (side.js
-// shapeOf). Colours are the strata's, with darker inks for strokes; every plant also has its number
+// to height on the side view's log scale (side.js heightFrac), as a tree, a shrub, a herb or a climber
+// (side.js shapeOf): a climber is a vine on a thin support line, never a free-standing plant. Colours are the strata's, with darker inks for strokes; every plant also has its number
 // below and its band's name beside it, so colour is never the only cue. A plant with no height is a
 // dashed outline at its layer's usual height.
 //
 // Units: a column is PLOT_H units tall with the ground at y = PLOT_H; the viewBox is MIN_COL units wide
-// around x = 0, so in any column at least MIN_COL px wide one unit is one pixel of the band's height
-// (preserveAspectRatio meet) and every plant keeps its true height. Crowns may spill into the
+// around x = 0. The <svg> is always the plot's height and MIN_COL / PLOT_H of it wide (consortium.css
+// .sv-svg), whatever its column's width, so one unit is plot-height / PLOT_H pixels and every plant
+// tops out on the 1, 5 and 20 m lines at any count up to 20 (review S3). Crowns may spill into the
 // neighbouring columns (overflow visible), never past the frame's label margin.
 
 export const PLOT_H = 72, MIN_COL = 16;
@@ -32,7 +33,7 @@ function blob(cx, cy, rx, ry, seed, lumps) {
 // The widest a crown reaches from its column's centre, in units.
 export const MAX_REACH = 13;
 
-// One plant: its stratum s (colour), shape ('tree' | 'shrub' | 'herb'), frac (0..1 of the column's
+// One plant: its stratum s (colour), shape ('tree' | 'shrub' | 'herb' | 'climber'), frac (0..1 of the column's
 // height), dashed (height not known: drawn at the layer's usual height). Returns the <svg>.
 export function plantSVG({ id, s, shape, frac, dashed }) {
   const gy = PLOT_H, h = Math.max(3, frac * PLOT_H), top = gy - h, seed = hash(id);
@@ -48,6 +49,17 @@ export function plantSVG({ id, s, shape, frac, dashed }) {
     let stems = '';
     for (const dx of [-2, 0, 2]) stems += `<path d="M${dx / 2},${gy} L${dx},${f(cy)}" fill="none" stroke-width="0.9"${dashed ? ' stroke-dasharray="2 1.6"' : ''}/>`;
     body = stems + `<path d="${blob(0, cy, rx, ry, seed, 7)}" ${fillA}/>`;
+  } else if (shape === 'climber') {
+    // The support (neutral ink) to the height it climbs, the vine winding up it, a leaf at each turn.
+    const turns = Math.max(2, Math.round(h / 9)), step = h / turns, dash = dashed ? ' stroke-dasharray="2 1.6"' : '';
+    let vine = `M0,${gy}`, leaves = '';
+    for (let i = 0; i < turns; i++) {
+      const y0 = gy - step * i, y1 = y0 - step, side = i % 2 ? -1 : 1;
+      vine += ` Q${f(side * 4.5)},${f(y0 - step / 2)} 0,${f(y1)}`;
+      leaves += `<path d="${blob(side * 3.6, y0 - step / 2, 1.9, 1.3, seed + i, 3)}" ${fillA}/>`;
+    }
+    body = `<path class="sv-support" d="M0,${gy} L0,${f(top)}" fill="none" stroke="var(--text-muted)" stroke-width="0.8"/>`
+      + `<path d="${vine}" fill="none" stroke-width="1.2" stroke-linecap="round"${dash}/>${leaves}`;
   } else {
     const spread = Math.min(6, Math.max(2, h * 0.4));
     for (let i = 0; i < 5; i++) {

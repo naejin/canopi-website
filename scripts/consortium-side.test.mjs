@@ -18,8 +18,10 @@ const named = (n) => temperate.taxa.find((t) => t.canonical_name === n);
 const layer = (s) => temperate.taxa.filter((t) => t.stratum?.value === s);
 const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
 
-function linkOf(members, { country = 'FR' } = {}) {
-  const q = core.encodeState({ climate: 'temperate', country, site: { ...core.DEFAULT_SITE }, kept: members, removed: [], members, plants: [], crops: [], guests: [] }, temperate);
+// Mockup state 05 is drawn at a field (design-scale.md §1c: "200 ids, field, France"), so the side
+// view is checked there unless a test says otherwise (review S9).
+function linkOf(members, { country = 'FR', room = 'field' } = {}) {
+  const q = core.encodeState({ climate: 'temperate', country, site: { ...core.DEFAULT_SITE, room }, kept: members, removed: [], members, plants: [], crops: [], guests: [] }, temperate);
   return '/consortium/#' + q.toString();
 }
 async function open(members, opts = {}) {
@@ -45,35 +47,55 @@ test('one log scale from 0.05 m to 60 m: the ground, the top, and the 1 m, 5 m a
   assert.ok(SV.heightFrac(40) > SV.heightFrac(4) && SV.heightFrac(4) > SV.heightFrac(0.3));
 });
 
-test('a plant is drawn as a tree, a shrub or a herb', () => {
+test('a plant is drawn as a tree, a shrub, a herb or a climber (never a free-standing tree: a vine on its support)', () => {
   assert.equal(SV.shapeOf(named('Tilia platyphyllos') ?? { traits: { habit: 'Tree' } }), 'tree');
   assert.equal(SV.shapeOf(named('Cornus mas')), named('Cornus mas').traits.habit === 'Tree' ? 'tree' : 'shrub');
   assert.equal(SV.shapeOf(named('Allium schoenoprasum')), 'herb');
-  assert.equal(SV.shapeOf({ traits: { habit: 'Climber' } }), 'shrub');
+  assert.equal(SV.shapeOf({ traits: { habit: 'Climber' } }), 'climber');
+  assert.equal(SV.shapeOf(named('Vitis vinifera')), 'climber');
   assert.equal(SV.shapeOf({ traits: { habit: null } }), 'herb');
 });
 
-test('M1 on the real Temperate list: typical heights are the middle half, the exceptions are named, unknown heights are counted', () => {
-  const mid = SV.bandFacts('medium', layer('medium'));
-  assert.deepEqual(mid.typical.map(roundHeight), [0.7, 4], 'Most 0.7–4 m');
-  assert.equal(mid.tall.length, 16, '16 tall plants that grow up through the shade');
-  assert.deepEqual(mid.tall.slice(0, 3).map((t) => t.names.en), ['Large-leaved linden', 'Norway spruce', 'Small-leaved linden']);
-  assert.deepEqual(mid.tall.slice(0, 3).map((t) => roundHeight(SV.heightOf(t))), [40, 40, 30]);
-  assert.equal(mid.unknown, 0);
-  const high = SV.bandFacts('high', layer('high'));
-  assert.deepEqual(high.typical.map(roundHeight), [1, 15]);
-  assert.equal(high.tall.length, 3);
-  assert.equal(high.unknown, 1, 'Common juniper');
+test('M1 on the real Temperate list: "Most" is the middle half of the heights not named as exceptions, both ends real heights; the exceptions and the climbers are named; unknown heights are counted', () => {
+  const heights = (list) => new Set(list.map(SV.heightOf));
+  for (const s of ['emergent', 'high', 'medium', 'low']) {
+    const f = SV.bandFacts(s, layer(s));
+    const named = new Set([...f.tall, ...f.short, ...f.climbers]);
+    const rest = layer(s).filter((t) => SV.heightOf(t) > 0 && !named.has(t));
+    for (const end of f.typical) assert.ok(heights(rest).has(end), `${s}: ${end} m is the height of a plant not named as an exception`);
+    assert.equal(f.n, layer(s).length, `${s}: every plant counted once`);
+  }
   const em = SV.bandFacts('emergent', layer('emergent'));
-  assert.equal(em.short.length, 2, '2 short sun-lovers');
-  assert.ok(SV.heightOf(em.short[0]) <= SV.heightOf(em.short[1]), 'shortest first');
+  assert.deepEqual(em.typical.map(roundHeight), [18, 40], 'Most 18–40 m (mockup state 05), not 7–40 m across the gap');
+  assert.deepEqual(em.short.map((t) => t.names.en), ['Corn', 'Sunflower'], 'shortest first');
   assert.equal(em.unknown, 2, 'Silver birch and English oak');
   assert.equal(em.tall.length, 0, 'Emergent has no "tall" exceptions');
+  const high = SV.bandFacts('high', layer('high'));
+  assert.deepEqual(high.typical.map(roundHeight), [1, 14]);
+  assert.deepEqual(high.tall.map((t) => t.names.en), ['European Ash', 'European chestnut'], 'a climber is never a "tall plant"');
+  assert.deepEqual(high.climbers.map((t) => t.names.en), ['Wine grape', 'Hardy kiwi', 'Hop', 'Scarlet runner bean'], 'tallest first');
+  assert.equal(high.unknown, 1, 'Common juniper');
+  const mid = SV.bandFacts('medium', layer('medium'));
+  assert.deepEqual(mid.typical.map(roundHeight), [0.7, 2]);
+  assert.equal(mid.tall.length, 14);
+  assert.deepEqual(mid.tall.slice(0, 3).map((t) => t.names.en), ['Large-leaved linden', 'Norway spruce', 'Small-leaved linden']);
+  assert.equal(mid.climbers.length, 7);
   const low = SV.bandFacts('low', layer('low'));
   assert.deepEqual(low.typical.map(roundHeight), [0.2, 0.6]);
   assert.equal(low.tall.length + low.short.length, 0, 'Low names no exceptions');
-  // Every plant is counted once: known or not.
-  for (const s of ['emergent', 'high', 'medium', 'low']) assert.equal(SV.bandFacts(s, layer(s)).n, layer(s).length);
+  // A band with 4 known heights or fewer lists them all, tallest first, and says no "Most".
+  const few = layer('low').slice(0, 4);
+  const small = SV.bandFacts('low', few);
+  assert.equal(small.typical, null);
+  assert.deepEqual(small.all.map(SV.heightOf), few.map(SV.heightOf).filter((h) => h > 0).sort((a, b) => b - a));
+  assert.equal(SV.bandFacts('low', layer('low').slice(0, 5)).all.length, 0);
+});
+
+test('marks are dense (no gap, alternate shades) only when they are too narrow for a 1 px gap at the width drawn', () => {
+  assert.equal(SV.denseAt(940, 107), false, '107 Mid marks at 1280: one shade with gaps');
+  assert.equal(SV.denseAt(250, 107), true, 'on a phone they are under 3 px');
+  assert.equal(SV.denseAt(0, 107), false, 'not laid out: nothing to decide');
+  assert.equal(SV.denseAt(250, 0), false);
 });
 
 test('a plant with no height stands at its layer\'s usual height: the band\'s median, else the list\'s, never zero', () => {
@@ -103,7 +125,7 @@ test('9 plants: four bands named by the light they need; each plant drawn true t
   assert.deepEqual(bands.map((b) => text(b.querySelector('.sv-light'))), ['needs full sun', 'needs a lot of light', 'takes some shade', 'takes deep shade']);
   const plants = [...page.$$('#ct-side .sv-plant')];
   assert.equal(plants.length, NINE.length, 'one silhouette per plant');
-  for (const p of plants) assert.match(p.attribs['data-shape'], /^(tree|shrub|herb)$/);
+  for (const p of plants) assert.match(p.attribs['data-shape'], /^(tree|shrub|herb|climber)$/);
   // In its own band.
   for (const id of NINE) {
     const t = temperate.taxa.find((x) => x.id === id);
@@ -157,6 +179,49 @@ test('the drawing has a text equivalent: each band is an image named by its plan
   assert.ok(page.$$('#ct-side .pkey [data-act="details"]').length === NINE.length);
 });
 
+test('a climber is drawn as a vine on its support, and the legend, the band and the caption say how high it climbs', async () => {
+  const grape = named('Vitis vinifera');
+  const { page } = await open([...NINE, grape.id]);
+  const p = page.$(`#ct-side .sv-col[data-t="${grape.id}"] .sv-plant`);
+  assert.equal(p.attribs['data-shape'], 'climber');
+  assert.ok(p.querySelector('.sv-support'), 'its support');
+  assert.match(text([...page.$$('#ct-side .pkey li')].find((li) => /Wine grape/.test(text(li)))), /climbs to 35 m$/);
+  assert.match(page.$('#ct-side .sv-band[data-s="high"] .sv-strip').attribs['aria-label'], /Wine grape, climbs to 35 m/);
+  assert.match(page.text('#ct-side .profile-foot'), /A climber is drawn as a vine on its support/);
+  const { page: none } = await open(NINE);
+  assert.doesNotMatch(none.text('#ct-side .profile-foot'), /climber/);
+});
+
+test('the legend, on screen and in print: one name per plant, the scientific name beside it when it differs, and "With a warning" beside each flagged plant', async () => {
+  const { page } = await open(NINE);
+  const check = (where) => {
+    const items = [...page.$$(`${where} .pkey li`)];
+    assert.equal(items.length, NINE.length, where);
+    let flagged = 0;
+    for (const li of items) {
+      assert.equal(li.querySelectorAll('.pkey-name').length, 1, `${where}: ${text(li)}`);
+      const n = text(li.querySelector('.pkey-n')), sci = li.querySelector('.pkey-sci');
+      const t = temperate.taxa.find((x) => x.names.en === n || x.canonical_name === n);
+      assert.ok(t, n);
+      if (t.canonical_name !== n) { assert.equal(sci?.name, 'i'); assert.equal(text(sci), t.canonical_name); } else assert.equal(sci, null);
+      if (li.querySelector('.plook')) { flagged++; assert.equal(text(li.querySelector('.plook .vh')), 'With a warning'); }
+    }
+    return flagged;
+  };
+  const shown = check('#ct-side');
+  assert.equal(shown, page.$$('#ct-side .sv-nums .num[data-w]').length, 'one per numbered dot');
+  assert.ok(shown >= 1);
+  await page.act('print');
+  assert.equal(check('#ct-print'), shown);
+});
+
+test('the light cue says layers are about light, not height (design-scale §2.3, M1)', async () => {
+  const { page } = await open(NINE);
+  assert.equal(page.text('.light-cue'), 'Layers are about light, not height: the top layers need full sun, the lower ones take the shade of those above.');
+  const fr = await open(NINE, { lang: 'fr' });
+  assert.equal(fr.page.text('.light-cue'), 'Les strates, c’est la lumière, pas la hauteur : en haut les plantes de plein soleil, plus bas celles qui supportent l’ombre des autres.');
+});
+
 // ---------- Above 20: one mark per plant in the same frame ----------
 test('21 plants: the same frame, one mark per plant in its band, a dot for a warning, the lines at 1, 5 and 20 m, no legend', async () => {
   const { page } = await open(ids.slice(0, 21));
@@ -175,15 +240,16 @@ test('21 plants: the same frame, one mark per plant in its band, a dot for a war
   for (const b of page.$$('#ct-side .sv-band')) assert.deepEqual([...b.querySelectorAll('.sv-line')].map((l) => text(l)), ['1 m', '5 m', '20 m']);
 });
 
-test('above 20 the marks are not 200 tab stops: one focusable summary per band; the arrow keys and the pointer name each mark', async () => {
+test('above 20 a band with marks is one focusable group named by its count and described by its heights; no arrow-key promise; the pointer and the arrow keys name each mark', async () => {
   const { page } = await open(ids);
   const strips = [...page.$$('#ct-side .sv-strip[tabindex="0"]')];
   assert.equal(strips.length, 4, 'one per band');
+  for (const s of strips) assert.equal(s.attribs.role, 'group');
   const mid = page.$('#ct-side .sv-band[data-s="medium"] .sv-strip');
-  assert.match(mid.attribs['aria-label'], /^Mid, takes some shade: 107 plants, \d+ with a warning\. /);
-  assert.equal(page.$('#' + mid.attribs['aria-describedby'].split(' ')[0])?.attribs.class, 'sv-sum', 'described by the band\'s heights');
+  assert.equal(mid.attribs['aria-label'], 'Mid, takes some shade: 107 plants, 10 with a warning.');
+  assert.doesNotMatch(mid.attribs['aria-label'], /arrow/i, 'a screen reader in browse mode never gets the arrow keys');
+  assert.equal(page.$('#' + mid.attribs['aria-describedby'])?.attribs.class, 'sv-sum', 'described by the band\'s heights');
   mid.focus();
-  mid.dispatchEvent(new page.Event('focus', { bubbles: false }));
   mid.dispatchEvent(new page.Event('focusin'));
   await page.settle();
   const tip = page.$('#ct-side .sv-band[data-s="medium"] .sv-tip');
@@ -191,35 +257,64 @@ test('above 20 the marks are not 200 tab stops: one focusable summary per band; 
   const firstT = temperate.taxa.find((x) => x.id === first.attribs['data-t']);
   assert.ok(!('hidden' in tip.attribs), 'focus names the first mark');
   assert.match(text(tip), new RegExp(`^${firstT.names.en}, \\d+ m`));
-  await page.key('ArrowRight');
+  // The arrow keys keep the page's own keys unless they move to another mark.
+  const press = (key) => { const e = new page.Event('keydown', { key }); mid.dispatchEvent(e); return e.defaultPrevented; };
+  assert.equal(press('ArrowLeft'), false, 'no mark before the first: the key scrolls the page');
+  assert.equal(press('PageDown'), false, 'Page Down scrolls the page');
+  assert.equal(press('ArrowRight'), true);
+  await page.settle();
   const second = [...page.$$('#ct-side .sv-band[data-s="medium"] .sv-marks i')][1];
   assert.match(text(tip), new RegExp(`^${temperate.taxa.find((x) => x.id === second.attribs['data-t']).names.en}, `));
   assert.equal(second.attribs['data-on'], 'true');
-  await page.key('End');
-  assert.match(text(tip), /no height|\d m/);
+  assert.equal(press('End'), true);
+  assert.equal(press('End'), false, 'already at the last mark');
   // The pointer: hovering a mark names it.
   const low = [...page.$$('#ct-side .sv-band[data-s="low"] .sv-marks i')][2];
   low.dispatchEvent(new page.Event('pointerover'));
   await page.settle();
   assert.match(text(page.$('#ct-side .sv-band[data-s="low"] .sv-tip')), new RegExp(`^${temperate.taxa.find((x) => x.id === low.attribs['data-t']).names.en}, `));
-  // A mark with a warning says so.
   const warned = page.$('#ct-side .sv-marks i[data-w]');
   warned.dispatchEvent(new page.Event('pointerover'));
   await page.settle();
   assert.match(text(warned.closest('.sv-band').querySelector('.sv-tip')), /With a warning/);
+  // A climber's mark says it climbs.
+  const grape = named('Vitis vinifera');
+  const g = page.$(`#ct-side .sv-marks i[data-t="${grape.id}"]`);
+  g.dispatchEvent(new page.Event('pointerover'));
+  await page.settle();
+  assert.match(text(g.closest('.sv-band').querySelector('.sv-tip')), /^Wine grape, climbs to 35 m/);
 });
 
-test('M1 at 200 plants: under each band the heights are spelled out, with named exceptions and the unknown heights counted', async () => {
+test('an empty band takes no tab stop and says it is empty with the list\'s own words', async () => {
+  const { page } = await open(ids.slice(0, 21));
+  const em = page.$('#ct-side .sv-band[data-s="emergent"]');
+  assert.equal(em.querySelectorAll('.sv-marks i').length, 0);
+  const strip = em.querySelector('.sv-strip');
+  assert.equal(strip.attribs.tabindex, undefined);
+  assert.equal(strip.attribs.role, 'img');
+  assert.equal(text(em.querySelector('.sv-sum')), 'No plant in this layer.');
+  assert.equal(page.$$('#ct-side .sv-strip[tabindex]').length, 3);
+});
+
+test('M1 at 200 plants (state 05, a field in France): under each band the heights are spelled out, the exceptions and climbers named with one separator, the unknown heights counted', async () => {
   const { page } = await open(ids);
   const sum = (s) => text(page.$(`#ct-side .sv-band[data-s="${s}"] .sv-sum`));
-  assert.equal(sum('medium'), 'Most 0.7–4 m. Also 16 tall plants that grow up through the shade: Large-leaved linden 40 m, Norway spruce 40 m, Small-leaved linden 30 m and 13 more.');
-  assert.match(sum('high'), /^Most 1–15 m\. Also 3 tall plants that grow up through the shade: .+ 40 m, .+ 35 m(,| and) .+ 35 m\. Height not known for 1\.$/);
-  assert.match(sum('emergent'), /^Most \d+–\d+ m\. Also 2 short sun-lovers: .+ \d m and .+ \d m\. Height not known for 2\.$/);
-  assert.equal(sum('low'), 'Most 0.2–0.6 m.');
-  // Each band says its count and warnings, and Show sets the Layer filter on the list.
-  assert.match(text(page.$('#ct-side .sv-band[data-s="medium"] .sv-n')), /^107 plants/);
+  assert.equal(sum('emergent'), 'Most 18–40 m. Also 2 short sun-lovers: Corn 2 m, Sunflower 3 m. Height not known for 2.');
+  assert.equal(sum('high'), 'Most 1–14 m. Also 2 tall plants that grow up through the shade: European Ash 40 m, European chestnut 35 m. Also 4 climbers: Wine grape climbs to 35 m, Hardy kiwi climbs to 30 m, Hop climbs to 8 m and 1 more. Height not known for 1.');
+  assert.match(sum('medium'), /^Most 0\.7–2 m\. Also 14 tall plants that grow up through the shade: Large-leaved linden 40 m, Norway spruce 40 m, Small-leaved linden 30 m and 11 more\. Also 7 climbers: .+ climbs to 12 m, .+ climbs to 10 m, .+ climbs to 6 m and 4 more\.$/);
+  assert.equal(sum('low'), 'Most 0.2–0.6 m. Also 1 climber: Common Ivy climbs to 2 m.');
+  // The band counts and warnings of state 05: ⚠ 1, 16, 10, 2 (29 of 200).
+  assert.deepEqual([...page.$$('#ct-side .sv-n')].map((n) => text(n.querySelector('.vh'))), ['1 with a warning', '16 with a warning', '10 with a warning', '2 with a warning']);
   await page.act('fset', 'layer:medium');
   assert.match(page.text('.fresults'), /Showing 107 of 200/);
+});
+
+test('one separator at every count, and "and n more" only past 3; in Chinese and Japanese no space before it', async () => {
+  const { page } = await open(ids, { lang: 'zh' });
+  const sum = text(page.$('#ct-side .sv-band[data-s="medium"] .sv-sum'));
+  assert.match(sum, /、[^、]+等另外 11 种/);
+  assert.doesNotMatch(sum, / 等另外/);
+  assert.doesNotMatch(sum, /和/);
 });
 
 test('readable at 200 plants: 200 marks, every one on the true scale, a dot only where the list warns', async () => {
@@ -236,9 +331,10 @@ test('readable at 200 plants: 200 marks, every one on the true scale, a dot only
   // The dots match the plants the warning box counts.
   const warnedRows = Number(/(\d+) of 200 plants/.exec(page.text('.attention-scale'))[1]);
   assert.equal(page.$$('#ct-side .sv-marks i[data-w]').length, warnedRows);
-  // A band with more marks than fit at full width is marked dense (no gaps; alternate shades).
-  assert.equal(page.$('#ct-side .sv-band[data-s="medium"] .sv-marks').attribs['data-dense'], 'true');
-  assert.equal(page.$('#ct-side .sv-band[data-s="emergent"] .sv-marks').attribs['data-dense'], undefined);
+  // Dense is decided at the width drawn (the browser), never by the count alone.
+  assert.equal(page.$$('#ct-side .sv-marks[data-dense]').length, 0);
+  // The caption explains the alternate shades, shown only where a band is dense.
+  assert.match(text(page.$('#ct-side .profile-foot .sv-dense-note')), /every other one is a different shade/);
 });
 
 test('speed: at 200 plants the side view renders in under 50 ms', async () => {
@@ -270,43 +366,51 @@ test('patched, not rebuilt: Keep and a tick leave the side view as it was; a Rem
   assert.equal(nine.page.$$('#ct-side .sv-plant').length, NINE.length - 1);
 });
 
-test('print: the drawing and its legend at 20 plants or fewer, the marks and band heights above 20; nothing to focus on paper', async () => {
+test('print: the drawing and its legend at 20 plants or fewer; above 20 "At a glance" then the table, no marks (state 13)', async () => {
   const { page } = await open(NINE);
   await page.act('print');
   assert.equal(page.$('#ct-print .profile').attribs['data-size'], 'draw');
   assert.equal(page.$$('#ct-print .sv-plant').length, NINE.length);
   assert.equal(page.$$('#ct-print .pkey li').length, NINE.length);
+  assert.equal(page.$$('#ct-print [tabindex], #ct-print .sv-tip').length, 0, 'nothing to focus on paper');
+  assert.equal(page.$$('#ct-print [id="ct-side"]').length, 0, 'no id shared with the screen');
   const big = await open(ids);
   await big.page.act('print');
-  assert.equal(big.page.$('#ct-print .profile').attribs['data-size'], 'marks');
-  assert.equal(big.page.$$('#ct-print .sv-marks i').length, 200);
-  assert.equal(big.page.$$('#ct-print .sv-sum').length, 4);
-  assert.equal(big.page.$$('#ct-print [tabindex], #ct-print button, #ct-print .sv-tip').length, 0);
+  assert.equal(big.page.$$('#ct-print .sv, #ct-print .sv-marks i').length, 0, 'no marks drawing');
+  const glance = big.page.$('#ct-print .print-glance');
+  assert.ok(glance, 'At a glance');
+  assert.equal(text(glance.querySelector('h3')), 'At a glance');
+  const rows = [...glance.querySelectorAll('tbody tr')].map((tr) => [...tr.children].map((c) => text(c)));
+  assert.deepEqual(rows, [['Plants', '10', '59', '107', '24', '200'], ['With a warning', '1', '16', '10', '2', '29']]);
+  assert.deepEqual([...glance.querySelectorAll('thead th')].map((c) => text(c)), ['', 'Emergent', 'High', 'Mid', 'Low', 'All']);
+  assert.match(text(glance.querySelector('.glance-kinds')), /^With a warning: Invasive in France 3 · Toxic 6 · .+ 20\.$/);
+  const order = big.page.$('#ct-print .sheet').children.map((c) => c.attribs?.class ?? c.name).filter(Boolean);
+  assert.ok(order.indexOf('print-glance') < order.indexOf('print-table'), 'At a glance, then the table');
   assert.equal(big.page.$$('#ct-print tbody tr[data-id]').length, 200, 'and the table');
-  assert.equal(big.page.$$('#ct-print [id="ct-side"]').length, 0, 'no id shared with the screen');
 });
 
+// (The page text is read with its spaces folded; the locale test checks the no-break spaces.)
 test('the side view reads in French', async () => {
   const { page } = await open(ids, { lang: 'fr' });
   assert.equal(text(page.$('#ct-side .sv-band[data-s="medium"] .sv-light')), 'supporte un peu d’ombre');
-  assert.match(text(page.$('#ct-side .sv-band[data-s="medium"] .sv-sum')), /^La plupart entre 0,7 et 4 m\. Aussi 16 plantes hautes qui montent à travers l’ombre : .+ 40 m, .+ 40 m, .+ 30 m et 13 autres\.$/);
+  assert.match(text(page.$('#ct-side .sv-band[data-s="medium"] .sv-sum')), /^La plupart mesurent entre 0,7 et 2 m\. S’y ajoutent 14 plantes hautes qui montent à travers l’ombre : .+ 40 m, .+ 40 m, .+ 30 m et 11 autres\. S’y ajoutent 7 grimpantes : .+ grimpe jusqu’à 12 m, .+ et 4 autres\.$/);
+  assert.match(text(page.$('#ct-side .sv-band[data-s="emergent"] .sv-sum')), /Hauteur inconnue pour 2 plantes\.$/);
   const nine = await open(NINE, { lang: 'fr' });
   assert.match(nine.page.text('#ct-side .profile-foot'), /contour en pointillé/);
 });
 
-test('every side-view string is in all 11 locales; the old "not the exact size" note is gone', () => {
-  const keys = ['sv.drawNote', 'sv.dashedNote', 'sv.marksNote', 'sv.most', 'sv.mostOne', 'sv.tall', 'sv.short', 'sv.unknown', 'sv.bandLabel', 'sv.keys', 'sv.empty'];
+test('every side-view string is in all 11 locales; the dead ones are gone; French has no-break spaces before : and ; and between a number and its unit', () => {
+  const keys = ['sv.drawNote', 'sv.dashedNote', 'sv.climbNote', 'sv.marksNote', 'sv.denseNote', 'sv.most', 'sv.mostOne', 'sv.tall', 'sv.short', 'sv.climb', 'sv.climbsTo', 'sv.all', 'sv.unknown', 'sv.bandLabel', 'glance', 'glancePlants', 'glanceAll', 'glanceWarn', 'lightCue', 'emptyLayer'];
   for (const lang of LOCALES) {
     const s = JSON.parse(read(`src/i18n/translations/${lang}.json`));
     for (const k of keys) assert.ok(s['consortium.' + k], `${lang}: ${k}`);
-    assert.equal(s['consortium.layersNote'], undefined, `${lang}: layersNote is gone`);
-    for (const k of ['sv.tall', 'sv.short', 'sv.unknown']) assert.match(s['consortium.' + k], /other:/, `${lang}: ${k} is plural`);
+    for (const k of ['layersNote', 'sv.keys', 'sv.empty', ...['emergent', 'high', 'medium', 'low'].map((x) => `stratum.${x}.short`)]) assert.equal(s['consortium.' + k], undefined, `${lang}: ${k} is gone`);
+    for (const k of ['sv.tall', 'sv.short', 'sv.climb', 'sv.unknown']) assert.match(s['consortium.' + k], /other:/, `${lang}: ${k} is plural`);
   }
-});
-
-test('chip text hyphenates in the page language rather than breaking mid-word', () => {
-  const css = read('src/styles/consortium.css');
-  assert.match(css, /\.ct \.warn-chip > span \{[^}]*hyphens: auto/);
-  assert.match(css, /\.ct \.warn > span \{[^}]*hyphens: auto/);
-  assert.match(read('src/layouts/Base.astro'), /<html lang=\{lang\}>/);
+  const fr = JSON.parse(read('src/i18n/translations/fr.json'));
+  for (const [k, v] of Object.entries(fr)) {
+    if (!k.startsWith('consortium.')) continue;
+    assert.doesNotMatch(v, / [:;!?]/, `fr ${k}: a no-break space before : ; ! ?`);
+    assert.doesNotMatch(v, /[\d}] (m|cm|ans?|mois)(?![\p{L}])/u, `fr ${k}: a no-break space between a number and its unit`);
+  }
 });

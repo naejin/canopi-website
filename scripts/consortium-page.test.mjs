@@ -81,7 +81,17 @@ test('every key the tool asks for exists, and every key exists for a reason', ()
     if (['site', 'basis', 'misfit'].includes(prefix) && rest) assert.ok(siteOptions[id].includes(rest.replace(/\.hint$/, '')), `${key}: ${rest}`);
     return true;
   };
-  for (const key of Object.keys(en)) assert.ok(dynamicOk(key) || app.includes(`'${key}'`) || page.includes(`'${key}'`), `unused string: ${key}`);
+  // A key built at run time with a part after the id ("stratum.high.needs") is read only when some
+  // code builds that part for that prefix: a prefix match alone is not a reader (review V4).
+  const builders = app;
+  const builtTail = (prefix, rest) => !rest || ['site', 'basis', 'misfit'].includes(prefix)
+    || builders.includes(`'${prefix}.' + `) && new RegExp(`'${prefix}\\.' \\+ \\w+ \\+ '\\.${rest.replace(/\./g, '\\.')}'`).test(builders)
+    || prefix === 'phase' && new RegExp(`phaseKey\\([^)]*'${rest}'\\)`).test(builders);
+  for (const key of Object.keys(en)) {
+    const literal = app.includes(`'${key}'`) || page.includes(`'${key}'`) || builders.includes(`'${key}'`);
+    const [prefix, , ...rest] = key.split('.');
+    assert.ok(literal || (dynamicOk(key) && builtTail(prefix, rest.join('.'))), `unused string: ${key}`);
+  }
 });
 
 test('no builder notes reach the page (N3)', () => {
@@ -497,7 +507,8 @@ test('a plant that misfits offers Swap and Remove, never a change to the site an
   assert.equal([...appJs.matchAll(/T\('nm\.try'/g)].length, 1, 'nm.try belongs to the no-match state only');
   // C5 (scale review B): the warning box has one line per kind at every size; "Not suited to your
   // site" shows its plants in the list, where each row has Swap and Remove. No line offers a site change.
-  const att = appJs.match(/function attentionScaleHTML[\s\S]*?\n\}/)[0];
+  // The kinds and their order live in warnKindList (shared with print's At a glance).
+  const att = appJs.match(/function warnKindList[\s\S]*?\n\}/)[0] + appJs.match(/function attentionScaleHTML[\s\S]*?\n\}/)[0];
   assert.match(att, /\['site', SITE, T\('d\.misfit'\)\]/);
   assert.match(att, /'fset', 'warn:' \+ k/);
   assert.doesNotMatch(att, /'relax'|'open-site'|'focus-site'/);
@@ -522,7 +533,8 @@ test('a site or climate change that rebuilds unkept plants offers Undo; a countr
 
 test('each warning kind is one list item with its own Show (F3, C5)', () => {
   assert.match(appJs, /function attentionHTML\(\) \{ return attentionScaleHTML\(\); \}/, 'the same box at every size');
-  const att = appJs.match(/function attentionScaleHTML[\s\S]*?\n\}/)[0];
+  // The kinds and their order live in warnKindList (shared with print's At a glance).
+  const att = appJs.match(/function warnKindList[\s\S]*?\n\}/)[0] + appJs.match(/function attentionScaleHTML[\s\S]*?\n\}/)[0];
   assert.match(att, /<ul class="att-lines" role="list">/);
   assert.match(att, /<li class="att-line att-\$\{k\}">/);
   // §2.6 order: invasive, toxic, site, pests, somewhere, unchecked.
@@ -748,7 +760,7 @@ test('every plant list shows the scientific name, smaller and in italics (prepus
   // Over time rows, the Jobs "who" list, the drawing's key (phone and print), the print phase lists.
   assert.match(appJs, /<small>\$\{sciHTML\(t\)\}/, 'Over time');
   assert.match(appJs, /<span>\$\{name\(d\.t\)\} <small>\$\{sciHTML\(d\.t\)\}/, 'Jobs');
-  assert.equal([...appJs.matchAll(/<span class="pkey-name"><span class="pkey-n">\$\{name\(t\)\}<\/span> \$\{sciHTML\(t, 'sci pkey-sci'\)\}<\/span>/g)].length, 1, 'the side view\'s legend, one helper for the screen and print');
+  // The side view's legend: consortium-side.test.mjs checks it rendered, on screen and in print.
   assert.match(appJs, /<li>\$\{name\(t\)\}\$\{sciHTML\(t, 'muted'\) && ' ' \+ sciHTML\(t, 'muted'\)\}<\/li>/, 'print phases');
   // Rows, Swap, Add, details and the print table already had it.
   assert.match(appJs, /<span class="pn">\$\{name\(t\)\}<\/span> <span class="sci">\$\{esc\(t\.canonical_name\)\}<\/span>/);
@@ -789,7 +801,6 @@ test('one warning heading everywhere: consortium.withWarning, in every locale (o
   assert.deepEqual(labels, ['withWarning', 'withWarning', 'otherLists'], 'Swap and Add head their flagged plants alike; Add then lists the other climates\' plants');
   assert.match(appJs.match(/function attentionScaleHTML[\s\S]*?\n\}/)[0], /<strong>\$\{esc\(T\('withWarning'\)\)\}<\/strong>/, 'the warnings summary');
   assert.match(appJs.match(/function printHTML[\s\S]*?\n\}/)[0], /<th>\$\{esc\(T\('withWarning'\)\)\}<\/th>/, 'print');
-  assert.equal([...appJs.matchAll(/<span class="vh">\$\{esc\(T\('withWarning'\)\)\}<\/span>/g)].length, 2, 'the side view\'s legend and the Over time rows (above 20 a mark\'s name says it: app.js svName)');
 });
 
 test('words: a merged soft chip starts with a capital where the script has one', () => {

@@ -524,7 +524,7 @@ test('m10: no climate name in mid-sentence capitals after "climat", "clima" or "
 });
 
 test('m11: the phrasings the review named read naturally', () => {
-  assert.equal(strings.fr.countryLine, 'Alertes plantes envahissantes :');
+  assert.equal(strings.fr.countryLine, 'Alertes plantes envahissantes\u00a0:');
   assert.doesNotMatch(Object.values(strings.fr).join('\n'), /comptes d’envahissantes|Comptes d’envahissantes/);
   assert.equal(strings.fr.inUse, 'Choisi');
   for (const key of ['fromBrowser', 'countryGuessed']) assert.doesNotMatch(strings.de[key], /erraten/, key);

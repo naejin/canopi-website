@@ -21,7 +21,7 @@ import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, c
 import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
 import { plantSVG } from './draw.js';
-import { heightFrac, heightOf, shapeOf, usualHeight, bandFacts, markOrder, SCALE_LINES } from './side.js';
+import { heightFrac, heightOf, shapeOf, isClimber, usualHeight, bandFacts, markOrder, denseAt, SCALE_LINES } from './side.js';
 import { viewMode, groupOpen, roundHeight, misfitSize, shownHeight, stageSpan, stageShort, warnKinds, pestLabels, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, pasteColumn, pasteDefault, PEST_TYPES, CARDS_UP_TO } from './scale.js';
 
 const data = JSON.parse(document.getElementById('ct-data').textContent);
@@ -628,23 +628,30 @@ function explainPanel(id) {
 // with a legend of names and heights; above 20, one mark per plant in its band on the same scale,
 // tallest first, a dot for a warning, and the band's heights spelled out with named exceptions (M1).
 // The text equivalent: each band's name and plants (or its summary) and the legend; above 20 a band
-// is one tab stop, the arrow keys and the pointer name its marks, and the list does the per-plant work.
-const DENSE_ABOVE = 90;
-const sentences = (parts) => parts.filter(Boolean).join(lang === 'zh' || lang === 'ja' ? '' : ' ');
-// "A, B, C and n more", or the whole list when 3 or fewer.
+// with marks is one focusable group named by its count and described by its heights; the pointer and,
+// for sighted keyboard users, the arrow keys name its marks; the list does the per-plant work.
+const cjk = lang === 'zh' || lang === 'ja';
+const sentences = (parts) => parts.filter(Boolean).join(cjk ? '' : ' ');
+// "A, B, C and n more": one separator at every count ("、" in Chinese and Japanese, with no space
+// before "and n more" there), "and n more" only past 3 (review S2/V8).
 function namedList(items) {
-  const first = items.slice(0, 3);
-  return items.length > 3 ? `${first.join(lang === 'zh' || lang === 'ja' ? '、' : ', ')} ${P('andMore', items.length - 3)}` : W.list(first);
+  const first = items.slice(0, 3).join(cjk ? '、' : ', ');
+  return items.length > 3 ? `${first}${cjk ? '' : ' '}${P('andMore', items.length - 3)}` : first;
 }
-const heightNamed = (t) => `${nameText(t)} ${heightText(t)}`;
-// A band's heights in words (M1): "Most 0.7–4 m. Also 16 tall plants …: A 40 m, B 40 m, C 30 m and 13 more. Height not known for 2."
+// A plant's height in the side view: a climber's is how high it climbs ("climbs to 35 m").
+const sideHeight = (t) => (isClimber(t) && heightOf(t) > 0 ? T('sv.climbsTo', { h: heightText(t) }) : heightText(t));
+const heightNamed = (t) => `${nameText(t)} ${sideHeight(t)}`;
+// A band's heights in words (M1): "Most 18–40 m. Also 2 short sun-lovers: Corn 2 m, Sunflower 3 m.
+// Also 1 climber: … Height not known for 2."; a band of 4 known heights or fewer lists them all.
 function bandSummary(f) {
-  if (!f.n) return T('sv.empty');
+  if (!f.n) return T('emptyLayer');
   const [a, b] = f.typical ? f.typical.map((h) => roundHeight(h)) : [];
   return sentences([
+    f.all.length ? T('sv.all', { list: f.all.map(heightNamed).join(cjk ? '、' : ', ') }) : '',
     f.typical ? (a === b ? T('sv.mostOne', { a: W.num(a) }) : T('sv.most', { a: W.num(a), b: W.num(b) })) : '',
     f.tall.length ? P('sv.tall', f.tall.length, { list: namedList(f.tall.map(heightNamed)) }) : '',
     f.short.length ? P('sv.short', f.short.length, { list: namedList(f.short.map(heightNamed)) }) : '',
+    f.climbers.length ? P('sv.climb', f.climbers.length, { list: namedList(f.climbers.map(heightNamed)) }) : '',
     f.unknown ? P('sv.unknown', f.unknown) : '',
   ]);
 }
@@ -659,17 +666,17 @@ function sideMarkup(flags, print = false) {
   const warned = (t) => kindsOf(t).has('any');
   const frac = (t) => heightFrac(heightOf(t) ?? usual.get(t.stratum.value));
   const pre = print ? 'ct-svp' : 'ct-sv';
-  let dashed = false;
+  let dashed = false, climbs = false;
   const bands = strata.map((s) => {
     const list = by.get(s), lab = `<strong>${esc(stratumLabel(s))}</strong> <span class="sv-light">${esc(lightWords(s))}</span>`;
     if (!marks) {
       const cols = placed.map((t) => {
         if (t.stratum.value !== s) return '<span class="sv-col"></span>';
-        const unknown = !(heightOf(t) > 0); dashed ||= unknown;
+        const unknown = !(heightOf(t) > 0); dashed ||= unknown; climbs ||= isClimber(t);
         return `<span class="sv-col" data-t="${t.id}">${plantSVG({ id: t.id, s, shape: shapeOf(t), frac: frac(t), dashed: unknown })}</span>`;
       }).join('');
       const numsRow = placed.map((t) => (t.stratum.value !== s ? '<span class="sv-numc"></span>' : `<span class="sv-numc"><span class="num" data-s="${s}"${warned(t) ? ' data-w' : ''}>${nums.get(t.id)}</span></span>`)).join('');
-      const said = list.length ? list.map((t) => `${nums.get(t.id)} ${nameText(t)}, ${heightText(t)}`).join('; ') : T('sv.empty').replace(/[.。]$/, '');
+      const said = list.length ? list.map((t) => `${nums.get(t.id)} ${nameText(t)}, ${sideHeight(t)}`).join('; ') : T('emptyLayer').replace(/[.。]$/, '');
       return `<li class="sv-band" data-s="${s}"><div class="sv-lab">${lab}</div>
         <div class="sv-strip" role="img" aria-label="${esc(bandLabel(s, said))}"><div class="sv-plot">${svLines()}<div class="sv-cols">${cols}</div></div><div class="sv-nums">${numsRow}</div></div></li>`;
     }
@@ -678,23 +685,28 @@ function sideMarkup(flags, print = false) {
     const order = markOrder(list);
     const iMarks = order.map((t) => { const h = heightOf(t); return `<i data-t="${t.id}" style="--h:${(frac(t) * 100).toFixed(2)}%"${warned(t) ? ' data-w' : ''}${h > 0 ? '' : ' data-u="true"'}></i>`; }).join('');
     const count = `<span class="sv-n">${esc(P('count', list.length))}${w ? ` · ${I.warn}<span aria-hidden="true">${W.num(w)}</span><span class="vh">${esc(P('withWarnCount', w))}</span>` : ''}</span>`;
-    const said = list.length ? [P('count', list.length), w ? P('withWarnCount', w) : ''].filter(Boolean).join(', ') : T('sv.empty').replace(/[.。]$/, '');
+    const said = list.length ? [P('count', list.length), w ? P('withWarnCount', w) : ''].filter(Boolean).join(', ') : T('emptyLayer').replace(/[.。]$/, '');
     const sumId = `${pre}-sum-${s}`;
-    const strip = print
+    // A band with marks is one tab stop (a group: its marks are named by the pointer and the arrow
+    // keys); an empty band is an image with no tab stop (review S4/S5).
+    const strip = print || !list.length
       ? `<div class="sv-strip" role="img" aria-label="${esc(bandLabel(s, said))}" aria-describedby="${sumId}">`
-      : `<div class="sv-strip" role="img" tabindex="0" aria-label="${esc(bandLabel(s, said) + (list.length ? ' ' + T('sv.keys') : ''))}" aria-describedby="${sumId}" ${fk('sv-' + s)}>`;
+      : `<div class="sv-strip" role="group" tabindex="0" aria-label="${esc(bandLabel(s, said))}" aria-describedby="${sumId}" ${fk('sv-' + s)}>`;
     return `<li class="sv-band" data-s="${s}"><div class="sv-lab">${lab}${count}</div>
-      ${strip}<div class="sv-plot">${svLines()}<div class="sv-marks" data-s="${s}"${list.length > DENSE_ABOVE ? ' data-dense="true"' : ''}>${iMarks}</div>${print ? '' : '<span class="sv-tip" hidden></span>'}</div></div>
+      ${strip}<div class="sv-plot">${svLines()}<div class="sv-marks" data-s="${s}">${iMarks}</div>${print || !list.length ? '' : '<span class="sv-tip" hidden></span>'}</div></div>
       <p class="sv-sum" id="${sumId}">${esc(bandSummary(f))}</p>
       ${print || !list.length ? '' : btn('button button-secondary button-small sv-show', 'fset', 'layer:' + s, `${esc(P('showN', list.length))}<span class="vh">, ${esc(stratumLabel(s))}</span>`, fk('sv-show-' + s))}</li>`;
   }).join('');
   const keyBody = (t) => `<span class="num" data-s="${t.stratum.value}" aria-hidden="true">${nums.get(t.id)}</span> <span class="pkey-name"><span class="pkey-n">${name(t)}</span> ${sciHTML(t, 'sci pkey-sci')}</span>${warned(t) ? ` <span class="plook">${I.warn}<span class="vh">${esc(T('withWarning'))}</span></span>` : ''}`;
-  const legend = marks ? '' : `<ol class="pkey" aria-label="${esc(T('drawingKey'))}">${placed.map((t) => `<li>${print ? `<span class="pkey-item">${keyBody(t)}</span>` : btn('pkey-item', 'details', t.id, keyBody(t), fk('pk-' + t.id))} <span class="pkey-h">${esc(heightText(t))}</span></li>`).join('')}</ol>`;
+  const legend = marks ? '' : `<ol class="pkey" aria-label="${esc(T('drawingKey'))}">${placed.map((t) => `<li>${print ? `<span class="pkey-item">${keyBody(t)}</span>` : btn('pkey-item', 'details', t.id, keyBody(t), fk('pk-' + t.id))} <span class="pkey-h">${esc(sideHeight(t))}</span></li>`).join('')}</ol>`;
   const unplaced = ms.filter((t) => !t.stratum);
-  const foot = [T(marks ? 'sv.marksNote' : 'sv.drawNote'), dashed ? T('sv.dashedNote') : '', unplaced.length ? T('noLayerList', { names: namedList(unplaced.map(nameText)) }) : ''];
+  const foot = [T(marks ? 'sv.marksNote' : 'sv.drawNote'), dashed ? T('sv.dashedNote') : '', climbs ? T('sv.climbNote') : '', unplaced.length ? T('noLayerList', { names: namedList(unplaced.map(nameText)) }) : ''];
+  // The alternate shades are explained where they show: consortium.css shows this note only while a
+  // band is dense (svFit).
+  const denseNote = marks ? ` <span class="sv-dense-note">${esc(T('sv.denseNote'))}</span>` : '';
   return `<div class="profile sv"${print ? '' : ' id="ct-side"'} data-size="${marks ? 'marks' : 'draw'}"${!marks && placed.length > 12 ? ' data-many="true"' : ''}>
     <ul class="sv-bands" role="list">${bands}</ul>
-    <p class="profile-foot">${foot.filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join(' ')}</p>${legend}</div>`;
+    <p class="profile-foot">${foot.filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join(' ')}${denseNote}</p>${legend}</div>`;
 }
 // The side view on the screen is patched, not rebuilt: when what it shows has not changed (a Keep, a
 // tick, a Keep n), render() moves the side view already on the page back in place of a slot.
@@ -708,10 +720,21 @@ function sideViewHTML(flags, print = false) {
   return html;
 }
 function placeSide() {
-  if (!sideReuse) return;
-  const slot = app.querySelector('#ct-side-slot');
-  if (slot) slot.replaceWith(sideReuse);
-  sideReuse = null;
+  if (sideReuse) {
+    const slot = app.querySelector('#ct-side-slot');
+    if (slot) slot.replaceWith(sideReuse);
+    sideReuse = null;
+  }
+  svFit();
+}
+// A band's marks are dense only when they are too narrow for a 1 px gap at the width drawn (side.js
+// denseAt); checked after each render and when the window changes size. Without a layout (width 0)
+// nothing is decided.
+function svFit() {
+  for (const m of app.querySelectorAll('#ct-side .sv-marks')) {
+    const dense = denseAt(m.clientWidth, m.children.length);
+    if (dense !== m.hasAttribute('data-dense')) dense ? m.setAttribute('data-dense', 'true') : m.removeAttribute('data-dense');
+  }
 }
 // Naming a mark: hover, a tap, or the arrow keys while its band has the focus.
 function svName(strip, i, announce = false) {
@@ -721,7 +744,7 @@ function svName(strip, i, announce = false) {
   for (const on of strip.querySelectorAll('.sv-marks i[data-on]')) on.removeAttribute('data-on');
   m.setAttribute('data-on', 'true'); strip.dataset.i = String(at);
   if (!t) return;
-  const words = [`${nameText(t)}, ${heightText(t)}`, kindsOf(t).has('any') ? T('withWarning') : ''].filter(Boolean).join(' · ');
+  const words = [`${nameText(t)}, ${sideHeight(t)}`, kindsOf(t).has('any') ? T('withWarning') : ''].filter(Boolean).join(' · ');
   const tip = strip.querySelector('.sv-tip');
   tip.textContent = words; tip.hidden = false;
   // Over its mark, kept inside the band.
@@ -1007,7 +1030,8 @@ function resultsLine() {
 }
 // Up to three names, then "and n more" (never "and … and n more"): "A, B, C and 2 more".
 function namesLine(ids) {
-  return namedList(ids.map((id) => nameText(taxonOf(id))));
+  const names = ids.slice(0, 3).map((id) => nameText(taxonOf(id)));
+  return ids.length > 3 ? `${names.join(cjk ? '、' : ', ')} ${P('andMore', ids.length - 3)}` : W.list(names);
 }
 // "n selected · m not shown", the names of the ticked rows shown, then Keep k · Remove k for those k (H4, H7).
 function selBarHTML() {
@@ -1076,11 +1100,14 @@ function plantsHTML(flags) {
 }
 // The warning box above 20 plants: one line per kind, each with its count, up to three names and a
 // "Show n" that sets the list's Warning filter (design-scale.md §2.6).
+// The kinds of warning in the §2.6 order: invasive here, toxic, not suited, pests, invasive somewhere,
+// not checked yet. The first four make a plant "with a warning" (scale.js warnKinds 'any').
+function warnKindList() {
+  return [S.country && countryChecked() ? ['invasive', I.warn, T('invHere', { country: W.country(S.country) })] : null, ['toxic', I.danger, T('tox.Moderate')], ['site', SITE, T('d.misfit')], ['pests', BUG, T('att.pests')], S.country ? null : ['somewhere', GLOBE, P('att.somewhere', invCountries())], ['unchecked', I.unknown, T('att.unchecked')]].filter(Boolean);
+}
 function attentionScaleHTML() {
   const ms = members(), any = ms.filter((t) => kindsOf(t).has('any'));
-  // §2.6 order: invasive here, toxic, not suited, pests, invasive somewhere, not checked yet.
-  const kinds = [S.country && countryChecked() ? ['invasive', I.warn, T('invHere', { country: W.country(S.country) })] : null, ['toxic', I.danger, T('tox.Moderate')], ['site', SITE, T('d.misfit')], ['pests', BUG, T('att.pests')], S.country ? null : ['somewhere', GLOBE, P('att.somewhere', invCountries())], ['unchecked', I.unknown, T('att.unchecked')]].filter(Boolean);
-  const lines = kinds.map(([k, icon, label]) => {
+  const lines = warnKindList().map(([k, icon, label]) => {
     const list = ms.filter((t) => kindsOf(t).has(k));
     if (!list.length) return '';
     const note = k === 'unchecked' ? `<p class="att-note">${esc(T('att.uncheckedNote'))}</p>` : '';
@@ -1491,9 +1518,21 @@ function printHTML() {
     <p class="sheet-foot">${esc(T('printFoot', { url: shareLink() }))}</p></article>`;
 }
 
-// Above 20 plants: "Your consortium", then one table grouped by layer with its light words: plant,
-// height, leads, jobs, kept, warnings in words (design-scale.md §1c.12). The drawing joins it with
-// the side view at every size (chunk C).
+// Above 20 plants (state 13): "Your consortium", At a glance (plants and plants with a warning per
+// layer, then the kinds of warning), then one table grouped by layer with its light words: plant,
+// height, leads, jobs, kept, warnings in words (design-scale.md §1c.12). No marks drawing on paper.
+function glanceHTML(ms) {
+  const cols = [...strata, ...(ms.some((t) => !t.stratum) ? ['none'] : [])];
+  const inCol = (s) => ms.filter((t) => stratumOf(t) === s);
+  const warned = (list) => list.filter((t) => kindsOf(t).has('any')).length;
+  const row = (label, f) => `<tr><th scope="row">${esc(label)}</th>${cols.map((s) => `<td>${W.num(f(inCol(s)))}</td>`).join('')}<td>${W.num(f(ms))}</td></tr>`;
+  const kinds = warnKindList().filter(([k]) => ['invasive', 'toxic', 'site', 'pests'].includes(k))
+    .map(([k, , label]) => [label, ms.filter((t) => kindsOf(t).has(k)).length]).filter(([, n]) => n)
+    .map(([label, n]) => `${label} ${W.num(n)}`).join(' · ');
+  return `<section class="print-glance"><h3>${esc(T('glance'))}</h3><table><thead><tr><th></th>${cols.map((s) => `<th scope="col">${esc(stratumLabel(s))}</th>`).join('')}<th scope="col">${esc(T('glanceAll'))}</th></tr></thead>
+    <tbody>${row(T('glancePlants'), (l) => l.length)}${row(T('withWarning'), warned)}</tbody></table>
+    ${kinds ? `<p class="glance-kinds">${esc(T('glanceWarn', { kinds }))}</p>` : ''}</section>`;
+}
 function printTableHTML(ms, flags, date, gapJobs) {
   const groupsOf = [...strata, 'none'].map((s) => [s, ms.filter((t) => stratumOf(t) === s)]).filter(([, l]) => l.length);
   const body = groupsOf.map(([s, list]) => `<tbody><tr class="print-layer"><th colspan="6">${esc(stratumLabel(s))} · ${esc(lightWords(s))} · ${esc(P('count', list.length))}</th></tr>${list.map((t) => {
@@ -1504,7 +1543,7 @@ function printTableHTML(ms, flags, date, gapJobs) {
   return `<article class="sheet sheet-big">
     <div class="sheet-head"><div><h2 class="sheet-title">${esc(T('yourConsortium'))}</h2><p class="muted">${esc(climateLabel())} · ${esc(printWhere(W, place()))} · ${esc(date)}</p>
     <p class="muted">${esc(T('basis', { site: basisText() }))} · ${esc(P('count', ms.length))} · ${esc(P('keptCount', ms.filter((t) => S.kept.has(t.id)).length))}</p></div><img src="/canopi-logo.svg" width="34" height="34" alt=""></div>
-    <div class="sheet-draw">${sideViewHTML(flags, true)}</div>
+    ${glanceHTML(ms)}
     <table class="print-table"><thead><tr><th>${esc(T('p.plant'))}</th><th>${esc(T('t.height'))}</th><th>${esc(T('col.leads'))}</th><th>${esc(T('p.jobs'))}</th><th>${esc(T('col.kept'))}</th><th>${esc(T('withWarning'))}</th></tr></thead>${body}</table>
     ${gapJobs.length ? `<section><h3>${esc(T('printGaps'))}</h3><ul>${gapJobs.map((j) => `<li>${esc(T('job.' + j + '.gap'))}</li>`).join('')}</ul></section>` : ''}
     <p class="muted small">${esc(T('d.liab'))}</p>
@@ -2300,8 +2339,9 @@ root.addEventListener('keydown', (e) => {
     act.view(e.key === 'Home' ? v[0] : e.key === 'End' ? v[2] : v[(i + (e.key === 'ArrowRight' ? 1 : 2)) % 3]);
   }
 });
-// The side view's marks (above 20 plants): hover, a tap, or focus names a mark; the arrow keys, Home,
-// End and Page Up/Down move along the band, one tab stop per band.
+// The side view's marks (above 20 plants): hover, a tap, or focus names a mark; for sighted keyboard
+// users the arrow keys, Home and End move along the band, one tab stop per band. A key that does not
+// move to another mark (Page Up/Down, an arrow at the end) keeps its own job: scrolling the page.
 const svStrip = (el) => el?.closest?.('.sv-strip[tabindex]');
 const svIndex = (strip, m) => [...strip.querySelectorAll('.sv-marks i')].indexOf(m);
 root.addEventListener('pointerover', (e) => {
@@ -2318,12 +2358,16 @@ root.addEventListener('keydown', (e) => {
   const strip = e.target.matches?.('.sv-strip[tabindex]') ? e.target : null;
   if (!strip) return;
   const n = strip.querySelectorAll('.sv-marks i').length, i = Number(strip.dataset.i ?? 0);
-  const to = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: n - 1, PageDown: i + 10, PageUp: i - 10 }[e.key];
+  const to = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: n - 1 }[e.key];
   if (to == null) { if (e.key === 'Escape') svHide(strip); return; }
+  const at = Math.max(0, Math.min(n - 1, to));
+  if (!n || at === i) return;
   e.preventDefault();
-  svName(strip, to, true);
+  svName(strip, at, true);
 });
 phoneMQ.addEventListener('change', () => { if (S.status !== 'boot') render(); });
+let fitting = false;
+addEventListener('resize', () => { if (fitting) return; fitting = true; requestAnimationFrame(() => { fitting = false; svFit(); }); });
 addEventListener('beforeprint', () => { if (!printEl.innerHTML) printEl.innerHTML = printHTML(); });
 addEventListener('afterprint', () => { printEl.innerHTML = ''; });
 
