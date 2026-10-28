@@ -1,6 +1,6 @@
 {
   "format_version": 2,
-  "generated_at": "2026-10-27T19:23:08Z",
+  "generated_at": "2026-10-28T09:36:20Z",
   "canopi_db_sha256": "49a54334d5d629d22f04171421f64939162d1c0913ae5a304a4440ac3a1f5537",
   "cells": [
     {
@@ -9,7 +9,7 @@
       "file": "tropical-southern-america.json",
       "taxa": 200,
       "interactions": 25,
-      "sha256": "8b4719074a6c3ec78644da604a797200f55c5e53c3b97aa664811afaa9dc15d4"
+      "sha256": "57a34fd8637828dbbe9927f129fc0101e1caa1ee05ddd88f1034d0ced9a90d71"
     },
     {
       "climate_zone": "Mediterranean",
@@ -17,7 +17,7 @@
       "file": "mediterranean-europe.json",
       "taxa": 200,
       "interactions": 55,
-      "sha256": "d0179081035960cda6eb2bb0fd7b4a67c321692b59868cdac9a062c1c151452e"
+      "sha256": "004d48ca0cf200f70bb8402d2fa0daac0b082d49796b6293c0f2e5536b28cebe"
     },
     {
       "climate_zone": "Temperate",
@@ -25,7 +25,7 @@
       "file": "temperate-europe.json",
       "taxa": 200,
       "interactions": 54,
-      "sha256": "8b7887552b206dcb63e6d5f5aa0af934a5775d8f02f7e375b9c5b3168985fd8b"
+      "sha256": "51ed58b02afa05abb8ce48ae4919ca40e59ca9ec01be0c557136caa9ddaf0d51"
     }
   ],
   "locales": [
