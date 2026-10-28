@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T20:32:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T02:42:43Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -21,6 +21,21 @@ sources:
     title: src/data/climates.ts
     digest: sha256:42b3b2e5b9af2739
     last_modified: 2026-10-26T23:34:11Z
+  - id: suggest-ts
+    resource: ../../src/lib/consortium/suggest.ts
+    title: src/lib/consortium/suggest.ts
+    digest: sha256:ced492870b65c23c
+    last_modified: 2026-10-28T02:41:10Z
+  - id: consortium-app-js
+    resource: ../../src/scripts/consortium/app.js
+    title: src/scripts/consortium/app.js
+    digest: sha256:3a4720245a79516c
+    last_modified: 2026-10-28T02:41:10Z
+  - id: consortium-css
+    resource: ../../src/styles/consortium.css
+    title: src/styles/consortium.css
+    digest: sha256:ca57a575200bb50d
+    last_modified: 2026-10-28T02:40:28Z
 ---
 
 Owner decisions: [Consortium tool — user decisions](/decisions/consortium-user-decisions.md).
@@ -60,7 +75,11 @@ and `docs/consortium-export.schema.json`, format 2.
 6. **Share or print.** A link restores the exact state; the last consortium on this
    device is restored on return; print view lists plants by stratum and phase.
 7. **Learn.** Explain popovers on strata, phases and jobs link to guides; guides
-   open the tool preset (`?plant=<canonical_name>&climate=<id>`).
+   open the tool preset (`?plant=<canonical_name>&climate=<id>`). A preset's
+   climate applies to that consortium only and never changes the shared site
+   climate (`canopi-climate`); only a climate the reader picks in the tool does.
+   A preset without a place reuses the place of the consortium saved on this
+   device, and says so.
 
 ## Data path
 - `scripts/install-consortium.mjs <export-dir>`: verifies `SHA256SUMS`, the
@@ -88,8 +107,9 @@ Types mirror format 2. Pure functions, unit-tested with `node --test`:
 - `suggest(cell, site, kept, removed, country)`: greedy, deterministic. Each
   round adds the candidate with the highest gain
   `10·new jobs + 3·empty (stratum × phase band) cells + 1·cells with one member + 6·new stratum + 8·phase bands with no food yet (crops) + 4·second doer of feeds-soil, ground or mulch + 1·edibility − 3·weed potential − 0.5·unknown traits`,
-  among plants that fill a gap (a new job or a cell with fewer than two
-  members), until size = limit (small 6, large 9, field 12); ties go to the
+  among plants that fill a gap (a new job, a cell with fewer than two members,
+  a phase band with no food yet, or a second doer of a key job that has one),
+  until size = limit (small 6, large 9, field 12); ties go to the
   plant named in more languages (a widely grown one), then `canonical_name`.
   (Amended 2026-10-27: the first rule, gain > 5 with 0.3·edibility, stopped the
   real cells at 4–7 plants, and name-order ties picked obscure plants; the
@@ -117,7 +137,10 @@ versus `[]` (unknown versus checked none), old share link (dropped ids), print.
 ## Interface languages
 All 11 locales for the interface (`consortium.*` keys in every translation file).
 Plant names from `names[lang]`, fallback English then the scientific name; the
-scientific name is always shown. `reason`/notes: the locale's text if present
+scientific name is shown beside the name in every list (rows, Swap, Add, Over
+time, Jobs, the drawing's numbered key, print) and in details. The desktop
+drawing's column labels and sentences that name plants (toasts, gap rows) show
+the name only, for space. `reason`/notes: the locale's text if present
 (en, fr), else English marked `lang="en"`. Strata labels: the app's (en
 Emergent/High/Mid/Low; fr Émergent/Haut/Moyen/Bas). Phases: plain time words +
 app term. Region names translated (8 × 11).
@@ -135,7 +158,9 @@ canonical name → guide slugs).
   check follows. All existing pages keep one path.
 - Warning tokens (`--warning`, `--warning-bg`, `--warning-line`, light and
   dark) in `tokens.css`; strata colours (Okabe-Ito: emergent #E69F00, high
-  #009E73, mid #0072B2, low #CC79A7) only in the drawing and legend.
+  #009E73, mid #0072B2, low #CC79A7) only in the drawing (with its numbered
+  labels, strata lines and key) and the strata legend; elsewhere the stratum
+  word, and number rings and timeline bars in neutral ink.
 - Climate ids: data `Tropical` ↔ site `tropical` (lowercase at the module edge).
 
 ## Budgets

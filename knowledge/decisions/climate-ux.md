@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Climate UX
 description: Every page that changes with the climate uses the app's seven zones, one stored choice set from an on-page chip, and one badge, and it reorders and marks content but never hides it.
 tags: [decision, climate, i18n]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:53:57Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T02:42:42Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:53:56Z }
 sources:
@@ -45,13 +45,18 @@ sources:
   - id: homepage-test-mjs
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:d38fde41df5c147c
-    last_modified: 2026-10-27T23:51:38Z
+    digest: sha256:2eee687e37141687
+    last_modified: 2026-10-28T02:42:20Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
     digest: sha256:a05883ed674e82bc
     last_modified: 2026-10-27T09:21:52Z
+  - id: consortium-app-js
+    resource: ../../src/scripts/consortium/app.js
+    title: src/scripts/consortium/app.js
+    digest: sha256:3a4720245a79516c
+    last_modified: 2026-10-28T02:41:10Z
 enforced_by: [scripts/homepage.test.mjs, scripts/guides.test.mjs]
 ---
 
@@ -71,7 +76,10 @@ coherent way to say which climate a piece of advice is for, everywhere it matter
 - **One choice, one place to set it.** `localStorage["canopi-climate"]`, mirrored on
   `html[data-climate]` by an inline head script before the first paint. It is set from a chip
   ("Your climate: …") that appears only on pages the climate changes (the bibliography, the guides
-  index and guides with climate blocks), never in the header. The chip opens a dialog with each zone's
+  index and guides with climate blocks), never in the header, and by the consortium tool when the
+  reader picks a climate there (`setClimate` in `src/scripts/consortium/app.js`; the owner decision
+  "Memory: the shared site climate"). The tool also starts from it when nothing else names a
+  climate. A guide's preset climate (`?climate=`) applies to that consortium only and never writes it. The chip opens a dialog with each zone's
   one-line description and three local example cities (Köppen-checked, chosen per locale), plus
   "I'd rather not say". Hidden without JavaScript, where nothing could be kept.
 - **Reorder and mark, never hide.** Badges of the reader's zone are filled (`.climate-badge`); in a
