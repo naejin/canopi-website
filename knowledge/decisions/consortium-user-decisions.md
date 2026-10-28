@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium tool — user decisions
 description: Dated decisions the project owner made about the consortium design tool; they change only when the owner changes them.
 tags: [consortium, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T16:52:51Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T22:37:05Z }
 ---
 
 # Consortium tool — user decisions
@@ -63,6 +63,7 @@ Data side (sibling repository `canopi-data`, read 2026-10-27): `docs/adr/0007-cu
 | 2026-10-28 | **Scale mockup approved** (owner): mockup v2 (`.local/consortium/climate-first/mockup-v2/`, critiqued over four rounds by a separate reviewer) is the design to build for 6 to 200 plants and the main-crops step. The crop step has one main button, "Suggest plants": with no crop chosen it gives the climate-only suggestion, and there is no separate Skip link (refines "Main crops first"). A main crop carries a "Main crop" tag, has a "Kept: Main crops" filter value, and is not swapped from its details. |
 | 2026-10-28 | **Unchecked country, coordinator choice** (within the owner's rows, not owner-reviewed): for a chosen country GRIIS does not cover, "not checked in {country}" is said once per view (country line, result sub-line, print head) and in a plant's details, never as a chip on every card or row (keeps the row that holds "not checked" statuses off cards); a plant with no invasive record reads "not recorded invasive in any country checked by GRIIS", with GRIIS among its sources, never "anywhere". |
 | 2026-10-28 | **Scale build, coordinator choices** (within the owner's rows, not owner-reviewed): "Add all" from a pasted list adds flagged plants (site misfit, serious conflict) without asking about each one, then says "n added with a warning" with a Show link, and every warning stays on its row (warn, never hide; a single Add still asks first); the approved design's rule holds in the core logic: a plant of a lower layer is not flagged "needs full sun" for a sunny site when layers above it shade it; main crops and plants added from another list are described neutrally for every reader ("Main crop", "From the Tropical list"), with no stored record of who chose them; share links keep their state in the fragment (`#v=3…`), so it never reaches server logs, and older query links still open. |
+| 2026-10-28 | **Side view, coordinator choices** (within the owner's rows, not owner-reviewed): a climber is drawn as a vine on a thin support and named "climbs to 35 m", never as a free-standing plant of its climbing height; each band's "Most a–b m" is computed over the plants it does not name as exceptions, and both ends are real plant heights (a band with 4 or fewer known heights lists them all); above 20 plants, print follows approved state 13 ("At a glance", then the table, no marks drawing), and at 20 or fewer print keeps the drawing; pest and disease chips show a common name only when it is one EPPO lists and a second source confirms is in use, and only when it names no single host unless every row of that agent is on that host, otherwise the scientific name. |
 
 ## Open questions for the owner (not decisions)
 
