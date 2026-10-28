@@ -2,17 +2,17 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T16:45:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T19:36:33Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T19:35:53Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T18:54:48Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
   - id: readme-md
     resource: ../../scripts/fixtures/consortium/README.md
     title: scripts/fixtures/consortium/README.md
-    digest: sha256:ea88ed4edcb2f0ab
-    last_modified: 2026-10-28T12:21:02Z
+    digest: sha256:d874dc32df70cbc0
+    last_modified: 2026-10-28T19:36:26Z
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
@@ -32,7 +32,7 @@ sources:
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
     digest: sha256:f0fc6974c3e83623
-    last_modified: 2026-10-28T19:13:06Z
+    last_modified: 2026-10-28T19:36:00Z
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css

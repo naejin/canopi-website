@@ -5,15 +5,15 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T16:45:20Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T19:36:41Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T19:35:51Z }
 sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:f2a22794996e6bf1
-    last_modified: 2026-10-28T19:13:55Z
+    digest: sha256:2f137a84cb3fe412
+    last_modified: 2026-10-28T19:36:33Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -28,7 +28,7 @@ sources:
     resource: ../../scripts/consortium-list-ui.test.mjs
     title: scripts/consortium-list-ui.test.mjs
     digest: sha256:ba78da15df3f1b45
-    last_modified: 2026-10-28T19:13:55Z
+    last_modified: 2026-10-28T19:36:00Z
 ---
 
 # Responsibility
