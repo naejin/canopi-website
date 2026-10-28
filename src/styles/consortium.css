@@ -683,7 +683,9 @@
 .ct .pkey { margin: 0 14px 12px; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; }
 .ct .pkey li { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14.5px; }
 .ct .pkey-item { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 4px; border: 0; background: none; text-align: start; font-weight: 600; font-size: 14.5px; }
-.ct .pkey-item:hover span:nth-child(2) { text-decoration: underline; }
+.ct .pkey-item:hover .pkey-n { text-decoration: underline; }
+.ct .pkey-name { min-width: 0; }
+.ct .pkey-sci { display: block; font-size: 12.5px; font-weight: 400; line-height: 1.25; }
 .ct .act-icon { min-width: 40px; padding: 0 8px; }
 @media (max-width: 639px) { .ct .act-icon { min-width: 48px; flex: 0 0 auto; } .ct .act-main { flex: 1 1 auto; } }
 .ct .photo img { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-alt); }

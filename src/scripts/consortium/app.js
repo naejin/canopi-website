@@ -90,6 +90,8 @@ const whereLabel = () => (S.country ? W.country(S.country) : W.region(S.region))
 const stratumLabel = (s) => T('stratum.' + s);
 const name = (t) => { const n = plantName(t, lang); return n.lang ? `<span lang="en">${esc(n.text)}</span>` : esc(n.text); };
 const nameText = (t) => plantName(t, lang).text;
+// The scientific name beside a plant's name in a list (L4), unless the name shown already is it.
+const sciHTML = (t, cls = 'sci') => (nameText(t) === t.canonical_name ? '' : `<i class="${cls}">${esc(t.canonical_name)}</i>`);
 const keptList = () => [...S.kept];
 // The climate chosen elsewhere on the site (src/scripts/climate.js), when it is one the tool knows.
 const siteClimate = () => (siteClimates.includes(document.documentElement.dataset.climate) ? document.documentElement.dataset.climate : null);
@@ -436,7 +438,7 @@ function profileHTML(flags, print = false) {
     const left = Math.max(0, center - lw / 2), w = Math.min(100, center + lw / 2) - left;
     return `<button class="plabel" type="button" data-act="details" data-v="${t.id}" ${fk('pl-' + t.id)} style="left:${left.toFixed(2)}%;width:${w.toFixed(2)}%;top:${stagger ? (i % 2) * 64 : 0}px"><span class="plabel-top"><span class="num" data-s="${s}" aria-hidden="true">${nums.get(t.id)}</span>${look ? `<span class="plook">${I.warn}<span class="vh">${esc(T('needsLook'))}</span></span>` : ''}</span><span class="pname">${name(t)}</span><span class="vh">, ${esc(stratumLabel(s))}</span></button>`;
   }).join('');
-  const key = small || print ? `<ol class="pkey" aria-label="${esc(T('drawingKey'))}">${placed.map((t) => `<li>${print ? `<span class="num" data-s="${t.stratum.value}" aria-hidden="true">${nums.get(t.id)}</span><span>${name(t)}</span>` : btn('pkey-item', 'details', t.id, `<span class="num" data-s="${t.stratum.value}" aria-hidden="true">${nums.get(t.id)}</span><span>${name(t)}</span>${needsLook(t, flags.get(t.id)) ? `<span class="plook">${I.warn}<span class="vh">${esc(T('needsLook'))}</span></span>` : ''}`, fk('pk-' + t.id))}</li>`).join('')}</ol>` : '';
+  const key = small || print ? `<ol class="pkey" aria-label="${esc(T('drawingKey'))}">${placed.map((t) => `<li>${print ? `<span class="num" data-s="${t.stratum.value}" aria-hidden="true">${nums.get(t.id)}</span><span class="pkey-name"><span class="pkey-n">${name(t)}</span>${sciHTML(t, 'sci pkey-sci')}</span>` : btn('pkey-item', 'details', t.id, `<span class="num" data-s="${t.stratum.value}" aria-hidden="true">${nums.get(t.id)}</span><span class="pkey-name"><span class="pkey-n">${name(t)}</span>${sciHTML(t, 'sci pkey-sci')}</span>${needsLook(t, flags.get(t.id)) ? `<span class="plook">${I.warn}<span class="vh">${esc(T('needsLook'))}</span></span>` : ''}`, fk('pk-' + t.id))}</li>`).join('')}</ol>` : '';
   const unplaced = members().filter((t) => !t.stratum);
   return `<figure class="profile"${small || print ? '' : ` style="max-width:${Math.round(p.ratio * 320)}px"`}>
     <div class="profile-draw">${p.svg}${p.lineLabels}</div>
@@ -488,7 +490,7 @@ function timeHTML(flags) {
       const a = phases.indexOf(t.phases.start), b = phases.indexOf(t.phases.end);
       bar = `<span class="bar" data-open="${b === phases.length - 1}" style="left:calc(${((a / 7) * 100).toFixed(3)}% + 4px);width:calc(${(((b - a + 1) / 7) * 100).toFixed(3)}% - 8px)"></span>`;
     } else bar = `<span class="bar-none">${esc(T('timingUnknown'))}</span>`;
-    return `<div class="tl-row"><div class="tl-name">${btn('', 'details', t.id, `<span>${name(t)}</span>${needsLook(t, flags.get(t.id)) ? `<span class="plook">${I.warn}<span class="vh">${esc(T('needsLook'))}</span></span>` : ''}`, fk('tl-' + t.id))}<small>${timeHTML1(t)} · ${esc(stratumLabel(s))}</small></div>
+    return `<div class="tl-row"><div class="tl-name">${btn('', 'details', t.id, `<span>${name(t)}</span>${needsLook(t, flags.get(t.id)) ? `<span class="plook">${I.warn}<span class="vh">${esc(T('needsLook'))}</span></span>` : ''}`, fk('tl-' + t.id))}<small>${sciHTML(t)}${sciHTML(t) && ' · '}${timeHTML1(t)} · ${esc(stratumLabel(s))}</small></div>
       <div class="tl-track"><div class="tl-cols" aria-hidden="true">${covered.map((c) => `<i data-gap="${!c}"></i>`).join('')}${bar}</div></div></div>`;
   }).join('');
   const gaps = covered.map((c, i) => (c ? '' : `<div class="gap-row"><span>${esc(T('timeGap', { stage: T(W.phaseKey(i, 'plain')) }))}</span>${btn('button button-secondary button-small', 'open-add', 'phase:' + i, esc(i <= 2 ? T('quickCrop') : T('findPlant')), fk('tgap-' + i))}</div>`)).join('');
@@ -521,7 +523,7 @@ function jobsHTML() {
     return `<article class="job" data-gap="${gap}"><div class="job-head"><span class="job-icon">${jobIcon(j)}</span><h4>${esc(T('job.' + j))}</h4></div>
       <p class="job-about">${esc(T('job.' + j + '.about'))}</p>
       ${gap ? `<p class="job-gap">${esc(T('job.' + j + '.gap'))}</p><div>${btn('button button-primary button-small', 'open-add', 'job:' + j, esc(T('job.' + j + '.find')), fk('jgap-' + j))}</div>`
-        : `<p class="job-status">${I.check}${esc(P('doneBy', list.length))}</p><ul class="job-who" role="list">${list.map((d) => `<li>${btn('who', 'details', d.t.id, `<span class="num" data-s="${stratumOf(d.t)}" aria-hidden="true">${nums.get(d.t.id)}</span><span>${name(d.t)} <small>· ${esc(d.how)}</small></span>`, fk(`jw-${j}-${d.t.id}`))}</li>`).join('')}</ul>`}
+        : `<p class="job-status">${I.check}${esc(P('doneBy', list.length))}</p><ul class="job-who" role="list">${list.map((d) => `<li>${btn('who', 'details', d.t.id, `<span class="num" data-s="${stratumOf(d.t)}" aria-hidden="true">${nums.get(d.t.id)}</span><span>${name(d.t)} <small>${sciHTML(d.t)}${sciHTML(d.t) && ' '}· ${esc(d.how)}</small></span>`, fk(`jw-${j}-${d.t.id}`))}</li>`).join('')}</ul>`}
       ${guideLink(data.jobGuides[j], 'guide-link', (title) => `${I.book}<span>${esc(T('readGuide'))}<span class="vh">: ${title}</span></span>`)}
     </article>`;
   }).join('');
@@ -696,7 +698,7 @@ function printHTML() {
   }).join('');
   const bands = phaseBands.map((k) => {
     const inBand = ms.filter((t) => bandsOf(t).includes(k));
-    return `<div><h3>${esc(T('band.' + k + '.print'))}</h3><ul>${inBand.map((t) => `<li>${name(t)}</li>`).join('')}</ul></div>`;
+    return `<div><h3>${esc(T('band.' + k + '.print'))}</h3><ul>${inBand.map((t) => `<li>${name(t)}${sciHTML(t, 'muted') && ' ' + sciHTML(t, 'muted')}</li>`).join('')}</ul></div>`;
   }).join('');
   const gapJobs = jobGaps(), free = Math.max(0, limit() - ms.length);
   const date = new Intl.DateTimeFormat(lang, { dateStyle: 'long' }).format(new Date());

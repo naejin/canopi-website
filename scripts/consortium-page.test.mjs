@@ -721,3 +721,17 @@ test('logic: licences read as their proper names, with the version the data give
   assert.match(app, /licenceHTML\(x\.licence\)/);
   for (const lang of locales) assert.ok(strings[lang].publicDomain, `${lang}: publicDomain`);
 });
+
+test('every plant list shows the scientific name, smaller and in italics (prepush L4)', () => {
+  const appJs = read('src/scripts/consortium/app.js');
+  // One helper writes it, only when it differs from the name shown (a plant with no common name is named by it).
+  assert.match(appJs, /const sciHTML = \(t, cls = 'sci'\) => \(nameText\(t\) === t\.canonical_name \? '' : `<i class="\$\{cls\}">\$\{esc\(t\.canonical_name\)\}<\/i>`\);/);
+  // Over time rows, the Jobs "who" list, the drawing's key (phone and print), the print phase lists.
+  assert.match(appJs, /<small>\$\{sciHTML\(t\)\}/, 'Over time');
+  assert.match(appJs, /<span>\$\{name\(d\.t\)\} <small>\$\{sciHTML\(d\.t\)\}/, 'Jobs');
+  assert.equal([...appJs.matchAll(/<span class="pkey-name"><span class="pkey-n">\$\{name\(t\)\}<\/span>\$\{sciHTML\(t, 'sci pkey-sci'\)\}<\/span>/g)].length, 2, 'drawing key, screen and print');
+  assert.match(appJs, /<li>\$\{name\(t\)\}\$\{sciHTML\(t, 'muted'\) && ' ' \+ sciHTML\(t, 'muted'\)\}<\/li>/, 'print phases');
+  // Rows, Swap, Add, details and the print table already had it.
+  assert.match(appJs, /<span class="pn">\$\{name\(t\)\}<\/span> <span class="sci">\$\{esc\(t\.canonical_name\)\}<\/span>/);
+  assert.match(appJs, /<span class="alt-name">[^\n]*<span class="sci">\$\{esc\(t\.canonical_name\)\}<\/span>/);
+});
