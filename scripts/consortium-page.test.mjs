@@ -16,7 +16,7 @@ const strings = Object.fromEntries(locales.map((lang) => {
   const all = JSON.parse(read(`src/i18n/translations/${lang}.json`));
   return [lang, Object.fromEntries(Object.entries(all).filter(([k]) => k.startsWith('consortium.')).map(([k, v]) => [k.slice('consortium.'.length), v]))];
 }));
-const app = read('src/scripts/consortium/app.js') + read('src/scripts/consortium/words.js');
+const app = read('src/scripts/consortium/app.js') + read('src/scripts/consortium/words.js') + read('src/scripts/consortium/parts.js');
 const manifest = JSON.parse(read('public/data/consortium/manifest.json'));
 const siteOptions = { light: core.lights, soil: core.soils, water: core.waters, room: core.rooms };
 const page = read('src/components/consortium/ConsortiumPage.astro');
@@ -773,10 +773,10 @@ test('print says "none found so far", not "all checked", while allelopathy is un
 });
 
 // ---------- consortium/climate-first (design-ui.md, owner decisions 2026-10-28) ----------
-test('a guessed country is shown as a guess with its reason, and never written to a link or a save', () => {
+// What the country line says is tested by behaviour in scripts/consortium-country.test.mjs.
+test('a guessed country has a dashed chip, and is never written to a link or a save', () => {
   const app = read('src/scripts/consortium/app.js');
   assert.match(app, /const country = S\.countrySource === 'guess' \? null : S\.country;/, 'stateNow drops a guess');
-  assert.match(app, /T\(\{ guess: 'countryGuessed', link: 'countryLinked' \}\[S\.countrySource\] \?\? 'countryChosen'\)/);
   assert.match(app, /data-src="\$\{S\.country \? S\.countrySource \?\? 'user' : 'none'\}"/);
   assert.match(css, /\.cl-chip\[data-src="guess"\][^{]*\{[^}]*dashed/, 'a guess has a dashed chip');
   assert.match(strings.en.countryGuessed, /browser/);
@@ -813,13 +813,8 @@ test('an invasive-here plant shows on its card and in the warning box, and Add a
   assert.equal(suggest.match(/^\s+flagged: (.*),$/m)?.[1], '!i.fit.ok || found.some(isSerious)');
 });
 
-test('the keys of the region flow are gone in every locale', () => {
-  const dead = ['outline', 'step2', 'ratherNot', 'regionInstead', 'backToCountry', 'whichPart', 'otherCountry', 'hasPlants', 'noPlants', 'cell',
-    'nc.optIn', 'nc.optNote', 'nc.why', 'nc.change', 'nc.noneClimate', 'borrowedText', 'borrowedInv', 'placeFrom', 'fromGuideWait', 'redonePlace', 'invElse', 'yourPlace'];
-  for (const lang of locales) for (const key of Object.keys(strings[lang])) {
-    assert.ok(!dead.some((d) => key === d || key.startsWith(d + '.')), `${lang}: ${key}`);
-    assert.doesNotMatch(key, /^(part\.|region\.\w+\.hint$)/, `${lang}: ${key}`);
-  }
+// The locale keys are covered by "every key exists for a reason" and the key parity test.
+test('the guide files keep no key of the region flow', () => {
   for (const lang of ['en', 'fr']) {
     const guides = JSON.parse(read(`src/i18n/guides/${lang}.json`));
     assert.ok(!Object.keys(guides).some((k) => k.startsWith('consortium.cell.')), `${lang}: guide cell keys`);

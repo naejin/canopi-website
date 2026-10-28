@@ -1,8 +1,8 @@
 // The consortium tool's pure rules about its own state (no DOM, no strings), so
-// scripts/consortium-page.test.mjs can test them: what a share link lost, which gap rows stay,
+// scripts/consortium-page.test.mjs and consortium-country.test.mjs can test them: what a share link lost, which gap rows stay,
 // when the address bar may be rewritten, which data urls may be links, where a photo came from, how much of a list shows, what a
-// climate change leaves of a link's notices, when a click is the tail of a double click, and the
-// language links' query.
+// climate change leaves of a link's notices, when a click is the tail of a double click, the
+// language links' query, where the country comes from at start and the browser's country guess.
 
 // How many plants an old link named that the climate file no longer has: the distinct ids of `p` (kept)
 // and `a` (members) that matched no taxon or several. A kept plant is in both lists, so it counts
@@ -127,4 +127,44 @@ export function uncheckedOnCard(taxon, hasJobs) {
   if (w.weed_potential == null) out.push('spreads');
   if (taxon.functions == null) out.push(hasJobs ? 'jobsOther' : 'jobs');
   return out;
+}
+
+// The country at start (M1, m12): a link's own k, else the reader's choice on this device (`pref`: a
+// code or '-' for "No country", written whenever they choose, in any status, and left alone by Start
+// over), else a saved consortium's (with the source it was saved with), else the browser's guess.
+// A link's country the reader chose themselves reads "chosen by you" ('user'), so their own reload or
+// language switch never turns it into "from the shared link"; only someone else's reads 'link'. A
+// link's unknown code is dropped and said (unknownCountry), with nothing put in its place; a stale
+// code on the device is quiet. `known(code)`: the manifest lists the code (upper case).
+export function pickCountry({ link, pref, saved, guess, known }) {
+  const out = { country: null, countrySource: null, noCountry: false, unknownCountry: null };
+  const up = (c) => (typeof c === 'string' ? c.toUpperCase() : null);
+  const own = up(pref) === '-' ? '-' : known(up(pref)) ? up(pref) : null;
+  if (link?.country) {
+    const code = up(link.country);
+    if (!known(code)) return { ...out, unknownCountry: code };
+    return { ...out, country: code, countrySource: own === code ? 'user' : 'link' };
+  }
+  if (link?.noCountry || own === '-') return { ...out, countrySource: 'user', noCountry: true };
+  if (own) return { ...out, country: own, countrySource: 'user' };
+  if (saved?.country && known(up(saved.country))) return { ...out, country: up(saved.country), countrySource: saved.source === 'link' ? 'link' : 'saved' };
+  if (saved?.noCountry) return { ...out, countrySource: 'user', noCountry: true };
+  if (guess && known(up(guess))) return { ...out, country: up(guess), countrySource: 'guess' };
+  return out;
+}
+
+// The browser's country, from `codes` (the manifest's): the time zone first (the one country whose
+// zones include it; `zonesOf` defaults to the runtime's CLDR data, which Firefox lacks), then the
+// region of the browser's languages. Bad input is skipped. Shown as a guess, never put in a link.
+const cldrZones = (c) => { const l = new Intl.Locale('und-' + c); const z = l.getTimeZones?.() ?? l.timeZones; return Array.isArray(z) ? z : []; };
+export function guessCountry(codes, { zone, languages = [], zonesOf = cldrZones } = {}) {
+  const set = new Set(codes.map((c) => c.toUpperCase()));
+  if (zone) {
+    const hits = codes.filter((c) => { try { return zonesOf(c).includes(zone); } catch { return false; } });
+    if (hits.length === 1) return hits[0].toUpperCase();
+  }
+  for (const l of languages) {
+    try { const r = new Intl.Locale(l).maximize().region; if (r && set.has(r.toUpperCase())) return r.toUpperCase(); } catch {}
+  }
+  return null;
 }

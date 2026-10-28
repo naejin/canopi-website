@@ -12,7 +12,8 @@ import {
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadClimate } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook, capFirst } from './words.js';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard } from './logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard, pickCountry, guessCountry } from './logic.js';
+import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, invasiveCardNote, invasiveDetails } from './parts.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
 
@@ -29,6 +30,9 @@ const printEl = document.getElementById('ct-print');
 const phoneMQ = matchMedia('(max-width: 639px)');
 const phone = () => phoneMQ.matches;
 const STORE = 'canopi-consortium';
+// The reader's own country choice ('FR', or '-' for "No country"), apart from the consortium, so a
+// reload in any status and Start over keep it (m12). A guess is never written.
+const COUNTRY_STORE = 'canopi-country';
 // The core's lists: the site answers as the core has them, and the climates in the site picker's
 // order (src/data/climates.ts, seam m5).
 const SITE_OPTIONS = { light: lights, soil: soils, water: waters, room: rooms };
@@ -89,11 +93,12 @@ const taxonOf = (id) => cell?.taxa.find((t) => t.id === id) ?? null;
 const stratumOf = (t) => t.stratum?.value ?? 'none';
 const limit = () => SIZE_LIMIT[S.site.room];
 const climateLabel = () => W.climate(S.climate);
-// The country the warnings use: a country GRIIS checked. With none (or one it did not check), each
-// plant says in how many countries it is invasive.
+// Whether GRIIS checked the chosen country: only then do its warnings say "invasive here" or nothing;
+// otherwise every surface says "not checked in {country}" (parts.js).
 const countryChecked = () => invasiveChecked(manifest, S.country);
-const warnCountry = () => (S.country && countryChecked() ? S.country : null);
 const where = () => ({ country: S.country, countryChecked: countryChecked() });
+// The reader's country as the words in parts.js take it.
+const place = () => ({ country: S.country, source: S.countrySource, checked: countryChecked(), noCountry: S.noCountry });
 const stratumLabel = (s) => T('stratum.' + s);
 const name = (t) => { const n = plantName(t, lang); return n.lang ? `<span lang="en">${esc(n.text)}</span>` : esc(n.text); };
 const nameText = (t) => plantName(t, lang).text;
@@ -144,21 +149,23 @@ function warnParts(t, flags) {
   // copy-m18: slight toxicity is a caution (soft chip), not the red danger mark.
   if (tox && tox.level !== 'None') severe.push({ cls: tox.level === 'Slight' ? 'soft' : 'danger', text: T('tox.' + tox.level), look: tox.level !== 'Slight' });
   if (flags.invasive === true) severe.push({ cls: 'warning', text: esc(T('invHere', { country: W.country(S.country) })), look: true });
+  // A country GRIIS has no list for: "not checked in {country}" on its own chip (m2).
+  const invNote = invasiveCardNote(W, { ...place(), inv: invasiveCountries(t) });
+  if (invNote?.cls === 'unknown') severe.push({ cls: 'unknown', text: esc(invNote.text), look: false });
   for (const c of flags.conflicts) severe.push({ cls: isSerious(c) ? 'warning' : 'soft', text: T('conflict', { other: name(otherOf(c, t)) }), look: isSerious(c), conflict: c });
   for (const k of flags.misfits) severe.push({ cls: 'warning', text: esc(misfitText(t, k)), look: true, misfit: k });
   if (t.warnings.allelopathic === true) soft.push(T('c.allelo'));
   if (t.warnings.weed_potential === true) soft.push(T('c.spreads'));
   // With a country, a card tells only that country's warning; other countries are in details (owner,
-  // 2026-10-28). Without one (or one GRIIS did not check), the soft count of countries.
-  const inv = invasiveCountries(t);
-  if (!warnCountry() && inv?.length) soft.push(P('invCount', inv.length));
+  // 2026-10-28). Without one, the soft count of countries.
+  if (invNote?.cls === 'soft') soft.push(invNote.text);
   // Allelopathy not checked yet is told in details only (owner, 2026-10-28): see uncheckedOnCard.
   for (const k of uncheckedOnCard(t, jobsOf(t).length > 0)) unk.push(T(uncheckedKey[k]));
   return { severe, soft, unk };
 }
 function chipsHTML(t, flags) {
   const { severe, soft, unk } = warnParts(t, flags);
-  const out = severe.map((w) => `<span class="warn warn-${w.cls}">${w.cls === 'danger' ? I.danger : I.warn}<span>${w.text}</span></span>`);
+  const out = severe.map((w) => `<span class="warn warn-${w.cls}">${w.cls === 'danger' ? I.danger : w.cls === 'unknown' ? I.unknown : I.warn}<span>${w.text}</span></span>`);
   if (soft.length) out.push(`<span class="warn warn-soft">${I.warn}<span>${esc(capFirst(soft.join(' · '), lang))}</span></span>`);
   if (unk.length) out.push(`<span class="warn warn-unknown">${I.unknown}<span>${esc(T('unchecked', { list: W.list(unk) }))}</span></span>`);
   return out.length ? `<div class="warns">${out.join('')}</div>` : '';
@@ -167,7 +174,7 @@ function chipsHTML(t, flags) {
 // confirmation (a list in the page language): no "; " that reads wrong in Japanese (live m4).
 function warnPlain(t, flags, all = true) {
   const { severe, soft, unk } = warnParts(t, flags);
-  const out = severe.filter((w) => all || w.cls !== 'soft').map((w) => w.text);
+  const out = severe.filter((w) => all || (w.cls !== 'soft' && w.cls !== 'unknown')).map((w) => w.text);
   if (all && soft.length) out.push(esc(capFirst(soft.join(' · '), lang)));
   if (all && unk.length) out.push(esc(T('unchecked', { list: W.list(unk) })));
   return out;
@@ -179,21 +186,8 @@ const sw = (s) => `<span class="sw" data-s="${s}"></span>`;
 const fk = (k) => `data-fk="${esc(k)}"`;
 const btn = (cls, act, v, label, extra = '') => `<button class="${cls}" type="button" data-act="${act}"${v != null ? ` data-v="${esc(v)}"` : ''} ${extra}>${label}</button>`;
 function timeHTML1(t) { const w = W.timeWords(t); return esc(w.plain) + (w.term ? ` <span class="apt">· ${esc(w.term)}</span>` : ''); }
-// A reason's text in the page language, else in English (marked). A plant chosen in several regions
-// of its climate has one reason per region: a row shows the first, details show them all.
-function textHTML(text) {
-  if (!text) return '';
-  if (text[lang]) return esc(text[lang]);
-  return `<span lang="en">${esc(text.en)}</span> <span class="muted">(${esc(T('inEnglish'))})</span>`;
-}
-const reasonHTML = (t) => textHTML(t.reasons?.[0]?.text);
-// Every reason, each labelled with its region and its sources (owner, 2026-10-28).
-function reasonsHTML(t) {
-  const list = t.reasons ?? [];
-  if (!list.length) return '';
-  const src = (r) => W.list(r.sources.map((id) => cell.sources[id]?.label ?? id));
-  return `<ul class="reasons" role="list">${list.map((r) => `<li><p>${textHTML(r.text)}</p><p class="muted">${esc(T('reasonFrom', { region: W.region(r.region), sources: src(r) }))}</p></li>`).join('')}</ul>`;
-}
+// A plant chosen in several regions of its climate has one reason per region: a row shows the first
+// with its region and how many more (M2), details show them all (parts.js).
 // A licence by its proper name, linked to its deed when the licence is known (L3).
 function licenceHTML(raw) {
   const l = licenceOf(raw);
@@ -217,25 +211,9 @@ function climateChoices() {
   }).join('')}</ul>
   <details class="climate-abouts"><summary>${esc(T('climatesAbout'))}</summary><dl>${CLIMATES.map((c) => `<dt>${esc(W.climate(c))}</dt><dd>${esc(data.strings['climate.' + c + '.about'])}</dd>`).join('')}</dl></details>`;
 }
-// The browser's country, worked out once: the time zone first (the one manifest country whose
-// zones, from the browser's own CLDR data, include it), then the region of the browser's languages.
-// Shown as a guess ("guessed from your browser"), never put in a share link on its own.
-function guessCountry() {
-  const known = (c) => (c && isCountry(manifest, c) ? c.toUpperCase() : null);
-  try {
-    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (zone) {
-      const hits = Object.keys(manifest.countries).filter((c) => {
-        try { const l = new Intl.Locale('und-' + c); const z = l.getTimeZones?.() ?? l.timeZones; return Array.isArray(z) && z.includes(zone); } catch { return false; }
-      });
-      if (hits.length === 1) return hits[0];
-    }
-  } catch {}
-  for (const l of navigator.languages ?? [navigator.language]) {
-    try { const r = known(new Intl.Locale(l).maximize().region); if (r) return r; } catch {}
-  }
-  return null;
-}
+// The browser's country, worked out once (logic.js): shown as a guess ("guessed from your browser"),
+// never put in a share link on its own.
+const browserGuess = () => guessCountry(Object.keys(manifest.countries), { zone: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return undefined; } })(), languages: navigator.languages ?? [navigator.language] });
 let browserCountry = null;
 function countryMatches() {
   const q = fold(countryQuery.trim());
@@ -262,15 +240,16 @@ function countryPicker() {
 }
 const privacy = () => `<p class="privacy">${I.lock}<span>${esc(T('privacy'))}</span></p>`;
 // "Invasive warnings for [France ▾] guessed from your browser": in step 1 above the climate cards
-// (so a guess is seen before it is used) and with the climate in the result.
+// (so a guess is seen before it is used) and with the climate in the result. With no country, its note
+// and its "Add your country" are the only ones in the view (m3); for a country GRIIS has no list for,
+// the no-list reason sits beside where the country came from (m1).
 function countryLineHTML(withPrivacy = false) {
-  const why = !S.country ? '' : !countryChecked() ? T('countryNoList')
-    : T({ guess: 'countryGuessed', link: 'countryLinked' }[S.countrySource] ?? 'countryChosen');
-  const row = S.country || S.noCountry
-    ? `<button class="chip-button cl-chip" type="button" data-act="open-place" data-v="country" data-src="${S.country ? S.countrySource ?? 'user' : 'none'}" aria-haspopup="dialog" ${fk('pc-country')}><span class="vh">${esc(T('countryLine'))} </span><strong>${esc(S.country ? W.country(S.country) : T('countryNone'))}</strong>${I.caret}</button>${why ? `<span class="cl-why">${esc(why)}</span>` : ''}`
+  const p = countryLineParts(W, place());
+  const row = p.chip
+    ? `<button class="chip-button cl-chip" type="button" data-act="open-place" data-v="country" data-src="${S.country ? S.countrySource ?? 'user' : 'none'}" aria-haspopup="dialog" ${fk('pc-country')}><span class="vh">${esc(T('countryLine'))} </span><strong>${esc(p.chip)}</strong>${I.caret}</button>${p.why.map((w) => `<span class="cl-why">${esc(w)}</span>`).join('')}`
     : btn('link-button cl-add', 'open-place', 'country', esc(T('addCountry')), `aria-haspopup="dialog" ${fk('pc-country')}`);
-  const note = !S.country && !S.noCountry ? `<p class="cl-why">${esc(T('noCountryNote'))}</p>` : '';
-  return `<div class="country-line"><p class="cl-row"><span class="cl-label" aria-hidden="true">${esc(T('countryLine'))}</span>${row}</p>${note}${withPrivacy ? privacy() : ''}</div>`;
+  const notes = p.notes.map((n) => `<p class="cl-why">${esc(n)}</p>`).join('');
+  return `<div class="country-line"><p class="cl-row"><span class="cl-label" aria-hidden="true">${esc(T('countryLine'))}</span>${row}</p>${notes}${withPrivacy ? privacy() : ''}</div>`;
 }
 // The guide's plant, found in the guide's climate file before the result, so the note names it as
 // the tool will (live m3); with its scientific name, which the guide's link carried, so a guide's
@@ -329,13 +308,7 @@ function asideHTML() {
 }
 const resultTitle = (text) => `<h2 id="ct-result-title" tabindex="-1">${esc(text)}</h2>`;
 function basisHTML() {
-  return `<p class="basis"><span>${esc(T('basis', { site: basisText() }))}</span> ${btn('link-button', phone() ? 'open-site' : 'focus-site', null, esc(T('basisChange')), fk('basis'))}</p>${worldHTML()}`;
-}
-// Without a country the warnings use (none, or one GRIIS did not check), one line says the counts
-// on the cards are for every country, with "Add your country".
-function worldHTML() {
-  if (warnCountry()) return '';
-  return `<p class="counts-world">${esc(T('worldCounts'))}${S.country ? '' : ' ' + btn('link-button', 'open-place', 'country', esc(T('addCountry')), `aria-haspopup="dialog" ${fk('world-add')}`)}</p>`;
+  return `<p class="basis"><span>${esc(T('basis', { site: basisText() }))}</span> ${btn('link-button', phone() ? 'open-site' : 'focus-site', null, esc(T('basisChange')), fk('basis'))}</p>`;
 }
 function attentionHTML(flags) {
   const look = ordered().filter((t) => needsLook(t, flags.get(t.id)));
@@ -375,7 +348,7 @@ function notices(can) {
   if (S.notice === 'guide') out += guideNote();
   if (S.notice === 'guideMissing') out += `<div class="note note-old" role="status">${I.info}<div><p>${T('guideMissing', { plant: `<i>${esc(S.guidePlant)}</i>`, climate: esc(climateLabel()) })}</p><div class="note-actions">${btn('link-button', 'dismiss', null, esc(T('dismiss')))}</div></div></div>`;
   // A link's country with no entry in the manifest: dropped, and said (never silent).
-  if (S.unknownCountry) out += `<div class="note note-old" role="status">${I.info}<div><p>${esc(T('countryUnknown', { code: S.unknownCountry }))}</p><div class="note-actions">${S.country ? '' : btn('link-button', 'open-place', 'country', esc(T('addCountry')), 'aria-haspopup="dialog"')}${btn('link-button', 'dismiss-country', null, esc(T('dismiss')))}</div></div></div>`;
+  if (S.unknownCountry) out += `<div class="note note-old" role="status">${I.info}<div><p>${esc(T('countryUnknown', { code: S.unknownCountry }))}</p><div class="note-actions">${btn('link-button', 'dismiss-country', null, esc(T('dismiss')))}</div></div></div>`;
   return out;
 }
 function mainHTML() {
@@ -387,7 +360,7 @@ function mainHTML() {
   const ms = members(), flags = flagsById(), can = fillable(), jobsDone = jobs.length - jobGaps().length;
   const lastEnd = Math.max(-1, ...ms.map((t) => (t.phases ? phases.indexOf(t.phases.end) : -1)));
   return `${notices(can)}
-    <div class="result-head"><div>${resultTitle(T('yourConsortium'))}<p class="result-sub">${esc(climateLabel())}${S.country ? ' · ' + esc(T('warningsFor', { country: W.country(S.country) })) : ''}</p></div>${phone() ? placeChips() : ''}</div>
+    <div class="result-head"><div>${resultTitle(T('yourConsortium'))}<p class="result-sub">${esc(climateLabel())}${S.country ? ' · ' + esc(warnWhere(W, place())) : ''}</p></div>${phone() ? placeChips() : ''}</div>
     <p class="summary-strip"><span><b>${esc(P('sizeLine.' + S.site.room, ms.length))}</b></span><span>${esc(T('sumLayers', { n: strataIn(ms).size }))}</span><span>${esc(T('sumJobs', { n: jobsDone }))}</span>${lastEnd >= 0 ? `<span>${esc(T('sumTime', { end: T(W.phaseKey(lastEnd, 'to')) }))}</span>` : ''}</p>
     ${basisHTML()}${attentionHTML(flags)}${freeRowHTML(can)}
     <div class="tabs" role="tablist" aria-label="${esc(T('yourConsortium'))}">${['layers', 'time', 'jobs'].map((v) => `<button class="tab" role="tab" type="button" id="ct-tab-${v}" aria-selected="${S.view === v}" aria-controls="ct-panel" tabindex="${S.view === v ? 0 : -1}" data-act="view" data-v="${v}" ${fk('tab-' + v)}>${esc(T('tab.' + v))}</button>`).join('')}</div>
@@ -487,7 +460,7 @@ function plantRow(t, nums, flags) {
     <div class="plant-main">
       <button class="plant-head" type="button" data-act="details" data-v="${t.id}" ${fk('pn-' + t.id)}><span class="pn">${name(t)}</span> <span class="sci">${esc(t.canonical_name)}</span></button>
       ${kept || fromGuide ? `<div class="plant-tags">${fromGuide ? `<span class="tag">${I.book}${esc(T('guideTag'))}</span>` : ''}${kept ? `<span class="tag tag-pin">${I.pinOn}${esc(T('keptTag'))}</span>` : ''}</div>` : ''}
-      <p class="plant-reason">${reasonHTML(t)}</p>
+      <p class="plant-reason">${cardReasonHTML(t, W, lang)}</p>
       <div class="plant-meta"><span class="time">${timeHTML1(t)}${t.phases ? ' ' + explainBtn('phase-' + t.id, T('whatPhase')) : ''}</span>${jobsOf(t).map((j) => `<span class="job-tag">${esc(T('job.' + j))}</span>`).join('')}</div>
       ${explainPanel('phase-' + t.id)}${chipsHTML(t, flags)}
     </div>
@@ -585,18 +558,16 @@ function detailsParts(t) {
   const items = [];
   if (tox && tox.level !== 'None') items.push(item('danger', I.danger, esc(T('tox.' + tox.level)), note(tox.note), `<p class="liab">${esc(T('d.liab'))}</p>`));
   if (flags.invasive === true) items.push(item('warning', I.warn, esc(T('invHere', { country: W.country(S.country) })), esc(T('d.invHere', { country: W.country(S.country) })), `<p class="liab">${esc(T('d.liab'))}</p>`));
-  // A country GRIIS has no checklist for: "not checked" there, never "none".
-  if (S.country && !countryChecked() && inv != null) items.push(item('unknown', I.unknown, esc(T('invNotChecked', { country: W.country(S.country) })), esc(T('d.invNotChecked', { country: W.country(S.country) }))));
+  // A country GRIIS has no checklist for: "not checked" there, never "none" (m4).
+  const invD = invasiveDetails(W, { ...place(), inv: invasiveCountries(t) });
+  if (invD.notChecked) items.push(item('unknown', I.unknown, esc(invD.notChecked.title), esc(invD.notChecked.text)));
   for (const c of flags.conflicts) items.push(item(isSerious(c) ? 'warning' : 'soft', I.warn, T('conflict', { other: name(otherOf(c, t)) }), note(c.note) || esc(T('ctype.' + c.type)), (c.agent ? `<p>${esc(T('d.agent', { agent: c.agent }))}</p>` : '') + conflictFrom(c)));
   for (const k of flags.misfits) items.push(item('warning', I.warn, esc(T('d.misfit')), esc(misfitText(t, k))));
   if (t.warnings.allelopathic === true) items.push(item('soft', I.warn, esc(T('c.allelo')), esc(T('d.allelo'))));
   if (t.warnings.weed_potential === true) items.push(item('soft', I.warn, esc(T('c.spreads')), esc(T('d.spreads'))));
-  if (inv?.length) {
-    const list = inv.map((x) => W.country(x.country)).sort((a, b) => a.localeCompare(b, lang));
-    items.push(item('soft', I.warn, esc(P('d.invList', inv.length)), '', `<details><summary>${esc(T('d.showList'))}</summary><p>${esc(W.list(list))}</p></details>`));
-  }
-  if (inv && !inv.length) items.push(item('checked', I.check, `${esc(T('d.invNone'))} <span class="muted">(${esc(T('d.checked'))})</span>`));
-  if (inv == null) items.push(item('unknown', I.unknown, esc(T('unkInv')), esc(T('d.invUnk'))));
+  if (invD.list) items.push(item('soft', I.warn, esc(invD.list.title), '', `<details><summary>${esc(T('d.showList'))}</summary><p>${esc(W.list(invD.list.countries))}</p></details>`));
+  if (invD.none) items.push(item('checked', I.check, esc(invD.none.title)));
+  if (invD.unknown) items.push(item('unknown', I.unknown, esc(invD.unknown.title), esc(invD.unknown.text)));
   if (tox?.level === 'None') items.push(item('checked', I.check, `${esc(T('d.toxNone'))} <span class="muted">(${esc(T('d.checked'))})</span>`));
   if (!tox) items.push(item('unknown', I.unknown, esc(T('unkTox')), esc(T('d.toxUnk'))));
   if (t.functions == null) items.push(item('unknown', I.unknown, esc(T(jobsOf(t).length ? 'unkJobsOther' : 'unkJobs')), esc(T('d.jobsUnk'))));
@@ -615,7 +586,7 @@ function detailsParts(t) {
   const headHTML = `<div><h2 id="ct-dlg-title">${name(t)}</h2><p class="lede"><i>${esc(t.canonical_name)}</i> · ${esc(T('family', { family: t.family }))}</p></div>`;
   const body = `${photo}
     <div class="d-layer"><span>${esc(stratumLabel(s))}${s !== 'none' ? ' · ' + esc(T('stratum.' + s + '.about')) : ''}</span><span>${esc(tw.plain)}${tw.term ? ' · ' + esc(tw.term) : ''}</span></div>
-    ${t.reasons?.length ? `<section class="d-section"><h3>${esc(T('why'))}</h3>${reasonsHTML(t)}</section>` : ''}
+    ${t.reasons?.length ? `<section class="d-section"><h3>${esc(T('why'))}</h3>${reasonsHTML(t, W, lang, cell.sources)}</section>` : ''}
     <section class="d-section"><h3>${esc(T('jobsHeading'))}</h3>${!jobsList.length ? `<p class="muted">${esc(T('d.jobsUnk'))}</p>` : `<div class="plant-meta">${jobsList.map((j) => `<span class="job-tag">${jobIcon(j, 14)}${esc(T('job.' + j))}</span>`).join('')}</div>`}</section>
     <section class="d-section"><h3>${esc(T('checks'))}</h3><ul class="w-list" role="list">${items.join('')}</ul></section>
     <section class="d-section"><h3>${esc(T('traits'))}</h3><dl class="facts">${facts.map(([k, v]) => `<dt>${esc(T(k))}</dt><dd>${v || unknown}</dd>`).join('')}</dl></section>
@@ -730,7 +701,7 @@ function printHTML() {
   const gapJobs = jobGaps(), free = Math.max(0, limit() - ms.length);
   const date = new Intl.DateTimeFormat(lang, { dateStyle: 'long' }).format(new Date());
   return `<article class="sheet">
-    <div class="sheet-head"><div><h2 class="sheet-title">${esc(T('printTitle'))}</h2><p class="muted">${esc(climateLabel())} · ${esc(warnCountry() ? T('printWarnings', { country: W.country(S.country) }) : T('printCounts'))} · ${esc(date)}</p>
+    <div class="sheet-head"><div><h2 class="sheet-title">${esc(T('printTitle'))}</h2><p class="muted">${esc(climateLabel())} · ${esc(printWhere(W, place()))} · ${esc(date)}</p>
     <p class="muted">${esc(T('basis', { site: basisText() }))} · ${esc(P('count', ms.length))}</p></div><img src="/canopi-logo.svg" width="34" height="34" alt=""></div>
     <div class="sheet-draw">${profileHTML(flags, true)}</div>
     <section><h3>${esc(T('tab.layers'))}</h3><table><thead><tr><th>${esc(T('p.layer'))}</th><th>${esc(T('p.plant'))}</th><th>${esc(T('p.time'))}</th><th>${esc(T('p.jobs'))}</th><th>${esc(T('withWarning'))}</th></tr></thead><tbody>${rows}</tbody></table></section>
@@ -862,7 +833,7 @@ function persist() {
   const q = query(false);
   try { history.replaceState(history.state, '', location.pathname + '?' + q); } catch {}
   syncLangLinks();
-  if (S.status === 'ready') try { localStorage.setItem(STORE, JSON.stringify({ q: query(true), at: new Date().toISOString() })); } catch {}
+  if (S.status === 'ready') try { localStorage.setItem(STORE, JSON.stringify({ q: query(true), at: new Date().toISOString(), src: S.countrySource })); } catch {}
 }
 // seam M1: the header's language links (inline menu and phone Menu) lead to this page in another
 // language with the address bar's query, so a language switch keeps what is shown: a guide's preset,
@@ -962,7 +933,9 @@ function leaveClimate() { Object.assign(S, afterMove(S)); S.unknownCountry = nul
 // The country only changes the warnings: the members stay, and no Undo is needed or dropped.
 function chooseCountry(code) {
   S.country = code; S.countrySource = 'user'; S.noCountry = !code; S.unknownCountry = null; countryQuery = '';
-  if (O) closeSheet(false); else focusNext = 'pc-country';
+  try { localStorage.setItem(COUNTRY_STORE, code ?? '-'); } catch {}
+  // Every caller acts from the country sheet.
+  closeSheet(false);
   render(); focusFk('pc-country', app);
   say(code ? T('warningsNow', { country: W.country(code) }) : T('warningsNone'));
 }
@@ -1145,22 +1118,21 @@ async function start() {
     app.innerHTML = `<div class="callout" role="alert"><h2>${esc(T('errorTitle'))}</h2><p>${esc(T('errorText'))}</p><div class="actions"><button class="button button-primary" type="button" onclick="location.reload()">${esc(T('retry'))}</button></div></div>`;
     return;
   }
-  browserCountry = guessCountry();
+  browserCountry = browserGuess();
   const params = new URLSearchParams(location.search);
   let decoded = null, saved = null, fromLink = false;
   try { saved = JSON.parse(localStorage.getItem(STORE) ?? 'null'); } catch {}
   if (params.has('c') || params.has('climate') || params.has('plant')) { decoded = decodeState(params); fromLink = true; }
   else if (saved?.q) { decoded = decodeState(saved.q); S.restoredAt = saved.at; }
-  // The country: a link's, else this device's (a guide preset keeps the saved one), else the guess.
+  // The country (logic.js pickCountry): a link's own k, else the reader's choice on this device, else a
+  // saved consortium's, else the guess.
+  let pref = null;
+  try { pref = localStorage.getItem(COUNTRY_STORE); } catch {}
   const savedState = saved?.q ? decodeState(saved.q).state : null;
-  const own = decoded?.state, linked = fromLink && (own.country || own.noCountry) ? own : null;
-  const pick = linked ?? (savedState && (savedState.country || savedState.noCountry) ? savedState : null);
-  if (pick?.country && !isCountry(manifest, pick.country)) {
-    // m: a code the manifest does not know is dropped, and said (a link's only; a stale save is quiet).
-    if (pick === linked) S.unknownCountry = pick.country;
-  } else if (pick?.country) { S.country = pick.country; S.countrySource = pick === linked ? 'link' : 'saved'; }
-  else if (pick?.noCountry) { S.noCountry = true; S.countrySource = 'user'; }
-  if (!S.country && !S.noCountry && !S.unknownCountry && browserCountry) { S.country = browserCountry; S.countrySource = 'guess'; }
+  Object.assign(S, pickCountry({
+    link: fromLink ? decoded.state : null, pref, saved: savedState && { ...savedState, source: saved.src }, guess: browserCountry,
+    known: (c) => isCountry(manifest, c),
+  }));
   if (decoded) {
     const d = decoded.state;
     S.climate = d.climate; S.site = { ...d.site };

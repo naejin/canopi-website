@@ -90,7 +90,7 @@
 .ct .suggest-country small { display: block; font-size: 14px; color: var(--text-muted); }
 .ct .suggest-country .go { margin-left: auto; font-weight: 600; color: var(--accent-ink); font-size: 15px; }
 .ct .field { display: grid; gap: 6px; }
-.ct .field > label, .ct .field-label { font-size: 15px; font-weight: 600; }
+.ct .field > label { font-size: 15px; font-weight: 600; }
 .ct .search {
   display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px;
   background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius);
@@ -250,6 +250,7 @@
 .ct .plant-name button:hover { text-decoration: underline; color: var(--accent-ink); }
 .ct .plant-name .sci { font-size: 15px; }
 .ct .plant-reason { font-size: 15.5px; color: var(--text-secondary); }
+.ct .plant-reason .reason-region { font-weight: 600; color: var(--text); }
 .ct .plant-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 14px; color: var(--text-muted); }
 .ct .plant-meta .time { margin-right: 6px; }
 .ct .job-tag { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 0 9px; border-radius: 999px; background: var(--surface-alt); color: var(--text-secondary); font-size: 13.5px; white-space: nowrap; }
@@ -779,7 +780,6 @@
 .ct .panel-place .cl-row { font-size: 15px; }
 .ct .climate-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
 .ct .result-head .country-line { width: 100%; }
-.ct .counts-world { margin-top: -12px; color: var(--text-muted); font-size: 14px; }
 .ct .no-country-pick { display: grid; gap: 0; padding-top: 12px; border-top: 1px solid var(--border); }
 .ct .no-country-pick .link-button { justify-self: start; font-weight: 600; color: var(--accent-ink); min-height: 40px; }
 .ct .suggest-country .go { display: inline-flex; align-items: center; gap: 4px; }
