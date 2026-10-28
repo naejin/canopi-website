@@ -295,6 +295,7 @@ test('the glossary plugin gives each term id one note, beside the block of its f
 test('the bibliography gives each book an optional, unique id', () => {
   assert.ok(bookIds.includes('landrace-gardening'));
   assert.ok(bookIds.includes('carbon-farming-solution'), 'The Carbon Farming Solution has an id for the carbon farming guides');
+  assert.ok(bookIds.includes('pollinator-victory-garden'), 'The Pollinator Victory Garden has an id for the pollinator guides');
   assert.equal(new Set(bookIds).size, bookIds.length, 'book ids are unique');
   for (const id of bookIds) assert.match(id, /^[a-z0-9]+(?:-[a-z0-9]+)*$/, id);
 });
