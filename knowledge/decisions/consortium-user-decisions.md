@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium tool — user decisions
 description: Dated decisions the project owner made about the consortium design tool; they change only when the owner changes them.
 tags: [consortium, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T10:25:49Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T11:06:49Z }
 ---
 
 # Consortium tool — user decisions
@@ -55,6 +55,7 @@ Data side (sibling repository `canopi-data`, read 2026-10-27): `docs/adr/0007-cu
 | 2026-10-28 | **Climate first, region no longer a filter** (replaces the cell-per-region choice of plants in the rows "Samples are cells" and "Region from an optional country" for what the tool offers; invasiveness stays per country): the tool asks one question, the climate, and suggests at once from plants grown in that climate in every region (assisted migration of plants and soil life is a legitimate design choice: bananas now planted in the south of France; Hervé Coves). The country is optional, prefilled from the browser as an editable guess, and adds per-country invasive warnings; it never removes a plant, and a plant invasive in the chosen country is still suggested automatically, with its warning (owner, 2026-10-28: "only warning"; replaces the invasive filter of the row "Region from an optional country"). canopi-data changes the export first (one file per climate, invasive status per country inside it), then the website. Guide 43 gets a short counterpoint to "natives first". A "warming climate" option (plants of the next warmer climate) is left out of the beta. |
 | 2026-10-28 | **Climate first, details** (owner answers): with no country, "invasive somewhere" is a soft chip with the count of countries on cards and rows, the list in details, and one line saying the counts are worldwide with "Add your country"; Add and Swap ask no confirm for a plant invasive in the reader's country (a warning chip only); a share link carries the country only when the sender chose it (never a browser guess); a plant chosen in several regions of one climate shows every reason in its details, each labelled with its region and source. |
 | 2026-10-28 | **Climate first, coordinator choices** (within the owner's rows, not owner-reviewed): no score penalty for invasiveness; a country GRIIS does not cover says "not checked", never "none"; one role per plant per climate (`curate check` enforces it); the 3-step outline goes; the country line sits above the climate cards so the guess is seen before it is used; climates not covered yet stay choosable with "Ask for this climate"; no "native to" label in the beta; old links with a region still open, the region ignored. |
+| 2026-10-28 | **Climate first, two refinements** (owner, agreeing with the coordinator's suggestions): once a country is chosen, a card shows only that country's invasive warning; counts for other countries move to the plant's details (with no country, the soft count chip stays on the card). Climate cards are shorter on phones (name, coverage pill, example places; the one-line description moves out of the card). **Scale** (owner input): some designers will build consortiums of about 200 plants, so the tool is designed for 6 to 200 plants in one UI. |
 
 ## Open questions for the owner (not decisions)
 
