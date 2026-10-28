@@ -224,6 +224,7 @@
   "consortium.countryGuessed": "브라우저에서 추측함",
   "consortium.countryChosen": "직접 선택함",
   "consortium.countryLinked": "공유 링크에서",
+  "consortium.countrySaved": "마지막 컨소시엄에서",
   "consortium.countryNoList": "확인 안 됨: 이 나라의 침입성 목록이 없습니다",
   "consortium.addCountry": "나라 지정",
   "consortium.countryNone": "나라 없음",

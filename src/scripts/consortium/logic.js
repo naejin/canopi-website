@@ -62,8 +62,14 @@ export const linkMembers = (status, members) => (status === 'ready' ? members : 
 // new climate, and then the notice is worked out there (min-1).
 export function afterMove({ pending }) {
   const plant = pending?.state?.plants?.[0] ?? null;
-  return { notice: null, guidePlant: plant, guideId: null };
+  return { notice: null, guidePlant: plant, guideId: null, ...noLinkCode };
 }
+
+// A link's unknown country code goes with its notice (Dismiss, a climate change, Start over), so the
+// reader's next address bar and share link never carry it (core-fix review 3, m-3).
+export const noLinkCode = Object.freeze({ unknownCountry: null, linkCode: null });
+// What Start over keeps: the reader's country, never the link's unknown code (m-3).
+export const keptCountry = ({ country, countrySource, noCountry }) => ({ country, countrySource, noCountry });
 
 // The second click of a double click, or a click right after the last one, lands on whatever slid
 // under the pointer: it is not a new request. Keyboard presses (detail 0) always count.
@@ -136,7 +142,8 @@ export function uncheckedOnCard(taxon, hasJobs) {
 // language switch never turns it into "from the shared link"; only someone else's reads 'link'. A
 // link's unknown code is said (unknownCountry) and the reader's own choice is used, never the guess
 // (m-5). A link's k=- (links never carry it) is read as no k (n1). Under a link with no k (a guide
-// preset), a saved country reads 'saved' (n2). A stale code on the device is quiet.
+// preset), a saved country reads 'saved' (n2), "from your last consortium", never "chosen by you"
+// (core-fix review 3, m-2). A stale code on the device is quiet.
 // `known(code)`: the manifest lists the code (upper case).
 export function pickCountry({ link, pref, saved, guess, known }) {
   const out = { country: null, countrySource: null, noCountry: false, unknownCountry: null };
@@ -164,19 +171,19 @@ export function linkCountry(S, saved) {
   return { country: country ?? (saved || S.noCountry ? null : S.linkCode ?? null), noCountry: saved && !S.country && S.noCountry };
 }
 
-// The query of a language link: the address bar's, with the reader's own country choice (`mine`: a
-// code, '-' or null) as MINE, so a language switch keeps "chosen by you" without storage (m-3).
-export function langSearch(search, mine, key = 'mine') {
+// The query of a language link: the address bar's, and nothing else. It never carries the reader's
+// own country as a marker: a copied language link would hand it to whoever opens it as their own
+// choice (core-fix review 3, M-1). An old link's `mine` is dropped.
+export function langSearch(search) {
   const q = new URLSearchParams(search);
-  q.delete(key);
-  if (mine) q.set(key, mine);
+  q.delete('mine');
   const s = q.toString();
   return s ? '?' + s : '';
 }
 
 // The country sheet's guess card is marked as chosen only when the reader chose that country, never
-// while it is only the guess or someone else's link (m-4).
-export const chosenHere = ({ guess, country, source }) => !!guess && country === guess && (source === 'user' || source === 'saved');
+// while it is only the guess, someone else's link or a restored save (m-4; core-fix review 3, m-2).
+export const chosenHere = ({ guess, country, source }) => !!guess && country === guess && source === 'user';
 
 // A print row with no warning: "None found (all checked)" only when nothing about the plant is
 // unchecked; allelopathy not checked yet, or a country GRIIS has no list for, gives "None found so far".

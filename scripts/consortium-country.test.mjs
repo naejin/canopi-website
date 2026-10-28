@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { makeWords } from '../src/scripts/consortium/words.js';
-import { pickCountry, guessCountry, linkCountry, langSearch, chosenHere, printNoneKey, invasiveSourceIds } from '../src/scripts/consortium/logic.js';
+import { pickCountry, guessCountry, linkCountry, langSearch, chosenHere, printNoneKey, invasiveSourceIds, afterMove, keptCountry, noLinkCode } from '../src/scripts/consortium/logic.js';
 import { cardReasonHTML, reasonsHTML, countryWhy, countryLineParts, warnWhere, printWhere, invasiveCardNote, invasiveDetails, countryAnnouncement } from '../src/scripts/consortium/parts.js';
 import { memoryOf, startState, STORE, COUNTRY_STORE, MINE } from '../src/scripts/consortium/memory.js';
 import * as core from '../src/lib/consortium/index.ts';
@@ -117,7 +117,7 @@ test('m1: a guessed country always says "guessed from your browser", with the no
   assert.deepEqual(countryWhy(en, { country: 'FR', source: 'guess', checked: true }), [en.T('countryGuessed')]);
   assert.deepEqual(countryWhy(en, { country: 'TW', source: 'user', checked: false }), [en.T('countryChosen'), en.T('countryNoList')]);
   assert.deepEqual(countryWhy(en, { country: 'FR', source: 'link', checked: true }), [en.T('countryLinked')]);
-  assert.deepEqual(countryWhy(en, { country: 'FR', source: 'saved', checked: true }), [en.T('countryChosen')]);
+  assert.deepEqual(countryWhy(en, { country: 'FR', source: 'saved', checked: true }), [en.T('countrySaved')]);
   assert.deepEqual(countryWhy(en, { country: null, source: null, checked: false }), []);
   for (const lang of locales) assert.match(strings[lang].countryNoList, /./, lang);
   assert.match(en.T('countryNoList'), /not checked/);
@@ -210,7 +210,7 @@ test('m-1: choosing a country GRIIS has no list for never announces "warnings fo
   assert.match(app.match(/function chooseCountry[\s\S]*?\n\}/)[0], /say\(countryAnnouncement\(W, place\(\)\)\)/);
 });
 
-test('m-3: a country chosen on this page reads "chosen by you" after a reload or a language switch, even with storage blocked', () => {
+test('m-3: a country chosen on this page reads "chosen by you" after a reload, even with storage blocked', () => {
   const blocked = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); }, removeItem() { throw new Error('blocked'); } };
   const tab = fakeHistory('/consortium/');
   memoryOf({ storage: blocked, history: tab, location: tab.location }).choose('FR');
@@ -218,32 +218,124 @@ test('m-3: a country chosen on this page reads "chosen by you" after a reload or
   tab.location.search = '?c=temperate&k=FR';
   const reload = startState({ params: new URLSearchParams(tab.location.search), memory: memoryOf({ storage: blocked, history: tab, location: tab.location }), guess: 'DE', known });
   assert.deepEqual(reload.country, { country: 'FR', countrySource: 'user', noCountry: false, unknownCountry: null });
-  // The language switch: a new page, no history.state; the language link carries the reader's own choice.
-  const switched = langSearch(tab.location.search, reload.pref);
-  assert.match(switched, new RegExp(`${MINE}=FR`));
-  const other = fakeHistory('/fr/consortium/', switched);
-  const mem = memoryOf({ storage: blocked, history: other, location: other.location });
-  const there = startState({ params: new URLSearchParams(switched), memory: mem, guess: 'DE', known });
-  assert.equal(there.country.countrySource, 'user');
-  // Arrived, the marker leaves the address bar (a copied address never carries it) and stays in the tab.
-  mem.settle(there.pref);
-  assert.doesNotMatch(other.location.search, new RegExp(MINE));
-  assert.equal(memoryOf({ storage: blocked, history: other, location: other.location }).pref(new URLSearchParams(other.location.search)), 'FR');
-  // "No country" crosses a language switch too.
-  assert.match(langSearch('', '-'), new RegExp(`${MINE}=-`));
   // Someone else's link opened in a fresh tab reads "from the shared link".
   const theirs = fakeHistory('/consortium/', '?c=temperate&k=FR');
   assert.equal(startState({ params: new URLSearchParams(theirs.location.search), memory: memoryOf({ storage: blocked, history: theirs, location: theirs.location }), guess: null, known }).country.countrySource, 'link');
-  // No marker: the language links carry nothing of their own.
-  assert.equal(langSearch('?c=temperate&k=FR', null), '?c=temperate&k=FR');
-  assert.equal(langSearch(`?c=temperate&${MINE}=DE`, 'FR'), `?c=temperate&${MINE}=FR`);
+});
+
+// ---------- core-fix review 3 (2026-10-28): M-1, m-1 to m-5, n2, n3 ----------
+// The app's start order, run as real code: arrive (before any await), then startState, then the
+// language links, then what the address bar and the share link would hold.
+function boot({ storage, search, guess, pathname = '/consortium/' }) {
+  const tab = fakeHistory(pathname, search);
+  const memory = memoryOf({ storage, history: tab, location: tab.location });
+  const params = memory.arrive();
+  const addressAtArrival = tab.location.search;
+  const st = startState({ params, memory, guess, known });
+  const S = { ...st.country, linkCode: st.country.unknownCountry };
+  return { tab, memory, params, st, S, addressAtArrival, lang: langSearch(tab.location.search), k: linkCountry(S, false).country };
+}
+const emptyStore = () => { const m = new Map(); return { m, storage: { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) } }; };
+const blockedStore = { getItem() { throw new Error('x'); }, setItem() { throw new Error('x'); }, removeItem() { throw new Error('x'); } };
+
+test('M-1: a copied language link never hands the sender\'s country to whoever opens it', () => {
+  for (const storage of [emptyStore().storage, blockedStore]) {
+    // B opens A's copied link in a fresh tab with nothing stored; B's browser guesses Brazil... here DE.
+    for (const search of [`?v=2&c=tropical&${MINE}=FR`, `?${MINE}=FR`, `?v=2&c=tropical&k=TW&${MINE}=FR`]) {
+      const b = boot({ storage, search, guess: 'DE' });
+      assert.notEqual(b.S.countrySource, 'user', search);
+      assert.notEqual(b.S.country, 'FR', search);
+      assert.notEqual(b.k, 'FR', `${search}: B's share link never carries A's country`);
+      assert.equal(b.tab.state, null, `${search}: nothing of A's enters B's tab`);
+      assert.doesNotMatch(b.lang, new RegExp(MINE), `${search}: B's language links carry no marker`);
+      assert.doesNotMatch(b.lang, /FR/, search);
+      // B reloads: still not B's choice.
+      const again = startState({ params: new URLSearchParams(b.tab.location.search), memory: b.memory, guess: 'DE', known });
+      assert.notEqual(again.country.countrySource, 'user', search);
+    }
+  }
+  // The language links of a reader who chose a country carry only the address bar's query.
+  const { storage } = emptyStore();
+  const a = boot({ storage, search: '?c=temperate', guess: 'DE' });
+  a.memory.choose('FR');
+  a.tab.location.search = '?c=temperate&k=FR';
+  assert.equal(langSearch(a.tab.location.search), '?c=temperate&k=FR');
+  assert.equal(langSearch(`?c=temperate&${MINE}=DE`), '?c=temperate');
+  assert.equal(langSearch(''), '');
+  // A gets "chosen by you" on the other language page from the device's storage.
+  const there = boot({ storage, search: langSearch(a.tab.location.search), guess: 'DE', pathname: '/fr/consortium/' });
+  assert.equal(there.S.countrySource, 'user');
+  assert.equal(there.k, 'FR');
+});
+
+test('m-1: an old link\'s marker leaves the address bar on arrival, before the manifest loads', () => {
+  const { storage } = emptyStore();
+  const b = boot({ storage, search: `?c=tropical&${MINE}=FR&k=TW`, guess: null });
+  assert.equal(b.addressAtArrival, '?c=tropical&k=TW');
+  assert.equal(b.params.has(MINE), false, 'the start never reads it');
+  assert.equal(b.params.get('k'), 'TW');
+  // arrive() runs in app.js before the first await (the manifest), so a slow or failed load leaves a clean address.
+  const app = read('src/scripts/consortium/app.js');
+  const arrive = app.indexOf('memory.arrive()'), load = app.indexOf('await loadManifest()');
+  assert.ok(arrive > 0 && arrive < load, 'arrive before the manifest');
+  assert.doesNotMatch(app, /\bmyCountry\b|settle\(/);
+});
+
+test('m-2: a country restored from a save, or from someone else\'s link, is never "chosen by you"', () => {
+  const { storage } = emptyStore();
+  const tab = fakeHistory('/consortium/');
+  memoryOf({ storage, history: tab, location: tab.location }).save('v=2&c=temperate&k=DE&l=sun&s=unsure&w=unsure&m=large', 'link');
+  const guide = boot({ storage, search: '?climate=temperate&plant=Malus%20domestica', guess: 'DE' });
+  assert.equal(guide.S.country, 'DE');
+  assert.notEqual(guide.S.countrySource, 'user');
+  assert.deepEqual(countryWhy(en, { country: 'DE', source: guide.S.countrySource, checked: true }).includes(en.T('countryChosen')), false);
+  assert.equal(chosenHere({ guess: 'DE', country: guide.S.country, source: guide.S.countrySource }), false, 'the guess card is not "In use"');
+  // A save of the reader's own reads "from your last consortium", in every locale.
+  assert.deepEqual(countryWhy(en, { country: 'DE', source: 'saved', checked: true }), [en.T('countrySaved')]);
+  for (const lang of locales) {
+    assert.match(strings[lang].countrySaved, /./, lang);
+    assert.notEqual(strings[lang].countrySaved, strings[lang].countryChosen, lang);
+    assert.notEqual(strings[lang].countrySaved, strings[lang].countryLinked, lang);
+  }
+});
+
+test('m-3: a link\'s unknown code goes with its notice: Start over, Dismiss and a climate change', () => {
+  const { storage } = emptyStore();
+  const b = boot({ storage, search: '?c=temperate&k=ZZ', guess: 'DE' });
+  assert.equal(b.S.unknownCountry, 'ZZ');
+  assert.equal(b.k, 'ZZ', 'a reload of the link view shows the same');
+  const startOver = { country: null, countrySource: null, noCountry: false, unknownCountry: null, linkCode: null, ...keptCountry(b.S) };
+  assert.equal(linkCountry(startOver, false).country, null, 'Start over');
+  const dismissed = { ...b.S, ...noLinkCode };
+  assert.equal(linkCountry(dismissed, false).country, null, 'Dismiss');
+  assert.equal(dismissed.unknownCountry, null);
+  const moved = { ...b.S, ...afterMove({ pending: null }) };
+  assert.equal(linkCountry(moved, false).country, null, 'a climate change');
+  assert.equal(moved.unknownCountry, null);
+  // The reader's own country survives Start over.
+  assert.deepEqual(keptCountry({ country: 'FR', countrySource: 'user', noCountry: false, unknownCountry: 'ZZ', linkCode: 'ZZ' }), { country: 'FR', countrySource: 'user', noCountry: false });
+  // app.js uses these.
+  const app = read('src/scripts/consortium/app.js');
+  assert.match(app, /'dismiss-country'\(\) \{ Object\.assign\(S, noLinkCode\)/);
+  assert.match(app, /keptCountry\(S\)/);
+  assert.doesNotMatch(app, /const \{ country, countrySource, noCountry, linkCode \} = S/);
+});
+
+test('n3: the "not checked" announcement ends with the locale\'s own full stop', () => {
+  for (const lang of locales) {
+    const w = words[lang], said = countryAnnouncement(w, { country: 'RE', checked: false });
+    const stop = w.T('warningsNow', { country: 'X' }).slice(-1);
+    assert.equal(said.slice(-1), stop, lang);
+  }
+  assert.match(countryAnnouncement(words.ja, { country: 'RE', checked: false }), /。$/);
+  assert.match(countryAnnouncement(words.zh, { country: 'RE', checked: false }), /。$/);
 });
 
 test('m-4: the browser\'s guess is never marked as chosen until the reader picks it', () => {
   assert.equal(chosenHere({ guess: 'FR', country: 'FR', source: 'guess' }), false);
   assert.equal(chosenHere({ guess: 'FR', country: 'FR', source: 'link' }), false, 'someone else chose it');
   assert.equal(chosenHere({ guess: 'FR', country: 'FR', source: 'user' }), true);
-  assert.equal(chosenHere({ guess: 'FR', country: 'FR', source: 'saved' }), true);
+  assert.equal(chosenHere({ guess: 'FR', country: 'FR', source: 'saved' }), false, 'restored, not chosen here (m-2)');
   assert.equal(chosenHere({ guess: 'FR', country: 'DE', source: 'user' }), false);
   assert.equal(chosenHere({ guess: null, country: null, source: null }), false);
   assert.match(read('src/scripts/consortium/app.js'), /inUse = chosenHere\(\{ guess: g, country: S\.country, source: S\.countrySource \}\)/);
