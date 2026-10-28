@@ -125,7 +125,7 @@ test('words: plural forms, time words, lists', () => {
   const taxon = (start, end) => ({ phases: { start, end } });
   assert.deepEqual(en.timeWords(taxon('placenta_iii', 'secondary_ii')), { plain: 'Leads from year 1 to year 25', term: 'Placenta 3 – Secondary 2' });
   assert.equal(en.timeWords(taxon('secondary_i', 'climax')).plain, 'Leads from year 3 on');
-  assert.equal(en.timeWords(taxon('placenta_i', 'placenta_i')).plain, 'First 90 days');
+  assert.equal(en.timeWords(taxon('placenta_i', 'placenta_i')).plain, 'First 90\u00a0days');
   assert.equal(en.timeWords({ phases: null }).plain, 'Timing not checked yet');
   const fr = makeWords(strings.fr, 'fr');
   assert.equal(fr.timeWords(taxon('placenta_iii', 'secondary_ii')).plain, 'Domine de la 1re année à la 25e année');

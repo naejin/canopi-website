@@ -89,6 +89,19 @@ test('M1 on the real Temperate list: "Most" is the middle half of the heights no
   assert.equal(small.typical, null);
   assert.deepEqual(small.all.map(SV.heightOf), few.map(SV.heightOf).filter((h) => h > 0).sort((a, b) => b - a));
   assert.equal(SV.bandFacts('low', layer('low').slice(0, 5)).all.length, 0);
+  // Review X2: a climbing or trailing plant in a small band is never a plain height in `all`.
+  const ivy = named('Hedera helix'), ramsons = named('Allium ursinum');
+  const vine = SV.bandFacts('low', [ivy, ramsons]);
+  assert.deepEqual(vine.all.map((t) => t.id), [ramsons.id]);
+  assert.deepEqual(vine.climbers.map((t) => t.id), [ivy.id]);
+});
+
+test('a climbing or trailing plant in a band of 4 known heights or fewer is named as one, never as a plain height', async () => {
+  const ivy = named('Hedera helix'), ramsons = named('Allium ursinum');
+  const others = ids.filter((id) => temperate.taxa.find((t) => t.id === id).stratum?.value !== 'low').slice(0, 30);
+  const { page } = await open([...others, ivy.id, ramsons.id]);
+  assert.equal(page.$('#ct-side').attribs['data-size'], 'marks');
+  assert.equal(text(page.$('#ct-side .sv-band[data-s="low"] .sv-sum')), 'Heights: Ramsons 0.5 m. Also 1 climbing or trailing plant: Common Ivy 2 m.');
 });
 
 test('marks are dense (no gap, alternate shades) only when they are too narrow for a 1 px gap at the width drawn', () => {
@@ -415,6 +428,9 @@ test('every side-view string is in all 11 locales; the dead ones are gone; Frenc
   }
   const fr = JSON.parse(read('src/i18n/translations/fr.json'));
   assert.match(fr['consortium.sv.climb'], /plantes grimpantes ou rampantes/);
+  // Review X3: the words after a plant's name carry their own noun, so they agree in every language.
+  const vineH = { fr: /^\{h\}, plante grimpante ou rampante$/, ru: /^\{h\}, вьющееся или стелющееся растение$/, es: /planta/, pt: /planta/, it: /pianta/, de: /Pflanze/, nl: /plant/ };
+  for (const [lang, re] of Object.entries(vineH)) assert.match(JSON.parse(read(`src/i18n/translations/${lang}.json`))['consortium.sv.vineH'], re, `${lang}: vineH names its noun`);
   for (const [k, v] of Object.entries(fr)) {
     if (!k.startsWith('consortium.')) continue;
     assert.doesNotMatch(v, / [:;!?]/, `fr ${k}: a no-break space before : ; ! ?`);
@@ -424,13 +440,24 @@ test('every side-view string is in all 11 locales; the dead ones are gone; Frenc
 
 // Review W2: in every locale a number and its unit never wrap apart ("0.3" at a line's end, "m." on the
 // next): a no-break space joins a number, a placeholder or a plural count to its unit.
-test('in all 11 locales a no-break space joins every number to its unit in the tool\'s strings', () => {
-  const unit = /[\d}#] (m|cm|mm|km|米|厘米|м|см|ans?|mois|years?|Jahren?|anni|años|anos|jaar|лет|года?|年)(?![\p{L}])/u;
+test('in all 11 locales a number keeps its unit on the same line, in each script\'s own way', () => {
+  // Review X1 ruling. Latin and Cyrillic units: a no-break space, never a plain space, whatever follows
+  // (Hangul and kana follow a unit in ko and ja). CJK units in zh and ja: no space at all ("1米", "第25年",
+  // "90天", "3か月"). Korean units: a no-break space, like a Latin one.
+  const latin = /[\d}#] (m|cm|mm|km|м|см|ans?|mois|jours?|semaines?|years?|mo|months?|days?|weeks?|wk|Jahren?|Monaten?|Tagen?|Wochen?|anni|mesi|giorni|settimane|años|meses|días|semanas|anos|dias|jaar|jaren|mnd|maanden|dagen|weken|лет|года?|мес|месяцев|месяца|дней|дня|недель|개월|년|일|주)(?![A-Za-zÀ-ɏЀ-ӿ])/u;
+  const cjk = /[\d}#][  ]+(米|厘米|年|天|日|个月|个?星期|か月|ヶ月|週|周)/u;
   for (const lang of LOCALES) {
     const s = JSON.parse(read(`src/i18n/translations/${lang}.json`));
-    for (const [k, v] of Object.entries(s)) if (k.startsWith('consortium.')) assert.doesNotMatch(v, unit, `${lang} ${k}: ${v}`);
-    assert.match(s['consortium.meters'], /\{v\}\u00a0/, `${lang}: meters`);
+    for (const [k, v] of Object.entries(s)) {
+      if (!k.startsWith('consortium.')) continue;
+      assert.doesNotMatch(v, latin, `${lang} ${k}: ${v}`);
+      if (lang === 'zh' || lang === 'ja') assert.doesNotMatch(v, cjk, `${lang} ${k}: no space before a CJK unit: ${v}`);
+    }
   }
+  const s = (lang) => JSON.parse(read(`src/i18n/translations/${lang}.json`));
+  for (const lang of ['en', 'fr', 'es', 'pt', 'it', 'de', 'ja', 'ko', 'nl']) assert.equal(s(lang)['consortium.meters'], '{v} m', lang);
+  assert.equal(s('ru')['consortium.meters'], '{v} м');
+  assert.equal(s('zh')['consortium.meters'], '{v}米');
 });
 
 // Review W3: a band with marks is a group, so its children are read; the scale's labels and the tip

@@ -418,7 +418,7 @@
   "consortium.sv.tall": "one: S’y ajoute # plante haute qui monte à travers l’ombre : {list}. | other: S’y ajoutent # plantes hautes qui montent à travers l’ombre : {list}.",
   "consortium.sv.short": "one: S’y ajoute # petite plante de plein soleil : {list}. | other: S’y ajoutent # petites plantes de plein soleil : {list}.",
   "consortium.sv.climb": "one: S’y ajoute # plante grimpante ou rampante : {list}. | other: S’y ajoutent # plantes grimpantes ou rampantes : {list}.",
-  "consortium.sv.vineH": "{h}, grimpante ou rampante",
+  "consortium.sv.vineH": "{h}, plante grimpante ou rampante",
   "consortium.sv.all": "Hauteurs : {list}.",
   "consortium.sv.unknown": "one: Hauteur inconnue pour # plante. | other: Hauteur inconnue pour # plantes.",
   "consortium.sv.bandLabel": "{layer}, {light} : {plants}.",

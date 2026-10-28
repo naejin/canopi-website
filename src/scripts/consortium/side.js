@@ -55,7 +55,8 @@ export function usualHeight(stratum, bandTaxa, listTaxa = []) {
 // q1 and q3 of the band's known heights, climbers aside), its climbing or trailing plants (tallest
 // first: their recorded size is no typical height), then "Most a–b m": the middle half of the
 // heights not named, each end snapped to a real plant height, so the range never spans a gap no
-// plant is in. A band with SMALL_BAND known heights or fewer lists them all (`all`, tallest first).
+// plant is in. A band with SMALL_BAND known heights or fewer lists them all (`all`, tallest first; its climbing or
+// trailing plants still apart).
 // Plants with no height are counted, never dropped.
 export const SMALL_BAND = 4;
 const desc = (a, b) => heightOf(b) - heightOf(a);
@@ -63,8 +64,10 @@ const nearest = (hs, x) => hs.reduce((p, c) => (Math.abs(c - x) < Math.abs(p - x
 export function bandFacts(stratum, taxa) {
   const known = taxa.filter((t) => heightOf(t) > 0);
   const facts = { stratum, n: taxa.length, typical: null, tall: [], short: [], climbers: [], all: [], unknown: taxa.length - known.length };
-  if (known.length <= SMALL_BAND) return { ...facts, all: [...known].sort(desc) };
+  // Climbing or trailing plants are always named apart, in a small band too (review X2): their recorded
+  // size is never a plain height.
   const climbers = known.filter(isClimber).sort(desc), rest = known.filter((t) => !isClimber(t));
+  if (known.length <= SMALL_BAND) return { ...facts, all: [...rest].sort(desc), climbers };
   const hs = rest.map(heightOf).sort((a, b) => a - b);
   let tall = [], short = [];
   if (hs.length && (stratum === 'high' || stratum === 'medium')) {
