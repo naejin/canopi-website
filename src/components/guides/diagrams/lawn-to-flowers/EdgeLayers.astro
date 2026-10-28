@@ -1,0 +1,110 @@
+---
+// Lawn to flowers: two side views of a garden edge. Before: tall trees stop abruptly at flat,
+// mown lawn. After: the same trees, then steps down through tall shrubs, small shrubs, flowers and
+// grasses and a low ground cover to the lawn kept for use. Each layer is named under the ground
+// line, ticks mark where one gives way to the next. Plants in plant tokens. No heights or widths:
+// the book gives none. Labels and alt text come from the MDX.
+import { r1, rng, seedOf, wrap } from '../../../../lib/svg';
+interface Labels {
+  before: string; after: string; mown: string;
+  trees: string; tallShrubs: string; smallShrubs: string; flowers: string; groundCover: string; lawn: string;
+}
+interface Props { labels: Labels; alt: string; }
+const { labels, alt } = Astro.props;
+const W = 520;
+const P1 = 0, P2 = 178; // panel tops
+const G1 = P1 + 124, G2 = P2 + 134; // ground lines
+// Layer bounds in the After view: trees take the first 100 units, the five steps 84 each.
+const bounds = [0, 100, 184, 268, 352, 436, W];
+const mid = (i: number) => (bounds[i] + bounds[i + 1]) / 2;
+const rand = rng(seedOf('edge-layers'));
+const ellipse = (cx: number, cy: number, rx: number, ry: number) => `M${r1(cx - rx)} ${r1(cy)}a${rx} ${ry} 0 1 0 ${2 * rx} 0a${rx} ${ry} 0 1 0 ${-2 * rx} 0Z`;
+// Trees: trunks and two-tone crowns, the same in both views.
+const trees = (G: number) => [[30, 44], [74, 34]].map(([x, top]) => ({
+  trunk: `M${x - 4} ${G}L${x - 3} ${G - 50}H${x + 3}L${x + 4} ${G}Z`,
+  crown: ellipse(x, top + (G - 124) + 34, 30, 40),
+  inner: ellipse(x + 6, top + (G - 124) + 26, 16, 22),
+}));
+// Tall shrubs, small shrubs: clusters of rounded masses on the ground.
+const shrubs = (x0: number, x1: number, h: number, n: number, G: number) => Array.from({ length: n }, (_, i) => {
+  const cx = x0 + ((i + 0.5) * (x1 - x0)) / n + (rand() - 0.5) * 6;
+  const rx = (x1 - x0) / n / 2 + 6, ry = h / 2 + rand() * 4;
+  return ellipse(r1(cx), r1(G - ry + 2), r1(rx), r1(ry));
+});
+// Flowers and grasses: grass blades and flower stems with round heads.
+const blades = Array.from({ length: 16 }, (_, i) => {
+  const x = bounds[3] + 6 + i * 4.8 + (rand() - 0.5) * 2, h = 22 + rand() * 18, lean = (rand() - 0.5) * 12;
+  return `M${r1(x)} ${G2}Q${r1(x + lean / 2)} ${r1(G2 - h / 2)} ${r1(x + lean)} ${r1(G2 - h)}`;
+});
+const blooms = Array.from({ length: 8 }, (_, i) => {
+  const x = bounds[3] + 10 + i * 9.4 + (rand() - 0.5) * 3, h = 26 + rand() * 20;
+  return { stem: `M${r1(x)} ${G2}V${r1(G2 - h)}`, x: r1(x), y: r1(G2 - h), tone: i % 3 };
+});
+// Ground cover: a low mound with small flowers.
+const coverMound = `M${bounds[4] + 2} ${G2}C${bounds[4] + 8} ${G2 - 14} ${bounds[5] - 8} ${G2 - 14} ${bounds[5] - 2} ${G2}Z`;
+const coverFlowers = Array.from({ length: 7 }, (_, i) => ({ x: r1(bounds[4] + 14 + i * 9.5), y: r1(G2 - 8 - rand() * 4) }));
+// Labels: 16px, 17 units apart, under the ground line.
+const layerLabels = [labels.trees, labels.tallShrubs, labels.smallShrubs, labels.flowers, labels.groundCover, labels.lawn].map((t) => wrap(t, 10));
+const mownLines = wrap(labels.mown, 24);
+---
+<svg class="guide-el" viewBox={`0 0 ${W} ${G2 + 22 + 17 + 6}`} role="img" aria-label={alt}>
+  {/* Before */}
+  <text x="4" y={P1 + 18} class="guide-el-label guide-el-strong">{labels.before}</text>
+  <rect x={bounds[1]} y={G1 - 4} width={W - bounds[1]} height="4" class="guide-el-lawn" />
+  {trees(G1).map((t) => (
+    <>
+      <path d={t.trunk} class="guide-el-wood" />
+      <path d={t.crown} class="guide-el-leaf-deep" />
+      <path d={t.inner} class="guide-el-leaf" />
+    </>
+  ))}
+  <line x1="0" y1={G1} x2={W} y2={G1} class="guide-el-ground" />
+  <text x={mid(0)} y={G1 + 20} text-anchor="middle" class="guide-el-label">{layerLabels[0][0]}</text>
+  <text x={(bounds[1] + W) / 2} y={G1 - 22} text-anchor="middle" class="guide-el-label">
+    {mownLines.map((t, i) => <tspan x={(bounds[1] + W) / 2} dy={i ? 17 : 0}>{t}</tspan>)}
+  </text>
+  <line x1="0" y1={P2 - 14} x2={W} y2={P2 - 14} class="guide-el-rule" />
+  {/* After */}
+  <text x="4" y={P2 + 18} class="guide-el-label guide-el-strong">{labels.after}</text>
+  {trees(G2).map((t) => (
+    <>
+      <path d={t.trunk} class="guide-el-wood" />
+      <path d={t.crown} class="guide-el-leaf-deep" />
+      <path d={t.inner} class="guide-el-leaf" />
+    </>
+  ))}
+  {shrubs(bounds[1], bounds[2], 62, 2, G2).map((d) => <path d={d} class="guide-el-leaf" />)}
+  {shrubs(bounds[2], bounds[3], 36, 3, G2).map((d) => <path d={d} class="guide-el-leaf-young" />)}
+  {blades.map((d) => <path d={d} class="guide-el-blade" />)}
+  {blooms.map((b) => (
+    <>
+      <path d={b.stem} class="guide-el-stalk" />
+      <circle cx={b.x} cy={b.y} r="4" class={`guide-el-bloom guide-el-bloom-${b.tone}`} />
+    </>
+  ))}
+  <path d={coverMound} class="guide-el-leaf" />
+  {coverFlowers.map((f) => <circle cx={f.x} cy={f.y} r="2.2" class="guide-el-bloom guide-el-bloom-0" />)}
+  <rect x={bounds[5]} y={G2 - 4} width={W - bounds[5]} height="4" class="guide-el-lawn" />
+  <line x1="0" y1={G2} x2={W} y2={G2} class="guide-el-ground" />
+  {bounds.slice(1, -1).map((x) => <line x1={x} y1={G2 + 2} x2={x} y2={G2 + 10} class="guide-el-tick" />)}
+  {layerLabels.map((lines, i) => (
+    <text x={mid(i)} y={G2 + 22} text-anchor="middle" class="guide-el-label">
+      {lines.map((t, j) => <tspan x={mid(i)} dy={j ? 17 : 0}>{t}</tspan>)}
+    </text>
+  ))}
+</svg>
+
+<style>
+  .guide-el { display: block; width: 100%; max-width: 40rem; height: auto; margin: 0 auto; }
+  .guide-el-ground { stroke: var(--border-strong); stroke-width: 1.4; }
+  .guide-el-rule { stroke: var(--border); stroke-width: 1; stroke-dasharray: 4 4; }
+  .guide-el-tick { stroke: var(--text-muted); stroke-width: 1; }
+  .guide-el-lawn { fill: var(--leaf-young); opacity: 0.6; }
+  .guide-el-wood { fill: var(--seed-1); opacity: 0.9; }
+  .guide-el-leaf { fill: var(--leaf); } .guide-el-leaf-deep { fill: var(--leaf-deep); } .guide-el-leaf-young { fill: var(--leaf-young); }
+  .guide-el-blade { fill: none; stroke: var(--leaf-young); stroke-width: 1.6; stroke-linecap: round; }
+  .guide-el-stalk { fill: none; stroke: var(--leaf); stroke-width: 1.2; }
+  .guide-el-bloom-0 { fill: var(--petal); } .guide-el-bloom-1 { fill: var(--seed-5); } .guide-el-bloom-2 { fill: var(--anther); }
+  .guide-el-label { font-family: var(--font-sans); font-size: 16px; fill: var(--text); }
+  .guide-el-strong { font-weight: 600; }
+</style>
