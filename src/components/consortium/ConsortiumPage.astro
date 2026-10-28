@@ -1,6 +1,6 @@
 ---
 // The consortium design tool (beta): /consortium/, /fr/guilde/ and /<lang>/consortium/.
-// The head (title, what a consortium is, the three steps) is rendered here; the tool itself is
+// The head (title, what a consortium is, the beta note) is rendered here; the tool itself is
 // src/scripts/consortium/app.js, which renders into #ct-app from the strings in #ct-data (every
 // consortium.* key without its prefix, the climate words, and the Field Guides the tool links).
 import Base from '../../layouts/Base.astro';
@@ -16,7 +16,7 @@ import '../../styles/consortium.css';
 // The installed manifest, read at build time only (the page ships its count, not the file).
 import manifest from '../../../public/data/consortium/manifest.json';
 import { makeWords } from '../../scripts/consortium/words.js';
-import { siteClimates, regions } from '../../lib/consortium/index.ts';
+import { siteClimates } from '../../lib/consortium/index.ts';
 
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
@@ -39,22 +39,17 @@ for (const entry of await publishedGuides(guideLang)) {
 const contact = localizedUrl('/', lang) + '#contact';
 const data = { lang, strings, guides, plantGuides: consortiumGuides, jobGuides, explainGuide, contact };
 const food = guides[explainGuide];
-// copy-m2: the number of places is the installed manifest's, read at build time.
-const betaNote = makeWords(strings, lang).P('betaNote', manifest.cells.length);
+// copy-m2: the number of climates is the installed manifest's, read at build time.
+const betaNote = makeWords(strings, lang).P('betaNote', manifest.climates.length);
 ---
 <Base title={`${tr('title')} · Canopi`} description={tr('description')} lang={lang} path={consortiumPath}>
   <Header lang={lang} path={consortiumPath} current="consortium" />
   <main id="main" class="ct">
     <div class="wrap ct-wrap">
-      <div class="tool-head" id="ct-head" data-step="0" data-climates={siteClimates.join(' ')} data-regions={regions.join(' ')}>
+      <div class="tool-head" id="ct-head" data-step="0" data-climates={siteClimates.join(' ')}>
         <div class="tool-head-text">
           <div class="tool-head-row"><h1 class="tool-title">{tr('title')}</h1><span class="badge-beta">{tr('beta')}</span></div>
           <p class="tool-lede">{t('home.consortium.lede', lang)}</p>
-          <ol class="outline" aria-label={tr('outline')}>
-            <li aria-current="step" data-done="false"><span class="o-num">1</span>{tr('outline.climate')}</li>
-            <li data-done="false"><span class="o-num">2</span>{tr('outline.place')}</li>
-            <li data-done="false"><span class="o-num">3</span>{tr('outline.result')}</li>
-          </ol>
           <p class="tool-meta">{betaNote} <a class="text-link" href={contact}>{tr('feedback')}</a></p>
         </div>
         <figure class="thumb">
@@ -73,31 +68,23 @@ const betaNote = makeWords(strings, lang).P('betaNote', manifest.cells.length);
       <noscript>
         <div class="callout"><p>{tr('noscript')}</p>{food && <p><a class="text-link" href={food.url} hreflang={food.lang !== lang ? food.lang : undefined}>{tr('noscript.link')}</a></p>}</div>
       </noscript>
-      {/* The head's size depends on the step the tool opens on (the lede and the drawing go once a
-          climate is chosen) and on the result (compact). It opens on the result when it has a climate and a region: from a link
-          (`c`, else a guide's `climate`, else the site climate; `r`), from the consortium saved on this
-          device, or a guide preset (`plant`, no `r` or `k`) that borrows the saved place, as app.js
-          start() and presetPlace() do. Set before the first paint, so nothing jumps when it renders
-          (prepush m5; scripts/consortium-page.test.mjs runs this script against the app's rules). */}
+      {/* The head is compact (no lede, no drawing) once the tool opens on a result, which it does as
+          soon as it has a climate: from a link (`c`, else a guide's `climate`), from the consortium
+          saved on this device, or the site climate, as app.js start() does. Set before the first
+          paint, so nothing jumps when it renders (prepush m5; scripts/consortium-page.test.mjs runs
+          this script against the app's rules). */}
       <script is:inline>(function () { try {
-        var h = document.getElementById('ct-head'), C = h.dataset.climates.split(' '), R = h.dataset.regions.split(' ');
+        var h = document.getElementById('ct-head'), C = h.dataset.climates.split(' ');
         var norm = function (v) { return v == null ? null : v.trim().toLowerCase(); }, has = function (list, v) { return v != null && list.indexOf(v) !== -1; };
         var p = new URLSearchParams(location.search), s = null;
         try { s = JSON.parse(localStorage.getItem('canopi-consortium') || 'null'); } catch (e) {}
         var saved = s && typeof s.q === 'string' ? new URLSearchParams(s.q) : null, fromLink = p.has('c') || p.has('climate') || p.has('plant');
-        var q = fromLink ? p : saved, climate = null, region = null;
-        if (q) {
-          climate = norm(q.has('c') || !q.has('climate') ? q.get('c') : q.get('climate'));
-          region = norm(q.get('r'));
-          var plant = fromLink ? p.get('plant') : null, country = (p.get('k') || '').trim().toUpperCase();
-          if (plant && plant.trim() && plant.length <= 200 && !has(R, region) && !/^[A-Z]{2}$/.test(country) && saved && has(R, norm(saved.get('r')))) region = norm(saved.get('r'));
-        }
+        var q = fromLink ? p : saved, climate = null;
+        if (q) climate = norm(q.has('c') || !q.has('climate') ? q.get('c') : q.get('climate'));
         if (!has(C, climate)) climate = document.documentElement.dataset.climate || null;
         if (!has(C, climate)) return;
-        var step = has(R, region) ? 2 : 1, li = h.querySelectorAll('.outline li');
-        h.dataset.step = String(step);
-        for (var i = 0; i < li.length; i++) { if (i === step) li[i].setAttribute('aria-current', 'step'); else li[i].removeAttribute('aria-current'); li[i].dataset.done = String(i < step); }
-        if (step === 2) h.classList.add('tool-head-compact');
+        h.dataset.step = '1';
+        h.classList.add('tool-head-compact');
       } catch (e) {} })();</script>
       <div id="ct-app" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
     </div>

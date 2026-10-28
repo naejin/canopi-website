@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { pluralForms, makeWords, needsLook, searchText, fold, plantName, capFirst } from '../src/scripts/consortium/words.js';
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
 import * as core from '../src/lib/consortium/index.ts';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget, relaxTo, licenceOf, uncheckedOnCard } from '../src/scripts/consortium/logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard } from '../src/scripts/consortium/logic.js';
 import { profileSVG } from '../src/scripts/consortium/draw.js';
 import { crops } from '../src/data/crops.ts';
 
@@ -66,15 +66,14 @@ test('every key the tool asks for exists, and every key exists for a reason', ()
     region: [...core.regions], stratum: [...core.strata, 'none'], band: [...core.phaseBands], phase: [...core.phases], job: [...core.jobs],
     fn: [...core.functionIds, 'crop'], tox: ['Slight', 'Moderate', 'Severe'], ctype: [...core.interactionTypes], tab: ['layers', 'time', 'jobs'],
     sizeLine: [...core.rooms], site: Object.keys(siteOptions), basis: Object.keys(siteOptions), misfit: Object.keys(siteOptions),
-    part: Object.keys(manifest.country_regions),
   };
   const dynamicOk = (key) => {
     const dot = key.indexOf('.');
     const prefix = key.slice(0, dot), tail = key.slice(dot + 1);
     if (dot < 0 || !ids[prefix]) return false;
-    const [id, rest = ''] = prefix === 'part' ? [tail.slice(0, 2), tail.slice(3)] : [tail.split('.')[0], tail.split('.').slice(1).join('.')];
+    const [id, rest = ''] = [tail.split('.')[0], tail.split('.').slice(1).join('.')];
     assert.ok(ids[prefix].includes(id), `${key}: ${id} is not a ${prefix} id of the data core`);
-    if (prefix === 'part') assert.ok(manifest.country_regions[id].includes(rest), `${key}: ${id} is not in ${rest}`);
+    if (prefix === 'region') assert.equal(rest, '', `${key}: a region has a name only (it labels a reason)`);
     if (['site', 'basis', 'misfit'].includes(prefix) && rest) assert.ok(siteOptions[id].includes(rest.replace(/\.hint$/, '')), `${key}: ${rest}`);
     return true;
   };
@@ -116,7 +115,8 @@ test('words: plural forms, time words, lists', () => {
   assert.equal(en.timeWords({ phases: null }).plain, 'Timing not checked yet');
   const fr = makeWords(strings.fr, 'fr');
   assert.equal(fr.timeWords(taxon('placenta_iii', 'secondary_ii')).plain, 'Domine de la 1re année à la 25e année');
-  assert.equal(en.cell('tropical', 'southern_america'), 'Tropical · Central and South America and the Caribbean');
+  assert.equal(en.region('southern_america'), 'Central and South America and the Caribbean', 'a region names the reasons a plant was chosen');
+  assert.ok(!('cell' in en), 'no cell label is left: a climate is one list');
 });
 
 test('words: what counts as "needs a look" (N4) and what the Add search reads (M11)', () => {
@@ -127,6 +127,10 @@ test('words: what counts as "needs a look" (N4) and what the Add search reads (M
   assert.equal(needsLook(plant('Moderate'), clean), true);
   assert.equal(needsLook(plant('Severe'), clean), true);
   assert.equal(needsLook(plant(null), { flagged: true }), true);
+  // Invasive here is a warning, no longer a flag: needsLook tests it on its own (owner, 2026-10-28).
+  assert.equal(needsLook(plant(null), { flagged: false, invasive: true }), true);
+  assert.equal(needsLook(plant(null), { flagged: false, invasive: false }), false);
+  assert.equal(needsLook(plant(null), { flagged: false, invasive: null }), false);
   const t = { canonical_name: 'Inga edulis', names: { en: 'Ice-cream bean', fr: 'Pois sucré', ja: 'インガ' } };
   assert.ok(searchText(t).includes(fold('pois sucre')));
   assert.ok(searchText(t).includes('inga edulis'));
@@ -163,9 +167,8 @@ test('logic: a photo credits the site it came from (copy-M6)', () => {
   assert.equal(photoSource('https://www.inaturalist.org/photos/123'), 'iNaturalist');
   assert.equal(photoSource('https://example.org/x'), 'example.org');
   assert.equal(photoSource('not a url'), null);
-  const cells = ['temperate-europe', 'mediterranean-europe', 'tropical-southern-america'];
-  for (const c of cells) {
-    for (const t of JSON.parse(read(`public/data/consortium/${c}.json`)).taxa) {
+  for (const c of manifest.climates) {
+    for (const t of JSON.parse(read(`public/data/consortium/${c.file}`)).taxa) {
       if (t.image?.source_page_url) assert.ok(['Wikimedia Commons', 'iNaturalist'].includes(photoSource(t.image.source_page_url)), `${t.canonical_name}: ${t.image.source_page_url}`);
     }
   }
@@ -244,7 +247,7 @@ const falseFriends = {
 // Words that, in one guide, name a cultivar type or another plant, never the cell plant.
 const notAbout = { 'squash-melons-cucumbers': ['acorn', 'banana'], 'hand-crosses': ['acorn', 'banana'] };
 const cellTaxa = new Map();
-for (const c of ['temperate-europe', 'mediterranean-europe', 'tropical-southern-america']) for (const t of JSON.parse(read(`public/data/consortium/${c}.json`)).taxa) cellTaxa.set(t.canonical_name, t);
+for (const c of manifest.climates) for (const t of JSON.parse(read(`public/data/consortium/${c.file}`)).taxa) cellTaxa.set(t.canonical_name, t);
 const reEsc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const wordRe = (w) => new RegExp(`(?<![\\p{L}-])${reEsc(w).replace(/y$/, '(?:y|ies)')}(?:s|es)?(?![\\p{L}])`, 'giu');
 function covers(plant, slug) {
@@ -327,13 +330,15 @@ test('strata labels and phase terms are the app\'s, light first, in every locale
   assert.doesNotMatch(JSON.stringify(strings.zh), /顶级群落/, 'zh: 顶极群落, the standard spelling');
 });
 
-// min-3: a country or region name never follows a preposition that needs an article (pour le Chili,
-// per il Cile, do Brasil, the United States): the name comes after a colon instead.
-test('the borrowed-list sentences need no article before a place name (min-3)', () => {
-  for (const lang of locales.filter((l) => !['zh', 'ja', 'ko'].includes(l))) {
-    for (const key of ['borrowedText', 'borrowedInv', 'nc.optNote']) assert.match(strings[lang][key], /: \{(where|country)\}/, `${lang}: ${key}`);
-    // …and the colon closes a whole phrase, never a bare preposition or verb ("для:", "for:", "учитывают:").
-    for (const key of ['borrowedText', 'borrowedInv', 'nc.optNote']) assert.doesNotMatch(strings[lang][key], /(?<!\p{L})(для|for|für|pour|para|per|voor|use|учитывают|usam|usan|utilisent|usano|gebruiken|verwenden):/iu, `${lang}: ${key}`);
+// min-3: a country name never follows a preposition that needs an article (pour le Chili, per il
+// Cile, do Brasil, the United States): in French, Portuguese and Italian it comes after a colon.
+test('the country sentences need no article before a country name (min-3)', () => {
+  for (const lang of ['fr', 'pt', 'it']) {
+    for (const key of ['invHere', 'd.invHere', 'printWarnings', 'warningsFor', 'invNotChecked']) assert.match(strings[lang][key], /: \{country\}/, `${lang}: ${key}`);
+  }
+  for (const lang of locales) for (const key of ['invHere', 'd.invHere', 'printWarnings', 'warningsFor', 'warningsNow', 'invNotChecked', 'd.invNotChecked']) {
+    assert.doesNotMatch(strings[lang][key], /(?<!\p{L})(pour|per|do|da|du|au|en el|in the) \{country\}/iu, `${lang}: ${key}`);
+    if (lang === 'pt') assert.doesNotMatch(strings[lang][key], /(?<!\p{L})(para|em) \{country\}/iu, `${lang}: ${key}`);
   }
 });
 
@@ -378,8 +383,8 @@ test('the number of places comes from the manifest, never from the words (copy-m
     assert.ok(isPlural(strings[lang][key]) && strings[lang][key].includes('#'), `${lang}: ${key}`);
     assert.doesNotMatch(strings[lang][key], /three|trois|tres|três|tre |drei|drie|три|三|세 /i, `${lang}: ${key}`);
   }
-  assert.match(page, /manifest\.cells\.length/);
-  assert.match(app, /P\('nc\.text', manifest\.cells\.length\)/);
+  assert.match(page, /manifest\.climates\.length/);
+  assert.match(app, /P\('nc\.text', covered\.length,/);
 });
 
 // ---------- consortium/fixes (seam-review.md, live-check.md) ----------
@@ -392,35 +397,17 @@ test('logic: the language links carry the tool\'s query, and only it (seam M1)',
   assert.match(app, /syncLangLinks\(\)/);
 });
 
-test('logic: a guide preset with no place takes the place saved on this device (seam m4)', () => {
-  const preset = { climate: 'temperate', region: null, country: null, plants: ['Pyrus communis'] };
-  assert.deepEqual(presetPlace(preset, { climate: 'tropical', region: 'europe', country: 'FR' }), { country: 'FR', region: 'europe' });
-  assert.deepEqual(presetPlace(preset, { region: 'africa', country: null }), { country: null, region: 'africa' });
-  assert.equal(presetPlace(preset, null), null);
-  assert.equal(presetPlace(preset, { region: null, country: null }), null);
-  assert.equal(presetPlace({ ...preset, region: 'europe' }, { region: 'africa' }), null, 'a link\'s own place wins');
-  assert.equal(presetPlace({ ...preset, plants: [] }, { region: 'africa' }), null, 'only a guide preset');
-});
-
-test('one name per locale for southern_america, on the tool, the home note and the guide links (seam m1, live m5)', () => {
+test('one name per locale for southern_america, on the tool and its reasons (seam m1, live m5)', () => {
   const names = {
     en: 'Central and South America and the Caribbean', fr: 'Amérique centrale, Amérique du Sud et Caraïbes', es: 'Centroamérica, Sudamérica y el Caribe',
     pt: 'América Central, América do Sul e Caribe', it: 'America centrale, America meridionale e Caraibi', de: 'Mittel- und Südamerika, Karibik',
     nl: 'Midden- en Zuid-Amerika, Caraïben', ru: 'Центральная и Южная Америка, Карибы', zh: '中美洲、南美洲和加勒比', ja: '中米・南米・カリブ海', ko: '중앙아메리카·남아메리카·카리브해',
   };
-  const mexico = { en: 'Mexico', fr: 'Mexique', es: 'México', pt: 'México', it: 'Messico', de: 'Mexiko', nl: 'Mexico', ru: 'Мексика', zh: '墨西哥', ja: 'メキシコ', ko: '멕시코' };
   for (const lang of locales) {
-    const s = strings[lang];
-    assert.equal(s['region.southern_america'], names[lang], lang);
-    assert.ok(home[lang]['home.consortium.note'].includes(names[lang]), `${lang}: the home note names the region as the tool does`);
-    // Mexico is in northern_america (the data's WGSRPD regions): both hints say so.
-    assert.ok(s['region.northern_america.hint'].includes(mexico[lang]) && s['region.southern_america.hint'].includes(mexico[lang]), `${lang}: hints place Mexico`);
+    assert.equal(strings[lang]['region.southern_america'], names[lang], lang);
+    // A region only labels a reason now: no hint, no part of a country, no cell.
+    for (const key of Object.keys(strings[lang])) assert.doesNotMatch(key, /^(region\.\w+\.hint|part\.|cell$|borrowed)/, `${lang}: ${key} is gone`);
   }
-  for (const lang of ['en', 'fr']) {
-    const guides = JSON.parse(read(`src/i18n/guides/${lang}.json`));
-    assert.ok(guides['consortium.cell.tropical.southern_america'].includes(names[lang]), `${lang}: guide links name the region as the tool does`);
-  }
-  assert.equal(manifest.country_regions.MX.join(), 'northern_america');
 });
 
 test('the tool lists climates in the site picker\'s order (seam m5)', () => {
@@ -493,11 +480,11 @@ test('the guide note says the climate belongs to this consortium, not the site (
 const css = read('src/styles/consortium.css');
 const appJs = read('src/scripts/consortium/app.js');
 
-test('a guide preset never lands silently: the guide note shows on "Not covered yet", and a place from this device says so (F1)', () => {
-  assert.match(appJs, /function notCoveredHTML\(\) \{[\s\S]*?guideNote\(/, 'the not-covered state renders the guide note');
-  assert.match(appJs, /T\('placeFrom', \{ where/);
-  assert.match(strings.en.placeFrom, /this device/);
-  assert.doesNotMatch(strings.en.fromGuideWait, /is kept,/, 'before a covered place the plant is not kept yet');
+test('a guide preset never lands silently: the guide note shows on "Not covered yet" (F1)', () => {
+  assert.match(appJs, /function notCoveredHTML\(\) \{[\s\S]*?guideNote\(true\)/, 'the not-covered state renders the guide note');
+  assert.match(appJs, /wait \? T\('fromGuideClimate', \{ plant \}\)/);
+  assert.doesNotMatch(strings.en.fromGuideClimate, /is kept,/, 'before a covered climate the plant is not kept yet');
+  assert.match(strings.en.fromGuideClimate, /climate/);
 });
 
 test('a plant that misfits offers Swap and Remove, never a change to the site answers (F2)', () => {
@@ -507,12 +494,16 @@ test('a plant that misfits offers Swap and Remove, never a change to the site an
   assert.match(att, /'swap'/); assert.match(att, /'remove'/);
 });
 
-test('a site or place change that rebuilds unkept plants offers Undo (F2)', () => {
+test('a site or climate change that rebuilds unkept plants offers Undo; a country change keeps the plants (F2)', () => {
   assert.match(appJs, /esc\(T\('redoneSite'\)\), 'redo'\)/);
   assert.match(appJs, /holdForRedo\(`site-/, 'site answers');
-  assert.match(appJs, /function choosePlace\(country, region\) \{\n  holdForRedo\(/, 'a place');
-  assert.match(appJs, /T\('redonePlace', \{ where/);
+  assert.match(appJs, /climate\(v\) \{ if \(S\.status !== 'setup'\) holdForRedo\('pc-climate', true\)/, 'a climate');
+  assert.match(appJs, /T\('redoneClimate', \{ climate/);
   assert.match(appJs, /v === 'redo'/);
+  // The country only changes the warnings: no rebuild, no Undo, an announcement instead.
+  const choose = appJs.match(/function chooseCountry[\s\S]*?\n\}/)[0];
+  assert.doesNotMatch(choose, /holdForRedo|recompute|resolveClimate|dropUndo|S\.members/);
+  assert.match(choose, /say\(code \? T\('warningsNow'/);
 });
 
 test('each warning item is one list item with its own actions (F3)', () => {
@@ -539,20 +530,17 @@ test('the English and German wording reads naturally (N2)', () => {
   assert.doesNotMatch(strings.de.added, /und behalten/);
 });
 
-test('logic: Tropical in a Northern American country says why it is not covered (N3)', () => {
-  assert.deepEqual(coverageHint(manifest, 'tropical', 'MX'), { region: 'southern_america', north: 'northern_america' });
-  assert.deepEqual(coverageHint(manifest, 'tropical', 'US'), { region: 'southern_america', north: 'northern_america' });
-  assert.equal(coverageHint(manifest, 'tropical', 'JP'), null);
-  assert.equal(coverageHint(manifest, 'tropical', 'BR'), null, 'a covered country needs no hint');
-  assert.equal(coverageHint(manifest, 'temperate', 'MX'), null, 'no temperate list in Central and South America');
-  assert.equal(coverageHint(manifest, 'tropical', null), null);
-  const names = { en: 'Northern America', fr: 'Amérique du Nord', de: 'Nordamerika' };
-  for (const lang of locales) {
-    assert.deepEqual(placeholders(strings[lang]['nc.why']), ['{country}', '{north}', '{region}'], lang);
-    assert.ok(!/\.\s+\S/.test(strings[lang]['nc.why'].trim().replace(/[.。]$/, '')), `${lang}: one sentence`);
-  }
-  assert.ok(names.en);
-  assert.match(appJs, /coverageHint\(manifest, S\.climate, S\.country\)/);
+test('a climate not covered yet stays choosable, lists the covered ones and asks for it; the country plays no part', () => {
+  const nc = appJs.match(/function notCoveredHTML[\s\S]*?\n\}/)[0];
+  assert.match(nc, /P\('nc\.text', covered\.length, \{ list: W\.list\(covered\.map\(W\.climate\)\) \}\)/);
+  assert.match(nc, /'open-place', 'climate', esc\(T\('nc\.other'\)\)/);
+  assert.match(nc, /T\('nc\.ask'\)/);
+  assert.doesNotMatch(nc, /country/i);
+  const en = makeWords(strings.en, 'en');
+  assert.equal(en.P('nc.text', 3, { list: 'Tropical, Mediterranean, and Temperate' }), 'This beta has plants for 3 climates so far: Tropical, Mediterranean, and Temperate.');
+  assert.equal(strings.en['nc.ask'], 'Ask for this climate');
+  // Every climate card is a button, covered or not.
+  assert.match(appJs, /<button class="climate-choice" type="button" data-act="climate" data-v="\$\{c\}"/);
 });
 
 test('details opened from the Swap list swap that plant in, never only add it; from Add they add (prepush m4)', () => {
@@ -572,72 +560,63 @@ test('details opened from the Swap list swap that plant in, never only add it; f
 });
 
 // The first-paint script of ConsortiumPage.astro, run as the browser runs it, against what the app
-// does on start (app.js start(): decodeState, presetPlace, the site climate): the head is compact
-// before the first paint exactly when the app opens past the setup (prepush m5: no layout jump).
-test('the head has its final size from the first paint: compact on a result, the step the tool opens on (prepush m5)', () => {
+// does on start (app.js start(): decodeState of the link, else of the save, else the site climate):
+// the head is compact before the first paint exactly when the app opens past the setup, that is when
+// a climate is known (prepush m5: no layout jump). The country plays no part: it never holds the setup.
+test('the head has its final size from the first paint: compact as soon as a climate is known (prepush m5)', () => {
   const script = page.match(/<script is:inline>([\s\S]*?)<\/script>/)?.[1];
   assert.ok(script && /ct-head/.test(script), 'the first-paint script');
-  const climates = page.match(/data-climates=\{([^}]+)\}/)?.[1], regionsAttr = page.match(/data-regions=\{([^}]+)\}/)?.[1];
-  assert.equal(climates, "siteClimates.join(' ')");
-  assert.equal(regionsAttr, "regions.join(' ')");
+  assert.equal(page.match(/data-climates=\{([^}]+)\}/)?.[1], "siteClimates.join(' ')");
+  assert.doesNotMatch(page, /data-regions|class="outline"/, 'no region, no outline');
   const firstPaint = (search, saved, siteClimate) => {
     const classes = new Set();
-    const items = [0, 1, 2].map(() => ({ dataset: {}, attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, removeAttribute(k) { delete this.attrs[k]; } }));
-    items[0].attrs['aria-current'] = 'step';
-    const head = { dataset: { climates: core.siteClimates.join(' '), regions: core.regions.join(' ') }, classList: { add: (c) => classes.add(c) }, querySelectorAll: (sel) => (sel === '.outline li' ? items : []) };
+    const head = { dataset: { climates: core.siteClimates.join(' ') }, classList: { add: (c) => classes.add(c) } };
     const document = { getElementById: (id) => (id === 'ct-head' ? head : null), documentElement: { dataset: siteClimate ? { climate: siteClimate } : {} } };
     const localStorage = { getItem: (k) => (k === 'canopi-consortium' && saved ? JSON.stringify({ q: saved, at: '2026-10-28T00:00:00Z' }) : null) };
-    new Function('location', 'localStorage', 'document', 'URLSearchParams', script)({ search: search }, localStorage, document, URLSearchParams);
-    // The step decides whether the lede and the drawing show (consortium.css), so it is part of the first paint too.
-    const step = head.dataset.step ?? '0';
-    items.forEach((li, i) => { assert.equal(li.attrs['aria-current'], i === Number(step) ? 'step' : undefined, `outline ${i}, step ${step}`); if (step !== '0') assert.equal(li.dataset.done, String(i < Number(step))); });
-    return { compact: classes.has('tool-head-compact'), step };
+    new Function('location', 'localStorage', 'document', 'URLSearchParams', script)({ search }, localStorage, document, URLSearchParams);
+    return { compact: classes.has('tool-head-compact'), step: head.dataset.step ?? '0' };
   };
   const opensOnResult = (search, saved, siteClimate) => {
     const params = new URLSearchParams(search);
-    let decoded = null, keep = saved;
+    let decoded = null;
     if (params.has('c') || params.has('climate') || params.has('plant')) decoded = core.decodeState(params);
-    else if (saved) { decoded = core.decodeState(saved); keep = null; }
-    let climate = null, region = null;
-    if (decoded) {
-      const d = decoded.state;
-      const place = keep ? presetPlace(d, core.decodeState(keep).state) : null;
-      climate = d.climate; region = place ? place.region : d.region;
-    }
+    else if (saved) decoded = core.decodeState(saved);
+    let climate = decoded?.state.climate ?? null;
     if (!climate && core.siteClimates.includes(siteClimate)) climate = siteClimate;
-    // app.js render(): step 0 with no climate, 1 while the place is chosen, 2 past the setup.
-    return { compact: !!(climate && region), step: !climate ? '0' : !region ? '1' : '2' };
+    // app.js render(): step 0 in the setup, 1 past it.
+    return { compact: !!climate, step: climate ? '1' : '0' };
   };
-  const place = 'v=2&c=temperate&r=europe&k=FR&l=sun&s=unsure&w=unsure&m=large';
+  const saved = 'v=2&c=temperate&k=FR&l=sun&s=unsure&w=unsure&m=large';
   const cases = [
-    ['?plant=Pyrus+communis&climate=temperate', place, null], // the reviewer's case: a guide preset, a saved place
+    ['?plant=Pyrus+communis&climate=temperate', saved, null],
     ['?plant=Pyrus+communis&climate=temperate', null, null],
-    ['?plant=Pyrus+communis', place, 'tropical'],
-    ['?plant=Pyrus+communis', place, null],
-    ['?plant=Pyrus+communis&climate=temperate&k=FR', place, null],
-    ['?plant=Pyrus+communis&climate=temperate&r=africa', place, null],
-    ['?plant=Pyrus+communis&climate=TEMPERATE+', place, null],
-    ['?plant=Pyrus+communis&climate=nowhere', place, 'arid'],
-    ['?plant=%20%20&climate=temperate', place, null],
-    ['?plant=' + 'x'.repeat(201) + '&climate=temperate', place, null],
-    ['?plant=Pyrus+communis&climate=temperate', 'v=2&c=temperate&k=FR', null],
-    ['?' + place, null, null],
-    ['?v=2&c=temperate&k=FR', null, null], // a hand-made link with a country and no region stays in setup
+    ['?plant=Pyrus+communis', saved, 'tropical'],
+    ['?plant=Pyrus+communis', saved, null],
+    ['?plant=Pyrus+communis&climate=temperate&k=FR', saved, null],
+    ['?plant=Pyrus+communis&climate=TEMPERATE+', saved, null],
+    ['?plant=Pyrus+communis&climate=nowhere', saved, 'arid'],
+    ['?plant=%20%20&climate=temperate', saved, null],
+    ['?plant=' + 'x'.repeat(201) + '&climate=temperate', saved, null],
+    ['?' + saved, null, null],
+    ['?v=2&c=temperate&k=FR', null, null], // a country is never needed to leave the setup
+    ['?v=2&c=temperate&k=-', null, null],
     ['?v=2&c=temperate', null, null],
-    ['?v=2&r=europe', null, 'temperate'],
+    ['?v=2&r=europe', null, 'temperate'], // an old region link: r is ignored
     ['?v=2&r=europe', null, null],
-    ['?v=2&c=Temperate&r=EUROPE', null, null],
-    ['?c=temperate&climate=arid&r=europe', null, null],
-    ['', place, null],
-    ['', 'v=2&c=temperate', null],
+    ['?v=2&c=Temperate&r=EUROPE&b=1', null, null],
+    ['?c=temperate&climate=arid', null, null],
+    ['?c=nowhere', saved, null],
+    ['', saved, null],
+    ['', 'v=2&k=FR', null],
     ['', null, 'temperate'],
-    ['?x=1', place, null],
+    ['', null, 'polar'],
+    ['?x=1', saved, null],
   ];
-  for (const [search, saved, siteClimate] of cases) {
-    assert.deepEqual(firstPaint(search, saved, siteClimate), opensOnResult(search, saved, siteClimate), `${search} | saved ${saved} | site ${siteClimate}`);
+  for (const [search, sv, siteClimate] of cases) {
+    assert.deepEqual(firstPaint(search, sv, siteClimate), opensOnResult(search, sv, siteClimate), `${search} | saved ${sv} | site ${siteClimate}`);
   }
-  assert.ok(firstPaint('?plant=Pyrus+communis&climate=temperate', place, null).compact, 'the reviewer\'s case is compact from the first paint');
-  assert.equal(firstPaint('?plant=Pyrus+communis&climate=temperate', null, null).step, '1', 'a preset with no place: the climate step is done from the first paint');
+  assert.ok(firstPaint('?plant=Pyrus+communis&climate=temperate', null, null).compact, 'a guide preset is compact from the first paint, country or not');
+  assert.ok(!firstPaint('', 'v=2&k=FR', null).compact, 'a saved country alone opens on the setup');
 });
 
 test('strata colours only in the drawing and its legend; elsewhere the stratum word or the number in neutral ink (prepush L1)', () => {
@@ -712,7 +691,7 @@ test('logic: licences read as their proper names, with the version the data give
   assert.equal(licenceOf('  '), null);
   // Every licence in the shipped data gets a name with no version the data did not give.
   const digits = (x) => (x.match(/\d/g) ?? []).join('');
-  for (const c of manifest.cells) {
+  for (const c of manifest.climates) {
     const cellData = JSON.parse(read(`public/data/consortium/${c.file}`));
     const all = [...cellData.taxa.map((t) => t.image?.licence), ...Object.values(cellData.sources).map((x) => x.licence)].filter(Boolean);
     for (const raw of all) {
@@ -791,4 +770,58 @@ test('print says "none found so far", not "all checked", while allelopathy is un
   const app = read('src/scripts/consortium/app.js');
   assert.match(app, /T\(t\.warnings\.allelopathic == null \? 'printNoneYet' : 'printNone'\)/);
   for (const lang of locales) assert.ok(strings[lang].printNoneYet, `${lang}: printNoneYet`);
+});
+
+// ---------- consortium/climate-first (design-ui.md, owner decisions 2026-10-28) ----------
+test('a guessed country is shown as a guess with its reason, and never written to a link or a save', () => {
+  const app = read('src/scripts/consortium/app.js');
+  assert.match(app, /const country = S\.countrySource === 'guess' \? null : S\.country;/, 'stateNow drops a guess');
+  assert.match(app, /T\(\{ guess: 'countryGuessed', link: 'countryLinked' \}\[S\.countrySource\] \?\? 'countryChosen'\)/);
+  assert.match(app, /data-src="\$\{S\.country \? S\.countrySource \?\? 'user' : 'none'\}"/);
+  assert.match(css, /\.cl-chip\[data-src="guess"\][^{]*\{[^}]*dashed/, 'a guess has a dashed chip');
+  assert.match(strings.en.countryGuessed, /browser/);
+  // The link a guess makes has no k at all.
+  const site = { light: 'sun', soil: 'unsure', water: 'unsure', room: 'large' };
+  const base = { climate: 'temperate', site, kept: [], removed: [], members: null, plants: [] };
+  assert.equal(core.encodeState({ ...base, country: null, noCountry: false }).get('k'), null);
+  assert.equal(core.encodeState({ ...base, country: 'br', noCountry: false }).get('k'), 'BR');
+});
+
+test('"No country" is kept on this device only (k=- in the save, never in a share link)', () => {
+  const app = read('src/scripts/consortium/app.js');
+  assert.match(app, /noCountry: saved && !S\.country && S\.noCountry/);
+  assert.match(app, /localStorage\.setItem\(STORE, JSON\.stringify\(\{ q: query\(true\)/);
+  assert.match(app, /history\.replaceState\(history\.state, '', location\.pathname \+ '\?' \+ q\)/);
+  assert.match(app, /const q = query\(false\);/);
+  const site = { light: 'sun', soil: 'unsure', water: 'unsure', room: 'large' };
+  const q = core.encodeState({ climate: 'temperate', country: null, noCountry: true, site, kept: [], removed: [], members: null, plants: [] });
+  assert.equal(q.get('k'), core.NO_COUNTRY);
+  const back = core.decodeState(q).state;
+  assert.equal(back.noCountry, true);
+  assert.equal(back.country, null);
+});
+
+test('an invasive-here plant shows on its card and in the warning box, and Add and Swap ask no confirmation for it', () => {
+  const app = read('src/scripts/consortium/app.js');
+  assert.match(app, /if \(flags\.invasive === true\) severe\.push\(\{ cls: 'warning', text: esc\(T\('invHere'/, 'on the card');
+  assert.match(app, /if \(flags\.invasive === true\) items\.push\(item\('warning', I\.warn, esc\(T\('invHere'/, 'in the details');
+  assert.match(app, /class="liab"/, 'with the liability line');
+  // The confirmation asks on flagged only, and flagged no longer counts invasive (suggest.ts).
+  assert.match(app, /add\(v\) \{ const f = flagsFor\(.*?\); if \(f\?\.flagged\)/);
+  assert.match(app, /use\(v\) \{ const from = swapTarget\(O\); if \(swapFlags\(from, v\)\?\.flagged\)/);
+  const suggest = read('src/lib/consortium/suggest.ts');
+  assert.equal(suggest.match(/^\s+flagged: (.*),$/m)?.[1], '!i.fit.ok || found.some(isSerious)');
+});
+
+test('the keys of the region flow are gone in every locale', () => {
+  const dead = ['outline', 'step2', 'ratherNot', 'regionInstead', 'backToCountry', 'whichPart', 'otherCountry', 'hasPlants', 'noPlants', 'cell',
+    'nc.optIn', 'nc.optNote', 'nc.why', 'nc.change', 'nc.noneClimate', 'borrowedText', 'borrowedInv', 'placeFrom', 'fromGuideWait', 'redonePlace', 'invElse', 'yourPlace'];
+  for (const lang of locales) for (const key of Object.keys(strings[lang])) {
+    assert.ok(!dead.some((d) => key === d || key.startsWith(d + '.')), `${lang}: ${key}`);
+    assert.doesNotMatch(key, /^(part\.|region\.\w+\.hint$)/, `${lang}: ${key}`);
+  }
+  for (const lang of ['en', 'fr']) {
+    const guides = JSON.parse(read(`src/i18n/guides/${lang}.json`));
+    assert.ok(!Object.keys(guides).some((k) => k.startsWith('consortium.cell.')), `${lang}: guide cell keys`);
+  }
 });

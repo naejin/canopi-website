@@ -1,11 +1,10 @@
 // The consortium tool's pure rules about its own state (no DOM, no strings), so
 // scripts/consortium-page.test.mjs can test them: what a share link lost, which gap rows stay,
 // when the address bar may be rewritten, which data urls may be links, where a photo came from, how much of a list shows, what a
-// place change leaves of a link's notices, when a click is the tail of a double click, the language
-// links' query, the place a guide preset borrows from the saved consortium, and why a Northern American
-// country is not covered.
+// climate change leaves of a link's notices, when a click is the tail of a double click, and the
+// language links' query.
 
-// How many plants an old link named that the cell no longer has: the distinct ids of `p` (kept)
+// How many plants an old link named that the climate file no longer has: the distinct ids of `p` (kept)
 // and `a` (members) that matched no taxon or several. A kept plant is in both lists, so it counts
 // once; removed plants (`x`) are not plants the link named.
 export function droppedPlants(dropped) {
@@ -58,9 +57,9 @@ export function shown(list, count, step = Infinity) {
 // the user emptied, and none for a no-match, so a reload works the no-match out again (min-2).
 export const linkMembers = (status, members) => (status === 'ready' ? members : null);
 
-// A notice (guide plant pinned or left out, older link, restored list) speaks of the place the page
-// opened on. When the user picks another place or climate it goes; only a link still waiting for its
-// cell takes its guide plant on to the new place, and then the notice is worked out there (min-1).
+// A notice (guide plant pinned or left out, older link, restored list) speaks of the climate the page
+// opened on. When the user picks another climate it goes; only a link's guide plant goes on to the
+// new climate, and then the notice is worked out there (min-1).
 export function afterMove({ pending }) {
   const plant = pending?.state?.plants?.[0] ?? null;
   return { notice: null, guidePlant: plant, guideId: null };
@@ -74,26 +73,8 @@ export function repeatClick(detail, now, last, ms = 500) {
 }
 
 // The language menu's link to this page in another language, with the tool's query (the address
-// bar's `search`), so a language switch keeps the plants, the place and a guide's preset (seam M1).
+// bar's `search`), so a language switch keeps the plants, the climate and a guide's preset (seam M1).
 export const withQuery = (href, search) => href.split('?')[0] + (search && search !== '?' ? search : '');
-
-// A guide preset names a plant and a climate but no place: the place saved on this device, if any,
-// is reused, so a returning gardener goes straight to the result (seam m4). A link with its own
-// place, or no guide plant, keeps what it says.
-export function presetPlace(preset, saved) {
-  if (!preset?.plants?.length || preset.region || preset.country || !saved?.region) return null;
-  return { country: saved.country ?? null, region: saved.region };
-}
-
-// "Not covered yet" for a country of Northern America in a climate whose only list is Central and
-// South America and the Caribbean (Tropical, in the beta): a reader in Yucatán reads "Central
-// America" and expects Mexico in it, but the data's regions put Mexico in Northern America (N3).
-export function coverageHint(manifest, climate, country) {
-  const regions = country ? manifest.country_regions[country] ?? [] : [];
-  if (!regions.includes('northern_america') || regions.includes('southern_america')) return null;
-  const has = (r) => manifest.cells.some((c) => c.climate_zone.toLowerCase() === climate && c.region === r);
-  return has('southern_america') && !has('northern_america') ? { region: 'southern_america', north: 'northern_america' } : null;
-}
 
 // The member a Swap replaces: the Swap list's own, and the same from a plant's details opened from
 // that list, so those details offer "Use this instead" and never only Add (prepush m4). null for

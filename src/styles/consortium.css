@@ -58,11 +58,6 @@
 .ct .setup { display: grid; gap: 20px; max-width: 880px; }
 .ct .step { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; display: grid; gap: 16px; }
 .ct .step-head { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: baseline; }
-.ct .step-num {
-  grid-row: span 2; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; align-self: start;
-  border: 1px solid var(--border-strong); font-family: var(--font-display); font-size: 17px; color: var(--text-secondary);
-}
-.ct .step[data-done="true"] .step-num { background: var(--text); color: var(--bg); border-color: var(--text); }
 .ct .step-head h2 { font-size: 26px; }
 .ct .step-head p { color: var(--text-secondary); font-size: 16px; }
 .ct .step-done { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 16px; }
@@ -108,11 +103,6 @@
 .ct .option:hover, .ct .option[aria-selected="true"] { background: var(--surface-alt); }
 .ct .option small { color: var(--text-muted); font-size: 14px; }
 .ct .option mark { background: none; color: inherit; font-weight: 600; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.2em; }
-.ct .or-line { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 15px; color: var(--text-muted); }
-.ct .region-choices { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 639px) {
-  .ct .region-choices { grid-template-columns: 1fr; }
-}
 .ct .privacy { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; color: var(--text-muted); }
 .ct .privacy svg { flex: none; margin-top: 3px; }
 /* ---------- Tool: result layout ---------- */
@@ -187,8 +177,6 @@
 .ct .note strong { font-weight: 600; }
 .ct .note p + p { margin-top: 4px; }
 .ct .note-actions { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 8px; }
-.ct .note-borrowed { border-left: 4px solid var(--warning-line); background: var(--warning-bg); }
-.ct .note-borrowed > svg { color: var(--warning); }
 .ct .note-old { background: var(--surface-alt); }
 /* Tabs */
 .ct .tabs { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); justify-self: start; max-width: 100%; }
@@ -501,50 +489,27 @@
 .ct :is(.profile, .strata-mini) .sw[data-s="high"] { box-shadow: inset 0 0 0 1.5px var(--s-high-ink); }
 .ct :is(.profile, .strata-mini) .sw[data-s="medium"] { box-shadow: inset 0 0 0 1.5px var(--s-medium-ink); }
 .ct :is(.profile, .strata-mini) .sw[data-s="low"] { box-shadow: inset 0 0 0 1.5px var(--s-low-ink); }
-/* Tool head: definition, outline, thumbnail; compact once there is a result */
+/* Tool head: definition, thumbnail; compact once there is a result */
 .ct .tool-head { grid-template-columns: minmax(0, 1fr) auto; align-items: start; column-gap: 32px; }
 .ct .tool-head-text { display: grid; gap: 12px; min-width: 0; }
 .ct .tool-head .thumb { margin: 6px 0 0; width: 220px; }
 .ct .tool-head .thumb svg { width: 100%; height: auto; }
 .ct .tool-head-compact { grid-template-columns: minmax(0, 1fr); padding-bottom: 16px; }
 .ct .tool-head-compact .tool-title { font-size: 30px; }
-.ct .outline { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 2px 0 0; padding: 0; list-style: none; font-size: 15px; color: var(--text-secondary); }
-.ct .outline li { display: inline-flex; align-items: center; gap: 8px; }
-.ct .outline li:not(:last-child)::after { content: '→'; color: var(--text-muted); margin-left: 4px; }
-.ct .outline .o-num { width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; border: 1.5px solid var(--border-strong); font-size: 13px; font-weight: 600; }
-.ct .outline li[aria-current="step"] { color: var(--text); font-weight: 600; }
-.ct .outline li[aria-current="step"] .o-num { border-color: var(--text); background: var(--text); color: var(--bg); }
-.ct .outline li[data-done="true"] .o-num { border-color: var(--text-secondary); }
 @media (max-width: 639px) {
   .ct .tool-head { grid-template-columns: minmax(0, 1fr); }
   .ct .tool-head .thumb { width: 100%; max-width: 260px; margin: 0; order: 2; }
   .ct .tool-head-compact { padding-bottom: 10px; gap: 6px; }
   .ct .tool-head-compact .tool-title { font-size: 25px; }
   .ct .tool-head-compact .tool-meta { font-size: 13.5px; }
-  .ct .outline { font-size: 14px; gap: 6px 10px; }
 }
-/* Climate step: chosen card has a check; pills name the covered region; collapsed summary */
+/* Climate step: chosen card has a check; a pill says whether the climate is covered */
 .ct .chosen-check { display: inline-flex; color: var(--accent-ink); margin-right: 6px; }
 .ct .chosen-check svg { width: 18px; height: 18px; }
 .ct .climate-choice strong { align-items: center; }
 .ct .climate-choice strong .cover-pill { margin-left: auto; }
 .ct .cover-pill[data-covered="true"] { color: var(--text); border-color: var(--border-strong); }
-.ct .step-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
-.ct .step-summary > div { display: grid; gap: 0; flex: 1; min-width: 0; }
-.ct .step-summary strong { font-size: 19px; font-weight: 600; }
-.ct .step-summary small { font-size: 14px; color: var(--text-muted); }
-.ct .step-summary .field-label { font-family: var(--font-sans); font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
-.ct .step-collapsed { padding-block: 16px; }
-.ct .step-num-done { display: inline-grid; place-items: center; }
-.ct .step-num-done svg { width: 18px; height: 18px; }
-.ct .mark { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; margin-left: 8px; white-space: nowrap; }
-.ct .mark svg { width: 14px; height: 14px; }
-.ct .mark-has { color: var(--text); }
-.ct .mark-no { color: var(--text-muted); font-weight: 400; font-style: italic; }
-.ct .climate-choice .mark { margin-left: 0; }
-.ct .suggest-country .mark { display: inline-flex; margin: 2px 0 0; }
 .ct .note-guide { background: var(--surface-alt); }
-.ct .note-guide .place-from { margin-top: 6px; font-size: 15px; color: var(--text-secondary); }
 /* Result: basis, attention, free places, foot */
 .ct .tabpanel { display: grid; gap: 20px; }
 .ct .basis { font-size: 15px; color: var(--text-secondary); margin-top: -8px; }
@@ -575,9 +540,6 @@
   .ct .result-foot .button { min-height: 44px; }
 }
 .ct .result-head .place-chips { width: 100%; }
-.ct .covered-plain { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 15.5px; }
-.ct .covered-plain strong { font-weight: 600; }
-.ct .covered-plain span { color: var(--text-muted); font-size: 14px; }
 /* Layers drawing: labelled strata lines, light cue, staggered labels */
 .ct .light-cue { display: flex; gap: 8px; align-items: flex-start; flex-basis: 100%; }
 .ct .light-cue svg { flex: none; color: var(--warning); margin-top: 1px; }
@@ -676,7 +638,7 @@
 
 /* ---------- Page additions ---------- */
 .ct .tool-head[data-step]:not([data-step="0"]) .tool-lede, .ct .tool-head[data-step]:not([data-step="0"]) .thumb,
-.ct .tool-head-compact .outline, .ct .tool-head-compact .tool-lede, .ct .tool-head-compact .thumb { display: none; }
+.ct .tool-head-compact .tool-lede, .ct .tool-head-compact .thumb { display: none; }
 .ct .tool-head:not([data-step="0"]) { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 639px) { .ct .tool-head .thumb { display: none; } }
 .ct .stratum-head h3 { font-size: 21px; display: inline-flex; align-items: center; gap: 9px; }
@@ -733,7 +695,6 @@
 @media print {
   body:has(.ct-print:not(:empty)) > :not(main), .ct:has(.ct-print:not(:empty)) > :not(.ct-print), .grain::after { display: none !important; }
   .ct .ct-print:not(:empty) { display: block; }
-  .ct .sheet-borrowed { border: 1px solid #1E1B16; padding: 8px 10px; margin-block: 8px; }
   .ct .sheet { box-shadow: none; padding: 0; max-width: none; }
   .ct .sheet table { page-break-inside: auto; } .ct .sheet tr { break-inside: avoid; }
   .ct .sheet-foot { word-break: break-all; }
@@ -783,8 +744,7 @@
 /* live M1: the browser's suggestion wraps inside a 320px column in every language. */
 .ct .suggest-country { flex-wrap: wrap; }
 .ct .suggest-country > span:nth-child(2) { flex: 1 1 9em; min-width: 0; }
-.ct .suggest-country .mark { white-space: normal; }
-/* The covered-places pill may need two lines ("Beta: Central and South America and the Caribbean"). */
+/* A long pill in another language may wrap under the name. */
 .ct .climate-choice strong { flex-wrap: wrap; }
 .ct .cover-pill { white-space: normal; border-radius: 12px; max-width: 100%; text-align: start; }
 /* Explain buttons with their question written out beside each view's title. */
@@ -803,3 +763,49 @@
 /* What to do about a plant that does not fit the site: the answer it fits, and Swap. */
 .ct .att-acts { display: inline-flex; flex-wrap: wrap; gap: 0 14px; margin-left: 10px; }
 .ct .att-acts .link-button { font-weight: 600; }
+
+/* ---------- Climate first: one question, the country line ---------- */
+.ct .step-head-solo { grid-template-columns: minmax(0, 1fr); }
+/* "Invasive warnings for [France ▾] guessed from your browser": a guess has a dashed chip. */
+.ct .country-line { display: grid; gap: 4px; }
+.ct .cl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 16px; color: var(--text-secondary); }
+.ct .cl-chip { min-height: 36px; padding: 0 12px; }
+.ct .cl-chip[data-src="guess"] { border-style: dashed; }
+.ct .cl-why { font-size: 14px; color: var(--text-muted); }
+.ct .cl-add { font-weight: 600; color: var(--accent-ink); font-size: 16px; min-height: 36px; }
+.ct .step-one .country-line { padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.ct .panel-place { gap: 10px; }
+.ct .panel-place .place-chips { display: grid; gap: 10px; }
+.ct .panel-place .cl-row { font-size: 15px; }
+.ct .climate-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.ct .result-head .country-line { width: 100%; }
+.ct .counts-world { margin-top: -12px; color: var(--text-muted); font-size: 14px; }
+.ct .no-country-pick { display: grid; gap: 0; padding-top: 12px; border-top: 1px solid var(--border); }
+.ct .no-country-pick .link-button { justify-self: start; font-weight: 600; color: var(--accent-ink); min-height: 40px; }
+.ct .suggest-country .go { display: inline-flex; align-items: center; gap: 4px; }
+.ct .suggest-country[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--accent); }
+.ct .option[aria-pressed="true"] { font-weight: 600; }
+/* Every reason a plant was chosen, each with its region and sources. */
+.ct .reasons { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.ct .reasons .muted { font-size: 14px; }
+/* The climates' descriptions: in each card on wider screens; under the cards on phones. */
+.ct .climate-abouts { display: none; font-size: 15px; color: var(--text-secondary); }
+.ct .climate-abouts summary { font-weight: 600; color: var(--accent-ink); min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.ct .climate-abouts dl { margin: 4px 0 0; display: grid; gap: 2px 0; }
+.ct .climate-abouts dt { font-weight: 600; color: var(--text); margin-top: 6px; }
+.ct .climate-abouts dd { margin: 0; }
+@media (max-width: 639px) {
+  .ct .cl-chip, .ct .cl-add { min-height: 44px; }
+  .ct .step-one { gap: 12px; padding-top: 16px; }
+  .ct .step-one .step-head p { display: none; }
+  .ct .step-one .country-line { padding-bottom: 12px; }
+  .ct .country-line { gap: 2px; }
+  .ct .cl-row { row-gap: 0; }
+  .ct .climate-choice .about { display: none; }
+  .ct .climate-abouts { display: block; }
+}
+@media (min-width: 960px) {
+  .ct .step-one .country-line { grid-template-columns: auto 1fr; align-items: center; column-gap: 18px; }
+  .ct .step-one .country-line .cl-why:not(.cl-row *) { grid-column: 1; }
+  .ct .step-one .country-line .privacy { grid-row: 1; grid-column: 2; justify-self: end; text-align: end; }
+}

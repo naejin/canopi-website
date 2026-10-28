@@ -1,7 +1,7 @@
 // The consortium data, fetched from the site's own static files (public/data/consortium/, written by
-// scripts/install-consortium.mjs): the manifest first, then one cell file when a place is chosen.
+// scripts/install-consortium.mjs): the manifest first, then one climate file when a climate is chosen.
 // Each file is fetched once per page view; a failed fetch is forgotten so "Try again" fetches again.
-import type { Cell, Labels, Manifest } from '../../lib/consortium/index.ts';
+import type { ClimateFile, Labels, Manifest } from '../../lib/consortium/index.ts';
 
 const BASE = '/data/consortium/';
 const cache = new Map<string, Promise<unknown>>();
@@ -21,4 +21,4 @@ function load<T>(file: string): Promise<T> {
 
 export const loadManifest = () => load<Manifest>('manifest.json');
 export const loadLabels = () => load<Labels>('labels.json');
-export const loadCell = (file: string) => load<Cell>(file);
+export const loadClimate = (file: string) => load<ClimateFile>(file);

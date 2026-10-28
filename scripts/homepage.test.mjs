@@ -38,7 +38,8 @@ test('every locale supplies the same keys and preserves interpolation placeholde
   const root = new URL('../src/i18n/translations/', import.meta.url);
   const en = JSON.parse(readFileSync(new URL('en.json', root), 'utf8'));
   const keys = Object.keys(en).sort();
-  const placeholders = text => (text.match(/\{\w+\}/g) || []).sort();
+  // The set of placeholders: a plural string repeats them once per form, and zh, ja and ko have one form.
+  const placeholders = text => [...new Set(text.match(/\{\w+\}/g) || [])].sort();
   const files = readdirSync(root).filter(file => file.endsWith('.json'));
   assert.equal(files.length, 11);
   for (const file of files) {
@@ -197,33 +198,31 @@ test('the consortium tool has one short header word and one full name per locale
   }
 });
 
-test('the home section\'s note names exactly the beta cells the manifest lists', () => {
-  // home.consortium.note spells these places out in all 11 locales: a cell added to (or dropped from)
-  // public/data/consortium/manifest.json means rewriting the note, and this list, in every locale.
-  const described = ['mediterranean × europe', 'temperate × europe', 'tropical × southern_america'];
+test('the home section\'s note names exactly the beta climates the manifest lists, and no region', () => {
+  // home.consortium.note spells these climates out in all 11 locales: a climate added to (or dropped
+  // from) public/data/consortium/manifest.json means rewriting the note, and this list, in every locale.
+  const described = ['mediterranean', 'temperate', 'tropical'];
   const manifest = JSON.parse(readFileSync(new URL('../public/data/consortium/manifest.json', import.meta.url), 'utf8'));
-  assert.deepEqual(manifest.cells.map((cell) => `${cell.climate_zone.toLowerCase()} × ${cell.region}`).sort(), described);
-  // The note itself, in each locale: the number of places, the two European climates, the tropics, and
-  // the tool's own name for the tropical cell's region (prepush L7).
+  assert.deepEqual(manifest.climates.map((c) => c.climate_zone.toLowerCase()).sort(), described);
+  // The note itself, in each locale: the number of climates and their three names.
   const words = {
-    en: [/three places/, /temperate/i, /Mediterranean/, /tropics/],
-    fr: [/trois endroits/, /tempérée/, /méditerranéenne/, /tropiques/],
-    es: [/tres lugares/, /templada/, /mediterránea/, /trópicos/],
-    pt: [/três lugares/, /temperada/, /mediterrânea/, /trópicos/],
-    it: [/tre luoghi/, /temperata/, /mediterranea/, /tropici/],
-    de: [/drei Gebieten/, /gemäßigte/, /mediterrane/, /Tropen/],
-    nl: [/drie gebieden/, /gematigd/, /mediterraan/, /tropen/],
-    ru: [/три области/, /умеренным/, /средиземноморским/, /тропики/],
-    zh: [/三个地区/, /温带/, /地中海/, /热带/],
-    ja: [/3つ/, /温帯/, /地中海/, /熱帯/],
-    ko: [/세 지역/, /온대/, /지중해/, /열대/],
+    en: [/three climates/, /tropical/, /Mediterranean/, /temperate/],
+    fr: [/trois climats/, /tropical/, /méditerranéen/, /tempéré/],
+    es: [/tres climas/, /tropical/, /mediterráneo/, /templado/],
+    pt: [/três climas/, /tropical/, /mediterrânico/, /temperado/],
+    it: [/tre climi/, /tropicale/, /mediterraneo/, /temperato/],
+    de: [/drei Klimazonen/, /tropisch/, /mediterran/, /gemäßigt/],
+    nl: [/drie klimaten/, /tropisch/, /mediterraan/, /gematigd/],
+    ru: [/три климата/, /тропический/, /средиземноморский/, /умеренный/],
+    zh: [/三种气候/, /热带/, /地中海/, /温带/],
+    ja: [/3つ/, /熱帯/, /地中海/, /温帯/],
+    ko: [/세 기후/, /열대/, /지중해/, /온대/],
   };
   for (const [lang, patterns] of Object.entries(words)) {
     const all = JSON.parse(readFileSync(new URL(`../src/i18n/translations/${lang}.json`, import.meta.url), 'utf8'));
-    const note = all['home.consortium.note'], region = all['consortium.region.southern_america'];
+    const note = all['home.consortium.note'];
     for (const w of patterns) assert.match(note, w, `${lang}: ${note}`);
-    assert.ok(note.includes(region) || note.includes(region.replace(/^./, (c) => c.toLowerCase())), `${lang}: names ${region}`);
-    assert.match(note, /Europ|Европ|欧洲|ヨーロッパ|유럽/, `${lang}: Europe`);
+    assert.doesNotMatch(note, /Europ|Европ|欧洲|ヨーロッパ|유럽|Caribbean|Caraïbes|Caribe|Caraibi|Karibik|Caraïben|Карибы|加勒比|カリブ|카리브/, `${lang}: no region`);
   }
 });
 

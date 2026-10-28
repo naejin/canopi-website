@@ -1,5 +1,5 @@
 // Guides → consortium tool: <TryConsortium plant climate name> opens the tool with the guide's plant
-// kept and its climate set (?plant=<canonical_name>&climate=<id>). The plant must be in the beta cell of
+// kept and its climate set (?plant=<canonical_name>&climate=<id>). The plant must be in the beta list of
 // that climate (public/data/consortium/), the climate the guide's own (<ForClimate> block), never a default.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -12,11 +12,11 @@ const guideRoot = join(repo, 'src/content/guides');
 const dataDir = 'public/data/consortium';
 const siteClimates = [...read('src/data/climates.ts').match(/export const climates = \[(.*)\] as const;/)[1].matchAll(/'([a-z]+)'/g)].map((m) => m[1]);
 
-// Site climate id → the canonical names of its beta cell.
+// Site climate id → the canonical names of its beta climate file.
 const manifest = JSON.parse(read(`${dataDir}/manifest.json`));
-const cells = new Map(manifest.cells.map((cell) => [
-  cell.climate_zone.toLowerCase(),
-  new Set(JSON.parse(read(`${dataDir}/${cell.file}`)).taxa.map((taxon) => taxon.canonical_name)),
+const cells = new Map(manifest.climates.map((entry) => [
+  entry.climate_zone.toLowerCase(),
+  new Set(JSON.parse(read(`${dataDir}/${entry.file}`)).taxa.map((taxon) => taxon.canonical_name)),
 ]));
 
 // Every <TryConsortium> of a guide body, with the zones of the <ForClimate> block around it (null outside).
@@ -35,8 +35,8 @@ function presets(body) {
 const guides = existsSync(guideRoot) ? readdirSync(guideRoot, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name) : [];
 const bodies = guides.flatMap((slug) => ['en', 'fr'].map((lang) => ({ slug, lang, file: `${slug}/${lang}.mdx`, body: read(`src/content/guides/${slug}/${lang}.mdx`) })));
 
-test('the consortium cells name site climates, and their canonical names are what the guides link', () => {
-  assert.ok(cells.size >= 1, 'public/data/consortium/manifest.json lists cells');
+test('the consortium climate files name site climates, and their canonical names are what the guides link', () => {
+  assert.ok(cells.size >= 1, 'public/data/consortium/manifest.json lists climates');
   for (const [climate, names] of cells) {
     assert.ok(siteClimates.includes(climate), `cell climate "${climate}" is a site climate`);
     assert.ok(names.size > 0, `the ${climate} cell has plants`);
@@ -56,7 +56,7 @@ test('the preset reader sees the attributes and the climate block around a <TryC
   ]);
 });
 
-test('every guide preset names a plant of the beta cell of its climate, and takes the climate from its block', () => {
+test('every guide preset names a plant of the beta list of its climate, and takes the climate from its block', () => {
   let count = 0;
   for (const { file, body } of bodies) {
     for (const p of presets(body)) {
@@ -98,43 +98,42 @@ test('a preset in a climate block is the last thing in it, after the list and an
   }
 });
 
-const { presetCells, presetLinks } = await import('../src/components/guides/try-consortium.ts');
-const liveCells = presetCells(manifest, (name) => JSON.parse(read(`${dataDir}/${name}`)));
-const holders = (plant) => [...liveCells].filter((cell) => cell.names.has(plant));
+const { presetClimates, presetLinks } = await import('../src/components/guides/try-consortium.ts');
+const liveClimates = presetClimates(manifest, (name) => JSON.parse(read(`${dataDir}/${name}`)));
+const holders = (plant) => liveClimates.filter((f) => f.names.has(plant));
 
-test('a preset without a climate links every beta cell that has the plant, in the site climate order', () => {
-  const links = presetLinks('/consortium/', 'Zea mays', undefined, liveCells);
-  const expected = siteClimates.filter((zone) => holders('Zea mays').some((cell) => cell.climate === zone));
-  assert.ok(expected.length > 1, 'corn is in more than one cell');
+test('a preset without a climate links every beta climate that has the plant, once each, in the site climate order', () => {
+  const links = presetLinks('/consortium/', 'Zea mays', undefined, liveClimates);
+  const expected = siteClimates.filter((zone) => holders('Zea mays').some((f) => f.climate === zone));
+  assert.ok(expected.length > 1, 'corn is in more than one climate');
   assert.deepEqual(links.map((link) => link.climate), expected);
   assert.deepEqual(links.map((link) => link.href), expected.map((zone) => `/consortium/?plant=Zea+mays&climate=${zone}`));
-  for (const link of links) {
-    assert.deepEqual(link.regions, holders('Zea mays').filter((cell) => cell.climate === link.climate).map((cell) => cell.region), `${link.climate}: the link names the cell it opens`);
-  }
 });
 
-test('a preset with a climate links that climate only, in the French slug too, and names its cell', () => {
-  const [cell] = liveCells.filter((c) => c.climate === 'tropical');
-  const plant = [...cell.names][0];
-  assert.deepEqual(presetLinks('/fr/guilde/', plant, 'tropical', liveCells), [
-    { climate: 'tropical', regions: [cell.region], href: `/fr/guilde/?${new URLSearchParams({ plant, climate: 'tropical' })}` },
+test('a preset with a climate links that climate only, in the French slug too', () => {
+  const plant = [...liveClimates.find((f) => f.climate === 'tropical').names][0];
+  assert.deepEqual(presetLinks('/fr/guilde/', plant, 'tropical', liveClimates), [
+    { climate: 'tropical', href: `/fr/guilde/?${new URLSearchParams({ plant, climate: 'tropical' })}` },
   ]);
 });
 
-test('a preset fails the build on an unknown climate, a plant outside that climate\'s cell, or a plant in no cell', () => {
-  const inTemperateOnly = [...liveCells.find((c) => c.climate === 'temperate').names].find((name) => holders(name).every((c) => c.climate === 'temperate'));
-  assert.ok(inTemperateOnly, 'some plant is only in the temperate cell');
-  assert.throws(() => presetLinks('/consortium/', 'Zea mays', 'polar', liveCells), /not a climate/);
-  assert.throws(() => presetLinks('/consortium/', inTemperateOnly, 'tropical', liveCells), /not in the tropical cell/);
-  assert.throws(() => presetLinks('/consortium/', 'Plantus inventus', undefined, liveCells), /in no consortium cell/);
+test('a preset fails the build on an unknown climate, a plant outside that climate\'s list, or a plant in no list', () => {
+  const inTemperateOnly = [...liveClimates.find((f) => f.climate === 'temperate').names].find((name) => holders(name).every((f) => f.climate === 'temperate'));
+  assert.ok(inTemperateOnly, 'some plant is only in the temperate list');
+  assert.throws(() => presetLinks('/consortium/', 'Zea mays', 'polar', liveClimates), /not a climate/);
+  assert.throws(() => presetLinks('/consortium/', inTemperateOnly, 'tropical', liveClimates), /not in the tropical list/);
+  assert.throws(() => presetLinks('/consortium/', 'Plantus inventus', undefined, liveClimates), /in no consortium climate/);
 });
 
-test('every beta cell has a name in the guides\' languages, and the link text names the plant and the cell', () => {
+test('the link text names the plant and the climate it opens ("Corn · Temperate"), with no region', () => {
   for (const lang of ['en', 'fr']) {
     const strings = JSON.parse(read(`src/i18n/guides/${lang}.json`));
-    for (const cell of liveCells) assert.ok(strings[`consortium.cell.${cell.climate}.${cell.region}`]?.trim(), `guides/${lang}.json: consortium.cell.${cell.climate}.${cell.region}`);
     assert.ok(strings['consortium.label']?.trim(), `guides/${lang}.json: consortium.label`);
-    assert.match(strings['consortium.link'], /\{plant\}[\s\S]*\{cell\}/, `guides/${lang}.json: consortium.link names {plant} and {cell}`);
+    assert.equal(strings['consortium.link'], '{plant} · {climate}', `guides/${lang}.json: consortium.link`);
+    assert.ok(!Object.keys(strings).some((k) => k.startsWith('consortium.cell.')), `guides/${lang}.json: no cell names left`);
+    const site = JSON.parse(read(`src/i18n/translations/${lang}.json`));
+    for (const f of liveClimates) assert.ok(site[`climate.${f.climate}`]?.trim(), `${lang}: climate.${f.climate}`);
   }
+  assert.match(read('src/components/guides/TryConsortium.astro'), /gt\('consortium\.link', lang, \{ plant: name, climate: t\(`climate\.\$\{link\.climate\}`, lang\) \}\)/);
   assert.match(JSON.parse(read('src/i18n/guides/fr.json'))['consortium.label'], /guilde/i, 'French says « guilde »');
 });

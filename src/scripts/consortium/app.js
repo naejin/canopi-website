@@ -1,16 +1,18 @@
-// The consortium tool (src/components/consortium/ConsortiumPage.astro): choose a climate and a
-// place, get a consortium from the data core (src/lib/consortium/), change it, share or print it.
+// The consortium tool (src/components/consortium/ConsortiumPage.astro): choose a climate, get a
+// consortium from the data core (src/lib/consortium/), change it, share or print it. The country is
+// optional and only sets the invasive warnings: guessed from the browser (shown as a guess, never
+// silent), changeable or cleared; it never changes the plants.
 // The page renders from one state object; every change re-renders the tool and puts the focus back
 // on the control that had it (data-fk), or on the one the action names. Sheets (details, Swap, Add,
-// place, site) are one native <dialog>. Nothing leaves the browser: the data files are the site's
+// climate, country, site) are one native <dialog>. Nothing leaves the browser: the data files are the site's
 // own, the state lives in the address bar and in localStorage.
 import {
-  cellFor, regionsOf, regions, strata, phases, phaseBands, bandsOf, jobs, jobsOf, jobOfFunction, suggest, evaluate, alternatives, flagsFor,
+  fileFor, isCountry, invasiveChecked, strata, phases, phaseBands, bandsOf, jobs, jobsOf, jobOfFunction, suggest, evaluate, alternatives, flagsFor,
   SIZE_LIMIT, DEFAULT_SITE, lights, soils, waters, rooms, encodeState, decodeState, resolveState, taxonByName, invasiveCountries, isSerious, siteClimates, fits,
 } from '../../lib/consortium/index.ts';
-import { loadManifest, loadLabels, loadCell } from './data.ts';
+import { loadManifest, loadLabels, loadClimate } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook, capFirst } from './words.js';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget, relaxTo, licenceOf, uncheckedOnCard } from './logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard } from './logic.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
 
@@ -27,9 +29,8 @@ const printEl = document.getElementById('ct-print');
 const phoneMQ = matchMedia('(max-width: 639px)');
 const phone = () => phoneMQ.matches;
 const STORE = 'canopi-consortium';
-// The core's lists: regions in the page language's alphabetical order, the site answers as the core has them,
-// and the climates in the site picker's order (src/data/climates.ts, seam m5).
-const REGIONS = [...regions].sort((a, b) => W.region(a).localeCompare(W.region(b), data.lang));
+// The core's lists: the site answers as the core has them, and the climates in the site picker's
+// order (src/data/climates.ts, seam m5).
 const SITE_OPTIONS = { light: lights, soil: soils, water: waters, room: rooms };
 const CLIMATES = climates.filter((c) => siteClimates.includes(c));
 
@@ -66,12 +67,15 @@ const JOB_ICON = {
 const jobIcon = (j, size = 20) => svg(JOB_ICON[j], size);
 
 // ---------- State ----------
+// cell: the climate file shown (the union of the climate's accepted cells).
 let manifest = null, labels = null, cell = null;
+// countrySource: 'guess' (the browser's, shown as a guess and never put in a link), 'user' (picked or
+// cleared here), 'link' (a share link's k), 'saved' (this device's last consortium); null with no
+// country and no choice. noCountry: the user chose "No country" (k=- in the saved state only).
 const fresh = () => ({
-  climate: null, climateSource: null, country: null, region: null, cellRegion: null,
-  ratherNot: false, pickFor: null, editClimate: false,
+  climate: null, climateSource: null, country: null, countrySource: null, noCountry: false, unknownCountry: null,
   site: { ...DEFAULT_SITE }, status: 'boot', members: [], kept: new Set(), removed: new Set(), gaps: [],
-  view: 'layers', explain: null, notice: null, dropped: 0, guidePlant: null, guideId: null, restoredAt: null, pending: null, placeFrom: null,
+  view: 'layers', explain: null, notice: null, dropped: 0, guidePlant: null, guideId: null, restoredAt: null, pending: null,
 });
 let S = fresh();
 let O = null; // the open sheet: { type, id, filter, back, confirm }
@@ -84,9 +88,12 @@ let swapMore = 0;
 const taxonOf = (id) => cell?.taxa.find((t) => t.id === id) ?? null;
 const stratumOf = (t) => t.stratum?.value ?? 'none';
 const limit = () => SIZE_LIMIT[S.site.room];
-const cellRegion = () => S.cellRegion ?? S.region;
-const cellLabel = () => W.cell(S.climate, cellRegion());
-const whereLabel = () => (S.country ? W.country(S.country) : W.region(S.region));
+const climateLabel = () => W.climate(S.climate);
+// The country the warnings use: a country GRIIS checked. With none (or one it did not check), each
+// plant says in how many countries it is invasive.
+const countryChecked = () => invasiveChecked(manifest, S.country);
+const warnCountry = () => (S.country && countryChecked() ? S.country : null);
+const where = () => ({ country: S.country, countryChecked: countryChecked() });
 const stratumLabel = (s) => T('stratum.' + s);
 const name = (t) => { const n = plantName(t, lang); return n.lang ? `<span lang="en">${esc(n.text)}</span>` : esc(n.text); };
 const nameText = (t) => plantName(t, lang).text;
@@ -99,8 +106,8 @@ const siteClimate = () => (siteClimates.includes(document.documentElement.datase
 // The members with their flags (evaluate never refills), cached until the state changes.
 let evalKey = '', evalOut = null;
 function evaluated() {
-  const key = [S.members.join(), keptList().join(), S.site.light, S.site.soil, S.site.water, S.site.room, S.country, cell?.climate_zone, cell?.region].join('|');
-  if (key !== evalKey) { evalKey = key; evalOut = evaluate(cell, S.members, { site: S.site, kept: keptList(), country: S.country }); }
+  const key = [S.members.join(), keptList().join(), S.site.light, S.site.soil, S.site.water, S.site.room, S.country, cell?.climate_zone].join('|');
+  if (key !== evalKey) { evalKey = key; evalOut = evaluate(cell, S.members, { site: S.site, kept: keptList(), ...where() }); }
   return evalOut;
 }
 const flagsById = () => new Map(evaluated().members.map((m) => [m.taxon.id, m.flags]));
@@ -115,7 +122,7 @@ const strataIn = (list) => new Set(list.filter((t) => t.stratum).map((t) => t.st
 // How many plants "Fill the free places" would add now.
 function fillable() {
   if (!cell || S.members.length >= limit()) return 0;
-  return suggest(cell, { site: S.site, kept: [...new Set([...S.members, ...S.kept])], removed: [...S.removed], country: S.country }).members.length - S.members.length;
+  return suggest(cell, { site: S.site, kept: [...new Set([...S.members, ...S.kept])], removed: [...S.removed] }).members.length - S.members.length;
 }
 
 // ---------- Warnings: one reading for every surface (card, Swap, Add, details, print) ----------
@@ -141,11 +148,10 @@ function warnParts(t, flags) {
   for (const k of flags.misfits) severe.push({ cls: 'warning', text: esc(misfitText(t, k)), look: true, misfit: k });
   if (t.warnings.allelopathic === true) soft.push(T('c.allelo'));
   if (t.warnings.weed_potential === true) soft.push(T('c.spreads'));
+  // With a country, a card tells only that country's warning; other countries are in details (owner,
+  // 2026-10-28). Without one (or one GRIIS did not check), the soft count of countries.
   const inv = invasiveCountries(t);
-  if (inv?.length) {
-    const others = S.country ? inv.filter((c) => c !== S.country).length : inv.length;
-    if (others) soft.push(S.country ? P('invElse', others) : P('invCount', others));
-  }
+  if (!warnCountry() && inv?.length) soft.push(P('invCount', inv.length));
   // Allelopathy not checked yet is told in details only (owner, 2026-10-28): see uncheckedOnCard.
   for (const k of uncheckedOnCard(t, jobsOf(t).length > 0)) unk.push(T(uncheckedKey[k]));
   return { severe, soft, unk };
@@ -173,10 +179,20 @@ const sw = (s) => `<span class="sw" data-s="${s}"></span>`;
 const fk = (k) => `data-fk="${esc(k)}"`;
 const btn = (cls, act, v, label, extra = '') => `<button class="${cls}" type="button" data-act="${act}"${v != null ? ` data-v="${esc(v)}"` : ''} ${extra}>${label}</button>`;
 function timeHTML1(t) { const w = W.timeWords(t); return esc(w.plain) + (w.term ? ` <span class="apt">· ${esc(w.term)}</span>` : ''); }
-function reasonHTML(t) {
-  if (!t.reason) return '';
-  if (t.reason[lang]) return esc(t.reason[lang]);
-  return `<span lang="en">${esc(t.reason.en)}</span> <span class="muted">(${esc(T('inEnglish'))})</span>`;
+// A reason's text in the page language, else in English (marked). A plant chosen in several regions
+// of its climate has one reason per region: a row shows the first, details show them all.
+function textHTML(text) {
+  if (!text) return '';
+  if (text[lang]) return esc(text[lang]);
+  return `<span lang="en">${esc(text.en)}</span> <span class="muted">(${esc(T('inEnglish'))})</span>`;
+}
+const reasonHTML = (t) => textHTML(t.reasons?.[0]?.text);
+// Every reason, each labelled with its region and its sources (owner, 2026-10-28).
+function reasonsHTML(t) {
+  const list = t.reasons ?? [];
+  if (!list.length) return '';
+  const src = (r) => W.list(r.sources.map((id) => cell.sources[id]?.label ?? id));
+  return `<ul class="reasons" role="list">${list.map((r) => `<li><p>${textHTML(r.text)}</p><p class="muted">${esc(T('reasonFrom', { region: W.region(r.region), sources: src(r) }))}</p></li>`).join('')}</ul>`;
 }
 // A licence by its proper name, linked to its deed when the licence is known (L3).
 function licenceHTML(raw) {
@@ -190,92 +206,97 @@ const guideLink = (slug, cls = '', inner) => { const g = guide(slug); return g ?
 const basisText = () => [T('basis.light.' + S.site.light), T('basis.soil.' + S.site.soil), T('basis.water.' + S.site.water), T('basis.room.' + S.site.room)].join(' · ');
 
 // ---------- Setup ----------
-function coveredRegions(climate) { return manifest.cells.filter((c) => c.climate_zone.toLowerCase() === climate).map((c) => c.region); }
-const hasCell = (region) => !!(S.climate && cellFor(manifest, S.climate, region));
-function mark(regions) {
-  if (!S.climate) return '';
-  return regions.some(hasCell) ? `<span class="mark mark-has">${I.check}${esc(T('hasPlants'))}</span>` : `<span class="mark mark-no">${esc(T('noPlants'))}</span>`;
-}
+// Phones show a card's name, coverage pill and example places; the climates' descriptions move
+// under the cards, in one "What the climates mean" list (owner, 2026-10-28).
 function climateChoices() {
   return `<ul class="climate-choices" role="list">${CLIMATES.map((c) => {
-    const rs = coveredRegions(c), on = S.climate === c;
+    const covered = !!fileFor(manifest, c), on = S.climate === c;
     return `<li><button class="climate-choice" type="button" data-act="climate" data-v="${c}" aria-pressed="${on}" ${fk('cl-' + c)}>
-      <strong>${on ? `<span class="chosen-check">${I.check}</span>` : ''}${esc(W.climate(c))}<span class="cover-pill" data-covered="${rs.length > 0}">${esc(rs.length ? T('covered', { regions: W.list(rs.map(W.region)) }) : T('notYet'))}</span></strong>
-      <span>${esc(data.strings['climate.' + c + '.about'])}</span><span class="places">${esc(data.strings['climate.' + c + '.places'])}</span></button></li>`;
-  }).join('')}</ul>`;
+      <strong>${on ? `<span class="chosen-check">${I.check}</span>` : ''}${esc(W.climate(c))}<span class="cover-pill" data-covered="${covered}">${esc(T(covered ? 'covered' : 'notYet'))}</span></strong>
+      <span class="about">${esc(data.strings['climate.' + c + '.about'])}</span><span class="places">${esc(data.strings['climate.' + c + '.places'])}</span></button></li>`;
+  }).join('')}</ul>
+  <details class="climate-abouts"><summary>${esc(T('climatesAbout'))}</summary><dl>${CLIMATES.map((c) => `<dt>${esc(W.climate(c))}</dt><dd>${esc(data.strings['climate.' + c + '.about'])}</dd>`).join('')}</dl></details>`;
+}
+// The browser's country, worked out once: the time zone first (the one manifest country whose
+// zones, from the browser's own CLDR data, include it), then the region of the browser's languages.
+// Shown as a guess ("guessed from your browser"), never put in a share link on its own.
+function guessCountry() {
+  const known = (c) => (c && isCountry(manifest, c) ? c.toUpperCase() : null);
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (zone) {
+      const hits = Object.keys(manifest.countries).filter((c) => {
+        try { const l = new Intl.Locale('und-' + c); const z = l.getTimeZones?.() ?? l.timeZones; return Array.isArray(z) && z.includes(zone); } catch { return false; }
+      });
+      if (hits.length === 1) return hits[0];
+    }
+  } catch {}
+  for (const l of navigator.languages ?? [navigator.language]) {
+    try { const r = known(new Intl.Locale(l).maximize().region); if (r) return r; } catch {}
+  }
+  return null;
 }
 let browserCountry = null;
-for (const l of navigator.languages ?? [navigator.language]) {
-  try { const r = new Intl.Locale(l).maximize().region; if (r) { browserCountry = r; break; } } catch {}
-}
 function countryMatches() {
   const q = fold(countryQuery.trim());
   if (!q) return [];
-  return Object.keys(manifest.country_regions).map((c) => ({ c, n: W.country(c) })).filter((x) => x.n !== x.c && fold(x.n).includes(q))
+  return Object.keys(manifest.countries).map((c) => ({ c, n: W.country(c) })).filter((x) => x.n !== x.c && fold(x.n).includes(q))
     .sort((a, b) => fold(a.n).indexOf(q) - fold(b.n).indexOf(q) || a.n.localeCompare(b.n, lang)).slice(0, 6);
 }
+// A country GRIIS has no checklist for says so in the list: its warnings would be "not checked".
+const noListNote = (c) => (invasiveChecked(manifest, c) ? '' : `<small>${esc(T('countryNoList'))}</small>`);
 function countryList() {
   const list = countryMatches();
   if (!countryQuery.trim()) return '';
   if (!list.length) return `<p class="place-note">${esc(T('noCountry'))}</p>`;
-  return `<ul class="options" role="list">${list.map((x) => `<li>${btn('option', 'country', x.c, `<span>${esc(x.n)}</span><small>${esc(W.list(regionsOf(manifest, x.c).map(W.region)))}${mark(regionsOf(manifest, x.c))}</small>`, fk('co-' + x.c))}</li>`).join('')}</ul>`;
+  return `<ul class="options" role="list">${list.map((x) => `<li>${btn('option', 'country', x.c, `<span>${esc(x.n)}</span>${noListNote(x.c)}`, `aria-pressed="${S.country === x.c}" ${fk('co-' + x.c)}`)}</li>`).join('')}</ul>`;
 }
+// The country sheet: the browser's guess as a one-tap card, the search, and "No country".
 function countryPicker() {
-  if (S.ratherNot) {
-    return `<p class="field-label">${esc(T('regionInstead'))}</p>
-      <ul class="region-choices" role="list">${REGIONS.map((r) => `<li><button class="climate-choice" type="button" data-act="region" data-v="${r}" aria-pressed="${S.region === r && !S.country}" ${fk('rg-' + r)}><strong>${esc(W.region(r))}</strong><span>${esc(T('region.' + r + '.hint'))}</span>${mark([r])}</button></li>`).join('')}</ul>
-      <p class="place-note">${esc(T('noCountryNote'))}</p>
-      <p>${btn('link-button', 'rather-not', '0', esc(T('backToCountry')), fk('back-country'))}</p>`;
-  }
-  if (S.pickFor) {
-    const k = S.pickFor;
-    return `<p class="field-label">${esc(T('whichPart', { country: W.country(k) }))}</p>
-      <ul class="region-choices" role="list">${regionsOf(manifest, k).map((r) => `<li><button class="climate-choice" type="button" data-act="country-region" data-v="${r}" ${fk('cr-' + r)}><strong>${esc(data.strings['part.' + k + '.' + r] ?? W.region(r))}</strong><span>${esc(W.region(r))}</span>${mark([r])}</button></li>`).join('')}</ul>
-      <p>${btn('link-button', 'other-country', null, esc(T('otherCountry')), fk('other-country'))}</p>`;
-  }
-  const sug = browserCountry && manifest.country_regions[browserCountry] && S.country !== browserCountry
-    ? `<button class="suggest-country" type="button" data-act="country" data-v="${browserCountry}" ${fk('suggest')}><span class="flagless" aria-hidden="true">${browserCountry}</span><span><strong>${esc(W.country(browserCountry))}</strong><small>${esc(T('fromBrowser'))}</small>${mark(regionsOf(manifest, browserCountry))}</span><span class="go">${esc(T('useIt'))}</span></button>` : '';
+  const g = browserCountry, inUse = g && S.country === g;
+  const sug = g ? `<button class="suggest-country" type="button" data-act="country" data-v="${g}" aria-pressed="${!!inUse}" ${fk('suggest')}><span class="flagless" aria-hidden="true">${g}</span><span><strong>${esc(W.country(g))}</strong><small>${esc(T('fromBrowser'))}</small>${noListNote(g)}</span><span class="go">${inUse ? `${I.check}${esc(T('inUse'))}` : esc(T('useIt'))}</span></button>` : '';
   return `${sug}<div class="field"><label for="ct-country-q">${esc(T('searchCountry'))}</label>
     <div class="search">${I.search}<input id="ct-country-q" type="search" autocomplete="off" spellcheck="false" placeholder="${esc(T('countryPlaceholder'))}" value="${esc(countryQuery)}" data-input="country" ${fk('country-q')}></div>
     <div id="ct-country-list">${countryList()}</div></div>
-    <p class="or-line">${btn('link-button', 'rather-not', '1', esc(T('ratherNot')), fk('rather'))}</p>`;
+    <div class="no-country-pick">${btn('link-button', 'no-country', null, esc(T('countryNone')), `aria-pressed="${!S.country && S.noCountry}" ${fk('no-country')}`)}<p class="place-note">${esc(T('countryNoneNote'))}</p></div>`;
 }
 const privacy = () => `<p class="privacy">${I.lock}<span>${esc(T('privacy'))}</span></p>`;
-// The guide's plant, found in a cell of the guide's climate before any place is chosen, so the note
-// names it as the tool will (live m3); with its scientific name, which the guide's link carried, so a
-// guide's "Guásimo" and the cell's "Bastard cedar" read as one plant (seam m2).
+// "Invasive warnings for [France ▾] guessed from your browser": in step 1 above the climate cards
+// (so a guess is seen before it is used) and with the climate in the result.
+function countryLineHTML(withPrivacy = false) {
+  const why = !S.country ? '' : !countryChecked() ? T('countryNoList')
+    : T({ guess: 'countryGuessed', link: 'countryLinked' }[S.countrySource] ?? 'countryChosen');
+  const row = S.country || S.noCountry
+    ? `<button class="chip-button cl-chip" type="button" data-act="open-place" data-v="country" data-src="${S.country ? S.countrySource ?? 'user' : 'none'}" aria-haspopup="dialog" ${fk('pc-country')}><span class="vh">${esc(T('countryLine'))} </span><strong>${esc(S.country ? W.country(S.country) : T('countryNone'))}</strong>${I.caret}</button>${why ? `<span class="cl-why">${esc(why)}</span>` : ''}`
+    : btn('link-button cl-add', 'open-place', 'country', esc(T('addCountry')), `aria-haspopup="dialog" ${fk('pc-country')}`);
+  const note = !S.country && !S.noCountry ? `<p class="cl-why">${esc(T('noCountryNote'))}</p>` : '';
+  return `<div class="country-line"><p class="cl-row"><span class="cl-label" aria-hidden="true">${esc(T('countryLine'))}</span>${row}</p>${note}${withPrivacy ? privacy() : ''}</div>`;
+}
+// The guide's plant, found in the guide's climate file before the result, so the note names it as
+// the tool will (live m3); with its scientific name, which the guide's link carried, so a guide's
+// "Guásimo" and the file's "Bastard cedar" read as one plant (seam m2).
 let guideTaxon = null;
 async function findGuidePlant() {
-  const plant = S.guidePlant;
-  if (!plant || !S.climate || !manifest || guideTaxon?.plant === plant) return;
-  for (const c of manifest.cells.filter((c) => c.climate_zone.toLowerCase() === S.climate)) {
-    let found = null;
-    try { found = taxonByName(await loadCell(c.file), plant); } catch {}
-    if (found) { guideTaxon = { plant, taxon: found }; if (S.guidePlant === plant && (S.status === 'setup' || S.status === 'notcovered')) render(); return; }
-  }
+  const plant = S.guidePlant, mc = S.climate && manifest ? fileFor(manifest, S.climate) : null;
+  if (!plant || !mc || guideTaxon?.plant === plant) return;
+  let found = null;
+  try { found = taxonByName(await loadClimate(mc.file), plant); } catch {}
+  if (found) { guideTaxon = { plant, taxon: found }; if (S.guidePlant === plant && (S.status === 'setup' || S.status === 'notcovered')) render(); }
 }
-// F1: a guide preset that took the place saved on this device says so, with a way to change it.
-const placeFromHTML = () => (S.placeFrom === 'device' && S.region
-  ? `<p class="place-from">${esc(T('placeFrom', { where: whereLabel() }))} ${btn('link-button', 'open-place', 'country', esc(T('change')), `aria-haspopup="dialog" ${fk('place-from')}`)}</p>` : '');
-// wait: the place has no list yet (not covered), so the plant is not kept yet.
+// wait: the climate has no list yet (not covered), so the plant is not kept yet.
 function guideNote(wait = false) {
   if (!S.guidePlant) return '';
   const t = (S.guideId && taxonOf(S.guideId)) || (guideTaxon?.plant === S.guidePlant ? guideTaxon.taxon : null);
   const plant = t ? name(t) + (nameText(t) !== t.canonical_name ? W.paren(`<i>${esc(t.canonical_name)}</i>`) : '') : `<i>${esc(S.guidePlant)}</i>`;
   // m4: the guide set the climate only when its link named one.
-  const text = wait ? T('fromGuideWait', { plant }) : S.climateSource === 'guide' && S.climate ? T('fromGuide', { plant, climate: esc(W.climate(S.climate)) }) : T('fromGuidePlant', { plant });
-  return `<div class="note note-guide">${I.book}<div><p>${text}</p>${placeFromHTML()}</div></div>`;
+  const text = wait ? T('fromGuideClimate', { plant }) : S.climateSource === 'guide' && S.climate ? T('fromGuide', { plant, climate: esc(W.climate(S.climate)) }) : T('fromGuidePlant', { plant });
+  return `<div class="note note-guide">${I.book}<div><p>${text}</p></div></div>`;
 }
+// One question: the climate. The country line sits above the cards.
 function setupHTML() {
-  const editing = !S.climate || S.editClimate;
-  const step1 = editing
-    ? `<section class="step" data-done="${!!S.climate}" aria-labelledby="ct-st1"><div class="step-head"><span class="step-num">1</span><h2 id="ct-st1">${esc(T('step1'))}</h2><p>${esc(T('step1.lede'))}</p></div>${climateChoices()}</section>`
-    : `<section class="step step-collapsed" data-done="true" aria-labelledby="ct-st1"><div class="step-summary"><span class="step-num step-num-done">${I.check}</span>
-        <div><h2 id="ct-st1" class="field-label">${esc(T('step1'))}</h2><strong>${esc(W.climate(S.climate))}</strong>${S.climateSource ? `<small>${esc(T(S.climateSource === 'guide' ? 'climateFromGuide' : 'climateFromSite'))}</small>` : ''}</div>
-        ${btn('button button-secondary button-small', 'edit-climate', null, esc(T('change')), fk('edit-climate'))}</div></section>`;
-  return `<div class="setup">${guideNote()}${step1}
-    <section class="step" data-done="${!!S.region}" aria-labelledby="ct-st2"><div class="step-head"><span class="step-num">2</span><h2 id="ct-st2">${esc(T('step2'))}</h2><p>${esc(T('step2.lede'))}</p></div>
-      ${countryPicker()}${privacy()}</section></div>`;
+  return `<div class="setup">${guideNote()}
+    <section class="step step-one" aria-labelledby="ct-st1"><div class="step-head step-head-solo"><h2 id="ct-st1">${esc(T('step1'))}</h2><p>${esc(T('step1.lede'))}</p></div>
+      ${countryLineHTML(true)}${climateChoices()}</section></div>`;
 }
 
 // ---------- Result ----------
@@ -284,10 +305,12 @@ function seg(key) {
   return `<fieldset class="seg"><legend>${esc(T('site.' + key))}</legend><div class="seg-options">${SITE_OPTIONS[key].map((o) => `<label class="seg-option"><input type="radio" name="ct-${key}${O ? '-d' : ''}" value="${o}" ${S.site[key] === o ? 'checked' : ''} data-site="${key}" ${fk(`site-${key}-${o}`)}><span>${esc(T(`site.${key}.${o}`))}</span></label>`).join('')}</div>${hint ? `<p class="seg-hint">${esc(hint)}</p>` : ''}</fieldset>`;
 }
 const siteFields = () => `<div class="site-fields">${Object.keys(SITE_OPTIONS).map(seg).join('')}</div>`;
+// The climate chip (with where the climate came from) and the country line.
 function placeChips() {
+  const from = S.climateSource ? `<small class="cl-why">${esc(T(S.climateSource === 'guide' ? 'climateFromGuide' : 'climateFromSite'))}</small>` : '';
   return `<div class="place-chips">
-    <button class="chip-button" type="button" data-act="open-place" data-v="climate" aria-haspopup="dialog" ${fk('pc-climate')}><span class="vh">${esc(T('step1'))}: </span><strong>${esc(W.climate(S.climate))}</strong>${I.caret}</button>
-    <button class="chip-button" type="button" data-act="open-place" data-v="country" aria-haspopup="dialog" ${fk('pc-country')}><span class="vh">${esc(T('step2'))} </span><strong>${esc(whereLabel())}</strong>${I.caret}</button></div>`;
+    <div class="climate-line"><button class="chip-button" type="button" data-act="open-place" data-v="climate" aria-haspopup="dialog" ${fk('pc-climate')}><span class="vh">${esc(T('step1'))}: </span><strong>${esc(W.climate(S.climate))}</strong>${I.caret}</button>${from}</div>
+    ${countryLineHTML()}</div>`;
 }
 // F4: the main actions (I want to grow…, Fill) come right after the place, before the site questions,
 // so they show at the top of the panel; on desktop the panel always sticks and scrolls inside itself
@@ -295,9 +318,8 @@ function placeChips() {
 function asideHTML() {
   if (phone()) return '';
   const result = S.status === 'ready' || S.status === 'nomatch';
-  return `<aside class="aside" aria-label="${esc(T('yourPlace'))}">
-    <div class="panel"><h2 class="panel-title">${esc(T('yourPlace'))}</h2>${placeChips()}
-      <p class="place-note">${esc(S.country ? W.region(S.region) : T('noCountryNote'))}</p></div>
+  return `<aside class="aside" aria-label="${esc(T('step1'))}">
+    <div class="panel panel-place"><h2 class="panel-title">${esc(T('step1'))}</h2>${placeChips()}</div>
     ${result ? `<div class="panel"><h2 class="panel-title">${esc(T('grow'))}</h2>
       ${btn('button button-secondary grow-button', 'open-add', 'grow', `${I.search}<span>${esc(T('growHint'))}</span>`, fk('grow'))}
       ${fillable() ? `${btn('button button-secondary button-small', 'fill', null, esc(T('fill')), fk('fill-aside'))}<p class="seg-hint">${esc(T('fillNote'))}</p>` : ''}
@@ -307,7 +329,13 @@ function asideHTML() {
 }
 const resultTitle = (text) => `<h2 id="ct-result-title" tabindex="-1">${esc(text)}</h2>`;
 function basisHTML() {
-  return `<p class="basis"><span>${esc(T('basis', { site: basisText() }))}</span> ${btn('link-button', phone() ? 'open-site' : 'focus-site', null, esc(T('basisChange')), fk('basis'))}</p>`;
+  return `<p class="basis"><span>${esc(T('basis', { site: basisText() }))}</span> ${btn('link-button', phone() ? 'open-site' : 'focus-site', null, esc(T('basisChange')), fk('basis'))}</p>${worldHTML()}`;
+}
+// Without a country the warnings use (none, or one GRIIS did not check), one line says the counts
+// on the cards are for every country, with "Add your country".
+function worldHTML() {
+  if (warnCountry()) return '';
+  return `<p class="counts-world">${esc(T('worldCounts'))}${S.country ? '' : ' ' + btn('link-button', 'open-place', 'country', esc(T('addCountry')), `aria-haspopup="dialog" ${fk('world-add')}`)}</p>`;
 }
 function attentionHTML(flags) {
   const look = ordered().filter((t) => needsLook(t, flags.get(t.id)));
@@ -337,11 +365,6 @@ function freeRowHTML(can) {
     <div class="free-actions">${btn('button button-secondary button-small', 'open-add', 'grow', `${I.search}<span>${esc(T('findPlant'))}</span>`, fk('find-free'))}
     ${can ? btn('button button-primary button-small', 'fill', null, esc(T('fill')), fk('fill')) : ''}</div></div>`;
 }
-// A result from another region's cell: the same words on screen and on paper (M6). Without a
-// country there is no invasive check where the user gardens, and the label says so (M5).
-function borrowedWords() {
-  return { title: T('borrowed', { cell: cellLabel() }), text: `${T('borrowedText', { where: whereLabel() })} ${S.country ? T('borrowedInv', { country: W.country(S.country) }) : T('borrowedNoInv')}` };
-}
 function notices(can) {
   let out = '';
   if (S.notice === 'oldlink') out += `<div class="note note-old" role="status">${I.info}<div><p><strong>${esc(T('oldLink.title'))}</strong></p><p>${esc(P('oldLink.text', S.dropped))}</p><div class="note-actions">${can ? btn('button button-secondary button-small', 'fill', null, esc(T('fill'))) : ''}${btn('link-button', 'dismiss', null, esc(T('dismiss')))}</div></div></div>`;
@@ -350,12 +373,13 @@ function notices(can) {
     out += `<div class="note note-old" role="status">${I.info}<div><p>${esc(T('restored', { date }))}</p><div class="note-actions">${btn('link-button', 'start-over', null, esc(T('startFresh')), fk('fresh'))}${btn('link-button', 'dismiss', null, esc(T('dismiss')))}</div></div></div>`;
   }
   if (S.notice === 'guide') out += guideNote();
-  if (S.notice === 'guideMissing') out += `<div class="note note-old" role="status">${I.info}<div><p>${T('guideMissing', { plant: `<i>${esc(S.guidePlant)}</i>` })}</p>${placeFromHTML()}<div class="note-actions">${btn('link-button', 'dismiss', null, esc(T('dismiss')))}</div></div></div>`;
-  if (S.cellRegion) { const b = borrowedWords(); out += `<div class="note note-borrowed">${I.warn}<div><p><strong>${esc(b.title)}</strong> ${esc(b.text)}</p><div class="note-actions">${btn('link-button', 'open-place', 'country', esc(T('change')))}</div></div></div>`; }
+  if (S.notice === 'guideMissing') out += `<div class="note note-old" role="status">${I.info}<div><p>${T('guideMissing', { plant: `<i>${esc(S.guidePlant)}</i>`, climate: esc(climateLabel()) })}</p><div class="note-actions">${btn('link-button', 'dismiss', null, esc(T('dismiss')))}</div></div></div>`;
+  // A link's country with no entry in the manifest: dropped, and said (never silent).
+  if (S.unknownCountry) out += `<div class="note note-old" role="status">${I.info}<div><p>${esc(T('countryUnknown', { code: S.unknownCountry }))}</p><div class="note-actions">${S.country ? '' : btn('link-button', 'open-place', 'country', esc(T('addCountry')), 'aria-haspopup="dialog"')}${btn('link-button', 'dismiss-country', null, esc(T('dismiss')))}</div></div></div>`;
   return out;
 }
 function mainHTML() {
-  if (S.status === 'loading') return `<div class="skeleton" aria-busy="true"><p class="status-line" role="status" id="ct-result-title" tabindex="-1"><span class="spinner" aria-hidden="true"></span>${esc(T('loading', { cell: cellLabel() }))}</p>
+  if (S.status === 'loading') return `<div class="skeleton" aria-busy="true"><p class="status-line" role="status" id="ct-result-title" tabindex="-1"><span class="spinner" aria-hidden="true"></span>${esc(T('loading', { climate: climateLabel() }))}</p>
     <div class="sk" style="height:46px;width:60%"></div><div class="sk" style="height:22px"></div><div class="sk" style="height:44px;max-width:300px;border-radius:999px"></div><div class="sk sk-draw"></div><div class="sk" style="height:84px"></div></div>`;
   if (S.status === 'error') return `<div class="callout" role="alert">${resultTitle(T('errorTitle'))}<p>${esc(T('errorText'))}</p><div class="actions">${btn('button button-primary', 'retry', null, esc(T('retry')), fk('retry'))}</div></div>`;
   if (S.status === 'notcovered') return notCoveredHTML();
@@ -363,23 +387,20 @@ function mainHTML() {
   const ms = members(), flags = flagsById(), can = fillable(), jobsDone = jobs.length - jobGaps().length;
   const lastEnd = Math.max(-1, ...ms.map((t) => (t.phases ? phases.indexOf(t.phases.end) : -1)));
   return `${notices(can)}
-    <div class="result-head"><div>${resultTitle(T('yourConsortium'))}<p class="result-sub">${esc(cellLabel())}${S.country ? ' · ' + esc(W.country(S.country)) : ''}</p></div>${phone() ? placeChips() : ''}</div>
+    <div class="result-head"><div>${resultTitle(T('yourConsortium'))}<p class="result-sub">${esc(climateLabel())}${S.country ? ' · ' + esc(T('warningsFor', { country: W.country(S.country) })) : ''}</p></div>${phone() ? placeChips() : ''}</div>
     <p class="summary-strip"><span><b>${esc(P('sizeLine.' + S.site.room, ms.length))}</b></span><span>${esc(T('sumLayers', { n: strataIn(ms).size }))}</span><span>${esc(T('sumJobs', { n: jobsDone }))}</span>${lastEnd >= 0 ? `<span>${esc(T('sumTime', { end: T(W.phaseKey(lastEnd, 'to')) }))}</span>` : ''}</p>
     ${basisHTML()}${attentionHTML(flags)}${freeRowHTML(can)}
     <div class="tabs" role="tablist" aria-label="${esc(T('yourConsortium'))}">${['layers', 'time', 'jobs'].map((v) => `<button class="tab" role="tab" type="button" id="ct-tab-${v}" aria-selected="${S.view === v}" aria-controls="ct-panel" tabindex="${S.view === v ? 0 : -1}" data-act="view" data-v="${v}" ${fk('tab-' + v)}>${esc(T('tab.' + v))}</button>`).join('')}</div>
     <div role="tabpanel" id="ct-panel" aria-labelledby="ct-tab-${S.view}" class="tabpanel">${S.view === 'layers' ? layersHTML(flags) : S.view === 'time' ? timeHTML(flags) : jobsHTML()}</div>${growRowHTML()}
     <div class="result-foot" role="group" aria-label="${esc(T('shareMenu'))}">${btn('button button-secondary button-small', 'share', null, `${I.link}${esc(T('share'))}`, fk('share'))}${btn('button button-secondary button-small', 'print', null, `${I.printer}${esc(T('print'))}`, fk('print'))}${btn('link-button quiet', 'start-over', null, esc(T('startOver')), fk('start-over'))}</div>`;
 }
+// A climate with no list yet: what is covered, another climate, and "Ask for this climate".
+// The country plays no part here.
 function notCoveredHTML() {
-  const same = manifest.cells.filter((c) => c.climate_zone.toLowerCase() === S.climate);
-  const where = whereLabel(), hint = coverageHint(manifest, S.climate, S.country);
-  // F1: a guide's plant waiting for a covered place keeps its note here too.
-  return `${guideNote(true)}<div class="callout">${resultTitle(T('nc.title', { climate: W.climate(S.climate), region: where }))}
-    ${hint ? `<p class="nc-why">${esc(T('nc.why', { region: W.region(hint.region), country: W.country(S.country), north: W.region(hint.north) }))}</p>` : ''}
-    <p>${esc(P('nc.text', manifest.cells.length))}</p>
-    <ul class="covered-plain">${manifest.cells.map((c) => `<li><strong>${esc(W.cell(c.climate_zone.toLowerCase(), c.region))}</strong></li>`).join('')}</ul>
-    ${same.length ? `<p class="place-note">${esc(T('nc.optNote', { where }))} ${esc(S.country ? T('borrowedInv', { country: W.country(S.country) }) : T('borrowedNoInv'))}</p><div class="actions">${same.map((c) => btn('button button-primary', 'opt-in', c.region, esc(T('nc.optIn', { cell: W.cell(S.climate, c.region) })), fk('optin-' + c.region))).join('')}</div>` : `<p class="place-note">${esc(T('nc.noneClimate'))}</p>`}
-    <div class="actions">${btn('button button-secondary', 'open-place', 'country', esc(T('nc.change')), fk('nc-change'))}<a class="text-link" href="${data.contact}">${esc(T('nc.ask'))}</a></div></div>`;
+  const covered = CLIMATES.filter((c) => fileFor(manifest, c));
+  return `${guideNote(true)}<div class="callout">${resultTitle(T('nc.title', { climate: climateLabel() }))}
+    <p>${esc(P('nc.text', covered.length, { list: W.list(covered.map(W.climate)) }))}</p>
+    <div class="actions">${btn('button button-primary', 'open-place', 'climate', esc(T('nc.other')), `aria-haspopup="dialog" ${fk('nc-change')}`)}<a class="text-link" href="${data.contact}">${esc(T('nc.ask'))}</a></div></div>`;
 }
 // For each site answer a "No match" button can loosen (relaxTo), how many plants it rules out on its own.
 function siteCounts() {
@@ -537,7 +558,7 @@ function jobsHTML() {
 function detailsParts(t) {
   const inMembers = S.members.includes(t.id), replacing = inMembers ? null : swapTarget(O);
   // From the Swap list, the flags it would carry in that member's place (the list's own), else beside the members.
-  const flags = inMembers ? flagsById().get(t.id) : (replacing && swapFlags(replacing, t.id)) || flagsFor(cell, t.id, S.members, { site: S.site, country: S.country });
+  const flags = inMembers ? flagsById().get(t.id) : (replacing && swapFlags(replacing, t.id)) || flagsFor(cell, t.id, S.members, { site: S.site, ...where() });
   const tr = t.traits, s = stratumOf(t), tw = W.timeWords(t);
   const unknown = `<span class="unknown">${esc(T('unknown'))}</span>`;
   const label = (field, v) => esc(labels?.[field]?.[v]?.[lang] ?? v);
@@ -561,7 +582,9 @@ function detailsParts(t) {
   const note = (n) => (n ? (n[lang] ? esc(n[lang]) : `<span lang="en">${esc(n.en)}</span>`) : '');
   const items = [];
   if (tox && tox.level !== 'None') items.push(item('danger', I.danger, esc(T('tox.' + tox.level)), note(tox.note), `<p class="liab">${esc(T('d.liab'))}</p>`));
-  if (flags.invasive === true) items.push(item('warning', I.warn, esc(T('invHere', { country: W.country(S.country) })), esc(T('d.invHere', { country: W.country(S.country) }))));
+  if (flags.invasive === true) items.push(item('warning', I.warn, esc(T('invHere', { country: W.country(S.country) })), esc(T('d.invHere', { country: W.country(S.country) })), `<p class="liab">${esc(T('d.liab'))}</p>`));
+  // A country GRIIS has no checklist for: "not checked" there, never "none".
+  if (S.country && !countryChecked() && inv != null) items.push(item('unknown', I.unknown, esc(T('invNotChecked', { country: W.country(S.country) })), esc(T('d.invNotChecked', { country: W.country(S.country) }))));
   for (const c of flags.conflicts) items.push(item(isSerious(c) ? 'warning' : 'soft', I.warn, T('conflict', { other: name(otherOf(c, t)) }), note(c.note) || esc(T('ctype.' + c.type)), c.agent ? `<p>${esc(T('d.agent', { agent: c.agent }))}</p>` : ''));
   for (const k of flags.misfits) items.push(item('warning', I.warn, esc(T('d.misfit')), esc(misfitText(t, k))));
   if (t.warnings.allelopathic === true) items.push(item('soft', I.warn, esc(T('c.allelo')), esc(T('d.allelo'))));
@@ -581,7 +604,7 @@ function detailsParts(t) {
   if (al == null) items.push(item('unknown', I.unknown, esc(T('unkAllelo')), esc(T('d.alleloUnk'))));
   if (wp === false) items.push(item('checked', I.check, `${esc(T('d.spreadsNone'))} <span class="muted">(${esc(T('d.checked'))})</span>`));
   if (wp == null) items.push(item('unknown', I.unknown, esc(T('unkSpreads')), esc(T('d.spreadsUnk'))));
-  const srcIds = new Set([...(t.stratum?.sources ?? []), ...(t.phases?.sources ?? []), ...(t.functions ?? []).flatMap((x) => x.sources), ...(tox?.sources ?? []), ...(inv ?? []).flatMap((x) => x.sources), ...flags.conflicts.flatMap((c) => c.sources)]);
+  const srcIds = new Set([...(t.reasons ?? []).flatMap((r) => r.sources), ...(t.stratum?.sources ?? []), ...(t.phases?.sources ?? []), ...(t.functions ?? []).flatMap((x) => x.sources), ...(tox?.sources ?? []), ...(inv ?? []).flatMap((x) => x.sources), ...flags.conflicts.flatMap((c) => c.sources)]);
   const srcs = [...srcIds].map((id) => cell.sources[id]).filter(Boolean);
   const guides = (data.plantGuides[t.canonical_name] ?? []).filter(guide);
   const img = t.image, pageHref = safeHref(img?.source_page_url);
@@ -590,7 +613,7 @@ function detailsParts(t) {
   const headHTML = `<div><h2 id="ct-dlg-title">${name(t)}</h2><p class="lede"><i>${esc(t.canonical_name)}</i> · ${esc(T('family', { family: t.family }))}</p></div>`;
   const body = `${photo}
     <div class="d-layer"><span>${esc(stratumLabel(s))}${s !== 'none' ? ' · ' + esc(T('stratum.' + s + '.about')) : ''}</span><span>${esc(tw.plain)}${tw.term ? ' · ' + esc(tw.term) : ''}</span></div>
-    ${t.reason ? `<section class="d-section"><h3>${esc(T('why'))}</h3><p>${reasonHTML(t)}</p></section>` : ''}
+    ${t.reasons?.length ? `<section class="d-section"><h3>${esc(T('why'))}</h3>${reasonsHTML(t)}</section>` : ''}
     <section class="d-section"><h3>${esc(T('jobsHeading'))}</h3>${!jobsList.length ? `<p class="muted">${esc(T('d.jobsUnk'))}</p>` : `<div class="plant-meta">${jobsList.map((j) => `<span class="job-tag">${jobIcon(j, 14)}${esc(T('job.' + j))}</span>`).join('')}</div>`}</section>
     <section class="d-section"><h3>${esc(T('checks'))}</h3><ul class="w-list" role="list">${items.join('')}</ul></section>
     <section class="d-section"><h3>${esc(T('traits'))}</h3><dl class="facts">${facts.map(([k, v]) => `<dt>${esc(T(k))}</dt><dd>${v || unknown}</dd>`).join('')}</dl></section>
@@ -612,14 +635,14 @@ function altRow(t, why, act, label, flags, opts = {}) {
     ${opts.disabled ? `<span class="seg-hint">${esc(T('inConsortium'))}</span>` : confirming ? confirmHTML(t.id, act) : btn(`button button-small ${opts.primary ? 'button-primary' : 'button-secondary'}`, act, t.id, esc(label), `aria-label="${esc(label)}: ${esc(nameText(t))}" ${fk(act + '-' + t.id)}`)}</li>`;
 }
 // The flags of a plant in the Swap list of member `from`.
-const swapFlags = (from, id) => alternatives(from, S.members, cell, { site: S.site, removed: [...S.removed], country: S.country }).find((a) => a.taxon.id === id)?.flags ?? null;
+const swapFlags = (from, id) => alternatives(from, S.members, cell, { site: S.site, removed: [...S.removed], ...where() }).find((a) => a.taxon.id === id)?.flags ?? null;
 function confirmHTML(id, act) {
-  const t = taxonOf(id), from = act === 'use' ? swapTarget(O) : null, flags = from ? swapFlags(from, id) : flagsFor(cell, id, S.members, { site: S.site, country: S.country });
+  const t = taxonOf(id), from = act === 'use' ? swapTarget(O) : null, flags = from ? swapFlags(from, id) : flagsFor(cell, id, S.members, { site: S.site, ...where() });
   return `<div class="confirm" role="alertdialog" aria-labelledby="ct-confirm-t" aria-describedby="ct-confirm-d"><p id="ct-confirm-t"><strong>${T('confirmTitle', { name: name(t) })}</strong></p><p id="ct-confirm-d">${T('confirmText', { warnings: W.list(warnPlain(t, flags, false)) })}</p>
     <div class="actions">${btn('button button-primary button-small', act + '-yes', id, esc(T(act === 'use' ? 'confirmUse' : 'confirmAdd')), fk('confirm-yes'))}${btn('button button-secondary button-small', 'confirm-no', null, esc(T('cancel')), fk('confirm-no'))}</div></div>`;
 }
 function swapParts(m) {
-  const all = alternatives(m.id, S.members, cell, { site: S.site, removed: [...S.removed], country: S.country });
+  const all = alternatives(m.id, S.members, cell, { site: S.site, removed: [...S.removed], ...where() });
   // copy-m5: eight of each group at first, eight more per "Show more".
   const fitAll = all.filter((a) => !a.flags.flagged), flaggedAll = all.filter((a) => a.flags.flagged);
   const fitShown = shown(fitAll, SWAP_STEP * (1 + swapMore), SWAP_STEP), flaggedShown = shown(flaggedAll, SWAP_STEP * (1 + swapMore), SWAP_STEP);
@@ -655,7 +678,7 @@ function addResults() {
   const q = fold(addQuery.trim());
   if (q) list = list.filter((t) => searchText(t).includes(q));
   list = [...list].sort((a, b) => nameText(a).localeCompare(nameText(b), lang));
-  const flagOf = new Map(list.map((t) => [t.id, flagsFor(cell, t.id, S.members, { site: S.site, country: S.country })]));
+  const flagOf = new Map(list.map((t) => [t.id, flagsFor(cell, t.id, S.members, { site: S.site, ...where() })]));
   const fit = list.filter((t) => !flagOf.get(t.id).flagged), flagged = list.filter((t) => flagOf.get(t.id).flagged);
   const row = (t) => altRow(t, `<span>${esc(stratumLabel(stratumOf(t)))}</span><span>${esc(jobsOf(t).map((j) => T('job.' + j)).join(' · '))}</span>`, 'add', T('add'), flagOf.get(t.id), { disabled: S.members.includes(t.id) });
   // M11: grouped by layer; plants with a warning last, in their own group.
@@ -671,7 +694,7 @@ function addResults() {
 function addParts() {
   const { fkind, jobF, layerF } = addFilter();
   const sel = (id, label, all, opts, cur) => `<label class="sel"><span>${esc(label)}</span><select data-filter="${id}" ${fk('f-' + id)}><option value="">${esc(all)}</option>${opts.map(([v, l]) => `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
-  const headHTML = `<div><h2 id="ct-dlg-title">${esc(fkind === 'grow' ? T('grow') : T('addTitle'))}</h2><p class="lede">${esc(T('addLede', { cell: cellLabel() }))}</p></div>`;
+  const headHTML = `<div><h2 id="ct-dlg-title">${esc(fkind === 'grow' ? T('grow') : T('addTitle'))}</h2><p class="lede">${esc(T('addLede', { climate: climateLabel() }))}</p></div>`;
   const body = `<div class="field"><label for="ct-add-q" class="vh">${esc(T('growHint'))}</label><div class="search">${I.search}<input id="ct-add-q" type="search" autocomplete="off" spellcheck="false" placeholder="${esc(T('growHint'))}" value="${esc(addQuery)}" data-input="add" aria-describedby="ct-add-count" ${fk('add-q')}></div></div>
     <div class="add-filters">${sel('job', T('filterJob'), T('allJobs'), jobs.map((j) => [j, T('job.' + j)]), jobF)}${sel('layer', T('filterLayer'), T('allLayers'), strata.map((s) => [s, stratumLabel(s)]), layerF)}</div>
     <div id="ct-add-results">${addResults()}</div>`;
@@ -684,7 +707,7 @@ function sheetHTML() {
   else if (O.type === 'add') p = addParts();
   else if (O.type === 'place') p = O.which === 'climate'
     ? { head: `<div><h2 id="ct-dlg-title">${esc(T('step1'))}</h2><p class="lede">${esc(T('step1.lede'))}</p></div>`, body: climateChoices() }
-    : { head: `<div><h2 id="ct-dlg-title">${esc(T('step2'))}</h2><p class="lede">${esc(T('step2.lede'))}</p></div>`, body: countryPicker() + privacy() };
+    : { head: `<div><h2 id="ct-dlg-title">${esc(T('countrySheet.title'))}</h2><p class="lede">${esc(T('countrySheet.lede'))}</p></div>`, body: countryPicker() + privacy() };
   else p = { head: `<div><h2 id="ct-dlg-title">${esc(T('yourSite'))}</h2><p class="lede">${esc(T('siteOptional'))}</p></div>`, body: siteFields() };
   return `<div class="drawer-head">${p.head}<button class="dialog-close" type="button" data-act="close" aria-label="${esc(T('close'))}" ${fk('close')}>${I.close}</button></div>
     <div class="drawer-body">${p.body}</div>${p.foot ? `<div class="drawer-foot">${p.foot}</div>` : ''}`;
@@ -705,9 +728,8 @@ function printHTML() {
   const gapJobs = jobGaps(), free = Math.max(0, limit() - ms.length);
   const date = new Intl.DateTimeFormat(lang, { dateStyle: 'long' }).format(new Date());
   return `<article class="sheet">
-    <div class="sheet-head"><div><h2 class="sheet-title">${esc(T('printTitle'))}</h2><p class="muted">${esc(cellLabel())}${S.country ? ' · ' + esc(W.country(S.country)) : ''} · ${esc(date)}</p>
+    <div class="sheet-head"><div><h2 class="sheet-title">${esc(T('printTitle'))}</h2><p class="muted">${esc(climateLabel())} · ${esc(warnCountry() ? T('printWarnings', { country: W.country(S.country) }) : T('printCounts'))} · ${esc(date)}</p>
     <p class="muted">${esc(T('basis', { site: basisText() }))} · ${esc(P('count', ms.length))}</p></div><img src="/canopi-logo.svg" width="34" height="34" alt=""></div>
-    ${S.cellRegion ? (({ title, text }) => `<p class="sheet-borrowed"><strong>${esc(title)}</strong> ${esc(text)}</p>`)(borrowedWords()) : ''}
     <div class="sheet-draw">${profileHTML(flags, true)}</div>
     <section><h3>${esc(T('tab.layers'))}</h3><table><thead><tr><th>${esc(T('p.layer'))}</th><th>${esc(T('p.plant'))}</th><th>${esc(T('p.time'))}</th><th>${esc(T('p.jobs'))}</th><th>${esc(T('withWarning'))}</th></tr></thead><tbody>${rows}</tbody></table></section>
     <section><h3>${esc(T('tab.time'))}</h3><div class="sheet-phases">${bands}</div></section>
@@ -728,12 +750,7 @@ function render() {
   const sel = active?.dataset?.input && app.contains(active) ? [active.selectionStart, active.selectionEnd] : null;
   const setup = S.status === 'setup' || S.status === 'boot';
   head.classList.toggle('tool-head-compact', !setup);
-  const step = !S.climate ? 0 : !S.region || setup ? 1 : 2;
-  head.dataset.step = String(step);
-  head.querySelectorAll('.outline li').forEach((li, i) => {
-    if (i === step) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
-    li.dataset.done = String(i < step);
-  });
+  head.dataset.step = setup ? '0' : '1';
   if (S.status === 'boot') return;
   const asideTop = app.querySelector('.aside')?.scrollTop ?? 0;
   app.innerHTML = setup ? setupHTML() : `<div class="tool-grid">${asideHTML()}<section class="result" aria-labelledby="ct-result-title">${mainHTML()}</section></div>`;
@@ -818,17 +835,19 @@ let sayTimer = 0;
 const sayLater = (text) => { clearTimeout(sayTimer); sayTimer = setTimeout(() => say(text), 500); };
 
 // The state in the address bar (a share link) and on this device (the last consortium).
-// A link still waiting for its cell (not covered yet, or before a place is chosen) keeps its own
-// plants, so a reload or a copied address loses nothing (M2).
-function stateNow() {
+// A link still waiting for its climate file (not covered yet) keeps its own plants, so a reload or
+// a copied address loses nothing (M2). A guessed country is never written (the reader did not choose
+// it); "No country" (k=-) only goes to this device's saved state.
+function stateNow(saved = false) {
   const p = S.pending?.state;
   const members = p ? p.members : linkMembers(S.status, S.members);
-  return { climate: S.climate, region: S.region, cellRegion: cellRegion(), country: S.country, site: S.site, kept: p ? p.kept : keptList(), removed: p ? p.removed : [...S.removed], members, plants: p?.plants ?? [] };
+  const country = S.countrySource === 'guess' ? null : S.country;
+  return { climate: S.climate, country, noCountry: saved && !S.country && S.noCountry, site: S.site, kept: p ? p.kept : keptList(), removed: p ? p.removed : [...S.removed], members, plants: p?.plants ?? [] };
 }
 // The link's own prefixes, written back exactly as they came (shortening them without the cell
 // could make two plants share one).
-function pendingQuery() {
-  const q = encodeState({ ...stateNow(), kept: [], removed: [], members: null });
+function pendingQuery(saved = false) {
+  const q = encodeState({ ...stateNow(saved), kept: [], removed: [], members: null });
   const st = S.pending.state;
   if (st.kept.length) q.set('p', st.kept.join('.'));
   if (st.removed.length) q.set('x', st.removed.join('.'));
@@ -836,11 +855,12 @@ function pendingQuery() {
   return q;
 }
 function persist() {
-  if (!S.climate || !S.region || !manifest || !mayPersist(S)) return;
-  const q = (S.pending ? pendingQuery() : encodeState(stateNow(), cell)).toString();
+  if (!S.climate || !manifest || !mayPersist(S) || S.status === 'setup') return;
+  const query = (saved) => (S.pending ? pendingQuery(saved) : encodeState(stateNow(saved), cell)).toString();
+  const q = query(false);
   try { history.replaceState(history.state, '', location.pathname + '?' + q); } catch {}
   syncLangLinks();
-  if (S.status === 'ready') try { localStorage.setItem(STORE, JSON.stringify({ q, at: new Date().toISOString() })); } catch {}
+  if (S.status === 'ready') try { localStorage.setItem(STORE, JSON.stringify({ q: query(true), at: new Date().toISOString() })); } catch {}
 }
 // seam M1: the header's language links (inline menu and phone Menu) lead to this page in another
 // language with the address bar's query, so a language switch keeps what is shown: a guide's preset,
@@ -856,7 +876,7 @@ function dropUndo() {
 }
 // F2: a site or place change makes the plants that are not kept again; the result before it comes
 // back with Undo. A run of changes (arrow keys through a radio group) keeps the result before the
-// first one. redoNext waits for a place's cell; undoRedo is the one the toast offers.
+// first one. redoNext waits for a climate's file; undoRedo is the one the toast offers.
 let undoRedo = null, redoNext = null;
 function holdForRedo(focus, place) {
   const snap = undoRedo ?? redoNext ?? (S.status === 'ready'
@@ -867,30 +887,28 @@ function holdForRedo(focus, place) {
 function offerRedo() {
   const snap = redoNext; redoNext = null;
   if (!snap || (snap.cell === cell && S.status === 'ready' && snap.S.members.join() === S.members.join() && snap.S.gaps.length === S.gaps.length)) return;
-  const where = snap.S.country ? W.country(snap.S.country) : W.region(snap.S.region);
   undoRedo = snap;
-  toast(snap.place ? esc(T('redonePlace', { where })) : esc(T('redoneSite')), 'redo');
+  toast(snap.place ? esc(T('redoneClimate', { climate: W.climate(snap.S.climate) })) : esc(T('redoneSite')), 'redo');
 }
 function recompute() {
   dropUndo();
-  const r = suggest(cell, { site: S.site, kept: keptList(), removed: [...S.removed], country: S.country });
+  const r = suggest(cell, { site: S.site, kept: keptList(), removed: [...S.removed] });
   S.members = r.members.map((m) => m.taxon.id); S.gaps = [];
   S.status = S.members.length ? 'ready' : 'nomatch';
 }
 function setClimate(c) {
-  S.climate = c; S.climateSource = null; S.editClimate = false;
+  S.climate = c; S.climateSource = null;
   try { localStorage.setItem('canopi-climate', c); } catch {}
   document.documentElement.dataset.climate = c;
   dispatchEvent(new StorageEvent('storage', { key: 'canopi-climate', newValue: c }));
 }
-// Each call has a number; a cell that arrives after a later call started is dropped (M1), so the
-// plants shown are always the place shown.
+// Each call has a number; a file that arrives after a later call started is dropped (M1), so the
+// plants shown are always the climate shown.
 let loadSeq = 0;
-async function resolvePlace() {
+async function resolveClimate() {
   const run = ++loadSeq;
-  if (!S.climate || !S.region) { S.status = 'setup'; render(); return; }
-  if (cellFor(manifest, S.climate, S.region) || (S.cellRegion && !cellFor(manifest, S.climate, S.cellRegion))) S.cellRegion = null;
-  const mc = cellFor(manifest, S.climate, cellRegion());
+  if (!S.climate) { S.status = 'setup'; render(); return; }
+  const mc = fileFor(manifest, S.climate);
   if (!mc) { cell = null; S.status = 'notcovered'; focusNext = 'result'; render(); offerRedo(); findGuidePlant(); return; }
   S.status = 'loading';
   // min-8: the loading screen replaces whatever had the focus (Retry, a place, a closed sheet's opener),
@@ -899,7 +917,7 @@ async function resolvePlace() {
   render();
   let next, nextLabels;
   try {
-    [next, nextLabels] = await Promise.all([loadCell(mc.file), labels ?? loadLabels().catch(() => null)]);
+    [next, nextLabels] = await Promise.all([loadClimate(mc.file), labels ?? loadLabels().catch(() => null)]);
   } catch {
     if (run !== loadSeq) return;
     S.status = 'error'; focusNext = 'retry'; render(); offerRedo(); return;
@@ -929,41 +947,32 @@ async function resolvePlace() {
   render(); offerRedo();
   say(S.status === 'ready' ? T('announce', { summary: P('sizeLine.' + S.site.room, S.members.length) }) : T('nm.title'));
 }
-// A place or climate the user picks: a borrowed cell is opted into again for it (m6), and an Undo
-// for the old place no longer applies (B2).
-// A shared consortium belongs to its place: once the user picks another climate or place it is left
-// behind (M1, M2), and only a guide's plant goes on to the new place.
+// A shared consortium belongs to its climate: once the user picks another climate it is left behind
+// (M1, M2), and only a guide's plant goes on to the new climate. An Undo for the old climate no
+// longer applies (B2).
 function leaveLink() {
   if (!S.pending) return;
   const plants = S.pending.state.plants ?? [];
   S.pending = plants.length ? decodeState(new URLSearchParams({ plant: plants[0] })) : null;
 }
 // min-1: the notices of the link that opened the page go with it.
-function leavePlace() { Object.assign(S, afterMove(S)); leaveLink(); }
-function choosePlace(country, region) {
-  holdForRedo('pc-country', true);
-  S.country = country; S.region = region; S.pickFor = null; S.ratherNot = !country && S.ratherNot; countryQuery = '';
-  S.cellRegion = null; S.placeFrom = null; dropUndo(); leavePlace();
-  if (O) closeSheet(false);
-  resolvePlace();
+function leaveClimate() { Object.assign(S, afterMove(S)); S.unknownCountry = null; leaveLink(); }
+// The country only changes the warnings: the members stay, and no Undo is needed or dropped.
+function chooseCountry(code) {
+  S.country = code; S.countrySource = 'user'; S.noCountry = !code; S.unknownCountry = null; countryQuery = '';
+  if (O) closeSheet(false); else focusNext = 'pc-country';
+  render(); focusFk('pc-country', app);
+  say(code ? T('warningsNow', { country: W.country(code) }) : T('warningsNone'));
 }
 const act = {
-  climate(v) { if (S.region) holdForRedo('pc-climate', true); setClimate(v); S.cellRegion = null; dropUndo(); leavePlace(); if (O) closeSheet(false); if (S.region) resolvePlace(); else { focusNext = S.ratherNot ? 'rg-' + REGIONS[0] : browserCountry ? 'suggest' : 'country-q'; render(); findGuidePlant(); } },
-  'edit-climate'() { S.editClimate = true; focusNext = 'cl-' + S.climate; render(); },
-  country(v) {
-    const rs = regionsOf(manifest, v);
-    if (rs.length > 1) { S.pickFor = v; countryQuery = ''; focusNext = 'cr-' + rs[0]; O ? renderSheet(focusNext) : render(); return; }
-    choosePlace(v, rs[0]);
-  },
-  'country-region'(v) { choosePlace(S.pickFor, v); },
-  'other-country'() { S.pickFor = null; focusNext = 'country-q'; O ? renderSheet('country-q') : render(); },
-  'rather-not'(v) { S.ratherNot = v === '1'; S.pickFor = null; const f = S.ratherNot ? 'rg-' + REGIONS[0] : 'country-q'; focusNext = f; O ? renderSheet(f) : render(); },
-  region(v) { S.ratherNot = true; choosePlace(null, v); },
+  climate(v) { if (S.status !== 'setup') holdForRedo('pc-climate', true); setClimate(v); dropUndo(); leaveClimate(); if (O) closeSheet(false); resolveClimate(); },
+  country(v) { if (isCountry(manifest, v)) chooseCountry(v.toUpperCase()); },
+  'no-country'() { chooseCountry(null); },
+  'dismiss-country'() { S.unknownCountry = null; focusNext = 'result'; render(); },
   'open-place'(v, el) { openSheet({ type: 'place', which: v }, el); },
   'open-site'(_, el) { openSheet({ type: 'site' }, el); },
   'focus-site'() { const p = document.getElementById('ct-site-panel'); p?.scrollIntoView({ block: 'nearest' }); focusFk('site-light-' + S.site.light, app); },
-  'opt-in'(v) { holdForRedo('pc-country', true); S.cellRegion = v; resolvePlace(); },
-  retry() { resolvePlace(); },
+  retry() { resolveClimate(); },
   view(v) { S.view = v; S.explain = null; focusNext = 'tab-' + v; render(); },
   explain(v) { S.explain = S.explain === v ? null : v; focusNext = 'ex-' + v; render(); },
   details(v, el) { openSheet({ type: 'details', id: v }, el); },
@@ -976,6 +985,8 @@ const act = {
     const next = [...dlg.querySelectorAll('[data-act=use]')].find((b) => !before.has(b.dataset.v));
     (next ?? dlg.querySelector('.dialog-close')).focus();
   },
+  // Only a misfit or a serious conflict asks first; a plant invasive in the reader's country carries
+  // its warning chip and asks nothing (owner, 2026-10-28).
   use(v) { const from = swapTarget(O); if (swapFlags(from, v)?.flagged) { O.confirm = v; renderSheet('confirm-yes'); } else act['use-yes'](v); },
   'use-yes'(v) {
     const old = swapTarget(O), a = taxonOf(old), b = taxonOf(v);
@@ -1013,7 +1024,7 @@ const act = {
     render(); if (O) renderSheet();
   },
   'open-add'(v, el) { addQuery = ''; addJob = ''; addLayer = ''; if (O) { O = { type: 'add', filter: v || '' }; renderSheet('add-q'); } else openSheet({ type: 'add', filter: v || '' }, el); },
-  add(v) { const f = flagsFor(cell, v, S.members, { site: S.site, country: S.country }); if (f?.flagged) { O.confirm = v; renderSheet('confirm-yes'); } else act['add-yes'](v); },
+  add(v) { const f = flagsFor(cell, v, S.members, { site: S.site, ...where() }); if (f?.flagged) { O.confirm = v; renderSheet('confirm-yes'); } else act['add-yes'](v); },
   // M4: Add adds the one plant asked for; "Fill the free places" is the only refill.
   'add-yes'(v) {
     S.kept.add(v); S.removed.delete(v);
@@ -1026,7 +1037,7 @@ const act = {
   },
   fill() {
     const before = S.members.length;
-    S.members = suggest(cell, { site: S.site, kept: [...new Set([...S.members, ...S.kept])], removed: [...S.removed], country: S.country }).members.map((m) => m.taxon.id);
+    S.members = suggest(cell, { site: S.site, kept: [...new Set([...S.members, ...S.kept])], removed: [...S.removed] }).members.map((m) => m.taxon.id);
     const added = S.members.slice(before);
     if (added.length) dropUndo();
     S.gaps = trimGaps(S.gaps, added.map((id) => stratumOf(taxonOf(id))), limit() - S.members.length);
@@ -1042,7 +1053,10 @@ const act = {
   },
   print() { printEl.innerHTML = printHTML(); print(); },
   'start-over'() {
+    // The country stays: it is the reader's, not the consortium's.
+    const { country, countrySource, noCountry } = S;
     undoStart = { S, cell, lastRemoved }; lastRemoved = null; redoNext = null; S = fresh(); S.status = 'setup'; cell = null; loadSeq++;
+    Object.assign(S, { country, countrySource, noCountry });
     if (siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }
     try { localStorage.removeItem(STORE); history.replaceState(history.state, '', location.pathname); } catch {}
     syncLangLinks(); render(); toast(esc(T('startOverDone')), 'start'); focusFk('undo', toastEl);
@@ -1129,25 +1143,31 @@ async function start() {
     app.innerHTML = `<div class="callout" role="alert"><h2>${esc(T('errorTitle'))}</h2><p>${esc(T('errorText'))}</p><div class="actions"><button class="button button-primary" type="button" onclick="location.reload()">${esc(T('retry'))}</button></div></div>`;
     return;
   }
+  browserCountry = guessCountry();
   const params = new URLSearchParams(location.search);
-  let decoded = null, saved = null;
+  let decoded = null, saved = null, fromLink = false;
   try { saved = JSON.parse(localStorage.getItem(STORE) ?? 'null'); } catch {}
-  if (params.has('c') || params.has('climate') || params.has('plant')) decoded = decodeState(params);
-  else if (saved?.q) { decoded = decodeState(saved.q); S.restoredAt = saved.at; saved = null; }
+  if (params.has('c') || params.has('climate') || params.has('plant')) { decoded = decodeState(params); fromLink = true; }
+  else if (saved?.q) { decoded = decodeState(saved.q); S.restoredAt = saved.at; }
+  // The country: a link's, else this device's (a guide preset keeps the saved one), else the guess.
+  const savedState = saved?.q ? decodeState(saved.q).state : null;
+  const own = decoded?.state, linked = fromLink && (own.country || own.noCountry) ? own : null;
+  const pick = linked ?? (savedState && (savedState.country || savedState.noCountry) ? savedState : null);
+  if (pick?.country && !isCountry(manifest, pick.country)) {
+    // m: a code the manifest does not know is dropped, and said (a link's only; a stale save is quiet).
+    if (pick === linked) S.unknownCountry = pick.country;
+  } else if (pick?.country) { S.country = pick.country; S.countrySource = pick === linked ? 'link' : 'saved'; }
+  else if (pick?.noCountry) { S.noCountry = true; S.countrySource = 'user'; }
+  if (!S.country && !S.noCountry && !S.unknownCountry && browserCountry) { S.country = browserCountry; S.countrySource = 'guess'; }
   if (decoded) {
     const d = decoded.state;
-    // seam m4: a guide preset without a place goes to the place saved on this device.
-    const place = saved?.q ? presetPlace(d, decodeState(saved.q).state) : null;
-    if (place) { d.region = place.region; d.country = place.country; S.placeFrom = 'device'; }
-    S.climate = d.climate; S.region = d.region; S.country = d.country; S.site = { ...d.site };
-    S.cellRegion = d.cellRegion && d.cellRegion !== d.region ? d.cellRegion : null;
-    S.ratherNot = !!d.region && !d.country;
+    S.climate = d.climate; S.site = { ...d.site };
     S.pending = decoded;
     if (d.plants?.length) { S.guidePlant = d.plants[0]; if (d.climate) S.climateSource = 'guide'; }
-    if (S.restoredAt && d.climate && d.region) S.notice = 'restored';
+    if (S.restoredAt && d.climate) S.notice = 'restored';
   }
   if (!S.climate && siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }
-  if (S.climate && S.region) resolvePlace();
-  else { S.status = 'setup'; render(); findGuidePlant(); }
+  if (S.climate) resolveClimate();
+  else { S.status = 'setup'; render(); }
 }
 start();
