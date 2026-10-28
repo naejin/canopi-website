@@ -4,15 +4,15 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:53:57Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:33:07Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T02:42:55Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T15:50:31Z }
 sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:f7393b32d2100393
-    last_modified: 2026-10-27T19:28:52Z
+    digest: sha256:26faf235c0876b4e
+    last_modified: 2026-10-28T15:44:49Z
   - id: readme
     resource: ../../README.md
     title: README.md
@@ -21,8 +21,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d281f44b1981356f
-    last_modified: 2026-10-28T02:33:09Z
+    digest: sha256:399f026aeee12ed0
+    last_modified: 2026-10-28T12:08:03Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json

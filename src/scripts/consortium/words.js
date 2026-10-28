@@ -42,7 +42,6 @@ export function makeWords(strings, lang) {
   const country = (code) => { try { return regionNames?.of(code) ?? code; } catch { return code; } };
   const climate = (id) => strings['climate.' + id] ?? id;
   const region = (id) => T('region.' + id);
-  const cell = (climateId, regionId) => T('cell', { climate: climate(climateId), region: region(regionId) });
 
   // When a plant leads the planting, plain time first, the app's term beside it:
   // { plain: "Leads from year 1 to year 25", term: "Placenta 3 – Secondary 2" }.
@@ -57,7 +56,7 @@ export function makeWords(strings, lang) {
     return { plain, term };
   }
 
-  return { T, P, list, paren, num, country, climate, region, cell, phaseKey, timeWords };
+  return { T, P, list, paren, num, country, climate, region, phaseKey, timeWords, lang };
 }
 
 // A plant's name in the page language, else English (marked lang="en"), else its scientific name.
@@ -75,10 +74,11 @@ export const fold = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').no
 export const searchText = (taxon) => fold([taxon.canonical_name, ...Object.values(taxon.names)].join(' '));
 
 // What the warnings summary counts: a misfit, invasive here, a medium or high conflict, and
-// moderate or severe toxicity; slight toxicity stays on the card only.
+// moderate or severe toxicity; slight toxicity stays on the card only. Invasive here is tested on
+// its own: it is a warning, not a flag (flags.flagged no longer includes it, owner 2026-10-28).
 export function needsLook(taxon, flags) {
   const tox = taxon.warnings.toxicity?.level;
-  return flags.flagged || tox === 'Moderate' || tox === 'Severe';
+  return flags.flagged || flags.invasive === true || tox === 'Moderate' || tox === 'Severe';
 }
 
 // A text with its first letter in capitals, in the page language's rules (no change where the

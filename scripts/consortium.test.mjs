@@ -1,19 +1,19 @@
 // The consortium tool's data core (src/lib/consortium/), through its public functions, on the
-// invented format 2 fixture (scripts/fixtures/consortium/) and on small cells built from it. The
+// invented format 3 fixture (scripts/fixtures/consortium/) and on small climate files built from it. The
 // scoring contract is the plan's "Scoring module" (knowledge/project/consortium-tool-plan.md).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
-const { cellFor, regionsOf, fits, jobsOf, jobs, bandOf, bandsOf, phases, conflicts, invasiveIn, invasiveCountries } = core;
-const { gain, suggest, evaluate, alternatives, flagsFor, SIZE_LIMIT, DEFAULT_SITE, encodeState, decodeState, resolveState, resolveIds, shortId, MAX_LINK_IDS, taxonByName } = core;
+const { fileFor, isCountry, invasiveChecked, fits, jobsOf, jobs, bandOf, bandsOf, phases, conflicts, invasiveIn } = core;
+const { gain, suggest, evaluate, alternatives, flagsFor, SIZE_LIMIT, DEFAULT_SITE, LINK_VERSION, FORMAT_VERSION, encodeState, decodeState, resolveState, resolveIds, MAX_LINK_IDS, MAX_CROPS, taxonByName } = core;
 
 const read = (name) => JSON.parse(readFileSync(new URL(`fixtures/consortium/${name}`, import.meta.url), 'utf8'));
 const manifest = read('manifest.json');
-const tropical = read('tropical-southern-america.json');
-const mediterranean = read('mediterranean-europe.json');
-const temperate = read('temperate-europe.json');
+const tropical = read('tropical.json');
+const mediterranean = read('mediterranean.json');
+const temperate = read('temperate.json');
 const allTaxa = [...tropical.taxa, ...mediterranean.taxa, ...temperate.taxa];
 const named = (name) => {
   const t = allTaxa.find((x) => x.canonical_name === name);
@@ -56,29 +56,36 @@ const layer = (value, start = 'placenta_i', end = 'climax') => ({
 const cellOf = (taxa, interactions = []) => ({ ...structuredClone(tropical), taxa, interactions });
 const names = (list) => list.map((m) => m.taxon.canonical_name);
 
-// cellFor and regionsOf
+// fileFor, isCountry and invasiveChecked
 
-test('cellFor maps the site climate ids (lowercase) to the export climate zones', () => {
-  assert.equal(cellFor(manifest, 'tropical', 'southern_america')?.file, 'tropical-southern-america.json');
-  assert.equal(cellFor(manifest, 'mediterranean', 'europe')?.file, 'mediterranean-europe.json');
-  assert.equal(cellFor(manifest, 'temperate', 'europe')?.taxa, 12);
-  assert.equal(cellFor(manifest, 'Temperate', 'europe')?.file, 'temperate-europe.json', 'either case is read');
+test('fileFor maps the site climate ids (lowercase) to the climate files of the export', () => {
+  assert.equal(fileFor(manifest, 'tropical')?.file, 'tropical.json');
+  assert.equal(fileFor(manifest, 'mediterranean')?.file, 'mediterranean.json');
+  assert.equal(fileFor(manifest, 'temperate')?.taxa, 13);
+  assert.deepEqual(fileFor(manifest, 'temperate')?.regions, ['europe', 'asia_temperate']);
+  assert.equal(fileFor(manifest, 'Temperate')?.file, 'temperate.json', 'either case is read');
 });
 
-test('cellFor answers null for a cell not covered yet or an unknown id', () => {
-  assert.equal(cellFor(manifest, 'temperate', 'africa'), null);
-  assert.equal(cellFor(manifest, 'boreal', 'europe'), null);
-  assert.equal(cellFor(manifest, 'polar', 'europe'), null);
-  assert.equal(cellFor(manifest, 'tropical', 'Southern_America'), null, 'region ids are exact');
+test('fileFor answers null for a climate not covered yet or an unknown id', () => {
+  assert.equal(fileFor(manifest, 'boreal'), null);
+  assert.equal(fileFor(manifest, 'arid'), null);
+  assert.equal(fileFor(manifest, 'polar'), null);
+  assert.equal(fileFor(manifest, 'mars'), null);
 });
 
-test('regionsOf gives every region of a country, the default first, and [] for absent codes', () => {
-  assert.deepEqual(regionsOf(manifest, 'ES'), ['europe', 'africa']);
-  assert.deepEqual(regionsOf(manifest, 'es'), ['europe', 'africa']);
-  assert.deepEqual(regionsOf(manifest, 'FR'), ['europe']);
-  assert.deepEqual(regionsOf(manifest, 'TR'), ['asia_temperate', 'europe']);
-  assert.deepEqual(regionsOf(manifest, 'BR'), ['southern_america']);
-  for (const code of ['AQ', 'BV', 'FK', 'GS', 'HM', 'TF', 'ZZ']) assert.deepEqual(regionsOf(manifest, code), [], code);
+test('isCountry knows every manifest country; invasiveChecked only those GRIIS checked', () => {
+  for (const code of ['FR', 'fr', 'BR', 'TW', 'AQ']) assert.ok(isCountry(manifest, code), code);
+  for (const code of ['ZZ', '', null, undefined]) assert.ok(!isCountry(manifest, code), String(code));
+  assert.equal(invasiveChecked(manifest, 'BR'), true);
+  assert.equal(invasiveChecked(manifest, 'tw'), false);
+  assert.equal(invasiveChecked(manifest, 'ZZ'), false);
+  assert.equal(invasiveChecked(manifest, null), false);
+});
+
+test('the link version is 3 (the compact encoding) while the export format is 3', () => {
+  assert.equal(LINK_VERSION, 3);
+  assert.equal(FORMAT_VERSION, 3);
+  assert.equal(manifest.format_version, FORMAT_VERSION);
 });
 
 // fits
@@ -224,16 +231,16 @@ test('conflicts: family rank, both directions, and a same-genus row pairs two me
 });
 
 test('invasiveIn: true where recorded, false where checked and absent, null when not checked or no country', () => {
-  const leucaena = named('Leucaena leucocephala'), cassava = named('Manihot esculenta'), lemongrass = named('Cymbopogon citratus');
-  assert.equal(invasiveIn(leucaena, 'BR'), true);
-  assert.equal(invasiveIn(leucaena, 'br'), true);
-  assert.equal(invasiveIn(leucaena, 'FR'), false);
-  assert.equal(invasiveIn(lemongrass, 'BR'), false, '[] is checked, none');
-  assert.equal(invasiveIn(cassava, 'BR'), null, 'null is not checked');
+  const leucaena = named('Leucaena leucocephala'), lemongrass = named('Cymbopogon citratus'), cassava = make({ warnings: { invasive_in: null } });
+  assert.equal(invasiveIn(leucaena, 'BR', true), true);
+  assert.equal(invasiveIn(leucaena, 'br', true), true);
+  assert.equal(invasiveIn(leucaena, 'FR', true), false);
+  assert.equal(invasiveIn(lemongrass, 'BR', true), false, 'checked, not recorded in Brazil');
+  assert.equal(invasiveIn(cassava, 'BR', true), null, 'null is not checked');
   assert.equal(invasiveIn(leucaena, null), null);
-  assert.equal(invasiveCountries(leucaena).length, 10);
-  assert.deepEqual(invasiveCountries(lemongrass), []);
-  assert.equal(invasiveCountries(cassava), null);
+  assert.equal(invasiveIn(leucaena, 'TW', false), null, 'a country GRIIS did not check is not checked, never none');
+  assert.equal(invasiveIn(lemongrass, 'TW', false), null);
+  assert.ok(!('invasiveCountries' in core), 'no export without a caller (C13): the page counts countries in parts.js');
 });
 
 // gain
@@ -334,10 +341,10 @@ test('suggest is deterministic: the same answer whatever the order of the cell',
   for (const cell of [tropical, mediterranean, temperate]) {
     for (const room of ['small', 'large', 'field']) {
       const site = { ...DEFAULT_SITE, room };
-      const once = suggest(cell, { site, country: 'BR' });
+      const once = suggest(cell, { site, country: 'BR', countryChecked: true });
       const shuffled = { ...cell, taxa: [...cell.taxa].reverse(), interactions: [...cell.interactions].reverse() };
-      assert.deepEqual(names(suggest(cell, { site, country: 'BR' }).members), names(once.members));
-      assert.deepEqual(names(suggest(shuffled, { site, country: 'BR' }).members), names(once.members));
+      assert.deepEqual(names(suggest(cell, { site, country: 'BR', countryChecked: true }).members), names(once.members));
+      assert.deepEqual(names(suggest(shuffled, { site, country: 'BR', countryChecked: true }).members), names(once.members));
       assert.ok(once.members.length > 0, `${cell.climate_zone} ${room}`);
     }
   }
@@ -353,19 +360,79 @@ test('suggest never picks a misfit, but a kept misfit stays with its flag', () =
   assert.equal(kept[0].flags.flagged, true);
 });
 
-test('suggest leaves out plants invasive in the user country; null (not checked) is not a reason', () => {
+// Coordinator, 2026-10-28 (decision row "Scale build, coordinator choices"; design-scale.md §2.6 m10):
+// on a sunny site a plant of a lower layer that does not take full sun is shaded by the layers above
+// it, so it is not flagged for the light; it is when nothing above it shades it, and a top-layer one always is.
+test('a shade plant in a lower layer is not flagged for full sun while a layer above it shades it', () => {
+  const tree = make({ functions: fn('nitrogen_fixer'), ...layer('high') });
+  const shrub = make({ functions: fn('mulch'), ...layer('medium') });
+  const violet = make({ functions: fn('ground_cover'), traits: { sun: false }, ...layer('low') });
+  const fern = make({ functions: fn('mulch'), traits: { sun: false }, ...layer('medium') });
+  const tall = make({ functions: fn('edible_fruit'), traits: { sun: false }, ...layer('high') });
+  const cell = cellOf([tree, shrub, violet, fern, tall]);
+  const flagsIn = (ids, id, site = open) => evaluate(cell, ids, { site }).members.find((m) => m.taxon.id === id).flags;
+  // Under a High tree: neither the Low nor the Mid shade plant is flagged.
+  for (const id of [violet.id, fern.id]) {
+    const f = flagsIn([tree.id, violet.id, fern.id], id);
+    assert.deepEqual(f.misfits, [], 'shaded by the High layer');
+    assert.equal(f.flagged, false);
+  }
+  // A Mid shrub shades the Low layer, not its own.
+  assert.deepEqual(flagsIn([shrub.id, violet.id], violet.id).misfits, []);
+  assert.deepEqual(flagsIn([shrub.id, fern.id], fern.id).misfits, ['light'], 'nothing above the Mid layer');
+  // Alone, or in a top layer, it is flagged.
+  assert.deepEqual(flagsIn([violet.id], violet.id).misfits, ['light']);
+  assert.deepEqual(flagsIn([tree.id, tall.id], tall.id).misfits, ['light'], 'a top-layer plant is never shaded');
+  // Only a sunny site: in part shade the light check is the plant's own.
+  assert.deepEqual(flagsFor(cell, violet.id, [tree.id], { site: open }).misfits, [], 'flagsFor, beside a High tree');
+  assert.deepEqual(flagsFor(cell, violet.id, [], { site: open }).misfits, ['light']);
+  const swaps = alternatives(tree.id, [tree.id, shrub.id], cell, { site: open });
+  assert.deepEqual(swaps.find((a) => a.taxon.id === violet.id).flags.misfits, [], 'Swap: the Mid shrub still shades it');
+});
+
+// Scale chunk B fix review H12: the automatic picks (suggest, so Fill too) read the same shaded-layer
+// rule as the flags: a plant the flags would not mark is a candidate, one they would mark is not.
+test('H12: suggest and Fill pick a shade plant of a lower layer under a canopy, never one the flags would mark', () => {
+  const tree = make({ functions: fn('nitrogen_fixer'), ...layer('high') });
+  const violet = make({ functions: fn('ground_cover'), traits: { sun: false }, ...layer('low') });
+  const fern = make({ functions: fn('mulch'), traits: { sun: false }, ...layer('medium') });
+  const tall = make({ functions: fn('edible_fruit'), traits: { sun: false }, ...layer('high') });
+  const cell = cellOf([tree, violet, fern, tall]);
+  const under = suggest(cell, { site: open, kept: [tree.id] });
+  assert.deepEqual(names(under.members).sort(), [tree, violet, fern].map((t) => t.canonical_name).sort(), 'both shade plants join under the High tree; the shade-loving High one never does');
+  for (const m of under.members) assert.equal(m.flags.flagged, false, m.taxon.canonical_name);
+  // With nothing kept, a shade plant joins only once a layer above it is chosen, and is never flagged.
+  const fresh = suggest(cell, { site: open });
+  for (const m of fresh.members) assert.equal(m.flags.flagged, false, m.taxon.canonical_name);
+  assert.ok(!names(fresh.members).includes(tall.canonical_name));
+  // Without the canopy (the tree removed), nothing shades them: none is picked.
+  const bare = suggest(cell, { site: open, removed: [tree.id] });
+  assert.deepEqual(names(bare.members), []);
+  // In part shade the light check is the plant's own: no shading needed.
+  const part = suggest(cell, { site: { ...open, light: 'part' }, kept: [] });
+  for (const m of part.members) assert.equal(m.flags.flagged, false);
+});
+
+// Owner, 2026-10-28: invasiveness is a warning, never a filter or a score.
+test('suggest picks the same plants with or without a country; invasive here is a warning, not a flag', () => {
   const invasive = make({ functions: fn('mulch'), warnings: { invasive_in: [{ country: 'BR', sources: ['griis'] }] } });
   const unchecked = make({ functions: fn('ground_cover'), warnings: { invasive_in: null } });
   const cell = cellOf([invasive, unchecked]);
-  assert.deepEqual(names(suggest(cell, { site: open, country: 'BR' }).members), [unchecked.canonical_name]);
-  assert.deepEqual(names(suggest(cell, { site: open, country: 'FR' }).members), [invasive.canonical_name, unchecked.canonical_name]);
-  assert.equal(suggest(cell, { site: open }).members.length, 2, 'no country, no filter');
-  const kept = suggest(cell, { site: open, country: 'BR', kept: [invasive.id] }).members;
-  assert.equal(kept.find((m) => m.taxon.id === invasive.id).flags.invasive, true);
-  assert.equal(kept.find((m) => m.taxon.id === unchecked.id).flags.invasive, null);
-  // On the fixture: leucaena, recorded invasive in Brazil, is never suggested there.
-  for (const room of ['small', 'large', 'field'])
-    assert.ok(!names(suggest(tropical, { site: { ...open, room }, country: 'BR', kept: [named('Inga edulis').id] }).members).includes('Leucaena leucocephala'));
+  const both = [invasive.canonical_name, unchecked.canonical_name];
+  for (const country of ['BR', 'FR', 'TW', null]) assert.deepEqual(names(suggest(cell, { site: open, country }).members), both, String(country));
+  const br = suggest(cell, { site: open, country: 'BR', countryChecked: true }).members;
+  assert.equal(br.find((m) => m.taxon.id === invasive.id).flags.invasive, true);
+  assert.equal(br.find((m) => m.taxon.id === invasive.id).flags.flagged, false, 'not held back');
+  assert.equal(br.find((m) => m.taxon.id === unchecked.id).flags.invasive, null);
+  assert.equal(suggest(cell, { site: open, country: 'FR', countryChecked: true }).members.find((m) => m.taxon.id === invasive.id).flags.invasive, false);
+  assert.equal(suggest(cell, { site: open, country: 'BR', countryChecked: false }).members.find((m) => m.taxon.id === invasive.id).flags.invasive, null, 'unchecked country');
+  // On the fixture: the members never depend on the country.
+  for (const room of ['small', 'large', 'field']) {
+    const site = { ...open, room };
+    const ids = (country) => suggest(tropical, { site, country, kept: [named('Inga edulis').id] }).members.map((m) => m.taxon.id);
+    assert.deepEqual(ids('BR'), ids(null), room);
+    assert.deepEqual(ids('FR'), ids(null), room);
+  }
 });
 
 test('suggest leaves out a plant with a medium or high conflict with a member; a low one only warns', () => {
@@ -417,7 +484,7 @@ test('evaluate scores a fixed list without refilling: a removed member leaves it
 
 test('evaluate flags misfits, invasives and conflicts in a fixed list, and ignores unknown and repeated ids', () => {
   const inga = named('Inga edulis'), potato = named('Ipomoea batatas'), tithonia = named('Tithonia diversifolia'), leucaena = named('Leucaena leucocephala');
-  const e = evaluate(tropical, [tithonia.id, potato.id, leucaena.id, inga.id, inga.id, 'ffffffff-0000-4000-8000-000000000000'], { site: { ...open, water: 'dry' }, country: 'BR' });
+  const e = evaluate(tropical, [tithonia.id, potato.id, leucaena.id, inga.id, inga.id, 'ffffffff-0000-4000-8000-000000000000'], { site: { ...open, water: 'dry' }, country: 'BR', countryChecked: true });
   assert.deepEqual(names(e.members), ['Tithonia diversifolia', 'Ipomoea batatas', 'Leucaena leucocephala', 'Inga edulis'], 'in the given order');
   const by = (name) => e.members.find((m) => m.taxon.canonical_name === name).flags;
   assert.equal(by('Leucaena leucocephala').invasive, true);
@@ -451,10 +518,10 @@ test('alternatives: unflagged first, then same stratum, shared jobs, gain, name;
 
 test('alternatives on the fixture: flagged plants are listed with their warnings', () => {
   const inga = named('Inga edulis'), potato = named('Ipomoea batatas');
-  const alts = alternatives(inga.id, [inga.id, potato.id], tropical, { site: open, country: 'BR' });
+  const alts = alternatives(inga.id, [inga.id, potato.id], tropical, { site: open, country: 'BR', countryChecked: true });
   const leucaena = alts.find((a) => a.taxon.canonical_name === 'Leucaena leucocephala');
   assert.equal(leucaena.flags.invasive, true);
-  assert.equal(leucaena.flags.flagged, true);
+  assert.equal(leucaena.flags.flagged, false, 'invasive here is told, not held back');
   const tithonia = alts.find((a) => a.taxon.canonical_name === 'Tithonia diversifolia');
   assert.equal(tithonia.flags.conflicts[0].b.canonical_name, 'Ipomoea batatas');
   assert.ok(!alts.some((a) => a.taxon.id === inga.id || a.taxon.id === potato.id));
@@ -462,72 +529,144 @@ test('alternatives on the fixture: flagged plants are listed with their warnings
   assert.ok(firstFlagged > 0 && alts.slice(firstFlagged).every((a) => a.flags.flagged), 'flagged plants come last, after every plant without a warning');
   for (const group of [alts.slice(0, firstFlagged), alts.slice(firstFlagged)]) {
     const firstOther = group.findIndex((a) => !a.sameStratum);
-    assert.ok(firstOther > 0 && group.slice(firstOther).every((a) => !a.sameStratum), 'same stratum first, within each group');
+    if (firstOther >= 0) assert.ok(group.slice(firstOther).every((a) => !a.sameStratum), 'same stratum first, within each group');
   }
 });
 
 test('flagsFor: a plant beside the members carries the flags it would have as a member', () => {
   const inga = named('Inga edulis'), potato = named('Ipomoea batatas'), tithonia = named('Tithonia diversifolia'), leucaena = named('Leucaena leucocephala');
-  const opts = { site: open, country: 'BR' };
+  const opts = { site: open, country: 'BR', countryChecked: true };
   const t = flagsFor(tropical, tithonia.id, [inga.id, potato.id], opts);
   assert.equal(t.conflicts[0].b.canonical_name, 'Ipomoea batatas');
   const asMember = evaluate(tropical, [inga.id, potato.id, tithonia.id], opts).members.at(-1).flags;
   assert.deepEqual({ ...t, conflicts: t.conflicts.length }, { ...asMember, conflicts: asMember.conflicts.length });
   assert.equal(flagsFor(tropical, leucaena.id, [], opts).invasive, true);
-  assert.equal(flagsFor(tropical, leucaena.id, [leucaena.id], opts).flagged, true, 'a member is left out of its own list');
+  assert.equal(flagsFor(tropical, leucaena.id, [], { ...opts, countryChecked: false }).invasive, null);
+  assert.equal(flagsFor(tropical, leucaena.id, [leucaena.id], opts).invasive, true, 'a member is left out of its own list');
   assert.equal(flagsFor(tropical, 'ffffffff-0000-4000-8000-000000000000', [], opts), null);
 });
 
 // state
 
 const sampleState = () => ({
-  climate: 'tropical', region: 'southern_america', country: 'BR',
+  climate: 'tropical', country: 'BR',
   site: { light: 'part', soil: 'acid', water: 'wet', room: 'small' },
   kept: [named('Inga edulis').id, named('Musa acuminata').id],
   removed: [named('Leucaena leucocephala').id],
 });
+// A v3 token: the first 36 bits of the id (9 hex digits) as 6 base64url characters.
+const hex = (id) => id.replace(/-/g, '');
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+const token = (id, long = false) => {
+  const bits = [...hex(id).slice(0, long ? 32 : 9)].map((c) => parseInt(c, 16).toString(2).padStart(4, '0')).join('');
+  const padded = bits.padEnd(Math.ceil(bits.length / 6) * 6, '0');
+  return (long ? '.' : '') + padded.match(/.{6}/g).map((b) => B64[parseInt(b, 2)]).join('');
+};
 
-test('state: encode then decode with the cell restores the exact state', () => {
+test('state: encode then decode with the cell restores the exact state (v3)', () => {
   const state = sampleState();
   const q = encodeState(state, tropical);
-  assert.equal(q.get('v'), '2');
+  assert.equal(q.get('v'), '3');
   assert.equal(q.get('c'), 'tropical');
-  assert.equal(q.get('p'), [named('Inga edulis').id.slice(0, 8), named('Musa acuminata').id.slice(0, 8)].sort().join('.'));
+  assert.equal(q.get('p'), state.kept.map((id) => token(id)).sort().join(''), 'kept plants with no member list: 6 characters each');
+  assert.equal(q.get('x'), token(state.removed[0]));
   assert.doesNotMatch(q.toString(), /%/, 'nothing escaped');
   const { state: back, dropped } = decodeState(q.toString(), tropical);
   assert.deepEqual(dropped, []);
-  assert.deepEqual({ ...back, kept: [...back.kept].sort() }, { ...state, cellRegion: null, members: null, plants: [], kept: [...state.kept].sort() });
+  assert.deepEqual({ ...back, kept: [...back.kept].sort() }, { ...state, noCountry: false, members: null, plants: [], crops: [], guests: [], kept: [...state.kept].sort() });
   const empty = decodeState('');
-  assert.deepEqual(empty, { state: { climate: null, region: null, cellRegion: null, country: null, site: DEFAULT_SITE, kept: [], removed: [], members: null, plants: [] }, dropped: [] });
+  assert.deepEqual(empty.state, { climate: null, country: null, noCountry: false, site: DEFAULT_SITE, kept: [], removed: [], members: null, plants: [], crops: [], guests: [] });
 });
 
-test('state: a link from another region keeps both regions, the user region and the region of the cell shown', () => {
-  const olive = mediterranean.taxa[0].id;
-  const state = { ...sampleState(), climate: 'mediterranean', region: 'southern_america', cellRegion: 'europe', country: null, kept: [olive], removed: [] };
-  const q = encodeState(state, mediterranean);
-  assert.equal(q.get('r'), 'southern_america');
-  assert.equal(q.get('b'), 'europe');
-  const { state: back, dropped } = decodeState(q.toString(), mediterranean);
-  assert.deepEqual(dropped, []);
-  assert.equal(back.region, 'southern_america');
-  assert.equal(back.cellRegion, 'europe');
-  assert.deepEqual(back.kept, [olive]);
-  assert.equal(encodeState({ ...state, cellRegion: 'southern_america' }).get('b'), null, 'written only when it differs');
-  assert.equal(decodeState('r=europe&b=europe').state.cellRegion, null);
-  assert.equal(decodeState('r=europe').state.cellRegion, null, 'an old link has none');
-  assert.deepEqual(decodeState('b=mars').dropped, [{ key: 'b', value: 'mars', reason: 'unknown' }]);
-});
-
-test('state: a link carries the members in order, so the page restores them without refilling', () => {
+test('state: v3 members keep their order, kept members carry a star, and no list repeats them', () => {
   const ids = [named('Musa acuminata').id, named('Inga edulis').id, named('Arachis pintoi').id];
   const state = { ...sampleState(), kept: [ids[1]], removed: [named('Leucaena leucocephala').id], members: ids };
   const q = encodeState(state, tropical);
-  assert.equal(q.get('a'), ids.map((id) => id.slice(0, 8)).join('.'), 'in member order');
+  assert.equal(q.get('a'), token(ids[0]) + '*' + token(ids[1]) + token(ids[2]));
+  assert.equal(q.get('p'), null, 'every kept plant is a member: no separate kept list');
   const { state: back, dropped } = decodeState(q, tropical);
   assert.deepEqual(dropped, []);
   assert.deepEqual(back.members, ids);
+  assert.deepEqual(back.kept, [ids[1]]);
   assert.deepEqual(evaluate(tropical, back.members, { site: back.site, kept: back.kept }).members.map((m) => m.taxon.id), ids);
-  assert.equal(decodeState(encodeState(sampleState(), tropical), tropical).state.members, null, 'an old link has none: the page suggests');
+  assert.equal(decodeState(encodeState(sampleState(), tropical), tropical).state.members, null, 'a state with no member list has none: the page suggests');
+});
+
+test('state: a link with 200 plants, 190 of them kept, and 2 main crops stays near 1.5 KB and comes back exactly', () => {
+  const taxa = Array.from({ length: 200 }, (_, i) => ({ ...structuredClone(tropical.taxa[i % tropical.taxa.length]), id: crypto.randomUUID(), canonical_name: `Plant ${i}` }));
+  const cell = { ...tropical, taxa };
+  const ids = taxa.map((t) => t.id);
+  const state = { climate: 'temperate', country: 'FR', site: { light: 'sun', soil: 'unsure', water: 'unsure', room: 'field' }, kept: ids.slice(0, 190), removed: [], members: ids, crops: taxa.filter((t) => t.role === 'crop').slice(0, 2).map((t) => t.id) };
+  const q = encodeState(state, cell);
+  const link = `https://projectcanopi.com/fr/consortium/?${q}`;
+  assert.ok(link.length <= 1520, `${link.length} characters`);
+  const back = decodeState(q.toString(), cell);
+  assert.deepEqual(back.dropped, []);
+  assert.deepEqual(back.state.members, ids);
+  assert.deepEqual([...back.state.kept].sort(), [...state.kept].sort());
+  assert.deepEqual(back.state.crops, state.crops);
+});
+
+test('state: a v3 link survives a data update: new plants, a new order and a plant gone; the lost one is reported', () => {
+  const ids = tropical.taxa.slice(0, 6).map((t) => t.id);
+  const q = encodeState({ ...sampleState(), kept: [ids[0]], removed: [], members: ids }, tropical);
+  const later = { ...tropical, taxa: [...tropical.taxa.filter((t) => t.id !== ids[3]).reverse(), make({ id: 'aaaaaaaa-0000-4000-8000-000000000000' }), make({ id: 'bbbbbbbb-0000-4000-8000-000000000000' })] };
+  const { state, dropped } = decodeState(q, later);
+  assert.deepEqual(state.members, ids.filter((id) => id !== ids[3]));
+  assert.deepEqual(state.kept, [ids[0]]);
+  assert.deepEqual(dropped, [{ key: 'a', value: hex(ids[3]).slice(0, 9), reason: 'unknown' }], 'reported as the 9 hex digits it stands for');
+});
+
+test('state: two ids that share 36 bits are written whole, and a short token that matches both is dropped as ambiguous', () => {
+  const a = make({ id: 'abcdef01-2111-4000-8000-000000000001' }), b = make({ id: 'abcdef01-2222-4000-8000-000000000002' });
+  assert.equal(hex(a.id).slice(0, 9), hex(b.id).slice(0, 9), 'the two share 36 bits');
+  const cell = cellOf([a, b, ...tropical.taxa]);
+  const q = encodeState({ ...sampleState(), kept: [a.id], removed: [b.id] }, cell);
+  assert.equal(q.get('p'), token(a.id, true));
+  assert.equal(q.get('x'), token(b.id, true));
+  const back = decodeState(q, cell);
+  assert.deepEqual([back.state.kept, back.state.removed], [[a.id], [b.id]]);
+  assert.deepEqual(decodeState(`v=3&p=${token(a.id)}`, cell).dropped, [{ key: 'p', value: 'abcdef012', reason: 'ambiguous' }]);
+});
+
+test('state: v2 links still open: dotted 8-hex prefixes, longer prefixes, members and kept lists', () => {
+  const inga = named('Inga edulis').id, musa = named('Musa acuminata').id, arachis = named('Arachis pintoi').id;
+  const link = `v=2&c=tropical&k=BR&l=part&s=acid&w=wet&m=small&p=${inga.slice(0, 8)}.${musa.slice(0, 13)}&x=${named('Leucaena leucocephala').id.slice(0, 8)}&a=${musa.slice(0, 8)}.${inga}.${arachis.slice(0, 8)}`;
+  const { state, dropped } = decodeState(link, tropical);
+  assert.deepEqual(dropped, []);
+  assert.deepEqual(state.members, [musa, inga, arachis]);
+  assert.deepEqual([...state.kept].sort(), [inga, musa].sort());
+  assert.deepEqual(state.removed, [named('Leucaena leucocephala').id]);
+  assert.deepEqual([state.crops, state.guests], [[], []]);
+  assert.equal(decodeState(link).version, 2, 'the page writes a pending v2 link back as it came');
+  assert.equal(decodeState(encodeState(state, tropical)).version, 3);
+});
+
+test('state: an old link with a region (r) and a borrowed cell (b) still opens; both are ignored without a notice', () => {
+  const olive = mediterranean.taxa[0].id;
+  const { state, dropped } = decodeState(`v=2&c=mediterranean&r=southern_america&b=europe&l=sun&s=acid&w=dry&m=large&p=${olive.slice(0, 8)}`, mediterranean);
+  assert.deepEqual(dropped, []);
+  assert.equal(state.climate, 'mediterranean');
+  assert.deepEqual(state.kept, [olive]);
+  assert.ok(!('region' in state) && !('cellRegion' in state));
+  assert.deepEqual(decodeState('r=mars&b=venus&r=x').dropped, [], 'not even a bad one');
+  const q = encodeState(state, mediterranean);
+  assert.equal(q.get('r'), null);
+  assert.equal(q.get('b'), null);
+});
+
+test('state: a country is written only when the state has one; k=- is "No country", chosen', () => {
+  const state = { ...sampleState(), country: null };
+  assert.equal(encodeState(state).get('k'), null, 'no country, no k');
+  assert.equal(encodeState({ ...state, noCountry: true }).get('k'), '-');
+  assert.equal(encodeState({ ...state, country: 'br', noCountry: true }).get('k'), 'BR', 'a country wins');
+  const none = decodeState('c=tropical&k=-');
+  assert.equal(none.state.country, null);
+  assert.equal(none.state.noCountry, true);
+  assert.deepEqual(none.dropped, []);
+  assert.equal(decodeState('k=BR').state.noCountry, false);
+  // A code of the right shape passes here; the page checks it against the manifest (countryUnknown).
+  assert.equal(decodeState('k=ZZ').state.country, 'ZZ');
 });
 
 test('state: a consortium with every member removed stays empty after a reload, it is not refilled', () => {
@@ -545,39 +684,34 @@ test('state: a guide preset plant not yet resolved survives an encode, so a relo
   assert.equal(again.state.climate, 'tropical');
 });
 
-test('state: without the cell, decode keeps the prefixes for resolveIds()', () => {
+test('state: without the cell, decode keeps 9-hex prefixes for resolveIds(), and writes them back unchanged', () => {
   const q = encodeState(sampleState());
-  const { state } = decodeState(q);
-  assert.deepEqual(state.kept.sort(), sampleState().kept.map((id) => id.slice(0, 8)).sort());
-  const { ids, dropped } = resolveIds(state.kept, tropical);
+  const decoded = decodeState(q);
+  assert.deepEqual([...decoded.state.kept].sort(), sampleState().kept.map((id) => hex(id).slice(0, 9)).sort());
+  const { ids, dropped } = resolveIds(decoded.state.kept, tropical);
   assert.deepEqual(ids.sort(), [...sampleState().kept].sort());
   assert.deepEqual(dropped, []);
-  assert.equal(decodeState(`p=${sampleState().kept[0]}`, tropical).state.kept[0], sampleState().kept[0], 'a full uuid is a prefix too');
+  assert.equal(encodeState(decoded.state).toString(), q.toString(), 'a pending link is written back as it came');
+  const whole = `v=3&c=tropical&l=sun&s=unsure&w=unsure&m=large&a=${token(sampleState().kept[0], true)}*${token(sampleState().kept[1])}`;
+  assert.equal(encodeState(decodeState(whole).state).toString(), whole + '&e=1', 'a whole token too');
+  assert.equal(decodeState(`p=${sampleState().kept[0]}`, tropical).state.kept[0], sampleState().kept[0], 'a full uuid is a v2 prefix too');
 });
 
 test('state: unknown and malformed values are dropped and reported, never thrown', () => {
-  const { state, dropped } = decodeState('v=9&c=polar&r=mars&k=France&l=dim&s=clay&w=soggy&m=huge&p=xyz.deadbeef.d9242605&x=1234', tropical);
-  assert.deepEqual(state, { climate: null, region: null, cellRegion: null, country: null, site: DEFAULT_SITE, kept: [named('Arachis pintoi').id], removed: [], members: null, plants: [] });
+  const { state, dropped } = decodeState('v=2&c=polar&r=mars&k=France&l=dim&s=clay&w=soggy&m=huge&p=xyz.deadbeef.d9242605&x=1234', tropical);
+  assert.deepEqual(state, { climate: null, country: null, noCountry: false, site: DEFAULT_SITE, kept: [named('Arachis pintoi').id], removed: [], members: null, plants: [], crops: [], guests: [] });
   assert.deepEqual(dropped.map((d) => `${d.key}=${d.value}:${d.reason}`).sort(), [
     'c=polar:unknown', 'k=France:unknown', 'l=dim:unknown', 'm=huge:unknown', 'p=deadbeef:unknown', 'p=xyz:malformed',
-    'r=mars:unknown', 's=clay:unknown', 'v=9:unknown', 'w=soggy:unknown', 'x=1234:malformed',
+    's=clay:unknown', 'w=soggy:unknown', 'x=1234:malformed',
   ]);
-  for (const g of ['%', 'c=%ZZ', 'p=..,,', '&&&=', `p=${'a'.repeat(5000)}`, 'c=tropical&c=arid', '?']) assert.doesNotThrow(() => decodeState(g, tropical), g);
+  // A version this page does not know reads no plants (B1); its v is reported.
+  assert.deepEqual(decodeState('v=9&p=d9242605', tropical).state.kept, []);
+  assert.deepEqual(decodeState('v=9&p=d9242605', tropical).dropped, [{ key: 'v', value: '9', reason: 'unknown' }]);
+  for (const g of ['%', 'c=%ZZ', 'p=..,,', '&&&=', `p=${'a'.repeat(5000)}`, 'c=tropical&c=arid', '?', 'v=3&a=***', 'v=3&a=.ab', 'v=3&a=AB$cd!', 'v=3&g=zz', 'v=3&g=meABC', `v=3&a=${'A'.repeat(50000)}`]) assert.doesNotThrow(() => decodeState(g, tropical), g);
+  assert.deepEqual(decodeState('v=3&a=ABCDEF$$').dropped.map((d) => [d.key, d.reason]), [['a', 'malformed']]);
+  assert.deepEqual(decodeState('v=3&g=zzABCDEF').dropped, [{ key: 'g', value: 'zzABCDEF', reason: 'unknown' }]);
   assert.deepEqual(decodeState('c=tropical&c=arid').dropped, [{ key: 'c', value: 'arid', reason: 'duplicate' }]);
   assert.equal(decodeState('c=Tropical&k=br').state.country, 'BR');
-});
-
-test('state: ids that share a prefix get a longer one, and an ambiguous prefix is dropped', () => {
-  const a = make({ id: 'abcdef01-1111-4000-8000-000000000001' }), b = make({ id: 'abcdef01-2222-4000-8000-000000000002' });
-  const cell = cellOf([a, b, ...tropical.taxa]);
-  assert.equal(shortId(a.id, cell), 'abcdef01-1111');
-  assert.equal(shortId(named('Inga edulis').id, cell), named('Inga edulis').id.slice(0, 8));
-  const q = encodeState({ ...sampleState(), kept: [a.id], removed: [b.id] }, cell);
-  const back = decodeState(q, cell);
-  assert.deepEqual([back.state.kept, back.state.removed], [[a.id], [b.id]]);
-  assert.deepEqual(decodeState('p=abcdef01', cell).dropped, [{ key: 'p', value: 'abcdef01', reason: 'ambiguous' }]);
-  const conflict = decodeState(`p=${a.id}&x=${a.id}`, cell);
-  assert.deepEqual([conflict.state.kept, conflict.state.removed], [[a.id], []], 'kept wins over removed');
 });
 
 test('state: kept wins over removed once prefixes of different lengths are resolved, with or without the cell at decode', () => {
@@ -592,7 +726,8 @@ test('state: kept wins over removed once prefixes of different lengths are resol
   assert.deepEqual(withMembers.state.removed, []);
 });
 
-test('state: a link with thousands of ids decodes fast; ids past the cap are dropped as one notice', () => {
+test('state: the cap on ids is a stated limit, far above any list, and ids past it are reported with their count', () => {
+  assert.ok(MAX_LINK_IDS >= 1000, 'lists will grow past 200 plants');
   const many = Array.from({ length: 30000 }, (_, n) => n.toString(16).padStart(8, '0'));
   const link = `p=${[named('Inga edulis').id.slice(0, 8), ...many].join('.')}&x=${many.join('.')}`;
   const start = performance.now();
@@ -604,7 +739,8 @@ test('state: a link with thousands of ids decodes fast; ids past the cap are dro
     { key: 'p', value: String(30001 - MAX_LINK_IDS), reason: 'excess' },
     { key: 'x', value: String(30000 - MAX_LINK_IDS), reason: 'excess' },
   ]);
-  assert.ok(MAX_LINK_IDS >= 200, 'a whole cell still fits');
+  const v3 = decodeState(`v=3&a=${'*AAAAAA'.repeat(MAX_LINK_IDS + 5)}`);
+  assert.deepEqual(v3.dropped.filter((d) => d.reason === 'excess'), [{ key: 'a', value: '5', reason: 'excess' }]);
 });
 
 test('state: a guide preset (?plant=<canonical_name>&climate=<id>) keeps its plant; one not in the cell is dropped', () => {
@@ -636,29 +772,146 @@ test('state: taxonByName is the one rule a guide preset is matched by, so the pa
   }
 });
 
+// main crops and plants from another climate's list
+
+test('state: main crops are kept members, at most three, and only food plants of the climate', () => {
+  const apple = named('Malus domestica').id, hazel = named('Corylus avellana').id, chives = named('Allium schoenoprasum').id, currant = named('Ribes nigrum').id, clover = named('Trifolium repens').id;
+  const q = encodeState({ climate: 'temperate', country: null, site: DEFAULT_SITE, kept: [], removed: [], members: [apple, clover], crops: [apple, hazel] }, temperate);
+  assert.equal(q.get('n'), token(apple) + token(hazel));
+  const back = decodeState(q, temperate);
+  assert.deepEqual(back.state.crops, [apple, hazel]);
+  assert.deepEqual(back.state.members, [apple, clover, hazel], 'a main crop is a member');
+  assert.ok(back.state.kept.includes(apple) && back.state.kept.includes(hazel), 'and kept');
+  const four = decodeState(`v=3&c=temperate&n=${[apple, hazel, chives, currant].map((id) => token(id)).join('')}`, temperate);
+  assert.deepEqual(four.state.crops, [apple, hazel, chives]);
+  assert.deepEqual(four.dropped, [{ key: 'n', value: '1', reason: 'excess' }]);
+  const support = decodeState(`v=3&c=temperate&n=${token(clover)}`, temperate);
+  assert.deepEqual(support.state.crops, [], 'a support plant is never a main crop');
+  assert.deepEqual(support.state.kept, [clover], 'but stays kept');
+  assert.equal(MAX_CROPS, 3);
+});
+
+test('state: a plant added from another climate\'s list carries that list in the link and comes back as a guest', () => {
+  const apple = named('Malus domestica').id, fig = named('Ficus carica'), olive = named('Olea europaea');
+  const state = { climate: 'temperate', country: null, site: DEFAULT_SITE, kept: [fig.id, olive.id], removed: [], members: [apple, fig.id, olive.id], guests: [{ id: fig.id, climate: 'mediterranean' }, { id: olive.id, climate: 'mediterranean' }] };
+  const q = encodeState(state, temperate, { mediterranean });
+  assert.equal(q.get('g'), 'me' + [fig.id, olive.id].map((id) => token(id)).sort().join(''));
+  const early = decodeState(q.toString());
+  assert.deepEqual(early.state.guests.map((g) => g.climate), ['mediterranean', 'mediterranean'], 'the page knows which files to fetch first');
+  const back = resolveState(early, temperate, { mediterranean });
+  assert.deepEqual(back.dropped, []);
+  assert.deepEqual(back.state.members, [apple, fig.id, olive.id]);
+  assert.deepEqual([...back.state.guests].sort((x, y) => (x.id < y.id ? -1 : 1)), [{ id: fig.id, climate: 'mediterranean' }, { id: olive.id, climate: 'mediterranean' }].sort((x, y) => (x.id < y.id ? -1 : 1)));
+  const without = resolveState(decodeState(q.toString()), temperate);
+  assert.deepEqual(without.state.members, [apple], 'a guest whose list is not at hand is left out');
+  assert.equal(without.dropped.filter((d) => d.key === 'g').length, 2);
+  const moved = { ...temperate, taxa: [...temperate.taxa, fig] };
+  const now = resolveState(decodeState(q.toString()), moved, { mediterranean });
+  assert.deepEqual(now.state.guests, [{ id: olive.id, climate: 'mediterranean' }], 'a guest that joined this climate\'s list is an ordinary member');
+  assert.deepEqual(now.state.members, [apple, fig.id, olive.id]);
+});
+
+// scale chunk A review, B1: a link cut short (a mail client keeps only its start) or written for a
+// version this page does not know never opens as a silently empty or partial consortium.
+test('state: every v3 link ends with e=1, so a link cut anywhere, even between two tokens, is told apart from a whole one', () => {
+  const ids = temperate.taxa.slice(0, 12).map((t) => t.id);
+  const state = { climate: 'temperate', country: null, site: DEFAULT_SITE, kept: ids.slice(0, 2), removed: [temperate.taxa[12].id], members: ids, crops: [] };
+  const q = encodeState(state, temperate).toString();
+  assert.ok(q.endsWith('&e=1'), q);
+  assert.equal(decodeState(q).ended, true);
+  // Every cut, at every character, reads as not ended.
+  for (let i = q.indexOf('a=') + 2; i < q.length - 1; i++) assert.equal(decodeState(q.slice(0, i)).ended, false, q.slice(i - 6, i));
+  assert.equal(decodeState(encodeState({ ...state, plants: ['Malus domestica'] })).ended, true, 'a pending guide plant comes before the end');
+});
+
+test('state: a link for a version this page does not know reads no plants (the page suggests and says plants may be missing)', () => {
+  const ids = temperate.taxa.slice(0, 3).map((t) => t.id);
+  const v4 = encodeState({ climate: 'temperate', country: null, site: DEFAULT_SITE, kept: [ids[0]], removed: [], members: ids }, temperate);
+  v4.set('v', '4');
+  const { state, dropped } = decodeState(v4, temperate);
+  assert.equal(state.climate, 'temperate', 'the climate and site still open');
+  assert.deepEqual([state.members, state.kept, state.removed, state.crops, state.guests], [null, [], [], [], []]);
+  assert.deepEqual(dropped.filter((d) => d.key === 'v'), [{ key: 'v', value: '4', reason: 'unknown' }]);
+});
+
+test('state: a member list cut inside its first token reads as none, so the page suggests instead of opening it empty', () => {
+  const ids = temperate.taxa.slice(0, 3).map((t) => t.id);
+  const q = encodeState({ climate: 'temperate', country: null, site: DEFAULT_SITE, kept: [], removed: [], members: ids }, temperate).toString();
+  const cut = decodeState(q.slice(0, q.indexOf('a=') + 5));
+  assert.equal(cut.state.members, null);
+  assert.deepEqual(cut.dropped.map((d) => [d.key, d.reason]), [['a', 'malformed']]);
+  assert.deepEqual(decodeState('v=3&c=temperate&a=&e=1').state.members, [], 'a whole link with an emptied consortium stays empty');
+});
+
+// B12: the guest key cannot be used to block the page.
+test('state: guest tokens share one cap across every g value, a repeated list code is a duplicate, and decoding stays fast', () => {
+  const tokens = Array.from({ length: MAX_LINK_IDS }, (_, n) => token(idOf(n + 1))).join('');
+  const codes = ['me', 'tr', 'su', 'ar', 'co', 'bo'];
+  const link = `v=3&c=temperate&${codes.map((c) => `g=${c}${tokens}`).join('&')}&g=me${tokens}&e=1`;
+  const start = performance.now();
+  const d = decodeState(link);
+  const r = resolveState(d, temperate, { mediterranean, tropical });
+  const ms = performance.now() - start;
+  assert.ok(ms < 1500, `${ms.toFixed(0)} ms (one hex table per token took 13 s at 600 KB)`);
+  assert.equal(d.state.guests.length, MAX_LINK_IDS, 'at most MAX_LINK_IDS guest tokens in all');
+  assert.deepEqual(d.dropped.filter((x) => x.key === 'g' && x.reason !== 'malformed').map((x) => [x.reason, x.reason === 'duplicate' ? x.value.slice(0, 2) : x.value]), [['duplicate', 'me'], ['excess', String((codes.length - 1) * MAX_LINK_IDS)]]);
+  assert.ok(r.dropped.length <= MAX_LINK_IDS + 2, `${r.dropped.length} dropped entries`);
+});
+
+test('guests: kept guests stay members and count for coverage; suggest, fill and Swap never offer a guest', () => {
+  const fig = named('Ficus carica'), olive = named('Olea europaea');
+  const site = { ...open, room: 'field' };
+  const s = suggest(temperate, { site, kept: [fig.id], guests: [fig, olive] });
+  assert.equal(s.members[0].taxon.id, fig.id, 'the kept guest is a member');
+  assert.ok(!s.members.some((m) => m.taxon.id === olive.id), 'a guest is never picked');
+  const ids = s.members.map((m) => m.taxon.id);
+  assert.deepEqual(evaluate(temperate, ids, { site, kept: [fig.id], guests: [fig] }).members.map((m) => m.taxon.id), ids);
+  assert.ok(flagsFor(temperate, fig.id, ids, { site, guests: [fig] }));
+  for (const id of ids) assert.ok(!alternatives(id, ids, temperate, { site, guests: [fig, olive] }).some((a) => a.taxon.id === fig.id || a.taxon.id === olive.id), id);
+  assert.ok(alternatives(fig.id, ids, temperate, { site, guests: [fig] }).length > 0, 'a guest can be swapped for a plant of this climate');
+});
+
 // performance
 
-test('suggest and every alternative for a 200-taxon cell take under 50 ms', () => {
-  const taxa = Array.from({ length: 200 }, (_, i) => {
+test('suggest and every alternative for a 200-taxon cell stay fast: cold runs, timed against a baseline in the same process', () => {
+  // Fresh taxon objects for every run, so each one misses the per-taxon info cache (suggest.ts
+  // infoOf) as the page does on every site change, and makeInfo is timed too (fix3 review, m-3).
+  const freshTaxa = () => Array.from({ length: 200 }, (_, i) => {
     const t = structuredClone(allTaxa[i % allTaxa.length]);
     return { ...t, id: idOf(100000 + i), canonical_name: `${t.canonical_name} ${String(i).padStart(3, '0')}` };
   });
-  const cell = { ...tropical, taxa, interactions: [...tropical.interactions, ...temperate.interactions] };
+  const interactions = [...tropical.interactions, ...temperate.interactions];
   const site = { light: 'sun', soil: 'neutral', water: 'average', room: 'field' };
-  const run = () => {
-    const s = suggest(cell, { site, country: 'BR', kept: [taxa[3].id] });
+  const run = (taxa) => {
+    const cell = { ...tropical, taxa, interactions };
+    const s = suggest(cell, { site, country: 'BR', countryChecked: true, kept: [taxa[3].id] });
     const ids = s.members.map((m) => m.taxon.id);
-    for (const id of ids) alternatives(id, ids, cell, { site, country: 'BR' });
+    for (const id of ids) alternatives(id, ids, cell, { site, country: 'BR', countryChecked: true });
     return s;
   };
-  // The page recomputes on every change: time a warm run, the best of three so a busy machine does not fail it.
-  run();
-  let ms = Infinity, s;
-  for (let k = 0; k < 3; k++) {
-    const start = performance.now();
-    s = run();
-    ms = Math.min(ms, performance.now() - start);
+  // A fixed workload of the same kinds (Map and string work, object allocation, a sort). npm test runs
+  // the files in parallel, and load slows both alike, so the ratio holds where a fixed ceiling does
+  // not. Measured: 0.6 to 0.8 quiet, at most 1.0 with 16 copies on 8 cores; a 10x slowdown of the
+  // work gives over 5. The ceiling of 2.5 catches a slowdown of about 4x or more.
+  const baseline = () => {
+    const m = new Map(); let x = 0;
+    for (let i = 0; i < 40000; i++) { const k = 'k' + (i % 997); m.set(k, (m.get(k) ?? 0) + i); x += k.length; }
+    const arr = Array.from({ length: 20000 }, (_, i) => ({ v: (i * 7919) % 20011 })).sort((p, q) => p.v - q.v);
+    return x + arr[0].v + m.size;
+  };
+  const time = (f) => { const start = performance.now(); const out = f(); return [performance.now() - start, out]; };
+  // Warm up the JIT, then interleave the two and take the best of ten of each.
+  for (let k = 0; k < 5; k++) { run(freshTaxa()); baseline(); }
+  let work = Infinity, base = Infinity, s;
+  for (let k = 0; k < 10; k++) {
+    const taxa = freshTaxa();
+    const [w, out] = time(() => run(taxa));
+    work = Math.min(work, w); s = out;
+    base = Math.min(base, time(baseline)[0]);
   }
   assert.ok(s.members.length >= 3);
-  assert.ok(ms < 50, `${ms.toFixed(1)} ms`);
+  const ratio = work / base;
+  assert.ok(ratio < 2.5, `cold run ${work.toFixed(1)} ms is ${ratio.toFixed(2)}x the baseline's ${base.toFixed(1)} ms (ceiling 2.5x)`);
+  // CONSORTIUM_PERF=1 also holds the page's real 50 ms budget on a quiet machine.
+  if (process.env.CONSORTIUM_PERF === '1') assert.ok(work < 50, `${work.toFixed(1)} ms (budget 50 ms)`);
 });

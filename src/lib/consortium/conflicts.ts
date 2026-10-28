@@ -3,7 +3,7 @@
 // canonical name, genus, family), so a genus row matches every species of the genus.
 // `allelopathy_tolerant` rows record a plant that tolerates another's allelopathy; they are good
 // news, not conflicts, so conflicts() leaves them out.
-import type { Interaction, InteractionType, Severity, Taxon, TaxonRef, Text } from './types.ts';
+import type { AgentNames, Interaction, InteractionType, Severity, Taxon, TaxonRef, Text } from './types.ts';
 
 export interface Conflict {
   a: Taxon; // matches the row's subject
@@ -11,6 +11,7 @@ export interface Conflict {
   type: Exclude<InteractionType, 'allelopathy_tolerant'>;
   severity: Severity | null;
   agent: string | null;
+  agent_names: AgentNames | null; // the agent's sourced common names, null when none was chosen
   note: Text | null;
   sources: string[];
 }
@@ -37,7 +38,7 @@ export function conflicts(members: Taxon[], interactions: Interaction[]): Confli
         const key = a.id < b.id ? `${a.id} ${b.id}` : `${b.id} ${a.id}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        out.push({ a, b, type: row.type, severity: row.severity, agent: row.agent, note: row.note ?? null, sources: row.sources });
+        out.push({ a, b, type: row.type, severity: row.severity, agent: row.agent, agent_names: row.agent_names ?? null, note: row.note ?? null, sources: row.sources });
       }
     }
   }
@@ -55,7 +56,7 @@ export function conflictsOf(taxon: Taxon, others: Taxon[], interactions: Interac
     for (const o of others) {
       if (o.id === taxon.id) continue;
       const pair = asSubject && matches(row.object, o) ? [taxon, o] : asObject && matches(row.subject, o) ? [o, taxon] : null;
-      if (pair) out.push({ a: pair[0], b: pair[1], type: row.type, severity: row.severity, agent: row.agent, note: row.note ?? null, sources: row.sources });
+      if (pair) out.push({ a: pair[0], b: pair[1], type: row.type, severity: row.severity, agent: row.agent, agent_names: row.agent_names ?? null, note: row.note ?? null, sources: row.sources });
     }
   }
   return out;
@@ -64,17 +65,13 @@ export function conflictsOf(taxon: Taxon, others: Taxon[], interactions: Interac
 // A medium or high conflict keeps a candidate out of automatic picks; low or unrated ones only warn.
 export const isSerious = (c: Conflict) => c.severity === 'medium' || c.severity === 'high';
 
-// The countries where the taxon is recorded invasive, or null when nobody checked.
-export function invasiveCountries(taxon: Taxon): string[] | null {
-  const list = taxon.warnings.invasive_in;
-  return list === null ? null : [...new Set(list.map((r) => r.country))];
-}
-
 // true: recorded invasive in the country; false: checked and not recorded there; null: not checked
-// for this taxon, or no country given.
-export function invasiveIn(taxon: Taxon, country: string | null | undefined): boolean | null {
+// for this taxon, a country GRIIS did not check, or no country given. `checked` is the manifest's
+// countries[code].invasive_checked and must be given as true for a "false": a caller that leaves it
+// out gets null, so "not checked" is never told as "none" (review m7).
+export function invasiveIn(taxon: Taxon, country: string | null | undefined, checked?: boolean): boolean | null {
   const list = taxon.warnings.invasive_in;
-  if (!country || list === null) return null;
+  if (!country || list === null || checked !== true) return null;
   const code = country.toUpperCase();
   return list.some((r) => r.country === code);
 }

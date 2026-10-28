@@ -4,20 +4,20 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:31:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:33:07Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:56Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:32:55Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:d5090f13b3d64365
-    last_modified: 2026-10-28T09:53:43Z
+    digest: sha256:90a5e593a59504de
+    last_modified: 2026-10-28T10:01:26Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:0db6cdc1c352b4ca
-    last_modified: 2026-10-28T09:23:52Z
+    digest: sha256:b726d0559715d5b9
+    last_modified: 2026-10-28T12:22:08Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
@@ -61,13 +61,13 @@ sources:
   - id: tryconsortium-astro
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
-    digest: sha256:5a02bf699f26c9a8
-    last_modified: 2026-10-27T21:22:08Z
+    digest: sha256:f5b4c40512da0ae4
+    last_modified: 2026-10-28T12:22:08Z
   - id: try-consortium-ts
     resource: ../../src/components/guides/try-consortium.ts
     title: src/components/guides/try-consortium.ts
-    digest: sha256:ed71c00bce5e1469
-    last_modified: 2026-10-27T21:22:08Z
+    digest: sha256:362d911ceadafb27
+    last_modified: 2026-10-28T12:22:08Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
@@ -76,8 +76,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d281f44b1981356f
-    last_modified: 2026-10-28T02:33:09Z
+    digest: sha256:399f026aeee12ed0
+    last_modified: 2026-10-28T12:08:03Z
 ---
 
 # Responsibility

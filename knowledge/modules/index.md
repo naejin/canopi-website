@@ -1,6 +1,6 @@
 # Module
 
-* [Consortium core](consortium-core.md) - Format 2 types and the pure, dependency-free functions of the consortium tool (cell lookup, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
+* [Consortium core](consortium-core.md) - Format 3 types and the pure, dependency-free functions of the consortium tool (climate file lookup, country checks, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 * [Consortium page](consortium-page.md) - The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks.
 * [Field Guides](field-guides.md) - The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data.
 * [mockup](mockup.md) - The approved October 2026 static HTML mockup and its implementation contract; a tracked design reference, not shipped by the build.

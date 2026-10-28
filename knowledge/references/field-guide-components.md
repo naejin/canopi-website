@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:53Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:32:54Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:0db6cdc1c352b4ca
-    last_modified: 2026-10-28T09:23:52Z
+    digest: sha256:b726d0559715d5b9
+    last_modified: 2026-10-28T12:22:08Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -60,18 +60,18 @@ sources:
   - id: tryconsortium-astro
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
-    digest: sha256:5a02bf699f26c9a8
-    last_modified: 2026-10-27T21:22:08Z
+    digest: sha256:f5b4c40512da0ae4
+    last_modified: 2026-10-28T12:22:08Z
   - id: try-consortium-ts
     resource: ../../src/components/guides/try-consortium.ts
     title: src/components/guides/try-consortium.ts
-    digest: sha256:ed71c00bce5e1469
-    last_modified: 2026-10-27T21:22:08Z
+    digest: sha256:362d911ceadafb27
+    last_modified: 2026-10-28T12:22:08Z
   - id: en-json
     resource: ../../src/i18n/guides/en.json
     title: src/i18n/guides/en.json
-    digest: sha256:2b48e0d09edf9266
-    last_modified: 2026-10-28T08:24:37Z
+    digest: sha256:e4517e6dee214755
+    last_modified: 2026-10-28T12:22:08Z
 enforced_by:
   - scripts/guides.test.mjs
   - scripts/check-built-site.mjs
@@ -187,22 +187,21 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
 - `<TryConsortium plant="Artocarpus altilis" climate="tropical" name="Breadfruit" />` — opens the
   consortium tool (beta) with the guide's plant kept and its climate set:
   `consortiumPath(lang)?plant=<canonical_name>&climate=<id>` (`/consortium/`, fr `/fr/guilde/`).
-  `plant` required: a `canonical_name` in a beta cell (`public/data/consortium/*.json`); `name`
+  `plant` required: a `canonical_name` in a beta climate file (`public/data/consortium/*.json`); `name`
   required: the guide's own name for the plant in that file's language (en and fr differ); `climate`
-  optional: the zone of the `<ForClimate>` block it sits in, and the plant must be in that cell. Left
-  out (only outside climate blocks, in a guide for every climate), each beta cell that has the plant
+  optional: the zone of the `<ForClimate>` block it sits in, and the plant must be in that climate's file. Left
+  out (only outside climate blocks, in a guide for every climate), each beta climate whose file has the plant
   gets a link, so no climate is assumed (never default to temperate). Renders a `.guide-next-inline`
   line: the label "Design a consortium (beta)" (fr « Composer une guilde (bêta) »,
-  `consortium.label`) and one link per climate, "<name> · <cell>" (`consortium.link`), where the
-  cell is named with its region ("Corn · Temperate Europe", « Maïs · Europe tempérée »;
-  `consortium.cell.<climate>.<region>` in `guides/{en,fr}.json`, one per manifest cell), so a reader
-  outside the region is not promised their own; each link is described by the label. The links come
-  from `src/components/guides/try-consortium.ts` (`presetCells`, `presetLinks`): an unknown climate, a
-  plant outside its climate's cell or in no cell fails the build. `scripts/guides-consortium.test.mjs`
-  checks those links on the real cells, every preset against the cells, its block and the en/fr
-  pairing (same plant and climate, once each per guide), a name for every cell, and that a preset in a
+  `consortium.label`) and one link per climate, "<name> · <climate>" (`consortium.link`, the climate from the site-wide
+  `climate.<id>`: "Corn · Temperate", « Maïs · Tempéré »); since format 3 one list serves a climate
+  everywhere, so no region is named; each link is described by the label. The links come
+  from `src/components/guides/try-consortium.ts` (`presetClimates`, `presetLinks`): an unknown climate, a
+  plant outside its climate's file or in no file fails the build. `scripts/guides-consortium.test.mjs`
+  checks those links on the real climate files, every preset against them, its block and the en/fr
+  pairing (same plant and climate, once each per guide), that no `consortium.cell.*` name is left, and that a preset in a
   climate block is the last thing in it. Used in guides whose subject is a plant or a planting system
-  of a beta cell: as the last thing in a climate block, after its list, its closing sentence and any
+  of a beta climate: as the last thing in a climate block, after its list, its closing sentence and any
   `<FoodCaution>` or `<Safety>` box (the warning stays beside what it warns about), or after a plant
   guide's season checklist. Not for a plant the guide says needs a large or special planting the tool
   does not build (Nuts as a staple links the cashew, not the Brazil nut). One link per climate block or paragraph, never two in a row: each repeats the label, so a paragraph that names several beta plants links the one it is about (Flowers all season links phacelia after its paragraph on borage, lavender and phacelia; the other two keep their tool → guide rows).

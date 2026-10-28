@@ -58,11 +58,6 @@
 .ct .setup { display: grid; gap: 20px; max-width: 880px; }
 .ct .step { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; display: grid; gap: 16px; }
 .ct .step-head { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: baseline; }
-.ct .step-num {
-  grid-row: span 2; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; align-self: start;
-  border: 1px solid var(--border-strong); font-family: var(--font-display); font-size: 17px; color: var(--text-secondary);
-}
-.ct .step[data-done="true"] .step-num { background: var(--text); color: var(--bg); border-color: var(--text); }
 .ct .step-head h2 { font-size: 26px; }
 .ct .step-head p { color: var(--text-secondary); font-size: 16px; }
 .ct .step-done { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 16px; }
@@ -95,7 +90,7 @@
 .ct .suggest-country small { display: block; font-size: 14px; color: var(--text-muted); }
 .ct .suggest-country .go { margin-left: auto; font-weight: 600; color: var(--accent-ink); font-size: 15px; }
 .ct .field { display: grid; gap: 6px; }
-.ct .field > label, .ct .field-label { font-size: 15px; font-weight: 600; }
+.ct .field > label { font-size: 15px; font-weight: 600; }
 .ct .search {
   display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px;
   background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius);
@@ -108,11 +103,6 @@
 .ct .option:hover, .ct .option[aria-selected="true"] { background: var(--surface-alt); }
 .ct .option small { color: var(--text-muted); font-size: 14px; }
 .ct .option mark { background: none; color: inherit; font-weight: 600; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.2em; }
-.ct .or-line { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 15px; color: var(--text-muted); }
-.ct .region-choices { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 639px) {
-  .ct .region-choices { grid-template-columns: 1fr; }
-}
 .ct .privacy { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; color: var(--text-muted); }
 .ct .privacy svg { flex: none; margin-top: 3px; }
 /* ---------- Tool: result layout ---------- */
@@ -187,8 +177,6 @@
 .ct .note strong { font-weight: 600; }
 .ct .note p + p { margin-top: 4px; }
 .ct .note-actions { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 8px; }
-.ct .note-borrowed { border-left: 4px solid var(--warning-line); background: var(--warning-bg); }
-.ct .note-borrowed > svg { color: var(--warning); }
 .ct .note-old { background: var(--surface-alt); }
 /* Tabs */
 .ct .tabs { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); justify-self: start; max-width: 100%; }
@@ -222,21 +210,12 @@
 .ct :is(.profile, .strata-mini) .sw[data-s="low"] { --sw: var(--s-low); }
 .ct .sw[data-s="none"] { background: transparent; border: 1.5px dashed var(--text-muted); }
 .ct .profile { position: relative; border: 1px solid var(--border); border-radius: 10px; background: linear-gradient(to bottom, var(--sky), transparent 70%), var(--surface); overflow: hidden; }
-.ct .profile svg { width: 100%; height: auto; }
-.ct .profile-labels { display: grid; padding: 6px 0 14px; }
-.ct .plabel { display: grid; justify-items: center; align-content: start; gap: 4px; padding: 4px 2px; border: 0; background: none; border-radius: 6px; text-align: center; min-height: 44px; }
-.ct .plabel:hover .pname { text-decoration: underline; }
 .ct .num {
   width: 26px; height: 26px; border-radius: 50%; display: inline-grid; place-items: center; flex: none;
   background: var(--surface); border: 2px solid var(--text-muted); font-size: 13.5px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums;
 }
 .ct .profile .num { border-color: var(--ring, var(--text-muted)); }
 .ct .num[data-s="none"] { border-style: dashed; }
-.ct .pname { font-size: 14px; font-weight: 600; line-height: 1.2; max-width: 11em; }
-.ct .pkept { font-size: 12px; color: var(--text-muted); display: inline-flex; gap: 3px; align-items: center; }
-@media (max-width: 639px) {
-  .ct .pname, .ct .pkept { display: none; }
-}
 .ct .profile-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 0 14px 12px; font-size: 13.5px; color: var(--text-muted); }
 /* Layer list */
 .ct .strata-list { display: grid; gap: 22px; }
@@ -262,6 +241,7 @@
 .ct .plant-name button:hover { text-decoration: underline; color: var(--accent-ink); }
 .ct .plant-name .sci { font-size: 15px; }
 .ct .plant-reason { font-size: 15.5px; color: var(--text-secondary); }
+.ct .plant-reason .reason-region { font-weight: 600; color: var(--text); }
 .ct .plant-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 14px; color: var(--text-muted); }
 .ct .plant-meta .time { margin-right: 6px; }
 .ct .job-tag { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 0 9px; border-radius: 999px; background: var(--surface-alt); color: var(--text-secondary); font-size: 13.5px; white-space: nowrap; }
@@ -291,6 +271,8 @@
   font-size: 13.5px; font-weight: 600; line-height: 1.3; border: 1px solid transparent; text-align: start;
 }
 .ct .warn svg { flex: none; }
+/* A long pest name (German compounds) hyphenates in the page's language (<html lang>) before it breaks. */
+.ct .warn > span { min-width: 0; overflow-wrap: anywhere; hyphens: auto; }
 .ct .warn-danger { color: var(--danger); background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
 .ct .warn-warning { color: var(--warning); background: var(--warning-bg); border-color: var(--warning-line); }
 .ct .warn-soft { color: var(--warning); background: transparent; border-color: var(--warning-line); font-weight: 400; }
@@ -423,7 +405,11 @@
 @media (max-width: 639px) {
   .ct .toast { width: auto; left: 12px; right: 12px; transform: none; bottom: 14px; }
   .ct .toast .button { min-height: 44px; }
+  /* C15: the words above, the buttons below at full width. */
+  .ct .toast { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px; }
+  .ct .toast-acts .button { flex: 1 1 0; }
 }
+.ct .toast-acts { display: flex; gap: 8px; }
 /* Loading / error / empty / not covered */
 .ct .skeleton { display: grid; gap: 20px; }
 .ct .sk { background: var(--surface-alt); border-radius: 8px; animation: pulse 1.4s ease-in-out infinite; }
@@ -501,50 +487,27 @@
 .ct :is(.profile, .strata-mini) .sw[data-s="high"] { box-shadow: inset 0 0 0 1.5px var(--s-high-ink); }
 .ct :is(.profile, .strata-mini) .sw[data-s="medium"] { box-shadow: inset 0 0 0 1.5px var(--s-medium-ink); }
 .ct :is(.profile, .strata-mini) .sw[data-s="low"] { box-shadow: inset 0 0 0 1.5px var(--s-low-ink); }
-/* Tool head: definition, outline, thumbnail; compact once there is a result */
+/* Tool head: definition, thumbnail; compact once there is a result */
 .ct .tool-head { grid-template-columns: minmax(0, 1fr) auto; align-items: start; column-gap: 32px; }
 .ct .tool-head-text { display: grid; gap: 12px; min-width: 0; }
 .ct .tool-head .thumb { margin: 6px 0 0; width: 220px; }
 .ct .tool-head .thumb svg { width: 100%; height: auto; }
 .ct .tool-head-compact { grid-template-columns: minmax(0, 1fr); padding-bottom: 16px; }
 .ct .tool-head-compact .tool-title { font-size: 30px; }
-.ct .outline { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 2px 0 0; padding: 0; list-style: none; font-size: 15px; color: var(--text-secondary); }
-.ct .outline li { display: inline-flex; align-items: center; gap: 8px; }
-.ct .outline li:not(:last-child)::after { content: '→'; color: var(--text-muted); margin-left: 4px; }
-.ct .outline .o-num { width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; border: 1.5px solid var(--border-strong); font-size: 13px; font-weight: 600; }
-.ct .outline li[aria-current="step"] { color: var(--text); font-weight: 600; }
-.ct .outline li[aria-current="step"] .o-num { border-color: var(--text); background: var(--text); color: var(--bg); }
-.ct .outline li[data-done="true"] .o-num { border-color: var(--text-secondary); }
 @media (max-width: 639px) {
   .ct .tool-head { grid-template-columns: minmax(0, 1fr); }
   .ct .tool-head .thumb { width: 100%; max-width: 260px; margin: 0; order: 2; }
   .ct .tool-head-compact { padding-bottom: 10px; gap: 6px; }
   .ct .tool-head-compact .tool-title { font-size: 25px; }
   .ct .tool-head-compact .tool-meta { font-size: 13.5px; }
-  .ct .outline { font-size: 14px; gap: 6px 10px; }
 }
-/* Climate step: chosen card has a check; pills name the covered region; collapsed summary */
+/* Climate step: chosen card has a check; a pill says whether the climate is covered */
 .ct .chosen-check { display: inline-flex; color: var(--accent-ink); margin-right: 6px; }
 .ct .chosen-check svg { width: 18px; height: 18px; }
 .ct .climate-choice strong { align-items: center; }
 .ct .climate-choice strong .cover-pill { margin-left: auto; }
 .ct .cover-pill[data-covered="true"] { color: var(--text); border-color: var(--border-strong); }
-.ct .step-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
-.ct .step-summary > div { display: grid; gap: 0; flex: 1; min-width: 0; }
-.ct .step-summary strong { font-size: 19px; font-weight: 600; }
-.ct .step-summary small { font-size: 14px; color: var(--text-muted); }
-.ct .step-summary .field-label { font-family: var(--font-sans); font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
-.ct .step-collapsed { padding-block: 16px; }
-.ct .step-num-done { display: inline-grid; place-items: center; }
-.ct .step-num-done svg { width: 18px; height: 18px; }
-.ct .mark { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; margin-left: 8px; white-space: nowrap; }
-.ct .mark svg { width: 14px; height: 14px; }
-.ct .mark-has { color: var(--text); }
-.ct .mark-no { color: var(--text-muted); font-weight: 400; font-style: italic; }
-.ct .climate-choice .mark { margin-left: 0; }
-.ct .suggest-country .mark { display: inline-flex; margin: 2px 0 0; }
 .ct .note-guide { background: var(--surface-alt); }
-.ct .note-guide .place-from { margin-top: 6px; font-size: 15px; color: var(--text-secondary); }
 /* Result: basis, attention, free places, foot */
 .ct .tabpanel { display: grid; gap: 20px; }
 .ct .basis { font-size: 15px; color: var(--text-secondary); margin-top: -8px; }
@@ -575,25 +538,11 @@
   .ct .result-foot .button { min-height: 44px; }
 }
 .ct .result-head .place-chips { width: 100%; }
-.ct .covered-plain { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 15.5px; }
-.ct .covered-plain strong { font-weight: 600; }
-.ct .covered-plain span { color: var(--text-muted); font-size: 14px; }
-/* Layers drawing: labelled strata lines, light cue, staggered labels */
+/* Layers view: the light cue */
 .ct .light-cue { display: flex; gap: 8px; align-items: flex-start; flex-basis: 100%; }
 .ct .light-cue svg { flex: none; color: var(--warning); margin-top: 1px; }
-.ct .profile-draw { position: relative; }
-.ct .sline { position: absolute; right: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 82%, transparent); font-size: 12.5px; line-height: 1.35; color: var(--text-secondary); white-space: nowrap; pointer-events: none; }
-.ct .sline .sw { width: 10px; height: 10px; }
-.ct .profile-labels { display: block; position: relative; padding: 0; margin: 6px 0 8px; }
-.ct .plabel { position: absolute; display: grid; justify-items: center; align-content: start; gap: 3px; padding: 2px; min-height: 60px; }
-.ct .plabel-top { display: inline-flex; align-items: center; gap: 2px; }
 .ct .plook { display: inline-flex; color: var(--warning); }
 .ct .plook svg { width: 14px; height: 14px; }
-.ct .pname { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 13px; line-height: 1.2; max-width: 100%; word-break: break-word; hyphens: auto; }
-@media (max-width: 639px) {
-  .ct .pname { display: -webkit-box; font-size: 12.5px; }
-  .ct .sline { font-size: 11.5px; padding: 0 6px; right: 4px; }
-}
 .ct .explain-panel { position: relative; display: grid; gap: 10px; padding: 16px 48px 16px 18px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); font-size: 15.5px; }
 .ct .explain-panel h4 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 19px; }
 .ct .explain-panel .guide-link { font-weight: 600; color: var(--accent-ink); }
@@ -636,7 +585,7 @@
   .ct .job .guide-link { min-height: 44px; }
 }
 /* Add sheet: full height on phone, compact rows, filters, groups */
-.ct .add-filters { display: flex; flex-wrap: wrap; gap: 10px; margin-top: -10px; }
+.ct .add-filters { display: flex; flex-wrap: wrap; gap: 10px; }
 .ct .sel { display: inline-flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 600; }
 .ct .sel select { min-height: 40px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg); font-weight: 400; }
 .ct .list-count { font-size: 14px; color: var(--text-muted); margin-top: -10px; }
@@ -657,9 +606,6 @@
 }
 /* Print sheet: a small side view, the full link */
 .ct .sheet-draw { --surface: #FFFDF8; --surface-alt: #F3EEE3; --text: #1E1B16; --text-secondary: #3F382E; --text-muted: #5A5246; --border: #D9D0BF; --border-strong: #8C826F; --soil: #8A5A2B; --ground-ink: #6B4A2E; --sky: transparent; --warning: #7A5A00; }
-.ct .sheet-draw .profile { max-width: 520px !important; margin: 0; }
-.ct .sheet-draw .profile-foot { display: none; }
-.ct .sheet-draw .plabel { pointer-events: none; color: #1E1B16; }
 .ct .sheet-draw .num { background: #FFFDF8; color: #1E1B16; }
 .ct .sheet-link { word-break: break-all; }
 .ct .profile { width: 100%; margin: 0; }
@@ -676,12 +622,11 @@
 
 /* ---------- Page additions ---------- */
 .ct .tool-head[data-step]:not([data-step="0"]) .tool-lede, .ct .tool-head[data-step]:not([data-step="0"]) .thumb,
-.ct .tool-head-compact .outline, .ct .tool-head-compact .tool-lede, .ct .tool-head-compact .thumb { display: none; }
+.ct .tool-head-compact .tool-lede, .ct .tool-head-compact .thumb { display: none; }
 .ct .tool-head:not([data-step="0"]) { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 639px) { .ct .tool-head .thumb { display: none; } }
 .ct .stratum-head h3 { font-size: 21px; display: inline-flex; align-items: center; gap: 9px; }
 .ct .explain-btn { flex: none; }
-.ct .plabel-num { min-height: 30px; pointer-events: none; }
 .ct .pkey { margin: 0 14px 12px; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; }
 .ct .pkey li { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14.5px; }
 .ct .pkey-item { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 4px; border: 0; background: none; text-align: start; font-weight: 600; font-size: 14.5px; }
@@ -726,6 +671,10 @@
 }
 @media (prefers-reduced-motion: reduce) { .ct-drawer[open] { animation: none; } .ct .toast { animation: none; } }
 .ct .toast { position: fixed; z-index: 40; bottom: 20px; }
+/* H5: inside an open sheet (app.js placeLive) the toast is the sheet's last row, under its foot: in the
+   sheet, never over its buttons. */
+.ct .ct-drawer > .toast { position: static; flex: none; transform: none; width: auto; max-width: none; margin: 0 22px 14px; }
+@media (max-width: 639px) { .ct .ct-drawer > .toast { margin: 0 12px 12px; } }
 
 /* Print: only the sheet, built from the screen's words (app.js printHTML). */
 .ct .ct-print { display: none; }
@@ -733,7 +682,6 @@
 @media print {
   body:has(.ct-print:not(:empty)) > :not(main), .ct:has(.ct-print:not(:empty)) > :not(.ct-print), .grain::after { display: none !important; }
   .ct .ct-print:not(:empty) { display: block; }
-  .ct .sheet-borrowed { border: 1px solid #1E1B16; padding: 8px 10px; margin-block: 8px; }
   .ct .sheet { box-shadow: none; padding: 0; max-width: none; }
   .ct .sheet table { page-break-inside: auto; } .ct .sheet tr { break-inside: avoid; }
   .ct .sheet-foot { word-break: break-all; }
@@ -783,8 +731,7 @@
 /* live M1: the browser's suggestion wraps inside a 320px column in every language. */
 .ct .suggest-country { flex-wrap: wrap; }
 .ct .suggest-country > span:nth-child(2) { flex: 1 1 9em; min-width: 0; }
-.ct .suggest-country .mark { white-space: normal; }
-/* The covered-places pill may need two lines ("Beta: Central and South America and the Caribbean"). */
+/* A long pill in another language may wrap under the name. */
 .ct .climate-choice strong { flex-wrap: wrap; }
 .ct .cover-pill { white-space: normal; border-radius: 12px; max-width: 100%; text-align: start; }
 /* Explain buttons with their question written out beside each view's title. */
@@ -803,3 +750,461 @@
 /* What to do about a plant that does not fit the site: the answer it fits, and Swap. */
 .ct .att-acts { display: inline-flex; flex-wrap: wrap; gap: 0 14px; margin-left: 10px; }
 .ct .att-acts .link-button { font-weight: 600; }
+
+/* ---------- Climate first: one question, the country line ---------- */
+.ct .step-head-solo { grid-template-columns: minmax(0, 1fr); }
+/* "Invasive warnings for [France ▾] guessed from your browser": a guess has a dashed chip. */
+.ct .country-line { display: grid; gap: 4px; }
+.ct .cl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 16px; color: var(--text-secondary); }
+.ct .cl-chip { min-height: 36px; padding: 0 12px; }
+.ct .cl-chip[data-src="guess"] { border-style: dashed; }
+.ct .cl-why { font-size: 14px; color: var(--text-muted); }
+.ct .cl-add { font-weight: 600; color: var(--accent-ink); font-size: 16px; min-height: 36px; }
+.ct .step-one .country-line { padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.ct .panel-place { gap: 10px; }
+.ct .panel-place .place-chips { display: grid; gap: 10px; }
+.ct .panel-place .cl-row { font-size: 15px; }
+.ct .climate-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.ct .result-head .country-line { width: 100%; }
+.ct .no-country-pick { display: grid; gap: 0; padding-top: 12px; border-top: 1px solid var(--border); }
+.ct .no-country-pick .link-button { justify-self: start; font-weight: 600; color: var(--accent-ink); min-height: 40px; }
+.ct .suggest-country .go { display: inline-flex; align-items: center; gap: 4px; }
+.ct .suggest-country[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--accent); }
+.ct .option[aria-pressed="true"] { font-weight: 600; }
+/* Every reason a plant was chosen, each with its region and sources. */
+.ct .reasons { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.ct .reasons .muted { font-size: 14px; }
+/* The climates' descriptions: in each card on wider screens; under the cards on phones. */
+.ct .climate-abouts { display: none; font-size: 15px; color: var(--text-secondary); }
+.ct .climate-abouts summary { font-weight: 600; color: var(--accent-ink); min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.ct .climate-abouts dl { margin: 4px 0 0; display: grid; gap: 2px 0; }
+.ct .climate-abouts dt { font-weight: 600; color: var(--text); margin-top: 6px; }
+.ct .climate-abouts dd { margin: 0; }
+@media (max-width: 639px) {
+  .ct .cl-chip, .ct .cl-add { min-height: 44px; }
+  .ct .step-one { gap: 12px; padding-top: 16px; }
+  .ct .step-one .step-head p { display: none; }
+  .ct .step-one .country-line { padding-bottom: 12px; }
+  .ct .country-line { gap: 2px; }
+  .ct .cl-row { row-gap: 0; }
+  .ct .climate-choice .about { display: none; }
+  .ct .climate-abouts { display: block; }
+}
+@media (min-width: 960px) {
+  .ct .step-one .country-line { grid-template-columns: auto 1fr; align-items: center; column-gap: 18px; }
+  .ct .step-one .country-line .cl-why:not(.cl-row *) { grid-column: 1; }
+  .ct .step-one .country-line .privacy { grid-row: 1; grid-column: 2; justify-self: end; text-align: end; }
+}
+/* ---------- Main crops (the question after the climate) and plants from another list ---------- */
+.ct .clim-chosen { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 16px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); }
+.ct .clim-chosen p { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.ct .clim-chosen strong { font-family: var(--font-display); font-weight: 400; font-size: 21px; }
+.ct .clim-chosen .places { font-size: 14px; color: var(--text-muted); }
+.ct .clim-chosen .button { min-height: 44px; }
+.ct .crops { display: grid; gap: 12px; max-width: 46rem; }
+.ct .crop-head h2 { margin: 0; font-size: 26px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.ct .crop-head p { margin: 6px 0 0; color: var(--text-secondary); }
+.ct .crop-opt { font: 600 13px/1.4 var(--font-sans); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.ct .crop-chips { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.ct .crop-chip { display: inline-flex; align-items: center; gap: 6px; padding-left: 12px; border: 1px solid var(--text); border-radius: 999px; background: var(--surface-alt); min-height: 44px; max-width: 100%; }
+.ct .crop-chip > span { min-width: 0; color: var(--text); }
+.ct .crop-chip b { font-weight: 600; }
+.ct .crop-chip .sci { font-size: 13.5px; color: var(--text-secondary); }
+.ct .crop-g { font-size: 13px; color: var(--text-muted); }
+.ct .crop-chip > svg { flex: none; color: var(--text-secondary); }
+.ct .others-failed { margin: 8px 0 0; font-size: 15px; color: var(--text-secondary); }
+.ct .others-retry { margin: 4px 0 0; font-size: 15px; }
+.ct .crop-retry:empty { display: none; }
+.ct .crop-x { flex: none; width: 44px; height: 44px; display: inline-grid; place-items: center; border: 0; background: none; color: var(--text); border-radius: 999px; }
+.ct .crop-x:hover { background: var(--bg); }
+.ct .crop-field { margin: 0; display: grid; gap: 6px; }
+.ct .crop-field label { font-weight: 600; }
+.ct .crop-field input[disabled] { cursor: not-allowed; }
+.ct .crop-field .search:has(input[disabled]) { opacity: 0.6; }
+.ct .crop-options .option b { font-weight: 600; }
+.ct .crop-st { margin: 0; min-height: 1.4em; font-size: 15px; color: var(--text-secondary); }
+/* C6: an empty status stays in the accessibility tree (a live region must exist before it speaks), out of the grid's flow (no gap). */
+.ct .crop-st:empty { position: absolute; width: 1px; height: 1px; min-height: 0; overflow: hidden; clip-path: inset(50%); }
+.ct .crop-none { padding: 12px 14px; border: 1px dashed var(--border-strong); border-radius: 10px; font-size: 16px; color: var(--text); }
+.ct .crop-none p { margin: 0 0 4px; }
+.ct .crop-none .muted { color: var(--text-secondary); }
+.ct .crop-eg { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--text-secondary); }
+.ct .crop-eg:empty { display: none; }
+.ct .crop-eg .chip-button { min-height: 44px; }
+.ct .crop-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.ct .crop-acts .button, .ct .crop-acts .link-button { min-height: 44px; }
+.ct .crop-acts .link-button { font-weight: 600; color: var(--accent-ink); }
+.ct .crop-hint { margin: 0; font-size: 14.5px; color: var(--text-muted); }
+.ct .built { align-items: flex-start; }
+.ct .built > svg { flex: none; margin-top: 3px; color: var(--accent-ink); }
+.ct .built .link-button { min-height: 44px; font-weight: 600; color: var(--accent-ink); }
+.ct .tag-main { color: var(--accent-ink); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.ct .tag-from { font-weight: 400; border-style: dotted; }
+.ct .d-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
+.ct .d-main { border-left: 3px solid var(--accent); padding-left: 12px; }
+.ct .d-main .link-button { justify-self: start; min-height: 44px; font-weight: 600; color: var(--accent-ink); }
+.ct .d-from { border-left: 3px solid var(--border-strong); padding-left: 12px; }
+.ct .d-foot-note { flex: 1 1 100%; margin: 0; }
+@media (max-width: 639px) {
+  .ct .crop-head h2 { font-size: 23px; }
+  .ct .crops { gap: 10px; }
+}
+
+/* ---------- Your plants: Cards | List, the dense list, its filters and selection (scale chunk B) ----------
+   design-scale.md §2. One grid of columns shared by the column heads and every row, so they line up
+   without a table; rows wrap their names (no truncation). Ochre and ink only: no green chrome. */
+.ct .tool-grid-full { grid-template-columns: minmax(0, 1fr); }
+.ct .tool-grid-full .result-head .place-chips { margin-top: 4px; }
+.ct .plants-sec { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 28px; }
+/* The list's columns follow the list's own width (the side panel shows at 20 plants or fewer), not the window's. */
+.ct .plants-sec { container: plants / inline-size; }
+.ct .plants-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.ct .plants-head h3 { font-size: 26px; margin-right: auto; }
+.ct .plants-head h3 .count { font-family: var(--font-body); font-size: 16px; color: var(--text-muted); font-variant-numeric: tabular-nums; margin-left: 4px; }
+.ct .plants-head h3:focus { outline: none; }
+.ct .plants-head h3:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ct .mode-switch { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius); overflow: hidden; }
+.ct .mode-btn { min-height: 44px; min-width: 72px; padding: 0 14px; border: 0; background: var(--bg); font-size: 15px; font-weight: 600; color: var(--text-secondary); }
+.ct .mode-btn + .mode-btn { border-left: 1px solid var(--border-strong); }
+.ct .mode-btn:hover { color: var(--text); background: var(--surface-alt); }
+.ct .mode-btn[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+.ct .add-plants { min-height: 44px; }
+.ct .plist, .ct .lbody { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.ct .skip-list { position: absolute; left: -9999px; min-height: 44px; padding: 0 14px; border: 1px solid var(--focus); border-radius: var(--radius); background: var(--surface); font-weight: 600; }
+.ct .skip-list:focus { position: static; justify-self: start; }
+.ct .lkey { display: flex; flex-wrap: wrap; gap: 4px 24px; font-size: 14px; color: var(--text-muted); }
+.ct .lkey p { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.ct .lkey b { font-weight: 600; color: var(--text-secondary); }
+.ct .lkey span { display: inline-flex; align-items: center; gap: 4px; }
+/* The filter row sticks to the top of the window; the column heads stick right under it (N5). */
+.ct .ftools { position: sticky; top: 0; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 0; background: var(--bg); }
+.ct .find { display: flex; align-items: center; gap: 8px; flex: 1 1 240px; max-width: 360px; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
+.ct .find:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
+.ct .find svg { flex: none; color: var(--text-muted); }
+.ct .find input { flex: 1; min-width: 0; min-height: 42px; border: 0; background: none; font-size: 16px; outline: none; }
+.ct .fchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ct .fchip { position: relative; display: inline-flex; align-items: stretch; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--bg); }
+.ct .fchip.is-on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--bg)); }
+.ct .fchip-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px 0 14px; border: 0; border-radius: 999px; background: none; font-size: 15px; color: var(--text-secondary); }
+.ct .fchip.is-on .fchip-btn { color: var(--accent-ink); font-weight: 600; }
+.ct .fchip-btn svg { flex: none; }
+.ct .fchip-x { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; border: 0; border-left: 1px solid var(--border); border-radius: 0 999px 999px 0; background: none; color: var(--accent-ink); }
+.ct .fchip-x:hover, .ct .fchip-btn:hover { background: var(--surface-alt); }
+.ct .fmenu-list, .ct .lmenu {
+  position: absolute; z-index: 8; top: calc(100% + 4px); min-width: 220px; padding: 4px; display: grid;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow);
+}
+.ct .fmenu-list { left: 0; max-height: 60vh; overflow: auto; }
+/* An open menu stays above the selection bar (B1). */
+.ct .ftools:has(.fmenu-list) { z-index: 9; }
+.ct .fmenu-head { display: none; }
+.ct .lmenu { right: 0; }
+.ct .fmenu-item, .ct .lmenu-item { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 5px; background: none; text-align: start; font-size: 15.5px; color: var(--text); white-space: nowrap; }
+.ct .lmenu-item { justify-content: flex-start; gap: 10px; }
+.ct .fmenu-item:hover, .ct .lmenu-item:hover { background: var(--surface-alt); }
+.ct .fmenu-item[aria-pressed="true"] { font-weight: 600; color: var(--accent-ink); }
+.ct .fmenu-n { color: var(--text-muted); font-variant-numeric: tabular-nums; font-weight: 400; }
+.ct .fresults { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 15px; color: var(--text-secondary); }
+.ct .fresults:empty { display: none; }
+/* The row grid: tick, pin, plant, height, leads, jobs, [invasive in], warnings, Swap, ⋯
+   One set of columns from the narrow tier up to the full desktop width: from a list of 850 px (a
+   960 px window) the columns shrink and their text wraps (names, stage words, the jobs' icons, the
+   chips), so Swap and the stage words always stay. The column heads use the same tracks. */
+.ct .lgroups, .ct .lcols { --lcols: 44px 44px minmax(120px, 1.5fr) 56px minmax(110px, 0.75fr) minmax(56px, 0.7fr) minmax(100px, 1.3fr) 112px 44px; }
+.ct .lgroups.no-country, .ct .lbody:has(.no-country) .lcols { --lcols: 44px 44px minmax(100px, 1.4fr) 56px minmax(110px, 0.75fr) minmax(56px, 0.7fr) minmax(88px, 100px) minmax(90px, 1fr) 112px 44px; }
+.ct .lgroups { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.ct .lcols, .ct .lrow { display: grid; grid-template-columns: var(--lcols); align-items: center; column-gap: 8px; }
+.ct .lcols {
+  position: sticky; top: var(--x-tools-h, 0px); z-index: 3; padding: 6px 12px; background: var(--bg); border-bottom: 1px solid var(--border-strong);
+  font-size: 12.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted);
+}
+/* The Kept head is wider than its 44 px column in some languages: it spans the tick's column too. */
+.ct .lcols > span:first-child { display: none; }
+.ct .lcols > span:nth-child(2) { grid-column: 1 / 3; justify-self: end; text-align: end; }
+/* The Warnings head ("Предупреждения", "Waarschuwingen") runs on over the Swap and ⋯ columns, which have no head. */
+.ct .lcols > span:last-child { grid-column: 7 / -1; }
+.ct .lcols:has(.lcol-inv) > span:last-child { grid-column: 8 / -1; }
+.ct .lcol-jobs { display: flex; flex-wrap: wrap; gap: 4px; }
+.ct .lcol-jobs svg { width: 16px; }
+.ct .lgroup { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.ct .lgroup-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 4px 12px; }
+.ct .lg-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 6px; border: 0; background: none; text-align: start; }
+.ct .lg-toggle svg { flex: none; transition: rotate 150ms ease; rotate: -90deg; }
+.ct .lg-toggle[aria-expanded="true"] svg { rotate: 0deg; }
+.ct .lg-name { font-family: var(--font-display); font-size: 19px; }
+.ct .lg-light { font-size: 14.5px; color: var(--text-muted); }
+.ct .lg-count { font-size: 14.5px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.ct .lg-jobs { display: inline-flex; gap: 6px; align-items: center; color: var(--text-muted); }
+.ct .lg-off { display: inline-block; width: 14px; text-align: center; opacity: 0.6; }
+.ct .lg-warn { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; font-size: 14px; color: var(--warning); }
+.ct .lg-warn:empty { display: none; }
+.ct .lrows { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
+.ct .lrow { position: relative; min-height: 56px; padding: 4px 12px; border-top: 1px solid var(--border); }
+/* A row the filters hide stays written in its group (B2: shown or hidden, never written again). */
+.ct .lrow[hidden] { display: none; }
+/* B2: the browser lays out only the rows near the screen; a row with its menu open draws in full. */
+.ct .lrow { content-visibility: auto; contain-intrinsic-size: auto 56px; }
+.ct .lrow:has(.lmenu) { content-visibility: visible; }
+.ct .selwrap { display: contents; }
+.ct .lrow:first-child { border-top: 0; }
+.ct .lrow[data-sel="true"] { box-shadow: inset 4px 0 0 var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+.ct .ltick { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; cursor: pointer; }
+.ct .ltick input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.ct .lpin, .ct .lmore-btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid transparent; border-radius: var(--radius); background: none; color: var(--text-muted); }
+.ct .lpin:hover, .ct .lmore-btn:hover { background: var(--surface-alt); color: var(--text); }
+.ct .lpin[aria-pressed="true"] { color: var(--accent-ink); }
+.ct .lmore-btn { font-size: 20px; line-height: 1; }
+.ct .lmore-btn[aria-expanded="true"] { border-color: var(--border-strong); background: var(--surface-alt); }
+.ct .lmore { position: relative; }
+.ct .lplant { display: grid; gap: 2px; min-width: 0; }
+.ct .lname-btn { display: grid; gap: 1px; padding: 2px 0; border: 0; background: none; text-align: start; color: var(--text); line-height: 1.3; }
+.ct .lname-btn:hover .lname { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.2em; }
+.ct .lname { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; hyphens: auto; }
+.ct .lsci { font-size: 14px; color: var(--text-muted); overflow-wrap: anywhere; }
+.ct .ltags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ct .tag-main { color: var(--accent-ink); border-color: var(--accent); }
+.ct .lheight { font-size: 14.5px; color: var(--text-secondary); font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; hyphens: auto; }
+.ct .lleads { display: grid; gap: 3px; }
+.ct .lstage { font-size: 13px; color: var(--text-muted); }
+/* Seven squares, one per stage; the ones a plant leads are solid ink (shape and fill, not colour alone). */
+.ct .stagebar { display: inline-flex; gap: 2px; vertical-align: middle; }
+.ct .stagebar i { display: block; width: 14px; height: 10px; border: 1px solid var(--border-strong); border-radius: 2px; background: transparent; }
+.ct .stagebar i[data-on="true"] { background: var(--text-secondary); border-color: var(--text-secondary); }
+.ct .stagebar-key i { width: 10px; height: 8px; }
+.ct .ljobs { display: flex; flex-wrap: wrap; gap: 4px; color: var(--text-secondary); }
+.ct .ljob { display: inline-flex; width: 16px; height: 16px; }
+.ct .lwarns, .ct .lline3 { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-width: 0; }
+.ct .warn-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 1px 8px 1px 6px; border-radius: 6px; border: 1px solid transparent; font-size: 13px; font-weight: 600; line-height: 1.25; max-width: 100%; }
+.ct .warn-chip svg { flex: none; width: 13px; height: 13px; }
+/* A one-word name longer than the cell ("Mittelmeerfruchtfliege") breaks inside its chip. */
+.ct .warn-chip > span { min-width: 0; overflow-wrap: anywhere; hyphens: auto; }
+/* Invasive here: filled, the strongest. Toxic: a red outline. Shared pests: a quiet outline. */
+.ct .warn-inv { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.ct .warn-tox { color: var(--danger); border-color: var(--danger); background: transparent; }
+.ct .warn-pest { color: var(--text-secondary); border-color: var(--border-strong); background: transparent; font-weight: 400; }
+/* C8: an outline with no fill, so it never reads as the filled "invasive here" chip. */
+.ct .warn-site { color: var(--warning); border-color: var(--warning-line); background: none; }
+.ct .warn-chip.warn-soft { color: var(--warning); border-color: var(--warning-line); font-weight: 400; }
+.ct .warn-more { font-size: 13px; font-weight: 600; color: var(--text-muted); padding: 0 4px; }
+.ct .inv-count { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 1px 7px; border: 1px dashed var(--border-strong); border-radius: 6px; font-size: 13px; color: var(--text-muted); }
+.ct .lswap { min-height: 40px; justify-self: start; }
+.ct .lgroup .gap-row { margin: 8px 12px 12px; }
+/* The selection bar: sticky at the bottom while the list is on screen; the toast sits above it. */
+.ct .selbar {
+  position: sticky; bottom: 8px; z-index: 5; margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
+  padding: 10px 14px; border: 1px solid var(--border-strong); border-left: 4px solid var(--accent); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow);
+}
+.ct .selbar p { font-size: 15px; min-width: 0; }
+.ct .selbar b { font-weight: 600; }
+.ct .selnames { color: var(--text-muted); }
+.ct .selbar-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ct .selbar-acts .button { min-height: 44px; }
+html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
+.ct:has(.selbar) .toast { bottom: 96px; }
+/* The warning box at scale: one line per kind with "Show n". */
+.ct .attention-scale > div { flex: 1; display: grid; gap: 8px; min-width: 0; }
+.ct .attention-scale .muted { color: var(--text-muted); }
+.ct .att-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.ct .att-line { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding-top: 6px; border-top: 1px solid var(--warning-line); }
+.ct .att-line > svg { color: var(--warning); }
+.ct .att-line .count { font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.ct .att-names { font-size: 14px; color: var(--text-muted); }
+.ct .att-note { font-size: 14px; color: var(--text-muted); }
+/* The one narrow tier: a list beside the side panel (840 px at most) or on a tablet, never the
+   full list of a desktop window (852 px or more at 960). No Swap and no stage words, and the
+   warnings take a line of their own under the plant, so a chip always wraps inside the row and is
+   never cut (the rows' content-visibility clips what runs past them). */
+@container plants (max-width: 849px) {
+  /* Down to the side panel's narrowest list (508 px): the jobs' icons wrap before the name narrows. */
+  .ct .lgroups, .ct .lcols, .ct .lgroups.no-country, .ct .lbody:has(.no-country) .lcols { --lcols: 44px 44px minmax(98px, 1fr) 56px 112px minmax(36px, 122px) 44px; }
+  .ct .lswap, .ct .lstage { display: none; }
+  .ct .lrow:not(.lrow-phone) .lwarns { grid-row: 2; grid-column: 3 / -1; padding-bottom: 6px; }
+  .ct .lrow:not(.lrow-phone) .lwarns:empty { display: none; }
+  .ct .lrow:not(.lrow-phone) .lmore { grid-row: 1; grid-column: -2 / -1; }
+  .ct .lcols > span:last-child, .ct .lcols > .lcol-inv { display: none; }
+  /* With no country, "invasive in n countries" opens that line, before the chips. */
+  .ct .lrow:not(.lrow-phone) .linv { grid-row: 2; grid-column: 3 / 5; }
+  .ct .lrow:not(.lrow-phone):has(.linv) .lwarns { grid-column: 5 / -1; }
+}
+@media (max-width: 639px) {
+  .ct .plants-head h3 { font-size: 22px; flex: 1 1 100%; }
+  .ct .plants-head .add-plants { flex: 1 1 auto; }
+  .ct .find { max-width: none; flex-basis: 100%; }
+  .ct .fchips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -4px; padding: 2px 4px; }
+  .ct .fchip-btn { min-height: 44px; white-space: nowrap; }
+  .ct .fchip-x { min-width: 44px; }
+  /* B1: the chips scroll sideways, which would clip a menu hanging from one, so on a phone the menu
+     is a sheet at the bottom of the screen, inside it whatever the chip's place. */
+  .ct .fmenu-list {
+    position: fixed; z-index: 30; top: auto; left: 8px; right: 8px; bottom: 8px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); min-width: 0; max-height: 70vh; max-height: 70dvh;
+    padding: 6px; border-color: var(--border-strong); border-radius: 12px; overscroll-behavior: contain;
+  }
+  /* H6: the sheet's z-index counts inside the filter row's stacking context, so while a menu is open
+     the row itself rises above the toast (z-index 40): no toast ever covers the sheet's last items. */
+  .ct .ftools:has(.fmenu-list) { z-index: 41; }
+  .ct .fmenu-head { display: block; padding: 6px 12px 4px; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
+  .ct .lcols { display: none; }
+  .ct .lgroup-head { padding: 4px 6px; }
+  .ct .lg-jobs { display: none; }
+  .ct .lrow-phone { grid-template-columns: 44px minmax(0, 1fr) 44px 44px; align-items: start; padding: 6px 4px; column-gap: 2px; }
+  .ct .lrow-phone .lname-btn { display: grid; gap: 4px; min-height: 44px; padding: 6px 4px; }
+  /* The scientific name on the name's line, cut short when it runs out of room (C15). */
+  .ct .lline1 { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ct .lline1 .lsci { display: inline; overflow-wrap: normal; }
+  .ct .lrow-phone { min-height: 0; }
+  .ct .lline2 { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .ct .lmenu { min-width: 200px; }
+  .ct .selbar { bottom: 6px; padding: 8px 10px; }
+  .ct .selbar-acts { flex: 1 1 100%; }
+  .ct .selbar-acts .button { flex: 1 1 auto; }
+  .ct .att-line { grid-template-columns: auto minmax(0, 1fr); }
+  .ct .att-line .button { grid-column: 1 / -1; min-height: 44px; }
+  .ct:has(.selbar) .toast { bottom: 128px; }
+}
+/* ---------- Add plants: Search | Paste a list ---------- */
+.ct-drawer .add-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-strong); margin-bottom: 4px; }
+.ct-drawer .add-tab { min-height: 44px; padding: 0 16px; border: 0; border-bottom: 3px solid transparent; margin-bottom: -1px; background: none; font: inherit; font-weight: 600; color: var(--text-secondary); }
+.ct-drawer .add-tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.ct-drawer .add-tab:hover { color: var(--text); }
+.ct-drawer .already { display: inline-flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 600; color: var(--text-muted); }
+.ct-drawer .paste-lede { font-size: 15px; color: var(--text-secondary); }
+.ct-drawer .paste-box { width: 100%; min-height: 140px; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg); color: var(--text); font: inherit; font-size: 15.5px; line-height: 1.45; resize: vertical; }
+.ct-drawer .paste-box:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.ct-drawer .paste-cols { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 15px; }
+.ct-drawer .paste-cols select { min-height: 44px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); max-width: 100%; }
+.ct-drawer .paste-group { border-top: 1px solid var(--border); padding-top: 6px; }
+.ct-drawer .paste-group > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }
+.ct-drawer .paste-group > summary .list-label { margin: 0; }
+.ct-drawer .paste-list, .ct-drawer .paste-choose ul { margin: 0; padding: 0; list-style: none; display: grid; }
+.ct-drawer .paste-row label { display: flex; gap: 10px; align-items: flex-start; min-height: 44px; padding: 8px 4px; cursor: pointer; }
+.ct-drawer .paste-row input { width: 18px; height: 18px; margin-top: 3px; flex: none; accent-color: var(--accent); }
+.ct-drawer .paste-row small { display: block; color: var(--text-muted); font-size: 13.5px; }
+.ct-drawer .add-row { display: flex; align-items: flex-start; gap: 8px; }
+.ct-drawer .add-row label { flex: 1 1 auto; min-width: 0; }
+/* H2: a Search row's way to its plant's details, beside the tick's label (never inside it). */
+.ct-drawer .add-details { flex: none; min-height: 44px; min-width: 44px; padding: 0 6px; font-size: 14.5px; }
+.ct-drawer .paste-close { display: inline-block; font-size: 13.5px; color: var(--warning); font-style: italic; }
+.ct-drawer .paste-typed { font-size: 13.5px; color: var(--text-muted); }
+.ct-drawer .paste-choose { margin: 6px 0; padding: 4px 10px 6px; border: 1px solid var(--border); border-radius: var(--radius); }
+.ct-drawer .paste-choose legend { padding: 0 4px; font-weight: 600; }
+.ct-drawer .paste-none { display: grid; gap: 8px; padding: 10px 12px; border: 1px dashed var(--border-strong); border-radius: var(--radius); font-size: 15px; }
+.ct-drawer .paste-names { margin: 0; padding-left: 20px; display: grid; gap: 2px; font-size: 15px; }
+.ct-drawer .paste-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.ct-drawer .paste-foot-wrap { flex: 1 1 100%; }
+.ct-drawer .drawer-foot:has(> .paste-foot-wrap:empty) { display: none; }
+.ct-drawer .paste-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
+.ct-drawer .paste-foot p { display: grid; gap: 2px; font-size: 15px; }
+.ct-drawer .paste-foot p span { font-size: 14px; color: var(--warning); }
+.ct-drawer .paste-foot p.add-foot-n { display: block; }
+.ct-drawer .paste-foot p.add-foot-n span { font-size: 15px; color: var(--text-secondary); }
+@media (max-width: 639px) {
+  .ct-drawer .paste-foot .button { flex: 1 1 100%; }
+}
+/* Print above 20 plants: one table, a heading row per layer. */
+.ct .print-table { width: 100%; border-collapse: collapse; }
+.ct .print-table th, .ct .print-table td { text-align: start; vertical-align: top; padding: 4px 6px; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+.ct .print-layer th { padding-top: 10px; font-family: var(--font-display); font-size: 15px; font-weight: 400; border-bottom: 1px solid var(--border-strong); }
+.ct-drawer #ct-paste-count { margin-top: 0; }
+.ct-drawer #ct-paste-count:empty { display: none; }
+.ct-drawer .paste-foot .button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ---------- The side view at every size (scale chunk C; app.js sideMarkup; mockup v2 states 02, 05) ----------
+   One frame, a band per layer named by its light, the 1 m, 5 m and 20 m lines of one log scale
+   (side.js). Up to 20 plants: a column per plant, drawn true to height (draw.js), numbered under the
+   ground line, with a legend. Above 20: one mark per plant, tallest first, a dot for a warning; a band
+   with more marks than fit with gaps (data-dense) loses the gaps and alternates two shades, so marks
+   never run together. The right 40 px of each band keep the line labels clear of plants and marks. */
+.ct .sv { --plot-h: 72px; --label-w: 40px; overflow: visible; background: linear-gradient(180deg, color-mix(in srgb, var(--sun-tint) 30%, var(--surface)) 0%, var(--surface) 70%); }
+.ct .sv-bands { margin: 0; padding: 0; list-style: none; }
+.ct .sv-band { display: grid; grid-template-columns: 170px minmax(0, 1fr); grid-template-areas: "lab strip"; gap: 6px 16px; align-items: end; padding: 10px 14px; border-bottom: 1px dashed var(--border-strong); }
+.ct .sv[data-size="marks"] .sv-band { grid-template-columns: 170px minmax(0, 1fr) auto; grid-template-areas: "lab strip strip" "lab sum show"; }
+.ct .sv-band:last-child { border-bottom: 2px solid var(--soil); }
+.ct .sv-lab { grid-area: lab; align-self: center; display: grid; min-width: 0; }
+.ct .sv-lab strong { font-family: var(--font-display); font-weight: 400; font-size: 20px; line-height: 1.2; }
+.ct .sv-light { font-size: 14px; color: var(--text-secondary); }
+.ct .sv-n { margin-top: 4px; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 15px; color: var(--text); font-variant-numeric: tabular-nums; }
+.ct .sv-n svg { width: 14px; height: 14px; color: var(--warning); }
+.ct .sv-strip { grid-area: strip; position: relative; min-width: 0; border-radius: 4px; }
+.ct .sv-strip[tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.ct .sv-plot { position: relative; height: var(--plot-h); }
+.ct .sv-line { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dotted var(--border-strong); pointer-events: none; }
+.ct .sv-line > span { position: absolute; right: 0; top: -0.65em; padding: 0 4px; border-radius: 3px; background: color-mix(in srgb, var(--surface) 88%, transparent); font-size: 11.5px; line-height: 1.2; color: var(--text-secondary); white-space: nowrap; }
+.ct .sv-cols, .ct .sv-marks { position: absolute; inset: 0 var(--label-w) 0 0; display: flex; align-items: flex-end; }
+.ct .sv-nums { display: flex; margin-right: var(--label-w); padding-top: 4px; }
+.ct .sv-col, .ct .sv-numc { flex: 1 1 0; min-width: 0; max-width: 64px; display: flex; justify-content: center; }
+/* Always the plot's height and 16/72 of it wide (draw.js MIN_COL / PLOT_H), whatever the column's
+   width: one drawing unit is the same number of pixels in every column, so each plant tops out on the
+   1, 5 and 20 m lines at any count up to 20 (review S3). A narrow column lets the crown spill over. */
+.ct .sv-col { position: relative; height: var(--plot-h); }
+.ct .sv-svg { position: absolute; bottom: 0; left: 50%; display: block; width: calc(var(--plot-h) * 16 / 72); height: var(--plot-h); margin-left: calc(var(--plot-h) * -8 / 72); overflow: visible; }
+.ct .profile .sv-nums .num { width: 22px; height: 22px; font-size: 12px; border-width: 1.5px; position: relative; }
+.ct .sv[data-many] .sv-nums .num { width: 19px; height: 19px; font-size: 11px; }
+.ct .sv-nums .num[data-w]::after { content: ''; position: absolute; top: -3px; right: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--text); box-shadow: 0 0 0 1.5px var(--surface); }
+/* Marks: one shade per band, 3:1 or more against the surface in light and dark (the layer colour where
+   it reaches that, else a deeper or lighter shade of the same hue), separated by a 1 px gap painted
+   the surface colour. Only where the marks are too narrow for that gap (app.js svFit, side.js
+   denseAt) do they touch, every other one in a second shade the caption explains (review S6/V6). */
+.ct .sv {
+  --m-emergent: #A87400; --m-high: #00916A; --m-medium: #0072B2; --m-low: #B16991;
+  --m2-emergent: #7E5700; --m2-high: #007555; --m2-medium: #005D92; --m2-low: #8D5373;
+}
+:root[data-theme="dark"] .ct .sv {
+  --m-emergent: #E69F00; --m-high: #009E73; --m-medium: #338EC1; --m-low: #CC79A7;
+  --m2-emergent: #EAB02E; --m2-high: #2EAF8C; --m2-medium: #61A8CF; --m2-low: #D591B7;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ct .sv {
+    --m-emergent: #E69F00; --m-high: #009E73; --m-medium: #338EC1; --m-low: #CC79A7;
+    --m2-emergent: #EAB02E; --m2-high: #2EAF8C; --m2-medium: #61A8CF; --m2-low: #D591B7;
+  }
+}
+.ct .sv-marks { gap: 1px; }
+.ct .sv-marks i { flex: 1 1 0; min-width: 1px; max-width: 9px; height: var(--h); position: relative; border-radius: 1px 1px 0 0; background: var(--m); }
+.ct .sv-marks i + i { box-shadow: -1px 0 0 var(--surface); }
+.ct .profile .sv-marks[data-s="emergent"] { --m: var(--m-emergent); --m2: var(--m2-emergent); }
+.ct .profile .sv-marks[data-s="high"] { --m: var(--m-high); --m2: var(--m2-high); }
+.ct .profile .sv-marks[data-s="medium"] { --m: var(--m-medium); --m2: var(--m2-medium); }
+.ct .profile .sv-marks[data-s="low"] { --m: var(--m-low); --m2: var(--m2-low); }
+.ct .sv-marks[data-dense] { gap: 0; }
+.ct .sv-marks[data-dense] i { box-shadow: none; }
+.ct .sv-marks[data-dense] i:nth-child(even) { background: var(--m2); }
+.ct .sv-marks i[data-u], .ct .sv-marks[data-dense] i[data-u] { background: none; border: 1px dashed var(--text-muted); border-bottom: 0; }
+/* A warning dot: never wider than its mark, so dots on neighbouring marks stay apart (review S7). */
+.ct .sv-marks i[data-w]::before { content: ''; position: absolute; left: 50%; top: -7px; width: min(5px, 100%); aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; background: var(--text); }
+.ct .sv-marks[data-dense] i[data-w]::before { width: max(1px, min(5px, calc(100% - 1px))); }
+.ct .sv-dense-note { display: none; }
+.ct .sv:has(.sv-marks[data-dense]) .sv-dense-note { display: inline; }
+.ct .sv-marks i[data-on] { outline: 2px solid var(--focus); outline-offset: 1px; z-index: 1; }
+.ct .sv-tip { position: absolute; top: 0; left: 0; z-index: 3; transform: translateY(calc(-100% - 6px)); padding: 3px 8px; border-radius: 6px; background: var(--text); color: var(--bg); font-size: 13px; line-height: 1.3; white-space: nowrap; pointer-events: none; }
+.ct .sv-sum { grid-area: sum; margin: 0; font-size: 14.5px; color: var(--text-secondary); }
+.ct .sv-show { grid-area: show; align-self: start; min-height: 44px; }
+.ct .sv .profile-foot { display: block; margin: 0; padding: 10px 14px 12px; }
+.ct .sv .pkey { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0 16px; }
+.ct .sv .pkey li { gap: 6px; }
+.ct .sv .pkey-item { width: auto; flex: 0 1 auto; min-width: 0; }
+.ct .pkey-h { flex: none; font-size: 14px; color: var(--text-muted); white-space: nowrap; }
+@media (max-width: 639px) {
+  /* Tall enough that a 4 m and a 15 m plant clearly sit either side of the 5 m line (review V5). */
+  .ct .sv { --plot-h: 88px; --label-w: 34px; }
+  .ct .sv-band, .ct .sv[data-size="marks"] .sv-band { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "lab lab" "strip strip" "sum show"; padding: 10px 12px; }
+  .ct .sv[data-size="draw"] .sv-band { grid-template-areas: "lab lab" "strip strip"; }
+  .ct .sv-lab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+  .ct .sv-n { margin: 0 0 0 auto; }
+  .ct .sv-line[data-m="5"] > span { display: none; }
+  /* 13 to 20 plants: columns narrower than a number, so every other number sits a row lower and
+     none overlaps, each still 19 px with 11 px digits (review V5). */
+  .ct .sv[data-many] .sv-nums .num { width: 19px; height: 19px; font-size: 11px; }
+  .ct .sv[data-many] .sv-numc:nth-child(even) { padding-top: 21px; }
+  .ct .sv .pkey { grid-template-columns: minmax(0, 1fr); }
+}
+/* Print: the whole width of an A4 or Letter page, every band kept together. */
+.ct .sheet-draw .sv { --plot-h: 56px; max-width: 100%; margin: 0 0 12px; background: none; }
+.ct .sheet-draw .sv-band { grid-template-columns: 130px minmax(0, 1fr); break-inside: avoid; }
+/* Above 20 plants print opens with At a glance (state 13), then the table. */
+.ct .print-glance { margin: 0 0 14px; break-inside: avoid; }
+.ct .print-glance h3 { margin: 0 0 4px; font-size: 18px; }
+.ct .print-glance table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.ct .print-glance th, .ct .print-glance td { text-align: start; padding: 3px 6px; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+.ct .print-glance thead th, .ct .print-glance tbody th { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.ct .glance-kinds { margin: 6px 0 0; font-size: 12.5px; }
+@media print { .ct .sv { --plot-h: 56px; } .ct .sv-band { break-inside: avoid; } }

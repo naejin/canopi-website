@@ -6,7 +6,7 @@ tags: [project]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:31:21Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-27T19:29:46Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T15:50:30Z }
 sources:
   - id: readme
     resource: ../../README.md
@@ -16,8 +16,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:f7393b32d2100393
-    last_modified: 2026-10-27T19:28:52Z
+    digest: sha256:26faf235c0876b4e
+    last_modified: 2026-10-28T15:44:49Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md

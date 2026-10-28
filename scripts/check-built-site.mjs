@@ -221,7 +221,7 @@ const headerOf = (html, from) => {
   assert.ok(panel, `${from}: the phone Menu panel`);
   return { header, panel, inline: header.replace(panel, '') };
 };
-const consortiumCells = JSON.parse(readFileSync(join(root, 'data', 'consortium', 'manifest.json'), 'utf8')).cells.map((c) => ({ ...c, climate: c.climate_zone }));
+const consortiumClimates = JSON.parse(readFileSync(join(root, 'data', 'consortium', 'manifest.json'), 'utf8')).climates.map((c) => ({ ...c, climate: c.climate_zone }));
 const consortiumTaxa = (file) => new Set(JSON.parse(readFileSync(join(root, 'data', 'consortium', file), 'utf8')).taxa.map((t) => t.canonical_name));
 const mainOf = (html) => html.match(/<main\b[\s\S]*?<\/main>/)?.[0] ?? '';
 const linkTo = (html, href) => new RegExp(`<a\\b[^>]*\\shref="${href.replace(/[.?*+^$()[\]{}|\\]/g, '\\$&')}"`).test(html);
@@ -292,16 +292,16 @@ for (const lang of guideLocales) {
   }
   assert.ok(linkTo(mainOf(index), localized('/bibliography/', lang)), `${lang} guides index: links to the bibliography`);
   assert.ok(linkTo(mainOf(index), consortiumPath(lang)), `${lang} guides index: mentions the consortium tool`);
-  // Guide presets open the tool with a plant of the cell their climate names.
+  // Guide presets open the tool with a plant of the climate file their climate names.
   let presets = 0;
   for (const [html, , from] of pages) {
     for (const [, href] of mainOf(html).matchAll(/<a\b[^>]*\shref="([^"]*\?[^"]*plant=[^"]*)"/g)) {
       const { path: hrefPath, query } = splitHref(href);
       assert.equal(hrefPath, consortiumPath(lang), `${from}: preset link goes to the tool`);
       const params = new URLSearchParams(query), climate = params.get('climate');
-      const cell = consortiumCells.find((c) => c.climate.toLowerCase() === climate);
-      assert.ok(cell, `${from}: preset climate ${climate} has a beta cell`);
-      assert.ok(consortiumTaxa(cell.file).has(params.get('plant')), `${from}: ${params.get('plant')} is in ${cell.file}`);
+      const file = consortiumClimates.find((c) => c.climate.toLowerCase() === climate);
+      assert.ok(file, `${from}: preset climate ${climate} has a beta climate file`);
+      assert.ok(consortiumTaxa(file.file).has(params.get('plant')), `${from}: ${params.get('plant')} is in ${file.file}`);
       presets++;
     }
   }
@@ -328,10 +328,10 @@ for (const lang of locales) {
   for (const asset of assetLinks(html)) assert.ok(existsSync(join(root, asset)), `${path}: missing asset ${asset}`);
 }
 assert.ok(!existsSync(join(root, 'fr', 'consortium')), 'no /fr/consortium/: French is /fr/guilde/');
-// prepush m2: the installed plant data, by the installer's own checks: format 2, a real
-// canopi_db_sha256 (never the fixture's zeros), SHA256SUMS, each cell's sha256, counts and shape,
-// and every photo a local file that exists.
+// prepush m2: the installed plant data, by the installer's own checks: format 3, a real
+// canopi_db_sha256 (never the fixture's zeros), SHA256SUMS, each climate file's sha256, regions,
+// counts, shape and the format's rules, and every photo a local file that exists.
 const consortiumInstall = verifyInstall(join(root, 'data', 'consortium'));
-assert.ok(consortiumInstall.cells > 0 && consortiumInstall.images > 0, 'consortium: cells and photos');
+assert.ok(consortiumInstall.climates > 0 && consortiumInstall.images > 0, 'consortium: climate files and photos');
 
 console.log(`Verified 11 locale pages, their bibliography and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);

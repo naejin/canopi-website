@@ -1,31 +1,38 @@
 {
-  "format_version": 2,
+  "format_version": 3,
   "generated_at": "2026-10-27T00:00:00Z",
   "canopi_db_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-  "cells": [
+  "climates": [
+    {
+      "climate_zone": "Tropical",
+      "file": "tropical.json",
+      "regions": [
+        "southern_america"
+      ],
+      "taxa": 16,
+      "interactions": 3,
+      "sha256": "3e6f6ed2069c1703a5e92882de506dc214bdef27ed206df7ff7f44de9df608f3"
+    },
     {
       "climate_zone": "Mediterranean",
-      "region": "europe",
-      "file": "mediterranean-europe.json",
+      "file": "mediterranean.json",
+      "regions": [
+        "europe"
+      ],
       "taxa": 12,
       "interactions": 0,
-      "sha256": "15886ade46c66d7608293e5c42675e8672b50682731da4e8d3ad80ebcca0309a"
+      "sha256": "a7d1a092be0577ed01de781492182b3b645ec2e9e6186c8a47591b4828305080"
     },
     {
       "climate_zone": "Temperate",
-      "region": "europe",
-      "file": "temperate-europe.json",
-      "taxa": 12,
+      "file": "temperate.json",
+      "regions": [
+        "europe",
+        "asia_temperate"
+      ],
+      "taxa": 13,
       "interactions": 3,
-      "sha256": "d8b79a7110985ebc46bf0f1ffe50b25e6b598a322955b323e315621f2c7b2f8d"
-    },
-    {
-      "climate_zone": "Tropical",
-      "region": "southern_america",
-      "file": "tropical-southern-america.json",
-      "taxa": 15,
-      "interactions": 2,
-      "sha256": "c4509dc0c1083ede5f556a02c5bdff16b27d5628101a21454e63604d966d0cc8"
+      "sha256": "e146f0fc46dbb784a2be593f08e3a844e6159f0a720b97b42e63f81bb6a81afe"
     }
   ],
   "locales": [
@@ -41,748 +48,756 @@
     "nl",
     "ru"
   ],
-  "country_regions": {
-    "AD": [
-      "europe"
-    ],
-    "AE": [
-      "asia_temperate"
-    ],
-    "AF": [
-      "asia_temperate"
-    ],
-    "AG": [
-      "southern_america"
-    ],
-    "AI": [
-      "southern_america"
-    ],
-    "AL": [
-      "europe"
-    ],
-    "AM": [
-      "asia_temperate"
-    ],
-    "AO": [
-      "africa"
-    ],
-    "AR": [
-      "southern_america"
-    ],
-    "AS": [
-      "pacific"
-    ],
-    "AT": [
-      "europe"
-    ],
-    "AU": [
-      "australasia"
-    ],
-    "AW": [
-      "southern_america"
-    ],
-    "AX": [
-      "europe"
-    ],
-    "AZ": [
-      "asia_temperate"
-    ],
-    "BA": [
-      "europe"
-    ],
-    "BB": [
-      "southern_america"
-    ],
-    "BD": [
-      "asia_tropical"
-    ],
-    "BE": [
-      "europe"
-    ],
-    "BF": [
-      "africa"
-    ],
-    "BG": [
-      "europe"
-    ],
-    "BH": [
-      "asia_temperate"
-    ],
-    "BI": [
-      "africa"
-    ],
-    "BJ": [
-      "africa"
-    ],
-    "BL": [
-      "southern_america"
-    ],
-    "BM": [
-      "southern_america"
-    ],
-    "BN": [
-      "asia_tropical"
-    ],
-    "BO": [
-      "southern_america"
-    ],
-    "BQ": [
-      "southern_america"
-    ],
-    "BR": [
-      "southern_america"
-    ],
-    "BS": [
-      "southern_america"
-    ],
-    "BT": [
-      "asia_tropical"
-    ],
-    "BW": [
-      "africa"
-    ],
-    "BY": [
-      "europe"
-    ],
-    "BZ": [
-      "southern_america"
-    ],
-    "CA": [
-      "northern_america"
-    ],
-    "CC": [
-      "asia_tropical"
-    ],
-    "CD": [
-      "africa"
-    ],
-    "CF": [
-      "africa"
-    ],
-    "CG": [
-      "africa"
-    ],
-    "CH": [
-      "europe"
-    ],
-    "CI": [
-      "africa"
-    ],
-    "CK": [
-      "pacific"
-    ],
-    "CL": [
-      "southern_america",
-      "pacific"
-    ],
-    "CM": [
-      "africa"
-    ],
-    "CN": [
-      "asia_temperate"
-    ],
-    "CO": [
-      "southern_america"
-    ],
-    "CR": [
-      "southern_america"
-    ],
-    "CU": [
-      "southern_america"
-    ],
-    "CV": [
-      "africa"
-    ],
-    "CW": [
-      "southern_america"
-    ],
-    "CX": [
-      "asia_tropical"
-    ],
-    "CY": [
-      "asia_temperate"
-    ],
-    "CZ": [
-      "europe"
-    ],
-    "DE": [
-      "europe"
-    ],
-    "DJ": [
-      "africa"
-    ],
-    "DK": [
-      "europe"
-    ],
-    "DM": [
-      "southern_america"
-    ],
-    "DO": [
-      "southern_america"
-    ],
-    "DZ": [
-      "africa"
-    ],
-    "EC": [
-      "southern_america"
-    ],
-    "EE": [
-      "europe"
-    ],
-    "EG": [
-      "africa",
-      "asia_temperate"
-    ],
-    "EH": [
-      "africa"
-    ],
-    "ER": [
-      "africa"
-    ],
-    "ES": [
-      "europe",
-      "africa"
-    ],
-    "ET": [
-      "africa"
-    ],
-    "FI": [
-      "europe"
-    ],
-    "FJ": [
-      "pacific"
-    ],
-    "FM": [
-      "pacific"
-    ],
-    "FO": [
-      "europe"
-    ],
-    "FR": [
-      "europe"
-    ],
-    "GA": [
-      "africa"
-    ],
-    "GB": [
-      "europe"
-    ],
-    "GD": [
-      "southern_america"
-    ],
-    "GE": [
-      "asia_temperate"
-    ],
-    "GF": [
-      "southern_america"
-    ],
-    "GG": [
-      "europe"
-    ],
-    "GH": [
-      "africa"
-    ],
-    "GI": [
-      "europe"
-    ],
-    "GL": [
-      "northern_america"
-    ],
-    "GM": [
-      "africa"
-    ],
-    "GN": [
-      "africa"
-    ],
-    "GP": [
-      "southern_america"
-    ],
-    "GQ": [
-      "africa"
-    ],
-    "GR": [
-      "europe",
-      "asia_temperate"
-    ],
-    "GT": [
-      "southern_america"
-    ],
-    "GU": [
-      "pacific"
-    ],
-    "GW": [
-      "africa"
-    ],
-    "GY": [
-      "southern_america"
-    ],
-    "HK": [
-      "asia_temperate"
-    ],
-    "HN": [
-      "southern_america"
-    ],
-    "HR": [
-      "europe"
-    ],
-    "HT": [
-      "southern_america"
-    ],
-    "HU": [
-      "europe"
-    ],
-    "ID": [
-      "asia_tropical"
-    ],
-    "IE": [
-      "europe"
-    ],
-    "IL": [
-      "asia_temperate"
-    ],
-    "IM": [
-      "europe"
-    ],
-    "IN": [
-      "asia_tropical"
-    ],
-    "IO": [
-      "africa"
-    ],
-    "IQ": [
-      "asia_temperate"
-    ],
-    "IR": [
-      "asia_temperate"
-    ],
-    "IS": [
-      "europe"
-    ],
-    "IT": [
-      "europe"
-    ],
-    "JE": [
-      "europe"
-    ],
-    "JM": [
-      "southern_america"
-    ],
-    "JO": [
-      "asia_temperate"
-    ],
-    "JP": [
-      "asia_temperate"
-    ],
-    "KE": [
-      "africa"
-    ],
-    "KG": [
-      "asia_temperate"
-    ],
-    "KH": [
-      "asia_tropical"
-    ],
-    "KI": [
-      "pacific"
-    ],
-    "KM": [
-      "africa"
-    ],
-    "KN": [
-      "southern_america"
-    ],
-    "KP": [
-      "asia_temperate"
-    ],
-    "KR": [
-      "asia_temperate"
-    ],
-    "KW": [
-      "asia_temperate"
-    ],
-    "KY": [
-      "southern_america"
-    ],
-    "KZ": [
-      "asia_temperate"
-    ],
-    "LA": [
-      "asia_tropical"
-    ],
-    "LB": [
-      "asia_temperate"
-    ],
-    "LC": [
-      "southern_america"
-    ],
-    "LI": [
-      "europe"
-    ],
-    "LK": [
-      "asia_tropical"
-    ],
-    "LR": [
-      "africa"
-    ],
-    "LS": [
-      "africa"
-    ],
-    "LT": [
-      "europe"
-    ],
-    "LU": [
-      "europe"
-    ],
-    "LV": [
-      "europe"
-    ],
-    "LY": [
-      "africa"
-    ],
-    "MA": [
-      "africa"
-    ],
-    "MC": [
-      "europe"
-    ],
-    "MD": [
-      "europe"
-    ],
-    "ME": [
-      "europe"
-    ],
-    "MF": [
-      "southern_america"
-    ],
-    "MG": [
-      "africa"
-    ],
-    "MH": [
-      "pacific"
-    ],
-    "MK": [
-      "europe"
-    ],
-    "ML": [
-      "africa"
-    ],
-    "MM": [
-      "asia_tropical"
-    ],
-    "MN": [
-      "asia_temperate"
-    ],
-    "MO": [
-      "asia_temperate"
-    ],
-    "MP": [
-      "pacific"
-    ],
-    "MQ": [
-      "southern_america"
-    ],
-    "MR": [
-      "africa"
-    ],
-    "MS": [
-      "southern_america"
-    ],
-    "MT": [
-      "europe"
-    ],
-    "MU": [
-      "africa"
-    ],
-    "MV": [
-      "asia_tropical"
-    ],
-    "MW": [
-      "africa"
-    ],
-    "MX": [
-      "northern_america"
-    ],
-    "MY": [
-      "asia_tropical"
-    ],
-    "MZ": [
-      "africa"
-    ],
-    "NA": [
-      "africa"
-    ],
-    "NC": [
-      "pacific"
-    ],
-    "NE": [
-      "africa"
-    ],
-    "NF": [
-      "australasia"
-    ],
-    "NG": [
-      "africa"
-    ],
-    "NI": [
-      "southern_america"
-    ],
-    "NL": [
-      "europe"
-    ],
-    "NO": [
-      "europe"
-    ],
-    "NP": [
-      "asia_tropical"
-    ],
-    "NR": [
-      "pacific"
-    ],
-    "NU": [
-      "pacific"
-    ],
-    "NZ": [
-      "australasia"
-    ],
-    "OM": [
-      "asia_temperate"
-    ],
-    "PA": [
-      "southern_america"
-    ],
-    "PE": [
-      "southern_america"
-    ],
-    "PF": [
-      "pacific"
-    ],
-    "PG": [
-      "asia_tropical"
-    ],
-    "PH": [
-      "asia_tropical"
-    ],
-    "PK": [
-      "asia_tropical"
-    ],
-    "PL": [
-      "europe"
-    ],
-    "PM": [
-      "northern_america"
-    ],
-    "PN": [
-      "pacific"
-    ],
-    "PR": [
-      "southern_america"
-    ],
-    "PS": [
-      "asia_temperate"
-    ],
-    "PT": [
-      "europe",
-      "africa"
-    ],
-    "PW": [
-      "pacific"
-    ],
-    "PY": [
-      "southern_america"
-    ],
-    "QA": [
-      "asia_temperate"
-    ],
-    "RE": [
-      "africa"
-    ],
-    "RO": [
-      "europe"
-    ],
-    "RS": [
-      "europe"
-    ],
-    "RU": [
-      "europe",
-      "asia_temperate"
-    ],
-    "RW": [
-      "africa"
-    ],
-    "SA": [
-      "asia_temperate"
-    ],
-    "SB": [
-      "asia_tropical",
-      "pacific"
-    ],
-    "SC": [
-      "africa"
-    ],
-    "SD": [
-      "africa"
-    ],
-    "SE": [
-      "europe"
-    ],
-    "SG": [
-      "asia_tropical"
-    ],
-    "SH": [
-      "africa"
-    ],
-    "SI": [
-      "europe"
-    ],
-    "SJ": [
-      "europe"
-    ],
-    "SK": [
-      "europe"
-    ],
-    "SL": [
-      "africa"
-    ],
-    "SM": [
-      "europe"
-    ],
-    "SN": [
-      "africa"
-    ],
-    "SO": [
-      "africa"
-    ],
-    "SR": [
-      "southern_america"
-    ],
-    "SS": [
-      "africa"
-    ],
-    "ST": [
-      "africa"
-    ],
-    "SV": [
-      "southern_america"
-    ],
-    "SX": [
-      "southern_america"
-    ],
-    "SY": [
-      "asia_temperate"
-    ],
-    "SZ": [
-      "africa"
-    ],
-    "TC": [
-      "southern_america"
-    ],
-    "TD": [
-      "africa"
-    ],
-    "TG": [
-      "africa"
-    ],
-    "TH": [
-      "asia_tropical"
-    ],
-    "TJ": [
-      "asia_temperate"
-    ],
-    "TK": [
-      "pacific"
-    ],
-    "TL": [
-      "asia_tropical"
-    ],
-    "TM": [
-      "asia_temperate"
-    ],
-    "TN": [
-      "africa"
-    ],
-    "TO": [
-      "pacific"
-    ],
-    "TR": [
-      "asia_temperate",
-      "europe"
-    ],
-    "TT": [
-      "southern_america"
-    ],
-    "TV": [
-      "pacific"
-    ],
-    "TW": [
-      "asia_temperate"
-    ],
-    "TZ": [
-      "africa"
-    ],
-    "UA": [
-      "europe"
-    ],
-    "UG": [
-      "africa"
-    ],
-    "UM": [
-      "pacific"
-    ],
-    "US": [
-      "northern_america",
-      "pacific"
-    ],
-    "UY": [
-      "southern_america"
-    ],
-    "UZ": [
-      "asia_temperate"
-    ],
-    "VA": [
-      "europe"
-    ],
-    "VC": [
-      "southern_america"
-    ],
-    "VE": [
-      "southern_america"
-    ],
-    "VG": [
-      "southern_america"
-    ],
-    "VI": [
-      "southern_america"
-    ],
-    "VN": [
-      "asia_tropical"
-    ],
-    "VU": [
-      "pacific"
-    ],
-    "WF": [
-      "pacific"
-    ],
-    "WS": [
-      "pacific"
-    ],
-    "XK": [
-      "europe"
-    ],
-    "YE": [
-      "asia_temperate",
-      "africa"
-    ],
-    "YT": [
-      "africa"
-    ],
-    "ZA": [
-      "africa"
-    ],
-    "ZM": [
-      "africa"
-    ],
-    "ZW": [
-      "africa"
-    ]
+  "countries": {
+    "AD": {
+      "invasive_checked": true
+    },
+    "AE": {
+      "invasive_checked": true
+    },
+    "AF": {
+      "invasive_checked": true
+    },
+    "AG": {
+      "invasive_checked": true
+    },
+    "AI": {
+      "invasive_checked": false
+    },
+    "AL": {
+      "invasive_checked": true
+    },
+    "AM": {
+      "invasive_checked": true
+    },
+    "AO": {
+      "invasive_checked": true
+    },
+    "AQ": {
+      "invasive_checked": false
+    },
+    "AR": {
+      "invasive_checked": true
+    },
+    "AS": {
+      "invasive_checked": false
+    },
+    "AT": {
+      "invasive_checked": true
+    },
+    "AU": {
+      "invasive_checked": true
+    },
+    "AW": {
+      "invasive_checked": false
+    },
+    "AX": {
+      "invasive_checked": false
+    },
+    "AZ": {
+      "invasive_checked": true
+    },
+    "BA": {
+      "invasive_checked": true
+    },
+    "BB": {
+      "invasive_checked": true
+    },
+    "BD": {
+      "invasive_checked": true
+    },
+    "BE": {
+      "invasive_checked": true
+    },
+    "BF": {
+      "invasive_checked": true
+    },
+    "BG": {
+      "invasive_checked": true
+    },
+    "BH": {
+      "invasive_checked": true
+    },
+    "BI": {
+      "invasive_checked": true
+    },
+    "BJ": {
+      "invasive_checked": true
+    },
+    "BL": {
+      "invasive_checked": false
+    },
+    "BM": {
+      "invasive_checked": false
+    },
+    "BN": {
+      "invasive_checked": true
+    },
+    "BO": {
+      "invasive_checked": true
+    },
+    "BQ": {
+      "invasive_checked": false
+    },
+    "BR": {
+      "invasive_checked": true
+    },
+    "BS": {
+      "invasive_checked": true
+    },
+    "BT": {
+      "invasive_checked": true
+    },
+    "BV": {
+      "invasive_checked": false
+    },
+    "BW": {
+      "invasive_checked": true
+    },
+    "BY": {
+      "invasive_checked": true
+    },
+    "BZ": {
+      "invasive_checked": true
+    },
+    "CA": {
+      "invasive_checked": true
+    },
+    "CC": {
+      "invasive_checked": false
+    },
+    "CD": {
+      "invasive_checked": true
+    },
+    "CF": {
+      "invasive_checked": true
+    },
+    "CG": {
+      "invasive_checked": true
+    },
+    "CH": {
+      "invasive_checked": true
+    },
+    "CI": {
+      "invasive_checked": true
+    },
+    "CK": {
+      "invasive_checked": true
+    },
+    "CL": {
+      "invasive_checked": true
+    },
+    "CM": {
+      "invasive_checked": true
+    },
+    "CN": {
+      "invasive_checked": true
+    },
+    "CO": {
+      "invasive_checked": true
+    },
+    "CR": {
+      "invasive_checked": true
+    },
+    "CU": {
+      "invasive_checked": true
+    },
+    "CV": {
+      "invasive_checked": true
+    },
+    "CW": {
+      "invasive_checked": false
+    },
+    "CX": {
+      "invasive_checked": false
+    },
+    "CY": {
+      "invasive_checked": true
+    },
+    "CZ": {
+      "invasive_checked": true
+    },
+    "DE": {
+      "invasive_checked": true
+    },
+    "DJ": {
+      "invasive_checked": true
+    },
+    "DK": {
+      "invasive_checked": true
+    },
+    "DM": {
+      "invasive_checked": true
+    },
+    "DO": {
+      "invasive_checked": true
+    },
+    "DZ": {
+      "invasive_checked": true
+    },
+    "EC": {
+      "invasive_checked": true
+    },
+    "EE": {
+      "invasive_checked": true
+    },
+    "EG": {
+      "invasive_checked": true
+    },
+    "EH": {
+      "invasive_checked": false
+    },
+    "ER": {
+      "invasive_checked": true
+    },
+    "ES": {
+      "invasive_checked": true
+    },
+    "ET": {
+      "invasive_checked": true
+    },
+    "FI": {
+      "invasive_checked": true
+    },
+    "FJ": {
+      "invasive_checked": true
+    },
+    "FK": {
+      "invasive_checked": false
+    },
+    "FM": {
+      "invasive_checked": true
+    },
+    "FO": {
+      "invasive_checked": false
+    },
+    "FR": {
+      "invasive_checked": true
+    },
+    "GA": {
+      "invasive_checked": true
+    },
+    "GB": {
+      "invasive_checked": true
+    },
+    "GD": {
+      "invasive_checked": true
+    },
+    "GE": {
+      "invasive_checked": true
+    },
+    "GF": {
+      "invasive_checked": false
+    },
+    "GG": {
+      "invasive_checked": false
+    },
+    "GH": {
+      "invasive_checked": true
+    },
+    "GI": {
+      "invasive_checked": false
+    },
+    "GL": {
+      "invasive_checked": false
+    },
+    "GM": {
+      "invasive_checked": true
+    },
+    "GN": {
+      "invasive_checked": true
+    },
+    "GP": {
+      "invasive_checked": false
+    },
+    "GQ": {
+      "invasive_checked": true
+    },
+    "GR": {
+      "invasive_checked": true
+    },
+    "GS": {
+      "invasive_checked": false
+    },
+    "GT": {
+      "invasive_checked": true
+    },
+    "GU": {
+      "invasive_checked": false
+    },
+    "GW": {
+      "invasive_checked": true
+    },
+    "GY": {
+      "invasive_checked": true
+    },
+    "HK": {
+      "invasive_checked": false
+    },
+    "HM": {
+      "invasive_checked": false
+    },
+    "HN": {
+      "invasive_checked": true
+    },
+    "HR": {
+      "invasive_checked": true
+    },
+    "HT": {
+      "invasive_checked": true
+    },
+    "HU": {
+      "invasive_checked": true
+    },
+    "ID": {
+      "invasive_checked": true
+    },
+    "IE": {
+      "invasive_checked": true
+    },
+    "IL": {
+      "invasive_checked": true
+    },
+    "IM": {
+      "invasive_checked": false
+    },
+    "IN": {
+      "invasive_checked": true
+    },
+    "IO": {
+      "invasive_checked": false
+    },
+    "IQ": {
+      "invasive_checked": true
+    },
+    "IR": {
+      "invasive_checked": true
+    },
+    "IS": {
+      "invasive_checked": true
+    },
+    "IT": {
+      "invasive_checked": true
+    },
+    "JE": {
+      "invasive_checked": false
+    },
+    "JM": {
+      "invasive_checked": true
+    },
+    "JO": {
+      "invasive_checked": true
+    },
+    "JP": {
+      "invasive_checked": true
+    },
+    "KE": {
+      "invasive_checked": true
+    },
+    "KG": {
+      "invasive_checked": true
+    },
+    "KH": {
+      "invasive_checked": true
+    },
+    "KI": {
+      "invasive_checked": true
+    },
+    "KM": {
+      "invasive_checked": true
+    },
+    "KN": {
+      "invasive_checked": true
+    },
+    "KP": {
+      "invasive_checked": true
+    },
+    "KR": {
+      "invasive_checked": true
+    },
+    "KW": {
+      "invasive_checked": true
+    },
+    "KY": {
+      "invasive_checked": false
+    },
+    "KZ": {
+      "invasive_checked": true
+    },
+    "LA": {
+      "invasive_checked": true
+    },
+    "LB": {
+      "invasive_checked": true
+    },
+    "LC": {
+      "invasive_checked": true
+    },
+    "LI": {
+      "invasive_checked": true
+    },
+    "LK": {
+      "invasive_checked": true
+    },
+    "LR": {
+      "invasive_checked": true
+    },
+    "LS": {
+      "invasive_checked": true
+    },
+    "LT": {
+      "invasive_checked": true
+    },
+    "LU": {
+      "invasive_checked": true
+    },
+    "LV": {
+      "invasive_checked": true
+    },
+    "LY": {
+      "invasive_checked": true
+    },
+    "MA": {
+      "invasive_checked": true
+    },
+    "MC": {
+      "invasive_checked": true
+    },
+    "MD": {
+      "invasive_checked": true
+    },
+    "ME": {
+      "invasive_checked": true
+    },
+    "MF": {
+      "invasive_checked": false
+    },
+    "MG": {
+      "invasive_checked": true
+    },
+    "MH": {
+      "invasive_checked": true
+    },
+    "MK": {
+      "invasive_checked": true
+    },
+    "ML": {
+      "invasive_checked": true
+    },
+    "MM": {
+      "invasive_checked": true
+    },
+    "MN": {
+      "invasive_checked": true
+    },
+    "MO": {
+      "invasive_checked": false
+    },
+    "MP": {
+      "invasive_checked": false
+    },
+    "MQ": {
+      "invasive_checked": false
+    },
+    "MR": {
+      "invasive_checked": true
+    },
+    "MS": {
+      "invasive_checked": false
+    },
+    "MT": {
+      "invasive_checked": true
+    },
+    "MU": {
+      "invasive_checked": true
+    },
+    "MV": {
+      "invasive_checked": true
+    },
+    "MW": {
+      "invasive_checked": true
+    },
+    "MX": {
+      "invasive_checked": true
+    },
+    "MY": {
+      "invasive_checked": true
+    },
+    "MZ": {
+      "invasive_checked": true
+    },
+    "NA": {
+      "invasive_checked": true
+    },
+    "NC": {
+      "invasive_checked": false
+    },
+    "NE": {
+      "invasive_checked": true
+    },
+    "NF": {
+      "invasive_checked": false
+    },
+    "NG": {
+      "invasive_checked": true
+    },
+    "NI": {
+      "invasive_checked": true
+    },
+    "NL": {
+      "invasive_checked": true
+    },
+    "NO": {
+      "invasive_checked": true
+    },
+    "NP": {
+      "invasive_checked": true
+    },
+    "NR": {
+      "invasive_checked": true
+    },
+    "NU": {
+      "invasive_checked": true
+    },
+    "NZ": {
+      "invasive_checked": true
+    },
+    "OM": {
+      "invasive_checked": true
+    },
+    "PA": {
+      "invasive_checked": true
+    },
+    "PE": {
+      "invasive_checked": true
+    },
+    "PF": {
+      "invasive_checked": false
+    },
+    "PG": {
+      "invasive_checked": true
+    },
+    "PH": {
+      "invasive_checked": true
+    },
+    "PK": {
+      "invasive_checked": true
+    },
+    "PL": {
+      "invasive_checked": true
+    },
+    "PM": {
+      "invasive_checked": false
+    },
+    "PN": {
+      "invasive_checked": false
+    },
+    "PR": {
+      "invasive_checked": false
+    },
+    "PS": {
+      "invasive_checked": true
+    },
+    "PT": {
+      "invasive_checked": true
+    },
+    "PW": {
+      "invasive_checked": true
+    },
+    "PY": {
+      "invasive_checked": true
+    },
+    "QA": {
+      "invasive_checked": true
+    },
+    "RE": {
+      "invasive_checked": false
+    },
+    "RO": {
+      "invasive_checked": true
+    },
+    "RS": {
+      "invasive_checked": true
+    },
+    "RU": {
+      "invasive_checked": true
+    },
+    "RW": {
+      "invasive_checked": true
+    },
+    "SA": {
+      "invasive_checked": true
+    },
+    "SB": {
+      "invasive_checked": true
+    },
+    "SC": {
+      "invasive_checked": true
+    },
+    "SD": {
+      "invasive_checked": true
+    },
+    "SE": {
+      "invasive_checked": true
+    },
+    "SG": {
+      "invasive_checked": true
+    },
+    "SH": {
+      "invasive_checked": false
+    },
+    "SI": {
+      "invasive_checked": true
+    },
+    "SJ": {
+      "invasive_checked": false
+    },
+    "SK": {
+      "invasive_checked": true
+    },
+    "SL": {
+      "invasive_checked": true
+    },
+    "SM": {
+      "invasive_checked": true
+    },
+    "SN": {
+      "invasive_checked": true
+    },
+    "SO": {
+      "invasive_checked": true
+    },
+    "SR": {
+      "invasive_checked": true
+    },
+    "SS": {
+      "invasive_checked": true
+    },
+    "ST": {
+      "invasive_checked": true
+    },
+    "SV": {
+      "invasive_checked": true
+    },
+    "SX": {
+      "invasive_checked": false
+    },
+    "SY": {
+      "invasive_checked": true
+    },
+    "SZ": {
+      "invasive_checked": true
+    },
+    "TC": {
+      "invasive_checked": false
+    },
+    "TD": {
+      "invasive_checked": true
+    },
+    "TF": {
+      "invasive_checked": false
+    },
+    "TG": {
+      "invasive_checked": true
+    },
+    "TH": {
+      "invasive_checked": true
+    },
+    "TJ": {
+      "invasive_checked": true
+    },
+    "TK": {
+      "invasive_checked": false
+    },
+    "TL": {
+      "invasive_checked": true
+    },
+    "TM": {
+      "invasive_checked": true
+    },
+    "TN": {
+      "invasive_checked": true
+    },
+    "TO": {
+      "invasive_checked": true
+    },
+    "TR": {
+      "invasive_checked": true
+    },
+    "TT": {
+      "invasive_checked": true
+    },
+    "TV": {
+      "invasive_checked": true
+    },
+    "TW": {
+      "invasive_checked": false
+    },
+    "TZ": {
+      "invasive_checked": true
+    },
+    "UA": {
+      "invasive_checked": true
+    },
+    "UG": {
+      "invasive_checked": true
+    },
+    "UM": {
+      "invasive_checked": false
+    },
+    "US": {
+      "invasive_checked": true
+    },
+    "UY": {
+      "invasive_checked": true
+    },
+    "UZ": {
+      "invasive_checked": true
+    },
+    "VA": {
+      "invasive_checked": false
+    },
+    "VC": {
+      "invasive_checked": true
+    },
+    "VE": {
+      "invasive_checked": true
+    },
+    "VG": {
+      "invasive_checked": false
+    },
+    "VI": {
+      "invasive_checked": false
+    },
+    "VN": {
+      "invasive_checked": true
+    },
+    "VU": {
+      "invasive_checked": true
+    },
+    "WF": {
+      "invasive_checked": false
+    },
+    "WS": {
+      "invasive_checked": true
+    },
+    "XK": {
+      "invasive_checked": false
+    },
+    "YE": {
+      "invasive_checked": true
+    },
+    "YT": {
+      "invasive_checked": false
+    },
+    "ZA": {
+      "invasive_checked": true
+    },
+    "ZM": {
+      "invasive_checked": true
+    },
+    "ZW": {
+      "invasive_checked": true
+    }
   }
 }

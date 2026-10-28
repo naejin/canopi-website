@@ -3,9 +3,9 @@ type: Architecture Decision
 title: Climate UX
 description: Every page that changes with the climate uses the app's seven zones, one stored choice set from an on-page chip, and one badge, and it reorders and marks content but never hides it.
 tags: [decision, climate, i18n]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:19:13Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T20:09:15Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:32:00Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:05:48Z }
 sources:
   - id: climates-ts
     resource: ../../src/data/climates.ts
@@ -45,18 +45,18 @@ sources:
   - id: homepage-test-mjs
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:2eee687e37141687
-    last_modified: 2026-10-28T02:42:20Z
+    digest: sha256:e850a59327549d9a
+    last_modified: 2026-10-28T21:34:43Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
     digest: sha256:2817fe32215561cf
-    last_modified: 2026-10-28T09:28:13Z
+    last_modified: 2026-10-28T09:32:12Z
   - id: consortium-app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:7d820394d21b0e50
-    last_modified: 2026-10-28T08:25:21Z
+    digest: sha256:b80a3de63072418e
+    last_modified: 2026-10-28T22:57:17Z
 enforced_by: [scripts/homepage.test.mjs, scripts/guides.test.mjs]
 ---
 
@@ -89,6 +89,14 @@ coherent way to say which climate a piece of advice is for, everywhere it matter
 - **Honest gaps.** When a run has no block for the reader's zone, a "not covered yet" note says so
   and every block stays open. Content with no climate tag shows no badge; there is no "all climates"
   badge, which would be a claim nobody checked.
+- **The consortium tool is climate-first** (owner, 2026-10-28, in [the decision log](/decisions/consortium-user-decisions.md)).
+  The climate alone picks the plant list; there is no region or place step. The tool lists all seven
+  zones in `src/data/climates.ts` order with their descriptions and example cities (on phones, the
+  descriptions sit in one "What the climates mean" disclosure); a zone with no list yet stays
+  choosable and says "Not covered yet", naming the covered ones. The country is a separate, optional
+  setting for invasive warnings only (see [Consortium page](/modules/consortium-page.md)). The home
+  section's note names the covered climates in every locale (`homepage.test.mjs` ties it to
+  `manifest.climates`).
 - **Hemisphere is separate.** Guides say seasons, not months; the climate choice does not imply a hemisphere.
 - **Later:** the app could share the same preference; not done yet.
 
