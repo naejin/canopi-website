@@ -6,6 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { parseFragment } from 'parse5';
 import { device, tab } from './consortium-harness.mjs';
 import * as core from '../src/lib/consortium/index.ts';
 
@@ -360,7 +361,9 @@ test('B2: Keep, a tick, a typed search, a menu and a group patch the list in pla
   assert.ok(rows(page).every((id) => /cherry/i.test(page.text(`.lrow[data-id="${id}"]`))));
 });
 
-test('B4: a filter that hides ticked rows unticks them, so Remove n removes only what shows; Undo focuses a row in view', async () => {
+// H4, H7 (coordinator, 2026-10-28) replace B4's pruning: a filter never unticks; Keep n and Remove n
+// count and act on the ticked rows it shows.
+test('B4: with ticked rows hidden by a filter, Remove n removes only what shows; Undo focuses a row in view', async () => {
   const { t, page } = await open200();
   const fr = (n) => named(n).id;
   await page.type('[data-input="find"]', 'Prunus');
@@ -370,9 +373,9 @@ test('B4: a filter that hides ticked rows unticks them, so Remove n removes only
   await page.type('[data-input="find"]', '');
   await page.type('[data-input="find"]', named('Prunus avium').canonical_name);
   const shown = rows(page);
-  assert.deepEqual(shown.filter((id) => prunus.slice(0, 3).includes(id)).length, page.$('.selbar') ? Number(/(\d+) selected/.exec(page.text('.selbar'))?.[1]) : 0, 'the bar counts only what shows');
+  assert.deepEqual(shown.filter((id) => prunus.slice(0, 3).includes(id)).length, page.$('[data-act="bulk-remove"]') ? Number(/Remove (\d+)/.exec(page.text('.selbar'))?.[1]) : 0, 'Remove counts only what shows');
   if (page.$('[data-act="bulk-remove"]')) {
-    const n = Number(/(\d+) selected/.exec(page.text('.selbar'))[1]);
+    const n = Number(/Remove (\d+)/.exec(page.text('.selbar'))[1]);
     await page.act('bulk-remove');
     assert.equal(stateOf(t).members.length, 200 - n);
     await page.act('undo', 'bulk');
@@ -503,4 +506,278 @@ test('B16: the share toast says what the link holds and how it opens; a guessed 
   assert.match(guessed.page.text('#ct-toast'), /France was only a guess, so the link has no country: it opens with each plant’s count of countries\./);
   await guessed.page.act('share-guess');
   assert.match(new URL(guessed.page.clipboard).hash, /[#&]k=FR/, 'copied again with France');
+});
+
+// ---------- Scale chunk B fix review (scale-b-fix-review.md, verified; coordinator rulings 2026-10-28) ----------
+// Markup with its attributes sorted and runs of white space as one space (the patch adds `hidden`
+// last, a full render writes it first); `data-flash` is the flash a row gets, never part of a render.
+function norm(html) {
+  const walk = (n) => {
+    if (n.nodeName === '#text') return n.value.replace(/\s+/g, ' ');
+    if (!n.tagName) return '';
+    const attrs = n.attrs.filter((a) => a.name !== 'data-flash').map((a) => ` ${a.name}="${a.value}"`).sort().join('');
+    return `<${n.tagName}${attrs}>${(n.content?.childNodes ?? n.childNodes ?? []).map(walk).join('')}</${n.tagName}>`;
+  };
+  return parseFragment(html).childNodes.map(walk).join('').replace(/>\s+</g, '><').trim();
+}
+// H1, H15: the list as patched is the list a full render writes, and every row the cache holds is
+// the row as it would be written now (the cache, not only the DOM, must follow the state).
+function sameAsFullRender(page, what) {
+  assert.deepEqual(page.app.__test.staleRows(), [], `${what}: a cached row differs from the row as written now`);
+  const a = norm(page.$('#ct-lbody').innerHTML), b = norm(page.app.__test.freshListBody());
+  if (a !== b) {
+    let i = 0; while (a[i] === b[i]) i++;
+    assert.fail(`${what}: the patched list differs from a full render at ${i}:\n  patched: …${a.slice(Math.max(0, i - 160), i + 160)}\n  full:    …${b.slice(Math.max(0, i - 160), i + 160)}`);
+  }
+}
+const menuOpen = (page, id) => !!page.$(`#ct-rm-${id}`) && page.$(`[data-act="rmenu"][data-v="${id}"]`).attribs['aria-expanded'] === 'true';
+const textOf = (el) => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
+test('H1, H15: after each list action the patched list is a full render and the row cache matches it; a row menu opens again after Escape, a tick or a click elsewhere', async () => {
+  const { page } = await open200();
+  for (const s of ['emergent', 'high', 'medium', 'low']) await page.act('group', s);
+  sameAsFullRender(page, 'groups opened');
+  const r = rows(page);
+  await page.act('keep', r[2]); sameAsFullRender(page, 'Keep');
+  await page.act('sel', r[4]); sameAsFullRender(page, 'tick');
+  await page.act('rmenu', r[5]);
+  assert.ok(menuOpen(page, r[5])); sameAsFullRender(page, 'menu open');
+  await page.key('Escape');
+  assert.ok(!menuOpen(page, r[5])); sameAsFullRender(page, 'Escape');
+  await page.act('rmenu', r[5]);
+  assert.ok(menuOpen(page, r[5]), 'the menu opens again after Escape');
+  await page.act('sel', r[6]);
+  assert.ok(!menuOpen(page, r[5]), 'a tick elsewhere closes it'); sameAsFullRender(page, 'tick elsewhere');
+  await page.act('rmenu', r[5]);
+  assert.ok(menuOpen(page, r[5]), 'it opens again after a tick elsewhere');
+  await click(page, page.$('#ct-summary'));
+  assert.ok(!menuOpen(page, r[5]), 'a click elsewhere closes it'); sameAsFullRender(page, 'click elsewhere');
+  await page.act('rmenu', r[5]);
+  assert.ok(menuOpen(page, r[5]), 'it opens again after a click elsewhere');
+  await page.act('rmenu', r[5]);
+  assert.ok(!menuOpen(page, r[5]), '⋯ again closes it'); sameAsFullRender(page, 'menu closed by ⋯');
+  await page.act('fmenu', 'warn'); sameAsFullRender(page, 'filter menu open');
+  await page.act('fset', 'warn:any'); sameAsFullRender(page, 'filter');
+  await page.type('[data-input="find"]', 'a'); sameAsFullRender(page, 'find');
+  await page.type('[data-input="find"]', ''); sameAsFullRender(page, 'find cleared');
+  await page.act('sel', rows(page)[0]);
+  await page.act('bulk-keep'); sameAsFullRender(page, 'bulk Keep');
+  await page.act('undo', 'bulk'); sameAsFullRender(page, 'Undo of Keep');
+  await page.act('sel', rows(page)[1]);
+  await page.act('bulk-remove'); sameAsFullRender(page, 'bulk Remove');
+  await page.act('undo', 'bulk'); sameAsFullRender(page, 'Undo of Remove');
+  const id = rows(page)[0];
+  await page.act('rmenu', id); await page.key('Escape'); await page.act('rmenu', id);
+  assert.ok(menuOpen(page, id), 'after all that, a menu still opens again');
+});
+
+test('H2, H13: one flagged plant ticked in Search asks first, as Add does; several join at once; each row opens its details; a tick announces its facts and warnings', async () => {
+  const t = tab(device(), '/consortium/', { siteClimate: 'temperate', data: 'real' });
+  const page = await t.load();
+  await page.act('suggest');
+  const before = stateOf(t).members.length;
+  await page.act('open-add', 'grow');
+  const free = (flagged) => [...page.$$(`.add-row[data-flagged="${flagged}"] [data-act="atick"]`)].filter((b) => !('disabled' in b.attribs)).map((b) => b.attribs['data-v']);
+  const [a, b] = free(true), [c, d] = free(false);
+  assert.ok(a && b && c && d, 'flagged and unflagged plants to tick');
+  for (const row of page.$$('#ct-add-results .add-row')) {
+    const id = row.querySelector('[data-act="atick"]').attribs['data-v'];
+    assert.ok(row.querySelector(`[data-act="details-from"][data-v="${id}"]`), 'each Search row opens its plant\'s details');
+    assert.ok(!row.querySelector('label [data-act="details-from"]'), 'outside the tick\'s label');
+  }
+  // H13: the tick is named by the plant and described by its facts and every warning chip.
+  const box = page.$(`[data-act="atick"][data-v="${a}"]`);
+  const described = (box.attribs['aria-describedby'] ?? '').split(/\s+/).filter(Boolean).map((id) => textOf(page.$(`[id="${id}"]`))).join(' ');
+  assert.match(described, / · /, 'layer · height · jobs');
+  const warns = textOf(box.closest('.add-row').querySelector('.add-warns'));
+  assert.ok(warns && described.includes(warns), `the warnings are announced: ${described}`);
+  // One flagged plant: the confirmation Add asks, in the sheet's foot.
+  await page.act('atick', a);
+  await page.act('add-ticked');
+  assert.equal(stateOf(t).members.length, before, 'not added before Yes');
+  assert.ok(page.$('#ct-add-foot [data-act="add-ticked-yes"]'), 'Add asks first');
+  assert.match(page.text('#ct-add-foot'), /has a warning/);
+  assert.equal(page.focused().attribs['data-fk'], 'confirm-yes');
+  await page.act('confirm-no');
+  assert.equal(stateOf(t).members.length, before);
+  assert.equal(page.focused().attribs['data-fk'], 'add-ticked', 'No goes back to the button');
+  await page.act('add-ticked');
+  await page.act('add-ticked-yes', a);
+  assert.ok(stateOf(t).members.includes(a), 'Yes adds it');
+  assert.ok(page.$('#ct-dialog').open, 'the sheet stays open');
+  // Several plants, one of them flagged: no question (decision b49117c).
+  await page.act('atick', b); await page.act('atick', c);
+  await page.act('add-ticked');
+  assert.ok(!page.$('[data-act="add-ticked-yes"]'));
+  assert.ok(stateOf(t).members.includes(b) && stateOf(t).members.includes(c));
+  // Details from a row, and back to the search with the ticks as they were.
+  await page.act('atick', d);
+  await page.act('details-from', d);
+  assert.equal(page.$('#ct-dialog').attribs['data-kind'], 'details');
+  await page.act('close');
+  assert.equal(page.$('#ct-dialog').attribs['data-kind'], 'add');
+  assert.ok(page.$(`[data-act="atick"][data-v="${d}"]`).checked, 'the tick stays');
+});
+
+test('H3, H14: edits never freeze the count\'s default into a choice; a pin near 20 holds through small edits; Show n at 9 plants shows the filtered list and Clear gives the cards back', async () => {
+  const t = tab(device(), '/consortium/', { siteClimate: 'temperate', data: 'real' });
+  const page = await t.load();
+  await page.act('suggest');
+  const listOn = () => page.$('[data-act="mode"][data-v="list"]').attribs['aria-pressed'] === 'true';
+  await page.act('remove', cards(page)[0]);
+  assert.ok(!listOn());
+  await page.act('open-add');
+  await page.act('add-tab', 'paste');
+  await page.type('#ct-paste', temperate.taxa.map((x) => x.canonical_name).join('\n'));
+  await page.settle();
+  await page.act('paste-add');
+  assert.equal(stateOf(t).members.length, 200);
+  assert.ok(listOn(), 'a paste to 200 shows the List');
+  assert.equal(cards(page).length, 0);
+  // Search ticks from 9 past 20 plants: the List; small edits near 20 then hold it.
+  const s = tab(device(), '/consortium/', { siteClimate: 'temperate', data: 'real' });
+  const p2 = await s.load();
+  await p2.act('suggest');
+  await p2.act('remove', cards(p2)[0]);
+  await p2.act('open-add', 'grow');
+  const free = [...p2.$$('[data-act="atick"]')].filter((b) => !('disabled' in b.attribs)).map((b) => b.attribs['data-v']).slice(0, 13);
+  for (const id of free) await p2.act('atick', id);
+  await p2.act('add-ticked');
+  await p2.act('close');
+  assert.equal(stateOf(s).members.length, 21);
+  assert.equal(p2.$('[data-act="mode"][data-v="list"]').attribs['aria-pressed'], 'true', 'Search ticks past 20 show the List');
+  for (const g of ['emergent', 'high', 'medium', 'low']) if (p2.$(`[data-act="group"][data-v="${g}"][aria-expanded="false"]`)) await p2.act('group', g);
+  const gone = rows(p2)[0];
+  await p2.act('rmenu', gone);
+  await click(p2, p2.$(`.lmenu [data-act="remove"][data-v="${gone}"]`), { detail: 0 }); // a key press: never read as a double click
+  assert.equal(stateOf(s).members.length, 20);
+  assert.equal(p2.$('[data-act="mode"][data-v="list"]').attribs['aria-pressed'], 'true', 'a Remove to 20 keeps the List (B14)');
+  // H14: Show n at 9 plants shows the filtered list; clearing the filter gives the cards back.
+  const u = tab(device(), '/consortium/', { siteClimate: 'temperate', data: 'real' });
+  const p3 = await u.load();
+  await p3.act('suggest');
+  const n = cards(p3).length, show = p3.$('.att-line [data-act="fset"]');
+  assert.ok(show, 'a warning line with Show');
+  await click(p3, show);
+  assert.equal(p3.$('[data-act="mode"][data-v="list"]').attribs['aria-pressed'], 'true');
+  assert.ok(p3.$('.fresults') && /Showing/.test(p3.text('.fresults')));
+  await p3.act('fclear-all');
+  assert.equal(p3.$('[data-act="mode"][data-v="cards"]').attribs['aria-pressed'], 'true', 'Clear filters: the default again');
+  assert.equal(cards(p3).length, n);
+  // A List the reader chose stays after Clear.
+  await p3.act('mode', 'list');
+  await click(p3, p3.$('.att-line [data-act="fset"]'));
+  await p3.act('fclear-all');
+  assert.equal(p3.$('[data-act="mode"][data-v="list"]').attribs['aria-pressed'], 'true');
+});
+
+test('H4, H7: filters and Find never untick; the bar says how many are not shown; Keep and Remove act on the shown ticks only; a Keep that hides its row moves the focus on', async () => {
+  const { t, page } = await open200();
+  const find = '[data-input="find"]';
+  await page.type(find, 'Prunus');
+  const three = rows(page).slice(0, 3);
+  for (const id of three) await page.act('sel', id);
+  await page.type(find, 'Prunus a');
+  await page.type(find, 'Prunus');
+  assert.match(page.text('.selbar'), /^3 selected /, 'a keystroke unticks nothing');
+  assert.doesNotMatch(page.text('.selbar'), /not shown/);
+  await page.type(find, temperate.taxa.find((x) => x.id === three[0]).canonical_name);
+  const k = rows(page).filter((id) => three.includes(id)).length;
+  assert.ok(k >= 1 && k < 3, `${k} of the 3 shown`);
+  assert.match(page.text('.selbar'), new RegExp(`^3 selected · ${3 - k} not shown`));
+  assert.match(page.text('.selbar'), new RegExp(`Keep ${k}(?!\\d).*Remove ${k}(?!\\d)`));
+  await page.act('bulk-remove');
+  assert.equal(stateOf(t).members.length, 200 - k, 'only the shown ticks go');
+  assert.match(page.text('#ct-toast'), new RegExp(`^${k} plants? removed`));
+  await page.type(find, '');
+  assert.match(page.text('.selbar'), new RegExp(`^${3 - k} selected `), 'the hidden ticks are still ticked');
+  // Kept: not kept. A pin hides its row: the tick stays, said as not shown, and the focus moves on.
+  const b = await open200();
+  await b.page.act('fmenu', 'kept');
+  await b.page.act('fset', 'kept:notKept');
+  const r = rows(b.page);
+  assert.equal(r.length, 10);
+  await b.page.act('sel', r[0]); await b.page.act('sel', r[1]);
+  await b.page.act('keep', r[0]);
+  assert.ok(!rows(b.page).includes(r[0]));
+  assert.match(b.page.text('.selbar'), /^2 selected · 1 not shown/);
+  assert.match(b.page.text('.selbar'), /Keep 1(?!\d).*Remove 1(?!\d)/);
+  assert.equal(b.page.focused().attribs['data-fk'], 'kp-' + r[1], 'the focus goes to the next row shown');
+  for (const id of rows(b.page).slice(1)) await b.page.act('sel', id);
+  assert.match(b.page.text('.selbar'), /Keep 9(?!\d)/);
+  await b.page.act('bulk-keep');
+  assert.equal(rows(b.page).length, 0);
+  assert.match(b.page.text('#ct-toast'), /^9 plants kept/);
+  assert.match(b.page.text('.selbar'), /^10 selected · 10 not shown/);
+  assert.ok(!b.page.$('[data-act="bulk-remove"]') && !b.page.$('[data-act="bulk-keep"]'), 'nothing shown to Keep or Remove');
+  assert.equal(b.page.focused().attribs['data-fk'], 'unselect', 'the focus goes to the bar');
+  assert.equal(stateOf(b.t).members.length, 200);
+});
+
+test('H5: with the Add sheet open, an add is said and its Undo and Show are reachable inside the sheet; the toast goes back to the page once it closes', async () => {
+  const t = tab(device(), '/consortium/', { siteClimate: 'temperate', data: 'real' });
+  const page = await t.load();
+  await page.act('suggest');
+  const before = stateOf(t).members.length;
+  await page.act('open-add', 'grow');
+  const dlg = page.$('#ct-dialog');
+  assert.ok(dlg.querySelector('#ct-say'), 'the live line is in the sheet while it is open');
+  const ids = [...page.$$('.add-row[data-flagged="true"] [data-act="atick"]')].filter((b) => !('disabled' in b.attribs)).slice(0, 2).map((b) => b.attribs['data-v']);
+  for (const id of ids) await page.act('atick', id);
+  await page.act('add-ticked');
+  const toastIn = dlg.querySelector('#ct-toast');
+  assert.ok(toastIn && !toastIn.hidden, 'the toast is inside the open sheet');
+  assert.match(textOf(toastIn), /2 plants added and kept · 2 with a warning\./);
+  assert.ok(toastIn.querySelector('[data-act="undo"]') && toastIn.querySelector('[data-act="show-warned"]'));
+  await page.act('undo', 'bulk');
+  assert.equal(stateOf(t).members.length, before);
+  assert.ok(dlg.open && dlg.contains(page.focused()), 'the focus stays in the sheet');
+  await page.act('close');
+  assert.ok(!dlg.querySelector('#ct-toast') && !dlg.querySelector('#ct-say'), 'back on the page');
+  assert.ok(page.$('main #ct-toast') && page.$('main #ct-say'));
+});
+
+test('H6: on a phone an open filter sheet draws above the toast and clears the bottom safe area', () => {
+  const css = read('src/styles/consortium.css');
+  const toastZ = Number(/\.ct \.toast \{ position: fixed; z-index: (\d+)/.exec(css)[1]);
+  const phone = css.slice(css.indexOf('B1: the chips scroll sideways'));
+  const lifted = /\.ct \.ftools:has\(\.fmenu-list\) \{ z-index: (\d+); \}/.exec(phone);
+  assert.ok(lifted && Number(lifted[1]) > toastZ, 'the filter row, and its sheet, above the toast');
+  assert.match(phone.slice(0, phone.indexOf('.ct .fmenu-head')), /env\(safe-area-inset-bottom/);
+});
+
+test('H8: Start over, No country, then Undo: the Warning filter is one the country offers, never "invasive in null"', async () => {
+  const { page } = await open200();
+  await page.act('fmenu', 'warn');
+  await page.act('fset', 'warn:invasive');
+  await page.act('start-over');
+  await page.act('open-place', 'country');
+  await page.act('no-country');
+  await page.act('undo', 'start');
+  const chip = page.text('[data-act="fmenu"][data-v="warn"]');
+  assert.doesNotMatch(chip, /null/);
+  assert.match(chip, /invasive in \d+ countries/);
+  assert.doesNotMatch(page.text('.fresults'), /Showing 0 of/);
+});
+
+test('C4: with no country, the invasive line and filter name the count of countries in every language, never "somewhere" or "elsewhere"', async () => {
+  const vague = /somewhere|elsewhere|quelque part|ailleurs|algún|algum|qualche|irgendwo|ergens|где-то|どこか|어딘가|某些/i;
+  for (const l of ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru']) {
+    const j = JSON.parse(read(`src/i18n/translations/${l}.json`));
+    for (const key of ['consortium.fw.somewhere', 'consortium.att.somewhere']) {
+      assert.match(j[key], /#/, `${l} ${key} names the count`);
+      assert.doesNotMatch(j[key], vague, `${l} ${key}`);
+    }
+  }
+  const fr = JSON.parse(read('src/i18n/translations/fr.json'));
+  assert.equal(fr['consortium.att.somewhere'], 'one: Envahissante dans # pays | other: Envahissante dans # pays');
+  const { page } = await open200({ country: null });
+  await page.act('open-place', 'country');
+  await page.act('no-country');
+  const n = new Set(temperate.taxa.flatMap((x) => (x.warnings.invasive_in ?? []).map((c) => c.country))).size;
+  assert.equal(page.text('.att-somewhere strong'), `Invasive in ${n} countries`);
+  const frPage = await open200({ country: null }, { lang: 'fr' });
+  await frPage.page.act('open-place', 'country');
+  await frPage.page.act('no-country');
+  assert.equal(frPage.page.text('.att-somewhere strong'), `Envahissante dans ${n} pays`);
 });

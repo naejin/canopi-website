@@ -11,7 +11,7 @@
 // own, the state lives in the address bar's fragment (never sent with a request: C8) and in localStorage.
 import {
   fileFor, isCountry, invasiveChecked, strata, phases, phaseBands, bandsOf, jobs, jobsOf, jobOfFunction, suggest, evaluate, alternatives, flagsFor,
-  SIZE_LIMIT, DEFAULT_SITE, lights, soils, waters, rooms, encodeState, decodeState, resolveState, taxonByName, isSerious, siteClimates, fits, MAX_CROPS,
+  SIZE_LIMIT, ROOM_LIMIT_M, DEFAULT_SITE, lights, soils, waters, rooms, encodeState, decodeState, resolveState, taxonByName, isSerious, siteClimates, fits, MAX_CROPS,
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadClimate } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook, capFirst } from './words.js';
@@ -22,7 +22,7 @@ import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
 import { pestName } from './pests.js';
-import { viewMode, groupOpen, roundHeight, stageSpan, stageShort, warnKinds, pestsOf, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, pasteColumn, pasteDefault, PEST_TYPES, CARDS_UP_TO } from './scale.js';
+import { viewMode, groupOpen, roundHeight, misfitSize, stageSpan, stageShort, warnKinds, pestsOf, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, pasteColumn, pasteDefault, PEST_TYPES, CARDS_UP_TO } from './scale.js';
 
 const data = JSON.parse(document.getElementById('ct-data').textContent);
 const W = makeWords(data.strings, data.lang);
@@ -112,30 +112,39 @@ let focusNext = null, lastRemoved = null, undoStart = null, toastTimer = 0, last
 const SWAP_STEP = 8;
 let swapMore = 0;
 // ---------- The plant list's own view state (chunk B): never in a link ----------
-// mode: the reader's Cards/List choice (null: the default for the count, scale.js viewMode); F: the
+// mode: the reader's Cards/List choice, set only by the switch (null: the default for the count,
+// scale.js viewMode); pin: the view a small edit near 20 plants holds (B14), never a choice and
+// dropped by a bulk add (H3); filterView: the list a filter set from the cards ("Show n") opened,
+// until the filters are cleared (H14). F: the
 // list's filters, fOrder the order they were set (the active ones come first); fMenu: the open filter
 // menu; groups: the reader's open or closed layers, fgroups the ones opened or closed while a filter
 // is on (a new filter forgets them, the reader's own stay: B12); foldN: the count the groups' fold
 // default was read at, fixed once the list shows (a Remove never folds a group); sel: the ticked rows,
 // anchor the last one ticked (Shift ranges from it); rMenu: the row whose ⋯ menu is open; lastBulk:
 // what Undo restores after a bulk Keep, Remove or Add.
-let mode = null, F = { ...NO_FILTERS }, fOrder = [], fMenu = null, rMenu = null, anchor = null, lastBulk = null, shiftDown = false;
+let mode = null, pin = null, filterView = false, F = { ...NO_FILTERS }, fOrder = [], fMenu = null, rMenu = null, anchor = null, lastBulk = null, shiftDown = false;
 const groups = new Map(), fgroups = new Map();
 let sel = new Set(), foldN = null;
 // The Add sheet's tab and its pasted list: the text, the column names are read from, the ticks the
 // reader changed (id → ticked).
 let addTab = 'search', pasteText = '', pasteCol = 0, pasteTicks = new Map(), pasteTimer = 0;
-function resetList() { mode = null; F = { ...NO_FILTERS }; fOrder = []; fMenu = null; rMenu = null; anchor = null; sel = new Set(); groups.clear(); fgroups.clear(); foldN = null; }
+function resetList() { mode = null; pin = null; filterView = false; F = { ...NO_FILTERS }; fOrder = []; fMenu = null; rMenu = null; anchor = null; sel = new Set(); groups.clear(); fgroups.clear(); foldN = null; }
 // A new list of plants (a paste added) reads the fold default again.
 function resetFold() { foldN = null; groups.clear(); fgroups.clear(); }
-// B14: the Cards/List default never flips while the reader works: a Remove, an Add or a Swap first
-// fixes the view the count gave.
-function pinView() { if (cell && S.status === 'ready') mode = viewMode(mode, members().length); }
+// B14, H3: near 20 plants a Remove, an Add or a Swap holds the view the count gave, so it never flips
+// under the reader; it is never stored as the reader's choice, holds only within PIN_NEAR plants of
+// the threshold, and a bulk add drops it (a paste to 200 shows the List).
+const PIN_NEAR = 10;
+const near = (n) => Math.abs(n - CARDS_UP_TO) <= PIN_NEAR;
+const heldView = (n) => (pin && near(n) ? pin : null);
+function pinView() { if (mode || !cell || S.status !== 'ready') return; const n = members().length; pin = near(n) ? viewMode(heldView(n), n) : null; }
+// The view shown: the reader's choice, else the list a filter opened, else the held or default view.
+function shownMode() { const n = members().length; return mode ?? (filterView ? 'list' : viewMode(heldView(n), n)); }
 // What Start over → Undo gives back with the consortium (B14).
-const listState = () => ({ mode, F, fOrder, sel, anchor, foldN, groups: new Map(groups), fgroups: new Map(fgroups) });
+const listState = () => ({ mode, pin, filterView, F, fOrder, sel, anchor, foldN, groups: new Map(groups), fgroups: new Map(fgroups) });
 function restoreList(l) {
   if (!l) return;
-  ({ mode, F, fOrder, sel, anchor, foldN } = l); fMenu = null; rMenu = null;
+  ({ mode, pin, filterView, F, fOrder, sel, anchor, foldN } = l); fMenu = null; rMenu = null;
   groups.clear(); for (const [k, v] of l.groups) groups.set(k, v);
   fgroups.clear(); for (const [k, v] of l.fgroups) fgroups.set(k, v);
 }
@@ -226,8 +235,9 @@ function misfitText(t, key) {
   if (key === 'light') return T('misfit.light.' + v);
   if (key === 'soil') return T('misfit.soil.' + v, { min: tr.soil_ph?.min != null ? W.num(tr.soil_ph.min) : '?', max: tr.soil_ph?.max != null ? W.num(tr.soil_ph.max) : '?' });
   if (key === 'water') return T('misfit.water.' + v);
-  // C7: the size rounded as the rows round heights (scale.js roundHeight).
-  const size = roundHeight(Math.max(tr.height_m?.max ?? 0, tr.width_max_m ?? 0)) ?? 0;
+  // C7: the size rounded as the rows round heights (scale.js roundHeight), never to a size the room
+  // takes (H11: 6.096 m in a small garden reads 6.1 m).
+  const size = misfitSize(Math.max(tr.height_m?.max ?? 0, tr.width_max_m ?? 0), ROOM_LIMIT_M[v]);
   return T('misfit.room.' + v, { w: W.num(size) });
 }
 const uncheckedKey = { tox: 'u.tox', inv: 'u.inv', spreads: 'u.spreads', jobs: 'u.jobs', jobsOther: 'u.jobsOther' };
@@ -658,16 +668,19 @@ function plantRow(t, nums, flags) {
 // Above 20 plants the side panel folds into the result head (M3), and the warning box has one line per kind.
 const big = () => !!cell && (S.status === 'ready' || S.status === 'nomatch') && S.members.length > CARDS_UP_TO;
 const noAside = () => phone() || big();
-const listMode = () => viewMode(mode, members().length) === 'list';
+const listMode = () => shownMode() === 'list';
 const lightWords = (s) => (s === 'none' ? T('stratum.none.about') : T('stratum.' + s + '.needs'));
 // The words of a filter's value, as its chip and its menu say them.
 function filterValue(key, v) {
   if (key === 'layer') return stratumLabel(v);
   if (key === 'job') return T('job.' + v);
   if (key === 'time') return T(W.phaseKey(Number(v), 'plain'));
-  if (key === 'warn') return v === 'invasive' ? T('fw.invasive', { country: W.country(S.country) }) : T('fw.' + v);
+  if (key === 'warn') return v === 'invasive' ? T('fw.invasive', { country: W.country(S.country) }) : v === 'somewhere' ? P('fw.somewhere', invCountries()) : T('fw.' + v);
   return T('fk.' + v);
 }
+// C4: with no country, how many countries the members are recorded invasive in (each counted once):
+// the invasive line and filter name it, never "somewhere" (approved state 17).
+const invCountries = () => new Set(members().flatMap((t) => (t.warnings.invasive_in ?? []).map((x) => x.country))).size;
 // The values a filter offers: the first is "all" (its empty value).
 function filterValues(key) {
   if (key === 'layer') return [['', T('allLayers')], ...[...strata, 'none'].filter((s) => s !== 'none' || members().some((t) => !t.stratum)).map((s) => [s, stratumLabel(s)])];
@@ -847,14 +860,23 @@ function patchChip(key) {
 }
 // The summary line (the kept count).
 function patchSummary() { const el = document.getElementById('ct-summary'); if (el) el.innerHTML = summaryHTML(); }
-// B4: the selection holds only rows the filters show: Keep n and Remove n act on what the reader sees.
-// Returns the plants it unticked (their rows change).
-function pruneSel() {
-  if (!sel.size || !filtering(F)) return new Set();
+// H4, H7 (replacing B4's pruning): a filter, a typed search or a Keep never unticks a row. The bar
+// says how many ticked rows are not shown; Keep n and Remove n act on the ticked rows shown.
+const tickedRows = () => [...sel].filter((id) => S.members.includes(id));
+function shownTicks() {
+  const all = tickedRows();
+  if (!filtering(F)) return all;
   const shown = new Set(listGroups().flatMap((g) => g.list.map((t) => t.id)));
-  const gone = new Set([...sel].filter((id) => !shown.has(id)));
-  if (gone.size) { sel = new Set([...sel].filter((id) => shown.has(id))); if (anchor && !sel.has(anchor)) anchor = null; }
-  return gone;
+  return all.filter((id) => shown.has(id));
+}
+// After a Keep hid the focused row: the next row shown (else the one before), else the bar, else the
+// heading. order: the rows in view before the Keep.
+function focusAfterHide(v, order, prefix) {
+  const now = visibleOrder();
+  if (now.includes(v)) return focusFk(prefix + v, app);
+  const i = order.indexOf(v);
+  const next = order.slice(i + 1).find((id) => now.includes(id)) ?? order.slice(0, Math.max(0, i)).reverse().find((id) => now.includes(id));
+  return (next && focusFk(prefix + next, app)) || focusFk('bulk-keep', app) || focusFk('unselect', app) || focusFk('plants-title', app);
 }
 // B3: a plant just added, swapped in or brought back shows in the list: its group opens, and the
 // filters that would hide it go.
@@ -862,7 +884,7 @@ function reveal(id) {
   if (!listMode()) return;
   const t = taxonOf(id);
   if (!t) return;
-  if (filtering(F) && !matches(t, F, filterCtx())) { F = { ...NO_FILTERS }; fOrder = []; fgroups.clear(); }
+  if (filtering(F) && !matches(t, F, filterCtx())) { F = { ...NO_FILTERS }; fOrder = []; fgroups.clear(); filterView = false; }
   (filtering(F) ? fgroups : groups).set(stratumOf(t), true);
 }
 // The filter row: the text search (the only role=search), then the menu buttons, the active ones
@@ -887,11 +909,14 @@ function namesLine(ids) {
   const names = ids.slice(0, 3).map((id) => nameText(taxonOf(id)));
   return ids.length > 3 ? `${names.join(lang === 'zh' || lang === 'ja' ? '、' : ', ')} ${P('andMore', ids.length - 3)}` : W.list(names);
 }
+// "n selected · m not shown", the names of the ticked rows shown, then Keep k · Remove k for those k (H4, H7).
 function selBarHTML() {
-  const ids = [...sel].filter((id) => S.members.includes(id));
-  if (!ids.length) return '';
-  return `<div class="selbar" role="group" aria-label="${esc(T('selection'))}"><p><b>${esc(P('selected', ids.length))}</b> <span class="selnames">${esc(namesLine(ids))}</span></p>
-    <div class="selbar-acts">${btn('button button-secondary button-small', 'bulk-keep', null, `${I.pin}<span>${esc(P('keepN', ids.length))}</span>`, fk('bulk-keep'))}${btn('button button-secondary button-small', 'bulk-remove', null, `${I.remove}<span>${esc(P('removeN', ids.length))}</span>`, fk('bulk-remove'))}${btn('link-button', 'unselect', null, esc(T('unselect')), fk('unselect'))}</div></div>`;
+  const all = tickedRows();
+  if (!all.length) return '';
+  const ids = shownTicks(), hidden = all.length - ids.length;
+  const acts = ids.length ? `${btn('button button-secondary button-small', 'bulk-keep', null, `${I.pin}<span>${esc(P('keepN', ids.length))}</span>`, fk('bulk-keep'))}${btn('button button-secondary button-small', 'bulk-remove', null, `${I.remove}<span>${esc(P('removeN', ids.length))}</span>`, fk('bulk-remove'))}` : '';
+  return `<div class="selbar" role="group" aria-label="${esc(T('selection'))}"><p><b>${esc(P('selected', all.length))}</b>${hidden ? ` · <span class="selhidden">${esc(P('notShown', hidden))}</span>` : ''} <span class="selnames">${esc(namesLine(ids.length ? ids : all))}</span></p>
+    <div class="selbar-acts">${acts}${btn('link-button', 'unselect', null, esc(T('unselect')), fk('unselect'))}</div></div>`;
 }
 // The part of the list a filter, a tick or a typed search changes (the search field stays as it is).
 function listBodyHTML(flags) {
@@ -954,7 +979,7 @@ function plantsHTML(flags) {
 function attentionScaleHTML() {
   const ms = members(), any = ms.filter((t) => kindsOf(t).has('any'));
   // §2.6 order: invasive here, toxic, not suited, pests, invasive somewhere, not checked yet.
-  const kinds = [S.country && countryChecked() ? ['invasive', I.warn, T('invHere', { country: W.country(S.country) })] : null, ['toxic', I.danger, T('tox.Moderate')], ['site', SITE, T('d.misfit')], ['pests', BUG, T('att.pests')], S.country ? null : ['somewhere', GLOBE, T('att.somewhere')], ['unchecked', I.unknown, T('att.unchecked')]].filter(Boolean);
+  const kinds = [S.country && countryChecked() ? ['invasive', I.warn, T('invHere', { country: W.country(S.country) })] : null, ['toxic', I.danger, T('tox.Moderate')], ['site', SITE, T('d.misfit')], ['pests', BUG, T('att.pests')], S.country ? null : ['somewhere', GLOBE, P('att.somewhere', invCountries())], ['unchecked', I.unknown, T('att.unchecked')]].filter(Boolean);
   const lines = kinds.map(([k, icon, label]) => {
     const list = ms.filter((t) => kindsOf(t).has(k));
     if (!list.length) return '';
@@ -1176,19 +1201,25 @@ function addResults() {
     ${byLayer}${flagged.length ? `<h3 class="list-label">${I.warn} ${esc(T('withWarning'))}</h3><p class="seg-hint">${esc(T('flaggedNote'))}</p><ul class="alt-list" role="list">${flagged.map(row).join('')}</ul>` : ''}${otherHitsHTML(filters)}`;
 }
 // C2 (mockup state 09): a tick per plant, kept while the search changes; the plants already in
-// are ticked and disabled; each says its layer, height and jobs, and its warnings.
+// are ticked and disabled; each says its layer, height and jobs, and its warnings. H13: the tick is
+// named "Add {name}" and described by those facts and every warning, so a screen reader says them.
+// H2: each row keeps a way to its plant's details, outside the tick's label.
 let addTicks = new Set();
 function addTick(t, flags) {
   const inside = S.members.includes(t.id), on = inside || addTicks.has(t.id), n = nameText(t);
-  const warns = rowWarns(t, flags);
+  const warns = rowWarns(t, flags), d = 'ct-atd-' + t.id;
   const meta = [stratumLabel(stratumOf(t)), heightText(t), W.list(jobsOf(t).map((j) => T('job.' + j)))].filter(Boolean).join(' · ');
-  return `<li class="paste-row add-row" data-in="${inside}"><label><input type="checkbox" data-act="atick" data-v="${t.id}" aria-label="${esc(T('addOne', { name: n }))}"${on ? ' checked' : ''}${inside ? ' disabled' : ''} ${fk('at-' + t.id)}><span><b>${name(t)}</b> ${sciHTML(t)} <small>${esc(meta)}${inside ? ` · <strong>${esc(T('inConsortium'))}</strong>` : ''}</small>${warns.length ? `<span class="add-warns">${warnChips(warns)}</span>` : ''}</span></label></li>`;
+  return `<li class="paste-row add-row" data-in="${inside}" data-flagged="${!!flags?.flagged}"><label><input type="checkbox" data-act="atick" data-v="${t.id}" aria-label="${esc(T('addOne', { name: n }))}" aria-describedby="${d}-m${warns.length ? ` ${d}-w` : ''}"${on ? ' checked' : ''}${inside ? ' disabled' : ''} ${fk('at-' + t.id)}><span><b>${name(t)}</b> ${sciHTML(t)} <small id="${d}-m">${esc(meta)}${inside ? ` · <strong>${esc(T('inConsortium'))}</strong>` : ''}</small>${warns.length ? `<span class="add-warns" id="${d}-w">${warnChips(warns)}</span>` : ''}</span></label>${btn('link-button add-details', 'details-from', t.id, esc(T('details')), `aria-label="${esc(T('detailsOf', { name: n }))}" ${fk('ad-' + t.id)}`)}</li>`;
 }
-// The foot: how many are ticked and which, and "Add n plants".
+// The ticked plants "Add n plants" would add.
+const addTicked = () => [...addTicks].filter((id) => !S.members.includes(id) && inCell(id));
+// The foot: how many are ticked and which, and "Add n plants"; while one flagged plant asks first
+// (H2), its confirmation in place of the button.
 function addFootHTML() {
-  const ids = [...addTicks].filter((id) => !S.members.includes(id) && inCell(id));
-  return `<div class="paste-foot"><p class="add-foot-n"><b>${esc(P('paste.toAdd', ids.length))}</b>${ids.length ? ` · <span>${esc(namesLine(ids))}</span>` : ''}</p>${btn('button button-primary button-small', 'add-ticked', null, esc(P('paste.addAll', ids.length)), `${ids.length ? '' : 'disabled '}${fk('add-ticked')}`)}</div>`;
+  const ids = addTicked(), asking = O?.confirm && ids.length === 1 && ids[0] === O.confirm;
+  return `<div class="paste-foot"><p class="add-foot-n"><b>${esc(P('paste.toAdd', ids.length))}</b>${ids.length ? ` · <span>${esc(namesLine(ids))}</span>` : ''}</p>${asking ? confirmHTML(O.confirm, 'add-ticked') : btn('button button-primary button-small', 'add-ticked', null, esc(P('paste.addAll', ids.length)), `${ids.length ? '' : 'disabled '}${fk('add-ticked')}`)}</div>`;
 }
+const refreshAddFoot = () => { const foot = dlg.querySelector('#ct-add-foot'); if (foot) foot.innerHTML = addFootHTML(); };
 const addCountHTML = (list, fkind, fv) => `<p class="list-count" id="ct-add-count">${esc(P('count', list.length))}${fkind === 'phase' ? ' · ' + esc(T('phaseFilter', { stage: T(W.phaseKey(Number(fv), 'plain')) })) : ''}</p>
 `;
 // "In another climate's list": what the other lists have for a search this list lacks, each with
@@ -1431,9 +1462,20 @@ function renderSheet(focusKey) {
   if (!dlg.open) {
     dlg.showModal();
     document.documentElement.style.overflow = 'hidden';
+    placeLive();
     focusFk(focusKey ?? (O.type === 'add' ? 'add-q' : O.type === 'place' ? (O.which === 'climate' ? 'cl-' + (S.climate ?? CLIMATES[0]) : 'country-q') : 'close'), dlg);
-  } else if (focusKey) focusFk(focusKey, dlg);
-  else if (activeFk) focusFk(activeFk, dlg) || dlg.querySelector('.dialog-close').focus();
+  } else {
+    placeLive();
+    if (focusKey) focusFk(focusKey, dlg) || dlg.querySelector('.dialog-close').focus();
+    else if (activeFk) focusFk(activeFk, dlg) || dlg.querySelector('.dialog-close').focus();
+  }
+}
+// H5: a modal sheet makes the rest of the page inert, so while one is open the toast (its words,
+// Undo and Show) and the live line move into it: said, seen and reachable; they go back when it closes.
+const liveHome = toastEl.parentElement;
+function placeLive() {
+  const into = dlg.open ? dlg : liveHome;
+  for (const el of [toastEl, sayEl]) if (el.parentElement !== into) into.append(el);
 }
 let opener = null;
 function openSheet(o, from) {
@@ -1455,6 +1497,7 @@ function closeSheet(back = true) {
   const from = opener; opener = null;
   resetSheet();
   if (dlg.open) { skipClose++; dlg.close(); }
+  placeLive();
   if (back && from) focusFk(from, app);
 }
 // Escape closes the dialog without closeSheet(): clear it and give the focus back here.
@@ -1462,11 +1505,14 @@ dlg.addEventListener('close', () => {
   if (skipClose) { skipClose--; return; }
   const from = opener; opener = null;
   resetSheet();
+  placeLive();
   if (from) focusFk(from, app);
 });
 // Back to the button a confirmation came from.
 const anywayFor = (id) => !!otherClimateOf(id) && !S.guests.has(id);
-const confirmFrom = (id) => (O.type === 'details' ? (swapTarget(O) ? 'd-use' : anywayFor(id) ? 'd-anyway' : 'd-add') : (O.type === 'swap' ? 'use-' : anywayFor(id) ? (addTab === 'paste' ? 'paste-anyway-' : 'add-anyway-') : 'add-') + id);
+const confirmFrom = (id) => (O.type === 'details' ? (swapTarget(O) ? 'd-use' : anywayFor(id) ? 'd-anyway' : 'd-add')
+  : O.type === 'add' && addTab === 'search' && addTicks.has(id) ? 'add-ticked'
+  : (O.type === 'swap' ? 'use-' : anywayFor(id) ? (addTab === 'paste' ? 'paste-anyway-' : 'add-anyway-') : 'add-') + id);
 dlg.addEventListener('cancel', (e) => { if (O?.confirm) { e.preventDefault(); const id = O.confirm; O.confirm = null; renderSheet(confirmFrom(id)); } else if (O?.back) { e.preventDefault(); O = O.back; renderSheet(); } });
 
 function toast(text, undo = null, extra = '') {
@@ -1767,12 +1813,16 @@ const act = {
       let back = here.find((id) => visibleOrder().includes(id));
       if (!back && here.length) { back = here[0]; reveal(back); }
       focusNext = back && listMode() ? 'sel-' + back : back ? 'pn-' + back : 'plants-title';
-      render(); if (!app.contains(document.activeElement)) focusFk('plants-title', app);
+      render();
+      // H5: an Undo pressed inside an open sheet keeps the focus in it.
+      if (O) { focusFk(O.type === 'add' && addTab === 'search' ? 'add-q' : 'close', dlg) || dlg.querySelector('.dialog-close')?.focus(); return; }
+      if (!app.contains(document.activeElement)) focusFk('plants-title', app);
       return;
     }
     if (v === 'start' && undoStart) {
       // B2: the state, its cell and its own Undo come back together.
-      S = keepCountry(undoStart.S, S); ({ cell, lastRemoved } = undoStart); restoreList(undoStart.list); undoStart = null; evalKey = ''; focusNext = 'start-over'; render(); return;
+      // H8: the list's Warning filter is read against the country kept, as a country choice does (B10).
+      S = keepCountry(undoStart.S, S); ({ cell, lastRemoved } = undoStart); restoreList(undoStart.list); undoStart = null; evalKey = ''; keepWarnFilter(); focusNext = 'start-over'; render(); return;
     }
     if (v === 'redo' && undoRedo) {
       const u = undoRedo; undoRedo = null; redoNext = null; loadSeq++;
@@ -1786,11 +1836,12 @@ const act = {
     S.gaps = S.gaps.filter((g) => g.id !== r.id); lastRemoved = null; reveal(r.id); focusNext = 'pn-' + r.id; render(); flash(r.id);
   },
   keep(v) {
-    const t = taxonOf(v);
+    const t = taxonOf(v), order = listMode() ? visibleOrder() : [];
     // A main crop is kept: no longer keeping it ends it as a main crop too.
     if (S.kept.has(v)) { S.kept.delete(v); S.crops = S.crops.filter((id) => id !== v); toast(T('unkeptNow', { name: name(t) })); } else { S.kept.add(v); toast(T('keptNow', { name: name(t) })); }
     // B2: in the list, a Keep rewrites its row, the heads and the summary line, not the result.
-    if (listMode() && !O && !isCrop(v) && patchList(new Set([v]))) { patchSummary(); if (fMenu === 'kept') patchChip('kept'); focusFk('kp-' + v, app); persist(); return; }
+    // H4: a Keep that hides its row (Kept: not kept) leaves its tick, and the focus moves on.
+    if (listMode() && !O && !isCrop(v) && patchList(new Set([v]))) { patchSummary(); if (fMenu === 'kept') patchChip('kept'); focusAfterHide(v, order, 'kp-'); persist(); return; }
     render(); if (O) renderSheet();
   },
   'open-add'(v, el) { addQuery = ''; addJob = ''; addLayer = ''; addTicks = new Set(); if (O) { O = { type: 'add', filter: v || '' }; renderSheet('add-q'); } else openSheet({ type: 'add', filter: v || '' }, el); },
@@ -1822,14 +1873,23 @@ const act = {
   atick(v) {
     if (S.members.includes(v)) return;
     addTicks = new Set(addTicks); if (addTicks.has(v)) addTicks.delete(v); else addTicks.add(v);
+    if (O.confirm && addTicked().length !== 1) O.confirm = null;
     const box = dlg.querySelector(`[data-act="atick"][data-v="${CSS.escape(v)}"]`); if (box) box.checked = addTicks.has(v);
-    const foot = dlg.querySelector('#ct-add-foot'); if (foot) foot.innerHTML = addFootHTML();
+    refreshAddFoot();
   },
-  // "Add n plants" adds the ticked plants as Add all does (decision b49117c): no question, the
-  // toast counts the ones with a warning; the sheet stays open for more.
+  // "Add n plants" adds several ticked plants as Add all does (decision b49117c): no question, the
+  // toast counts the ones with a warning; the sheet stays open for more. H2: exactly one plant with a
+  // flag asks first, as Add does ("a single Add still asks first").
   'add-ticked'() {
-    const ids = [...addTicks].filter((id) => !S.members.includes(id) && inCell(id)); if (!ids.length) return;
-    dropUndo(); lastBulk = snapshot(ids); pinView();
+    const ids = addTicked(); if (!ids.length) return;
+    if (ids.length === 1 && flagsFor(cell, ids[0], S.members, { site: S.site, guests: guestTaxa(), ...where() })?.flagged) { O.confirm = ids[0]; renderSheet('confirm-yes'); return; }
+    act['add-ticked-yes']();
+  },
+  'add-ticked-yes'() {
+    const ids = addTicked(); if (!ids.length) return;
+    O.confirm = null;
+    // A bulk add drops a held view (H3): past 20 plants it is the List.
+    dropUndo(); lastBulk = snapshot(ids); if (ids.length > 1) pin = null; else pinView();
     S.kept = new Set(S.kept); S.removed = new Set(S.removed);
     for (const id of ids) { S.members.push(id); S.kept.add(id); S.removed.delete(id); }
     if (S.status === 'nomatch') S.status = 'ready';
@@ -1852,7 +1912,7 @@ const act = {
     toast(esc(P('filled', added.length)));
   },
   relax(k) { const to = relaxTo(k, S.site); if (!to) return; S.site = { ...S.site, [k]: to }; recompute(); focusNext = 'result'; render(); },
-  close() { if (O?.back) { O = O.back; renderSheet(); } else closeSheet(); },
+  close() { if (O?.back) { const id = O.id; O = O.back; renderSheet(O.type === 'add' || O.type === 'swap' ? 'ad-' + id : undefined); } else closeSheet(); },
   // B16: the toast says what the link holds (its plants, its size) and how it opens; a guessed
   // country is never written in it, and the toast says so, with the country to choose.
   async share() {
@@ -1913,15 +1973,19 @@ const act = {
     relist('gsel-' + v, new Set(ids));
   },
   unselect() { const was = sel; sel = new Set(); anchor = null; relist('find', was); },
+  // H4: Keep n keeps the ticked rows shown; a row it hides (Kept: not kept) stays ticked, said as not
+  // shown, and the focus goes to the bar, else the heading.
   'bulk-keep'() {
-    const ids = [...sel].filter((id) => S.members.includes(id)); if (!ids.length) return;
+    const ids = shownTicks(); if (!ids.length) return;
     dropUndo(); lastBulk = snapshot(ids);
     S.kept = new Set(S.kept); for (const id of ids) S.kept.add(id);
-    focusNext = 'bulk-keep'; render(); toast(esc(P('keptN', ids.length)), 'bulk');
+    focusNext = 'bulk-keep'; render();
+    if (!app.contains(document.activeElement)) focusFk('unselect', app) || focusFk('plants-title', app);
+    toast(esc(P('keptN', ids.length)), 'bulk');
   },
   // Remove keeps the filters, the open groups and the place in the list: the focus goes to the next row (m2).
   'bulk-remove'() {
-    const ids = [...sel].filter((id) => S.members.includes(id)); if (!ids.length) return;
+    const ids = shownTicks(); if (!ids.length) return;
     const order = visibleOrder(), last = Math.max(...ids.map((id) => order.indexOf(id)));
     const next = order.slice(last + 1).find((id) => !sel.has(id)) ?? [...order].reverse().find((id) => !sel.has(id));
     const names = namesLine(ids);
@@ -1929,7 +1993,7 @@ const act = {
     const gone = new Set(ids);
     S.members = S.members.filter((id) => !gone.has(id)); S.kept = new Set([...S.kept].filter((id) => !gone.has(id))); S.crops = S.crops.filter((id) => !gone.has(id));
     S.removed = new Set(S.removed); for (const id of ids) if (!S.guests.has(id)) S.removed.add(id);
-    sel = new Set(); anchor = null;
+    sel = new Set([...sel].filter((id) => !gone.has(id))); if (anchor && gone.has(anchor)) anchor = null;
     focusNext = next ? 'sel-' + next : 'plants-title'; render();
     if (!app.contains(document.activeElement)) focusFk('plants-title', app);
     toast(esc(P('removedN', ids.length, { names })), 'bulk');
@@ -1957,7 +2021,7 @@ const act = {
     }
     if (S.status === 'nomatch') S.status = 'ready';
     S.gaps = trimGaps(S.gaps, ids.map((id) => stratumOf(taxonOf(id))), 0);
-    resetFold(); closeSheet(false); focusNext = 'plants-title'; render();
+    pin = null; resetFold(); closeSheet(false); focusNext = 'plants-title'; render();
     const warned = ids.filter((id) => kindsOf(taxonOf(id)).has('any')).length;
     toast(esc(addedText(ids.length, warned)), 'bulk',
       warned ? btn('button', 'show-warned', null, esc(P('showN', warned)), fk('show-warned')) : '');
@@ -1985,28 +2049,34 @@ const act = {
 const snapshot = (ids) => ({ ids, members: [...S.members], kept: new Set(S.kept), removed: new Set(S.removed), crops: [...S.crops], guests: new Map(S.guests), gaps: [...S.gaps], status: S.status });
 // The list in place, the focus on the control the action names.
 function relist(key, only = null) { if (!patchList(only)) refreshList(); focusFk(key, app); }
-// New filters: the groups opened under the old ones are forgotten, hidden ticks go (B4), and the
-// list is patched where it shows (a "Show n" from the cards opens the list first).
+// New filters: the groups opened under the old ones are forgotten, the ticks stay (H4, H7), and the
+// list is patched where it shows. H14: a "Show n" from the cards opens the list while a filter is on,
+// never as the reader's choice; clearing the filters gives the default view back.
 function setFilters(next, order, focusKey) {
+  const was = listMode();
   F = next; fOrder = order; fgroups.clear(); fMenu = null;
-  const unticked = pruneSel();
-  if (listMode() && app.querySelector('.fchips') && patchList(unticked)) {
+  if (!filtering(F)) filterView = false;
+  else if (!was) filterView = true;
+  if (was && listMode() && app.querySelector('.fchips') && patchList(new Set())) {
     patchChips();
     const find = app.querySelector('[data-input="find"]'); if (find && find.value !== F.q) find.value = F.q;
     focusFk(focusKey, app);
   }
-  else { if (!listMode()) mode = 'list'; focusNext = focusKey; render(); }
+  else { focusNext = focusKey; render(); if (!app.contains(document.activeElement)) focusFk('plants-title', app); }
   sayResults();
 }
 // m9: the filtered count, once, after the change.
 const sayResults = () => { const n = listGroups().reduce((a, g) => a + g.list.length, 0); sayLater(filtering(F) ? P('showing', members().length, { n: W.num(n) }) : P('count', members().length)); };
 // The menus close on any other action or a click outside them (their state is in the page, so Escape
 // and a click elsewhere act the same).
+// H1: the chip and the row are written again from the state (patchChip, patchList), never edited in
+// place, so the row cache always holds each row as it is on the page.
 function closeMenus() {
   if (!fMenu && !rMenu) return false;
+  const chip = fMenu, row = rMenu;
   fMenu = null; rMenu = null;
-  for (const m of app.querySelectorAll('.fmenu-list, .lmenu')) m.remove();
-  for (const b of app.querySelectorAll('.fchip-btn[aria-expanded="true"], .lmore-btn[aria-expanded="true"]')) b.setAttribute('aria-expanded', 'false');
+  if (chip) patchChip(chip);
+  if (row && !patchList(new Set([row]))) refreshList();
   return true;
 }
 // The plant's card, or its row in the list (B3); with neither in view the focus goes to the heading.
@@ -2077,13 +2147,13 @@ root.addEventListener('input', (e) => {
   // The list's search redraws the rows at once and says the count once typing pauses.
   if (el.dataset.input === 'find') {
     F = { ...F, q: el.value }; fgroups.clear();
-    if (!patchList(pruneSel())) refreshList();
+    if (!patchList(new Set())) refreshList();
     if (fMenu) patchChip(fMenu);
     sayResults();
   }
   if (el.dataset.input === 'paste') { pasteText = el.value; clearTimeout(pasteTimer); pasteTimer = setTimeout(refreshPaste, 500); }
   if (el.dataset.input === 'add') {
-    addQuery = el.value; O.confirm = null; dlg.querySelector('#ct-add-results').innerHTML = addResults();
+    addQuery = el.value; O.confirm = null; dlg.querySelector('#ct-add-results').innerHTML = addResults(); refreshAddFoot();
     sayLater(dlg.querySelector('#ct-add-count')?.textContent ?? '');
   }
 });
@@ -2116,6 +2186,25 @@ root.addEventListener('keydown', (e) => {
 phoneMQ.addEventListener('change', () => { if (S.status !== 'boot') render(); });
 addEventListener('beforeprint', () => { if (!printEl.innerHTML) printEl.innerHTML = printHTML(); });
 addEventListener('afterprint', () => { printEl.innerHTML = ''; });
+
+// ---------- Test seam (scripts/consortium-list-ui.test.mjs, H1 and H15) ----------
+// staleRows: the rows on the page whose cached markup is not the row as written now; freshListBody:
+// the list's body as a full render writes it, without touching the caches.
+export const __test = {
+  staleRows() {
+    const body = document.getElementById('ct-lbody');
+    if (!body) return [];
+    const flags = flagsById();
+    return [...body.querySelectorAll('.lrow')].map((r) => r.dataset.id).filter((id) => rowCache.get(id) !== listRow(taxonOf(id), flags.get(id)));
+  },
+  freshListBody() {
+    const rows = new Map(rowCache), parts = new Map(partCache);
+    try { return listBodyHTML(flagsById()); } finally {
+      rowCache.clear(); for (const [k, v] of rows) rowCache.set(k, v);
+      partCache.clear(); for (const [k, v] of parts) partCache.set(k, v);
+    }
+  },
+};
 
 // ---------- Start ----------
 syncLangLinks();

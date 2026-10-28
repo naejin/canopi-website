@@ -102,7 +102,8 @@ function makeDocument(page) {
   define('parentElement', { get() { return this.parent instanceof Element ? this.parent : null; } });
   define('innerHTML', {
     get() { return render(this.children, { decodeEntities: true }); },
-    set(v) { adopt(this, parse(String(v))); },
+    // The old children leave the page, as in a browser (a node moved back in later is not still "in" it).
+    set(v) { for (const c of this.children ?? []) c.parent = null; adopt(this, parse(String(v))); },
   });
   // A patched row or group (app.js patchList, B2): the element is replaced by the parsed markup.
   define('outerHTML', {
@@ -179,6 +180,13 @@ function makeDocument(page) {
     showModal() { this.open = true; },
     close() { if (!this.open) return; this.open = false; page.later(() => this.dispatchEvent(new Event('close', { bubbles: false }))); },
     remove() { if (!this.parent) return; const kids = this.parent.children.filter((c) => c !== this); adopt(this.parent, kids); this.parent = null; },
+    // Moves each node to the end of this element (the toast and the live line move into an open sheet: H5).
+    append(...nodes) {
+      for (const n of nodes) {
+        if (n.parent?.children?.includes(n)) adopt(n.parent, n.parent.children.filter((c) => c !== n));
+        adopt(this, [...this.children.filter((c) => c !== n), n]);
+      }
+    },
   });
   Object.assign(doc, events, {
     documentElement: html,
@@ -347,7 +355,8 @@ async function openPage(t, { lang = 'en', width = 1280, siteClimate = null, data
   // Events with their own init (a Shift+click: { shiftKey: true }).
   page.Event = Event;
   page.key = async (key, init = {}) => { const el = doc.activeElement; el.dispatchEvent(new Event('keydown', { key, ...init })); await page.settle(); };
-  await import(new URL(`src/scripts/consortium/app.js?ctrun=${++runs}`, root).href);
+  // The module's own test seam (app.js __test): the list as a full render would write it, and the cached rows.
+  page.app = await import(new URL(`src/scripts/consortium/app.js?ctrun=${++runs}`, root).href);
   await page.settle();
   return page;
 }

@@ -693,6 +693,10 @@
 }
 @media (prefers-reduced-motion: reduce) { .ct-drawer[open] { animation: none; } .ct .toast { animation: none; } }
 .ct .toast { position: fixed; z-index: 40; bottom: 20px; }
+/* H5: inside an open sheet (app.js placeLive) the toast is the sheet's last row, under its foot: in the
+   sheet, never over its buttons. */
+.ct .ct-drawer > .toast { position: static; flex: none; transform: none; width: auto; max-width: none; margin: 0 22px 14px; }
+@media (max-width: 639px) { .ct .ct-drawer > .toast { margin: 0 12px 12px; } }
 
 /* Print: only the sheet, built from the screen's words (app.js printHTML). */
 .ct .ct-print { display: none; }
@@ -1031,9 +1035,12 @@ html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
   /* B1: the chips scroll sideways, which would clip a menu hanging from one, so on a phone the menu
      is a sheet at the bottom of the screen, inside it whatever the chip's place. */
   .ct .fmenu-list {
-    position: fixed; z-index: 30; top: auto; left: 8px; right: 8px; bottom: 8px; min-width: 0; max-height: 70vh; max-height: 70dvh;
+    position: fixed; z-index: 30; top: auto; left: 8px; right: 8px; bottom: 8px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); min-width: 0; max-height: 70vh; max-height: 70dvh;
     padding: 6px; border-color: var(--border-strong); border-radius: 12px; overscroll-behavior: contain;
   }
+  /* H6: the sheet's z-index counts inside the filter row's stacking context, so while a menu is open
+     the row itself rises above the toast (z-index 40): no toast ever covers the sheet's last items. */
+  .ct .ftools:has(.fmenu-list) { z-index: 41; }
   .ct .fmenu-head { display: block; padding: 6px 12px 4px; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
   .ct .lcols { display: none; }
   .ct .lgroup-head { padding: 4px 6px; }
@@ -1071,6 +1078,10 @@ html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
 .ct-drawer .paste-row label { display: flex; gap: 10px; align-items: flex-start; min-height: 44px; padding: 8px 4px; cursor: pointer; }
 .ct-drawer .paste-row input { width: 18px; height: 18px; margin-top: 3px; flex: none; accent-color: var(--accent); }
 .ct-drawer .paste-row small { display: block; color: var(--text-muted); font-size: 13.5px; }
+.ct-drawer .add-row { display: flex; align-items: flex-start; gap: 8px; }
+.ct-drawer .add-row label { flex: 1 1 auto; min-width: 0; }
+/* H2: a Search row's way to its plant's details, beside the tick's label (never inside it). */
+.ct-drawer .add-details { flex: none; min-height: 44px; min-width: 44px; padding: 0 6px; font-size: 14.5px; }
 .ct-drawer .paste-close { display: inline-block; font-size: 13.5px; color: var(--warning); font-style: italic; }
 .ct-drawer .paste-typed { font-size: 13.5px; color: var(--text-muted); }
 .ct-drawer .paste-choose { margin: 6px 0; padding: 4px 10px 6px; border: 1px solid var(--border); border-radius: var(--radius); }
