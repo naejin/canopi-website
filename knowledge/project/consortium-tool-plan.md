@@ -4,7 +4,7 @@ title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:08:31Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:31:50Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T14:10:36Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -26,18 +26,18 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:a76a16490a4f96c7
-    last_modified: 2026-10-28T13:09:26Z
+    digest: sha256:4db8d028b7f8c7f7
+    last_modified: 2026-10-28T13:44:57Z
   - id: consortium-app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:98c3cc2386f3ee9b
-    last_modified: 2026-10-28T13:24:43Z
+    digest: sha256:780d629270691fe2
+    last_modified: 2026-10-28T14:09:49Z
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:8786f8fa6b1dcabf
-    last_modified: 2026-10-28T13:09:26Z
+    digest: sha256:f61bc275cf239689
+    last_modified: 2026-10-28T14:09:49Z
 ---
 
 Owner decisions: [Consortium tool — user decisions](/decisions/consortium-user-decisions.md).

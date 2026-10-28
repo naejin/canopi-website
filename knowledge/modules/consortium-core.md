@@ -4,7 +4,7 @@ title: Consortium core
 description: Format 3 types and the pure, dependency-free functions of the consortium tool (climate file lookup, country checks, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:08:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T14:10:35Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
@@ -17,7 +17,7 @@ sources:
     resource: ../../src/lib/consortium/climates.ts
     title: src/lib/consortium/climates.ts
     digest: sha256:8f5253475ea0a087
-    last_modified: 2026-10-28T13:02:34Z
+    last_modified: 2026-10-28T13:09:26Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -32,17 +32,17 @@ sources:
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
     digest: sha256:6cd9ea01fd21d687
-    last_modified: 2026-10-28T13:02:34Z
+    last_modified: 2026-10-28T13:09:26Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:a76a16490a4f96c7
-    last_modified: 2026-10-28T13:02:34Z
+    digest: sha256:4db8d028b7f8c7f7
+    last_modified: 2026-10-28T13:44:57Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:6670864dddbde83c
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:3098d13f4cd14b5d
+    last_modified: 2026-10-28T13:44:57Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -77,7 +77,7 @@ export under `public/data/consortium/`.
 | [jobs.ts](../../src/lib/consortium/jobs.ts) | `jobs` (six ids), `jobsOf(taxon)`, `jobOfFunction`, `phaseBands`, `bandOf(phase)`, `bandsOf(taxon)` |
 | [conflicts.ts](../../src/lib/consortium/conflicts.ts) | `conflicts(members, interactions)`, `conflictsOf(taxon, others, interactions)`, `matches(ref, taxon)`, `isSerious`, `invasiveIn(taxon, country, checked)` → `true \| false \| null` (null when the country is unchecked, the record unknown, or `checked` is not given as true: a caller that forgets the flag never gets "none"), `invasiveCountries(taxon)` |
 | [suggest.ts](../../src/lib/consortium/suggest.ts) | `gain(taxon, members, site)` (term by term), `suggest(file, { site, kept, removed, country, countryChecked })` → `{ members, limit, gaps }` (the only function that fills), `evaluate(cell, ids, { site, kept, country })` → the same `{ members, limit, gaps }` for a fixed list, never refilled, `alternatives(memberId, consortium, cell, { site, removed, country })`, `flagsFor(cell, id, memberIds, { site, country })` (the flags of one plant against a list: what Add uses to sort and confirm), `SIZE_LIMIT` |
-| [state.ts](../../src/lib/consortium/state.ts) | `ConsortiumState` (`climate`, `country`, `noCountry`, `site`, `kept`, `removed`, `members`, `plants`), `encodeState(state, cell?)` → `URLSearchParams`, `decodeState(params, cell?)` → `{ state, dropped }`, `resolveState(decoded, cell)`, `taxonByName(cell, name)` (a guide's plant: exact canonical name, else case and spacing aside), `resolveIds(tokens, cell)`, `shortId(id, cell?)`, `MAX_LINK_IDS` = 256, `LINK_VERSION` = 2, `NO_COUNTRY` = `-` |
+| [state.ts](../../src/lib/consortium/state.ts) | `ConsortiumState` (`climate`, `country`, `noCountry`, `site`, `kept`, `removed`, `members`, `plants`, `crops`, `guests`), `encodeState(state, cell?, others?)` → `URLSearchParams`, `decodeState(params, cell?, others?)` → `{ state, dropped, version }`, `resolveState(decoded, cell, others?)`, `taxonByName(cell, name)` (a guide's plant: exact canonical name, else case and spacing aside), `resolveIds(tokens, pool, key?)`, `shortId(id, cell?)`, `MAX_LINK_IDS` = 2000, `MAX_CROPS` = 3, `GUEST_CODES` (two letters per climate), `LINK_VERSION` = 3, `NO_COUNTRY` = `-` |
 | [index.ts](../../src/lib/consortium/index.ts) | re-exports all of the above |
 | [install-consortium.mjs](../../scripts/install-consortium.mjs) | `npm run install:consortium -- <export-dir> [--fixture [--no-images]] [--out <dir>]`; `installConsortium(...)`, `verifyExport`, `verifyInstall(dir, { fixture })` (re-checks an installed folder: manifest, labels, `SHA256SUMS`, each climate file's sha256, regions, shape, counts, sources and `ruleProblem`, every photo a local file that exists; `check-built-site.mjs` runs it on `dist/`), `shapeErrors`, `cellShape`, `ruleProblem(file, climateFile, countries)`, `isHttpUrl`, `thumbnailUrl`, `STAGING_DIR`, `stagingDirFor(out)` |
 
@@ -89,7 +89,8 @@ export under `public/data/consortium/`.
 - **Suggest.** Kept plants come first and always stay, flagged or not (kept wins over removed; ids not in the cell are ignored). Automatic picks skip misfits, medium/high conflicts with a member, and removed ids. The country never changes the plants (owner, 2026-10-28): a plant invasive in it is still picked, and carries `flags.invasive === true` as a warning. `flagged` (what keeps a plant out of automatic picks and makes Add or Swap ask first) is a misfit or a medium/high conflict only. Every member carries `flags` (`misfits`, `unknowns`, `invasive`, `conflicts`, `flagged`); `invasive` is null when the country is unset or `countryChecked` is not true; the `Country` option type requires `countryChecked` whenever `country` is a string.
 - **Conflicts.** Rows match at species (canonical name), genus or family, in either member order; a same-genus row pairs two members once. `allelopathy_tolerant` rows are not conflicts. `suggest()`'s exclusion of medium/high partners is built from `conflicts()` over the whole cell, so it matches exactly as the flags do.
 - **Alternatives.** Plants without a flag first, flagged ones (misfit, medium/high conflict) last so the page can list them under a warning; within each, same stratum, then most shared jobs, then gain against the rest, then better known, then name. Members and removed plants are not listed.
-- **Share links.** Keys `v c k l s w m p x a`; site keys always written. `k` is written only when the state has a country (the page leaves out a guessed one); `k=-` (`NO_COUNTRY`) is "No country", which the page writes only to its local save. `a` is the members in order (absent: the page suggests; present: it calls `evaluate()`). Links from the region era carry `r` and `b`: both are ignored silently. `LINK_VERSION` stays 2 (the link changed less than the files). Ids are shortened to the first 8 hex characters, lengthened at UUID segment boundaries (13, 18, 23, 36) when another taxon of the cell shares the prefix, joined with `.`; at most `MAX_LINK_IDS` tokens are read per key, the rest reported once as `excess` with their count. Decoding never throws; unknown, malformed, ambiguous, duplicate and excess values go to `dropped`.
+- **Share links (v3, 2026-10-28).** Keys `v c k l s w m a p x n g`; site keys always written. `k` is written only when the state has a country (the page leaves out a guessed one); `k=-` (`NO_COUNTRY`) is "No country", which the page writes only to its local save. `a` is the members in order, a kept member marked with a leading `*` (absent: the page suggests; present: it calls `evaluate()`); `p` kept plants that are not members; `x` removed; `n` main crops (at most `MAX_CROPS`, each a kept member); `g` plants added from another climate's list, one `g` per list: its `GUEST_CODES` code then its tokens. A token is 6 base64url characters (the first 36 bits of the id), or `.` plus 22 characters (the whole id) when another taxon of the pool shares those bits; tokens are joined without a separator. At 200 plants (190 kept, 2 crops) a link is about 1,500 characters, against about 3,600 in v2. At most `MAX_LINK_IDS` tokens are read per key, the rest reported once as `excess` with their count. v2 links (8-hex prefixes joined with `.`, `p` for kept) still decode, with `version: 2`; links from the region era carry `r` and `b`, ignored silently. Decoding never throws; unknown, malformed, ambiguous, duplicate and excess values go to `dropped` (a dropped v3 token is reported as its 9 hex characters).
+- **Guests.** `suggest`, `evaluate`, `flagsFor` and `alternatives` take `guests?: Taxon[]` (plants of another list the page added): they count as members for jobs, layers and conflicts but are never suggested.
 - **Resolution.** The page decodes without the climate file (`c` chooses it), then calls `resolveState(decoded, cell)`: prefixes become full ids, and the list rules are applied again on full ids (kept wins over removed; a member is never removed; with `a`, every kept plant is a member). `decodeState(params, cell)` does the same in one call.
 - **Guide preset.** `?plant=<canonical_name>&climate=<id>`: `climate` is read when `c` is absent (`c` wins, `climate` dropped as a duplicate); `plant` waits in `state.plants` until `resolveState()`, which keeps it when the cell has that canonical name (exact, else case and spacing aside) and drops it as `unknown` otherwise. `encodeState` writes only the short keys.
 
