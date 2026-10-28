@@ -174,20 +174,24 @@ test('the drawing has a text equivalent: each band is an image named by its plan
   for (const s of strips) assert.equal(s.attribs.role, 'img');
   const mid = page.$('#ct-side .sv-band[data-s="medium"] .sv-strip').attribs['aria-label'];
   assert.match(mid, /^Mid, takes some shade: /);
-  assert.match(mid, /Cornelian cherry, \d+ m/);
+  assert.match(mid, /Cornelian cherry, \d+\u00a0m/);
   assert.equal(page.$$('#ct-side .sv-strip[tabindex]').length, 0, 'the drawing adds no tab stop: the legend buttons open details');
   assert.ok(page.$$('#ct-side .pkey [data-act="details"]').length === NINE.length);
 });
 
-test('a climber is drawn as a vine on its support, and the legend, the band and the caption say how high it climbs', async () => {
+// Review W1 (coordinator ruling): the data's "Climber" habit takes in trailing plants, and its height
+// can be a runner's length (Pumpkin 12 m) or a low recorded height (Common Ivy 1.5 m). The site says no
+// more than the data: "climbing or trailing" and the recorded size, never "climbs to", never a support.
+test('a climbing or trailing plant is drawn as a vine with no support, and the legend, the band and the caption give its recorded size, never how high it climbs', async () => {
   const grape = named('Vitis vinifera');
   const { page } = await open([...NINE, grape.id]);
   const p = page.$(`#ct-side .sv-col[data-t="${grape.id}"] .sv-plant`);
   assert.equal(p.attribs['data-shape'], 'climber');
-  assert.ok(p.querySelector('.sv-support'), 'its support');
-  assert.match(text([...page.$$('#ct-side .pkey li')].find((li) => /Wine grape/.test(text(li)))), /climbs to 35 m$/);
-  assert.match(page.$('#ct-side .sv-band[data-s="high"] .sv-strip').attribs['aria-label'], /Wine grape, climbs to 35 m/);
-  assert.match(page.text('#ct-side .profile-foot'), /A climber is drawn as a vine on its support/);
+  assert.equal(p.querySelector('.sv-support'), null, 'no support line implying an upright height');
+  assert.match(text([...page.$$('#ct-side .pkey li')].find((li) => /Wine grape/.test(text(li)))), /35 m, climbing or trailing$/);
+  assert.match(page.$('#ct-side .sv-band[data-s="high"] .sv-strip').attribs['aria-label'], /Wine grape, 35\u00a0m, climbing or trailing/);
+  assert.match(page.text('#ct-side .profile-foot'), /A climbing or trailing plant is drawn as a vine/);
+  assert.doesNotMatch(page.text('#ct-side'), /climbs/);
   const { page: none } = await open(NINE);
   assert.doesNotMatch(none.text('#ct-side .profile-foot'), /climber/);
 });
@@ -277,12 +281,12 @@ test('above 20 a band with marks is one focusable group named by its count and d
   warned.dispatchEvent(new page.Event('pointerover'));
   await page.settle();
   assert.match(text(warned.closest('.sv-band').querySelector('.sv-tip')), /With a warning/);
-  // A climber's mark says it climbs.
+  // A climbing or trailing plant's mark says so, with its recorded size.
   const grape = named('Vitis vinifera');
   const g = page.$(`#ct-side .sv-marks i[data-t="${grape.id}"]`);
   g.dispatchEvent(new page.Event('pointerover'));
   await page.settle();
-  assert.match(text(g.closest('.sv-band').querySelector('.sv-tip')), /^Wine grape, climbs to 35 m/);
+  assert.match(text(g.closest('.sv-band').querySelector('.sv-tip')), /^Wine grape, 35 m, climbing or trailing/);
 });
 
 test('an empty band takes no tab stop and says it is empty with the list\'s own words', async () => {
@@ -300,9 +304,10 @@ test('M1 at 200 plants (state 05, a field in France): under each band the height
   const { page } = await open(ids);
   const sum = (s) => text(page.$(`#ct-side .sv-band[data-s="${s}"] .sv-sum`));
   assert.equal(sum('emergent'), 'Most 18–40 m. Also 2 short sun-lovers: Corn 2 m, Sunflower 3 m. Height not known for 2.');
-  assert.equal(sum('high'), 'Most 1–14 m. Also 2 tall plants that grow up through the shade: European Ash 40 m, European chestnut 35 m. Also 4 climbers: Wine grape climbs to 35 m, Hardy kiwi climbs to 30 m, Hop climbs to 8 m and 1 more. Height not known for 1.');
-  assert.match(sum('medium'), /^Most 0\.7–2 m\. Also 14 tall plants that grow up through the shade: Large-leaved linden 40 m, Norway spruce 40 m, Small-leaved linden 30 m and 11 more\. Also 7 climbers: .+ climbs to 12 m, .+ climbs to 10 m, .+ climbs to 6 m and 4 more\.$/);
-  assert.equal(sum('low'), 'Most 0.2–0.6 m. Also 1 climber: Common Ivy climbs to 2 m.');
+  assert.equal(sum('high'), 'Most 1–14 m. Also 2 tall plants that grow up through the shade: European Ash 40 m, European chestnut 35 m. Also 4 climbing or trailing plants: Wine grape 35 m, Hardy kiwi 30 m, Hop 8 m and 1 more. Height not known for 1.');
+  assert.match(sum('medium'), /^Most 0\.7–2 m\. Also 14 tall plants that grow up through the shade: Large-leaved linden 40 m, Norway spruce 40 m, Small-leaved linden 30 m and 11 more\. Also 7 climbing or trailing plants: Pumpkin 12 m, Winter squash 10 m, Woodbine 6 m and 4 more\.$/);
+  assert.equal(sum('low'), 'Most 0.2–0.6 m. Also 1 climbing or trailing plant: Common Ivy 2 m.');
+  assert.doesNotMatch(page.text('#ct-side'), /climbs/);
   // The band counts and warnings of state 05: ⚠ 1, 16, 10, 2 (29 of 200).
   assert.deepEqual([...page.$$('#ct-side .sv-n')].map((n) => text(n.querySelector('.vh'))), ['1 with a warning', '16 with a warning', '10 with a warning', '2 with a warning']);
   await page.act('fset', 'layer:medium');
@@ -393,24 +398,51 @@ test('print: the drawing and its legend at 20 plants or fewer; above 20 "At a gl
 test('the side view reads in French', async () => {
   const { page } = await open(ids, { lang: 'fr' });
   assert.equal(text(page.$('#ct-side .sv-band[data-s="medium"] .sv-light')), 'supporte un peu d’ombre');
-  assert.match(text(page.$('#ct-side .sv-band[data-s="medium"] .sv-sum')), /^La plupart mesurent entre 0,7 et 2 m\. S’y ajoutent 14 plantes hautes qui montent à travers l’ombre : .+ 40 m, .+ 40 m, .+ 30 m et 11 autres\. S’y ajoutent 7 grimpantes : .+ grimpe jusqu’à 12 m, .+ et 4 autres\.$/);
+  assert.match(text(page.$('#ct-side .sv-band[data-s="medium"] .sv-sum')), /^La plupart mesurent entre 0,7 et 2 m\. S’y ajoutent 14 plantes hautes qui montent à travers l’ombre : .+ 40 m, .+ 40 m, .+ 30 m et 11 autres\. S’y ajoutent 7 plantes grimpantes ou rampantes : Courge 12 m, .+ 10 m, .+ et 4 autres\.$/);
+  assert.doesNotMatch(page.text('#ct-side'), /grimpe jusqu/);
   assert.match(text(page.$('#ct-side .sv-band[data-s="emergent"] .sv-sum')), /Hauteur inconnue pour 2 plantes\.$/);
   const nine = await open(NINE, { lang: 'fr' });
   assert.match(nine.page.text('#ct-side .profile-foot'), /contour en pointillé/);
 });
 
 test('every side-view string is in all 11 locales; the dead ones are gone; French has no-break spaces before : and ; and between a number and its unit', () => {
-  const keys = ['sv.drawNote', 'sv.dashedNote', 'sv.climbNote', 'sv.marksNote', 'sv.denseNote', 'sv.most', 'sv.mostOne', 'sv.tall', 'sv.short', 'sv.climb', 'sv.climbsTo', 'sv.all', 'sv.unknown', 'sv.bandLabel', 'glance', 'glancePlants', 'glanceAll', 'glanceWarn', 'lightCue', 'emptyLayer'];
+  const keys = ['sv.drawNote', 'sv.dashedNote', 'sv.climbNote', 'sv.marksNote', 'sv.denseNote', 'sv.most', 'sv.mostOne', 'sv.tall', 'sv.short', 'sv.climb', 'sv.vineH', 'sv.all', 'sv.unknown', 'sv.bandLabel', 'glance', 'glancePlants', 'glanceAll', 'glanceWarn', 'lightCue', 'emptyLayer'];
   for (const lang of LOCALES) {
     const s = JSON.parse(read(`src/i18n/translations/${lang}.json`));
     for (const k of keys) assert.ok(s['consortium.' + k], `${lang}: ${k}`);
-    for (const k of ['layersNote', 'sv.keys', 'sv.empty', ...['emergent', 'high', 'medium', 'low'].map((x) => `stratum.${x}.short`)]) assert.equal(s['consortium.' + k], undefined, `${lang}: ${k} is gone`);
+    for (const k of ['layersNote', 'sv.keys', 'sv.empty', 'sv.climbsTo', ...['emergent', 'high', 'medium', 'low'].map((x) => `stratum.${x}.short`)]) assert.equal(s['consortium.' + k], undefined, `${lang}: ${k} is gone`);
     for (const k of ['sv.tall', 'sv.short', 'sv.climb', 'sv.unknown']) assert.match(s['consortium.' + k], /other:/, `${lang}: ${k} is plural`);
   }
   const fr = JSON.parse(read('src/i18n/translations/fr.json'));
+  assert.match(fr['consortium.sv.climb'], /plantes grimpantes ou rampantes/);
   for (const [k, v] of Object.entries(fr)) {
     if (!k.startsWith('consortium.')) continue;
     assert.doesNotMatch(v, / [:;!?]/, `fr ${k}: a no-break space before : ; ! ?`);
     assert.doesNotMatch(v, /[\d}] (m|cm|ans?|mois)(?![\p{L}])/u, `fr ${k}: a no-break space between a number and its unit`);
+  }
+});
+
+// Review W2: in every locale a number and its unit never wrap apart ("0.3" at a line's end, "m." on the
+// next): a no-break space joins a number, a placeholder or a plural count to its unit.
+test('in all 11 locales a no-break space joins every number to its unit in the tool\'s strings', () => {
+  const unit = /[\d}#] (m|cm|mm|km|米|厘米|м|см|ans?|mois|years?|Jahren?|anni|años|anos|jaar|лет|года?|年)(?![\p{L}])/u;
+  for (const lang of LOCALES) {
+    const s = JSON.parse(read(`src/i18n/translations/${lang}.json`));
+    for (const [k, v] of Object.entries(s)) if (k.startsWith('consortium.')) assert.doesNotMatch(v, unit, `${lang} ${k}: ${v}`);
+    assert.match(s['consortium.meters'], /\{v\}\u00a0/, `${lang}: meters`);
+  }
+});
+
+// Review W3: a band with marks is a group, so its children are read; the scale's labels and the tip
+// (spoken already through the live region) are hidden from screen readers.
+test('inside a band\'s group the 1, 5 and 20 m labels and the tip are hidden from screen readers', async () => {
+  const { page } = await open(ids);
+  const groups = page.$$('#ct-side .sv-strip[role="group"]');
+  assert.equal(groups.length, 4);
+  for (const g of groups) {
+    const lines = g.querySelectorAll('.sv-line');
+    assert.equal(lines.length, 3);
+    for (const l of lines) assert.equal(l.attribs['aria-hidden'], 'true');
+    assert.equal(g.querySelector('.sv-tip').attribs['aria-hidden'], 'true');
   }
 });

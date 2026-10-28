@@ -638,9 +638,12 @@ function namedList(items) {
   const first = items.slice(0, 3).join(cjk ? '、' : ', ');
   return items.length > 3 ? `${first}${cjk ? '' : ' '}${P('andMore', items.length - 3)}` : first;
 }
-// A plant's height in the side view: a climber's is how high it climbs ("climbs to 35 m").
-const sideHeight = (t) => (isClimber(t) && heightOf(t) > 0 ? T('sv.climbsTo', { h: heightText(t) }) : heightText(t));
-const heightNamed = (t) => `${nameText(t)} ${sideHeight(t)}`;
+// A plant's height in the side view. The data's "Climber" habit takes in trailing plants, and its height
+// can be a runner's length or a low recorded size, so the site says "climbing or trailing" beside the
+// recorded size and never how high it climbs (review W1, coordinator ruling).
+const sideHeight = (t) => (isClimber(t) && heightOf(t) > 0 ? T('sv.vineH', { h: heightText(t) }) : heightText(t));
+// In a band's sentence the climbing or trailing plants have their own sentence, so their size stands alone.
+const heightNamed = (t) => `${nameText(t)} ${heightText(t)}`;
 // A band's heights in words (M1): "Most 18–40 m. Also 2 short sun-lovers: Corn 2 m, Sunflower 3 m.
 // Also 1 climber: … Height not known for 2."; a band of 4 known heights or fewer lists them all.
 function bandSummary(f) {
@@ -656,7 +659,9 @@ function bandSummary(f) {
   ]);
 }
 const bandLabel = (s, plants) => T('sv.bandLabel', { layer: stratumLabel(s), light: lightWords(s), plants });
-const svLines = () => SCALE_LINES.map((m) => `<span class="sv-line" data-m="${m}" style="bottom:${(heightFrac(m) * 100).toFixed(2)}%"><span>${esc(T('meters', { v: W.num(m) }))}</span></span>`).join('');
+// The scale's labels are hidden from screen readers: inside a band's group they would be read before
+// every band (review W3); the band's name and sentence carry the heights.
+const svLines = () => SCALE_LINES.map((m) => `<span class="sv-line" aria-hidden="true" data-m="${m}" style="bottom:${(heightFrac(m) * 100).toFixed(2)}%"><span>${esc(T('meters', { v: W.num(m) }))}</span></span>`).join('');
 // What the side view shows, as markup: the same for the screen and print, but print has no buttons,
 // no tab stops, no tooltip and no ids the screen uses.
 function sideMarkup(flags, print = false) {
@@ -693,7 +698,7 @@ function sideMarkup(flags, print = false) {
       ? `<div class="sv-strip" role="img" aria-label="${esc(bandLabel(s, said))}" aria-describedby="${sumId}">`
       : `<div class="sv-strip" role="group" tabindex="0" aria-label="${esc(bandLabel(s, said))}" aria-describedby="${sumId}" ${fk('sv-' + s)}>`;
     return `<li class="sv-band" data-s="${s}"><div class="sv-lab">${lab}${count}</div>
-      ${strip}<div class="sv-plot">${svLines()}<div class="sv-marks" data-s="${s}">${iMarks}</div>${print || !list.length ? '' : '<span class="sv-tip" hidden></span>'}</div></div>
+      ${strip}<div class="sv-plot">${svLines()}<div class="sv-marks" data-s="${s}">${iMarks}</div>${print || !list.length ? '' : '<span class="sv-tip" aria-hidden="true" hidden></span>'}</div></div>
       <p class="sv-sum" id="${sumId}">${esc(bandSummary(f))}</p>
       ${print || !list.length ? '' : btn('button button-secondary button-small sv-show', 'fset', 'layer:' + s, `${esc(P('showN', list.length))}<span class="vh">, ${esc(stratumLabel(s))}</span>`, fk('sv-show-' + s))}</li>`;
   }).join('');

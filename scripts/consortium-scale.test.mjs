@@ -182,8 +182,8 @@ test('words: the room hint names the height and width limit the check uses, and 
     for (const key of ['home.consortium.lede', 'consortium.description']) assert.match(home[lang][key], /6/, `${lang}: ${key} still names the suggestion`);
   }
   const en = makeWords(strings.en, 'en'), fr = makeWords(strings.fr, 'fr');
-  assert.equal(roomHint(en, 'small'), 'Plants up to 6 m tall and across · suggests 6 plants');
-  assert.equal(roomHint(en, 'large'), 'Plants up to 12 m tall and across · suggests 9 plants');
+  assert.equal(roomHint(en, 'small'), 'Plants up to 6\u00a0m tall and across · suggests 6 plants');
+  assert.equal(roomHint(en, 'large'), 'Plants up to 12\u00a0m tall and across · suggests 9 plants');
   assert.equal(roomHint(en, 'field'), 'Plants of any size · suggests 12 plants');
   assert.equal(roomHint(fr, 'small'), 'Plantes jusqu’à 6\u00a0m de haut et de large · suggestions de 6 plantes');
   // F6: the suggestion size says it counts plants, in every language.

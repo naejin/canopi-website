@@ -1137,7 +1137,6 @@ html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
    1, 5 and 20 m lines at any count up to 20 (review S3). A narrow column lets the crown spill over. */
 .ct .sv-col { position: relative; height: var(--plot-h); }
 .ct .sv-svg { position: absolute; bottom: 0; left: 50%; display: block; width: calc(var(--plot-h) * 16 / 72); height: var(--plot-h); margin-left: calc(var(--plot-h) * -8 / 72); overflow: visible; }
-.ct .sv-support { stroke-dasharray: none; }
 .ct .profile .sv-nums .num { width: 22px; height: 22px; font-size: 12px; border-width: 1.5px; position: relative; }
 .ct .sv[data-many] .sv-nums .num { width: 19px; height: 19px; font-size: 11px; }
 .ct .sv-nums .num[data-w]::after { content: ''; position: absolute; top: -3px; right: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--text); box-shadow: 0 0 0 1.5px var(--surface); }

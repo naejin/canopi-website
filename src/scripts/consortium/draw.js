@@ -1,6 +1,6 @@
 // The side view's silhouettes (1 to 20 plants; app.js sideMarkup): one plant per column, drawn true
 // to height on the side view's log scale (side.js heightFrac), as a tree, a shrub, a herb or a climber
-// (side.js shapeOf): a climber is a vine on a thin support line, never a free-standing plant. Colours are the strata's, with darker inks for strokes; every plant also has its number
+// (side.js shapeOf): a climbing or trailing plant is a vine with leaves, no support, never a free-standing plant. Colours are the strata's, with darker inks for strokes; every plant also has its number
 // below and its band's name beside it, so colour is never the only cue. A plant with no height is a
 // dashed outline at its layer's usual height.
 //
@@ -50,7 +50,8 @@ export function plantSVG({ id, s, shape, frac, dashed }) {
     for (const dx of [-2, 0, 2]) stems += `<path d="M${dx / 2},${gy} L${dx},${f(cy)}" fill="none" stroke-width="0.9"${dashed ? ' stroke-dasharray="2 1.6"' : ''}/>`;
     body = stems + `<path d="${blob(0, cy, rx, ry, seed, 7)}" ${fillA}/>`;
   } else if (shape === 'climber') {
-    // The support (neutral ink) to the height it climbs, the vine winding up it, a leaf at each turn.
+    // A vine winding to its recorded size, a leaf at each turn; no support line, which would claim a
+    // height it reaches upright (review W1).
     const turns = Math.max(2, Math.round(h / 9)), step = h / turns, dash = dashed ? ' stroke-dasharray="2 1.6"' : '';
     let vine = `M0,${gy}`, leaves = '';
     for (let i = 0; i < turns; i++) {
@@ -58,8 +59,7 @@ export function plantSVG({ id, s, shape, frac, dashed }) {
       vine += ` Q${f(side * 4.5)},${f(y0 - step / 2)} 0,${f(y1)}`;
       leaves += `<path d="${blob(side * 3.6, y0 - step / 2, 1.9, 1.3, seed + i, 3)}" ${fillA}/>`;
     }
-    body = `<path class="sv-support" d="M0,${gy} L0,${f(top)}" fill="none" stroke="var(--text-muted)" stroke-width="0.8"/>`
-      + `<path d="${vine}" fill="none" stroke-width="1.2" stroke-linecap="round"${dash}/>${leaves}`;
+    body = `<path d="${vine}" fill="none" stroke-width="1.2" stroke-linecap="round"${dash}/>${leaves}`;
   } else {
     const spread = Math.min(6, Math.max(2, h * 0.4));
     for (let i = 0; i < 5; i++) {

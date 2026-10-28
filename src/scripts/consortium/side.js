@@ -18,7 +18,8 @@ export function heightFrac(m) {
 export const heightOf = (t) => t.traits?.height_m?.max ?? null;
 
 // A plant is drawn as a tree, a shrub, a herb or a climber (its habit). A climber is never drawn as a
-// free-standing plant: it is a vine on a thin support, and its height is how high it climbs
+// free-standing plant: it is a vine. The habit takes in trailing plants too, so its height is the recorded
+// size (a runner's length for a squash), never a height it climbs to
 // (coordinator choice, chunk C review S8/V9).
 export const isClimber = (t) => t.traits?.habit === 'Climber';
 export function shapeOf(t) {
@@ -51,8 +52,8 @@ export function usualHeight(stratum, bandTaxa, listTaxa = []) {
 
 // What a band spells out (M1; chunk C review S1/V1): its plants, the named exceptions (High and Mid:
 // taller than max(2 × q3, q3 + 5 m), tallest first; Emergent: shorter than q1 / 2, shortest first;
-// q1 and q3 of the band's known heights, climbers aside), its climbers (tallest first: a climber's
-// height is how high it climbs, never a typical height), then "Most a–b m": the middle half of the
+// q1 and q3 of the band's known heights, climbers aside), its climbing or trailing plants (tallest
+// first: their recorded size is no typical height), then "Most a–b m": the middle half of the
 // heights not named, each end snapped to a real plant height, so the range never spans a gap no
 // plant is in. A band with SMALL_BAND known heights or fewer lists them all (`all`, tallest first).
 // Plants with no height are counted, never dropped.
