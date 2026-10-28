@@ -280,6 +280,8 @@
   font-size: 13.5px; font-weight: 600; line-height: 1.3; border: 1px solid transparent; text-align: start;
 }
 .ct .warn svg { flex: none; }
+/* A long pest name (German compounds) hyphenates in the page's language (<html lang>) before it breaks. */
+.ct .warn > span { min-width: 0; overflow-wrap: anywhere; hyphens: auto; }
 .ct .warn-danger { color: var(--danger); background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
 .ct .warn-warning { color: var(--warning); background: var(--warning-bg); border-color: var(--warning-line); }
 .ct .warn-soft { color: var(--warning); background: transparent; border-color: var(--warning-line); font-weight: 400; }
@@ -999,7 +1001,7 @@
 .ct .warn-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 1px 8px 1px 6px; border-radius: 6px; border: 1px solid transparent; font-size: 13px; font-weight: 600; line-height: 1.25; max-width: 100%; }
 .ct .warn-chip svg { flex: none; width: 13px; height: 13px; }
 /* A one-word name longer than the cell ("Mittelmeerfruchtfliege") breaks inside its chip. */
-.ct .warn-chip > span { min-width: 0; overflow-wrap: anywhere; }
+.ct .warn-chip > span { min-width: 0; overflow-wrap: anywhere; hyphens: auto; }
 /* Invasive here: filled, the strongest. Toxic: a red outline. Shared pests: a quiet outline. */
 .ct .warn-inv { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .ct .warn-tox { color: var(--danger); border-color: var(--danger); background: transparent; }
