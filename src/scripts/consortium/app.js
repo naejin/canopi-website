@@ -243,8 +243,11 @@ function misfitText(t, key) {
   if (key === 'water') return T('misfit.water.' + v);
   // C7: the size rounded as the rows round heights (scale.js roundHeight), never to a size the room
   // takes (H11: 6.096 m in a small garden reads 6.1 m).
-  const size = misfitSize(Math.max(tr.height_m?.max ?? 0, tr.width_max_m ?? 0), ROOM_LIMIT_M[v]);
-  return T('misfit.room.' + v, { w: W.num(size) });
+  // When the width is what breaks the limit (wider than tall), the chip says it spreads, so its size
+  // never contradicts the height on the row (prepush R4: Walnut, 18 m tall, 20 m wide).
+  const h = tr.height_m?.max ?? 0, w = tr.width_max_m ?? 0;
+  const size = misfitSize(Math.max(h, w), ROOM_LIMIT_M[v]);
+  return T('misfit.room.' + v + (w > h && w > ROOM_LIMIT_M[v] ? '.wide' : ''), { w: W.num(size) });
 }
 const uncheckedKey = { tox: 'u.tox', inv: 'u.inv', spreads: 'u.spreads', jobs: 'u.jobs', jobsOther: 'u.jobsOther' };
 const otherOf = (c, t) => (c.a.id === t.id ? c.b : c.a);
@@ -264,24 +267,28 @@ function warnParts(t, flags) {
   if (t.warnings.weed_potential === true) soft.push(T('c.spreads'));
   // With a country, a card tells only that country's warning; other countries are in details (owner,
   // 2026-10-28). Without one, the soft count of countries.
-  if (invNote?.cls === 'soft') soft.push(invNote.text);
+  // It is a fact, not a warning: drawn as the rows and the warning box draw it, a muted dashed globe
+  // with no warning sign (prepush R5); print and the confirmation keep it among the soft words.
+  const inv = invNote?.cls === 'soft' ? invNote.text : null;
   // Allelopathy not checked yet is told in details only (owner, 2026-10-28): see uncheckedOnCard.
   for (const k of uncheckedOnCard(t, jobsOf(t).length > 0)) unk.push(T(uncheckedKey[k]));
-  return { severe, soft, unk };
+  return { severe, soft, unk, inv };
 }
 function chipsHTML(t, flags) {
-  const { severe, soft } = warnParts(t, flags);
+  const { severe, soft, inv } = warnParts(t, flags);
   const out = severe.map((w) => `<span class="warn warn-${w.cls}">${w.cls === 'danger' ? I.danger : w.cls === 'unknown' ? I.unknown : I.warn}<span>${w.text}</span></span>`);
   if (soft.length) out.push(`<span class="warn warn-soft">${I.warn}<span>${esc(capFirst(soft.join(' · '), lang))}</span></span>`);
+  if (inv) out.push(`<span class="inv-count">${GLOBE}<span>${esc(capFirst(inv, lang))}</span></span>`);
   // C5: what is not checked yet is said once, in the warning box, and in the plant's details.
   return out.length ? `<div class="warns">${out.join('')}</div>` : '';
 }
 // The same words in plain text, one per warning, for print (one line each) and the Swap/Add
 // confirmation (a list in the page language): no "; " that reads wrong in Japanese (live m4).
 function warnPlain(t, flags, all = true) {
-  const { severe, soft, unk } = warnParts(t, flags);
+  const { severe, soft, unk, inv } = warnParts(t, flags);
   const out = severe.filter((w) => all || (w.cls !== 'soft' && w.cls !== 'unknown')).map((w) => w.text);
-  if (all && soft.length) out.push(esc(capFirst(soft.join(' · '), lang)));
+  const softAll = inv ? [...soft, inv] : soft;
+  if (all && softAll.length) out.push(esc(capFirst(softAll.join(' · '), lang)));
   if (all && unk.length) out.push(esc(T('unchecked', { list: W.list(unk) })));
   return out;
 }
@@ -352,8 +359,11 @@ const privacy = () => `<p class="privacy">${I.lock}<span>${esc(T('privacy'))}</s
 // the no-list reason sits beside where the country came from (m1).
 function countryLineHTML(withPrivacy = false) {
   const p = countryLineParts(W, place());
+  // A guess (dashed chip) says what it means in its title and offers the one-tap "Use France" beside
+  // it, which makes it the reader's own choice (design-scale 1a, m4; prepush R1).
+  const guess = S.country && S.countrySource === 'guess' ? W.country(S.country) : null;
   const row = p.chip
-    ? `<button class="chip-button cl-chip" type="button" data-act="open-place" data-v="country" data-src="${S.country ? S.countrySource ?? 'user' : 'none'}" aria-haspopup="dialog" ${fk('pc-country')}><span class="vh">${esc(T('countryLine'))} </span><strong>${esc(p.chip)}</strong>${I.caret}</button>${p.why.map((w) => `<span class="cl-why">${esc(w)}</span>`).join('')}`
+    ? `<button class="chip-button cl-chip" type="button" data-act="open-place" data-v="country" data-src="${S.country ? S.countrySource ?? 'user' : 'none'}"${guess ? ` title="${esc(T('guessTitle', { country: guess }))}"` : ''} aria-haspopup="dialog" ${fk('pc-country')}><span class="vh">${esc(T('countryLine'))} </span><strong>${esc(p.chip)}</strong>${I.caret}</button>${p.why.map((w) => `<span class="cl-why">${esc(w)}</span>`).join('')}${guess ? ` ${btn('link-button cl-use', 'use-country', S.country, esc(T('useCountry', { country: guess })), fk('cl-use'))}` : ''}`
     : btn('link-button cl-add', 'open-place', 'country', esc(T('addCountry')), `aria-haspopup="dialog" ${fk('pc-country')}`);
   const notes = p.notes.map((n) => `<p class="cl-why">${esc(n)}</p>`).join('');
   return `<div class="country-line"><p class="cl-row"><span class="cl-label" aria-hidden="true">${esc(T('countryLine'))}</span>${row}</p>${notes}${withPrivacy ? privacy() : ''}</div>`;
@@ -1513,7 +1523,7 @@ function printHTML() {
   const date = new Intl.DateTimeFormat(lang, { dateStyle: 'long' }).format(new Date());
   if (big()) return printTableHTML(ms, flags, date, gapJobs);
   return `<article class="sheet">
-    <div class="sheet-head"><div><h2 class="sheet-title">${esc(T('printTitle'))}</h2><p class="muted">${esc(climateLabel())} · ${esc(printWhere(W, place()))} · ${esc(date)}</p>
+    <div class="sheet-head"><div><h2 class="sheet-title">${esc(T('yourConsortium'))}</h2><p class="muted">${esc(climateLabel())} · ${esc(printWhere(W, place()))} · ${esc(date)}</p>
     <p class="muted">${esc(T('basis', { site: basisText() }))} · ${esc(P('count', ms.length))}</p></div><img src="/canopi-logo.svg" width="34" height="34" alt=""></div>
     <div class="sheet-draw">${sideViewHTML(flags, true)}</div>
     <section><h3>${esc(T('tab.layers'))}</h3><table><thead><tr><th>${esc(T('p.layer'))}</th><th>${esc(T('p.plant'))}</th><th>${esc(T('p.time'))}</th><th>${esc(T('p.jobs'))}</th><th>${esc(T('withWarning'))}</th></tr></thead><tbody>${rows}</tbody></table></section>
@@ -1947,6 +1957,7 @@ const act = {
   'not-crop'(v) { S.crops = S.crops.filter((id) => id !== v); render(); if (O) renderSheet('d-keep'); toast(T('notMainCropNow', { name: name(taxonOf(v)) })); },
   country(v) { if (isCountry(manifest, v)) chooseCountry(v.toUpperCase()); },
   'no-country'() { chooseCountry(null); },
+  'use-country'(v) { if (isCountry(manifest, v)) chooseCountry(v.toUpperCase()); },
   'dismiss-country'() { Object.assign(S, noLinkCode); focusNext = 'result'; render(); },
   'open-place'(v, el) { openSheet({ type: 'place', which: v }, el); },
   'open-site'(_, el) { openSheet({ type: 'site' }, el); },

@@ -51,12 +51,28 @@ export const cropMatches = (cell, query, lang, chosen = [], max = 8) => cropHits
 // one in brackets when the match came from it. paren: the page's brackets (words.js makeWords).
 export const cropLabel = (hit, lang, paren) => plantName(hit.taxon, lang).text + (hit.english ? paren(hit.english) : '');
 
-// One-tap examples, which the page names in the reader's language: the climate's best-known food
-// plants (named in the most languages), then the most edible, then by scientific name: the same
-// every time. The crops already chosen are left out (C5: the examples and the field's placeholder).
+// One-tap examples, which the page names in the reader's language. Ranked by the climate's best-known
+// food plants (named in the most languages), then the most edible, then by scientific name: the same
+// every time. Then picked for variety (prepush R2; approved state 18: apple, garlic, hazelnut, tomato):
+// at most one plant per genus, and each round takes the best of a layer not yet shown, so the examples
+// spread across the layers before a layer repeats. The crops already chosen are left out (C5: the
+// examples and the field's placeholder).
 export function cropExamples(cell, n = 4, chosen = []) {
   const known = (t) => Object.keys(t.names).length, skip = new Set(chosen);
-  return foodPlants(cell).filter((t) => !skip.has(t.id)).sort((a, b) => known(b) - known(a) || (b.traits.edibility_rating ?? 0) - (a.traits.edibility_rating ?? 0) || (a.canonical_name < b.canonical_name ? -1 : 1)).slice(0, n);
+  const ranked = foodPlants(cell).filter((t) => !skip.has(t.id)).sort((a, b) => known(b) - known(a) || (b.traits.edibility_rating ?? 0) - (a.traits.edibility_rating ?? 0) || (a.canonical_name < b.canonical_name ? -1 : 1));
+  const out = [], genera = new Set();
+  while (out.length < n) {
+    const layers = new Set();
+    let took = false;
+    for (const t of ranked) {
+      if (out.length >= n) break;
+      const g = t.genus ?? t.canonical_name.split(' ')[0], s = t.stratum?.value ?? '';
+      if (out.includes(t) || genera.has(g) || layers.has(s)) continue;
+      out.push(t); genera.add(g); layers.add(s); took = true;
+    }
+    if (!took) break;
+  }
+  return out;
 }
 
 // A plant only another climate's list has, for the crop step's no-match message: the first list (in

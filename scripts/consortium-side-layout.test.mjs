@@ -27,9 +27,9 @@ const TWENTY = [...new Set([
   'Betula pendula', 'Caragana arborescens', 'Juniperus communis', 'Cornus mas', 'Allium sativum', 'Allium schoenoprasum', 'Allium ursinum', 'Viola odorata', 'Malus domestica', 'Vitis vinifera',
 ].map(named).concat(ids))].slice(0, 20);
 
-async function sideHtml(members) {
+async function sideHtml(members, lang = 'en') {
   const q = core.encodeState({ climate: 'temperate', country: 'FR', site: { ...core.DEFAULT_SITE, room: 'field' }, kept: members, removed: [], members, plants: [], crops: [], guests: [] }, temperate);
-  const page = await tab(device(), '/consortium/#' + q.toString(), { data: 'real' }).load();
+  const page = await tab(device(), '/consortium/#' + q.toString(), { data: 'real', lang }).load();
   const html = page.$('#ct-side').outerHTML;
   assert.ok(html.length > 1000);
   return html;
@@ -65,7 +65,14 @@ function measure(theme) {
   return [...document.querySelectorAll('.case')].map((box) => {
     for (const m of box.querySelectorAll('.sv-marks')) { if (denseAt(m.clientWidth, m.children.length)) m.setAttribute('data-dense', 'true'); else m.removeAttribute('data-dense'); }
     const surface = getComputedStyle(box.querySelector('.probe')).backgroundColor;
-    const r = { width: parseInt(box.style.width, 10), size: box.querySelector('.sv').dataset.size, plotH: 0, svgs: 0, scale: [], bands: [], denseNote: false, numOverlap: 0, minNum: 99 };
+    const r = { width: parseInt(box.style.width, 10), size: box.querySelector('.sv').dataset.size, plotH: 0, svgs: 0, scale: [], bands: [], denseNote: false, numOverlap: 0, minNum: 99, keyOverlap: [] };
+    // The legend: a plant's name never runs under its height ("30 m, climbing or trailing").
+    for (const li of box.querySelectorAll('.pkey li')) {
+      const h = li.querySelector('.pkey-h')?.getBoundingClientRect(), it = li.querySelector('.pkey-item');
+      if (!h || !h.width) continue;
+      for (const el of it.querySelectorAll('.pkey-n, .pkey-sci, .num')) { const e = el.getBoundingClientRect(); if (e.right > h.left + 0.5 && e.left < h.right - 0.5 && e.bottom > h.top + 0.5 && e.top < h.bottom - 0.5) r.keyOverlap.push(li.textContent.replace(/\s+/g, ' ').trim()); }
+      if (it.scrollWidth > it.clientWidth + 1) r.keyOverlap.push('overflows: ' + li.textContent.replace(/\s+/g, ' ').trim());
+    }
     // The numbers under the drawing: none overlaps another, each one readable.
     const nums = [...box.querySelectorAll('.sv-nums .num')].map((n) => n.getBoundingClientRect());
     for (const n of nums) r.minNum = Math.min(r.minNum, n.width);
@@ -126,10 +133,10 @@ async function run(cases, windowWidth) {
 }
 
 test('in Chrome, the side view is true to scale and readable at 320 px and on the desktop, in light and dark', { skip: !chrome && 'no Chrome or Chromium on this machine', timeout: 90000 }, async () => {
-  const draw = await sideHtml(TWENTY), marks = await sideHtml(ids);
+  const draw = await sideHtml(TWENTY), marks = await sideHtml(ids), drawFr = await sideHtml(TWENTY, 'fr');
   // A 320 px phone (16 px page gutters), then the desktop: the drawing beside the side panel and the
   // marks at full width.
-  const results = [...await run([[288, draw], [288, marks]], 320).then((r) => [r]), await run([[825, draw], [1185, marks]], 1300)];
+  const results = [...await run([[288, draw], [288, marks], [288, drawFr]], 320).then((r) => [r]), await run([[825, draw], [1185, marks], [825, drawFr]], 1300)];
   for (const out of results) for (const theme of ['light', 'dark']) for (const r of out[theme]) {
     const where = `${r.size} at ${r.width} px, ${theme}`;
     if (r.size === 'draw') {
@@ -141,6 +148,7 @@ test('in Chrome, the side view is true to scale and readable at 320 px and on th
       // V5: 20 numbers that never overlap, each at least 19 px.
       assert.equal(r.numOverlap, 0, `${where}: numbers apart`);
       assert.ok(r.minNum >= 19, `${where}: numbers ${r.minNum} px`);
+      assert.deepEqual(r.keyOverlap, [], `${where}: legend names clear of their heights`);
       continue;
     }
     assert.equal(r.bands.reduce((a, b) => a + b.n, 0), 200, where);

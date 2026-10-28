@@ -78,7 +78,7 @@ test('every key the tool asks for exists, and every key exists for a reason', ()
     const [id, rest = ''] = [tail.split('.')[0], tail.split('.').slice(1).join('.')];
     assert.ok(ids[prefix].includes(id), `${key}: ${id} is not a ${prefix} id of the data core`);
     if (prefix === 'region') assert.equal(rest, '', `${key}: a region has a name only (it labels a reason)`);
-    if (['site', 'basis', 'misfit'].includes(prefix) && rest) assert.ok(siteOptions[id].includes(rest.replace(/\.hint$/, '')), `${key}: ${rest}`);
+    if (['site', 'basis', 'misfit'].includes(prefix) && rest) assert.ok(siteOptions[id].includes(rest.replace(/\.(hint|wide)$/, '')), `${key}: ${rest}`);
     return true;
   };
   // A key built at run time with a part after the id ("stratum.high.needs") is read only when some
