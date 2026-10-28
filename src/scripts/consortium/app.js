@@ -8,7 +8,7 @@
 // own, the state lives in the address bar and in localStorage.
 import {
   fileFor, isCountry, invasiveChecked, strata, phases, phaseBands, bandsOf, jobs, jobsOf, jobOfFunction, suggest, evaluate, alternatives, flagsFor,
-  SIZE_LIMIT, DEFAULT_SITE, lights, soils, waters, rooms, encodeState, decodeState, resolveState, taxonByName, invasiveCountries, isSerious, siteClimates, fits,
+  SIZE_LIMIT, DEFAULT_SITE, lights, soils, waters, rooms, encodeState, decodeState, resolveState, taxonByName, isSerious, siteClimates, fits,
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadClimate } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook, capFirst } from './words.js';
@@ -151,7 +151,7 @@ function warnParts(t, flags) {
   if (tox && tox.level !== 'None') severe.push({ cls: tox.level === 'Slight' ? 'soft' : 'danger', text: T('tox.' + tox.level), look: tox.level !== 'Slight' });
   if (flags.invasive === true) severe.push({ cls: 'warning', text: esc(T('invHere', { country: W.country(S.country) })), look: true });
   // A country GRIIS has no list for is said once per view and in details, not on every card (m-2).
-  const invNote = invasiveCardNote(W, { ...place(), inv: invasiveCountries(t) });
+  const invNote = invasiveCardNote(W, { ...place(), inv: t.warnings.invasive_in });
   for (const c of flags.conflicts) severe.push({ cls: isSerious(c) ? 'warning' : 'soft', text: T('conflict', { other: name(otherOf(c, t)) }), look: isSerious(c), conflict: c });
   for (const k of flags.misfits) severe.push({ cls: 'warning', text: esc(misfitText(t, k)), look: true, misfit: k });
   if (t.warnings.allelopathic === true) soft.push(T('c.allelo'));
@@ -560,7 +560,7 @@ function detailsParts(t) {
   if (tox && tox.level !== 'None') items.push(item('danger', I.danger, esc(T('tox.' + tox.level)), note(tox.note), `<p class="liab">${esc(T('d.liab'))}</p>`));
   if (flags.invasive === true) items.push(item('warning', I.warn, esc(T('invHere', { country: W.country(S.country) })), esc(T('d.invHere', { country: W.country(S.country) })), `<p class="liab">${esc(T('d.liab'))}</p>`));
   // A country GRIIS has no checklist for: "not checked" there, never "none" (m4).
-  const invD = invasiveDetails(W, { ...place(), inv: invasiveCountries(t) });
+  const invD = invasiveDetails(W, { ...place(), inv: t.warnings.invasive_in });
   if (invD.notChecked) items.push(item('unknown', I.unknown, esc(invD.notChecked.title), esc(invD.notChecked.text)));
   for (const c of flags.conflicts) items.push(item(isSerious(c) ? 'warning' : 'soft', I.warn, T('conflict', { other: name(otherOf(c, t)) }), note(c.note) || esc(T('ctype.' + c.type)), (c.agent ? `<p>${esc(T('d.agent', { agent: c.agent }))}</p>` : '') + conflictFrom(c)));
   for (const k of flags.misfits) items.push(item('warning', I.warn, esc(T('d.misfit')), esc(misfitText(t, k))));

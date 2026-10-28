@@ -337,6 +337,12 @@ test('n2: under a link with no country (a guide preset), a saved country reads "
 test('n3: a country listed twice is counted once', () => {
   const inv = [{ country: 'BR', sources: ['g'] }, { country: 'BR', sources: ['h'] }];
   assert.equal(invasiveDetails(en, { country: 'FR', checked: true, inv }).list.title, 'Recorded invasive in 1 country');
+  // The page hands the parts the taxon's own records ({ country, sources }), never bare codes: a
+  // list of codes read as one country with no name, and a plant's details failed to open.
+  const appJs = read('src/scripts/consortium/app.js');
+  assert.match(appJs, /invasiveCardNote\(W, \{ \.\.\.place\(\), inv: t\.warnings\.invasive_in \}\)/);
+  assert.match(appJs, /invasiveDetails\(W, \{ \.\.\.place\(\), inv: t\.warnings\.invasive_in \}\)/);
+  assert.deepEqual(invasiveDetails(en, { country: null, checked: false, inv: [{ country: 'US', sources: ['griis'] }, { country: 'NZ', sources: ['griis'] }] }).list.countries, ['New Zealand', 'United States']);
   assert.deepEqual(invasiveCardNote(en, { country: null, checked: false, inv }), { cls: 'soft', text: 'invasive in 1 country' });
 });
 
