@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { pluralForms, makeWords, needsLook, searchText, fold, plantName } from '../src/scripts/consortium/words.js';
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
 import * as core from '../src/lib/consortium/index.ts';
-import { droppedPlants, trimGaps, mayPersist, photoSource, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint } from '../src/scripts/consortium/logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint } from '../src/scripts/consortium/logic.js';
 import { profileSVG } from '../src/scripts/consortium/draw.js';
 import { crops } from '../src/data/crops.ts';
 
@@ -170,6 +170,25 @@ test('logic: a photo credits the site it came from (copy-M6)', () => {
     }
   }
   assert.doesNotMatch(read('src/scripts/consortium/app.js'), />Wikimedia Commons</, 'the host is never hard-coded');
+});
+
+test('logic: only an http(s) url from the data becomes a link; any other is plain text (prepush m1)', () => {
+  const bad = ['javascript:alert(document.domain)', 'javascript://commons.wikimedia.org/%0aalert(document.domain)', 'JaVaScRiPt:x', ' javascript:x', 'data:text/html,x', 'vbscript:x', '//commons.wikimedia.org/x', 'commons.wikimedia.org/x', '', null, undefined, 42];
+  for (const url of bad) {
+    assert.equal(safeHref(url), null, String(url));
+    assert.equal(photoSource(url), null, `photoSource ${String(url)}`);
+  }
+  assert.equal(safeHref('https://pfaf.org/x?a=1&b=2'), 'https://pfaf.org/x?a=1&b=2');
+  assert.equal(safeHref('http://example.org/'), 'http://example.org/');
+  // The source is the parsed host: a lookalike host is not Commons.
+  assert.equal(photoSource('https://commons.wikimedia.org.evil.example/x'), 'commons.wikimedia.org.evil.example');
+  // The page puts a data url in an href only through safeHref; the other hrefs are the site's own.
+  const appJs = read('src/scripts/consortium/app.js');
+  const hrefs = [...appJs.matchAll(/href="\$\{([^}]+)\}"/g)].map((m) => m[1]);
+  assert.ok(hrefs.length >= 4, 'hrefs found');
+  for (const h of hrefs) assert.ok(['g.url', 'data.contact', 'esc(href)', 'esc(pageHref)'].includes(h), `href from ${h}`);
+  assert.match(appJs, /const href = safeHref\(x\.url\)/);
+  assert.match(appJs, /pageHref = safeHref\(img\?\.source_page_url\)/);
 });
 
 test('logic: a long list shows in steps, and "Show more" counts what one press reveals (copy-m5, min-4)', () => {

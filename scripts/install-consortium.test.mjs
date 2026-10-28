@@ -403,3 +403,30 @@ test('labels.json must be trait → English value → locale → text, as the fo
     assert.equal(existsSync(w.out), false);
   }
 });
+
+test('a source url or a photo page url that is not http(s) is refused, so no data link can run script (prepush m1)', async (t) => {
+  const bad = ['javascript:alert(document.domain)', 'javascript://commons.wikimedia.org/%0aalert(1)', 'data:text/html,x', '//example.org/x', 'vbscript:x', ' javascript:x', 'example.org/page'];
+  for (const url of bad) {
+    const w = workspace(t);
+    const cell = w.json('temperate-europe.json');
+    const id = Object.keys(cell.sources).find((k) => cell.sources[k].url);
+    cell.sources[id].url = url;
+    w.write('temperate-europe.json', cell);
+    await assert.rejects(install(w), new RegExp(`sources\\.${id}\\.url: .*is not an http\\(s\\) URL`), url);
+    assert.equal(existsSync(w.out), false);
+  }
+  for (const url of bad) {
+    const w = workspace(t);
+    const cell = withPhotos(w);
+    cell.taxa.find((x) => x.image).image.source_page_url = url;
+    w.write('tropical-southern-america.json', cell);
+    await assert.rejects(install(w), /image\.source_page_url: .*is not an http\(s\) URL/, url);
+  }
+  // http, https and null pass.
+  const cell = JSON.parse(readFileSync(join(fixture, 'temperate-europe.json'), 'utf8'));
+  const id = Object.keys(cell.sources)[0];
+  for (const url of ['https://example.org/a', 'http://example.org/b', 'HTTPS://EXAMPLE.ORG/C', null]) {
+    cell.sources[id].url = url;
+    assert.deepEqual(shapeErrors(cell, cellShape), [], String(url));
+  }
+});

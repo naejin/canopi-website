@@ -1,6 +1,6 @@
 // The consortium tool's pure rules about its own state (no DOM, no strings), so
 // scripts/consortium-page.test.mjs can test them: what a share link lost, which gap rows stay,
-// when the address bar may be rewritten, where a photo came from, how much of a list shows, what a
+// when the address bar may be rewritten, which data urls may be links, where a photo came from, how much of a list shows, what a
 // place change leaves of a link's notices, when a click is the tail of a double click, the language
 // links' query, the place a guide preset borrows from the saved consortium, and why a Northern American
 // country is not covered.
@@ -30,11 +30,19 @@ export function trimGaps(gaps, addedStrata, free) {
 // loading and error screens: the link that led there stays whole for a reload (M2).
 export const mayPersist = (state) => state.status !== 'loading' && state.status !== 'error' && state.status !== 'boot';
 
-// The site a photo's source page is on, by name, for its credit line.
+// A url from the data as a link target: an absolute http or https url, else null, so the page shows
+// the text without a link (prepush m1: the installer refuses other schemes; this is the second wall).
+export function safeHref(url) {
+  if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) return null;
+  try { return ['http:', 'https:'].includes(new URL(url).protocol) ? url : null; } catch { return null; }
+}
+
+// The site a photo's source page is on, by name, for its credit line: decided by the parsed url's
+// host, and null for a url that is not http(s) (javascript://commons.wikimedia.org/… has that host too).
 const HOSTS = [['commons.wikimedia.org', 'Wikimedia Commons'], ['wikimedia.org', 'Wikimedia Commons'], ['inaturalist.org', 'iNaturalist']];
 export function photoSource(url) {
-  let host;
-  try { host = new URL(url).hostname.toLowerCase(); } catch { return null; }
+  if (!safeHref(url)) return null;
+  const host = new URL(url).hostname.toLowerCase();
   const hit = HOSTS.find(([h]) => host === h || host.endsWith('.' + h));
   return hit ? hit[1] : host.replace(/^www\./, '');
 }

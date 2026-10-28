@@ -9,7 +9,8 @@
 //   --fixture (tests only), each cell's file, sha256 and taxa/interactions counts.
 // - each cell file: the required keys and types of canopi-data's consortium-export.schema.json,
 //   checked by hand (no dependency); extra keys are allowed, as the format lets the export add
-//   fields; taxon ids unique; every source id it cites defined in `sources`.
+//   fields; taxon ids unique; every source id it cites defined in `sources`; every source url and
+//   photo page url http(s) (the page links them).
 // Photos: each taxon's image.url (http or https) is downloaded once per taxon id, one at a time
 // with a half-second pause (rate limiting waited out, see download()), into images/<id>.<ext>, and the installed cell points to
 // /data/consortium/images/<id>.<ext>; credit, licence and source page stay as they are. Wikimedia
@@ -69,6 +70,13 @@ export function thumbnailUrl(url, width = THUMB_WIDTH) {
 // not require it); null passes only where the schema allows it.
 const t = (kind) => ({ kind });
 const str = t('string'), num = t('number'), int = t('integer'), bool = t('boolean');
+// A link the page puts in an href (a source, a photo's page): http or https only, so a javascript:,
+// data: or protocol-relative value from upstream never becomes a link on the site's origin.
+const httpUrl = { kind: 'string', url: true };
+export const isHttpUrl = (value) => {
+  if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) return false;
+  try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; }
+};
 const orNull = (s) => ({ ...s, nullable: true });
 const optional = (s) => ({ ...s, optional: true });
 const oneOf = (...values) => ({ kind: 'enum', values });
@@ -101,7 +109,7 @@ const taxon = obj({
   id: { kind: 'string', pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/ },
   canonical_name: str, genus: str, family: str,
   names: map(str, LOCALES),
-  image: orNull(obj({ url: str, credit: orNull(str), licence: orNull(str), source_page_url: orNull(str) })),
+  image: orNull(obj({ url: str, credit: orNull(str), licence: orNull(str), source_page_url: orNull(httpUrl) })),
   role: oneOf('crop', 'support'),
   reason: optional(orNull(text)),
   stratum: orNull(obj({ value: oneOf('emergent', 'high', 'medium', 'low'), sources: sourceIds })),
@@ -134,7 +142,7 @@ export const cellShape = obj({
   climate_zone: climateZone,
   region,
   generated_at: str,
-  sources: map(obj({ label: str, url: optional(orNull(str)), licence: optional(orNull(str)), attribution: optional(orNull(str)) })),
+  sources: map(obj({ label: str, url: optional(orNull(httpUrl)), licence: optional(orNull(str)), attribution: optional(orNull(str)) })),
   taxa: arr(taxon),
   interactions: arr(interaction),
 });
@@ -165,6 +173,7 @@ export function shapeErrors(value, shape, path = '$', out = [], max = 20) {
     case 'string':
       if (typeof value !== 'string') fail('is not a string');
       else if (shape.pattern && !shape.pattern.test(value)) fail(`"${value}" does not match ${shape.pattern}`);
+      else if (shape.url && !isHttpUrl(value)) fail(`${JSON.stringify(value)} is not an http(s) URL`);
       break;
     case 'number': if (typeof value !== 'number' || !Number.isFinite(value)) fail('is not a number'); break;
     case 'integer':
