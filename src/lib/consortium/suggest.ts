@@ -44,7 +44,12 @@ export interface Alternative { taxon: Taxon; sameStratum: boolean; sharedJobs: J
 // missing or false flag makes Flags.invasive null, "not checked" (review m7).
 export type Country = { country?: null; countryChecked?: boolean } | { country: string; countryChecked: boolean };
 
-export type SuggestOptions = Country & {
+// Guests: plants from another climate's list, added with "Add anyway" (owner, 2026-10-28). A kept
+// guest is a member like any kept plant and counts for the coverage; a guest is never picked,
+// offered in Swap or used to fill: the suggestion and its alternatives come from this climate only.
+export interface WithGuests { guests?: Taxon[] }
+
+export type SuggestOptions = Country & WithGuests & {
   site: Site;
   kept?: string[]; // taxon ids that are always members, flagged or not (kept wins over removed)
   removed?: string[]; // taxon ids never picked automatically
@@ -140,6 +145,13 @@ function seriousPartners(cell: ClimateFile): Map<string, Set<string>> {
   return out;
 }
 
+// The guests that are not in this cell (a plant the cell lists is an ordinary member).
+function guestsOf(cell: ClimateFile, guests: Taxon[] | undefined): Taxon[] {
+  if (!guests?.length) return [];
+  const own = new Set(cell.taxa.map((t) => t.id));
+  return guests.filter((t, i) => !own.has(t.id) && guests.findIndex((g) => g.id === t.id) === i);
+}
+
 function flagsOf(i: Info, others: Taxon[], cell: ClimateFile, where: Country): Flags {
   const invasive = invasiveIn(i.taxon, where.country, where.countryChecked);
   const found = conflictsOf(i.taxon, others, cell.interactions);
@@ -161,8 +173,10 @@ export function suggest(cell: ClimateFile, options: SuggestOptions): Suggestion 
   const infos = sorted.map((t) => infoOf(t, site));
   const partners = seriousPartners(cell);
 
-  // Kept plants first, in tie order (better known first, then by name); ids that are not in this cell are ignored.
-  const chosen = infos.filter((i) => keptIds.has(i.taxon.id));
+  // Kept plants first, in tie order (better known first, then by name), then kept guests; ids that
+  // are neither in this cell nor guests are ignored.
+  const guests = guestsOf(cell, options.guests).sort(byKnownThenName).map((t) => infoOf(t, site));
+  const chosen = [...infos, ...guests].filter((i) => keptIds.has(i.taxon.id));
   const gains = new Map<string, number | null>(chosen.map((i) => [i.taxon.id, null]));
   const cov = coverageOf(chosen);
   const memberIds = new Set(chosen.map((i) => i.taxon.id));
@@ -202,7 +216,7 @@ function result(chosen: Info[], keptIds: Set<string>, gains: Map<string, number 
   return { members, limit: SIZE_LIMIT[site.room], gaps: allJobs.filter((j) => !coverageOf(chosen).jobs.has(j)) };
 }
 
-export type EvaluateOptions = Country & { site: Site; kept?: string[] };
+export type EvaluateOptions = Country & WithGuests & { site: Site; kept?: string[] };
 
 // A fixed consortium, scored as it stands and never refilled: the page's state after a Remove (the
 // gap stays) or a restored share link. Members come in the order of `ids` (repeats and ids not in
@@ -211,7 +225,7 @@ export type EvaluateOptions = Country & { site: Site; kept?: string[] };
 export function evaluate(cell: ClimateFile, ids: string[], options: EvaluateOptions): Suggestion {
   const { site } = options;
   const keptIds = new Set(options.kept ?? []);
-  const byId = new Map(cell.taxa.map((t) => [t.id, t]));
+  const byId = new Map([...cell.taxa, ...guestsOf(cell, options.guests)].map((t) => [t.id, t]));
   const chosen: Info[] = [], gains = new Map<string, number | null>();
   const cov = coverageOf([]);
   for (const id of ids) {
@@ -225,32 +239,34 @@ export function evaluate(cell: ClimateFile, ids: string[], options: EvaluateOpti
   return result(chosen, keptIds, gains, cell, site, options);
 }
 
-export type FlagsOptions = Country & { site: Site };
+export type FlagsOptions = Country & WithGuests & { site: Site };
 
 // The flags a plant would carry beside these members (it is left out of them if it is one): the
 // same misfits, unknowns, invasive check and conflicts as a member of suggest() or evaluate(), for a
 // plant the page offers to add. Ids not in the cell are ignored; null for a taxon id the cell lacks.
 export function flagsFor(cell: ClimateFile, id: string, memberIds: string[], options: FlagsOptions): Flags | null {
-  const taxon = cell.taxa.find((t) => t.id === id);
+  const pool = [...cell.taxa, ...guestsOf(cell, options.guests)];
+  const taxon = pool.find((t) => t.id === id);
   if (!taxon) return null;
   const ids = new Set(memberIds);
-  const others = cell.taxa.filter((t) => ids.has(t.id) && t.id !== id);
+  const others = pool.filter((t) => ids.has(t.id) && t.id !== id);
   return flagsOf(infoOf(taxon, options.site), others, cell, options);
 }
 
-export type AlternativeOptions = Country & { site: Site; removed?: string[] };
+export type AlternativeOptions = Country & WithGuests & { site: Site; removed?: string[] };
 
 // Plants that could take a member's place: plants without a flag before flagged ones (a misfit or a
 // serious conflict; invasive here is a warning, not a flag), then same stratum, then the most jobs shared with the member,
 // then the highest gain to the rest of the consortium, then by name. Flagged plants are listed, with
 // their flags, so the page can show them under a warning; current members and removed plants are not.
 export function alternatives(memberId: string, consortium: string[], cell: ClimateFile, options: AlternativeOptions): Alternative[] {
-  const member = cell.taxa.find((t) => t.id === memberId);
+  const pool = [...cell.taxa, ...guestsOf(cell, options.guests)];
+  const member = pool.find((t) => t.id === memberId);
   if (!member) return [];
   const { site } = options;
   const inConsortium = new Set([...consortium, memberId]);
   const removedIds = new Set(options.removed ?? []);
-  const others = cell.taxa.filter((t) => inConsortium.has(t.id) && t.id !== memberId);
+  const others = pool.filter((t) => inConsortium.has(t.id) && t.id !== memberId);
   const cov = coverageOf(others.map((t) => infoOf(t, site)));
   const memberJobs = new Set(jobsOf(member));
   const memberStratum = member.stratum?.value ?? null;

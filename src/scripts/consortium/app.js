@@ -815,12 +815,15 @@ const sayLater = (text) => { clearTimeout(sayTimer); sayTimer = setTimeout(() =>
 function stateNow(saved = false) {
   const p = S.pending?.state;
   const members = p ? p.members : linkMembers(S.status, S.members);
-  return { climate: S.climate, ...linkCountry(S, saved), site: S.site, kept: p ? p.kept : keptList(), removed: p ? p.removed : [...S.removed], members, plants: p?.plants ?? [] };
+  return { climate: S.climate, ...linkCountry(S, saved), site: S.site, kept: p ? p.kept : keptList(), removed: p ? p.removed : [...S.removed], members, plants: p?.plants ?? [], crops: p ? p.crops : [], guests: p ? p.guests : [] };
 }
 // The link's own prefixes, written back exactly as they came (shortening them without the cell
-// could make two plants share one).
+// could make two plants share one): a v3 link's tokens come back the same from encodeState; a v2
+// link is written back as v2.
 function pendingQuery(saved = false) {
-  const q = encodeState({ ...stateNow(saved), kept: [], removed: [], members: null });
+  if (S.pending.version === 3) return encodeState(stateNow(saved));
+  const q = encodeState({ ...stateNow(saved), kept: [], removed: [], members: null, crops: [], guests: [] });
+  q.set('v', '2');
   const st = S.pending.state;
   if (st.kept.length) q.set('p', st.kept.join('.'));
   if (st.removed.length) q.set('x', st.removed.join('.'));
