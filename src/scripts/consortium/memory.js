@@ -8,18 +8,37 @@
 // without it.
 // scripts/consortium-country.test.mjs runs this wiring with a stubbed storage and history (m-7).
 import { decodeState } from '../../lib/consortium/index.ts';
-import { pickCountry } from './logic.js';
+import { pickCountry, arrivalParams } from './logic.js';
 
 export const STORE = 'canopi-consortium';
 // The reader's own country choice ('FR', or '-' for "No country"), apart from the consortium, so a
 // reload in any status and Start over keep it (m12). A guess is never written.
 export const COUNTRY_STORE = 'canopi-country';
 export const MINE = 'mine';
+// The main crops and "Add anyway" guests the reader chose on this device (B7): only those read "you
+// chose it" or "you added it"; a shared link's are described neutrally (parts.js builtKey). Kept in
+// storage and in this tab (history.state), so a reload or a language switch keeps them with storage
+// blocked; Start over forgets them.
+export const OWN_STORE = 'canopi-own';
 const TAB = 'canopiCountry';
+const OWN_TAB = 'canopiOwn';
+const ownOf = (v) => ({ crops: new Set(v?.crops ?? []), guests: new Set(v?.guests ?? []) });
 const attempt = (f) => { try { return f(); } catch { return null; } };
 
 export function memoryOf({ storage, history, location }) {
+  const readOwn = () => attempt(() => history.state?.[OWN_TAB]) ?? attempt(() => JSON.parse(storage.getItem(OWN_STORE) ?? 'null'));
   return {
+    // Whether the state was read from the fragment (arrive): only those links carry the end marker.
+    fromFragment: false,
+    own: () => ownOf(readOwn()),
+    addOwn({ crops = [], guests = [] }) {
+      const o = ownOf(readOwn());
+      for (const id of crops) o.crops.add(id);
+      for (const id of guests) o.guests.add(id);
+      const v = { crops: [...o.crops], guests: [...o.guests] };
+      attempt(() => storage.setItem(OWN_STORE, JSON.stringify(v)));
+      attempt(() => history.replaceState({ ...(history.state ?? {}), [OWN_TAB]: v }, ''));
+    },
     // The last consortium on this device: { q, at, src } or null.
     saved: () => attempt(() => JSON.parse(storage.getItem(STORE) ?? 'null')),
     save: (q, src) => attempt(() => storage.setItem(STORE, JSON.stringify({ q, at: new Date().toISOString(), src }))),
@@ -31,21 +50,21 @@ export function memoryOf({ storage, history, location }) {
       attempt(() => storage.setItem(COUNTRY_STORE, v));
       attempt(() => history.replaceState({ ...(history.state ?? {}), [TAB]: v }, ''));
     },
-    // On arrival, before any await: an old link's MINE leaves the address bar (so a slow or failed
-    // manifest load never leaves it there to be copied or bookmarked: m-1), and the start reads the
-    // query without it.
+    // On arrival, before any await: the state is read from the fragment, else from the query of a
+    // link from before (v2, the first v3 links, a guide preset), which moves into the fragment (C8);
+    // an old link's MINE leaves the address bar (so a slow or failed manifest load never leaves it
+    // there to be copied or bookmarked: m-1), and the start reads the state without it.
     arrive() {
-      const q = new URLSearchParams(location.search);
-      if (q.has(MINE)) {
-        q.delete(MINE);
-        const rest = q.toString();
-        attempt(() => history.replaceState(history.state, '', location.pathname + (rest ? '?' + rest : '')));
-      }
-      return q;
+      const { params, fragment, address } = arrivalParams({ search: location.search, hash: location.hash }, MINE);
+      this.fromFragment = fragment;
+      if (address != null) attempt(() => history.replaceState(history.state, '', location.pathname + address));
+      return params;
     },
-    // Start over: the consortium goes; the country (device and tab) stays.
+    // Start over: the consortium and the reader's own picks go; the country (device and tab) stays.
     startOver(path) {
       attempt(() => storage.removeItem(STORE));
+      attempt(() => storage.removeItem(OWN_STORE));
+      attempt(() => history.replaceState({ ...(history.state ?? {}), [OWN_TAB]: undefined }, ''));
       attempt(() => history.replaceState(history.state, '', path));
     },
   };

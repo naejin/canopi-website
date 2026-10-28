@@ -5,8 +5,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { makeWords } from '../src/scripts/consortium/words.js';
-import { pickCountry, guessCountry, linkCountry, langSearch, chosenHere, printNoneKey, invasiveSourceIds, afterMove, keptCountry, noLinkCode } from '../src/scripts/consortium/logic.js';
-import { cardReasonHTML, reasonsHTML, countryWhy, countryLineParts, warnWhere, printWhere, invasiveCardNote, invasiveDetails, countryAnnouncement } from '../src/scripts/consortium/parts.js';
+import { pickCountry, guessCountry, linkCountry, langHash, chosenHere, printNoneKey, invasiveSourceIds, afterMove, keptCountry, noLinkCode } from '../src/scripts/consortium/logic.js';
+import { cardReasonHTML, reasonsHTML, countryWhy, countryLineParts, warnWhere, printWhere, invasiveCardNote, invasiveDetails, cardInvasive, detailsInvasive, countryAnnouncement } from '../src/scripts/consortium/parts.js';
 import { memoryOf, startState, STORE, COUNTRY_STORE, MINE } from '../src/scripts/consortium/memory.js';
 import * as core from '../src/lib/consortium/index.ts';
 
@@ -214,9 +214,9 @@ test('m-3: a country chosen on this page reads "chosen by you" after a reload, e
   const blocked = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); }, removeItem() { throw new Error('blocked'); } };
   const tab = fakeHistory('/consortium/');
   memoryOf({ storage: blocked, history: tab, location: tab.location }).choose('FR');
-  // The reload: persist() wrote k=FR into the address bar; the same tab keeps its history.state.
-  tab.location.search = '?c=temperate&k=FR';
-  const reload = startState({ params: new URLSearchParams(tab.location.search), memory: memoryOf({ storage: blocked, history: tab, location: tab.location }), guess: 'DE', known });
+  // The reload: persist() wrote k=FR into the address bar's fragment; the same tab keeps its history.state.
+  tab.location.hash = '#c=temperate&k=FR';
+  const reload = startState({ params: new URLSearchParams(tab.location.hash.slice(1)), memory: memoryOf({ storage: blocked, history: tab, location: tab.location }), guess: 'DE', known });
   assert.deepEqual(reload.country, { country: 'FR', countrySource: 'user', noCountry: false, unknownCountry: null });
   // Someone else's link opened in a fresh tab reads "from the shared link".
   const theirs = fakeHistory('/consortium/', '?c=temperate&k=FR');
@@ -230,10 +230,10 @@ function boot({ storage, search, guess, pathname = '/consortium/' }) {
   const tab = fakeHistory(pathname, search);
   const memory = memoryOf({ storage, history: tab, location: tab.location });
   const params = memory.arrive();
-  const addressAtArrival = tab.location.search;
+  const addressAtArrival = tab.location.search + tab.location.hash;
   const st = startState({ params, memory, guess, known });
   const S = { ...st.country, linkCode: st.country.unknownCountry };
-  return { tab, memory, params, st, S, addressAtArrival, lang: langSearch(tab.location.search), k: linkCountry(S, false).country };
+  return { tab, memory, params, st, S, addressAtArrival, lang: langHash(tab.location.hash), k: linkCountry(S, false).country };
 }
 const emptyStore = () => { const m = new Map(); return { m, storage: { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) } }; };
 const blockedStore = { getItem() { throw new Error('x'); }, setItem() { throw new Error('x'); }, removeItem() { throw new Error('x'); } };
@@ -250,20 +250,20 @@ test('M-1: a copied language link never hands the sender\'s country to whoever o
       assert.doesNotMatch(b.lang, new RegExp(MINE), `${search}: B's language links carry no marker`);
       assert.doesNotMatch(b.lang, /FR/, search);
       // B reloads: still not B's choice.
-      const again = startState({ params: new URLSearchParams(b.tab.location.search), memory: b.memory, guess: 'DE', known });
+      const again = startState({ params: b.memory.arrive(), memory: b.memory, guess: 'DE', known });
       assert.notEqual(again.country.countrySource, 'user', search);
     }
   }
-  // The language links of a reader who chose a country carry only the address bar's query.
+  // The language links of a reader who chose a country carry only the address bar's fragment (C8).
   const { storage } = emptyStore();
-  const a = boot({ storage, search: '?c=temperate', guess: 'DE' });
+  const a = boot({ storage, search: '#c=temperate', guess: 'DE' });
   a.memory.choose('FR');
-  a.tab.location.search = '?c=temperate&k=FR';
-  assert.equal(langSearch(a.tab.location.search), '?c=temperate&k=FR');
-  assert.equal(langSearch(`?c=temperate&${MINE}=DE`), '?c=temperate');
-  assert.equal(langSearch(''), '');
+  a.tab.location.hash = '#c=temperate&k=FR';
+  assert.equal(langHash(a.tab.location.hash), '#c=temperate&k=FR');
+  assert.equal(langHash(`#c=temperate&${MINE}=DE`), '#c=temperate');
+  assert.equal(langHash(''), '');
   // A gets "chosen by you" on the other language page from the device's storage.
-  const there = boot({ storage, search: langSearch(a.tab.location.search), guess: 'DE', pathname: '/fr/consortium/' });
+  const there = boot({ storage, search: langHash(a.tab.location.hash), guess: 'DE', pathname: '/fr/consortium/' });
   assert.equal(there.S.countrySource, 'user');
   assert.equal(there.k, 'FR');
 });
@@ -271,7 +271,8 @@ test('M-1: a copied language link never hands the sender\'s country to whoever o
 test('m-1: an old link\'s marker leaves the address bar on arrival, before the manifest loads', () => {
   const { storage } = emptyStore();
   const b = boot({ storage, search: `?c=tropical&${MINE}=FR&k=TW`, guess: null });
-  assert.equal(b.addressAtArrival, '?c=tropical&k=TW');
+  assert.equal(b.addressAtArrival, '#c=tropical&k=TW', 'and the old query link moves into the fragment (C8)');
+  assert.equal(boot({ storage, search: `#c=tropical&${MINE}=FR&k=TW`, guess: null }).addressAtArrival, '#c=tropical&k=TW');
   assert.equal(b.params.has(MINE), false, 'the start never reads it');
   assert.equal(b.params.get('k'), 'TW');
   // arrive() runs in app.js before the first await (the manifest), so a slow or failed load leaves a clean address.
@@ -467,21 +468,23 @@ test('n2: under a link with no country (a guide preset), a saved country reads "
 test('n3: a country listed twice is counted once', () => {
   const inv = [{ country: 'BR', sources: ['g'] }, { country: 'BR', sources: ['h'] }];
   assert.equal(invasiveDetails(en, { country: 'FR', checked: true, inv }).list.title, 'Recorded invasive in 1 country');
-  // The page hands the parts the taxon's own records ({ country, sources }), never bare codes: a
-  // list of codes read as one country with no name, and a plant's details failed to open.
-  const appJs = read('src/scripts/consortium/app.js');
-  assert.match(appJs, /invasiveCardNote\(W, \{ \.\.\.place\(\), inv: t\.warnings\.invasive_in \}\)/);
-  assert.match(appJs, /invasiveDetails\(W, \{ \.\.\.place\(\), inv: t\.warnings\.invasive_in \}\)/);
+  // The page hands the parts the taxon itself (cardInvasive, detailsInvasive: C14), whose records are
+  // { country, sources }, never bare codes: a list of codes read as one country with no name.
+  const taxon = { warnings: { invasive_in: inv } };
+  assert.equal(detailsInvasive(en, { country: null, checked: false }, taxon).list.title, 'Recorded invasive in 1 country');
+  assert.deepEqual(cardInvasive(en, { country: null, checked: false }, taxon), { cls: 'soft', text: 'invasive in 1 country' });
   assert.deepEqual(invasiveDetails(en, { country: null, checked: false, inv: [{ country: 'US', sources: ['griis'] }, { country: 'NZ', sources: ['griis'] }] }).list.countries, ['New Zealand', 'United States']);
   assert.deepEqual(invasiveCardNote(en, { country: null, checked: false, inv }), { cls: 'soft', text: 'invasive in 1 country' });
 });
 
 // A history and location for one tab: replaceState changes the state and the address.
-function fakeHistory(pathname, search = '') {
-  const location = { pathname, search };
+// address: a query ('?…', a link from before the fragment) or a fragment ('#…').
+function fakeHistory(pathname, address = '') {
+  const u0 = new URL(pathname + address, 'https://x.test');
+  const location = { pathname, search: u0.search, hash: u0.hash };
   const h = { state: null, location, replaceState(state, _title, url) {
     h.state = state;
-    if (url != null) { const u = new URL(url, 'https://x.test'); location.pathname = u.pathname; location.search = u.search; }
+    if (url != null) { const u = new URL(url, 'https://x.test'); location.pathname = u.pathname; location.search = u.search; location.hash = u.hash; }
   } };
   return h;
 }

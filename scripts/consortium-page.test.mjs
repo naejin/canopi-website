@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { pluralForms, makeWords, needsLook, searchText, fold, plantName, capFirst } from '../src/scripts/consortium/words.js';
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
 import * as core from '../src/lib/consortium/index.ts';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard, printNoneKey, linkCountry, opensOnResult } from '../src/scripts/consortium/logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withHash, langHash, arrivalParams, redoToastKey, swapTarget, relaxTo, licenceOf, uncheckedOnCard, printNoneKey, linkCountry, opensOnResult } from '../src/scripts/consortium/logic.js';
 import { profileSVG } from '../src/scripts/consortium/draw.js';
 import { crops } from '../src/data/crops.ts';
 
@@ -390,10 +390,11 @@ test('the number of places comes from the manifest, never from the words (copy-m
 // ---------- consortium/fixes (seam-review.md, live-check.md) ----------
 const home = Object.fromEntries(locales.map((lang) => [lang, JSON.parse(read(`src/i18n/translations/${lang}.json`))]));
 
-test('logic: the language links carry the tool\'s query, and only it (seam M1)', () => {
-  assert.equal(withQuery('/de/consortium/', '?plant=Cocos+nucifera&climate=tropical'), '/de/consortium/?plant=Cocos+nucifera&climate=tropical');
-  assert.equal(withQuery('/de/consortium/?old=1', ''), '/de/consortium/');
-  assert.equal(withQuery('/fr/guilde/', '?'), '/fr/guilde/');
+test('logic: the language links carry the tool\'s state, in the fragment, and only it (seam M1, C8)', () => {
+  assert.equal(withHash('/de/consortium/', langHash('#plant=Cocos+nucifera&climate=tropical')), '/de/consortium/#plant=Cocos+nucifera&climate=tropical');
+  assert.equal(withHash('/de/consortium/?old=1', ''), '/de/consortium/');
+  assert.equal(withHash('/fr/guilde/', '#'), '/fr/guilde/');
+  assert.equal(withHash('/fr/guilde/', langHash('#main')), '/fr/guilde/', 'the skip link\'s anchor is not the tool\'s');
   assert.match(app, /syncLangLinks\(\)/);
 });
 
@@ -495,8 +496,10 @@ test('a plant that misfits offers Swap and Remove, never a change to the site an
 });
 
 test('a site or climate change that rebuilds unkept plants offers Undo; a country change keeps the plants (F2)', () => {
-  assert.match(appJs, /esc\(T\(snap\.crops \? 'redoneCrops' : 'redoneSite'\)\), 'redo'\)/);
-  assert.match(appJs, /'change-crops'\(\) \{\s*dropUndo\(\); redoNext = null; holdForRedo\('change-crops', false\)/, 'Change crops');
+  // C14: which toast follows a re-suggestion is a behaviour (logic.js redoToastKey), not source text.
+  assert.equal(redoToastKey({ crops: true }, ['x']), 'redoneCrops', 'Change crops');
+  assert.equal(redoToastKey({ crops: true }, []), 'redoneSite', 'every crop removed');
+  assert.equal(redoToastKey({ place: true }, []), 'redoneClimate');
   assert.match(appJs, /holdForRedo\(`site-/, 'site answers');
   assert.match(appJs, /climate\(v\) \{ if \(S\.status !== 'setup'\) holdForRedo\('pc-climate', true\)/, 'a climate');
   assert.match(appJs, /T\('redoneClimate', \{ climate/);
@@ -574,11 +577,13 @@ test('the head has its final size from the first paint: compact when the page op
     const head = { dataset: { climates: core.siteClimates.join(' ') }, classList: { add: (c) => classes.add(c) } };
     const document = { getElementById: (id) => (id === 'ct-head' ? head : null), documentElement: { dataset: siteClimate ? { climate: siteClimate } : {} } };
     const localStorage = { getItem: (k) => (k === 'canopi-consortium' && saved ? JSON.stringify({ q: saved, at: '2026-10-28T00:00:00Z' }) : null) };
-    new Function('location', 'localStorage', 'document', 'URLSearchParams', script)({ search }, localStorage, document, URLSearchParams);
+    const u = new URL('https://x.test/consortium/' + search);
+    new Function('location', 'localStorage', 'document', 'URLSearchParams', script)({ search: u.search, hash: u.hash }, localStorage, document, URLSearchParams);
     return { compact: classes.has('tool-head-compact'), step: head.dataset.step ?? '0' };
   };
   const appOpens = (search, saved, siteClimate) => {
-    const params = new URLSearchParams(search);
+    const u = new URL('https://x.test/consortium/' + search);
+    const { params } = arrivalParams({ search: u.search, hash: u.hash });
     let decoded = null;
     const fromLink = params.has('c') || params.has('climate') || params.has('plant');
     if (fromLink) decoded = core.decodeState(params);
@@ -620,9 +625,13 @@ test('the head has its final size from the first paint: compact when the page op
     ['?v=3&c=temperate&n=AAAAAA', null, null],
     ['?v=3&c=temperate&p=', null, null],
   ];
-  for (const [search, sv, siteClimate] of cases) {
+  // C8: each address as a fragment too (the links made now), with a query beside it, and a page anchor.
+  const all = [...cases, ...cases.filter(([a]) => a.startsWith('?')).map(([a, sv, c]) => ['#' + a.slice(1), sv, c]),
+    ['?v=2&c=tropical#v=3&c=temperate&a=AAAAAA&e=1', null, null], ['?v=3&c=temperate&a=AAAAAA#main', null, null], ['#main', saved, null]];
+  for (const [search, sv, siteClimate] of all) {
     assert.deepEqual(firstPaint(search, sv, siteClimate), appOpens(search, sv, siteClimate), `${search} | saved ${sv} | site ${siteClimate}`);
   }
+  assert.ok(firstPaint('#v=3&c=temperate&a=AAAAAA&e=1', null, null).compact, 'a link in the fragment is compact from the first paint');
   assert.ok(firstPaint('?plant=Pyrus+communis&climate=temperate', null, null).compact, 'a guide preset is compact from the first paint, country or not');
   assert.ok(!firstPaint('', 'v=2&k=FR', null).compact, 'a saved country alone opens on the setup');
   assert.ok(!firstPaint('?v=2&c=temperate', null, null).compact, 'a climate alone opens the crop question under the full head');
@@ -778,7 +787,7 @@ test('words: a merged soft chip starts with a capital where the script has one',
 // Print has no details view, so its warnings cell never claims "all checked" while allelopathy is unknown (tweaks review).
 test('print says "none found so far", not "all checked", while allelopathy is unknown', () => {
   const app = read('src/scripts/consortium/app.js');
-  assert.match(app, /T\(printNoneKey\(t, place\(\)\)\)/);
+  assert.match(app, /T\(printNoneKey\(t, place\(\), S\.guests\.has\(t\.id\)\)\)/);
   assert.equal(printNoneKey({ warnings: { allelopathic: null } }, { country: null, checked: false }), 'printNoneYet');
   assert.equal(printNoneKey({ warnings: { allelopathic: false } }, { country: null, checked: false }), 'printNone');
   for (const lang of locales) assert.ok(strings[lang].printNoneYet, `${lang}: printNoneYet`);
@@ -807,7 +816,7 @@ test('"No country" is kept on this device only (k=- in the save, never in a shar
   assert.equal(linkCountry(none, false).noCountry, false, 'never in the address bar');
   assert.equal(linkCountry(none, true).noCountry, true, 'in the save');
   assert.match(app, /memory\.save\(query\(true\), S\.countrySource\)/);
-  assert.match(app, /history\.replaceState\(history\.state, '', location\.pathname \+ '\?' \+ q\)/);
+  assert.match(app, /lastHash = '#' \+ q;\s*try \{ history\.replaceState\(history\.state, '', location\.pathname \+ lastHash\)/, 'the address bar\'s fragment (C8)');
   assert.match(app, /const q = query\(false\);/);
   const site = { light: 'sun', soil: 'unsure', water: 'unsure', room: 'large' };
   const q = core.encodeState({ climate: 'temperate', country: null, noCountry: true, site, kept: [], removed: [], members: null, plants: [] });

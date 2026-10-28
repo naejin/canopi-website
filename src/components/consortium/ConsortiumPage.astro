@@ -78,7 +78,10 @@ const betaNote = makeWords(strings, lang).P('betaNote', manifest.climates.length
       <script is:inline>(function () { try {
         var h = document.getElementById('ct-head'), C = h.dataset.climates.split(' ');
         var norm = function (v) { return v == null ? null : v.trim().toLowerCase(); }, has = function (list, v) { return v != null && list.indexOf(v) !== -1; };
-        var p = new URLSearchParams(location.search), s = null;
+        // The tool's state is in the fragment (C8); a link from before has it in the query (logic.js arrivalParams).
+        var tool = function (q) { return ['v', 'c', 'climate', 'plant', 'a', 'p', 'k'].some(function (k) { return q.has(k); }); };
+        var hp = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+        var p = tool(hp) ? hp : new URLSearchParams(location.search), s = null;
         try { s = JSON.parse(localStorage.getItem('canopi-consortium') || 'null'); } catch (e) {}
         var saved = s && typeof s.q === 'string' ? new URLSearchParams(s.q) : null, fromLink = p.has('c') || p.has('climate') || p.has('plant');
         var q = fromLink ? p : saved, climate = null;

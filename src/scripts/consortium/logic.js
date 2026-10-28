@@ -16,6 +16,21 @@ export function droppedPlants(dropped) {
   return new Set(lost.map((d) => d.value)).size + excess;
 }
 
+// Whether a link may have lost plants nobody can count (B1): a plant list that does not parse (a
+// link cut inside a token), a version this page does not know, or, for a link read from the
+// fragment, no end marker (cut anywhere, even between two tokens: state.ts e=1). The page then says
+// plants may be missing, never opening it as a silently empty or partial consortium. Query links
+// from before the fragment (v2, and the first v3 links) have no end marker and are not held to one.
+const PLANT_KEYS = new Set(['a', 'p', 'x', 'n', 'g']);
+export function linkDamaged(decoded, fromFragment) {
+  if (!decoded) return false;
+  const st = decoded.state, dropped = decoded.dropped ?? [];
+  if (dropped.some((d) => d.key === 'v' && d.reason === 'unknown')) return true;
+  if (dropped.some((d) => PLANT_KEYS.has(d.key) && d.reason === 'malformed')) return true;
+  const names = st.members != null || st.kept.length || st.removed.length || (st.crops ?? []).length || (st.guests ?? []).length;
+  return !!(fromFragment && decoded.version === 3 && !decoded.ended && (names || st.climate));
+}
+
 // Whether a link (decoded, or null for none) leaves the crop question to ask: it names no plants
 // (no members, kept, removed or other-list plants). A guide preset asks it too; the page then
 // checks the plant is a food plant of that climate (design-scale.md §6c).
@@ -36,12 +51,33 @@ export function opensOnResult({ climate, fromLink, decoded }) {
 }
 
 // The address Copy link shares: the page's path and the tool's state (encodeState) only, never the
-// address bar, so an old link's `mine` marker (memory.js arrive) never reaches a shared link.
+// address bar, so an old link's `mine` marker (memory.js arrive) never reaches a shared link. The
+// state is in the fragment (C8, design §2.7), which no request carries, so it never reaches a
+// server or CDN log.
 export function shareUrl(loc, q, mine = 'mine') {
   const out = new URLSearchParams(q);
   out.delete(mine);
   const s = out.toString();
-  return loc.origin + loc.pathname + (s ? '?' + s : '');
+  return loc.origin + loc.pathname + (s ? '#' + s : '');
+}
+
+// The keys that make an address the tool's state (a link, or a guide preset): a page anchor such
+// as the skip link's #main is not one.
+const TOOL_KEYS = ['v', 'c', 'climate', 'plant', 'a', 'p', 'k'];
+export const isToolState = (q) => TOOL_KEYS.some((k) => q.has(k));
+// Where the page reads its state on arrival (C8): the fragment; else the query of a link from
+// before (v2, the first v3 links, a guide's ?plant=&climate=), which then moves into the fragment
+// (address: what replaceState writes after the path, or null when nothing changes). An old link's
+// `mine` is dropped from either. fragment: the state came from the fragment (only those links carry
+// the end marker: linkDamaged).
+export function arrivalParams({ search, hash }, mine = 'mine') {
+  const h = new URLSearchParams((hash ?? '').replace(/^#/, '')), s = new URLSearchParams(search ?? '');
+  const hadMine = h.has(mine) || s.has(mine);
+  h.delete(mine); s.delete(mine);
+  if (isToolState(h)) return { params: h, fragment: true, address: hadMine || [...s].length ? '#' + h : null };
+  if (isToolState(s)) return { params: s, fragment: false, address: '#' + s };
+  const rest = (q) => (q.toString() ? '?' + q : '');
+  return { params: s, fragment: false, address: hadMine ? rest(s) + (hash && !h.has(mine) ? hash : '') : null };
 }
 
 // The "a place is free since you removed …" rows once plants are added: each added plant takes
@@ -118,9 +154,10 @@ export function repeatClick(detail, now, last, ms = 500) {
   return detail > 1 || (last != null && now - last < ms);
 }
 
-// The language menu's link to this page in another language, with the tool's query (the address
-// bar's `search`), so a language switch keeps the plants, the climate and a guide's preset (seam M1).
-export const withQuery = (href, search) => href.split('?')[0] + (search && search !== '?' ? search : '');
+// The language menu's link to this page in another language, with the tool's state (the address
+// bar's fragment: langHash), so a language switch keeps the plants, the climate and a guide's preset
+// (seam M1, C8).
+export const withHash = (href, hash) => href.split('#')[0].split('?')[0] + (hash && hash !== '#' ? hash : '');
 
 // The member a Swap replaces: the Swap list's own, and the same from a plant's details opened from
 // that list, so those details offer "Use this instead" and never only Add (prepush m4). null for
@@ -213,14 +250,14 @@ export function linkCountry(S, saved) {
   return { country: country ?? (saved || S.noCountry ? null : S.linkCode ?? null), noCountry: saved && !S.country && S.noCountry };
 }
 
-// The query of a language link: the address bar's, and nothing else. It never carries the reader's
-// own country as a marker: a copied language link would hand it to whoever opens it as their own
-// choice (core-fix review 3, M-1). An old link's `mine` is dropped.
-export function langSearch(search) {
-  const q = new URLSearchParams(search);
+// The fragment of a language link: the address bar's tool state, and nothing else (a page anchor
+// is not carried). It never carries the reader's own country as a marker: a copied language link
+// would hand it to whoever opens it as their own choice (core-fix review 3, M-1). An old link's
+// `mine` is dropped. The address bar holds a country only when the reader chose it (linkCountry).
+export function langHash(hash) {
+  const q = new URLSearchParams((hash ?? '').replace(/^#/, ''));
   q.delete('mine');
-  const s = q.toString();
-  return s ? '?' + s : '';
+  return isToolState(q) ? '#' + q : '';
 }
 
 // The country sheet's guess card is marked as chosen only when the reader chose that country, never
@@ -228,9 +265,50 @@ export function langSearch(search) {
 export const chosenHere = ({ guess, country, source }) => !!guess && country === guess && source === 'user';
 
 // A print row with no warning: "None found (all checked)" only when nothing about the plant is
-// unchecked; allelopathy not checked yet, or a country GRIIS has no list for, gives "None found so far".
-export function printNoneKey(taxon, { country, checked }) {
-  return taxon.warnings.allelopathic == null || (country && !checked) ? 'printNoneYet' : 'printNone';
+// unchecked; allelopathy not checked yet, a country GRIIS has no list for, or a plant from another
+// climate's list (guest: its fit with the others was never checked, B4) gives "None found so far".
+export function printNoneKey(taxon, { country, checked }, guest = false) {
+  return guest || taxon.warnings.allelopathic == null || (country && !checked) ? 'printNoneYet' : 'printNone';
+}
+
+// A result that comes back (Back to your consortium, Undo of a re-suggestion) is the plants as they
+// were, never the country as it was: the country the reader has now stays (B5). Returns a copy.
+const COUNTRY_FIELDS = ['country', 'countrySource', 'noCountry', 'unknownCountry', 'linkCode'];
+export function keepCountry(snapState, now) {
+  const out = { ...snapState };
+  for (const k of COUNTRY_FIELDS) out[k] = now[k];
+  return out;
+}
+
+// The toast after a re-suggestion (Undo offered): a climate change, Change crops while main crops are
+// left, else the site (C11: never "around your main crops" once every crop was removed).
+export const redoToastKey = (snap, crops) => (snap.place ? 'redoneClimate' : snap.crops && crops.length ? 'redoneCrops' : 'redoneSite');
+
+// Whether a site answer suggests the plants again (the kept ones stay). The room limits a plant's
+// height and width, never the number of plants (owner, 2026-10-28; coordinator ruling on C10 and
+// B11): on a result, a room change only flags the plants that no longer fit. With no plants yet (no
+// match), every answer tries again.
+export const siteChangeRebuilds = (key, status) => key !== 'room' || status !== 'ready';
+
+// Swap: the plant chosen takes the member's place and is kept; the member is removed (a plant from
+// another list simply leaves). A main crop swapped is no longer one (endedCrop), which the Swap sheet
+// and its toast say (B10: never silently). lists: { members, kept: Set, removed: Set, crops, guests: Map }.
+export function afterSwap({ members, kept, removed, crops, guests }, old, v) {
+  const k = new Set(kept), r = new Set(removed);
+  k.delete(old); k.add(v);
+  if (!guests.has(old)) r.add(old);
+  return { members: members.map((id) => (id === old ? v : id)), kept: k, removed: r, crops: crops.filter((id) => id !== old), endedCrop: crops.includes(old) };
+}
+
+// Where the climate came from at start, for the words beside it (B6): a guide's preset; the climate
+// the reader chose on this site (their own reload, or a link with the climate they had chosen); a
+// shared link's; a save of this device's; null with none. Only the reader's own pick in the tool says
+// "chosen by you" (app.js setClimate sets 'user').
+export function climateSourceAt({ fromLink, climate, guide, siteClimate }) {
+  if (!climate) return null;
+  if (guide) return 'guide';
+  if (climate === siteClimate) return 'site';
+  return fromLink ? 'link' : 'saved';
 }
 
 // The sources of a plant's invasive status: its records' own, and GRIIS (the export's one source of

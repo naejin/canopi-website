@@ -8,16 +8,16 @@
 // The page renders from one state object; every change re-renders the tool and puts the focus back
 // on the control that had it (data-fk), or on the one the action names. Sheets (details, Swap, Add,
 // climate, country, site) are one native <dialog>. Nothing leaves the browser: the data files are the site's
-// own, the state lives in the address bar and in localStorage.
+// own, the state lives in the address bar's fragment (never sent with a request: C8) and in localStorage.
 import {
   fileFor, isCountry, invasiveChecked, strata, phases, phaseBands, bandsOf, jobs, jobsOf, jobOfFunction, suggest, evaluate, alternatives, flagsFor,
   SIZE_LIMIT, DEFAULT_SITE, lights, soils, waters, rooms, encodeState, decodeState, resolveState, taxonByName, isSerious, siteClimates, fits, MAX_CROPS,
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadClimate } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook, capFirst } from './words.js';
-import { cropMatches, cropExamples, elsewhereHit, otherListMatches, isFood } from './crops.js';
-import { asksCrops, shareUrl, droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, noLinkCode, keptCountry, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard, guessCountry, linkCountry, langSearch, chosenHere, printNoneKey, invasiveSourceIds } from './logic.js';
-import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, invasiveCardNote, invasiveDetails, countryAnnouncement } from './parts.js';
+import { cropHits, cropLabel, cropExamples, elsewhereHit, otherListMatches, isFood, inClimateOrder, loadLists, addFilterMatch } from './crops.js';
+import { asksCrops, shareUrl, droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, noLinkCode, keptCountry, repeatClick, withHash, swapTarget, relaxTo, licenceOf, uncheckedOnCard, guessCountry, linkCountry, langHash, chosenHere, printNoneKey, invasiveSourceIds, linkDamaged, isToolState, keepCountry, redoToastKey, siteChangeRebuilds, afterSwap, climateSourceAt } from './logic.js';
+import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, cardInvasive, detailsInvasive, countryAnnouncement, roomHint, builtKey, mainCropKey, fromListKey } from './parts.js';
 import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
@@ -36,8 +36,9 @@ const phoneMQ = matchMedia('(max-width: 639px)');
 const phone = () => phoneMQ.matches;
 // The save, the reader's country choice (device and tab) and Start over's part of them (memory.js).
 const memory = memoryOf({ storage: (() => { try { return localStorage; } catch { return null; } })(), history, location });
-// The address bar's query as the page opened, an old link's `mine` marker already gone from it and
-// from the address bar, before the manifest's await (memory.js arrive: core-fix review 3, m-1).
+// The tool's state as the page opened: the fragment, else an older link's query, which arrive() moves
+// into the fragment; an old link's `mine` marker already gone from it and from the address bar,
+// before the manifest's await (memory.js arrive: core-fix review 3, m-1; C8).
 const arrival = memory.arrive();
 // The core's lists: the site answers as the core has them, and the climates in the site picker's
 // order (src/data/climates.ts, seam m5).
@@ -91,28 +92,38 @@ const fresh = () => ({
   // the climate's file is loaded; cropFromGuide: the crop a guide's link chose; cropsBack: the crop
   // question was opened from a result, which "Back to your consortium" returns to.
   crops: [], guests: new Map(), askCrops: false, cropFromGuide: null, cropsBack: false,
+  // cutLink: the link that opened the page was cut or could not be read whole (logic.js linkDamaged).
+  cutLink: false,
 });
 let S = fresh();
+// The main crops and guests the reader chose on this device (memory.js own: B7).
+let ownPicks = { crops: new Set(), guests: new Set() };
+const ownCrops = () => S.crops.length > 0 && S.crops.every((id) => ownPicks.crops.has(id));
+function addOwn(picks) { memory.addOwn(picks); ownPicks = memory.own(); }
 let O = null; // the open sheet: { type, id, filter, back, confirm }
 let addQuery = '', addJob = '', addLayer = '';
 let countryQuery = '', cropQuery = '';
 // The other climates' files, loaded only when needed (Add anyway, the crop question's "in another
 // list", a link's guests): climate → file.
 const others = new Map();
-let othersLoading = null, othersDone = false;
+// othersState: 'idle' | 'loading' | 'done' | 'failed' (some file did not load: the page says so and
+// offers Retry, never auto-retrying, and never reads a guest of that list as no longer listed: B2).
+let othersLoading = null, othersState = 'idle';
 let focusNext = null, lastRemoved = null, undoStart = null, toastTimer = 0, lastRemoveAt = null;
 const SWAP_STEP = 8;
 let swapMore = 0;
 
 const inCell = (id) => !!cell?.taxa.some((t) => t.id === id);
-function otherTaxon(id) { for (const f of others.values()) { const t = f.taxa.find((x) => x.id === id); if (t) return t; } return null; }
+// The other lists in the climates' order (B9): the same list names a plant on every visit.
+const othersList = () => inClimateOrder(others, CLIMATES, S.climate);
+function otherTaxon(id) { for (const [, f] of othersList()) { const t = f.taxa.find((x) => x.id === id); if (t) return t; } return null; }
 const taxonOf = (id) => cell?.taxa.find((t) => t.id === id) ?? S.guests.get(id)?.taxon ?? otherTaxon(id);
 const guestTaxa = () => [...S.guests.values()].map((g) => g.taxon);
 // The other list a plant comes from (a guest's, or the list the Add search found it in); null for this climate's own.
 function otherClimateOf(id) {
   if (!id || inCell(id)) return null;
   if (S.guests.has(id)) return S.guests.get(id).climate;
-  for (const [c, f] of others) if (c !== S.climate && f.taxa.some((t) => t.id === id)) return c;
+  for (const [c, f] of othersList()) if (f.taxa.some((t) => t.id === id)) return c;
   return null;
 }
 // The sources a plant's own file names (a guest's file for a guest).
@@ -121,14 +132,21 @@ const isCrop = (id) => S.crops.includes(id);
 const listName = (c) => T('list.' + c);
 const fromListLabel = (c) => T('fromList', { list: listName(c) });
 // The other covered climates' files, once: the crop question and the Add search re-render when they arrive.
+// A list that fails stays failed until the reader taps Retry (retryOthers): no loop of requests.
 function loadOthers() {
   if (!othersLoading) {
-    othersLoading = Promise.all(CLIMATES.filter((c) => fileFor(manifest, c)).map(async (c) => { try { others.set(c, await loadClimate(fileFor(manifest, c).file)); } catch {} }))
-      .then(() => { othersDone = true; refreshCrops(true); refreshAdd(); });
+    othersState = 'loading';
+    const todo = CLIMATES.filter((c) => fileFor(manifest, c) && !others.has(c));
+    othersLoading = loadLists(todo, (c) => loadClimate(fileFor(manifest, c).file)).then(({ files, failed }) => {
+      for (const [c, f] of files) others.set(c, f);
+      othersState = failed.length ? 'failed' : 'done';
+      refreshCrops(true); refreshAdd();
+    });
   }
   return othersLoading;
 }
-const othersList = () => [...others].filter(([c]) => c !== S.climate);
+function retryOthers() { othersLoading = null; return loadOthers(); }
+const othersFailedHTML = () => (othersState === 'failed' ? `<p class="others-failed">${esc(T('othersFailed'))} ${btn('link-button', 'others-retry', null, esc(T('othersRetry')), fk('others-retry'))}</p>` : '');
 const stratumOf = (t) => t.stratum?.value ?? 'none';
 const limit = () => SIZE_LIMIT[S.site.room];
 const climateLabel = () => W.climate(S.climate);
@@ -192,7 +210,7 @@ function warnParts(t, flags) {
   if (tox && tox.level !== 'None') severe.push({ cls: tox.level === 'Slight' ? 'soft' : 'danger', text: T('tox.' + tox.level), look: tox.level !== 'Slight' });
   if (flags.invasive === true) severe.push({ cls: 'warning', text: esc(T('invHere', { country: W.country(S.country) })), look: true });
   // A country GRIIS has no list for is said once per view and in details, not on every card (m-2).
-  const invNote = invasiveCardNote(W, { ...place(), inv: t.warnings.invasive_in });
+  const invNote = cardInvasive(W, place(), t);
   for (const c of flags.conflicts) severe.push({ cls: isSerious(c) ? 'warning' : 'soft', text: T('conflict', { other: name(otherOf(c, t)) }), look: isSerious(c), conflict: c });
   for (const k of flags.misfits) severe.push({ cls: 'warning', text: esc(misfitText(t, k)), look: true, misfit: k });
   if (t.warnings.allelopathic === true) soft.push(T('c.allelo'));
@@ -322,20 +340,30 @@ function setupHTML() {
 
 // ---------- Main crops ----------
 // The climate chosen, folded: its name, its cover, its places, where it came from, and Change.
+// Where the climate came from (B6): a guide, this site, a shared link, this device's last consortium,
+// or the reader's pick here; nothing said when unknown.
+const CLIMATE_WHY = { guide: 'climateFromGuide', site: 'climateFromSite', link: 'countryLinked', saved: 'countrySaved', user: 'climateChosen' };
 function chosenClimateHTML() {
-  const c = S.climate, why = T(S.climateSource === 'guide' ? 'climateFromGuide' : S.climateSource === 'site' ? 'climateFromSite' : 'countryChosen');
-  return `<div class="clim-chosen"><p><strong>${esc(W.climate(c))}</strong> <span class="cover-pill" data-covered="true">${esc(T('covered'))}</span> <span class="places">${esc(data.strings['climate.' + c + '.places'])}</span> <span class="cl-why">${esc(why)}</span></p>
+  const c = S.climate, why = CLIMATE_WHY[S.climateSource] ? T(CLIMATE_WHY[S.climateSource]) : '';
+  return `<div class="clim-chosen"><p><strong>${esc(W.climate(c))}</strong> <span class="cover-pill" data-covered="true">${esc(T('covered'))}</span> <span class="places">${esc(data.strings['climate.' + c + '.places'])}</span>${why ? ` <span class="cl-why">${esc(why)}</span>` : ''}</p>
     ${btn('button button-secondary button-small', 'open-place', 'climate', esc(T('change')), `aria-haspopup="dialog" aria-label="${esc(T('change'))}: ${esc(W.climate(c))}" ${fk('pc-climate')}`)}</div>`;
 }
 const cropFull = () => S.crops.length >= MAX_CROPS;
+// The options show the first few hits; the status counts them all (B8). A hit on a hidden English
+// name shows it in brackets, the option's accessible name too (C1, state 19f), and names the plant
+// in full: name, scientific name, layer, height (C4).
+const CROP_OPTIONS = 8;
+const cropHitsNow = () => (cropFull() ? [] : cropHits(cell, cropQuery, lang, S.crops));
+const hitName = (h) => (h.english ? `${name(h.taxon)}${W.paren(`<span lang="en">${esc(h.english)}</span>`)}` : name(h.taxon));
 function cropOptionsHTML() {
-  const hits = cropFull() ? [] : cropMatches(cell, cropQuery, lang, S.crops);
-  const size = (t) => (t.traits.height_m?.max != null ? ' · ' + esc(T('meters', { v: W.num(t.traits.height_m.max) })) : '');
-  return hits.length ? `<ul class="options crop-options" role="list" aria-label="${esc(T('crops.label', { list: listName(S.climate) }))}">${hits.map((t) => `<li>${btn('option', 'crop-add', t.id, `<span><b>${name(t)}</b> ${sciHTML(t)}</span><small>${esc(stratumLabel(stratumOf(t)))}${size(t)}</small>`, fk('co-' + t.id))}</li>`).join('')}</ul>` : '';
+  const hits = cropHitsNow().slice(0, CROP_OPTIONS);
+  const height = (t) => (t.traits.height_m?.max != null ? T('meters', { v: W.num(t.traits.height_m.max) }) : '');
+  const label = (h) => [cropLabel(h, lang, W.paren), nameText(h.taxon) === h.taxon.canonical_name ? '' : h.taxon.canonical_name, stratumLabel(stratumOf(h.taxon)), height(h.taxon)].filter(Boolean).join(', ');
+  return hits.length ? `<ul class="options crop-options" role="list" aria-label="${esc(T('crops.label', { climate: climateLabel() }))}">${hits.map((h) => `<li>${btn('option', 'crop-add', h.taxon.id, `<span><b>${hitName(h)}</b> ${sciHTML(h.taxon)}</span><small>${esc(stratumLabel(stratumOf(h.taxon)))}${height(h.taxon) ? ' · ' + esc(height(h.taxon)) : ''}</small>`, `aria-label="${esc(label(h))}" ${fk('co-' + h.taxon.id)}`)}</li>`).join('')}</ul>` : '';
 }
 function cropExamplesHTML() {
   if (cropQuery.trim() || cropFull()) return '';
-  const ex = cropExamples(cell, lang).filter((t) => !isCrop(t.id));
+  const ex = cropExamples(cell, 4, S.crops);
   return ex.length ? `<span>${esc(T('crops.examples'))}</span> ${ex.map((t) => btn('chip-button', 'crop-add', t.id, `<span>${name(t)}</span>`, fk('ce-' + t.id))).join('')}` : '';
 }
 // The status under the search (role=status): how many match, how many are chosen, or, with no match,
@@ -344,12 +372,12 @@ function cropStatus() {
   const q = cropQuery.trim(), n = S.crops.length;
   if (cropFull()) return esc(T('crops.full', { max: W.num(MAX_CROPS) }));
   if (q) {
-    const hits = cropMatches(cell, q, lang, S.crops);
+    const hits = cropHitsNow();
     if (hits.length) return esc(P('crops.matches', hits.length));
-    if (!othersDone) loadOthers();
+    loadOthers();
     const hit = elsewhereHit(q, lang, othersList(), cell);
-    const elsewhere = hit ? `<p>${esc(T('crops.elsewhere', { name: nameText(hit.taxon), other: listName(hit.climate), anyway: T('addAnyway'), label: fromListLabel(hit.climate) }))}</p>` : '';
-    return `<div class="crop-none"><p><strong>${esc(T('crops.none', { list: listName(S.climate), q }))}</strong></p>${elsewhere}<p class="muted">${esc(T('crops.spelling'))}</p></div>`;
+    const elsewhere = hit ? `<p>${esc(T('crops.elsewhere', { name: cropLabel(hit, lang, W.paren), other: listName(hit.climate), grow: T('grow'), anyway: T('addAnyway'), label: fromListLabel(hit.climate) }))}</p>` : '';
+    return `<div class="crop-none"><p><strong>${esc(T('crops.none', { list: listName(S.climate), q }))}</strong></p>${elsewhere}${hit ? '' : othersFailedHTML()}<p class="muted">${esc(T('crops.spelling'))}</p></div>`;
   }
   return n ? esc(P('crops.chosen', n, { max: W.num(MAX_CROPS) })) : '';
 }
@@ -368,15 +396,17 @@ function cropsHTML() {
   const list = listName(S.climate), n = S.crops.length;
   const chips = n ? `<ul class="crop-chips" role="list" aria-label="${esc(T('crops.yours'))}">${S.crops.map((id) => {
     const t = taxonOf(id), g = S.cropFromGuide === id;
-    return `<li class="crop-chip"><span><b>${name(t)}</b> ${sciHTML(t)}${g ? ` <span class="crop-g" aria-hidden="true">${esc(T('guideTag'))}</span><span class="vh">${esc(T('crops.guideVh'))}</span>` : ''}</span>${btn('crop-x', 'crop-remove', id, I.close, `aria-label="${esc(T('remove', { name: nameText(t) }))}" ${fk('cx-' + id)}`)}</li>`;
+    return `<li class="crop-chip">${I.pinOn}<span><b>${name(t)}</b> ${sciHTML(t)}${g ? ` <span class="crop-g" aria-hidden="true">${esc(T('crops.fromGuide'))}</span><span class="vh">${esc(T('crops.guideVh'))}</span>` : ''}</span>${btn('crop-x', 'crop-remove', id, I.close, `aria-label="${esc(T('remove', { name: nameText(t) }))}" ${fk('cx-' + id)}`)}</li>`;
   }).join('')}</ul>` : '';
-  const ph = new Intl.ListFormat(lang, { type: 'unit', style: 'short' }).format(cropExamples(cell, lang, 3).map(nameText)) + '…';
+  // C5: the placeholder never names a crop already chosen; none when nothing is left to name.
+  const phEx = cropFull() ? [] : cropExamples(cell, 3, S.crops);
+  const ph = phEx.length ? new Intl.ListFormat(lang, { type: 'unit', style: 'short' }).format(phEx.map(nameText)) + '…' : '';
   const go = btn('button button-primary', 'suggest', null, esc(T(n === 0 ? 'suggest' : n === 1 ? 'suggestIt' : 'suggestThem')), fk('suggest'));
   return `<div class="setup">
-    <section class="step step-one" aria-labelledby="ct-st1"><div class="step-head step-head-solo"><h2 id="ct-st1">${esc(T('step1'))}</h2></div>${countryLineHTML(true)}${chosenClimateHTML()}</section>
+    <section class="step step-one" aria-labelledby="ct-st1"><div class="step-head step-head-solo"><h2 id="ct-st1">${esc(T('step1'))}</h2><p>${esc(T('step1.lede'))}</p></div>${countryLineHTML(true)}${chosenClimateHTML()}</section>
     <section class="step crops" aria-labelledby="ct-st2"><div class="crop-head"><h2 id="ct-st2" tabindex="-1">${esc(T('crops.title'))} <span class="crop-opt">${esc(T('crops.optional'))}</span></h2><p>${esc(T('crops.lede', { max: W.num(MAX_CROPS), list }))}</p></div>
       ${chips}
-      <div class="field crop-field"><label for="ct-crop-q">${esc(T('crops.label', { list }))}</label>
+      <div class="field crop-field"><label for="ct-crop-q">${esc(T('crops.label', { climate: climateLabel() }))}</label>
         <div class="search">${I.search}<input id="ct-crop-q" type="search" autocomplete="off" spellcheck="false" placeholder="${esc(ph)}" value="${esc(cropQuery)}" data-input="crop" aria-describedby="crop-st"${cropFull() ? ' disabled' : ''} ${fk('crop-q')}></div>
         <div id="ct-crop-list">${cropOptionsHTML()}</div></div>
       <div class="crop-st" id="crop-st" role="status">${cropStatus()}</div>
@@ -388,18 +418,19 @@ function cropsHTML() {
 function builtHTML() {
   const crops = S.crops.map(taxonOf).filter(Boolean);
   if (!crops.length) return '';
-  return `<p class="note built">${I.pinOn}<span><span>${T(crops.length === 1 ? 'builtOne' : 'builtMany', { names: W.list(crops.map((t) => `<b>${name(t)}</b>`)) })}</span> ${btn('link-button', 'change-crops', null, esc(T('changeCrops')), fk('change-crops'))}</span></p>`;
+  return `<p class="note built">${I.pinOn}<span><span>${T(builtKey(crops.length, ownCrops()), { names: W.list(crops.map((t) => `<b>${name(t)}</b>`)) })}</span> ${btn('link-button', 'change-crops', null, esc(T('changeCrops')), fk('change-crops'))}</span></p>`;
 }
 
 // ---------- Result ----------
 function seg(key) {
-  const hint = key === 'soil' ? T('soilHint') : key === 'room' ? T('site.room.' + S.site.room + '.hint') : '';
+  const hint = key === 'soil' ? T('soilHint') : key === 'room' ? roomHint(W, S.site.room) : '';
   return `<fieldset class="seg"><legend>${esc(T('site.' + key))}</legend><div class="seg-options">${SITE_OPTIONS[key].map((o) => `<label class="seg-option"><input type="radio" name="ct-${key}${O ? '-d' : ''}" value="${o}" ${S.site[key] === o ? 'checked' : ''} data-site="${key}" ${fk(`site-${key}-${o}`)}><span>${esc(T(`site.${key}.${o}`))}</span></label>`).join('')}</div>${hint ? `<p class="seg-hint">${esc(hint)}</p>` : ''}</fieldset>`;
 }
 const siteFields = () => `<div class="site-fields">${Object.keys(SITE_OPTIONS).map(seg).join('')}</div>`;
 // The climate chip (with where the climate came from) and the country line.
 function placeChips() {
-  const from = S.climateSource ? `<small class="cl-why">${esc(T(S.climateSource === 'guide' ? 'climateFromGuide' : 'climateFromSite'))}</small>` : '';
+  // Only a guide's or this site's climate is said here (B6): a link's, a save's or the reader's own pick is not.
+  const from = S.climateSource === 'guide' || S.climateSource === 'site' ? `<small class="cl-why">${esc(T(S.climateSource === 'guide' ? 'climateFromGuide' : 'climateFromSite'))}</small>` : '';
   return `<div class="place-chips">
     <div class="climate-line"><button class="chip-button" type="button" data-act="open-place" data-v="climate" aria-haspopup="dialog" ${fk('pc-climate')}><span class="vh">${esc(T('step1'))}: </span><strong>${esc(W.climate(S.climate))}</strong>${I.caret}</button>${from}</div>
     ${countryLineHTML()}</div>`;
@@ -454,6 +485,7 @@ function freeRowHTML(can) {
 }
 function notices(can) {
   let out = '';
+  if (S.notice === 'cutlink') out += `<div class="note note-old" role="status">${I.info}<div><p><strong>${esc(T('cutLink.title'))}</strong></p><p>${esc(T('cutLink.text'))}</p><div class="note-actions">${can ? btn('button button-secondary button-small', 'fill', null, esc(T('fill'))) : ''}${btn('link-button', 'dismiss', null, esc(T('dismiss')))}</div></div></div>`;
   if (S.notice === 'oldlink') out += `<div class="note note-old" role="status">${I.info}<div><p><strong>${esc(T('oldLink.title'))}</strong></p><p>${esc(P('oldLink.text', S.dropped))}</p><div class="note-actions">${can ? btn('button button-secondary button-small', 'fill', null, esc(T('fill'))) : ''}${btn('link-button', 'dismiss', null, esc(T('dismiss')))}</div></div></div>`;
   if (S.notice === 'restored') {
     const date = new Intl.DateTimeFormat(lang, { dateStyle: 'long' }).format(new Date(S.restoredAt));
@@ -573,8 +605,9 @@ function plantRow(t, nums, flags) {
   return `<li class="plant" data-id="${t.id}"><span class="num" data-s="${stratumOf(t)}" aria-hidden="true">${nums.get(t.id)}</span>
     <div class="plant-main">
       <button class="plant-head" type="button" data-act="details" data-v="${t.id}" ${fk('pn-' + t.id)}><span class="pn">${name(t)}</span> <span class="sci">${esc(t.canonical_name)}</span></button>
-      ${kept || fromGuide || from ? `<div class="plant-tags">${crop ? `<span class="tag tag-main">${esc(T('mainCrop'))}</span>` : ''}${fromGuide ? `<span class="tag">${I.book}${esc(T('guideTag'))}</span>` : ''}${kept ? `<span class="tag tag-pin">${I.pinOn}${esc(T('keptTag'))}</span>` : ''}${from ? `<span class="tag tag-from">${esc(fromListLabel(from))}</span>` : ''}</div>` : ''}
+      ${kept || fromGuide ? `<div class="plant-tags">${crop ? `<span class="tag tag-main">${esc(T('mainCrop'))}</span>` : ''}${fromGuide ? `<span class="tag">${I.book}${esc(T('guideTag'))}</span>` : ''}${kept && !crop ? `<span class="tag tag-pin">${I.pinOn}${esc(T('keptTag'))}</span>` : ''}</div>` : ''}
       <p class="plant-reason">${cardReasonHTML(t, W, lang)}</p>
+      ${from ? `<div class="plant-tags plant-from"><span class="tag tag-from">${esc(fromListLabel(from))}</span></div>` : ''}
       <div class="plant-meta"><span class="time">${timeHTML1(t)}${t.phases ? ' ' + explainBtn('phase-' + t.id, T('whatPhase')) : ''}</span>${jobsOf(t).map((j) => `<span class="job-tag">${esc(T('job.' + j))}</span>`).join('')}</div>
       ${explainPanel('phase-' + t.id)}${chipsHTML(t, flags)}
     </div>
@@ -678,7 +711,7 @@ function detailsParts(t) {
   if (tox && tox.level !== 'None') items.push(item('danger', I.danger, esc(T('tox.' + tox.level)), note(tox.note), `<p class="liab">${esc(T('d.liab'))}</p>`));
   if (flags.invasive === true) items.push(item('warning', I.warn, esc(T('invHere', { country: W.country(S.country) })), esc(T('d.invHere', { country: W.country(S.country) })), `<p class="liab">${esc(T('d.liab'))}</p>`));
   // A country GRIIS has no checklist for: "not checked" there, never "none" (m4).
-  const invD = invasiveDetails(W, { ...place(), inv: t.warnings.invasive_in });
+  const invD = detailsInvasive(W, place(), t);
   if (invD.notChecked) items.push(item('unknown', I.unknown, esc(invD.notChecked.title), esc(invD.notChecked.text)));
   for (const c of flags.conflicts) items.push(item(isSerious(c) ? 'warning' : 'soft', I.warn, T('conflict', { other: name(otherOf(c, t)) }), note(c.note) || esc(T('ctype.' + c.type)), (c.agent ? `<p>${esc(T('d.agent', { agent: c.agent }))}</p>` : '') + conflictFrom(c)));
   for (const k of flags.misfits) items.push(item('warning', I.warn, esc(T('d.misfit')), esc(misfitText(t, k))));
@@ -706,12 +739,12 @@ function detailsParts(t) {
   const headHTML = `<div><h2 id="ct-dlg-title">${name(t)}</h2><p class="lede"><i>${esc(t.canonical_name)}</i> · ${esc(T('family', { family: t.family }))}</p>${tags ? `<p class="d-tags">${tags}</p>` : ''}</div>`;
   // A main crop says why it is there and what it does (owner, 2026-10-28); a plant from another list
   // says which list, and that its fit here was not checked.
-  const mainSec = crop ? `<section class="d-section d-main"><h3>${esc(T('mainCrop'))}</h3><p>${esc(T('mainCropText'))}</p>${btn('link-button', 'change-crops', null, esc(T('changeCrops')), fk('d-crops'))}</section>` : '';
-  const fromSec = from ? `<section class="d-section d-from"><h3>${esc(capFirst(fromListLabel(from), lang))}</h3><p>${esc(guest ? T('fromListText', { anyway: T('addAnyway'), list: listName(from), here: listName(S.climate) }) : T('inOtherList', { list: listName(from), here: listName(S.climate) }))}</p></section>` : '';
+  const mainSec = crop ? `<section class="d-section d-main"><h3>${esc(T('mainCrop'))}</h3><p>${esc(T(mainCropKey(ownPicks.crops.has(t.id))))}</p>${btn('link-button', 'change-crops', null, esc(T('changeCrops')), fk('d-crops'))}</section>` : '';
+  const fromSec = from ? `<section class="d-section d-from"><h3>${esc(capFirst(fromListLabel(from), lang))}</h3><p>${esc(guest ? T(fromListKey(ownPicks.guests.has(t.id)), { anyway: T('addAnyway'), list: listName(from), here: listName(S.climate) }) : T('inOtherList', { list: listName(from), here: listName(S.climate) }))}</p></section>` : '';
   const body = `${photo}${mainSec}${fromSec}
     <div class="d-layer"><span>${esc(stratumLabel(s))}${s !== 'none' ? ' · ' + esc(T('stratum.' + s + '.about')) : ''}</span><span>${esc(tw.plain)}${tw.term ? ' · ' + esc(tw.term) : ''}</span></div>
-    ${t.reasons?.length ? `<section class="d-section"><h3>${esc(T(from ? 'whyInList' : 'why'))}</h3>${reasonsHTML(t, W, lang, sources)}</section>` : ''}
-    <section class="d-section"><h3>${esc(T(crop ? 'whatItDoes' : 'jobsHeading'))}</h3>${!jobsList.length ? `<p class="muted">${esc(T('d.jobsUnk'))}</p>` : `<div class="plant-meta">${jobsList.map((j) => `<span class="job-tag">${jobIcon(j, 14)}${esc(T('job.' + j))}</span>`).join('')}</div>`}</section>
+    ${t.reasons?.length ? `<section class="d-section"><h3>${esc(T(from ? 'whyInList' : crop ? 'whatItDoes' : 'why'))}</h3>${reasonsHTML(t, W, lang, sources)}</section>` : ''}
+    <section class="d-section"><h3>${esc(T('jobsHeading'))}</h3>${!jobsList.length ? `<p class="muted">${esc(T('d.jobsUnk'))}</p>` : `<div class="plant-meta">${jobsList.map((j) => `<span class="job-tag">${jobIcon(j, 14)}${esc(T('job.' + j))}</span>`).join('')}</div>`}</section>
     <section class="d-section"><h3>${esc(T('checks'))}</h3><ul class="w-list" role="list">${items.join('')}</ul></section>
     <section class="d-section"><h3>${esc(T('traits'))}</h3><dl class="facts">${facts.map(([k, v]) => `<dt>${esc(T(k))}</dt><dd>${v || unknown}</dd>`).join('')}</dl></section>
     ${guides.length ? `<section class="d-section"><h3>${esc(T('guides'))}</h3><ul class="guides" role="list">${guides.map((g) => `<li>${guideLink(g, '', (title) => `${I.book}<span>${title}<small>${esc(T('readGuide'))}</small></span>`)}</li>`).join('')}</ul></section>` : ''}
@@ -724,7 +757,7 @@ function detailsParts(t) {
     : inMembers
     ? `${btn('button button-primary button-small', 'swap', t.id, `${I.swap}${esc(T('swap'))}`, fk('d-swap'))}${btn('button button-secondary button-small', 'keep', t.id, `${kept ? I.pinOn : I.pin}<span>${esc(T(kept ? 'unkeep' : 'keep', { name: n }))}</span>`, `aria-pressed="${kept}" ${fk('d-keep')}`)}${btn('button button-secondary button-small', 'remove', t.id, `${I.remove}<span>${esc(T('remove', { name: n }))}</span>`, fk('d-remove'))}`
     : replacing ? (O.confirm === t.id ? confirmHTML(t.id, 'use') : btn('button button-primary button-small', 'use', t.id, `${I.swap}${esc(T('useInstead'))}`, fk('d-use')))
-    : from && !guest ? btn('button button-primary button-small', 'add-anyway', from + ':' + t.id, esc(T('addAnyway')), fk('d-anyway'))
+    : from && !guest ? (O.confirm === t.id ? confirmHTML(t.id, 'add-anyway', from + ':' + t.id) : btn('button button-primary button-small', 'add-anyway', from + ':' + t.id, esc(T('addAnyway')), fk('d-anyway')))
     : O.confirm === t.id ? confirmHTML(t.id, 'add') : btn('button button-primary button-small', 'add', t.id, esc(T('add')), fk('d-add'));
   return { head: headHTML, body, foot };
 }
@@ -734,14 +767,17 @@ function altRow(t, why, act, label, flags, opts = {}) {
   const confirming = O?.confirm === t.id && !opts.disabled, v = opts.v ?? t.id;
   return `<li class="alt" data-flagged="${flags.flagged}"${confirming ? ' data-confirming="true"' : ''}><div class="alt-main"><span class="alt-name">${btn('link-button alt-link', 'details-from', t.id, name(t), fk('ad-' + t.id))} <span class="sci">${esc(t.canonical_name)}</span></span>
     <span class="alt-why">${why}</span>${chipsHTML(t, flags)}</div>
-    ${opts.disabled ? `<span class="seg-hint">${esc(T('inConsortium'))}</span>` : confirming ? confirmHTML(t.id, act) : btn(`button button-small ${opts.primary ? 'button-primary' : 'button-secondary'}`, act, v, esc(label), `aria-label="${esc(label)}: ${esc(nameText(t))}" ${fk(act + '-' + t.id)}`)}</li>`;
+    ${opts.disabled ? `<span class="seg-hint">${esc(T('inConsortium'))}</span>` : confirming ? confirmHTML(t.id, act, v) : btn(`button button-small ${opts.primary ? 'button-primary' : 'button-secondary'}`, act, v, esc(label), `aria-label="${esc(label)}: ${esc(nameText(t))}" ${fk(act + '-' + t.id)}`)}</li>`;
 }
 // The flags of a plant in the Swap list of member `from`.
 const swapFlags = (from, id) => alternatives(from, S.members, cell, { site: S.site, removed: [...S.removed], guests: guestTaxa(), ...where() }).find((a) => a.taxon.id === id)?.flags ?? null;
-function confirmHTML(id, act) {
-  const t = taxonOf(id), from = act === 'use' ? swapTarget(O) : null, flags = from ? swapFlags(from, id) : flagsFor(cell, id, S.members, { site: S.site, guests: guestTaxa(), ...where() });
+// act: 'use', 'add' or 'add-anyway' (B3: a plant of another list asks first too, with the flags it
+// would carry beside the members); v: the value its Yes acts on (add-anyway: climate:id).
+function confirmHTML(id, act, v = id) {
+  const t = taxonOf(id), from = act === 'use' ? swapTarget(O) : null;
+  const flags = from ? swapFlags(from, id) : flagsFor(cell, id, S.members, { site: S.site, guests: act === 'add-anyway' ? [...guestTaxa(), t] : guestTaxa(), ...where() });
   return `<div class="confirm" role="alertdialog" aria-labelledby="ct-confirm-t" aria-describedby="ct-confirm-d"><p id="ct-confirm-t"><strong>${T('confirmTitle', { name: name(t) })}</strong></p><p id="ct-confirm-d">${T('confirmText', { warnings: W.list(warnPlain(t, flags, false)) })}</p>
-    <div class="actions">${btn('button button-primary button-small', act + '-yes', id, esc(T(act === 'use' ? 'confirmUse' : 'confirmAdd')), fk('confirm-yes'))}${btn('button button-secondary button-small', 'confirm-no', null, esc(T('cancel')), fk('confirm-no'))}</div></div>`;
+    <div class="actions">${btn('button button-primary button-small', act + '-yes', v, esc(T(act === 'use' ? 'confirmUse' : 'confirmAdd')), fk('confirm-yes'))}${btn('button button-secondary button-small', 'confirm-no', null, esc(T('cancel')), fk('confirm-no'))}</div></div>`;
 }
 function swapParts(m) {
   const all = alternatives(m.id, S.members, cell, { site: S.site, removed: [...S.removed], guests: guestTaxa(), ...where() });
@@ -759,7 +795,7 @@ function swapParts(m) {
     const why = `<span>${esc(a.sameStratum ? T('sameLayer') : stratumLabel(as))}</span>${shared.length ? `<span>${esc(T('alsoJobs', { jobs: W.list(shared) }))}</span>` : ''}<span class="${lost.length ? 'loses' : 'keeps'}">${esc(lost.length ? T('loses', { jobs: W.list(lost) }) : T('keepsAll'))}</span>`;
     return altRow(a.taxon, why, 'use', T('use'), a.flags, { primary });
   };
-  const headHTML = `<div><h2 id="ct-dlg-title">${T('swapTitle', { name: name(m) })}</h2><p class="lede">${esc(mJobs.length ? T('swapNow', { layer: stratumLabel(s), jobs: W.list(mJobs.map((j) => T('job.' + j))) }) : T('swapNowLayer', { layer: stratumLabel(s) }))}</p><p class="lede">${esc(T('swapLede'))}</p></div>`;
+  const headHTML = `<div><h2 id="ct-dlg-title">${T('swapTitle', { name: name(m) })}</h2><p class="lede">${esc(mJobs.length ? T('swapNow', { layer: stratumLabel(s), jobs: W.list(mJobs.map((j) => T('job.' + j))) }) : T('swapNowLayer', { layer: stratumLabel(s) }))}</p><p class="lede">${esc(T('swapLede'))}</p>${isCrop(m.id) ? `<p class="note note-dashed swap-crop">${I.pinOn}<span>${esc(T('swapCropNote', { name: nameText(m) }))}</span></p>` : ''}</div>`;
   const body = !all.length ? `<p class="muted">${esc(T('noAlt'))}</p>`
     : `${fit.length ? `<ul class="alt-list" role="list">${fit.map((a, i) => row(a, i === 0)).join('')}</ul>` : ''}
       ${flagged.length ? `<h3 class="list-label">${I.warn} ${esc(T('withWarning'))}</h3><p class="seg-hint">${esc(T('flaggedNote'))}</p><ul class="alt-list" role="list">${flagged.map((a) => row(a, false)).join('')}</ul>` : ''}
@@ -771,12 +807,11 @@ function addFilter() {
   const [fkind, fv] = (O.filter || '').split(':');
   return { fkind, fv, jobF: addJob || (fkind === 'job' ? fv : ''), layerF: addLayer || (fkind === 'stratum' ? fv : '') };
 }
+// The filters the sheet applies to its own list and to the other lists' plants alike (B13).
+const addFilters = () => { const { fkind, fv, jobF, layerF } = addFilter(); return { job: jobF, layer: layerF, phase: fkind === 'phase' ? Number(fv) : null }; };
 function addResults() {
-  const { fkind, fv, jobF, layerF } = addFilter();
-  let list = cell.taxa;
-  if (jobF) list = list.filter((t) => jobsOf(t).includes(jobF));
-  if (layerF) list = list.filter((t) => stratumOf(t) === layerF);
-  if (fkind === 'phase') { const i = Number(fv); list = list.filter((t) => t.phases && phases.indexOf(t.phases.start) <= i && phases.indexOf(t.phases.end) >= i); }
+  const { fkind, fv } = addFilter(), filters = addFilters();
+  let list = cell.taxa.filter((t) => addFilterMatch(t, filters));
   const q = fold(addQuery.trim());
   if (q) list = list.filter((t) => searchText(t).includes(q));
   list = [...list].sort((a, b) => nameText(a).localeCompare(nameText(b), lang));
@@ -790,27 +825,34 @@ function addResults() {
   }).join('');
   return `${addCountHTML(list, fkind, fv)}
     ${!list.length ? `<p class="muted">${esc(T('emptyList'))}</p>` : ''}
-    ${jobF && !fit.length && flagged.length ? `<p class="note note-dashed">${I.unknown}<span>${esc(T('noFitForJob'))}</span></p>` : ''}
-    ${byLayer}${flagged.length ? `<h3 class="list-label">${I.warn} ${esc(T('withWarning'))}</h3><p class="seg-hint">${esc(T('flaggedNote'))}</p><ul class="alt-list" role="list">${flagged.map(row).join('')}</ul>` : ''}${otherHitsHTML(jobF, layerF)}`;
+    ${filters.job && !fit.length && flagged.length ? `<p class="note note-dashed">${I.unknown}<span>${esc(T('noFitForJob'))}</span></p>` : ''}
+    ${byLayer}${flagged.length ? `<h3 class="list-label">${I.warn} ${esc(T('withWarning'))}</h3><p class="seg-hint">${esc(T('flaggedNote'))}</p><ul class="alt-list" role="list">${flagged.map(row).join('')}</ul>` : ''}${otherHitsHTML(filters)}`;
 }
 const addCountHTML = (list, fkind, fv) => `<p class="list-count" id="ct-add-count">${esc(P('count', list.length))}${fkind === 'phase' ? ' · ' + esc(T('phaseFilter', { stage: T(W.phaseKey(Number(fv), 'plain')) })) : ''}</p>
 `;
 // "In another climate's list": what the other lists have for a search this list lacks, each with
 // "Add anyway". Their files load only once a search is typed (data.ts caches them).
-function otherHitsHTML(jobF, layerF) {
+function otherHitsHTML(filters) {
   if (!addQuery.trim()) return '';
-  if (!othersDone) { loadOthers(); return ''; }
-  let hits = otherListMatches(addQuery, othersList(), cell);
-  if (jobF) hits = hits.filter((h) => jobsOf(h.taxon).includes(jobF));
-  if (layerF) hits = hits.filter((h) => stratumOf(h.taxon) === layerF);
-  if (!hits.length) return '';
+  loadOthers();
+  if (othersState === 'loading') return '';
+  const hits = otherListMatches(addQuery, othersList(), cell).filter((h) => addFilterMatch(h.taxon, filters));
+  if (!hits.length) return othersFailedHTML();
   const here = listName(S.climate);
   return `<h3 class="list-label">${esc(T('otherLists'))}</h3><ul class="alt-list" role="list">${hits.map(({ climate, taxon }) => altRow(taxon,
     `<span>${esc(T('inOtherList', { list: listName(climate), here }))}</span><span>${esc(stratumLabel(stratumOf(taxon)))}</span>`,
     'add-anyway', T('addAnyway'), flagsFor(cell, taxon.id, S.members, { site: S.site, guests: [...guestTaxa(), taxon], ...where() }) ?? { flagged: false, conflicts: [], misfits: [] },
-    { disabled: S.members.includes(taxon.id), v: climate + ':' + taxon.id })).join('')}</ul>`;
+    { disabled: S.members.includes(taxon.id), v: climate + ':' + taxon.id })).join('')}</ul>${othersFailedHTML()}`;
 }
-function refreshAdd() { const r = O?.type === 'add' && dlg.querySelector('#ct-add-results'); if (r) r.innerHTML = addResults(); }
+// B13: a redraw while the reader is in the results (a list arriving) puts the focus back on the
+// control that had it.
+function refreshAdd() {
+  const r = O?.type === 'add' && dlg.querySelector('#ct-add-results');
+  if (!r) return;
+  const had = r.contains(document.activeElement) ? document.activeElement.dataset.fk : null;
+  r.innerHTML = addResults();
+  if (had) focusFk(had, r) || dlg.querySelector('#ct-add-q')?.focus();
+}
 function addParts() {
   const { fkind, jobF, layerF } = addFilter();
   const sel = (id, label, all, opts, cur) => `<label class="sel"><span>${esc(label)}</span><select data-filter="${id}" ${fk('f-' + id)}><option value="">${esc(all)}</option>${opts.map(([v, l]) => `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
@@ -840,7 +882,7 @@ function printHTML() {
   const rows = ms.map((t) => {
     const s = stratumOf(t), tw = W.timeWords(t), w = warnPlain(t, flags.get(t.id)).join('<br>');
     const from = otherClimateOf(t.id), tags = [isCrop(t.id) && T('mainCrop'), from && fromListLabel(from)].filter(Boolean);
-    return `<tr><td>${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i>${tags.length ? `<br><span class="muted">${esc(tags.join(' · '))}</span>` : ''}</td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${w || `<span class="muted">${esc(T(printNoneKey(t, place())))}</span>`}</td></tr>`;
+    return `<tr><td>${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i>${tags.length ? `<br><span class="muted">${esc(tags.join(' · '))}</span>` : ''}</td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${w || `<span class="muted">${esc(T(printNoneKey(t, place(), S.guests.has(t.id))))}</span>`}</td></tr>`;
   }).join('');
   const bands = phaseBands.map((k) => {
     const inBand = ms.filter((t) => bandsOf(t).includes(k));
@@ -943,7 +985,8 @@ dlg.addEventListener('close', () => {
   if (from) focusFk(from, app);
 });
 // Back to the button a confirmation came from.
-const confirmFrom = (id) => (O.type === 'details' ? (swapTarget(O) ? 'd-use' : 'd-add') : (O.type === 'swap' ? 'use-' : 'add-') + id);
+const anywayFor = (id) => !!otherClimateOf(id) && !S.guests.has(id);
+const confirmFrom = (id) => (O.type === 'details' ? (swapTarget(O) ? 'd-use' : anywayFor(id) ? 'd-anyway' : 'd-add') : (O.type === 'swap' ? 'use-' : anywayFor(id) ? 'add-anyway-' : 'add-') + id);
 dlg.addEventListener('cancel', (e) => { if (O?.confirm) { e.preventDefault(); const id = O.confirm; O.confirm = null; renderSheet(confirmFrom(id)); } else if (O?.back) { e.preventDefault(); O = O.back; renderSheet(); } });
 
 function toast(text, undo = null) {
@@ -976,7 +1019,7 @@ function stateNow(saved = false) {
 function pendingQuery(saved = false) {
   if (S.pending.version === 3) return encodeState(stateNow(saved));
   const q = encodeState({ ...stateNow(saved), kept: [], removed: [], members: null, crops: [], guests: [] });
-  q.set('v', '2');
+  q.set('v', '2'); q.delete('e');
   const st = S.pending.state;
   if (st.kept.length) q.set('p', st.kept.join('.'));
   if (st.removed.length) q.set('x', st.removed.join('.'));
@@ -993,16 +1036,26 @@ function persist() {
   if (!S.climate || !manifest || !mayPersist(S) || S.status === 'setup' || S.status === 'crops') return;
   const query = (saved) => linkQuery(saved).toString();
   const q = query(false);
-  try { history.replaceState(history.state, '', location.pathname + '?' + q); } catch {}
+  lastHash = '#' + q;
+  try { history.replaceState(history.state, '', location.pathname + lastHash); } catch {}
   syncLangLinks();
   if (S.status === 'ready') memory.save(query(true), S.countrySource);
 }
+// The fragment persist() last wrote. Another tool state typed or pasted into the address bar (or
+// Back to an earlier one) opens it: the page reloads to read it. A page anchor (the skip link's
+// #main, #donate) is not a state: the consortium's fragment is written back (C8).
+let lastHash = location.hash;
+addEventListener('hashchange', () => {
+  if (isToolState(new URLSearchParams(location.hash.slice(1)))) { if (location.hash !== lastHash) location.reload(); }
+  // After every other listener (the Donate dialog opens on #donate), so its anchor is read first.
+  else setTimeout(persist);
+});
 // seam M1: the header's language links (inline menu and phone Menu) lead to this page in another
-// language with the address bar's query, so a language switch keeps what is shown: a guide's preset,
-// a link still waiting for its place, or the consortium itself.
+// language with the address bar's fragment, so a language switch keeps what is shown: a guide's
+// preset, a link still waiting for its place, or the consortium itself.
 const langLinks = [...document.querySelectorAll('[data-lang-menu] a, .nav-panel-langs a')].map((a) => [a, a.getAttribute('href')]);
 // They carry nothing else: never the reader's own country choice (core-fix review 3, M-1).
-function syncLangLinks() { const q = langSearch(location.search); for (const [a, href] of langLinks) a.setAttribute('href', withQuery(href, q)); }
+function syncLangLinks() { const h = langHash(location.hash); for (const [a, href] of langLinks) a.setAttribute('href', withHash(href, h)); }
 
 // ---------- Actions ----------
 // An Undo offered for an earlier state no longer applies once the consortium is made again, refilled
@@ -1024,7 +1077,8 @@ function offerRedo() {
   const snap = redoNext; redoNext = null;
   if (!snap || (snap.cell === cell && S.status === 'ready' && snap.S.members.join() === S.members.join() && snap.S.gaps.length === S.gaps.length)) return;
   undoRedo = snap;
-  toast(snap.place ? esc(T('redoneClimate', { climate: W.climate(snap.S.climate) })) : esc(T(snap.crops ? 'redoneCrops' : 'redoneSite')), 'redo');
+  const key = redoToastKey(snap, S.crops);
+  toast(esc(key === 'redoneClimate' ? T('redoneClimate', { climate: W.climate(snap.S.climate) }) : T(key)), 'redo');
 }
 function recompute() {
   dropUndo();
@@ -1033,7 +1087,8 @@ function recompute() {
   S.status = S.members.length ? 'ready' : 'nomatch';
 }
 function setClimate(c) {
-  S.climate = c; S.climateSource = null;
+  // B6: only a climate the reader picks here reads "chosen by you".
+  S.climate = c; S.climateSource = 'user';
   try { localStorage.setItem('canopi-climate', c); } catch {}
   document.documentElement.dataset.climate = c;
   dispatchEvent(new StorageEvent('storage', { key: 'canopi-climate', newValue: c }));
@@ -1066,8 +1121,12 @@ async function resolveClimate() {
     // A link's plants from other lists need their lists first.
     const lists = [...new Set((S.pending.state.guests ?? []).map((g) => g.climate))].filter((c) => c !== S.climate && fileFor(manifest, c) && !others.has(c));
     if (lists.length) {
-      await Promise.all(lists.map(async (c) => { try { others.set(c, await loadClimate(fileFor(manifest, c).file)); } catch {} }));
+      const { files, failed } = await loadLists(lists, (c) => loadClimate(fileFor(manifest, c).file));
       if (run !== loadSeq) return;
+      for (const [c, f] of files) others.set(c, f);
+      // B2: a guest's list that did not load is an error with Retry, the link kept as it came (S.pending
+      // stays, so persist and Copy link still carry every guest); never "no longer listed".
+      if (failed.length) { S.status = 'error'; focusNext = 'retry'; render(); offerRedo(); return; }
     }
     const asked = S.pending.state.members;
     const r = resolveState(S.pending, cell, Object.fromEntries(others)), st8 = r.state;
@@ -1081,6 +1140,8 @@ async function resolveClimate() {
     }
     const lost = droppedPlants(r.dropped);
     if (lost) { S.dropped = lost; S.notice = 'oldlink'; }
+    // B1: a cut or unreadable link says plants may be missing, whatever could be counted.
+    if (S.cutLink) S.notice = 'cutlink';
     // A guide's food plant of this climate opens the crop question with it chosen; any other plant
     // of a guide is kept and the result shows at once, as before.
     const food = S.askCrops && S.guidePlant ? taxonOf(S.guideId) : null;
@@ -1089,8 +1150,9 @@ async function resolveClimate() {
       showCrops(); return;
     }
     S.askCrops = false;
-    // m3: a link whose every member is gone gets a fresh suggestion; an emptied consortium stays empty.
-    if (st8.members && (st8.members.length || !asked?.length)) { S.members = st8.members.filter((id) => inCell(id) || S.guests.has(id)); S.status = 'ready'; } else recompute();
+    // m3: a link whose every member is gone gets a fresh suggestion; an emptied consortium stays empty,
+    // unless the link was cut (B1): its plants were lost, not removed.
+    if (st8.members && (st8.members.length || (!asked?.length && !S.cutLink))) { S.members = st8.members.filter((id) => inCell(id) || S.guests.has(id)); S.status = 'ready'; } else recompute();
   } else if (S.askCrops) { showCrops(); return; } else recompute();
   // The result takes the focus only from the loading line (or nothing): a user who moved on keeps their place.
   const at = document.activeElement;
@@ -1113,6 +1175,7 @@ function leaveLink() {
   if (!S.pending) return;
   const plants = S.pending.state.plants ?? [];
   S.pending = plants.length ? decodeState(new URLSearchParams({ plant: plants[0] })) : null;
+  S.cutLink = false;
 }
 // min-1: the notices of the link that opened the page go with it.
 // The country of someone else's link goes too (keptCountry): the next consortium is the reader's.
@@ -1143,6 +1206,7 @@ const act = {
   },
   suggest() {
     for (const id of S.crops) { S.kept.add(id); S.removed.delete(id); }
+    if (S.crops.length) addOwn({ crops: S.crops });
     S.askCrops = false; S.cropsBack = false; cropQuery = '';
     recompute(); focusNext = 'result'; render(); offerRedo();
     say(S.status === 'ready' ? T('announce', { summary: P('count', S.members.length) }) : T('nm.title'));
@@ -1156,7 +1220,8 @@ const act = {
     if (O) closeSheet(false);
     focusNext = 'crops'; render();
   },
-  'crops-back'() { const snap = redoNext; redoNext = null; if (!snap) return; ({ S, cell } = snap); evalKey = ''; fillKey = ''; focusNext = 'change-crops'; render(); },
+  // B5: the consortium comes back; the country chosen since stays.
+  'crops-back'() { const snap = redoNext; redoNext = null; if (!snap) return; S = keepCountry(snap.S, S); cell = snap.cell; evalKey = ''; fillKey = ''; focusNext = 'change-crops'; render(); },
   'not-crop'(v) { S.crops = S.crops.filter((id) => id !== v); render(); if (O) renderSheet('d-keep'); toast(T('notMainCropNow', { name: name(taxonOf(v)) })); },
   country(v) { if (isCountry(manifest, v)) chooseCountry(v.toUpperCase()); },
   'no-country'() { chooseCountry(null); },
@@ -1180,11 +1245,12 @@ const act = {
   // Only a misfit or a serious conflict asks first; a plant invasive in the reader's country carries
   // its warning chip and asks nothing (owner, 2026-10-28).
   use(v) { const from = swapTarget(O); if (swapFlags(from, v)?.flagged) { O.confirm = v; renderSheet('confirm-yes'); } else act['use-yes'](v); },
+  // B10: a main crop swapped is no longer one, and the toast says so.
   'use-yes'(v) {
     const old = swapTarget(O), a = taxonOf(old), b = taxonOf(v);
-    S.members = S.members.map((id) => (id === old ? v : id)); S.kept.delete(old); S.kept.add(v); if (!S.guests.has(old)) S.removed.add(old);
-    S.crops = S.crops.filter((id) => id !== old);
-    closeSheet(false); focusNext = 'pn-' + v; render(); flash(v); toast(T('swapped', { a: name(a), b: name(b) }));
+    const r = afterSwap(S, old, v);
+    Object.assign(S, { members: r.members, kept: r.kept, removed: r.removed, crops: r.crops });
+    closeSheet(false); focusNext = 'pn-' + v; render(); flash(v); toast(T(r.endedCrop ? 'swappedCrop' : 'swapped', { a: name(a), b: name(b) }));
   },
   'confirm-no'() { const id = O.confirm; O.confirm = null; renderSheet(confirmFrom(id)); },
   remove(v) {
@@ -1200,11 +1266,11 @@ const act = {
     hideToast();
     if (v === 'start' && undoStart) {
       // B2: the state, its cell and its own Undo come back together.
-      ({ S, cell, lastRemoved } = undoStart); undoStart = null; evalKey = ''; focusNext = 'start-over'; render(); return;
+      S = keepCountry(undoStart.S, S); ({ cell, lastRemoved } = undoStart); undoStart = null; evalKey = ''; focusNext = 'start-over'; render(); return;
     }
     if (v === 'redo' && undoRedo) {
       const u = undoRedo; undoRedo = null; redoNext = null; loadSeq++;
-      ({ S, cell } = u); evalKey = ''; focusNext = u.focus; render();
+      S = keepCountry(u.S, S); cell = u.cell; evalKey = ''; focusNext = u.focus; render();
       if (!app.contains(document.activeElement)) focusFk('basis', app) || document.getElementById('ct-result-title')?.focus();
       say(T('announce', { summary: P('count', S.members.length) }));
       return;
@@ -1232,19 +1298,28 @@ const act = {
     S.view = 'layers'; closeSheet(false); focusNext = 'pn-' + v; render(); flash(v); toast(T('added', { name: name(taxonOf(v)) }));
   },
   // "Add anyway": a plant of another climate's list joins as a kept guest, labelled with its list.
+  // A flagged one asks first, as Add does (B3); it joins only on Yes.
   'add-anyway'(v) {
+    const [c, id] = String(v).split(':'), t = others.get(c)?.taxa.find((x) => x.id === id);
+    if (!t || inCell(id)) return;
+    const f = flagsFor(cell, id, S.members, { site: S.site, guests: [...guestTaxa(), t], ...where() });
+    if (f?.flagged) { O.confirm = id; renderSheet('confirm-yes'); } else act['add-anyway-yes'](v);
+  },
+  'add-anyway-yes'(v) {
     const [c, id] = String(v).split(':'), f = others.get(c), t = f?.taxa.find((x) => x.id === id);
     if (!t || inCell(id)) return;
     S.guests.set(id, { climate: c, taxon: t, sources: f.sources });
+    addOwn({ guests: [id] });
     act['add-yes'](id);
   },
+  'others-retry'() { retryOthers(); refreshCrops(true); refreshAdd(); },
   fill() {
     const before = S.members.length;
     S.members = suggest(cell, { site: S.site, kept: [...new Set([...S.members, ...S.kept])], removed: [...S.removed], guests: guestTaxa() }).members.map((m) => m.taxon.id);
     const added = S.members.slice(before);
     if (added.length) dropUndo();
     S.gaps = trimGaps(S.gaps, added.map((id) => stratumOf(taxonOf(id))), limit() - S.members.length);
-    if (S.notice === 'oldlink') S.notice = null;
+    if (S.notice === 'oldlink' || S.notice === 'cutlink') S.notice = null;
     focusNext = added.length ? 'pn-' + added[0] : 'result'; render(); if (added.length) flash(added[0]);
     toast(esc(P('filled', added.length)));
   },
@@ -1305,8 +1380,12 @@ root.addEventListener('change', (e) => {
   const el = e.target;
   if (el.dataset.site) {
     const k = el.dataset.site;
-    holdForRedo(`site-${k}-${S.site[k]}`, false);
-    S.site = { ...S.site, [k]: el.value }; recompute(); render(); offerRedo();
+    // C10, B11: the room limits the plants' size, never their number: on a result a room change only
+    // flags the plants that no longer fit (evaluate), and Fill fills up to the room's suggestion size.
+    if (siteChangeRebuilds(k, S.status)) {
+      holdForRedo(`site-${k}-${S.site[k]}`, false);
+      S.site = { ...S.site, [k]: el.value }; recompute(); render(); offerRedo();
+    } else { S.site = { ...S.site, [k]: el.value }; render(); }
     if (O) renderSheet();
     say(S.status === 'ready' ? T('announce', { summary: P('count', S.members.length) }) : T('nm.title'));
   }
@@ -1354,15 +1433,19 @@ async function start() {
   // choice (tab, device), else a saved consortium's, else the guess (memory.js).
   const { decoded, saved, fromLink, country } = startState({ params: arrival, memory, guess: browserCountry, known: (c) => isCountry(manifest, c) });
   if (!fromLink && decoded) S.restoredAt = saved.at;
+  S.cutLink = fromLink && linkDamaged(decoded, memory.fromFragment);
+  // B7: the crops and guests the reader chose on this device; a link's others are described neutrally.
+  ownPicks = memory.own();
   Object.assign(S, country, { linkCode: country.unknownCountry });
   syncLangLinks();
   // A fresh climate (or a guide's plant) asks the crop question; a shared or saved consortium opens as it was.
-  S.askCrops = fromLink ? asksCrops(decoded) : !decoded;
+  S.askCrops = fromLink ? asksCrops(decoded) && !S.cutLink : !decoded;
   if (decoded) {
     const d = decoded.state;
     S.climate = d.climate; S.site = { ...d.site };
     S.pending = decoded;
-    if (d.plants?.length) { S.guidePlant = d.plants[0]; if (d.climate) S.climateSource = 'guide'; }
+    if (d.plants?.length) S.guidePlant = d.plants[0];
+    S.climateSource = climateSourceAt({ fromLink, climate: d.climate, guide: !!(d.plants?.length && d.climate), siteClimate: siteClimate() });
     if (S.restoredAt && d.climate) S.notice = 'restored';
   }
   if (!S.climate && siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }

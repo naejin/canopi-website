@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T14:12:33Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T14:56:16Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T14:10:36Z }
 sources:
@@ -31,13 +31,13 @@ sources:
   - id: consortium-app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:0802c2d85ab0052a
-    last_modified: 2026-10-28T14:11:56Z
+    digest: sha256:29afb35a702b6bf5
+    last_modified: 2026-10-28T14:48:39Z
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:f61bc275cf239689
-    last_modified: 2026-10-28T14:09:49Z
+    digest: sha256:5e07025352dce24f
+    last_modified: 2026-10-28T14:45:18Z
 ---
 
 Owner decisions: [Consortium tool — user decisions](/decisions/consortium-user-decisions.md).
@@ -125,7 +125,7 @@ Types mirror format 3. Pure functions, unit-tested with `node --test`:
   list, never refilled (Remove leaves its gap; a link restores its members).
 - `alternatives(member, …)`: unflagged before flagged, then same stratum, shared jobs, gain;
   flagged ones included and marked.
-- `encodeState`/`decodeState`/`resolveState`: URL query (`c`, `k` a chosen
+- `encodeState`/`decodeState`/`resolveState`: the URL fragment since scale chunk A (v3 ending in `e=1`; older query links still open and move to the fragment) (`c`, `k` a chosen
   country or `-` for "No country" in the local save only; old `r` and `b` ignored, site keys,
   `p` = taxon ids kept, `x` removed, `a` members in order, `v` = link
   version 2; guide presets `plant`, `climate`); unknown ids are dropped with a

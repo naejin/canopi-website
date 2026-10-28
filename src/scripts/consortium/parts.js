@@ -4,6 +4,7 @@
 // country: the chosen code or null; source: 'guess' | 'user' | 'link' | 'saved' | null; checked: GRIIS
 // has a list for the country (manifest countries[code].invasive_checked).
 import { esc, capFirst } from './words.js';
+import { ROOM_LIMIT_M, SIZE_LIMIT } from '../../lib/consortium/index.ts';
 
 // A reason's text in the page language, else in English (marked).
 export function textHTML(text, W, lang) {
@@ -102,3 +103,19 @@ export function invasiveDetails(W, { country, checked, inv }) {
     unknown: inv == null ? { title: W.T('unkInv'), text: W.T('d.invUnk') } : null,
   };
 }
+
+// The same two, handed the plant itself (C14): its own records, so a caller can never pass another field.
+export const cardInvasive = (W, place, taxon) => invasiveCardNote(W, { ...place, inv: taxon.warnings.invasive_in });
+export const detailsInvasive = (W, place, taxon) => invasiveDetails(W, { ...place, inv: taxon.warnings.invasive_in });
+
+// The room's hint: the height and width the room check allows (site.ts ROOM_LIMIT_M) and the size of
+// a suggestion (suggest.ts SIZE_LIMIT), from the core, so the words and the check never part (C10,
+// B11). The room never limits how many plants a consortium has.
+export const roomHint = (W, room) => W.T(`site.room.${room}.hint`, { m: W.num(ROOM_LIMIT_M[room]), n: W.num(SIZE_LIMIT[room]) });
+
+// B7: "your main crop", "you chose it", "you added it" only for what the reader chose on this device
+// (memory.js own); a shared link's crops and guests are described neutrally.
+const BUILT = { own: ['builtOne', 'builtMany'], link: ['builtOneLink', 'builtManyLink'] };
+export const builtKey = (n, own) => BUILT[own ? 'own' : 'link'][n === 1 ? 0 : 1];
+export const mainCropKey = (own) => (own ? 'mainCropText' : 'mainCropTextLink');
+export const fromListKey = (own) => (own ? 'fromListText' : 'fromListTextLink');
