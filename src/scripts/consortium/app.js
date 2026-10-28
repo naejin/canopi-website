@@ -16,7 +16,7 @@ import {
 import { loadManifest, loadLabels, loadClimate } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook, capFirst } from './words.js';
 import { cropMatches, cropExamples, elsewhereHit, otherListMatches, isFood } from './crops.js';
-import { asksCrops, shareUrl, droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard, guessCountry, linkCountry, langSearch, chosenHere, printNoneKey, invasiveSourceIds } from './logic.js';
+import { asksCrops, shareUrl, droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, noLinkCode, keptCountry, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard, guessCountry, linkCountry, langSearch, chosenHere, printNoneKey, invasiveSourceIds } from './logic.js';
 import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, invasiveCardNote, invasiveDetails, countryAnnouncement } from './parts.js';
 import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
@@ -36,8 +36,9 @@ const phoneMQ = matchMedia('(max-width: 639px)');
 const phone = () => phoneMQ.matches;
 // The save, the reader's country choice (device and tab) and Start over's part of them (memory.js).
 const memory = memoryOf({ storage: (() => { try { return localStorage; } catch { return null; } })(), history, location });
-// The reader's own country choice ('FR', '-' for "No country", or null), carried by the language links.
-let myCountry = null;
+// The address bar's query as the page opened, an old link's `mine` marker already gone from it and
+// from the address bar, before the manifest's await (memory.js arrive: core-fix review 3, m-1).
+const arrival = memory.arrive();
 // The core's lists: the site answers as the core has them, and the climates in the site picker's
 // order (src/data/climates.ts, seam m5).
 const SITE_OPTIONS = { light: lights, soil: soils, water: waters, room: rooms };
@@ -985,7 +986,7 @@ function pendingQuery(saved = false) {
 // The link's query: a token is written whole only when another plant of the files at hand shares
 // its first 36 bits (state.ts).
 const linkQuery = (saved = false) => (S.pending ? pendingQuery(saved) : encodeState(stateNow(saved), cell, Object.fromEntries(others)));
-// The address Copy link and print give: the tool's state alone, never the page's own `mine`.
+// The address Copy link and print give: the tool's state alone, never an old link's `mine`.
 const shareLink = () => shareUrl(location, linkQuery(false), MINE);
 function persist() {
   // The crop question is not written: a reload asks it again, or returns to the result it came from.
@@ -1000,8 +1001,8 @@ function persist() {
 // language with the address bar's query, so a language switch keeps what is shown: a guide's preset,
 // a link still waiting for its place, or the consortium itself.
 const langLinks = [...document.querySelectorAll('[data-lang-menu] a, .nav-panel-langs a')].map((a) => [a, a.getAttribute('href')]);
-// They also carry the reader's own country choice, so it stays "chosen by you" there without storage (m-3).
-function syncLangLinks() { const q = langSearch(location.search, myCountry, MINE); for (const [a, href] of langLinks) a.setAttribute('href', withQuery(href, q)); }
+// They carry nothing else: never the reader's own country choice (core-fix review 3, M-1).
+function syncLangLinks() { const q = langSearch(location.search); for (const [a, href] of langLinks) a.setAttribute('href', withQuery(href, q)); }
 
 // ---------- Actions ----------
 // An Undo offered for an earlier state no longer applies once the consortium is made again, refilled
@@ -1114,11 +1115,14 @@ function leaveLink() {
   S.pending = plants.length ? decodeState(new URLSearchParams({ plant: plants[0] })) : null;
 }
 // min-1: the notices of the link that opened the page go with it.
-function leaveClimate() { Object.assign(S, afterMove(S)); S.unknownCountry = null; leaveLink(); }
+// The country of someone else's link goes too (keptCountry): the next consortium is the reader's.
+function leaveClimate() { Object.assign(S, afterMove(S), keptCountry(S, own())); leaveLink(); }
+// What keptCountry falls back to: the reader's own choice (tab, device), else the browser's guess.
+const own = () => ({ pref: memory.pref(), guess: browserCountry, known: (c) => isCountry(manifest, c) });
 // The country only changes the warnings: the members stay, and no Undo is needed or dropped.
 function chooseCountry(code) {
   S.country = code; S.countrySource = 'user'; S.noCountry = !code; S.unknownCountry = null; S.linkCode = null; countryQuery = '';
-  myCountry = code ?? '-'; memory.choose(code);
+  memory.choose(code);
   // Every caller acts from the country sheet.
   closeSheet(false);
   render(); syncLangLinks(); focusFk('pc-country', app);
@@ -1156,7 +1160,7 @@ const act = {
   'not-crop'(v) { S.crops = S.crops.filter((id) => id !== v); render(); if (O) renderSheet('d-keep'); toast(T('notMainCropNow', { name: name(taxonOf(v)) })); },
   country(v) { if (isCountry(manifest, v)) chooseCountry(v.toUpperCase()); },
   'no-country'() { chooseCountry(null); },
-  'dismiss-country'() { S.unknownCountry = null; focusNext = 'result'; render(); },
+  'dismiss-country'() { Object.assign(S, noLinkCode); focusNext = 'result'; render(); },
   'open-place'(v, el) { openSheet({ type: 'place', which: v }, el); },
   'open-site'(_, el) { openSheet({ type: 'site' }, el); },
   'focus-site'() { const p = document.getElementById('ct-site-panel'); p?.scrollIntoView({ block: 'nearest' }); focusFk('site-light-' + S.site.light, app); },
@@ -1252,10 +1256,11 @@ const act = {
   },
   print() { printEl.innerHTML = printHTML(); print(); },
   'start-over'() {
-    // The country stays: it is the reader's, not the consortium's.
-    const { country, countrySource, noCountry, linkCode } = S;
+    // The reader's own country stays (m12); someone else's link's country and unknown code go
+    // (keptCountry: core-fix review 4, m-1; m-3).
+    const kept = keptCountry(S, own());
     undoStart = { S, cell, lastRemoved }; lastRemoved = null; redoNext = null; S = fresh(); S.status = 'setup'; cell = null; loadSeq++;
-    Object.assign(S, { country, countrySource, noCountry, linkCode });
+    Object.assign(S, kept);
     if (siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }
     memory.startOver(location.pathname);
     syncLangLinks(); render(); toast(esc(T('startOverDone')), 'start'); focusFk('undo', toastEl);
@@ -1346,11 +1351,11 @@ async function start() {
   }
   browserCountry = browserGuess();
   // A link, else the save; the country (logic.js pickCountry): a link's own k, else the reader's
-  // choice (tab, device, language link), else a saved consortium's, else the guess (memory.js).
-  const { decoded, saved, fromLink, pref, country } = startState({ params: new URLSearchParams(location.search), memory, guess: browserCountry, known: (c) => isCountry(manifest, c) });
+  // choice (tab, device), else a saved consortium's, else the guess (memory.js).
+  const { decoded, saved, fromLink, country } = startState({ params: arrival, memory, guess: browserCountry, known: (c) => isCountry(manifest, c) });
   if (!fromLink && decoded) S.restoredAt = saved.at;
   Object.assign(S, country, { linkCode: country.unknownCountry });
-  myCountry = pref; memory.settle(pref); syncLangLinks();
+  syncLangLinks();
   // A fresh climate (or a guide's plant) asks the crop question; a shared or saved consortium opens as it was.
   S.askCrops = fromLink ? asksCrops(decoded) : !decoded;
   if (decoded) {

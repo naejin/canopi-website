@@ -249,6 +249,7 @@
   "consortium.countryGuessed": "vom Browser vermutet",
   "consortium.countryChosen": "von dir gewählt",
   "consortium.countryLinked": "aus dem geteilten Link",
+  "consortium.countrySaved": "aus deinem letzten Konsortium",
   "consortium.countryNoList": "nicht geprüft: keine Liste invasiver Arten für dieses Land",
   "consortium.addCountry": "Dein Land angeben",
   "consortium.countryNone": "Kein Land",

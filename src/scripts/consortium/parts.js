@@ -31,10 +31,11 @@ export function reasonsHTML(t, W, lang, sources) {
 }
 
 // The words beside the country chip: where the country came from, always (a guess always says it is
-// one), and, for a country GRIIS has no list for, the no-list reason beside it, never instead (m1).
+// one; only the reader's own pick says "chosen by you", a restored save says "from your last
+// consortium": core-fix review 3, m-2), and, for a country GRIIS has no list for, the no-list reason beside it, never instead (m1).
 export function countryWhy(W, { country, source, checked }) {
   if (!country) return [];
-  const from = W.T({ guess: 'countryGuessed', link: 'countryLinked' }[source] ?? 'countryChosen');
+  const from = W.T({ guess: 'countryGuessed', link: 'countryLinked', saved: 'countrySaved' }[source] ?? 'countryChosen');
   return checked ? [from] : [from, W.T('countryNoList')];
 }
 
@@ -66,7 +67,9 @@ export function printWhere(W, { country, checked }) {
 // country GRIIS has a list for; otherwise that its invasive status is not checked there (m-1).
 export function countryAnnouncement(W, { country, checked }) {
   if (!country) return W.T('warningsNone');
-  return checked ? W.T('warningsNow', { country: W.country(country) }) : capFirst(W.T('invStatusNotChecked', { country: W.country(country) }), W.lang) + '.';
+  // The locale's own full stop (。 in zh and ja), taken from its "Warnings now" sentence (n3).
+  const stop = W.T('warningsNow', { country: '' }).slice(-1);
+  return checked ? W.T('warningsNow', { country: W.country(country) }) : capFirst(W.T('invStatusNotChecked', { country: W.country(country) }), W.lang) + stop;
 }
 
 const countriesOf = (inv) => [...new Set(inv.map((x) => x.country))];

@@ -249,6 +249,7 @@
   "consortium.countryGuessed": "определено по браузеру",
   "consortium.countryChosen": "выбрано вами",
   "consortium.countryLinked": "из присланной ссылки",
+  "consortium.countrySaved": "из вашего последнего консорциума",
   "consortium.countryNoList": "не проверено: для этой страны нет списка инвазивных видов",
   "consortium.addCountry": "Указать страну",
   "consortium.countryNone": "Без страны",

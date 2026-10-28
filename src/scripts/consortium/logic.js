@@ -36,7 +36,7 @@ export function opensOnResult({ climate, fromLink, decoded }) {
 }
 
 // The address Copy link shares: the page's path and the tool's state (encodeState) only, never the
-// address bar, so nothing the page keeps there for itself (`mine`) reaches a shared link.
+// address bar, so an old link's `mine` marker (memory.js arrive) never reaches a shared link.
 export function shareUrl(loc, q, mine = 'mine') {
   const out = new URLSearchParams(q);
   out.delete(mine);
@@ -94,7 +94,21 @@ export const linkMembers = (status, members) => (status === 'ready' ? members : 
 // new climate, and then the notice is worked out there (min-1).
 export function afterMove({ pending }) {
   const plant = pending?.state?.plants?.[0] ?? null;
-  return { notice: null, guidePlant: plant, guideId: null };
+  return { notice: null, guidePlant: plant, guideId: null, ...noLinkCode };
+}
+
+// A link's unknown country code goes with its notice (Dismiss, a climate change, Start over), so the
+// reader's next address bar and share link never carry it (core-fix review 3, m-3).
+export const noLinkCode = Object.freeze({ unknownCountry: null, linkCode: null });
+// The country after Start over or a climate change: the consortium is now the reader's, so only a
+// country they chose stays (m12). One that came from someone else's link ('link', or 'saved' from a
+// save of one) goes: the reader's own choice (`pref`: tab, then device), else "No country" if they
+// chose it, else the browser's guess, never put in a link (core-fix review 4, m-1). Never the
+// link's unknown code (m-3). own: { pref, guess, known } as for pickCountry.
+export function keptCountry({ country, countrySource, noCountry }, own) {
+  if (countrySource === 'user') return { country, countrySource, noCountry };
+  const { country: c, countrySource: src, noCountry: none } = pickCountry({ link: null, pref: own.pref, saved: null, guess: own.guess, known: own.known });
+  return { country: c, countrySource: src, noCountry: none };
 }
 
 // The second click of a double click, or a click right after the last one, lands on whatever slid
@@ -165,10 +179,13 @@ export function uncheckedOnCard(taxon, hasJobs) {
 // "No country", written whenever they choose, in any status, and left alone by Start over:
 // memory.js), else a saved consortium's (with the source it was saved with), else the browser's guess.
 // A link's country the reader chose themselves reads "chosen by you" ('user'), so their own reload or
-// language switch never turns it into "from the shared link"; only someone else's reads 'link'. A
+// language switch keeps that label; only someone else's reads 'link'. With storage blocked, a
+// language switch opens a new page without the tab's choice, so it reads 'link' there (the safe
+// direction: memory.js). A
 // link's unknown code is said (unknownCountry) and the reader's own choice is used, never the guess
 // (m-5). A link's k=- (links never carry it) is read as no k (n1). Under a link with no k (a guide
-// preset), a saved country reads 'saved' (n2). A stale code on the device is quiet.
+// preset), a saved country reads 'saved' (n2), "from your last consortium", never "chosen by you"
+// (core-fix review 3, m-2). A stale code on the device is quiet.
 // `known(code)`: the manifest lists the code (upper case).
 export function pickCountry({ link, pref, saved, guess, known }) {
   const out = { country: null, countrySource: null, noCountry: false, unknownCountry: null };
@@ -196,19 +213,19 @@ export function linkCountry(S, saved) {
   return { country: country ?? (saved || S.noCountry ? null : S.linkCode ?? null), noCountry: saved && !S.country && S.noCountry };
 }
 
-// The query of a language link: the address bar's, with the reader's own country choice (`mine`: a
-// code, '-' or null) as MINE, so a language switch keeps "chosen by you" without storage (m-3).
-export function langSearch(search, mine, key = 'mine') {
+// The query of a language link: the address bar's, and nothing else. It never carries the reader's
+// own country as a marker: a copied language link would hand it to whoever opens it as their own
+// choice (core-fix review 3, M-1). An old link's `mine` is dropped.
+export function langSearch(search) {
   const q = new URLSearchParams(search);
-  q.delete(key);
-  if (mine) q.set(key, mine);
+  q.delete('mine');
   const s = q.toString();
   return s ? '?' + s : '';
 }
 
 // The country sheet's guess card is marked as chosen only when the reader chose that country, never
-// while it is only the guess or someone else's link (m-4).
-export const chosenHere = ({ guess, country, source }) => !!guess && country === guess && (source === 'user' || source === 'saved');
+// while it is only the guess, someone else's link or a restored save (m-4; core-fix review 3, m-2).
+export const chosenHere = ({ guess, country, source }) => !!guess && country === guess && source === 'user';
 
 // A print row with no warning: "None found (all checked)" only when nothing about the plant is
 // unchecked; allelopathy not checked yet, or a country GRIIS has no list for, gives "None found so far".

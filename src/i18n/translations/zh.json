@@ -249,6 +249,7 @@
   "consortium.countryGuessed": "根据你的浏览器推测",
   "consortium.countryChosen": "由你选择",
   "consortium.countryLinked": "来自分享的链接",
+  "consortium.countrySaved": "来自你上次的植物联合体",
   "consortium.countryNoList": "未核查：此国家没有入侵植物名录",
   "consortium.addCountry": "设置你的国家",
   "consortium.countryNone": "不选国家",

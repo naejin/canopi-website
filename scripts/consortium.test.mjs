@@ -772,27 +772,45 @@ test('guests: kept guests stay members and count for coverage; suggest, fill and
 
 // performance
 
-test('suggest and every alternative for a 200-taxon cell take under 50 ms', () => {
-  const taxa = Array.from({ length: 200 }, (_, i) => {
+test('suggest and every alternative for a 200-taxon cell stay fast: cold runs, timed against a baseline in the same process', () => {
+  // Fresh taxon objects for every run, so each one misses the per-taxon info cache (suggest.ts
+  // infoOf) as the page does on every site change, and makeInfo is timed too (fix3 review, m-3).
+  const freshTaxa = () => Array.from({ length: 200 }, (_, i) => {
     const t = structuredClone(allTaxa[i % allTaxa.length]);
     return { ...t, id: idOf(100000 + i), canonical_name: `${t.canonical_name} ${String(i).padStart(3, '0')}` };
   });
-  const cell = { ...tropical, taxa, interactions: [...tropical.interactions, ...temperate.interactions] };
+  const interactions = [...tropical.interactions, ...temperate.interactions];
   const site = { light: 'sun', soil: 'neutral', water: 'average', room: 'field' };
-  const run = () => {
+  const run = (taxa) => {
+    const cell = { ...tropical, taxa, interactions };
     const s = suggest(cell, { site, country: 'BR', countryChecked: true, kept: [taxa[3].id] });
     const ids = s.members.map((m) => m.taxon.id);
     for (const id of ids) alternatives(id, ids, cell, { site, country: 'BR', countryChecked: true });
     return s;
   };
-  // The page recomputes on every change: time a warm run, the best of three so a busy machine does not fail it.
-  run();
-  let ms = Infinity, s;
-  for (let k = 0; k < 3; k++) {
-    const start = performance.now();
-    s = run();
-    ms = Math.min(ms, performance.now() - start);
+  // A fixed workload of the same kinds (Map and string work, object allocation, a sort). npm test runs
+  // the files in parallel, and load slows both alike, so the ratio holds where a fixed ceiling does
+  // not. Measured: 0.6 to 0.8 quiet, at most 1.0 with 16 copies on 8 cores; a 10x slowdown of the
+  // work gives over 5. The ceiling of 2.5 catches a slowdown of about 4x or more.
+  const baseline = () => {
+    const m = new Map(); let x = 0;
+    for (let i = 0; i < 40000; i++) { const k = 'k' + (i % 997); m.set(k, (m.get(k) ?? 0) + i); x += k.length; }
+    const arr = Array.from({ length: 20000 }, (_, i) => ({ v: (i * 7919) % 20011 })).sort((p, q) => p.v - q.v);
+    return x + arr[0].v + m.size;
+  };
+  const time = (f) => { const start = performance.now(); const out = f(); return [performance.now() - start, out]; };
+  // Warm up the JIT, then interleave the two and take the best of ten of each.
+  for (let k = 0; k < 5; k++) { run(freshTaxa()); baseline(); }
+  let work = Infinity, base = Infinity, s;
+  for (let k = 0; k < 10; k++) {
+    const taxa = freshTaxa();
+    const [w, out] = time(() => run(taxa));
+    work = Math.min(work, w); s = out;
+    base = Math.min(base, time(baseline)[0]);
   }
   assert.ok(s.members.length >= 3);
-  assert.ok(ms < 50, `${ms.toFixed(1)} ms`);
+  const ratio = work / base;
+  assert.ok(ratio < 2.5, `cold run ${work.toFixed(1)} ms is ${ratio.toFixed(2)}x the baseline's ${base.toFixed(1)} ms (ceiling 2.5x)`);
+  // CONSORTIUM_PERF=1 also holds the page's real 50 ms budget on a quiet machine.
+  if (process.env.CONSORTIUM_PERF === '1') assert.ok(work < 50, `${work.toFixed(1)} ms (budget 50 ms)`);
 });

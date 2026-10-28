@@ -210,11 +210,11 @@ test('logic: a no-match result writes no plant list to the link, an emptied one 
 
 test('logic: a place the user picks drops the notices of the link that opened the page (min-1)', () => {
   const resolved = { pending: null, notice: 'guide', guidePlant: 'Betula pendula', guideId: 'b2d0928d' };
-  assert.deepEqual(afterMove(resolved), { notice: null, guidePlant: null, guideId: null });
+  assert.deepEqual(afterMove(resolved), { notice: null, guidePlant: null, guideId: null, unknownCountry: null, linkCode: null });
   for (const notice of ['guideMissing', 'oldlink', 'restored']) assert.equal(afterMove({ ...resolved, notice }).notice, null, notice);
-  const waiting = { pending: { state: { plants: ['Betula pendula'] } }, notice: null, guidePlant: 'Betula pendula', guideId: null };
-  assert.deepEqual(afterMove(waiting), { notice: null, guidePlant: 'Betula pendula', guideId: null }, 'a link still waiting takes the guide\'s plant to the new place');
-  assert.deepEqual(afterMove({ ...waiting, pending: { state: { plants: [] } } }), { notice: null, guidePlant: null, guideId: null });
+  const waiting = { pending: { state: { plants: ['Betula pendula'] } }, notice: null, guidePlant: 'Betula pendula', guideId: null, unknownCountry: null, linkCode: null };
+  assert.deepEqual(afterMove(waiting), { notice: null, guidePlant: 'Betula pendula', guideId: null, unknownCountry: null, linkCode: null }, 'a link still waiting takes the guide\'s plant to the new place');
+  assert.deepEqual(afterMove({ ...waiting, pending: { state: { plants: [] } } }), { notice: null, guidePlant: null, guideId: null, unknownCountry: null, linkCode: null });
 });
 
 test('logic: the second click of a double click never removes the plant that slid under it (appendix)', () => {

@@ -249,6 +249,7 @@
   "consortium.countryGuessed": "ブラウザから推測",
   "consortium.countryChosen": "あなたが選択",
   "consortium.countryLinked": "共有リンクから",
+  "consortium.countrySaved": "前回のコンソーシアムから",
   "consortium.countryNoList": "未確認：この国の侵略的植物リストはありません",
   "consortium.addCountry": "国を指定",
   "consortium.countryNone": "国を選ばない",

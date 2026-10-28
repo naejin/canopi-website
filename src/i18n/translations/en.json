@@ -249,6 +249,7 @@
   "consortium.countryGuessed": "guessed from your browser",
   "consortium.countryChosen": "chosen by you",
   "consortium.countryLinked": "from the shared link",
+  "consortium.countrySaved": "from your last consortium",
   "consortium.countryNoList": "not checked: there is no invasive list for this country",
   "consortium.addCountry": "Add your country",
   "consortium.countryNone": "No country",

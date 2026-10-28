@@ -4,7 +4,7 @@ title: Consortium core
 description: Format 3 types and the pure, dependency-free functions of the consortium tool (climate file lookup, country checks, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T14:10:35Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T14:12:32Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
@@ -106,4 +106,4 @@ export under `public/data/consortium/`.
 - Infos are cached per taxon object and site in a `WeakMap`: treat climate file data as immutable once loaded.
 - A taxon may be in several climate files (same id); photos are fetched once per id.
 - Parameters and page variables are still called `cell` (one loaded climate file): a name kept from format 2, not a separate notion.
-- `npm test` covers this module in `scripts/consortium.test.mjs` (fixture data, a 200-taxon synthetic file under 50 ms warm) and the installer in `scripts/install-consortium.test.mjs` (stub fetch, temporary output; never `public/`).
+- `npm test` covers this module in `scripts/consortium.test.mjs` (fixture data, a 200-taxon synthetic file timed cold against a same-process baseline, under 2.5 times it; `CONSORTIUM_PERF=1` adds the 50 ms budget) and the installer in `scripts/install-consortium.test.mjs` (stub fetch, temporary output; never `public/`).
