@@ -569,3 +569,72 @@ test('details opened from the Swap list swap that plant in, never only add it; f
   assert.match(app, /'use-yes'\(v\) \{\s*const old = swapTarget\(O\)/);
   for (const lang of locales) assert.ok(strings[lang].useInstead, `${lang}: useInstead`);
 });
+
+// The first-paint script of ConsortiumPage.astro, run as the browser runs it, against what the app
+// does on start (app.js start(): decodeState, presetPlace, the site climate): the head is compact
+// before the first paint exactly when the app opens past the setup (prepush m5: no layout jump).
+test('the head has its final size from the first paint: compact on a result, the step the tool opens on (prepush m5)', () => {
+  const script = page.match(/<script is:inline>([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(script && /ct-head/.test(script), 'the first-paint script');
+  const climates = page.match(/data-climates=\{([^}]+)\}/)?.[1], regionsAttr = page.match(/data-regions=\{([^}]+)\}/)?.[1];
+  assert.equal(climates, "siteClimates.join(' ')");
+  assert.equal(regionsAttr, "regions.join(' ')");
+  const firstPaint = (search, saved, siteClimate) => {
+    const classes = new Set();
+    const items = [0, 1, 2].map(() => ({ dataset: {}, attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, removeAttribute(k) { delete this.attrs[k]; } }));
+    items[0].attrs['aria-current'] = 'step';
+    const head = { dataset: { climates: core.siteClimates.join(' '), regions: core.regions.join(' ') }, classList: { add: (c) => classes.add(c) }, querySelectorAll: (sel) => (sel === '.outline li' ? items : []) };
+    const document = { getElementById: (id) => (id === 'ct-head' ? head : null), documentElement: { dataset: siteClimate ? { climate: siteClimate } : {} } };
+    const localStorage = { getItem: (k) => (k === 'canopi-consortium' && saved ? JSON.stringify({ q: saved, at: '2026-10-28T00:00:00Z' }) : null) };
+    new Function('location', 'localStorage', 'document', 'URLSearchParams', script)({ search: search }, localStorage, document, URLSearchParams);
+    // The step decides whether the lede and the drawing show (consortium.css), so it is part of the first paint too.
+    const step = head.dataset.step ?? '0';
+    items.forEach((li, i) => { assert.equal(li.attrs['aria-current'], i === Number(step) ? 'step' : undefined, `outline ${i}, step ${step}`); if (step !== '0') assert.equal(li.dataset.done, String(i < Number(step))); });
+    return { compact: classes.has('tool-head-compact'), step };
+  };
+  const opensOnResult = (search, saved, siteClimate) => {
+    const params = new URLSearchParams(search);
+    let decoded = null, keep = saved;
+    if (params.has('c') || params.has('climate') || params.has('plant')) decoded = core.decodeState(params);
+    else if (saved) { decoded = core.decodeState(saved); keep = null; }
+    let climate = null, region = null;
+    if (decoded) {
+      const d = decoded.state;
+      const place = keep ? presetPlace(d, core.decodeState(keep).state) : null;
+      climate = d.climate; region = place ? place.region : d.region;
+    }
+    if (!climate && core.siteClimates.includes(siteClimate)) climate = siteClimate;
+    // app.js render(): step 0 with no climate, 1 while the place is chosen, 2 past the setup.
+    return { compact: !!(climate && region), step: !climate ? '0' : !region ? '1' : '2' };
+  };
+  const place = 'v=2&c=temperate&r=europe&k=FR&l=sun&s=unsure&w=unsure&m=large';
+  const cases = [
+    ['?plant=Pyrus+communis&climate=temperate', place, null], // the reviewer's case: a guide preset, a saved place
+    ['?plant=Pyrus+communis&climate=temperate', null, null],
+    ['?plant=Pyrus+communis', place, 'tropical'],
+    ['?plant=Pyrus+communis', place, null],
+    ['?plant=Pyrus+communis&climate=temperate&k=FR', place, null],
+    ['?plant=Pyrus+communis&climate=temperate&r=africa', place, null],
+    ['?plant=Pyrus+communis&climate=TEMPERATE+', place, null],
+    ['?plant=Pyrus+communis&climate=nowhere', place, 'arid'],
+    ['?plant=%20%20&climate=temperate', place, null],
+    ['?plant=' + 'x'.repeat(201) + '&climate=temperate', place, null],
+    ['?plant=Pyrus+communis&climate=temperate', 'v=2&c=temperate&k=FR', null],
+    ['?' + place, null, null],
+    ['?v=2&c=temperate&k=FR', null, null], // a hand-made link with a country and no region stays in setup
+    ['?v=2&c=temperate', null, null],
+    ['?v=2&r=europe', null, 'temperate'],
+    ['?v=2&r=europe', null, null],
+    ['?v=2&c=Temperate&r=EUROPE', null, null],
+    ['?c=temperate&climate=arid&r=europe', null, null],
+    ['', place, null],
+    ['', 'v=2&c=temperate', null],
+    ['', null, 'temperate'],
+    ['?x=1', place, null],
+  ];
+  for (const [search, saved, siteClimate] of cases) {
+    assert.deepEqual(firstPaint(search, saved, siteClimate), opensOnResult(search, saved, siteClimate), `${search} | saved ${saved} | site ${siteClimate}`);
+  }
+  assert.ok(firstPaint('?plant=Pyrus+communis&climate=temperate', place, null).compact, 'the reviewer\'s case is compact from the first paint');
+  assert.equal(firstPaint('?plant=Pyrus+communis&climate=temperate', null, null).step, '1', 'a preset with no place: the climate step is done from the first paint');
+});
