@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium tool — user decisions
 description: Dated decisions the project owner made about the consortium design tool; they change only when the owner changes them.
 tags: [consortium, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:53:57Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T07:55:38Z }
 ---
 
 # Consortium tool — user decisions
@@ -45,12 +45,13 @@ Data side (sibling repository `canopi-data`, read 2026-10-27): `docs/adr/0007-cu
 | 2026-10-27 | **No `canopi.db` writes in this push:** the export uses today's catalog values; plan step 3 (imports into existing fields) is deferred. Unknown traits show as unknown. |
 | 2026-10-27 | **Region from an optional country:** step 1 asks the climate (the shared site choice) and "Where do you garden?": a country search, with the browser's hint offered as a one-tap suggestion and never applied silently. A country gives the region and turns on the invasive filter: plants recorded invasive there are never suggested automatically, and still appear with a warning in Swap and Add. "Rather not say" picks one of the 8 regions instead. The region stays shown and editable. Nothing leaves the browser. |
 | 2026-10-27 | **No accepted cell for (climate, region):** explain that it is not covered yet and list what is, with an explicit opt-in ("See the same climate in Europe instead"). A result from another region carries a permanent label naming the cell it came from and that it was not checked for the user's region; the invasive check still uses the user's country. |
+| 2026-10-28 | **Light-based layer names in ja and ko, app included:** the site's 突出層 / 上層 / 中層 / 下層 and 돌출층 / 상층 / 중층 / 하층 stay; the Canopi app switches to the same names (it still uses tree-based 高木層 / 교목층). |
+| 2026-10-28 | **zh "climax" is 顶极群落**, on the site and in the app (the app's 顶级群落 is changed). |
+| 2026-10-28 | **Allelopathy "not checked yet" is shown in a plant's details only**, not on every card; unknown is still never shown as "none". |
+| 2026-10-28 | **One warning heading everywhere: "With a warning"** (and its translations), never "Cautions". |
+| 2026-10-28 | **The helpers job gets real Field Guides:** written from *The Pollinator Victory Garden* (Kim Eierman, 2020, now in the owner's library), which also joins the bibliography. |
+| 2026-10-28 | **"Consortium" means each language's own form of the word** (Konsortium, Consorcio, コンソーシアム, 植物联合体…), « Guilde » in French. |
 
 ## Open questions for the owner (not decisions)
 
-Recorded 2026-10-28 by the coordinating agent; each waits for the owner's answer.
-
-- **Light-based layer names in ja and ko, app and site together.** The site's tool follows "Strata are about light first" with light-position names: ja 突出層 / 上層 / 中層 / 下層, ko 돌출층 / 상층 / 중층 / 하층. The Canopi app's ja and ko still use tree-based names (高木層 / 低木層, 교목층), so a Web Edition user sees both. Should the app switch too?
-- **zh "climax" spelling.** The site writes the standard 顶极群落; the app writes 顶级群落. Should the app follow?
-- **Allelopathy shown as "not checked yet".** Most plants have no allelopathy data, so most plant cards say so (unknown is never shown as "none"). Keep it as is, or show it more quietly?
-- **The helpers job links no guide**, since no Field Guide covers insectary or pollinator plants yet.
+None open (all answered 2026-10-28, see the rows above).
