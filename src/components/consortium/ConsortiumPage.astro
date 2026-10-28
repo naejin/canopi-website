@@ -68,11 +68,13 @@ const betaNote = makeWords(strings, lang).P('betaNote', manifest.climates.length
       <noscript>
         <div class="callout"><p>{tr('noscript')}</p>{food && <p><a class="text-link" href={food.url} hreflang={food.lang !== lang ? food.lang : undefined}>{tr('noscript.link')}</a></p>}</div>
       </noscript>
-      {/* The head is compact (no lede, no drawing) once the tool opens on a result, which it does as
-          soon as it has a climate: from a link (`c`, else a guide's `climate`), from the consortium
-          saved on this device, or the site climate, as app.js start() does. Set before the first
-          paint, so nothing jumps when it renders (prepush m5; scripts/consortium-page.test.mjs runs
-          this script against the app's rules). */}
+      {/* The head is compact (no lede, no drawing) when the tool opens past the climate and crop
+          questions (logic.js opensOnResult): a climate is known (a link's `c`, else a guide's
+          `climate`, else the save's, else the site climate) and the page opens on the consortium
+          saved on this device or on a link that names plants (a guide's included). A climate alone
+          opens the crop question under the full head. Set before the first paint, so nothing jumps
+          when it renders (prepush m5; scripts/consortium-page.test.mjs runs this script against the
+          app's rules). */}
       <script is:inline>(function () { try {
         var h = document.getElementById('ct-head'), C = h.dataset.climates.split(' ');
         var norm = function (v) { return v == null ? null : v.trim().toLowerCase(); }, has = function (list, v) { return v != null && list.indexOf(v) !== -1; };
@@ -82,7 +84,10 @@ const betaNote = makeWords(strings, lang).P('betaNote', manifest.climates.length
         var q = fromLink ? p : saved, climate = null;
         if (q) climate = norm(q.has('c') || !q.has('climate') ? q.get('c') : q.get('climate'));
         if (!has(C, climate)) climate = document.documentElement.dataset.climate || null;
-        if (!has(C, climate)) return;
+        if (!has(C, climate) || !q) return;
+        var named = q.has('a') || ['p', 'x', 'n', 'g'].some(function (k) { return (q.get(k) || '').trim() !== ''; });
+        var plant = (q.get('plant') || '').trim() !== '' && q.get('plant').length <= 200;
+        if (fromLink && !named && !plant) return;
         h.dataset.step = '1';
         h.classList.add('tool-head-compact');
       } catch (e) {} })();</script>

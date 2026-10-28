@@ -4,12 +4,44 @@
 // climate change leaves of a link's notices, when a click is the tail of a double click, the
 // language links' query, where the country comes from at start and the browser's country guess.
 
-// How many plants an old link named that the climate file no longer has: the distinct ids of `p` (kept)
-// and `a` (members) that matched no taxon or several. A kept plant is in both lists, so it counts
-// once; removed plants (`x`) are not plants the link named.
+// How many plants an old link named that the climate files no longer have: the distinct ids of `p`
+// (kept), `a` (members) and `g` (plants from another list) that matched no taxon or several, plus
+// the ids past the stated limit (an 'excess' entry carries their count). A kept plant may be in two
+// lists, so it counts once; removed plants (`x`) are not plants the link named, and a main crop
+// (`n`) is a member too.
+const NAMED = new Set(['p', 'a', 'g']);
 export function droppedPlants(dropped) {
-  const lost = dropped.filter((d) => (d.key === 'p' || d.key === 'a') && (d.reason === 'unknown' || d.reason === 'ambiguous'));
-  return new Set(lost.map((d) => d.value)).size;
+  const lost = dropped.filter((d) => NAMED.has(d.key) && (d.reason === 'unknown' || d.reason === 'ambiguous'));
+  const excess = dropped.filter((d) => NAMED.has(d.key) && d.reason === 'excess').reduce((n, d) => n + (Number(d.value) || 0), 0);
+  return new Set(lost.map((d) => d.value)).size + excess;
+}
+
+// Whether a link (decoded, or null for none) leaves the crop question to ask: it names no plants
+// (no members, kept, removed or other-list plants). A guide preset asks it too; the page then
+// checks the plant is a food plant of that climate (design-scale.md §6c).
+export function asksCrops(decoded) {
+  if (!decoded) return true;
+  const st = decoded.state;
+  return st.members == null && !st.kept.length && !st.removed.length && !(st.guests ?? []).length && !(st.crops ?? []).length;
+}
+
+// The head is compact from the first paint when the page opens past the climate and crop questions:
+// a saved consortium, or a link that names plants (a guide preset included: the first paint cannot
+// tell whether its plant asks the crop question). ConsortiumPage.astro's inline script follows this
+// rule, and scripts/consortium-page.test.mjs runs it against this function.
+export function opensOnResult({ climate, fromLink, decoded }) {
+  if (!climate || !decoded) return false;
+  if (!fromLink) return true;
+  return !asksCrops(decoded) || (decoded.state.plants ?? []).length > 0;
+}
+
+// The address Copy link shares: the page's path and the tool's state (encodeState) only, never the
+// address bar, so nothing the page keeps there for itself (`mine`) reaches a shared link.
+export function shareUrl(loc, q, mine = 'mine') {
+  const out = new URLSearchParams(q);
+  out.delete(mine);
+  const s = out.toString();
+  return loc.origin + loc.pathname + (s ? '?' + s : '');
 }
 
 // The "a place is free since you removed …" rows once plants are added: each added plant takes

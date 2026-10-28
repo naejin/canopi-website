@@ -2,17 +2,21 @@
 // consortium from the data core (src/lib/consortium/), change it, share or print it. The country is
 // optional and only sets the invasive warnings: guessed from the browser (shown as a guess, never
 // silent), changeable or cleared; it never changes the plants.
+// After the climate, an optional question: up to three main crops, food plants of that climate; the
+// suggestion is built around them (crops.js). A plant only another climate lists can still be added
+// from the plant search ("Add anyway") and carries that list's name everywhere (owner, 2026-10-28).
 // The page renders from one state object; every change re-renders the tool and puts the focus back
 // on the control that had it (data-fk), or on the one the action names. Sheets (details, Swap, Add,
 // climate, country, site) are one native <dialog>. Nothing leaves the browser: the data files are the site's
 // own, the state lives in the address bar and in localStorage.
 import {
   fileFor, isCountry, invasiveChecked, strata, phases, phaseBands, bandsOf, jobs, jobsOf, jobOfFunction, suggest, evaluate, alternatives, flagsFor,
-  SIZE_LIMIT, DEFAULT_SITE, lights, soils, waters, rooms, encodeState, decodeState, resolveState, taxonByName, isSerious, siteClimates, fits,
+  SIZE_LIMIT, DEFAULT_SITE, lights, soils, waters, rooms, encodeState, decodeState, resolveState, taxonByName, isSerious, siteClimates, fits, MAX_CROPS,
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadClimate } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook, capFirst } from './words.js';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard, guessCountry, linkCountry, langSearch, chosenHere, printNoneKey, invasiveSourceIds } from './logic.js';
+import { cropMatches, cropExamples, elsewhereHit, otherListMatches, isFood } from './crops.js';
+import { asksCrops, shareUrl, droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard, guessCountry, linkCountry, langSearch, chosenHere, printNoneKey, invasiveSourceIds } from './logic.js';
 import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, invasiveCardNote, invasiveDetails, countryAnnouncement } from './parts.js';
 import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
@@ -81,16 +85,49 @@ const fresh = () => ({
   climate: null, climateSource: null, country: null, countrySource: null, noCountry: false, unknownCountry: null, linkCode: null,
   site: { ...DEFAULT_SITE }, status: 'boot', members: [], kept: new Set(), removed: new Set(), gaps: [],
   view: 'layers', explain: null, notice: null, dropped: 0, guidePlant: null, guideId: null, restoredAt: null, pending: null,
+  // crops: the main crops, in the order chosen (kept once the suggestion is made); guests: plants from
+  // another climate's list, id → { climate, taxon, sources }; askCrops: the crop question comes once
+  // the climate's file is loaded; cropFromGuide: the crop a guide's link chose; cropsBack: the crop
+  // question was opened from a result, which "Back to your consortium" returns to.
+  crops: [], guests: new Map(), askCrops: false, cropFromGuide: null, cropsBack: false,
 });
 let S = fresh();
 let O = null; // the open sheet: { type, id, filter, back, confirm }
 let addQuery = '', addJob = '', addLayer = '';
-let countryQuery = '';
+let countryQuery = '', cropQuery = '';
+// The other climates' files, loaded only when needed (Add anyway, the crop question's "in another
+// list", a link's guests): climate → file.
+const others = new Map();
+let othersLoading = null, othersDone = false;
 let focusNext = null, lastRemoved = null, undoStart = null, toastTimer = 0, lastRemoveAt = null;
 const SWAP_STEP = 8;
 let swapMore = 0;
 
-const taxonOf = (id) => cell?.taxa.find((t) => t.id === id) ?? null;
+const inCell = (id) => !!cell?.taxa.some((t) => t.id === id);
+function otherTaxon(id) { for (const f of others.values()) { const t = f.taxa.find((x) => x.id === id); if (t) return t; } return null; }
+const taxonOf = (id) => cell?.taxa.find((t) => t.id === id) ?? S.guests.get(id)?.taxon ?? otherTaxon(id);
+const guestTaxa = () => [...S.guests.values()].map((g) => g.taxon);
+// The other list a plant comes from (a guest's, or the list the Add search found it in); null for this climate's own.
+function otherClimateOf(id) {
+  if (!id || inCell(id)) return null;
+  if (S.guests.has(id)) return S.guests.get(id).climate;
+  for (const [c, f] of others) if (c !== S.climate && f.taxa.some((t) => t.id === id)) return c;
+  return null;
+}
+// The sources a plant's own file names (a guest's file for a guest).
+const sourcesOf = (t) => { const c = otherClimateOf(t.id); return c ? S.guests.get(t.id)?.sources ?? others.get(c)?.sources ?? {} : cell.sources; };
+const isCrop = (id) => S.crops.includes(id);
+const listName = (c) => T('list.' + c);
+const fromListLabel = (c) => T('fromList', { list: listName(c) });
+// The other covered climates' files, once: the crop question and the Add search re-render when they arrive.
+function loadOthers() {
+  if (!othersLoading) {
+    othersLoading = Promise.all(CLIMATES.filter((c) => fileFor(manifest, c)).map(async (c) => { try { others.set(c, await loadClimate(fileFor(manifest, c).file)); } catch {} }))
+      .then(() => { othersDone = true; refreshCrops(true); refreshAdd(); });
+  }
+  return othersLoading;
+}
+const othersList = () => [...others].filter(([c]) => c !== S.climate);
 const stratumOf = (t) => t.stratum?.value ?? 'none';
 const limit = () => SIZE_LIMIT[S.site.room];
 const climateLabel = () => W.climate(S.climate);
@@ -112,8 +149,8 @@ const siteClimate = () => (siteClimates.includes(document.documentElement.datase
 // The members with their flags (evaluate never refills), cached until the state changes.
 let evalKey = '', evalOut = null;
 function evaluated() {
-  const key = [S.members.join(), keptList().join(), S.site.light, S.site.soil, S.site.water, S.site.room, S.country, cell?.climate_zone].join('|');
-  if (key !== evalKey) { evalKey = key; evalOut = evaluate(cell, S.members, { site: S.site, kept: keptList(), ...where() }); }
+  const key = [S.members.join(), keptList().join(), [...S.guests.keys()].join(), S.site.light, S.site.soil, S.site.water, S.site.room, S.country, cell?.climate_zone].join('|');
+  if (key !== evalKey) { evalKey = key; evalOut = evaluate(cell, S.members, { site: S.site, kept: keptList(), guests: guestTaxa(), ...where() }); }
   return evalOut;
 }
 const flagsById = () => new Map(evaluated().members.map((m) => [m.taxon.id, m.flags]));
@@ -125,10 +162,13 @@ const numbering = () => new Map(ordered().map((t, i) => [t.id, i + 1]));
 // The jobs nobody does come from the core (evaluate's gaps); the layers in use from the members.
 const jobGaps = () => evaluated().gaps;
 const strataIn = (list) => new Set(list.filter((t) => t.stratum).map((t) => t.stratum.value));
-// How many plants "Fill the free places" would add now.
+// How many plants "Fill the gaps" would add now, worked out once per state (a render asks several times).
+let fillKey = '', fillOut = 0;
 function fillable() {
   if (!cell || S.members.length >= limit()) return 0;
-  return suggest(cell, { site: S.site, kept: [...new Set([...S.members, ...S.kept])], removed: [...S.removed] }).members.length - S.members.length;
+  const key = [S.members.join(), keptList().join(), [...S.removed].join(), [...S.guests.keys()].join(), S.site.light, S.site.soil, S.site.water, S.site.room, cell.climate_zone].join('|');
+  if (key !== fillKey) { fillKey = key; fillOut = suggest(cell, { site: S.site, kept: [...new Set([...S.members, ...S.kept])], removed: [...S.removed], guests: guestTaxa() }).members.length - S.members.length; }
+  return fillOut;
 }
 
 // ---------- Warnings: one reading for every surface (card, Swap, Add, details, print) ----------
@@ -279,6 +319,77 @@ function setupHTML() {
       ${countryLineHTML(true)}${climateChoices()}</section></div>`;
 }
 
+// ---------- Main crops ----------
+// The climate chosen, folded: its name, its cover, its places, where it came from, and Change.
+function chosenClimateHTML() {
+  const c = S.climate, why = T(S.climateSource === 'guide' ? 'climateFromGuide' : S.climateSource === 'site' ? 'climateFromSite' : 'countryChosen');
+  return `<div class="clim-chosen"><p><strong>${esc(W.climate(c))}</strong> <span class="cover-pill" data-covered="true">${esc(T('covered'))}</span> <span class="places">${esc(data.strings['climate.' + c + '.places'])}</span> <span class="cl-why">${esc(why)}</span></p>
+    ${btn('button button-secondary button-small', 'open-place', 'climate', esc(T('change')), `aria-haspopup="dialog" aria-label="${esc(T('change'))}: ${esc(W.climate(c))}" ${fk('pc-climate')}`)}</div>`;
+}
+const cropFull = () => S.crops.length >= MAX_CROPS;
+function cropOptionsHTML() {
+  const hits = cropFull() ? [] : cropMatches(cell, cropQuery, lang, S.crops);
+  const size = (t) => (t.traits.height_m?.max != null ? ' · ' + esc(T('meters', { v: W.num(t.traits.height_m.max) })) : '');
+  return hits.length ? `<ul class="options crop-options" role="list" aria-label="${esc(T('crops.label', { list: listName(S.climate) }))}">${hits.map((t) => `<li>${btn('option', 'crop-add', t.id, `<span><b>${name(t)}</b> ${sciHTML(t)}</span><small>${esc(stratumLabel(stratumOf(t)))}${size(t)}</small>`, fk('co-' + t.id))}</li>`).join('')}</ul>` : '';
+}
+function cropExamplesHTML() {
+  if (cropQuery.trim() || cropFull()) return '';
+  const ex = cropExamples(cell, lang).filter((t) => !isCrop(t.id));
+  return ex.length ? `<span>${esc(T('crops.examples'))}</span> ${ex.map((t) => btn('chip-button', 'crop-add', t.id, `<span>${name(t)}</span>`, fk('ce-' + t.id))).join('')}` : '';
+}
+// The status under the search (role=status): how many match, how many are chosen, or, with no match,
+// the whole message: the list that has the plant ("Add anyway" later), never another climate to choose.
+function cropStatus() {
+  const q = cropQuery.trim(), n = S.crops.length;
+  if (cropFull()) return esc(T('crops.full', { max: W.num(MAX_CROPS) }));
+  if (q) {
+    const hits = cropMatches(cell, q, lang, S.crops);
+    if (hits.length) return esc(P('crops.matches', hits.length));
+    if (!othersDone) loadOthers();
+    const hit = elsewhereHit(q, lang, othersList(), cell);
+    const elsewhere = hit ? `<p>${esc(T('crops.elsewhere', { name: nameText(hit.taxon), other: listName(hit.climate), anyway: T('addAnyway'), label: fromListLabel(hit.climate) }))}</p>` : '';
+    return `<div class="crop-none"><p><strong>${esc(T('crops.none', { list: listName(S.climate), q }))}</strong></p>${elsewhere}<p class="muted">${esc(T('crops.spelling'))}</p></div>`;
+  }
+  return n ? esc(P('crops.chosen', n, { max: W.num(MAX_CROPS) })) : '';
+}
+let cropTimer = 0;
+// Typing redraws the options at once and the status once typing pauses (so it is read once).
+function refreshCrops(now = false) {
+  if (S.status !== 'crops') return;
+  const l = document.getElementById('ct-crop-list'), eg = document.getElementById('ct-crop-eg');
+  if (l) l.innerHTML = cropOptionsHTML();
+  if (eg) eg.innerHTML = cropExamplesHTML();
+  clearTimeout(cropTimer);
+  const put = () => { const st = document.getElementById('crop-st'); if (st && S.status === 'crops') st.innerHTML = cropStatus(); };
+  if (now) put(); else cropTimer = setTimeout(put, 400);
+}
+function cropsHTML() {
+  const list = listName(S.climate), n = S.crops.length;
+  const chips = n ? `<ul class="crop-chips" role="list" aria-label="${esc(T('crops.yours'))}">${S.crops.map((id) => {
+    const t = taxonOf(id), g = S.cropFromGuide === id;
+    return `<li class="crop-chip"><span><b>${name(t)}</b> ${sciHTML(t)}${g ? ` <span class="crop-g" aria-hidden="true">${esc(T('guideTag'))}</span><span class="vh">${esc(T('crops.guideVh'))}</span>` : ''}</span>${btn('crop-x', 'crop-remove', id, I.close, `aria-label="${esc(T('remove', { name: nameText(t) }))}" ${fk('cx-' + id)}`)}</li>`;
+  }).join('')}</ul>` : '';
+  const ph = new Intl.ListFormat(lang, { type: 'unit', style: 'short' }).format(cropExamples(cell, lang, 3).map(nameText)) + '…';
+  const go = btn('button button-primary', 'suggest', null, esc(T(n === 0 ? 'suggest' : n === 1 ? 'suggestIt' : 'suggestThem')), fk('suggest'));
+  return `<div class="setup">
+    <section class="step step-one" aria-labelledby="ct-st1"><div class="step-head step-head-solo"><h2 id="ct-st1">${esc(T('step1'))}</h2></div>${countryLineHTML(true)}${chosenClimateHTML()}</section>
+    <section class="step crops" aria-labelledby="ct-st2"><div class="crop-head"><h2 id="ct-st2" tabindex="-1">${esc(T('crops.title'))} <span class="crop-opt">${esc(T('crops.optional'))}</span></h2><p>${esc(T('crops.lede', { max: W.num(MAX_CROPS), list }))}</p></div>
+      ${chips}
+      <div class="field crop-field"><label for="ct-crop-q">${esc(T('crops.label', { list }))}</label>
+        <div class="search">${I.search}<input id="ct-crop-q" type="search" autocomplete="off" spellcheck="false" placeholder="${esc(ph)}" value="${esc(cropQuery)}" data-input="crop" aria-describedby="crop-st"${cropFull() ? ' disabled' : ''} ${fk('crop-q')}></div>
+        <div id="ct-crop-list">${cropOptionsHTML()}</div></div>
+      <div class="crop-st" id="crop-st" role="status">${cropStatus()}</div>
+      <p class="crop-eg" id="ct-crop-eg">${cropExamplesHTML()}</p>
+      <div class="crop-acts">${go}${n ? `<p class="crop-hint">${esc(T(n === 1 ? 'withoutIt' : 'withoutThem'))}</p>` : ''}${S.cropsBack ? btn('link-button', 'crops-back', null, esc(T('backToResult')), fk('crops-back')) : ''}</div>
+    </section></div>`;
+}
+// The result's line about the main crops it was built around, with "Change crops".
+function builtHTML() {
+  const crops = S.crops.map(taxonOf).filter(Boolean);
+  if (!crops.length) return '';
+  return `<p class="note built">${I.pinOn}<span><span>${T(crops.length === 1 ? 'builtOne' : 'builtMany', { names: W.list(crops.map((t) => `<b>${name(t)}</b>`)) })}</span> ${btn('link-button', 'change-crops', null, esc(T('changeCrops')), fk('change-crops'))}</span></p>`;
+}
+
 // ---------- Result ----------
 function seg(key) {
   const hint = key === 'soil' ? T('soilHint') : key === 'room' ? T('site.room.' + S.site.room + '.hint') : '';
@@ -329,15 +440,16 @@ function attentionHTML(flags) {
 // Phone has no side panel: with no free place, the "I want to grow…" search sits under the views
 // (growRowHTML), so the first screen still reaches the plants (M4).
 function growRowHTML() {
-  if (!phone() || Math.max(0, limit() - S.members.length)) return '';
+  if (!phone() || fillable()) return '';
   return `<div class="free-row grow-row"><div class="free-actions">${btn('button button-secondary grow-button', 'open-add', 'grow', `${I.search}<span>${esc(T('grow'))}</span>`, fk('grow'))}</div></div>`;
 }
+// Shown only while Fill would add plants; the words never count places: the room limits the
+// plants' size, not their number (owner, 2026-10-28).
 function freeRowHTML(can) {
-  const free = Math.max(0, limit() - S.members.length);
-  if (!free) return '';
-  return `<div class="free-row"><p>${esc(can ? P('free', free) : P('freeNone', free))}</p>
+  if (!can) return '';
+  return `<div class="free-row"><p>${esc(T('fillable'))}</p>
     <div class="free-actions">${btn('button button-secondary button-small', 'open-add', 'grow', `${I.search}<span>${esc(T('findPlant'))}</span>`, fk('find-free'))}
-    ${can ? btn('button button-primary button-small', 'fill', null, esc(T('fill')), fk('fill')) : ''}</div></div>`;
+    ${btn('button button-primary button-small', 'fill', null, esc(T('fill')), fk('fill'))}</div></div>`;
 }
 function notices(can) {
   let out = '';
@@ -362,8 +474,8 @@ function mainHTML() {
   const lastEnd = Math.max(-1, ...ms.map((t) => (t.phases ? phases.indexOf(t.phases.end) : -1)));
   return `${notices(can)}
     <div class="result-head"><div>${resultTitle(T('yourConsortium'))}<p class="result-sub">${esc(climateLabel())}${S.country ? ' · ' + esc(warnWhere(W, place())) : ''}</p></div>${phone() ? placeChips() : ''}</div>
-    <p class="summary-strip"><span><b>${esc(P('sizeLine.' + S.site.room, ms.length))}</b></span><span>${esc(T('sumLayers', { n: strataIn(ms).size }))}</span><span>${esc(T('sumJobs', { n: jobsDone }))}</span>${lastEnd >= 0 ? `<span>${esc(T('sumTime', { end: T(W.phaseKey(lastEnd, 'to')) }))}</span>` : ''}</p>
-    ${basisHTML()}${attentionHTML(flags)}${freeRowHTML(can)}
+    <p class="summary-strip"><span><b>${esc(P('count', ms.length))}</b> · ${esc(T('basis.room.' + S.site.room))} · ${esc(P('keptCount', ms.filter((t) => S.kept.has(t.id)).length))}</span><span>${esc(T('sumLayers', { n: strataIn(ms).size }))}</span><span>${esc(T('sumJobs', { n: jobsDone }))}</span>${lastEnd >= 0 ? `<span>${esc(T('sumTime', { end: T(W.phaseKey(lastEnd, 'to')) }))}</span>` : ''}</p>
+    ${builtHTML()}${basisHTML()}${attentionHTML(flags)}${freeRowHTML(can)}
     <div class="tabs" role="tablist" aria-label="${esc(T('yourConsortium'))}">${['layers', 'time', 'jobs'].map((v) => `<button class="tab" role="tab" type="button" id="ct-tab-${v}" aria-selected="${S.view === v}" aria-controls="ct-panel" tabindex="${S.view === v ? 0 : -1}" data-act="view" data-v="${v}" ${fk('tab-' + v)}>${esc(T('tab.' + v))}</button>`).join('')}</div>
     <div role="tabpanel" id="ct-panel" aria-labelledby="ct-tab-${S.view}" class="tabpanel">${S.view === 'layers' ? layersHTML(flags) : S.view === 'time' ? timeHTML(flags) : jobsHTML()}</div>${growRowHTML()}
     <div class="result-foot" role="group" aria-label="${esc(T('shareMenu'))}">${btn('button button-secondary button-small', 'share', null, `${I.link}${esc(T('share'))}`, fk('share'))}${btn('button button-secondary button-small', 'print', null, `${I.printer}${esc(T('print'))}`, fk('print'))}${btn('link-button quiet', 'start-over', null, esc(T('startOver')), fk('start-over'))}</div>`;
@@ -456,11 +568,11 @@ function layersHTML(flags) {
 }
 // M19: one primary action (Swap) and two labelled icon buttons (Keep, Remove).
 function plantRow(t, nums, flags) {
-  const kept = S.kept.has(t.id), fromGuide = S.guideId === t.id, n = nameText(t);
+  const kept = S.kept.has(t.id), fromGuide = S.guideId === t.id, n = nameText(t), crop = isCrop(t.id), from = otherClimateOf(t.id);
   return `<li class="plant" data-id="${t.id}"><span class="num" data-s="${stratumOf(t)}" aria-hidden="true">${nums.get(t.id)}</span>
     <div class="plant-main">
       <button class="plant-head" type="button" data-act="details" data-v="${t.id}" ${fk('pn-' + t.id)}><span class="pn">${name(t)}</span> <span class="sci">${esc(t.canonical_name)}</span></button>
-      ${kept || fromGuide ? `<div class="plant-tags">${fromGuide ? `<span class="tag">${I.book}${esc(T('guideTag'))}</span>` : ''}${kept ? `<span class="tag tag-pin">${I.pinOn}${esc(T('keptTag'))}</span>` : ''}</div>` : ''}
+      ${kept || fromGuide || from ? `<div class="plant-tags">${crop ? `<span class="tag tag-main">${esc(T('mainCrop'))}</span>` : ''}${fromGuide ? `<span class="tag">${I.book}${esc(T('guideTag'))}</span>` : ''}${kept ? `<span class="tag tag-pin">${I.pinOn}${esc(T('keptTag'))}</span>` : ''}${from ? `<span class="tag tag-from">${esc(fromListLabel(from))}</span>` : ''}</div>` : ''}
       <p class="plant-reason">${cardReasonHTML(t, W, lang)}</p>
       <div class="plant-meta"><span class="time">${timeHTML1(t)}${t.phases ? ' ' + explainBtn('phase-' + t.id, T('whatPhase')) : ''}</span>${jobsOf(t).map((j) => `<span class="job-tag">${esc(T('job.' + j))}</span>`).join('')}</div>
       ${explainPanel('phase-' + t.id)}${chipsHTML(t, flags)}
@@ -529,10 +641,15 @@ function jobsHTML() {
 }
 
 // ---------- Sheets ----------
+// The guests the core reads beside the cell, with a plant of another list that is not one yet (so its
+// warnings beside the members can be read before "Add anyway").
+const withGuest = (t) => (otherClimateOf(t.id) && !S.guests.has(t.id) ? [...guestTaxa(), t] : guestTaxa());
 function detailsParts(t) {
   const inMembers = S.members.includes(t.id), replacing = inMembers ? null : swapTarget(O);
+  // from: the other climate's list it is in (a guest's, or an Add search hit); guest: added from it.
+  const from = otherClimateOf(t.id), guest = S.guests.has(t.id), crop = inMembers && isCrop(t.id), sources = sourcesOf(t);
   // From the Swap list, the flags it would carry in that member's place (the list's own), else beside the members.
-  const flags = inMembers ? flagsById().get(t.id) : (replacing && swapFlags(replacing, t.id)) || flagsFor(cell, t.id, S.members, { site: S.site, ...where() });
+  const flags = inMembers ? flagsById().get(t.id) : (replacing && swapFlags(replacing, t.id)) || flagsFor(cell, t.id, S.members, { site: S.site, guests: withGuest(t), ...where() });
   const tr = t.traits, s = stratumOf(t), tw = W.timeWords(t);
   const unknown = `<span class="unknown">${esc(T('unknown'))}</span>`;
   const label = (field, v) => esc(labels?.[field]?.[v]?.[lang] ?? v);
@@ -555,7 +672,7 @@ function detailsParts(t) {
   const item = (cls, icon, title, text = '', extra = '') => `<li class="w-item ${cls}">${icon}<div><strong>${title}</strong>${text ? `<p>${text}</p>` : ''}${extra}</div></li>`;
   const note = (n) => (n ? (n[lang] ? esc(n[lang]) : `<span lang="en">${esc(n.en)}</span>`) : '');
   // Each interaction names all its sources (one record may rest on a host page and a distribution page).
-  const conflictFrom = (c) => (c.sources?.length ? `<p class="muted">${esc(T('d.conflictFrom', { sources: W.list(c.sources.map((id) => cell.sources[id]?.label ?? id)) }))}</p>` : '');
+  const conflictFrom = (c) => (c.sources?.length ? `<p class="muted">${esc(T('d.conflictFrom', { sources: W.list(c.sources.map((id) => (cell.sources[id] ?? sources[id])?.label ?? id)) }))}</p>` : '');
   const items = [];
   if (tox && tox.level !== 'None') items.push(item('danger', I.danger, esc(T('tox.' + tox.level)), note(tox.note), `<p class="liab">${esc(T('d.liab'))}</p>`));
   if (flags.invasive === true) items.push(item('warning', I.warn, esc(T('invHere', { country: W.country(S.country) })), esc(T('d.invHere', { country: W.country(S.country) })), `<p class="liab">${esc(T('d.liab'))}</p>`));
@@ -578,45 +695,55 @@ function detailsParts(t) {
   if (al == null) items.push(item('unknown', I.unknown, esc(T('unkAllelo')), esc(T('d.alleloUnk'))));
   if (wp === false) items.push(item('checked', I.check, `${esc(T('d.spreadsNone'))} <span class="muted">(${esc(T('d.checked'))})</span>`));
   if (wp == null) items.push(item('unknown', I.unknown, esc(T('unkSpreads')), esc(T('d.spreadsUnk'))));
-  const srcIds = new Set([...(t.reasons ?? []).flatMap((r) => r.sources), ...(t.stratum?.sources ?? []), ...(t.phases?.sources ?? []), ...(t.functions ?? []).flatMap((x) => x.sources), ...(tox?.sources ?? []), ...invasiveSourceIds(inv, cell.sources), ...flags.conflicts.flatMap((c) => c.sources)]);
-  const srcs = [...srcIds].map((id) => cell.sources[id]).filter(Boolean);
+  const srcIds = new Set([...(t.reasons ?? []).flatMap((r) => r.sources), ...(t.stratum?.sources ?? []), ...(t.phases?.sources ?? []), ...(t.functions ?? []).flatMap((x) => x.sources), ...(tox?.sources ?? []), ...invasiveSourceIds(inv, sources), ...flags.conflicts.flatMap((c) => c.sources)]);
+  const srcs = [...srcIds].map((id) => sources[id] ?? cell.sources[id]).filter(Boolean);
   const guides = (data.plantGuides[t.canonical_name] ?? []).filter(guide);
   const img = t.image, pageHref = safeHref(img?.source_page_url);
   const photo = img ? `<figure class="photo"><img src="${esc(img.url)}" alt="${esc(nameText(t))}" loading="lazy" decoding="async" width="480" height="320"><figcaption>${esc(T('photo', { credit: img.credit ?? '' }))}${img.licence ? ` · ${licenceHTML(img.licence)}` : ''}${pageHref ? ` · <a href="${esc(pageHref)}" rel="noopener">${esc(photoSource(pageHref))}</a>` : ''}</figcaption></figure>` : '';
   const jobsList = jobsOf(t);
-  const headHTML = `<div><h2 id="ct-dlg-title">${name(t)}</h2><p class="lede"><i>${esc(t.canonical_name)}</i> · ${esc(T('family', { family: t.family }))}</p></div>`;
-  const body = `${photo}
+  const tags = `${crop ? `<span class="tag tag-main">${esc(T('mainCrop'))}</span>` : ''}${from ? `<span class="tag tag-from">${esc(fromListLabel(from))}</span>` : ''}`;
+  const headHTML = `<div><h2 id="ct-dlg-title">${name(t)}</h2><p class="lede"><i>${esc(t.canonical_name)}</i> · ${esc(T('family', { family: t.family }))}</p>${tags ? `<p class="d-tags">${tags}</p>` : ''}</div>`;
+  // A main crop says why it is there and what it does (owner, 2026-10-28); a plant from another list
+  // says which list, and that its fit here was not checked.
+  const mainSec = crop ? `<section class="d-section d-main"><h3>${esc(T('mainCrop'))}</h3><p>${esc(T('mainCropText'))}</p>${btn('link-button', 'change-crops', null, esc(T('changeCrops')), fk('d-crops'))}</section>` : '';
+  const fromSec = from ? `<section class="d-section d-from"><h3>${esc(capFirst(fromListLabel(from), lang))}</h3><p>${esc(guest ? T('fromListText', { anyway: T('addAnyway'), list: listName(from), here: listName(S.climate) }) : T('inOtherList', { list: listName(from), here: listName(S.climate) }))}</p></section>` : '';
+  const body = `${photo}${mainSec}${fromSec}
     <div class="d-layer"><span>${esc(stratumLabel(s))}${s !== 'none' ? ' · ' + esc(T('stratum.' + s + '.about')) : ''}</span><span>${esc(tw.plain)}${tw.term ? ' · ' + esc(tw.term) : ''}</span></div>
-    ${t.reasons?.length ? `<section class="d-section"><h3>${esc(T('why'))}</h3>${reasonsHTML(t, W, lang, cell.sources)}</section>` : ''}
-    <section class="d-section"><h3>${esc(T('jobsHeading'))}</h3>${!jobsList.length ? `<p class="muted">${esc(T('d.jobsUnk'))}</p>` : `<div class="plant-meta">${jobsList.map((j) => `<span class="job-tag">${jobIcon(j, 14)}${esc(T('job.' + j))}</span>`).join('')}</div>`}</section>
+    ${t.reasons?.length ? `<section class="d-section"><h3>${esc(T(from ? 'whyInList' : 'why'))}</h3>${reasonsHTML(t, W, lang, sources)}</section>` : ''}
+    <section class="d-section"><h3>${esc(T(crop ? 'whatItDoes' : 'jobsHeading'))}</h3>${!jobsList.length ? `<p class="muted">${esc(T('d.jobsUnk'))}</p>` : `<div class="plant-meta">${jobsList.map((j) => `<span class="job-tag">${jobIcon(j, 14)}${esc(T('job.' + j))}</span>`).join('')}</div>`}</section>
     <section class="d-section"><h3>${esc(T('checks'))}</h3><ul class="w-list" role="list">${items.join('')}</ul></section>
     <section class="d-section"><h3>${esc(T('traits'))}</h3><dl class="facts">${facts.map(([k, v]) => `<dt>${esc(T(k))}</dt><dd>${v || unknown}</dd>`).join('')}</dl></section>
     ${guides.length ? `<section class="d-section"><h3>${esc(T('guides'))}</h3><ul class="guides" role="list">${guides.map((g) => `<li>${guideLink(g, '', (title) => `${I.book}<span>${title}<small>${esc(T('readGuide'))}</small></span>`)}</li>`).join('')}</ul></section>` : ''}
     <section class="d-section"><h3>${esc(T('sources'))}</h3>${srcs.length ? `<ol class="srcs">${srcs.map((x) => { const href = safeHref(x.url); return `<li>${href ? `<a href="${esc(href)}" rel="noopener">${esc(x.label)}</a>` : esc(x.label)}${x.licence ? ` <span class="muted">· ${licenceHTML(x.licence)}</span>` : ''}</li>`; }).join('')}</ol>` : `<p class="muted">${esc(T('noSource'))}</p>`}</section>`;
   const kept = S.kept.has(t.id), n = nameText(t);
-  const foot = inMembers
+  const keepBtn = (cls) => btn(cls, 'keep', t.id, `${kept ? I.pinOn : I.pin}<span>${esc(T(kept ? 'unkeep' : 'keep', { name: n }))}</span>`, `aria-pressed="${kept}" ${fk('d-keep')}`);
+  // A main crop has no Swap here: Not a main crop first, then Remove, which also ends it as a crop.
+  const foot = crop
+    ? `${keepBtn('button button-secondary button-small')}${btn('button button-secondary button-small', 'not-crop', t.id, esc(T('notMainCrop')), fk('d-notcrop'))}${btn('button button-secondary button-small', 'remove', t.id, `${I.remove}<span>${esc(T('remove', { name: n }))}</span>`, fk('d-remove'))}<p class="seg-hint d-foot-note">${esc(T('mainCropRemoveNote'))}</p>`
+    : inMembers
     ? `${btn('button button-primary button-small', 'swap', t.id, `${I.swap}${esc(T('swap'))}`, fk('d-swap'))}${btn('button button-secondary button-small', 'keep', t.id, `${kept ? I.pinOn : I.pin}<span>${esc(T(kept ? 'unkeep' : 'keep', { name: n }))}</span>`, `aria-pressed="${kept}" ${fk('d-keep')}`)}${btn('button button-secondary button-small', 'remove', t.id, `${I.remove}<span>${esc(T('remove', { name: n }))}</span>`, fk('d-remove'))}`
     : replacing ? (O.confirm === t.id ? confirmHTML(t.id, 'use') : btn('button button-primary button-small', 'use', t.id, `${I.swap}${esc(T('useInstead'))}`, fk('d-use')))
+    : from && !guest ? btn('button button-primary button-small', 'add-anyway', from + ':' + t.id, esc(T('addAnyway')), fk('d-anyway'))
     : O.confirm === t.id ? confirmHTML(t.id, 'add') : btn('button button-primary button-small', 'add', t.id, esc(T('add')), fk('d-add'));
   return { head: headHTML, body, foot };
 }
 // A flagged plant's confirmation takes the place of its button, inside its own row (a list holds
 // only items).
 function altRow(t, why, act, label, flags, opts = {}) {
-  const confirming = O?.confirm === t.id && !opts.disabled;
+  const confirming = O?.confirm === t.id && !opts.disabled, v = opts.v ?? t.id;
   return `<li class="alt" data-flagged="${flags.flagged}"${confirming ? ' data-confirming="true"' : ''}><div class="alt-main"><span class="alt-name">${btn('link-button alt-link', 'details-from', t.id, name(t), fk('ad-' + t.id))} <span class="sci">${esc(t.canonical_name)}</span></span>
     <span class="alt-why">${why}</span>${chipsHTML(t, flags)}</div>
-    ${opts.disabled ? `<span class="seg-hint">${esc(T('inConsortium'))}</span>` : confirming ? confirmHTML(t.id, act) : btn(`button button-small ${opts.primary ? 'button-primary' : 'button-secondary'}`, act, t.id, esc(label), `aria-label="${esc(label)}: ${esc(nameText(t))}" ${fk(act + '-' + t.id)}`)}</li>`;
+    ${opts.disabled ? `<span class="seg-hint">${esc(T('inConsortium'))}</span>` : confirming ? confirmHTML(t.id, act) : btn(`button button-small ${opts.primary ? 'button-primary' : 'button-secondary'}`, act, v, esc(label), `aria-label="${esc(label)}: ${esc(nameText(t))}" ${fk(act + '-' + t.id)}`)}</li>`;
 }
 // The flags of a plant in the Swap list of member `from`.
-const swapFlags = (from, id) => alternatives(from, S.members, cell, { site: S.site, removed: [...S.removed], ...where() }).find((a) => a.taxon.id === id)?.flags ?? null;
+const swapFlags = (from, id) => alternatives(from, S.members, cell, { site: S.site, removed: [...S.removed], guests: guestTaxa(), ...where() }).find((a) => a.taxon.id === id)?.flags ?? null;
 function confirmHTML(id, act) {
-  const t = taxonOf(id), from = act === 'use' ? swapTarget(O) : null, flags = from ? swapFlags(from, id) : flagsFor(cell, id, S.members, { site: S.site, ...where() });
+  const t = taxonOf(id), from = act === 'use' ? swapTarget(O) : null, flags = from ? swapFlags(from, id) : flagsFor(cell, id, S.members, { site: S.site, guests: guestTaxa(), ...where() });
   return `<div class="confirm" role="alertdialog" aria-labelledby="ct-confirm-t" aria-describedby="ct-confirm-d"><p id="ct-confirm-t"><strong>${T('confirmTitle', { name: name(t) })}</strong></p><p id="ct-confirm-d">${T('confirmText', { warnings: W.list(warnPlain(t, flags, false)) })}</p>
     <div class="actions">${btn('button button-primary button-small', act + '-yes', id, esc(T(act === 'use' ? 'confirmUse' : 'confirmAdd')), fk('confirm-yes'))}${btn('button button-secondary button-small', 'confirm-no', null, esc(T('cancel')), fk('confirm-no'))}</div></div>`;
 }
 function swapParts(m) {
-  const all = alternatives(m.id, S.members, cell, { site: S.site, removed: [...S.removed], ...where() });
+  const all = alternatives(m.id, S.members, cell, { site: S.site, removed: [...S.removed], guests: guestTaxa(), ...where() });
   // copy-m5: eight of each group at first, eight more per "Show more".
   const fitAll = all.filter((a) => !a.flags.flagged), flaggedAll = all.filter((a) => a.flags.flagged);
   const fitShown = shown(fitAll, SWAP_STEP * (1 + swapMore), SWAP_STEP), flaggedShown = shown(flaggedAll, SWAP_STEP * (1 + swapMore), SWAP_STEP);
@@ -652,7 +779,7 @@ function addResults() {
   const q = fold(addQuery.trim());
   if (q) list = list.filter((t) => searchText(t).includes(q));
   list = [...list].sort((a, b) => nameText(a).localeCompare(nameText(b), lang));
-  const flagOf = new Map(list.map((t) => [t.id, flagsFor(cell, t.id, S.members, { site: S.site, ...where() })]));
+  const flagOf = new Map(list.map((t) => [t.id, flagsFor(cell, t.id, S.members, { site: S.site, guests: guestTaxa(), ...where() })]));
   const fit = list.filter((t) => !flagOf.get(t.id).flagged), flagged = list.filter((t) => flagOf.get(t.id).flagged);
   const row = (t) => altRow(t, `<span>${esc(stratumLabel(stratumOf(t)))}</span><span>${esc(jobsOf(t).map((j) => T('job.' + j)).join(' · '))}</span>`, 'add', T('add'), flagOf.get(t.id), { disabled: S.members.includes(t.id) });
   // M11: grouped by layer; plants with a warning last, in their own group.
@@ -660,11 +787,29 @@ function addResults() {
     const g = fit.filter((t) => stratumOf(t) === s);
     return g.length ? `<h3 class="list-label">${esc(stratumLabel(s))}</h3><ul class="alt-list" role="list">${g.map(row).join('')}</ul>` : '';
   }).join('');
-  return `<p class="list-count" id="ct-add-count">${esc(P('count', list.length))}${fkind === 'phase' ? ' · ' + esc(T('phaseFilter', { stage: T(W.phaseKey(Number(fv), 'plain')) })) : ''}</p>
+  return `${addCountHTML(list, fkind, fv)}
     ${!list.length ? `<p class="muted">${esc(T('emptyList'))}</p>` : ''}
     ${jobF && !fit.length && flagged.length ? `<p class="note note-dashed">${I.unknown}<span>${esc(T('noFitForJob'))}</span></p>` : ''}
-    ${byLayer}${flagged.length ? `<h3 class="list-label">${I.warn} ${esc(T('withWarning'))}</h3><p class="seg-hint">${esc(T('flaggedNote'))}</p><ul class="alt-list" role="list">${flagged.map(row).join('')}</ul>` : ''}`;
+    ${byLayer}${flagged.length ? `<h3 class="list-label">${I.warn} ${esc(T('withWarning'))}</h3><p class="seg-hint">${esc(T('flaggedNote'))}</p><ul class="alt-list" role="list">${flagged.map(row).join('')}</ul>` : ''}${otherHitsHTML(jobF, layerF)}`;
 }
+const addCountHTML = (list, fkind, fv) => `<p class="list-count" id="ct-add-count">${esc(P('count', list.length))}${fkind === 'phase' ? ' · ' + esc(T('phaseFilter', { stage: T(W.phaseKey(Number(fv), 'plain')) })) : ''}</p>
+`;
+// "In another climate's list": what the other lists have for a search this list lacks, each with
+// "Add anyway". Their files load only once a search is typed (data.ts caches them).
+function otherHitsHTML(jobF, layerF) {
+  if (!addQuery.trim()) return '';
+  if (!othersDone) { loadOthers(); return ''; }
+  let hits = otherListMatches(addQuery, othersList(), cell);
+  if (jobF) hits = hits.filter((h) => jobsOf(h.taxon).includes(jobF));
+  if (layerF) hits = hits.filter((h) => stratumOf(h.taxon) === layerF);
+  if (!hits.length) return '';
+  const here = listName(S.climate);
+  return `<h3 class="list-label">${esc(T('otherLists'))}</h3><ul class="alt-list" role="list">${hits.map(({ climate, taxon }) => altRow(taxon,
+    `<span>${esc(T('inOtherList', { list: listName(climate), here }))}</span><span>${esc(stratumLabel(stratumOf(taxon)))}</span>`,
+    'add-anyway', T('addAnyway'), flagsFor(cell, taxon.id, S.members, { site: S.site, guests: [...guestTaxa(), taxon], ...where() }) ?? { flagged: false, conflicts: [], misfits: [] },
+    { disabled: S.members.includes(taxon.id), v: climate + ':' + taxon.id })).join('')}</ul>`;
+}
+function refreshAdd() { const r = O?.type === 'add' && dlg.querySelector('#ct-add-results'); if (r) r.innerHTML = addResults(); }
 function addParts() {
   const { fkind, jobF, layerF } = addFilter();
   const sel = (id, label, all, opts, cur) => `<label class="sel"><span>${esc(label)}</span><select data-filter="${id}" ${fk('f-' + id)}><option value="">${esc(all)}</option>${opts.map(([v, l]) => `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
@@ -693,13 +838,14 @@ function printHTML() {
   const ms = ordered(), nums = numbering(), flags = flagsById();
   const rows = ms.map((t) => {
     const s = stratumOf(t), tw = W.timeWords(t), w = warnPlain(t, flags.get(t.id)).join('<br>');
-    return `<tr><td>${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i></td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${w || `<span class="muted">${esc(T(printNoneKey(t, place())))}</span>`}</td></tr>`;
+    const from = otherClimateOf(t.id), tags = [isCrop(t.id) && T('mainCrop'), from && fromListLabel(from)].filter(Boolean);
+    return `<tr><td>${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i>${tags.length ? `<br><span class="muted">${esc(tags.join(' · '))}</span>` : ''}</td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${w || `<span class="muted">${esc(T(printNoneKey(t, place())))}</span>`}</td></tr>`;
   }).join('');
   const bands = phaseBands.map((k) => {
     const inBand = ms.filter((t) => bandsOf(t).includes(k));
     return `<div><h3>${esc(T('band.' + k + '.print'))}</h3><ul>${inBand.map((t) => `<li>${name(t)}${sciHTML(t, 'muted') && ' ' + sciHTML(t, 'muted')}</li>`).join('')}</ul></div>`;
   }).join('');
-  const gapJobs = jobGaps(), free = Math.max(0, limit() - ms.length);
+  const gapJobs = jobGaps();
   const date = new Intl.DateTimeFormat(lang, { dateStyle: 'long' }).format(new Date());
   return `<article class="sheet">
     <div class="sheet-head"><div><h2 class="sheet-title">${esc(T('printTitle'))}</h2><p class="muted">${esc(climateLabel())} · ${esc(printWhere(W, place()))} · ${esc(date)}</p>
@@ -707,9 +853,9 @@ function printHTML() {
     <div class="sheet-draw">${profileHTML(flags, true)}</div>
     <section><h3>${esc(T('tab.layers'))}</h3><table><thead><tr><th>${esc(T('p.layer'))}</th><th>${esc(T('p.plant'))}</th><th>${esc(T('p.time'))}</th><th>${esc(T('p.jobs'))}</th><th>${esc(T('withWarning'))}</th></tr></thead><tbody>${rows}</tbody></table></section>
     <section><h3>${esc(T('tab.time'))}</h3><div class="sheet-phases">${bands}</div></section>
-    ${gapJobs.length || free ? `<section><h3>${esc(T('printGaps'))}</h3><ul>${gapJobs.map((j) => `<li>${esc(T('job.' + j + '.gap'))}</li>`).join('')}${free ? `<li>${esc(T('printFree', { n: W.num(free) }))}</li>` : ''}</ul></section>` : ''}
+    ${gapJobs.length ? `<section><h3>${esc(T('printGaps'))}</h3><ul>${gapJobs.map((j) => `<li>${esc(T('job.' + j + '.gap'))}</li>`).join('')}</ul></section>` : ''}
     <p class="muted small">${esc(T('d.liab'))}</p>
-    <p class="sheet-foot">${esc(T('printFoot', { url: location.href }))}</p></article>`;
+    <p class="sheet-foot">${esc(T('printFoot', { url: shareLink() }))}</p></article>`;
 }
 
 // ---------- Render ----------
@@ -722,18 +868,22 @@ function focusFk(key, root = document) {
 function render() {
   const active = document.activeElement, activeFk = app.contains(active) ? fkOf(active) : null;
   const sel = active?.dataset?.input && app.contains(active) ? [active.selectionStart, active.selectionEnd] : null;
-  const setup = S.status === 'setup' || S.status === 'boot';
-  head.classList.toggle('tool-head-compact', !setup);
-  head.dataset.step = setup ? '0' : '1';
+  const setup = S.status === 'setup' || S.status === 'boot', crops = S.status === 'crops';
+  // The crop question keeps the head as it was: full after the climate cards, compact from a result
+  // (or a guide's link, compact from the first paint: ConsortiumPage.astro).
+  // A climate's file loading (or failing) before the crop question holds it too.
+  const holdHead = crops || (S.askCrops && (S.status === 'loading' || S.status === 'error'));
+  if (!holdHead) { head.classList.toggle('tool-head-compact', !setup); head.dataset.step = setup ? '0' : '1'; }
   if (S.status === 'boot') return;
   const asideTop = app.querySelector('.aside')?.scrollTop ?? 0;
-  app.innerHTML = setup ? setupHTML() : `<div class="tool-grid">${asideHTML()}<section class="result" aria-labelledby="ct-result-title">${mainHTML()}</section></div>`;
+  app.innerHTML = crops ? cropsHTML() : setup ? setupHTML() : `<div class="tool-grid">${asideHTML()}<section class="result" aria-labelledby="ct-result-title">${mainHTML()}</section></div>`;
   const aside = app.querySelector('.aside');
   if (aside) aside.scrollTop = asideTop;
   app.removeAttribute('aria-busy');
   if (O) renderSheet();
   const target = focusNext; focusNext = null;
-  if (target === 'result') {
+  if (target === 'crops') document.getElementById('ct-st2')?.focus();
+  else if (target === 'result') {
     // M4: on phone the result starts at the top of the screen, so the drawing and its key show at once.
     // m12: while a header menu is open (Safari leaves a tapped summary unfocused), the heading takes
     // the focus without scrolling, and the menu stays open where the reader is.
@@ -815,7 +965,9 @@ const sayLater = (text) => { clearTimeout(sayTimer); sayTimer = setTimeout(() =>
 function stateNow(saved = false) {
   const p = S.pending?.state;
   const members = p ? p.members : linkMembers(S.status, S.members);
-  return { climate: S.climate, ...linkCountry(S, saved), site: S.site, kept: p ? p.kept : keptList(), removed: p ? p.removed : [...S.removed], members, plants: p?.plants ?? [], crops: p ? p.crops : [], guests: p ? p.guests : [] };
+  // A guest the consortium no longer holds leaves the link.
+  const guests = [...S.guests].filter(([id]) => S.members.includes(id) || S.kept.has(id)).map(([id, g]) => ({ id, climate: g.climate }));
+  return { climate: S.climate, ...linkCountry(S, saved), site: S.site, kept: p ? p.kept : keptList(), removed: p ? p.removed : [...S.removed], members, plants: p?.plants ?? [], crops: p ? p.crops : [...S.crops], guests: p ? p.guests : guests };
 }
 // The link's own prefixes, written back exactly as they came (shortening them without the cell
 // could make two plants share one): a v3 link's tokens come back the same from encodeState; a v2
@@ -830,9 +982,15 @@ function pendingQuery(saved = false) {
   if (st.members) q.set('a', st.members.join('.'));
   return q;
 }
+// The link's query: a token is written whole only when another plant of the files at hand shares
+// its first 36 bits (state.ts).
+const linkQuery = (saved = false) => (S.pending ? pendingQuery(saved) : encodeState(stateNow(saved), cell, Object.fromEntries(others)));
+// The address Copy link and print give: the tool's state alone, never the page's own `mine`.
+const shareLink = () => shareUrl(location, linkQuery(false), MINE);
 function persist() {
-  if (!S.climate || !manifest || !mayPersist(S) || S.status === 'setup') return;
-  const query = (saved) => (S.pending ? pendingQuery(saved) : encodeState(stateNow(saved), cell)).toString();
+  // The crop question is not written: a reload asks it again, or returns to the result it came from.
+  if (!S.climate || !manifest || !mayPersist(S) || S.status === 'setup' || S.status === 'crops') return;
+  const query = (saved) => linkQuery(saved).toString();
   const q = query(false);
   try { history.replaceState(history.state, '', location.pathname + '?' + q); } catch {}
   syncLangLinks();
@@ -857,7 +1015,7 @@ function dropUndo() {
 let undoRedo = null, redoNext = null;
 function holdForRedo(focus, place) {
   const snap = undoRedo ?? redoNext ?? (S.status === 'ready'
-    ? { S: { ...S, site: { ...S.site }, members: [...S.members], kept: new Set(S.kept), removed: new Set(S.removed), gaps: [...S.gaps] }, cell, focus } : null);
+    ? { S: { ...S, site: { ...S.site }, members: [...S.members], kept: new Set(S.kept), removed: new Set(S.removed), gaps: [...S.gaps], crops: [...S.crops], guests: new Map(S.guests) }, cell, focus } : null);
   if (snap && place) snap.place = true;
   redoNext = snap;
 }
@@ -865,11 +1023,11 @@ function offerRedo() {
   const snap = redoNext; redoNext = null;
   if (!snap || (snap.cell === cell && S.status === 'ready' && snap.S.members.join() === S.members.join() && snap.S.gaps.length === S.gaps.length)) return;
   undoRedo = snap;
-  toast(snap.place ? esc(T('redoneClimate', { climate: W.climate(snap.S.climate) })) : esc(T('redoneSite')), 'redo');
+  toast(snap.place ? esc(T('redoneClimate', { climate: W.climate(snap.S.climate) })) : esc(T(snap.crops ? 'redoneCrops' : 'redoneSite')), 'redo');
 }
 function recompute() {
   dropUndo();
-  const r = suggest(cell, { site: S.site, kept: keptList(), removed: [...S.removed] });
+  const r = suggest(cell, { site: S.site, kept: keptList(), removed: [...S.removed], guests: guestTaxa() });
   S.members = r.members.map((m) => m.taxon.id); S.gaps = [];
   S.status = S.members.length ? 'ready' : 'nomatch';
 }
@@ -904,10 +1062,17 @@ async function resolveClimate() {
   const keep = (ids) => ids.filter((id) => cell.taxa.some((t) => t.id === id));
   S.kept = new Set(keep(keptList())); S.removed = new Set(keep([...S.removed]));
   if (S.pending) {
+    // A link's plants from other lists need their lists first.
+    const lists = [...new Set((S.pending.state.guests ?? []).map((g) => g.climate))].filter((c) => c !== S.climate && fileFor(manifest, c) && !others.has(c));
+    if (lists.length) {
+      await Promise.all(lists.map(async (c) => { try { others.set(c, await loadClimate(fileFor(manifest, c).file)); } catch {} }));
+      if (run !== loadSeq) return;
+    }
     const asked = S.pending.state.members;
-    const r = resolveState(S.pending, cell), st8 = r.state;
+    const r = resolveState(S.pending, cell, Object.fromEntries(others)), st8 = r.state;
     S.pending = null;
-    S.kept = new Set(st8.kept); S.removed = new Set(st8.removed);
+    S.guests = new Map(st8.guests.map((g) => { const f = others.get(g.climate); return [g.id, { climate: g.climate, taxon: f.taxa.find((t) => t.id === g.id), sources: f.sources }]; }));
+    S.kept = new Set(st8.kept); S.removed = new Set(st8.removed); S.crops = [...st8.crops];
     if (S.guidePlant) {
       // m5: the plant the core pinned, by the core's own rule; "left out" only when it dropped it.
       S.guideId = taxonByName(cell, S.guidePlant)?.id ?? null;
@@ -915,14 +1080,30 @@ async function resolveClimate() {
     }
     const lost = droppedPlants(r.dropped);
     if (lost) { S.dropped = lost; S.notice = 'oldlink'; }
+    // A guide's food plant of this climate opens the crop question with it chosen; any other plant
+    // of a guide is kept and the result shows at once, as before.
+    const food = S.askCrops && S.guidePlant ? taxonOf(S.guideId) : null;
+    if (S.askCrops && (!S.guidePlant || isFood(food))) {
+      if (food) { S.crops = [food.id]; S.cropFromGuide = food.id; S.notice = null; }
+      showCrops(); return;
+    }
+    S.askCrops = false;
     // m3: a link whose every member is gone gets a fresh suggestion; an emptied consortium stays empty.
-    if (st8.members && (st8.members.length || !asked?.length)) { S.members = keep(st8.members); S.status = 'ready'; } else recompute();
-  } else recompute();
+    if (st8.members && (st8.members.length || !asked?.length)) { S.members = st8.members.filter((id) => inCell(id) || S.guests.has(id)); S.status = 'ready'; } else recompute();
+  } else if (S.askCrops) { showCrops(); return; } else recompute();
   // The result takes the focus only from the loading line (or nothing): a user who moved on keeps their place.
   const at = document.activeElement;
   if (!at || at === document.body || at.id === 'ct-result-title') focusNext = 'result';
   render(); offerRedo();
-  say(S.status === 'ready' ? T('announce', { summary: P('sizeLine.' + S.site.room, S.members.length) }) : T('nm.title'));
+  say(S.status === 'ready' ? T('announce', { summary: P('count', S.members.length) }) : T('nm.title'));
+}
+// The crop question, once the climate's file is loaded. The focus goes to its heading only from the
+// loading line (or nothing), as for a result.
+function showCrops() {
+  S.status = 'crops'; cropQuery = '';
+  const at = document.activeElement;
+  if (!at || at === document.body || at.id === 'ct-result-title') focusNext = 'crops';
+  render(); offerRedo();
 }
 // A shared consortium belongs to its climate: once the user picks another climate it is left behind
 // (M1, M2), and only a guide's plant goes on to the new climate. An Undo for the old climate no
@@ -944,7 +1125,35 @@ function chooseCountry(code) {
   say(countryAnnouncement(W, place()));
 }
 const act = {
-  climate(v) { if (S.status !== 'setup') holdForRedo('pc-climate', true); setClimate(v); dropUndo(); leaveClimate(); if (O) closeSheet(false); resolveClimate(); },
+  // A new climate asks the crop question again: crops and plants from other lists belong to the old one.
+  climate(v) { if (S.status !== 'setup') holdForRedo('pc-climate', true); setClimate(v); dropUndo(); leaveClimate(); Object.assign(S, { crops: [], guests: new Map(), cropFromGuide: null, askCrops: true, cropsBack: false }); if (O) closeSheet(false); resolveClimate(); },
+  'crop-add'(v) {
+    if (cropFull() || isCrop(v) || !isFood(taxonOf(v))) return;
+    S.crops.push(v); cropQuery = ''; focusNext = cropFull() ? 'suggest' : 'crop-q'; render();
+    say(cropFull() ? T('crops.full', { max: W.num(MAX_CROPS) }) : P('crops.chosen', S.crops.length, { max: W.num(MAX_CROPS) }));
+  },
+  // Without the crop, the suggestion is made without it: it is no longer kept either.
+  'crop-remove'(v) {
+    S.crops = S.crops.filter((id) => id !== v); S.kept.delete(v); if (S.cropFromGuide === v) S.cropFromGuide = null;
+    focusNext = 'crop-q'; render(); if (S.crops.length) say(P('crops.chosen', S.crops.length, { max: W.num(MAX_CROPS) }));
+  },
+  suggest() {
+    for (const id of S.crops) { S.kept.add(id); S.removed.delete(id); }
+    S.askCrops = false; S.cropsBack = false; cropQuery = '';
+    recompute(); focusNext = 'result'; render(); offerRedo();
+    say(S.status === 'ready' ? T('announce', { summary: P('count', S.members.length) }) : T('nm.title'));
+  },
+  // From a result: the question again, with the crops chosen; "Back to your consortium" and Undo
+  // return to the result it left.
+  'change-crops'() {
+    dropUndo(); redoNext = null; holdForRedo('change-crops', false);
+    if (redoNext) redoNext.crops = true;
+    Object.assign(S, { status: 'crops', askCrops: true, cropsBack: !!redoNext }); cropQuery = '';
+    if (O) closeSheet(false);
+    focusNext = 'crops'; render();
+  },
+  'crops-back'() { const snap = redoNext; redoNext = null; if (!snap) return; ({ S, cell } = snap); evalKey = ''; fillKey = ''; focusNext = 'change-crops'; render(); },
+  'not-crop'(v) { S.crops = S.crops.filter((id) => id !== v); render(); if (O) renderSheet('d-keep'); toast(T('notMainCropNow', { name: name(taxonOf(v)) })); },
   country(v) { if (isCountry(manifest, v)) chooseCountry(v.toUpperCase()); },
   'no-country'() { chooseCountry(null); },
   'dismiss-country'() { S.unknownCountry = null; focusNext = 'result'; render(); },
@@ -969,15 +1178,18 @@ const act = {
   use(v) { const from = swapTarget(O); if (swapFlags(from, v)?.flagged) { O.confirm = v; renderSheet('confirm-yes'); } else act['use-yes'](v); },
   'use-yes'(v) {
     const old = swapTarget(O), a = taxonOf(old), b = taxonOf(v);
-    S.members = S.members.map((id) => (id === old ? v : id)); S.kept.delete(old); S.kept.add(v); S.removed.add(old);
+    S.members = S.members.map((id) => (id === old ? v : id)); S.kept.delete(old); S.kept.add(v); if (!S.guests.has(old)) S.removed.add(old);
+    S.crops = S.crops.filter((id) => id !== old);
     closeSheet(false); focusNext = 'pn-' + v; render(); flash(v); toast(T('swapped', { a: name(a), b: name(b) }));
   },
   'confirm-no'() { const id = O.confirm; O.confirm = null; renderSheet(confirmFrom(id)); },
   remove(v) {
     const t = taxonOf(v), idx = S.members.indexOf(v);
-    S.members = S.members.filter((id) => id !== v); S.removed.add(v); const wasKept = S.kept.delete(v);
+    // A plant from another list is not "removed" from this one: it simply leaves.
+    S.members = S.members.filter((id) => id !== v); if (!S.guests.has(v)) S.removed.add(v); const wasKept = S.kept.delete(v);
+    const crop = S.crops.indexOf(v); if (crop >= 0) S.crops.splice(crop, 1);
     S.gaps.push({ stratum: stratumOf(t), name: name(t), id: v });
-    lastRemoved = { id: v, idx, wasKept };
+    lastRemoved = { id: v, idx, wasKept, crop };
     closeSheet(false); render(); toast(T('removed', { name: name(t) }), 'remove'); focusFk('undo', toastEl);
   },
   undo(v) {
@@ -990,20 +1202,21 @@ const act = {
       const u = undoRedo; undoRedo = null; redoNext = null; loadSeq++;
       ({ S, cell } = u); evalKey = ''; focusNext = u.focus; render();
       if (!app.contains(document.activeElement)) focusFk('basis', app) || document.getElementById('ct-result-title')?.focus();
-      say(T('announce', { summary: P('sizeLine.' + S.site.room, S.members.length) }));
+      say(T('announce', { summary: P('count', S.members.length) }));
       return;
     }
     const r = lastRemoved; if (!r) return;
-    S.members.splice(r.idx, 0, r.id); S.removed.delete(r.id); if (r.wasKept) S.kept.add(r.id);
+    S.members.splice(r.idx, 0, r.id); S.removed.delete(r.id); if (r.wasKept) S.kept.add(r.id); if (r.crop >= 0) S.crops.splice(r.crop, 0, r.id);
     S.gaps = S.gaps.filter((g) => g.id !== r.id); lastRemoved = null; focusNext = 'pn-' + r.id; render(); flash(r.id);
   },
   keep(v) {
     const t = taxonOf(v);
-    if (S.kept.has(v)) { S.kept.delete(v); toast(T('unkeptNow', { name: name(t) })); } else { S.kept.add(v); toast(T('keptNow', { name: name(t) })); }
+    // A main crop is kept: no longer keeping it ends it as a main crop too.
+    if (S.kept.has(v)) { S.kept.delete(v); S.crops = S.crops.filter((id) => id !== v); toast(T('unkeptNow', { name: name(t) })); } else { S.kept.add(v); toast(T('keptNow', { name: name(t) })); }
     render(); if (O) renderSheet();
   },
   'open-add'(v, el) { addQuery = ''; addJob = ''; addLayer = ''; if (O) { O = { type: 'add', filter: v || '' }; renderSheet('add-q'); } else openSheet({ type: 'add', filter: v || '' }, el); },
-  add(v) { const f = flagsFor(cell, v, S.members, { site: S.site, ...where() }); if (f?.flagged) { O.confirm = v; renderSheet('confirm-yes'); } else act['add-yes'](v); },
+  add(v) { const f = flagsFor(cell, v, S.members, { site: S.site, guests: guestTaxa(), ...where() }); if (f?.flagged) { O.confirm = v; renderSheet('confirm-yes'); } else act['add-yes'](v); },
   // M4: Add adds the one plant asked for; "Fill the free places" is the only refill.
   'add-yes'(v) {
     S.kept.add(v); S.removed.delete(v);
@@ -1014,9 +1227,16 @@ const act = {
     }
     S.view = 'layers'; closeSheet(false); focusNext = 'pn-' + v; render(); flash(v); toast(T('added', { name: name(taxonOf(v)) }));
   },
+  // "Add anyway": a plant of another climate's list joins as a kept guest, labelled with its list.
+  'add-anyway'(v) {
+    const [c, id] = String(v).split(':'), f = others.get(c), t = f?.taxa.find((x) => x.id === id);
+    if (!t || inCell(id)) return;
+    S.guests.set(id, { climate: c, taxon: t, sources: f.sources });
+    act['add-yes'](id);
+  },
   fill() {
     const before = S.members.length;
-    S.members = suggest(cell, { site: S.site, kept: [...new Set([...S.members, ...S.kept])], removed: [...S.removed] }).members.map((m) => m.taxon.id);
+    S.members = suggest(cell, { site: S.site, kept: [...new Set([...S.members, ...S.kept])], removed: [...S.removed], guests: guestTaxa() }).members.map((m) => m.taxon.id);
     const added = S.members.slice(before);
     if (added.length) dropUndo();
     S.gaps = trimGaps(S.gaps, added.map((id) => stratumOf(taxonOf(id))), limit() - S.members.length);
@@ -1028,7 +1248,7 @@ const act = {
   close() { if (O?.back) { O = O.back; renderSheet(); } else closeSheet(); },
   async share() {
     persist();
-    try { await navigator.clipboard.writeText(location.href); toast(esc(T('copied'))); } catch { toast(esc(T('copyFailed'))); }
+    try { await navigator.clipboard.writeText(shareLink()); toast(esc(T('copied'))); } catch { toast(esc(T('copyFailed'))); }
   },
   print() { printEl.innerHTML = printHTML(); print(); },
   'start-over'() {
@@ -1083,7 +1303,7 @@ root.addEventListener('change', (e) => {
     holdForRedo(`site-${k}-${S.site[k]}`, false);
     S.site = { ...S.site, [k]: el.value }; recompute(); render(); offerRedo();
     if (O) renderSheet();
-    say(S.status === 'ready' ? T('announce', { summary: P('sizeLine.' + S.site.room, S.members.length) }) : T('nm.title'));
+    say(S.status === 'ready' ? T('announce', { summary: P('count', S.members.length) }) : T('nm.title'));
   }
   if (el.dataset.filter) {
     if (el.dataset.filter === 'job') addJob = el.value; else addLayer = el.value;
@@ -1097,6 +1317,7 @@ root.addEventListener('input', (e) => {
     countryQuery = el.value; el.closest('.field').querySelector('#ct-country-list').innerHTML = countryList();
     if (countryQuery.trim()) sayLater(P('countryCount', countryMatches().length));
   }
+  if (el.dataset.input === 'crop') { cropQuery = el.value; refreshCrops(); }
   if (el.dataset.input === 'add') {
     addQuery = el.value; O.confirm = null; dlg.querySelector('#ct-add-results').innerHTML = addResults();
     sayLater(dlg.querySelector('#ct-add-count')?.textContent ?? '');
@@ -1104,6 +1325,7 @@ root.addEventListener('input', (e) => {
 });
 root.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && e.target.dataset.input === 'country') { e.preventDefault(); e.target.closest('.field').querySelector('.option')?.click(); }
+  if (e.key === 'Enter' && e.target.dataset.input === 'crop') { e.preventDefault(); document.querySelector('#ct-crop-list .option')?.click(); }
   if (e.key === 'Escape' && S.explain && !dlg.open) { const v = S.explain; S.explain = null; focusNext = 'ex-' + v; render(); }
   if (e.target.getAttribute('role') === 'tab' && ['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) {
     e.preventDefault();
@@ -1129,6 +1351,8 @@ async function start() {
   if (!fromLink && decoded) S.restoredAt = saved.at;
   Object.assign(S, country, { linkCode: country.unknownCountry });
   myCountry = pref; memory.settle(pref); syncLangLinks();
+  // A fresh climate (or a guide's plant) asks the crop question; a shared or saved consortium opens as it was.
+  S.askCrops = fromLink ? asksCrops(decoded) : !decoded;
   if (decoded) {
     const d = decoded.state;
     S.climate = d.climate; S.site = { ...d.site };

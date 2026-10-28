@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { pluralForms, makeWords, needsLook, searchText, fold, plantName, capFirst } from '../src/scripts/consortium/words.js';
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
 import * as core from '../src/lib/consortium/index.ts';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard, printNoneKey, linkCountry } from '../src/scripts/consortium/logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, swapTarget, relaxTo, licenceOf, uncheckedOnCard, printNoneKey, linkCountry, opensOnResult } from '../src/scripts/consortium/logic.js';
 import { profileSVG } from '../src/scripts/consortium/draw.js';
 import { crops } from '../src/data/crops.ts';
 
@@ -65,7 +65,7 @@ test('every key the tool asks for exists, and every key exists for a reason', ()
   const ids = {
     region: [...core.regions], stratum: [...core.strata, 'none'], band: [...core.phaseBands], phase: [...core.phases], job: [...core.jobs],
     fn: [...core.functionIds, 'crop'], tox: ['Slight', 'Moderate', 'Severe'], ctype: [...core.interactionTypes], tab: ['layers', 'time', 'jobs'],
-    sizeLine: [...core.rooms], site: Object.keys(siteOptions), basis: Object.keys(siteOptions), misfit: Object.keys(siteOptions),
+    list: [...core.siteClimates], site: Object.keys(siteOptions), basis: Object.keys(siteOptions), misfit: Object.keys(siteOptions),
   };
   const dynamicOk = (key) => {
     const dot = key.indexOf('.');
@@ -495,7 +495,8 @@ test('a plant that misfits offers Swap and Remove, never a change to the site an
 });
 
 test('a site or climate change that rebuilds unkept plants offers Undo; a country change keeps the plants (F2)', () => {
-  assert.match(appJs, /esc\(T\('redoneSite'\)\), 'redo'\)/);
+  assert.match(appJs, /esc\(T\(snap\.crops \? 'redoneCrops' : 'redoneSite'\)\), 'redo'\)/);
+  assert.match(appJs, /'change-crops'\(\) \{\s*dropUndo\(\); redoNext = null; holdForRedo\('change-crops', false\)/, 'Change crops');
   assert.match(appJs, /holdForRedo\(`site-/, 'site answers');
   assert.match(appJs, /climate\(v\) \{ if \(S\.status !== 'setup'\) holdForRedo\('pc-climate', true\)/, 'a climate');
   assert.match(appJs, /T\('redoneClimate', \{ climate/);
@@ -560,10 +561,10 @@ test('details opened from the Swap list swap that plant in, never only add it; f
 });
 
 // The first-paint script of ConsortiumPage.astro, run as the browser runs it, against what the app
-// does on start (app.js start(): decodeState of the link, else of the save, else the site climate):
-// the head is compact before the first paint exactly when the app opens past the setup, that is when
-// a climate is known (prepush m5: no layout jump). The country plays no part: it never holds the setup.
-test('the head has its final size from the first paint: compact as soon as a climate is known (prepush m5)', () => {
+// does on start (app.js start(): decodeState of the link, else of the save, else the site climate;
+// logic.js opensOnResult): the head is compact before the first paint exactly when the app opens past
+// the climate and crop questions (prepush m5: no layout jump). The country plays no part.
+test('the head has its final size from the first paint: compact when the page opens on a consortium (prepush m5)', () => {
   const script = page.match(/<script is:inline>([\s\S]*?)<\/script>/)?.[1];
   assert.ok(script && /ct-head/.test(script), 'the first-paint script');
   assert.equal(page.match(/data-climates=\{([^}]+)\}/)?.[1], "siteClimates.join(' ')");
@@ -576,15 +577,17 @@ test('the head has its final size from the first paint: compact as soon as a cli
     new Function('location', 'localStorage', 'document', 'URLSearchParams', script)({ search }, localStorage, document, URLSearchParams);
     return { compact: classes.has('tool-head-compact'), step: head.dataset.step ?? '0' };
   };
-  const opensOnResult = (search, saved, siteClimate) => {
+  const appOpens = (search, saved, siteClimate) => {
     const params = new URLSearchParams(search);
     let decoded = null;
-    if (params.has('c') || params.has('climate') || params.has('plant')) decoded = core.decodeState(params);
+    const fromLink = params.has('c') || params.has('climate') || params.has('plant');
+    if (fromLink) decoded = core.decodeState(params);
     else if (saved) decoded = core.decodeState(saved);
     let climate = decoded?.state.climate ?? null;
     if (!climate && core.siteClimates.includes(siteClimate)) climate = siteClimate;
-    // app.js render(): step 0 in the setup, 1 past it.
-    return { compact: !!climate, step: climate ? '1' : '0' };
+    // app.js render(): step 0 under the full head, 1 compact.
+    const compact = opensOnResult({ climate, fromLink, decoded });
+    return { compact, step: compact ? '1' : '0' };
   };
   const saved = 'v=2&c=temperate&k=FR&l=sun&s=unsure&w=unsure&m=large';
   const cases = [
@@ -611,12 +614,19 @@ test('the head has its final size from the first paint: compact as soon as a cli
     ['', null, 'temperate'],
     ['', null, 'polar'],
     ['?x=1', saved, null],
+    ['?v=3&c=temperate&a=', null, null], // an emptied consortium
+    ['?v=3&c=temperate&p=AAAAAA', null, null],
+    ['?v=3&c=temperate&g=meAAAAAA', null, null],
+    ['?v=3&c=temperate&n=AAAAAA', null, null],
+    ['?v=3&c=temperate&p=', null, null],
   ];
   for (const [search, sv, siteClimate] of cases) {
-    assert.deepEqual(firstPaint(search, sv, siteClimate), opensOnResult(search, sv, siteClimate), `${search} | saved ${sv} | site ${siteClimate}`);
+    assert.deepEqual(firstPaint(search, sv, siteClimate), appOpens(search, sv, siteClimate), `${search} | saved ${sv} | site ${siteClimate}`);
   }
   assert.ok(firstPaint('?plant=Pyrus+communis&climate=temperate', null, null).compact, 'a guide preset is compact from the first paint, country or not');
   assert.ok(!firstPaint('', 'v=2&k=FR', null).compact, 'a saved country alone opens on the setup');
+  assert.ok(!firstPaint('?v=2&c=temperate', null, null).compact, 'a climate alone opens the crop question under the full head');
+  assert.ok(!firstPaint('', null, 'temperate').compact, 'and so does the site climate');
 });
 
 test('strata colours only in the drawing and its legend; elsewhere the stratum word or the number in neutral ink (prepush L1)', () => {
@@ -752,7 +762,7 @@ test('one warning heading everywhere: consortium.withWarning, in every locale (o
   }
   const appJs = read('src/scripts/consortium/app.js');
   const labels = [...appJs.matchAll(/<h3 class="list-label">([^<]*?)\$\{esc\(T\('(\w+)'\)\)\}/g)].map((m) => m[2]);
-  assert.deepEqual(labels, ['withWarning', 'withWarning'], 'Swap and Add head their flagged plants alike');
+  assert.deepEqual(labels, ['withWarning', 'withWarning', 'otherLists'], 'Swap and Add head their flagged plants alike; Add then lists the other climates\' plants');
   assert.match(appJs.match(/function attentionHTML[\s\S]*?\n\}/)[0], /<strong>\$\{esc\(T\('withWarning'\)\)\}<\/strong>/, 'the warnings summary');
   assert.match(appJs.match(/function printHTML[\s\S]*?\n\}/)[0], /<th>\$\{esc\(T\('withWarning'\)\)\}<\/th>/, 'print');
   assert.equal([...appJs.matchAll(/<span class="vh">\$\{esc\(T\('withWarning'\)\)\}<\/span>/g)].length, 3, 'the marks on the drawing, its key and the Over time rows');

@@ -809,3 +809,52 @@
   .ct .step-one .country-line .cl-why:not(.cl-row *) { grid-column: 1; }
   .ct .step-one .country-line .privacy { grid-row: 1; grid-column: 2; justify-self: end; text-align: end; }
 }
+/* ---------- Main crops (the question after the climate) and plants from another list ---------- */
+.ct .clim-chosen { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 16px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); }
+.ct .clim-chosen p { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.ct .clim-chosen strong { font-family: var(--font-display); font-weight: 400; font-size: 21px; }
+.ct .clim-chosen .places { font-size: 14px; color: var(--text-muted); }
+.ct .clim-chosen .button { min-height: 44px; }
+.ct .crops { display: grid; gap: 12px; max-width: 46rem; }
+.ct .crop-head h2 { margin: 0; font-size: 26px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.ct .crop-head p { margin: 6px 0 0; color: var(--text-secondary); }
+.ct .crop-opt { font: 600 13px/1.4 var(--font-sans); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.ct .crop-chips { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.ct .crop-chip { display: inline-flex; align-items: center; gap: 6px; padding-left: 12px; border: 1px solid var(--text); border-radius: 999px; background: var(--surface-alt); min-height: 44px; max-width: 100%; }
+.ct .crop-chip > span { min-width: 0; color: var(--text); }
+.ct .crop-chip b { font-weight: 600; }
+.ct .crop-chip .sci { font-size: 13.5px; color: var(--text-secondary); }
+.ct .crop-g { font-size: 13px; color: var(--text-muted); }
+.ct .crop-x { flex: none; width: 44px; height: 44px; display: inline-grid; place-items: center; border: 0; background: none; color: var(--text); border-radius: 999px; }
+.ct .crop-x:hover { background: var(--bg); }
+.ct .crop-field { margin: 0; display: grid; gap: 6px; }
+.ct .crop-field label { font-weight: 600; }
+.ct .crop-field input[disabled] { cursor: not-allowed; }
+.ct .crop-field .search:has(input[disabled]) { opacity: 0.6; }
+.ct .crop-options .option b { font-weight: 600; }
+.ct .crop-st { margin: 0; min-height: 1.4em; font-size: 15px; color: var(--text-secondary); }
+.ct .crop-st:empty { display: none; }
+.ct .crop-none { padding: 12px 14px; border: 1px dashed var(--border-strong); border-radius: 10px; font-size: 16px; color: var(--text); }
+.ct .crop-none p { margin: 0 0 4px; }
+.ct .crop-none .muted { color: var(--text-secondary); }
+.ct .crop-eg { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--text-secondary); }
+.ct .crop-eg:empty { display: none; }
+.ct .crop-eg .chip-button { min-height: 44px; }
+.ct .crop-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.ct .crop-acts .button, .ct .crop-acts .link-button { min-height: 44px; }
+.ct .crop-acts .link-button { font-weight: 600; color: var(--accent-ink); }
+.ct .crop-hint { margin: 0; font-size: 14.5px; color: var(--text-muted); }
+.ct .built { align-items: flex-start; }
+.ct .built > svg { flex: none; margin-top: 3px; color: var(--accent-ink); }
+.ct .built .link-button { min-height: 44px; font-weight: 600; color: var(--accent-ink); }
+.ct .tag-main { color: var(--accent-ink); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.ct .tag-from { font-weight: 400; border-style: dotted; }
+.ct .d-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
+.ct .d-main { border-left: 3px solid var(--accent); padding-left: 12px; }
+.ct .d-main .link-button { justify-self: start; min-height: 44px; font-weight: 600; color: var(--accent-ink); }
+.ct .d-from { border-left: 3px solid var(--border-strong); padding-left: 12px; }
+.ct .d-foot-note { flex: 1 1 100%; margin: 0; }
+@media (max-width: 639px) {
+  .ct .crop-head h2 { font-size: 23px; }
+  .ct .crops { gap: 10px; }
+}
