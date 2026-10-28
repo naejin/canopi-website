@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T20:09:16Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T22:01:58Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T21:52:35Z }
 sources:
@@ -31,13 +31,13 @@ sources:
   - id: consortium-app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:2ecc132b5ba55f54
-    last_modified: 2026-10-28T21:34:43Z
+    digest: sha256:26eb855ccef9c6b3
+    last_modified: 2026-10-28T21:53:04Z
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:e338e993982cf38c
-    last_modified: 2026-10-28T21:34:43Z
+    digest: sha256:e7f7de19609bb934
+    last_modified: 2026-10-28T22:00:55Z
 ---
 
 Owner decisions: [Consortium tool — user decisions](/decisions/consortium-user-decisions.md).
@@ -67,8 +67,10 @@ the region-cell plan of format 2 is superseded where this page says so).
 3. **Start from a plant or let it suggest.** Search a crop of the climate's list ("I want to
    grow…") or "Suggest a consortium". The tool fills a consortium around the
    chosen plants.
-4. **Read the consortium** in three views: **Layers** (profile drawing by stratum
-   with HTML labels, plus a list by stratum), **Over time** (phase bands, plain
+4. **Read the consortium** in three views: **Layers** (one side view by stratum at
+   every size: silhouettes with numbers up to 20 plants, one true-height mark
+   per plant above, with each band's typical heights and exceptions in words;
+   plus a list by stratum), **Over time** (phase bands, plain
    time words first: "Years 1–3 · Placenta 3"), **Jobs** (six plain jobs: who does
    each, gaps named).
 5. **Adjust.** Per plant: details (photo if any, reason, traits, sources,
@@ -143,8 +145,8 @@ versus `[]` (unknown versus checked none), old share link (dropped ids), print.
 All 11 locales for the interface (`consortium.*` keys in every translation file).
 Plant names from `names[lang]`, fallback English then the scientific name; the
 scientific name is shown beside the name in every list (rows, Swap, Add, Over
-time, Jobs, the drawing's numbered key, print) and in details. The desktop
-drawing's column labels and sentences that name plants (toasts, gap rows) show
+time, Jobs, the drawing's numbered key, print) and in details. The side view's
+tooltips and sentences that name plants (toasts, gap rows) show
 the name only, for space. `reason`/notes: the locale's text if present
 (en, fr), else English marked `lang="en"`. Strata labels: the app's (en
 Emergent/High/Mid/Low; fr Émergent/Haut/Moyen/Bas). Phases: plain time words +
