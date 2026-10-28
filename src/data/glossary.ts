@@ -577,6 +577,130 @@ export const glossary: Record<string, { en: GlossaryEntry; fr: GlossaryEntry }> 
     en: { term: 'Retting', definition: 'Letting cut stems partly rot, in water or on damp ground, so that their fibres come away from the rest of the stem.' },
     fr: { term: 'Rouissage', definition: 'Le fait de laisser pourrir en partie des tiges coupées, dans l’eau ou sur un pré humide, pour que leurs fibres se détachent du reste.' },
   },
+  pollinator: {
+    en: { term: 'Pollinator', definition: 'An animal that carries pollen from flower to flower as it feeds, so the plant can set seed and fruit. Most are insects, but some birds, bats and other animals pollinate too.' },
+    fr: { term: 'Pollinisateur', definition: 'Un animal qui transporte le pollen d’une fleur à l’autre en se nourrissant, ce qui permet à la plante de former graines et fruits. Ce sont surtout des insectes, mais certains oiseaux, chauves-souris et autres animaux pollinisent aussi.' },
+  },
+  'natural-enemy': {
+    en: { term: 'Natural enemy', definition: 'A living thing that kills or weakens pests: a predator, a parasitoid or a disease organism, such as lady beetles, hoverfly larvae, lacewings, spiders and parasitic wasps.' },
+    fr: { term: 'Auxiliaire', definition: 'Un être vivant qui tue ou affaiblit les ravageurs : prédateur, parasitoïde ou micro-organisme, comme les coccinelles, les larves de syrphes, les chrysopes, les araignées et les guêpes parasitoïdes. Au sens large, le mot couvre aussi les pollinisateurs.' },
+  },
+  parasitoid: {
+    en: { term: 'Parasitoid', definition: 'An insect, often a tiny wasp or fly, whose larva lives in or on a single host insect and kills it as it grows.' },
+    fr: { term: 'Parasitoïde', definition: 'Un insecte, souvent une minuscule guêpe ou mouche, dont la larve vit dans ou sur un seul insecte hôte et le tue en se développant.' },
+  },
+  'solitary-bee': {
+    en: { term: 'Solitary bee', definition: 'A bee whose female builds and stocks her own nest, with no colony and no workers. Most of the world’s bee species live this way.' },
+    fr: { term: 'Abeille solitaire', definition: 'Une abeille dont la femelle construit et approvisionne seule son nid, sans colonie ni ouvrières. C’est le mode de vie de la plupart des espèces d’abeilles du monde.' },
+  },
+  'ground-nesting-bee': {
+    en: { term: 'Ground-nesting bee', definition: 'A bee that digs its nest tunnels in the soil, usually in bare, sunny, well-drained ground. Most bee species nest this way.' },
+    fr: { term: 'Abeille terricole', definition: 'Une abeille qui creuse ses galeries de nid dans le sol, le plus souvent dans une terre nue, ensoleillée et bien drainée. La plupart des espèces d’abeilles nichent ainsi.' },
+  },
+  'cavity-nesting-bee': {
+    en: { term: 'Cavity-nesting bee', definition: 'A bee that nests in a hole it finds, such as a beetle tunnel in dead wood, a hollow or pithy stem or a gap in stone, and often walls off its cells with mud, leaf pieces or resin.' },
+    fr: { term: 'Abeille cavicole', definition: 'Une abeille qui niche dans une cavité existante (galerie d’insecte dans le bois mort, tige creuse ou à moelle, fente dans la pierre) et cloisonne souvent ses cellules avec de la boue, des morceaux de feuilles ou de la résine.' },
+  },
+  'generalist-pollinator': {
+    en: { term: 'Generalist pollinator', definition: 'A pollinator that feeds on the flowers of many unrelated plants.' },
+    fr: { term: 'Pollinisateur généraliste', definition: 'Un pollinisateur qui se nourrit sur les fleurs de nombreuses plantes sans parenté entre elles.' },
+  },
+  'specialist-pollinator': {
+    en: { term: 'Specialist pollinator', definition: 'A pollinator, often a bee, that gathers pollen from only one plant family, genus or species, and cannot raise its young without those plants.' },
+    fr: { term: 'Pollinisateur spécialiste', definition: 'Un pollinisateur, souvent une abeille, qui ne récolte le pollen que d’une famille, d’un genre ou d’une espèce de plantes, et ne peut pas élever ses larves sans ces plantes.' },
+  },
+  'floral-constancy': {
+    en: { term: 'Floral constancy', definition: 'The habit of a pollinator, especially a bee, of sticking to one kind of flower for a while as it forages, which carries pollen between plants of the same species.' },
+    fr: { term: 'Constance florale', definition: 'L’habitude d’un pollinisateur, surtout d’une abeille, de s’en tenir un moment à un seul type de fleur quand il butine, ce qui transporte le pollen entre plantes de la même espèce.' },
+  },
+  'buzz-pollination': {
+    en: { term: 'Buzz pollination', definition: 'Shaking pollen out of a flower by vibrating the flight muscles while clinging to it. Bumblebees and many other bees do it on tomato, aubergine and blueberry flowers; honey bees do not.' },
+    fr: { term: 'Pollinisation vibratile', definition: 'Le fait de secouer le pollen hors d’une fleur en faisant vibrer les muscles du vol, accroché à elle. Les bourdons et beaucoup d’autres abeilles le font sur les fleurs de tomate, d’aubergine ou de myrtille, mais pas l’abeille domestique.' },
+  },
+  'pollination-syndrome': {
+    en: { term: 'Pollination syndrome', definition: 'A set of flower traits (shape, colour, scent, opening time, reward) that tends to go with one group of pollinators, such as red tubes for birds or pale, night-scented flowers for moths. It is a tendency, not a rule.' },
+    fr: { term: 'Syndrome de pollinisation', definition: 'Un ensemble de caractères de la fleur (forme, couleur, odeur, heure d’ouverture, récompense) qui va souvent avec un groupe de pollinisateurs, comme les tubes rouges pour les oiseaux ou les fleurs pâles, parfumées la nuit, pour les papillons de nuit. C’est une tendance, pas une règle.' },
+  },
+  'nectar-guide': {
+    en: { term: 'Nectar guide', definition: 'Lines, spots or colour patterns on petals, some visible only in ultraviolet light, that lead a visitor to the nectar.' },
+    fr: { term: 'Guide à nectar', definition: 'Des lignes, des points ou des motifs de couleur sur les pétales, parfois visibles seulement dans l’ultraviolet, qui mènent le visiteur jusqu’au nectar.' },
+  },
+  'larval-host-plant': {
+    en: { term: 'Larval host plant', definition: 'A plant on which a butterfly, moth or other insect lays its eggs, and whose leaves or other parts its young eat. Many species can use only a few kinds of plant.' },
+    fr: { term: 'Plante hôte', definition: 'Une plante sur laquelle un papillon ou un autre insecte pond, et dont ses larves mangent les feuilles ou d’autres parties. Beaucoup d’espèces n’acceptent que quelques sortes de plantes.' },
+  },
+  'native-plant': {
+    en: { term: 'Native plant', definition: 'A plant species that grows naturally in a region, having arrived or evolved there without human help. A plant is native only to a place, never everywhere.' },
+    fr: { term: 'Plante indigène', definition: 'Une espèce végétale présente naturellement dans une région, arrivée ou apparue là sans l’aide de l’homme. Une plante n’est indigène que par rapport à un lieu, jamais partout.' },
+  },
+  'naturalised-plant': {
+    en: { term: 'Naturalised plant', definition: 'A plant brought from elsewhere that now reproduces in the wild on its own. Not every naturalised plant is invasive.' },
+    fr: { term: 'Plante naturalisée', definition: 'Une plante venue d’ailleurs qui se reproduit désormais seule dans la nature. Toutes les plantes naturalisées ne sont pas envahissantes.' },
+  },
+  'invasive-plant': {
+    en: { term: 'Invasive plant', definition: 'A plant from elsewhere that spreads widely in the wild and harms local ecosystems, farming or health. A plant can be invasive in one region and harmless in another, so check your local list.' },
+    fr: { term: 'Plante exotique envahissante', definition: 'Une plante venue d’ailleurs qui se répand largement dans la nature et nuit aux milieux, à l’agriculture ou à la santé. Elle peut l’être dans une région et pas dans une autre : consultez la liste locale.' },
+  },
+  'double-flower': {
+    en: { term: 'Double flower', definition: 'A flower bred to carry extra petals, often in place of its stamens or nectaries, so it may offer little or no pollen or nectar and be hard for insects to get into.' },
+    fr: { term: 'Fleur double', definition: 'Une fleur sélectionnée pour porter des pétales en plus, souvent à la place de ses étamines ou de ses nectaires. Elle offre alors peu ou pas de pollen et de nectar, et les insectes y entrent mal.' },
+  },
+  'straight-species': {
+    en: { term: 'Straight species', definition: 'The wild form of a plant species, grown from seed, as opposed to a named variety selected from it.' },
+    fr: { term: 'Espèce type', definition: 'La forme sauvage d’une espèce végétale, multipliée par graines, par opposition à une variété nommée sélectionnée à partir d’elle.' },
+  },
+  cultivar: {
+    en: { term: 'Cultivar', definition: 'A cultivated variety: a plant selected or bred for chosen traits and kept under a name, by seed or by cuttings, grafts or division.' },
+    fr: { term: 'Cultivar', definition: 'Une variété cultivée : une plante sélectionnée pour des caractères choisis et conservée sous un nom, par semis ou par bouturage, greffage ou division.' },
+  },
+  nativar: {
+    en: { term: 'Nativar', definition: 'A cultivar selected or bred from a native plant species. Its flowers or leaves may differ enough from the wild form to change how useful it is to insects.' },
+    fr: { term: 'Cultivar d’espèce indigène', definition: 'Un cultivar sélectionné à partir d’une espèce indigène (en anglais, nativar). Ses fleurs ou son feuillage peuvent assez différer de la forme sauvage pour changer son intérêt pour les insectes.' },
+  },
+  'bloom-succession': {
+    en: { term: 'Bloom succession', definition: 'The order in which a garden’s plants come into flower through the year, planned so that something is in bloom whenever pollinators are active.' },
+    fr: { term: 'Succession des floraisons', definition: 'L’ordre dans lequel les plantes d’un jardin fleurissent au fil de l’année, prévu pour qu’il y ait des fleurs tant que les pollinisateurs sont actifs.' },
+  },
+  'floral-target': {
+    en: { term: 'Floral target', definition: 'A patch of one kind of flower big enough for pollinators to find easily and worth their visit, made by planting several of the same plant together.' },
+    fr: { term: 'Tache florale', definition: 'Une tache d’une même fleur assez grande pour que les pollinisateurs la repèrent facilement et y trouvent leur compte, obtenue en plantant ensemble plusieurs pieds de la même plante.' },
+  },
+  'nectar-dearth': {
+    en: { term: 'Nectar dearth', definition: 'A stretch of the season when few plants flower and pollinators find little food, often in heat or drought or between two waves of flowering.' },
+    fr: { term: 'Période de disette', definition: 'Une période de la saison où peu de plantes fleurissent et où les pollinisateurs trouvent peu à manger, souvent pendant la chaleur ou la sécheresse, ou entre deux vagues de floraison.' },
+  },
+  snag: {
+    en: { term: 'Snag', definition: 'A standing dead or dying tree, left in place for the insects, birds and other animals that feed and nest in its wood.' },
+    fr: { term: 'Arbre mort sur pied', definition: 'Un arbre mort ou dépérissant laissé debout pour les insectes, les oiseaux et les autres animaux qui se nourrissent et nichent dans son bois.' },
+  },
+  'pithy-stem': {
+    en: { term: 'Pithy stem', definition: 'A stem filled with soft, spongy tissue (pith) that some small bees and wasps hollow out to nest in, as in elder, brambles and raspberries.' },
+    fr: { term: 'Tige à moelle', definition: 'Une tige remplie d’un tissu tendre et spongieux (la moelle), que de petites abeilles et guêpes creusent pour y nicher, comme chez le sureau, la ronce ou le framboisier.' },
+  },
+  diapause: {
+    en: { term: 'Diapause', definition: 'A resting state, triggered by day length or temperature, in which an insect’s development pauses to get through a cold winter, a dry season or another hard time.' },
+    fr: { term: 'Diapause', definition: 'Un état de repos, déclenché par la durée du jour ou la température, pendant lequel le développement d’un insecte s’arrête pour passer un hiver froid, une saison sèche ou une autre période difficile.' },
+  },
+  puddling: {
+    en: { term: 'Puddling', definition: 'Butterflies and some other insects drinking from wet soil, mud or dung to take in salts and minerals.' },
+    fr: { term: 'Abreuvement sur sol humide', definition: 'Le fait, pour les papillons et quelques autres insectes, de boire sur une terre mouillée, de la boue ou des excréments pour y prendre des sels et des minéraux.' },
+  },
+  'systemic-pesticide': {
+    en: { term: 'Systemic pesticide', definition: 'A pesticide that a plant takes up and carries through its tissues, nectar and pollen included, so it can harm insects that feed on the plant long after treatment. Neonicotinoids are the best known.' },
+    fr: { term: 'Pesticide systémique', definition: 'Un pesticide que la plante absorbe et transporte dans ses tissus, nectar et pollen compris, de sorte qu’il peut nuire aux insectes qui s’en nourrissent longtemps après le traitement. Les néonicotinoïdes sont les plus connus.' },
+  },
+  meadowscape: {
+    en: { term: 'Meadowscape', definition: 'A planting that looks and works like a meadow, with flowering plants and grasses mixed in a sunny spot, cut back rarely rather than mown often.' },
+    fr: { term: 'Prairie fleurie', definition: 'Une plantation qui ressemble à une prairie et fonctionne comme elle, mêlant plantes à fleurs et graminées dans un endroit ensoleillé, fauchée rarement plutôt que tondue souvent.' },
+  },
+  'pollinator-pathway': {
+    en: { term: 'Pollinator pathway', definition: 'A chain of gardens, verges and other planted spaces close enough together that pollinators can move from one to the next across a town or farmland.' },
+    fr: { term: 'Corridor pour pollinisateurs', definition: 'Une chaîne de jardins, de bords de route et d’autres espaces plantés assez proches les uns des autres pour que les pollinisateurs passent de l’un à l’autre à travers une ville ou des terres agricoles.' },
+  },
+  'habitat-fragmentation': {
+    en: { term: 'Habitat fragmentation', definition: 'The breaking up of a large area of habitat into small, separate pieces by roads, buildings or farmland, which leaves wildlife cut off and short of food or nesting places.' },
+    fr: { term: 'Fragmentation des habitats', definition: 'Le morcellement d’un grand milieu naturel en petites parcelles séparées par des routes, des bâtiments ou des cultures, qui laisse la faune isolée et à court de nourriture ou de sites de nidification.' },
+  },
 };
 
 export function glossaryEntry(id: string, lang: 'en' | 'fr'): GlossaryEntry {

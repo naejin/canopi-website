@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:19:13Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:24:21Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:04:54Z }
 sources:
@@ -40,8 +40,8 @@ sources:
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
-    digest: sha256:f38183640164ace1
-    last_modified: 2026-10-28T08:19:00Z
+    digest: sha256:7ee2f4fb8c1fce43
+    last_modified: 2026-10-28T08:20:46Z
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
@@ -70,8 +70,8 @@ sources:
   - id: en-json
     resource: ../../src/i18n/guides/en.json
     title: src/i18n/guides/en.json
-    digest: sha256:39afcab2f1342063
-    last_modified: 2026-10-27T21:22:08Z
+    digest: sha256:2b48e0d09edf9266
+    last_modified: 2026-10-28T08:22:38Z
 enforced_by:
   - scripts/guides.test.mjs
   - scripts/check-built-site.mjs
@@ -282,6 +282,11 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   or comme, or before "naturel" ("sert de mordant", "un mordant"); "en mordant" still fails.
 - Invasive names (a heuristic): a body naming one of the carbon farming book's flagged species (en
   mesquite, prosopis, leucaena, kudzu, castor, Osage orange, air potato, Chinese tallow, miscanthus,
-  pongam/pongamia, leafy spurge, cardoon; fr the French names: mesquite, prosopis, leucaena, kudzu,
-  ricin, oranger des Osages, igname bulbifère, arbre à suif, miscanthus, pongamia, euphorbe ésule,
-  cardon) must contain `<Invasive />` at least once. Reviewers still check each name.
+  pongam/pongamia, leafy spurge, cardoon, honey locust, moringa, petroleum plant; fr the French names:
+  mesquite, prosopis, leucaena, kudzu, ricin, oranger des Osages, igname bulbifère, arbre à suif,
+  miscanthus, pongamia, euphorbe ésule, cardon, févier, moringa) or of *The Pollinator Victory
+  Garden*'s (en butterfly bush, buddleja/buddleia, Japanese barberry, oriental bittersweet, Norway
+  maple, Japanese honeysuckle, black acacia, giant reed, Mexican feathergrass, tree of heaven; fr
+  buddleia/buddleja, arbre aux papillons, épine-vinette du Japon, bourreau des arbres, érable plane,
+  chèvrefeuille du Japon, acacia à bois noir, canne de Provence, Stipa tenuissima, ailante, faux
+  vernis du Japon) must contain `<Invasive />` at least once. Reviewers still check each name.

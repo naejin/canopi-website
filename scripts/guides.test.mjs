@@ -586,8 +586,8 @@ test('the crossing meter fills with a non-green token: green is for plants, not 
 // rule: a guide naming one of the book's flagged species must carry the note at least once; reviewers
 // still check each name and its placement.
 const invasiveNames = {
-  en: /\b(?:prosopis|mesquites?|leucaenas?|kudzu|castor|osage oranges?|air potato(?:es)?|chinese tallow|miscanthus|pongam(?:ia)?s?|leafy spurge|cardoons?|honey locusts?|moringas?|petroleum plants?)\b/i,
-  fr: /(?<!\p{L})(?:prosopis|mesquites?|leucaenas?|kudzu|ricins?|orangers? des osages|ignames? bulbifères?|arbres? à suif|miscanthus|pongamias?|euphorbes? ésules?|cardons?|féviers?|moringas?)(?!\p{L})/iu,
+  en: /\b(?:prosopis|mesquites?|leucaenas?|kudzu|castor|osage oranges?|air potato(?:es)?|chinese tallow|miscanthus|pongam(?:ia)?s?|leafy spurge|cardoons?|honey locusts?|moringas?|petroleum plants?|butterfly bush(?:es)?|buddlejas?|buddleias?|japanese barberr(?:y|ies)|oriental bittersweet|norway maples?|japanese honeysuckles?|black acacias?|giant reeds?|mexican feathergrass(?:es)?|trees? of heaven)\b/i,
+  fr: /(?<!\p{L})(?:prosopis|mesquites?|leucaenas?|kudzu|ricins?|orangers? des osages|ignames? bulbifères?|arbres? à suif|miscanthus|pongamias?|euphorbes? ésules?|cardons?|féviers?|moringas?|buddleias?|buddlejas?|arbres? aux papillons|épines?-vinettes? du japon|bourreaux? des arbres|érables? planes?|chèvrefeuilles? du japon|acacias? à bois noir|cannes? de provence|stipa tenuissima|ailantes?|faux vernis du japon)(?!\p{L})/iu,
 };
 const invasiveProblem = (body, lang) => {
   const text = body.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -612,6 +612,12 @@ test('the invasive note is inline and self-closing, and a guide naming a flagged
     ['- <Invasive /> Mesquite', 'en', true],
     ['## Mesquite <Invasive />', 'en', true],
     ['{/* mesquite, later */}Sow beans.', 'en', false],
+    ['Butterfly bush <Invasive /> draws butterflies.', 'en', false],
+    ['A butterfly bush draws butterflies.', 'en', true],
+    ['Trees of heaven sucker.', 'en', true],
+    ['L’arbre aux papillons attire les papillons.', 'fr', true],
+    ['L’érable plane <Invasive /> fleurit tôt.', 'fr', false],
+    ['La canne de Provence pousse vite.', 'fr', true],
   ];
   for (const [text, lang, bad] of samples) assert.equal(Boolean(invasiveProblem(text, lang)), bad, `${lang}: ${JSON.stringify(text)}`);
   const component = read('components/guides/Invasive.astro');
