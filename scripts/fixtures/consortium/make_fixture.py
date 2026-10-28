@@ -34,6 +34,9 @@ SOURCES = {
     # Real ids, labels and URLs, copied from the canopi-data export of 2026-10-28 (tropical.json).
     "eppo-global-database-anastrepha-fraterculus-anstfr-host": {"label": "EPPO Global Database: Anastrepha fraterculus (ANSTFR), host plants", "url": "https://gd.eppo.int/taxon/ANSTFR/hosts", "licence": None, "attribution": None},
     "eppo-global-database-anastrepha-fraterculus-anstfr": {"label": "EPPO Global Database: Anastrepha fraterculus (ANSTFR), distribution", "url": "https://gd.eppo.int/taxon/ANSTFR/distribution", "licence": None, "attribution": None},
+    "eppo-global-database-anastrepha-fraterculus-anstfr-common": {"label": "EPPO Global Database: Anastrepha fraterculus (ANSTFR), common names", "url": "https://gd.eppo.int/taxon/ANSTFR", "licence": None, "attribution": None},
+    "wikipedia-en-anastrepha-fraterculus": {"label": "Wikipedia (en): Anastrepha fraterculus", "url": "https://en.wikipedia.org/wiki/Anastrepha_fraterculus", "licence": None, "attribution": None},
+    "wikipedia-pt-anastrepha-fraterculus": {"label": "Wikipedia (pt): Anastrepha fraterculus", "url": "https://pt.wikipedia.org/wiki/Anastrepha_fraterculus", "licence": None, "attribution": None},
 }
 
 BASE_TRAITS = {
@@ -230,7 +233,13 @@ TROP_INTER = [
     # Its agent is region-bound, so it cites two sources: the row's host page, then the
     # distribution page the "only in the Americas" note rests on.
     {"subject": {"name": "Psidium guajava", "rank": "species"}, "object": {"name": "Citrus", "rank": "genus"},
-     "type": "shared_pest", "agent": "Anastrepha fraterculus", "severity": "medium",
+     "type": "shared_pest", "agent": "Anastrepha fraterculus",
+     # The agent's EPPO names chosen by a second source (optional field, null or absent elsewhere):
+     # the EPPO page, then the Wikipedia pages the choices rest on.
+     "agent_names": {"names": {"en": "South American fruit fly", "pt": "mosca-das-frutas-sul-americana"},
+                     "sources": ["eppo-global-database-anastrepha-fraterculus-anstfr-common",
+                                 "wikipedia-en-anastrepha-fraterculus", "wikipedia-pt-anastrepha-fraterculus"]},
+     "severity": "medium",
      "note": R("Watch guava near citrus for fruit flies: guava is a major host of the South American fruit fly, which also attacks citrus. EPPO records this fly only in the Americas.",
                "Surveillez les mouches des fruits sur goyavier près des agrumes : le goyavier est hôte majeur de la mouche sud-américaine, qui attaque aussi les agrumes. L'OEPP ne signale cette mouche que dans les Amériques."),
      "sources": ["eppo-global-database-anastrepha-fraterculus-anstfr-host", "eppo-global-database-anastrepha-fraterculus-anstfr"]},
@@ -480,6 +489,8 @@ def used_sources(taxa, inter):
             ids.update(c["sources"])
     for i in inter:
         ids.update(i["sources"])
+        if i.get("agent_names"):
+            ids.update(i["agent_names"]["sources"])
     return {k: SOURCES[k] for k in sorted(ids)}
 
 
@@ -580,7 +591,9 @@ open(os.path.join(OUT, "README.md"), "w").write(
     "interactions, allelopathy with and without a recorded target, `allelopathy_tolerant`, missing names per locale,\n"
     "a climate with no interactions (`[]`, checked none), a reason per region with its source, an interaction of a\n"
     "region-bound agent with two sources (Psidium guajava x Citrus, copied from the real export of 2026-10-28: the\n"
-    "EPPO host page, then the distribution page its \"only in the Americas\" note rests on), countries GRIIS\n"
+    "EPPO host page, then the distribution page its \"only in the Americas\" note rests on; it is also the one\n"
+    "interaction with `agent_names`, the agent's EPPO names chosen by Wikipedia in en and pt, while the others\n"
+    "leave the optional field out, as an export from before 2026-10-28 does), countries GRIIS\n"
     "does not cover (`invasive_checked: false`, for example TW, PR, PF and the six Antarctic codes).\n"
     "`invasive_in` is never null here: the exporter writes null for every taxon, with every country unchecked,\n"
     "only when the GRIIS compendium is missing, so a test that needs it sets it on a copy.\n\n"
