@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium tool — user decisions
 description: Dated decisions the project owner made about the consortium design tool; they change only when the owner changes them.
 tags: [consortium, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:18:51Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T10:01:24Z }
 ---
 
 # Consortium tool — user decisions
@@ -51,7 +51,7 @@ Data side (sibling repository `canopi-data`, read 2026-10-27): `docs/adr/0007-cu
 | 2026-10-28 | **One warning heading everywhere: "With a warning"** (and its translations), never "Cautions". |
 | 2026-10-28 | **The helpers job gets real Field Guides:** written from *The Pollinator Victory Garden* (Kim Eierman, 2020, now in the owner's library), which also joins the bibliography. |
 | 2026-10-28 | **"Consortium" means each language's own form of the word** (Konsortium, Consorcio, コンソーシアム, 植物联合体…), « Guilde » in French. |
-| 2026-10-28 | **Helpers data is fixed in canopi-data, reproducibly:** the cells' `pollinator_forage` rows are reviewed against *The Pollinator Victory Garden* (wind-pollinated and sterile plants out; invasives kept and flagged per country) and sourced `insectary` rows are added from the book. Every step is a committed script or data file in canopi-data, so a re-run gives the same rows; then re-export and install. |
+| 2026-10-28 | **Helpers data is fixed in canopi-data, reproducibly:** the cells' `pollinator_forage` rows are reviewed against *The Pollinator Victory Garden* (wind-pollinated and sterile plants out, where "sterile" means without nectar or pollen for pollinators, not without seed: owner, 2026-10-28, so seedless Tahiti lime and saffron stay; invasives kept and flagged per country) and sourced `insectary` rows are added from the book. Every step is a committed script or data file in canopi-data, so a re-run gives the same rows; then re-export and install. |
 
 ## Open questions for the owner (not decisions)
 
