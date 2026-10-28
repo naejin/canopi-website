@@ -247,7 +247,8 @@ const SETTLE_ROUNDS = 50;
 async function openPage(t, { lang = 'en', width = 1280, siteClimate = null } = {}) {
   /** @type {any} */
   const page = { lang, active: null, timers: new Map(), nextTimer: 1, reloads: 0, closed: false, clipboard: null };
-  page.later = (fn) => { const id = page.nextTimer++; page.timers.set(id, fn); return id; };
+  // G5: a closed page's code does nothing: its timers are never scheduled.
+  page.later = (fn) => { if (page.closed) return undefined; const id = page.nextTimer++; page.timers.set(id, fn); return id; };
   const { doc, html } = makeDocument(page);
   page.document = doc;
   page.connected = (el) => { for (let n = el; n; n = n.parent) if (n === doc) return true; return false; };
@@ -288,13 +289,19 @@ async function openPage(t, { lang = 'en', width = 1280, siteClimate = null } = {
     StorageEvent: class extends Event {}, CSS: { escape: cssEscape }, print() {},
     navigator: { language: lang, languages: [lang], clipboard: { writeText: async (s) => { page.clipboard = s; } } },
     setTimeout: (fn) => page.later(fn), clearTimeout: (id) => { own.delete(id); },
+    // G5: a data file asked for by a closed page, or arriving after it closed, never arrives.
     fetch: async (url) => {
+      const never = () => new Promise(() => {});
+      if (page.closed) return never();
+      await new Promise((r) => setImmediate(r));
+      if (page.closed) return never();
       const file = String(url).replace(/^\/data\/consortium\//, '');
       t.dev.fetched.push(file);
       if (t.dev.failing.has(file)) return { ok: false, status: 503, json: async () => null };
       return { ok: true, status: 200, json: async () => JSON.parse(read(`scripts/fixtures/consortium/${file}`)) };
     },
   };
+  page.globals = globals;
   for (const [k, v] of Object.entries(globals)) Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true });
   // Runs the timers due (the page's setTimeout calls) and lets the data files arrive, until quiet.
   // Bounded: a page that keeps scheduling work (a re-render loop) fails the test, never runs forever.

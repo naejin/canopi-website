@@ -92,7 +92,8 @@ const fresh = () => ({
   // the climate's file is loaded; cropFromGuide: the crop a guide's link chose; cropsBack: the crop
   // question was opened from a result, which "Back to your consortium" returns to.
   crops: [], guests: new Map(), askCrops: false, cropFromGuide: null, cropsBack: false,
-  // cutLink: the link that opened the page was cut or could not be read whole (logic.js linkDamaged).
+  // cutLink: the link that opened the page was cut or could not be read whole (logic.js linkDamaged),
+  // and still waits to be applied (G2): false once it resolves or the reader leaves it.
   cutLink: false,
 });
 let S = fresh();
@@ -1154,7 +1155,9 @@ async function resolveClimate() {
     }
     const asked = S.pending.state.members;
     const r = resolveState(S.pending, cell, Object.fromEntries(others)), st8 = r.state;
-    S.pending = null;
+    // G2: cutLink holds only while the cut link waits; once applied, the notice below says it.
+    const cut = S.cutLink;
+    S.pending = null; S.cutLink = false;
     S.guests = new Map(st8.guests.map((g) => { const f = others.get(g.climate); return [g.id, { climate: g.climate, taxon: f.taxa.find((t) => t.id === g.id), sources: f.sources }]; }));
     S.kept = new Set(st8.kept); S.removed = new Set(st8.removed); S.crops = [...st8.crops];
     if (S.guidePlant) {
@@ -1165,7 +1168,7 @@ async function resolveClimate() {
     const lost = droppedPlants(r.dropped);
     if (lost) { S.dropped = lost; S.notice = 'oldlink'; }
     // B1: a cut or unreadable link says plants may be missing, whatever could be counted.
-    if (S.cutLink) S.notice = 'cutlink';
+    if (cut) S.notice = 'cutlink';
     // A guide's food plant of this climate opens the crop question with it chosen; any other plant
     // of a guide is kept and the result shows at once, as before.
     const food = S.askCrops && S.guidePlant ? taxonOf(S.guideId) : null;
@@ -1176,7 +1179,7 @@ async function resolveClimate() {
     S.askCrops = false;
     // m3: a link whose every member is gone gets a fresh suggestion; an emptied consortium stays empty,
     // unless the link was cut (B1): its plants were lost, not removed.
-    if (st8.members && (st8.members.length || (!asked?.length && !S.cutLink))) { S.members = st8.members.filter((id) => inCell(id) || S.guests.has(id)); S.status = 'ready'; } else recompute();
+    if (st8.members && (st8.members.length || (!asked?.length && !cut))) { S.members = st8.members.filter((id) => inCell(id) || S.guests.has(id)); S.status = 'ready'; } else recompute();
   } else if (S.askCrops) { showCrops(); return; } else recompute();
   // The result takes the focus only from the loading line (or nothing): a user who moved on keeps their place.
   const at = document.activeElement;
@@ -1196,15 +1199,15 @@ function showCrops() {
 // (M1, M2), and only a guide's plant goes on to the new climate. An Undo for the old climate no
 // longer applies (B2).
 function leaveLink() {
+  S.cutLink = false; // G2: a link left behind no longer waits
   if (!S.pending) return;
   const plants = S.pending.state.plants ?? [];
   S.pending = plants.length ? decodeState(new URLSearchParams({ plant: plants[0] })) : null;
-  S.cutLink = false;
 }
 // min-1: the notices of the link that opened the page go with it.
 // The country of someone else's link goes too (keptCountry): the next consortium is the reader's.
 function leaveClimate() { Object.assign(S, afterMove(S), keptCountry(S, own())); leaveLink(); }
-// What keptCountry falls back to: the reader's own choice (tab, device), else the browser's guess.
+// What keptCountry falls back to: the reader's own choice (device, else tab), else the browser's guess.
 const own = () => ({ pref: memory.pref(), guess: browserCountry, known: (c) => isCountry(manifest, c) });
 // The country only changes the warnings: the members stay, and no Undo is needed or dropped.
 function chooseCountry(code) {
@@ -1454,7 +1457,7 @@ async function start() {
   }
   browserCountry = browserGuess();
   // A link, else the save; the country (logic.js pickCountry): a link's own k, else the reader's
-  // choice (tab, device), else a saved consortium's, else the guess (memory.js).
+  // choice (device, else tab), else a saved consortium's, else the guess (memory.js).
   const { decoded, saved, fromLink, country } = startState({ params: arrival, memory, guess: browserCountry, known: (c) => isCountry(manifest, c) });
   if (!fromLink && decoded) S.restoredAt = saved.at;
   S.cutLink = fromLink && linkDamaged(decoded, memory.fromFragment);

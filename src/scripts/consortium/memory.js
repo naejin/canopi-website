@@ -6,6 +6,10 @@
 // a language switch therefore reads the reader's country as the link's, never the reverse. Every
 // storage call may throw (private mode, blocked cookies): each one is caught, and the tool works
 // without it.
+// G3 (accepted): with storage blocked, a language switch opens a new document with no history state,
+// so its fragment (the tool's own) has no WROTE mark and the climate and country read "from the shared
+// link". That is the safe direction: the reader's own state is never mislabelled as theirs, only theirs
+// as a link's, and a choice made after the switch is labelled "chosen by you" again.
 // scripts/consortium-country.test.mjs runs this wiring with a stubbed storage and history (m-7).
 import { decodeState } from '../../lib/consortium/index.ts';
 import { pickCountry, arrivalParams } from './logic.js';
@@ -36,9 +40,11 @@ export function memoryOf({ storage, history, location }) {
     // The last consortium on this device: { q, at, src } or null.
     saved: () => attempt(() => JSON.parse(storage.getItem(STORE) ?? 'null')),
     save: (q, src) => attempt(() => storage.setItem(STORE, JSON.stringify({ q, at: new Date().toISOString(), src }))),
-    // The reader's own choice: this tab's, else this device's. Only choose() writes either, so
-    // nothing from a link someone else made is ever read as the reader's own (M-1).
-    pref: () => attempt(() => history.state?.[TAB]) ?? attempt(() => storage.getItem(COUNTRY_STORE)) ?? null,
+    // The reader's own choice: this device's, else (storage blocked) this tab's. Only choose() writes
+    // either, so nothing from a link someone else made is ever read as the reader's own (M-1). The
+    // device wins when both are set: an older history entry keeps the tab key it had then, so Back to
+    // it must not bring back an older choice (G1, B5).
+    pref: () => attempt(() => storage.getItem(COUNTRY_STORE)) ?? attempt(() => history.state?.[TAB]) ?? null,
     choose(code) {
       const v = code ?? '-';
       attempt(() => storage.setItem(COUNTRY_STORE, v));

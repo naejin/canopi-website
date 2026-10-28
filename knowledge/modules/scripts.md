@@ -7,18 +7,18 @@ tags: [module, tooling]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T15:50:29Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T14:56:18Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T16:00:43Z }
 sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:cf60aa454fdf61ce
-    last_modified: 2026-10-28T15:45:38Z
+    digest: sha256:9395172dd6304b2a
+    last_modified: 2026-10-28T15:59:32Z
   - id: package-json
     resource: ../../package.json
     title: package.json
     digest: sha256:26faf235c0876b4e
-    last_modified: 2026-10-28T15:44:49Z
+    last_modified: 2026-10-28T15:50:43Z
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs

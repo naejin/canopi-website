@@ -192,6 +192,24 @@ test('F2: Back to an older entry of this tab keeps the reader\'s country and nev
   assert.equal(stateOf(t).state.country, 'BR', 'the reader\'s latest choice stays');
 });
 
+test('G1: Back to an older entry where this tab chose another country keeps the newest choice', async () => {
+  const { t, page } = await appleResult();
+  await chooseCountry(page, 'FR'); // entry 1 holds France in the tab
+  await t.goHash('#main');
+  await chooseCountry(page, 'BR'); // entry 2 and the device hold Brazil
+  await t.back();
+  const again = await t.load();
+  assert.equal(stateOf(t).state.country, 'BR', 'the newest choice wins');
+  assert.doesNotMatch(again.text(), new RegExp(en.countryLinked));
+});
+
+test('G1: with storage blocked the tab still keeps the reader\'s choice through a reload', async () => {
+  const { t, page } = await appleResult(device({ blocked: true }));
+  await chooseCountry(page, 'FR');
+  await t.load();
+  assert.equal(stateOf(t).state.country, 'FR');
+});
+
 test('F2: a real link\'s country reads "from the shared link", also after a reload', async () => {
   const ana = await appleResult();
   await chooseCountry(ana.page, 'BR');
@@ -226,6 +244,38 @@ test('F9: a cut link for a climate not covered yet stays cut in the address bar 
   assert.match(page.text(), new RegExp(en['cutLink.title'].slice(0, 20)), 'the cut is said');
   const again = await t.load();
   assert.match(again.text(), new RegExp(en['cutLink.title'].slice(0, 20)), 'and still after a reload');
+});
+
+test('G2: once a cut link has opened, leaving for a climate not covered no longer says the link was cut', async () => {
+  const q = core.encodeState({ climate: 'temperate', site: { ...core.DEFAULT_SITE }, kept: [], removed: [], members: [apple.id, temperate.taxa[1].id], plants: [], crops: [], guests: [] });
+  q.delete('e');
+  const t = tab(device(), '/consortium/#' + q);
+  const page = await t.load();
+  assert.match(page.text(), new RegExp(en['cutLink.title'].slice(0, 20)), 'the cut link says so');
+  await page.act('open-place', 'climate');
+  await page.act('climate', 'arid');
+  assert.match(page.text(), new RegExp(head(en['nc.title']).slice(0, 10)));
+  assert.doesNotMatch(page.text(), new RegExp(en['cutLink.title'].slice(0, 20)), 'the reader\'s own consortium is not the cut link');
+});
+
+// G5: a closed page's code does nothing.
+test('G5: once a page is closed, its timers and data loads do nothing', async () => {
+  const t = tab(device(), '/consortium/', { siteClimate: 'temperate' });
+  const old = await t.load();
+  const { fetch: oldFetch } = old.globals;
+  const loading = oldFetch('/data/consortium/temperate.json');
+  const fresh = await t.load();
+  assert.equal(old.closed, true);
+  let ran = false;
+  assert.equal(old.later(() => { ran = true; }), undefined, 'no timer is scheduled');
+  assert.equal(old.timers.size, 0);
+  const tick = Symbol('tick');
+  const late = await Promise.race([loading, new Promise((r) => setImmediate(() => setImmediate(() => r(tick))))]);
+  assert.equal(late, tick, 'a load started before the close never arrives');
+  const after = await Promise.race([oldFetch('/data/consortium/temperate.json'), new Promise((r) => setImmediate(() => setImmediate(() => r(tick))))]);
+  assert.equal(after, tick, 'nor does one started after it');
+  await fresh.settle();
+  assert.equal(ran, false);
 });
 
 // F6: the room hint says the number counts plants.
