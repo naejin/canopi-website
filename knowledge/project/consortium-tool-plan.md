@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:47:46Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:59:26Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:31:50Z }
 sources:
@@ -31,8 +31,8 @@ sources:
   - id: consortium-app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:62bf07fc087476ca
-    last_modified: 2026-10-28T13:44:12Z
+    digest: sha256:03846c25ce3b99fb
+    last_modified: 2026-10-28T13:57:04Z
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
@@ -130,7 +130,7 @@ Types mirror format 3. Pure functions, unit-tested with `node --test`:
   `p` = taxon ids kept, `x` removed, `a` members in order, `v` = link
   version 2; guide presets `plant`, `climate`); unknown ids are dropped with a
   notice.
-Recompute < 50 ms for 200 taxa (`npm test` holds a 100 ms ceiling on the best of ten warm runs, since its files run in parallel; `CONSORTIUM_PERF=1` holds 50 ms).
+Recompute < 50 ms for 200 taxa (`npm test` times the best of ten cold runs, each on fresh taxon objects so the per-taxon cache misses, against a fixed baseline workload in the same process and fails above 2.5 times it, so parallel load slows both alike and a 4x or larger slowdown fails; `CONSORTIUM_PERF=1` also holds 50 ms).
 
 ## UI states (each in the mockup and in browser checks)
 First visit (nothing chosen), choosing climate/country, no match for the site,

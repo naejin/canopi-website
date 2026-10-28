@@ -68,8 +68,16 @@ export function afterMove({ pending }) {
 // A link's unknown country code goes with its notice (Dismiss, a climate change, Start over), so the
 // reader's next address bar and share link never carry it (core-fix review 3, m-3).
 export const noLinkCode = Object.freeze({ unknownCountry: null, linkCode: null });
-// What Start over keeps: the reader's country, never the link's unknown code (m-3).
-export const keptCountry = ({ country, countrySource, noCountry }) => ({ country, countrySource, noCountry });
+// The country after Start over or a climate change: the consortium is now the reader's, so only a
+// country they chose stays (m12). One that came from someone else's link ('link', or 'saved' from a
+// save of one) goes: the reader's own choice (`pref`: tab, then device), else "No country" if they
+// chose it, else the browser's guess, never put in a link (core-fix review 4, m-1). Never the
+// link's unknown code (m-3). own: { pref, guess, known } as for pickCountry.
+export function keptCountry({ country, countrySource, noCountry }, own) {
+  if (countrySource === 'user') return { country, countrySource, noCountry };
+  const { country: c, countrySource: src, noCountry: none } = pickCountry({ link: null, pref: own.pref, saved: null, guess: own.guess, known: own.known });
+  return { country: c, countrySource: src, noCountry: none };
+}
 
 // The second click of a double click, or a click right after the last one, lands on whatever slid
 // under the pointer: it is not a new request. Keyboard presses (detail 0) always count.
@@ -139,7 +147,9 @@ export function uncheckedOnCard(taxon, hasJobs) {
 // "No country", written whenever they choose, in any status, and left alone by Start over:
 // memory.js), else a saved consortium's (with the source it was saved with), else the browser's guess.
 // A link's country the reader chose themselves reads "chosen by you" ('user'), so their own reload or
-// language switch never turns it into "from the shared link"; only someone else's reads 'link'. A
+// language switch keeps that label; only someone else's reads 'link'. With storage blocked, a
+// language switch opens a new page without the tab's choice, so it reads 'link' there (the safe
+// direction: memory.js). A
 // link's unknown code is said (unknownCountry) and the reader's own choice is used, never the guess
 // (m-5). A link's k=- (links never carry it) is read as no k (n1). Under a link with no k (a guide
 // preset), a saved country reads 'saved' (n2), "from your last consortium", never "chosen by you"

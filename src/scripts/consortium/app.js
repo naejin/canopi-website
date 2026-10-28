@@ -931,7 +931,10 @@ function leaveLink() {
   S.pending = plants.length ? decodeState(new URLSearchParams({ plant: plants[0] })) : null;
 }
 // min-1: the notices of the link that opened the page go with it.
-function leaveClimate() { Object.assign(S, afterMove(S)); leaveLink(); }
+// The country of someone else's link goes too (keptCountry): the next consortium is the reader's.
+function leaveClimate() { Object.assign(S, afterMove(S), keptCountry(S, own())); leaveLink(); }
+// What keptCountry falls back to: the reader's own choice (tab, device), else the browser's guess.
+const own = () => ({ pref: memory.pref(), guess: browserCountry, known: (c) => isCountry(manifest, c) });
 // The country only changes the warnings: the members stay, and no Undo is needed or dropped.
 function chooseCountry(code) {
   S.country = code; S.countrySource = 'user'; S.noCountry = !code; S.unknownCountry = null; S.linkCode = null; countryQuery = '';
@@ -1030,8 +1033,9 @@ const act = {
   },
   print() { printEl.innerHTML = printHTML(); print(); },
   'start-over'() {
-    // The country stays: it is the reader's, not the consortium's; a link's unknown code goes (m-3).
-    const kept = keptCountry(S);
+    // The reader's own country stays (m12); someone else's link's country and unknown code go
+    // (keptCountry: core-fix review 4, m-1; m-3).
+    const kept = keptCountry(S, own());
     undoStart = { S, cell, lastRemoved }; lastRemoved = null; redoNext = null; S = fresh(); S.status = 'setup'; cell = null; loadSeq++;
     Object.assign(S, kept);
     if (siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }

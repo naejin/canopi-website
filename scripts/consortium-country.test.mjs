@@ -304,7 +304,7 @@ test('m-3: a link\'s unknown code goes with its notice: Start over, Dismiss and 
   const b = boot({ storage, search: '?c=temperate&k=ZZ', guess: 'DE' });
   assert.equal(b.S.unknownCountry, 'ZZ');
   assert.equal(b.k, 'ZZ', 'a reload of the link view shows the same');
-  const startOver = { country: null, countrySource: null, noCountry: false, unknownCountry: null, linkCode: null, ...keptCountry(b.S) };
+  const startOver = { country: null, countrySource: null, noCountry: false, unknownCountry: null, linkCode: null, ...keptCountry(b.S, { pref: b.memory.pref(), guess: 'DE', known }) };
   assert.equal(linkCountry(startOver, false).country, null, 'Start over');
   const dismissed = { ...b.S, ...noLinkCode };
   assert.equal(linkCountry(dismissed, false).country, null, 'Dismiss');
@@ -313,12 +313,50 @@ test('m-3: a link\'s unknown code goes with its notice: Start over, Dismiss and 
   assert.equal(linkCountry(moved, false).country, null, 'a climate change');
   assert.equal(moved.unknownCountry, null);
   // The reader's own country survives Start over.
-  assert.deepEqual(keptCountry({ country: 'FR', countrySource: 'user', noCountry: false, unknownCountry: 'ZZ', linkCode: 'ZZ' }), { country: 'FR', countrySource: 'user', noCountry: false });
+  assert.deepEqual(keptCountry({ country: 'FR', countrySource: 'user', noCountry: false, unknownCountry: 'ZZ', linkCode: 'ZZ' }, { pref: null, guess: 'DE', known }), { country: 'FR', countrySource: 'user', noCountry: false });
   // app.js uses these.
   const app = read('src/scripts/consortium/app.js');
   assert.match(app, /'dismiss-country'\(\) \{ Object\.assign\(S, noLinkCode\)/);
-  assert.match(app, /keptCountry\(S\)/);
+  assert.match(app, /keptCountry\(S, own\(\)\)/);
   assert.doesNotMatch(app, /const \{ country, countrySource, noCountry, linkCode \} = S/);
+});
+
+test('m-1 (fix3 review): after someone else\'s link, Start over and a climate change drop its country; the reader\'s own choice stays', () => {
+  const own = (b) => ({ pref: b.memory.pref(), guess: 'FR', known });
+  const after = (b) => ({ country: null, countrySource: null, noCountry: false, unknownCountry: null, linkCode: null, ...keptCountry(b.S, own(b)) });
+  // B never chose a country; the browser guesses FR. B opens A's link with k=DE.
+  const plain = boot({ storage: emptyStore().storage, search: '?v=2&c=temperate&k=DE', guess: 'FR' });
+  assert.equal(plain.S.countrySource, 'link');
+  const fresh = after(plain);
+  assert.deepEqual([fresh.country, fresh.countrySource], ['FR', 'guess'], 'the browser guess, shown as a guess');
+  assert.equal(linkCountry(fresh, false).country, null, 'B\'s next share link carries no country');
+  assert.equal(linkCountry(fresh, true).country, null, 'nor does the save');
+  // B chose TW earlier on this device: Start over gives TW, B's own.
+  const { storage } = emptyStore();
+  memoryOf({ storage, history: fakeHistory('/consortium/'), location: { pathname: '/consortium/', search: '' } }).choose('TW');
+  const chose = after(boot({ storage, search: '?v=2&c=temperate&k=DE', guess: 'FR' }));
+  assert.deepEqual([chose.country, chose.countrySource], ['TW', 'user']);
+  assert.equal(linkCountry(chose, false).country, 'TW');
+  // B chose "No country": it stays, and no link carries DE.
+  const none = emptyStore();
+  memoryOf({ storage: none.storage, history: fakeHistory('/consortium/'), location: { pathname: '/consortium/', search: '' } }).choose(null);
+  const noneAfter = after(boot({ storage: none.storage, search: '?v=2&c=temperate&k=DE', guess: 'FR' }));
+  assert.deepEqual([noneAfter.country, noneAfter.countrySource, noneAfter.noCountry], [null, 'user', true]);
+  assert.equal(linkCountry(noneAfter, false).country, null);
+  // Storage blocked, B chose RE in this tab (history.state): RE.
+  const tabChoice = boot({ storage: blockedStore, search: '?v=2&c=temperate&k=DE', guess: 'FR' });
+  tabChoice.memory.choose('RE');
+  assert.equal(tabChoice.S.countrySource, 'link');
+  const reAfter = after(tabChoice);
+  assert.deepEqual([reAfter.country, reAfter.countrySource], ['RE', 'user']);
+  // A saved consortium from someone else's link, reopened under a guide preset ('saved'), goes too.
+  assert.deepEqual(keptCountry({ country: 'DE', countrySource: 'saved', noCountry: false }, { pref: null, guess: 'FR', known }), { country: 'FR', countrySource: 'guess', noCountry: false });
+  // m12: the reader's own choice survives Start over, whatever the device says.
+  assert.deepEqual(keptCountry({ country: 'DE', countrySource: 'user', noCountry: false, linkCode: 'ZZ' }, { pref: null, guess: 'FR', known }), { country: 'DE', countrySource: 'user', noCountry: false });
+  // app.js runs this on Start over and on a climate change.
+  const app = read('src/scripts/consortium/app.js');
+  assert.match(app, /'start-over'\(\) \{[^]*?keptCountry\(S, own\(\)\)/);
+  assert.match(app, /function leaveClimate\(\) \{[^}]*keptCountry\(S, own\(\)\)/);
 });
 
 test('n3: the "not checked" announcement ends with the locale\'s own full stop', () => {
