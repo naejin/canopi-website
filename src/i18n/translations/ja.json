@@ -347,9 +347,9 @@
   "consortium.filled": "other: 植物を # 種追加しました。",
   "consortium.swap": "入れ替え",
   "consortium.keep": "{name}を残す",
-  "consortium.unkeep": "{name}を残さない",
+  "consortium.unkeep": "{name}を残す設定を外す",
   "consortium.remove": "{name}を外す",
-  "consortium.keptTag": "残す",
+  "consortium.keptTag": "残しています",
   "consortium.guideTag": "ガイドから",
   "consortium.layersTitle": "横から見た図",
   "consortium.whatStratum": "階層とは？",
@@ -618,5 +618,11 @@
   "consortium.whatJob": "これらの役割とは？",
   "consortium.ex.job.title": "どの植物にも役割があります",
   "consortium.ex.job": "コンソーシアムは6つの役割を分け合い、1つの植物がいくつも担えます。だれも担っていない役割は空きです。下の各カードに、担っている植物か、探すべき植物を示します。",
-  "consortium.swapNowLayer": "現在：{layer}"
+  "consortium.swapNowLayer": "現在：{layer}",
+  "consortium.fromGuideWait": "ガイドのおすすめ：{plant}。リストのある場所を選ぶと、この植物を残します。",
+  "consortium.placeFrom": "場所（{where}）は、この端末で前回作ったコンソーシアムから引き継いでいます。",
+  "consortium.redoneSite": "この敷地に合わせて植物を選び直しました。残している植物はそのままです。",
+  "consortium.redonePlace": "{where}向けのコンソーシアムはいったん外しました。",
+  "consortium.nc.why": "この気候でベータ版が扱うのは{region}で、データでは{country}は{north}に含まれます。",
+  "consortium.removeShort": "外す"
 }

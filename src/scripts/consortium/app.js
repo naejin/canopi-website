@@ -10,7 +10,7 @@ import {
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadCell } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook } from './words.js';
-import { droppedPlants, trimGaps, mayPersist, photoSource, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace } from './logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint } from './logic.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
 
@@ -73,7 +73,7 @@ const fresh = () => ({
   climate: null, climateSource: null, country: null, region: null, cellRegion: null,
   ratherNot: false, pickFor: null, editClimate: false,
   site: { ...DEFAULT_SITE }, status: 'boot', members: [], kept: new Set(), removed: new Set(), gaps: [],
-  view: 'layers', explain: null, notice: null, dropped: 0, guidePlant: null, guideId: null, restoredAt: null, pending: null,
+  view: 'layers', explain: null, notice: null, dropped: 0, guidePlant: null, guideId: null, restoredAt: null, pending: null, placeFrom: null,
 });
 let S = fresh();
 let O = null; // the open sheet: { type, id, filter, back, confirm }
@@ -244,15 +244,20 @@ async function findGuidePlant() {
   for (const c of manifest.cells.filter((c) => c.climate_zone.toLowerCase() === S.climate)) {
     let found = null;
     try { found = taxonByName(await loadCell(c.file), plant); } catch {}
-    if (found) { guideTaxon = { plant, taxon: found }; if (S.guidePlant === plant && S.status === 'setup') render(); return; }
+    if (found) { guideTaxon = { plant, taxon: found }; if (S.guidePlant === plant && (S.status === 'setup' || S.status === 'notcovered')) render(); return; }
   }
 }
-function guideNote() {
+// F1: a guide preset that took the place saved on this device says so, with a way to change it.
+const placeFromHTML = () => (S.placeFrom === 'device' && S.region
+  ? `<p class="place-from">${esc(T('placeFrom', { where: whereLabel() }))} ${btn('link-button', 'open-place', 'country', esc(T('change')), `aria-haspopup="dialog" ${fk('place-from')}`)}</p>` : '');
+// wait: the place has no list yet (not covered), so the plant is not kept yet.
+function guideNote(wait = false) {
   if (!S.guidePlant) return '';
   const t = (S.guideId && taxonOf(S.guideId)) || (guideTaxon?.plant === S.guidePlant ? guideTaxon.taxon : null);
   const plant = t ? name(t) + (nameText(t) !== t.canonical_name ? W.paren(`<i>${esc(t.canonical_name)}</i>`) : '') : `<i>${esc(S.guidePlant)}</i>`;
   // m4: the guide set the climate only when its link named one.
-  return `<div class="note note-guide">${I.book}<p>${S.climateSource === 'guide' && S.climate ? T('fromGuide', { plant, climate: esc(W.climate(S.climate)) }) : T('fromGuidePlant', { plant })}</p></div>`;
+  const text = wait ? T('fromGuideWait', { plant }) : S.climateSource === 'guide' && S.climate ? T('fromGuide', { plant, climate: esc(W.climate(S.climate)) }) : T('fromGuidePlant', { plant });
+  return `<div class="note note-guide">${I.book}<div><p>${text}</p>${placeFromHTML()}</div></div>`;
 }
 function setupHTML() {
   const editing = !S.climate || S.editClimate;
@@ -277,17 +282,20 @@ function placeChips() {
     <button class="chip-button" type="button" data-act="open-place" data-v="climate" aria-haspopup="dialog" ${fk('pc-climate')}><span class="vh">${esc(T('step1'))}: </span><strong>${esc(W.climate(S.climate))}</strong>${I.caret}</button>
     <button class="chip-button" type="button" data-act="open-place" data-v="country" aria-haspopup="dialog" ${fk('pc-country')}><span class="vh">${esc(T('step2'))} </span><strong>${esc(whereLabel())}</strong>${I.caret}</button></div>`;
 }
+// F4: the main actions (I want to grow…, Fill) come right after the place, before the site questions,
+// so they show at the top of the panel; on desktop the panel always sticks and scrolls inside itself
+// when it is taller than the window (src/styles/consortium.css), so it never changes layout mid-scroll.
 function asideHTML() {
   if (phone()) return '';
   const result = S.status === 'ready' || S.status === 'nomatch';
   return `<aside class="aside" aria-label="${esc(T('yourPlace'))}">
     <div class="panel"><h2 class="panel-title">${esc(T('yourPlace'))}</h2>${placeChips()}
       <p class="place-note">${esc(S.country ? W.region(S.region) : T('noCountryNote'))}</p></div>
-    ${result ? `<div class="panel" id="ct-site-panel"><h2 class="panel-title">${esc(T('yourSite'))}</h2><p class="seg-hint">${esc(T('siteOptional'))}</p>${siteFields()}</div>
-    <div class="panel"><h2 class="panel-title">${esc(T('grow'))}</h2>
+    ${result ? `<div class="panel"><h2 class="panel-title">${esc(T('grow'))}</h2>
       ${btn('button button-secondary grow-button', 'open-add', 'grow', `${I.search}<span>${esc(T('growHint'))}</span>`, fk('grow'))}
       ${fillable() ? `${btn('button button-secondary button-small', 'fill', null, esc(T('fill')), fk('fill-aside'))}<p class="seg-hint">${esc(T('fillNote'))}</p>` : ''}
-    </div>` : ''}
+    </div>
+    <div class="panel" id="ct-site-panel"><h2 class="panel-title">${esc(T('yourSite'))}</h2><p class="seg-hint">${esc(T('siteOptional'))}</p>${siteFields()}</div>` : ''}
   </aside>`;
 }
 const resultTitle = (text) => `<h2 id="ct-result-title" tabindex="-1">${esc(text)}</h2>`;
@@ -299,18 +307,15 @@ function attentionHTML(flags) {
   if (!look.length) return '';
   const items = look.map((t) => {
     const f = flags.get(t.id), why = warnParts(t, f).severe.filter((w) => w.look).map((w) => w.text);
-    // A plant that does not fit the site (often a guide's or a kept one) says what to do next: the
-    // site answer it would fit, and Swap (usability).
-    const next = f.misfits.length ? `<span class="att-next">${f.misfits.map((k) => { const v = fitsWith(t, k); return v ? btn('link-button', 'fit', `${k}:${v}`, esc(T('nm.try', { value: T(`site.${k}.${v}`) })), fk(`fit-${t.id}-${k}`)) : ''; }).join('')}${btn('link-button', 'swap', t.id, esc(T('swap')), `aria-haspopup="dialog" aria-label="${esc(T('swap'))}: ${esc(nameText(t))}" ${fk('asw-' + t.id)}`)}</span>` : '';
-    return `<span class="att-item">${btn('link-button', 'goto', t.id, name(t))} (${W.list(why)})${next}</span>`;
+    // F2: a plant that does not fit the site (often a guide's or a kept one) says what it needs (its
+    // size against the room, its light…) and offers Swap and Remove. The site answers are facts about
+    // the reader's garden: they are never offered as a change to fit one plant.
+    const n = esc(nameText(t));
+    const acts = f.misfits.length ? `<span class="att-acts">${btn('link-button', 'swap', t.id, esc(T('swap')), `aria-haspopup="dialog" aria-label="${esc(T('swap'))}: ${n}" ${fk('asw-' + t.id)}`)}${btn('link-button', 'remove', t.id, esc(T('removeShort')), `aria-label="${esc(T('removeShort'))}: ${n}" ${fk('arm-' + t.id)}`)}</span>` : '';
+    return `<li class="att-item">${btn('link-button', 'goto', t.id, name(t))}${W.paren(W.list(why))}${acts}</li>`;
   });
-  return `<div class="attention">${I.warn}<p><strong>${esc(P('attention', look.length))}</strong> ${items.join(' · ')}</p></div>`;
-}
-// The nearest other answer to a site question that a plant fits ("Not sure" is no answer to offer).
-function fitsWith(t, key) {
-  const opts = SITE_OPTIONS[key], at = opts.indexOf(S.site[key]);
-  const order = opts.map((o, i) => [o, Math.abs(i - at)]).filter(([o]) => o !== S.site[key] && o !== 'unsure').sort((a, b) => a[1] - b[1]).map(([o]) => o);
-  return order.find((o) => !fits(t, { ...S.site, [key]: o }).misfits.includes(key)) ?? null;
+  // F3: one item per line, each with its own actions.
+  return `<div class="attention">${I.warn}<div><p><strong>${esc(P('attention', look.length))}</strong></p><ul class="att-list" role="list">${items.join('')}</ul></div></div>`;
 }
 // Phone has no side panel: with no free place, the "I want to grow…" search sits under the views
 // (growRowHTML), so the first screen still reaches the plants (M4).
@@ -338,7 +343,7 @@ function notices(can) {
     out += `<div class="note note-old" role="status">${I.info}<div><p>${esc(T('restored', { date }))}</p><div class="note-actions">${btn('link-button', 'start-over', null, esc(T('startFresh')), fk('fresh'))}${btn('link-button', 'dismiss', null, esc(T('dismiss')))}</div></div></div>`;
   }
   if (S.notice === 'guide') out += guideNote();
-  if (S.notice === 'guideMissing') out += `<div class="note note-old" role="status">${I.info}<div><p>${T('guideMissing', { plant: `<i>${esc(S.guidePlant)}</i>` })}</p><div class="note-actions">${btn('link-button', 'dismiss', null, esc(T('dismiss')))}</div></div></div>`;
+  if (S.notice === 'guideMissing') out += `<div class="note note-old" role="status">${I.info}<div><p>${T('guideMissing', { plant: `<i>${esc(S.guidePlant)}</i>` })}</p>${placeFromHTML()}<div class="note-actions">${btn('link-button', 'dismiss', null, esc(T('dismiss')))}</div></div></div>`;
   if (S.cellRegion) { const b = borrowedWords(); out += `<div class="note note-borrowed">${I.warn}<div><p><strong>${esc(b.title)}</strong> ${esc(b.text)}</p><div class="note-actions">${btn('link-button', 'open-place', 'country', esc(T('change')))}</div></div></div>`; }
   return out;
 }
@@ -360,8 +365,10 @@ function mainHTML() {
 }
 function notCoveredHTML() {
   const same = manifest.cells.filter((c) => c.climate_zone.toLowerCase() === S.climate);
-  const where = whereLabel();
-  return `<div class="callout">${resultTitle(T('nc.title', { climate: W.climate(S.climate), region: where }))}
+  const where = whereLabel(), hint = coverageHint(manifest, S.climate, S.country);
+  // F1: a guide's plant waiting for a covered place keeps its note here too.
+  return `${guideNote(true)}<div class="callout">${resultTitle(T('nc.title', { climate: W.climate(S.climate), region: where }))}
+    ${hint ? `<p class="nc-why">${esc(T('nc.why', { region: W.region(hint.region), country: W.country(S.country), north: W.region(hint.north) }))}</p>` : ''}
     <p>${esc(P('nc.text', manifest.cells.length))}</p>
     <ul class="covered-plain">${manifest.cells.map((c) => `<li><strong>${esc(W.cell(c.climate_zone.toLowerCase(), c.region))}</strong></li>`).join('')}</ul>
     ${same.length ? `<p class="place-note">${esc(T('nc.optNote', { where }))} ${esc(S.country ? T('borrowedInv', { country: W.country(S.country) }) : T('borrowedNoInv'))}</p><div class="actions">${same.map((c) => btn('button button-primary', 'opt-in', c.region, esc(T('nc.optIn', { cell: W.cell(S.climate, c.region) })), fk('optin-' + c.region))).join('')}</div>` : `<p class="place-note">${esc(T('nc.noneClimate'))}</p>`}
@@ -713,7 +720,10 @@ function render() {
     li.dataset.done = String(i < step);
   });
   if (S.status === 'boot') return;
+  const asideTop = app.querySelector('.aside')?.scrollTop ?? 0;
   app.innerHTML = setup ? setupHTML() : `<div class="tool-grid">${asideHTML()}<section class="result" aria-labelledby="ct-result-title">${mainHTML()}</section></div>`;
+  const aside = app.querySelector('.aside');
+  if (aside) aside.scrollTop = asideTop;
   app.removeAttribute('aria-busy');
   if (O) renderSheet();
   const target = focusNext; focusNext = null;
@@ -731,17 +741,8 @@ function render() {
     if (sel && document.activeElement?.setSelectionRange) document.activeElement.setSelectionRange(...sel);
   }
   persist();
-  fitAside();
 }
 const headerMenuOpen = () => !!document.querySelector('[data-nav-menu][open], [data-lang-menu][open]');
-// live M2: the side panel sticks beside the result only while it fits the window; a taller one (long
-// words, a short laptop screen) scrolls with the page, so no control in it is ever out of reach.
-function fitAside() {
-  const a = app.querySelector('.aside');
-  if (a) a.classList.toggle('aside-sticky', a.offsetHeight <= innerHeight - 32);
-}
-addEventListener('resize', fitAside);
-document.fonts?.ready.then(fitAside);
 function renderSheet(focusKey) {
   const body = dlg.querySelector('.drawer-body'), scroll = body?.scrollTop ?? 0, kind = dlg.dataset.kind;
   const activeFk = dlg.contains(document.activeElement) ? fkOf(document.activeElement) : null;
@@ -790,6 +791,7 @@ dlg.addEventListener('cancel', (e) => { if (O?.confirm) { e.preventDefault(); co
 
 function toast(text, undo = null) {
   clearTimeout(toastTimer);
+  if (undo !== 'redo') undoRedo = null;
   toastEl.innerHTML = `<span>${text}</span>${undo ? btn('button', 'undo', undo, esc(T('undo')), fk('undo')) : ''}`;
   toastEl.hidden = false;
   if (!undo) toastTimer = setTimeout(hideToast, 5000);
@@ -835,7 +837,24 @@ function syncLangLinks() { for (const [a, href] of langLinks) a.setAttribute('hr
 // An Undo offered for an earlier state no longer applies once the consortium is made again, refilled
 // or moved to another place (B2, m1): its toast goes.
 function dropUndo() {
-  if (lastRemoved || undoStart) { lastRemoved = null; undoStart = null; if (toastEl.querySelector('[data-act=undo]')) hideToast(); }
+  if (lastRemoved || undoStart || undoRedo) { lastRemoved = null; undoStart = null; undoRedo = null; if (toastEl.querySelector('[data-act=undo]')) hideToast(); }
+}
+// F2: a site or place change makes the plants that are not kept again; the result before it comes
+// back with Undo. A run of changes (arrow keys through a radio group) keeps the result before the
+// first one. redoNext waits for a place's cell; undoRedo is the one the toast offers.
+let undoRedo = null, redoNext = null;
+function holdForRedo(focus, place) {
+  const snap = undoRedo ?? redoNext ?? (S.status === 'ready'
+    ? { S: { ...S, site: { ...S.site }, members: [...S.members], kept: new Set(S.kept), removed: new Set(S.removed), gaps: [...S.gaps] }, cell, focus } : null);
+  if (snap && place) snap.place = true;
+  redoNext = snap;
+}
+function offerRedo() {
+  const snap = redoNext; redoNext = null;
+  if (!snap || (snap.cell === cell && S.status === 'ready' && snap.S.members.join() === S.members.join() && snap.S.gaps.length === S.gaps.length)) return;
+  const where = snap.S.country ? W.country(snap.S.country) : W.region(snap.S.region);
+  undoRedo = snap;
+  toast(snap.place ? esc(T('redonePlace', { where })) : esc(T('redoneSite')), 'redo');
 }
 function recompute() {
   dropUndo();
@@ -857,7 +876,7 @@ async function resolvePlace() {
   if (!S.climate || !S.region) { S.status = 'setup'; render(); return; }
   if (cellFor(manifest, S.climate, S.region) || (S.cellRegion && !cellFor(manifest, S.climate, S.cellRegion))) S.cellRegion = null;
   const mc = cellFor(manifest, S.climate, cellRegion());
-  if (!mc) { cell = null; S.status = 'notcovered'; focusNext = 'result'; render(); return; }
+  if (!mc) { cell = null; S.status = 'notcovered'; focusNext = 'result'; render(); offerRedo(); findGuidePlant(); return; }
   S.status = 'loading';
   // min-8: the loading screen replaces whatever had the focus (Retry, a place, a closed sheet's opener),
   // so the focus waits on its status line.
@@ -868,7 +887,7 @@ async function resolvePlace() {
     [next, nextLabels] = await Promise.all([loadCell(mc.file), labels ?? loadLabels().catch(() => null)]);
   } catch {
     if (run !== loadSeq) return;
-    S.status = 'error'; focusNext = 'retry'; render(); return;
+    S.status = 'error'; focusNext = 'retry'; render(); offerRedo(); return;
   }
   if (run !== loadSeq) return;
   cell = next; labels = nextLabels;
@@ -892,7 +911,7 @@ async function resolvePlace() {
   // The result takes the focus only from the loading line (or nothing): a user who moved on keeps their place.
   const at = document.activeElement;
   if (!at || at === document.body || at.id === 'ct-result-title') focusNext = 'result';
-  render();
+  render(); offerRedo();
   say(S.status === 'ready' ? T('announce', { summary: P('sizeLine.' + S.site.room, S.members.length) }) : T('nm.title'));
 }
 // A place or climate the user picks: a borrowed cell is opted into again for it (m6), and an Undo
@@ -907,13 +926,14 @@ function leaveLink() {
 // min-1: the notices of the link that opened the page go with it.
 function leavePlace() { Object.assign(S, afterMove(S)); leaveLink(); }
 function choosePlace(country, region) {
+  holdForRedo('pc-country', true);
   S.country = country; S.region = region; S.pickFor = null; S.ratherNot = !country && S.ratherNot; countryQuery = '';
-  S.cellRegion = null; dropUndo(); leavePlace();
+  S.cellRegion = null; S.placeFrom = null; dropUndo(); leavePlace();
   if (O) closeSheet(false);
   resolvePlace();
 }
 const act = {
-  climate(v) { setClimate(v); S.cellRegion = null; dropUndo(); leavePlace(); if (O) closeSheet(false); if (S.region) resolvePlace(); else { focusNext = S.ratherNot ? 'rg-' + REGIONS[0] : browserCountry ? 'suggest' : 'country-q'; render(); findGuidePlant(); } },
+  climate(v) { if (S.region) holdForRedo('pc-climate', true); setClimate(v); S.cellRegion = null; dropUndo(); leavePlace(); if (O) closeSheet(false); if (S.region) resolvePlace(); else { focusNext = S.ratherNot ? 'rg-' + REGIONS[0] : browserCountry ? 'suggest' : 'country-q'; render(); findGuidePlant(); } },
   'edit-climate'() { S.editClimate = true; focusNext = 'cl-' + S.climate; render(); },
   country(v) {
     const rs = regionsOf(manifest, v);
@@ -926,8 +946,8 @@ const act = {
   region(v) { S.ratherNot = true; choosePlace(null, v); },
   'open-place'(v, el) { openSheet({ type: 'place', which: v }, el); },
   'open-site'(_, el) { openSheet({ type: 'site' }, el); },
-  'focus-site'() { const p = document.getElementById('ct-site-panel'); p?.scrollIntoView({ block: 'start' }); focusFk('site-light-' + S.site.light, app); },
-  'opt-in'(v) { S.cellRegion = v; resolvePlace(); },
+  'focus-site'() { const p = document.getElementById('ct-site-panel'); p?.scrollIntoView({ block: 'nearest' }); focusFk('site-light-' + S.site.light, app); },
+  'opt-in'(v) { holdForRedo('pc-country', true); S.cellRegion = v; resolvePlace(); },
   retry() { resolvePlace(); },
   view(v) { S.view = v; S.explain = null; focusNext = 'tab-' + v; render(); },
   explain(v) { S.explain = S.explain === v ? null : v; focusNext = 'ex-' + v; render(); },
@@ -961,6 +981,13 @@ const act = {
       // B2: the state, its cell and its own Undo come back together.
       ({ S, cell, lastRemoved } = undoStart); undoStart = null; evalKey = ''; focusNext = 'start-over'; render(); return;
     }
+    if (v === 'redo' && undoRedo) {
+      const u = undoRedo; undoRedo = null; redoNext = null; loadSeq++;
+      ({ S, cell } = u); evalKey = ''; focusNext = u.focus; render();
+      if (!app.contains(document.activeElement)) focusFk('basis', app) || document.getElementById('ct-result-title')?.focus();
+      say(T('announce', { summary: P('sizeLine.' + S.site.room, S.members.length) }));
+      return;
+    }
     const r = lastRemoved; if (!r) return;
     S.members.splice(r.idx, 0, r.id); S.removed.delete(r.id); if (r.wasKept) S.kept.add(r.id);
     S.gaps = S.gaps.filter((g) => g.id !== r.id); lastRemoved = null; focusNext = 'pn-' + r.id; render(); flash(r.id);
@@ -993,11 +1020,6 @@ const act = {
     toast(esc(P('filled', added.length)));
   },
   relax(k) { S.site = { ...S.site, [k]: relaxTo(k) }; recompute(); focusNext = 'result'; render(); },
-  fit(v) {
-    const [k, value] = v.split(':');
-    S.site = { ...S.site, [k]: value }; recompute(); focusNext = 'result'; render();
-    say(S.status === 'ready' ? T('announce', { summary: P('sizeLine.' + S.site.room, S.members.length) }) : T('nm.title'));
-  },
   close() { if (O?.back) { O = O.back; renderSheet(); } else closeSheet(); },
   async share() {
     persist();
@@ -1005,7 +1027,7 @@ const act = {
   },
   print() { printEl.innerHTML = printHTML(); print(); },
   'start-over'() {
-    undoStart = { S, cell, lastRemoved }; lastRemoved = null; S = fresh(); S.status = 'setup'; cell = null; loadSeq++;
+    undoStart = { S, cell, lastRemoved }; lastRemoved = null; redoNext = null; S = fresh(); S.status = 'setup'; cell = null; loadSeq++;
     if (siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }
     try { localStorage.removeItem(STORE); history.replaceState(history.state, '', location.pathname); } catch {}
     syncLangLinks(); render(); toast(esc(T('startOverDone')), 'start'); focusFk('undo', toastEl);
@@ -1049,7 +1071,9 @@ dlg.addEventListener('click', (e) => {
 root.addEventListener('change', (e) => {
   const el = e.target;
   if (el.dataset.site) {
-    S.site = { ...S.site, [el.dataset.site]: el.value }; recompute(); render();
+    const k = el.dataset.site;
+    holdForRedo(`site-${k}-${S.site[k]}`, false);
+    S.site = { ...S.site, [k]: el.value }; recompute(); render(); offerRedo();
     if (O) renderSheet();
     say(S.status === 'ready' ? T('announce', { summary: P('sizeLine.' + S.site.room, S.members.length) }) : T('nm.title'));
   }
@@ -1099,7 +1123,7 @@ async function start() {
     const d = decoded.state;
     // seam m4: a guide preset without a place goes to the place saved on this device.
     const place = saved?.q ? presetPlace(d, decodeState(saved.q).state) : null;
-    if (place) { d.region = place.region; d.country = place.country; }
+    if (place) { d.region = place.region; d.country = place.country; S.placeFrom = 'device'; }
     S.climate = d.climate; S.region = d.region; S.country = d.country; S.site = { ...d.site };
     S.cellRegion = d.cellRegion && d.cellRegion !== d.region ? d.cellRegion : null;
     S.ratherNot = !!d.region && !d.country;

@@ -618,5 +618,11 @@
   "consortium.whatJob": "O que são estas funções?",
   "consortium.ex.job.title": "Cada planta tem uma função",
   "consortium.ex.job": "Um consórcio reparte seis funções, e uma planta pode cumprir várias. Uma função que ninguém cumpre é uma lacuna: cada cartão mostra quem a cumpre, ou o que procurar.",
-  "consortium.swapNowLayer": "Agora: {layer}"
+  "consortium.swapNowLayer": "Agora: {layer}",
+  "consortium.fromGuideWait": "Planta sugerida pelo guia: {plant}. Será mantida assim que escolher um local com lista.",
+  "consortium.placeFrom": "Local retirado do seu último consórcio neste dispositivo: {where}.",
+  "consortium.redoneSite": "Novas plantas sugeridas para este terreno. As plantas mantidas ficam.",
+  "consortium.redonePlace": "O seu consórcio para {where} foi posto de lado.",
+  "consortium.nc.why": "Para este clima, a beta cobre a região “{region}”, e nos dados o país escolhido ({country}) faz parte da {north}.",
+  "consortium.removeShort": "Retirar"
 }

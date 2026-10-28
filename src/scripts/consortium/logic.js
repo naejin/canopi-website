@@ -2,7 +2,8 @@
 // scripts/consortium-page.test.mjs can test them: what a share link lost, which gap rows stay,
 // when the address bar may be rewritten, where a photo came from, how much of a list shows, what a
 // place change leaves of a link's notices, when a click is the tail of a double click, the language
-// links' query and the place a guide preset borrows from the saved consortium.
+// links' query, the place a guide preset borrows from the saved consortium, and why a Northern American
+// country is not covered.
 
 // How many plants an old link named that the cell no longer has: the distinct ids of `p` (kept)
 // and `a` (members) that matched no taxon or several. A kept plant is in both lists, so it counts
@@ -74,4 +75,14 @@ export const withQuery = (href, search) => href.split('?')[0] + (search && searc
 export function presetPlace(preset, saved) {
   if (!preset?.plants?.length || preset.region || preset.country || !saved?.region) return null;
   return { country: saved.country ?? null, region: saved.region };
+}
+
+// "Not covered yet" for a country of Northern America in a climate whose only list is Central and
+// South America and the Caribbean (Tropical, in the beta): a reader in Yucatán reads "Central
+// America" and expects Mexico in it, but the data's regions put Mexico in Northern America (N3).
+export function coverageHint(manifest, climate, country) {
+  const regions = country ? manifest.country_regions[country] ?? [] : [];
+  if (!regions.includes('northern_america') || regions.includes('southern_america')) return null;
+  const has = (r) => manifest.cells.some((c) => c.climate_zone.toLowerCase() === climate && c.region === r);
+  return has('southern_america') && !has('northern_america') ? { region: 'southern_america', north: 'northern_america' } : null;
 }

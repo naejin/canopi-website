@@ -341,7 +341,7 @@
   "consortium.undo": "Rückgängig",
   "consortium.removed": "{name} entfernt. Der Platz bleibt frei.",
   "consortium.swapped": "{a} durch {b} ersetzt.",
-  "consortium.added": "{name} hinzugefügt und behalten.",
+  "consortium.added": "{name} hinzugefügt; die Pflanze bleibt.",
   "consortium.keptNow": "{name} wird behalten: Die Pflanze bleibt, wenn du Plätze füllst oder deinen Standort änderst.",
   "consortium.unkeptNow": "{name} wird nicht mehr behalten.",
   "consortium.filled": "one: # Pflanze hinzugefügt. | other: # Pflanzen hinzugefügt.",
@@ -618,5 +618,11 @@
   "consortium.whatJob": "Was sind diese Aufgaben?",
   "consortium.ex.job.title": "Jede Pflanze hat eine Aufgabe",
   "consortium.ex.job": "Ein Konsortium teilt sich sechs Aufgaben, und eine Pflanze kann mehrere übernehmen. Eine Aufgabe, die niemand erledigt, ist eine Lücke: Jede Karte unten zeigt, wer sie erledigt oder wonach du suchen kannst.",
-  "consortium.swapNowLayer": "Jetzt: {layer}"
+  "consortium.swapNowLayer": "Jetzt: {layer}",
+  "consortium.fromGuideWait": "Vom Leitfaden vorgeschlagen: {plant}. Die Pflanze wird behalten, sobald du einen Ort mit Liste wählst.",
+  "consortium.placeFrom": "Der Ort, {where}, stammt aus deinem letzten Konsortium auf diesem Gerät.",
+  "consortium.redoneSite": "Neue Pflanzen für diesen Standort vorgeschlagen. Behaltene Pflanzen bleiben.",
+  "consortium.redonePlace": "Dein Konsortium für {where} wurde beiseitegelegt.",
+  "consortium.nc.why": "Für dieses Klima deckt die Beta {region} ab, und in den Daten zählt das gewählte Land ({country}) zu {north}.",
+  "consortium.removeShort": "Entfernen"
 }

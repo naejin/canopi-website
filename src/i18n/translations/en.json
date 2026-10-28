@@ -210,7 +210,7 @@
   "consortium.noscript.link": "Read the food forest guide",
   "consortium.loadingTool": "Loading the tool…",
   "consortium.step1": "Your climate",
-  "consortium.step1.lede": "Your climate decides which plants can grow with you.",
+  "consortium.step1.lede": "Your climate decides which plants can grow where you live.",
   "consortium.covered": "Beta: {regions}",
   "consortium.notYet": "Not yet",
   "consortium.climateFromSite": "Chosen earlier on this site",
@@ -618,5 +618,11 @@
   "consortium.whatJob": "What are the jobs?",
   "consortium.ex.job.title": "Every plant has work to do",
   "consortium.ex.job": "A consortium shares six jobs, and one plant can do several. A job nobody does is a gap: each card below shows who does it, or what to look for.",
-  "consortium.swapNowLayer": "Now: {layer}"
+  "consortium.swapNowLayer": "Now: {layer}",
+  "consortium.fromGuideWait": "The guide suggested {plant}. It is kept once you choose a place that has a list.",
+  "consortium.placeFrom": "The place, {where}, comes from your last consortium on this device.",
+  "consortium.redoneSite": "New plants suggested for this site. Kept plants stayed.",
+  "consortium.redonePlace": "Your consortium for {where} was set aside.",
+  "consortium.nc.why": "For this climate the beta covers {region}, and in the data {country} counts as {north}.",
+  "consortium.removeShort": "Remove"
 }

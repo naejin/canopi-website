@@ -618,5 +618,11 @@
   "consortium.whatJob": "Che cosa sono questi compiti?",
   "consortium.ex.job.title": "Ogni pianta ha un compito",
   "consortium.ex.job": "Un consorzio si divide sei compiti, e una pianta può svolgerne diversi. Un compito che nessuno svolge è un vuoto: ogni scheda mostra chi lo svolge, o che cosa cercare.",
-  "consortium.swapNowLayer": "Ora: {layer}"
+  "consortium.swapNowLayer": "Ora: {layer}",
+  "consortium.fromGuideWait": "Pianta suggerita dalla guida: {plant}. Sarà tenuta appena scegli un luogo che ha un elenco.",
+  "consortium.placeFrom": "Luogo ripreso dal tuo ultimo consorzio su questo dispositivo: {where}.",
+  "consortium.redoneSite": "Nuove piante suggerite per questo terreno. Le piante tenute restano.",
+  "consortium.redonePlace": "Il tuo consorzio per {where} è stato messo da parte.",
+  "consortium.nc.why": "Per questo clima la beta copre la regione «{region}», e nei dati il paese scelto ({country}) rientra nell’{north}.",
+  "consortium.removeShort": "Togli"
 }

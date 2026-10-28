@@ -618,5 +618,11 @@
   "consortium.whatJob": "이 역할들은 무엇인가요?",
   "consortium.ex.job.title": "모든 식물에는 역할이 있습니다",
   "consortium.ex.job": "컨소시엄은 여섯 가지 역할을 나누어 맡고, 한 식물이 여러 역할을 맡을 수 있습니다. 아무도 맡지 않은 역할은 빈자리입니다. 아래 각 카드에 누가 맡는지, 또는 무엇을 찾으면 되는지 나옵니다.",
-  "consortium.swapNowLayer": "지금: {layer}"
+  "consortium.swapNowLayer": "지금: {layer}",
+  "consortium.fromGuideWait": "가이드가 제안한 식물: {plant}. 목록이 있는 곳을 고르면 이 식물을 남깁니다.",
+  "consortium.placeFrom": "장소({where})는 이 기기에서 마지막으로 만든 컨소시엄에서 가져왔습니다.",
+  "consortium.redoneSite": "이 터에 맞게 식물을 다시 골랐습니다. 남긴 식물은 그대로입니다.",
+  "consortium.redonePlace": "{where}용 컨소시엄은 잠시 치워 두었습니다.",
+  "consortium.nc.why": "이 기후에서 베타는 {region}을(를) 다루며, 데이터에서는 {country}이(가) {north}에 속합니다.",
+  "consortium.removeShort": "빼기"
 }

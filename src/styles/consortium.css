@@ -119,8 +119,13 @@
 @media (max-width: 959px) {
   .ct .tool-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; }
 }
-.ct .aside { display: grid; gap: 22px; }
-@media (min-width: 960px) { .ct .aside.aside-sticky { position: sticky; top: 16px; } }
+.ct .aside { display: grid; gap: 22px; align-content: start; }
+/* F4: always sticky on desktop; a panel taller than the window scrolls inside itself (the grow search
+   and Fill come first in it), so it never changes layout mid-scroll. The padding keeps focus rings
+   inside the scroll box, and scroll-padding keeps a focused control clear of its edges. */
+@media (min-width: 960px) {
+  .ct .aside { position: sticky; top: 16px; max-height: calc(100dvh - 32px); overflow-y: auto; padding: 4px; margin: -4px; scroll-padding-block: 16px; scrollbar-width: thin; }
+}
 @media (max-width: 959px) {
   .ct .aside { position: static; gap: 14px; }
 }
@@ -549,6 +554,7 @@
 .ct .climate-choice .mark { margin-left: 0; }
 .ct .suggest-country .mark { display: inline-flex; margin: 2px 0 0; }
 .ct .note-guide { background: var(--surface-alt); }
+.ct .note-guide .place-from { margin-top: 6px; font-size: 15px; color: var(--text-secondary); }
 /* Result: basis, attention, free places, foot */
 .ct .tabpanel { display: grid; gap: 20px; }
 .ct .basis { font-size: 15px; color: var(--text-secondary); margin-top: -8px; }
@@ -560,6 +566,7 @@
 .ct .attention > svg { flex: none; margin-top: 3px; color: var(--warning); }
 .ct .attention strong { font-weight: 600; }
 .ct .attention .link-button { font-weight: 600; }
+.ct .att-list { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; }
 .ct .att-item { white-space: normal; }
 .ct .free-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 14px; border: 1.5px dashed var(--border-strong); border-radius: var(--radius); font-size: 15px; color: var(--text-secondary); }
 .ct .free-row[data-free="false"] { border: 0; padding: 0; }
@@ -804,5 +811,5 @@
 @media (max-width: 639px) { .ct .plant-meta .time .explain-btn { width: 44px; height: 44px; margin: -11px -9px; } }
 .ct .plant-main > .explain-panel { margin-top: 4px; }
 /* What to do about a plant that does not fit the site: the answer it fits, and Swap. */
-.ct .att-next { display: inline-flex; flex-wrap: wrap; gap: 0 12px; margin-left: 8px; }
-.ct .att-next .link-button { font-weight: 600; }
+.ct .att-acts { display: inline-flex; flex-wrap: wrap; gap: 0 14px; margin-left: 10px; }
+.ct .att-acts .link-button { font-weight: 600; }

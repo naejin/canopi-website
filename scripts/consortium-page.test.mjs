@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { pluralForms, makeWords, needsLook, searchText, fold, plantName } from '../src/scripts/consortium/words.js';
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
 import * as core from '../src/lib/consortium/index.ts';
-import { droppedPlants, trimGaps, mayPersist, photoSource, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace } from '../src/scripts/consortium/logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint } from '../src/scripts/consortium/logic.js';
 import { profileSVG } from '../src/scripts/consortium/draw.js';
 import { crops } from '../src/data/crops.ts';
 
@@ -467,4 +467,70 @@ test('every animation the tool\'s CSS runs has its keyframes (seam note)', () =>
 test('the guide note says the climate belongs to this consortium, not the site (seam m3)', () => {
   assert.doesNotMatch(strings.en.fromGuide, /set to/);
   assert.match(strings.en.fromGuide, /This consortium/);
+});
+
+// ---------- consortium/fixes, second round (fixes-review.md) ----------
+const css = read('src/styles/consortium.css');
+const appJs = read('src/scripts/consortium/app.js');
+
+test('a guide preset never lands silently: the guide note shows on "Not covered yet", and a place from this device says so (F1)', () => {
+  assert.match(appJs, /function notCoveredHTML\(\) \{[\s\S]*?guideNote\(/, 'the not-covered state renders the guide note');
+  assert.match(appJs, /T\('placeFrom', \{ where/);
+  assert.match(strings.en.placeFrom, /this device/);
+  assert.doesNotMatch(strings.en.fromGuideWait, /is kept,/, 'before a covered place the plant is not kept yet');
+});
+
+test('a plant that misfits offers Swap and Remove, never a change to the site answers (F2)', () => {
+  assert.doesNotMatch(appJs, /fitsWith|data-act="fit"|'fit',|\bfit\(v\)/);
+  assert.equal([...appJs.matchAll(/T\('nm\.try'/g)].length, 1, 'nm.try belongs to the no-match state only');
+  const att = appJs.match(/function attentionHTML[\s\S]*?\n\}/)[0];
+  assert.match(att, /'swap'/); assert.match(att, /'remove'/);
+});
+
+test('a site or place change that rebuilds unkept plants offers Undo (F2)', () => {
+  assert.match(appJs, /esc\(T\('redoneSite'\)\), 'redo'\)/);
+  assert.match(appJs, /holdForRedo\(`site-/, 'site answers');
+  assert.match(appJs, /function choosePlace\(country, region\) \{\n  holdForRedo\(/, 'a place');
+  assert.match(appJs, /T\('redonePlace', \{ where/);
+  assert.match(appJs, /v === 'redo'/);
+});
+
+test('each warning item is one list item with its own actions (F3)', () => {
+  const att = appJs.match(/function attentionHTML[\s\S]*?\n\}/)[0];
+  assert.match(att, /<ul class="att-list"/);
+  assert.match(att, /<li class="att-item"/);
+  assert.doesNotMatch(att, /join\(' · '\)/);
+});
+
+test('the desktop side panel always sticks and scrolls inside itself; the grow search and Fill come before the site questions (F4)', () => {
+  assert.doesNotMatch(appJs + css, /aside-sticky|fitAside/);
+  assert.match(css, /\.ct \.aside \{[^}]*position: sticky;[^}]*max-height: calc\(100dvh - 32px\);[^}]*overflow-y: auto;/);
+  const aside = appJs.match(/function asideHTML[\s\S]*?\n\}/)[0];
+  assert.ok(aside.indexOf("'open-add'") < aside.indexOf('ct-site-panel'), 'grow panel first');
+});
+
+test('Japanese keep labels read as a state and an action (N1)', () => {
+  assert.equal(strings.ja.keptTag, '残しています');
+  assert.equal(strings.ja.unkeep, '{name}を残す設定を外す');
+});
+
+test('the English and German wording reads naturally (N2)', () => {
+  assert.doesNotMatch(strings.en['step1.lede'], /grow with you/);
+  assert.doesNotMatch(strings.de.added, /und behalten/);
+});
+
+test('logic: Tropical in a Northern American country says why it is not covered (N3)', () => {
+  assert.deepEqual(coverageHint(manifest, 'tropical', 'MX'), { region: 'southern_america', north: 'northern_america' });
+  assert.deepEqual(coverageHint(manifest, 'tropical', 'US'), { region: 'southern_america', north: 'northern_america' });
+  assert.equal(coverageHint(manifest, 'tropical', 'JP'), null);
+  assert.equal(coverageHint(manifest, 'tropical', 'BR'), null, 'a covered country needs no hint');
+  assert.equal(coverageHint(manifest, 'temperate', 'MX'), null, 'no temperate list in Central and South America');
+  assert.equal(coverageHint(manifest, 'tropical', null), null);
+  const names = { en: 'Northern America', fr: 'Amérique du Nord', de: 'Nordamerika' };
+  for (const lang of locales) {
+    assert.deepEqual(placeholders(strings[lang]['nc.why']), ['{country}', '{north}', '{region}'], lang);
+    assert.ok(!/\.\s+\S/.test(strings[lang]['nc.why'].trim().replace(/[.。]$/, '')), `${lang}: one sentence`);
+  }
+  assert.ok(names.en);
+  assert.match(appJs, /coverageHint\(manifest, S\.climate, S\.country\)/);
 });

@@ -618,5 +618,11 @@
   "consortium.whatJob": "这些作用是什么？",
   "consortium.ex.job.title": "每种植物都有自己的作用",
   "consortium.ex.job": "一个联合体分担六项作用，一种植物可以承担好几项。没有植物承担的作用就是空缺：下面每张卡片都显示由谁承担，或者该找什么。",
-  "consortium.swapNowLayer": "当前：{layer}"
+  "consortium.swapNowLayer": "当前：{layer}",
+  "consortium.fromGuideWait": "指南建议的植物：{plant}。选择一个有清单的地点后，它就会被保留。",
+  "consortium.placeFrom": "地点“{where}”来自你在这台设备上的上一个植物联合体。",
+  "consortium.redoneSite": "已按这个场地重新推荐植物。保留的植物不变。",
+  "consortium.redonePlace": "你为{where}做的植物联合体已放到一边。",
+  "consortium.nc.why": "这个气候在测试版中只覆盖{region}，而数据把{country}归入{north}。",
+  "consortium.removeShort": "移除"
 }

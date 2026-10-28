@@ -618,5 +618,11 @@
   "consortium.whatJob": "Wat zijn deze taken?",
   "consortium.ex.job.title": "Elke plant heeft een taak",
   "consortium.ex.job": "Een consortium verdeelt zes taken, en één plant kan er meerdere doen. Een taak die niemand doet is een gat: elke kaart hieronder toont wie haar doet, of waar je naar kunt zoeken.",
-  "consortium.swapNowLayer": "Nu: {layer}"
+  "consortium.swapNowLayer": "Nu: {layer}",
+  "consortium.fromGuideWait": "Door de gids voorgesteld: {plant}. De plant wordt gehouden zodra je een plek met een lijst kiest.",
+  "consortium.placeFrom": "De plek, {where}, komt uit je laatste consortium op dit apparaat.",
+  "consortium.redoneSite": "Nieuwe planten voorgesteld voor dit terrein. Gehouden planten blijven.",
+  "consortium.redonePlace": "Je consortium voor {where} is opzijgezet.",
+  "consortium.nc.why": "Voor dit klimaat dekt de bèta {region}, en in de gegevens hoort het gekozen land ({country}) bij {north}.",
+  "consortium.removeShort": "Weghalen"
 }

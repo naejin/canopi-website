@@ -618,5 +618,11 @@
   "consortium.whatJob": "Que sont ces rôles ?",
   "consortium.ex.job.title": "Chaque plante a un rôle",
   "consortium.ex.job": "Une guilde se partage six rôles, et une plante peut en tenir plusieurs. Un rôle que personne ne tient est un manque : chaque carte ci-dessous montre qui le tient, ou quoi chercher.",
-  "consortium.swapNowLayer": "Aujourd’hui : {layer}"
+  "consortium.swapNowLayer": "Aujourd’hui : {layer}",
+  "consortium.fromGuideWait": "Plante proposée par la fiche : {plant}. Elle sera gardée dès que vous choisirez un endroit qui a une liste.",
+  "consortium.placeFrom": "Lieu repris de votre dernière guilde sur cet appareil : {where}.",
+  "consortium.redoneSite": "Nouvelles plantes proposées pour ce terrain. Les plantes gardées restent.",
+  "consortium.redonePlace": "Votre guilde pour {where} a été mise de côté.",
+  "consortium.nc.why": "Pour ce climat, la bêta couvre la région « {region} », et dans les données, le pays choisi ({country}) fait partie de la région « {north} ».",
+  "consortium.removeShort": "Retirer"
 }
