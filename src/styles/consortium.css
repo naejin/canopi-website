@@ -412,7 +412,11 @@
 @media (max-width: 639px) {
   .ct .toast { width: auto; left: 12px; right: 12px; transform: none; bottom: 14px; }
   .ct .toast .button { min-height: 44px; }
+  /* C15: the words above, the buttons below at full width. */
+  .ct .toast { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px; }
+  .ct .toast-acts .button { flex: 1 1 0; }
 }
+.ct .toast-acts { display: flex; gap: 8px; }
 /* Loading / error / empty / not covered */
 .ct .skeleton { display: grid; gap: 20px; }
 .ct .sk { background: var(--surface-alt); border-radius: 8px; animation: pulse 1.4s ease-in-out infinite; }
@@ -599,7 +603,7 @@
   .ct .job .guide-link { min-height: 44px; }
 }
 /* Add sheet: full height on phone, compact rows, filters, groups */
-.ct .add-filters { display: flex; flex-wrap: wrap; gap: 10px; margin-top: -10px; }
+.ct .add-filters { display: flex; flex-wrap: wrap; gap: 10px; }
 .ct .sel { display: inline-flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 600; }
 .ct .sel select { min-height: 40px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg); font-weight: 400; }
 .ct .list-count { font-size: 14px; color: var(--text-muted); margin-top: -10px; }
@@ -907,6 +911,9 @@
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow);
 }
 .ct .fmenu-list { left: 0; max-height: 60vh; overflow: auto; }
+/* An open menu stays above the selection bar (B1). */
+.ct .ftools:has(.fmenu-list) { z-index: 9; }
+.ct .fmenu-head { display: none; }
 .ct .lmenu { right: 0; }
 .ct .fmenu-item, .ct .lmenu-item { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 5px; background: none; text-align: start; font-size: 15.5px; color: var(--text); white-space: nowrap; }
 .ct .lmenu-item { justify-content: flex-start; gap: 10px; }
@@ -940,7 +947,13 @@
 .ct .lg-warn { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; font-size: 14px; color: var(--warning); }
 .ct .lg-warn:empty { display: none; }
 .ct .lrows { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
-.ct .lrow { position: relative; padding: 6px 12px; border-top: 1px solid var(--border); }
+.ct .lrow { position: relative; min-height: 56px; padding: 4px 12px; border-top: 1px solid var(--border); }
+/* A row the filters hide stays written in its group (B2: shown or hidden, never written again). */
+.ct .lrow[hidden] { display: none; }
+/* B2: the browser lays out only the rows near the screen; a row with its menu open draws in full. */
+.ct .lrow { content-visibility: auto; contain-intrinsic-size: auto 56px; }
+.ct .lrow:has(.lmenu) { content-visibility: visible; }
+.ct .selwrap { display: contents; }
 .ct .lrow:first-child { border-top: 0; }
 .ct .lrow[data-sel="true"] { box-shadow: inset 4px 0 0 var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
 .ct .ltick { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; cursor: pointer; }
@@ -952,7 +965,7 @@
 .ct .lmore-btn[aria-expanded="true"] { border-color: var(--border-strong); background: var(--surface-alt); }
 .ct .lmore { position: relative; }
 .ct .lplant { display: grid; gap: 2px; min-width: 0; }
-.ct .lname-btn { display: grid; gap: 1px; padding: 4px 0; border: 0; background: none; text-align: start; color: var(--text); }
+.ct .lname-btn { display: grid; gap: 1px; padding: 2px 0; border: 0; background: none; text-align: start; color: var(--text); line-height: 1.3; }
 .ct .lname-btn:hover .lname { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.2em; }
 .ct .lname { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
 .ct .lsci { font-size: 14px; color: var(--text-muted); overflow-wrap: anywhere; }
@@ -975,7 +988,8 @@
 .ct .warn-inv { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .ct .warn-tox { color: var(--danger); border-color: var(--danger); background: transparent; }
 .ct .warn-pest { color: var(--text-secondary); border-color: var(--border-strong); background: transparent; font-weight: 400; }
-.ct .warn-site { color: var(--warning); border-color: var(--warning-line); background: var(--warning-bg); }
+/* C8: an outline with no fill, so it never reads as the filled "invasive here" chip. */
+.ct .warn-site { color: var(--warning); border-color: var(--warning-line); background: none; }
 .ct .warn-chip.warn-soft { color: var(--warning); border-color: var(--warning-line); font-weight: 400; }
 .ct .warn-more { font-size: 13px; font-weight: 600; color: var(--text-muted); padding: 0 4px; }
 .ct .inv-count { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border: 1px dashed var(--border-strong); border-radius: 6px; font-size: 13px; color: var(--text-muted); white-space: nowrap; }
@@ -1001,6 +1015,7 @@ html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
 .ct .att-line > svg { color: var(--warning); }
 .ct .att-line .count { font-variant-numeric: tabular-nums; color: var(--text-secondary); }
 .ct .att-names { font-size: 14px; color: var(--text-muted); }
+.ct .att-note { font-size: 14px; color: var(--text-muted); }
 @media (min-width: 640px) and (max-width: 959px) {
   .ct .lgroups, .ct .lcols { --lcols: 44px 44px minmax(160px, 1fr) 56px 112px 122px minmax(140px, 1fr) 44px; }
   .ct .lgroups.no-country, .ct .lbody:has(.no-country) .lcols { --lcols: 44px 44px minmax(150px, 1fr) 56px 112px 122px 100px minmax(120px, 1fr) 44px; }
@@ -1013,13 +1028,22 @@ html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
   .ct .fchips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -4px; padding: 2px 4px; }
   .ct .fchip-btn { min-height: 44px; white-space: nowrap; }
   .ct .fchip-x { min-width: 44px; }
+  /* B1: the chips scroll sideways, which would clip a menu hanging from one, so on a phone the menu
+     is a sheet at the bottom of the screen, inside it whatever the chip's place. */
+  .ct .fmenu-list {
+    position: fixed; z-index: 30; top: auto; left: 8px; right: 8px; bottom: 8px; min-width: 0; max-height: 70vh; max-height: 70dvh;
+    padding: 6px; border-color: var(--border-strong); border-radius: 12px; overscroll-behavior: contain;
+  }
+  .ct .fmenu-head { display: block; padding: 6px 12px 4px; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
   .ct .lcols { display: none; }
   .ct .lgroup-head { padding: 4px 6px; }
   .ct .lg-jobs { display: none; }
   .ct .lrow-phone { grid-template-columns: 44px minmax(0, 1fr) 44px 44px; align-items: start; padding: 6px 4px; column-gap: 2px; }
   .ct .lrow-phone .lname-btn { display: grid; gap: 4px; min-height: 44px; padding: 6px 4px; }
-  .ct .lline1 { display: block; }
-  .ct .lline1 .lsci { display: block; }
+  /* The scientific name on the name's line, cut short when it runs out of room (C15). */
+  .ct .lline1 { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ct .lline1 .lsci { display: inline; overflow-wrap: normal; }
+  .ct .lrow-phone { min-height: 0; }
   .ct .lline2 { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
   .ct .lmenu { min-width: 200px; }
   .ct .selbar { bottom: 6px; padding: 8px 10px; }
@@ -1059,6 +1083,8 @@ html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
 .ct-drawer .paste-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
 .ct-drawer .paste-foot p { display: grid; gap: 2px; font-size: 15px; }
 .ct-drawer .paste-foot p span { font-size: 14px; color: var(--warning); }
+.ct-drawer .paste-foot p.add-foot-n { display: block; }
+.ct-drawer .paste-foot p.add-foot-n span { font-size: 15px; color: var(--text-secondary); }
 @media (max-width: 639px) {
   .ct-drawer .paste-foot .button { flex: 1 1 100%; }
 }

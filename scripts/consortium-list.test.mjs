@@ -144,3 +144,65 @@ test('all 200 Temperate names pasted over an empty design are all found, and mat
   const en = S.readPaste(temperate.taxa.filter((t) => t.names.en).map((t) => t.names.en), { cell: temperate, members: [] });
   assert.ok(en.found.length + en.choose.length >= 190, `${en.found.length} found, ${en.choose.length} to choose`);
 });
+
+// ---------- Scale review B (scale-b-bugs.md, verified) ----------
+test('B5: a name with several matches in another climate\'s list goes to Choose, tagged with that list, never to "none"', () => {
+  const others = [['mediterranean', mediterranean], ['tropical', tropical]];
+  const r = S.readPaste(['Banana', 'Citrus', 'Diospyros', 'Cistus'], { cell: temperate, others, members: [] });
+  assert.deepEqual(r.none, [], 'every one of them is in some list');
+  for (const n of ['Banana', 'Citrus', 'Diospyros', 'Cistus']) {
+    const c = r.choose.find((x) => x.name === n);
+    assert.ok(c && c.taxa.length > 1, `${n} to choose`);
+    assert.ok(['mediterranean', 'tropical'].includes(c.climate), `${n} names its list`);
+    assert.ok(c.taxa.every((t) => !temperate.taxa.some((x) => x.id === t.id)), `${n}: plants of that list only`);
+  }
+  // A choice made in this climate's own list has no list tag.
+  assert.equal(S.readPaste(['Rubus'], { cell: temperate, others, members: [] }).choose[0].climate, null);
+});
+
+test('B6: names are folded once; 1,000 unmatched lines read against all three lists take well under 300 ms', () => {
+  const lines = Array.from({ length: 1000 }, (_, i) => `Plantus inventus${i} ${String.fromCharCode(97 + (i % 26))}x`);
+  const names = S.pasteNames(lines.join('\n'));
+  const others = [['mediterranean', mediterranean], ['tropical', tropical]];
+  S.readPaste(names.slice(0, 5), { cell: temperate, others, members: [] }); // the lists' indexes, built once
+  const t0 = performance.now();
+  const r = S.readPaste(names, { cell: temperate, others, members: [] });
+  const ms = performance.now() - t0;
+  assert.equal(r.none.length, 1000);
+  assert.ok(ms < 300, `read in ${Math.round(ms)} ms`);
+  // A close spelling is still found in every list.
+  assert.equal(S.readPaste(['Coryllus avellana'], { cell: temperate, others, members: [] }).found[0].close, 'Corylus avellana');
+});
+
+test('B8: a plant found by one name and offered under a genus has one tick default everywhere', () => {
+  const apple = named(temperate, 'Malus domestica');
+  const r = S.readPaste(['Malus domestica', 'Malus'], { cell: temperate, members: [] });
+  assert.equal(S.pasteDefault(r, apple.id), true, 'found: ticked, in Found and in Choose');
+  const other = r.choose[0].taxa.find((t) => t.id !== apple.id);
+  assert.equal(S.pasteDefault(r, other.id), false);
+});
+
+test('B9: the column names are read from is always one the text has', () => {
+  assert.equal(S.pasteColumn('a\tb\tc', 2), 2);
+  assert.equal(S.pasteColumn('Apple\nPear', 2), 0, 'a plain list after a 3-column one');
+  assert.equal(S.pasteColumn('', 1), 0);
+});
+
+test('B11: spreadsheet quotes are stripped, a quoted cell may hold a line break, and a header row never reaches the groups', () => {
+  assert.deepEqual(S.pasteNames('"Malus domestica"\n"Pyrus communis"'), ['Malus domestica', 'Pyrus communis']);
+  assert.deepEqual(S.pasteNames('"Apple, Malus domestica"\tx'), ['Apple', 'Malus domestica']);
+  const t = S.pasteTable('"Malus\ndomestica"\t1\nPear\t2');
+  assert.equal(t.rows.length, 2, 'the quoted line break stays in its cell');
+  assert.deepEqual(S.pasteNames('"Malus\ndomestica"\t1\nPear\t2'), ['Malus domestica', 'Pear']);
+  assert.deepEqual(S.pasteNames('He said ""hi""'), ['He said ""hi""'], 'quotes inside an unquoted cell stay');
+  const names = S.pasteNames('Scientific name\tCommon name\nMalus domestica\tApple\nPyrus communis\tPear');
+  const r = S.readPaste(names, { cell: temperate, members: [] });
+  assert.equal(r.found.length, 2);
+  assert.deepEqual(r.none, [], 'the header is left out of every group');
+  assert.equal(r.header, 'Scientific name', 'and said apart, as the column names');
+  // Only a table's first row can be a header: a plain list's first name stays where it belongs.
+  const plain = S.readPaste(S.pasteNames('Juglans nigra\nMalus domestica'), { cell: temperate, members: [] });
+  assert.deepEqual(plain.none.map((x) => x.name), ['Juglans nigra']);
+  assert.equal(plain.header, null);
+  assert.equal(S.readPaste(S.pasteNames('Zzzz\nYyyy'), { cell: temperate, members: [] }).none.length, 2);
+});

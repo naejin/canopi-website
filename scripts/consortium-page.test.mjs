@@ -495,8 +495,14 @@ test('a guide preset never lands silently: the guide note shows on "Not covered 
 test('a plant that misfits offers Swap and Remove, never a change to the site answers (F2)', () => {
   assert.doesNotMatch(appJs, /fitsWith|data-act="fit"|'fit',|\bfit\(v\)/);
   assert.equal([...appJs.matchAll(/T\('nm\.try'/g)].length, 1, 'nm.try belongs to the no-match state only');
-  const att = appJs.match(/function attentionHTML[\s\S]*?\n\}/)[0];
-  assert.match(att, /'swap'/); assert.match(att, /'remove'/);
+  // C5 (scale review B): the warning box has one line per kind at every size; "Not suited to your
+  // site" shows its plants in the list, where each row has Swap and Remove. No line offers a site change.
+  const att = appJs.match(/function attentionScaleHTML[\s\S]*?\n\}/)[0];
+  assert.match(att, /\['site', SITE, T\('d\.misfit'\)\]/);
+  assert.match(att, /'fset', 'warn:' \+ k/);
+  assert.doesNotMatch(att, /'relax'|'open-site'|'focus-site'/);
+  assert.match(appJs, /btn\('act lswap', 'swap'/, 'Swap on each row');
+  assert.match(appJs, /btn\('lmenu-item', 'remove'/, 'Remove in each row\'s menu');
 });
 
 test('a site or climate change that rebuilds unkept plants offers Undo; a country change keeps the plants (F2)', () => {
@@ -514,11 +520,16 @@ test('a site or climate change that rebuilds unkept plants offers Undo; a countr
   assert.match(choose, /say\(countryAnnouncement\(W, place\(\)\)\)/);
 });
 
-test('each warning item is one list item with its own actions (F3)', () => {
-  const att = appJs.match(/function attentionHTML[\s\S]*?\n\}/)[0];
-  assert.match(att, /<ul class="att-list"/);
-  assert.match(att, /<li class="att-item"/);
-  assert.doesNotMatch(att, /join\(' · '\)/);
+test('each warning kind is one list item with its own Show (F3, C5)', () => {
+  assert.match(appJs, /function attentionHTML\(\) \{ return attentionScaleHTML\(\); \}/, 'the same box at every size');
+  const att = appJs.match(/function attentionScaleHTML[\s\S]*?\n\}/)[0];
+  assert.match(att, /<ul class="att-lines" role="list">/);
+  assert.match(att, /<li class="att-line att-\$\{k\}">/);
+  // §2.6 order: invasive, toxic, site, pests, somewhere, unchecked.
+  const order = [...att.matchAll(/\['(\w+)', (?:I\.\w+|SITE|BUG|GLOBE),/g)].map((m) => m[1]);
+  assert.deepEqual(order, ['invasive', 'toxic', 'site', 'pests', 'somewhere', 'unchecked']);
+  assert.match(att, /T\('att\.uncheckedNote'\)/);
+  assert.doesNotMatch(appJs.match(/function chipsHTML[\s\S]*?\n\}/)[0], /warn-unknown/, 'no "not checked yet" chip on a card');
 });
 
 test('the desktop side panel always sticks and scrolls inside itself; the grow search and Fill come before the site questions (F4)', () => {
@@ -776,7 +787,7 @@ test('one warning heading everywhere: consortium.withWarning, in every locale (o
   const appJs = read('src/scripts/consortium/app.js');
   const labels = [...appJs.matchAll(/<h3 class="list-label">([^<]*?)\$\{esc\(T\('(\w+)'\)\)\}/g)].map((m) => m[2]);
   assert.deepEqual(labels, ['withWarning', 'withWarning', 'otherLists'], 'Swap and Add head their flagged plants alike; Add then lists the other climates\' plants');
-  assert.match(appJs.match(/function attentionHTML[\s\S]*?\n\}/)[0], /<strong>\$\{esc\(T\('withWarning'\)\)\}<\/strong>/, 'the warnings summary');
+  assert.match(appJs.match(/function attentionScaleHTML[\s\S]*?\n\}/)[0], /<strong>\$\{esc\(T\('withWarning'\)\)\}<\/strong>/, 'the warnings summary');
   assert.match(appJs.match(/function printHTML[\s\S]*?\n\}/)[0], /<th>\$\{esc\(T\('withWarning'\)\)\}<\/th>/, 'print');
   assert.equal([...appJs.matchAll(/<span class="vh">\$\{esc\(T\('withWarning'\)\)\}<\/span>/g)].length, 3, 'the marks on the drawing, its key and the Over time rows');
 });

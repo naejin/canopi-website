@@ -17,7 +17,8 @@ const ids = temperate.taxa.map((t) => t.id);
 const named = (n) => temperate.taxa.find((t) => t.canonical_name === n);
 const hashOf = (t) => t.entry().url.hash;
 const stateOf = (t) => core.decodeState(new URLSearchParams(hashOf(t).slice(1)), temperate, { tropical, mediterranean }).state;
-const rows = (page) => [...page.$$('.lrow[data-id]')].map((el) => el.attribs['data-id']);
+// The rows in view: a row the filters hide stays in its open group, `hidden` (B2).
+const rows = (page) => [...page.$$('.lrow[data-id]')].filter((el) => !('hidden' in el.attribs)).map((el) => el.attribs['data-id']);
 const cards = (page) => [...page.$$('.plant[data-id]')].map((el) => el.attribs['data-id']);
 const click = async (page, el, init = {}) => {
   el.focus();
@@ -133,9 +134,11 @@ test('an unchecked country is said once in the view, never per row', async () =>
   assert.ok(unchecked);
   const { page } = await open200({ country: unchecked });
   await page.act('group', 'high');
-  const where = new Intl.DisplayNames(['en'], { type: 'region' }).of(unchecked);
-  const all = page.text().split(`not checked in ${where}`).length - 1;
-  assert.ok(all >= 1 && all <= 2, `said ${all} times`);
+  // C16 (scale-b fix): above 20 plants the place chips in the head say the country and its status
+  // ("not checked: there is no invasive list for this country"); no sub-line repeats them.
+  const all = page.text().split(/not checked: there is no invasive list for this country|invasive status not checked in/).length - 1;
+  assert.equal(all, 1, `said ${all} times`);
+  assert.ok(!page.$('.result-sub'), 'no sub-line under the title beside the place chips');
   assert.equal([...page.$$('.lrow')].filter((r) => /not checked in/i.test(page.text(`.lrow[data-id="${r.attribs['data-id']}"]`))).length, 0);
 });
 
@@ -307,10 +310,11 @@ test('the Add search marks the plants already in the design', async () => {
   const tx = fixture.taxa.find((x) => x.id === inside);
   await page.act('open-add');
   await page.type('#ct-add-q', tx.canonical_name);
-  const row = [...page.$$('#ct-add-results .alt')].find((li) => li.querySelector(`[data-v="${inside}"]`));
+  const row = [...page.$$('#ct-add-results .add-row')].find((li) => li.querySelector(`[data-v="${inside}"]`));
   assert.ok(row);
   assert.match(page.text('#ct-add-results'), /In your consortium/);
-  assert.ok(!row.querySelector('[data-act="add"]'), 'no Add for a plant already in');
+  const box = row.querySelector('[data-act="atick"]');
+  assert.ok('disabled' in box.attribs && 'checked' in box.attribs, 'ticked and disabled for a plant already in');
 });
 
 // ---------- Print and share ----------
@@ -328,4 +332,175 @@ test('print at 200 plants is one table grouped by layer, every plant once; the s
   assert.equal(st.kept.length, 190);
   assert.ok(shared.hash.length < 2000, `${shared.hash.length} characters`);
   assert.equal(stateOf(t).members.length, 200);
+});
+
+// ---------- Scale review B (scale-b-bugs.md, verified; coordinator rulings 2026-10-28) ----------
+const tabOf = (page) => page.$('.tabpanel');
+test('B2: Keep, a tick, a typed search, a menu and a group patch the list in place; the rest of the result is not written again', async () => {
+  const { page } = await open200();
+  for (const s of ['emergent', 'high', 'medium', 'low']) await page.act('group', s);
+  const panel = tabOf(page), tools = page.$('#ct-ftools'), first = rows(page)[3];
+  const other = page.$(`.lrow[data-id="${rows(page)[9]}"]`);
+  await page.act('keep', first);
+  assert.equal(tabOf(page), panel, 'the drawing stays as it was');
+  assert.equal(page.$(`.lrow[data-id="${rows(page)[9]}"]`), other, 'another row stays as it was');
+  assert.equal(page.$(`.lrow[data-id="${first}"] [data-act="keep"]`).attribs['aria-pressed'], 'false', 'its row says so');
+  assert.equal(page.focused().attribs['data-fk'], 'kp-' + first);
+  await page.act('sel', first);
+  assert.equal(tabOf(page), panel);
+  assert.match(page.text('.selbar'), /1 selected/);
+  await page.act('fmenu', 'warn');
+  assert.equal(page.$('#ct-ftools'), tools, 'a menu redraws its own chip only');
+  assert.ok(page.$('.fmenu-list'));
+  await page.act('fmenu', 'warn');
+  await page.type('[data-input="find"]', 'cherry');
+  assert.equal(tabOf(page), panel);
+  assert.equal(page.$('#ct-ftools'), tools, 'the search field is never written again');
+  assert.ok(rows(page).length >= 1 && rows(page).length < 20);
+  assert.ok(rows(page).every((id) => /cherry/i.test(page.text(`.lrow[data-id="${id}"]`))));
+});
+
+test('B4: a filter that hides ticked rows unticks them, so Remove n removes only what shows; Undo focuses a row in view', async () => {
+  const { t, page } = await open200();
+  const fr = (n) => named(n).id;
+  await page.type('[data-input="find"]', 'Prunus');
+  const prunus = rows(page);
+  assert.ok(prunus.length >= 3);
+  for (const id of prunus.slice(0, 3)) await page.act('sel', id);
+  await page.type('[data-input="find"]', '');
+  await page.type('[data-input="find"]', named('Prunus avium').canonical_name);
+  const shown = rows(page);
+  assert.deepEqual(shown.filter((id) => prunus.slice(0, 3).includes(id)).length, page.$('.selbar') ? Number(/(\d+) selected/.exec(page.text('.selbar'))?.[1]) : 0, 'the bar counts only what shows');
+  if (page.$('[data-act="bulk-remove"]')) {
+    const n = Number(/(\d+) selected/.exec(page.text('.selbar'))[1]);
+    await page.act('bulk-remove');
+    assert.equal(stateOf(t).members.length, 200 - n);
+    await page.act('undo', 'bulk');
+    assert.equal(stateOf(t).members.length, 200);
+    assert.ok(rows(page).includes(page.focused().closest('.lrow')?.attribs['data-id']), 'the focus is on a row in view');
+  }
+  assert.ok(fr('Prunus avium'));
+});
+
+test('B5, B7, C1: Banana and Citrus pasted into Temperate are offered to choose from their list; Add all adds flagged plants and says how many have a warning, with Show', async () => {
+  const t = tab(device(), '/consortium/', { siteClimate: 'temperate', data: 'real' });
+  const page = await t.load();
+  await page.act('suggest');
+  await page.act('open-add');
+  await page.act('add-tab', 'paste');
+  await page.type('#ct-paste', 'Banana\nCitrus');
+  await page.settle();
+  const text = page.text('#ct-dialog');
+  assert.doesNotMatch(text, /Not in any of Canopi’s lists yet/, 'never "none"');
+  assert.ok(page.$$('.paste-choose').length === 2, text);
+  assert.ok(page.$$('.paste-choose legend .tag-from').length === 2, 'each tagged with its list');
+  const pick = page.$('.paste-choose [data-act="ptick"]').attribs['data-v'];
+  await page.act('ptick', pick);
+  await page.act('paste-add');
+  assert.ok(stateOf(t).guests.some((g) => g.id === pick), 'it joins as a guest of its list');
+  // Add all with flagged plants: no question, a count of the warned ones and Show.
+  await page.act('open-add');
+  await page.act('add-tab', 'paste');
+  await page.type('#ct-paste', ['Robinia pseudoacacia', 'Pyrus communis', 'Malus domestica'].join('\n'));
+  await page.act('paste-add');
+  assert.ok(!page.$('#ct-dialog').open, 'added without asking');
+  assert.match(page.text('#ct-toast'), /3 plants added and kept · \d+ with a warning\./);
+  await page.act('show-warned');
+  assert.equal(page.$('[data-act="fmenu"][data-v="warn"]')?.closest('.fchip').attribs.class.includes('is-on'), true, 'Show sets the Warning filter');
+});
+
+test('C2: the Search tab ticks plants, names them in its foot, adds them all and stays open', async () => {
+  const t = tab(device(), '/consortium/', { siteClimate: 'temperate', data: 'real' });
+  const page = await t.load();
+  await page.act('suggest');
+  await page.act('open-add', 'grow');
+  assert.equal(page.text('#ct-dlg-title'), 'Add plants');
+  assert.match(page.text('#ct-dialog .lede'), /Tick as many as you like/);
+  await page.type('#ct-add-q', 'cherry');
+  const free = [...page.$$('[data-act="atick"]')].filter((b) => !('disabled' in b.attribs)).map((b) => b.attribs['data-v']);
+  assert.ok(free.length >= 2);
+  for (const id of free.slice(0, 2)) await page.act('atick', id);
+  await page.type('#ct-add-q', 'cherr');
+  assert.match(page.text('#ct-add-foot'), /2 to add · .+, .+|2 to add · .+ and .+/);
+  assert.match(page.text('#ct-add-foot'), /Add 2 plants/);
+  assert.match(page.text('.add-row small'), /·/, 'layer · height · jobs');
+  await page.act('add-ticked');
+  for (const id of free.slice(0, 2)) assert.ok(stateOf(t).members.includes(id));
+  assert.ok(page.$('#ct-dialog').open, 'the sheet stays open');
+  for (const id of free.slice(0, 2)) assert.ok('disabled' in page.$(`[data-act="atick"][data-v="${id}"]`).attribs, 'now already in');
+});
+
+test('C3, B10: an unchecked country offers no "invasive in"; a country chosen with "invasive somewhere" on turns it to "invasive in"', async () => {
+  const unchecked = Object.entries(JSON.parse(read('public/data/consortium/manifest.json')).countries).find(([, c]) => !c.invasive_checked)?.[0];
+  const { page } = await open200({ country: unchecked });
+  await page.act('fmenu', 'warn');
+  assert.ok(!page.$('[data-act="fset"][data-v="warn:invasive"]'));
+  assert.ok(!page.$('[data-act="fset"][data-v="warn:somewhere"]'));
+  // No country: "invasive somewhere"; France chosen then turns it to "invasive in France".
+  const none = await open200({ country: null }, { lang: 'en', languages: ['en'] });
+  await none.page.act('open-place', 'country');
+  if (none.page.$('[data-act="no-country"]')) await none.page.act('no-country');
+  await none.page.act('fmenu', 'warn');
+  await none.page.act('fset', 'warn:somewhere');
+  await none.page.act('open-place', 'country');
+  await none.page.act('country', 'FR');
+  assert.match(none.page.text('[data-act="fmenu"][data-v="warn"]'), /invasive in France/i);
+});
+
+test('B13: a menu counts what it would show with the search and the other filters as they are', async () => {
+  const { page } = await open200();
+  await page.type('[data-input="find"]', 'Prunus');
+  const n = rows(page).length;
+  await page.act('fmenu', 'kept');
+  const all = Number(page.text('[data-act="fset"][data-v="kept:"] .fmenu-n'));
+  assert.equal(all, n);
+});
+
+test('B12, B14: a group the reader closed stays closed after a Remove; the view never flips; Start over then Undo gives the list back as it was', async () => {
+  const { page } = await open200();
+  await page.act('group', 'high');
+  await page.act('group', 'high');
+  await page.act('group', 'low');
+  await page.act('fmenu', 'layer');
+  await page.act('fset', 'layer:low');
+  const id = rows(page)[0];
+  await page.act('rmenu', id);
+  await page.act('remove', id);
+  assert.equal(page.$('.lgroup[data-s="high"]').attribs['data-open'], 'false', 'High stays closed');
+  assert.equal(page.$('[data-act="mode"][data-v="list"]').attribs['aria-pressed'], 'true');
+  await page.act('start-over');
+  await page.act('undo', 'start');
+  assert.equal(page.$('[data-act="mode"][data-v="list"]').attribs['aria-pressed'], 'true');
+  assert.match(page.text('[data-act="fmenu"][data-v="layer"]'), /Low/, 'the filter is back');
+});
+
+test('C5: at 9 plants the warning box has one line per kind with Show, and no card says "not checked yet"', async () => {
+  const t = tab(device(), '/consortium/', { siteClimate: 'temperate', data: 'real' });
+  const page = await t.load();
+  await page.act('suggest');
+  assert.ok(cards(page).length <= 20);
+  assert.equal(page.$$('.plant .warn-unknown').length, 0);
+  if (page.$('.attention')) {
+    assert.ok(page.$$('.att-line').length >= 1);
+    for (const li of page.$$('.att-line')) assert.ok(li.querySelector('[data-act="fset"]'), 'a Show per line');
+  }
+});
+
+// The words a toast showed, even once its timer (run at once here) has hidden it.
+function toastLog(page) {
+  const el = page.$('#ct-toast'), log = [], own = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'innerHTML');
+  Object.defineProperty(el, 'innerHTML', { configurable: true, get() { return own.get.call(this); }, set(v) { if (v) log.push(String(v).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()); own.set.call(this, v); } });
+  return log;
+}
+test('B16: the share toast says what the link holds and how it opens; a guessed country is said, with the country to choose', async () => {
+  const { page } = await open200();
+  const log = toastLog(page);
+  await page.act('share');
+  assert.match(log.at(-1), /^Link copied: all 200 plants, [\d.]+ kB\. It opens this consortium with warnings for France\.$/);
+  // No country in the link (the harness's browser guesses France): said, with France to choose.
+  const guessed = await open200({ country: null });
+  await guessed.page.act('share');
+  assert.match(guessed.page.text('#ct-toast'), /France was only a guess, so the link has no country: it opens with each plant’s count of countries\./);
+  await guessed.page.act('share-guess');
+  assert.match(new URL(guessed.page.clipboard).hash, /[#&]k=FR/, 'copied again with France');
 });

@@ -4,7 +4,7 @@
 // filters, range selection, and reading a pasted list of names. Pure (no DOM, no strings), so
 // scripts/consortium-list.test.mjs tests it on the fixture and the real Temperate list.
 import { phases, jobsOf, isSerious } from '../../lib/consortium/index.ts';
-import { fold, searchText, plantName } from './words.js';
+import { fold, searchText } from './words.js';
 import { uncheckedOnCard } from './logic.js';
 
 // Cards up to 20 plants, the list above, until the reader chooses (coordinator, 2026-10-28).
@@ -104,23 +104,48 @@ export function groupTick(ids, selected) {
 }
 
 // ---------- Paste a list (design-scale.md §2.5) ----------
-// The lines of a paste and, when it has tabs, its columns: { lines: [[cell, …], …], columns }.
+// The rows of a paste and, when it has tabs, its columns: { rows: [[cell, …], …], columns }. Read as a
+// spreadsheet writes it (B11): a cell that starts with a quote runs to its closing quote, may hold tabs
+// and line breaks, and has its quotes taken off ("" is one quote); other cells are kept as typed.
 export function pasteTable(text) {
-  const lines = String(text ?? '').split(/\r?\n/).map((l) => l.replace(/\s+$/, '')).filter((l) => l.trim());
-  const rows = lines.map((l) => (l.includes('\t') ? l.split('\t') : [l]));
-  return { rows, columns: Math.max(0, ...rows.map((r) => r.length)) };
+  const src = String(text ?? '').replace(/\r\n?/g, '\n'), rows = [];
+  let row = [], cell = '', quoted = false, start = true, tabs = false;
+  const endCell = () => { row.push(cell.replace(/\s+$/, '')); cell = ''; start = true; };
+  const endRow = () => { endCell(); if (row.some((c) => c.trim())) rows.push(row); row = []; };
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (quoted) {
+      if (c === '"' && src[i + 1] === '"') { cell += '"'; i++; }
+      else if (c === '"') quoted = false;
+      else cell += c;
+      continue;
+    }
+    if (start && c === '"' && src.indexOf('"', i + 1) > 0) { quoted = true; start = false; continue; }
+    if (c === '\t') { tabs = true; endCell(); continue; }
+    if (c === '\n') { endRow(); continue; }
+    if (start && /\s/.test(c)) { cell += c; continue; }
+    start = false; cell += c;
+  }
+  endRow();
+  return { rows: tabs ? rows : rows.map((r) => [r.join('\t')]), columns: Math.max(0, ...rows.map((r) => r.length)) };
 }
-// The names in one column (0-based): a cell split on commas and semicolons, each name once.
+// The column names are read from, always one the text has (B9): a plain list after a 3-column one reads column 1.
+export const pasteColumn = (text, column) => (column > 0 && column < pasteTable(text).columns ? column : 0);
+// The names in one column (0-based): a cell split on commas and semicolons, each name once. In a table
+// (two columns or more, two rows or more) the first row's names are kept apart as `head`, a header
+// readPaste may leave out.
 export function pasteNames(text, column = 0) {
-  const out = [], seen = new Set();
-  for (const row of pasteTable(text).rows) {
+  const out = [], seen = new Set(), table = pasteTable(text), head = [];
+  table.rows.forEach((row, r) => {
     for (const part of String(row[column] ?? '').split(/[,;]/)) {
       const name = part.replace(/\s+/g, ' ').trim();
       const key = fold(name);
       if (!name || seen.has(key)) continue;
       seen.add(key); out.push(name);
+      if (r === 0) head.push(name);
     }
-  }
+  });
+  Object.defineProperty(out, 'head', { value: table.columns > 1 && table.rows.length > 1 ? head : [], enumerable: false });
   return out;
 }
 const RANK_WORDS = new Set(['subsp', 'ssp', 'var', 'f', 'cv', 'x', '×', 'agg', 'sp', 'spp']);
@@ -142,17 +167,36 @@ export function oneOff(a, b) {
   }
   return edits + (la - i) + (lb - j) <= 1;
 }
-// One index of a list for matching: scientific names, binomials, genera, and every common name.
+// One index of a list for matching: scientific names, binomials, genera, every common name, and every
+// name folded once, by length, for the close-spelling pass (B6: a paste costs about its number of lines).
 export function nameIndex(taxa) {
-  const sci = new Map(), bi = new Map(), genus = new Map(), common = new Map();
+  const sci = new Map(), bi = new Map(), genus = new Map(), common = new Map(), byLen = new Map();
   const add = (m, k, t) => { if (!k) return; const l = m.get(k) ?? []; if (!l.includes(t)) l.push(t); m.set(k, l); };
-  for (const t of taxa) {
+  taxa.forEach((t, at) => {
     add(sci, fold(t.canonical_name), t);
     add(bi, binomial(t.canonical_name), t);
     add(genus, fold(t.genus ?? t.canonical_name.split(' ')[0]), t);
     for (const n of Object.values(t.names)) add(common, fold(n).trim(), t);
+    [t.canonical_name, ...Object.values(t.names)].forEach((n, o) => {
+      const f = fold(n).trim();
+      if (f.length < 4) return;
+      const l = byLen.get(f.length) ?? []; l.push({ f, t, n, at, o }); byLen.set(f.length, l);
+    });
+  });
+  return { sci, bi, genus, common, byLen, taxa };
+}
+// The index of a climate file, built once per file (and, for another climate's file, once per list it
+// is read beside: only its own plants).
+const indexes = new WeakMap();
+function indexOf(file, without = null) {
+  let byCell = indexes.get(file);
+  if (!byCell) indexes.set(file, (byCell = new Map()));
+  const key = without ?? file;
+  if (!byCell.has(key)) {
+    const skip = without ? new Set(without.taxa.map((t) => t.id)) : null;
+    byCell.set(key, nameIndex(skip ? file.taxa.filter((t) => !skip.has(t.id)) : file.taxa));
   }
-  return { sci, bi, genus, common, taxa };
+  return byCell.get(key);
 }
 // One name against one list: { how: 'exact' | 'close' | 'choose', taxa, close? } or null.
 // Exact scientific name, then genus + species, then a common name in any language, then a genus or a
@@ -163,27 +207,34 @@ export function matchName(name, idx) {
   const hit = one(idx.sci.get(f), 'exact') ?? (b && one(idx.bi.get(b), 'exact')) ?? one(idx.common.get(f), 'exact');
   if (hit) return hit;
   if (!f.includes(' ') && idx.genus.get(f)?.length) return { how: 'choose', taxa: idx.genus.get(f) };
-  const close = [];
-  for (const t of idx.taxa) {
-    const names = [t.canonical_name, ...Object.values(t.names)];
-    const n = names.find((x) => oneOff(fold(x).trim(), f));
-    if (n) close.push({ t, n });
+  // Each plant once, by the first of its names (scientific name first) that is one letter off.
+  const close = new Map();
+  for (let len = f.length - 1; len <= f.length + 1; len++) {
+    for (const e of idx.byLen?.get(len) ?? []) {
+      if (!oneOff(e.f, f)) continue;
+      const had = close.get(e.t);
+      if (!had || e.o < had.o) close.set(e.t, e);
+    }
   }
-  if (close.length === 1) return { how: 'close', taxa: [close[0].t], close: close[0].n };
-  if (close.length > 1) return { how: 'choose', taxa: close.map((c) => c.t) };
+  const list = [...close.values()].sort((x, y) => x.at - y.at);
+  if (list.length === 1) return { how: 'close', taxa: [list[0].t], close: list[0].n };
+  if (list.length > 1) return { how: 'choose', taxa: list.map((c) => c.t) };
   return null;
 }
 // A whole paste, sorted into the groups the sheet shows, each name once:
 //   found   one plant of this climate's list (ticked), close spellings marked
-//   choose  several plants match (a genus or a shared name): none ticked
-//   other   only another climate's list has it: "Add anyway"
+//   choose  several plants match (a genus or a shared name): none ticked; `climate` names another
+//           climate's list when only that list has them (B5), null for this one
+//   other   only another climate's list has it, one plant: "Add anyway"
 //   already in the consortium already
 //   none    in no list
+//   header  a table's first row that matches no list while rows below do: its column names (B11),
+//           left out of every group
 // cell: this climate's file; others: [[climate, file], …] (crops.js inClimateOrder); members: ids.
 export function readPaste(names, { cell, others = [], members = [] }) {
-  const here = nameIndex(cell.taxa), ins = new Set(members), seen = new Set();
-  const lists = others.map(([climate, file]) => [climate, nameIndex(file.taxa.filter((t) => !cell.taxa.some((x) => x.id === t.id)))]);
-  const out = { found: [], choose: [], other: [], already: [], none: [] };
+  const here = indexOf(cell), ins = new Set(members), seen = new Set();
+  const lists = others.map(([climate, file]) => [climate, indexOf(file, cell)]);
+  const out = { found: [], choose: [], other: [], already: [], none: [], header: null };
   for (const name of names) {
     const m = matchName(name, here);
     if (m && m.how !== 'choose') {
@@ -193,21 +244,31 @@ export function readPaste(names, { cell, others = [], members = [] }) {
       (ins.has(t.id) ? out.already : out.found).push({ name, taxon: t, close: m.close ?? null });
       continue;
     }
-    if (m) { out.choose.push({ name, taxa: m.taxa, inside: m.taxa.filter((t) => ins.has(t.id)).map((t) => t.id) }); continue; }
+    const inside = (taxa) => taxa.filter((t) => ins.has(t.id)).map((t) => t.id);
+    if (m) { out.choose.push({ name, taxa: m.taxa, inside: inside(m.taxa), climate: null }); continue; }
     let elsewhere = null;
-    for (const [climate, idx] of lists) {
-      const o = matchName(name, idx);
-      if (o && o.taxa.length === 1) { elsewhere = { name, climate, taxon: o.taxa[0], close: o.close ?? null }; break; }
-    }
-    if (elsewhere && !seen.has(elsewhere.taxon.id)) { seen.add(elsewhere.taxon.id); (ins.has(elsewhere.taxon.id) ? out.already : out.other).push(elsewhere); }
-    else if (!elsewhere) out.none.push({ name });
+    for (const [climate, idx] of lists) { const o = matchName(name, idx); if (o) { elsewhere = { climate, o }; break; } }
+    if (!elsewhere) { out.none.push({ name }); continue; }
+    const { climate, o } = elsewhere;
+    if (o.how === 'choose') { out.choose.push({ name, taxa: o.taxa, inside: inside(o.taxa), climate }); continue; }
+    const t = o.taxa[0];
+    if (seen.has(t.id)) continue;
+    seen.add(t.id);
+    (ins.has(t.id) ? out.already : out.other).push({ name, climate, taxon: t, close: o.close ?? null });
+  }
+  const head = names.head ?? [];
+  const matched = out.found.length + out.choose.length + out.other.length + out.already.length;
+  if (head.length && matched && head.every((h) => out.none.some((x) => x.name === h))) {
+    out.none = out.none.filter((x) => !head.includes(x.name));
+    out.header = head.join(', ');
   }
   return out;
 }
+// The tick a pasted plant starts with, the same in every group it shows in (B8): ticked when it was
+// found by one of its names, else not (a Choose line ticks nothing on its own).
+export const pasteDefault = (r, id) => r.found.some((f) => f.taxon.id === id);
 // A short sample of a column, for the column picker: "column 1 (Malus domestica…)".
 export const columnSample = (text, column, max = 18) => {
   const first = pasteTable(text).rows.find((r) => (r[column] ?? '').trim())?.[column]?.trim() ?? '';
   return first.length > max ? first.slice(0, max) + '…' : first;
 };
-// The name a row shows for a taxon: what plantName gives (for sorting and the selection bar).
-export const shownName = (t, lang) => plantName(t, lang).text;

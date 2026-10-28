@@ -21,7 +21,8 @@ import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, c
 import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
-import { viewMode, groupOpen, roundHeight, stageSpan, stageShort, warnKinds, pestsOf, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, CARDS_UP_TO } from './scale.js';
+import { pestName } from './pests.js';
+import { viewMode, groupOpen, roundHeight, stageSpan, stageShort, warnKinds, pestsOf, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, pasteColumn, pasteDefault, PEST_TYPES, CARDS_UP_TO } from './scale.js';
 
 const data = JSON.parse(document.getElementById('ct-data').textContent);
 const W = makeWords(data.strings, data.lang);
@@ -113,16 +114,31 @@ let swapMore = 0;
 // ---------- The plant list's own view state (chunk B): never in a link ----------
 // mode: the reader's Cards/List choice (null: the default for the count, scale.js viewMode); F: the
 // list's filters, fOrder the order they were set (the active ones come first); fMenu: the open filter
-// menu; groups: the reader's open or closed layers; sel: the ticked rows, anchor the last one ticked
-// (Shift ranges from it); rMenu: the row whose ⋯ menu is open; lastBulk: what Undo restores after a
-// bulk Keep, Remove or Add.
+// menu; groups: the reader's open or closed layers, fgroups the ones opened or closed while a filter
+// is on (a new filter forgets them, the reader's own stay: B12); foldN: the count the groups' fold
+// default was read at, fixed once the list shows (a Remove never folds a group); sel: the ticked rows,
+// anchor the last one ticked (Shift ranges from it); rMenu: the row whose ⋯ menu is open; lastBulk:
+// what Undo restores after a bulk Keep, Remove or Add.
 let mode = null, F = { ...NO_FILTERS }, fOrder = [], fMenu = null, rMenu = null, anchor = null, lastBulk = null, shiftDown = false;
-const groups = new Map();
-let sel = new Set();
+const groups = new Map(), fgroups = new Map();
+let sel = new Set(), foldN = null;
 // The Add sheet's tab and its pasted list: the text, the column names are read from, the ticks the
 // reader changed (id → ticked).
 let addTab = 'search', pasteText = '', pasteCol = 0, pasteTicks = new Map(), pasteTimer = 0;
-function resetList() { mode = null; F = { ...NO_FILTERS }; fOrder = []; fMenu = null; rMenu = null; anchor = null; sel = new Set(); groups.clear(); }
+function resetList() { mode = null; F = { ...NO_FILTERS }; fOrder = []; fMenu = null; rMenu = null; anchor = null; sel = new Set(); groups.clear(); fgroups.clear(); foldN = null; }
+// A new list of plants (a paste added) reads the fold default again.
+function resetFold() { foldN = null; groups.clear(); fgroups.clear(); }
+// B14: the Cards/List default never flips while the reader works: a Remove, an Add or a Swap first
+// fixes the view the count gave.
+function pinView() { if (cell && S.status === 'ready') mode = viewMode(mode, members().length); }
+// What Start over → Undo gives back with the consortium (B14).
+const listState = () => ({ mode, F, fOrder, sel, anchor, foldN, groups: new Map(groups), fgroups: new Map(fgroups) });
+function restoreList(l) {
+  if (!l) return;
+  ({ mode, F, fOrder, sel, anchor, foldN } = l); fMenu = null; rMenu = null;
+  groups.clear(); for (const [k, v] of l.groups) groups.set(k, v);
+  fgroups.clear(); for (const [k, v] of l.fgroups) fgroups.set(k, v);
+}
 
 const inCell = (id) => !!cell?.taxa.some((t) => t.id === id);
 // The other lists in the climates' order (B9): the same list names a plant on every visit.
@@ -210,7 +226,8 @@ function misfitText(t, key) {
   if (key === 'light') return T('misfit.light.' + v);
   if (key === 'soil') return T('misfit.soil.' + v, { min: tr.soil_ph?.min != null ? W.num(tr.soil_ph.min) : '?', max: tr.soil_ph?.max != null ? W.num(tr.soil_ph.max) : '?' });
   if (key === 'water') return T('misfit.water.' + v);
-  const size = Math.max(tr.height_m?.max ?? 0, tr.width_max_m ?? 0);
+  // C7: the size rounded as the rows round heights (scale.js roundHeight).
+  const size = roundHeight(Math.max(tr.height_m?.max ?? 0, tr.width_max_m ?? 0)) ?? 0;
   return T('misfit.room.' + v, { w: W.num(size) });
 }
 const uncheckedKey = { tox: 'u.tox', inv: 'u.inv', spreads: 'u.spreads', jobs: 'u.jobs', jobsOther: 'u.jobsOther' };
@@ -237,10 +254,10 @@ function warnParts(t, flags) {
   return { severe, soft, unk };
 }
 function chipsHTML(t, flags) {
-  const { severe, soft, unk } = warnParts(t, flags);
+  const { severe, soft } = warnParts(t, flags);
   const out = severe.map((w) => `<span class="warn warn-${w.cls}">${w.cls === 'danger' ? I.danger : w.cls === 'unknown' ? I.unknown : I.warn}<span>${w.text}</span></span>`);
   if (soft.length) out.push(`<span class="warn warn-soft">${I.warn}<span>${esc(capFirst(soft.join(' · '), lang))}</span></span>`);
-  if (unk.length) out.push(`<span class="warn warn-unknown">${I.unknown}<span>${esc(T('unchecked', { list: W.list(unk) }))}</span></span>`);
+  // C5: what is not checked yet is said once, in the warning box, and in the plant's details.
   return out.length ? `<div class="warns">${out.join('')}</div>` : '';
 }
 // The same words in plain text, one per warning, for print (one line each) and the Swap/Add
@@ -492,22 +509,9 @@ const resultTitle = (text) => `<h2 id="ct-result-title" tabindex="-1">${esc(text
 function basisHTML() {
   return `<p class="basis"><span>${esc(T('basis', { site: basisText() }))}</span> ${btn('link-button', noAside() ? 'open-site' : 'focus-site', null, esc(T('basisChange')), fk('basis'))}</p>`;
 }
-function attentionHTML(flags) {
-  if (big()) return attentionScaleHTML();
-  const look = ordered().filter((t) => needsLook(t, flags.get(t.id)));
-  if (!look.length) return '';
-  const items = look.map((t) => {
-    const f = flags.get(t.id), why = warnParts(t, f).severe.filter((w) => w.look).map((w) => w.text);
-    // F2: a plant that does not fit the site (often a guide's or a kept one) says what it needs (its
-    // size against the room, its light…) and offers Swap and Remove. The site answers are facts about
-    // the reader's garden: they are never offered as a change to fit one plant.
-    const n = esc(nameText(t));
-    const acts = f.misfits.length ? `<span class="att-acts">${btn('link-button', 'swap', t.id, esc(T('swap')), `aria-haspopup="dialog" aria-label="${esc(T('swap'))}: ${n}" ${fk('asw-' + t.id)}`)}${btn('link-button', 'remove', t.id, esc(T('removeShort')), `aria-label="${esc(T('removeShort'))}: ${n}" ${fk('arm-' + t.id)}`)}</span>` : '';
-    return `<li class="att-item">${btn('link-button', 'goto', t.id, name(t))}${W.paren(W.list(why))}${acts}</li>`;
-  });
-  // F3: one item per line, each with its own actions.
-  return `<div class="attention">${I.warn}<div><p><strong>${esc(T('withWarning'))}</strong></p><ul class="att-list" role="list">${items.join('')}</ul></div></div>`;
-}
+// The warning box, at every size (C5, design-scale.md §2.6): one line per kind, each with its
+// count, up to three names and "Show n", which sets the list's Warning filter.
+function attentionHTML() { return attentionScaleHTML(); }
 // Shown only while Fill would add plants; the words never count places: the room limits the
 // plants' size, not their number (owner, 2026-10-28).
 function freeRowHTML(can) {
@@ -530,18 +534,22 @@ function notices(can) {
   if (S.unknownCountry) out += `<div class="note note-old" role="status">${I.info}<div><p>${esc(T('countryUnknown', { code: S.unknownCountry }))}</p><div class="note-actions">${btn('link-button', 'dismiss-country', null, esc(T('dismiss')))}</div></div></div>`;
   return out;
 }
+function summaryHTML() {
+  const ms = members(), jobsDone = jobs.length - jobGaps().length;
+  const lastEnd = Math.max(-1, ...ms.map((t) => (t.phases ? phases.indexOf(t.phases.end) : -1)));
+  return `<span><b>${esc(P('count', ms.length))}</b> · ${esc(T('basis.room.' + S.site.room))} · ${esc(P('keptCount', ms.filter((t) => S.kept.has(t.id)).length))}</span><span>${esc(T('sumLayers', { n: strataIn(ms).size }))}</span><span>${esc(T('sumJobs', { n: jobsDone }))}</span>${lastEnd >= 0 ? `<span>${esc(T('sumTime', { end: T(W.phaseKey(lastEnd, 'to')) }))}</span>` : ''}`;
+}
 function mainHTML() {
   if (S.status === 'loading') return `<div class="skeleton" aria-busy="true"><p class="status-line" role="status" id="ct-result-title" tabindex="-1"><span class="spinner" aria-hidden="true"></span>${esc(T('loading', { climate: climateLabel() }))}</p>
     <div class="sk" style="height:46px;width:60%"></div><div class="sk" style="height:22px"></div><div class="sk" style="height:44px;max-width:300px;border-radius:999px"></div><div class="sk sk-draw"></div><div class="sk" style="height:84px"></div></div>`;
   if (S.status === 'error') return `<div class="callout" role="alert">${resultTitle(T('errorTitle'))}<p>${esc(T('errorText'))}</p><div class="actions">${btn('button button-primary', 'retry', null, esc(T('retry')), fk('retry'))}</div></div>`;
   if (S.status === 'notcovered') return notCoveredHTML();
   if (S.status === 'nomatch') return `${notices(fillable())}${noAside() ? placeChips() : ''}${noMatchHTML()}${basisHTML()}`;
-  const ms = members(), flags = flagsById(), can = fillable(), jobsDone = jobs.length - jobGaps().length;
-  const lastEnd = Math.max(-1, ...ms.map((t) => (t.phases ? phases.indexOf(t.phases.end) : -1)));
+  const flags = flagsById(), can = fillable();
   return `${notices(can)}
-    <div class="result-head"><div>${resultTitle(T('yourConsortium'))}<p class="result-sub">${esc(climateLabel())}${S.country ? ' · ' + esc(warnWhere(W, place())) : ''}</p></div>${noAside() ? placeChips() : ''}</div>
-    <p class="summary-strip"><span><b>${esc(P('count', ms.length))}</b> · ${esc(T('basis.room.' + S.site.room))} · ${esc(P('keptCount', ms.filter((t) => S.kept.has(t.id)).length))}</span><span>${esc(T('sumLayers', { n: strataIn(ms).size }))}</span><span>${esc(T('sumJobs', { n: jobsDone }))}</span>${lastEnd >= 0 ? `<span>${esc(T('sumTime', { end: T(W.phaseKey(lastEnd, 'to')) }))}</span>` : ''}</p>
-    ${builtHTML()}${basisHTML()}${attentionHTML(flags)}${freeRowHTML(can)}
+    <div class="result-head"><div>${resultTitle(T('yourConsortium'))}${noAside() ? '' : `<p class="result-sub">${esc(climateLabel())}${S.country ? ' · ' + esc(warnWhere(W, place())) : ''}</p>`}</div>${noAside() ? placeChips() : ''}</div>
+    <p class="summary-strip" id="ct-summary">${summaryHTML()}</p>
+    ${builtHTML()}${basisHTML()}${attentionHTML()}${freeRowHTML(can)}
     <div class="tabs" role="tablist" aria-label="${esc(T('yourConsortium'))}">${['layers', 'time', 'jobs'].map((v) => `<button class="tab" role="tab" type="button" id="ct-tab-${v}" aria-selected="${S.view === v}" aria-controls="ct-panel" tabindex="${S.view === v ? 0 : -1}" data-act="view" data-v="${v}" ${fk('tab-' + v)}>${esc(T('tab.' + v))}</button>`).join('')}</div>
     <div role="tabpanel" id="ct-panel" aria-labelledby="ct-tab-${S.view}" class="tabpanel">${S.view === 'layers' ? layersHTML(flags) : S.view === 'time' ? timeHTML(flags) : jobsHTML()}</div>
     ${plantsHTML(flags)}
@@ -591,7 +599,7 @@ function explainPanel(id) {
   if (S.explain !== id) return '';
   const kind = id.startsWith('phase') ? 'phase' : id;
   const body = kind === 'stratum'
-    ? `<h4>${esc(T('ex.stratum.title'))}</h4><p>${esc(T('ex.stratum'))}</p><ul class="strata-mini" role="list">${strata.map((s) => `<li>${sw(s)}<span><b>${esc(stratumLabel(s))}</b> · ${esc(T('stratum.' + s + '.about'))}</span></li>`).join('')}</ul>`
+    ? `<h4>${esc(T('ex.stratum.title'))}</h4><p>${esc(T('ex.stratum'))}</p><ul class="strata-mini" role="list">${strata.map((s) => `<li>${sw(s)}<span><b>${esc(stratumLabel(s))}</b> · ${esc(lightWords(s))}</span></li>`).join('')}</ul>`
     : kind === 'job'
       ? `<h4>${esc(T('ex.job.title'))}</h4><p>${esc(T('ex.job'))}</p>`
       : `<h4>${esc(T('ex.phase.title'))}</h4><p>${esc(T('ex.phase'))}</p>`;
@@ -665,7 +673,9 @@ function filterValues(key) {
   if (key === 'layer') return [['', T('allLayers')], ...[...strata, 'none'].filter((s) => s !== 'none' || members().some((t) => !t.stratum)).map((s) => [s, stratumLabel(s)])];
   if (key === 'job') return [['', T('allJobs')], ...jobs.map((j) => [j, T('job.' + j)])];
   if (key === 'time') return [['', T('allStages')], ...phases.map((_, i) => [String(i), T(W.phaseKey(i, 'plain'))])];
-  if (key === 'warn') return [['', T('fk.all')], ...['any', S.country ? 'invasive' : 'somewhere', 'toxic', 'pests', 'site', 'unchecked'].map((v) => [v, filterValue('warn', v)])];
+  // C3: "invasive in {country}" only for a country whose invasive list is checked; with none chosen,
+  // "invasive somewhere"; with an unchecked one, neither (its status is said once, by the country).
+  if (key === 'warn') return [['', T('fk.all')], ...['any', S.country ? (countryChecked() ? 'invasive' : null) : 'somewhere', 'toxic', 'site', 'pests', 'unchecked'].filter(Boolean).map((v) => [v, filterValue('warn', v)])];
   return KEPT_FILTERS.map((v) => [v === 'all' ? '' : v, T('fk.' + v)]);
 }
 // What the list reads of a plant: its warning kinds (cached per state, like evaluate).
@@ -683,7 +693,8 @@ function listGroups() {
   const shown = on ? all.filter((t) => matches(t, F, ctx)) : all;
   return [...strata, 'none'].map((s) => {
     const total = all.filter((t) => stratumOf(t) === s), list = shown.filter((t) => stratumOf(t) === s);
-    const open = groupOpen(s, { total: all.length, shown: list.length, filtering: on, choice: groups.has(s) ? groups.get(s) : null });
+    const choices = on ? fgroups : groups;
+    const open = groupOpen(s, { total: foldN ?? all.length, shown: list.length, filtering: on, choice: choices.has(s) ? choices.get(s) : null });
     return { s, total, list, open };
   }).filter((g) => g.total.length);
 }
@@ -706,6 +717,8 @@ function jobsCells(t) {
   return jobs.map((j) => (has.includes(j) ? `<span class="ljob" title="${esc(T('job.' + j))}">${jobIcon(j, 16)}<span class="vh">${esc(T('job.' + j))}</span></span>` : '<span class="ljob" aria-hidden="true"></span>')).join('');
 }
 const BUG = svg(`<ellipse cx="8" cy="9" rx="3.2" ry="4.2" ${st}/><path d="M8 4.8V2.6M6.2 3.2 5 2M9.8 3.2 11 2M4.8 7.4 2.4 6.4M11.2 7.4l2.4-1M4.8 10.6l-2.4 1M11.2 10.6l2.4 1" ${st}/>`, 14);
+// C8: "not suited to your site" has its own mark, a place pin, never the invasive warning's.
+const SITE = svg(`<path d="M8 14.2s-4.6-4.1-4.6-7.4a4.6 4.6 0 0 1 9.2 0c0 3.3-4.6 7.4-4.6 7.4z" ${st}/><circle cx="8" cy="6.8" r="1.6" ${st}/>`, 14);
 const GLOBE = svg(`<circle cx="8" cy="8" r="6.2" ${st} stroke-dasharray="2 1.6"/><path d="M1.8 8h12.4M8 1.8c2 2 2 10.4 0 12.4M8 1.8c-2 2-2 10.4 0 12.4" ${st}/>`, 14);
 // A row's warnings: invasive in the chosen country (filled), toxic (red outline), shared pests (a
 // quiet outline naming the first two), not suited or a serious conflict, then the soft ones; the
@@ -715,13 +728,13 @@ function rowWarns(t, flags) {
   if (flags.invasive === true) out.push({ cls: 'warn-inv', icon: I.warn, text: T('invHere', { country: W.country(S.country) }) });
   if (tox === 'Moderate' || tox === 'Severe') out.push({ cls: 'warn-tox', icon: I.danger, text: T('tox.' + tox) });
   const pests = pestsOf(flags);
-  if (pests.length) out.push({ cls: 'warn-pest', icon: BUG, text: pests.slice(0, 2).join(' · ') });
-  for (const k of flags.misfits) out.push({ cls: 'warn-site', icon: I.warn, text: misfitText(t, k) });
-  for (const c of flags.conflicts) if (!PEST_TYPE.has(c.type) && isSerious(c)) out.push({ cls: 'warn-site', icon: I.warn, text: T('conflict', { other: nameText(otherOf(c, t)) }) });
+  // C6: the pests by their common names (pests.js); the details keep the scientific one.
+  if (pests.length) out.push({ cls: 'warn-pest', icon: BUG, text: capFirst(pests.slice(0, 2).map((a) => pestName(a, lang)).join(' · '), lang) });
+  for (const k of flags.misfits) out.push({ cls: 'warn-site', icon: SITE, text: misfitText(t, k) });
+  for (const c of flags.conflicts) if (!PEST_TYPES.has(c.type) && isSerious(c)) out.push({ cls: 'warn-site', icon: SITE, text: T('conflict', { other: nameText(otherOf(c, t)) }) });
   if (tox === 'Slight') out.push({ cls: 'warn-soft', icon: I.warn, text: T('tox.Slight') });
   return out;
 }
-const PEST_TYPE = new Set(['shared_pest', 'alternate_host']);
 function warnChips(list, max = 2) {
   const shown = list.slice(0, max), rest = list.slice(max);
   return shown.map((w) => `<span class="warn-chip ${w.cls}">${w.icon}<span>${esc(w.text)}</span></span>`).join('')
@@ -764,32 +777,105 @@ function listRow(t, flags) {
     <span class="ljobs">${jobsCells(t)}</span>${S.country ? '' : `<span class="linv">${invCount(t)}</span>`}<span class="lwarns">${warnChips(warns)}</span>
     ${isCrop(t.id) ? '<span></span>' : btn('act lswap', 'swap', t.id, `${I.swap}<span>${esc(T('swap'))}</span>`, `aria-haspopup="dialog" aria-label="${esc(T('swap'))} ${esc(n)}" ${fk('sw-' + t.id)}`)}${more}</li>`;
 }
-function groupHTML(g, flags) {
+// The rows as last written, by plant: patchList rewrites only the ones whose markup changed.
+// The rows, group heads, results line and selection bar as last written: patchList rewrites only
+// the ones whose markup changed.
+const rowCache = new Map(), partCache = new Map();
+function rowHTML(t, flags) { const html = listRow(t, flags); rowCache.set(t.id, html); return html; }
+const part = (key, html) => { partCache.set(key, html); return html; };
+function groupHeadHTML(g) {
   const ids = g.list.map((t) => t.id), tick = groupTick(ids, sel), on = filtering(F);
   const warnN = g.list.filter((t) => kindsOf(t).has('any')).length;
-  const count = on ? T('shownOf', { n: W.num(g.list.length), total: W.num(g.total.length) }) : P('count', g.total.length);
+  const count = on ? P('shownOf', g.list.length, { total: W.num(g.total.length) }) : P('count', g.total.length);
   const label = [stratumLabel(g.s), lightWords(g.s), count, warnN ? P('withWarnCount', warnN) : ''].filter(Boolean).join(', ');
   const did = new Set(g.list.flatMap(jobsOf));
   const box = `<label class="ltick"><input type="checkbox" data-act="gsel" data-v="${g.s}" aria-label="${esc(T('selectLayer', { layer: stratumLabel(g.s) }))}"${tick === 'all' ? ' checked' : ''}${tick === 'some' ? ' data-mixed="true"' : ''}${ids.length ? '' : ' disabled'} ${fk('gsel-' + g.s)}></label>`;
-  return `<section class="lgroup" data-s="${g.s}"><div class="lgroup-head">${box}
+  return `<div class="lgroup-head">${box}
     <button class="lg-toggle" type="button" data-act="group" data-v="${g.s}" aria-expanded="${g.open}" aria-controls="ct-lg-${g.s}" aria-label="${esc(label)}" ${fk('lg-' + g.s)}>${I.caret}<span class="lg-name">${esc(stratumLabel(g.s))}</span> <span class="lg-light">${esc(lightWords(g.s))}</span></button>
     <span class="lg-count" aria-hidden="true">${esc(count)}</span><span class="lg-jobs" aria-hidden="true">${jobs.map((j) => (did.has(j) ? jobIcon(j, 14) : '<span class="lg-off">–</span>')).join('')}</span>
-    <span class="lg-warn" aria-hidden="true">${warnN ? `${I.warn}${esc(P('withWarnCount', warnN))}` : ''}</span></div>
-    ${g.open && g.list.length ? `<ul class="lrows" id="ct-lg-${g.s}" role="list">${g.list.map((t) => listRow(t, flags.get(t.id))).join('')}</ul>` : `<div id="ct-lg-${g.s}" hidden></div>`}</section>`;
+    <span class="lg-warn" aria-hidden="true">${warnN ? `${I.warn}${esc(P('withWarnCount', warnN))}` : ''}</span></div>`;
+}
+// An open group holds every row of its layer; the ones a filter hides carry `hidden` (B2: a typed
+// search or a filter shows and hides rows, it does not write them again).
+function groupHTML(g, flags) {
+  const shown = new Set(g.list.map((t) => t.id));
+  return `<section class="lgroup" data-s="${g.s}" data-open="${g.open}">${part('head-' + g.s, groupHeadHTML(g))}
+    ${g.open && g.list.length ? `<ul class="lrows" id="ct-lg-${g.s}" role="list">${g.total.map((t) => rowHTML(t, flags.get(t.id)).replace('<li ', shown.has(t.id) ? '<li ' : '<li hidden ')).join('')}</ul>` : `<div id="ct-lg-${g.s}" hidden></div>`}</section>`;
+}
+// The list in place (B2, design-scale.md §2.10): a Keep, a tick, a typed search, a filter or a
+// group rewrites the rows whose markup changed, the group heads, the results line and the
+// selection bar, and shows or hides the other rows; never the whole result. False when the list
+// is not on the page in the shape it was written (refreshList then writes its body again).
+// only: the plants whose row may read differently (a Keep, a tick); null for every row. A search,
+// a filter or a group changes no row's markup, only which rows show (an empty set).
+function patchList(only = null) {
+  const body = document.getElementById('ct-lbody');
+  if (!body) return false;
+  const flags = flagsById(), gs = listGroups(), secs = body.querySelectorAll('.lgroup');
+  if (secs.length !== gs.length || gs.some((g, i) => secs[i].dataset.s !== g.s)) return false;
+  gs.forEach((g, i) => {
+    const sec = secs[i];
+    if (sec.dataset.open !== String(g.open) || (g.open && !sec.querySelector('.lrows') !== !g.list.length)) { sec.outerHTML = groupHTML(g, flags); return; }
+    const head = sec.querySelector('.lgroup-head'), html = groupHeadHTML(g);
+    if (head && partCache.get('head-' + g.s) !== html) head.outerHTML = part('head-' + g.s, html);
+    if (!g.open || !g.list.length) return;
+    const shown = new Set(g.list.map((t) => t.id)), rows = new Map([...sec.querySelectorAll('.lrow')].map((r) => [r.dataset.id, r]));
+    for (const t of g.total) {
+      let row = rows.get(t.id);
+      if (!row) { sec.outerHTML = groupHTML(g, flags); return; }
+      const markup = only && !only.has(t.id) ? rowCache.get(t.id) : listRow(t, flags.get(t.id));
+      if (rowCache.get(t.id) !== markup) { rowCache.set(t.id, markup); row.outerHTML = markup; row = [...sec.querySelectorAll('.lrow')].find((r) => r.dataset.id === t.id); }
+      if (row && row.hidden !== !shown.has(t.id)) row.hidden = !shown.has(t.id);
+    }
+  });
+  const res = body.querySelector('.fresults'), line = resultsLine();
+  if (res && partCache.get('res') !== line) res.innerHTML = part('res', line);
+  const bar = body.querySelector('#ct-selbar'), barHTML = selBarHTML();
+  if (bar && partCache.get('bar') !== barHTML) bar.innerHTML = part('bar', barHTML);
+  markMixed();
+  return true;
+}
+// The filter chips again (their names, their order, an open menu's counts).
+function patchChips() {
+  const chips = app.querySelector('.fchips');
+  if (chips) chips.innerHTML = filterOrder(F, fOrder).map(filterChip).join('');
+}
+// One chip: its menu opened or closed.
+function patchChip(key) {
+  const chip = key && app.querySelector(`.fchip[data-key="${key}"]`);
+  if (chip) chip.outerHTML = filterChip(key);
+}
+// The summary line (the kept count).
+function patchSummary() { const el = document.getElementById('ct-summary'); if (el) el.innerHTML = summaryHTML(); }
+// B4: the selection holds only rows the filters show: Keep n and Remove n act on what the reader sees.
+// Returns the plants it unticked (their rows change).
+function pruneSel() {
+  if (!sel.size || !filtering(F)) return new Set();
+  const shown = new Set(listGroups().flatMap((g) => g.list.map((t) => t.id)));
+  const gone = new Set([...sel].filter((id) => !shown.has(id)));
+  if (gone.size) { sel = new Set([...sel].filter((id) => shown.has(id))); if (anchor && !sel.has(anchor)) anchor = null; }
+  return gone;
+}
+// B3: a plant just added, swapped in or brought back shows in the list: its group opens, and the
+// filters that would hide it go.
+function reveal(id) {
+  if (!listMode()) return;
+  const t = taxonOf(id);
+  if (!t) return;
+  if (filtering(F) && !matches(t, F, filterCtx())) { F = { ...NO_FILTERS }; fOrder = []; fgroups.clear(); }
+  (filtering(F) ? fgroups : groups).set(stratumOf(t), true);
 }
 // The filter row: the text search (the only role=search), then the menu buttons, the active ones
 // first, named with their value, each with its own ✕ (M2).
 function filterChip(key) {
   const v = F[key], on = v !== '', name = T('f.' + key), open = fMenu === key;
   const label = on ? T('filterOn', { name, value: filterValue(key, v) }) : name;
-  const counts = key === 'kept' ? keptCounts(S.members, { kept: S.kept, crops: S.crops }) : null;
-  const countOf = (val) => {
-    if (counts) return counts[val || 'all'];
-    const ctx = filterCtx(), probe = { ...NO_FILTERS, [key]: val };
-    return members().filter((t) => matches(t, probe, ctx)).length;
-  };
-  const menu = open ? `<div class="fmenu-list" id="ct-fm-${key}">${filterValues(key).map(([val, l]) => btn('fmenu-item', 'fset', `${key}:${val}`, `<span>${esc(capFirst(l, lang))}</span><span class="fmenu-n">${W.num(countOf(val))}</span>`, `aria-pressed="${v === val}" ${fk(`fs-${key}-${val}`)}`)).join('')}</div>` : '';
-  return `<span class="fchip${on ? ' is-on' : ''}">${btn('fchip-btn', 'fmenu', key, `<span>${esc(label)}</span>${I.caret}`, `aria-expanded="${open}" aria-controls="ct-fm-${key}" ${fk('fm-' + key)}`)}${on ? btn('fchip-x', 'fclear', key, I.close, `aria-label="${esc(T('filterClear', { name: label }))}" ${fk('fx-' + key)}`) : ''}${menu}</span>`;
+  // B13: a value's count is what the list would show with it, the other filters and the search as they are.
+  const ctx = filterCtx(), ms = open ? members() : [];
+  const countOf = (val) => { const probe = { ...F, [key]: val }; return ms.filter((t) => matches(t, probe, ctx)).length; };
+  // On a phone the menu is a sheet at the bottom of the screen (B1): its head names the filter.
+  const menu = open ? `<div class="fmenu-list" id="ct-fm-${key}"><p class="fmenu-head" aria-hidden="true">${esc(name)}</p>${filterValues(key).map(([val, l]) => btn('fmenu-item', 'fset', `${key}:${val}`, `<span>${esc(capFirst(l, lang))}</span><span class="fmenu-n">${W.num(countOf(val))}</span>`, `aria-pressed="${v === val}" ${fk(`fs-${key}-${val}`)}`)).join('')}</div>` : '';
+  return `<span class="fchip${on ? ' is-on' : ''}" data-key="${key}">${btn('fchip-btn', 'fmenu', key, `<span>${esc(label)}</span>${I.caret}`, `aria-expanded="${open}" aria-controls="ct-fm-${key}" ${fk('fm-' + key)}`)}${on ? btn('fchip-x', 'fclear', key, I.close, `aria-label="${esc(T('filterClear', { name: label }))}" ${fk('fx-' + key)}`) : ''}${menu}</span>`;
 }
 function resultsLine() {
   if (!filtering(F)) return '';
@@ -809,12 +895,13 @@ function selBarHTML() {
 }
 // The part of the list a filter, a tick or a typed search changes (the search field stays as it is).
 function listBodyHTML(flags) {
-  return `<p class="fresults">${resultsLine()}</p>
+  return `<p class="fresults">${part('res', resultsLine())}</p>
     <div class="lcols" aria-hidden="true"><span></span><span>${esc(T('col.kept'))}</span><span>${esc(T('p.plant'))}</span><span>${esc(T('t.height'))}</span><span>${esc(T('col.leads'))}</span><span class="lcol-jobs">${jobs.map((j) => jobIcon(j, 14)).join('')}</span>${S.country ? '' : `<span class="lcol-inv">${esc(T('col.invIn'))}</span>`}<span>${esc(T('col.warnings'))}</span></div>
-    <div class="lgroups${S.country ? '' : ' no-country'}">${listGroups().map((g) => groupHTML(g, flags)).join('')}</div>${selBarHTML()}`;
+    <div class="lgroups${S.country ? '' : ' no-country'}">${listGroups().map((g) => groupHTML(g, flags)).join('')}</div><div id="ct-selbar" class="selwrap">${part('bar', selBarHTML())}</div>`;
 }
 function listHTML(flags) {
   const keys = filterOrder(F, fOrder);
+  foldN ??= members().length;
   return `<div class="plist">${btn('skip-list', 'skip-list', null, esc(T('skipList')), fk('skip-list'))}
     <div class="lkey"><p><b>${esc(T('jobsKey'))}:</b> ${jobs.map((j) => `<span>${jobIcon(j, 14)}${esc(T('job.' + j))}</span>`).join('')}</p><p><b>${esc(T('stageBar'))}:</b> <span class="stagebar stagebar-key" aria-hidden="true">${phases.map((_, i) => `<i${i >= 3 ? ' data-on="true"' : ''}></i>`).join('')}</span> <span>${esc(T('stageBarKey'))}</span></p></div>
     <div class="ftools" id="ct-ftools"><div class="find" role="search" aria-label="${esc(T('findLabel'))}">${I.search}<input type="search" autocomplete="off" spellcheck="false" aria-label="${esc(T('findLabel'))}" placeholder="${esc(P('findIn', members().length))}" value="${esc(F.q)}" data-input="find" ${fk('find')}></div>
@@ -846,7 +933,7 @@ function cardsHTML(flags) {
     const list = ordered().filter((t) => stratumOf(t) === s), gaps = S.gaps.filter((g) => g.stratum === s);
     if (s === 'none' && !list.length) return '';
     return `<section class="stratum-group" aria-labelledby="ct-sg-${s}">
-      <div class="stratum-head"><h3 id="ct-sg-${s}">${esc(stratumLabel(s))}</h3><p>${esc(T('stratum.' + s + '.about'))}</p><span class="count">${list.length}</span></div>
+      <div class="stratum-head"><h3 id="ct-sg-${s}">${esc(stratumLabel(s))}</h3><p>${esc(lightWords(s))}</p><span class="count">${list.length}</span></div>
       ${list.length ? `<ul class="plants" role="list">${list.map((t) => plantRow(t, nums, flags.get(t.id))).join('')}</ul>` : ''}
       ${gaps.map((g) => `<div class="gap-row"><span>${T('gapRow', { name: g.name })}</span>${btn('button button-secondary button-small', 'open-add', 'stratum:' + s, esc(T('findPlant')), fk('gap-' + g.id))}</div>`).join('')}
       ${!list.length && !gaps.length ? `<div class="gap-row"><span>${esc(T('emptyLayer'))}</span>${btn('button button-secondary button-small', 'open-add', 'stratum:' + s, esc(T('emptyLayerFind')), fk('empty-' + s))}</div>` : ''}
@@ -866,14 +953,16 @@ function plantsHTML(flags) {
 // "Show n" that sets the list's Warning filter (design-scale.md §2.6).
 function attentionScaleHTML() {
   const ms = members(), any = ms.filter((t) => kindsOf(t).has('any'));
-  const kinds = [S.country ? ['invasive', I.warn, T('invHere', { country: W.country(S.country) })] : null, ['toxic', I.danger, T('tox.Moderate')], ['pests', BUG, T('att.pests')], ['site', I.warn, T('d.misfit')], S.country ? null : ['somewhere', GLOBE, T('att.somewhere')], ['unchecked', I.unknown, T('att.unchecked')]].filter(Boolean);
+  // §2.6 order: invasive here, toxic, not suited, pests, invasive somewhere, not checked yet.
+  const kinds = [S.country && countryChecked() ? ['invasive', I.warn, T('invHere', { country: W.country(S.country) })] : null, ['toxic', I.danger, T('tox.Moderate')], ['site', SITE, T('d.misfit')], ['pests', BUG, T('att.pests')], S.country ? null : ['somewhere', GLOBE, T('att.somewhere')], ['unchecked', I.unknown, T('att.unchecked')]].filter(Boolean);
   const lines = kinds.map(([k, icon, label]) => {
     const list = ms.filter((t) => kindsOf(t).has(k));
     if (!list.length) return '';
-    return `<li class="att-line att-${k}">${icon}<div><p><strong>${esc(label)}</strong> <span class="count">${W.num(list.length)}</span></p><p class="att-names">${esc(namesLine(list.map((t) => t.id)))}</p></div>${btn('button button-secondary button-small', 'fset', 'warn:' + k, esc(P('showN', list.length)), fk('att-' + k))}</li>`;
+    const note = k === 'unchecked' ? `<p class="att-note">${esc(T('att.uncheckedNote'))}</p>` : '';
+    return `<li class="att-line att-${k}">${icon}<div><p><strong>${esc(label)}</strong> <span class="count">${W.num(list.length)}</span></p><p class="att-names">${esc(namesLine(list.map((t) => t.id)))}</p>${note}</div>${btn('button button-secondary button-small', 'fset', 'warn:' + k, esc(P('showN', list.length)), fk('att-' + k))}</li>`;
   }).join('');
   if (!lines) return '';
-  return `<div class="attention attention-scale">${I.warn}<div><p><strong>${esc(T('withWarning'))}</strong> <span class="muted">${esc(T('attOf', { n: W.num(any.length), total: W.num(ms.length) }))}</span></p><ul class="att-lines" role="list">${lines}</ul></div></div>`;
+  return `<div class="attention attention-scale">${I.warn}<div><p><strong>${esc(T('withWarning'))}</strong> <span class="muted">${esc(P('attOf', any.length, { total: W.num(ms.length) }))}</span></p><ul class="att-lines" role="list">${lines}</ul></div></div>`;
 }
 
 // ---------- Over time ----------
@@ -1000,7 +1089,7 @@ function detailsParts(t) {
   const mainSec = crop ? `<section class="d-section d-main"><h3>${esc(T('mainCrop'))}</h3><p>${esc(T('mainCropText'))}</p>${btn('link-button', 'change-crops', null, esc(T('changeCrops')), fk('d-crops'))}</section>` : '';
   const fromSec = from ? `<section class="d-section d-from"><h3>${esc(capFirst(fromListLabel(from), lang))}</h3><p>${esc(guest ? T('fromListText', { anyway: T('addAnyway'), list: listName(from), here: listName(S.climate) }) : T('inOtherList', { list: listName(from), here: listName(S.climate) }))}</p></section>` : '';
   const body = `${photo}${mainSec}${fromSec}
-    <div class="d-layer"><span>${esc(stratumLabel(s))}${s !== 'none' ? ' · ' + esc(T('stratum.' + s + '.about')) : ''}</span><span>${esc(tw.plain)}${tw.term ? ' · ' + esc(tw.term) : ''}</span></div>
+    <div class="d-layer"><span>${esc(stratumLabel(s))}${s !== 'none' ? ' · ' + esc(lightWords(s)) : ''}</span><span>${esc(tw.plain)}${tw.term ? ' · ' + esc(tw.term) : ''}</span></div>
     ${t.reasons?.length ? `<section class="d-section"><h3>${esc(T(from ? 'whyInList' : crop ? 'whatItDoes' : 'why'))}</h3>${reasonsHTML(t, W, lang, sources)}</section>` : ''}
     <section class="d-section"><h3>${esc(T('jobsHeading'))}</h3>${!jobsList.length ? `<p class="muted">${esc(T('d.jobsUnk'))}</p>` : `<div class="plant-meta">${jobsList.map((j) => `<span class="job-tag">${jobIcon(j, 14)}${esc(T('job.' + j))}</span>`).join('')}</div>`}</section>
     <section class="d-section"><h3>${esc(T('checks'))}</h3><ul class="w-list" role="list">${items.join('')}</ul></section>
@@ -1075,7 +1164,7 @@ function addResults() {
   list = [...list].sort((a, b) => nameText(a).localeCompare(nameText(b), lang));
   const flagOf = new Map(list.map((t) => [t.id, flagsFor(cell, t.id, S.members, { site: S.site, guests: guestTaxa(), ...where() })]));
   const fit = list.filter((t) => !flagOf.get(t.id).flagged), flagged = list.filter((t) => flagOf.get(t.id).flagged);
-  const row = (t) => altRow(t, `<span>${esc(stratumLabel(stratumOf(t)))}</span><span>${esc(jobsOf(t).map((j) => T('job.' + j)).join(' · '))}</span>`, 'add', T('add'), flagOf.get(t.id), { disabled: S.members.includes(t.id) });
+  const row = (t) => addTick(t, flagOf.get(t.id));
   // M11: grouped by layer; plants with a warning last, in their own group.
   const byLayer = [...strata, 'none'].map((s) => {
     const g = fit.filter((t) => stratumOf(t) === s);
@@ -1085,6 +1174,20 @@ function addResults() {
     ${!list.length ? `<p class="muted">${esc(T('emptyList'))}</p>` : ''}
     ${filters.job && !fit.length && flagged.length ? `<p class="note note-dashed">${I.unknown}<span>${esc(T('noFitForJob'))}</span></p>` : ''}
     ${byLayer}${flagged.length ? `<h3 class="list-label">${I.warn} ${esc(T('withWarning'))}</h3><p class="seg-hint">${esc(T('flaggedNote'))}</p><ul class="alt-list" role="list">${flagged.map(row).join('')}</ul>` : ''}${otherHitsHTML(filters)}`;
+}
+// C2 (mockup state 09): a tick per plant, kept while the search changes; the plants already in
+// are ticked and disabled; each says its layer, height and jobs, and its warnings.
+let addTicks = new Set();
+function addTick(t, flags) {
+  const inside = S.members.includes(t.id), on = inside || addTicks.has(t.id), n = nameText(t);
+  const warns = rowWarns(t, flags);
+  const meta = [stratumLabel(stratumOf(t)), heightText(t), W.list(jobsOf(t).map((j) => T('job.' + j)))].filter(Boolean).join(' · ');
+  return `<li class="paste-row add-row" data-in="${inside}"><label><input type="checkbox" data-act="atick" data-v="${t.id}" aria-label="${esc(T('addOne', { name: n }))}"${on ? ' checked' : ''}${inside ? ' disabled' : ''} ${fk('at-' + t.id)}><span><b>${name(t)}</b> ${sciHTML(t)} <small>${esc(meta)}${inside ? ` · <strong>${esc(T('inConsortium'))}</strong>` : ''}</small>${warns.length ? `<span class="add-warns">${warnChips(warns)}</span>` : ''}</span></label></li>`;
+}
+// The foot: how many are ticked and which, and "Add n plants".
+function addFootHTML() {
+  const ids = [...addTicks].filter((id) => !S.members.includes(id) && inCell(id));
+  return `<div class="paste-foot"><p class="add-foot-n"><b>${esc(P('paste.toAdd', ids.length))}</b>${ids.length ? ` · <span>${esc(namesLine(ids))}</span>` : ''}</p>${btn('button button-primary button-small', 'add-ticked', null, esc(P('paste.addAll', ids.length)), `${ids.length ? '' : 'disabled '}${fk('add-ticked')}`)}</div>`;
 }
 const addCountHTML = (list, fkind, fv) => `<p class="list-count" id="ct-add-count">${esc(P('count', list.length))}${fkind === 'phase' ? ' · ' + esc(T('phaseFilter', { stage: T(W.phaseKey(Number(fv), 'plain')) })) : ''}</p>
 `;
@@ -1115,36 +1218,42 @@ function refreshAdd() {
 function addParts() {
   const { fkind, jobF, layerF } = addFilter();
   const sel = (id, label, all, opts, cur) => `<label class="sel"><span>${esc(label)}</span><select data-filter="${id}" ${fk('f-' + id)}><option value="">${esc(all)}</option>${opts.map(([v, l]) => `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
-  const headHTML = `<div><h2 id="ct-dlg-title">${esc(fkind === 'grow' ? T('grow') : T('addTitle'))}</h2><p class="lede">${esc(T('addLede', { climate: climateLabel() }))}</p></div>`;
+  // C12: the sheet "Add plants" opens is titled so; each tab says what it does.
+  const title = fkind === 'grow' ? T('addPlants') : T('addTitle');
+  const headHTML = `<div><h2 id="ct-dlg-title">${esc(title)}</h2><p class="lede">${esc(addTab === 'paste' ? T('paste.headLede') : T('add.lede'))}</p></div>`;
   const search = `<div class="field"><label for="ct-add-q" class="vh">${esc(T('growHint'))}</label><div class="search">${I.search}<input id="ct-add-q" type="search" autocomplete="off" spellcheck="false" placeholder="${esc(T('growHint'))}" value="${esc(addQuery)}" data-input="add" aria-describedby="ct-add-count" ${fk('add-q')}></div></div>
     <div class="add-filters">${sel('job', T('filterJob'), T('allJobs'), jobs.map((j) => [j, T('job.' + j)]), jobF)}${sel('layer', T('filterLayer'), T('allLayers'), strata.map((s) => [s, stratumLabel(s)]), layerF)}</div>
     <div id="ct-add-results">${addResults()}</div>`;
   // Two real tabs (m5): Search and Paste a list.
   const tabs = `<div class="add-tabs" role="tablist" aria-label="${esc(T('addPlants'))}">${['search', 'paste'].map((v) => `<button class="add-tab" role="tab" type="button" id="ct-at-${v}" aria-selected="${addTab === v}" aria-controls="ct-ap-${v}" tabindex="${addTab === v ? 0 : -1}" data-act="add-tab" data-v="${v}" ${fk('at-' + v)}>${esc(T('tab.' + v))}</button>`).join('')}</div>`;
   const body = `${tabs}<div role="tabpanel" id="ct-ap-${addTab}" aria-labelledby="ct-at-${addTab}">${addTab === 'paste' ? pasteHTML() : search}</div>`;
-  return { head: headHTML, body, foot: addTab === 'paste' ? `<div id="ct-paste-foot" class="paste-foot-wrap">${pasteFootHTML()}</div>` : '' };
+  return { head: headHTML, body, foot: addTab === 'paste' ? `<div id="ct-paste-foot" class="paste-foot-wrap">${pasteFootHTML()}</div>` : `<div id="ct-add-foot" class="paste-foot-wrap">${addFootHTML()}</div>` };
 }
 // ---------- Paste a list (design-scale.md §2.5, state 10) ----------
 // The paste read against this climate's list, the other lists loaded so far and the members; once per change.
 let pasteKey = '', pasteOut = null;
 const pasteOpen = new Map();
 function pasteResult() {
-  const key = [pasteText, pasteCol, S.members.join(), othersState, others.size].join('|');
+  const col = pasteColumn(pasteText, pasteCol), key = [pasteText, col, S.members.join(), othersState, others.size].join('|');
   if (key !== pasteKey) {
     pasteKey = key;
-    pasteOut = readPaste(pasteNames(pasteText, pasteCol), { cell, others: othersList(), members: S.members });
+    pasteOut = readPaste(pasteNames(pasteText, col), { cell, others: othersList(), members: S.members });
     // Names no list here has: the other lists may (loaded once, as Add anyway does).
     if (pasteOut.none.length && othersState === 'idle') loadOthers();
   }
   return pasteOut;
 }
-const ticked = (id, def) => (pasteTicks.has(id) ? pasteTicks.get(id) : def);
-// The plants Add all adds: the found ones still ticked, then the ones ticked in Choose, each once.
-function pasteToAdd() {
-  const r = pasteResult(), out = [];
-  for (const f of r.found) if (ticked(f.taxon.id, true) && !out.includes(f.taxon.id)) out.push(f.taxon.id);
-  for (const c of r.choose) for (const t of c.taxa) if (!c.inside.includes(t.id) && ticked(t.id, false) && !out.includes(t.id)) out.push(t.id);
-  return out;
+// "3 plants added and kept · 1 with a warning." (B7, C1): the count of the warned ones joins the sentence.
+const addedText = (n, warned) => (warned ? P('paste.added', n).replace(/([.。])$/, ` · ${P('withWarnCount', warned)}$1`) : P('paste.added', n));
+// One tick per plant, wherever it shows (B8): the reader's, else pasteDefault (found: ticked).
+const ticked = (id) => (pasteTicks.has(id) ? pasteTicks.get(id) : pasteDefault(pasteResult(), id));
+// The plants Add all adds: the found ones still ticked, then the ones ticked in Choose, each once;
+// a Choose line of another climate's list names it, so its plant joins as a guest (B5).
+function pasteToAdd(withList = false) {
+  const r = pasteResult(), out = new Map();
+  for (const f of r.found) if (ticked(f.taxon.id)) out.set(f.taxon.id, null);
+  for (const c of r.choose) for (const t of c.taxa) if (!c.inside.includes(t.id) && !out.has(t.id) && ticked(t.id)) out.set(t.id, c.climate ? { climate: c.climate, taxon: t } : null);
+  return withList ? out : [...out.keys()];
 }
 function pasteCountText() {
   if (!pasteText.trim()) return T('paste.empty');
@@ -1152,13 +1261,13 @@ function pasteCountText() {
   return [['paste.found', r.found.length], ['paste.choose', r.choose.length], ['paste.other', r.other.length], ['paste.none', r.none.length], ['paste.already', r.already.length]].filter(([, n]) => n).map(([k, n]) => P(k, n)).join(' · ');
 }
 function pasteColsHTML() {
-  const { columns } = pasteTable(pasteText);
+  const { columns } = pasteTable(pasteText), col = pasteColumn(pasteText, pasteCol);
   if (columns < 2) return '';
-  return `<label class="paste-cols"><span>${esc(T('paste.columns', { n: W.num(columns) }))}</span> <select data-paste-col ${fk('paste-col')}>${Array.from({ length: columns }, (_, i) => `<option value="${i}"${i === pasteCol ? ' selected' : ''}>${esc(T('paste.column', { n: W.num(i + 1), sample: columnSample(pasteText, i) }))}</option>`).join('')}</select></label>`;
+  return `<label class="paste-cols"><span>${esc(T('paste.columns', { n: W.num(columns) }))}</span> <select data-paste-col ${fk('paste-col')}>${Array.from({ length: columns }, (_, i) => `<option value="${i}"${i === col ? ' selected' : ''}>${esc(T('paste.column', { n: W.num(i + 1), sample: columnSample(pasteText, i) }))}</option>`).join('')}</select></label>`;
 }
 const pasteFacts = (t) => `<small>${esc(stratumLabel(stratumOf(t)))} · ${esc(heightText(t))}</small>`;
-function pasteTick(t, def, opts = {}) {
-  const on = opts.inside || ticked(t.id, def);
+function pasteTick(t, opts = {}) {
+  const on = opts.inside || ticked(t.id);
   return `<li class="paste-row"><label><input type="checkbox" data-act="ptick" data-v="${t.id}"${on ? ' checked' : ''}${opts.inside ? ' disabled' : ''} ${fk('pt-' + t.id)}><span><b>${name(t)}</b> ${sciHTML(t)} ${pasteFacts(t)}${opts.close ? ` <span class="paste-close">${esc(T('paste.close', { name: opts.close }))}</span>` : ''}${opts.inside ? ` <span class="already">${esc(T('inConsortium'))}</span>` : ''}</span></label></li>`;
 }
 // A group that folds when long: Found above 10 rows, Already in above 10 (§2.5 item 9).
@@ -1175,8 +1284,8 @@ function pasteGroupsHTML() {
     { disabled: S.members.includes(taxon.id), v: climate + ':' + taxon.id })).join('')}</ul>`);
   if (r.none.length) out.push(`<section class="paste-none"><h3 class="list-label paste-label">${esc(T('paste.g.none'))} <span class="count">${W.num(r.none.length)}</span></h3><p>${esc(T('paste.noneText'))}</p><ul class="paste-names" role="list">${r.none.map((x) => `<li>${esc(x.name)}</li>`).join('')}</ul>
     <p class="paste-acts">${btn('button button-secondary button-small', 'paste-copy', null, esc(P('paste.copy', r.none.length)), fk('paste-copy'))}<a class="text-link" href="${data.contact}">${esc(T('paste.ask'))}</a></p></section>`);
-  if (r.choose.length) out.push(pasteGroup('choose', T('paste.g.choose'), r.choose.length, `<p class="seg-hint">${esc(T('paste.chooseHint'))}</p>${r.choose.map((c) => `<fieldset class="paste-choose"><legend>${esc(c.name)}</legend><ul role="list">${c.taxa.map((t) => pasteTick(t, false, { inside: c.inside.includes(t.id) })).join('')}</ul></fieldset>`).join('')}`, false));
-  if (r.found.length) out.push(pasteGroup('found', T('paste.g.found'), r.found.length, `<ul class="paste-list" role="list">${r.found.map((f) => pasteTick(f.taxon, true, { close: f.close })).join('')}</ul>`));
+  if (r.choose.length) out.push(pasteGroup('choose', T('paste.g.choose'), r.choose.length, `<p class="seg-hint">${esc(T('paste.chooseHint'))}</p>${r.choose.map((c) => `<fieldset class="paste-choose"><legend>${esc(c.name)}${c.climate ? ` <span class="tag tag-from">${esc(fromListLabel(c.climate))}</span>` : ''}</legend><ul role="list">${c.taxa.map((t) => pasteTick(t, { inside: c.inside.includes(t.id) })).join('')}</ul></fieldset>`).join('')}`, false));
+  if (r.found.length) out.push(pasteGroup('found', T('paste.g.found'), r.found.length, `<ul class="paste-list" role="list">${r.found.map((f) => pasteTick(f.taxon, { close: f.close })).join('')}</ul>`));
   if (r.already.length) out.push(pasteGroup('already', T('paste.g.already'), r.already.length, `<ul class="paste-names" role="list">${r.already.map((f) => `<li>${name(f.taxon)} ${sciHTML(f.taxon)}${f.climate ? ` <span class="tag tag-from">${esc(fromListLabel(f.climate))}</span>` : ''}</li>`).join('')}</ul>`));
   if (othersState === 'failed' && r.none.length) out.push(othersFailedHTML());
   return out.join('');
@@ -1191,7 +1300,7 @@ function pasteHTML() {
 function pasteFootHTML() {
   if (!pasteText.trim()) return '';
   const n = pasteToAdd().length, r = pasteResult();
-  const untouched = r.choose.filter((c) => !c.taxa.some((t) => !c.inside.includes(t.id) && ticked(t.id, false)) && c.inside.length < c.taxa.length);
+  const untouched = r.choose.filter((c) => !c.taxa.some((t) => !c.inside.includes(t.id) && ticked(t.id)) && c.inside.length < c.taxa.length);
   return `<div class="paste-foot"><p><b>${esc(P('paste.toAdd', n))}</b>${untouched.map((c) => `<span>${esc(T('paste.noneTicked', { name: c.name }))}</span>`).join('')}</p>${btn('button button-primary button-small', 'paste-add', null, esc(P('paste.addAll', n)), `${n ? '' : 'disabled '}${fk('paste-add')}`)}</div>`;
 }
 // A redraw of the results and the foot: the field keeps its text and caret, the count line is written
@@ -1360,12 +1469,12 @@ const anywayFor = (id) => !!otherClimateOf(id) && !S.guests.has(id);
 const confirmFrom = (id) => (O.type === 'details' ? (swapTarget(O) ? 'd-use' : anywayFor(id) ? 'd-anyway' : 'd-add') : (O.type === 'swap' ? 'use-' : anywayFor(id) ? (addTab === 'paste' ? 'paste-anyway-' : 'add-anyway-') : 'add-') + id);
 dlg.addEventListener('cancel', (e) => { if (O?.confirm) { e.preventDefault(); const id = O.confirm; O.confirm = null; renderSheet(confirmFrom(id)); } else if (O?.back) { e.preventDefault(); O = O.back; renderSheet(); } });
 
-function toast(text, undo = null) {
+function toast(text, undo = null, extra = '') {
   clearTimeout(toastTimer);
   if (undo !== 'redo') undoRedo = null;
-  toastEl.innerHTML = `<span>${text}</span>${undo ? btn('button', 'undo', undo, esc(T('undo')), fk('undo')) : ''}`;
+  toastEl.innerHTML = `<span>${text}</span>${extra || undo ? `<span class="toast-acts">${extra}${undo ? btn('button', 'undo', undo, esc(T('undo')), fk('undo')) : ''}</span>` : ''}`;
   toastEl.hidden = false;
-  if (!undo) toastTimer = setTimeout(hideToast, 5000);
+  if (!undo && !extra) toastTimer = setTimeout(hideToast, 5000);
 }
 function hideToast() { toastEl.hidden = true; toastEl.innerHTML = ''; }
 function say(text) { sayEl.textContent = ''; setTimeout(() => { sayEl.textContent = text; }, 60); }
@@ -1557,8 +1666,17 @@ function leaveClimate() { Object.assign(S, afterMove(S), keptCountry(S, own()));
 // What keptCountry falls back to: the reader's own choice (device, else tab), else the browser's guess.
 const own = () => ({ pref: memory.pref(), guess: browserCountry, known: (c) => isCountry(manifest, c) });
 // The country only changes the warnings: the members stay, and no Undo is needed or dropped.
+// B10: the Warning filter keeps a value the new country offers: "invasive in" and "invasive
+// somewhere" trade places, and one the country has no list for is cleared.
+function keepWarnFilter() {
+  if (!F.warn || filterValues('warn').some(([v]) => v === F.warn)) return;
+  const swap = { invasive: 'somewhere', somewhere: 'invasive' }[F.warn];
+  F = { ...F, warn: swap && filterValues('warn').some(([v]) => v === swap) ? swap : '' };
+  if (!F.warn) fOrder = fOrder.filter((k) => k !== 'warn');
+}
 function chooseCountry(code) {
   S.country = code; S.countrySource = 'user'; S.noCountry = !code; S.unknownCountry = null; S.linkCode = null; countryQuery = '';
+  keepWarnFilter();
   memory.choose(code);
   // Every caller acts from the country sheet.
   closeSheet(false);
@@ -1621,13 +1739,15 @@ const act = {
   // B10: a main crop swapped is no longer one, and the toast says so.
   'use-yes'(v) {
     const old = swapTarget(O), a = taxonOf(old), b = taxonOf(v);
+    pinView();
     const r = afterSwap(S, old, v);
     Object.assign(S, { members: r.members, kept: r.kept, removed: r.removed, crops: r.crops });
-    closeSheet(false); focusNext = 'pn-' + v; render(); flash(v); toast(T(r.endedCrop ? 'swappedCrop' : 'swapped', { a: name(a), b: name(b) }));
+    closeSheet(false); reveal(v); focusNext = 'pn-' + v; render(); flash(v); toast(T(r.endedCrop ? 'swappedCrop' : 'swapped', { a: name(a), b: name(b) }));
   },
   'confirm-no'() { const id = O.confirm; O.confirm = null; renderSheet(confirmFrom(id)); },
   remove(v) {
     const t = taxonOf(v), idx = S.members.indexOf(v);
+    pinView();
     // A plant from another list is not "removed" from this one: it simply leaves.
     S.members = S.members.filter((id) => id !== v); if (!S.guests.has(v)) S.removed.add(v); const wasKept = S.kept.delete(v);
     const crop = S.crops.indexOf(v); if (crop >= 0) S.crops.splice(crop, 1);
@@ -1640,15 +1760,19 @@ const act = {
     if (v === 'bulk' && lastBulk) {
       // One step back for a bulk Keep, Remove or Add: the plants, their kept pins and crops as they were.
       const b = lastBulk; lastBulk = null;
-      Object.assign(S, { members: b.members, kept: b.kept, removed: b.removed, crops: b.crops, guests: b.guests });
-      const back = b.ids.find((id) => S.members.includes(id));
+      Object.assign(S, { members: b.members, kept: b.kept, removed: b.removed, crops: b.crops, guests: b.guests, gaps: b.gaps, status: b.status });
+      // The focus goes to a row the reader can see (B4): the first one back that shows, else the
+      // first one back, its group opened and the filters that hide it cleared.
+      const here = b.ids.filter((id) => S.members.includes(id));
+      let back = here.find((id) => visibleOrder().includes(id));
+      if (!back && here.length) { back = here[0]; reveal(back); }
       focusNext = back && listMode() ? 'sel-' + back : back ? 'pn-' + back : 'plants-title';
       render(); if (!app.contains(document.activeElement)) focusFk('plants-title', app);
       return;
     }
     if (v === 'start' && undoStart) {
       // B2: the state, its cell and its own Undo come back together.
-      S = keepCountry(undoStart.S, S); ({ cell, lastRemoved } = undoStart); undoStart = null; evalKey = ''; focusNext = 'start-over'; render(); return;
+      S = keepCountry(undoStart.S, S); ({ cell, lastRemoved } = undoStart); restoreList(undoStart.list); undoStart = null; evalKey = ''; focusNext = 'start-over'; render(); return;
     }
     if (v === 'redo' && undoRedo) {
       const u = undoRedo; undoRedo = null; redoNext = null; loadSeq++;
@@ -1659,25 +1783,27 @@ const act = {
     }
     const r = lastRemoved; if (!r) return;
     S.members.splice(r.idx, 0, r.id); S.removed.delete(r.id); if (r.wasKept) S.kept.add(r.id); if (r.crop >= 0) S.crops.splice(r.crop, 0, r.id);
-    S.gaps = S.gaps.filter((g) => g.id !== r.id); lastRemoved = null; focusNext = 'pn-' + r.id; render(); flash(r.id);
+    S.gaps = S.gaps.filter((g) => g.id !== r.id); lastRemoved = null; reveal(r.id); focusNext = 'pn-' + r.id; render(); flash(r.id);
   },
   keep(v) {
     const t = taxonOf(v);
     // A main crop is kept: no longer keeping it ends it as a main crop too.
     if (S.kept.has(v)) { S.kept.delete(v); S.crops = S.crops.filter((id) => id !== v); toast(T('unkeptNow', { name: name(t) })); } else { S.kept.add(v); toast(T('keptNow', { name: name(t) })); }
+    // B2: in the list, a Keep rewrites its row, the heads and the summary line, not the result.
+    if (listMode() && !O && !isCrop(v) && patchList(new Set([v]))) { patchSummary(); if (fMenu === 'kept') patchChip('kept'); focusFk('kp-' + v, app); persist(); return; }
     render(); if (O) renderSheet();
   },
-  'open-add'(v, el) { addQuery = ''; addJob = ''; addLayer = ''; if (O) { O = { type: 'add', filter: v || '' }; renderSheet('add-q'); } else openSheet({ type: 'add', filter: v || '' }, el); },
+  'open-add'(v, el) { addQuery = ''; addJob = ''; addLayer = ''; addTicks = new Set(); if (O) { O = { type: 'add', filter: v || '' }; renderSheet('add-q'); } else openSheet({ type: 'add', filter: v || '' }, el); },
   add(v) { const f = flagsFor(cell, v, S.members, { site: S.site, guests: guestTaxa(), ...where() }); if (f?.flagged) { O.confirm = v; renderSheet('confirm-yes'); } else act['add-yes'](v); },
   // M4: Add adds the one plant asked for; "Fill the free places" is the only refill.
   'add-yes'(v) {
-    S.kept.add(v); S.removed.delete(v);
+    pinView(); S.kept.add(v); S.removed.delete(v);
     if (S.status === 'nomatch') recompute();
     else if (!S.members.includes(v)) {
       dropUndo();
       S.members.push(v); S.gaps = trimGaps(S.gaps, [stratumOf(taxonOf(v))], limit() - S.members.length);
     }
-    S.view = 'layers'; closeSheet(false); focusNext = 'pn-' + v; render(); flash(v); toast(T('added', { name: name(taxonOf(v)) }));
+    S.view = 'layers'; closeSheet(false); reveal(v); focusNext = 'pn-' + v; render(); flash(v); toast(T('added', { name: name(taxonOf(v)) }));
   },
   // "Add anyway": a plant of another climate's list joins as a kept guest, labelled with its list.
   // A flagged one asks first, as Add does (B3); it joins only on Yes.
@@ -1693,9 +1819,30 @@ const act = {
     S.guests.set(id, { climate: c, taxon: t, sources: f.sources });
     act['add-yes'](id);
   },
+  atick(v) {
+    if (S.members.includes(v)) return;
+    addTicks = new Set(addTicks); if (addTicks.has(v)) addTicks.delete(v); else addTicks.add(v);
+    const box = dlg.querySelector(`[data-act="atick"][data-v="${CSS.escape(v)}"]`); if (box) box.checked = addTicks.has(v);
+    const foot = dlg.querySelector('#ct-add-foot'); if (foot) foot.innerHTML = addFootHTML();
+  },
+  // "Add n plants" adds the ticked plants as Add all does (decision b49117c): no question, the
+  // toast counts the ones with a warning; the sheet stays open for more.
+  'add-ticked'() {
+    const ids = [...addTicks].filter((id) => !S.members.includes(id) && inCell(id)); if (!ids.length) return;
+    dropUndo(); lastBulk = snapshot(ids); pinView();
+    S.kept = new Set(S.kept); S.removed = new Set(S.removed);
+    for (const id of ids) { S.members.push(id); S.kept.add(id); S.removed.delete(id); }
+    if (S.status === 'nomatch') S.status = 'ready';
+    S.gaps = trimGaps(S.gaps, ids.map((id) => stratumOf(taxonOf(id))), 0);
+    addTicks = new Set(); render(); renderSheet('add-q');
+    const warned = ids.filter((id) => kindsOf(taxonOf(id)).has('any')).length;
+    toast(esc(addedText(ids.length, warned)), 'bulk',
+      warned ? btn('button', 'show-warned', null, esc(P('showN', warned)), fk('show-warned')) : '');
+  },
   'others-retry'() { retryOthers(); refreshCrops(true); refreshAdd(); },
   fill() {
     const before = S.members.length;
+    pinView();
     S.members = suggest(cell, { site: S.site, kept: [...new Set([...S.members, ...S.kept])], removed: [...S.removed], guests: guestTaxa() }).members.map((m) => m.taxon.id);
     const added = S.members.slice(before);
     if (added.length) dropUndo();
@@ -1706,16 +1853,24 @@ const act = {
   },
   relax(k) { const to = relaxTo(k, S.site); if (!to) return; S.site = { ...S.site, [k]: to }; recompute(); focusNext = 'result'; render(); },
   close() { if (O?.back) { O = O.back; renderSheet(); } else closeSheet(); },
+  // B16: the toast says what the link holds (its plants, its size) and how it opens; a guessed
+  // country is never written in it, and the toast says so, with the country to choose.
   async share() {
     persist();
-    try { await navigator.clipboard.writeText(shareLink()); toast(esc(T('copied'))); } catch { toast(esc(T('copyFailed'))); }
+    const link = shareLink();
+    try { await navigator.clipboard.writeText(link); } catch { toast(esc(T('copyFailed'))); return; }
+    const size = new Intl.NumberFormat(lang, { style: 'unit', unit: 'kilobyte', unitDisplay: 'short', maximumFractionDigits: 1 }).format(Math.max(0.1, link.length / 1000));
+    const head = P('share.copied', S.members.length, { size }), country = S.country ? W.country(S.country) : '';
+    if (S.country && S.countrySource === 'guess') toast(esc(`${head} ${T('share.guess', { country })}`), null, btn('button', 'share-guess', null, esc(T('share.useGuess', { country })), fk('share-guess')));
+    else toast(esc(`${head} ${S.country ? T('share.opensWith', { country }) : T('share.opensNoCountry')}`));
   },
+  'share-guess'() { if (!S.country) return; hideToast(); chooseCountry(S.country); act.share(); },
   print() { printEl.innerHTML = printHTML(); print(); },
   'start-over'() {
     // The reader's own country stays (m12); someone else's link's country and unknown code go
     // (keptCountry: core-fix review 4, m-1; m-3).
     const kept = keptCountry(S, own());
-    undoStart = { S, cell, lastRemoved }; lastRemoved = null; redoNext = null; S = fresh(); S.status = 'setup'; cell = null; loadSeq++; resetList();
+    undoStart = { S, cell, lastRemoved, list: listState() }; lastRemoved = null; redoNext = null; S = fresh(); S.status = 'setup'; cell = null; loadSeq++; resetList();
     Object.assign(S, kept);
     if (siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }
     memory.startOver(location.pathname);
@@ -1726,32 +1881,38 @@ const act = {
   dismiss() { S.notice = null; focusNext = 'result'; render(); },
   // ---------- Your plants: the switch, the list, its filters and selection (chunk B) ----------
   mode(v) { mode = v === 'list' ? 'list' : 'cards'; focusNext = 'mode-' + mode; render(); },
-  group(v) { const g = listGroups().find((x) => x.s === v); if (!g) return; groups.set(v, !g.open); relist('lg-' + v); },
-  fmenu(v) { fMenu = fMenu === v ? null : v; rMenu = null; focusNext = 'fm-' + v; render(); },
+  group(v) { const g = listGroups().find((x) => x.s === v); if (!g) return; (filtering(F) ? fgroups : groups).set(v, !g.open); relist('lg-' + v, new Set()); },
+  // B2: a menu opening or closing rewrites its own chip (and the one it closes), nothing else.
+  fmenu(v) {
+    const was = fMenu, row = rMenu; fMenu = fMenu === v ? null : v; rMenu = null;
+    if (!app.querySelector('.fchips')) { focusNext = 'fm-' + v; render(); return; }
+    if (was && was !== v) patchChip(was);
+    patchChip(v); if (row) patchList(new Set([row]));
+    focusFk('fm-' + v, app);
+  },
   fset(v) {
     const i = String(v).indexOf(':'), key = v.slice(0, i), val = v.slice(i + 1);
     if (!FILTER_KEYS.includes(key)) return;
-    F = { ...F, [key]: val }; fOrder = [...fOrder.filter((k) => k !== key), ...(val ? [key] : [])]; groups.clear();
     // "Show n" in the warning box opens the list, whatever the reader chose before.
-    if (!listMode()) mode = 'list';
-    focusNext = 'fm-' + key; render(); sayResults();
+    setFilters({ ...F, [key]: val }, [...fOrder.filter((k) => k !== key), ...(val ? [key] : [])], 'fm-' + key);
   },
-  fclear(v) { F = { ...F, [v]: '' }; fOrder = fOrder.filter((k) => k !== v); groups.clear(); focusNext = 'fm-' + v; render(); sayResults(); },
-  'fclear-all'() { F = { ...NO_FILTERS }; fOrder = []; groups.clear(); focusNext = 'find'; render(); sayResults(); },
+  fclear(v) { setFilters({ ...F, [v]: '' }, fOrder.filter((k) => k !== v), 'fm-' + v); },
+  'fclear-all'() { setFilters({ ...NO_FILTERS }, [], 'find'); },
   // A tick, or with Shift every row from the last one ticked (Shift+click, Shift+Space).
   sel(v, _el, e) {
     const on = !sel.has(v), range = anchor && anchor !== v && (e?.shiftKey || (!e?.detail && shiftDown));
+    const before = sel;
     if (range) sel = selectRange(visibleOrder(), anchor, v, sel, on);
     else { sel = new Set(sel); if (on) sel.add(v); else sel.delete(v); }
-    anchor = v; relist('sel-' + v);
+    anchor = v; relist('sel-' + v, new Set([...before, ...sel].filter((id) => before.has(id) !== sel.has(id))));
   },
   gsel(v) {
     const g = listGroups().find((x) => x.s === v); if (!g) return;
     const ids = g.list.map((t) => t.id), all = groupTick(ids, sel) === 'all';
     sel = new Set(sel); for (const id of ids) { if (all) sel.delete(id); else sel.add(id); }
-    relist('gsel-' + v);
+    relist('gsel-' + v, new Set(ids));
   },
-  unselect() { sel = new Set(); anchor = null; relist('find'); },
+  unselect() { const was = sel; sel = new Set(); anchor = null; relist('find', was); },
   'bulk-keep'() {
     const ids = [...sel].filter((id) => S.members.includes(id)); if (!ids.length) return;
     dropUndo(); lastBulk = snapshot(ids);
@@ -1764,7 +1925,7 @@ const act = {
     const order = visibleOrder(), last = Math.max(...ids.map((id) => order.indexOf(id)));
     const next = order.slice(last + 1).find((id) => !sel.has(id)) ?? [...order].reverse().find((id) => !sel.has(id));
     const names = namesLine(ids);
-    dropUndo(); lastBulk = snapshot(ids);
+    dropUndo(); lastBulk = snapshot(ids); pinView();
     const gone = new Set(ids);
     S.members = S.members.filter((id) => !gone.has(id)); S.kept = new Set([...S.kept].filter((id) => !gone.has(id))); S.crops = S.crops.filter((id) => !gone.has(id));
     S.removed = new Set(S.removed); for (const id of ids) if (!S.guests.has(id)) S.removed.add(id);
@@ -1773,21 +1934,35 @@ const act = {
     if (!app.contains(document.activeElement)) focusFk('plants-title', app);
     toast(esc(P('removedN', ids.length, { names })), 'bulk');
   },
-  rmenu(v) { rMenu = rMenu === v ? null : v; fMenu = null; relist('rmenu-' + v); },
+  rmenu(v) {
+    const was = rMenu, chip = fMenu; rMenu = rMenu === v ? null : v; fMenu = null;
+    if (chip) patchChip(chip);
+    relist('rmenu-' + v, new Set([was, v].filter(Boolean)));
+  },
   'skip-list'() { focusFk('share', app); },
   'add-tab'(v) { addTab = v === 'paste' ? 'paste' : 'search'; O.confirm = null; renderSheet('at-' + addTab); },
-  ptick(v) { const r = pasteResult(), def = r.found.some((f) => f.taxon.id === v); pasteTicks.set(v, !ticked(v, def)); refreshPaste(); focusFk('pt-' + v, dlg); },
+  ptick(v) { pasteTicks.set(v, !ticked(v)); refreshPaste(); focusFk('pt-' + v, dlg); },
   'paste-copy'() { const names = pasteResult().none.map((x) => x.name).join('\n'); navigator.clipboard?.writeText(names).then(() => toast(esc(T('paste.copied'))), () => {}); },
   // Add all: the ticked plants join, kept (plants added by hand are kept), in one step Undo takes back.
+  // Flagged plants join without a question (decision b49117c); the toast counts them, with a Show
+  // that sets the Warning filter (B7, C1), and their warnings stay on their rows.
   'paste-add'() {
-    const ids = pasteToAdd().filter((id) => !S.members.includes(id)); if (!ids.length) return;
+    const picked = pasteToAdd(true), ids = [...picked.keys()].filter((id) => !S.members.includes(id)); if (!ids.length) return;
     dropUndo(); lastBulk = snapshot(ids);
-    S.kept = new Set(S.kept); S.removed = new Set(S.removed);
-    for (const id of ids) { S.members.push(id); S.kept.add(id); S.removed.delete(id); }
+    S.kept = new Set(S.kept); S.removed = new Set(S.removed); S.guests = new Map(S.guests);
+    for (const id of ids) {
+      const g = picked.get(id);
+      if (g) S.guests.set(id, { climate: g.climate, taxon: g.taxon, sources: others.get(g.climate)?.sources ?? {} });
+      S.members.push(id); S.kept.add(id); S.removed.delete(id);
+    }
     if (S.status === 'nomatch') S.status = 'ready';
     S.gaps = trimGaps(S.gaps, ids.map((id) => stratumOf(taxonOf(id))), 0);
-    closeSheet(false); focusNext = 'plants-title'; render(); toast(esc(P('paste.added', ids.length)), 'bulk');
+    resetFold(); closeSheet(false); focusNext = 'plants-title'; render();
+    const warned = ids.filter((id) => kindsOf(taxonOf(id)).has('any')).length;
+    toast(esc(addedText(ids.length, warned)), 'bulk',
+      warned ? btn('button', 'show-warned', null, esc(P('showN', warned)), fk('show-warned')) : '');
   },
+  'show-warned'() { hideToast(); if (O) closeSheet(false); act.fset('warn:any'); },
   'paste-anyway'(v) {
     const [c, id] = String(v).split(':'), t = others.get(c)?.taxa.find((x) => x.id === id);
     if (!t || inCell(id)) return;
@@ -1798,17 +1973,31 @@ const act = {
   'paste-anyway-yes'(v) {
     const [c, id] = String(v).split(':'), f = others.get(c), t = f?.taxa.find((x) => x.id === id);
     if (!t || inCell(id) || S.members.includes(id)) return;
-    dropUndo();
+    dropUndo(); pinView();
     S.guests.set(id, { climate: c, taxon: t, sources: f.sources }); S.members.push(id); S.kept.add(id); S.removed.delete(id);
     if (S.status === 'nomatch') S.status = 'ready';
     O.confirm = null; render(); renderSheet('paste'); toast(T('added', { name: name(t) }));
   },
-  goto(v) { S.view = 'layers'; focusNext = 'pn-' + v; render(); flash(v); },
+  goto(v) { S.view = 'layers'; reveal(v); focusNext = 'pn-' + v; render(); flash(v); },
 };
 // What Undo restores after a bulk step, and the plants it named (the focus returns to the first).
-const snapshot = (ids) => ({ ids, members: [...S.members], kept: new Set(S.kept), removed: new Set(S.removed), crops: [...S.crops], guests: new Map(S.guests) });
-// The list's body again, the focus on the control the action names.
-function relist(key) { refreshList(); focusFk(key, app); }
+// B15: the gaps a step leaves and the status come back too.
+const snapshot = (ids) => ({ ids, members: [...S.members], kept: new Set(S.kept), removed: new Set(S.removed), crops: [...S.crops], guests: new Map(S.guests), gaps: [...S.gaps], status: S.status });
+// The list in place, the focus on the control the action names.
+function relist(key, only = null) { if (!patchList(only)) refreshList(); focusFk(key, app); }
+// New filters: the groups opened under the old ones are forgotten, hidden ticks go (B4), and the
+// list is patched where it shows (a "Show n" from the cards opens the list first).
+function setFilters(next, order, focusKey) {
+  F = next; fOrder = order; fgroups.clear(); fMenu = null;
+  const unticked = pruneSel();
+  if (listMode() && app.querySelector('.fchips') && patchList(unticked)) {
+    patchChips();
+    const find = app.querySelector('[data-input="find"]'); if (find && find.value !== F.q) find.value = F.q;
+    focusFk(focusKey, app);
+  }
+  else { if (!listMode()) mode = 'list'; focusNext = focusKey; render(); }
+  sayResults();
+}
 // m9: the filtered count, once, after the change.
 const sayResults = () => { const n = listGroups().reduce((a, g) => a + g.list.length, 0); sayLater(filtering(F) ? P('showing', members().length, { n: W.num(n) }) : P('count', members().length)); };
 // The menus close on any other action or a click outside them (their state is in the page, so Escape
@@ -1820,9 +2009,10 @@ function closeMenus() {
   for (const b of app.querySelectorAll('.fchip-btn[aria-expanded="true"], .lmore-btn[aria-expanded="true"]')) b.setAttribute('aria-expanded', 'false');
   return true;
 }
+// The plant's card, or its row in the list (B3); with neither in view the focus goes to the heading.
 function flash(id) {
-  const el = app.querySelector(`.plant[data-id="${CSS.escape(id)}"]`);
-  if (!el) return;
+  const el = app.querySelector(`.plant[data-id="${CSS.escape(id)}"], .lrow[data-id="${CSS.escape(id)}"]`);
+  if (!el) { if (!app.contains(document.activeElement)) focusFk('plants-title', app); return; }
   el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   el.dataset.flash = 'true';
 }
@@ -1885,7 +2075,12 @@ root.addEventListener('input', (e) => {
   }
   if (el.dataset.input === 'crop') { cropQuery = el.value; refreshCrops(); }
   // The list's search redraws the rows at once and says the count once typing pauses.
-  if (el.dataset.input === 'find') { F = { ...F, q: el.value }; groups.clear(); refreshList(); sayResults(); }
+  if (el.dataset.input === 'find') {
+    F = { ...F, q: el.value }; fgroups.clear();
+    if (!patchList(pruneSel())) refreshList();
+    if (fMenu) patchChip(fMenu);
+    sayResults();
+  }
   if (el.dataset.input === 'paste') { pasteText = el.value; clearTimeout(pasteTimer); pasteTimer = setTimeout(refreshPaste, 500); }
   if (el.dataset.input === 'add') {
     addQuery = el.value; O.confirm = null; dlg.querySelector('#ct-add-results').innerHTML = addResults();

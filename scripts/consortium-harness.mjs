@@ -104,6 +104,16 @@ function makeDocument(page) {
     get() { return render(this.children, { decodeEntities: true }); },
     set(v) { adopt(this, parse(String(v))); },
   });
+  // A patched row or group (app.js patchList, B2): the element is replaced by the parsed markup.
+  define('outerHTML', {
+    get() { return render([this], { decodeEntities: true }); },
+    set(v) {
+      const up = this.parent;
+      if (!up) return;
+      const kids = up.children.flatMap((c) => (c === this ? parse(String(v)) : [c]));
+      adopt(up, kids); this.parent = null;
+    },
+  });
   define('textContent', {
     get() { const t = (n) => (n instanceof Text ? n.data : (n.children ?? []).map(t).join('')); return t(this); },
     set(v) { adopt(this, [new Text(String(v))]); },
