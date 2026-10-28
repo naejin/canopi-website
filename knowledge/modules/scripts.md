@@ -5,20 +5,20 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T14:12:32Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T15:50:29Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T14:56:18Z }
 sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:2556c706f9deab98
-    last_modified: 2026-10-28T14:47:26Z
+    digest: sha256:cf60aa454fdf61ce
+    last_modified: 2026-10-28T15:45:38Z
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:f7393b32d2100393
-    last_modified: 2026-10-27T19:28:52Z
+    digest: sha256:26faf235c0876b4e
+    last_modified: 2026-10-28T15:44:49Z
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs
@@ -53,7 +53,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 
 # Dependencies
 
-- [src/lib](/modules/src-lib.md) and [src/data](/modules/src-data.md) (tests and checks read them); Node built-ins plus `js-yaml` (declared devDependency; guide frontmatter in `guides.test.mjs`); `npm run check` uses the devDependencies `typescript` and `@astrojs/check`, after `wrangler types`; Python scripts need Pillow and SQLite. Tests import `.ts` data files directly, so `npm test` passes `--experimental-strip-types` (Node 22.12, the engines floor, does not strip types by default).
+- [src/lib](/modules/src-lib.md) and [src/data](/modules/src-data.md) (tests and checks read them); Node built-ins plus `js-yaml` (declared devDependency; guide frontmatter in `guides.test.mjs`); `parse5`, `domhandler`, `css-select` and `dom-serializer` (declared devDependencies; the small DOM of `consortium-harness.mjs`, which runs the consortium tool's app.js in `consortium-app.test.mjs`; run tests under a memory cap, as the harness once ran a process out of memory); `npm run check` uses the devDependencies `typescript` and `@astrojs/check`, after `wrangler types`; Python scripts need Pillow and SQLite. Tests import `.ts` data files directly, so `npm test` passes `--experimental-strip-types` (Node 22.12, the engines floor, does not strip types by default).
 
 # Gotchas
 
