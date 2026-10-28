@@ -607,7 +607,7 @@
   "consortium.d.misfit": "Past niet bij je terrein",
   "consortium.d.toxNone": "Niet bekend als giftig",
   "consortium.d.checked": "gecontroleerd",
-  "consortium.d.toxUnk": "De giftigheid is nog niet gecontroleerd. Wees tot dan voorzichtig en eet er niets van.",
+  "consortium.d.toxUnk": "De giftigheid is nog niet gecontroleerd. Wees tot dan voorzichtig.",
   "consortium.d.invHere": "Bekend als invasief in {country}: ze kan vanuit tuinen de natuur in verwilderen. Kijk voor het planten wat de lokale regels zeggen.",
   "consortium.d.invList": "one: Bekend als invasief in # land | other: Bekend als invasief in # landen",
   "consortium.d.invNone": "In geen enkel door het wereldwijde register van invasieve soorten (GRIIS) gecontroleerd land bekend als invasief",

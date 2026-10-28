@@ -607,7 +607,7 @@
   "consortium.d.misfit": "Passt nicht zu deinem Standort",
   "consortium.d.toxNone": "Nicht als giftig bekannt",
   "consortium.d.checked": "geprüft",
-  "consortium.d.toxUnk": "Die Giftigkeit ist noch nicht geprüft. Geh bis dahin vorsichtig damit um und iss nichts davon.",
+  "consortium.d.toxUnk": "Die Giftigkeit ist noch nicht geprüft. Geh bis dahin vorsichtig damit um.",
   "consortium.d.invHere": "Als invasiv erfasst in: {country}. Sie kann aus Gärten in die freie Natur verwildern. Prüfe vor dem Pflanzen die örtlichen Regeln.",
   "consortium.d.invList": "one: Als invasiv erfasst in # Land | other: Als invasiv erfasst in # Ländern",
   "consortium.d.invNone": "In keinem der vom weltweiten Register invasiver Arten (GRIIS) geprüften Länder als invasiv erfasst",

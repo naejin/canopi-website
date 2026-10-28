@@ -72,6 +72,9 @@ function measure(theme) {
       if (!h || !h.width) continue;
       for (const el of it.querySelectorAll('.pkey-n, .pkey-sci, .num')) { const e = el.getBoundingClientRect(); if (e.right > h.left + 0.5 && e.left < h.right - 0.5 && e.bottom > h.top + 0.5 && e.top < h.bottom - 0.5) r.keyOverlap.push(li.textContent.replace(/\s+/g, ' ').trim()); }
       if (it.scrollWidth > it.clientWidth + 1) r.keyOverlap.push('overflows: ' + li.textContent.replace(/\s+/g, ' ').trim());
+      // A wrapped height sits in the name's column, never under the number (review Y3).
+      const n = li.querySelector('.pkey-n').getBoundingClientRect(), num = li.querySelector('.num').getBoundingClientRect();
+      if (h.top >= n.bottom - 0.5 && Math.abs(h.left - n.left) > 1.5) r.keyOverlap.push('wrapped at ' + (h.left - num.left) + ' px, name at ' + (n.left - num.left) + ' px: ' + li.textContent.replace(/\s+/g, ' ').trim());
     }
     // The numbers under the drawing: none overlaps another, each one readable.
     const nums = [...box.querySelectorAll('.sv-nums .num')].map((n) => n.getBoundingClientRect());

@@ -1182,8 +1182,11 @@ html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
 .ct .sv .pkey { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0 16px; }
 .ct .sv .pkey li { gap: 6px; }
 .ct .sv .pkey-item { width: auto; flex: 0 1 auto; min-width: 0; }
-/* A long height ("30 m, climbing or trailing") wraps under the name rather than running over it. */
-.ct .sv .pkey li { flex-wrap: wrap; }
+/* A long height ("30 m, climbing or trailing") wraps under the name rather than running over it, set
+   in the name's column (38 px: where the name starts, as consortium-side-layout.test.mjs measures) so it belongs to
+   its own entry (review Y3). */
+.ct .sv .pkey li { flex-wrap: wrap; padding-inline-start: 38px; }
+.ct .sv .pkey li > .pkey-item { margin-inline-start: -38px; }
 .ct .pkey-h { flex: 0 1 auto; min-width: 0; font-size: 14px; color: var(--text-muted); }
 @media (max-width: 639px) {
   /* Tall enough that a 4 m and a 15 m plant clearly sit either side of the 5 m line (review V5). */

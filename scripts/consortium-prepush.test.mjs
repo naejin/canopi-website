@@ -31,7 +31,11 @@ test('Q1: French never says "consortium": the tool is a « guilde » everywhere'
 });
 
 test('Q2: an unchecked toxicity never invites tasting or eating, in any language', () => {
-  assert.equal(loc('fr')['consortium.d.toxUnk'], 'La toxicité n’a pas encore été vérifiée. En attendant, manipulez-la avec précaution et ne la consommez pas.');
+  // Review Y1 ruling: care only, nothing about eating either way (food crops have unchecked toxicity too).
+  assert.equal(loc('fr')['consortium.d.toxUnk'], 'La toxicité n’a pas encore été vérifiée. D’ici là, manipulez-la avec précaution.');
+  assert.equal(loc('en')['consortium.d.toxUnk'], 'Toxicity has not been checked yet. Treat it with care until it is.');
+  const eat = /\beat\b|consomm|mange|\bcom[ae]s?\b|\biss\b|essen|mangi|食べ|食用|吃|먹|\beet\b|ешьте|съед/i;
+  for (const lang of LOCALES) assert.doesNotMatch(loc(lang)['consortium.d.toxUnk'], eat, `${lang}: says nothing about eating`);
   const taste = /go[uû]t|tast|kost|probier|assagg|prueb|prov[ae]|saborea|degust|попроб|отвед|味見|尝|吃吧|맛보|드세요|smaak|proef/i;
   for (const lang of LOCALES) assert.doesNotMatch(loc(lang)['consortium.d.toxUnk'], taste, lang);
 });
@@ -64,6 +68,9 @@ test('Q7: the seedless-crop sentence is its own general tip, outside the bullet 
     assert.doesNotMatch(bullet, seedless, `${lang}: not in Eierman's bullet`);
     const tip = lines.find((l) => seedless.test(l));
     assert.match(tip, /^\{\/\* general tip, not from the book \*\/\}/, `${lang}: tagged, on its own line`);
+    // Review Y2: the sentence names its own subject.
+    assert.match(tip, lang === 'en' ? /a reason to rule a plant out as forage/ : /exclure une plante des ressources/);
+    assert.doesNotMatch(tip, /les exclure|is not the test/);
   }
 });
 
@@ -75,6 +82,8 @@ test('R1: a guessed country offers a one-tap "Use France" on the country line, a
   const chip = page.$('#ct-app .cl-chip');
   assert.equal(chip.attribs['data-src'], 'guess');
   assert.equal(chip.attribs.title, 'France is only a guess from your browser, so shared links leave it out until you use it.');
+  // Review Y4: the pronoun refers to "this country", whatever the country's gender.
+  for (const [lang, re] of [['fr', /ce pays/], ['es', /este país/], ['it', /questo paese/], ['pt', /este país/]]) assert.match(loc(lang)['consortium.guessTitle'], re, lang);
   const use = page.$('#ct-app .country-line [data-act="use-country"]');
   assert.equal(text(use), 'Use France');
   assert.equal(use.attribs['data-v'], 'FR');
@@ -130,6 +139,7 @@ test('R3: every print is titled "Your consortium", at any plant count; printTitl
 // ---------- R4: a spread is said as a spread ----------
 test('R4: when a plant\'s width breaks the room limit, its chip says it spreads, in all 11 languages', async () => {
   for (const lang of LOCALES) for (const r of ['small', 'large']) assert.match(loc(lang)[`consortium.misfit.room.${r}.wide`], /\{w\}/, `${lang} ${r}`);
+  assert.match(loc('es')['consortium.misfit.room.large.wide'], /^Se extiende hasta \{w\}/, 'Y5');
   const file = climate('temperate');
   const walnut = byName(file, 'Juglans regia');
   const { page } = await open('temperate', [...file.taxa.filter((t) => t.id !== walnut.id).slice(0, 8).map((t) => t.id), walnut.id], { room: 'large' });
