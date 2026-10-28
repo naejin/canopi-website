@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:10:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:32:32Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:20:52Z }
 sources:
@@ -12,7 +12,7 @@ sources:
     resource: ../../scripts/fixtures/consortium/README.md
     title: scripts/fixtures/consortium/README.md
     digest: sha256:ea88ed4edcb2f0ab
-    last_modified: 2026-10-28T12:20:47Z
+    last_modified: 2026-10-28T12:21:02Z
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
@@ -26,44 +26,45 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:ced492870b65c23c
-    last_modified: 2026-10-28T02:41:10Z
+    digest: sha256:f1cf0f7c11bd8e70
+    last_modified: 2026-10-28T12:22:08Z
   - id: consortium-app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:7d820394d21b0e50
-    last_modified: 2026-10-28T08:25:21Z
+    digest: sha256:1e5bcb24674a7219
+    last_modified: 2026-10-28T12:22:55Z
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:8fd5b17b2c562304
-    last_modified: 2026-10-28T08:18:06Z
+    digest: sha256:49c68a7e30ab5289
+    last_modified: 2026-10-28T12:22:08Z
 ---
 
 Owner decisions: [Consortium tool — user decisions](/decisions/consortium-user-decisions.md).
 They win over this plan. Data contract: canopi-data `docs/consortium-export-format.md`
-and `docs/consortium-export.schema.json`, format 2.
+and `docs/consortium-export.schema.json`, format 3 (one plant list per climate, since 2026-10-28;
+the region-cell plan of format 2 is superseded where this page says so).
 
 ## Release scope (beta)
 - One page, `/consortium/` (English and 9 locales: `/<lang>/consortium/`),
   `/fr/guilde/` in French. Title "Design a consortium" / « Composer une guilde »,
   a **Beta** badge and a feedback link to the site's contact form.
-- Three cells: Temperate × europe, Mediterranean × europe,
-  Tropical × southern_america. Every other (climate, region) shows the
-  "not covered yet" state of the decision log.
+- Three climates: Tropical, Mediterranean and Temperate, 200 plants each (the
+  2026-10-28 export). Every other climate is choosable and shows "not covered
+  yet", naming the covered ones (climate-first, owner 2026-10-28).
 - No Open in Canopi, no saved-design list, no backend.
 
 ## User paths
-1. **Set the place.** Climate (the shared site choice, `canopi-climate`; nothing
-   preselected when unset: never default to temperate) and "Where do you garden?"
-   (country search, names from `Intl.DisplayNames` in the page language; the
-   browser's region offered as a one-tap suggestion, never applied silently;
-   "Rather not say" → pick one of 8 regions). The region is shown and editable.
+1. **Choose a climate** (the shared site choice, `canopi-climate`; nothing
+   preselected when unset: never default to temperate). The consortium shows at
+   once. The country is optional and only sets the invasive warnings: guessed
+   from the browser and shown as a guess ("guessed from your browser"), changeable,
+   or "No country"; it never changes the plants and a guess is never put in a link.
 2. **Describe the site** (optional, defaults shown): light (full sun / part shade /
    shade), soil (acid / neutral / chalky / not sure), water (dry / average / wet /
    not sure), room (small garden ≤ 6 m / large garden ≤ 12 m / field; default
    large garden).
-3. **Start from a plant or let it suggest.** Search a crop of the cell ("I want to
+3. **Start from a plant or let it suggest.** Search a crop of the climate's list ("I want to
    grow…") or "Suggest a consortium". The tool fills a consortium around the
    chosen plants.
 4. **Read the consortium** in three views: **Layers** (profile drawing by stratum
@@ -80,24 +81,25 @@ and `docs/consortium-export.schema.json`, format 2.
    open the tool preset (`?plant=<canonical_name>&climate=<id>`). A preset's
    climate applies to that consortium only and never changes the shared site
    climate (`canopi-climate`); only a climate the reader picks in the tool does.
-   A preset without a place reuses the place of the consortium saved on this
-   device, and says so.
+   A preset opens straight on the result; the country is the saved one or the guess.
 
 ## Data path
 - `scripts/install-consortium.mjs <export-dir>`: verifies `SHA256SUMS`, the
-  manifest (format_version 2, each cell's sha256, taxa/interactions counts),
-  validates each cell against the schema's required shape (structural checks,
-  no dependency), and copies `manifest.json`, `labels.json` and the cell files to
+  manifest (format_version 3, each climate file's sha256, regions,
+  taxa/interactions counts, `countries` with `invasive_checked`), validates each
+  file against the schema's required shape and the format's rules (reasons one per
+  region, regions the union of the reasons', invasive only in checked countries),
+  and copies `manifest.json`, `labels.json` and the climate files to
   `public/data/consortium/`. It refuses `canopi_db_sha256` of all zeros (the
   fixture) unless `--fixture` (tests only). Committed output; run by hand.
 - Photos: the installer downloads each `image.url` once into
   `public/data/consortium/images/<id>.<ext>` and rewrites `url` locally; credit,
   licence and source page stay. Missing photo = no photo.
-- Client loads the manifest, then one cell file (`fetch`, cached in memory).
+- Client loads the manifest, then one climate file (`fetch`, cached in memory).
 
 ## Scoring module (`src/lib/consortium/`, dependency-free TypeScript)
-Types mirror format 2. Pure functions, unit-tested with `node --test`:
-- `cellFor(manifest, climate, region)` → file or null; `regionsOf(manifest, country)`.
+Types mirror format 3. Pure functions, unit-tested with `node --test`:
+- `fileFor(manifest, climate)` → file or null; `isCountry`, `invasiveChecked(manifest, country)`.
 - `fits(taxon, site)` → `{ ok, misfits[] }` using traits (sun/semi/full shade,
   soil pH range, drought/moisture, `height_m.max`/`width_max_m` vs room). Unknown
   trait = no misfit (counts as an unknown).
@@ -115,25 +117,26 @@ Types mirror format 2. Pure functions, unit-tested with `node --test`:
   plant named in more languages (a widely grown one), then `canonical_name`.
   (Amended 2026-10-27: the first rule, gain > 5 with 0.3·edibility, stopped the
   real cells at 4–7 plants, and name-order ties picked obscure plants; the
-  mockup reviewer asked for food in every phase band and backed-up key jobs.) Excluded from automatic picks: misfits, invasive in the user's
-  country, a medium/high conflict with a member, removed plants. Kept plants are
+  mockup reviewer asked for food in every phase band and backed-up key jobs.) Excluded from automatic picks: misfits, a medium/high conflict
+  with a member, removed plants. A plant invasive in the user's country is a
+  warning only (owner, 2026-10-28), never excluded and never confirmed. Kept plants are
   always members.
 - `evaluate(cell, ids, options)`: the same members, flags and gaps for a fixed
   list, never refilled (Remove leaves its gap; a link restores its members).
 - `alternatives(member, …)`: unflagged before flagged, then same stratum, shared jobs, gain;
   flagged ones included and marked.
-- `encodeState`/`decodeState`/`resolveState`: URL query (`c`, `r` the user's
-  region, `b` the borrowed cell's region, `k` country, site keys,
-  `p` = taxon ids kept, `x` removed, `a` members in order, `v` = format
-  version; guide presets `plant`, `climate`); unknown ids are dropped with a
+- `encodeState`/`decodeState`/`resolveState`: URL query (`c`, `k` a chosen
+  country or `-` for "No country" in the local save only; old `r` and `b` ignored, site keys,
+  `p` = taxon ids kept, `x` removed, `a` members in order, `v` = link
+  version 2; guide presets `plant`, `climate`); unknown ids are dropped with a
   notice.
 Recompute < 50 ms for 200 taxa.
 
 ## UI states (each in the mockup and in browser checks)
 First visit (nothing chosen), choosing climate/country, no match for the site,
-loading, error (fetch fails: retry), cell not covered (with opt-in), result,
+loading, error (fetch fails: retry), climate not covered (choose another, ask), result,
 plant details, swap list, removed with Undo, warnings (toxicity, invasive in your
-country, invasive elsewhere count, conflict, allelopathic, misfit), `null`
+country, invasive not checked for the country, invasive elsewhere count, conflict, allelopathic, misfit), `null`
 versus `[]` (unknown versus checked none), old share link (dropped ids), print.
 
 ## Interface languages
@@ -145,7 +148,7 @@ drawing's column labels and sentences that name plants (toasts, gap rows) show
 the name only, for space. `reason`/notes: the locale's text if present
 (en, fr), else English marked `lang="en"`. Strata labels: the app's (en
 Emergent/High/Mid/Low; fr Émergent/Haut/Moyen/Bas). Phases: plain time words +
-app term. Region names translated (8 × 11).
+app term. Region names translated (8 × 11), as labels of a plant's reasons.
 
 ## Entry points (decision log)
 Header item (inline ≥ 640 px; phone Menu below), measured at 640 px in all 11
@@ -166,7 +169,7 @@ canonical name → guide slugs).
 - Climate ids: data `Tropical` ↔ site `tropical` (lowercase at the module edge).
 
 ## Budgets
-Cell file ≤ 100 KB compressed; tool JS ≤ 30 KB compressed; LCP ≤ 2.5 s on slow
+Climate file ≤ 100 KB compressed; tool JS ≤ 30 KB compressed; LCP ≤ 2.5 s on slow
 4G; no layout shift when data arrives; works at 320 px; keyboard complete;
 WCAG AA contrast in both themes.
 
@@ -181,7 +184,7 @@ WCAG AA contrast in both themes.
   usability walkthrough. No real screen-reader pass (noted at handoff).
 
 ## Order
-1. Data: curate and accept the 3 cells (canopi-data), export, install.
+1. Data: curate and accept the 3 climates (canopi-data), export, install.
 2. Mockup artifact (all states, switches), reviewer critique, iterate.
 3. Build: site seams (slugs, tokens), scoring module + tests, page and island,
    entry points, translations, installer.

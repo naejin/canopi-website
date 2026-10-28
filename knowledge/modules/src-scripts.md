@@ -5,15 +5,15 @@ description: Vanilla browser modules for the home and bibliography pages (chrome
 resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:10:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:33:07Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:55Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:32:56Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:1b44c1b69bc66f76
-    last_modified: 2026-10-28T08:25:21Z
+    digest: sha256:52467bcac93835db
+    last_modified: 2026-10-28T12:22:55Z
 ---
 
 # Responsibility

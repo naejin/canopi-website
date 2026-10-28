@@ -5,20 +5,20 @@ description: The 11-locale translation tables and the t() lookup used by every c
 resource: ../../src/i18n
 tags: [module, i18n]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:10:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:32:54Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:55Z }
 sources:
   - id: i18n
     resource: ../../src/i18n
     title: src/i18n/
-    digest: sha256:ebd85b17a5f7c439
-    last_modified: 2026-10-28T08:25:21Z
+    digest: sha256:0b87b0eb369611a2
+    last_modified: 2026-10-28T12:22:55Z
   - id: homepage-test
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:2eee687e37141687
-    last_modified: 2026-10-28T02:42:20Z
+    digest: sha256:ece980522aef8b88
+    last_modified: 2026-10-28T12:22:08Z
 ---
 
 # Responsibility
@@ -45,7 +45,7 @@ Build-time translation for the 11 locales (en default at `/`; fr, es, pt, it, zh
 
 # Gotchas
 
-- Add every new key to all 11 files: `npm test` (`homepage.test.mjs`) fails if locales differ in keys or placeholders, if an English key is unused, or if a script string is missing from the page.
+- Add every new key to all 11 files: `npm test` (`homepage.test.mjs`) fails if locales differ in keys or in the set of placeholders (a plural repeats them once per form, and zh, ja and ko have one form), if an English key is unused, or if a script string is missing from the page.
 - Bibliography theme labels (`bibliography.theme.<slug>`) must exist for every theme in `src/data/bibliography.md`. Climate strings are site-wide under `climate.*`: `climate.<zone>`, `.about`, `.places` (example cities checked against Köppen, localized per locale) for every zone in `src/data/climates.ts`, plus the picker's `climate.zone`, `yours`, `chip`, `notSet`, `title`, `lede`, `none`, `none.about` (`homepage.test.mjs`).
 - The consortium tool's strings are the `consortium.*` keys at the end of each locale file; `homepage.test.mjs` treats the prefix as dynamic, and `consortium-page.test.mjs` checks their parity, placeholders and plural forms (see [Consortium page](/modules/consortium-page.md)). The French tool is "guilde", the others "consortium" or a local word.
 - `t()` replaces only the first occurrence of each placeholder.

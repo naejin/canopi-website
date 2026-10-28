@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Site navigation
 description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page has Start here then the consortium section.
 tags: [decision, navigation]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:10:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:32:54Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:55Z }
 sources:
@@ -55,13 +55,13 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:65dd1467a1a905c9
-    last_modified: 2026-10-28T08:25:21Z
+    digest: sha256:bacdf87d07409e75
+    last_modified: 2026-10-28T12:22:55Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
-    digest: sha256:2dc6039b3cc2124f
-    last_modified: 2026-10-28T09:38:49Z
+    digest: sha256:329133fbeb4fc404
+    last_modified: 2026-10-28T12:08:03Z
 enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 ---
 
@@ -81,7 +81,7 @@ enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 - **Learn section**: the guides index links to the bibliography; the bibliography page links to the guides; both link to the consortium tool (`learn.consortium.link`, "Design a consortium (beta): …"). Guides link into the tool with a plant and climate preset (`<TryConsortium>`, see [Field Guide components](/references/field-guide-components.md)).
 - **Footer**: "Design a consortium" (`nav.consortium.full`, the same key as the Menu line) after the bibliography link.
 - **One name per locale**: `nav.consortium.full` is the tool's name in the Menu, the footer and the home section's title, and `learn.consortium.link` starts with it, so each locale names the tool with one verb in one mood (de "Ein Konsortium planen", ja "コンソーシアムを設計する", ru "Составить консорциум"; it and nl use the imperative throughout). The full name contains the header word.
-- **Consortium home section** (`src/components/ConsortiumSection.astro`), right after Start here: title (`nav.consortium.full`) with a Beta mark, a one-paragraph promise, the beta's coverage (`home.consortium.note`: temperate and Mediterranean Europe, and the tropics of Central America, South America and the Caribbean, which is the manifest's `southern_america` region) and one action to the tool. The note spells the places out in each locale; `homepage.test.mjs` fails when `public/data/consortium/manifest.json` lists other cells, so a new cell means rewriting the note in all 11 locales. No photos and no strata colours (the tool's drawing keeps those); styles scoped in the component.
+- **Consortium home section** (`src/components/ConsortiumSection.astro`), right after Start here: title (`nav.consortium.full`) with a Beta mark, a one-paragraph promise, the beta's coverage (`home.consortium.note`: "A beta with three climates so far: tropical, Mediterranean and temperate") and one action to the tool. The note spells the climates out in each locale, with no region; `homepage.test.mjs` fails when `public/data/consortium/manifest.json` lists other climates, so a new climate means rewriting the note in all 11 locales. No photos and no strata colours (the tool's drawing keeps those); styles scoped in the component.
 - **Start here** (`src/components/StartHere.astro`): three entry guides from frontmatter, en or fr by locale, English with an "in English" note elsewhere, plus "All field guides".
 
 # Settled choices
