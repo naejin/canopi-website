@@ -1,27 +1,32 @@
-// Installs a canopi-data consortium export (format 2) into public/data/consortium/, where the
+// Installs a canopi-data consortium export (format 3: one file per climate) into public/data/consortium/, where the
 // consortium page fetches it as static JSON. Run by hand; the output is committed.
 //
 //   node scripts/install-consortium.mjs <export-dir> [--fixture [--no-images]] [--out <dir>]
 //
 // Checks, in order, and refuses on the first failure (nothing is written then):
 // - SHA256SUMS: every listed file exists and matches; no .json in the directory is unlisted.
-// - manifest.json: format_version 2, canopi_db_sha256 not all zeros (the invented fixture) unless
-//   --fixture (tests only), each cell's file, sha256 and taxa/interactions counts.
-// - each cell file: the required keys and types of canopi-data's consortium-export.schema.json,
+// - manifest.json: format_version 3, canopi_db_sha256 not all zeros (the invented fixture) unless
+//   --fixture (tests only), one entry per climate, each climate file's sha256, regions and
+//   taxa/interactions counts; `countries` keyed by ISO alpha-2 code, each with invasive_checked.
+// - each climate file: the required keys and types of canopi-data's consortium-export.schema.json,
 //   checked by hand (no dependency); extra keys are allowed, as the format lets the export add
-//   fields; taxon ids unique; every source id it cites defined in `sources`; every source url and
-//   photo page url http(s) (the page links them).
+//   fields; taxon ids unique; every source id it cites (reasons included) defined in `sources`;
+//   every source url and photo page url http(s) (the page links them).
+// - the rules the schema cannot express (canopi-data docs/consortium-export-format.md): a taxon's
+//   reasons are one per region, in region order, each in the file's regions; the file's regions are
+//   the union of its reasons' regions; every invasive_in country is a manifest country that GRIIS
+//   checked (the page's "not checked, never none" rests on it).
 // Photos: each taxon's image.url (http or https) is downloaded once per taxon id, one at a time
-// with a half-second pause (rate limiting waited out, see download()), into images/<id>.<ext>, and the installed cell points to
+// with a half-second pause (rate limiting waited out, see download()), into images/<id>.<ext>, and the installed climate file points to
 // /data/consortium/images/<id>.<ext>; credit, licence and source page stay as they are. Wikimedia
 // Commons and iNaturalist originals are fetched as 500 px copies. A photo that fails becomes image: null (no
-// photo) and is listed in the summary; more than 10% failing stops the install. Installed cells
-// that changed get their sha256 recomputed in the installed manifest and SHA256SUMS. An image url
-// that is not http(s) becomes image: null. --no-images (allowed only with --fixture, for tests)
-// skips downloads and keeps the other cells byte for byte.
+// photo) and is listed in the summary; more than 10% failing stops the install. Installed climate
+// files that changed get their sha256 recomputed in the installed manifest and SHA256SUMS. An image
+// url that is not http(s) becomes image: null. --no-images (allowed only with --fixture, for tests)
+// skips downloads and keeps the other files byte for byte.
 // The output directory is replaced as a whole: written in a staging directory (see STAGING_DIR),
-// then renamed into place. It must be absent, empty or a previous install (a manifest.json with
-// format_version 2): anything else is refused, so a mistyped --out never deletes a folder.
+// then renamed into place. It must be absent, empty or a previous install (its INSTALLED_BY mark):
+// anything else is refused, so a mistyped --out never deletes a folder.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
@@ -83,13 +88,16 @@ const oneOf = (...values) => ({ kind: 'enum', values });
 const obj = (props) => ({ kind: 'object', props });
 const arr = (items, minItems = 0) => ({ kind: 'array', items, minItems });
 const map = (values, keys) => ({ kind: 'map', values, keys });
-// The 11 site locales: the keys of `names`, of every text (`reason`, `note`) and of labels.json.
+// The 11 site locales: the keys of `names`, of every text (`reasons[].text`, `note`) and of labels.json.
 const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
 const text = { kind: 'map', values: str, props: { en: str }, keys: LOCALES };
 const range = orNull(obj({ min: orNull(num), max: orNull(num) }));
 const sourceIds = arr(str, 1);
 const climateZone = oneOf('Tropical', 'Subtropical', 'Arid', 'Mediterranean', 'Temperate', 'Continental', 'Boreal');
-const region = oneOf('europe', 'africa', 'asia_temperate', 'asia_tropical', 'australasia', 'pacific', 'northern_america', 'southern_america');
+// WGSRPD level-1 continents, in the export's region order.
+const REGIONS = ['europe', 'africa', 'asia_temperate', 'asia_tropical', 'australasia', 'pacific', 'northern_america', 'southern_america'];
+const region = oneOf(...REGIONS);
+const COUNTRY = /^[A-Z]{2}$/;
 const phase = oneOf('placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax');
 const taxonRef = obj({ name: str, rank: oneOf('species', 'genus', 'family') });
 
@@ -111,7 +119,7 @@ const taxon = obj({
   names: map(str, LOCALES),
   image: orNull(obj({ url: str, credit: orNull(str), licence: orNull(str), source_page_url: orNull(httpUrl) })),
   role: oneOf('crop', 'support'),
-  reason: optional(orNull(text)),
+  reasons: arr(obj({ region, text, sources: sourceIds }), 1),
   stratum: orNull(obj({ value: oneOf('emergent', 'high', 'medium', 'low'), sources: sourceIds })),
   phases: orNull(obj({ start: phase, end: phase, sources: sourceIds })),
   functions: orNull(arr(obj({
@@ -122,7 +130,7 @@ const taxon = obj({
   traits,
   warnings: obj({
     toxicity: orNull(obj({ level: oneOf('None', 'Slight', 'Moderate', 'Severe'), note: optional(orNull(text)), sources: sourceIds })),
-    invasive_in: orNull(arr(obj({ country: { kind: 'string', pattern: /^[A-Z]{2}$/ }, sources: sourceIds }))),
+    invasive_in: orNull(arr(obj({ country: { kind: 'string', pattern: COUNTRY }, sources: sourceIds }))),
     allelopathic: orNull(bool),
     weed_potential: orNull(bool),
   }),
@@ -138,9 +146,9 @@ const interaction = obj({
 });
 
 export const cellShape = obj({
-  format_version: oneOf(2),
+  format_version: oneOf(3),
   climate_zone: climateZone,
-  region,
+  regions: arr(region, 1),
   generated_at: str,
   sources: map(obj({ label: str, url: optional(orNull(httpUrl)), licence: optional(orNull(str)), attribution: optional(orNull(str)) })),
   taxa: arr(taxon),
@@ -148,12 +156,12 @@ export const cellShape = obj({
 });
 
 const manifestShape = obj({
-  format_version: oneOf(2),
+  format_version: oneOf(3),
   generated_at: str,
   canopi_db_sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ },
-  cells: arr(obj({ climate_zone: climateZone, region, file: { kind: 'string', pattern: SAFE_NAME }, taxa: int, interactions: int, sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ } }), 1),
+  climates: arr(obj({ climate_zone: climateZone, file: { kind: 'string', pattern: SAFE_NAME }, regions: arr(region, 1), taxa: int, interactions: int, sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ } }), 1),
   locales: arr(oneOf(...LOCALES)),
-  country_regions: map(arr(region)),
+  countries: { kind: 'map', values: obj({ invasive_checked: bool }), keyPattern: COUNTRY },
 });
 
 // labels.json: trait → English value → locale → translation (canopi-data docs/consortium-export-format.md).
@@ -193,6 +201,7 @@ export function shapeErrors(value, shape, path = '$', out = [], max = 20) {
     case 'object':
       if (!isObject(value)) { fail('is not an object'); break; }
       if (shape.keys) for (const key of Object.keys(value)) if (!shape.keys.includes(key)) fail(`has a key "${key}" outside ${shape.keys.join(', ')}`);
+      if (shape.keyPattern) for (const key of Object.keys(value)) if (!shape.keyPattern.test(key)) fail(`has a key "${key}" that does not match ${shape.keyPattern}`);
       for (const [key, s] of Object.entries(shape.props ?? {})) {
         if (!(key in value)) { if (!s.optional) fail(`misses required key "${key}"`); continue; }
         shapeErrors(value[key], s, `${path}.${key}`, out, max);
@@ -204,7 +213,7 @@ export function shapeErrors(value, shape, path = '$', out = [], max = 20) {
 }
 
 // Written into every install, so --out replaces only a directory this script made (an export has a
-// format 2 manifest too, and canopi-data does not keep its exports in git).
+// format 3 manifest too, and canopi-data does not keep its exports in git).
 const INSTALL_MARK = 'INSTALLED_BY';
 const INSTALL_MARK_TEXT = 'scripts/install-consortium.mjs (canopi-website)\n';
 
@@ -256,11 +265,12 @@ function parse(dir, name) {
   }
 }
 
-// Source ids a cell cites anywhere, to check against its `sources`.
+// Source ids a climate file cites anywhere, to check against its `sources`.
 function citedSources(cell) {
   const ids = new Set();
   const add = (list) => { for (const id of list ?? []) ids.add(id); };
   for (const t of cell.taxa) {
+    for (const r of t.reasons) add(r.sources);
     add(t.stratum?.sources);
     add(t.phases?.sources);
     for (const f of t.functions ?? []) add(f.sources);
@@ -271,11 +281,31 @@ function citedSources(cell) {
   return ids;
 }
 
-// Reads and checks a whole export directory; returns the parsed manifest, labels bytes and cells.
+// The format's rules the schema cannot express, for one climate file already shape-checked: the
+// first problem as a sentence, or null. `countries` is the manifest's.
+export function ruleProblem(file, cell, countries) {
+  const order = (list) => [...list].sort((a, b) => REGIONS.indexOf(a) - REGIONS.indexOf(b));
+  const named = new Set();
+  for (const t of cell.taxa) {
+    const rs = t.reasons.map((r) => r.region);
+    if (new Set(rs).size !== rs.length || order(rs).join() !== rs.join()) return `${file}: ${t.canonical_name}: its reasons are not one per region in region order (${rs.join(', ')}).`;
+    const outside = rs.find((r) => !cell.regions.includes(r));
+    if (outside) return `${file}: ${t.canonical_name}: a reason for ${outside}, not in the file's regions (${cell.regions.join(', ')}).`;
+    for (const r of rs) named.add(r);
+    for (const { country } of t.warnings.invasive_in ?? []) {
+      if (countries[country]?.invasive_checked !== true) return `${file}: ${t.canonical_name}: invasive in ${country}, a country GRIIS did not check (or one the manifest lacks).`;
+    }
+  }
+  const union = order(named);
+  if (union.join() !== cell.regions.join()) return `${file}: regions ${cell.regions.join(', ')} are not those of its reasons (${union.join(', ')}).`;
+  return null;
+}
+
+// Reads and checks a whole export directory; returns the parsed manifest, labels bytes and climate files.
 export function verifyExport(dir, { fixture = false } = {}) {
   const sums = readSums(dir);
   const manifest = parse(dir, 'manifest.json');
-  if (!isObject(manifest) || manifest.format_version !== 2) refuse(`manifest.json format_version is ${JSON.stringify(manifest?.format_version)}, not 2.`);
+  if (!isObject(manifest) || manifest.format_version !== 3) refuse(`manifest.json format_version is ${JSON.stringify(manifest?.format_version)}, not 3.`);
   const manifestProblems = shapeErrors(manifest, manifestShape, 'manifest.json');
   if (manifestProblems.length) refuse(manifestProblems.join('; '));
   if (manifest.canopi_db_sha256 === ZERO_SHA && !fixture) refuse('canopi_db_sha256 is all zeros: this is the invented fixture, never installed for real (tests pass --fixture).');
@@ -283,8 +313,8 @@ export function verifyExport(dir, { fixture = false } = {}) {
   if (labelProblems.length) refuse(labelProblems.join('; '));
 
   const seen = new Set();
-  const cells = manifest.cells.map((entry) => {
-    const where = `${entry.climate_zone} × ${entry.region}`;
+  const cells = manifest.climates.map((entry) => {
+    const where = entry.climate_zone;
     if (seen.has(where) || seen.has(entry.file)) refuse(`the manifest lists ${where} (${entry.file}) twice.`);
     seen.add(where).add(entry.file);
     if (!sums.has(entry.file)) refuse(`${entry.file} is not listed in SHA256SUMS.`);
@@ -293,13 +323,16 @@ export function verifyExport(dir, { fixture = false } = {}) {
     const cell = parse(dir, entry.file);
     const problems = shapeErrors(cell, cellShape, entry.file);
     if (problems.length) refuse(problems.join('; '));
-    if (cell.climate_zone !== entry.climate_zone || cell.region !== entry.region) refuse(`${entry.file} is ${cell.climate_zone} × ${cell.region}, the manifest says ${where}.`);
+    if (cell.climate_zone !== entry.climate_zone) refuse(`${entry.file} is ${cell.climate_zone}, the manifest says ${where}.`);
+    if (cell.regions.join() !== entry.regions.join()) refuse(`${entry.file} has the regions ${cell.regions.join(', ')}, the manifest says ${entry.regions.join(', ')}.`);
     if (cell.taxa.length !== entry.taxa) refuse(`${entry.file} has ${cell.taxa.length} taxa, the manifest says ${entry.taxa}.`);
     if (cell.interactions.length !== entry.interactions) refuse(`${entry.file} has ${cell.interactions.length} interactions, the manifest says ${entry.interactions}.`);
     const ids = new Set(cell.taxa.map((t) => t.id));
     if (ids.size !== cell.taxa.length) refuse(`${entry.file} lists a taxon id twice.`);
     const undefinedSources = [...citedSources(cell)].filter((id) => !(id in cell.sources));
     if (undefinedSources.length) refuse(`${entry.file} cites undefined sources: ${undefinedSources.join(', ')}.`);
+    const rule = ruleProblem(entry.file, cell, manifest.countries);
+    if (rule) refuse(rule);
     return { entry, cell, bytes };
   });
   return { manifest, manifestBytes: readFileSync(join(dir, 'manifest.json')), labelsBytes: readFileSync(join(dir, 'labels.json')), cells };
@@ -307,15 +340,16 @@ export function verifyExport(dir, { fixture = false } = {}) {
 
 // Checks an installed directory as the site serves it (scripts/check-built-site.mjs runs it on
 // dist/client/data/consortium/, the tests on public/data/consortium/): the manifest's format and
-// shape, SHA256SUMS line by line, each cell against its manifest sha256, taxa and interactions
-// counts and the export's shape, and every photo a local images/ file that exists. Throws on the
-// first problem; returns the counts of cells and photos.
+// shape, SHA256SUMS line by line, each climate file against its manifest sha256, regions, taxa and
+// interactions counts, the export's shape and the rules the schema cannot express, and every photo a
+// local images/ file that exists. Throws on the first problem; returns the counts of climate files
+// and photos.
 export function verifyInstall(dir, { fixture = false } = {}) {
   const broken = (message) => { throw new Error(`Consortium install broken (${dir}): ${message}`); };
   const read = (name) => { try { return readFileSync(join(dir, name)); } catch { return broken(`${name} is missing.`); } };
   const json = (name) => { try { return JSON.parse(read(name).toString('utf8')); } catch (err) { return broken(`${name} is not valid JSON (${err.message}).`); } };
   const manifest = json('manifest.json');
-  if (!isObject(manifest) || manifest.format_version !== 2) broken(`manifest.json format_version is ${JSON.stringify(manifest?.format_version)}, not 2.`);
+  if (!isObject(manifest) || manifest.format_version !== 3) broken(`manifest.json format_version is ${JSON.stringify(manifest?.format_version)}, not 3.`);
   const manifestProblems = shapeErrors(manifest, manifestShape, 'manifest.json');
   if (manifestProblems.length) broken(manifestProblems.join('; '));
   if (manifest.canopi_db_sha256 === ZERO_SHA && !fixture) broken('canopi_db_sha256 is all zeros: the invented fixture is installed.');
@@ -329,20 +363,24 @@ export function verifyInstall(dir, { fixture = false } = {}) {
     if (!m) broken(`SHA256SUMS has a malformed line: ${line}`);
     sums.set(m[2], m[1]);
   }
-  for (const name of ['manifest.json', 'labels.json', ...manifest.cells.map((c) => c.file)]) if (!sums.has(name)) broken(`SHA256SUMS does not list ${name}.`);
+  for (const name of ['manifest.json', 'labels.json', ...manifest.climates.map((c) => c.file)]) if (!sums.has(name)) broken(`SHA256SUMS does not list ${name}.`);
+  if (new Set(manifest.climates.map((c) => c.climate_zone)).size !== manifest.climates.length) broken('the manifest lists a climate twice.');
 
   let images = 0;
-  for (const entry of manifest.cells) {
+  for (const entry of manifest.climates) {
     const bytes = read(entry.file);
     if (sha256(bytes) !== entry.sha256) broken(`${entry.file} does not match the manifest's sha256.`);
     let cell;
     try { cell = JSON.parse(bytes.toString('utf8')); } catch (err) { broken(`${entry.file} is not valid JSON (${err.message}).`); }
     const problems = shapeErrors(cell, cellShape, entry.file);
     if (problems.length) broken(problems.join('; '));
-    if (cell.climate_zone !== entry.climate_zone || cell.region !== entry.region) broken(`${entry.file} is ${cell.climate_zone} × ${cell.region}, the manifest says ${entry.climate_zone} × ${entry.region}.`);
+    if (cell.climate_zone !== entry.climate_zone) broken(`${entry.file} is ${cell.climate_zone}, the manifest says ${entry.climate_zone}.`);
+    if (cell.regions.join() !== entry.regions.join()) broken(`${entry.file} has the regions ${cell.regions.join(', ')}, the manifest says ${entry.regions.join(', ')}.`);
     if (cell.taxa.length !== entry.taxa || cell.interactions.length !== entry.interactions) broken(`${entry.file} has ${cell.taxa.length} taxa and ${cell.interactions.length} interactions, the manifest says ${entry.taxa} and ${entry.interactions}.`);
     const undefinedSources = [...citedSources(cell)].filter((id) => !(id in cell.sources));
     if (undefinedSources.length) broken(`${entry.file} cites undefined sources: ${undefinedSources.join(', ')}.`);
+    const rule = ruleProblem(entry.file, cell, manifest.countries);
+    if (rule) broken(rule);
     for (const t of cell.taxa) {
       if (!t.image) continue;
       const name = t.image.url.startsWith(IMAGE_BASE) ? t.image.url.slice(IMAGE_BASE.length) : null;
@@ -355,7 +393,7 @@ export function verifyInstall(dir, { fixture = false } = {}) {
     if (!existsSync(join(dir, name))) broken(`${name} is listed in SHA256SUMS but missing.`);
     if (sha256(readFileSync(join(dir, name))) !== hash) broken(`${name} does not match SHA256SUMS.`);
   }
-  return { cells: manifest.cells.length, images };
+  return { climates: manifest.climates.length, images };
 }
 
 // Hosts a photo may be fetched from after a redirect, besides the host first asked.
@@ -435,7 +473,7 @@ async function download(url, { fetchImpl, delayMs, backoffMs }) {
   throw new Error(last ?? `no URL for ${url}`);
 }
 
-// Downloads every photo once per taxon id and rewrites the cells in place. Returns the image files
+// Downloads every photo once per taxon id (a taxon may be in several climate files) and rewrites the files in place. Returns the image files
 // and the failures.
 async function fetchImages(cells, { fetchImpl, delayMs, backoffMs, log, maxFailedShare }) {
   const wanted = new Map(); // id -> { url, name }
@@ -481,7 +519,7 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
   }
   const photos = images ? await fetchImages(cells, { fetchImpl, delayMs, backoffMs, log, maxFailedShare }) : { files: new Map(), failed: [], total: 0 };
 
-  // Installed bytes: unchanged cells byte for byte, changed ones minified (the export's own style)
+  // Installed bytes: unchanged climate files byte for byte, changed ones minified (the export's own style)
   // with their checksum recomputed in the installed manifest.
   const written = new Map();
   for (const c of cells) {
@@ -526,10 +564,10 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
 
   const summary = {
     out,
-    cells: cells.map((c) => ({ file: c.entry.file, taxa: c.entry.taxa, interactions: c.entry.interactions })),
+    climates: cells.map((c) => ({ file: c.entry.file, taxa: c.entry.taxa, interactions: c.entry.interactions })),
     photos: { total: photos.total, downloaded: photos.files.size, failed: photos.failed },
   };
-  log(`Installed ${cells.length} consortium cells (${cells.map((c) => c.entry.file).join(', ')}) in ${out}`);
+  log(`Installed ${cells.length} consortium climates (${cells.map((c) => c.entry.file).join(', ')}) in ${out}`);
   if (images) log(`Photos: ${photos.files.size} of ${photos.total} downloaded${photos.failed.length ? `; no photo for ${photos.failed.map((f) => f.name).join(', ')}` : ''}.`);
   else log('Photos: skipped (--no-images).');
   return summary;

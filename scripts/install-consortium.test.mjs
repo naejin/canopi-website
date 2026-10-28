@@ -29,7 +29,7 @@ function workspace(t) {
     writeFileSync(join(src, name), bytes);
     if (name !== 'manifest.json' && sums) {
       const manifest = json('manifest.json');
-      const entry = manifest.cells.find((c) => c.file === name);
+      const entry = manifest.climates.find((c) => c.file === name);
       if (entry) { entry.sha256 = sha(bytes); write('manifest.json', JSON.stringify(manifest, null, 2)); }
     }
     if (sums) {
@@ -45,13 +45,13 @@ const install = (w, opts = {}) => installConsortium({ exportDir: w.src, outDir: 
 test('the fixture installs with --fixture --no-images --out, byte for byte, with its SHA256SUMS', (t) => {
   const w = workspace(t);
   mkdirSync(w.out);
-  writeFileSync(join(w.out, 'manifest.json'), '{"format_version":2}'); // a previous install, by its mark
+  writeFileSync(join(w.out, 'manifest.json'), '{"format_version":3}'); // a previous install, by its mark
   writeFileSync(join(w.out, 'INSTALLED_BY'), 'scripts/install-consortium.mjs (canopi-website)\n');
   writeFileSync(join(w.out, 'stale.json'), '{}');
   const stdout = execFileSync(process.execPath, [script, w.src, '--fixture', '--no-images', '--out', w.out], { encoding: 'utf8' });
-  assert.match(stdout, /Installed 3 consortium cells/);
-  assert.deepEqual(readdirSync(w.out).sort(), ['INSTALLED_BY', 'SHA256SUMS', 'labels.json', 'manifest.json', 'mediterranean-europe.json', 'temperate-europe.json', 'tropical-southern-america.json']);
-  for (const name of ['manifest.json', 'labels.json', 'temperate-europe.json']) assert.deepEqual(readFileSync(join(w.out, name)), readFileSync(join(fixture, name)), name);
+  assert.match(stdout, /Installed 3 consortium climates/);
+  assert.deepEqual(readdirSync(w.out).sort(), ['INSTALLED_BY', 'SHA256SUMS', 'labels.json', 'manifest.json', 'mediterranean.json', 'temperate.json', 'tropical.json']);
+  for (const name of ['manifest.json', 'labels.json', 'temperate.json']) assert.deepEqual(readFileSync(join(w.out, name)), readFileSync(join(fixture, name)), name);
   for (const line of readFileSync(join(w.out, 'SHA256SUMS'), 'utf8').trim().split('\n')) {
     const [hash, name] = line.split('  ');
     assert.equal(sha(readFileSync(join(w.out, name))), hash, name);
@@ -69,10 +69,10 @@ test('without --fixture, the all-zeros canopi_db_sha256 of the fixture is refuse
 
 test('a file that does not match SHA256SUMS is refused', async (t) => {
   const w = workspace(t);
-  const cell = w.json('temperate-europe.json');
+  const cell = w.json('temperate.json');
   cell.taxa[0].names.en = 'Changed';
-  w.write('temperate-europe.json', cell, { sums: false });
-  await assert.rejects(install(w), /temperate-europe\.json does not match its SHA256SUMS checksum/);
+  w.write('temperate.json', cell, { sums: false });
+  await assert.rejects(install(w), /temperate\.json does not match its SHA256SUMS checksum/);
   assert.equal(existsSync(w.out), false);
 });
 
@@ -85,44 +85,115 @@ test('an unlisted json file, or a listed file that is missing, is refused', asyn
   await assert.rejects(install(w), /labels\.json is listed in SHA256SUMS but missing/);
 });
 
-test('a manifest whose format_version is not 2 is refused', async (t) => {
+test('a manifest whose format_version is not 3 is refused', async (t) => {
   const w = workspace(t);
   const manifest = w.json('manifest.json');
-  manifest.format_version = 1;
+  manifest.format_version = 2;
   w.write('manifest.json', manifest);
-  await assert.rejects(install(w), /format_version is 1, not 2/);
+  await assert.rejects(install(w), /format_version is 2, not 3/);
 });
 
 test('a cell whose sha256 differs from the manifest is refused', async (t) => {
   const w = workspace(t);
   const manifest = w.json('manifest.json');
-  manifest.cells[0].sha256 = 'f'.repeat(64);
+  manifest.climates[0].sha256 = 'f'.repeat(64);
   w.write('manifest.json', manifest);
   await assert.rejects(install(w), /does not match the manifest's sha256/);
 });
 
 test('a cell missing a required key is refused, naming the key', async (t) => {
   const w = workspace(t);
-  const cell = w.json('tropical-southern-america.json');
+  const cell = w.json('tropical.json');
   delete cell.taxa[2].traits.sun;
-  w.write('tropical-southern-america.json', cell);
+  w.write('tropical.json', cell);
   await assert.rejects(install(w), /taxa\[2\]\.traits: misses required key "sun"/);
 });
 
 test('taxa or interactions counts that differ from the manifest are refused', async (t) => {
   const w = workspace(t);
   const manifest = w.json('manifest.json');
-  manifest.cells.find((c) => c.file === 'temperate-europe.json').taxa = 13;
+  manifest.climates.find((c) => c.file === 'temperate.json').taxa = 14;
   w.write('manifest.json', manifest);
-  await assert.rejects(install(w), /has 12 taxa, the manifest says 13/);
-  manifest.cells.find((c) => c.file === 'temperate-europe.json').taxa = 12;
-  manifest.cells.find((c) => c.file === 'temperate-europe.json').interactions = 0;
+  await assert.rejects(install(w), /has 13 taxa, the manifest says 14/);
+  manifest.climates.find((c) => c.file === 'temperate.json').taxa = 13;
+  manifest.climates.find((c) => c.file === 'temperate.json').interactions = 0;
   w.write('manifest.json', manifest);
   await assert.rejects(install(w), /has 3 interactions, the manifest says 0/);
 });
 
+test('format 3: one file per climate, its regions those of the manifest entry', async (t) => {
+  const w = workspace(t);
+  const manifest = w.json('manifest.json');
+  manifest.climates[1] = { ...manifest.climates[1], climate_zone: 'Tropical' };
+  w.write('manifest.json', manifest);
+  await assert.rejects(install(w), /the manifest lists Tropical \(mediterranean\.json\) twice/);
+  const w2 = workspace(t);
+  const m2 = w2.json('manifest.json');
+  m2.climates.find((c) => c.file === 'temperate.json').regions = ['europe'];
+  w2.write('manifest.json', m2);
+  await assert.rejects(install(w2), /temperate\.json has the regions europe, asia_temperate, the manifest says europe/);
+  assert.equal(existsSync(w2.out), false);
+});
+
+test('format 3: the manifest lists countries with invasive_checked, keyed by ISO alpha-2 codes', async (t) => {
+  for (const [breakIt, problem] of [
+    [(m) => { m.countries.fr = { invasive_checked: true }; }, /countries: has a key "fr"/],
+    [(m) => { m.countries.FR = { invasive_checked: 'yes' }; }, /countries\.FR\.invasive_checked: is not a boolean/],
+    [(m) => { m.countries.FR = {}; }, /countries\.FR: misses required key "invasive_checked"/],
+    [(m) => { delete m.countries; m.country_regions = {}; }, /misses required key "countries"/],
+    [(m) => { m.cells = m.climates; delete m.climates; }, /misses required key "climates"/],
+  ]) {
+    const w = workspace(t);
+    const manifest = w.json('manifest.json');
+    breakIt(manifest);
+    w.write('manifest.json', manifest);
+    await assert.rejects(install(w), problem, String(problem));
+    assert.equal(existsSync(w.out), false);
+  }
+});
+
+test('format 3: every reason cites a defined source', async (t) => {
+  const w = workspace(t);
+  const cell = w.json('temperate.json');
+  cell.taxa[1].reasons[0].sources = ['nobody-2099'];
+  w.write('temperate.json', cell);
+  await assert.rejects(install(w), /temperate\.json cites undefined sources: nobody-2099/);
+});
+
+test('format 3: the rules the schema cannot express (reasons per region, regions as their union, invasive only where GRIIS checked)', async (t) => {
+  const cases = [
+    ['a region twice in one taxon', (c) => { const x = c.taxa.find((y) => y.reasons.length === 2); x.reasons[1].region = x.reasons[0].region; }, /Allium schoenoprasum: its reasons are not one per region in region order/],
+    ['reasons out of region order', (c) => { const x = c.taxa.find((y) => y.reasons.length === 2); x.reasons.reverse(); }, /Allium schoenoprasum: its reasons are not one per region in region order/],
+    ['a reason outside the file\'s regions', (c) => { c.taxa[1].reasons[0].region = 'africa'; }, /Alnus cordata: a reason for africa, not in the file's regions/],
+    ['a file region no reason names', (c) => { c.regions = ['europe', 'asia_temperate', 'pacific']; }, /temperate\.json: regions europe, asia_temperate, pacific are not those of its reasons \(europe, asia_temperate\)/],
+    ['file regions out of order', (c) => { c.regions = ['asia_temperate', 'europe']; }, /temperate\.json: regions asia_temperate, europe are not those of its reasons/],
+  ];
+  for (const [name, breakIt, problem] of cases) {
+    const w = workspace(t);
+    const cell = w.json('temperate.json');
+    breakIt(cell);
+    const manifest = w.json('manifest.json');
+    manifest.climates.find((c) => c.file === 'temperate.json').regions = cell.regions;
+    w.write('manifest.json', manifest);
+    w.write('temperate.json', cell);
+    await assert.rejects(install(w), problem, name);
+    assert.equal(existsSync(w.out), false, name);
+  }
+  const w = workspace(t);
+  const manifest = w.json('manifest.json');
+  const cell = w.json('tropical.json');
+  const x = cell.taxa.find((y) => y.warnings.invasive_in?.length);
+  const unchecked = Object.keys(manifest.countries).find((k) => !manifest.countries[k].invasive_checked);
+  x.warnings.invasive_in.push({ country: unchecked, sources: ['griis'] });
+  w.write('tropical.json', cell);
+  await assert.rejects(install(w), new RegExp(`${x.canonical_name}: invasive in ${unchecked}, a country GRIIS did not check`));
+  x.warnings.invasive_in[x.warnings.invasive_in.length - 1].country = 'ZZ';
+  w.write('tropical.json', cell);
+  await assert.rejects(install(w), new RegExp(`${x.canonical_name}: invasive in ZZ, a country GRIIS did not check`));
+});
+
 test('the shape check: types, enums, nulls where allowed, extra keys accepted', () => {
-  const cell = JSON.parse(readFileSync(join(fixture, 'temperate-europe.json'), 'utf8'));
+  const cell = JSON.parse(readFileSync(join(fixture, 'temperate.json'), 'utf8'));
   assert.deepEqual(shapeErrors(cell, cellShape), []);
   const broken = structuredClone(cell);
   broken.taxa[0].role = 'weed';
@@ -131,9 +202,14 @@ test('the shape check: types, enums, nulls where allowed, extra keys accepted', 
   broken.taxa[3].id = 'not-a-uuid';
   broken.interactions[0].severity = 'extreme';
   broken.taxa[4].future_field = 'allowed';
-  delete broken.taxa[5].reason;
+  delete broken.taxa[5].reasons;
+  broken.taxa[6].reasons = [];
+  broken.taxa[7].reasons[0].region = 'atlantis';
+  delete broken.taxa[8].reasons[0].sources;
+  broken.regions = [];
   assert.deepEqual(shapeErrors(broken, cellShape).map((e) => e.split(':')[0]), [
-    '$.taxa[0].role', '$.taxa[1].traits.edibility_rating', '$.taxa[2].stratum.sources', '$.taxa[3].id', '$.interactions[0].severity',
+    '$.regions', '$.taxa[0].role', '$.taxa[1].traits.edibility_rating', '$.taxa[2].stratum.sources', '$.taxa[3].id',
+    '$.taxa[5]', '$.taxa[6].reasons', '$.taxa[7].reasons[0].region', '$.taxa[8].reasons[0]', '$.interactions[0].severity',
   ]);
 });
 
@@ -155,7 +231,7 @@ test('thumbnailUrl: Commons and iNaturalist originals become 500 px thumbnails (
   assert.equal(thumbnailUrl('https://example.org/photo.jpg'), null);
 });
 
-// Gives the fixture photos: two Commons originals and an iNaturalist one, on one taxon in two cells.
+// Gives the fixture photos: two Commons originals and an iNaturalist one, all in the Tropical file.
 function withPhotos(w) {
   const photos = {
     'Inga edulis': 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Inga.jpg',
@@ -163,9 +239,9 @@ function withPhotos(w) {
     'Arachis pintoi': 'https://inaturalist-open-data.s3.amazonaws.com/photos/9/medium.jpeg',
     'Carica papaya': 'https://upload.wikimedia.org/wikipedia/commons/c/c2/Papaya.jpg',
   };
-  const cell = w.json('tropical-southern-america.json');
+  const cell = w.json('tropical.json');
   for (const t of cell.taxa) if (photos[t.canonical_name]) t.image = { url: photos[t.canonical_name], credit: 'Someone', licence: 'CC BY 4.0', source_page_url: 'https://commons.wikimedia.org/wiki/File:X.jpg' };
-  w.write('tropical-southern-america.json', cell);
+  w.write('tropical.json', cell);
   return cell;
 }
 
@@ -185,17 +261,17 @@ test('photos: thumbnails downloaded with the User-Agent, urls rewritten, checksu
   assert.ok(calls.every((c) => c.ua === USER_AGENT));
   assert.ok(calls.some((c) => c.url.endsWith('/thumb/a/a6/Inga.jpg/500px-Inga.jpg')));
   assert.ok(calls.some((c) => c.url.endsWith('/thumb/b/b1/Musa.svg/500px-Musa.svg.png')));
-  const cell = JSON.parse(readFileSync(join(w.out, 'tropical-southern-america.json'), 'utf8'));
+  const cell = JSON.parse(readFileSync(join(w.out, 'tropical.json'), 'utf8'));
   const inga = cell.taxa.find((x) => x.canonical_name === 'Inga edulis'), musa = cell.taxa.find((x) => x.canonical_name === 'Musa acuminata');
   assert.equal(inga.image.url, `/data/consortium/images/${inga.id}.jpg`);
   assert.equal(musa.image.url, `/data/consortium/images/${musa.id}.png`);
   assert.equal(inga.image.credit, 'Someone', 'credit and licence stay');
   assert.ok(existsSync(join(w.out, 'images', `${inga.id}.jpg`)));
   const manifest = JSON.parse(readFileSync(join(w.out, 'manifest.json'), 'utf8'));
-  const entry = manifest.cells.find((c) => c.file === 'tropical-southern-america.json');
+  const entry = manifest.climates.find((c) => c.file === 'tropical.json');
   assert.equal(entry.sha256, sha(readFileSync(join(w.out, entry.file))));
   const sums = readFileSync(join(w.out, 'SHA256SUMS'), 'utf8');
-  assert.match(sums, new RegExp(`${entry.sha256}  tropical-southern-america\\.json`));
+  assert.match(sums, new RegExp(`${entry.sha256}  tropical\\.json`));
   assert.match(sums, new RegExp(`images/${inga.id}\\.jpg`));
 });
 
@@ -206,12 +282,12 @@ test('photos: a failed photo becomes image: null and is listed; over 10% failing
   await assert.rejects(install(w, { images: true, fetchImpl: stubFetch([], { fail: ['Papaya'] }), delayMs: 0, backoffMs: 0 }), /1 of 4 photos failed/);
   assert.equal(existsSync(w.out), false);
   // Give 11 taxa a photo so one failure is under 10%.
-  const cell = w.json('tropical-southern-america.json');
+  const cell = w.json('tropical.json');
   cell.taxa.forEach((x, i) => { if (i < 11) x.image = { url: `https://upload.wikimedia.org/wikipedia/commons/d/d${i % 10}/P${i}.jpg`, credit: null, licence: null, source_page_url: null }; });
-  w.write('tropical-southern-america.json', cell);
+  w.write('tropical.json', cell);
   const summary = await install(w, { images: true, fetchImpl: stubFetch([], { fail: ['P3.jpg'] }), delayMs: 0, backoffMs: 0 });
   assert.deepEqual(summary.photos.failed.map((f) => f.name), [cell.taxa[3].canonical_name]);
-  const installed = JSON.parse(readFileSync(join(w.out, 'tropical-southern-america.json'), 'utf8'));
+  const installed = JSON.parse(readFileSync(join(w.out, 'tropical.json'), 'utf8'));
   assert.equal(installed.taxa[3].image, null);
   assert.ok(installed.taxa[4].image.url.startsWith('/data/consortium/images/'));
 });
@@ -305,16 +381,16 @@ test('photos: an image url that is not http(s) is installed as image: null, with
     const cell = withPhotos(w);
     const odd = { 'Inga edulis': '//cdn.example/x.jpg', 'Musa acuminata': 'data:image/png;base64,AAAA', 'Carica papaya': 'ftp://example.org/p.jpg' };
     for (const x of cell.taxa) if (odd[x.canonical_name]) x.image.url = odd[x.canonical_name];
-    w.write('tropical-southern-america.json', cell);
+    w.write('tropical.json', cell);
     const seen = [];
     await install(w, { images, fetchImpl: stubFetch(seen), delayMs: 0, backoffMs: 0 });
-    const installed = JSON.parse(readFileSync(join(w.out, 'tropical-southern-america.json'), 'utf8'));
+    const installed = JSON.parse(readFileSync(join(w.out, 'tropical.json'), 'utf8'));
     for (const name of Object.keys(odd)) assert.equal(installed.taxa.find((x) => x.canonical_name === name).image, null, `${name}, images ${images}`);
     assert.ok(!seen.some((c) => !/^https:/.test(c.url)));
     const left = installed.taxa.filter((x) => x.image).map((x) => x.image.url);
     assert.ok(left.every((u) => u.startsWith('/data/consortium/images/') || !images), 'downloads rewrite every remaining url');
     const manifest = JSON.parse(readFileSync(join(w.out, 'manifest.json'), 'utf8'));
-    assert.equal(manifest.cells.find((c) => c.file === 'tropical-southern-america.json').sha256, sha(readFileSync(join(w.out, 'tropical-southern-america.json'))));
+    assert.equal(manifest.climates.find((c) => c.file === 'tropical.json').sha256, sha(readFileSync(join(w.out, 'tropical.json'))));
   }
 });
 
@@ -322,7 +398,7 @@ test('--out refuses a canopi-data export, and the export directory itself, so ne
   const w = workspace(t);
   const other = join(w.out, '..', 'another-export');
   cpSync(w.src, other, { recursive: true });
-  await assert.rejects(install({ ...w, out: other }), /holds no consortium install/, 'an export has a format 2 manifest too');
+  await assert.rejects(install({ ...w, out: other }), /holds no consortium install/, 'an export has a format 3 manifest too');
   assert.ok(existsSync(join(other, 'SHA256SUMS')));
   await assert.rejects(install({ ...w, out: w.src }), /export directory/);
   await assert.rejects(install({ ...w, out: join(w.src, 'inside') }), /export directory/);
@@ -372,15 +448,15 @@ test('staging lives outside public/ (git-ignored .cache/), and what a killed run
 });
 
 test('the shape check holds edibility to 0–5 and names, reasons and notes to the 11 site locales', () => {
-  const cell = JSON.parse(readFileSync(join(fixture, 'temperate-europe.json'), 'utf8'));
+  const cell = JSON.parse(readFileSync(join(fixture, 'temperate.json'), 'utf8'));
   const broken = structuredClone(cell);
   broken.taxa[0].traits.edibility_rating = 50;
   broken.taxa[1].traits.edibility_rating = -1;
   broken.taxa[2].names.la = 'Malus';
-  broken.taxa[3].reason = { en: 'Fine.', xx: 'No.' };
+  broken.taxa[3].reasons[0].text = { en: 'Fine.', xx: 'No.' };
   broken.interactions[0].note = { en: 'Fine.', klingon: 'No.' };
   assert.deepEqual(shapeErrors(broken, cellShape).map((e) => e.split(':')[0]), [
-    '$.taxa[0].traits.edibility_rating', '$.taxa[1].traits.edibility_rating', '$.taxa[2].names', '$.taxa[3].reason', '$.interactions[0].note',
+    '$.taxa[0].traits.edibility_rating', '$.taxa[1].traits.edibility_rating', '$.taxa[2].names', '$.taxa[3].reasons[0].text', '$.interactions[0].note',
   ]);
   const fine = structuredClone(cell);
   fine.taxa[0].traits.edibility_rating = 5;
@@ -408,10 +484,10 @@ test('a source url or a photo page url that is not http(s) is refused, so no dat
   const bad = ['javascript:alert(document.domain)', 'javascript://commons.wikimedia.org/%0aalert(1)', 'data:text/html,x', '//example.org/x', 'vbscript:x', ' javascript:x', 'example.org/page'];
   for (const url of bad) {
     const w = workspace(t);
-    const cell = w.json('temperate-europe.json');
+    const cell = w.json('temperate.json');
     const id = Object.keys(cell.sources).find((k) => cell.sources[k].url);
     cell.sources[id].url = url;
-    w.write('temperate-europe.json', cell);
+    w.write('temperate.json', cell);
     await assert.rejects(install(w), new RegExp(`sources\\.${id}\\.url: .*is not an http\\(s\\) URL`), url);
     assert.equal(existsSync(w.out), false);
   }
@@ -419,11 +495,11 @@ test('a source url or a photo page url that is not http(s) is refused, so no dat
     const w = workspace(t);
     const cell = withPhotos(w);
     cell.taxa.find((x) => x.image).image.source_page_url = url;
-    w.write('tropical-southern-america.json', cell);
+    w.write('tropical.json', cell);
     await assert.rejects(install(w), /image\.source_page_url: .*is not an http\(s\) URL/, url);
   }
   // http, https and null pass.
-  const cell = JSON.parse(readFileSync(join(fixture, 'temperate-europe.json'), 'utf8'));
+  const cell = JSON.parse(readFileSync(join(fixture, 'temperate.json'), 'utf8'));
   const id = Object.keys(cell.sources)[0];
   for (const url of ['https://example.org/a', 'http://example.org/b', 'HTTPS://EXAMPLE.ORG/C', null]) {
     cell.sources[id].url = url;
@@ -444,23 +520,25 @@ async function installed(t) {
 
 test('verifyInstall: a whole install passes, and so does the committed public/data/consortium/', async (t) => {
   const w = await installed(t);
-  assert.deepEqual(verifyInstall(w.out, { fixture: true }), { cells: 3, images: 4 });
+  assert.deepEqual(verifyInstall(w.out, { fixture: true }), { climates: 3, images: 4 });
   const real = verifyInstall(DEFAULT_OUT);
-  assert.ok(real.cells >= 3 && real.images > 100, JSON.stringify(real));
+  assert.ok(real.climates >= 3 && real.images > 100, JSON.stringify(real));
   assert.throws(() => verifyInstall(w.out), /canopi_db_sha256 is all zeros/, 'the fixture is never a real install');
 });
 
 test('verifyInstall: the reviewer\'s broken installs fail (prepush m2)', async (t) => {
   const cases = [
     ['no photos', (w) => rmSync(join(w.out, 'images'), { recursive: true }), /images\/[0-9a-f-]+\.(jpg|png) is missing/],
-    ['format_version 3', (w) => { const c = w.json('temperate-europe.json'); c.format_version = 3; w.put('temperate-europe.json', c); }, /temperate-europe\.json does not match the manifest's sha256|format_version/],
-    ['format_version 3, checksums redone', (w) => { const c = w.json('temperate-europe.json'); c.format_version = 3; w.put('temperate-europe.json', c); resum(w, 'temperate-europe.json'); }, /format_version: 3 is not one of 2/],
-    ['no interactions', (w) => { const c = w.json('temperate-europe.json'); delete c.interactions; w.put('temperate-europe.json', c); resum(w, 'temperate-europe.json'); }, /misses required key "interactions"/],
-    ['null traits and warnings', (w) => { const c = w.json('temperate-europe.json'); for (const x of c.taxa) { x.traits = null; x.warnings = null; } w.put('temperate-europe.json', c); resum(w, 'temperate-europe.json'); }, /traits: is null/],
-    ['a cell that is not its manifest sha256', (w) => { const c = w.json('temperate-europe.json'); c.taxa[0].names.en = 'Changed'; w.put('temperate-europe.json', c); }, /temperate-europe\.json does not match the manifest's sha256/],
+    ['format_version 2', (w) => { const c = w.json('temperate.json'); c.format_version = 2; w.put('temperate.json', c); }, /temperate\.json does not match the manifest's sha256|format_version/],
+    ['format_version 2, checksums redone', (w) => { const c = w.json('temperate.json'); c.format_version = 2; w.put('temperate.json', c); resum(w, 'temperate.json'); }, /format_version: 2 is not one of 3/],
+    ['no interactions', (w) => { const c = w.json('temperate.json'); delete c.interactions; w.put('temperate.json', c); resum(w, 'temperate.json'); }, /misses required key "interactions"/],
+    ['null traits and warnings', (w) => { const c = w.json('temperate.json'); for (const x of c.taxa) { x.traits = null; x.warnings = null; } w.put('temperate.json', c); resum(w, 'temperate.json'); }, /traits: is null/],
+    ['a cell that is not its manifest sha256', (w) => { const c = w.json('temperate.json'); c.taxa[0].names.en = 'Changed'; w.put('temperate.json', c); }, /temperate\.json does not match the manifest's sha256/],
     ['a stale SHA256SUMS', (w) => writeFileSync(join(w.out, 'labels.json'), '{}'), /labels\.json does not match SHA256SUMS/],
-    ['a remote photo url', (w) => { const c = w.json('tropical-southern-america.json'); c.taxa.find((x) => x.image).image.url = 'https://upload.wikimedia.org/x.jpg'; w.put('tropical-southern-america.json', c); resum(w, 'tropical-southern-america.json'); }, /image\.url .* is not a local \/data\/consortium\/images\/ file/],
-    ['manifest format_version 3', (w) => { const m = w.json('manifest.json'); m.format_version = 3; w.put('manifest.json', m); resum(w, 'manifest.json'); }, /manifest\.json format_version is 3, not 2/],
+    ['a remote photo url', (w) => { const c = w.json('tropical.json'); c.taxa.find((x) => x.image).image.url = 'https://upload.wikimedia.org/x.jpg'; w.put('tropical.json', c); resum(w, 'tropical.json'); }, /image\.url .* is not a local \/data\/consortium\/images\/ file/],
+    ['manifest format_version 2', (w) => { const m = w.json('manifest.json'); m.format_version = 2; w.put('manifest.json', m); resum(w, 'manifest.json'); }, /manifest\.json format_version is 2, not 3/],
+    ['a reason outside the file\'s regions', (w) => { const c = w.json('temperate.json'); c.regions = ['europe']; w.put('temperate.json', c); const m = w.json('manifest.json'); m.climates.find((x) => x.file === 'temperate.json').regions = ['europe']; w.put('manifest.json', m); resum(w, 'temperate.json'); }, /temperate\.json: .*asia_temperate.* not in the file's regions/],
+    ['an invasive country not checked', (w) => { const m = w.json('manifest.json'); const c = w.json('tropical.json'); const code = c.taxa.find((x) => x.warnings.invasive_in?.length).warnings.invasive_in[0].country; m.countries[code].invasive_checked = false; w.put('manifest.json', m); resum(w, 'manifest.json'); }, /invasive in [A-Z]{2}, a country GRIIS did not check/],
   ];
   for (const [name, breakIt, error] of cases) {
     const w = await installed(t);
@@ -475,7 +553,7 @@ function resum(w, name) {
   const bytes = readFileSync(join(w.out, name));
   if (name !== 'manifest.json') {
     const m = w.json('manifest.json');
-    m.cells.find((c) => c.file === name).sha256 = sha(bytes);
+    m.climates.find((c) => c.file === name).sha256 = sha(bytes);
     w.put('manifest.json', m);
   }
   const lines = readFileSync(join(w.out, 'SHA256SUMS'), 'utf8').trim().split('\n').map((l) => {
