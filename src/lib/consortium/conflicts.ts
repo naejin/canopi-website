@@ -64,12 +64,6 @@ export function conflictsOf(taxon: Taxon, others: Taxon[], interactions: Interac
 // A medium or high conflict keeps a candidate out of automatic picks; low or unrated ones only warn.
 export const isSerious = (c: Conflict) => c.severity === 'medium' || c.severity === 'high';
 
-// The countries where the taxon is recorded invasive, or null when nobody checked.
-export function invasiveCountries(taxon: Taxon): string[] | null {
-  const list = taxon.warnings.invasive_in;
-  return list === null ? null : [...new Set(list.map((r) => r.country))];
-}
-
 // true: recorded invasive in the country; false: checked and not recorded there; null: not checked
 // for this taxon, a country GRIIS did not check, or no country given. `checked` is the manifest's
 // countries[code].invasive_checked and must be given as true for a "false": a caller that leaves it

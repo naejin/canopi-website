@@ -4,7 +4,7 @@ title: Consortium core
 description: Format 3 types and the pure, dependency-free functions of the consortium tool (climate file lookup, country checks, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T14:12:32Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T14:56:15Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
@@ -31,8 +31,8 @@ sources:
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
-    digest: sha256:6cd9ea01fd21d687
-    last_modified: 2026-10-28T13:09:26Z
+    digest: sha256:79476173394e0839
+    last_modified: 2026-10-28T14:34:32Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
@@ -41,8 +41,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:3098d13f4cd14b5d
-    last_modified: 2026-10-28T13:44:57Z
+    digest: sha256:608ccc8a28fc24c7
+    last_modified: 2026-10-28T14:34:01Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -75,9 +75,9 @@ export under `public/data/consortium/`.
 | [climates.ts](../../src/lib/consortium/climates.ts) | `fileFor(manifest, climate)` → `ManifestClimate \| null`; `isCountry(manifest, code)`; `invasiveChecked(manifest, code)` (GRIIS checked that country); `climateZoneOf`, `siteClimates`, `isSiteClimate` |
 | [site.ts](../../src/lib/consortium/site.ts) | `Site`, `DEFAULT_SITE` (sun, soil and water unsure, large garden), `fits(taxon, site)` → `{ ok, misfits, unknowns }` |
 | [jobs.ts](../../src/lib/consortium/jobs.ts) | `jobs` (six ids), `jobsOf(taxon)`, `jobOfFunction`, `phaseBands`, `bandOf(phase)`, `bandsOf(taxon)` |
-| [conflicts.ts](../../src/lib/consortium/conflicts.ts) | `conflicts(members, interactions)`, `conflictsOf(taxon, others, interactions)`, `matches(ref, taxon)`, `isSerious`, `invasiveIn(taxon, country, checked)` → `true \| false \| null` (null when the country is unchecked, the record unknown, or `checked` is not given as true: a caller that forgets the flag never gets "none"), `invasiveCountries(taxon)` |
+| [conflicts.ts](../../src/lib/consortium/conflicts.ts) | `conflicts(members, interactions)`, `conflictsOf(taxon, others, interactions)`, `matches(ref, taxon)`, `isSerious`, `invasiveIn(taxon, country, checked)` → `true \| false \| null` (null when the country is unchecked, the record unknown, or `checked` is not given as true: a caller that forgets the flag never gets "none") |
 | [suggest.ts](../../src/lib/consortium/suggest.ts) | `gain(taxon, members, site)` (term by term), `suggest(file, { site, kept, removed, country, countryChecked })` → `{ members, limit, gaps }` (the only function that fills), `evaluate(cell, ids, { site, kept, country })` → the same `{ members, limit, gaps }` for a fixed list, never refilled, `alternatives(memberId, consortium, cell, { site, removed, country })`, `flagsFor(cell, id, memberIds, { site, country })` (the flags of one plant against a list: what Add uses to sort and confirm), `SIZE_LIMIT` |
-| [state.ts](../../src/lib/consortium/state.ts) | `ConsortiumState` (`climate`, `country`, `noCountry`, `site`, `kept`, `removed`, `members`, `plants`, `crops`, `guests`), `encodeState(state, cell?, others?)` → `URLSearchParams`, `decodeState(params, cell?, others?)` → `{ state, dropped, version }`, `resolveState(decoded, cell, others?)`, `taxonByName(cell, name)` (a guide's plant: exact canonical name, else case and spacing aside), `resolveIds(tokens, pool, key?)`, `shortId(id, cell?)`, `MAX_LINK_IDS` = 2000, `MAX_CROPS` = 3, `GUEST_CODES` (two letters per climate), `LINK_VERSION` = 3, `NO_COUNTRY` = `-` |
+| [state.ts](../../src/lib/consortium/state.ts) | `ConsortiumState` (`climate`, `country`, `noCountry`, `site`, `kept`, `removed`, `members`, `plants`, `crops`, `guests`), `encodeState(state, cell?, others?)` → `URLSearchParams`, `decodeState(params, cell?, others?)` → `{ state, dropped, version }`, `resolveState(decoded, cell, others?)`, `taxonByName(cell, name)` (a guide's plant: exact canonical name, else case and spacing aside), `resolveIds(tokens, pool, key?, match?)` (one prefix `matcher(pool)` per pool), `END_KEY` = `e` (`encodeState` writes `e=1` last, `decodeState` reports `ended`, so a link cut between two tokens is seen as cut; an unknown `v` reads no plant keys; every `g` value shares one cap and a repeated guest code is dropped as `duplicate`), `shortId(id, cell?)`, `MAX_LINK_IDS` = 2000, `MAX_CROPS` = 3, `GUEST_CODES` (two letters per climate), `LINK_VERSION` = 3, `NO_COUNTRY` = `-` |
 | [index.ts](../../src/lib/consortium/index.ts) | re-exports all of the above |
 | [install-consortium.mjs](../../scripts/install-consortium.mjs) | `npm run install:consortium -- <export-dir> [--fixture [--no-images]] [--out <dir>]`; `installConsortium(...)`, `verifyExport`, `verifyInstall(dir, { fixture })` (re-checks an installed folder: manifest, labels, `SHA256SUMS`, each climate file's sha256, regions, shape, counts, sources and `ruleProblem`, every photo a local file that exists; `check-built-site.mjs` runs it on `dist/`), `shapeErrors`, `cellShape`, `ruleProblem(file, climateFile, countries)`, `isHttpUrl`, `thumbnailUrl`, `STAGING_DIR`, `stagingDirFor(out)` |
 
