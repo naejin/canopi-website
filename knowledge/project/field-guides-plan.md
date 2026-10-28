@@ -4,20 +4,20 @@ title: Field Guides plan
 description: Build plan for the 17 Field Guides drawn from Landrace Gardening — steps, streams, file ownership and exit criteria.
 tags: [field-guides, plan]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:31:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T22:39:57Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:56Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T22:39:59Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:d5090f13b3d64365
-    last_modified: 2026-10-28T09:53:43Z
+    digest: sha256:0678e2b538c9f0f3
+    last_modified: 2026-10-28T22:38:47Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
     digest: sha256:f7e2fc8ce6d55b8c
-    last_modified: 2026-10-28T09:52:50Z
+    last_modified: 2026-10-28T09:57:25Z
 ---
 
 # Field Guides plan
@@ -72,6 +72,7 @@ Guide map: `.local/field-guides/pollinators/00-map.md` (source: *The Pollinator 
 - Shared files on `guides/pollinators-shared`: the section label `domain.pests` renamed ("Helpers & pests", « Auxiliaires et ravageurs »), 31 glossary terms, the book's invasive names in `invasiveNames`.
 - The four guides 42 garden-helpers (hub), 43 flowers-for-pollinators, 44 homes-for-pollinators and 45 lawn-to-flowers, written in three streams and merged on `consortium/integration`; `jobGuides.helpers` is `garden-helpers`.
 - Hand-offs (`guides/pollinators-handoffs`): section orders 42→1 … 45→4, `pests-without-sprays`→5; `related` lists from the specs; cross-guide anchors fixed to real heading ids, French link texts set to the target's French title; the hub's "Where to start" and the end of 43–45 use `<NextGuides>`; `consortiumGuides` rows only where the final text discusses the plant (see [consortium page](/modules/consortium-page.md)); the habitat-vs-soil-cover compromise recorded in [Field Guide writing](/conventions/field-guide-writing.md).
+- Guide 43's counterpoint to "natives first" (`consortium/guide43`, from the owner's "Climate first" row in [consortium user decisions](/decisions/consortium-user-decisions.md)): one paragraph, tagged as a general tip, ends the "Natives first" section in en and fr: natives are a sound default; plants and soil life from a matching climate elsewhere are a legitimate design choice; check the country's invasive list (GRIIS) first and never plant a species recorded invasive there; the consortium tool shows per-country invasive records. No person is named: no Hervé Coves source is in the bibliography.
 - Not pushed. Still open: browser check at 390/1280 light/dark with a climate chosen and none, pre-push review, push on the owner's go; `related` entries in 12, 17, 25 and 29 pointing to the new guides on the owner's go.
 
 ## Tracker
