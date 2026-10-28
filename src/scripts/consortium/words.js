@@ -80,3 +80,7 @@ export function needsLook(taxon, flags) {
   const tox = taxon.warnings.toxicity?.level;
   return flags.flagged || tox === 'Moderate' || tox === 'Severe';
 }
+
+// A text with its first letter in capitals, in the page language's rules (no change where the
+// script has no case): the merged soft chip, which has no label before its list.
+export const capFirst = (s, lang) => (s ? s.charAt(0).toLocaleUpperCase(lang) + s.slice(1) : '');

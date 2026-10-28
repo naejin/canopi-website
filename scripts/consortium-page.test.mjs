@@ -3,10 +3,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { pluralForms, makeWords, needsLook, searchText, fold, plantName } from '../src/scripts/consortium/words.js';
+import { pluralForms, makeWords, needsLook, searchText, fold, plantName, capFirst } from '../src/scripts/consortium/words.js';
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
 import * as core from '../src/lib/consortium/index.ts';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget, relaxTo, licenceOf } from '../src/scripts/consortium/logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget, relaxTo, licenceOf, uncheckedOnCard } from '../src/scripts/consortium/logic.js';
 import { profileSVG } from '../src/scripts/consortium/draw.js';
 import { crops } from '../src/data/crops.ts';
 
@@ -739,4 +739,48 @@ test('every plant list shows the scientific name, smaller and in italics (prepus
   // Rows, Swap, Add, details and the print table already had it.
   assert.match(appJs, /<span class="pn">\$\{name\(t\)\}<\/span> <span class="sci">\$\{esc\(t\.canonical_name\)\}<\/span>/);
   assert.match(appJs, /<span class="alt-name">[^\n]*<span class="sci">\$\{esc\(t\.canonical_name\)\}<\/span>/);
+});
+
+// Owner, 2026-10-28: allelopathy "not checked yet" is told in a plant's details only.
+test('logic: cards and rows list the facts not checked yet, never allelopathy (owner 2026-10-28)', () => {
+  const t = (w, functions = null) => ({ warnings: { toxicity: null, invasive_in: null, allelopathic: null, weed_potential: null, ...w }, functions });
+  assert.deepEqual(uncheckedOnCard(t({}), false), ['tox', 'inv', 'spreads', 'jobs']);
+  assert.deepEqual(uncheckedOnCard(t({}), true), ['tox', 'inv', 'spreads', 'jobsOther']);
+  assert.deepEqual(uncheckedOnCard(t({ toxicity: { level: 'None' }, invasive_in: [], weed_potential: false }, []), false), []);
+  for (const al of [null, undefined, false, true]) assert.ok(!uncheckedOnCard(t({ allelopathic: al }), false).includes('allelo'));
+});
+
+test('no card, row, Swap, Add, summary or print template says allelopathy is not checked yet; details still do (owner 2026-10-28)', () => {
+  const appJs = read('src/scripts/consortium/app.js');
+  for (const lang of locales) assert.ok(!('u.allelo' in strings[lang]), `${lang}: u.allelo is gone`);
+  assert.doesNotMatch(appJs, /'u\.allelo'/);
+  const uses = [...appJs.matchAll(/'unkAllelo'|'d\.alleloUnk'/g)].map((m) => m.index);
+  const details = appJs.match(/function detailsParts[\s\S]*?\n\}/);
+  assert.ok(uses.length >= 1, 'details tell an unknown allelopathy');
+  for (const i of uses) assert.ok(i > details.index && i < details.index + details[0].length, 'only inside detailsParts');
+  assert.match(details[0], /al == null\) items\.push\(item\('unknown'/, 'unknown is never shown as none');
+  assert.match(appJs, /allelopathic === true\) soft\.push/, 'a known allelopathic plant keeps its warning on the card');
+});
+
+// Owner, 2026-10-28: one warning heading, "With a warning", never "Cautions" or another variant.
+test('one warning heading everywhere: consortium.withWarning, in every locale (owner 2026-10-28)', () => {
+  const heading = { en: 'With a warning', fr: 'Avec une alerte', es: 'Con aviso', pt: 'Com aviso', it: 'Con un avviso', zh: '有警告', de: 'Mit Warnung', ja: '警告あり', ko: '경고 있음', nl: 'Met een waarschuwing', ru: 'С предупреждением' };
+  for (const lang of locales) {
+    assert.equal(strings[lang].withWarning, heading[lang], lang);
+    for (const gone of ['cautions', 'flaggedGroup', 'attention', 'needsLook', 'p.warn']) assert.ok(!(gone in strings[lang]), `${lang}: ${gone} is gone`);
+    for (const [key, value] of Object.entries(strings[lang])) assert.doesNotMatch(value, /^(cautions?|précautions?|vorsicht|precauciones|cuidados|attenzione|let op|осторожно|注意|주의)\s*[:：]/i, `${lang}: ${key}` + ' labels a warning another way');
+  }
+  const appJs = read('src/scripts/consortium/app.js');
+  const labels = [...appJs.matchAll(/<h3 class="list-label">([^<]*?)\$\{esc\(T\('(\w+)'\)\)\}/g)].map((m) => m[2]);
+  assert.deepEqual(labels, ['withWarning', 'withWarning'], 'Swap and Add head their flagged plants alike');
+  assert.match(appJs.match(/function attentionHTML[\s\S]*?\n\}/)[0], /<strong>\$\{esc\(T\('withWarning'\)\)\}<\/strong>/, 'the warnings summary');
+  assert.match(appJs.match(/function printHTML[\s\S]*?\n\}/)[0], /<th>\$\{esc\(T\('withWarning'\)\)\}<\/th>/, 'print');
+  assert.equal([...appJs.matchAll(/<span class="vh">\$\{esc\(T\('withWarning'\)\)\}<\/span>/g)].length, 3, 'the marks on the drawing, its key and the Over time rows');
+});
+
+test('words: a merged soft chip starts with a capital where the script has one', () => {
+  assert.equal(capFirst('can spread · invasive in 2 countries', 'en'), 'Can spread · invasive in 2 countries');
+  assert.equal(capFirst('ívó', 'fr'), 'Ívó');
+  assert.equal(capFirst('隣の植物', 'ja'), '隣の植物');
+  assert.equal(capFirst('', 'en'), '');
 });
