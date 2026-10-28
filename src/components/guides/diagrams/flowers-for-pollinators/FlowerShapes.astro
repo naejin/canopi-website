@@ -1,0 +1,149 @@
+---
+// Flowers for pollinators: five flower shapes and the visitors each tends to suit, as small panels in
+// a row (two a line on phones, the last one wide). Open bowl: a single five-petalled flower with a
+// bee and a beetle. Flat cluster: a dome of small florets that a butterfly stands on. Narrow tubes: a
+// spike of lipped tubes with a long-tongued bee reaching in. Red funnel: a hanging trumpet with a
+// nectar-feeding bird at its mouth. Night flower: a pale star under a crescent moon, with a moth.
+// Flowers and stems use plant tokens; the visitors are drawn in ink with ochre marks (they are not
+// plants). These are tendencies, not rules (the guide says so). `shapes` gives each title, line and
+// alt text in that order; every word comes from the MDX, and titles and lines are HTML, so they wrap.
+import { r1 } from '../../../../lib/svg';
+interface Shape { title: string; text: string; alt: string; }
+interface Props { shapes: [Shape, Shape, Shape, Shape, Shape]; }
+const { shapes } = Astro.props;
+const ellipse = (cx: number, cy: number, rx: number, ry: number) => `M${cx - rx} ${cy}a${rx} ${ry} 0 1 0 ${2 * rx} 0a${rx} ${ry} 0 1 0 ${-2 * rx} 0Z`;
+const circle = (cx: number, cy: number, rad: number) => ellipse(cx, cy, rad, rad);
+const at = (x: number, y: number, deg = 0) => `translate(${x} ${y}) rotate(${deg})`;
+// Five round petals around a centre, for the open bowl and the night flower.
+const ring = (cx: number, cy: number, dist: number, rad: number, turn = -90) =>
+  Array.from({ length: 5 }, (_, i) => {
+    const a = ((turn + i * 72) * Math.PI) / 180;
+    return circle(r1(cx + dist * Math.cos(a)), r1(cy + dist * Math.sin(a)), rad);
+  }).join('');
+const star = (cx: number, cy: number, out: number, inner: number) =>
+  'M' + Array.from({ length: 10 }, (_, i) => {
+    const a = ((-90 + i * 36) * Math.PI) / 180, rad = i % 2 ? inner : out;
+    return `${r1(cx + rad * Math.cos(a))} ${r1(cy + rad * Math.sin(a))}`;
+  }).join('L') + 'Z';
+const florets = [[44, 50], [52, 46], [60, 44], [68, 46], [76, 50], [48, 56], [56, 52], [64, 52], [72, 56], [40, 57], [80, 57], [60, 58]];
+const tubes = [[56, 34, -38], [64, 46, 38], [56, 58, -38], [64, 70, 38], [56, 82, -38]];
+---
+<ul class="guide-fs">
+  <li>
+    <svg viewBox="0 0 120 120" role="img" aria-label={shapes[0].alt}>
+      <path d="M60 116V74" class="guide-fs-stem" />
+      <path d="M60 100c-8-2-16-8-18-16c9 0 16 6 18 16Z" class="guide-fs-leaf" />
+      <path d={ring(60, 56, 15, 13)} class="guide-fs-yellow" />
+      <path d={circle(60, 56, 8)} class="guide-fs-centre" />
+      <g transform={at(84, 22, 20)} class="guide-fs-bee">
+        <path d={ellipse(-2, -6, 6, 3.5)} class="guide-fs-wing" /><path d={ellipse(3, -6, 6, 3.5)} class="guide-fs-wing" />
+        <path d={ellipse(0, 0, 8, 4.5)} class="guide-fs-ink" /><path d="M-1-4V4M3-4V4" class="guide-fs-band" /><path d={circle(-9, 0, 3)} class="guide-fs-ink" />
+      </g>
+      <g transform={at(70, 52, 30)}>
+        <path d="M-6-3l-4-2M-6 0h-5M-6 3l-4 2M6-3l4-2M6 0h5M6 3l4 2" class="guide-fs-leg" />
+        <path d={ellipse(0, 0, 6, 4.5)} class="guide-fs-ink" /><path d="M-6 0H6" class="guide-fs-seam" /><path d={circle(8, 0, 2.6)} class="guide-fs-ink" />
+      </g>
+    </svg>
+    <strong>{shapes[0].title}</strong>
+    <span>{shapes[0].text}</span>
+  </li>
+  <li>
+    <svg viewBox="0 0 120 120" role="img" aria-label={shapes[1].alt}>
+      <path d="M60 116V60M60 66L46 58M60 66L74 58M60 72L40 60M60 72L80 60" class="guide-fs-stem" />
+      <path d="M60 98c9-2 17-8 19-16c-9 0-17 6-19 16Z" class="guide-fs-leaf" />
+      <path d={florets.map(([x, y]) => circle(x, y, 4.6)).join('')} class="guide-fs-orange" />
+      <path d={florets.map(([x, y]) => circle(x, y, 1.3)).join('')} class="guide-fs-centre" />
+      <g transform={at(60, 34)}>
+        <path d="M0-2C-6-14-22-16-22-6C-22 2-8 2 0-2ZM0-2C6-14 22-16 22-6C22 2 8 2 0-2Z" class="guide-fs-wing-ochre" />
+        <path d="M0 0C-4 4-14 10-14 14C-8 14-2 8 0 0ZM0 0C4 4 14 10 14 14C8 14 2 8 0 0Z" class="guide-fs-wing-ochre" />
+        <path d="M0-6V8" class="guide-fs-body" /><path d="M0-6l-3-6M0-6l3-6" class="guide-fs-leg" />
+      </g>
+    </svg>
+    <strong>{shapes[1].title}</strong>
+    <span>{shapes[1].text}</span>
+  </li>
+  <li>
+    <svg viewBox="0 0 120 120" role="img" aria-label={shapes[2].alt}>
+      <path d="M60 116V24" class="guide-fs-stem" />
+      <path d="M60 104c-8-2-15-7-17-14c8 0 15 5 17 14ZM60 104c8-2 15-7 17-14c-8 0-15 5-17 14Z" class="guide-fs-leaf" />
+      {tubes.map(([x, y, a]) => (
+        <path d="M0-3L18-4C22-7 26-4 24 0C26 4 22 7 18 4L0 3Z" transform={at(x, y, a)} class="guide-fs-violet" />
+      ))}
+      <g transform={at(96, 42, 160)} class="guide-fs-bee">
+        <path d={ellipse(-2, -6, 6, 3.5)} class="guide-fs-wing" /><path d={ellipse(3, -6, 6, 3.5)} class="guide-fs-wing" />
+        <path d={ellipse(0, 0, 9, 5.5)} class="guide-fs-ink" /><path d="M-2-5V5M3-5V5" class="guide-fs-band" /><path d={circle(10, 0, 3.4)} class="guide-fs-ink" />
+        <path d="M13 1L22 3" class="guide-fs-tongue" />
+      </g>
+    </svg>
+    <strong>{shapes[2].title}</strong>
+    <span>{shapes[2].text}</span>
+  </li>
+  <li>
+    <svg viewBox="0 0 120 120" role="img" aria-label={shapes[3].alt}>
+      <path d="M104 4C102 18 92 28 80 34" class="guide-fs-stem" />
+      <path d="M96 20c6-6 14-8 20-6c-4 6-12 9-20 6Z" class="guide-fs-leaf" />
+      <path d="M78.3 32.9C70 50 52 60 41.2 68.8Q48 80 62.8 83.2C68 66 76 52 81.7 35.1Z" class="guide-fs-red" />
+      <path d="M52 76l-8 10M55 78l-5 11" class="guide-fs-anther" />
+      <g transform={at(30, 96, -35)}>
+        <path d="M-8 0L-18-5L-16 0L-18 5Z" class="guide-fs-ink" />
+        <path d={ellipse(0, 0, 9, 4.5)} class="guide-fs-ink" /><path d={circle(10, -2, 4)} class="guide-fs-ink" />
+        <path d="M13-3L28-5" class="guide-fs-beak" />
+        <path d="M-1-3C-6-10-12-16-10-21C-4-17 0-10-1-3Z" class="guide-fs-wing-dark" />
+      </g>
+    </svg>
+    <strong>{shapes[3].title}</strong>
+    <span>{shapes[3].text}</span>
+  </li>
+  <li>
+    <svg viewBox="0 0 120 120" role="img" aria-label={shapes[4].alt}>
+      <path d="M100 8a12 12 0 1 0 10 18a9 9 0 1 1-10-18Z" class="guide-fs-moon" />
+      <path d="M52 116V66" class="guide-fs-stem" />
+      <path d="M52 100c8-2 15-7 17-14c-8 0-15 5-17 14Z" class="guide-fs-leaf" />
+      <path d={star(52, 56, 24, 9)} class="guide-fs-pale" />
+      <path d={circle(52, 56, 4)} class="guide-fs-centre" />
+      <g transform={at(96, 80)}>
+        <path d="M0 0C-6-6-16-8-20-2C-16 2-8 3 0 1ZM0 0C6-6 16-8 20-2C16 2 8 3 0 1Z" class="guide-fs-wing-dark" />
+        <path d="M0 1C-4 3-10 6-11 9C-6 9-2 6 0 2ZM0 1C4 3 10 6 11 9C6 9 2 6 0 2Z" class="guide-fs-wing-dark" />
+        <path d="M0-4V8" class="guide-fs-body" /><path d="M0-4l-5-6M0-4l5-6" class="guide-fs-leg" />
+      </g>
+    </svg>
+    <strong>{shapes[4].title}</strong>
+    <span>{shapes[4].text}</span>
+  </li>
+</ul>
+
+<style>
+  :global(.guide-body) .guide-fs { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.8rem; }
+  :global(.guide-body) .guide-fs li { margin: 0; display: grid; gap: 0.3rem; align-content: start; }
+  .guide-fs svg { display: block; width: 100%; height: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .guide-fs strong { font-family: var(--font-display); font-weight: 600; line-height: 1.3; color: var(--text); }
+  .guide-fs span { font-size: 0.9rem; line-height: 1.4; color: var(--text-secondary); }
+  /* Plant parts: plant tokens. */
+  .guide-fs-stem { fill: none; stroke: var(--leaf); stroke-width: 2.2; stroke-linecap: round; }
+  .guide-fs-leaf { fill: var(--leaf-young); }
+  .guide-fs-yellow { fill: var(--petal); }
+  .guide-fs-orange { fill: var(--leaf-ochre); }
+  .guide-fs-violet { fill: var(--seed-5); }
+  .guide-fs-red { fill: var(--seed-4); }
+  .guide-fs-pale { fill: var(--seed-3); stroke: var(--leaf-deep); stroke-width: 0.8; stroke-linejoin: round; }
+  .guide-fs-centre { fill: var(--anther); }
+  .guide-fs-anther { fill: none; stroke: var(--anther); stroke-width: 1.4; stroke-linecap: round; }
+  /* Visitors and sky: ink and ochre, never plant colours. */
+  .guide-fs-ink { fill: var(--text-secondary); }
+  .guide-fs-wing { fill: var(--surface-alt); stroke: var(--text-muted); stroke-width: 0.9; }
+  .guide-fs-wing-ochre { fill: var(--accent); stroke: var(--text-secondary); stroke-width: 1; stroke-linejoin: round; }
+  .guide-fs-wing-dark { fill: var(--text-muted); stroke: var(--text-secondary); stroke-width: 0.9; stroke-linejoin: round; }
+  .guide-fs-band { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+  .guide-fs-seam { fill: none; stroke: var(--surface); stroke-width: 0.8; }
+  .guide-fs-leg, .guide-fs-body, .guide-fs-tongue, .guide-fs-beak { fill: none; stroke: var(--text-secondary); stroke-linecap: round; }
+  .guide-fs-leg { stroke-width: 1; }
+  .guide-fs-body { stroke-width: 2.6; }
+  .guide-fs-tongue { stroke-width: 1; }
+  .guide-fs-beak { stroke-width: 1.4; }
+  .guide-fs-moon { fill: none; stroke: var(--text-muted); stroke-width: 1.4; stroke-linejoin: round; }
+  @media (max-width: 639px) {
+    :global(.guide-body) .guide-fs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    :global(.guide-body) .guide-fs li:last-child { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: 0.8rem; }
+    .guide-fs li:last-child svg { grid-row: span 2; }
+  }
+</style>
