@@ -10,7 +10,7 @@ import {
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadCell } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook } from './words.js';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget } from './logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget, relaxTo } from './logic.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
 
@@ -32,8 +32,6 @@ const STORE = 'canopi-consortium';
 const REGIONS = [...regions].sort((a, b) => W.region(a).localeCompare(W.region(b), data.lang));
 const SITE_OPTIONS = { light: lights, soil: soils, water: waters, room: rooms };
 const CLIMATES = climates.filter((c) => siteClimates.includes(c));
-// "No match": the one looser answer each site question offers.
-const relaxTo = (k) => ({ light: 'part', soil: 'unsure', water: 'unsure', room: S.site.room === 'small' ? 'large' : 'field' })[k];
 
 // ---------- Icons ----------
 const svg = (body, size = 16) => `<svg viewBox="0 0 16 16" width="${size}" height="${size}" aria-hidden="true">${body}</svg>`;
@@ -375,10 +373,11 @@ function notCoveredHTML() {
     ${same.length ? `<p class="place-note">${esc(T('nc.optNote', { where }))} ${esc(S.country ? T('borrowedInv', { country: W.country(S.country) }) : T('borrowedNoInv'))}</p><div class="actions">${same.map((c) => btn('button button-primary', 'opt-in', c.region, esc(T('nc.optIn', { cell: W.cell(S.climate, c.region) })), fk('optin-' + c.region))).join('')}</div>` : `<p class="place-note">${esc(T('nc.noneClimate'))}</p>`}
     <div class="actions">${btn('button button-secondary', 'open-place', 'country', esc(T('nc.change')), fk('nc-change'))}<a class="text-link" href="${data.contact}">${esc(T('nc.ask'))}</a></div></div>`;
 }
-// For each site answer, how many plants it rules out on its own.
+// For each site answer a "No match" button can loosen (relaxTo), how many plants it rules out on its own.
 function siteCounts() {
   const out = [];
   for (const key of ['light', 'soil', 'water', 'room']) {
+    if (!relaxTo(key, S.site)) continue;
     if (S.site[key] === DEFAULT_SITE[key] && key !== 'light' && key !== 'room') continue;
     if (S.site[key] === 'unsure' || S.site[key] === 'average' || (key === 'room' && S.site.room === 'field')) continue;
     const one = { ...DEFAULT_SITE, room: 'field', [key]: S.site[key] };
@@ -390,7 +389,7 @@ function siteCounts() {
 function noMatchHTML() {
   return `<div class="callout">${resultTitle(T('nm.title'))}<p>${esc(T('nm.text'))}</p>
     <ul class="relax" role="list">${siteCounts().map((c) => {
-      const value = T(`site.${c.key}.${relaxTo(c.key)}`);
+      const value = T(`site.${c.key}.${relaxTo(c.key, S.site)}`);
       return `<li><span>${esc(T('nm.rule', { label: T('site.' + c.key), value: T(`site.${c.key}.${S.site[c.key]}`), n: W.num(c.n), total: W.num(cell.taxa.length) }))}</span>${btn('button button-secondary button-small', 'relax', c.key, esc(c.key === 'light' && S.site.light === 'shade' ? T('nm.tryLight', { value }) : T('nm.try', { value })), fk('relax-' + c.key))}</li>`;
     }).join('')}</ul>
     <div class="actions">${btn('button button-secondary', 'open-add', 'grow', `${I.search}${esc(T('growHint'))}`, fk('nm-add'))}</div></div>`;
@@ -1024,7 +1023,7 @@ const act = {
     focusNext = added.length ? 'pn-' + added[0] : 'result'; render(); if (added.length) flash(added[0]);
     toast(esc(P('filled', added.length)));
   },
-  relax(k) { S.site = { ...S.site, [k]: relaxTo(k) }; recompute(); focusNext = 'result'; render(); },
+  relax(k) { const to = relaxTo(k, S.site); if (!to) return; S.site = { ...S.site, [k]: to }; recompute(); focusNext = 'result'; render(); },
   close() { if (O?.back) { O = O.back; renderSheet(); } else closeSheet(); },
   async share() {
     persist();

@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { pluralForms, makeWords, needsLook, searchText, fold, plantName } from '../src/scripts/consortium/words.js';
 import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortium-guides.ts';
 import * as core from '../src/lib/consortium/index.ts';
-import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget } from '../src/scripts/consortium/logic.js';
+import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withQuery, presetPlace, coverageHint, swapTarget, relaxTo } from '../src/scripts/consortium/logic.js';
 import { profileSVG } from '../src/scripts/consortium/draw.js';
 import { crops } from '../src/data/crops.ts';
 
@@ -656,4 +656,29 @@ test('strata colours only in the drawing and its legend; elsewhere the stratum w
   assert.doesNotMatch(thumb, /--s-/, 'the head picture is neutral ink');
   // The drawing keeps them (draw.js fills and strokes each stratum).
   assert.match(read('src/scripts/consortium/draw.js'), /fill="var\(--s-\$\{s\}\)"/);
+});
+
+test('logic: a "No match" relax button is offered only when it changes the answer (prepush L2)', () => {
+  const site = (over) => ({ ...core.DEFAULT_SITE, ...over });
+  for (const light of core.lights) for (const soil of core.soils) for (const water of core.waters) for (const room of core.rooms) {
+    const now = { light, soil, water, room };
+    for (const key of ['light', 'soil', 'water', 'room']) {
+      const to = relaxTo(key, now);
+      if (to === null) continue;
+      assert.notEqual(to, now[key], `${key}: ${now[key]} offers itself`);
+      assert.ok(siteOptions[key].includes(to), `${key}: ${to} is an answer`);
+    }
+  }
+  assert.equal(relaxTo('light', site({ light: 'part' })), null, 'already part shade');
+  assert.equal(relaxTo('light', site({ light: 'shade' })), 'part');
+  assert.equal(relaxTo('light', site({ light: 'sun' })), 'part');
+  assert.equal(relaxTo('soil', site({ soil: 'unsure' })), null);
+  assert.equal(relaxTo('soil', site({ soil: 'acid' })), 'unsure');
+  assert.equal(relaxTo('water', site({ water: 'unsure' })), null);
+  assert.equal(relaxTo('room', site({ room: 'small' })), 'large');
+  assert.equal(relaxTo('room', site({ room: 'large' })), 'field');
+  assert.equal(relaxTo('room', site({ room: 'field' })), null);
+  // The page lists only the answers relaxTo can loosen.
+  assert.match(app, /if \(!relaxTo\(key, S\.site\)\) continue;/);
+  assert.doesNotMatch(app, /const relaxTo = /);
 });

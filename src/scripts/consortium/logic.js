@@ -102,3 +102,12 @@ export function swapTarget(sheet) {
   if (sheet?.type === 'swap') return sheet.id;
   return sheet?.type === 'details' && sheet.back?.type === 'swap' ? sheet.back.id : null;
 }
+
+// "No match": the one looser answer a site question offers (part shade, "not sure", the next room
+// size), or null when the answer is already that one, so a button never offers the current value
+// (prepush L2).
+const LOOSER = { light: () => 'part', soil: () => 'unsure', water: () => 'unsure', room: (v) => ({ small: 'large', large: 'field' })[v] ?? null };
+export function relaxTo(key, site) {
+  const to = LOOSER[key]?.(site[key]) ?? null;
+  return to === site[key] ? null : to;
+}
