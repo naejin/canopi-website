@@ -638,3 +638,22 @@ test('the head has its final size from the first paint: compact on a result, the
   assert.ok(firstPaint('?plant=Pyrus+communis&climate=temperate', place, null).compact, 'the reviewer\'s case is compact from the first paint');
   assert.equal(firstPaint('?plant=Pyrus+communis&climate=temperate', null, null).step, '1', 'a preset with no place: the climate step is done from the first paint');
 });
+
+test('strata colours only in the drawing and its legend; elsewhere the stratum word or the number in neutral ink (prepush L1)', () => {
+  const css = read('src/styles/consortium.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  const colour = /var\(--s-(emergent|high|medium|low)(-ink)?\)|var\(--(sw|ring|bar|bar-ink)\)/;
+  const scoped = /\.profile\b|\.strata-mini\b|\.sline\b/;
+  for (const [, selector, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    // The strata colours, and the custom properties that carry them, are read only in a scoped rule.
+    if (colour.test(body) || /--(sw|ring|bar|bar-ink)\s*:\s*var\(--s-/.test(body)) assert.match(selector, scoped, `strata colour outside the drawing and its legend: ${selector.trim()}`);
+  }
+  // The page's own markup: no stratum swatch outside the legend, no stratum colour in the head's picture.
+  const appJs = read('src/scripts/consortium/app.js');
+  const swatches = [...appJs.matchAll(/\$\{sw\(/g)].length;
+  assert.equal(swatches, 1, 'one swatch call, in the strata legend');
+  assert.match(appJs, /<ul class="strata-mini" role="list">\$\{strata\.map\(\(s\) => `<li>\$\{sw\(s\)\}/);
+  const thumb = page.match(/<figure class="thumb">[\s\S]*?<\/figure>/)[0];
+  assert.doesNotMatch(thumb, /--s-/, 'the head picture is neutral ink');
+  // The drawing keeps them (draw.js fills and strokes each stratum).
+  assert.match(read('src/scripts/consortium/draw.js'), /fill="var\(--s-\$\{s\}\)"/);
+});

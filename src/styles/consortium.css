@@ -1,7 +1,8 @@
 /* The consortium tool (src/components/consortium/ConsortiumPage.astro, src/scripts/consortium/app.js).
    Ported from the reviewed mockup; everything is scoped to .ct. Strata colours (Okabe-Ito fills, with
-   darker or lighter inks at 3:1 or more for strokes and rings) belong to the drawing, its numbers and
-   the legend only. */
+   darker or lighter inks at 3:1 or more for strokes and rings) belong to the drawing (.profile: the
+   crowns, its numbers, its strata lines and its key) and the strata legend (.strata-mini) only.
+   Elsewhere a plant's stratum is its word, and its number ring is neutral ink (prepush L1). */
 .ct {
   --s-emergent: #E69F00; --s-high: #009E73; --s-medium: #0072B2; --s-low: #CC79A7; --s-none: var(--text-muted);
   --s-emergent-ink: #9A6400; --s-high-ink: #00805C; --s-medium-ink: #0072B2; --s-low-ink: #A8507F; --s-none-ink: var(--text-muted);
@@ -213,12 +214,13 @@
 /* Layers view: legend, drawing, labels */
 .ct .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font-size: 14.5px; color: var(--text-secondary); }
 .ct .legend li { display: inline-flex; align-items: center; gap: 7px; }
-.ct .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; background: var(--sw); }
-.ct .sw[data-s="emergent"] { --sw: var(--s-emergent); }
-.ct .sw[data-s="high"] { --sw: var(--s-high); }
-.ct .sw[data-s="medium"] { --sw: var(--s-medium); }
-.ct .sw[data-s="low"] { --sw: var(--s-low); }
-.ct .sw[data-s="none"] { --sw: transparent; border: 1.5px dashed var(--text-muted); }
+.ct .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.ct :is(.profile, .strata-mini) .sw { background: var(--sw); }
+.ct :is(.profile, .strata-mini) .sw[data-s="emergent"] { --sw: var(--s-emergent); }
+.ct :is(.profile, .strata-mini) .sw[data-s="high"] { --sw: var(--s-high); }
+.ct :is(.profile, .strata-mini) .sw[data-s="medium"] { --sw: var(--s-medium); }
+.ct :is(.profile, .strata-mini) .sw[data-s="low"] { --sw: var(--s-low); }
+.ct .sw[data-s="none"] { background: transparent; border: 1.5px dashed var(--text-muted); }
 .ct .profile { position: relative; border: 1px solid var(--border); border-radius: 10px; background: linear-gradient(to bottom, var(--sky), transparent 70%), var(--surface); overflow: hidden; }
 .ct .profile svg { width: 100%; height: auto; }
 .ct .profile-labels { display: grid; padding: 6px 0 14px; }
@@ -226,12 +228,9 @@
 .ct .plabel:hover .pname { text-decoration: underline; }
 .ct .num {
   width: 26px; height: 26px; border-radius: 50%; display: inline-grid; place-items: center; flex: none;
-  background: var(--surface); border: 2px solid var(--ring, var(--text-muted)); font-size: 13.5px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums;
+  background: var(--surface); border: 2px solid var(--text-muted); font-size: 13.5px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums;
 }
-.ct .num[data-s="emergent"] { --ring: var(--s-emergent); }
-.ct .num[data-s="high"] { --ring: var(--s-high); }
-.ct .num[data-s="medium"] { --ring: var(--s-medium); }
-.ct .num[data-s="low"] { --ring: var(--s-low); }
+.ct .profile .num { border-color: var(--ring, var(--text-muted)); }
 .ct .num[data-s="none"] { border-style: dashed; }
 .ct .pname { font-size: 14px; font-weight: 600; line-height: 1.2; max-width: 11em; }
 .ct .pkept { font-size: 12px; color: var(--text-muted); display: inline-flex; gap: 3px; align-items: center; }
@@ -244,7 +243,6 @@
 .ct .stratum-group { display: grid; gap: 10px; }
 .ct .stratum-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 .ct .stratum-head h4 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 21px; display: inline-flex; align-items: center; gap: 9px; }
-.ct .stratum-head h4 .sw { width: 14px; height: 14px; }
 .ct .stratum-head p { font-size: 15px; color: var(--text-muted); }
 .ct .stratum-head .count { margin-left: auto; font-size: 14px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .ct .plants { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
@@ -320,11 +318,7 @@
 .ct .tl-track .tl-cols > i { border-left: 1px solid var(--border); }
 .ct .tl-track .tl-cols > i:first-child { border-left: 0; }
 .ct .tl-track .tl-cols > i:nth-child(4), .ct .tl-track .tl-cols > i:nth-child(6) { border-left-color: var(--border-strong); }
-.ct .bar { position: absolute; top: 50%; height: 18px; transform: translateY(-50%); border-radius: 9px; background: var(--bar); opacity: 0.9; }
-.ct .bar[data-s="emergent"] { --bar: var(--s-emergent); }
-.ct .bar[data-s="high"] { --bar: var(--s-high); }
-.ct .bar[data-s="medium"] { --bar: var(--s-medium); }
-.ct .bar[data-s="low"] { --bar: var(--s-low); }
+.ct .bar { position: absolute; top: 50%; height: 18px; transform: translateY(-50%); border-radius: 9px; background: color-mix(in srgb, var(--text-muted) 32%, var(--surface)); box-shadow: inset 0 0 0 1.5px var(--text-muted); }
 .ct .bar[data-open="true"] { border-radius: 9px 0 0 9px; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
 .ct .bar-none { position: absolute; inset: 50% 8px auto; transform: translateY(-50%); height: 26px; border: 1.5px dashed var(--border-strong); border-radius: 13px; display: grid; place-items: center; font-size: 13px; color: var(--text-muted); }
 .ct .tl-legend { display: none; }
@@ -409,7 +403,6 @@
 .ct .alt-name { font-weight: 600; font-size: 16.5px; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
 .ct .alt-name .sci { font-weight: 400; font-size: 14.5px; }
 .ct .alt-why { font-size: 14px; color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
-.ct .alt-why .sw { width: 10px; height: 10px; }
 .ct .alt .button { min-height: 40px; padding: 0 14px; font-size: 15px; }
 @media (max-width: 639px) {
   .ct .alt { grid-template-columns: minmax(0, 1fr); }
@@ -497,20 +490,15 @@
   .ct .explain-btn[aria-expanded="true"] { background: radial-gradient(circle, var(--surface) 11.5px, var(--accent) 12px 13px, transparent 13.5px); }
 }
 /* ---------- Review round 1 ---------- */
-/* Strata: Okabe-Ito hues fill; darker (light theme) or lighter (dark theme) inks draw strokes and rings at ≥ 3:1. */
-.ct .num[data-s="emergent"] { --ring: var(--s-emergent-ink); }
-.ct .num[data-s="high"] { --ring: var(--s-high-ink); }
-.ct .num[data-s="medium"] { --ring: var(--s-medium-ink); }
-.ct .num[data-s="low"] { --ring: var(--s-low-ink); }
-.ct .sw[data-s="emergent"] { box-shadow: inset 0 0 0 1.5px var(--s-emergent-ink); }
-.ct .sw[data-s="high"] { box-shadow: inset 0 0 0 1.5px var(--s-high-ink); }
-.ct .sw[data-s="medium"] { box-shadow: inset 0 0 0 1.5px var(--s-medium-ink); }
-.ct .sw[data-s="low"] { box-shadow: inset 0 0 0 1.5px var(--s-low-ink); }
-.ct .bar { opacity: 1; box-shadow: inset 0 0 0 1.5px var(--bar-ink); }
-.ct .bar[data-s="emergent"] { --bar-ink: var(--s-emergent-ink); }
-.ct .bar[data-s="high"] { --bar-ink: var(--s-high-ink); }
-.ct .bar[data-s="medium"] { --bar-ink: var(--s-medium-ink); }
-.ct .bar[data-s="low"] { --bar-ink: var(--s-low-ink); }
+/* Strata in the drawing and its legend: Okabe-Ito hues fill; darker (light theme) or lighter (dark theme) inks draw strokes and rings at ≥ 3:1. */
+.ct .profile .num[data-s="emergent"] { --ring: var(--s-emergent-ink); }
+.ct .profile .num[data-s="high"] { --ring: var(--s-high-ink); }
+.ct .profile .num[data-s="medium"] { --ring: var(--s-medium-ink); }
+.ct .profile .num[data-s="low"] { --ring: var(--s-low-ink); }
+.ct :is(.profile, .strata-mini) .sw[data-s="emergent"] { box-shadow: inset 0 0 0 1.5px var(--s-emergent-ink); }
+.ct :is(.profile, .strata-mini) .sw[data-s="high"] { box-shadow: inset 0 0 0 1.5px var(--s-high-ink); }
+.ct :is(.profile, .strata-mini) .sw[data-s="medium"] { box-shadow: inset 0 0 0 1.5px var(--s-medium-ink); }
+.ct :is(.profile, .strata-mini) .sw[data-s="low"] { box-shadow: inset 0 0 0 1.5px var(--s-low-ink); }
 /* Tool head: definition, outline, thumbnail; compact once there is a result */
 .ct .tool-head { grid-template-columns: minmax(0, 1fr) auto; align-items: start; column-gap: 32px; }
 .ct .tool-head-text { display: grid; gap: 12px; min-width: 0; }
@@ -635,7 +623,6 @@
 .ct .tl-groups .tl-name { align-self: end; padding-bottom: 6px; }
 .ct .tl-scale-phone { display: none; }
 .ct .tl-track .tl-cols > i[data-gap="true"], .ct .tl-phases .tl-cols > div[data-gap="true"] { background: repeating-linear-gradient(135deg, transparent 0 6px, var(--border) 6px 7px); }
-.ct .tl-name button .sw { width: 12px; height: 12px; }
 .ct .tl-name small .apt { font-size: 1em; }
 @media (max-width: 639px) {
   .ct .tl-groups .tl-name { display: none; }
@@ -691,7 +678,6 @@
 .ct .tool-head:not([data-step="0"]) { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 639px) { .ct .tool-head .thumb { display: none; } }
 .ct .stratum-head h3 { font-size: 21px; display: inline-flex; align-items: center; gap: 9px; }
-.ct .stratum-head h3 .sw { width: 14px; height: 14px; }
 .ct .explain-btn { flex: none; }
 .ct .plabel-num { min-height: 30px; pointer-events: none; }
 .ct .pkey { margin: 0 14px 12px; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; }

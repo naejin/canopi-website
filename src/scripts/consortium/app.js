@@ -169,6 +169,7 @@ function warnPlain(t, flags, all = true) {
 }
 
 // ---------- Small parts ----------
+// A stratum's colour swatch: in the strata legend only; the drawing (draw.js) draws its own.
 const sw = (s) => `<span class="sw" data-s="${s}"></span>`;
 const fk = (k) => `data-fk="${esc(k)}"`;
 const btn = (cls, act, v, label, extra = '') => `<button class="${cls}" type="button" data-act="${act}"${v != null ? ` data-v="${esc(v)}"` : ''} ${extra}>${label}</button>`;
@@ -442,7 +443,7 @@ function layersHTML(flags) {
     const list = ordered().filter((t) => stratumOf(t) === s), gaps = S.gaps.filter((g) => g.stratum === s);
     if (s === 'none' && !list.length) return '';
     return `<section class="stratum-group" aria-labelledby="ct-sg-${s}">
-      <div class="stratum-head"><h3 id="ct-sg-${s}">${sw(s)}${esc(stratumLabel(s))}</h3><p>${esc(T('stratum.' + s + '.about'))}</p><span class="count">${list.length}</span></div>
+      <div class="stratum-head"><h3 id="ct-sg-${s}">${esc(stratumLabel(s))}</h3><p>${esc(T('stratum.' + s + '.about'))}</p><span class="count">${list.length}</span></div>
       ${list.length ? `<ul class="plants" role="list">${list.map((t) => plantRow(t, nums, flags.get(t.id))).join('')}</ul>` : ''}
       ${gaps.map((g) => `<div class="gap-row"><span>${T('gapRow', { name: g.name })}</span>${btn('button button-secondary button-small', 'open-add', 'stratum:' + s, esc(T('findPlant')), fk('gap-' + g.id))}</div>`).join('')}
       ${!list.length && !gaps.length ? `<div class="gap-row"><span>${esc(T('emptyLayer'))}</span>${btn('button button-secondary button-small', 'open-add', 'stratum:' + s, esc(T('emptyLayerFind')), fk('empty-' + s))}</div>` : ''}
@@ -479,9 +480,9 @@ function timeHTML(flags) {
     let bar;
     if (t.phases) {
       const a = phases.indexOf(t.phases.start), b = phases.indexOf(t.phases.end);
-      bar = `<span class="bar" data-s="${s}" data-open="${b === phases.length - 1}" style="left:calc(${((a / 7) * 100).toFixed(3)}% + 4px);width:calc(${(((b - a + 1) / 7) * 100).toFixed(3)}% - 8px)"></span>`;
+      bar = `<span class="bar" data-open="${b === phases.length - 1}" style="left:calc(${((a / 7) * 100).toFixed(3)}% + 4px);width:calc(${(((b - a + 1) / 7) * 100).toFixed(3)}% - 8px)"></span>`;
     } else bar = `<span class="bar-none">${esc(T('timingUnknown'))}</span>`;
-    return `<div class="tl-row"><div class="tl-name">${btn('', 'details', t.id, `${sw(s)}<span>${name(t)}</span>${needsLook(t, flags.get(t.id)) ? `<span class="plook">${I.warn}<span class="vh">${esc(T('needsLook'))}</span></span>` : ''}`, fk('tl-' + t.id))}<small>${timeHTML1(t)} · ${esc(stratumLabel(s))}</small></div>
+    return `<div class="tl-row"><div class="tl-name">${btn('', 'details', t.id, `<span>${name(t)}</span>${needsLook(t, flags.get(t.id)) ? `<span class="plook">${I.warn}<span class="vh">${esc(T('needsLook'))}</span></span>` : ''}`, fk('tl-' + t.id))}<small>${timeHTML1(t)} · ${esc(stratumLabel(s))}</small></div>
       <div class="tl-track"><div class="tl-cols" aria-hidden="true">${covered.map((c) => `<i data-gap="${!c}"></i>`).join('')}${bar}</div></div></div>`;
   }).join('');
   const gaps = covered.map((c, i) => (c ? '' : `<div class="gap-row"><span>${esc(T('timeGap', { stage: T(W.phaseKey(i, 'plain')) }))}</span>${btn('button button-secondary button-small', 'open-add', 'phase:' + i, esc(i <= 2 ? T('quickCrop') : T('findPlant')), fk('tgap-' + i))}</div>`)).join('');
@@ -581,7 +582,7 @@ function detailsParts(t) {
   const jobsList = jobsOf(t);
   const headHTML = `<div><h2 id="ct-dlg-title">${name(t)}</h2><p class="lede"><i>${esc(t.canonical_name)}</i> · ${esc(T('family', { family: t.family }))}</p></div>`;
   const body = `${photo}
-    <div class="d-layer"><span>${sw(s)}${esc(stratumLabel(s))}${s !== 'none' ? ' · ' + esc(T('stratum.' + s + '.about')) : ''}</span><span>${esc(tw.plain)}${tw.term ? ' · ' + esc(tw.term) : ''}</span></div>
+    <div class="d-layer"><span>${esc(stratumLabel(s))}${s !== 'none' ? ' · ' + esc(T('stratum.' + s + '.about')) : ''}</span><span>${esc(tw.plain)}${tw.term ? ' · ' + esc(tw.term) : ''}</span></div>
     ${t.reason ? `<section class="d-section"><h3>${esc(T('why'))}</h3><p>${reasonHTML(t)}</p></section>` : ''}
     <section class="d-section"><h3>${esc(T('jobsHeading'))}</h3>${!jobsList.length ? `<p class="muted">${esc(T('d.jobsUnk'))}</p>` : `<div class="plant-meta">${jobsList.map((j) => `<span class="job-tag">${jobIcon(j, 14)}${esc(T('job.' + j))}</span>`).join('')}</div>`}</section>
     <section class="d-section"><h3>${esc(T('checks'))}</h3><ul class="w-list" role="list">${items.join('')}</ul></section>
@@ -623,7 +624,7 @@ function swapParts(m) {
     const lost = mJobs.filter((j) => !othersJobs.has(j) && !jobsOf(a.taxon).includes(j)).map((j) => T('job.' + j));
     const shared = a.sharedJobs.map((j) => T('job.' + j));
     const as = stratumOf(a.taxon);
-    const why = `<span>${sw(as)} ${esc(a.sameStratum ? T('sameLayer') : stratumLabel(as))}</span>${shared.length ? `<span>${esc(T('alsoJobs', { jobs: W.list(shared) }))}</span>` : ''}<span class="${lost.length ? 'loses' : 'keeps'}">${esc(lost.length ? T('loses', { jobs: W.list(lost) }) : T('keepsAll'))}</span>`;
+    const why = `<span>${esc(a.sameStratum ? T('sameLayer') : stratumLabel(as))}</span>${shared.length ? `<span>${esc(T('alsoJobs', { jobs: W.list(shared) }))}</span>` : ''}<span class="${lost.length ? 'loses' : 'keeps'}">${esc(lost.length ? T('loses', { jobs: W.list(lost) }) : T('keepsAll'))}</span>`;
     return altRow(a.taxon, why, 'use', T('use'), a.flags, { primary });
   };
   const headHTML = `<div><h2 id="ct-dlg-title">${T('swapTitle', { name: name(m) })}</h2><p class="lede">${esc(mJobs.length ? T('swapNow', { layer: stratumLabel(s), jobs: W.list(mJobs.map((j) => T('job.' + j))) }) : T('swapNowLayer', { layer: stratumLabel(s) }))}</p><p class="lede">${esc(T('swapLede'))}</p></div>`;
@@ -645,11 +646,11 @@ function addResults() {
   list = [...list].sort((a, b) => nameText(a).localeCompare(nameText(b), lang));
   const flagOf = new Map(list.map((t) => [t.id, flagsFor(cell, t.id, S.members, { site: S.site, country: S.country })]));
   const fit = list.filter((t) => !flagOf.get(t.id).flagged), flagged = list.filter((t) => flagOf.get(t.id).flagged);
-  const row = (t) => altRow(t, `<span>${sw(stratumOf(t))} ${esc(stratumLabel(stratumOf(t)))}</span><span>${esc(jobsOf(t).map((j) => T('job.' + j)).join(' · '))}</span>`, 'add', T('add'), flagOf.get(t.id), { disabled: S.members.includes(t.id) });
+  const row = (t) => altRow(t, `<span>${esc(stratumLabel(stratumOf(t)))}</span><span>${esc(jobsOf(t).map((j) => T('job.' + j)).join(' · '))}</span>`, 'add', T('add'), flagOf.get(t.id), { disabled: S.members.includes(t.id) });
   // M11: grouped by layer; plants with a warning last, in their own group.
   const byLayer = [...strata, 'none'].map((s) => {
     const g = fit.filter((t) => stratumOf(t) === s);
-    return g.length ? `<h3 class="list-label">${sw(s)} ${esc(stratumLabel(s))}</h3><ul class="alt-list" role="list">${g.map(row).join('')}</ul>` : '';
+    return g.length ? `<h3 class="list-label">${esc(stratumLabel(s))}</h3><ul class="alt-list" role="list">${g.map(row).join('')}</ul>` : '';
   }).join('');
   return `<p class="list-count" id="ct-add-count">${esc(P('count', list.length))}${fkind === 'phase' ? ' · ' + esc(T('phaseFilter', { stage: T(W.phaseKey(Number(fv), 'plain')) })) : ''}</p>
     ${!list.length ? `<p class="muted">${esc(T('emptyList'))}</p>` : ''}
@@ -685,7 +686,7 @@ function printHTML() {
   const ms = ordered(), nums = numbering(), flags = flagsById();
   const rows = ms.map((t) => {
     const s = stratumOf(t), tw = W.timeWords(t), w = warnPlain(t, flags.get(t.id)).join('<br>');
-    return `<tr><td>${sw(s)} ${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i></td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${w || `<span class="muted">${esc(T('printNone'))}</span>`}</td></tr>`;
+    return `<tr><td>${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i></td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${w || `<span class="muted">${esc(T('printNone'))}</span>`}</td></tr>`;
   }).join('');
   const bands = phaseBands.map((k) => {
     const inBand = ms.filter((t) => bandsOf(t).includes(k));
