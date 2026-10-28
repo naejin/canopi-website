@@ -71,11 +71,12 @@ export function invasiveCountries(taxon: Taxon): string[] | null {
 }
 
 // true: recorded invasive in the country; false: checked and not recorded there; null: not checked
-// for this taxon, a country GRIIS did not check (`checked` false: manifest countries[code]
-// .invasive_checked), or no country given. "Not checked" is never told as "none".
-export function invasiveIn(taxon: Taxon, country: string | null | undefined, checked = true): boolean | null {
+// for this taxon, a country GRIIS did not check, or no country given. `checked` is the manifest's
+// countries[code].invasive_checked and must be given as true for a "false": a caller that leaves it
+// out gets null, so "not checked" is never told as "none" (review m7).
+export function invasiveIn(taxon: Taxon, country: string | null | undefined, checked?: boolean): boolean | null {
   const list = taxon.warnings.invasive_in;
-  if (!country || list === null || !checked) return null;
+  if (!country || list === null || checked !== true) return null;
   const code = country.toUpperCase();
   return list.some((r) => r.country === code);
 }

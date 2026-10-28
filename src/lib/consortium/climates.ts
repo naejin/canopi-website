@@ -1,14 +1,13 @@
 // Which climate file serves a climate, and which countries the invasive warnings know. The site names
 // climates in lowercase ('tropical', the shared site choice of src/data/climates.ts); the export
 // names them capitalised ('Tropical'). The mapping happens here, at the module edge, and nowhere else.
-import type { ClimateZone, Manifest, ManifestClimate, Region } from './types.ts';
-import { climateZones, regions } from './types.ts';
+import type { ClimateZone, Manifest, ManifestClimate } from './types.ts';
+import { climateZones } from './types.ts';
 
 export const siteClimates = climateZones.map((z) => z.toLowerCase() as Lowercase<ClimateZone>);
 export type SiteClimate = Lowercase<ClimateZone>;
 
 export const isSiteClimate = (value: string): value is SiteClimate => (siteClimates as string[]).includes(value);
-export const isRegion = (value: string): value is Region => (regions as readonly string[]).includes(value);
 
 // The export's climate zone for a site climate id, or null for an id the export does not know.
 export function climateZoneOf(climate: string): ClimateZone | null {

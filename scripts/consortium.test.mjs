@@ -232,11 +232,11 @@ test('conflicts: family rank, both directions, and a same-genus row pairs two me
 
 test('invasiveIn: true where recorded, false where checked and absent, null when not checked or no country', () => {
   const leucaena = named('Leucaena leucocephala'), lemongrass = named('Cymbopogon citratus'), cassava = make({ warnings: { invasive_in: null } });
-  assert.equal(invasiveIn(leucaena, 'BR'), true);
-  assert.equal(invasiveIn(leucaena, 'br'), true);
-  assert.equal(invasiveIn(leucaena, 'FR'), false);
-  assert.equal(invasiveIn(lemongrass, 'BR'), false, 'checked, not recorded in Brazil');
-  assert.equal(invasiveIn(cassava, 'BR'), null, 'null is not checked');
+  assert.equal(invasiveIn(leucaena, 'BR', true), true);
+  assert.equal(invasiveIn(leucaena, 'br', true), true);
+  assert.equal(invasiveIn(leucaena, 'FR', true), false);
+  assert.equal(invasiveIn(lemongrass, 'BR', true), false, 'checked, not recorded in Brazil');
+  assert.equal(invasiveIn(cassava, 'BR', true), null, 'null is not checked');
   assert.equal(invasiveIn(leucaena, null), null);
   assert.equal(invasiveIn(leucaena, 'TW', false), null, 'a country GRIIS did not check is not checked, never none');
   assert.equal(invasiveIn(lemongrass, 'TW', false), null);
@@ -343,10 +343,10 @@ test('suggest is deterministic: the same answer whatever the order of the cell',
   for (const cell of [tropical, mediterranean, temperate]) {
     for (const room of ['small', 'large', 'field']) {
       const site = { ...DEFAULT_SITE, room };
-      const once = suggest(cell, { site, country: 'BR' });
+      const once = suggest(cell, { site, country: 'BR', countryChecked: true });
       const shuffled = { ...cell, taxa: [...cell.taxa].reverse(), interactions: [...cell.interactions].reverse() };
-      assert.deepEqual(names(suggest(cell, { site, country: 'BR' }).members), names(once.members));
-      assert.deepEqual(names(suggest(shuffled, { site, country: 'BR' }).members), names(once.members));
+      assert.deepEqual(names(suggest(cell, { site, country: 'BR', countryChecked: true }).members), names(once.members));
+      assert.deepEqual(names(suggest(shuffled, { site, country: 'BR', countryChecked: true }).members), names(once.members));
       assert.ok(once.members.length > 0, `${cell.climate_zone} ${room}`);
     }
   }
@@ -369,11 +369,11 @@ test('suggest picks the same plants with or without a country; invasive here is 
   const cell = cellOf([invasive, unchecked]);
   const both = [invasive.canonical_name, unchecked.canonical_name];
   for (const country of ['BR', 'FR', 'TW', null]) assert.deepEqual(names(suggest(cell, { site: open, country }).members), both, String(country));
-  const br = suggest(cell, { site: open, country: 'BR' }).members;
+  const br = suggest(cell, { site: open, country: 'BR', countryChecked: true }).members;
   assert.equal(br.find((m) => m.taxon.id === invasive.id).flags.invasive, true);
   assert.equal(br.find((m) => m.taxon.id === invasive.id).flags.flagged, false, 'not held back');
   assert.equal(br.find((m) => m.taxon.id === unchecked.id).flags.invasive, null);
-  assert.equal(suggest(cell, { site: open, country: 'FR' }).members.find((m) => m.taxon.id === invasive.id).flags.invasive, false);
+  assert.equal(suggest(cell, { site: open, country: 'FR', countryChecked: true }).members.find((m) => m.taxon.id === invasive.id).flags.invasive, false);
   assert.equal(suggest(cell, { site: open, country: 'BR', countryChecked: false }).members.find((m) => m.taxon.id === invasive.id).flags.invasive, null, 'unchecked country');
   // On the fixture: the members never depend on the country.
   for (const room of ['small', 'large', 'field']) {
@@ -433,7 +433,7 @@ test('evaluate scores a fixed list without refilling: a removed member leaves it
 
 test('evaluate flags misfits, invasives and conflicts in a fixed list, and ignores unknown and repeated ids', () => {
   const inga = named('Inga edulis'), potato = named('Ipomoea batatas'), tithonia = named('Tithonia diversifolia'), leucaena = named('Leucaena leucocephala');
-  const e = evaluate(tropical, [tithonia.id, potato.id, leucaena.id, inga.id, inga.id, 'ffffffff-0000-4000-8000-000000000000'], { site: { ...open, water: 'dry' }, country: 'BR' });
+  const e = evaluate(tropical, [tithonia.id, potato.id, leucaena.id, inga.id, inga.id, 'ffffffff-0000-4000-8000-000000000000'], { site: { ...open, water: 'dry' }, country: 'BR', countryChecked: true });
   assert.deepEqual(names(e.members), ['Tithonia diversifolia', 'Ipomoea batatas', 'Leucaena leucocephala', 'Inga edulis'], 'in the given order');
   const by = (name) => e.members.find((m) => m.taxon.canonical_name === name).flags;
   assert.equal(by('Leucaena leucocephala').invasive, true);
@@ -467,7 +467,7 @@ test('alternatives: unflagged first, then same stratum, shared jobs, gain, name;
 
 test('alternatives on the fixture: flagged plants are listed with their warnings', () => {
   const inga = named('Inga edulis'), potato = named('Ipomoea batatas');
-  const alts = alternatives(inga.id, [inga.id, potato.id], tropical, { site: open, country: 'BR' });
+  const alts = alternatives(inga.id, [inga.id, potato.id], tropical, { site: open, country: 'BR', countryChecked: true });
   const leucaena = alts.find((a) => a.taxon.canonical_name === 'Leucaena leucocephala');
   assert.equal(leucaena.flags.invasive, true);
   assert.equal(leucaena.flags.flagged, false, 'invasive here is told, not held back');
@@ -484,7 +484,7 @@ test('alternatives on the fixture: flagged plants are listed with their warnings
 
 test('flagsFor: a plant beside the members carries the flags it would have as a member', () => {
   const inga = named('Inga edulis'), potato = named('Ipomoea batatas'), tithonia = named('Tithonia diversifolia'), leucaena = named('Leucaena leucocephala');
-  const opts = { site: open, country: 'BR' };
+  const opts = { site: open, country: 'BR', countryChecked: true };
   const t = flagsFor(tropical, tithonia.id, [inga.id, potato.id], opts);
   assert.equal(t.conflicts[0].b.canonical_name, 'Ipomoea batatas');
   const asMember = evaluate(tropical, [inga.id, potato.id, tithonia.id], opts).members.at(-1).flags;
@@ -673,9 +673,9 @@ test('suggest and every alternative for a 200-taxon cell take under 50 ms', () =
   const cell = { ...tropical, taxa, interactions: [...tropical.interactions, ...temperate.interactions] };
   const site = { light: 'sun', soil: 'neutral', water: 'average', room: 'field' };
   const run = () => {
-    const s = suggest(cell, { site, country: 'BR', kept: [taxa[3].id] });
+    const s = suggest(cell, { site, country: 'BR', countryChecked: true, kept: [taxa[3].id] });
     const ids = s.members.map((m) => m.taxon.id);
-    for (const id of ids) alternatives(id, ids, cell, { site, country: 'BR' });
+    for (const id of ids) alternatives(id, ids, cell, { site, country: 'BR', countryChecked: true });
     return s;
   };
   // The page recomputes on every change: time a warm run, the best of three so a busy machine does not fail it.

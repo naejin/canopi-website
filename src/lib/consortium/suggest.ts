@@ -40,14 +40,15 @@ export interface Alternative { taxon: Taxon; sameStratum: boolean; sharedJobs: J
 
 // The user's country, for the invasive flag only: the plants picked never depend on it (owner,
 // 2026-10-28). country is ISO alpha-2; countryChecked is the manifest's countries[country]
-// .invasive_checked (default true), and false makes Flags.invasive null, "not checked".
-export interface Country { country?: string | null; countryChecked?: boolean }
+// .invasive_checked and is required with a country: only true gives "not recorded" (false), and a
+// missing or false flag makes Flags.invasive null, "not checked" (review m7).
+export type Country = { country?: null; countryChecked?: boolean } | { country: string; countryChecked: boolean };
 
-export interface SuggestOptions extends Country {
+export type SuggestOptions = Country & {
   site: Site;
   kept?: string[]; // taxon ids that are always members, flagged or not (kept wins over removed)
   removed?: string[]; // taxon ids never picked automatically
-}
+};
 
 // What a taxon brings, worked out once per call.
 interface Info { taxon: Taxon; jobs: JobId[]; stratum: string | null; bands: PhaseBand[]; cells: string[]; edibility: number; weedy: boolean; fit: Fit }
@@ -140,7 +141,7 @@ function seriousPartners(cell: ClimateFile): Map<string, Set<string>> {
 }
 
 function flagsOf(i: Info, others: Taxon[], cell: ClimateFile, where: Country): Flags {
-  const invasive = invasiveIn(i.taxon, where.country, where.countryChecked ?? true);
+  const invasive = invasiveIn(i.taxon, where.country, where.countryChecked);
   const found = conflictsOf(i.taxon, others, cell.interactions);
   return {
     misfits: [...i.fit.misfits],
@@ -201,7 +202,7 @@ function result(chosen: Info[], keptIds: Set<string>, gains: Map<string, number 
   return { members, limit: SIZE_LIMIT[site.room], gaps: allJobs.filter((j) => !coverageOf(chosen).jobs.has(j)) };
 }
 
-export interface EvaluateOptions extends Country { site: Site; kept?: string[] }
+export type EvaluateOptions = Country & { site: Site; kept?: string[] };
 
 // A fixed consortium, scored as it stands and never refilled: the page's state after a Remove (the
 // gap stays) or a restored share link. Members come in the order of `ids` (repeats and ids not in
@@ -224,7 +225,7 @@ export function evaluate(cell: ClimateFile, ids: string[], options: EvaluateOpti
   return result(chosen, keptIds, gains, cell, site, options);
 }
 
-export interface FlagsOptions extends Country { site: Site }
+export type FlagsOptions = Country & { site: Site };
 
 // The flags a plant would carry beside these members (it is left out of them if it is one): the
 // same misfits, unknowns, invasive check and conflicts as a member of suggest() or evaluate(), for a
@@ -237,7 +238,7 @@ export function flagsFor(cell: ClimateFile, id: string, memberIds: string[], opt
   return flagsOf(infoOf(taxon, options.site), others, cell, options);
 }
 
-export interface AlternativeOptions extends Country { site: Site; removed?: string[] }
+export type AlternativeOptions = Country & { site: Site; removed?: string[] };
 
 // Plants that could take a member's place: plants without a flag before flagged ones (a misfit or a
 // serious conflict; invasive here is a warning, not a flag), then same stratum, then the most jobs shared with the member,
