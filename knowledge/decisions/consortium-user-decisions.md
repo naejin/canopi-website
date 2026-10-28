@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium tool — user decisions
 description: Dated decisions the project owner made about the consortium design tool; they change only when the owner changes them.
 tags: [consortium, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:38:43Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:27:57Z }
 ---
 
 # Consortium tool — user decisions
@@ -60,6 +60,7 @@ Data side (sibling repository `canopi-data`, read 2026-10-27): `docs/adr/0007-cu
 | 2026-10-28 | **Main crops first** (owner idea, agreed with the coordinator): after the climate, one optional question, "What do you mainly want to grow?", up to 3 crops chosen from that climate's food plants; they are kept and the suggestion is built around them; Skip gives the climate-only suggestion. Refines "one question, the climate": the climate stays the only required question. |
 | 2026-10-28 | **Scale follow-ups** (owner): no CSV download in the beta (later); the climate lists grow past 200 plants in canopi-data after this release, under the same curation rules; "Open in Canopi" stays out of the beta and is the first consortium follow-up once the app's 2.1 catalog settles. |
 | 2026-10-28 | **Scale, coordinator choices** (within the owner's rows, not owner-reviewed): Cards by default up to 20 plants, List above, with a Cards/List switch from the first plant; the share link moves to a compact encoding that survives data updates (needed for 200 plants; a guessed country still never goes in it); one side-view drawing at every size (one mark per plant above 20). |
+| 2026-10-28 | **Scale mockup approved** (owner): mockup v2 (`.local/consortium/climate-first/mockup-v2/`, critiqued over four rounds by a separate reviewer) is the design to build for 6 to 200 plants and the main-crops step. The crop step has one main button, "Suggest plants": with no crop chosen it gives the climate-only suggestion, and there is no separate Skip link (refines "Main crops first"). A main crop carries a "Main crop" tag, has a "Kept: Main crops" filter value, and is not swapped from its details. |
 
 ## Open questions for the owner (not decisions)
 
