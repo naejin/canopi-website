@@ -5,15 +5,15 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:19:13Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T11:50:26Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:55Z }
 sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:69d217b6f5adee1b
-    last_modified: 2026-10-28T09:53:06Z
+    digest: sha256:830599356199bfe6
+    last_modified: 2026-10-28T11:49:46Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -41,7 +41,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 | [check-bibliography-links.mjs](../../scripts/check-bibliography-links.mjs) | visits every bibliography link (network) | `npm run check:bibliography` |
 | `*.test.mjs` | contact, featured-designs privacy, homepage/i18n (header keys, width queries only 639/640/959/960 plus the 1200px hero-image query, no header item hidden by width except the inline/Menu swap, the menus chrome.js closes, the consortium tool's header word and full name per locale, the home note against the manifest's cells, the header's global styles, the consortium keys' places), installer, nearest, guides (content rules, related lists, glossary, crop table, safety wording and mouth words only inside `<Safety>` boxes, checklist and glossary plugins, shared `wrap()`, mix bar, breakpoints, colours and fonts), guides-consortium (the preset links of `try-consortium.ts` on the real cells and their build failures; every `<TryConsortium>` preset: plant in the beta cell of its climate, climate from its `<ForClimate>` block and last in it, same presets in en and fr; a guide name for every cell), built-links, consortium (scoring module on the fixture, share-link state, 200-taxon timing, `flagsFor`), consortium-page (the tool's `consortium.*` strings in 11 locales: titles, key and placeholder parity, plural forms, every key used, no builder notes; the guides it links exist; `words.js` helpers), install-consortium (refusals, `--out` and staging, photos through a stub fetch: byte cap, redirect hosts, cancelled bodies), package (declared static and dynamic imports, Node floor, the type check's tsconfig excludes and `check` script) | `npm test` |
 | [built-links.mjs](../../scripts/built-links.mjs) | `builtTarget(root, pathname)`: resolves an internal link to a built file; a path without trailing slash or extension is an error. `subdirectories(dir)`: folder names only (the guide slugs; a stray `.DS_Store` is not a guide) | `check-built-site.mjs` |
-| [fixtures/consortium/make_fixture.py](../../scripts/fixtures/consortium/make_fixture.py) | writes the invented consortium fixture (format 2, three cells, real `country_regions`) for building the tool before real data; never shipped | by hand, see its README |
+| [fixtures/consortium/make_fixture.py](../../scripts/fixtures/consortium/make_fixture.py) | writes the invented consortium fixture (format 3, three climate files; Temperate adds an invented asia_temperate cell, with a taxon chosen there only; real `countries`; each invented `invasive_in` also holds every country where GRIIS really records the plant invasive, from a `griis.json` built in canopi-data) for building the tool before real data; never shipped | by hand, see its README |
 | [export-featured-designs.py](../../scripts/export-featured-designs.py) | `.canopi` files to privacy-safe `public/data/featured-designs.json` | by hand |
 | [compress-heroes.py](../../scripts/compress-heroes.py), [make-og-images.py](../../scripts/make-og-images.py) | hero JPGs (2400 and 1200 px), 1200x630 social images | by hand (Pillow) |
 
