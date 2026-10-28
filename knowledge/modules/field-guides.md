@@ -6,7 +6,7 @@ resource: ../../src/components/guides
 tags: [module, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T23:51:00Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T00:59:27Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:24:22Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -17,7 +17,7 @@ sources:
     resource: ../../src/components/guides
     title: src/components/guides/
     digest: sha256:992f527de4046685
-    last_modified: 2026-10-28T00:57:32Z
+    last_modified: 2026-10-28T01:05:25Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
@@ -41,8 +41,8 @@ sources:
   - id: glossary-ts
     resource: ../../src/data/glossary.ts
     title: src/data/glossary.ts
-    digest: sha256:22f74ff58adf03d7
-    last_modified: 2026-10-27T07:35:39Z
+    digest: sha256:2063a6f64828bf3f
+    last_modified: 2026-10-28T08:22:34Z
   - id: crops-ts
     resource: ../../src/data/crops.ts
     title: src/data/crops.ts
