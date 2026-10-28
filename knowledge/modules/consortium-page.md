@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T16:00:41Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T16:45:09Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:31:51Z }
 sources:
@@ -15,12 +15,12 @@ sources:
     resource: ../../scripts/consortium-app.test.mjs
     title: scripts/consortium-app.test.mjs
     digest: sha256:cf0a0dcda712a260
-    last_modified: 2026-10-28T15:59:16Z
+    last_modified: 2026-10-28T16:00:51Z
   - id: consortium-harness
     resource: ../../scripts/consortium-harness.mjs
     title: scripts/consortium-harness.mjs
-    digest: sha256:1bbe83fa5be8a9a8
-    last_modified: 2026-10-28T15:59:32Z
+    digest: sha256:82c30761500078f0
+    last_modified: 2026-10-28T16:08:33Z
   - id: consortium-scale-test
     resource: ../../scripts/consortium-scale.test.mjs
     title: scripts/consortium-scale.test.mjs
@@ -34,8 +34,8 @@ sources:
   - id: app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:396351611c23f296
-    last_modified: 2026-10-28T15:59:43Z
+    digest: sha256:ba465208a0a2c1f3
+    last_modified: 2026-10-28T16:33:24Z
   - id: words-js
     resource: ../../src/scripts/consortium/words.js
     title: src/scripts/consortium/words.js
@@ -54,8 +54,8 @@ sources:
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:62dab8c33b8f1cb0
-    last_modified: 2026-10-28T15:50:43Z
+    digest: sha256:ac81da56061e4f79
+    last_modified: 2026-10-28T16:33:42Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
@@ -64,8 +64,8 @@ sources:
   - id: consortium-page-test-mjs
     resource: ../../scripts/consortium-page.test.mjs
     title: scripts/consortium-page.test.mjs
-    digest: sha256:709d4b763a6f3c97
-    last_modified: 2026-10-28T15:50:43Z
+    digest: sha256:e5149ae190a30f8c
+    last_modified: 2026-10-28T16:17:36Z
   - id: logic-js
     resource: ../../src/scripts/consortium/logic.js
     title: src/scripts/consortium/logic.js
@@ -100,10 +100,27 @@ sources:
     resource: ../../src/scripts/consortium/memory.js
     title: src/scripts/consortium/memory.js
     digest: sha256:9afe79999ae8fa2a
-    last_modified: 2026-10-28T15:59:32Z
+    last_modified: 2026-10-28T16:00:51Z
+  - id: scale-js
+    resource: ../../src/scripts/consortium/scale.js
+    title: src/scripts/consortium/scale.js
+    digest: sha256:a99ba204dcc88016
+    last_modified: 2026-10-28T16:07:04Z
+  - id: consortium-list-test-mjs
+    resource: ../../scripts/consortium-list.test.mjs
+    title: scripts/consortium-list.test.mjs
+    digest: sha256:1067378ed2a9878a
+    last_modified: 2026-10-28T16:07:10Z
+  - id: consortium-list-ui-test-mjs
+    resource: ../../scripts/consortium-list-ui.test.mjs
+    title: scripts/consortium-list-ui.test.mjs
+    digest: sha256:5736c2e74eab199a
+    last_modified: 2026-10-28T16:17:47Z
 enforced_by:
   - scripts/consortium-page.test.mjs
   - scripts/consortium-country.test.mjs
+  - scripts/consortium-list-ui.test.mjs
+  - scripts/consortium-list.test.mjs
 ---
 
 # Responsibility
@@ -122,6 +139,7 @@ The consortium tool's page: the visitor picks a climate and gets 6 to 12 plants 
 | [logic.js](../../src/scripts/consortium/logic.js) | Pure page rules tested in node: `withHash` (a language link with the tool's fragment), `arrivalParams` and `isToolState` (where the state is read on arrival: the fragment, else an older link's query, moved to the fragment; a page anchor such as `#main` is not a state), `linkDamaged` (a link cut or unreadable: a plant list that does not parse, an unknown `v`, or a fragment v3 link without the `e=1` end marker), `keepCountry` (Back to your consortium and Undo restore the plants, never an older country), `redoToastKey`, `siteChangeRebuilds` (a room change on a result only flags misfits), `afterSwap` (a main crop swapped stops being one), `climateSourceAt` (guide, site, link, saved; `user` is set by a pick in the tool), `droppedPlants` (old-link count), `trimGaps`, `mayPersist`, `photoSource`, `shown` (with `next`, what one "Show more" reveals), `linkMembers` (the link's `a`), `afterMove` (notices dropped on a climate change, the link's unknown country code with them), `noLinkCode` (what Dismiss clears), `keptCountry` (the country after Start over or a climate change: the reader's own `user` country, else `pref`, else the guess; never someone else's link's country or `linkCode`), `repeatClick` (double-click guard), `safeHref` (only http(s) URLs become links), `licenceOf` (licence name and Creative Commons deed link, public domain flagged), `swapTarget` (the plant a details sheet opened from Swap would replace), `relaxTo` (the looser site answer, null when it is the current one), `pickCountry` (the country at start, with where it came from), `guessCountry` (the browser's country from its time zone, else its languages), `linkCountry` (the country part of the address bar and the save), `langHash` (the language links' fragment: the address bar's tool state, an old `mine` dropped, never the reader's country, never a page anchor), `chosenHere` (the guess card is marked chosen only for a `user` source), `printNoneKey` (`printNoneYet` while allelopathy or the country's invasive status is unchecked, and always for a plant from another list), `invasiveSourceIds` (a plant's invasive sources; GRIIS for an empty `invasive_in`), `asksCrops` (a link opens on the crop step), `opensOnResult` (the first-paint rule), `shareUrl` (Copy link's address: the path and `#` + the tool's state only, an old `mine` dropped) |
 | [crops.js](../../src/scripts/consortium/crops.js) | Pure rules of the main-crops step and "Add anyway": `foodPlants`/`isFood` (the `crop` role), `cropHits`/`cropMatches` (shown name in the reader's language and scientific name; starts, then a word, then inside; then the English name when the page hides it, ranked after every shown-name hit and shown in brackets: « Cerisier acide (Sour cherry) »), `cropLabel` (the one string an option shows, is named by and matched), `cropExamples(cell, n, chosen)` (never a chosen crop: the examples and the placeholder), `elsewhereHit` (the first other list, in climates' order, with a matching plant, for the no-match message), `otherListMatches` (the Add search's "In another climate's list"), `inClimateOrder` and `loadLists` (the other lists in `src/data/climates.ts` order, with the ones that failed), `addFilterMatch` (the Add sheet's job, layer and stage filters, for its own list and the other lists alike), and the Kept filter seam for chunk B (`KEPT_FILTERS`, `keptFilter`, `keptCounts`) |
 | [parts.js](../../src/scripts/consortium/parts.js) | Pure words about reasons and the reader's country, rendered with the page's `makeWords`: `cardReasonHTML` (a card's reason, always with its region, "also chosen for # other regions"), `reasonsHTML` (details), `countryWhy` and `countryLineParts` (the country line), `warnWhere` (result sub-line), `printWhere` (print head), `countryAnnouncement` (the live announcement after a country choice), `invasiveCardNote` (the no-country count chip on cards and print rows), `invasiveDetails` (details' invasive items), `cardInvasive`/`detailsInvasive` (the same, handed the taxon), `roomHint` (the room's height and width limit from `ROOM_LIMIT_M` and its suggestion size from `SIZE_LIMIT`), `builtKey` (one or several main crops; the wording is neutral for every reader) |
+| [scale.js](../../src/scripts/consortium/scale.js) | Pure rules of the plant list at scale (chunk B): `viewMode` (Cards up to `CARDS_UP_TO` = 20 plants, the list above, the reader's choice wins), `groupOpen` (groups closed above `FOLD_ABOVE` = 60, a filter opens the groups it matches, the reader's toggle wins), `roundHeight` (one decimal below 1 m, whole metres to 20 m, 5 m steps above), `stageSpan`/`stageShort` (the 7-square stage bar and its short words), `warnKinds`/`pestsOf` (the Warning filter's kinds: invasive here, somewhere, toxic, pests, site, unchecked, any), `NO_FILTERS`/`FILTER_KEYS`/`matches`/`filtering`/`filterOrder` (Layer, Job, Time, Warning, Kept and text, AND; active chips first), `selectRange`/`groupTick` (Shift range, a group's mixed box), and the paste reader (`pasteTable`, `pasteNames`, `binomial`, `oneOff`, `nameIndex`, `matchName`, `readPaste` → found, choose, other climate's list, already in, none; `columnSample`) |
 | [data.ts](../../src/scripts/consortium/data.ts) | `loadManifest`, `loadLabels`, `loadClimate` from `/data/consortium/` |
 | [consortium.css](../../src/styles/consortium.css) | Everything under `.ct`; strata colours only in the drawing (`.profile`, its numbered labels and key) and the strata legend (`.strata-mini`); number rings elsewhere and timeline bars in neutral ink; in print, the light palette on white whatever the theme |
 | [consortium-guides.ts](../../src/data/consortium-guides.ts) | Guides linked per plant, per job (one guide for each of the six jobs, never `null`; helpers is `garden-helpers`, the pollinator hub, whose quick answer the test ties to the job's line), and for the explanations; a plant links only guides that grow or use it, never one passing sentence (the pollinator guides add borage, lavender, phacelia, dog rose, purple willow, elder and white clover; goldenrod, tomato and mango were dropped on 2026-10-28 as single mentions). A guide that opens the tool with a plant (`<TryConsortium>`) is linked back from that plant when it really discusses it (runner bean, pigeon pea, walnut, chestnut and carob added 2026-10-28); the presets of olive in `coppice-and-bamboo` and breadfruit in `food-forest` stay one-way under the three-guide cap, and garden-helpers' tomato and mango presets stay one-way as single mentions. `consortium-page.test.mjs` knows lavender, elder and runner bean by their kind word |
@@ -170,10 +188,15 @@ Routes: `/consortium/`, `/fr/guilde/` (the French tool is a "guilde"), `/{lang}/
 - "Not covered yet: {climate}" lists the covered climates (`nc.text`, a plural of `covered.length`), offers "Choose another climate" (`nc.other`) and "Ask for this climate" (`nc.ask`); the country plays no part. Every climate card stays a button, covered or not. Print: no ASCII punctuation glued to translated text (warnings one per line, jobs with `Intl.ListFormat`).
 - Climates are listed in `src/data/climates.ts` order, as in the site picker.
 - Words: the action is "Keep" (keys `keep`, `unkeep`, `keptTag`, `keptNow`, `unkeptNow`); French site field « Surface »; `southern_america` is named for what WGSRPD puts in it (Central and South America and the Caribbean), as a reason label.
+- Your plants at scale (scale chunk B, 2026-10-28, design-scale §2): every result has a "Your plants" head below the tabs panel with the count, a Cards | List switch (`aria-pressed`, shown from the first plant) and "+ Add plants". Cards up to 20 plants, the dense list above, until the reader chooses (kept in the page, reset by a climate change or Start over). Above 20 the side panel folds into the head (`noAside`: the place chips in the result head, `tool-grid-full`), the warning box becomes one line per kind with "Show n" (`attentionScaleHTML`, sets the Warning filter and opens the list), and print is one table grouped by layer (`printTableHTML`, no drawing). The list: a skip link, a key (jobs, stage bar), a sticky filter row (`#ct-ftools`: the only `role=search` find field, `/` focuses it; Layer, Job, Time, Warning, Kept with Main crops; the active chips named, first, each with ✕) and column heads sticky under it (`--x-tools-h` from a ResizeObserver); groups by layer with a select-all box (`data-mixed` → `indeterminate`), a named toggle, "n shown of m" while filtering; rows with checkbox, kept pin, name over scientific name (no truncation), honest height, stage bar with short words, job icons, warning chips (invasive here filled ochre, toxic red outline, shared pests quiet outline, +n), with no country a muted "Invasive in n countries" column, Swap and ⋯ (Details, Swap, Remove; Escape returns to ⋯). From 640 to 959 px Swap and the stage words drop; on phones a row is one name button (its label reads the whole row), a 44 px Keep and ⋯, with the stage bar and jobs on line 2 and warnings on line 3. Ticking (Shift+click or Shift+Space for a range) shows a sticky bottom bar: "n selected", names, Keep n, Remove n, Unselect; Remove keeps the filters and open groups, moves the focus to the next row and toasts "n plants removed: …" with Undo (`lastBulk` restores members, kept, removed, crops and guests in one step). The list's search and ticks redraw only `#ct-lbody` (`refreshList`), so the field keeps its caret. Timing at 200 plants (scale-b checks): harness load 0.7 s cold, Keep with all rows open 0.24 s; Chrome Keep 0.2–0.36 s, a filter 0.13–0.2 s.
+- Add plants has two tabs (`add-tab`, arrow keys): Search (a plant already in reads "In your consortium", no button) and Paste a list (`#ct-paste`, read 500 ms after typing stops): tab-separated columns get a column picker; names sort into Found (ticked, a close spelling named), Choose (a genus or shared name: tick the ones meant), another climate's list (Add anyway with the from-list tag; the sheet stays open), Already in, and Not in any of Canopi's lists (copy the names, ask for them). The foot reads "n to add" and Add all, which adds the ticked plants kept in one Undo step; flagged plants are added without a per-plant confirm (only Add anyway confirms a flagged plant).
+
 # Tests
 
 - [consortium-page.test.mjs](../../scripts/consortium-page.test.mjs): strings in 11 locales (every key used, `list.<climate>` for every site climate, dynamic prefixes checked against core ids), app strata and phase terms, plural climate counts, country sentences with no article before a country, the first-paint script against the app's start rules, a guess never in a link, `k=-` in the save only, invasive-here warnings without confirmation, the region-era guide keys gone, guides exist and cover their plants (crop list, heading, table, list item, bold or `<Term>`, or twice in prose; frontmatter, alt text and safety boxes ignored; a human check beyond that), `initDialogs` skipping `data-own-dialog`, `words.js`, `logic.js`.
 - [consortium-app.test.mjs](../../scripts/consortium-app.test.mjs): runs app.js itself in [consortium-harness.mjs](../../scripts/consortium-harness.mjs) (a small DOM on parse5, domhandler and css-select; one device's localStorage, a tab's history entries with Back, reload and hashchange; fixture data files that can fail; a fresh module graph per page load), clicking and typing as a reader: neutral main-crop and other-list wording on someone's link, the Add-anyway confirm, Retry and its focus, the guest-list error, the hashchange reload and anchor write-back, Start over then pasting the same link, Back/Undo keeping the country, a moved query link staying whole, a cut link for an uncovered climate, Back to an entry where the tab chose an older country (G1), leaving a cut link for an uncovered climate (G2). A closed page's code does nothing: its `page.later` schedules nothing and its `fetch` never resolves, also for a load started before the close (G5); `page.globals` exposes a page's own globals to tests. The harness's waits are bounded (settle rounds, dispatch depth) and its tree links are non-enumerable, so a failed assertion on an element cannot print the whole circular tree (that once ran a test process out of memory).
 - [consortium-scale.test.mjs](../../scripts/consortium-scale.test.mjs): the crop search (English fallback in brackets on the real French Temperate list), examples and limit, Add anyway matches, the Kept filter, the start rules (`asksCrops`, `opensOnResult`), `shareUrl`, old-link counts, the new words (room hints from the core, ledes, French non-breaking spaces), and the scale chunk A review fixes: fragment arrival and language links, cut-link detection, other lists in order with failures, print for a guest, Back keeping the country, the redo toast, Swap of a main crop, the Add filters on other lists, own versus neutral crop words, the climate's source, and the invasive words handed the taxon.
+- [consortium-list.test.mjs](../../scripts/consortium-list.test.mjs): scale.js on the fixture and the real Temperate list: the Cards/List default, group folding, height rounding, short stage words, warning kinds (3 invasive in France, 6 toxic, 20 pests, 138 invasive somewhere without a country), filters, range selection, the paste reader and its speed at 200 names.
+- [consortium-list-ui.test.mjs](../../scripts/consortium-list-ui.test.mjs): the list in the harness at 200 real plants (`openPage({ data: 'real' })`): the switch, groups, desktop and phone rows, no-country column, filters and results line, Main crops, the warning box's Show n, selection with Shift range, bulk Keep and Remove with Undo and the link, paste (all found, mixed results, Add anyway), the Add search mark, print and share at 200.
 - [consortium-country.test.mjs](../../scripts/consortium-country.test.mjs): behaviour of the country and reason words with the real locale files: `pickCountry` (chosen survives reload and language switch, someone else's link, Start over, "No country", old saves, an unknown or `-` link code, a guide preset over a save), the memory.js wiring run with stubbed storage and history (a choice written to `canopi-country`, kept by Start over, kept in the tab across a reload when storage throws, and read as the link's after a language switch with storage blocked), `keptCountry` (someone else's link's country dropped on Start over and a climate change, the reader's own kept), `countryAnnouncement`, `chosenHere`, `printNoneKey`, `invasiveSourceIds`, `guessCountry`, card and details reasons, the country line, the unchecked-country surfaces, `d.invNone`, `countryUnknown`, the core's required checked flag, and the review's wording fixes (m10, m11).
 - [check-built-site.mjs](../../scripts/check-built-site.mjs): the 11 built pages, their hreflang, header (current link through `consortiumPath`, from `src/i18n/consortium-path.js`), links and assets, and the installed data through `verifyInstall`.

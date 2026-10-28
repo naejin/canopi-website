@@ -8,6 +8,8 @@ import { consortiumGuides, jobGuides, explainGuide } from '../src/data/consortiu
 import * as core from '../src/lib/consortium/index.ts';
 import { droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, repeatClick, withHash, langHash, arrivalParams, redoToastKey, swapTarget, relaxTo, licenceOf, uncheckedOnCard, printNoneKey, linkCountry, opensOnResult } from '../src/scripts/consortium/logic.js';
 import { profileSVG } from '../src/scripts/consortium/draw.js';
+import * as scale from '../src/scripts/consortium/scale.js';
+import { KEPT_FILTERS } from '../src/scripts/consortium/crops.js';
 import { crops } from '../src/data/crops.ts';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -16,7 +18,7 @@ const strings = Object.fromEntries(locales.map((lang) => {
   const all = JSON.parse(read(`src/i18n/translations/${lang}.json`));
   return [lang, Object.fromEntries(Object.entries(all).filter(([k]) => k.startsWith('consortium.')).map(([k, v]) => [k.slice('consortium.'.length), v]))];
 }));
-const app = read('src/scripts/consortium/app.js') + read('src/scripts/consortium/words.js') + read('src/scripts/consortium/parts.js') + read('src/scripts/consortium/logic.js');
+const app = read('src/scripts/consortium/app.js') + read('src/scripts/consortium/words.js') + read('src/scripts/consortium/parts.js') + read('src/scripts/consortium/logic.js') + read('src/scripts/consortium/scale.js');
 const manifest = JSON.parse(read('public/data/consortium/manifest.json'));
 const siteOptions = { light: core.lights, soil: core.soils, water: core.waters, room: core.rooms };
 const page = read('src/components/consortium/ConsortiumPage.astro');
@@ -64,7 +66,9 @@ test('every key the tool asks for exists, and every key exists for a reason', ()
   // names an id the core has; every other key is asked for literally.
   const ids = {
     region: [...core.regions], stratum: [...core.strata, 'none'], band: [...core.phaseBands], phase: [...core.phases], job: [...core.jobs],
-    fn: [...core.functionIds, 'crop'], tox: ['Slight', 'Moderate', 'Severe'], ctype: [...core.interactionTypes], tab: ['layers', 'time', 'jobs'],
+    fn: [...core.functionIds, 'crop'], tox: ['Slight', 'Moderate', 'Severe'], ctype: [...core.interactionTypes], tab: ['layers', 'time', 'jobs', 'search', 'paste'],
+    // The plant list (scale.js): its filters, their warning and kept values, and the stage ends.
+    f: [...scale.FILTER_KEYS], fw: [...scale.WARN_KINDS], fk: [...KEPT_FILTERS], stageEnd: [...core.phases], stageStart: [...core.phases],
     list: [...core.siteClimates], site: Object.keys(siteOptions), basis: Object.keys(siteOptions), misfit: Object.keys(siteOptions),
   };
   const dynamicOk = (key) => {

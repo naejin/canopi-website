@@ -244,7 +244,9 @@ export function tab(dev, url, opts = {}) {
 
 let runs = 0;
 const SETTLE_ROUNDS = 50;
-async function openPage(t, { lang = 'en', width = 1280, siteClimate = null } = {}) {
+// data: 'fixture' (the invented files) or 'real' (the installed export under public/data/consortium/,
+// 200 plants per climate: the scale tests).
+async function openPage(t, { lang = 'en', width = 1280, siteClimate = null, data: dataSet = 'fixture' } = {}) {
   /** @type {any} */
   const page = { lang, active: null, timers: new Map(), nextTimer: 1, reloads: 0, closed: false, clipboard: null };
   // G5: a closed page's code does nothing: its timers are never scheduled.
@@ -298,7 +300,7 @@ async function openPage(t, { lang = 'en', width = 1280, siteClimate = null } = {
       const file = String(url).replace(/^\/data\/consortium\//, '');
       t.dev.fetched.push(file);
       if (t.dev.failing.has(file)) return { ok: false, status: 503, json: async () => null };
-      return { ok: true, status: 200, json: async () => JSON.parse(read(`scripts/fixtures/consortium/${file}`)) };
+      return { ok: true, status: 200, json: async () => JSON.parse(read(dataSet === 'real' ? `public/data/consortium/${file}` : `scripts/fixtures/consortium/${file}`)) };
     },
   };
   page.globals = globals;
@@ -330,9 +332,11 @@ async function openPage(t, { lang = 'en', width = 1280, siteClimate = null } = {
     const el = doc.querySelector(sel);
     el.focus(); el.value = value; el.dispatchEvent(new Event('input')); await page.settle();
   };
-  page.key = async (key) => { const el = doc.activeElement; el.dispatchEvent(new Event('keydown', { key })); await page.settle(); };
   page.escape = async () => { const d = doc.getElementById('ct-dialog'); if (d.dispatchEvent(new Event('cancel', { bubbles: false }))) d.close(); await page.settle(); };
   page.focused = () => doc.activeElement;
+  // Events with their own init (a Shift+click: { shiftKey: true }).
+  page.Event = Event;
+  page.key = async (key, init = {}) => { const el = doc.activeElement; el.dispatchEvent(new Event('keydown', { key, ...init })); await page.settle(); };
   await import(new URL(`src/scripts/consortium/app.js?ctrun=${++runs}`, root).href);
   await page.settle();
   return page;

@@ -15,12 +15,13 @@ import {
 } from '../../lib/consortium/index.ts';
 import { loadManifest, loadLabels, loadClimate } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook, capFirst } from './words.js';
-import { cropHits, cropLabel, cropExamples, elsewhereHit, otherListMatches, isFood, inClimateOrder, loadLists, addFilterMatch } from './crops.js';
+import { cropHits, cropLabel, cropExamples, elsewhereHit, otherListMatches, isFood, inClimateOrder, loadLists, addFilterMatch, KEPT_FILTERS, keptCounts } from './crops.js';
 import { asksCrops, shareUrl, droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, noLinkCode, keptCountry, repeatClick, withHash, swapTarget, relaxTo, licenceOf, uncheckedOnCard, guessCountry, linkCountry, langHash, chosenHere, printNoneKey, invasiveSourceIds, linkDamaged, isToolState, keepCountry, redoToastKey, siteChangeRebuilds, afterSwap, climateSourceAt } from './logic.js';
 import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, cardInvasive, detailsInvasive, countryAnnouncement, roomHint, builtKey } from './parts.js';
 import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
+import { viewMode, groupOpen, roundHeight, stageSpan, stageShort, warnKinds, pestsOf, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, CARDS_UP_TO } from './scale.js';
 
 const data = JSON.parse(document.getElementById('ct-data').textContent);
 const W = makeWords(data.strings, data.lang);
@@ -109,6 +110,19 @@ let othersLoading = null, othersState = 'idle';
 let focusNext = null, lastRemoved = null, undoStart = null, toastTimer = 0, lastRemoveAt = null;
 const SWAP_STEP = 8;
 let swapMore = 0;
+// ---------- The plant list's own view state (chunk B): never in a link ----------
+// mode: the reader's Cards/List choice (null: the default for the count, scale.js viewMode); F: the
+// list's filters, fOrder the order they were set (the active ones come first); fMenu: the open filter
+// menu; groups: the reader's open or closed layers; sel: the ticked rows, anchor the last one ticked
+// (Shift ranges from it); rMenu: the row whose ⋯ menu is open; lastBulk: what Undo restores after a
+// bulk Keep, Remove or Add.
+let mode = null, F = { ...NO_FILTERS }, fOrder = [], fMenu = null, rMenu = null, anchor = null, lastBulk = null, shiftDown = false;
+const groups = new Map();
+let sel = new Set();
+// The Add sheet's tab and its pasted list: the text, the column names are read from, the ticks the
+// reader changed (id → ticked).
+let addTab = 'search', pasteText = '', pasteCol = 0, pasteTicks = new Map(), pasteTimer = 0;
+function resetList() { mode = null; F = { ...NO_FILTERS }; fOrder = []; fMenu = null; rMenu = null; anchor = null; sel = new Set(); groups.clear(); }
 
 const inCell = (id) => !!cell?.taxa.some((t) => t.id === id);
 // The other lists in the climates' order (B9): the same list names a plant on every visit.
@@ -170,11 +184,13 @@ function evaluated() {
   if (key !== evalKey) { evalKey = key; evalOut = evaluate(cell, S.members, { site: S.site, kept: keptList(), guests: guestTaxa(), ...where() }); }
   return evalOut;
 }
-const flagsById = () => new Map(evaluated().members.map((m) => [m.taxon.id, m.flags]));
+// Both read once per evaluation (a 200-plant list asks for them per row).
+let byIdSrc = null, byIdOut = null, orderedOut = null;
+const flagsById = () => { const ev = evaluated(); if (ev !== byIdSrc) { byIdSrc = ev; byIdOut = new Map(ev.members.map((m) => [m.taxon.id, m.flags])); orderedOut = null; } return byIdOut; };
 const members = () => evaluated().members.map((m) => m.taxon);
 const height = (t) => t.traits.height_m?.max ?? 0;
 const rank = (t) => (t.stratum ? strata.indexOf(t.stratum.value) : 9) * 1000 - height(t);
-const ordered = () => [...members()].sort((a, b) => rank(a) - rank(b) || a.canonical_name.localeCompare(b.canonical_name));
+const ordered = () => { flagsById(); return (orderedOut ??= [...members()].sort((a, b) => rank(a) - rank(b) || a.canonical_name.localeCompare(b.canonical_name))); };
 const numbering = () => new Map(ordered().map((t, i) => [t.id, i + 1]));
 // The jobs nobody does come from the core (evaluate's gaps); the layers in use from the members.
 const jobGaps = () => evaluated().gaps;
@@ -461,7 +477,7 @@ function placeChips() {
 // so they show at the top of the panel; on desktop the panel always sticks and scrolls inside itself
 // when it is taller than the window (src/styles/consortium.css), so it never changes layout mid-scroll.
 function asideHTML() {
-  if (phone()) return '';
+  if (noAside()) return '';
   const result = S.status === 'ready' || S.status === 'nomatch';
   return `<aside class="aside" aria-label="${esc(T('step1'))}">
     <div class="panel panel-place"><h2 class="panel-title">${esc(T('step1'))}</h2>${placeChips()}</div>
@@ -474,9 +490,10 @@ function asideHTML() {
 }
 const resultTitle = (text) => `<h2 id="ct-result-title" tabindex="-1">${esc(text)}</h2>`;
 function basisHTML() {
-  return `<p class="basis"><span>${esc(T('basis', { site: basisText() }))}</span> ${btn('link-button', phone() ? 'open-site' : 'focus-site', null, esc(T('basisChange')), fk('basis'))}</p>`;
+  return `<p class="basis"><span>${esc(T('basis', { site: basisText() }))}</span> ${btn('link-button', noAside() ? 'open-site' : 'focus-site', null, esc(T('basisChange')), fk('basis'))}</p>`;
 }
 function attentionHTML(flags) {
+  if (big()) return attentionScaleHTML();
   const look = ordered().filter((t) => needsLook(t, flags.get(t.id)));
   if (!look.length) return '';
   const items = look.map((t) => {
@@ -490,12 +507,6 @@ function attentionHTML(flags) {
   });
   // F3: one item per line, each with its own actions.
   return `<div class="attention">${I.warn}<div><p><strong>${esc(T('withWarning'))}</strong></p><ul class="att-list" role="list">${items.join('')}</ul></div></div>`;
-}
-// Phone has no side panel: with no free place, the "I want to grow…" search sits under the views
-// (growRowHTML), so the first screen still reaches the plants (M4).
-function growRowHTML() {
-  if (!phone() || fillable()) return '';
-  return `<div class="free-row grow-row"><div class="free-actions">${btn('button button-secondary grow-button', 'open-add', 'grow', `${I.search}<span>${esc(T('grow'))}</span>`, fk('grow'))}</div></div>`;
 }
 // Shown only while Fill would add plants; the words never count places: the room limits the
 // plants' size, not their number (owner, 2026-10-28).
@@ -524,15 +535,16 @@ function mainHTML() {
     <div class="sk" style="height:46px;width:60%"></div><div class="sk" style="height:22px"></div><div class="sk" style="height:44px;max-width:300px;border-radius:999px"></div><div class="sk sk-draw"></div><div class="sk" style="height:84px"></div></div>`;
   if (S.status === 'error') return `<div class="callout" role="alert">${resultTitle(T('errorTitle'))}<p>${esc(T('errorText'))}</p><div class="actions">${btn('button button-primary', 'retry', null, esc(T('retry')), fk('retry'))}</div></div>`;
   if (S.status === 'notcovered') return notCoveredHTML();
-  if (S.status === 'nomatch') return `${notices(fillable())}${phone() ? placeChips() : ''}${noMatchHTML()}${basisHTML()}`;
+  if (S.status === 'nomatch') return `${notices(fillable())}${noAside() ? placeChips() : ''}${noMatchHTML()}${basisHTML()}`;
   const ms = members(), flags = flagsById(), can = fillable(), jobsDone = jobs.length - jobGaps().length;
   const lastEnd = Math.max(-1, ...ms.map((t) => (t.phases ? phases.indexOf(t.phases.end) : -1)));
   return `${notices(can)}
-    <div class="result-head"><div>${resultTitle(T('yourConsortium'))}<p class="result-sub">${esc(climateLabel())}${S.country ? ' · ' + esc(warnWhere(W, place())) : ''}</p></div>${phone() ? placeChips() : ''}</div>
+    <div class="result-head"><div>${resultTitle(T('yourConsortium'))}<p class="result-sub">${esc(climateLabel())}${S.country ? ' · ' + esc(warnWhere(W, place())) : ''}</p></div>${noAside() ? placeChips() : ''}</div>
     <p class="summary-strip"><span><b>${esc(P('count', ms.length))}</b> · ${esc(T('basis.room.' + S.site.room))} · ${esc(P('keptCount', ms.filter((t) => S.kept.has(t.id)).length))}</span><span>${esc(T('sumLayers', { n: strataIn(ms).size }))}</span><span>${esc(T('sumJobs', { n: jobsDone }))}</span>${lastEnd >= 0 ? `<span>${esc(T('sumTime', { end: T(W.phaseKey(lastEnd, 'to')) }))}</span>` : ''}</p>
     ${builtHTML()}${basisHTML()}${attentionHTML(flags)}${freeRowHTML(can)}
     <div class="tabs" role="tablist" aria-label="${esc(T('yourConsortium'))}">${['layers', 'time', 'jobs'].map((v) => `<button class="tab" role="tab" type="button" id="ct-tab-${v}" aria-selected="${S.view === v}" aria-controls="ct-panel" tabindex="${S.view === v ? 0 : -1}" data-act="view" data-v="${v}" ${fk('tab-' + v)}>${esc(T('tab.' + v))}</button>`).join('')}</div>
-    <div role="tabpanel" id="ct-panel" aria-labelledby="ct-tab-${S.view}" class="tabpanel">${S.view === 'layers' ? layersHTML(flags) : S.view === 'time' ? timeHTML(flags) : jobsHTML()}</div>${growRowHTML()}
+    <div role="tabpanel" id="ct-panel" aria-labelledby="ct-tab-${S.view}" class="tabpanel">${S.view === 'layers' ? layersHTML(flags) : S.view === 'time' ? timeHTML(flags) : jobsHTML()}</div>
+    ${plantsHTML(flags)}
     <div class="result-foot" role="group" aria-label="${esc(T('shareMenu'))}">${btn('button button-secondary button-small', 'share', null, `${I.link}${esc(T('share'))}`, fk('share'))}${btn('button button-secondary button-small', 'print', null, `${I.printer}${esc(T('print'))}`, fk('print'))}${btn('link-button quiet', 'start-over', null, esc(T('startOver')), fk('start-over'))}</div>`;
 }
 // A climate with no list yet: what is covered, another climate, and "Ask for this climate".
@@ -608,21 +620,13 @@ function profileHTML(flags, print = false) {
     <div class="profile-labels" style="height:${small || print ? 34 : stagger ? 128 : 66}px">${labels}</div>${key}
     <figcaption class="profile-foot"><span>${esc(T('layersNote'))}</span>${unplaced.length ? `<span>${T('noLayerList', { names: W.list(unplaced.map(name)) })}</span>` : ''}</figcaption></figure>`;
 }
+// The Layers tab: the side view only; the plants are in "Your plants" below every tab (mockup v2).
 function layersHTML(flags) {
-  const nums = numbering();
-  const groups = [...strata, 'none'].map((s) => {
-    const list = ordered().filter((t) => stratumOf(t) === s), gaps = S.gaps.filter((g) => g.stratum === s);
-    if (s === 'none' && !list.length) return '';
-    return `<section class="stratum-group" aria-labelledby="ct-sg-${s}">
-      <div class="stratum-head"><h3 id="ct-sg-${s}">${esc(stratumLabel(s))}</h3><p>${esc(T('stratum.' + s + '.about'))}</p><span class="count">${list.length}</span></div>
-      ${list.length ? `<ul class="plants" role="list">${list.map((t) => plantRow(t, nums, flags.get(t.id))).join('')}</ul>` : ''}
-      ${gaps.map((g) => `<div class="gap-row"><span>${T('gapRow', { name: g.name })}</span>${btn('button button-secondary button-small', 'open-add', 'stratum:' + s, esc(T('findPlant')), fk('gap-' + g.id))}</div>`).join('')}
-      ${!list.length && !gaps.length ? `<div class="gap-row"><span>${esc(T('emptyLayer'))}</span>${btn('button button-secondary button-small', 'open-add', 'stratum:' + s, esc(T('emptyLayerFind')), fk('empty-' + s))}</div>` : ''}
-    </section>`;
-  }).join('');
   return `<div class="view-head"><h3>${esc(T('layersTitle'))}</h3>${explainBtn('stratum', T('whatStratum'), true)}<p class="light-cue">${I.sun}<span>${esc(T('lightCue'))}</span></p></div>
-    ${explainPanel('stratum')}${profileHTML(flags)}<div class="strata-list">${groups}</div>`;
+    ${explainPanel('stratum')}${sideViewHTML(flags)}`;
 }
+// The seam for the side view at every size (scale chunk C): the result and print call only this.
+const sideViewHTML = (flags, print = false) => profileHTML(flags, print);
 // M19: one primary action (Swap) and two labelled icon buttons (Keep, Remove).
 function plantRow(t, nums, flags) {
   const kept = S.kept.has(t.id), fromGuide = S.guideId === t.id, n = nameText(t), crop = isCrop(t.id), from = otherClimateOf(t.id);
@@ -640,6 +644,236 @@ function plantRow(t, nums, flags) {
       ${btn('act act-icon', 'keep', t.id, kept ? I.pinOn : I.pin, `aria-pressed="${kept}" aria-label="${esc(T('keep', { name: n }))}" title="${esc(T(kept ? 'unkeep' : 'keep', { name: n }))}" ${fk('kp-' + t.id)}`)}
       ${btn('act act-icon', 'remove', t.id, I.remove, `aria-label="${esc(T('remove', { name: n }))}" title="${esc(T('remove', { name: n }))}" ${fk('rm-' + t.id)}`)}
     </div></li>`;
+}
+
+// ---------- Your plants: Cards or List (design-scale.md §2; chunk B) ----------
+// Above 20 plants the side panel folds into the result head (M3), and the warning box has one line per kind.
+const big = () => !!cell && (S.status === 'ready' || S.status === 'nomatch') && S.members.length > CARDS_UP_TO;
+const noAside = () => phone() || big();
+const listMode = () => viewMode(mode, members().length) === 'list';
+const lightWords = (s) => (s === 'none' ? T('stratum.none.about') : T('stratum.' + s + '.needs'));
+// The words of a filter's value, as its chip and its menu say them.
+function filterValue(key, v) {
+  if (key === 'layer') return stratumLabel(v);
+  if (key === 'job') return T('job.' + v);
+  if (key === 'time') return T(W.phaseKey(Number(v), 'plain'));
+  if (key === 'warn') return v === 'invasive' ? T('fw.invasive', { country: W.country(S.country) }) : T('fw.' + v);
+  return T('fk.' + v);
+}
+// The values a filter offers: the first is "all" (its empty value).
+function filterValues(key) {
+  if (key === 'layer') return [['', T('allLayers')], ...[...strata, 'none'].filter((s) => s !== 'none' || members().some((t) => !t.stratum)).map((s) => [s, stratumLabel(s)])];
+  if (key === 'job') return [['', T('allJobs')], ...jobs.map((j) => [j, T('job.' + j)])];
+  if (key === 'time') return [['', T('allStages')], ...phases.map((_, i) => [String(i), T(W.phaseKey(i, 'plain'))])];
+  if (key === 'warn') return [['', T('fk.all')], ...['any', S.country ? 'invasive' : 'somewhere', 'toxic', 'pests', 'site', 'unchecked'].map((v) => [v, filterValue('warn', v)])];
+  return KEPT_FILTERS.map((v) => [v === 'all' ? '' : v, T('fk.' + v)]);
+}
+// What the list reads of a plant: its warning kinds (cached per state, like evaluate).
+let kindsSrc = null, kindsOut = new Map();
+function kindsOf(t) {
+  const ev = evaluated();
+  if (ev !== kindsSrc) { kindsSrc = ev; kindsOut = new Map(); }
+  if (!kindsOut.has(t.id)) kindsOut.set(t.id, warnKinds(t, flagsById().get(t.id), { country: S.country }));
+  return kindsOut.get(t.id);
+}
+const filterCtx = () => ({ kinds: kindsOf, kept: S.kept, crops: S.crops });
+// The members the filters let through, by layer, in the order shown.
+function listGroups() {
+  const all = ordered(), ctx = filterCtx(), on = filtering(F);
+  const shown = on ? all.filter((t) => matches(t, F, ctx)) : all;
+  return [...strata, 'none'].map((s) => {
+    const total = all.filter((t) => stratumOf(t) === s), list = shown.filter((t) => stratumOf(t) === s);
+    const open = groupOpen(s, { total: all.length, shown: list.length, filtering: on, choice: groups.has(s) ? groups.get(s) : null });
+    return { s, total, list, open };
+  }).filter((g) => g.total.length);
+}
+// The rows in view, in order: Shift ranges and "the next row" after Remove read them.
+const visibleOrder = () => listGroups().filter((g) => g.open).flatMap((g) => g.list.map((t) => t.id));
+const heightText = (t) => { const h = roundHeight(t.traits.height_m?.max); return h == null ? T('noHeight') : T('meters', { v: W.num(h) }); };
+function stageShortText(t) {
+  const s = stageShort(stageSpan(t));
+  if (!s) return '';
+  const part = (p) => (p.key ? T(p.key) : W.num(p.num));
+  return s.key === 'stageSpan' ? T('stageSpan', { from: part(s.from), to: part(s.to) }) : T(s.key, { a: W.num(s.a), b: W.num(s.b) });
+}
+// One square per stage, filled where the plant leads; named with the plain words (m7).
+function stageBar(t) {
+  const sp = stageSpan(t), words = W.timeWords(t).plain;
+  return `<span class="stagebar" role="img" aria-label="${esc(words)}" title="${esc(words)}">${phases.map((_, i) => `<i${sp && i >= sp.a && i <= sp.b ? ' data-on="true"' : ''}></i>`).join('')}</span>`;
+}
+function jobsCells(t) {
+  const has = jobsOf(t);
+  return jobs.map((j) => (has.includes(j) ? `<span class="ljob" title="${esc(T('job.' + j))}">${jobIcon(j, 16)}<span class="vh">${esc(T('job.' + j))}</span></span>` : '<span class="ljob" aria-hidden="true"></span>')).join('');
+}
+const BUG = svg(`<ellipse cx="8" cy="9" rx="3.2" ry="4.2" ${st}/><path d="M8 4.8V2.6M6.2 3.2 5 2M9.8 3.2 11 2M4.8 7.4 2.4 6.4M11.2 7.4l2.4-1M4.8 10.6l-2.4 1M11.2 10.6l2.4 1" ${st}/>`, 14);
+const GLOBE = svg(`<circle cx="8" cy="8" r="6.2" ${st} stroke-dasharray="2 1.6"/><path d="M1.8 8h12.4M8 1.8c2 2 2 10.4 0 12.4M8 1.8c-2 2-2 10.4 0 12.4" ${st}/>`, 14);
+// A row's warnings: invasive in the chosen country (filled), toxic (red outline), shared pests (a
+// quiet outline naming the first two), not suited or a serious conflict, then the soft ones; the
+// first two as chips, the rest as "+n" (design-scale.md §2.2, M8).
+function rowWarns(t, flags) {
+  const out = [], tox = t.warnings.toxicity?.level;
+  if (flags.invasive === true) out.push({ cls: 'warn-inv', icon: I.warn, text: T('invHere', { country: W.country(S.country) }) });
+  if (tox === 'Moderate' || tox === 'Severe') out.push({ cls: 'warn-tox', icon: I.danger, text: T('tox.' + tox) });
+  const pests = pestsOf(flags);
+  if (pests.length) out.push({ cls: 'warn-pest', icon: BUG, text: pests.slice(0, 2).join(' · ') });
+  for (const k of flags.misfits) out.push({ cls: 'warn-site', icon: I.warn, text: misfitText(t, k) });
+  for (const c of flags.conflicts) if (!PEST_TYPE.has(c.type) && isSerious(c)) out.push({ cls: 'warn-site', icon: I.warn, text: T('conflict', { other: nameText(otherOf(c, t)) }) });
+  if (tox === 'Slight') out.push({ cls: 'warn-soft', icon: I.warn, text: T('tox.Slight') });
+  return out;
+}
+const PEST_TYPE = new Set(['shared_pest', 'alternate_host']);
+function warnChips(list, max = 2) {
+  const shown = list.slice(0, max), rest = list.slice(max);
+  return shown.map((w) => `<span class="warn-chip ${w.cls}">${w.icon}<span>${esc(w.text)}</span></span>`).join('')
+    + (rest.length ? `<span class="warn-more" title="${esc(rest.map((w) => w.text).join(' · '))}">+${W.num(rest.length)}<span class="vh"> ${esc(P('moreWarnings', rest.length))}: ${esc(W.list(rest.map((w) => w.text)))}</span></span>` : '');
+}
+// With no country, the soft count of countries in its own muted column (M5); nothing once a country is chosen.
+function invCount(t) {
+  if (S.country) return '';
+  const n = new Set((t.warnings.invasive_in ?? []).map((x) => x.country)).size;
+  return n ? `<span class="inv-count" title="${esc(P('invCount', n))}">${GLOBE}<span><span class="vh">${esc(T('col.invIn'))} </span>${esc(P('countryCount', n))}</span></span>` : '';
+}
+function rowTags(t) {
+  const from = otherClimateOf(t.id);
+  const tags = `${isCrop(t.id) ? `<span class="tag tag-main">${esc(T('mainCrop'))}</span>` : ''}${S.guideId === t.id ? `<span class="tag">${esc(T('guideTag'))}</span>` : ''}${from ? `<span class="tag tag-from">${esc(fromListLabel(from))}</span>` : ''}`;
+  return tags ? `<span class="ltags">${tags}</span>` : '';
+}
+const rowMenu = (t) => {
+  if (rMenu !== t.id) return '';
+  const n = nameText(t);
+  return `<div class="lmenu" id="ct-rm-${t.id}">${btn('lmenu-item', 'details', t.id, `${I.info}<span>${esc(T('details'))}</span>`, fk('rmenu-' + t.id))}${isCrop(t.id) ? '' : btn('lmenu-item', 'swap', t.id, `${I.swap}<span>${esc(T('swap'))}</span>`, `aria-haspopup="dialog" ${fk('rmenu-' + t.id)}`)}${btn('lmenu-item', 'remove', t.id, `${I.remove}<span>${esc(T('remove', { name: n }))}</span>`, fk('rmenu-' + t.id))}</div>`;
+};
+function listRow(t, flags) {
+  const n = nameText(t), kept = S.kept.has(t.id), picked = sel.has(t.id);
+  const tick = `<label class="ltick"><input type="checkbox" data-act="sel" data-v="${t.id}" aria-label="${esc(T('selectPlant', { name: n }))}"${picked ? ' checked' : ''} ${fk('sel-' + t.id)}></label>`;
+  const pin = btn('lpin', 'keep', t.id, kept ? I.pinOn : I.pin, `aria-pressed="${kept}" aria-label="${esc(T('keep', { name: n }))}" title="${esc(T(kept ? 'unkeep' : 'keep', { name: n }))}" ${fk('kp-' + t.id)}`);
+  const more = `<span class="lmore">${btn('lmore-btn', 'rmenu', t.id, '<span aria-hidden="true">⋯</span>', `aria-expanded="${rMenu === t.id}" aria-controls="ct-rm-${t.id}" aria-label="${esc(T('moreFor', { name: n }))}" ${fk('rmenu-' + t.id)}`)}${rowMenu(t)}</span>`;
+  const warns = rowWarns(t, flags);
+  const sci = `<i class="lsci">${esc(t.canonical_name)}</i>`;
+  const height = `<span class="lheight"><span class="vh">${esc(T('t.height'))} </span>${esc(heightText(t))}</span>`;
+  if (phone()) {
+    const line3 = warnChips(warns) + invCount(t) + rowTags(t);
+    const label = [n, t.canonical_name !== n ? t.canonical_name : '', heightText(t), W.timeWords(t).plain, ...warns.map((w) => w.text), isCrop(t.id) ? T('mainCrop') : ''].filter(Boolean).join(', ');
+    return `<li class="lrow lrow-phone" data-id="${t.id}"${picked ? ' data-sel="true"' : ''}>${tick}
+      <button class="lname-btn" type="button" data-act="details" data-v="${t.id}" aria-label="${esc(label)}" ${fk('pn-' + t.id)}><span class="lline1"><span class="lname">${name(t)}</span> ${sci}</span>
+      <span class="lline2">${height}${stageBar(t)}<span class="ljobs">${jobsCells(t).replace(/<span class="ljob" aria-hidden="true"><\/span>/g, '')}</span></span>${line3 ? `<span class="lline3">${line3}</span>` : ''}</button>${pin}${more}</li>`;
+  }
+  return `<li class="lrow" data-id="${t.id}"${picked ? ' data-sel="true"' : ''}>${tick}${pin}
+    <span class="lplant"><button class="lname-btn" type="button" data-act="details" data-v="${t.id}" ${fk('pn-' + t.id)}><span class="lname">${name(t)}</span>${sci}</button>${rowTags(t)}</span>
+    ${height}<span class="lleads">${stageBar(t)}<span class="lstage" aria-hidden="true">${esc(stageShortText(t))}</span></span>
+    <span class="ljobs">${jobsCells(t)}</span>${S.country ? '' : `<span class="linv">${invCount(t)}</span>`}<span class="lwarns">${warnChips(warns)}</span>
+    ${isCrop(t.id) ? '<span></span>' : btn('act lswap', 'swap', t.id, `${I.swap}<span>${esc(T('swap'))}</span>`, `aria-haspopup="dialog" aria-label="${esc(T('swap'))} ${esc(n)}" ${fk('sw-' + t.id)}`)}${more}</li>`;
+}
+function groupHTML(g, flags) {
+  const ids = g.list.map((t) => t.id), tick = groupTick(ids, sel), on = filtering(F);
+  const warnN = g.list.filter((t) => kindsOf(t).has('any')).length;
+  const count = on ? T('shownOf', { n: W.num(g.list.length), total: W.num(g.total.length) }) : P('count', g.total.length);
+  const label = [stratumLabel(g.s), lightWords(g.s), count, warnN ? P('withWarnCount', warnN) : ''].filter(Boolean).join(', ');
+  const did = new Set(g.list.flatMap(jobsOf));
+  const box = `<label class="ltick"><input type="checkbox" data-act="gsel" data-v="${g.s}" aria-label="${esc(T('selectLayer', { layer: stratumLabel(g.s) }))}"${tick === 'all' ? ' checked' : ''}${tick === 'some' ? ' data-mixed="true"' : ''}${ids.length ? '' : ' disabled'} ${fk('gsel-' + g.s)}></label>`;
+  return `<section class="lgroup" data-s="${g.s}"><div class="lgroup-head">${box}
+    <button class="lg-toggle" type="button" data-act="group" data-v="${g.s}" aria-expanded="${g.open}" aria-controls="ct-lg-${g.s}" aria-label="${esc(label)}" ${fk('lg-' + g.s)}>${I.caret}<span class="lg-name">${esc(stratumLabel(g.s))}</span> <span class="lg-light">${esc(lightWords(g.s))}</span></button>
+    <span class="lg-count" aria-hidden="true">${esc(count)}</span><span class="lg-jobs" aria-hidden="true">${jobs.map((j) => (did.has(j) ? jobIcon(j, 14) : '<span class="lg-off">–</span>')).join('')}</span>
+    <span class="lg-warn" aria-hidden="true">${warnN ? `${I.warn}${esc(P('withWarnCount', warnN))}` : ''}</span></div>
+    ${g.open && g.list.length ? `<ul class="lrows" id="ct-lg-${g.s}" role="list">${g.list.map((t) => listRow(t, flags.get(t.id))).join('')}</ul>` : `<div id="ct-lg-${g.s}" hidden></div>`}</section>`;
+}
+// The filter row: the text search (the only role=search), then the menu buttons, the active ones
+// first, named with their value, each with its own ✕ (M2).
+function filterChip(key) {
+  const v = F[key], on = v !== '', name = T('f.' + key), open = fMenu === key;
+  const label = on ? T('filterOn', { name, value: filterValue(key, v) }) : name;
+  const counts = key === 'kept' ? keptCounts(S.members, { kept: S.kept, crops: S.crops }) : null;
+  const countOf = (val) => {
+    if (counts) return counts[val || 'all'];
+    const ctx = filterCtx(), probe = { ...NO_FILTERS, [key]: val };
+    return members().filter((t) => matches(t, probe, ctx)).length;
+  };
+  const menu = open ? `<div class="fmenu-list" id="ct-fm-${key}">${filterValues(key).map(([val, l]) => btn('fmenu-item', 'fset', `${key}:${val}`, `<span>${esc(capFirst(l, lang))}</span><span class="fmenu-n">${W.num(countOf(val))}</span>`, `aria-pressed="${v === val}" ${fk(`fs-${key}-${val}`)}`)).join('')}</div>` : '';
+  return `<span class="fchip${on ? ' is-on' : ''}">${btn('fchip-btn', 'fmenu', key, `<span>${esc(label)}</span>${I.caret}`, `aria-expanded="${open}" aria-controls="ct-fm-${key}" ${fk('fm-' + key)}`)}${on ? btn('fchip-x', 'fclear', key, I.close, `aria-label="${esc(T('filterClear', { name: label }))}" ${fk('fx-' + key)}`) : ''}${menu}</span>`;
+}
+function resultsLine() {
+  if (!filtering(F)) return '';
+  const n = listGroups().reduce((a, g) => a + g.list.length, 0);
+  return `<span>${esc(P('showing', members().length, { n: W.num(n) }))}</span>${btn('link-button', 'fclear-all', null, esc(T('filtersClear')), fk('fclear-all'))}`;
+}
+// Up to three names, then "and n more" (never "and … and n more"): "A, B, C and 2 more".
+function namesLine(ids) {
+  const names = ids.slice(0, 3).map((id) => nameText(taxonOf(id)));
+  return ids.length > 3 ? `${names.join(lang === 'zh' || lang === 'ja' ? '、' : ', ')} ${P('andMore', ids.length - 3)}` : W.list(names);
+}
+function selBarHTML() {
+  const ids = [...sel].filter((id) => S.members.includes(id));
+  if (!ids.length) return '';
+  return `<div class="selbar" role="group" aria-label="${esc(T('selection'))}"><p><b>${esc(P('selected', ids.length))}</b> <span class="selnames">${esc(namesLine(ids))}</span></p>
+    <div class="selbar-acts">${btn('button button-secondary button-small', 'bulk-keep', null, `${I.pin}<span>${esc(P('keepN', ids.length))}</span>`, fk('bulk-keep'))}${btn('button button-secondary button-small', 'bulk-remove', null, `${I.remove}<span>${esc(P('removeN', ids.length))}</span>`, fk('bulk-remove'))}${btn('link-button', 'unselect', null, esc(T('unselect')), fk('unselect'))}</div></div>`;
+}
+// The part of the list a filter, a tick or a typed search changes (the search field stays as it is).
+function listBodyHTML(flags) {
+  return `<p class="fresults">${resultsLine()}</p>
+    <div class="lcols" aria-hidden="true"><span></span><span>${esc(T('col.kept'))}</span><span>${esc(T('p.plant'))}</span><span>${esc(T('t.height'))}</span><span>${esc(T('col.leads'))}</span><span class="lcol-jobs">${jobs.map((j) => jobIcon(j, 14)).join('')}</span>${S.country ? '' : `<span class="lcol-inv">${esc(T('col.invIn'))}</span>`}<span>${esc(T('col.warnings'))}</span></div>
+    <div class="lgroups${S.country ? '' : ' no-country'}">${listGroups().map((g) => groupHTML(g, flags)).join('')}</div>${selBarHTML()}`;
+}
+function listHTML(flags) {
+  const keys = filterOrder(F, fOrder);
+  return `<div class="plist">${btn('skip-list', 'skip-list', null, esc(T('skipList')), fk('skip-list'))}
+    <div class="lkey"><p><b>${esc(T('jobsKey'))}:</b> ${jobs.map((j) => `<span>${jobIcon(j, 14)}${esc(T('job.' + j))}</span>`).join('')}</p><p><b>${esc(T('stageBar'))}:</b> <span class="stagebar stagebar-key" aria-hidden="true">${phases.map((_, i) => `<i${i >= 3 ? ' data-on="true"' : ''}></i>`).join('')}</span> <span>${esc(T('stageBarKey'))}</span></p></div>
+    <div class="ftools" id="ct-ftools"><div class="find" role="search" aria-label="${esc(T('findLabel'))}">${I.search}<input type="search" autocomplete="off" spellcheck="false" aria-label="${esc(T('findLabel'))}" placeholder="${esc(P('findIn', members().length))}" value="${esc(F.q)}" data-input="find" ${fk('find')}></div>
+      <div class="fchips">${keys.map(filterChip).join('')}</div></div>
+    <div id="ct-lbody" class="lbody">${listBodyHTML(flags)}</div></div>`;
+}
+// Only the list's body, for typing in its search: the field keeps its focus and caret.
+function refreshList() {
+  const b = document.getElementById('ct-lbody');
+  if (!b) return;
+  b.innerHTML = listBodyHTML(flagsById());
+  markMixed();
+  persist();
+}
+// The column heads stick right under the sticky filter row, whatever its height (N5).
+let toolsObs = null;
+function measureTools() {
+  const tools = document.getElementById('ct-ftools');
+  if (!tools || typeof ResizeObserver === 'undefined') return;
+  toolsObs?.disconnect();
+  toolsObs = new ResizeObserver(() => app.style.setProperty?.('--x-tools-h', tools.offsetHeight + 'px'));
+  toolsObs.observe(tools);
+}
+function markMixed() { for (const el of app.querySelectorAll('[data-mixed="true"]')) el.indeterminate = true; }
+// The cards, grouped by layer as before (up to 20 plants by default).
+function cardsHTML(flags) {
+  const nums = numbering();
+  return `<div class="strata-list">${[...strata, 'none'].map((s) => {
+    const list = ordered().filter((t) => stratumOf(t) === s), gaps = S.gaps.filter((g) => g.stratum === s);
+    if (s === 'none' && !list.length) return '';
+    return `<section class="stratum-group" aria-labelledby="ct-sg-${s}">
+      <div class="stratum-head"><h3 id="ct-sg-${s}">${esc(stratumLabel(s))}</h3><p>${esc(T('stratum.' + s + '.about'))}</p><span class="count">${list.length}</span></div>
+      ${list.length ? `<ul class="plants" role="list">${list.map((t) => plantRow(t, nums, flags.get(t.id))).join('')}</ul>` : ''}
+      ${gaps.map((g) => `<div class="gap-row"><span>${T('gapRow', { name: g.name })}</span>${btn('button button-secondary button-small', 'open-add', 'stratum:' + s, esc(T('findPlant')), fk('gap-' + g.id))}</div>`).join('')}
+      ${!list.length && !gaps.length ? `<div class="gap-row"><span>${esc(T('emptyLayer'))}</span>${btn('button button-secondary button-small', 'open-add', 'stratum:' + s, esc(T('emptyLayerFind')), fk('empty-' + s))}</div>` : ''}
+    </section>`;
+  }).join('')}</div>`;
+}
+function plantsHTML(flags) {
+  const list = listMode(), n = members().length;
+  const modeBtn = (m) => btn('mode-btn', 'mode', m, esc(T(m === 'cards' ? 'viewCards' : 'viewList')), `aria-pressed="${(m === 'list') === list}" ${fk('mode-' + m)}`);
+  return `<section class="plants-sec" aria-labelledby="ct-plants-title"><div class="plants-head">
+    <h3 id="ct-plants-title" tabindex="-1" ${fk('plants-title')}>${esc(T('yourPlants'))} <span class="count">${W.num(n)}</span></h3>
+    <div class="mode-switch" role="group" aria-label="${esc(T('viewAs'))}">${modeBtn('cards')}${modeBtn('list')}</div>
+    ${btn('button button-primary button-small add-plants', 'open-add', 'grow', `<span aria-hidden="true">+</span><span>${esc(T('addPlants'))}</span>`, `aria-haspopup="dialog" ${fk('add-plants')}`)}</div>
+    ${list ? listHTML(flags) : cardsHTML(flags)}</section>`;
+}
+// The warning box above 20 plants: one line per kind, each with its count, up to three names and a
+// "Show n" that sets the list's Warning filter (design-scale.md §2.6).
+function attentionScaleHTML() {
+  const ms = members(), any = ms.filter((t) => kindsOf(t).has('any'));
+  const kinds = [S.country ? ['invasive', I.warn, T('invHere', { country: W.country(S.country) })] : null, ['toxic', I.danger, T('tox.Moderate')], ['pests', BUG, T('att.pests')], ['site', I.warn, T('d.misfit')], S.country ? null : ['somewhere', GLOBE, T('att.somewhere')], ['unchecked', I.unknown, T('att.unchecked')]].filter(Boolean);
+  const lines = kinds.map(([k, icon, label]) => {
+    const list = ms.filter((t) => kindsOf(t).has(k));
+    if (!list.length) return '';
+    return `<li class="att-line att-${k}">${icon}<div><p><strong>${esc(label)}</strong> <span class="count">${W.num(list.length)}</span></p><p class="att-names">${esc(namesLine(list.map((t) => t.id)))}</p></div>${btn('button button-secondary button-small', 'fset', 'warn:' + k, esc(P('showN', list.length)), fk('att-' + k))}</li>`;
+  }).join('');
+  if (!lines) return '';
+  return `<div class="attention attention-scale">${I.warn}<div><p><strong>${esc(T('withWarning'))}</strong> <span class="muted">${esc(T('attOf', { n: W.num(any.length), total: W.num(ms.length) }))}</span></p><ul class="att-lines" role="list">${lines}</ul></div></div>`;
 }
 
 // ---------- Over time ----------
@@ -791,7 +1025,7 @@ function altRow(t, why, act, label, flags, opts = {}) {
   const confirming = O?.confirm === t.id && !opts.disabled, v = opts.v ?? t.id;
   return `<li class="alt" data-flagged="${flags.flagged}"${confirming ? ' data-confirming="true"' : ''}><div class="alt-main"><span class="alt-name">${btn('link-button alt-link', 'details-from', t.id, name(t), fk('ad-' + t.id))} <span class="sci">${esc(t.canonical_name)}</span></span>
     <span class="alt-why">${why}</span>${chipsHTML(t, flags)}</div>
-    ${opts.disabled ? `<span class="seg-hint">${esc(T('inConsortium'))}</span>` : confirming ? confirmHTML(t.id, act, v) : btn(`button button-small ${opts.primary ? 'button-primary' : 'button-secondary'}`, act, v, esc(label), `aria-label="${esc(label)}: ${esc(nameText(t))}" ${fk(act + '-' + t.id)}`)}</li>`;
+    ${opts.disabled ? `<span class="already">${I.check}<span>${esc(T('inConsortium'))}</span></span>` : confirming ? confirmHTML(t.id, act, v) : btn(`button button-small ${opts.primary ? 'button-primary' : 'button-secondary'}`, act, v, esc(label), `aria-label="${esc(label)}: ${esc(nameText(t))}" ${fk(act + '-' + t.id)}`)}</li>`;
 }
 // The flags of a plant in the Swap list of member `from`.
 const swapFlags = (from, id) => alternatives(from, S.members, cell, { site: S.site, removed: [...S.removed], guests: guestTaxa(), ...where() }).find((a) => a.taxon.id === id)?.flags ?? null;
@@ -799,7 +1033,7 @@ const swapFlags = (from, id) => alternatives(from, S.members, cell, { site: S.si
 // would carry beside the members); v: the value its Yes acts on (add-anyway: climate:id).
 function confirmHTML(id, act, v = id) {
   const t = taxonOf(id), from = act === 'use' ? swapTarget(O) : null;
-  const flags = from ? swapFlags(from, id) : flagsFor(cell, id, S.members, { site: S.site, guests: act === 'add-anyway' ? [...guestTaxa(), t] : guestTaxa(), ...where() });
+  const flags = from ? swapFlags(from, id) : flagsFor(cell, id, S.members, { site: S.site, guests: act === 'add-anyway' || act === 'paste-anyway' ? [...guestTaxa(), t] : guestTaxa(), ...where() });
   return `<div class="confirm" role="alertdialog" aria-labelledby="ct-confirm-t" aria-describedby="ct-confirm-d"><p id="ct-confirm-t"><strong>${T('confirmTitle', { name: name(t) })}</strong></p><p id="ct-confirm-d">${T('confirmText', { warnings: W.list(warnPlain(t, flags, false)) })}</p>
     <div class="actions">${btn('button button-primary button-small', act + '-yes', v, esc(T(act === 'use' ? 'confirmUse' : 'confirmAdd')), fk('confirm-yes'))}${btn('button button-secondary button-small', 'confirm-no', null, esc(T('cancel')), fk('confirm-no'))}</div></div>`;
 }
@@ -871,6 +1105,7 @@ function otherHitsHTML(filters) {
 // B13: a redraw while the reader is in the results (a list arriving) puts the focus back on the
 // control that had it.
 function refreshAdd() {
+  if (O?.type === 'add' && addTab === 'paste') { refreshPaste(); return; }
   const r = O?.type === 'add' && dlg.querySelector('#ct-add-results');
   if (!r) return;
   const had = r.contains(document.activeElement) ? document.activeElement.dataset.fk : null;
@@ -881,10 +1116,100 @@ function addParts() {
   const { fkind, jobF, layerF } = addFilter();
   const sel = (id, label, all, opts, cur) => `<label class="sel"><span>${esc(label)}</span><select data-filter="${id}" ${fk('f-' + id)}><option value="">${esc(all)}</option>${opts.map(([v, l]) => `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
   const headHTML = `<div><h2 id="ct-dlg-title">${esc(fkind === 'grow' ? T('grow') : T('addTitle'))}</h2><p class="lede">${esc(T('addLede', { climate: climateLabel() }))}</p></div>`;
-  const body = `<div class="field"><label for="ct-add-q" class="vh">${esc(T('growHint'))}</label><div class="search">${I.search}<input id="ct-add-q" type="search" autocomplete="off" spellcheck="false" placeholder="${esc(T('growHint'))}" value="${esc(addQuery)}" data-input="add" aria-describedby="ct-add-count" ${fk('add-q')}></div></div>
+  const search = `<div class="field"><label for="ct-add-q" class="vh">${esc(T('growHint'))}</label><div class="search">${I.search}<input id="ct-add-q" type="search" autocomplete="off" spellcheck="false" placeholder="${esc(T('growHint'))}" value="${esc(addQuery)}" data-input="add" aria-describedby="ct-add-count" ${fk('add-q')}></div></div>
     <div class="add-filters">${sel('job', T('filterJob'), T('allJobs'), jobs.map((j) => [j, T('job.' + j)]), jobF)}${sel('layer', T('filterLayer'), T('allLayers'), strata.map((s) => [s, stratumLabel(s)]), layerF)}</div>
     <div id="ct-add-results">${addResults()}</div>`;
-  return { head: headHTML, body };
+  // Two real tabs (m5): Search and Paste a list.
+  const tabs = `<div class="add-tabs" role="tablist" aria-label="${esc(T('addPlants'))}">${['search', 'paste'].map((v) => `<button class="add-tab" role="tab" type="button" id="ct-at-${v}" aria-selected="${addTab === v}" aria-controls="ct-ap-${v}" tabindex="${addTab === v ? 0 : -1}" data-act="add-tab" data-v="${v}" ${fk('at-' + v)}>${esc(T('tab.' + v))}</button>`).join('')}</div>`;
+  const body = `${tabs}<div role="tabpanel" id="ct-ap-${addTab}" aria-labelledby="ct-at-${addTab}">${addTab === 'paste' ? pasteHTML() : search}</div>`;
+  return { head: headHTML, body, foot: addTab === 'paste' ? `<div id="ct-paste-foot" class="paste-foot-wrap">${pasteFootHTML()}</div>` : '' };
+}
+// ---------- Paste a list (design-scale.md §2.5, state 10) ----------
+// The paste read against this climate's list, the other lists loaded so far and the members; once per change.
+let pasteKey = '', pasteOut = null;
+const pasteOpen = new Map();
+function pasteResult() {
+  const key = [pasteText, pasteCol, S.members.join(), othersState, others.size].join('|');
+  if (key !== pasteKey) {
+    pasteKey = key;
+    pasteOut = readPaste(pasteNames(pasteText, pasteCol), { cell, others: othersList(), members: S.members });
+    // Names no list here has: the other lists may (loaded once, as Add anyway does).
+    if (pasteOut.none.length && othersState === 'idle') loadOthers();
+  }
+  return pasteOut;
+}
+const ticked = (id, def) => (pasteTicks.has(id) ? pasteTicks.get(id) : def);
+// The plants Add all adds: the found ones still ticked, then the ones ticked in Choose, each once.
+function pasteToAdd() {
+  const r = pasteResult(), out = [];
+  for (const f of r.found) if (ticked(f.taxon.id, true) && !out.includes(f.taxon.id)) out.push(f.taxon.id);
+  for (const c of r.choose) for (const t of c.taxa) if (!c.inside.includes(t.id) && ticked(t.id, false) && !out.includes(t.id)) out.push(t.id);
+  return out;
+}
+function pasteCountText() {
+  if (!pasteText.trim()) return T('paste.empty');
+  const r = pasteResult();
+  return [['paste.found', r.found.length], ['paste.choose', r.choose.length], ['paste.other', r.other.length], ['paste.none', r.none.length], ['paste.already', r.already.length]].filter(([, n]) => n).map(([k, n]) => P(k, n)).join(' · ');
+}
+function pasteColsHTML() {
+  const { columns } = pasteTable(pasteText);
+  if (columns < 2) return '';
+  return `<label class="paste-cols"><span>${esc(T('paste.columns', { n: W.num(columns) }))}</span> <select data-paste-col ${fk('paste-col')}>${Array.from({ length: columns }, (_, i) => `<option value="${i}"${i === pasteCol ? ' selected' : ''}>${esc(T('paste.column', { n: W.num(i + 1), sample: columnSample(pasteText, i) }))}</option>`).join('')}</select></label>`;
+}
+const pasteFacts = (t) => `<small>${esc(stratumLabel(stratumOf(t)))} · ${esc(heightText(t))}</small>`;
+function pasteTick(t, def, opts = {}) {
+  const on = opts.inside || ticked(t.id, def);
+  return `<li class="paste-row"><label><input type="checkbox" data-act="ptick" data-v="${t.id}"${on ? ' checked' : ''}${opts.inside ? ' disabled' : ''} ${fk('pt-' + t.id)}><span><b>${name(t)}</b> ${sciHTML(t)} ${pasteFacts(t)}${opts.close ? ` <span class="paste-close">${esc(T('paste.close', { name: opts.close }))}</span>` : ''}${opts.inside ? ` <span class="already">${esc(T('inConsortium'))}</span>` : ''}</span></label></li>`;
+}
+// A group that folds when long: Found above 10 rows, Already in above 10 (§2.5 item 9).
+function pasteGroup(id, label, n, inner, fold = n > 10) {
+  const open = pasteOpen.has(id) ? pasteOpen.get(id) : !fold;
+  return `<details class="paste-group" data-g="${id}"${open ? ' open' : ''}><summary><span class="list-label">${esc(label)}</span> <span class="count">${W.num(n)}</span></summary>${inner}</details>`;
+}
+function pasteGroupsHTML() {
+  if (!pasteText.trim()) return '';
+  const r = pasteResult(), here = listName(S.climate), out = [];
+  if (r.other.length) out.push(`<h3 class="list-label paste-label">${esc(T('otherLists'))} <span class="count">${W.num(r.other.length)}</span></h3><ul class="alt-list" role="list">${r.other.map(({ name: typed, climate, taxon }) => altRow(taxon,
+    `<span>${esc(T('inOtherList', { list: listName(climate), here }))}</span><span class="tag tag-from">${esc(fromListLabel(climate))}</span>${fold(typed) !== fold(taxon.canonical_name) ? `<span class="paste-typed">${esc(typed)}</span>` : ''}`,
+    'paste-anyway', T('addAnyway'), flagsFor(cell, taxon.id, S.members, { site: S.site, guests: [...guestTaxa(), taxon], ...where() }) ?? { flagged: false, conflicts: [], misfits: [] },
+    { disabled: S.members.includes(taxon.id), v: climate + ':' + taxon.id })).join('')}</ul>`);
+  if (r.none.length) out.push(`<section class="paste-none"><h3 class="list-label paste-label">${esc(T('paste.g.none'))} <span class="count">${W.num(r.none.length)}</span></h3><p>${esc(T('paste.noneText'))}</p><ul class="paste-names" role="list">${r.none.map((x) => `<li>${esc(x.name)}</li>`).join('')}</ul>
+    <p class="paste-acts">${btn('button button-secondary button-small', 'paste-copy', null, esc(P('paste.copy', r.none.length)), fk('paste-copy'))}<a class="text-link" href="${data.contact}">${esc(T('paste.ask'))}</a></p></section>`);
+  if (r.choose.length) out.push(pasteGroup('choose', T('paste.g.choose'), r.choose.length, `<p class="seg-hint">${esc(T('paste.chooseHint'))}</p>${r.choose.map((c) => `<fieldset class="paste-choose"><legend>${esc(c.name)}</legend><ul role="list">${c.taxa.map((t) => pasteTick(t, false, { inside: c.inside.includes(t.id) })).join('')}</ul></fieldset>`).join('')}`, false));
+  if (r.found.length) out.push(pasteGroup('found', T('paste.g.found'), r.found.length, `<ul class="paste-list" role="list">${r.found.map((f) => pasteTick(f.taxon, true, { close: f.close })).join('')}</ul>`));
+  if (r.already.length) out.push(pasteGroup('already', T('paste.g.already'), r.already.length, `<ul class="paste-names" role="list">${r.already.map((f) => `<li>${name(f.taxon)} ${sciHTML(f.taxon)}${f.climate ? ` <span class="tag tag-from">${esc(fromListLabel(f.climate))}</span>` : ''}</li>`).join('')}</ul>`));
+  if (othersState === 'failed' && r.none.length) out.push(othersFailedHTML());
+  return out.join('');
+}
+function pasteHTML() {
+  return `<p class="paste-lede">${esc(T('paste.lede'))}</p><label for="ct-paste" class="vh">${esc(T('paste.label'))}</label>
+    <textarea id="ct-paste" class="paste-box" rows="6" spellcheck="false" autocomplete="off" data-input="paste" aria-describedby="ct-paste-count" ${fk('paste')}>${esc(pasteText)}</textarea>
+    <div id="ct-paste-cols">${pasteColsHTML()}</div><p id="ct-paste-count" class="list-count" role="status">${esc(pasteCountText())}</p>
+    <div id="ct-paste-out">${pasteGroupsHTML()}</div>`;
+}
+// The foot: "n to add" on one line, any Choose name with nothing ticked on the next, and Add all (N10).
+function pasteFootHTML() {
+  if (!pasteText.trim()) return '';
+  const n = pasteToAdd().length, r = pasteResult();
+  const untouched = r.choose.filter((c) => !c.taxa.some((t) => !c.inside.includes(t.id) && ticked(t.id, false)) && c.inside.length < c.taxa.length);
+  return `<div class="paste-foot"><p><b>${esc(P('paste.toAdd', n))}</b>${untouched.map((c) => `<span>${esc(T('paste.noneTicked', { name: c.name }))}</span>`).join('')}</p>${btn('button button-primary button-small', 'paste-add', null, esc(P('paste.addAll', n)), `${n ? '' : 'disabled '}${fk('paste-add')}`)}</div>`;
+}
+// A redraw of the results and the foot: the field keeps its text and caret, the count line is written
+// in place (one live region), folded groups stay as the reader left them.
+function refreshPaste() {
+  if (O?.type !== 'add' || addTab !== 'paste') return;
+  const out = dlg.querySelector('#ct-paste-out');
+  if (!out) return;
+  for (const d of out.querySelectorAll('details[data-g]')) pasteOpen.set(d.dataset.g, d.open);
+  const had = out.contains(document.activeElement) || dlg.querySelector('#ct-paste-foot')?.contains(document.activeElement) ? fkOf(document.activeElement) : null;
+  const cols = dlg.querySelector('#ct-paste-cols');
+  if (cols && !cols.contains(document.activeElement)) cols.innerHTML = pasteColsHTML();
+  out.innerHTML = pasteGroupsHTML();
+  const count = dlg.querySelector('#ct-paste-count');
+  if (count) { const text = pasteCountText(); if (count.textContent !== text) count.textContent = text; }
+  const foot = dlg.querySelector('#ct-paste-foot');
+  if (foot) foot.innerHTML = pasteFootHTML();
+  if (had && !dlg.contains(document.activeElement)) focusFk(had, dlg) || focusFk('paste', dlg);
 }
 function sheetHTML() {
   let p;
@@ -906,7 +1231,7 @@ function printHTML() {
   const rows = ms.map((t) => {
     const s = stratumOf(t), tw = W.timeWords(t), w = warnPlain(t, flags.get(t.id)).join('<br>');
     const from = otherClimateOf(t.id), tags = [isCrop(t.id) && T('mainCrop'), from && fromListLabel(from)].filter(Boolean);
-    return `<tr><td>${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i>${tags.length ? `<br><span class="muted">${esc(tags.join(' · '))}</span>` : ''}</td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${w || `<span class="muted">${esc(T(printNoneKey(t, place(), S.guests.has(t.id))))}</span>`}</td></tr>`;
+    return `<tr data-id="${t.id}"><td>${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i>${tags.length ? `<br><span class="muted">${esc(tags.join(' · '))}</span>` : ''}</td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${w || `<span class="muted">${esc(T(printNoneKey(t, place(), S.guests.has(t.id))))}</span>`}</td></tr>`;
   }).join('');
   const bands = phaseBands.map((k) => {
     const inBand = ms.filter((t) => bandsOf(t).includes(k));
@@ -914,12 +1239,32 @@ function printHTML() {
   }).join('');
   const gapJobs = jobGaps();
   const date = new Intl.DateTimeFormat(lang, { dateStyle: 'long' }).format(new Date());
+  if (big()) return printTableHTML(ms, flags, date, gapJobs);
   return `<article class="sheet">
     <div class="sheet-head"><div><h2 class="sheet-title">${esc(T('printTitle'))}</h2><p class="muted">${esc(climateLabel())} · ${esc(printWhere(W, place()))} · ${esc(date)}</p>
     <p class="muted">${esc(T('basis', { site: basisText() }))} · ${esc(P('count', ms.length))}</p></div><img src="/canopi-logo.svg" width="34" height="34" alt=""></div>
-    <div class="sheet-draw">${profileHTML(flags, true)}</div>
+    <div class="sheet-draw">${sideViewHTML(flags, true)}</div>
     <section><h3>${esc(T('tab.layers'))}</h3><table><thead><tr><th>${esc(T('p.layer'))}</th><th>${esc(T('p.plant'))}</th><th>${esc(T('p.time'))}</th><th>${esc(T('p.jobs'))}</th><th>${esc(T('withWarning'))}</th></tr></thead><tbody>${rows}</tbody></table></section>
     <section><h3>${esc(T('tab.time'))}</h3><div class="sheet-phases">${bands}</div></section>
+    ${gapJobs.length ? `<section><h3>${esc(T('printGaps'))}</h3><ul>${gapJobs.map((j) => `<li>${esc(T('job.' + j + '.gap'))}</li>`).join('')}</ul></section>` : ''}
+    <p class="muted small">${esc(T('d.liab'))}</p>
+    <p class="sheet-foot">${esc(T('printFoot', { url: shareLink() }))}</p></article>`;
+}
+
+// Above 20 plants: "Your consortium", then one table grouped by layer with its light words: plant,
+// height, leads, jobs, kept, warnings in words (design-scale.md §1c.12). The drawing joins it with
+// the side view at every size (chunk C).
+function printTableHTML(ms, flags, date, gapJobs) {
+  const groupsOf = [...strata, 'none'].map((s) => [s, ms.filter((t) => stratumOf(t) === s)]).filter(([, l]) => l.length);
+  const body = groupsOf.map(([s, list]) => `<tbody><tr class="print-layer"><th colspan="6">${esc(stratumLabel(s))} · ${esc(lightWords(s))} · ${esc(P('count', list.length))}</th></tr>${list.map((t) => {
+    const w = warnPlain(t, flags.get(t.id)).join('<br>');
+    const from = otherClimateOf(t.id), tags = [isCrop(t.id) && T('mainCrop'), from && fromListLabel(from)].filter(Boolean);
+    return `<tr data-id="${t.id}"><td><b>${name(t)}</b> <i class="muted">${esc(t.canonical_name)}</i>${tags.length ? ` <span class="muted">· ${esc(tags.join(' · '))}</span>` : ''}</td><td>${esc(heightText(t))}</td><td>${esc(stageShortText(t) || W.timeWords(t).plain)}</td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${S.kept.has(t.id) ? esc(T('keptTag')) : ''}</td><td>${w || `<span class="muted">${esc(T(printNoneKey(t, place(), S.guests.has(t.id))))}</span>`}</td></tr>`;
+  }).join('')}</tbody>`).join('');
+  return `<article class="sheet sheet-big">
+    <div class="sheet-head"><div><h2 class="sheet-title">${esc(T('yourConsortium'))}</h2><p class="muted">${esc(climateLabel())} · ${esc(printWhere(W, place()))} · ${esc(date)}</p>
+    <p class="muted">${esc(T('basis', { site: basisText() }))} · ${esc(P('count', ms.length))} · ${esc(P('keptCount', ms.filter((t) => S.kept.has(t.id)).length))}</p></div><img src="/canopi-logo.svg" width="34" height="34" alt=""></div>
+    <table class="print-table"><thead><tr><th>${esc(T('p.plant'))}</th><th>${esc(T('t.height'))}</th><th>${esc(T('col.leads'))}</th><th>${esc(T('p.jobs'))}</th><th>${esc(T('col.kept'))}</th><th>${esc(T('withWarning'))}</th></tr></thead>${body}</table>
     ${gapJobs.length ? `<section><h3>${esc(T('printGaps'))}</h3><ul>${gapJobs.map((j) => `<li>${esc(T('job.' + j + '.gap'))}</li>`).join('')}</ul></section>` : ''}
     <p class="muted small">${esc(T('d.liab'))}</p>
     <p class="sheet-foot">${esc(T('printFoot', { url: shareLink() }))}</p></article>`;
@@ -943,9 +1288,10 @@ function render() {
   if (!holdHead) { head.classList.toggle('tool-head-compact', !setup); head.dataset.step = setup ? '0' : '1'; }
   if (S.status === 'boot') return;
   const asideTop = app.querySelector('.aside')?.scrollTop ?? 0;
-  app.innerHTML = crops ? cropsHTML() : setup ? setupHTML() : `<div class="tool-grid">${asideHTML()}<section class="result" aria-labelledby="ct-result-title">${mainHTML()}</section></div>`;
+  app.innerHTML = crops ? cropsHTML() : setup ? setupHTML() : `<div class="tool-grid${S.status === 'ready' && noAside() ? ' tool-grid-full' : ''}">${asideHTML()}<section class="result" aria-labelledby="ct-result-title">${mainHTML()}</section></div>`;
   const aside = app.querySelector('.aside');
   if (aside) aside.scrollTop = asideTop;
+  markMixed(); measureTools();
   app.removeAttribute('aria-busy');
   if (O) renderSheet();
   const target = focusNext; focusNext = null;
@@ -993,6 +1339,7 @@ function openSheet(o, from) {
 let skipClose = 0;
 function resetSheet() {
   O = null; dlg.innerHTML = ''; addQuery = ''; addJob = ''; addLayer = ''; swapMore = 0;
+  addTab = 'search'; pasteText = ''; pasteCol = 0; pasteTicks = new Map(); pasteOpen.clear(); clearTimeout(pasteTimer);
   document.documentElement.style.overflow = '';
 }
 function closeSheet(back = true) {
@@ -1010,7 +1357,7 @@ dlg.addEventListener('close', () => {
 });
 // Back to the button a confirmation came from.
 const anywayFor = (id) => !!otherClimateOf(id) && !S.guests.has(id);
-const confirmFrom = (id) => (O.type === 'details' ? (swapTarget(O) ? 'd-use' : anywayFor(id) ? 'd-anyway' : 'd-add') : (O.type === 'swap' ? 'use-' : anywayFor(id) ? 'add-anyway-' : 'add-') + id);
+const confirmFrom = (id) => (O.type === 'details' ? (swapTarget(O) ? 'd-use' : anywayFor(id) ? 'd-anyway' : 'd-add') : (O.type === 'swap' ? 'use-' : anywayFor(id) ? (addTab === 'paste' ? 'paste-anyway-' : 'add-anyway-') : 'add-') + id);
 dlg.addEventListener('cancel', (e) => { if (O?.confirm) { e.preventDefault(); const id = O.confirm; O.confirm = null; renderSheet(confirmFrom(id)); } else if (O?.back) { e.preventDefault(); O = O.back; renderSheet(); } });
 
 function toast(text, undo = null) {
@@ -1086,7 +1433,7 @@ function syncLangLinks() { const h = langHash(location.hash); for (const [a, hre
 // An Undo offered for an earlier state no longer applies once the consortium is made again, refilled
 // or moved to another place (B2, m1): its toast goes.
 function dropUndo() {
-  if (lastRemoved || undoStart || undoRedo) { lastRemoved = null; undoStart = null; undoRedo = null; if (toastEl.querySelector('[data-act=undo]')) hideToast(); }
+  if (lastRemoved || undoStart || undoRedo || lastBulk) { lastRemoved = null; undoStart = null; undoRedo = null; lastBulk = null; if (toastEl.querySelector('[data-act=undo]')) hideToast(); }
 }
 // F2: a site or place change makes the plants that are not kept again; the result before it comes
 // back with Undo. A run of changes (arrow keys through a radio group) keeps the result before the
@@ -1220,7 +1567,7 @@ function chooseCountry(code) {
 }
 const act = {
   // A new climate asks the crop question again: crops and plants from other lists belong to the old one.
-  climate(v) { if (S.status !== 'setup') holdForRedo('pc-climate', true); setClimate(v); dropUndo(); leaveClimate(); Object.assign(S, { crops: [], guests: new Map(), cropFromGuide: null, askCrops: true, cropsBack: false }); if (O) closeSheet(false); resolveClimate(); },
+  climate(v) { if (S.status !== 'setup') holdForRedo('pc-climate', true); setClimate(v); dropUndo(); resetList(); leaveClimate(); Object.assign(S, { crops: [], guests: new Map(), cropFromGuide: null, askCrops: true, cropsBack: false }); if (O) closeSheet(false); resolveClimate(); },
   'crop-add'(v) {
     if (cropFull() || isCrop(v) || !isFood(taxonOf(v))) return;
     S.crops.push(v); cropQuery = ''; focusNext = cropFull() ? 'suggest' : 'crop-q'; render();
@@ -1290,6 +1637,15 @@ const act = {
   },
   undo(v) {
     hideToast();
+    if (v === 'bulk' && lastBulk) {
+      // One step back for a bulk Keep, Remove or Add: the plants, their kept pins and crops as they were.
+      const b = lastBulk; lastBulk = null;
+      Object.assign(S, { members: b.members, kept: b.kept, removed: b.removed, crops: b.crops, guests: b.guests });
+      const back = b.ids.find((id) => S.members.includes(id));
+      focusNext = back && listMode() ? 'sel-' + back : back ? 'pn-' + back : 'plants-title';
+      render(); if (!app.contains(document.activeElement)) focusFk('plants-title', app);
+      return;
+    }
     if (v === 'start' && undoStart) {
       // B2: the state, its cell and its own Undo come back together.
       S = keepCountry(undoStart.S, S); ({ cell, lastRemoved } = undoStart); undoStart = null; evalKey = ''; focusNext = 'start-over'; render(); return;
@@ -1359,7 +1715,7 @@ const act = {
     // The reader's own country stays (m12); someone else's link's country and unknown code go
     // (keptCountry: core-fix review 4, m-1; m-3).
     const kept = keptCountry(S, own());
-    undoStart = { S, cell, lastRemoved }; lastRemoved = null; redoNext = null; S = fresh(); S.status = 'setup'; cell = null; loadSeq++;
+    undoStart = { S, cell, lastRemoved }; lastRemoved = null; redoNext = null; S = fresh(); S.status = 'setup'; cell = null; loadSeq++; resetList();
     Object.assign(S, kept);
     if (siteClimate()) { S.climate = siteClimate(); S.climateSource = 'site'; }
     memory.startOver(location.pathname);
@@ -1368,8 +1724,102 @@ const act = {
     syncLangLinks(); render(); toast(esc(T('startOverDone')), 'start'); focusFk('undo', toastEl);
   },
   dismiss() { S.notice = null; focusNext = 'result'; render(); },
+  // ---------- Your plants: the switch, the list, its filters and selection (chunk B) ----------
+  mode(v) { mode = v === 'list' ? 'list' : 'cards'; focusNext = 'mode-' + mode; render(); },
+  group(v) { const g = listGroups().find((x) => x.s === v); if (!g) return; groups.set(v, !g.open); relist('lg-' + v); },
+  fmenu(v) { fMenu = fMenu === v ? null : v; rMenu = null; focusNext = 'fm-' + v; render(); },
+  fset(v) {
+    const i = String(v).indexOf(':'), key = v.slice(0, i), val = v.slice(i + 1);
+    if (!FILTER_KEYS.includes(key)) return;
+    F = { ...F, [key]: val }; fOrder = [...fOrder.filter((k) => k !== key), ...(val ? [key] : [])]; groups.clear();
+    // "Show n" in the warning box opens the list, whatever the reader chose before.
+    if (!listMode()) mode = 'list';
+    focusNext = 'fm-' + key; render(); sayResults();
+  },
+  fclear(v) { F = { ...F, [v]: '' }; fOrder = fOrder.filter((k) => k !== v); groups.clear(); focusNext = 'fm-' + v; render(); sayResults(); },
+  'fclear-all'() { F = { ...NO_FILTERS }; fOrder = []; groups.clear(); focusNext = 'find'; render(); sayResults(); },
+  // A tick, or with Shift every row from the last one ticked (Shift+click, Shift+Space).
+  sel(v, _el, e) {
+    const on = !sel.has(v), range = anchor && anchor !== v && (e?.shiftKey || (!e?.detail && shiftDown));
+    if (range) sel = selectRange(visibleOrder(), anchor, v, sel, on);
+    else { sel = new Set(sel); if (on) sel.add(v); else sel.delete(v); }
+    anchor = v; relist('sel-' + v);
+  },
+  gsel(v) {
+    const g = listGroups().find((x) => x.s === v); if (!g) return;
+    const ids = g.list.map((t) => t.id), all = groupTick(ids, sel) === 'all';
+    sel = new Set(sel); for (const id of ids) { if (all) sel.delete(id); else sel.add(id); }
+    relist('gsel-' + v);
+  },
+  unselect() { sel = new Set(); anchor = null; relist('find'); },
+  'bulk-keep'() {
+    const ids = [...sel].filter((id) => S.members.includes(id)); if (!ids.length) return;
+    dropUndo(); lastBulk = snapshot(ids);
+    S.kept = new Set(S.kept); for (const id of ids) S.kept.add(id);
+    focusNext = 'bulk-keep'; render(); toast(esc(P('keptN', ids.length)), 'bulk');
+  },
+  // Remove keeps the filters, the open groups and the place in the list: the focus goes to the next row (m2).
+  'bulk-remove'() {
+    const ids = [...sel].filter((id) => S.members.includes(id)); if (!ids.length) return;
+    const order = visibleOrder(), last = Math.max(...ids.map((id) => order.indexOf(id)));
+    const next = order.slice(last + 1).find((id) => !sel.has(id)) ?? [...order].reverse().find((id) => !sel.has(id));
+    const names = namesLine(ids);
+    dropUndo(); lastBulk = snapshot(ids);
+    const gone = new Set(ids);
+    S.members = S.members.filter((id) => !gone.has(id)); S.kept = new Set([...S.kept].filter((id) => !gone.has(id))); S.crops = S.crops.filter((id) => !gone.has(id));
+    S.removed = new Set(S.removed); for (const id of ids) if (!S.guests.has(id)) S.removed.add(id);
+    sel = new Set(); anchor = null;
+    focusNext = next ? 'sel-' + next : 'plants-title'; render();
+    if (!app.contains(document.activeElement)) focusFk('plants-title', app);
+    toast(esc(P('removedN', ids.length, { names })), 'bulk');
+  },
+  rmenu(v) { rMenu = rMenu === v ? null : v; fMenu = null; relist('rmenu-' + v); },
+  'skip-list'() { focusFk('share', app); },
+  'add-tab'(v) { addTab = v === 'paste' ? 'paste' : 'search'; O.confirm = null; renderSheet('at-' + addTab); },
+  ptick(v) { const r = pasteResult(), def = r.found.some((f) => f.taxon.id === v); pasteTicks.set(v, !ticked(v, def)); refreshPaste(); focusFk('pt-' + v, dlg); },
+  'paste-copy'() { const names = pasteResult().none.map((x) => x.name).join('\n'); navigator.clipboard?.writeText(names).then(() => toast(esc(T('paste.copied'))), () => {}); },
+  // Add all: the ticked plants join, kept (plants added by hand are kept), in one step Undo takes back.
+  'paste-add'() {
+    const ids = pasteToAdd().filter((id) => !S.members.includes(id)); if (!ids.length) return;
+    dropUndo(); lastBulk = snapshot(ids);
+    S.kept = new Set(S.kept); S.removed = new Set(S.removed);
+    for (const id of ids) { S.members.push(id); S.kept.add(id); S.removed.delete(id); }
+    if (S.status === 'nomatch') S.status = 'ready';
+    S.gaps = trimGaps(S.gaps, ids.map((id) => stratumOf(taxonOf(id))), 0);
+    closeSheet(false); focusNext = 'plants-title'; render(); toast(esc(P('paste.added', ids.length)), 'bulk');
+  },
+  'paste-anyway'(v) {
+    const [c, id] = String(v).split(':'), t = others.get(c)?.taxa.find((x) => x.id === id);
+    if (!t || inCell(id)) return;
+    const f = flagsFor(cell, id, S.members, { site: S.site, guests: [...guestTaxa(), t], ...where() });
+    if (f?.flagged) { O.confirm = id; renderSheet('confirm-yes'); } else act['paste-anyway-yes'](v);
+  },
+  // From a paste, "Add anyway" adds the one plant and the sheet stays open on the rest of the list.
+  'paste-anyway-yes'(v) {
+    const [c, id] = String(v).split(':'), f = others.get(c), t = f?.taxa.find((x) => x.id === id);
+    if (!t || inCell(id) || S.members.includes(id)) return;
+    dropUndo();
+    S.guests.set(id, { climate: c, taxon: t, sources: f.sources }); S.members.push(id); S.kept.add(id); S.removed.delete(id);
+    if (S.status === 'nomatch') S.status = 'ready';
+    O.confirm = null; render(); renderSheet('paste'); toast(T('added', { name: name(t) }));
+  },
   goto(v) { S.view = 'layers'; focusNext = 'pn-' + v; render(); flash(v); },
 };
+// What Undo restores after a bulk step, and the plants it named (the focus returns to the first).
+const snapshot = (ids) => ({ ids, members: [...S.members], kept: new Set(S.kept), removed: new Set(S.removed), crops: [...S.crops], guests: new Map(S.guests) });
+// The list's body again, the focus on the control the action names.
+function relist(key) { refreshList(); focusFk(key, app); }
+// m9: the filtered count, once, after the change.
+const sayResults = () => { const n = listGroups().reduce((a, g) => a + g.list.length, 0); sayLater(filtering(F) ? P('showing', members().length, { n: W.num(n) }) : P('count', members().length)); };
+// The menus close on any other action or a click outside them (their state is in the page, so Escape
+// and a click elsewhere act the same).
+function closeMenus() {
+  if (!fMenu && !rMenu) return false;
+  fMenu = null; rMenu = null;
+  for (const m of app.querySelectorAll('.fmenu-list, .lmenu')) m.remove();
+  for (const b of app.querySelectorAll('.fchip-btn[aria-expanded="true"], .lmore-btn[aria-expanded="true"]')) b.setAttribute('aria-expanded', 'false');
+  return true;
+}
 function flash(id) {
   const el = app.querySelector(`.plant[data-id="${CSS.escape(id)}"]`);
   if (!el) return;
@@ -1378,12 +1828,16 @@ function flash(id) {
 }
 
 const root = document.querySelector('.ct');
+const MENU_ACTS = new Set(['fmenu', 'rmenu']);
 root.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
+  // A click anywhere but a menu button closes an open menu (its items act, then it closes too).
+  if (!el || !MENU_ACTS.has(el.dataset.act)) closeMenus();
   if (!el) return;
   const fn = act[el.dataset.act];
   if (!fn) return;
-  e.preventDefault();
+  // A checkbox ticks itself: the page redraws it from the selection right after.
+  if (el.getAttribute('type') !== 'checkbox') e.preventDefault();
   // A double click on Remove removes one plant: the list shifts, and the second click would land on
   // the next plant's Remove (appendix).
   if (el.dataset.act === 'remove') {
@@ -1391,7 +1845,7 @@ root.addEventListener('click', (e) => {
     if (repeatClick(e.detail, now, lastRemoveAt)) return;
     lastRemoveAt = e.detail ? now : null;
   }
-  fn(el.dataset.v, el);
+  fn(el.dataset.v, el, e);
 });
 // The sheet's backdrop closes it (the site's dialog helper leaves this dialog to the tool: min-10).
 // Only a press that starts on the backdrop closes it: a text selection dragged out of the sheet does not.
@@ -1416,6 +1870,7 @@ root.addEventListener('change', (e) => {
     if (O) renderSheet();
     say(S.status === 'ready' ? T('announce', { summary: P('count', S.members.length) }) : T('nm.title'));
   }
+  if ('pasteCol' in el.dataset) { pasteCol = Number(el.value) || 0; pasteTicks = new Map(); refreshPaste(); return; }
   if (el.dataset.filter) {
     if (el.dataset.filter === 'job') addJob = el.value; else addLayer = el.value;
     if (O.filter.startsWith(el.dataset.filter === 'job' ? 'job:' : 'stratum:')) O.filter = '';
@@ -1429,16 +1884,35 @@ root.addEventListener('input', (e) => {
     if (countryQuery.trim()) sayLater(P('countryCount', countryMatches().length));
   }
   if (el.dataset.input === 'crop') { cropQuery = el.value; refreshCrops(); }
+  // The list's search redraws the rows at once and says the count once typing pauses.
+  if (el.dataset.input === 'find') { F = { ...F, q: el.value }; groups.clear(); refreshList(); sayResults(); }
+  if (el.dataset.input === 'paste') { pasteText = el.value; clearTimeout(pasteTimer); pasteTimer = setTimeout(refreshPaste, 500); }
   if (el.dataset.input === 'add') {
     addQuery = el.value; O.confirm = null; dlg.querySelector('#ct-add-results').innerHTML = addResults();
     sayLater(dlg.querySelector('#ct-add-count')?.textContent ?? '');
   }
 });
+// Shift held while Space ticks a box: a range (the click a key makes carries no modifier everywhere).
+addEventListener('keydown', (e) => {
+  shiftDown = e.shiftKey;
+  // "/" goes to the list's search when the focus is not in a field (design-scale.md §2.9).
+  const at = document.activeElement, field = at && (/^(INPUT|TEXTAREA|SELECT)$/.test(at.tagName) || at.isContentEditable);
+  if (e.key === '/' && !field && !dlg.open && !e.ctrlKey && !e.metaKey) { const f = app.querySelector('[data-input="find"]'); if (f) { e.preventDefault(); f.focus(); } }
+});
+addEventListener('keyup', (e) => { shiftDown = e.shiftKey; });
 root.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && (fMenu || rMenu) && !dlg.open) {
+    const back = fMenu ? 'fm-' + fMenu : 'rmenu-' + rMenu;
+    e.preventDefault(); closeMenus(); focusFk(back, app); return;
+  }
+  if (e.key === ' ' && e.shiftKey && e.target.dataset?.act === 'sel') { shiftDown = true; }
+  if (e.target.getAttribute?.('role') === 'tab' && e.target.dataset.act === 'add-tab' && ['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) {
+    e.preventDefault(); act['add-tab'](addTab === 'paste' ? 'search' : 'paste'); return;
+  }
   if (e.key === 'Enter' && e.target.dataset.input === 'country') { e.preventDefault(); e.target.closest('.field').querySelector('.option')?.click(); }
   if (e.key === 'Enter' && e.target.dataset.input === 'crop') { e.preventDefault(); document.querySelector('#ct-crop-list .option')?.click(); }
   if (e.key === 'Escape' && S.explain && !dlg.open) { const v = S.explain; S.explain = null; focusNext = 'ex-' + v; render(); }
-  if (e.target.getAttribute('role') === 'tab' && ['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) {
+  if (e.target.getAttribute('role') === 'tab' && e.target.dataset.act === 'view' && ['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) {
     e.preventDefault();
     const v = ['layers', 'time', 'jobs'], i = v.indexOf(S.view);
     act.view(e.key === 'Home' ? v[0] : e.key === 'End' ? v[2] : v[(i + (e.key === 'ArrowRight' ? 1 : 2)) % 3]);
