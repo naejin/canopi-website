@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T21:25:41Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T21:52:09Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T13:31:51Z }
 sources:
@@ -15,12 +15,12 @@ sources:
     resource: ../../scripts/consortium-app.test.mjs
     title: scripts/consortium-app.test.mjs
     digest: sha256:b5de6d49b6530d93
-    last_modified: 2026-10-28T20:26:11Z
+    last_modified: 2026-10-28T21:34:43Z
   - id: consortium-harness
     resource: ../../scripts/consortium-harness.mjs
     title: scripts/consortium-harness.mjs
     digest: sha256:6668fee0953add3c
-    last_modified: 2026-10-28T20:25:41Z
+    last_modified: 2026-10-28T21:34:43Z
   - id: consortium-scale-test
     resource: ../../scripts/consortium-scale.test.mjs
     title: scripts/consortium-scale.test.mjs
@@ -34,8 +34,8 @@ sources:
   - id: app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:0a40ab55f22ea90f
-    last_modified: 2026-10-28T20:26:13Z
+    digest: sha256:2ecc132b5ba55f54
+    last_modified: 2026-10-28T21:34:43Z
   - id: words-js
     resource: ../../src/scripts/consortium/words.js
     title: src/scripts/consortium/words.js
@@ -55,7 +55,7 @@ sources:
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
     digest: sha256:e338e993982cf38c
-    last_modified: 2026-10-28T21:22:04Z
+    last_modified: 2026-10-28T21:34:43Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
@@ -64,8 +64,8 @@ sources:
   - id: consortium-page-test-mjs
     resource: ../../scripts/consortium-page.test.mjs
     title: scripts/consortium-page.test.mjs
-    digest: sha256:aabbb6bf184961a3
-    last_modified: 2026-10-28T18:17:10Z
+    digest: sha256:74e7227426a85c71
+    last_modified: 2026-10-28T21:34:43Z
   - id: logic-js
     resource: ../../src/scripts/consortium/logic.js
     title: src/scripts/consortium/logic.js
@@ -100,22 +100,22 @@ sources:
     resource: ../../src/scripts/consortium/memory.js
     title: src/scripts/consortium/memory.js
     digest: sha256:772e17c80be8b6c7
-    last_modified: 2026-10-28T20:26:13Z
+    last_modified: 2026-10-28T21:34:43Z
   - id: scale-js
     resource: ../../src/scripts/consortium/scale.js
     title: src/scripts/consortium/scale.js
     digest: sha256:35a106414651ac76
-    last_modified: 2026-10-28T20:27:00Z
+    last_modified: 2026-10-28T21:34:43Z
   - id: consortium-list-test-mjs
     resource: ../../scripts/consortium-list.test.mjs
     title: scripts/consortium-list.test.mjs
     digest: sha256:39dbf0f23d633eac
-    last_modified: 2026-10-28T20:26:52Z
+    last_modified: 2026-10-28T21:34:43Z
   - id: consortium-list-ui-test-mjs
     resource: ../../scripts/consortium-list-ui.test.mjs
     title: scripts/consortium-list-ui.test.mjs
     digest: sha256:9ddd461d023f1766
-    last_modified: 2026-10-28T21:25:04Z
+    last_modified: 2026-10-28T21:34:43Z
 enforced_by:
   - scripts/consortium-page.test.mjs
   - scripts/consortium-country.test.mjs
@@ -198,7 +198,7 @@ Routes: `/consortium/`, `/fr/guilde/` (the French tool is a "guilde"), `/{lang}/
 - [consortium-app.test.mjs](../../scripts/consortium-app.test.mjs): runs app.js itself in [consortium-harness.mjs](../../scripts/consortium-harness.mjs) (a small DOM on parse5, domhandler and css-select; one device's localStorage, a tab's history entries with Back, reload and hashchange; fixture data files that can fail; a fresh module graph per page load), clicking and typing as a reader: neutral main-crop and other-list wording on someone's link, the Add-anyway confirm, Retry and its focus, the guest-list error, the hashchange reload and anchor write-back, Start over then pasting the same link, Back/Undo keeping the country, a moved query link staying whole, a cut link for an uncovered climate, Back to an entry where the tab chose an older country (G1), leaving a cut link for an uncovered climate (G2). A closed page's code does nothing: its `page.later` schedules nothing and its `fetch` never resolves, also for a load started before the close (G5); `page.globals` exposes a page's own globals to tests. The harness's waits are bounded (settle rounds, dispatch depth) and its tree links are non-enumerable, so a failed assertion on an element cannot print the whole circular tree (that once ran a test process out of memory).
 - [consortium-scale.test.mjs](../../scripts/consortium-scale.test.mjs): the crop search (English fallback in brackets on the real French Temperate list), examples and limit, Add anyway matches, the Kept filter, the start rules (`asksCrops`, `opensOnResult`), `shareUrl`, old-link counts, the new words (room hints from the core, ledes, French non-breaking spaces), and the scale chunk A review fixes: fragment arrival and language links, cut-link detection, other lists in order with failures, print for a guest, Back keeping the country, the redo toast, Swap of a main crop, the Add filters on other lists, own versus neutral crop words, the climate's source, and the invasive words handed the taxon.
 - [consortium-list.test.mjs](../../scripts/consortium-list.test.mjs): scale.js on the fixture and the real Temperate list: the Cards/List default, group folding, height rounding, short stage words, warning kinds (3 invasive in France, 6 toxic, 20 pests, 138 invasive somewhere without a country), filters, range selection, the paste reader and its speed at 200 names.
-- List columns (scale-b fix5, the owner's ruling on review L3): the list is a size container (`.plants-sec { container: plants / inline-size }`), so its columns follow the list's own width, never the window's. Measured list widths: beside the side panel (20 plants or fewer, desktop) 508 px at a 960 px window, at most 840 px (the content is capped at 1,200 px); the full-width list (above 20 plants) 852–868 px at a 960 px window, 929 at 1024, 1,145 at 1240 and 1,185 from 1280. One container tier, `@container plants (max-width: 849px)`, covers a list beside the side panel or on a tablet: no Swap and no stage words, the jobs' icons wrap before the name narrows (fits down to 508 px), and the warning chips take a second line under the plant, with "invasive in n countries" first when no country is set. From 850 px one set of columns serves every width up to the full desktop: the leads, jobs, plant and warnings columns share the room by fractions, and text wraps (names, stage words, the jobs' icons, the chips, the invasive count) so Swap and the stage words always stay. A chip is at most its cell's width and its text breaks inside it (`overflow-wrap: anywhere`), so a long one-word name such as "Mittelmeerfruchtfliege" never runs past its outline (rows have `content-visibility: auto`, which clips what runs past them). The Kept column head spans the tick's column ("Gehouden"); the Warnings head runs on over the Swap and ⋯ columns ("Предупреждения"). `scripts/consortium-layout.test.mjs` lays the real rows out in headless Chrome with the site's stylesheets and fonts at list widths 508–1185 in de, ru, fr, nl and en and checks that nothing runs past its cell, row or chip and where Swap and the stage words show. `homepage.test.mjs` exempts only the named `plants` container from the 639/960 rule, and its header-hiding check reads `@container` blocks too.
+- List columns (scale-b fix5, the owner's ruling on review L3): the list is a size container (`.plants-sec { container: plants / inline-size }`), so its columns follow the list's own width, never the window's. Measured list widths: beside the side panel (20 plants or fewer, desktop) 508 px at a 960 px window, at most 840 px (the content is capped at 1,200 px); the full-width list (above 20 plants) 852–868 px at a 960 px window, 929 at 1024, 1,145 at 1240 and 1,185 from 1280. One container tier, `@container plants (max-width: 849px)`, covers a list beside the side panel or on a tablet: no Swap and no stage words, the jobs' icons wrap before the name narrows (fits down to 508 px), and the warning chips take a second line under the plant, with "invasive in n countries" first when no country is set. From 850 px one set of columns serves every width up to the full desktop: the leads, jobs, plant and warnings columns share the room by fractions, and text wraps (names, stage words, the jobs' icons, the chips, the invasive count) so Swap and the stage words always stay. A chip is at most its cell's width and its text breaks inside it (`overflow-wrap: anywhere`), so a long one-word name such as "Mittelmeerfruchtfliege" never runs past its outline (rows have `content-visibility: auto`, which clips what runs past them). The Kept column head spans the tick's column ("Gehouden"); the Warnings head runs on over the Swap and ⋯ columns ("Предупреждения"). `scripts/consortium-layout.test.mjs` lays the fixture's rows out in headless Chrome with the site's stylesheets and fonts at list widths 508, 850 and 1185 (German, no country, the long name in a chip) and checks that nothing runs past its cell, row or chip and where Swap and the stage words show; the wider 200-plant sweep (de, ru, fr, nl, en at 17 widths) was a one-off check, too heavy for `npm test`. `homepage.test.mjs` exempts only the named `plants` container from the 639/960 rule, and its header-hiding check reads `@container` blocks too.
 - A link pasted into the address bar while the page is still starting is opened: `persist()` reloads instead of writing over a tool state it did not write. `lastHash` is read back from `location.hash` after each write (review L1): browsers drop `replaceState` calls past a rate limit (WebKit and Firefox throw, Chrome ignores them) and a sandboxed embed always throws, so a dropped write leaves the old fragment, still the page's own, and never causes a reload or a loop; `memory.write` skips the call when the address and the page's mark already hold the state, so a render that changes nothing writes nothing. Tested with the harness's `device().historyFails` ('throw' or 'ignore'). Browser checks must open each link as a new document (a unique query before the fragment): a same-document hash navigation fires no load event, and the same fragment twice is no navigation at all, so a CDP `goto` that waits for `load` stalls (the full-page screenshot was never the cause; at 390 with 200 plants it takes about 0.5 s). axe's color-contrast reports on rows far off screen at 390 px come from `content-visibility: auto` (not drawn yet) and vanish when rows are drawn.
 - [consortium-list-ui.test.mjs](../../scripts/consortium-list-ui.test.mjs): the list in the harness at 200 real plants (`openPage({ data: 'real' })`): the switch, groups, desktop and phone rows, no-country column, filters and results line, Main crops, the warning box's Show n, selection with Shift range, bulk Keep and Remove with Undo and the link, paste (all found, mixed results, Add anyway), the Add search mark, print and share at 200.
 - [consortium-country.test.mjs](../../scripts/consortium-country.test.mjs): behaviour of the country and reason words with the real locale files: `pickCountry` (chosen survives reload and language switch, someone else's link, Start over, "No country", old saves, an unknown or `-` link code, a guide preset over a save), the memory.js wiring run with stubbed storage and history (a choice written to `canopi-country`, kept by Start over, kept in the tab across a reload when storage throws, and read as the link's after a language switch with storage blocked), `keptCountry` (someone else's link's country dropped on Start over and a climate change, the reader's own kept), `countryAnnouncement`, `chosenHere`, `printNoneKey`, `invasiveSourceIds`, `guessCountry`, card and details reasons, the country line, the unchecked-country surfaces, `d.invNone`, `countryUnknown`, the core's required checked flag, and the review's wording fixes (m10, m11).
