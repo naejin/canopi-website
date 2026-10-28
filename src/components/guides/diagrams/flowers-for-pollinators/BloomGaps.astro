@@ -7,6 +7,9 @@
 // its one bar (a winter-flowering shrub) is dashed too. Seasons, not months; no species: the
 // book's own sample chart stays in the book. A CSS grid, not an SVG, so labels wrap at 390 px; the
 // grid is one image to assistive technology, described by `alt`; the key under it is plain text. Words come from the MDX.
+// The winter column is never narrower than its label (min-content), so "Winter" stays inside its
+// dashed box at 390 px; the upright gap label is set sideways so an apostrophe (fr "d’abord") lies
+// along the line instead of standing up and splitting the word.
 interface Props {
   seasons: [string, string, string, string]; // spring, summer, autumn, winter
   parts: [string, string]; // early, late
@@ -43,7 +46,7 @@ const col = (c: number) => c + 2; // grid column of season column c (column 1 ho
 
 <style>
   .guide-bg-wrap { display: grid; gap: 0.5rem; }
-  .guide-bg { display: grid; grid-template-columns: minmax(4.4rem, auto) repeat(7, minmax(0, 1fr)); grid-auto-rows: minmax(1.9rem, auto); align-items: center; column-gap: 0; padding: 0.6rem 0.7rem 0.7rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.88rem; line-height: 1.25; color: var(--text); }
+  .guide-bg { display: grid; grid-template-columns: minmax(4.4rem, auto) repeat(6, minmax(0, 1fr)) minmax(min-content, 1fr); grid-auto-rows: minmax(1.9rem, auto); align-items: center; column-gap: 0; padding: 0.6rem 0.7rem 0.7rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.88rem; line-height: 1.25; color: var(--text); }
   .guide-bg > * { min-width: 0; }
   .guide-bg-season { font-family: var(--font-display); font-weight: 600; text-align: center; padding: 0 0.15rem; border-bottom: 1px solid var(--border-strong); align-self: end; }
   .guide-bg-part { font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 0.15rem 0.1rem; align-self: start; overflow-wrap: anywhere; }
@@ -59,9 +62,9 @@ const col = (c: number) => c + 2; // grid column of season column c (column 1 ho
   .guide-bg-gap::before { content: ''; position: absolute; inset: 0; background: var(--accent); opacity: 0.16; border-radius: var(--radius); }
   .guide-bg-gap span { position: relative; padding: 0.2rem 0.15rem; overflow-wrap: anywhere; }
   @media (max-width: 639px) {
-    .guide-bg { padding: 0.5rem 0.4rem 0.6rem; font-size: 0.8rem; grid-template-columns: minmax(3.6rem, auto) repeat(7, minmax(0, 1fr)); }
+    .guide-bg { padding: 0.5rem 0.4rem 0.6rem; font-size: 0.8rem; grid-template-columns: minmax(3.6rem, auto) repeat(6, minmax(0, 1fr)) minmax(min-content, 1fr); }
     .guide-bg-part, .guide-bg-gap { font-size: 0.72rem; }
     .guide-bg-name { padding-right: 0.3rem; }
-    .guide-bg-gap span { writing-mode: vertical-rl; transform: rotate(180deg); padding: 0.4rem 0; overflow-wrap: normal; }
+    .guide-bg-gap span { writing-mode: vertical-rl; text-orientation: sideways; transform: rotate(180deg); padding: 0.4rem 0; overflow-wrap: normal; }
   }
 </style>
