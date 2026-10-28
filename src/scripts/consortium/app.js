@@ -642,9 +642,13 @@ function swapParts(m) {
       ${more ? `<p>${btn('button button-secondary button-small', 'swap-more', null, esc(P('showMore', more)), fk('swap-more'))}</p>` : ''}`;
   return { head: headHTML, body };
 }
-function addResults() {
+// The Add sheet's filter: the one it opened with (job:, stratum:, phase:, grow), then the selects.
+function addFilter() {
   const [fkind, fv] = (O.filter || '').split(':');
-  const jobF = addJob || (fkind === 'job' ? fv : ''), layerF = addLayer || (fkind === 'stratum' ? fv : '');
+  return { fkind, fv, jobF: addJob || (fkind === 'job' ? fv : ''), layerF: addLayer || (fkind === 'stratum' ? fv : '') };
+}
+function addResults() {
+  const { fkind, fv, jobF, layerF } = addFilter();
   let list = cell.taxa;
   if (jobF) list = list.filter((t) => jobsOf(t).includes(jobF));
   if (layerF) list = list.filter((t) => stratumOf(t) === layerF);
@@ -666,8 +670,7 @@ function addResults() {
     ${byLayer}${flagged.length ? `<h3 class="list-label">${I.warn} ${esc(T('flaggedGroup'))}</h3><ul class="alt-list" role="list">${flagged.map(row).join('')}</ul>` : ''}`;
 }
 function addParts() {
-  const [fkind, fv] = (O.filter || '').split(':');
-  const jobF = addJob || (fkind === 'job' ? fv : ''), layerF = addLayer || (fkind === 'stratum' ? fv : '');
+  const { fkind, jobF, layerF } = addFilter();
   const sel = (id, label, all, opts, cur) => `<label class="sel"><span>${esc(label)}</span><select data-filter="${id}" ${fk('f-' + id)}><option value="">${esc(all)}</option>${opts.map(([v, l]) => `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
   const headHTML = `<div><h2 id="ct-dlg-title">${esc(fkind === 'grow' ? T('grow') : T('addTitle'))}</h2><p class="lede">${esc(T('addLede', { cell: cellLabel() }))}</p></div>`;
   const body = `<div class="field"><label for="ct-add-q" class="vh">${esc(T('growHint'))}</label><div class="search">${I.search}<input id="ct-add-q" type="search" autocomplete="off" spellcheck="false" placeholder="${esc(T('growHint'))}" value="${esc(addQuery)}" data-input="add" aria-describedby="ct-add-count" ${fk('add-q')}></div></div>

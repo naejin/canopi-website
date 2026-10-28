@@ -16,7 +16,7 @@ import type { JobId } from './jobs.ts';
 import { fits } from './site.ts';
 import type { PhaseBand } from './jobs.ts';
 import { bandsOf, jobs as allJobs, jobsOf } from './jobs.ts';
-import { conflictsOf, invasiveIn, isSerious, matches } from './conflicts.ts';
+import { conflicts, conflictsOf, invasiveIn, isSerious } from './conflicts.ts';
 
 // A plant joins only while it brings something the consortium lacks: a job nobody does yet, or a
 // stratum in a phase band that stands empty. Edibility and unknown traits only rank such plants,
@@ -126,22 +126,12 @@ const byKnownThenName = (a: Taxon, b: Taxon) => known(b) - known(a) || byName(a,
 const byName = (a: Taxon, b: Taxon) =>
   a.canonical_name < b.canonical_name ? -1 : a.canonical_name > b.canonical_name ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 
-// For each taxon id of the cell, the ids it has a medium or high conflict with (either side of the row).
+// For each taxon id of the cell, the ids it has a medium or high conflict with (either side of the
+// row): conflicts() over the whole cell, so the matching rule is the one the flags use.
 function seriousPartners(cell: Cell): Map<string, Set<string>> {
   const out = new Map<string, Set<string>>();
-  for (const row of cell.interactions) {
-    if (row.type === 'allelopathy_tolerant' || !(row.severity === 'medium' || row.severity === 'high')) continue;
-    const subjects = cell.taxa.filter((t) => matches(row.subject, t));
-    if (!subjects.length) continue;
-    const objects = cell.taxa.filter((t) => matches(row.object, t));
-    for (const a of subjects) for (const b of objects) {
-      if (a.id === b.id) continue;
-      if (!out.has(a.id)) out.set(a.id, new Set());
-      if (!out.has(b.id)) out.set(b.id, new Set());
-      out.get(a.id)!.add(b.id);
-      out.get(b.id)!.add(a.id);
-    }
-  }
+  const link = (a: string, b: string) => { if (!out.has(a)) out.set(a, new Set()); out.get(a)!.add(b); };
+  for (const c of conflicts(cell.taxa, cell.interactions)) if (isSerious(c)) { link(c.a.id, c.b.id); link(c.b.id, c.a.id); }
   return out;
 }
 
@@ -166,7 +156,7 @@ export function suggest(cell: Cell, options: SuggestOptions): Suggestion {
   const infos = sorted.map((t) => infoOf(t, site));
   const partners = seriousPartners(cell);
 
-  // Kept plants first, in name order; ids that are not in this cell are ignored.
+  // Kept plants first, in tie order (better known first, then by name); ids that are not in this cell are ignored.
   const chosen = infos.filter((i) => keptIds.has(i.taxon.id));
   const gains = new Map<string, number | null>(chosen.map((i) => [i.taxon.id, null]));
   const cov = coverageOf(chosen);
