@@ -506,6 +506,7 @@
   "consortium.d.spreads": "Alastra sozinha e pode ser preciso contê-la.",
   "consortium.d.jobsUnk": "As suas funções ainda não foram verificadas.",
   "consortium.d.agent": "Causa: {agent}",
+  "consortium.d.conflictFrom": "Segundo {sources}",
   "consortium.d.liab": "Confirme com um especialista local antes de comer ou plantar. A Canopi partilha o que as suas fontes dizem e não o pode garantir.",
   "consortium.ctype.allelopathic_harm": "Uma delas pode travar o crescimento da outra.",
   "consortium.ctype.alternate_host": "Uma delas aloja uma praga ou doença da outra.",

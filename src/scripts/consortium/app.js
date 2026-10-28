@@ -580,12 +580,14 @@ function detailsParts(t) {
   const tox = t.warnings.toxicity, inv = t.warnings.invasive_in;
   const item = (cls, icon, title, text = '', extra = '') => `<li class="w-item ${cls}">${icon}<div><strong>${title}</strong>${text ? `<p>${text}</p>` : ''}${extra}</div></li>`;
   const note = (n) => (n ? (n[lang] ? esc(n[lang]) : `<span lang="en">${esc(n.en)}</span>`) : '');
+  // Each interaction names all its sources (one record may rest on a host page and a distribution page).
+  const conflictFrom = (c) => (c.sources?.length ? `<p class="muted">${esc(T('d.conflictFrom', { sources: W.list(c.sources.map((id) => cell.sources[id]?.label ?? id)) }))}</p>` : '');
   const items = [];
   if (tox && tox.level !== 'None') items.push(item('danger', I.danger, esc(T('tox.' + tox.level)), note(tox.note), `<p class="liab">${esc(T('d.liab'))}</p>`));
   if (flags.invasive === true) items.push(item('warning', I.warn, esc(T('invHere', { country: W.country(S.country) })), esc(T('d.invHere', { country: W.country(S.country) })), `<p class="liab">${esc(T('d.liab'))}</p>`));
   // A country GRIIS has no checklist for: "not checked" there, never "none".
   if (S.country && !countryChecked() && inv != null) items.push(item('unknown', I.unknown, esc(T('invNotChecked', { country: W.country(S.country) })), esc(T('d.invNotChecked', { country: W.country(S.country) }))));
-  for (const c of flags.conflicts) items.push(item(isSerious(c) ? 'warning' : 'soft', I.warn, T('conflict', { other: name(otherOf(c, t)) }), note(c.note) || esc(T('ctype.' + c.type)), c.agent ? `<p>${esc(T('d.agent', { agent: c.agent }))}</p>` : ''));
+  for (const c of flags.conflicts) items.push(item(isSerious(c) ? 'warning' : 'soft', I.warn, T('conflict', { other: name(otherOf(c, t)) }), note(c.note) || esc(T('ctype.' + c.type)), (c.agent ? `<p>${esc(T('d.agent', { agent: c.agent }))}</p>` : '') + conflictFrom(c)));
   for (const k of flags.misfits) items.push(item('warning', I.warn, esc(T('d.misfit')), esc(misfitText(t, k))));
   if (t.warnings.allelopathic === true) items.push(item('soft', I.warn, esc(T('c.allelo')), esc(T('d.allelo'))));
   if (t.warnings.weed_potential === true) items.push(item('soft', I.warn, esc(T('c.spreads')), esc(T('d.spreads'))));

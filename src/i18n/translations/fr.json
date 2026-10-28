@@ -506,6 +506,7 @@
   "consortium.d.spreads": "Se répand d’elle-même et peut demander à être contenue.",
   "consortium.d.jobsUnk": "Ses rôles n’ont pas encore été vérifiés.",
   "consortium.d.agent": "Cause : {agent}",
+  "consortium.d.conflictFrom": "D’après {sources}",
   "consortium.d.liab": "Vérifiez auprès d’un expert local avant de manger ou de planter. Canopi partage ce que disent ses sources et ne peut s’en porter garant.",
   "consortium.ctype.allelopathic_harm": "L’une des deux peut freiner la croissance de l’autre.",
   "consortium.ctype.alternate_host": "L’une des deux héberge un ravageur ou une maladie de l’autre.",

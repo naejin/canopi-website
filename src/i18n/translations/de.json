@@ -506,6 +506,7 @@
   "consortium.d.spreads": "Breitet sich von selbst aus und muss vielleicht in Schach gehalten werden.",
   "consortium.d.jobsUnk": "Ihre Aufgaben wurden noch nicht geprüft.",
   "consortium.d.agent": "Ursache: {agent}",
+  "consortium.d.conflictFrom": "Laut {sources}",
   "consortium.d.liab": "Frag eine Fachperson vor Ort, bevor du etwas isst oder pflanzt. Canopi gibt wieder, was seine Quellen sagen, und kann dafür nicht bürgen.",
   "consortium.ctype.allelopathic_harm": "Eine der beiden kann das Wachstum der anderen hemmen.",
   "consortium.ctype.alternate_host": "Eine der beiden beherbergt einen Schädling oder eine Krankheit der anderen.",

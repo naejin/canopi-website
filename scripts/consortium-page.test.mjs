@@ -825,3 +825,17 @@ test('the keys of the region flow are gone in every locale', () => {
     assert.ok(!Object.keys(guides).some((k) => k.startsWith('consortium.cell.')), `${lang}: guide cell keys`);
   }
 });
+
+test('an interaction shows every one of its sources in the plant details (fixture: Psidium guajava and Citrus, two EPPO pages)', () => {
+  const app = read('src/scripts/consortium/app.js');
+  assert.match(app, /const conflictFrom = \(c\) => \(c\.sources\?\.length \? `<p class="muted">\$\{esc\(T\('d\.conflictFrom', \{ sources: W\.list\(c\.sources\.map\(/);
+  assert.match(app, /\+ conflictFrom\(c\)\)\);/);
+  const fixture = JSON.parse(read('scripts/fixtures/consortium/tropical.json'));
+  const two = fixture.interactions.find((i) => i.sources.length > 1);
+  assert.ok(two, 'the fixture has a two-source interaction');
+  for (const id of two.sources) assert.ok(fixture.sources[id]?.label, id);
+  const en = makeWords(strings.en, 'en');
+  const labels = two.sources.map((id) => fixture.sources[id].label);
+  const line = en.T('d.conflictFrom', { sources: en.list(labels) });
+  for (const l of labels) assert.ok(line.includes(l), line);
+});

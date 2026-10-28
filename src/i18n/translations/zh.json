@@ -506,6 +506,7 @@
   "consortium.d.spreads": "会自行蔓延，可能需要控制。",
   "consortium.d.jobsUnk": "它的作用尚未核实。",
   "consortium.d.agent": "原因：{agent}",
+  "consortium.d.conflictFrom": "来源：{sources}",
   "consortium.d.liab": "食用或种植前，请先咨询当地专家。Canopi 分享其来源的内容，无法为其担保。",
   "consortium.ctype.allelopathic_harm": "其中一种可能抑制另一种的生长。",
   "consortium.ctype.alternate_host": "其中一种是另一种的害虫或病害的寄主。",

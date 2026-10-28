@@ -506,6 +506,7 @@
   "consortium.d.spreads": "自然に広がるので、抑える必要があるかもしれません。",
   "consortium.d.jobsUnk": "役割はまだ確認されていません。",
   "consortium.d.agent": "原因：{agent}",
+  "consortium.d.conflictFrom": "出典：{sources}",
   "consortium.d.liab": "食べたり植えたりする前に、地元の専門家に確認してください。Canopiは出典の内容を伝えるもので、それを保証することはできません。",
   "consortium.ctype.allelopathic_harm": "一方がもう一方の成長を抑えることがあります。",
   "consortium.ctype.alternate_host": "一方がもう一方の害虫や病気の宿主になります。",

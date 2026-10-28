@@ -506,6 +506,7 @@
   "consortium.d.spreads": "Verspreidt zich vanzelf en moet misschien in toom worden gehouden.",
   "consortium.d.jobsUnk": "Haar taken zijn nog niet gecontroleerd.",
   "consortium.d.agent": "Oorzaak: {agent}",
+  "consortium.d.conflictFrom": "Volgens {sources}",
   "consortium.d.liab": "Overleg met een lokale deskundige voordat je iets eet of plant. Canopi deelt wat zijn bronnen zeggen en kan er niet voor instaan.",
   "consortium.ctype.allelopathic_harm": "Een van beide kan de groei van de andere remmen.",
   "consortium.ctype.alternate_host": "Een van beide herbergt een plaag of ziekte van de andere.",

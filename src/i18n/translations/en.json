@@ -506,6 +506,7 @@
   "consortium.d.spreads": "Spreads by itself and may need keeping in check.",
   "consortium.d.jobsUnk": "Its jobs have not been checked yet.",
   "consortium.d.agent": "Cause: {agent}",
+  "consortium.d.conflictFrom": "From {sources}",
   "consortium.d.liab": "Check with a local expert before eating or planting. Canopi shares what its sources say and cannot vouch for it.",
   "consortium.ctype.allelopathic_harm": "One of them can hold back the other’s growth.",
   "consortium.ctype.alternate_host": "One of them hosts a pest or disease of the other.",

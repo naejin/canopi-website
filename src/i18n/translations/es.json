@@ -506,6 +506,7 @@
   "consortium.d.spreads": "Se extiende sola y puede que haya que contenerla.",
   "consortium.d.jobsUnk": "Sus funciones aún no se han revisado.",
   "consortium.d.agent": "Causa: {agent}",
+  "consortium.d.conflictFrom": "Según {sources}",
   "consortium.d.liab": "Consulta a un experto local antes de comer o plantar. Canopi comparte lo que dicen sus fuentes y no puede garantizarlo.",
   "consortium.ctype.allelopathic_harm": "Una de ellas puede frenar el crecimiento de la otra.",
   "consortium.ctype.alternate_host": "Una de ellas aloja una plaga o enfermedad de la otra.",

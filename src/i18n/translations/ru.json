@@ -506,6 +506,7 @@
   "consortium.d.spreads": "Само разрастается, и его, возможно, придётся сдерживать.",
   "consortium.d.jobsUnk": "Его задачи ещё не проверены.",
   "consortium.d.agent": "Причина: {agent}",
+  "consortium.d.conflictFrom": "По данным: {sources}",
   "consortium.d.liab": "Прежде чем есть или сажать, посоветуйтесь с местным специалистом. Canopi передаёт сведения из своих источников и не может за них ручаться.",
   "consortium.ctype.allelopathic_harm": "Одно из них может угнетать рост другого.",
   "consortium.ctype.alternate_host": "Одно из них служит хозяином вредителя или болезни другого.",
