@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { builtTarget, splitHref, subdirectories } from './built-links.mjs';
+import { verifyInstall } from './install-consortium.mjs';
+import { consortiumPath } from '../src/i18n/consortium-path.js';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -219,14 +221,15 @@ const headerOf = (html, from) => {
   assert.ok(panel, `${from}: the phone Menu panel`);
   return { header, panel, inline: header.replace(panel, '') };
 };
-// The consortium tool's page per locale (French at /fr/guilde/).
-const consortiumPath = (lang) => (lang === 'en' ? '/consortium/' : lang === 'fr' ? '/fr/guilde/' : `/${lang}/consortium/`);
 const consortiumCells = JSON.parse(readFileSync(join(root, 'data', 'consortium', 'manifest.json'), 'utf8')).cells.map((c) => ({ ...c, climate: c.climate_zone }));
 const consortiumTaxa = (file) => new Set(JSON.parse(readFileSync(join(root, 'data', 'consortium', file), 'utf8')).taxa.map((t) => t.canonical_name));
 const mainOf = (html) => html.match(/<main\b[\s\S]*?<\/main>/)?.[0] ?? '';
 const linkTo = (html, href) => new RegExp(`<a\\b[^>]*\\shref="${href.replace(/[.?*+^$()[\]{}|\\]/g, '\\$&')}"`).test(html);
 const currentLink = (html, href) => new RegExp(`<a\\b[^>]*\\shref="${href}"[^>]*\\saria-current="page"|<a\\b[^>]*\\saria-current="page"[^>]*\\shref="${href}"`).test(html);
+// path: the page's path in every locale ('/bibliography/'), or a function of the locale for a page
+// whose slug is translated (consortiumPath).
 function checkHeader(html, lang, path, from, alternates = locales) {
+  const pathIn = typeof path === 'function' ? path : (l) => localized(path, l);
   const { panel, inline } = headerOf(html, from);
   const books = localized('/bibliography/', lang);
   for (const [part, where] of [[inline, 'inline'], [panel, 'menu']]) {
@@ -236,7 +239,7 @@ function checkHeader(html, lang, path, from, alternates = locales) {
     assert.ok(linkTo(part, consortiumPath(lang)), `${from}: ${where} consortium tool link`);
     // The language list: the same page in each locale, else the English page.
     for (const other of locales) {
-      const target = localized(path, alternates.includes(other) ? other : 'en');
+      const target = pathIn(alternates.includes(other) ? other : 'en');
       assert.ok(new RegExp(`<a\\b[^>]*\\shref="${target}"[^>]*\\slang="${other}"`).test(part), `${from}: ${where} language link ${other} → ${target}`);
     }
   }
@@ -318,13 +321,17 @@ for (const lang of locales) {
   assert.ok(currentLink(html.match(/<header\b[\s\S]*?<\/header>/)?.[0] ?? '', path), `${path}: the header marks the tool as the current page`);
   const alternates = [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => `${m[1]} ${m[2]}`).sort();
   assert.deepEqual(alternates, [...locales.map((l) => `${l} https://projectcanopi.com${consortiumPath(l)}`), 'x-default https://projectcanopi.com/consortium/'].sort(), `${path}: hreflang`);
+  // prepush m3: its own links (the language menu, the noscript guide link, the contact anchor) lead to
+  // built pages and ids; a language link to a redirect (/fr/consortium/) fails here.
+  checkHeader(html, lang, consortiumPath, path);
+  checkLinks(html, path);
+  for (const asset of assetLinks(html)) assert.ok(existsSync(join(root, asset)), `${path}: missing asset ${asset}`);
 }
 assert.ok(!existsSync(join(root, 'fr', 'consortium')), 'no /fr/consortium/: French is /fr/guilde/');
-const consortiumData = join(root, 'data', 'consortium');
-const consortiumManifest = JSON.parse(readFileSync(join(consortiumData, 'manifest.json'), 'utf8'));
-assert.ok(/^[0-9a-f]{64}$/.test(consortiumManifest.canopi_db_sha256) && !/^0+$/.test(consortiumManifest.canopi_db_sha256), 'consortium: canopi_db_sha256 is a real digest');
-assert.ok(consortiumManifest.cells.length > 0, 'consortium: cells');
-for (const cell of consortiumManifest.cells) assert.ok(existsSync(join(consortiumData, cell.file)), `consortium: ${cell.file}`);
-assert.ok(existsSync(join(consortiumData, 'labels.json')), 'consortium: labels.json');
+// prepush m2: the installed plant data, by the installer's own checks: format 2, a real
+// canopi_db_sha256 (never the fixture's zeros), SHA256SUMS, each cell's sha256, counts and shape,
+// and every photo a local file that exists.
+const consortiumInstall = verifyInstall(join(root, 'data', 'consortium'));
+assert.ok(consortiumInstall.cells > 0 && consortiumInstall.images > 0, 'consortium: cells and photos');
 
 console.log(`Verified 11 locale pages, their bibliography and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);

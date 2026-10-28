@@ -9,7 +9,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { installConsortium, thumbnailUrl, shapeErrors, cellShape, USER_AGENT, DEFAULT_OUT, STAGING_DIR, stagingDirFor } from './install-consortium.mjs';
+import { installConsortium, verifyInstall, thumbnailUrl, shapeErrors, cellShape, USER_AGENT, DEFAULT_OUT, STAGING_DIR, stagingDirFor } from './install-consortium.mjs';
 
 const fixture = fileURLToPath(new URL('fixtures/consortium/', import.meta.url));
 const script = fileURLToPath(new URL('install-consortium.mjs', import.meta.url));
@@ -430,3 +430,57 @@ test('a source url or a photo page url that is not http(s) is refused, so no dat
     assert.deepEqual(shapeErrors(cell, cellShape), [], String(url));
   }
 });
+
+// An installed directory as the site serves it, with its photos (prepush m2): what the built-site
+// check verifies under dist/client/data/consortium/.
+async function installed(t) {
+  const w = workspace(t);
+  withPhotos(w);
+  await install(w, { images: true, fetchImpl: stubFetch([]), delayMs: 0, backoffMs: 0 });
+  const json = (name) => JSON.parse(readFileSync(join(w.out, name), 'utf8'));
+  const put = (name, value) => writeFileSync(join(w.out, name), JSON.stringify(value));
+  return { ...w, json, put };
+}
+
+test('verifyInstall: a whole install passes, and so does the committed public/data/consortium/', async (t) => {
+  const w = await installed(t);
+  assert.deepEqual(verifyInstall(w.out, { fixture: true }), { cells: 3, images: 4 });
+  const real = verifyInstall(DEFAULT_OUT);
+  assert.ok(real.cells >= 3 && real.images > 100, JSON.stringify(real));
+  assert.throws(() => verifyInstall(w.out), /canopi_db_sha256 is all zeros/, 'the fixture is never a real install');
+});
+
+test('verifyInstall: the reviewer\'s broken installs fail (prepush m2)', async (t) => {
+  const cases = [
+    ['no photos', (w) => rmSync(join(w.out, 'images'), { recursive: true }), /images\/[0-9a-f-]+\.(jpg|png) is missing/],
+    ['format_version 3', (w) => { const c = w.json('temperate-europe.json'); c.format_version = 3; w.put('temperate-europe.json', c); }, /temperate-europe\.json does not match the manifest's sha256|format_version/],
+    ['format_version 3, checksums redone', (w) => { const c = w.json('temperate-europe.json'); c.format_version = 3; w.put('temperate-europe.json', c); resum(w, 'temperate-europe.json'); }, /format_version: 3 is not one of 2/],
+    ['no interactions', (w) => { const c = w.json('temperate-europe.json'); delete c.interactions; w.put('temperate-europe.json', c); resum(w, 'temperate-europe.json'); }, /misses required key "interactions"/],
+    ['null traits and warnings', (w) => { const c = w.json('temperate-europe.json'); for (const x of c.taxa) { x.traits = null; x.warnings = null; } w.put('temperate-europe.json', c); resum(w, 'temperate-europe.json'); }, /traits: is null/],
+    ['a cell that is not its manifest sha256', (w) => { const c = w.json('temperate-europe.json'); c.taxa[0].names.en = 'Changed'; w.put('temperate-europe.json', c); }, /temperate-europe\.json does not match the manifest's sha256/],
+    ['a stale SHA256SUMS', (w) => writeFileSync(join(w.out, 'labels.json'), '{}'), /labels\.json does not match SHA256SUMS/],
+    ['a remote photo url', (w) => { const c = w.json('tropical-southern-america.json'); c.taxa.find((x) => x.image).image.url = 'https://upload.wikimedia.org/x.jpg'; w.put('tropical-southern-america.json', c); resum(w, 'tropical-southern-america.json'); }, /image\.url .* is not a local \/data\/consortium\/images\/ file/],
+    ['manifest format_version 3', (w) => { const m = w.json('manifest.json'); m.format_version = 3; w.put('manifest.json', m); resum(w, 'manifest.json'); }, /manifest\.json format_version is 3, not 2/],
+  ];
+  for (const [name, breakIt, error] of cases) {
+    const w = await installed(t);
+    breakIt(w);
+    assert.throws(() => verifyInstall(w.out, { fixture: true }), error, name);
+  }
+});
+
+// Brings the installed manifest and SHA256SUMS in step with a file changed on purpose, so the check
+// past the checksums is the one tested.
+function resum(w, name) {
+  const bytes = readFileSync(join(w.out, name));
+  if (name !== 'manifest.json') {
+    const m = w.json('manifest.json');
+    m.cells.find((c) => c.file === name).sha256 = sha(bytes);
+    w.put('manifest.json', m);
+  }
+  const lines = readFileSync(join(w.out, 'SHA256SUMS'), 'utf8').trim().split('\n').map((l) => {
+    const file = l.split('  ')[1];
+    return file === name || file === 'manifest.json' ? `${sha(readFileSync(join(w.out, file)))}  ${file}` : l;
+  });
+  writeFileSync(join(w.out, 'SHA256SUMS'), `${lines.join('\n')}\n`);
+}

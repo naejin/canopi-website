@@ -59,7 +59,6 @@ export function pageUrl(path: PagePath, lang: Locale): string {
   return typeof path === 'string' ? localizedUrl(path, lang) : path(lang);
 }
 
-// The consortium tool: "Consortium" in every language except French, "Guilde".
-export function consortiumPath(lang: Locale): string {
-  return localizedUrl(lang === 'fr' ? '/guilde/' : '/consortium/', lang);
-}
+// The consortium tool: "Consortium" in every language except French, "Guilde" (one rule, shared
+// with scripts/check-built-site.mjs).
+export { consortiumPath } from './consortium-path.js';

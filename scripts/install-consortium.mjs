@@ -305,6 +305,59 @@ export function verifyExport(dir, { fixture = false } = {}) {
   return { manifest, manifestBytes: readFileSync(join(dir, 'manifest.json')), labelsBytes: readFileSync(join(dir, 'labels.json')), cells };
 }
 
+// Checks an installed directory as the site serves it (scripts/check-built-site.mjs runs it on
+// dist/client/data/consortium/, the tests on public/data/consortium/): the manifest's format and
+// shape, SHA256SUMS line by line, each cell against its manifest sha256, taxa and interactions
+// counts and the export's shape, and every photo a local images/ file that exists. Throws on the
+// first problem; returns the counts of cells and photos.
+export function verifyInstall(dir, { fixture = false } = {}) {
+  const broken = (message) => { throw new Error(`Consortium install broken (${dir}): ${message}`); };
+  const read = (name) => { try { return readFileSync(join(dir, name)); } catch { return broken(`${name} is missing.`); } };
+  const json = (name) => { try { return JSON.parse(read(name).toString('utf8')); } catch (err) { return broken(`${name} is not valid JSON (${err.message}).`); } };
+  const manifest = json('manifest.json');
+  if (!isObject(manifest) || manifest.format_version !== 2) broken(`manifest.json format_version is ${JSON.stringify(manifest?.format_version)}, not 2.`);
+  const manifestProblems = shapeErrors(manifest, manifestShape, 'manifest.json');
+  if (manifestProblems.length) broken(manifestProblems.join('; '));
+  if (manifest.canopi_db_sha256 === ZERO_SHA && !fixture) broken('canopi_db_sha256 is all zeros: the invented fixture is installed.');
+  const labelProblems = shapeErrors(json('labels.json'), labelsShape, 'labels.json');
+  if (labelProblems.length) broken(labelProblems.join('; '));
+
+  const sums = new Map();
+  for (const line of read('SHA256SUMS').toString('utf8').split('\n')) {
+    if (!line.trim()) continue;
+    const m = /^([0-9a-f]{64}) [ *](.+)$/.exec(line);
+    if (!m) broken(`SHA256SUMS has a malformed line: ${line}`);
+    sums.set(m[2], m[1]);
+  }
+  for (const name of ['manifest.json', 'labels.json', ...manifest.cells.map((c) => c.file)]) if (!sums.has(name)) broken(`SHA256SUMS does not list ${name}.`);
+
+  let images = 0;
+  for (const entry of manifest.cells) {
+    const bytes = read(entry.file);
+    if (sha256(bytes) !== entry.sha256) broken(`${entry.file} does not match the manifest's sha256.`);
+    let cell;
+    try { cell = JSON.parse(bytes.toString('utf8')); } catch (err) { broken(`${entry.file} is not valid JSON (${err.message}).`); }
+    const problems = shapeErrors(cell, cellShape, entry.file);
+    if (problems.length) broken(problems.join('; '));
+    if (cell.climate_zone !== entry.climate_zone || cell.region !== entry.region) broken(`${entry.file} is ${cell.climate_zone} × ${cell.region}, the manifest says ${entry.climate_zone} × ${entry.region}.`);
+    if (cell.taxa.length !== entry.taxa || cell.interactions.length !== entry.interactions) broken(`${entry.file} has ${cell.taxa.length} taxa and ${cell.interactions.length} interactions, the manifest says ${entry.taxa} and ${entry.interactions}.`);
+    const undefinedSources = [...citedSources(cell)].filter((id) => !(id in cell.sources));
+    if (undefinedSources.length) broken(`${entry.file} cites undefined sources: ${undefinedSources.join(', ')}.`);
+    for (const t of cell.taxa) {
+      if (!t.image) continue;
+      const name = t.image.url.startsWith(IMAGE_BASE) ? t.image.url.slice(IMAGE_BASE.length) : null;
+      if (!name || !SAFE_NAME.test(name)) broken(`${entry.file}: ${t.canonical_name}'s image.url ${JSON.stringify(t.image.url)} is not a local ${IMAGE_BASE} file.`);
+      if (!existsSync(join(dir, 'images', name))) broken(`${entry.file}: images/${name} is missing (${t.canonical_name}).`);
+      images++;
+    }
+  }
+  for (const [name, hash] of sums) {
+    if (!existsSync(join(dir, name))) broken(`${name} is listed in SHA256SUMS but missing.`);
+    if (sha256(readFileSync(join(dir, name))) !== hash) broken(`${name} does not match SHA256SUMS.`);
+  }
+  return { cells: manifest.cells.length, images };
+}
+
 // Hosts a photo may be fetched from after a redirect, besides the host first asked.
 const PHOTO_HOSTS = ['upload.wikimedia.org', 'inaturalist-open-data.s3.amazonaws.com'];
 const MAX_REDIRECTS = 5;
