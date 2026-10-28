@@ -32,7 +32,7 @@ export interface Flags {
   unknowns: SiteKey[];
   invasive: boolean | null; // invasiveIn() for the user's country: a warning only, never a filter or a score
   conflicts: Conflict[]; // with the other members, any severity
-  flagged: boolean; // what keeps it out of automatic picks: a misfit or a medium/high conflict (not invasiveness)
+  flagged: boolean; // what keeps it out of automatic picks: a misfit (beside the members: siteMisfits) or a medium/high conflict (not invasiveness)
 }
 
 export interface Member { taxon: Taxon; kept: boolean; gain: number | null; flags: Flags }
@@ -157,17 +157,28 @@ function guestsOf(cell: ClimateFile, guests: Taxon[] | undefined): Taxon[] {
 // choices"): on a sunny site, a Mid or Low plant that does not take full sun is not a light misfit
 // while another member grows in a layer above it (Emergent or High over Mid; any of them over Low).
 // A plant of a top layer, or one with nothing above it, keeps the flag.
+// The one owner of the rule (H12): the flags (flagsOf) and the automatic picks (suggest, so Fill too)
+// both read siteMisfits, so a plant the flags would not mark is a candidate and one they would is not.
+// strataAbove: the layers the other members grow in.
 const SHADED_LAYERS = new Set(['medium', 'low']);
-function shaded(i: Info, others: Taxon[], site: Site): boolean {
+function shaded(i: Info, strataOfOthers: Iterable<string>, site: Site): boolean {
   if (site.light !== 'sun' || !i.stratum || !SHADED_LAYERS.has(i.stratum)) return false;
   const order: readonly string[] = layerOrder, own = order.indexOf(i.stratum);
-  return others.some((t) => { const at = order.indexOf(t.stratum?.value ?? ''); return at >= 0 && at < own; });
+  for (const s of strataOfOthers) { const at = order.indexOf(s); if (at >= 0 && at < own) return true; }
+  return false;
 }
+// The site checks a plant fails beside the other members: its own fit, less the light where a layer
+// above it shades it.
+function siteMisfits(i: Info, strataOfOthers: Iterable<string>, site: Site): SiteKey[] {
+  if (!i.fit.misfits.length) return [];
+  return shaded(i, strataOfOthers, site) ? i.fit.misfits.filter((k) => k !== 'light') : [...i.fit.misfits];
+}
+const strataOf = (taxa: Taxon[]) => taxa.flatMap((t) => (t.stratum ? [t.stratum.value] : []));
 
 function flagsOf(i: Info, others: Taxon[], cell: ClimateFile, where: Country, site: Site): Flags {
   const invasive = invasiveIn(i.taxon, where.country, where.countryChecked);
   const found = conflictsOf(i.taxon, others, cell.interactions);
-  const misfits = shaded(i, others, site) ? i.fit.misfits.filter((k) => k !== 'light') : [...i.fit.misfits];
+  const misfits = siteMisfits(i, strataOf(others), site);
   return {
     misfits,
     unknowns: [...i.fit.unknowns],
@@ -194,13 +205,17 @@ export function suggest(cell: ClimateFile, options: SuggestOptions): Suggestion 
   const cov = coverageOf(chosen);
   const memberIds = new Set(chosen.map((i) => i.taxon.id));
 
+  // A plant whose only misfit is the light may still join under a canopy (siteMisfits, H12): it is a
+  // candidate, checked against the layers chosen so far at each pick.
+  const lightOnly = (i: Info) => i.fit.misfits.length === 1 && i.fit.misfits[0] === 'light' && shaded(i, layerOrder, site);
   const candidates = infos.filter((i) =>
-    !memberIds.has(i.taxon.id) && !removedIds.has(i.taxon.id) && i.fit.ok);
+    !memberIds.has(i.taxon.id) && !removedIds.has(i.taxon.id) && (i.fit.ok || lightOnly(i)));
 
   while (chosen.length < limit) {
     let best: Info | null = null, bestGain = -Infinity;
     for (const i of candidates) {
       if (memberIds.has(i.taxon.id)) continue;
+      if (siteMisfits(i, cov.strata, site).length) continue; // not yet shaded by the layers chosen
       const p = partners.get(i.taxon.id);
       if (p && [...p].some((id) => memberIds.has(id))) continue;
       const t = tenths(i, cov);

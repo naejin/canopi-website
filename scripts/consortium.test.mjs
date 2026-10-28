@@ -390,6 +390,29 @@ test('a shade plant in a lower layer is not flagged for full sun while a layer a
   assert.deepEqual(swaps.find((a) => a.taxon.id === violet.id).flags.misfits, [], 'Swap: the Mid shrub still shades it');
 });
 
+// Scale chunk B fix review H12: the automatic picks (suggest, so Fill too) read the same shaded-layer
+// rule as the flags: a plant the flags would not mark is a candidate, one they would mark is not.
+test('H12: suggest and Fill pick a shade plant of a lower layer under a canopy, never one the flags would mark', () => {
+  const tree = make({ functions: fn('nitrogen_fixer'), ...layer('high') });
+  const violet = make({ functions: fn('ground_cover'), traits: { sun: false }, ...layer('low') });
+  const fern = make({ functions: fn('mulch'), traits: { sun: false }, ...layer('medium') });
+  const tall = make({ functions: fn('edible_fruit'), traits: { sun: false }, ...layer('high') });
+  const cell = cellOf([tree, violet, fern, tall]);
+  const under = suggest(cell, { site: open, kept: [tree.id] });
+  assert.deepEqual(names(under.members).sort(), [tree, violet, fern].map((t) => t.canonical_name).sort(), 'both shade plants join under the High tree; the shade-loving High one never does');
+  for (const m of under.members) assert.equal(m.flags.flagged, false, m.taxon.canonical_name);
+  // With nothing kept, a shade plant joins only once a layer above it is chosen, and is never flagged.
+  const fresh = suggest(cell, { site: open });
+  for (const m of fresh.members) assert.equal(m.flags.flagged, false, m.taxon.canonical_name);
+  assert.ok(!names(fresh.members).includes(tall.canonical_name));
+  // Without the canopy (the tree removed), nothing shades them: none is picked.
+  const bare = suggest(cell, { site: open, removed: [tree.id] });
+  assert.deepEqual(names(bare.members), []);
+  // In part shade the light check is the plant's own: no shading needed.
+  const part = suggest(cell, { site: { ...open, light: 'part' }, kept: [] });
+  for (const m of part.members) assert.equal(m.flags.flagged, false);
+});
+
 // Owner, 2026-10-28: invasiveness is a warning, never a filter or a score.
 test('suggest picks the same plants with or without a country; invasive here is a warning, not a flag', () => {
   const invasive = make({ functions: fn('mulch'), warnings: { invasive_in: [{ country: 'BR', sources: ['griis'] }] } });
