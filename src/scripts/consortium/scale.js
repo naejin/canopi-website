@@ -26,6 +26,13 @@ export function roundHeight(m) {
   if (m <= 20) return Math.round(m);
   return Math.round(m / 5) * 5;
 }
+// The size a room misfit says (H11): rounded as heights are (C7), unless that would land on or under
+// the room's limit (6.096 m in a 6 m garden reads "6 m"): then rounded up to one decimal, so "too big"
+// never shows a size the room takes.
+export function misfitSize(m, limit) {
+  const r = roundHeight(m) ?? 0;
+  return r > limit ? r : Math.ceil(m * 10 - 1e-9) / 10;
+}
 
 // The stages a plant leads in, as indexes into phases ({ a, b }), or null when not checked.
 export const stageSpan = (t) => (t.phases ? { a: phases.indexOf(t.phases.start), b: phases.indexOf(t.phases.end) } : null);
@@ -107,6 +114,21 @@ export function groupTick(ids, selected) {
 // The rows of a paste and, when it has tabs, its columns: { rows: [[cell, …], …], columns }. Read as a
 // spreadsheet writes it (B11): a cell that starts with a quote runs to its closing quote, may hold tabs
 // and line breaks, and has its quotes taken off ("" is one quote); other cells are kept as typed.
+// H10: only a quote that a spreadsheet would close opens a quoted cell: its closing quote is on the
+// same line and ends the cell (a tab, a line break or the end follows), or, past a line break, is
+// followed by a tab (the row goes on). Any other quote is text, and never swallows the lines after it.
+function quotedEnd(src, i) {
+  let lines = false;
+  for (let j = i + 1; j < src.length; j++) {
+    const c = src[j];
+    if (c === '\n') lines = true;
+    if (c !== '"') continue;
+    if (src[j + 1] === '"') { j++; continue; }
+    const next = src[j + 1];
+    return (lines ? next === '\t' : next === undefined || next === '\t' || next === '\n') ? j : -1;
+  }
+  return -1;
+}
 export function pasteTable(text) {
   const src = String(text ?? '').replace(/\r\n?/g, '\n'), rows = [];
   let row = [], cell = '', quoted = false, start = true, tabs = false;
@@ -120,7 +142,7 @@ export function pasteTable(text) {
       else cell += c;
       continue;
     }
-    if (start && c === '"' && src.indexOf('"', i + 1) > 0) { quoted = true; start = false; continue; }
+    if (start && c === '"' && quotedEnd(src, i) > 0) { quoted = true; start = false; continue; }
     if (c === '\t') { tabs = true; endCell(); continue; }
     if (c === '\n') { endRow(); continue; }
     if (start && /\s/.test(c)) { cell += c; continue; }
@@ -131,21 +153,47 @@ export function pasteTable(text) {
 }
 // The column names are read from, always one the text has (B9): a plain list after a 3-column one reads column 1.
 export const pasteColumn = (text, column) => (column > 0 && column < pasteTable(text).columns ? column : 0);
-// The names in one column (0-based): a cell split on commas and semicolons, each name once. In a table
-// (two columns or more, two rows or more) the first row's names are kept apart as `head`, a header
-// readPaste may leave out.
+// Column names a list's first row may hold, in the site's 11 languages, folded (H9). A first cell
+// made only of these words (and small joining words) is a header; any other first row is read like
+// every line, so a plant there is never dropped.
+const HEADER_WORDS = new Set([
+  // en
+  'name', 'names', 'scientific', 'latin', 'botanical', 'common', 'english', 'species', 'plant', 'plants', 'taxon', 'taxa', 'genus', 'family', 'variety', 'cultivar', 'qty', 'quantity', 'number', 'count', 'no', 'notes', 'note', 'type', 'layer', 'stratum',
+  // fr
+  'nom', 'noms', 'scientifique', 'latin', 'commun', 'vernaculaire', 'francais', 'espece', 'especes', 'plante', 'plantes', 'genre', 'famille', 'variete', 'quantite', 'nombre', 'strate',
+  // es, pt, it
+  'nombre', 'cientifico', 'comun', 'especie', 'planta', 'plantas', 'genero', 'familia', 'cantidad', 'nome', 'cientifico', 'comum', 'quantidade', 'scientifico', 'specie', 'pianta', 'piante', 'genere', 'famiglia', 'quantita', 'varieta',
+  // de, nl
+  'wissenschaftlicher', 'botanischer', 'deutscher', 'art', 'arten', 'pflanze', 'pflanzen', 'gattung', 'familie', 'sorte', 'anzahl', 'menge', 'naam', 'wetenschappelijke', 'nederlandse', 'soort', 'soorten', 'geslacht', 'aantal',
+  // ru
+  'название', 'научное', 'латинское', 'русское', 'вид', 'растение', 'растения', 'род', 'семейство', 'сорт', 'количество', 'имя',
+  // zh, ja, ko (written without spaces: the whole cell)
+  '名称', '名字', '学名', '中文名', '拉丁名', '物种', '种', '植物', '属', '科', '品种', '数量', '名前', '和名', '種', '種類', '数', '이름', '학명', '종', '식물', '속', '과', '품종', '수량',
+].map(fold));
+const JOINING = new Set(['of', 'the', 'de', 'du', 'des', 'la', 'le', 'del', 'da', 'do', 'di', 'der', 'die', 'das', 'en', 'in', 'van', 'het', 'een', 'e', 'y', 'et', 'and', 'und', 'en']);
+export function looksLikeHeader(cell) {
+  const words = fold(String(cell ?? '')).replace(/[()[\]:.#/_*-]/g, ' ').split(/\s+/).filter(Boolean);
+  const own = words.filter((w) => !JOINING.has(w));
+  return own.length > 0 && own.every((w) => HEADER_WORDS.has(w));
+}
+// The names in one column (0-based): a cell split on commas and semicolons, each name once. A first
+// row that looks like column names (looksLikeHeader, in a paste of two rows or more) is left out and
+// kept apart as `header` (H9); readPaste names it.
+// A stray quote at the start or end of a name (one with no partner, H10) is taken off.
 export function pasteNames(text, column = 0) {
-  const out = [], seen = new Set(), table = pasteTable(text), head = [];
+  const out = [], seen = new Set(), table = pasteTable(text);
+  const head = table.rows.length > 1 && looksLikeHeader(table.rows[0][column]) ? table.rows[0][column].trim() : null;
   table.rows.forEach((row, r) => {
+    if (r === 0 && head) return;
     for (const part of String(row[column] ?? '').split(/[,;]/)) {
-      const name = part.replace(/\s+/g, ' ').trim();
+      let name = part.replace(/\s+/g, ' ').trim();
+      if ((name.match(/"/g) ?? []).length === 1 && /^"|"$/.test(name)) name = name.replace(/^"|"$/, '').trim();
       const key = fold(name);
       if (!name || seen.has(key)) continue;
       seen.add(key); out.push(name);
-      if (r === 0) head.push(name);
     }
   });
-  Object.defineProperty(out, 'head', { value: table.columns > 1 && table.rows.length > 1 ? head : [], enumerable: false });
+  Object.defineProperty(out, 'header', { value: head, enumerable: false });
   return out;
 }
 const RANK_WORDS = new Set(['subsp', 'ssp', 'var', 'f', 'cv', 'x', '×', 'agg', 'sp', 'spp']);
@@ -228,8 +276,7 @@ export function matchName(name, idx) {
 //   other   only another climate's list has it, one plant: "Add anyway"
 //   already in the consortium already
 //   none    in no list
-//   header  a table's first row that matches no list while rows below do: its column names (B11),
-//           left out of every group
+//   header  the first row, when it looks like column names (pasteNames, H9): left out of every group
 // cell: this climate's file; others: [[climate, file], …] (crops.js inClimateOrder); members: ids.
 export function readPaste(names, { cell, others = [], members = [] }) {
   const here = indexOf(cell), ins = new Set(members), seen = new Set();
@@ -256,12 +303,7 @@ export function readPaste(names, { cell, others = [], members = [] }) {
     seen.add(t.id);
     (ins.has(t.id) ? out.already : out.other).push({ name, climate, taxon: t, close: o.close ?? null });
   }
-  const head = names.head ?? [];
-  const matched = out.found.length + out.choose.length + out.other.length + out.already.length;
-  if (head.length && matched && head.every((h) => out.none.some((x) => x.name === h))) {
-    out.none = out.none.filter((x) => !head.includes(x.name));
-    out.header = head.join(', ');
-  }
+  out.header = names.header ?? null;
   return out;
 }
 // The tick a pasted plant starts with, the same in every group it shows in (B8): ticked when it was

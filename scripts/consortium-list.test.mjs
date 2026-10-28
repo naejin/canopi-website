@@ -206,3 +206,59 @@ test('B11: spreadsheet quotes are stripped, a quoted cell may hold a line break,
   assert.equal(plain.header, null);
   assert.equal(S.readPaste(S.pasteNames('Zzzz\nYyyy'), { cell: temperate, members: [] }).none.length, 2);
 });
+
+// ---------- Scale chunk B fix review (scale-b-fix-review.md, verified; coordinator rulings 2026-10-28) ----------
+test('H9: a first row is dropped only when it looks like column names, in any of the 11 languages; a plant there is read like any line', () => {
+  // The design's own "in no list" example: a 3-column sheet with no header row.
+  const sheet = S.pasteNames('Juglans nigra\tBlack walnut\t3\nMalus domestica\tApple\t2');
+  assert.deepEqual([...sheet], ['Juglans nigra', 'Malus domestica']);
+  const r = S.readPaste(sheet, { cell: temperate, members: [] });
+  assert.deepEqual(r.none.map((x) => x.name), ['Juglans nigra'], 'the walnut is said, under "not in any list"');
+  assert.equal(r.header, null);
+  for (const [row, words] of [
+    ['Scientific name\tCommon name', 'Scientific name'], ['Name\tQty', 'Name'], ['Species\tNotes', 'Species'], ['Plant name\tQuantity', 'Plant name'],
+    ['Nom scientifique\tNom commun', 'Nom scientifique'], ['Espèce\tQuantité', 'Espèce'], ['Nombre científico\tCantidad', 'Nombre científico'],
+    ['Nome científico\tQuantidade', 'Nome científico'], ['Nome scientifico\tQuantità', 'Nome scientifico'], ['Wissenschaftlicher Name\tAnzahl', 'Wissenschaftlicher Name'],
+    ['Wetenschappelijke naam\tAantal', 'Wetenschappelijke naam'], ['Научное название\tКоличество', 'Научное название'], ['学名\t数量', '学名'], ['学名\t和名', '学名'], ['학명\t수량', '학명'],
+  ]) {
+    const names = S.pasteNames(`${row}\nMalus domestica\tApple\nPyrus communis\tPear`);
+    assert.deepEqual([...names], ['Malus domestica', 'Pyrus communis'], row);
+    const out = S.readPaste(names, { cell: temperate, members: [] });
+    assert.equal(out.header, words, row);
+    assert.equal(out.found.length, 2, row);
+  }
+  // One column with a header word on top; a plain list of plants keeps its first line.
+  assert.deepEqual([...S.pasteNames('Name\nMalus domestica\nPyrus communis')], ['Malus domestica', 'Pyrus communis']);
+  assert.deepEqual([...S.pasteNames('Juglans nigra\nMalus domestica')], ['Juglans nigra', 'Malus domestica']);
+  // A plant's name that holds a header word is still a plant.
+  assert.deepEqual([...S.pasteNames('Black walnut name tag\t1\nMalus domestica\t2')], ['Black walnut name tag', 'Malus domestica']);
+});
+
+test('H10: a quote opens a quoted cell only at its start and closes on its line, or in its spreadsheet row when a tab follows; a stray quote never swallows lines', () => {
+  assert.deepEqual([...S.pasteNames('"Malus domestica\nPyrus communis\nPrunus avium\n5" pot')], ['Malus domestica', 'Pyrus communis', 'Prunus avium', '5" pot']);
+  const r = S.readPaste(S.pasteNames('"Malus domestica\nPyrus communis\nPrunus avium'), { cell: temperate, members: [] });
+  assert.equal(r.found.length, 3, 'three plants, each found');
+  // What spreadsheets write still reads as before.
+  assert.deepEqual([...S.pasteNames('"Malus domestica"\n"Pyrus communis"')], ['Malus domestica', 'Pyrus communis']);
+  assert.deepEqual([...S.pasteNames('"Malus\ndomestica"\t1\nPear\t2')], ['Malus domestica', 'Pear'], 'a line break inside a quoted cell, a tab after it');
+  assert.deepEqual([...S.pasteNames('"Apple, ""Bramley"""\tx\nPear\ty')], ['Apple', '"Bramley"', 'Pear']);
+  // A line break inside quotes with no tab after the close is a stray quote: each line stays a line.
+  assert.deepEqual([...S.pasteNames('"Malus\nPyrus" communis\nPrunus avium')], ['Malus', 'Pyrus" communis', 'Prunus avium']);
+  // A quote inside a cell is text.
+  assert.deepEqual([...S.pasteNames('Malus "Bramley" domestica\nPear')], ['Malus "Bramley" domestica', 'Pear']);
+});
+
+test('H11: a room misfit never shows a size the room takes: the shown size is always above the limit', () => {
+  assert.equal(S.misfitSize(6.096, 6), 6.1);
+  assert.equal(S.misfitSize(12.192, 12), 12.2);
+  assert.equal(S.misfitSize(15.2, 12), 15);
+  assert.equal(S.misfitSize(22, 12), 20);
+  assert.equal(S.misfitSize(6.0001, 6), 6.1);
+  // Every plant of the three lists that fails a room shows a size above that room's limit.
+  for (const cell of [temperate, mediterranean, tropical]) for (const t of cell.taxa) for (const room of ['small', 'large']) {
+    const site = { ...core.DEFAULT_SITE, room };
+    if (!core.fits(t, site).misfits.includes('room')) continue;
+    const size = Math.max(t.traits.height_m?.max ?? 0, t.traits.width_max_m ?? 0);
+    assert.ok(S.misfitSize(size, core.ROOM_LIMIT_M[room]) > core.ROOM_LIMIT_M[room], `${t.canonical_name} in a ${room} garden: ${size}`);
+  }
+});
