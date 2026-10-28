@@ -784,3 +784,10 @@ test('words: a merged soft chip starts with a capital where the script has one',
   assert.equal(capFirst('隣の植物', 'ja'), '隣の植物');
   assert.equal(capFirst('', 'en'), '');
 });
+
+// Print has no details view, so its warnings cell never claims "all checked" while allelopathy is unknown (tweaks review).
+test('print says "none found so far", not "all checked", while allelopathy is unknown', () => {
+  const app = read('src/scripts/consortium/app.js');
+  assert.match(app, /T\(t\.warnings\.allelopathic == null \? 'printNoneYet' : 'printNone'\)/);
+  for (const lang of locales) assert.ok(strings[lang].printNoneYet, `${lang}: printNoneYet`);
+});

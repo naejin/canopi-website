@@ -596,6 +596,7 @@
   "consortium.p.time": "Jaren",
   "consortium.p.jobs": "Taken",
   "consortium.printNone": "Geen gevonden (alles gecontroleerd)",
+  "consortium.printNoneYet": "Tot nu toe geen gevonden",
   "consortium.printGaps": "Nog te vinden",
   "consortium.printFree": "Vrije plekken: {n}",
   "consortium.printFoot": "Gemaakt met Canopi: {url}",

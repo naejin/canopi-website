@@ -596,6 +596,7 @@
   "consortium.p.time": "Годы",
   "consortium.p.jobs": "Задачи",
   "consortium.printNone": "Не найдено (всё проверено)",
+  "consortium.printNoneYet": "Пока не найдено",
   "consortium.printGaps": "Ещё найти",
   "consortium.printFree": "Свободных мест: {n}",
   "consortium.printFoot": "Сделано в Canopi: {url}",

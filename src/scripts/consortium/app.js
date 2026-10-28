@@ -637,7 +637,7 @@ function swapParts(m) {
   const headHTML = `<div><h2 id="ct-dlg-title">${T('swapTitle', { name: name(m) })}</h2><p class="lede">${esc(mJobs.length ? T('swapNow', { layer: stratumLabel(s), jobs: W.list(mJobs.map((j) => T('job.' + j))) }) : T('swapNowLayer', { layer: stratumLabel(s) }))}</p><p class="lede">${esc(T('swapLede'))}</p></div>`;
   const body = !all.length ? `<p class="muted">${esc(T('noAlt'))}</p>`
     : `${fit.length ? `<ul class="alt-list" role="list">${fit.map((a, i) => row(a, i === 0)).join('')}</ul>` : ''}
-      ${flagged.length ? `<h3 class="list-label">${esc(T('withWarning'))}</h3><p class="seg-hint">${esc(T('flaggedNote'))}</p><ul class="alt-list" role="list">${flagged.map((a) => row(a, false)).join('')}</ul>` : ''}
+      ${flagged.length ? `<h3 class="list-label">${I.warn} ${esc(T('withWarning'))}</h3><p class="seg-hint">${esc(T('flaggedNote'))}</p><ul class="alt-list" role="list">${flagged.map((a) => row(a, false)).join('')}</ul>` : ''}
       ${more ? `<p>${btn('button button-secondary button-small', 'swap-more', null, esc(P('showMore', more)), fk('swap-more'))}</p>` : ''}`;
   return { head: headHTML, body };
 }
@@ -696,7 +696,7 @@ function printHTML() {
   const ms = ordered(), nums = numbering(), flags = flagsById();
   const rows = ms.map((t) => {
     const s = stratumOf(t), tw = W.timeWords(t), w = warnPlain(t, flags.get(t.id)).join('<br>');
-    return `<tr><td>${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i></td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${w || `<span class="muted">${esc(T('printNone'))}</span>`}</td></tr>`;
+    return `<tr><td>${esc(stratumLabel(s))}</td><td><b>${nums.get(t.id)}. ${name(t)}</b><br><i class="muted">${esc(t.canonical_name)}</i></td><td>${esc(tw.plain)}<br><span class="muted">${esc(tw.term)}</span></td><td>${esc(W.list(jobsOf(t).map((j) => T('job.' + j))))}</td><td>${w || `<span class="muted">${esc(T(t.warnings.allelopathic == null ? 'printNoneYet' : 'printNone'))}</span>`}</td></tr>`;
   }).join('');
   const bands = phaseBands.map((k) => {
     const inBand = ms.filter((t) => bandsOf(t).includes(k));

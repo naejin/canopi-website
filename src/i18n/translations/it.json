@@ -596,6 +596,7 @@
   "consortium.p.time": "Anni",
   "consortium.p.jobs": "Compiti",
   "consortium.printNone": "Nessuno trovato (tutto controllato)",
+  "consortium.printNoneYet": "Nessuno trovato finora",
   "consortium.printGaps": "Ancora da trovare",
   "consortium.printFree": "Posti liberi: {n}",
   "consortium.printFoot": "Fatto con Canopi: {url}",

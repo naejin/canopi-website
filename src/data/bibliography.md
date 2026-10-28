@@ -169,7 +169,7 @@ Not tied to a count: ISBN fallback links (the first edition with no stable page)
 - id: pollinator-victory-garden
 - by: Kim Eierman
 - year: 2020
-- en: [The Pollinator Victory Garden: Win the War on Pollinator Decline with Ecological Gardening](https://www.quarto.com/books/9781631597503/the-pollinator-victory-garden)
+- en: [The Pollinator Victory Garden: Win the War on Pollinator Decline with Ecological Gardening; Attract and Support Bees, Beetles, Butterflies, Bats, and Other Pollinators](https://www.quarto.com/books/9781631597503/the-pollinator-victory-garden)
 
 ### Les auxiliaires au jardin
 - by: Vincent Albouy

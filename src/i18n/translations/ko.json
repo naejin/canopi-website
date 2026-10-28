@@ -596,6 +596,7 @@
   "consortium.p.time": "기간",
   "consortium.p.jobs": "역할",
   "consortium.printNone": "없음(모두 확인됨)",
+  "consortium.printNoneYet": "아직 발견되지 않음",
   "consortium.printGaps": "아직 찾을 것",
   "consortium.printFree": "빈자리: {n}곳",
   "consortium.printFoot": "Canopi로 만듦: {url}",

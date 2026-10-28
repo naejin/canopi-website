@@ -596,6 +596,7 @@
   "consortium.p.time": "年数",
   "consortium.p.jobs": "役割",
   "consortium.printNone": "なし（すべて確認済み）",
+  "consortium.printNoneYet": "今のところ見つかっていません",
   "consortium.printGaps": "まだ探すもの",
   "consortium.printFree": "空き：{n}か所",
   "consortium.printFoot": "Canopiで作成：{url}",

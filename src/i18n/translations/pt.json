@@ -596,6 +596,7 @@
   "consortium.p.time": "Anos",
   "consortium.p.jobs": "Funções",
   "consortium.printNone": "Nenhum encontrado (tudo verificado)",
+  "consortium.printNoneYet": "Nenhum encontrado por enquanto",
   "consortium.printGaps": "Ainda por encontrar",
   "consortium.printFree": "Lugares livres: {n}",
   "consortium.printFoot": "Feito com a Canopi: {url}",

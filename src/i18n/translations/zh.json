@@ -596,6 +596,7 @@
   "consortium.p.time": "年份",
   "consortium.p.jobs": "作用",
   "consortium.printNone": "未发现（均已核实）",
+  "consortium.printNoneYet": "目前未发现",
   "consortium.printGaps": "还要找的",
   "consortium.printFree": "空位：{n} 个",
   "consortium.printFoot": "用 Canopi 制作：{url}",
