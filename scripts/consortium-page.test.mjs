@@ -231,8 +231,8 @@ test('logic: the second click of a double click never removes the plant that sli
 // reading for a plant stays a human check (see the comment in src/data/consortium-guides.ts).
 const kind = {
   Alnus: 'alder', Bambusa: 'bamboo', Dendrocalamus: 'bamboo', Guadua: 'bamboo', Phyllostachys: 'bamboo', Castanea: 'chestnut',
-  Corylus: 'hazel', Gleditsia: 'honey locust', Lavandula: 'lavender', Lupinus: ['lupin', 'lupini'], Morus: 'mulberry', Quercus: 'acorn', Salix: 'willow', Sambucus: 'elder', Solidago: 'goldenrod', Tilia: 'linden',
-  Triticum: 'wheat', 'Vicia faba': 'fava', 'Phaseolus lunatus': 'lima',
+  Corylus: 'hazel', Gleditsia: 'honey locust', Lavandula: 'lavender', Lupinus: ['lupin', 'lupini'], Morus: 'mulberry', Quercus: 'acorn', Salix: 'willow', Sambucus: 'elder', Tilia: 'linden',
+  Triticum: 'wheat', 'Vicia faba': 'fava', 'Phaseolus lunatus': 'lima', 'Phaseolus coccineus': 'runner',
 };
 // Names that contain a cell plant's name but are another plant, or a product rather than the plant.
 // Names that contain a cell plant's word but name another plant.

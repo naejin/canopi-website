@@ -5,17 +5,19 @@ description: Build plan for the 17 Field Guides drawn from Landrace Gardening â€
 tags: [field-guides, plan]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:31:26Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:56Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:e13851d8356776ca
-    last_modified: 2026-10-28T09:26:47Z
+    digest: sha256:d5090f13b3d64365
+    last_modified: 2026-10-28T09:53:43Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
-    digest: sha256:61f3dbcfde78adc1
-    last_modified: 2026-10-28T09:27:42Z
+    digest: sha256:f7e2fc8ce6d55b8c
+    last_modified: 2026-10-28T09:52:50Z
 ---
 
 # Field Guides plan

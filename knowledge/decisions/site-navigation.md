@@ -5,7 +5,7 @@ description: The header carries Guides, Books, Consortium, Donate, language and 
 tags: [decision, navigation]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:10:58Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:10:55Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:55Z }
 sources:
   - id: header-astro
     resource: ../../src/components/Header.astro
@@ -55,13 +55,13 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:b8c17b8d27395b22
-    last_modified: 2026-10-28T07:59:20Z
+    digest: sha256:65dd1467a1a905c9
+    last_modified: 2026-10-28T08:25:21Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
-    digest: sha256:e38c7f91916d5e39
-    last_modified: 2026-10-27T20:27:11Z
+    digest: sha256:2dc6039b3cc2124f
+    last_modified: 2026-10-28T09:38:49Z
 enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 ---
 

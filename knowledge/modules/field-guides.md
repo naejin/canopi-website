@@ -6,13 +6,13 @@ resource: ../../src/components/guides
 tags: [module, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:31:58Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:08:19Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:56Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:e13851d8356776ca
-    last_modified: 2026-10-28T09:26:47Z
+    digest: sha256:d5090f13b3d64365
+    last_modified: 2026-10-28T09:53:43Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
@@ -72,7 +72,7 @@ sources:
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
     digest: sha256:2817fe32215561cf
-    last_modified: 2026-10-28T09:28:13Z
+    last_modified: 2026-10-28T09:32:12Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs

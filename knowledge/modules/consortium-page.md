@@ -2,9 +2,9 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:31:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:53Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T02:08:47Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
@@ -39,13 +39,13 @@ sources:
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
-    digest: sha256:61f3dbcfde78adc1
-    last_modified: 2026-10-28T09:27:42Z
+    digest: sha256:f7e2fc8ce6d55b8c
+    last_modified: 2026-10-28T09:52:50Z
   - id: consortium-page-test-mjs
     resource: ../../scripts/consortium-page.test.mjs
     title: scripts/consortium-page.test.mjs
-    digest: sha256:2486d745df470b2c
-    last_modified: 2026-10-28T09:28:47Z
+    digest: sha256:211b7fae94d63c5f
+    last_modified: 2026-10-28T09:53:06Z
   - id: logic-js
     resource: ../../src/scripts/consortium/logic.js
     title: src/scripts/consortium/logic.js
@@ -54,8 +54,8 @@ sources:
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
-    digest: sha256:e38c7f91916d5e39
-    last_modified: 2026-10-27T20:27:11Z
+    digest: sha256:2dc6039b3cc2124f
+    last_modified: 2026-10-28T09:38:49Z
   - id: dialogs-js
     resource: ../../src/scripts/dialogs.js
     title: src/scripts/dialogs.js
@@ -84,7 +84,7 @@ The consortium tool's page: the visitor picks a climate and a place, and gets 6 
 | [logic.js](../../src/scripts/consortium/logic.js) | Pure page rules tested in node: `withQuery` (the language links' query), `presetPlace` (a guide preset borrows the saved place), `coverageHint` (why a Northern American country is not covered), `droppedPlants` (old-link count), `trimGaps`, `mayPersist`, `photoSource`, `shown` (with `next`, what one "Show more" reveals), `linkMembers` (the link's `a`), `afterMove` (notices dropped on a place change), `repeatClick` (double-click guard), `safeHref` (only http(s) URLs become links), `licenceOf` (licence name and Creative Commons deed link, public domain flagged), `swapTarget` (the plant a details sheet opened from Swap would replace), `relaxTo` (the looser site answer, null when it is the current one) |
 | [data.ts](../../src/scripts/consortium/data.ts) | `loadManifest`, `loadLabels`, `loadCell` from `/data/consortium/` |
 | [consortium.css](../../src/styles/consortium.css) | Everything under `.ct`; strata colours only in the drawing (`.profile`, its numbered labels and key) and the strata legend (`.strata-mini`); number rings elsewhere and timeline bars in neutral ink; in print, the light palette on white whatever the theme |
-| [consortium-guides.ts](../../src/data/consortium-guides.ts) | Guides linked per plant, per job (`null` when no guide covers a job; helpers is `garden-helpers`, the pollinator hub, whose quick answer the test ties to the job's line), and for the explanations; a plant links only guides that grow or use it, never one passing sentence (the pollinator guides add borage, lavender, phacelia, dog rose, purple willow, goldenrod, elder, white clover, tomato and mango; `consortium-page.test.mjs` knows lavender, elder and goldenrod by their kind word) |
+| [consortium-guides.ts](../../src/data/consortium-guides.ts) | Guides linked per plant, per job (one guide for each of the six jobs, never `null`; helpers is `garden-helpers`, the pollinator hub, whose quick answer the test ties to the job's line), and for the explanations; a plant links only guides that grow or use it, never one passing sentence (the pollinator guides add borage, lavender, phacelia, dog rose, purple willow, elder and white clover; goldenrod, tomato and mango were dropped on 2026-10-28 as single mentions). A guide that opens the tool with a plant (`<TryConsortium>`) is linked back from that plant when it really discusses it (runner bean, pigeon pea, walnut, chestnut and carob added 2026-10-28); the presets of olive in `coppice-and-bamboo` and breadfruit in `food-forest` stay one-way under the three-guide cap, and garden-helpers' tomato and mango presets stay one-way as single mentions. `consortium-page.test.mjs` knows lavender, elder and runner bean by their kind word |
 
 Routes: `/consortium/`, `/fr/guilde/` (the French tool is a "guilde"), `/{lang}/consortium/` for the other 9.
 

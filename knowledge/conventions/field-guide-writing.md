@@ -5,18 +5,18 @@ description: The writing, safety, attribution and language rules every Field Gui
 tags: [convention, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:31:36Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:03:01Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:56Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:e13851d8356776ca
-    last_modified: 2026-10-28T09:26:47Z
+    digest: sha256:d5090f13b3d64365
+    last_modified: 2026-10-28T09:53:43Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
     digest: sha256:2817fe32215561cf
-    last_modified: 2026-10-28T09:28:13Z
+    last_modified: 2026-10-28T09:32:12Z
   - id: decisions-field-guides-user-decisions
     resource: /decisions/field-guides-user-decisions.md
   - id: hero-row-ts
@@ -38,7 +38,7 @@ sources:
     resource: ../../src/content/guides/homes-for-pollinators/en.mdx
     title: src/content/guides/homes-for-pollinators/en.mdx
     digest: sha256:3e5ad1d83a776cac
-    last_modified: 2026-10-28T09:26:47Z
+    last_modified: 2026-10-28T09:32:12Z
   - id: en-mdx-2
     resource: ../../src/content/guides/mulch/en.mdx
     title: src/content/guides/mulch/en.mdx

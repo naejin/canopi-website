@@ -3,9 +3,9 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T08:48:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:53Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:32:00Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
   - id: index-ts
     resource: ../../src/components/guides/index.ts
@@ -41,7 +41,7 @@ sources:
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
     digest: sha256:2817fe32215561cf
-    last_modified: 2026-10-28T09:28:13Z
+    last_modified: 2026-10-28T09:32:12Z
   - id: hero-row-ts
     resource: ../../src/components/guides/diagrams/hero-row.ts
     title: src/components/guides/diagrams/hero-row.ts
@@ -205,7 +205,7 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   of a beta cell: as the last thing in a climate block, after its list, its closing sentence and any
   `<FoodCaution>` or `<Safety>` box (the warning stays beside what it warns about), or after a plant
   guide's season checklist. Not for a plant the guide says needs a large or special planting the tool
-  does not build (Nuts as a staple links the cashew, not the Brazil nut).
+  does not build (Nuts as a staple links the cashew, not the Brazil nut). One link per climate block or paragraph, never two in a row: each repeats the label, so a paragraph that names several beta plants links the one it is about (Flowers all season links phacelia after its paragraph on borage, lavender and phacelia; the other two keep their tool → guide rows).
 
 # Crop components (data: `src/data/crops.ts`)
 - `<CropCard crop="corn" />` — `crop` required (crop id; unknown id fails the build).
