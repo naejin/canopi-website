@@ -7,13 +7,13 @@ tags: [module, tooling]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T16:45:20Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T18:58:03Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T19:35:51Z }
 sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:29e5aa0a2c60ebcb
-    last_modified: 2026-10-28T18:49:02Z
+    digest: sha256:f2a22794996e6bf1
+    last_modified: 2026-10-28T19:13:55Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -27,8 +27,8 @@ sources:
   - id: consortium-list-ui-test-mjs
     resource: ../../scripts/consortium-list-ui.test.mjs
     title: scripts/consortium-list-ui.test.mjs
-    digest: sha256:d6bcd373d1fc8544
-    last_modified: 2026-10-28T18:49:02Z
+    digest: sha256:ba78da15df3f1b45
+    last_modified: 2026-10-28T19:13:55Z
 ---
 
 # Responsibility

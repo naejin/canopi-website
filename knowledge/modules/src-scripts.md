@@ -7,18 +7,18 @@ tags: [module, frontend]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T16:45:20Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T18:58:03Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T19:35:52Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:933b489a6458b364
-    last_modified: 2026-10-28T18:48:15Z
+    digest: sha256:623b3bb4df45f923
+    last_modified: 2026-10-28T19:13:06Z
   - id: scale-js
     resource: ../../src/scripts/consortium/scale.js
     title: src/scripts/consortium/scale.js
-    digest: sha256:71f66e5a2c0a787b
-    last_modified: 2026-10-28T18:44:21Z
+    digest: sha256:a4caffa5c9f4a2f0
+    last_modified: 2026-10-28T19:12:56Z
 ---
 
 # Responsibility

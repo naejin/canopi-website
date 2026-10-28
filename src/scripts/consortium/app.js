@@ -22,7 +22,7 @@ import { memoryOf, startState, MINE } from './memory.js';
 import { climates } from '../../data/climates.ts';
 import { profileSVG } from './draw.js';
 import { pestName } from './pests.js';
-import { viewMode, groupOpen, roundHeight, misfitSize, stageSpan, stageShort, warnKinds, pestsOf, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, pasteColumn, pasteDefault, PEST_TYPES, CARDS_UP_TO } from './scale.js';
+import { viewMode, groupOpen, roundHeight, misfitSize, shownHeight, stageSpan, stageShort, warnKinds, pestsOf, NO_FILTERS, FILTER_KEYS, filtering, matches, filterOrder, selectRange, groupTick, pasteTable, pasteNames, readPaste, columnSample, pasteColumn, pasteDefault, PEST_TYPES, CARDS_UP_TO } from './scale.js';
 
 const data = JSON.parse(document.getElementById('ct-data').textContent);
 const W = makeWords(data.strings, data.lang);
@@ -131,13 +131,19 @@ let addTab = 'search', pasteText = '', pasteCol = 0, pasteTicks = new Map(), pas
 function resetList() { mode = null; pin = null; filterView = false; F = { ...NO_FILTERS }; fOrder = []; fMenu = null; rMenu = null; anchor = null; sel = new Set(); groups.clear(); fgroups.clear(); foldN = null; }
 // A new list of plants (a paste added) reads the fold default again.
 function resetFold() { foldN = null; groups.clear(); fgroups.clear(); }
-// B14, H3: near 20 plants a Remove, an Add or a Swap holds the view the count gave, so it never flips
-// under the reader; it is never stored as the reader's choice, holds only within PIN_NEAR plants of
-// the threshold, and a bulk add drops it (a paste to 200 shows the List).
+// B14, H3, K1: a Remove, an Add or a Swap holds the view shown before it whenever the count after it
+// is 20 or fewer, or near 20 (within PIN_NEAR), so a step never flips the view under the reader (a
+// Remove from 31 to 20 keeps the List). It is never stored as the reader's choice, holds only while
+// the count stays there, and a bulk add drops it (a paste to 200 shows the List).
 const PIN_NEAR = 10;
-const near = (n) => Math.abs(n - CARDS_UP_TO) <= PIN_NEAR;
-const heldView = (n) => (pin && near(n) ? pin : null);
-function pinView() { if (mode || !cell || S.status !== 'ready') return; const n = members().length; pin = near(n) ? viewMode(heldView(n), n) : null; }
+const holds = (n) => n <= CARDS_UP_TO || Math.abs(n - CARDS_UP_TO) <= PIN_NEAR;
+const heldView = (n) => (pin && holds(n) ? pin : null);
+// after: the count the step leaves (a Remove: fewer).
+function pinView(after) {
+  if (mode || !cell || S.status !== 'ready') return;
+  const n = members().length;
+  pin = holds(after ?? n) ? viewMode(heldView(n), n) : null;
+}
 // The view shown: the reader's choice, else the list a filter opened, else the held or default view.
 function shownMode() { const n = members().length; return mode ?? (filterView ? 'list' : viewMode(heldView(n), n)); }
 // What Start over → Undo gives back with the consortium (B14).
@@ -713,7 +719,7 @@ function listGroups() {
 }
 // The rows in view, in order: Shift ranges and "the next row" after Remove read them.
 const visibleOrder = () => listGroups().filter((g) => g.open).flatMap((g) => g.list.map((t) => t.id));
-const heightText = (t) => { const h = roundHeight(t.traits.height_m?.max); return h == null ? T('noHeight') : T('meters', { v: W.num(h) }); };
+const heightText = (t) => { const h = shownHeight(t, ROOM_LIMIT_M[S.site?.room] ?? Infinity); return h == null ? T('noHeight') : T('meters', { v: W.num(h) }); };
 function stageShortText(t) {
   const s = stageShort(stageSpan(t));
   if (!s) return '';
@@ -1719,6 +1725,7 @@ function keepWarnFilter() {
   const swap = { invasive: 'somewhere', somewhere: 'invasive' }[F.warn];
   F = { ...F, warn: swap && filterValues('warn').some(([v]) => v === swap) ? swap : '' };
   if (!F.warn) fOrder = fOrder.filter((k) => k !== 'warn');
+  if (!filtering(F)) filterView = false;
 }
 function chooseCountry(code) {
   S.country = code; S.countrySource = 'user'; S.noCountry = !code; S.unknownCountry = null; S.linkCode = null; countryQuery = '';
@@ -1728,6 +1735,38 @@ function chooseCountry(code) {
   closeSheet(false);
   render(); syncLangLinks(); focusFk('pc-country', app);
   say(countryAnnouncement(W, place()));
+}
+// The steps Undo takes back (act.undo gives the focus its tail).
+function undoStep(v) {
+  if (v === 'bulk' && lastBulk) {
+    // One step back for a bulk Keep, Remove or Add: the plants, their kept pins and crops as they were.
+    const b = lastBulk; lastBulk = null;
+    Object.assign(S, { members: b.members, kept: b.kept, removed: b.removed, crops: b.crops, guests: b.guests, gaps: b.gaps, status: b.status });
+    // The focus goes to a row the reader can see (B4): the first one back that shows, else the
+    // first one back, its group opened and the filters that hide it cleared.
+    const here = b.ids.filter((id) => S.members.includes(id));
+    let back = here.find((id) => visibleOrder().includes(id));
+    if (!back && here.length) { back = here[0]; reveal(back); }
+    focusNext = back && listMode() ? 'sel-' + back : back ? 'pn-' + back : 'plants-title';
+    render();
+    if (!O && !app.contains(document.activeElement)) focusFk('plants-title', app);
+    return;
+  }
+  if (v === 'start' && undoStart) {
+    // B2: the state, its cell and its own Undo come back together.
+    // H8: the list's Warning filter is read against the country kept, as a country choice does (B10).
+    S = keepCountry(undoStart.S, S); ({ cell, lastRemoved } = undoStart); restoreList(undoStart.list); undoStart = null; evalKey = ''; keepWarnFilter(); focusNext = 'start-over'; render(); return;
+  }
+  if (v === 'redo' && undoRedo) {
+    const u = undoRedo; undoRedo = null; redoNext = null; loadSeq++;
+    S = keepCountry(u.S, S); cell = u.cell; evalKey = ''; focusNext = u.focus; render();
+    if (!O && !app.contains(document.activeElement)) focusFk('basis', app) || document.getElementById('ct-result-title')?.focus();
+    say(T('announce', { summary: P('count', S.members.length) }));
+    return;
+  }
+  const r = lastRemoved; if (!r) return;
+  S.members.splice(r.idx, 0, r.id); S.removed.delete(r.id); if (r.wasKept) S.kept.add(r.id); if (r.crop >= 0) S.crops.splice(r.crop, 0, r.id);
+  S.gaps = S.gaps.filter((g) => g.id !== r.id); lastRemoved = null; reveal(r.id); focusNext = 'pn-' + r.id; render(); flash(r.id);
 }
 const act = {
   // A new climate asks the crop question again: crops and plants from other lists belong to the old one.
@@ -1793,7 +1832,7 @@ const act = {
   'confirm-no'() { const id = O.confirm; O.confirm = null; renderSheet(confirmFrom(id)); },
   remove(v) {
     const t = taxonOf(v), idx = S.members.indexOf(v);
-    pinView();
+    pinView(members().length - 1);
     // A plant from another list is not "removed" from this one: it simply leaves.
     S.members = S.members.filter((id) => id !== v); if (!S.guests.has(v)) S.removed.add(v); const wasKept = S.kept.delete(v);
     const crop = S.crops.indexOf(v); if (crop >= 0) S.crops.splice(crop, 1);
@@ -1801,39 +1840,11 @@ const act = {
     lastRemoved = { id: v, idx, wasKept, crop };
     closeSheet(false); render(); toast(T('removed', { name: name(t) }), 'remove'); focusFk('undo', toastEl);
   },
+  // K2: one tail for every Undo: pressed inside an open sheet, the focus stays in the sheet.
   undo(v) {
     hideToast();
-    if (v === 'bulk' && lastBulk) {
-      // One step back for a bulk Keep, Remove or Add: the plants, their kept pins and crops as they were.
-      const b = lastBulk; lastBulk = null;
-      Object.assign(S, { members: b.members, kept: b.kept, removed: b.removed, crops: b.crops, guests: b.guests, gaps: b.gaps, status: b.status });
-      // The focus goes to a row the reader can see (B4): the first one back that shows, else the
-      // first one back, its group opened and the filters that hide it cleared.
-      const here = b.ids.filter((id) => S.members.includes(id));
-      let back = here.find((id) => visibleOrder().includes(id));
-      if (!back && here.length) { back = here[0]; reveal(back); }
-      focusNext = back && listMode() ? 'sel-' + back : back ? 'pn-' + back : 'plants-title';
-      render();
-      // H5: an Undo pressed inside an open sheet keeps the focus in it.
-      if (O) { focusFk(O.type === 'add' && addTab === 'search' ? 'add-q' : 'close', dlg) || dlg.querySelector('.dialog-close')?.focus(); return; }
-      if (!app.contains(document.activeElement)) focusFk('plants-title', app);
-      return;
-    }
-    if (v === 'start' && undoStart) {
-      // B2: the state, its cell and its own Undo come back together.
-      // H8: the list's Warning filter is read against the country kept, as a country choice does (B10).
-      S = keepCountry(undoStart.S, S); ({ cell, lastRemoved } = undoStart); restoreList(undoStart.list); undoStart = null; evalKey = ''; keepWarnFilter(); focusNext = 'start-over'; render(); return;
-    }
-    if (v === 'redo' && undoRedo) {
-      const u = undoRedo; undoRedo = null; redoNext = null; loadSeq++;
-      S = keepCountry(u.S, S); cell = u.cell; evalKey = ''; focusNext = u.focus; render();
-      if (!app.contains(document.activeElement)) focusFk('basis', app) || document.getElementById('ct-result-title')?.focus();
-      say(T('announce', { summary: P('count', S.members.length) }));
-      return;
-    }
-    const r = lastRemoved; if (!r) return;
-    S.members.splice(r.idx, 0, r.id); S.removed.delete(r.id); if (r.wasKept) S.kept.add(r.id); if (r.crop >= 0) S.crops.splice(r.crop, 0, r.id);
-    S.gaps = S.gaps.filter((g) => g.id !== r.id); lastRemoved = null; reveal(r.id); focusNext = 'pn-' + r.id; render(); flash(r.id);
+    undoStep(v);
+    if (O && dlg.open && !dlg.contains(document.activeElement)) focusFk(O.type === 'add' && addTab === 'search' ? 'add-q' : 'close', dlg) || dlg.querySelector('.dialog-close')?.focus();
   },
   keep(v) {
     const t = taxonOf(v), order = listMode() ? visibleOrder() : [];
@@ -1989,7 +2000,7 @@ const act = {
     const order = visibleOrder(), last = Math.max(...ids.map((id) => order.indexOf(id)));
     const next = order.slice(last + 1).find((id) => !sel.has(id)) ?? [...order].reverse().find((id) => !sel.has(id));
     const names = namesLine(ids);
-    dropUndo(); lastBulk = snapshot(ids); pinView();
+    dropUndo(); lastBulk = snapshot(ids); pinView(members().length - ids.length);
     const gone = new Set(ids);
     S.members = S.members.filter((id) => !gone.has(id)); S.kept = new Set([...S.kept].filter((id) => !gone.has(id))); S.crops = S.crops.filter((id) => !gone.has(id));
     S.removed = new Set(S.removed); for (const id of ids) if (!S.guests.has(id)) S.removed.add(id);
@@ -2146,7 +2157,11 @@ root.addEventListener('input', (e) => {
   if (el.dataset.input === 'crop') { cropQuery = el.value; refreshCrops(); }
   // The list's search redraws the rows at once and says the count once typing pauses.
   if (el.dataset.input === 'find') {
+    const was = listMode();
     F = { ...F, q: el.value }; fgroups.clear();
+    // K3: with no filter left, the list a "Show n" opened goes, and the view shown follows.
+    if (!filtering(F)) filterView = false;
+    if (was !== listMode()) { focusNext = 'plants-title'; render(); sayResults(); return; }
     if (!patchList(new Set())) refreshList();
     if (fMenu) patchChip(fMenu);
     sayResults();

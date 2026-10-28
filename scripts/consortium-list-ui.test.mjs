@@ -781,3 +781,65 @@ test('C4: with no country, the invasive line and filter name the count of countr
   await frPage.page.act('no-country');
   assert.equal(frPage.page.text('.att-somewhere strong'), `Envahissante dans ${n} pays`);
 });
+
+const linkN = (n) => '/consortium/#' + core.encodeState({ climate: 'temperate', country: 'FR', site: { ...core.DEFAULT_SITE }, kept: ids.slice(0, n), removed: [], members: ids.slice(0, n), plants: [], crops: [], guests: [] }, temperate).toString();
+const listOn = (page) => page.$('[data-act="mode"][data-v="list"]')?.attribs['aria-pressed'] === 'true';
+const openGroups = async (page) => { for (const g of ['emergent', 'high', 'medium', 'low']) if (page.$(`[data-act="group"][data-v="${g}"][aria-expanded="false"]`)) await page.act('group', g); };
+
+test('K1: a Remove never changes the view shown: a bulk Remove from 31 plants to 20 keeps the List, rows and focus', async () => {
+  const t = tab(device(), linkN(31), { data: 'real' });
+  const page = await t.load();
+  assert.ok(listOn(page));
+  await openGroups(page);
+  for (const id of rows(page).slice(0, 11)) await page.act('sel', id);
+  await page.act('bulk-remove');
+  assert.equal(stateOf(t).members.length, 20);
+  assert.ok(listOn(page), 'still the List');
+  assert.equal(cards(page).length, 0);
+  assert.equal(rows(page).length, 20);
+  assert.match(page.focused()?.attribs?.['data-fk'] ?? '', /^sel-/, 'the focus on the next row');
+  // And on down: a Remove to 9 keeps it too.
+  for (const id of rows(page).slice(0, 11)) await page.act('sel', id);
+  await page.act('bulk-remove');
+  assert.ok(listOn(page) && rows(page).length === 9);
+  // From Cards, a Remove keeps the Cards.
+  const c = tab(device(), linkN(15), { data: 'real' });
+  const p2 = await c.load();
+  await p2.act('remove', cards(p2)[0]);
+  assert.ok(!listOn(p2) && cards(p2).length === 14);
+});
+
+test('K2: every Undo pressed in an open sheet leaves the focus in the sheet', async () => {
+  const t = tab(device(), '/consortium/', { siteClimate: 'temperate', data: 'real' });
+  const page = await t.load();
+  await page.act('suggest');
+  const n = stateOf(t).members.length;
+  await page.act('remove', cards(page)[0]);
+  await page.act('open-add', 'grow');
+  const dlg = page.$('#ct-dialog');
+  assert.ok(dlg.querySelector('#ct-toast [data-act="undo"]'));
+  await page.act('undo');
+  assert.equal(stateOf(t).members.length, n);
+  assert.ok(dlg.open && dlg.contains(page.focused()), 'a single Remove\'s Undo');
+  await page.act('close');
+  await page.act('start-over');
+  await page.act('open-place', 'country');
+  assert.ok(dlg.querySelector('#ct-toast [data-act="undo"]'));
+  await page.act('undo', 'start');
+  assert.ok(dlg.open && dlg.contains(page.focused()), 'Start over\'s Undo');
+});
+
+test('K3: when the Find text was the last filter, deleting it gives the count\'s default view back', async () => {
+  const t = tab(device(), '/consortium/', { siteClimate: 'temperate', data: 'real' });
+  const page = await t.load();
+  await page.act('suggest');
+  await click(page, page.$('.att-line [data-act="fset"]'));
+  assert.ok(listOn(page));
+  await page.type('[data-input="find"]', 'a');
+  const chip = page.$('.fchip.is-on [data-act="fclear"]') ?? page.$('[data-act="fclear"]');
+  await click(page, chip);
+  assert.ok(listOn(page), 'the Find text still filters');
+  await page.type('[data-input="find"]', '');
+  assert.ok(!listOn(page), 'no filter left: the Cards again');
+  assert.ok(cards(page).length > 0);
+});
