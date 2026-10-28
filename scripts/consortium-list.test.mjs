@@ -262,3 +262,34 @@ test('H11: a room misfit never shows a size the room takes: the shown size is al
     assert.ok(S.misfitSize(size, core.ROOM_LIMIT_M[room]) > core.ROOM_LIMIT_M[room], `${t.canonical_name} in a ${room} garden: ${size}`);
   }
 });
+
+test('K4: past a line break, a closing quote before a tab, a line break or the end closes the quoted cell when the rows keep the table\'s column count', () => {
+  assert.deepEqual([...S.pasteNames('Malus domestica\t"Prune in\nwinter"\nPyrus communis\tsun')], ['Malus domestica', 'Pyrus communis']);
+  assert.deepEqual([...S.pasteNames('Pyrus communis\tsun\nMalus domestica\t"Prune in\nwinter"')], ['Pyrus communis', 'Malus domestica'], 'the quoted cell in the last row');
+  assert.deepEqual(S.pasteTable('Malus domestica\t"Prune in\nwinter"\nPyrus communis\tsun').rows, [['Malus domestica', 'Prune in\nwinter'], ['Pyrus communis', 'sun']]);
+  // Read that way the rows would not keep the column count: the quote stays text, each line a line.
+  assert.deepEqual([...S.pasteNames('Malus\t"x\nPear"\nPrunus\ty\nQuince')], ['Malus', 'Pear', 'Prunus', 'Quince']);
+  // A list with no tabs has no columns to keep: a quote across lines never joins two names.
+  assert.deepEqual([...S.pasteNames('"Apple\nPear"')], ['Apple', 'Pear']);
+});
+
+test('K5: a first row of column names in any of the 11 languages is a header; no real plant name in the three lists is', () => {
+  for (const h of ['Nome comune', 'Nome latino', 'Lateinischer Name', 'Latijnse naam', 'Nome popular', '植物名', '植物名称', 'Common name(s)', 'Scientific name(s)', 'Nom(s) commun(s)', 'Nombre común', 'Nome científico', 'Wissenschaftlicher Name', 'Nederlandse naam', 'Научное название', '学名', '和名', '학명'])
+    assert.ok(S.looksLikeHeader(h), h);
+  assert.deepEqual([...S.pasteNames('Nome comune\nMelo\nPero')], ['Melo', 'Pero']);
+  for (const cell of [temperate, mediterranean, tropical]) for (const t of cell.taxa)
+    for (const n of [t.canonical_name, ...Object.values(t.names ?? {})]) assert.ok(!S.looksLikeHeader(n), `${n} is a plant, not a header`);
+});
+
+test('K6: when the room flags a plant by its height, the height shown is the size its warning gives', () => {
+  let seen = 0;
+  for (const cell of [temperate, mediterranean, tropical]) for (const t of cell.taxa) for (const room of ['small', 'large', 'field']) {
+    const limit = core.ROOM_LIMIT_M[room], h = t.traits.height_m?.max ?? null, w = t.traits.width_max_m ?? 0;
+    const flagged = core.fits(t, { ...core.DEFAULT_SITE, room }).misfits.includes('room');
+    const shown = S.shownHeight(t, limit);
+    if (flagged && h != null && h >= w) { seen++; assert.equal(shown, S.misfitSize(Math.max(h, w), limit), `${t.canonical_name} in a ${room} garden`); }
+    else assert.equal(shown, S.roundHeight(h));
+  }
+  assert.ok(seen > 0);
+  assert.equal(S.shownHeight({ traits: { height_m: { max: 6.096 } } }, 6), 6.1);
+});

@@ -33,6 +33,13 @@ export function misfitSize(m, limit) {
   const r = roundHeight(m) ?? 0;
   return r > limit ? r : Math.ceil(m * 10 - 1e-9) / 10;
 }
+// K6: the height a row, card, details, paste or print shows: when the room flags the plant by its
+// height (the larger of height and width, over the limit), the size its warning gives, else
+// roundHeight. null when the height is unknown.
+export function shownHeight(t, limit) {
+  const h = t.traits?.height_m?.max ?? null, w = t.traits?.width_max_m ?? 0;
+  return h != null && h > limit && h >= w ? misfitSize(h, limit) : roundHeight(h);
+}
 
 // The stages a plant leads in, as indexes into phases ({ a, b }), or null when not checked.
 export const stageSpan = (t) => (t.phases ? { a: phases.indexOf(t.phases.start), b: phases.indexOf(t.phases.end) } : null);
@@ -117,20 +124,22 @@ export function groupTick(ids, selected) {
 // H10: only a quote that a spreadsheet would close opens a quoted cell: its closing quote is on the
 // same line and ends the cell (a tab, a line break or the end follows), or, past a line break, is
 // followed by a tab (the row goes on). Any other quote is text, and never swallows the lines after it.
-function quotedEnd(src, i) {
+// K4: in a table (tabs), a closing quote past a line break followed by a line break or the end also
+// closes the cell, when the rows read that way all keep the table's column count.
+function quotedEnd(src, i, wide) {
   let lines = false;
   for (let j = i + 1; j < src.length; j++) {
     const c = src[j];
     if (c === '\n') lines = true;
     if (c !== '"') continue;
     if (src[j + 1] === '"') { j++; continue; }
-    const next = src[j + 1];
-    return (lines ? next === '\t' : next === undefined || next === '\t' || next === '\n') ? j : -1;
+    const next = src[j + 1], ends = next === undefined || next === '\t' || next === '\n';
+    return (lines ? next === '\t' || (wide && ends) : ends) ? j : -1;
   }
   return -1;
 }
-export function pasteTable(text) {
-  const src = String(text ?? '').replace(/\r\n?/g, '\n'), rows = [];
+function readTable(src, wide) {
+  const rows = [];
   let row = [], cell = '', quoted = false, start = true, tabs = false;
   const endCell = () => { row.push(cell.replace(/\s+$/, '')); cell = ''; start = true; };
   const endRow = () => { endCell(); if (row.some((c) => c.trim())) rows.push(row); row = []; };
@@ -142,7 +151,7 @@ export function pasteTable(text) {
       else cell += c;
       continue;
     }
-    if (start && c === '"' && quotedEnd(src, i) > 0) { quoted = true; start = false; continue; }
+    if (start && c === '"' && quotedEnd(src, i, wide) > 0) { quoted = true; start = false; continue; }
     if (c === '\t') { tabs = true; endCell(); continue; }
     if (c === '\n') { endRow(); continue; }
     if (start && /\s/.test(c)) { cell += c; continue; }
@@ -150,6 +159,13 @@ export function pasteTable(text) {
   }
   endRow();
   return { rows: tabs ? rows : rows.map((r) => [r.join('\t')]), columns: Math.max(0, ...rows.map((r) => r.length)) };
+}
+export function pasteTable(text) {
+  const src = String(text ?? '').replace(/\r\n?/g, '\n');
+  const strict = readTable(src, false);
+  if (!src.includes('\t') || !src.includes('"')) return strict;
+  const wide = readTable(src, true);
+  return wide.rows.length < strict.rows.length && wide.rows.every((r) => r.length === strict.columns) ? wide : strict;
 }
 // The column names are read from, always one the text has (B9): a plain list after a 3-column one reads column 1.
 export const pasteColumn = (text, column) => (column > 0 && column < pasteTable(text).columns ? column : 0);
@@ -167,10 +183,15 @@ const HEADER_WORDS = new Set([
   'wissenschaftlicher', 'botanischer', 'deutscher', 'art', 'arten', 'pflanze', 'pflanzen', 'gattung', 'familie', 'sorte', 'anzahl', 'menge', 'naam', 'wetenschappelijke', 'nederlandse', 'soort', 'soorten', 'geslacht', 'aantal',
   // ru
   'название', 'научное', 'латинское', 'русское', 'вид', 'растение', 'растения', 'род', 'семейство', 'сорт', 'количество', 'имя',
+  // K5: more of the usual column words
+  'comune', 'latino', 'volgare', 'italiano', 'botanico', 'botanica', 'popular', 'vulgar', 'latim', 'cientifica', 'portugues', 'espanol', 'botanique',
+  'lateinischer', 'lateinisch', 'trivialname', 'deutsch', 'latijnse', 'gewone', 'botanische', 'wetenschappelijk', 'nederlands', 'vernacular',
+  'научное', 'название', 'русское', 'латинское', 'наименование', 'ботаническое', 'общее',
   // zh, ja, ko (written without spaces: the whole cell)
-  '名称', '名字', '学名', '中文名', '拉丁名', '物种', '种', '植物', '属', '科', '品种', '数量', '名前', '和名', '種', '種類', '数', '이름', '학명', '종', '식물', '속', '과', '품종', '수량',
+  '植物名', '植物名称', '中文名称', '拉丁学名', '俗名', '通用名', '物种名', '一般名', '식물명', '일반명', '국명', '名称', '名字', '学名', '中文名', '拉丁名', '物种', '种', '植物', '属', '科', '品种', '数量', '名前', '和名', '種', '種類', '数', '이름', '학명', '종', '식물', '속', '과', '품종', '수량',
 ].map(fold));
-const JOINING = new Set(['of', 'the', 'de', 'du', 'des', 'la', 'le', 'del', 'da', 'do', 'di', 'der', 'die', 'das', 'en', 'in', 'van', 'het', 'een', 'e', 'y', 'et', 'and', 'und', 'en']);
+// 's' is the plural of "name(s)" (K5).
+const JOINING = new Set(['s', 'of', 'the', 'de', 'du', 'des', 'la', 'le', 'del', 'da', 'do', 'di', 'der', 'die', 'das', 'en', 'in', 'van', 'het', 'een', 'e', 'y', 'et', 'and', 'und', 'en']);
 export function looksLikeHeader(cell) {
   const words = fold(String(cell ?? '')).replace(/[()[\]:.#/_*-]/g, ' ').split(/\s+/).filter(Boolean);
   const own = words.filter((w) => !JOINING.has(w));
