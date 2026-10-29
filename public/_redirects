@@ -2,8 +2,3 @@
 # Language detection is handled client-side in Base.astro
 # Keep /app/assets/ and /app/canopi-catalog/ files direct.
 /app/:route /app/ 200
-# The consortium tool is /fr/guilde/ in French: guessed paths go there (plain rules; the query string is kept).
-/fr/consortium/ /fr/guilde/ 301
-/fr/consortium /fr/guilde/ 301
-/guilde/ /fr/guilde/ 301
-/guilde /fr/guilde/ 301

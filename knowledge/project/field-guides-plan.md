@@ -6,13 +6,13 @@ tags: [field-guides, plan]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:06:35Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:53:30Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:39Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:dc0d49806e584993
-    last_modified: 2026-10-28T23:53:25Z
+    digest: sha256:ed6176f3515735a8
+    last_modified: 2026-10-29T04:59:27Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts

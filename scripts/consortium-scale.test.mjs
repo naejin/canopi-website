@@ -258,8 +258,8 @@ test('C8: memory.arrive moves a query link into the fragment before anything els
   assert.equal(tab.location.search, '', 'no query left for a request to carry');
   assert.equal(tab.location.hash, '#v=2&c=temperate&k=FR');
   assert.equal(m.fromFragment, false, 'a query v3 link is not checked for its end marker');
-  assert.equal(withHash('/fr/guilde/', '#v=3&c=temperate&e=1'), '/fr/guilde/#v=3&c=temperate&e=1');
-  assert.equal(withHash('/fr/guilde/?old=1#x', ''), '/fr/guilde/');
+  assert.equal(withHash('/fr/consortium/', '#v=3&c=temperate&e=1'), '/fr/consortium/#v=3&c=temperate&e=1');
+  assert.equal(withHash('/fr/consortium/?old=1#x', ''), '/fr/consortium/');
   assert.equal(langHash(`#v=3&c=temperate&${MINE}=DE`), '#v=3&c=temperate');
   assert.equal(langHash('#main'), '', 'a page anchor is not carried');
   assert.equal(langHash(''), '');

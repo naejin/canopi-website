@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T12:32:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:24Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:b726d0559715d5b9
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:775266072808943b
+    last_modified: 2026-10-29T04:59:27Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -60,8 +60,8 @@ sources:
   - id: tryconsortium-astro
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
-    digest: sha256:f5b4c40512da0ae4
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:5564864731574a7e
+    last_modified: 2026-10-29T04:59:27Z
   - id: try-consortium-ts
     resource: ../../src/components/guides/try-consortium.ts
     title: src/components/guides/try-consortium.ts
@@ -186,7 +186,7 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   so a section may name a guide before it is written; nothing renders if none is published.
 - `<TryConsortium plant="Artocarpus altilis" climate="tropical" name="Breadfruit" />` — opens the
   consortium tool (beta) with the guide's plant kept and its climate set:
-  `consortiumPath(lang)?plant=<canonical_name>&climate=<id>` (`/consortium/`, fr `/fr/guilde/`).
+  `consortiumPath(lang)?plant=<canonical_name>&climate=<id>` (`/consortium/`, fr `/fr/consortium/`).
   `plant` required: a `canonical_name` in a beta climate file (`public/data/consortium/*.json`); `name`
   required: the guide's own name for the plant in that file's language (en and fr differ); `climate`
   optional: the zone of the `<ForClimate>` block it sits in, and the plant must be in that climate's file. Left

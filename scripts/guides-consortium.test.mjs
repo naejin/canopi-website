@@ -112,8 +112,8 @@ test('a preset without a climate links every beta climate that has the plant, on
 
 test('a preset with a climate links that climate only, in the French slug too', () => {
   const plant = [...liveClimates.find((f) => f.climate === 'tropical').names][0];
-  assert.deepEqual(presetLinks('/fr/guilde/', plant, 'tropical', liveClimates), [
-    { climate: 'tropical', href: `/fr/guilde/?${new URLSearchParams({ plant, climate: 'tropical' })}` },
+  assert.deepEqual(presetLinks('/fr/consortium/', plant, 'tropical', liveClimates), [
+    { climate: 'tropical', href: `/fr/consortium/?${new URLSearchParams({ plant, climate: 'tropical' })}` },
   ]);
 });
 

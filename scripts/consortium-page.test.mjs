@@ -407,8 +407,8 @@ const home = Object.fromEntries(locales.map((lang) => [lang, JSON.parse(read(`sr
 test('logic: the language links carry the tool\'s state, in the fragment, and only it (seam M1, C8)', () => {
   assert.equal(withHash('/de/consortium/', langHash('#plant=Cocos+nucifera&climate=tropical')), '/de/consortium/#plant=Cocos+nucifera&climate=tropical');
   assert.equal(withHash('/de/consortium/?old=1', ''), '/de/consortium/');
-  assert.equal(withHash('/fr/guilde/', '#'), '/fr/guilde/');
-  assert.equal(withHash('/fr/guilde/', langHash('#main')), '/fr/guilde/', 'the skip link\'s anchor is not the tool\'s');
+  assert.equal(withHash('/fr/consortium/', '#'), '/fr/consortium/');
+  assert.equal(withHash('/fr/consortium/', langHash('#main')), '/fr/consortium/', 'the skip link\'s anchor is not the tool\'s');
   assert.match(app, /syncLangLinks\(\)/);
 });
 
@@ -439,12 +439,17 @@ test('the home section and the tool share one intro and one beta word (seam m6)'
   assert.match(read('src/components/ConsortiumSection.astro'), /t\('consortium\.beta', lang\)/);
 });
 
-test('static redirects for guessed French and English paths (seam m11)', () => {
-  const rules = read('public/_redirects').split('\n').map((l) => l.trim().split(/\s+/)).filter((r) => r.length === 3);
-  const to = (from) => rules.find((r) => r[0] === from);
-  assert.deepEqual(to('/fr/consortium/'), ['/fr/consortium/', '/fr/guilde/', '301']);
-  assert.deepEqual(to('/guilde/'), ['/guilde/', '/fr/guilde/', '301']);
+// Owner decision 2026-10-29 (decision log, c62d97c): the tool is /consortium/ in every language, French
+// included (/fr/consortium/; the page still says « guilde »). /fr/guilde/ was never published: no page, no
+// redirect, no link.
+test('the tool is /consortium/ in every language, French included; /fr/guilde/ is gone', async () => {
+  const { consortiumPath } = await import('../src/i18n/consortium-path.js');
+  for (const lang of locales) assert.equal(consortiumPath(lang), lang === 'en' ? '/consortium/' : `/${lang}/consortium/`, lang);
+  assert.ok(!existsSync(new URL('../src/pages/fr/guilde.astro', import.meta.url)), 'no French page of its own');
+  assert.doesNotMatch(read('src/pages/[lang]/consortium.astro'), /'fr'/, '[lang]/consortium.astro builds fr too');
+  assert.doesNotMatch(read('public/_redirects'), /guilde/, 'no redirect for a path never published');
   assert.doesNotMatch(read('public/_redirects'), /Language=/);
+  for (const f of ['src/i18n/utils.ts', 'src/i18n/consortium-path.js', 'scripts/consortium-harness.mjs', 'src/content/guides/garden-helpers/fr.mdx', 'src/content/guides/flowers-for-pollinators/fr.mdx']) assert.doesNotMatch(read(f), /\/fr\/guilde|guilde\.astro/, f);
 });
 
 test('the header works even if the tool fails to start (seam m10)', () => {

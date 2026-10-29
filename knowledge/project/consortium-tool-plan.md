@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T22:57:30Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:24Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:53:28Z }
 sources:
@@ -46,8 +46,8 @@ and `docs/consortium-export.schema.json`, format 3 (one plant list per climate, 
 the region-cell plan of format 2 is superseded where this page says so).
 
 ## Release scope (beta)
-- One page, `/consortium/` (English and 9 locales: `/<lang>/consortium/`),
-  `/fr/guilde/` in French. Title "Design a consortium" / « Composer une guilde »,
+- One page, `/consortium/` in English and `/<lang>/consortium/` in the 10 other
+  locales, French included (owner, 2026-10-29; the French page still says « guilde »). Title "Design a consortium" / « Composer une guilde »,
   a **Beta** badge and a feedback link to the site's contact form.
 - Three climates: Tropical, Mediterranean and Temperate, 200 plants each (the
   2026-10-28 export). Every other climate is choosable and shows "not covered

@@ -39,7 +39,7 @@ test('the guide folders are the subdirectories only: a stray file such as .DS_St
 
 test('an href is read as the browser reads it: entities decoded, then path, query and hash apart', () => {
   assert.deepEqual(splitHref('/consortium/?plant=Zea%20mays&#38;climate=tropical'), { path: '/consortium/', query: 'plant=Zea%20mays&climate=tropical', hash: '' });
-  assert.deepEqual(splitHref('/fr/guilde/?plant=Olea&amp;climate=mediterranean#result'), { path: '/fr/guilde/', query: 'plant=Olea&climate=mediterranean', hash: 'result' });
+  assert.deepEqual(splitHref('/fr/consortium/?plant=Olea&amp;climate=mediterranean#result'), { path: '/fr/consortium/', query: 'plant=Olea&climate=mediterranean', hash: 'result' });
   assert.deepEqual(splitHref('/guides/x/#a-b'), { path: '/guides/x/', query: '', hash: 'a-b' });
   assert.deepEqual(splitHref('#top'), { path: '', query: '', hash: 'top' });
   assert.deepEqual(splitHref('/a/&#x26;b/'), { path: '/a/&b/', query: '', hash: '' });

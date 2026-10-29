@@ -51,14 +51,12 @@ export function localizedUrl(path: string, lang: Locale): string {
   return `/${lang}${path}`;
 }
 
-// A page's path within a locale: the same path in every locale, or one per locale
-// (a page whose slug is translated, such as the consortium tool's /fr/guilde/).
-export type PagePath = string | ((lang: Locale) => string);
+// A page's path within a locale: the same path in every locale.
+export type PagePath = string;
 
 export function pageUrl(path: PagePath, lang: Locale): string {
-  return typeof path === 'string' ? localizedUrl(path, lang) : path(lang);
+  return localizedUrl(path, lang);
 }
 
-// The consortium tool: "Consortium" in every language except French, "Guilde" (one rule, shared
-// with scripts/check-built-site.mjs).
+// The consortium tool: /consortium/ in every language (one rule, shared with scripts/check-built-site.mjs).
 export { consortiumPath } from './consortium-path.js';

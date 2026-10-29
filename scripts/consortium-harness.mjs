@@ -284,7 +284,7 @@ async function openPage(t, { lang = 'en', width = 1280, siteClimate = null, data
   page.connected = (el) => { for (let n = el; n; n = n.parent) if (n === doc) return true; return false; };
   if (siteClimate) html.attribs['data-climate'] = siteClimate;
   const data = { lang, strings: pageStrings(lang), guides: {}, plantGuides: consortiumGuides, jobGuides, explainGuide, contact: '/#contact' };
-  const body = `<header><details data-lang-menu><summary>Language</summary><a href="/consortium/">English</a><a href="/fr/guilde/">Français</a></details></header>
+  const body = `<header><details data-lang-menu><summary>Language</summary><a href="/consortium/">English</a><a href="/fr/consortium/">Français</a></details></header>
     <main id="main" class="ct"><div class="wrap ct-wrap"><div class="tool-head" id="ct-head" data-step="0" data-climates="${siteClimates.join(' ')}"></div>
     <div id="ct-app" aria-busy="true"><p class="status-line">Loading</p></div></div>
     <dialog id="ct-dialog" class="ct-drawer" aria-labelledby="ct-dlg-title" data-own-dialog></dialog>

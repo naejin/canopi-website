@@ -226,10 +226,9 @@ const consortiumTaxa = (file) => new Set(JSON.parse(readFileSync(join(root, 'dat
 const mainOf = (html) => html.match(/<main\b[\s\S]*?<\/main>/)?.[0] ?? '';
 const linkTo = (html, href) => new RegExp(`<a\\b[^>]*\\shref="${href.replace(/[.?*+^$()[\]{}|\\]/g, '\\$&')}"`).test(html);
 const currentLink = (html, href) => new RegExp(`<a\\b[^>]*\\shref="${href}"[^>]*\\saria-current="page"|<a\\b[^>]*\\saria-current="page"[^>]*\\shref="${href}"`).test(html);
-// path: the page's path in every locale ('/bibliography/'), or a function of the locale for a page
-// whose slug is translated (consortiumPath).
+// path: the page's path in every locale ('/bibliography/').
 function checkHeader(html, lang, path, from, alternates = locales) {
-  const pathIn = typeof path === 'function' ? path : (l) => localized(path, l);
+  const pathIn = (l) => localized(path, l);
   const { panel, inline } = headerOf(html, from);
   const books = localized('/bibliography/', lang);
   for (const [part, where] of [[inline, 'inline'], [panel, 'menu']]) {
@@ -310,7 +309,7 @@ for (const lang of guideLocales) {
 
 for (const asset of ['canopi-logo.svg', 'data/featured-designs.json', 'data/plant-symbols.json']) assert.ok(existsSync(join(root, asset)), asset);
 for (const gone of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'screenshot-light.png', 'network']) assert.ok(!existsSync(join(root, gone)), `${gone} is retired`);
-// The consortium tool: one page per locale (French at /fr/guilde/), its alternates, and the installed plant data.
+// The consortium tool: one page per locale (/consortium/ in every language, French included), its alternates, and the installed plant data.
 for (const lang of locales) {
   const path = consortiumPath(lang);
   const html = readFileSync(join(root, path, 'index.html'), 'utf8');
@@ -323,11 +322,24 @@ for (const lang of locales) {
   assert.deepEqual(alternates, [...locales.map((l) => `${l} https://projectcanopi.com${consortiumPath(l)}`), 'x-default https://projectcanopi.com/consortium/'].sort(), `${path}: hreflang`);
   // prepush m3: its own links (the language menu, the noscript guide link, the contact anchor) lead to
   // built pages and ids; a language link to a redirect (/fr/consortium/) fails here.
-  checkHeader(html, lang, consortiumPath, path);
+  checkHeader(html, lang, '/consortium/', path);
   checkLinks(html, path);
   for (const asset of assetLinks(html)) assert.ok(existsSync(join(root, asset)), `${path}: missing asset ${asset}`);
 }
-assert.ok(!existsSync(join(root, 'fr', 'consortium')), 'no /fr/consortium/: French is /fr/guilde/');
+// Owner, 2026-10-29: French is /fr/consortium/ too; /fr/guilde/ was never published, so nothing builds it
+// and no built page links to it.
+assert.ok(!existsSync(join(root, 'fr', 'guilde')), 'no /fr/guilde/: French is /fr/consortium/');
+{
+  const stack = [root], linking = [];
+  while (stack.length) {
+    const dir = stack.pop();
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) { if (p !== join(root, 'app')) stack.push(p); } else if (e.name.endsWith('.html') && /\/(?:fr\/)?guilde\b/.test(readFileSync(p, 'utf8'))) linking.push(p.slice(root.length));
+    }
+  }
+  assert.deepEqual(linking, [], 'no built page links to /fr/guilde/');
+}
 // prepush m2: the installed plant data, by the installer's own checks: format 3, a real
 // canopi_db_sha256 (never the fixture's zeros), SHA256SUMS, each climate file's sha256, regions,
 // counts, shape and the format's rules, and every photo a local file that exists.

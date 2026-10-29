@@ -1,5 +1,5 @@
 ---
-// The consortium design tool (beta): /consortium/, /fr/guilde/ and /<lang>/consortium/.
+// The consortium design tool (beta): /consortium/ and /<lang>/consortium/.
 // The head (title, what a consortium is, the beta note) is rendered here; the tool itself is
 // src/scripts/consortium/app.js, which renders into #ct-app from the strings in #ct-data (every
 // consortium.* key without its prefix, the climate words, and the Field Guides the tool links).
@@ -42,8 +42,8 @@ const food = guides[explainGuide];
 // copy-m2: the number of climates is the installed manifest's, read at build time.
 const betaNote = makeWords(strings, lang).P('betaNote', manifest.climates.length);
 ---
-<Base title={`${tr('title')} · Canopi`} description={tr('description')} lang={lang} path={consortiumPath}>
-  <Header lang={lang} path={consortiumPath} current="consortium" />
+<Base title={`${tr('title')} · Canopi`} description={tr('description')} lang={lang} path="/consortium/">
+  <Header lang={lang} path="/consortium/" current="consortium" />
   <main id="main" class="ct">
     <div class="wrap ct-wrap">
       <div class="tool-head" id="ct-head" data-step="0" data-climates={siteClimates.join(' ')}>

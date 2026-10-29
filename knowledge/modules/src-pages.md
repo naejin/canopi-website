@@ -5,15 +5,15 @@ description: Astro routes; thin per-locale wrappers around components, plus the 
 resource: ../../src/pages
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:24Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:27Z }
 sources:
   - id: pages
     resource: ../../src/pages
     title: src/pages/
-    digest: sha256:639d69caba686c92
-    last_modified: 2026-10-27T20:39:29Z
+    digest: sha256:fe64271be37d0852
+    last_modified: 2026-10-29T04:59:27Z
 ---
 
 # Responsibility
@@ -29,7 +29,7 @@ Map URLs to components for all 11 locales. Pages hold no markup or logic of thei
 | `/contact/sent/`, `/contact/failed/` (+ `/{lang}/`) | `contact/*.astro`, `[lang]/contact/*.astro` | `ContactResult.astro` |
 | `/guides/`, `/fr/guides/` | [guides/index.astro](../../src/pages/guides/index.astro), `[lang]/guides/index.astro` | `GuidesIndex.astro` |
 | `/guides/<slug>/`, `/fr/guides/<slug>/` | `guides/[slug].astro`, `[lang]/guides/[slug].astro` | `GuideLayout.astro` |
-| `/consortium/`, `/fr/guilde/`, `/{lang}/consortium/` (9 others) | [consortium.astro](../../src/pages/consortium.astro), [fr/guilde.astro](../../src/pages/fr/guilde.astro), `[lang]/consortium.astro` (all but fr) | `ConsortiumPage.astro`, see [Consortium page](/modules/consortium-page.md) |
+| `/consortium/`, `/{lang}/consortium/` (the 10 others, French included: owner, 2026-10-29) | [consortium.astro](../../src/pages/consortium.astro), `[lang]/consortium.astro` | `ConsortiumPage.astro`, see [Consortium page](/modules/consortium-page.md) |
 | `POST /api/contact` | `api/contact.ts` | `handleContact(request, env)` |
 
 # Interfaces

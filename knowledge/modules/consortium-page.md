@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:53:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:24Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:43:54Z }
 sources:
@@ -19,18 +19,18 @@ sources:
   - id: consortium-harness
     resource: ../../scripts/consortium-harness.mjs
     title: scripts/consortium-harness.mjs
-    digest: sha256:f7064fb43763942f
-    last_modified: 2026-10-28T21:53:04Z
+    digest: sha256:4cec2eb34724053c
+    last_modified: 2026-10-29T04:59:07Z
   - id: consortium-scale-test
     resource: ../../scripts/consortium-scale.test.mjs
     title: scripts/consortium-scale.test.mjs
-    digest: sha256:d01b086134617e25
-    last_modified: 2026-10-28T22:57:17Z
+    digest: sha256:fd9db359c0668c4f
+    last_modified: 2026-10-29T04:59:07Z
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:ca7b150f5bc0dc4f
-    last_modified: 2026-10-28T14:56:59Z
+    digest: sha256:7b5c92a5e3252b12
+    last_modified: 2026-10-29T04:59:27Z
   - id: app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
@@ -79,8 +79,8 @@ sources:
   - id: consortium-page-test-mjs
     resource: ../../scripts/consortium-page.test.mjs
     title: scripts/consortium-page.test.mjs
-    digest: sha256:9fa346582f4d4752
-    last_modified: 2026-10-28T23:43:35Z
+    digest: sha256:691b1a2ac3fe3059
+    last_modified: 2026-10-29T04:59:07Z
   - id: logic-js
     resource: ../../src/scripts/consortium/logic.js
     title: src/scripts/consortium/logic.js
@@ -160,7 +160,7 @@ The consortium tool's page: the visitor picks a climate and gets 6 to 12 plants 
 | [consortium.css](../../src/styles/consortium.css) | Everything under `.ct`; strata colours only in the drawing (`.profile`, its numbered labels and key) and the strata legend (`.strata-mini`); number rings elsewhere and timeline bars in neutral ink; in print, the light palette on white whatever the theme |
 | [consortium-guides.ts](../../src/data/consortium-guides.ts) | Guides linked per plant, per job (one guide for each of the six jobs, never `null`; helpers is `garden-helpers`, the pollinator hub, whose quick answer the test ties to the job's line), and for the explanations; a plant links only guides that grow or use it, never one passing sentence (the pollinator guides add borage, lavender, phacelia, dog rose, purple willow, elder and white clover; goldenrod, tomato and mango were dropped on 2026-10-28 as single mentions). A guide that opens the tool with a plant (`<TryConsortium>`) is linked back from that plant when it really discusses it (runner bean, pigeon pea, walnut, chestnut and carob added 2026-10-28); the presets of olive in `coppice-and-bamboo` and breadfruit in `food-forest` stay one-way under the three-guide cap, and garden-helpers' tomato and mango presets stay one-way as single mentions. `consortium-page.test.mjs` knows lavender, elder and runner bean by their kind word |
 
-Routes: `/consortium/`, `/fr/guilde/` (the French tool is a "guilde"), `/{lang}/consortium/` for the other 9.
+Routes: `/consortium/` and `/{lang}/consortium/` for the other 10, French included (owner, 2026-10-29: one path in every language; the French page still calls the tool a « guilde »). `/fr/guilde/` was never published: no page, no redirect, and check-built-site fails if a built page links to it.
 
 # Behaviour worth knowing
 
@@ -198,7 +198,7 @@ Routes: `/consortium/`, `/fr/guilde/` (the French tool is a "guilde"), `/{lang}/
 - Links (scale chunk A review, 2026-10-28, design-scale §2.7): the tool's state lives in the address bar's fragment (`#v=3&…&e=1`), which no request carries, so a shared state never reaches a server or CDN log; Copy link and print give `path#state`. Older links in the query (v2, the first v3 links, a guide's `?plant=&climate=`) still open and move into the fragment with `replaceState` (memory.js `arrive`); the first-paint script in `ConsortiumPage.astro` reads the fragment first too. A tool state typed or pasted into the address bar (or Back to an earlier one) reloads the page to read it; a page anchor (`#main`, `#donate`) is not a state, and the consortium's fragment is written back after the other listeners. A fragment v3 link with no `e=1`, a plant list that does not parse, or an unknown `v` is a damaged link: the page says plants may be missing (`cutLink.*`), never opening it silently empty or partial (a damaged link whose members read empty gets a suggestion). A v3 link moved from the query gains `e=1` as it moves (it was never held to the marker, so a reload stays whole: F3); a cut link still waiting for a climate not covered yet is written back without `e=1` and says so on the not-covered screen (F9); `S.cutLink` holds only while the cut link waits: it is cleared when the link is applied (the result's `cutlink` notice says it then) and when the reader leaves it, so a later not-covered climate never calls the reader's own consortium a cut link (G2); Start over sets `lastHash` to the cleared address, so pasting back the link that was open reloads it (F7).
 - Other lists (B2, B9): the other climates' files load at once and are read in the climates' order (`inClimateOrder`), so a plant in two other lists is labelled the same on every visit. A file that fails is a retryable error: the crop step's no-match and the Add sheet say "Some other climates' lists could not be loaded" with Retry (no automatic retry loop; in the crop step the sentence is in the live status and Retry sits outside it, in `#crop-retry`, and a redraw that removes the focused control puts the focus back on it or on the search); a link whose guest's list fails to load shows the error state with Retry and keeps the link as it came (`S.pending`), never calling the guest "no longer listed".
 - "Add anyway" asks first, like Add, when the plant would be flagged beside the members (B3); the guest joins only on Yes. A main crop swapped is no longer a main crop: the Swap sheet says so before, and the toast after (`swapCropNote`, `swappedCrop`). The climate's source reads "from the shared link" for a link's, "from your last consortium" for a save's, "Chosen earlier on this site" for this site's, "Set by the guide", and "chosen by you" (`climateChosen`, ru «выбран вами») only after a pick in the tool; the result's climate chip says only the guide's or this site's.
-- Language switch (seam M1): the header's language links (inline and phone Menu) carry the tool's fragment (`langHash` of `location.hash`), kept current after every `replaceState` (`syncLangLinks`); other pages' links are unchanged. Typed guesses `/fr/consortium/` and `/guilde/` redirect to `/fr/guilde/` (`public/_redirects`).
+- Language switch (seam M1): the header's language links (inline and phone Menu) carry the tool's fragment (`langHash` of `location.hash`), kept current after every `replaceState` (`syncLangLinks`); other pages' links are unchanged. No redirect rules for the tool (`public/_redirects` has none).
 - A guide preset (`?plant=&climate=`) is never silent: a food plant of that climate opens the crop step with it chosen (chip "From the guide"); any other plant opens straight on the result with the guide note, also on "Not covered yet" (there `fromGuideClimate`: the plant is kept once a climate with a list is chosen); the tool loads that climate's file to name the plant as it will ("Pear (*Pyrus communis*)"). Guide links read "{plant} · {climate}". A guide's climate applies to this consortium only: the shared site climate (`canopi-climate`) changes only when the reader picks a climate in the tool (decision taken in the fixes round; the note says "This consortium uses the … climate").
 - The "With a warning" banner is a list (`ul.att-list`), one plant per line with its actions inside its own item. A plant that misfits the site (often the guide's) states what it needs (its size against the room, its light…) and offers Swap and Remove (`removeShort`). The site answers are facts about the reader's garden: the tool never offers changing one to fit a plant (`nm.try` belongs to the no-match state only).
 - Each view has a written-out "?" explanation button; each plant row has a "?" beside its phase words that opens the phase explanation in the row (`S.explain = 'phase-<id>'`).

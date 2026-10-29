@@ -7,7 +7,7 @@ tags: [module, frontend]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T22:01:41Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:53:27Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:40Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
