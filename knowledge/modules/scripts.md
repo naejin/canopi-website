@@ -5,15 +5,15 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-30T11:06:07Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:53:26Z }
 sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:28d971c211bbc65a
-    last_modified: 2026-10-29T04:59:34Z
+    digest: sha256:93b5a2c9133bf4e3
+    last_modified: 2026-10-30T11:05:25Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -23,7 +23,7 @@ sources:
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs
     digest: sha256:3a575513f09f4747
-    last_modified: 2026-10-29T04:59:07Z
+    last_modified: 2026-10-29T05:02:41Z
   - id: consortium-list-ui-test-mjs
     resource: ../../scripts/consortium-list-ui.test.mjs
     title: scripts/consortium-list-ui.test.mjs
@@ -48,7 +48,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 | [built-links.mjs](../../scripts/built-links.mjs) | `builtTarget(root, pathname)`: resolves an internal link to a built file; a path without trailing slash or extension is an error. `subdirectories(dir)`: folder names only (the guide slugs; a stray `.DS_Store` is not a guide) | `check-built-site.mjs` |
 | [fixtures/consortium/make_fixture.py](../../scripts/fixtures/consortium/make_fixture.py) | writes the invented consortium fixture (format 3, three climate files; Temperate adds an invented asia_temperate cell, with a taxon chosen there only; real `countries`; each invented `invasive_in` also holds every country where GRIIS really records the plant invasive, from a `griis.json` built in canopi-data) for building the tool before real data; never shipped | by hand, see its README |
 | [export-featured-designs.py](../../scripts/export-featured-designs.py) | `.canopi` files to privacy-safe `public/data/featured-designs.json` | by hand |
-| [compress-heroes.py](../../scripts/compress-heroes.py), [make-og-images.py](../../scripts/make-og-images.py) | hero JPGs (2400 and 1200 px), 1200x630 social images | by hand (Pillow) |
+| [compress-heroes.py](../../scripts/compress-heroes.py), [make-og-images.py](../../scripts/make-og-images.py) | hero JPGs (2400 and 1200 px); 1200x630 social images (painting with the logo and wordmark on a parchment label inside the centre 630 px square, each ≤ 250 KB for WhatsApp) and `public/apple-touch-icon.png`; bump `?v=` on `ogImage` in `Base.astro` when they change, since messaging apps cache by image URL | by hand (Pillow + Inkscape) |
 
 # Interfaces
 
