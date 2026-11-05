@@ -1,0 +1,85 @@
+// The TRY citation and the parser of the dataset list behind /data-sources/. Free of Astro and
+// Vite, so scripts/try-references.test.mjs and scripts/check-built-site.mjs can run it in node.
+import { safeHref } from '../scripts/consortium/logic.js';
+
+// The short standard reference from the TRY Intellectual Property Guidelines, verbatim: the space
+// in "119– 188" is theirs. The DOI is split off only because the page links it.
+export const TRY_CITATION = 'Kattge, J, Bönisch, G, Díaz, S, et al. TRY plant trait database – enhanced coverage and open access. Glob Change Biol. 2020; 26: 119– 188.';
+export const TRY_DOI = 'https://doi.org/10.1111/gcb.14904';
+
+export interface TryReference {
+  datasetId: string;
+  dataset: string;
+  custodian: string;
+  reference: string;
+}
+
+export interface TryCounts {
+  rows: number;
+  dataset_ids: number;
+}
+
+const HEADER = 'dataset_id\tdataset\tcustodian\treference';
+const FILE = 'src/data/try_references.tsv';
+
+// UTF-8 text, LF line ends, one header, four tab-split fields and no quoting (canopi-data
+// docs/sources/try.md). Anything else, or counts other than the source's, throws, which fails the build.
+export function parseTryReferences(source: string, expected: TryCounts): TryReference[] {
+  const fail = (line: number, message: string): never => {
+    throw new Error(`${FILE}:${line}: ${message}`);
+  };
+  if (source.startsWith('﻿')) fail(1, 'starts with a byte order mark');
+  if (source.includes('\r')) fail(1, 'has a carriage return; lines end in LF');
+  if (!source.endsWith('\n')) fail(1, 'does not end in a line feed');
+  const [header, ...lines] = source.slice(0, -1).split('\n');
+  if (header !== HEADER) fail(1, `the header is not ${JSON.stringify(HEADER)}`);
+  const rows = lines.map((text, index): TryReference => {
+    const line = index + 2;
+    const fields = text.split('\t');
+    if (fields.length !== 4) fail(line, `${fields.length} fields, not 4`);
+    const [datasetId, dataset, custodian, reference] = fields;
+    if (!/^[1-9]\d*$/.test(datasetId)) fail(line, `dataset_id ${JSON.stringify(datasetId)} is not a number`);
+    if (!dataset.trim() || !custodian.trim() || !reference.trim()) fail(line, 'an empty field');
+    return { datasetId, dataset, custodian, reference };
+  });
+  if (rows.length !== expected.rows) fail(1, `${rows.length} rows, not the source's ${expected.rows}`);
+  const ids = new Set(rows.map((row) => row.datasetId)).size;
+  if (ids !== expected.dataset_ids) fail(1, `${ids} DatasetIDs, not the source's ${expected.dataset_ids}`);
+  return rows;
+}
+
+export interface TextPart {
+  text: string;
+  href?: string;
+}
+
+const closes: Record<string, string> = { ')': '(', ']': '[', '}': '{' };
+const count = (text: string, char: string) => text.split(char).length - 1;
+
+// A url ends before the punctuation of the sentence around it: "(see http://a.org/)." links http://a.org/.
+function urlEnd(url: string): string {
+  let end = url;
+  for (;;) {
+    const last = end.at(-1) ?? '';
+    const unmatched = last in closes && count(end, last) > count(end, closes[last]);
+    if (!/[.,;:!?'’"”]/.test(last) && !unmatched) return end;
+    end = end.slice(0, -1);
+  }
+}
+
+// A reference as text and links, whose text joined is the reference unchanged. A url links only
+// when safeHref allows it, and never with a lost character (�) in it, which could not lead anywhere.
+export function referenceParts(reference: string): TextPart[] {
+  const parts: TextPart[] = [];
+  let at = 0;
+  for (const match of reference.matchAll(/(?<![\w/])https?:\/\/[^\s<>"]+/gi)) {
+    const url = urlEnd(match[0]);
+    const href = url.includes('�') ? null : safeHref(url);
+    if (!href) continue;
+    if (match.index > at) parts.push({ text: reference.slice(at, match.index) });
+    parts.push({ text: url, href });
+    at = match.index + url.length;
+  }
+  if (at < reference.length) parts.push({ text: reference.slice(at) });
+  return parts;
+}

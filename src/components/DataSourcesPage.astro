@@ -1,0 +1,46 @@
+---
+// /data-sources/ for one locale: the TRY citation, then every dataset row as TRY delivered it, as
+// static HTML. The citation and the rows stay in their original language, so only the words around
+// them are translated. Astro escapes all this text; a row is never written as markup.
+import Base from '../layouts/Base.astro';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import DonateDialog from './DonateDialog.astro';
+import PageData from './PageData.astro';
+import { tryReferences, tryDatasetCount } from '../data/try-references';
+import { TRY_CITATION, TRY_DOI, referenceParts } from '../lib/try-references';
+import { t, type Locale } from '../i18n/utils';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+---
+<Base title={`${t('dataSources.title', lang)} · Canopi`} description={t('dataSources.lede', lang)} lang={lang} path="/data-sources/">
+  <Header lang={lang} path="/data-sources/" />
+  <main id="main">
+    <section class="section data-sources" aria-labelledby="data-sources-title">
+      <div class="wrap">
+        <header class="section-head">
+          <h1 id="data-sources-title">{t('dataSources.title', lang)}</h1>
+          <p>{t('dataSources.lede', lang)}</p>
+        </header>
+        <h2 lang="en" translate="no">TRY plant trait database</h2>
+        <p class="try-citation" lang="en" translate="no">{TRY_CITATION} <a href={TRY_DOI} rel="noopener">{TRY_DOI}</a></p>
+        <p class="try-guidelines">{t('dataSources.guidelines', lang)}</p>
+        <h2 id="try-datasets">{t('dataSources.list.title', lang)}</h2>
+        <p class="try-note">{t('dataSources.list.count', lang, { rows: String(tryReferences.length), datasets: String(tryDatasetCount) })}</p>
+        <p class="try-note">{t('dataSources.list.lost', lang)} {t('dataSources.list.partial', lang)}</p>
+        <ul class="try-list" role="list" lang="und" translate="no" aria-labelledby="try-datasets">
+          {tryReferences.map((row) => (
+            <li class="try-row"><span class="try-dataset">{row.dataset}</span><span class="try-custodian">{row.custodian}</span><span class="try-reference">{referenceParts(row.reference).map((part) => part.href ? <a href={part.href} rel="noopener">{part.text}</a> : part.text)}</span></li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  </main>
+  <Footer lang={lang} />
+  <DonateDialog lang={lang} />
+  <PageData lang={lang} keys={[]} />
+  <script>
+    import { initChrome } from '../scripts/chrome.js';
+    initChrome();
+  </script>
+</Base>

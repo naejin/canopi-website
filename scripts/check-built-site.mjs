@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { builtTarget, splitHref, subdirectories } from './built-links.mjs';
 import { verifyInstall } from './install-consortium.mjs';
 import { consortiumPath } from '../src/i18n/consortium-path.js';
+import { parseTryReferences, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.ts';
+import { safeHref } from '../src/scripts/consortium/logic.js';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -19,6 +22,13 @@ const downloads = [
   'RELEASE-SHA256SUMS.txt',
 ];
 const locales = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
+// The TRY list: the file the build read, checked against the source's hash and counts.
+const tryMeta = JSON.parse(readFileSync('src/data/try_references.meta.json', 'utf8'));
+const trySource = readFileSync('src/data/try_references.tsv', 'utf8');
+assert.equal(createHash('sha256').update(trySource).digest('hex'), tryMeta.tsv_sha256, 'try_references.tsv matches its source hash');
+const tryRows = parseTryReferences(trySource, tryMeta);
+// A rendered field back to its text: the tags go, and the entities Astro writes become characters once.
+const plainText = (html) => html.replace(/<[^>]*>/g, '').replace(/&(amp|lt|gt|quot|#39|#x27);/g, (_, name) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", '#x27': "'" })[name]);
 const assetLinks = (html) => [...html.matchAll(/(?:src|href)="(\/(?:_astro|fonts|hero|og|data|vendor)\/[^"?#]+)"/g)].map((m) => m[1]);
 
 for (const lang of locales) {
@@ -60,6 +70,29 @@ for (const lang of locales) {
     assert.ok(bibliography.includes(`hreflang="${other}" href="${href}"`), `${lang}: bibliography alternate ${other}`);
   }
   for (const path of assetLinks(bibliography)) assert.ok(existsSync(join(root, path)), `Missing asset: ${path}`);
+
+  // /data-sources/: the TRY citation and every source row, each as delivered, in every locale.
+  const dataSourcesPath = lang === 'en' ? '/data-sources/' : `/${lang}/data-sources/`;
+  const footerOf = (page) => page.slice(page.indexOf('<footer'));
+  assert.ok(footerOf(html).includes(`href="${dataSourcesPath}"`), `${lang}: footer link to the data sources page`);
+  const dataSources = readFileSync(join(root, dir, 'data-sources', 'index.html'), 'utf8');
+  assert.ok(dataSources.includes(`<html lang="${lang}"`) && dataSources.includes('<h1 id="data-sources-title"'), `${lang}: data sources page`);
+  assert.ok(footerOf(dataSources).includes(`href="${dataSourcesPath}"`), `${lang}: data sources page footer link`);
+  assert.ok(dataSources.includes(`${TRY_CITATION} <a href="${TRY_DOI}" rel="noopener">${TRY_DOI}</a>`), `${lang}: TRY citation with its DOI link`);
+  assert.ok(!dataSources.includes('CC BY'), `${lang}: no CC BY claim for TRY`);
+  for (const other of locales) {
+    const href = `https://projectcanopi.com${other === 'en' ? '' : `/${other}`}/data-sources/`;
+    assert.ok(dataSources.includes(`hreflang="${other}" href="${href}"`), `${lang}: data sources alternate ${other}`);
+  }
+  const rendered = [...dataSources.matchAll(/<li class="try-row"><span class="try-dataset">(.*?)<\/span><span class="try-custodian">(.*?)<\/span><span class="try-reference">(.*?)<\/span><\/li>/g)];
+  assert.equal((dataSources.match(/class="try-row"/g) ?? []).length, tryRows.length, `${lang}: rendered data source rows`);
+  assert.equal(rendered.length, tryRows.length, `${lang}: rendered data source rows, each in three fields`);
+  rendered.forEach((match, index) => {
+    const row = tryRows[index];
+    assert.deepEqual(match.slice(1).map(plainText), [row.dataset, row.custodian, row.reference], `${lang}: data source row ${index + 1}`);
+    for (const [, href] of match[3].matchAll(/<a href="([^"]*)"/g)) assert.ok(safeHref(plainText(href)), `${lang}: data source link ${href}`);
+  });
+  for (const path of assetLinks(dataSources)) assert.ok(existsSync(join(root, path)), `Missing asset: ${path}`);
 
   for (const result of ['sent', 'failed']) {
     const page = readFileSync(join(root, dir, 'contact', result, 'index.html'), 'utf8');
@@ -346,4 +379,4 @@ assert.ok(!existsSync(join(root, 'fr', 'guilde')), 'no /fr/guilde/: French is /f
 const consortiumInstall = verifyInstall(join(root, 'data', 'consortium'));
 assert.ok(consortiumInstall.climates > 0 && consortiumInstall.images > 0, 'consortium: climate files and photos');
 
-console.log(`Verified 11 locale pages, their bibliography and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);
+console.log(`Verified 11 locale pages, their bibliography, data sources (${tryRows.length} TRY rows each) and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);

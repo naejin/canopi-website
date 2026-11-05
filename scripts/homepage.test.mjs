@@ -52,6 +52,24 @@ test('every locale supplies the same keys and preserves interpolation placeholde
   }
 });
 
+test('the data sources page has its own words in every locale, with no licence claim for TRY', () => {
+  const root = new URL('../src/i18n/translations/', import.meta.url);
+  const en = JSON.parse(readFileSync(new URL('en.json', root), 'utf8'));
+  const keys = Object.keys(en).filter((key) => key.startsWith('dataSources.')).sort();
+  assert.deepEqual(keys, ['dataSources.guidelines', 'dataSources.lede', 'dataSources.list.count', 'dataSources.list.lost', 'dataSources.list.partial', 'dataSources.list.title', 'dataSources.title']);
+  assert.equal(en['dataSources.guidelines'], 'Used under the TRY Intellectual Property Guidelines');
+  for (const file of readdirSync(root).filter((name) => name.endsWith('.json'))) {
+    const translated = JSON.parse(readFileSync(new URL(file, root), 'utf8'));
+    for (const key of keys) {
+      assert.ok(translated[key]?.trim(), `${file}: ${key}`);
+      if (file !== 'en.json') assert.notEqual(translated[key], en[key], `${file}: ${key} is translated`);
+      assert.ok(!translated[key].includes('CC BY'), `${file}: ${key}`);
+    }
+    assert.ok(translated['dataSources.list.lost'].includes('\ufffd'), `${file}: the lost character is shown as it appears in the list`);
+    assert.ok(translated['dataSources.guidelines'].includes('TRY Intellectual Property Guidelines'), `${file}: the guidelines keep their name`);
+  }
+});
+
 test('every English key is used by a page or a script, and every script string reaches the page', () => {
   const read = (path) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
   // Every file under the folder, subfolders included (src/components/guides/…).

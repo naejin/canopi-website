@@ -333,6 +333,20 @@
 .section-head .bibliography-guides { margin-top: 10px; font-size: 16px; }
 .bibliography-guides a { font-weight: 600; color: var(--accent-ink); }
 
+/* ---------- Data sources ---------- */
+
+/* Rows as delivered hold long unbroken names and urls: they break anywhere rather than scroll the page. */
+.data-sources h2 { max-width: 640px; margin-top: clamp(32px, 4vw, 44px); font-size: clamp(24px, 3vw, 30px); }
+.try-citation, .try-guidelines, .try-note { max-width: 640px; margin-top: 12px; overflow-wrap: anywhere; }
+.try-citation { font-size: 18px; }
+.try-citation a, .try-reference a { color: var(--accent-ink); }
+.try-guidelines, .try-note { color: var(--text-secondary); }
+.try-list { display: grid; gap: 18px; max-width: 760px; margin: 24px 0 0; padding: 0; list-style: none; overflow-wrap: anywhere; }
+.try-row > span { display: block; }
+.try-dataset { font-weight: 600; line-height: 1.35; }
+.try-custodian { font-size: 14px; color: var(--text-muted); }
+.try-reference { margin-top: 2px; font-size: 15px; line-height: 1.45; color: var(--text-secondary); }
+
 /* ---------- Contact ---------- */
 
 .contact-layout { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 6vw, 96px); }
