@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium tool — user decisions
 description: Dated decisions the project owner made about the consortium design tool; they change only when the owner changes them.
 tags: [consortium, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:52Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-05T23:04:44Z }
 ---
 
 # Consortium tool — user decisions
@@ -66,6 +66,7 @@ Data side (sibling repository `canopi-data`, read 2026-10-27): `docs/adr/0007-cu
 | 2026-10-28 | **Side view, coordinator choices** (within the owner's rows, not owner-reviewed): a plant of habit "Climber" is drawn as a vine and named among "climbing or trailing plants" with its recorded size as is (the data's size can be a runner length, e.g. Pumpkin 12 m), never as a free-standing plant of that height and never with "climbs to"; each band's "Most a–b m" is computed over the plants it does not name as exceptions, and both ends are real plant heights (a band with 4 or fewer known heights lists them all); above 20 plants, print follows approved state 13 ("At a glance", then the table, no marks drawing), and at 20 or fewer print keeps the drawing; pest and disease chips show a common name only when it is one EPPO lists and a second source confirms is in use, and only when it names no single host unless every row of that agent is on that host, otherwise the scientific name. |
 | 2026-10-29 | **One address in every language** (owner; replaces the "Place" row's `/fr/guilde/` and "a slug per language"): the tool lives at `/consortium/` and `/{lang}/consortium/` in all 11 locales, French included (`/fr/consortium/`); the page still says « guilde » to French readers. `/fr/guilde/` was never published, so no redirect is needed. |
 | 2026-10-29 | **Crop examples and guide 43** (owner): the "What do you mainly want to grow?" examples follow a rule, not a hand-picked list: deterministic, at most one plant per genus, spread across layers (Temperate: Onion, European chestnut, Sunflower, Bilberry), so they differ from mockup state 18; guide 43's "natives first" counterpoint ships naming no one, and a Hervé Coves citation waits until a source of his is in the bibliography. |
+| 2026-11-05 | **TRY citation** (owner): a new `/data-sources/` page in all 11 locales, linked from the footer and the tool's head, shows the Kattge et al. 2020 citation verbatim with its DOI as a link, then "Used under the TRY Intellectual Property Guidelines" (translated), then the full dataset list inline as static HTML with no script. There is no CC BY claim for TRY: its `licence` is null, as deliveries cannot mark restricted rows. Each row shows dataset, custodian and reference as delivered, untranslated; http(s) urls link only under the `safeHref` rule. The page says plainly that some text reached us with lost characters (�) and that the list covers TRY's active deliveries, so it may be incomplete until the next refresh. The page shows the citation because the site does not display `attribution`. |
 
 ## Open questions for the owner (not decisions)
 

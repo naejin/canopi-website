@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-05T23:04:45Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:43:54Z }
 sources:
@@ -20,17 +20,17 @@ sources:
     resource: ../../scripts/consortium-harness.mjs
     title: scripts/consortium-harness.mjs
     digest: sha256:4cec2eb34724053c
-    last_modified: 2026-10-29T04:59:07Z
+    last_modified: 2026-10-29T05:02:41Z
   - id: consortium-scale-test
     resource: ../../scripts/consortium-scale.test.mjs
     title: scripts/consortium-scale.test.mjs
     digest: sha256:fd9db359c0668c4f
-    last_modified: 2026-10-29T04:59:07Z
+    last_modified: 2026-10-29T05:02:41Z
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:7b5c92a5e3252b12
-    last_modified: 2026-10-29T04:59:27Z
+    digest: sha256:d2af1d0254d070be
+    last_modified: 2026-11-05T22:55:29Z
   - id: app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
@@ -80,7 +80,7 @@ sources:
     resource: ../../scripts/consortium-page.test.mjs
     title: scripts/consortium-page.test.mjs
     digest: sha256:691b1a2ac3fe3059
-    last_modified: 2026-10-29T04:59:07Z
+    last_modified: 2026-10-29T05:02:41Z
   - id: logic-js
     resource: ../../src/scripts/consortium/logic.js
     title: src/scripts/consortium/logic.js
@@ -89,8 +89,8 @@ sources:
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
-    digest: sha256:86fd6fad3df599ee
-    last_modified: 2026-10-28T20:09:16Z
+    digest: sha256:71d07f07594beeaf
+    last_modified: 2026-11-05T22:56:24Z
   - id: dialogs-js
     resource: ../../src/scripts/dialogs.js
     title: src/scripts/dialogs.js
@@ -146,7 +146,7 @@ The consortium tool's page: the visitor picks a climate and gets 6 to 12 plants 
 
 | File | Role |
 |---|---|
-| [ConsortiumPage.astro](../../src/components/consortium/ConsortiumPage.astro) | Its script runs `initChrome()` first, then `import()`s app.js, so a tool failure never breaks the header. Server-rendered tool head (title, Beta, lede `home.consortium.lede` shared with the home section, `betaNote` counting `manifest.climates.length`, feedback link), `noscript`, the `#ct-app` mount, one `<dialog id="ct-dialog" data-own-dialog>` (the site's `initDialogs` in `src/scripts/dialogs.js` skips it; the app handles Escape, backdrop and scroll lock itself), toast, `#ct-say` live region, print sheet; writes `#ct-data` (the `consortium.*` strings without prefix, climate names, guide titles and URLs) |
+| [ConsortiumPage.astro](../../src/components/consortium/ConsortiumPage.astro) | Its script runs `initChrome()` first, then `import()`s app.js, so a tool failure never breaks the header. Server-rendered tool head (title, Beta, lede `home.consortium.lede` shared with the home section, `betaNote` counting `manifest.climates.length`, feedback link, link to `/data-sources/`), `noscript`, the `#ct-app` mount, one `<dialog id="ct-dialog" data-own-dialog>` (the site's `initDialogs` in `src/scripts/dialogs.js` skips it; the app handles Escape, backdrop and scroll lock itself), toast, `#ct-say` live region, print sheet; writes `#ct-data` (the `consortium.*` strings without prefix, climate names, guide titles and URLs) |
 | [app.js](../../src/scripts/consortium/app.js) | The whole tool: state `S`, `render()`, sheets (`O`, one dialog with `data-kind`), actions table, share link; what it keeps for the reader goes through memory.js |
 | [memory.js](../../src/scripts/consortium/memory.js) | What the tool keeps apart from the address bar, every call caught when storage throws: `memoryOf({ storage, history, location })` with `saved`/`save` (`localStorage["canopi-consortium"]`, `{ q, at, src }`), `pref` (the reader's own country: `localStorage["canopi-country"]`, else, with storage blocked, this tab's `history.state.canopiCountry`; the device wins because an older history entry keeps the tab key it had then, so Back never brings back an older choice: scale-a fix2 review G1; only `choose` writes either), `choose` (writes both), `arrive` (called in app.js before the manifest's `await`, through logic.js `arrivalParams`: reads the tool's state from the fragment, else from an older link's query, which `replaceState` moves into the fragment; drops an old link's `mine` from either and returns the state without it; `mine` is never read; sets `fromFragment`, and `written`: the page's own mark when the fragment is the one it wrote in this entry), `write` (persist's address-bar write: `replaceState` with `history.state.canopiWrote = { hash, countrySource, climateSource }`, so Back to that entry or its reload reads it as the tab's own, never as someone else's link; only a real arrival reads "from the shared link"; scale-a fix review F2), `startOver` (removes the save and the mark); `startState` (the link or the save, and `pickCountry` with `pref`, the save's `src` and, for a fragment the tab wrote, `linkSource`). Nothing records who picked a main crop or an "Add anyway" plant: they read the same for every reader (F1, F4). `consortium-country.test.mjs` runs it with a stubbed storage and history |
 | [words.js](../../src/scripts/consortium/words.js) | `makeWords(strings, lang)` → `T`, `P` (plural forms `one: … \| other: …` with `#`), lists, phase time words; `needsLook`, `searchText`, `fold`, `plantName` |

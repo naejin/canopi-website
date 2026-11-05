@@ -5,15 +5,15 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:53Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-05T23:04:45Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:6f0f6470d1648830
-    last_modified: 2026-10-28T09:52:50Z
+    digest: sha256:59266fcd3598fd39
+    last_modified: 2026-11-05T22:54:26Z
 ---
 
 # Responsibility
@@ -28,6 +28,7 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 - [bibliography.md](../../src/data/bibliography.md): the hand-edited bibliography (format documented in its header comment).
 - [climates.ts](../../src/data/climates.ts): `climates`, `Climate`, `isClimate`: the one list of the seven climate zones, shared with the Canopi app and used by the bibliography, guides, picker and head script.
 - [bibliography.ts](../../src/data/bibliography.ts): parses the markdown (`?raw` import) into `themes`; book climates are validated against `climates.ts`.
+- [try_references.tsv](../../src/data/try_references.tsv), [try_references.meta.json](../../src/data/try_references.meta.json), [try-references.ts](../../src/data/try-references.ts): the TRY dataset list, copied from canopi-data `data/curated/try_references.tsv`, with that source's row count, DatasetID count and sha256; `tryReferences` is parsed when the site builds, by [src/lib](/modules/src-lib.md). To refresh it, copy both values from canopi-data together (`try_references_inputs.json` gives the counts and hash).
 - [glossary.ts](../../src/data/glossary.ts): the Field Guides glossary, en and fr (`glossary`, `glossaryEntry(id, lang)`; one id per concept, no aliases).
 - [crops.ts](../../src/data/crops.ts): the 42-row crop table (the guide map's 40 crops plus mustard and flax) behind `CropCards`, `CropTable` and `CropExplorer` (ease, crossing, pollination, life, seed; `crop(id)`; no aliases).
 - [consortium-guides.ts](../../src/data/consortium-guides.ts): the Field Guides the consortium tool links: `consortiumGuides` (plant canonical name to slugs), `jobGuides` (one guide for each of the six jobs, never `null`) and `explainGuide`; see [Consortium page](/modules/consortium-page.md).
@@ -48,6 +49,7 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 
 - Desktop downloads use `releases/latest/download/...` aliases; only version and date change per release. `check-built-site.mjs` asserts these URLs and rejects stale versioned ones.
 - The bibliography parser throws with `file:line` on malformed fields, unknown climates, empty themes, books missing by/year/edition, or fewer than 3 / more than 6 `featured: yes` books, so a bad edit fails the build.
+- The TRY parser throws with `file:line` on a malformed row (not four tab-split fields, an empty field, a DatasetID that is not a number, CR, BOM) and on counts other than the meta file's, which stops the build. The rows are shown as delivered and untranslated; � in them is what the source delivery lost, and is not to be repaired here. Astro escapes the text: never `set:html`.
 - A new bibliography theme needs `bibliography.theme.<slug>` in all 11 translation files.
 - `- id:` is a book id; the Indonesian edition line is `- ind:`. Ids are unique; a guide citing an unknown id fails the build.
 - "Agroecology network" never implies partnership (see CONTEXT.md).

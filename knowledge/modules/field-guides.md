@@ -6,18 +6,18 @@ resource: ../../src/components/guides
 tags: [module, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:06:40Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:39Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-05T23:04:46Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
     digest: sha256:ed6176f3515735a8
-    last_modified: 2026-10-29T04:59:27Z
+    last_modified: 2026-10-29T05:02:41Z
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
     digest: sha256:775266072808943b
-    last_modified: 2026-10-29T04:59:27Z
+    last_modified: 2026-10-29T05:02:41Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
@@ -62,7 +62,7 @@ sources:
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
     digest: sha256:5564864731574a7e
-    last_modified: 2026-10-29T04:59:27Z
+    last_modified: 2026-10-29T05:02:41Z
   - id: try-consortium-ts
     resource: ../../src/components/guides/try-consortium.ts
     title: src/components/guides/try-consortium.ts
@@ -76,8 +76,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:cd95c89ad09c56eb
-    last_modified: 2026-10-29T04:59:34Z
+    digest: sha256:acf288a00fc5bc48
+    last_modified: 2026-11-05T22:55:29Z
 ---
 
 # Responsibility

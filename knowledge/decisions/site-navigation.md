@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Site navigation
 description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page has Start here then the consortium section.
 tags: [decision, navigation]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T22:01:57Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-05T23:04:44Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:39Z }
 sources:
@@ -36,12 +36,12 @@ sources:
     resource: ../../src/components/ConsortiumSection.astro
     title: src/components/ConsortiumSection.astro
     digest: sha256:bb4e1a1f5dc07c90
-    last_modified: 2026-10-29T04:59:27Z
+    last_modified: 2026-10-29T05:02:41Z
   - id: footer-astro
     resource: ../../src/components/Footer.astro
     title: src/components/Footer.astro
-    digest: sha256:6f4503755f7c5490
-    last_modified: 2026-10-27T21:22:08Z
+    digest: sha256:56a42ab06771a82f
+    last_modified: 2026-11-05T22:54:26Z
   - id: bibliography-astro
     resource: ../../src/components/Bibliography.astro
     title: src/components/Bibliography.astro
@@ -55,13 +55,13 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:c6ff92ae13cb8f74
-    last_modified: 2026-10-28T23:53:25Z
+    digest: sha256:6fb5f7ff1523f2dc
+    last_modified: 2026-11-05T23:01:48Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
-    digest: sha256:86fd6fad3df599ee
-    last_modified: 2026-10-28T20:09:16Z
+    digest: sha256:71d07f07594beeaf
+    last_modified: 2026-11-05T22:56:24Z
 enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 ---
 
@@ -80,6 +80,7 @@ enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 - **Phone Menu**: below 640px only the logo, a `<details data-nav-menu>` Menu and the theme toggle show. The panel holds Guides, Books, the tool's full name (`nav.consortium.full`, "Design a consortium" / « Composer une guilde »), Donate, Discord, Docs (if set), Contact and the 11 languages. It opens without script; `src/scripts/chrome.js` closes it on outside click, Escape, link activation and focus leaving. `donate.js` returns focus to the Menu summary.
 - **Learn section**: the guides index links to the bibliography; the bibliography page links to the guides; both link to the consortium tool (`learn.consortium.link`, "Design a consortium (beta): …"). Guides link into the tool with a plant and climate preset (`<TryConsortium>`, see [Field Guide components](/references/field-guide-components.md)).
 - **Footer**: "Design a consortium" (`nav.consortium.full`, the same key as the Menu line) after the bibliography link.
+- **Footer, data sources**: "Data sources" (`dataSources.title`) sits after the bibliography link, in the footer only, not the header or the phone Menu; the consortium tool's head also links it. Measured 2026-11-06 in headless Chrome, all 11 locales, at 320, 360, 414, 500, 639, 640, 768, 959 and 1200 px: links wrap with 20 px between them in a row, no overlap, no horizontal scroll. The extra link adds at most one row (29 px); the tallest is Japanese at 320 px, five rows, 348 px of footer.
 - **One name per locale**: `nav.consortium.full` is the tool's name in the Menu, the footer and the home section's title, and `learn.consortium.link` starts with it, so each locale names the tool with one verb in one mood (de "Ein Konsortium planen", ja "コンソーシアムを設計する", ru "Составить консорциум"; it and nl use the imperative throughout). The full name contains the header word.
 - **Consortium home section** (`src/components/ConsortiumSection.astro`), right after Start here: title (`nav.consortium.full`) with a Beta mark, a one-paragraph promise, the beta's coverage (`home.consortium.note`: "A beta with three climates so far: tropical, Mediterranean and temperate") and one action to the tool. The note spells the climates out in each locale, with no region; `homepage.test.mjs` fails when `public/data/consortium/manifest.json` lists other climates, so a new climate means rewriting the note in all 11 locales. No photos and no strata colours (the tool's drawing keeps those); styles scoped in the component.
 - **Start here** (`src/components/StartHere.astro`): three entry guides from frontmatter, en or fr by locale, English with an "in English" note elsewhere, plus "All field guides".
