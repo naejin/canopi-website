@@ -21,7 +21,7 @@ NS = uuid.UUID("00000000-0000-4000-8000-00000000c0de")
 SOURCES = {
     "pfaf": {"label": "Plants For A Future", "url": "https://pfaf.org/", "licence": None, "attribution": "Plants For A Future (pfaf.org)"},
     "griis": {"label": "GRIIS, Global Register of Introduced and Invasive Species", "url": "https://griis.org/", "licence": "CC BY 4.0", "attribution": "GRIIS (griis.org), CC BY 4.0"},
-    "try": {"label": "TRY Plant Trait Database", "url": "https://www.try-db.org/", "licence": "CC BY 4.0", "attribution": "TRY Plant Trait Database, CC BY 4.0"},
+    "try": {"label": "TRY Plant Trait Database", "url": "https://www.try-db.org/", "licence": None, "attribution": "Kattge, J, Bönisch, G, Díaz, S, et al. TRY plant trait database – enhanced coverage and open access. Glob Change Biol. 2020; 26: 119– 188. https://doi.org/10.1111/gcb.14904 Used under the TRY Intellectual Property Guidelines. https://projectcanopi.com/data-sources/"},
     "crawford-2010": {"label": "Crawford, Creating a Forest Garden (2010)", "url": None, "licence": None, "attribution": None},
     "jacke-2005": {"label": "Jacke & Toensmeier, Edible Forest Gardens, vol. 2 (2005)", "url": None, "licence": None, "attribution": None},
     "toensmeier-2016": {"label": "Toensmeier, The Carbon Farming Solution (2016)", "url": None, "licence": None, "attribution": None},
