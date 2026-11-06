@@ -8,17 +8,18 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:42Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:41Z }
+  - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
 sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:7d0b51b4f865486f
-    last_modified: 2026-11-06T00:08:32Z
+    digest: sha256:d5567f1a413b4d55
+    last_modified: 2026-11-06T00:26:40Z
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:68be8c2e07c6cae9
-    last_modified: 2026-11-06T00:08:32Z
+    digest: sha256:26faf235c0876b4e
+    last_modified: 2026-11-06T00:26:10Z
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs

@@ -604,7 +604,8 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
   const tmp = join(staging, `new-${process.pid}`), old = join(staging, `old-${process.pid}`);
   mkdirSync(dirname(out), { recursive: true });
   mkdirSync(staging, { recursive: true });
-  // The list goes in with the install: staged beside its target (one file system), moved right after.
+  // The list goes in with the install, staged with it: git-ignored, swept by the next run, so a killed
+  // run leaves nothing in src/data/ that git could commit; both are in the repository, one file system.
   const listFiles = !listDir || !tryList ? [] : [
     [TRY_LIST_FILE, tryList.bytes],
     [TRY_LIST_META, Buffer.from(`${JSON.stringify({ sha256: tryList.entry.sha256, rows: tryList.entry.rows, dataset_ids: tryList.entry.dataset_ids }, null, 2)}\n`)],
@@ -612,7 +613,7 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
     const path = join(listDir, name);
     let previous = null;
     try { previous = readFileSync(path); } catch { /* none yet */ }
-    return { path, staged: `${path}.tmp-${process.pid}`, bytes, previous };
+    return { path, staged: join(staging, `${name}-${process.pid}`), bytes, previous };
   });
   try {
     for (const [name, bytes] of written) {
@@ -635,7 +636,6 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
     }
   } finally {
     rmSync(staging, { recursive: true, force: true });
-    for (const file of listFiles) rmSync(file.staged, { force: true });
   }
 
   const summary = {

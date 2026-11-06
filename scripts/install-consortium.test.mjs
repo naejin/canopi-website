@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { installConsortium, verifyInstall, thumbnailUrl, shapeErrors, cellShape, USER_AGENT, DEFAULT_OUT, STAGING_DIR, stagingDirFor, TRY_LIST_DIR, tryListDirFor } from './install-consortium.mjs';
 
 const fixture = fileURLToPath(new URL('fixtures/consortium/', import.meta.url));
@@ -708,6 +708,33 @@ test('try list: a failure while it is moved into place puts back the install and
   assert.deepEqual(readFileSync(join(w.out, 'manifest.json')), before);
   assert.equal(readFileSync(join(w.listDir, 'try_references.tsv'), 'utf8'), TRY_LIST);
   assert.deepEqual(readdirSync(w.listDir).sort(), ['try_references.meta.json', 'try_references.tsv'], 'no temporary file left');
+});
+
+test('try list: a run killed while it moves the list leaves nothing new in the list folder', async (t) => {
+  const w = realExport(t);
+  // A child that dies by SIGKILL on its first rename into the list folder, with both files staged.
+  const child = `
+    import fs from 'node:fs';
+    import { syncBuiltinESMExports } from 'node:module';
+    const rename = fs.renameSync;
+    fs.renameSync = (from, to) => {
+      if (to.startsWith(${JSON.stringify(w.listDir)})) process.kill(process.pid, 'SIGKILL');
+      return rename(from, to);
+    };
+    syncBuiltinESMExports();
+    const { installConsortium } = await import(${JSON.stringify(pathToFileURL(script).href)});
+    await installConsortium(${JSON.stringify({ exportDir: w.src, outDir: w.out, tryListDir: w.listDir })});
+  `;
+  const run = spawnSync(process.execPath, ['--input-type=module', '-e', child], { encoding: 'utf8' });
+  assert.equal(run.signal, 'SIGKILL', run.stderr);
+  assert.deepEqual(readdirSync(w.listDir), [], 'nothing a commit could pick up');
+  const staging = stagingDirFor(w.out);
+  assert.equal(readdirSync(staging).filter((name) => name.includes('try_references')).length, 2, 'staged with the install');
+  // The next run sweeps the staging folder and installs.
+  await realInstall(w);
+  assert.equal(existsSync(staging), false);
+  assert.deepEqual(readdirSync(w.listDir).sort(), ['try_references.meta.json', 'try_references.tsv']);
+  assert.equal(readFileSync(join(w.listDir, 'try_references.tsv'), 'utf8'), TRY_LIST);
 });
 
 test('verifyInstall: a real install holds the try_references entry', async (t) => {
