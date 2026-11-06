@@ -38,6 +38,8 @@ test('the test command can load .ts files on the oldest Node that engines allows
   const stripsByDefault = floor[0] > 23 || (floor[0] === 23 && floor[1] >= 6) || (floor[0] === 22 && floor[1] >= 18);
   const usesTs = readdirSync(scripts).some((f) => f.endsWith('.test.mjs') && /import\(['"][^'"]+\.ts['"]\)|from ['"][^'"]+\.ts['"]/.test(readFileSync(join(scripts, f), 'utf8')));
   if (usesTs && !stripsByDefault) assert.match(pkg.scripts.test, /--experimental-strip-types/, `engines allows Node ${floor.join('.')}, which needs --experimental-strip-types to import .ts`);
+  // The installer parses the TRY list with src/lib/try-references.ts.
+  if (!stripsByDefault) assert.match(pkg.scripts['install:consortium'], /--experimental-strip-types/);
 });
 
 test('the type check reads the site source only, not bundled or copied JavaScript', () => {

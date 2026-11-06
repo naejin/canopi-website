@@ -5,11 +5,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { installConsortium, verifyInstall, thumbnailUrl, shapeErrors, cellShape, USER_AGENT, DEFAULT_OUT, STAGING_DIR, stagingDirFor } from './install-consortium.mjs';
+import { installConsortium, verifyInstall, thumbnailUrl, shapeErrors, cellShape, USER_AGENT, DEFAULT_OUT, STAGING_DIR, stagingDirFor, TRY_LIST_DIR, tryListDirFor } from './install-consortium.mjs';
 
 const fixture = fileURLToPath(new URL('fixtures/consortium/', import.meta.url));
 const script = fileURLToPath(new URL('install-consortium.mjs', import.meta.url));
@@ -25,7 +25,7 @@ function workspace(t) {
   const json = (name) => JSON.parse(readFileSync(join(src, name), 'utf8'));
   // Rewrites a file and, unless told not to, keeps SHA256SUMS (and the manifest's sha256 of a cell) in step.
   const write = (name, value, { sums = true } = {}) => {
-    const bytes = typeof value === 'string' ? value : JSON.stringify(value);
+    const bytes = typeof value === 'string' || Buffer.isBuffer(value) ? value : JSON.stringify(value);
     writeFileSync(join(src, name), bytes);
     if (name !== 'manifest.json' && sums) {
       const manifest = json('manifest.json');
@@ -590,4 +590,133 @@ test('agent_names (format 3, added 2026-10-28): optional or null, names keyed by
   c.interactions[i].agent_names.sources = ['nobody-agent-2099'];
   w.write('tropical.json', c);
   await assert.rejects(install(w), /tropical\.json cites undefined sources: nobody-agent-2099/);
+});
+
+// The TRY dataset list: an export a real install accepts (no photos, so no fetch), with a list of its
+// own, and an empty folder standing in for src/data/.
+const TRY_LIST = 'dataset_id\tdataset\tcustodian\treference\n1\tA\tB\tC\n2\tD\tE\tF\n2\tG\tH\tI\n';
+function realExport(t, list = TRY_LIST) {
+  const w = workspace(t);
+  for (const name of ['tropical.json', 'mediterranean.json', 'temperate.json']) {
+    const cell = w.json(name);
+    for (const taxon of cell.taxa) taxon.image = null;
+    w.write(name, cell);
+  }
+  const manifest = w.json('manifest.json');
+  manifest.canopi_db_sha256 = 'a'.repeat(64);
+  manifest.try_references = { file: 'try_references.tsv', sha256: sha(list), rows: 3, dataset_ids: 2 };
+  w.write('manifest.json', manifest);
+  writeFileSync(join(w.src, 'try_references.tsv'), list);
+  appendFileSync(join(w.src, 'SHA256SUMS'), `${sha(list)}  try_references.tsv\n`);
+  w.listDir = join(w.root, 'list');
+  mkdirSync(w.listDir);
+  // A list changed on purpose: its hash follows, so what is left to refuse is the content.
+  w.rewriteList = (bytes) => {
+    w.write('try_references.tsv', bytes);
+    const m = w.json('manifest.json');
+    m.try_references.sha256 = sha(bytes);
+    w.write('manifest.json', m);
+  };
+  return w;
+}
+const realInstall = (w, opts = {}) => installConsortium({ exportDir: w.src, outDir: w.out, tryListDir: w.listDir, log: quiet, ...opts });
+const shippedList = () => ['try_references.tsv', 'try_references.meta.json'].map((name) => sha(readFileSync(join(TRY_LIST_DIR, name))));
+
+test('try list: a real install writes the file byte for byte and its meta from the manifest entry', async (t) => {
+  const w = realExport(t);
+  await realInstall(w);
+  assert.equal(readFileSync(join(w.listDir, 'try_references.tsv'), 'utf8'), TRY_LIST);
+  assert.deepEqual(JSON.parse(readFileSync(join(w.listDir, 'try_references.meta.json'), 'utf8')), { sha256: sha(TRY_LIST), rows: 3, dataset_ids: 2 });
+  assert.deepEqual(readdirSync(w.listDir).sort(), ['try_references.meta.json', 'try_references.tsv'], 'no temporary file left');
+  // The page reads src/data/; the installed folder keeps the manifest whole, and no copy of the file.
+  assert.ok(!existsSync(join(w.out, 'try_references.tsv')));
+  assert.ok(!readFileSync(join(w.out, 'SHA256SUMS'), 'utf8').includes('try_references'));
+  assert.deepEqual(JSON.parse(readFileSync(join(w.out, 'manifest.json'), 'utf8')).try_references, w.json('manifest.json').try_references);
+  assert.deepEqual(verifyInstall(w.out), { climates: 3, images: 0 });
+});
+
+test('try list: only a real install writes it, never --out or --fixture', async (t) => {
+  assert.equal(tryListDirFor(DEFAULT_OUT, false), TRY_LIST_DIR);
+  assert.equal(tryListDirFor(DEFAULT_OUT, true), null);
+  assert.equal(tryListDirFor('/tmp/elsewhere', false), null);
+  assert.equal(tryListDirFor('/tmp/elsewhere', true), null);
+  const before = shippedList();
+  const w = realExport(t);
+  const run = spawnSync(process.execPath, [script, w.src, '--out', w.out], { encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  assert.deepEqual(shippedList(), before, '--out left src/data/ alone');
+  // --out still checks the list.
+  const broken = realExport(t);
+  const m = broken.json('manifest.json');
+  m.try_references.rows = 4;
+  broken.write('manifest.json', m);
+  const refused = spawnSync(process.execPath, [script, broken.src, '--out', broken.out], { encoding: 'utf8' });
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /3 rows, not the source's 4/);
+  const f = realExport(t);
+  await realInstall(f, { fixture: true, images: false });
+  assert.deepEqual(readdirSync(f.listDir), [], '--fixture writes no list, even when given a folder');
+  assert.deepEqual(shippedList(), before);
+});
+
+test('try list: a missing or mismatched list refuses the install with nothing written', async (t) => {
+  const manifestEdit = (edit) => (w) => { const m = w.json('manifest.json'); edit(m); w.write('manifest.json', m); };
+  for (const [name, breakIt, problem] of [
+    ['an older export', manifestEdit((m) => { delete m.try_references; }), /no try_references entry/],
+    ['a null entry', manifestEdit((m) => { m.try_references = null; }), /try_references: is null/],
+    ['another file name', manifestEdit((m) => { m.try_references.file = 'labels.json'; }), /try_references\.file/],
+    ['no rows', manifestEdit((m) => { m.try_references.rows = 0; }), /try_references\.rows/],
+    ['a sha256 of something else', manifestEdit((m) => { m.try_references.sha256 = 'f'.repeat(64); }), /try_references\.tsv does not match the manifest's sha256/],
+    ['another row count', manifestEdit((m) => { m.try_references.rows = 4; }), /3 rows, not the source's 4/],
+    ['another DatasetID count', manifestEdit((m) => { m.try_references.dataset_ids = 3; }), /2 DatasetIDs, not the source's 3/],
+    ['a file SHA256SUMS does not list', (w) => writeFileSync(join(w.src, 'SHA256SUMS'), readFileSync(join(w.src, 'SHA256SUMS'), 'utf8').replace(/.*try_references\.tsv\n/, '')), /try_references\.tsv is not listed in SHA256SUMS/],
+    ['a file missing', (w) => rmSync(join(w.src, 'try_references.tsv')), /try_references\.tsv is listed in SHA256SUMS but missing/],
+    ['a changed file', (w) => writeFileSync(join(w.src, 'try_references.tsv'), TRY_LIST.replace('A', 'Z')), /try_references\.tsv does not match its SHA256SUMS checksum/],
+    ['a row that does not parse', (w) => w.rewriteList(TRY_LIST.replace('A\tB', 'A')), /try_references\.tsv:2: 3 fields/],
+    ['a byte order mark', (w) => w.rewriteList(`﻿${TRY_LIST}`), /byte order mark/],
+    ['bytes that are not UTF-8', (w) => w.rewriteList(Buffer.concat([Buffer.from(TRY_LIST), Buffer.from([0xff, 0x0a])])), /try_references\.tsv is not UTF-8/],
+  ]) {
+    const w = realExport(t);
+    breakIt(w);
+    await assert.rejects(realInstall(w), problem, name);
+    assert.equal(existsSync(w.out), false, `${name}: no install`);
+    assert.deepEqual(readdirSync(w.listDir), [], `${name}: no list`);
+  }
+});
+
+test('try list: the fixture alone may have no entry; an entry it does have is still checked', async (t) => {
+  const w = realExport(t);
+  const m = w.json('manifest.json');
+  m.try_references.rows = 4;
+  w.write('manifest.json', m);
+  await assert.rejects(realInstall(w, { fixture: true, images: false }), /3 rows, not the source's 4/);
+  const bare = workspace(t);
+  await install(bare);
+  assert.deepEqual(verifyInstall(bare.out, { fixture: true }), { climates: 3, images: 0 });
+});
+
+test('try list: a failure while it is moved into place puts back the install and the list', async (t) => {
+  const w = realExport(t);
+  await realInstall(w);
+  const before = readFileSync(join(w.out, 'manifest.json'));
+  const next = realExport(t, TRY_LIST.replace('A', 'Z'));
+  next.out = w.out;
+  next.listDir = w.listDir;
+  rmSync(join(w.listDir, 'try_references.meta.json'));
+  mkdirSync(join(w.listDir, 'try_references.meta.json')); // a rename onto a directory fails
+  await assert.rejects(realInstall(next));
+  assert.deepEqual(readFileSync(join(w.out, 'manifest.json')), before);
+  assert.equal(readFileSync(join(w.listDir, 'try_references.tsv'), 'utf8'), TRY_LIST);
+  assert.deepEqual(readdirSync(w.listDir).sort(), ['try_references.meta.json', 'try_references.tsv'], 'no temporary file left');
+});
+
+test('verifyInstall: a real install holds the try_references entry', async (t) => {
+  const w = realExport(t);
+  await realInstall(w);
+  const manifest = JSON.parse(readFileSync(join(w.out, 'manifest.json'), 'utf8'));
+  delete manifest.try_references;
+  const bytes = JSON.stringify(manifest);
+  writeFileSync(join(w.out, 'manifest.json'), bytes);
+  writeFileSync(join(w.out, 'SHA256SUMS'), readFileSync(join(w.out, 'SHA256SUMS'), 'utf8').replace(/^.*  manifest\.json$/m, `${sha(bytes)}  manifest.json`));
+  assert.throws(() => verifyInstall(w.out), /no try_references entry/);
 });

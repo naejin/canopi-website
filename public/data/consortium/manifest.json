@@ -1,6 +1,6 @@
 {
   "format_version": 3,
-  "generated_at": "2026-11-05T22:42:51Z",
+  "generated_at": "2026-11-06T00:00:11Z",
   "canopi_db_sha256": "49a54334d5d629d22f04171421f64939162d1c0913ae5a304a4440ac3a1f5537",
   "climates": [
     {
@@ -11,7 +11,7 @@
       ],
       "taxa": 200,
       "interactions": 25,
-      "sha256": "f0ad597c772d49d6fcd15f37b3f584693dba455b8b0ccebe353857c125c1781b"
+      "sha256": "0a5053f987ffb6182b1d5b590118c5624297756565f61c1180beb28f195eb05a"
     },
     {
       "climate_zone": "Mediterranean",
@@ -21,7 +21,7 @@
       ],
       "taxa": 200,
       "interactions": 55,
-      "sha256": "3ebee7a20750330da6f4f4b7503bbf2d78914cb9ab0cef95486a15687f35149b"
+      "sha256": "dfbf3bee9cce79bf226708425294c1b1fbbc2e15e5a320415e16d3a2968936e1"
     },
     {
       "climate_zone": "Temperate",
@@ -31,7 +31,7 @@
       ],
       "taxa": 200,
       "interactions": 54,
-      "sha256": "79f4a11b1a1a564326080086bca239243cae0aac6ce61d8cce5e878bc9b45a52"
+      "sha256": "938555cd93fa910abb67a9985c5cde6a098bed0148d9e3ddfeefdd28be149f9f"
     }
   ],
   "locales": [
@@ -798,5 +798,11 @@
     "ZW": {
       "invasive_checked": true
     }
+  },
+  "try_references": {
+    "file": "try_references.tsv",
+    "sha256": "25381ab4795f21627cbafb70e1301983634ecd761d932be2eaf656a299ca75a1",
+    "rows": 767,
+    "dataset_ids": 591
   }
 }

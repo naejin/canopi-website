@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { builtTarget, splitHref, subdirectories } from './built-links.mjs';
-import { verifyInstall } from './install-consortium.mjs';
+import { tryListProblem, verifyInstall } from './install-consortium.mjs';
 import { consortiumPath } from '../src/i18n/consortium-path.js';
 import { parseTryReferences, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.ts';
 import { safeHref } from '../src/scripts/consortium/logic.js';
@@ -22,11 +21,14 @@ const downloads = [
   'RELEASE-SHA256SUMS.txt',
 ];
 const locales = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
-// The TRY list: the file the build read, checked against the source's hash and counts.
+// The TRY list: the file the build read, checked against its meta, and the meta against the entry of
+// the export that is installed (the list's one owner).
 const tryMeta = JSON.parse(readFileSync('src/data/try_references.meta.json', 'utf8'));
-const trySource = readFileSync('src/data/try_references.tsv', 'utf8');
-assert.equal(createHash('sha256').update(trySource).digest('hex'), tryMeta.tsv_sha256, 'try_references.tsv matches its source hash');
-const tryRows = parseTryReferences(trySource, tryMeta);
+const tryBytes = readFileSync('src/data/try_references.tsv');
+assert.equal(tryListProblem(tryBytes, tryMeta), null, 'try_references.tsv matches its meta');
+const { sha256: trySha256, rows: tryRowCount, dataset_ids: tryIdCount } = JSON.parse(readFileSync(join(root, 'data', 'consortium', 'manifest.json'), 'utf8')).try_references;
+assert.deepEqual(tryMeta, { sha256: trySha256, rows: tryRowCount, dataset_ids: tryIdCount }, 'try_references.meta.json is the installed manifest entry');
+const tryRows = parseTryReferences(tryBytes.toString('utf8'), tryMeta);
 // A rendered field back to its text: the tags go, and the entities Astro writes become characters once.
 const plainText = (html) => html.replace(/<[^>]*>/g, '').replace(/&(amp|lt|gt|quot|#39|#x27);/g, (_, name) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", '#x27': "'" })[name]);
 const assetLinks = (html) => [...html.matchAll(/(?:src|href)="(\/(?:_astro|fonts|hero|og|data|vendor)\/[^"?#]+)"/g)].map((m) => m[1]);

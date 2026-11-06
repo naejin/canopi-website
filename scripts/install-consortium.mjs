@@ -16,6 +16,14 @@
 //   reasons are one per region, in region order, each in the file's regions; the file's regions are
 //   the union of its reasons' regions; every invasive_in country is a manifest country that GRIIS
 //   checked (the page's "not checked, never none" rests on it).
+// - the TRY dataset list (manifest try_references): listed in SHA256SUMS, its sha256, rows and
+//   dataset_ids those of the manifest entry, and parsed as the site's build parses it. An export
+//   with no entry is refused; only --fixture may lack one (the fixture is an export from before the
+//   list and never reaches the page).
+// A real install (the default output, no --fixture) also writes that list to src/data/, where the
+// page reads it: try_references.tsv byte for byte, and try_references.meta.json holding the entry's
+// sha256, rows and dataset_ids. --out and --fixture check it and write nothing there. The manifest
+// keeps the entry, as it keeps every key it is given; the file itself is not copied to the output.
 // Photos: each taxon's image.url (http or https) is downloaded once per taxon id, one at a time
 // with a half-second pause (rate limiting waited out, see download()), into images/<id>.<ext>, and the installed climate file points to
 // /data/consortium/images/<id>.<ext>; credit, licence and source page stay as they are. Wikimedia
@@ -31,9 +39,13 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseTryReferences } from '../src/lib/try-references.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DEFAULT_OUT = join(ROOT, 'public', 'data', 'consortium');
+export const TRY_LIST_DIR = join(ROOT, 'src', 'data');
+// Where an install writes the TRY list: only a real one.
+export const tryListDirFor = (out, fixture) => (!fixture && resolve(out) === DEFAULT_OUT ? TRY_LIST_DIR : null);
 export const IMAGE_BASE = '/data/consortium/images/';
 // Where an install is written before it is renamed into place: outside public/ (so astro build
 // never ships a half-written or leftover copy) and git-ignored (.cache/). An --out outside the
@@ -50,6 +62,8 @@ export const USER_AGENT = 'CanopiWebsite/1.0 (https://projectcanopi.com; contact
 export const MAX_FAILED_SHARE = 0.1;
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024; // a larger file (a full-size original) counts as failed
 const ZERO_SHA = '0'.repeat(64);
+const TRY_LIST_FILE = 'try_references.tsv';
+const TRY_LIST_META = 'try_references.meta.json';
 const SAFE_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const IMAGE_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' };
 
@@ -166,6 +180,8 @@ const manifestShape = obj({
   climates: arr(obj({ climate_zone: climateZone, file: { kind: 'string', pattern: SAFE_NAME }, regions: arr(region, 1), taxa: int, interactions: int, sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ } }), 1),
   locales: arr(oneOf(...LOCALES)),
   countries: { kind: 'map', values: obj({ invasive_checked: bool }), keyPattern: COUNTRY },
+  // Required except on the fixture (see tryListEntry): optional here, so the shape reads the same for both.
+  try_references: optional(obj({ file: oneOf(TRY_LIST_FILE), sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ }, rows: { ...int, min: 1 }, dataset_ids: { ...int, min: 1 } })),
 });
 
 // labels.json: trait → English value → locale → translation (canopi-data docs/consortium-export-format.md).
@@ -307,6 +323,31 @@ export function ruleProblem(file, cell, countries) {
   return null;
 }
 
+// The TRY list's bytes against { sha256, rows, dataset_ids } (a manifest entry or the meta file): the
+// first problem as a sentence, or null. It parses as the site's build does, so what installs builds.
+export function tryListProblem(bytes, { sha256: hash, rows, dataset_ids }) {
+  if (sha256(bytes) !== hash) return `${TRY_LIST_FILE} does not match the manifest's sha256.`;
+  let text;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
+  } catch {
+    return `${TRY_LIST_FILE} is not UTF-8.`;
+  }
+  try {
+    parseTryReferences(text, { rows, dataset_ids }, TRY_LIST_FILE);
+  } catch (err) {
+    return err.message;
+  }
+  return null;
+}
+
+// A manifest's try_references, or null on a fixture that has none (fail is refuse or broken).
+function tryListEntry(manifest, fixture, fail) {
+  if (manifest.try_references !== undefined) return manifest.try_references;
+  if (!fixture) fail('manifest.json has no try_references entry: an export from before the TRY dataset list, or not from canopi-data.');
+  return null;
+}
+
 // Reads and checks a whole export directory; returns the parsed manifest, labels bytes and climate files.
 export function verifyExport(dir, { fixture = false } = {}) {
   const sums = readSums(dir);
@@ -317,6 +358,15 @@ export function verifyExport(dir, { fixture = false } = {}) {
   if (manifest.canopi_db_sha256 === ZERO_SHA && !fixture) refuse('canopi_db_sha256 is all zeros: this is the invented fixture, never installed for real (tests pass --fixture).');
   const labelProblems = shapeErrors(parse(dir, 'labels.json'), labelsShape, 'labels.json');
   if (labelProblems.length) refuse(labelProblems.join('; '));
+  const tryEntry = tryListEntry(manifest, fixture, refuse);
+  let tryList = null;
+  if (tryEntry) {
+    if (!sums.has(tryEntry.file)) refuse(`${tryEntry.file} is not listed in SHA256SUMS.`);
+    const bytes = readFileSync(join(dir, tryEntry.file));
+    const problem = tryListProblem(bytes, tryEntry);
+    if (problem) refuse(problem);
+    tryList = { entry: tryEntry, bytes };
+  }
 
   const seen = new Set();
   const cells = manifest.climates.map((entry) => {
@@ -341,14 +391,14 @@ export function verifyExport(dir, { fixture = false } = {}) {
     if (rule) refuse(rule);
     return { entry, cell, bytes };
   });
-  return { manifest, manifestBytes: readFileSync(join(dir, 'manifest.json')), labelsBytes: readFileSync(join(dir, 'labels.json')), cells };
+  return { manifest, manifestBytes: readFileSync(join(dir, 'manifest.json')), labelsBytes: readFileSync(join(dir, 'labels.json')), cells, tryList };
 }
 
 // Checks an installed directory as the site serves it (scripts/check-built-site.mjs runs it on
 // dist/client/data/consortium/, the tests on public/data/consortium/): the manifest's format and
 // shape, SHA256SUMS line by line, each climate file against its manifest sha256, regions, taxa and
-// interactions counts, the export's shape and the rules the schema cannot express, and every photo a
-// local images/ file that exists. Throws on the first problem; returns the counts of climate files
+// interactions counts, the export's shape and the rules the schema cannot express, every photo a
+// local images/ file that exists, and the try_references entry (the file is in src/data/, not here). Throws on the first problem; returns the counts of climate files
 // and photos.
 export function verifyInstall(dir, { fixture = false } = {}) {
   const broken = (message) => { throw new Error(`Consortium install broken (${dir}): ${message}`); };
@@ -361,6 +411,7 @@ export function verifyInstall(dir, { fixture = false } = {}) {
   if (manifest.canopi_db_sha256 === ZERO_SHA && !fixture) broken('canopi_db_sha256 is all zeros: the invented fixture is installed.');
   const labelProblems = shapeErrors(json('labels.json'), labelsShape, 'labels.json');
   if (labelProblems.length) broken(labelProblems.join('; '));
+  tryListEntry(manifest, fixture, broken);
 
   const sums = new Map();
   for (const line of read('SHA256SUMS').toString('utf8').split('\n')) {
@@ -512,12 +563,14 @@ async function fetchImages(cells, { fetchImpl, delayMs, backoffMs, log, maxFaile
   return { files, failed, total: wanted.size };
 }
 
-export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, maxFailedShare = MAX_FAILED_SHARE, stagingDir = null, log = console.log } = {}) {
+export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, maxFailedShare = MAX_FAILED_SHARE, stagingDir = null, tryListDir = null, log = console.log } = {}) {
   if (!exportDir) refuse('no export directory given.');
   if (!images && !fixture) refuse('--no-images is allowed only with --fixture: a real install copies its photos into the site.');
   const dir = resolve(exportDir), out = resolve(outDir);
   checkOut(out, dir);
-  const { manifest, manifestBytes, labelsBytes, cells } = verifyExport(dir, { fixture });
+  const { manifest, manifestBytes, labelsBytes, cells, tryList } = verifyExport(dir, { fixture });
+  // tryListDir stands in for src/data/ in tests; a fixture never writes the list.
+  const listDir = fixture ? null : tryListDir ?? tryListDirFor(out, fixture);
   // A photo that is not an http(s) url (protocol-relative, data:, another scheme) is never
   // downloaded and never served from elsewhere: no photo.
   for (const c of cells) for (const t of c.cell.taxa) {
@@ -551,21 +604,38 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
   const tmp = join(staging, `new-${process.pid}`), old = join(staging, `old-${process.pid}`);
   mkdirSync(dirname(out), { recursive: true });
   mkdirSync(staging, { recursive: true });
+  // The list goes in with the install: staged beside its target (one file system), moved right after.
+  const listFiles = !listDir || !tryList ? [] : [
+    [TRY_LIST_FILE, tryList.bytes],
+    [TRY_LIST_META, Buffer.from(`${JSON.stringify({ sha256: tryList.entry.sha256, rows: tryList.entry.rows, dataset_ids: tryList.entry.dataset_ids }, null, 2)}\n`)],
+  ].map(([name, bytes]) => {
+    const path = join(listDir, name);
+    let previous = null;
+    try { previous = readFileSync(path); } catch { /* none yet */ }
+    return { path, staged: `${path}.tmp-${process.pid}`, bytes, previous };
+  });
   try {
     for (const [name, bytes] of written) {
       mkdirSync(dirname(join(tmp, name)), { recursive: true });
       writeFileSync(join(tmp, name), bytes);
     }
+    for (const file of listFiles) writeFileSync(file.staged, file.bytes);
     const hadOut = existsSync(out);
     if (hadOut) renameSync(out, old);
+    const moved = [];
     try {
       renameSync(tmp, out);
+      for (const file of listFiles) { renameSync(file.staged, file.path); moved.push(file); }
     } catch (err) {
-      if (hadOut) renameSync(old, out); // put the previous install back
+      // Put back what was there: the list files already moved and the previous install.
+      for (const file of moved) { if (file.previous) writeFileSync(file.path, file.previous); else rmSync(file.path); }
+      rmSync(out, { recursive: true, force: true });
+      if (hadOut) renameSync(old, out);
       throw err;
     }
   } finally {
     rmSync(staging, { recursive: true, force: true });
+    for (const file of listFiles) rmSync(file.staged, { force: true });
   }
 
   const summary = {
@@ -576,6 +646,7 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
   log(`Installed ${cells.length} consortium climates (${cells.map((c) => c.entry.file).join(', ')}) in ${out}`);
   if (images) log(`Photos: ${photos.files.size} of ${photos.total} downloaded${photos.failed.length ? `; no photo for ${photos.failed.map((f) => f.name).join(', ')}` : ''}.`);
   else log('Photos: skipped (--no-images).');
+  if (listFiles.length) log(`TRY list: ${tryList.entry.rows} rows, ${tryList.entry.dataset_ids} DatasetIDs, written to ${listDir}.`);
   return summary;
 }
 

@@ -13,6 +13,8 @@ as in the real export.
 not invented; every `invasive_in` country is a checked one. `invasive_in` lists are invented, but each one
 also holds every country where GRIIS really records the plant invasive (`griis.json`), so the fixture never
 shows "not recorded invasive" where GRIIS says otherwise.
+`try_references` is absent from the manifest, as in an export from before the TRY dataset list; the installer
+allows that only with `--fixture`, which never writes `src/data/`.
 
 Covers: null versus `[]` (`toxicity`), `functions: null` and a taxon with no stratum or phases yet
 (Zingiber officinale), invasive in a few or many countries, every toxicity level, genus, species and family-rank

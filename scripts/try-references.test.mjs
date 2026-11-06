@@ -2,24 +2,35 @@
 // parser's refusals, which urls link, and that the page never writes the text as markup.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { tryListProblem } from './install-consortium.mjs';
 import { parseTryReferences, referenceParts, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.ts';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
-const source = read('src/data/try_references.tsv');
+const bytes = readFileSync(new URL('../src/data/try_references.tsv', import.meta.url));
+const source = bytes.toString('utf8');
 const meta = JSON.parse(read('src/data/try_references.meta.json'));
 const HEADER = 'dataset_id\tdataset\tcustodian\treference\n';
 const one = { rows: 1, dataset_ids: 1 };
 
-test('the shipped list is the source file: its hash, 767 rows and 591 DatasetIDs', () => {
-  assert.equal(createHash('sha256').update(source).digest('hex'), meta.tsv_sha256);
+test('the shipped list is what its meta says: hash, rows and DatasetIDs read from the file', () => {
+  assert.equal(tryListProblem(bytes, meta), null);
+  const lines = source.slice(0, -1).split('\n').slice(1).map((line) => line.split('\t'));
+  assert.equal(lines.length, meta.rows);
+  assert.equal(new Set(lines.map(([id]) => id)).size, meta.dataset_ids);
   const rows = parseTryReferences(source, meta);
-  assert.equal(rows.length, 767);
-  assert.equal(new Set(rows.map((row) => row.datasetId)).size, 591);
-  assert.equal(rows[0].dataset, 'Abisko & Sheffield Database');
-  assert.equal(rows.find((row) => row.datasetId === '689').dataset, 'O:PFT_FTI_privatDatasets_TRY_TRY050_uploads329');
-  assert.ok(rows.some((row) => row.reference.length === 1774), 'the longest reference is whole');
+  assert.deepEqual(rows.map((row) => [row.datasetId, row.dataset, row.custodian, row.reference]), lines, 'each row whole, in order');
+});
+
+test('the list has one owner: the meta is the installed manifest entry, so a hand copy shows', () => {
+  const { sha256, rows, dataset_ids } = JSON.parse(read('public/data/consortium/manifest.json')).try_references;
+  assert.deepEqual(meta, { sha256, rows, dataset_ids });
+});
+
+test('a list that differs from its meta fails', () => {
+  assert.match(tryListProblem(bytes, { ...meta, sha256: 'f'.repeat(64) }), /does not match the manifest's sha256/);
+  assert.match(tryListProblem(bytes, { ...meta, rows: meta.rows + 1 }), /rows, not the source's/);
+  assert.match(tryListProblem(bytes, { ...meta, dataset_ids: meta.dataset_ids + 1 }), /DatasetIDs, not the source's/);
 });
 
 test('a malformed file or another count fails the build', () => {

@@ -23,10 +23,11 @@ const HEADER = 'dataset_id\tdataset\tcustodian\treference';
 const FILE = 'src/data/try_references.tsv';
 
 // UTF-8 text, LF line ends, one header, four tab-split fields and no quoting (canopi-data
-// docs/sources/try.md). Anything else, or counts other than the source's, throws, which fails the build.
-export function parseTryReferences(source: string, expected: TryCounts): TryReference[] {
+// docs/sources/try.md). Anything else, or counts other than the source's, throws, which fails the
+// build and refuses an install; `file` names the file in that message.
+export function parseTryReferences(source: string, expected: TryCounts, file = FILE): TryReference[] {
   const fail = (line: number, message: string): never => {
-    throw new Error(`${FILE}:${line}: ${message}`);
+    throw new Error(`${file}:${line}: ${message}`);
   };
   if (source.startsWith('﻿')) fail(1, 'starts with a byte order mark');
   if (source.includes('\r')) fail(1, 'has a carriage return; lines end in LF');

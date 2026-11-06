@@ -1,6 +1,5 @@
 {
-  "source": "canopi-data data/curated/try_references_inputs.json",
+  "sha256": "25381ab4795f21627cbafb70e1301983634ecd761d932be2eaf656a299ca75a1",
   "rows": 767,
-  "dataset_ids": 591,
-  "tsv_sha256": "25381ab4795f21627cbafb70e1301983634ecd761d932be2eaf656a299ca75a1"
+  "dataset_ids": 591
 }
