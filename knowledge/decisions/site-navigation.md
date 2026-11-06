@@ -5,7 +5,7 @@ description: The header carries Guides, Books, Consortium, Donate, language and 
 tags: [decision, navigation]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:00Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:19Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T21:55:00Z }
 sources:
   - id: header-astro
     resource: ../../src/components/Header.astro
@@ -21,7 +21,7 @@ sources:
     resource: ../../src/components/LearnAndTry.astro
     title: src/components/LearnAndTry.astro
     digest: sha256:1db4d9cd5f5ae2fc
-    last_modified: 2026-11-06T14:31:17Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: global-css
     resource: ../../src/styles/global.css
     title: src/styles/global.css
@@ -41,7 +41,7 @@ sources:
     resource: ../../src/components/Bibliography.astro
     title: src/components/Bibliography.astro
     digest: sha256:ddbb81054d86f22f
-    last_modified: 2026-11-06T13:33:07Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: guidesindex-astro
     resource: ../../src/components/guides/GuidesIndex.astro
     title: src/components/guides/GuidesIndex.astro
@@ -51,12 +51,12 @@ sources:
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
     digest: sha256:0d17dec900085382
-    last_modified: 2026-11-06T14:03:52Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
-    digest: sha256:3a83f0cfdbe7ada8
-    last_modified: 2026-11-06T00:08:32Z
+    digest: sha256:6b311db622eab597
+    last_modified: 2026-11-06T21:51:25Z
 enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 ---
 

@@ -6,7 +6,7 @@ resource: ../../src/lib/consortium
 tags: [module, consortium]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T21:40:57Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T22:24:54Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -51,8 +51,8 @@ sources:
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
-    digest: sha256:9d414066cec0b7c4
-    last_modified: 2026-11-06T21:40:38Z
+    digest: sha256:676a6819187fb97c
+    last_modified: 2026-11-06T22:24:45Z
 enforced_by:
   - scripts/consortium.test.mjs
   - scripts/install-consortium.test.mjs

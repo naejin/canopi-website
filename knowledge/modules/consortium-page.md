@@ -4,7 +4,7 @@ title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T21:53:24Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:03Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T22:24:54Z }
 sources:
   - id: crops-js
     resource: ../../src/scripts/consortium/crops.js
@@ -54,8 +54,8 @@ sources:
   - id: consortium-side-test
     resource: ../../scripts/consortium-side.test.mjs
     title: scripts/consortium-side.test.mjs
-    digest: sha256:382b0f345bf9a611
-    last_modified: 2026-11-06T21:53:24Z
+    digest: sha256:0daa3e4ca54eb91a
+    last_modified: 2026-11-06T22:24:45Z
   - id: consortium-side-layout-test
     resource: ../../scripts/consortium-side-layout.test.mjs
     title: scripts/consortium-side-layout.test.mjs
