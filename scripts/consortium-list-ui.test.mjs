@@ -900,3 +900,21 @@ test('pest chips name the data\'s sourced common names (agent_names) in en, fr a
   const cited = [...d.querySelectorAll('.srcs li')].map((li) => textOf(li));
   for (const id of i.agent_names.sources) assert.ok(cited.some((c) => c.includes(temperate.sources[id].label)), `Sources cite ${id}`);
 });
+
+// ---------- A corrected toxicity (installed since the export of 2026-11-06) ----------
+test('a corrected toxicity shows "Canopi correction" in the plant\'s source list, never its bare id, in any language', async (t) => {
+  const errors = t.mock.method(console, 'error', () => {});
+  for (const [climate, file, name] of [['mediterranean', mediterranean, 'Hedera helix'], ['temperate', temperate, 'Hedera helix'], ['tropical', tropical, 'Asclepias curassavica']]) {
+    const plant = file.taxa.find((x) => x.canonical_name === name);
+    assert.deepEqual(plant.warnings.toxicity.sources, ['canopi-correction'], `${name} in ${climate}`);
+    const q = core.encodeState({ climate, site: { ...core.DEFAULT_SITE }, kept: [], removed: [], members: [plant.id, file.taxa.find((x) => x.id !== plant.id).id], plants: [], crops: [], guests: [] }, file);
+    for (const lang of ['en', 'fr']) {
+      const page = await tab(device(), `/consortium/#${q}`, { data: 'real', lang }).load();
+      await page.act('details', plant.id);
+      const items = [...page.$$('#ct-dialog .srcs li')].map((li) => li.textContent.trim());
+      assert.ok(items.includes('Canopi correction'), `${name} in ${climate}, ${lang}: ${items.join(' | ')}`);
+      assert.doesNotMatch(page.text('#ct-dialog'), /canopi-correction/);
+    }
+  }
+  assert.equal(errors.mock.callCount(), 0, 'nothing logged as an error');
+});
