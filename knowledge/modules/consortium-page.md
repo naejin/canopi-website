@@ -2,9 +2,9 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-05T23:04:45Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:33Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:43:54Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:16Z }
 sources:
   - id: crops-js
     resource: ../../src/scripts/consortium/crops.js
@@ -30,7 +30,7 @@ sources:
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
     digest: sha256:d2af1d0254d070be
-    last_modified: 2026-11-05T22:55:29Z
+    last_modified: 2026-11-05T23:05:05Z
   - id: app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
@@ -89,8 +89,8 @@ sources:
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
-    digest: sha256:71d07f07594beeaf
-    last_modified: 2026-11-05T22:56:24Z
+    digest: sha256:3a83f0cfdbe7ada8
+    last_modified: 2026-11-06T00:08:32Z
   - id: dialogs-js
     resource: ../../src/scripts/dialogs.js
     title: src/scripts/dialogs.js

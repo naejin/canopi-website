@@ -3,9 +3,9 @@ type: Architecture Decision
 title: Site navigation
 description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page has Start here then the consortium section.
 tags: [decision, navigation]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-05T23:04:44Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:32Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:39Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:19Z }
 sources:
   - id: header-astro
     resource: ../../src/components/Header.astro
@@ -41,7 +41,7 @@ sources:
     resource: ../../src/components/Footer.astro
     title: src/components/Footer.astro
     digest: sha256:56a42ab06771a82f
-    last_modified: 2026-11-05T22:54:26Z
+    last_modified: 2026-11-05T23:05:05Z
   - id: bibliography-astro
     resource: ../../src/components/Bibliography.astro
     title: src/components/Bibliography.astro
@@ -56,12 +56,12 @@ sources:
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
     digest: sha256:6fb5f7ff1523f2dc
-    last_modified: 2026-11-05T23:01:48Z
+    last_modified: 2026-11-05T23:05:05Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
-    digest: sha256:71d07f07594beeaf
-    last_modified: 2026-11-05T22:56:24Z
+    digest: sha256:3a83f0cfdbe7ada8
+    last_modified: 2026-11-06T00:08:32Z
 enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 ---
 

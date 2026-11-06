@@ -4,9 +4,9 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:06:40Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:33Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-05T23:04:46Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:17Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -76,8 +76,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:acf288a00fc5bc48
-    last_modified: 2026-11-05T22:55:29Z
+    digest: sha256:48cb30a45a5d6ea0
+    last_modified: 2026-11-06T00:08:32Z
 ---
 
 # Responsibility

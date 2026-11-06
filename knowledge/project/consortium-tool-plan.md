@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:33Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-30T11:06:08Z }
 sources:
@@ -11,13 +11,13 @@ sources:
   - id: readme-md
     resource: ../../scripts/fixtures/consortium/README.md
     title: scripts/fixtures/consortium/README.md
-    digest: sha256:d874dc32df70cbc0
-    last_modified: 2026-10-28T19:06:36Z
+    digest: sha256:ccb79a7048093d22
+    last_modified: 2026-11-06T00:08:32Z
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
     digest: sha256:ad69909984f46681
-    last_modified: 2026-10-30T11:02:35Z
+    last_modified: 2026-10-30T11:10:55Z
   - id: climates-ts
     resource: ../../src/data/climates.ts
     title: src/data/climates.ts
@@ -93,7 +93,8 @@ the region-cell plan of format 2 is superseded where this page says so).
   file against the schema's required shape and the format's rules (reasons one per
   region, regions the union of the reasons', invasive only in checked countries),
   and copies `manifest.json`, `labels.json` and the climate files to
-  `public/data/consortium/`. It refuses `canopi_db_sha256` of all zeros (the
+  `public/data/consortium/`. A real install also writes the export's TRY dataset
+  list, checked against the manifest's `try_references`, to `src/data/`. It refuses `canopi_db_sha256` of all zeros (the
   fixture) unless `--fixture` (tests only). Committed output; run by hand.
 - Photos: the installer downloads each `image.url` once into
   `public/data/consortium/images/<id>.<ext>` and rewrites `url` locally; credit,
