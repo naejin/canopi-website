@@ -16,6 +16,12 @@ const temperate = real('temperate');
 const ids = temperate.taxa.map((t) => t.id);
 const named = (n) => temperate.taxa.find((t) => t.canonical_name === n);
 const layer = (s) => temperate.taxa.filter((t) => t.stratum?.value === s);
+// A plant's height as the page words it, from the installed list: TRY's restricted values stay out
+// of tracked text. Read from the raw trait, not through side.js, and rounded by the helper
+// consortium-list.test.mjs pins. Which plants a sentence names, their order and its words stay literal here.
+const metres = (name) => roundHeight(temperate.taxa.find((t) => t.canonical_name === name).traits.height_m.max);
+const asRegex = (n) => String(n).replace('.', '\\.');
+const asFrench = (n) => String(n).replace('.', ',');
 const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
 
 // Mockup state 05 is drawn at a field (design-scale.md §1c: "200 ids, field, France"), so the side
@@ -43,7 +49,7 @@ test('one log scale from 0.05 m to 60 m: the ground, the top, and the 1 m, 5 m a
   assert.equal(SV.heightFrac(null), 0);
   const [one, five, twenty] = SV.SCALE_LINES.map(SV.heightFrac);
   assert.ok(one > 0.4 && one < 0.45 && five > 0.62 && five < 0.68 && twenty > 0.82 && twenty < 0.86, `${one} ${five} ${twenty}`);
-  // True to height: a 40 m linden stands above a 0.3 m herb, in every band, on the same scale.
+  // True to height: a tall tree stands above a low herb, in every band, on the same scale.
   assert.ok(SV.heightFrac(40) > SV.heightFrac(4) && SV.heightFrac(4) > SV.heightFrac(0.3));
 });
 
@@ -66,7 +72,7 @@ test('M1 on the real Temperate list: "Most" is the middle half of the heights no
     assert.equal(f.n, layer(s).length, `${s}: every plant counted once`);
   }
   const em = SV.bandFacts('emergent', layer('emergent'));
-  assert.deepEqual(em.typical.map(roundHeight), [18, 40], 'Most 18–40 m (mockup state 05), not 7–40 m across the gap');
+  assert.deepEqual(em.typical.map(roundHeight), [metres('Robinia pseudoacacia'), metres('Quercus petraea')], 'Most starts above the gap (mockup state 05), not below it');
   assert.deepEqual(em.short.map((t) => t.names.en), ['Corn', 'Sunflower'], 'shortest first');
   assert.equal(em.unknown, 2, 'Silver birch and English oak');
   assert.equal(em.tall.length, 0, 'Emergent has no "tall" exceptions');
@@ -101,7 +107,7 @@ test('a climbing or trailing plant in a band of 4 known heights or fewer is name
   const others = ids.filter((id) => temperate.taxa.find((t) => t.id === id).stratum?.value !== 'low').slice(0, 30);
   const { page } = await open([...others, ivy.id, ramsons.id]);
   assert.equal(page.$('#ct-side').attribs['data-size'], 'marks');
-  assert.equal(text(page.$('#ct-side .sv-band[data-s="low"] .sv-sum')), 'Heights: Ramsons 0.5 m. Also 1 climbing or trailing plant: Common Ivy 2 m.');
+  assert.equal(text(page.$('#ct-side .sv-band[data-s="low"] .sv-sum')), `Heights: Ramsons ${metres('Allium ursinum')} m. Also 1 climbing or trailing plant: Common Ivy ${metres('Hedera helix')} m.`);
 });
 
 test('marks are dense (no gap, alternate shades) only when they are too narrow for a 1 px gap at the width drawn', () => {
@@ -193,7 +199,7 @@ test('the drawing has a text equivalent: each band is an image named by its plan
 });
 
 // Review W1 (coordinator ruling): the data's "Climber" habit takes in trailing plants, and its height
-// can be a runner's length (Pumpkin 12 m) or a low recorded height (Common Ivy 1.5 m). The site says no
+// can be a runner's length or a low recorded height. The site says no
 // more than the data: "climbing or trailing" and the recorded size, never "climbs to", never a support.
 test('a climbing or trailing plant is drawn as a vine with no support, and the legend, the band and the caption give its recorded size, never how high it climbs', async () => {
   const grape = named('Vitis vinifera');
@@ -201,8 +207,8 @@ test('a climbing or trailing plant is drawn as a vine with no support, and the l
   const p = page.$(`#ct-side .sv-col[data-t="${grape.id}"] .sv-plant`);
   assert.equal(p.attribs['data-shape'], 'climber');
   assert.equal(p.querySelector('.sv-support'), null, 'no support line implying an upright height');
-  assert.match(text([...page.$$('#ct-side .pkey li')].find((li) => /Wine grape/.test(text(li)))), /35 m, climbing or trailing$/);
-  assert.match(page.$('#ct-side .sv-band[data-s="high"] .sv-strip').attribs['aria-label'], /Wine grape, 35\u00a0m, climbing or trailing/);
+  assert.match(text([...page.$$('#ct-side .pkey li')].find((li) => /Wine grape/.test(text(li)))), new RegExp(`${asRegex(metres('Vitis vinifera'))} m, climbing or trailing$`));
+  assert.match(page.$('#ct-side .sv-band[data-s="high"] .sv-strip').attribs['aria-label'], new RegExp(`Wine grape, ${asRegex(metres('Vitis vinifera'))}\u00a0m, climbing or trailing`));
   assert.match(page.text('#ct-side .profile-foot'), /A climbing or trailing plant is drawn as a vine/);
   assert.doesNotMatch(page.text('#ct-side'), /climbs/);
   const { page: none } = await open(NINE);
@@ -299,7 +305,7 @@ test('above 20 a band with marks is one focusable group named by its count and d
   const g = page.$(`#ct-side .sv-marks i[data-t="${grape.id}"]`);
   g.dispatchEvent(new page.Event('pointerover'));
   await page.settle();
-  assert.match(text(g.closest('.sv-band').querySelector('.sv-tip')), /^Wine grape, 35 m, climbing or trailing/);
+  assert.match(text(g.closest('.sv-band').querySelector('.sv-tip')), new RegExp(`^Wine grape, ${asRegex(metres('Vitis vinifera'))} m, climbing or trailing`));
 });
 
 test('an empty band takes no tab stop and says it is empty with the list\'s own words', async () => {
@@ -316,10 +322,10 @@ test('an empty band takes no tab stop and says it is empty with the list\'s own 
 test('M1 at 200 plants (state 05, a field in France): under each band the heights are spelled out, the exceptions and climbers named with one separator, the unknown heights counted', async () => {
   const { page } = await open(ids);
   const sum = (s) => text(page.$(`#ct-side .sv-band[data-s="${s}"] .sv-sum`));
-  assert.equal(sum('emergent'), 'Most 18–40 m. Also 2 short sun-lovers: Corn 2 m, Sunflower 3 m. Height not known for 2.');
-  assert.equal(sum('high'), 'Most 1–14 m. Also 2 tall plants that grow up through the shade: European Ash 40 m, European chestnut 35 m. Also 4 climbing or trailing plants: Wine grape 35 m, Hardy kiwi 30 m, Hop 8 m and 1 more. Height not known for 1.');
-  assert.match(sum('medium'), /^Most 0\.7–2 m\. Also 14 tall plants that grow up through the shade: Large-leaved linden 40 m, Norway spruce 40 m, Small-leaved linden 30 m and 11 more\. Also 7 climbing or trailing plants: Pumpkin 12 m, Winter squash 10 m, Woodbine 6 m and 4 more\.$/);
-  assert.equal(sum('low'), 'Most 0.2–0.6 m. Also 1 climbing or trailing plant: Common Ivy 2 m.');
+  assert.equal(sum('emergent'), `Most ${metres('Robinia pseudoacacia')}–${metres('Quercus petraea')} m. Also 2 short sun-lovers: Corn ${metres('Zea mays')} m, Sunflower ${metres('Helianthus annuus')} m. Height not known for 2.`);
+  assert.equal(sum('high'), `Most ${metres('Secale cereale')}–${metres('Alnus glutinosa')} m. Also 2 tall plants that grow up through the shade: European Ash ${metres('Fraxinus excelsior')} m, European chestnut ${metres('Castanea sativa')} m. Also 4 climbing or trailing plants: Wine grape ${metres('Vitis vinifera')} m, Hardy kiwi ${metres('Actinidia arguta')} m, Hop ${metres('Humulus lupulus')} m and 1 more. Height not known for 1.`);
+  assert.match(sum('medium'), new RegExp(`^Most ${asRegex(metres('Origanum vulgare'))}–${asRegex(metres('Ribes nigrum'))} m\\. Also 14 tall plants that grow up through the shade: Large-leaved linden ${asRegex(metres('Tilia platyphyllos'))} m, Norway spruce ${asRegex(metres('Picea abies'))} m, Small-leaved linden ${asRegex(metres('Tilia cordata'))} m and 11 more\\. Also 7 climbing or trailing plants: Woodbine ${asRegex(metres('Lonicera periclymenum'))} m, Common bean ${asRegex(metres('Phaseolus vulgaris'))} m, Singletary pea ${asRegex(metres('Lathyrus oleraceus'))} m and 4 more\\.$`));
+  assert.equal(sum('low'), `Most ${metres('Vaccinium myrtillus')}–${metres('Lamium album')} m. Also 1 climbing or trailing plant: Common Ivy ${metres('Hedera helix')} m.`);
   assert.doesNotMatch(page.text('#ct-side'), /climbs/);
   // The band counts and warnings of state 05: ⚠ 1, 16, 10, 2 (29 of 200).
   assert.deepEqual([...page.$$('#ct-side .sv-n')].map((n) => text(n.querySelector('.vh'))), ['1 with a warning', '16 with a warning', '10 with a warning', '2 with a warning']);
@@ -411,7 +417,7 @@ test('print: the drawing and its legend at 20 plants or fewer; above 20 "At a gl
 test('the side view reads in French', async () => {
   const { page } = await open(ids, { lang: 'fr' });
   assert.equal(text(page.$('#ct-side .sv-band[data-s="medium"] .sv-light')), 'supporte un peu d’ombre');
-  assert.match(text(page.$('#ct-side .sv-band[data-s="medium"] .sv-sum')), /^La plupart mesurent entre 0,7 et 2 m\. S’y ajoutent 14 plantes hautes qui montent à travers l’ombre : .+ 40 m, .+ 40 m, .+ 30 m et 11 autres\. S’y ajoutent 7 plantes grimpantes ou rampantes : Courge 12 m, .+ 10 m, .+ et 4 autres\.$/);
+  assert.match(text(page.$('#ct-side .sv-band[data-s="medium"] .sv-sum')), new RegExp(`^La plupart mesurent entre ${asFrench(metres('Origanum vulgare'))} et ${asFrench(metres('Ribes nigrum'))} m\\. S’y ajoutent 14 plantes hautes qui montent à travers l’ombre : .+ ${asFrench(metres('Tilia platyphyllos'))} m, .+ ${asFrench(metres('Picea abies'))} m, .+ ${asFrench(metres('Tilia cordata'))} m et 11 autres\\. S’y ajoutent 7 plantes grimpantes ou rampantes : .+ ${asFrench(metres('Lonicera periclymenum'))} m, .+ ${asFrench(metres('Phaseolus vulgaris'))} m, .+ et 4 autres\\.$`));
   assert.doesNotMatch(page.text('#ct-side'), /grimpe jusqu/);
   assert.match(text(page.$('#ct-side .sv-band[data-s="emergent"] .sv-sum')), /Hauteur inconnue pour 2 plantes\.$/);
   const nine = await open(NINE, { lang: 'fr' });
