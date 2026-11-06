@@ -4,7 +4,7 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:34Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:01Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:18Z }
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
@@ -12,18 +12,18 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:26faf235c0876b4e
-    last_modified: 2026-11-06T00:26:10Z
+    digest: sha256:5da4d8acf55b5be6
+    last_modified: 2026-11-06T13:53:29Z
   - id: readme
     resource: ../../README.md
     title: README.md
-    digest: sha256:22edd4bb3671389f
-    last_modified: 2026-10-26T20:08:11Z
+    digest: sha256:18790192849df669
+    last_modified: 2026-11-06T13:57:26Z
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:119fb510174fe5b0
-    last_modified: 2026-11-06T00:26:10Z
+    digest: sha256:00df44c46bd707e6
+    last_modified: 2026-11-06T14:03:59Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -46,7 +46,7 @@ Node >= 22.12.0.
 | dev server (port 4321) | `npm run dev` |
 | unit/regression tests | `npm test` (`node --experimental-strip-types --test scripts/*.test.mjs`, so it runs on Node 22.12) |
 | type check | `npm run check` (`wrangler types` writes the gitignored `worker-configuration.d.ts`, then `astro check` type-checks `.ts`, `.js` and `.astro` files; MDX is not checked) |
-| marketing build | `npm run build` (runs `copy-maplibre.mjs` first) |
+| marketing build | `npm run build` |
 | built-site check | `node scripts/check-built-site.mjs` |
 | bibliography links (network, by hand) | `npm run check:bibliography` |
 | consortium data (network, by hand; output committed) | `npm run install:consortium -- <canopi-data export dir>` (see [Consortium core](/modules/consortium-core.md); tests use `--fixture --no-images --out <tmp>`) |
@@ -62,7 +62,6 @@ Node >= 22.12.0.
 
 - `build:with-web`, `preview` or `deploy` fail with "CANOPI_WEB_EDITION_ARCHIVE is required": set it, or `CANOPI_WEB_EDITION_REQUIRED=0` for an intentional marketing-only build.
 - `npm run check` runs out of memory (it should peak under 1 GB): `tsconfig.json` must exclude `public`, `mockup`, `.local` and `node_modules`; the base config allows JS, so without them the check parses the MapLibre bundle in `public/vendor` and needs more than 4 GB, and the out-of-memory killer can take the terminal session with it. `scripts/package.test.mjs` fails if an exclude goes missing.
-- Map 404s in dev after a build: `npm run build` wiped `public/vendor`; restart the dev server (do not kill processes by port).
 - Build throws `src/data/bibliography.md:<line>`: fix the bibliography entry as the message says (see [src/data](/modules/src-data.md)).
 - `npm test` key mismatch: add the key to all 11 translation files (see [src/i18n](/modules/src-i18n.md)); guide strings go in `src/i18n/guides/{en,fr}.json` only.
 - `guides.test.mjs` fails: the message names the guide file and rule (see [Field Guide writing](/conventions/field-guide-writing.md)).

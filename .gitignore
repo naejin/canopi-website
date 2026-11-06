@@ -60,6 +60,5 @@ coverage/
 *.db
 .beads-credential-key
 .beads.gate.lock
-public/vendor/
 scripts/featured-files.local.json
 .local/

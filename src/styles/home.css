@@ -94,66 +94,15 @@
 .section-head :is(h1, h2) { font-size: clamp(34px, 4.6vw, 54px); }
 .section-head p { margin-top: 12px; font-size: 18px; color: var(--text-secondary); }
 /* The quieter sections after the featured plan. */
-:is(.network, .start-here, .bibliography) .section-head h2 { font-size: clamp(30px, 3.6vw, 42px); }
+:is(.network, .bibliography) .section-head h2 { font-size: clamp(30px, 3.6vw, 42px); }
 
 /* ---------- Featured design ---------- */
 
 /* No dividers between sections: space and the paper grain separate them. The plan is the page's
    centrepiece, so it runs wider than the text column; the sections after it are quieter. */
 .featured { padding-top: clamp(40px, 6vw, 72px); }
-/* Only the canvas widens; its caption stays on the text column, level with the finder below. */
+/* Only the canvas widens; its caption stays on the text column, level with the list below. */
 .design-canvas-wrap { margin-inline: calc(50% - min(50vw - var(--gutter), 740px)); }
-/* A real plan first, full width, with one caption line; then the finder for others: locate and
-   the map on the left, the nearest designs on the right. */
-/* The locate row sits above the map only; the list starts level with the map. */
-.finder {
-  display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 14px 20px; align-items: start; margin-top: 40px;
-  grid-template-areas: "locate ." "map index";
-}
-.finder-browse { display: contents; }
-.finder-index { grid-area: index; display: flex; flex-direction: column; min-width: 0; }
-.finder-locate { grid-area: locate; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-.finder-map { grid-area: map; }
-/* The locate label may wrap: in French it is wider than a 320px phone. */
-.finder-locate .button { gap: 8px; max-width: 100%; padding-block: 6px; white-space: normal; text-align: center; line-height: 1.25; }
-.finder-status { font-size: 14px; color: var(--text-muted); flex: 1 1 220px; }
-.finder-map {
-  position: relative;
-  height: clamp(340px, 46vh, 460px);
-  border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
-  background: var(--surface);
-}
-/* Credits: an "i" in a paper circle that unfolds into one line to its left. */
-.finder-map .maplibregl-ctrl-bottom-right { left: 0; display: flex; justify-content: flex-end; }
-.map-credits { display: flex; align-items: flex-end; justify-content: flex-end; gap: 6px; min-width: 0; }
-/* MapLibre's corner rule sets the control's margins; the credits also keep clear of the map's left edge. */
-.finder-map .maplibregl-ctrl-bottom-right .map-credits { margin-left: 10px; }
-.map-credits-toggle {
-  flex: none; width: 24px; height: 24px; padding: 0;
-  display: grid; place-items: center;
-  border: 1px solid var(--border); border-radius: 50%; background: var(--surface);
-  font: italic 600 14px/1 var(--font-display); color: var(--text-secondary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-}
-.map-credits-toggle:hover, .map-credits-toggle[aria-expanded="true"] { color: var(--text); border-color: var(--border-strong); }
-.map-credits-text {
-  margin: 0; padding: 4px 10px; border-radius: 12px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--border);
-  font-size: 12px; line-height: 1.4; color: var(--text-secondary); text-wrap: balance;
-}
-.map-credits-text a { color: inherit; }
-.finder-map.maplibregl-map { font: inherit; }
-.finder-map.is-unavailable { display: grid; place-items: center; padding: 24px; text-align: center; color: var(--text-muted); }
-.finder-hint {
-  position: absolute; left: 12px; top: 12px; z-index: 2; pointer-events: none; max-width: calc(100% - 70px);
-  padding: 6px 10px; font-size: 13px; color: var(--text-secondary);
-  background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--border); border-radius: var(--radius);
-  transition: opacity 400ms ease;
-}
-.finder-hint.is-gone { opacity: 0; }
-.finder-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
-.finder-more { margin-top: 12px; align-self: flex-start; color: var(--text-secondary); }
-.finder-note { margin-top: 16px; font-size: 15px; color: var(--text-secondary); }
 .design-stage { margin: 0; display: flex; flex-direction: column; min-width: 0; }
 .design-canvas-wrap {
   position: relative;
@@ -209,7 +158,7 @@
 @keyframes caption-in { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { .design-caption.is-swapping > *, .design-legend.is-swapping { animation: none; } }
 
-/* Nearest designs and the map's pins and clusters. */
+/* The list of designs. */
 
 .place-button {
   width: 100%; display: grid; gap: 2px; text-align: left;
@@ -219,37 +168,6 @@
 .place-button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
 .place-name { font-family: var(--font-display); font-size: 20px; }
 .place-meta { font-size: 14px; color: var(--text-muted); }
-.place-distance { font-size: 14px; font-weight: 600; color: var(--accent-ink); }
-
-/* Pins: ochre dots on a paper ring; the active one names its design. */
-.pin {
-  position: relative; display: block; width: 22px; height: 22px; padding: 0;
-  border: 0; border-radius: 50%; background: none;
-}
-.pin::before {
-  content: ''; position: absolute; inset: 4px; border-radius: 50%;
-  background: var(--accent); box-shadow: 0 0 0 3px var(--surface), 0 1px 4px rgba(0, 0, 0, 0.3);
-  transition: inset 160ms ease;
-}
-.pin[aria-pressed="true"]::before { inset: 0; }
-.pin-label {
-  position: absolute; left: 28px; top: 50%; transform: translateY(-50%);
-  padding: 3px 8px; white-space: nowrap;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 5px;
-  font: 600 13px var(--font-sans); color: var(--text);
-}
-.pin:not([aria-pressed="true"]) .pin-label { display: none; }
-.pin:hover .pin-label, .pin:focus-visible .pin-label { display: block; }
-.cluster {
-  display: grid; place-items: center; width: var(--size); height: var(--size); padding: 0;
-  border: 3px solid var(--surface); border-radius: 50%; background: var(--accent); color: var(--on-accent);
-  font: 600 14px var(--font-sans); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-}
-.cluster:hover { background: var(--accent-hover); }
-.visitor-dot {
-  display: block; width: 14px; height: 14px; border-radius: 50%;
-  background: var(--focus); box-shadow: 0 0 0 3px var(--surface), 0 0 0 9px color-mix(in srgb, var(--focus) 22%, transparent);
-}
 
 /* ---------- Network ---------- */
 
@@ -264,33 +182,6 @@
 .network-group a { display: inline-block; padding: 4px 0; text-decoration: none; }
 .network-group a:hover { text-decoration: underline; }
 .network-group a span { color: var(--text-muted); font-size: 0.85em; }
-
-/* ---------- Start here ---------- */
-
-/* Three entry guides as numbered notebook cards, just before the bibliography they draw on. */
-.start-here { padding-bottom: 0; }
-.section-head .start-here-note { margin-top: 8px; font-size: 14px; color: var(--text-muted); }
-.start-here-list {
-  margin: 0; padding: 0; list-style: none; counter-reset: start;
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px;
-}
-.start-here-card {
-  counter-increment: start; position: relative; display: grid; gap: 8px; align-content: start;
-  padding: 18px 20px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-}
-.start-here-card::before {
-  content: counter(start, decimal-leading-zero);
-  padding-bottom: 8px; border-bottom: 1px solid var(--border);
-  font-size: 13px; font-weight: 600; letter-spacing: 0.06em; color: var(--accent-ink);
-}
-.start-here-card:hover { border-color: var(--border-strong); }
-.start-here-card h3 { font-size: 21px; line-height: 1.2; text-wrap: pretty; }
-.start-here-card a { text-decoration: none; }
-/* The whole card is the link's target. */
-.start-here-card a::after { content: ''; position: absolute; inset: 0; border-radius: var(--radius); }
-.start-here-card a:hover { color: var(--accent-ink); text-decoration: underline; }
-.start-here-card p { font-size: 15px; line-height: 1.45; color: var(--text-secondary); text-wrap: pretty; }
-.start-here-all { margin-top: 24px; }
 
 /* ---------- Bibliography ---------- */
 
@@ -389,10 +280,7 @@
   .hero-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 360px; }
   .hero-actions .button { min-width: 0; width: 100%; }
   .contact-layout, .field-row { grid-template-columns: 1fr; }
-  .finder { grid-template-columns: minmax(0, 1fr); grid-template-areas: "locate" "map" "index"; }
   .design-canvas-wrap { height: 420px; }
-  .finder-map { height: 320px; }
-  .finder { margin-top: 32px; }
   .design-hint { top: 12px; bottom: auto; }
   .place-button { padding: 11px 14px; }
   /* The edition codes are 24 px targets (above); no negative margin, so they never overlap the guide links. */
@@ -403,11 +291,6 @@
   .footer-legal { margin-left: 0; }
 }
 
-/* Between phones and desktops the list goes under the map. */
-@media (min-width: 640px) and (max-width: 959px) {
-  .finder { grid-template-columns: minmax(0, 1fr); grid-template-areas: "locate" "map" "index"; }
-}
-
 /* ---------- Contact result pages (no-JS form posts) ---------- */
 
 .contact-result { min-height: 60vh; }
@@ -415,3 +298,98 @@
 .contact-result h1 { font-size: clamp(34px, 4.6vw, 54px); }
 .contact-result p { margin-top: 16px; font-size: 18px; color: var(--text-secondary); }
 .contact-result p + p { margin-top: 28px; }
+
+/* ---------- Hero proof line, what the app does, ways in, about ---------- */
+
+.hero-proof {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 0;
+  margin: 14px 0 0; padding: 0; list-style: none;
+  font-size: 15px; font-weight: 600; letter-spacing: 0.02em; color: var(--text-secondary); text-shadow: var(--halo);
+}
+.hero-proof li + li::before { content: '·'; margin: 0 10px; color: var(--text-muted); }
+.hero-editions { max-width: 34em; margin-top: 16px; font-size: 15px; line-height: 1.45; color: var(--text-secondary); text-shadow: var(--halo); text-wrap: balance; }
+
+.what { padding-bottom: 0; }
+.what-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.what-card {
+  display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.what-card-wide { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 9fr); align-items: center; }
+.what-card-wide img { display: block; width: 100%; height: auto; border-left: 1px solid var(--border); }
+/* One capture per theme; the hidden one is lazy, so it is never fetched. */
+.what-shot-dark { display: none; }
+:root[data-theme="dark"] .what-shot-light { display: none; }
+:root[data-theme="dark"] .what-shot-dark { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .what-shot-light { display: none; }
+  :root:not([data-theme="light"]) .what-shot-dark { display: block; }
+}
+.what-text { display: grid; gap: 8px; padding: clamp(20px, 2.6vw, 30px); }
+.what-text h3 { font-size: clamp(23px, 2.4vw, 28px); line-height: 1.15; }
+.what-text .what-note { font-size: 14px; color: var(--text-muted); }
+.what-text p { font-size: 16px; line-height: 1.5; color: var(--text-secondary); text-wrap: pretty; }
+/* The panel crop rises from the card's foot, cut off so it reads as part of a longer panel. */
+.what-panel { flex: 1; height: 360px; max-height: 360px; overflow: hidden; display: flex; justify-content: center; padding-inline: 20px; background: var(--surface-alt); border-top: 1px solid var(--border); }
+.what-panel img { width: min(100%, 380px); height: auto; align-self: flex-start; margin-top: 20px; border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; }
+.what-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; margin-top: 24px; }
+.what-foot p { flex: 1 1 320px; max-width: 40em; color: var(--text-secondary); text-wrap: pretty; }
+
+.design-picker { margin-top: 24px; }
+.design-picker-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+.design-picker-more { margin-top: 12px; color: var(--text-secondary); }
+.design-picker-note { margin-top: 16px; font-size: 15px; color: var(--text-secondary); }
+
+.learn { padding-top: 0; }
+.learn-grid { display: grid; gap: 16px; }
+.learn-card {
+  display: flex; flex-direction: column; gap: 12px; min-width: 0;
+  padding: clamp(22px, 3vw, 32px); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.learn-card h3 { font-size: clamp(26px, 2.8vw, 32px); line-height: 1.15; text-wrap: balance; }
+.learn-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.learn-col > p { color: var(--text-secondary); text-wrap: pretty; }
+.learn-col > .learn-note { font-size: 15px; color: var(--text-muted); }
+.learn-topics .chip { gap: 8px; }
+.learn-topics .chip span { color: var(--text-muted); font-weight: 400; }
+.learn-beta {
+  display: inline-flex; align-items: center; min-height: 24px; padding: 0 9px; margin-left: 4px;
+  border: 1px solid var(--accent); border-radius: 999px; vertical-align: 0.3em;
+  font-family: var(--font-sans); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink);
+}
+.learn-picks { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
+.learn-picks li { border-bottom: 1px solid var(--border); }
+.learn-picks a { display: block; padding: 10px 0; font-family: var(--font-display); font-size: 19px; line-height: 1.25; text-decoration: none; }
+.learn-picks a:hover { color: var(--accent-ink); text-decoration: underline; }
+.learn-topics { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.learn-action { margin: 0; padding-top: 8px; }
+.learn-action .button { white-space: normal; text-align: center; }
+
+.about { padding-top: 0; }
+.about-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 24px 32px; margin: 0; padding: 24px 0; border-block: 1px solid var(--border); }
+.about-facts dt { font-family: var(--font-display); font-size: 21px; line-height: 1.2; }
+.about-facts dd { margin: 6px 0 0; font-size: 15px; line-height: 1.45; color: var(--text-secondary); text-wrap: pretty; }
+.about-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+
+.bibliography { padding-top: 0; }
+.network-fold { border-block: 1px solid var(--border); }
+.network-fold summary { padding: 16px 0; cursor: pointer; }
+.network-fold summary h2 { display: inline; font-size: clamp(20px, 2.2vw, 24px); }
+.network-note { margin-bottom: 24px; color: var(--text-secondary); }
+
+@media (max-width: 639px) {
+  .what-grid { grid-template-columns: minmax(0, 1fr); }
+  .what-card-wide { display: flex; }
+  .what-card-wide img { border-left: 0; border-top: 1px solid var(--border); }
+  .what-panel { height: 300px; max-height: 300px; }
+  .hero-actions .button, .what-foot .button, .about-actions .button { width: 100%; }
+}
+@media (min-width: 640px) and (max-width: 959px) {
+  .what-card-wide { display: flex; }
+  .what-card-wide img { border-left: 0; border-top: 1px solid var(--border); }
+}
+@media (min-width: 960px) {
+  .learn-consortium { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: end; }
+  .learn-consortium .learn-col { max-width: 40em; }
+  .learn-guides { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 48px; }
+}

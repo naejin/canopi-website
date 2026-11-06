@@ -1,5 +1,7 @@
 export const CANOPI_VERSION = '2.0.3';
 export const CANOPI_RELEASE_DATE = '2026-10-21';
+// The species count Canopi Web's catalog shows; check it when a release changes the catalog.
+export const CANOPI_SPECIES_COUNT = 175473;
 export const CANOPI_RELEASE_TAG = `v${CANOPI_VERSION}`;
 export const CANOPI_RELEASE_URL = `https://github.com/opencanopi/canopi/releases/tag/${CANOPI_RELEASE_TAG}`;
 export const CANOPI_RELEASES_URL = 'https://github.com/opencanopi/canopi/releases';

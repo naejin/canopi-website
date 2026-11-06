@@ -1,0 +1,34 @@
+---
+// Who is behind Canopi and why it can be trusted, in one short block.
+import { t, type Locale } from '../i18n/utils';
+import { SOURCE_URL, discordUrl } from '../data/site';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+const facts = [
+  ['about.free.title', 'about.free.text'],
+  ['about.open.title', 'about.open.text'],
+  ['about.nonprofit.title', 'about.nonprofit.text'],
+  ['about.world.title', 'about.world.text'],
+];
+---
+<section class="section about" id="about" aria-labelledby="about-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="about-title">{t('about.title', lang)}</h2>
+      <p>{t('about.lede', lang)}</p>
+    </header>
+    <dl class="about-facts">
+      {facts.map(([title, text]) => (
+        <div>
+          <dt>{t(title, lang)}</dt>
+          <dd>{t(text, lang)}</dd>
+        </div>
+      ))}
+    </dl>
+    <p class="about-actions">
+      <button class="button button-primary" type="button" data-open-donate>{t('about.donate', lang)}</button>
+      <a class="button button-secondary" href={discordUrl(lang)}>{t('about.community', lang)}</a>
+      <a class="button button-secondary" href={SOURCE_URL}>{t('about.source', lang)}</a>
+    </p>
+  </div>
+</section>

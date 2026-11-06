@@ -5,8 +5,9 @@ import Header from './Header.astro';
 import Hero from './Hero.astro';
 import FeaturedDesign from './FeaturedDesign.astro';
 import Network from './Network.astro';
-import StartHere from './StartHere.astro';
-import ConsortiumSection from './ConsortiumSection.astro';
+import WhatYouCanDo from './WhatYouCanDo.astro';
+import LearnAndTry from './LearnAndTry.astro';
+import AboutCanopi from './AboutCanopi.astro';
 import Bibliography from './Bibliography.astro';
 import Contact from './Contact.astro';
 import Footer from './Footer.astro';
@@ -34,8 +35,7 @@ const keys = [
   'design.canvasLabel', 'design.hintPointer', 'design.hintTouch', 'design.by', 'design.stats', 'design.org',
   'design.role.apple', 'design.role.berry', 'design.role.nut', 'design.role.pod', 'design.role.carrot',
   'design.role.chili', 'design.role.medicinal', 'design.role.bee', 'design.role.timber', 'design.role.biomass',
-  'finder.meta', 'finder.unavailable', 'finder.note', 'finder.credits', 'finder.cluster',
-  'finder.locating', 'finder.located', 'finder.locateFailed',
+  'design.choiceMeta',
   'contact.sending', 'contact.sent', 'contact.failed', 'contact.refused', 'contact.invalid',
 ];
 ---
@@ -44,11 +44,12 @@ const keys = [
   <Header lang={lang} />
   <main id="main">
     <Hero lang={lang} />
+    <WhatYouCanDo lang={lang} />
     <FeaturedDesign lang={lang} />
-    <Network lang={lang} />
-    <StartHere lang={lang} />
-    <ConsortiumSection lang={lang} />
+    <LearnAndTry lang={lang} />
+    <AboutCanopi lang={lang} />
     <Bibliography lang={lang} />
+    <Network lang={lang} />
     <Contact lang={lang} />
   </main>
   <Footer lang={lang} />

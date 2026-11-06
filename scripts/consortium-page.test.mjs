@@ -436,7 +436,7 @@ test('the home section and the tool share one intro and one beta word (seam m6)'
     assert.ok(home[lang]['home.consortium.lede'], lang);
   }
   assert.match(page, /t\('home\.consortium\.lede', lang\)/);
-  assert.match(read('src/components/ConsortiumSection.astro'), /t\('consortium\.beta', lang\)/);
+  assert.match(read('src/components/LearnAndTry.astro'), /t\('consortium\.beta', lang\)/);
 });
 
 // Owner decision 2026-10-29 (decision log, c62d97c): the tool is /consortium/ in every language, French

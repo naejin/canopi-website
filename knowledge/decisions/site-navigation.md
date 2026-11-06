@@ -1,9 +1,9 @@
 ---
 type: Architecture Decision
 title: Site navigation
-description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page has Start here then the consortium section.
+description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page's Learn and try section holds the consortium tool and the entry guides.
 tags: [decision, navigation]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:32Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:00Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:19Z }
 sources:
@@ -18,10 +18,10 @@ sources:
     digest: sha256:34b05ddd61557259
     last_modified: 2026-10-26T23:34:11Z
   - id: starthere-astro
-    resource: ../../src/components/StartHere.astro
-    title: src/components/StartHere.astro
-    digest: sha256:71ddb89d7ff75714
-    last_modified: 2026-10-25T16:51:12Z
+    resource: ../../src/components/LearnAndTry.astro
+    title: src/components/LearnAndTry.astro
+    digest: sha256:1db4d9cd5f5ae2fc
+    last_modified: 2026-11-06T14:31:17Z
   - id: global-css
     resource: ../../src/styles/global.css
     title: src/styles/global.css
@@ -32,11 +32,6 @@ sources:
     title: .local/next-session-navigation.md
     digest: sha256:7284a6783ffdd56b
     last_modified: 2026-10-25T16:42:41Z
-  - id: consortiumsection-astro
-    resource: ../../src/components/ConsortiumSection.astro
-    title: src/components/ConsortiumSection.astro
-    digest: sha256:bb4e1a1f5dc07c90
-    last_modified: 2026-10-29T05:02:41Z
   - id: footer-astro
     resource: ../../src/components/Footer.astro
     title: src/components/Footer.astro
@@ -45,8 +40,8 @@ sources:
   - id: bibliography-astro
     resource: ../../src/components/Bibliography.astro
     title: src/components/Bibliography.astro
-    digest: sha256:3e620cbabe963e2d
-    last_modified: 2026-10-27T20:56:00Z
+    digest: sha256:ddbb81054d86f22f
+    last_modified: 2026-11-06T13:33:07Z
   - id: guidesindex-astro
     resource: ../../src/components/guides/GuidesIndex.astro
     title: src/components/guides/GuidesIndex.astro
@@ -55,8 +50,8 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:6fb5f7ff1523f2dc
-    last_modified: 2026-11-05T23:05:05Z
+    digest: sha256:0d17dec900085382
+    last_modified: 2026-11-06T14:03:52Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
@@ -71,6 +66,7 @@ enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 |---|---|---|
 | 2026-10-25 | owner (Jean-Pierre Yin) | approved all four: header Guides+Books (Discord, Docs to footer); phone Menu disclosure below 640px with every link; guides↔bibliography as one Learn section; home Start here row (landrace-gardening, will-they-cross, saving-seed) |
 | 2026-10-27 | owner | consortium tool entry points: a short header item (in the phone Menu below 640px), measured at 640px in all 11 locales; a footer link; its own home section after Start here; the tool in the Learn section ([Consortium tool — user decisions](/decisions/consortium-user-decisions.md)) |
+| 2026-11-06 | owner | home page redesign: Start here and the consortium section become one section, with other entry guides ([Home page redesign](/decisions/homepage-redesign.md)) |
 
 # What was built
 
@@ -81,9 +77,9 @@ enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 - **Learn section**: the guides index links to the bibliography; the bibliography page links to the guides; both link to the consortium tool (`learn.consortium.link`, "Design a consortium (beta): …"). Guides link into the tool with a plant and climate preset (`<TryConsortium>`, see [Field Guide components](/references/field-guide-components.md)).
 - **Footer**: "Design a consortium" (`nav.consortium.full`, the same key as the Menu line) after the bibliography link.
 - **Footer, data sources**: "Data sources" (`dataSources.title`) sits after the bibliography link, in the footer only, not the header or the phone Menu; the consortium tool's head also links it. Measured 2026-11-06 in headless Chrome, all 11 locales, at 320, 360, 414, 500, 639, 640, 768, 959 and 1200 px: links wrap with 20 px between them in a row, no overlap, no horizontal scroll. The extra link adds at most one row (29 px); the tallest is Japanese at 320 px, five rows, 348 px of footer.
-- **One name per locale**: `nav.consortium.full` is the tool's name in the Menu, the footer and the home section's title, and `learn.consortium.link` starts with it, so each locale names the tool with one verb in one mood (de "Ein Konsortium planen", ja "コンソーシアムを設計する", ru "Составить консорциум"; it and nl use the imperative throughout). The full name contains the header word.
-- **Consortium home section** (`src/components/ConsortiumSection.astro`), right after Start here: title (`nav.consortium.full`) with a Beta mark, a one-paragraph promise, the beta's coverage (`home.consortium.note`: "A beta with three climates so far: tropical, Mediterranean and temperate") and one action to the tool. The note spells the climates out in each locale, with no region; `homepage.test.mjs` fails when `public/data/consortium/manifest.json` lists other climates, so a new climate means rewriting the note in all 11 locales. No photos and no strata colours (the tool's drawing keeps those); styles scoped in the component.
-- **Start here** (`src/components/StartHere.astro`): three entry guides from frontmatter, en or fr by locale, English with an "in English" note elsewhere, plus "All field guides".
+- **One name per locale**: `nav.consortium.full` is the tool's name in the Menu, the footer and the home card's title, and `learn.consortium.link` starts with it, so each locale names the tool with one verb in one mood (de "Ein Konsortium planen", ja "コンソーシアムを設計する", ru "Составить консорциум"; it and nl use the imperative throughout). The full name contains the header word.
+- **Consortium on the home page** (`src/components/LearnAndTry.astro`), the first card of the section: title (`nav.consortium.full`) with a Beta mark, a one-paragraph promise, the beta's coverage (`home.consortium.note`: "A beta with three climates so far: tropical, Mediterranean and temperate") and one action to the tool. The note spells the climates out in each locale, with no region; `homepage.test.mjs` fails when `public/data/consortium/manifest.json` lists other climates, so a new climate means rewriting the note in all 11 locales. No photos and no strata colours (the tool's drawing keeps those); styles scoped in the component.
+- **Entry guides** (`src/components/LearnAndTry.astro`), the second card: three guides (food-forest, living-soil, landrace-gardening) from frontmatter, en or fr by locale, English with an "in English" note elsewhere, the topics with their counts, plus "All field guides".
 
 # Settled choices
 
@@ -96,7 +92,7 @@ enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 - No nav item is hidden by width except the one inline/Menu swap (`.nav-inline` hidden, `.nav-menu` shown below 640px, in `src/styles/global.css`). The old `.nav-guides` and `.nav-discord` (479px) hiding is gone.
 - Width queries use 639/640/959/960 only, plus the 1200px hero-image query.
 - The inline header must fit at 640px in all 11 locales, measured in a real browser, not assumed. New header labels must stay short.
-- Enforced by `scripts/homepage.test.mjs` (breakpoint allowlist, no width-hidden header items, header keys in every locale, chrome.js handles both menus, the consortium header word and full name per locale, the home note against the manifest's cells, the header's global styles, and the consortium keys' places in the translation files) and `scripts/check-built-site.mjs` (header and Menu links per locale, `aria-current`, Start here, guides↔bibliography links).
+- Enforced by `scripts/homepage.test.mjs` (breakpoint allowlist, no width-hidden header items, header keys in every locale, chrome.js handles both menus, the consortium header word and full name per locale, the home note against the manifest's cells, the header's global styles, and the consortium keys' places in the translation files) and `scripts/check-built-site.mjs` (header and Menu links per locale, `aria-current`, the Learn and try section, guides↔bibliography links).
 
 # Related
 

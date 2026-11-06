@@ -5,7 +5,7 @@ description: The approved October 2026 static HTML mockup and its implementation
 resource: ../../mockup
 tags: [module, reference, design]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:57:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:01Z }
 sources:
   - id: mockup
     resource: ../../mockup
@@ -46,5 +46,5 @@ None at build time. Its modules map onto [src/scripts](/modules/src-scripts.md),
 
 # Gotchas
 
-- Code is truth: where `src/` and the mockup differ, the production code wins (e.g. `places-map.js` became `design-map.js`; the mockup exporter was retired for `scripts/export-featured-designs.py`).
+- Code is truth: where `src/` and the mockup differ, the production code wins (e.g. the mockup's `places-map.js` map was removed from the site; the mockup exporter was retired for `scripts/export-featured-designs.py`).
 - Untracked local folders (`screenshots/`, `codex-v1/`, hero originals) may exist in a working copy; never commit them.

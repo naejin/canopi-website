@@ -1,0 +1,55 @@
+---
+// The two things a visitor can use right now with nothing to install: the consortium tool and the guides.
+import { t, consortiumPath, type Locale } from '../i18n/utils';
+import { guideDomains, publishedGuides, slugOf } from '../lib/guides';
+import { gt, guideLangOf, guidePath, guidesPath, isGuideLang } from '../i18n/guides';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+const entrySlugs = ['food-forest', 'living-soil', 'landrace-gardening'];
+const guideLang = guideLangOf(lang);
+const published = await publishedGuides(guideLang);
+const guides = entrySlugs.map((slug) => {
+  const entry = published.find((e) => slugOf(e) === slug);
+  if (!entry) throw new Error(`LearnAndTry: no published guide "${slug}" in ${guideLang}`);
+  return { href: guidePath(slug, lang), title: entry.data.title };
+});
+const topics = guideDomains
+  .map((domain) => ({ domain, count: published.filter((e) => e.data.domain === domain).length }))
+  .filter((topic) => topic.count);
+const textLang = isGuideLang(lang) ? undefined : guideLang;
+---
+<section class="section learn" aria-labelledby="learn-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="learn-title">{t('learn.title', lang)}</h2>
+      <p>{t('learn.lede', lang)}</p>
+    </header>
+    <div class="learn-grid">
+      <article class="learn-card learn-consortium">
+        <div class="learn-col">
+          <h3>{t('nav.consortium.full', lang)} <span class="learn-beta">{t('consortium.beta', lang)}</span></h3>
+          <p>{t('home.consortium.lede', lang)}</p>
+          <p class="learn-note">{t('home.consortium.note', lang)}</p>
+        </div>
+        <p class="learn-action"><a class="button button-primary" href={consortiumPath(lang)}>{t('home.consortium.action', lang)}</a></p>
+      </article>
+      <article class="learn-card learn-guides">
+        <div class="learn-col">
+          <h3>{t('learn.guides.title', lang)}</h3>
+          <p>{t('learn.guides.lede', lang, { count: String(published.length) })}</p>
+          {textLang && <p class="learn-note">{t('start.inEnglish', lang)}</p>}
+          <ul class="learn-picks" role="list">
+            {guides.map((guide) => (<li><a href={guide.href} hreflang={guideLang} lang={textLang}>{guide.title}</a></li>))}
+          </ul>
+        </div>
+        <div class="learn-col">
+          <p class="learn-note">{t('learn.guides.topics', lang)}</p>
+          <ul class="learn-topics" role="list">
+            {topics.map((topic) => (<li><a class="chip" href={`${guidesPath(lang)}#${topic.domain}`} hreflang={guideLang} lang={textLang}>{gt(`domain.${topic.domain}`, guideLang)}<span>{topic.count}</span></a></li>))}
+          </ul>
+          <p class="learn-action"><a class="button button-secondary" href={guidesPath(lang)}>{t('start.all', lang)}</a></p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>

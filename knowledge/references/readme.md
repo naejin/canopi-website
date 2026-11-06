@@ -6,12 +6,14 @@ resource: ../../README.md
 tags: [docs]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:07:50Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:05Z }
 sources:
   - id: readme-md
     resource: ../../README.md
     title: README.md
-    digest: sha256:22edd4bb3671389f
-    last_modified: 2026-10-26T20:05:29Z
+    digest: sha256:18790192849df669
+    last_modified: 2026-11-06T13:57:26Z
 ---
 
 # Summary

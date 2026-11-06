@@ -7,18 +7,18 @@ tags: [module, i18n]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-05T23:04:45Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:53:26Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:05Z }
 sources:
   - id: i18n
     resource: ../../src/i18n
     title: src/i18n/
-    digest: sha256:c8247a15b43f3b72
-    last_modified: 2026-11-05T23:01:48Z
+    digest: sha256:3bb2a7effaa64d8a
+    last_modified: 2026-11-06T14:03:52Z
   - id: homepage-test
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:842e9d310a1310dc
-    last_modified: 2026-11-05T22:55:29Z
+    digest: sha256:44b329d882790413
+    last_modified: 2026-11-06T14:03:52Z
 ---
 
 # Responsibility

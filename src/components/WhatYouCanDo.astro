@@ -1,0 +1,57 @@
+---
+// What the app does, shown with captures of Canopi Web in the page's language and theme, for visitors
+// who do not know it yet. The design in them is a fictional example; scripts/home-captures/ makes them.
+import { t, type Locale } from '../i18n/utils';
+import { WEB_URL } from '../data/site';
+import { CANOPI_SPECIES_COUNT } from '../data/release';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+const species = new Intl.NumberFormat(lang).format(CANOPI_SPECIES_COUNT);
+const themes = ['light', 'dark'] as const;
+const shot = (name: string, theme: string) => `/home/${lang}/${name}-${theme}.webp`;
+---
+<section class="section what" id="what" aria-labelledby="what-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="what-title">{t('what.title', lang)}</h2>
+      <p>{t('what.lede', lang)}</p>
+    </header>
+    <div class="what-grid">
+      <article class="what-card what-card-wide">
+        <div class="what-text">
+          <h3>{t('what.map.title', lang)}</h3>
+          <p>{t('what.map.text', lang)}</p>
+          <p class="what-note">{t('what.map.note', lang)}</p>
+        </div>
+        {themes.map((theme) => (
+          <picture class={`what-shot-${theme}`}>
+            <source media="(max-width: 639px)" srcset={shot('map-phone', theme)} width="720" height="996" />
+            <img src={shot('map', theme)} width="1440" height="900" alt={t('what.map.alt', lang)} loading="lazy" decoding="async" />
+          </picture>
+        ))}
+      </article>
+      <article class="what-card">
+        <div class="what-text">
+          <h3>{t('what.catalog.title', lang)}</h3>
+          <p>{t('what.catalog.text', lang, { count: species })}</p>
+        </div>
+        <div class="what-panel">
+          {themes.map((theme) => <picture class={`what-shot-${theme}`}><img src={shot('catalog', theme)} width="580" height="800" alt={t('what.catalog.alt', lang)} loading="lazy" decoding="async" /></picture>)}
+        </div>
+      </article>
+      <article class="what-card">
+        <div class="what-text">
+          <h3>{t('what.plan.title', lang)}</h3>
+          <p>{t('what.plan.text', lang)}</p>
+        </div>
+        <div class="what-panel">
+          {themes.map((theme) => <picture class={`what-shot-${theme}`}><img src={shot('calendar', theme)} width="580" height="800" alt={t('what.plan.alt', lang)} loading="lazy" decoding="async" /></picture>)}
+        </div>
+      </article>
+    </div>
+    <div class="what-foot">
+      <p>{t('what.export', lang)}</p>
+      <a class="button button-primary" href={WEB_URL}>{t('what.action', lang)} <span aria-hidden="true">↗</span></a>
+    </div>
+  </div>
+</section>

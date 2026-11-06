@@ -5,15 +5,15 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:15Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:01Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:5a66efb755626aaf
-    last_modified: 2026-11-06T00:08:14Z
+    digest: sha256:ef0eb969ad1b8a7d
+    last_modified: 2026-11-06T13:57:02Z
 ---
 
 # Responsibility
@@ -22,7 +22,7 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 
 # Key files
 
-- [release.ts](../../src/data/release.ts): `CANOPI_VERSION`, `CANOPI_RELEASE_DATE`, `CANOPI_DOWNLOADS`, `CANOPI_CHECKSUMS_URL`; the single authority for download links.
+- [release.ts](../../src/data/release.ts): `CANOPI_VERSION`, `CANOPI_RELEASE_DATE`, `CANOPI_SPECIES_COUNT` (what Canopi Web's catalog shows, quoted on the home page), `CANOPI_DOWNLOADS`, `CANOPI_CHECKSUMS_URL`; the single authority for download links.
 - [site.ts](../../src/data/site.ts): `WEB_URL` (https://web.projectcanopi.com/), `SOURCE_URL`, `DOCS_URL` (null hides the Docs link), HelloAsso URLs, `DONATION_AMOUNTS`, `discordUrl(lang)`.
 - [network.ts](../../src/data/network.ts): `countries`, the agroecology network organisations grouped by region with i18n label keys.
 - [bibliography.md](../../src/data/bibliography.md): the hand-edited bibliography (format documented in its header comment).

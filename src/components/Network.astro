@@ -3,12 +3,13 @@ import { t, type Locale } from '../i18n/utils';
 import { countries } from '../data/network';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
+const count = countries.reduce((sum, country) => sum + country.organisations.length, 0);
 ---
-<section class="section network" id="network" aria-labelledby="network-title">
+<section class="network" id="network" aria-labelledby="network-title">
   <div class="wrap">
-    <header class="section-head">
-      <h2 id="network-title">{t('network.title', lang)}</h2>
-    </header>
+    <details class="network-fold">
+      <summary><h2 id="network-title">{t('network.summary', lang, { count: String(count) })}</h2></summary>
+      <p class="network-note">{t('network.note', lang)}</p>
     <div class="network-grid">
       {countries.map((country) => (
         <section class="network-group">
@@ -19,5 +20,6 @@ const { lang } = Astro.props;
         </section>
       ))}
     </div>
+    </details>
   </div>
 </section>

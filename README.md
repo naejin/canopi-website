@@ -58,8 +58,7 @@ One Astro component tree (`src/components/Home.astro`) renders the home page for
 locales; `src/scripts/` holds its scripts, which take every string from the page. Styles are
 `src/styles/{tokens,fonts,global,home}.css` with the app's palette. Literata and Source Sans 3
 (Latin and Cyrillic subsets) are served from `public/fonts/` with their licences; CJK pages use
-system fonts. MapLibre is copied from `node_modules` into `public/vendor/` before each build
-(`scripts/copy-maplibre.mjs`).
+system fonts.
 
 Generated assets and their scripts:
 

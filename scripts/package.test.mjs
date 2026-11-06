@@ -60,7 +60,7 @@ test('the scripts documented as plain node load no TypeScript, on every Node tha
 
 test('the type check reads the site source only, not bundled or copied JavaScript', () => {
   // tsconfig allows JS (astro/tsconfigs/base), so without these excludes `npm run check` parses the
-  // MapLibre bundle in public/vendor and the mockup scripts, and needs more than 4 GB of memory.
+  // mockup scripts and anything copied into public, and needs more than 4 GB of memory.
   const tsconfig = JSON.parse(readFileSync(new URL('../tsconfig.json', import.meta.url), 'utf8'));
   for (const dir of ['dist', 'node_modules', 'public', 'mockup', '.local']) assert.ok(tsconfig.exclude?.includes(dir), `tsconfig.json excludes ${dir}`);
   assert.equal(pkg.scripts.check, 'wrangler types && astro check', 'npm run check generates the Worker types, then type-checks');

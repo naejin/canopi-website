@@ -31,7 +31,7 @@ assert.deepEqual(tryMeta, { sha256: trySha256, rows: tryRowCount, dataset_ids: t
 const tryRows = parseTryReferences(tryBytes.toString('utf8'), tryMeta);
 // A rendered field back to its text: the tags go, and the entities Astro writes become characters once.
 const plainText = (html) => html.replace(/<[^>]*>/g, '').replace(/&(amp|lt|gt|quot|#39|#x27);/g, (_, name) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", '#x27': "'" })[name]);
-const assetLinks = (html) => [...html.matchAll(/(?:src|href)="(\/(?:_astro|fonts|hero|og|data|vendor)\/[^"?#]+)"/g)].map((m) => m[1]);
+const assetLinks = (html) => [...html.matchAll(/(?:src|href)="(\/(?:_astro|fonts|hero|home|og|data)\/[^"?#]+)"/g)].map((m) => m[1]);
 
 for (const lang of locales) {
   const dir = lang === 'en' ? '' : lang;
@@ -291,20 +291,30 @@ for (const lang of locales) {
   const dir = lang === 'en' ? '' : lang;
   const home = readFileSync(join(root, dir, 'index.html'), 'utf8');
   checkHeader(home, lang, '/', `${lang} home`);
-  // "Start here": the three entry guides and the guides index.
-  const start = home.match(/<section class="section start-here"[\s\S]*?<\/section>/)?.[0];
-  assert.ok(start, `${lang}: the Start here section`);
-  for (const slug of ['landrace-gardening', 'will-they-cross', 'saving-seed']) assert.ok(linkTo(start, guideFor(slug, lang)), `${lang}: Start here links to ${guideFor(slug, lang)}`);
-  assert.ok(linkTo(start, guidesFor(lang)), `${lang}: Start here links to the guides index`);
-  // The consortium tool: its home section, after Start here, links to it, and so does the footer.
-  const toolHome = home.match(/<section class="section consortium-home"[\s\S]*?<\/section>/)?.[0];
-  assert.ok(toolHome && linkTo(toolHome, consortiumPath(lang)), `${lang}: the consortium home section links to ${consortiumPath(lang)}`);
-  assert.ok(home.indexOf('class="section start-here"') < home.indexOf('class="section consortium-home"'), `${lang}: the consortium section follows Start here`);
+  // The hero: its proof line and what each edition is for.
+  assert.ok(/class="hero-proof"/.test(home) && /class="hero-editions"/.test(home), `${lang}: the hero's proof line and editions note`);
+  // What the app does: captures in this language, one per theme, and no sign of the old map.
+  const what = home.match(/<section class="section what"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(what, `${lang}: the What you can do section`);
+  for (const name of ['map', 'map-phone', 'catalog', 'calendar']) for (const theme of ['light', 'dark']) {
+    const path = `/home/${lang}/${name}-${theme}.webp`;
+    assert.ok(what.includes(path) && existsSync(join(root, path)), `${lang}: ${path}`);
+  }
+  assert.ok(!home.includes('data-finder-map') && !existsSync(join(root, 'vendor')), `${lang}: the design map is gone`);
+  // The list of designs: its slot and the string the script needs.
+  assert.ok(/data-design-list/.test(home) && home.includes('design.choiceMeta'), `${lang}: the design list and its string`);
+  // Ways in: the entry guides, the guides index and the consortium tool.
+  const learn = home.match(/<section class="section learn"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(learn, `${lang}: the Learn and try section`);
+  for (const slug of ['food-forest', 'living-soil', 'landrace-gardening']) assert.ok(linkTo(learn, guideFor(slug, lang)), `${lang}: the section links to ${guideFor(slug, lang)}`);
+  assert.ok(linkTo(learn, guidesFor(lang)), `${lang}: the section links to the guides index`);
+  assert.ok(linkTo(learn, consortiumPath(lang)), `${lang}: the section links to ${consortiumPath(lang)}`);
+  assert.ok(home.indexOf('class="section what"') < home.indexOf('class="section featured"') && home.indexOf('class="section featured"') < home.indexOf('class="section learn"'), `${lang}: the sections keep their order`);
   assert.ok(linkTo(home.match(/<footer\b[\s\S]*?<\/footer>/)?.[0] ?? '', consortiumPath(lang)), `${lang}: the footer links to the consortium tool`);
   // The guides are English outside en and fr: a note says so, and the English text is marked lang="en".
-  const note = start.includes('class="start-here-note"');
+  const note = learn.includes(`>${JSON.parse(readFileSync(`src/i18n/translations/${lang}.json`, 'utf8'))['start.inEnglish']}<`);
   if (guideLocales.includes(lang)) assert.ok(!note, `${lang}: no "in English" note where the guides are in ${lang}`);
-  else assert.ok(note && /\slang="en"/.test(start), `${lang}: the "in English" note and lang="en" on the English text`);
+  else assert.ok(note && /\slang="en"/.test(learn), `${lang}: the "in English" note and lang="en" on the English text`);
   const bibliography = readFileSync(join(root, dir, 'bibliography', 'index.html'), 'utf8');
   const { inline, panel } = checkHeader(bibliography, lang, '/bibliography/', `${lang} bibliography`);
   for (const part of [inline, panel]) {

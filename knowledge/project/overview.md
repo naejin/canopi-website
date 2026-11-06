@@ -4,7 +4,7 @@ title: canopi-website
 description: Astro marketing site for projectcanopi.com, the home of the Canopi agroecological design app, deployed by Cloudflare Workers Builds on push to master.
 tags: [project]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:34Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:01Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:18Z }
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:35Z }
@@ -12,13 +12,13 @@ sources:
   - id: readme
     resource: ../../README.md
     title: README.md
-    digest: sha256:22edd4bb3671389f
-    last_modified: 2026-10-26T20:08:11Z
+    digest: sha256:18790192849df669
+    last_modified: 2026-11-06T13:57:26Z
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:26faf235c0876b4e
-    last_modified: 2026-11-06T00:26:10Z
+    digest: sha256:5da4d8acf55b5be6
+    last_modified: 2026-11-06T13:53:29Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
@@ -27,18 +27,18 @@ sources:
   - id: context-md
     resource: ../../CONTEXT.md
     title: CONTEXT.md
-    digest: sha256:8ccfd167ea7cabf1
-    last_modified: 2026-10-15T09:36:40Z
+    digest: sha256:f59328e7c523dc98
+    last_modified: 2026-11-06T13:57:18Z
 ---
 
 # Purpose
 
-The public website of Canopi, an open-source agroecological design app run by a non-profit association. Visitors (growers, designers, the agroecology community) learn what Canopi is, download Canopi Desktop for their OS, open Canopi Web at `web.projectcanopi.com`, browse featured designs on a map, read a curated bibliography and practical Field Guides (English and French), and contact or donate to the project. [^readme]
+The public website of Canopi, an open-source agroecological design app run by a non-profit association. Visitors (growers, designers, the agroecology community) learn what Canopi is, download Canopi Desktop for their OS, open Canopi Web at `web.projectcanopi.com`, see what the app does and browse featured designs, read a curated bibliography and practical Field Guides (English and French), and contact or donate to the project. [^readme]
 
 # Tech stack
 
 - Astro 6 static output with `@astrojs/cloudflare`, `@astrojs/sitemap` and `@astrojs/mdx` 5 (Field Guides); plain CSS; vanilla JS modules.
-- MapLibre GL (unbundled, copied to `public/vendor/`), OpenFreeMap tiles, HelloAsso donations.
+- HelloAsso donations.
 - One Cloudflare Worker `projectcanopi`: serves `dist/client/` and the on-demand `POST /api/contact` (send_email binding).
 - Node >= 22.12 for tooling and `node --test`; Python (Pillow) for asset generators.
 - 11 locales (en at `/`, others at `/{lang}/`); the Field Guides are en and fr only (`/guides/`, `/fr/guides/`); field-notebook design with the app's palette and fonts.

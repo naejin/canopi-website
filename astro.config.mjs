@@ -6,7 +6,6 @@ import { rehypeGuideTerms } from './src/lib/rehype-guide-terms.mjs';
 import { rehypeGuideChecklists } from './src/lib/rehype-guide-checklists.mjs';
 
 import cloudflare from '@astrojs/cloudflare';
-import maplibre from 'maplibre-gl/package.json' with { type: 'json' };
 
 export default defineConfig({
   site: 'https://projectcanopi.com',
@@ -25,7 +24,5 @@ export default defineConfig({
   // rehypeGuideTerms places each <Term>'s glossary note beside the block that first uses it;
   // rehypeGuideChecklists tells each checklist <Item> its list, for page-unique checkbox ids.
   integrations: [mdx({ rehypePlugins: [rehypeGuideTerms, rehypeGuideChecklists] }), sitemap({ filter: (page) => !page.includes('/contact/') })],
-  // src/scripts/places-map.js loads MapLibre from public/vendor/maplibre-gl-<version>/.
-  vite: { define: { MAPLIBRE_VERSION: JSON.stringify(maplibre.version) } },
   adapter: cloudflare(),
 });

@@ -20,10 +20,17 @@ const paintingStyle = [
     <img class="hero-logo" src="/canopi-logo.svg" width="88" height="88" alt="" />
     <h1 id="hero-title" class="hero-title">Canopi</h1>
     <p class="hero-tagline">{t('hero.tagline', lang)}</p>
+    <ul class="hero-proof" role="list">
+      <li>{t('hero.proof.free', lang)}</li>
+      <li>{t('hero.proof.open', lang)}</li>
+      <li>{t('hero.proof.nonprofit', lang)}</li>
+      <li>{t('hero.proof.languages', lang)}</li>
+    </ul>
     <div class="hero-actions">
       <a class="button button-primary" data-primary-action href={WEB_URL}>{t('edition.web.cta', lang)} <span aria-hidden="true">↗</span></a>
       <a class="button button-secondary" data-secondary-action href={CANOPI_RELEASES_URL}>{t('edition.desktop.cta', lang)} <span aria-hidden="true">↓</span></a>
     </div>
+    <p class="hero-editions">{t('hero.editions', lang)}</p>
     <div class="mac-chooser" data-mac-chooser hidden>
       <p>{t('download.pickMac', lang)} <span class="muted">{t('download.helpMac', lang)}</span></p>
       <div class="mac-chips">

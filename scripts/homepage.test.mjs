@@ -253,7 +253,7 @@ test('the header\'s styles are global, and the home section draws no plant and n
   // A scoped <style> would stamp data-astro-cid attributes on the header markup that check-built-site.mjs reads.
   assert.doesNotMatch(read('components/Header.astro'), /<style(?![^>]*is:global)/, 'Header.astro styles are global');
   // No photos and no strata colours in the section: the tool's drawing keeps those.
-  assert.ok(!/<img|<picture|background-image|--leaf|#[0-9a-f]{3,6}\b/i.test(read('components/ConsortiumSection.astro')), 'ConsortiumSection draws no plant and no green');
+  assert.ok(!/<img|<picture|background-image|--leaf|#[0-9a-f]{3,6}\b/i.test(read('components/LearnAndTry.astro')), 'LearnAndTry draws no plant and no green');
 });
 
 test('the consortium keys sit with their families, apart from the tool page\'s consortium.* keys at the end', () => {
@@ -264,6 +264,6 @@ test('the consortium keys sit with their families, apart from the tool page\'s c
     assert.equal(at('nav.consortium'), at('header.menu') + 1, `${file}: nav.consortium follows the header keys`);
     assert.equal(at('nav.consortium.full'), at('nav.consortium') + 1, `${file}: nav.consortium.full follows nav.consortium`);
     assert.equal(at('learn.consortium.link'), at('bibliography.guides') + 1, `${file}: learn.consortium.link follows bibliography.guides`);
-    assert.equal(at('home.consortium.action') + 1, at('start.title'), `${file}: home.consortium.* comes before start.title`);
+    assert.equal(at('home.consortium.action') + 1, at('start.all'), `${file}: home.consortium.* comes before start.all`);
   }
 });

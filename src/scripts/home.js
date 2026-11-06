@@ -1,10 +1,10 @@
-// Home page entry: the shared chrome (./chrome.js), hero, downloads, the featured design and its map,
+// Home page entry: the shared chrome (./chrome.js), hero, downloads, the featured design and its list,
 // contact and donations. Strings come from the page (./page-data.js), never from this code.
 import { initChrome } from './chrome.js';
 import { initDownloads } from './downloads.js';
 import { initHeroReveal } from './hero-reveal.js';
 import { createDesignCanvas } from './design-canvas.js';
-import { createDesignFinder } from './design-map.js';
+import { createDesignList } from './design-list.js';
 import { initContact } from './contact.js';
 import { lang, text } from './page-data.js';
 
@@ -14,12 +14,11 @@ const params = new URLSearchParams(location.search);
 const placeName = (d) => `${d.region}, ${new Intl.DisplayNames([lang], { type: 'region' }).of(d.country)}`;
 
 let design = null;
-let map = null;
 initDownloads();
 const hero = initHeroReveal();
-initChrome({ onThemeChange: () => { hero.refresh(); design?.refreshTheme(); map?.refreshTheme(); } });
+initChrome({ onThemeChange: () => { hero.refresh(); design?.refreshTheme(); } });
 
-// ---------- featured design and map ----------
+// ---------- featured design ----------
 
 const caption = document.querySelector('.design-caption');
 const field = (name) => caption.querySelector(`[data-design-${name}]`);
@@ -40,16 +39,11 @@ design = createDesignCanvas({
 });
 document.querySelector('[data-design-hint]').textContent = text(matchMedia('(hover: hover)').matches ? 'design.hintPointer' : 'design.hintTouch');
 
-map = createDesignFinder({
-  lang,
+const designList = createDesignList({
   placeName,
   text,
-  container: document.querySelector('[data-finder-map]'),
-  list: document.querySelector('[data-finder-list]'),
-  more: document.querySelector('[data-list-more]'),
-  hint: document.querySelector('[data-map-hint]'),
-  locate: document.querySelector('[data-locate]'),
-  status: document.querySelector('[data-locate-status]'),
+  list: document.querySelector('[data-design-list]'),
+  more: document.querySelector('[data-design-more]'),
   onSelect: (id, { from }) => select(id, { from }),
 });
 
@@ -97,7 +91,7 @@ function select(id, { from } = {}) {
   if (!next) return;
   describe(next);
   design.show(next);
-  map.setActive(id);
+  designList.setActive(id);
   if (from) {
     const stage = document.querySelector('.design-stage');
     const box = stage.getBoundingClientRect();
@@ -108,7 +102,7 @@ function select(id, { from } = {}) {
 design.load().then((data) => {
   designs = data.designs;
   symbolArt = data.symbolArt;
-  map.setDesigns(designs);
+  designList.setDesigns(designs);
   // ?design=<id> shows one design, for links and reviews; otherwise one at random.
   const first = designs.find((d) => d.id === params.get('design')) ?? designs[Math.floor(Math.random() * designs.length)];
   select(first.id);

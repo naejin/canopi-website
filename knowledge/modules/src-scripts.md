@@ -1,19 +1,19 @@
 ---
 type: Module
 title: src/scripts
-description: Vanilla browser modules for the home and bibliography pages (chrome, hero reveal, downloads, featured design canvas and map, contact, donations).
+description: Vanilla browser modules for the home and bibliography pages (chrome, hero reveal, downloads, featured design canvas and list, contact, donations).
 resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T22:01:41Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:01Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:40Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:fe2ab556fb3a6040
-    last_modified: 2026-10-28T23:43:35Z
+    digest: sha256:5d6454cc93073862
+    last_modified: 2026-11-06T13:53:23Z
   - id: scale-js
     resource: ../../src/scripts/consortium/scale.js
     title: src/scripts/consortium/scale.js
@@ -33,7 +33,7 @@ Client-side behaviour, no framework. Scripts hold no user-facing English: every 
 - [downloads.js](../../src/scripts/downloads.js): OS-aware primary action and installer dialog; falls back to Canopi Web for unknown devices.
 - [hero-reveal.js](../../src/scripts/hero-reveal.js): cursor "ink dot" reveal of the hero painting; touch taps bloom, reduced motion stays still.
 - [design-canvas.js](../../src/scripts/design-canvas.js): draws the featured design as the app does, from `/data/featured-designs.json` and `/data/plant-symbols.json`.
-- [design-map.js](../../src/scripts/design-map.js): MapLibre design finder with clusters and a nearest-first list.
+- [design-list.js](../../src/scripts/design-list.js): the list of featured designs under the canvas, a page at a time.
 - [contact.js](../../src/scripts/contact.js): in-place validation, posts with `Accept: application/json`.
 - [climate.js](../../src/scripts/climate.js): the reader's climate (`initClimate()`, called by `initChrome`): the picker dialog, `localStorage["canopi-climate"]` and `html[data-climate]`, ordering of `<ForClimate>` runs, the "not covered yet" note, sync across tabs, all blocks open for print. See [Climate UX](/decisions/climate-ux.md).
 - [consortium/](../../src/scripts/consortium): the consortium tool (`app.js`, `words.js`, `draw.js`, `data.ts`, the node-tested `logic.js`, `parts.js`, `memory.js`, `crops.js`, `scale.js` (the plant list at scale) and `side.js` (the side view's rules)); it reads its strings from `#ct-data`, not `#page-data`. See [Consortium page](/modules/consortium-page.md).
@@ -41,17 +41,15 @@ Client-side behaviour, no framework. Scripts hold no user-facing English: every 
 
 # Interfaces
 
-`initChrome`, `initDownloads`, `initHeroReveal`, `createDesignCanvas`, `createDesignFinder`, `initContact`, `initDonate`, `initDialogs`, `openDialog`, `text`.
+`initChrome`, `initDownloads`, `initHeroReveal`, `createDesignCanvas`, `createDesignList`, `initContact`, `initDonate`, `initDialogs`, `openDialog`, `text`.
 
 # Dependencies
 
-- [src/lib](/modules/src-lib.md): `installer.mjs`, `nearest.mjs`.
-- MapLibre GL served unbundled from `/vendor/maplibre-gl-<version>/` (copied by `scripts/copy-maplibre.mjs`); OpenFreeMap Liberty tiles; HelloAsso iframe.
+- [src/lib](/modules/src-lib.md): `installer.mjs`.
+- HelloAsso iframe.
 
 # Gotchas
 
-- No third-party request before the visitor asks: MapLibre loads only near the viewport, the HelloAsso iframe only when Donate opens. `/#donate` opens the dialog.
-- Geolocation is requested only on button press, kept in memory, never sent. Map pins are rounded (~10 km) and max zoom is 9.
+- No third-party request before the visitor asks: the HelloAsso iframe only when Donate opens. `/#donate` opens the dialog.
 - Theme-dependent canvases redraw via `onThemeChange`.
-- `npm run build` wipes `public/vendor`; a running dev server then 404s the map until restarted.
 - `homepage.test.mjs` fails if a `text()` key used by a script is not passed to the page.

@@ -1,11 +1,11 @@
 ---
 type: Module
 title: src/lib
-description: Framework-free logic shared by the Worker endpoint, the page scripts and node --test (contact handler, installer detection, nearest-design distances, the consortium data core).
+description: Framework-free logic shared by the Worker endpoint, the page scripts and node --test (contact handler, installer detection, the consortium data core).
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:15Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:01Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T20:09:06Z }
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
@@ -13,8 +13,8 @@ sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:57f0e4417c3b59e0
-    last_modified: 2026-11-06T00:26:10Z
+    digest: sha256:0ba0a196bd53d39f
+    last_modified: 2026-11-06T13:30:20Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -30,7 +30,6 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 
 - [contact.mjs](../../src/lib/contact.mjs): the `POST /api/contact` handler.
 - [installer.mjs](../../src/lib/installer.mjs): picks a desktop installer from the user agent.
-- [nearest.mjs](../../src/lib/nearest.mjs): great-circle distances for the design finder.
 - [try-references.js](../../src/lib/try-references.js): `TRY_CITATION`, `TRY_DOI`, `parseTryReferences(source, { rows, dataset_ids }, file?)` and `referenceParts(reference)`, which splits a reference into text and links (trailing punctuation left out of the url; linked only through `safeHref` from `src/scripts/consortium/logic.js`, and never with � in the url). Used by `DataSourcesPage.astro`, `check-built-site.mjs` and `install-consortium.mjs` (so what installs builds); plain JavaScript because both run in plain Node, and Node 22.12 to 22.17 cannot import a `.ts` file without a flag.
 - [consortium/](../../src/lib/consortium): the consortium tool's data core (format 3 types, climate file and country lookup, site fit, jobs, conflicts, greedy suggestion, fixed-list evaluation, swaps, share-link state); see [Consortium core](/modules/consortium-core.md).
 - Field Guides (build time only): [guides.ts](../../src/lib/guides.ts) (`publishedGuides(lang)`, `guidesCiting(bookId, lang)`, `slugOf`), [svg.ts](../../src/lib/svg.ts) (seeded `rng`, `grid`, `shuffle`, bean drawing and the other shared seed and leaf shapes — kernel, squash seed, grain, tomato seed, clove, `leafPath`, `lobedLeafPath`, and the soil `crumbPath` and `threadPath` used by the soil hero row and the Soil diagrams — and `wrap` for SVG text lines), [tree-shapes.ts](../../src/lib/tree-shapes.ts) (the tree outlines the carbon farming diagrams share), [rehype-guide-terms.mjs](../../src/lib/rehype-guide-terms.mjs) (places each first `<Term>`'s glossary note and keeps a term with the punctuation touching it), [rehype-guide-checklists.mjs](../../src/lib/rehype-guide-checklists.mjs) (gives each `<Item>` its checklist id; fails on duplicate ids).
@@ -40,12 +39,11 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 - `handleContact(request, env, { timeoutMs, log })`: validates and mails the form through `env.EMAIL.send()` to `env.MAIL_TO`. Answers JSON `{ ok, code, fields? }` when `Accept: application/json`, else a 303 to `/{lang}/contact/sent/` or `/failed/`.
 - `normalise(form)`, `mailText(fields, lang)`, constants `LOCALES`, `FROM`, `MAX_BODY` (32 KiB), `LIMITS`, `TIMEOUT_MS` (10 s).
 - `detectInstaller(ua, platform, architecture, touchPoints, bitness)` returns `windows`, `mac-arm`, `mac-intel`, `linux` or `null`; `isMacDesktop(...)`.
-- `distanceKm(a, b)`, `nearestFirst(designs, point)`.
 
 # Dependencies
 
 - Used by [src/pages](/modules/src-pages.md) (`api/contact.ts` passes the Worker `env` from `cloudflare:workers`) and [src/scripts](/modules/src-scripts.md) (`downloads.js`, `design-map.js`).
-- Tested by [scripts](/modules/scripts.md): `contact.test.mjs`, `homepage.test.mjs`, `nearest.test.mjs`, `consortium.test.mjs`.
+- Tested by [scripts](/modules/scripts.md): `contact.test.mjs`, `homepage.test.mjs`, `consortium.test.mjs`.
 - No external libraries.
 
 # Gotchas

@@ -77,13 +77,13 @@ const climateBooks = full && shelves.some((shelf) => shelf.books.some((book) => 
                     {book.climates.map((climate) => <ClimateBadge zone={climate} lang={lang} />)}
                   </p>
                 )}
-                {book.guides.length > 0 && (
+                {full && book.guides.length > 0 && (
                   <p class="book-guides">
                     <span>{t('bibliography.fieldGuide', lang)}</span>
                     {book.guides.map((guide) => <a href={guide.href} hreflang={guideLang} lang={guideLang}>{guide.title}</a>)}
                   </p>
                 )}
-                {book.others.length > 0 && (
+                {full && book.others.length > 0 && (
                   <p class="book-editions">
                     <span>{t('bibliography.alsoIn', lang)}</span>
                     {book.others.map((edition) => (
