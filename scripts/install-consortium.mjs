@@ -3,6 +3,14 @@
 //
 //   node scripts/install-consortium.mjs <export-dir> [--fixture [--no-images]] [--out <dir>]
 //
+// A real install (no --fixture) needs canopi-data beside this repository and uv: after the checks
+// below, and before any photo, it runs `uv run canopi release verify <export-dir>` from there, on the
+// original directory, as the receipt stands beside it. Exit 0 may install; anything else refuses and
+// shows the message: a recorded disagreement, a stale release, changed bytes, no receipt (so also any
+// export from before the receipts). --fixture (tests only) skips it, so tests need no canopi-data,
+// and is refused for this checkout's own public/data/consortium/ and anything in it (symlinks followed).
+// That guard covers this checkout's site only: --out can still name another checkout's site.
+//
 // Checks, in order, and refuses on the first failure (nothing is written then):
 // - SHA256SUMS: every listed file exists and matches; no .json in the directory is unlisted.
 // - manifest.json: format_version 3, canopi_db_sha256 not all zeros (the invented fixture) unless
@@ -35,6 +43,7 @@
 // The output directory is replaced as a whole: written in a staging directory (see STAGING_DIR),
 // then renamed into place. It must be absent, empty or a previous install (its INSTALLED_BY mark):
 // anything else is refused, so a mistyped --out never deletes a folder.
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
@@ -47,6 +56,9 @@ export const TRY_LIST_DIR = join(ROOT, 'src', 'data');
 // Where an install writes the TRY list: only a real one.
 export const tryListDirFor = (out, fixture) => (!fixture && resolve(out) === DEFAULT_OUT ? TRY_LIST_DIR : null);
 export const IMAGE_BASE = '/data/consortium/images/';
+export const CANOPI_DATA_DIR = resolve(ROOT, '..', 'canopi-data');
+// About 5 s, more when uv first has to sync the environment.
+const RELEASE_VERIFY_TIMEOUT_MS = 300_000;
 // Where an install is written before it is renamed into place: outside public/ (so astro build
 // never ships a half-written or leftover copy) and git-ignored (.cache/). An --out outside the
 // repository stages beside it instead, in .consortium-install/, as a rename needs one file system.
@@ -239,11 +251,12 @@ export function shapeErrors(value, shape, path = '$', out = [], max = 20) {
 const INSTALL_MARK = 'INSTALLED_BY';
 const INSTALL_MARK_TEXT = 'scripts/install-consortium.mjs (canopi-website)\n';
 
+// Paths compared where they lead (symlinks, case on macOS), a path as far as it exists.
+const real = (p) => { let tail = ''; while (!existsSync(p)) { tail = join(basename(p), tail); p = dirname(p); } return join(realpathSync.native(p), tail).replace(/[\\/]$/, ''); };
+const inside = (a, b) => a === b || a.startsWith(b + sep);
+
 // An --out that is absent, empty or a previous install; anything else is refused before any work.
 function checkOut(out, exportDir) {
-  // Compared where the paths lead (symlinks, case on macOS), the output as far as it exists.
-  const real = (p) => { let tail = ''; while (!existsSync(p)) { tail = join(basename(p), tail); p = dirname(p); } return join(realpathSync.native(p), tail).replace(/[\\/]$/, ''); };
-  const inside = (a, b) => a === b || a.startsWith(b + sep);
   const ro = real(out), re = real(exportDir);
   if (inside(ro, re) || inside(re, ro)) refuse(`${out} is, holds or sits inside the export directory ${exportDir}.`);
   if (!existsSync(out)) return;
@@ -256,6 +269,19 @@ function checkOut(out, exportDir) {
 
 function refuse(message) {
   throw new Error(`Consortium export refused: ${message}`);
+}
+
+// What `canopi release verify` says of an export: null when it may install (exit 0), else the reason.
+// `dir` must be the original directory, absolute, as the command runs from the canopi-data root.
+export function releaseVerifyProblem(dir, { root = CANOPI_DATA_DIR, env = process.env, log = console.log } = {}) {
+  const command = 'uv run canopi release verify';
+  if (!existsSync(root)) return `canopi-data was not found at ${root}, so \`${command}\` cannot say whether this export may ship.`;
+  const run = spawnSync('uv', ['run', 'canopi', 'release', 'verify', dir], { cwd: root, env, encoding: 'utf8', timeout: RELEASE_VERIFY_TIMEOUT_MS });
+  const said = [run.stdout, run.stderr].map((text) => text?.trim()).filter(Boolean).join('\n');
+  if (run.error && run.status === null && !run.signal) return `could not run \`${command}\` in ${root}: ${run.error.message}.`;
+  if (run.status === 0) { if (said) log(said); return null; }
+  const how = run.status === null ? `\`${command}\` was stopped by ${run.signal}` : `\`${command}\` exited ${run.status}`;
+  return said ? `${how}:\n${said}` : `${how}, saying nothing.`;
 }
 
 function readSums(dir) {
@@ -563,12 +589,17 @@ async function fetchImages(cells, { fetchImpl, delayMs, backoffMs, log, maxFaile
   return { files, failed, total: wanted.size };
 }
 
-export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, maxFailedShare = MAX_FAILED_SHARE, stagingDir = null, tryListDir = null, log = console.log } = {}) {
+export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, maxFailedShare = MAX_FAILED_SHARE, stagingDir = null, tryListDir = null, releaseCheck = releaseVerifyProblem, siteDir = DEFAULT_OUT, log = console.log } = {}) {
   if (!exportDir) refuse('no export directory given.');
   if (!images && !fixture) refuse('--no-images is allowed only with --fixture: a real install copies its photos into the site.');
   const dir = resolve(exportDir), out = resolve(outDir);
   checkOut(out, dir);
+  if (fixture && inside(real(out), real(resolve(siteDir)))) refuse(`--fixture is for tests and never installs into the site (${out}).`);
   const { manifest, manifestBytes, labelsBytes, cells, tryList } = verifyExport(dir, { fixture });
+  if (!fixture) {
+    const problem = releaseCheck(dir, { log });
+    if (problem) refuse(problem);
+  }
   // tryListDir stands in for src/data/ in tests; a fixture never writes the list.
   const listDir = fixture ? null : tryListDir ?? tryListDirFor(out, fixture);
   // A photo that is not an http(s) url (protocol-relative, data:, another scheme) is never

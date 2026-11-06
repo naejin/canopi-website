@@ -1,15 +1,16 @@
 // The consortium export installer (scripts/install-consortium.mjs): the fixture installs with
 // --fixture into a temporary directory (never public/), and each broken export is refused before
-// anything is written. Photos are downloaded through a stub fetch; nothing here uses the network.
+// anything is written. Photos are downloaded through a stub fetch; nothing here uses the network,
+// canopi-data or uv: `canopi release verify` is a stub, or a fake `uv` on PATH.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { installConsortium, verifyInstall, thumbnailUrl, shapeErrors, cellShape, USER_AGENT, DEFAULT_OUT, STAGING_DIR, stagingDirFor, TRY_LIST_DIR, tryListDirFor } from './install-consortium.mjs';
+import { installConsortium, verifyInstall, thumbnailUrl, shapeErrors, cellShape, USER_AGENT, DEFAULT_OUT, STAGING_DIR, stagingDirFor, TRY_LIST_DIR, tryListDirFor, CANOPI_DATA_DIR, releaseVerifyProblem } from './install-consortium.mjs';
 
 const fixture = fileURLToPath(new URL('fixtures/consortium/', import.meta.url));
 const script = fileURLToPath(new URL('install-consortium.mjs', import.meta.url));
@@ -619,7 +620,8 @@ function realExport(t, list = TRY_LIST) {
   };
   return w;
 }
-const realInstall = (w, opts = {}) => installConsortium({ exportDir: w.src, outDir: w.out, tryListDir: w.listDir, log: quiet, ...opts });
+const mayShip = () => null;
+const realInstall = (w, opts = {}) => installConsortium({ exportDir: w.src, outDir: w.out, tryListDir: w.listDir, releaseCheck: mayShip, log: quiet, ...opts });
 const shippedList = () => ['try_references.tsv', 'try_references.meta.json'].map((name) => sha(readFileSync(join(TRY_LIST_DIR, name))));
 
 test('try list: a real install writes the file byte for byte and its meta from the manifest entry', async (t) => {
@@ -642,8 +644,7 @@ test('try list: only a real install writes it, never --out or --fixture', async 
   assert.equal(tryListDirFor('/tmp/elsewhere', true), null);
   const before = shippedList();
   const w = realExport(t);
-  const run = spawnSync(process.execPath, [script, w.src, '--out', w.out], { encoding: 'utf8' });
-  assert.equal(run.status, 0, run.stderr);
+  await installConsortium({ exportDir: w.src, outDir: w.out, releaseCheck: mayShip, log: quiet });
   assert.deepEqual(shippedList(), before, '--out left src/data/ alone');
   // --out still checks the list.
   const broken = realExport(t);
@@ -723,7 +724,7 @@ test('try list: a run killed while it moves the list leaves nothing new in the l
     };
     syncBuiltinESMExports();
     const { installConsortium } = await import(${JSON.stringify(pathToFileURL(script).href)});
-    await installConsortium(${JSON.stringify({ exportDir: w.src, outDir: w.out, tryListDir: w.listDir })});
+    await installConsortium({ ...${JSON.stringify({ exportDir: w.src, outDir: w.out, tryListDir: w.listDir })}, releaseCheck: () => null });
   `;
   const run = spawnSync(process.execPath, ['--input-type=module', '-e', child], { encoding: 'utf8' });
   assert.equal(run.signal, 'SIGKILL', run.stderr);
@@ -746,4 +747,124 @@ test('verifyInstall: a real install holds the try_references entry', async (t) =
   writeFileSync(join(w.out, 'manifest.json'), bytes);
   writeFileSync(join(w.out, 'SHA256SUMS'), readFileSync(join(w.out, 'SHA256SUMS'), 'utf8').replace(/^.*  manifest\.json$/m, `${sha(bytes)}  manifest.json`));
   assert.throws(() => verifyInstall(w.out), /no try_references entry/);
+});
+
+// `canopi release verify`: what canopi-data says about an export decides whether a real install runs.
+test('release verify: a refusal stops a real install before any photo or write, showing its message', async (t) => {
+  const w = realExport(t);
+  withPhotos(w);
+  const asked = [], fetched = [];
+  const refusal = 'the export: no receipt beside it, so nothing says it was checked. Build it again';
+  const releaseCheck = (dir) => { asked.push(dir); return refusal; };
+  await assert.rejects(realInstall(w, { releaseCheck, fetchImpl: stubFetch(fetched), delayMs: 0 }), (err) => err.message === `Consortium export refused: ${refusal}`);
+  assert.deepEqual(asked, [resolve(w.src)], 'asked once, of the original directory');
+  assert.deepEqual(fetched, [], 'no photo downloaded');
+  assert.equal(existsSync(w.out), false, 'nothing installed');
+  assert.deepEqual(readdirSync(w.listDir), [], 'no TRY list written');
+});
+
+test('release verify: a refusal leaves a previous install and TRY list as they were', async (t) => {
+  const w = realExport(t);
+  await realInstall(w);
+  const before = () => [readFileSync(join(w.out, 'manifest.json')), readFileSync(join(w.listDir, 'try_references.tsv'))];
+  const was = before();
+  const next = realExport(t, `${TRY_LIST}3\tJ\tK\tL\n`);
+  const m = next.json('manifest.json');
+  m.try_references.rows = 4;
+  m.try_references.dataset_ids = 3;
+  next.write('manifest.json', m);
+  await assert.rejects(realInstall({ ...next, out: w.out, listDir: w.listDir }, { releaseCheck: () => 'stale' }), /refused: stale/);
+  assert.deepEqual(before(), was);
+});
+
+test('release verify: an export the installer itself refuses never gets as far as asking', async (t) => {
+  const w = realExport(t);
+  const m = w.json('manifest.json');
+  m.try_references.rows = 4;
+  w.write('manifest.json', m);
+  let asked = false;
+  await assert.rejects(realInstall(w, { releaseCheck: () => { asked = true; return null; } }), /3 rows, not the source's 4/);
+  assert.equal(asked, false);
+});
+
+test('release verify: a real install that passes it installs, whatever the --out', async (t) => {
+  const w = realExport(t);
+  const asked = [];
+  await realInstall(w, { releaseCheck: (dir) => { asked.push(dir); return null; } });
+  assert.deepEqual(asked, [resolve(w.src)]);
+  assert.deepEqual(verifyInstall(w.out), { climates: 3, images: 0 });
+});
+
+// A fake uv: records where it ran and with what, then says and exits as the test asks.
+function fakeUv(t, body) {
+  const root = mkdtempSync(join(tmpdir(), 'consortium-uv-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const bin = join(root, 'bin'), data = join(root, 'canopi-data'), logged = join(root, 'asked');
+  mkdirSync(bin);
+  mkdirSync(data);
+  writeFileSync(join(bin, 'uv'), `#!/bin/sh\n{ pwd; printf '%s\\n' "$@"; } > "${logged}"\n${body}\n`);
+  chmodSync(join(bin, 'uv'), 0o755);
+  // Keeps sh and its tools findable, with the fake first.
+  return { root: data, env: { ...process.env, PATH: `${bin}:/usr/bin:/bin` }, asked: () => readFileSync(logged, 'utf8').trim().split('\n'), data };
+}
+
+test('release verify: runs `uv run canopi release verify <dir>` from the canopi-data root; exit 0 may install', (t) => {
+  const uv = fakeUv(t, 'echo "OK: it is from release r-1"; echo "shared values compared"; exit 0');
+  const lines = [];
+  assert.equal(releaseVerifyProblem('/some/where/2026-11-06', { root: uv.root, env: uv.env, log: (l) => lines.push(l) }), null);
+  assert.deepEqual(uv.asked(), [realpathSync(uv.data), 'run', 'canopi', 'release', 'verify', '/some/where/2026-11-06']);
+  assert.match(lines.join('\n'), /OK: it is from release r-1/);
+  assert.match(lines.join('\n'), /shared values compared/);
+});
+
+test('release verify: any other exit refuses and shows what it printed, on stdout and on stderr', (t) => {
+  for (const [code, name] of [[1, 'its refusal'], [2, 'a usage error'], [3, 'an exit it does not document'], [127, 'a command not found']]) {
+    const uv = fakeUv(t, `echo "plant field: differs from the release"; echo "and on stderr" >&2; exit ${code}`);
+    const problem = releaseVerifyProblem('/x', { root: uv.root, env: uv.env, log: quiet });
+    assert.match(problem, /plant field: differs from the release/, name);
+    assert.match(problem, /and on stderr/, name);
+  }
+});
+
+test('release verify: a run that cannot answer refuses (killed, no uv, no canopi-data)', (t) => {
+  const killed = fakeUv(t, 'kill -9 $$');
+  assert.match(releaseVerifyProblem('/x', { root: killed.root, env: killed.env, log: quiet }), /canopi release verify.*SIGKILL/);
+  const uv = fakeUv(t, 'exit 0');
+  assert.match(releaseVerifyProblem('/x', { root: uv.root, env: { ...process.env, PATH: join(uv.data, 'nothing-here') }, log: quiet }), /could not run `uv run canopi release verify`/);
+  assert.match(releaseVerifyProblem('/x', { root: join(uv.data, 'absent'), env: uv.env, log: quiet }), /canopi-data was not found at .*absent/);
+});
+
+test('release verify: canopi-data is looked for beside the website', () => {
+  assert.equal(CANOPI_DATA_DIR, resolve(dirname(script), '..', '..', 'canopi-data'));
+});
+
+test('the command line: a real export is refused when verify cannot say yes, and nothing is written', (t) => {
+  // With no uv on PATH the result is the same here and on CI, where canopi-data is absent too.
+  const w = realExport(t);
+  const run = spawnSync(process.execPath, [script, w.src, '--out', w.out], { encoding: 'utf8', env: { ...process.env, PATH: join(w.root, 'no-such-bin') } });
+  assert.equal(run.status, 1, run.stdout);
+  assert.match(run.stderr, /^Consortium export refused: .*canopi(-data| release verify)/);
+  assert.equal(existsSync(w.out), false);
+});
+
+test('--fixture alone skips verify, and needs neither canopi-data nor uv', (t) => {
+  const w = workspace(t);
+  const run = spawnSync(process.execPath, [script, w.src, '--fixture', '--no-images', '--out', w.out], { encoding: 'utf8', env: { ...process.env, PATH: join(w.root, 'no-such-bin') } });
+  assert.equal(run.status, 0, run.stderr);
+  const v = workspace(t);
+  return install(v, { releaseCheck: () => { throw new Error('asked on a fixture'); } });
+});
+
+test('--fixture never reaches the site, so it is no way around verify', async (t) => {
+  // siteDir stands in for public/data/consortium/, as a failing test must not overwrite the real one.
+  const w = workspace(t);
+  await assert.rejects(install(w, { siteDir: w.out }), /--fixture.*never.*site/);
+  assert.equal(existsSync(w.out), false, 'the site itself');
+  await assert.rejects(install({ ...w, out: join(w.out, 'inside') }, { siteDir: w.out }), /--fixture.*never.*site/);
+  assert.equal(existsSync(w.out), false, 'a folder inside the site');
+  mkdirSync(w.out);
+  const alias = join(w.root, 'alias');
+  symlinkSync(w.out, alias);
+  await assert.rejects(install({ ...w, out: alias }, { siteDir: w.out }), /--fixture.*never.*site/);
+  assert.deepEqual(readdirSync(w.out), [], 'through a symlink');
 });
