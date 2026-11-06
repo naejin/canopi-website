@@ -2,7 +2,7 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:33Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T21:40:57Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-30T11:06:08Z }
 sources:
@@ -95,7 +95,9 @@ the region-cell plan of format 2 is superseded where this page says so).
   and copies `manifest.json`, `labels.json` and the climate files to
   `public/data/consortium/`. A real install also writes the export's TRY dataset
   list, checked against the manifest's `try_references`, to `src/data/`. It refuses `canopi_db_sha256` of all zeros (the
-  fixture) unless `--fixture` (tests only). Committed output; run by hand.
+  fixture) unless `--fixture` (tests only). Then, except for `--fixture`, it runs
+  `canopi release verify` on the original directory from `../canopi-data` and refuses
+  on any exit but 0. Committed output; run by hand.
 - Photos: the installer downloads each `image.url` once into
   `public/data/consortium/images/<id>.<ext>` and rewrites `url` locally; credit,
   licence and source page stay. Missing photo = no photo.

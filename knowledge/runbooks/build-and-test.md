@@ -4,7 +4,7 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:01Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T21:40:58Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:18Z }
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
@@ -13,17 +13,17 @@ sources:
     resource: ../../package.json
     title: package.json
     digest: sha256:5da4d8acf55b5be6
-    last_modified: 2026-11-06T13:53:29Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: readme
     resource: ../../README.md
     title: README.md
     digest: sha256:18790192849df669
-    last_modified: 2026-11-06T13:57:26Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:00df44c46bd707e6
-    last_modified: 2026-11-06T14:03:59Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -49,7 +49,7 @@ Node >= 22.12.0.
 | marketing build | `npm run build` |
 | built-site check | `node scripts/check-built-site.mjs` |
 | bibliography links (network, by hand) | `npm run check:bibliography` |
-| consortium data (network, by hand; output committed) | `npm run install:consortium -- <canopi-data export dir>` (see [Consortium core](/modules/consortium-core.md); tests use `--fixture --no-images --out <tmp>`) |
+| consortium data (network, by hand; output committed) | `npm run install:consortium -- <canopi-data export dir>`, given the original directory under `../canopi-data/data/exports/consortium/`, not a copy: the install runs `canopi release verify` on it from the sibling `../canopi-data` (needs `uv`) and refuses on any exit but 0, showing the reason, older exports with no receipt included (see [Consortium core](/modules/consortium-core.md); tests use `--fixture --no-images --out <tmp>`, which skip that check, need no canopi-data, and are refused for `public/data/consortium/`) |
 | with legacy `/app/` | `CANOPI_WEB_EDITION_ARCHIVE=/path/to/canopi-web-edition-*.tar.gz npm run build:with-web` |
 | preview / manual deploy | `npm run preview` (`wrangler dev`), `npm run deploy` (needs Cloudflare auth) |
 
