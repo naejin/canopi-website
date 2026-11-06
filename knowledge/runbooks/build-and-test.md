@@ -7,12 +7,13 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:34Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:18Z }
+  - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
 sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:68be8c2e07c6cae9
-    last_modified: 2026-11-06T00:08:32Z
+    digest: sha256:26faf235c0876b4e
+    last_modified: 2026-11-06T00:26:10Z
   - id: readme
     resource: ../../README.md
     title: README.md
@@ -21,8 +22,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:48cb30a45a5d6ea0
-    last_modified: 2026-11-06T00:08:32Z
+    digest: sha256:119fb510174fe5b0
+    last_modified: 2026-11-06T00:26:10Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
