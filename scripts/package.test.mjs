@@ -2,8 +2,10 @@
 // command loads the TypeScript data files on the oldest Node that "engines" allows.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { builtinModules } from 'node:module';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const scripts = new URL('.', import.meta.url).pathname;
@@ -38,8 +40,22 @@ test('the test command can load .ts files on the oldest Node that engines allows
   const stripsByDefault = floor[0] > 23 || (floor[0] === 23 && floor[1] >= 6) || (floor[0] === 22 && floor[1] >= 18);
   const usesTs = readdirSync(scripts).some((f) => f.endsWith('.test.mjs') && /import\(['"][^'"]+\.ts['"]\)|from ['"][^'"]+\.ts['"]/.test(readFileSync(join(scripts, f), 'utf8')));
   if (usesTs && !stripsByDefault) assert.match(pkg.scripts.test, /--experimental-strip-types/, `engines allows Node ${floor.join('.')}, which needs --experimental-strip-types to import .ts`);
-  // The installer parses the TRY list with src/lib/try-references.ts.
-  if (!stripsByDefault) assert.match(pkg.scripts['install:consortium'], /--experimental-strip-types/);
+});
+
+// What is documented as plain `node <script>` must load without type stripping: Node 22.12 to 22.17,
+// which engines allows, throw ERR_UNKNOWN_FILE_EXTENSION on a .ts import. Run from an empty folder,
+// so each stops at its first read of the site, or its usage, once its imports have loaded.
+test('the scripts documented as plain node load no TypeScript, on every Node that engines allows', (t) => {
+  const empty = mkdtempSync(join(tmpdir(), 'plain-node-'));
+  t.after(() => rmSync(empty, { recursive: true, force: true }));
+  for (const file of ['install-consortium.mjs', 'check-built-site.mjs']) {
+    const run = spawnSync(process.execPath, ['--no-experimental-strip-types', join(scripts, file)], { cwd: empty, encoding: 'utf8' });
+    assert.doesNotMatch(run.stderr, /ERR_UNKNOWN_FILE_EXTENSION/, file);
+  }
+  // The installer's tests spawn plain node too, and import nothing that needs a flag.
+  const specs = importedSpecifiers(readFileSync(join(scripts, 'install-consortium.test.mjs'), 'utf8'));
+  assert.deepEqual(specs.filter((spec) => spec.endsWith('.ts')), []);
+  assert.doesNotMatch(pkg.scripts['install:consortium'], /--experimental-strip-types/, 'the npm script is the documented command, no flag');
 });
 
 test('the type check reads the site source only, not bundled or copied JavaScript', () => {

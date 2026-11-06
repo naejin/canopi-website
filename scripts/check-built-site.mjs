@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { builtTarget, splitHref, subdirectories } from './built-links.mjs';
 import { tryListProblem, verifyInstall } from './install-consortium.mjs';
 import { consortiumPath } from '../src/i18n/consortium-path.js';
-import { parseTryReferences, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.ts';
+import { parseTryReferences, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.js';
 import { safeHref } from '../src/scripts/consortium/logic.js';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';

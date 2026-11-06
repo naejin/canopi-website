@@ -1,10 +1,10 @@
-// The TRY dataset list behind /data-sources/ (src/lib/try-references.ts): the shipped file, the
+// The TRY dataset list behind /data-sources/ (src/lib/try-references.js): the shipped file, the
 // parser's refusals, which urls link, and that the page never writes the text as markup.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { tryListProblem } from './install-consortium.mjs';
-import { parseTryReferences, referenceParts, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.ts';
+import { parseTryReferences, referenceParts, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const bytes = readFileSync(new URL('../src/data/try_references.tsv', import.meta.url));
