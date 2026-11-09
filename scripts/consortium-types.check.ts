@@ -1,5 +1,5 @@
 // Compile-time checks of the consortium data types, run by `npm run check` (astro check), never imported.
-import type { AgentNames, Interaction } from '../src/lib/consortium/types.ts';
+import type { AgentNames, Interaction, Manifest } from '../src/lib/consortium/types.ts';
 
 // agent_names (format 3, 2026-10-28): optional or null, names keyed by the 11 site locales only.
 export const named: AgentNames = { names: { en: 'agent one', fr: 'agent un', nl: 'agent een' }, sources: ['eppo', 'wikipedia-en'] };
@@ -8,3 +8,8 @@ export const without: Pick<Interaction, 'agent_names'>[] = [{}, { agent_names: n
 export const outside: AgentNames = { names: { la: 'Erwinia' }, sources: [] };
 // @ts-expect-error a name is a string
 export const notText: AgentNames = { names: { en: 1 }, sources: [] };
+
+// The release id (Step 8): optional in the type, as the invented fixture has none; a string when present.
+export const releaseOf = (m: Manifest): string | undefined => m.release_id;
+// @ts-expect-error a release id is a string
+export const notReleaseId: Pick<Manifest, 'release_id'> = { release_id: 1 };

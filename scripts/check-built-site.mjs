@@ -5,6 +5,8 @@ import { builtTarget, splitHref, subdirectories } from './built-links.mjs';
 import { tryListProblem, verifyInstall } from './install-consortium.mjs';
 import { consortiumPath } from '../src/i18n/consortium-path.js';
 import { parseTryReferences, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.js';
+import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
+import { createHash } from 'node:crypto';
 import { safeHref } from '../src/scripts/consortium/logic.js';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
@@ -29,6 +31,14 @@ assert.equal(tryListProblem(tryBytes, tryMeta), null, 'try_references.tsv matche
 const { sha256: trySha256, rows: tryRowCount, dataset_ids: tryIdCount } = JSON.parse(readFileSync(join(root, 'data', 'consortium', 'manifest.json'), 'utf8')).try_references;
 assert.deepEqual(tryMeta, { sha256: trySha256, rows: tryRowCount, dataset_ids: tryIdCount }, 'try_references.meta.json is the installed manifest entry');
 const tryRows = parseTryReferences(tryBytes.toString('utf8'), tryMeta);
+// The source credits: in src/data/ exactly when the installed export lists them, and its bytes.
+const installedManifest = JSON.parse(readFileSync(join(root, 'data', 'consortium', 'manifest.json'), 'utf8'));
+assert.match(installedManifest.release_id ?? '', /^r-[0-9a-f]{16}$/, 'the installed manifest names its data release');
+const creditsPath = 'src/data/source_credits.tsv';
+assert.equal(existsSync(creditsPath), installedManifest.source_credits !== undefined, 'source_credits.tsv is in src/data/ exactly when the installed export lists it');
+const credits = existsSync(creditsPath) ? shownCredits(parseSourceCredits(readFileSync(creditsPath, 'utf8'))) : { used: [], held: [] };
+if (existsSync(creditsPath)) assert.equal(createHash('sha256').update(readFileSync(creditsPath)).digest('hex'), installedManifest.source_credits.sha256, 'source_credits.tsv is the installed export\'s');
+const creditRows = [...credits.used, ...credits.held];
 // A rendered field back to its text: the tags go, and the entities Astro writes become characters once.
 const plainText = (html) => html.replace(/<[^>]*>/g, '').replace(/&(amp|lt|gt|quot|#39|#x27);/g, (_, name) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", '#x27': "'" })[name]);
 const assetLinks = (html) => [...html.matchAll(/(?:src|href)="(\/(?:_astro|fonts|hero|home|og|data)\/[^"?#]+)"/g)].map((m) => m[1]);
@@ -81,7 +91,12 @@ for (const lang of locales) {
   assert.ok(dataSources.includes(`<html lang="${lang}"`) && dataSources.includes('<h1 id="data-sources-title"'), `${lang}: data sources page`);
   assert.ok(footerOf(dataSources).includes(`href="${dataSourcesPath}"`), `${lang}: data sources page footer link`);
   assert.ok(dataSources.includes(`${TRY_CITATION} <a href="${TRY_DOI}" rel="noopener">${TRY_DOI}</a>`), `${lang}: TRY citation with its DOI link`);
-  assert.ok(!dataSources.includes('CC BY'), `${lang}: no CC BY claim for TRY`);
+  const trySection = dataSources.match(/<section class="try"[\s\S]*?<\/section>/)?.[0] ?? '';
+  assert.ok(trySection.includes(TRY_CITATION), `${lang}: the TRY section`);
+  assert.ok(!trySection.includes('CC BY'), `${lang}: no CC BY claim for TRY`);
+  // The credits: every used and held source, never an internal one.
+  const creditNames = [...dataSources.matchAll(/<li class="credit-row"><span class="credit-name"[^>]*>(.*?)<\/span>/g)].map((m) => plainText(m[1]));
+  assert.deepEqual(creditNames, creditRows.map((row) => row.name), `${lang}: the used and held sources, in order`);
   for (const other of locales) {
     const href = `https://projectcanopi.com${other === 'en' ? '' : `/${other}`}/data-sources/`;
     assert.ok(dataSources.includes(`hreflang="${other}" href="${href}"`), `${lang}: data sources alternate ${other}`);
@@ -358,8 +373,13 @@ for (const gone of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'screenshot
 for (const lang of locales) {
   const path = consortiumPath(lang);
   const html = readFileSync(join(root, path, 'index.html'), 'utf8');
-  const title = JSON.parse(readFileSync(`src/i18n/translations/${lang}.json`, 'utf8'))['consortium.title'];
+  const words = JSON.parse(readFileSync(`src/i18n/translations/${lang}.json`, 'utf8'));
+  const title = words['consortium.title'];
   assert.ok(html.includes(`lang="${lang}"`), `${path}: lang`);
+  // The data release under the tool, and the same id handed to "Suggest a correction".
+  const releaseLine = words['consortium.release'].replace('{id}', installedManifest.release_id);
+  assert.ok(html.includes(`<p class="tool-release">${releaseLine}</p>`), `${path}: the release line names ${installedManifest.release_id}`);
+  assert.ok(html.includes(`"release":"${installedManifest.release_id}"`), `${path}: the correction form gets the release id`);
   assert.ok(html.includes(`<title>${title}`), `${path}: title ${title}`);
   assert.ok(html.includes('id="ct-app"') && html.includes('id="ct-data"'), `${path}: tool`);
   assert.ok(currentLink(html.match(/<header\b[\s\S]*?<\/header>/)?.[0] ?? '', path), `${path}: the header marks the tool as the current page`);
@@ -391,4 +411,4 @@ assert.ok(!existsSync(join(root, 'fr', 'guilde')), 'no /fr/guilde/: French is /f
 const consortiumInstall = verifyInstall(join(root, 'data', 'consortium'));
 assert.ok(consortiumInstall.climates > 0 && consortiumInstall.images > 0, 'consortium: climate files and photos');
 
-console.log(`Verified 11 locale pages, their bibliography, data sources (${tryRows.length} TRY rows each) and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);
+console.log(`Verified 11 locale pages, their bibliography, data sources (${creditRows.length} credited sources, ${tryRows.length} TRY rows each) and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);

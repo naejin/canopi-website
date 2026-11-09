@@ -596,6 +596,7 @@ test('agent_names (format 3, added 2026-10-28): optional or null, names keyed by
 // The TRY dataset list: an export a real install accepts (no photos, so no fetch), with a list of its
 // own, and an empty folder standing in for src/data/.
 const TRY_LIST = 'dataset_id\tdataset\tcustodian\treference\n1\tA\tB\tC\n2\tD\tE\tF\n2\tG\tH\tI\n';
+const RELEASE_ID = 'r-559dd6ac9aef21e1';
 function realExport(t, list = TRY_LIST) {
   const w = workspace(t);
   for (const name of ['tropical.json', 'mediterranean.json', 'temperate.json']) {
@@ -605,6 +606,7 @@ function realExport(t, list = TRY_LIST) {
   }
   const manifest = w.json('manifest.json');
   manifest.canopi_db_sha256 = 'a'.repeat(64);
+  manifest.release_id = RELEASE_ID;
   manifest.try_references = { file: 'try_references.tsv', sha256: sha(list), rows: 3, dataset_ids: 2 };
   w.write('manifest.json', manifest);
   writeFileSync(join(w.src, 'try_references.tsv'), list);
@@ -867,4 +869,126 @@ test('--fixture never reaches the site, so it is no way around verify', async (t
   symlinkSync(w.out, alias);
   await assert.rejects(install({ ...w, out: alias }, { siteDir: w.out }), /--fixture.*never.*site/);
   assert.deepEqual(readdirSync(w.out), [], 'through a symlink');
+});
+
+// The data release (Step 8): canopi-data's manifest names the release it was built from, and the
+// site shows it under the tool and sends it with a correction.
+test('release id: a real install requires release_id, r- and 16 hex digits, and keeps it in the installed manifest', async (t) => {
+  const w = realExport(t);
+  await realInstall(w);
+  assert.equal(JSON.parse(readFileSync(join(w.out, 'manifest.json'), 'utf8')).release_id, RELEASE_ID);
+  const manifestEdit = (edit) => (x) => { const m = x.json('manifest.json'); edit(m); x.write('manifest.json', m); };
+  for (const [name, breakIt, problem] of [
+    ['an export from before the releases', manifestEdit((m) => { delete m.release_id; }), /manifest\.json has no release_id/],
+    ['a null id', manifestEdit((m) => { m.release_id = null; }), /release_id: is null/],
+    ['a short id', manifestEdit((m) => { m.release_id = 'r-559dd6ac'; }), /release_id: "r-559dd6ac" does not match/],
+    ['upper-case hex', manifestEdit((m) => { m.release_id = 'r-559DD6AC9AEF21E1'; }), /release_id: .* does not match/],
+    ['another prefix', manifestEdit((m) => { m.release_id = 'x-559dd6ac9aef21e1'; }), /release_id: .* does not match/],
+  ]) {
+    const x = realExport(t);
+    breakIt(x);
+    await assert.rejects(realInstall(x), problem, name);
+    assert.equal(existsSync(x.out), false, `${name}: no install`);
+    assert.deepEqual(readdirSync(x.listDir), [], `${name}: no list`);
+  }
+});
+
+test('release id: the fixture alone may lack it; an id it does have is still checked', async (t) => {
+  const bare = workspace(t);
+  assert.equal(bare.json('manifest.json').release_id, undefined, 'the fixture has none');
+  await install(bare);
+  assert.deepEqual(verifyInstall(bare.out, { fixture: true }), { climates: 3, images: 0 });
+  const w = workspace(t);
+  const m = w.json('manifest.json');
+  m.release_id = 'r-1';
+  w.write('manifest.json', m);
+  await assert.rejects(install(w), /release_id: "r-1" does not match/);
+});
+
+test('verifyInstall: a real install holds its release_id, and so does the committed one', async (t) => {
+  assert.match(JSON.parse(readFileSync(join(DEFAULT_OUT, 'manifest.json'), 'utf8')).release_id, /^r-[0-9a-f]{16}$/);
+  const w = realExport(t);
+  await realInstall(w);
+  const manifest = JSON.parse(readFileSync(join(w.out, 'manifest.json'), 'utf8'));
+  delete manifest.release_id;
+  const bytes = JSON.stringify(manifest);
+  writeFileSync(join(w.out, 'manifest.json'), bytes);
+  writeFileSync(join(w.out, 'SHA256SUMS'), readFileSync(join(w.out, 'SHA256SUMS'), 'utf8').replace(/^.*  manifest\.json$/m, `${sha(bytes)}  manifest.json`));
+  assert.throws(() => verifyInstall(w.out), /no release_id/);
+  assert.deepEqual(verifyInstall(w.out, { fixture: true }), { climates: 3, images: 0 }, 'a fixture install may lack it');
+});
+
+// The source credits (Step 8): canopi-data's source_credits.tsv, shipped as the TRY list is. Until
+// canopi-data ships it an export may lack it; once the manifest lists it, it is verified and copied.
+const CREDITS = 'source\ttags\tname\tcredit\tlicence\tlicence_status\turl\tstatus\ntry\ttry\tTRY Plant Trait Database\t\t\tterms\thttps://www.try-db.org/\tused\nrules\trule\tCanopi rules\t\t\tnone\t\tinternal\n';
+function withCredits(w, text = CREDITS) {
+  writeFileSync(join(w.src, 'source_credits.tsv'), text);
+  appendFileSync(join(w.src, 'SHA256SUMS'), `${sha(text)}  source_credits.tsv\n`);
+  const m = w.json('manifest.json');
+  m.source_credits = { file: 'source_credits.tsv', sha256: sha(text) };
+  w.write('manifest.json', m);
+  return w;
+}
+
+test('source credits: a real install copies the listed file byte for byte beside the TRY list', async (t) => {
+  const w = withCredits(realExport(t));
+  await realInstall(w);
+  assert.equal(readFileSync(join(w.listDir, 'source_credits.tsv'), 'utf8'), CREDITS);
+  assert.deepEqual(readdirSync(w.listDir).sort(), ['source_credits.tsv', 'try_references.meta.json', 'try_references.tsv'], 'no temporary file left');
+  assert.ok(!existsSync(join(w.out, 'source_credits.tsv')), 'the page reads src/data/, the install keeps no copy');
+  assert.deepEqual(JSON.parse(readFileSync(join(w.out, 'manifest.json'), 'utf8')).source_credits, w.json('manifest.json').source_credits);
+  assert.deepEqual(verifyInstall(w.out), { climates: 3, images: 0 });
+});
+
+test('source credits: an export without them installs, and a copy from an earlier export is removed', async (t) => {
+  const first = withCredits(realExport(t));
+  await realInstall(first);
+  const next = realExport(t);
+  next.out = first.out;
+  next.listDir = first.listDir;
+  await realInstall(next);
+  assert.deepEqual(readdirSync(first.listDir).sort(), ['try_references.meta.json', 'try_references.tsv'], 'no stale credits');
+});
+
+test('source credits: only a real install writes them, never --out alone or --fixture', async (t) => {
+  const w = withCredits(realExport(t));
+  await installConsortium({ exportDir: w.src, outDir: w.out, releaseCheck: mayShip, log: quiet });
+  assert.ok(!existsSync(join(TRY_LIST_DIR, 'source_credits.tsv')) || readFileSync(join(TRY_LIST_DIR, 'source_credits.tsv'), 'utf8') !== CREDITS, '--out left src/data/ alone');
+  const f = withCredits(realExport(t));
+  await realInstall(f, { fixture: true, images: false });
+  assert.deepEqual(readdirSync(f.listDir), [], '--fixture writes nothing there');
+});
+
+test('source credits: a listed file that is missing, changed or malformed refuses the install with nothing written', async (t) => {
+  const manifestEdit = (edit) => (w) => { const m = w.json('manifest.json'); edit(m); w.write('manifest.json', m); };
+  const rewrite = (text) => (w) => { w.write('source_credits.tsv', text); manifestEdit((m) => { m.source_credits.sha256 = sha(text); })(w); };
+  for (const [name, breakIt, problem] of [
+    ['a null entry', manifestEdit((m) => { m.source_credits = null; }), /source_credits: is null/],
+    ['another file name', manifestEdit((m) => { m.source_credits.file = 'credits.tsv'; }), /source_credits\.file/],
+    ['a sha256 of something else', manifestEdit((m) => { m.source_credits.sha256 = 'f'.repeat(64); }), /source_credits\.tsv does not match the manifest's sha256/],
+    ['a file SHA256SUMS does not list', (w) => writeFileSync(join(w.src, 'SHA256SUMS'), readFileSync(join(w.src, 'SHA256SUMS'), 'utf8').replace(/.*source_credits\.tsv\n/, '')), /source_credits\.tsv is not listed in SHA256SUMS/],
+    ['a file missing', (w) => rmSync(join(w.src, 'source_credits.tsv')), /source_credits\.tsv is listed in SHA256SUMS but missing/],
+    ['a changed file', (w) => writeFileSync(join(w.src, 'source_credits.tsv'), CREDITS.replace('TRY', 'XYZ')), /source_credits\.tsv does not match its SHA256SUMS checksum/],
+    ['an unknown status', rewrite(CREDITS.replace('\tused\n', '\tshipped\n')), /source_credits\.tsv:2: try: status "shipped"/],
+    ['other columns', rewrite(CREDITS.replace('licence_status', 'licence_state')), /source_credits\.tsv:1: the columns are not/],
+    ['bytes that are not UTF-8', rewrite(Buffer.concat([Buffer.from(CREDITS), Buffer.from([0xff, 0x0a])])), /source_credits\.tsv is not UTF-8/],
+  ]) {
+    const w = withCredits(realExport(t));
+    breakIt(w);
+    await assert.rejects(realInstall(w), problem, name);
+    assert.equal(existsSync(w.out), false, `${name}: no install`);
+    assert.deepEqual(readdirSync(w.listDir), [], `${name}: nothing in the list folder`);
+  }
+});
+
+test('source credits: a failure while moving into place puts back the previous credits', async (t) => {
+  const w = withCredits(realExport(t));
+  await realInstall(w);
+  const next = withCredits(realExport(t), CREDITS.replace('Canopi rules', 'Canopi own rules'));
+  next.out = w.out;
+  next.listDir = w.listDir;
+  rmSync(join(w.listDir, 'try_references.meta.json'));
+  mkdirSync(join(w.listDir, 'try_references.meta.json')); // a rename onto a directory fails
+  await assert.rejects(realInstall(next));
+  assert.equal(readFileSync(join(w.listDir, 'source_credits.tsv'), 'utf8'), CREDITS);
 });

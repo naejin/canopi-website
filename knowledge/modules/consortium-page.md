@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T21:53:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-09T23:57:53Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-06T22:24:54Z }
 sources:
@@ -19,8 +19,8 @@ sources:
   - id: consortium-harness
     resource: ../../scripts/consortium-harness.mjs
     title: scripts/consortium-harness.mjs
-    digest: sha256:4cec2eb34724053c
-    last_modified: 2026-10-29T05:02:41Z
+    digest: sha256:6dafd61dcc0d6b89
+    last_modified: 2026-11-09T23:46:56Z
   - id: consortium-scale-test
     resource: ../../scripts/consortium-scale.test.mjs
     title: scripts/consortium-scale.test.mjs
@@ -29,13 +29,13 @@ sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:d2af1d0254d070be
-    last_modified: 2026-11-05T23:05:05Z
+    digest: sha256:529ce6ec3064cd0c
+    last_modified: 2026-11-09T23:49:59Z
   - id: app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:87e4d4e3112d9be6
-    last_modified: 2026-10-28T23:43:35Z
+    digest: sha256:b81beaafd2f833bc
+    last_modified: 2026-11-09T23:49:23Z
   - id: words-js
     resource: ../../src/scripts/consortium/words.js
     title: src/scripts/consortium/words.js
@@ -55,7 +55,7 @@ sources:
     resource: ../../scripts/consortium-side.test.mjs
     title: scripts/consortium-side.test.mjs
     digest: sha256:0daa3e4ca54eb91a
-    last_modified: 2026-11-06T22:24:45Z
+    last_modified: 2026-11-06T22:24:55Z
   - id: consortium-side-layout-test
     resource: ../../scripts/consortium-side-layout.test.mjs
     title: scripts/consortium-side-layout.test.mjs
@@ -69,8 +69,8 @@ sources:
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:728a21a9ef73f7a1
-    last_modified: 2026-10-28T23:53:25Z
+    digest: sha256:adee47390676d1a2
+    last_modified: 2026-11-09T23:49:59Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
@@ -90,7 +90,7 @@ sources:
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
     digest: sha256:6b311db622eab597
-    last_modified: 2026-11-06T21:51:25Z
+    last_modified: 2026-11-06T22:24:55Z
   - id: dialogs-js
     resource: ../../src/scripts/dialogs.js
     title: src/scripts/dialogs.js
@@ -130,7 +130,7 @@ sources:
     resource: ../../scripts/consortium-list-ui.test.mjs
     title: scripts/consortium-list-ui.test.mjs
     digest: sha256:747e5be19b55f849
-    last_modified: 2026-11-06T21:51:36Z
+    last_modified: 2026-11-06T22:24:55Z
 enforced_by:
   - scripts/consortium-page.test.mjs
   - scripts/consortium-country.test.mjs
@@ -156,11 +156,14 @@ The consortium tool's page: the visitor picks a climate and gets 6 to 12 plants 
 | [crops.js](../../src/scripts/consortium/crops.js) | Pure rules of the main-crops step and "Add anyway": `foodPlants`/`isFood` (the `crop` role), `cropHits`/`cropMatches` (shown name in the reader's language and scientific name; starts, then a word, then inside; then the English name when the page hides it, ranked after every shown-name hit and shown in brackets: « Cerisier acide (Sour cherry) »), `cropLabel` (the one string an option shows, is named by and matched), `cropExamples(cell, n, chosen)` (ranked by names, edibility, then scientific name, and picked for variety: at most one per genus, each round the best of a layer not yet shown; never a chosen crop: the examples and the placeholder; prepush R2), `elsewhereHit` (the first other list, in climates' order, with a matching plant, for the no-match message), `otherListMatches` (the Add search's "In another climate's list"), `inClimateOrder` and `loadLists` (the other lists in `src/data/climates.ts` order, with the ones that failed), `addFilterMatch` (the Add sheet's job, layer and stage filters, for its own list and the other lists alike), and the Kept filter seam for chunk B (`KEPT_FILTERS`, `keptFilter`, `keptCounts`) |
 | [parts.js](../../src/scripts/consortium/parts.js) | Pure words about reasons and the reader's country, rendered with the page's `makeWords`: `cardReasonHTML` (a card's reason, always with its region, "also chosen for # other regions"), `reasonsHTML` (details), `countryWhy` and `countryLineParts` (the country line), `warnWhere` (result sub-line), `printWhere` (print head), `countryAnnouncement` (the live announcement after a country choice), `invasiveCardNote` (the no-country count chip on cards and print rows), `invasiveDetails` (details' invasive items), `cardInvasive`/`detailsInvasive` (the same, handed the taxon), `roomHint` (the room's height and width limit from `ROOM_LIMIT_M` and its suggestion size from `SIZE_LIMIT`), `builtKey` (one or several main crops; the wording is neutral for every reader) |
 | [scale.js](../../src/scripts/consortium/scale.js) | Pure rules of the plant list at scale (chunk B): `viewMode` (Cards up to `CARDS_UP_TO` = 20 plants, the list above, the reader's choice wins), `groupOpen` (groups closed above `FOLD_ABOVE` = 60, a filter opens the groups it matches, the reader's toggle wins), `roundHeight` (one decimal below 1 m, whole metres to 20 m, 5 m steps above), `misfitSize` (a misfit's size as `roundHeight` gives it, unless that would read as a size the room takes: then rounded up to one decimal, so 6.096 m in a small garden reads 6.1 m, H11), `shownHeight` (the height every row, card, details, paste and print shows: `misfitSize` when the room flags the plant by its height, so it always matches the warning, K6), `stageSpan`/`stageShort` (the 7-square stage bar and its short words), `pestLabels(flags, lang)` (a pest chip's words: each agent's `agent_names.names[lang]` from the data, else (none, or an empty one) its scientific name; no name is ever written in the site's code, an owner rule against model-written names, so the former hand-written pests.js is gone; the details keep `Cause: <scientific name>` and list the EPPO and usage pages in Sources), `warnKinds`/`pestsOf` (the Warning filter's kinds: invasive here, somewhere, toxic, pests, site, unchecked, any), `NO_FILTERS`/`FILTER_KEYS`/`matches`/`filtering`/`filterOrder` (Layer, Job, Time, Warning, Kept and text, AND; active chips first), `selectRange`/`groupTick` (Shift range, a group's mixed box), and the paste reader (`pasteTable`: spreadsheet quoting, a quote opens a quoted cell only at a cell's start and only when its closing quote follows on the same line, or within the same row when a tab follows it (`quotedEnd`, H10), or in a table when a line break or the end follows it and every row then keeps the table's column count (K4), so a stray quote never swallows later lines; `pasteColumn`: the column read is always one the text has; `pasteNames`: a first row is dropped only when it looks like a header (`looksLikeHeader`: column words such as name, plant, species, "(s)" plurals and whole CJK cells in the 11 languages, H9, K5; no common or scientific name in the three lists reads as one), so a first row of plant names is read; `binomial`, `oneOff`, `nameIndex`: every name folded once and indexed by length, cached per file, so 1,000 unmatched lines against three lists take about 40 ms; `matchName`, `readPaste` → found, choose (`climate` set when only another climate's list has the several matches: never "none"), other climate's list, already in, none, and `header` (the first row `looksLikeHeader` dropped, else null); `pasteDefault`: one tick default per plant, found → ticked, in every group it shows; `columnSample`) |
+| [correction.js](../../src/scripts/consortium/correction.js) | "Suggest a correction", the details sheet's last section (Step 8): `freshCorrection`, `correctionFields` (the sheet's facts with their catalog field ids from `detailsFacts` in app.js, then `stratum`, `phases`, `common_name`, `other`), `checkCorrection`, `correctionBody`, `postCorrection` (POST `/api/correction`, never throws), `correctionHTML`, `currentHTML`, `statusLine`. app.js keeps one state per open plant (`corr`, reset with the sheet) and redraws the form from it; every `correction.*` string is asked here, whole, since app.js asks only `consortium.*` keys. It sits at the end of the sheet body, not in the sticky action foot, so the foot stays one row on a phone; the status line keeps its room (no shift). Left out when the page has no release id |
 | [data.ts](../../src/scripts/consortium/data.ts) | `loadManifest`, `loadLabels`, `loadClimate` from `/data/consortium/` |
 | [consortium.css](../../src/styles/consortium.css) | Everything under `.ct`; strata colours only in the drawing (`.profile`, its numbered labels and key) and the strata legend (`.strata-mini`); number rings elsewhere and timeline bars in neutral ink; in print, the light palette on white whatever the theme |
 | [consortium-guides.ts](../../src/data/consortium-guides.ts) | Guides linked per plant, per job (one guide for each of the six jobs, never `null`; helpers is `garden-helpers`, the pollinator hub, whose quick answer the test ties to the job's line), and for the explanations; a plant links only guides that grow or use it, never one passing sentence (the pollinator guides add borage, lavender, phacelia, dog rose, purple willow, elder and white clover; goldenrod, tomato and mango were dropped on 2026-10-28 as single mentions). A guide that opens the tool with a plant (`<TryConsortium>`) is linked back from that plant when it really discusses it (runner bean, pigeon pea, walnut, chestnut and carob added 2026-10-28); the presets of olive in `coppice-and-bamboo` and breadfruit in `food-forest` stay one-way under the three-guide cap, and garden-helpers' tomato and mango presets stay one-way as single mentions. `consortium-page.test.mjs` knows lavender, elder and runner bean by their kind word |
 
 Routes: `/consortium/` and `/{lang}/consortium/` for the other 10, French included (owner, 2026-10-29: one path in every language; the French page still calls the tool a « guilde »). `/fr/guilde/` was never published: no page, no redirect, and check-built-site fails if a built page links to it.
+
+The data release: ConsortiumPage.astro reads `release_id` from the installed manifest at build time, shows "Data release r-…" (`consortium.release`) under the tool and hands it to app.js as `data.release` (with `data.languageName`) for the correction report; `check-built-site.mjs` checks both on every locale page.
 
 # Behaviour worth knowing
 
@@ -214,6 +217,7 @@ Routes: `/consortium/` and `/{lang}/consortium/` for the other 10, French includ
 # Tests
 
 - [consortium-page.test.mjs](../../scripts/consortium-page.test.mjs): strings in 11 locales (every key used, `list.<climate>` for every site climate, dynamic prefixes checked against core ids), app strata and phase terms, plural climate counts, country sentences with no article before a country, the first-paint script against the app's start rules, a guess never in a link, `k=-` in the save only, invasive-here warnings without confirmation, the region-era guide keys gone, guides exist and cover their plants (crop list, heading, table, list item, bold or `<Term>`, or twice in prose; frontmatter, alt text and safety boxes ignored; a human check beyond that), `initDialogs` skipping `data-own-dialog`, `words.js`, `logic.js`.
+- [consortium-correction.test.mjs](../../scripts/consortium-correction.test.mjs): the correction form in the harness (whose fetch stub answers `/api/correction` through `t.dev.answer` and records `t.dev.posts`): closed section, field options, the value shown now, invalid submit and focus, values kept across a redraw, the posted body, sending, sent, failed and refused states, Enter submits, Cancel, another plant, no release, French, the pure helpers and the CSS that keeps the status line's room.
 - [consortium-app.test.mjs](../../scripts/consortium-app.test.mjs): runs app.js itself in [consortium-harness.mjs](../../scripts/consortium-harness.mjs) (a small DOM on parse5, domhandler and css-select; one device's localStorage, a tab's history entries with Back, reload and hashchange; fixture data files that can fail; a fresh module graph per page load), clicking and typing as a reader: neutral main-crop and other-list wording on someone's link, the Add-anyway confirm, Retry and its focus, the guest-list error, the hashchange reload and anchor write-back, Start over then pasting the same link, Back/Undo keeping the country, a moved query link staying whole, a cut link for an uncovered climate, Back to an entry where the tab chose an older country (G1), leaving a cut link for an uncovered climate (G2). A closed page's code does nothing: its `page.later` schedules nothing and its `fetch` never resolves, also for a load started before the close (G5); `page.globals` exposes a page's own globals to tests. The harness's waits are bounded (settle rounds, dispatch depth) and its tree links are non-enumerable, so a failed assertion on an element cannot print the whole circular tree (that once ran a test process out of memory).
 - [consortium-scale.test.mjs](../../scripts/consortium-scale.test.mjs): the crop search (English fallback in brackets on the real French Temperate list), examples and limit, Add anyway matches, the Kept filter, the start rules (`asksCrops`, `opensOnResult`), `shareUrl`, old-link counts, the new words (room hints from the core, ledes, French non-breaking spaces), and the scale chunk A review fixes: fragment arrival and language links, cut-link detection, other lists in order with failures, print for a guest, Back keeping the country, the redo toast, Swap of a main crop, the Add filters on other lists, own versus neutral crop words, the climate's source, and the invasive words handed the taxon.
 - [consortium-side.test.mjs](../../scripts/consortium-side.test.mjs): side.js and the side view in the harness: the scale, shapes, band sentences on the real Temperate list, usual height, mark order, the 9-plant drawing and its dashed plant, the one height helper, the text equivalent, climbing or trailing plants (no support, no "climbs"), the rendered legend on screen and in print, the light cue, 21 and 200 marks at a field (true scale, state 05's ⚠ 1/16/10/2, one group per band with marks, no tab stop on an empty band, keys that keep their page job), the band sentences pinned (which plants, in which order; their heights read from the installed list, so no TRY figure sits in the test), one list separator (zh), At a glance in print, side view at 200 plants in under 50 ms, no rebuild on re-render, French, keys in 11 locales and no dead ones, French no-break spaces, number–unit no-break spaces in all 11 locales, hidden scale labels and tip inside a group.

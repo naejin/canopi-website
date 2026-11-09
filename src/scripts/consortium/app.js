@@ -19,6 +19,7 @@ import { cropHits, cropLabel, cropExamples, elsewhereHit, otherListMatches, isFo
 import { asksCrops, shareUrl, droppedPlants, trimGaps, mayPersist, photoSource, safeHref, shown, linkMembers, afterMove, noLinkCode, keptCountry, repeatClick, withHash, swapTarget, relaxTo, licenceOf, uncheckedOnCard, guessCountry, linkCountry, langHash, chosenHere, printNoneKey, invasiveSourceIds, linkDamaged, isToolState, keepCountry, redoToastKey, siteChangeRebuilds, afterSwap, climateSourceAt } from './logic.js';
 import { cardReasonHTML, reasonsHTML, countryLineParts, warnWhere, printWhere, cardInvasive, detailsInvasive, countryAnnouncement, roomHint, builtKey } from './parts.js';
 import { memoryOf, startState, MINE } from './memory.js';
+import { correctionFields, correctionHTML, correctionBody, checkCorrection, postCorrection, freshCorrection, currentHTML, statusLine, plain, ERROR_ORDER } from './correction.js';
 import { climates } from '../../data/climates.ts';
 import { plantSVG } from './draw.js';
 import { heightFrac, heightOf, shapeOf, isClimber, usualHeight, bandFacts, markOrder, denseAt, SCALE_LINES } from './side.js';
@@ -100,6 +101,10 @@ const fresh = () => ({
 });
 let S = fresh();
 let O = null; // the open sheet: { type, id, filter, back, confirm }
+// The details sheet's correction form (correction.js), for the plant whose sheet is open; a new plant
+// or a closed sheet starts it again.
+let corr = null;
+const corrOf = (id) => (corr?.id === id ? corr : (corr = freshCorrection(id)));
 let addQuery = '', addJob = '', addLayer = '';
 let countryQuery = '', cropQuery = '';
 // The other climates' files, loaded only when needed (Add anyway, the crop question's "in another
@@ -1192,30 +1197,46 @@ function jobsHTML() {
 // The guests the core reads beside the cell, with a plant of another list that is not one yet (so its
 // warnings beside the members can be read before "Add anyway").
 const withGuest = (t) => (otherClimateOf(t.id) && !S.guests.has(t.id) ? [...guestTaxa(), t] : guestTaxa());
+// The facts the details sheet lists: [label key, HTML or a falsy value when unknown, the catalog
+// field a correction names].
+function detailsFacts(t) {
+  const tr = t.traits;
+  const label = (field, v) => esc(labels?.[field]?.[v]?.[lang] ?? v);
+  const lightKeys = [['sun', 'sun'], ['semi_shade', 'part'], ['full_shade', 'shade']];
+  const lightsYes = lightKeys.filter(([k]) => tr[k] === true).map(([, v]) => T('site.light.' + v));
+  const lightsUnk = lightKeys.filter(([k]) => tr[k] == null).map(([, v]) => T('site.light.' + v));
+  return [
+    ['t.habit', tr.habit && label('habit', tr.habit), 'habit'],
+    ['t.height', tr.height_m?.max != null && esc(heightRangeText(t)), 'height_m'],
+    ['t.width', tr.width_max_m != null && esc(T('meters', { v: W.num(roundHeight(tr.width_max_m)) })), 'width_max_m'],
+    ['t.light', lightsYes.length && esc(W.list(lightsYes)) + (lightsUnk.length ? ` <span class="unknown">· ${esc(T('lightUnk', { list: W.list(lightsUnk) }))}</span>` : ''), 'light'],
+    ['t.ph', tr.soil_ph?.min != null && tr.soil_ph?.max != null && `${W.num(tr.soil_ph.min)}–${W.num(tr.soil_ph.max)}`, 'soil_ph'],
+    ['t.drought', tr.drought_tolerance && label('drought_tolerance', tr.drought_tolerance), 'drought_tolerance'],
+    ['t.moisture', tr.moisture_use && label('moisture_use', tr.moisture_use), 'moisture_use'],
+    ['t.leaf', tr.deciduous_evergreen && label('deciduous_evergreen', tr.deciduous_evergreen), 'deciduous_evergreen'],
+    ['t.life', tr.lifespan && label('lifespan', tr.lifespan), 'lifespan'],
+    ['t.nfix', tr.nitrogen_fixer != null && esc(T(tr.nitrogen_fixer ? 'yes' : 'no')), 'nitrogen_fixer'],
+  ];
+}
+// What "Suggest a correction" offers for a plant (correction.js): its facts as the sheet shows them,
+// then its layer, timing and name.
+function corrFields(t) {
+  const tw = W.timeWords(t);
+  const facts = detailsFacts(t).map(([k, v, field]) => ({ field, label: T(k), current: v ? plain(v) : '' }));
+  return correctionFields(T, facts, { layer: t.stratum ? stratumLabel(stratumOf(t)) : '', timing: t.phases ? tw.plain + (tw.term ? ' · ' + tw.term : '') : '', name: nameText(t) });
+}
+// The report's context: the release the page was built with (ConsortiumPage.astro reads it from the
+// installed manifest), the consortium's climate and the page language.
+const corrCtx = (t) => ({ release: data.release ?? null, plantId: t.id, plantName: t.canonical_name, plantLabel: nameText(t), climate: S.climate, climateLabel: climateLabel(), locale: lang, languageName: data.languageName ?? lang });
 function detailsParts(t) {
   const inMembers = S.members.includes(t.id), replacing = inMembers ? null : swapTarget(O);
   // from: the other climate's list it is in (a guest's, or an Add search hit); guest: added from it.
   const from = otherClimateOf(t.id), guest = S.guests.has(t.id), crop = inMembers && isCrop(t.id), sources = sourcesOf(t);
   // From the Swap list, the flags it would carry in that member's place (the list's own), else beside the members.
   const flags = inMembers ? flagsById().get(t.id) : (replacing && swapFlags(replacing, t.id)) || flagsFor(cell, t.id, S.members, { site: S.site, guests: withGuest(t), ...where() });
-  const tr = t.traits, s = stratumOf(t), tw = W.timeWords(t);
+  const s = stratumOf(t), tw = W.timeWords(t);
   const unknown = `<span class="unknown">${esc(T('unknown'))}</span>`;
-  const label = (field, v) => esc(labels?.[field]?.[v]?.[lang] ?? v);
-  const lightKeys = [['sun', 'sun'], ['semi_shade', 'part'], ['full_shade', 'shade']];
-  const lightsYes = lightKeys.filter(([k]) => tr[k] === true).map(([, v]) => T('site.light.' + v));
-  const lightsUnk = lightKeys.filter(([k]) => tr[k] == null).map(([, v]) => T('site.light.' + v));
-  const facts = [
-    ['t.habit', tr.habit && label('habit', tr.habit)],
-    ['t.height', tr.height_m?.max != null && esc(heightRangeText(t))],
-    ['t.width', tr.width_max_m != null && esc(T('meters', { v: W.num(roundHeight(tr.width_max_m)) }))],
-    ['t.light', lightsYes.length && esc(W.list(lightsYes)) + (lightsUnk.length ? ` <span class="unknown">· ${esc(T('lightUnk', { list: W.list(lightsUnk) }))}</span>` : '')],
-    ['t.ph', tr.soil_ph?.min != null && tr.soil_ph?.max != null && `${W.num(tr.soil_ph.min)}–${W.num(tr.soil_ph.max)}`],
-    ['t.drought', tr.drought_tolerance && label('drought_tolerance', tr.drought_tolerance)],
-    ['t.moisture', tr.moisture_use && label('moisture_use', tr.moisture_use)],
-    ['t.leaf', tr.deciduous_evergreen && label('deciduous_evergreen', tr.deciduous_evergreen)],
-    ['t.life', tr.lifespan && label('lifespan', tr.lifespan)],
-    ['t.nfix', tr.nitrogen_fixer != null && esc(T(tr.nitrogen_fixer ? 'yes' : 'no'))],
-  ];
+  const facts = detailsFacts(t);
   const tox = t.warnings.toxicity, inv = t.warnings.invasive_in;
   const item = (cls, icon, title, text = '', extra = '') => `<li class="w-item ${cls}">${icon}<div><strong>${title}</strong>${text ? `<p>${text}</p>` : ''}${extra}</div></li>`;
   const note = (n) => (n ? (n[lang] ? esc(n[lang]) : `<span lang="en">${esc(n.en)}</span>`) : '');
@@ -1262,7 +1283,8 @@ function detailsParts(t) {
     <section class="d-section"><h3>${esc(T('checks'))}</h3><ul class="w-list" role="list">${items.join('')}</ul></section>
     <section class="d-section"><h3>${esc(T('traits'))}</h3><dl class="facts">${facts.map(([k, v]) => `<dt>${esc(T(k))}</dt><dd>${v || unknown}</dd>`).join('')}</dl></section>
     ${guides.length ? `<section class="d-section"><h3>${esc(T('guides'))}</h3><ul class="guides" role="list">${guides.map((g) => `<li>${guideLink(g, '', (title) => `${I.book}<span>${title}<small>${esc(T('readGuide'))}</small></span>`)}</li>`).join('')}</ul></section>` : ''}
-    <section class="d-section"><h3>${esc(T('sources'))}</h3>${srcs.length ? `<ol class="srcs">${srcs.map((x) => { const href = safeHref(x.url); return `<li>${href ? `<a href="${esc(href)}" rel="noopener">${esc(x.label)}</a>` : esc(x.label)}${x.licence ? ` <span class="muted">· ${licenceHTML(x.licence)}</span>` : ''}</li>`; }).join('')}</ol>` : `<p class="muted">${esc(T('noSource'))}</p>`}</section>`;
+    <section class="d-section"><h3>${esc(T('sources'))}</h3>${srcs.length ? `<ol class="srcs">${srcs.map((x) => { const href = safeHref(x.url); return `<li>${href ? `<a href="${esc(href)}" rel="noopener">${esc(x.label)}</a>` : esc(x.label)}${x.licence ? ` <span class="muted">· ${licenceHTML(x.licence)}</span>` : ''}</li>`; }).join('')}</ol>` : `<p class="muted">${esc(T('noSource'))}</p>`}</section>
+    ${correctionHTML(T, corrOf(t.id), corrFields(t), corrCtx(t), fk)}`;
   const kept = S.kept.has(t.id), n = nameText(t);
   const keepBtn = (cls) => btn(cls, 'keep', t.id, `${kept ? I.pinOn : I.pin}<span>${esc(T(kept ? 'unkeep' : 'keep', { name: n }))}</span>`, `aria-pressed="${kept}" ${fk('d-keep')}`);
   // A main crop has no Swap here: Not a main crop first, then Remove, which also ends it as a crop.
@@ -1645,7 +1667,7 @@ function openSheet(o, from) {
 // render() in between must not see the old sheet and reopen it.
 let skipClose = 0;
 function resetSheet() {
-  O = null; dlg.innerHTML = ''; addQuery = ''; addJob = ''; addLayer = ''; swapMore = 0;
+  O = null; corr = null; dlg.innerHTML = ''; addQuery = ''; addJob = ''; addLayer = ''; swapMore = 0;
   addTab = 'search'; pasteText = ''; pasteCol = 0; pasteTicks = new Map(); pasteOpen.clear(); clearTimeout(pasteTimer);
   document.documentElement.style.overflow = '';
 }
@@ -1664,6 +1686,42 @@ dlg.addEventListener('close', () => {
   placeLive();
   if (from) focusFk(from, app);
 });
+// Checks the form, then posts it; the answer is shown only while the same form is still open (a
+// closed sheet or another plant's drops it). While it is on its way the button is busy, not disabled,
+// so the focus stays on it, and a second press sends nothing.
+async function sendCorrection() {
+  if (O?.type !== 'details') return;
+  const t = taxonOf(O.id), c = corrOf(t.id);
+  if (c.status === 'sending' || c.status === 'sent') return;
+  const fields = corrFields(t), errors = checkCorrection(c, fields);
+  if (Object.keys(errors).length) {
+    Object.assign(c, { status: 'idle', message: 'correction.invalid', errors });
+    renderSheet('corr-' + ERROR_ORDER.find((k) => errors[k]));
+    say(statusLine(T, c));
+    return;
+  }
+  Object.assign(c, { status: 'sending', message: null, errors: {} });
+  renderSheet('corr-send');
+  say(statusLine(T, c));
+  const result = await postCorrection(fetch, correctionBody(c, fields, corrCtx(t)));
+  if (corr !== c) return;
+  Object.assign(c, result);
+  if (O?.type !== 'details' || O.id !== t.id) return;
+  const first = ERROR_ORDER.find((k) => c.errors[k]);
+  renderSheet(c.status === 'sent' ? 'corr-sent' : first ? 'corr-' + first : 'corr-send');
+  say(statusLine(T, c));
+}
+// A field of the correction form: kept in its state as typed (the sheet redraws from it); a new
+// field shows its value at once.
+function corrInput(el) {
+  if (!corr || !el.dataset.corr) return false;
+  const k = el.dataset.corr;
+  if (k === 'consent') corr.consent = el.checked;
+  else corr[k] = el.value;
+  if (k === 'field' && O?.type === 'details') { const out = dlg.querySelector('#ct-corr-current'); if (out) out.innerHTML = currentHTML(T, corrFields(taxonOf(O.id)), corr.field); }
+  return true;
+}
+
 // Back to the button a confirmation came from.
 const anywayFor = (id) => !!otherClimateOf(id) && !S.guests.has(id);
 const confirmFrom = (id) => (O.type === 'details' ? (swapTarget(O) ? 'd-use' : anywayFor(id) ? 'd-anyway' : 'd-add')
@@ -1967,6 +2025,11 @@ const act = {
   explain(v) { S.explain = S.explain === v ? null : v; focusNext = 'ex-' + v; render(); },
   details(v, el) { openSheet({ type: 'details', id: v }, el); },
   'details-from'(v) { O = { type: 'details', id: v, back: O }; renderSheet('close'); },
+  // "Suggest a correction" (correction.js): open, cancel, send, and another after a sent one.
+  'corr-open'() { corrOf(O.id).open = true; renderSheet('corr-field'); },
+  'corr-cancel'() { const c = corrOf(O.id); c.open = false; if (c.status !== 'sending') Object.assign(c, { status: 'idle', message: null, errors: {} }); renderSheet('corr-open'); },
+  'corr-again'() { corr = freshCorrection(O.id, true); renderSheet('corr-field'); },
+  'corr-send'() { sendCorrection(); },
   swap(v, el) { swapMore = 0; if (O) { O = { type: 'swap', id: v }; renderSheet('close'); } else openSheet({ type: 'swap', id: v }, el); },
   // The focus goes to the first plant the step reveals.
   'swap-more'() {
@@ -2287,6 +2350,7 @@ dlg.addEventListener('click', (e) => {
 });
 root.addEventListener('change', (e) => {
   const el = e.target;
+  if (corrInput(el)) return;
   if (el.dataset.site) {
     const k = el.dataset.site;
     // C10, B11: the room limits the plants' size, never their number: on a result a room change only
@@ -2307,6 +2371,7 @@ root.addEventListener('change', (e) => {
 });
 root.addEventListener('input', (e) => {
   const el = e.target;
+  if (corrInput(el)) return;
   if (el.dataset.input === 'country') {
     countryQuery = el.value; el.closest('.field').querySelector('#ct-country-list').innerHTML = countryList();
     if (countryQuery.trim()) sayLater(P('countryCount', countryMatches().length));
@@ -2328,6 +2393,12 @@ root.addEventListener('input', (e) => {
     addQuery = el.value; O.confirm = null; dlg.querySelector('#ct-add-results').innerHTML = addResults(); refreshAddFoot();
     sayLater(dlg.querySelector('#ct-add-count')?.textContent ?? '');
   }
+});
+// Enter in a field of the correction form sends it, as its button does.
+root.addEventListener('submit', (e) => {
+  if (!e.target.matches?.('[data-corr-form]')) return;
+  e.preventDefault();
+  sendCorrection();
 });
 // Shift held while Space ticks a box: a range (the click a key makes carries no modifier everywhere).
 addEventListener('keydown', (e) => {

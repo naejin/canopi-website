@@ -31,14 +31,14 @@ const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const translations = (lang) => JSON.parse(read(`src/i18n/translations/${lang}.json`));
 
-// The strings ConsortiumPage.astro hands app.js (every consortium.* key without its prefix, and the
-// climate words), English where the locale has none.
+// The strings ConsortiumPage.astro hands app.js (every consortium.* key without its prefix, the
+// climate words and the correction.* keys whole), English where the locale has none.
 function pageStrings(lang) {
   const en = translations('en'), own = translations(lang), out = {};
   for (const key of Object.keys(en)) {
     const v = own[key] ?? en[key];
     if (key.startsWith('consortium.')) out[key.slice('consortium.'.length)] = v;
-    else if (/^climate\.[a-z]+(\.about|\.places)?$/.test(key)) out[key] = v;
+    else if (/^climate\.[a-z]+(\.about|\.places)?$/.test(key) || key.startsWith('correction.')) out[key] = v;
   }
   return out;
 }
@@ -232,7 +232,9 @@ export function device({ blocked = false } = {}) {
   // onFetch(file): called as a data file is asked for (a test changes the address mid-start with it).
   // historyFails: null, 'throw' (WebKit and Firefox past their rate limit, a sandboxed embed) or
   // 'ignore' (Chrome past its limit): what history.replaceState does with a call.
-  return { store, storage, failing: new Set(), fetched: [], onFetch: null, historyFails: null };
+  // posts: the bodies posted to /api/correction; answer(body): the endpoint's reply ({ status, json }),
+  // a sent report by default; a reply that is a Promise waits, one that throws is a network failure.
+  return { store, storage, failing: new Set(), fetched: [], onFetch: null, historyFails: null, posts: [], answer: null };
 }
 
 // A tab: its history entries ({ url, state, doc: the page load that owns it }) and the page shown.
@@ -274,7 +276,8 @@ let runs = 0;
 const SETTLE_ROUNDS = 50;
 // data: 'fixture' (the invented files) or 'real' (the installed export under public/data/consortium/,
 // 200 plants per climate: the scale tests).
-async function openPage(t, { lang = 'en', width = 1280, siteClimate = null, data: dataSet = 'fixture' } = {}) {
+// release: the data release the page was built with (ConsortiumPage.astro reads the installed manifest).
+async function openPage(t, { lang = 'en', width = 1280, siteClimate = null, data: dataSet = 'fixture', release = 'r-0123456789abcdef' } = {}) {
   /** @type {any} */
   const page = { lang, active: null, timers: new Map(), nextTimer: 1, reloads: 0, closed: false, clipboard: null };
   // G5: a closed page's code does nothing: its timers are never scheduled.
@@ -283,7 +286,7 @@ async function openPage(t, { lang = 'en', width = 1280, siteClimate = null, data
   page.document = doc;
   page.connected = (el) => { for (let n = el; n; n = n.parent) if (n === doc) return true; return false; };
   if (siteClimate) html.attribs['data-climate'] = siteClimate;
-  const data = { lang, strings: pageStrings(lang), guides: {}, plantGuides: consortiumGuides, jobGuides, explainGuide, contact: '/#contact' };
+  const data = { lang, strings: pageStrings(lang), guides: {}, plantGuides: consortiumGuides, jobGuides, explainGuide, contact: '/#contact', release, languageName: lang === 'fr' ? 'Français' : 'English' };
   const body = `<header><details data-lang-menu><summary>Language</summary><a href="/consortium/">English</a><a href="/fr/consortium/">Français</a></details></header>
     <main id="main" class="ct"><div class="wrap ct-wrap"><div class="tool-head" id="ct-head" data-step="0" data-climates="${siteClimates.join(' ')}"></div>
     <div id="ct-app" aria-busy="true"><p class="status-line">Loading</p></div></div>
@@ -323,9 +326,16 @@ async function openPage(t, { lang = 'en', width = 1280, siteClimate = null, data
     navigator: { language: lang, languages: [lang], clipboard: { writeText: async (s) => { page.clipboard = s; } } },
     setTimeout: (fn) => page.later(fn), clearTimeout: (id) => { own.delete(id); },
     // G5: a data file asked for by a closed page, or arriving after it closed, never arrives.
-    fetch: async (url) => {
+    fetch: async (url, init = {}) => {
       const never = () => new Promise(() => {});
       if (page.closed) return never();
+      if (String(url) === '/api/correction') {
+        const body = JSON.parse(init.body);
+        t.dev.posts.push({ method: init.method, headers: init.headers, body });
+        await new Promise((r) => setImmediate(r));
+        const reply = await (t.dev.answer ?? (() => ({ status: 200, json: { ok: true, code: 'sent' } })))(body);
+        return { ok: reply.status >= 200 && reply.status < 300, status: reply.status, json: async () => reply.json };
+      }
       await new Promise((r) => setImmediate(r));
       if (page.closed) return never();
       const file = String(url).replace(/^\/data\/consortium\//, '');

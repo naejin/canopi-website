@@ -2,13 +2,15 @@
 // The consortium design tool (beta): /consortium/ and /<lang>/consortium/.
 // The head (title, what a consortium is, the beta note) is rendered here; the tool itself is
 // src/scripts/consortium/app.js, which renders into #ct-app from the strings in #ct-data (every
-// consortium.* key without its prefix, the climate words, and the Field Guides the tool links).
+// consortium.* key without its prefix, the climate words, the correction.* keys whole, the Field Guides
+// the tool links, the data release and the page language's name for "Suggest a correction"). Under the
+// tool, a small line names the data release the installed export was built from.
 import Base from '../../layouts/Base.astro';
 import Header from '../Header.astro';
 import Footer from '../Footer.astro';
 import DonateDialog from '../DonateDialog.astro';
 import PageData from '../PageData.astro';
-import { t, consortiumPath, localizedUrl, type Locale } from '../../i18n/utils';
+import { t, consortiumPath, localizedUrl, languageNames, type Locale } from '../../i18n/utils';
 import en from '../../i18n/translations/en.json';
 import { publishedGuides, slugOf } from '../../lib/guides';
 import { consortiumGuides, jobGuides, explainGuide } from '../../data/consortium-guides';
@@ -27,6 +29,7 @@ const strings: Record<string, string> = {};
 for (const key of Object.keys(en)) {
   if (key.startsWith(prefix)) strings[key.slice(prefix.length)] = t(key, lang);
   else if (key.startsWith('climate.') && /^climate\.[a-z]+(\.about|\.places)?$/.test(key)) strings[key] = t(key, lang);
+  else if (key.startsWith('correction.')) strings[key] = t(key, lang);
 }
 // Guides exist in en and fr; every other locale links the English guide (marked lang="en").
 const guideLang = lang === 'fr' ? 'fr' : 'en';
@@ -37,7 +40,9 @@ for (const entry of await publishedGuides(guideLang)) {
   if (wanted.has(slug)) guides[slug] = { title: entry.data.title, url: localizedUrl(`/guides/${slug}/`, guideLang), lang: guideLang };
 }
 const contact = localizedUrl('/', lang) + '#contact';
-const data = { lang, strings, guides, plantGuides: consortiumGuides, jobGuides, explainGuide, contact };
+// The data release of the installed export (required on every real install: scripts/install-consortium.mjs).
+const release: string | null = (manifest as { release_id?: string }).release_id ?? null;
+const data = { lang, strings, guides, plantGuides: consortiumGuides, jobGuides, explainGuide, contact, release, languageName: languageNames[lang] };
 const food = guides[explainGuide];
 // copy-m2: the number of climates is the installed manifest's, read at build time.
 const betaNote = makeWords(strings, lang).P('betaNote', manifest.climates.length);
@@ -95,6 +100,7 @@ const betaNote = makeWords(strings, lang).P('betaNote', manifest.climates.length
         h.classList.add('tool-head-compact');
       } catch (e) {} })();</script>
       <div id="ct-app" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
+      {release && <p class="tool-release">{tr('release').replace('{id}', release)}</p>}
     </div>
     <dialog id="ct-dialog" class="ct-drawer" aria-labelledby="ct-dlg-title" data-own-dialog></dialog>
     <div id="ct-toast" class="toast" role="status" hidden></div>

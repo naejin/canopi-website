@@ -45,6 +45,8 @@
 }
 .ct .tool-lede { max-width: 40em; font-family: var(--font-display); font-size: 20px; line-height: 1.4; color: var(--text-secondary); text-wrap: pretty; }
 .ct .tool-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 15px; color: var(--text-muted); }
+/* The data release under the tool (ConsortiumPage.astro): small, out of the way. */
+.ct .tool-release { margin-top: 20px; font-size: 13.5px; color: var(--text-muted); overflow-wrap: anywhere; }
 .ct .tag-illustrative {
   display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 10px; border-radius: 999px;
   border: 1px dashed var(--border-strong); color: var(--text-secondary); font-size: 13px; font-weight: 600;
@@ -1213,3 +1215,29 @@ html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
 .ct .print-glance thead th, .ct .print-glance tbody th { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 .ct .glance-kinds { margin: 6px 0 0; font-size: 12.5px; }
 @media print { .ct .sv { --plot-h: 56px; } .ct .sv-band { break-inside: avoid; } }
+
+/* "Suggest a correction" (src/scripts/consortium/correction.js): the details sheet's last section.
+   Fields use the site's .field styles (home.css); the status line keeps one line of room, so a
+   message never moves the buttons above it. */
+.ct .corr-form { display: grid; gap: 14px; }
+.ct .corr-form .field input, .ct .corr-form .field textarea, .ct .corr-form .field select { width: 100%; min-height: 44px; padding: 9px 12px; font-size: 15px; }
+.ct .corr-form .field select { border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); color: inherit; font-family: inherit; }
+.ct .corr-form .field textarea { min-height: 88px; }
+.ct .corr-current { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+.ct .corr-current .unknown { color: var(--text-muted); font-style: italic; }
+.ct .corr-consent { display: grid; gap: 6px; }
+.ct .corr-consent label { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; cursor: pointer; }
+.ct .corr-consent input { flex: none; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--accent); }
+.ct .corr-consent input[aria-invalid="true"] { outline: 2px solid var(--danger); outline-offset: 2px; }
+.ct .corr-context { margin: 0; overflow-wrap: anywhere; }
+.ct .corr-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.ct .corr-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ct .corr-actions [aria-disabled="true"] { opacity: 0.7; cursor: progress; }
+.ct .corr-status { min-height: 1.5em; margin: 0; font-size: 15px; color: var(--text-secondary); }
+.ct .corr-status.is-error { color: var(--danger); }
+.ct .corr-sent { display: grid; gap: 10px; }
+.ct .corr-sent p { margin: 0; }
+@media (max-width: 639px) {
+  .ct .corr-form input, .ct .corr-form select, .ct .corr-form textarea { font-size: 16px; }
+  .ct .corr-actions .button { flex: 1 1 auto; min-height: 44px; }
+}

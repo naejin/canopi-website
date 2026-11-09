@@ -6,8 +6,8 @@ tags: [runbook, build, test]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T21:40:58Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T00:08:18Z }
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-09T23:58:04Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -22,8 +22,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:00df44c46bd707e6
-    last_modified: 2026-11-06T14:34:09Z
+    digest: sha256:130dbc4323938220
+    last_modified: 2026-11-09T23:52:39Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json

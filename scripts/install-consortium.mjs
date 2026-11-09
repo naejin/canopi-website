@@ -28,10 +28,18 @@
 //   dataset_ids those of the manifest entry, and parsed as the site's build parses it. An export
 //   with no entry is refused; only --fixture may lack one (the fixture is an export from before the
 //   list and never reaches the page).
+// - the release id (manifest release_id, canopi-data ADR 0008): `r-` and 16 lowercase hex digits.
+//   An export with none is refused; only --fixture may lack one. The page shows it under the tool and
+//   a correction report carries it.
+// - the source credits (manifest source_credits, optional until canopi-data ships them): when listed,
+//   listed in SHA256SUMS, its sha256 that of the entry, UTF-8, and parsed as the site's build parses
+//   it (src/lib/source-credits.js). An export that does not list them installs without them.
 // A real install (the default output, no --fixture) also writes that list to src/data/, where the
 // page reads it: try_references.tsv byte for byte, and try_references.meta.json holding the entry's
-// sha256, rows and dataset_ids. --out and --fixture check it and write nothing there. The manifest
-// keeps the entry, as it keeps every key it is given; the file itself is not copied to the output.
+// sha256, rows and dataset_ids; and source_credits.tsv byte for byte when the export lists it (a copy
+// an earlier export left is removed when this one lists none). --out and --fixture check them and
+// write nothing there. The manifest keeps the entries, as it keeps every key it is given; the files
+// themselves are not copied to the output.
 // Photos: each taxon's image.url (http or https) is downloaded once per taxon id, one at a time
 // with a half-second pause (rate limiting waited out, see download()), into images/<id>.<ext>, and the installed climate file points to
 // /data/consortium/images/<id>.<ext>; credit, licence and source page stay as they are. Wikimedia
@@ -49,6 +57,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameS
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseTryReferences } from '../src/lib/try-references.js';
+import { CREDIT_FILE, parseSourceCredits } from '../src/lib/source-credits.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DEFAULT_OUT = join(ROOT, 'public', 'data', 'consortium');
@@ -76,6 +85,7 @@ const MAX_IMAGE_BYTES = 3 * 1024 * 1024; // a larger file (a full-size original)
 const ZERO_SHA = '0'.repeat(64);
 const TRY_LIST_FILE = 'try_references.tsv';
 const TRY_LIST_META = 'try_references.meta.json';
+export const RELEASE_ID = /^r-[0-9a-f]{16}$/;
 const SAFE_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const IMAGE_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' };
 
@@ -194,6 +204,10 @@ const manifestShape = obj({
   countries: { kind: 'map', values: obj({ invasive_checked: bool }), keyPattern: COUNTRY },
   // Required except on the fixture (see tryListEntry): optional here, so the shape reads the same for both.
   try_references: optional(obj({ file: oneOf(TRY_LIST_FILE), sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ }, rows: { ...int, min: 1 }, dataset_ids: { ...int, min: 1 } })),
+  // Required except on the fixture (see releaseIdEntry).
+  release_id: optional({ kind: 'string', pattern: RELEASE_ID }),
+  // Optional until canopi-data ships it; verified once listed.
+  source_credits: optional(obj({ file: oneOf(CREDIT_FILE), sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ } })),
 });
 
 // labels.json: trait → English value → locale → translation (canopi-data docs/consortium-export-format.md).
@@ -367,6 +381,30 @@ export function tryListProblem(bytes, { sha256: hash, rows, dataset_ids }) {
   return null;
 }
 
+// The source credits' bytes against their manifest entry: the first problem as a sentence, or null.
+export function creditsProblem(bytes, { sha256: hash }) {
+  if (sha256(bytes) !== hash) return `${CREDIT_FILE} does not match the manifest's sha256.`;
+  let text;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
+  } catch {
+    return `${CREDIT_FILE} is not UTF-8.`;
+  }
+  try {
+    parseSourceCredits(text, CREDIT_FILE);
+  } catch (err) {
+    return err.message;
+  }
+  return null;
+}
+
+// A manifest's release id, or null on a fixture that has none (fail is refuse or broken).
+function releaseIdEntry(manifest, fixture, fail) {
+  if (manifest.release_id !== undefined) return manifest.release_id;
+  if (!fixture) fail('manifest.json has no release_id: an export from before the data releases, or not from canopi-data.');
+  return null;
+}
+
 // A manifest's try_references, or null on a fixture that has none (fail is refuse or broken).
 function tryListEntry(manifest, fixture, fail) {
   if (manifest.try_references !== undefined) return manifest.try_references;
@@ -393,6 +431,16 @@ export function verifyExport(dir, { fixture = false } = {}) {
     if (problem) refuse(problem);
     tryList = { entry: tryEntry, bytes };
   }
+  releaseIdEntry(manifest, fixture, refuse);
+  let credits = null;
+  if (manifest.source_credits !== undefined) {
+    const entry = manifest.source_credits;
+    if (!sums.has(entry.file)) refuse(`${entry.file} is not listed in SHA256SUMS.`);
+    const bytes = readFileSync(join(dir, entry.file));
+    const problem = creditsProblem(bytes, entry);
+    if (problem) refuse(problem);
+    credits = { entry, bytes };
+  }
 
   const seen = new Set();
   const cells = manifest.climates.map((entry) => {
@@ -417,7 +465,7 @@ export function verifyExport(dir, { fixture = false } = {}) {
     if (rule) refuse(rule);
     return { entry, cell, bytes };
   });
-  return { manifest, manifestBytes: readFileSync(join(dir, 'manifest.json')), labelsBytes: readFileSync(join(dir, 'labels.json')), cells, tryList };
+  return { manifest, manifestBytes: readFileSync(join(dir, 'manifest.json')), labelsBytes: readFileSync(join(dir, 'labels.json')), cells, tryList, credits };
 }
 
 // Checks an installed directory as the site serves it (scripts/check-built-site.mjs runs it on
@@ -438,6 +486,7 @@ export function verifyInstall(dir, { fixture = false } = {}) {
   const labelProblems = shapeErrors(json('labels.json'), labelsShape, 'labels.json');
   if (labelProblems.length) broken(labelProblems.join('; '));
   tryListEntry(manifest, fixture, broken);
+  releaseIdEntry(manifest, fixture, broken);
 
   const sums = new Map();
   for (const line of read('SHA256SUMS').toString('utf8').split('\n')) {
@@ -595,7 +644,7 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
   const dir = resolve(exportDir), out = resolve(outDir);
   checkOut(out, dir);
   if (fixture && inside(real(out), real(resolve(siteDir)))) refuse(`--fixture is for tests and never installs into the site (${out}).`);
-  const { manifest, manifestBytes, labelsBytes, cells, tryList } = verifyExport(dir, { fixture });
+  const { manifest, manifestBytes, labelsBytes, cells, tryList, credits } = verifyExport(dir, { fixture });
   if (!fixture) {
     const problem = releaseCheck(dir, { log });
     if (problem) refuse(problem);
@@ -637,9 +686,12 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
   mkdirSync(staging, { recursive: true });
   // The list goes in with the install, staged with it: git-ignored, swept by the next run, so a killed
   // run leaves nothing in src/data/ that git could commit; both are in the repository, one file system.
+  // The credits too, or, when this export lists none, their removal (bytes null): an earlier
+  // export's copy never stays to credit sources this one does not.
   const listFiles = !listDir || !tryList ? [] : [
     [TRY_LIST_FILE, tryList.bytes],
     [TRY_LIST_META, Buffer.from(`${JSON.stringify({ sha256: tryList.entry.sha256, rows: tryList.entry.rows, dataset_ids: tryList.entry.dataset_ids }, null, 2)}\n`)],
+    [CREDIT_FILE, credits ? credits.bytes : null],
   ].map(([name, bytes]) => {
     const path = join(listDir, name);
     let previous = null;
@@ -651,16 +703,20 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
       mkdirSync(dirname(join(tmp, name)), { recursive: true });
       writeFileSync(join(tmp, name), bytes);
     }
-    for (const file of listFiles) writeFileSync(file.staged, file.bytes);
+    for (const file of listFiles) if (file.bytes) writeFileSync(file.staged, file.bytes);
     const hadOut = existsSync(out);
     if (hadOut) renameSync(out, old);
     const moved = [];
     try {
       renameSync(tmp, out);
-      for (const file of listFiles) { renameSync(file.staged, file.path); moved.push(file); }
+      for (const file of listFiles) {
+        if (file.bytes) renameSync(file.staged, file.path);
+        else if (file.previous) rmSync(file.path);
+        moved.push(file);
+      }
     } catch (err) {
-      // Put back what was there: the list files already moved and the previous install.
-      for (const file of moved) { if (file.previous) writeFileSync(file.path, file.previous); else rmSync(file.path); }
+      // Put back what was there: the list files already moved or removed and the previous install.
+      for (const file of moved) { if (file.previous) writeFileSync(file.path, file.previous); else rmSync(file.path, { force: true }); }
       rmSync(out, { recursive: true, force: true });
       if (hadOut) renameSync(old, out);
       throw err;
@@ -678,6 +734,8 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
   if (images) log(`Photos: ${photos.files.size} of ${photos.total} downloaded${photos.failed.length ? `; no photo for ${photos.failed.map((f) => f.name).join(', ')}` : ''}.`);
   else log('Photos: skipped (--no-images).');
   if (listFiles.length) log(`TRY list: ${tryList.entry.rows} rows, ${tryList.entry.dataset_ids} DatasetIDs, written to ${listDir}.`);
+  if (listFiles.length) log(credits ? `Source credits: ${CREDIT_FILE} written to ${listDir}.` : 'Source credits: none in this export.');
+  log(`Data release: ${manifest.release_id ?? 'none (fixture)'}.`);
   return summary;
 }
 

@@ -151,6 +151,13 @@ export interface Manifest {
   // Every ISO 3166-1 alpha-2 code (and XK). invasive_checked: GRIIS has a checklist for the country,
   // so a taxon with no record there is "not recorded invasive"; otherwise it is "not checked".
   countries: Record<string, { invasive_checked: boolean }>;
+  // The canopi-data release the export was built from (`r-` and 16 hex digits, ADR 0008): required on
+  // every real install (scripts/install-consortium.mjs), absent only on the invented fixture. The page
+  // shows it under the tool and a correction report carries it.
+  release_id?: string;
+  // The TRY dataset list and the source credits, copied to src/data/ by the installer.
+  try_references?: { file: 'try_references.tsv'; sha256: string; rows: number; dataset_ids: number };
+  source_credits?: { file: 'source_credits.tsv'; sha256: string };
 }
 
 // labels.json: trait name → English value → locale → translation (missing = fall back to English).

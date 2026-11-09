@@ -56,7 +56,12 @@ test('the data sources page has its own words in every locale, with no licence c
   const root = new URL('../src/i18n/translations/', import.meta.url);
   const en = JSON.parse(readFileSync(new URL('en.json', root), 'utf8'));
   const keys = Object.keys(en).filter((key) => key.startsWith('dataSources.')).sort();
-  assert.deepEqual(keys, ['dataSources.guidelines', 'dataSources.lede', 'dataSources.list.count', 'dataSources.list.lost', 'dataSources.list.partial', 'dataSources.list.title', 'dataSources.title']);
+  assert.deepEqual(keys, [
+    'dataSources.credits.held', 'dataSources.credits.lede',
+    'dataSources.credits.licence.confirmed', 'dataSources.credits.licence.per_item', 'dataSources.credits.licence.permission', 'dataSources.credits.licence.terms', 'dataSources.credits.licence.unconfirmed',
+    'dataSources.credits.title', 'dataSources.credits.used',
+    'dataSources.guidelines', 'dataSources.lede', 'dataSources.list.count', 'dataSources.list.lost', 'dataSources.list.partial', 'dataSources.list.title', 'dataSources.title',
+  ]);
   assert.equal(en['dataSources.guidelines'], 'Used under the TRY Intellectual Property Guidelines');
   for (const file of readdirSync(root).filter((name) => name.endsWith('.json'))) {
     const translated = JSON.parse(readFileSync(new URL(file, root), 'utf8'));
