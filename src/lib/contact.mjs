@@ -11,13 +11,13 @@ export const FROM = { email: 'contact@projectcanopi.com', name: 'Canopi website'
 export const MAX_BODY = 32 * 1024;
 export const LIMITS = { name: 120, email: 254, message: 5000 };
 export const TIMEOUT_MS = 10_000;
-const EMAIL_RE = /^[^\s@<>"(),;:]+@[^\s@<>"(),;:]+\.[^\s@<>"(),;:]{2,}$/;
+export const EMAIL_RE = /^[^\s@<>"(),;:]+@[^\s@<>"(),;:]+\.[^\s@<>"(),;:]{2,}$/;
 // Control characters (C0 except tab and newline, DEL, C1) and Unicode line separators.
-const CONTROL = /[\u0000-\u0008\u000B-\u001F\u007F-\u009F\u2028\u2029]/g;
+export const CONTROL = /[\u0000-\u0008\u000B-\u001F\u007F-\u009F\u2028\u2029]/g;
 
 // send() error codes that will fail again however often the visitor retries (the portfolio
 // mailer's 4xx codes, without 408 and 429).
-const PERMANENT = new Set([
+export const PERMANENT = new Set([
   'E_VALIDATION_ERROR', 'E_FIELD_MISSING', 'E_TOO_MANY_RECIPIENTS', 'E_TOO_MANY_ATTACHMENTS',
   'E_HEADER_NOT_ALLOWED', 'E_HEADER_USE_API_FIELD', 'E_HEADER_VALUE_INVALID', 'E_HEADER_VALUE_TOO_LONG',
   'E_HEADER_NAME_INVALID', 'E_HEADERS_TOO_LARGE', 'E_HEADERS_TOO_MANY', 'E_CONTENT_TOO_LARGE',
@@ -55,7 +55,7 @@ export function mailText({ name, email, message }, lang) {
   ].join('\n');
 }
 
-const withTimeout = (promise, ms) => new Promise((resolve, reject) => {
+export const withTimeout = (promise, ms) => new Promise((resolve, reject) => {
   const timer = setTimeout(() => reject(Object.assign(new Error('timeout'), { code: 'E_TIMEOUT' })), ms);
   promise.then((value) => { clearTimeout(timer); resolve(value); }, (error) => { clearTimeout(timer); reject(error); });
 });
