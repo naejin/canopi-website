@@ -277,7 +277,8 @@ const SETTLE_ROUNDS = 50;
 // data: 'fixture' (the invented files) or 'real' (the installed export under public/data/consortium/,
 // 200 plants per climate: the scale tests).
 // release: the data release the page was built with (ConsortiumPage.astro reads the installed manifest).
-async function openPage(t, { lang = 'en', width = 1280, siteClimate = null, data: dataSet = 'fixture', release = 'r-0123456789abcdef' } = {}) {
+// edit(file, json): changes a data file as it arrives (a test's own variant of the installed list).
+async function openPage(t, { lang = 'en', width = 1280, siteClimate = null, data: dataSet = 'fixture', release = 'r-0123456789abcdef', edit = null } = {}) {
   /** @type {any} */
   const page = { lang, active: null, timers: new Map(), nextTimer: 1, reloads: 0, closed: false, clipboard: null };
   // G5: a closed page's code does nothing: its timers are never scheduled.
@@ -342,7 +343,7 @@ async function openPage(t, { lang = 'en', width = 1280, siteClimate = null, data
       t.dev.fetched.push(file);
       t.dev.onFetch?.(file, t);
       if (t.dev.failing.has(file)) return { ok: false, status: 503, json: async () => null };
-      return { ok: true, status: 200, json: async () => JSON.parse(read(dataSet === 'real' ? `public/data/consortium/${file}` : `scripts/fixtures/consortium/${file}`)) };
+      return { ok: true, status: 200, json: async () => { const json = JSON.parse(read(dataSet === 'real' ? `public/data/consortium/${file}` : `scripts/fixtures/consortium/${file}`)); return edit ? edit(file, json) : json; } };
     },
   };
   page.globals = globals;

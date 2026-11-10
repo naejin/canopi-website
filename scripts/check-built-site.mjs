@@ -95,8 +95,9 @@ for (const lang of locales) {
   assert.ok(trySection.includes(TRY_CITATION), `${lang}: the TRY section`);
   assert.ok(!trySection.includes('CC BY'), `${lang}: no CC BY claim for TRY`);
   // The credits: every used and held source, never an internal one.
-  const creditNames = [...dataSources.matchAll(/<li class="credit-row"><span class="credit-name"[^>]*>(.*?)<\/span>/g)].map((m) => plainText(m[1]));
+  const creditNames = [...dataSources.matchAll(/<li class="credit-row">\s*<span class="credit-name"[^>]*>(.*?)<\/span>/g)].map((m) => plainText(m[1]));
   assert.deepEqual(creditNames, creditRows.map((row) => row.name), `${lang}: the used and held sources, in order`);
+  assert.equal((dataSources.match(/class="credit-row"/g) ?? []).length, creditRows.length, `${lang}: one credit row per used or held source`);
   for (const other of locales) {
     const href = `https://projectcanopi.com${other === 'en' ? '' : `/${other}`}/data-sources/`;
     assert.ok(dataSources.includes(`hreflang="${other}" href="${href}"`), `${lang}: data sources alternate ${other}`);

@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T06:50:13Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T06:57:45Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-06T22:24:54Z }
 sources:
@@ -19,8 +19,8 @@ sources:
   - id: consortium-harness
     resource: ../../scripts/consortium-harness.mjs
     title: scripts/consortium-harness.mjs
-    digest: sha256:6dafd61dcc0d6b89
-    last_modified: 2026-11-09T23:58:32Z
+    digest: sha256:3722fba7bb2b87fa
+    last_modified: 2026-11-10T06:53:16Z
   - id: consortium-scale-test
     resource: ../../scripts/consortium-scale.test.mjs
     title: scripts/consortium-scale.test.mjs
@@ -35,7 +35,7 @@ sources:
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
     digest: sha256:82fe21f30fdb3e98
-    last_modified: 2026-11-10T06:44:49Z
+    last_modified: 2026-11-10T06:50:47Z
   - id: words-js
     resource: ../../src/scripts/consortium/words.js
     title: src/scripts/consortium/words.js
@@ -54,8 +54,8 @@ sources:
   - id: consortium-side-test
     resource: ../../scripts/consortium-side.test.mjs
     title: scripts/consortium-side.test.mjs
-    digest: sha256:0daa3e4ca54eb91a
-    last_modified: 2026-11-06T22:24:55Z
+    digest: sha256:ab7376a624f6c040
+    last_modified: 2026-11-10T06:54:21Z
   - id: consortium-side-layout-test
     resource: ../../scripts/consortium-side-layout.test.mjs
     title: scripts/consortium-side-layout.test.mjs
@@ -70,7 +70,7 @@ sources:
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
     digest: sha256:42bf1a0578657b37
-    last_modified: 2026-11-10T06:44:49Z
+    last_modified: 2026-11-10T06:50:47Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
@@ -80,7 +80,7 @@ sources:
     resource: ../../scripts/consortium-page.test.mjs
     title: scripts/consortium-page.test.mjs
     digest: sha256:e4336420b5b01d2e
-    last_modified: 2026-11-10T06:43:58Z
+    last_modified: 2026-11-10T06:50:47Z
   - id: logic-js
     resource: ../../src/scripts/consortium/logic.js
     title: src/scripts/consortium/logic.js
@@ -89,8 +89,8 @@ sources:
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
-    digest: sha256:6b311db622eab597
-    last_modified: 2026-11-06T22:24:55Z
+    digest: sha256:17d0ec34137adc78
+    last_modified: 2026-11-10T06:51:33Z
   - id: dialogs-js
     resource: ../../src/scripts/dialogs.js
     title: src/scripts/dialogs.js
@@ -220,7 +220,7 @@ The data release: ConsortiumPage.astro reads `release_id` from the installed man
 - [consortium-page.test.mjs](../../scripts/consortium-page.test.mjs): strings in 11 locales (every key used, `list.<climate>` for every site climate, dynamic prefixes checked against core ids), app strata and phase terms, plural climate counts, country sentences with no article before a country, the first-paint script against the app's start rules, a guess never in a link, `k=-` in the save only, invasive-here warnings without confirmation, the region-era guide keys gone, guides exist and cover their plants (crop list, heading, table, list item, bold or `<Term>`, or twice in prose; frontmatter, alt text and safety boxes ignored; a human check beyond that), `initDialogs` skipping `data-own-dialog`, `words.js`, `logic.js`.
 - [consortium-layers.test.mjs](../../scripts/consortium-layers.test.mjs): layers.js (months, scope, kinds, rows) and the details sheet on the fixture's layer values and yield-gain pair: marker words, legend, French, positive check from both sides, strings in 11 locales, the marker CSS.
 - [consortium-correction.test.mjs](../../scripts/consortium-correction.test.mjs): the correction form in the harness (whose fetch stub answers `/api/correction` through `t.dev.answer` and records `t.dev.posts`): closed section, field options, the value shown now, invalid submit and focus, values kept across a redraw, the posted body, sending, sent, failed and refused states, Enter submits, Cancel, another plant, no release, French, the pure helpers and the CSS that keeps the status line's room.
-- [consortium-app.test.mjs](../../scripts/consortium-app.test.mjs): runs app.js itself in [consortium-harness.mjs](../../scripts/consortium-harness.mjs) (a small DOM on parse5, domhandler and css-select; one device's localStorage, a tab's history entries with Back, reload and hashchange; fixture data files that can fail; a fresh module graph per page load), clicking and typing as a reader: neutral main-crop and other-list wording on someone's link, the Add-anyway confirm, Retry and its focus, the guest-list error, the hashchange reload and anchor write-back, Start over then pasting the same link, Back/Undo keeping the country, a moved query link staying whole, a cut link for an uncovered climate, Back to an entry where the tab chose an older country (G1), leaving a cut link for an uncovered climate (G2). A closed page's code does nothing: its `page.later` schedules nothing and its `fetch` never resolves, also for a load started before the close (G5); `page.globals` exposes a page's own globals to tests. The harness's waits are bounded (settle rounds, dispatch depth) and its tree links are non-enumerable, so a failed assertion on an element cannot print the whole circular tree (that once ran a test process out of memory).
+- [consortium-app.test.mjs](../../scripts/consortium-app.test.mjs): runs app.js itself in [consortium-harness.mjs](../../scripts/consortium-harness.mjs) (a small DOM on parse5, domhandler and css-select; one device's localStorage, a tab's history entries with Back, reload and hashchange; fixture data files that can fail, or the installed ones with `data: 'real'`, changed as they arrive by an `edit(file, json)` hook (the side tests take out three Temperate heights to keep a plant with no height, since every Temperate plant has one from r-a352b5a0bb695d59); a fresh module graph per page load), clicking and typing as a reader: neutral main-crop and other-list wording on someone's link, the Add-anyway confirm, Retry and its focus, the guest-list error, the hashchange reload and anchor write-back, Start over then pasting the same link, Back/Undo keeping the country, a moved query link staying whole, a cut link for an uncovered climate, Back to an entry where the tab chose an older country (G1), leaving a cut link for an uncovered climate (G2). A closed page's code does nothing: its `page.later` schedules nothing and its `fetch` never resolves, also for a load started before the close (G5); `page.globals` exposes a page's own globals to tests. The harness's waits are bounded (settle rounds, dispatch depth) and its tree links are non-enumerable, so a failed assertion on an element cannot print the whole circular tree (that once ran a test process out of memory).
 - [consortium-scale.test.mjs](../../scripts/consortium-scale.test.mjs): the crop search (English fallback in brackets on the real French Temperate list), examples and limit, Add anyway matches, the Kept filter, the start rules (`asksCrops`, `opensOnResult`), `shareUrl`, old-link counts, the new words (room hints from the core, ledes, French non-breaking spaces), and the scale chunk A review fixes: fragment arrival and language links, cut-link detection, other lists in order with failures, print for a guest, Back keeping the country, the redo toast, Swap of a main crop, the Add filters on other lists, own versus neutral crop words, the climate's source, and the invasive words handed the taxon.
 - [consortium-side.test.mjs](../../scripts/consortium-side.test.mjs): side.js and the side view in the harness: the scale, shapes, band sentences on the real Temperate list, usual height, mark order, the 9-plant drawing and its dashed plant, the one height helper, the text equivalent, climbing or trailing plants (no support, no "climbs"), the rendered legend on screen and in print, the light cue, 21 and 200 marks at a field (true scale, state 05's ⚠ 1/16/10/2, one group per band with marks, no tab stop on an empty band, keys that keep their page job), the band sentences pinned (which plants, in which order; their heights read from the installed list, so no TRY figure sits in the test), one list separator (zh), At a glance in print, side view at 200 plants in under 50 ms, no rebuild on re-render, French, keys in 11 locales and no dead ones, French no-break spaces, number–unit no-break spaces in all 11 locales, hidden scale labels and tip inside a group.
 - [consortium-side-layout.test.mjs](../../scripts/consortium-side-layout.test.mjs): the side view in headless Chrome with the site's stylesheets at a 320 px phone and on the desktop, light and dark: every drawing on its plot's scale at 20 plants, an 84–96 px phone plot, 19 px numbers that never overlap, every mark 3:1 against the surface, a 1 px gap unless dense, dense exactly below a 3 px pitch with the caption note, warning dots narrower than the pitch. Skipped without Chrome.

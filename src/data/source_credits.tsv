@@ -1,0 +1,37 @@
+source	tags	name	credit	licence	licence_status	url	status
+try	try	TRY Plant Trait Database			terms	https://www.try-db.org/	used
+pfaf	pfaf;pfaf_sqlite;pfaf_notes	Plants For A Future	Plants For A Future (pfaf.org)		permission	https://pfaf.org/	used
+plantatlas	plantatlas	USDA PLANTS Database (via PlantAtlas)		Public domain (US government)	confirmed	https://plants.usda.gov/	used
+griis	griis	Global Register of Introduced and Invasive Species (GRIIS)	Global Register of Introduced and Invasive Species (griis.org), compendium via Zenodo	CC BY 4.0	confirmed	https://griis.org/	used
+gisd	gisd	Global Invasive Species Database (GISD)	Global Invasive Species Database (iucngisd.org), Darwin Core Archive via GBIF	CC BY 4.0	confirmed	https://www.iucngisd.org/	used
+eol	eol;eol_distribution	Encyclopedia of Life TraitBank	Encyclopedia of Life TraitBank (eol.org), Zenodo bulk download	CC BY	confirmed	https://eol.org/	used
+ellenberg	ellenberg	Ellenberg-type indicator values	Tichý et al. (2023), Ellenberg-type indicator values for European vascular plants, Zenodo compilation of 13 regional datasets (tables of 2022-11-07, v2)	CC BY	confirmed		used
+fungalroot	fungalroot	FungalRoot	FungalRoot mycorrhizal associations, GBIF dataset 744edc21-8dd2-474e-8a0b-b8c3d56a3c2d		unconfirmed	https://www.gbif.org/dataset/744edc21-8dd2-474e-8a0b-b8c3d56a3c2d	used
+groot	groot	Global Root Traits (GRooT)	GRooT (Global Root Traits) database		unconfirmed	https://github.com/GRooT-Database/GRooT-Data	held
+trefle	trefle	Trefle	Trefle open-access plant database		unconfirmed		used
+wikidata	wikidata	Wikidata	Wikidata (wikidata.org)	CC0	confirmed	https://www.wikidata.org/	used
+wikimedia_commons	wikidata_p18	Wikimedia Commons	Photos from Wikimedia Commons, found through Wikidata		per_item	https://commons.wikimedia.org/	used
+inaturalist	inaturalist	iNaturalist	Photos by iNaturalist observers, each under the CC0 or CC BY licence its observer chose		per_item	https://www.inaturalist.org/	used
+gbif	gbif	GBIF vernacular names	GBIF Backbone Taxonomy (backbone.zip), vernacular names from its checklists		unconfirmed		used
+wcvp	wcvp;wcvp_distribution	World Checklist of Vascular Plants (WCVP)	Govaerts R (ed.). 2026. WCVP: World Checklist of Vascular Plants. Facilitated by the Royal Botanic Gardens, Kew. https://doi.org/10.34885/rvc3-4d77		unconfirmed	https://doi.org/10.34885/rvc3-4d77	used
+wgsrpd		World Geographical Scheme for Recording Plant Distributions (WGSRPD)	TDWG World Geographical Scheme for Recording Plant Distributions, Level 3 areas		unconfirmed	https://www.tdwg.org/standards/wgsrpd/	used
+treegoer	treegeoer	TreeGOER	TreeGOER Köppen-Geiger zone distributions (Kindt 2023), Zenodo record 14211620		unconfirmed	https://zenodo.org/records/14211620	used
+koppen_geiger		Köppen-Geiger climate map	Beck et al. (2023) Köppen-Geiger map, 0.1° resolution, current climate (1991-2020), figshare file 61012822		unconfirmed	https://ndownloader.figshare.com/files/61012822	used
+eppo	agent	EPPO Global Database	EPPO (2026) EPPO Global Database. https://gd.eppo.int		unconfirmed	https://gd.eppo.int/	used
+wikipedia	wikipedia	Wikipedia	Article titles from Wikipedia (wikipedia.org)		unconfirmed	https://www.wikipedia.org/	used
+austraits	austraits	AusTraits	AusTraits 7.0.0, Zenodo record 15718081	CC BY 4.0	confirmed		used
+brot	brot	BROT 2.0	Tavsanoglu C. & Pausas J.G. 2018. A functional trait database for Mediterranean Basin plants. Scientific Data 5:180135. http://dx.doi.org/10.1038/sdata.2018.135. Licence unconfirmed: CC0 on the data article (figshare 5280868), CC BY 4.0 in the collection's DataCite record		unconfirmed	https://ndownloader.figshare.com/files/11194784	held
+uk_guide	uk_guide	UK guide	UK guide file (uk_guide_v7.xlsx), figshare file 52659353	CC BY 4.0	confirmed	https://ndownloader.figshare.com/files/52659353	used
+phenovision	phenovision	PhenoVision	PhenoVision flowering and fruiting annotations, Zenodo record 15306421	CC BY 4.0	confirmed		used
+tropical_seed		Tropical Seed Trait Database	Tropical Seed Trait Database v2, figshare file 63834627		unconfirmed	https://ndownloader.figshare.com/files/63834627	held
+agroforestreeadvice	agroforestreeadvice	AgroforesTreeAdvice tables	AgroforesTreeAdvice tables (models/ folder)		permission	https://github.com/euraf/agroforestreeadvice	used
+shadetreeadvice	shadetreeadvice	ShadeTreeAdvice	ShadeTreeAdvice farmers' ratings (dataSTA.txt, AgroforesTreeAdvice models/ folder)		permission	https://github.com/euraf/agroforestreeadvice	held
+dentro	dentro	DENTRO	DENTRO table (AgroforesTreeAdvice models/ folder)		permission	https://github.com/euraf/agroforestreeadvice	held
+intercropping	intercropping	Horticulture intercropping experiments	Horticulture intercropping experiments, version 7, Recherche Data Gouv. https://doi.org/10.57745/HV33V1	Etalab 2.0	confirmed	https://doi.org/10.57745/HV33V1	used
+canopi		Canopi catalog			none		internal
+canopi-correction	canopi-correction	Canopi correction			none		internal
+canopi_rules	dq-fix;gap-fill;try-autonym	Canopi rules	Values derived by Canopi's rules from the values of the sources above		none		internal
+canopi_strata	human-verified	Canopi curated strata	Strata and succession phases from Canopi's reviewed consortium roles (data/curated/consortium_roles.tsv)		none		internal
+model_output	llm;ai-generated	Model output	Common names and classifications written by a language model		none		internal
+curated_names	curated	Canopi curated names	Common names added by Canopi's curators (data/curated/common_names.tsv)		none		internal
+unrecorded	unknown	Source not recorded	Common names whose source was not recorded when they were loaded		none		internal

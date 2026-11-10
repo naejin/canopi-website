@@ -120,6 +120,18 @@
       "nl": "Voorjaar",
       "ru": "Весна"
     },
+    "Spring-Summer": {
+      "fr": "Printemps-été",
+      "es": "Primavera-verano",
+      "pt": "Primavera-verão",
+      "it": "Primavera-estate",
+      "zh": "春夏",
+      "de": "Frühling-Sommer",
+      "ja": "春夏",
+      "ko": "봄-여름",
+      "nl": "Voorjaar-zomer",
+      "ru": "Весна-лето"
+    },
     "Summer": {
       "fr": "Été",
       "es": "Verano",
@@ -132,6 +144,18 @@
       "nl": "Zomer",
       "ru": "Лето"
     },
+    "Summer-Fall": {
+      "fr": "Été-automne",
+      "es": "Verano-otoño",
+      "pt": "Verão-outono",
+      "it": "Estate-autunno",
+      "zh": "夏秋",
+      "de": "Sommer-Herbst",
+      "ja": "夏秋",
+      "ko": "여름-가을",
+      "nl": "Zomer-herfst",
+      "ru": "Лето-осень"
+    },
     "Winter": {
       "fr": "Hiver",
       "es": "Invierno",
@@ -143,6 +167,18 @@
       "ko": "겨울",
       "nl": "Winter",
       "ru": "Зима"
+    },
+    "Winter-Spring": {
+      "fr": "Hiver-printemps",
+      "es": "Invierno-primavera",
+      "pt": "Inverno-primavera",
+      "it": "Inverno-primavera",
+      "zh": "冬春",
+      "de": "Winter-Frühling",
+      "ja": "冬春",
+      "ko": "겨울-봄",
+      "nl": "Winter-voorjaar",
+      "ru": "Зима-весна"
     }
   },
   "clonal_growth_form": {
