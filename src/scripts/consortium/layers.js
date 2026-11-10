@@ -25,7 +25,8 @@ const monthName = (lang, i) => {
   return monthNames.get(lang)[i];
 };
 
-// "Apr–May", "Nov–Feb" (a run over the new year stays one run), "Jan, Mar–Apr, Jun"; all twelve: "All year".
+// "Apr–May", "Nov–Feb" (a run over the new year stays one run), "Jan, Mar–Apr, and Jun"; all twelve:
+// "All year". Runs are joined by the site's one list form (W.list), so they stay apart in every locale.
 export function monthsText(months, W) {
   const on = MONTHS.map((m) => months.includes(m));
   if (on.every(Boolean)) return W.T('t.allYear');
@@ -39,7 +40,7 @@ export function monthsText(months, W) {
     else runs.push([i, i]);
   }
   const words = runs.map(([a, b]) => (a === b ? monthName(W.lang, a) : `${monthName(W.lang, a)}–${monthName(W.lang, b)}`));
-  return new Intl.ListFormat(W.lang, { type: 'unit', style: 'short' }).format(words);
+  return W.list(words);
 }
 
 // Where a value holds: its climate, country (by name), region and latitude band (with its hemisphere),
@@ -60,7 +61,7 @@ export function scopeText(scope, W) {
   return parts.join(' · ') || W.T('scope.everywhere');
 }
 
-// The rows the sheet shows: [{ field, label, values: [{ text, where, estimate, source }] }], in
+// The rows the sheet shows: [{ field, label, values: [{ text, where, estimate }] }], in
 // LAYER_ROWS order, values in file order; a field with no value has no row. sourceLabel(id) names a
 // source as the sheet's source list does.
 export function layerRows(taxon, W, sourceLabel) {
@@ -72,7 +73,6 @@ export function layerRows(taxon, W, sourceLabel) {
       text: typeof v.value === 'boolean' ? W.T(v.value ? 'yes' : 'no') : monthsText(v.value, W),
       where: `${scopeText(v.scope, W)} · ${sourceLabel(v.source)}`,
       estimate: isEstimate(v),
-      source: v.source,
     })),
   })).filter((r) => r.values.length);
 }

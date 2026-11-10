@@ -116,8 +116,7 @@ export interface Taxon {
   layer_values?: LayerValue[];
 }
 
-export const layerFields = ['bloom_months', 'ripening_or_fruit_seen_months', 'sowing_months', 'tolerates_wind'] as const;
-export type LayerField = (typeof layerFields)[number];
+export type LayerField = 'bloom_months' | 'ripening_or_fruit_seen_months' | 'sowing_months' | 'tolerates_wind';
 export type Month = 'Jan' | 'Feb' | 'Mar' | 'Apr' | 'May' | 'Jun' | 'Jul' | 'Aug' | 'Sep' | 'Oct' | 'Nov' | 'Dec';
 // Where a layer value holds; null: everywhere. latitude is a band such as "35..50" or "-50..-35".
 export interface LayerScope { climate?: ClimateZone; country?: string; hemisphere?: 'N' | 'S'; latitude?: string; region?: Region }

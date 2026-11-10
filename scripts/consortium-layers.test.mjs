@@ -53,10 +53,20 @@ test('months: names in the page language, runs joined, a run over the new year k
   assert.equal(monthsText(['Apr', 'May'], W), `${short('en', 3)}–${short('en', 4)}`);
   assert.equal(monthsText(['May'], W), short('en', 4));
   assert.equal(monthsText(['Nov', 'Dec', 'Jan', 'Feb'], W), `${short('en', 10)}–${short('en', 1)}`);
-  assert.equal(monthsText(['Feb', 'Mar', 'Nov', 'Dec'], W), new Intl.ListFormat('en', { type: 'unit', style: 'short' }).format([`${short('en', 1)}–${short('en', 2)}`, `${short('en', 10)}–${short('en', 11)}`]));
-  assert.equal(monthsText(['Jan', 'Mar', 'Apr', 'Jun'], W), new Intl.ListFormat('en', { type: 'unit', style: 'short' }).format([short('en', 0), `${short('en', 2)}–${short('en', 3)}`, short('en', 5)]));
+  assert.equal(monthsText(['Feb', 'Mar', 'Nov', 'Dec'], W), 'Feb–Mar and Nov–Dec');
+  assert.equal(monthsText(['Jan', 'Mar', 'Apr', 'Jun'], W), 'Jan, Mar–Apr, and Jun');
   assert.equal(monthsText(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], W), en['consortium.t.allYear']);
   for (const lang of ['fr', 'ja', 'ru']) assert.equal(monthsText(['Apr'], wordsFor(lang)), short(lang, 3), lang);
+});
+
+test('months: separate runs are visibly separated in every locale, with the site\'s one list form (W.list)', () => {
+  const runs = ['May', 'Nov', 'Dec', 'Jan', 'Feb'];
+  assert.equal(monthsText(runs, wordsFor('zh')), '5月和11月–2月');
+  assert.equal(monthsText(runs, wordsFor('ja')), '5月、11月–2月');
+  assert.equal(monthsText(runs, wordsFor('ru')), 'май и нояб.–февр.');
+  assert.equal(monthsText(runs, wordsFor('ko')), '5월 및 11월–2월');
+  assert.equal(monthsText(['Jan', 'Mar', 'Apr', 'Jun'], wordsFor('zh')), '1月、3月–4月和6月');
+  assert.doesNotMatch(read('src/scripts/consortium/layers.js'), /ListFormat/, 'one list formatter: words.js');
 });
 
 test('scope: a country by its name, a latitude band with its hemisphere, the climate, everywhere', () => {
@@ -121,10 +131,19 @@ test('a plant whose values are all recorded has no legend; a plant with none has
   const hazel = await sheet('Corylus avellana');
   assert.equal(ddOf(hazel, en['consortium.t.bloom']), null);
   assert.equal(hazel.$$('#ct-dialog .lv-legend').length, 0);
-  // Recorded only: no legend.
-  const only = structuredClone(temperate);
-  only.taxa.find((t) => t.canonical_name === 'Fragaria vesca').layer_values.splice(1);
-  assert.deepEqual(layerRows(only.taxa.find((t) => t.canonical_name === 'Fragaria vesca'), wordsFor('en'), (id) => id).flatMap((r) => r.values.map((v) => v.estimate)), [false]);
+});
+
+test('in the sheet, a plant whose values are all recorded shows them with no marker and no legend', async () => {
+  // The fixture's strawberry with its recorded sowing value only.
+  const recordedOnly = (file, json) => {
+    if (file === 'temperate.json') json.taxa.find((t) => t.canonical_name === 'Fragaria vesca').layer_values.splice(1);
+    return json;
+  };
+  const page = await sheet('Fragaria vesca', { edit: recordedOnly });
+  assert.equal(rows(ddOf(page, en['consortium.t.sowing'])).length, 1);
+  assert.equal(ddOf(page, en['consortium.t.fruit']), null);
+  assert.equal(page.$$('#ct-dialog .lv-est').length, 0);
+  assert.equal(page.$$('#ct-dialog .lv-legend').length, 0);
 });
 
 test('the sheet speaks the page language: month names, the marker and the legend', async () => {
