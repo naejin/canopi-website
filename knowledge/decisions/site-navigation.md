@@ -6,6 +6,7 @@ tags: [decision, navigation]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:09Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:32Z }
+  - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
 sources:
   - id: header-astro
     resource: ../../src/components/Header.astro
@@ -50,8 +51,8 @@ sources:
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
-    digest: sha256:e932d07ac266c4cf
-    last_modified: 2026-11-10T10:21:02Z
+    digest: sha256:51974c7232791e09
+    last_modified: 2026-11-10T18:07:38Z
 enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 ---
 
