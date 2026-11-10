@@ -834,5 +834,19 @@
   "dataSources.credits.licence.unconfirmed": "Lizenz noch nicht bestätigt",
   "dataSources.credits.licence.permission": "Mit Genehmigung verwendet",
   "dataSources.credits.licence.per_item": "Lizenz je Eintrag angegeben",
-  "dataSources.credits.licence.terms": "Nach den Nutzungsbedingungen der Quelle verwendet"
+  "dataSources.credits.licence.terms": "Nach den Nutzungsbedingungen der Quelle verwendet",
+  "consortium.est.word": "Schätzung",
+  "consortium.est.legend": "aus datierten Fotos berechnet oder per Regel aus einem Text gelesen, nicht von einem Datensatz erfasst. Die Monate stammen aus der Quelle und gelten für den genannten Ort.",
+  "consortium.t.bloom": "Blüte",
+  "consortium.t.fruit": "Reife oder Früchte gesehen",
+  "consortium.t.sowing": "Aussaat",
+  "consortium.t.wind": "Verträgt Wind",
+  "consortium.t.allYear": "Ganzjährig",
+  "consortium.scope.everywhere": "Überall",
+  "consortium.scope.latN": "{from}–{to}° N",
+  "consortium.scope.latS": "{from}–{to}° S",
+  "consortium.scope.north": "Nordhalbkugel",
+  "consortium.scope.south": "Südhalbkugel",
+  "consortium.ctype.intercropped_yield_gain": "In Feldversuchen zusammen angebaut mit Mehrertrag.",
+  "consortium.d.yieldGain": "Mit {other} angebaut, mit Mehrertrag"
 }

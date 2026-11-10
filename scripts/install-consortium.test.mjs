@@ -119,7 +119,7 @@ test('taxa or interactions counts that differ from the manifest are refused', as
   manifest.climates.find((c) => c.file === 'temperate.json').taxa = 13;
   manifest.climates.find((c) => c.file === 'temperate.json').interactions = 0;
   w.write('manifest.json', manifest);
-  await assert.rejects(install(w), /has 3 interactions, the manifest says 0/);
+  await assert.rejects(install(w), /has 4 interactions, the manifest says 0/);
 });
 
 test('format 3: one file per climate, its regions those of the manifest entry', async (t) => {
@@ -972,6 +972,7 @@ test('source credits: a listed file that is missing, changed or malformed refuse
     ['an unknown status', rewrite(CREDITS.replace('\tused\n', '\tshipped\n')), /source_credits\.tsv:2: try: status "shipped"/],
     ['other columns', rewrite(CREDITS.replace('licence_status', 'licence_state')), /source_credits\.tsv:1: the columns are not/],
     ['bytes that are not UTF-8', rewrite(Buffer.concat([Buffer.from(CREDITS), Buffer.from([0xff, 0x0a])])), /source_credits\.tsv is not UTF-8/],
+    ['a rows count that is not the file\'s', manifestEdit((m) => { m.source_credits.rows = 5; }), /source_credits\.tsv has 2 rows, the manifest says 5/],
   ]) {
     const w = withCredits(realExport(t));
     breakIt(w);
@@ -991,4 +992,111 @@ test('source credits: a failure while moving into place puts back the previous c
   mkdirSync(join(w.listDir, 'try_references.meta.json')); // a rename onto a directory fails
   await assert.rejects(realInstall(next));
   assert.equal(readFileSync(join(w.listDir, 'source_credits.tsv'), 'utf8'), CREDITS);
+});
+
+test('source credits: the manifest entry may give rows (the export does), and it is the file\'s data rows', async (t) => {
+  const w = withCredits(realExport(t));
+  const m = w.json('manifest.json');
+  m.source_credits.rows = 2;
+  w.write('manifest.json', m);
+  await realInstall(w);
+  assert.equal(readFileSync(join(w.listDir, 'source_credits.tsv'), 'utf8'), CREDITS);
+});
+
+// Added within format 3 on 2026-11-10 (canopi-data docs/consortium-export-format.md): layer values on a
+// taxon, climate_zone on every interaction, and the intercropped_yield_gain type.
+const temperateCell = () => JSON.parse(readFileSync(join(fixture, 'temperate.json'), 'utf8'));
+const errorsOf = (cell) => shapeErrors(cell, cellShape).join('\n');
+
+test('layer values: the fixture carries them; field, kind and scope are held to the format', () => {
+  const cell = temperateCell();
+  const i = cell.taxa.findIndex((t) => t.layer_values);
+  assert.ok(i >= 0, 'the fixture carries layer values');
+  assert.deepEqual(shapeErrors(cell, cellShape), []);
+  const row = cell.taxa[i].layer_values[0];
+  for (const [change, problem] of [
+    [{ field: 'seed_months' }, /layer_values\[0\]\.field: "seed_months" is not one of bloom_months, ripening_or_fruit_seen_months, sowing_months, tolerates_wind/],
+    [{ kind: 'guessed' }, /layer_values\[0\]\.kind: "guessed" is not one of recorded, extracted, derived, llm/],
+    [{ scope: 'GB' }, /layer_values\[0\]\.scope: is not an object/],
+    [{ scope: { planet: 'Mars' } }, /layer_values\[0\]\.scope: has a key "planet"/],
+    [{ scope: { country: 'gb' } }, /layer_values\[0\]\.scope\.country/],
+    [{ scope: { hemisphere: 'E' } }, /layer_values\[0\]\.scope\.hemisphere/],
+    [{ scope: { latitude: 'north' } }, /layer_values\[0\]\.scope\.latitude/],
+    [{ source: '' }, /layer_values\[0\]\.source: is empty/],
+  ]) {
+    const broken = structuredClone(cell);
+    Object.assign(broken.taxa[i].layer_values[0], change);
+    assert.match(errorsOf(broken), problem, JSON.stringify(change));
+  }
+  const fine = structuredClone(cell);
+  fine.taxa[i].layer_values[0] = { ...row, scope: null };
+  assert.deepEqual(shapeErrors(fine, cellShape), [], 'a value that holds everywhere has scope null');
+  const missing = structuredClone(cell);
+  delete missing.taxa[i].layer_values[0].kind;
+  assert.match(errorsOf(missing), /misses required key "kind"/);
+});
+
+test('layer values: months for the month fields, a boolean for wind, a defined source; refused with nothing written', async (t) => {
+  const cell = temperateCell();
+  const i = cell.taxa.findIndex((x) => x.canonical_name === 'Malus domestica');
+  const name = cell.taxa[i].canonical_name;
+  const months = cell.taxa[i].layer_values.findIndex((v) => v.field === 'bloom_months');
+  const wind = cell.taxa[i].layer_values.findIndex((v) => v.field === 'tolerates_wind');
+  for (const [at, change, problem] of [
+    [months, { value: ['April'] }, new RegExp(`temperate\\.json: ${name}: bloom_months is not a list of months Jan … Dec`)],
+    [months, { value: [] }, new RegExp(`${name}: bloom_months is not a list of months`)],
+    [months, { value: ['Apr', 'Apr'] }, new RegExp(`${name}: bloom_months is not a list of months`)],
+    [months, { value: true }, new RegExp(`${name}: bloom_months is not a list of months`)],
+    [wind, { value: ['Apr'] }, new RegExp(`${name}: tolerates_wind is not a boolean`)],
+    [months, { source: 'nobody-2099' }, /temperate\.json cites undefined sources: nobody-2099/],
+  ]) {
+    const w = workspace(t);
+    const c = w.json('temperate.json');
+    Object.assign(c.taxa[i].layer_values[at], change);
+    w.write('temperate.json', c);
+    await assert.rejects(install(w), problem, JSON.stringify(change));
+    assert.equal(existsSync(w.out), false);
+  }
+});
+
+test('interactions: climate_zone is null or absent on the four curated types, and never another value', async (t) => {
+  const cell = temperateCell();
+  assert.ok(cell.interactions.some((x) => x.type !== 'intercropped_yield_gain' && x.climate_zone === null), 'the fixture has a null climate_zone');
+  const tropical = JSON.parse(readFileSync(join(fixture, 'tropical.json'), 'utf8'));
+  assert.ok(tropical.interactions.every((x) => !('climate_zone' in x)), 'and an earlier export leaves it out');
+  assert.deepEqual(shapeErrors(tropical, cellShape), []);
+  const w = workspace(t);
+  const c = w.json('temperate.json');
+  const k = c.interactions.findIndex((x) => x.type === 'alternate_host');
+  c.interactions[k].climate_zone = 'Temperate';
+  w.write('temperate.json', c);
+  await assert.rejects(install(w), /temperate\.json: an alternate_host interaction \(Juniperus → Malus\) has climate_zone Temperate; only intercropped_yield_gain rows name a climate/);
+});
+
+test('intercropped_yield_gain: accepted, its climate_zone the file\'s own, both plants species of the file', async (t) => {
+  const cell = temperateCell();
+  const k = cell.interactions.findIndex((x) => x.type === 'intercropped_yield_gain');
+  assert.ok(k >= 0, 'the fixture carries a pair');
+  const w0 = workspace(t);
+  await install(w0);
+  assert.deepEqual(JSON.parse(readFileSync(join(w0.out, 'temperate.json'), 'utf8')).interactions[k], cell.interactions[k]);
+  const other = cell.taxa.find((x) => x.canonical_name !== cell.interactions[k].subject.name && x.canonical_name !== cell.interactions[k].object.name).canonical_name;
+  for (const [change, problem] of [
+    [(i) => { i.climate_zone = null; }, /temperate\.json: an intercropped_yield_gain pair \(Malus domestica \+ Trifolium repens\) has climate_zone null, not the file's Temperate/],
+    [(i) => { delete i.climate_zone; }, /has climate_zone null, not the file's Temperate/],
+    [(i) => { i.climate_zone = 'Tropical'; }, /has climate_zone Tropical, not the file's Temperate/],
+    [(i) => { i.object = { name: 'Zea mays', rank: 'species' }; }, /temperate\.json: an intercropped_yield_gain pair \(Malus domestica \+ Zea mays\) names a plant that is not a taxon of the file/],
+    [(i) => { i.object = { name: 'Malus', rank: 'genus' }; }, /names a plant that is not a taxon of the file/],
+    [(i) => { i.subject = { name: other, rank: 'family' }; }, /names a plant that is not a taxon of the file/],
+  ]) {
+    const w = workspace(t);
+    const c = w.json('temperate.json');
+    change(c.interactions[k]);
+    w.write('temperate.json', c);
+    await assert.rejects(install(w), problem, String(change));
+    assert.equal(existsSync(w.out), false);
+  }
+  const typo = structuredClone(cell);
+  typo.interactions[k].type = 'intercropped';
+  assert.match(errorsOf(typo), /type: "intercropped" is not one of allelopathic_harm, allelopathy_tolerant, alternate_host, shared_pest, intercropped_yield_gain/);
 });

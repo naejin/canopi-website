@@ -18,7 +18,7 @@ const strings = Object.fromEntries(locales.map((lang) => {
   const all = JSON.parse(read(`src/i18n/translations/${lang}.json`));
   return [lang, Object.fromEntries(Object.entries(all).filter(([k]) => k.startsWith('consortium.')).map(([k, v]) => [k.slice('consortium.'.length), v]))];
 }));
-const app = read('src/scripts/consortium/app.js') + read('src/scripts/consortium/words.js') + read('src/scripts/consortium/parts.js') + read('src/scripts/consortium/logic.js') + read('src/scripts/consortium/scale.js');
+const app = read('src/scripts/consortium/app.js') + read('src/scripts/consortium/words.js') + read('src/scripts/consortium/parts.js') + read('src/scripts/consortium/logic.js') + read('src/scripts/consortium/scale.js') + read('src/scripts/consortium/layers.js');
 const manifest = JSON.parse(read('public/data/consortium/manifest.json'));
 const siteOptions = { light: core.lights, soil: core.soils, water: core.waters, room: core.rooms };
 const page = read('src/components/consortium/ConsortiumPage.astro');

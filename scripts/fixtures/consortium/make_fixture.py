@@ -20,6 +20,9 @@ NS = uuid.UUID("00000000-0000-4000-8000-00000000c0de")
 
 SOURCES = {
     "pfaf": {"label": "Plants For A Future", "url": "https://pfaf.org/", "licence": None, "attribution": "Plants For A Future (pfaf.org)"},
+    # Layer values and intercropping (added within format 3, 2026-11-10), copied from the real export.
+    "phenovision": {"label": "PhenoVision", "url": None, "licence": "CC BY 4.0", "attribution": "PhenoVision flowering and fruiting annotations, Zenodo record 15306421"},
+    "intercropping": {"label": "Horticulture intercropping experiments", "url": "https://doi.org/10.57745/HV33V1", "licence": "Etalab 2.0", "attribution": "Horticulture intercropping experiments, version 7, Recherche Data Gouv. https://doi.org/10.57745/HV33V1"},
     "griis": {"label": "GRIIS, Global Register of Introduced and Invasive Species", "url": "https://griis.org/", "licence": "CC BY 4.0", "attribution": "GRIIS (griis.org), CC BY 4.0"},
     "try": {"label": "TRY Plant Trait Database", "url": "https://www.try-db.org/", "licence": None, "attribution": "Kattge, J, Bönisch, G, Díaz, S, et al. TRY plant trait database – enhanced coverage and open access. Glob Change Biol. 2020; 26: 119– 188. https://doi.org/10.1111/gcb.14904 Used under the TRY Intellectual Property Guidelines. https://projectcanopi.com/data-sources/"},
     "crawford-2010": {"label": "Crawford, Creating a Forest Garden (2010)", "url": None, "licence": None, "attribution": None},
@@ -435,20 +438,43 @@ TEMPERATE = [
           {"height_m": (0.4, 0.9), "width_max_m": 0.3, "edibility_rating": 0, "habit": "Herbaceous", "is_annual": True, "is_perennial": False},
           {"invasive_in": []}),
 ]
+# The Temperate rows carry climate_zone (null for the four curated types), as an export from
+# 2026-11-10 on does; the Tropical rows leave it out, as an earlier export does.
 TEMP_INTER = [
     {"subject": {"name": "Juniperus", "rank": "genus"}, "object": {"name": "Malus", "rank": "genus"},
-     "type": "alternate_host", "agent": "Gymnosporangium juniperi-virginianae", "severity": "high",
+     "type": "alternate_host", "climate_zone": None, "agent": "Gymnosporangium juniperi-virginianae", "severity": "high",
      "note": R("Cedar-apple rust alternates between junipers and apples; keep them apart.", "La rouille grillagée alterne entre genévriers et pommiers ; éloignez-les."),
      "sources": ["extension-rust"]},
     {"subject": {"name": "Juglans nigra", "rank": "species"}, "object": {"name": "Malus", "rank": "genus"},
-     "type": "allelopathic_harm", "agent": "juglone", "severity": "high",
+     "type": "allelopathic_harm", "climate_zone": None, "agent": "juglone", "severity": "high",
      "note": R("Apples planted within the walnut's root zone often decline.", "Les pommiers plantés dans la zone racinaire du noyer dépérissent souvent."),
      "sources": ["extension-juglone"]},
     {"subject": {"name": "Juglans nigra", "rank": "species"}, "object": {"name": "Symphytum", "rank": "genus"},
-     "type": "allelopathy_tolerant", "agent": "juglone", "severity": None,
+     "type": "allelopathy_tolerant", "climate_zone": None, "agent": "juglone", "severity": None,
      "note": R("Comfrey is reported to grow well near walnuts.", "La consoude pousserait bien près des noyers."),
      "sources": ["extension-juglone"]},
+    # A positive pair from field trials (invented figures, the exporter's wording): never a conflict.
+    {"subject": {"name": "Malus domestica", "rank": "species"}, "object": {"name": "Trifolium repens", "rank": "species"},
+     "type": "intercropped_yield_gain", "climate_zone": "Temperate", "agent": None, "agent_names": None, "severity": None,
+     "note": R("Grown together with a yield gain: median land equivalent ratio 1.12 over 4 field observations (1 article; France).",
+               "Cultivées ensemble avec un gain de rendement : rapport de surface équivalente médian 1,12 sur 4 observations au champ (1 article ; France)."),
+     "sources": ["intercropping"]},
 ]
+
+# Layer values (ADR 0009 in canopi-data), by taxon: recorded by a dataset for a country, derived from
+# dated photos for a latitude band, extracted by a rule for the climate.
+LAYER_VALUES = {
+    "Malus domestica": [
+        {"field": "bloom_months", "value": ["Apr", "May"], "scope": {"country": "GB"}, "source": "pfaf", "kind": "recorded"},
+        {"field": "bloom_months", "value": ["Mar", "Apr", "May"], "scope": {"hemisphere": "N", "latitude": "35..50"}, "source": "phenovision", "kind": "derived"},
+        {"field": "ripening_or_fruit_seen_months", "value": ["Aug", "Sep", "Oct"], "scope": {"hemisphere": "N", "latitude": "50..66"}, "source": "phenovision", "kind": "derived"},
+        {"field": "tolerates_wind", "value": True, "scope": {"climate": "Temperate"}, "source": "pfaf", "kind": "extracted"},
+    ],
+    "Fragaria vesca": [
+        {"field": "sowing_months", "value": ["Feb", "Mar", "Nov", "Dec"], "scope": {"country": "GB"}, "source": "pfaf", "kind": "recorded"},
+        {"field": "ripening_or_fruit_seen_months", "value": ["Nov", "Dec", "Jan", "Feb"], "scope": {"hemisphere": "S", "latitude": "-50..-35"}, "source": "phenovision", "kind": "derived"},
+    ],
+}
 
 
 ALL_TAXA = TROPICAL + MEDITERRANEAN + TEMPERATE
@@ -487,6 +513,8 @@ def used_sources(taxa, inter):
             ids.update(w["toxicity"]["sources"])
         for c in w["invasive_in"] or []:
             ids.update(c["sources"])
+        for v in t.get("layer_values", []):
+            ids.add(v["source"])
     for i in inter:
         ids.update(i["sources"])
         if i.get("agent_names"):
@@ -532,6 +560,8 @@ def climate_file(zone, region, taxa, inter):
         t["reasons"] = sorted(reasons, key=lambda r: REGION_ORDER.index(r["region"]))
         for c in t["warnings"]["invasive_in"] or []:
             assert COUNTRIES[c["country"]]["invasive_checked"], c  # GRIIS has a checklist there
+        if zone == "Temperate" and t["canonical_name"] in LAYER_VALUES:
+            t["layer_values"] = LAYER_VALUES[t["canonical_name"]]  # absent, never [], when none
         out.append(t)
     regions = sorted({r["region"] for t in out for r in t["reasons"]}, key=REGION_ORDER.index)
     inter = sorted(inter, key=lambda i: (i["subject"]["name"], i["object"]["name"], i["type"]))
@@ -597,6 +627,11 @@ open(os.path.join(OUT, "README.md"), "w").write(
     "interaction with `agent_names`, the agent's EPPO names chosen by Wikipedia in en and pt, while the others\n"
     "leave the optional field out, as an export from before 2026-10-28 does), countries GRIIS\n"
     "does not cover (`invasive_checked: false`, for example TW, PR, PF and the six Antarctic codes).\n"
+    "Added within format 3 (2026-11-10): `layer_values` on Malus domestica and Fragaria vesca in the Temperate file\n"
+    "(recorded for a country, derived for a latitude band in either hemisphere, extracted for the climate; months\n"
+    "that wrap over the new year), one `intercropped_yield_gain` pair (Malus domestica with Trifolium repens,\n"
+    "`climate_zone` the file's own), and `climate_zone: null` on the other Temperate rows; the Tropical rows leave\n"
+    "`climate_zone` out, as an earlier export does.\n"
     "`invasive_in` is never null here: the exporter writes null for every taxon, with every country unchecked,\n"
     "only when the GRIIS compendium is missing, so a test that needs it sets it on a copy.\n\n"
     "Regenerate (needs ../canopi-data):\n\n"

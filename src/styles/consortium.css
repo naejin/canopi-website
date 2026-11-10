@@ -371,6 +371,9 @@
 .ct .w-item.unknown > svg { color: var(--text-muted); }
 .ct .w-item.checked { border: 1px solid var(--border); background: var(--bg); }
 .ct .w-item.checked > svg { color: var(--text-secondary); }
+/* A yield-gain pair (an intercropped_yield_gain row): good news, never a warning. */
+.ct .w-item.good { border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); background: var(--bg); }
+.ct .w-item.good > svg { color: var(--accent-ink); }
 .ct .w-item details summary { cursor: pointer; font-size: 14px; color: var(--text-secondary); min-height: 32px; display: flex; align-items: center; }
 .ct .w-item .liab { font-size: 13.5px; color: var(--text-muted); margin-top: 4px; }
 .ct .srcs { margin: 0; padding-left: 18px; font-size: 14.5px; color: var(--text-secondary); display: grid; gap: 4px; }
@@ -1242,3 +1245,13 @@ html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
   .ct .corr-form input, .ct .corr-form select, .ct .corr-form textarea { font-size: 16px; }
   .ct .corr-actions .button { flex: 1 1 auto; min-height: 44px; }
 }
+
+/* Layer values in the details sheet (layers.js): one line per value, months, then where it holds and
+   its source, then the word "estimate" when a dataset did not record it. The word never splits; the
+   line wraps, so on a phone the word may go to a line of its own. */
+.ct .lv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ct .lv-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.ct .lv-v { font-weight: 600; }
+.ct .lv-where { color: var(--text-secondary); font-size: 14px; overflow-wrap: anywhere; }
+.ct .lv-est { white-space: nowrap; font-size: 12.5px; font-weight: 600; letter-spacing: 0.02em; padding: 0 6px; border: 1px dashed var(--border-strong); border-radius: 999px; color: var(--text-secondary); }
+.ct .lv-legend { margin-top: 10px; }

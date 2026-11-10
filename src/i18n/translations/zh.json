@@ -834,5 +834,19 @@
   "dataSources.credits.licence.unconfirmed": "许可尚未确认",
   "dataSources.credits.licence.permission": "经许可使用",
   "dataSources.credits.licence.per_item": "许可逐项注明",
-  "dataSources.credits.licence.terms": "依据来源的使用条款使用"
+  "dataSources.credits.licence.terms": "依据来源的使用条款使用",
+  "consortium.est.word": "估计",
+  "consortium.est.legend": "由带日期的照片推算，或按规则从文本中读取，并非数据集记录。月份按来源给出，适用于所注地点。",
+  "consortium.t.bloom": "花期",
+  "consortium.t.fruit": "成熟或见果期",
+  "consortium.t.sowing": "播种期",
+  "consortium.t.wind": "耐风",
+  "consortium.t.allYear": "全年",
+  "consortium.scope.everywhere": "各地",
+  "consortium.scope.latN": "北纬 {from}–{to}°",
+  "consortium.scope.latS": "南纬 {from}–{to}°",
+  "consortium.scope.north": "北半球",
+  "consortium.scope.south": "南半球",
+  "consortium.ctype.intercropped_yield_gain": "田间试验中间作可增产。",
+  "consortium.d.yieldGain": "与{other}间作可增产"
 }

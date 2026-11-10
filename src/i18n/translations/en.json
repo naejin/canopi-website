@@ -834,5 +834,19 @@
   "dataSources.credits.licence.unconfirmed": "Licence not yet confirmed",
   "dataSources.credits.licence.permission": "Used with permission",
   "dataSources.credits.licence.per_item": "Licence given item by item",
-  "dataSources.credits.licence.terms": "Used under the source’s terms of use"
+  "dataSources.credits.licence.terms": "Used under the source’s terms of use",
+  "consortium.est.word": "estimate",
+  "consortium.est.legend": "worked out from dated photos or read from a text by a rule, not recorded by a dataset. Months are as the source gives them, for the place named.",
+  "consortium.t.bloom": "Flowering",
+  "consortium.t.fruit": "Ripening or fruit seen",
+  "consortium.t.sowing": "Sowing",
+  "consortium.t.wind": "Tolerates wind",
+  "consortium.t.allYear": "All year",
+  "consortium.scope.everywhere": "Everywhere",
+  "consortium.scope.latN": "{from}–{to}° N",
+  "consortium.scope.latS": "{from}–{to}° S",
+  "consortium.scope.north": "Northern Hemisphere",
+  "consortium.scope.south": "Southern Hemisphere",
+  "consortium.ctype.intercropped_yield_gain": "Grown together with a yield gain in field trials.",
+  "consortium.d.yieldGain": "Grown with {other} with a yield gain"
 }

@@ -216,6 +216,36 @@ test('conflicts: genus against genus, and the walnut-tolerant comfrey is not a c
   assert.deepEqual(conflicts([named('Juglans nigra'), named('Symphytum × uplandicum')], temperate.interactions), []);
 });
 
+test('intercropped_yield_gain: a positive pair, never a conflict; pairings() gives it for either member order', () => {
+  const apple = named('Malus domestica'), clover = named('Trifolium repens'), hazel = named('Corylus avellana');
+  const row = temperate.interactions.find((r) => r.type === 'intercropped_yield_gain');
+  assert.ok(row, 'the fixture has a pair');
+  assert.deepEqual(conflicts([apple, clover], temperate.interactions), []);
+  assert.deepEqual(core.conflictsOf(apple, [clover], temperate.interactions), []);
+  assert.deepEqual(core.conflictsOf(clover, [apple], temperate.interactions), []);
+  for (const [t, others, other] of [[apple, [clover, hazel], clover], [clover, [hazel, apple], apple]]) {
+    const found = core.pairings(t, others, temperate.interactions);
+    assert.equal(found.length, 1);
+    assert.equal(found[0].other.id, other.id);
+    assert.deepEqual(found[0].note, row.note);
+    assert.deepEqual(found[0].sources, ['intercropping']);
+  }
+  assert.deepEqual(core.pairings(apple, [apple, hazel], temperate.interactions), [], 'never with itself, nor with a plant outside the pair');
+  assert.deepEqual(core.pairings(hazel, [apple, clover], temperate.interactions), []);
+  // Only that type: a tolerant or harmful row is no pairing.
+  assert.deepEqual(core.pairings(named('Juglans nigra'), [named('Symphytum × uplandicum'), apple], temperate.interactions), []);
+});
+
+test('intercropped_yield_gain: display only, the suggestion is the same with or without the pairs', () => {
+  const without = { ...temperate, interactions: temperate.interactions.filter((r) => r.type !== 'intercropped_yield_gain') };
+  const apple = named('Malus domestica');
+  for (const site of [open, { ...open, room: 'small' }]) {
+    const a = suggest(temperate, { site, kept: [apple.id] }), b = suggest(without, { site, kept: [apple.id] });
+    assert.deepEqual(a.members.map((m) => m.taxon.id), b.members.map((m) => m.taxon.id));
+    assert.deepEqual(JSON.parse(JSON.stringify(a.members.map((m) => m.flags))), JSON.parse(JSON.stringify(b.members.map((m) => m.flags))));
+  }
+});
+
 test('conflicts: family rank, both directions, and a same-genus row pairs two members once', () => {
   const rows = [{ subject: { name: 'Rosaceae', rank: 'family' }, object: { name: 'Fabaceae', rank: 'family' }, type: 'shared_pest', agent: null, severity: 'low', note: null, sources: ['pfaf'] }];
   const apple = named('Malus domestica'), clover = named('Trifolium repens');

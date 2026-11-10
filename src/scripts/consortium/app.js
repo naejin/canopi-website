@@ -11,8 +11,9 @@
 // own, the state lives in the address bar's fragment (never sent with a request: C8) and in localStorage.
 import {
   fileFor, isCountry, invasiveChecked, strata, phases, phaseBands, bandsOf, jobs, jobsOf, jobOfFunction, suggest, evaluate, alternatives, flagsFor,
-  SIZE_LIMIT, ROOM_LIMIT_M, DEFAULT_SITE, lights, soils, waters, rooms, encodeState, decodeState, resolveState, taxonByName, isSerious, siteClimates, fits, MAX_CROPS,
+  SIZE_LIMIT, ROOM_LIMIT_M, DEFAULT_SITE, lights, soils, waters, rooms, encodeState, decodeState, resolveState, taxonByName, isSerious, siteClimates, fits, MAX_CROPS, pairings,
 } from '../../lib/consortium/index.ts';
+import { layerRows } from './layers.js';
 import { loadManifest, loadLabels, loadClimate } from './data.ts';
 import { makeWords, esc, plantName, searchText, fold, needsLook, capFirst } from './words.js';
 import { cropHits, cropLabel, cropExamples, elsewhereHit, otherListMatches, isFood, inClimateOrder, loadLists, addFilterMatch, KEPT_FILTERS, keptCounts } from './crops.js';
@@ -1257,6 +1258,9 @@ function detailsParts(t) {
   const invD = detailsInvasive(W, place(), t);
   if (invD.notChecked) items.push(item('unknown', I.unknown, esc(invD.notChecked.title), esc(invD.notChecked.text)));
   for (const c of flags.conflicts) items.push(item(isSerious(c) ? 'warning' : 'soft', I.warn, T('conflict', { other: name(otherOf(c, t)) }), note(c.note) || esc(T('ctype.' + c.type)), (c.agent ? `<p>${esc(T('d.agent', { agent: c.agent }))}</p>` : '') + conflictFrom(c)));
+  // Grown together with a yield gain in field trials (display only: the suggestion never reads it).
+  const pairs = pairings(t, members(), cell.interactions);
+  for (const p of pairs) items.push(item('good', I.check, T('d.yieldGain', { other: name(p.other) }), note(p.note) || esc(T('ctype.intercropped_yield_gain')), conflictFrom(p)));
   for (const k of flags.misfits) items.push(item('warning', I.warn, esc(T('d.misfit')), esc(misfitText(t, k))));
   if (t.warnings.allelopathic === true) items.push(item('soft', I.warn, esc(T('c.allelo')), esc(T('d.allelo'))));
   if (t.warnings.weed_potential === true) items.push(item('soft', I.warn, esc(T('c.spreads')), esc(T('d.spreads'))));
@@ -1272,8 +1276,14 @@ function detailsParts(t) {
   if (al == null) items.push(item('unknown', I.unknown, esc(T('unkAllelo')), esc(T('d.alleloUnk'))));
   if (wp === false) items.push(item('checked', I.check, `${esc(T('d.spreadsNone'))} <span class="muted">(${esc(T('d.checked'))})</span>`));
   if (wp == null) items.push(item('unknown', I.unknown, esc(T('unkSpreads')), esc(T('d.spreadsUnk'))));
-  const srcIds = new Set([...(t.reasons ?? []).flatMap((r) => r.sources), ...(t.stratum?.sources ?? []), ...(t.phases?.sources ?? []), ...(t.functions ?? []).flatMap((x) => x.sources), ...(tox?.sources ?? []), ...invasiveSourceIds(inv, sources), ...flags.conflicts.flatMap((c) => [...c.sources, ...(c.agent_names?.sources ?? [])])]);
+  const srcIds = new Set([...(t.reasons ?? []).flatMap((r) => r.sources), ...(t.stratum?.sources ?? []), ...(t.phases?.sources ?? []), ...(t.functions ?? []).flatMap((x) => x.sources), ...(tox?.sources ?? []), ...invasiveSourceIds(inv, sources), ...flags.conflicts.flatMap((c) => [...c.sources, ...(c.agent_names?.sources ?? [])]), ...pairs.flatMap((p) => p.sources), ...(t.layer_values ?? []).map((v) => v.source)]);
   const srcs = [...srcIds].map((id) => sources[id] ?? cell.sources[id]).filter(Boolean);
+  // Layer values (layers.js): months, place and source per value; an estimate says so in words, with
+  // one legend line under the list, so nothing rests on a tooltip.
+  const lrows = layerRows(t, W, (id) => (cell.sources[id] ?? sources[id])?.label ?? id);
+  const estWord = `<span class="lv-est">${esc(T('est.word'))}</span>`;
+  const layerHTML = lrows.map((r) => `<dt>${esc(r.label)}</dt><dd><ul class="lv-list" role="list">${r.values.map((v) => `<li><span class="lv-v">${esc(v.text)}</span> <span class="lv-where">${esc(v.where)}</span>${v.estimate ? ` ${estWord}` : ''}</li>`).join('')}</ul></dd>`).join('');
+  const layerLegend = lrows.some((r) => r.values.some((v) => v.estimate)) ? `<p class="seg-hint lv-legend">${estWord} ${esc(T('est.legend'))}</p>` : '';
   const guides = (data.plantGuides[t.canonical_name] ?? []).filter(guide);
   const img = t.image, pageHref = safeHref(img?.source_page_url);
   const photo = img ? `<figure class="photo"><img src="${esc(img.url)}" alt="${esc(nameText(t))}" loading="lazy" decoding="async" width="480" height="320"><figcaption>${esc(T('photo', { credit: img.credit ?? '' }))}${img.licence ? ` · ${licenceHTML(img.licence)}` : ''}${pageHref ? ` · <a href="${esc(pageHref)}" rel="noopener">${esc(photoSource(pageHref))}</a>` : ''}</figcaption></figure>` : '';
@@ -1289,7 +1299,7 @@ function detailsParts(t) {
     ${t.reasons?.length ? `<section class="d-section"><h3>${esc(T(from ? 'whyInList' : crop ? 'whatItDoes' : 'why'))}</h3>${reasonsHTML(t, W, lang, sources)}</section>` : ''}
     <section class="d-section"><h3>${esc(T('jobsHeading'))}</h3>${!jobsList.length ? `<p class="muted">${esc(T('d.jobsUnk'))}</p>` : `<div class="plant-meta">${jobsList.map((j) => `<span class="job-tag">${jobIcon(j, 14)}${esc(T('job.' + j))}</span>`).join('')}</div>`}</section>
     <section class="d-section"><h3>${esc(T('checks'))}</h3><ul class="w-list" role="list">${items.join('')}</ul></section>
-    <section class="d-section"><h3>${esc(T('traits'))}</h3><dl class="facts">${facts.map(([k, v]) => `<dt>${esc(T(k))}</dt><dd>${v || unknown}</dd>`).join('')}</dl></section>
+    <section class="d-section"><h3>${esc(T('traits'))}</h3><dl class="facts">${facts.map(([k, v]) => `<dt>${esc(T(k))}</dt><dd>${v || unknown}</dd>`).join('')}${layerHTML}</dl>${layerLegend}</section>
     ${guides.length ? `<section class="d-section"><h3>${esc(T('guides'))}</h3><ul class="guides" role="list">${guides.map((g) => `<li>${guideLink(g, '', (title) => `${I.book}<span>${title}<small>${esc(T('readGuide'))}</small></span>`)}</li>`).join('')}</ul></section>` : ''}
     <section class="d-section"><h3>${esc(T('sources'))}</h3>${srcs.length ? `<ol class="srcs">${srcs.map((x) => { const href = safeHref(x.url); return `<li>${href ? `<a href="${esc(href)}" rel="noopener">${esc(x.label)}</a>` : esc(x.label)}${x.licence ? ` <span class="muted">· ${licenceHTML(x.licence)}</span>` : ''}</li>`; }).join('')}</ol>` : `<p class="muted">${esc(T('noSource'))}</p>`}</section>
     ${correctionHTML(T, corrOf(t.id), corrFields(t), corrCtx(t), fk)}`;

@@ -834,5 +834,19 @@
   "dataSources.credits.licence.unconfirmed": "Licentie nog niet bevestigd",
   "dataSources.credits.licence.permission": "Gebruikt met toestemming",
   "dataSources.credits.licence.per_item": "Licentie per item vermeld",
-  "dataSources.credits.licence.terms": "Gebruikt volgens de gebruiksvoorwaarden van de bron"
+  "dataSources.credits.licence.terms": "Gebruikt volgens de gebruiksvoorwaarden van de bron",
+  "consortium.est.word": "schatting",
+  "consortium.est.legend": "berekend uit gedateerde foto’s of met een regel uit een tekst gelezen, niet vastgelegd in een dataset. De maanden zijn die van de bron, voor de genoemde plek.",
+  "consortium.t.bloom": "Bloei",
+  "consortium.t.fruit": "Rijping of vrucht gezien",
+  "consortium.t.sowing": "Zaaien",
+  "consortium.t.wind": "Verdraagt wind",
+  "consortium.t.allYear": "Het hele jaar",
+  "consortium.scope.everywhere": "Overal",
+  "consortium.scope.latN": "{from}–{to}° N",
+  "consortium.scope.latS": "{from}–{to}° Z",
+  "consortium.scope.north": "Noordelijk halfrond",
+  "consortium.scope.south": "Zuidelijk halfrond",
+  "consortium.ctype.intercropped_yield_gain": "Samen geteeld met meeropbrengst in veldproeven.",
+  "consortium.d.yieldGain": "Geteeld met {other}, met meeropbrengst"
 }

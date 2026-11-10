@@ -27,7 +27,9 @@ export type Stratum = (typeof strata)[number];
 export const functionIds = ['nitrogen_fixer', 'dynamic_accumulator', 'mulch', 'ground_cover', 'insectary', 'pest_repellent', 'trap_crop', 'pollinator_forage', 'windbreak', 'wildlife_habitat'] as const;
 export type FunctionId = (typeof functionIds)[number];
 
-export const interactionTypes = ['allelopathic_harm', 'allelopathy_tolerant', 'alternate_host', 'shared_pest'] as const;
+// intercropped_yield_gain (added within format 3, 2026-11-10): two species grown together with a yield
+// gain in field trials, a positive pair like allelopathy_tolerant, never a conflict.
+export const interactionTypes = ['allelopathic_harm', 'allelopathy_tolerant', 'alternate_host', 'shared_pest', 'intercropped_yield_gain'] as const;
 export type InteractionType = (typeof interactionTypes)[number];
 
 export type Severity = 'low' | 'medium' | 'high';
@@ -109,6 +111,24 @@ export interface Taxon {
   functions: TaxonFunction[] | null; // null = none accepted yet (not curated)
   traits: Traits;
   warnings: Warnings;
+  // Values of canopi-data's layer table beside the traits, never merged into them (added within
+  // format 3, 2026-11-10). Absent when no layer source gives one; never [].
+  layer_values?: LayerValue[];
+}
+
+export const layerFields = ['bloom_months', 'ripening_or_fruit_seen_months', 'sowing_months', 'tolerates_wind'] as const;
+export type LayerField = (typeof layerFields)[number];
+export type Month = 'Jan' | 'Feb' | 'Mar' | 'Apr' | 'May' | 'Jun' | 'Jul' | 'Aug' | 'Sep' | 'Oct' | 'Nov' | 'Dec';
+// Where a layer value holds; null: everywhere. latitude is a band such as "35..50" or "-50..-35".
+export interface LayerScope { climate?: ClimateZone; country?: string; hemisphere?: 'N' | 'S'; latitude?: string; region?: Region }
+// kind: recorded (a dataset gives it), or an estimate: extracted (read by a rule from a text), derived
+// (computed, such as months from dated photos) or llm. The page marks every kind but recorded.
+export interface LayerValue {
+  field: LayerField;
+  value: Month[] | boolean; // months as the source gave them, never shifted; a boolean for tolerates_wind
+  scope: LayerScope | null;
+  source: string;
+  kind: 'recorded' | 'extracted' | 'derived' | 'llm';
 }
 
 export interface TaxonRef { name: string; rank: Rank }
@@ -119,6 +139,9 @@ export interface Interaction {
   subject: TaxonRef;
   object: TaxonRef;
   type: InteractionType;
+  // The file's climate on an intercropped_yield_gain row; null on the four curated types (absent in an
+  // export from before 2026-11-10).
+  climate_zone?: ClimateZone | null;
   agent: string | null;
   // The agent's common names by site locale (EPPO names chosen by a usage source) and those sources;
   // absent or null: none chosen, the page shows `agent` (added within format 3, 2026-10-28).

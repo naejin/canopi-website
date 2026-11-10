@@ -834,5 +834,19 @@
   "dataSources.credits.licence.unconfirmed": "Лицензия ещё не подтверждена",
   "dataSources.credits.licence.permission": "Используется с разрешения",
   "dataSources.credits.licence.per_item": "Лицензия указана для каждого элемента",
-  "dataSources.credits.licence.terms": "Используется на условиях источника"
+  "dataSources.credits.licence.terms": "Используется на условиях источника",
+  "consortium.est.word": "оценка",
+  "consortium.est.legend": "рассчитано по датированным фотографиям или прочитано в тексте по правилу, а не записано в наборе данных. Месяцы указаны как в источнике, для названного места.",
+  "consortium.t.bloom": "Цветение",
+  "consortium.t.fruit": "Созревание или плоды",
+  "consortium.t.sowing": "Посев",
+  "consortium.t.wind": "Выносит ветер",
+  "consortium.t.allYear": "Круглый год",
+  "consortium.scope.everywhere": "Повсюду",
+  "consortium.scope.latN": "{from}–{to}° с. ш.",
+  "consortium.scope.latS": "{from}–{to}° ю. ш.",
+  "consortium.scope.north": "Северное полушарие",
+  "consortium.scope.south": "Южное полушарие",
+  "consortium.ctype.intercropped_yield_gain": "В полевых опытах совместное выращивание повышало урожай.",
+  "consortium.d.yieldGain": "Вместе с {other}: прибавка урожая"
 }

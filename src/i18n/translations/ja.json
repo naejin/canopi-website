@@ -834,5 +834,19 @@
   "dataSources.credits.licence.unconfirmed": "ライセンス未確認",
   "dataSources.credits.licence.permission": "許可を得て使用",
   "dataSources.credits.licence.per_item": "ライセンスは項目ごとに記載",
-  "dataSources.credits.licence.terms": "出典の利用規約に従って使用"
+  "dataSources.credits.licence.terms": "出典の利用規約に従って使用",
+  "consortium.est.word": "推定",
+  "consortium.est.legend": "日付入りの写真から算出、または規則によりテキストから読み取ったもので、データセットの記録ではありません。月は出典のとおりで、示された場所についてのものです。",
+  "consortium.t.bloom": "開花",
+  "consortium.t.fruit": "成熟・結実の観察",
+  "consortium.t.sowing": "種まき",
+  "consortium.t.wind": "風に強い",
+  "consortium.t.allYear": "通年",
+  "consortium.scope.everywhere": "全域",
+  "consortium.scope.latN": "北緯 {from}–{to}°",
+  "consortium.scope.latS": "南緯 {from}–{to}°",
+  "consortium.scope.north": "北半球",
+  "consortium.scope.south": "南半球",
+  "consortium.ctype.intercropped_yield_gain": "圃場試験で混作により収量が増えました。",
+  "consortium.d.yieldGain": "{other}との混作で収量増"
 }

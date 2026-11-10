@@ -25,6 +25,11 @@ EPPO host page, then the distribution page its "only in the Americas" note rests
 interaction with `agent_names`, the agent's EPPO names chosen by Wikipedia in en and pt, while the others
 leave the optional field out, as an export from before 2026-10-28 does), countries GRIIS
 does not cover (`invasive_checked: false`, for example TW, PR, PF and the six Antarctic codes).
+Added within format 3 (2026-11-10): `layer_values` on Malus domestica and Fragaria vesca in the Temperate file
+(recorded for a country, derived for a latitude band in either hemisphere, extracted for the climate; months
+that wrap over the new year), one `intercropped_yield_gain` pair (Malus domestica with Trifolium repens,
+`climate_zone` the file's own), and `climate_zone: null` on the other Temperate rows; the Tropical rows leave
+`climate_zone` out, as an earlier export does.
 `invasive_in` is never null here: the exporter writes null for every taxon, with every country unchecked,
 only when the GRIIS compendium is missing, so a test that needs it sets it on a copy.
 

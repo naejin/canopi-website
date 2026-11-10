@@ -834,5 +834,19 @@
   "dataSources.credits.licence.unconfirmed": "라이선스 미확인",
   "dataSources.credits.licence.permission": "허가를 받아 사용",
   "dataSources.credits.licence.per_item": "항목별로 라이선스 표시",
-  "dataSources.credits.licence.terms": "출처의 이용 약관에 따라 사용"
+  "dataSources.credits.licence.terms": "출처의 이용 약관에 따라 사용",
+  "consortium.est.word": "추정",
+  "consortium.est.legend": "날짜가 있는 사진에서 계산했거나 규칙에 따라 글에서 읽은 값으로, 데이터셋에 기록된 값이 아닙니다. 월은 출처에 나온 그대로이며 표시된 장소에 해당합니다.",
+  "consortium.t.bloom": "개화",
+  "consortium.t.fruit": "익음 또는 열매 관찰",
+  "consortium.t.sowing": "파종",
+  "consortium.t.wind": "바람에 강함",
+  "consortium.t.allYear": "연중",
+  "consortium.scope.everywhere": "모든 곳",
+  "consortium.scope.latN": "북위 {from}–{to}°",
+  "consortium.scope.latS": "남위 {from}–{to}°",
+  "consortium.scope.north": "북반구",
+  "consortium.scope.south": "남반구",
+  "consortium.ctype.intercropped_yield_gain": "포장 시험에서 함께 재배해 수확량이 늘었습니다.",
+  "consortium.d.yieldGain": "{other}와(과) 함께 재배 시 수확량 증가"
 }

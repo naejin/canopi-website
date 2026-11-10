@@ -1,14 +1,16 @@
 // Warnings between and about taxa: interaction rows that pair two members, and invasive records
 // for the user's country. An interaction names its subject and object at a rank (species = the
 // canonical name, genus, family), so a genus row matches every species of the genus.
-// `allelopathy_tolerant` rows record a plant that tolerates another's allelopathy; they are good
-// news, not conflicts, so conflicts() leaves them out.
+// `allelopathy_tolerant` rows record a plant that tolerates another's allelopathy, and
+// `intercropped_yield_gain` rows two species grown together with a yield gain in field trials; both
+// are good news, not conflicts, so conflicts() and conflictsOf() leave them out. pairings() gives the
+// yield-gain pairs, for display only: nothing in the suggestion reads them.
 import type { AgentNames, Interaction, InteractionType, Severity, Taxon, TaxonRef, Text } from './types.ts';
 
 export interface Conflict {
   a: Taxon; // matches the row's subject
   b: Taxon; // matches the row's object
-  type: Exclude<InteractionType, 'allelopathy_tolerant'>;
+  type: Exclude<InteractionType, 'allelopathy_tolerant' | 'intercropped_yield_gain'>;
   severity: Severity | null;
   agent: string | null;
   agent_names: AgentNames | null; // the agent's sourced common names, null when none was chosen
@@ -27,7 +29,7 @@ export function matches(ref: TaxonRef, taxon: Taxon): boolean {
 export function conflicts(members: Taxon[], interactions: Interaction[]): Conflict[] {
   const out: Conflict[] = [];
   for (const row of interactions) {
-    if (row.type === 'allelopathy_tolerant') continue;
+    if (row.type === 'allelopathy_tolerant' || row.type === 'intercropped_yield_gain') continue;
     const subjects = members.filter((t) => matches(row.subject, t));
     if (!subjects.length) continue;
     const objects = members.filter((t) => matches(row.object, t));
@@ -50,13 +52,37 @@ export function conflicts(members: Taxon[], interactions: Interaction[]): Confli
 export function conflictsOf(taxon: Taxon, others: Taxon[], interactions: Interaction[]): Conflict[] {
   const out: Conflict[] = [];
   for (const row of interactions) {
-    if (row.type === 'allelopathy_tolerant') continue;
+    if (row.type === 'allelopathy_tolerant' || row.type === 'intercropped_yield_gain') continue;
     const asSubject = matches(row.subject, taxon), asObject = matches(row.object, taxon);
     if (!asSubject && !asObject) continue;
     for (const o of others) {
       if (o.id === taxon.id) continue;
       const pair = asSubject && matches(row.object, o) ? [taxon, o] : asObject && matches(row.subject, o) ? [o, taxon] : null;
       if (pair) out.push({ a: pair[0], b: pair[1], type: row.type, severity: row.severity, agent: row.agent, agent_names: row.agent_names ?? null, note: row.note ?? null, sources: row.sources });
+    }
+  }
+  return out;
+}
+
+// A yield-gain pair of one taxon with another member: the other plant, the exporter's note (the
+// evidence as counted) and its sources.
+export interface Pairing { taxon: Taxon; other: Taxon; note: Text | null; sources: string[] }
+
+// The intercropped_yield_gain rows that pair a taxon with one of the others (both are species, so a
+// row names each plant by its canonical name), once per other plant.
+export function pairings(taxon: Taxon, others: Taxon[], interactions: Interaction[]): Pairing[] {
+  const out: Pairing[] = [];
+  const seen = new Set<string>();
+  for (const row of interactions) {
+    if (row.type !== 'intercropped_yield_gain') continue;
+    const asSubject = matches(row.subject, taxon), asObject = matches(row.object, taxon);
+    if (!asSubject && !asObject) continue;
+    for (const o of others) {
+      if (o.id === taxon.id || seen.has(o.id)) continue;
+      if ((asSubject && matches(row.object, o)) || (asObject && matches(row.subject, o))) {
+        seen.add(o.id);
+        out.push({ taxon, other: o, note: row.note ?? null, sources: row.sources });
+      }
     }
   }
   return out;

@@ -834,5 +834,19 @@
   "dataSources.credits.licence.unconfirmed": "Licença ainda não confirmada",
   "dataSources.credits.licence.permission": "Usada com autorização",
   "dataSources.credits.licence.per_item": "Licença indicada item a item",
-  "dataSources.credits.licence.terms": "Usada segundo os termos de utilização da fonte"
+  "dataSources.credits.licence.terms": "Usada segundo os termos de utilização da fonte",
+  "consortium.est.word": "estimativa",
+  "consortium.est.legend": "calculada a partir de fotos datadas ou lida num texto por uma regra, não registada por um conjunto de dados. Os meses são os da fonte, para o local indicado.",
+  "consortium.t.bloom": "Floração",
+  "consortium.t.fruit": "Maturação ou fruto observado",
+  "consortium.t.sowing": "Sementeira",
+  "consortium.t.wind": "Tolera o vento",
+  "consortium.t.allYear": "Todo o ano",
+  "consortium.scope.everywhere": "Em todo o lado",
+  "consortium.scope.latN": "{from}–{to}° N",
+  "consortium.scope.latS": "{from}–{to}° S",
+  "consortium.scope.north": "Hemisfério Norte",
+  "consortium.scope.south": "Hemisfério Sul",
+  "consortium.ctype.intercropped_yield_gain": "Cultivadas juntas com ganho de rendimento em ensaios de campo.",
+  "consortium.d.yieldGain": "Cultivada com {other}, com ganho de rendimento"
 }

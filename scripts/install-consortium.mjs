@@ -149,6 +149,25 @@ const traits = obj({
   clonal_growth_form: orNull(str), is_annual: orNull(bool), is_perennial: orNull(bool), habit: orNull(str),
 });
 
+// Added within format 3 (2026-11-10): values of canopi-data's layer table beside the traits, each
+// with where it holds (scope: null, everywhere) and how it was got; ruleProblem checks each value
+// against its field (months Jan … Dec, or a boolean for wind).
+export const LAYER_FIELDS = ['bloom_months', 'ripening_or_fruit_seen_months', 'sowing_months', 'tolerates_wind'];
+export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const layerValue = obj({
+  field: oneOf(...LAYER_FIELDS),
+  value: { kind: 'any' },
+  scope: orNull({
+    kind: 'map', values: { kind: 'never' }, keys: ['climate', 'country', 'hemisphere', 'latitude', 'region'],
+    props: {
+      climate: optional(climateZone), country: optional({ kind: 'string', pattern: COUNTRY }), hemisphere: optional(oneOf('N', 'S')),
+      latitude: optional({ kind: 'string', pattern: /^-?\d{1,2}\.\.-?\d{1,2}$/ }), region: optional(region),
+    },
+  }),
+  source: { ...str, minLength: 1 },
+  kind: oneOf('recorded', 'extracted', 'derived', 'llm'),
+});
+
 const taxon = obj({
   id: { kind: 'string', pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/ },
   canonical_name: str, genus: str, family: str,
@@ -170,11 +189,18 @@ const taxon = obj({
     allelopathic: orNull(bool),
     weed_potential: orNull(bool),
   }),
+  // Absent when no layer source gives a value (never []).
+  layer_values: optional(arr(layerValue, 1)),
 });
 
+// Positive pairs (intercropped_yield_gain, added within format 3 on 2026-11-10) are good news, as
+// allelopathy_tolerant rows are; climate_zone names the file's climate on them and is null (or, in an
+// earlier export, absent) on the four curated types. ruleProblem holds both.
+export const INTERACTION_TYPES = ['allelopathic_harm', 'allelopathy_tolerant', 'alternate_host', 'shared_pest', 'intercropped_yield_gain'];
 const interaction = obj({
   subject: taxonRef, object: taxonRef,
-  type: oneOf('allelopathic_harm', 'allelopathy_tolerant', 'alternate_host', 'shared_pest'),
+  type: oneOf(...INTERACTION_TYPES),
+  climate_zone: optional(orNull(climateZone)),
   agent: orNull(str),
   // Added within format 3 (2026-10-28): the agent's common names by site locale, each an EPPO name
   // chosen by a usage source (canopi-data docs/consortium-export-format.md); absent reads as null.
@@ -207,7 +233,7 @@ const manifestShape = obj({
   // Required except on the fixture (see releaseIdEntry).
   release_id: optional({ kind: 'string', pattern: RELEASE_ID }),
   // Optional until canopi-data ships it; verified once listed.
-  source_credits: optional(obj({ file: oneOf(CREDIT_FILE), sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ } })),
+  source_credits: optional(obj({ file: oneOf(CREDIT_FILE), sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ }, rows: optional({ ...int, min: 1 }) })),
 });
 
 // labels.json: trait → English value → locale → translation (canopi-data docs/consortium-export-format.md).
@@ -338,6 +364,7 @@ function citedSources(cell) {
     for (const f of t.functions ?? []) add(f.sources);
     add(t.warnings.toxicity?.sources);
     for (const r of t.warnings.invasive_in ?? []) add(r.sources);
+    for (const v of t.layer_values ?? []) add([v.source]);
   }
   for (const i of cell.interactions) { add(i.sources); add(i.agent_names?.sources); }
   return ids;
@@ -360,6 +387,24 @@ export function ruleProblem(file, cell, countries) {
   }
   const union = order(named);
   if (union.join() !== cell.regions.join()) return `${file}: regions ${cell.regions.join(', ')} are not those of its reasons (${union.join(', ')}).`;
+  for (const t of cell.taxa) {
+    for (const v of t.layer_values ?? []) {
+      if (v.field === 'tolerates_wind') { if (typeof v.value !== 'boolean') return `${file}: ${t.canonical_name}: tolerates_wind is not a boolean.`; continue; }
+      const ok = Array.isArray(v.value) && v.value.length > 0 && v.value.every((m) => MONTHS.includes(m)) && new Set(v.value).size === v.value.length;
+      if (!ok) return `${file}: ${t.canonical_name}: ${v.field} is not a list of months Jan … Dec (${JSON.stringify(v.value)}).`;
+    }
+  }
+  const species = new Set(cell.taxa.map((t) => t.canonical_name));
+  for (const i of cell.interactions) {
+    const zone = i.climate_zone ?? null;
+    if (i.type !== 'intercropped_yield_gain') {
+      if (zone !== null) return `${file}: an ${i.type} interaction (${i.subject.name} → ${i.object.name}) has climate_zone ${zone}; only intercropped_yield_gain rows name a climate.`;
+      continue;
+    }
+    const pair = `an intercropped_yield_gain pair (${i.subject.name} + ${i.object.name})`;
+    if (zone !== cell.climate_zone) return `${file}: ${pair} has climate_zone ${zone}, not the file's ${cell.climate_zone}.`;
+    if (![i.subject, i.object].every((r) => r.rank === 'species' && species.has(r.name))) return `${file}: ${pair} names a plant that is not a taxon of the file.`;
+  }
   return null;
 }
 
@@ -382,7 +427,7 @@ export function tryListProblem(bytes, { sha256: hash, rows, dataset_ids }) {
 }
 
 // The source credits' bytes against their manifest entry: the first problem as a sentence, or null.
-export function creditsProblem(bytes, { sha256: hash }) {
+export function creditsProblem(bytes, { sha256: hash, rows }) {
   if (sha256(bytes) !== hash) return `${CREDIT_FILE} does not match the manifest's sha256.`;
   let text;
   try {
@@ -390,11 +435,13 @@ export function creditsProblem(bytes, { sha256: hash }) {
   } catch {
     return `${CREDIT_FILE} is not UTF-8.`;
   }
+  let parsed;
   try {
-    parseSourceCredits(text, CREDIT_FILE);
+    parsed = parseSourceCredits(text, CREDIT_FILE);
   } catch (err) {
     return err.message;
   }
+  if (rows !== undefined && parsed.length !== rows) return `${CREDIT_FILE} has ${parsed.length} rows, the manifest says ${rows}.`;
   return null;
 }
 
