@@ -1,19 +1,19 @@
 ---
 type: Module
 title: src/scripts
-description: Vanilla browser modules for the home and bibliography pages (chrome, hero reveal, downloads, featured design canvas and list, contact, donations).
+description: Vanilla browser modules for the site's pages (chrome, climate, hero reveal, downloads, featured design canvas and list, contact, donations) and the consortium tool.
 resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:01Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:31Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T06:20:56Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:34Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:0614753a5c2b4b34
-    last_modified: 2026-11-10T06:19:01Z
+    digest: sha256:9b9234d12d490e94
+    last_modified: 2026-11-10T07:26:18Z
   - id: scale-js
     resource: ../../src/scripts/consortium/scale.js
     title: src/scripts/consortium/scale.js
@@ -36,7 +36,7 @@ Client-side behaviour, no framework. Scripts hold no user-facing English: every 
 - [design-list.js](../../src/scripts/design-list.js): the list of featured designs under the canvas, a page at a time.
 - [contact.js](../../src/scripts/contact.js): in-place validation, posts with `Accept: application/json`.
 - [climate.js](../../src/scripts/climate.js): the reader's climate (`initClimate()`, called by `initChrome`): the picker dialog, `localStorage["canopi-climate"]` and `html[data-climate]`, ordering of `<ForClimate>` runs, the "not covered yet" note, sync across tabs, all blocks open for print. See [Climate UX](/decisions/climate-ux.md).
-- [consortium/](../../src/scripts/consortium): the consortium tool (`app.js`, `words.js`, `draw.js`, `data.ts`, the node-tested `logic.js`, `parts.js`, `memory.js`, `crops.js`, `scale.js` (the plant list at scale) and `side.js` (the side view's rules)); it reads its strings from `#ct-data`, not `#page-data`. See [Consortium page](/modules/consortium-page.md).
+- [consortium/](../../src/scripts/consortium): the consortium tool (`app.js`, `words.js`, `draw.js`, `data.ts`, the node-tested `logic.js`, `parts.js`, `memory.js`, `crops.js`, `scale.js` (the plant list at scale), `side.js` (the side view's rules), `layers.js` (layer values and the estimate marker in a plant's details) and `correction.js` (the "Suggest a correction" form, posting to `/api/correction`)); it reads its strings from `#ct-data`, not `#page-data`. See [Consortium page](/modules/consortium-page.md).
 - [donate.js](../../src/scripts/donate.js), [dialogs.js](../../src/scripts/dialogs.js): HelloAsso donation dialog and native `<dialog>` helpers; `initDialogs` skips a dialog marked `data-own-dialog` (the consortium tool's sheet, which handles its own close, backdrop and scroll lock). Donate opened from the phone Menu returns focus to the Menu summary; from `#donate`, to the first visible Donate button.
 
 # Interfaces

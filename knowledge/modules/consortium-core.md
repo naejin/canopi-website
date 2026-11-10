@@ -4,15 +4,15 @@ title: Consortium core
 description: Format 3 types and the pure, dependency-free functions of the consortium tool (climate file lookup, country checks, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T06:50:12Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:10Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T22:24:54Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:32Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:c93528c7bef7f2de
-    last_modified: 2026-11-10T06:42:40Z
+    digest: sha256:653dd32712064a21
+    last_modified: 2026-11-10T07:26:18Z
   - id: climates-ts
     resource: ../../src/lib/consortium/climates.ts
     title: src/lib/consortium/climates.ts
@@ -32,7 +32,7 @@ sources:
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
     digest: sha256:935fffbd0c6781ea
-    last_modified: 2026-11-10T06:42:40Z
+    last_modified: 2026-11-10T06:50:47Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
@@ -52,7 +52,7 @@ sources:
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
     digest: sha256:e4828f9bc3fa57e0
-    last_modified: 2026-11-10T06:41:41Z
+    last_modified: 2026-11-10T06:50:47Z
 enforced_by:
   - scripts/consortium.test.mjs
   - scripts/install-consortium.test.mjs
@@ -71,7 +71,7 @@ export under `public/data/consortium/`.
 
 | File | Exports |
 |---|---|
-| [types.ts](../../src/lib/consortium/types.ts) | `Manifest` (`climates`, `countries: Record<code, { invasive_checked }>`), `ManifestClimate`, `ClimateFile` (`regions[]`), `Taxon` (`reasons: Reason[]`), `Reason` (`region`, `text`, `sources`), `Traits`, `Warnings`, `Interaction`, `Source`, `Labels`; value lists `climateZones`, `regions`, `locales`, `phases`, `strata`, `functionIds`, `interactionTypes`; `FORMAT_VERSION` = 3 |
+| [types.ts](../../src/lib/consortium/types.ts) | `Manifest` (`climates`, `countries: Record<code, { invasive_checked }>`), `ManifestClimate`, `ClimateFile` (`regions[]`), `Taxon` (`reasons: Reason[]`), `Reason` (`region`, `text`, `sources`), `Traits`, `Warnings`, `Interaction` (`climate_zone`, set on `intercropped_yield_gain`), `Source`, `Labels`, `LayerValue` (`field`, `value`, `scope`, `source`, `kind`), `LayerField`, `LayerScope`, `Month`; value lists `climateZones`, `regions`, `locales`, `phases`, `strata`, `functionIds`, `interactionTypes`; `FORMAT_VERSION` = 3 |
 | [climates.ts](../../src/lib/consortium/climates.ts) | `fileFor(manifest, climate)` → `ManifestClimate \| null`; `isCountry(manifest, code)`; `invasiveChecked(manifest, code)` (GRIIS checked that country); `climateZoneOf`, `siteClimates`, `isSiteClimate` |
 | [site.ts](../../src/lib/consortium/site.ts) | `Site`, `DEFAULT_SITE` (sun, soil and water unsure, large garden), `fits(taxon, site)` → `{ ok, misfits, unknowns }` |
 | [jobs.ts](../../src/lib/consortium/jobs.ts) | `jobs` (six ids), `jobsOf(taxon)`, `jobOfFunction`, `phaseBands`, `bandOf(phase)`, `bandsOf(taxon)` |
@@ -87,7 +87,7 @@ export under `public/data/consortium/`.
 - **Gain.** `10·new jobs + 3·empty (stratum × band) cells + 1·cells with one member + 6·new stratum + 8·bands with no food yet (crops) + 4·second doer of feeds_soil/ground/mulch + 1·edibility − 3·weed potential − 0.5·unknowns`, where unknowns are the site checks `fits()` could not decide. Counted in integer tenths so ties are exact. Only plants that fill a gap (a new job, a cell with fewer than two members, a band with no food, a key job with one doer) are picked, until size = 6/9/12; ties go to the plant with more `names` (better known), then `canonical_name` in code-unit order (not `localeCompare`). On the 2026-10-28 format 3 export (three climate files, 200 plants each) the default site (full sun, soil and water not sure) fills every climate to its limit in each room, but 50 of the 432 site combinations (3 climates × 3 lights × 4 soils × 4 waters × 3 rooms) fill fewer places than the room allows, because too few plants fit; the slowest of the 432 took 42 ms (cold). A short consortium is expected, not a bug: the page reports the free places.
 - **Evaluate.** `evaluate()` scores a fixed list (the page's state after a Remove, whose gap stays, or a restored link): members in the order given, repeats and ids not in the file ignored, the same flags as `suggest()` (one shared code path), a gain of what each adds to those before it (null when kept), and the gaps. The ids of a suggestion give that suggestion back.
 - **Suggest.** Kept plants come first and always stay, flagged or not (kept wins over removed; ids not in the cell are ignored). Automatic picks skip misfits, medium/high conflicts with a member, and removed ids; a plant whose only misfit is light is a candidate, and is picked only while the members chosen so far shade it (`siteMisfits(i, strata, site)` read at each pick, scale-b fix2 H12), so Fill and the flags use one shade rule. The country never changes the plants (owner, 2026-10-28): a plant invasive in it is still picked, and carries `flags.invasive === true` as a warning. `flagged` (what keeps a plant out of automatic picks and makes Add or Swap ask first) is a misfit or a medium/high conflict only. A shaded lower layer (decision row "Scale build, coordinator choices"; design-scale.md §2.6 m10, scale-b fix): on a sunny site, a Mid or Low plant that does not take full sun is not a light misfit while another member grows in a layer above it (Emergent or High over Mid; any of them over Low); a top-layer plant, or one with nothing above it, keeps the flag (`shaded`/`siteMisfits` in suggest.ts, read by `evaluate`, `suggest` (its picks too), `flagsFor` and `alternatives` alike; at 200 Temperate plants in a field, "With a warning" counts 29 with France, 26 with no country). Every member carries `flags` (`misfits`, `unknowns`, `invasive`, `conflicts`, `flagged`); `invasive` is null when the country is unset or `countryChecked` is not true; the `Country` option type requires `countryChecked` whenever `country` is a string.
-- **Conflicts.** Rows match at species (canonical name), genus or family, in either member order; a same-genus row pairs two members once. `allelopathy_tolerant` rows are not conflicts. `suggest()`'s exclusion of medium/high partners is built from `conflicts()` over the whole cell, so it matches exactly as the flags do.
+- **Conflicts.** Rows match at species (canonical name), genus or family, in either member order; a same-genus row pairs two members once. `allelopathy_tolerant` and `intercropped_yield_gain` rows are not conflicts (`pairings()` lists the yield-gain ones for the details sheet). `suggest()`'s exclusion of medium/high partners is built from `conflicts()` over the whole cell, so it matches exactly as the flags do.
 - **Alternatives.** Plants without a flag first, flagged ones (misfit, medium/high conflict) last so the page can list them under a warning; within each, same stratum, then most shared jobs, then gain against the rest, then better known, then name. Members and removed plants are not listed.
 - **Share links (v3, 2026-10-28).** Keys `v c k l s w m a p x n g`; site keys always written. `k` is written only when the state has a country (the page leaves out a guessed one); `k=-` (`NO_COUNTRY`) is "No country", which the page writes only to its local save. `a` is the members in order, a kept member marked with a leading `*` (absent: the page suggests; present: it calls `evaluate()`); `p` kept plants that are not members; `x` removed; `n` main crops (at most `MAX_CROPS`, each a kept member); `g` plants added from another climate's list, one `g` per list: its `GUEST_CODES` code then its tokens. A token is 6 base64url characters (the first 36 bits of the id), or `.` plus 22 characters (the whole id) when another taxon of the pool shares those bits; tokens are joined without a separator. At 200 plants (190 kept, 2 crops) a link is about 1,500 characters, against about 3,600 in v2. At most `MAX_LINK_IDS` tokens are read per key, the rest reported once as `excess` with their count. v2 links (8-hex prefixes joined with `.`, `p` for kept) still decode, with `version: 2`; links from the region era carry `r` and `b`, ignored silently. Decoding never throws; unknown, malformed, ambiguous, duplicate and excess values go to `dropped` (a dropped v3 token is reported as its 9 hex characters).
 - **Guests.** `suggest`, `evaluate`, `flagsFor` and `alternatives` take `guests?: Taxon[]` (plants of another list the page added): they count as members for jobs, layers and conflicts but are never suggested.

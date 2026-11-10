@@ -1,20 +1,20 @@
 ---
 type: Module
 title: src/lib
-description: Framework-free logic shared by the Worker endpoint, the page scripts and node --test (contact handler, installer detection, the consortium data core).
+description: Framework-free logic shared by the Worker endpoints, the page scripts and node --test (contact and correction handlers, installer detection, the TRY list and source credits parsers, the consortium data core).
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T06:19:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:30Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-28T20:09:06Z }
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:34Z }
 sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:f8740ff498cf7128
-    last_modified: 2026-11-10T00:04:47Z
+    digest: sha256:eb9b681d6a59bb56
+    last_modified: 2026-11-10T07:26:18Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -45,8 +45,8 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 
 # Dependencies
 
-- Used by [src/pages](/modules/src-pages.md) (`api/contact.ts` passes the Worker `env` from `cloudflare:workers`) and [src/scripts](/modules/src-scripts.md) (`downloads.js`, `design-map.js`).
-- Tested by [scripts](/modules/scripts.md): `contact.test.mjs`, `homepage.test.mjs`, `consortium.test.mjs`.
+- Used by [src/pages](/modules/src-pages.md) (`api/contact.ts` and `api/correction.ts` pass the Worker `env` from `cloudflare:workers`), [src/scripts](/modules/src-scripts.md) (`downloads.js`; the consortium scripts import `consortium/index.ts`) and [src/data](/modules/src-data.md) (`source-credits.ts`).
+- Tested by [scripts](/modules/scripts.md): `contact.test.mjs`, `correction.test.mjs`, `source-credits.test.mjs`, `try-references.test.mjs`, `homepage.test.mjs`, `consortium.test.mjs`.
 - No external libraries.
 
 # Gotchas

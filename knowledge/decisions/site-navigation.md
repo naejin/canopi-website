@@ -3,9 +3,9 @@ type: Architecture Decision
 title: Site navigation
 description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page's Learn and try section holds the consortium tool and the entry guides.
 tags: [decision, navigation]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:09Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T21:55:00Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:32Z }
 sources:
   - id: header-astro
     resource: ../../src/components/Header.astro
@@ -27,11 +27,6 @@ sources:
     title: src/styles/global.css
     digest: sha256:47c585d78f6c50ca
     last_modified: 2026-10-26T23:34:11Z
-  - id: next-session-navigation-md
-    resource: ../../.local/next-session-navigation.md
-    title: .local/next-session-navigation.md
-    digest: sha256:7284a6783ffdd56b
-    last_modified: 2026-10-25T16:42:41Z
   - id: footer-astro
     resource: ../../src/components/Footer.astro
     title: src/components/Footer.astro
@@ -50,13 +45,13 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:0d17dec900085382
-    last_modified: 2026-11-06T14:34:09Z
+    digest: sha256:52b27fd31f284d06
+    last_modified: 2026-11-10T06:50:47Z
   - id: manifest-json
     resource: ../../public/data/consortium/manifest.json
     title: public/data/consortium/manifest.json
-    digest: sha256:6b311db622eab597
-    last_modified: 2026-11-06T21:51:25Z
+    digest: sha256:e932d07ac266c4cf
+    last_modified: 2026-11-10T10:21:02Z
 enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 ---
 
@@ -75,8 +70,8 @@ enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 - **No climate in the header**: the reader's climate is set from a chip on the pages it changes, not from the header (see [Climate UX](/decisions/climate-ux.md)).
 - **Phone Menu**: below 640px only the logo, a `<details data-nav-menu>` Menu and the theme toggle show. The panel holds Guides, Books, the tool's full name (`nav.consortium.full`, "Design a consortium" / « Composer une guilde »), Donate, Discord, Docs (if set), Contact and the 11 languages. It opens without script; `src/scripts/chrome.js` closes it on outside click, Escape, link activation and focus leaving. `donate.js` returns focus to the Menu summary.
 - **Learn section**: the guides index links to the bibliography; the bibliography page links to the guides; both link to the consortium tool (`learn.consortium.link`, "Design a consortium (beta): …"). Guides link into the tool with a plant and climate preset (`<TryConsortium>`, see [Field Guide components](/references/field-guide-components.md)).
-- **Footer**: "Design a consortium" (`nav.consortium.full`, the same key as the Menu line) after the bibliography link.
-- **Footer, data sources**: "Data sources" (`dataSources.title`) sits after the bibliography link, in the footer only, not the header or the phone Menu; the consortium tool's head also links it. Measured 2026-11-06 in headless Chrome, all 11 locales, at 320, 360, 414, 500, 639, 640, 768, 959 and 1200 px: links wrap with 20 px between them in a row, no overlap, no horizontal scroll. The extra link adds at most one row (29 px); the tallest is Japanese at 320 px, five rows, 348 px of footer.
+- **Footer**: "Design a consortium" (`nav.consortium.full`, the same key as the Menu line) after the bibliography and data sources links (`Footer.astro` order: Docs if set, source code, Discord, Guides, bibliography, Data sources, Design a consortium, Donate, Contact).
+- **Footer, data sources**: "Data sources" (`dataSources.title`) sits right after the bibliography link, before the consortium tool, in the footer only, not the header or the phone Menu; the consortium tool's head also links it. Measured 2026-11-06 in headless Chrome, all 11 locales, at 320, 360, 414, 500, 639, 640, 768, 959 and 1200 px: links wrap with 20 px between them in a row, no overlap, no horizontal scroll. The extra link adds at most one row (29 px); the tallest is Japanese at 320 px, five rows, 348 px of footer.
 - **One name per locale**: `nav.consortium.full` is the tool's name in the Menu, the footer and the home card's title, and `learn.consortium.link` starts with it, so each locale names the tool with one verb in one mood (de "Ein Konsortium planen", ja "コンソーシアムを設計する", ru "Составить консорциум"; it and nl use the imperative throughout). The full name contains the header word.
 - **Consortium on the home page** (`src/components/LearnAndTry.astro`), the first card of the section: title (`nav.consortium.full`) with a Beta mark, a one-paragraph promise, the beta's coverage (`home.consortium.note`: "A beta with three climates so far: tropical, Mediterranean and temperate") and one action to the tool. The note spells the climates out in each locale, with no region; `homepage.test.mjs` fails when `public/data/consortium/manifest.json` lists other climates, so a new climate means rewriting the note in all 11 locales. No photos and no strata colours (the tool's drawing keeps those); styles scoped in the component.
 - **Entry guides** (`src/components/LearnAndTry.astro`), the second card: three guides (food-forest, living-soil, landrace-gardening) from frontmatter, en or fr by locale, English with an "in English" note elsewhere, the topics with their counts, plus "All field guides".

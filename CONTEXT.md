@@ -1,6 +1,6 @@
 # Canopi Website Context
 
-This context defines product-edition and ecosystem language used by the Canopi marketing website.
+This context defines product-edition, ecosystem and consortium-data language used by the Canopi marketing website.
 
 ## Language
 
@@ -20,6 +20,18 @@ _Avoid_: Partners, related organizations, organizations using Canopi
 The shared visual design tools available in both Canopi Desktop and Canopi Web for working on the design canvas. The website uses this concise term instead of enumerating the whole toolbar.
 _Avoid_: Left toolbar features, all canvas features
 
+**Owner correction**:
+A plant value the project owner changed in canopi-data's `corrections.tsv`; it wins over every source and can be reverted. In the consortium tool a corrected toxicity warning names "Canopi correction" among its sources; other corrected values carry no mark of their own, since traits and names cite no source per value. A reader's "Suggest a correction" report is not one: it is a suggestion the owner reviews, and only the owner turns it into a correction.
+_Avoid_: User correction, fix, edit (for a reader's report: say suggestion)
+
+**Estimate**:
+A value no dataset records: worked out from observations (such as months from dated photos), read from a text by a rule, or answered by a language model, which is published as the owner's estimate. In a plant's details it carries the inline word "estimate" and one legend line; a recorded value carries no marker.
+_Avoid_: Guess, approximation, AI value, prediction
+
+**Yield-gain pairing**:
+Two plants of the same climate list grown together with a yield gain in field trials (median land equivalent ratio above 1). A plant's details list it as a positive check ("Grown with … with a yield gain"); it is never a conflict and never changes a suggestion.
+_Avoid_: Companion plant, good neighbour, guild partner
+
 ## Example Dialogue
 
 Developer: "Should the hero show Linux, macOS, and Windows as three products?"
@@ -30,6 +42,12 @@ Domain expert: "No. Use Agroecology network unless a formal partnership is confi
 
 Developer: "Should the edition cards list every toolbar tool?"
 Domain expert: "No. Say Canvas tools under both editions."
+
+Developer: "A reader sent a correction for a plant's height. Is it an Owner correction now?"
+Domain expert: "No. It is a suggestion until the owner promotes it in canopi-data."
+
+Developer: "Should bloom months from dated photos look like recorded ones?"
+Domain expert: "No. Mark them with the word estimate and keep the legend line."
 
 ## Approved homepage (October 2026)
 

@@ -2,17 +2,17 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T21:40:57Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:12Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T06:20:56Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:34Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
   - id: readme-md
     resource: ../../scripts/fixtures/consortium/README.md
     title: scripts/fixtures/consortium/README.md
-    digest: sha256:ccb79a7048093d22
-    last_modified: 2026-11-06T00:08:32Z
+    digest: sha256:4aac754db6aab91b
+    last_modified: 2026-11-10T06:50:47Z
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
@@ -31,13 +31,13 @@ sources:
   - id: consortium-app-js
     resource: ../../src/scripts/consortium/app.js
     title: src/scripts/consortium/app.js
-    digest: sha256:184d4adbf4f78df8
-    last_modified: 2026-11-10T06:19:01Z
+    digest: sha256:82fe21f30fdb3e98
+    last_modified: 2026-11-10T06:50:47Z
   - id: consortium-css
     resource: ../../src/styles/consortium.css
     title: src/styles/consortium.css
-    digest: sha256:1b48fe13e6dfca82
-    last_modified: 2026-11-10T06:19:01Z
+    digest: sha256:42bf1a0578657b37
+    last_modified: 2026-11-10T06:50:47Z
 ---
 
 Owner decisions: [Consortium tool — user decisions](/decisions/consortium-user-decisions.md).
@@ -52,7 +52,7 @@ the region-cell plan of format 2 is superseded where this page says so).
 - Three climates: Tropical, Mediterranean and Temperate, 200 plants each (the
   2026-10-28 export). Every other climate is choosable and shows "not covered
   yet", naming the covered ones (climate-first, owner 2026-10-28).
-- No Open in Canopi, no saved-design list, no backend.
+- No Open in Canopi, no saved-design list, no backend for the tool's data. Since 2026-11-10 one form posts to the site's Worker: "Suggest a correction" (`POST /api/correction`, built like the contact form, which mails the owner and stores nothing; owner row "Correction form").
 
 ## User paths
 1. **Choose a climate** (the shared site choice, `canopi-climate`; nothing
@@ -75,7 +75,7 @@ the region-cell plan of format 2 is superseded where this page says so).
    time words first: "Years 1–3 · Placenta 3"), **Jobs** (six plain jobs: who does
    each, gaps named).
 5. **Adjust.** Per plant: details (photo if any, reason, traits, sources,
-   warnings, guides that cover it), Swap (ranked alternatives of the same stratum
+   warnings, guides that cover it; since 2026-11-10 also its layer values, each marked "estimate" unless a dataset records it, its yield-gain pairs with other members as positive checks, and a "Suggest a correction" form at the end), Swap (ranked alternatives of the same stratum
    and jobs; flagged ones shown with their warning), Remove (gap stays, Undo),
    Keep (pinned plants survive site changes). Add a plant (search).
 6. **Share or print.** A link restores the exact state; the last consortium on this
@@ -94,7 +94,8 @@ the region-cell plan of format 2 is superseded where this page says so).
   region, regions the union of the reasons', invasive only in checked countries),
   and copies `manifest.json`, `labels.json` and the climate files to
   `public/data/consortium/`. A real install also writes the export's TRY dataset
-  list, checked against the manifest's `try_references`, to `src/data/`. It refuses `canopi_db_sha256` of all zeros (the
+  list, checked against the manifest's `try_references`, and its `source_credits.tsv`
+  to `src/data/`, and needs the manifest's `release_id`, which the page shows under the tool. It refuses `canopi_db_sha256` of all zeros (the
   fixture) unless `--fixture` (tests only). Then, except for `--fixture`, it runs
   `canopi release verify` on the original directory from `../canopi-data` and refuses
   on any exit but 0. Committed output; run by hand.
@@ -158,7 +159,7 @@ app term. Region names translated (8 × 11), as labels of a plant's reasons.
 
 ## Entry points (decision log)
 Header item (inline ≥ 640 px; phone Menu below), measured at 640 px in all 11
-locales; footer link; home section after Start here; guides index and
+locales; footer link; home section after Start here (since 2026-11-06 the first card of the home's one Learn and try section, owner row in [Home page redesign](/decisions/homepage-redesign.md)); guides index and
 bibliography mention it (Learn section); guides → tool preset links;
 plant details → guides (hand-made map `src/data/consortium-guides.ts`,
 canonical name → guide slugs).

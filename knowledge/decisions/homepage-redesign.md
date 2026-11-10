@@ -3,47 +3,49 @@ type: Architecture Decision
 title: Home page redesign
 description: The home page answers a visitor's questions in order, shows the app with localized captures of a fictional design, and has no map of designs.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:00Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:13Z }
 sources:
   - id: home-astro
     resource: ../../src/components/Home.astro
     title: src/components/Home.astro
     digest: sha256:b5208cacbccdbf2e
-    last_modified: 2026-11-06T13:53:23Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: whatyoucando-astro
     resource: ../../src/components/WhatYouCanDo.astro
     title: src/components/WhatYouCanDo.astro
     digest: sha256:88b6ac00d5c9f228
-    last_modified: 2026-11-06T13:57:02Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: learnandtry-astro
     resource: ../../src/components/LearnAndTry.astro
     title: src/components/LearnAndTry.astro
     digest: sha256:1db4d9cd5f5ae2fc
-    last_modified: 2026-11-06T14:31:17Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: aboutcanopi-astro
     resource: ../../src/components/AboutCanopi.astro
     title: src/components/AboutCanopi.astro
     digest: sha256:9b00aca8802a234b
-    last_modified: 2026-11-06T14:09:08Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: network-astro
     resource: ../../src/components/Network.astro
     title: src/components/Network.astro
     digest: sha256:adaa78990628770e
-    last_modified: 2026-11-06T13:33:07Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: design-list-js
     resource: ../../src/scripts/design-list.js
     title: src/scripts/design-list.js
     digest: sha256:09af431115979444
-    last_modified: 2026-11-06T13:53:22Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: capture-cjs
     resource: ../../scripts/home-captures/capture.cjs
     title: scripts/home-captures/capture.cjs
     digest: sha256:80d646ef1cba1164
-    last_modified: 2026-11-06T14:20:25Z
+    last_modified: 2026-11-06T14:34:09Z
   - id: context-md
     resource: ../../CONTEXT.md
     title: CONTEXT.md
-    digest: sha256:f59328e7c523dc98
-    last_modified: 2026-11-06T13:57:18Z
+    digest: sha256:0a5a8181d949ff64
+    last_modified: 2026-11-10T15:30:09Z
 ---
 
 # Decision

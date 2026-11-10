@@ -1,11 +1,11 @@
 ---
 type: Module
 title: src/pages
-description: Astro routes; thin per-locale wrappers around components, plus the one on-demand contact endpoint.
+description: Astro routes; thin per-locale wrappers around components, plus the two on-demand endpoints, contact and correction.
 resource: ../../src/pages
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-09T23:58:15Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:30Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:27Z }
 sources:
