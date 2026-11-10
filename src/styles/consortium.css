@@ -1227,6 +1227,7 @@ html:has(.ct .selbar) { scroll-padding-bottom: 96px; }
 .ct .corr-current .unknown { color: var(--text-muted); font-style: italic; }
 .ct .corr-consent { display: grid; gap: 6px; }
 .ct .corr-consent label { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; cursor: pointer; }
+.ct .corr-licence { white-space: nowrap; }
 .ct .corr-consent input { flex: none; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--accent); }
 .ct .corr-consent input[aria-invalid="true"] { outline: 2px solid var(--danger); outline-offset: 2px; }
 .ct .corr-context { margin: 0; overflow-wrap: anywhere; }

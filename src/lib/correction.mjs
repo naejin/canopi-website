@@ -13,7 +13,8 @@ import { CONTROL, EMAIL_RE, FROM, LOCALES, PERMANENT, TIMEOUT_MS, withTimeout } 
 
 export { LOCALES };
 export const MAX_BODY = 16 * 1024;
-export const LIMITS = { plant_name: 200, current_value: 500, proposed_value: 500, note: 2000, email: 254 };
+// current_value is measured as its JSON text.
+export const LIMITS = { plant_name: 200, current_value: 500, current_display: 500, proposed_value: 500, note: 2000, email: 254 };
 export const REPORT_SCHEMA = 'canopi-correction-report/1';
 export const REPORT_START = '-----BEGIN CANOPI CORRECTION REPORT-----';
 export const REPORT_END = '-----END CANOPI CORRECTION REPORT-----';
@@ -23,8 +24,9 @@ export const LICENCE = 'CC BY-SA 4.0';
 export const CLIMATES = ['Tropical', 'Subtropical', 'Mediterranean', 'Arid', 'Temperate', 'Continental', 'Boreal'];
 const PLANT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const RELEASE_ID = /^r-[0-9a-f]{16}$/;
-// A field id: a catalog field name (height_m, soil_ph) or one of the form's own (stratum, other).
-const FIELD = /^[a-z][a-z0-9_]{0,63}$/;
+// A field id: a catalog field name of the consortium export (a trait or warning key such as height_m
+// or sun, stratum, phases, functions, a layer field) or names.<locale>.
+const FIELD = /^(?:[a-z][a-z0-9_]{0,63}|names\.[a-z]{2})$/;
 
 const singleLine = (value) => value.replace(CONTROL, '').replace(/[\t\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
 const multiLine = (value) => value.replace(/\r\n?/g, '\n').replace(CONTROL, '').trim();
@@ -42,7 +44,10 @@ export function normalise(body) {
   const plant_id = text('plant_id', singleLine);
   const plant_name = text('plant_name', singleLine);
   const field = text('field', singleLine);
-  const current_value = text('current_value', singleLine);
+  // The raw catalog value, any JSON type, as the installed export holds it; null when it has none.
+  const current_value = body.current_value === undefined ? null : body.current_value;
+  if (JSON.stringify(current_value).length > LIMITS.current_value) errors.current_value = 'too_long';
+  const current_display = text('current_display', singleLine);
   const proposed_value = text('proposed_value', singleLine);
   const note = text('note', multiLine);
   const release_id = text('release_id', singleLine);
@@ -56,8 +61,8 @@ export function normalise(body) {
   if (!plant_name) set('plant_name', 'required');
   if (!FIELD.test(field)) set('field', 'pattern');
   if (!proposed_value) set('proposed_value', 'required');
-  for (const [key, value] of Object.entries({ plant_name, current_value, proposed_value, note, email })) if (value.length > LIMITS[key]) errors[key] = 'too_long';
-  if (!errors.proposed_value && proposed_value === current_value) errors.proposed_value = 'unchanged';
+  for (const [key, value] of Object.entries({ plant_name, current_display, proposed_value, note, email })) if (value.length > LIMITS[key]) errors[key] = 'too_long';
+  if (!errors.proposed_value && proposed_value === current_display) errors.proposed_value = 'unchanged';
   if (!RELEASE_ID.test(release_id)) set('release_id', 'pattern');
   if (!climate) set('climate', 'unknown');
   if (!LOCALES.includes(locale)) set('locale', 'unknown');
@@ -66,22 +71,29 @@ export function normalise(body) {
 
   const report = {
     schema: REPORT_SCHEMA, received_at: null, release_id, plant_id, plant_name, field,
-    current_value: current_value || null, proposed_value, note: note || null, climate, locale, licence: LICENCE,
+    current_value, current_display: current_display || null, proposed_value, note: note || null, climate, locale, licence: LICENCE,
   };
   return { report, email: email || null, errors };
 }
 
 // The block canopi-data imports: its markers on their own lines, the report as indented JSON in
-// between. JSON writes every newline of a value as \n, so no value can put a marker on a line of its own.
+// between. JSON writes every newline of a value as \n, so inside the block every line the reporter's
+// text reaches starts with spaces and a quote. The readable part above it must keep the same promise
+// (mailText): no reporter text may start a line, or it could forge a whole block before the real one.
 export const reportBlock = (report) => `${REPORT_START}\n${JSON.stringify(report, null, 2)}\n${REPORT_END}`;
 
+// The readable part. Every value but the note is one line after its label (normalise makes them
+// single-line, JSON.stringify writes the catalog value on one line); the note keeps its lines, each
+// quoted behind "  | ", so no line of the mail starts with text the reporter wrote.
 export function mailText(report, hasEmail) {
+  const note = report.note === null ? ['Note: (none)'] : ['Note:', ...report.note.split('\n').map((line) => `  | ${line}`)];
   return [
     `Plant: ${report.plant_name}`,
     `Field: ${report.field}`,
-    `Shown now: ${report.current_value ?? '(unknown)'}`,
+    `Shown now: ${report.current_display ?? '(unknown)'}`,
+    `Catalog value: ${JSON.stringify(report.current_value)}`,
     `Proposed: ${report.proposed_value}`,
-    `Note: ${report.note ?? '(none)'}`,
+    ...note,
     '',
     `Release: ${report.release_id}`,
     `Climate: ${report.climate}`,

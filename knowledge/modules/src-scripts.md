@@ -7,13 +7,13 @@ tags: [module, frontend]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:01Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-09T23:58:05Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T06:20:56Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:f4868494283a00f1
-    last_modified: 2026-11-09T23:49:41Z
+    digest: sha256:0614753a5c2b4b34
+    last_modified: 2026-11-10T06:19:01Z
   - id: scale-js
     resource: ../../src/scripts/consortium/scale.js
     title: src/scripts/consortium/scale.js

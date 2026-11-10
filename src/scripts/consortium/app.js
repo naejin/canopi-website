@@ -1219,11 +1219,19 @@ function detailsFacts(t) {
   ];
 }
 // What "Suggest a correction" offers for a plant (correction.js): its facts as the sheet shows them,
-// then its layer, timing and name.
+// each under its catalog field name with the installed value (light as its three fields: sun,
+// semi_shade, full_shade), then its layer, timing and name.
 function corrFields(t) {
-  const tw = W.timeWords(t);
-  const facts = detailsFacts(t).map(([k, v, field]) => ({ field, label: T(k), current: v ? plain(v) : '' }));
-  return correctionFields(T, facts, { layer: t.stratum ? stratumLabel(stratumOf(t)) : '', timing: t.phases ? tw.plain + (tw.term ? ' · ' + tw.term : '') : '', name: nameText(t) });
+  const tr = t.traits, tw = W.timeWords(t);
+  const yesNo = (v) => (v == null ? '' : T(v ? 'yes' : 'no'));
+  const facts = detailsFacts(t).flatMap(([k, v, field]) => field === 'light'
+    ? [['sun', 'sun'], ['semi_shade', 'part'], ['full_shade', 'shade']].map(([key, word]) => ({ field: key, label: `${T('t.light')}: ${T('site.light.' + word)}`, current: yesNo(tr[key]), raw: tr[key] ?? null }))
+    : [{ field, label: T(k), current: v ? plain(v) : '', raw: tr[field] ?? null }]);
+  return correctionFields(T, facts, {
+    layer: { current: t.stratum ? stratumLabel(stratumOf(t)) : '', raw: t.stratum?.value ?? null },
+    timing: { current: t.phases ? tw.plain + (tw.term ? ' · ' + tw.term : '') : '', raw: t.phases ? { start: t.phases.start, end: t.phases.end } : null },
+    name: { field: 'names.' + lang, current: nameText(t), raw: t.names?.[lang] ?? null },
+  });
 }
 // The report's context: the release the page was built with (ConsortiumPage.astro reads it from the
 // installed manifest), the consortium's climate and the page language.

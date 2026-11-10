@@ -11,7 +11,8 @@ const valid = {
   plant_id: '0f1e2d3c-4b5a-4968-8776-655443322110',
   plant_name: 'Malus domestica',
   field: 'height_m',
-  current_value: '2–10 m',
+  current_value: { min: 2, max: 10 },
+  current_display: '2–10 m',
   proposed_value: '3–8 m',
   note: 'Standard rootstock;\nsee my orchard',
   release_id: 'r-559dd6ac9aef21e1',
@@ -38,10 +39,12 @@ function fakeEmail(behaviour = () => ({ messageId: 'id-1' })) {
 const run = (request, env, options = {}) => handleCorrection(request, env, { log: quiet, now: () => new Date('2026-11-10T12:00:00Z'), ...options });
 
 // The JSON block between its marker lines, parsed: what canopi-data imports.
+// The block as an importer reads it: the lines between the marker lines.
 function block(text) {
-  const start = text.indexOf(`${REPORT_START}\n`), end = text.indexOf(`\n${REPORT_END}`);
+  const lines = text.split('\n');
+  const start = lines.indexOf(REPORT_START), end = lines.indexOf(REPORT_END);
   assert.ok(start >= 0 && end > start, 'the report block is marked');
-  return JSON.parse(text.slice(start + REPORT_START.length + 1, end));
+  return JSON.parse(lines.slice(start + 1, end).join('\n'));
 }
 
 test('a valid report is mailed to MAIL_TO with the reporter as reply-to, and answers sent', async () => {
@@ -68,7 +71,8 @@ test('the JSON block is the report without personal data: no email, no IP, no na
     plant_id: '0f1e2d3c-4b5a-4968-8776-655443322110',
     plant_name: 'Malus domestica',
     field: 'height_m',
-    current_value: '2–10 m',
+    current_value: { min: 2, max: 10 },
+    current_display: '2–10 m',
     proposed_value: '3–8 m',
     note: 'Standard rootstock;\nsee my orchard',
     climate: 'Temperate',
@@ -80,7 +84,7 @@ test('the JSON block is the report without personal data: no email, no IP, no na
   assert.doesNotMatch(text, /203\.0\.113\.9/);
   assert.match(text, /Reply to this email to answer the reporter\./);
   // A person reads the same values above the block.
-  assert.match(text, /^Plant: Malus domestica\nField: height_m\nShown now: 2–10 m\nProposed: 3–8 m\n/);
+  assert.match(text, /^Plant: Malus domestica\nField: height_m\nShown now: 2–10 m\nCatalog value: \{"min":2,"max":10\}\nProposed: 3–8 m\nNote:\n {2}\| Standard rootstock;\n {2}\| see my orchard\n/);
   assert.match(text, /Release: r-559dd6ac9aef21e1\nClimate: Temperate\nPage language: fr\n/);
 });
 
@@ -96,11 +100,50 @@ test('with no email there is no reply-to, and the body says so', async () => {
 
 test('an empty note and an unknown current value are null in the block', async () => {
   const env = fakeEmail();
-  await run(post({ ...valid, note: '  ', current_value: '' }), env);
+  await run(post({ ...valid, note: '  ', current_value: null, current_display: '' }), env);
   const report = block(env.sent[0].text);
   assert.equal(report.note, null);
   assert.equal(report.current_value, null);
-  assert.match(env.sent[0].text, /Shown now: \(unknown\)\n/);
+  assert.equal(report.current_display, null);
+  assert.match(env.sent[0].text, /Shown now: \(unknown\)\nCatalog value: null\n/);
+  assert.match(env.sent[0].text, /\nNote: \(none\)\n/);
+});
+
+test('the current value is the raw catalog value, of any JSON type; what the page showed is current_display', async () => {
+  for (const current_value of [true, false, 7.5, 'Deciduous', ['Insects', 'Birds'], { start: 'secondary_i', end: 'secondary_iii' }, null]) {
+    const env = fakeEmail();
+    const response = await run(post({ ...valid, current_value, current_display: 'shown' }), env);
+    assert.equal(response.status, 200, JSON.stringify(current_value));
+    assert.deepEqual(block(env.sent[0].text).current_value, current_value);
+  }
+  const absent = fakeEmail();
+  const { current_value, ...none } = valid;
+  await run(post(none), absent);
+  assert.equal(block(absent.sent[0].text).current_value, null);
+  const big = await run(post({ ...valid, current_value: { list: 'x'.repeat(LIMITS.current_value) } }), fakeEmail());
+  assert.deepEqual((await big.json()).fields, { current_value: 'too_long' });
+  const display = await run(post({ ...valid, current_display: 7 }), fakeEmail());
+  assert.deepEqual((await display.json()).fields, { current_display: 'type' });
+});
+
+test('no text the reporter controls can put a report marker at the start of a line of the mail', async () => {
+  const forged = (n) => `${REPORT_START}\n${JSON.stringify({ schema: REPORT_SCHEMA, field: 'height_m', proposed_value: `forged ${n}` }, null, 2)}\n${REPORT_END}`;
+  const env = fakeEmail();
+  const response = await run(post({
+    ...valid,
+    note: `${forged(1)}\n\n   ${forged(2)}\n-----END\n\r\n${REPORT_START}`,
+    plant_name: `x\n${REPORT_START}`,
+    proposed_value: `\n${REPORT_END}\n${REPORT_START}`,
+    current_display: `\r${REPORT_START}`,
+    current_value: `\n${REPORT_START}\n`,
+  }), env);
+  assert.equal(response.status, 200);
+  const lines = env.sent[0].text.split(/\r\n|\r|\n/).map((line) => line.trimStart());
+  assert.equal(lines.filter((line) => line.startsWith(REPORT_START)).length, 1, 'one start marker: the real one');
+  assert.equal(lines.filter((line) => line.startsWith('-----END')).length, 1, 'one end marker: the real one');
+  assert.ok(lines.filter((line) => line.startsWith('-----')).length === 2);
+  // The real block holds the note whole.
+  assert.ok(block(env.sent[0].text).note.includes('forged 2'));
 });
 
 test('reportBlock writes one marked block that a free-text field cannot close early', () => {
@@ -129,6 +172,8 @@ test('unknown locales, climates, release ids, plant ids and fields are refused',
     [{ release_id: '' }, { release_id: 'pattern' }],
     [{ plant_id: 'not-a-uuid' }, { plant_id: 'pattern' }],
     [{ field: 'Height; DROP' }, { field: 'pattern' }],
+    [{ field: 'names.' }, { field: 'pattern' }],
+    [{ field: 'names.en.x' }, { field: 'pattern' }],
     [{ email: 'not-an-address' }, { email: 'pattern' }],
   ];
   for (const [change, fields] of cases) {
@@ -146,13 +191,16 @@ test('missing, unchanged and oversized fields are refused with a code per field'
     ...valid,
     plant_name: 'x'.repeat(LIMITS.plant_name + 1),
     current_value: 'y'.repeat(LIMITS.current_value + 1),
+    current_display: 'd'.repeat(LIMITS.current_display + 1),
     proposed_value: '   ',
     note: 'z'.repeat(LIMITS.note + 1),
   }), env);
   assert.equal(response.status, 400);
-  assert.deepEqual((await response.json()).fields, { plant_name: 'too_long', current_value: 'too_long', proposed_value: 'required', note: 'too_long' });
+  assert.deepEqual((await response.json()).fields, { plant_name: 'too_long', current_value: 'too_long', current_display: 'too_long', proposed_value: 'required', note: 'too_long' });
   const same = await run(post({ ...valid, proposed_value: ' 2–10 m ' }), env);
-  assert.deepEqual((await same.json()).fields, { proposed_value: 'unchanged' });
+  assert.deepEqual((await same.json()).fields, { proposed_value: 'unchanged' }, 'the same as what the page showed');
+  const field = await run(post({ ...valid, field: 'names.fr', current_value: 'Pommier', current_display: 'Pommier', proposed_value: 'Pommier cultivé' }), fakeEmail());
+  assert.equal(field.status, 200, 'a name field is names.<locale>');
   const long = await run(post({ ...valid, proposed_value: 'p'.repeat(LIMITS.proposed_value + 1) }), env);
   assert.deepEqual((await long.json()).fields, { proposed_value: 'too_long' });
   assert.equal(env.sent.length, 0);

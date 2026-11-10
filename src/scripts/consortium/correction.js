@@ -16,24 +16,29 @@ const FROM_SERVER = { field: 'field', proposed_value: 'proposed', note: 'note', 
 // status: 'idle' | 'sending' | 'sent' | 'failed'; message: the key of the line under the button.
 export const freshCorrection = (id, open = false) => ({ id, open, field: '', proposed: '', note: '', email: '', consent: false, website: '', status: 'idle', message: null, errors: {} });
 
+// The licence name kept on one line (a phone would break it after "BY-").
+const licenceNoBreak = (html) => html.replace('CC BY-SA 4.0', '<span class="corr-licence">CC BY-SA 4.0</span>');
 const escHTML = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 // A fact as the sheet writes it (escaped HTML with spans) back to the text a reader sees.
 export const plain = (html) => String(html ?? '').replace(/<[^>]*>/g, '').replace(/&(amp|lt|gt|quot|#39);/g, (_, n) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" })[n]).replace(/\s+/g, ' ').trim();
 
-// The options of "What looks wrong": the sheet's facts ({ field, label, current }, current '' when
-// unknown), then its layer, its succession timing and its name, then "Something else".
-export function correctionFields(T, facts, { layer = '', timing = '', name = '' } = {}) {
+// The options of "What looks wrong", each a catalog field of the consortium export, so canopi-data
+// reads a report without a mapping: the sheet's facts ({ field, label, current, raw }: field a trait
+// key such as height_m or sun, current the text the sheet shows ('' when unknown), raw the installed
+// value), then the layer (stratum), the succession timing (phases) and the name (names.<locale>).
+const NONE = { current: '', raw: null };
+export function correctionFields(T, facts, { layer = NONE, timing = NONE, name = { field: 'names.en', ...NONE } } = {}) {
   return [
     ...facts,
-    { field: 'stratum', label: T('correction.fieldLayer'), current: layer },
-    { field: 'phases', label: T('correction.fieldTiming'), current: timing },
-    { field: 'common_name', label: T('correction.fieldName'), current: name },
-    { field: 'other', label: T('correction.fieldOther'), current: '' },
+    { field: 'stratum', label: T('correction.fieldLayer'), current: layer.current, raw: layer.raw },
+    { field: 'phases', label: T('correction.fieldTiming'), current: timing.current, raw: timing.raw },
+    { field: name.field, label: T('correction.fieldName'), current: name.current, raw: name.raw },
   ];
 }
 
 const fieldOf = (fields, id) => fields.find((f) => f.field === id) ?? null;
 export const currentOf = (fields, id) => fieldOf(fields, id)?.current ?? '';
+const rawOf = (fields, id) => fieldOf(fields, id)?.raw ?? null;
 
 // What "Value shown now" says for a field: the value, "Unknown", or a dash before one is chosen.
 export const currentHTML = (T, fields, id) => {
@@ -60,10 +65,11 @@ export function checkCorrection(c, fields) {
 }
 export const ERROR_ORDER = ['field', 'proposed', 'note', 'email', 'consent'];
 
-// The JSON the endpoint reads. ctx: { plantId, plantName, release, climate, locale }.
+// The JSON the endpoint reads. ctx: { plantId, plantName, release, climate, locale }. current_value is
+// the installed catalog value (any JSON type), current_display the text the sheet showed for it.
 export function correctionBody(c, fields, ctx) {
   return {
-    plant_id: ctx.plantId, plant_name: ctx.plantName, field: c.field, current_value: currentOf(fields, c.field),
+    plant_id: ctx.plantId, plant_name: ctx.plantName, field: c.field, current_value: rawOf(fields, c.field), current_display: currentOf(fields, c.field),
     proposed_value: c.proposed.trim(), note: c.note.trim(), release_id: ctx.release, climate: ctx.climate, locale: ctx.locale,
     consent: c.consent === true, email: c.email.trim(), website: c.website,
   };
@@ -128,7 +134,7 @@ export function correctionHTML(T, c, fields, ctx, fk) {
       <div class="field"><label for="ct-corr-email">${esc(T('correction.email'))}</label>
         <input id="ct-corr-email" type="email" maxlength="${MAX.email}" autocomplete="email" inputmode="email" data-corr="email" value="${esc(c.email)}" ${invalid('email', 'ct-corr-privacy')} ${fk('corr-email')}>
         <p class="seg-hint" id="ct-corr-privacy">${esc(T('correction.privacy'))}</p>${errorLine('email')}</div>
-      <div class="corr-consent"><label><input id="ct-corr-consent" type="checkbox" data-corr="consent"${c.consent ? ' checked' : ''} ${invalid('consent')} ${fk('corr-consent')}><span>${esc(T('correction.consent'))}</span></label>${errorLine('consent')}</div>
+      <div class="corr-consent"><label><input id="ct-corr-consent" type="checkbox" data-corr="consent"${c.consent ? ' checked' : ''} ${invalid('consent')} ${fk('corr-consent')}><span>${licenceNoBreak(esc(T('correction.consent')))}</span></label>${errorLine('consent')}</div>
       <p class="corr-context seg-hint">${esc(T('correction.context', { plant: ctx.plantLabel, release: ctx.release, climate: ctx.climateLabel, language: ctx.languageName }))}</p>
       <div class="corr-hp" aria-hidden="true"><label>${esc(T('correction.honeypot'))} <input type="text" data-corr="website" tabindex="-1" autocomplete="off" value="${esc(c.website)}"></label></div>
       <div class="actions corr-actions">

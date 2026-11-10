@@ -8,13 +8,13 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-09T23:57:55Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-06T22:24:54Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T06:20:56Z }
 sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:f7d599afb2ebb88c
-    last_modified: 2026-11-09T23:52:39Z
+    digest: sha256:bdae6d571ece98fe
+    last_modified: 2026-11-10T06:19:15Z
   - id: package-json
     resource: ../../package.json
     title: package.json

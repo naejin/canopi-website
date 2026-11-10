@@ -56,9 +56,11 @@ test('the sheet ends with a closed "Suggest a correction" section; its button op
   await page.act('corr-open');
   assert.ok(page.$('form#ct-corr'));
   assert.equal(page.focused().attribs.id, 'ct-corr-field');
-  // The facts the sheet shows, then layer, timing, name and something else.
+  // The facts the sheet shows (light as its three catalog fields), then layer, timing and name: catalog
+  // field names only, never a word of the page's own.
   const options = page.$$('#ct-corr-field option').map((o) => o.attribs.value);
-  assert.deepEqual(options, ['', 'habit', 'height_m', 'width_max_m', 'light', 'soil_ph', 'drought_tolerance', 'moisture_use', 'deciduous_evergreen', 'lifespan', 'nitrogen_fixer', 'stratum', 'phases', 'common_name', 'other']);
+  assert.deepEqual(options, ['', 'habit', 'height_m', 'width_max_m', 'sun', 'semi_shade', 'full_shade', 'soil_ph', 'drought_tolerance', 'moisture_use', 'deciduous_evergreen', 'lifespan', 'nitrogen_fixer', 'stratum', 'phases', 'names.en']);
+  assert.equal(text(page, '#ct-corr-field option[value="semi_shade"]'), `${en['consortium.t.light']}: ${en['consortium.site.light.part']}`);
   // The consent line, the privacy note and the context it is sent with.
   assert.equal(text(page, '.corr-consent label'), en['correction.consent']);
   assert.equal(en['correction.consent'], 'I agree my suggestion is published under CC BY-SA 4.0');
@@ -73,8 +75,10 @@ test('choosing a field shows the value the sheet shows for it; an unknown one sa
   await choose(page, '#ct-corr-field', 'height_m');
   assert.equal(text(page, '#ct-corr-current'), factShown(page, en['consortium.t.height']));
   assert.equal(page.focused().attribs.id, 'ct-corr-field', 'the focus stays on the select');
-  await choose(page, '#ct-corr-field', 'other');
+  await choose(page, '#ct-corr-field', 'drought_tolerance');
   assert.equal(text(page, '#ct-corr-current'), en['correction.unknown']);
+  await choose(page, '#ct-corr-field', 'full_shade');
+  assert.equal(text(page, '#ct-corr-current'), en['consortium.no']);
 });
 
 test('sending with nothing filled in marks the fields, says why, sends nothing and focuses the first', async () => {
@@ -113,7 +117,7 @@ test('a filled form survives a redraw, posts the prefilled report and shows the 
   assert.equal(method, 'POST');
   assert.equal(headers['Content-Type'], 'application/json');
   assert.deepEqual(body, {
-    plant_id: apple.id, plant_name: 'Malus domestica', field: 'height_m', current_value: shown,
+    plant_id: apple.id, plant_name: 'Malus domestica', field: 'height_m', current_value: apple.traits.height_m, current_display: shown,
     proposed_value: '3–6 m', note: 'My own trees', release_id: RELEASE, climate: 'temperate', locale: 'en', consent: true, email: 'ada@example.org', website: '',
   });
   assert.equal(page.$('form#ct-corr'), null, 'the form gives way to the thanks');
@@ -130,8 +134,8 @@ test('while sending the button is marked busy and a second press sends nothing m
   let release;
   dev.answer = () => new Promise((r) => { release = r; });
   await page.act('corr-open');
-  await choose(page, '#ct-corr-field', 'other');
-  await page.type('#ct-corr-proposed', 'It is a tree, not a shrub');
+  await choose(page, '#ct-corr-field', 'habit');
+  await page.type('#ct-corr-proposed', 'Shrub');
   await tick(page, '#ct-corr-consent');
   await page.act('corr-send');
   assert.equal(text(page, '#ct-corr-status'), en['correction.sending']);
@@ -143,7 +147,7 @@ test('while sending the button is marked busy and a second press sends nothing m
   await page.settle();
   assert.equal(text(page, '#ct-corr-status'), en['correction.failed']);
   assert.ok(page.$('#ct-corr-status').attribs.class.includes('is-error'));
-  assert.equal(page.$('#ct-corr-proposed').attribs.value, 'It is a tree, not a shrub');
+  assert.equal(page.$('#ct-corr-proposed').attribs.value, 'Shrub');
   assert.equal(page.$('[data-act="corr-send"]').attribs['aria-disabled'], undefined, 'ready to try again');
   assert.equal(focusedFk(page), 'corr-send');
   // A refused mail points elsewhere; Enter in a field sends too.
@@ -190,20 +194,75 @@ test('the form speaks the page language', async () => {
 
 test('the pure parts: fields, checks, body and server answers', async () => {
   const T = (k) => k;
-  const fields = correctionFields(T, [{ field: 'height_m', label: 'Height', current: '2–4 m' }], { layer: 'High', timing: '', name: 'Apple' });
-  assert.deepEqual(fields.map((f) => f.field), ['height_m', 'stratum', 'phases', 'common_name', 'other']);
+  const fields = correctionFields(T, [{ field: 'height_m', label: 'Height', current: '2–4 m', raw: { min: 2, max: 4 } }], {
+    layer: { current: 'High', raw: 'high' }, timing: { current: '', raw: null }, name: { field: 'names.fr', current: 'Pommier', raw: 'Pommier' },
+  });
+  assert.deepEqual(fields.map((f) => f.field), ['height_m', 'stratum', 'phases', 'names.fr']);
   assert.equal(plain('<span class="unknown">a &amp; b</span> · &lt;c&gt;'), 'a & b · <c>');
   const c = { ...freshCorrection('id'), field: 'height_m', proposed: ' 2–4 m ', consent: true };
   assert.deepEqual(checkCorrection(c, fields), { proposed: 'correction.unchanged' });
   assert.deepEqual(checkCorrection({ ...c, proposed: '3 m', email: 'nope' }, fields), { email: 'correction.emailError' });
   const body = correctionBody({ ...c, proposed: '3 m' }, fields, { plantId: 'id', plantName: 'Malus domestica', release: RELEASE, climate: 'temperate', locale: 'en' });
-  assert.equal(body.current_value, '2–4 m');
+  assert.deepEqual(body.current_value, { min: 2, max: 4 });
+  assert.equal(body.current_display, '2–4 m');
+  assert.equal(correctionBody({ ...c, field: 'stratum' }, fields, {}).current_value, 'high');
+  assert.equal(correctionBody({ ...c, field: 'phases' }, fields, {}).current_value, null);
   assert.equal(body.consent, true);
   const answer = (status, json) => async () => ({ ok: status < 300, status, json: async () => json });
   assert.deepEqual(await postCorrection(answer(200, { ok: true, code: 'sent' }), body), { status: 'sent', message: null, errors: {} });
   assert.deepEqual(await postCorrection(answer(400, { ok: false, code: 'invalid', fields: { proposed_value: 'unchanged', email: 'pattern' } }), body), { status: 'failed', message: 'correction.invalid', errors: { proposed: 'correction.unchanged', email: 'correction.emailError' } });
   assert.equal((await postCorrection(answer(400, { ok: false, code: 'invalid', fields: { release_id: 'pattern' } }), body)).message, 'correction.failed', 'a field the reader cannot fix');
   assert.equal((await postCorrection(async () => { throw new Error('offline'); }, body)).message, 'correction.failed');
+});
+
+// Every field the form can send is a catalog field of the installed consortium export: a key of a
+// taxon's traits or warnings, names.<locale>, stratum, phases, functions or a layer field. A renamed
+// catalog field fails here. current_value is the installed value itself.
+const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
+const LAYER_FIELDS = ['bloom_months', 'ripening_or_fruit_seen_months', 'sowing_months', 'tolerates_wind'];
+test('on the installed export, every field offered is a catalog field and its current value is the installed one', async () => {
+  const installed = JSON.parse(read('public/data/consortium/temperate.json'));
+  const catalog = new Set(['stratum', 'phases', 'functions', ...LAYER_FIELDS, ...LOCALES.map((l) => `names.${l}`)]);
+  for (const t of installed.taxa) for (const key of [...Object.keys(t.traits ?? {}), ...Object.keys(t.warnings ?? {})]) catalog.add(key);
+  const taxon = installed.taxa.find((t) => t.canonical_name === 'Malus domestica');
+  const dev = device();
+  const t = tab(dev, '/consortium/', { siteClimate: 'temperate', data: 'real' });
+  const page = await t.load();
+  await page.type('#ct-crop-q', 'Malus domestica');
+  await page.act('crop-add', taxon.id);
+  await page.act('suggest');
+  await page.act('details', taxon.id);
+  await page.act('corr-open');
+  const options = page.$$('#ct-corr-field option').map((o) => o.attribs.value).filter(Boolean);
+  assert.ok(options.length >= 10);
+  for (const field of options) assert.ok(catalog.has(field), `${field} is not a field of the installed export`);
+  const raw = (field) => field === 'stratum' ? taxon.stratum?.value ?? null
+    : field === 'phases' ? (taxon.phases ? { start: taxon.phases.start, end: taxon.phases.end } : null)
+    : field.startsWith('names.') ? taxon.names?.[field.slice(6)] ?? null
+    : taxon.traits[field] ?? taxon.warnings[field] ?? null;
+  await tick(page, '#ct-corr-consent');
+  for (const field of options) {
+    await choose(page, '#ct-corr-field', field);
+    await page.type('#ct-corr-proposed', `not ${field}`);
+    await page.act('corr-send');
+    const { body } = dev.posts.at(-1);
+    assert.equal(body.field, field);
+    assert.deepEqual(body.current_value, raw(field), field);
+    assert.equal(typeof body.current_display, 'string', field);
+    await page.act('corr-again');
+    await tick(page, '#ct-corr-consent');
+  }
+  assert.equal(dev.posts.length, options.length);
+});
+
+test('the licence name in the consent line never breaks across lines', () => {
+  for (const lang of LOCALES) {
+    const words = JSON.parse(read(`src/i18n/translations/${lang}.json`));
+    assert.ok(words['correction.consent'].includes('CC BY-SA 4.0'), lang);
+  }
+  const js = read('src/scripts/consortium/correction.js');
+  assert.match(js, /<span class="corr-licence">/);
+  assert.match(read('src/styles/consortium.css'), /\.ct \.corr-licence \{[^}]*white-space: nowrap/);
 });
 
 test('layout: the status line keeps its room, the honeypot is off screen, and the form fits a phone sheet', () => {

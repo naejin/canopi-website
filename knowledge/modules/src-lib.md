@@ -5,7 +5,7 @@ description: Framework-free logic shared by the Worker endpoint, the page script
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-09T23:57:55Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T06:19:25Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T20:09:06Z }
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
@@ -13,8 +13,8 @@ sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:27dda12f66dd46b8
-    last_modified: 2026-11-09T23:44:46Z
+    digest: sha256:f8740ff498cf7128
+    last_modified: 2026-11-10T00:04:47Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -29,7 +29,7 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 # Key files
 
 - [contact.mjs](../../src/lib/contact.mjs): the `POST /api/contact` handler.
-- [correction.mjs](../../src/lib/correction.mjs): the `POST /api/correction` handler (Step 8), contact's pattern and limits (origin, 16 KiB body, honeypot, the same EMAIL binding, sender and error mapping; nothing stored). Mails the owner a plain-text summary and a JSON block between `-----BEGIN/END CANOPI CORRECTION REPORT-----` (schema `canopi-correction-report/1`; keys schema, received_at, release_id, plant_id, plant_name, field, current_value, proposed_value, note, climate, locale, licence), without the reporter email, which is only the reply-to.
+- [correction.mjs](../../src/lib/correction.mjs): the `POST /api/correction` handler (Step 8), contact's pattern and limits (origin, 16 KiB body, honeypot, the same EMAIL binding, sender and error mapping; nothing stored). Mails the owner a plain-text summary and a JSON block between `-----BEGIN/END CANOPI CORRECTION REPORT-----` (schema `canopi-correction-report/1`; keys schema, received_at, release_id, plant_id, plant_name, field, current_value, current_display, proposed_value, note, climate, locale, licence), without the reporter email, which is only the reply-to. `field` is a catalog field name (`names.<locale>` allowed); `current_value` is the installed catalog value of any JSON type, `current_display` the text the page showed. No reporter text may start a line of the mail: the block's JSON escapes newlines, every other value is one line after its label, and the note's lines are quoted behind `  | `, so a note cannot forge a block (tested on the whole mail text).
 - [source-credits.js](../../src/lib/source-credits.js): `parseSourceCredits(source, file?)` reads canopi-data's `source_credits.tsv` as its `read_table` does and refuses what its check refuses; `shownCredits(rows)` → `{ used, held }` (internal rows never shown). Plain JavaScript, used by the installer, `check-built-site.mjs` and `src/data/source-credits.ts`.
 - [installer.mjs](../../src/lib/installer.mjs): picks a desktop installer from the user agent.
 - [try-references.js](../../src/lib/try-references.js): `TRY_CITATION`, `TRY_DOI`, `parseTryReferences(source, { rows, dataset_ids }, file?)` and `referenceParts(reference)`, which splits a reference into text and links (trailing punctuation left out of the url; linked only through `safeHref` from `src/scripts/consortium/logic.js`, and never with � in the url). Used by `DataSourcesPage.astro`, `check-built-site.mjs` and `install-consortium.mjs` (so what installs builds); plain JavaScript because both run in plain Node, and Node 22.12 to 22.17 cannot import a `.ts` file without a flag.
