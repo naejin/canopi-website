@@ -38,7 +38,7 @@ const creditGroups = sourceCredits ? [
 // build), GBIF, the map and the place search. Each row has a data-credit id.
 const climateIndex = Object.values(import.meta.glob('../data/climate-index.json', { eager: true, import: 'default' }))[0] as { credits?: ClimateCredit[] } | undefined;
 const tool = toolCredits(climateIndex?.credits, climateRelease.tag);
-const USE_KEYS = { grid: 'dataSources.tool.gridUse', gbif: 'dataSources.tool.gbifUse', map: 'dataSources.tool.mapUse', search: 'dataSources.tool.searchUse' } as const;
+const USE_KEYS = { grid: 'dataSources.tool.gridUse', served: 'dataSources.tool.servedUse', gbif: 'dataSources.tool.gbifUse', map: 'dataSources.tool.mapUse', search: 'dataSources.tool.searchUse' } as const;
 const toolPrivacyParts = t('dataSources.tool.privacy', lang).split('{link}');
 ---
 <Base title={`${t('dataSources.title', lang)} · Canopi`} description={t('dataSources.lede', lang)} lang={lang} path="/data-sources/">

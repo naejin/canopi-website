@@ -23,16 +23,19 @@ export interface ToolCredit {
   line: string;
   licence: string | null;
   /** What the tool uses it for, as a line the page translates (DataSourcesPage.astro USE_KEYS). */
-  use?: 'grid' | 'gbif' | 'map' | 'search';
+  use?: 'grid' | 'served' | 'gbif' | 'map' | 'search';
 }
 
 /** The climate index entries this page reads (src/data/climate-index.json `credits`). */
 export interface ClimateCredit { id: string; title: string; citation: string | null; landing: string | null; licence: string }
 
 /** canopi-climate's source ids → this page's data-credit ids, in the order the page lists them. */
+export const SERVED_ONLY = new Set(['soilgrids', 'wgsrpd']);
 export const GRID_SOURCES: ReadonlyArray<readonly [string, string]> = [
   ['chelsa-v2.1', 'chelsa'],
   ['beck2023', 'koppen-beck'],
+  // SoilGrids and WGSRPD tiles are fetched by the site lookup but no P5 feature reads them (the soil
+  // offer and the native line moved to P5.2, owner 2026-11-11): credited as served with the grid.
   ['soilgrids-2.0', 'soilgrids'],
   ['wgsrpd-level3', 'wgsrpd'],
   ['natural-earth-map-units-50m', 'natural-earth'],
@@ -96,7 +99,7 @@ export function toolCredits(climateCredits: readonly ClimateCredit[] | null | un
   const missing = GRID_SOURCES.filter(([source]) => !byId.has(source)).map(([source]) => source);
   if (missing.length) throw new Error(`src/data/climate-index.json credits lack ${missing.join(', ')}: run the build (scripts/install-climate.mjs) or update GRID_SOURCES`);
   const known = new Set(GRID_SOURCES.map(([source]) => source));
-  const row = (c: ClimateCredit, id: string): ToolCredit => ({ id, name: c.title, href: c.landing, line: c.citation ?? '', licence: c.licence });
+  const row = (c: ClimateCredit, id: string): ToolCredit => ({ id, name: c.title, href: c.landing, line: c.citation ?? '', licence: c.licence, ...(SERVED_ONLY.has(id) ? { use: 'served' as const } : {}) });
   return [
     {
       id: 'canopi-climate',

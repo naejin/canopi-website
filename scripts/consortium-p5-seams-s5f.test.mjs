@@ -62,6 +62,8 @@ test('the tool credits: the grid, its five inputs, GBIF, OpenFreeMap and Nominat
   assert.match(rows[0].licence, /AGPL-3\.0-or-later/);
   assert.equal(rows.find((r) => r.id === 'chelsa').licence, 'CC0 1.0', 'licences as the grid publishes them');
   for (const r of rows) assert.ok(r.line, `${r.id}: a citation or attribution`);
+  // P5 reads no soil or botanical area: those tiles are credited as served with the grid, not as a feature.
+  assert.deepEqual(rows.filter((r) => r.use === 'served').map((r) => r.id), ['soilgrids', 'wgsrpd']);
 });
 
 test('a grid source missing from the climate index stops the build; a new one is credited under its own id', () => {
@@ -88,7 +90,7 @@ const KEYS = [
   'privacy.correction.title', 'privacy.correction.body', 'privacy.correction.email',
   'privacy.donate.title', 'privacy.donate.body',
   'privacy.ask.title', 'privacy.ask.body', 'privacy.ask.link',
-  'dataSources.tool.title', 'dataSources.tool.lede', 'dataSources.tool.gridUse', 'dataSources.tool.gbifUse', 'dataSources.tool.mapUse', 'dataSources.tool.searchUse', 'dataSources.tool.privacy',
+  'dataSources.tool.title', 'dataSources.tool.lede', 'dataSources.tool.gridUse', 'dataSources.tool.servedUse', 'dataSources.tool.gbifUse', 'dataSources.tool.mapUse', 'dataSources.tool.searchUse', 'dataSources.tool.privacy',
 ];
 
 test('every privacy and tool-credit string is in all 11 locales, after consortium.block.s5f and before consortium.block.end', () => {

@@ -4,7 +4,7 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range, placement, future, native, soil and lazy marks stubs), the rules S1 ported, and the format 4 schema 2 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:48:32Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:21:20Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T15:36:38Z }
 sources:
@@ -107,7 +107,7 @@ sources:
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
     digest: sha256:3d97f0a6805f884b
-    last_modified: 2026-11-11T19:48:09Z
+    last_modified: 2026-11-11T18:17:26Z
   - id: native-ts
     resource: ../../src/lib/consortium/native.ts
     title: src/lib/consortium/native.ts
@@ -142,7 +142,7 @@ sources:
     resource: ../../src/lib/consortium/future-marks.ts
     title: src/lib/consortium/future-marks.ts
     digest: sha256:3415dfcfa8a629ee
-    last_modified: 2026-11-11T19:48:09Z
+    last_modified: 2026-11-11T18:09:28Z
   - id: native-marks-ts
     resource: ../../src/lib/consortium/native-marks.ts
     title: src/lib/consortium/native-marks.ts
@@ -162,7 +162,7 @@ sources:
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
     digest: sha256:109516b6d34ecb0c
-    last_modified: 2026-11-11T19:48:09Z
+    last_modified: 2026-11-11T18:17:52Z
   - id: consortium-p5-seams-s5e-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5e.test.mjs
     title: scripts/consortium-p5-seams-s5e.test.mjs
@@ -177,7 +177,7 @@ sources:
     resource: ../../scripts/fixtures/consortium-future/README.md
     title: scripts/fixtures/consortium-future/README.md
     digest: sha256:16982db16208c8af
-    last_modified: 2026-11-11T19:48:09Z
+    last_modified: 2026-11-11T17:32:49Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs

@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium tool — user decisions
 description: Dated decisions the project owner made about the consortium design tool; they change only when the owner changes them.
 tags: [consortium, decisions]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:48:32Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:47:19Z }
 ---
 
 # Consortium tool — user decisions
