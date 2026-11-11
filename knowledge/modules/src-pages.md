@@ -5,15 +5,15 @@ description: Astro routes; thin per-locale wrappers around components, plus the 
 resource: ../../src/pages
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:20:21Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T21:55:51Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:27Z }
 sources:
   - id: pages
     resource: ../../src/pages
     title: src/pages/
-    digest: sha256:1d328acd146485f5
-    last_modified: 2026-11-09T23:41:46Z
+    digest: sha256:0ca0ecf9cb13931b
+    last_modified: 2026-11-11T21:55:25Z
 ---
 
 # Responsibility
@@ -26,7 +26,8 @@ Map URLs to components for all 11 locales. Pages hold no markup or logic of thei
 |---|---|---|
 | `/`, `/{lang}/` | [index.astro](../../src/pages/index.astro), `[lang]/index.astro` | `Home.astro` |
 | `/bibliography/`, `/{lang}/bibliography/` | [bibliography.astro](../../src/pages/bibliography.astro), `[lang]/bibliography.astro` | `BibliographyPage.astro` |
-| `/data-sources/`, `/{lang}/data-sources/` | [data-sources.astro](../../src/pages/data-sources.astro), `[lang]/data-sources.astro` | `DataSourcesPage.astro`: a link to the repository's `THIRD_PARTY_NOTICES.md` (code licences; `dataSources.notices`), the source credits, the TRY citation, the guidelines line and every dataset row as static HTML |
+| `/data-sources/`, `/{lang}/data-sources/` | [data-sources.astro](../../src/pages/data-sources.astro), `[lang]/data-sources.astro` | `DataSourcesPage.astro`: a link to the repository's `THIRD_PARTY_NOTICES.md` (code licences; `dataSources.notices`), the source credits, the consortium tool's credits (`data-credit` rows, see [Privacy page and tool credits](/modules/privacy-and-credits.md)), the TRY citation, the guidelines line and every dataset row as static HTML |
+| `/privacy/`, `/{lang}/privacy/` | [privacy.astro](../../src/pages/privacy.astro), `[lang]/privacy.astro` | `PrivacyPage.astro`, see [Privacy page and tool credits](/modules/privacy-and-credits.md) |
 | `/contact/sent/`, `/contact/failed/` (+ `/{lang}/`) | `contact/*.astro`, `[lang]/contact/*.astro` | `ContactResult.astro` |
 | `/guides/`, `/fr/guides/` | [guides/index.astro](../../src/pages/guides/index.astro), `[lang]/guides/index.astro` | `GuidesIndex.astro` |
 | `/guides/<slug>/`, `/fr/guides/<slug>/` | `guides/[slug].astro`, `[lang]/guides/[slug].astro` | `GuideLayout.astro` |

@@ -13,7 +13,9 @@ import { tryReferences, tryDatasetCount } from '../data/try-references';
 import { sourceCredits } from '../data/source-credits';
 import { safeHref } from '../lib/safe-href.js';
 import { TRY_CITATION, TRY_DOI, referenceParts } from '../lib/try-references';
-import { t, type Locale } from '../i18n/utils';
+import { t, localizedUrl, type Locale } from '../i18n/utils';
+import { toolCredits, type ClimateCredit } from '../data/consortium-credits';
+import climateRelease from '../data/climate-release.json';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
 // The licences of the code the site ships live in the repository's THIRD_PARTY_NOTICES.md.
@@ -31,6 +33,13 @@ const creditGroups = sourceCredits ? [
   { id: 'credits-used', title: t('dataSources.credits.used', lang), rows: sourceCredits.used },
   { id: 'credits-held', title: t('dataSources.credits.held', lang), rows: sourceCredits.held },
 ].filter((group) => group.rows.length) : [];
+// The consortium tool's credits (P5 S5f, src/data/consortium-credits.ts): the canopi-climate grid and its
+// inputs as the installed climate index names them (scripts/install-climate.mjs writes it before every
+// build), GBIF, the map and the place search. Each row has a data-credit id.
+const climateIndex = Object.values(import.meta.glob('../data/climate-index.json', { eager: true, import: 'default' }))[0] as { credits?: ClimateCredit[] } | undefined;
+const tool = toolCredits(climateIndex?.credits, climateRelease.tag);
+const USE_KEYS = { grid: 'dataSources.tool.gridUse', served: 'dataSources.tool.servedUse', gbif: 'dataSources.tool.gbifUse', map: 'dataSources.tool.mapUse', search: 'dataSources.tool.searchUse' } as const;
+const toolPrivacyParts = t('dataSources.tool.privacy', lang).split('{link}');
 ---
 <Base title={`${t('dataSources.title', lang)} · Canopi`} description={t('dataSources.lede', lang)} lang={lang} path="/data-sources/">
   <Header lang={lang} path="/data-sources/" />
@@ -65,6 +74,24 @@ const creditGroups = sourceCredits ? [
             ))}
           </section>
         )}
+        <section class="tool-credits" aria-labelledby="tool-credits-title">
+          <h2 id="tool-credits-title">{t('dataSources.tool.title', lang)}</h2>
+          <p class="credits-note">{t('dataSources.tool.lede', lang)}</p>
+          <ul class="credit-list" role="list" aria-labelledby="tool-credits-title">
+            {tool.map((row) => {
+              const href = row.href ? safeHref(row.href) : null;
+              return (
+                <li class="tool-credit" data-credit={row.id}>
+                  <span class="credit-name" lang="en" translate="no">{href ? <a href={href} rel="noopener">{row.name}</a> : row.name}</span>
+                  {row.use && <span class="credit-use">{t(USE_KEYS[row.use], lang)}</span>}
+                  <span class="credit-line" lang="en" translate="no">{referenceParts(row.line).map((part) => part.href ? <a href={part.href} rel="noopener">{part.text}</a> : part.text)}</span>
+                  {row.licence && <span class="credit-licence">{t('dataSources.credits.licence.confirmed', lang, { licence: row.licence })}</span>}
+                </li>
+              );
+            })}
+          </ul>
+          <p class="credits-note">{toolPrivacyParts[0]}<a href={localizedUrl('/privacy/', lang)}>{t('privacy.title', lang)}</a>{toolPrivacyParts[1]}</p>
+        </section>
         <section class="try" aria-labelledby="try-title">
         <h2 id="try-title" lang="en" translate="no">TRY plant trait database</h2>
         <p class="try-citation" lang="en" translate="no">{TRY_CITATION} <a href={TRY_DOI} rel="noopener">{TRY_DOI}</a></p>
@@ -84,6 +111,13 @@ const creditGroups = sourceCredits ? [
   <Footer lang={lang} />
   <DonateDialog lang={lang} />
   <PageData lang={lang} keys={[]} />
+  <!-- Global, under .tool-credits: a scoped style would mark every element of this page, and the
+       built-site check reads the TRY citation's markup exactly. -->
+  <style is:global>
+    .tool-credits .tool-credit > span { display: block; }
+    .tool-credits .credit-use { font-size: 15px; color: var(--text-secondary); }
+    .tool-credits .credit-line a { color: var(--accent-ink); }
+  </style>
   <script>
     import { initChrome } from '../scripts/chrome.js';
     initChrome();

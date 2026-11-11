@@ -601,4 +601,29 @@ console.log(`Static assets: ${assetFiles} files in ${root} (limit ${MAX_ASSET_FI
   console.log(`Climate tiles: canopi-climate ${climateIndex.release.builder_version} under ${climateIndex.base}, ${counts.climate} climate, ${counts.soil} soil and ${counts.regions} regions tiles, each with its size.`);
 }
 
+// ---------- Privacy (P5 S5f) ----------
+// /privacy/ in every locale: its own page with a title, the header, every alternate, in the sitemap,
+// and every page's footer links to its locale's privacy page.
+{
+  const sitemap = readFileSync(join(root, 'sitemap-0.xml'), 'utf8');
+  for (const lang of locales) {
+    const path = localized('/privacy/', lang);
+    const file = join(root, path, 'index.html');
+    assert.ok(existsSync(file), `${path}: the privacy page`);
+    const page = readFileSync(file, 'utf8');
+    assert.ok(page.includes(`<html lang="${lang}"`) && page.includes('<h1 id="privacy-title"'), `${path}: privacy page in ${lang} with its title`);
+    checkHeader(page, lang, '/privacy/', `${lang} privacy`);
+    for (const who of ['Nominatim', 'OpenFreeMap', 'Cloudflare']) assert.ok(mainOf(page).includes(who), `${path}: names ${who}`);
+    for (const other of locales) {
+      assert.ok(page.includes(`hreflang="${other}" href="https://projectcanopi.com${localized('/privacy/', other)}"`), `${path}: alternate ${other}`);
+    }
+    assert.ok(sitemap.includes(`<loc>https://projectcanopi.com${path}</loc>`), `${path}: in the sitemap`);
+    for (const from of [localized('/', lang), localized('/data-sources/', lang), consortiumPath(lang), path]) {
+      const footer = readFileSync(join(root, from, 'index.html'), 'utf8').match(/<footer\b[\s\S]*?<\/footer>/)?.[0] ?? '';
+      assert.ok(linkTo(footer, path), `${from}: the footer links to ${path}`);
+    }
+    for (const asset of assetLinks(page)) assert.ok(existsSync(join(root, asset)), `Missing asset: ${asset}`);
+  }
+}
+
 console.log(`Verified 11 locale pages, their bibliography, data sources (${creditRows.length} credited sources, ${tryRows.length} TRY rows each) and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);

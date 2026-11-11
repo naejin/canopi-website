@@ -1,0 +1,94 @@
+---
+// /privacy/ for one locale (P5 stream S5f; owner answer 4, "P5 owner answers" 2026-11-11): what the site,
+// the consortium tool, the contact form and the correction form send, to whom, and what stays on the
+// device. Each claim is grounded in the code it describes:
+// - hosting and logs: wrangler.jsonc (Cloudflare Workers, observability on, send_email to the owner's
+//   mailbox); Workers Logs keep request details for up to 7 days (WORKERS_LOGS, Cloudflare's docs);
+//   src/lib/contact.mjs and src/lib/correction.mjs log codes only, never content;
+// - storage on the device: src/layouts/Base.astro (theme, climate, the language offer in
+//   sessionStorage), src/components/guides/Checklist.astro, src/islands/consortium/memory.ts
+//   (consortium, country, site climate in localStorage; share links in the address's fragment);
+// - location, place search and map: the P5 design check §B and the owner's answers 4 and 5 (asked
+//   only on the reader's click; the precise point kept on the device; a link holds the 0.1° cell only
+//   with the reader's tick; Nominatim on Enter; OpenFreeMap only once the map opens); the climate
+//   tiles are static files from this site (scripts/install-climate.mjs): climate tiles 100 cells of 0.1° (10°)
+//   per side, soil and regions 200 cells of 0.05°, so a download shows only a ~1,000 km area;
+// - donations: src/scripts/donate.js (HelloAsso's iframe is created when the dialog first opens).
+// The site has no analytics script and its code sets no cookies. The association's mailbox address is
+// never written in a page (scripts/check-built-site.mjs).
+import Base from '../layouts/Base.astro';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import DonateDialog from './DonateDialog.astro';
+import PageData from './PageData.astro';
+import { t, localizedUrl, type Locale } from '../i18n/utils';
+interface Props { lang: Locale; }
+const { lang } = Astro.props;
+
+// Each service's own privacy policy (checked 2026-11-11).
+const POLICIES = {
+  cloudflare: { name: 'Cloudflare', href: 'https://www.cloudflare.com/privacypolicy/' },
+  osmf: { name: 'OpenStreetMap Foundation (Nominatim)', href: 'https://osmfoundation.org/wiki/Privacy_Policy' },
+  openfreemap: { name: 'OpenFreeMap', href: 'https://openfreemap.org/privacy/' },
+  google: { name: 'Google (Gmail)', href: 'https://policies.google.com/privacy' },
+} as const;
+type Policy = keyof typeof POLICIES;
+// Cloudflare's documented retention of Workers Logs ("Maximum log retention period: 7 days", read 2026-11-11).
+const WORKERS_LOGS = 'https://developers.cloudflare.com/workers/observability/logs/workers-logs/';
+const logsParts = t('privacy.site.logs', lang).split('{link}');
+const policyParts = t('privacy.policy', lang).split('{link}');
+const askParts = t('privacy.ask.body', lang).split('{link}');
+const contactHref = `${localizedUrl('/', lang)}#contact`;
+
+// Every key is written out, so the unused-key check (scripts/homepage.test.mjs) finds it.
+const sections: { id: string; title: string; paragraphs: string[]; policies?: Policy[] }[] = [
+  { id: 'site', title: 'privacy.site.title', paragraphs: ['privacy.site.host', 'privacy.site.none', 'privacy.site.storage'], policies: ['cloudflare'] },
+  { id: 'tool', title: 'privacy.tool.title', paragraphs: ['privacy.tool.device', 'privacy.tool.share'] },
+  { id: 'location', title: 'privacy.location.title', paragraphs: ['privacy.location.device', 'privacy.location.tiles', 'privacy.location.link', 'privacy.location.search', 'privacy.location.map'], policies: ['osmf', 'openfreemap'] },
+  { id: 'contact', title: 'privacy.contact.title', paragraphs: ['privacy.contact.body'], policies: ['google'] },
+  { id: 'correction', title: 'privacy.correction.title', paragraphs: ['privacy.correction.body', 'privacy.correction.email'] },
+  { id: 'donate', title: 'privacy.donate.title', paragraphs: ['privacy.donate.body'] },
+];
+---
+<Base title={`${t('privacy.title', lang)} · Canopi`} description={t('privacy.lede', lang)} lang={lang} path="/privacy/">
+  <Header lang={lang} path="/privacy/" />
+  <main id="main">
+    <section class="section privacy" aria-labelledby="privacy-title">
+      <div class="wrap">
+        <header class="section-head">
+          <h1 id="privacy-title">{t('privacy.title', lang)}</h1>
+          <p>{t('privacy.lede', lang)}</p>
+        </header>
+        {sections.map((section) => (
+          <section class="privacy-part" id={section.id} aria-labelledby={`privacy-${section.id}`}>
+            <h2 id={`privacy-${section.id}`}>{t(section.title, lang)}</h2>
+            {section.paragraphs.map((key) => <p>{t(key, lang)}</p>)}
+            {section.id === 'site' && <p class="privacy-policy">{logsParts[0]}<a href={WORKERS_LOGS} rel="noopener" lang="en" translate="no">Cloudflare Workers Logs</a>{logsParts[1]}</p>}
+            {section.policies?.map((id) => (
+              <p class="privacy-policy">{policyParts[0]}<a href={POLICIES[id].href} rel="noopener" lang="en" translate="no">{POLICIES[id].name}</a>{policyParts[1]}</p>
+            ))}
+          </section>
+        ))}
+        <section class="privacy-part" id="questions" aria-labelledby="privacy-ask">
+          <h2 id="privacy-ask">{t('privacy.ask.title', lang)}</h2>
+          <p>{askParts[0]}<a href={contactHref}>{t('privacy.ask.link', lang)}</a>{askParts[1]}</p>
+        </section>
+      </div>
+    </section>
+  </main>
+  <Footer lang={lang} />
+  <DonateDialog lang={lang} />
+  <PageData lang={lang} keys={[]} />
+  <script>
+    import { initChrome } from '../scripts/chrome.js';
+    initChrome();
+  </script>
+</Base>
+
+<style>
+  .privacy-part { max-width: 680px; margin-top: clamp(28px, 4vw, 40px); }
+  .privacy-part h2 { font-size: clamp(22px, 2.6vw, 28px); }
+  .privacy-part p { margin-top: 12px; color: var(--text-secondary); }
+  .privacy-part a { color: var(--accent-ink); }
+  .privacy-policy { font-size: 15px; }
+</style>
