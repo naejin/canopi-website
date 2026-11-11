@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T11:57:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T12:34:46Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:32Z }
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
@@ -15,8 +15,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:53cde779c38f54d2
-    last_modified: 2026-11-11T09:00:47Z
+    digest: sha256:02f4374b76d404ea
+    last_modified: 2026-11-11T12:33:37Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
@@ -35,8 +35,8 @@ sources:
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
-    digest: sha256:b893d6d76f299da8
-    last_modified: 2026-11-11T11:56:04Z
+    digest: sha256:57ff548e060566f7
+    last_modified: 2026-11-11T12:33:37Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
@@ -45,8 +45,8 @@ sources:
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:6856fd96bfad5140
-    last_modified: 2026-11-11T11:36:48Z
+    digest: sha256:c28b3735442b8b52
+    last_modified: 2026-11-11T12:33:37Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -80,8 +80,8 @@ sources:
   - id: consortium-commit0-browser-test-mjs
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:005a46977371f712
-    last_modified: 2026-11-11T11:36:48Z
+    digest: sha256:71df9f46f798811b
+    last_modified: 2026-11-11T12:33:37Z
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
@@ -170,8 +170,8 @@ sources:
   - id: consortium-seams-browser-test-mjs
     resource: ../../scripts/browser/consortium-seams.browser.test.mjs
     title: scripts/browser/consortium-seams.browser.test.mjs
-    digest: sha256:119920dc3faafeb7
-    last_modified: 2026-11-11T11:45:03Z
+    digest: sha256:3ace4dcaaef5fdfd
+    last_modified: 2026-11-11T12:33:37Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
@@ -207,8 +207,8 @@ The v1 tool (app.js and its tests) was deleted in commit 0. Its full description
 | [main.ts](../../src/islands/consortium/main.ts) | Reads `#ct-data`, sets the strings, renders App into `#ct-root` and opens the database at once. `data/load.ts` is a dynamic import (its own chunk with the sqlite-wasm glue, outside the §8 60 KB budget), retried after a failed import. It maps the index's climates through the core's `zoneOf`. S1 owns it from the follow-up. A loader chunk that fails to import is `stale` (Reload) while `navigator.onLine`, else `fetch` (review B2) |
 | [store.ts](../../src/islands/consortium/store.ts) | The frozen signals of §6. State: `climate`, `country{code,source}`, `site` (`DEFAULT_SITE`: all four `unsure`), `crops`, `members`, `kept`, `removed`, `guests`, `view`, `stage`, `sheet{kind,id}`, `load{status,error}`. Data: `source`, `pools`. Computed: `pool`, `matrix`, `flags`, `memberTaxa`. The one opener: every sheet opens through `openSheet(kind, id, {cell, job, anyway})`, which also sets `sheetCell` (Add filters by the cell's span, the job, or shows the cell anyway); `closeSheet`. The edits `removeMember`, `toggleKeep`, `swapMember`, `addMembers` (which leaves Start for the matrix) show the toast (`showToast`, with Undo); the undo snapshot holds the view, so Undo of a list pasted on Start goes back to Start (F2). `FOR_NOTHING` is the empty `sheetCell` |
 | [strings.ts](../../src/islands/consortium/strings.ts) | `setStrings`, `T(key, vars)`, `P(key, n, vars)` with v1's plural form `one: # x \| other: # xs`; the page uses `P` at build time for the beta note |
-| [App.tsx](../../src/islands/consortium/App.tsx) | Frozen. The §5 screens from `load` (`data-load-error`, `role=alert`). Retry: `fetch`, `damaged`. Reload: `stale`, `schema`, `wasm-fetch` (sqlite3.wasm did not arrive: a 403, offline, a 15 s stall or the 90 s backstop; shown as `load.toolFailed`, review L1, R4-4). Guide link only: `too-old`, `wasm-blocked`. Slots in page order: `Start` (S4), `Matrix` (S2; routes the side view, Jobs and plant list from `store.view`), `Actions` (S4; Share, Download, Print, link notices; after the matrix once ready), `Details` (S3; routes `store.sheet`). Each is a module exporting null until its stream fills it, so streams never edit App.tsx |
-| [data/load.ts](../../src/islands/consortium/data/load.ts), [data/bytes.ts](../../src/islands/consortium/data/bytes.ts) | Minimum loader, owned by S1. Steps: `tooOld()` (no DecompressionStream) and `wasmMissing()` (P5); fetch through `download()` (a 15 s stall timer reset on every chunk, 90 s backstop; a stall → `fetch`; 404 → `stale`); the body read whole (`bytes.ts` `decodeDatabase`: empty → `damaged`; gzip magic from the buffer; sha256 and size of the gzipped file, or of the raw database when the server already decoded it (P3), checked with SubtleCrypto where present → `damaged`; inflate with DecompressionStream); sqlite-wasm init whose `instantiateWasm` hook downloads the wasm with the same `download()` (did not arrive, a stall or the backstop → `wasm-fetch`; a refused compile or instantiate → `wasm-blocked`); `sqlite3_deserialize` FREEONCLOSE\|READONLY; then `application_id`, `user_version`, `meta.release_id` and the climates checked against the page (`schema`). `scripts/consortium-load.test.mjs` tests `bytes.ts` in Node |
+| [App.tsx](../../src/islands/consortium/App.tsx) | Frozen. The §5 screens from `load` (`data-load-error`, `role=alert`). Retry: `fetch`, `damaged`. Reload: `stale`, `schema`, `wasm-fetch` (sqlite3.wasm did not arrive: a 403, offline or a 15 s stall; shown as `load.toolFailed`, review L1, R4-4). Guide link only: `too-old`, `wasm-blocked`. Slots in page order: `Start` (S4), `Matrix` (S2; routes the side view, Jobs and plant list from `store.view`), `Actions` (S4; Share, Download, Print, link notices; after the matrix once ready), `Details` (S3; routes `store.sheet`). Each is a module exporting null until its stream fills it, so streams never edit App.tsx |
+| [data/load.ts](../../src/islands/consortium/data/load.ts), [data/bytes.ts](../../src/islands/consortium/data/bytes.ts) | Minimum loader, owned by S1. Steps: `tooOld()` (no DecompressionStream) and `wasmMissing()` (P5); fetch through `download()` (a 15 s stall timer reset on every chunk, no overall cap, so 10 KB/s loads; a stall → `fetch`; 404 → `stale`); the body read whole (`bytes.ts` `decodeDatabase`: empty → `damaged`; gzip magic from the buffer; sha256 and size of the gzipped file, or of the raw database when the server already decoded it (P3), checked with SubtleCrypto where present → `damaged`; inflate with DecompressionStream); the wasm downloaded with the same `download()` from the URL main.ts passes (did not arrive or a stall → `wasm-fetch`; a refused compile or instantiate → `wasm-blocked`), then sqlite-wasm init with it through `instantiateWasm` (without a URL, as in Node's unit tests, Emscripten fetches the file itself); `sqlite3_deserialize` FREEONCLOSE\|READONLY; then `application_id`, `user_version`, `meta.release_id` and the climates checked against the page (`schema`). `scripts/consortium-load.test.mjs` tests `bytes.ts` in Node |
 | [views/Start.tsx](../../src/islands/consortium/views/Start.tsx) | S4's Start slot (it calls `startMemory()` once). Before a consortium: the country line (`data-ct="country"`, above the cards: guessed/linked/chosen, Use/Change/No country, the "not checked" note), the 7 climate cards as a radio group (none chosen on a fresh visit; the stored site climate pre-selects), "Ask for this climate" for uncovered ones, Main crops (4 real examples by the v1 rule, a local search, max 3), Your site (4 radio rows), then Suggest plants / Start empty and search / Paste a list (sheets `search` and `paste` are S3's). Once a consortium is shown: the result head (count, climate, site basis, Change site, Start over, the country line) |
 | [memory.ts](../../src/islands/consortium/memory.ts) | S4. Pure: guarded storage, the saved record `{fragment, at, src}` under `canopi-consortium` (`src`: whether its country came from a shared link), `oldRecord` (v1's `{q, at, src}` or another link version), `arrival()` (the page's own address after a reload, i.e. `history.state.ct` equal to the fragment, opens as the save; then link > guide preset > v1 query link (outdated notice) > saved > start), `countryAtStart`, `shareState` (a guessed country is never written), `shareUrl` (drops the query), `guessCountry`, `cropExamples`. Wiring: restores a `#v=4` link or the last consortium (calm notices for unknown plants, cut links, a link with no climate (cut, Start stays), outdated links, an old save shown once and then removed), opens a link pasted into the open tab (`hashchange`; `hashAction`: Back/Forward to the page's own address reopens it as the save with its country label; with a consortium shown, an older, cut or unloadable pasted link changes nothing, shows `share.pasted.*` in the action area and puts the address back), changes the store only after every list the link needs is read, reading those lists itself rather than through `store.loadPool` (whose failure is app-wide), so a failed read shows `share.failed` or `share.pasted.failed` and keeps the consortium; a restore touches no store signal until it applies in one batch, and applies only if it is still the newest restore and the reader has not acted since it began (an action counter bumped by the watcher on every write to the consortium that is not a restore applying or a guessed country); outdated and cut refusals take no number but cancel the restore in flight (the latest link wins, its notice kept); a reader action during a first-visit restore makes the link's shown climate the chosen one; saving has no restore gate: `watchStore` saves every change and writes the address; Start shows the link's climate at once (`pendingClimate`, derived from the restore in flight), writes `history.state {ct, src}` with each address so a reload keeps the country's label, applies guide presets `?plant=&climate=` (the plant kept, as crop when it is one), writes the site climate (`canopi-climate`) and country (`canopi-country`), then keeps the address and the saved record in step with the store. The save model (review rounds 3 and 4): two states, the consortium and Start's draft. Change site (`changeSite`) sets the consortium aside in `store.setAside`, with its site answers, country and stage, and opens a draft seeded from it; the draft (the picked card, its crops and site answers and, on the consortium's own card, its plants) never changes the consortium or the save. Another card starts the draft empty; the consortium's card seeds its plants and crops again (`chooseClimate`). Only Suggest, Start empty, a paste on Start (each adopts the draft's answers) and Back to your consortium (which restores the consortium's answers) end it. The save and the address always encode the consortium (`own()`: the store when a view other than Start shows, else the one set aside). Undo restores the snapshot with the view and `setAside`, so it rewrites the save. Every write of the save goes through `writeSave(next)`: the page's own consortium is written when it changes; a removal (Start over, an older save) or a put-back happens only while storage still holds what the page last wrote or read (`lastSave`). The first write over a save the page did not write remembers it (`beneath`, or the newer save another tab wrote there since), and an Undo back to a Start with no consortium of the page's own puts it back or removes the save (F2, R2-2, R2-3, R4-1, R4-2). Back shows only with a consortium set aside (`canGoBack`). Suggest moves focus to the shown view (`focus.ts`). Unit tests: `scripts/consortium-memory.test.mjs` |
 | [views/Actions.tsx](../../src/islands/consortium/views/Actions.tsx), [Share.tsx](../../src/islands/consortium/views/Share.tsx), [PrintSheet.tsx](../../src/islands/consortium/views/PrintSheet.tsx) | S4, after the matrix (nothing while Start shows): the link notices, then Share (the `#v=4` link in a field, copied by the Copy button only; notes for a link over 2,000 characters and for blocked storage), Print (`window.print()`, after the sheet has loaded) and Download for Canopi (`canopiFile` of the members, a `.canopi` v9 file with `plants: []`, see [Consortium core](/modules/consortium-core.md)). The print sheet is hidden on screen: head (climate, count, site, country, hypothesis), at ≤ 20 plants the side view drawing (`SideDrawing` at the chosen stage) and above 20 the "At a glance" table, then the plant table and the footer |
@@ -224,7 +224,7 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
 # Build setup
 
 - **JSX:** `astro.config.mjs` scopes JSX to `src/islands/consortium/**/*.tsx` with its own pre-plugin (`canopi:consortium-jsx`) and excludes those files from `vite:esbuild`, whose `include` would otherwise decide which .ts files compile at all. Each .tsx file starts with `/** @jsxImportSource preact */` for `astro check`. This deviates from A1's literal `esbuild.include` snippet, which would break every other .ts file.
-- **One wasm:** `canopi:sqlite-main-thread-only` splits two string literals in sqlite-wasm's browser build so Vite cannot see them: the Worker #1 promiser's `new Worker(new URL('sqlite3-worker1.mjs'))` and the OPFS proxy's URL. Otherwise Vite bundles a worker with a second glue and a second 879 KB wasm. The build ships one `sqlite3.<hash>.wasm`, found by the package's own `new URL('sqlite3.wasm', import.meta.url)`, with no `locateFile`. The plugin also passes that URL as a third argument to the `instantiateWasm` hook, so `load.ts` downloads the wasm itself (review R4-4). The plugin throws if a sqlite-wasm upgrade changes those literals or that call.
+- **One wasm:** `canopi:sqlite-main-thread-only` splits two string literals in sqlite-wasm's browser build so Vite cannot see them: the Worker #1 promiser's `new Worker(new URL('sqlite3-worker1.mjs'))` and the OPFS proxy's URL. Otherwise Vite bundles a worker with a second glue and a second 879 KB wasm. The build ships one `sqlite3.<hash>.wasm`, named both by the package's own `new URL('sqlite3.wasm', import.meta.url)` and by main.ts's `import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url'` (Vite emits the one file, same hash; `check-built-site` checks there is exactly one), with no `locateFile`. main.ts passes that URL to `openDatabase`, so `load.ts` downloads the wasm itself and hands the compiled module to sqlite-wasm's `instantiateWasm` option, with no source patch (review R4-4, round 5). The plugin throws if a sqlite-wasm upgrade changes those literals.
 - **Pins:** `optimizeDeps.exclude` holds `@sqlite.org/sqlite-wasm`. Exact pins: preact 11.0.1, @preact/signals 2.11.3, @sqlite.org/sqlite-wasm 3.54.1-build1, puppeteer-core 25.16.0 (dev).
 - **Caching:** `public/_headers` makes `/_astro/*` and `/data/consortium/*` `public, max-age=31536000, immutable`; the DB and photos carry digests in their names. Other paths keep the default `max-age=0, must-revalidate`.
 - **Preloads (A2):** the `canopi:consortium-modulepreload` integration in `astro.config.mjs` runs after the build: on each page holding `#ct-root` it adds a `<link rel="modulepreload">` for every chunk of the page's import graph not already a `<script src>` (chrome, main, the loader with the glue), found by [built-modules.mjs](../../scripts/built-modules.mjs). Other pages are untouched (P7: identical modulo asset hashes). `src/layouts/Base.astro` has a `head` slot for the page's DB preload.
