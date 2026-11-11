@@ -7,7 +7,10 @@
 // JavaScript budget for P5", amended; check-built-site.mjs).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chunkRoles, onDemandChunks, P5_FEATURE_ENTRIES } from './built-modules.mjs';
+import { chunkRoles, importsOf, moduleGraph, onDemandChunks, P5_FEATURE_ENTRIES } from './built-modules.mjs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const graphOf = (edges) => new Map(Object.entries(edges).map(([p, imports]) => [p, { code: '', imports }]));
 const noFeatures = { location: [], markProviders: [], future: [], pool: [], likely: [], native: [] };
@@ -84,4 +87,26 @@ test('onDemandChunks: every feature chunk and what only features reach are featu
     location: ['/_astro/search.h.js', '/_astro/where.e.js'],
     maplibre: [],
   });
+});
+
+// Vite's __vite__mapDeps lists what to preload with each dynamic import; it is not an import. A chunk
+// named only there (a dependency of a feature chunk) loads with that feature, so it bills to the
+// feature budget, not the island's 60 KB (S5d hand-off, 2026-11-11).
+const MAIN = 'const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["_astro/feat.b.js","_astro/shared.c.js"])))=>i.map(i=>d[i]);\n'
+  + 'import{h}from"./preact.d.js";const f=()=>ae(()=>import("./feat.b.js"),__vite__mapDeps([0,1]));';
+test('importsOf: static and dynamic imports are edges, the __vite__mapDeps preload list is not', () => {
+  assert.deepEqual(importsOf(MAIN, '/_astro/main.a.js').sort(), ['/_astro/feat.b.js', '/_astro/preact.d.js']);
+  assert.deepEqual(importsOf('import"./shared.c.js";', '/_astro/feat.b.js'), ['/_astro/shared.c.js']);
+});
+
+test('a chunk shared only by a feature chunk through mapDeps bills to the features, not the island', () => {
+  const root = mkdtempSync(join(tmpdir(), 'built-modules-'));
+  try {
+    mkdirSync(join(root, '_astro'));
+    const files = { 'main.a.js': MAIN, 'feat.b.js': 'import"./shared.c.js";', 'shared.c.js': '', 'preact.d.js': '' };
+    for (const [f, code] of Object.entries(files)) writeFileSync(join(root, '_astro', f), code);
+    const graph = moduleGraph(root, '<script type="module" src="/_astro/main.a.js"></script>');
+    const lazy = onDemandChunks(graph, ['/_astro/main.a.js'], roles({ future: ['/_astro/feat.b.js'] }));
+    assert.deepEqual(lazy.features, ['/_astro/feat.b.js', '/_astro/shared.c.js']);
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });
