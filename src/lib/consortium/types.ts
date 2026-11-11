@@ -264,8 +264,8 @@ export interface JobGap { job: JobId; members: PlantId[]; missing: PhaseOrd[] }
 
 // Share state (#v=4, state.ts): what a link restores, and what the page must say about it (§5).
 // unknownCount: plants of the link no longer in the list ("2 plants from this link…");
-// cut: the link lost its end marker ("This link looks cut off"); long: over 2,000 characters
-// ("Some apps cut long links…").
+// cut: the link lost its end marker ("This link looks cut off"). "Some apps cut long links…" is not
+// a notice of a link being read: it is checked on the URL at share time (state.ts isLongLink).
 export interface ShareState {
   climate: ClimateZone | null;
   country: string | null;
@@ -279,5 +279,5 @@ export interface ShareState {
 }
 // outdated: a link of another version (v1 share links are not read: owner row 2026-11-11); its plants
 // are not restored.
-export interface LinkNotice { unknownCount: number; cut: boolean; long: boolean; outdated: boolean }
+export interface LinkNotice { unknownCount: number; cut: boolean; outdated: boolean }
 export interface DecodedLink { state: ShareState; notice: LinkNotice }

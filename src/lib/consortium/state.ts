@@ -64,12 +64,19 @@ function b64ToHex(text: string, digits: number): string | null {
 const zoneOf = (code: string): ClimateZone | null => climateZones.find((z) => z.toLowerCase() === code.trim().toLowerCase()) ?? null;
 const codeZone = new Map(climateZones.map((z) => [GUEST_CODES[z], z] as const));
 
-// The token of an id: short unless another id of `known` shares its first 36 bits.
-export function tokenOf(id: PlantId, known: readonly PlantId[]): string {
-  const hex = hexOf(id), short = hex.slice(0, SHORT_HEX);
-  const clash = known.some((k) => { const h = hexOf(k); return h !== hex && h.startsWith(short); });
-  return clash ? LONG_MARK + hexToB64(hex.slice(0, LONG_HEX)) : hexToB64(short);
+// The token function for a set of known ids: an id's token is short unless another known id shares
+// its first 36 bits. Clashes are looked up in one table: 36-bit prefix → how many known ids share it.
+function tokens(known: Iterable<PlantId>): (id: PlantId) => string {
+  const hexes = new Set([...known].map(hexOf)), prefixes = new Map<string, number>();
+  for (const h of hexes) { const p = h.slice(0, SHORT_HEX); prefixes.set(p, (prefixes.get(p) ?? 0) + 1); }
+  return (id) => {
+    const hex = hexOf(id), others = (prefixes.get(hex.slice(0, SHORT_HEX)) ?? 0) - (hexes.has(hex) ? 1 : 0);
+    return others > 0 ? LONG_MARK + hexToB64(hex.slice(0, LONG_HEX)) : hexToB64(hex.slice(0, SHORT_HEX));
+  };
 }
+
+// The token of one id against `known` (encodeLink builds the table once for every id).
+export const tokenOf = (id: PlantId, known: readonly PlantId[]): string => tokens(known)(id);
 
 // The ids the link's plants are matched against, per climate: the chosen climate's and each guest
 // list's (PlantSource.pool(c) ids). Climates not given match nothing.
@@ -77,14 +84,7 @@ export type KnownIds = Partial<Record<ClimateZone, readonly PlantId[]>>;
 
 // The link's fragment, without "#": "v=4&…&e=1".
 export function encodeLink(state: ShareState, known: KnownIds): string {
-  const all = [...new Set(Object.values(known).flatMap((ids) => [...(ids ?? [])]))];
-  // Prefix clashes are looked up in one table: 36-bit prefix → how many known ids share it.
-  const hexes = new Set(all.map(hexOf)), prefixes = new Map<string, number>();
-  for (const h of hexes) { const p = h.slice(0, SHORT_HEX); prefixes.set(p, (prefixes.get(p) ?? 0) + 1); }
-  const tok = (id: PlantId) => {
-    const hex = hexOf(id), others = (prefixes.get(hex.slice(0, SHORT_HEX)) ?? 0) - (hexes.has(hex) ? 1 : 0);
-    return others > 0 ? LONG_MARK + hexToB64(hex.slice(0, LONG_HEX)) : hexToB64(hex.slice(0, SHORT_HEX));
-  };
+  const tok = tokens(Object.values(known).flatMap((ids) => [...(ids ?? [])]));
   const list = (ids: Iterable<PlantId>) => [...new Set([...ids].map(tok))].sort().join('');
   const pairs: [string, string][] = [['v', String(LINK_VERSION)]];
   if (state.climate) pairs.push(['c', state.climate.toLowerCase()]);
@@ -110,6 +110,7 @@ export function encodeLink(state: ShareState, known: KnownIds): string {
   return new URLSearchParams(pairs).toString();
 }
 
+// The long-link check, on the whole URL the reader is about to share (never on a link being read).
 export const isLongLink = (url: string): boolean => url.length > LONG_LINK;
 
 const params = (link: string) => new URLSearchParams(link.replace(/^[#?]/, ''));
@@ -154,7 +155,7 @@ const oneOf = <T extends string>(list: readonly T[], v: string | null): T | null
 export function decodeLink(link: string, known: KnownIds): DecodedLink {
   const text = link.replace(/^[#?]/, '');
   const q = params(text);
-  const notice = { unknownCount: 0, cut: q.get(END_KEY) !== '1', long: text.length > LONG_LINK, outdated: false };
+  const notice = { unknownCount: 0, cut: q.get(END_KEY) !== '1', outdated: false };
   const c = q.get('c');
   const climate = c === null ? null : zoneOf(c);
   const k = (q.get('k') ?? '').trim().toUpperCase();
@@ -167,7 +168,9 @@ export function decodeLink(link: string, known: KnownIds): DecodedLink {
   const t = q.get('t');
   const stage = t !== null && /^[0-6]$/.test(t) ? (Number(t) as PhaseOrd) : null;
   const state: ShareState = { climate, country: COUNTRY.test(k) ? k : null, site, members: [], kept: [], removed: [], guests: [], crops: [], stage };
-  if (q.get('v') !== String(LINK_VERSION)) {
+  // A link without `v` is read as this version; another version reads no plants.
+  const v = q.get('v');
+  if (v !== null && v !== String(LINK_VERSION)) {
     notice.outdated = true;
     notice.cut = false;
     return { state, notice };
@@ -194,11 +197,13 @@ export function decodeLink(link: string, known: KnownIds): DecodedLink {
     return hit;
   };
   const resolve = (tok: Token) => resolveIn(tok, byShort, byLong);
-  const read = (key: string, stars = false, cap = MAX_LINK_IDS) => {
+  // Plants past MAX_LINK_IDS are left out and counted; crops past MAX_CROPS are ignored (only three
+  // can be chosen, and each is also a member or kept, so nothing is lost).
+  const read = (key: string, stars = false, cap = MAX_LINK_IDS, countExcess = true) => {
     const counter = { left: cap, excess: 0 };
     const r = readTokens(q.get(key) ?? '', stars, counter);
     if (r.malformed) notice.cut = true;
-    notice.unknownCount += counter.excess;
+    if (countExcess) notice.unknownCount += counter.excess;
     return r.tokens;
   };
   const uniq = (ids: (PlantId | null)[]) => [...new Set(ids.filter((x): x is PlantId => x !== null))];
@@ -211,7 +216,7 @@ export function decodeLink(link: string, known: KnownIds): DecodedLink {
     if (tok.star) starred.push(id);
   }
   const keptOnly = uniq(read('p').map(resolve));
-  const crops = uniq(read('n', false, MAX_CROPS).map(resolve));
+  const crops = uniq(read('n', false, MAX_CROPS, false).map(resolve));
   const removed = uniq(read('x').map(resolve));
   // Guests are matched in their own list; one cap for every `g` together; a list given twice is cut.
   const guests: ShareState['guests'] = [];

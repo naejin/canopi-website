@@ -17,7 +17,7 @@ const {
   jobsOf, jobGapsByPhase, jobIds,
   buildMatrix, cellsOf, phaseOrd, plantsIn,
   suggest, SIZE_LIMIT, gain, flagsFor, flagsOf, asks, alternatives,
-  encodeLink, decodeLink, linkClimates, readPreset, LINK_VERSION, MAX_LINK_IDS, LONG_LINK, tokenOf,
+  encodeLink, decodeLink, linkClimates, readPreset, LINK_VERSION, MAX_LINK_IDS, LONG_LINK, tokenOf, isLongLink, MAX_CROPS,
   strata, phases,
 } = core;
 
@@ -364,7 +364,7 @@ test('state: #v=4 round-trips members, kept, removed, crops, guests, site, count
   assert.match(link, /&e=1$/);
   assert.deepEqual(linkClimates(link), ['Temperate', 'Tropical']);
   const back = decodeLink(link, known());
-  assert.deepEqual(back.notice, { unknownCount: 0, cut: false, long: false, outdated: false });
+  assert.deepEqual(back.notice, { unknownCount: 0, cut: false, outdated: false });
   assert.deepEqual(back.state, st);
   assert.deepEqual(decodeLink('#' + link, known()).state, st, 'a leading # is read');
 });
@@ -406,13 +406,21 @@ test('state: a cut link opens what parses and says so; a long link is flagged; a
   assert.deepEqual(b.state.members, real.slice(0, 1));
   assert.equal(b.notice.cut, true);
   assert.equal(b.state.site.room, 'small', 'the site keys before the cut are kept');
+  // Long links are checked on the whole URL at share time, never on a link being read.
   assert.equal(LONG_LINK, 2000);
   const many = Array.from({ length: 400 }, (_, i) => idOf(0x10000000 + i * 0x1000));
-  assert.equal(decodeLink(encodeLink(shareState({ members: many }), { Temperate: many }), { Temperate: many }).notice.long, true);
+  const url = `https://projectcanopi.com/consortium/#${encodeLink(shareState({ members: many }), { Temperate: many })}`;
+  assert.equal(isLongLink(url), true);
+  assert.equal(isLongLink(`https://projectcanopi.com/consortium/#${link}`), false);
+  assert.ok(!('long' in decodeLink(url.split('#')[1], { Temperate: many }).notice));
   const old = decodeLink('v=3&c=temperate&a=AAAAAA&e=1', known());
   assert.deepEqual(old.state.members, []);
   assert.equal(old.state.climate, 'Temperate');
   assert.equal(old.notice.outdated, true);
+  // No v key: read as this version, never "outdated".
+  const bare = decodeLink(link.replace(/^v=4&/, ''), { Temperate: real });
+  assert.equal(bare.notice.outdated, false);
+  assert.deepEqual(bare.state.members, real);
 });
 
 test('state: at most MAX_LINK_IDS tokens per key are read; malformed values fall back to "unsure"', () => {
@@ -425,6 +433,15 @@ test('state: at most MAX_LINK_IDS tokens per key are read; malformed values fall
   assert.deepEqual(e.state.site, UNSURE_SITE);
   assert.equal(e.state.stage, null);
   assert.equal(e.state.country, null);
+});
+
+test('state: Main crops past MAX_CROPS are ignored, not counted unknown', () => {
+  const five = [0, 1, 2, 3, 4].map((i) => idOf(0x300 + i * 0x1000000));
+  const n = five.map((id) => tokenOf(id, five)).join('');
+  const d = decodeLink(`v=4&c=temperate&a=&n=${n}&e=1`, { Temperate: five });
+  assert.equal(MAX_CROPS, 3);
+  assert.deepEqual(d.state.crops, five.slice(0, 3));
+  assert.equal(d.notice.unknownCount, 0);
 });
 
 test('state: guide presets keep ?plant=&climate=', () => {
