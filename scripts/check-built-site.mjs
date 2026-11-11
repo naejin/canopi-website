@@ -380,7 +380,7 @@ assert.ok(consortiumGuideSlugs.size > 10, 'consortium-guides.ts lists guide slug
   const scripts = readdirSync(join(root, '_astro')).filter((f) => f.endsWith('.js'));
   for (const f of scripts) {
     const text = readFileSync(join(root, '_astro', f), 'utf8');
-    for (const word of ['__ctTest', '__ctViews', 'failSheets']) assert.ok(!text.includes(word), `_astro/${f}: the browser-test hook (${word}) is in a production build; build without PUBLIC_CT_TEST_HOOK`);
+    for (const word of ['__ctTest', '__ctViews', 'failSheets']) assert.ok(!text.includes(word), `_astro/${f}: the browser-test hook (${word}) is in a production build; build with npm run build, not build:browser-test`);
   }
 }
 // The consortium tool: one page per locale (/consortium/ in every language, French included), its alternates, and the installed plant data.
@@ -401,8 +401,10 @@ for (const lang of locales) {
   assert.deepEqual(pageData?.climates, consortiumIndex.climates.map((c) => c.toLowerCase()), `${path}: the island gets the installed climates`);
   // H13/H14: the site-wide words the island shows under their own names (the correction form's
   // correction.*, the climate names) arrive in the page language, so nothing stands in in English.
-  for (const key of Object.keys(en).filter((k) => k.startsWith('correction.') || /^climate\.[a-z]+$/.test(k)))
-    assert.equal(pageData?.strings?.[key], words[key] ?? en[key], `${path}: the island gets ${key} in ${lang}`);
+  for (const key of Object.keys(en).filter((k) => k.startsWith('correction.') || /^climate\.[a-z]+$/.test(k))) {
+    assert.ok(key in words, `${path}: ${key} is missing from ${lang}.json`);
+    assert.equal(pageData?.strings?.[key], words[key], `${path}: the island gets ${key} in ${lang}`);
+  }
   for (const slug of consortiumGuideSlugs)
     assert.equal(typeof pageData?.guideTitles?.[slug], 'string', `${path}: the island gets the title of the guide ${slug}`);
   // P6: with JavaScript off the page still names itself and links a guide; the loading line is there to replace.

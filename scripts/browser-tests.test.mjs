@@ -27,13 +27,19 @@ test('every browser test runs: no todo, no skip, in any file (H8)', () => {
   }
 });
 
-test('the browser tests build their own hook build; the hook needs the browser-test flag (H14)', () => {
+test('the browser tests build their own hook build; only the browser-test flag turns the hook on (H14, review F6)', () => {
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.match(pkg.scripts['build:browser-test'], /^CANOPI_BROWSER_TEST=1 PUBLIC_CT_TEST_HOOK=1 astro build$/);
+  assert.match(pkg.scripts['build:browser-test'], /^CANOPI_BROWSER_TEST=1 astro build$/);
   assert.match(pkg.scripts['test:browser'], /^npm run build:browser-test && /);
-  assert.doesNotMatch(pkg.scripts.build, /PUBLIC_CT_TEST_HOOK/);
+  assert.doesNotMatch(pkg.scripts.build, /CANOPI_BROWSER_TEST/);
+  // No PUBLIC_/VITE_ variable: Vite fills those from .env files too, so a stray .env could turn the
+  // hook on in a deploy. The hook's switch is a compile-time constant set from the shell flag only.
   const config = readFileSync(new URL('../astro.config.mjs', import.meta.url), 'utf8');
-  assert.match(config, /PUBLIC_CT_TEST_HOOK[\s\S]{0,200}CANOPI_BROWSER_TEST[\s\S]{0,200}throw new Error/, 'astro.config.mjs refuses the hook without the flag');
+  assert.match(config, /__CT_TEST_HOOK__:\s*JSON\.stringify\(process\.env\.CANOPI_BROWSER_TEST === '1'\)/, 'astro.config.mjs defines the switch from the flag');
+  const hook = readFileSync(new URL('../src/islands/consortium/test-hook.ts', import.meta.url), 'utf8');
+  assert.match(hook, /if \(__CT_TEST_HOOK__\)/);
+  for (const f of ['../astro.config.mjs', '../src/islands/consortium/test-hook.ts', '../package.json'])
+    assert.doesNotMatch(readFileSync(new URL(f, import.meta.url), 'utf8'), /PUBLIC_CT_TEST_HOOK/, f);
   const checker = readFileSync(new URL('./check-built-site.mjs', import.meta.url), 'utf8');
   for (const word of ['__ctTest', '__ctViews', 'failSheets']) assert.ok(checker.includes(`'${word}'`), `check-built-site looks for ${word}`);
 });

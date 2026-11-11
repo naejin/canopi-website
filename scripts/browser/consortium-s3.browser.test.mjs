@@ -1,9 +1,8 @@
 // Stream S3's browser tests (details dialog, correction form, Swap, Add, Search, Paste; review C1).
-// S3 edits only this file among the browser tests and flips its todo tests as it builds them.
 // Design check §7 BT-5, BT-6. Run capped: npm run test:browser (see consortium-commit0).
 //
 // Every step uses the page's own controls. The test hook (src/islands/consortium/test-hook.ts; a page
-// opened with window.__ctTest = true on a PUBLIC_CT_TEST_HOOK=1 build) is used only to read membership
+// whose script sets window.__ctTest = true, on the npm run build:browser-test build) is used only to read membership
 // and guests, to set up a consortium no control makes in one step (a member taken out mid-sheet, deep
 // shade without the re-suggestion Change site makes), and to make a sheet's chunk fail to load.
 import test, { after, before } from 'node:test';
@@ -36,7 +35,7 @@ async function chipOf(page, name) {
 }
 
 // The page, with the test hook.
-// The hook is compiled in only when the site is built with PUBLIC_CT_TEST_HOOK=1 (never for production).
+// The hook is compiled in only by npm run build:browser-test (CANOPI_BROWSER_TEST=1; never for production).
 async function open(opts) {
   const page = await h.open('/consortium/', opts);
   await page.evaluateOnNewDocument(() => { window.__ctTest = true; });

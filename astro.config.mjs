@@ -86,12 +86,10 @@ const consortiumModulePreload = {
 };
 
 // The consortium's browser-test hook (src/islands/consortium/test-hook.ts) is compiled in only for
-// the browser tests' own build (npm run build:browser-test). A stray PUBLIC_CT_TEST_HOOK in a shell or
-// a CI setting must never reach a deploy: without the explicit browser-test flag the build stops
-// (H14; check-built-site also fails if the hook reaches dist/).
-if (process.env.PUBLIC_CT_TEST_HOOK && process.env.CANOPI_BROWSER_TEST !== '1') {
-  throw new Error('PUBLIC_CT_TEST_HOOK is set without CANOPI_BROWSER_TEST=1: the test hook is only for npm run build:browser-test');
-}
+// the browser tests' own build (npm run build:browser-test, CANOPI_BROWSER_TEST=1). Its switch is the
+// compile-time constant __CT_TEST_HOOK__ below, set from that shell flag alone: not a PUBLIC_ or VITE_
+// variable, which Vite would also read from .env files, so no .env can turn it on in a deploy (H14,
+// review F6; check-built-site also fails if the hook reaches dist/).
 
 export default defineConfig({
   site: 'https://projectcanopi.com',
@@ -114,6 +112,7 @@ export default defineConfig({
 
   vite: {
     plugins: [consortiumJsx, sqliteMainThreadOnly],
+    define: { __CT_TEST_HOOK__: JSON.stringify(process.env.CANOPI_BROWSER_TEST === '1') },
     esbuild: { exclude: [/\.js$/, CONSORTIUM_TSX] },
     // sqlite-wasm finds its .wasm with its own new URL('sqlite3.wasm', import.meta.url) (no
     // locateFile, no ?url import); the dependency optimizer must leave the package as published, or
