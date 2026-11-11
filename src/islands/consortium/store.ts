@@ -6,7 +6,7 @@
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
 import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
-import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, loadMarkProviders, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
+import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, loadMarkProviders, needsMarkProviders, suggest, withinRange } from '../../lib/consortium/index.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
@@ -73,6 +73,13 @@ export const pool = computed<Taxon[] | null>(() => {
   const c = climate.value;
   return c ? pools.value[c] ?? null : null;
 });
+// What suggestions and lists draw from (P5 S5c, owner answer 2): the pool without the plants outside
+// their observed range at the site location (core range.ts withinRange); the pool itself without one.
+// Members stay: a plant added anyway is never dropped from a list it is in.
+export const fitPool = computed<Taxon[] | null>(() => {
+  const p = pool.value;
+  return p && withinRange(p, location.value, members.value);
+});
 // The guests as plants: each with its home climate's placement and `from` set (A9), once that
 // climate's pool is read.
 export const guestTaxa = computed<Taxon[]>(() => {
@@ -125,8 +132,9 @@ export const flagContext = computed<FlagContext>(() => {
 });
 // The strata × phases matrix of the members on this site (core matrix.ts).
 export const matrix = computed<Matrix | null>(() => {
-  const c = climate.value, p = pool.value;
+  const c = climate.value, p = fitPool.value;
   if (!c || !p) return null;
+  // P5 S5c: with a site location, a cell's "N fit" leaves out plants outside their observed range.
   return buildMatrix(c, p, memberTaxa.value, site.value);
 });
 // What the plant marks read (core marks.ts plantMarks; views/PlantMarks.tsx renders them).
@@ -212,7 +220,7 @@ export function suggestMembers(): boolean {
   const p = pool.value;
   if (!p || guestsPending.value.length) return false;
   const keep = [...new Set([...crops.value, ...kept.value])];
-  const s = suggest(p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
+  const s = suggest(withinRange(p, location.value, keep), { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
   kept.value = keep;
   members.value = s.members;
   return true;

@@ -147,7 +147,7 @@ test('P5-0d (commit 0 seams): today the start step shows no location controls, n
   await choose(page, 'Temperate');
   await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
   assert.ok(await page.waitForFunction(() => document.querySelectorAll('[data-plant-id]').length > 0 && window.__ctTest.store.markProviders.value.length === 3, { timeout: 10_000 }).then(() => true, () => false), 'members in the matrix, and the mark providers loaded for the location');
-  assert.equal(await page.$('[data-mark]'), null, 'the mark providers are stubs');
+  assert.equal(await page.$('[data-mark]:not([data-mark="edge"], [data-mark="outside"], [data-mark="unknown"], [data-mark="estimate"])'), null, 'only the range marks (S5c); the future and native providers are stubs');
   assert.equal(await page.$('[data-likely]'), null);
   assert.deepEqual(page.thirdParty, []);
   assert.deepEqual(page.nominatim, []);
@@ -356,7 +356,7 @@ test('P5-14 (S5c nothing fits): at Yakutsk no plant\'s range holds the site: the
   assert.ok(await has(page, '.ct-add .ct-search input', 10_000), 'the next step opens the plant search');
 });
 
-test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range, and Add lists none until one is typed, which then asks first', { todo: 'S5c: waits for hand-off H-S5c-1 (store.ts suggestMembers, Add.tsx and Swap.tsx through core withinRange)' }, async () => {
+test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range, and Add lists none until one is typed, which then asks first', async () => {
   const page = await tool();
   const lookup = await atSite(page, 'seville');
   const outside = await pickRanged(OUTSIDE, lookup.climate.periods[0], 'Mediterranean');
@@ -376,6 +376,20 @@ test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant 
   assert.match(await text(page, 'dialog.ct-ask[open]') ?? '', /outside its observed range/i);
 });
 
+test('P5-14c (S5c matrix counts): a cell\'s "N fit" leaves out plants outside their range at the site, and counts them all again without a location', async () => {
+  const page = await tool();
+  await choose(page, 'Mediterranean');
+  const sum = () => page.evaluate(() => window.__ctTest.store.matrix.value.rows.flatMap((r) => r.cells).reduce((a, c) => a + c.inList, 0));
+  const before = await sum();
+  await atSite(page, 'seville');
+  const within = await sum();
+  assert.ok(within < before, `fewer plants counted at Seville (${within} cell entries) than without a location (${before})`);
+  const counted = await page.evaluate(() => { const { store } = window.__ctTest; return store.fitPool.value.length; });
+  assert.equal(counted, 101, 'the matrix counts the 101 of 200 Mediterranean plants kept at Seville (design check §C)');
+  await page.evaluate(() => { window.__ctTest.store.location.value = null; });
+  assert.equal(await sum(), before, 'without a location the counts are P2\'s');
+});
+
 test('P5-15 (S5c near-edge mark): a Mediterranean plant whose range ends within 2 °C of Seville\'s climate carries "near the edge"', async () => {
   const page = await tool();
   const lookup = await atSite(page, 'seville');
@@ -391,6 +405,21 @@ test('P5-15 (S5c near-edge mark): a Mediterranean plant whose range ends within 
     return [...document.querySelectorAll('[data-mark]')].map((e) => e.getAttribute('data-mark'));
   }, edge);
   assert.ok(marks.includes('edge'), `${edge} is marked near the edge`);
+});
+
+test('P5-15b (S5c range lines in Details, page language): in French, a plant near the edge at Seville says why with the site\'s values written "5,8"', async () => {
+  const page = await tool({ lang: 'fr' });
+  const lookup = await atSite(page, 'seville');
+  const p = lookup.climate.periods[0];
+  // A plant past its coldest-month bound at Seville (so the line quotes the site's 5.8 °C).
+  const name = await realDb((db) => db.prepare(`SELECT name FROM (${RANGED}) WHERE NOT ${OUTSIDE} AND (nlo > ?1 OR ?1 > nhi) ORDER BY name LIMIT 1`).get(p.tminColdC, p.tmaxWarmC, 'Mediterranean')?.name);
+  assert.ok(name, 'a Mediterranean plant near its coldest-month bound at Seville');
+  await choose(page, 'Mediterranean');
+  await page.evaluate((n) => { const { store } = window.__ctTest; store.view.value = 'matrix'; store.openSheet('details', store.pool.value.find((x) => x.canonical_name === n).id); }, name);
+  assert.ok(await has(page, '[data-mark-surface="details"][data-mark-state="cold"], [data-mark-surface="details"][data-mark-state="mild"]', 10_000), 'a line per bound passed');
+  const line = await text(page, '[data-mark-surface="details"][data-mark-state="cold"], [data-mark-surface="details"][data-mark-state="mild"]');
+  assert.match(line, /5,8 °C/, `"${line}" writes the number the French way`);
+  assert.match(await text(page, '[data-mark-surface="details"][data-mark="edge"]:not([data-mark-state="cold"]):not([data-mark-state="mild"]):not([data-mark-state="hot"])') ?? '', /cultures comprises/, 'the Details mark says observed ranges include cultivation');
 });
 
 test('P5-16 (S5c outside-range warning on add): typed in Add, a plant whose range misses the site shows "outside", and adding it still makes it a member', async () => {

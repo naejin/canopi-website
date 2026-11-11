@@ -69,7 +69,9 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
     assert.equal(await loadState(page), 'ready');
     const arid = await h.open('/consortium/', v);
     await arid.locator(aria('radio', 'Arid')).click();
-    assert.ok(await has(arid, aria('link', 'Ask for this climate')), 'Arid shows "Ask for this climate"');
+    // P5 owner answer 1: an uncovered climate borrows the nearest curated lists (S5c), so Arid is Ready.
+    assert.ok(await has(arid, '[data-pool-borrowed]'), 'Arid borrows its plants from the nearest lists');
+    assert.equal(await has(arid, aria('link', 'Ask for this climate'), 1000), false, 'no "Ask for this climate" once a nearest list exists');
     await done(page, arid);
   });
 });
