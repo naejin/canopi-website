@@ -306,6 +306,8 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
     const g = { ...before.guests };
     for (const id of fresh) if (from[id]) g[id] = from[id];
     guests.value = g;
+    // A list pasted on Start opens its consortium (Share, Print, the address; X3).
+    if (view.peek() === 'start') view.value = 'matrix';
   });
   const flagged = warned.filter((id) => fresh.includes(id));
   const text = P('paste.added', fresh.length) + (flagged.length ? ` ${P('paste.addedWarn', flagged.length)}` : '');

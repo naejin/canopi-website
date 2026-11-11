@@ -155,3 +155,48 @@ test('H16: Remove in All plants takes the plant out with a toast and Undo, which
     await done(page);
   });
 });
+
+// The members the share link holds (its `a` list), read from the address.
+const linkOf = (page) => page.evaluate(() => location.hash);
+
+test('X3: a list pasted on Start shows its consortium with Share, saved: a reload keeps it', async (t) => {
+  const plants = await temperate();
+  const names = plants.slice(0, 3).map((p) => p.name);
+  await eachVariant(t, async (v) => {
+    const page = await h.open('/consortium/', { ...v, data: 'fixture' });
+    await page.locator(aria('radio', 'Temperate')).click();
+    assert.equal(await loadState(page), 'ready');
+    await page.locator(aria('button', 'Paste a list')).click();
+    await page.locator('#ct-paste-text').fill(names.join('\n'));
+    const add = await findAx(page, { role: 'button', name: /^Add 3 plants$/ });
+    assert.ok(add, 'the three names are found');
+    await page.locator(aria('button', add.name)).click();
+    assert.ok(await has(page, aria('button', 'Share'), 5000), 'the consortium is shown, with Share');
+    const link = await linkOf(page);
+    assert.match(link, /^#v=4/, 'the address holds it');
+    await page.reload();
+    assert.equal(await loadState(page), 'ready');
+    assert.ok(await has(page, aria('button', 'Share'), 8000), 'a reload restores it');
+    assert.equal(await linkOf(page), link, 'the same consortium');
+    await page.locator(aria('tab', 'All plants')).click();
+    assert.equal((await memberIds(page)).length, 3, 'the three pasted plants');
+    await done(page);
+  });
+});
+
+test('X3: an edit made after "Change site" is saved and in the address', async (t) => {
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    const before = await linkOf(page);
+    await page.locator(aria('button', 'Change site')).click();
+    await page.locator(aria('radio', 'Shade')).click();
+    await page.waitForFunction((b) => location.hash !== b, { timeout: 4000 }, before).catch(() => {});
+    const after = await linkOf(page);
+    assert.notEqual(after, before, 'the address follows the edit');
+    await page.reload();
+    assert.equal(await loadState(page), 'ready');
+    assert.ok(await has(page, aria('button', 'Share'), 8000) || await has(page, aria('button', 'Back to your consortium'), 2000), 'the consortium is restored');
+    assert.equal(await linkOf(page), after, 'with the edit');
+    await done(page);
+  });
+});

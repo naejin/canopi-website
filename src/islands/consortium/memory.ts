@@ -444,11 +444,16 @@ async function applyPreset(climate: ClimateZone, plant: string | null): Promise<
   }));
 }
 
-// The address bar holds the shown consortium's link (replaceState, no history entry). Same address:
+// Whether there is a consortium to keep: one is shown, or the reader is back on Start ("Change site")
+// with members, whose edits there change it (X3: every edit ends saved and in the address). A fresh
+// Start with no member keeps the last consortium saved until another replaces it.
+const hasConsortium = (): boolean => store.view.peek() !== 'start' || store.members.peek().length > 0;
+
+// The address bar holds the consortium's link (replaceState, no history entry). Same address:
 // nothing written (browsers drop replaceState calls past a rate limit).
 function writeAddress(force = false): void {
   if (typeof location === 'undefined') return;
-  const fragment = store.view.peek() !== 'start' || force ? currentFragment() : null;
+  const fragment = hasConsortium() || force ? currentFragment() : null;
   const next = fragment ? shareUrl(location.href, fragment) : `${location.origin}${location.pathname}${location.search}`;
   // history.state marks the address as the page's own, so a reload opens it as the save (review 1).
   const state = fragment ? { ct: fragment, src: countryFrom() } : null;
@@ -510,9 +515,9 @@ export function requestSuggest(): void {
   pendingSuggest.value = true;
 }
 
-// The save and the address bar, for a shown consortium (nothing on Start).
+// The save and the address bar, whenever there is a consortium (hasConsortium).
 function persist(): void {
-  if (store.view.peek() === 'start' || !store.pool.peek()) return;
+  if (!hasConsortium() || !store.pool.peek()) return;
   const fragment = currentFragment();
   if (!fragment) return;
   memory.write(STORE, saveRecord(fragment, new Date().toISOString(), countryFrom()));
@@ -568,7 +573,7 @@ export function startMemory(): void {
   window.addEventListener('hashchange', () => {
     const act = hashAction(location.hash, attempt(() => history.state), currentFragment());
     if (act.kind === 'ignore') return;
-    const keep = store.view.peek() !== 'start';
+    const keep = hasConsortium();
     if (act.kind === 'saved') { void restore(act.fragment, { from: 'saved', src: act.src, keep }); return; }
     notices.value = { ...NO_NOTICES };
     void restore(act.fragment, { from: 'link', keep });
@@ -593,8 +598,8 @@ export function startMemory(): void {
 }
 
 let watching = false;
-// The save and the address bar follow every change of a shown consortium (persist: nothing on Start,
-// where the last consortium stays until another replaces it), and any write to the consortium that
+// The save and the address bar follow every change of the consortium (persist: nothing on a fresh
+// Start, where the last consortium stays until another replaces it), and any write to the consortium that
 // is not a restore applying counts as the reader acting. Set up once (startMemory; the unit tests).
 // (It reads the signals themselves, not shownFragment: the view is not in the link, so a computed
 // fragment would not change when the result first shows.)
