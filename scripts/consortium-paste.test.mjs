@@ -97,6 +97,30 @@ test('readPaste falls back to a word-prefix search for a line with no match: "Ch
   assert.equal(r.none.length, 0);
 });
 
+test('comma or semicolon columns: the same count on every line makes a table; a split cell never goes to the word-prefix search', () => {
+  const csv = 'Malus domestica,Tree,Sun\nCastanea sativa,Tree,Sun\n';
+  assert.deepEqual([pasteTable(csv).columns, pasteTable(csv).sep], [3, ',']);
+  assert.deepEqual([...pasteNames(csv, 0)], ['Malus domestica', 'Castanea sativa']);
+  assert.equal(pasteTable('"Malus domestica";"Tree"\n"Rubus idaeus";"Shrub"').columns, 2);
+  assert.deepEqual([...pasteNames('"Malus domestica";"Tree"\n"Rubus idaeus";"Shrub"', 0)], ['Malus domestica', 'Rubus idaeus']);
+  assert.equal(pasteTable('Apple, Hawthorn\nRaspberry').columns, 1, 'uneven counts stay a list');
+  const one = readPaste(pasteNames('Malus domestica,Tree,Sun'), { here: temperate, others: [['Tropical', tropical]], members: [] });
+  assert.deepEqual(one.found.map((f) => f.taxon.id), ['t1']);
+  assert.deepEqual(one.choose, [], 'Tree and Sun are not offered by word prefix');
+  assert.deepEqual(one.none.map((x) => x.name), ['Tree', 'Sun']);
+});
+
+test('500 unmatched lines against a large list read in well under a second', () => {
+  const big = Array.from({ length: 4000 }, (_, i) => plant(`b${i}`, `Genus${i} species${i}`, { en: `Common plant number ${i}`, fr: `Plante commune ${i}` }));
+  const lines = Array.from({ length: 500 }, (_, i) => `Zzq unknown ${i}`).join('\n');
+  readPaste(pasteNames('warm'), { here: big, others: [['Tropical', big.slice(0, 2000)]], members: [] });
+  const t0 = performance.now();
+  const r = readPaste(pasteNames(lines), { here: big, others: [['Tropical', big.slice(0, 2000)]], members: [] });
+  const ms = performance.now() - t0;
+  assert.equal(r.none.length, 500);
+  assert.ok(ms < 200, `read in ${ms.toFixed(0)} ms`);
+});
+
 // ---- months as runs ----
 const W = {
   lang: 'en',

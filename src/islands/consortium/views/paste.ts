@@ -4,7 +4,7 @@
 // case, Latin/Greek/Cyrillic marks stripped, ß/œ/æ written out), never with SQL LIKE (A6).
 // Pure: no DOM, no store, so scripts/consortium-paste.test.mjs tests it.
 import type { ClimateZone, PlantId } from '../../../lib/consortium/types.ts';
-import { fold, searchIndex } from '../data/sqlite-source.ts';
+import { fold } from '../data/sqlite-source.ts';
 
 // What matching reads of a plant (a Taxon has all of it).
 export interface Named { id: PlantId; canonical_name: string; genus?: string | null; names: Partial<Record<string, string>> }
@@ -49,13 +49,49 @@ function readTable(src: string, wide: boolean): { rows: string[][]; columns: num
   endRow();
   return { rows: tabs ? rows : rows.map((r) => [r.join('\t')]), columns: Math.max(0, ...rows.map((r) => r.length)) };
 }
-// The rows of a paste and, when it has tabs, its columns.
-export function pasteTable(text: string): { rows: string[][]; columns: number } {
+// One line split on a comma or a semicolon, a quoted cell ("…", "" for a quote) kept whole.
+function splitLine(line: string, sep: string): string[] {
+  const cells: string[] = [];
+  let cell = '', quoted = false, start = true;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (quoted) {
+      if (c === '"' && line[i + 1] === '"') { cell += '"'; i++; } else if (c === '"') quoted = false; else cell += c;
+    } else if (c === sep) { cells.push(cell.trim()); cell = ''; start = true; }
+    else if (start && c === '"') { quoted = true; start = false; }
+    else { if (!/\s/.test(c)) start = false; if (!start || !/\s/.test(c)) cell += c; }
+  }
+  cells.push(cell.trim());
+  return cells;
+}
+// A paste without tabs whose lines (two or more) all split into the same number of cells on a comma,
+// or else on a semicolon, is a table with that separator (a CSV export); any other is a list.
+function sepTable(src: string): PasteTable | null {
+  const lines = src.split('\n').filter((l) => l.trim());
+  if (lines.length < 2) return null;
+  for (const sep of [',', ';'] as const) {
+    const rows = lines.map((l) => splitLine(l, sep));
+    const n = rows[0].length;
+    if (n > 1 && rows.every((r) => r.length === n)) return { rows, columns: n, sep };
+  }
+  return null;
+}
+export interface PasteTable { rows: string[][]; columns: number; sep: '\t' | ',' | ';' | null }
+let lastText: string | null = null, lastTable: PasteTable | null = null;
+// The rows of a paste and, when it has tabs (or consistent commas or semicolons), its columns. The
+// last text's table is kept, so the sheet's several reads of one paste split it once.
+export function pasteTable(text: string): PasteTable {
   const src = String(text ?? '').replace(/\r\n?/g, '\n');
-  const strict = readTable(src, false);
-  if (!src.includes('\t') || !src.includes('"')) return strict;
+  if (src === lastText && lastTable) return lastTable;
+  lastText = src;
+  return (lastTable = readPasteTable(src));
+}
+function readPasteTable(src: string): PasteTable {
+  const strict = { ...readTable(src, false), sep: src.includes('\t') ? '\t' as const : null };
+  if (!src.includes('\t')) return sepTable(src) ?? strict;
+  if (!src.includes('"')) return strict;
   const wide = readTable(src, true);
-  return wide.rows.length < strict.rows.length && wide.rows.every((r) => r.length === strict.columns) ? wide : strict;
+  return wide.rows.length < strict.rows.length && wide.rows.every((r) => r.length === strict.columns) ? { ...wide, sep: '\t' } : strict;
 }
 // The column names are read from, always one the text has.
 export const pasteColumn = (text: string, column: number): number => (column > 0 && column < pasteTable(text).columns ? column : 0);
@@ -80,24 +116,30 @@ export function looksLikeHeader(cell: string | undefined): boolean {
   return own.length > 0 && own.every((w) => HEADER_WORDS.has(w));
 }
 
-export type PastedNames = string[] & { header?: string | null };
-// The names in one column: a cell split on commas and semicolons, each name once (folded). A first
-// row that looks like column names (in a paste of two rows or more) is left out and kept as `header`.
+// header: the first row, when it holds column names; split: the names cut out of a longer cell
+// (never sent to the word-prefix search: "Malus domestica,Tree,Sun" does not offer trees).
+export type PastedNames = string[] & { header?: string | null; split?: ReadonlySet<string> };
+// The names in one column: a cell split on commas and semicolons (unless they separate the columns),
+// each name once (folded). A first row that looks like column names (in a paste of two rows or more)
+// is left out and kept as `header`.
 export function pasteNames(text: string, column = 0): PastedNames {
-  const out: PastedNames = [], seen = new Set<string>(), table = pasteTable(text);
+  const out: PastedNames = [], seen = new Set<string>(), split = new Set<string>(), table = pasteTable(text);
   const head = table.rows.length > 1 && looksLikeHeader(table.rows[0][column]) ? table.rows[0][column].trim() : null;
   table.rows.forEach((row, r) => {
     if (r === 0 && head) return;
-    for (const part of String(row[column] ?? '').split(/[,;]/)) {
+    const parts = table.sep === ',' || table.sep === ';' ? [String(row[column] ?? '')] : String(row[column] ?? '').split(/[,;]/);
+    for (const part of parts) {
       let name = part.replace(/\s+/g, ' ').trim();
       if ((name.match(/"/g) ?? []).length === 1 && /^"|"$/.test(name)) name = name.replace(/^"|"$/, '').trim();
       const key = fold(name);
       if (!name || seen.has(key)) continue;
       seen.add(key);
       out.push(name);
+      if (parts.length > 1) split.add(name);
     }
   });
   Object.defineProperty(out, 'header', { value: head, enumerable: false });
+  Object.defineProperty(out, 'split', { value: split, enumerable: false });
   return out;
 }
 
@@ -182,15 +224,43 @@ function indexOf<T extends Named>(taxa: readonly T[]): NameIndex<T> {
   if (!idx) indexes.set(taxa, (idx = nameIndex(taxa)));
   return idx as unknown as NameIndex<T>;
 }
-type Search = ReturnType<typeof searchIndex>;
-const searches = new WeakMap<readonly Named[], Search>();
-// S1's search (whole names, then word prefixes) over a list, for a line no name matched.
-const PREFIX_SCORE = 2, PREFIX_LIMIT = 8;
+// The word-prefix search of S1's searchIndex (scores 0 exact, 1 name prefix, 2 word prefix; ties by
+// canonical name), over a sorted list of every name's word starts, built once per list, so a line
+// costs a binary search rather than a pass over the list.
+const WORD = /[\p{L}\p{N}]/u;
+interface Starts<T> { keys: string[]; at: number[]; whole: string[]; taxa: T[] }
+const starts = new WeakMap<readonly Named[], Starts<Named>>();
+function startsOf<T extends Named>(taxa: readonly T[]): Starts<T> {
+  const had = starts.get(taxa);
+  if (had) return had as unknown as Starts<T>;
+  const all: [string, number, string, T][] = [];
+  for (const t of taxa) {
+    for (const n of [t.canonical_name, ...Object.values(t.names)]) {
+      if (!n) continue;
+      const f = fold(n);
+      for (let i = 0; i < f.length; i++) if ((i === 0 || !WORD.test(f[i - 1])) && WORD.test(f[i])) all.push([f.slice(i), i, f, t]);
+    }
+  }
+  all.sort((x, y) => (x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : 0));
+  const built = { keys: all.map((e) => e[0]), at: all.map((e) => e[1]), whole: all.map((e) => e[2]), taxa: all.map((e) => e[3]) };
+  starts.set(taxa, built as unknown as Starts<Named>);
+  return built;
+}
+const PREFIX_LIMIT = 8;
 function prefixMatch<T extends Named>(name: string, taxa: readonly T[]): T[] {
-  let s = searches.get(taxa);
-  if (!s) searches.set(taxa, (s = searchIndex(taxa.map((t) => ({ id: t.id, canonical: t.canonical_name, names: t.names })))));
-  const byId = new Map(taxa.map((t) => [t.id, t]));
-  return s(name, PREFIX_LIMIT).filter((h) => h.score <= PREFIX_SCORE).flatMap((h) => byId.get(h.id) ?? []);
+  const q = fold(name).trim().replace(/\s+/g, ' ');
+  if (!q) return [];
+  const s = startsOf(taxa);
+  let lo = 0, hi = s.keys.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (s.keys[mid] < q) lo = mid + 1; else hi = mid; }
+  const best = new Map<T, number>();
+  for (let i = lo; i < s.keys.length && s.keys[i].startsWith(q); i++) {
+    const score = s.at[i] > 0 ? 2 : s.whole[i] === q ? 0 : 1;
+    const had = best.get(s.taxa[i]);
+    if (had === undefined || score < had) best.set(s.taxa[i], score);
+  }
+  return [...best].sort((x, y) => x[1] - y[1] || (x[0].canonical_name < y[0].canonical_name ? -1 : x[0].canonical_name > y[0].canonical_name ? 1 : 0))
+    .slice(0, PREFIX_LIMIT).map(([t]) => t);
 }
 
 export interface PasteResult<T> {
@@ -242,7 +312,8 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
       else one(name, o.taxa[0], o.close ?? null, climate);
       continue;
     }
-    // No name matched: S1's word-prefix search, this list first.
+    // No name matched: S1's word-prefix search, this list first (not for a piece of a longer cell).
+    if (names.split?.has(name)) { out.none.push({ name }); continue; }
     const prefix = prefixMatch(name, here);
     if (prefix.length) { out.choose.push({ name, taxa: prefix, inside: [], climate: null }); continue; }
     let found = false;
