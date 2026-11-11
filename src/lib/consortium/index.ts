@@ -19,3 +19,5 @@ export * from './future.ts';
 export * from './native.ts';
 export * from './soil-likely.ts';
 export * from './marks.ts';
+// S5b: the location core (Köppen zone, borderline).
+export * from './site-climate.ts';

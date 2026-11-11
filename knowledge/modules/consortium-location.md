@@ -2,38 +2,38 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:17:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:27:10Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
     digest: sha256:2dcff7afe57b5877
-    last_modified: 2026-11-11T19:15:23Z
+    last_modified: 2026-11-11T19:25:16Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
     digest: sha256:bbfc5c04b8239be1
-    last_modified: 2026-11-11T18:44:06Z
+    last_modified: 2026-11-11T19:25:16Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
     digest: sha256:6658f7fd428942d0
-    last_modified: 2026-11-11T19:12:20Z
+    last_modified: 2026-11-11T19:25:16Z
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
     digest: sha256:79e78a387e75a014
-    last_modified: 2026-11-11T18:13:46Z
+    last_modified: 2026-11-11T19:25:16Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:1945a23122835683
-    last_modified: 2026-11-11T18:00:01Z
+    digest: sha256:872f411989736b65
+    last_modified: 2026-11-11T19:25:51Z
   - id: memory-ts
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
     digest: sha256:d8455a5b419af6f4
-    last_modified: 2026-11-11T19:13:20Z
+    last_modified: 2026-11-11T19:25:16Z
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
@@ -48,7 +48,7 @@ sources:
     resource: ../../src/lib/location/geolocation.ts
     title: src/lib/location/geolocation.ts
     digest: sha256:9198637d2982820e
-    last_modified: 2026-11-11T19:15:36Z
+    last_modified: 2026-11-11T19:25:16Z
   - id: maplibre-ts
     resource: ../../src/lib/location/maplibre.ts
     title: src/lib/location/maplibre.ts
@@ -58,7 +58,7 @@ sources:
     resource: ../../src/lib/location/maplibre-entry.ts
     title: src/lib/location/maplibre-entry.ts
     digest: sha256:da3a0c205f99a418
-    last_modified: 2026-11-11T18:13:17Z
+    last_modified: 2026-11-11T19:25:16Z
   - id: maplibre-worker-ts
     resource: ../../src/lib/location/maplibre-worker.ts
     title: src/lib/location/maplibre-worker.ts
@@ -73,17 +73,17 @@ sources:
     resource: ../../src/islands/consortium/views/location/keep.ts
     title: src/islands/consortium/views/location/keep.ts
     digest: sha256:d1071d7fbe9e67d6
-    last_modified: 2026-11-11T18:23:20Z
+    last_modified: 2026-11-11T19:25:16Z
   - id: s5b-css
     resource: ../../src/styles/consortium/p5/s5b.css
     title: src/styles/consortium/p5/s5b.css
     digest: sha256:19308b24807af818
-    last_modified: 2026-11-11T18:12:49Z
+    last_modified: 2026-11-11T19:25:16Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
     digest: sha256:7188c34814f956af
-    last_modified: 2026-11-11T18:12:58Z
+    last_modified: 2026-11-11T19:25:16Z
 enforced_by:
   - scripts/consortium-p5-seams-s5b.test.mjs
   - scripts/browser/consortium-p5.browser.test.mjs
@@ -104,7 +104,7 @@ a climate card and a country, and the reader confirms (owner answers 1, 4, 5). P
 | `src/islands/consortium/views/location/load.ts` | `loadLocationStep()` (cached `import('./location.tsx')`), the `locationStep` signal, and `lookups`/`looking(step)`: location steps in flight (a click, a search, a map centre, a link's or the saved location), counted until they settle or fail; plain `.ts` so memory.ts imports it under node --test |
 | `src/islands/consortium/views/location/location.tsx` | The lazy chunk (≤ 20 KB): `useMyLocation`, `searchPlace`, `openMap`, `settle(how, saved)`, `forget`, `LocationResult` (`[data-location-state]`, `[data-location-confirm]`), the map dialog (`[data-location-map]`, crosshair, `[data-location-use-centre]`; test hook `mapCentre`) |
 | `src/lib/consortium/site-climate.ts` | `siteClimate(lookup)`: state `sea` / `polar` / `borderline` / `coast` / `ready`, `zone`, `near`, `suggested`; `koppenZone(k)` |
-| `src/lib/consortium/state.ts` | `o=` in links: `encodeLink(…, { origin })`, `linkOrigin(link)`, `cellCentre(lookup)`; re-exports site-climate.ts so the island reaches it through index.ts |
+| `src/lib/consortium/state.ts` | `o=` in links: `encodeLink(…, { origin })`, `linkOrigin(link)`, `cellCentre(lookup)` |
 | `src/lib/location/*` | Copied from canopi (see below): registry, place search, transport, geolocation, MapLibre loader; `maplibre-entry.ts`, `maplibre-worker.ts` |
 
 ## Rules

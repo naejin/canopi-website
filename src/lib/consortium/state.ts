@@ -27,8 +27,6 @@
 // list that stops mid-token is read up to there and reported as cut.
 import type { ClimateZone, DecodedLink, PhaseOrd, PlantId, ShareState, Site, SiteLookup } from './types.ts';
 import { climateZones, lights, rooms, soils, waters } from './types.ts';
-// S5b's location core, public through index.ts (which S5b does not edit) by way of this file.
-export * from './site-climate.ts';
 
 export const LINK_VERSION = 4;
 export const MAX_CROPS = 3; // "What do you mainly want to grow?" takes up to three (owner, 2026-10-28)
