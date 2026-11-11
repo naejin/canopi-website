@@ -5,6 +5,10 @@
 // (data/sqlite-source.ts) and set on the store, which then reads the chosen climate's plants
 // (store.watchPools). The other streams add their wiring to the store and views, not here.
 import { h, render } from 'preact';
+// The wasm's URL, for the loader to download it itself (a stall timer; review R4-4). Vite emits the one
+// sqlite3.<hash>.wasm the package's own new URL('sqlite3.wasm', import.meta.url) names (checked by
+// scripts/check-built-site.mjs). Here, not in load.ts: Node's unit tests import load.ts.
+import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App } from './App.tsx';
 import { load, setSource, watchPools } from './store.ts';
 import { zoneOf } from '../../lib/consortium/index.ts';
@@ -39,7 +43,7 @@ async function open(data: PageData): Promise<void> {
   try {
     const mod = await getLoader();
     LoadError = mod.LoadError;
-    const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map((c) => zoneOf(c) ?? c) });
+    const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map((c) => zoneOf(c) ?? c) }, wasmUrl);
     setSource(mod.createSqliteSource(opened.db, { images: data.images }), () => opened.db.close());
     load.value = { status: 'ready', error: null };
   } catch (err) {

@@ -93,16 +93,17 @@ const SCREENS = [
   ['the loader chunk gone after a deploy (online)', { data: 'fixture', loader: 404 }, 'stale', 'reload'],
   ['the loader chunk unreachable offline', { data: 'fixture', loader: 'offline' }, 'fetch', 'retry'],
 ];
-test('R3-4, R4-4: a slow but steady download (40 KB/s, the wasm over 20 s) loads', async () => {
+test('R3-4, R4-4: a slow but steady download (10 KB/s, the wasm over a minute) loads', async () => {
   const page = await h.open('/consortium/', { width: 1280, data: 'fixture' });
   const cdp = await page.createCDPSession();
   await cdp.send('Network.enable');
   await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
-  // About 40 KB/s: the ~900 KB wasm takes over 20 s (Slow 3G took 22.7 s in review round 3).
-  await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 400, downloadThroughput: 40_000, uploadThroughput: 40_000 });
+  // 10 KB/s: the wasm takes over a minute; no failure while bytes keep coming (no overall cap).
+  await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 400, downloadThroughput: 10_000, uploadThroughput: 10_000 });
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.locator(aria('radio', 'Temperate')).click();
-  assert.equal(await loadState(page, 90_000), 'ready', 'no failure screen while bytes keep arriving');
+  // The island itself arrives slowly too: the climate cards may take a while to show.
+  await page.locator(aria('radio', 'Temperate')).setTimeout(120_000).click();
+  assert.equal(await loadState(page, 240_000), 'ready', 'no failure screen while bytes keep arriving');
   await page.browserContext().close();
 });
 
