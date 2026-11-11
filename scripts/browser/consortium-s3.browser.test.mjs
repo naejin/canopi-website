@@ -107,7 +107,12 @@ test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and cred
     assert.equal(page.correctionPosts.length, 1, 'one POST to /api/correction');
     assert.match(page.correctionPosts[0], new RegExp(fixture().releaseId), 'the post names the data release');
     await page.keyboard.press('Escape');
-    await page.waitForFunction(() => !document.querySelector('dialog[open]'));
+    // Wait for the app to take the sheet down, not only for the browser to close the <dialog>: the
+    // dialog's open flag drops and the browser puts the focus back on the chip at once, but the
+    // 'close' event the app listens to is a later task. An openSheet in that gap was closed by the
+    // old dialog's close handler (ho-misc: 2 in 80 runs under load; deterministic with close() and
+    // openSheet in one task).
+    await page.waitForFunction(() => !document.querySelector('dialog.ct-sheet'));
     await page.waitForFunction((name) => (document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent) === name, { timeout: 2000 }, chip.name).catch(() => {});
     assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent), chip.name, 'focus returns to the chip');
     // Estimates: Apple's flowering months are derived for latitude bands.
@@ -220,7 +225,8 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an 
 });
 
 const sheetOpen = (page) => page.evaluate(() => !!document.querySelector('dialog[open]'));
-const closed = (page) => page.waitForFunction(() => !document.querySelector('dialog[open]'));
+// Closed means the app took the sheet down (the element is gone), not only the <dialog> closing (BT-5's note).
+const closed = (page) => page.waitForFunction(() => !document.querySelector('dialog[open], dialog.ct-sheet'));
 const setStore = (page, fn, ...args) => hooked(page, fn, ...args);
 
 test('BT-5 (S3 review): the correction draft survives closing; a drag released on the backdrop does not close; focus moves into and out of the form', async () => {
