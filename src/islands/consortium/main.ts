@@ -6,7 +6,7 @@
 // (store.watchPools). The other streams add their wiring to the store and views, not here.
 import { h, render } from 'preact';
 import { App } from './App.tsx';
-import { load, source, watchPools } from './store.ts';
+import { load, setSource, watchPools } from './store.ts';
 import { setStrings, type Strings } from './strings.ts';
 import type { DbRef } from './data/bytes.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
@@ -31,14 +31,16 @@ type Loader = typeof import('./data/load.ts');
 let loader: Promise<Loader> | null = null;
 const getLoader = () => (loader ??= import('./data/load.ts').catch((err: unknown) => { loader = null; throw err; }));
 
+// Retry opens a new database: the one opened before is closed first (store.setSource).
 async function open(data: PageData): Promise<void> {
   load.value = { status: 'loading', error: null };
+  setSource(null);
   let LoadError: Loader['LoadError'] | null = null;
   try {
     const mod = await getLoader();
     LoadError = mod.LoadError;
     const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map(zoneOf) });
-    source.value = mod.createSqliteSource(opened.db, { images: data.images });
+    setSource(mod.createSqliteSource(opened.db, { images: data.images }), () => opened.db.close());
     load.value = { status: 'ready', error: null };
   } catch (err) {
     // The loader chunk did not arrive: offline is the fetch screen; online, the chunk is gone after a

@@ -259,3 +259,134 @@ test('real install: opens with the index, every pool and image path, cell counts
     assert.ok(searchIndex(names)('chataig').length >= 1);
   } finally { real.db.close(); }
 });
+
+// ---- store: pool loading, guests, country status, source replacement (src/islands/consortium/store.ts) ----
+
+const store = await import('../src/islands/consortium/store.ts');
+const tick = () => new Promise((r) => setTimeout(r, 0));
+// A PlantSource over the fixture that counts pool reads and can fail them.
+function counting(base = source, { fail = () => false } = {}) {
+  const reads = [];
+  return {
+    reads,
+    src: {
+      ...base,
+      info: () => base.info(),
+      countries: () => base.countries(),
+      pool: (c) => { reads.push(c); return fail(c) ? Promise.reject(new Error(`no table for ${c}`)) : base.pool(c); },
+      interactions: (c) => base.interactions(c),
+    },
+  };
+}
+function reset() {
+  store.setSource(null);
+  store.pools.value = {};
+  store.interactionSets.value = {};
+  store.climate.value = null;
+  store.guests.value = {};
+  store.members.value = [];
+  store.kept.value = [];
+  store.crops.value = [];
+  store.removed.value = [];
+  store.country.value = { code: null, source: null };
+  store.site.value = { ...store.DEFAULT_SITE };
+  store.load.value = { status: 'ready', error: null };
+}
+const quiet = async (fn) => { const e = console.error; console.error = () => {}; try { return await fn(); } finally { console.error = e; } };
+
+test('store: a pool read that fails after the database opened is damage, and a later call reads again', async () => {
+  reset();
+  let broken = true;
+  const { src, reads } = counting(source, { fail: () => broken });
+  store.setSource(src);
+  assert.equal(await quiet(() => store.loadPool('Temperate')), null);
+  assert.deepEqual(store.load.value, { status: 'failed', error: 'damaged' });
+  assert.equal(store.pools.value.Temperate, undefined, 'never a partial pool');
+  broken = false;
+  assert.ok((await store.loadPool('Temperate')).length > 0);
+  assert.deepEqual(reads, ['Temperate', 'Temperate']);
+  assert.ok(store.interactionSets.value.Temperate.length > 0);
+  // Read once: later calls share it.
+  await store.loadPool('Temperate');
+  assert.equal(reads.length, 2);
+});
+
+test('store: watchPools reads the chosen and guest climates once each, and never retries a failure in a loop', async () => {
+  reset();
+  const { src, reads } = counting(source, { fail: (c) => c === 'Tropical' });
+  const stop = store.watchPools();
+  try {
+    store.climate.value = 'Temperate';
+    await tick();
+    assert.deepEqual(reads, [], 'nothing before the database is open');
+    store.setSource(src);
+    await tick(); await tick();
+    assert.deepEqual(reads, ['Temperate']);
+    assert.ok(store.pool.value.length > 0);
+    store.guests.value = { [idOf('Vitis vinifera')]: 'Mediterranean' };
+    await tick(); await tick();
+    assert.deepEqual(reads, ['Temperate', 'Mediterranean'], 'a pool arriving does not re-run the effect');
+    await quiet(async () => { store.climate.value = 'Tropical'; for (let i = 0; i < 5; i++) await tick(); });
+    assert.deepEqual(reads, ['Temperate', 'Mediterranean', 'Tropical'], 'a failed read is tried once, not looped');
+    assert.equal(store.load.value.status, 'failed');
+  } finally { stop(); }
+  store.climate.value = 'Mediterranean';
+  await tick();
+  assert.equal(reads.length, 3, 'disposed');
+});
+
+test('store: a guest whose list is still loading is never dropped silently; Suggest waits for it', async () => {
+  reset();
+  const vitis = idOf('Vitis vinifera');
+  store.setSource(source);
+  store.climate.value = 'Temperate';
+  await store.loadPool('Temperate');
+  store.guests.value = { [vitis]: 'Mediterranean' };
+  store.members.value = [vitis];
+  store.kept.value = [vitis];
+  assert.deepEqual(store.guestsPending.value, ['Mediterranean']);
+  assert.deepEqual(store.missingMembers.value, { loading: [vitis], unlisted: [] });
+  assert.equal(store.suggestMembers(), false);
+  assert.deepEqual(store.members.value, [vitis], 'a refused suggestion changes nothing');
+  await store.loadPool('Mediterranean');
+  assert.deepEqual(store.guestsPending.value, []);
+  assert.deepEqual(store.missingMembers.value, { loading: [], unlisted: [] });
+  assert.equal(store.memberTaxa.value[0].from, 'Mediterranean');
+  assert.equal(store.suggestMembers(), true);
+  assert.equal(store.members.value[0], vitis, 'the kept guest is a member of the suggestion');
+  assert.ok(store.members.value.length > 1);
+  // An id not in its list once read is "unlisted", not loading.
+  store.members.value = [...store.members.value, '00000000-f1c7-4000-8000-ffffffffffff'];
+  assert.deepEqual(store.missingMembers.value.unlisted, ['00000000-f1c7-4000-8000-ffffffffffff']);
+});
+
+test('store: flagContext keeps "no country" apart from "not checked"', () => {
+  reset();
+  store.setSource(source);
+  const checked = [...source.countries()].find(([, v]) => v.invasiveChecked)?.[0];
+  assert.ok(checked, 'the fixture has a checked country');
+  assert.equal(store.flagContext.value.countryStatus, 'none');
+  store.country.value = { code: 'ZZ', source: 'chosen' };
+  assert.equal(store.flagContext.value.countryStatus, 'unchecked');
+  store.country.value = { code: checked, source: 'chosen' };
+  assert.equal(store.flagContext.value.countryStatus, 'checked');
+});
+
+test('store: setSource closes the database before it (Retry), and a read of the old one neither writes nor fails', async () => {
+  reset();
+  const closed = [];
+  let release;
+  const slow = { ...source, info: () => source.info(), countries: () => source.countries(), interactions: (c) => source.interactions(c), pool: () => new Promise((_, reject) => { release = () => reject(new Error('database closed')); }) };
+  store.setSource(slow, () => closed.push('first'));
+  const pending = store.loadPool('Temperate');
+  store.setSource(source, () => closed.push('second'));
+  assert.deepEqual(closed, ['first']);
+  release();
+  assert.equal(await pending, null);
+  assert.deepEqual(store.load.value, { status: 'ready', error: null }, 'the old read does not fail the new load');
+  assert.equal(store.pools.value.Temperate, undefined);
+  assert.ok((await store.loadPool('Temperate')).length > 0, 'the new source reads');
+  store.setSource(null);
+  assert.deepEqual(closed, ['first', 'second']);
+  assert.equal(store.source.value, null);
+});

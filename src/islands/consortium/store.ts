@@ -61,8 +61,28 @@ export const guestTaxa = computed<Taxon[]>(() => {
   }
   return out;
 });
-// The members as plants, in order: the climate's own, or a guest's home record. Ids not at hand yet
-// (a guest list still loading, a plant no longer listed) are left out.
+// The guest climates whose plant list is not read yet: while any is, guests from it are missing from
+// memberTaxa, the matrix and the flags, and "Suggest plants" waits (suggestMembers returns false).
+export const guestsPending = computed<ClimateZone[]>(() => {
+  const out: ClimateZone[] = [];
+  for (const from of Object.values(guests.value)) if (from && !pools.value[from] && !out.includes(from)) out.push(from);
+  return out;
+});
+// Members memberTaxa leaves out, never silently: `loading` while their list is read (a guest climate
+// in guestsPending, or the chosen climate's pool), `unlisted` once read and not in it.
+export const missingMembers = computed<{ loading: PlantId[]; unlisted: PlantId[] }>(() => {
+  const own = pool.value, loading: PlantId[] = [], unlisted: PlantId[] = [];
+  const found = new Set(memberTaxa.value.map((t) => t.id));
+  for (const id of members.value) {
+    if (found.has(id)) continue;
+    const from = guests.value[id];
+    if (!own || (from && !pools.value[from])) loading.push(id);
+    else unlisted.push(id);
+  }
+  return { loading, unlisted };
+});
+// The members as plants, in order: the climate's own, or a guest's home record. Ids not at hand are
+// left out here and listed in missingMembers (the views say so).
 export const memberTaxa = computed<Taxon[]>(() => {
   const own = pool.value;
   if (!own) return [];
@@ -96,19 +116,24 @@ export const flags = computed<Flag[]>(() => {
 // ---- actions (S1) ----
 
 // Reads a climate's pool and interactions once (later calls share the first read). A read that
-// fails after the database opened is damage: the §5 screen, never a partial matrix.
+// fails after the database opened is damage: the §5 screen, never a partial matrix; a later call
+// tries again. Signals are read with peek(), so an effect calling this does not re-run per load.
 const reading = new Map<ClimateZone, Promise<Taxon[] | null>>();
 export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
-  const src = source.value;
+  const src = source.peek();
   if (!src) return Promise.resolve(null);
-  if (pools.value[c]) return Promise.resolve(pools.value[c]!);
+  const have = pools.peek()[c];
+  if (have) return Promise.resolve(have);
   let p = reading.get(c);
   if (!p) {
+    // A read of a source replaced meanwhile (Retry) neither writes nor fails the new load.
     p = Promise.all([src.pool(c), src.interactions(c)]).then(([plants, rows]) => {
-      pools.value = { ...pools.value, [c]: plants };
-      interactionSets.value = { ...interactionSets.value, [c]: rows };
+      if (source.peek() !== src) return null;
+      pools.value = { ...pools.peek(), [c]: plants };
+      interactionSets.value = { ...interactionSets.peek(), [c]: rows };
       return plants;
     }).catch((err: unknown) => {
+      if (source.peek() !== src) return null;
       reading.delete(c);
       console.error(`Consortium data ${src.info().releaseId}: ${c}: ${(err as Error).message}`);
       load.value = { status: 'failed', error: 'damaged' };
@@ -119,8 +144,22 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
   return p;
 }
 
+// Sets the open database's PlantSource, closing the one before it first (Retry opens a new
+// database; the old one is never left open). null closes the current one and leaves none.
+let closeCurrent: (() => void) | null = null;
+export function setSource(next: PlantSource | null, close: (() => void) | null = null): void {
+  const prev = closeCurrent;
+  closeCurrent = null;
+  source.value = null;
+  reading.clear();
+  try { prev?.(); } catch (err) { console.error(`Consortium data: closing the previous database: ${(err as Error).message}`); }
+  source.value = next;
+  closeCurrent = next ? close : null;
+}
+
 // Keeps the chosen climate's pool and every guest list's pool read as soon as the database is open,
-// so Start works while the plant list loads. Returns the effect's disposer.
+// so Start works while the plant list loads. Re-runs only when the source, the climate or the guests
+// change (never on a pool arriving, so a failed read is not retried in a loop). Returns the disposer.
 export function watchPools(): () => void {
   return effect(() => {
     if (!source.value) return;
@@ -131,10 +170,11 @@ export function watchPools(): () => void {
 }
 
 // "Suggest plants": a new suggestion around the kept plants and Main crops (which become kept),
-// leaving out removed plants (core suggest.ts). Needs the climate's pool; false when it is not read.
+// leaving out removed plants (core suggest.ts). Needs the climate's pool and every guest climate's
+// (a kept guest must count); false, changing nothing, while any is not read (guestsPending).
 export function suggestMembers(): boolean {
   const p = pool.value;
-  if (!p) return false;
+  if (!p || guestsPending.value.length) return false;
   const keep = [...new Set([...crops.value, ...kept.value])];
   const s = suggest(p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
   kept.value = keep;
