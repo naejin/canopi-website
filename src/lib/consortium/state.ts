@@ -1,97 +1,44 @@
-// The tool's state in a share link (link v3), carried in the address's fragment so it never
-// reaches a server or CDN log (design-scale.md §2.7; the page reads and writes it, memory.js):
-//   #v=3&c=temperate&k=FR&l=sun&s=unsure&w=unsure&m=field&a=…&p=…&x=…&n=…&g=me…&e=1
-//   v link version (LINK_VERSION, not the export's FORMAT_VERSION), c climate (site id, lowercase),
-//   k country (ISO alpha-2, for the invasive warnings only), l light, s soil, w water, m room,
-//   a the members in order, a kept member marked with a leading "*";
-//   p kept plants that are not members (a no-match result keeps its kept plants, with no `a`);
-//   x removed plants; n main crops (at most MAX_CROPS, each also a kept member);
-//   g plants added from another climate's list ("Add anyway"): one `g` per list, its two-letter
-//     code (GUEST_CODES) then its tokens; each is also in `a`;
-//   e=1 the end, always last: a link a mail or chat client cut short (even between two tokens)
-//     lacks it, so the page can say plants may be missing (DecodedState.ended).
-// k is written only when the state has a country; the page leaves out a country it guessed, so a
-// link carries a country only when the user chose it. `k=-` means "No country", chosen: the page
-// writes it only to its saved state (local storage), never to a share link. The page's own `mine`
-// (memory.js) never reaches encodeState.
-// A guide opens the tool with a preset instead: ?plant=<canonical_name>&climate=<id>. `climate` is
-// read when `c` is absent; the plant becomes kept once the cell is known (resolveState), and a
-// plant the cell does not have is dropped. encodeState always writes the short keys.
-// Site keys are always written, so a link means the same thing if the defaults change. Decoding
-// never throws: an unknown or malformed value is left out and listed in `dropped`, so the page can
-// say what an old link lost.
+// The share link (link v4), carried in the address's fragment so it never reaches a server or CDN log
+// (coordinator row "Scale build, coordinator choices" 2026-10-28). Design check §2: v1's 36-bit
+// base64url tokens, ported, under a new version; v1 links are not read (owner row 2026-11-11: no
+// compatibility with v1 share links).
 //
-// Ids (v3). A token is the id's first 36 bits (9 hex digits, dashes aside) in 6 base64url
-// characters, with nothing between tokens. When another taxon the encoder knows (the cell, and the
-// files of the state's guests) shares those 36 bits, the id is written whole: "." then its 128 bits
-// in 22 characters. Tokens never depend on a file's order or size, so a link survives a data
-// update: decoding matches each token against the ids at hand; a plant no longer listed is dropped
-// and reported ('unknown'), and one that a new taxon now shares 36 bits with is dropped as
-// 'ambiguous' (about one chance in 10^5 for a 1,000-taxon file). Only "*", "." and base64url
-// characters are used, which a query string leaves unescaped.
+//   #v=4&c=temperate&k=FR&l=sun&s=unsure&w=unsure&m=small&a=…&p=…&x=…&n=…&g=tr…&t=3&e=1
 //
-// Length budget: 6 characters per member, 7 for a kept one; 6 per removed plant, 6 per main crop
-// again, and 6 per guest again plus 2 per list. 200 members with 190 kept is 1,390 characters of
-// `a`; with 2 main crops, the other keys and https://projectcanopi.com/fr/consortium/ the link is
-// about 1,500 characters (v2 needed 3,600), under the 2,000 that the most limited chat and mail
-// clients keep whole. A dropped token is reported as the hex prefix it stands for (9 digits).
-// Decoding reads at most MAX_LINK_IDS tokens per key (`g` counts all its values together, and a
-// list code given twice is a duplicate): a stated limit, far above any climate list (about 200
-// plants in 2026; they will grow), that keeps a hostile link from blocking the page; the ids past it
-// are reported ('excess', with their count), never dropped silently. A link for a version this page
-// does not know (v=4…) reads no plants at all: its `v` is reported, and the page says so.
+//   v link version (LINK_VERSION); c climate (lowercase); k country (ISO alpha-2, only when the reader
+//   chose it: a guessed country never goes in a link); l light, s soil, w water, m room (always
+//   written, so a link means the same thing if the defaults change); a the members in order, a kept
+//   one marked with a leading "*"; p kept plants that are not members; x removed plants; n Main
+//   crops (at most MAX_CROPS, each also kept); g plants added from another climate's list, one `g`
+//   per list: its two-letter code (GUEST_CODES) then its tokens (each is also in `a`); t the stage
+//   (0–6) the views show; e=1 the end, always last: a link a mail or chat client cut short lacks it.
 //
-// Older links (v2, or no `v`): ids are hex prefixes (8 characters, or longer at a UUID segment
-// boundary), joined with "." (or ","), in p (kept), x (removed) and a (members). They still decode,
-// and a link still waiting for its climate file is written back as v2 by the page (DecodedState
-// .version). Links from before the climate-first tool carry r (region) and b (borrowed cell
-// region): both are ignored, without a notice, since one climate file now serves every region.
-import type { ClimateFile, Taxon } from './types.ts';
-import type { Site } from './site.ts';
-import type { SiteClimate } from './climates.ts';
-import { DEFAULT_SITE, lights, rooms, soils, waters } from './site.ts';
-import { isSiteClimate, siteClimates } from './climates.ts';
+// Ids. A token is the id's first 36 bits (9 hex digits, dashes aside) in 6 base64url characters, with
+// nothing between tokens. When another id the encoder knows shares those 36 bits, the id is written
+// whole: "." then its 128 bits in 22 characters. Tokens never depend on a file's order or size, so a
+// link survives a data update: decoding matches each token against the ids at hand, and a plant no
+// longer listed (or now ambiguous) is left out and counted (LinkNotice.unknownCount). Only "*", "."
+// and base64url characters are used, which a query string leaves unescaped. 6 characters per member
+// (7 kept): 200 members stay near 1,500 characters. Decoding reads at most MAX_LINK_IDS tokens per key
+// (every `g` together), so a hostile link cannot block the page; the rest are counted as unknown.
+// Decoding never throws: a malformed value falls back ("Not sure", no climate, no stage) and a token
+// list that stops mid-token is read up to there and reported as cut.
+import type { ClimateZone, DecodedLink, PhaseOrd, PlantId, ShareState, Site } from './types.ts';
+import { climateZones, lights, rooms, soils, waters } from './types.ts';
 
-// The share link's own version, kept apart from the export's FORMAT_VERSION.
-export const LINK_VERSION = 3;
-// `k=-`: the user chose "No country" (saved state only).
-export const NO_COUNTRY = '-';
-// Main crops: "What do you mainly want to grow?" takes up to three (owner, 2026-10-28).
-export const MAX_CROPS = 3;
-// Tokens read per key (see the header): far above any climate list.
+export const LINK_VERSION = 4;
+export const MAX_CROPS = 3; // "What do you mainly want to grow?" takes up to three (owner, 2026-10-28)
 export const MAX_LINK_IDS = 2000;
-// The two-letter code of each climate in `g`.
-export const GUEST_CODES: Record<SiteClimate, string> = { tropical: 'tr', subtropical: 'su', arid: 'ar', mediterranean: 'me', temperate: 'te', continental: 'co', boreal: 'bo' };
-
-// A plant from another climate's list: its id and the list it came from.
-export interface Guest { id: string; climate: SiteClimate }
-
-export interface ConsortiumState {
-  climate: SiteClimate | null;
-  country: string | null; // ISO alpha-2, upper case; only the invasive warnings use it
-  noCountry?: boolean; // the user chose "No country" (k=-); decodeState always sets it
-  site: Site;
-  kept: string[]; // taxon ids; before resolveState(), the prefixes read from the link
-  removed: string[];
-  members?: string[] | null; // every member in order; null when the link has none (suggest); decodeState always sets it
-  plants?: string[]; // canonical names from a guide preset, until resolveState() makes them kept ids; decodeState always sets it
-  crops?: string[]; // main crops, in the order chosen; decodeState always sets it
-  guests?: Guest[]; // plants from another climate's list; decodeState always sets it
-}
-
-// `excess`: the ids past MAX_LINK_IDS (or MAX_CROPS) in one key, reported once with their count as the value.
-export interface Dropped { key: string; value: string; reason: 'unknown' | 'malformed' | 'ambiguous' | 'duplicate' | 'excess' }
-// version: the link's id grammar, 2 or 3, so a link still waiting for its file is written back as it came.
-// ended: the link ends with e=1 (every v3 link encodeState writes does), so nothing was cut off it.
-export interface DecodedState { state: ConsortiumState; dropped: Dropped[]; version: 2 | 3; ended?: boolean }
+// Above this many characters, some apps cut links (design check §5: "Some apps cut long links…").
+export const LONG_LINK = 2000;
+export const END_KEY = 'e';
+export const GUEST_CODES: Record<ClimateZone, string> = { Tropical: 'tr', Subtropical: 'su', Arid: 'ar', Mediterranean: 'me', Temperate: 'te', Continental: 'co', Boreal: 'bo' };
 
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-const SHORT = 6, LONG = 22, SHORT_HEX = 9, LONG_MARK = '.', KEPT_MARK = '*';
-const V2_PREFIX = /^[0-9a-f]{8}(-[0-9a-f]{4}(-[0-9a-f]{4}(-[0-9a-f]{4}(-[0-9a-f]{12})?)?)?)?$/;
+const SHORT = 6, LONG = 22, SHORT_HEX = 9, LONG_HEX = 32, LONG_MARK = '.', KEPT_MARK = '*';
 const COUNTRY = /^[A-Z]{2}$/;
 const MAX_NAME_LENGTH = 200;
-const nameKey = (name: string) => name.trim().replace(/\s+/g, ' ').toLowerCase();
-// An id or prefix as lower-case hex, dashes aside: what tokens and prefixes are matched on.
+
 const hexOf = (id: string) => id.toLowerCase().replace(/-/g, '');
 
 function hexToB64(hex: string): string {
@@ -114,278 +61,192 @@ function b64ToHex(text: string, digits: number): string | null {
   return out;
 }
 
-// The end of a v3 link (see the header).
-export const END_KEY = 'e';
-// The v3 token of an id (or of a 9- or 32-hex prefix read from a link): short unless another id of
-// `known` shares its 36 bits.
-// A 32-digit prefix without dashes came from a whole token of a link still waiting for its file:
-// it is written back whole.
-function tokenOf(id: string, known: string[] | null): string {
-  const hex = hexOf(id), short = hex.slice(0, SHORT_HEX);
-  const clash = hex.length >= 32 && (known ? known.some((k) => k !== hex && k.startsWith(short)) : !id.includes('-'));
-  return clash ? LONG_MARK + hexToB64(hex.slice(0, 32)) : hexToB64(short);
+const zoneOf = (code: string): ClimateZone | null => climateZones.find((z) => z.toLowerCase() === code.trim().toLowerCase()) ?? null;
+const codeZone = new Map(climateZones.map((z) => [GUEST_CODES[z], z] as const));
+
+// The token function for a set of known ids: an id's token is short unless another known id shares
+// its first 36 bits. Clashes are looked up in one table: 36-bit prefix → how many known ids share it.
+function tokens(known: Iterable<PlantId>): (id: PlantId) => string {
+  const hexes = new Set([...known].map(hexOf)), prefixes = new Map<string, number>();
+  for (const h of hexes) { const p = h.slice(0, SHORT_HEX); prefixes.set(p, (prefixes.get(p) ?? 0) + 1); }
+  return (id) => {
+    const hex = hexOf(id), others = (prefixes.get(hex.slice(0, SHORT_HEX)) ?? 0) - (hexes.has(hex) ? 1 : 0);
+    return others > 0 ? LONG_MARK + hexToB64(hex.slice(0, LONG_HEX)) : hexToB64(hex.slice(0, SHORT_HEX));
+  };
 }
 
-export function encodeState(state: ConsortiumState, cell?: ClimateFile | null, others?: Partial<Record<SiteClimate, ClimateFile>>): URLSearchParams {
-  const q = new URLSearchParams();
-  const guests = state.guests ?? [];
-  const known = cell ? [...cell.taxa, ...guests.flatMap((g) => others?.[g.climate]?.taxa ?? [])].map((t) => hexOf(t.id)) : null;
-  const tok = (id: string) => tokenOf(id, known);
-  const list = (ids: Iterable<string>) => [...new Set([...ids].map(tok))].sort().join('');
-  q.set('v', String(LINK_VERSION));
-  if (state.climate) q.set('c', state.climate);
-  if (state.country) q.set('k', state.country.toUpperCase());
-  else if (state.noCountry) q.set('k', NO_COUNTRY);
-  q.set('l', state.site.light);
-  q.set('s', state.site.soil);
-  q.set('w', state.site.water);
-  q.set('m', state.site.room);
-  const kept = new Set(state.kept), members = state.members ? [...new Set(state.members)] : null;
-  // Members keep their order (it is the order the page lists them in). An empty list is written
-  // too: every member removed is a state, not "suggest".
-  if (members) q.set('a', members.map((id) => (kept.has(id) ? KEPT_MARK : '') + tok(id)).join(''));
-  const inMembers = new Set(members ?? []);
+// The token of one id against `known` (encodeLink builds the table once for every id).
+export const tokenOf = (id: PlantId, known: readonly PlantId[]): string => tokens(known)(id);
+
+// The ids the link's plants are matched against, per climate: the chosen climate's and each guest
+// list's (PlantSource.pool(c) ids). Climates not given match nothing.
+export type KnownIds = Partial<Record<ClimateZone, readonly PlantId[]>>;
+
+// The link's fragment, without "#": "v=4&…&e=1".
+export function encodeLink(state: ShareState, known: KnownIds): string {
+  const tok = tokens(Object.values(known).flatMap((ids) => [...(ids ?? [])]));
+  const list = (ids: Iterable<PlantId>) => [...new Set([...ids].map(tok))].sort().join('');
+  const pairs: [string, string][] = [['v', String(LINK_VERSION)]];
+  if (state.climate) pairs.push(['c', state.climate.toLowerCase()]);
+  if (state.country) pairs.push(['k', state.country.toUpperCase()]);
+  pairs.push(['l', state.site.light], ['s', state.site.soil], ['w', state.site.water], ['m', state.site.room]);
+  const crops = [...new Set(state.crops)].slice(0, MAX_CROPS);
+  const kept = new Set([...state.kept, ...crops]);
+  const members = [...new Set(state.members)];
+  // An empty member list is written too: every member removed is a state, not "suggest".
+  pairs.push(['a', members.map((id) => (kept.has(id) ? KEPT_MARK : '') + tok(id)).join('')]);
+  const inMembers = new Set(members);
   const keptOnly = [...kept].filter((id) => !inMembers.has(id));
-  if (keptOnly.length) q.set('p', list(keptOnly));
+  if (keptOnly.length) pairs.push(['p', list(keptOnly)]);
   const removed = state.removed.filter((id) => !kept.has(id) && !inMembers.has(id));
-  if (removed.length) q.set('x', list(removed));
-  if (state.crops?.length) q.set('n', [...new Set(state.crops)].slice(0, MAX_CROPS).map(tok).join(''));
-  for (const climate of siteClimates) {
-    const ids = guests.filter((g) => g.climate === climate).map((g) => g.id);
-    if (ids.length) q.append('g', GUEST_CODES[climate] + list(ids));
+  if (removed.length) pairs.push(['x', list(removed)]);
+  if (crops.length) pairs.push(['n', crops.map(tok).join('')]);
+  for (const zone of climateZones) {
+    const ids = state.guests.filter((g) => g.from === zone).map((g) => g.id);
+    if (ids.length) pairs.push(['g', GUEST_CODES[zone] + list(ids)]);
   }
-  // A guide's plant the page could not resolve yet (no cell loaded) is kept for the next load.
-  if (state.plants?.length) q.set('plant', state.plants[0]); // a preset names one plant
-  q.set(END_KEY, '1');
-  return q;
+  if (state.stage !== null) pairs.push(['t', String(state.stage)]);
+  pairs.push([END_KEY, '1']);
+  return new URLSearchParams(pairs).toString();
 }
 
-// Matches link prefixes (hex, with or without dashes) against the ids of `pool` (a climate file,
-// or its taxa with the guests'). Unknown and ambiguous prefixes are dropped.
-// The pool's ids as hex, worked out once and matched against many tokens (B12: once per token
-// made a crafted link with many guests freeze the tab).
-type Matcher = (token: string) => string[];
-function matcher(pool: { taxa: Taxon[] }): Matcher {
-  const hexes = pool.taxa.map((t) => [hexOf(t.id), t.id] as const);
-  return (token) => { const h = hexOf(token); return hexes.filter(([x]) => x.startsWith(h)).map(([, id]) => id); };
-}
-export function resolveIds(tokens: string[], pool: { taxa: Taxon[] }, key = 'p', match: Matcher = matcher(pool)): { ids: string[]; dropped: Dropped[] } {
-  const ids = new Set<string>(), dropped: Dropped[] = [];
-  for (const token of tokens) {
-    const hits = match(token);
-    if (hits.length === 1) ids.add(hits[0]);
-    else dropped.push({ key, value: token, reason: hits.length ? 'ambiguous' : 'unknown' });
-  }
-  return { ids: [...ids], dropped };
+// The long-link check, on the whole URL the reader is about to share (never on a link being read).
+export const isLongLink = (url: string): boolean => url.length > LONG_LINK;
+
+const params = (link: string) => new URLSearchParams(link.replace(/^[#?]/, ''));
+
+// The climates whose plants must be at hand before decodeLink: the chosen one, then each guest list.
+export function linkClimates(link: string): ClimateZone[] {
+  const q = params(link);
+  const out: ClimateZone[] = [];
+  const c = q.get('c');
+  const zone = c === null ? null : zoneOf(c);
+  if (zone) out.push(zone);
+  for (const g of q.getAll('g')) { const z = codeZone.get(g.slice(0, 2)); if (z && !out.includes(z)) out.push(z); }
+  return out;
 }
 
-const oneOf = <T extends string>(list: readonly T[]) => (v: string): v is T => (list as readonly string[]).includes(v);
-const codeClimate = new Map(siteClimates.map((c) => [GUEST_CODES[c], c] as const));
+interface Token { hex: string; star: boolean }
 
-// Reads a link's query. With the cell (and, for guests, the other climates' files), kept, removed,
-// members and crops hold full ids; without it, the checked prefixes (lower-case hex: 9 or 32
-// digits from a v3 link, as written in a v2 one), to pass to resolveState() once the files are loaded.
-export function decodeState(params: URLSearchParams | string, cell?: ClimateFile | null, others?: Partial<Record<SiteClimate, ClimateFile>>): DecodedState {
-  const q = typeof params === 'string' ? new URLSearchParams(params) : params;
-  const dropped: Dropped[] = [];
-
-  // The first value of a key; repeats are dropped.
-  const first = (key: string): string | null => {
-    const all = q.getAll(key);
-    for (const extra of all.slice(1)) dropped.push({ key, value: extra, reason: 'duplicate' });
-    return all.length ? all[0] : null;
-  };
-  const pick = <T extends string>(key: string, valid: (v: string) => v is T, normalise = (v: string) => v): T | null => {
-    const raw = first(key);
-    if (raw === null) return null;
-    const v = normalise(raw.trim());
-    if (valid(v)) return v;
-    dropped.push({ key, value: raw, reason: 'unknown' });
-    return null;
-  };
-
-  const v = first('v');
-  // A version this page does not know: its plants are not read (B1); the page suggests and says so.
-  const unknownVersion = v !== null && v !== '2' && v !== '3';
-  if (unknownVersion) dropped.push({ key: 'v', value: v, reason: 'unknown' });
-  const version: 2 | 3 = v === '3' ? 3 : 2;
-  const ended = q.get(END_KEY) === '1';
-
-  // A guide preset names the climate `climate`; a link's own `c` wins over it.
-  const climate = q.has('c') || !q.has('climate')
-    ? pick('c', isSiteClimate, (x) => x.toLowerCase())
-    : pick('climate', isSiteClimate, (x) => x.toLowerCase());
-  if (q.has('c')) for (const extra of q.getAll('climate')) dropped.push({ key: 'climate', value: extra, reason: 'duplicate' });
-  const plants: string[] = [];
-  const plant = first('plant');
-  if (plant !== null) {
-    if (plant.trim() && plant.length <= MAX_NAME_LENGTH) plants.push(plant.trim());
-    else dropped.push({ key: 'plant', value: plant.slice(0, MAX_NAME_LENGTH), reason: 'malformed' });
+// Concatenated tokens ([*] then 6 characters, or "." and 22). Returns the tokens read and whether the
+// value stopped inside a token (a cut link).
+function readTokens(value: string, stars: boolean, cap: { left: number; excess: number }): { tokens: Token[]; malformed: boolean } {
+  const tokens: Token[] = [];
+  let i = 0;
+  while (i < value.length) {
+    const star = stars && value[i] === KEPT_MARK;
+    if (star) i++;
+    const long = value[i] === LONG_MARK;
+    if (long) i++;
+    const n = long ? LONG : SHORT, body = value.slice(i, i + n);
+    const hex = body.length === n ? b64ToHex(body, long ? LONG_HEX : SHORT_HEX) : null;
+    if (!hex) return { tokens, malformed: true };
+    i += n;
+    if (cap.left <= 0) { cap.excess++; continue; }
+    cap.left--;
+    tokens.push({ hex, star });
   }
-  // r and b (an old link's region and borrowed cell) are not read: no notice, nothing lost that matters.
-  const k = pick('k', (x: string): x is string => x === NO_COUNTRY || COUNTRY.test(x), (x) => x.toUpperCase());
-  const noCountry = k === NO_COUNTRY;
-  const country = noCountry ? null : k;
+  return { tokens, malformed: false };
+}
+
+const oneOf = <T extends string>(list: readonly T[], v: string | null): T | null => (v !== null && (list as readonly string[]).includes(v) ? (v as T) : null);
+
+// Reads a link (with or without its "#") against the ids at hand (see linkClimates). Never throws.
+export function decodeLink(link: string, known: KnownIds): DecodedLink {
+  const text = link.replace(/^[#?]/, '');
+  const q = params(text);
+  const notice = { unknownCount: 0, cut: q.get(END_KEY) !== '1', outdated: false };
+  const c = q.get('c');
+  const climate = c === null ? null : zoneOf(c);
+  const k = (q.get('k') ?? '').trim().toUpperCase();
   const site: Site = {
-    light: pick('l', oneOf(lights)) ?? DEFAULT_SITE.light,
-    soil: pick('s', oneOf(soils)) ?? DEFAULT_SITE.soil,
-    water: pick('w', oneOf(waters)) ?? DEFAULT_SITE.water,
-    room: pick('m', oneOf(rooms)) ?? DEFAULT_SITE.room,
+    light: oneOf(lights, q.get('l')) ?? 'unsure',
+    soil: oneOf(soils, q.get('s')) ?? 'unsure',
+    water: oneOf(waters, q.get('w')) ?? 'unsure',
+    room: oneOf(rooms, q.get('m')) ?? 'unsure',
   };
-
-  // Every token counts toward the cap, so malformed ones cannot flood `dropped`.
-  const capped = (key: string, cap = MAX_LINK_IDS) => {
-    const out = new Set<string>(), kept = new Set<string>();
-    let read = 0, excess = 0;
-    return {
-      // token null: a malformed one, which still counts toward the cap.
-      add(token: string | null, raw: string, star = false) {
-        if (read++ >= cap) { excess++; return false; }
-        if (token === null) return true;
-        if (out.has(token)) { dropped.push({ key, value: raw, reason: 'duplicate' }); return; }
-        out.add(token);
-        if (star) kept.add(token);
-        return true;
-      },
-      done() { if (excess) dropped.push({ key, value: String(excess), reason: 'excess' }); return { ids: [...out], kept: [...kept] }; },
-      size: () => out.size,
-      idsFrom: (n: number) => [...out].slice(n),
-    };
-  };
-  // v2: dotted hex prefixes.
-  const v2Tokens = (key: string) => {
-    const c = capped(key);
-    for (const raw of (first(key) ?? '').split(/[.,]/)) {
-      const token = raw.trim().toLowerCase();
-      if (!token) continue;
-      if (!V2_PREFIX.test(token)) { if (c.add(null, raw)) dropped.push({ key, value: raw, reason: 'malformed' }); continue; }
-      c.add(token, raw);
-    }
-    return c.done().ids;
-  };
-  // v3: concatenated tokens ([*] then 6 characters, or "." and 22); the rest of a value that does
-  // not parse is one malformed entry. `into`: a cap shared by several values (every `g`).
-  type Capped = ReturnType<typeof capped>;
-  const v3Read = (c: Capped, key: string, value: string | null, stars = false) => {
-    const text = value ?? '';
-    let malformed = false;
-    let i = 0;
-    while (i < text.length) {
-      const start = i;
-      const star = stars && text[i] === KEPT_MARK;
-      if (star) i++;
-      const long = text[i] === LONG_MARK;
-      if (long) i++;
-      const n = long ? LONG : SHORT, body = text.slice(i, i + n);
-      const hex = body.length === n ? b64ToHex(body, long ? 32 : SHORT_HEX) : null;
-      if (!hex) { dropped.push({ key, value: text.slice(start, start + 40), reason: 'malformed' }); malformed = true; break; }
-      i += n;
-      c.add(hex, text.slice(start + (star ? 1 : 0), i), star);
-    }
-    return malformed;
-  };
-  const v3Tokens = (key: string, value: string | null, cap = MAX_LINK_IDS, stars = false) => {
-    const c = capped(key, cap);
-    const malformed = v3Read(c, key, value, stars);
-    return { ...c.done(), malformed };
-  };
-
-  let kept: string[], removed: string[], members: string[] | null, crops: string[] = [];
-  const guests: Guest[] = [];
-  if (unknownVersion) {
-    kept = []; removed = []; members = null;
-  } else if (version === 3) {
-    const a = q.has('a') ? v3Tokens('a', first('a'), MAX_LINK_IDS, true) : null;
-    // A member list cut inside its first token is no list: the page suggests (and says plants may be missing).
-    members = a && !(a.malformed && !a.ids.length) ? a.ids : null;
-    kept = [...new Set([...(a?.kept ?? []), ...v3Tokens('p', first('p')).ids])];
-    removed = v3Tokens('x', first('x')).ids;
-    crops = v3Tokens('n', first('n'), MAX_CROPS).ids;
-    // One cap for every `g` value together; a list code given twice is a duplicate.
-    const g = capped('g'), codes = new Set<string>();
-    for (const value of q.getAll('g')) {
-      const code = value.slice(0, 2), c = codeClimate.get(code);
-      if (!c) { dropped.push({ key: 'g', value: value.slice(0, 40), reason: 'unknown' }); continue; }
-      if (codes.has(code)) { dropped.push({ key: 'g', value: value.slice(0, 40), reason: 'duplicate' }); continue; }
-      codes.add(code);
-      const before = g.size();
-      v3Read(g, 'g', value.slice(2));
-      for (const id of g.idsFrom(before)) guests.push({ id, climate: c });
-    }
-    g.done();
-  } else {
-    kept = v2Tokens('p'); removed = v2Tokens('x'); members = q.has('a') ? v2Tokens('a') : null;
+  const t = q.get('t');
+  const stage = t !== null && /^[0-6]$/.test(t) ? (Number(t) as PhaseOrd) : null;
+  const state: ShareState = { climate, country: COUNTRY.test(k) ? k : null, site, members: [], kept: [], removed: [], guests: [], crops: [], stage };
+  // A link without `v` is read as this version; another version reads no plants.
+  const v = q.get('v');
+  if (v !== null && v !== String(LINK_VERSION)) {
+    notice.outdated = true;
+    notice.cut = false;
+    return { state, notice };
   }
-  const decoded: DecodedState = {
-    state: { climate, country, noCountry, site, kept, removed, members, plants, crops, guests },
-    dropped,
-    version,
-    ended,
+
+  // The ids of the climates the link names, by 36-bit prefix and by whole id.
+  const zones = linkClimates(text);
+  const byShort = new Map<string, PlantId[]>(), byLong = new Map<string, PlantId>();
+  const index = (ids: readonly PlantId[], short: Map<string, PlantId[]>, long: Map<string, PlantId>) => {
+    for (const id of ids) {
+      const hex = hexOf(id);
+      if (long.has(hex.slice(0, LONG_HEX))) continue;
+      long.set(hex.slice(0, LONG_HEX), id);
+      const p = hex.slice(0, SHORT_HEX);
+      if (!short.has(p)) short.set(p, []);
+      short.get(p)!.push(id);
+    }
   };
-  const read = consistent(decoded, false);
-  return cell ? resolveState(read, cell, others) : read;
+  for (const z of zones) index(known[z] ?? [], byShort, byLong);
+  const unknown = new Set<string>();
+  const resolveIn = (tok: Token, short: Map<string, PlantId[]>, long: Map<string, PlantId>): PlantId | null => {
+    const hit = tok.hex.length === LONG_HEX ? long.get(tok.hex) ?? null : (short.get(tok.hex)?.length === 1 ? short.get(tok.hex)![0] : null);
+    if (!hit) unknown.add(tok.hex.slice(0, SHORT_HEX));
+    return hit;
+  };
+  const resolve = (tok: Token) => resolveIn(tok, byShort, byLong);
+  // Plants past MAX_LINK_IDS are left out and counted; crops past MAX_CROPS are ignored (only three
+  // can be chosen, and each is also a member or kept, so nothing is lost).
+  const read = (key: string, stars = false, cap = MAX_LINK_IDS, countExcess = true) => {
+    const counter = { left: cap, excess: 0 };
+    const r = readTokens(q.get(key) ?? '', stars, counter);
+    if (r.malformed) notice.cut = true;
+    if (countExcess) notice.unknownCount += counter.excess;
+    return r.tokens;
+  };
+  const uniq = (ids: (PlantId | null)[]) => [...new Set(ids.filter((x): x is PlantId => x !== null))];
+
+  const members: PlantId[] = [], starred: PlantId[] = [];
+  for (const tok of read('a', true)) {
+    const id = resolve(tok);
+    if (!id || members.includes(id)) continue;
+    members.push(id);
+    if (tok.star) starred.push(id);
+  }
+  const keptOnly = uniq(read('p').map(resolve));
+  const crops = uniq(read('n', false, MAX_CROPS, false).map(resolve));
+  const removed = uniq(read('x').map(resolve));
+  // Guests are matched in their own list; one cap for every `g` together; a list given twice is cut.
+  const guests: ShareState['guests'] = [];
+  const gCap = { left: MAX_LINK_IDS, excess: 0 }, codes = new Set<string>();
+  for (const value of q.getAll('g')) {
+    const code = value.slice(0, 2), zone = codeZone.get(code);
+    if (!zone || codes.has(code)) { notice.cut = true; continue; }
+    codes.add(code);
+    const short = new Map<string, PlantId[]>(), long = new Map<string, PlantId>();
+    index(known[zone] ?? [], short, long);
+    const r = readTokens(value.slice(2), false, gCap);
+    if (r.malformed) notice.cut = true;
+    for (const tok of r.tokens) {
+      const id = resolveIn(tok, short, long);
+      if (id && !guests.some((g) => g.id === id)) guests.push({ id, from: zone });
+    }
+  }
+  notice.unknownCount += gCap.excess + unknown.size;
+
+  const kept = uniq([...starred, ...keptOnly, ...crops]);
+  const keep = new Set([...kept, ...members]);
+  Object.assign(state, { members, kept, crops, removed: removed.filter((id) => !keep.has(id)), guests });
+  return { state, notice };
 }
 
-// The rules between the lists: a main crop is kept, a plant both kept and removed stays kept, and
-// no member is removed; once ids are resolved, every kept plant is a member too (when the link
-// lists members).
-function consistent({ state, dropped, version, ended }: DecodedState, resolved: boolean): DecodedState {
-  const crops = state.crops ?? [];
-  const keptAll = [...new Set([...state.kept, ...crops])];
-  let members = state.members ?? null;
-  if (members && resolved) {
-    const inMembers = new Set(members);
-    members = [...members, ...keptAll.filter((id) => !inMembers.has(id))];
-  }
-  const keep = new Set([...keptAll, ...(members ?? [])]);
-  const out = [...dropped];
-  for (const id of state.removed) if (keep.has(id)) out.push({ key: 'x', value: id, reason: 'duplicate' });
-  return { state: { ...state, kept: keptAll, crops, members, removed: state.removed.filter((id) => !keep.has(id)) }, dropped: out, version, ended };
-}
-
-// The cell's taxon a guide names, by canonical name: exact first, then case and spacing aside;
-// null when the cell has none. resolveState() and the page's guide notice both use it.
-export function taxonByName(cell: ClimateFile, name: string): Taxon | null {
-  return cell.taxa.find((t) => t.canonical_name === name) ?? cell.taxa.find((t) => nameKey(t.canonical_name) === nameKey(name)) ?? null;
-}
-
-// A link decoded without its files (the page reads `c` and `g` first to choose them), resolved once
-// they are loaded: a guest is found in its own list (or, once this climate's list has it, is an
-// ordinary member); prefixes become full ids; unknown and ambiguous ones are dropped; a main crop
-// must be a food plant of this climate (else it stays kept, unmarked); and the kept-over-removed
-// rule is applied again on the full ids (a link may carry one id at two lengths).
-export function resolveState(decoded: DecodedState, cell: ClimateFile, others?: Partial<Record<SiteClimate, ClimateFile>>): DecodedState {
-  const { state } = decoded;
-  const guestDropped: Dropped[] = [], guests: Guest[] = [], guestTaxa: Taxon[] = [];
-  // Each pool's hex table once (B12).
-  const inCell = matcher(cell), files = new Map<SiteClimate, Matcher>(), guestIds = new Set<string>();
-  const fileMatch = (c: SiteClimate, file: ClimateFile) => { if (!files.has(c)) files.set(c, matcher(file)); return files.get(c)!; };
-  for (const g of state.guests ?? []) {
-    if (inCell(g.id).length === 1) continue; // in this climate's list now
-    const file = others?.[g.climate];
-    const r = file ? resolveIds([g.id], file, 'g', fileMatch(g.climate, file)) : { ids: [], dropped: [{ key: 'g', value: g.id, reason: 'unknown' as const }] };
-    if (r.ids.length && !guestIds.has(r.ids[0])) { guestIds.add(r.ids[0]); guests.push({ id: r.ids[0], climate: g.climate }); guestTaxa.push(file!.taxa.find((t) => t.id === r.ids[0])!); }
-    guestDropped.push(...r.dropped);
-  }
-  const pool = { taxa: [...cell.taxa, ...guestTaxa] }, inPool = matcher(pool);
-  const k = resolveIds(state.kept, pool, 'p', inPool), x = resolveIds(state.removed, pool, 'x', inPool);
-  const a = state.members ? resolveIds(state.members, pool, 'a', inPool) : null;
-  const n = resolveIds(state.crops ?? [], cell, 'n', inCell);
-  const crops = n.ids.filter((id) => cell.taxa.find((t) => t.id === id)?.role === 'crop');
-  // A guide's plant, by canonical name (case and spacing aside), joins the kept plants.
-  const kept = new Set([...k.ids, ...n.ids]), named: Dropped[] = [];
-  for (const name of state.plants ?? []) {
-    const hit = taxonByName(cell, name);
-    if (hit) kept.add(hit.id);
-    else named.push({ key: 'plant', value: name, reason: 'unknown' });
-  }
-  // A guest left out is in `g` and again in `a` (and kept): it is reported once, under `g`.
-  const lostGuest = new Set(guestDropped.map((d) => hexOf(d.value)));
-  const notGuest = (d: Dropped) => !lostGuest.has(hexOf(d.value));
-  return consistent({
-    state: { ...state, kept: [...kept], removed: x.ids, members: a ? a.ids : null, plants: [], crops, guests },
-    dropped: [...decoded.dropped, ...guestDropped, ...k.dropped.filter(notGuest), ...x.dropped, ...(a?.dropped ?? []).filter(notGuest), ...n.dropped, ...named],
-    version: decoded.version,
-    ended: decoded.ended,
-  }, true);
+// A Field Guide opens the tool with ?plant=<canonical name>&climate=<id> (design check A5; not a
+// share link). The page resolves the plant in the climate's list once it is loaded.
+export function readPreset(search: string): { climate: ClimateZone | null; plant: string | null } {
+  const q = params(search);
+  const c = q.get('climate');
+  const plant = (q.get('plant') ?? '').trim();
+  return { climate: c === null ? null : zoneOf(c), plant: plant && plant.length <= MAX_NAME_LENGTH ? plant : null };
 }

@@ -212,15 +212,44 @@ export interface SourceInfo { releaseId: string; schemaVersion: 1; builtAt: stri
 // The strata × phases matrix the store computes (store.ts `matrix`): one row per stratum, top to
 // bottom, seven cells each. An empty cell says why: 'gap' (no plant in the list for this cell yet)
 // or 'misfit' (plants exist, none fits the site: "Show them anyway"). One plant fills a cell.
-export interface MatrixCell { stratum: Stratum; phase: PhaseOrd; members: PlantId[]; empty: 'gap' | 'misfit' | null }
+// inList: the climate's plants that grow in the cell; fitting: those that do not misfit the site (an
+// unknown fits: "Free: N plants fit"); reasons: for a 'misfit' cell, the plants per site answer they
+// misfit; bothReasons: the counts add up to more than inList ("some for both reasons").
+export interface MatrixCell {
+  stratum: Stratum;
+  phase: PhaseOrd;
+  members: PlantId[];
+  empty: 'gap' | 'misfit' | null;
+  inList: number;
+  fitting: number;
+  // Counted per site key only: the views word each from the site answer (light: "too sunny" on a sun
+  // site, "too shady" on part shade or shade; water: "too dry" on dry, "too wet" on wet).
+  reasons: Partial<Record<SiteKey, number>>;
+  bothReasons: boolean;
+}
 // unplaced: the climate's plants with no stratum yet (`stratum IS NULL`, 0 today), listed under
 // "No layer yet" rather than dropped (design check §4).
-export interface Matrix { climate: ClimateZone; rows: { stratum: Stratum; cells: MatrixCell[] }[]; filled: number; total: number; unplaced: PlantId[] }
+// The fill meter: filled of total cells that can be filled; free = total − filled; cannot = the empty
+// cells nothing can fill here (gap or misfit), which never count against the reader (28 = total + cannot).
+export interface Matrix { climate: ClimateZone; rows: { stratum: Stratum; cells: MatrixCell[] }[]; filled: number; total: number; free: number; cannot: number; unplaced: PlantId[] }
 
 // A warning on a member (store.ts `flags`): a conflict between two members, a site misfit, an
 // invasive or toxicity warning. Add and Swap ask only about 'misfit' and a high 'conflict'.
+// A conflict flag is one per other member, for its worst row, and carries that row's type, agent
+// and note. Low conflicts are flags too: the views decide what to show (they filter low out of chips).
 export type FlagKind = 'conflict' | 'misfit' | 'invasive' | 'toxicity';
-export interface Flag { id: PlantId; kind: FlagKind; other?: PlantId; severity?: Severity }
+export interface Flag {
+  id: PlantId;
+  kind: FlagKind;
+  other?: PlantId;
+  severity?: Severity;
+  type?: Exclude<InteractionType, 'allelopathy_tolerant' | 'intercropped_yield_gain'>;
+  agent?: string | null;
+  note?: Text | null;
+}
+// The reader's country for the invasive check (conflicts.ts countryStatus): none given, given and
+// checked against GRIIS ("not recorded" is then a real answer), or given but not checked.
+export type CountryStatus = 'none' | 'checked' | 'unchecked';
 
 // ---- Shapes the views need from the rules (review C5; S1 fills them, S2–S4 render them) ----
 
@@ -235,8 +264,10 @@ export type JobId = (typeof jobIds)[number];
 export type Verdict = 'fit' | 'misfit' | 'unknown';
 export type FitReason =
   | { key: 'light' | 'soil' | 'water'; verdict: Verdict; trait: keyof Traits | null }
-  | { key: 'room'; verdict: Verdict; kind: 'fits' | 'wild_height'; meters: number }
-  | { key: 'room'; verdict: 'unknown'; kind: 'height_not_recorded' };
+  // Room checks the height only. meters: the plant's wild maximum height; limit: the room's.
+  | { key: 'room'; verdict: Verdict; kind: 'fits' | 'wild_height'; meters: number; limit: number }
+  // A climber's recorded size can be a runner length, so its room is unknown, said as such.
+  | { key: 'room'; verdict: 'unknown'; kind: 'height_not_recorded' | 'climber' };
 export interface Fit { verdict: Verdict; misfits: SiteKey[]; unknowns: SiteKey[]; reasons: FitReason[] }
 
 // Swap: a plant that could take a member's place, with what it changes in the matrix ("Also fills…",
@@ -249,8 +280,8 @@ export interface JobGap { job: JobId; members: PlantId[]; missing: PhaseOrd[] }
 
 // Share state (#v=4, state.ts): what a link restores, and what the page must say about it (§5).
 // unknownCount: plants of the link no longer in the list ("2 plants from this link…");
-// cut: the link lost its end marker ("This link looks cut off"); long: over 2,000 characters
-// ("Some apps cut long links…").
+// cut: the link lost its end marker ("This link looks cut off"). "Some apps cut long links…" is not
+// a notice of a link being read: it is checked on the URL at share time (state.ts isLongLink).
 export interface ShareState {
   climate: ClimateZone | null;
   country: string | null;
@@ -259,7 +290,10 @@ export interface ShareState {
   kept: PlantId[];
   removed: PlantId[];
   guests: { id: PlantId; from: ClimateZone }[];
+  crops: PlantId[]; // Main crops (at most 3), each also kept
   stage: PhaseOrd | null;
 }
-export interface LinkNotice { unknownCount: number; cut: boolean; long: boolean }
+// outdated: a link of another version (v1 share links are not read: owner row 2026-11-11); its plants
+// are not restored.
+export interface LinkNotice { unknownCount: number; cut: boolean; outdated: boolean }
 export interface DecodedLink { state: ShareState; notice: LinkNotice }

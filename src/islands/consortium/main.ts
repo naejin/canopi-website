@@ -1,11 +1,12 @@
 // The consortium island's entry (commit 0 of P2; stream S1 owns it from here). ConsortiumPage.astro
 // imports it from its page script. It reads #ct-data, renders App into #ct-root (replacing the static
 // loading line) and opens the database at once, in parallel with the first render (design check A2),
-// so Start works while the plant list loads. S1 wires its PlantSource here; the other streams add
-// their wiring to the store and views, not here.
+// so Start works while the plant list loads. Once open, the database is wrapped in the PlantSource
+// (data/sqlite-source.ts) and set on the store, which then reads the chosen climate's plants
+// (store.watchPools). The other streams add their wiring to the store and views, not here.
 import { h, render } from 'preact';
 import { App } from './App.tsx';
-import { load } from './store.ts';
+import { load, setSource, watchPools } from './store.ts';
 import { setStrings, type Strings } from './strings.ts';
 import type { DbRef } from './data/bytes.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
@@ -30,15 +31,16 @@ type Loader = typeof import('./data/load.ts');
 let loader: Promise<Loader> | null = null;
 const getLoader = () => (loader ??= import('./data/load.ts').catch((err: unknown) => { loader = null; throw err; }));
 
+// Retry opens a new database: the one opened before is closed first (store.setSource).
 async function open(data: PageData): Promise<void> {
   load.value = { status: 'loading', error: null };
+  setSource(null);
   let LoadError: Loader['LoadError'] | null = null;
   try {
     const mod = await getLoader();
     LoadError = mod.LoadError;
     const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map(zoneOf) });
-    // S1 wraps `opened` in its PlantSource (data/sqlite-source.ts) and sets store.source here.
-    void opened;
+    setSource(mod.createSqliteSource(opened.db, { images: data.images }), () => opened.db.close());
     load.value = { status: 'ready', error: null };
   } catch (err) {
     // The loader chunk did not arrive: offline is the fetch screen; online, the chunk is gone after a
@@ -60,5 +62,6 @@ if (root && raw) {
   root.textContent = '';
   root.removeAttribute('aria-busy');
   render(h(App, { guide: data.guide, onRetry: () => void open(data) }), root);
+  watchPools();
   void open(data);
 }
