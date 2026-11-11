@@ -620,7 +620,7 @@
   "consortium.misfit.unk.water": "Besoins en eau non connus : non vérifiés pour votre terrain.",
   "consortium.misfit.unk.room": "Hauteur dans la nature non connue : non vérifiée pour votre espace.",
   "consortium.misfit.unk.climber": "Plante grimpante : sa taille dépend de son support, non vérifiée pour votre espace.",
-  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file.",
+  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, up to the next block key.",
   "consortium.start.climate.title": "Choisissez un climat",
   "consortium.start.climate.lede": "Il en faut un. Rien n’est choisi pour vous : Canopi sert dans tous les climats.",
   "consortium.start.climate.ready": "Prêt",
@@ -737,5 +737,10 @@
   "consortium.share.pasted.outdated": "Le lien collé vient d’une ancienne version de l’outil : rien n’a été changé.",
   "consortium.share.pasted.cut": "Le lien collé semble coupé et ne nomme aucun climat : rien n’a été changé.",
   "consortium.share.pasted.failed": "Le lien collé n’a pas pu être ouvert : sa liste de plantes ne s’est pas chargée. Rien n’a été changé.",
-  "consortium.share.failed": "Ce lien n’a pas pu être ouvert : sa liste de plantes ne s’est pas chargée. Réessayez plus tard."
+  "consortium.share.failed": "Ce lien n’a pas pu être ouvert : sa liste de plantes ne s’est pas chargée. Réessayez plus tard.",
+  "consortium.block.s5b": "Stream S5b keys (where is your site: location, search, map, share location) follow, up to the next block key.",
+  "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
+  "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
+  "consortium.block.s5e": "Stream S5e keys (native here, soil likely) follow, up to the next block key.",
+  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, to the end of the file."
 }

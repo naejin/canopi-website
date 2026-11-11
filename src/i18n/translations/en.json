@@ -620,7 +620,7 @@
   "consortium.misfit.unk.water": "Water needs not recorded, so not checked against your site.",
   "consortium.misfit.unk.room": "Height in the wild not recorded, so not checked against your space.",
   "consortium.misfit.unk.climber": "A climber: its size depends on its support, so not checked against your space.",
-  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file.",
+  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, up to the next block key.",
   "consortium.start.climate.title": "Choose a climate",
   "consortium.start.climate.lede": "One is needed. Nothing is chosen for you: Canopi is used in every climate.",
   "consortium.start.climate.ready": "Ready",
@@ -737,5 +737,10 @@
   "consortium.share.pasted.outdated": "The pasted link is from an older version of the tool, so nothing was changed.",
   "consortium.share.pasted.cut": "The pasted link looks cut off and names no climate, so nothing was changed.",
   "consortium.share.pasted.failed": "The pasted link could not be opened: its plant list did not load. Nothing was changed.",
-  "consortium.share.failed": "This link could not be opened: its plant list did not load. Try again later."
+  "consortium.share.failed": "This link could not be opened: its plant list did not load. Try again later.",
+  "consortium.block.s5b": "Stream S5b keys (where is your site: location, search, map, share location) follow, up to the next block key.",
+  "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
+  "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
+  "consortium.block.s5e": "Stream S5e keys (native here, soil likely) follow, up to the next block key.",
+  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, to the end of the file."
 }

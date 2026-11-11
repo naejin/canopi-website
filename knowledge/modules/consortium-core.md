@@ -1,28 +1,28 @@
 ---
 type: Module
 title: Consortium core
-description: Consortium v2 core seams (types, PlantSource, load failures), the rules S1 ported, and the format 4 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
+description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range, placement, future, native, soil and marks stubs), the rules S1 ported, and the format 4 schema 2 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:20:19Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:50:03Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:32Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:ddac18ec413ae1cf
-    last_modified: 2026-11-11T04:40:22Z
+    digest: sha256:6e80ef325881b757
+    last_modified: 2026-11-11T14:45:37Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:e05dce72d4196000
-    last_modified: 2026-11-11T14:19:07Z
+    digest: sha256:63acafcac8e3d159
+    last_modified: 2026-11-11T14:39:43Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:bd44a5ec645f12ce
-    last_modified: 2026-11-11T04:31:48Z
+    digest: sha256:b2b2ff7f685ec7ae
+    last_modified: 2026-11-11T14:39:43Z
   - id: matrix-ts
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
@@ -41,18 +41,18 @@ sources:
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
-    digest: sha256:6904e3c78deffa76
-    last_modified: 2026-11-11T03:24:14Z
+    digest: sha256:78d0869e4c85b9ae
+    last_modified: 2026-11-11T14:39:43Z
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
-    digest: sha256:67ac3c2c8af76873
-    last_modified: 2026-11-11T02:58:29Z
+    digest: sha256:526af982cb7e40af
+    last_modified: 2026-11-11T14:39:43Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
-    digest: sha256:8d4ded230e94a7b1
-    last_modified: 2026-11-11T02:58:29Z
+    digest: sha256:fa3a04d440663ab4
+    last_modified: 2026-11-11T14:39:43Z
   - id: readme-md
     resource: ../../scripts/fixtures/consortium-v2/README.md
     title: scripts/fixtures/consortium-v2/README.md
@@ -61,8 +61,8 @@ sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
-    digest: sha256:067b733f9fc92fd8
-    last_modified: 2026-11-11T02:58:29Z
+    digest: sha256:b1ea457758728418
+    last_modified: 2026-11-11T14:39:43Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -87,15 +87,56 @@ sources:
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
     digest: sha256:47a850b28f749c9f
-    last_modified: 2026-11-11T14:19:07Z
+    last_modified: 2026-11-11T13:27:12Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
     digest: sha256:2204b1125f7911bc
     last_modified: 2026-11-11T03:07:08Z
+  - id: range-ts
+    resource: ../../src/lib/consortium/range.ts
+    title: src/lib/consortium/range.ts
+    digest: sha256:209744259c565747
+    last_modified: 2026-11-11T14:39:43Z
+  - id: placement-ts
+    resource: ../../src/lib/consortium/placement.ts
+    title: src/lib/consortium/placement.ts
+    digest: sha256:bd70a2a8fe488a47
+    last_modified: 2026-11-11T14:39:43Z
+  - id: future-ts
+    resource: ../../src/lib/consortium/future.ts
+    title: src/lib/consortium/future.ts
+    digest: sha256:4428f15e54091dfd
+    last_modified: 2026-11-11T14:39:43Z
+  - id: native-ts
+    resource: ../../src/lib/consortium/native.ts
+    title: src/lib/consortium/native.ts
+    digest: sha256:4b51ac6e64dc8100
+    last_modified: 2026-11-11T14:39:43Z
+  - id: soil-likely-ts
+    resource: ../../src/lib/consortium/soil-likely.ts
+    title: src/lib/consortium/soil-likely.ts
+    digest: sha256:6db10dbc48f6bf4c
+    last_modified: 2026-11-11T14:39:43Z
+  - id: marks-ts
+    resource: ../../src/lib/consortium/marks.ts
+    title: src/lib/consortium/marks.ts
+    digest: sha256:a20057132b064ed1
+    last_modified: 2026-11-11T14:39:43Z
+  - id: consortium-p5-seams-test-mjs
+    resource: ../../scripts/consortium-p5-seams.test.mjs
+    title: scripts/consortium-p5-seams.test.mjs
+    digest: sha256:4677cc70ebaad7b6
+    last_modified: 2026-11-11T14:45:37Z
+  - id: consortium-grid-check-mjs
+    resource: ../../scripts/consortium-grid-check.mjs
+    title: scripts/consortium-grid-check.mjs
+    digest: sha256:d00a6bc0eac9d46b
+    last_modified: 2026-11-11T14:41:50Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs
+  - scripts/consortium-p5-seams.test.mjs
 ---
 
 # Responsibility
@@ -113,14 +154,15 @@ The core has no DOM, no Astro and no package imports, so `node --test` runs it a
 
 | File | Holds |
 |---|---|
-| [types.ts](../../src/lib/consortium/types.ts) | `SCHEMA_VERSION` 1, `APPLICATION_ID` 0x43434F4E. Value lists: `climateZones` (capitalised as exported), `regions`, `locales`, `phases`, `strata`, `roles`, `functionIds`, `interactionTypes`, `severities`, `toxicityLevels`, `layerFields`, `layerKinds`, `months`. Site answers `lights`/`soils`/`waters`/`rooms`, each with `unsure` (A7). Records: `PlantId` (the plants.id UUID, never the integer `plant`), `Placement`, `Taxon` (one plant in one climate; `from?` marks a guest, A9), `Traits`, `Warnings`, `Interaction`, `Reason`, `LayerValue`, `Details`, `Labels`, `SourceInfo`, `Matrix`/`MatrixCell` (empty: `gap` or `misfit`), `Flag`. View shapes for S2–S4 (review C5): `Verdict`, `FitReason` (wild height "can grow over N m", "height not recorded"), `Fit`, `JobId`/`jobIds`, `CellRef`, `Alternative` (`alsoFills`, `leavesEmpty`), `JobGap` (missing phases), `ShareState`, `LinkNotice` (`unknownCount`, `cut`, `long`), `DecodedLink`; `Matrix.unplaced` ("No layer yet") |
-| [source.ts](../../src/lib/consortium/source.ts) | `PlantSource`, as in design check §4: `info`, `countries`, `pool`, `interactions`, `placements`, `names`, `details`, `labels`, and `cellCounts` (a test oracle). `loadFailures`: `too-old`, `wasm-blocked`, `wasm-fetch` (sqlite3.wasm did not arrive; review L1), `fetch`, `stale`, `damaged`, `schema`, one per §5 screen |
+| [types.ts](../../src/lib/consortium/types.ts) | `SCHEMA_VERSION` 2, `APPLICATION_ID` 0x43434F4E. Value lists: `climateZones` (capitalised as exported), `regions`, `locales`, `phases`, `strata`, `roles`, `functionIds`, `interactionTypes`, `severities`, `toxicityLevels`, `layerFields`, `layerKinds`, `months`. Site answers `lights`/`soils`/`waters`/`rooms`, each with `unsure` (A7). Records: `PlantId` (the plants.id UUID, never the integer `plant`), `Placement`, `Taxon` (one plant in one climate; `from?` marks a guest, A9), `Traits`, `Warnings`, `Interaction`, `Reason`, `LayerValue`, `Details`, `Labels`, `SourceInfo`, `Matrix`/`MatrixCell` (empty: `gap` or `misfit`), `Flag`. View shapes for S2–S4 (review C5): `Verdict`, `FitReason` (wild height "can grow over N m", "height not recorded"), `Fit`, `JobId`/`jobIds`, `CellRef`, `Alternative` (`alsoFills`, `leavesEmpty`), `JobGap` (missing phases), `ShareState`, `LinkNotice` (`unknownCount`, `cut`, `long`), `DecodedLink`; `Matrix.unplaced` ("No layer yet"). Schema 2 (P5 commit 0): `Taxon.climate: TaxonClimate | null` (`tminCold`, `tmaxWarm`, `aridity` as `ClimateRange {low, median, high, count, basis}`, `cells`, `nativeShare`; null = "range not recorded"), `Taxon.areasKnown` (WCVP matched; false = native "unknown"), `Taxon.placedFrom?`/`estimate?` (S5c), `Details.koppen: KoppenShare[]` (largest first), `SourceInfo.schemaVersion` 2 with `climateGrid` and `rangesReview`. P5 seams: `SiteLookup`/`SitePeriod` (a structural mirror of the climate reader's lookup; store.ts checks the reader's type stays assignable, since the core may not import `src/lib/climate`), `SiteLocation {lat, lon, source: 'geo'|'search'|'map'|'link', label?, lookup}`, `scenarios`/`Scenario`/`DEFAULT_SCENARIO` ('ssp245'), `markKinds`/`Mark {kind, key, vars?, severity: 'note'|'warning'}` |
+| [source.ts](../../src/lib/consortium/source.ts) | `PlantSource`, as in design check §4: `info`, `countries`, `pool`, `interactions`, `placements`, `names`, `details`, `labels`, `cellCounts` (a test oracle), and (schema 2) `nativeIn(l3): ReadonlySet<PlantId>`, synchronous and cached per area (plant_areas, introduced = 0). `loadFailures`: `too-old`, `wasm-blocked`, `wasm-fetch` (sqlite3.wasm did not arrive; review L1), `fetch`, `stale`, `damaged`, `schema`, one per §5 screen |
 | [index.ts](../../src/lib/consortium/index.ts) | Re-exports types, source and canopi-file (S4's, exported now so S4 never edits index.ts). Stream S1 adds the rule exports here. |
 | [canopi-file.ts](../../src/lib/consortium/canopi-file.ts) | S4's `.canopi` writer for the app (format v9, canopi `0c425fb07`): `canopiFile(members, { name, description, at })` returns the JSON text of an empty design whose `consortiums` hold one entry per member (`target {kind: 'species', canonical_name}`, its `stratum` or `unassigned`, `start_phase`/`end_phase` 0–6; app default `unassigned` 0–2), deduplicated by canonical name, with `plants: []` (checked at P2 hand-offs: `PlacedPlant` requires a map `position` the tool does not have, and the app's consortium sync (`app/consortium/workflow.ts` at `0c425fb07`) only adds entries for placed plants and never removes these, so the entries survive until the reader places the plants); `canopiFileName(name)` makes a safe `<name>.canopi`. Pure. Checked in `scripts/consortium-canopi-file.test.mjs` and BT-9 against the app's vendored format, [scripts/vendor/canopi-design-format/](../../scripts/vendor/canopi-design-format) (canopi `0c425fb07`, AGPL header, test-only), with its `validate.mjs` |
 | [site.ts](../../src/lib/consortium/site.ts), [conflicts.ts](../../src/lib/consortium/conflicts.ts), [jobs.ts](../../src/lib/consortium/jobs.ts), [matrix.ts](../../src/lib/consortium/matrix.ts), [suggest.ts](../../src/lib/consortium/suggest.ts), [state.ts](../../src/lib/consortium/state.ts) | Stream S1's rules, exported from `index.ts`: three-valued site fit; conflicts and invasive records; the six jobs and their gaps per phase; `buildMatrix` (4 strata × 7 phases); the greedy suggestion and Swap list; the `#v=4` share link (`encodeLink`, `decodeLink`, `isLongLink` over 2,000 characters, `readPreset` for guide links); `zoneOf(code)` in `state.ts` is the one climate-code lookup (the island's memory.ts and main.ts import it) |
+| [range.ts](../../src/lib/consortium/range.ts), [placement.ts](../../src/lib/consortium/placement.ts), [future.ts](../../src/lib/consortium/future.ts), [native.ts](../../src/lib/consortium/native.ts), [soil-likely.ts](../../src/lib/consortium/soil-likely.ts), [marks.ts](../../src/lib/consortium/marks.ts) | P5 commit 0 seams, each a stub keeping today's behaviour and filled by one stream (`.local/consortium/v2/p5-owners.md`): `rangeFit(taxon, site)` → 'unknown' and `rangeMarks` (S5c); `placeFor(placements, zone, nearestOrder)` → own placement or null, with `NEAREST_LISTS` (Subtropical/Arid → Mediterranean, Tropical, Temperate; Continental/Boreal → Temperate, Mediterranean) (S5c); `futureCheck(taxon, site, scenario)` → null and `futureMarks` (S5d); `nativeHere(taxon, l3, natives)` → null, `nativeMarks`, `likelyFor(question, lookup)` → null (S5e); `plantMarks(taxon, ctx, providers = markProviders)` concatenates range, future and native marks, `MarkContext {climate, location, scenario, source}`. Pinned by `scripts/consortium-p5-seams.test.mjs` |
 | [install-consortium.mjs](../../scripts/install-consortium.mjs) | The installer, described below |
-| [consortium-schema.mjs](../../scripts/consortium-schema.mjs) | `DDL`: the export's 34 statements, from canopi-data at `ab6bfad` (unchanged since `8a74efd`). `DATA_TABLES`: the 25 counted tables |
-| [make-fixture.mjs](../../scripts/fixtures/consortium-v2/make-fixture.mjs) | The invented fixture, 38 plants, built with `node:sqlite`. `buildFixtureDb` and `writeFixtureExport(dir, { edit, userVersion, applicationId, manifest, after })` build the broken variants for tests. The committed `export/` passes canopi-data's `check_export`; coverage is in its README |
+| [consortium-schema.mjs](../../scripts/consortium-schema.mjs) | `DDL`: schema 2, the export's 37 statements as stored in export `r-e0b162087a79eecf` (schema 1's from canopi-data `ab6bfad`, plus `plant_climate_status`, `plant_climate`, `plant_koppen`). `DATA_TABLES`: the 28 counted tables |
+| [make-fixture.mjs](../../scripts/fixtures/consortium-v2/make-fixture.mjs) | The invented fixture, 38 plants, built with `node:sqlite`; schema 2 ranges by rule from each plant's first placement (`FIXTURE_GRID_SHA256` is the real v0.2.0 grid digest), Phacelia without a range. `buildFixtureDb` and `writeFixtureExport(dir, { edit, userVersion, applicationId, manifest, after })` build the broken variants for tests. The committed `export/` passes canopi-data's `check_export`; coverage is in its README |
 
 The v1 rules were ported in place by S1 (design check §2); their v1 descriptions are in this concept at commit `f8e59ba`.
 
@@ -131,13 +173,14 @@ Usage: `node scripts/install-consortium.mjs <export-dir> [--fixture [--no-images
 It refuses on the first failure, with nothing written:
 - **Sums:** every `SHA256SUMS` entry exists and matches, and every other file of the directory is listed.
 - **Manifest:**
-  - `format_version` 4 and `schema_version` 1, refused by name otherwise; format 3 was v1's;
+  - `format_version` 4 and `schema_version` 2, refused by name otherwise; format 3 was v1's;
+  - a `climate_ranges` block naming `climate_grid_manifest_sha256`;
   - `release_id` matching `^r-[0-9a-f]{16}$`;
   - `canopi_db_sha256` all zeros only with `--fixture`;
   - `split` false with one file (the page reads `files[0]` and expects every climate, so a split export is refused until it reads one file per climate), climates are in climate order, and the files' climates equal the manifest's;
   - the `try_references` and `source_credits` entries.
 - **Each database file:**
-  - its name is `databaseName(release, raw_sha256, climate?)`, i.e. `consortium-v1.<release>.<12 hex of the raw db>.sqlite.gz`;
+  - its name is `databaseName(release, raw_sha256, climate?)`, i.e. `consortium-v2.<release>.<12 hex of the raw db>.sqlite.gz`;
   - sha256 and bytes match the manifest, and the gzip magic is present;
   - at most `MAX_GZIP_BYTES` (1,000,000) gzipped and at most `MAX_FILE_BYTES` (25 MiB) raw; raw sha256 and bytes match.
 - **The database read with `node:sqlite`** (`readDatabase`; dynamic import, unflagged from Node 22.13, the engines floor):
@@ -145,6 +188,7 @@ It refuses on the first failure, with nothing written:
   - every table and column of `consortium-schema.mjs`, and no table outside it;
   - meta (schema, format, release, `built_at` = `generated_at`, climates), and each table's count against meta and the manifest;
   - every plant placed, and every placement with a reason;
+  - schema 2: `meta.ranges_review` is `estimate_not_reviewed`; `meta.climate_grid_manifest_sha256` is a sha256 (an empty value counts as missing) equal to the manifest's `climate_ranges`; every plant has a `plant_climate_status` row; range or Köppen rows only beside a `range_source`;
   - plant ids are UUIDs, and source and photo-page URLs are http(s);
   - invasive rows only in countries GRIIS checked.
 - **TRY list and credits:** parsed as the site's build parses them.
@@ -162,7 +206,8 @@ What it writes:
   - `climates` (capitalised, manifest order), `griis_available`;
   - `names{climate: sorted canonical names}`;
   - `images{uuid: /data/consortium/images/…}`;
-  - `try_references{sha256, rows, dataset_ids}` and `source_credits{sha256, rows}`.
+  - `try_references{sha256, rows, dataset_ids}` and `source_credits{sha256, rows}`;
+  - `climate_grid_manifest_sha256` and `ranges_review` (schema 2). `install-climate.mjs` refuses tiles of another grid, and `check-built-site.mjs` (through `scripts/consortium-grid-check.mjs`) requires the climate index's grid to equal it with `consortium_grid_check.status` `matched`.
   - With `--out` or `--fixture`, the index goes inside the output instead.
 - On a real install, `src/data/`:
   - `try_references.tsv` with its meta;
@@ -173,12 +218,11 @@ What it writes:
 - Staging is in `.cache/consortium-install/`, then a rename, with the `src/data/` files put back on failure.
 - `verifyInstall(dir, index)` re-checks a served folder against the index: the mark, each database by sha256, gzip and limits, every indexed photo present, and nothing else. `check-built-site.mjs` runs it on `dist/client/data/consortium/`.
 
-Installed now: release `r-2c6bdf65c35caca3`, `consortium-v1.r-2c6bdf65c35caca3.d1047f1b78b9.sqlite.gz`.
-- 429,481 B gzipped, about 1.66 MB raw.
-- 515 plants, 200 placements per climate (Tropical, Mediterranean, Temperate).
-- 190 photos (179 Commons, 11 iNaturalist).
-
-The export was rebuilt on 2026-11-11 at 03:39, so the digest is not the `6d303e00b6ac` the design check names.
+Installed now (P5 commit 0): release `r-e0b162087a79eecf`, schema 2, `consortium-v2.r-e0b162087a79eecf.7fe89cd1dda2.sqlite.gz`.
+- 556,862 B gzipped, 2,138,112 B raw (schema 1's `r-2c6bdf65c35caca3` was 429,481 B gzipped, about 1.66 MB raw).
+- 515 plants, 200 placements per climate (Tropical, Mediterranean, Temperate); 515 status rows, 2,575 range rows (5 variables), 8,549 Köppen rows (4,671 under 1 %), 34,176 area rows.
+- Ranges sampled from canopi-climate grid `04ec85f4…` (v0.2.0), `ranges_review` `estimate_not_reviewed`; WCVP did not match Prunus dulcis (native "unknown").
+- The same 190 photos (179 Commons, 11 iNaturalist).
 
 # Gotchas
 

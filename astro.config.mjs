@@ -10,7 +10,7 @@ import { transformWithEsbuild } from 'vite';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { moduleGraph } from './scripts/built-modules.mjs';
+import { moduleGraph, onDemandChunks, pageEntries } from './scripts/built-modules.mjs';
 import { climateTiles } from './scripts/climate-integration.mjs';
 
 // Consortium v2 (design check A1, coordinator row "v2 build setup", 2026-11-11): Preact 11 without
@@ -58,7 +58,8 @@ const sqliteMainThreadOnly = {
 // Design check A2 (review C8): the consortium page loads its island through a dynamic import, and
 // the island its loader, so their chunks would arrive one after another. After the build, every page
 // holding #ct-root gets a <link rel="modulepreload"> for each chunk of its import graph that it does
-// not already load with a <script src>, the sqlite glue included. Other pages are not touched (P7).
+// not already load with a <script src>, the sqlite glue included, but not the on-demand chunks (P5:
+// the location chunk and MapLibre, loaded when the reader asks). Other pages are not touched (P7).
 // ConsortiumPage.astro preloads the database itself; scripts/check-built-site.mjs checks both.
 /** @type {import('astro').AstroIntegration} */
 const consortiumModulePreload = {
@@ -76,8 +77,11 @@ const consortiumModulePreload = {
           if (!e.name.endsWith('.html')) continue;
           const html = readFileSync(p, 'utf8');
           if (!html.includes('id="ct-root"')) continue;
-          const links = [...moduleGraph(root, html).keys()]
-            .filter((m) => !html.includes(`src="${m}"`) && !html.includes(`href="${m}"`))
+          const graph = moduleGraph(root, html);
+          const lazy = onDemandChunks(graph, pageEntries(html));
+          const onDemand = new Set([...lazy.location, ...lazy.maplibre]);
+          const links = [...graph.keys()]
+            .filter((m) => !onDemand.has(m) && !html.includes(`src="${m}"`) && !html.includes(`href="${m}"`))
             .map((m) => `<link rel="modulepreload" href="${m}">`).join('');
           if (links) writeFileSync(p, html.replace('</head>', `${links}</head>`));
         }

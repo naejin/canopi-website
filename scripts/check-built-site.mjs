@@ -4,13 +4,14 @@ import { join } from 'node:path';
 import { builtTarget, splitHref, subdirectories } from './built-links.mjs';
 import { tryListProblem, verifyInstall, INDEX_PATH } from './install-consortium.mjs';
 import { verifyClimateInstall, readRelease, INDEX_PATH as CLIMATE_INDEX_PATH } from './install-climate.mjs';
+import { consortiumGridProblem } from './consortium-grid-check.mjs';
 import { consortiumPath } from '../src/i18n/consortium-path.js';
 import { parseTryReferences, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.js';
 import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
 import { createHash } from 'node:crypto';
 import { safeHref } from '../src/lib/safe-href.js';
 import { gzipSync } from 'node:zlib';
-import { firstRunChunks, islandChunks, isSqliteGlue, moduleGraph } from './built-modules.mjs';
+import { firstRunChunks, islandChunks, isSqliteGlue, moduleGraph, onDemandChunks, LOCATION_CHUNK, MAPLIBRE_CHUNK } from './built-modules.mjs';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -476,6 +477,16 @@ const ISLAND_BUDGET = 60 * 1024;
 // review: 37.6 KB at the time). The 60 KB above counts the lazy chunks too, so moving code to a lazy
 // chunk does not lower it; P5 is to change that metric.
 const FIRST_RUN_BUDGET = 40 * 1024;
+// P5 (decision row "Island JavaScript budget for P5"): the location chunk (S5b, the lazy
+// views/location/location.tsx) and MapLibre load on demand, are not modulepreloaded, are not counted
+// in the 60 KB, and have budgets of their own: location ≤ 20 KB, MapLibre ≤ 330 KB. Vacuous-safe:
+// until src/islands/consortium/views/location/ exists, the build must hold neither.
+const LOCATION_BUDGET = 20 * 1024;
+const MAPLIBRE_BUDGET = 330 * 1024;
+const locationSource = existsSync(new URL('../src/islands/consortium/views/location/', import.meta.url));
+if (locationSource) assert.ok(existsSync(new URL('../src/islands/consortium/views/location/location.tsx', import.meta.url)), 'src/islands/consortium/views/location/ has no location.tsx, the lazy entry the location budget finds by name (location.<hash>.js)');
+let locationBytes = 0;
+let maplibreBytes = 0;
 let firstRunBytes = 0;
 let islandBytes = 0;
 let islandList = [];
@@ -489,8 +500,23 @@ for (const lang of locales) {
   // the page script) and without the sqlite glue (review C8 follow-up).
   const scripts = [...html.matchAll(/<script\b[^>]*\btype="module"[^>]*\bsrc="([^"]+)"/g)].map(([, src]) => src);
   assert.ok(scripts.length > 0, `${path}: the page loads its scripts as module scripts (else nothing below is counted)`);
-  const island = islandChunks(graph, scripts);
-  assert.ok(island.chunks.length > 0, `${path}: the island's chunks are found (else the budget counts nothing)`);
+  const all = islandChunks(graph, scripts);
+  assert.ok(all.chunks.length > 0, `${path}: the island's chunks are found (else the budget counts nothing)`);
+  const lazy = onDemandChunks(graph, scripts);
+  const onDemand = new Set([...lazy.location, ...lazy.maplibre]);
+  const gz = (list) => list.reduce((n, p) => n + gzipSync(graph.get(p).code, { level: 9 }).length, 0);
+  const astro = readdirSync(join(root, '_astro')).map((f) => `/_astro/${f}`);
+  if (locationSource) {
+    assert.equal(lazy.location.filter((p) => LOCATION_CHUNK.test(p)).length, 1, `${path}: one location chunk (location.<hash>.js) in the island's graph`);
+  } else {
+    assert.deepEqual(astro.filter((p) => LOCATION_CHUNK.test(p) || MAPLIBRE_CHUNK.test(p)), [], `${path}: no location or MapLibre chunk before S5b lands`);
+    for (const p of graph.keys()) assert.ok(!graph.get(p).code.includes('maplibregl'), `${path}: ${p} holds MapLibre before S5b lands`);
+  }
+  locationBytes = gz(lazy.location);
+  maplibreBytes = gz(lazy.maplibre);
+  assert.ok(locationBytes <= LOCATION_BUDGET, `${path}: the location chunk is ${(locationBytes / 1024).toFixed(1)} KB gzip, the budget is 20 KB`);
+  assert.ok(maplibreBytes <= MAPLIBRE_BUDGET, `${path}: MapLibre is ${(maplibreBytes / 1024).toFixed(1)} KB gzip, the budget is 330 KB`);
+  const island = { entry: all.entry, chunks: all.chunks.filter((p) => !onDemand.has(p)) };
   const total = island.chunks.reduce((n, p) => n + gzipSync(graph.get(p).code, { level: 9 }).length, 0);
   islandList = island.chunks;
   // The PlantSource rides in the loader's chunk beside the glue (data/load.ts): a sheet importing
@@ -504,9 +530,12 @@ for (const lang of locales) {
   const db = preloads.find((l) => l.href === consortiumIndex.files[0].url);
   assert.ok(db && db.rel === 'preload' && /\bas="fetch"/.test(db.tag) && /\bcrossorigin\b/.test(db.tag), `${path}: <link rel="preload" as="fetch" crossorigin> for the database`);
   const modules = new Set(preloads.filter((l) => l.rel === 'modulepreload').map((l) => l.href));
-  for (const p of graph.keys()) if (!html.includes(`src="${p}"`)) assert.ok(modules.has(p), `${path}: modulepreload ${p}`);
+  for (const p of graph.keys()) {
+    if (onDemand.has(p)) assert.ok(!modules.has(p), `${path}: ${p} loads on demand, not modulepreloaded`);
+    else if (!html.includes(`src="${p}"`)) assert.ok(modules.has(p), `${path}: modulepreload ${p}`);
+  }
 }
-console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB); first run ${(firstRunBytes / 1024).toFixed(1)} KB (budget 40 KB).`);
+console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB); first run ${(firstRunBytes / 1024).toFixed(1)} KB (budget 40 KB); on demand: location ${(locationBytes / 1024).toFixed(1)} KB (budget 20 KB${locationSource ? '' : ', none before S5b'}), MapLibre ${(maplibreBytes / 1024).toFixed(1)} KB (budget 330 KB).`);
 
 // P5 design check A: Workers static assets take at most 20,000 files on the Free plan (100,000 Paid);
 // every file of the build counts, the Web Edition under /app/ and the climate tiles included.
@@ -534,6 +563,9 @@ console.log(`Static assets: ${assetFiles} files in ${root} (limit ${MAX_ASSET_FI
   const pin = readRelease();
   assert.equal(climateIndex.release?.grid_manifest_sha256, pin.grid_manifest_sha256, `${CLIMATE_INDEX_PATH} is not the pinned climate grid ${pin.tag}: rebuild`);
   const counts = verifyClimateInstall(climateDir, climateIndex);
+  // One grid for the plant ranges and the site lookup (scripts/consortium-grid-check.mjs).
+  const gridProblem = consortiumGridProblem(consortiumIndex, climateIndex);
+  assert.equal(gridProblem, null, `${CLIMATE_INDEX_PATH}: ${gridProblem}`);
   console.log(`Climate tiles: canopi-climate ${climateIndex.release.builder_version} under ${climateIndex.base}, ${counts.climate} climate, ${counts.soil} soil and ${counts.regions} regions tiles, each with its size.`);
 }
 

@@ -1,12 +1,14 @@
-# Invented consortium fixture (format 4, schema 1)
+# Invented consortium fixture (format 4, schema 2)
 
 Plausible but **invented** plant values for testing consortium v2 without the real export. Never shipped:
 `canopi_db_sha256` is all zeros, which a real install refuses, and the directory sits outside `public/`.
 
 - **Built by** `node scripts/fixtures/consortium-v2/make-fixture.mjs` (Node's `node:sqlite`, no Python on the
   website: coordinator row "v2 build setup", 2026-11-11). The output in `export/` is committed.
-- **Schema:** the DDL is canopi-data's `consortium_sqlite.ddl()` at `consortium-v2-export` ab6bfad, copied from
-  the stored `CREATE` statements of export `r-2c6bdf65c35caca3`. canopi-data's `check_export` passes on `export/`.
+- **Schema:** schema 2 (P5 commit 0), the stored `CREATE` statements of export `r-e0b162087a79eecf`: schema 1's
+  (canopi-data `consortium_sqlite.ddl()` at `consortium-v2-export` ab6bfad) plus `plant_climate_status`,
+  `plant_climate` and `plant_koppen`. canopi-data's `check_export` passed on the schema 1 `export/`; it was not
+  re-run on the schema 2 one.
 - **Contract:** canopi-data `docs/consortium-export-v2.md`.
 - **Variants:** tests call `writeFixtureExport(dir, { edit, userVersion, applicationId, manifest, after })` for
   a broken copy rather than keep broken files here.
@@ -33,3 +35,7 @@ Plausible but **invented** plant values for testing consortium v2 without the re
 | Photos: Commons with credit, CC0 with no credit, an iNaturalist PNG original | Castanea, Quercus robur, Inga, … (6 plants) |
 | Names: missing locales, accents for folded search (Châtaignier, Trèfle, Phacélie), CJK and Cyrillic | `plant_names` |
 | WCVP: accepted, synonym, not found (`wcvp_match` NULL) | Elaeagnus (synonym), Phacelia (not found) |
+| Schema 2 climate ranges, by rule from each plant's home climate (first placement): tmin_cold, tmax_warm, aridity, precip, dry_months, Q05/median/Q95, tmin and tmax shifted by ((i % 5) − 2) / 2 °C; count 200 + 37 i cells | every plant but Phacelia (Castanea: tmin −15/−4/2.5, tmax 18/24/30, 200 cells) |
+| No range recorded (`range_source` NULL with a reason; no range or Köppen rows): "range not recorded" | Phacelia |
+| Köppen shares per home climate, each with a class under 1 % (hidden in Details) | `plant_koppen` (Castanea: Cfb 0.5 … ET 0.005) |
+| Grid digest of the ranges: the real canopi-climate v0.2.0 manifest (`FIXTURE_GRID_SHA256`) | meta, manifest `climate_ranges` |

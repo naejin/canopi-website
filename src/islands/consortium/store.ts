@@ -5,14 +5,16 @@
 // inside the computed bodies, the core calls they own (matrix: S1 lib/consortium/matrix.ts; flags:
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
-import type { ClimateZone, Flag, FlagContext, Interaction, JobId, Matrix, PhaseOrd, PlantId, Site, Stratum, Taxon } from '../../lib/consortium/index.ts';
-import { buildMatrix, countryStatus, flagsOf, suggest } from '../../lib/consortium/index.ts';
+import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, Matrix, PhaseOrd, PlantId, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
+import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, suggest } from '../../lib/consortium/index.ts';
+import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
 
-// Where the country came from: the reader chose it, a link carried it, or the page guessed it from
-// the browser's language (shown as a guess, never assumed).
-export type CountrySource = 'chosen' | 'link' | 'guess';
+// Where the country came from: the reader chose it, a link carried it, the page guessed it from
+// the browser's language (shown as a guess, never assumed), or (P5 S5b) the site location gave it
+// ("from your location"; in a link only with "include my location").
+export type CountrySource = 'chosen' | 'link' | 'guess' | 'location';
 export interface Country { code: string | null; source: CountrySource | null }
 // Which view fills the main area once a climate is chosen (Start comes first).
 export type View = 'start' | 'matrix' | 'side' | 'jobs' | 'list';
@@ -48,6 +50,15 @@ export interface Consortium {
 }
 export const setAside = signal<Consortium | null>(null);
 export const load = signal<Load>({ status: 'idle', error: null });
+// P5 (commit 0 seam): where the site is. S5b writes it (device location, place search, map pick, a
+// link's `o=`); S5c (range check, nearest lists), S5d (future check) and S5e (native here, soil
+// likely) read it. null: no location given, the manual climate choice as before.
+export const location = signal<SiteLocation | null>(null);
+// The future check's scenario (S5d may expose a control); SSP2-4.5 by default (owner row).
+export const scenario = signal<Scenario>(DEFAULT_SCENARIO);
+// The climate reader's lookup (src/lib/climate) must stay assignable to the core's view of it.
+const readerFitsCore = (l: ReaderLookup): CoreLookup => l;
+void readerFitsCore;
 
 // ---- data (set once the database is open; S1's load fills them) ----
 export const source = signal<PlantSource | null>(null);
@@ -118,6 +129,8 @@ export const matrix = computed<Matrix | null>(() => {
   if (!c || !p) return null;
   return buildMatrix(c, p, memberTaxa.value, site.value);
 });
+// What the plant marks read (core marks.ts plantMarks; views/PlantMarks.tsx renders them).
+export const markContext = computed<MarkContext>(() => ({ climate: climate.value, location: location.value, scenario: scenario.value, source: source.value }));
 // The warnings on members: conflicts, site misfits, invasive and toxicity (core suggest.ts flagsOf).
 export const flags = computed<Flag[]>(() => {
   if (!pool.value) return [];

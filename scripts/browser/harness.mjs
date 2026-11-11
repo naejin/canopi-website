@@ -11,6 +11,7 @@ import { gunzipSync, gzipSync } from 'node:zlib';
 import { join } from 'node:path';
 import puppeteer from 'puppeteer-core';
 import { ROOT, serve } from './serve.mjs';
+import { NOMINATIM } from './location-fixtures.mjs';
 
 export const CHROME = process.env.CANOPI_CHROME ?? '/usr/bin/google-chrome';
 export const WIDTHS = [390, 1280];
@@ -58,14 +59,14 @@ export async function fixturePhotos() {
 // The database bytes served for a variant, and the reference the page is told (its digests are those
 // of the served bytes, so each broken copy fails where it is meant to, not at the digest):
 // - 'corrupt': bytes overwritten inside the gzip stream (does not inflate: damaged);
-// - 'user-version': a valid database with user_version 2 (schema);
+// - 'user-version': a valid database with user_version 1 (schema; the page reads schema 2);
 // - 'digest': the right bytes under a wrong sha256 (damaged);
 // - 'empty': an empty 200 body (damaged);
 // - 'stall': no response ever comes (a stalled connection: fetch, after the stall timer).
 export function servedDatabase(kind, fx) {
   let gz = fx.gz, raw = gunzipSync(fx.gz), wrongSha = false;
   if (kind === 'corrupt') gz = Buffer.concat([gz.subarray(0, 64), Buffer.alloc(256, 0x5a), gz.subarray(320)]);
-  else if (kind === 'user-version') { raw = Buffer.from(raw); raw.writeUInt32BE(2, 60); gz = gzipSync(raw); }
+  else if (kind === 'user-version') { raw = Buffer.from(raw); raw.writeUInt32BE(1, 60); gz = gzipSync(raw); }
   else if (kind === 'digest') wrongSha = true;
   else if (kind === 'empty' || kind === 'stall') gz = kind === 'empty' ? Buffer.alloc(0) : gz;
   else if (kind) throw new Error(`no database variant "${kind}"`);
@@ -85,7 +86,13 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     await site.stop();
     throw err;
   }
+  // Open contexts, oldest first. Only the last KEEP_CONTEXTS stay open: a file opens dozens of pages
+  // (four variants per test) and Chrome kept every one until close(), which took a file of real-data
+  // pages to the 3 GB cap (P5 commit 0: the s2 file peaked at 3.0 GB, and one run was OOM-killed).
+  // No test uses a page after opening this many more.
+  const KEEP_CONTEXTS = 4;
   const contexts = new Set();
+  let opened = 0;
   // Chrome with its real cookie block (profile.default_content_setting_values.cookies = 2: site data
   // refused, localStorage and sessionStorage throw SecurityError), launched on first use (H1/W1).
   let blocked = null;
@@ -117,14 +124,34 @@ export async function startHarness({ log = () => {}, dir } = {}) {
   //   the page in a Chrome whose profile blocks site data (the real setting, not a stub);
   // - correction: 'ok' | 'offline' | status number stubs POST /api/correction; page.correctionPosts
   //   holds each request body (BT-5).
+  // P5 (commit 0; no network in tests: every request to another origin is answered by a stub or
+  // aborted, and page.thirdParty lists the aborted ones):
+  // - geolocation: { lat, lon, accuracy? } grants the permission and emulates the position (CDP);
+  //   'denied' denies the permission; 'unavailable' grants it with no position (POSITION_UNAVAILABLE);
+  //   'timeout' never answers getCurrentPosition, then fails with TIMEOUT after the call's own timeout;
+  // - nominatim: 'fixture' answers nominatim.openstreetmap.org searches from location-fixtures.mjs
+  //   NOMINATIM ([] for an unknown query); 'offline' aborts them; page.nominatim lists each request
+  //   ({ url, headers });
+  // - mapTiles: 'stub' answers tiles.openfreemap.org styles with a one-layer style and everything
+  //   else (tiles, glyphs, sprites) with 204; 'offline' aborts them;
+  // - webgl: false makes canvas.getContext('webgl'/'webgl2') return null (no WebGL: no map button);
+  // - climateTiles: 404 | 'offline' fails every /data/climate/**.tif fetch (the reader fails: manual
+  //   climate stays).
   // page.capturedDownloads() lists the files this page downloaded (BT-9 .canopi), via the CDP
   // download events; pdf(page) prints it to PDF (BT-8).
-  async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, island = null, wasmFile = null, storage = true, correction = null } = {}) {
+  async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, island = null, wasmFile = null, storage = true, correction = null, geolocation = null, nominatim = null, mapTiles = null, webgl = true, climateTiles = null } = {}) {
     const real = storage === 'cookies-blocked' ? await blockedBrowser() : null;
     // The blocked profile's setting applies to its default context (an incognito context of it
     // starts from defaults), so that page is opened there.
     const context = real ? real.browser.defaultBrowserContext() : await browser.createBrowserContext();
-    if (!real) contexts.add(context);
+    if (!real) {
+      contexts.add(context);
+      for (const old of [...contexts].slice(0, Math.max(0, contexts.size - KEEP_CONTEXTS))) {
+        contexts.delete(old);
+        await old.close().catch(() => {});
+      }
+    }
+    opened += 1;
     const page = await context.newPage();
     // Short waits: a missing control fails in seconds rather than at the test's timeout.
     page.setDefaultTimeout(4000);
@@ -142,8 +169,37 @@ export async function startHarness({ log = () => {}, dir } = {}) {
         }
       }
     }, theme, wasm, loader !== 'offline', storage !== false);
+    if (!webgl) {
+      await page.evaluateOnNewDocument(() => {
+        const get = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function (kind, ...rest) { return /webgl/i.test(String(kind)) ? null : get.call(this, kind, ...rest); };
+      });
+    }
+    if (geolocation === 'timeout') {
+      await page.evaluateOnNewDocument(() => {
+        const fail = (error, options) => {
+          const ms = options && Number.isFinite(options.timeout) ? options.timeout : null;
+          if (error && ms !== null) setTimeout(() => error({ code: 3, message: 'Timeout expired', PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 }), ms);
+        };
+        Geolocation.prototype.getCurrentPosition = function (_ok, error, options) { fail(error, options); };
+        Geolocation.prototype.watchPosition = function (_ok, error, options) { fail(error, options); return 1; };
+      });
+    }
+    if (geolocation) {
+      const origin = site.url;
+      if (geolocation === 'denied') {
+        await browserSession.send('Browser.setPermission', { permission: { name: 'geolocation' }, setting: 'denied', origin, ...(real ? {} : { browserContextId: context.id }) });
+      } else {
+        await context.overridePermissions(origin, ['geolocation']);
+        if (geolocation === 'unavailable') await (await page.createCDPSession()).send('Emulation.setGeolocationOverride', {});
+        else if (typeof geolocation === 'object') await page.setGeolocation({ latitude: geolocation.lat, longitude: geolocation.lon, accuracy: geolocation.accuracy ?? 1000 });
+      }
+    }
+    page.thirdParty = [];
+    page.nominatim = [];
+    const p5 = !!(geolocation || nominatim || mapTiles || !webgl || climateTiles);
 
-    const dir = join(downloadRoot, real ? `blocked-${Date.now()}` : String(contexts.size));
+    const dir = join(downloadRoot, real ? `blocked-${Date.now()}` : String(opened));
     if (!real) await browserSession.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: dir, browserContextId: context.id, eventsEnabled: true });
     page.capturedDownloads = () => (existsSync(dir) ? readdirSync(dir).filter((f) => !f.endsWith('.crdownload')).map((f) => ({ name: f, bytes: readFileSync(join(dir, f)) })) : []);
     page.correctionPosts = [];
@@ -152,7 +208,7 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     const fx = useFixture ? fixture() : null;
     const served = useFixture && database !== 404 ? servedDatabase(database, fx) : null;
     const images = photos ? await fixturePhotos() : {};
-    if (useFixture || loader || island || wasmFile || correction) {
+    if (useFixture || loader || island || wasmFile || correction || p5) {
       await page.setRequestInterception(true);
       page.on('request', async (request) => {
         if (request.isInterceptResolutionHandled()) return;
@@ -176,6 +232,27 @@ export async function startHarness({ log = () => {}, dir } = {}) {
           if (correction === 'offline') return request.abort('internetdisconnected');
           const status = correction === 'ok' ? 200 : Number(correction);
           return request.respond({ status, contentType: 'application/json', body: JSON.stringify(status === 200 ? { ok: true } : { ok: false, code: 'server' }) });
+        }
+        if (url.hostname === 'nominatim.openstreetmap.org' && nominatim) {
+          page.nominatim.push({ url: url.href, headers: request.headers() });
+          if (nominatim === 'offline') return request.abort('internetdisconnected');
+          const q = (url.searchParams.get('q') ?? '').trim().toLowerCase();
+          return request.respond({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(NOMINATIM[q] ?? []) });
+        }
+        if (url.hostname === 'tiles.openfreemap.org' && mapTiles) {
+          if (mapTiles === 'offline') return request.abort('internetdisconnected');
+          const cors = { 'access-control-allow-origin': '*' };
+          if (url.pathname.startsWith('/styles/')) {
+            return request.respond({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ version: 8, name: 'stub', sources: {}, layers: [{ id: 'paper', type: 'background', paint: { 'background-color': '#efe6d2' } }] }) });
+          }
+          return request.respond({ status: 204, headers: cors, body: '' });
+        }
+        if (climateTiles && url.origin === site.url && /^\/data\/climate\/.+\.tif$/.test(url.pathname)) {
+          return climateTiles === 'offline' ? request.abort('internetdisconnected') : request.respond({ status: Number(climateTiles), contentType: 'text/plain', body: 'Not found' });
+        }
+        if (p5 && url.origin !== site.url && /^https?:$/.test(url.protocol)) {
+          page.thirdParty.push(url.href);
+          return request.abort('blockedbyclient');
         }
         if (fx && request.resourceType() === 'document' && url.origin === site.url && /\/consortium\/$/.test(url.pathname)) {
           const res = await fetch(url, { headers: { 'accept-language': 'en' } });

@@ -620,7 +620,7 @@
   "consortium.misfit.unk.water": "水の必要量の記録がないため、あなたの場所とは照合していません。",
   "consortium.misfit.unk.room": "野生での高さの記録がないため、あなたの場所とは照合していません。",
   "consortium.misfit.unk.climber": "つる植物：大きさは支えしだいなので、あなたの場所とは照合していません。",
-  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file.",
+  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, up to the next block key.",
   "consortium.start.climate.title": "気候を選ぶ",
   "consortium.start.climate.lede": "1つ選んでください。こちらで選ぶことはありません。Canopi はあらゆる気候で使われています。",
   "consortium.start.climate.ready": "利用可",
@@ -737,5 +737,10 @@
   "consortium.share.pasted.outdated": "貼り付けたリンクは古いバージョンのツールのものなので、何も変更していません。",
   "consortium.share.pasted.cut": "貼り付けたリンクは途中で切れていて気候が書かれていないため、何も変更していません。",
   "consortium.share.pasted.failed": "貼り付けたリンクを開けませんでした。植物リストが読み込まれませんでした。何も変更していません。",
-  "consortium.share.failed": "このリンクを開けませんでした。植物リストが読み込まれませんでした。後でもう一度お試しください。"
+  "consortium.share.failed": "このリンクを開けませんでした。植物リストが読み込まれませんでした。後でもう一度お試しください。",
+  "consortium.block.s5b": "Stream S5b keys (where is your site: location, search, map, share location) follow, up to the next block key.",
+  "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
+  "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
+  "consortium.block.s5e": "Stream S5e keys (native here, soil likely) follow, up to the next block key.",
+  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, to the end of the file."
 }

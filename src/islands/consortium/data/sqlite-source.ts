@@ -1,7 +1,7 @@
 // The PlantSource over the opened SQLite database (stream S1; design check §4; canopi-data
 // docs/consortium-export-v2.md, format 4, schema 2). It reads plain records with SQL and hands them to
 // the core, which computes the matrix, site fit and reason counts itself. No sqlite-wasm import here:
-// it takes any database with OO1's selectObjects, so the tests run it on the package's Node build.
+// it takes any database with OO1's selectObjects and selectArrays, so the tests run it on the package's Node build.
 // Photos come from the index's {uuid: path} map (design check A4), never the export's remote URLs.
 // Search runs in JavaScript over folded names (A6, `fold`): lower case, Latin/Greek/Cyrillic marks
 // stripped, ß/œ/æ written out, word prefix;
@@ -15,8 +15,9 @@ import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
 // What the adapter needs of an OO1 database.
-// (OO1's DB.selectObjects takes a BindingSpec; the adapter only passes arrays of strings and numbers.)
-export interface Db { selectObjects(sql: string, bind?: (string | number)[]): Row[] }
+// (OO1's DB.selectObjects and selectArrays take a BindingSpec; the adapter only passes arrays of
+// strings and numbers.)
+export interface Db { selectObjects(sql: string, bind?: (string | number)[]): Row[]; selectArrays(sql: string, bind?: (string | number)[]): unknown[][] }
 export interface SourceOptions { images: Record<string, string> }
 
 const str = (v: unknown): string | null => (v === null || v === undefined ? null : String(v));
@@ -91,22 +92,22 @@ function textOf(rows: Row[] | undefined): Text | null {
   return t.en === undefined ? null : (t as Text);
 }
 
-// Schema 2: one variable's range row, and a plant's observed climate from its status and range rows
-// (null without a range_source: "range not recorded").
-const rangeOf = (r: Row | undefined): ClimateRange | null => (r
-  ? { low: num(r.low), median: num(r.median), high: num(r.high), count: num(r.count), basis: r.basis as RangeBasis }
-  : null);
-function climateOf(status: Row | undefined, ranges: Row[] | undefined): TaxonClimate | null {
-  if (!status || status.range_source === null || status.range_source === undefined) return null;
-  const by = new Map((ranges ?? []).map((r) => [String(r.variable), r]));
-  return {
-    source: String(status.range_source),
-    tminCold: rangeOf(by.get('tmin_cold')),
-    tmaxWarm: rangeOf(by.get('tmax_warm')),
-    aridity: rangeOf(by.get('aridity')),
-    cells: num(status.gbif_cells),
-    nativeShare: num(status.native_share),
-  };
+// Schema 2: the observed climate of a climate's plants, in one query of arrays (the pool is read
+// before the matrix draws; objects for every row cost ~0.1 s at 4× CPU). A plant without a
+// range_source is absent: "range not recorded" (Taxon.climate null).
+const CLIMATE_ROWS = `SELECT s.plant, s.range_source, s.gbif_cells, s.native_share, c.variable, c.low, c.median, c.high, c.count, c.basis
+  FROM plant_climate_status s LEFT JOIN plant_climate c ON c.plant = s.plant AND c.variable IN ('tmin_cold', 'tmax_warm', 'aridity')
+  WHERE s.range_source IS NOT NULL AND s.plant IN (SELECT plant FROM placements WHERE climate_zone = ?1)`;
+const RANGE_FIELD = { tmin_cold: 'tminCold', tmax_warm: 'tmaxWarm', aridity: 'aridity' } as const;
+function climatesOf(rows: unknown[][]): Map<number, TaxonClimate> {
+  const out = new Map<number, TaxonClimate>();
+  for (const [plant, source, cells, share, variable, low, median, high, count, basis] of rows) {
+    let t = out.get(Number(plant));
+    if (!t) out.set(Number(plant), t = { source: String(source), tminCold: null, tmaxWarm: null, aridity: null, cells: num(cells), nativeShare: num(share) });
+    const field = RANGE_FIELD[variable as keyof typeof RANGE_FIELD];
+    if (field) t[field] = { low: num(low), median: num(median), high: num(high), count: num(count), basis: basis as RangeBasis } satisfies ClimateRange;
+  }
+  return out;
 }
 
 const IN_CLIMATE = 'plant IN (SELECT plant FROM placements WHERE climate_zone = ?1)';
@@ -147,8 +148,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
     const invasive = group(db.selectObjects(`SELECT plant, country, source FROM plant_invasive WHERE ${IN_CLIMATE} ORDER BY country, source`, [c]), (r) => Number(r.plant));
     const images = new Map(db.selectObjects(`SELECT * FROM plant_images WHERE ${IN_CLIMATE}`, [c]).map((r) => [Number(r.plant), r]));
     const tox = group(db.selectObjects(`SELECT plant, source FROM toxicity_sources WHERE ${IN_CLIMATE} ORDER BY plant, ord`, [c]), (r) => Number(r.plant));
-    const status = new Map(db.selectObjects(`SELECT * FROM plant_climate_status WHERE ${IN_CLIMATE}`, [c]).map((r) => [Number(r.plant), r]));
-    const ranges = group(db.selectObjects(`SELECT * FROM plant_climate WHERE ${IN_CLIMATE} AND variable IN ('tmin_cold', 'tmax_warm', 'aridity')`, [c]), (r) => Number(r.plant));
+    const climates = climatesOf(db.selectArrays(CLIMATE_ROWS, [c]));
     return rows.map((r): Taxon => {
       const plant = Number(r.plant), id = String(r.id);
       const own = Object.fromEntries((names.get(plant) ?? []).map((n) => [n.locale, String(n.name)])) as Partial<Record<Locale, string>>;
@@ -175,7 +175,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
           allelopathic: bool(r.allelopathic),
           weed_potential: bool(r.weed_potential),
         },
-        climate: climateOf(status.get(plant), ranges.get(plant)),
+        climate: climates.get(plant) ?? null,
         areasKnown: r.wcvp_match !== null && r.wcvp_match !== undefined,
       };
     });

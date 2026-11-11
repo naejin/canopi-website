@@ -14,6 +14,8 @@ import type { ClimateZone, PlantId, Site, SiteKey, Taxon } from '../../../lib/co
 import { countryStatus, lights, MAX_CROPS, rooms, soils, waters } from '../../../lib/consortium/index.ts';
 import { climate, country, crops, kept, members, openSheet, pool, site, source, view } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
+import { LocationSlot } from './LocationSlot.tsx';
+import { LikelySlot } from './LikelySlot.tsx';
 import {
   backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
 } from '../memory.ts';
@@ -215,6 +217,7 @@ function SiteQuestions() {
                 </label>
               ))}
             </div>
+            <LikelySlot question={k} />
           </fieldset>
         ))}
       </div>
@@ -260,6 +263,7 @@ function StartView() {
     <div class="ct-start">
       <CountryLine />
       <StartNotices />
+      <LocationSlot />
       <Climates />
       {z && !covered(z) && <Uncovered zone={z} />}
       {z && covered(z) && (

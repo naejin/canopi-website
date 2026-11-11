@@ -620,7 +620,7 @@
   "consortium.misfit.unk.water": "Waterbehoefte niet bekend, dus niet getoetst aan jouw plek.",
   "consortium.misfit.unk.room": "Hoogte in het wild niet bekend, dus niet getoetst aan jouw ruimte.",
   "consortium.misfit.unk.climber": "Klimplant: de grootte hangt af van de steun, dus niet getoetst aan jouw ruimte.",
-  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file.",
+  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, up to the next block key.",
   "consortium.start.climate.title": "Kies een klimaat",
   "consortium.start.climate.lede": "Er is er één nodig. Er wordt niets voor je gekozen: Canopi wordt in elk klimaat gebruikt.",
   "consortium.start.climate.ready": "Klaar",
@@ -737,5 +737,10 @@
   "consortium.share.pasted.outdated": "De geplakte link komt uit een oudere versie van het hulpmiddel, dus er is niets veranderd.",
   "consortium.share.pasted.cut": "De geplakte link lijkt afgeknipt en noemt geen klimaat, dus er is niets veranderd.",
   "consortium.share.pasted.failed": "De geplakte link kon niet worden geopend: de plantenlijst is niet geladen. Er is niets veranderd.",
-  "consortium.share.failed": "Deze link kon niet worden geopend: de plantenlijst is niet geladen. Probeer het later opnieuw."
+  "consortium.share.failed": "Deze link kon niet worden geopend: de plantenlijst is niet geladen. Probeer het later opnieuw.",
+  "consortium.block.s5b": "Stream S5b keys (where is your site: location, search, map, share location) follow, up to the next block key.",
+  "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
+  "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
+  "consortium.block.s5e": "Stream S5e keys (native here, soil likely) follow, up to the next block key.",
+  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, to the end of the file."
 }

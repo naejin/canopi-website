@@ -620,7 +620,7 @@
   "consortium.misfit.unk.water": "물 요구 기록이 없어 당신의 터와 비교하지 않았습니다.",
   "consortium.misfit.unk.room": "야생 높이 기록이 없어 당신의 공간과 비교하지 않았습니다.",
   "consortium.misfit.unk.climber": "덩굴식물: 크기가 지지대에 달려 있어 당신의 공간과 비교하지 않았습니다.",
-  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file.",
+  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, up to the next block key.",
   "consortium.start.climate.title": "기후를 고르세요",
   "consortium.start.climate.lede": "하나를 골라야 합니다. 미리 골라 두지 않습니다. Canopi는 모든 기후에서 쓰입니다.",
   "consortium.start.climate.ready": "사용 가능",
@@ -737,5 +737,10 @@
   "consortium.share.pasted.outdated": "붙여 넣은 링크는 이전 버전의 도구에서 만들어져 아무것도 바꾸지 않았습니다.",
   "consortium.share.pasted.cut": "붙여 넣은 링크가 잘려 있고 기후가 없어 아무것도 바꾸지 않았습니다.",
   "consortium.share.pasted.failed": "붙여 넣은 링크를 열지 못했습니다. 식물 목록을 불러오지 못했습니다. 아무것도 바꾸지 않았습니다.",
-  "consortium.share.failed": "이 링크를 열지 못했습니다. 식물 목록을 불러오지 못했습니다. 나중에 다시 시도하세요."
+  "consortium.share.failed": "이 링크를 열지 못했습니다. 식물 목록을 불러오지 못했습니다. 나중에 다시 시도하세요.",
+  "consortium.block.s5b": "Stream S5b keys (where is your site: location, search, map, share location) follow, up to the next block key.",
+  "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
+  "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
+  "consortium.block.s5e": "Stream S5e keys (native here, soil likely) follow, up to the next block key.",
+  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, to the end of the file."
 }

@@ -343,9 +343,11 @@ export interface SitePeriod {
   period: string; // '1991-2020', '2041-2070', '2071-2099'
   scenario: string; // 'historical', 'ssp126', 'ssp245', 'ssp370', 'ssp585'
   koppen: string; // '' where unclassified
-  koppenTemperatureMarginC: number; // °C inside the class's temperature bounds (borderline under ~0.5)
-  tminColdC: number;
-  tmaxWarmC: number;
+  koppenTemperatureMarginC: number; // °C the monthly means lie outside the class's bounds (0: consistent)
+  tminColdC: number; // coldest-month mean daily minimum
+  tmaxWarmC: number; // warmest-month mean daily maximum
+  tmeanColdC: number; // coldest- and warmest-month means: how near a Köppen bound (0, 18, 22, 10 °C)
+  tmeanWarmC: number; //   the site is, so "borderline" (design check §C, S5b site-climate.ts)
   aridityIndex: number | null; // null on ice: "not checked"
 }
 export interface SiteLookup {

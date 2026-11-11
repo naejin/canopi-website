@@ -17,13 +17,14 @@ const taxon = (over = {}) => ({
   areasKnown: true,
   ...over,
 });
-// Lyon as the climate reader answers it (scripts/fixtures/climate/goldens.json shape, trimmed).
+// Lyon as the climate reader answers it on the v0.2.0 tiles (trimmed): Cfa, its warmest month 0.4 °C
+// above the Cfa/Cfb bound, so borderline.
 const lyon = {
   lat: 45.76, lon: 4.84, source: 'search', label: 'Lyon',
   lookup: {
     lat: 45.76, lon: 4.84,
-    climate: { cellLat: 45.75, cellLon: 4.85, distanceCells: 0, periods: [{ period: '1991-2020', scenario: 'historical', koppen: 'Cfa', koppenTemperatureMarginC: 0.1, tminColdC: -0.6, tmaxWarmC: 27.9, aridityIndex: 0.9 }] },
-    soil: { phH2o: 6.6, texture: 'loam', filled: false, fillDistanceCells: 0, distanceCells: 0 },
+    climate: { cellLat: 45.75, cellLon: 4.85, distanceCells: 0, periods: [{ period: '1991-2020', scenario: 'historical', koppen: 'Cfa', koppenTemperatureMarginC: 0, tminColdC: 0.1, tmaxWarmC: 27.9, tmeanColdC: 4.3, tmeanWarmC: 22.4, aridityIndex: 1.1 }] },
+    soil: { phH2o: 5.9, texture: 'loam', filled: false, fillDistanceCells: 0, distanceCells: 0 },
     regions: { wgsrpdL3: 'FRA', isoA2: 'FR' },
   },
 };
@@ -71,4 +72,26 @@ test('marks.ts plantMarks: the range, future and native providers in that order;
   assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), providers).map((m) => m.kind), ['edge', 'native']);
   assert.deepEqual(core.markProviders.map((p) => p.name), ['rangeMarks', 'futureMarks', 'nativeMarks']);
   assert.deepEqual(core.markKinds, ['edge', 'outside', 'unknown', 'estimate', 'future', 'native']);
+});
+
+// ---- the island's seams (store.ts, Start.tsx slots) ----
+
+test('store: location (S5b writes, S5c–S5e read) starts empty, scenario at SSP2-4.5, and markContext follows both', async () => {
+  const store = await import('../src/islands/consortium/store.ts');
+  assert.equal(store.location.value, null);
+  assert.equal(store.scenario.value, 'ssp245');
+  assert.deepEqual(store.markContext.value, { climate: store.climate.value, location: null, scenario: 'ssp245', source: store.source.value });
+  store.location.value = lyon;
+  try { assert.equal(store.markContext.value.location, lyon); } finally { store.location.value = null; }
+});
+
+test('Start mounts the empty LocationSlot above the climate cards and a LikelySlot in each site question', async () => {
+  const { readFileSync } = await import('node:fs');
+  const start = readFileSync(new URL('../src/islands/consortium/views/Start.tsx', import.meta.url), 'utf8');
+  assert.ok(start.indexOf('<LocationSlot />') > 0 && start.indexOf('<LocationSlot />') < start.indexOf('<Climates />'), 'LocationSlot before the cards');
+  assert.match(start, /<LikelySlot question=\{k\} \/>/);
+  for (const f of ['LocationSlot.tsx', 'LikelySlot.tsx']) {
+    const text = readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
+    assert.match(text, /return null;/, `${f} renders nothing until its stream fills it`);
+  }
 });

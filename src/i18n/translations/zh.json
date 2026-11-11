@@ -620,7 +620,7 @@
   "consortium.misfit.unk.water": "需水量未记录，因此未对照你的场地核查。",
   "consortium.misfit.unk.room": "野生高度未记录，因此未对照你的空间核查。",
   "consortium.misfit.unk.climber": "攀援植物：大小取决于支撑物，因此未对照你的空间核查。",
-  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file.",
+  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, up to the next block key.",
   "consortium.start.climate.title": "选择气候",
   "consortium.start.climate.lede": "需要选一个。我们不会替你选择：Canopi 适用于各种气候。",
   "consortium.start.climate.ready": "可用",
@@ -737,5 +737,10 @@
   "consortium.share.pasted.outdated": "粘贴的链接来自本工具的旧版本，因此没有做任何更改。",
   "consortium.share.pasted.cut": "粘贴的链接似乎被截断了，且没有指明气候，因此没有做任何更改。",
   "consortium.share.pasted.failed": "无法打开粘贴的链接：它的植物清单没有加载。没有做任何更改。",
-  "consortium.share.failed": "无法打开此链接：它的植物清单没有加载。请稍后再试。"
+  "consortium.share.failed": "无法打开此链接：它的植物清单没有加载。请稍后再试。",
+  "consortium.block.s5b": "Stream S5b keys (where is your site: location, search, map, share location) follow, up to the next block key.",
+  "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
+  "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
+  "consortium.block.s5e": "Stream S5e keys (native here, soil likely) follow, up to the next block key.",
+  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, to the end of the file."
 }

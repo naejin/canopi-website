@@ -34,6 +34,7 @@ import { phasePlain as plainPhase, spanWords } from './StageBar.tsx';
 import { safeHref } from '../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../data/consortium-guides.ts';
 import { testFault } from '../test-hook.ts';
+import { PlantMarks } from './PlantMarks.tsx';
 
 // ---- words ----
 
@@ -401,6 +402,7 @@ function PlantDetails({ id }: { id: PlantId }) {
           {!crop && kept && <span class="ct-tag">{PIN}{T('keptTag')}</span>}
           {t.from && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(t.from) })}</span>}
           {lines.filter((l) => l.kind !== 'soft').length > 0 && <span class="ct-flag">{WARN}{P('details.warnCount', lines.filter((l) => l.kind !== 'soft').length)}</span>}
+          <PlantMarks taxon={t} />
         </p>
       </div>
 

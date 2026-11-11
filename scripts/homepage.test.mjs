@@ -275,11 +275,13 @@ test('the consortium keys sit with their families, apart from the tool page\'s c
 });
 
 // Review C2: each consortium stream appends its keys in its own block, after its block key, so no
-// two streams edit the same lines. The four block keys close each file's consortium.* keys, in order;
-// S1's keys (consortium.load.*) sit between consortium.block.s1 and consortium.block.s2.
-test('the consortium stream blocks: four block keys in order at the end of every locale file', () => {
+// two streams edit the same lines. The block keys close each file's consortium.* keys, in order: the
+// four P2 streams, then the five P5 streams (P5 commit 0); S1's keys (consortium.load.*) sit between
+// consortium.block.s1 and consortium.block.s2. S5f's block may also hold its privacy.* and new
+// dataSources.* keys (the /privacy page and the credits).
+test('the consortium stream blocks: nine block keys in order at the end of every locale file', () => {
   const root = new URL('../src/i18n/translations/', import.meta.url);
-  const blocks = ['consortium.block.s1', 'consortium.block.s2', 'consortium.block.s3', 'consortium.block.s4'];
+  const blocks = ['consortium.block.s1', 'consortium.block.s2', 'consortium.block.s3', 'consortium.block.s4', 'consortium.block.s5b', 'consortium.block.s5c', 'consortium.block.s5d', 'consortium.block.s5e', 'consortium.block.s5f'];
   for (const file of readdirSync(root).filter((name) => name.endsWith('.json'))) {
     const keys = Object.keys(JSON.parse(readFileSync(new URL(file, root), 'utf8')));
     const at = blocks.map((k) => keys.indexOf(k));
@@ -288,6 +290,7 @@ test('the consortium stream blocks: four block keys in order at the end of every
     const s1 = keys.slice(at[0] + 1, at[1]);
     assert.ok(s1.length && s1.every((k) => k.startsWith('consortium.load.')), `${file}: S1's block holds its consortium.load.* keys`);
     assert.ok(keys.slice(0, at[0]).every((k) => !k.startsWith('consortium.load.')), `${file}: no consortium.load.* key before S1's block`);
-    for (const k of keys.slice(at[0])) assert.ok(k.startsWith('consortium.') || k.startsWith('correction.'), `${file}: ${k} inside the consortium stream blocks`);
+    for (const k of keys.slice(at[0], at[8])) assert.ok(k.startsWith('consortium.') || k.startsWith('correction.'), `${file}: ${k} inside the consortium stream blocks`);
+    for (const k of keys.slice(at[8])) assert.ok(/^(consortium|privacy|dataSources)\./.test(k), `${file}: ${k} inside S5f's block`);
   }
 });

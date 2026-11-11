@@ -100,3 +100,20 @@ export function firstRunChunks(graph, island) {
   }
   return [...seen];
 }
+
+// P5 (commit 0): the chunks loaded only when the reader asks for them, never modulepreloaded and
+// left out of the island's 60 KB, each with its own budget (decision row "Island JavaScript budget
+// for P5"): the location chunk (S5b's lazy views/location/location.tsx, built as location.<hash>.js)
+// with the chunks only it reaches, and MapLibre (maplibre-gl.<hash>.js) with the chunks only it
+// reaches. entries: the page's own entries (its module scripts). Sorted paths.
+export const LOCATION_CHUNK = /^\/_astro\/location\.[\w-]+\.js$/;
+export const MAPLIBRE_CHUNK = /^\/_astro\/maplibre-gl\.[\w-]+\.js$/;
+export function onDemandChunks(graph, entries) {
+  const paths = [...graph.keys()];
+  const maplibreRoots = paths.filter((p) => MAPLIBRE_CHUNK.test(p));
+  const locationRoots = paths.filter((p) => LOCATION_CHUNK.test(p));
+  const always = reachable(graph, entries, new Set([...maplibreRoots, ...locationRoots]));
+  const maplibre = [...reachable(graph, maplibreRoots)].filter((p) => !always.has(p));
+  const location = [...reachable(graph, locationRoots, new Set(maplibreRoots))].filter((p) => !always.has(p) && !maplibre.includes(p));
+  return { location: location.sort(), maplibre: maplibre.sort() };
+}

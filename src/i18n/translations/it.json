@@ -620,7 +620,7 @@
   "consortium.misfit.unk.water": "Esigenze d’acqua non registrate: non verificate per il tuo terreno.",
   "consortium.misfit.unk.room": "Altezza in natura non registrata: non verificata per il tuo spazio.",
   "consortium.misfit.unk.climber": "Rampicante: la dimensione dipende dal sostegno, non verificata per il tuo spazio.",
-  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file.",
+  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, up to the next block key.",
   "consortium.start.climate.title": "Scegli un clima",
   "consortium.start.climate.lede": "Ne serve uno. Niente è scelto al posto tuo: Canopi si usa in ogni clima.",
   "consortium.start.climate.ready": "Pronto",
@@ -737,5 +737,10 @@
   "consortium.share.pasted.outdated": "Il link incollato viene da una versione precedente dello strumento, quindi non è cambiato nulla.",
   "consortium.share.pasted.cut": "Il link incollato sembra tagliato e non indica alcun clima, quindi non è cambiato nulla.",
   "consortium.share.pasted.failed": "Non è stato possibile aprire il link incollato: il suo elenco di piante non si è caricato. Non è cambiato nulla.",
-  "consortium.share.failed": "Non è stato possibile aprire questo link: il suo elenco di piante non si è caricato. Riprova più tardi."
+  "consortium.share.failed": "Non è stato possibile aprire questo link: il suo elenco di piante non si è caricato. Riprova più tardi.",
+  "consortium.block.s5b": "Stream S5b keys (where is your site: location, search, map, share location) follow, up to the next block key.",
+  "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
+  "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
+  "consortium.block.s5e": "Stream S5e keys (native here, soil likely) follow, up to the next block key.",
+  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, to the end of the file."
 }

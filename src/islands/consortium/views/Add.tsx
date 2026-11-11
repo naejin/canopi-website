@@ -17,6 +17,7 @@ import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/
 import { asks, canopyOf, fits, jobsOf, misfitsBeside, phaseOrd } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/search.ts';
 import { Ask, Bar, NotChecked, SheetFrame, WARN, addMembers, closeSheet, flagLines, flagsOfPlant, nameOf, num, plainPhase, sheetCell, spanWords, zoneName } from './Details.tsx';
+import { PlantMarks } from './PlantMarks.tsx';
 
 const FIRST_ROWS = 8;
 
@@ -145,6 +146,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
                 <div class="ct-row-why">
                   <span>{[spanWords(t), heightWords(t)].join(' · ')}</span>
                   {lines.length > 0 && <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span>}
+                  <PlantMarks taxon={t} />
                 </div>
               </li>
             );
@@ -168,6 +170,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
                   <div class="ct-row-why" id={`ct-add-o-${t.id}`}>
                     <span>{T('add.otherLine', { other: zoneName(from), climate: zoneName(climate) })} {T('details.fromList', { climate: zoneName(from) })}.</span>
                     {lines.length > 0 && <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span>}
+                    <PlantMarks taxon={t} />
                   </div>
                 </li>
               );

@@ -620,7 +620,7 @@
   "consortium.misfit.unk.water": "Потребность в воде не указана, поэтому не сверено с вашим участком.",
   "consortium.misfit.unk.room": "Высота в природе не указана, поэтому не сверено с вашим участком.",
   "consortium.misfit.unk.climber": "Лиана: размер зависит от опоры, поэтому не сверено с вашим участком.",
-  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file.",
+  "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, up to the next block key.",
   "consortium.start.climate.title": "Выберите климат",
   "consortium.start.climate.lede": "Нужно выбрать один. Мы ничего не выбираем за вас: Canopi используют в любом климате.",
   "consortium.start.climate.ready": "Готов",
@@ -737,5 +737,10 @@
   "consortium.share.pasted.outdated": "Вставленная ссылка из старой версии инструмента, поэтому ничего не изменено.",
   "consortium.share.pasted.cut": "Вставленная ссылка, похоже, обрезана и не называет климат, поэтому ничего не изменено.",
   "consortium.share.pasted.failed": "Не удалось открыть вставленную ссылку: её список растений не загрузился. Ничего не изменено.",
-  "consortium.share.failed": "Не удалось открыть эту ссылку: её список растений не загрузился. Попробуйте позже."
+  "consortium.share.failed": "Не удалось открыть эту ссылку: её список растений не загрузился. Попробуйте позже.",
+  "consortium.block.s5b": "Stream S5b keys (where is your site: location, search, map, share location) follow, up to the next block key.",
+  "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
+  "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
+  "consortium.block.s5e": "Stream S5e keys (native here, soil likely) follow, up to the next block key.",
+  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, to the end of the file."
 }

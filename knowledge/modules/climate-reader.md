@@ -2,7 +2,7 @@
 type: Module
 title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:41:06Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:50:44Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
@@ -32,13 +32,13 @@ sources:
   - id: install-climate-mjs
     resource: ../../scripts/install-climate.mjs
     title: scripts/install-climate.mjs
-    digest: sha256:28af013232ff3d00
-    last_modified: 2026-11-11T09:39:56Z
+    digest: sha256:218e0bd26ec9452e
+    last_modified: 2026-11-11T14:21:59Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:657ef460ed3c5724
-    last_modified: 2026-11-11T09:39:56Z
+    digest: sha256:f5353da876784eed
+    last_modified: 2026-11-11T14:43:12Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -52,8 +52,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:cc25e3608d4deac1
-    last_modified: 2026-11-11T09:39:56Z
+    digest: sha256:02ddfcb7eee72f4b
+    last_modified: 2026-11-11T14:41:08Z
   - id: climate-integration-mjs
     resource: ../../scripts/climate-integration.mjs
     title: scripts/climate-integration.mjs
@@ -62,8 +62,18 @@ sources:
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:a17ae460ff13b7ed
-    last_modified: 2026-11-11T09:39:56Z
+    digest: sha256:67b051ba7e43611d
+    last_modified: 2026-11-11T14:43:12Z
+  - id: consortium-grid-check-mjs
+    resource: ../../scripts/consortium-grid-check.mjs
+    title: scripts/consortium-grid-check.mjs
+    digest: sha256:d00a6bc0eac9d46b
+    last_modified: 2026-11-11T14:41:50Z
+  - id: store-ts
+    resource: ../../src/islands/consortium/store.ts
+    title: src/islands/consortium/store.ts
+    digest: sha256:1f4c2221c8114a9b
+    last_modified: 2026-11-11T14:40:20Z
 enforced_by:
   - scripts/climate-reader.test.mjs
   - scripts/install-climate.test.mjs
@@ -71,7 +81,7 @@ enforced_by:
 
 # What it is
 
-P5 stream S5b's data half: a TypeScript reader for the canopi-climate v0.2 grid (`src/lib/climate/`) and the installer that serves the grid's tiles as static files (`scripts/install-climate.mjs`). The island's "Where is your site?" view (S5b UI) calls it; nothing in `src/islands` or `src/lib/consortium` imports it yet.
+P5 stream S5b's data half: a TypeScript reader for the canopi-climate v0.2 grid (`src/lib/climate/`) and the installer that serves the grid's tiles as static files (`scripts/install-climate.mjs`). The island's "Where is your site?" view (S5b UI) calls it. Since P5 commit 0 the island's `store.ts` imports its `SiteLookup` type only, to check at compile time that it stays assignable to the core's structural `SiteLookup` (`src/lib/consortium/types.ts`: lat, lon, climate periods with Köppen, margin, tmin/tmax and tmean of the coldest/warmest months, aridity; soil pH, texture and fill; region codes); the core never imports the reader. `scripts/browser/location-fixtures.mjs` `lookupAt` runs it in Node over a build's tiles for the P5 browser specs.
 
 # Reader (`src/lib/climate/`)
 
@@ -89,10 +99,10 @@ P5 stream S5b's data half: a TypeScript reader for the canopi-climate v0.2 grid 
 # Installer and served files
 
 - The tiles are fetched at build and verified, never committed (owner decision 2026-11-11). [climate-release.json](../../src/data/climate-release.json) pins the release: tag `v0.2.0`, the GitHub asset URL under `github.com/opencanopi/canopi-climate/releases/download/`, 99,194,880 bytes, the tar's sha256 `56f717f1…` and the manifest's sha256 `04ec85f4…`.
-- Every `astro build` runs `ensureClimate` first, from the `climateTiles` integration ([climate-integration.mjs](../../scripts/climate-integration.mjs), in `astro.config.mjs`, on `astro:config:setup`), so the install does not depend on the build command Cloudflare Workers Builds runs (which could not be confirmed); `npm run build` is plain `astro build`. A failure throws from the hook and fails the build. `astro dev` runs the same install (nothing when installed) and only warns on failure, the dev server then serving no tiles; sync, preview and `astro check` do nothing. Astro loads `astro.config.mjs` with plain Node, so on Node < 22.18 `loadTiffModule` compiles `tiff.ts` with TypeScript (a dev dependency) instead of importing it. It does nothing when `src/data/climate-index.json` names the pinned manifest and archive and every tile is in `public/data/climate/` with its size (the consortium grid check is re-run and the index follows it). Otherwise it takes, in order: `CANOPI_CLIMATE_ARCHIVE` (a local tar; offline and dev; not cached), the cache (`CANOPI_CLIMATE_CACHE`, default `node_modules/.cache/canopi-climate/`), else one plain `fetch` of the URL (no custom headers), streamed to a part file with a running sha256 and cut at the pinned size. The size and sha256 are checked before the tar is read; a corrupt cached tar is downloaded again; a failed download, a mismatch or any refusal fails the build.
+- Every `astro build` runs `ensureClimate` first, from the `climateTiles` integration ([climate-integration.mjs](../../scripts/climate-integration.mjs), in `astro.config.mjs`, on `astro:config:setup`), so the install does not depend on the build command Cloudflare Workers Builds runs (which could not be confirmed); `npm run build` is plain `astro build`. A failure throws from the hook and fails the build. `astro dev` runs the same install (nothing when installed) and only warns on failure, the dev server then serving no tiles; sync, preview and `astro check` do nothing. Astro loads `astro.config.mjs` with plain Node, so on Node < 22.18 `loadTiffModule` compiles `tiff.ts` with TypeScript (a runtime dependency since P5 commit 0, so a `NODE_ENV=production` install keeps it) instead of importing it. It does nothing when `src/data/climate-index.json` names the pinned manifest and archive and every tile is in `public/data/climate/` with its size (the consortium grid check is re-run and the index follows it). Otherwise it takes, in order: `CANOPI_CLIMATE_ARCHIVE` (a local tar; offline and dev; not cached), the cache (`CANOPI_CLIMATE_CACHE`, default `node_modules/.cache/canopi-climate/`), else one plain `fetch` of the URL (no custom headers), streamed to a part file with a running sha256 and cut at the pinned size. The size and sha256 are checked before the tar is read; a corrupt cached tar is downloaded again; a failed download, a mismatch or any refusal fails the build.
 - `npm run install:climate` installs by hand; `npm run install:climate -- <tar>` installs a local archive, verified against the pin as well. `installClimate({ archive })` without `release` (the `.sha256` beside the tar) remains for a hand install of another grid.
 - Then the checks: tar entries (regular files, safe paths, no duplicates, ≤ 25 MiB), every `SHA256SUMS` line, the manifest's sha256 against the pin and its content against `model.js`, each tile's size, sha256 and TIFF position. The tiles go to `public/data/climate/<version>-<12 hex manifest sha>/{tiles,soil,regions}/` and the index to `src/data/climate-index.json`; both are git-ignored and regenerated (the index is deterministic for a grid and a consortium export, and no type check imports it).
-- Consortium grid check: the consortium index's `climate_grid_manifest_sha256` must equal the grid's manifest sha256 (`04ec85f4…` for v0.2.0); while the export does not carry it (schema 1), the install warns and records `consortium_grid_check.status = "unchecked"`.
+- Consortium grid check: the consortium index's `climate_grid_manifest_sha256` must equal the grid's manifest sha256 (`04ec85f4…` for v0.2.0); since P5 commit 0 the installed schema 2 export carries it (`r-e0b162087a79eecf`, `04ec85f4…`) and the build records `consortium_grid_check.status = "matched"`. A schema 1 index without it still installs as `"unchecked"`, but `check-built-site.mjs` then fails ([consortium-grid-check.mjs](../../scripts/consortium-grid-check.mjs): a missing or empty sha, another grid, or a status other than `matched`).
 - `public/_headers` caches `/data/climate/*` immutably (the directory name changes with the manifest).
 - `scripts/check-built-site.mjs` fails above 20,000 files in `dist/client` (Workers Free), and fails when the index is missing, names another grid than the pin, or any tile it lists is missing or of another size (`verifyClimateInstall`).
 - v0.2.0: 464 climate (77.4 MB), 330 soil (19.6 MB), 463 regions (0.8 MB) tiles; the build had 1,795 files without the Web Edition.
