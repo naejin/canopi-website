@@ -1,0 +1,6 @@
+/* Consortium P5, stream S5d (future: FutureSlot and views/future/). Owned by that stream alone; no other stream edits this file, and
+   the stream edits no shared consortium CSS (base, matrix, details, shell, print). Imported once by
+   ConsortiumPage.astro. Use the tokens of base.css; the future mark draws in ink, never green. */
+
+/* The scenario radios sit apart from the summary below them. */
+.ct .ct-future .ct-seg { margin-bottom: 12px; }
