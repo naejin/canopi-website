@@ -875,6 +875,7 @@
   "consortium.matrix.cell": "{layer}, {stage}",
   "consortium.matrix.cellSays": "{cell}: {what}",
   "consortium.matrix.gap": "Ainda não há planta da lista para esta célula",
+  "consortium.matrix.gapRun": "Ainda não há planta da lista para estas células",
   "consortium.matrix.gapBody": "Nenhuma planta da {list} cresce neste estrato nesta etapa. É uma lacuna dos dados, não do seu terreno.",
   "consortium.matrix.gapBodyRun": "Nenhuma planta da {list} cresce neste estrato nestas etapas. É uma lacuna dos dados, não do seu terreno.",
   "consortium.matrix.misfit": "Nenhuma planta se adapta ao seu terreno aqui",
@@ -936,7 +937,7 @@
   "consortium.side.marks": "Cada marca é uma planta à sua altura.",
   "consortium.side.first": "primeira etapa, a crescer",
   "consortium.side.noHeight": "altura não registada",
-  "consortium.side.height": "até {m} m",
+  "consortium.side.height": "até {m} m em estado silvestre",
   "consortium.side.empty": "Ainda nenhuma planta vive nesta etapa.",
   "consortium.side.drawing": "{title}. {plants}.",
   "consortium.side.none": "nenhuma",
@@ -961,6 +962,10 @@
   "consortium.list.none": "Nenhuma planta corresponde.",
   "consortium.list.swap": "Trocar",
   "consortium.list.swapName": "Trocar {name}",
+  "consortium.list.remove": "Remover",
+  "consortium.list.removeName": "Remover {name}",
+  "consortium.list.job": "Função",
+  "consortium.list.all": "Todas",
   "consortium.block.s3": "Stream S3 keys (details, swap, add, paste, misfit) follow, up to the next block key.",
   "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file."
 }

@@ -875,6 +875,7 @@
   "consortium.matrix.cell": "{layer}・{stage}",
   "consortium.matrix.cellSays": "{cell}：{what}",
   "consortium.matrix.gap": "このマスに合う植物はまだリストにありません",
+  "consortium.matrix.gapRun": "これらのマスに合う植物はまだリストにありません",
   "consortium.matrix.gapBody": "{list}には、この段階でこの階層に育つ植物がありません。データの欠けであって、あなたの土地のせいではありません。",
   "consortium.matrix.gapBodyRun": "{list}には、これらの段階でこの階層に育つ植物がありません。データの欠けであって、あなたの土地のせいではありません。",
   "consortium.matrix.misfit": "ここにはあなたの土地に合う植物がありません",
@@ -936,7 +937,7 @@
   "consortium.side.marks": "線1本が1種の植物とその高さです。",
   "consortium.side.first": "最初の段階、成長中",
   "consortium.side.noHeight": "高さは未記録",
-  "consortium.side.height": "最大{m} m",
+  "consortium.side.height": "野生で最大{m} m",
   "consortium.side.empty": "この段階にはまだ植物がありません。",
   "consortium.side.drawing": "{title}。{plants}。",
   "consortium.side.none": "なし",
@@ -961,6 +962,10 @@
   "consortium.list.none": "該当する植物はありません。",
   "consortium.list.swap": "入れ替え",
   "consortium.list.swapName": "{name}を入れ替え",
+  "consortium.list.remove": "外す",
+  "consortium.list.removeName": "{name}を外す",
+  "consortium.list.job": "役割",
+  "consortium.list.all": "すべて",
   "consortium.block.s3": "Stream S3 keys (details, swap, add, paste, misfit) follow, up to the next block key.",
   "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file."
 }

@@ -875,6 +875,7 @@
   "consortium.matrix.cell": "{layer}, {stage}",
   "consortium.matrix.cellSays": "{cell}: {what}",
   "consortium.matrix.gap": "Ancora nessuna pianta della lista per questa casella",
+  "consortium.matrix.gapRun": "Ancora nessuna pianta della lista per queste caselle",
   "consortium.matrix.gapBody": "Nessuna pianta {list} cresce in questo strato a questo stadio. È una lacuna dei dati, non del tuo terreno.",
   "consortium.matrix.gapBodyRun": "Nessuna pianta {list} cresce in questo strato in questi stadi. È una lacuna dei dati, non del tuo terreno.",
   "consortium.matrix.misfit": "Nessuna pianta si adatta al tuo terreno qui",
@@ -936,7 +937,7 @@
   "consortium.side.marks": "Ogni tacca è una pianta alla sua altezza.",
   "consortium.side.first": "primo stadio, in crescita",
   "consortium.side.noHeight": "altezza non registrata",
-  "consortium.side.height": "fino a {m} m",
+  "consortium.side.height": "fino a {m} m allo stato selvatico",
   "consortium.side.empty": "Ancora nessuna pianta vive in questo stadio.",
   "consortium.side.drawing": "{title}. {plants}.",
   "consortium.side.none": "nessuna",
@@ -961,6 +962,10 @@
   "consortium.list.none": "Nessuna pianta corrisponde.",
   "consortium.list.swap": "Sostituisci",
   "consortium.list.swapName": "Sostituisci {name}",
+  "consortium.list.remove": "Togli",
+  "consortium.list.removeName": "Togli {name}",
+  "consortium.list.job": "Ruolo",
+  "consortium.list.all": "Tutti",
   "consortium.block.s3": "Stream S3 keys (details, swap, add, paste, misfit) follow, up to the next block key.",
   "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file."
 }

@@ -875,6 +875,7 @@
   "consortium.matrix.cell": "{layer}，{stage}",
   "consortium.matrix.cellSays": "{cell}：{what}",
   "consortium.matrix.gap": "列表中暂无适合这一格的植物",
+  "consortium.matrix.gapRun": "列表中暂无适合这些格的植物",
   "consortium.matrix.gapBody": "{list}中没有植物在这个阶段长在这一层。这是数据缺口，不是你场地的问题。",
   "consortium.matrix.gapBodyRun": "{list}中没有植物在这些阶段长在这一层。这是数据缺口，不是你场地的问题。",
   "consortium.matrix.misfit": "这里没有适合你场地的植物",
@@ -936,7 +937,7 @@
   "consortium.side.marks": "每条线代表一种植物及其高度。",
   "consortium.side.first": "第一个阶段，仍在生长",
   "consortium.side.noHeight": "高度未记录",
-  "consortium.side.height": "最高 {m} 米",
+  "consortium.side.height": "野生最高 {m} 米",
   "consortium.side.empty": "这个阶段还没有植物。",
   "consortium.side.drawing": "{title}。{plants}。",
   "consortium.side.none": "无",
@@ -961,6 +962,10 @@
   "consortium.list.none": "没有符合的植物。",
   "consortium.list.swap": "替换",
   "consortium.list.swapName": "替换{name}",
+  "consortium.list.remove": "移除",
+  "consortium.list.removeName": "移除{name}",
+  "consortium.list.job": "作用",
+  "consortium.list.all": "全部",
   "consortium.block.s3": "Stream S3 keys (details, swap, add, paste, misfit) follow, up to the next block key.",
   "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file."
 }

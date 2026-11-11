@@ -875,6 +875,7 @@
   "consortium.matrix.cell": "{layer}, {stage}",
   "consortium.matrix.cellSays": "{cell}: {what}",
   "consortium.matrix.gap": "No plant in the list for this cell yet",
+  "consortium.matrix.gapRun": "No plant in the list for these cells yet",
   "consortium.matrix.gapBody": "Nothing in {list} grows in this layer at this stage. A data gap, not your site.",
   "consortium.matrix.gapBodyRun": "Nothing in {list} grows in this layer at these stages. A data gap, not your site.",
   "consortium.matrix.misfit": "No plant fits your site here",
@@ -936,7 +937,7 @@
   "consortium.side.marks": "Each mark is one plant at its height.",
   "consortium.side.first": "first stage, still growing",
   "consortium.side.noHeight": "height not recorded",
-  "consortium.side.height": "up to {m} m",
+  "consortium.side.height": "up to {m} m in the wild",
   "consortium.side.empty": "No plant lives in this stage yet.",
   "consortium.side.drawing": "{title}. {plants}.",
   "consortium.side.none": "none",
@@ -961,6 +962,10 @@
   "consortium.list.none": "No plant matches.",
   "consortium.list.swap": "Swap",
   "consortium.list.swapName": "Swap {name}",
+  "consortium.list.remove": "Remove",
+  "consortium.list.removeName": "Remove {name}",
+  "consortium.list.job": "Job",
+  "consortium.list.all": "All",
   "consortium.block.s3": "Stream S3 keys (details, swap, add, paste, misfit) follow, up to the next block key.",
   "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file."
 }

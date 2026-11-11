@@ -875,6 +875,7 @@
   "consortium.matrix.cell": "{layer}, {stage}",
   "consortium.matrix.cellSays": "{cell}: {what}",
   "consortium.matrix.gap": "Nog geen plant uit de lijst voor dit vak",
+  "consortium.matrix.gapRun": "Nog geen plant uit de lijst voor deze vakken",
   "consortium.matrix.gapBody": "Niets uit {list} groeit in deze laag in dit stadium. Een gat in de gegevens, niet in je plek.",
   "consortium.matrix.gapBodyRun": "Niets uit {list} groeit in deze laag in deze stadia. Een gat in de gegevens, niet in je plek.",
   "consortium.matrix.misfit": "Hier past geen plant bij je plek",
@@ -936,7 +937,7 @@
   "consortium.side.marks": "Elk streepje is één plant op zijn hoogte.",
   "consortium.side.first": "eerste stadium, groeit nog",
   "consortium.side.noHeight": "hoogte niet vastgelegd",
-  "consortium.side.height": "tot {m} m",
+  "consortium.side.height": "tot {m} m in het wild",
   "consortium.side.empty": "In dit stadium leeft nog geen plant.",
   "consortium.side.drawing": "{title}. {plants}.",
   "consortium.side.none": "geen",
@@ -961,6 +962,10 @@
   "consortium.list.none": "Geen plant gevonden.",
   "consortium.list.swap": "Wisselen",
   "consortium.list.swapName": "{name} wisselen",
+  "consortium.list.remove": "Verwijderen",
+  "consortium.list.removeName": "{name} verwijderen",
+  "consortium.list.job": "Taak",
+  "consortium.list.all": "Alle",
   "consortium.block.s3": "Stream S3 keys (details, swap, add, paste, misfit) follow, up to the next block key.",
   "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file."
 }

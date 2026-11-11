@@ -875,6 +875,7 @@
   "consortium.matrix.cell": "{layer}, {stage}",
   "consortium.matrix.cellSays": "{cell}: {what}",
   "consortium.matrix.gap": "이 칸에 맞는 식물이 아직 목록에 없습니다",
+  "consortium.matrix.gapRun": "이 칸들에 맞는 식물이 아직 목록에 없습니다",
   "consortium.matrix.gapBody": "{list}에는 이 단계에 이 층에서 자라는 식물이 없습니다. 땅의 문제가 아니라 데이터의 빈틈입니다.",
   "consortium.matrix.gapBodyRun": "{list}에는 이 단계들에 이 층에서 자라는 식물이 없습니다. 땅의 문제가 아니라 데이터의 빈틈입니다.",
   "consortium.matrix.misfit": "여기에는 땅에 맞는 식물이 없습니다",
@@ -936,7 +937,7 @@
   "consortium.side.marks": "선 하나가 식물 한 종과 그 키입니다.",
   "consortium.side.first": "첫 단계, 자라는 중",
   "consortium.side.noHeight": "키 기록 없음",
-  "consortium.side.height": "최대 {m}m",
+  "consortium.side.height": "야생에서 최대 {m}m",
   "consortium.side.empty": "이 단계에는 아직 식물이 없습니다.",
   "consortium.side.drawing": "{title}. {plants}.",
   "consortium.side.none": "없음",
@@ -961,6 +962,10 @@
   "consortium.list.none": "맞는 식물이 없습니다.",
   "consortium.list.swap": "바꾸기",
   "consortium.list.swapName": "{name} 바꾸기",
+  "consortium.list.remove": "빼기",
+  "consortium.list.removeName": "{name} 빼기",
+  "consortium.list.job": "역할",
+  "consortium.list.all": "전체",
   "consortium.block.s3": "Stream S3 keys (details, swap, add, paste, misfit) follow, up to the next block key.",
   "consortium.block.s4": "Stream S4 keys (start, site, crops, country, share, print, download, page) follow, to the end of the file."
 }
