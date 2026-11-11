@@ -1,0 +1,65 @@
+/* Consortium v2: shared tokens and the page shell (commit 0 of P2). Everything is scoped to .ct.
+   The palette is the site's (src/styles/tokens.css); these add the tool's own: strata colours
+   (Okabe-Ito fills with inks at 3:1 or more, the reviewed mockups' values; for the drawing, the
+   matrix row marks and the legend only, never chrome), the hatch of a cell that cannot be filled,
+   the stage bar, and the matrix cell sizes (--cell-*). Streams own matrix.css (S2), details.css (S3)
+   and shell.css / print.css (S4) beside this file.
+   Breakpoints, as everywhere on the site: max-width 639px (phone) and min-width 960px (desktop);
+   custom properties cannot hold a media query, so each file writes them out. */
+.ct {
+  --s-emergent: #E69F00; --s-high: #009E73; --s-medium: #0072B2; --s-low: #CC79A7; --s-none: var(--text-muted);
+  --s-emergent-ink: #8A5E00; --s-high-ink: #005C43; --s-medium-ink: #004A75; --s-low-ink: #8E4775; --s-none-ink: var(--text-muted);
+  --hatch: rgba(58, 46, 28, 0.10);
+  --hatch-fill: repeating-linear-gradient(135deg, var(--hatch) 0 4px, transparent 4px 9px);
+  --bar: #4A4237; --bar-soft: rgba(58, 46, 28, 0.20);
+  --backdrop: rgba(22, 21, 16, 0.42);
+  /* Matrix cells: desktop, then the phone overview grid (41 × 40 px, mockup 02). */
+  --cell-min-w: 96px; --cell-min-h: 56px; --cell-gap: 4px; --cell-radius: 6px;
+  --cell-phone-w: 41px; --cell-phone-h: 40px;
+  --cell-free-border: 1px dashed var(--border-strong);
+  --cell-filled-bg: var(--surface);
+  --cell-cannot-bg: var(--hatch-fill);
+  --cell-head-w: 196px; /* row headers: 140px below 1200px */
+}
+:root[data-theme="dark"] .ct {
+  --s-emergent-ink: #F5C25A; --s-high-ink: #5FD3AE; --s-medium-ink: #69B4EA; --s-low-ink: #E7A9CF;
+  --hatch: rgba(255, 248, 235, 0.16);
+  --bar: #D6CEBF; --bar-soft: rgba(255, 248, 235, 0.22);
+  --backdrop: rgba(0, 0, 0, 0.55);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ct {
+    --s-emergent-ink: #F5C25A; --s-high-ink: #5FD3AE; --s-medium-ink: #69B4EA; --s-low-ink: #E7A9CF;
+    --hatch: rgba(255, 248, 235, 0.16);
+    --bar: #D6CEBF; --bar-soft: rgba(255, 248, 235, 0.22);
+    --backdrop: rgba(0, 0, 0, 0.55);
+  }
+}
+@media (max-width: 1199px) { .ct { --cell-head-w: 140px; } }
+
+.ct { display: block; padding-bottom: 24px; }
+.ct h1, .ct h2, .ct h3, .ct h4 { margin: 0; font-family: var(--font-display); font-weight: 400; line-height: 1.12; text-wrap: balance; }
+:where(.ct) :where(button, input, select, textarea) { font: inherit; color: inherit; }
+.ct .text-link { display: inline-block; padding-block: 6px; font-weight: 600; color: var(--accent-ink); }
+
+/* The static shell: head, lede, release line. Its height is kept when the island mounts (P6). */
+.ct .tool-head { padding-top: 20px; padding-bottom: 28px; display: grid; gap: 12px; }
+.ct .tool-head-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.ct .tool-title { font-size: 46px; letter-spacing: -0.025em; }
+.ct .badge-beta {
+  display: inline-flex; align-items: center; min-height: 26px; padding: 0 10px; border-radius: 999px;
+  border: 1px solid var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.ct .tool-lede { max-width: 40em; font-family: var(--font-display); font-size: 20px; line-height: 1.4; color: var(--text-secondary); text-wrap: pretty; }
+.ct .tool-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 15px; color: var(--text-muted); }
+.ct .tool-release { margin-top: 20px; font-size: 13.5px; color: var(--text-muted); overflow-wrap: anywhere; }
+.ct #ct-root { min-height: 60vh; }
+.ct .status-line { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--text-secondary); }
+.ct .callout { display: grid; gap: 14px; padding: 28px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); max-width: 720px; }
+.ct .callout > p { font-size: 16.5px; color: var(--text-secondary); }
+@media (max-width: 639px) {
+  .ct .tool-head { padding-top: 8px; padding-bottom: 20px; gap: 10px; }
+  .ct .tool-title { font-size: 34px; }
+  .ct .tool-lede { font-size: 18px; }
+  .ct .callout { padding: 20px 16px; }
+}

@@ -1,9 +1,9 @@
-// The consortium tool's data core: format 3 types and pure, dependency-free functions (no DOM, no
-// Astro), so node --test runs them and the app can reuse them after its 2.1 refactor.
+// The consortium v2 core: types, the PlantSource seam and (from stream S1) pure, framework-free
+// rules: site fit, matrix fill, swaps, conflicts, jobs, share state and the .canopi writer. No DOM,
+// no Astro, no import outside this folder (scripts/consortium-boundary.test.mjs), so node --test runs
+// it and it can move to a canopi-consortium package unchanged.
+//
+// site.ts, conflicts.ts, jobs.ts, suggest.ts and state.ts here are still the v1 modules, kept for S1
+// to port in place (design check §2); tsconfig.json excludes them and nothing imports them until then.
 export * from './types.ts';
-export * from './climates.ts';
-export * from './site.ts';
-export * from './jobs.ts';
-export * from './conflicts.ts';
-export * from './suggest.ts';
-export * from './state.ts';
+export * from './source.ts';

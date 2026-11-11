@@ -1,0 +1,45 @@
+// The page's words on the island (frozen seam): ConsortiumPage.astro writes every consortium.* key of
+// the page language, without its prefix, into #ct-data `strings`; T and P read them. Plural strings
+// use the v1 form "one: # plant | other: # plants" (Intl.PluralRules picks the form, # is the number).
+// A missing key shows the key itself, so a gap is visible rather than blank.
+export type Strings = Record<string, string>;
+
+let strings: Strings = {};
+let lang = 'en';
+let rules = new Intl.PluralRules('en');
+let numbers = new Intl.NumberFormat('en', { maximumFractionDigits: 1 });
+
+export function setStrings(next: Strings, nextLang: string): void {
+  strings = next;
+  lang = nextLang;
+  rules = new Intl.PluralRules(nextLang);
+  numbers = new Intl.NumberFormat(nextLang, { maximumFractionDigits: 1 });
+}
+
+export const pageLang = (): string => lang;
+
+type Vars = Record<string, string | number>;
+const fill = (value: string, vars?: Vars) =>
+  vars ? value.replace(/\{(\w+)\}/g, (m, name: string) => (name in vars ? String(vars[name]) : m)) : value;
+
+// A string with its {name} placeholders replaced (values as given: Preact escapes text).
+export function T(key: string, vars?: Vars): string {
+  return fill(strings[key] ?? key, vars);
+}
+
+// The forms of a plural string: { one: '# plant', other: '# plants' }.
+export function pluralForms(value: string): Partial<Record<Intl.LDMLPluralRule, string>> {
+  const forms: Partial<Record<Intl.LDMLPluralRule, string>> = {};
+  for (const part of value.split(' | ')) {
+    const m = /^(zero|one|two|few|many|other)\s*:\s*([\s\S]*)$/.exec(part.trim());
+    if (m) forms[m[1] as Intl.LDMLPluralRule] = m[2];
+  }
+  return forms;
+}
+
+// A plural string for n, # replaced by the formatted number, then its {name} placeholders.
+export function P(key: string, n: number, vars?: Vars): string {
+  const forms = pluralForms(strings[key] ?? key);
+  const form = forms[rules.select(n)] ?? forms.other ?? key;
+  return fill(form.replace(/#/g, numbers.format(n)), vars);
+}

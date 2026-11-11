@@ -848,5 +848,14 @@
   "consortium.scope.north": "北半球",
   "consortium.scope.south": "南半球",
   "consortium.ctype.intercropped_yield_gain": "田间试验中间作可增产。",
-  "consortium.d.yieldGain": "与{other}间作可增产"
+  "consortium.d.yieldGain": "与{other}间作可增产",
+  "consortium.load.plants": "Loading the plant list…",
+  "consortium.load.tooOld": "This tool needs a more recent browser: Chrome or Edge 80, Firefox 113, Safari 16.4 or later.",
+  "consortium.load.wasmBlocked": "WebAssembly is turned off in this browser (for example by Lockdown Mode), and the tool needs it.",
+  "consortium.load.fetch": "The plant list did not load. Check your connection.",
+  "consortium.load.damaged": "The plant list did not load: the file is damaged.",
+  "consortium.load.stale": "The tool was updated since this page opened.",
+  "consortium.load.retry": "Retry",
+  "consortium.load.reload": "Reload",
+  "consortium.load.guides": "Meanwhile, the Field Guides explain how to plan a layered garden by hand."
 }

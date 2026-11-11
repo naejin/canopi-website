@@ -10,6 +10,12 @@
     "node_modules",
     "public",
     "mockup",
-    ".local"
+    ".local",
+    "src/scripts/consortium",
+    "src/lib/consortium/site.ts",
+    "src/lib/consortium/conflicts.ts",
+    "src/lib/consortium/jobs.ts",
+    "src/lib/consortium/suggest.ts",
+    "src/lib/consortium/state.ts"
   ]
 }

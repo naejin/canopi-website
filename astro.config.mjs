@@ -14,14 +14,37 @@ import { transformWithEsbuild } from 'vite';
 // `include` also decides which .ts files are compiled at all, so the scope is a plugin of its own and
 // vite:esbuild skips those files; every other file compiles exactly as before (probe P7).
 const CONSORTIUM_TSX = /\/src\/islands\/consortium\/.*\.tsx$/;
+/** @type {import('vite').Plugin} */
 const consortiumJsx = {
   name: 'canopi:consortium-jsx',
   enforce: 'pre',
-  async transform(code, id) {
+  async transform(/** @type {string} */ code, /** @type {string} */ id) {
     const path = id.split('?')[0];
     if (!CONSORTIUM_TSX.test(path)) return null;
     const out = await transformWithEsbuild(code, path, { loader: 'tsx', jsx: 'automatic', jsxImportSource: 'preact', target: 'esnext' });
     return { code: out.code, map: out.map };
+  },
+};
+
+// sqlite-wasm's browser build names two helpers with new URL('…', import.meta.url): the deprecated
+// Worker #1 promiser (new Worker(new URL('sqlite3-worker1.mjs'))) and the OPFS proxy. Vite would
+// bundle the worker, a second copy of the glue and of the 879 KB wasm, and copy the proxy. The page
+// opens the database on the main thread with neither (design check §2), so the two names are split
+// where Vite cannot see them; the one wasm stays (probe P1: one hashed wasm).
+const SQLITE_BROWSER = /\/@sqlite\.org\/sqlite-wasm\/dist\/index\.mjs$/;
+/** @type {import('vite').Plugin} */
+const sqliteMainThreadOnly = {
+  name: 'canopi:sqlite-main-thread-only',
+  enforce: 'pre',
+  transform(/** @type {string} */ code, /** @type {string} */ id) {
+    if (!SQLITE_BROWSER.test(id.split('?')[0])) return null;
+    let out = code;
+    for (const name of ['sqlite3-worker1.mjs', 'sqlite3-opfs-async-proxy.js']) {
+      const literal = `new URL("${name}", import.meta.url)`;
+      if (!out.includes(literal)) throw new Error(`canopi:sqlite-main-thread-only: ${literal} is gone from ${id}; check the sqlite-wasm upgrade`);
+      out = out.replaceAll(literal, `new URL(${JSON.stringify(name.slice(0, 7))} + ${JSON.stringify(name.slice(7))}, import.meta.url)`);
+    }
+    return { code: out, map: null };
   },
 };
 
@@ -45,7 +68,7 @@ export default defineConfig({
   adapter: cloudflare(),
 
   vite: {
-    plugins: [consortiumJsx],
+    plugins: [consortiumJsx, sqliteMainThreadOnly],
     esbuild: { exclude: [/\.js$/, CONSORTIUM_TSX] },
     // sqlite-wasm finds its .wasm through `locateFile` and an `?url` import (design check P1), so
     // the dependency optimizer must leave the package as published.
