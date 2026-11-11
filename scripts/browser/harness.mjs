@@ -122,7 +122,7 @@ export async function startHarness({ log = () => {} } = {}) {
     const context = real ? real.browser.defaultBrowserContext() : await browser.createBrowserContext();
     if (!real) contexts.add(context);
     const page = await context.newPage();
-    // Short waits: a missing control fails in seconds, so the todo tests of unbuilt streams stay quick.
+    // Short waits: a missing control fails in seconds rather than at the test's timeout.
     page.setDefaultTimeout(4000);
     page.setDefaultNavigationTimeout(20_000);
     await page.setViewport({ width, height: width < 640 ? 844 : 900, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });

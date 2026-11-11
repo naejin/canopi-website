@@ -319,7 +319,7 @@ test('BT-9 (S4 .canopi): the download validates against the app schema (canopi 0
   });
 });
 
-test('Exit walk-through (S4, every stream): on the real install, keyboard only: start → adjust → share → print → download', async (t) => {
+test('Exit walk-through (S4, every stream): on the real install, keyboard only: start → adjust → keep → share (reopened) → print → download', async (t) => {
   await eachVariant(t, async (v) => {
     const page = await h.open('/consortium/', v);
     // The print dialog is the browser's: counted, not opened.
@@ -329,7 +329,7 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
       const el = document.activeElement;
       const by = el?.getAttribute('aria-labelledby');
       const text = el?.getAttribute('aria-label') || (by && document.getElementById(by)?.textContent) || el?.labels?.[0]?.textContent || el?.textContent || '';
-      return { tag: el?.tagName.toLowerCase(), type: el?.type, text: text.trim(), role: el?.getAttribute('role') };
+      return { tag: el?.tagName.toLowerCase(), type: el?.type, text: text.trim(), role: el?.getAttribute('role'), cls: typeof el?.className === 'string' ? el.className : '', plant: el?.closest('[data-plant-id]')?.dataset.plantId ?? null, inSheet: !!el?.closest('dialog[open]') };
     });
     // Tab (forward) until the focused control matches; every stop is a real focus, never <body>.
     const tabTo = async (match, what, max = 120) => {
@@ -357,6 +357,7 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
     assert.equal((await active()).text, 'All plants');
     const before = await page.$$eval('#ct-root [data-plant-id]', (els) => new Set(els.map((e) => e.dataset.plantId)).size);
     const removed = await tabTo((a) => a.text.startsWith('Remove '), 'a Remove button');
+    assert.ok(removed.plant, 'the Remove button names its plant');
     await page.keyboard.press('Enter');
     assert.ok(await has(page, aria('button', 'Undo')), `${removed.text}: the toast offers Undo`);
     assert.equal(await page.$$eval('#ct-root [data-plant-id]', (els) => new Set(els.map((e) => e.dataset.plantId)).size), before - 1);
@@ -366,13 +367,34 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
     await page.keyboard.press('Enter');
     await page.waitForFunction((n) => new Set([...document.querySelectorAll('#ct-root [data-plant-id]')].map((e) => e.dataset.plantId)).size === n, { timeout: 3000 }, before);
     await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 2000 }).catch(() => {});
-    assert.notEqual((await active()).tag, 'body', 'focus is on the restored plant');
+    assert.equal((await active()).plant, removed.plant, 'focus is on the restored plant');
+
+    // Keep: a plant's name opens its dialog; Keep pins it; Escape closes the dialog.
+    const named = await tabTo((a) => a.cls.includes('ct-lname-btn'), 'a plant\'s name in All plants');
+    await page.keyboard.press('Enter');
+    assert.ok(await findAx(page, { role: 'dialog' }), `${named.text}: its dialog`);
+    await tabTo((a) => a.inSheet && a.text === 'Keep', 'Keep in the dialog', 40);
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.activeElement?.getAttribute('aria-pressed') === 'true', { timeout: 2000 });
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.querySelector('dialog[open]'));
+    const members = await page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort());
 
     // Share: the link field holds the consortium.
     await tabTo((a) => a.text === 'Share', 'Share');
     await page.keyboard.press('Enter');
     const field = await findAx(page, { role: 'textbox', name: /link/i });
     assert.match(field?.value ?? '', /#v=4/, 'the share field holds the link');
+    // The copied link, opened as a new document: the same members, the kept plant pinned.
+    const copy = await h.open(`/consortium/?run=${Date.now()}${hashOf(field.value)}`, v);
+    assert.equal(await loadState(copy), 'ready');
+    assert.ok(await has(copy, aria('button', 'Share'), 8000), 'the link reopens the consortium');
+    await copy.locator(aria('tab', 'All plants')).click();
+    await copy.waitForSelector('#ct-root [data-plant-id]');
+    assert.deepEqual(await copy.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort()), members, 'the same members');
+    const pin = await copy.$eval(`#ct-root [data-plant-id="${named.plant}"]`, (el) => el.textContent + ' ' + [...el.querySelectorAll('[aria-label], [title]')].map((x) => x.getAttribute('aria-label') ?? x.getAttribute('title')).join(' '));
+    assert.match(pin, /Kept/, 'the kept pin');
+    await done(copy);
     // Print.
     await tabTo((a) => a.text === 'Print', 'Print');
     await page.keyboard.press('Enter');
