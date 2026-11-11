@@ -217,6 +217,11 @@ test('BT-8 (S4 print): > 20 plants print "At a glance" and the table, ≤ 20 the
     const pdf = await h.pdf(small);
     assert.ok(pdf.length > 1000, 'it prints');
     assert.deepEqual(await shownTables(small), ['The plants'], '≤ 20 plants: the table, no "At a glance"');
+    const inks = await small.$eval('.ct', (el) => ['--bar', '--s-high-ink', '--hatch'].map((k) => getComputedStyle(el).getPropertyValue(k).replace(/\s/g, '').replace(/,0?\.10?\)/, ',.1)').toUpperCase()));
+    assert.deepEqual(inks, ['#4A4237', '#005C43', 'RGBA(58,46,28,.1)'], 'light inks on paper in either theme (review 8)');
+    const printed = await small.$eval('.ct-print', (el) => el.textContent);
+    const guessed = await small.$eval('[data-ct="country"]', (el) => /guessed from your browser/.test(el.textContent)).catch(() => false);
+    if (guessed) assert.match(printed, /\(guessed from your browser\)/, 'a guessed country is labelled so on paper');
     assert.equal(await printedControls(small), 0, 'no controls printed');
     await done(small);
 
