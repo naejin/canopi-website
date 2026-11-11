@@ -122,7 +122,9 @@ async function initSqlite(): Promise<Sqlite3> {
     timer = setTimeout(() => reject(new LoadError('wasm-fetch', `sqlite3.wasm did not start in ${BACKSTOP_MS / 1000} s`)), BACKSTOP_MS);
   });
   try {
-    return await Promise.race([init({ print: () => {}, printErr: () => {}, instantiateWasm }), failure, backstop]);
+    // Node (the unit tests) loads the package unpatched: Emscripten reads the wasm file itself there.
+    const browser = typeof document !== 'undefined';
+    return await Promise.race([init({ print: () => {}, printErr: () => {}, ...(browser ? { instantiateWasm } : {}) }), failure, backstop]);
   } catch (err) {
     if (err instanceof LoadError) throw err;
     throw new LoadError('wasm-blocked', `WebAssembly was refused: ${String((err as Error)?.message ?? err)}`);
