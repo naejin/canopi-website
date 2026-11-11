@@ -59,3 +59,26 @@ export function moduleGraph(root, html) {
 // The chunk holding the sqlite-wasm glue (and the loader that imports it statically): left out of
 // the island's budget (§8) and loaded only once the island asks for it.
 export const isSqliteGlue = (code) => code.includes('sqlite3_deserialize') && /sqlite3\.[\w-]+\.wasm/.test(code);
+
+// The chunks reachable from `from` without entering any chunk of `stop` (paths of a moduleGraph).
+export function reachable(graph, from, stop = new Set()) {
+  const seen = new Set();
+  const stack = [...from];
+  while (stack.length) {
+    const p = stack.pop();
+    if (seen.has(p) || stop.has(p) || !graph.has(p)) continue;
+    seen.add(p);
+    stack.push(...graph.get(p).imports);
+  }
+  return seen;
+}
+
+// The island's own chunks (§8): everything reachable from its entry chunk (the one that mounts into
+// #ct-root, src/islands/consortium/main.ts), less what the page loads without it (the site chrome,
+// the page script with Vite's preload helper) and less the sqlite glue.
+export function islandChunks(graph, pageEntries) {
+  const main = [...graph].filter(([, m]) => m.code.includes('"ct-root"') && m.code.includes('"ct-data"')).map(([p]) => p);
+  if (main.length !== 1) throw new Error(`one island entry chunk expected, found ${main.length}: ${main.join(', ')}`);
+  const pageWide = reachable(graph, pageEntries, new Set(main));
+  return { entry: main[0], chunks: [...reachable(graph, main)].filter((p) => !pageWide.has(p) && !isSqliteGlue(graph.get(p).code)) };
+}

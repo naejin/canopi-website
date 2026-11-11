@@ -7,7 +7,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:28Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:35Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T04:06:19Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -22,8 +22,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:2538db48b2f7133b
-    last_modified: 2026-11-11T03:28:04Z
+    digest: sha256:1e31420840fc381e
+    last_modified: 2026-11-11T04:04:21Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json

@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T04:05:37Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:32Z }
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
@@ -65,28 +65,28 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:2538db48b2f7133b
-    last_modified: 2026-11-11T03:28:04Z
+    digest: sha256:1e31420840fc381e
+    last_modified: 2026-11-11T04:04:21Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
     digest: sha256:8fdc621be2f68b1b
-    last_modified: 2026-11-11T03:49:07Z
+    last_modified: 2026-11-11T04:00:55Z
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
     digest: sha256:884c87ba9ee40d8c
-    last_modified: 2026-11-11T03:47:58Z
+    last_modified: 2026-11-11T04:00:55Z
   - id: consortium-commit0-browser-test-mjs
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
     digest: sha256:dd4d9259379effa3
-    last_modified: 2026-11-11T03:35:39Z
+    last_modified: 2026-11-11T04:00:55Z
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
     digest: sha256:dbe5436d6b5380cf
-    last_modified: 2026-11-11T03:37:35Z
+    last_modified: 2026-11-11T04:00:55Z
   - id: bytes-ts
     resource: ../../src/islands/consortium/data/bytes.ts
     title: src/islands/consortium/data/bytes.ts
@@ -95,8 +95,8 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:13a32232086a803a
-    last_modified: 2026-11-11T03:28:04Z
+    digest: sha256:7f2dd725d361d8ac
+    last_modified: 2026-11-11T04:04:21Z
 enforced_by:
   - scripts/check-built-site.mjs
   - scripts/browser/consortium-commit0.browser.test.mjs
@@ -148,7 +148,7 @@ The v1 tool (app.js and its tests) was deleted in commit 0. Its full description
   - hreflang, header and links;
   - then `verifyInstall` on the served data, a real `canopi_db_sha256`, and no v1 file or index served.
   - exactly one `sqlite3.<hash>.wasm` and no `sqlite3-worker1`/`opfs-async-proxy` file anywhere (review B4);
-  - §8: the island's JavaScript through the built import graph, without the chunk holding the sqlite glue, under 60 KB gzip -9 (12.3 KB at the follow-up), and on every locale page the DB preload and a modulepreload for each chunk.
+  - §8: the island's JavaScript through the built import graph, without the chunk holding the sqlite glue, under 60 KB gzip -9: only the island's own chunks, from its entry chunk (main.ts) without the page-wide chunks (site chrome, page script) or the glue (9.1 KB, the main chunk alone); a serve.mjs marker file left in `dist/client` fails the check, and on every locale page the DB preload and a modulepreload for each chunk.
 - Browser tests, via `npm run test:browser` (after `npm run build`, capped; never in `npm test`), one file per owner (review C1), enforced by [browser-tests.test.mjs](../../scripts/browser-tests.test.mjs) in `npm test`:
   - [consortium-commit0.browser.test.mjs](../../scripts/browser/consortium-commit0.browser.test.mjs), no todo: P1 (515 plants counted in the page from the one hashed wasm), P2 (`application/wasm`, immutable headers), P3 (gzip magic, no content-encoding), P6/BT-9 JS-off shell, a mount with no head shift, and the BT-9 load screens with their buttons (DB 404, corrupt, wrong digest, empty body, `user_version` 2, WebAssembly off, loader chunk 404 online and offline) at all four variants;
   - `consortium-s1…s4.browser.test.mjs`: each stream's §7 tests in full (BT-1 data and start halves, BT-2…BT-8, BT-9 `.canopi` against the vendored app schema, BT-5 offline correction, the exit walk-through), todo and named for their stream until it builds them;

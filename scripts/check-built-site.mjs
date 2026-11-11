@@ -9,7 +9,7 @@ import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
 import { createHash } from 'node:crypto';
 import { safeHref } from '../src/lib/safe-href.js';
 import { gzipSync } from 'node:zlib';
-import { isSqliteGlue, moduleGraph } from './built-modules.mjs';
+import { islandChunks, isSqliteGlue, moduleGraph, pageEntries } from './built-modules.mjs';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -421,6 +421,12 @@ const consortiumInstall = verifyInstall(join(root, 'data', 'consortium'), consor
 assert.ok(consortiumInstall.databases > 0 && consortiumInstall.images > 0, 'consortium: database and photos');
 for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json', 'temperate.json', 'mediterranean.json', 'consortium-index.json']) assert.ok(!existsSync(join(root, 'data', 'consortium', gone)), `consortium: ${gone} is not served`);
 
+// Review B5 follow-up: a browser test run writes a marker file into dist/client and removes it when
+// it stops; one left behind (a killed run) must never be deployed.
+{
+  const markers = readdirSync(root).filter((f) => /^__canopi-serve-/.test(f));
+  assert.deepEqual(markers, [], `scripts/browser/serve.mjs marker files left in ${root} (a browser run was killed): delete them`);
+}
 // Review B4: the build ships exactly one sqlite wasm, and neither helper of sqlite-wasm's browser
 // build (the Worker #1 script, the OPFS proxy) that astro.config.mjs keeps Vite from emitting.
 {
@@ -445,14 +451,20 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 // the island's chunks, the glue included, so they arrive beside the page script.
 const ISLAND_BUDGET = 60 * 1024;
 let islandBytes = 0;
+let islandList = [];
 for (const lang of locales) {
   const path = `${consortiumPath(lang)}index.html`;
   const html = readFileSync(join(root, path), 'utf8');
   const graph = moduleGraph(root, html);
   const glue = [...graph].filter(([, m]) => isSqliteGlue(m.code)).map(([p]) => p);
   assert.equal(glue.length, 1, `${path}: one chunk holds the sqlite-wasm glue (${glue.join(', ')})`);
-  const total = [...graph].filter(([p]) => !glue.includes(p)).reduce((n, [, m]) => n + gzipSync(m.code, { level: 9 }).length, 0);
-  assert.ok(total < ISLAND_BUDGET, `${path}: island JS is ${(total / 1024).toFixed(1)} KB gzip, the budget is 60 KB`);
+  // Only the island's graph counts: from its entry chunk, without the page-wide chunks (site chrome,
+  // the page script) and without the sqlite glue (review C8 follow-up).
+  const scripts = [...html.matchAll(/<script\b[^>]*\btype="module"[^>]*\bsrc="([^"]+)"/g)].map(([, src]) => src);
+  const island = islandChunks(graph, scripts.length ? scripts : pageEntries(html));
+  const total = island.chunks.reduce((n, p) => n + gzipSync(graph.get(p).code, { level: 9 }).length, 0);
+  islandList = island.chunks;
+  assert.ok(total < ISLAND_BUDGET, `${path}: island JS (main.ts graph) is ${(total / 1024).toFixed(1)} KB gzip, the budget is 60 KB`);
   islandBytes = total;
   const preloads = [...html.matchAll(/<link\b[^>]*\brel="(preload|modulepreload)"[^>]*>/g)].map(([tag, rel]) => ({ rel, tag, href: tag.match(/\bhref="([^"]+)"/)?.[1] }));
   const db = preloads.find((l) => l.href === consortiumIndex.files[0].url);
@@ -460,6 +472,6 @@ for (const lang of locales) {
   const modules = new Set(preloads.filter((l) => l.rel === 'modulepreload').map((l) => l.href));
   for (const p of graph.keys()) if (!html.includes(`src="${p}"`)) assert.ok(modules.has(p), `${path}: modulepreload ${p}`);
 }
-console.log(`Consortium island JS: ${(islandBytes / 1024).toFixed(1)} KB gzip (budget 60 KB, sqlite glue excluded).`);
+console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB).`);
 
 console.log(`Verified 11 locale pages, their bibliography, data sources (${creditRows.length} credited sources, ${tryRows.length} TRY rows each) and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);
