@@ -6,7 +6,7 @@ tags: [decision, navigation]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:38Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:30Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T05:24:48Z }
 sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
@@ -51,8 +51,8 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:af00783eb4fc8a41
-    last_modified: 2026-11-11T03:33:26Z
+    digest: sha256:10f51508b2aee84b
+    last_modified: 2026-11-11T05:05:30Z
 enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 ---
 

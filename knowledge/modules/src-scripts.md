@@ -5,15 +5,15 @@ description: Vanilla browser modules for the site's pages (chrome, climate, hero
 resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:39Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T05:24:47Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:31Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:7785c6fb79f838ac
-    last_modified: 2026-11-11T03:33:26Z
+    digest: sha256:cf06adae00461ba2
+    last_modified: 2026-11-11T05:18:16Z
   - id: scale-js
     resource: ../../src/scripts/consortium/scale.js
     title: src/scripts/consortium/scale.js
@@ -36,7 +36,7 @@ Client-side behaviour, no framework. Scripts hold no user-facing English: every 
 - [design-list.js](../../src/scripts/design-list.js): the list of featured designs under the canvas, a page at a time.
 - [contact.js](../../src/scripts/contact.js): in-place validation, posts with `Accept: application/json`.
 - [climate.js](../../src/scripts/climate.js): the reader's climate (`initClimate()`, called by `initChrome`): the picker dialog, `localStorage["canopi-climate"]` and `html[data-climate]`, ordering of `<ForClimate>` runs, the "not covered yet" note, sync across tabs, all blocks open for print. See [Climate UX](/decisions/climate-ux.md).
-- [consortium/](../../src/scripts/consortium): the v1 consortium tool's modules, unimported since P2 commit 0 deleted `app.js` and `data.ts` and kept here for the v2 streams to port (`tsconfig.json` excludes the folder; v2 is the island in `src/islands/consortium/`): `words.js`, `draw.js`, the node-tested `logic.js`, `parts.js`, `memory.js`, `crops.js`, `scale.js` (the plant list at scale), `side.js` (the side view's rules), `layers.js` (layer values and the estimate marker in a plant's details) and `correction.js` (the "Suggest a correction" form, posting to `/api/correction`). See [Consortium page](/modules/consortium-page.md).
+- [consortium/](../../src/scripts/consortium): the v1 consortium tool's modules, unimported since P2 commit 0 deleted `app.js` and `data.ts` and kept here for the v2 streams to port (`tsconfig.json` excludes the folder; v2 is the island in `src/islands/consortium/`): `words.js`, `draw.js`, the node-tested `logic.js`, `parts.js`, `scale.js` (the plant list at scale), `side.js` (the side view's rules), `layers.js` (layer values and the estimate marker in a plant's details) and `correction.js` (the "Suggest a correction" form, posting to `/api/correction`). S4 deleted `memory.js` and `crops.js` (ported to `src/islands/consortium/memory.ts` and `views/Start.tsx`); the coordinator deletes the folder after every stream merges. See [Consortium page](/modules/consortium-page.md).
 - [donate.js](../../src/scripts/donate.js), [dialogs.js](../../src/scripts/dialogs.js): HelloAsso donation dialog and native `<dialog>` helpers; `initDialogs` skips a dialog marked `data-own-dialog` (the consortium tool's sheet, which handles its own close, backdrop and scroll lock). Donate opened from the phone Menu returns focus to the Menu summary; from `#donate`, to the first visible Donate button.
 
 # Interfaces

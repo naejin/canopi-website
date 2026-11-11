@@ -4,7 +4,7 @@ title: Existing agent instructions
 description: The durable project rules given to coding agents in AGENTS.md and CLAUDE.md, summarised with where each is enforced.
 tags: [convention, agents]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:08:04Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T05:24:46Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:30:38Z }
 sources:
@@ -16,8 +16,8 @@ sources:
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:d72c6a09aa29c21c
-    last_modified: 2026-10-26T20:30:07Z
+    digest: sha256:52c0df7cf83ada6a
+    last_modified: 2026-11-11T05:18:51Z
 ---
 
 # Rule
@@ -27,7 +27,7 @@ Instruction files: [AGENTS.md](../../AGENTS.md), [CLAUDE.md](../../CLAUDE.md). T
 ## Stack and scope
 
 - Astro static output and plain CSS; no Tailwind, no framework in the browser.
-- Canopi Web lives at `web.projectcanopi.com`; the site only links to it. No website-side catalog search, storage, DuckDB, Worker/Pages Function, R2, KV, D1, service worker or offline catalog. `/app/*` fallback stays a static `_redirects` rule; `/app/canopi-catalog/` files are served as static assets.
+- Canopi Web lives at `web.projectcanopi.com`; the site only links to it. No website-side catalog search, storage, DuckDB, Worker/Pages Function, R2, KV, D1, service worker or offline catalog. `/app/*` fallback stays a static `_redirects` rule; `/app/canopi-catalog/` files are served as static assets. The rule covers the Web Edition files under `/app/`, not the consortium tool (`/consortium/`), which reads its own static SQLite export in the browser with sqlite-wasm and keeps the last consortium in localStorage (CLAUDE.md; licences in `THIRD_PARTY_NOTICES.md`).
 - Cloudflare `_redirects` has no `Language=` conditions; language detection is client-side in `Base.astro`.
 
 ## i18n
