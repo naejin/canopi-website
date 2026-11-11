@@ -61,7 +61,7 @@ function Views() {
           </button>
         ))}
       </div>
-      <div class="ct-viewbar"><button type="button" class="button button-secondary ct-btn-sm" onClick={() => openAdd({ cell: null, anyway: false, job: null })}>{T('matrix.addPlants')}</button></div>
+      <div class="ct-viewbar"><button type="button" class="button button-secondary ct-btn-sm" onClick={() => openAdd()}>{T('matrix.addPlants')}</button></div>
       <Notices />
       <FirstPaint />
       {TABS.map((tab) => (
@@ -108,7 +108,7 @@ export function EmptyNotice({ phone: small = false }: { phone?: boolean }) {
       <div><strong>{T('matrix.empty')}</strong><p>{T('matrix.emptyBody')}</p></div>
       <div class="ct-row">
         <button type="button" class="button button-primary" onClick={() => { if (suggestMembers()) view.value = 'matrix'; }}>{T('matrix.suggest')}</button>
-        {!small && <button type="button" class="button button-secondary" onClick={() => openAdd({ cell: null, anyway: false, job: null })}>{T('matrix.addPlant')}</button>}
+        {!small && <button type="button" class="button button-secondary" onClick={() => openAdd()}>{T('matrix.addPlant')}</button>}
       </div>
     </div>
   );
@@ -118,7 +118,7 @@ export function FreeCell({ stratum, phase, fitting }: { stratum: Stratum; phase:
   return (
     <>
       <span>{P('matrix.freeCell', fitting)}</span>
-      <button type="button" class="ct-add-cell" aria-label={T('matrix.addTo', { cell: cellName(stratum, phase) })} onClick={() => openAdd({ cell: [stratum, phase], anyway: false, job: null })}>+ {T('matrix.add')}</button>
+      <button type="button" class="ct-add-cell" aria-label={T('matrix.addTo', { cell: cellName(stratum, phase) })} onClick={() => openAdd({ cell: { stratum, from: phase, to: phase } })}>+ {T('matrix.add')}</button>
     </>
   );
 }
@@ -142,7 +142,7 @@ export function CellReason({ stratum, from, to, kind }: { stratum: Stratum; from
       <strong><span class="ct-blocked" aria-hidden="true">–</span> {head}</strong>
       <span>{body}</span>
       {kind === 'misfit' && (
-        <span><button type="button" class="ct-link-button" aria-label={T('matrix.showAnywayIn', { cell: cellName(stratum, from, to) })} onClick={() => openAdd({ cell: [stratum, from as PhaseOrd], anyway: true, job: null })}>{T('matrix.showAnyway')}</button></span>
+        <span><button type="button" class="ct-link-button" aria-label={T('matrix.showAnywayIn', { cell: cellName(stratum, from, to) })} onClick={() => openAdd({ cell: { stratum, from: from as PhaseOrd, to: to as PhaseOrd }, anyway: true })}>{T('matrix.showAnyway')}</button></span>
       )}
     </>
   );

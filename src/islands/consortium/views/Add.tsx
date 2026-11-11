@@ -14,11 +14,16 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { asks, plantsIn } from '../../../lib/consortium/index.ts';
+import { asks, canopyOf, fits, jobsOf, misfitsBeside, phaseOrd } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/sqlite-source.ts';
 import { Ask, Bar, NotChecked, SheetFrame, WARN, addMembers, closeSheet, flagLines, flagsOfPlant, nameOf, num, plainPhase, sheetCell, spanWords, zoneName } from './Details.tsx';
 
 const FIRST_ROWS = 8;
+const NOTHING = { cell: null, job: null, anyway: false } as const;
+
+// Whether a plant grows in a layer during any stage of from..to.
+const growsIn = (t: Taxon, stratum: string, from: number, to: number) =>
+  t.stratum?.value === stratum && !!t.phases && phaseOrd(t.phases.start) <= to && phaseOrd(t.phases.end) >= from;
 
 type Search = ReturnType<typeof searchIndex>;
 const searches = new WeakMap<Taxon[], Search>();
@@ -40,7 +45,8 @@ function heightWords(t: Taxon): string {
 export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
   const pool = store.pool.value;
   const climate = store.climate.value;
-  const cell = mode === 'add' ? sheetCell.value : null;
+  // What Add was opened for (store.openSheet): a cell or run of one layer, a job, and `anyway`.
+  const { cell, job, anyway } = mode === 'add' ? sheetCell.value : NOTHING;
   const members = store.members.value;
   const [query, setQuery] = useState('');
   const [all, setAll] = useState(false);
@@ -53,7 +59,22 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
   // Another climate's list is read only once a name is typed (it can only answer a query).
   useEffect(() => { if (q) for (const z of otherZones) void store.loadPool(z); }, [q !== '', otherZones.join()]);
 
-  const base = useMemo(() => (pool ? (cell ? plantsIn(pool, cell[0], cell[1]) : pool) : []), [pool, cell]);
+  // A cell's "+ Add" lists the plants that fit the site there (the cell's "N fit"), counted as the
+  // matrix counts them (core matrix.ts: a misfit beside the members' canopy); "Show them anyway"
+  // lists every plant of the cell or run, the misfits flagged and asking first.
+  const site = store.site.value, taxa = store.memberTaxa.value;
+  const base = useMemo(() => {
+    if (!pool) return [];
+    const canopy = canopyOf(taxa);
+    return pool.filter((t) => {
+      if (job && !jobsOf(t).includes(job)) return false;
+      if (!cell) return true;
+      if (!growsIn(t, cell.stratum, cell.from, cell.to)) return false;
+      if (anyway) return true;
+      const fit = fits(t, site);
+      return !fit.misfits.length || !misfitsBeside(t, site, canopy, fit).length;
+    });
+  }, [pool, cell, job, anyway, site, taxa]);
   const rows = useMemo(() => {
     if (!pool) return [];
     const list = base.filter((t) => !members.includes(t.id)).map((t) => ({ t, flags: flagsOfPlant(t) })).map((r) => ({ ...r, asks: asks(r.flags) }));
@@ -91,7 +112,9 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
     closeSheet();
     addMembers(ids, from);
   };
-  const title = mode === 'search' ? T('add.searchTitle') : cell ? T('add.titleCell', { layer: T(`stratum.${cell[0]}`), phase: plainPhase(cell[1]) }) : T('add.title');
+  const title = mode === 'search' ? T('add.searchTitle')
+    : cell ? T('add.titleCell', { layer: T(`stratum.${cell.stratum}`), phase: cell.from === cell.to ? plainPhase(cell.from) : `${plainPhase(cell.from)} → ${plainPhase(cell.to)}` })
+    : job ? T(`job.${job}.find`) : T('add.title');
   const n = selected.length;
 
   return (
@@ -115,7 +138,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
               <li class={`${asksFirst ? 'flagged' : ''}${on ? ' is-on' : ''}`}>
                 <div class="ct-row-main">
                   <strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i>
-                  <Bar taxon={t} current={cell ? cell[1] : -1} />
+                  <Bar taxon={t} current={cell ? cell.from : -1} />
                 </div>
                 {asksFirst
                   ? <button type="button" class="button button-secondary" aria-label={T('addOne', { name: nameOf(t) })} onClick={() => setAsking({ t, from: null })}>{T('add')}</button>
@@ -130,7 +153,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
         </ul>
       ) : <p class="ct-muted">{T('emptyList')}</p>}
       {!all && rows.length > shown.length && (
-        <p><button type="button" class="button button-secondary" onClick={() => setAll(true)}>{P('add.showAll', rows.length)}</button></p>
+        <p><button type="button" class="button button-secondary ct-add-showall" onClick={() => setAll(true)}>{P('add.showAll', rows.length)}</button></p>
       )}
       {elsewhere.length > 0 && (
         <section aria-labelledby="ct-add-other">

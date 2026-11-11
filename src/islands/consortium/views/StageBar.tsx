@@ -7,14 +7,14 @@
 // - a plant's name, its marks (Main crop is a sprout, Kept a pin, never colour alone; a warning
 //   triangle with its count; "From the Tropical list" for a guest) and its full accessible name;
 // - the "What is a layer?" / "What are these stages?" popovers;
-// - openDetails / openAdd: the S3 sheets, opened through store.sheet. Add reads `addRequest` for the
-//   cell, the job or "Show them anyway" that opened it (S3 hand-off: Sheet carries no cell).
-import { batch, computed, signal } from '@preact/signals';
+// - openDetails / openSwap / openAdd: the sheets, through the store's one opener (store.openSheet),
+//   which also says what Add was opened for (a cell or run, a job, "Show them anyway").
+import { computed } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { CellRef, ClimateZone, JobId, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
+import type { ClimateZone, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
 import { phases } from '../../../lib/consortium/index.ts';
-import { crops, flags, guests, kept, members, removed, sheet } from '../store.ts';
-import { P, T, pageLang } from '../strings.ts';
+import { crops, flags, kept, openSheet, type SheetFor } from '../store.ts';
+import { P, T, nameOf, pageLang } from '../strings.ts';
 import { PHASE_ORDS, collatorFor, spanOf, warningCounts, type Order } from './tracks.ts';
 
 // ---- words ----
@@ -26,10 +26,7 @@ export const listName = (c: ClimateZone): string => T(`list.${c.toLowerCase()}`)
 export const cellName = (s: Stratum, from: number, to: number = from): string =>
   T('matrix.cell', { layer: layerName(s), stage: from === to ? phasePlain(from) : `${phasePlain(from)} → ${phasePlain(to)}` });
 
-export function nameOf(t: Taxon): string {
-  const lang = pageLang() as keyof Taxon['names'];
-  return t.names[lang] || t.names.en || t.canonical_name;
-}
+export { nameOf };
 
 // Plants by their shown name, with the page language's one collator (tracks.ts collatorFor).
 export const byName: Order = (a, b) => collatorFor(pageLang()).compare(nameOf(a), nameOf(b));
@@ -37,7 +34,7 @@ export const byName: Order = (a, b) => collatorFor(pageLang()).compare(nameOf(a)
 // "Years 3–15 → 60 years on · Secondary 1 – Climax", or one stage's words.
 export function spanWords(t: Taxon): string {
   const s = spanOf(t);
-  if (!s) return T('matrix.noLayer');
+  if (!s) return T('timingUnknown');
   return s.from === s.to ? phaseWords(s.from) : `${phasePlain(s.from)} → ${phasePlain(s.to)} · ${phaseTerm(s.from)} – ${phaseTerm(s.to)}`;
 }
 
@@ -107,36 +104,10 @@ export function StageStrip({ on, label }: { on: boolean[]; label: string }) {
   );
 }
 
-// ---- sheets (S3) ----
-export interface AddRequest { cell: CellRef | null; anyway: boolean; job: JobId | null }
-// What the Add sheet was opened for: a free cell ("+ Add"), a blocked cell ("Show them anyway": every
-// plant of the cell, flagged), or a job ("Find a soil feeder"). S3's Add reads it.
-export const addRequest = signal<AddRequest | null>(null);
-// S3 (consortium/s3, Details.tsx) opens sheets with openSheet(kind, id, cell); once merged, openAdd
-// is `openSheet('add', null, req.cell)` (S3 hand-off 2026-11-11), addRequest keeping job and anyway.
-export function openAdd(req: AddRequest): void {
-  addRequest.value = req;
-  sheet.value = { kind: 'add', id: null };
-}
-export function openDetails(id: string): void {
-  sheet.value = { kind: 'details', id };
-}
-export function openSwap(id: string): void {
-  sheet.value = { kind: 'swap', id };
-}
-// Remove (plant list rows): the member leaves the consortium, its pin and Main crop mark, and a new
-// suggestion leaves it out. S3 (consortium/s3, Details.tsx) has removeMember, the same edit plus the
-// toast with Undo; once merged, this is `removeMember(id)` (hand-off, review 2026-11-11).
-export function removePlant(id: string): void {
-  const without = (xs: readonly string[]) => xs.filter((x) => x !== id);
-  batch(() => {
-    members.value = without(members.peek());
-    kept.value = without(kept.peek());
-    crops.value = without(crops.peek());
-    removed.value = [...without(removed.peek()), id];
-    if (guests.peek()[id]) { const g = { ...guests.peek() }; delete g[id]; guests.value = g; }
-  });
-}
+// ---- sheets ----
+export const openAdd = (target: Partial<SheetFor> = {}): void => openSheet('add', null, target);
+export const openDetails = (id: string): void => openSheet('details', id);
+export const openSwap = (id: string): void => openSheet('swap', id);
 
 // ---- popovers ----
 let popoverSeq = 0;

@@ -4,10 +4,11 @@
 // Renaming or removing a signal is a seam change for the coordinator; streams may add actions and,
 // inside the computed bodies, the core calls they own (matrix: S1 lib/consortium/matrix.ts; flags:
 // S1 conflicts and site).
-import { computed, effect, signal } from '@preact/signals';
-import type { ClimateZone, Flag, FlagContext, Interaction, Matrix, PhaseOrd, PlantId, Site, Taxon } from '../../lib/consortium/index.ts';
+import { batch, computed, effect, signal } from '@preact/signals';
+import type { ClimateZone, Flag, FlagContext, Interaction, JobId, Matrix, PhaseOrd, PlantId, Site, Stratum, Taxon } from '../../lib/consortium/index.ts';
 import { buildMatrix, countryStatus, flagsOf, suggest } from '../../lib/consortium/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
+import { P, T, nameOf } from './strings.ts';
 
 // Where the country came from: the reader chose it, a link carried it, or the page guessed it from
 // the browser's language (shown as a guess, never assumed).
@@ -180,4 +181,133 @@ export function suggestMembers(): boolean {
   kept.value = keep;
   members.value = s.members;
   return true;
+}
+
+// ---- sheets: the one opener (H3, H7, H11, H12; seam review X1, X2) ----
+
+// What a sheet was opened for. Add reads it: a cell or a run of cells of one layer ("+ Add" in a free
+// cell, "Show them anyway" on a blocked cell or run), a job ("Find a soil feeder"), and `anyway`:
+// every plant of the cell, misfits included and flagged, where "+ Add" lists only the plants that fit.
+export interface CellSpan { stratum: Stratum; from: PhaseOrd; to: PhaseOrd }
+export interface SheetFor { cell: CellSpan | null; job: JobId | null; anyway: boolean }
+const FOR_NOTHING: SheetFor = { cell: null, job: null, anyway: false };
+export const sheetCell = signal<SheetFor>(FOR_NOTHING);
+// Every sheet opens through here, so what the last one was opened for never leaks into the next.
+export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Partial<SheetFor> = {}): void {
+  batch(() => { sheetCell.value = { ...FOR_NOTHING, ...target }; sheet.value = { kind, id }; });
+}
+export const closeSheet = (): void => { sheet.value = null; };
+
+// ---- the toast (one short line under the tool, with Undo when the change can be taken back) ----
+
+export interface ToastAction { label: string; run: () => void }
+export type ToastWhere = 'page' | 'sheet';
+// focus: the plants Undo brings back; the first one's control takes the focus after Undo (W4).
+export interface ToastLine { id: number; text: string; undo: (() => void) | null; action: ToastAction | null; where: ToastWhere; focus: PlantId[] }
+export const toast = signal<ToastLine | null>(null);
+const TOAST_MS = 12_000; // long enough to reach Undo with a keyboard or a screen reader
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
+let toastSeq = 1;
+export function showToast(text: string, undo: (() => void) | null = null, action: ToastAction | null = null, focus: PlantId[] = []): void {
+  if (toastTimer) clearTimeout(toastTimer);
+  const line: ToastLine = { id: toastSeq++, text, undo, action, where: sheet.peek() !== null ? 'sheet' : 'page', focus };
+  toast.value = line;
+  toastTimer = setTimeout(() => { if (toast.peek()?.id === line.id) toast.value = null; }, TOAST_MS);
+}
+export function hideToast(): void {
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = null;
+  toast.value = null;
+}
+
+// ---- edits (Remove, Keep, Swap, Add), each undoable ----
+
+// A plant as the consortium has it (a guest with its home placement), else the climate's list, else
+// another climate's list already read.
+export function taxonOf(id: PlantId): Taxon | null {
+  const m = memberTaxa.value.find((t) => t.id === id);
+  if (m) return m;
+  const own = pool.value?.find((t) => t.id === id);
+  if (own) return own;
+  for (const [zone, list] of Object.entries(pools.value)) {
+    const t = list?.find((x) => x.id === id);
+    if (t) return { ...t, from: zone as ClimateZone };
+  }
+  return null;
+}
+const nameById = (id: PlantId) => { const t = taxonOf(id); return t ? nameOf(t) : id; };
+
+interface Snapshot { members: PlantId[]; kept: PlantId[]; removed: PlantId[]; crops: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>> }
+const snapshot = (): Snapshot => ({ members: members.peek(), kept: kept.peek(), removed: removed.peek(), crops: crops.peek(), guests: guests.peek() });
+const restoreSnapshot = (s: Snapshot) => batch(() => {
+  members.value = s.members; kept.value = s.kept; removed.value = s.removed; crops.value = s.crops; guests.value = s.guests;
+});
+const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.includes(x));
+
+// Undo puts back the snapshot taken before the action, so it is offered only while nothing else has
+// changed the consortium (a pin, a new suggestion, another climate): any change hides the toast.
+let undoAfter: (Snapshot & { climate: ClimateZone | null }) | null = null;
+const SNAP_KEYS = ['members', 'kept', 'removed', 'crops', 'guests'] as const;
+function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = []): void {
+  undoAfter = { ...snapshot(), climate: climate.peek() };
+  showToast(text, () => { undoAfter = null; restoreSnapshot(before); }, action, focus);
+}
+effect(() => {
+  const now = { members: members.value, kept: kept.value, removed: removed.value, crops: crops.value, guests: guests.value, climate: climate.value };
+  const after = undoAfter;
+  if (!after) return;
+  if (now.climate !== after.climate || SNAP_KEYS.some((k) => now[k] !== after[k])) {
+    undoAfter = null;
+    if (toast.peek()?.undo) hideToast();
+  }
+});
+
+// Remove (details, the plant list): its cells are free again (the gap stays), it is left out of a new
+// suggestion, and Undo brings back the consortium as it was.
+export function removeMember(id: PlantId): void {
+  const before = snapshot(), name = nameById(id);
+  batch(() => {
+    members.value = without(before.members, [id]);
+    kept.value = without(before.kept, [id]);
+    crops.value = without(before.crops, [id]);
+    removed.value = [...without(before.removed, [id]), id];
+    if (before.guests[id]) { const g = { ...before.guests }; delete g[id]; guests.value = g; }
+  });
+  offerUndo(T('details.removed', { name }), before, null, [id]);
+}
+export function toggleKeep(id: PlantId): void {
+  const k = kept.peek();
+  kept.value = k.includes(id) ? without(k, [id]) : [...k, id];
+}
+// Swap: the new plant takes the old one's place in the order (and its pin); the old one is left out
+// of a new suggestion. A main crop is never swapped from the dialog (owner row).
+export function swapMember(oldId: PlantId, newId: PlantId): void {
+  const before = snapshot(), a = nameById(oldId), b = nameById(newId);
+  batch(() => {
+    members.value = before.members.map((x) => (x === oldId ? newId : x)).filter((x, i, all) => all.indexOf(x) === i);
+    if (before.kept.includes(oldId)) kept.value = before.kept.map((x) => (x === oldId ? newId : x));
+    removed.value = [...without(before.removed, [newId, oldId]), oldId];
+    if (before.guests[oldId]) { const g = { ...before.guests }; delete g[oldId]; guests.value = g; }
+  });
+  offerUndo(T('swapped', { a, b }), before, null, [oldId]);
+}
+// Add: plants chosen by hand join and are kept (a new suggestion keeps them). from: guests, each with
+// the climate whose list it comes from ("Add anyway", A9). warned: plants added without being asked
+// about a misfit or a serious conflict ("Add all" from a paste, 2026-10-28 "Scale build" row): the
+// toast says "n added with a warning" with Show (the first one's details).
+export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [] }: { warned?: PlantId[] } = {}): void {
+  const before = snapshot();
+  const fresh = ids.filter((id, i) => ids.indexOf(id) === i && !before.members.includes(id));
+  if (!fresh.length) return;
+  batch(() => {
+    members.value = [...before.members, ...fresh];
+    kept.value = [...before.kept, ...fresh.filter((id) => !before.kept.includes(id))];
+    removed.value = without(before.removed, fresh);
+    const g = { ...before.guests };
+    for (const id of fresh) if (from[id]) g[id] = from[id];
+    guests.value = g;
+  });
+  const flagged = warned.filter((id) => fresh.includes(id));
+  const text = P('paste.added', fresh.length) + (flagged.length ? ` ${P('paste.addedWarn', flagged.length)}` : '');
+  offerUndo(text, before, flagged.length ? { label: T('paste.show'), run: () => openSheet('details', flagged[0]) } : null);
 }

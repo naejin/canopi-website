@@ -291,6 +291,8 @@ function applyDecoded(d: DecodedLink, countryFrom: 'link' | 'chosen'): void {
     if (s.stage !== null) store.stage.value = s.stage;
     if (s.country) store.country.value = { code: s.country, source: countryFrom };
     store.view.value = 'matrix';
+    // A sheet left open would show a plant of the consortium replaced (X8).
+    store.closeSheet();
   });
 }
 
@@ -476,7 +478,7 @@ export function startOver(): void {
     store.removed.value = [];
     store.guests.value = {};
     store.crops.value = [];
-    store.sheet.value = null;
+    store.closeSheet();
     store.view.value = 'start';
     notices.value = { ...NO_NOTICES };
   });
@@ -490,7 +492,7 @@ export function startEmpty(): void {
   batch(() => {
     store.members.value = [];
     store.view.value = 'matrix';
-    store.sheet.value = { kind: 'search', id: null };
+    store.openSheet('search');
   });
 }
 

@@ -6,7 +6,7 @@
 // with PUBLIC_CT_TEST_HOOK=1, and a page opened with window.__ctViews = true gets the store, so a test
 // sets the climate, the site's room, the members (a suggestion, or 120 real ids) and the view without
 // stream S4's start screen. A production build has no hook. "Show them anyway" and the side view's
-// key open stream S3's dialogs: those two stay todo until the streams meet.
+// key open stream S3's dialogs (the seams file checks what Add lists).
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
@@ -202,13 +202,13 @@ test('BT-2 (S2 matrix): the view tabs fit a 390 px phone in every language', asy
   }
 });
 
-test('BT-2 (S2 matrix): "Show them anyway" opens Add with the cell\'s plants', { todo: 'S2: the button sets addRequest and opens sheet add; the Add dialog is S3\'s' }, async (t) => {
+test('BT-2 (S2 matrix): "Show them anyway" opens Add with the cell\'s plants', async (t) => {
   await eachVariant(t, async (v) => {
     const page = await views(v, { room: 'small' });
     if (v.width < 640) for (let i = 0; i < 3; i++) await page.locator(aria('button', 'Later stage')).click();
     const btn = await findAx(page, { role: 'button', name: /^Show them anyway/ });
     await page.locator(aria('button', btn.name)).click();
-    assert.ok(await findAx(page, { role: 'dialog', name: /^Add/ }), '"Show them anyway" opens Add');
+    assert.ok(await findAx(page, { role: 'dialog', name: /^Add to Emergent · / }), '"Show them anyway" opens "Add to Emergent · {phase}" (each row in the cell: consortium-seams X7)');
   });
 });
 
@@ -283,13 +283,13 @@ test('BT-3 (S2 side view): 8, 20 and 30 plants keep the scale: plants at full pl
   });
 });
 
-test('BT-3 (S2 side view): a name in the key opens its details', { todo: 'S2: the key sets sheet details; the Details dialog is S3\'s' }, async (t) => {
+test('BT-3 (S2 side view): a name in the key opens its details', async (t) => {
   await eachVariant(t, async (v) => {
     const page = await views(v, { view: 'side' });
     const img = await find(page, { role: IMG, name: /^Side view: / });
     const key = (await axNodes(page)).find((n) => n.role === 'button' && n.name && img.name.includes(n.name) && n.name.length > 2);
     await page.locator(aria('button', key.name)).click();
-    assert.ok(await findAx(page, { role: 'dialog' }), 'the key opens details');
+    assert.ok(await findAx(page, { role: 'dialog', name: key.name }), 'the key opens that plant\'s details');
   });
 });
 

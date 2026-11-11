@@ -18,6 +18,9 @@ export function setStrings(next: Strings, nextLang: string): void {
 
 export const pageLang = (): string => lang;
 
+// A plant's name in the page language, else English, else its scientific name (every view's one).
+export const nameOf = (t: { names: Partial<Record<string, string>>; canonical_name: string }): string => t.names[lang] || t.names.en || t.canonical_name;
+
 type Vars = Record<string, string | number>;
 const fill = (value: string, vars?: Vars) =>
   vars ? value.replace(/\{(\w+)\}/g, (m, name: string) => (name in vars ? String(vars[name]) : m)) : value;

@@ -2,8 +2,7 @@
 // Jobs (mockup 04; owner row 2026-11-10: Jobs stays): a six-row table of the plain jobs a consortium
 // does (core jobs.ts, jobGapsByPhase). Each row names the job and what it means, lists who does it
 // (buttons opening details), and shows a seven-segment strip of the stages where someone does it.
-// Gaps are named in words: "Nothing feeds the soil yet" with "Find a soil feeder" (S3's Add, through
-// addRequest), and, new in v2, the stages where no one does it ("No one does it in: First 90 days,
+// Gaps are named in words: "Nothing feeds the soil yet" with "Find a soil feeder" (Add, opened for the job), and, new in v2, the stages where no one does it ("No one does it in: First 90 days,
 // Months 3–12 and 60 years on", BT-4).
 import { jobGapsByPhase, jobIds } from '../../../lib/consortium/index.ts';
 import { memberTaxa } from '../store.ts';
@@ -54,7 +53,7 @@ export function Jobs() {
                   ) : (
                     <div class="ct-jgap">
                       <strong>{T(`job.${g.job}.gap`)}</strong>
-                      <div><button type="button" class="button button-secondary ct-btn-sm" onClick={() => openAdd({ cell: null, anyway: false, job: g.job })}>{T(`job.${g.job}.find`)}</button></div>
+                      <div><button type="button" class="button button-secondary ct-btn-sm" onClick={() => openAdd({ job: g.job })}>{T(`job.${g.job}.find`)}</button></div>
                     </div>
                   )}
                 </td>

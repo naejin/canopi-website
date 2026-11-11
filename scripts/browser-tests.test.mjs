@@ -12,17 +12,19 @@ const read = (f) => readFileSync(new URL(f, dir), 'utf8');
 // Top-level test titles and their options text: test('title', { … }, …) or test('title', async …).
 const testsOf = (text) => [...text.matchAll(/^test\('((?:\\'|[^'])+)',\s*(\{[^}]*\})?/gm)].map(([, title, opts]) => ({ title: title.replace(/\\'/g, "'"), opts: opts ?? '' }));
 
-test('one browser test file for commit 0 and one per stream, nothing else', () => {
-  assert.deepEqual(files, ['consortium-commit0.browser.test.mjs', 'consortium-s1.browser.test.mjs', 'consortium-s2.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs']);
+test('one browser test file for commit 0, one per stream and one for the seams between them, nothing else', () => {
+  assert.deepEqual(files, ['consortium-commit0.browser.test.mjs', 'consortium-s1.browser.test.mjs', 'consortium-s2.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs', 'consortium-seams.browser.test.mjs']);
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.match(pkg.scripts['test:browser'], /scripts\/browser\/\*\.browser\.test\.mjs/);
   assert.doesNotMatch(pkg.scripts.test, /browser/, 'browser tests never run in npm test');
 });
 
-test('commit 0 tests all run: no todo, no skip', () => {
-  const text = read('consortium-commit0.browser.test.mjs');
-  assert.ok(testsOf(text).length >= 6);
-  assert.doesNotMatch(text, /\btodo\s*:|\bskip\s*:|\.todo\(|\.skip\(/);
+test('commit 0 and seam tests all run: no todo, no skip', () => {
+  for (const [file, min] of [['consortium-commit0.browser.test.mjs', 6], ['consortium-seams.browser.test.mjs', 5]]) {
+    const text = read(file);
+    assert.ok(testsOf(text).length >= min, file);
+    assert.doesNotMatch(text, /\btodo\s*:|\bskip\s*:|\.todo\(|\.skip\(/, file);
+  }
 });
 
 test('each stream file names its stream in every test, todo only for that stream', () => {

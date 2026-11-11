@@ -6,31 +6,12 @@
 // page behind it inert, so a line shown while a sheet is open, as after Paste's "Add anyway", is shown
 // and heard in the sheet). A line is announced once, by the region it first shows in: moved into a
 // sheet or back out, it is shown outside that region's live part, so it is not read again. A toast goes away by itself after a while, on Dismiss, or on its action.
-// Details.tsx renders both regions and calls showToast.
-import { signal } from '@preact/signals';
+// Details.tsx renders both regions; the store's edits call showToast (store.ts).
 import * as store from '../store.ts';
+import { hideToast, toast, type ToastWhere as Where } from '../store.ts';
 import { T } from '../strings.ts';
 
-export interface ToastAction { label: string; run: () => void }
-type Where = 'page' | 'sheet';
-export interface ToastLine { id: number; text: string; undo: (() => void) | null; action: ToastAction | null; where: Where }
-export const toast = signal<ToastLine | null>(null);
-
-const SHOWN_MS = 12_000; // long enough to reach Undo with a keyboard or a screen reader
-let timer: ReturnType<typeof setTimeout> | null = null;
-let next = 1;
-
-export function showToast(text: string, undo: (() => void) | null = null, action: ToastAction | null = null): void {
-  if (timer) clearTimeout(timer);
-  const line = { id: next++, text, undo, action, where: (store.sheet.peek() !== null ? 'sheet' : 'page') as Where };
-  toast.value = line;
-  timer = setTimeout(() => { if (toast.peek()?.id === line.id) toast.value = null; }, SHOWN_MS);
-}
-export function hideToast(): void {
-  if (timer) clearTimeout(timer);
-  timer = null;
-  toast.value = null;
-}
+export { hideToast, showToast, toast, type ToastAction, type ToastLine } from '../store.ts';
 
 // where: 'page' (shown while no sheet is open) or 'sheet' (inside the open sheet).
 export function Toast({ where = 'page' }: { where?: Where }) {

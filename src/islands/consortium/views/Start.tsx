@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, PlantId, Site, SiteKey, Taxon } from '../../../lib/consortium/index.ts';
 import { countryStatus, lights, MAX_CROPS, rooms, soils, waters } from '../../../lib/consortium/index.ts';
-import { climate, country, crops, kept, members, pool, sheet, site, source, view } from '../store.ts';
+import { climate, country, crops, kept, members, openSheet, pool, site, source, view } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import {
   chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
@@ -270,7 +270,7 @@ function StartView() {
             <button type="button" class="button button-primary" aria-busy={waiting ? 'true' : undefined} onClick={requestSuggest}>{T('start.suggest')}</button>
             {members.value.length > 0 && <button type="button" class="button button-secondary" onClick={() => { view.value = 'matrix'; }}>{T('start.back')}</button>}
             <button type="button" class="button button-secondary" onClick={startEmpty}>{T('start.empty')}</button>
-            <button type="button" class="link-button ct-link" onClick={() => { sheet.value = { kind: 'paste', id: null }; }}>{T('start.paste')}</button>
+            <button type="button" class="link-button ct-link" onClick={() => openSheet('paste')}>{T('start.paste')}</button>
           </div>
           {waiting && <p class="status-line" role="status">{T('load.plants')}</p>}
           <p class="ct-muted ct-small-text">{T('page.hypothesis')}</p>
