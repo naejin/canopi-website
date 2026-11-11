@@ -7,13 +7,13 @@ tags: [module, i18n]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:03:08Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T17:39:33Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:21:28Z }
 sources:
   - id: i18n
     resource: ../../src/i18n
     title: src/i18n/
-    digest: sha256:dc31e8f1c348e3bc
-    last_modified: 2026-11-11T17:57:03Z
+    digest: sha256:db0c5e84d94539d0
+    last_modified: 2026-11-11T18:17:26Z
   - id: homepage-test
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
