@@ -1,5 +1,6 @@
-# build output
+# build output (dist-test/: the browser tests' own build)
 dist/
+dist-test/
 # generated types
 .astro/
 worker-configuration.d.ts

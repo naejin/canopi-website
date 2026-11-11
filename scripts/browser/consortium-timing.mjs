@@ -8,6 +8,7 @@
 // never sets it fails the run. Cold: a fresh browser context (empty cache). Warm: the same
 // context reloaded (HTTP cache filled). Prints the median of 5 of each.
 import { startHarness } from './harness.mjs';
+import { BUILDS } from './serve.mjs';
 import { realDb } from './helpers.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 
@@ -32,7 +33,7 @@ async function throttle(page) {
   await page.emulateNetworkConditions(NETWORK);
 }
 
-const h = await startHarness();
+const h = await startHarness({ dir: BUILDS.production });
 try {
   const cold = [], warm = [];
   let mark = null;

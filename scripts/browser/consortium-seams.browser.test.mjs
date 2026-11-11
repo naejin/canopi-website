@@ -517,6 +517,29 @@ test('D1 (R4-3): site answers changed in the draft are not saved until a commit;
   });
 });
 
+test('pre-push 1: a guest removed from the consortium gives no "no longer in the list" notice after a reload', async (t) => {
+  const [guest] = await tropicalOnly();
+  await eachVariant(t, async (v) => {
+    const page = await hookedPage(v);
+    await page.locator(aria('radio', 'Temperate')).click();
+    assert.equal(await loadState(page), 'ready');
+    await page.locator(aria('button', 'Suggest plants')).click();
+    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000));
+    await page.evaluate(async (name) => {
+      const s = window.__ctTest.store;
+      const id = (await s.loadPool('Tropical')).find((x) => x.canonical_name === name).id;
+      s.addMembers([id], { [id]: 'Tropical' });
+      s.removeMember(id);
+    }, guest);
+    await page.reload();
+    assert.equal(await loadState(page), 'ready');
+    assert.ok(await has(page, aria('button', 'Share'), 8000));
+    const notes = await page.$$eval('#ct-root .ct-notice', (els) => els.map((e) => e.textContent));
+    assert.ok(!notes.some((x) => /no longer in the list/.test(x)), `no false notice (${notes.join(' | ')})`);
+    await done(page);
+  });
+});
+
 test('F3: Undo of a plant added in the Paste sheet keeps the focus in the sheet', async (t) => {
   await eachVariant(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });

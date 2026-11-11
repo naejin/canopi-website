@@ -4,8 +4,8 @@
 // (growing, eating, a use), most useful first, three at most; one passing sentence is not enough
 // (min-6: no rubber tree for one clause about plantain, no alfalfa for alfalfa meal, no candlenut for
 // a safety line, no walnut for black walnut). Guides exist in en and fr only; the page links the
-// English guide for every other locale. scripts/consortium-page.test.mjs checks that every slug
-// exists and that each guide names its plant where it grows or uses it; the judgement stays human.
+// English guide for every other locale. scripts/check-built-site.mjs checks that each consortium page
+// gets every slug's guide title; which guide fits which plant is a human judgement.
 export const consortiumGuides: Record<string, readonly string[]> = {
   'Allium cepa': ['will-they-cross'],
   'Allium sativum': ['true-seed-potato-garlic-sunroot'],

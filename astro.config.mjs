@@ -89,11 +89,13 @@ const consortiumModulePreload = {
 // the browser tests' own build (npm run build:browser-test, CANOPI_BROWSER_TEST=1). Its switch is the
 // compile-time constant __CT_TEST_HOOK__ below, set from that shell flag alone: not a PUBLIC_ or VITE_
 // variable, which Vite would also read from .env files, so no .env can turn it on in a deploy (H14,
-// review F6; check-built-site also fails if the hook reaches dist/).
+// review F6; check-built-site also fails if the hook reaches dist/). That build goes to its own
+// dist-test/ (served by scripts/browser/serve.mjs), so dist/ only ever holds a production build.
 
 export default defineConfig({
   site: 'https://projectcanopi.com',
   output: 'static',
+  outDir: process.env.CANOPI_BROWSER_TEST === '1' ? './dist-test' : './dist',
 
   i18n: {
     defaultLocale: 'en',
@@ -114,9 +116,9 @@ export default defineConfig({
     plugins: [consortiumJsx, sqliteMainThreadOnly],
     define: { __CT_TEST_HOOK__: JSON.stringify(process.env.CANOPI_BROWSER_TEST === '1') },
     esbuild: { exclude: [/\.js$/, CONSORTIUM_TSX] },
-    // sqlite-wasm finds its .wasm with its own new URL('sqlite3.wasm', import.meta.url) (no
-    // locateFile, no ?url import); the dependency optimizer must leave the package as published, or
-    // in dev that URL would point into .vite/deps, where the wasm is not.
+    // sqlite-wasm's own new URL('sqlite3.wasm', import.meta.url) and main.ts's ?url import name the
+    // same emitted file; the dependency optimizer must leave the package as published, or in dev
+    // that URL would point into .vite/deps, where the wasm is not.
     optimizeDeps: { exclude: ['@sqlite.org/sqlite-wasm'] },
   },
 });

@@ -14,6 +14,7 @@ import { P, T, pageLang } from '../strings.ts';
 import { plantName } from '../memory.ts';
 import { basisLine, countryName, page, zoneLabel } from './Start.tsx';
 import { SideDrawing } from './SideView.tsx';
+import { phasePlain, phaseTerm } from './StageBar.tsx';
 
 const PRINT_DRAWING_MAX = 20;
 
@@ -69,6 +70,7 @@ export function PrintSheet() {
         {status === 'unchecked' && code ? ` (${T('country.unchecked', { country: countryName(code) })})` : ''}
       </p>
       <p class="ct-print-basis">{T('page.hypothesis')}</p>
+      {small && <p class="ct-print-basis ct-print-stage">{T('side.title', { stage: phasePlain(stage.value) })} · {phaseTerm(stage.value)}</p>}
       {small ? <SideDrawing stage={stage.value} /> : <Glance members={members} />}
       <table class="ct-print-table">
         <caption>{T('print.plants')}</caption>

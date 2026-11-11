@@ -100,7 +100,10 @@ export function encodeLink(state: ShareState, known: KnownIds): string {
   const inMembers = new Set(members);
   const keptOnly = [...kept].filter((id) => !inMembers.has(id));
   if (keptOnly.length) pairs.push(['p', list(keptOnly)]);
-  const removed = state.removed.filter((id) => !kept.has(id) && !inMembers.has(id));
+  // A removed plant no list of the link knows (a guest taken out: its climate is no longer read) is
+  // dropped: it would read back as "no longer in the list" (pre-push review 1).
+  const listed = new Set(Object.values(known).flatMap((ids) => [...(ids ?? [])]));
+  const removed = state.removed.filter((id) => !kept.has(id) && !inMembers.has(id) && listed.has(id));
   if (removed.length) pairs.push(['x', list(removed)]);
   if (crops.length) pairs.push(['n', crops.map(tok).join('')]);
   for (const zone of climateZones) {

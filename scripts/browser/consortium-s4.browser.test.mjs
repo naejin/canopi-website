@@ -1,5 +1,5 @@
-// Stream S4's browser tests (start, share, memory, print, .canopi download; review C1). S4 edits only
-// this file among the browser tests and flips its todo tests as it builds them. Design check §7 BT-1
+// Stream S4's browser tests (start, share, memory, print, .canopi download; review C1). Every test
+// runs and must pass (scripts/browser-tests.test.mjs). Design check §7 BT-1
 // (start), BT-7, BT-8, BT-9 (.canopi) and the exit walk-through. Run capped: npm run test:browser.
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -298,6 +298,14 @@ test('BT-8 (S4 print, drawing): ≤ 20 plants print the side view drawing', asyn
     assert.match(drawing.name, /^Side view/, 'named as the side view');
     assert.ok(drawing.h > 50 && drawing.w > 200, `printed at a readable size (${drawing.w} × ${drawing.h})`);
     assert.ok(drawing.shapes > 4, 'with its plants drawn');
+    // Which stage the drawing shows is printed above it (pre-push review 5).
+    const above = await small.$eval('.ct-print [role="img"]', (img) => {
+      let el = img;
+      while (el && !el.previousElementSibling) el = el.parentElement;
+      return el?.previousElementSibling?.textContent.trim() ?? '';
+    });
+    const stages = Object.keys(en).filter((k) => /^consortium\.phase\.\w+\.plain$/.test(k));
+    assert.ok(stages.some((k) => above.includes(en[k]) && above.includes(en[k.replace('.plain', '.term')])), `the stage named above the drawing (got "${above}")`);
     await done(small);
   });
 });

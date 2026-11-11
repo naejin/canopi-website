@@ -109,6 +109,30 @@ const betaNote = P('betaNote', index.climates.length);
   <script>
     import { initChrome } from '../../scripts/chrome.js';
     initChrome();
-    import('../../islands/consortium/main.ts');
+    // The island's chunk did not arrive (offline, a deploy replaced it): the loading line would stay
+    // forever, so it gives way to "the tool did not load" and Reload (pre-push review 3).
+    import('../../islands/consortium/main.ts').catch(() => {
+      const root = document.querySelector('#ct-root'); // a selector: the bare ids mark the island's chunk (scripts/built-modules.mjs)
+      if (!root) return;
+      let words: Record<string, string> = {};
+      try { words = JSON.parse(document.querySelector('#ct-data')?.textContent ?? '{}').strings ?? {}; } catch { /* the defaults below */ }
+      const box = document.createElement('div');
+      box.className = 'callout ct-load-failed';
+      box.setAttribute('role', 'alert');
+      box.dataset.loadError = 'island';
+      const text = document.createElement('p');
+      text.textContent = words['load.toolFailed'] ?? 'The tool did not load.';
+      const reload = document.createElement('button');
+      reload.type = 'button';
+      reload.className = 'button button-primary';
+      reload.textContent = words['load.reload'] ?? 'Reload';
+      reload.addEventListener('click', () => location.reload());
+      const row = document.createElement('p');
+      row.appendChild(reload);
+      box.appendChild(text);
+      box.appendChild(row);
+      root.removeAttribute('aria-busy');
+      root.replaceChildren(box);
+    });
   </script>
 </Base>

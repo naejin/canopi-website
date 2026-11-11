@@ -349,3 +349,20 @@ test('restore: a newer cut link cancels the older restore and keeps its notice (
   assert.deepEqual(store.members.peek(), []);
   assert.equal(m.restoring.peek(), false);
 });
+
+test('applyPreset: a card the reader picks while the guide\'s plant is read wins; the plant is not applied (pre-push review 2)', async () => {
+  await shown();
+  store.view.value = 'start';
+  store.members.value = [];
+  store.crops.value = [];
+  store.kept.value = [];
+  const crop = (await realSource.pool('Tropical')).find((t) => t.role === 'crop');
+  delays.Tropical = 60;
+  const p = m.applyPreset('Tropical', crop.canonical_name);
+  await wait(5);
+  m.chooseClimate('Mediterranean');
+  await p;
+  assert.equal(store.climate.peek(), 'Mediterranean', 'the reader\'s card');
+  assert.deepEqual({ crops: store.crops.peek(), kept: store.kept.peek() }, { crops: [], kept: [] }, 'the guide\'s plant is not applied');
+  assert.equal(m.notices.peek().guideKept, null);
+});

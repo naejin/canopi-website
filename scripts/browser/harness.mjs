@@ -72,8 +72,8 @@ export function servedDatabase(kind, fx) {
   return { bytes: gz, ref: { sha256: wrongSha ? sha256(raw) : sha256(gz), bytes: gz.length, rawSha256: sha256(raw), rawBytes: raw.length } };
 }
 
-export async function startHarness({ log = () => {} } = {}) {
-  const site = await serve({ log });
+export async function startHarness({ log = () => {}, dir } = {}) {
+  const site = await serve({ log, dir });
   let browser;
   try {
     browser = await puppeteer.launch({
@@ -109,6 +109,7 @@ export async function startHarness({ log = () => {} } = {}) {
   // - photos: true gives the fixture's 6 photo plants a self-served PNG (BT-5);
   // - wasm: false removes WebAssembly before any script runs (Lockdown Mode, P5);
   // - loader: 404 | 'offline' fails the island's loader chunk (a deploy; offline, navigator.onLine false);
+  // - island: 404 fails the island's own chunk (main.<hash>.js), which the page script imports;
   // - wasmFile: 403 | 'offline' | 'stall' fails the fetch of sqlite3.<hash>.wasm (a proxy refusing it;
   //   offline; never answered, a stalled connection);
   // - storage: false makes localStorage and sessionStorage throw (BT-7's note); the theme then comes
@@ -118,7 +119,7 @@ export async function startHarness({ log = () => {} } = {}) {
   //   holds each request body (BT-5).
   // page.capturedDownloads() lists the files this page downloaded (BT-9 .canopi), via the CDP
   // download events; pdf(page) prints it to PDF (BT-8).
-  async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, wasmFile = null, storage = true, correction = null } = {}) {
+  async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, island = null, wasmFile = null, storage = true, correction = null } = {}) {
     const real = storage === 'cookies-blocked' ? await blockedBrowser() : null;
     // The blocked profile's setting applies to its default context (an incognito context of it
     // starts from defaults), so that page is opened there.
@@ -151,7 +152,7 @@ export async function startHarness({ log = () => {} } = {}) {
     const fx = useFixture ? fixture() : null;
     const served = useFixture && database !== 404 ? servedDatabase(database, fx) : null;
     const images = photos ? await fixturePhotos() : {};
-    if (useFixture || loader || wasmFile || correction) {
+    if (useFixture || loader || island || wasmFile || correction) {
       await page.setRequestInterception(true);
       page.on('request', async (request) => {
         if (request.isInterceptResolutionHandled()) return;
@@ -165,6 +166,7 @@ export async function startHarness({ log = () => {} } = {}) {
         if (loader && /^\/_astro\/load\.[\w-]+\.js$/.test(url.pathname)) {
           return loader === 'offline' ? request.abort('internetdisconnected') : request.respond({ status: 404, contentType: 'text/plain', body: 'Not found' });
         }
+        if (island && /^\/_astro\/main\.[\w-]+\.js$/.test(url.pathname)) return request.respond({ status: 404, contentType: 'text/plain', body: 'Not found' });
         if (wasmFile && /\/sqlite3\.[\w-]+\.wasm$/.test(url.pathname)) {
           if (wasmFile === 'stall') return; // never answered: the page's stall timer must end it
           return wasmFile === 'offline' ? request.abort('internetdisconnected') : request.respond({ status: Number(wasmFile), contentType: 'text/plain', body: 'Forbidden' });
@@ -216,7 +218,7 @@ export async function startHarness({ log = () => {} } = {}) {
     rmSync(downloadRoot, { recursive: true, force: true });
   }
 
-  return { url: site.url, browser, open, pdf, close };
+  return { url: site.url, dir: site.dir, browser, open, pdf, close };
 }
 
 // The island's load state as the page shows it: 'ready' once the loading line is gone without a

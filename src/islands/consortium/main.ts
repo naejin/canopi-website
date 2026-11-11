@@ -44,7 +44,14 @@ async function open(data: PageData): Promise<void> {
     const mod = await getLoader();
     LoadError = mod.LoadError;
     const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map((c) => zoneOf(c) ?? c) }, wasmUrl);
-    setSource(mod.createSqliteSource(opened.db, { images: data.images }), () => opened.db.close());
+    let source;
+    try {
+      source = mod.createSqliteSource(opened.db, { images: data.images });
+    } catch (err) {
+      opened.db.close(); // never left open (pre-push review 4)
+      throw err;
+    }
+    setSource(source, () => opened.db.close());
     load.value = { status: 'ready', error: null };
   } catch (err) {
     // The loader chunk did not arrive: offline is the fetch screen; online, the chunk is gone after a

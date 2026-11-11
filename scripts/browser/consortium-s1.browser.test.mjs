@@ -1,5 +1,5 @@
-// Stream S1's browser tests (core, data, loader; review C1). S1 edits only this file among the
-// browser tests and flips its todo tests as it builds them. Design check §7 BT-1 (data half).
+// Stream S1's browser tests (core, data, loader; review C1). Every test runs and must pass
+// (scripts/browser-tests.test.mjs). Design check §7 BT-1 (data half).
 // Run: timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 npm run test:browser
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';

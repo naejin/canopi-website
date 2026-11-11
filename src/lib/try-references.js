@@ -1,6 +1,6 @@
 // The TRY citation and the parser of the dataset list behind /data-sources/. Plain JavaScript, free of
 // Astro and Vite, so scripts/install-consortium.mjs and scripts/check-built-site.mjs run it in plain
-// Node on every version engines allows (22.12 to 22.17 cannot import a .ts file without a flag).
+// Node on every version engines allows (22.13 to 22.17 cannot import a .ts file without a flag).
 import { safeHref } from './safe-href.js';
 
 // The short standard reference from the TRY Intellectual Property Guidelines, verbatim: the space

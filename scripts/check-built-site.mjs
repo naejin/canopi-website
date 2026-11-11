@@ -9,7 +9,7 @@ import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
 import { createHash } from 'node:crypto';
 import { safeHref } from '../src/lib/safe-href.js';
 import { gzipSync } from 'node:zlib';
-import { firstRunChunks, islandChunks, isSqliteGlue, moduleGraph, pageEntries } from './built-modules.mjs';
+import { firstRunChunks, islandChunks, isSqliteGlue, moduleGraph } from './built-modules.mjs';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -487,7 +487,9 @@ for (const lang of locales) {
   // Only the island's graph counts: from its entry chunk, without the page-wide chunks (site chrome,
   // the page script) and without the sqlite glue (review C8 follow-up).
   const scripts = [...html.matchAll(/<script\b[^>]*\btype="module"[^>]*\bsrc="([^"]+)"/g)].map(([, src]) => src);
-  const island = islandChunks(graph, scripts.length ? scripts : pageEntries(html));
+  assert.ok(scripts.length > 0, `${path}: the page loads its scripts as module scripts (else nothing below is counted)`);
+  const island = islandChunks(graph, scripts);
+  assert.ok(island.chunks.length > 0, `${path}: the island's chunks are found (else the budget counts nothing)`);
   const total = island.chunks.reduce((n, p) => n + gzipSync(graph.get(p).code, { level: 9 }).length, 0);
   islandList = island.chunks;
   // The PlantSource rides in the loader's chunk beside the glue (data/load.ts): a sheet importing

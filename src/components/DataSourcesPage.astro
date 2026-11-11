@@ -16,6 +16,9 @@ import { TRY_CITATION, TRY_DOI, referenceParts } from '../lib/try-references';
 import { t, type Locale } from '../i18n/utils';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
+// The licences of the code the site ships live in the repository's THIRD_PARTY_NOTICES.md.
+const NOTICES_URL = 'https://github.com/naejin/canopi-website/blob/master/THIRD_PARTY_NOTICES.md';
+const noticesParts = t('dataSources.notices', lang).split('{link}');
 // The sentence each licence status shows; a confirmed licence names its licence.
 const licenceWords: Record<string, string> = {
   confirmed: 'dataSources.credits.licence.confirmed',
@@ -37,6 +40,7 @@ const creditGroups = sourceCredits ? [
         <header class="section-head">
           <h1 id="data-sources-title">{t('dataSources.title', lang)}</h1>
           <p>{t('dataSources.lede', lang)}</p>
+          <p class="notices-note">{noticesParts[0]}<a href={NOTICES_URL} rel="noopener" lang="en" translate="no">THIRD_PARTY_NOTICES.md</a>{noticesParts[1]}</p>
         </header>
         {creditGroups.length > 0 && (
           <section class="credits" aria-labelledby="credits-title">

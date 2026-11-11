@@ -428,13 +428,15 @@ export async function restore(fragment: string, { from, src = null, keep = false
 }
 
 // A guide preset: the climate for this consortium only (never the shared site climate), and the
-// guide's plant kept: a main crop when it is a food plant of that list, else a kept plant.
-async function applyPreset(climate: ClimateZone, plant: string | null): Promise<void> {
+// guide's plant kept: a main crop when it is a food plant of that list, else a kept plant. The plant
+// applies only if the reader has not acted while it was read (another card, a crop: pre-push review 2).
+export async function applyPreset(climate: ClimateZone, plant: string | null): Promise<void> {
   store.climate.value = climate;
   if (!plant) return;
+  const began = actions;
   await waitForSource();
   const pool = await store.loadPool(climate);
-  if (!pool) return;
+  if (!pool || actions !== began || store.climate.peek() !== climate) return;
   const t = pool.find((x) => x.canonical_name === plant);
   if (!t) { notices.value = { ...notices.peek(), guideMissing: plant }; return; }
   // The guide's plant is the guide's choice, not the reader acting.
