@@ -8,6 +8,8 @@ import { parseTryReferences, TRY_CITATION, TRY_DOI } from '../src/lib/try-refere
 import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
 import { createHash } from 'node:crypto';
 import { safeHref } from '../src/lib/safe-href.js';
+import { gzipSync } from 'node:zlib';
+import { isSqliteGlue, moduleGraph } from './built-modules.mjs';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -383,7 +385,7 @@ for (const lang of locales) {
   assert.ok(html.includes('id="ct-root"') && html.includes('id="ct-data"'), `${path}: tool`);
   const pageData = JSON.parse(html.match(/<script type="application\/json" id="ct-data">([\s\S]*?)<\/script>/)?.[1] ?? 'null');
   assert.equal(pageData?.releaseId, consortiumIndex.release_id, `${path}: the island gets the release id`);
-  assert.deepEqual(pageData?.db, { url: consortiumIndex.files[0].url, sha256: consortiumIndex.files[0].sha256, bytes: consortiumIndex.files[0].bytes }, `${path}: the island gets the installed database`);
+  assert.deepEqual(pageData?.db, { url: consortiumIndex.files[0].url, sha256: consortiumIndex.files[0].sha256, bytes: consortiumIndex.files[0].bytes, rawSha256: consortiumIndex.files[0].raw_sha256, rawBytes: consortiumIndex.files[0].raw_bytes }, `${path}: the island gets the installed database`);
   assert.deepEqual(pageData?.climates, consortiumIndex.climates.map((c) => c.toLowerCase()), `${path}: the island gets the installed climates`);
   // P6: with JavaScript off the page still names itself and links a guide; the loading line is there to replace.
   assert.ok(/<noscript>[\s\S]*?<a [^>]*href="[^"]*\/guides\/[^"]+"[\s\S]*?<\/noscript>/.test(html), `${path}: noscript links a guide`);
@@ -418,5 +420,46 @@ assert.notEqual(consortiumIndex.canopi_db_sha256, '0'.repeat(64), 'consortium: a
 const consortiumInstall = verifyInstall(join(root, 'data', 'consortium'), consortiumIndex);
 assert.ok(consortiumInstall.databases > 0 && consortiumInstall.images > 0, 'consortium: database and photos');
 for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json', 'temperate.json', 'mediterranean.json', 'consortium-index.json']) assert.ok(!existsSync(join(root, 'data', 'consortium', gone)), `consortium: ${gone} is not served`);
+
+// Review B4: the build ships exactly one sqlite wasm, and neither helper of sqlite-wasm's browser
+// build (the Worker #1 script, the OPFS proxy) that astro.config.mjs keeps Vite from emitting.
+{
+  const assets = readdirSync(join(root, '_astro'));
+  const wasm = assets.filter((f) => f.endsWith('.wasm'));
+  assert.equal(wasm.length, 1, `one wasm in the build: ${wasm.join(', ') || 'none'}`);
+  assert.match(wasm[0], /^sqlite3\.[\w-]+\.wasm$/, 'the one wasm is sqlite3');
+  const helpers = [];
+  const stack = [root];
+  while (stack.length) {
+    const dir = stack.pop();
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.isDirectory()) { if (join(dir, e.name) !== join(root, 'app')) stack.push(join(dir, e.name)); } else if (/sqlite3-worker1|opfs-async-proxy/.test(e.name)) helpers.push(join(dir, e.name).slice(root.length));
+    }
+  }
+  assert.deepEqual(helpers, [], 'no sqlite-wasm worker or OPFS proxy file is shipped');
+}
+// Design check §8 and A2 (review C8): the island's JavaScript, followed through the import graph of
+// the built page (module scripts, modulepreload links, static, dynamic and preload-helper imports),
+// without the chunk holding the sqlite-wasm glue, stays under 60 KB gzip -9. Every locale page
+// preloads the database (as=fetch, crossorigin, so the island's fetch reuses it) and modulepreloads
+// the island's chunks, the glue included, so they arrive beside the page script.
+const ISLAND_BUDGET = 60 * 1024;
+let islandBytes = 0;
+for (const lang of locales) {
+  const path = `${consortiumPath(lang)}index.html`;
+  const html = readFileSync(join(root, path), 'utf8');
+  const graph = moduleGraph(root, html);
+  const glue = [...graph].filter(([, m]) => isSqliteGlue(m.code)).map(([p]) => p);
+  assert.equal(glue.length, 1, `${path}: one chunk holds the sqlite-wasm glue (${glue.join(', ')})`);
+  const total = [...graph].filter(([p]) => !glue.includes(p)).reduce((n, [, m]) => n + gzipSync(m.code, { level: 9 }).length, 0);
+  assert.ok(total < ISLAND_BUDGET, `${path}: island JS is ${(total / 1024).toFixed(1)} KB gzip, the budget is 60 KB`);
+  islandBytes = total;
+  const preloads = [...html.matchAll(/<link\b[^>]*\brel="(preload|modulepreload)"[^>]*>/g)].map(([tag, rel]) => ({ rel, tag, href: tag.match(/\bhref="([^"]+)"/)?.[1] }));
+  const db = preloads.find((l) => l.href === consortiumIndex.files[0].url);
+  assert.ok(db && db.rel === 'preload' && /\bas="fetch"/.test(db.tag) && /\bcrossorigin\b/.test(db.tag), `${path}: <link rel="preload" as="fetch" crossorigin> for the database`);
+  const modules = new Set(preloads.filter((l) => l.rel === 'modulepreload').map((l) => l.href));
+  for (const p of graph.keys()) if (!html.includes(`src="${p}"`)) assert.ok(modules.has(p), `${path}: modulepreload ${p}`);
+}
+console.log(`Consortium island JS: ${(islandBytes / 1024).toFixed(1)} KB gzip (budget 60 KB, sqlite glue excluded).`);
 
 console.log(`Verified 11 locale pages, their bibliography, data sources (${creditRows.length} credited sources, ${tryRows.length} TRY rows each) and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);

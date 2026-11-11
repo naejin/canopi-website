@@ -4,7 +4,7 @@
 // the noscript callout with its guide link, a loading line and the data release line. The tool is a
 // Preact island, src/islands/consortium/main.ts, mounted from the page script into #ct-root; it reads
 // #ct-data: every consortium.* key of the page language without its prefix, the release id, the
-// installed database (url, sha256, bytes), the climates and the {plant uuid: photo} map, all from
+// installed database (url, sha256, bytes and the raw digest, checked by the island), the climates and the {plant uuid: photo} map, all from
 // src/data/consortium-index.json (scripts/install-consortium.mjs; nothing at build time reads SQLite).
 // Stream S4 owns this file after commit 0.
 import Base from '../../layouts/Base.astro';
@@ -41,7 +41,7 @@ const data = {
   lang,
   strings,
   releaseId: index.release_id,
-  db: { url: db.url, sha256: db.sha256, bytes: db.bytes },
+  db: { url: db.url, sha256: db.sha256, bytes: db.bytes, rawSha256: db.raw_sha256, rawBytes: db.raw_bytes },
   climates: index.climates.map((c) => c.toLowerCase()),
   images: index.images,
   guide,
@@ -51,6 +51,10 @@ setStrings(strings, lang);
 const betaNote = P('betaNote', index.climates.length);
 ---
 <Base title={`${tr('title')} · Canopi`} description={tr('description')} lang={lang} path="/consortium/">
+  {/* Design check A2: the database (≤ 1 MB gzipped) starts downloading with the page; crossorigin
+      so the island's same-origin fetch() reuses it. The island's chunks get modulepreload links
+      after the build (astro.config.mjs). */}
+  <link slot="head" rel="preload" href={db.url} as="fetch" crossorigin="anonymous" />
   <Header lang={lang} path="/consortium/" current="consortium" />
   <main id="main" class="ct">
     <div class="wrap ct-wrap">

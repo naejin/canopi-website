@@ -1,12 +1,14 @@
-// The consortium island's entry (commit 0 of P2): ConsortiumPage.astro imports it from its page
-// script. It reads #ct-data, renders App into #ct-root (replacing the static loading line) and opens
-// the database at once, in parallel with the first render (design check A2), so Start works while
-// the plant list loads. Streams add their wiring to the store and views, not here.
+// The consortium island's entry (commit 0 of P2; stream S1 owns it from here). ConsortiumPage.astro
+// imports it from its page script. It reads #ct-data, renders App into #ct-root (replacing the static
+// loading line) and opens the database at once, in parallel with the first render (design check A2),
+// so Start works while the plant list loads. S1 wires its PlantSource here; the other streams add
+// their wiring to the store and views, not here.
 import { h, render } from 'preact';
 import { App } from './App.tsx';
 import { load } from './store.ts';
 import { setStrings, type Strings } from './strings.ts';
-import type { DbRef } from './data/load.ts';
+import type { DbRef } from './data/bytes.ts';
+import type { LoadFailure } from '../../lib/consortium/source.ts';
 
 // What the page hands the island (ConsortiumPage.astro, checked by scripts/check-built-site.mjs).
 export interface PageData {
@@ -39,8 +41,12 @@ async function open(data: PageData): Promise<void> {
     void opened;
     load.value = { status: 'ready', error: null };
   } catch (err) {
-    // A loader chunk that did not arrive is the offline screen; anything else unknown is damage.
-    const failure = LoadError && err instanceof LoadError ? err.failure : LoadError ? 'damaged' : 'fetch';
+    // The loader chunk did not arrive: offline is the fetch screen; online, the chunk is gone after a
+    // deploy (its hash changed), so the page is stale and Reload fetches the new one (review B2).
+    // Anything else unknown after the loader arrived is damage.
+    const failure: LoadFailure = LoadError
+      ? (err instanceof LoadError ? err.failure : 'damaged')
+      : (navigator.onLine === false ? 'fetch' : 'stale');
     console.error(`Consortium data ${data.releaseId}: ${(err as Error).message}`);
     load.value = { status: 'failed', error: failure };
   }

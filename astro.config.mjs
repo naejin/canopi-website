@@ -7,6 +7,10 @@ import { rehypeGuideChecklists } from './src/lib/rehype-guide-checklists.mjs';
 
 import cloudflare from '@astrojs/cloudflare';
 import { transformWithEsbuild } from 'vite';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { moduleGraph } from './scripts/built-modules.mjs';
 
 // Consortium v2 (design check A1, coordinator row "v2 build setup", 2026-11-11): Preact 11 without
 // @astrojs/preact, whose Astro 6 releases accept only Preact 10. JSX is compiled for Preact in
@@ -30,7 +34,9 @@ const consortiumJsx = {
 // Worker #1 promiser (new Worker(new URL('sqlite3-worker1.mjs'))) and the OPFS proxy. Vite would
 // bundle the worker, a second copy of the glue and of the 879 KB wasm, and copy the proxy. The page
 // opens the database on the main thread with neither (design check §2), so the two names are split
-// where Vite cannot see them; the one wasm stays (probe P1: one hashed wasm).
+// where Vite cannot see them: neither file is emitted, and the glue's code that would load them
+// stays in the loader chunk, never called (it would 404). The build ships one hashed sqlite3 wasm;
+// scripts/check-built-site.mjs fails on a second wasm or on either helper file (review B4).
 const SQLITE_BROWSER = /\/@sqlite\.org\/sqlite-wasm\/dist\/index\.mjs$/;
 /** @type {import('vite').Plugin} */
 const sqliteMainThreadOnly = {
@@ -45,6 +51,37 @@ const sqliteMainThreadOnly = {
       out = out.replaceAll(literal, `new URL(${JSON.stringify(name.slice(0, 7))} + ${JSON.stringify(name.slice(7))}, import.meta.url)`);
     }
     return { code: out, map: null };
+  },
+};
+
+// Design check A2 (review C8): the consortium page loads its island through a dynamic import, and
+// the island its loader, so their chunks would arrive one after another. After the build, every page
+// holding #ct-root gets a <link rel="modulepreload"> for each chunk of its import graph that it does
+// not already load with a <script src>, the sqlite glue included. Other pages are not touched (P7).
+// ConsortiumPage.astro preloads the database itself; scripts/check-built-site.mjs checks both.
+/** @type {import('astro').AstroIntegration} */
+const consortiumModulePreload = {
+  name: 'canopi:consortium-modulepreload',
+  hooks: {
+    'astro:build:done': ({ dir }) => {
+      const out = fileURLToPath(dir);
+      const root = existsSync(join(out, '_astro')) ? out : join(out, 'client');
+      const stack = [root];
+      while (stack.length) {
+        const d = /** @type {string} */ (stack.pop());
+        for (const e of readdirSync(d, { withFileTypes: true })) {
+          const p = join(d, e.name);
+          if (e.isDirectory()) { if (p !== join(root, 'app')) stack.push(p); continue; }
+          if (!e.name.endsWith('.html')) continue;
+          const html = readFileSync(p, 'utf8');
+          if (!html.includes('id="ct-root"')) continue;
+          const links = [...moduleGraph(root, html).keys()]
+            .filter((m) => !html.includes(`src="${m}"`) && !html.includes(`href="${m}"`))
+            .map((m) => `<link rel="modulepreload" href="${m}">`).join('');
+          if (links) writeFileSync(p, html.replace('</head>', `${links}</head>`));
+        }
+      }
+    },
   },
 };
 
@@ -64,14 +101,15 @@ export default defineConfig({
   // Field Guides are MDX (src/content/guides/); @astrojs/mdx 5 is the line for Astro 6, so the pin moves with Astro.
   // rehypeGuideTerms places each <Term>'s glossary note beside the block that first uses it;
   // rehypeGuideChecklists tells each checklist <Item> its list, for page-unique checkbox ids.
-  integrations: [mdx({ rehypePlugins: [rehypeGuideTerms, rehypeGuideChecklists] }), sitemap({ filter: (page) => !page.includes('/contact/') })],
+  integrations: [mdx({ rehypePlugins: [rehypeGuideTerms, rehypeGuideChecklists] }), sitemap({ filter: (page) => !page.includes('/contact/') }), consortiumModulePreload],
   adapter: cloudflare(),
 
   vite: {
     plugins: [consortiumJsx, sqliteMainThreadOnly],
     esbuild: { exclude: [/\.js$/, CONSORTIUM_TSX] },
-    // sqlite-wasm finds its .wasm through `locateFile` and an `?url` import (design check P1), so
-    // the dependency optimizer must leave the package as published.
+    // sqlite-wasm finds its .wasm with its own new URL('sqlite3.wasm', import.meta.url) (no
+    // locateFile, no ?url import); the dependency optimizer must leave the package as published, or
+    // in dev that URL would point into .vite/deps, where the wasm is not.
     optimizeDeps: { exclude: ['@sqlite.org/sqlite-wasm'] },
   },
 });

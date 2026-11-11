@@ -1,18 +1,14 @@
 // Opening the consortium database in the browser (stream S1 owns this file; commit 0 holds the
 // minimum the shell and probe P1 need). Design check §2: sqlite-wasm OO1 on the main thread, no OPFS,
-// no worker, no COOP/COEP; the gzipped file is fetched whole, decompressed with DecompressionStream
-// unless the server already decoded it (P3: no 1f 8b magic), deserialized read-only, then checked
+// no worker, no COOP/COEP; the gzipped file is fetched whole, its digest checked and decompressed with
+// DecompressionStream unless the server already decoded it (P3: no 1f 8b magic; bytes.ts), deserialized read-only, then checked
 // against the index the page was built with (§4 "open"). Each failure maps to a §5 screen.
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 import { APPLICATION_ID, SCHEMA_VERSION } from '../../../lib/consortium/types.ts';
-import type { LoadFailure } from '../../../lib/consortium/source.ts';
+import { decodeDatabase, LoadError, type DbRef } from './bytes.ts';
 
-export interface DbRef { url: string; sha256: string; bytes: number }
+export { LoadError, type DbRef };
 export interface Expected { releaseId: string; climates: string[] } // climates as the export names them
-
-export class LoadError extends Error {
-  constructor(readonly failure: LoadFailure, message: string) { super(message); }
-}
 
 type Sqlite3 = Awaited<ReturnType<typeof sqlite3InitModule>>;
 export type Database = InstanceType<Sqlite3['oo1']['DB']>;
@@ -38,19 +34,14 @@ async function fetchBytes(ref: DbRef): Promise<Uint8Array> {
   }
   // A 404 after a deploy: the page is older than the file it names (a stale tab).
   if (res.status === 404) throw new LoadError('stale', `${ref.url} is gone (404)`);
-  if (!res.ok || !res.body) throw new LoadError('fetch', `${ref.url}: HTTP ${res.status}`);
-  const [head, body] = res.body.tee();
-  const peek = head.getReader();
-  const first = await peek.read();
-  // Cancelled at once, so the tee does not hold a second copy of the body.
-  void peek.cancel();
-  const gz = !!first.value && first.value[0] === 0x1f && first.value[1] === 0x8b;
+  if (!res.ok) throw new LoadError('fetch', `${ref.url}: HTTP ${res.status}`);
+  let body: Uint8Array;
   try {
-    const stream = gz ? body.pipeThrough(new DecompressionStream('gzip')) : body;
-    return new Uint8Array(await new Response(stream).arrayBuffer());
+    body = new Uint8Array(await res.arrayBuffer());
   } catch (err) {
-    throw new LoadError('damaged', `${ref.url} does not decompress: ${(err as Error).message}`);
+    throw new LoadError('fetch', `the database stopped arriving: ${(err as Error).message}`);
   }
+  return decodeDatabase(body, ref);
 }
 
 async function initSqlite(): Promise<Sqlite3> {
