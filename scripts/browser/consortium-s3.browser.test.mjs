@@ -22,7 +22,23 @@ after(async () => { await h?.close(); });
 
 const CANON = ['Castanea sativa', 'Malus domestica', 'Juglans regia', 'Robinia pseudoacacia', 'Inga edulis'];
 const names = await fixtureDb((db) => Object.fromEntries(CANON.map((c) => [c, englishName(db, c)])));
-const chipOf = async (page, name) => (await axNodes(page)).find((n) => n.role === 'button' && (n.name ?? '').startsWith(name));
+const chipNow = async (page, name) => (await axNodes(page)).find((n) => n.role === 'button' && (n.name ?? '').startsWith(name));
+// On a phone the matrix shows one stage at a time (S2's stepper, opening on the first stage):
+// step through the stages like a reader until the plant's chip shows.
+async function chipOf(page, name) {
+  const first = await chipNow(page, name);
+  if (first) return first;
+  for (let i = 0; i < 6 && (await has(page, '::-p-aria(Earlier stage)[aria-disabled="false"], ::-p-aria(Earlier stage):not([aria-disabled])', 200)); i++) {
+    await page.locator(aria('button', 'Earlier stage')).click();
+  }
+  for (let i = 0; i <= 6; i++) {
+    const chip = await chipNow(page, name);
+    if (chip) return chip;
+    if (!(await has(page, aria('button', 'Later stage'), 300))) return undefined;
+    await page.locator(aria('button', 'Later stage')).click();
+  }
+  return chipNow(page, name);
+}
 
 // The page, with the test hook.
 // The hook is compiled in only when the site is built with PUBLIC_CT_TEST_HOOK=1 (never for production).
@@ -159,11 +175,18 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an 
     const page = await open({ ...v, data: 'fixture' });
     await start(page);
     // Swap: the first member whose alternatives also fill a cell (the fixture's Temperate list has one).
-    const chips = (await axNodes(page)).filter((n) => n.role === 'button' && / · /.test(n.name ?? ''));
+    // The members' names from the store; each chip is found where the reader would find it (on a phone, its stage).
+    const memberNames = await hooked(page, () => window.__ctTest.store.memberTaxa.value.map((t) => t.names.en ?? t.canonical_name));
     let fills = null;
-    for (const c of chips) {
+    for (const n of memberNames) {
+      const c = await chipOf(page, n);
+      if (!c) continue;
       await page.locator(aria('button', c.name)).click();
-      if (!(await has(page, aria('button', 'Swap'), 1000))) { await page.keyboard.press('Escape'); continue; } // a main crop
+      if (!(await has(page, aria('button', 'Swap'), 1000))) { // a main crop
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.querySelector('dialog[open]'));
+        continue;
+      }
       await page.locator(aria('button', 'Swap')).click();
       fills = await findAx(page, { name: /^Also fills/ }, 1500);
       await page.keyboard.press('Escape');
