@@ -4,7 +4,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
-import { aria, axNodes, countAx, eachVariant, findAx, fixtureDb, has } from './helpers.mjs';
+import { aria, axNodes, countAx, eachVariant, en, findAx, fixtureDb, has } from './helpers.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 import { CANOPI_FILE_SCHEMA, CURRENT_CANOPI_FILE_VERSION } from '../vendor/canopi-design-format/canopi-design-format.ts';
 import { validate } from '../vendor/canopi-design-format/validate.mjs';
@@ -13,8 +13,8 @@ let h;
 before(async () => { h = await startHarness(); });
 after(async () => { await h?.close(); });
 
-// Choose a climate and press Suggest. Without S2's matrix yet, the result is seen through S4's own
-// action row (Share, Print, Download for Canopi), which App.tsx shows once the plant list is ready.
+// Choose a climate and press Suggest: the result shows with its action row (Share, Print, Download for
+// Canopi).
 async function suggest(page, climate = 'Temperate') {
   await page.locator(aria('radio', climate)).click();
   assert.equal(await loadState(page), 'ready');
@@ -36,6 +36,8 @@ const hashOf = (url) => new URL(url).hash;
 const done = async (...pages) => { for (const p of pages) await p.browserContext().close().catch(() => {}); };
 const countryText = (page) => page.$eval('[data-ct="country"]', (el) => el.textContent);
 const fixtureTemperate = () => fixtureDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
+// A phase column's header begins with its plain words (Years 1–3) or its short term.
+const PHASE_WORDS = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'].flatMap((p) => [en[`consortium.phase.${p}.plain`], en[`consortium.phase.${p}.short`]].filter(Boolean));
 const UNSURE = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
 // A #v=4 link of the first five fixture Temperate plants at stage 3, with a chosen country.
 const stageLink = async () => {
@@ -72,15 +74,18 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
   });
 });
 
-test('BT-1 (S4 start, matrix half): Suggest gives a captioned 4 × 7 matrix with the fill meter', { todo: 'S4 matrix half: needs S2 matrix view (Matrix.tsx is null until S2 merges)' }, async (t) => {
+test('BT-1 (S4 start, matrix half): Suggest gives a captioned 4 × 7 matrix with the fill meter', async (t) => {
   await eachVariant(t, async (v) => {
     const page = await h.open('/consortium/', v);
     await suggest(page);
     const table = await findAx(page, { role: 'table' });
     assert.ok(table?.name, 'the table has a caption');
     assert.equal(await countAx(page, (n) => n.role === 'rowheader'), 4, 'four strata');
-    assert.equal(await countAx(page, (n) => n.role === 'columnheader'), 7, 'seven phases');
-    assert.ok(await findAx(page, { role: 'meter' }) ?? await findAx(page, { role: 'progressbar' }), 'the fill meter');
+    const cols = (await axNodes(page)).filter((n) => n.role === 'columnheader').map((n) => n.name);
+    assert.equal(cols.filter((c) => PHASE_WORDS.some((w) => c.startsWith(w))).length, 7, `seven phases (${cols.join(' | ')})`);
+    // The fill meter is words in the caption (its bar is drawn for the eye only).
+    const fill = new RegExp(en['consortium.matrix.fill'].replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\{[ft]\\\}/g, '\\d+'));
+    assert.match(table.name, fill, `the fill meter in the caption (${table.name})`);
   });
 });
 
@@ -221,24 +226,31 @@ test('BT-7 (S4 share, blocked storage): everything works and Share says the link
   });
 });
 
-test('BT-7 (S4 share, views): the restored members and the kept pin as S2 and S3 show them', { todo: 'S4 views half: needs S2 member chips and S3 Keep (the link itself is checked above)' }, async (t) => {
+test('BT-7 (S4 share, views): the restored members and the kept pin as S2 and S3 show them', async (t) => {
+  // Read in All plants, which lists every member at every width (data-plant-id on each row).
+  const listed = async (page) => {
+    await page.locator(aria('tab', 'All plants')).click();
+    await page.waitForSelector('#ct-root [data-plant-id]');
+    return page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort());
+  };
   await eachVariant(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await suggest(page);
-    const first = (await memberNames(page))[0];
-    await page.locator(aria('button', first)).click();
+    const members = await listed(page);
+    const first = await page.$eval('#ct-root [data-plant-id] button', (el) => el.closest('[data-plant-id]').dataset.plantId);
+    await page.locator(`#ct-root [data-plant-id="${first}"] button`).click();
     await page.locator(aria('button', 'Keep')).click();
     await page.keyboard.press('Escape');
-    const members = await memberNames(page);
+    await page.waitForFunction(() => !document.querySelector('dialog[open]'));
     const copy = await h.open(`/consortium/?run=${Date.now()}${hashOf(await shareLink(page))}`, { ...v, data: 'fixture' });
-    assert.deepEqual(await memberNames(copy), members, 'the same members');
-    assert.ok(await findAx(copy, { role: 'button', name: /Kept|Unpin/ }), 'the kept pin');
+    assert.equal(await loadState(copy), 'ready');
+    assert.ok(await has(copy, aria('button', 'Share'), 8000), 'the restored consortium');
+    assert.deepEqual(await listed(copy), members, 'the same members');
+    const pinned = await copy.$eval(`#ct-root [data-plant-id="${first}"]`, (el) => el.textContent + ' ' + [...el.querySelectorAll('[aria-label], [title]')].map((x) => x.getAttribute('aria-label') ?? x.getAttribute('title')).join(' '));
+    assert.match(pinned, /Kept/, 'the kept pin');
+    await done(page, copy);
   });
 });
-
-// The captions of the tables shown (the accessibility snapshot's interesting-only tree drops tables).
-const shownTables = (page) => page.$$eval('#ct-root table', (els) => els.filter((el) => el.getBoundingClientRect().height > 0).map((el) => el.querySelector('caption')?.textContent?.trim() ?? ''));
-const printedControls = (page) => page.$$eval('#ct-root button, #ct-root [role="button"], #ct-root input, #ct-root select, #ct-root a', (els) => els.filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; }).length);
 
 test('BT-8 (S4 print): > 20 plants print "At a glance" and the table, ≤ 20 the table; no controls are printed', async (t) => {
   const all = await allTemperateLink();
@@ -303,20 +315,72 @@ test('BT-9 (S4 .canopi): the download validates against the app schema (canopi 0
   });
 });
 
-test('Exit walk-through (S4, every stream): on the real install, keyboard only: start → adjust → share → print → download', { todo: 'S4 last, after S1–S3' }, async () => {
-  const page = await h.open('/consortium/');
-  // Keyboard only: Tab to the Temperate choice, Space, Tab to Suggest, Enter.
-  for (let i = 0; i < 60; i++) {
-    await page.keyboard.press('Tab');
-    if (await page.evaluate(() => document.activeElement?.getAttribute('aria-label') === 'Temperate' || document.activeElement?.labels?.[0]?.textContent?.includes('Temperate'))) break;
-  }
-  await page.keyboard.press('Space');
-  assert.equal(await loadState(page), 'ready');
-  for (let i = 0; i < 60; i++) {
-    await page.keyboard.press('Tab');
-    if (await page.evaluate(() => document.activeElement?.textContent?.trim() === 'Suggest plants')) break;
-  }
-  await page.keyboard.press('Enter');
-  assert.ok(await findAx(page, { role: 'table' }), 'the matrix, reached by keyboard');
-  for (const name of ['Share', 'Print', 'Download for Canopi']) assert.ok(await has(page, aria('button', name)), `${name} is reachable`);
+test('Exit walk-through (S4, every stream): on the real install, keyboard only: start → adjust → share → print → download', async (t) => {
+  await eachVariant(t, async (v) => {
+    const page = await h.open('/consortium/', v);
+    // The print dialog is the browser's: counted, not opened.
+    await page.evaluateOnNewDocument(() => { window.__printed = 0; window.print = () => { window.__printed++; }; });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    const active = () => page.evaluate(() => {
+      const el = document.activeElement;
+      const by = el?.getAttribute('aria-labelledby');
+      const text = el?.getAttribute('aria-label') || (by && document.getElementById(by)?.textContent) || el?.labels?.[0]?.textContent || el?.textContent || '';
+      return { tag: el?.tagName.toLowerCase(), type: el?.type, text: text.trim(), role: el?.getAttribute('role') };
+    });
+    // Tab (forward) until the focused control matches; every stop is a real focus, never <body>.
+    const tabTo = async (match, what, max = 120) => {
+      for (let i = 0; i < max; i++) {
+        await page.keyboard.press('Tab');
+        const a = await active();
+        if (match(a)) return a;
+      }
+      assert.fail(`${what} is reachable by Tab`);
+    };
+    // Start: Tab into the climate choices, arrows to Temperate (an arrow checks it); Suggest plants, Enter.
+    await tabTo((a) => a.type === 'radio', 'the climate choices');
+    for (let i = 0; i < 12 && !(await active()).text.startsWith('Temperate'); i++) await page.keyboard.press('ArrowDown');
+    assert.ok((await active()).text.startsWith('Temperate'), 'Temperate by arrow keys');
+    if (!(await page.evaluate(() => document.activeElement.checked))) await page.keyboard.press('Space');
+    assert.equal(await loadState(page), 'ready');
+    await tabTo((a) => a.text === 'Suggest plants', 'Suggest plants');
+    await page.keyboard.press('Enter');
+    assert.ok(await findAx(page, { role: 'table' }, 8000), 'the matrix, reached by keyboard');
+    assert.notEqual((await active()).tag, 'body', 'focus moves to the matrix');
+
+    // Adjust: the tabs by arrow keys to All plants, then Remove a plant and Undo it.
+    await tabTo((a) => a.role === 'tab', 'the view tabs');
+    for (let i = 0; i < 4 && (await active()).text !== 'All plants'; i++) await page.keyboard.press('ArrowRight');
+    assert.equal((await active()).text, 'All plants');
+    const before = await page.$$eval('#ct-root [data-plant-id]', (els) => new Set(els.map((e) => e.dataset.plantId)).size);
+    const removed = await tabTo((a) => a.text.startsWith('Remove '), 'a Remove button');
+    await page.keyboard.press('Enter');
+    assert.ok(await has(page, aria('button', 'Undo')), `${removed.text}: the toast offers Undo`);
+    assert.equal(await page.$$eval('#ct-root [data-plant-id]', (els) => new Set(els.map((e) => e.dataset.plantId)).size), before - 1);
+    await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 2000 }).catch(() => {});
+    assert.notEqual((await active()).tag, 'body', 'focus stays in the page after Remove');
+    await tabTo((a) => a.text === 'Undo', 'Undo');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction((n) => new Set([...document.querySelectorAll('#ct-root [data-plant-id]')].map((e) => e.dataset.plantId)).size === n, { timeout: 3000 }, before);
+    await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 2000 }).catch(() => {});
+    assert.notEqual((await active()).tag, 'body', 'focus is on the restored plant');
+
+    // Share: the link field holds the consortium.
+    await tabTo((a) => a.text === 'Share', 'Share');
+    await page.keyboard.press('Enter');
+    const field = await findAx(page, { role: 'textbox', name: /link/i });
+    assert.match(field?.value ?? '', /#v=4/, 'the share field holds the link');
+    // Print.
+    await tabTo((a) => a.text === 'Print', 'Print');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => window.__printed === 1, { timeout: 3000 });
+    // Download for Canopi: a valid .canopi file.
+    await tabTo((a) => a.text === 'Download for Canopi', 'Download for Canopi');
+    await page.keyboard.press('Enter');
+    let files = [];
+    for (let i = 0; i < 40 && !files.length; i++) { await new Promise((r) => setTimeout(r, 150)); files = page.capturedDownloads(); }
+    assert.equal(files.length, 1, 'one file downloaded');
+    const doc = JSON.parse(files[0].bytes.toString('utf8'));
+    assert.deepEqual(validate(CANOPI_FILE_SCHEMA, doc), [], 'valid against the app schema');
+    await done(page);
+  });
 });

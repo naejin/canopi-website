@@ -19,22 +19,31 @@ test('one browser test file for commit 0, one per stream and one for the seams b
   assert.doesNotMatch(pkg.scripts.test, /browser/, 'browser tests never run in npm test');
 });
 
-test('commit 0 and seam tests all run: no todo, no skip', () => {
-  for (const [file, min] of [['consortium-commit0.browser.test.mjs', 6], ['consortium-seams.browser.test.mjs', 5]]) {
+test('every browser test runs: no todo, no skip, in any file (H8)', () => {
+  for (const file of files) {
     const text = read(file);
-    assert.ok(testsOf(text).length >= min, file);
+    assert.ok(testsOf(text).length >= (file.includes('-s1.') ? 2 : 5), file);
     assert.doesNotMatch(text, /\btodo\s*:|\bskip\s*:|\.todo\(|\.skip\(/, file);
   }
 });
 
-test('each stream file names its stream in every test, todo only for that stream', () => {
+test('the browser tests build their own hook build; the hook needs the browser-test flag (H14)', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.match(pkg.scripts['build:browser-test'], /^CANOPI_BROWSER_TEST=1 PUBLIC_CT_TEST_HOOK=1 astro build$/);
+  assert.match(pkg.scripts['test:browser'], /^npm run build:browser-test && /);
+  assert.doesNotMatch(pkg.scripts.build, /PUBLIC_CT_TEST_HOOK/);
+  const config = readFileSync(new URL('../astro.config.mjs', import.meta.url), 'utf8');
+  assert.match(config, /PUBLIC_CT_TEST_HOOK[\s\S]{0,200}CANOPI_BROWSER_TEST[\s\S]{0,200}throw new Error/, 'astro.config.mjs refuses the hook without the flag');
+  const checker = readFileSync(new URL('./check-built-site.mjs', import.meta.url), 'utf8');
+  for (const word of ['__ctTest', '__ctViews', 'failSheets']) assert.ok(checker.includes(`'${word}'`), `check-built-site looks for ${word}`);
+});
+
+test('each stream file names its stream in every test', () => {
   for (const n of [1, 2, 3, 4]) {
     const tests = testsOf(read(`consortium-s${n}.browser.test.mjs`));
     assert.ok(tests.length, `S${n} has tests`);
     for (const { title, opts } of tests) {
       assert.match(title, new RegExp(`^(BT-\\d|Exit walk-through) \\(S${n}\\b`), `S${n}: "${title}" names its stream`);
-      const todo = opts.match(/todo:\s*'([^']*)'/)?.[1];
-      if (todo !== undefined) assert.match(todo, new RegExp(`^S${n}\\b`), `S${n}: "${title}" is todo for S${n}`);
     }
   }
 });

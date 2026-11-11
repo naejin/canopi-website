@@ -33,6 +33,7 @@ import { Toast } from './Toast.tsx';
 import { phasePlain as plainPhase, spanWords } from './StageBar.tsx';
 import { safeHref } from '../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../data/consortium-guides.ts';
+import { testFault } from '../test-hook.ts';
 
 // ---- words ----
 
@@ -220,7 +221,6 @@ export function Ask({ title, lines, yes, onYes, onCancel }: { title: string; lin
 
 // Browser-test builds only: makes the next sheet chunk fail to load (the page preloads every chunk,
 // so the network cannot make it fail).
-const testFault = { sheets: false };
 // A sheet module loaded on first use.
 type SheetModule = { default: ComponentType<Record<string, unknown>> };
 const loaded = new Map<() => Promise<SheetModule>, ComponentType<Record<string, unknown>>>();
@@ -544,14 +544,3 @@ function S3Views() {
 }
 
 export const Details: ComponentType | null = S3Views;
-
-// Browser tests only (scripts/browser/consortium-s3.browser.test.mjs): a page whose script set
-// window.__ctTest = true before the island loaded gets the store and openSheet there, so the S3 tests
-// can choose a climate and open sheets while the S2 matrix and S4 start views are not in the build.
-// Nothing in the site sets the flag.
-// Compiled in only when the site is built with PUBLIC_CT_TEST_HOOK=1 (the browser-test build); the
-// production build replaces the condition with false and drops this block.
-if (import.meta.env.PUBLIC_CT_TEST_HOOK === '1') {
-  const probe = globalThis as { __ctTest?: unknown };
-  if (probe.__ctTest === true) probe.__ctTest = { store, openSheet, failSheets: () => { testFault.sheets = true; } };
-}

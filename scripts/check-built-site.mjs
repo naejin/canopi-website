@@ -375,6 +375,14 @@ const en = JSON.parse(readFileSync('src/i18n/translations/en.json', 'utf8'));
 // The guide slugs the plant dialog links (src/data/consortium-guides.ts: 'Name': ['slug', …]).
 const consortiumGuideSlugs = new Set([...readFileSync('src/data/consortium-guides.ts', 'utf8').matchAll(/\[([^\]]*)\]/g)].flatMap((m) => [...m[1].matchAll(/'([a-z0-9-]+)'/g)].map((x) => x[1])));
 assert.ok(consortiumGuideSlugs.size > 10, 'consortium-guides.ts lists guide slugs');
+// The browser-test hook never ships (H14): no built script names it.
+{
+  const scripts = readdirSync(join(root, '_astro')).filter((f) => f.endsWith('.js'));
+  for (const f of scripts) {
+    const text = readFileSync(join(root, '_astro', f), 'utf8');
+    for (const word of ['__ctTest', '__ctViews', 'failSheets']) assert.ok(!text.includes(word), `_astro/${f}: the browser-test hook (${word}) is in a production build; build without PUBLIC_CT_TEST_HOOK`);
+  }
+}
 // The consortium tool: one page per locale (/consortium/ in every language, French included), its alternates, and the installed plant data.
 for (const lang of locales) {
   const path = consortiumPath(lang);

@@ -2,15 +2,10 @@
 // S3 edits only this file among the browser tests and flips its todo tests as it builds them.
 // Design check §7 BT-5, BT-6. Run capped: npm run test:browser (see consortium-commit0).
 //
-// Built before the S2 matrix and the S4 start views were merged, so each step uses their controls when
-// the page has them and otherwise the store: the page is opened with window.__ctTest = true, which
-// makes views/Details.tsx put { store, openSheet } there (nothing in the site sets it). Without S4's
-// climate radios the test chooses the climate and suggests through the store; without S2's chips it
-// draws stand-in chip buttons (`<name> · <layer>`, data-plant-id, one per member, redrawn when the
-// members change) that open details as a chip does, so focus return and Remove/Undo are tested; without
-// S2's "Add plants" and S4's "Paste a list" it opens those sheets with openSheet. The guest chip label
-// is S2's: without it the test checks the guest in the store and the "From the Tropical list" label in
-// the Paste sheet. Once S2 and S4 are in, every fallback goes unused.
+// Every step uses the page's own controls. The test hook (src/islands/consortium/test-hook.ts; a page
+// opened with window.__ctTest = true on a PUBLIC_CT_TEST_HOOK=1 build) is used only to read membership
+// and guests, to set up a consortium no control makes in one step (a member taken out mid-sheet, deep
+// shade without the re-suggestion Change site makes), and to make a sheet's chunk fail to load.
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture, loadState, startHarness } from './harness.mjs';
@@ -48,61 +43,27 @@ async function open(opts) {
   await page.reload({ waitUntil: 'domcontentloaded' });
   return page;
 }
-async function needHook(page) {
+const hooked = async (page, fn, ...args) => {
   const ok = await page.waitForFunction(() => typeof window.__ctTest === 'object', { timeout: 20_000 }).then(() => true, () => false);
-  assert.ok(ok, 'no S4 start view and no test hook: build with PUBLIC_CT_TEST_HOOK=1 npm run build');
-}
-const hooked = (page, fn, ...args) => page.evaluate(fn, ...args);
-
-// Stand-in chips while the S2 matrix is not in the build (see the head of the file).
-async function standInChips(page) {
-  await hooked(page, () => {
-    const { store, openSheet } = window.__ctTest;
-    const box = document.createElement('div');
-    box.id = 'ct-test-chips';
-    document.getElementById('ct-root').prepend(box);
-    const draw = () => {
-      box.replaceChildren(...store.memberTaxa.value.map((t) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.dataset.plantId = t.id;
-        b.textContent = `${t.names.en ?? t.canonical_name} · ${t.stratum?.value ?? 'none'}`;
-        b.setAttribute('aria-label', b.textContent);
-        b.addEventListener('click', () => openSheet('details', t.id));
-        return b;
-      }));
-    };
-    store.memberTaxa.subscribe(draw);
-  });
-}
+  assert.ok(ok, 'the test hook: build with npm run build:browser-test');
+  return page.evaluate(fn, ...args);
+};
 
 async function start(page, climate = 'Temperate') {
-  if (await has(page, aria('radio', climate), 1500)) {
-    await page.locator(aria('radio', climate)).click();
-    assert.equal(await loadState(page), 'ready');
-    await page.locator(aria('button', 'Suggest plants')).click();
-  } else {
-    assert.equal(await loadState(page), 'ready');
-    await needHook(page);
-    await page.waitForFunction(() => window.__ctTest?.store?.source.value, { timeout: 20_000 });
-    assert.ok(await hooked(page, async (c) => {
-      const { store } = window.__ctTest;
-      store.climate.value = c;
-      await store.loadPool(c);
-      return store.suggestMembers();
-    }, climate), 'a suggestion through the store');
-  }
-  if (!(await findAx(page, { role: 'table' }, 1500))) await standInChips(page);
+  await page.locator(aria('radio', climate)).click();
+  assert.equal(await loadState(page), 'ready');
+  await page.locator(aria('button', 'Suggest plants')).click();
+  assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000), 'the matrix');
 }
-// Opens a sheet by its button, else through the store (S2/S4 controls not in the build).
-async function openBy(page, button, kind) {
-  if (await has(page, aria('button', button), 800)) await page.locator(aria('button', button)).click();
-  else await hooked(page, (k) => window.__ctTest.openSheet(k), kind);
-  assert.ok(await findAx(page, { role: 'dialog' }), `the ${kind} sheet`);
+// Opens a sheet by its button: "Add plants" on the views; "Paste a list" on Start (Change site).
+async function openBy(page, button) {
+  if (button === 'Paste a list' && !(await has(page, aria('button', button), 300))) await page.locator(aria('button', 'Change site')).click();
+  await page.locator(aria('button', button)).click();
+  assert.ok(await findAx(page, { role: 'dialog' }), `the ${button} sheet`);
 }
 // Add one plant: tick it and "Add 1 plant", or, on a row that asks, its "Add {name}" button.
 async function addPlant(page, name) {
-  await openBy(page, 'Add plants', 'add');
+  await openBy(page, 'Add plants');
   await page.locator('::-p-aria([role="searchbox"])').fill(name);
   const box = (await axNodes(page)).find((n) => n.role === 'checkbox' && (n.name ?? '').startsWith(name));
   if (box) {
@@ -137,7 +98,7 @@ test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and cred
     const dialog = await findAx(page, { role: 'dialog' });
     assert.ok(dialog, 'a dialog');
     assert.ok(await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"], dialog')), 'focus moves into the dialog');
-    assert.ok(await findAx(page, { role: 'image', name: `Photo of ${names['Castanea sativa']}` }), 'the photo, with its alt text');
+    assert.ok(await findAx(page, { role: 'img', name: `Photo of ${names['Castanea sativa']}` }), 'the photo, with its alt text');
     assert.ok(await findAx(page, { name: /Wikimedia Commons|iNaturalist|CC/ }), 'the photo credit');
     assert.ok(await has(page, '::-p-aria(Placed for the Temperate climate)'));
     assert.ok(await findAx(page, { role: 'heading', name: 'With a warning' }), 'the warning section');
@@ -205,7 +166,12 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an 
     await page.keyboard.press('Escape');
     assert.equal(await isMember(page, 'Juglans regia'), false, 'Cancel adds nothing');
     // Robinia: an invasive warning is shown but never asks (France: recorded invasive).
-    await hooked(page, () => { window.__ctTest.store.country.value = { code: 'FR', source: 'chosen' }; });
+    if (await sheetOpen(page)) await page.locator('dialog[open] ' + aria('button', 'Close')).click();
+    await closed(page);
+    await page.locator(aria('button', 'Change site')).click();
+    await page.locator('[data-ct="country"] button[aria-expanded]').click();
+    await page.select('#ct-country-select', 'FR');
+    await page.locator(aria('button', 'Back to your consortium')).click();
     await addPlant(page, names['Robinia pseudoacacia']);
     assert.equal(await findAx(page, { role: 'alertdialog' }, 800), null, 'an invasive warning does not ask');
     assert.ok(await isMember(page, 'Robinia pseudoacacia'), 'Robinia is added');
@@ -229,7 +195,7 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an 
     await page.waitForFunction(() => !document.querySelector('dialog[open]'));
 
     // Add with two selected.
-    await openBy(page, 'Add plants', 'add');
+    await openBy(page, 'Add plants');
     const boxes = (await axNodes(page)).filter((n) => n.role === 'checkbox' && !n.checked).slice(0, 2);
     assert.equal(boxes.length, 2, 'two plants to tick');
     for (const b of boxes) await page.locator(aria('checkbox', b.name)).click();
@@ -238,7 +204,7 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an 
     await page.waitForFunction(() => !document.querySelector('dialog[open]'));
 
     // Paste a Tropical-only plant from Temperate: Add anyway, then a chip labelled with its list.
-    await openBy(page, 'Paste a list', 'paste');
+    await openBy(page, 'Paste a list');
     await page.locator('::-p-aria([role="textbox"])').fill('Inga edulis');
     await page.locator(aria('button', 'Add anyway')).click();
     if (await findAx(page, { role: 'table' }, 500)) {
@@ -291,7 +257,11 @@ test('BT-6 (S3 review): Undo goes away when the consortium changes another way; 
   await page.locator(aria('button', 'Remove')).click();
   await closed(page);
   assert.ok(await has(page, aria('button', 'Undo')), 'Undo after Remove');
-  await setStore(page, () => { const { store } = window.__ctTest; store.kept.value = [...store.kept.value, store.members.value[0]]; });
+  const other = (await axNodes(page)).find((n) => n.role === 'button' && / · /.test(n.name ?? '') && !n.name.startsWith(names['Castanea sativa']));
+  await page.locator(aria('button', other.name)).click();
+  await page.locator(aria('button', 'Keep')).click();
+  await page.keyboard.press('Escape');
+  await closed(page);
   assert.equal(await has(page, aria('button', 'Undo'), 800), false, 'a pin made since hides Undo');
 
   // The page modulepreloads every chunk, so the hook makes the Swap chunk's import fail.
@@ -308,7 +278,7 @@ test('BT-6 (S3 review): "Add anyway" keeps the ticks; a guest that misfits asks 
   for (const c of ['Juglans regia', 'Robinia pseudoacacia']) if (await isMember(page, c)) await dropMember(page, c);
   if (!(await isMember(page, 'Malus domestica'))) await addPlant(page, names['Malus domestica']);
   await closed(page);
-  await openBy(page, 'Add plants', 'add');
+  await openBy(page, 'Add plants');
   await page.locator('::-p-aria([role="searchbox"])').fill(names['Robinia pseudoacacia']);
   await page.locator(aria('checkbox', `${names['Robinia pseudoacacia']}, Robinia pseudoacacia`)).click();
   await page.locator('::-p-aria([role="searchbox"])').fill(names['Juglans regia']);
@@ -318,7 +288,7 @@ test('BT-6 (S3 review): "Add anyway" keeps the ticks; a guest that misfits asks 
   assert.ok(await isMember(page, 'Juglans regia') && await isMember(page, 'Robinia pseudoacacia'), 'the ticked plant joins with the one confirmed');
 
   // A query lists 8 rows at most, best match first.
-  await openBy(page, 'Add plants', 'add');
+  await openBy(page, 'Add plants');
   await page.locator('::-p-aria([role="searchbox"])').fill('a');
   const rows = (await axNodes(page)).filter((n) => n.role === 'checkbox' || /^Add (?!\d)/.test(n.name ?? '') && n.role === 'button');
   assert.ok(rows.length <= 8, `at most 8 rows (${rows.length})`);
@@ -327,7 +297,7 @@ test('BT-6 (S3 review): "Add anyway" keeps the ticks; a guest that misfits asks 
 
   // Deep shade: a sun plant from the Tropical list misfits, so "Add anyway" asks.
   await setStore(page, () => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, light: 'shade' }; });
-  await openBy(page, 'Paste a list', 'paste');
+  await openBy(page, 'Paste a list');
   await page.locator('::-p-aria([role="textbox"])').fill('Inga edulis');
   assert.ok(await findAx(page, { name: /^Your site:/ }), 'the guest row shows its warning');
   await page.locator(aria('button', 'Add anyway')).click();
@@ -396,7 +366,7 @@ test('BT-6 (S3 review 2): a toast moving into a sheet is not announced again; "A
   await closed(page);
   await page.waitForSelector('.ct-toast');
   assert.ok(await page.$eval('.ct-toast', (el) => !!el.closest('[aria-live]')), 'the toast is announced where it is first shown');
-  await openBy(page, 'Paste a list', 'paste');
+  await openBy(page, 'Paste a list');
   await page.waitForSelector('dialog[open] .ct-toast');
   assert.ok(await page.$eval('dialog[open] .ct-toast', (el) => !el.closest('[aria-live]')), 'moved into the sheet, it is not in a live region');
   await setStore(page, () => { window.__ctTest.store.members.value = []; });

@@ -2,10 +2,10 @@
 // S2 edits only this file among the browser tests. Design check §7 BT-2, BT-3, BT-4. Run capped:
 // npm run test:browser (see consortium-commit0).
 //
-// The views are reached through S2's test hook (Matrix.tsx; stream S3's pattern): the site is built
-// with PUBLIC_CT_TEST_HOOK=1, and a page opened with window.__ctViews = true gets the store, so a test
-// sets the climate, the site's room, the members (a suggestion, or 120 real ids) and the view without
-// stream S4's start screen. A production build has no hook. "Show them anyway" and the side view's
+// The views are reached through the test hook (src/islands/consortium/test-hook.ts; npm run
+// build:browser-test): a page opened with window.__ctTest = true gets the store, so a test sets
+// member sets no control makes in one step (8, 20, 30 or 120 real ids), the climate, the room and the
+// view. A production build has no hook. The seams file drives the same views through the controls. "Show them anyway" and the side view's
 // key open stream S3's dialogs (the seams file checks what Add lists).
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -26,13 +26,13 @@ const fill = (key, vars) => en[`consortium.${key}`].replace(/\{(\w+)\}/g, (_, k)
 // A page of the views through the test hook: climate, room, members (null: "Suggest plants") and view.
 async function views(v, { data = 'fixture', lang = 'en', climate = 'Temperate', room = null, members = null, view = 'matrix' } = {}) {
   const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { ...v, data });
-  await page.evaluateOnNewDocument(() => { window.__ctViews = true; });
+  await page.evaluateOnNewDocument(() => { window.__ctTest = true; });
   await page.reload({ waitUntil: 'domcontentloaded' });
   assert.equal(await loadState(page), 'ready');
-  const hooked = await page.waitForFunction(() => window.__ctViews?.store?.source.value, { timeout: 20_000 }).then(() => true, () => false);
-  assert.ok(hooked, 'no S2 test hook: build the site with PUBLIC_CT_TEST_HOOK=1 npm run build');
+  const hooked = await page.waitForFunction(() => window.__ctTest?.store?.source.value, { timeout: 20_000 }).then(() => true, () => false);
+  assert.ok(hooked, 'no test hook: build with npm run build:browser-test');
   const set = await page.evaluate(async (o) => {
-    const { store } = window.__ctViews;
+    const { store } = window.__ctTest;
     store.climate.value = o.climate;
     if (o.room) store.site.value = { ...store.site.value, room: o.room };
     if (!(await store.loadPool(o.climate))) return 'no pool';
@@ -159,7 +159,7 @@ test('BT-2 (S2 matrix): real Temperate gap, Room Small misfits with reasons, one
       await page.focus(earlier);
       await page.keyboard.press('Enter');
       assert.equal(await page.evaluate((sel) => document.activeElement === document.querySelector(sel), earlier), true, 'Earlier keeps the focus at the first stage');
-      assert.equal(await store(page, () => window.__ctViews.store.stage.value), 0);
+      assert.equal(await store(page, () => window.__ctTest.store.stage.value), 0);
       await page.focus(later);
       for (let i = 0; i < 6; i++) await page.keyboard.press('Enter');
       assert.ok(await findAx(page, { name: new RegExp(esc(plain(6))) }), 'Later reaches the last stage');
@@ -180,7 +180,7 @@ test('BT-2 (S2 matrix): a collapsed cell (more than 5 tracks) lists its starters
     if (v.width < 640) return; // the phone grid has no tracks
     // Every Temperate plant of the medium layer: far more than five tracks.
     const page = await views(v, { data: 'real' });
-    await store(page, () => { const { store: s } = window.__ctViews; s.members.value = s.pool.value.filter((x) => x.stratum?.value === 'medium').map((x) => x.id); });
+    await store(page, () => { const { store: s } = window.__ctTest; s.members.value = s.pool.value.filter((x) => x.stratum?.value === 'medium').map((x) => x.id); });
     assert.ok(await has(page, '.ct-cell-count', 5000), 'the medium row is collapsed');
     const order = await page.$$eval('tr[data-stratum-row="medium"] td', (tds) => tds.map((td) => [...td.querySelectorAll('.ct-pchip')].map((c) => c.tagName)));
     for (const chips of order) {
@@ -236,7 +236,7 @@ test('BT-3 (S2 side view): 8, 20 and 30 plants keep the scale: plants at full pl
   await eachVariant(t, async (v) => {
     const page = await views(v, { data: 'real', view: 'side' });
     const stage = await store(page, () => {
-      const { store: s } = window.__ctViews, ph = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'];
+      const { store: s } = window.__ctTest, ph = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'];
       const n = [0, 1, 2, 3, 4, 5, 6].map((p) => s.pool.value.filter((x) => x.stratum && x.phases && ph.indexOf(x.phases.start) <= p && p <= ph.indexOf(x.phases.end)).length);
       const best = n.indexOf(Math.max(...n));
       s.stage.value = best;
@@ -245,7 +245,7 @@ test('BT-3 (S2 side view): 8, 20 and 30 plants keep the scale: plants at full pl
     assert.ok(stage.n >= 30, `a stage with 30 plants (${JSON.stringify(stage)})`);
     for (const count of [8, 20, 30]) {
       await store(page, (k) => {
-        const { store: s } = window.__ctViews, ph = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'], p = s.stage.value;
+        const { store: s } = window.__ctTest, ph = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'], p = s.stage.value;
         s.members.value = s.pool.value.filter((x) => x.stratum && x.phases && ph.indexOf(x.phases.start) <= p && p <= ph.indexOf(x.phases.end)).slice(0, k).map((x) => x.id);
       }, count);
       await page.waitForFunction((k) => document.querySelectorAll('.ct-views .ct-sv-key li').length === k, { timeout: 5000 }, count);
@@ -353,7 +353,7 @@ test('BT-4 (S2 jobs and list): a 6-row Jobs table whose gaps name their stages; 
     const [first, second] = await real.$$eval('tr[data-plant-id]', (trs) => trs.slice(0, 2).map((tr) => tr.dataset.plantId));
     await real.$eval(`tr[data-plant-id="${first}"] .ct-lact button:last-child`, (b) => b.click());
     await real.waitForFunction((id) => !document.querySelector(`tr[data-plant-id="${id}"]`), { timeout: 3000 }, first);
-    assert.equal(await store(real, (id) => window.__ctViews.store.members.value.includes(id) || !window.__ctViews.store.removed.value.includes(id), first), false, 'out of the members, into removed');
+    assert.equal(await store(real, (id) => window.__ctTest.store.members.value.includes(id) || !window.__ctTest.store.removed.value.includes(id), first), false, 'out of the members, into removed');
     await real.waitForFunction((id) => document.activeElement?.closest('tr')?.dataset.plantId === id, { timeout: 3000 }, second);
   });
 });

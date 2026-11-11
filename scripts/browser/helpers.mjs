@@ -18,10 +18,19 @@ export const has = async (page, selector, timeout = 2500) => !!(await page.waitF
 export const aria = (role, name) => `::-p-aria([role="${role}"][name="${name.replace(/"/g, '\\"')}"])`;
 
 // The accessibility tree, flattened: [{ role, name, checked, pressed, value, level, disabled }].
+// The full tree (H11): puppeteer's "interesting only" view drops tables, rows, cells and groups, which
+// the tests ask for. Inline text boxes and unnamed wrappers are left out, and Chrome's "image" role is read as
+// the ARIA "img".
+const SKIP = new Set(['none', 'generic', 'InlineTextBox', 'LineBreak']);
 export async function axNodes(page) {
   const out = [];
-  const walk = (n) => { if (!n) return; out.push(n); for (const c of n.children ?? []) walk(c); };
-  walk(await page.accessibility.snapshot({ interestingOnly: true }));
+  const walk = (n) => {
+    if (!n) return;
+    if (n.role === 'image') n.role = 'img';
+    if (!SKIP.has(n.role) || (n.role === 'generic' && n.name)) out.push(n);
+    for (const c of n.children ?? []) walk(c);
+  };
+  walk(await page.accessibility.snapshot({ interestingOnly: false }));
   return out;
 }
 // Waits for a node whose role matches and whose name matches (string: exact; RegExp: test).

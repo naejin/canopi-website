@@ -85,6 +85,14 @@ const consortiumModulePreload = {
   },
 };
 
+// The consortium's browser-test hook (src/islands/consortium/test-hook.ts) is compiled in only for
+// the browser tests' own build (npm run build:browser-test). A stray PUBLIC_CT_TEST_HOOK in a shell or
+// a CI setting must never reach a deploy: without the explicit browser-test flag the build stops
+// (H14; check-built-site also fails if the hook reaches dist/).
+if (process.env.PUBLIC_CT_TEST_HOOK && process.env.CANOPI_BROWSER_TEST !== '1') {
+  throw new Error('PUBLIC_CT_TEST_HOOK is set without CANOPI_BROWSER_TEST=1: the test hook is only for npm run build:browser-test');
+}
+
 export default defineConfig({
   site: 'https://projectcanopi.com',
   output: 'static',

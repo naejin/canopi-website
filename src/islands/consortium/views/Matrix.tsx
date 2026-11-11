@@ -25,7 +25,6 @@ import type { ComponentChildren, ComponentType } from 'preact';
 import { useEffect } from 'preact/hooks';
 import type { Matrix as MatrixData, MatrixCell, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
 import { ROOM_LIMIT_M, strata } from '../../../lib/consortium/index.ts';
-import * as store from '../store.ts';
 import { climate, matrix, memberTaxa, members, missingMembers, pool, site, suggestMembers, view, type View } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { COLLAPSED_CHIPS, MAX_TRACKS, PHASE_ORDS, SHARE_AIM, cellOrder, fillPercent, reasonParts, rowPieces, runReasons, spanOf, spans, tracksOf } from './tracks.ts';
@@ -295,13 +294,3 @@ function Chip({ taxon: t, phase, compact = false }: { taxon: Taxon; phase: Phase
 }
 
 export const Matrix: ComponentType | null = Views;
-
-// Browser-test hook (stream S3's pattern; review 2026-11-11): a page opened with window.__ctViews =
-// true before the island loaded gets the store there, so the S2 tests set the climate, the site, the
-// members and the view without the start screen. Compiled in only when the site is built with
-// PUBLIC_CT_TEST_HOOK=1 (the browser-test build); a production build drops it as dead code. Its own
-// global, so it never races S3's __ctTest.
-if (import.meta.env.PUBLIC_CT_TEST_HOOK === '1') {
-  const probe = globalThis as { __ctViews?: unknown };
-  if (probe.__ctViews === true) probe.__ctViews = { store };
-}

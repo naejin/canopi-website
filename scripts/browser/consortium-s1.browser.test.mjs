@@ -61,9 +61,8 @@ test('BT-1 (S1 data, in the page): the loader opens the real database and its Pl
   });
 });
 
-// The full BT-1 data path through the page: it needs the S4 Start view (the climate radio and Suggest)
-// and the S2 matrix (the table and its chips), so it stays todo in this stream and flips once they land.
-test('BT-1 (S1 data): on the real Temperate list with every site answer unsure, Suggest picks 9 plants placed in Temperate, from the database', { todo: 'S1: needs the S4 Start and S2 matrix views' }, async (t) => {
+// The full BT-1 data path through the page: Start's climate radio and Suggest, then the matrix's chips.
+test('BT-1 (S1 data): on the real Temperate list with every site answer unsure, Suggest picks 9 plants placed in Temperate, from the database', async (t) => {
   const temperate = new Set(await realDb((db) => db.prepare(
     "SELECT coalesce(n.name, p.canonical_name) name FROM placements x JOIN plants p USING (plant) LEFT JOIN plant_names n ON n.plant = p.plant AND n.locale = 'en' WHERE x.climate_zone = 'Temperate'").all().map((r) => r.name)));
   assert.equal(index.names.Temperate.length, temperate.size);
@@ -73,8 +72,12 @@ test('BT-1 (S1 data): on the real Temperate list with every site answer unsure, 
     assert.equal(await loadState(page), 'ready');
     await page.locator(aria('button', 'Suggest plants')).click();
     assert.ok(await findAx(page, { role: 'table' }), 'the matrix');
-    // Chips are buttons inside the table; their names start with the plant's name (S2 adds layer and phase words).
-    const chips = (await axNodes(page)).filter((n) => n.role === 'button' && [...temperate].some((name) => (n.name ?? '').startsWith(name)));
-    assert.equal(new Set(chips.map((c) => c.name)).size, 9, 'A7: an unsure room suggests 9 plants');
+    // All plants lists every member at every width; each row's name button starts with the plant's name.
+    await page.locator(aria('tab', 'All plants')).click();
+    await page.waitForSelector('#ct-root [data-plant-id]');
+    const rows = await page.$$eval('#ct-root [data-plant-id] .ct-lname-btn', (els) => els.map((e) => e.textContent.trim()));
+    assert.equal(rows.length, 9, 'A7: an unsure room suggests 9 plants');
+    for (const r of rows) assert.ok([...temperate].some((name) => r.startsWith(name)), `${r} is placed in Temperate`);
+    await page.browserContext().close().catch(() => {});
   });
 });
