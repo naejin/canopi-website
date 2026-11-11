@@ -98,20 +98,22 @@ function workspace(t) {
 }
 const install = (w, archive, opts = {}) => installClimate({ archive, outDir: w.out, indexPath: w.index, consortiumIndexPath: w.consortiumIndex, stagingDir: w.staging, log: quiet, ...opts });
 
-test('a grid installs: tiles byte for byte under <version>-<12 hex>/, the mark, the index, nothing else', async (t) => {
+test('a grid installs: tiles byte for byte under <version>-<12 hex>/, the index, nothing else (no mark served)', async (t) => {
   const w = workspace(t);
   const { archive, manifestSha } = writeArchive(w.root);
   const logs = [];
   const summary = await install(w, archive, { log: (l) => logs.push(l) });
   const dir = installDirName('0.2.0', manifestSha);
   assert.equal(dir, `0.2.0-${manifestSha.slice(0, 12)}`);
-  assert.deepEqual(readdirSync(w.out).sort(), [dir, 'INSTALLED_BY']);
+  assert.deepEqual(readdirSync(w.out), [dir]);
   assert.deepEqual(readdirSync(join(w.out, dir)).sort(), ['regions', 'soil', 'tiles']);
   for (const [p, b] of Object.entries(TILES)) assert.deepEqual(readFileSync(join(w.out, dir, p)), b, p);
   const index = JSON.parse(readFileSync(w.index, 'utf8'));
   assert.equal(climateIndexProblem(index), null);
   assert.equal(index.base, `${PUBLIC_BASE}${dir}/`);
   assert.deepEqual(index.layers.climate.tiles, { n50e000: TILES['tiles/n50e000.tif'].length });
+  assert.deepEqual(index.layers.climate.sha256, { n50e000: sha(TILES['tiles/n50e000.tif']) });
+  assert.deepEqual(index.layers.soil.sha256, { n50e000: sha(TILES['soil/n50e000.tif']) });
   assert.deepEqual(Object.keys(index.layers), ['climate', 'soil', 'regions']);
   assert.equal(index.layers.soil.dir, 'soil');
   assert.equal(index.release.grid_manifest_sha256, manifestSha);
@@ -125,10 +127,10 @@ test('a grid installs: tiles byte for byte under <version>-<12 hex>/, the mark, 
   assert.ok(logs.some((l) => /warning: .*climate_grid_manifest_sha256/.test(l)), logs.join('\n'));
   assert.deepEqual(verifyClimateInstall(join(w.out), index), { climate: 1, soil: 1, regions: 1 });
   assert.equal(summary.files, 3);
-  assert.ok(!existsSync(w.staging), 'staging removed');
-  // A second install replaces the first (its mark).
+  assert.deepEqual(existsSync(w.staging) ? readdirSync(w.staging) : [], [], 'this run\'s staging and lock removed');
+  // A second install replaces the first (recognised by its shape: version directories only).
   await install(w, archive);
-  assert.deepEqual(readdirSync(w.out).sort(), [dir, 'INSTALLED_BY']);
+  assert.deepEqual(readdirSync(w.out), [dir]);
 });
 
 test('the consortium export\'s grid digest: equal installs (matched), different refuses', async (t) => {
@@ -141,6 +143,16 @@ test('the consortium export\'s grid digest: equal installs (matched), different 
   rmSync(w.out, { recursive: true });
   await assert.rejects(install(w, archive), /r-0000000000000003 was sampled from the grid aaaaaaaaaaaa…, this archive is .*: refused/);
   assert.ok(!existsSync(w.out), 'nothing written');
+  // An empty string is "unknown", not another grid.
+  writeFileSync(w.consortiumIndex, JSON.stringify({ release_id: 'r-0000000000000004', climate_grid_manifest_sha256: '' }));
+  const logs = [];
+  await install(w, archive, { log: (l) => logs.push(l) });
+  assert.deepEqual(JSON.parse(readFileSync(w.index, 'utf8')).consortium_grid_check, { status: 'unchecked', consortium_release: 'r-0000000000000004', reason: 'the consortium index\'s climate_grid_manifest_sha256 is empty (unknown grid)' });
+  assert.ok(logs.some((l) => /warning: .*climate_grid_manifest_sha256 is empty/.test(l)), logs.join('\n'));
+  // Anything else that is not a sha256 is refused as such.
+  writeFileSync(w.consortiumIndex, JSON.stringify({ release_id: 'r-0000000000000005', climate_grid_manifest_sha256: 'nope' }));
+  rmSync(w.out, { recursive: true });
+  await assert.rejects(install(w, archive), /climate_grid_manifest_sha256 "nope" is not a sha256/);
 });
 
 test('broken archives are refused before anything is written', async (t) => {
@@ -191,6 +203,13 @@ test('an output that is not a previous install is not replaced', async (t) => {
   writeFileSync(join(w.out, 'keep.txt'), 'mine');
   await assert.rejects(install(w, archive), /not empty and holds no climate install/);
   assert.equal(readFileSync(join(w.out, 'keep.txt'), 'utf8'), 'mine');
+  // A previous install with the old public INSTALLED_BY mark is replaced, and the mark goes.
+  rmSync(w.out, { recursive: true });
+  mkdirSync(join(w.out, '0.1.0-000000000000', 'tiles'), { recursive: true });
+  writeFileSync(join(w.out, 'INSTALLED_BY'), 'scripts/install-climate.mjs (canopi-website)\n');
+  await install(w, archive);
+  assert.equal(readdirSync(w.out).length, 1);
+  assert.ok(!existsSync(join(w.out, 'INSTALLED_BY')));
 });
 
 test('verifyClimateInstall: every index tile present with its size, nothing else, one version', async (t) => {
@@ -209,6 +228,16 @@ test('verifyClimateInstall: every index tile present with its size, nothing else
   rmSync(join(dir, 'tiles', 'n40e000.tif'));
   mkdirSync(join(w.out, '0.1.0-000000000000'));
   assert.throws(() => verifyClimateInstall(w.out, index), /0\.1\.0-000000000000/);
+  rmSync(join(w.out, '0.1.0-000000000000'), { recursive: true });
+  // A same-size edit is caught by the tile's sha256; a served install mark is refused.
+  const edited = Buffer.from(TILES['regions/n50e000.tif']);
+  edited[edited.length - 1] ^= 1;
+  writeFileSync(join(dir, 'regions', 'n50e000.tif'), edited);
+  assert.throws(() => verifyClimateInstall(w.out, index), /regions\/n50e000\.tif does not match the index's sha256/);
+  writeFileSync(join(dir, 'regions', 'n50e000.tif'), TILES['regions/n50e000.tif']);
+  verifyClimateInstall(w.out, index);
+  writeFileSync(join(w.out, 'INSTALLED_BY'), 'x');
+  assert.throws(() => verifyClimateInstall(w.out, index), /INSTALLED_BY/);
 });
 
 test('readTar refuses truncated archives and bad checksums', () => {
@@ -364,11 +393,111 @@ test('an install of another grid is replaced by the pinned one', async (t) => {
   await ensure(w, pinFor(old.archive, old.manifestSha), { env: { CANOPI_CLIMATE_ARCHIVE: old.archive } });
   const r = await ensure(w, pinFor(cur.archive, cur.manifestSha), { env: { CANOPI_CLIMATE_ARCHIVE: cur.archive } });
   assert.equal(r.action, 'installed');
-  assert.deepEqual(readdirSync(w.out).sort(), [installDirName('0.2.0', cur.manifestSha), 'INSTALLED_BY']);
+  assert.deepEqual(readdirSync(w.out), [installDirName('0.2.0', cur.manifestSha)]);
 });
 
 test('the TIFF check loads on a Node that cannot import .ts (TypeScript fallback)', async () => {
   const { readTileHeader } = await loadTiffModule({ native: false });
   const h = readTileHeader(TILES['tiles/n50e000.tif'], { side: 100, cellDeg: 0.1, bands: 72 });
   assert.deepEqual([h.north, h.west], [50, 0]);
+});
+
+// --- Review fixes (2026-11-11) ---
+
+test('a same-size edit of an installed tile is caught at build and the grid reinstalled', async (t) => {
+  const w = workspace(t);
+  const { archive, manifestSha } = writeArchive(w.root);
+  const release = pinFor(archive, manifestSha);
+  await ensure(w, release, { env: { CANOPI_CLIMATE_ARCHIVE: archive } });
+  const tile = join(w.out, installDirName('0.2.0', manifestSha), 'tiles', 'n50e000.tif');
+  const edited = Buffer.from(TILES['tiles/n50e000.tif']);
+  edited[100] ^= 1;
+  writeFileSync(tile, edited);
+  const r = await ensure(w, release, { env: { CANOPI_CLIMATE_ARCHIVE: archive } });
+  assert.equal(r.action, 'installed');
+  assert.deepEqual(readFileSync(tile), TILES['tiles/n50e000.tif']);
+});
+
+test('each run stages in its own directory and leaves other runs\' staging alone; concurrent installs both succeed', async (t) => {
+  const w = workspace(t);
+  const { archive, manifestSha } = writeArchive(w.root);
+  const release = pinFor(archive, manifestSha);
+  const foreign = join(w.staging, 'run-424242-abc');
+  mkdirSync(join(foreign, 'old'), { recursive: true });
+  writeFileSync(join(foreign, 'old', 'backup.tif'), 'another run\'s backup');
+  await ensure(w, release, { env: { CANOPI_CLIMATE_ARCHIVE: archive } });
+  assert.equal(readFileSync(join(foreign, 'old', 'backup.tif'), 'utf8'), 'another run\'s backup');
+  assert.deepEqual(readdirSync(w.staging), ['run-424242-abc']);
+
+  // dev, build and build:browser-test at once: one installs, the others find it installed.
+  rmSync(w.out, { recursive: true });
+  const runs = await Promise.all([1, 2, 3].map(() => ensure(w, release, { env: { CANOPI_CLIMATE_ARCHIVE: archive } })));
+  assert.deepEqual(runs.map((r) => r.action).sort(), ['installed', 'up to date', 'up to date']);
+  verifyClimateInstall(w.out, JSON.parse(readFileSync(w.index, 'utf8')));
+  assert.deepEqual(readdirSync(w.staging), ['run-424242-abc']);
+
+  // A lock left by a dead process does not block.
+  writeFileSync(join(w.staging, 'lock'), '999999999 dead');
+  rmSync(w.out, { recursive: true });
+  assert.equal((await ensure(w, release, { env: { CANOPI_CLIMATE_ARCHIVE: archive } })).action, 'installed');
+});
+
+test('dev never downloads: archive or cache only, else a clear refusal without a fetch', async (t) => {
+  const w = workspace(t);
+  const src = join(w.root, 'src');
+  mkdirSync(src);
+  const { archive, manifestSha } = writeArchive(src);
+  const release = pinFor(archive, manifestSha);
+  let fetched = 0;
+  await assert.rejects(ensure(w, release, { allowDownload: false, fetch: async () => { fetched++; throw new Error('x'); } }), /not downloaded here.*CANOPI_CLIMATE_ARCHIVE/);
+  assert.equal(fetched, 0);
+  mkdirSync(join(w.root, 'cache'));
+  writeFileSync(join(w.root, 'cache', release.file), readFileSync(archive));
+  assert.equal((await ensure(w, release, { allowDownload: false })).source, 'cache');
+});
+
+// A response whose body sends `first` bytes and then one more chunk every `every` ms (or nothing).
+function slowFetch(body, { first = 1000, every = null } = {}) {
+  return async (_url, init) => {
+    let timer = null;
+    const stream = new ReadableStream({
+      start(c) {
+        c.enqueue(new Uint8Array(body.subarray(0, first)));
+        let at = first;
+        if (every) timer = setInterval(() => { if (at < body.length) { c.enqueue(new Uint8Array(body.subarray(at, at + 10))); at += 10; } }, every);
+      },
+      cancel() { clearInterval(timer); },
+    });
+    init?.signal?.addEventListener('abort', () => clearInterval(timer));
+    return new Response(stream, { status: 200 });
+  };
+}
+
+test('a download that stalls or runs too long is aborted and fails clearly; nothing is cached', async (t) => {
+  const w = workspace(t);
+  const src = join(w.root, 'src');
+  mkdirSync(src);
+  const { archive, manifestSha } = writeArchive(src);
+  const body = readFileSync(archive);
+  const release = pinFor(archive, manifestSha);
+  await assert.rejects(ensure(w, release, { fetch: slowFetch(body), stallMs: 80 }), /no data for 0\.08 s: aborted/);
+  await assert.rejects(ensure(w, release, { fetch: slowFetch(body, { every: 10 }), stallMs: 80, timeoutMs: 200 }), /took over 0\.2 s: aborted/);
+  // A fetch that never answers is cut by the stall timer too.
+  await assert.rejects(ensure(w, release, { fetch: (_u, init) => new Promise((_ok, ko) => init.signal.addEventListener('abort', () => ko(init.signal.reason))), stallMs: 80 }), /no data for 0\.08 s/);
+  assert.deepEqual(existsSync(join(w.root, 'cache')) ? readdirSync(join(w.root, 'cache')) : [], []);
+  assert.equal(existsSync(w.out), false);
+});
+
+test('stale partial downloads of dead runs are removed before downloading; a live run\'s is kept', async (t) => {
+  const w = workspace(t);
+  const src = join(w.root, 'src');
+  mkdirSync(src);
+  const { archive, manifestSha } = writeArchive(src);
+  const release = pinFor(archive, manifestSha);
+  const cache = join(w.root, 'cache');
+  mkdirSync(cache);
+  writeFileSync(join(cache, `${release.file}.part-999999999`), 'stale');
+  writeFileSync(join(cache, `${release.file}.part-${process.ppid}`), 'live');
+  await ensure(w, release, { fetch: fakeFetch(readFileSync(archive)) });
+  assert.deepEqual(readdirSync(cache).sort(), [release.file, `${release.file}.part-${process.ppid}`]);
 });

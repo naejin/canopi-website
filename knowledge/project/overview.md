@@ -7,7 +7,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:20:21Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:35Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:32Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:35:46Z }
 sources:
   - id: readme
     resource: ../../README.md
@@ -18,12 +18,12 @@ sources:
     resource: ../../package.json
     title: package.json
     digest: sha256:4e660919ba94a290
-    last_modified: 2026-11-11T14:19:07Z
+    last_modified: 2026-11-11T14:21:59Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:f7393ab4645afd15
-    last_modified: 2026-11-11T14:19:07Z
+    digest: sha256:d688c0718a0cd93b
+    last_modified: 2026-11-11T14:33:33Z
   - id: context-md
     resource: ../../CONTEXT.md
     title: CONTEXT.md
