@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildMatrix, phases } from '../src/lib/consortium/index.ts';
-import { COLLAPSED_CHIPS, MAX_TRACKS, SHARE_AIM, fillPercent, fold, listGroups, matchesQuery, reasonParts, rowPieces, runReasons, spanOf, startCounts, stepStage, tracksOf, warningCounts } from '../src/islands/consortium/views/tracks.ts';
+import { COLLAPSED_CHIPS, MAX_TRACKS, SHARE_AIM, cellOrder, collatorFor, fillPercent, fold, listGroups, matchesFilters, matchesQuery, nameOrder, reasonParts, rowPieces, runReasons, spanOf, startCounts, stepStage, tracksOf, warningCounts } from '../src/islands/consortium/views/tracks.ts';
 import { FALLBACK_HEIGHT, LOG_MAX, MAX_SILHOUETTES, SCALE_LINES, heightFrac, lineTop, quantile, shapeOf, sidePlants, usualHeight } from '../src/islands/consortium/views/side.ts';
 import { PLOT_H, blob, hash, plantStrokes, topOf } from '../src/islands/consortium/views/draw.ts';
 
@@ -30,14 +30,15 @@ function plant(name, stratum, a, b, { h = null, habit = null, role = 'support', 
   };
 }
 const nameOf = (t) => t.canonical_name;
+const byName = nameOrder(nameOf, 'en');
 
 test('tracksOf packs one stratum on fixed tracks: a plant joins the first track that ends before it starts', () => {
   const a = plant('A', 'high', 0, 1), b = plant('B', 'high', 2, 6), c = plant('C', 'high', 1, 3), d = plant('D', 'low', 0, 6), e = plant('E', 'high', null, null);
-  const tracks = tracksOf([b, c, a, d, e], 'high', nameOf);
+  const tracks = tracksOf([b, c, a, d, e], 'high', byName);
   assert.deepEqual(tracks.map((t) => t.map(nameOf)), [['A', 'B'], ['C']]);
   // Longer first at the same start, then by name.
   const x = plant('X', 'medium', 0, 2), y = plant('Y', 'medium', 0, 5), z = plant('Z', 'medium', 0, 2);
-  assert.deepEqual(tracksOf([x, y, z], 'medium', nameOf).map((t) => t.map(nameOf)), [['Y'], ['X'], ['Z']]);
+  assert.deepEqual(tracksOf([x, y, z], 'medium', byName).map((t) => t.map(nameOf)), [['Y'], ['X'], ['Z']]);
   assert.ok(MAX_TRACKS >= 3 && COLLAPSED_CHIPS <= MAX_TRACKS);
 });
 
@@ -45,6 +46,31 @@ test('rowPieces merges neighbouring empty cells of one kind only', () => {
   const cell = (phase, empty, members = []) => ({ stratum: 'emergent', phase, members, empty, inList: 0, fitting: 0, reasons: {}, bothReasons: false });
   const pieces = rowPieces([cell(0, 'gap'), cell(1, 'gap'), cell(2, 'misfit'), cell(3, 'misfit'), cell(4, null, ['x']), cell(5, 'misfit'), cell(6, null)]);
   assert.deepEqual(pieces.map((p) => (p.kind === 'run' ? `${p.empty}:${p.from}-${p.to}` : `cell:${p.cell.phase}`)), ['gap:0-1', 'misfit:2-3', 'cell:4', 'misfit:5-5', 'cell:6']);
+  assert.ok(pieces.every((p) => !('cells' in p)), 'a run carries its bounds only');
+});
+
+test('cellOrder: a collapsed cell lists the plants starting in it first, so each keeps its one Tab stop', () => {
+  const early = plant('Aa early', 'high', 0, 4), here1 = plant('Zz here', 'high', 2, 3), here2 = plant('Bb here', 'high', 2, 6), mid = plant('Ab mid', 'high', 1, 2);
+  assert.deepEqual(cellOrder([early, here1, mid, here2], 2, byName).map(nameOf), ['Bb here', 'Zz here', 'Aa early', 'Ab mid']);
+});
+
+test('nameOrder sorts with one Intl.Collator per page language', () => {
+  assert.equal(collatorFor('de'), collatorFor('de'), 'one collator per language');
+  const names = ['Zitrone', 'Äpfel', 'Birne'].map((x) => plant(x, 'low', 0, 1));
+  assert.deepEqual(names.slice().sort(nameOrder(nameOf, 'de')).map(nameOf), ['Äpfel', 'Birne', 'Zitrone']);
+  const sv = ['Zitron', 'Äpple'].map((x) => plant(x, 'low', 0, 1));
+  assert.deepEqual(sv.slice().sort(nameOrder(nameOf, 'sv')).map(nameOf), ['Zitron', 'Äpple'], 'the language decides');
+});
+
+test('matchesFilters: layer, a stage the plant grows in, and a job; null filters nothing', () => {
+  const fixer = plant('Alder', 'high', 2, 5, { nitrogen_fixer: true });
+  fixer.functions = [{ function: 'nitrogen_fixer', sources: [] }];
+  const none = { layer: null, stage: null, job: null };
+  assert.ok(matchesFilters(fixer, none));
+  assert.ok(matchesFilters(fixer, { ...none, layer: 'high' }) && !matchesFilters(fixer, { ...none, layer: 'low' }));
+  assert.ok(matchesFilters(fixer, { ...none, stage: 4 }) && !matchesFilters(fixer, { ...none, stage: 1 }));
+  assert.ok(matchesFilters(fixer, { ...none, job: 'feeds_soil' }) && !matchesFilters(fixer, { ...none, job: 'mulch' }));
+  assert.ok(!matchesFilters(plant('N', null, null, null), { ...none, stage: 1 }), 'no placement: in no stage');
 });
 
 test('runReasons counts each plant of a merged run once, beside the members; reasonParts words light and water from the site', () => {
@@ -65,7 +91,7 @@ test('runReasons counts each plant of a merged run once, beside the members; rea
 
 test('listGroups lists each plant once under its start cell, in matrix order; no placement last', () => {
   const a = plant('Apple', 'high', 3, 5), b = plant('Bean', 'emergent', 0, 1), c = plant('Clover', 'low', 1, 3), d = plant('Alder', 'high', 3, 6), e = plant('Ginger', null, null, null);
-  const groups = listGroups([a, b, c, d, e, a], nameOf);
+  const groups = listGroups([a, b, c, d, e, a], byName);
   assert.deepEqual(groups.map((g) => [g.stratum, g.phase, g.plants.map(nameOf)]), [['emergent', 0, ['Bean']], ['high', 3, ['Alder', 'Apple']], ['low', 1, ['Clover']], [null, null, ['Ginger']]]);
   assert.equal(groups.flatMap((g) => g.plants).length, 5, 'each once');
   assert.deepEqual([...startCounts(groups)], [[0, 1], [10, 2], [22, 1]]);
@@ -115,7 +141,7 @@ test('sidePlants: the stage\'s members by layer then height; dashed in the first
   const phacelia = plant('Phacelia', 'low', 1, 3, { h: null });
   const bean = plant('Bean', 'emergent', 0, 1, { h: 3, habit: 'Climber' });
   const once = plant('Once', 'low', 3, 3, { h: 0.4 });
-  const drawn = sidePlants([phacelia, hazel, oak, bean, once], 3, [], nameOf);
+  const drawn = sidePlants([phacelia, hazel, oak, bean, once], 3, [], byName);
   assert.deepEqual(drawn.map((p) => p.taxon.canonical_name), ['Oak', 'Hazel', 'Once', 'Phacelia']);
   const by = Object.fromEntries(drawn.map((p) => [p.taxon.canonical_name, p]));
   assert.equal(by.Oak.first, true, 'Oak starts here and spans more: first stage');
@@ -145,4 +171,11 @@ test('plantStrokes: deterministic, tops out near the drawn height, dashed outlin
   assert.ok(plantStrokes({ id: 'y', shape: 'tree', frac: 0.5, dashed: true }).every((s) => s.fillOpacity === null || s.fillOpacity <= 0.1), 'a dashed plant has a light fill');
   assert.match(blob(0, 0, 2, 2, 0.3, 5), /^M[-\d.]+,[-\d.]+(C[^Z]+)+Z$/);
   assert.ok(hash('a') >= 0 && hash('a') < 1 && hash('a') !== hash('b'));
+});
+
+test('plants and scale lines share one coordinate system: a tree or a shrub of 5 m tops out on the 5 m line', () => {
+  for (const m of SCALE_LINES) for (const shape of ['tree', 'shrub']) for (const id of ['a', 'line', 'zz']) {
+    const top = topOf(plantStrokes({ id, shape, frac: heightFrac(m), dashed: false }));
+    assert.ok(Math.abs(top / PLOT_H * 100 - lineTop(m)) < 1, `${shape} ${id} : ` + `${m} m: tree top ${(top / PLOT_H * 100).toFixed(1)} %, line ${lineTop(m).toFixed(1)} %`);
+  }
 });

@@ -11,7 +11,7 @@ import type { Shape } from './side.ts';
 
 export const PLOT_H = 72, MIN_COL = 16;
 // The widest a crown reaches from its column's centre, in units.
-export const MAX_REACH = 13;
+const MAX_REACH = 13;
 export const DASH = '2 1.6';
 
 export interface Stroke {
@@ -51,15 +51,19 @@ export function plantStrokes({ id, shape, frac, dashed }: { id: string; shape: S
   const gy = PLOT_H, h = Math.max(3, frac * PLOT_H), top = gy - h, seed = hash(id);
   const crown = (d: string): Stroke => ({ d, width: 1.1, fillOpacity: dashed ? 0.08 : 0.32, dashed });
   if (shape === 'tree') {
-    const crownH = h * 0.58, cy = top + (crownH / 2) * 1.11, rx = Math.min(MAX_REACH, Math.max(3.5, crownH * 0.42));
+    // The crown's outline tops out exactly at h, on the scale the lines use.
+    const lumps = 5 + Math.floor(seed * 3), crownH = h * 0.58, rx = Math.min(MAX_REACH, Math.max(3.5, crownH * 0.42));
+    const cy = top - yExtent(blob(0, 0, rx, crownH / 2, seed, lumps))[0];
     return [
       { d: `M-1.3,${gy} L-0.6,${f(cy)} L0.6,${f(cy)} L1.3,${gy} Z`, width: 0.9, fillOpacity: dashed ? 0.1 : 0.6, dashed },
-      crown(blob(0, cy, rx, crownH / 2, seed, 5 + Math.floor(seed * 3))), // its lumps top out at h
+      crown(blob(0, cy, rx, crownH / 2, seed, lumps)),
     ];
   }
   if (shape === 'shrub') {
-    // The blob's lumps reach 11 % past its radius: the bush sits on the ground and tops out at h.
-    const ry = h / 2 / 1.11, cy = gy - h / 2, rx = Math.min(MAX_REACH, Math.max(3.5, h * 0.55));
+    // The bush's outline sits on the ground and tops out at h: its extent grows with ry in proportion,
+    // so it is measured once at ry = 100 (paths are written to 0.1 unit).
+    const rx = Math.min(MAX_REACH, Math.max(3.5, h * 0.55)), [a, b] = yExtent(blob(0, 0, rx, 100, seed, 7));
+    const ry = (100 * h) / (b - a), cy = gy - (b / 100) * ry;
     const stems = [-2, 0, 2].map((dx): Stroke => ({ d: `M${dx / 2},${gy} L${dx},${f(cy)}`, width: 0.9, fillOpacity: null, dashed }));
     return [...stems, crown(blob(0, cy, rx, ry, seed, 7))];
   }
@@ -84,9 +88,26 @@ export function plantStrokes({ id, shape, frac, dashed }: { id: string; shape: S
   return out;
 }
 
-// The topmost y any stroke reaches (for tests: a plant tops out near its drawn height).
-export function topOf(strokes: readonly Stroke[]): number {
-  let min = Infinity;
-  for (const s of strokes) for (const m of s.d.matchAll(/-?\d+(?:\.\d+)?,(-?\d+(?:\.\d+)?)/g)) min = Math.min(min, Number(m[1]));
-  return min;
+// The lowest and highest y a path reaches, sampled along its curves. Reads the M, L, Q and C commands
+// this module writes.
+function yExtent(d: string): [number, number] {
+  let min = Infinity, max = -Infinity, y0 = 0;
+  for (const [, cmd, args] of d.matchAll(/([MLQCZ])([^MLQCZ]*)/g)) {
+    const ys = [...args.matchAll(/-?\d+(?:\.\d+)?,(-?\d+(?:\.\d+)?)/g)].map((m) => Number(m[1]));
+    const k = cmd === 'C' ? 3 : cmd === 'Q' ? 2 : 1;
+    for (let i = 0; i + k <= ys.length; i += k) {
+      const p = [y0, ...ys.slice(i, i + k)];
+      for (let j = 0; j <= 24; j++) {
+        const t = j / 24, u = 1 - t;
+        const y = k === 3 ? u * u * u * p[0] + 3 * u * u * t * p[1] + 3 * u * t * t * p[2] + t * t * t * p[3] : k === 2 ? u * u * p[0] + 2 * u * t * p[1] + t * t * p[2] : p[1];
+        min = Math.min(min, y);
+        max = Math.max(max, y);
+      }
+      y0 = p[k];
+    }
+  }
+  return [min, max];
 }
+
+// The topmost y any stroke reaches (for tests: a plant tops out at its drawn height).
+export const topOf = (strokes: readonly Stroke[]): number => Math.min(...strokes.map((s) => yExtent(s.d)[0]));

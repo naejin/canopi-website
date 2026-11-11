@@ -9,11 +9,12 @@
 // layer's usual height.
 import type { PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
 import { strata } from '../../../lib/consortium/index.ts';
-import { spanOf } from './tracks.ts';
+import { spanOf, type Order } from './tracks.ts';
 
 // One scale at every size: 0.05 m at the ground, 60 m at the top, logarithmic, so a 0.3 m herb and a
 // 40 m linden both read. The lines are drawn at 1 m, 5 m and 20 m.
-export const LOG_MIN = 0.05, LOG_MAX = 60;
+const LOG_MIN = 0.05;
+export const LOG_MAX = 60;
 export const SCALE_LINES = [1, 5, 20] as const;
 const SPAN = Math.log(LOG_MAX / LOG_MIN);
 // A height as a fraction of the plot's height (0 at the ground, 1 at the top), clamped.
@@ -22,7 +23,7 @@ export function heightFrac(m: number | null | undefined): number {
   return Math.min(1, Math.max(0, Math.log(m / LOG_MIN) / SPAN));
 }
 
-export const heightOf = (t: Taxon): number | null => t.traits.height_m?.max ?? null;
+const heightOf = (t: Taxon): number | null => t.traits.height_m?.max ?? null;
 
 // A plant is drawn as a tree, a shrub, a herb or a climber (its habit). A climber is a vine, never a
 // free-standing plant: its recorded size can be a runner's length, never a height it climbs to.
@@ -66,7 +67,7 @@ export interface SidePlant {
 
 // The members growing in one stage, in the order the drawing and its key number them: by layer from
 // the top, then tallest first, then by name. Plants with no placement are not drawn.
-export function sidePlants(members: readonly Taxon[], stage: PhaseOrd, list: readonly Taxon[] = [], nameOf: (t: Taxon) => string = (t) => t.canonical_name): SidePlant[] {
+export function sidePlants(members: readonly Taxon[], stage: PhaseOrd, list: readonly Taxon[] = [], byName: Order = (a, b) => a.canonical_name.localeCompare(b.canonical_name)): SidePlant[] {
   const here = members.filter((t) => {
     const s = spanOf(t);
     return t.stratum && s && s.from <= stage && stage <= s.to;
@@ -77,7 +78,7 @@ export function sidePlants(members: readonly Taxon[], stage: PhaseOrd, list: rea
     const drawn = height !== null && height > 0 ? height : usualHeight(stratum, here, list);
     return { taxon: t, stratum, shape: shapeOf(t), height: height !== null && height > 0 ? height : null, frac: heightFrac(drawn), first, dashed: first || !(height !== null && height > 0) };
   });
-  return out.sort((a, b) => strata.indexOf(a.stratum) - strata.indexOf(b.stratum) || (b.height ?? -1) - (a.height ?? -1) || nameOf(a.taxon).localeCompare(nameOf(b.taxon)));
+  return out.sort((a, b) => strata.indexOf(a.stratum) - strata.indexOf(b.stratum) || (b.height ?? -1) - (a.height ?? -1) || byName(a.taxon, b.taxon));
 }
 
 // Where a scale line sits, in percent from the top of the plot.

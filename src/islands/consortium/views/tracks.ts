@@ -8,9 +8,24 @@
 // - runReasons / reasonParts: why a run of misfit cells is empty, counted once per plant;
 // - listGroups: each plant once, under the cell where it starts (owner row "v2 mockup choices");
 // - warningCounts: the warnings a chip counts (low conflicts are not shown on chips, types.ts Flag);
-// - fold: accent- and case-folded text for the list's search (design check A6: never LIKE).
-import type { Flag, MatrixCell, PhaseOrd, PlantId, Site, SiteKey, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { fits, misfitsBeside, phaseSpan, plantsIn, startCell, strata } from '../../../lib/consortium/index.ts';
+// - fold: accent- and case-folded text for the list's search (design check A6: never LIKE);
+// - nameOrder: plants by name with one Intl.Collator per page language, shared by every view.
+import type { Flag, JobId, MatrixCell, PhaseOrd, PlantId, Site, SiteKey, Stratum, Taxon } from '../../../lib/consortium/index.ts';
+import { fits, jobsOf, misfitsBeside, phaseSpan, plantsIn, startCell, strata } from '../../../lib/consortium/index.ts';
+
+// Names sort in the page's language ("Äpfel" before "Birne" in German, after "Zitron" in Swedish):
+// one collator per language, made once.
+export type Order = (a: Taxon, b: Taxon) => number;
+const collators = new Map<string, Intl.Collator>();
+export function collatorFor(lang: string): Intl.Collator {
+  let c = collators.get(lang);
+  if (!c) { c = new Intl.Collator(lang); collators.set(lang, c); }
+  return c;
+}
+export const nameOrder = (nameOf: (t: Taxon) => string, lang: string): Order => {
+  const c = collatorFor(lang);
+  return (a, b) => c.compare(nameOf(a), nameOf(b));
+};
 
 // Götsch's share of ground cover per layer, an aim given as text, never a bar or a height
 // (coordinator row "v2 mockup choices": "aim ≈ 20 % cover; layers overlap").
@@ -36,10 +51,10 @@ export const spans = (t: Taxon, phase: number): boolean => {
 
 // The members of one stratum on tracks: sorted by start, longer first, then by name; each plant goes
 // on the first track whose last plant ends before it starts. Plants with no placement are left out.
-export function tracksOf(members: readonly Taxon[], stratum: Stratum, nameOf: (t: Taxon) => string): Taxon[][] {
+export function tracksOf(members: readonly Taxon[], stratum: Stratum, byName: Order): Taxon[][] {
   const here = members.filter((t) => t.stratum?.value === stratum && spanOf(t));
   const key = (t: Taxon) => spanOf(t)!;
-  here.sort((a, b) => key(a).from - key(b).from || key(b).to - key(a).to || nameOf(a).localeCompare(nameOf(b)));
+  here.sort((a, b) => key(a).from - key(b).from || key(b).to - key(a).to || byName(a, b));
   const tracks: Taxon[][] = [];
   for (const t of here) {
     const from = key(t).from;
@@ -53,18 +68,26 @@ export function tracksOf(members: readonly Taxon[], stratum: Stratum, nameOf: (t
 // One row as the desktop table draws it: a cell, or a run of neighbouring empty cells of one kind.
 export type RowPiece =
   | { kind: 'cell'; cell: MatrixCell }
-  | { kind: 'run'; empty: 'gap' | 'misfit'; from: PhaseOrd; to: PhaseOrd; cells: MatrixCell[] };
+  | { kind: 'run'; empty: 'gap' | 'misfit'; from: PhaseOrd; to: PhaseOrd };
 export function rowPieces(cells: readonly MatrixCell[]): RowPiece[] {
   const out: RowPiece[] = [];
   for (const cell of cells) {
     const last = out[out.length - 1];
     if (cell.empty && last?.kind === 'run' && last.empty === cell.empty && last.to === cell.phase - 1) {
       last.to = cell.phase;
-      last.cells.push(cell);
-    } else if (cell.empty) out.push({ kind: 'run', empty: cell.empty, from: cell.phase, to: cell.phase, cells: [cell] });
+    } else if (cell.empty) out.push({ kind: 'run', empty: cell.empty, from: cell.phase, to: cell.phase });
     else out.push({ kind: 'cell', cell });
   }
   return out;
+}
+
+// A collapsed cell's plants (a row of more than MAX_TRACKS tracks shows COLLAPSED_CHIPS of them): the
+// plants starting in this cell first, by name, then those continuing from earlier, by start and name.
+// A plant's button is its start piece, so listing the starters first keeps each plant's one Tab stop
+// in view rather than behind "+ N more".
+export function cellOrder(taxa: readonly Taxon[], phase: number, byName: Order): Taxon[] {
+  const from = (t: Taxon) => spanOf(t)?.from ?? -1;
+  return [...taxa].sort((a, b) => Number(from(b) === phase) - Number(from(a) === phase) || from(a) - from(b) || byName(a, b));
 }
 
 // Why a run of misfit cells (one stratum, phases from..to) is empty: the pool's plants growing in any
@@ -98,7 +121,7 @@ export function reasonParts(reasons: Partial<Record<SiteKey, number>>, site: Sit
 // The plant list's groups: each plant once, under the cell where it starts (layer × first stage), in
 // matrix order, names sorted inside a group; plants with no placement yet come last (stratum null).
 export interface ListGroup { stratum: Stratum | null; phase: PhaseOrd | null; plants: Taxon[] }
-export function listGroups(members: readonly Taxon[], nameOf: (t: Taxon) => string): ListGroup[] {
+export function listGroups(members: readonly Taxon[], byName: Order): ListGroup[] {
   const byKey = new Map<number, ListGroup>();
   const none: ListGroup = { stratum: null, phase: null, plants: [] };
   const seen = new Set<PlantId>();
@@ -114,8 +137,18 @@ export function listGroups(members: readonly Taxon[], nameOf: (t: Taxon) => stri
   }
   const out = [...byKey.entries()].sort((a, b) => a[0] - b[0]).map(([, g]) => g);
   if (none.plants.length) out.push(none);
-  for (const g of out) g.plants.sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
+  for (const g of out) g.plants.sort(byName);
   return out;
+}
+
+// The plant list's Layer / Stage / Job filters (mockup NOTES "All plants"): its layer, a stage it
+// grows in (its span holds the stage), one of its jobs; null filters nothing.
+export interface ListFilters { layer: Stratum | null; stage: PhaseOrd | null; job: JobId | null }
+export function matchesFilters(t: Taxon, f: ListFilters): boolean {
+  if (f.layer !== null && t.stratum?.value !== f.layer) return false;
+  if (f.stage !== null && !spans(t, f.stage)) return false;
+  if (f.job !== null && !jobsOf(t).includes(f.job)) return false;
+  return true;
 }
 
 // The warnings a plant's chip and row count: every flag but a low conflict.
