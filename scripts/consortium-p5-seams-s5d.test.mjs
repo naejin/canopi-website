@@ -19,8 +19,8 @@ const at = (name, lookup = SITES[name]) => ({ lat: lookup.lat, lon: lookup.lon, 
 
 // A site with one value per slot: today, then 2041–2070 and 2071–2099 for each scenario.
 const slot = (period, scenario, tmaxWarmC, aridityIndex = 1, tminColdC = 0) => ({ period, scenario, koppen: 'Cfb', koppenTemperatureMarginC: 0, tminColdC, tmaxWarmC, tmeanColdC: 3, tmeanWarmC: 18, aridityIndex });
-function site(mid, late = mid, { arid = [1, 1, 1, 1], tmin = 0 } = {}) {
-  const periods = [slot('1991-2020', 'historical', 25)];
+function site(mid, late = mid, { arid = [1, 1, 1, 1], tmin = 0, today = { tmax: 25, arid: 1 } } = {}) {
+  const periods = today ? [slot('1991-2020', 'historical', today.tmax, today.arid)] : [];
   core.scenarios.forEach((s, i) => periods.push(slot('2041-2070', s, mid[i], arid[i], tmin)));
   core.scenarios.forEach((s, i) => periods.push(slot('2071-2099', s, late[i], arid[i], tmin)));
   return { ...lyon, lookup: { ...lyon.lookup, climate: { ...lyon.lookup.climate, periods } } };
@@ -28,30 +28,45 @@ function site(mid, late = mid, { arid = [1, 1, 1, 1], tmin = 0 } = {}) {
 // The fixture plant: Q95 of the warmest-month maximum 30 °C, so too hot beyond 32 °C; no aridity range.
 const ends = (end) => taxon({ phases: { start: 'placenta_i', end, sources: [] } });
 const withArid = (low) => taxon({ climate: { ...taxon().climate, aridity: { low, median: 1, high: 2, count: 200, basis: 'observed_cells' } } });
+const check = (period, verdict, why, already, agree, of) => ({ period, verdict, why, already, agree, of });
 
 test('futurePeriod: the latest period the phases reach (phase_end ≥ 3 → 2041–2070; climax → 2071–2099); short-lived plants and unplaced ones none', () => {
   assert.deepEqual(core.futurePeriods, ['2041-2070', '2071-2099']);
   for (const [end, want] of [['placenta_i', null], ['placenta_iii', null], ['secondary_i', '2041-2070'], ['secondary_iii', '2041-2070'], ['climax', '2071-2099']]) assert.equal(core.futurePeriod(ends(end)), want, end);
   assert.equal(core.futurePeriod(taxon({ phases: null })), null);
   assert.equal(core.FUTURE_HEAT_MARGIN_C, 2, 'the margin of today\'s range check (owner answer 2)');
+  assert.equal('hasFutureData' in core, false, 'internal');
 });
 
-test('futureCheck: too hot beyond Q95 + 2 °C, near the edge between Q95 and the margin, the scenarios\' agreement, the chosen period', () => {
+test('futureCheck: too hot beyond Q95 + 2 °C, near the edge between Q95 and the margin, the chosen period; agreement: outside for a shown reason, else not outside', () => {
   const t = ends('secondary_iii'); // 2041–2070
-  assert.deepEqual(core.futureCheck(t, site([31, 32.5, 33, 34]), 'ssp245'), { period: '2041-2070', verdict: 'outside', why: ['heat'], agree: 3, of: 4 });
-  assert.deepEqual(core.futureCheck(t, site([31, 32.5, 33, 34]), 'ssp126'), { period: '2041-2070', verdict: 'edge', why: [], agree: 1, of: 4 });
-  assert.deepEqual(core.futureCheck(t, site([29, 29.5, 30, 31]), 'ssp245'), { period: '2041-2070', verdict: 'inside', why: [], agree: 3, of: 4 });
+  assert.deepEqual(core.futureCheck(t, site([31, 32.5, 33, 34]), 'ssp245'), check('2041-2070', 'outside', ['heat'], [], 3, 4));
+  assert.deepEqual(core.futureCheck(t, site([31, 32.5, 33, 34]), 'ssp126'), check('2041-2070', 'edge', [], [], 1, 4), 'stays within in 1 of 4: the others are outside');
+  // Inside with the others near the edge: all 4 stay within (never "1 of 4").
+  assert.deepEqual(core.futureCheck(t, site([31, 29.5, 31, 31.5]), 'ssp245'), check('2041-2070', 'inside', [], [], 4, 4));
   assert.equal(core.futureCheck(t, site([31, 32, 33, 34]), 'ssp245').verdict, 'edge', 'exactly Q95 + 2 °C is still within the margin');
   // A climax plant is checked at 2071–2099 only.
-  assert.deepEqual(core.futureCheck(ends('climax'), site([29, 29, 29, 29], [31, 33, 35, 37]), 'ssp245'), { period: '2071-2099', verdict: 'outside', why: ['heat'], agree: 3, of: 4 });
+  assert.deepEqual(core.futureCheck(ends('climax'), site([29, 29, 29, 29], [31, 33, 35, 37]), 'ssp245'), check('2071-2099', 'outside', ['heat'], [], 3, 4));
   assert.equal(core.futureCheck(ends('secondary_i'), site([29, 29, 29, 29], [40, 40, 40, 40]), 'ssp245').verdict, 'inside', 'a plant gone by climax is not checked at 2071–2099');
 });
 
-test('futureCheck: too dry below the aridity Q05; both reasons together; warm winters left out', () => {
-  assert.deepEqual(core.futureCheck(withArid(0.5), site([29, 29, 29, 29], undefined, { arid: [0.6, 0.45, 0.4, 0.3] }), 'ssp245'), { period: '2071-2099', verdict: 'outside', why: ['arid'], agree: 3, of: 4 });
+test('futureCheck: too dry below the aridity Q05 (no edge band); both reasons; agreement on a shown reason only; warm winters left out', () => {
+  assert.deepEqual(core.futureCheck(withArid(0.5), site([29, 29, 29, 29], undefined, { arid: [0.6, 0.45, 0.4, 0.3] }), 'ssp245'), check('2071-2099', 'outside', ['arid'], [], 3, 4));
   assert.deepEqual(core.futureCheck(withArid(0.5), site([29, 33, 34, 35], undefined, { arid: [0.4, 0.4, 0.4, 0.4] }), 'ssp245').why, ['heat', 'arid']);
+  // Too dry under SSP2-4.5; SSP1-2.6 is outside only for heat, which is not the shown reason: 3 of 4.
+  assert.deepEqual(core.futureCheck(withArid(0.5), site([33, 29, 29, 29], undefined, { arid: [0.6, 0.4, 0.4, 0.4] }), 'ssp245'), check('2071-2099', 'outside', ['arid'], [], 3, 4));
   // The fixture plant's coldest-month Q95 is 2.5 °C: a winter at 15 °C is warmer than anywhere it is recorded, and not a failure.
   assert.equal(core.futureCheck(ends('climax'), site([29, 29, 29, 29], undefined, { tmin: 15 }), 'ssp245').verdict, 'inside');
+});
+
+test('futureCheck: a reason must be a change from today; a plant already beyond the bound today is "already", not outside by the period', () => {
+  const hot = { tmax: 33, arid: 1 }, dry = { tmax: 25, arid: 0.4 };
+  assert.deepEqual(core.futureCheck(ends('climax'), site([34, 34, 34, 34], undefined, { today: hot }), 'ssp245'), check('2071-2099', 'already', [], ['heat'], 4, 4));
+  assert.deepEqual(core.futureCheck(withArid(0.5), site([29, 29, 29, 29], undefined, { arid: [0.3, 0.3, 0.3, 0.3], today: dry }), 'ssp245'), check('2071-2099', 'already', [], ['arid'], 4, 4));
+  // Too hot today, and newly too dry: outside for the new reason only.
+  assert.deepEqual(core.futureCheck(withArid(0.5), site([34, 34, 34, 34], undefined, { arid: [0.4, 0.4, 0.4, 0.4], today: hot }), 'ssp245'), check('2071-2099', 'outside', ['arid'], ['heat'], 4, 4));
+  // No today slot: nothing is known to be already beyond.
+  assert.deepEqual(core.futureCheck(ends('climax'), site([34, 34, 34, 34], undefined, { today: null }), 'ssp245'), check('2071-2099', 'outside', ['heat'], [], 4, 4));
 });
 
 test('futureCheck: null ("not checked") without a site, without projections, without a range, or with nothing to compare', () => {
@@ -60,9 +75,6 @@ test('futureCheck: null ("not checked") without a site, without projections, wit
   assert.equal(core.futureCheck(t, { ...lyon, lookup: null }, 'ssp245'), null, 'the lookup still loading or failed');
   assert.equal(core.futureCheck(t, { ...lyon, lookup: { ...lyon.lookup, climate: null } }, 'ssp245'), null, 'open sea');
   assert.equal(core.futureCheck(t, lyon, 'ssp245'), null, 'today only: no future slot');
-  assert.equal(core.hasFutureData(lyon), false);
-  assert.equal(core.hasFutureData(site([30, 30, 30, 30])), true);
-  assert.equal(core.hasFutureData(null), false);
   assert.equal(core.futureCheck(taxon({ climate: null }), site([40, 40, 40, 40]), 'ssp245'), null, 'range not recorded');
   assert.equal(core.futureCheck(ends('placenta_iii'), site([40, 40, 40, 40]), 'ssp245'), null, 'short-lived: today\'s climate only');
   const noHeat = taxon({ climate: { ...taxon().climate, tmaxWarm: null, aridity: { low: 0.5, median: 1, high: 2, count: 9, basis: 'observed_cells' } } });
@@ -71,97 +83,80 @@ test('futureCheck: null ("not checked") without a site, without projections, wit
   // A missing slot drops out of the agreement; the chosen scenario's own slot missing is "not checked".
   const three = site([33, 33, 33, 33]);
   three.lookup.climate.periods = three.lookup.climate.periods.filter((p) => p.scenario !== 'ssp585');
-  assert.deepEqual(core.futureCheck(t, three, 'ssp245'), { period: '2071-2099', verdict: 'outside', why: ['heat'], agree: 3, of: 3 });
+  assert.deepEqual(core.futureCheck(t, three, 'ssp245'), check('2071-2099', 'outside', ['heat'], [], 3, 3));
   assert.equal(core.futureCheck(t, three, 'ssp585'), null);
   assert.equal(core.scenarioName('ssp245'), 'SSP2-4.5');
   assert.equal(core.scenarioName('ssp585'), 'SSP5-8.5');
   assert.equal(core.periodName('2041-2070'), '2041–2070');
 });
 
-test('futureSummary: members grouped by period and reason, short-lived and unchecked ones apart; no projections: not available', () => {
+test('futureSummary: one entry per member; per period n of m by reason; already outside today, short-lived and unchecked apart, so the counts add up', () => {
   const s = site([33, 33, 33, 33], [29, 29, 29, 29], { arid: [0.4, 0.4, 0.4, 0.4] });
   const a = { ...ends('secondary_ii'), id: 'a' }; // 2041–2070, too hot
   const b = { ...withArid(0.5), id: 'b' }; // climax: 2071–2099, too dry
   const c = { ...ends('climax'), id: 'c' }; // 2071–2099, inside
   const d = { ...ends('placenta_ii'), id: 'd' }; // today only
   const e = { ...taxon({ climate: null }), id: 'e' }; // not checked
-  const sum = core.futureSummary([a, b, c, d, e], s, 'ssp245');
+  const f = { ...withArid(1.5), id: 'f' }; // climax, already too dry today (1 < 1.5)
+  const sum = core.futureSummary([a, b, c, d, e, f], s, 'ssp245');
   assert.equal(sum.available, true);
   assert.deepEqual(sum.periods, [
     { period: '2041-2070', checked: ['a'], outside: ['a'], heat: ['a'], arid: [] },
     { period: '2071-2099', checked: ['b', 'c'], outside: ['b'], heat: [], arid: ['b'] },
   ]);
+  assert.deepEqual(sum.already, { heat: [], arid: ['f'] });
   assert.deepEqual(sum.todayOnly, ['d']);
   assert.deepEqual(sum.notChecked, ['e']);
+  assert.deepEqual(Object.keys(sum.checks).sort(), ['a', 'b', 'c', 'f']);
+  assert.equal(sum.checks.f.verdict, 'already');
   const none = core.futureSummary([a, b], lyon, 'ssp245');
   assert.equal(none.available, false);
   assert.deepEqual(none.periods, []);
   assert.deepEqual(none.notChecked, ['a', 'b']);
 });
 
-// ---- the numbers of the design check (p5-design-check.md §C "Future"), on the installed export ----
+// ---- the installed export: whole lists through the panel's own summary (no range pre-filter; when
+// S5c's range.ts lands the panel sees the filtered pool's members, a merge follow-up) ----
 
 const ROOT = new URL('../', import.meta.url);
 const index = JSON.parse(readFileSync(new URL('src/data/consortium-index.json', ROOT), 'utf8'));
 const realFile = new URL(`public${index.files[0].url}`, ROOT);
-async function realPools(climates) {
+let pools = null;
+async function realPools() {
+  if (pools) return pools;
   const { openBytes } = await import('../src/islands/consortium/data/load.ts');
   const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
   const real = await openBytes(new Uint8Array(gunzipSync(readFileSync(realFile))), { releaseId: index.release_id, climates: index.climates });
-  try {
-    const src = createSqliteSource(real.db, { images: index.images });
-    return Object.fromEntries(await Promise.all(climates.map(async (c) => [c, await src.pool(c)])));
-  } finally { real.db.close?.(); }
+  const src = createSqliteSource(real.db, { images: index.images });
+  pools = Object.fromEntries(await Promise.all(['Temperate', 'Tropical', 'Mediterranean'].map(async (c) => [c, await src.pool(c)])));
+  return pools;
 }
-// Today's range check as S5c's range.ts applies it (owner answer 2): coldest-month minimum on both
-// sides and warmest-month maximum on the hot side, `margin` °C beyond Q05/Q95; aridity not a filter
-// (the design check's own count used margin 0 and the aridity Q05 too).
-function insideToday(t, today, margin, arid = false) {
-  const c = t.climate;
-  if (!c) return false;
-  if (c.tminCold?.low != null && today.tminColdC < c.tminCold.low - margin) return false;
-  if (margin && c.tminCold?.high != null && today.tminColdC > c.tminCold.high + margin) return false;
-  if (c.tmaxWarm?.high != null && today.tmaxWarmC > c.tmaxWarm.high + margin) return false;
-  if (arid && c.aridity?.low != null && today.aridityIndex != null && today.aridityIndex < c.aridity.low) return false;
-  return true;
-}
-// Count, over plants inside today, those outside (n) of those checked (m), per period.
-const count = (sum) => Object.fromEntries(sum.periods.map((p) => [p.period, [p.outside.length, p.checked.length]]));
-// The design check's measure: no margin (Q95 itself), the 2041–2070 slot for every plant reaching
-// phase 3 (climax plants too), and 2071–2099 for climax plants.
-const shift = (t) => (t.climate?.tmaxWarm ? { ...t, climate: { ...t.climate, tmaxWarm: { ...t.climate.tmaxWarm, high: t.climate.tmaxWarm.high - core.FUTURE_HEAT_MARGIN_C } } } : t);
-function designCheck(pool, s) {
-  const today = s.lookup.climate.periods[0];
-  const reach = pool.filter((t) => core.futurePeriod(t) && t.climate && insideToday(t, today, 0, true)).map(shift);
-  const as41 = reach.map((t) => (core.futurePeriod(t) === '2071-2099' ? { ...t, phases: { ...t.phases, end: 'secondary_iii' } } : t));
-  const climax = reach.filter((t) => core.futurePeriod(t) === '2071-2099');
-  const out = (list) => [list.filter((t) => core.futureCheck(t, s, 'ssp245')?.verdict === 'outside').length, list.length];
-  return { mid: out(as41), late: out(climax) };
-}
-
-test('real export: the design check\'s flips reproduce (Lyon on the Temperate list 51/100 and 19/26, Manaus 16/140 and 9/31, Seville 10/13, Oslo 0) with its no-margin measure', { skip: !existsSync(realFile) && 'no real install' }, async () => {
-  const pools = await realPools(['Temperate', 'Tropical', 'Mediterranean']);
-  assert.deepEqual(designCheck(pools.Temperate, at('lyon')), { mid: [51, 100], late: [19, 26] });
-  assert.deepEqual(designCheck(pools.Tropical, at('manaus')), { mid: [16, 140], late: [9, 31] });
-  assert.deepEqual(designCheck(pools.Mediterranean, at('seville')).mid, [10, 13]);
-  const oslo = designCheck(pools.Temperate, at('oslo'));
-  assert.deepEqual([oslo.mid[0], oslo.late[0]], [0, 0]);
+const counts = (sum) => ({
+  ...Object.fromEntries(sum.periods.map((p) => [p.period, { n: p.outside.length, m: p.checked.length, heat: p.heat.length, arid: p.arid.length }])),
+  already: { heat: sum.already.heat.length, arid: sum.already.arid.length }, todayOnly: sum.todayOnly.length, notChecked: sum.notChecked.length,
 });
 
-test('real export: under the shipped rule (2 °C margin, latest period) Lyon 28/97 + 17/33, Manaus 2/99 + 1/26, Seville 29/44 + 13/13, Oslo 0', { skip: !existsSync(realFile) && 'no real install' }, async () => {
-  const pools = await realPools(['Temperate', 'Tropical', 'Mediterranean']);
-  const run = (pool, name) => {
-    const s = at(name);
-    const today = s.lookup.climate.periods[0];
-    return count(core.futureSummary(pool.filter((t) => insideToday(t, today, core.FUTURE_HEAT_MARGIN_C)), s, 'ssp245'));
-  };
-  assert.deepEqual(run(pools.Temperate, 'lyon'), { '2041-2070': [28, 97], '2071-2099': [17, 33] });
-  assert.deepEqual(run(pools.Tropical, 'manaus'), { '2041-2070': [2, 99], '2071-2099': [1, 26] });
-  assert.deepEqual(run(pools.Mediterranean, 'seville'), { '2041-2070': [29, 44], '2071-2099': [13, 13] });
-  assert.deepEqual(run(pools.Temperate, 'oslo'), { '2041-2070': [0, 90], '2071-2099': [0, 29] });
-  // Lyon's reasons: 21 too hot and 7 too dry by 2041–2070 (none both); 17 too hot by 2071–2099.
-  const lyonSum = core.futureSummary(pools.Temperate.filter((t) => insideToday(t, SITES.lyon.climate.periods[0], 2)), at('lyon'), 'ssp245');
-  assert.deepEqual(lyonSum.periods.map((p) => [p.heat.length, p.arid.length]), [[21, 7], [17, 0]]);
+// Cross-checked with an independent sqlite3 count of the same rule (whole lists of 200). Reasons count
+// only as changes from today: at Lyon 5 of the 7 plants too dry by 2041–2070 are already too dry today.
+const EXPECT = {
+  lyon: { '2041-2070': { n: 23, m: 92, heat: 21, arid: 2 }, '2071-2099': { n: 17, m: 33, heat: 17, arid: 0 }, already: { heat: 5, arid: 5 }, todayOnly: 65, notChecked: 0 },
+  manaus: { '2041-2070': { n: 2, m: 110, heat: 0, arid: 2 }, '2071-2099': { n: 1, m: 31, heat: 0, arid: 1 }, already: { heat: 0, arid: 0 }, todayOnly: 59, notChecked: 0 },
+  seville: { '2041-2070': { n: 49, m: 64, heat: 29, arid: 32 }, '2071-2099': { n: 14, m: 14, heat: 13, arid: 8 }, already: { heat: 51, arid: 49 }, todayOnly: 71, notChecked: 0 },
+  oslo: { '2041-2070': { n: 0, m: 102, heat: 0, arid: 0 }, '2071-2099': { n: 0, m: 33, heat: 0, arid: 0 }, already: { heat: 0, arid: 0 }, todayOnly: 65, notChecked: 0 },
+};
+
+test('real export, SSP2-4.5: whole lists through futureSummary (Lyon Temperate, Manaus Tropical, Seville Mediterranean, Oslo Temperate)', { skip: !existsSync(realFile) && 'no real install' }, async () => {
+  const p = await realPools();
+  const run = (list, name) => counts(core.futureSummary(p[list], at(name), 'ssp245'));
+  assert.deepEqual(run('Temperate', 'lyon'), EXPECT.lyon);
+  assert.deepEqual(run('Tropical', 'manaus'), EXPECT.manaus);
+  assert.deepEqual(run('Mediterranean', 'seville'), EXPECT.seville);
+  assert.deepEqual(run('Temperate', 'oslo'), EXPECT.oslo);
+  for (const [list, name] of [['Temperate', 'lyon'], ['Mediterranean', 'seville']]) {
+    const sum = core.futureSummary(p[list], at(name), 'ssp245');
+    const total = sum.periods.reduce((n, x) => n + x.checked.length, 0) + sum.todayOnly.length + sum.notChecked.length + new Set([...sum.already.heat, ...sum.already.arid]).size;
+    assert.equal(total, p[list].length, `${name}: the counts add up to the list`);
+  }
 });
 
 // ---- the marks and the views ----
@@ -176,7 +171,9 @@ test('futureMarks: an ink note (severity note) when outside on every surface, ne
   assert.equal(dry[0].key, 'future.mark.both');
   const edge = ctx({ location: loc, scenario: 'ssp126' });
   assert.deepEqual(futureMarks(t, edge, 'chip'), []);
-  assert.deepEqual(futureMarks(t, edge, 'details'), [{ kind: 'future', key: 'future.long.edge', vars: { period: '2071–2099', scenario: 'SSP1-2.6' }, severity: 'note', state: 'edge' }]);
+  assert.deepEqual(futureMarks(t, edge, 'details'), [{ kind: 'future', key: 'future.long.edge', vars: { period: '2071–2099', scenario: 'SSP1-2.6', agree: 1, of: 4 }, severity: 'note', state: 'edge' }]);
+  const hotToday = ctx({ location: site([34, 34, 34, 34], undefined, { today: { tmax: 33, arid: 1 } }) });
+  for (const s of core.markSurfaces) assert.deepEqual(futureMarks(t, hotToday, s), [], `already outside today: today's range mark (S5c) says it, not the future mark (${s})`);
   assert.deepEqual(futureMarks(t, ctx({ location: site([29, 29, 29, 29]) }), 'details'), [], 'inside: no mark');
   assert.deepEqual(futureMarks(t, ctx({ location: null }), 'details'), [], 'no location: nothing');
   assert.deepEqual(futureMarks(t, ctx({ location: lyon }), 'details'), [], 'no projections: no mark (the panel says "not checked")');

@@ -426,8 +426,13 @@ test('P5-18 (S5d future summary): at Lyon on the Temperate list the panel leads 
   assert.match(await text(page, '[data-future-summary]'), /\d+ of \d+ .*2041–2070/);
   assert.equal(await page.evaluate(() => window.__ctTest.store.scenario.value), 'ssp245');
   assert.equal(await page.$eval('input[name="ct-scenario"]:checked', (e) => e.value), 'ssp245', 'SSP2-4.5 checked by default');
-  // The lede says what is compared: model ensemble means (CHELSA), ranges with cultivation included, not reviewed.
-  assert.match(await text(page, '#ct-future-h + p'), /ensemble.*CHELSA.*cultivation included.*not reviewed/);
+  // The lede says what is compared: constrained CMIP6 changes on CHELSA v2.1, ranges with cultivation included, not reviewed.
+  assert.match(await text(page, '#ct-future-h + p'), /CMIP6 model ensemble \(Beck et al\., 2023\).*CHELSA v2\.1.*1981–2010.*cultivation included.*not reviewed/);
+  // The members not counted in "n of m" are counted on their own line, so the numbers add up.
+  const lines = await page.$$eval('[data-future-verdict]', (els) => els.map((e) => e.getAttribute('data-future-verdict')));
+  const uncounted = lines.filter((v) => v === 'not-checked').length;
+  const said = ((await text(page, '[data-future-uncounted]')) ?? '').match(/\d+/g)?.reduce((n, d) => n + Number(d), 0) ?? 0;
+  assert.equal(said, uncounted, 'the uncounted line adds up to the members outside "n of m"');
   // Each member has its line; one outside carries an ink mark (a note, not the ochre warning) on its chip.
   const verdicts = await page.$$eval('[data-future-verdict]', (els) => els.map((e) => e.getAttribute('data-future-verdict')));
   const members = await page.evaluate(() => window.__ctTest.store.members.value.length);
@@ -441,7 +446,8 @@ test('P5-18 (S5d future summary): at Lyon on the Temperate list the panel leads 
   await page.click('input[name="ct-scenario"][value="ssp585"]');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.scenario.value === 'ssp585', { timeout: 5000 }).then(() => true, () => false), 'the radio writes store.scenario');
   assert.ok(await outside() >= before);
-  assert.match(await text(page, '[data-future-plant]'), /SSP5-8\.5|Short-lived|Not checked/);
+  const named = await page.$$eval('[data-future-verdict="inside"], [data-future-verdict="edge"], [data-future-verdict="outside"]', (els) => els.map((e) => e.textContent));
+  assert.ok(named.length > 0 && named.every((t) => t.includes('SSP5-8.5')), `every checked line names the chosen scenario (${named.join(' | ')})`);
   // Without a location nothing shows.
   await page.evaluate(() => { window.__ctTest.store.location.value = null; });
   assert.ok(await page.waitForFunction(() => !document.querySelector('[data-future]') && !document.querySelector('[data-mark="future"]'), { timeout: 5000 }).then(() => true, () => false), 'no location: no panel and no future mark');
