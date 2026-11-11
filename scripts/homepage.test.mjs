@@ -84,8 +84,8 @@ test('every English key is used by a page or a script, and every script string r
   const en = JSON.parse(read('i18n/translations/en.json'));
   const source = [...dir('components'), ...dir('scripts'), read('layouts/Base.astro'), read('data/network.ts')].join('\n');
   // Keys built from a prefix in components (installer names and details, plant roles, countries, bibliography themes, climate zones).
-  // consortium.* keys are asked for without their prefix (T('…') in src/scripts/consortium/): scripts/consortium-page.test.mjs
-  // checks each of them is asked for literally, or is a run-time prefix plus an id of the data core.
+  // consortium.* keys are asked for without their prefix (T('…') in the island, src/islands/consortium/);
+  // the coordinator's used/unused key test for them comes when S4 is done and the v1 keys are pruned.
   const dynamic = ['edition.installer.', 'download.detail.', 'design.role.', 'network.country.', 'bibliography.theme.', 'climate.', 'consortium.'];
   for (const key of Object.keys(en)) {
     const used = source.includes(`'${key}'`) || dynamic.some((prefix) => key.startsWith(prefix));
@@ -270,5 +270,23 @@ test('the consortium keys sit with their families, apart from the tool page\'s c
     assert.equal(at('nav.consortium.full'), at('nav.consortium') + 1, `${file}: nav.consortium.full follows nav.consortium`);
     assert.equal(at('learn.consortium.link'), at('bibliography.guides') + 1, `${file}: learn.consortium.link follows bibliography.guides`);
     assert.equal(at('home.consortium.action') + 1, at('start.all'), `${file}: home.consortium.* comes before start.all`);
+  }
+});
+
+// Review C2: each consortium stream appends its keys in its own block, after its block key, so no
+// two streams edit the same lines. The four block keys close each file's consortium.* keys, in order;
+// S1's keys (consortium.load.*) sit between consortium.block.s1 and consortium.block.s2.
+test('the consortium stream blocks: four block keys in order at the end of every locale file', () => {
+  const root = new URL('../src/i18n/translations/', import.meta.url);
+  const blocks = ['consortium.block.s1', 'consortium.block.s2', 'consortium.block.s3', 'consortium.block.s4'];
+  for (const file of readdirSync(root).filter((name) => name.endsWith('.json'))) {
+    const keys = Object.keys(JSON.parse(readFileSync(new URL(file, root), 'utf8')));
+    const at = blocks.map((k) => keys.indexOf(k));
+    assert.ok(at.every((i) => i >= 0), `${file}: every block key is there`);
+    assert.deepEqual([...at].sort((a, b) => a - b), at, `${file}: block keys in stream order`);
+    const s1 = keys.slice(at[0] + 1, at[1]);
+    assert.ok(s1.length && s1.every((k) => k.startsWith('consortium.load.')), `${file}: S1's block holds its consortium.load.* keys`);
+    assert.ok(keys.slice(0, at[0]).every((k) => !k.startsWith('consortium.load.')), `${file}: no consortium.load.* key before S1's block`);
+    for (const k of keys.slice(at[0])) assert.ok(k.startsWith('consortium.') || k.startsWith('correction.'), `${file}: ${k} inside the consortium stream blocks`);
   }
 });

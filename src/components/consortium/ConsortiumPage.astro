@@ -29,7 +29,8 @@ const tr = (key: string) => t('consortium.' + key, lang);
 
 const prefix = 'consortium.';
 const strings: Record<string, string> = {};
-for (const key of Object.keys(en)) if (key.startsWith(prefix)) strings[key.slice(prefix.length)] = t(key, lang);
+// consortium.block.s1…s4 only mark where each stream appends its keys; they never reach the page.
+for (const key of Object.keys(en)) if (key.startsWith(prefix) && !key.startsWith('consortium.block.')) strings[key.slice(prefix.length)] = t(key, lang);
 
 // Guides exist in en and fr; every other locale links the English guide (marked hreflang="en").
 const guideLang = lang === 'fr' ? 'fr' : 'en';
