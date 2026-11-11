@@ -763,6 +763,7 @@
   "consortium.range.empty.title": "목록의 어떤 식물도 이 터와 비슷한 기후에서 기록되지 않았습니다",
   "consortium.range.empty.body": "이곳은 가장 추운 달 평균이 {cold} °C, 가장 더운 달이 {hot} °C입니다. 위치가 맞는지 확인하거나, 모든 식물에서 검색해 직접 추가하세요. 관측된 분포 범위 밖의 식물에는 경고가 표시됩니다.",
   "consortium.range.empty.search": "모든 식물 검색",
+  "consortium.range.unavailable": "분포 범위 확인을 사용할 수 없습니다: 도구 일부를 불러오지 못했습니다. 식물은 확인 없이 표시됩니다. 페이지를 새로 고쳐 다시 시도하세요.",
   "consortium.estimate.short": "추정",
   "consortium.estimate.fromMediterranean": "추정: 지중해성 목록과 같이 배치",
   "consortium.estimate.fromTropical": "추정: 열대 목록과 같이 배치",

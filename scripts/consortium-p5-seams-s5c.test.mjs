@@ -202,7 +202,7 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
   // What the code reads: range-marks.ts and pool.tsx keys.
   const used = ['range.edge', 'range.edgeShort', 'range.edgeDetails', 'range.outside', 'range.outsideShort', 'range.outsideDetails', 'range.unknown', 'range.unknownShort', 'range.drier', 'range.wetter', 'range.aridityNotChecked',
     'range.side.cold', 'range.side.mild', 'range.side.hot', 'range.pool.count', 'range.pool.edge', 'range.pool.left', 'range.pool.caveat', 'range.pool.aridityNotChecked',
-    'range.empty.title', 'range.empty.body', 'range.empty.search', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed'];
+    'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailable', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed'];
   assert.deepEqual(mine, used.map((k) => `consortium.${k}`));
   const holes = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().filter((x, i, a) => a.indexOf(x) === i);
   for (const l of locales) {
@@ -280,4 +280,24 @@ test('PlantSource.interactions: a borrowed climate reads the rows of the curated
   assert.deepEqual([...await zones(fixture, 'Temperate')].sort(), [null, 'Temperate'].sort(), 'a curated climate: its own rows, as in P2');
   assert.ok((await zones(real, 'Arid')).has('Mediterranean'), 'real export: an Arid pool sees a Mediterranean-specific row');
   assert.equal((await zones(real, 'Boreal')).has('Tropical'), false, 'real export: Boreal sees no Tropical row');
+});
+
+test('PlantSource.interactions: a borrowed climate keeps one row per (subject, object, type, agent): the general row first, then the first list in NEAREST_LISTS order', async () => {
+  const pv = (rows) => rows.filter((r) => r.subject.name === 'Phaseolus vulgaris' && r.object.name === 'Zea mays' && r.type === 'intercropped_yield_gain');
+  assert.deepEqual(pv(await real.interactions('Subtropical')).map((r) => r.climate_zone), ['Tropical'], 'Subtropical: Mediterranean, Tropical, Temperate → the Tropical row only');
+  assert.deepEqual(pv(await real.interactions('Continental')).map((r) => r.climate_zone), ['Temperate'], 'Continental: Temperate first');
+  assert.deepEqual(pv(await real.interactions('Temperate')).map((r) => r.climate_zone), ['Temperate'], 'a curated climate: its own row');
+  const key = (r) => [r.subject.rank, r.subject.name, r.object.rank, r.object.name, r.type, r.agent ?? ''].join('|');
+  for (const z of ['Subtropical', 'Arid', 'Continental', 'Boreal']) {
+    const keys = (await real.interactions(z)).map(key);
+    assert.equal(new Set(keys).size, keys.length, `${z}: no duplicate rows`);
+  }
+  // conflicts() and pairings() then see each pair once.
+  const pool = await real.pool('Subtropical');
+  const bean = pool.find((t) => t.canonical_name === 'Phaseolus vulgaris'), maize = pool.find((t) => t.canonical_name === 'Zea mays');
+  assert.ok(bean && maize, 'both in the Subtropical pool');
+  assert.equal(core.pairings(bean, [maize], await real.interactions('Subtropical')).length, 1, 'one yield-gain pairing');
+  const rows = await real.interactions('Arid');
+  const all = core.conflicts(pool, rows).map((c) => `${c.a.id} ${c.b.id} ${c.type} ${c.agent ?? ''}`);
+  assert.equal(new Set(all).size, all.length, 'conflicts(): each pair and kind once');
 });

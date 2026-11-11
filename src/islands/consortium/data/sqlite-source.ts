@@ -241,7 +241,17 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
     async interactions(c) {
       const zones = info.climates.includes(c) ? [c] : NEAREST_LISTS[c].filter((z) => info.climates.includes(z));
       const inZones = interactionsIn(zones);
-      const rows = db.selectObjects(`SELECT * FROM interactions WHERE interaction IN (${inZones}) ORDER BY interaction`, zones);
+      const all = db.selectObjects(`SELECT * FROM interactions WHERE interaction IN (${inZones}) ORDER BY interaction`, zones);
+      // A borrowed climate may read the same pairing from several lists: one row per (subject, object,
+      // type, agent), the general row first, then the first list of the NEAREST_LISTS order (so
+      // conflicts() and pairings() see each once). A curated climate's rows are unique already.
+      const rank = (r: Row) => (r.climate_zone == null ? 0 : 1 + zones.indexOf(r.climate_zone as ClimateZone));
+      const seen = new Set<string>(), kept = new Set<Row>();
+      for (const r of [...all].sort((x, y) => rank(x) - rank(y))) {
+        const key = [r.subject_rank, r.subject, r.object_rank, r.object, r.type, r.agent ?? ''].join('\u0000');
+        if (!seen.has(key)) { seen.add(key); kept.add(r); }
+      }
+      const rows = all.filter((r) => kept.has(r));
       const notes = group(db.selectObjects(`SELECT interaction, locale, text FROM interaction_notes WHERE interaction IN (${inZones})`, zones), (r) => Number(r.interaction));
       const sources = group(db.selectObjects(`SELECT interaction, source FROM interaction_sources WHERE interaction IN (${inZones}) ORDER BY interaction, ord`, zones), (r) => Number(r.interaction));
       const agentNames = group(db.selectObjects('SELECT agent, locale, name FROM agent_names'), (r) => String(r.agent));

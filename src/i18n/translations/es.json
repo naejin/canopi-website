@@ -763,6 +763,7 @@
   "consortium.range.empty.title": "Ninguna planta de la lista está registrada en un clima como el de este terreno",
   "consortium.range.empty.body": "Aquí el mes más frío tiene una media de {cold} °C y el más cálido de {hot} °C. Comprueba que la ubicación es correcta, o busca entre todas las plantas y añade algunas a mano: cada una fuera de su rango observado muestra un aviso.",
   "consortium.range.empty.search": "Buscar entre todas las plantas",
+  "consortium.range.unavailable": "Las comprobaciones de rango no están disponibles: una parte de la herramienta no se cargó. Las plantas se muestran sin ellas. Recarga la página para intentarlo de nuevo.",
   "consortium.estimate.short": "estimación",
   "consortium.estimate.fromMediterranean": "estimación: colocada como en la lista Mediterráneo",
   "consortium.estimate.fromTropical": "estimación: colocada como en la lista Tropical",

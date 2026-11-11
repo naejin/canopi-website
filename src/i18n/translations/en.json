@@ -763,6 +763,7 @@
   "consortium.range.empty.title": "No plant in the list is recorded in a climate like this site’s",
   "consortium.range.empty.body": "Here the coldest month averages {cold} °C and the warmest {hot} °C. Check that the location is right, or search all plants and add some by hand: each one outside its observed range shows a warning.",
   "consortium.range.empty.search": "Search all plants",
+  "consortium.range.unavailable": "Range checks are unavailable: part of the tool did not load. Plants are listed without them. Reload the page to try again.",
   "consortium.estimate.short": "estimate",
   "consortium.estimate.fromMediterranean": "estimate: placed as on the Mediterranean list",
   "consortium.estimate.fromTropical": "estimate: placed as on the Tropical list",

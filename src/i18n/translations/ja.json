@@ -763,6 +763,7 @@
   "consortium.range.empty.title": "リストのどの植物も、この土地に似た気候では記録されていません",
   "consortium.range.empty.body": "ここでは最寒月の平均が {cold} °C、最暖月が {hot} °C です。場所が正しいか確認するか、すべての植物から検索して手で加えてください。観測された分布範囲の外にある植物には警告が出ます。",
   "consortium.range.empty.search": "すべての植物を検索",
+  "consortium.range.unavailable": "分布範囲のチェックは利用できません：ツールの一部を読み込めませんでした。植物はチェックなしで表示されています。ページを再読み込みしてもう一度お試しください。",
   "consortium.estimate.short": "推定",
   "consortium.estimate.fromMediterranean": "推定：地中海性のリストと同じ配置",
   "consortium.estimate.fromTropical": "推定：熱帯のリストと同じ配置",

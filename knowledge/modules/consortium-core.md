@@ -4,9 +4,9 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future, native, soil and lazy marks seams), the rules S1 ported, and the format 4 schema 2 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:26:46Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:10:09Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:03:20Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:39:16Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -97,17 +97,17 @@ sources:
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
     digest: sha256:f9ed6f0d46d4fdb5
-    last_modified: 2026-11-11T19:12:04Z
+    last_modified: 2026-11-11T19:27:07Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
     digest: sha256:a55b5edbf206fab1
-    last_modified: 2026-11-11T19:12:04Z
+    last_modified: 2026-11-11T19:27:07Z
   - id: future-ts
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
     digest: sha256:e809a90edddde9cb
-    last_modified: 2026-11-11T19:12:04Z
+    last_modified: 2026-11-11T19:27:07Z
   - id: native-ts
     resource: ../../src/lib/consortium/native.ts
     title: src/lib/consortium/native.ts
@@ -156,13 +156,13 @@ sources:
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
-    digest: sha256:b13dfb1fd2cea4fe
-    last_modified: 2026-11-11T19:08:04Z
+    digest: sha256:1cd8a08fc8121e6a
+    last_modified: 2026-11-11T19:33:28Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
     digest: sha256:727242c3c971ce8f
-    last_modified: 2026-11-11T19:12:04Z
+    last_modified: 2026-11-11T19:27:07Z
   - id: consortium-p5-seams-s5e-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5e.test.mjs
     title: scripts/consortium-p5-seams-s5e.test.mjs

@@ -763,6 +763,7 @@
   "consortium.range.empty.title": "列表中没有植物在与此场地相似的气候中有记录",
   "consortium.range.empty.body": "这里最冷月平均 {cold} °C，最热月平均 {hot} °C。请确认位置是否正确，或在全部植物中搜索并手动添加：超出观测分布范围的植物都会显示警告。",
   "consortium.range.empty.search": "搜索全部植物",
+  "consortium.range.unavailable": "分布范围检查不可用：工具的一部分未能加载。植物列表未经此检查。请重新加载页面再试。",
   "consortium.estimate.short": "估计",
   "consortium.estimate.fromMediterranean": "估计：按地中海列表放置",
   "consortium.estimate.fromTropical": "估计：按热带列表放置",

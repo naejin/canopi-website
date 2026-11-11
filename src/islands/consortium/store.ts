@@ -71,21 +71,36 @@ export const interactionSets = signal<Partial<Record<ClimateZone, Interaction[]>
 // ---- computed ----
 // The plants of the chosen climate, or null until they are read.
 // P5 S5c: with a site climate, also until the range rule has loaded, so nothing draws from an
-// unfiltered list (a pending "Suggest plants" waits for it as for the pool).
+// unfiltered list (a pending "Suggest plants" waits for it as for the pool). If it cannot load
+// (offline after a first visit), the pool itself, unfiltered as in P2, with a notice (rangeFailed).
 export const pool = computed<Taxon[] | null>(() => {
   const c = climate.value;
   const p = c ? pools.value[c] ?? null : null;
-  return p && siteClimate.value && !rangeRule.value ? null : p;
+  return p && siteClimate.value && !rangeRule.value && !rangeFailed.value ? null : p;
 });
 // The range rule (core range.ts, owner answer 2) arrives with the pool feature chunk, loaded only once
 // the site location has a climate, so it stays off the first run (decision row "Island JavaScript
 // budget for P5"). The page asks it nothing without one.
 export const rangeRule = signal<RangeRule | null>(null);
+// The rule's chunk did not load: range checks are off (P2's unfiltered pool) until the next location
+// with a climate tries again.
+export const rangeFailed = signal(false);
+// The rule's load in flight (settled once rangeRule or rangeFailed is set): loadPool waits for it, so a
+// caller that awaited the pool finds it readable.
+let rangeLoad: Promise<void> | null = null;
+const withRule = <T>(p: Promise<T>): Promise<T> => (siteClimate.peek() && !rangeRule.peek() && rangeLoad ? Promise.all([p, rangeLoad]).then(([x]) => x) : p);
 // Whether the location gave a climate (core siteToday is non-null; inlined to keep the rule off the first run).
 export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
 effect(() => {
+  const at = location.value; // each new location with a climate tries again
   if (!siteClimate.value || rangeRule.peek()) return;
-  import('./views/pool/pool.tsx').then((m) => { rangeRule.value = m.rangeRule; }, console.error);
+  rangeFailed.value = false;
+  rangeLoad = import('./views/pool/pool.tsx').then((m) => { rangeRule.value = m.rangeRule; }, (err: unknown) => {
+    console.error(err);
+    if (location.peek() !== at || rangeRule.peek()) return;
+    rangeFailed.value = true;
+    showToast(T('range.unavailable'), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
+  });
 });
 // What suggestions and lists draw from (P5 S5c, owner answer 2): the pool without the plants outside
 // their observed range at the site location (core range.ts withinRange); the pool itself without one.
@@ -182,7 +197,7 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
   const src = source.peek();
   if (!src) return Promise.resolve(null);
   const have = pools.peek()[c];
-  if (have) return Promise.resolve(have);
+  if (have) return withRule(Promise.resolve(have));
   let p = reading.get(c);
   if (!p) {
     // A read of a source replaced meanwhile (Retry) neither writes nor fails the new load.
@@ -200,7 +215,7 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
     });
     reading.set(c, p);
   }
-  return p;
+  return withRule(p);
 }
 
 // Sets the open database's PlantSource, closing the one before it first (Retry opens a new
@@ -236,6 +251,8 @@ export function suggestMembers(): boolean {
   if (!p || guestsPending.value.length) return false;
   const keep = [...new Set([...crops.value, ...kept.value])];
   const rule = rangeRule.value;
+  // Nothing fits the site: no suggestion (it could only be an empty matrix); Start shows why.
+  if (rule?.none(p, location.value)) return false;
   const s = suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
   kept.value = keep;
   members.value = s.members;

@@ -30,6 +30,7 @@ import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
 import { has, realDb } from './helpers.mjs';
 import { EXPECTED, NOMINATIM, SITES, lookupAt } from './location-fixtures.mjs';
+import { encodeLink } from '../../src/lib/consortium/state.ts';
 
 let h;
 before(async () => { h = await startHarness(); });
@@ -402,6 +403,52 @@ test('P5-14c (S5c matrix counts): a cell\'s "N fit" leaves out plants outside th
   assert.equal(counted, 101, 'the matrix counts the 101 of 200 Mediterranean plants kept at Seville (design check §C)');
   await page.evaluate(() => { window.__ctTest.store.location.value = null; });
   assert.equal(await sum(), before, 'without a location the counts are P2\'s');
+});
+
+test('P5-14e (S5c range chunk offline): if the pool chunk cannot load, the tool falls back to the unfiltered pool with a notice, and Suggest, Start crops, a link and Swap all work', async () => {
+  const page = await tool();
+  const cdp = await page.createCDPSession();
+  await cdp.send('Network.enable');
+  await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/pool.*'] });
+  await choose(page, 'Mediterranean');
+  await atSite(page, 'seville');
+  assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'a notice on Start: range checks unavailable');
+  assert.match(await text(page, '[data-range-unavailable]') ?? '', /Reload/);
+  assert.match(await text(page, '.ct-toast') ?? '', /range/i, 'and a toast with Reload');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.pool.value?.length === 200, { timeout: 10_000 }).then(() => true, () => false), 'the unfiltered pool (P2)');
+  assert.ok(await has(page, '.ct-chips', 10_000), 'Start\'s crops are listed');
+  const suggest = await page.waitForFunction(() => [...document.querySelectorAll('.ct-cta button')].find((b) => b.textContent.trim() === 'Suggest plants'), { timeout: 10_000 }).catch(() => null);
+  assert.ok(suggest, 'Suggest plants');
+  await suggest.click();
+  assert.ok(await has(page, '[data-plant-id]', 10_000), 'Suggest gives a matrix');
+  const id = await page.evaluate(() => window.__ctTest.store.members.value[0]);
+  await page.evaluate((m) => window.__ctTest.openSheet('swap', m), id);
+  assert.ok(await has(page, '.ct-swap .ct-rows li', 10_000), 'Swap lists alternatives');
+  await page.keyboard.press('Escape');
+  const ids = await realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
+  const link = `#${encodeLink({ climate: 'Temperate', country: null, site: { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' }, members: ids.slice(0, 5), kept: [], removed: [], guests: [], crops: [], stage: null }, { Temperate: ids })}`;
+  await page.evaluate((h) => { location.hash = h; }, link);
+  assert.ok(await page.waitForFunction((want) => { const { store } = window.__ctTest; return store.climate.value === 'Temperate' && store.view.value === 'matrix' && want.every((x) => store.members.value.includes(x)); }, { timeout: 15_000 }, ids.slice(0, 5)).then(() => true, () => false), 'a pasted link opens its consortium');
+});
+
+test('P5-14f (S5c Suggest while the range rule loads): when nothing fits, a Suggest pressed before the rule arrives stays on Start with the nothing-fits state', async () => {
+  const page = await tool();
+  // Temperate (curated): no panel, so the rule's chunk is not fetched before the location; no
+  // Temperate plant holds Yakutsk.
+  await choose(page, 'Temperate');
+  const cdp = await page.createCDPSession();
+  await cdp.send('Network.enable');
+  await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 2500, downloadThroughput: -1, uploadThroughput: -1 });
+  await atSite(page, 'yakutsk');
+  const suggest = await page.waitForFunction(() => [...document.querySelectorAll('.ct-cta button')].find((b) => b.textContent.trim() === 'Suggest plants'), { timeout: 5_000 }).catch(() => null);
+  assert.ok(suggest, 'Suggest is there while the rule loads');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.rangeRule.value), null, 'the rule has not arrived yet');
+  await suggest.click();
+  assert.ok(await has(page, '[data-pool-empty]', 20_000), 'the nothing-fits state once the rule is in');
+  await new Promise((r) => setTimeout(r, 500));
+  const state = await page.evaluate(() => { const { store } = window.__ctTest; return { view: store.view.value, members: store.members.value.length }; });
+  assert.deepEqual(state, { view: 'start', members: 0 }, 'still on Start, no empty matrix');
+  assert.equal(await page.$('.ct-cta button[aria-busy="true"]'), null, 'the pending Suggest is cleared');
 });
 
 test('P5-15 (S5c near-edge mark): a Mediterranean plant whose range ends within 2 °C of Seville\'s climate carries "near the edge"', async () => {

@@ -763,6 +763,7 @@
   "consortium.range.empty.title": "Keine Pflanze der Liste ist in einem Klima wie dem dieses Standorts verzeichnet",
   "consortium.range.empty.body": "Hier liegt der kälteste Monat im Mittel bei {cold} °C und der wärmste bei {hot} °C. Prüfe, ob der Ort stimmt, oder suche unter allen Pflanzen und füge einige von Hand hinzu: Jede außerhalb ihres beobachteten Verbreitungsgebiets zeigt einen Hinweis.",
   "consortium.range.empty.search": "Alle Pflanzen durchsuchen",
+  "consortium.range.unavailable": "Die Prüfung der Verbreitung ist nicht verfügbar: Ein Teil des Werkzeugs wurde nicht geladen. Die Pflanzen werden ohne sie aufgelistet. Lade die Seite neu, um es erneut zu versuchen.",
   "consortium.estimate.short": "Schätzung",
   "consortium.estimate.fromMediterranean": "Schätzung: eingeordnet wie in der Liste Mediterran",
   "consortium.estimate.fromTropical": "Schätzung: eingeordnet wie in der Liste Tropisch",
