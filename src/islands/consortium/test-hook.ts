@@ -10,9 +10,18 @@ import * as store from './store.ts';
 declare const __CT_TEST_HOOK__: boolean;
 export const hookOn: boolean = __CT_TEST_HOOK__;
 
-export const testFault = { sheets: false };
+// sheets: the next sheet chunk fails (views/Details.tsx Lazy). later: the after-the-matrix chunk
+// (views/lazy.tsx) fails, or waits until released.
+export const testFault: { sheets: boolean; later: 'fail' | 'hold' | null; release: Promise<void> | null } = { sheets: false, later: null, release: null };
 
 if (__CT_TEST_HOOK__) {
   const probe = globalThis as { __ctTest?: unknown };
-  if (probe.__ctTest === true) probe.__ctTest = { store, openSheet: store.openSheet, failSheets: () => { testFault.sheets = true; } };
+  let release = () => {};
+  if (probe.__ctTest === true) probe.__ctTest = {
+    store, openSheet: store.openSheet,
+    failSheets: () => { testFault.sheets = true; },
+    failLater: () => { testFault.later = 'fail'; },
+    holdLater: () => { testFault.later = 'hold'; testFault.release = new Promise((r) => { release = r; }); },
+    releaseLater: () => { testFault.later = null; release(); },
+  };
 }
