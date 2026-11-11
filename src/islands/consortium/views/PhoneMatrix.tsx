@@ -14,7 +14,7 @@ import { P, T } from '../strings.ts';
 import { PHASE_ORDS, SHARE_AIM, spans } from './tracks.ts';
 import { ChevronIcon, Explain, Marks, StageBar, byName, cellName, layerName, nameOf, openDetails, phasePlain, plantLabel } from './StageBar.tsx';
 import { StageStepper } from './StageStepper.tsx';
-import { CellReason, EmptyNotice, FillMeter, FreeCell, GlyphKey } from './Matrix.tsx';
+import { AddMore, CellReason, EmptyNotice, FillMeter, FreeCell, GlyphKey } from './Matrix.tsx';
 
 const kindOf = (cell: MatrixCell, empty: boolean) => (cell.empty ? 'cannot' : empty ? 'potential' : cell.members.length ? 'filled' : 'free');
 
@@ -108,6 +108,7 @@ function StageLayer({ stratum, cell, empty }: { stratum: Stratum; cell: MatrixCe
             <ChevronIcon dir="right" />
           </button>
         ))}
+        <AddMore stratum={stratum} phase={s} phone />
       </section>
     );
   }

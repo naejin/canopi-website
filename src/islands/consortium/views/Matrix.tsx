@@ -124,6 +124,18 @@ export function EmptyNotice({ phone: small = false }: { phone?: boolean }) {
   );
 }
 
+// A filled cell's own "+" (owner request): opens Add for the cell as a free cell's "+ Add" does; last in
+// the cell, so the keyboard reaches the cell's plants first. phone: the stage view's "+ Add" line.
+export function AddMore({ stratum, phase, phone: small = false }: { stratum: Stratum; phase: PhaseOrd; phone?: boolean }) {
+  return (
+    <div class={small ? 'ct-pmore' : 'ct-lane-add'}>
+      <button type="button" class={small ? 'ct-add-cell' : 'ct-add-more'} data-add-filled aria-label={T('matrix.addTo', { cell: cellName(stratum, phase) })} onClick={() => openAdd({ cell: { stratum, from: phase, to: phase } })}>
+        {small ? `+ ${T('matrix.add')}` : '+'}
+      </button>
+    </div>
+  );
+}
+
 export function FreeCell({ stratum, phase, fitting }: { stratum: Stratum; phase: PhaseOrd; fitting: number }) {
   return (
     <>
@@ -270,6 +282,7 @@ function Row({ stratum, cells, taxa, empty }: { stratum: Stratum; cells: MatrixC
                   </button>
                 </div>
               )}
+              <AddMore stratum={stratum} phase={p} />
             </td>
           );
         }
@@ -279,6 +292,7 @@ function Row({ stratum, cells, taxa, empty }: { stratum: Stratum; cells: MatrixC
               const t = track.find((x) => spans(x, p));
               return <div class="ct-lane" key={i}>{t && <Chip taxon={t} phase={p} />}</div>;
             })}
+            <AddMore stratum={stratum} phase={p} />
           </td>
         );
       })}

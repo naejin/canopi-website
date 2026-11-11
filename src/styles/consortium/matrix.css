@@ -139,6 +139,16 @@
   padding: 2px 10px; font-size: 13.5px; font-weight: 600; min-height: 32px; cursor: pointer;
 }
 .ct .ct-add-cell:hover { border-color: var(--text); }
+/* A filled cell's "+" (owner request): its own line under the lanes, at the cell's end, so it never
+   narrows a chip; quiet (dashed, like a free cell), stronger when the cell is hovered or it has focus,
+   never hidden, so touch and keyboard readers see it. */
+.ct .ct-lane-add { display: flex; justify-content: flex-end; margin: var(--cell-gap) 6px 0; }
+.ct .ct-add-more {
+  width: 28px; height: 24px; padding: 0; border: 1.5px dashed var(--border-strong); border-radius: 6px; background: var(--surface);
+  color: var(--text-secondary); font: inherit; font-weight: 600; font-size: 15px; line-height: 1; cursor: pointer;
+}
+.ct .ct-mx td:hover .ct-add-more, .ct .ct-add-more:focus-visible { border-color: var(--text); color: var(--text); }
+.ct .ct-pmore { padding: 6px 12px 10px; border-top: 1px solid var(--border); }
 .ct .ct-cell-count { margin: 0 8px 4px; font-size: 13px; font-weight: 600; color: var(--text-secondary); }
 .ct .ct-more-cell { margin: 4px 6px 0; font-size: 13px; }
 

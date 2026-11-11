@@ -821,3 +821,61 @@ test('UX4: Jobs counts the jobs that cover every stage; each stage gap has a "Fi
     await done(page);
   });
 });
+
+// Owner request (coordinator, item 7): adding a plant to a cell that already has plants is one click.
+// Every filled cell (desktop table; each filled layer of the phone stage view) has its own "+" named
+// "Add a plant: {cell}", after the cell's plants in the keyboard order, opening Add for that cell as a
+// free cell's "+ Add" does; it never cuts a plant name.
+test('Item 7: a filled cell has its own "+", which opens Add for that cell, and the plant added lands there; no name is cut by it at 960 or 1280 px', async (t) => {
+  const plants = await temperate();
+  const byName = new Map(plants.map((p) => [p.name, p]));
+  for (const width of [1280, 960]) {
+    const page = await suggested({ width, theme: 'light' });
+    const filled = await page.$$eval('table.ct-mx td', (tds) => tds.filter((td) => td.querySelector('.ct-pchip')).map((td) => {
+      const plus = td.querySelector('[data-add-filled]');
+      const chips = [...td.querySelectorAll('button')];
+      return { plus: plus?.getAttribute('aria-label') ?? null, last: chips.at(-1) === plus, h: plus ? plus.getBoundingClientRect().height : 0, shown: plus ? getComputedStyle(plus).visibility === 'visible' && Number(getComputedStyle(plus).opacity) > 0.3 : false };
+    }));
+    assert.ok(filled.length > 0, `${width} px: filled cells`);
+    for (const c of filled) {
+      assert.match(c.plus ?? '', /^Add a plant: /, `${width} px: every filled cell has its "+"`);
+      assert.ok(c.last, `${width} px: "+" after the cell's plants in the keyboard order`);
+      assert.ok(c.h >= 24, `${width} px: a target of 24 px at least (${c.h})`);
+      assert.ok(c.shown, `${width} px: shown without hover`);
+    }
+    const cut = () => page.$$eval('.ct-mx .ct-pchip .ct-nm > span:first-child', (els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).length);
+    const withPlus = await cut();
+    await page.addStyleTag({ content: '[data-add-filled] { display: none !important; }' });
+    assert.equal(withPlus, await cut(), `${width} px: the "+" cuts no name`);
+    await done(page);
+  }
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    await page.locator(aria('tab', 'All plants')).click();
+    assert.ok(await has(page, '.ct-views [data-plant-id]', 5000));
+    const members = new Set(await memberIds(page));
+    await page.locator(aria('tab', 'Layers × stages')).click();
+    // A filled cell with a plant still to add (the fixture's site is "not sure": every plant fits).
+    const addable = (cell) => plants.filter((p) => p.stratum === cell.stratum && p.a <= cell.to && p.b >= cell.from && !members.has(p.id)).map((p) => p.name).sort();
+    let label = null;
+    for (let i = 0; i < 7 && !label; i++) {
+      const labels = await page.$$eval('[data-add-filled]', (bs) => bs.map((b) => b.getAttribute('aria-label')));
+      label = labels.find((l) => addable(cellIn(l)).length > 0) ?? null;
+      if (!label && v.width < 960) await page.locator(aria('button', 'Later stage')).click();
+      else if (!label) break;
+    }
+    assert.ok(label, 'a filled cell with its "+" and a plant still to add');
+    const cell = cellIn(label);
+    await page.click(`[data-add-filled][aria-label="${label}"]`);
+    assert.ok(await findAx(page, { role: 'dialog', name: new RegExp(`^Add to ${esc(en[`consortium.stratum.${cell.stratum}`])} · `) }), `"+" opens Add for ${label}`);
+    const expected = addable(cell);
+    assert.deepEqual((await addRows(page)).sort(), expected, `the plants of ${label}`);
+    const name = await page.$eval('.ct-add .ct-sheet-body > ul.ct-rows > li:has(input[type="checkbox"]) .ct-sci', (e) => e.textContent.trim());
+    await page.click('.ct-add .ct-sheet-body > ul.ct-rows > li:has(input[type="checkbox"]) input[type="checkbox"]');
+    await page.locator(aria('button', 'Add 1 plant')).click();
+    const id = byName.get(name).id;
+    const where = v.width < 960 ? `.ct-pstratum[aria-label="${en[`consortium.stratum.${cell.stratum}`]}"] [data-plant-id="${id}"]` : `tr[data-stratum-row="${cell.stratum}"] [data-plant-id="${id}"]`;
+    assert.ok(await has(page, where, 5000), `${name} lands in ${label}`);
+    await done(page);
+  });
+});
