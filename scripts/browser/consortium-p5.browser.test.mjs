@@ -422,7 +422,7 @@ test('P5-26 (S5c borrowed list from a link): #v=4&c=subtropical without o= opens
 
 // ---- S5d: future check ----
 
-test('P5-18 (S5d future summary): at Lyon on the Temperate list the panel leads with "n of m outside by 2041–2070" under SSP2-4.5', { todo: 'S5d: future check not built' }, async () => {
+test('P5-18 (S5d future summary): at Lyon on the Temperate list the panel leads with "n of m outside by 2041–2070" under SSP2-4.5', async () => {
   const page = await tool();
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');
@@ -430,15 +430,43 @@ test('P5-18 (S5d future summary): at Lyon on the Temperate list the panel leads 
   assert.ok(await has(page, '[data-future-summary]', 10_000), 'the future panel');
   assert.match(await text(page, '[data-future-summary]'), /\d+ of \d+ .*2041–2070/);
   assert.equal(await page.evaluate(() => window.__ctTest.store.scenario.value), 'ssp245');
+  assert.equal(await page.$eval('input[name="ct-scenario"]:checked', (e) => e.value), 'ssp245', 'SSP2-4.5 checked by default');
+  // The lede says what is compared: constrained CMIP6 changes on CHELSA v2.1, ranges with cultivation included, not reviewed.
+  assert.match(await text(page, '#ct-future-h + p'), /CMIP6 model ensemble \(Beck et al\., 2023\).*CHELSA v2\.1.*1981–2010.*cultivation included.*not reviewed/);
+  // The members not counted in "n of m" are counted on their own line, so the numbers add up.
+  const lines = await page.$$eval('[data-future-verdict]', (els) => els.map((e) => e.getAttribute('data-future-verdict')));
+  const uncounted = lines.filter((v) => v === 'not-checked').length;
+  const said = ((await text(page, '[data-future-uncounted]')) ?? '').match(/\d+/g)?.reduce((n, d) => n + Number(d), 0) ?? 0;
+  assert.equal(said, uncounted, 'the uncounted line adds up to the members outside "n of m"');
+  // Each member has its line; one outside carries an ink mark (a note, not the ochre warning) on its chip.
+  const verdicts = await page.$$eval('[data-future-verdict]', (els) => els.map((e) => e.getAttribute('data-future-verdict')));
+  const members = await page.evaluate(() => window.__ctTest.store.members.value.length);
+  assert.equal(verdicts.length, members, 'one line per member');
+  assert.ok(verdicts.includes('outside'), `Lyon's suggestion has a member outside by its period (${verdicts})`);
+  assert.ok(await has(page, '[data-mark="future"][data-mark-surface="chip"]', 10_000), 'a future mark on a chip');
+  assert.equal(await page.$('[data-mark="future"].ct-flag'), null, 'drawn in ink, apart from the ochre warnings');
+  // The scenario control: a real radio; SSP5-8.5 never puts fewer plants outside than SSP2-4.5.
+  const outside = () => page.$$eval('[data-future-verdict="outside"]', (els) => els.length);
+  const before = await outside();
+  await page.click('input[name="ct-scenario"][value="ssp585"]');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.scenario.value === 'ssp585', { timeout: 5000 }).then(() => true, () => false), 'the radio writes store.scenario');
+  assert.ok(await outside() >= before);
+  const named = await page.$$eval('[data-future-verdict="inside"], [data-future-verdict="edge"], [data-future-verdict="outside"]', (els) => els.map((e) => e.textContent));
+  assert.ok(named.length > 0 && named.every((t) => t.includes('SSP5-8.5')), `every checked line names the chosen scenario (${named.join(' | ')})`);
+  // Without a location nothing shows.
+  await page.evaluate(() => { window.__ctTest.store.location.value = null; });
+  assert.ok(await page.waitForFunction(() => !document.querySelector('[data-future]') && !document.querySelector('[data-mark="future"]'), { timeout: 5000 }).then(() => true, () => false), 'no location: no panel and no future mark');
 });
 
-test('P5-19 (S5d not checked): with no future data for the site the panel says "not checked", never "fine"', { todo: 'S5d: future check not built' }, async () => {
+test('P5-19 (S5d not checked): with no future data for the site the panel says "not checked", never "fine"', async () => {
   const page = await tool();
   const full = await lookupAt(...SITES.lyon);
   await atSite(page, 'lyon', { climate: { ...full.climate, periods: full.climate.periods.slice(0, 1) } });
   await choose(page, 'Temperate');
   await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
   assert.ok(await has(page, '[data-future="not-checked"]', 10_000), 'the future panel says "not checked"');
+  assert.match(await text(page, '[data-future="not-checked"]'), /not checked/);
+  assert.equal(await page.$('[data-future-summary]'), null, 'no count that could read as "fine"');
   assert.equal(await page.$('[data-mark="future"]'), null);
 });
 
