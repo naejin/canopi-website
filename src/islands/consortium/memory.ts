@@ -18,6 +18,12 @@
 // - The shared site climate: localStorage SITE_CLIMATE (knowledge/decisions/climate-ux.md), written
 //   when the reader picks a climate on Start, and read when nothing else names one. A link's or a
 //   guide's climate never writes it.
+// - The site location (P5 S5b): localStorage LOCATION_STORE { lat, lon, source, label }, apart from the
+//   consortium and never in a link or the address; a link carries the climate cell's centre (`o=`)
+//   only when the reader ticks "include my location" in Share (owner answer 5). A visit that opens no
+//   link looks the saved location up again once the plant list is open; a link's `o=` replaces it.
+//   A country from the location ("from your location") replaces a guess, never a country the reader
+//   chose or a link carried, and is written into a link only with the tick.
 // Every storage call may throw (private mode, blocked cookies): each one is caught, and the tool
 // works without it; Share then says the link keeps the consortium (§5 "Storage unavailable").
 //
@@ -25,15 +31,17 @@
 // countryAtStart, the save record, shareState, guessCountry and cropExamples (ported from v1
 // logic.js, memory.js and crops.js). The wiring (startMemory) reads and writes the store's signals.
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
-import type { ClimateZone, DecodedLink, Interaction, LinkNotice, PhaseOrd, PlantId, ShareState, Site, Taxon } from '../../lib/consortium/index.ts';
-import { decodeLink, encodeLink, linkClimates, readPreset, zoneOf, LINK_VERSION, MAX_CROPS } from '../../lib/consortium/index.ts';
+import type { ClimateZone, DecodedLink, Interaction, LinkNotice, LinkOrigin, LocationSource, PhaseOrd, PlantId, ShareState, Site, SiteLocation, Taxon } from '../../lib/consortium/index.ts';
+import { decodeLink, encodeLink, linkClimates, linkOrigin, readPreset, zoneOf, LINK_VERSION, MAX_CROPS } from '../../lib/consortium/index.ts';
 import type { Country } from './store.ts';
 import * as store from './store.ts';
 import { focusView } from './focus.ts';
+import { loadLocationStep } from './views/location/load.ts';
 
 export const STORE = 'canopi-consortium';
 export const COUNTRY_STORE = 'canopi-country';
 export const SITE_CLIMATE = 'canopi-climate';
+export const LOCATION_STORE = 'canopi-location';
 const NO_COUNTRY = '-';
 
 // ---- storage, guarded ----
@@ -103,6 +111,24 @@ export function oldRecord(text: string | null): boolean {
 
 export { zoneOf };
 export const siteId = (z: ClimateZone): string => z.toLowerCase();
+
+// ---- the saved site location (P5 S5b) ----
+
+export interface SavedLocation { lat: number; lon: number; source: LocationSource; label?: string }
+const LOCATION_SOURCES: readonly LocationSource[] = ['geo', 'search', 'map', 'link'];
+export const locationRecord = (l: Pick<SiteLocation, 'lat' | 'lon' | 'source' | 'label'>): string =>
+  JSON.stringify(l.label ? { lat: l.lat, lon: l.lon, source: l.source, label: l.label } : { lat: l.lat, lon: l.lon, source: l.source });
+// A saved location read back, or null when it is not one.
+export function readLocation(text: string | null): SavedLocation | null {
+  const v = parsed(text);
+  if (!v) return null;
+  const { lat, lon, source, label } = v;
+  if (typeof lat !== 'number' || typeof lon !== 'number' || !(Math.abs(lat) <= 90) || !(Math.abs(lon) <= 180)) return null;
+  if (!LOCATION_SOURCES.includes(source as LocationSource)) return null;
+  const out: SavedLocation = { lat, lon, source: source as LocationSource };
+  if (typeof label === 'string' && label && label.length <= 200) out.label = label;
+  return out;
+}
 
 // ---- how the page opens ----
 
@@ -338,8 +364,10 @@ const waitForSource = (): Promise<void> => new Promise((resolve) => {
 });
 
 // The current state as a fragment, against the climate's and the guest lists' ids.
-// of: a consortium set aside (Start's draft shows), in place of the store's.
-export function currentFragment(of: store.Consortium | null = null): string | null {
+// of: a consortium set aside (Start's draft shows), in place of the store's. origin: the site's cell
+// centre, given only for Share's "include my location" tick: the link then carries `o=` and a country
+// from the location (owner answer 5); the address bar and the save never pass it.
+export function currentFragment(of: store.Consortium | null = null, { origin = null }: { origin?: LinkOrigin | null } = {}): string | null {
   const c = of?.climate ?? store.climate.peek();
   if (!c) return null;
   const guests = of?.guests ?? store.guests.peek();
@@ -351,7 +379,7 @@ export function currentFragment(of: store.Consortium | null = null): string | nu
   return encodeLink(shareState({
     climate: c, country: of?.country ?? store.country.peek(), site: of?.site ?? store.site.peek(), members: of?.members ?? store.members.peek(),
     kept: of?.kept ?? store.kept.peek(), removed: of?.removed ?? store.removed.peek(), guests, crops: of?.crops ?? store.crops.peek(), stage: of?.stage ?? store.stage.peek(),
-  }), known);
+  }, { location: origin !== null }), known, { origin });
 }
 
 // Where the shown consortium's country came from, as the save and history.state keep it.
@@ -422,12 +450,18 @@ export async function restore(fragment: string, { from, src = null, keep = false
     if (!current()) return false;
     if (!known) return refuse('failed', { failed: true });
     const d = decodeLink(fragment, known);
+    // A link's site location (`o=`, P5 S5b): set in the same batch, its lookup still to come, so the
+    // link's climate, site answers and country stay as the link says; the lookup (the location chunk)
+    // fills in the climate facts only, labelled "from the shared link, approximate".
+    const origin = from === 'link' ? linkOrigin(fragment) : null;
     // One batch; the watcher then saves it and writes the address (plants no longer in the list are
     // left out of the address, §5).
     quietly(() => batch(() => {
       applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen');
       notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut, pasted: null, failed: false };
+      if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', lookup: null };
     }));
+    if (origin) void settleLocation('link');
     return true;
   } finally {
     if (inFlight.peek()?.id === id) inFlight.value = null;
@@ -540,6 +574,34 @@ export function chooseCountry(code: string | null): void {
   store.country.value = { code, source: 'chosen' };
   memory.write(COUNTRY_STORE, code ?? NO_COUNTRY);
   pickingCountry.value = false;
+}
+
+// ---- the site location (P5 S5b) ----
+
+// The location chunk looks up store.location (a link's `o=`, or the saved location) and settles it.
+// how: 'link' (the link's answers win; no country, no suggestion) or 'saved' (looked up again).
+function settleLocation(how: 'link' | 'saved', saved: SavedLocation | null = null): Promise<void> {
+  return loadLocationStep().then((m) => m.settle(how, saved), (err: unknown) => {
+    attempt(() => console.error(`Consortium: the location step did not load: ${(err as Error).message}`));
+    if (how === 'link') store.location.value = null;
+  });
+}
+// The site location kept on this device (never in a link), or removed (null).
+export function keepLocation(l: Pick<SiteLocation, 'lat' | 'lon' | 'source' | 'label'> | null): void {
+  if (l) memory.write(LOCATION_STORE, locationRecord(l));
+  else memory.remove(LOCATION_STORE);
+}
+// A country from the site location ("from your location"; null: none there, e.g. offshore). It
+// replaces a guess, no country, or an earlier location's; a country the reader chose or a link
+// carried stays. reader: the reader gave the location now (an action); otherwise (the saved location
+// looked up again) the write is quiet.
+export function locationCountry(code: string | null, reader: boolean): void {
+  const now = store.country.peek();
+  if (now.source === 'chosen' || now.source === 'link') return;
+  const next: Country = code ? { code, source: 'location' } : now.source === 'location' ? { code: null, source: null } : now;
+  if (next.code === now.code && next.source === now.source) return;
+  if (reader) store.country.value = next;
+  else quietly(() => { store.country.value = next; });
 }
 
 // Change site: the consortium set aside, Start's draft seeded from it.
@@ -656,6 +718,11 @@ export function startMemory(): void {
     // the effect ends, after `quietly`, and a guessed country is not the reader acting.
     if (g && g !== store.country.peek().code) queueMicrotask(() => quietly(() => { store.country.value = { code: g, source: 'guess' }; }));
   });
+
+  // The saved site location, looked up again once the plant list is open (so its tiles never compete
+  // with the database); a link brings its own location or none.
+  const savedLocation = how.kind === 'link' ? null : readLocation(memory.read(LOCATION_STORE));
+  if (savedLocation) void waitForSource().then(() => { if (!store.location.peek()) void settleLocation('saved', savedLocation); });
 
   if (how.kind === 'link') void restore(how.fragment, { from: 'link' });
   else if (how.kind === 'saved') void restore(how.fragment, { from: 'saved', src: how.src });

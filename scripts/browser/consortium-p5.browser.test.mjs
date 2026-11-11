@@ -74,10 +74,14 @@ async function locationState(page, timeout = 15_000) {
 const text = (page, sel) => page.$eval(sel, (e) => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => null);
 const checkedCard = (page) => page.$eval('input[name="ct-climate"]:checked', (e) => e.value).catch(() => null);
 const storeClimate = (page) => page.evaluate(() => window.__ctTest.store.climate.value);
-// The result line ready, the suggested card confirmed (owner answer 1), then a consortium in the matrix.
+// The result line ready, the suggested card confirmed (owner answer 1), then a consortium in the matrix
+// and its Share panel open (S5b: the panel opens on its button; the specs read its field).
 async function confirmAndSuggest(page) {
   await page.click('[data-location-confirm]');
   await page.evaluate(async () => { const { store } = window.__ctTest; await store.loadPool(store.climate.value); store.suggestMembers(); store.view.value = 'matrix'; });
+  assert.ok(await has(page, '.ct-action-row button', 10_000), 'the matrix\'s actions');
+  await page.click('.ct-action-row button');
+  assert.ok(await has(page, '#ct-share-field', 10_000), 'the Share panel');
 }
 const search = async (page, q) => {
   await page.type('input[data-location-search]', q);
@@ -140,9 +144,10 @@ test('P5-0c (commit 0 harness): Nominatim and OpenFreeMap are stubbed, WebGL can
   ]), ['failed', 'failed']);
 });
 
-test('P5-0d (commit 0 seams): today the start step shows no location controls, no marks and no likely offers, and calls no third party', async () => {
+test('P5-0d (commit 0 seams): the start step calls no third party before a click (S5b: its controls show, nothing sent), no marks and no likely offers', async () => {
   const page = await tool({ nominatim: 'fixture', mapTiles: 'stub' });
-  assert.equal(await page.$('[data-location-action]'), null);
+  assert.ok(await has(page, '[data-location-action="geo"]', 4000), 'S5b: the location controls show');
+  assert.deepEqual(await page.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name).filter((n) => /maplibre|\/data\/climate\//.test(n))), [], 'no MapLibre and no climate tile before a click');
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');
   await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
@@ -155,7 +160,7 @@ test('P5-0d (commit 0 seams): today the start step shows no location controls, n
 
 // ---- S5b: Where is your site? ----
 
-test('P5-1 (S5b location granted): "Use my location" fills the result line and the climate card from the reader', { todo: 'S5b: location controls not built' }, async () => {
+test('P5-1 (S5b location granted): "Use my location" fills the result line and the climate card from the reader', async () => {
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon } });
   await locationControls(page);
@@ -172,7 +177,7 @@ test('P5-1 (S5b location granted): "Use my location" fills the result line and t
   assert.equal(await page.evaluate(() => window.__ctTest.store.country.value.source), 'location', 'the country "from your location"');
 });
 
-test('P5-2 (S5b location denied): a denied permission says so and leaves the manual climate cards', { todo: 'S5b: location controls not built' }, async () => {
+test('P5-2 (S5b location denied): a denied permission says so and leaves the manual climate cards', async () => {
   const page = await tool({ geolocation: 'denied' });
   await locationControls(page);
   await page.click('[data-location-action="geo"]');
@@ -182,7 +187,7 @@ test('P5-2 (S5b location denied): a denied permission says so and leaves the man
   assert.equal(await checkedCard(page), null, 'no card pre-checked');
 });
 
-test('P5-3 (S5b location timeout): a location that never comes ends in "timeout", with search and map offered', { todo: 'S5b: location controls not built' }, async () => {
+test('P5-3 (S5b location timeout): a location that never comes ends in "timeout", with search and map offered', async () => {
   const page = await tool({ geolocation: 'timeout' });
   await locationControls(page);
   await page.click('[data-location-action="geo"]');
@@ -194,7 +199,7 @@ test('P5-3 (S5b location timeout): a location that never comes ends in "timeout"
   assert.equal(await locationState(unavailable), 'unavailable');
 });
 
-test('P5-4 (S5b search hit): Enter searches Nominatim once, in the page language, without email; the place sets the site', { todo: 'S5b: place search not built' }, async () => {
+test('P5-4 (S5b search hit): Enter searches Nominatim once, in the page language, without email; the place sets the site', async () => {
   const page = await tool({ lang: 'fr', nominatim: 'fixture' });
   await locationControls(page);
   assert.equal(page.nominatim.length, 0, 'nothing is sent before the reader asks');
@@ -209,7 +214,7 @@ test('P5-4 (S5b search hit): Enter searches Nominatim once, in the page language
   assert.equal((await page.evaluate(() => window.__ctTest.store.location.value)).source, 'search');
 });
 
-test('P5-5 (S5b search no result / offline): an unknown place and an offline search each say so, nothing changed', { todo: 'S5b: place search not built' }, async () => {
+test('P5-5 (S5b search no result / offline): an unknown place and an offline search each say so, nothing changed', async () => {
   const page = await tool({ nominatim: 'fixture' });
   await locationControls(page);
   await search(page, 'Nowhereville');
@@ -221,7 +226,7 @@ test('P5-5 (S5b search no result / offline): an unknown place and an offline sea
   assert.equal(await offline.evaluate(() => window.__ctTest.store.location.value), null);
 });
 
-test('P5-6 (S5b map pick and ocean click): "Use the map centre" sets the site; the open sea asks for a point on land', { todo: 'S5b: map not built' }, async () => {
+test('P5-6 (S5b map pick and ocean click): "Use the map centre" sets the site; the open sea asks for a point on land', async () => {
   const page = await tool({ mapTiles: 'stub' });
   await locationControls(page);
   await page.click('[data-location-action="map"]');
@@ -238,14 +243,14 @@ test('P5-6 (S5b map pick and ocean click): "Use the map centre" sets the site; t
   assert.ok(page.thirdParty.every((u) => !u.includes('openfreemap')), 'map requests go to the stub');
 });
 
-test('P5-7 (S5b no WebGL): without WebGL the map button is hidden, search and location stay', { todo: 'S5b: map not built' }, async () => {
+test('P5-7 (S5b no WebGL): without WebGL the map button is hidden, search and location stay', async () => {
   const page = await tool({ webgl: false });
   await locationControls(page);
   assert.equal(await page.$('[data-location-action="map"]'), null);
   assert.ok(await has(page, 'input[data-location-search]'));
 });
 
-test('P5-8 (S5b coast): a point offshore takes the nearest cell\'s climate and says there is no country or soil there', { todo: 'S5b: location result states not built' }, async () => {
+test('P5-8 (S5b coast): a point offshore takes the nearest cell\'s climate and says there is no country or soil there', async () => {
   const [lat, lon] = SITES.coast;
   const page = await tool({ geolocation: { lat, lon } });
   await locationControls(page);
@@ -258,7 +263,7 @@ test('P5-8 (S5b coast): a point offshore takes the nearest cell\'s climate and s
   assert.ok(c.code === null || c.source !== 'location', 'no country offshore');
 });
 
-test('P5-9 (S5b polar): an ET site has its own state, no curated list claimed', { todo: 'S5b: location result states not built' }, async () => {
+test('P5-9 (S5b polar): an ET site has its own state, no curated list claimed', async () => {
   const [lat, lon] = SITES.polar;
   const page = await tool({ geolocation: { lat, lon } });
   await locationControls(page);
@@ -268,7 +273,7 @@ test('P5-9 (S5b polar): an ET site has its own state, no curated list claimed', 
   assert.equal(await checkedCard(page), null, 'no curated card claimed');
 });
 
-test('P5-10 (S5b borderline): Lyon says "Borderline: check the climate" and keeps the cards open', { todo: 'S5b: location result states not built' }, async () => {
+test('P5-10 (S5b borderline): Lyon says "Borderline: check the climate" and keeps the cards open', async () => {
   const [lat, lon] = SITES.lyon;
   const page = await tool({ geolocation: { lat, lon } });
   await locationControls(page);
@@ -285,7 +290,7 @@ test('P5-10 (S5b borderline): Lyon says "Borderline: check the climate" and keep
   assert.equal(await storeClimate(calm), null, 'not committed until confirmed');
 });
 
-test('P5-11 (S5b tiles fail): when the climate tiles cannot be read the manual climate stays, with a line saying so', { todo: 'S5b: location result states not built' }, async () => {
+test('P5-11 (S5b tiles fail): when the climate tiles cannot be read the manual climate stays, with a line saying so', async () => {
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon }, climateTiles: 404 });
   await locationControls(page);
@@ -296,7 +301,7 @@ test('P5-11 (S5b tiles fail): when the climate tiles cannot be read the manual c
   assert.equal(await checkedCard(page), null, 'no card pre-checked');
 });
 
-test('P5-12 (S5b share without the tick): a link never carries the location, nor its country, unless asked', { todo: 'S5b: share location tick not built' }, async () => {
+test('P5-12 (S5b share without the tick): a link never carries the location, nor its country, unless asked', async () => {
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon } });
   await locationControls(page);
@@ -312,7 +317,7 @@ test('P5-12 (S5b share without the tick): a link never carries the location, nor
   assert.doesNotMatch(await page.evaluate(() => location.hash), /[?&#]k=/, 'nor in the address bar');
 });
 
-test('P5-13 (S5b share with "include my location"): the link carries the cell centre only, and opens as "from the shared link, approximate"', { todo: 'S5b: share location tick not built' }, async () => {
+test('P5-13 (S5b share with "include my location"): the link carries the cell centre only, and opens as "from the shared link, approximate"', async () => {
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon } });
   await locationControls(page);

@@ -241,6 +241,7 @@ function Head() {
         <button type="button" class="link-button ct-link" onClick={changeSite}>{T('start.changeSite')}</button>
         <button type="button" class="link-button ct-link" onClick={startOver}>{T('start.over')}</button>
       </p>
+      <LocationSlot compact />
       <CountryLine />
     </div>
   );

@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T16:41:40Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T17:46:37Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:33:21Z }
@@ -46,7 +46,7 @@ sources:
     resource: ../../astro.config.mjs
     title: astro.config.mjs
     digest: sha256:ad2fea270b47646a
-    last_modified: 2026-11-11T16:39:42Z
+    last_modified: 2026-11-11T17:14:18Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -66,7 +66,7 @@ sources:
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:03e318f55b8613e4
-    last_modified: 2026-11-11T16:39:39Z
+    last_modified: 2026-11-11T17:14:18Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -96,12 +96,12 @@ sources:
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:1bb1fd4d5be7fb64
-    last_modified: 2026-11-11T16:39:10Z
+    last_modified: 2026-11-11T17:14:18Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
-    digest: sha256:8275d95f4158821d
-    last_modified: 2026-11-11T16:35:59Z
+    digest: sha256:10ad3c6cef59a9ec
+    last_modified: 2026-11-11T17:27:17Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -110,8 +110,8 @@ sources:
   - id: share-tsx
     resource: ../../src/islands/consortium/views/Share.tsx
     title: src/islands/consortium/views/Share.tsx
-    digest: sha256:d07b936125a26d11
-    last_modified: 2026-11-11T06:10:08Z
+    digest: sha256:554be9242220c0f7
+    last_modified: 2026-11-11T17:36:49Z
   - id: printsheet-tsx
     resource: ../../src/islands/consortium/views/PrintSheet.tsx
     title: src/islands/consortium/views/PrintSheet.tsx
@@ -120,8 +120,8 @@ sources:
   - id: memory-ts
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
-    digest: sha256:3a9ba89417f5f053
-    last_modified: 2026-11-11T16:35:59Z
+    digest: sha256:a26c85d6c4f5358f
+    last_modified: 2026-11-11T17:26:05Z
   - id: shell-css
     resource: ../../src/styles/consortium/shell.css
     title: src/styles/consortium/shell.css
@@ -171,7 +171,7 @@ sources:
     resource: ../../scripts/browser/consortium-seams.browser.test.mjs
     title: scripts/browser/consortium-seams.browser.test.mjs
     digest: sha256:d7a98f717e79020f
-    last_modified: 2026-11-11T16:38:17Z
+    last_modified: 2026-11-11T17:14:18Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
@@ -191,7 +191,7 @@ sources:
     resource: ../../src/islands/consortium/views/FutureSlot.tsx
     title: src/islands/consortium/views/FutureSlot.tsx
     digest: sha256:a4a62300cc380e2f
-    last_modified: 2026-11-11T16:40:01Z
+    last_modified: 2026-11-11T17:14:18Z
   - id: nativeslot-tsx
     resource: ../../src/islands/consortium/views/NativeSlot.tsx
     title: src/islands/consortium/views/NativeSlot.tsx
@@ -206,7 +206,7 @@ sources:
     resource: ../../src/islands/consortium/views/future/future.tsx
     title: src/islands/consortium/views/future/future.tsx
     digest: sha256:8279dbe3c5173f7f
-    last_modified: 2026-11-11T16:39:54Z
+    last_modified: 2026-11-11T17:14:18Z
   - id: plantmarks-tsx
     resource: ../../src/islands/consortium/views/PlantMarks.tsx
     title: src/islands/consortium/views/PlantMarks.tsx
@@ -215,8 +215,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:c2cf0449baa1a218
-    last_modified: 2026-11-11T15:36:29Z
+    digest: sha256:dd6ab91dcd436bd7
+    last_modified: 2026-11-11T17:27:08Z
   - id: likelyslot-tsx
     resource: ../../src/islands/consortium/views/LikelySlot.tsx
     title: src/islands/consortium/views/LikelySlot.tsx
@@ -225,8 +225,8 @@ sources:
   - id: consortium-p5-browser-test-mjs
     resource: ../../scripts/browser/consortium-p5.browser.test.mjs
     title: scripts/browser/consortium-p5.browser.test.mjs
-    digest: sha256:d4b1f1a068e63cc0
-    last_modified: 2026-11-11T16:35:59Z
+    digest: sha256:dd88842941db4903
+    last_modified: 2026-11-11T17:37:03Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
@@ -237,6 +237,11 @@ sources:
     title: scripts/consortium-grid-check.mjs
     digest: sha256:d00a6bc0eac9d46b
     last_modified: 2026-11-11T15:36:29Z
+  - id: location-tsx
+    resource: ../../src/islands/consortium/views/location/location.tsx
+    title: src/islands/consortium/views/location/location.tsx
+    digest: sha256:a4a157bef527b50d
+    last_modified: 2026-11-11T17:36:49Z
 enforced_by:
   - scripts/check-built-site.mjs
   - scripts/browser/consortium-commit0.browser.test.mjs
@@ -266,10 +271,10 @@ The v1 tool (app.js and its tests) was deleted in commit 0. Its full description
 | [strings.ts](../../src/islands/consortium/strings.ts) | `setStrings`, `T(key, vars)`, `P(key, n, vars)` with v1's plural form `one: # x \| other: # xs`; the page uses `P` at build time for the beta note |
 | [App.tsx](../../src/islands/consortium/App.tsx) | Frozen. The §5 screens from `load` (`data-load-error`, `role=alert`). Retry: `fetch`, `damaged`. Reload: `stale`, `schema`, `wasm-fetch` (sqlite3.wasm did not arrive: a 403, offline or a 15 s stall; shown as `load.toolFailed`, review L1, R4-4). Guide link only: `too-old`, `wasm-blocked`. Slots in page order: `Start` (S4), `Matrix` (S2; routes the side view, Jobs and plant list from `store.view`), `Actions` (S4; Share, Download, Print, link notices; after the matrix once ready), `Details` (S3; routes `store.sheet`). Each is a module exporting null until its stream fills it, so streams never edit App.tsx |
 | [data/load.ts](../../src/islands/consortium/data/load.ts), [data/bytes.ts](../../src/islands/consortium/data/bytes.ts) | Minimum loader, owned by S1. Steps: `tooOld()` (no DecompressionStream) and `wasmMissing()` (P5); fetch through `download()` (a 15 s stall timer reset on every chunk, no overall cap, so 10 KB/s loads; a stall → `fetch`; 404 → `stale`); the body read whole (`bytes.ts` `decodeDatabase`: empty → `damaged`; gzip magic from the buffer; sha256 and size of the gzipped file, or of the raw database when the server already decoded it (P3), checked with SubtleCrypto where present → `damaged`; inflate with DecompressionStream); the wasm downloaded with the same `download()` from the URL main.ts passes (did not arrive or a stall → `wasm-fetch`; a refused compile or instantiate → `wasm-blocked`), then sqlite-wasm init with it through `instantiateWasm` (without a URL, as in Node's unit tests, Emscripten fetches the file itself); `sqlite3_deserialize` FREEONCLOSE\|READONLY; then `application_id`, `user_version`, `meta.release_id` and the climates checked against the page (`schema`). `scripts/consortium-load.test.mjs` tests `bytes.ts` in Node |
-| [views/Start.tsx](../../src/islands/consortium/views/Start.tsx) | S4's Start slot (it calls `startMemory()` once). Before a consortium: the country line (`data-ct="country"`, above the cards: guessed/linked/chosen, Use/Change/No country, the "not checked" note), the 7 climate cards as a radio group (none chosen on a fresh visit; the stored site climate pre-selects), "Ask for this climate" for uncovered ones, Main crops (4 real examples by the v1 rule, a local search, max 3), Your site (4 radio rows), then Suggest plants / Start empty and search / Paste a list (sheets `search` and `paste` are S3's). Once a consortium is shown: the result head (count, climate, site basis, Change site, Start over, the country line). P5 commit 0 mounts empty slots, each its stream's file: `<LocationSlot />` ([views/LocationSlot.tsx](../../src/islands/consortium/views/LocationSlot.tsx), S5b, which loads its UI as the lazy chunk `views/location/location.tsx`) between the notices and the climate cards; `<LikelySlot question={k} />` ([views/LikelySlot.tsx](../../src/islands/consortium/views/LikelySlot.tsx), S5e) at the end of each site question; `<PoolSlot zone={z} />` and `hasList(z)` ([views/PoolSlot.tsx](../../src/islands/consortium/views/PoolSlot.tsx), S5c) below the cards: `hasList` decides the card's Ready pill and whether crops and site questions follow (today: the export curates the climate), `PoolSlot` shows "Not covered yet" when there is no list. The cards show `climate ?? pendingClimate ?? proposedClimate` checked. The country line labels a location country "from your location" (`consortium.country.fromLocation`) |
+| [views/Start.tsx](../../src/islands/consortium/views/Start.tsx) | S4's Start slot (it calls `startMemory()` once). Before a consortium: the country line (`data-ct="country"`, above the cards: guessed/linked/chosen, Use/Change/No country, the "not checked" note), the 7 climate cards as a radio group (none chosen on a fresh visit; the stored site climate pre-selects), "Ask for this climate" for uncovered ones, Main crops (4 real examples by the v1 rule, a local search, max 3), Your site (4 radio rows), then Suggest plants / Start empty and search / Paste a list (sheets `search` and `paste` are S3's). Once a consortium is shown: the result head (count, climate, site basis, Change site, Start over, the country line). P5 commit 0 mounts empty slots, each its stream's file: `<LocationSlot />` ([views/LocationSlot.tsx](../../src/islands/consortium/views/LocationSlot.tsx), S5b, which loads its UI as the lazy chunk `views/location/location.tsx`; see [Consortium location step](/modules/consortium-location.md)) between the notices and the climate cards, and `<LocationSlot compact />` (the result line) in the result head; `<LikelySlot question={k} />` ([views/LikelySlot.tsx](../../src/islands/consortium/views/LikelySlot.tsx), S5e) at the end of each site question; `<PoolSlot zone={z} />` and `hasList(z)` ([views/PoolSlot.tsx](../../src/islands/consortium/views/PoolSlot.tsx), S5c) below the cards: `hasList` decides the card's Ready pill and whether crops and site questions follow (today: the export curates the climate), `PoolSlot` shows "Not covered yet" when there is no list. The cards show `climate ?? pendingClimate ?? proposedClimate` checked. The country line labels a location country "from your location" (`consortium.country.fromLocation`) |
 | [views/PlantMarks.tsx](../../src/islands/consortium/views/PlantMarks.tsx) | P5 commit 0: `PlantMarks({taxon, surface})`, the core's `plantMarks(taxon, markContext, surface, markProviders)`, one span each with `data-mark={kind}`, `data-mark-state={state}` and `data-mark-surface` (`.ct-flag` for a warning, `.ct-tag` for a note), nothing before the providers load or when empty (today). Surfaces: StageBar's `Marks` gives 'chip' (desktop matrix, `tight`) or 'row' (phone rows, side and list views), the Details head 'details', both Add lists 'add', so a stream adds a mark, or keeps one to some surfaces, without touching a view. Other P5 slots: [views/FutureSlot.tsx](../../src/islands/consortium/views/FutureSlot.tsx) (S5d), a thin shell that loads its content, [views/future/future.tsx](../../src/islands/consortium/views/future/future.tsx) (`FuturePanel`, a P5 feature chunk), only once `store.location` is set; exported from `later.ts` and mounted `idle` (`later(…, { idle: true })`, exported from Matrix.tsx: it never asks for the chunk itself and shows once `prefetchLater()` has loaded it, so nothing downloads before `ct:matrix`) below the desktop table and the phone overview; [views/NativeSlot.tsx](../../src/islands/consortium/views/NativeSlot.tsx) (S5e) under the plant's name in Details |
 | [memory.ts](../../src/islands/consortium/memory.ts) | S4. Pure: guarded storage, the saved record `{fragment, at, src, country?}` under `canopi-consortium` (`src` 'link' \| 'chosen' \| 'location' \| null: where its country came from; a country from the site location (P5 owner answer 5) is kept as `country` beside the fragment, never in it, and restored labelled "from your location"), `oldRecord` (v1's `{q, at, src}` or another link version), `arrival()` (the page's own address after a reload, i.e. `history.state.ct` equal to the fragment, opens as the save; then link > guide preset > v1 query link (outdated notice) > saved > start), `countryAtStart`, `shareState(s, { location })` (a guessed country is never written; a location country only with `{ location: true }`, S5b's "include my location" tick), `shareUrl` (drops the query), `guessCountry`, `cropExamples`. Wiring: restores a `#v=4` link or the last consortium (calm notices for unknown plants, cut links, a link with no climate (cut, Start stays), outdated links, an old save shown once and then removed), opens a link pasted into the open tab (`hashchange`; `hashAction`: Back/Forward to the page's own address reopens it as the save with its country label; with a consortium shown, an older, cut or unloadable pasted link changes nothing, shows `share.pasted.*` in the action area and puts the address back), changes the store only after every list the link needs is read, reading those lists itself rather than through `store.loadPool` (whose failure is app-wide), so a failed read shows `share.failed` or `share.pasted.failed` and keeps the consortium; a restore touches no store signal until it applies in one batch, and applies only if it is still the newest restore and the reader has not acted since it began (an action counter bumped by the watcher on every write to the consortium that is not a restore applying or a guessed country); outdated and cut refusals take no number but cancel the restore in flight (the latest link wins, its notice kept); a reader action during a first-visit restore makes the link's shown climate the chosen one; saving has no restore gate: `watchStore` saves every change and writes the address; Start shows the link's climate at once (`pendingClimate`, derived from the restore in flight), writes `history.state {ct, src}` with each address so a reload keeps the country's label, applies guide presets `?plant=&climate=` (the plant kept, as crop when it is one), writes the site climate (`canopi-climate`) and country (`canopi-country`), then keeps the address and the saved record in step with the store. The save model (review rounds 3 and 4): two states, the consortium and Start's draft. Change site (`changeSite`) sets the consortium aside in `store.setAside`, with its site answers, country and stage, and opens a draft seeded from it; the draft (the picked card, its crops and site answers and, on the consortium's own card, its plants) never changes the consortium or the save. Another card starts the draft empty; the consortium's card seeds its plants and crops again (`chooseClimate`). Only Suggest, Start empty, a paste on Start (each adopts the draft's answers) and Back to your consortium (which restores the consortium's answers) end it. The save and the address always encode the consortium (`own()`: the store when a view other than Start shows, else the one set aside). Undo restores the snapshot with the view and `setAside`, so it rewrites the save. Every write of the save goes through `writeSave(next)`: the page's own consortium is written when it changes; a removal (Start over, an older save) or a put-back happens only while storage still holds what the page last wrote or read (`lastSave`). The first write over a save the page did not write remembers it (`beneath`, or the newer save another tab wrote there since), and an Undo back to a Start with no consortium of the page's own puts it back or removes the save (F2, R2-2, R2-3, R4-1, R4-2). Back shows only with a consortium set aside (`canGoBack`). Suggest moves focus to the shown view (`focus.ts`). Unit tests: `scripts/consortium-memory.test.mjs` |
-| [views/Actions.tsx](../../src/islands/consortium/views/Actions.tsx), [Share.tsx](../../src/islands/consortium/views/Share.tsx), [PrintSheet.tsx](../../src/islands/consortium/views/PrintSheet.tsx) | S4, after the matrix (nothing while Start shows): the link notices, then Share (the `#v=4` link in a field, copied by the Copy button only; notes for a link over 2,000 characters and for blocked storage), Print (`window.print()`, after the sheet has loaded) and Download for Canopi (`canopiFile` of the members, a `.canopi` v9 file with `plants: []`, see [Consortium core](/modules/consortium-core.md)). The print sheet is hidden on screen: head (climate, count, site, country, hypothesis), at ≤ 20 plants the side view drawing (`SideDrawing` at the chosen stage) and above 20 the "At a glance" table, then the plant table and the footer |
+| [views/Actions.tsx](../../src/islands/consortium/views/Actions.tsx), [Share.tsx](../../src/islands/consortium/views/Share.tsx), [PrintSheet.tsx](../../src/islands/consortium/views/PrintSheet.tsx) | S4, after the matrix (nothing while Start shows): the link notices, then Share (the `#v=4` link in a field, copied by the Copy button only; notes for a link over 2,000 characters and for blocked storage; S5b's "include my location" tick `input[data-share-location]`, shown once the site has a climate cell, adds `o=` and the location country), Print (`window.print()`, after the sheet has loaded) and Download for Canopi (`canopiFile` of the members, a `.canopi` v9 file with `plants: []`, see [Consortium core](/modules/consortium-core.md)). The print sheet is hidden on screen: head (climate, count, site, country, hypothesis), at ≤ 20 plants the side view drawing (`SideDrawing` at the chosen stage) and above 20 the "At a glance" table, then the plant table and the footer |
 | [views/lazy.tsx](../../src/islands/consortium/views/lazy.tsx), [views/later.ts](../../src/islands/consortium/views/later.ts) | What shows after the matrix, in one chunk (`later.ts`: SideView, Jobs, PlantList, PrintSheet, Share, S5d's FutureSlot and the `.canopi` writer). `later(importer)` gives a view that renders nothing until loaded and a Reload notice (`details.loadFailed`) if it fails; a view still loading shows the `load.plants` line, the print sheet (`quiet`) shows nothing; `laterModule` for the writer; Print and Download catch a failed chunk and show the Reload notice in the action area, and print.css hides the page for print only once `.ct-print` exists (a Ctrl+P before it prints the tool); `prefetchLater()` loads them all in idle time once `ct:matrix` is marked (Matrix.tsx). One chunk, not six: the 60 KB budget counts lazy chunks, and six cost 1.5 KB more |
 | [focus.ts](../../src/islands/consortium/focus.ts) | `focusView()` (the shown view's caption, table or heading, after Suggest) and `focusPlant(id)` (after Undo, falling back to the heading), two frames later, so focus never drops to `<body>`; while a sheet is open the focus stays in it (its `[data-autofocus]` heading when the target is behind it), and with nothing found the tool's first heading (Start's, after an Undo back to Start) |
 | [test-hook.ts](../../src/islands/consortium/test-hook.ts) | The one browser-test hook, `window.__ctTest = { store, openSheet, failSheets, failLater, holdLater, releaseLater }` (the last three make `views/later.ts` fail or wait), behind the compile-time constant `__CT_TEST_HOOK__`, which `astro.config.mjs` defines from `CANOPI_BROWSER_TEST === '1'` alone (`npm run build:browser-test`): not a PUBLIC_ variable, which Vite would also take from a `.env` file (review F6). `check-built-site.mjs` fails if `__ctTest`, `__ctViews` or `failSheets` is in a built chunk |
@@ -313,7 +318,7 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
 # Gotchas
 
 - P7: the JSX scope alone leaves every other page byte-identical (checked after the pins commit). Deleting app.js drops one export from the shared `chrome` chunk, so that chunk's hash, and the `<script src>` of every page, change. The page contents are otherwise identical.
-- `#ct-data` carries every `consortium.*` string (462 keys per locale: the P2 hand-offs and their review pruned 422 unused ones, P5 commit 0 added `country.fromLocation`; `scripts/consortium-keys.test.mjs` keeps it so, counting a key used only when it is in a T( or P( call, a template, ConsortiumPage.astro or its INDIRECT list). Block keys close each locale file in order: `consortium.block.s1`…`s4`, then (P5 commit 0) `s5b`…`s5f` and last `consortium.block.end`, each stream appending after its own block key and before the next, so no stream edits another's last line; S5f's block may also hold `privacy.*` and new `dataSources.*` keys (`homepage.test.mjs`). S4's keys sit after `consortium.block.s4` with names that differ from the v1 keys (`share.done`, `crops.question`, `print.button`…): a duplicate JSON key would keep the v1 position and break the block-order test in `homepage.test.mjs`.
+- `#ct-data` carries every `consortium.*` string (522 keys per locale: the P2 hand-offs and their review pruned 422 unused ones, P5 commit 0 added `country.fromLocation`, S5b 60 `location.*` and `share.location*` keys; `scripts/consortium-keys.test.mjs` keeps it so, counting a key used only when it is in a T( or P( call, a template, ConsortiumPage.astro or its INDIRECT list). Block keys close each locale file in order: `consortium.block.s1`…`s4`, then (P5 commit 0) `s5b`…`s5f` and last `consortium.block.end`, each stream appending after its own block key and before the next, so no stream edits another's last line; S5f's block may also hold `privacy.*` and new `dataSources.*` keys (`homepage.test.mjs`). S4's keys sit after `consortium.block.s4` with names that differ from the v1 keys (`share.done`, `crops.question`, `print.button`…): a duplicate JSON key would keep the v1 position and break the block-order test in `homepage.test.mjs`.
 - With storage blocked (reading `localStorage` throws), the sqlite-wasm bootstrap's kvvfs setup threw `SecurityError`; `data/load.ts` switches kvvfs and OPFS off through `sqlite3ApiConfig` before init (H1).
 - Each browser-test page is a context with its own copy of the database: the s4 file closes each page's context once used (`done()`); without it, BT-7's many pages were OOM-killed at 3 GB.
 - `helpers.mjs` `axNodes` reads the full accessibility tree (`interestingOnly: false`, skipping none, unnamed generic, InlineTextBox and LineBreak; Chrome's `image` becomes `img`), so tables and cells are visible; BT-8 still reads the shown tables' captions from the DOM.
