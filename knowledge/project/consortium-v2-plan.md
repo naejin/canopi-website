@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: Phases, order, exits and session brief for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate.
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:51:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:53:36Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -68,7 +68,7 @@ Each phase ships on its own. Repos: W website, D canopi-data, C canopi-climate.
 ### P7 (W, then C + D) — site adjustments, then dry season (owner, 2026-11-11)
 - **Goal for users:** a frost pocket, a hot paved yard or a watered garden changes the suggestions honestly; later, a long dry season is checked like winter cold.
 - **P7a (website):** the three site adjustments of the decision row "Site adjustments and dry season"; one share-link key; range and future checks read the adjusted site through one function; marks and plant details name the adjustment.
-- **P7b (canopi-climate, canopi-data, website):** rain seasonality and driest-quarter rain in a canopi-climate release, plant ranges for them in canopi-data (schema bump), a dry-season mark in the tool.
+- **P7b (canopi-data QA, then website):** the dry months already shipped (tiles today and future, plant ranges, schema-2 export) checked in canopi-data QA against the drought indicators (EcoCrop, Niinemets & Valladares, EIVE) and on the validation cities (does it separate Mediterranean from monsoon sites at equal aridity?); then a dry-season row in the website's one range rule (today, future, marks). Only if the check fails: new variables in canopi-climate, then `canopi ranges build`, tiles and ranges rebuilt together under one grid sha.
 - **How:** the full loop (design check, architecture review, one question batch, commit 0, streams, a bug and a conformance review per stream with fix rounds until clean, seam reviews, real-browser walk-through, pre-push review); coherence with P5's range rule, future check, share keys and privacy page is a design-check row.
 - **Order:** after the P5 push; P7a before P7b.
 
