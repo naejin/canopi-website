@@ -239,7 +239,7 @@ function Head() {
   const n = members.value.length;
   return (
     <div class="ct-result-head">
-      <h2 class="ct-result-title">{T('start.yours')} <span class="ct-muted ct-result-sub">· {P('start.count', n)} · {zoneLabel(climate.value)}</span></h2>
+      <h2 class="ct-result-title">{T('start.yours')} <span class="ct-muted ct-result-sub">{P('start.count', n)} · {zoneLabel(climate.value)}</span></h2>
       <p class="ct-basis">
         <span>{basisLine(site.value)}</span>
         <button type="button" class="link-button ct-link" onClick={() => { view.value = 'start'; }}>{T('start.changeSite')}</button>
