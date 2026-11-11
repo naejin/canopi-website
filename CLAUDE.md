@@ -46,7 +46,7 @@ supported filter metadata before copying it under `dist/client/app/`.
 - `public/canopi-logo.svg` and `canopi-icon-128.png` are copied from the app repo
 - `<body class="grain">` already provides a global SVG noise overlay (`global.css`) — do not add page-level paper textures
 - Responsive breakpoints across the project: `max-width: 639px` (mobile) and `min-width: 960px` (desktop); no tablet tier
-- Web Edition `/app/*` fallback is static `_redirects`; do not add website-side catalog search, storage, DuckDB, Worker, Pages Function, R2, KV, D1, service-worker, or offline catalog behavior
+- Web Edition `/app/*` fallback is static `_redirects`; for the Web Edition files under `/app/`, do not add website-side catalog search, storage, DuckDB, Worker, Pages Function, R2, KV, D1, service-worker, or offline catalog behavior. This does not cover the consortium tool (`/consortium/`), which reads its own static SQLite export (`/data/consortium/*.sqlite.gz`) in the browser with sqlite-wasm and keeps the last consortium in localStorage; licences in `THIRD_PARTY_NOTICES.md`
 - Web Edition catalog files under `/app/canopi-catalog/` must serve directly as static assets
 
 <!-- okf:begin -->
