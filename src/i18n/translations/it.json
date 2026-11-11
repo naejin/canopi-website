@@ -402,6 +402,7 @@
   "consortium.load.fetch": "L’elenco delle piante non si è caricato. Controlla la connessione.",
   "consortium.load.damaged": "L’elenco delle piante non si è caricato: il file è danneggiato.",
   "consortium.load.stale": "Lo strumento è stato aggiornato dopo l’apertura di questa pagina.",
+  "consortium.load.toolFailed": "Lo strumento non si è caricato. Controlla la connessione, poi ricarica la pagina.",
   "consortium.load.retry": "Riprova",
   "consortium.load.reload": "Ricarica",
   "consortium.load.guides": "Nel frattempo, le guide pratiche spiegano come progettare a mano un giardino a strati.",

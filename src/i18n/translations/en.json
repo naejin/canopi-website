@@ -402,6 +402,7 @@
   "consortium.load.fetch": "The plant list did not load. Check your connection.",
   "consortium.load.damaged": "The plant list did not load: the file is damaged.",
   "consortium.load.stale": "The tool was updated since this page opened.",
+  "consortium.load.toolFailed": "The tool did not load. Check your connection, then reload the page.",
   "consortium.load.retry": "Retry",
   "consortium.load.reload": "Reload",
   "consortium.load.guides": "Meanwhile, the Field Guides explain how to plan a layered garden by hand.",

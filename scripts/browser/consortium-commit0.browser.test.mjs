@@ -88,6 +88,8 @@ const SCREENS = [
   ['an empty body', { database: 'empty' }, 'damaged', 'retry'],
   ['wrong user_version', { database: 'user-version' }, 'schema', 'reload'],
   ['WebAssembly disabled', { data: 'fixture', wasm: false }, 'wasm-blocked', null],
+  ['sqlite3.wasm refused (403; review L1)', { data: 'fixture', wasmFile: 403 }, 'wasm-fetch', 'reload'],
+  ['sqlite3.wasm unreachable offline (review L1)', { data: 'fixture', wasmFile: 'offline' }, 'wasm-fetch', 'reload'],
   ['the loader chunk gone after a deploy (online)', { data: 'fixture', loader: 404 }, 'stale', 'reload'],
   ['the loader chunk unreachable offline', { data: 'fixture', loader: 'offline' }, 'fetch', 'retry'],
 ];
@@ -101,6 +103,8 @@ test('BT-9 load: each failure gives its §5 screen and button', async (t) => {
         const reload = await has(page, aria('button', en['consortium.load.reload']), 500);
         assert.deepEqual({ retry, reload }, { retry: button === 'retry', reload: button === 'reload' });
         assert.ok(await has(page, '::-p-aria([role="alert"])', 500), 'the screen is announced');
+        // A wasm file that did not arrive is not "WebAssembly is turned off" (review L1).
+        if (opts.wasmFile) assert.equal(await page.$eval('[data-load-error] p', (el) => el.textContent.trim()), en['consortium.load.toolFailed']);
       });
     });
   }

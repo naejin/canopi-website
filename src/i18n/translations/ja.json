@@ -402,6 +402,7 @@
   "consortium.load.fetch": "植物リストを読み込めませんでした。接続を確認してください。",
   "consortium.load.damaged": "植物リストを読み込めませんでした：ファイルが壊れています。",
   "consortium.load.stale": "このページを開いた後にツールが更新されました。",
+  "consortium.load.toolFailed": "ツールを読み込めませんでした。接続を確認してから、ページを再読み込みしてください。",
   "consortium.load.retry": "もう一度試す",
   "consortium.load.reload": "再読み込み",
   "consortium.load.guides": "そのあいだに、フィールドガイドで階層のある庭を手で計画する方法を読めます。",

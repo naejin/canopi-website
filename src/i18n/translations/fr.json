@@ -402,6 +402,7 @@
   "consortium.load.fetch": "La liste des plantes ne s’est pas chargée. Vérifiez votre connexion.",
   "consortium.load.damaged": "La liste des plantes ne s’est pas chargée : le fichier est endommagé.",
   "consortium.load.stale": "L’outil a été mis à jour depuis l’ouverture de cette page.",
+  "consortium.load.toolFailed": "L’outil ne s’est pas chargé. Vérifiez votre connexion, puis rechargez la page.",
   "consortium.load.retry": "Réessayer",
   "consortium.load.reload": "Recharger",
   "consortium.load.guides": "En attendant, les fiches de terrain expliquent comment concevoir à la main un jardin en strates.",

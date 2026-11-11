@@ -42,7 +42,7 @@ const named = namedKeys(island);
 // results (views/Correction.tsx).
 const INDIRECT = [
   't.bloom', 't.fruit', 't.sowing', 't.wind',
-  'load.tooOld', 'load.wasmBlocked', 'load.fetch', 'load.damaged', 'load.stale',
+  'load.tooOld', 'load.wasmBlocked', 'load.toolFailed', 'load.fetch', 'load.damaged', 'load.stale',
   'correction.fieldError', 'correction.proposedError', 'correction.unchanged', 'correction.tooLong', 'correction.emailError',
   'correction.consentError', 'correction.invalid', 'correction.failed', 'correction.refused', 'correction.offline',
 ];

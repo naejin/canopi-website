@@ -17,6 +17,7 @@ export type Database = InstanceType<Sqlite3['oo1']['DB']>;
 export interface Opened { sqlite3: Sqlite3; db: Database }
 
 const WASM_TIMEOUT_MS = 15_000;
+const WASM_FETCH_FAILED = /both async and sync fetching of the wasm failed/;
 
 // The browser is too old for the tool (P4: no DecompressionStream). WebAssembly missing is the
 // "turned off" screen instead (P5: iOS Lockdown Mode or a policy removes it from a recent browser).
@@ -66,7 +67,11 @@ async function initSqlite(): Promise<Sqlite3> {
     return await Promise.race([init({ print: () => {}, printErr: () => {} }), timeout]);
   } catch (err) {
     if (err instanceof LoadError) throw err;
-    throw new LoadError('wasm-blocked', `WebAssembly was refused: ${(err as Error).message}`);
+    const message = String((err as Error)?.message ?? err);
+    // The wasm file did not arrive (a 403 from a proxy, offline): the Emscripten loader aborts with
+    // this line once both its fetches failed. That is not WebAssembly turned off (review L1).
+    if (WASM_FETCH_FAILED.test(message)) throw new LoadError('wasm-fetch', `sqlite3.wasm did not arrive: ${message}`);
+    throw new LoadError('wasm-blocked', `WebAssembly was refused: ${message}`);
   } finally {
     clearTimeout(timer);
   }

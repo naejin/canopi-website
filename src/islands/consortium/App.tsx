@@ -28,6 +28,7 @@ export interface AppProps {
 const screens: Record<LoadFailure, { text: string; action: 'retry' | 'reload' | null }> = {
   'too-old': { text: 'load.tooOld', action: null },
   'wasm-blocked': { text: 'load.wasmBlocked', action: null },
+  'wasm-fetch': { text: 'load.toolFailed', action: 'reload' },
   fetch: { text: 'load.fetch', action: 'retry' },
   damaged: { text: 'load.damaged', action: 'retry' },
   stale: { text: 'load.stale', action: 'reload' },

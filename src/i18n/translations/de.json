@@ -402,6 +402,7 @@
   "consortium.load.fetch": "Die Pflanzenliste konnte nicht geladen werden. Prüfe deine Verbindung.",
   "consortium.load.damaged": "Die Pflanzenliste konnte nicht geladen werden: Die Datei ist beschädigt.",
   "consortium.load.stale": "Das Werkzeug wurde aktualisiert, seit diese Seite geöffnet wurde.",
+  "consortium.load.toolFailed": "Das Werkzeug konnte nicht geladen werden. Prüfe deine Verbindung und lade die Seite neu.",
   "consortium.load.retry": "Noch einmal versuchen",
   "consortium.load.reload": "Neu laden",
   "consortium.load.guides": "Bis dahin erklären die Leitfäden, wie man einen Garten in Schichten von Hand plant.",

@@ -402,6 +402,7 @@
   "consortium.load.fetch": "A lista de plantas não carregou. Verifique a sua ligação.",
   "consortium.load.damaged": "A lista de plantas não carregou: o ficheiro está danificado.",
   "consortium.load.stale": "A ferramenta foi atualizada desde que esta página abriu.",
+  "consortium.load.toolFailed": "A ferramenta não carregou. Verifique a sua ligação e recarregue a página.",
   "consortium.load.retry": "Tentar outra vez",
   "consortium.load.reload": "Recarregar",
   "consortium.load.guides": "Entretanto, os guias de campo explicam como planear à mão um jardim em estratos.",

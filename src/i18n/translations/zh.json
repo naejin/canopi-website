@@ -402,6 +402,7 @@
   "consortium.load.fetch": "植物列表未能加载。请检查网络连接。",
   "consortium.load.damaged": "植物列表未能加载：文件已损坏。",
   "consortium.load.stale": "此页面打开后，工具已经更新。",
+  "consortium.load.toolFailed": "工具未能加载。请检查网络连接，然后重新加载页面。",
   "consortium.load.retry": "重试",
   "consortium.load.reload": "重新加载",
   "consortium.load.guides": "在此期间，田间指南会讲解如何手工规划分层的园子。",

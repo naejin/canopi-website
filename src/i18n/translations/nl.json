@@ -402,6 +402,7 @@
   "consortium.load.fetch": "De plantenlijst is niet geladen. Controleer je verbinding.",
   "consortium.load.damaged": "De plantenlijst is niet geladen: het bestand is beschadigd.",
   "consortium.load.stale": "De tool is bijgewerkt sinds deze pagina werd geopend.",
+  "consortium.load.toolFailed": "De tool is niet geladen. Controleer je verbinding en laad de pagina opnieuw.",
   "consortium.load.retry": "Opnieuw proberen",
   "consortium.load.reload": "Opnieuw laden",
   "consortium.load.guides": "Intussen leggen de veldgidsen uit hoe je met de hand een tuin in lagen ontwerpt.",
