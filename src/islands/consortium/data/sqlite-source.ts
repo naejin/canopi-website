@@ -8,9 +8,9 @@
 // never SQL LIKE (ASCII-only folding, a substring match, % and _ unescaped).
 import type {
   ClimateRange, ClimateZone, Details, FunctionId, FunctionMethod, Image, Interaction, InvasiveRecord, KoppenShare, Labels, LayerScope, LayerValue, Locale, Month, Placement,
-  PlantId, RangeBasis, Reason, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
+  PlantId, RangeBasis, Reason, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
 } from '../../../lib/consortium/index.ts';
-import { firstPlaced, months, NEAREST_LISTS, phases } from '../../../lib/consortium/index.ts';
+import { firstPlaced, months, NEAREST_LISTS, phases, severities } from '../../../lib/consortium/index.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
@@ -243,11 +243,13 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       const inZones = interactionsIn(zones);
       const all = db.selectObjects(`SELECT * FROM interactions WHERE interaction IN (${inZones}) ORDER BY interaction`, zones);
       // A borrowed climate may read the same pairing from several lists: one row per (subject, object,
-      // type, agent), the general row first, then the first list of the NEAREST_LISTS order (so
-      // conflicts() and pairings() see each once). A curated climate's rows are unique already.
+      // type, agent), so conflicts() and pairings() see each once. The highest severity wins, so a
+      // conflict warning never gets milder; then the general row, then the first list of the
+      // NEAREST_LISTS order. A curated climate's rows are unique already.
       const rank = (r: Row) => (r.climate_zone == null ? 0 : 1 + zones.indexOf(r.climate_zone as ClimateZone));
+      const weight = (r: Row) => (r.severity == null ? -1 : severities.indexOf(r.severity as Severity));
       const seen = new Set<string>(), kept = new Set<Row>();
-      for (const r of [...all].sort((x, y) => rank(x) - rank(y))) {
+      for (const r of [...all].sort((x, y) => weight(y) - weight(x) || rank(x) - rank(y))) {
         const key = [r.subject_rank, r.subject, r.object_rank, r.object, r.type, r.agent ?? ''].join('\u0000');
         if (!seen.has(key)) { seen.add(key); kept.add(r); }
       }

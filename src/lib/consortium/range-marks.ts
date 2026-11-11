@@ -8,12 +8,14 @@
 //   Details adds one line per bound passed, with the site's and the recorded values (the very values
 //   the verdict compared, to the hundredth, so the gap a reader works out matches it), and says
 //   observed ranges include cultivation and are estimates, not reviewed (export meta ranges_review).
-// - With or without a location: 'estimate' on a plant placed from a nearest list (placement.ts).
+//   An annual (no winter-cold check): "grown in the warm season; check the frost-free season" (not on chips).
+// - With or without a location: 'estimate' on a plant placed from a nearest list (placement.ts);
+//   without a site climate, also "give your site's location to check it" (not on chips).
 // Chips (desktop matrix) get the short words.
 import type { ClimateZone, Mark, MarkSurface, Taxon } from './types.ts';
 import type { MarkContext } from './marks.ts';
 import type { RangeSide } from './range.ts';
-import { rangeCheck, siteToday } from './range.ts';
+import { isAnnual, rangeCheck, siteToday } from './range.ts';
 
 // Every key written out (consortium.* strings, S5c block), so a key check can find them.
 const VERDICT_KEYS: Record<'edge' | 'outside', Record<MarkSurface, string>> = {
@@ -47,11 +49,15 @@ export function rangeMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface)
       }
     }
     if (!tight && (aridity === 'drier' || aridity === 'wetter')) out.push({ kind: 'aridity', key: ARIDITY_KEYS[aridity], severity: 'note', state: aridity });
+    if (!tight && isAnnual(taxon)) out.push({ kind: 'unknown', key: 'range.annual', severity: 'note', state: 'annual' });
     if (surface === 'details' && aridity === 'not-checked') out.push({ kind: 'unknown', key: 'range.aridityNotChecked', severity: 'note', state: 'aridity' });
   }
   if (taxon.estimate && taxon.placedFrom) {
     const key = (!tight && ESTIMATE_KEYS[taxon.placedFrom]) || 'estimate.short';
     out.push({ kind: 'estimate', key, severity: 'note', state: taxon.placedFrom.toLowerCase() });
+    // A borrowed plant with no site climate (a link or a saved consortium opened without a location):
+    // nothing checked it against a real place yet (decision row "P5 fixes from the UX audit" (1)).
+    if (!tight && !siteToday(ctx.location)) out.push({ kind: 'estimate', key: 'estimate.noSite', severity: 'note', state: 'no-site' });
   }
   return out;
 }

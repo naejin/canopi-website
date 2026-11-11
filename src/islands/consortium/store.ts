@@ -82,23 +82,23 @@ export const pool = computed<Taxon[] | null>(() => {
 // the site location has a climate, so it stays off the first run (decision row "Island JavaScript
 // budget for P5"). The page asks it nothing without one.
 export const rangeRule = signal<RangeRule | null>(null);
-// The rule's chunk did not load: range checks are off (P2's unfiltered pool) until the next location
-// with a climate tries again.
-export const rangeFailed = signal(false);
-// The rule's load in flight (settled once rangeRule or rangeFailed is set): loadPool waits for it, so a
+// The rule's chunk did not load (rangeBroken, once per page: a browser remembers a failed module URL,
+// so the import is never tried again and Reload is the only retry, one toast for the failure).
+// rangeFailed: range checks are off (P2's unfiltered pool) while a location with a climate asks for
+// them; with no location (Forget, Start over) the page is plain P2 and says nothing of it.
+const rangeBroken = signal(false);
+export const rangeFailed = computed(() => rangeBroken.value && siteClimate.value);
+// The rule's load in flight (settled once rangeRule or rangeBroken is set): loadPool waits for it, so a
 // caller that awaited the pool finds it readable.
 let rangeLoad: Promise<void> | null = null;
 const withRule = <T>(p: Promise<T>): Promise<T> => (siteClimate.peek() && !rangeRule.peek() && rangeLoad ? Promise.all([p, rangeLoad]).then(([x]) => x) : p);
 // Whether the location gave a climate (core siteToday is non-null; inlined to keep the rule off the first run).
 export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
 effect(() => {
-  const at = location.value; // each new location with a climate tries again
-  if (!siteClimate.value || rangeRule.peek()) return;
-  rangeFailed.value = false;
+  if (!siteClimate.value || rangeLoad) return;
   rangeLoad = import('./views/pool/pool.tsx').then((m) => { rangeRule.value = m.rangeRule; }, (err: unknown) => {
     console.error(err);
-    if (location.peek() !== at || rangeRule.peek()) return;
-    rangeFailed.value = true;
+    rangeBroken.value = true;
     showToast(T('range.unavailable'), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
   });
 });
@@ -253,6 +253,8 @@ export function suggestMembers(): boolean {
   const rule = rangeRule.value;
   // Nothing fits the site: no suggestion (it could only be an empty matrix); Start shows why.
   if (rule?.none(p, location.value)) return false;
+  // A borrowed pool without a site climate: no suggestion until a location filters it (UX audit fix 1).
+  if (!siteClimate.value && p.some((t) => t.estimate)) return false;
   const s = suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
   kept.value = keep;
   members.value = s.members;

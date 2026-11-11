@@ -1,7 +1,7 @@
 // Stream S5c: whether a plant's observed climate range holds the site (owner answer 2, 2026-11-11).
 // The site's today values (the climate reader's historical period) against the plant's observed
 // range (Taxon.climate, GBIF cells, cultivation included): the coldest-month minimum on both sides
-// and the warmest-month maximum on the hot side. Beyond the Q05/Q95 percentile by more than
+// (never for an annual) and the warmest-month maximum on the hot side. Beyond the Q05/Q95 percentile by more than
 // RANGE_MARGIN_C: 'outside' (left out of suggestions and lists, still addable with a warning);
 // beyond it by up to the margin: 'edge' ("near the edge of its observed range"). Aridity is a mark
 // only and never changes the verdict. No range: 'unknown' ("range not recorded"), never filtered.
@@ -35,6 +35,8 @@ export function passes(value: number, bound: number, side: 'below' | 'above'): P
   return cents <= 0 ? 'inside' : cents > RANGE_MARGIN_C * 100 ? 'beyond' : 'edge';
 }
 
+export const isAnnual = (taxon: Taxon): boolean => taxon.traits?.is_annual === true;
+
 // null: nothing to check against (no site climate).
 export function rangeCheck(taxon: Taxon, site: SiteLocation | null): RangeCheck | null {
   const today = siteToday(site);
@@ -52,8 +54,13 @@ export function rangeCheck(taxon: Taxon, site: SiteLocation | null): RangeCheck 
     sides.push(side);
     if (p === 'beyond') beyond.push(side);
   };
-  if (cold?.low != null) pass('cold', passes(today.tminColdC, cold.low, 'below'));
-  if (cold?.high != null) pass('mild', passes(today.tminColdC, cold.high, 'above'));
+  // An annual grows in the warm season: never checked against its coldest-month minimum, on either
+  // side (owner, decision row "Annuals skip the winter-cold check"); the frost-free season's length is
+  // not in the climate data yet, so its marks ask the reader to check it (range-marks.ts range.annual).
+  if (!isAnnual(taxon)) {
+    if (cold?.low != null) pass('cold', passes(today.tminColdC, cold.low, 'below'));
+    if (cold?.high != null) pass('mild', passes(today.tminColdC, cold.high, 'above'));
+  }
   if (warm?.high != null) pass('hot', passes(today.tmaxWarmC, warm.high, 'above'));
   return { verdict: beyond.length ? 'outside' : sides.length ? 'edge' : 'inside', sides, beyond, aridity };
 }

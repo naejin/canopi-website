@@ -45,6 +45,23 @@ test('rangeFit: coldest month on both sides and warmest month on the hot side, "
   assert.deepEqual(core.rangeCheck(t, at(-18, 31)), { verdict: 'outside', sides: ['cold', 'hot'], beyond: ['cold'], aridity: 'unknown' });
 });
 
+test('rangeCheck: an annual skips the winter-cold check on both sides, the summer heat still applies (owner, "Annuals skip the winter-cold check")', () => {
+  // Harbin-like values: coldest-month minimum -24 °C, warmest-month maximum 29 °C.
+  const harbin = at(-24, 29);
+  const marks = (t, site, surface) => rangeMarks(t, ctx({ location: site }), surface).map((m) => [m.kind, m.key, m.severity]);
+  const warmRange = { ...taxon().climate, tminCold: { low: -2, median: 5, high: 12, count: 90, basis: 'observed_cells' }, tmaxWarm: { low: 20, median: 27, high: 31, count: 90, basis: 'observed_cells' } };
+  const annual = taxon({ traits: { is_annual: true }, climate: warmRange });
+  assert.deepEqual(core.rangeCheck(annual, harbin), { verdict: 'inside', sides: [], beyond: [], aridity: 'unknown' }, 'cold: passes, no cold side');
+  assert.equal(core.rangeFit(taxon({ traits: { is_annual: false }, climate: warmRange }), harbin), 'outside', 'a perennial with the same range is still left out');
+  const mild = at(18, 29);
+  assert.equal(core.rangeCheck(annual, mild).sides.includes('mild'), false, 'nor the mild-winter side');
+  const hot = taxon({ traits: { is_annual: true }, climate: { ...warmRange, tmaxWarm: { ...warmRange.tmaxWarm, high: 25 } } });
+  assert.equal(core.rangeFit(hot, harbin), 'outside', 'heat: 29 °C against 25 still fails');
+  assert.deepEqual(core.withinRange([annual], harbin), [annual], 'kept in the filtered pool');
+  assert.deepEqual(marks(annual, harbin, 'row'), [['unknown', 'range.annual', 'note']], 'its row says it grows in the warm season');
+  assert.deepEqual(marks(annual, harbin, 'chip'), [], 'not on chips');
+});
+
 test('passes: the one comparison of the range rule (range.ts), in hundredths of a degree, used by today\'s check and the future one', () => {
   assert.equal(core.passes(7.8, 7.8, 'above'), 'inside', 'on the bound');
   assert.equal(core.passes(9.8, 7.8, 'above'), 'edge', 'exactly the margin above, though 9.8 - 7.8 is a hair over 2 in floats');
@@ -186,7 +203,8 @@ test('rangeMarks: edge, outside and unknown with a site climate; estimate on a b
   assert.deepEqual(marks(arid, at(0, 25, null), 'details'), [['unknown', 'range.aridityNotChecked', 'note']], 'ice: not checked');
   const borrowed = taxon({ placedFrom: 'Mediterranean', estimate: true });
   assert.deepEqual(marks(borrowed, null, 'chip'), [['estimate', 'estimate.short', 'note']]);
-  assert.deepEqual(marks(borrowed, null, 'row'), [['estimate', 'estimate.fromMediterranean', 'note']]);
+  assert.deepEqual(marks(borrowed, null, 'row'), [['estimate', 'estimate.fromMediterranean', 'note'], ['estimate', 'estimate.noSite', 'note']], 'without a location: give one to check it (UX audit fix 1)');
+  assert.deepEqual(marks(borrowed, null, 'details'), [['estimate', 'estimate.fromMediterranean', 'note'], ['estimate', 'estimate.noSite', 'note']]);
   assert.deepEqual(marks(borrowed, at(-16, 25), 'chip'), [['edge', 'range.edgeShort', 'note'], ['estimate', 'estimate.short', 'note']]);
   assert.equal('rangeMarks' in core, false, 'not exported from index.ts, so out of the first run');
 });
@@ -202,7 +220,7 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
   // What the code reads: range-marks.ts and pool.tsx keys.
   const used = ['range.edge', 'range.edgeShort', 'range.edgeDetails', 'range.outside', 'range.outsideShort', 'range.outsideDetails', 'range.unknown', 'range.unknownShort', 'range.drier', 'range.wetter', 'range.aridityNotChecked',
     'range.side.cold', 'range.side.mild', 'range.side.hot', 'range.pool.count', 'range.pool.edge', 'range.pool.left', 'range.pool.caveat', 'range.pool.aridityNotChecked',
-    'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailable', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed'];
+    'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailable', 'range.needsSite', 'range.needsSite.go', 'range.needsSite.pill', 'range.annual', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed', 'estimate.noSite'];
   assert.deepEqual(mine, used.map((k) => `consortium.${k}`));
   const holes = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().filter((x, i, a) => a.indexOf(x) === i);
   for (const l of locales) {
@@ -245,11 +263,10 @@ const SITES = {
   yakutsk: ['Dfc', 'Boreal', -39.8, 24.7, 0.48],
   chicago: ['Dfa', 'Continental', -6.2, 27.8, 1.3],
 };
-// Plants kept (not outside) from the climate's pool, own or borrowed. The design check's numbers
-// match for the curated and the Subtropical/Arid sites (Nairobi, Perth, Seville: "own list" 181, 117,
-// 101); its Montreal 101 and Oslo 227 counted all 515 plants, while Continental borrows from Temperate
-// and Mediterranean only (327 plants): 100 and 224.
-const KEPT = { lyon: 339, dakar: 199, lima: 207, hanoi: 208, montreal: 100, nairobi: 181, perth: 117, seville: 101, oslo: 224, manaus: 175, phoenix: 12, brisbane: 265, yakutsk: 0, chicago: 230 };
+// Plants kept (not outside) from the climate's pool, own or borrowed, with annuals exempt from the
+// winter-cold check (owner, "Annuals skip the winter-cold check"; before it: Lyon 339, Montreal 100,
+// Oslo 224, Yakutsk 0, the design check's counts). Yakutsk keeps its 59 annuals and nothing else.
+const KEPT = { lyon: 348, dakar: 247, lima: 253, hanoi: 244, montreal: 145, nairobi: 182, perth: 131, seville: 101, oslo: 238, manaus: 183, phoenix: 13, brisbane: 289, yakutsk: 59, chicago: 238 };
 
 const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
 const real = await sourceOf(new URL(`../public${index.files[0].url}`, import.meta.url), { releaseId: index.release_id, climates: index.climates });
@@ -268,8 +285,8 @@ test('real export: the pool each site keeps, and a suggestion from it never hold
     const members = s.members.map((id) => kept.find((t) => t.id === id));
     assert.equal(members.every((t) => t && core.rangeFit(t, site) !== 'outside'), true, `${name}: no suggested plant outside its range`);
     assert.equal(core.flagsOf(members, ctxt).some((f) => f.kind === 'conflict' && f.severity === 'high'), false, `${name}: no serious conflict`);
-    if (name === 'yakutsk') assert.equal(s.members.length, 0, 'nothing fits at Yakutsk');
-    else assert.ok(s.members.length > 0, `${name}: a suggestion`);
+    assert.ok(s.members.length > 0, `${name}: a suggestion`);
+    if (name === 'yakutsk') assert.equal(members.every((t) => t.traits.is_annual === true), true, 'Yakutsk: annuals only (they skip the winter-cold check)');
   }
 });
 
@@ -280,6 +297,27 @@ test('PlantSource.interactions: a borrowed climate reads the rows of the curated
   assert.deepEqual([...await zones(fixture, 'Temperate')].sort(), [null, 'Temperate'].sort(), 'a curated climate: its own rows, as in P2');
   assert.ok((await zones(real, 'Arid')).has('Mediterranean'), 'real export: an Arid pool sees a Mediterranean-specific row');
   assert.equal((await zones(real, 'Boreal')).has('Tropical'), false, 'real export: Boreal sees no Tropical row');
+});
+
+test('PlantSource.interactions: duplicate rows keep the highest severity, then list order, so a conflict warning never gets milder (fix review 231bead, 3)', async () => {
+  const opened = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url)))), { releaseId: index.release_id, climates: index.climates });
+  // The export has no such key today: a wrapped db adds, for one Subtropical row, a milder general copy
+  // (read first by list order) and a stronger copy from the last list of the order.
+  const db = new Proxy(opened.db, { get(o, k) {
+    if (k !== 'selectObjects') return typeof o[k] === 'function' ? o[k].bind(o) : o[k];
+    return (sql, params) => {
+      const rows = o.selectObjects(sql, params);
+      if (!/^SELECT \* FROM interactions/.test(sql)) return rows;
+      const r = rows.find((x) => x.climate_zone === 'Tropical');
+      return r ? [...rows, { ...r, interaction: -1, climate_zone: null, severity: 'low' }, { ...r, interaction: -2, climate_zone: 'Temperate', severity: 'high' }] : rows;
+    };
+  } });
+  const src = createSqliteSource(db, { images: {} });
+  const plain = (await real.interactions('Subtropical')).find((x) => x.climate_zone === 'Tropical');
+  assert.ok(plain, 'a Tropical row to copy');
+  const key = (x) => [x.subject.name, x.object.name, x.type, x.agent ?? ''].join('|');
+  const got = (await src.interactions('Subtropical')).filter((x) => key(x) === key(plain));
+  assert.deepEqual(got.map((x) => [x.climate_zone, x.severity]), [['Temperate', 'high']], 'the high row wins over the general and the earlier lists');
 });
 
 test('PlantSource.interactions: a borrowed climate keeps one row per (subject, object, type, agent): the general row first, then the first list in NEAREST_LISTS order', async () => {

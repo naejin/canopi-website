@@ -342,17 +342,26 @@ test('P5-13 (S5b share with "include my location"): the link carries the cell ce
 // The owner's range rule (2026-11-11) in SQL, for picking a plant: coldest-month minimum on both
 // sides and warmest-month maximum on the hot side, 2 °C beyond the percentiles "outside", between
 // the percentile and the margin "near the edge".
-const RANGED = `SELECT p.canonical_name name, n.low nlo, n.high nhi, x.high xhi FROM plants p
+// An annual skips the winter-cold check (owner, "Annuals skip the winter-cold check").
+const RANGED = `SELECT p.canonical_name name, n.low nlo, n.high nhi, x.high xhi, coalesce(p.is_annual, 0) annual FROM plants p
   JOIN placements pl ON pl.plant = p.plant AND pl.climate_zone = ?3
   JOIN plant_climate n ON n.plant = p.plant AND n.variable = 'tmin_cold'
   JOIN plant_climate x ON x.plant = p.plant AND x.variable = 'tmax_warm'`;
-const OUTSIDE = '(nlo - 2 > ?1 OR ?1 > nhi + 2 OR ?2 > xhi + 2)';
-const EDGE = `(NOT ${OUTSIDE} AND (nlo > ?1 OR ?1 > nhi OR ?2 > xhi))`;
+const OUTSIDE = '((NOT annual AND (nlo - 2 > ?1 OR ?1 > nhi + 2)) OR ?2 > xhi + 2)';
+const EDGE = `(NOT ${OUTSIDE} AND ((NOT annual AND (nlo > ?1 OR ?1 > nhi)) OR ?2 > xhi))`;
 const pickRanged = (where, site, zone) => realDb((db) => db.prepare(`SELECT name FROM (${RANGED}) WHERE ${where} ORDER BY name LIMIT 1`).get(site.tminColdC, site.tmaxWarmC, zone)?.name);
 
-test('P5-14 (S5c nothing fits): at Yakutsk no plant\'s range holds the site: the "nothing fits" state, not an empty matrix', async () => {
+// Since annuals skip the winter-cold check, every real site keeps some plant: "nothing fits" is shown
+// at Yakutsk's coordinates with a warmest month of 46 °C, above every recorded summer maximum + 2 °C.
+async function atNowhere(page) {
+  const l = await lookupAt(...SITES.yakutsk);
+  const periods = l.climate.periods.map((p) => (p.scenario === 'historical' ? { ...p, tmaxWarmC: 46 } : p));
+  return atSite(page, 'yakutsk', { climate: { ...l.climate, periods } });
+}
+
+test('P5-14 (S5c nothing fits): where no plant\'s range holds the site: the "nothing fits" state, not an empty matrix', async () => {
   const page = await tool();
-  await atSite(page, 'yakutsk');
+  await atNowhere(page);
   await page.evaluate(() => { window.__ctTest.store.climate.value = 'Boreal'; });
   assert.ok(await has(page, '[data-pool-empty]', 10_000), 'the nothing-fits state');
   // Strengthened (S5c): the state gives a clear next step, a real control that opens the search of
@@ -367,6 +376,22 @@ test('P5-14 (S5c nothing fits): at Yakutsk no plant\'s range holds the site: the
   await page.click('.ct-add-showall').catch(() => {});
   assert.ok(await has(page, '.ct-add .ct-rows li', 10_000), 'the search lists plants before a query');
   assert.ok(await has(page, '.ct-add .ct-rows li [data-mark="outside"]', 10_000), 'each one marked outside its range');
+});
+
+test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold check"): at Yakutsk the Boreal pool keeps its annual crops, Suggest uses them, and an annual says to check the frost-free season', async () => {
+  const page = await tool();
+  await atSite(page, 'yakutsk');
+  await page.evaluate(async () => { const { store } = window.__ctTest; store.climate.value = 'Boreal'; await store.loadPool('Boreal'); });
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.fitPool.value?.length > 0, { timeout: 10_000 }).then(() => true, () => false), 'the pool keeps plants');
+  const kept = await page.evaluate(() => { const p = window.__ctTest.store.fitPool.value; return { all: p.length, annual: p.filter((t) => t.traits.is_annual).length, perennial: p.filter((t) => t.traits.is_annual !== true).length }; });
+  assert.ok(kept.annual >= 50, `annual crops kept (${kept.annual})`);
+  assert.equal(kept.perennial, 0, 'no perennial holds a −39.8 °C winter');
+  assert.equal(await page.$('[data-pool-empty]'), null, 'not "nothing fits"');
+  assert.equal(await page.evaluate(() => { const { store } = window.__ctTest; const ok = store.suggestMembers(); store.view.value = 'matrix'; return ok && store.members.value.length > 0; }), true, 'Suggest gives a consortium');
+  const id = await page.evaluate(() => window.__ctTest.store.members.value[0]);
+  await page.evaluate((m) => window.__ctTest.openSheet('details', m), id);
+  assert.ok(await has(page, '[data-mark-surface="details"][data-mark-state="annual"]', 10_000), 'Details: the annual line');
+  assert.match(await text(page, '[data-mark-surface="details"][data-mark-state="annual"]') ?? '', /warm season.*frost-free season/);
 });
 
 test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range, and Add lists none until one is typed, which then asks first', async () => {
@@ -431,15 +456,36 @@ test('P5-14e (S5c range chunk offline): if the pool chunk cannot load, the tool 
   assert.ok(await page.waitForFunction((want) => { const { store } = window.__ctTest; return store.climate.value === 'Temperate' && store.view.value === 'matrix' && want.every((x) => store.members.value.includes(x)); }, { timeout: 15_000 }, ids.slice(0, 5)).then(() => true, () => false), 'a pasted link opens its consortium');
 });
 
+test('P5-14g (S5c range chunk offline, fix review 231bead 1–2): Reload is the only retry, one toast per failure, and the notice goes with the location', async () => {
+  const page = await tool();
+  const cdp = await page.createCDPSession();
+  const urls = new Map(), failed = [];
+  cdp.on('Network.requestWillBeSent', (e) => urls.set(e.requestId, e.request.url));
+  cdp.on('Network.loadingFailed', (e) => { if (/\/_astro\/pool\./.test(urls.get(e.requestId) ?? '')) failed.push(e.blockedReason); });
+  await cdp.send('Network.enable');
+  await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/pool.*'] });
+  await page.evaluate(() => { window.__toasts = new Set(); window.__ctTest.store.toast.subscribe((t) => { if (t) window.__toasts.add(t.id); }); });
+  await choose(page, 'Mediterranean');
+  await atSite(page, 'seville');
+  assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'the notice');
+  await atSite(page, 'lyon');
+  await new Promise((r) => setTimeout(r, 1500));
+  assert.equal(failed.length, 1, 'a new location does not import the chunk the browser remembers as failed');
+  assert.equal(await page.evaluate(() => window.__toasts.size), 1, 'never a second toast for the same failure');
+  assert.ok(await has(page, '[data-range-unavailable]'), 'the notice stays, with Reload');
+  await page.evaluate(() => { window.__ctTest.store.location.value = null; });
+  assert.ok(await page.waitForFunction(() => !document.querySelector('[data-range-unavailable]') && !window.__ctTest.store.rangeFailed.value, { timeout: 5_000 }).then(() => true, () => false), 'location cleared: plain P2, no notice');
+});
+
 test('P5-14f (S5c Suggest while the range rule loads): when nothing fits, a Suggest pressed before the rule arrives stays on Start with the nothing-fits state', async () => {
   const page = await tool();
   // Temperate (curated): no panel, so the rule's chunk is not fetched before the location; no
-  // Temperate plant holds Yakutsk.
+  // Temperate plant holds the synthetic site (atNowhere).
   await choose(page, 'Temperate');
   const cdp = await page.createCDPSession();
   await cdp.send('Network.enable');
   await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 2500, downloadThroughput: -1, uploadThroughput: -1 });
-  await atSite(page, 'yakutsk');
+  await atNowhere(page);
   const suggest = await page.waitForFunction(() => [...document.querySelectorAll('.ct-cta button')].find((b) => b.textContent.trim() === 'Suggest plants'), { timeout: 5_000 }).catch(() => null);
   assert.ok(suggest, 'Suggest is there while the rule loads');
   assert.equal(await page.evaluate(() => window.__ctTest.store.rangeRule.value), null, 'the rule has not arrived yet');
@@ -523,13 +569,52 @@ test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from t
 });
 
 test('P5-26 (S5c borrowed list from a link): #v=4&c=subtropical without o= opens with borrowed plants marked "estimate", no location needed', async () => {
-  const page = await tool({ hash: '#v=4&c=subtropical&a=&e=1' });
+  // A consortium made at Lyon on the borrowed Subtropical list, then opened from its link without a location.
+  const maker = await tool();
+  await atSite(maker, 'lyon');
+  await maker.evaluate(async () => { const { store } = window.__ctTest; store.climate.value = 'Subtropical'; await store.loadPool('Subtropical'); });
+  assert.equal(await maker.evaluate(() => { const { store } = window.__ctTest; const ok = store.suggestMembers(); store.view.value = 'matrix'; return ok; }), true, 'with a location, Subtropical suggests');
+  assert.ok(await maker.waitForFunction(() => /[#&]c=subtropical/.test(location.hash) && /[#&]m=|[#&]a=./.test(location.hash), { timeout: 10_000 }).then(() => true, () => false), 'the address bar holds the link');
+  const hash = await maker.evaluate(() => location.hash);
+  const members = await maker.evaluate(() => [...window.__ctTest.store.members.value].sort());
+  const page = await tool({ hash });
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.climate.value === 'Subtropical', { timeout: 10_000 }).then(() => true, () => false), 'the link\'s climate');
   assert.equal(await page.evaluate(() => window.__ctTest.store.location.value), null, 'no location: borrowing depends on the climate only');
-  assert.ok(await page.waitForFunction(() => (window.__ctTest.store.pool.value ?? []).some((t) => t.estimate), { timeout: 10_000 }).then(() => true, () => false), 'a borrowed pool');
-  await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
+  assert.ok(await page.waitForFunction((want) => JSON.stringify([...window.__ctTest.store.members.value].sort()) === JSON.stringify(want), { timeout: 10_000 }, members).then(() => true, () => false), 'UX audit fix (1): the link\'s plants are all restored, no data loss');
+  await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; });
   assert.ok(await has(page, '[data-mark="estimate"]', 10_000), 'borrowed plants marked "estimate"');
+  await page.evaluate(() => { const { store } = window.__ctTest; store.openSheet('details', store.members.value[0]); });
+  assert.ok(await has(page, '[data-mark-surface="details"][data-mark-state="no-site"]', 10_000), 'Details says to give a location to check it');
+  assert.match(await text(page, '[data-mark-surface="details"][data-mark-state="no-site"]') ?? '', /give your site.s location to check/i);
+  assert.equal(await page.evaluate(() => window.__ctTest.store.suggestMembers()), false, 'no new suggestion from a borrowed list without a location');
   assert.equal(await page.$('[data-pool-empty]'), null);
+});
+
+test('P5-26b (S5c borrowed climate without a location, UX audit fix 1): Start offers no Suggest, no crops and no Start empty, and says the climate needs the site\'s location; a curated climate is as in P2', async () => {
+  const page = await tool();
+  await page.click('input[name="ct-climate"][value="subtropical"]');
+  assert.ok(await has(page, '[data-needs-site]', 10_000), 'the needs-location line');
+  assert.match(await text(page, '[data-needs-site]') ?? '', /needs your site.s location to pick plants/);
+  assert.ok(await has(page, '[data-needs-site] button'), 'a control to the location step');
+  assert.equal(await page.$('.ct-cta'), null, 'no Suggest, Start empty or Paste for it');
+  assert.equal(await page.$('.ct-chips'), null, 'no crops from an unfiltered borrowed list');
+  await page.click('input[name="ct-climate"][value="temperate"]');
+  assert.ok(await has(page, '.ct-cta', 10_000), 'Temperate without a location: Suggest as in P2');
+  assert.equal(await page.$('[data-needs-site]'), null);
+  // With a location the borrowed climate is offered (filtered by the range rule).
+  await atSite(page, 'lyon');
+  await page.click('input[name="ct-climate"][value="subtropical"]');
+  assert.ok(await has(page, '.ct-cta', 10_000), 'Subtropical with a location: Suggest');
+  assert.equal(await page.$('[data-needs-site]'), null);
+});
+
+test('P5-26c (S5c card pill, UX audit fix 1): a borrowed climate\'s card says "Needs your location" until a location is given', { todo: 'S5c: waits for hand-off H-S5c-5 (Start.tsx Climates pill reads PoolSlot cardPill)' }, async () => {
+  const page = await tool();
+  const pill = (v) => page.$eval(`input[name="ct-climate"][value="${v}"] ~ .ct-card-desc .ct-pill`, (e) => e.textContent.trim());
+  assert.equal(await pill('subtropical'), 'Needs your location');
+  assert.equal(await pill('temperate'), 'Ready');
+  await atSite(page, 'lyon');
+  assert.equal(await pill('subtropical'), 'Ready');
 });
 
 // ---- S5d: future check ----

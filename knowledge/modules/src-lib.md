@@ -5,16 +5,16 @@ description: Framework-free logic shared by the Worker endpoints, the page scrip
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:03:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:46:18Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:27:06Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:27:54Z }
 sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:5b9ffac81ef7dd32
-    last_modified: 2026-11-11T19:12:04Z
+    digest: sha256:d9e1f36fd9208c30
+    last_modified: 2026-11-11T20:32:24Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
