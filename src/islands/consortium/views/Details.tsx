@@ -455,11 +455,13 @@ function PlantDetails({ id }: { id: PlantId }) {
   const [correcting, setCorrecting] = useState(() => drafts.has(id));
   const openButton = useRef<HTMLButtonElement>(null);
   const reopened = useRef(false);
+  const byReader = useRef(false); // opened with the button (focus the form), not brought back with a draft
   useEffect(() => { if (!correcting && reopened.current) openButton.current?.focus(); reopened.current = correcting; }, [correcting]);
   useEffect(() => {
     const src = store.source.value;
     setFacts(null);
     setCorrecting(drafts.has(id));
+    byReader.current = false;
     if (!src || !zone) return;
     let live = true;
     src.details(id, zone, lang() as Locale).then((d) => { if (live) setFacts(d); })
@@ -631,10 +633,10 @@ function PlantDetails({ id }: { id: PlantId }) {
         <section class="ct-correct" aria-labelledby="ct-corr-title">
           <h3 id="ct-corr-title">{TS('correction.title')}</h3>
           {correcting
-            ? <Lazy load={loadCorrection} props={{ fields, plantId: id, plantName: t.canonical_name, plantLabel: nameOf(t), release, climate: zone, climateLabel: zoneName(zone), onCancel: () => setCorrecting(false) }} />
+            ? <Lazy load={loadCorrection} props={{ fields, plantId: id, plantName: t.canonical_name, plantLabel: nameOf(t), release, climate: zone, climateLabel: zoneName(zone), onCancel: () => setCorrecting(false), focusFirst: byReader.current }} />
             : <>
                 <p class="ct-muted">{TS('correction.lede')}</p>
-                <p><button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => setCorrecting(true)}>{TS('correction.open')}</button></p>
+                <p><button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => { byReader.current = true; setCorrecting(true); }}>{TS('correction.open')}</button></p>
               </>}
         </section>
       )}

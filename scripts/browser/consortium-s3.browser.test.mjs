@@ -324,3 +324,63 @@ test('BT-6 (S3 review): "Add anyway" keeps the ticks; a guest that misfits asks 
   assert.ok(await findAx(page, { role: 'dialog' }), 'Show opens the plant');
   await page.close();
 });
+
+test('BT-5 (S3 review 2): after a send no draft is kept, even with the email filled; a restored draft leaves the focus on the heading', async () => {
+  const page = await open({ width: 1280, data: 'fixture', correction: 'ok' });
+  await start(page);
+  const chip = await chipOf(page, names['Castanea sativa']);
+  await page.locator(aria('button', chip.name)).click();
+  await page.locator(aria('button', 'Suggest a correction')).click();
+  await page.waitForSelector('dialog input[type="email"]');
+  await page.type('dialog input[type="email"]', 'reader@example.org');
+  await page.keyboard.press('Escape');
+  await closed(page);
+  await page.locator(aria('button', chip.name)).click();
+  assert.ok(await findAx(page, { role: 'button', name: 'Suggest a correction' }), 'an email alone is no draft');
+  await page.locator(aria('button', 'Suggest a correction')).click();
+  await page.waitForSelector('dialog select');
+  await page.select('dialog select', 'height_m');
+  await page.locator('::-p-aria([role="textbox"])').fill('The height looks wrong.');
+  await page.type('dialog input[type="email"]', 'reader@example.org');
+  await page.locator(aria('checkbox', 'I agree my suggestion is published under CC BY-SA 4.0')).click();
+  await page.locator(aria('button', 'Send suggestion')).click();
+  assert.ok(await findAx(page, { name: /^Thank you/ }), 'sent');
+  await page.locator(aria('button', 'Suggest another')).click();
+  await page.keyboard.press('Escape');
+  await closed(page);
+  await page.locator(aria('button', chip.name)).click();
+  assert.ok(await findAx(page, { role: 'button', name: 'Suggest a correction' }), 'reopened after a send: the open button, no form');
+  // A draft: typed, closed, reopened: the form is back, the focus is on the sheet's heading.
+  await page.locator(aria('button', 'Suggest a correction')).click();
+  await page.waitForSelector('dialog select');
+  await page.select('dialog select', 'height_m');
+  await page.locator('::-p-aria([role="textbox"])').fill('Unsent');
+  await page.keyboard.press('Escape');
+  await closed(page);
+  await page.locator(aria('button', chip.name)).click();
+  await page.waitForSelector('dialog[open] textarea');
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(await page.evaluate(() => document.activeElement?.tagName), 'H2', 'the restored form does not take the focus');
+  await page.close();
+});
+
+test('BT-6 (S3 review 2): a toast moving into a sheet is not announced again; "Add all" reads the text as it is when clicked', async () => {
+  const page = await open({ width: 1280, data: 'fixture' });
+  await start(page);
+  const chip = await chipOf(page, names['Castanea sativa']);
+  await page.locator(aria('button', chip.name)).click();
+  await page.locator(aria('button', 'Remove')).click();
+  await closed(page);
+  await page.waitForSelector('.ct-toast');
+  assert.ok(await page.$eval('.ct-toast', (el) => !!el.closest('[aria-live]')), 'the toast is announced where it is first shown');
+  await openBy(page, 'Paste a list', 'paste');
+  await page.waitForSelector('dialog[open] .ct-toast');
+  assert.ok(await page.$eval('dialog[open] .ct-toast', (el) => !el.closest('[aria-live]')), 'moved into the sheet, it is not in a live region');
+  await setStore(page, () => { window.__ctTest.store.members.value = []; });
+  await page.locator('::-p-aria([role="textbox"])').fill('Malus domestica');
+  await page.waitForFunction(() => /Add 1/.test(document.querySelector('dialog[open] .ct-add-bar .button-primary')?.textContent ?? ''));
+  await page.$eval('dialog[open] textarea', (el) => { el.value = 'Malus domestica\nCastanea sativa'; el.dispatchEvent(new Event('input', { bubbles: true })); el.closest('dialog').querySelector('.ct-add-bar .button-primary').click(); });
+  await closed(page);
+  assert.ok(await isMember(page, 'Malus domestica') && await isMember(page, 'Castanea sativa'), 'both lines are added');
+  await page.close();
+});

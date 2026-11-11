@@ -61,7 +61,7 @@ const ORDER: Name[] = ['field', 'proposed', 'note', 'email', 'consent'];
 type Form = CorrectionDraft;
 type Status = 'idle' | 'sending' | 'sent' | 'failed';
 type Errors = Partial<Record<Name, string>>;
-interface Props { fields: CorrectionField[]; plantId: string; plantName: string; plantLabel: string; release: string; climate: string; climateLabel: string; onCancel: () => void }
+interface Props { fields: CorrectionField[]; plantId: string; plantName: string; plantLabel: string; release: string; climate: string; climateLabel: string; onCancel: () => void; focusFirst?: boolean }
 
 const fieldOf = (fields: CorrectionField[], id: string) => fields.find((f) => f.field === id) ?? null;
 
@@ -103,11 +103,12 @@ async function post(body: unknown): Promise<{ status: 'sent' | 'failed'; message
 let languageNames: Intl.DisplayNames | null = null;
 const languageName = (code: string) => { try { languageNames ??= new Intl.DisplayNames([code], { type: 'language' }); return languageNames.of(code) ?? code; } catch { return code; } };
 
-export default function Correction({ fields, plantId, plantName, plantLabel, release, climate, climateLabel, onCancel }: Props) {
+export default function Correction({ fields, plantId, plantName, plantLabel, release, climate, climateLabel, onCancel, focusFirst = false }: Props) {
   const [form, setFormState] = useState<Form>(() => drafts.get(plantId) ?? { field: '', proposed: '', note: '', email: '', consent: false, website: '' });
-  const setForm = (next: (f: Form) => Form) => setFormState((f) => { const n = next(f); if (n.proposed || n.note || n.email) drafts.set(plantId, n); else drafts.delete(plantId); return n; });
-  // The first field takes the focus when the form opens.
-  useEffect(() => { document.getElementById('ct-corr-field')?.focus(); }, []);
+  // A draft is unsent text (a field, a value or a note); an email or a tick alone is not one.
+  const setForm = (next: (f: Form) => Form) => setFormState((f) => { const n = next(f); if (n.field || n.proposed.trim() || n.note.trim()) drafts.set(plantId, n); else drafts.delete(plantId); return n; });
+  // The first field takes the focus when the reader opens the form, not when a draft brings it back.
+  useEffect(() => { if (focusFirst) document.getElementById('ct-corr-field')?.focus(); }, []);
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<Errors>({});
