@@ -4,7 +4,7 @@
 // case, Latin/Greek/Cyrillic marks stripped, ß/œ/æ written out), never with SQL LIKE (A6).
 // Pure: no DOM, no store, so scripts/consortium-paste.test.mjs tests it.
 import type { ClimateZone, PlantId } from '../../../lib/consortium/types.ts';
-import { fold } from '../data/sqlite-source.ts';
+import { fold, searchIndex } from '../data/sqlite-source.ts';
 
 // What matching reads of a plant (a Taxon has all of it).
 export interface Named { id: PlantId; canonical_name: string; genus?: string | null; names: Partial<Record<string, string>> }
@@ -182,56 +182,79 @@ function indexOf<T extends Named>(taxa: readonly T[]): NameIndex<T> {
   if (!idx) indexes.set(taxa, (idx = nameIndex(taxa)));
   return idx as unknown as NameIndex<T>;
 }
+type Search = ReturnType<typeof searchIndex>;
+const searches = new WeakMap<readonly Named[], Search>();
+// S1's search (whole names, then word prefixes) over a list, for a line no name matched.
+const PREFIX_SCORE = 2, PREFIX_LIMIT = 8;
+function prefixMatch<T extends Named>(name: string, taxa: readonly T[]): T[] {
+  let s = searches.get(taxa);
+  if (!s) searches.set(taxa, (s = searchIndex(taxa.map((t) => ({ id: t.id, canonical: t.canonical_name, names: t.names })))));
+  const byId = new Map(taxa.map((t) => [t.id, t]));
+  return s(name, PREFIX_LIMIT).filter((h) => h.score <= PREFIX_SCORE).flatMap((h) => byId.get(h.id) ?? []);
+}
 
 export interface PasteResult<T> {
   found: { name: string; taxon: T; close: string | null }[];
   choose: { name: string; taxa: T[]; inside: PlantId[]; climate: ClimateZone | null }[];
   other: { name: string; climate: ClimateZone; taxon: T; close: string | null }[];
   already: { name: string; taxon: T; close: string | null; climate: ClimateZone | null }[];
+  duplicate: { name: string; taxon: T }[];
   none: { name: string }[];
   header: string | null;
 }
 // A whole paste, sorted into the groups the sheet shows, each plant once:
-//   found   one plant of this climate's list (added by "Add the N found")
-//   choose  several plants match (a genus or a shared name): the reader ticks; `climate` names
-//           another climate's list when only that list has them, null for this one
-//   other   only another climate's list has it, one plant: "Add anyway", a guest (A9)
-//   already in the consortium already
-//   none    in no list
+//   found      one plant of this climate's list (added by "Add the N found")
+//   choose     several plants match (a genus, a shared name, or, for a line no name matched, S1's
+//              word-prefix search: "Chestnut" → European chestnut); plants another line matched are
+//              left out, and a group left empty is dropped; `climate` names another climate's list
+//              when only that list has them, null for this one
+//   other      only another climate's list has it, one plant: "Add anyway", a guest (A9)
+//   already    in the consortium already
+//   duplicate  a later line naming a plant an earlier line matched
+//   none       in no list
 // here: this climate's plants; others: [[climate, plants], …] in the export's order (a plant of this
 // list is never offered from another); members: the consortium's ids.
 export function readPaste<T extends Named>(names: PastedNames, { here, others = [], members = [] }: { here: readonly T[]; others?: [ClimateZone, readonly T[]][]; members?: readonly PlantId[] }): PasteResult<T> {
   const own = indexOf(here), ins = new Set(members), seen = new Set<PlantId>();
   const ownIds = new Set(here.map((t) => t.id));
-  const lists = others.map(([climate, taxa]) => [climate, indexOf(taxa)] as const);
-  const out: PasteResult<T> = { found: [], choose: [], other: [], already: [], none: [], header: null };
-  const inside = (taxa: T[]) => taxa.filter((t) => ins.has(t.id)).map((t) => t.id);
+  const lists = others.map(([climate, taxa]) => [climate, taxa, indexOf(taxa)] as const);
+  const out: PasteResult<T> = { found: [], choose: [], other: [], already: [], duplicate: [], none: [], header: null };
+  const one = (name: string, t: T, close: string | null, climate: ClimateZone | null) => {
+    if (seen.has(t.id)) { out.duplicate.push({ name, taxon: t }); return; }
+    seen.add(t.id);
+    if (ins.has(t.id)) out.already.push({ name, taxon: t, close, climate });
+    else if (climate) out.other.push({ name, climate, taxon: t, close });
+    else out.found.push({ name, taxon: t, close });
+  };
   for (const name of names) {
     const m = matchName(name, own);
-    if (m && m.how !== 'choose') {
-      const t = m.taxa[0];
-      if (seen.has(t.id)) continue;
-      seen.add(t.id);
-      if (ins.has(t.id)) out.already.push({ name, taxon: t, close: m.close ?? null, climate: null });
-      else out.found.push({ name, taxon: t, close: m.close ?? null });
-      continue;
-    }
-    if (m) { out.choose.push({ name, taxa: m.taxa, inside: inside(m.taxa), climate: null }); continue; }
+    if (m && m.how !== 'choose') { one(name, m.taxa[0], m.close ?? null, null); continue; }
+    if (m) { out.choose.push({ name, taxa: m.taxa, inside: [], climate: null }); continue; }
     let elsewhere: { climate: ClimateZone; o: Match<T> } | null = null;
-    for (const [climate, idx] of lists) {
+    for (const [climate, , idx] of lists) {
       const o = matchName(name, idx);
       const kept = o ? { ...o, taxa: o.taxa.filter((t) => !ownIds.has(t.id)) } : null;
       if (kept && kept.taxa.length) { elsewhere = { climate, o: kept }; break; }
     }
-    if (!elsewhere) { out.none.push({ name }); continue; }
-    const { climate, o } = elsewhere;
-    if (o.how === 'choose') { out.choose.push({ name, taxa: o.taxa, inside: inside(o.taxa), climate }); continue; }
-    const t = o.taxa[0];
-    if (seen.has(t.id)) continue;
-    seen.add(t.id);
-    if (ins.has(t.id)) out.already.push({ name, taxon: t, close: o.close ?? null, climate });
-    else out.other.push({ name, climate, taxon: t, close: o.close ?? null });
+    if (elsewhere) {
+      const { climate, o } = elsewhere;
+      if (o.how === 'choose') out.choose.push({ name, taxa: o.taxa, inside: [], climate });
+      else one(name, o.taxa[0], o.close ?? null, climate);
+      continue;
+    }
+    // No name matched: S1's word-prefix search, this list first.
+    const prefix = prefixMatch(name, here);
+    if (prefix.length) { out.choose.push({ name, taxa: prefix, inside: [], climate: null }); continue; }
+    let found = false;
+    for (const [climate, taxa] of lists) {
+      const hits = prefixMatch(name, taxa).filter((t) => !ownIds.has(t.id));
+      if (hits.length) { out.choose.push({ name, taxa: hits, inside: [], climate }); found = true; break; }
+    }
+    if (!found) out.none.push({ name });
   }
+  // Plants another line matched leave the choose groups; a group left empty goes.
+  out.choose = out.choose.map((c) => ({ ...c, taxa: c.taxa.filter((t) => !seen.has(t.id)) })).filter((c) => c.taxa.length)
+    .map((c) => ({ ...c, inside: c.taxa.filter((t) => ins.has(t.id)).map((t) => t.id) }));
   out.header = names.header ?? null;
   return out;
 }

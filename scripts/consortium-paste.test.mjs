@@ -77,6 +77,26 @@ test('readPaste lists a plant once even when two lines name it, and prefers this
   assert.equal(r.other.length, 0);
 });
 
+test('readPaste lists a later line naming a plant already matched as a duplicate', () => {
+  const r = readPaste(pasteNames('Apple\nMalus domestica\nPommier'), { here: temperate, members: [] });
+  assert.deepEqual(r.found.map((f) => f.name), ['Apple']);
+  assert.deepEqual(r.duplicate.map((d) => [d.name, d.taxon.id]), [['Malus domestica', 't1'], ['Pommier', 't1']]);
+});
+
+test('readPaste hides plants matched by another line from the choose groups, and drops a group left empty', () => {
+  const r = readPaste(pasteNames('Rubus\nRaspberry'), { here: temperate, members: [] });
+  assert.deepEqual(r.found.map((f) => f.taxon.id), ['t4']);
+  assert.deepEqual(r.choose.map((c) => c.taxa.map((t) => t.id)), [['t5']]);
+  const gone = readPaste(pasteNames('Rubus\nRaspberry\nBlackberry'), { here: temperate, members: [] });
+  assert.deepEqual(gone.choose, []);
+});
+
+test('readPaste falls back to a word-prefix search for a line with no match: "Chestnut" offers European chestnut to choose', () => {
+  const r = readPaste(pasteNames('Chestnut\nIce'), { here: temperate, others: [['Tropical', tropical]], members: [] });
+  assert.deepEqual(r.choose.map((c) => [c.name, c.taxa.map((t) => t.id), c.climate]), [['Chestnut', ['t2'], null], ['Ice', ['p1'], 'Tropical']]);
+  assert.equal(r.none.length, 0);
+});
+
 // ---- months as runs ----
 const W = {
   lang: 'en',
