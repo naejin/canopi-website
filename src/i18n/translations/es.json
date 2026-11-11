@@ -761,6 +761,7 @@
   "consortium.location.state.polar": "Es un clima polar: ninguna lista de plantas lo cubre, así que no se propone ningún clima.",
   "consortium.location.state.borderline": "En el límite: revisa el clima. Tu terreno está a menos de 0,5 °C de una temperatura que separa dos climas; elige la tarjeta que mejor le corresponda.",
   "consortium.location.state.failed": "No se pudo leer el clima de este terreno. Elige tu clima abajo a mano.",
+  "consortium.location.unread": "Las plantas se propusieron sin el clima de tu terreno: no se leyó a tiempo. Comprueba que el clima elegido corresponde a tu terreno.",
   "consortium.location.why": "{place}: clase de Köppen {koppen} ({words}); las noches del mes más frío rondan los {tmin} °C.",
   "consortium.location.suggests": "Esto apunta al clima {climate}.",
   "consortium.location.near": "Está cerca del clima {climate}.",

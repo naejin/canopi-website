@@ -761,6 +761,7 @@
   "consortium.location.state.polar": "Dat is een poolklimaat: geen plantenlijst dekt het, dus er wordt geen klimaat voorgesteld.",
   "consortium.location.state.borderline": "Grensgeval: controleer het klimaat. Je terrein ligt binnen 0,5 °C van een temperatuur die twee klimaten scheidt; kies de kaart die het best past.",
   "consortium.location.state.failed": "Het klimaat van dit terrein kon niet worden gelezen. Kies hieronder zelf je klimaat.",
+  "consortium.location.unread": "De planten zijn voorgesteld zonder het klimaat van je terrein: het werd niet op tijd gelezen. Controleer of het gekozen klimaat bij je terrein past.",
   "consortium.location.why": "{place}: Köppen-klasse {koppen} ({words}); de nachten in de koudste maand liggen gemiddeld op {tmin} °C.",
   "consortium.location.suggests": "Dit wijst op het klimaat {climate}.",
   "consortium.location.near": "Het ligt dicht bij {climate}.",

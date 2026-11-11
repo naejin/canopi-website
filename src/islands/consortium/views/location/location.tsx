@@ -29,8 +29,8 @@ import { loadMapLibreModule } from '../../../../lib/location/maplibre.ts';
 import * as store from '../../store.ts';
 import { T, pageLang } from '../../strings.ts';
 import { chooseClimate } from '../../memory.ts';
-import { keepLocation, locationCountry, readLocation } from './keep.ts';
-import { looking } from './load.ts';
+import { keepLocation, locationCountry, readLocation, siteFound } from './keep.ts';
+import { looking, unread } from './load.ts';
 import { zoneLabel } from '../Start.tsx';
 
 // ---- the result line ----
@@ -47,13 +47,20 @@ function tileSource(): TileSource {
   tiles ??= createTileSource({ index: siteIndex(JSON.parse(document.getElementById('ct-climate')?.textContent ?? 'null')) });
   return tiles;
 }
+// A read that has not answered in 15 s fails like any other (review round 2, 3): the reader is told and
+// a waiting Suggest is released. (The climate reader takes no AbortSignal; the late answer is dropped.)
+export const READ_TIMEOUT_MS = 15_000;
 async function read(lat: number, lon: number): Promise<SiteLookup | null> {
+  let timer = 0;
   try {
-    return await lookupSite(lat, lon, tileSource());
+    return await Promise.race([
+      lookupSite(lat, lon, tileSource()),
+      new Promise<never>((_, reject) => { timer = window.setTimeout(() => reject(new Error(`no answer in ${READ_TIMEOUT_MS / 1000} s`)), READ_TIMEOUT_MS); }),
+    ]);
   } catch (err) {
     console.error(`Consortium: the site's climate could not be read: ${(err as Error).message}`);
     return null;
-  }
+  } finally { clearTimeout(timer); }
 }
 
 // A position the reader gave (device, search, map): looked up, then the site, its suggestion and its
@@ -73,12 +80,11 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
   const sc = siteClimate(lookup);
   if (sc.state === 'sea') { line.value = { state: 'sea', ...extra }; return; }
   const loc: SiteLocation = { lat, lon, source, ...(label ? { label } : {}), lookup };
-  batch(() => {
+  siteFound(() => {
     store.location.value = loc;
     store.proposedClimate.value = sc.suggested;
-    locationCountry(lookup.regions.isoA2, false);
     line.value = { state: sc.state, ...extra };
-  });
+  }, lookup.regions.isoA2);
   keepLocation(loc);
 }
 
@@ -100,12 +106,12 @@ export async function settle(how: 'link' | 'saved', savedText: string | null): P
   // Something else set the site meanwhile (the reader, another link): this lookup's line goes.
   if (how === 'link' ? store.location.peek() !== start : store.location.peek() !== null) { line.value = null; return; }
   const loc: SiteLocation = { lat: start.lat, lon: start.lon, source: start.source, ...(start.label ? { label: start.label } : {}), lookup };
-  batch(() => {
+  // A link's location brings no country (its link's country stands).
+  siteFound(() => {
     store.location.value = loc;
     if (how === 'saved' && !store.climate.peek()) store.proposedClimate.value = sc.suggested;
     line.value = { state: sc.state };
-  });
-  if (how === 'saved') locationCountry(lookup.regions.isoA2, false);
+  }, how === 'saved' ? lookup.regions.isoA2 : undefined);
 }
 
 // ---- the three ways ----
@@ -171,6 +177,7 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
   const gone = !!l && !loc && (l.state === 'ready' || l.state === 'borderline' || l.state === 'polar' || l.state === 'coast');
   return (
     <>
+      {unread.value && <p class="ct-notice" role="status" data-location-unread>{T('location.unread')}</p>}
       {l && !gone && (
         <div class="ct-location-result" data-location-state={l.state} role="status" aria-busy={l.state === 'loading' ? 'true' : undefined}>
           {site ? (

@@ -4,9 +4,9 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range, placement, future, native, soil and lazy marks stubs), the rules S1 ported, and the format 4 schema 2 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:27:10Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:02:58Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:25:11Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:35:12Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -22,7 +22,7 @@ sources:
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
     digest: sha256:5aeff5ec4837ea50
-    last_modified: 2026-11-11T19:25:51Z
+    last_modified: 2026-11-11T19:27:15Z
   - id: matrix-ts
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
@@ -87,7 +87,7 @@ sources:
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
     digest: sha256:872f411989736b65
-    last_modified: 2026-11-11T19:25:51Z
+    last_modified: 2026-11-11T19:27:15Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -127,7 +127,7 @@ sources:
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
     digest: sha256:cbc00340d84765b4
-    last_modified: 2026-11-11T19:25:51Z
+    last_modified: 2026-11-11T19:27:15Z
   - id: mark-providers-ts
     resource: ../../src/lib/consortium/mark-providers.ts
     title: src/lib/consortium/mark-providers.ts
@@ -151,8 +151,8 @@ sources:
   - id: consortium-p5-seams-s5b-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
-    digest: sha256:37c6c1c2313ef26a
-    last_modified: 2026-11-11T19:25:16Z
+    digest: sha256:44762c50d5f04d1b
+    last_modified: 2026-11-11T19:32:36Z
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs

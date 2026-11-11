@@ -235,6 +235,43 @@ test('P5-1d (S5b review round 1 addendum): Suggest pressed while a location look
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 20_000 }).then(() => true, () => false), 'the suggestion comes');
   assert.equal(await page.evaluate(() => window.__firstMembers), true, 'members were built only once the site was read');
 });
+// A page whose /data/climate/ fetches wait `ms` (Infinity: never answer), optionally with a saved location.
+async function slowTiles(ms, { saved = null, geolocation = { lat: SITES.seville[0], lon: SITES.seville[1] } } = {}) {
+  const page = await h.open('/consortium/', { mapTiles: 'stub', geolocation });
+  await page.evaluateOnNewDocument((wait, rec) => {
+    window.__ctTest = true;
+    if (rec && !localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
+    const f = window.fetch;
+    window.fetch = (input, init) => (/\/data\/climate\//.test(String(input?.url ?? input))
+      ? (wait === null ? new Promise(() => {}) : new Promise((r) => setTimeout(r, wait)).then(() => f(input, init)))
+      : f(input, init));
+  }, Number.isFinite(ms) ? ms : null, saved);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready(page);
+  return page;
+}
+const watchFirstMembers = (page) => page.evaluate(() => { const { store } = window.__ctTest; window.__firstMembers = undefined; store.members.subscribe((m) => { if (m.length && window.__firstMembers === undefined) window.__firstMembers = !!store.location.peek()?.lookup; }); });
+test('P5-1e (S5b review round 2, 2): Suggest pressed while the saved location is looked up again waits for the site', async () => {
+  const page = await slowTiles(3000, { saved: JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }) });
+  await page.click('input[name="ct-climate"][value="mediterranean"]');
+  assert.ok(await has(page, '.ct-cta .button-primary', 15_000));
+  await watchFirstMembers(page);
+  await page.click('.ct-cta .button-primary');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 20_000 }).then(() => true, () => false));
+  assert.equal(await page.evaluate(() => window.__firstMembers), true, 'members built once the saved site was read');
+});
+test('P5-1f (S5b review round 2, 3): tiles that never answer hold Suggest at most ~10 s, which then says the climate was not read; the read fails after ~15 s', async () => {
+  const page = await slowTiles(Infinity);
+  await page.click('input[name="ct-climate"][value="mediterranean"]');
+  assert.ok(await has(page, '.ct-cta .button-primary', 15_000));
+  await page.click('[data-location-action="geo"]');
+  const t0 = Date.now();
+  await page.click('.ct-cta .button-primary');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 14_000 }).then(() => true, () => false), 'Suggest ran within the cap');
+  assert.ok(Date.now() - t0 >= 8000, 'after waiting for the site first');
+  assert.ok(await has(page, '[data-location-unread]', 4000), 'a line says the climate was not read');
+  assert.ok(await page.waitForFunction(() => document.querySelector('[data-location-state]')?.getAttribute('data-location-state') === 'failed', { timeout: 15_000 }).then(() => true, () => false), 'the stalled read ends as failed');
+});
 test('P5-2 (S5b location denied): a denied permission says so and leaves the manual climate cards', async () => {
   const page = await tool({ geolocation: 'denied' });
   await locationControls(page);
@@ -407,6 +444,24 @@ test('P5-10 (S5b borderline): Lyon says "Borderline: check the climate" and keep
   assert.equal(await storeClimate(calm), null, 'not committed until confirmed');
 });
 
+test('P5-10b (S5b review round 2, 5): with a card proposed and none checked, Tab lands on it; arrows move without choosing; Space chooses', async () => {
+  const page = await tool({ geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
+  await locationControls(page);
+  await page.click('[data-location-action="geo"]');
+  assert.equal(await locationState(page), 'ready');
+  // From the last control before the cards (the result line's Forget), Tab enters the card group.
+  await page.evaluate(() => [...document.querySelectorAll('.ct-location button')].at(-1).focus());
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('value')), 'mediterranean', 'Tab lands on the proposed card');
+  await page.keyboard.press('ArrowRight');
+  const moved = await page.evaluate(() => document.activeElement?.getAttribute('value'));
+  assert.ok(moved && moved !== 'mediterranean', 'the arrow moves the focus');
+  assert.equal(await storeClimate(page), null, 'without choosing');
+  assert.equal(await checkedCard(page), null);
+  await page.keyboard.press('Space');
+  assert.equal(await checkedCard(page), moved, 'Space chooses the focused card');
+  assert.notEqual(await storeClimate(page), null);
+});
 test('P5-11 (S5b tiles fail): when the climate tiles cannot be read the manual climate stays, with a line saying so', async () => {
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon }, climateTiles: 404 });
@@ -452,6 +507,22 @@ test('P5-13 (S5b share with "include my location"): the link carries the cell ce
   const opened = await h.open(new URL(link).pathname + new URL(link).search + new URL(link).hash);
   assert.equal(await loadState(opened), 'ready');
   assert.match(await text(opened, '[data-location-state]') ?? '', /approximate/i);
+});
+test('P5-13c (S5b review round 2, 4): a link\'s location goes with its consortium: Start over and Change site clear it', async () => {
+  const [lat, lon] = SITES.seville;
+  const maker = await tool({ geolocation: { lat, lon } });
+  await locationControls(maker);
+  await maker.click('[data-location-action="geo"]');
+  assert.equal(await locationState(maker), 'ready');
+  await confirmAndSuggest(maker);
+  await maker.click('input[data-share-location]');
+  const link = new URL(await maker.$eval('#ct-share-field', (e) => e.value));
+  for (const label of ['Start over', 'Change site']) {
+    const page = await tool({ hash: link.hash });
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.source === 'link' && window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'the link opens with its location');
+    assert.ok(await page.evaluate((l) => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === l); b?.click(); return !!b; }, label), label);
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value === null, { timeout: 5000 }).then(() => true, () => false), `${label} clears the link's location`);
+  }
 });
 test('P5-13b (S5b review round 1, 1 and 2): a link\'s o= lives for the page only: never saved, never a country "from your location"; a link without o= clears it', async () => {
   const [lat, lon] = SITES.seville;

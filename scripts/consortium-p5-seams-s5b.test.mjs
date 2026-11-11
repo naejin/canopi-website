@@ -141,3 +141,67 @@ test('the location step stays off the first run: the shell imports its chunk onl
   }
   assert.match(readFileSync(new URL('../src/lib/location/registry.ts', import.meta.url), 'utf8'), /Qiusheng Wu\. MIT License/, 'the GeoLibre MIT header kept');
 });
+
+test('review round 2 (1): a lookup\'s writes are quiet even in a batch: a restore in flight survives them', async () => {
+  const m = await import('../src/islands/consortium/memory.ts');
+  const store = await import('../src/islands/consortium/store.ts');
+  const keep = await import('../src/islands/consortium/views/location/keep.ts');
+  const { batch } = await import('@preact/signals');
+  m.watchStore();
+  const before = { country: store.country.peek(), location: store.location.peek(), source: store.source.peek() };
+  try {
+    store.source.value = null;
+    store.country.value = { code: null, source: null };
+    // A restore waiting for the plant source: in flight until it comes.
+    void m.restore('v=4&c=temperate&e=1', { from: 'link' });
+    assert.equal(m.restoring.peek(), true, 'the restore is in flight');
+    // The bug: a quiet write inside a batch flushes after quietly() has reset, and counts as an action.
+    batch(() => { keep.locationCountry('DE', false); });
+    const counted = !m.restoring.peek();
+    assert.equal(counted, true, 'reproduces: a quiet write inside batch() is counted (this is why siteFound exists)');
+    store.country.value = { code: null, source: null };
+    void m.restore('v=4&c=temperate&e=1', { from: 'link' });
+    assert.equal(m.restoring.peek(), true);
+    keep.siteFound(() => { store.location.value = { lat: 37.39, lon: -5.98, source: 'geo', lookup: null }; }, 'ES');
+    assert.equal(m.restoring.peek(), true, 'siteFound: the site and its country written, the restore still in flight');
+    assert.deepEqual(store.country.peek(), { code: 'ES', source: 'location' });
+  } finally {
+    batch(() => { store.country.value = before.country; store.location.value = before.location; });
+  }
+});
+
+test('review round 2 (2): one pending lookup from the chunk load through its settle, no gap for Suggest', async () => {
+  const load = await import('../src/islands/consortium/views/location/load.ts');
+  const { effect } = await import('@preact/signals');
+  const seen = [];
+  const stop = effect(() => { seen.push(load.lookups.value); });
+  try {
+    const tick = () => new Promise((r) => setTimeout(r, 5));
+    // The old shape, looking(load).then(looking(settle)), drops to 0 between the two.
+    await load.looking(tick).then(() => load.looking(tick));
+    assert.ok(seen.slice(1, -1).includes(0), 'reproduces: the old chain shows a gap');
+    seen.length = 0;
+    await load.lookingThrough(tick, tick);
+    assert.deepEqual(seen, [1, 0], 'lookingThrough: one lookup from load to settle');
+  } finally { stop(); }
+  const memory = readFileSync(new URL('../src/islands/consortium/memory.ts', import.meta.url), 'utf8');
+  assert.match(memory, /lookingThrough\(/, 'settleLocation holds one lookup through load and settle');
+});
+
+test('review round 2 (3): a geocoder request unanswered in 15 s fails as an error (a failed search), not as a silent abort', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { geocodingTransport, GEOCODER_TIMEOUT_MS } = await import('../src/lib/location/transport.ts');
+  const real = globalThis.fetch;
+  globalThis.fetch = (_u, init) => new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))));
+  try {
+    const caller = new AbortController();
+    const p = geocodingTransport('https://example.test/search', caller.signal);
+    t.mock.timers.tick(GEOCODER_TIMEOUT_MS);
+    await assert.rejects(p, (e) => !(e instanceof DOMException) && /15 s/.test(e.message));
+    // The caller's own abort stays an AbortError (a newer search replaced it).
+    const c2 = new AbortController();
+    const p2 = geocodingTransport('https://example.test/search', c2.signal);
+    c2.abort();
+    await assert.rejects(p2, (e) => e instanceof DOMException && e.name === 'AbortError');
+  } finally { globalThis.fetch = real; }
+});

@@ -761,6 +761,7 @@
   "consortium.location.state.polar": "Das ist ein Polarklima: Keine Pflanzenliste deckt es ab, daher wird kein Klima vorgeschlagen.",
   "consortium.location.state.borderline": "Grenzfall: Prüfe das Klima. Dein Standort liegt weniger als 0,5 °C von einer Temperatur entfernt, die zwei Klimas trennt; wähle die Karte, die am besten passt.",
   "consortium.location.state.failed": "Das Klima dieses Standorts konnte nicht gelesen werden. Wähle dein Klima unten von Hand.",
+  "consortium.location.unread": "Die Pflanzen wurden ohne das Klima Ihres Standorts vorgeschlagen: Es wurde nicht rechtzeitig gelesen. Prüfen Sie, ob das gewählte Klima zu Ihrem Standort passt.",
   "consortium.location.why": "{place}: Köppen-Klasse {koppen} ({words}); die Nächte im kältesten Monat liegen im Mittel bei {tmin} °C.",
   "consortium.location.suggests": "Das spricht für das Klima {climate}.",
   "consortium.location.near": "Es liegt nahe an {climate}.",

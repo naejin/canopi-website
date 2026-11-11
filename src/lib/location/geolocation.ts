@@ -25,9 +25,12 @@ function geolocationSupported(): boolean {
 export function currentPosition(options: PositionOptions = SITE_POSITION_OPTIONS): Promise<{ lat: number; lon: number } | { code: GeolocationErrorCode }> {
   if (!geolocationSupported()) return Promise.resolve({ code: 2 })
   return new Promise((resolve) => {
+    // The browser's own timeout does not run while its permission prompt waits: a prompt left
+    // unanswered ends as a timeout here too (review round 2, 3), 5 s after the browser's would.
+    const prompt = setTimeout(() => resolve({ code: 3 }), (options.timeout ?? 15_000) + 5_000)
     navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }),
-      (e) => resolve({ code: (e.code === 1 || e.code === 3 ? e.code : 2) as GeolocationErrorCode }),
+      (p) => { clearTimeout(prompt); resolve({ lat: p.coords.latitude, lon: p.coords.longitude }) },
+      (e) => { clearTimeout(prompt); resolve({ code: (e.code === 1 || e.code === 3 ? e.code : 2) as GeolocationErrorCode }) },
       options,
     )
   })

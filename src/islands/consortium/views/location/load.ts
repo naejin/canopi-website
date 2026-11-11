@@ -25,3 +25,8 @@ export async function looking<T>(step: () => Promise<T>): Promise<T> {
   lookups.value++;
   try { return await step(); } finally { lookups.value--; }
 }
+// One lookup held from the chunk load through its settle: two looking() calls in a row would drop
+// to 0 between them, and a waiting Suggest would run in that gap (review round 2, 2).
+export const lookingThrough = <M, T>(load: () => Promise<M>, run: (m: M) => Promise<T>): Promise<T> => looking(async () => run(await load()));
+// Suggest ran without the site's climate: its lookup outlasted the wait's cap (memory.requestSuggest).
+export const unread = signal(false);

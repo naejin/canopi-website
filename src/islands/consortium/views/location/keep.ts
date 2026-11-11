@@ -1,7 +1,9 @@
 // What the location step writes beside the consortium (P5 S5b), kept out of memory.ts so these bytes
 // load with the location chunk, not on every first run: the site location on this device and the
 // country from it. Plain .ts, so node --test imports it (scripts/consortium-p5-seams-s5b.test.mjs).
+import { batch } from '@preact/signals';
 import type { LocationSource, SiteLocation } from '../../../../lib/consortium/index.ts';
+import { unread } from './load.ts';
 import type { Country } from '../../store.ts';
 import * as store from '../../store.ts';
 import { LOCATION_STORE, memory, quietly } from '../../memory.ts';
@@ -28,6 +30,15 @@ export const locationRecord = (l: Pick<SiteLocation, 'lat' | 'lon' | 'source' | 
 export function keepLocation(l: Pick<SiteLocation, 'lat' | 'lon' | 'source' | 'label'> | null): void {
   if (l) memory.write(LOCATION_STORE, locationRecord(l));
   else memory.remove(LOCATION_STORE);
+}
+
+// A lookup's result: its writes (write: the site, its suggestion, its line) in one batch, then the
+// country, quiet. Not inside the batch: a batch flushes after quietly() has reset, so the watcher
+// would count the country as the reader acting and a restore in flight would not apply (review round 2, 1).
+// code undefined: no country from this site (a link's location: its link's country stands).
+export function siteFound(write: () => void, code?: string | null): void {
+  batch(() => { write(); unread.value = false; });
+  if (code !== undefined) locationCountry(code, false);
 }
 
 // A country from the site location ("from your location"; null: none there, e.g. offshore). It

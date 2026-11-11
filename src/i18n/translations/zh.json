@@ -761,6 +761,7 @@
   "consortium.location.state.polar": "这是极地气候：没有植物清单涵盖它，因此不推荐气候。",
   "consortium.location.state.borderline": "临界：请核对气候。你的场地与区分两种气候的温度相差不到 0.5 °C，请选择最合适的卡片。",
   "consortium.location.state.failed": "无法读取此场地的气候。请在下方手动选择气候。",
+  "consortium.location.unread": "植物推荐未使用您场地的气候：未能及时读取。请确认所选气候与您的场地相符。",
   "consortium.location.why": "{place}：柯本气候类型 {koppen}（{words}）；最冷月夜间平均 {tmin} °C。",
   "consortium.location.suggests": "据此推荐{climate}气候。",
   "consortium.location.near": "它也接近{climate}气候。",

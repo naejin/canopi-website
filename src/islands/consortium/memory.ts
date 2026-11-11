@@ -36,7 +36,7 @@ import { decodeLink, encodeLink, linkClimates, linkOrigin, readPreset, zoneOf, L
 import type { Country } from './store.ts';
 import * as store from './store.ts';
 import { focusView } from './focus.ts';
-import { loadLocationStep, looking, lookups } from './views/location/load.ts';
+import { loadLocationStep, lookingThrough, lookups, unread } from './views/location/load.ts';
 
 export const STORE = 'canopi-consortium';
 export const COUNTRY_STORE = 'canopi-country';
@@ -567,13 +567,16 @@ export function chooseCountry(code: string | null): void {
 // how: 'link' (the link's answers win; no country, no suggestion) or 'saved' (looked up again; saved:
 // the stored record's text, read by the chunk, views/location/keep.ts).
 function settleLocation(how: 'link' | 'saved', saved: string | null = null): Promise<void> {
-  return looking(() => loadLocationStep()).then((m) => looking(() => m.settle(how, saved)), () => {
+  return lookingThrough(loadLocationStep, (m) => m.settle(how, saved)).catch(() => {
     if (how === 'link') store.location.value = null;
   });
 }
+// A link's location goes with its consortium (review round 2, 4): Change site, Start over, Start empty.
+const dropLinkLocation = () => { if (store.location.peek()?.source === 'link') store.location.value = null; };
 // Change site: the consortium set aside, Start's draft seeded from it.
 export function changeSite(): void {
   batch(() => {
+    dropLinkLocation();
     store.setAside.value = own();
     store.view.value = 'start';
   });
@@ -592,6 +595,7 @@ export function startOver(): void {
     store.crops.value = [];
     store.closeSheet();
     store.view.value = 'start';
+    dropLinkLocation();
     notices.value = { ...NO_NOTICES };
   });
 }
@@ -618,6 +622,7 @@ export function backToConsortium(): void {
 export function startEmpty(): void {
   adoptPending();
   batch(() => {
+    dropLinkLocation();
     store.members.value = [];
     store.view.value = 'matrix';
     store.openSheet('search');
@@ -631,11 +636,17 @@ function adoptPending(): void {
   if (shown) store.climate.value = shown;
 }
 
+// Suggest has waited its 10 s for a location lookup (requestSuggest).
+const waited = signal(false);
 // "Suggest plants": now when the plants are read, else once they are (§5 Loading).
 export function requestSuggest(): void {
   adoptPending();
-  // A location being read: Suggest waits for it (the effect below runs it once lookups settle).
-  if (!lookups.peek() && store.suggestMembers()) { store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
+  // A location being read: Suggest waits for it (the effect below runs it once lookups settle), 10 s
+  // at most; then it runs without it, and the location line says the climate was not read (review
+  // round 2, 3).
+  const busy = lookups.peek() && !waited.peek();
+  if (!busy && store.suggestMembers()) { unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
+  if (busy && !pendingSuggest.peek()) setTimeout(() => { waited.value = pendingSuggest.peek(); }, 10_000);
   pendingSuggest.value = true;
 }
 
@@ -711,7 +722,7 @@ export function startMemory(): void {
 
   // "Suggest plants" pressed early runs when the climate's plants (and every guest list) are read.
   effect(() => {
-    if (!pendingSuggest.value || !store.pool.value || store.guestsPending.value.length || lookups.value) return;
+    if (!pendingSuggest.value || !store.pool.value || store.guestsPending.value.length || (lookups.value && !waited.value)) return;
     queueMicrotask(() => { if (pendingSuggest.peek()) requestSuggest(); });
   });
 

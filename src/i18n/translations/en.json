@@ -761,6 +761,7 @@
   "consortium.location.state.polar": "That is a polar climate: no plant list covers it, so no climate is suggested.",
   "consortium.location.state.borderline": "Borderline: check the climate. Your site is within 0.5 °C of a temperature that separates two climates, so choose the card that fits it best.",
   "consortium.location.state.failed": "The climate of this site could not be read. Choose your climate below by hand.",
+  "consortium.location.unread": "Plants were suggested without your site's climate: it was not read in time. Check that the chosen climate fits your site.",
   "consortium.location.why": "{place}: Köppen class {koppen} ({words}); nights in the coldest month average {tmin} °C.",
   "consortium.location.suggests": "This suggests the {climate} climate.",
   "consortium.location.near": "It is close to {climate}.",
