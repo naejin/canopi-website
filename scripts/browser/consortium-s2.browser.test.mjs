@@ -20,12 +20,34 @@ const plain = (ord) => en[`consortium.phase.${['placenta_i', 'placenta_ii', 'pla
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const OPEN = en['consortium.matrix.open'];
 
+// Clicks through the element itself: the start screen grows as the crop examples load, so a click at
+// a measured point can land on the card that moved under it.
+const press = async (page, role, name) => (await page.locator(aria(role, name)).waitHandle()).evaluate((el) => el.click());
 async function suggest(page, climate, { room } = {}) {
   assert.equal(await loadState(page), 'ready');
-  await page.locator(aria('radio', climate)).click();
-  if (room) await page.locator(aria('radio', room)).click();
-  await page.locator(aria('button', 'Suggest plants')).click();
+  await press(page, 'radio', climate);
+  if (room) await press(page, 'radio', room);
+  await press(page, 'button', 'Suggest plants');
   assert.ok(await findAx(page, { role: 'tab', name: 'Layers × stages' }, 15_000), 'the views, once the suggestion is made');
+}
+
+// The whole accessibility tree (the shared axNodes keeps "interesting" nodes only, which drops tables,
+// cells and rows), and a polling search over it; an image's role reads "image" in recent Chrome.
+async function allAx(page) {
+  const out = [];
+  const walk = (n) => { if (!n) return; out.push(n); for (const c of n.children ?? []) walk(c); };
+  walk(await page.accessibility.snapshot({ interestingOnly: false }));
+  return out;
+}
+const IMG = /^(img|image)$/;
+async function find(page, { role, name }, timeout = 4000) {
+  const ok = (n) => (!role || (role instanceof RegExp ? role.test(n.role) : n.role === role)) && (name === undefined || (name instanceof RegExp ? name.test(n.name ?? '') : n.name === name));
+  const until = Date.now() + timeout;
+  for (;;) {
+    const hit = (await allAx(page)).find(ok);
+    if (hit || Date.now() > until) return hit ?? null;
+    await new Promise((r) => setTimeout(r, 150));
+  }
 }
 
 // The accessible names of a tab panel's Tab stops, from its first focusable element until focus
@@ -55,13 +77,13 @@ test('BT-2 (S2 matrix): real Temperate gap, Room Small misfits with reasons, one
     // button on phones).
     const real = await h.open('/consortium/', v);
     await suggest(real, 'Temperate');
-    const gap = await findAx(real, { name: new RegExp(`^Low, ${esc(plain(0))}: No plant in the list for this cell yet`) });
+    const gap = await find(real, { name: new RegExp(`^Low, ${esc(plain(0))}: No plant in the list for this cell yet`) });
     assert.ok(gap, 'the gap is Temperate low × "First 90 days"');
 
     // Fixture, Room Small: every emergent plant is over 6 m, so emergent's later stages say why.
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await suggest(page, 'Temperate', { room: 'Small garden' });
-    const misfit = await findAx(page, { name: /^Emergent, .*No plant fits your site here/ });
+    const misfit = await find(page, { name: /^Emergent, .*No plant fits your site here/ });
     assert.ok(misfit, 'a misfit cell');
     if (v.width >= 640) {
       assert.match(misfit.name, /grows? taller than 6 m/, 'the reason is counted and worded');
@@ -84,7 +106,7 @@ test('BT-2 (S2 matrix): real Temperate gap, Room Small misfits with reasons, one
       const sizes = await page.$$eval('#ct-overview td', (cells) => cells.map((c) => { const r = c.getBoundingClientRect(); return [r.width, r.height]; }));
       assert.equal(sizes.length, 28, 'a 4 × 7 overview');
       assert.ok(sizes.every(([w, hgt]) => w >= 40 && hgt >= 40), `phone cells are at least 40 px: ${JSON.stringify(sizes.slice(0, 7))}`);
-      assert.ok(await findAx(page, { role: 'group', name: 'Stage' }), 'the stepper is named');
+      assert.ok(await find(page, { role: 'group', name: 'Stage' }), 'the stepper is named');
       assert.ok(await page.$('.ct-stepper [aria-live="polite"]'), 'the stepper announces through aria-live');
       await page.locator(aria('button', 'Later stage')).click();
       assert.ok(await findAx(page, { name: new RegExp(esc(plain(1))) }), 'Later stage shows the next stage');
@@ -116,7 +138,7 @@ test('BT-3 (S2 side view): the chosen stage, a drawing with role=img and names, 
       await page.locator(aria('button', `${plain(2)} · ${en['consortium.phase.placenta_iii.term']}`)).click();
     }
     assert.ok(await findAx(page, { role: 'heading', name: new RegExp(`^Side view: ${esc(plain(2))}`) }), 'the chosen stage is shown');
-    const img = await findAx(page, { role: 'img', name: /^Side view: / });
+    const img = await find(page, { role: IMG, name: /^Side view: / });
     assert.ok(img && /Emergent: .*High: .*Mid: .*Low: /.test(img.name), `the drawing has role=img and names its plants by layer: ${img?.name}`);
     assert.ok(await findAx(page, { name: /Layer is light, not height/ }), '"Layer is light, not height"');
     const keys = (await axNodes(page)).filter((n) => n.role === 'button' && n.name && img.name.includes(n.name) && n.name.length > 2);
@@ -129,7 +151,7 @@ test('BT-3 (S2 side view): a name in the key opens its details', { todo: 'S2: th
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await suggest(page, 'Temperate');
     await page.locator(aria('tab', 'Side view')).click();
-    const img = await findAx(page, { role: 'img', name: /^Side view: / });
+    const img = await find(page, { role: IMG, name: /^Side view: / });
     const key = (await axNodes(page)).find((n) => n.role === 'button' && n.name && img.name.includes(n.name) && n.name.length > 2);
     await page.locator(aria('button', key.name)).click();
     assert.ok(await findAx(page, { role: 'dialog' }), 'the key opens details');
@@ -151,14 +173,14 @@ test('BT-4 (S2 jobs and list): a 6-row Jobs table whose gaps name their stages; 
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await suggest(page, 'Temperate');
     await page.locator(aria('tab', 'Jobs')).click();
-    assert.ok(await findAx(page, { role: 'table', name: 'Who does what' }), 'the Jobs table');
-    assert.equal(await countAx(page, (n) => n.role === 'rowheader'), 6, 'six jobs');
-    assert.ok(await findAx(page, { name: /No one does it (in: |yet)/ }), 'a gap names its stages');
+    assert.ok(await find(page, { role: 'table', name: 'Who does what' }), 'the Jobs table');
+    assert.equal((await allAx(page)).filter((n) => n.role === 'rowheader').length, 6, 'six jobs');
+    assert.ok(await find(page, { role: 'cell', name: /No one does it (in: |yet)/ }), 'a gap names its stages');
 
     const real = await h.open(`/consortium/#${link}`, v);
     assert.equal(await loadState(real), 'ready');
     await real.locator(aria('tab', 'All plants')).click();
-    const named = async () => (await axNodes(real)).filter((n) => n.role === 'row' && n.name).map((n) => n.name);
+    const named = async () => (await allAx(real)).filter((n) => n.role === 'row' && n.name).map((n) => n.name);
     const rows = await named();
     for (const c of canon) assert.equal(rows.filter((r) => r.endsWith(`, ${c}`)).length, 1, `${c} is listed once`);
     assert.ok((await countAx(real, (n) => n.role === 'heading' && n.level === 3)) >= 2, 'grouped under start cells');
