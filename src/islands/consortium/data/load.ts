@@ -7,6 +7,9 @@ import { APPLICATION_ID, SCHEMA_VERSION } from '../../../lib/consortium/types.ts
 import { decodeDatabase, LoadError, type DbRef } from './bytes.ts';
 
 export { LoadError, type DbRef };
+// The PlantSource rides in this chunk (out of the island's 60 KB budget, beside the glue it needs);
+// main.ts and the S1 browser test take it from here.
+export { createSqliteSource } from './sqlite-source.ts';
 export interface Expected { releaseId: string; climates: string[] } // climates as the export names them
 
 type Sqlite3 = Awaited<ReturnType<typeof sqlite3InitModule>>;
