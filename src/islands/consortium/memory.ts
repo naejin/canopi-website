@@ -24,7 +24,7 @@
 // The pure parts come first (scripts/consortium-memory.test.mjs runs them in Node): arrival,
 // countryAtStart, the save record, shareState, guessCountry and cropExamples (ported from v1
 // logic.js, memory.js and crops.js). The wiring (startMemory) reads and writes the store's signals.
-import { batch, computed, effect, signal } from '@preact/signals';
+import { batch, computed, effect, signal, untracked } from '@preact/signals';
 import type { ClimateZone, DecodedLink, Interaction, LinkNotice, PhaseOrd, PlantId, ShareState, Site, Taxon } from '../../lib/consortium/index.ts';
 import { climateZones, decodeLink, encodeLink, linkClimates, readPreset, LINK_VERSION, MAX_CROPS } from '../../lib/consortium/index.ts';
 import type { Country } from './store.ts';
@@ -272,8 +272,6 @@ export const notices = signal<Notices>({ ...NO_NOTICES });
 export const storageWorks = signal(true);
 // "Suggest plants" pressed while the plant list loads: the suggestion runs once it is ready (§5).
 export const pendingSuggest = signal(false);
-// Restoring a link or the save: Start shows the climate at once, and the result when the plants are read.
-export const restoring = signal(false);
 // The country picker on the country line is open.
 export const pickingCountry = signal(false);
 
@@ -351,31 +349,36 @@ const countryFrom = (): CountryFrom => {
   return !c.code || c.source === 'guess' ? null : c.source === 'link' ? 'link' : 'chosen';
 };
 
-// The link's climate while its first-visit restore loads: Start shows it at once (display only;
-// store.climate is set when the link opens, or by the reader).
-export const pendingClimate = signal<ClimateZone | null>(null);
-// Each restore takes a number; only the latest one applies and clears `restoring` (a slower, older
-// restore is dropped), and the reader acting on Start cancels the one in flight (their action wins).
+// ---- restoring a link or the save ----
+// A restore reads everything first and changes no store signal until it applies, in one batch, and
+// only if it is still the newest restore and the reader has not acted since it began. Saving never
+// waits for it: the store watcher saves every change (watchStore), so nothing has to be cleared on
+// the way out for saving to work again.
 let restoreGen = 0;
-export function cancelRestore(): void {
-  restoreGen++;
-  batch(() => { restoring.value = false; pendingClimate.value = null; });
-}
+// Every write to the consortium's signals that is not a restore applying or a guessed country (an
+// edit, Suggest, Start empty, a climate, Start over): the reader acted.
+let actions = 0;
+let quiet = false;
+// (Only outside an effect: a write made in an effect reaches the watcher after the effect ends.)
+const quietly = (fn: () => void): void => { quiet = true; try { fn(); } finally { quiet = false; } };
+// The newest restore in flight, for display only: Start's "reading" line, and the link's climate on
+// Start at once while the plants are read (first visit). Ended by that restore, or by the reader acting.
+const inFlight = signal<{ id: number; climate: ClimateZone | null } | null>(null);
+export const restoring = computed(() => inFlight.value !== null);
+export const pendingClimate = computed(() => (store.climate.value ? null : inFlight.value?.climate ?? null));
 
 export interface RestoreOptions { from: 'link' | 'saved'; src?: CountryFrom; keep?: boolean }
 // Restores a fragment (a link or the save) once its climates are read. Returns whether it opened.
 // src: the saved country's source (a save's country that came from a link keeps that label).
 // keep: a consortium is shown (a link pasted into the open tab, Back/Forward): a link that cannot
-// open changes nothing, says so where the reader is, and the address goes back to the consortium
-// shown, so a reload reopens it. The store changes only once every list the link needs is read.
-// Whatever happens, an edit the reader made meanwhile ends saved and in the address.
+// open changes nothing, says so where the reader is, and the address goes back to the consortium shown.
 export async function restore(fragment: string, { from, src = null, keep = false }: RestoreOptions): Promise<boolean> {
-  const id = ++restoreGen;
   const refuse = (problem: PastedProblem, notice: Partial<Notices>): false => {
     if (keep) { notices.value = { ...notices.peek(), pasted: problem }; writeAddress(true); }
     else notices.value = { ...notices.peek(), ...notice };
     return false;
   };
+  // Refusals come first, take no restore number and leave the one in flight alone.
   const v = new URLSearchParams(fragment).get('v');
   if (v !== null && v !== String(LINK_VERSION)) {
     // Another version: on Start, the climate it names (decodeLink still reads it) and the notice.
@@ -388,30 +391,27 @@ export async function restore(fragment: string, { from, src = null, keep = false
   // A link with no climate (cut before it, or edited): the cut notice, and nothing opens (review 7).
   const climate = zoneOf(new URLSearchParams(fragment).get('c'));
   if (!climate) return refuse('cut', { cut: true });
-  const before = currentFragment();
-  batch(() => {
-    restoring.value = true;
-    if (!keep && !store.climate.peek()) pendingClimate.value = climate;
-  });
-  let opened = false;
+
+  const id = ++restoreGen;
+  const began = actions;
+  const current = (): boolean => id === restoreGen && actions === began;
+  inFlight.value = { id, climate: keep ? null : climate };
   try {
     await waitForSource();
-    if (id !== restoreGen) return false;
+    if (!current()) return false;
     const known = await knownFor(linkClimates(fragment));
-    if (id !== restoreGen) return false;
+    if (!current()) return false;
     if (!known) return refuse('failed', { failed: true });
     const d = decodeLink(fragment, known);
-    applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen');
-    notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut, pasted: null, failed: false };
-    opened = true;
+    // One batch; the watcher then saves it and writes the address (plants no longer in the list are
+    // left out of the address, §5).
+    quietly(() => batch(() => {
+      applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen');
+      notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut, pasted: null, failed: false };
+    }));
     return true;
   } finally {
-    if (id === restoreGen) {
-      batch(() => { restoring.value = false; pendingClimate.value = null; });
-      // Saved and in the address when it opened (plants no longer in the list are then left out of
-      // the address, §5), or when the reader edited the consortium meanwhile; else left as it was.
-      if (opened || currentFragment() !== before) persist();
-    }
+    if (inFlight.peek()?.id === id) inFlight.value = null;
   }
 }
 
@@ -445,7 +445,6 @@ function writeAddress(force = false): void {
 
 // The reader picks a climate on Start: the shared site climate is written (climate-ux; v1 setClimate).
 export function chooseClimate(z: ClimateZone): void {
-  cancelRestore();
   store.climate.value = z;
   memory.write(SITE_CLIMATE, siteId(z));
   attempt(() => { document.documentElement.dataset.climate = siteId(z); });
@@ -461,7 +460,6 @@ export function chooseCountry(code: string | null): void {
 // Start over: the consortium goes, from the store, the save and the address; the climate, the site
 // and the country stay.
 export function startOver(): void {
-  cancelRestore();
   batch(() => {
     store.members.value = [];
     store.kept.value = [];
@@ -486,16 +484,14 @@ export function startEmpty(): void {
   });
 }
 
-// "Suggest plants": now when the plants are read, else once they are (§5 Loading).
-// The reader acts on Start while a link loads: the restore is cancelled, and the climate the link
-// showed becomes the chosen one (round 3).
+// The reader acts on Start while a link loads: the climate the link shows becomes the chosen one
+// (that write is the reader acting, so the restore in flight will not apply).
 function adoptPending(): void {
   const shown = pendingClimate.peek();
-  if (!restoring.peek() && !shown) return;
-  cancelRestore();
-  if (shown && !store.climate.peek()) store.climate.value = shown;
+  if (shown) store.climate.value = shown;
 }
 
+// "Suggest plants": now when the plants are read, else once they are (§5 Loading).
 export function requestSuggest(): void {
   adoptPending();
   if (store.suggestMembers()) { store.view.value = 'matrix'; pendingSuggest.value = false; return; }
@@ -544,7 +540,9 @@ export function startMemory(): void {
     const src = store.source.value;
     if (!src || store.country.peek().source !== 'guess') return;
     const g = guessCountry([...src.countries().keys()], { zone, languages });
-    if (g && g !== store.country.peek().code) store.country.value = { code: g, source: 'guess' };
+    // Written after this effect, not in it: a write made inside an effect reaches the watcher only once
+    // the effect ends, after `quietly`, and a guessed country is not the reader acting.
+    if (g && g !== store.country.peek().code) queueMicrotask(() => quietly(() => { store.country.value = { code: g, source: 'guess' }; }));
   });
 
   if (how.kind === 'link') void restore(how.fragment, { from: 'link' });
@@ -579,14 +577,30 @@ export function startMemory(): void {
     attempt(() => performance.mark('ct:pool'));
   });
 
-  // Each change of a shown consortium: the save and the address bar (never while restoring: restore
-  // saves once it has opened; never on Start with nothing chosen: the last consortium stays until
-  // another replaces it).
-  // (It reads the signals themselves, not shownFragment: the view is not in the link, so a computed
-  // fragment would not change when the result first shows.)
+  watchStore();
+}
+
+let watching = false;
+// The save and the address bar follow every change of a shown consortium (persist: nothing on Start,
+// where the last consortium stays until another replaces it), and any write to the consortium that
+// is not a restore applying counts as the reader acting. Set up once (startMemory; the unit tests).
+// (It reads the signals themselves, not shownFragment: the view is not in the link, so a computed
+// fragment would not change when the result first shows.)
+export function watchStore(): void {
+  if (watching) return;
+  watching = true;
+  let first = true;
+  effect(() => {
+    void [store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
+      store.guests.value, store.crops.value, store.stage.value, store.view.value];
+    if (first) { first = false; return; }
+    if (quiet) return;
+    actions++;
+    untracked(() => { inFlight.value = null; });
+  });
   effect(() => {
     void [store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
       store.guests.value, store.crops.value, store.stage.value, store.view.value, store.pools.value];
-    if (!restoring.peek()) persist();
+    untracked(persist);
   });
 }

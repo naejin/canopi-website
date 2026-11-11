@@ -183,6 +183,8 @@ const testSource = new Proxy(realSource, {
     return typeof v === 'function' ? v.bind(t) : v;
   },
 });
+// The save and the address follow every change, as startMemory sets them up in the page.
+m.watchStore?.();
 const UNSURE = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
 const linkOf = async (zone, n, extra = {}) => {
   const ids = (await realSource.pool(zone)).map((t) => t.id);
@@ -263,4 +265,43 @@ test('restore: an edit made while a pasted link loads and fails is saved (round 
   const saved = readRecord(storage.getItem(STORE));
   assert.ok(saved, 'saved');
   assert.equal(decodeLink(saved.fragment, { Temperate: pool.map((t) => t.id) }).state.members.length, 7, 'the edit is the saved state');
+});
+
+test('restore: a cut or outdated link arriving during a first-visit restore leaves nothing stuck; edits save again (round 4, 1)', async () => {
+  const pool = await shown();
+  store.view.value = 'start';
+  store.climate.value = null;
+  store.members.value = [];
+  const link = await linkOf('Tropical', 4);
+  delays.Tropical = 60;
+  const a = m.restore(link, { from: 'link' });
+  await wait(5);
+  assert.equal(await m.restore('v=4&k=FR', { from: 'link' }), false, 'cut');
+  assert.equal(await m.restore('v=1&c=temperate', { from: 'link' }), false, 'outdated');
+  await a;
+  assert.equal(m.restoring.peek(), false);
+  assert.equal(m.pendingClimate.peek(), null);
+  store.climate.value = 'Temperate';
+  store.view.value = 'matrix';
+  writes = 0;
+  store.members.value = pool.slice(0, 3).map((t) => t.id);
+  assert.ok(writes > 0, 'an edit is saved again');
+  assert.equal(decodeLink(readRecord(storage.getItem(STORE)).fragment, { Temperate: pool.map((t) => t.id) }).state.members.length, 3);
+});
+
+test('restore: an edit during restore A, superseded by a newer restore B that fails, is saved (round 4, 2)', async () => {
+  const pool = await shown();
+  const linkA = await linkOf('Tropical', 4), linkB = await linkOf('Mediterranean', 5);
+  delays.Tropical = 60;
+  delays.Mediterranean = 20;
+  failing.add('Mediterranean');
+  const a = m.restore(linkA, { from: 'link', keep: true });
+  await wait(5);
+  store.members.value = pool.slice(0, 8).map((t) => t.id);
+  const b = m.restore(linkB, { from: 'link', keep: true });
+  assert.equal(await b, false);
+  assert.equal(await a, false, 'the reader acted: A does not apply');
+  assert.equal(store.climate.peek(), 'Temperate');
+  assert.equal(decodeLink(readRecord(storage.getItem(STORE)).fragment, { Temperate: pool.map((t) => t.id) }).state.members.length, 8, 'the edit is saved');
+  assert.equal(m.restoring.peek(), false);
 });
