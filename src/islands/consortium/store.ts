@@ -37,13 +37,16 @@ export const guests = signal<Partial<Record<PlantId, ClimateZone>>>({}); // adde
 export const view = signal<View>('start');
 export const stage = signal<PhaseOrd>(0); // the stage the side view, stepper and print show
 export const sheet = signal<Sheet | null>(null);
-// While Start shows (view 'start'), the signals above are the Start draft: the picked card and its
-// crops (and, on the consortium's own card, its plants, which Suggest and a paste build on). The
-// consortium itself is then set aside here: the one shown before Change site, or the save this page
-// opened with but did not show (a guide link's Start: its record as saved); null: none. Only the
+// While Start shows (view 'start'), the signals above are the Start draft: the picked card, its
+// crops and site answers (and, on the consortium's own card, its plants, which Suggest and a paste
+// build on). The consortium shown before Change site is then set aside here, with its own site
+// answers, country and stage; null: none. Only the
 // commit actions turn the draft into the consortium (memory.ts); the save mirrors the consortium.
-export interface Consortium { climate: ClimateZone; members: PlantId[]; kept: PlantId[]; removed: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>>; crops: PlantId[] }
-export const setAside = signal<Consortium | { record: string } | null>(null);
+export interface Consortium {
+  climate: ClimateZone; members: PlantId[]; kept: PlantId[]; removed: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>>; crops: PlantId[];
+  site: Site; country: Country; stage: PhaseOrd;
+}
+export const setAside = signal<Consortium | null>(null);
 export const load = signal<Load>({ status: 'idle', error: null });
 
 // ---- data (set once the database is open; S1's load fills them) ----
@@ -246,7 +249,7 @@ const nameById = (id: PlantId) => { const t = taxonOf(id); return t ? nameOf(t) 
 
 // The view and the consortium set aside too: Undo of a list pasted on Start goes back to Start's
 // draft, with the consortium it replaced, so the save mirrors that one again (F2, R2-1).
-interface Snapshot { members: PlantId[]; kept: PlantId[]; removed: PlantId[]; crops: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>>; view: View; setAside: Consortium | { record: string } | null }
+interface Snapshot { members: PlantId[]; kept: PlantId[]; removed: PlantId[]; crops: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>>; view: View; setAside: Consortium | null }
 const snapshot = (): Snapshot => ({ members: members.peek(), kept: kept.peek(), removed: removed.peek(), crops: crops.peek(), guests: guests.peek(), view: view.peek(), setAside: setAside.peek() });
 const restoreSnapshot = (s: Snapshot) => batch(() => {
   members.value = s.members; kept.value = s.kept; removed.value = s.removed; crops.value = s.crops; guests.value = s.guests;

@@ -439,6 +439,78 @@ test('T4 (R3-1): Start empty under another card is the consortium: Change site k
   });
 });
 
+// Another tab's save, written while this page is open.
+const OTHER_TAB = JSON.stringify({ fragment: 'v=4&c=tropical&l=unsure&s=unsure&w=unsure&m=unsure&a=&e=1', at: '2026-11-11T00:00:00.000Z', src: null });
+const otherTabSaves = (page) => page.evaluate((x) => localStorage.setItem('canopi-consortium', x), OTHER_TAB);
+const pasteOne = async (page, name) => {
+  await page.locator(aria('button', 'Paste a list')).click();
+  await page.locator('#ct-paste-text').fill(name);
+  await page.locator(aria('button', 'Add 1 plant')).click();
+  assert.ok(await has(page, aria('button', 'Share'), 5000));
+};
+
+test('M1 (R4-1): Undo of a paste on a fresh Start puts back the save another tab wrote before the paste', async (t) => {
+  const [first] = await temperate();
+  await eachVariant(t, async (v) => {
+    const page = await h.open('/consortium/', { ...v, data: 'fixture' });
+    await page.locator(aria('radio', 'Temperate')).click();
+    assert.equal(await loadState(page), 'ready');
+    await otherTabSaves(page);
+    await pasteOne(page, first.name);
+    await page.locator(aria('button', 'Undo')).click();
+    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.equal(await saved(page), OTHER_TAB, 'the other tab\'s save is back');
+    await done(page);
+  });
+});
+
+test('M2 (R4-1): on a guide link\'s Start, Undo of a paste puts back the newer save another tab wrote, not the one read at open', async (t) => {
+  const [first] = await temperate();
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    await page.goto(page.url().split('#')[0].split('?')[0] + '?climate=temperate', { waitUntil: 'domcontentloaded' });
+    assert.equal(await loadState(page), 'ready');
+    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    await otherTabSaves(page);
+    await pasteOne(page, first.name);
+    await page.locator(aria('button', 'Undo')).click();
+    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.equal(await saved(page), OTHER_TAB);
+    await done(page);
+  });
+});
+
+test('M3 (R4-2): Start over leaves alone a save another tab wrote since', async (t) => {
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    await otherTabSaves(page);
+    await page.locator(aria('button', 'Start over')).click();
+    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.equal(await saved(page), OTHER_TAB);
+    await done(page);
+  });
+});
+
+test('D1 (R4-3): site answers changed in the draft are not saved until a commit; Back keeps the old ones, Suggest takes the new', async (t) => {
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    const before = await linkOf(page);
+    await changeSiteTo(page, 'Tropical');
+    await page.locator('input[name="ct-site-water"]:not(:checked)').click();
+    assert.equal(await savedFragment(page), before, 'the draft\'s answer is not saved');
+    await page.locator(aria('button', 'Back to your consortium')).click();
+    assert.ok(await has(page, aria('button', 'Share'), 4000));
+    assert.equal(await linkOf(page), before, 'Back: the consortium with its own answers');
+    await changeSiteTo(page, 'Temperate');
+    await page.locator('input[name="ct-site-water"]:not(:checked)').click();
+    const water = await page.$eval('input[name="ct-site-water"]:checked', (el) => el.value);
+    await page.locator(aria('button', 'Suggest plants')).click();
+    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000));
+    assert.equal(param(await savedFragment(page), 'w'), water, 'Suggest commits the draft\'s answer');
+    await done(page);
+  });
+});
+
 test('F3: Undo of a plant added in the Paste sheet keeps the focus in the sheet', async (t) => {
   await eachVariant(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });

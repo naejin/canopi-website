@@ -331,8 +331,7 @@ const waitForSource = (): Promise<void> => new Promise((resolve) => {
 });
 
 // The current state as a fragment, against the climate's and the guest lists' ids.
-// of: a consortium set aside (Start's draft shows), in place of the store's plants and climate; the
-// site answers, the country and the stage are always the store's.
+// of: a consortium set aside (Start's draft shows), in place of the store's.
 export function currentFragment(of: store.Consortium | null = null): string | null {
   const c = of?.climate ?? store.climate.peek();
   if (!c) return null;
@@ -343,14 +342,13 @@ export function currentFragment(of: store.Consortium | null = null): string | nu
     if (p) known[z] = p.map((t) => t.id);
   }
   return encodeLink(shareState({
-    climate: c, country: store.country.peek(), site: store.site.peek(), members: of?.members ?? store.members.peek(), kept: of?.kept ?? store.kept.peek(),
-    removed: of?.removed ?? store.removed.peek(), guests, crops: of?.crops ?? store.crops.peek(), stage: store.stage.peek(),
+    climate: c, country: of?.country ?? store.country.peek(), site: of?.site ?? store.site.peek(), members: of?.members ?? store.members.peek(),
+    kept: of?.kept ?? store.kept.peek(), removed: of?.removed ?? store.removed.peek(), guests, crops: of?.crops ?? store.crops.peek(), stage: of?.stage ?? store.stage.peek(),
   }), known);
 }
 
 // Where the shown consortium's country came from, as the save and history.state keep it.
-const countryFrom = (): CountryFrom => {
-  const c = store.country.peek();
+const countryFrom = (c: Country = store.country.peek()): CountryFrom => {
   return !c.code || c.source === 'guess' ? null : c.source === 'link' ? 'link' : 'chosen';
 };
 
@@ -453,25 +451,48 @@ async function applyPreset(climate: ClimateZone, plant: string | null): Promise<
 // never changes the consortium or the save. Only Suggest, Start empty, a paste and Back to your
 // consortium (which discards the draft) end it. The save always encodes the consortium, written on
 // every change of it; Undo restores the consortium (and the view), so it rewrites the save too.
-// A page writes over what another tab or an earlier visit saved only when its consortium changed:
-// putting back a save it did not write itself (an earlier one, or none) waits for the save to
-// still be the one it wrote (R2-2, R2-3).
+// Every write of the save goes through writeSave, which holds the one multi-tab rule.
 
 // The consortium this page shows or set aside on Start (null: none of its own).
 function own(): store.Consortium | null {
   if (store.view.peek() !== 'start') {
     const climate = store.climate.peek();
-    return climate && { climate, members: store.members.peek(), kept: store.kept.peek(), removed: store.removed.peek(), guests: store.guests.peek(), crops: store.crops.peek() };
+    return climate && {
+      climate, members: store.members.peek(), kept: store.kept.peek(), removed: store.removed.peek(), guests: store.guests.peek(), crops: store.crops.peek(),
+      site: store.site.peek(), country: store.country.peek(), stage: store.stage.peek(),
+    };
   }
-  const aside = store.setAside.peek();
-  return aside && !('record' in aside) ? aside : null;
+  return store.setAside.peek();
 }
+
 // The save as this page last wrote it, or read it when it opened (startMemory).
 let lastSave: string | null = null;
+// What the save held just before this page's first write over it, or the newer save another tab
+// wrote there since (undefined: nothing to put back). Undo back to a Start with no consortium of the
+// page's own puts it back (R2-3, R4-1).
+let beneath: string | null | undefined;
 const sameSave = (a: string | null, b: string | null): boolean => {
   const x = readRecord(a), y = readRecord(b);
   return x && y ? x.fragment === y.fragment && x.src === y.src : a === b;
 };
+// next: this page's consortium as a record; null: the save removed (Start over, an older save);
+// 'back': the page has no consortium of its own any more, so the save goes back to `beneath`.
+// The rule: a remove or a put-back happens only while the save is still what this page last wrote
+// or read, so another tab's save, or an earlier visit's, is never lost (R2-2, R4-1, R4-2); the
+// page's own consortium is written whenever it changes (the reader acted here).
+function writeSave(next: string | null | 'back'): void {
+  const now = memory.read(STORE);
+  if (next === 'back' || next === null) {
+    const to = next === 'back' ? beneath : null;
+    beneath = undefined;
+    if (to === undefined || now !== lastSave) return;
+    if (to === null ? memory.remove(STORE) : memory.write(STORE, to)) lastSave = to;
+    return;
+  }
+  if (sameSave(next, lastSave)) return;
+  if (beneath === undefined || now !== lastSave) beneath = now;
+  if (memory.write(STORE, next)) lastSave = next;
+}
 
 // The address bar holds the consortium's link (replaceState, no history entry). Same address:
 // nothing written (browsers drop replaceState calls past a rate limit).
@@ -481,7 +502,7 @@ function writeAddress(force = false): void {
   const fragment = mine ? currentFragment(mine) : force ? currentFragment() : null;
   const next = fragment ? shareUrl(location.href, fragment) : `${location.origin}${location.pathname}${location.search}`;
   // history.state marks the address as the page's own, so a reload opens it as the save (review 1).
-  const state = fragment ? { ct: fragment, src: countryFrom() } : null;
+  const state = fragment ? { ct: fragment, src: countryFrom(mine?.country) } : null;
   if (next !== location.href || JSON.stringify(attempt(() => history.state)) !== JSON.stringify(state)) attempt(() => history.replaceState(state, '', next));
 }
 
@@ -523,6 +544,7 @@ export function changeSite(): void {
 // Start over: the consortium goes, from the store, the save and the address; the climate, the site
 // and the country stay.
 export function startOver(): void {
+  writeSave(null);
   batch(() => {
     store.setAside.value = null;
     store.members.value = [];
@@ -534,16 +556,21 @@ export function startOver(): void {
     store.view.value = 'start';
     notices.value = { ...NO_NOTICES };
   });
-  if (memory.remove(STORE)) lastSave = null;
 }
 
 // "Back to your consortium" from Start: the draft discarded, the consortium shown in its own climate
-// again, whatever card was chosen since "Change site" (F1, R2-4); the focus goes to the view (W4).
-export const canGoBack = computed(() => { const a = store.setAside.value; return store.view.value === 'start' && !!a && !('record' in a); });
+// again, whatever card was chosen since "Change site", with its own site answers, country and stage
+// (F1, R2-4, R4-3); the focus goes to the view (W4).
+export const canGoBack = computed(() => store.view.value === 'start' && store.setAside.value !== null);
 export function backToConsortium(): void {
   const aside = own();
   batch(() => {
-    if (aside) chooseClimate(aside.climate);
+    if (aside) {
+      chooseClimate(aside.climate);
+      store.site.value = aside.site;
+      store.country.value = aside.country;
+      store.stage.value = aside.stage;
+    }
     store.view.value = 'matrix';
   });
   focusView();
@@ -573,21 +600,12 @@ export function requestSuggest(): void {
   pendingSuggest.value = true;
 }
 
-// The save and the address bar follow the consortium. With none of its own on Start, the save goes
-// back to what it held when the page opened (an earlier visit's, or none), only over this page's write.
+// The save and the address bar follow the consortium; with none of the page's own, the save goes back.
 function persist(): void {
   if (store.view.peek() !== 'start' && !store.pool.peek()) return;
   writeAddress();
   const mine = own();
-  if (mine) {
-    const record = saveRecord(currentFragment(mine) ?? '', new Date().toISOString(), countryFrom());
-    if (!sameSave(record, lastSave) && memory.write(STORE, record)) lastSave = record;
-    return;
-  }
-  const aside = store.setAside.peek();
-  const back = aside && 'record' in aside ? aside.record : null;
-  if (sameSave(back, lastSave)) return;
-  if (memory.read(STORE) === lastSave && (back ? memory.write(STORE, back) : memory.remove(STORE))) lastSave = back;
+  writeSave(mine ? saveRecord(currentFragment(mine) ?? '', new Date().toISOString(), countryFrom(mine.country)) : 'back');
 }
 
 // The shown consortium's link, recomputed on every change of what the link holds (Share's field).
@@ -607,14 +625,11 @@ export function startMemory(): void {
   const raw = memory.read(STORE);
   const saved = readRecord(raw);
   lastSave = raw;
-  // A save this visit does not open (a guide link, a shared link) stays the device's consortium until
-  // this page has one of its own.
-  if (saved) store.setAside.value = { record: raw! };
   const how = arrival({ hash: location.hash, search: location.search }, saved, memory.read(SITE_CLIMATE), attempt(() => history.state));
   // An older save: said once, then removed, so the notice does not come back on every visit (review 4).
   if (how.kind === 'start' && oldRecord(raw)) {
     notices.value = { ...notices.peek(), oldSave: true };
-    if (memory.remove(STORE)) lastSave = null;
+    writeSave(null);
   }
   const linkK = how.kind === 'link' ? new URLSearchParams(how.fragment).get('k') : null;
   const savedK = how.kind === 'saved' ? new URLSearchParams(how.fragment).get('k') : null;
