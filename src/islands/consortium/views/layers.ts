@@ -4,7 +4,7 @@
 // by a rule, derived from dated photos, llm) is an estimate, marked "estimate" by the view. Months
 // come as the source gave them (PlantSource.details reads them round the year from months_from),
 // never shifted for a hemisphere, and are written in the page language by Intl.
-// Pure: no DOM, no store; W carries the page's words, so scripts/consortium-paste.test.mjs tests it.
+// Pure: no DOM, no store; W carries the page's words, so scripts/consortium-layers.test.mjs tests it.
 import type { LayerField, LayerScope, LayerValue, Month } from '../../../lib/consortium/types.ts';
 import { months as MONTHS } from '../../../lib/consortium/types.ts';
 

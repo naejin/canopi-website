@@ -72,6 +72,16 @@ test('arrival: a link wins, then a guide preset, then an old query link, then th
   assert.deepEqual(arrival({ hash: '', search: '' }, null, 'none'), { kind: 'start', climate: null });
   assert.equal(zoneOf(' Temperate '), 'Temperate');
   assert.equal(zoneOf('x'), null);
+  assert.equal(zoneOf(null), null);
+});
+
+test('one zoneOf: the island reads climate ids with the core\'s (H15)', async () => {
+  const core = await import('../src/lib/consortium/index.ts');
+  assert.equal(zoneOf, core.zoneOf, 'memory.ts re-exports the core zoneOf, no copy');
+  const main = readFileSync(new URL('../src/islands/consortium/main.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(main, /const zoneOf\b/, 'main.ts has no zoneOf of its own');
+  assert.doesNotMatch(readFileSync(new URL('../src/islands/consortium/memory.ts', import.meta.url), 'utf8'), /ct:pool/, 'no ct:pool mark: the timing script reads ct:matrix');
+  assert.doesNotMatch(readFileSync(new URL('./browser/consortium-timing.mjs', import.meta.url), 'utf8'), /ct:pool/, 'the timing script has no ct:pool fallback');
 });
 
 test('arrival: the page\'s own address after a reload is the save, not a shared link (review 1)', () => {
@@ -338,4 +348,21 @@ test('restore: a newer cut link cancels the older restore and keeps its notice (
   assert.equal(m.notices.peek().cut, true, 'the cut notice stays');
   assert.deepEqual(store.members.peek(), []);
   assert.equal(m.restoring.peek(), false);
+});
+
+test('applyPreset: a card the reader picks while the guide\'s plant is read wins; the plant is not applied (pre-push review 2)', async () => {
+  await shown();
+  store.view.value = 'start';
+  store.members.value = [];
+  store.crops.value = [];
+  store.kept.value = [];
+  const crop = (await realSource.pool('Tropical')).find((t) => t.role === 'crop');
+  delays.Tropical = 60;
+  const p = m.applyPreset('Tropical', crop.canonical_name);
+  await wait(5);
+  m.chooseClimate('Mediterranean');
+  await p;
+  assert.equal(store.climate.peek(), 'Mediterranean', 'the reader\'s card');
+  assert.deepEqual({ crops: store.crops.peek(), kept: store.kept.peek() }, { crops: [], kept: [] }, 'the guide\'s plant is not applied');
+  assert.equal(m.notices.peek().guideKept, null);
 });

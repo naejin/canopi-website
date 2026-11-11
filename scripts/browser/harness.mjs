@@ -5,7 +5,7 @@
 // Run under the memory cap: timeout 600 systemd-run --user --scope -q -p MemoryMax=3G
 // -p MemorySwapMax=0 npm run test:browser
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { join } from 'node:path';
@@ -60,19 +60,20 @@ export async function fixturePhotos() {
 // - 'corrupt': bytes overwritten inside the gzip stream (does not inflate: damaged);
 // - 'user-version': a valid database with user_version 2 (schema);
 // - 'digest': the right bytes under a wrong sha256 (damaged);
-// - 'empty': an empty 200 body (damaged).
+// - 'empty': an empty 200 body (damaged);
+// - 'stall': no response ever comes (a stalled connection: fetch, after the stall timer).
 export function servedDatabase(kind, fx) {
   let gz = fx.gz, raw = gunzipSync(fx.gz), wrongSha = false;
   if (kind === 'corrupt') gz = Buffer.concat([gz.subarray(0, 64), Buffer.alloc(256, 0x5a), gz.subarray(320)]);
   else if (kind === 'user-version') { raw = Buffer.from(raw); raw.writeUInt32BE(2, 60); gz = gzipSync(raw); }
   else if (kind === 'digest') wrongSha = true;
-  else if (kind === 'empty') gz = Buffer.alloc(0);
+  else if (kind === 'empty' || kind === 'stall') gz = kind === 'empty' ? Buffer.alloc(0) : gz;
   else if (kind) throw new Error(`no database variant "${kind}"`);
   return { bytes: gz, ref: { sha256: wrongSha ? sha256(raw) : sha256(gz), bytes: gz.length, rawSha256: sha256(raw), rawBytes: raw.length } };
 }
 
-export async function startHarness({ log = () => {} } = {}) {
-  const site = await serve({ log });
+export async function startHarness({ log = () => {}, dir } = {}) {
+  const site = await serve({ log, dir });
   let browser;
   try {
     browser = await puppeteer.launch({
@@ -85,6 +86,18 @@ export async function startHarness({ log = () => {} } = {}) {
     throw err;
   }
   const contexts = new Set();
+  // Chrome with its real cookie block (profile.default_content_setting_values.cookies = 2: site data
+  // refused, localStorage and sessionStorage throw SecurityError), launched on first use (H1/W1).
+  let blocked = null;
+  const blockedBrowser = async () => {
+    if (blocked) return blocked;
+    const dir = mkdtempSync(join(tmpdir(), 'consortium-cookieblock-'));
+    mkdirSync(join(dir, 'Default'));
+    writeFileSync(join(dir, 'Default', 'Preferences'), JSON.stringify({ profile: { default_content_setting_values: { cookies: 2 } } }));
+    const b = await puppeteer.launch({ executablePath: CHROME, headless: true, userDataDir: dir, args: ['--no-first-run', '--no-default-browser-check', '--disable-extensions', '--disable-background-networking', '--mute-audio'] });
+    blocked = { browser: b, dir, session: await b.target().createCDPSession() };
+    return blocked;
+  };
   const downloadRoot = mkdtempSync(join(tmpdir(), 'consortium-downloads-'));
   const browserSession = await browser.target().createCDPSession();
 
@@ -96,17 +109,24 @@ export async function startHarness({ log = () => {} } = {}) {
   // - photos: true gives the fixture's 6 photo plants a self-served PNG (BT-5);
   // - wasm: false removes WebAssembly before any script runs (Lockdown Mode, P5);
   // - loader: 404 | 'offline' fails the island's loader chunk (a deploy; offline, navigator.onLine false);
+  // - island: 404 fails the island's own chunk (main.<hash>.js), which the page script imports;
+  // - wasmFile: 403 | 'offline' | 'stall' fails the fetch of sqlite3.<hash>.wasm (a proxy refusing it;
+  //   offline; never answered, a stalled connection);
   // - storage: false makes localStorage and sessionStorage throw (BT-7's note); the theme then comes
-  //   from prefers-color-scheme, which is always emulated as well;
+  //   from prefers-color-scheme, which is always emulated as well; storage: 'cookies-blocked' opens
+  //   the page in a Chrome whose profile blocks site data (the real setting, not a stub);
   // - correction: 'ok' | 'offline' | status number stubs POST /api/correction; page.correctionPosts
   //   holds each request body (BT-5).
   // page.capturedDownloads() lists the files this page downloaded (BT-9 .canopi), via the CDP
   // download events; pdf(page) prints it to PDF (BT-8).
-  async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, storage = true, correction = null } = {}) {
-    const context = await browser.createBrowserContext();
-    contexts.add(context);
+  async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, island = null, wasmFile = null, storage = true, correction = null } = {}) {
+    const real = storage === 'cookies-blocked' ? await blockedBrowser() : null;
+    // The blocked profile's setting applies to its default context (an incognito context of it
+    // starts from defaults), so that page is opened there.
+    const context = real ? real.browser.defaultBrowserContext() : await browser.createBrowserContext();
+    if (!real) contexts.add(context);
     const page = await context.newPage();
-    // Short waits: a missing control fails in seconds, so the todo tests of unbuilt streams stay quick.
+    // Short waits: a missing control fails in seconds rather than at the test's timeout.
     page.setDefaultTimeout(4000);
     page.setDefaultNavigationTimeout(20_000);
     await page.setViewport({ width, height: width < 640 ? 844 : 900, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });
@@ -121,10 +141,10 @@ export async function startHarness({ log = () => {} } = {}) {
           Object.defineProperty(window, name, { get() { throw new DOMException('The operation is insecure.', 'SecurityError'); }, configurable: true });
         }
       }
-    }, theme, wasm, loader !== 'offline', storage);
+    }, theme, wasm, loader !== 'offline', storage !== false);
 
-    const dir = join(downloadRoot, String(contexts.size));
-    await browserSession.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: dir, browserContextId: context.id, eventsEnabled: true });
+    const dir = join(downloadRoot, real ? `blocked-${Date.now()}` : String(contexts.size));
+    if (!real) await browserSession.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: dir, browserContextId: context.id, eventsEnabled: true });
     page.capturedDownloads = () => (existsSync(dir) ? readdirSync(dir).filter((f) => !f.endsWith('.crdownload')).map((f) => ({ name: f, bytes: readFileSync(join(dir, f)) })) : []);
     page.correctionPosts = [];
 
@@ -132,18 +152,24 @@ export async function startHarness({ log = () => {} } = {}) {
     const fx = useFixture ? fixture() : null;
     const served = useFixture && database !== 404 ? servedDatabase(database, fx) : null;
     const images = photos ? await fixturePhotos() : {};
-    if (useFixture || loader || correction) {
+    if (useFixture || loader || island || wasmFile || correction) {
       await page.setRequestInterception(true);
       page.on('request', async (request) => {
         if (request.isInterceptResolutionHandled()) return;
         const url = new URL(request.url());
         if (fx && url.pathname === `/data/consortium/${fx.file}`) {
           if (!served) return request.respond({ status: 404, contentType: 'text/plain', body: 'Not found' });
+          if (database === 'stall') return; // never answered: the page's stall timer must end it
           return request.respond({ status: 200, contentType: 'application/gzip', body: served.bytes });
         }
         if (photos && url.pathname.startsWith(FIXTURE_PHOTO_PREFIX)) return request.respond({ status: 200, contentType: 'image/png', body: PNG_1PX });
         if (loader && /^\/_astro\/load\.[\w-]+\.js$/.test(url.pathname)) {
           return loader === 'offline' ? request.abort('internetdisconnected') : request.respond({ status: 404, contentType: 'text/plain', body: 'Not found' });
+        }
+        if (island && /^\/_astro\/main\.[\w-]+\.js$/.test(url.pathname)) return request.respond({ status: 404, contentType: 'text/plain', body: 'Not found' });
+        if (wasmFile && /\/sqlite3\.[\w-]+\.wasm$/.test(url.pathname)) {
+          if (wasmFile === 'stall') return; // never answered: the page's stall timer must end it
+          return wasmFile === 'offline' ? request.abort('internetdisconnected') : request.respond({ status: Number(wasmFile), contentType: 'text/plain', body: 'Forbidden' });
         }
         if (correction && url.pathname === '/api/correction' && request.method() === 'POST') {
           page.correctionPosts.push(request.postData() ?? '');
@@ -182,11 +208,17 @@ export async function startHarness({ log = () => {} } = {}) {
     const pid = browser.process()?.pid;
     await browser.close().catch(() => {});
     if (pid) { try { process.kill(pid, 'SIGKILL'); } catch { /* closed */ } }
+    if (blocked) {
+      const bpid = blocked.browser.process()?.pid;
+      await blocked.browser.close().catch(() => {});
+      if (bpid) { try { process.kill(bpid, 'SIGKILL'); } catch { /* closed */ } }
+      rmSync(blocked.dir, { recursive: true, force: true });
+    }
     await site.stop();
     rmSync(downloadRoot, { recursive: true, force: true });
   }
 
-  return { url: site.url, browser, open, pdf, close };
+  return { url: site.url, dir: site.dir, browser, open, pdf, close };
 }
 
 // The island's load state as the page shows it: 'ready' once the loading line is gone without a

@@ -25,16 +25,19 @@ import type { ComponentChildren, ComponentType } from 'preact';
 import { useEffect } from 'preact/hooks';
 import type { Matrix as MatrixData, MatrixCell, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
 import { ROOM_LIMIT_M, strata } from '../../../lib/consortium/index.ts';
-import * as store from '../store.ts';
 import { climate, matrix, memberTaxa, members, missingMembers, pool, site, suggestMembers, view, type View } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { COLLAPSED_CHIPS, MAX_TRACKS, PHASE_ORDS, SHARE_AIM, cellOrder, fillPercent, reasonParts, rowPieces, runReasons, spanOf, spans, tracksOf } from './tracks.ts';
 import { Explain, Marks, PinIcon, SproutIcon, WarnIcon, byName, cellName, layerName, listName, nameOf, openAdd, openDetails, phasePlain, phaseTerm, plantLabel } from './StageBar.tsx';
 import { phone } from './StageStepper.tsx';
 import { PhoneMatrix } from './PhoneMatrix.tsx';
-import { SideView } from './SideView.tsx';
-import { Jobs } from './Jobs.tsx';
-import { PlantList } from './PlantList.tsx';
+import { later, prefetchLater } from './lazy.tsx';
+import { focusView } from '../focus.ts';
+
+// The other three views load after the matrix (views/lazy.tsx).
+const { View: SideView } = later(() => import('./later.ts').then((m) => m.SideView));
+const { View: Jobs } = later(() => import('./later.ts').then((m) => m.Jobs));
+const { View: PlantList } = later(() => import('./later.ts').then((m) => m.PlantList));
 
 type Tab = Exclude<View, 'start'>;
 const TABS: readonly Tab[] = ['matrix', 'side', 'jobs', 'list'];
@@ -61,7 +64,7 @@ function Views() {
           </button>
         ))}
       </div>
-      <div class="ct-viewbar"><button type="button" class="button button-secondary ct-btn-sm" onClick={() => openAdd({ cell: null, anyway: false, job: null })}>{T('matrix.addPlants')}</button></div>
+      <div class="ct-viewbar"><button type="button" class="button button-secondary ct-btn-sm" onClick={() => openAdd()}>{T('matrix.addPlants')}</button></div>
       <Notices />
       <FirstPaint />
       {TABS.map((tab) => (
@@ -107,8 +110,8 @@ export function EmptyNotice({ phone: small = false }: { phone?: boolean }) {
     <div class={`ct-mnotice ct-mx-empty${small ? ' is-phone' : ''}`}>
       <div><strong>{T('matrix.empty')}</strong><p>{T('matrix.emptyBody')}</p></div>
       <div class="ct-row">
-        <button type="button" class="button button-primary" onClick={() => { if (suggestMembers()) view.value = 'matrix'; }}>{T('matrix.suggest')}</button>
-        {!small && <button type="button" class="button button-secondary" onClick={() => openAdd({ cell: null, anyway: false, job: null })}>{T('matrix.addPlant')}</button>}
+        <button type="button" class="button button-primary" onClick={() => { if (suggestMembers()) { view.value = 'matrix'; focusView(); } }}>{T('matrix.suggest')}</button>
+        {!small && <button type="button" class="button button-secondary" onClick={() => openAdd()}>{T('matrix.addPlant')}</button>}
       </div>
     </div>
   );
@@ -118,7 +121,7 @@ export function FreeCell({ stratum, phase, fitting }: { stratum: Stratum; phase:
   return (
     <>
       <span>{P('matrix.freeCell', fitting)}</span>
-      <button type="button" class="ct-add-cell" aria-label={T('matrix.addTo', { cell: cellName(stratum, phase) })} onClick={() => openAdd({ cell: [stratum, phase], anyway: false, job: null })}>+ {T('matrix.add')}</button>
+      <button type="button" class="ct-add-cell" aria-label={T('matrix.addTo', { cell: cellName(stratum, phase) })} onClick={() => openAdd({ cell: { stratum, from: phase, to: phase } })}>+ {T('matrix.add')}</button>
     </>
   );
 }
@@ -142,7 +145,7 @@ export function CellReason({ stratum, from, to, kind }: { stratum: Stratum; from
       <strong><span class="ct-blocked" aria-hidden="true">–</span> {head}</strong>
       <span>{body}</span>
       {kind === 'misfit' && (
-        <span><button type="button" class="ct-link-button" aria-label={T('matrix.showAnywayIn', { cell: cellName(stratum, from, to) })} onClick={() => openAdd({ cell: [stratum, from as PhaseOrd], anyway: true, job: null })}>{T('matrix.showAnyway')}</button></span>
+        <span><button type="button" class="ct-link-button" aria-label={T('matrix.showAnywayIn', { cell: cellName(stratum, from, to) })} onClick={() => openAdd({ cell: { stratum, from: from as PhaseOrd, to: to as PhaseOrd }, anyway: true })}>{T('matrix.showAnyway')}</button></span>
       )}
     </>
   );
@@ -174,6 +177,7 @@ function FirstPaint() {
     if (marked || typeof performance === 'undefined') return;
     marked = true;
     performance.mark('ct:matrix');
+    prefetchLater();
   }, []);
   return null;
 }
@@ -295,13 +299,3 @@ function Chip({ taxon: t, phase, compact = false }: { taxon: Taxon; phase: Phase
 }
 
 export const Matrix: ComponentType | null = Views;
-
-// Browser-test hook (stream S3's pattern; review 2026-11-11): a page opened with window.__ctViews =
-// true before the island loaded gets the store there, so the S2 tests set the climate, the site, the
-// members and the view without the start screen. Compiled in only when the site is built with
-// PUBLIC_CT_TEST_HOOK=1 (the browser-test build); a production build drops it as dead code. Its own
-// global, so it never races S3's __ctTest.
-if (import.meta.env.PUBLIC_CT_TEST_HOOK === '1') {
-  const probe = globalThis as { __ctViews?: unknown };
-  if (probe.__ctViews === true) probe.__ctViews = { store };
-}

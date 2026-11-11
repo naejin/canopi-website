@@ -5,7 +5,7 @@ description: Astro routes; thin per-locale wrappers around components, plus the 
 resource: ../../src/pages
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:30Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:20:21Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:27Z }
 sources:
@@ -26,7 +26,7 @@ Map URLs to components for all 11 locales. Pages hold no markup or logic of thei
 |---|---|---|
 | `/`, `/{lang}/` | [index.astro](../../src/pages/index.astro), `[lang]/index.astro` | `Home.astro` |
 | `/bibliography/`, `/{lang}/bibliography/` | [bibliography.astro](../../src/pages/bibliography.astro), `[lang]/bibliography.astro` | `BibliographyPage.astro` |
-| `/data-sources/`, `/{lang}/data-sources/` | [data-sources.astro](../../src/pages/data-sources.astro), `[lang]/data-sources.astro` | `DataSourcesPage.astro`: the TRY citation, the guidelines line and every dataset row as static HTML |
+| `/data-sources/`, `/{lang}/data-sources/` | [data-sources.astro](../../src/pages/data-sources.astro), `[lang]/data-sources.astro` | `DataSourcesPage.astro`: a link to the repository's `THIRD_PARTY_NOTICES.md` (code licences; `dataSources.notices`), the source credits, the TRY citation, the guidelines line and every dataset row as static HTML |
 | `/contact/sent/`, `/contact/failed/` (+ `/{lang}/`) | `contact/*.astro`, `[lang]/contact/*.astro` | `ContactResult.astro` |
 | `/guides/`, `/fr/guides/` | [guides/index.astro](../../src/pages/guides/index.astro), `[lang]/guides/index.astro` | `GuidesIndex.astro` |
 | `/guides/<slug>/`, `/fr/guides/<slug>/` | `guides/[slug].astro`, `[lang]/guides/[slug].astro` | `GuideLayout.astro` |

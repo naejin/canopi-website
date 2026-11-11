@@ -12,27 +12,44 @@ const read = (f) => readFileSync(new URL(f, dir), 'utf8');
 // Top-level test titles and their options text: test('title', { … }, …) or test('title', async …).
 const testsOf = (text) => [...text.matchAll(/^test\('((?:\\'|[^'])+)',\s*(\{[^}]*\})?/gm)].map(([, title, opts]) => ({ title: title.replace(/\\'/g, "'"), opts: opts ?? '' }));
 
-test('one browser test file for commit 0 and one per stream, nothing else', () => {
-  assert.deepEqual(files, ['consortium-commit0.browser.test.mjs', 'consortium-s1.browser.test.mjs', 'consortium-s2.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs']);
+test('one browser test file for commit 0, one per stream and one for the seams between them, nothing else', () => {
+  assert.deepEqual(files, ['consortium-commit0.browser.test.mjs', 'consortium-s1.browser.test.mjs', 'consortium-s2.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs', 'consortium-seams.browser.test.mjs']);
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.match(pkg.scripts['test:browser'], /scripts\/browser\/\*\.browser\.test\.mjs/);
   assert.doesNotMatch(pkg.scripts.test, /browser/, 'browser tests never run in npm test');
 });
 
-test('commit 0 tests all run: no todo, no skip', () => {
-  const text = read('consortium-commit0.browser.test.mjs');
-  assert.ok(testsOf(text).length >= 6);
-  assert.doesNotMatch(text, /\btodo\s*:|\bskip\s*:|\.todo\(|\.skip\(/);
+test('every browser test runs: no todo, no skip, in any file (H8)', () => {
+  for (const file of files) {
+    const text = read(file);
+    assert.ok(testsOf(text).length >= (file.includes('-s1.') ? 2 : 5), file);
+    assert.doesNotMatch(text, /\btodo\s*:|\bskip\s*:|\.todo\(|\.skip\(/, file);
+  }
 });
 
-test('each stream file names its stream in every test, todo only for that stream', () => {
+test('the browser tests build their own hook build; only the browser-test flag turns the hook on (H14, review F6)', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.match(pkg.scripts['build:browser-test'], /^CANOPI_BROWSER_TEST=1 astro build$/);
+  assert.match(pkg.scripts['test:browser'], /^npm run build:browser-test && /);
+  assert.doesNotMatch(pkg.scripts.build, /CANOPI_BROWSER_TEST/);
+  // No PUBLIC_/VITE_ variable: Vite fills those from .env files too, so a stray .env could turn the
+  // hook on in a deploy. The hook's switch is a compile-time constant set from the shell flag only.
+  const config = readFileSync(new URL('../astro.config.mjs', import.meta.url), 'utf8');
+  assert.match(config, /__CT_TEST_HOOK__:\s*JSON\.stringify\(process\.env\.CANOPI_BROWSER_TEST === '1'\)/, 'astro.config.mjs defines the switch from the flag');
+  const hook = readFileSync(new URL('../src/islands/consortium/test-hook.ts', import.meta.url), 'utf8');
+  assert.match(hook, /if \(__CT_TEST_HOOK__\)/);
+  for (const f of ['../astro.config.mjs', '../src/islands/consortium/test-hook.ts', '../package.json'])
+    assert.doesNotMatch(readFileSync(new URL(f, import.meta.url), 'utf8'), /PUBLIC_CT_TEST_HOOK/, f);
+  const checker = readFileSync(new URL('./check-built-site.mjs', import.meta.url), 'utf8');
+  for (const word of ['__ctTest', '__ctViews', 'failSheets']) assert.ok(checker.includes(`'${word}'`), `check-built-site looks for ${word}`);
+});
+
+test('each stream file names its stream in every test', () => {
   for (const n of [1, 2, 3, 4]) {
     const tests = testsOf(read(`consortium-s${n}.browser.test.mjs`));
     assert.ok(tests.length, `S${n} has tests`);
     for (const { title, opts } of tests) {
       assert.match(title, new RegExp(`^(BT-\\d|Exit walk-through) \\(S${n}\\b`), `S${n}: "${title}" names its stream`);
-      const todo = opts.match(/todo:\s*'([^']*)'/)?.[1];
-      if (todo !== undefined) assert.match(todo, new RegExp(`^S${n}\\b`), `S${n}: "${title}" is todo for S${n}`);
     }
   }
 });

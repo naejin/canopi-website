@@ -12,10 +12,10 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, PlantId, Site, SiteKey, Taxon } from '../../../lib/consortium/index.ts';
 import { countryStatus, lights, MAX_CROPS, rooms, soils, waters } from '../../../lib/consortium/index.ts';
-import { climate, country, crops, kept, members, pool, sheet, site, source, view } from '../store.ts';
+import { climate, country, crops, kept, members, openSheet, pool, site, source, view } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import {
-  chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
+  backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
 } from '../memory.ts';
 
 // ---- page data (ConsortiumPage.astro #ct-data) ----
@@ -179,7 +179,7 @@ function Crops({ zone }: { zone: ClimateZone }) {
             ))}
           </div>
           <p class="ct-muted ct-crops-count" aria-live="polite">{full ? T('crops.limit', { max: MAX_CROPS }) : P('crops.count', chosen.length, { max: MAX_CROPS })}</p>
-          <div class="ct-search">
+          <div class="ct-crop-search">
             <input type="search" value={q} aria-label={T('crops.search', { climate: zoneLabel(zone) })} placeholder={T('crops.search', { climate: zoneLabel(zone) })} disabled={full} onInput={(e) => setQ((e.currentTarget as HTMLInputElement).value)} />
           </div>
           {q.trim() && (
@@ -245,7 +245,7 @@ function Head() {
       <h2 class="ct-result-title">{T('start.yours')} <span class="ct-muted ct-result-sub">{P('start.count', n)} · {zoneLabel(climate.value)}</span></h2>
       <p class="ct-basis">
         <span>{basisLine(site.value)}</span>
-        <button type="button" class="link-button ct-link" onClick={() => { view.value = 'start'; }}>{T('start.changeSite')}</button>
+        <button type="button" class="link-button ct-link" onClick={changeSite}>{T('start.changeSite')}</button>
         <button type="button" class="link-button ct-link" onClick={startOver}>{T('start.over')}</button>
       </p>
       <CountryLine />
@@ -268,9 +268,9 @@ function StartView() {
           <SiteQuestions />
           <div class="ct-cta">
             <button type="button" class="button button-primary" aria-busy={waiting ? 'true' : undefined} onClick={requestSuggest}>{T('start.suggest')}</button>
-            {members.value.length > 0 && <button type="button" class="button button-secondary" onClick={() => { view.value = 'matrix'; }}>{T('start.back')}</button>}
+            {canGoBack.value && <button type="button" class="button button-secondary" onClick={backToConsortium}>{T('start.back')}</button>}
             <button type="button" class="button button-secondary" onClick={startEmpty}>{T('start.empty')}</button>
-            <button type="button" class="link-button ct-link" onClick={() => { sheet.value = { kind: 'paste', id: null }; }}>{T('start.paste')}</button>
+            <button type="button" class="link-button ct-link" onClick={() => openSheet('paste')}>{T('start.paste')}</button>
           </div>
           {waiting && <p class="status-line" role="status">{T('load.plants')}</p>}
           <p class="ct-muted ct-small-text">{T('page.hypothesis')}</p>

@@ -42,7 +42,7 @@ test('the test command can load .ts files on the oldest Node that engines allows
   if (usesTs && !stripsByDefault) assert.match(pkg.scripts.test, /--experimental-strip-types/, `engines allows Node ${floor.join('.')}, which needs --experimental-strip-types to import .ts`);
 });
 
-// What is documented as plain `node <script>` must load without type stripping: Node 22.12 to 22.17,
+// What is documented as plain `node <script>` must load without type stripping: Node 22.13 to 22.17,
 // which engines allows, throw ERR_UNKNOWN_FILE_EXTENSION on a .ts import. Run from an empty folder,
 // so each stops at its first read of the site, or its usage, once its imports have loaded.
 test('the scripts documented as plain node load no TypeScript, on every Node that engines allows', (t) => {
@@ -62,6 +62,6 @@ test('the type check reads the site source only, not bundled or copied JavaScrip
   // tsconfig allows JS (astro/tsconfigs/base), so without these excludes `npm run check` parses the
   // mockup scripts and anything copied into public, and needs more than 4 GB of memory.
   const tsconfig = JSON.parse(readFileSync(new URL('../tsconfig.json', import.meta.url), 'utf8'));
-  for (const dir of ['dist', 'node_modules', 'public', 'mockup', '.local']) assert.ok(tsconfig.exclude?.includes(dir), `tsconfig.json excludes ${dir}`);
+  for (const dir of ['dist', 'dist-test', 'node_modules', 'public', 'mockup', '.local']) assert.ok(tsconfig.exclude?.includes(dir), `tsconfig.json excludes ${dir}`);
   assert.equal(pkg.scripts.check, 'wrangler types && astro check', 'npm run check generates the Worker types, then type-checks');
 });

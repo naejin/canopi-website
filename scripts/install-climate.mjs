@@ -208,7 +208,7 @@ function checkTiles(m, files) {
 
 /**
  * The reader's src/lib/climate/tiff.ts (it imports nothing). Astro loads astro.config.mjs, and so this
- * module, with plain Node, which imports .ts only from 22.18 (22.6 with --experimental-strip-types);
+ * module, with plain Node, which imports .ts without a flag only from 22.18 (engines allows 22.13);
  * on an older Node 22 it is compiled with TypeScript (a declared dev dependency, installed by the build's npm install) and imported as a data: URL.
  */
 export async function loadTiffModule({ native = true } = {}) {

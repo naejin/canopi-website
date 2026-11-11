@@ -1,8 +1,8 @@
 // The consortium page in a real browser: what commit 0 of P2 built (design check §3 probes P1–P3 and
-// P6, the §5 load screens of BT-9). No todo here: every test runs and must pass (review C1;
+// P6, the §5 load screens of BT-9). Every test runs and must pass (review C1;
 // scripts/browser-tests.test.mjs enforces it). The streams' tests are consortium-s1…s4.browser.test.mjs.
 // Headless Chrome through puppeteer-core on the built site served by wrangler dev. Never part of
-// `npm test`; run after `npm run build`, capped:
+// `npm test`; test:browser builds dist-test/ (npm run build:browser-test) first, capped:
 //   timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 npm run test:browser
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,7 +17,7 @@ before(async () => { h = await startHarness(); });
 after(async () => { await h?.close(); });
 
 test('P1: SQLite-WASM opens the real install in headless Chrome on wrangler dev, from the one hashed wasm', async () => {
-  const wasm = readdirSync(join(ROOT, 'dist', 'client', '_astro')).filter((f) => f.endsWith('.wasm'));
+  const wasm = readdirSync(join(ROOT, h.dir, 'client', '_astro')).filter((f) => f.endsWith('.wasm'));
   assert.equal(wasm.length, 1, `one wasm in the build: ${wasm.join(', ')}`);
   assert.match(wasm[0], /^sqlite3\.[\w-]{8}\.wasm$/);
   const page = await h.open('/consortium/');
@@ -28,7 +28,7 @@ test('P1: SQLite-WASM opens the real install in headless Chrome on wrangler dev,
 });
 
 test('P2: the wasm is served as application/wasm, and hashed files and the database as immutable', async () => {
-  const wasm = readdirSync(join(ROOT, 'dist', 'client', '_astro')).find((f) => f.endsWith('.wasm'));
+  const wasm = readdirSync(join(ROOT, h.dir, 'client', '_astro')).find((f) => f.endsWith('.wasm'));
   const res = await fetch(`${h.url}/_astro/${wasm}`);
   await res.body?.cancel();
   assert.equal(res.status, 200);
@@ -88,9 +88,47 @@ const SCREENS = [
   ['an empty body', { database: 'empty' }, 'damaged', 'retry'],
   ['wrong user_version', { database: 'user-version' }, 'schema', 'reload'],
   ['WebAssembly disabled', { data: 'fixture', wasm: false }, 'wasm-blocked', null],
+  ['sqlite3.wasm refused (403; review L1)', { data: 'fixture', wasmFile: 403 }, 'wasm-fetch', 'reload'],
+  ['sqlite3.wasm unreachable offline (review L1)', { data: 'fixture', wasmFile: 'offline' }, 'wasm-fetch', 'reload'],
   ['the loader chunk gone after a deploy (online)', { data: 'fixture', loader: 404 }, 'stale', 'reload'],
   ['the loader chunk unreachable offline', { data: 'fixture', loader: 'offline' }, 'fetch', 'retry'],
 ];
+test('R3-4, R4-4: a slow but steady download (10 KB/s, the wasm over a minute) loads', async () => {
+  const page = await h.open('/consortium/', { width: 1280, data: 'fixture' });
+  const cdp = await page.createCDPSession();
+  await cdp.send('Network.enable');
+  await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
+  // 10 KB/s: the wasm takes over a minute; no failure while bytes keep coming (no overall cap).
+  await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 400, downloadThroughput: 10_000, uploadThroughput: 10_000 });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  // The island itself arrives slowly too: the climate cards may take a while to show.
+  await page.locator(aria('radio', 'Temperate')).setTimeout(120_000).click();
+  assert.equal(await loadState(page, 240_000), 'ready', 'no failure screen while bytes keep arriving');
+  await page.browserContext().close();
+});
+
+for (const [what, opts, screen, button] of [
+  ['the wasm', { wasmFile: 'stall' }, 'wasm-fetch', 'consortium.load.reload'],
+  ['the database', { database: 'stall' }, 'fetch', 'consortium.load.retry'],
+]) {
+  test(`R4-4: a stalled download of ${what} (no byte for 15 s) gives the failure screen with its button`, async () => {
+    const page = await h.open('/consortium/', { width: 1280, data: 'fixture', ...opts });
+    assert.equal(await loadState(page, 40_000), screen);
+    if (opts.wasmFile) assert.equal(await page.$eval('[data-load-error] p', (el) => el.textContent.trim()), en['consortium.load.toolFailed']);
+    assert.ok(await has(page, aria('button', en[button]), 500));
+    await page.browserContext().close();
+  });
+}
+
+test('pre-push 3: the island chunk failing to load replaces the loading line with "the tool did not load" and Reload', async () => {
+  const page = await h.open('/consortium/', { width: 1280, data: 'fixture', island: 404 });
+  assert.ok(await page.waitForSelector('#ct-root [role="alert"]', { timeout: 8000 }).then(() => true, () => false), 'an alert in place of the loading line');
+  assert.equal(await page.$eval('#ct-root [role="alert"] p', (el) => el.textContent.trim()), en['consortium.load.toolFailed']);
+  assert.ok(await has(page, aria('button', en['consortium.load.reload']), 500));
+  assert.equal(await page.$('#ct-root .status-line'), null, 'no loading line left');
+  await page.browserContext().close();
+});
+
 test('BT-9 load: each failure gives its §5 screen and button', async (t) => {
   for (const [what, opts, screen, button] of SCREENS) {
     await t.test(what, async (tt) => {
@@ -101,6 +139,8 @@ test('BT-9 load: each failure gives its §5 screen and button', async (t) => {
         const reload = await has(page, aria('button', en['consortium.load.reload']), 500);
         assert.deepEqual({ retry, reload }, { retry: button === 'retry', reload: button === 'reload' });
         assert.ok(await has(page, '::-p-aria([role="alert"])', 500), 'the screen is announced');
+        // A wasm file that did not arrive is not "WebAssembly is turned off" (review L1).
+        if (opts.wasmFile) assert.equal(await page.$eval('[data-load-error] p', (el) => el.textContent.trim()), en['consortium.load.toolFailed']);
       });
     });
   }

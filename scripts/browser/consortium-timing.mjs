@@ -4,11 +4,11 @@
 // (CANOPI_BROWSER_PORT picks the port, as for the browser tests.) Each run opens a #v=4 link of 9
 // real Temperate plants (built with the core's encodeLink, so the page restores a consortium and
 // draws its matrix) with 4× CPU slowdown, 9 Mbps down and 60 ms RTT, and reads the time of
-// `performance.mark('ct:matrix')` (S2: the matrix is drawn) from the start of navigation. Until S2's
-// matrix sets that mark, it reads `ct:pool` (S4: the climate's plant list is loaded) and says so.
-// TODO(after S2 merges): drop the ct:pool fallback, so a missing ct:matrix fails the run. Cold: a fresh browser context (empty cache). Warm: the same
+// `performance.mark('ct:matrix')` (the matrix is drawn) from the start of navigation; a page that
+// never sets it fails the run. Cold: a fresh browser context (empty cache). Warm: the same
 // context reloaded (HTTP cache filled). Prints the median of 5 of each.
 import { startHarness } from './harness.mjs';
+import { BUILDS } from './serve.mjs';
 import { realDb } from './helpers.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 
@@ -24,9 +24,7 @@ const median = (xs) => { const s = [...xs].sort((a, b) => a - b); return s[Math.
 async function markTime(page) {
   return page.waitForFunction(() => {
     const [m] = performance.getEntriesByName('ct:matrix', 'mark');
-    if (m) return { mark: 'ct:matrix', ms: m.startTime };
-    const [p] = performance.getEntriesByName('ct:pool', 'mark');
-    return p ? { mark: 'ct:pool', ms: p.startTime } : false;
+    return m ? { mark: 'ct:matrix', ms: m.startTime } : false;
   }, { timeout: 120_000, polling: 50 }).then((h) => h.jsonValue());
 }
 
@@ -35,7 +33,7 @@ async function throttle(page) {
   await page.emulateNetworkConditions(NETWORK);
 }
 
-const h = await startHarness();
+const h = await startHarness({ dir: BUILDS.production });
 try {
   const cold = [], warm = [];
   let mark = null;
@@ -54,7 +52,7 @@ try {
     await page.browserContext().close();
   }
   const fmt = (xs) => xs.map((x) => Math.round(x)).join(', ');
-  console.log(`mark: ${mark}${mark === 'ct:pool' ? " (S2's matrix not here yet: time to 'pool loaded')" : ''}`);
+  console.log(`mark: ${mark}`);
   console.log(`cold ms: ${fmt(cold)} -> median ${Math.round(median(cold))}`);
   console.log(`warm ms: ${fmt(warm)} -> median ${Math.round(median(warm))}`);
 } finally {

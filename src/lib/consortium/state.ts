@@ -61,7 +61,9 @@ function b64ToHex(text: string, digits: number): string | null {
   return out;
 }
 
-const zoneOf = (code: string): ClimateZone | null => climateZones.find((z) => z.toLowerCase() === code.trim().toLowerCase()) ?? null;
+// A climate id as the site and links write it ('temperate', any case, spaces around) → its zone.
+export const zoneOf = (code: string | null | undefined): ClimateZone | null =>
+  (code ? climateZones.find((z) => z.toLowerCase() === code.trim().toLowerCase()) : undefined) ?? null;
 const codeZone = new Map(climateZones.map((z) => [GUEST_CODES[z], z] as const));
 
 // The token function for a set of known ids: an id's token is short unless another known id shares
@@ -98,7 +100,10 @@ export function encodeLink(state: ShareState, known: KnownIds): string {
   const inMembers = new Set(members);
   const keptOnly = [...kept].filter((id) => !inMembers.has(id));
   if (keptOnly.length) pairs.push(['p', list(keptOnly)]);
-  const removed = state.removed.filter((id) => !kept.has(id) && !inMembers.has(id));
+  // A removed plant no list of the link knows (a guest taken out: its climate is no longer read) is
+  // dropped: it would read back as "no longer in the list" (pre-push review 1).
+  const listed = new Set(Object.values(known).flatMap((ids) => [...(ids ?? [])]));
+  const removed = state.removed.filter((id) => !kept.has(id) && !inMembers.has(id) && listed.has(id));
   if (removed.length) pairs.push(['x', list(removed)]);
   if (crops.length) pairs.push(['n', crops.map(tok).join('')]);
   for (const zone of climateZones) {

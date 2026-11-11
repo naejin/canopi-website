@@ -12,7 +12,8 @@ import { gunzipSync } from 'node:zlib';
 import { writeFixtureExport } from './fixtures/consortium-v2/make-fixture.mjs';
 
 const { openBytes, LoadError } = await import('../src/islands/consortium/data/load.ts');
-const { createSqliteSource, fold, searchIndex } = await import('../src/islands/consortium/data/sqlite-source.ts');
+const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+const { fold, searchIndex } = await import('../src/islands/consortium/data/search.ts');
 const core = await import('../src/lib/consortium/index.ts');
 
 const fixtureDir = new URL('fixtures/consortium-v2/export/', import.meta.url);

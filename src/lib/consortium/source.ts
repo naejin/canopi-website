@@ -26,5 +26,5 @@ export interface PlantSource {
 // fetch: the file did not arrive (offline); stale: 404 after a deploy (a stale tab: Reload);
 // damaged: decompress or open failed; schema: application_id, user_version, release id or climates
 // differ from the index (the Reload screen, never a partial render).
-export const loadFailures = ['too-old', 'wasm-blocked', 'fetch', 'stale', 'damaged', 'schema'] as const;
+export const loadFailures = ['too-old', 'wasm-blocked', 'wasm-fetch', 'fetch', 'stale', 'damaged', 'schema'] as const;
 export type LoadFailure = (typeof loadFailures)[number];

@@ -3,9 +3,9 @@ type: Architecture Decision
 title: Climate UX
 description: Every page that changes with the climate uses the app's seven zones, one stored choice set from an on-page chip, and one badge, and it reorders and marks content but never hides it.
 tags: [decision, climate, i18n]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:38Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:20:18Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:29Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:30Z }
 sources:
   - id: climates-ts
     resource: ../../src/data/climates.ts
@@ -45,8 +45,8 @@ sources:
   - id: homepage-test-mjs
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:9fc8bf4a4560866c
-    last_modified: 2026-11-11T03:33:26Z
+    digest: sha256:0f06272c4502071c
+    last_modified: 2026-11-11T14:19:07Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
@@ -73,7 +73,7 @@ coherent way to say which climate a piece of advice is for, everywhere it matter
   ("Your climate: …") that appears only on pages the climate changes (the bibliography, the guides
   index and guides with climate blocks), never in the header, and by the consortium tool when the
   reader picks a climate there (the owner decision "Memory: the shared site climate"; v1 did it in
-  app.js `setClimate`, deleted at P2 commit 0; in v2 the Start view of stream S4 must write it). The tool also starts from it when nothing else names a
+  app.js `setClimate`, deleted at P2 commit 0; in v2 memory.ts writes it when a climate is picked on Start). The tool also starts from it when nothing else names a
   climate. A guide's preset climate (`?climate=`) applies to that consortium only and never writes it. The chip opens a dialog with each zone's
   one-line description and three local example cities (Köppen-checked, chosen per locale), plus
   "I'd rather not say". Hidden without JavaScript, where nothing could be kept.

@@ -37,7 +37,7 @@
   border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--text); cursor: pointer;
 }
 .ct .ct-icon-button:hover { border-color: var(--border-strong); }
-.ct .ct-back {
+.ct :where(.ct-sheet) .ct-back {
   display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 8px 0 0;
   border: 0; background: none; color: var(--accent-ink); font-weight: 600; cursor: pointer;
 }
@@ -109,10 +109,10 @@
 .ct :where(.ct-sheet) .ct-tick input, .ct :where(.ct-sheet) .ct-check input { width: 20px; height: 20px; accent-color: var(--accent); }
 .ct :where(.ct-sheet) .ct-check { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 44px; }
 .ct .ct-paste-rows > li { grid-template-columns: 1fr; justify-items: start; }
-.ct .ct-search { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg, var(--surface)); }
-.ct .ct-search input { flex: 1; min-width: 0; min-height: 44px; border: 0; background: transparent; }
-.ct .ct-search input:focus { outline: none; }
-.ct .ct-search:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ct :where(.ct-sheet) .ct-search { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg, var(--surface)); }
+.ct :where(.ct-sheet) .ct-search input { flex: 1; min-width: 0; min-height: 44px; border: 0; background: transparent; }
+.ct :where(.ct-sheet) .ct-search input:focus { outline: none; }
+.ct :where(.ct-sheet) .ct-search:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
 .ct .ct-add-bar {
   position: sticky; bottom: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
   margin: 0 -24px -28px; padding: 12px 24px; background: var(--surface); border-top: 1px solid var(--border-strong);
@@ -143,8 +143,14 @@
 .ct .ct-ask h3 { font-size: 22px; margin-bottom: 12px; }
 .ct .ct-ask .ct-warnlist { margin: 0 0 18px; padding: 0; list-style: none; font-size: 16px; }
 
-/* Toast: bottom centre, above the page; always in the DOM so screen readers hear it */
-.ct .ct-toast-region { position: fixed; left: 50%; bottom: 20px; z-index: 50; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); }
+/* Toast: bottom centre, above the page; always in the DOM so screen readers hear it. While a line
+   shows, the page keeps room for it at its end and around focus (W7): every control can be scrolled
+   or tabbed out from under it, and only the card itself takes clicks. */
+.ct .ct-toast-region { position: fixed; left: 50%; bottom: 20px; z-index: 50; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); pointer-events: none; }
+.ct .ct-toast-region .ct-toast { pointer-events: auto; }
+.ct #ct-root:has(.ct-toast-page .ct-toast) { padding-bottom: var(--ct-toast-room); }
+html:has(.ct .ct-toast-page .ct-toast) { scroll-padding-bottom: var(--ct-toast-room); }
+:root { --ct-toast-room: 96px; }
 .ct .ct-toast {
   display: flex; align-items: center; gap: 6px 12px; padding: 6px 6px 6px 16px; border-radius: 10px;
   background: var(--text); color: var(--surface); box-shadow: var(--shadow); font-size: 15.5px;
@@ -170,6 +176,7 @@
   .ct .ct-traits { grid-template-columns: 1fr; gap: 0 0; }
   .ct .ct-traits dd { margin-bottom: 8px; }
   .ct .ct-toast-region { bottom: 12px; }
+  :root { --ct-toast-room: 148px; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .ct .ct-sheet[open] { animation: ct-sheet-in 160ms ease-out; }

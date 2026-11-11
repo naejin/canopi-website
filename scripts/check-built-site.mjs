@@ -10,7 +10,7 @@ import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
 import { createHash } from 'node:crypto';
 import { safeHref } from '../src/lib/safe-href.js';
 import { gzipSync } from 'node:zlib';
-import { islandChunks, isSqliteGlue, moduleGraph, pageEntries } from './built-modules.mjs';
+import { firstRunChunks, islandChunks, isSqliteGlue, moduleGraph } from './built-modules.mjs';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -372,6 +372,18 @@ for (const lang of guideLocales) {
 
 for (const asset of ['canopi-logo.svg', 'data/featured-designs.json', 'data/plant-symbols.json']) assert.ok(existsSync(join(root, asset)), asset);
 for (const gone of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'screenshot-light.png', 'network']) assert.ok(!existsSync(join(root, gone)), `${gone} is retired`);
+const en = JSON.parse(readFileSync('src/i18n/translations/en.json', 'utf8'));
+// The guide slugs the plant dialog links (src/data/consortium-guides.ts: 'Name': ['slug', …]).
+const consortiumGuideSlugs = new Set([...readFileSync('src/data/consortium-guides.ts', 'utf8').matchAll(/\[([^\]]*)\]/g)].flatMap((m) => [...m[1].matchAll(/'([a-z0-9-]+)'/g)].map((x) => x[1])));
+assert.ok(consortiumGuideSlugs.size > 10, 'consortium-guides.ts lists guide slugs');
+// The browser-test hook never ships (H14): no built script names it.
+{
+  const scripts = readdirSync(join(root, '_astro')).filter((f) => f.endsWith('.js'));
+  for (const f of scripts) {
+    const text = readFileSync(join(root, '_astro', f), 'utf8');
+    for (const word of ['__ctTest', '__ctViews', 'failSheets']) assert.ok(!text.includes(word), `_astro/${f}: the browser-test hook (${word}) is in a production build; build with npm run build, not build:browser-test`);
+  }
+}
 // The consortium tool: one page per locale (/consortium/ in every language, French included), its alternates, and the installed plant data.
 for (const lang of locales) {
   const path = consortiumPath(lang);
@@ -388,6 +400,14 @@ for (const lang of locales) {
   assert.equal(pageData?.releaseId, consortiumIndex.release_id, `${path}: the island gets the release id`);
   assert.deepEqual(pageData?.db, { url: consortiumIndex.files[0].url, sha256: consortiumIndex.files[0].sha256, bytes: consortiumIndex.files[0].bytes, rawSha256: consortiumIndex.files[0].raw_sha256, rawBytes: consortiumIndex.files[0].raw_bytes }, `${path}: the island gets the installed database`);
   assert.deepEqual(pageData?.climates, consortiumIndex.climates.map((c) => c.toLowerCase()), `${path}: the island gets the installed climates`);
+  // H13/H14: the site-wide words the island shows under their own names (the correction form's
+  // correction.*, the climate names) arrive in the page language, so nothing stands in in English.
+  for (const key of Object.keys(en).filter((k) => k.startsWith('correction.') || /^climate\.[a-z]+$/.test(k))) {
+    assert.ok(key in words, `${path}: ${key} is missing from ${lang}.json`);
+    assert.equal(pageData?.strings?.[key], words[key], `${path}: the island gets ${key} in ${lang}`);
+  }
+  for (const slug of consortiumGuideSlugs)
+    assert.equal(typeof pageData?.guideTitles?.[slug], 'string', `${path}: the island gets the title of the guide ${slug}`);
   // P6: with JavaScript off the page still names itself and links a guide; the loading line is there to replace.
   assert.ok(/<noscript>[\s\S]*?<a [^>]*href="[^"]*\/guides\/[^"]+"[\s\S]*?<\/noscript>/.test(html), `${path}: noscript links a guide`);
   assert.ok(html.includes(`<p class="tool-lede">`) && html.includes('aria-busy="true"'), `${path}: lede and loading line`);
@@ -451,6 +471,12 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 // preloads the database (as=fetch, crossorigin, so the island's fetch reuses it) and modulepreloads
 // the island's chunks, the glue included, so they arrive beside the page script.
 const ISLAND_BUDGET = 60 * 1024;
+// The first run (the entry and its static imports; the sheets and the views after the matrix load
+// with import()) stays under 40 KB, so the matrix does not wait for them (P2 hand-off budget and its
+// review: 37.6 KB at the time). The 60 KB above counts the lazy chunks too, so moving code to a lazy
+// chunk does not lower it; P5 is to change that metric.
+const FIRST_RUN_BUDGET = 40 * 1024;
+let firstRunBytes = 0;
 let islandBytes = 0;
 let islandList = [];
 for (const lang of locales) {
@@ -462,18 +488,25 @@ for (const lang of locales) {
   // Only the island's graph counts: from its entry chunk, without the page-wide chunks (site chrome,
   // the page script) and without the sqlite glue (review C8 follow-up).
   const scripts = [...html.matchAll(/<script\b[^>]*\btype="module"[^>]*\bsrc="([^"]+)"/g)].map(([, src]) => src);
-  const island = islandChunks(graph, scripts.length ? scripts : pageEntries(html));
+  assert.ok(scripts.length > 0, `${path}: the page loads its scripts as module scripts (else nothing below is counted)`);
+  const island = islandChunks(graph, scripts);
+  assert.ok(island.chunks.length > 0, `${path}: the island's chunks are found (else the budget counts nothing)`);
   const total = island.chunks.reduce((n, p) => n + gzipSync(graph.get(p).code, { level: 9 }).length, 0);
   islandList = island.chunks;
+  // The PlantSource rides in the loader's chunk beside the glue (data/load.ts): a sheet importing
+  // from data/sqlite-source.ts would split it into a chunk of its own, counted here.
+  for (const p of island.chunks) assert.ok(!graph.get(p).code.includes('climate_zone = ?1'), `${path}: ${p} holds the PlantSource's SQL, which belongs in the loader's chunk`);
   assert.ok(total < ISLAND_BUDGET, `${path}: island JS (main.ts graph) is ${(total / 1024).toFixed(1)} KB gzip, the budget is 60 KB`);
   islandBytes = total;
+  firstRunBytes = firstRunChunks(graph, island).reduce((n, p) => n + gzipSync(graph.get(p).code, { level: 9 }).length, 0);
+  assert.ok(firstRunBytes < FIRST_RUN_BUDGET, `${path}: the island's first run is ${(firstRunBytes / 1024).toFixed(1)} KB gzip, the budget is 40 KB`);
   const preloads = [...html.matchAll(/<link\b[^>]*\brel="(preload|modulepreload)"[^>]*>/g)].map(([tag, rel]) => ({ rel, tag, href: tag.match(/\bhref="([^"]+)"/)?.[1] }));
   const db = preloads.find((l) => l.href === consortiumIndex.files[0].url);
   assert.ok(db && db.rel === 'preload' && /\bas="fetch"/.test(db.tag) && /\bcrossorigin\b/.test(db.tag), `${path}: <link rel="preload" as="fetch" crossorigin> for the database`);
   const modules = new Set(preloads.filter((l) => l.rel === 'modulepreload').map((l) => l.href));
   for (const p of graph.keys()) if (!html.includes(`src="${p}"`)) assert.ok(modules.has(p), `${path}: modulepreload ${p}`);
 }
-console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB).`);
+console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB); first run ${(firstRunBytes / 1024).toFixed(1)} KB (budget 40 KB).`);
 
 // P5 design check A: Workers static assets take at most 20,000 files on the Free plan (100,000 Paid);
 // every file of the build counts, the Web Edition under /app/ and the climate tiles included.

@@ -1,12 +1,12 @@
 ---
 type: Module
 title: Consortium core
-description: Consortium v2 core seams (types, PlantSource, load failures), the v1 rule modules kept for S1 to port, and the format 4 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
+description: Consortium v2 core seams (types, PlantSource, load failures), the rules S1 ported, and the format 4 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T05:24:46Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:20:19Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T05:55:26Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:32Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -16,8 +16,8 @@ sources:
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:f394eeac07ff7979
-    last_modified: 2026-11-11T03:13:35Z
+    digest: sha256:e05dce72d4196000
+    last_modified: 2026-11-11T14:19:07Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -86,8 +86,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:2694799b50a2d65f
-    last_modified: 2026-11-11T04:34:19Z
+    digest: sha256:47a850b28f749c9f
+    last_modified: 2026-11-11T14:19:07Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -114,10 +114,10 @@ The core has no DOM, no Astro and no package imports, so `node --test` runs it a
 | File | Holds |
 |---|---|
 | [types.ts](../../src/lib/consortium/types.ts) | `SCHEMA_VERSION` 1, `APPLICATION_ID` 0x43434F4E. Value lists: `climateZones` (capitalised as exported), `regions`, `locales`, `phases`, `strata`, `roles`, `functionIds`, `interactionTypes`, `severities`, `toxicityLevels`, `layerFields`, `layerKinds`, `months`. Site answers `lights`/`soils`/`waters`/`rooms`, each with `unsure` (A7). Records: `PlantId` (the plants.id UUID, never the integer `plant`), `Placement`, `Taxon` (one plant in one climate; `from?` marks a guest, A9), `Traits`, `Warnings`, `Interaction`, `Reason`, `LayerValue`, `Details`, `Labels`, `SourceInfo`, `Matrix`/`MatrixCell` (empty: `gap` or `misfit`), `Flag`. View shapes for S2–S4 (review C5): `Verdict`, `FitReason` (wild height "can grow over N m", "height not recorded"), `Fit`, `JobId`/`jobIds`, `CellRef`, `Alternative` (`alsoFills`, `leavesEmpty`), `JobGap` (missing phases), `ShareState`, `LinkNotice` (`unknownCount`, `cut`, `long`), `DecodedLink`; `Matrix.unplaced` ("No layer yet") |
-| [source.ts](../../src/lib/consortium/source.ts) | `PlantSource`, as in design check §4: `info`, `countries`, `pool`, `interactions`, `placements`, `names`, `details`, `labels`, and `cellCounts` (a test oracle). `loadFailures`: `too-old`, `wasm-blocked`, `fetch`, `stale`, `damaged`, `schema`, one per §5 screen |
+| [source.ts](../../src/lib/consortium/source.ts) | `PlantSource`, as in design check §4: `info`, `countries`, `pool`, `interactions`, `placements`, `names`, `details`, `labels`, and `cellCounts` (a test oracle). `loadFailures`: `too-old`, `wasm-blocked`, `wasm-fetch` (sqlite3.wasm did not arrive; review L1), `fetch`, `stale`, `damaged`, `schema`, one per §5 screen |
 | [index.ts](../../src/lib/consortium/index.ts) | Re-exports types, source and canopi-file (S4's, exported now so S4 never edits index.ts). Stream S1 adds the rule exports here. |
-| [canopi-file.ts](../../src/lib/consortium/canopi-file.ts) | S4's `.canopi` writer for the app (format v9, canopi `0c425fb07`): `canopiFile(members, { name, description, at })` returns the JSON text of an empty design whose `consortiums` hold one entry per member (`target {kind: 'species', canonical_name}`, its `stratum` or `unassigned`, `start_phase`/`end_phase` 0–6; app default `unassigned` 0–2), deduplicated by canonical name; `canopiFileName(name)` makes a safe `<name>.canopi`. Pure. Checked in `scripts/consortium-canopi-file.test.mjs` and BT-9 against the app's vendored format, [scripts/vendor/canopi-design-format/](../../scripts/vendor/canopi-design-format) (canopi `0c425fb07`, AGPL header, test-only), with its `validate.mjs` |
-| [site.ts](../../src/lib/consortium/site.ts), [conflicts.ts](../../src/lib/consortium/conflicts.ts), [jobs.ts](../../src/lib/consortium/jobs.ts), [matrix.ts](../../src/lib/consortium/matrix.ts), [suggest.ts](../../src/lib/consortium/suggest.ts), [state.ts](../../src/lib/consortium/state.ts) | Stream S1's rules, exported from `index.ts`: three-valued site fit; conflicts and invasive records; the six jobs and their gaps per phase; `buildMatrix` (4 strata × 7 phases); the greedy suggestion and Swap list; the `#v=4` share link (`encodeLink`, `decodeLink`, `isLongLink` over 2,000 characters, `readPreset` for guide links) |
+| [canopi-file.ts](../../src/lib/consortium/canopi-file.ts) | S4's `.canopi` writer for the app (format v9, canopi `0c425fb07`): `canopiFile(members, { name, description, at })` returns the JSON text of an empty design whose `consortiums` hold one entry per member (`target {kind: 'species', canonical_name}`, its `stratum` or `unassigned`, `start_phase`/`end_phase` 0–6; app default `unassigned` 0–2), deduplicated by canonical name, with `plants: []` (checked at P2 hand-offs: `PlacedPlant` requires a map `position` the tool does not have, and the app's consortium sync (`app/consortium/workflow.ts` at `0c425fb07`) only adds entries for placed plants and never removes these, so the entries survive until the reader places the plants); `canopiFileName(name)` makes a safe `<name>.canopi`. Pure. Checked in `scripts/consortium-canopi-file.test.mjs` and BT-9 against the app's vendored format, [scripts/vendor/canopi-design-format/](../../scripts/vendor/canopi-design-format) (canopi `0c425fb07`, AGPL header, test-only), with its `validate.mjs` |
+| [site.ts](../../src/lib/consortium/site.ts), [conflicts.ts](../../src/lib/consortium/conflicts.ts), [jobs.ts](../../src/lib/consortium/jobs.ts), [matrix.ts](../../src/lib/consortium/matrix.ts), [suggest.ts](../../src/lib/consortium/suggest.ts), [state.ts](../../src/lib/consortium/state.ts) | Stream S1's rules, exported from `index.ts`: three-valued site fit; conflicts and invasive records; the six jobs and their gaps per phase; `buildMatrix` (4 strata × 7 phases); the greedy suggestion and Swap list; the `#v=4` share link (`encodeLink`, `decodeLink`, `isLongLink` over 2,000 characters, `readPreset` for guide links); `zoneOf(code)` in `state.ts` is the one climate-code lookup (the island's memory.ts and main.ts import it) |
 | [install-consortium.mjs](../../scripts/install-consortium.mjs) | The installer, described below |
 | [consortium-schema.mjs](../../scripts/consortium-schema.mjs) | `DDL`: the export's 34 statements, from canopi-data at `ab6bfad` (unchanged since `8a74efd`). `DATA_TABLES`: the 25 counted tables |
 | [make-fixture.mjs](../../scripts/fixtures/consortium-v2/make-fixture.mjs) | The invented fixture, 38 plants, built with `node:sqlite`. `buildFixtureDb` and `writeFixtureExport(dir, { edit, userVersion, applicationId, manifest, after })` build the broken variants for tests. The committed `export/` passes canopi-data's `check_export`; coverage is in its README |
@@ -140,7 +140,7 @@ It refuses on the first failure, with nothing written:
   - its name is `databaseName(release, raw_sha256, climate?)`, i.e. `consortium-v1.<release>.<12 hex of the raw db>.sqlite.gz`;
   - sha256 and bytes match the manifest, and the gzip magic is present;
   - at most `MAX_GZIP_BYTES` (1,000,000) gzipped and at most `MAX_FILE_BYTES` (25 MiB) raw; raw sha256 and bytes match.
-- **The database read with `node:sqlite`** (`readDatabase`; dynamic import, since Node 22.12 needs a flag):
+- **The database read with `node:sqlite`** (`readDatabase`; dynamic import, unflagged from Node 22.13, the engines floor):
   - `application_id`, `user_version`, `integrity_check` and `foreign_key_check`;
   - every table and column of `consortium-schema.mjs`, and no table outside it;
   - meta (schema, format, release, `built_at` = `generated_at`, climates), and each table's count against meta and the manifest;

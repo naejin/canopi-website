@@ -7,10 +7,10 @@
   ],
   "exclude": [
     "dist",
+    "dist-test",
     "node_modules",
     "public",
     "mockup",
-    ".local",
-    "src/scripts/consortium"
+    ".local"
   ]
 }

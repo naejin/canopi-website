@@ -6,19 +6,17 @@
 // - above 20: "At a glance" (plants per layer and stage), then the table; no drawing.
 // No control is printed. Rendered by views/Actions.tsx.
 //
-// The drawing is stream S2's side view (views/SideView.tsx). It is not in this branch yet: `Drawing`
-// stays null until the coordinator wires S2's component here at the S2 + S4 merge (hand-off).
-import type { ComponentType } from 'preact';
-import type { Flag, PhaseOrd, PlantId, Taxon } from '../../../lib/consortium/index.ts';
+// The drawing is the side view's own (views/SideView.tsx SideDrawing), of the chosen stage (H6).
+import type { Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { jobsOf, phases, strata } from '../../../lib/consortium/index.ts';
 import { climate, country, crops, flags, guests, kept, matrix, memberTaxa, site, source, stage } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { plantName } from '../memory.ts';
 import { basisLine, countryName, page, zoneLabel } from './Start.tsx';
+import { SideDrawing } from './SideView.tsx';
+import { phasePlain, phaseTerm } from './StageBar.tsx';
 
 const PRINT_DRAWING_MAX = 20;
-// Hand-off to the coordinator: S2's side view drawing for print, e.g. `(p) => <SideView stage={p.stage} print />`.
-const Drawing: ComponentType<{ stage: PhaseOrd }> | null = null;
 
 const phaseWords = (t: Taxon) => {
   if (!t.phases) return T('stratum.none');
@@ -72,7 +70,8 @@ export function PrintSheet() {
         {status === 'unchecked' && code ? ` (${T('country.unchecked', { country: countryName(code) })})` : ''}
       </p>
       <p class="ct-print-basis">{T('page.hypothesis')}</p>
-      {small ? (Drawing ? <Drawing stage={stage.value} /> : null) : <Glance members={members} />}
+      {small && <p class="ct-print-basis ct-print-stage">{T('side.title', { stage: phasePlain(stage.value) })} · {phaseTerm(stage.value)}</p>}
+      {small ? <SideDrawing stage={stage.value} /> : <Glance members={members} />}
       <table class="ct-print-table">
         <caption>{T('print.plants')}</caption>
         <thead>

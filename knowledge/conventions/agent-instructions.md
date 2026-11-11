@@ -4,7 +4,7 @@ title: Existing agent instructions
 description: The durable project rules given to coding agents in AGENTS.md and CLAUDE.md, summarised with where each is enforced.
 tags: [convention, agents]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:41:06Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:20:18Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:30:38Z }
 sources:
@@ -16,8 +16,8 @@ sources:
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:4c24c93256c0a324
-    last_modified: 2026-11-11T09:41:02Z
+    digest: sha256:f7393ab4645afd15
+    last_modified: 2026-11-11T14:19:07Z
 ---
 
 # Rule
@@ -27,7 +27,7 @@ Instruction files: [AGENTS.md](../../AGENTS.md), [CLAUDE.md](../../CLAUDE.md). T
 ## Stack and scope
 
 - Astro static output and plain CSS; no Tailwind, no framework in the browser, except the consortium tool's Preact island on `/consortium/` ([architecture](/decisions/consortium-v2-architecture.md)).
-- Canopi Web lives at `web.projectcanopi.com`; the site only links to it. No website-side catalog search, storage, DuckDB, Worker/Pages Function, R2, KV, D1, service worker or offline catalog. `/app/*` fallback stays a static `_redirects` rule; `/app/canopi-catalog/` files are served as static assets. The rule covers the Web Edition files under `/app/`, not the consortium tool (`/consortium/`), which reads its own static SQLite export in the browser with sqlite-wasm and keeps the last consortium and the reader's country choice in localStorage (CLAUDE.md; licences in `THIRD_PARTY_NOTICES.md`). The consortium's location lookup reads static canopi-climate tiles under `/data/climate/`, fetched and verified at build (every `astro build` installs the release pinned in `src/data/climate-release.json` through the `climateTiles` integration in `astro.config.mjs`) and never committed; a failed download or checksum mismatch fails the build; the reader never requests a tile its index does not list (CLAUDE.md).
+- Canopi Web lives at `web.projectcanopi.com`; the site only links to it. No website-side catalog search, storage, DuckDB, Worker/Pages Function, R2, KV, D1, service worker or offline catalog. `/app/*` fallback stays a static `_redirects` rule; `/app/canopi-catalog/` files are served as static assets. The rule covers the Web Edition files under `/app/`, not the consortium tool (`/consortium/`), which reads its own static SQLite export in the browser with sqlite-wasm and keeps the last consortium, the reader's country choice and the shared site climate (`canopi-climate`) in localStorage (CLAUDE.md; licences in `THIRD_PARTY_NOTICES.md`). The consortium's location lookup reads static canopi-climate tiles under `/data/climate/`, fetched and verified at build (every `astro build` installs the release pinned in `src/data/climate-release.json` through the `climateTiles` integration in `astro.config.mjs`) and never committed; a failed download or checksum mismatch fails the build; the reader never requests a tile its index does not list (CLAUDE.md).
 - Cloudflare `_redirects` has no `Language=` conditions; language detection is client-side in `Base.astro`.
 
 ## i18n

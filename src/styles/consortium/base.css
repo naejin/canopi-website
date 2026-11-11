@@ -55,6 +55,12 @@
 .ct .tool-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 15px; color: var(--text-muted); }
 .ct .tool-release { margin-top: 20px; font-size: 13.5px; color: var(--text-muted); overflow-wrap: anywhere; }
 .ct #ct-root { min-height: 60vh; }
+/* The site has 400 and 600 only: bold is 600, never a synthesised 700 (W8). */
+.ct strong, .ct b { font-weight: 600; }
+/* CJK headings break between phrases, not inside a word (W9): Japanese by phrase where the browser
+   can (auto-phrase), Korean at its spaces, Chinese kept whole unless a run cannot fit. */
+.ct :is(h1, h2, h3):is(:lang(ja), :lang(zh), :lang(ko)) { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
+.ct :is(h1, h2, h3):lang(ja) { word-break: auto-phrase; }
 .ct .status-line { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--text-secondary); }
 .ct .callout { display: grid; gap: 14px; padding: 28px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); max-width: 720px; }
 .ct .callout > p { font-size: 16.5px; color: var(--text-secondary); }
@@ -63,4 +69,5 @@
   .ct .tool-title { font-size: 34px; }
   .ct .tool-lede { font-size: 18px; }
   .ct .callout { padding: 20px 16px; }
+  .ct .text-link { padding-block: 8px; } /* at least 36 px to tap (W6) */
 }

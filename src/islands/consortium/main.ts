@@ -5,8 +5,13 @@
 // (data/sqlite-source.ts) and set on the store, which then reads the chosen climate's plants
 // (store.watchPools). The other streams add their wiring to the store and views, not here.
 import { h, render } from 'preact';
+// The wasm's URL, for the loader to download it itself (a stall timer; review R4-4). Vite emits the one
+// sqlite3.<hash>.wasm the package's own new URL('sqlite3.wasm', import.meta.url) names (checked by
+// scripts/check-built-site.mjs). Here, not in load.ts: Node's unit tests import load.ts.
+import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App } from './App.tsx';
 import { load, setSource, watchPools } from './store.ts';
+import { zoneOf } from '../../lib/consortium/index.ts';
 import { setStrings, type Strings } from './strings.ts';
 import type { DbRef } from './data/bytes.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
@@ -22,7 +27,6 @@ export interface PageData {
   guide: { url: string; lang: string } | null;
 }
 
-const zoneOf = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 
 // The loader and the sqlite-wasm glue are a chunk of their own (design check §8 leaves it out of the
 // island's 60 KB budget); its import starts at once, beside the first render, and a failed import
@@ -39,8 +43,15 @@ async function open(data: PageData): Promise<void> {
   try {
     const mod = await getLoader();
     LoadError = mod.LoadError;
-    const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map(zoneOf) });
-    setSource(mod.createSqliteSource(opened.db, { images: data.images }), () => opened.db.close());
+    const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map((c) => zoneOf(c) ?? c) }, wasmUrl);
+    let source;
+    try {
+      source = mod.createSqliteSource(opened.db, { images: data.images });
+    } catch (err) {
+      opened.db.close(); // never left open (pre-push review 4)
+      throw err;
+    }
+    setSource(source, () => opened.db.close());
     load.value = { status: 'ready', error: null };
   } catch (err) {
     // The loader chunk did not arrive: offline is the fetch screen; online, the chunk is gone after a

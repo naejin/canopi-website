@@ -1,4 +1,5 @@
-// Serves the built site (`npm run build` first) with `wrangler dev`, as Cloudflare Workers serves
+// Serves a built site with `wrangler dev` (the browser tests' dist-test/ from `npm run
+// build:browser-test` by default; consortium-timing.mjs serves the production dist/), as Cloudflare Workers serves
 // it: static assets, public/_headers, _redirects. Browser tests only (design check A10): one server
 // per run on a port in 4420–4499 (CANOPI_BROWSER_PORT, default 4420; the dev server's 4321 is never
 // used), its inspector on the next port. It runs in its own process group and is stopped by its own
@@ -16,6 +17,8 @@ import { fileURLToPath } from 'node:url';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const PORTS = { min: 4420, max: 4499 };
+// The browser tests' own build (astro.config.mjs outDir with CANOPI_BROWSER_TEST=1) and production's.
+export const BUILDS = { test: 'dist-test', production: 'dist' };
 const READY_TIMEOUT_MS = 90_000;
 
 export function portFrom(value = process.env.CANOPI_BROWSER_PORT ?? '4420') {
@@ -26,15 +29,17 @@ export function portFrom(value = process.env.CANOPI_BROWSER_PORT ?? '4420') {
 }
 
 // Starts wrangler dev and resolves once the site answers; returns { url, pid, stop }.
-export async function serve({ port = portFrom(), log = () => {} } = {}) {
-  if (!existsSync(join(ROOT, 'dist', 'client', 'index.html'))) throw new Error('no built site: run `npm run build` first');
+export async function serve({ port = portFrom(), log = () => {}, dir = BUILDS.test } = {}) {
+  if (!existsSync(join(ROOT, dir, 'client', 'index.html'))) throw new Error(`no built site in ${dir}/: run \`npm run ${dir === BUILDS.test ? 'build:browser-test' : 'build'}\` first`);
   const token = randomBytes(12).toString('hex');
   const markerPath = `/__canopi-serve-${token}.txt`;
-  const markerFile = join(ROOT, 'dist', 'client', markerPath);
+  const markerFile = join(ROOT, dir, 'client', markerPath);
   writeFileSync(markerFile, token);
   const dropMarker = () => rmSync(markerFile, { force: true });
   const bin = join(ROOT, 'node_modules', '.bin', 'wrangler');
-  const child = spawn(bin, ['dev', '--ip', '127.0.0.1', '--port', String(port), '--inspector-port', String(port + 1), '--log-level', 'warn', '--show-interactive-dev-session=false'], {
+  // The build's own generated config (its assets beside it), never the .wrangler redirect, which
+  // names whichever build ran last.
+  const child = spawn(bin, ['dev', '--config', join(dir, 'server', 'wrangler.json'), '--ip', '127.0.0.1', '--port', String(port), '--inspector-port', String(port + 1), '--log-level', 'warn', '--show-interactive-dev-session=false'], {
     cwd: ROOT,
     detached: true, // its own process group: stop() ends wrangler and workerd together
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -73,7 +78,7 @@ export async function serve({ port = portFrom(), log = () => {} } = {}) {
     if (Date.now() - start > READY_TIMEOUT_MS) { await stop(); throw new Error(`wrangler dev did not answer on ${url} in ${READY_TIMEOUT_MS / 1000} s:\n${output}`); }
     await new Promise((r) => setTimeout(r, 300));
   }
-  return { url, pid: child.pid, stop };
+  return { url, pid: child.pid, dir, stop };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

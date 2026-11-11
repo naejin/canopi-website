@@ -16,7 +16,9 @@ type Sqlite3 = Awaited<ReturnType<typeof sqlite3InitModule>>;
 export type Database = InstanceType<Sqlite3['oo1']['DB']>;
 export interface Opened { sqlite3: Sqlite3; db: Database }
 
-const WASM_TIMEOUT_MS = 15_000;
+// A download fails when it stalls: no byte for STALL_MS, before the response or between chunks. A
+// slow but steady connection is waited for, however long it takes (review R4-4).
+const STALL_MS = 15_000;
 
 // The browser is too old for the tool (P4: no DecompressionStream). WebAssembly missing is the
 // "turned off" screen instead (P5: iOS Lockdown Mode or a policy removes it from a recent browser).
@@ -27,49 +29,102 @@ export function wasmMissing(): boolean {
   return typeof WebAssembly !== 'object' || typeof WebAssembly.instantiate !== 'function';
 }
 
-async function fetchBytes(ref: DbRef): Promise<Uint8Array> {
-  let res: Response;
+// The whole body of url (bytes null when the status is not ok). Throws when it did not arrive: a
+// network error or a stall.
+async function download(url: string): Promise<{ status: number; bytes: Uint8Array | null }> {
+  const ctrl = new AbortController();
+  let why = '';
+  let stall: ReturnType<typeof setTimeout> | undefined;
+  const arm = () => { clearTimeout(stall); stall = setTimeout(() => { why = `no byte for ${STALL_MS / 1000} s`; ctrl.abort(); }, STALL_MS); };
+  arm();
   try {
-    res = await fetch(ref.url);
+    const res = await fetch(url, { signal: ctrl.signal, credentials: 'same-origin' });
+    if (!res.ok) return { status: res.status, bytes: null };
+    if (!res.body) return { status: res.status, bytes: new Uint8Array(await res.arrayBuffer()) };
+    const reader = res.body.getReader(), parts: Uint8Array[] = [];
+    let size = 0;
+    for (;;) {
+      arm();
+      const { done, value } = await reader.read();
+      if (done) break;
+      parts.push(value);
+      size += value.length;
+    }
+    const bytes = new Uint8Array(size);
+    let at = 0;
+    for (const p of parts) { bytes.set(p, at); at += p.length; }
+    return { status: res.status, bytes };
+  } catch (err) {
+    throw new Error(why || (err as Error).message);
+  } finally {
+    clearTimeout(stall);
+  }
+}
+
+async function fetchBytes(ref: DbRef): Promise<Uint8Array> {
+  let got: { status: number; bytes: Uint8Array | null };
+  try {
+    got = await download(ref.url);
   } catch (err) {
     throw new LoadError('fetch', `the database did not arrive: ${(err as Error).message}`);
   }
   // A 404 after a deploy: the page is older than the file it names (a stale tab).
-  if (res.status === 404) throw new LoadError('stale', `${ref.url} is gone (404)`);
-  if (!res.ok) throw new LoadError('fetch', `${ref.url}: HTTP ${res.status}`);
-  let body: Uint8Array;
-  try {
-    body = new Uint8Array(await res.arrayBuffer());
-  } catch (err) {
-    throw new LoadError('fetch', `the database stopped arriving: ${(err as Error).message}`);
-  }
-  return decodeDatabase(body, ref);
+  if (got.status === 404) throw new LoadError('stale', `${ref.url} is gone (404)`);
+  if (!got.bytes) throw new LoadError('fetch', `${ref.url}: HTTP ${got.status}`);
+  return decodeDatabase(got.bytes, ref);
 }
 
-async function initSqlite(): Promise<Sqlite3> {
-  // The typings declare no argument; the Emscripten module takes print and printErr. No locateFile:
-  // the package finds its wasm with new URL('sqlite3.wasm', import.meta.url), which Vite already
-  // emits hashed, so a ?url import would ship a second copy (probe P1).
+// wasmUrl: the page downloads the wasm itself (main.ts passes the URL), so a stall ends it and the
+// failure says which: the file did not arrive (wasm-fetch: the tool did not load, Reload) or
+// WebAssembly refused it (wasm-blocked: compile or instantiate refused). Without it (Node's unit
+// tests, the browser tests' own opens) the Emscripten loader fetches the file itself.
+async function initSqlite(wasmUrl?: string): Promise<Sqlite3> {
+  // The typings declare no argument; the Emscripten module takes print, printErr and instantiateWasm.
   const init = sqlite3InitModule as unknown as (opts: Record<string, unknown>) => Promise<Sqlite3>;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new LoadError('wasm-blocked', 'WebAssembly did not start in 15 s')), WASM_TIMEOUT_MS);
-  });
+  // The bootstrap installs the kvvfs (a VFS kept in localStorage/sessionStorage), whose setup reads
+  // globalThis.localStorage: with site data blocked (a cookie block, some private modes) that read
+  // throws SecurityError and startup fails as if WebAssembly were off (H1). The page uses neither kvvfs
+  // nor OPFS, so both are switched off; the bootstrap reads and deletes this global (sqlite3ApiConfig).
+  (globalThis as { sqlite3ApiConfig?: unknown }).sqlite3ApiConfig = {
+    disable: { vfs: { kvvfs: true, opfs: true, 'opfs-vfs': true, 'opfs-sahpool': true, 'opfs-wl': true } },
+  };
+  const refused = (err: unknown) => new LoadError('wasm-blocked', `WebAssembly was refused: ${String((err as Error)?.message ?? err)}`);
+  const opts: Record<string, unknown> = { print: () => {}, printErr: () => {} };
+  // Emscripten never rejects through instantiateWasm, so a refused instantiate races the init.
+  let failed: (err: unknown) => void = () => {};
+  const failure = new Promise<never>((_, reject) => { failed = reject; });
+  if (wasmUrl) {
+    let got: { status: number; bytes: Uint8Array | null };
+    try {
+      got = await download(wasmUrl);
+    } catch (err) {
+      throw new LoadError('wasm-fetch', `sqlite3.wasm did not arrive: ${(err as Error).message}`);
+    }
+    if (!got.bytes) throw new LoadError('wasm-fetch', `sqlite3.wasm: HTTP ${got.status}`);
+    let module: WebAssembly.Module;
+    try {
+      module = await WebAssembly.compile(got.bytes as Uint8Array<ArrayBuffer>);
+    } catch (err) {
+      throw refused(err);
+    }
+    opts.instantiateWasm = (imports: WebAssembly.Imports, ready: (i: WebAssembly.Instance, m: WebAssembly.Module) => void) => {
+      WebAssembly.instantiate(module, imports).then((instance) => ready(instance, module), (err: unknown) => failed(refused(err)));
+      return {};
+    };
+  }
   try {
-    return await Promise.race([init({ print: () => {}, printErr: () => {} }), timeout]);
+    return await Promise.race([init(opts), failure]);
   } catch (err) {
     if (err instanceof LoadError) throw err;
-    throw new LoadError('wasm-blocked', `WebAssembly was refused: ${(err as Error).message}`);
-  } finally {
-    clearTimeout(timer);
+    throw refused(err);
   }
 }
 
 // Fetches, opens and checks the database; throws a LoadError naming its §5 screen.
-export async function openDatabase(ref: DbRef, expected: Expected): Promise<Opened> {
+export async function openDatabase(ref: DbRef, expected: Expected, wasmUrl?: string): Promise<Opened> {
   if (tooOld()) throw new LoadError('too-old', 'no DecompressionStream');
   if (wasmMissing()) throw new LoadError('wasm-blocked', 'no WebAssembly');
-  const [bytes, sqlite3] = await Promise.all([fetchBytes(ref), initSqlite()]);
+  const [bytes, sqlite3] = await Promise.all([fetchBytes(ref), initSqlite(wasmUrl)]);
   return openWith(sqlite3, bytes, expected);
 }
 

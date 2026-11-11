@@ -6,7 +6,9 @@
    the table; above 20, "At a glance" and the table. */
 @media print {
   body:has(.ct-print) > :not(main), .grain::after { display: none !important; }
-  .ct .ct-wrap > :not(#ct-root), .ct #ct-root > :not(:has(.ct-print)):not(.ct-print), .ct .ct-actions > :not(.ct-print) { display: none !important; }
+  /* Only once the print sheet is in the page (it loads after the matrix): a Ctrl+P before that, or
+     after its chunk failed, prints the tool as it is rather than an empty page (F4). */
+  .ct:has(.ct-print) .ct-wrap > :not(#ct-root), .ct #ct-root:has(.ct-print) > :not(:has(.ct-print)):not(.ct-print), .ct .ct-page-actions:has(.ct-print) > :not(.ct-print) { display: none !important; }
   .ct #ct-root { min-height: 0; }
   .ct .ct-print { display: block; }
   :root:root:has(.ct) {

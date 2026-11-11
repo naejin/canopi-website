@@ -14,7 +14,8 @@ import { jobIds, jobsOf, strata } from '../../../lib/consortium/index.ts';
 import { kept, memberTaxa } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { PHASE_ORDS, listGroups, matchesFilters, matchesQuery, startCounts, type ListFilters } from './tracks.ts';
-import { Marks, StageBar, byName, layerName, nameOf, openDetails, openSwap, phasePlain, phaseTerm, removePlant, warnings } from './StageBar.tsx';
+import { Marks, StageBar, byName, layerName, nameOf, openDetails, openSwap, phasePlain, phaseTerm, warnings } from './StageBar.tsx';
+import { removeMember } from '../store.ts';
 
 const groupId = (s: string | null, p: number | null) => (s ? `ct-g-${s}-${p}` : 'ct-g-none');
 
@@ -30,7 +31,7 @@ function removeAndRefocus(id: string) {
   const rows = [...document.querySelectorAll<HTMLElement>('.ct-list tr[data-plant-id]')];
   const at = rows.findIndex((r) => r.dataset.plantId === id);
   const next = rows[at + 1]?.dataset.plantId ?? rows[at - 1]?.dataset.plantId ?? null;
-  removePlant(id);
+  removeMember(id);
   requestAnimationFrame(() => {
     const target = next ? document.querySelector<HTMLElement>(`.ct-list tr[data-plant-id="${next}"] .ct-lname-btn`) : null;
     (target ?? document.getElementById('ct-list-h'))?.focus();

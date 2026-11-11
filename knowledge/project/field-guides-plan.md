@@ -4,20 +4,20 @@ title: Field Guides plan
 description: Build plan for the 17 Field Guides drawn from Landrace Gardening — steps, streams, file ownership and exit criteria.
 tags: [field-guides, plan]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-28T23:06:35Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:20:21Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:39Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T13:07:35Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
     digest: sha256:ed6176f3515735a8
-    last_modified: 2026-10-29T04:59:27Z
+    last_modified: 2026-10-29T05:02:41Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
-    digest: sha256:f7e2fc8ce6d55b8c
-    last_modified: 2026-10-28T09:57:25Z
+    digest: sha256:3491730a2a5922b5
+    last_modified: 2026-11-11T14:19:07Z
 ---
 
 # Field Guides plan
