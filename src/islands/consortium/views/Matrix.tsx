@@ -63,6 +63,7 @@ function Views() {
       </div>
       <div class="ct-viewbar"><button type="button" class="button button-secondary ct-btn-sm" onClick={() => openAdd({ cell: null, anyway: false, job: null })}>{T('matrix.addPlants')}</button></div>
       <Notices />
+      <FirstPaint />
       {TABS.map((tab) => (
         <div key={tab} role="tabpanel" class="ct-tabpanel" id={`ct-panel-${tab}`} aria-labelledby={`ct-tab-${tab}`} hidden={tab !== active}>
           {tab === active && (tab === 'matrix' ? (phone.value ? <PhoneMatrix /> : <MatrixTable m={m} />) : tab === 'side' ? <SideView /> : tab === 'jobs' ? <Jobs /> : <PlantList />)}
@@ -164,20 +165,21 @@ const keepNumbers = (text: string) => text.split(/(\S*\d\S*)/).map((part, i) => 
 
 const GROUPS: readonly { key: string; span: number }[] = [{ key: 'placenta', span: 3 }, { key: 'secondary', span: 3 }, { key: 'climax', span: 1 }];
 
-// performance.mark('ct:matrix') once, when the matrix (desktop table or phone grid) first painted:
-// S4's timing script waits for it. Effects run after the browser painted the render.
+// performance.mark('ct:matrix') once per page, when the consortium is first on screen, whichever view
+// shows it (the matrix, the side view, Jobs or the list): S4's timing script waits for it. Rendered
+// inside the views, so its effect runs after the browser painted them.
 let marked = false;
-export function useMatrixMark(): void {
+function FirstPaint() {
   useEffect(() => {
     if (marked || typeof performance === 'undefined') return;
     marked = true;
     performance.mark('ct:matrix');
   }, []);
+  return null;
 }
 
 function MatrixTable({ m }: { m: MatrixData }) {
   const taxa = memberTaxa.value, empty = taxa.length === 0;
-  useMatrixMark();
   return (
     <div class="ct-desk">
       {empty && <EmptyNotice />}

@@ -14,14 +14,13 @@ import { P, T } from '../strings.ts';
 import { PHASE_ORDS, SHARE_AIM, spans } from './tracks.ts';
 import { ChevronIcon, Explain, Marks, StageBar, byName, cellName, layerName, nameOf, openDetails, phasePlain, plantLabel } from './StageBar.tsx';
 import { StageStepper } from './StageStepper.tsx';
-import { CellReason, EmptyNotice, FillMeter, FreeCell, GlyphKey, useMatrixMark } from './Matrix.tsx';
+import { CellReason, EmptyNotice, FillMeter, FreeCell, GlyphKey } from './Matrix.tsx';
 
 const kindOf = (cell: MatrixCell, empty: boolean) => (cell.empty ? 'cannot' : empty ? 'potential' : cell.members.length ? 'filled' : 'free');
 
 export function PhoneMatrix() {
   const m = matrix.value!, s = stage.value, taxa = memberTaxa.value;
   const empty = taxa.length === 0;
-  useMatrixMark();
   const back = () => {
     const grid = document.getElementById('ct-overview');
     grid?.scrollIntoView({ block: 'start' });
