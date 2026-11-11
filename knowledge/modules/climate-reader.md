@@ -2,7 +2,9 @@
 type: Module
 title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T15:37:51Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T16:21:21Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T16:00:05Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
@@ -33,12 +35,12 @@ sources:
     resource: ../../scripts/install-climate.mjs
     title: scripts/install-climate.mjs
     digest: sha256:8670ed7d1bcd8d91
-    last_modified: 2026-11-11T15:37:12Z
+    last_modified: 2026-11-11T14:35:47Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:f5353da876784eed
-    last_modified: 2026-11-11T15:36:29Z
+    digest: sha256:d5c7dceebfce4fc5
+    last_modified: 2026-11-11T16:20:09Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -58,12 +60,12 @@ sources:
     resource: ../../scripts/climate-integration.mjs
     title: scripts/climate-integration.mjs
     digest: sha256:4dc9481c2233fe60
-    last_modified: 2026-11-11T15:37:12Z
+    last_modified: 2026-11-11T14:35:47Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:67b051ba7e43611d
-    last_modified: 2026-11-11T15:36:29Z
+    digest: sha256:f332ca4b66b4de5b
+    last_modified: 2026-11-11T16:20:09Z
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
@@ -72,8 +74,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:1f4c2221c8114a9b
-    last_modified: 2026-11-11T15:36:29Z
+    digest: sha256:05166406def09402
+    last_modified: 2026-11-11T16:20:09Z
 enforced_by:
   - scripts/climate-reader.test.mjs
   - scripts/install-climate.test.mjs
