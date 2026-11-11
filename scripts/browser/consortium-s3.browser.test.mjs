@@ -112,7 +112,10 @@ test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and cred
     assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent), chip.name, 'focus returns to the chip');
     // Estimates: Apple's flowering months are derived for latitude bands.
     await hooked(page, () => { const { store, openSheet } = window.__ctTest; openSheet('details', store.pool.value.find((t) => t.canonical_name === 'Malus domestica').id); });
-    assert.ok(await findAx(page, { name: /^estimate$/ }), 'an estimate tag on a layer value');
+    // The sheet renders after openSheet returns (its chunk may still load): poll, do not read once.
+    let estimate = null;
+    for (let i = 0; i < 20 && !estimate; i++) { estimate = await findAx(page, { name: /^estimate$/ }); if (!estimate) await new Promise((r) => setTimeout(r, 200)); }
+    assert.ok(estimate, 'an estimate tag on a layer value');
     await page.keyboard.press('Escape');
     await page.close();
   });

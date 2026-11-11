@@ -198,23 +198,25 @@ test('X3: a list pasted on Start shows its consortium with Share, saved: a reloa
   });
 });
 
-// Review R4-3 changed this seam: a site answer given after Change site is the draft's, saved by a
-// commit (Suggest here), not at once; Back keeps the consortium's own answers (D1).
-test('X3: an edit made after "Change site" is saved and in the address once Suggest commits it', async (t) => {
+// Review R4-3 changed this seam: a site answer given after Change site is the draft's, and a commit
+// (a paste of a plant not in the consortium here) saves it; D1 covers the draft and Back.
+test('X3: a site answer made after "Change site" is saved with the commit, and a reload keeps it', async (t) => {
+  const plants = await temperate();
   await eachVariant(t, async (v) => {
     const page = await suggested(v);
-    const before = await linkOf(page);
+    const ids = new Set(await memberIds(page));
+    const other = plants.find((p) => !ids.has(p.id));
+    assert.ok(other, 'a Temperate plant not in the consortium');
     await page.locator(aria('button', 'Change site')).click();
     await page.locator(aria('radio', 'Shade')).click();
-    assert.equal(await linkOf(page), before, 'the draft is not the consortium yet');
-    await page.locator(aria('button', 'Suggest plants')).click();
-    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000));
-    const after = await linkOf(page);
-    assert.notEqual(after, before, 'the address follows the committed edit');
+    await pasteOne(page, other.name);
+    const after = await savedFragment(page);
+    assert.equal(param(after, 'l'), 'shade', 'the draft\'s answer is saved with the commit');
+    assert.equal(await linkOf(page), after, 'and in the address');
     await page.reload();
     assert.equal(await loadState(page), 'ready');
     assert.ok(await has(page, aria('button', 'Share'), 8000), 'the consortium is restored');
-    assert.equal(await linkOf(page), after, 'with the edit');
+    assert.equal(await linkOf(page), after, 'with the answer');
     await done(page);
   });
 });
