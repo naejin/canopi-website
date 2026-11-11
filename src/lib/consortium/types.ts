@@ -375,7 +375,7 @@ export const DEFAULT_SCENARIO: Scenario = 'ssp245';
 // edge "near the edge of its observed range", outside (Add's warning), unknown "range not recorded",
 // estimate (a borrowed placement), future (drawn in ink, apart from the ochre warnings), native.
 // key: a consortium.* string key without its prefix, read with T(key, vars).
-export const markKinds = ['edge', 'outside', 'unknown', 'estimate', 'future', 'native'] as const;
+export const markKinds = ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity'] as const;
 export type MarkKind = (typeof markKinds)[number];
 export type MarkSeverity = 'note' | 'warning';
 // state: a finer state the views write as data-mark-state (e.g. native: 'native' | 'not_recorded' | 'unknown').

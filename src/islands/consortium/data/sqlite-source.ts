@@ -8,9 +8,9 @@
 // never SQL LIKE (ASCII-only folding, a substring match, % and _ unescaped).
 import type {
   ClimateRange, ClimateZone, Details, FunctionId, FunctionMethod, Image, Interaction, InvasiveRecord, KoppenShare, Labels, LayerScope, LayerValue, Locale, Month, Placement,
-  PlantId, RangeBasis, Reason, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
+  PlantId, RangeBasis, Reason, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
 } from '../../../lib/consortium/index.ts';
-import { months, NEAREST_LISTS, phases } from '../../../lib/consortium/index.ts';
+import { firstPlaced, months, NEAREST_LISTS, phases, severities } from '../../../lib/consortium/index.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
@@ -111,7 +111,10 @@ function climatesOf(rows: unknown[][]): Map<number, TaxonClimate> {
 }
 
 const IN_CLIMATE = 'plant IN (SELECT plant FROM placements WHERE climate_zone = ?1)';
-const INTERACTIONS_IN = 'SELECT interaction FROM interactions WHERE climate_zone IS NULL OR climate_zone = ?1';
+// The interactions a climate reads: the general rows and those of the lists its plants come from (its
+// own, or for a borrowed climate the curated lists of its nearest-list order, P5 S5c).
+const interactionsIn = (zones: readonly ClimateZone[]): string =>
+  `SELECT interaction FROM interactions WHERE climate_zone IS NULL${zones.length ? ` OR climate_zone IN (${zones.map((_, i) => `?${i + 1}`).join(', ')})` : ''}`;
 
 export function createSqliteSource(db: Db, options: SourceOptions): PlantSource {
   const meta = new Map(db.selectObjects('SELECT key, value FROM meta').map((r) => [String(r.key), String(r.value)]));
@@ -211,15 +214,48 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
     },
     // P5 seam (commit 0): stream S5c owns this method's body and nobody else edits it. The plants of a
     // climate the export does not curate, each placed from the first list of `order` that places it
-    // (core placement.ts placeFor), with Taxon.estimate true and Taxon.placedFrom that list. Stub:
-    // nothing, today's "Not covered yet".
-    async borrowed(_zone, _order) {
-      return [];
+    // (core placement.ts placeFor), with Taxon.estimate true and Taxon.placedFrom that list. Read once
+    // per climate and kept (the same objects every time), in the curated pools' order (by name). An
+    // order naming no curated climate gives nothing: "Not covered yet".
+    async borrowed(zone, order) {
+      let p = pools.get(zone);
+      if (p) return p;
+      const own = (z: ClimateZone): Taxon[] => {
+        let list = pools.get(z);
+        if (!list) pools.set(z, (list = readPool(z)));
+        return list;
+      };
+      // Each plant in every curated list of the order: zone → its record there.
+      const records = new Map<PlantId, Partial<Record<ClimateZone, Taxon>>>();
+      for (const z of order.filter((x) => info.climates.includes(x))) {
+        for (const t of own(z)) { let r = records.get(t.id); if (!r) records.set(t.id, (r = {})); r[z] = t; }
+      }
+      // The first list of the order that places it (placement.ts firstPlaced, placeFor's one rule; zone is uncurated).
+      p = [...records.values()].flatMap((r): Taxon[] => {
+        const hit = firstPlaced(r, zone, order);
+        return hit ? [{ ...hit.value, placedFrom: hit.zone, estimate: true }] : [];
+      }).sort((a, b) => (a.canonical_name < b.canonical_name ? -1 : a.canonical_name > b.canonical_name ? 1 : 0));
+      pools.set(zone, p);
+      return p;
     },
     async interactions(c) {
-      const rows = db.selectObjects(`SELECT * FROM interactions WHERE interaction IN (${INTERACTIONS_IN}) ORDER BY interaction`, [c]);
-      const notes = group(db.selectObjects(`SELECT interaction, locale, text FROM interaction_notes WHERE interaction IN (${INTERACTIONS_IN})`, [c]), (r) => Number(r.interaction));
-      const sources = group(db.selectObjects(`SELECT interaction, source FROM interaction_sources WHERE interaction IN (${INTERACTIONS_IN}) ORDER BY interaction, ord`, [c]), (r) => Number(r.interaction));
+      const zones = info.climates.includes(c) ? [c] : NEAREST_LISTS[c].filter((z) => info.climates.includes(z));
+      const inZones = interactionsIn(zones);
+      const all = db.selectObjects(`SELECT * FROM interactions WHERE interaction IN (${inZones}) ORDER BY interaction`, zones);
+      // A borrowed climate may read the same pairing from several lists: one row per (subject, object,
+      // type, agent), so conflicts() and pairings() see each once. The highest severity wins, so a
+      // conflict warning never gets milder; then the general row, then the first list of the
+      // NEAREST_LISTS order. A curated climate's rows are unique already.
+      const rank = (r: Row) => (r.climate_zone == null ? 0 : 1 + zones.indexOf(r.climate_zone as ClimateZone));
+      const weight = (r: Row) => (r.severity == null ? -1 : severities.indexOf(r.severity as Severity));
+      const seen = new Set<string>(), kept = new Set<Row>();
+      for (const r of [...all].sort((x, y) => weight(y) - weight(x) || rank(x) - rank(y))) {
+        const key = [r.subject_rank, r.subject, r.object_rank, r.object, r.type, r.agent ?? ''].join('\u0000');
+        if (!seen.has(key)) { seen.add(key); kept.add(r); }
+      }
+      const rows = all.filter((r) => kept.has(r));
+      const notes = group(db.selectObjects(`SELECT interaction, locale, text FROM interaction_notes WHERE interaction IN (${inZones})`, zones), (r) => Number(r.interaction));
+      const sources = group(db.selectObjects(`SELECT interaction, source FROM interaction_sources WHERE interaction IN (${inZones}) ORDER BY interaction, ord`, zones), (r) => Number(r.interaction));
       const agentNames = group(db.selectObjects('SELECT agent, locale, name FROM agent_names'), (r) => String(r.agent));
       const agentSources = group(db.selectObjects('SELECT agent, source FROM agent_name_sources ORDER BY agent, ord'), (r) => String(r.agent));
       return rows.map((r): Interaction => {

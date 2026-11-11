@@ -69,7 +69,11 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
     assert.equal(await loadState(page), 'ready');
     const arid = await h.open('/consortium/', v);
     await arid.locator(aria('radio', 'Arid')).click();
-    assert.ok(await has(arid, aria('link', 'Ask for this climate')), 'Arid shows "Ask for this climate"');
+    // P5 owner answer 1: an uncovered climate borrows the nearest curated lists (S5c), once a location
+    // filters them (UX audit fix 1); without one, Arid says it needs the site's location, no palette.
+    assert.ok(await has(arid, '[data-needs-site]'), 'Arid needs the site\'s location to pick plants');
+    assert.equal(await arid.$('.ct-cta'), null, 'no Suggest from an unfiltered borrowed list');
+    assert.equal(await arid.$eval('[data-needs-site] a[href]', (a) => a.textContent.trim()).catch(() => null), 'Ask for this climate', 'P2\'s ask link stays (owner answer 1)');
     await done(page, arid);
   });
 });

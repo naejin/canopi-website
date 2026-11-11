@@ -7,6 +7,7 @@
 import { batch, computed, effect, signal } from '@preact/signals';
 import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
 import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, loadMarkProviders, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
+import type { RangeRule } from './views/pool/pool.tsx';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
@@ -69,10 +70,46 @@ export const interactionSets = signal<Partial<Record<ClimateZone, Interaction[]>
 
 // ---- computed ----
 // The plants of the chosen climate, or null until they are read.
+// P5 S5c: with a site climate, also until the range rule has loaded, so nothing draws from an
+// unfiltered list (a pending "Suggest plants" waits for it as for the pool). If it cannot load
+// (offline after a first visit), the pool itself, unfiltered as in P2, with a notice (rangeFailed).
 export const pool = computed<Taxon[] | null>(() => {
   const c = climate.value;
-  return c ? pools.value[c] ?? null : null;
+  const p = c ? pools.value[c] ?? null : null;
+  return p && siteClimate.value && !rangeRule.value && !rangeFailed.value ? null : p;
 });
+// The range rule (core range.ts, owner answer 2) arrives with the pool feature chunk, loaded only once
+// the site location has a climate, so it stays off the first run (decision row "Island JavaScript
+// budget for P5"). The page asks it nothing without one.
+export const rangeRule = signal<RangeRule | null>(null);
+// The rule's chunk did not load (rangeBroken, once per page: a browser remembers a failed module URL,
+// so the import is never tried again and Reload is the only retry, one toast for the failure).
+// rangeFailed: range checks are off (P2's unfiltered pool) while a location with a climate asks for
+// them; with no location (Forget, Start over) the page is plain P2 and says nothing of it.
+const rangeBroken = signal(false);
+export const rangeFailed = computed(() => rangeBroken.value && siteClimate.value);
+// The rule's load in flight (settled once rangeRule or rangeBroken is set): loadPool waits for it, so a
+// caller that awaited the pool finds it readable.
+let rangeLoad: Promise<void> | null = null;
+const withRule = <T>(p: Promise<T>): Promise<T> => (siteClimate.peek() && !rangeRule.peek() && rangeLoad ? Promise.all([p, rangeLoad]).then(([x]) => x) : p);
+// Whether the location gave a climate (core siteToday is non-null; inlined to keep the rule off the first run).
+export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
+effect(() => {
+  if (!siteClimate.value || rangeLoad) return;
+  rangeLoad = import('./views/pool/pool.tsx').then((m) => { rangeRule.value = m.rangeRule; }, (err: unknown) => {
+    console.error(err);
+    rangeBroken.value = true;
+    showToast(T('range.unavailable'), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
+  });
+});
+// What suggestions and lists draw from (P5 S5c, owner answer 2): the pool without the plants outside
+// their observed range at the site location (core range.ts withinRange); the pool itself without one.
+// Members stay: a plant added anyway is never dropped from a list it is in.
+export const fitPool = computed<Taxon[] | null>(() => {
+  const p = pool.value, rule = rangeRule.value;
+  return p && (rule ? rule.withinRange(p, location.value, members.value) : p);
+});
+
 // The guests as plants: each with its home climate's placement and `from` set (A9), once that
 // climate's pool is read.
 export const guestTaxa = computed<Taxon[]>(() => {
@@ -125,8 +162,9 @@ export const flagContext = computed<FlagContext>(() => {
 });
 // The strata × phases matrix of the members on this site (core matrix.ts).
 export const matrix = computed<Matrix | null>(() => {
-  const c = climate.value, p = pool.value;
+  const c = climate.value, p = fitPool.value;
   if (!c || !p) return null;
+  // P5 S5c: with a site location, a cell's "N fit" leaves out plants outside their observed range.
   return buildMatrix(c, p, memberTaxa.value, site.value);
 });
 // What the plant marks read (core marks.ts plantMarks; views/PlantMarks.tsx renders them).
@@ -159,7 +197,7 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
   const src = source.peek();
   if (!src) return Promise.resolve(null);
   const have = pools.peek()[c];
-  if (have) return Promise.resolve(have);
+  if (have) return withRule(Promise.resolve(have));
   let p = reading.get(c);
   if (!p) {
     // A read of a source replaced meanwhile (Retry) neither writes nor fails the new load.
@@ -177,7 +215,7 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
     });
     reading.set(c, p);
   }
-  return p;
+  return withRule(p);
 }
 
 // Sets the open database's PlantSource, closing the one before it first (Retry opens a new
@@ -212,7 +250,13 @@ export function suggestMembers(): boolean {
   const p = pool.value;
   if (!p || guestsPending.value.length) return false;
   const keep = [...new Set([...crops.value, ...kept.value])];
-  const s = suggest(p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
+  const rule = rangeRule.value;
+  // Nothing fits the site: no suggestion (it could only be an empty matrix); Start shows why.
+  if (rule?.none(p, location.value)) return false;
+  // A borrowed pool unfiltered (no site climate, or the rule's chunk failed): no suggestion, since only
+  // the range filter fits it to a place (UX audit fix 1; fix review 29b709e, 2).
+  if ((!siteClimate.value || !rule) && p.some((t) => t.estimate)) return false;
+  const s = suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
   kept.value = keep;
   members.value = s.members;
   return true;

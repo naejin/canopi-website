@@ -22,7 +22,8 @@ export default function Swap({ id }: { id: PlantId }) {
   const removed = store.removed.value;
   const [all, setAll] = useState(false);
   const [asking, setAsking] = useState<Taxon | null>(null);
-  const alts = useMemo(() => (pool ? alternatives(id, members, pool, { ...ctx, removed }) : []), [id, pool, members, ctx, removed]);
+  const fitting = store.fitPool.value;
+  const alts = useMemo(() => (fitting ? alternatives(id, members, fitting, { ...ctx, removed }) : []), [id, fitting, members, ctx, removed]);
   if (!t || !pool) return null;
   const byId = new Map(pool.map((x) => [x.id, x]));
   const fit = alts.filter((a) => !asks(a.flags)), ask = alts.filter((a) => asks(a.flags));

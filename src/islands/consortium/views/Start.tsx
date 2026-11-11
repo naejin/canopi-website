@@ -16,7 +16,7 @@ import { climate, country, crops, proposedClimate, kept, members, openSheet, poo
 import { P, T, pageLang } from '../strings.ts';
 import { LocationSlot } from './LocationSlot.tsx';
 import { LikelySlot } from './LikelySlot.tsx';
-import { PoolSlot, hasList } from './PoolSlot.tsx';
+import { PoolSlot, hasList, nothingFits } from './PoolSlot.tsx';
 import {
   backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
 } from '../memory.ts';
@@ -278,7 +278,7 @@ function StartView() {
           <Crops zone={z} />
           <SiteQuestions />
           <div class="ct-cta">
-            <button type="button" class="button button-primary" aria-busy={waiting ? 'true' : undefined} onClick={requestSuggest}>{T('start.suggest')}</button>
+            {!nothingFits() && <button type="button" class="button button-primary" aria-busy={waiting ? 'true' : undefined} onClick={requestSuggest}>{T('start.suggest')}</button>}
             {canGoBack.value && <button type="button" class="button button-secondary" onClick={backToConsortium}>{T('start.back')}</button>}
             <button type="button" class="button button-secondary" onClick={startEmpty}>{T('start.empty')}</button>
             <button type="button" class="link-button ct-link" onClick={() => openSheet('paste')}>{T('start.paste')}</button>

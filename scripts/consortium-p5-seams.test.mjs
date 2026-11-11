@@ -17,7 +17,7 @@ test('marks.ts plantMarks: the loaded providers concatenated in order, for one s
   assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), 'details', providers).map((m) => [m.kind, m.state]), [['edge', undefined], ['native', 'native']]);
   assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), 'chip', providers).map((m) => m.kind), ['edge'], 'a provider keeps a mark off a surface');
   assert.deepEqual(core.markSurfaces, ['chip', 'row', 'add', 'details']);
-  assert.deepEqual(core.markKinds, ['edge', 'outside', 'unknown', 'estimate', 'future', 'native']);
+  assert.deepEqual(core.markKinds, ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity']);
   const loaded = await core.loadMarkProviders();
   assert.deepEqual(loaded.map((p) => p.name), ['rangeMarks', 'futureMarks', 'nativeMarks'], 'range (S5c), future (S5d), native (S5e)');
   assert.equal(await core.loadMarkProviders(), loaded, 'loaded once');

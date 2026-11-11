@@ -46,8 +46,13 @@ const INDIRECT = [
   'correction.fieldError', 'correction.proposedError', 'correction.unchanged', 'correction.tooLong', 'correction.emailError',
   'correction.consentError', 'correction.invalid', 'correction.failed', 'correction.refused', 'correction.offline',
 ];
+// The P5 mark providers (src/lib/consortium/*-marks.ts) write their keys as quoted strings;
+// views/PlantMarks.tsx passes each mark's key to T.
+const markSource = readdirSync(join(root, 'lib/consortium')).filter((f) => f.endsWith('-marks.ts'))
+  .map((f) => readFileSync(join(root, 'lib/consortium', f), 'utf8')).join('\n');
+const markKeys = new Set([...markSource.matchAll(/'([a-z]\w*(?:\.\w+)+)'/g)].map((m) => m[1]));
 const fromPage = new Set([...page.matchAll(/\b(?:tr|P)\('([\w.]+)'/g)].map((m) => m[1]));
-const asked = (k) => named.has(k) || INDIRECT.includes(k) || fromPage.has(k) || templates.some((re) => re.test(k));
+const asked = (k) => named.has(k) || markKeys.has(k) || INDIRECT.includes(k) || fromPage.has(k) || templates.some((re) => re.test(k));
 
 test('no consortium key is left unused (H9)', () => {
   assert.deepEqual(short.filter((k) => !asked(k)), []);

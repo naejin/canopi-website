@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { asks, canopyOf, fits, jobsOf, misfitsBeside, phaseOrd } from '../../../lib/consortium/index.ts';
+import { asks as asksFlags, canopyOf, fits, jobsOf, misfitsBeside, phaseOrd } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/search.ts';
 import { Ask, Bar, NotChecked, SheetFrame, WARN, addMembers, closeSheet, flagLines, flagsOfPlant, nameOf, num, plainPhase, sheetCell, spanWords, zoneName } from './Details.tsx';
 import { PlantMarks } from './PlantMarks.tsx';
@@ -44,6 +44,15 @@ function heightWords(t: Taxon): string {
 
 export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
   const pool = store.pool.value;
+  // P5 S5c: a plant outside its observed range at the site is listed only once its name is typed, and
+  // then asks first ("outside its observed range"; owner answer 2). When nothing fits the site, the
+  // search ("Search all plants") lists every plant, each marked, rather than none.
+  const loc = store.location.value;
+  const rule = store.rangeRule.value;
+  const outside = (t: Taxon) => !!rule && rule.rangeFit(t, loc) === 'outside';
+  const fitting = store.fitPool.value?.some((t) => !outside(t)) ? store.fitPool.value : null;
+  const asks = (flags: Flag[], t?: Taxon) => asksFlags(flags) || (!!t && outside(t));
+  const askLines = (t: Taxon) => [...flagLines(t, flagsOfPlant(t)).filter((l) => l.asks).map((l) => l.text), ...(outside(t) ? [T('range.outsideDetails')] : [])];
   const climate = store.climate.value;
   // What Add was opened for (store.openSheet): a cell or run of one layer, a job, and `anyway`.
   const { cell, job, anyway } = mode === 'add' ? sheetCell.value : store.FOR_NOTHING;
@@ -66,7 +75,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
   const base = useMemo(() => {
     if (!pool) return [];
     const canopy = canopyOf(taxa);
-    return pool.filter((t) => {
+    return (query.trim() ? pool : fitting ?? pool).filter((t) => {
       if (job && !jobsOf(t).includes(job)) return false;
       if (!cell) return true;
       if (!growsIn(t, cell.stratum, cell.from, cell.to)) return false;
@@ -74,10 +83,10 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
       const fit = fits(t, site);
       return !misfitsBeside(t, site, canopy, fit).length;
     });
-  }, [pool, cell, job, anyway, site, taxa]);
+  }, [pool, fitting, query.trim() !== '', cell, job, anyway, site, taxa]);
   const rows = useMemo(() => {
     if (!pool) return [];
-    const list = base.filter((t) => !members.includes(t.id)).map((t) => ({ t, flags: flagsOfPlant(t) })).map((r) => ({ ...r, asks: asks(r.flags) }));
+    const list = base.filter((t) => !members.includes(t.id)).map((t) => ({ t, flags: flagsOfPlant(t) })).map((r) => ({ ...r, asks: asks(r.flags, r.t) }));
     if (q) {
       // Best match first (S1's score: whole name, name prefix, word prefix, then by name).
       const score = new Map(searchOf(pool)(q).map((x, i) => [x.id, i]));
@@ -163,10 +172,10 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
             {elsewhere.map(({ t, from, flags }) => {
               const lines = flagLines(t, flags);
               return (
-                <li class={asks(flags) ? 'flagged' : ''}>
+                <li class={asks(flags, t) ? 'flagged' : ''}>
                   <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
                   <button type="button" class="button button-secondary" aria-describedby={`ct-add-o-${t.id}`}
-                    onClick={() => (asks(flags) ? setAsking({ t, from }) : addSelected([t.id], { [t.id]: from }))}>{T('addAnyway')}</button>
+                    onClick={() => (asks(flags, t) ? setAsking({ t, from }) : addSelected([t.id], { [t.id]: from }))}>{T('addAnyway')}</button>
                   <div class="ct-row-why" id={`ct-add-o-${t.id}`}>
                     <span>{T('add.otherLine', { other: zoneName(from), climate: zoneName(climate) })} {T('details.fromList', { climate: zoneName(from) })}.</span>
                     {lines.length > 0 && <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span>}
@@ -185,7 +194,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
       {asking && (
         <Ask
           title={T('add.ask')}
-          lines={flagLines(asking.t, flagsOfPlant(asking.t)).filter((l) => l.asks).map((l) => l.text)}
+          lines={askLines(asking.t)}
           yes={T('addAnyway')}
           onYes={() => { const { t, from } = asking; addSelected([t.id], from ? { [t.id]: from } : {}); }}
           onCancel={() => setAsking(null)}
