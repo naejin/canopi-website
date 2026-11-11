@@ -4,8 +4,9 @@
 // Renaming or removing a signal is a seam change for the coordinator; streams may add actions and,
 // inside the computed bodies, the core calls they own (matrix: S1 lib/consortium/matrix.ts; flags:
 // S1 conflicts and site).
-import { computed, signal } from '@preact/signals';
-import type { ClimateZone, Flag, Matrix, PhaseOrd, PlantId, Site, Taxon } from '../../lib/consortium/index.ts';
+import { computed, effect, signal } from '@preact/signals';
+import type { ClimateZone, Flag, FlagContext, Interaction, Matrix, PhaseOrd, PlantId, Site, Taxon } from '../../lib/consortium/index.ts';
+import { buildMatrix, flagsOf, suggest } from '../../lib/consortium/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 
 // Where the country came from: the reader chose it, a link carried it, or the page guessed it from
@@ -41,6 +42,8 @@ export const load = signal<Load>({ status: 'idle', error: null });
 export const source = signal<PlantSource | null>(null);
 // Each climate's plants as PlantSource.pool returned them, cached by climate once read.
 export const pools = signal<Partial<Record<ClimateZone, Taxon[]>>>({});
+// Each climate's interactions (PlantSource.interactions), read with its pool (S1).
+export const interactionSets = signal<Partial<Record<ClimateZone, Interaction[]>>>({});
 
 // ---- computed ----
 // The plants of the chosen climate, or null until they are read.
@@ -48,13 +51,92 @@ export const pool = computed<Taxon[] | null>(() => {
   const c = climate.value;
   return c ? pools.value[c] ?? null : null;
 });
-// The strata × phases matrix of the members on this site (S1 fills the body with the core's matrix).
-export const matrix = computed<Matrix | null>(() => {
-  if (!pool.value) return null;
-  return null;
+// The guests as plants: each with its home climate's placement and `from` set (A9), once that
+// climate's pool is read.
+export const guestTaxa = computed<Taxon[]>(() => {
+  const out: Taxon[] = [];
+  for (const [id, from] of Object.entries(guests.value)) {
+    const t = from ? pools.value[from]?.find((x) => x.id === id) : undefined;
+    if (t && from) out.push({ ...t, from });
+  }
+  return out;
 });
-// The warnings on members: conflicts, site misfits, invasive and toxicity (S1 fills the body).
+// The members as plants, in order: the climate's own, or a guest's home record. Ids not at hand yet
+// (a guest list still loading, a plant no longer listed) are left out.
+export const memberTaxa = computed<Taxon[]>(() => {
+  const own = pool.value;
+  if (!own) return [];
+  const byId = new Map<PlantId, Taxon>(own.map((t) => [t.id, t]));
+  for (const g of guestTaxa.value) if (!byId.has(g.id)) byId.set(g.id, g);
+  return members.value.flatMap((id) => byId.get(id) ?? []);
+});
+// What the flags read: the site, the climate's interactions and the chosen country.
+export const flagContext = computed<FlagContext>(() => {
+  const code = country.value.code;
+  return {
+    site: site.value,
+    interactions: (climate.value && interactionSets.value[climate.value]) || [],
+    country: code,
+    countryChecked: code ? source.value?.countries().get(code)?.invasiveChecked === true : false,
+  };
+});
+// The strata × phases matrix of the members on this site (core matrix.ts).
+export const matrix = computed<Matrix | null>(() => {
+  const c = climate.value, p = pool.value;
+  if (!c || !p) return null;
+  return buildMatrix(c, p, memberTaxa.value, site.value);
+});
+// The warnings on members: conflicts, site misfits, invasive and toxicity (core suggest.ts flagsOf).
 export const flags = computed<Flag[]>(() => {
   if (!pool.value) return [];
-  return [];
+  return flagsOf(memberTaxa.value, flagContext.value);
 });
+
+// ---- actions (S1) ----
+
+// Reads a climate's pool and interactions once (later calls share the first read). A read that
+// fails after the database opened is damage: the §5 screen, never a partial matrix.
+const reading = new Map<ClimateZone, Promise<Taxon[] | null>>();
+export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
+  const src = source.value;
+  if (!src) return Promise.resolve(null);
+  if (pools.value[c]) return Promise.resolve(pools.value[c]!);
+  let p = reading.get(c);
+  if (!p) {
+    p = Promise.all([src.pool(c), src.interactions(c)]).then(([plants, rows]) => {
+      pools.value = { ...pools.value, [c]: plants };
+      interactionSets.value = { ...interactionSets.value, [c]: rows };
+      return plants;
+    }).catch((err: unknown) => {
+      reading.delete(c);
+      console.error(`Consortium data ${src.info().releaseId}: ${c}: ${(err as Error).message}`);
+      load.value = { status: 'failed', error: 'damaged' };
+      return null;
+    });
+    reading.set(c, p);
+  }
+  return p;
+}
+
+// Keeps the chosen climate's pool and every guest list's pool read as soon as the database is open,
+// so Start works while the plant list loads. Returns the effect's disposer.
+export function watchPools(): () => void {
+  return effect(() => {
+    if (!source.value) return;
+    const c = climate.value;
+    if (c) void loadPool(c);
+    for (const from of new Set(Object.values(guests.value))) if (from) void loadPool(from);
+  });
+}
+
+// "Suggest plants": a new suggestion around the kept plants and Main crops (which become kept),
+// leaving out removed plants (core suggest.ts). Needs the climate's pool; false when it is not read.
+export function suggestMembers(): boolean {
+  const p = pool.value;
+  if (!p) return false;
+  const keep = [...new Set([...crops.value, ...kept.value])];
+  const s = suggest(p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
+  kept.value = keep;
+  members.value = s.members;
+  return true;
+}
