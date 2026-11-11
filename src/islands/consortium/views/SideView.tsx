@@ -24,7 +24,7 @@ function Silhouette({ p }: { p: SidePlant }) {
     <svg class="ct-sv-svg" viewBox={`${-MIN_COL / 2} 0 ${MIN_COL} ${PLOT_H}`} preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false">
       <g data-stratum={p.stratum} data-shape={p.shape} data-dashed={String(p.dashed)}>
         {plantStrokes({ id: p.taxon.id, shape: p.shape, frac: p.frac, dashed: p.dashed }).map((s, i) => (
-          <path key={i} d={s.d} fill={s.fillOpacity === null ? 'none' : undefined} fill-opacity={s.fillOpacity ?? undefined} stroke-width={s.width} stroke-dasharray={s.dashed ? DASH : undefined} stroke-linecap={s.round ? 'round' : undefined} />
+          <path key={i} d={s.d} fill={s.fillOpacity === null ? 'none' : undefined} fill-opacity={s.fillOpacity ?? undefined} stroke-width={s.width} stroke-dasharray={s.dashed ? DASH : undefined} stroke-linecap={s.round && !s.dashed ? 'round' : undefined} />
         ))}
       </g>
     </svg>
@@ -42,17 +42,17 @@ export function SideView() {
   const marks = drawn.length > MAX_SILHOUETTES;
   return (
     <section class="ct-sv" aria-labelledby="ct-sv-h">
-      <h2 id="ct-sv-h">{title} <span class="ct-muted ct-sv-term">· {phaseTerm(s)}</span></h2>
+      <h2 id="ct-sv-h">{title} <span class="ct-dim ct-sv-term">· {phaseTerm(s)}</span></h2>
       <p class="ct-sv-layer"><strong>{T('side.layer')}.</strong> <Explain kind="layer" /></p>
       <div class="ct-sv-phases" role="group" aria-label={T('phase.stage')}>
         {PHASE_ORDS.map((p) => (
-          <button key={p} type="button" class="ct-chip" aria-pressed={p === s} onClick={() => { stage.value = p; }}>
+          <button key={p} type="button" class="ct-stchip" aria-pressed={p === s} onClick={() => { stage.value = p; }}>
             {phasePlain(p)} <span class="ct-chip-term">· {phaseTerm(p)}</span>
           </button>
         ))}
       </div>
       <div class="ct-sv-stepper"><StageStepper /></div>
-      {drawn.length === 0 ? <p class="ct-muted">{T('side.empty')}</p> : (
+      {drawn.length === 0 ? <p class="ct-dim">{T('side.empty')}</p> : (
         <>
           <figure class="ct-sv-figure">
             <div class={`ct-sv-plot${marks ? ' is-marks' : ''}`} role="img" aria-label={T('side.drawing', { title, plants })}>
@@ -65,13 +65,13 @@ export function SideView() {
           </figure>
           <ol class="ct-sv-key">
             {drawn.map((p, i) => (
-              <li key={p.taxon.id}>
+              <li key={p.taxon.id} data-plant-id={p.taxon.id}>
                 <span class="ct-sv-n" aria-hidden="true">{i + 1}</span>
                 <span>
                   <span class="ct-sv-sw" data-stratum={p.stratum} aria-hidden="true" />
                   <button type="button" class="ct-link-button" aria-haspopup="dialog" onClick={() => openDetails(p.taxon.id)}>{nameOf(p.taxon)}</button>{' '}
                   <span class="ct-sc">{p.taxon.canonical_name}</span>{' '}
-                  <span class="ct-muted">· {layerName(p.stratum)} · {p.height !== null ? T('side.height', { m: num(p.height) }) : T('side.noHeight')}{p.first ? ` · ${T('side.first')}` : ''}</span>{' '}
+                  <span class="ct-dim">· {layerName(p.stratum)} · {p.height !== null ? T('side.height', { m: num(p.height) }) : T('side.noHeight')}{p.first ? ` · ${T('side.first')}` : ''}</span>{' '}
                   <Marks taxon={p.taxon} />
                 </span>
               </li>

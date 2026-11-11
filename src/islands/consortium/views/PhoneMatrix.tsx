@@ -85,7 +85,7 @@ function StageLayer({ stratum, cell, empty }: { stratum: Stratum; cell: MatrixCe
   const head = (
     <header>
       <h3>{layerName(stratum)} <span class="ct-needs">· {T(`stratum.${stratum}.needs`)}</span></h3>
-      <span class="ct-share">{T('matrix.share', { p: SHARE_AIM[stratum] })}</span>
+      <span class="ct-lshare">{T('matrix.share', { p: SHARE_AIM[stratum] })}</span>
     </header>
   );
   if (here.length) {
@@ -93,7 +93,7 @@ function StageLayer({ stratum, cell, empty }: { stratum: Stratum; cell: MatrixCe
       <section class="ct-pstratum" aria-label={layerName(stratum)}>
         {head}
         {here.map((t) => (
-          <button key={t.id} type="button" class={`ct-prow${t.from ? ' is-guest' : ''}`} aria-label={plantLabel(t)} onClick={() => openDetails(t.id)}>
+          <button key={t.id} type="button" data-plant-id={t.id} class={`ct-prow${t.from ? ' is-guest' : ''}`} aria-label={plantLabel(t)} onClick={() => openDetails(t.id)}>
             <span>
               <span class="ct-nm">{nameOf(t)} <Marks taxon={t} /></span>
               <span class="ct-sc">{t.canonical_name}</span>

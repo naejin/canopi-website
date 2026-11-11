@@ -4,7 +4,7 @@
    stratum colours appear only in rules whose selector names a stratum; breakpoints are the site's two. */
 
 /* ---------- Shared bits ---------- */
-.ct .ct-muted { color: var(--text-muted); }
+.ct .ct-dim { color: var(--text-muted); }
 .ct .ct-nw { white-space: nowrap; }
 .ct .ct-icon { width: 16px; height: 16px; flex: none; }
 .ct .ct-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
@@ -19,11 +19,11 @@
   background: none; color: var(--text-secondary); font-weight: 600; font-size: 15px; cursor: pointer;
 }
 .ct .ct-quiet:hover { border-color: var(--border-strong); color: var(--text); }
-.ct .ct-chip {
+.ct .ct-stchip {
   display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 99px;
   border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-size: 15px; cursor: pointer;
 }
-.ct .ct-chip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 600; }
+.ct .ct-stchip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 600; }
 .ct .ct-chip-term { font-size: 13px; opacity: 0.8; }
 .ct .ct-sc { font-style: italic; color: var(--text-muted); }
 
@@ -67,10 +67,11 @@
 }
 .ct .ct-tab[aria-selected="true"] { color: var(--accent-ink); border-bottom-color: var(--accent); }
 .ct .ct-tab:hover { color: var(--text); }
+.ct .ct-viewbar { display: flex; justify-content: flex-end; margin: -6px 0 10px; }
 .ct .ct-notes { display: grid; gap: 4px; margin: 0 0 12px; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface-alt); font-size: 15px; }
 .ct .ct-notes p { margin: 0; }
-.ct .ct-notice { padding: 12px 14px; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface-alt); font-size: 15px; display: grid; gap: 10px; }
-.ct .ct-notice p { margin: 4px 0 0; color: var(--text-secondary); }
+.ct .ct-mnotice { padding: 12px 14px; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface-alt); font-size: 15px; display: grid; gap: 10px; }
+.ct .ct-mnotice p { margin: 4px 0 0; color: var(--text-secondary); }
 .ct .ct-mx-empty { margin-bottom: 12px; grid-template-columns: 1fr auto; align-items: center; }
 
 /* ---------- Fill meter and legend ---------- */
@@ -106,7 +107,7 @@
 .ct .ct-mx th, .ct .ct-rh-name, .ct .ct-ph-plain, .ct .ct-ph-term, .ct .ct-pstratum h3 { hyphens: auto; overflow-wrap: anywhere; }
 .ct .ct-rh-name { display: block; font-weight: 600; font-size: 16px; }
 .ct .ct-rh-needs { display: block; font-size: 13.5px; color: var(--text-secondary); }
-.ct .ct-share { display: block; margin-top: 6px; font-size: 12.5px; color: var(--text-muted); }
+.ct .ct-lshare { display: block; margin-top: 6px; font-size: 12.5px; color: var(--text-muted); }
 .ct .ct-mx td { padding: 6px 0; position: relative; min-width: var(--cell-min-w); }
 .ct .ct-mx td.cannot { background: var(--cell-cannot-bg); }
 .ct .ct-lane { height: 44px; display: flex; align-items: stretch; }
@@ -174,8 +175,8 @@
   display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 6px; margin: 14px 0 6px;
   position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 6px 0;
 }
-.ct .ct-step { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); display: grid; place-items: center; cursor: pointer; padding: 0; }
-.ct .ct-step[disabled] { opacity: 0.35; cursor: default; }
+.ct .ct-stepbtn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.ct .ct-stepbtn[disabled] { opacity: 0.35; cursor: default; }
 .ct .ct-step-now { text-align: center; line-height: 1.2; }
 .ct .ct-step-now strong { display: block; font-size: 18px; font-family: var(--font-display); font-weight: 400; }
 .ct .ct-step-now span { font-size: 13px; color: var(--text-muted); }
@@ -183,7 +184,7 @@
 .ct .ct-pstratum.cannot { background: var(--hatch-fill), var(--surface); }
 .ct .ct-pstratum > header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0 8px; padding: 10px 12px 6px; }
 .ct .ct-pstratum h3 { font-family: var(--font-sans); font-weight: 600; font-size: 16px; margin: 0; }
-.ct .ct-pstratum .ct-share { margin: 0; }
+.ct .ct-pstratum .ct-lshare { margin: 0; }
 .ct .ct-needs { font-size: 13px; font-weight: 400; color: var(--text-secondary); }
 .ct .ct-prow {
   display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; padding: 8px 12px; width: 100%;
@@ -210,7 +211,7 @@
 .ct .ct-sv-line span { position: absolute; left: -32px; top: -9px; }
 .ct .ct-sv-col { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; }
 .ct .ct-sv-svg { height: 100%; width: auto; max-width: 100%; overflow: visible; }
-.ct .ct-sv-svg g { fill: currentColor; stroke: currentColor; stroke-linejoin: round; color: var(--text-secondary); }
+.ct .ct-sv-svg g { fill: var(--s-none); stroke: var(--s-none-ink); stroke-linejoin: round; }
 .ct .ct-sv-num {
   position: absolute; bottom: -24px; font-size: 12px; font-weight: 600; width: 20px; height: 20px; border-radius: 50%;
   border: 1.5px solid var(--text-secondary); display: grid; place-items: center; background: var(--surface);
@@ -225,10 +226,14 @@
 .ct .ct-sv-n { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--text-secondary); display: grid; place-items: center; font-size: 12px; font-weight: 600; }
 .ct .ct-sv-sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; background: var(--s-none); }
 /* Stratum colours: the drawing and its key only. */
-.ct .ct-sv-svg g[data-stratum="emergent"], .ct .ct-sv-mark[data-stratum="emergent"] { color: var(--s-emergent-ink); border-color: var(--s-emergent-ink); }
-.ct .ct-sv-svg g[data-stratum="high"], .ct .ct-sv-mark[data-stratum="high"] { color: var(--s-high-ink); border-color: var(--s-high-ink); }
-.ct .ct-sv-svg g[data-stratum="medium"], .ct .ct-sv-mark[data-stratum="medium"] { color: var(--s-medium-ink); border-color: var(--s-medium-ink); }
-.ct .ct-sv-svg g[data-stratum="low"], .ct .ct-sv-mark[data-stratum="low"] { color: var(--s-low-ink); border-color: var(--s-low-ink); }
+.ct .ct-sv-svg g[data-stratum="emergent"] { fill: var(--s-emergent); stroke: var(--s-emergent-ink); }
+.ct .ct-sv-mark[data-stratum="emergent"] { border-color: var(--s-emergent-ink); }
+.ct .ct-sv-svg g[data-stratum="high"] { fill: var(--s-high); stroke: var(--s-high-ink); }
+.ct .ct-sv-mark[data-stratum="high"] { border-color: var(--s-high-ink); }
+.ct .ct-sv-svg g[data-stratum="medium"] { fill: var(--s-medium); stroke: var(--s-medium-ink); }
+.ct .ct-sv-mark[data-stratum="medium"] { border-color: var(--s-medium-ink); }
+.ct .ct-sv-svg g[data-stratum="low"] { fill: var(--s-low); stroke: var(--s-low-ink); }
+.ct .ct-sv-mark[data-stratum="low"] { border-color: var(--s-low-ink); }
 .ct .ct-sv-mark[data-stratum="emergent"]:not(.is-dashed), .ct .ct-sv-sw[data-stratum="emergent"] { background: var(--s-emergent); }
 .ct .ct-sv-mark[data-stratum="high"]:not(.is-dashed), .ct .ct-sv-sw[data-stratum="high"] { background: var(--s-high); }
 .ct .ct-sv-mark[data-stratum="medium"]:not(.is-dashed), .ct .ct-sv-sw[data-stratum="medium"] { background: var(--s-medium); }
@@ -263,9 +268,9 @@
 .ct .ct-mini td a { display: grid; place-items: center; height: 28px; border-radius: 5px; background: var(--bar); color: var(--bg); font-size: 13px; font-weight: 600; text-decoration: none; }
 .ct .ct-mini td.none span { display: block; height: 28px; border-radius: 5px; border: 1px solid var(--border); }
 .ct .ct-list-tools { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 4px 0 6px; }
-.ct .ct-search { display: flex; align-items: center; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); flex: 1 1 260px; max-width: 460px; }
-.ct .ct-search input { border: 0; background: none; color: var(--text); flex: 1; min-width: 0; min-height: 40px; font: inherit; outline: none; }
-.ct .ct-search:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
+.ct .ct-lsearch { display: flex; align-items: center; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); flex: 1 1 260px; max-width: 460px; }
+.ct .ct-lsearch input { border: 0; background: none; color: var(--text); flex: 1; min-width: 0; min-height: 40px; font: inherit; outline: none; }
+.ct .ct-lsearch:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
 .ct .ct-check { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 15px; }
 .ct .ct-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
 .ct .ct-list-shown { margin: 0 0 4px; font-size: 14px; }
@@ -274,7 +279,7 @@
   font-family: var(--font-sans); font-weight: 600; font-size: 16px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline;
   padding-bottom: 6px; margin: 0; border-bottom: 1px solid var(--border-strong);
 }
-.ct .ct-lgroup > h3 .ct-muted { font-weight: 400; font-size: 14px; }
+.ct .ct-lgroup > h3 .ct-dim { font-weight: 400; font-size: 14px; }
 .ct table.ct-lrows { width: 100%; border-collapse: collapse; font-size: 15px; table-layout: fixed; }
 .ct .ct-lrows td { padding: 5px 4px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .ct .ct-lname { width: 44%; }
@@ -290,7 +295,7 @@
 
 /* ---------- Phone ---------- */
 @media (max-width: 639px) {
-  .ct .ct-tab { padding: 10px 9px; font-size: 14.5px; }
+  .ct .ct-tab { padding: 10px 7px; font-size: 14.5px; }
   .ct .ct-mx-empty { grid-template-columns: 1fr; }
   .ct .ct-link-button { min-height: 36px; display: inline-flex; align-items: center; }
   .ct .ct-sv { padding: 12px; }

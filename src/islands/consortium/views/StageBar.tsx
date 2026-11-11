@@ -109,6 +109,8 @@ export interface AddRequest { cell: CellRef | null; anyway: boolean; job: JobId 
 // What the Add sheet was opened for: a free cell ("+ Add"), a blocked cell ("Show them anyway": every
 // plant of the cell, flagged), or a job ("Find a soil feeder"). S3's Add reads it.
 export const addRequest = signal<AddRequest | null>(null);
+// S3 (consortium/s3, Details.tsx) opens sheets with openSheet(kind, id, cell); once merged, openAdd
+// is `openSheet('add', null, req.cell)` (S3 hand-off 2026-11-11), addRequest keeping job and anyway.
 export function openAdd(req: AddRequest): void {
   addRequest.value = req;
   sheet.value = { kind: 'add', id: null };

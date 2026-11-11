@@ -906,6 +906,7 @@
   "consortium.matrix.emptyBody": "数字は、そのマスを埋められるリストの植物の数です。Canopi に最初の組み合わせを提案させるか、植物を1つずつ追加してください。",
   "consortium.matrix.suggest": "最初の提案を見る",
   "consortium.matrix.addPlant": "植物を追加",
+  "consortium.matrix.addPlants": "植物を追加",
   "consortium.matrix.key.filled": "埋まっている",
   "consortium.matrix.key.free": "空き：植物を入れられる",
   "consortium.matrix.key.cannot": "ここでは埋められない",

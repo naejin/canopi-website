@@ -906,6 +906,7 @@
   "consortium.matrix.emptyBody": "每个数字表示列表中有多少种植物可以填这一格。让 Canopi 推荐一个起点，或逐一添加植物。",
   "consortium.matrix.suggest": "推荐起点",
   "consortium.matrix.addPlant": "添加植物",
+  "consortium.matrix.addPlants": "添加植物",
   "consortium.matrix.key.filled": "已填",
   "consortium.matrix.key.free": "空着：可以放一种植物",
   "consortium.matrix.key.cannot": "这里无法填",

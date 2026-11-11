@@ -906,6 +906,7 @@
   "consortium.matrix.emptyBody": "Каждое число показывает, сколько растений из списка могут заполнить клетку. Пусть Canopi предложит начало, или добавляйте растения по одному.",
   "consortium.matrix.suggest": "Предложить начало",
   "consortium.matrix.addPlant": "Добавить растение",
+  "consortium.matrix.addPlants": "Добавить растения",
   "consortium.matrix.key.filled": "Заполнена",
   "consortium.matrix.key.free": "Свободна: сюда подойдёт растение",
   "consortium.matrix.key.cannot": "Здесь не заполнить",

@@ -22,12 +22,12 @@ export function StageStepper({ id }: { id?: string }) {
   const s = stage.value;
   return (
     <div class="ct-stepper" role="group" aria-label={T('phase.stage')} id={id}>
-      <button type="button" class="ct-step" aria-label={T('phase.earlier')} disabled={s === 0} onClick={() => { stage.value = stepStage(s, -1); }}><ChevronIcon dir="left" /></button>
+      <button type="button" class="ct-stepbtn" aria-label={T('phase.earlier')} disabled={s === 0} onClick={() => { stage.value = stepStage(s, -1); }}><ChevronIcon dir="left" /></button>
       <div class="ct-step-now" aria-live="polite" aria-atomic="true">
         <strong>{phasePlain(s)}</strong>
         <span>{phaseTerm(s)} · {T('phase.stepOf', { i: s + 1 })}</span>
       </div>
-      <button type="button" class="ct-step" aria-label={T('phase.later')} disabled={s === 6} onClick={() => { stage.value = stepStage(s, 1); }}><ChevronIcon dir="right" /></button>
+      <button type="button" class="ct-stepbtn" aria-label={T('phase.later')} disabled={s === 6} onClick={() => { stage.value = stepStage(s, 1); }}><ChevronIcon dir="right" /></button>
     </div>
   );
 }

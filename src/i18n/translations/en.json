@@ -906,6 +906,7 @@
   "consortium.matrix.emptyBody": "Each number is how many plants in the list could fill that cell. Let Canopi suggest a start, or add plants one by one.",
   "consortium.matrix.suggest": "Suggest a start",
   "consortium.matrix.addPlant": "Add a plant",
+  "consortium.matrix.addPlants": "Add plants",
   "consortium.matrix.key.filled": "Filled",
   "consortium.matrix.key.free": "Free: a plant could go here",
   "consortium.matrix.key.cannot": "Cannot be filled here",

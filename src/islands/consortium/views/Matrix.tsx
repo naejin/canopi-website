@@ -59,9 +59,10 @@ function Views() {
           </button>
         ))}
       </div>
+      <div class="ct-viewbar"><button type="button" class="button button-secondary ct-btn-sm" onClick={() => openAdd({ cell: null, anyway: false, job: null })}>{T('matrix.addPlants')}</button></div>
       <Notices />
       {TABS.map((tab) => (
-        <div key={tab} role="tabpanel" class="ct-panel" id={`ct-panel-${tab}`} aria-labelledby={`ct-tab-${tab}`} hidden={tab !== active}>
+        <div key={tab} role="tabpanel" class="ct-tabpanel" id={`ct-panel-${tab}`} aria-labelledby={`ct-tab-${tab}`} hidden={tab !== active}>
           {tab === active && (tab === 'matrix' ? (phone.value ? <PhoneMatrix /> : <MatrixTable m={m} />) : tab === 'side' ? <SideView /> : tab === 'jobs' ? <Jobs /> : <PlantList />)}
         </div>
       ))}
@@ -93,14 +94,14 @@ export function FillMeter({ m }: { m: MatrixData }) {
     <span class="ct-fill">
       <span class="ct-fill-bar" aria-hidden="true"><i style={{ width: `${fillPercent(m.filled, m.total)}%` }} /></span>
       <strong>{T('matrix.fill', { f: m.filled, t: m.total })}</strong>
-      <span class="ct-muted">{P('matrix.free', m.free)} · {P('matrix.cannot', m.cannot)}</span>
+      <span class="ct-dim">{P('matrix.free', m.free)} · {P('matrix.cannot', m.cannot)}</span>
     </span>
   );
 }
 
 export function EmptyNotice({ phone: small = false }: { phone?: boolean }) {
   return (
-    <div class={`ct-notice ct-mx-empty${small ? ' is-phone' : ''}`}>
+    <div class={`ct-mnotice ct-mx-empty${small ? ' is-phone' : ''}`}>
       <div><strong>{T('matrix.empty')}</strong><p>{T('matrix.emptyBody')}</p></div>
       <div class="ct-row">
         <button type="button" class="button button-primary" onClick={() => { if (suggestMembers()) view.value = 'matrix'; }}>{T('matrix.suggest')}</button>
@@ -210,7 +211,7 @@ function Row({ stratum, cells, taxa, empty }: { stratum: Stratum; cells: MatrixC
       <th scope="row" id={`ct-row-${s}`}>
         <span class="ct-rh-name">{layerName(stratum)}</span>
         <span class="ct-rh-needs">{T(`stratum.${stratum}.needs`)}</span>
-        <span class="ct-share">{T('matrix.share', { p: SHARE_AIM[stratum] })}</span>
+        <span class="ct-lshare">{T('matrix.share', { p: SHARE_AIM[stratum] })}</span>
       </th>
       {rowPieces(cells).map((piece) => {
         if (piece.kind === 'run') {
@@ -268,14 +269,14 @@ function Chip({ taxon: t, phase, compact = false }: { taxon: Taxon; phase: Phase
   if (t.from) cls.push('is-guest');
   if (start) {
     return (
-      <button type="button" class={cls.join(' ')} aria-label={plantLabel(t)} title={`${nameOf(t)} — ${t.canonical_name}`} onClick={() => openDetails(t.id)}>
+      <button type="button" class={cls.join(' ')} data-plant-id={t.id} aria-label={plantLabel(t)} title={`${nameOf(t)} — ${t.canonical_name}`} onClick={() => openDetails(t.id)}>
         <span class="ct-nm"><span>{nameOf(t)}</span></span>
         <span class="ct-sc2"><span class="ct-sc">{t.canonical_name}</span><Marks taxon={t} tight /></span>
       </button>
     );
   }
   cls.push('seg-mid');
-  return <span class={cls.join(' ')}><span class="ct-nm"><span><span class="visually-hidden">{T('matrix.continues')}: </span>{nameOf(t)}</span></span></span>;
+  return <span class={cls.join(' ')} data-plant-id={t.id}><span class="ct-nm"><span><span class="visually-hidden">{T('matrix.continues')}: </span>{nameOf(t)}</span></span></span>;
 }
 
 export const Matrix: ComponentType | null = Views;

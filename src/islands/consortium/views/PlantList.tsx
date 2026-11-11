@@ -31,7 +31,7 @@ export function PlantList() {
   return (
     <section class="ct-list" aria-labelledby="ct-list-h">
       <h2 id="ct-list-h">{T('list.title')}</h2>
-      <p class="ct-muted ct-list-lede">{T('list.lede')}</p>
+      <p class="ct-dim ct-list-lede">{T('list.lede')}</p>
       <table class="ct-mini ct-jump">
         <caption>{T('list.jump')}</caption>
         <thead>
@@ -55,33 +55,33 @@ export function PlantList() {
         </tbody>
       </table>
       <div class="ct-list-tools">
-        <label class="ct-search">
+        <label class="ct-lsearch">
           <span class="visually-hidden">{T('list.search')}</span>
           <input type="search" placeholder={T('list.search')} value={query} onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)} />
         </label>
-        <span class="ct-check"><input type="checkbox" id="ct-list-warned" checked={warnedOnly} onChange={(e) => setWarnedOnly((e.currentTarget as HTMLInputElement).checked)} /><label for="ct-list-warned">{T('list.warned')}</label> <span class="ct-muted" aria-hidden="true">{warnedN}</span></span>
-        <span class="ct-check"><input type="checkbox" id="ct-list-kept" checked={keptOnly} onChange={(e) => setKeptOnly((e.currentTarget as HTMLInputElement).checked)} /><label for="ct-list-kept">{T('list.keptOnly')}</label> <span class="ct-muted" aria-hidden="true">{keep.size}</span></span>
+        <span class="ct-check"><input type="checkbox" id="ct-list-warned" checked={warnedOnly} onChange={(e) => setWarnedOnly((e.currentTarget as HTMLInputElement).checked)} /><label for="ct-list-warned">{T('list.warned')}</label> <span class="ct-dim" aria-hidden="true">{warnedN}</span></span>
+        <span class="ct-check"><input type="checkbox" id="ct-list-kept" checked={keptOnly} onChange={(e) => setKeptOnly((e.currentTarget as HTMLInputElement).checked)} /><label for="ct-list-kept">{T('list.keptOnly')}</label> <span class="ct-dim" aria-hidden="true">{keep.size}</span></span>
       </div>
-      <p class="ct-muted ct-list-shown" role="status">{shown ? P('list.shown', shown) : T('list.none')}</p>
+      <p class="ct-dim ct-list-shown" role="status">{shown ? P('list.shown', shown) : T('list.none')}</p>
       {groups.map((g) => {
         const id = groupId(g.stratum, g.phase);
         return (
           <div class="ct-lgroup" id={id} key={id}>
             <h3 id={`${id}-h`}>
               {g.stratum && g.phase !== null ? T('list.group', { layer: layerName(g.stratum), stage: phasePlain(g.phase) }) : T('matrix.noLayer')}
-              <span class="ct-muted">{g.phase !== null ? `${phaseTerm(g.phase)} · ` : ''}{P('list.count', g.plants.length)}</span>
+              <span class="ct-dim">{g.phase !== null ? `${phaseTerm(g.phase)} · ` : ''}{P('list.count', g.plants.length)}</span>
             </h3>
-            <table class="ct-lrows" aria-labelledby={`${id}-h`}>
-              <tbody>
+            <table class="ct-lrows" role="table" aria-labelledby={`${id}-h`}>
+              <tbody role="rowgroup">
                 {g.plants.map((t) => (
-                  <tr key={t.id} aria-label={`${nameOf(t)}, ${t.canonical_name}`}>
-                    <td class="ct-lname">
+                  <tr role="row" key={t.id} data-plant-id={t.id} aria-label={`${nameOf(t)}, ${t.canonical_name}`}>
+                    <td role="cell" class="ct-lname">
                       <button type="button" class="ct-lname-btn" aria-haspopup="dialog" onClick={() => openDetails(t.id)}>{nameOf(t)}</button>{' '}
                       <span class="ct-sc">{t.canonical_name}</span> <Marks taxon={t} />
                     </td>
-                    <td class="ct-lstage"><StageBar taxon={t} /></td>
-                    <td class="ct-ljobs">{jobsOf(t).map((j) => T(`job.${j}`)).join(' · ')}</td>
-                    <td class="ct-lact"><button type="button" class="ct-quiet" aria-label={T('list.swapName', { name: nameOf(t) })} onClick={() => openSwap(t.id)}>{T('list.swap')}</button></td>
+                    <td role="cell" class="ct-lstage"><StageBar taxon={t} /></td>
+                    <td role="cell" class="ct-ljobs">{jobsOf(t).map((j) => T(`job.${j}`)).join(' · ')}</td>
+                    <td role="cell" class="ct-lact"><button type="button" class="ct-quiet" aria-label={T('list.swapName', { name: nameOf(t) })} onClick={() => openSwap(t.id)}>{T('list.swap')}</button></td>
                   </tr>
                 ))}
               </tbody>

@@ -906,6 +906,7 @@
   "consortium.matrix.emptyBody": "Ogni numero indica quante piante della lista potrebbero riempire quella casella. Lascia che Canopi suggerisca un inizio, o aggiungi piante una alla volta.",
   "consortium.matrix.suggest": "Suggerisci un inizio",
   "consortium.matrix.addPlant": "Aggiungi una pianta",
+  "consortium.matrix.addPlants": "Aggiungi piante",
   "consortium.matrix.key.filled": "Piena",
   "consortium.matrix.key.free": "Libera: qui può andare una pianta",
   "consortium.matrix.key.cannot": "Non si può riempire qui",

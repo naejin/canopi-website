@@ -906,6 +906,7 @@
   "consortium.matrix.emptyBody": "Elk getal zegt hoeveel planten uit de lijst dat vak kunnen vullen. Laat Canopi een begin voorstellen, of voeg planten een voor een toe.",
   "consortium.matrix.suggest": "Begin voorstellen",
   "consortium.matrix.addPlant": "Plant toevoegen",
+  "consortium.matrix.addPlants": "Planten toevoegen",
   "consortium.matrix.key.filled": "Gevuld",
   "consortium.matrix.key.free": "Vrij: hier past een plant",
   "consortium.matrix.key.cannot": "Hier niet te vullen",
