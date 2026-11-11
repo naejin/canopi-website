@@ -14,7 +14,7 @@ function run(command, ensure) {
 
 test('astro build installs the tiles first and fails when the install fails', async () => {
   let calls = 0;
-  const ok = run('build', async ({ log }) => { calls++; log('Installed'); log('warning: unchecked'); return { action: 'installed' }; });
+  const ok = run('build', async ({ log, allowDownload }) => { calls++; assert.notEqual(allowDownload, false); log('Installed'); log('warning: unchecked'); return { action: 'installed' }; });
   await ok.done;
   assert.equal(calls, 1);
   assert.deepEqual(ok.logs, { info: ['Installed'], warn: ['unchecked'] });
@@ -26,9 +26,9 @@ test('astro dev installs once and only warns on failure; sync and preview do not
   const bad = run('dev', async () => { throw new Error('Climate grid refused: offline.'); });
   await bad.done;
   assert.match(bad.logs.warn[0], /offline\. The dev server runs without climate tiles: set CANOPI_CLIMATE_ARCHIVE/);
-  let calls = 0;
-  await run('dev', async () => { calls++; }).done;
-  assert.equal(calls, 1);
+  const seen = [];
+  await run('dev', async (opts) => { seen.push(opts.allowDownload); }).done;
+  assert.deepEqual(seen, [false], 'dev never downloads');
   for (const command of ['sync', 'preview']) await run(command, async () => { throw new Error(`called for ${command}`); }).done;
 });
 
