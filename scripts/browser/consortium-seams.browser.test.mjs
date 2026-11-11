@@ -64,13 +64,18 @@ test('X1/X2: "+ Add" in a free cell opens Add for that cell, and lists only its 
   const plants = await temperate();
   await eachVariant(t, async (v) => {
     const page = await suggested(v, { room: 'Small garden' });
+    // The members, read at each phone stage (a stage shows only its own); a filled cell's "+" has the
+    // same name as a free cell's, so a cell holding a member is skipped.
     const members = new Set(await memberIds(page));
-    const inCell = (cell) => plants.filter((p) => p.stratum === cell.stratum && p.a <= cell.to && p.b >= cell.from && !members.has(p.id));
+    const span = (cell) => plants.filter((p) => p.stratum === cell.stratum && p.a <= cell.to && p.b >= cell.from);
+    const inCell = (cell) => span(cell).filter((p) => !members.has(p.id));
+    const free = (cell) => !span(cell).some((p) => members.has(p.id));
     // A free cell where the room leaves out at least one of its plants, so the filter is seen working.
     let btn = null;
     for (let i = 0; i < 7 && !btn; i++) {
+      for (const id of await memberIds(page)) members.add(id);
       const adds = (await axNodes(page)).filter((n) => n.role === 'button' && /^Add a plant: /.test(n.name ?? ''));
-      btn = adds.find((n) => inCell(cellIn(n.name)).some((p) => !fitsSmall(p))) ?? null;
+      btn = adds.find((n) => { const c = cellIn(n.name); return free(c) && inCell(c).some((p) => !fitsSmall(p)); }) ?? null;
       if (!btn && v.width < 640) await page.locator(aria('button', 'Later stage')).click();
     }
     assert.ok(btn, 'a free cell with "+ Add" holding a plant too tall for a small garden');
@@ -876,6 +881,49 @@ test('Item 7: a filled cell has its own "+", which opens Add for that cell, and 
     const id = byName.get(name).id;
     const where = v.width < 960 ? `.ct-pstratum[aria-label="${en[`consortium.stratum.${cell.stratum}`]}"] [data-plant-id="${id}"]` : `tr[data-stratum-row="${cell.stratum}"] [data-plant-id="${id}"]`;
     assert.ok(await has(page, where, 5000), `${name} lands in ${label}`);
+    await done(page);
+  });
+});
+
+// Item 8 (ho-misc's flake trace): Escape closes a sheet's <dialog> at once and fires its close event a
+// task later; a sheet opened in between (another plant, "+") must survive that late event.
+test('Item 8: a sheet\'s late close event never closes the next sheet, opened in the same task', async (t) => {
+  // The open dialog's name, once the page has had a few tasks to deliver the close event.
+  const openName = (page) => page.evaluate(async () => {
+    for (let i = 0; i < 4; i++) await new Promise((r) => setTimeout(r, 50));
+    const d = document.querySelector('dialog.ct-sheet[open]');
+    return d ? document.getElementById(d.getAttribute('aria-labelledby'))?.textContent.trim() ?? '' : null;
+  });
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    await page.locator(aria('tab', 'All plants')).click();
+    const ids = await memberIds(page);
+    assert.ok(ids.length >= 2, 'two plants to open');
+    await page.locator(`#ct-root [data-plant-id="${ids[0]}"] button, #ct-root button[data-plant-id="${ids[0]}"]`).click();
+    await page.waitForSelector('dialog.ct-sheet[open]', { timeout: 8000 });
+    const second = await page.evaluate((id) => {
+      const b = document.querySelector(`#ct-root [data-plant-id="${CSS.escape(id)}"] button, #ct-root button[data-plant-id="${CSS.escape(id)}"]`);
+      document.querySelector('dialog.ct-sheet[open]').close(); // what Escape does
+      b.click();
+      return b.closest('[data-plant-id]').querySelector('.ct-sci')?.textContent.trim() ?? b.textContent.trim();
+    }, ids[1]);
+    const name = await openName(page);
+    assert.ok(name !== null, 'Details → another plant: the second plant\'s sheet stays open');
+    assert.ok(name.includes(second) || second.includes(name), `the second plant's sheet ("${name}", "${second}")`);
+    assert.equal(await page.evaluate(() => document.querySelectorAll('dialog.ct-sheet[open]').length), 1);
+
+    // Details → Add: a filled cell's "+" opened as the plant's sheet closes.
+    await page.locator('dialog.ct-sheet[open] .ct-sheet-head .ct-icon-button').click();
+    await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
+    await page.locator(aria('tab', 'Layers × stages')).click();
+    await page.click('#ct-root [data-plant-id] button, #ct-root button[data-plant-id]');
+    await page.waitForSelector('dialog.ct-sheet[open]', { timeout: 8000 });
+    await page.evaluate(() => {
+      const plus = document.querySelector('#ct-root [data-add-filled]');
+      document.querySelector('dialog.ct-sheet[open]').close();
+      plus.click();
+    });
+    assert.match((await openName(page)) ?? '(none)', /^Add to /, 'Details → "+": Add stays open');
     await done(page);
   });
 });

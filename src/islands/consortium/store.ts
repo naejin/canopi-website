@@ -21,7 +21,9 @@ export interface Country { code: string | null; source: CountrySource | null }
 export type View = 'start' | 'matrix' | 'side' | 'jobs' | 'list';
 // The open dialog, if any: what it shows and for which plant (null for sheets about no one plant).
 export type SheetKind = 'details' | 'swap' | 'add' | 'search' | 'paste' | 'share' | 'download';
-export interface Sheet { kind: SheetKind; id: PlantId | null }
+// n: which opening this is (openSheet counts them), so a dialog's late close event closes its own
+// sheet only, never one opened since (Escape closes the <dialog> at once and fires `close` a task later).
+export interface Sheet { kind: SheetKind; id: PlantId | null; n: number }
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'failed';
 export interface Load { status: LoadStatus; error: LoadFailure | null }
 
@@ -274,8 +276,9 @@ export interface SheetFor { cell: CellSpan | null; job: JobId | null; anyway: bo
 export const FOR_NOTHING: SheetFor = { cell: null, job: null, anyway: false };
 export const sheetCell = signal<SheetFor>(FOR_NOTHING);
 // Every sheet opens through here, so what the last one was opened for never leaks into the next.
+let opened = 0;
 export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Partial<SheetFor> = {}): void {
-  batch(() => { sheetCell.value = { ...FOR_NOTHING, ...target }; sheet.value = { kind, id }; });
+  batch(() => { sheetCell.value = { ...FOR_NOTHING, ...target }; sheet.value = { kind, id, n: ++opened }; });
 }
 export const closeSheet = (): void => { sheet.value = null; };
 

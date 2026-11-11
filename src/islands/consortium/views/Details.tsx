@@ -174,7 +174,9 @@ export function SheetFrame({ titleId, head, children, class: cls = '' }: { title
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
-    const onClose = () => { if (store.sheet.peek()) closeSheet(); };
+    // Its own sheet only: the close event comes a task after Escape, maybe once another sheet opened.
+    const mine = store.sheet.peek();
+    const onClose = () => { if (mine && store.sheet.peek() === mine) closeSheet(); };
     d.addEventListener('close', onClose);
     if (!d.open) d.showModal();
     d.querySelector<HTMLElement>('[data-autofocus]')?.focus();
@@ -533,12 +535,13 @@ function Router() {
   const s = store.sheet.value;
   if (!s || store.load.value.status !== 'ready') return null;
   switch (s.kind) {
-    // Keyed by kind: going from one sheet to another (details → Swap) mounts a fresh dialog.
-    case 'details': return s.id ? <PlantDetails key="details" id={s.id} /> : null;
-    case 'swap': return s.id ? <Lazy key="swap" load={loadSwap} props={{ id: s.id }} /> : null;
-    case 'add': return <Lazy key="add" load={loadAdd} props={{ mode: 'add' }} />;
-    case 'search': return <Lazy key="search" load={loadAdd} props={{ mode: 'search' }} />;
-    case 'paste': return <Lazy key="paste" load={loadPaste} />;
+    // Keyed by opening: every sheet opened (details → Swap, one plant → another) mounts a fresh dialog
+    // whose close listener knows its own sheet (SheetFrame).
+    case 'details': return s.id ? <PlantDetails key={`details:${s.n}`} id={s.id} /> : null;
+    case 'swap': return s.id ? <Lazy key={`swap:${s.n}`} load={loadSwap} props={{ id: s.id }} /> : null;
+    case 'add': return <Lazy key={`add:${s.n}`} load={loadAdd} props={{ mode: 'add' }} />;
+    case 'search': return <Lazy key={`search:${s.n}`} load={loadAdd} props={{ mode: 'search' }} />;
+    case 'paste': return <Lazy key={`paste:${s.n}`} load={loadPaste} />;
     default: return null; // share and download are stream S4's
   }
 }
