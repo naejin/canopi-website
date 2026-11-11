@@ -1,0 +1,37 @@
+/* Consortium v2, stream S4: what the page prints (design check §7 BT-8, probe P8). Only the print
+   sheet (views/PrintSheet.tsx) is printed: the site header and footer, the tool's head, every control
+   and every other view are left out, so no button, field or link is printed. Paper is white and the ink
+   dark whatever the theme: the light palette on a white page (:root:root:has(.ct) outranks the
+   dark-theme rules of tokens.css and base.css). At 20 plants or fewer the sheet holds the side view drawing and
+   the table; above 20, "At a glance" and the table. */
+@media print {
+  body:has(.ct-print) > :not(main), .grain::after { display: none !important; }
+  .ct .ct-wrap > :not(#ct-root), .ct #ct-root > :not(:has(.ct-print)):not(.ct-print), .ct .ct-actions > :not(.ct-print) { display: none !important; }
+  .ct #ct-root { min-height: 0; }
+  .ct .ct-print { display: block; }
+  :root:root:has(.ct) {
+    color-scheme: light;
+    --bg: #FFFFFF; --surface: #FFFFFF; --surface-alt: #F3EEE3;
+    --text: #27231D; --text-secondary: #4A4237; --text-muted: #645A4C;
+    --accent: #9C5A16; --accent-ink: #8A4E12; --border: rgba(58, 46, 28, 0.14); --border-strong: rgba(58, 46, 28, 0.55);
+    background: #FFFFFF; color: #27231D;
+  }
+  :root:root:has(.ct) body { background: #FFFFFF; color: #27231D; }
+  /* The tool's own inks back to their light values (base.css), so a dark theme prints dark ink. */
+  :root:root:root .ct {
+    --s-emergent-ink: #8A5E00; --s-high-ink: #005C43; --s-medium-ink: #004A75; --s-low-ink: #8E4775;
+    --hatch: rgba(58, 46, 28, 0.10);
+    --bar: #4A4237; --bar-soft: rgba(58, 46, 28, 0.20);
+  }
+  .ct .ct-print-title { font-size: 24pt; }
+  .ct .ct-print-sub { margin: 4pt 0 2pt; font-size: 12pt; font-weight: 600; }
+  .ct .ct-print-basis { margin: 2pt 0; font-size: 10pt; color: var(--text-secondary); }
+  .ct .ct-print table { width: 100%; margin-top: 10pt; border-collapse: collapse; font-size: 9.5pt; page-break-inside: auto; }
+  .ct .ct-print caption { text-align: left; font-family: var(--font-display); font-size: 13pt; padding-bottom: 4pt; }
+  .ct .ct-print th, .ct .ct-print td { padding: 3pt 5pt; border-bottom: 0.5pt solid var(--border-strong); text-align: left; vertical-align: top; font-weight: 400; }
+  .ct .ct-print thead th { font-weight: 600; }
+  .ct .ct-print tr { break-inside: avoid; }
+  .ct .ct-print-name { font-weight: 600; }
+  .ct .ct-print-glance td { text-align: center; }
+  .ct .ct-print-foot { margin-top: 10pt; font-size: 8.5pt; color: var(--text-muted); word-break: break-all; }
+}

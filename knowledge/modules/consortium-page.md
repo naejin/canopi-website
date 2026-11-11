@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T04:29:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T07:08:06Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:32Z }
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
@@ -10,18 +10,18 @@ sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:56ea999956b38996
-    last_modified: 2026-11-11T03:33:26Z
+    digest: sha256:3a28a9a4d8c7ad94
+    last_modified: 2026-11-11T05:05:30Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:4ea8d26ea8944d8d
-    last_modified: 2026-11-11T03:28:04Z
+    digest: sha256:3dd1ad1e0a5156c3
+    last_modified: 2026-11-11T04:40:46Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:d53def1d24a40c72
-    last_modified: 2026-11-11T03:07:08Z
+    digest: sha256:490e6e3e1233a481
+    last_modified: 2026-11-11T04:40:46Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -35,8 +35,8 @@ sources:
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
-    digest: sha256:fbf72e1d3a1c0c26
-    last_modified: 2026-11-11T03:28:04Z
+    digest: sha256:3a5c0f4d345ec38d
+    last_modified: 2026-11-11T04:31:48Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
@@ -71,7 +71,7 @@ sources:
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
     digest: sha256:e8197504ca8ce55c
-    last_modified: 2026-11-11T04:28:45Z
+    last_modified: 2026-11-11T04:29:00Z
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
@@ -97,10 +97,62 @@ sources:
     title: scripts/built-modules.mjs
     digest: sha256:7f2dd725d361d8ac
     last_modified: 2026-11-11T04:06:19Z
+  - id: start-tsx
+    resource: ../../src/islands/consortium/views/Start.tsx
+    title: src/islands/consortium/views/Start.tsx
+    digest: sha256:56c8392ab1e51942
+    last_modified: 2026-11-11T06:17:40Z
+  - id: actions-tsx
+    resource: ../../src/islands/consortium/views/Actions.tsx
+    title: src/islands/consortium/views/Actions.tsx
+    digest: sha256:bbeaacf2a46d5b3f
+    last_modified: 2026-11-11T06:10:08Z
+  - id: share-tsx
+    resource: ../../src/islands/consortium/views/Share.tsx
+    title: src/islands/consortium/views/Share.tsx
+    digest: sha256:d07b936125a26d11
+    last_modified: 2026-11-11T06:10:08Z
+  - id: printsheet-tsx
+    resource: ../../src/islands/consortium/views/PrintSheet.tsx
+    title: src/islands/consortium/views/PrintSheet.tsx
+    digest: sha256:f413931a6a45df69
+    last_modified: 2026-11-11T05:47:54Z
+  - id: memory-ts
+    resource: ../../src/islands/consortium/memory.ts
+    title: src/islands/consortium/memory.ts
+    digest: sha256:0218641363d9f30b
+    last_modified: 2026-11-11T07:08:06Z
+  - id: shell-css
+    resource: ../../src/styles/consortium/shell.css
+    title: src/styles/consortium/shell.css
+    digest: sha256:b0844c4018004854
+    last_modified: 2026-11-11T05:47:54Z
+  - id: print-css
+    resource: ../../src/styles/consortium/print.css
+    title: src/styles/consortium/print.css
+    digest: sha256:a21ea49f7c2fb0c0
+    last_modified: 2026-11-11T05:47:54Z
+  - id: consortium-s4-browser-test-mjs
+    resource: ../../scripts/browser/consortium-s4.browser.test.mjs
+    title: scripts/browser/consortium-s4.browser.test.mjs
+    digest: sha256:f373bc752a347124
+    last_modified: 2026-11-11T06:10:08Z
+  - id: consortium-timing-mjs
+    resource: ../../scripts/browser/consortium-timing.mjs
+    title: scripts/browser/consortium-timing.mjs
+    digest: sha256:1e8b67c2df74bd4d
+    last_modified: 2026-11-11T05:54:17Z
+  - id: consortium-memory-test-mjs
+    resource: ../../scripts/consortium-memory.test.mjs
+    title: scripts/consortium-memory.test.mjs
+    digest: sha256:a2e1ae50e7b54feb
+    last_modified: 2026-11-11T07:08:06Z
 enforced_by:
   - scripts/check-built-site.mjs
   - scripts/browser/consortium-commit0.browser.test.mjs
   - scripts/browser-tests.test.mjs
+  - scripts/browser/consortium-s4.browser.test.mjs
+  - scripts/consortium-memory.test.mjs
 ---
 
 # Responsibility
@@ -116,20 +168,21 @@ The v1 tool (app.js and its tests) was deleted in commit 0. Its full description
 
 | File | Role |
 |---|---|
-| [ConsortiumPage.astro](../../src/components/consortium/ConsortiumPage.astro) | The static shell (S4 owns it after commit 0). It renders: title and Beta; the lede (`home.consortium.lede`); `betaNote` counting the index's climates; the feedback and data-sources links; the `noscript` callout with the food-forest guide link; an inline head script setting `#ct-head[data-opens]` (`link` for `#v=4`, `preset` for `?plant=&climate=`, else `start`); `#ct-root` with the loading line (`consortium.loadingTool`, `aria-busy`); and the release line. A `<link rel="preload" as="fetch" crossorigin>` for the database goes into Base's `head` slot (A2). `#ct-data` carries `{ lang, strings (every consortium.* key without prefix, the `consortium.block.*` markers left out), releaseId, db { url, sha256, bytes, rawSha256, rawBytes }, climates (lowercase), images, guide }`, all from `src/data/consortium-index.json`. The page script runs `initChrome()` first, then `import()`s main.ts |
+| [ConsortiumPage.astro](../../src/components/consortium/ConsortiumPage.astro) | The static shell (S4 owns it after commit 0). It renders: title and Beta; the lede (`home.consortium.lede`); `betaNote` counting the index's climates; the feedback and data-sources links; the `noscript` callout with the food-forest guide link; an inline head script setting `#ct-head[data-opens]` (`link` for `#v=4`, `preset` for `?plant=&climate=`, else `start`); `#ct-root` with the loading line (`consortium.loadingTool`, `aria-busy`); and the release line. A `<link rel="preload" as="fetch" crossorigin>` for the database goes into Base's `head` slot (A2). `#ct-data` carries `{ lang, strings (every consortium.* key without prefix, the `consortium.block.*` markers left out), releaseId, db { url, sha256, bytes, rawSha256, rawBytes }, climates (lowercase), images, guide, start }`, all from `src/data/consortium-index.json` except `start` (S4): `{ zones: [{ id, label, places }] for all 7 climates of src/data/climates, contact, site (the absolute tool URL for the print footer) }`. It imports `src/styles/consortium/print.css`. The page script runs `initChrome()` first, then `import()`s main.ts |
 | [main.ts](../../src/islands/consortium/main.ts) | Reads `#ct-data`, sets the strings, renders App into `#ct-root` and opens the database at once. `data/load.ts` is a dynamic import (its own chunk with the sqlite-wasm glue, outside the §8 60 KB budget), retried after a failed import. S1 owns it from the follow-up. A loader chunk that fails to import is `stale` (Reload) while `navigator.onLine`, else `fetch` (review B2) |
 | [store.ts](../../src/islands/consortium/store.ts) | The frozen signals of §6. State: `climate`, `country{code,source}`, `site` (`DEFAULT_SITE`: all four `unsure`), `crops`, `members`, `kept`, `removed`, `guests`, `view`, `stage`, `sheet{kind,id}`, `load{status,error}`. Data: `source`, `pools`. Computed: `pool`, `matrix`, `flags` (S1 fills their bodies) |
 | [strings.ts](../../src/islands/consortium/strings.ts) | `setStrings`, `T(key, vars)`, `P(key, n, vars)` with v1's plural form `one: # x \| other: # xs`; the page uses `P` at build time for the beta note |
 | [App.tsx](../../src/islands/consortium/App.tsx) | Frozen. The §5 screens from `load` (`data-load-error`, `role=alert`). Retry: `fetch`, `damaged`. Reload: `stale`, `schema`. Guide link only: `too-old`, `wasm-blocked`. Slots in page order: `Start` (S4), `Matrix` (S2; routes the side view, Jobs and plant list from `store.view`), `Actions` (S4; Share, Download, Print, link notices; after the matrix once ready), `Details` (S3; routes `store.sheet`). Each is a module exporting null until its stream fills it, so streams never edit App.tsx |
 | [data/load.ts](../../src/islands/consortium/data/load.ts), [data/bytes.ts](../../src/islands/consortium/data/bytes.ts) | Minimum loader, owned by S1. Steps: `tooOld()` (no DecompressionStream) and `wasmMissing()` (P5); fetch (404 → `stale`); the body read whole (`bytes.ts` `decodeDatabase`: empty → `damaged`; gzip magic from the buffer; sha256 and size of the gzipped file, or of the raw database when the server already decoded it (P3), checked with SubtleCrypto where present → `damaged`; inflate with DecompressionStream); sqlite-wasm init with a 15 s timeout; `sqlite3_deserialize` FREEONCLOSE\|READONLY; then `application_id`, `user_version`, `meta.release_id` and the climates checked against the page (`schema`). `scripts/consortium-load.test.mjs` tests `bytes.ts` in Node |
-| [views/](../../src/islands/consortium/views/), [data/sqlite-source.ts](../../src/islands/consortium/data/sqlite-source.ts) | Stream stubs |
-| [base.css](../../src/styles/consortium/base.css) | Under `.ct`: strata colours and inks (the mockups' Okabe-Ito), `--hatch`/`--hatch-fill`, `--bar`, `--cell-*` (desktop 96×56, phone 41×40, head 140 px, 196 px from 960 px; no other tier), dark values, and the shell styles. Breakpoints 639/960 are written out per file. Stubs `matrix.css` (S2), `details.css` (S3), `shell.css` (S4) |
+| [views/Start.tsx](../../src/islands/consortium/views/Start.tsx) | S4's Start slot (it calls `startMemory()` once). Before a consortium: the country line (`data-ct="country"`, above the cards: guessed/linked/chosen, Use/Change/No country, the "not checked" note), the 7 climate cards as a radio group (none chosen on a fresh visit; the stored site climate pre-selects), "Ask for this climate" for uncovered ones, Main crops (4 real examples by the v1 rule, a local search, max 3), Your site (4 radio rows), then Suggest plants / Start empty and search / Paste a list (sheets `search` and `paste` are S3's). Once a consortium is shown: the result head (count, climate, site basis, Change site, Start over, the country line) |
+| [memory.ts](../../src/islands/consortium/memory.ts) | S4. Pure: guarded storage, the saved record `{fragment, at, src}` under `canopi-consortium` (`src`: whether its country came from a shared link), `oldRecord` (v1's `{q, at, src}` or another link version), `arrival()` (the page's own address after a reload, i.e. `history.state.ct` equal to the fragment, opens as the save; then link > guide preset > v1 query link (outdated notice) > saved > start), `countryAtStart`, `shareState` (a guessed country is never written), `shareUrl` (drops the query), `guessCountry`, `cropExamples`. Wiring: restores a `#v=4` link or the last consortium (calm notices for unknown plants, cut links, a link with no climate (cut, Start stays), outdated links, an old save shown once and then removed), opens a link pasted into the open tab (`hashchange`; `hashAction`: Back/Forward to the page's own address reopens it as the save with its country label; with a consortium shown, an older, cut or unloadable pasted link changes nothing, shows `share.pasted.*` in the action area and puts the address back), changes the store only after every list the link needs is read, reading those lists itself rather than through `store.loadPool` (whose failure is app-wide), so a failed read shows `share.failed` or `share.pasted.failed` and keeps the consortium; a restore touches no store signal until it applies in one batch, and applies only if it is still the newest restore and the reader has not acted since it began (an action counter bumped by the watcher on every write to the consortium that is not a restore applying or a guessed country); outdated and cut refusals take no number but cancel the restore in flight (the latest link wins, its notice kept); a reader action during a first-visit restore makes the link's shown climate the chosen one; saving has no restore gate: `watchStore` saves every change and writes the address; Start shows the link's climate at once (`pendingClimate`, derived from the restore in flight), writes `history.state {ct, src}` with each address so a reload keeps the country's label, applies guide presets `?plant=&climate=` (the plant kept, as crop when it is one), writes the site climate (`canopi-climate`) and country (`canopi-country`), then keeps the address and the saved record in step with the store. Marks `performance.mark('ct:pool')` when the first plant list is in. Unit tests: `scripts/consortium-memory.test.mjs` |
+| [views/Actions.tsx](../../src/islands/consortium/views/Actions.tsx), [Share.tsx](../../src/islands/consortium/views/Share.tsx), [PrintSheet.tsx](../../src/islands/consortium/views/PrintSheet.tsx) | S4, after the matrix (nothing while Start shows): the link notices, then Share (the `#v=4` link in a field, copied by the Copy button only; notes for a link over 2,000 characters and for blocked storage), Print (`window.print()`) and Download for Canopi (`canopiFile` of the members, a `.canopi` v9 file). The print sheet is hidden on screen: head (climate, count, site, country, hypothesis), at ≤ 20 plants S2's side view drawing (`Drawing`, null until wired at the S2 merge) and above 20 the "At a glance" table, then the plant table and the footer |
+| [data/sqlite-source.ts](../../src/islands/consortium/data/sqlite-source.ts) | S1's PlantSource over the database |
+| [base.css](../../src/styles/consortium/base.css) | Under `.ct`: strata colours and inks (the mockups' Okabe-Ito), `--hatch`/`--hatch-fill`, `--bar`, `--cell-*` (desktop 96×56, phone 41×40, head 140 px, 196 px from 960 px; no other tier), dark values, and the shell styles. Breakpoints 639/960 are written out per file. `matrix.css` (S2), `details.css` (S3); [shell.css](../../src/styles/consortium/shell.css) (S4: country line, cards, chips, site rows, notices, actions, share; chosen states in ink, never green) and [print.css](../../src/styles/consortium/print.css) (S4: in print only the print sheet shows, light palette on white, no control) |
 | [consortium-guides.ts](../../src/data/consortium-guides.ts) | Guides per plant, per job and for the explanations (unchanged from v1; S4's) |
 
 **Kept unimported for the streams' ports (design check §2; `tsconfig.json` excludes them):**
-- `src/scripts/consortium/{side,draw,layers,correction,scale,parts,crops,words,memory,logic}.js`;
-- `src/styles/consortium.css`.
-- `logic.js` still re-exports `safeHref`, now in `src/lib/safe-href.js`.
+- `src/scripts/consortium/{side,draw,layers,correction,scale,parts,words,logic}.js` (S4 deleted `crops.js`, `memory.js` and `src/styles/consortium.css`; the coordinator deletes the folder and its `tsconfig.json` exclude line once every stream has merged).
 
 # Build setup
 
@@ -152,9 +205,14 @@ The v1 tool (app.js and its tests) was deleted in commit 0. Its full description
 - Browser tests, via `npm run test:browser` (after `npm run build`, capped; never in `npm test`), one file per owner (review C1), enforced by [browser-tests.test.mjs](../../scripts/browser-tests.test.mjs) in `npm test`:
   - [consortium-commit0.browser.test.mjs](../../scripts/browser/consortium-commit0.browser.test.mjs), no todo: P1 (515 plants counted in the page from the one hashed wasm), P2 (`application/wasm`, immutable headers), P3 (gzip magic, no content-encoding), P6/BT-9 JS-off shell, a mount with no head shift, and the BT-9 load screens with their buttons (DB 404, corrupt, wrong digest, empty body, `user_version` 2, WebAssembly off, loader chunk 404 online and offline) at all four variants;
   - `consortium-s1…s4.browser.test.mjs`: each stream's §7 tests in full (BT-1 data and start halves, BT-2…BT-8, BT-9 `.canopi` against the vendored app schema, BT-5 offline correction, the exit walk-through), todo and named for their stream until it builds them;
+  - [consortium-s4.browser.test.mjs](../../scripts/browser/consortium-s4.browser.test.mjs) runs: BT-1 start half (real data, the exact four crop examples), BT-7 (a link reopened, an unknown token, an outdated link, a reload restore, a stage 3 link round trip, the country label kept over reloads and saves, a pasted link, a link with no climate, a v1 query link, a v1 save shown once, Copy on click only; compared through the share link), BT-8 (> 20 plants from an encoded link of the fixture's 21 Temperate plants: "At a glance" + table; ≤ 20: the table; no control printed), BT-9 `.canopi`. Still todo: BT-1's matrix half and BT-7's chips (S2/S3), the print drawing (S2), blocked storage (see Gotchas) and the exit walk-through;
+  - [consortium-timing.mjs](../../scripts/browser/consortium-timing.mjs), on demand only: §8 cold/warm timing of a `#v=4` link of 9 real Temperate plants (built with `encodeLink`; 4× CPU, 9 Mbps, 60 ms RTT, median of 5) to `ct:matrix`, or to `ct:pool` until S2 sets the matrix mark (the fallback is to be dropped then). Reading of 2026-11-11, `ct:pool`: cold 2,134 ms, warm 1,134 ms;
   - harness: [serve.mjs](../../scripts/browser/serve.mjs) runs wrangler dev on 4420–4498 with the inspector on the next port, in its own process group, stopped by pid; it counts the server up only when it serves a random marker file written into the build for this run (review B5), and kills its group if the process ends early. [harness.mjs](../../scripts/browser/harness.mjs) drives the system Chrome through puppeteer-core at 390/1280 px, light/dark (stored theme and emulated `prefers-color-scheme`), 4 s waits. Options: `data: 'fixture'`, `database` variants, `photos`, `wasm: false`, `loader: 404 | 'offline'`, `storage: false`, `correction` stub (`page.correctionPosts`), `page.capturedDownloads()`, `pdf(page)`. [helpers.mjs](../../scripts/browser/helpers.mjs): variants, accessibility-tree readers, node:sqlite reads of the real and fixture databases.
 
 # Gotchas
 
 - P7: the JSX scope alone leaves every other page byte-identical (checked after the pins commit). Deleting app.js drops one export from the shared `chrome` chunk, so that chunk's hash, and the `<script src>` of every page, change. The page contents are otherwise identical.
-- `#ct-data` still carries all ~580 `consortium.*` strings. After S4, the main agent prunes the old keys (§6).
+- `#ct-data` still carries all ~580 `consortium.*` strings. After S4, the main agent prunes the old keys (§6). S4's keys sit after `consortium.block.s4` with names that differ from the v1 keys (`share.done`, `crops.question`, `print.button`…): a duplicate JSON key would keep the v1 position and break the block-order test in `homepage.test.mjs`.
+- With storage blocked (reading `localStorage` throws, as when a browser blocks site data), the sqlite-wasm bootstrap throws `SecurityError` and the page shows the WebAssembly screen; the fix belongs in S1's `data/load.ts` (BT-7's blocked-storage part stays todo until then).
+- Each browser-test page is a context with its own copy of the database: the s4 file closes each page's context once used (`done()`); without it, BT-7's many pages were OOM-killed at 3 GB.
+- Puppeteer's interesting-only accessibility snapshot leaves out tables that are not focusable, so BT-8 reads the shown tables' captions from the DOM.
