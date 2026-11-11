@@ -104,9 +104,6 @@ export function trimGaps(gaps, addedStrata, free) {
 // loading and error screens: the link that led there stays whole for a reload (M2).
 export const mayPersist = (state) => state.status !== 'loading' && state.status !== 'error' && state.status !== 'boot';
 
-// safeHref lives in src/lib/safe-href.js (shared with /data-sources/ and the built-site check).
-export { safeHref };
-
 // The site a photo's source page is on, by name, for its credit line: decided by the parsed url's
 // host, and null for a url that is not http(s) (javascript://commons.wikimedia.org/… has that host too).
 const HOSTS = [['commons.wikimedia.org', 'Wikimedia Commons'], ['wikimedia.org', 'Wikimedia Commons'], ['inaturalist.org', 'iNaturalist']];

@@ -31,7 +31,7 @@ function presets(body) {
 const guides = existsSync(guideRoot) ? readdirSync(guideRoot, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name) : [];
 const bodies = guides.flatMap((slug) => ['en', 'fr'].map((lang) => ({ slug, lang, file: `${slug}/${lang}.mdx`, body: read(`src/content/guides/${slug}/${lang}.mdx`) })));
 
-test('the consortium climate files name site climates, and their canonical names are what the guides link', () => {
+test('the installed index names site climates, and its canonical names per climate are what the guides link', () => {
   assert.ok(cells.size >= 1, 'src/data/consortium-index.json lists climates');
   for (const [climate, names] of cells) {
     assert.ok(siteClimates.includes(climate), `cell climate "${climate}" is a site climate`);
