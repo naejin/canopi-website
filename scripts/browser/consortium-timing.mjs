@@ -1,17 +1,23 @@
 // Consortium v2 cold and warm timing (design check §8), run on demand, never by npm test:
 //   npm run build && timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 \
 //     node scripts/browser/consortium-timing.mjs
-// (CANOPI_BROWSER_PORT picks the port, as for the browser tests.) Each run opens
-// /consortium/?climate=Temperate on the real install with 4× CPU slowdown, 9 Mbps down and 60 ms
-// RTT, and reads the time of `performance.mark('ct:matrix')` (S2: the matrix is drawn) from the
-// start of navigation. Until S2's matrix sets that mark, it reads `ct:pool` (S4: the climate's
-// plant list is loaded) and says so. Cold: a fresh browser context (empty cache). Warm: the same
+// (CANOPI_BROWSER_PORT picks the port, as for the browser tests.) Each run opens a #v=4 link of 9
+// real Temperate plants (built with the core's encodeLink, so the page restores a consortium and
+// draws its matrix) with 4× CPU slowdown, 9 Mbps down and 60 ms RTT, and reads the time of
+// `performance.mark('ct:matrix')` (S2: the matrix is drawn) from the start of navigation. Until S2's
+// matrix sets that mark, it reads `ct:pool` (S4: the climate's plant list is loaded) and says so.
+// TODO(after S2 merges): drop the ct:pool fallback, so a missing ct:matrix fails the run. Cold: a fresh browser context (empty cache). Warm: the same
 // context reloaded (HTTP cache filled). Prints the median of 5 of each.
 import { startHarness } from './harness.mjs';
+import { realDb } from './helpers.mjs';
+import { encodeLink } from '../../src/lib/consortium/state.ts';
 
 const RUNS = 5;
 const NETWORK = { download: (9e6 / 8), upload: (9e6 / 8), latency: 60 };
-const PATH = '/consortium/?climate=Temperate';
+// The link: the first 9 Temperate plants of the installed export by id, site all "not sure".
+const ids = await realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
+const site = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
+const PATH = `/consortium/#${encodeLink({ climate: 'Temperate', country: null, site, members: ids.slice(0, 9), kept: [], removed: [], guests: [], crops: [], stage: null }, { Temperate: ids })}`;
 
 const median = (xs) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
 
