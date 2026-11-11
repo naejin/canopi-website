@@ -4,7 +4,7 @@
 // listed once, under the cell where it starts (its layer and first stage); its stage bar shows every
 // stage it spans. A small "Where plants start" grid counts the plants per start cell; each count is a
 // button that scrolls to its group and focuses its heading (a #fragment link would replace the page's
-// share fragment, S4), disabled while the filters hide the group. Search (folded, word prefix: design
+// share fragment, S4); it counts the plants the filters leave, and is disabled at 0. Search (folded, word prefix: design
 // check A6), "With a warning", "Kept" and the Layer / Stage / Job filters narrow the list; the count of
 // plants shown is announced. Each group is a table named by its heading; each row is named by the
 // plant's name and scientific name, and holds its marks, stage bar, jobs, details, Swap and Remove.
@@ -66,7 +66,7 @@ export function PlantList() {
     plants: g.plants.filter((t) => (!warnedOnly || (w.get(t.id) ?? 0) > 0) && (!keptOnly || keep.has(t.id)) && matchesFilters(t, filters)
       && matchesQuery([nameOf(t), t.canonical_name, ...Object.values(t.names).filter((n): n is string => !!n)], query)),
   })).filter((g) => g.plants.length);
-  const shownIds = new Set(groups.map((g) => groupId(g.stratum, g.phase)));
+  const visible = startCounts(groups); // per start cell, the plants the filters leave
   const shown = groups.reduce((n, g) => n + g.plants.length, 0);
   return (
     <section class="ct-list" aria-labelledby="ct-list-h">
@@ -85,9 +85,9 @@ export function PlantList() {
             <tr key={st}>
               <th scope="row">{layerName(st)}</th>
               {PHASE_ORDS.map((p) => {
-                const n = counts.get(s * 7 + p), id = groupId(st, p);
-                return n
-                  ? <td key={p} class="filled"><button type="button" disabled={!shownIds.has(id)} aria-label={`${T('list.group', { layer: layerName(st), stage: phasePlain(p) })}: ${P('list.count', n)}`} onClick={() => goTo(id)}>{n}</button></td>
+                const n = visible.get(s * 7 + p) ?? 0, id = groupId(st, p);
+                return counts.has(s * 7 + p)
+                  ? <td key={p} class="filled"><button type="button" disabled={n === 0} aria-label={`${T('list.group', { layer: layerName(st), stage: phasePlain(p) })}: ${P('list.count', n)}`} onClick={() => goTo(id)}>{n}</button></td>
                   : <td key={p} class="none"><span /></td>;
               })}
             </tr>
