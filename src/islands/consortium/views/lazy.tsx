@@ -8,11 +8,11 @@ import type { ComponentType } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import { T } from '../strings.ts';
-import { hookOn, testFault } from '../test-hook.ts';
+import { testFault } from '../test-hook.ts';
 
 // Browser-test builds only: the chunk fails, or waits until the test releases it (test-hook.ts).
 async function gate(): Promise<void> {
-  if (!hookOn) return;
+  if (!__CT_TEST_HOOK__) return;
   if (testFault.later === 'fail') throw new Error('test fault: the chunk did not load');
   if (testFault.later === 'hold') await testFault.release;
 }

@@ -15,7 +15,7 @@ import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { asks, canopyOf, fits, jobsOf, misfitsBeside, phaseOrd } from '../../../lib/consortium/index.ts';
-import { searchIndex } from '../data/sqlite-source.ts';
+import { searchIndex } from '../data/search.ts';
 import { Ask, Bar, NotChecked, SheetFrame, WARN, addMembers, closeSheet, flagLines, flagsOfPlant, nameOf, num, plainPhase, sheetCell, spanWords, zoneName } from './Details.tsx';
 
 const FIRST_ROWS = 8;

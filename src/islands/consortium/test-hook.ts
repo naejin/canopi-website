@@ -7,8 +7,9 @@
 // and drops the block, and check-built-site fails if __ctTest or failSheets reach dist/.
 import * as store from './store.ts';
 
-declare const __CT_TEST_HOOK__: boolean;
-export const hookOn: boolean = __CT_TEST_HOOK__;
+// (Read as __CT_TEST_HOOK__ where it is used, not through an exported const, so the production build
+// drops each guarded line and testFault with it.)
+declare global { const __CT_TEST_HOOK__: boolean }
 
 // sheets: the next sheet chunk fails (views/Details.tsx Lazy). later: the after-the-matrix chunk
 // (views/lazy.tsx) fails, or waits until released.

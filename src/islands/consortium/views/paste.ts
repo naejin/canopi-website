@@ -1,10 +1,10 @@
 // "Paste a list" (stream S3; design check §2: the pure parts of v1 scale.js, ported): a pasted list
 // of plant names, read as a spreadsheet writes it, matched against this climate's list and then the
-// other climates' lists. Names are compared folded with S1's `fold` (data/sqlite-source.ts: lower
+// other climates' lists. Names are compared folded with S1's `fold` (data/search.ts: lower
 // case, Latin/Greek/Cyrillic marks stripped, ß/œ/æ written out), never with SQL LIKE (A6).
 // Pure: no DOM, no store, so scripts/consortium-paste.test.mjs tests it.
 import type { ClimateZone, PlantId } from '../../../lib/consortium/types.ts';
-import { fold } from '../data/sqlite-source.ts';
+import { fold } from '../data/search.ts';
 
 // What matching reads of a plant (a Taxon has all of it).
 export interface Named { id: PlantId; canonical_name: string; genus?: string | null; names: Partial<Record<string, string>> }

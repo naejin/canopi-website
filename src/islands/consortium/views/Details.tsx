@@ -33,7 +33,7 @@ import { Toast } from './Toast.tsx';
 import { phasePlain as plainPhase, spanWords } from './StageBar.tsx';
 import { safeHref } from '../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../data/consortium-guides.ts';
-import { hookOn, testFault } from '../test-hook.ts';
+import { testFault } from '../test-hook.ts';
 
 // ---- words ----
 
@@ -229,7 +229,7 @@ function Lazy({ load, props = {} }: { load: () => Promise<SheetModule>; props?: 
   useEffect(() => {
     if (View) return;
     let live = true;
-    const fail = hookOn && testFault.sheets;
+    const fail = __CT_TEST_HOOK__ && testFault.sheets;
     (fail ? Promise.reject(new Error('test: sheet chunk blocked')) : load()).then((m) => { loaded.set(load, m.default); if (live) setView(() => m.default); })
       .catch((err: unknown) => {
         console.error(`Consortium: a sheet did not load: ${(err as Error).message}`);
