@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:10:35Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:41:27Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:33:21Z }
@@ -45,8 +45,8 @@ sources:
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:c38dfb419e140dd4
-    last_modified: 2026-11-11T03:28:04Z
+    digest: sha256:a17ae460ff13b7ed
+    last_modified: 2026-11-11T09:39:56Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -55,8 +55,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:b49158bb6806ce9a
-    last_modified: 2026-11-11T09:30:54Z
+    digest: sha256:cc25e3608d4deac1
+    last_modified: 2026-11-11T09:39:56Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
@@ -65,8 +65,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:27937a1911b162b1
-    last_modified: 2026-11-11T09:30:54Z
+    digest: sha256:657ef460ed3c5724
+    last_modified: 2026-11-11T09:39:56Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -190,6 +190,7 @@ The v1 tool (app.js and its tests) was deleted in commit 0. Its full description
 - **One wasm:** `canopi:sqlite-main-thread-only` splits two string literals in sqlite-wasm's browser build so Vite cannot see them: the Worker #1 promiser's `new Worker(new URL('sqlite3-worker1.mjs'))` and the OPFS proxy's URL. Otherwise Vite bundles a worker with a second glue and a second 879 KB wasm. The build ships one `sqlite3.<hash>.wasm`, found by the package's own `new URL('sqlite3.wasm', import.meta.url)`, with no `locateFile`. The plugin throws if a sqlite-wasm upgrade changes those literals.
 - **Pins:** `optimizeDeps.exclude` holds `@sqlite.org/sqlite-wasm`. Exact pins: preact 11.0.1, @preact/signals 2.11.3, @sqlite.org/sqlite-wasm 3.54.1-build1, puppeteer-core 25.16.0 (dev).
 - **Caching:** `public/_headers` makes `/_astro/*`, `/data/consortium/*` and `/data/climate/*` `public, max-age=31536000, immutable`; the DB and photos carry digests in their names, the climate tiles sit under a directory named by the grid manifest's digest ([Climate reader](/modules/climate-reader.md)). Other paths keep the default `max-age=0, must-revalidate`.
+- **Climate tiles:** the first integration in `astro.config.mjs`, `climateTiles` (`canopi:climate-tiles`), installs the pinned canopi-climate grid for the location lookup before every build, and fails the build without it ([Climate reader](/modules/climate-reader.md)).
 - **Preloads (A2):** the `canopi:consortium-modulepreload` integration in `astro.config.mjs` runs after the build: on each page holding `#ct-root` it adds a `<link rel="modulepreload">` for every chunk of the page's import graph not already a `<script src>` (chrome, main, the loader with the glue), found by [built-modules.mjs](../../scripts/built-modules.mjs). Other pages are untouched (P7: identical modulo asset hashes). `src/layouts/Base.astro` has a `head` slot for the page's DB preload.
 
 # Checks
