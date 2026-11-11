@@ -124,13 +124,26 @@ test('comma or semicolon columns read every cell unless the reader picks one; ta
   assert.equal(pasteColumn(tabs, -1), 0);
 });
 
-test('500 unmatched lines against a large list read in well under a second', () => {
-  const big = Array.from({ length: 4000 }, (_, i) => plant(`b${i}`, `Genus${i} species${i}`, { en: `Common plant number ${i}`, fr: `Plante commune ${i}` }));
-  const lines = Array.from({ length: 500 }, (_, i) => `Zzq unknown ${i}`).join('\n');
-  readPaste(pasteNames('warm'), { here: big, others: [['Tropical', big.slice(0, 2000)]], members: [] });
-  const t0 = performance.now();
-  const r = readPaste(pasteNames(lines), { here: big, others: [['Tropical', big.slice(0, 2000)]], members: [] });
-  const ms = performance.now() - t0;
-  assert.equal(r.none.length, 500);
-  assert.ok(ms < 200, `read in ${ms.toFixed(0)} ms`);
+// The cost guard: 500 unmatched lines against a large list. It used to time the read (< 200 ms wall
+// clock), which failed under machine load (the parallel test files, a build or the browser suite on
+// the same cores: an unloaded read takes ~40 ms, with 2 runnable processes per core ~130 ms, and
+// more under heavier load), because wall time counts the time the process waits for a core, not the
+// work. What the guard protects (4658fdb: the word-prefix index built once per list) is that a line
+// costs a lookup, not a pass over the list. That is counted instead, deterministically: every read of
+// a plant's fields goes through a Proxy, and the reads may not grow with the number of lines.
+test('500 unmatched lines read the large lists once, not once per line (work counted, not timed)', () => {
+  let reads = 0;
+  const counted = (t) => new Proxy(t, { get(target, key, recv) { reads++; return Reflect.get(target, key, recv); } });
+  const big = Array.from({ length: 4000 }, (_, i) => counted(plant(`b${i}`, `Genus${i} species${i}`, { en: `Common plant number ${i}`, fr: `Plante commune ${i}` })));
+  const read = (count) => {
+    const here = big.slice(), tropical = big.slice(0, 2000); // fresh lists: their indexes are built inside the count
+    const lines = Array.from({ length: count }, (_, i) => `Zzq unknown ${i}`).join('\n');
+    reads = 0;
+    const r = readPaste(pasteNames(lines), { here, others: [['Tropical', tropical]], members: [] });
+    assert.equal(r.none.length, count);
+    return reads;
+  };
+  const few = read(5), many = read(500);
+  assert.ok(few < 20 * 6000, `building the two lists' indexes reads each plant a few times (${few} reads)`);
+  assert.ok(many - few < 1000, `495 more lines add ${many - few} plant reads (${few} for 5 lines, ${many} for 500): a line must not pass over the list`);
 });
