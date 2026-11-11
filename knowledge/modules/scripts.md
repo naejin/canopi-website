@@ -8,7 +8,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T15:35:59Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T15:13:10Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T15:36:39Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -19,17 +19,17 @@ sources:
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
     digest: sha256:2082c2b16997dada
-    last_modified: 2026-11-11T14:46:03Z
+    last_modified: 2026-11-11T15:36:29Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:525e5dc73be5210c
-    last_modified: 2026-11-11T15:21:20Z
+    digest: sha256:e2a1613347e6aa7f
+    last_modified: 2026-11-11T15:36:29Z
   - id: package-json
     resource: ../../package.json
     title: package.json
     digest: sha256:02ddfcb7eee72f4b
-    last_modified: 2026-11-11T14:41:08Z
+    last_modified: 2026-11-11T15:36:29Z
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs
@@ -39,12 +39,12 @@ sources:
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
     digest: sha256:d00a6bc0eac9d46b
-    last_modified: 2026-11-11T14:41:50Z
+    last_modified: 2026-11-11T15:36:29Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
     digest: sha256:b11e1af2cd4b2f3d
-    last_modified: 2026-11-11T14:42:46Z
+    last_modified: 2026-11-11T15:36:29Z
 ---
 
 # Responsibility

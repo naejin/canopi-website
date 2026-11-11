@@ -6,13 +6,13 @@ resource: ../../src/lib/consortium
 tags: [module, consortium]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:50:03Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:32Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T15:36:38Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:6e80ef325881b757
-    last_modified: 2026-11-11T14:45:37Z
+    last_modified: 2026-11-11T15:36:29Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -56,8 +56,8 @@ sources:
   - id: readme-md
     resource: ../../scripts/fixtures/consortium-v2/README.md
     title: scripts/fixtures/consortium-v2/README.md
-    digest: sha256:33e5d4a5dbccc049
-    last_modified: 2026-11-11T02:58:29Z
+    digest: sha256:12007f0893a7c37e
+    last_modified: 2026-11-11T15:36:29Z
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
@@ -127,12 +127,12 @@ sources:
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
     digest: sha256:4677cc70ebaad7b6
-    last_modified: 2026-11-11T14:45:37Z
+    last_modified: 2026-11-11T15:36:29Z
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
     digest: sha256:d00a6bc0eac9d46b
-    last_modified: 2026-11-11T14:41:50Z
+    last_modified: 2026-11-11T15:36:29Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs
