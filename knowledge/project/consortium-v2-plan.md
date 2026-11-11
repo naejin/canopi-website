@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: Phases, order, exits and session brief for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate.
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T01:59:39Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T08:01:45Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -17,7 +17,7 @@ sources:
 Architecture: [Consortium v2 architecture](/decisions/consortium-v2-architecture.md). Owner decisions (final, dated): [user decisions](/decisions/consortium-user-decisions.md). Adapter: [agentic delivery](/runbooks/agentic-delivery.md) (branch prefix `consortium/` instead of `guides/`). v1 plan for history: [Consortium tool plan](/project/consortium-tool-plan.md).
 
 ## Session brief (read first)
-- **State (2026-11-11):** P3a released (canopi-climate v0.1.0, grid as release asset); P1 built on canopi-data branch `consortium-v2-export` (export in `/media/daylon/main_hdd/canopi-cache/exports/consortium-v2/r-2c6bdf65c35caca3/`), push after its fix re-review; P3b (soil and border layers) building on canopi-climate branch `p3b-site-layers`; P2 mockups accepted (`.local/consortium/v2/mockups/`) and design check done (`.local/consortium/v2/p2-design-check.md`, gitignored). Prototype reports: `.local/consortium/v2/prototypes.md`.
+- **State (2026-11-11):** P1 pushed (canopi-data master ab6bfad; export in `/media/daylon/main_hdd/canopi-cache/exports/consortium-v2/r-2c6bdf65c35caca3/`); P3 released (canopi-climate v0.1.0 climate grid, v0.2.0 adds soil and regions layers; grid archives are release assets); P4 pushed (canopi-data master 154f3f6; release `r-e0b162087a79eecf` built with the known Georgia accept; schema-2 export 556,862 B gzipped in `/media/daylon/main_hdd/canopi-cache/exports/consortium-v2/r-e0b162087a79eecf/`; QA regenerated on it); P2 streams S1–S4 merged on website branch `consortium/integration` (worktree `../canopi-website-wt/integration`, tip 1ed5f74), hand-off branch `consortium/handoffs` building (list `.local/consortium/v2/handoffs.md`); P2 mockups accepted (`.local/consortium/v2/mockups/`) and design check done (`.local/consortium/v2/p2-design-check.md`, gitignored). Prototype reports: `.local/consortium/v2/prototypes.md`.
 - **Mode:** the owner delivers unsupervised: no checkpoints; push to master (deploys) only when fully satisfied; an unclear point gets the most cautious choice and a revertible coordinator row in the decision log.
 - **Repos:** website (this), `../canopi-data` (Python; free to change and push), `../canopi-climate` (Rust; push freely), `../canopi` (read only; pinned at 0c425fb07; work in progress there).
 - **Never reopen:** SQLite-WASM (not DuckDB), matrix replaces Layers + Over time, no v1 link compatibility, no reference-consortia benchmark, observed ranges never phrased as limits, no pairwise companion folklore, warn rather than remove dangerous info, never default to temperate.
@@ -56,6 +56,7 @@ Each phase ships on its own. Repos: W website, D canopi-data, C canopi-climate.
 - **Goal:** each plant's observed climate on the same grid, plus drought and heat indicators, all with provenance.
 - **Built:** name spine matched with authors plus an override table, non-direct matches logged; GBIF cells per plant through the maps API (≤ 1 request per second, cached with URL and date); `canopi-climate sample` at the cells; quantiles Q05/median/Q95 with cell counts; TreeGOER and EcoCrop as cross-check and fallback; EIVE, Niinemets & Valladares and EcoCrop indicators mapped to documented classes; every value marked "estimate, not reviewed"; export schema version 2 with these columns.
 - **Exit:** all 515 plants have ranges or a stated reason; QA report of disagreements with existing hardiness and drought traits.
+- **Done 2026-11-11 (deviations, see canopi-data `docs/plant-climate-ranges.md`):** all 515 from GBIF (≥ 56 cells; TreeGOER/EcoCrop fallbacks unused); zoom-0 then zoom-2 map tiles; no cultivation or year filter (decision row "Observed ranges include cultivation"); EcoCrop a drought cross-check only; indicators kept in canopi-data, not exported; `plant_koppen.share` added; regions read by a Python reader duplicating `canopi-climate lookup` (follow-up: regions in `sample` output, slot next canopi-climate minor); 23 annuals with zone ≤ 4 flagged as suspected data errors (slot: next canopi-data release); GBIF derived-dataset DOI pending (slot: before P5 ships credits). Website side: installer and schema check learn schema 2 in P5.
 
 ### P5 (W) — location and future climate, shipped
 - **Goal for users:** "Where is your site?" sets the climate, country, native plants and soil defaults; long-lived plants are checked against the projected climate.
@@ -65,7 +66,7 @@ Each phase ships on its own. Repos: W website, D canopi-data, C canopi-climate.
 - **Exit:** gates green; real-browser walk-throughs for a site in each of the seven climates; budgets met with the map and WASM loaded lazily.
 
 ### P6 — close
-- Usefulness pass, receipts, retrospective; measurements note for the app's ADR 0006; follow-ups filed with slots (upstream whitebox fixes, GBIF DOI download with an account, extreme-minimum model, wider curation).
+- Usefulness pass, receipts, retrospective; measurements note for the app's ADR 0006; follow-ups filed with slots (canopi-data's WCVP distribution fill is stale by 844 rows since the hybrid-sign reader fix of 2026-11-11 and was left unapplied because its `--apply` is a reviewed coordinator step that forces a release rebuild, slot: the next canopi-data release; upstream whitebox fixes, GBIF DOI download with an account, extreme-minimum model, wider curation).
 
 ## Order
 P1 and P3 start in parallel; P2 after P1; P4 after P3 (needs `sample`); P5 after P2, P3 and P4.
