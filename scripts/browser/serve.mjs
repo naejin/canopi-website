@@ -1,6 +1,6 @@
 // Serves the built site (`npm run build` first) with `wrangler dev`, as Cloudflare Workers serves
 // it: static assets, public/_headers, _redirects. Browser tests only (design check A10): one server
-// per run on a port in 4420–4429 (CANOPI_BROWSER_PORT, default 4420; the dev server's 4321 is never
+// per run on a port in 4420–4499 (CANOPI_BROWSER_PORT, default 4420; the dev server's 4321 is never
 // used), its inspector on the next port. It runs in its own process group and is stopped by its own
 // pid, never by port. Before it starts, a file with a random name and content is written into the
 // build; the server counts as up only once it serves that file and is still running, so a stray
@@ -15,7 +15,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const PORTS = { min: 4420, max: 4429 };
+export const PORTS = { min: 4420, max: 4499 };
 const READY_TIMEOUT_MS = 90_000;
 
 export function portFrom(value = process.env.CANOPI_BROWSER_PORT ?? '4420') {
