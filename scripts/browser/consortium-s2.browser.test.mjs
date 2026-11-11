@@ -111,6 +111,13 @@ test('BT-2 (S2 matrix): real Temperate gap, Room Small misfits with reasons, one
     if (desk) assert.match(gap.headers, /^ct-row-3 ct-col-0( |$)/, 'the merged cell names its row and columns');
     else assert.match(gap.text, new RegExp(`^Low, ${esc(plain(0))}: `), 'the phone cell names its layer and stage');
     assert.equal(await real.evaluate(() => performance.getEntriesByName('ct:matrix', 'mark').length), 1, 'performance.mark ct:matrix once, at the first matrix paint');
+    for (const other of ['side', 'jobs', 'list']) {
+      const p2 = await views(v, { view: other });
+      assert.equal(await p2.evaluate(() => performance.getEntriesByName('ct:matrix', 'mark').length), 1, `ct:matrix once when the page opens on ${other}`);
+      await p2.locator(aria('tab', 'Layers × stages')).click();
+      assert.equal(await p2.evaluate(() => performance.getEntriesByName('ct:matrix', 'mark').length), 1, 'still once after switching views');
+      await p2.close();
+    }
 
     // Fixture, Room Small: every emergent plant is over 6 m, so emergent's later stages say why.
     const page = await views(v, { room: 'small' });
@@ -244,12 +251,13 @@ test('BT-3 (S2 side view): 8, 20 and 30 plants keep the scale: plants at full pl
         const svg = document.querySelector('.ct-sv-svg'), box = svg.getBoundingClientRect();
         const plants = [...svg.querySelectorAll('svg.ct-sv-plant > g')].map((el) => {
           const m = el.getScreenCTM(), r = el.getBoundingClientRect();
-          return { scale: m.d, ground: m.f + 72 * m.d, x: m.e, frac: Number(el.dataset.frac), shape: el.dataset.shape, top: r.top };
+          return { scale: m.d, ground: m.f + 72 * m.d, x: m.e, frac: Number(el.dataset.frac), shape: el.dataset.shape, top: r.top, left: r.left, right: r.right };
         });
         const marks = [...svg.querySelectorAll('rect.ct-sv-mark')].map((el) => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, w: r.width }; });
         const lines = [...svg.querySelectorAll('.ct-sv-line')].map((el) => el.getBoundingClientRect().top);
         const nums = [...document.querySelectorAll('.ct-sv-nums span')].map((el) => { const r = el.getBoundingClientRect(); return r.left + r.width / 2; });
-        return { top: box.top, bottom: box.bottom, height: box.height, plants, marks, lines, nums };
+        const labels = [...document.querySelectorAll('.ct-sv-scale span')].map((el) => el.getBoundingClientRect().right);
+        return { top: box.top, bottom: box.bottom, height: box.height, left: box.left, right: box.right, plants, marks, lines, nums, labels };
       });
       const frac = (m) => Math.log(m / 0.05) / Math.log(60 / 0.05);
       [1, 5, 20].forEach((m, i) => assert.ok(Math.abs(g.lines[i] - (g.top + (1 - frac(m)) * g.height)) <= 1.5, `${count}: the ${m} m line sits on the scale`));
@@ -261,6 +269,10 @@ test('BT-3 (S2 side view): 8, 20 and 30 plants keep the scale: plants at full pl
           if (p.shape === 'tree' || p.shape === 'shrub') assert.ok(Math.abs(p.top - (g.top + (1 - p.frac) * g.height)) <= 2.5, `${count}: a ${p.shape} tops out at its height on the lines' scale`);
         }
         g.plants.forEach((p, i) => assert.ok(Math.abs(p.x - g.nums[i]) <= 1.5, `${count}: number ${i + 1} under its plant`));
+        // No silhouette covers the scale labels or leaves the plot (its shape's box, strokes aside).
+        const labelEdge = Math.max(...g.labels);
+        assert.ok(labelEdge <= g.left + 0.5, `${count}: the labels end where the plot starts (${labelEdge} ≤ ${g.left})`);
+        g.plants.forEach((p, i) => assert.ok(p.left >= g.left - 1.5 && p.right <= g.right + 1.5 && p.top >= g.top - 1.5, `${count}: plant ${i + 1} stays in the plot: ${[p.left, p.right, p.top].map(Math.round)} within ${[g.left, g.right, g.top].map(Math.round)}`));
       } else {
         assert.equal(g.marks.length, count, `${count} marks`);
         for (const r of g.marks) assert.ok(Math.abs(r.bottom - g.bottom) <= 1 && r.top >= g.top - 1, `${count}: a mark stands on the ground within the plot`);
@@ -281,7 +293,7 @@ test('BT-3 (S2 side view): a name in the key opens its details', { todo: 'S2: th
 
 test('BT-4 (S2 jobs and list): a 6-row Jobs table whose gaps name their stages; 120 real plants listed once each under their start cell; jump, filters and Remove', async (t) => {
   // 120 real Temperate plants with their start cell, from the database.
-  const rows120 = await realDb((db) => db.prepare("SELECT p.id, p.canonical_name, x.stratum, x.phase_start FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' AND x.stratum IS NOT NULL ORDER BY p.canonical_name LIMIT 120").all());
+  const rows120 = await realDb((db) => db.prepare("SELECT p.id, p.canonical_name, x.stratum, x.phase_start, x.phase_end FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' AND x.stratum IS NOT NULL ORDER BY p.canonical_name LIMIT 120").all());
   assert.equal(rows120.length, 120);
   const ids = rows120.map((r) => r.id);
   const heading = Object.fromEntries(rows120.map((r) => [r.id, fill('list.group', { layer: en[`consortium.stratum.${r.stratum}`], stage: plain(r.phase_start) })]));
@@ -318,11 +330,17 @@ test('BT-4 (S2 jobs and list): a 6-row Jobs table whose gaps name their stages; 
     // Layer, Stage and Job filters; a jump cell whose group is filtered out is disabled.
     await real.select('#ct-list-layer', 'low');
     assert.ok(await real.$$eval('tr[data-plant-id]', (trs) => trs.length > 0 && trs.every((tr) => tr.closest('.ct-lgroup').id.startsWith('ct-g-low-'))), 'Layer: low only');
-    assert.ok(await real.$$eval('.ct-jump tbody tr', (trs) => trs.slice(0, 3).every((tr) => [...tr.querySelectorAll('button')].every((b) => b.disabled))), 'the other layers\' jump cells are disabled');
+    assert.ok(await real.$$eval('.ct-jump tbody tr', (trs) => trs.slice(0, 3).every((tr) => [...tr.querySelectorAll('button')].every((b) => b.disabled && b.textContent === '0'))), 'the other layers\' jump cells count 0 and are disabled');
+    const jumpSum = await real.$$eval('.ct-jump button', (bs) => bs.reduce((n, b) => n + Number(b.textContent), 0));
+    assert.equal(jumpSum, await real.$$eval('tr[data-plant-id]', (trs) => trs.length), 'the jump counts are the plants shown');
+    assert.ok(await real.$$eval('.ct-jump button:not([disabled])', (bs) => bs.length > 0 && bs.every((b) => b.getAttribute('aria-label').endsWith(`: ${b.textContent} plant${b.textContent === '1' ? '' : 's'}`))), 'each count is announced as shown');
     await real.select('#ct-list-layer', '');
     await real.select('#ct-list-stage', '0');
-    const inStage0 = rows120.filter((r) => r.phase_start === 0).length;
-    assert.ok((await real.$$eval('tr[data-plant-id]', (trs) => trs.length)) >= inStage0, 'Stage: every plant growing in it');
+    const inStage = new Set(rows120.filter((r) => r.phase_start <= 0 && 0 <= r.phase_end).map((r) => r.id));
+    const shownIds = await real.$$eval('tr[data-plant-id]', (trs) => trs.map((tr) => tr.dataset.plantId));
+    assert.ok(shownIds.length > 0 && shownIds.length < 120, `Stage: some plants, not all (${shownIds.length})`);
+    assert.deepEqual(shownIds.filter((id) => !inStage.has(id)), [], 'Stage: every row shown grows in the stage');
+    assert.equal(shownIds.length, inStage.size, 'Stage: every plant growing in it');
     await real.select('#ct-list-stage', '');
     await real.select('#ct-list-job', 'feeds_soil');
     const job = en['consortium.job.feeds_soil'];
