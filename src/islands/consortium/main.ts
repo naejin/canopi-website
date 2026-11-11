@@ -6,7 +6,7 @@ import { h, render } from 'preact';
 import { App } from './App.tsx';
 import { load } from './store.ts';
 import { setStrings, type Strings } from './strings.ts';
-import { LoadError, openDatabase, type DbRef } from './data/load.ts';
+import type { DbRef } from './data/load.ts';
 
 // What the page hands the island (ConsortiumPage.astro, checked by scripts/check-built-site.mjs).
 export interface PageData {
@@ -21,15 +21,26 @@ export interface PageData {
 
 const zoneOf = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 
+// The loader and the sqlite-wasm glue are a chunk of their own (design check §8 leaves it out of the
+// island's 60 KB budget); its import starts at once, beside the first render, and a failed import
+// is tried again on Retry.
+type Loader = typeof import('./data/load.ts');
+let loader: Promise<Loader> | null = null;
+const getLoader = () => (loader ??= import('./data/load.ts').catch((err: unknown) => { loader = null; throw err; }));
+
 async function open(data: PageData): Promise<void> {
   load.value = { status: 'loading', error: null };
+  let LoadError: Loader['LoadError'] | null = null;
   try {
-    const opened = await openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map(zoneOf) });
+    const mod = await getLoader();
+    LoadError = mod.LoadError;
+    const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map(zoneOf) });
     // S1 wraps `opened` in its PlantSource (data/sqlite-source.ts) and sets store.source here.
     void opened;
     load.value = { status: 'ready', error: null };
   } catch (err) {
-    const failure = err instanceof LoadError ? err.failure : 'damaged';
+    // A loader chunk that did not arrive is the offline screen; anything else unknown is damage.
+    const failure = LoadError && err instanceof LoadError ? err.failure : LoadError ? 'damaged' : 'fetch';
     console.error(`Consortium data ${data.releaseId}: ${(err as Error).message}`);
     load.value = { status: 'failed', error: failure };
   }

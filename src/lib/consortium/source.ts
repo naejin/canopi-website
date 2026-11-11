@@ -22,7 +22,7 @@ export interface PlantSource {
 }
 
 // Why the data could not be opened, one per screen of design check §5.
-// too-old: no DecompressionStream or WebAssembly; wasm-blocked: WebAssembly refused or timed out;
+// too-old: no DecompressionStream; wasm-blocked: WebAssembly missing, refused or timed out (P5);
 // fetch: the file did not arrive (offline); stale: 404 after a deploy (a stale tab: Reload);
 // damaged: decompress or open failed; schema: application_id, user_version, release id or climates
 // differ from the index (the Reload screen, never a partial render).

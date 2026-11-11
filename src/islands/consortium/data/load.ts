@@ -20,9 +20,13 @@ export interface Opened { sqlite3: Sqlite3; db: Database }
 
 const WASM_TIMEOUT_MS = 15_000;
 
-// The browser can run the tool at all (P4): DecompressionStream and WebAssembly.
+// The browser is too old for the tool (P4: no DecompressionStream). WebAssembly missing is the
+// "turned off" screen instead (P5: iOS Lockdown Mode or a policy removes it from a recent browser).
 export function tooOld(): boolean {
-  return typeof DecompressionStream !== 'function' || typeof WebAssembly !== 'object';
+  return typeof DecompressionStream !== 'function';
+}
+export function wasmMissing(): boolean {
+  return typeof WebAssembly !== 'object' || typeof WebAssembly.instantiate !== 'function';
 }
 
 async function fetchBytes(ref: DbRef): Promise<Uint8Array> {
@@ -70,7 +74,8 @@ async function initSqlite(): Promise<Sqlite3> {
 
 // Fetches, opens and checks the database; throws a LoadError naming its §5 screen.
 export async function openDatabase(ref: DbRef, expected: Expected): Promise<Opened> {
-  if (tooOld()) throw new LoadError('too-old', 'no DecompressionStream or WebAssembly');
+  if (tooOld()) throw new LoadError('too-old', 'no DecompressionStream');
+  if (wasmMissing()) throw new LoadError('wasm-blocked', 'no WebAssembly');
   const [bytes, sqlite3] = await Promise.all([fetchBytes(ref), initSqlite()]);
   const { capi, wasm, oo1 } = sqlite3;
   const db = new oo1.DB();

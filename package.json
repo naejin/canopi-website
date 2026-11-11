@@ -9,6 +9,7 @@
     "dev": "astro dev",
     "check": "wrangler types && astro check",
     "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test scripts/*.test.mjs",
+    "test:browser": "node --test --test-concurrency=1 scripts/browser/*.browser.test.mjs",
     "check:bibliography": "node scripts/check-bibliography-links.mjs",
     "build": "astro build",
     "install:web-edition": "node scripts/install-web-edition.mjs",
