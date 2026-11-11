@@ -51,6 +51,13 @@ async function initSqlite(): Promise<Sqlite3> {
   // the package finds its wasm with new URL('sqlite3.wasm', import.meta.url), which Vite already
   // emits hashed, so a ?url import would ship a second copy (probe P1).
   const init = sqlite3InitModule as unknown as (opts: Record<string, unknown>) => Promise<Sqlite3>;
+  // The bootstrap installs the kvvfs (a VFS kept in localStorage/sessionStorage), whose setup reads
+  // globalThis.localStorage: with site data blocked (a cookie block, some private modes) that read
+  // throws SecurityError and startup fails as if WebAssembly were off (H1). The page uses neither kvvfs
+  // nor OPFS, so both are switched off; the bootstrap reads and deletes this global (sqlite3ApiConfig).
+  (globalThis as { sqlite3ApiConfig?: unknown }).sqlite3ApiConfig = {
+    disable: { vfs: { kvvfs: true, opfs: true, 'opfs-vfs': true, 'opfs-sahpool': true, 'opfs-wl': true } },
+  };
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new LoadError('wasm-blocked', 'WebAssembly did not start in 15 s')), WASM_TIMEOUT_MS);

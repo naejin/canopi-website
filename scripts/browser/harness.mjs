@@ -5,7 +5,7 @@
 // Run under the memory cap: timeout 600 systemd-run --user --scope -q -p MemoryMax=3G
 // -p MemorySwapMax=0 npm run test:browser
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { join } from 'node:path';
@@ -85,6 +85,18 @@ export async function startHarness({ log = () => {} } = {}) {
     throw err;
   }
   const contexts = new Set();
+  // Chrome with its real cookie block (profile.default_content_setting_values.cookies = 2: site data
+  // refused, localStorage and sessionStorage throw SecurityError), launched on first use (H1/W1).
+  let blocked = null;
+  const blockedBrowser = async () => {
+    if (blocked) return blocked;
+    const dir = mkdtempSync(join(tmpdir(), 'consortium-cookieblock-'));
+    mkdirSync(join(dir, 'Default'));
+    writeFileSync(join(dir, 'Default', 'Preferences'), JSON.stringify({ profile: { default_content_setting_values: { cookies: 2 } } }));
+    const b = await puppeteer.launch({ executablePath: CHROME, headless: true, userDataDir: dir, args: ['--no-first-run', '--no-default-browser-check', '--disable-extensions', '--disable-background-networking', '--mute-audio'] });
+    blocked = { browser: b, dir, session: await b.target().createCDPSession() };
+    return blocked;
+  };
   const downloadRoot = mkdtempSync(join(tmpdir(), 'consortium-downloads-'));
   const browserSession = await browser.target().createCDPSession();
 
@@ -97,14 +109,18 @@ export async function startHarness({ log = () => {} } = {}) {
   // - wasm: false removes WebAssembly before any script runs (Lockdown Mode, P5);
   // - loader: 404 | 'offline' fails the island's loader chunk (a deploy; offline, navigator.onLine false);
   // - storage: false makes localStorage and sessionStorage throw (BT-7's note); the theme then comes
-  //   from prefers-color-scheme, which is always emulated as well;
+  //   from prefers-color-scheme, which is always emulated as well; storage: 'cookies-blocked' opens
+  //   the page in a Chrome whose profile blocks site data (the real setting, not a stub);
   // - correction: 'ok' | 'offline' | status number stubs POST /api/correction; page.correctionPosts
   //   holds each request body (BT-5).
   // page.capturedDownloads() lists the files this page downloaded (BT-9 .canopi), via the CDP
   // download events; pdf(page) prints it to PDF (BT-8).
   async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, storage = true, correction = null } = {}) {
-    const context = await browser.createBrowserContext();
-    contexts.add(context);
+    const real = storage === 'cookies-blocked' ? await blockedBrowser() : null;
+    // The blocked profile's setting applies to its default context (an incognito context of it
+    // starts from defaults), so that page is opened there.
+    const context = real ? real.browser.defaultBrowserContext() : await browser.createBrowserContext();
+    if (!real) contexts.add(context);
     const page = await context.newPage();
     // Short waits: a missing control fails in seconds, so the todo tests of unbuilt streams stay quick.
     page.setDefaultTimeout(4000);
@@ -121,10 +137,10 @@ export async function startHarness({ log = () => {} } = {}) {
           Object.defineProperty(window, name, { get() { throw new DOMException('The operation is insecure.', 'SecurityError'); }, configurable: true });
         }
       }
-    }, theme, wasm, loader !== 'offline', storage);
+    }, theme, wasm, loader !== 'offline', storage !== false);
 
-    const dir = join(downloadRoot, String(contexts.size));
-    await browserSession.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: dir, browserContextId: context.id, eventsEnabled: true });
+    const dir = join(downloadRoot, real ? `blocked-${Date.now()}` : String(contexts.size));
+    if (!real) await browserSession.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: dir, browserContextId: context.id, eventsEnabled: true });
     page.capturedDownloads = () => (existsSync(dir) ? readdirSync(dir).filter((f) => !f.endsWith('.crdownload')).map((f) => ({ name: f, bytes: readFileSync(join(dir, f)) })) : []);
     page.correctionPosts = [];
 
@@ -182,6 +198,12 @@ export async function startHarness({ log = () => {} } = {}) {
     const pid = browser.process()?.pid;
     await browser.close().catch(() => {});
     if (pid) { try { process.kill(pid, 'SIGKILL'); } catch { /* closed */ } }
+    if (blocked) {
+      const bpid = blocked.browser.process()?.pid;
+      await blocked.browser.close().catch(() => {});
+      if (bpid) { try { process.kill(bpid, 'SIGKILL'); } catch { /* closed */ } }
+      rmSync(blocked.dir, { recursive: true, force: true });
+    }
     await site.stop();
     rmSync(downloadRoot, { recursive: true, force: true });
   }

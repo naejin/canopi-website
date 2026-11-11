@@ -200,12 +200,24 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
   });
 });
 
-test('BT-7 (S4 share, blocked storage): everything works and Share says the link keeps it', { todo: 'S4 blocked storage: the sqlite-wasm bootstrap in S1 data/load.ts throws SecurityError when localStorage access throws, so the page shows the WebAssembly screen (hand-off)' }, async (t) => {
+test('BT-7 (S4 share, blocked storage): everything works and Share says the link keeps it', async (t) => {
   await eachVariant(t, async (v) => {
     const blocked = await h.open('/consortium/', { ...v, data: 'fixture', storage: false });
     await suggest(blocked);
     await blocked.locator(aria('button', 'Share')).click();
     assert.ok(await findAx(blocked, { name: /This browser does not keep your consortium; your link does/ }));
+    await done(blocked);
+  });
+  // Chrome's own cookie block (site data refused for every site), not a stub (H1/W1): sqlite-wasm
+  // starts, the plant list loads and the note shows.
+  await t.test('Chrome blocking site data', async () => {
+    const page = await h.open('/consortium/', { data: 'fixture', storage: 'cookies-blocked' });
+    try {
+      assert.equal(await page.evaluate(() => { try { void localStorage.length; return 'works'; } catch (e) { return e.name; } }), 'SecurityError', 'the profile blocks site data');
+      await suggest(page);
+      await page.locator(aria('button', 'Share')).click();
+      assert.ok(await findAx(page, { name: /This browser does not keep your consortium; your link does/ }));
+    } finally { await page.close(); }
   });
 });
 
