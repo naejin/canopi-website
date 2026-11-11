@@ -113,6 +113,9 @@ test('the manifest: format 4 and schema 1 only, by name; release id, split, clim
     [(m) => { delete m.release_id; }, /release_id undefined is not r- and 16/],
     [(m) => { m.release_id = 'r-XYZ'; }, /release_id "r-XYZ"/],
     [(m) => { m.files.push({ ...m.files[0] }); }, /split is false but lists 2 files/],
+    // The page opens files[0] and expects every climate in it, so a split export would give the
+    // Reload screen for good: refused until the page reads more than one file (review B1).
+    [(m) => { m.split = true; }, /split is true: the page reads one database file only/],
     [(m) => { m.climates.reverse(); }, /not in climate order/],
     [(m) => { m.climates.splice(1, 0, { climate_zone: 'Arid', regions: ['africa'], plants: 0, interactions: 0 }); }, /the files hold Tropical, Mediterranean, Temperate/],
     [(m) => { m.climates[0].plants = 12; }, /Tropical has 11 plants, the manifest says 12/],

@@ -13,8 +13,8 @@
 // Checks, in order, and refuses on the first failure (nothing is written then):
 // - SHA256SUMS: every listed file exists and matches; every other file of the directory is listed.
 // - manifest.json: format_version 4 and schema_version 1 (anything else refused by name), release_id
-//   (`r-` and 16 hex digits), canopi_db_sha256 not all zeros unless --fixture, `split` matching the
-//   number of files, the climates of the files those of `climates`, the TRY list and credits entries.
+//   (`r-` and 16 hex digits), canopi_db_sha256 not all zeros unless --fixture, `split` false (the page
+//   reads one file) with one file, the climates of the files those of `climates`, the TRY list and credits entries.
 // - each database file: a safe name of the contract's form (schema, release, digest of the raw
 //   database), its sha256 and bytes those of the manifest and SHA256SUMS, the gzip magic, at most
 //   MAX_GZIP_BYTES gzipped and under MAX_FILE_BYTES raw; then, read with node:sqlite: application_id,
@@ -235,6 +235,9 @@ export function manifestProblem(m, { fixture = false } = {}) {
   if (typeof m.generated_at !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/.test(m.generated_at)) return 'manifest.json generated_at is not YYYY-MM-DDTHH:MM:SSZ.';
   if (typeof m.split !== 'boolean') return 'manifest.json split is not a boolean.';
   if (!Array.isArray(m.files) || !m.files.length) return 'manifest.json lists no database file.';
+  // The page opens files[0] and expects every climate in it: a split export would leave it on the
+  // Reload screen, so it is refused until the page reads one file per climate.
+  if (m.split) return 'manifest.json split is true: the page reads one database file only, so a split export is refused until it reads one per climate.';
   if (!m.split && m.files.length !== 1) return `manifest.json split is false but lists ${m.files.length} files.`;
   if (!Array.isArray(m.climates) || !m.climates.length) return 'manifest.json lists no climate.';
   const zones = [];
