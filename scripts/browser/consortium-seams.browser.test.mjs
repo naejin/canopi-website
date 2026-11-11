@@ -260,6 +260,96 @@ test('F2: Undo after a list pasted from "Start over" goes back to Start and keep
   });
 });
 
+// The save as this page's storage holds it.
+const saved = (page) => page.evaluate(() => localStorage.getItem('canopi-consortium'));
+const savedFragment = async (page) => { const raw = await saved(page); return raw ? `#${JSON.parse(raw).fragment}` : null; };
+const tropicalOnly = () => fixtureDb((db) => db.prepare("SELECT p.canonical_name name FROM plants p WHERE EXISTS (SELECT 1 FROM placements x WHERE x.plant = p.plant AND x.climate_zone = 'Tropical') AND NOT EXISTS (SELECT 1 FROM placements x WHERE x.plant = p.plant AND x.climate_zone = 'Temperate')").all().map((r) => r.name));
+
+test('R2-1: a list pasted on Start under another climate starts that climate\'s consortium; Undo brings the old one back, saved', async (t) => {
+  const [inga] = await tropicalOnly();
+  assert.ok(inga, 'a Tropical-only plant in the fixture');
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    const before = await linkOf(page);
+    await page.locator(aria('button', 'Change site')).click();
+    await page.locator(aria('radio', 'Tropical')).click();
+    assert.equal(await loadState(page), 'ready');
+    await page.locator(aria('button', 'Paste a list')).click();
+    await page.locator('#ct-paste-text').fill(inga);
+    const add = await findAx(page, { role: 'button', name: /^Add 1 plant$/ });
+    assert.ok(add, `${inga} is found in the Tropical list`);
+    await page.locator(aria('button', add.name)).click();
+    assert.ok(await has(page, aria('button', 'Share'), 5000), 'the pasted consortium is shown');
+    await page.locator(aria('tab', 'All plants')).click();
+    assert.equal((await memberIds(page)).length, 1, 'only the pasted plant: no Temperate member carried over');
+    assert.match(await linkOf(page), /[#&]c=tropical/, 'under Tropical');
+    await page.locator(aria('button', 'Undo')).click();
+    assert.ok(await has(page, aria('button', 'Back to your consortium'), 4000), 'Undo goes back to Start, the old consortium kept');
+    assert.equal(await page.$eval('input[name="ct-climate"]:checked', (el) => el.value), 'tropical', 'the picked card stays picked');
+    assert.equal(await savedFragment(page), before, 'the old consortium is saved again');
+    await page.reload();
+    assert.equal(await loadState(page), 'ready');
+    assert.ok(await has(page, aria('button', 'Share'), 8000), 'a reload restores it');
+    assert.equal(await linkOf(page), before, 'the Temperate consortium, whole');
+    await done(page);
+  });
+});
+
+test('R2-2: Undo back to an empty Start leaves alone a save another tab wrote meanwhile', async (t) => {
+  const names = (await temperate()).slice(0, 2).map((p) => p.name);
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    await page.locator(aria('button', 'Start over')).click();
+    await page.locator(aria('button', 'Paste a list')).click();
+    await page.locator('#ct-paste-text').fill(names.join('\n'));
+    await page.locator(aria('button', 'Add 2 plants')).click();
+    assert.ok(await has(page, aria('button', 'Share'), 5000));
+    const other = JSON.stringify({ fragment: 'v=4&c=tropical&l=unsure&s=unsure&w=unsure&m=unsure&a=', at: '2026-11-11T00:00:00.000Z', src: null });
+    await page.evaluate((x) => localStorage.setItem('canopi-consortium', x), other);
+    await page.locator(aria('button', 'Undo')).click();
+    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.equal(await saved(page), other, 'the other tab\'s save is untouched');
+    await done(page);
+  });
+});
+
+test('R2-3: Undo of a paste on a guide link\'s Start puts back the save of an earlier visit', async (t) => {
+  const names = (await temperate()).slice(0, 1).map((p) => p.name);
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    const earlier = await saved(page);
+    assert.ok(earlier, 'an earlier visit saved its consortium');
+    await page.goto(page.url().split('#')[0].split('?')[0] + '?climate=temperate', { waitUntil: 'domcontentloaded' });
+    assert.equal(await loadState(page), 'ready');
+    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000), 'the guide link opens Start');
+    await page.locator(aria('button', 'Paste a list')).click();
+    await page.locator('#ct-paste-text').fill(names.join('\n'));
+    await page.locator(aria('button', 'Add 1 plant')).click();
+    assert.ok(await has(page, aria('button', 'Share'), 5000));
+    await page.locator(aria('button', 'Undo')).click();
+    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.equal(await saved(page), earlier, 'the earlier save is back, as it was');
+    await done(page);
+  });
+});
+
+test('R2-4: crops ticked under another climate card are not carried back by "Back to your consortium"', async (t) => {
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    const before = await linkOf(page);
+    await page.locator(aria('button', 'Change site')).click();
+    await page.locator(aria('radio', 'Tropical')).click();
+    assert.equal(await loadState(page), 'ready');
+    const chip = await page.waitForSelector('.ct-chips .ct-chip[aria-pressed="false"]', { timeout: 4000 });
+    await chip.click();
+    await page.locator(aria('button', 'Back to your consortium')).click();
+    assert.ok(await has(page, aria('button', 'Share'), 4000));
+    assert.equal(await linkOf(page), before, 'the consortium as it was, no Tropical crop in it');
+    assert.equal(await savedFragment(page), before, 'and saved so');
+    await done(page);
+  });
+});
+
 test('F3: Undo of a plant added in the Paste sheet keeps the focus in the sheet', async (t) => {
   await eachVariant(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });

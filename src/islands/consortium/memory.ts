@@ -331,8 +331,9 @@ const waitForSource = (): Promise<void> => new Promise((resolve) => {
 });
 
 // The current state as a fragment, against the climate's and the guest lists' ids.
-export function currentFragment(): string | null {
-  const c = store.climate.peek();
+// over: the consortium's own climate, crops and pins in place of the store's (keptFragment).
+export function currentFragment(over: { climate: ClimateZone; crops?: PlantId[]; kept?: PlantId[] } | null = null): string | null {
+  const c = over?.climate ?? store.climate.peek();
   if (!c) return null;
   const known: Partial<Record<ClimateZone, PlantId[]>> = {};
   for (const z of new Set<ClimateZone>([c, ...Object.values(store.guests.peek()).filter((x): x is ClimateZone => !!x)])) {
@@ -340,8 +341,8 @@ export function currentFragment(): string | null {
     if (p) known[z] = p.map((t) => t.id);
   }
   return encodeLink(shareState({
-    climate: c, country: store.country.peek(), site: store.site.peek(), members: store.members.peek(), kept: store.kept.peek(),
-    removed: store.removed.peek(), guests: store.guests.peek(), crops: store.crops.peek(), stage: store.stage.peek(),
+    climate: c, country: store.country.peek(), site: store.site.peek(), members: store.members.peek(), kept: over?.kept ?? store.kept.peek(),
+    removed: store.removed.peek(), guests: store.guests.peek(), crops: over?.crops ?? store.crops.peek(), stage: store.stage.peek(),
   }), known);
 }
 
@@ -448,19 +449,28 @@ async function applyPreset(climate: ClimateZone, plant: string | null): Promise<
 // with members, whose edits there change it (X3: every edit ends saved and in the address). A fresh
 // Start with no member keeps the last consortium saved until another replaces it.
 const hasConsortium = (): boolean => store.view.peek() !== 'start' || store.members.peek().length > 0;
-// The climate the consortium was last shown in (any view but Start). On Start ("Change site") another
-// climate card is a choice the reader has not acted on yet: nothing is saved under it until Suggest,
-// Start empty or "Back to your consortium" (F1: a save only ever holds members of its own climate).
-let shownIn: ClimateZone | null = null;
-// Whether this page wrote the save since it opened or since Start over: an Undo that takes the
-// consortium back to an empty Start then removes it rather than leave a list the reader undid (F2).
-let savedHere = false;
+// On Start ("Change site") another climate card is a choice the reader has not acted on yet: the save
+// and the address keep the consortium under its own climate (store.home), with the crops and pins it
+// had when the card changed (`held`), until Suggest, Start empty, a paste (a new consortium, R2-1) or
+// "Back to your consortium" (F1, R2-4: a save only ever holds members placed under its climate).
+let held: { crops: PlantId[]; kept: PlantId[] } | null = null;
+function keptFragment(): string | null {
+  const home = store.home.peek();
+  if (store.view.peek() === 'start' && home && store.climate.peek() !== home) return currentFragment({ climate: home, crops: held?.crops, kept: held?.kept });
+  return currentFragment();
+}
+// This page's writes to the save (R2-2, R2-3): `replaced` is what the save held before this page's
+// first write (undefined: no write yet), `wrote` the record it last wrote. An Undo back to an empty
+// Start puts `replaced` back (or removes the save if there was none), and only if the save is still
+// what this page wrote: another tab's save, or an earlier visit's, is never lost.
+let replaced: string | null | undefined;
+let wrote: string | null = null;
 
 // The address bar holds the consortium's link (replaceState, no history entry). Same address:
 // nothing written (browsers drop replaceState calls past a rate limit).
 function writeAddress(force = false): void {
   if (typeof location === 'undefined') return;
-  const fragment = hasConsortium() || force ? currentFragment() : null;
+  const fragment = hasConsortium() || force ? keptFragment() : null;
   const next = fragment ? shareUrl(location.href, fragment) : `${location.origin}${location.pathname}${location.search}`;
   // history.state marks the address as the page's own, so a reload opens it as the save (review 1).
   const state = fragment ? { ct: fragment, src: countryFrom() } : null;
@@ -495,15 +505,22 @@ export function startOver(): void {
     notices.value = { ...NO_NOTICES };
   });
   memory.remove(STORE);
-  savedHere = false;
+  replaced = undefined;
+  wrote = null;
   writeAddress();
 }
 
 // "Back to your consortium" from Start: shown in its own climate again, whatever card was chosen
 // since "Change site" (F1); the focus goes to the view (W4).
 export function backToConsortium(): void {
-  if (shownIn && store.climate.peek() !== shownIn) chooseClimate(shownIn);
-  store.view.value = 'matrix';
+  const home = store.home.peek(), keep = held;
+  batch(() => {
+    if (home && store.climate.peek() !== home) {
+      chooseClimate(home);
+      if (keep) { store.crops.value = keep.crops; store.kept.value = keep.kept; }
+    }
+    store.view.value = 'matrix';
+  });
   focusView();
 }
 
@@ -533,20 +550,31 @@ export function requestSuggest(): void {
 
 // The save and the address bar, whenever there is a consortium (hasConsortium).
 function persist(): void {
-  const onStart = store.view.peek() === 'start';
-  if (!onStart) shownIn = store.climate.peek();
-  if (onStart && savedHere && !store.members.peek().length) {
-    memory.remove(STORE);
-    savedHere = false;
-    writeAddress();
+  const onStart = store.view.peek() === 'start', home = store.home.peek(), c = store.climate.peek();
+  if (!onStart) { if (home !== c) store.home.value = c; held = null; }
+  else if (home && c !== home) held ??= { crops: store.crops.peek(), kept: store.kept.peek() };
+  else held = null;
+  if (onStart && !store.members.peek().length) {
+    if (wrote !== null) undoSave();
     return;
   }
   if (!hasConsortium() || !store.pool.peek()) return;
-  if (onStart && shownIn && store.climate.peek() !== shownIn) return;
-  const fragment = currentFragment();
+  const fragment = keptFragment();
   if (!fragment) return;
-  memory.write(STORE, saveRecord(fragment, new Date().toISOString(), countryFrom()));
-  savedHere = true;
+  if (replaced === undefined) replaced = memory.read(STORE);
+  const record = saveRecord(fragment, new Date().toISOString(), countryFrom());
+  if (memory.write(STORE, record)) wrote = record;
+  writeAddress();
+}
+
+// Back to an empty Start by Undo: the save as it was before this page wrote it (R2-2, R2-3).
+function undoSave(): void {
+  if (memory.read(STORE) === wrote) {
+    if (replaced) memory.write(STORE, replaced);
+    else memory.remove(STORE);
+  }
+  replaced = undefined;
+  wrote = null;
   writeAddress();
 }
 
