@@ -61,7 +61,9 @@ async function initSqlite(): Promise<Sqlite3> {
   };
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new LoadError('wasm-blocked', 'WebAssembly did not start in 15 s')), WASM_TIMEOUT_MS);
+    // Not started in 15 s: a download too slow, not WebAssembly turned off (that fails at once: no
+    // WebAssembly global, or a refused compile or instantiate). The tool did not load; Reload (R3-4).
+    timer = setTimeout(() => reject(new LoadError('wasm-fetch', 'sqlite3.wasm did not start in 15 s')), WASM_TIMEOUT_MS);
   });
   try {
     return await Promise.race([init({ print: () => {}, printErr: () => {} }), timeout]);

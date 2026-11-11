@@ -93,6 +93,21 @@ const SCREENS = [
   ['the loader chunk gone after a deploy (online)', { data: 'fixture', loader: 404 }, 'stale', 'reload'],
   ['the loader chunk unreachable offline', { data: 'fixture', loader: 'offline' }, 'fetch', 'retry'],
 ];
+test('R3-4: a sqlite3.wasm download slower than 15 s says the tool did not load, with Reload, not WebAssembly turned off', async () => {
+  const page = await h.open('/consortium/', { width: 1280, data: 'fixture' });
+  const cdp = await page.createCDPSession();
+  await cdp.send('Network.enable');
+  await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
+  // About 40 KB/s: the ~900 KB wasm takes over 20 s (Slow 3G took 22.7 s in review round 3).
+  await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 400, downloadThroughput: 40_000, uploadThroughput: 40_000 });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator(aria('radio', 'Temperate')).click();
+  assert.equal(await loadState(page, 60_000), 'wasm-fetch');
+  assert.equal(await page.$eval('[data-load-error] p', (el) => el.textContent.trim()), en['consortium.load.toolFailed']);
+  assert.ok(await has(page, aria('button', en['consortium.load.reload']), 500));
+  await page.browserContext().close();
+});
+
 test('BT-9 load: each failure gives its §5 screen and button', async (t) => {
   for (const [what, opts, screen, button] of SCREENS) {
     await t.test(what, async (tt) => {
