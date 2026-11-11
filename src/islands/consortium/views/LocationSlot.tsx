@@ -10,15 +10,12 @@
 // compact (the result head, once a consortium shows): the result line alone, no probe.
 import { location } from '../store.ts';
 import { T, pageLang } from '../strings.ts';
-import { loadLocationStep, locationStep, looking, type LocationStep } from './location/load.ts';
+import { loadLocationStep, locationStep, lookingThrough, type LocationStep } from './location/load.ts';
 import { signal } from '@preact/signals';
 
 const broken = signal(false);
 // The whole step, chunk load included, counts as a lookup in flight (load.ts `lookups`).
-const run = (f: (m: LocationStep) => unknown) => looking(async () => {
-  const m = await loadLocationStep().catch(() => { broken.value = true; return null; });
-  if (m) await f(m);
-});
+const run = (f: (m: LocationStep) => unknown) => lookingThrough(() => loadLocationStep().catch(() => { broken.value = true; return null; }), async (m) => { if (m) await f(m); });
 let gl: boolean | undefined;
 const webgl = (): boolean => {
   if (gl === undefined) {

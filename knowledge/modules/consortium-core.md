@@ -6,7 +6,7 @@ resource: ../../src/lib/consortium
 tags: [module, consortium]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:07:20Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:35:12Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:31:10Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -107,7 +107,7 @@ sources:
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
     digest: sha256:3d97f0a6805f884b
-    last_modified: 2026-11-11T20:07:03Z
+    last_modified: 2026-11-11T18:21:29Z
   - id: native-ts
     resource: ../../src/lib/consortium/native.ts
     title: src/lib/consortium/native.ts
@@ -142,7 +142,7 @@ sources:
     resource: ../../src/lib/consortium/future-marks.ts
     title: src/lib/consortium/future-marks.ts
     digest: sha256:3415dfcfa8a629ee
-    last_modified: 2026-11-11T20:07:03Z
+    last_modified: 2026-11-11T18:09:28Z
   - id: native-marks-ts
     resource: ../../src/lib/consortium/native-marks.ts
     title: src/lib/consortium/native-marks.ts
@@ -151,8 +151,8 @@ sources:
   - id: consortium-p5-seams-s5b-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
-    digest: sha256:44762c50d5f04d1b
-    last_modified: 2026-11-11T20:03:06Z
+    digest: sha256:727b4e4361e4f680
+    last_modified: 2026-11-11T20:13:07Z
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
@@ -162,7 +162,7 @@ sources:
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
     digest: sha256:109516b6d34ecb0c
-    last_modified: 2026-11-11T20:07:03Z
+    last_modified: 2026-11-11T18:21:29Z
   - id: consortium-p5-seams-s5e-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5e.test.mjs
     title: scripts/consortium-p5-seams-s5e.test.mjs
@@ -176,13 +176,13 @@ sources:
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
-    digest: sha256:79e78a387e75a014
-    last_modified: 2026-11-11T19:25:16Z
+    digest: sha256:cc2231455c1573d7
+    last_modified: 2026-11-11T20:12:25Z
   - id: readme-md-2
     resource: ../../scripts/fixtures/consortium-future/README.md
     title: scripts/fixtures/consortium-future/README.md
     digest: sha256:16982db16208c8af
-    last_modified: 2026-11-11T20:07:03Z
+    last_modified: 2026-11-11T17:32:49Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs

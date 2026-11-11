@@ -19,7 +19,7 @@
 // link pasted while tiles load still restores (review round 1, 4).
 import { batch, signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { siteClimate, type LocationSource, type SiteLocation, type SiteState } from '../../../../lib/consortium/index.ts';
+import { siteClimate, type LocationSource, type SiteLocation } from '../../../../lib/consortium/index.ts';
 import { createTileSource, lookupSite, siteIndex, type SiteLookup, type TileSource } from '../../../../lib/climate/index.ts';
 import { createPlaceSearchController, type PlaceSearchController, type PlaceSearchResult } from '../../../../lib/location/place-search.ts';
 import { defaultGeocoderConfig } from '../../../../lib/location/registry.ts';
@@ -30,16 +30,11 @@ import * as store from '../../store.ts';
 import { T, pageLang } from '../../strings.ts';
 import { chooseClimate } from '../../memory.ts';
 import { keepLocation, locationCountry, readLocation, siteFound } from './keep.ts';
-import { looking, unread } from './load.ts';
+import { line, liveLookup, looking, nextLookup, unread, type Line } from './load.ts';
 import { zoneLabel } from '../Start.tsx';
 
 // ---- the result line ----
-export type LineState = 'loading' | 'denied' | 'timeout' | 'unavailable' | 'no-result' | 'offline' | 'failed' | SiteState;
-interface Line { state: LineState; query?: string; others?: readonly PlaceSearchResult[]; attribution?: string | null }
-export const line = signal<Line | null>(null);
 export const mapOpen = signal(false);
-// The newest request: an older one that ends later changes nothing.
-let seq = 0;
 
 // ---- the climate reader over the installed tiles (#ct-climate, ConsortiumPage.astro) ----
 let tiles: TileSource | null = null;
@@ -69,12 +64,12 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
 const locate = (lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> =>
   looking(() => locateNow(lat, lon, source, label, extra));
 async function locateNow(lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> {
-  const id = ++seq;
+  const id = nextLookup();
   line.value = { state: 'loading', ...extra };
   const lookup = await read(lat, lon);
-  if (id !== seq) return;
+  if (!liveLookup(id)) return;
   if (!lookup) {
-    batch(() => { store.location.value = null; store.proposedClimate.value = null; line.value = { state: 'failed', ...extra }; });
+    batch(() => { store.location.value = null; store.proposedClimate.value = null; unread.value = false; line.value = { state: 'failed', ...extra }; });
     return;
   }
   const sc = siteClimate(lookup);
@@ -94,13 +89,13 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
 export async function settle(how: 'link' | 'saved', savedText: string | null): Promise<void> {
   const start = how === 'link' ? store.location.peek() : readLocation(savedText);
   if (!start) return;
-  const id = ++seq;
+  const id = nextLookup();
   line.value = { state: 'loading' };
   const lookup = await read(start.lat, start.lon);
-  if (id !== seq) return;
+  if (!liveLookup(id)) return;
   const sc = lookup ? siteClimate(lookup) : null;
   if (!lookup || !sc || sc.state === 'sea') {
-    batch(() => { if (how === 'link' && store.location.peek() === start) store.location.value = null; line.value = { state: lookup ? 'sea' : 'failed' }; });
+    batch(() => { if (how === 'link' && store.location.peek() === start) store.location.value = null; unread.value = false; line.value = { state: lookup ? 'sea' : 'failed' }; });
     return;
   }
   // Something else set the site meanwhile (the reader, another link): this lookup's line goes.
@@ -116,11 +111,12 @@ export async function settle(how: 'link' | 'saved', savedText: string | null): P
 
 // ---- the three ways ----
 export async function useMyLocation(): Promise<void> {
-  const id = ++seq;
+  const id = nextLookup();
   line.value = { state: 'loading' };
-  if ((await queryGeolocationPermission())?.state === 'denied') { if (id === seq) line.value = { state: 'denied' }; return; }
-  const at = await currentPosition();
-  if (id !== seq) return;
+  const permission = await queryGeolocationPermission();
+  if (permission?.state === 'denied') { if (liveLookup(id)) line.value = { state: 'denied' }; return; }
+  const at = await currentPosition(undefined, permission);
+  if (!liveLookup(id)) return;
   if ('code' in at) { line.value = { state: at.code === 1 ? 'denied' : at.code === 3 ? 'timeout' : 'unavailable' }; return; }
   await locate(at.lat, at.lon, 'geo', undefined);
 }
@@ -131,10 +127,10 @@ export async function searchPlace(q: string): Promise<void> {
   const query = q.trim();
   if (!query) return;
   search ??= createPlaceSearchController({ transport: geocodingTransport, config: { ...defaultGeocoderConfig(), language: pageLang() }, limit: 5 });
-  const id = ++seq;
+  const id = nextLookup();
   line.value = { state: 'loading', query };
   await search.search(query);
-  if (id !== seq) return;
+  if (!liveLookup(id)) return;
   const status = search.status.peek(), [first, ...others] = search.results.peek(), attribution = search.attribution.peek();
   if (status === 'error') { line.value = { state: 'offline', query }; return; }
   if (!first) { line.value = { state: 'no-result', query, attribution }; return; }
@@ -146,7 +142,8 @@ export function openMap(): void { mapOpen.value = true; }
 // "Forget this location": the site, its suggestion, its country and the saved copy go. A link's
 // location goes alone: the reader's own saved location is not the link's to remove.
 function forget(): void {
-  seq++;
+  nextLookup();
+  unread.value = false;
   const own = store.location.peek()?.source !== 'link';
   batch(() => { store.location.value = null; store.proposedClimate.value = null; line.value = null; if (own) locationCountry(null, true); });
   if (own) keepLocation(null);
@@ -185,8 +182,10 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
               <p>
                 {T('location.why', { place: placeOf(loc), koppen: sc.today!.koppen, words: koppenWords(sc.today!.koppen), tmin: new Intl.NumberFormat(pageLang(), { maximumFractionDigits: 1 }).format(sc.today!.tminColdC) })}
                 {' '}
-                {sc.state === 'polar' ? T('location.state.polar') : sc.state === 'borderline' ? T('location.state.borderline') : T('location.suggests', { climate: zoneLabel(sc.zone) })}
-                {sc.state === 'borderline' && sc.near && ` ${T('location.near', { climate: zoneLabel(sc.near) })}`}
+                {sc.state === 'polar' ? T('location.state.polar')
+                  // Borderline (UX audit fix 2): both climates named, the class's own pre-selected.
+                  : sc.state === 'borderline' ? (sc.zone && sc.near ? `${T('location.between', { a: zoneLabel(sc.zone), b: zoneLabel(sc.near) })} ${T('location.state.borderline')}` : `${T('location.state.borderline')}${sc.zone ? ` ${T('location.picked', { climate: zoneLabel(sc.zone) })}` : ''}`)
+                  : T('location.suggests', { climate: zoneLabel(sc.zone) })}
                 {sc.state === 'coast' && ` ${T('location.state.coast')}`}
               </p>
               {!compact && proposed && store.climate.value !== proposed && (

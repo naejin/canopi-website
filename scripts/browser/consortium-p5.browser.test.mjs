@@ -271,6 +271,33 @@ test('P5-1f (S5b review round 2, 3): tiles that never answer hold Suggest at mos
   assert.ok(Date.now() - t0 >= 8000, 'after waiting for the site first');
   assert.ok(await has(page, '[data-location-unread]', 4000), 'a line says the climate was not read');
   assert.ok(await page.waitForFunction(() => document.querySelector('[data-location-state]')?.getAttribute('data-location-state') === 'failed', { timeout: 15_000 }).then(() => true, () => false), 'the stalled read ends as failed');
+  assert.equal(await page.$('[data-location-unread]'), null, 'review round 3 (3): the failed line replaces the "not read" note');
+});
+test('P5-13d (S5b review round 3, 2): Start over drops a link\'s lookup on a stalled network: no loading line, no later "failed", no Suggest hold', async () => {
+  const [lat, lon] = SITES.seville;
+  const maker = await tool({ geolocation: { lat, lon } });
+  await locationControls(maker);
+  await maker.click('[data-location-action="geo"]');
+  assert.equal(await locationState(maker), 'ready');
+  await confirmAndSuggest(maker);
+  await maker.click('input[data-share-location]');
+  const link = new URL(await maker.$eval('#ct-share-field', (e) => e.value));
+  const page = await slowTiles(Infinity);
+  await page.evaluate((hash) => { location.hash = hash; }, link.hash);
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.source === 'link' && window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'the link opens, its lookup stalled');
+  assert.ok(await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Start over'); b?.click(); return !!b; }));
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.view.value === 'start', { timeout: 5000 }).then(() => true, () => false));
+  assert.equal(await page.$('[data-location-state]'), null, 'no "loading" line left on Start');
+  // Past the read's 15 s timeout: the dead lookup writes nothing.
+  await new Promise((r) => setTimeout(r, 16_000));
+  assert.equal(await page.$('[data-location-state]'), null, 'no later "failed" line');
+  // Suggest is not held by it.
+  await page.click('input[name="ct-climate"][value="mediterranean"]');
+  assert.ok(await has(page, '.ct-cta .button-primary', 15_000));
+  const t0 = Date.now();
+  await page.click('.ct-cta .button-primary');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0 && window.__ctTest.store.view.value === 'matrix', { timeout: 8000 }).then(() => true, () => false), 'Suggest runs at once');
+  assert.ok(Date.now() - t0 < 8000);
 });
 test('P5-2 (S5b location denied): a denied permission says so and leaves the manual climate cards', async () => {
   const page = await tool({ geolocation: 'denied' });
@@ -426,21 +453,38 @@ test('P5-9 (S5b polar): an ET site has its own state, no curated list claimed', 
   assert.equal(await checkedCard(page), null, 'no curated card claimed');
 });
 
-test('P5-10 (S5b borderline): Lyon says "Borderline: check the climate" and keeps the cards open', async () => {
+test('P5-10 (S5b borderline, UX audit fix 2): Lyon pre-selects Subtropical, says "between Subtropical and Temperate", and applies nothing until confirmed', async () => {
   const [lat, lon] = SITES.lyon;
   const page = await tool({ geolocation: { lat, lon } });
   await locationControls(page);
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'borderline');
+  assert.equal(await proposedCard(page), 'subtropical', 'the class\'s own climate is pre-selected (proposed)');
+  const text = await page.$eval('[data-location-state]', (e) => e.textContent);
+  assert.match(text, /Between Subtropical and Temperate/, 'both names, in plain words');
+  assert.match(text, /we picked Subtropical/i);
+  assert.match(text, /Cfa/, 'the Köppen code stays in the line');
+  assert.equal(await checkedCard(page), null, 'proposed, not checked');
+  assert.equal(await storeClimate(page), null, 'nothing applied until confirmed');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.country.value?.source ?? null), 'location', 'the country from the location (quiet), as for a clear site');
   assert.ok(await has(page, '.ct-climates'), 'the cards stay open');
-  assert.equal(await checkedCard(page), null, 'no card pre-checked when borderline');
-  assert.equal(await proposedCard(page), null, 'no card pre-checked when borderline: none proposed either');
-  assert.equal(await storeClimate(page), null);
+  assert.equal(await page.$$eval('input[name="ct-climate"]', (r) => r.filter((x) => !x.disabled).length), await page.$$eval('input[name="ct-climate"]', (r) => r.length), 'every other card one tap away');
+  await page.click('input[name="ct-climate"][value="temperate"]');
+  assert.equal(await storeClimate(page), 'Temperate', 'the other climate, one tap');
+  assert.equal(await proposedCard(page), null);
+  // Confirming the pre-selected card instead.
+  const other = await tool({ geolocation: { lat, lon } });
+  await locationControls(other);
+  await other.click('[data-location-action="geo"]');
+  assert.equal(await locationState(other), 'borderline');
+  await other.click('[data-location-confirm]');
+  assert.equal(await storeClimate(other), 'Subtropical', 'confirmed by the reader');
   const calm = await tool({ geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
   await locationControls(calm);
   await calm.click('[data-location-action="geo"]');
   assert.equal(await locationState(calm), 'ready', 'Seville is not borderline');
   assert.equal(await proposedCard(calm), 'mediterranean', 'proposed');
+  assert.doesNotMatch(await calm.$eval('[data-location-state]', (e) => e.textContent), /Between/, 'a clear site names one climate');
   assert.equal(await storeClimate(calm), null, 'not committed until confirmed');
 });
 

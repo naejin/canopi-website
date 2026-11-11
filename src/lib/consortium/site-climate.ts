@@ -11,8 +11,9 @@
 // - 'polar': an E class (no curated list is claimed, no card pre-checked);
 // - 'borderline': the class's coldest- or warmest-month mean lies within BORDERLINE_C of a Köppen
 //   temperature bound whose other side is another zone (18 °C A/C, 0 °C C/D, 22 °C Cfa/Cfb, 10 °C
-//   C or D/E), or the grid's own class disagrees with its means (koppenTemperatureMarginC > 0). No card
-//   is pre-checked. Bounds that change no zone (Csa/Csb, Dfa/Dfb) do not count; the D b/c bound counts
+//   C or D/E), or the grid's own class disagrees with its means (koppenTemperatureMarginC > 0). The
+//   class's own climate is still suggested (proposed, not checked) and the line names the zone across
+//   (UX audit fix 2). Bounds that change no zone (Csa/Csb, Dfa/Dfb) do not count; the D b/c bound counts
 //   months above 10 °C, which the grid does not hold, so it is not checked; B classes are set by
 //   rainfall, not temperature, so they are never borderline here;
 // - 'coast': a climate from the nearest cell and no country at the point (offshore, a coast): the
@@ -32,7 +33,8 @@ export interface SiteClimate {
   // Borderline: the zone across the nearby bound, when it is a zone (null: polar, or the class itself
   // disagrees with its means).
   near: ClimateZone | null;
-  // The climate the location suggests (pre-checked, confirmed by the reader): ready and coast only.
+  // The climate the location suggests (proposed, confirmed by the reader): ready, coast and borderline
+  // (its class's own climate); none at sea, polar or a cell without a class.
   suggested: ClimateZone | null;
 }
 
@@ -75,6 +77,8 @@ export function siteClimate(lookup: SiteLookup): SiteClimate {
   // A cell without a class (none in v0.2): nothing to suggest, so the reader checks the climate.
   if (!zone) return { state: 'borderline', today, zone: null, near: null, suggested: null };
   const near = across(today);
-  if (near !== undefined) return { state: 'borderline', today, zone, near, suggested: null };
+  // Borderline: its own class's climate is pre-selected all the same, and the line names both (UX
+  // audit fix 2, decision row "P5 fixes from the UX audit"); the reader still confirms (owner answer 1).
+  if (near !== undefined) return { state: 'borderline', today, zone, near, suggested: zone };
   return { state: lookup.regions.isoA2 === null ? 'coast' : 'ready', today, zone, near: null, suggested: zone };
 }

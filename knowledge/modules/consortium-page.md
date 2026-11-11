@@ -5,7 +5,7 @@ description: "The consortium v2 page in 11 locales: the static Astro shell, the 
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:07:20Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:21:27Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:31:08Z }
 sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
@@ -66,7 +66,7 @@ sources:
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:725ffc9c2ab50b8e
-    last_modified: 2026-11-11T20:07:03Z
+    last_modified: 2026-11-11T19:30:02Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -120,8 +120,8 @@ sources:
   - id: memory-ts
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
-    digest: sha256:1550da18e20a6c55
-    last_modified: 2026-11-11T20:03:06Z
+    digest: sha256:fbb8476ab6bd5e58
+    last_modified: 2026-11-11T20:12:15Z
   - id: shell-css
     resource: ../../src/styles/consortium/shell.css
     title: src/styles/consortium/shell.css
@@ -206,7 +206,7 @@ sources:
     resource: ../../src/islands/consortium/views/future/future.tsx
     title: src/islands/consortium/views/future/future.tsx
     digest: sha256:0cae0bf63297175f
-    last_modified: 2026-11-11T20:07:03Z
+    last_modified: 2026-11-11T18:21:29Z
   - id: plantmarks-tsx
     resource: ../../src/islands/consortium/views/PlantMarks.tsx
     title: src/islands/consortium/views/PlantMarks.tsx
@@ -215,8 +215,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:2dcff7afe57b5877
-    last_modified: 2026-11-11T19:25:16Z
+    digest: sha256:c50e95d99fd9f486
+    last_modified: 2026-11-11T20:12:15Z
   - id: likelyslot-tsx
     resource: ../../src/islands/consortium/views/LikelySlot.tsx
     title: src/islands/consortium/views/LikelySlot.tsx
@@ -225,8 +225,8 @@ sources:
   - id: consortium-p5-browser-test-mjs
     resource: ../../scripts/browser/consortium-p5.browser.test.mjs
     title: scripts/browser/consortium-p5.browser.test.mjs
-    digest: sha256:25a8641643d2df7b
-    last_modified: 2026-11-11T20:07:03Z
+    digest: sha256:e2becc9cd9de66c0
+    last_modified: 2026-11-11T20:09:31Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
@@ -240,8 +240,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:2b876dd9163a7d43
-    last_modified: 2026-11-11T20:03:06Z
+    digest: sha256:69bb2457af59d25e
+    last_modified: 2026-11-11T20:15:15Z
 enforced_by:
   - scripts/check-built-site.mjs
   - scripts/browser/consortium-commit0.browser.test.mjs

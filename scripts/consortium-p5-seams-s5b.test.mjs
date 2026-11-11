@@ -27,8 +27,9 @@ test('site-climate koppenZone: the Köppen families of src/data/climates.ts, pol
 });
 
 test('site-climate siteClimate: a location suggests a climate only when it is clear (owner answer 1)', () => {
-  // Lyon: Cfa with its warmest month 0.4 °C above 22 °C: borderline with Temperate, nothing suggested.
-  assert.deepEqual(({ ...sc.siteClimate(lyon.lookup), today: null }), { state: 'borderline', today: null, zone: 'Subtropical', near: 'Temperate', suggested: null });
+  // Lyon: Cfa with its warmest month 0.4 °C above 22 °C: borderline with Temperate; its own class's
+  // climate, Subtropical, is pre-selected for the reader to check (UX audit fix 2, review round 3).
+  assert.deepEqual(({ ...sc.siteClimate(lyon.lookup), today: null }), { state: 'borderline', today: null, zone: 'Subtropical', near: 'Temperate', suggested: 'Subtropical' });
   // Seville-like Csa: ready, the Mediterranean card suggested.
   const seville = sc.siteClimate(at({ koppen: 'Csa', tmeanColdC: 10.6, tmeanWarmC: 27.4, tminColdC: 5.2 }, { regions: { wgsrpdL3: 'SPA', isoA2: 'ES' } }));
   assert.equal(seville.state, 'ready');
@@ -46,9 +47,12 @@ test('site-climate siteClimate: a location suggests a climate only when it is cl
   assert.equal(sc.siteClimate(at({ koppen: 'As', tmeanColdC: 18.1, tmeanWarmC: 26 })).near, 'Mediterranean', 'As → Csa');
   // Near the tundra bound (10 °C warmest month), or the class disagreeing with its means: borderline, no zone across.
   assert.deepEqual([sc.siteClimate(at({ koppen: 'Dfc', tmeanColdC: -20, tmeanWarmC: 10.3 })).state, sc.siteClimate(at({ koppen: 'Dfc', tmeanColdC: -20, tmeanWarmC: 10.3 })).near], ['borderline', null]);
+  assert.equal(sc.siteClimate(at({ koppen: 'Dfc', tmeanColdC: -20, tmeanWarmC: 10.3 })).suggested, 'Boreal', 'borderline with no zone across: its own climate, still pre-selected');
+  assert.equal(sc.siteClimate(at({ koppen: 'Cfb', tmeanColdC: 0.3, tmeanWarmC: 17 })).suggested, 'Temperate');
   assert.equal(sc.siteClimate(at({ koppen: 'Cfb', tmeanColdC: 5, tmeanWarmC: 17, koppenTemperatureMarginC: 0.3 })).state, 'borderline');
   // B classes are set by rainfall: never borderline on temperature.
   assert.equal(sc.siteClimate(at({ koppen: 'BSh', tmeanColdC: 18.1, tmeanWarmC: 30 })).state, 'ready');
+  assert.equal(sc.siteClimate(at({ koppen: 'BWk', tmeanColdC: 0.2, tmeanWarmC: 22.1 })).state, 'ready', 'arid: never borderline, at 0 °C or 22 °C either');
 });
 
 test('site-climate siteClimate: polar, sea and coast have their own states', () => {
@@ -204,4 +208,95 @@ test('review round 2 (3): a geocoder request unanswered in 15 s fails as an erro
     c2.abort();
     await assert.rejects(p2, (e) => e instanceof DOMException && e.name === 'AbortError');
   } finally { globalThis.fetch = real; }
+});
+
+test('review round 3 (1): the Suggest cap is 10 s per press: an earlier press\'s timer never releases a later one', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const m = await import('../src/islands/consortium/memory.ts');
+  const store = await import('../src/islands/consortium/store.ts');
+  const load = await import('../src/islands/consortium/views/location/load.ts');
+  assert.equal(store.pool.peek(), null, 'no plant list read: Suggest stays pending');
+  try {
+    load.lookups.value = 1;
+    m.requestSuggest(); // press during lookup A, t = 0
+    load.lookups.value = 0; m.pendingSuggest.value = false; // A settles, the Suggest runs
+    t.mock.timers.tick(5000);
+    load.lookups.value = 1;
+    m.requestSuggest(); // Change site, lookup B, press at t = 5
+    t.mock.timers.tick(5000); // t = 10: A's timer, if it were still live
+    assert.equal(m.waited.peek(), false, "A's timer does not release B's press");
+    t.mock.timers.tick(5000); // t = 15: B's own 10 s
+    assert.equal(m.waited.peek(), true, "B's press waits its own 10 s");
+  } finally { load.lookups.value = 0; m.pendingSuggest.value = false; }
+});
+
+test('review round 3 (2, 3): Start over, Change site and Start empty drop a link\'s lookup (its hold, its line, its later writes) and the "not read" note', async (t) => {
+  const m = await import('../src/islands/consortium/memory.ts');
+  const store = await import('../src/islands/consortium/store.ts');
+  const load = await import('../src/islands/consortium/views/location/load.ts');
+  const raf = globalThis.requestAnimationFrame;
+  globalThis.requestAnimationFrame ??= () => 0; // Start empty opens the search sheet (its focus waits a frame)
+  t.after(() => { globalThis.requestAnimationFrame = raf; store.closeSheet(); });
+  for (const act of ['startOver', 'changeSite', 'startEmpty']) {
+    store.location.value = { lat: 45.75, lon: 4.85, source: 'link', lookup: null };
+    void load.lookingThrough(() => new Promise(() => {}), async () => {}); // a link's lookup on a network that never answers
+    const id = load.nextLookup?.();
+    load.line.value = { state: 'loading' };
+    load.unread.value = true;
+    m[act]();
+    assert.equal(load.lookups.peek(), 0, `${act}: the dead lookup holds no Suggest`);
+    assert.equal(load.line.peek(), null, `${act}: no "loading" line left`);
+    assert.equal(load.liveLookup(id), false, `${act}: its later answer (or timeout) writes nothing`);
+    assert.equal(store.location.peek(), null, act);
+    assert.equal(load.unread.peek(), false, `${act}: the "not read" note goes`);
+  }
+  // The reader's own location stays (only its note goes).
+  store.location.value = { lat: 45.75, lon: 4.85, source: 'geo', lookup: null };
+  load.unread.value = true;
+  m.changeSite();
+  assert.equal(store.location.peek()?.source, 'geo');
+  assert.equal(load.unread.peek(), false);
+  store.location.value = null;
+});
+
+test('review round 3 (4): an answered permission prompt leaves the fix to the browser\'s own timeout; an ignored one times out', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const geo = await import('../src/lib/location/geolocation.ts');
+  const hadWindow = 'window' in globalThis;
+  globalThis.window ??= { isSecureContext: true };
+  const realGeo = Object.getOwnPropertyDescriptor(navigator, 'geolocation');
+  let pending = null;
+  Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition: (ok, fail) => { pending = { ok, fail }; } } });
+  const status = () => Object.assign(new EventTarget(), { state: 'prompt' });
+  try {
+    // Answered at 12 s, a fix 9 s later (21 s): the position, not a timeout.
+    const s1 = status();
+    let got = null;
+    void geo.currentPosition(geo.SITE_POSITION_OPTIONS, s1).then((r) => { got = r; });
+    t.mock.timers.tick(12_000);
+    s1.state = 'granted'; s1.dispatchEvent(new Event('change'));
+    t.mock.timers.tick(9_000);
+    pending.ok({ coords: { latitude: 45.75, longitude: 4.85 } });
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(got, { lat: 45.75, lon: 4.85 }, 'a 12 s answer and a 9 s fix give the position');
+    // Never answered: a timeout once the prompt cap passes, so nothing waits on it forever.
+    const s2 = status();
+    got = null;
+    void geo.currentPosition(geo.SITE_POSITION_OPTIONS, s2).then((r) => { got = r; });
+    t.mock.timers.tick(geo.PROMPT_CAP_MS);
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(got, { code: 3 }, 'an ignored prompt ends as a timeout');
+    // No Permissions API: the cap covers the prompt and the browser's 15 s.
+    got = null;
+    void geo.currentPosition(geo.SITE_POSITION_OPTIONS, null).then((r) => { got = r; });
+    t.mock.timers.tick(geo.PROMPT_CAP_MS + 10_000);
+    await new Promise((r) => setImmediate(r));
+    assert.equal(got, null, 'no permission signal: still waiting within prompt + 15 s');
+    t.mock.timers.tick(10_000);
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(got, { code: 3 });
+  } finally {
+    if (realGeo) Object.defineProperty(navigator, 'geolocation', realGeo); else delete navigator.geolocation;
+    if (!hadWindow) delete globalThis.window;
+  }
 });

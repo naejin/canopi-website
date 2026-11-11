@@ -36,7 +36,7 @@ import { decodeLink, encodeLink, linkClimates, linkOrigin, readPreset, zoneOf, L
 import type { Country } from './store.ts';
 import * as store from './store.ts';
 import { focusView } from './focus.ts';
-import { loadLocationStep, lookingThrough, lookups, unread } from './views/location/load.ts';
+import { letGo, loadLocationStep, lookingThrough, lookups, unread } from './views/location/load.ts';
 
 export const STORE = 'canopi-consortium';
 export const COUNTRY_STORE = 'canopi-country';
@@ -571,8 +571,9 @@ function settleLocation(how: 'link' | 'saved', saved: string | null = null): Pro
     if (how === 'link') store.location.value = null;
   });
 }
-// A link's location goes with its consortium (review round 2, 4): Change site, Start over, Start empty.
-const dropLinkLocation = () => { if (store.location.peek()?.source === 'link') store.location.value = null; };
+// Change site, Start over, Start empty: the "not read" note goes, and a link's location goes with
+// its consortium (review round 2, 4), its lookup dropped (round 3, 2: no line, hold or later write).
+const dropLinkLocation = () => { const link = store.location.peek()?.source === 'link'; letGo(link); if (link) store.location.value = null; };
 // Change site: the consortium set aside, Start's draft seeded from it.
 export function changeSite(): void {
   batch(() => {
@@ -637,16 +638,19 @@ function adoptPending(): void {
 }
 
 // Suggest has waited its 10 s for a location lookup (requestSuggest).
-const waited = signal(false);
+export const waited = signal(false);
+let cap: ReturnType<typeof setTimeout> | undefined;
 // "Suggest plants": now when the plants are read, else once they are (§5 Loading).
 export function requestSuggest(): void {
   adoptPending();
   // A location being read: Suggest waits for it (the effect below runs it once lookups settle), 10 s
   // at most; then it runs without it, and the location line says the climate was not read (review
   // round 2, 3).
+  // Each press has its own 10 s: an earlier press's timer is cleared (review round 3, 1).
+  if (!pendingSuggest.peek()) { clearTimeout(cap); waited.value = false; }
   const busy = lookups.peek() && !waited.peek();
-  if (!busy && store.suggestMembers()) { unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
-  if (busy && !pendingSuggest.peek()) setTimeout(() => { waited.value = pendingSuggest.peek(); }, 10_000);
+  if (!busy && store.suggestMembers()) { clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
+  if (busy && !pendingSuggest.peek()) cap = setTimeout(() => { waited.value = true; }, 10_000);
   pendingSuggest.value = true;
 }
 
