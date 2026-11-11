@@ -11,8 +11,7 @@ import type { PlantId, SiteLocation, SitePeriod, Taxon } from './types.ts';
 export const rangeVerdicts = ['inside', 'edge', 'outside', 'unknown'] as const;
 export type RangeVerdict = (typeof rangeVerdicts)[number];
 // Which bound the site passes: colder winters than recorded, milder winters, hotter summers.
-export const rangeSides = ['cold', 'mild', 'hot'] as const;
-export type RangeSide = (typeof rangeSides)[number];
+export type RangeSide = 'cold' | 'mild' | 'hot';
 // The site's aridity index (precipitation / PET; lower is drier) against the plant's: a mark only.
 // 'not-checked': the site has none (ice); 'unknown': the plant has none recorded.
 export type AridityFit = 'inside' | 'drier' | 'wetter' | 'not-checked' | 'unknown';
@@ -20,6 +19,16 @@ export type AridityFit = 'inside' | 'drier' | 'wetter' | 'not-checked' | 'unknow
 export interface RangeCheck { verdict: RangeVerdict; sides: RangeSide[]; beyond: RangeSide[]; aridity: AridityFit }
 
 export const RANGE_MARGIN_C = 2;
+
+// The one comparison of the rule, today's check and the future one (future.ts) alike: whether value
+// passes bound ('below': under a low bound; 'above': over a high one), and by more than the margin.
+// In hundredths of a degree (site values have one decimal, ranges two), so that 9.8 − 7.8 is exactly
+// the margin rather than a float a hair above it.
+export type Passed = 'inside' | 'edge' | 'beyond';
+export function passes(value: number, bound: number, side: 'below' | 'above'): Passed {
+  const cents = Math.round((side === 'below' ? bound - value : value - bound) * 100);
+  return cents <= 0 ? 'inside' : cents > RANGE_MARGIN_C * 100 ? 'beyond' : 'edge';
+}
 
 // The site's climate today (the 1991–2020 period), or null when the location gave none.
 export function siteToday(site: SiteLocation | null): SitePeriod | null {
@@ -40,17 +49,14 @@ export function rangeCheck(taxon: Taxon, site: SiteLocation | null): RangeCheck 
     : ai < arid.low ? 'drier' : ai > arid.high ? 'wetter' : 'inside';
   if (!c || (!cold && !warm)) return { verdict: 'unknown', sides: [], beyond: [], aridity };
   const sides: RangeSide[] = [], beyond: RangeSide[] = [];
-  // In hundredths of a degree (the site values have one decimal, the ranges two), so that 9.8 − 7.8
-  // is exactly the margin rather than a float a hair above it.
-  const pass = (side: RangeSide, by: number) => {
-    const cents = Math.round(by * 100);
-    if (cents <= 0) return;
+  const pass = (side: RangeSide, p: Passed) => {
+    if (p === 'inside') return;
     sides.push(side);
-    if (cents > RANGE_MARGIN_C * 100) beyond.push(side);
+    if (p === 'beyond') beyond.push(side);
   };
-  if (cold?.low != null) pass('cold', cold.low - today.tminColdC);
-  if (cold?.high != null) pass('mild', today.tminColdC - cold.high);
-  if (warm?.high != null) pass('hot', today.tmaxWarmC - warm.high);
+  if (cold?.low != null) pass('cold', passes(today.tminColdC, cold.low, 'below'));
+  if (cold?.high != null) pass('mild', passes(today.tminColdC, cold.high, 'above'));
+  if (warm?.high != null) pass('hot', passes(today.tmaxWarmC, warm.high, 'above'));
   return { verdict: beyond.length ? 'outside' : sides.length ? 'edge' : 'inside', sides, beyond, aridity };
 }
 

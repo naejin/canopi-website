@@ -357,8 +357,15 @@ test('P5-14 (S5c nothing fits): at Yakutsk no plant\'s range holds the site: the
   // Strengthened (S5c): the state gives a clear next step, a real control that opens the search of
   // every plant.
   assert.match(await text(page, '[data-pool-empty]') ?? '', /−?-?39\.8 °C/, 'says why: the site\'s coldest month');
+  // Review round 1: no "Suggest plants" that would only give an empty matrix; the panel's step is the way on.
+  const ctas = await page.$$eval('.ct-cta button', (els) => els.filter((e) => !e.disabled).map((e) => e.textContent.trim()));
+  assert.equal(ctas.includes('Suggest plants'), false, `no usable "Suggest plants" when nothing fits (${ctas.join(', ')})`);
   await page.click('[data-pool-empty] button');
   assert.ok(await has(page, '.ct-add .ct-search input', 10_000), 'the next step opens the plant search');
+  // Review round 1: before anything is typed it lists every plant (each marked outside), never "No plant matches".
+  await page.click('.ct-add-showall').catch(() => {});
+  assert.ok(await has(page, '.ct-add .ct-rows li', 10_000), 'the search lists plants before a query');
+  assert.ok(await has(page, '.ct-add .ct-rows li [data-mark="outside"]', 10_000), 'each one marked outside its range');
 });
 
 test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range, and Add lists none until one is typed, which then asks first', async () => {

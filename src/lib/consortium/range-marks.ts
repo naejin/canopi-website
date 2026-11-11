@@ -2,9 +2,11 @@
 // only by mark-providers.ts, the lazy chunk, so its code never weighs on the first run; not exported
 // from index.ts for the same reason.
 // - With a site climate (range.ts rangeCheck): 'outside' (a warning: "outside its observed range"),
-//   'edge' ("near the edge of its observed range"; also aridity, a mark only: drier or wetter than
-//   where it is recorded), 'unknown' ("range not recorded"; and in Details, aridity "not checked" on
-//   ice). Details adds one line per bound passed, with the site's and the recorded values, and says
+//   'edge' ("near the edge of its observed range"), 'aridity' (a mark only, never the verdict: drier
+//   or wetter than where it is recorded; its own kind, so the edge marks and the panel's "N near the
+//   edge" agree), 'unknown' ("range not recorded"; and in Details, aridity "not checked" on ice).
+//   Details adds one line per bound passed, with the site's and the recorded values (the very values
+//   the verdict compared, to the hundredth, so the gap a reader works out matches it), and says
 //   observed ranges include cultivation and are estimates, not reviewed (export meta ranges_review).
 // - With or without a location: 'estimate' on a plant placed from a nearest list (placement.ts).
 // Chips (desktop matrix) get the short words.
@@ -22,7 +24,8 @@ const SIDE_KEYS: Record<RangeSide, string> = { cold: 'range.side.cold', mild: 'r
 const ARIDITY_KEYS = { drier: 'range.drier', wetter: 'range.wetter' } as const;
 // The curated climates a nearest list can name, each with its own "placed as on the … list" string.
 const ESTIMATE_KEYS: Partial<Record<ClimateZone, string>> = { Mediterranean: 'estimate.fromMediterranean', Tropical: 'estimate.fromTropical', Temperate: 'estimate.fromTemperate' };
-const deg = (n: number) => Math.round(n * 10) / 10;
+// To the hundredth, as the rule compares (range.ts passes): a bound of 7.84 never reads 7.8.
+const deg = (n: number) => Math.round(n * 100) / 100;
 
 export function rangeMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface): Mark[] {
   const out: Mark[] = [];
@@ -33,7 +36,7 @@ export function rangeMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface)
     if (verdict === 'outside' || verdict === 'edge') {
       out.push({ kind: verdict, key: VERDICT_KEYS[verdict][surface], severity: verdict === 'outside' ? 'warning' : 'note', state: sides.join(' ') });
     } else if (verdict === 'unknown') {
-      out.push({ kind: 'unknown', key: 'range.unknown', severity: 'note' });
+      out.push({ kind: 'unknown', key: tight ? 'range.unknownShort' : 'range.unknown', severity: 'note' });
     }
     if (surface === 'details' && sides.length) {
       const today = siteToday(ctx.location)!, c = taxon.climate!;
@@ -43,7 +46,7 @@ export function rangeMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface)
         out.push({ kind: beyond.includes(side) ? 'outside' : 'edge', key: SIDE_KEYS[side], vars: { site: deg(site), bound: deg(bound) }, severity: 'note', state: side });
       }
     }
-    if (!tight && (aridity === 'drier' || aridity === 'wetter')) out.push({ kind: 'edge', key: ARIDITY_KEYS[aridity], severity: 'note', state: aridity });
+    if (!tight && (aridity === 'drier' || aridity === 'wetter')) out.push({ kind: 'aridity', key: ARIDITY_KEYS[aridity], severity: 'note', state: aridity });
     if (surface === 'details' && aridity === 'not-checked') out.push({ kind: 'unknown', key: 'range.aridityNotChecked', severity: 'note', state: 'aridity' });
   }
   if (taxon.estimate && taxon.placedFrom) {

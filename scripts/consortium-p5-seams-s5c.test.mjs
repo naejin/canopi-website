@@ -13,7 +13,6 @@ const core = await import('../src/lib/consortium/index.ts');
 const { rangeMarks } = await import('../src/lib/consortium/range-marks.ts');
 const { openBytes } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
-const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
 
 // A site whose today values are given (the climate reader's historical period first, a future one after).
 const at = (tminColdC, tmaxWarmC, aridityIndex = 1) => ({
@@ -44,6 +43,21 @@ test('rangeFit: coldest month on both sides and warmest month on the hot side, "
   assert.equal(core.rangeFit(t, at(0, 5)), 'inside', 'a cool summer is never checked (hot side only)');
   assert.deepEqual(core.rangeCheck(t, at(-16, 31)).sides, ['cold', 'hot']);
   assert.deepEqual(core.rangeCheck(t, at(-18, 31)), { verdict: 'outside', sides: ['cold', 'hot'], beyond: ['cold'], aridity: 'unknown' });
+});
+
+test('passes: the one comparison of the range rule (range.ts), in hundredths of a degree, used by today\'s check and the future one', () => {
+  assert.equal(core.passes(7.8, 7.8, 'above'), 'inside', 'on the bound');
+  assert.equal(core.passes(9.8, 7.8, 'above'), 'edge', 'exactly the margin above, though 9.8 - 7.8 is a hair over 2 in floats');
+  assert.equal(core.passes(9.81, 7.8, 'above'), 'beyond');
+  assert.equal(core.passes(5.8, 7.8, 'below'), 'edge');
+  assert.equal(core.passes(5.79, 7.8, 'below'), 'beyond');
+  assert.equal(core.passes(8, 7.8, 'below'), 'inside');
+  assert.equal('rangeSides' in core, false, 'the sides are a type, not a value export');
+  // future.ts takes the same rule: a slot 2 °C above Q95 in decimal terms (32.02 > 30.02 + 2 in floats) is the edge, not outside.
+  const t = taxon({ climate: { ...taxon().climate, tmaxWarm: { low: 18, median: 25, high: 30.02, count: 9, basis: 'observed_cells' } }, phases: { start: 'secondary_i', end: 'secondary_ii' } });
+  const site = at(0, 30);
+  site.lookup.climate.periods = [site.lookup.climate.periods[0], ...['ssp126', 'ssp245', 'ssp370', 'ssp585'].flatMap((scenario) => ['2041-2070', '2071-2099'].map((period) => ({ ...site.lookup.climate.periods[0], period, scenario, tmaxWarmC: 32.02 })))];
+  assert.equal(core.futureCheck(t, site, 'ssp245')?.verdict, 'edge');
 });
 
 test('rangeFit: today\'s period only (the 1991-2020 historical slot), never a future one', () => {
@@ -155,12 +169,19 @@ test('rangeMarks: edge, outside and unknown with a site climate; estimate on a b
   assert.deepEqual(marks(taxon(), at(-20, 25), 'add'), [['outside', 'range.outside', 'warning']]);
   assert.deepEqual(marks(taxon(), at(-20, 25), 'chip'), [['outside', 'range.outsideShort', 'warning']]);
   assert.deepEqual(marks(taxon({ climate: null }), at(0, 25), 'add'), [['unknown', 'range.unknown', 'note']]);
+  assert.deepEqual(marks(taxon({ climate: null }), at(0, 25), 'chip'), [['unknown', 'range.unknownShort', 'note']], 'chips get the short word');
   const details = rangeMarks(taxon(), ctx({ location: at(-20, 31) }), 'details');
   assert.deepEqual(details.map((m) => [m.kind, m.key]), [['outside', 'range.outsideDetails'], ['outside', 'range.side.cold'], ['edge', 'range.side.hot']]);
   assert.deepEqual(details[1].vars, { site: -20, bound: -15 });
   assert.deepEqual(details[2].vars, { site: 31, bound: 30 });
+  // The values a Details line shows are those the verdict compared: a bound of 7.84 against 5.8 is
+  // outside (2.04 beyond) and the line says 7.84, never a rounded 7.8 that reads as within 2 °C.
+  const fine = taxon({ climate: { ...taxon().climate, tminCold: { low: 7.84, median: 9, high: 12, count: 9, basis: 'observed_cells' } } });
+  const line = rangeMarks(fine, ctx({ location: at(5.8, 25) }), 'details').find((m) => m.key === 'range.side.cold');
+  assert.equal(line.kind, 'outside');
+  assert.deepEqual(line.vars, { site: 5.8, bound: 7.84 });
   const arid = taxon({ climate: { ...taxon().climate, aridity: { low: 0.5, median: 1, high: 2, count: 9, basis: 'observed_cells' } } });
-  assert.deepEqual(marks(arid, at(0, 25, 0.1), 'row'), [['edge', 'range.drier', 'note']], 'aridity: a mark only');
+  assert.deepEqual(marks(arid, at(0, 25, 0.1), 'row'), [['aridity', 'range.drier', 'note']], 'aridity: a mark only, of its own kind, so "N near the edge" and the edge marks agree');
   assert.deepEqual(marks(arid, at(0, 25, 0.1), 'chip'), [], 'not on the tight chips');
   assert.deepEqual(marks(arid, at(0, 25, null), 'details'), [['unknown', 'range.aridityNotChecked', 'note']], 'ice: not checked');
   const borrowed = taxon({ placedFrom: 'Mediterranean', estimate: true });
@@ -179,7 +200,7 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
   const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
   const mine = blockOf('en');
   // What the code reads: range-marks.ts and pool.tsx keys.
-  const used = ['range.edge', 'range.edgeShort', 'range.edgeDetails', 'range.outside', 'range.outsideShort', 'range.outsideDetails', 'range.unknown', 'range.drier', 'range.wetter', 'range.aridityNotChecked',
+  const used = ['range.edge', 'range.edgeShort', 'range.edgeDetails', 'range.outside', 'range.outsideShort', 'range.outsideDetails', 'range.unknown', 'range.unknownShort', 'range.drier', 'range.wetter', 'range.aridityNotChecked',
     'range.side.cold', 'range.side.mild', 'range.side.hot', 'range.pool.count', 'range.pool.edge', 'range.pool.left', 'range.pool.caveat', 'range.pool.aridityNotChecked',
     'range.empty.title', 'range.empty.body', 'range.empty.search', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed'];
   assert.deepEqual(mine, used.map((k) => `consortium.${k}`));
@@ -196,29 +217,18 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
       }
     }
   }
+  for (const l of locales) {
+    const strings = JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'));
+    for (const k of mine) assert.doesNotMatch(strings[k], /\b2\s?°C/, `${l} ${k}: the margin comes from {margin} (RANGE_MARGIN_C)`);
+    assert.match(strings['consortium.range.pool.count'], /\{margin\}/, `${l}: the count names the margin`);
+  }
+  assert.match(en['consortium.range.side.cold'], /mostly recorded down to \{bound\}/, 'Q05: "mostly recorded down to"');
+  assert.match(en['consortium.range.side.mild'], /mostly recorded up to \{bound\}/, 'Q95: "mostly recorded up to"');
+  assert.match(en['consortium.range.side.hot'], /mostly recorded up to \{bound\}/);
   assert.match(en['consortium.range.pool.caveat'], /cultivation included/);
   assert.match(en['consortium.range.pool.caveat'], /not been reviewed/);
 });
 
-// ---- the Start slot ----
-
-test('views/PoolSlot.tsx: every climate with a curated nearest list has a list (Ready, crops and site questions); the panel is a lazy feature chunk', () => {
-  const slot = view('PoolSlot.tsx');
-  assert.match(slot, /export const hasList = \(z: ClimateZone\): boolean => hasPlants\(z, curated\(\)\);/);
-  assert.match(slot, /lazyPart\(\(\) => import\('\.\/pool\/pool\.tsx'\)/, 'the panel loads on demand (P5_FEATURE_ENTRIES.pool)');
-  assert.match(slot, /!curated\(\)\.includes\(zone\) \|\| siteToday\(location\.value\) \? <panel\.View zone=\{zone\} \/> : null/, 'a curated climate without a site climate: nothing, as in P2');
-  assert.match(slot, /start\.uncovered\.title/, 'no list at all: "Not covered yet"');
-  const panel = view('pool/pool.tsx');
-  assert.match(panel, /data-pool-empty/);
-  assert.match(panel, /onClick=\{startEmpty\}/, 'nothing fits: the next step searches every plant');
-  assert.match(panel, /range\.pool\.caveat/);
-});
-
-// ---- the real export at the design check's 14 sites (p5-design-check.md §C) ----
-
-// Each site's today values as the climate reader answers them on the v0.2.0 tiles (design check
-// scratchpad p5c/*.json, period 1991-2020): Köppen, the climate it maps to, coldest-month minimum,
-// warmest-month maximum, aridity index.
 const SITES = {
   lyon: ['Cfa', 'Subtropical', 0.1, 26.6, 1.1],
   dakar: ['BSh', 'Arid', 20.0, 28.6, 0.32],
@@ -261,4 +271,13 @@ test('real export: the pool each site keeps, and a suggestion from it never hold
     if (name === 'yakutsk') assert.equal(s.members.length, 0, 'nothing fits at Yakutsk');
     else assert.ok(s.members.length > 0, `${name}: a suggestion`);
   }
+});
+
+test('PlantSource.interactions: a borrowed climate reads the rows of the curated lists it borrows from, and only those', async () => {
+  const zones = async (src, z) => new Set((await src.interactions(z)).map((i) => i.climate_zone));
+  assert.deepEqual([...await zones(fixture, 'Subtropical')].sort(), [null, 'Temperate', 'Tropical'].sort(), 'Subtropical: the general rows and those of Temperate and Tropical');
+  assert.deepEqual([...await zones(fixture, 'Continental')].sort(), [null, 'Temperate'].sort(), 'Continental never reads a Tropical row');
+  assert.deepEqual([...await zones(fixture, 'Temperate')].sort(), [null, 'Temperate'].sort(), 'a curated climate: its own rows, as in P2');
+  assert.ok((await zones(real, 'Arid')).has('Mediterranean'), 'real export: an Arid pool sees a Mediterranean-specific row');
+  assert.equal((await zones(real, 'Boreal')).has('Tropical'), false, 'real export: Boreal sees no Tropical row');
 });

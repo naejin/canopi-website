@@ -13,6 +13,7 @@
 // 4"). No projection, no range or nothing to compare: null, "not checked".
 import type { PlantId, Scenario, SitePeriod, SiteLocation, Taxon } from './types.ts';
 import { phases, scenarios } from './types.ts';
+import { passes, RANGE_MARGIN_C } from './range.ts';
 
 export const futurePeriods = ['2041-2070', '2071-2099'] as const;
 export type FuturePeriod = (typeof futurePeriods)[number];
@@ -27,8 +28,9 @@ export interface FutureCheck {
   of: number; // scenarios of the period with data
 }
 
-// °C beyond the warmest-month Q95 before a plant is too hot: today's margin (range.ts).
-export const FUTURE_HEAT_MARGIN_C = 2;
+// °C beyond the warmest-month Q95 before a plant is too hot: today's margin, and today's comparison
+// (range.ts passes, the rule's one owner). The name stays for S5d's seams test.
+export const FUTURE_HEAT_MARGIN_C = RANGE_MARGIN_C;
 const SECONDARY = phases.indexOf('secondary_i');
 const CLIMAX = phases.indexOf('climax');
 
@@ -57,9 +59,10 @@ function beyond(taxon: Taxon, slot: SitePeriod): { reasons: FutureReason[]; edge
   const aridChecked = low !== null && slot.aridityIndex !== null;
   if (!heatChecked && !aridChecked) return null;
   const reasons: FutureReason[] = [];
-  if (heatChecked && slot.tmaxWarmC > high + FUTURE_HEAT_MARGIN_C) reasons.push('heat');
+  const heat = heatChecked ? passes(slot.tmaxWarmC, high, 'above') : 'inside';
+  if (heat === 'beyond') reasons.push('heat');
   if (aridChecked && (slot.aridityIndex as number) < low) reasons.push('arid');
-  return { reasons, edge: heatChecked && slot.tmaxWarmC > high };
+  return { reasons, edge: heat !== 'inside' };
 }
 
 export function futureCheck(taxon: Taxon, site: SiteLocation | null, scenario: Scenario): FutureCheck | null {

@@ -45,10 +45,11 @@ function heightWords(t: Taxon): string {
 export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
   const pool = store.pool.value;
   // P5 S5c: a plant outside its observed range at the site is listed only once its name is typed, and
-  // then asks first ("outside its observed range"; owner answer 2).
-  const fitting = store.fitPool.value;
+  // then asks first ("outside its observed range"; owner answer 2). When nothing fits the site, the
+  // search ("Search all plants") lists every plant, each marked, rather than none.
   const loc = store.location.value;
   const outside = (t: Taxon) => rangeFit(t, loc) === 'outside';
+  const fitting = store.fitPool.value?.some((t) => !outside(t)) ? store.fitPool.value : null;
   const asks = (flags: Flag[], t?: Taxon) => asksFlags(flags) || (!!t && outside(t));
   const askLines = (t: Taxon) => [...flagLines(t, flagsOfPlant(t)).filter((l) => l.asks).map((l) => l.text), ...(outside(t) ? [T('range.outsideDetails')] : [])];
   const climate = store.climate.value;

@@ -10,7 +10,7 @@ import type {
   ClimateRange, ClimateZone, Details, FunctionId, FunctionMethod, Image, Interaction, InvasiveRecord, KoppenShare, Labels, LayerScope, LayerValue, Locale, Month, Placement,
   PlantId, RangeBasis, Reason, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
 } from '../../../lib/consortium/index.ts';
-import { months, NEAREST_LISTS, phases } from '../../../lib/consortium/index.ts';
+import { firstPlaced, months, NEAREST_LISTS, phases } from '../../../lib/consortium/index.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
@@ -111,7 +111,10 @@ function climatesOf(rows: unknown[][]): Map<number, TaxonClimate> {
 }
 
 const IN_CLIMATE = 'plant IN (SELECT plant FROM placements WHERE climate_zone = ?1)';
-const INTERACTIONS_IN = 'SELECT interaction FROM interactions WHERE climate_zone IS NULL OR climate_zone = ?1';
+// The interactions a climate reads: the general rows and those of the lists its plants come from (its
+// own, or for a borrowed climate the curated lists of its nearest-list order, P5 S5c).
+const interactionsIn = (zones: readonly ClimateZone[]): string =>
+  `SELECT interaction FROM interactions WHERE climate_zone IS NULL${zones.length ? ` OR climate_zone IN (${zones.map((_, i) => `?${i + 1}`).join(', ')})` : ''}`;
 
 export function createSqliteSource(db: Db, options: SourceOptions): PlantSource {
   const meta = new Map(db.selectObjects('SELECT key, value FROM meta').map((r) => [String(r.key), String(r.value)]));
@@ -227,18 +230,20 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       for (const z of order.filter((x) => info.climates.includes(x))) {
         for (const t of own(z)) { let r = records.get(t.id); if (!r) records.set(t.id, (r = {})); r[z] = t; }
       }
-      // The first list of the order that places it (placement.ts placeFor's rule; zone is uncurated).
+      // The first list of the order that places it (placement.ts firstPlaced, placeFor's one rule; zone is uncurated).
       p = [...records.values()].flatMap((r): Taxon[] => {
-        const from = order.find((z) => r[z]);
-        return from ? [{ ...r[from]!, placedFrom: from, estimate: true }] : [];
+        const hit = firstPlaced(r, zone, order);
+        return hit ? [{ ...hit.value, placedFrom: hit.zone, estimate: true }] : [];
       }).sort((a, b) => (a.canonical_name < b.canonical_name ? -1 : a.canonical_name > b.canonical_name ? 1 : 0));
       pools.set(zone, p);
       return p;
     },
     async interactions(c) {
-      const rows = db.selectObjects(`SELECT * FROM interactions WHERE interaction IN (${INTERACTIONS_IN}) ORDER BY interaction`, [c]);
-      const notes = group(db.selectObjects(`SELECT interaction, locale, text FROM interaction_notes WHERE interaction IN (${INTERACTIONS_IN})`, [c]), (r) => Number(r.interaction));
-      const sources = group(db.selectObjects(`SELECT interaction, source FROM interaction_sources WHERE interaction IN (${INTERACTIONS_IN}) ORDER BY interaction, ord`, [c]), (r) => Number(r.interaction));
+      const zones = info.climates.includes(c) ? [c] : NEAREST_LISTS[c].filter((z) => info.climates.includes(z));
+      const inZones = interactionsIn(zones);
+      const rows = db.selectObjects(`SELECT * FROM interactions WHERE interaction IN (${inZones}) ORDER BY interaction`, zones);
+      const notes = group(db.selectObjects(`SELECT interaction, locale, text FROM interaction_notes WHERE interaction IN (${inZones})`, zones), (r) => Number(r.interaction));
+      const sources = group(db.selectObjects(`SELECT interaction, source FROM interaction_sources WHERE interaction IN (${inZones}) ORDER BY interaction, ord`, zones), (r) => Number(r.interaction));
       const agentNames = group(db.selectObjects('SELECT agent, locale, name FROM agent_names'), (r) => String(r.agent));
       const agentSources = group(db.selectObjects('SELECT agent, source FROM agent_name_sources ORDER BY agent, ord'), (r) => String(r.agent));
       return rows.map((r): Interaction => {

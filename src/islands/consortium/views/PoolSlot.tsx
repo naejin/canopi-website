@@ -10,8 +10,8 @@
 // range.ts in the main chunk: shared by the lazy parts only, it became its own chunk, which the
 // page modulepreloads; that cost about 0.1 s at ct:matrix.)
 import type { ClimateZone } from '../../../lib/consortium/index.ts';
-import { hasPlants, siteToday } from '../../../lib/consortium/index.ts';
-import { location } from '../store.ts';
+import { hasPlants, siteToday, withinRange } from '../../../lib/consortium/index.ts';
+import { location, pools } from '../store.ts';
 import { zoneOf } from '../memory.ts';
 import { T } from '../strings.ts';
 import { lazyPart } from './lazy.tsx';
@@ -21,6 +21,12 @@ const panel = lazyPart(() => import('./pool/pool.tsx').then((m) => m.PoolPanel),
 
 const curated = (): ClimateZone[] => page().climates.flatMap((c) => zoneOf(c) ?? []);
 export const hasList = (z: ClimateZone): boolean => hasPlants(z, curated());
+// Nothing fits: the site has a climate and no plant of the climate's list holds it. Start then offers
+// no "Suggest plants" (it could only give an empty matrix); the panel's "Search all plants" is the step.
+export const nothingFits = (z: ClimateZone): boolean => {
+  const list = pools.value[z], loc = location.value;
+  return !!list && list.length > 0 && withinRange(list, loc).length === 0 && !!siteToday(loc);
+};
 
 export function PoolSlot({ zone }: { zone: ClimateZone }) {
   if (hasList(zone)) return !curated().includes(zone) || siteToday(location.value) ? <panel.View zone={zone} /> : null;

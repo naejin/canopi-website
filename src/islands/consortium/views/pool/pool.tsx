@@ -3,16 +3,17 @@
 // or once a site location is given; never in the first run): under the climate cards, what the plant
 // list holds for this site.
 // - A climate with no list of its own: its plants come from the nearest lists, placed as there and
-//   marked "estimate" (owner answer 1; core placement.ts NEAREST_LISTS). No location needed.
+//   marked "estimate" (owner answer 1; core placement.ts NEAREST_LISTS), with P2's "Ask for this
+//   climate" link kept in that paragraph. No location needed.
 // - With a site climate: how many plants are recorded in a climate like the site's (owner answer 2,
-//   core range.ts: coldest month on both sides, warmest month on the hot side, 2 °C margin), how many
+//   core range.ts: coldest month on both sides, warmest month on the hot side, RANGE_MARGIN_C margin), how many
 //   are near the edge, that the others are left out of suggestions but can still be added with a
 //   warning, and that observed ranges include cultivation and are estimates, not reviewed (export
 //   meta ranges_review 'estimate_not_reviewed'). Aridity on ice: "not checked".
 // - None of them: the "nothing fits" state [data-pool-empty], with the next step (search all plants).
 import { useEffect } from 'preact/hooks';
 import type { ClimateZone } from '../../../../lib/consortium/index.ts';
-import { NEAREST_LISTS, rangeFit, siteToday } from '../../../../lib/consortium/index.ts';
+import { NEAREST_LISTS, RANGE_MARGIN_C, rangeFit, siteToday } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { startEmpty, zoneOf } from '../../memory.ts';
 import { P, T, pageLang } from '../../strings.ts';
@@ -35,6 +36,7 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
       {!own && (
         <p class="ct-muted" data-pool-borrowed>
           {T('estimate.borrowed', { climate: zoneLabel(zone), lists: NEAREST_LISTS[zone].filter((z) => curated.includes(z)).map(zoneLabel).join(', ') })}
+          {' '}<a href={page().start.contact}>{T('start.uncovered.ask')}</a>
         </p>
       )}
       {verdicts && temps && (fit === 0 ? (
@@ -45,7 +47,7 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
         </div>
       ) : (
         <p data-pool-fit={fit}>
-          {P('range.pool.count', fit, { total: deg.format(verdicts.length), ...temps })}
+          {P('range.pool.count', fit, { total: deg.format(verdicts.length), margin: deg.format(RANGE_MARGIN_C), ...temps })}
           {edge > 0 && <> {P('range.pool.edge', edge)}</>}
           {fit < verdicts.length && <> {T('range.pool.left')}</>}
         </p>
