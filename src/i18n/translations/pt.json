@@ -748,7 +748,7 @@
   "privacy.lede": "O que projectcanopi.com recebe, o que fica no seu dispositivo, e que outros serviços são contactados, e quando.",
   "privacy.policy": "A política de privacidade deles: {link}",
   "privacy.site.title": "Ao visitar o site",
-  "privacy.site.host": "A Canopi é uma associação sem fins lucrativos de direito francês. O site está alojado na Cloudflare: como qualquer alojamento web, recebe cada pedido que o seu navegador faz a projectcanopi.com, com o seu endereço IP. Os pedidos que executam o código do próprio site, como enviar um formulário, ficam nos registos da Cloudflare com os seus detalhes: o endereço pedido, a hora, o seu navegador e uma localização aproximada (país e rede). O código do site nunca regista o que escreveu.",
+  "privacy.site.host": "A Canopi é uma associação sem fins lucrativos de direito francês. O site está alojado na Cloudflare: como qualquer alojamento web, recebe cada pedido que o seu navegador faz a projectcanopi.com, com o seu endereço IP. Os pedidos que executam o código do próprio site, como enviar um formulário, ficam nos registos da Cloudflare com os seus detalhes: o endereço pedido, a hora, o seu navegador e uma localização aproximada (como cidade, país e rede). O código do site nunca regista o que escreveu.",
   "privacy.site.none": "Não há contas, nem análise de audiência, nem publicidade, e o código do site não cria cookies.",
   "privacy.site.storage": "O seu navegador guarda algumas definições neste dispositivo: o tema claro ou escuro, o clima que escolheu, as caixas marcadas nas listas dos guias e, só durante esta visita, o facto de já lhe ter sugerido o seu idioma.",
   "privacy.site.logs": "A Cloudflare guarda estes registos até 7 dias: {link}",

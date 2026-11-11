@@ -35,17 +35,16 @@ The full citations are in the grid's `ATTRIBUTION.md` and in `src/data/climate-i
 
 The owner allowed copying app code into the site (decision "P5 owner answers", answer 6, 2026-11-11).
 Each copied file keeps its licence header and adds a line "copied from canopi <path> at <commit>".
-Stream S5b ("Where is your site?") copies these files from `desktop/web/src/` of
-[canopi](https://github.com/opencanopi/canopi) into `src/lib/location/`; the exact commit of each is
-filled in when S5b merges.
+All are from [canopi](https://github.com/opencanopi/canopi) at commit `b039f14ee612c6090c91d44b9968357cbdd1d33e`,
+under `desktop/web/src/`, copied by stream S5b ("Where is your site?").
 
-| Copied into | From canopi | At commit | Licence |
-|---|---|---|---|
-| `src/lib/location/` (geocoding registry: the provider interface, Nominatim, URL building, pacing; `email` dropped) | `desktop/web/src/app/geocoding/registry.ts` | TODO (S5b merge) | GNU AGPL v3 or later, Copyright (C) 2026 Canopi contributors; adapted in canopi from [GeoLibre](https://github.com/opengeos/GeoLibre) `packages/core/src/geocoding.ts` at commit `e9df9e2`, MIT License, Copyright (c) 2026 Qiusheng Wu (MIT text below) |
-| `src/lib/location/` (`parseCoordinates`, `shortPlaceLabel`, the pacing and the search controller) | `desktop/web/src/app/geocoding/place-search.ts` | TODO (S5b merge) | GNU AGPL v3 or later, Copyright (C) 2026 Canopi contributors |
-| `src/lib/location/` (the browser transport) | `desktop/web/src/app/geocoding/transport.browser.ts` | TODO (S5b merge) | GNU AGPL v3 or later, Copyright (C) 2026 Canopi contributors |
-| `src/lib/location/` (`geolocationSupported`, `queryGeolocationPermission`) | `desktop/web/src/app/my-location/geolocation.ts` | TODO (S5b merge) | GNU AGPL v3 or later, Copyright (C) 2026 Canopi contributors |
-| `src/islands/consortium/views/location/` (the MapLibre worker setup), if copied | `desktop/web/src/maplibre/loader.ts` | TODO (S5b merge) | GNU AGPL v3 or later, Copyright (C) 2026 Canopi contributors |
+| Copied into | From canopi `desktop/web/src/` | Licence |
+|---|---|---|
+| `src/lib/location/registry.ts` (the geocoding provider interface, Nominatim, URL building, pacing; `email` dropped) | `app/geocoding/registry.ts` | GNU AGPL v3 or later (the same licence as this site), Copyright (C) 2026 Canopi contributors; adapted in canopi from [GeoLibre](https://github.com/opengeos/GeoLibre) `packages/core/src/geocoding.ts` at commit `e9df9e2`, MIT License, Copyright (c) 2026 Qiusheng Wu (MIT text below) |
+| `src/lib/location/place-search.ts` | `app/geocoding/place-search.ts` | GNU AGPL v3 or later (the same licence as this site), Copyright (C) 2026 Canopi contributors |
+| `src/lib/location/transport.ts` | `app/geocoding/transport.browser.ts` | GNU AGPL v3 or later (the same licence as this site), Copyright (C) 2026 Canopi contributors |
+| `src/lib/location/geolocation.ts` (`geolocationSupported`, `queryGeolocationPermission`, one position read) | `app/my-location/geolocation.ts` | GNU AGPL v3 or later (the same licence as this site), Copyright (C) 2026 Canopi contributors; the browser part adapted from GeoLibre `apps/geolibre-desktop/src/lib/geolocation.ts` (and the permission rule of `packages/map/src/map-controller.ts`) at commit `e9df9e2`, MIT License, Copyright (c) 2026 Qiusheng Wu (MIT text below) |
+| `src/lib/location/maplibre.ts` | `maplibre/loader.ts` | GNU AGPL v3 or later (the same licence as this site), Copyright (C) 2026 Canopi contributors |
 
 ## Test-only, never shipped
 
@@ -1126,7 +1125,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ### murmurhash-js 1.0.0
 
 ```text
-No licence file in the package. Its package.json declares MIT, author Gary Court; the MIT licence text in this file applies.
+Copyright (c) 2011 Gary Court
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+(From the package's README.md, "License (MIT)"; it ships no licence file.)
 ```
 
 ### pbf 5.1.2

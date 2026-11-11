@@ -748,7 +748,7 @@
   "privacy.lede": "Wat projectcanopi.com ontvangt, wat op je apparaat blijft, en welke andere diensten wanneer worden benaderd.",
   "privacy.policy": "Hun privacybeleid: {link}",
   "privacy.site.title": "Als je de site bezoekt",
-  "privacy.site.host": "Canopi is een vereniging zonder winstoogmerk naar Frans recht. De site wordt gehost door Cloudflare: zoals elke webhost ontvangt het elk verzoek dat je browser aan projectcanopi.com doet, met je IP-adres. Verzoeken die de eigen code van de site uitvoeren, zoals het versturen van een formulier, komen met hun gegevens in de logboeken van Cloudflare: het gevraagde adres, het tijdstip, je browser en een globale locatie (land en netwerk). De code van de site logt nooit wat je schreef.",
+  "privacy.site.host": "Canopi is een vereniging zonder winstoogmerk naar Frans recht. De site wordt gehost door Cloudflare: zoals elke webhost ontvangt het elk verzoek dat je browser aan projectcanopi.com doet, met je IP-adres. Verzoeken die de eigen code van de site uitvoeren, zoals het versturen van een formulier, komen met hun gegevens in de logboeken van Cloudflare: het gevraagde adres, het tijdstip, je browser en een globale locatie (zoals stad, land en netwerk). De code van de site logt nooit wat je schreef.",
   "privacy.site.none": "Er is geen account, geen bezoekersstatistiek en geen reclame, en de eigen code van de site plaatst geen cookies.",
   "privacy.site.storage": "Je browser bewaart een paar instellingen op dit apparaat: het lichte of donkere thema, het gekozen klimaat, de vinkjes in de checklists van de gidsen en, alleen tijdens dit bezoek, dat hij je taal al heeft voorgesteld.",
   "privacy.site.logs": "Cloudflare bewaart deze logboeken tot 7 dagen: {link}",

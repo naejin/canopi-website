@@ -748,7 +748,7 @@
   "privacy.lede": "Che cosa riceve projectcanopi.com, che cosa resta sul tuo dispositivo, quali altri servizi vengono contattati e quando.",
   "privacy.policy": "La loro informativa sulla privacy: {link}",
   "privacy.site.title": "Visitando il sito",
-  "privacy.site.host": "Canopi è un’associazione senza scopo di lucro di diritto francese. Il sito è ospitato da Cloudflare: come ogni hosting, riceve ogni richiesta che il tuo browser fa a projectcanopi.com, con il tuo indirizzo IP. Le richieste che eseguono il codice del sito, come l’invio di un modulo, finiscono nei log di Cloudflare con i loro dettagli: l’indirizzo richiesto, l’ora, il tuo browser e una posizione approssimativa (paese e rete). Il codice del sito non registra mai ciò che hai scritto.",
+  "privacy.site.host": "Canopi è un’associazione senza scopo di lucro di diritto francese. Il sito è ospitato da Cloudflare: come ogni hosting, riceve ogni richiesta che il tuo browser fa a projectcanopi.com, con il tuo indirizzo IP. Le richieste che eseguono il codice del sito, come l’invio di un modulo, finiscono nei log di Cloudflare con i loro dettagli: l’indirizzo richiesto, l’ora, il tuo browser e una posizione approssimativa (ad esempio città, paese e rete). Il codice del sito non registra mai ciò che hai scritto.",
   "privacy.site.none": "Niente account, niente statistiche di visita, niente pubblicità, e il codice del sito non imposta cookie.",
   "privacy.site.storage": "Il tuo browser conserva alcune impostazioni su questo dispositivo: il tema chiaro o scuro, il clima che hai scelto, le caselle spuntate nelle liste delle guide e, solo per questa visita, il fatto di averti già proposto la tua lingua.",
   "privacy.site.logs": "Cloudflare conserva questi log fino a 7 giorni: {link}",

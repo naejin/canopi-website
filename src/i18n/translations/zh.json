@@ -748,7 +748,7 @@
   "privacy.lede": "projectcanopi.com 会收到什么，哪些内容只留在你的设备上，以及何时会联系哪些其他服务。",
   "privacy.policy": "其隐私政策：{link}",
   "privacy.site.title": "访问本站",
-  "privacy.site.host": "Canopi 是依据法国法律成立的非营利协会。本站由 Cloudflare 托管：和所有网站托管商一样，它会收到你的浏览器向 projectcanopi.com 发出的每个请求，以及你的 IP 地址。运行本站自身代码的请求（例如提交表单）会连同请求详情记录在 Cloudflare 的日志中：所请求的地址、时间、你的浏览器和大致位置（国家和网络）。本站代码从不记录你写的内容。",
+  "privacy.site.host": "Canopi 是依据法国法律成立的非营利协会。本站由 Cloudflare 托管：和所有网站托管商一样，它会收到你的浏览器向 projectcanopi.com 发出的每个请求，以及你的 IP 地址。运行本站自身代码的请求（例如提交表单）会连同请求详情记录在 Cloudflare 的日志中：所请求的地址、时间、你的浏览器和大致位置（例如城市、国家和网络）。本站代码从不记录你写的内容。",
   "privacy.site.none": "本站没有账户、没有访问统计、没有广告，本站自身代码也不设置任何 Cookie。",
   "privacy.site.storage": "你的浏览器会在本设备上保存少量设置：浅色或深色主题、你选择的气候、指南清单中勾选的项目，以及仅在本次访问中记住已向你推荐过语言。",
   "privacy.site.logs": "Cloudflare 最多保留这些日志 7 天：{link}",

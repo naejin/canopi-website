@@ -748,7 +748,7 @@
   "privacy.lede": "What projectcanopi.com receives, what stays on your device, and which other services are contacted, and when.",
   "privacy.policy": "Their privacy policy: {link}",
   "privacy.site.title": "Visiting the site",
-  "privacy.site.host": "Canopi is a non-profit association under French law. Cloudflare hosts the site: like any web host, it receives each request your browser makes to projectcanopi.com, with your IP address. Requests that run the site’s own code, such as sending a form, are recorded in Cloudflare’s logs with the request’s details: the address requested, the time, your browser and an approximate location (country and network). The site’s code never logs what you wrote.",
+  "privacy.site.host": "Canopi is a non-profit association under French law. Cloudflare hosts the site: like any web host, it receives each request your browser makes to projectcanopi.com, with your IP address. Requests that run the site’s own code, such as sending a form, are recorded in Cloudflare’s logs with the request’s details: the address requested, the time, your browser and an approximate location (such as city, country and network). The site’s code never logs what you wrote.",
   "privacy.site.none": "There is no account, no analytics and no advertising, and the site’s own code sets no cookies.",
   "privacy.site.storage": "Your browser keeps a few settings on this device: the light or dark theme, the climate you chose, the ticks in a guide’s checklists and, for this visit only, the fact that it already offered your language.",
   "privacy.site.logs": "Cloudflare keeps these logs for up to 7 days: {link}",
