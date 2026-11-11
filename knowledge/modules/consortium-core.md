@@ -6,7 +6,7 @@ resource: ../../src/lib/consortium
 tags: [module, consortium]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T05:24:46Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:32Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T05:55:26Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -31,8 +31,8 @@ sources:
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
-    digest: sha256:e948f8172181f2f8
-    last_modified: 2026-11-11T04:54:12Z
+    digest: sha256:a162262df831f7bf
+    last_modified: 2026-11-11T05:47:54Z
   - id: consortium-canopi-file-test-mjs
     resource: ../../scripts/consortium-canopi-file.test.mjs
     title: scripts/consortium-canopi-file.test.mjs
