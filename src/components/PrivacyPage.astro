@@ -3,14 +3,16 @@
 // the consortium tool, the contact form and the correction form send, to whom, and what stays on the
 // device. Each claim is grounded in the code it describes:
 // - hosting and logs: wrangler.jsonc (Cloudflare Workers, observability on, send_email to the owner's
-//   mailbox); src/lib/contact.mjs and src/lib/correction.mjs log codes only, never content;
+//   mailbox); Workers Logs keep request details for up to 7 days (WORKERS_LOGS, Cloudflare's docs);
+//   src/lib/contact.mjs and src/lib/correction.mjs log codes only, never content;
 // - storage on the device: src/layouts/Base.astro (theme, climate, the language offer in
 //   sessionStorage), src/components/guides/Checklist.astro, src/islands/consortium/memory.ts
 //   (consortium, country, site climate in localStorage; share links in the address's fragment);
 // - location, place search and map: the P5 design check §B and the owner's answers 4 and 5 (asked
 //   only on the reader's click; the precise point kept on the device; a link holds the 0.1° cell only
 //   with the reader's tick; Nominatim on Enter; OpenFreeMap only once the map opens); the climate
-//   tiles are static files from this site (scripts/install-climate.mjs), 112 cells of 0.1° per side;
+//   tiles are static files from this site (scripts/install-climate.mjs): climate tiles 100 cells of 0.1° (10°)
+//   per side, soil and regions 200 cells of 0.05°, so a download shows only a ~1,000 km area;
 // - donations: src/scripts/donate.js (HelloAsso's iframe is created when the dialog first opens).
 // The site has no analytics script and its code sets no cookies. The association's mailbox address is
 // never written in a page (scripts/check-built-site.mjs).
@@ -31,6 +33,9 @@ const POLICIES = {
   google: { name: 'Google (Gmail)', href: 'https://policies.google.com/privacy' },
 } as const;
 type Policy = keyof typeof POLICIES;
+// Cloudflare's documented retention of Workers Logs ("Maximum log retention period: 7 days", read 2026-11-11).
+const WORKERS_LOGS = 'https://developers.cloudflare.com/workers/observability/logs/workers-logs/';
+const logsParts = t('privacy.site.logs', lang).split('{link}');
 const policyParts = t('privacy.policy', lang).split('{link}');
 const askParts = t('privacy.ask.body', lang).split('{link}');
 const contactHref = `${localizedUrl('/', lang)}#contact`;
@@ -58,6 +63,7 @@ const sections: { id: string; title: string; paragraphs: string[]; policies?: Po
           <section class="privacy-part" id={section.id} aria-labelledby={`privacy-${section.id}`}>
             <h2 id={`privacy-${section.id}`}>{t(section.title, lang)}</h2>
             {section.paragraphs.map((key) => <p>{t(key, lang)}</p>)}
+            {section.id === 'site' && <p class="privacy-policy">{logsParts[0]}<a href={WORKERS_LOGS} rel="noopener" lang="en" translate="no">Cloudflare Workers Logs</a>{logsParts[1]}</p>}
             {section.policies?.map((id) => (
               <p class="privacy-policy">{policyParts[0]}<a href={POLICIES[id].href} rel="noopener" lang="en" translate="no">{POLICIES[id].name}</a>{policyParts[1]}</p>
             ))}

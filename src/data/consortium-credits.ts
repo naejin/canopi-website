@@ -102,7 +102,7 @@ export function toolCredits(climateCredits: readonly ClimateCredit[] | null | un
       id: 'canopi-climate',
       name: `canopi-climate ${tag} grid`,
       href: CLIMATE_REPO,
-      line: `canopi-climate ${tag} by opencanopi (${CLIMATE_REPO}): a 0.1° grid of climate (1991–2020 and CMIP6 projections to 2099), soil and regions. The grid is derived from the datasets below; their licences and attribution requirements apply to it.`,
+      line: `canopi-climate ${tag} by opencanopi (${CLIMATE_REPO}): climate on a 0.1° grid (1991–2020 and CMIP6 projections to 2099), soil and regions on a 0.05° grid. The grid is derived from the datasets below; their licences and attribution requirements apply to it.`,
       licence: 'AGPL-3.0-or-later (the code)',
       use: 'grid',
     },

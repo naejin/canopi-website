@@ -81,7 +81,7 @@ function existsSafe(path) { try { readFileSync(new URL(path, root)); return true
 // The privacy page's and the credits' strings, in every locale, inside S5f's translation block.
 const KEYS = [
   'privacy.title', 'privacy.lede', 'privacy.policy',
-  'privacy.site.title', 'privacy.site.host', 'privacy.site.none', 'privacy.site.storage',
+  'privacy.site.title', 'privacy.site.host', 'privacy.site.none', 'privacy.site.storage', 'privacy.site.logs',
   'privacy.tool.title', 'privacy.tool.device', 'privacy.tool.share',
   'privacy.location.title', 'privacy.location.device', 'privacy.location.tiles', 'privacy.location.link', 'privacy.location.search', 'privacy.location.map',
   'privacy.contact.title', 'privacy.contact.body',
@@ -102,7 +102,7 @@ test('every privacy and tool-credit string is in all 11 locales, after consortiu
       const at = keys.indexOf(key);
       assert.ok(at > from && at < to, `${lang}: ${key} sits in the S5f block`);
     }
-    for (const key of ['privacy.policy', 'privacy.ask.body', 'dataSources.tool.privacy']) assert.ok(words[key].includes('{link}'), `${lang}: ${key} has {link}`);
+    for (const key of ['privacy.policy', 'privacy.site.logs', 'privacy.ask.body', 'dataSources.tool.privacy']) assert.ok(words[key].includes('{link}'), `${lang}: ${key} has {link}`);
     // Nominatim and OpenFreeMap are named in every language (the page says who receives what).
     for (const who of ['Nominatim', 'OpenFreeMap']) assert.ok(KEYS.some((k) => k.startsWith('privacy.') && words[k].includes(who)), `${lang}: names ${who}`);
   }

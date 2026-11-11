@@ -7,13 +7,13 @@ tags: [module, data]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T17:51:05Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T13:07:36Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:06:14Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:153672f1497fea1d
-    last_modified: 2026-11-11T17:27:34Z
+    digest: sha256:9a7986ec82838cf4
+    last_modified: 2026-11-11T18:02:54Z
   - id: climate-release-json
     resource: ../../src/data/climate-release.json
     title: src/data/climate-release.json
