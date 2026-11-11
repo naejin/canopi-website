@@ -7,7 +7,7 @@ tags: [module, guides]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:39Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T04:06:18Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:10:37Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -77,8 +77,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:1e31420840fc381e
-    last_modified: 2026-11-11T04:04:21Z
+    digest: sha256:9d3fae33c85bb59d
+    last_modified: 2026-11-11T09:09:11Z
 ---
 
 # Responsibility

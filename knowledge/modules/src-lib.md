@@ -5,7 +5,7 @@ description: Framework-free logic shared by the Worker endpoints, the page scrip
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T05:24:47Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:10:10Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T05:55:27Z }
@@ -13,8 +13,8 @@ sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:15cc07d3b75c07a0
-    last_modified: 2026-11-11T05:47:54Z
+    digest: sha256:df47300642a31665
+    last_modified: 2026-11-11T09:09:11Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -35,6 +35,7 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 - [try-references.js](../../src/lib/try-references.js): `TRY_CITATION`, `TRY_DOI`, `parseTryReferences(source, { rows, dataset_ids }, file?)` and `referenceParts(reference)`, which splits a reference into text and links (trailing punctuation left out of the url; linked only through `safeHref` from `src/lib/safe-href.js`, and never with � in the url). Used by `DataSourcesPage.astro`, `check-built-site.mjs` and `install-consortium.mjs` (so what installs builds); plain JavaScript because both run in plain Node, and Node 22.12 to 22.17 cannot import a `.ts` file without a flag.
 - [safe-href.js](../../src/lib/safe-href.js): `safeHref(url)`, http(s) only (moved from the consortium's `logic.js` at P2 commit 0; used by `DataSourcesPage.astro`, `source-credits.js`, `try-references.js` and `check-built-site.mjs`; `src/scripts/consortium/logic.js` re-exports it for the streams; tested by `safe-href.test.mjs`).
 - [consortium/](../../src/lib/consortium): the consortium v2 core: the frozen seams `types.ts`, `source.ts` (`PlantSource`, load failures), `index.ts`, S1's rules (`site`, `conflicts`, `jobs`, `matrix`, `suggest`, `state`: the `#v=4` share link) and S4's `canopi-file.ts` (the `.canopi` v9 file for the app); see [Consortium core](/modules/consortium-core.md).
+- [climate/](../../src/lib/climate): the canopi-climate tile reader (P5): `lookupSite(lat, lon, source)` over `createTileSource({ index })`, ported from the crate's lookup rules (AGPL header in each file); `model.js` is plain JavaScript for the installer; see [Climate reader](/modules/climate-reader.md).
 - Field Guides (build time only): [guides.ts](../../src/lib/guides.ts) (`publishedGuides(lang)`, `guidesCiting(bookId, lang)`, `slugOf`), [svg.ts](../../src/lib/svg.ts) (seeded `rng`, `grid`, `shuffle`, bean drawing and the other shared seed and leaf shapes — kernel, squash seed, grain, tomato seed, clove, `leafPath`, `lobedLeafPath`, and the soil `crumbPath` and `threadPath` used by the soil hero row and the Soil diagrams — and `wrap` for SVG text lines), [tree-shapes.ts](../../src/lib/tree-shapes.ts) (the tree outlines the carbon farming diagrams share), [rehype-guide-terms.mjs](../../src/lib/rehype-guide-terms.mjs) (places each first `<Term>`'s glossary note and keeps a term with the punctuation touching it), [rehype-guide-checklists.mjs](../../src/lib/rehype-guide-checklists.mjs) (gives each `<Item>` its checklist id; fails on duplicate ids).
 
 # Interfaces
