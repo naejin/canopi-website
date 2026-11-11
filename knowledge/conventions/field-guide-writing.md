@@ -3,9 +3,9 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:17:23Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:38Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:17:22Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:29Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -32,8 +32,8 @@ sources:
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs
-    digest: sha256:7537b0a9f32178d6
-    last_modified: 2026-11-11T02:58:29Z
+    digest: sha256:54b8fd886c66eeb7
+    last_modified: 2026-11-11T03:33:26Z
   - id: en-mdx
     resource: ../../src/content/guides/homes-for-pollinators/en.mdx
     title: src/content/guides/homes-for-pollinators/en.mdx

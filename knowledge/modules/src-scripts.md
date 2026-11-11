@@ -5,15 +5,15 @@ description: Vanilla browser modules for the site's pages (chrome, climate, hero
 resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:17:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:39Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:34Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:31Z }
 sources:
   - id: scripts
     resource: ../../src/scripts
     title: src/scripts/
-    digest: sha256:2bd1e670eb2bb251
-    last_modified: 2026-11-11T03:07:08Z
+    digest: sha256:7785c6fb79f838ac
+    last_modified: 2026-11-11T03:33:26Z
   - id: scale-js
     resource: ../../src/scripts/consortium/scale.js
     title: src/scripts/consortium/scale.js

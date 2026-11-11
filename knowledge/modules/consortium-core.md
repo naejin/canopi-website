@@ -4,15 +4,15 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures), the v1 rule modules kept for S1 to port, and the format 4 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:14:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:27Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:32Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:4a89c38d0ebcab40
-    last_modified: 2026-11-11T03:07:08Z
+    digest: sha256:4777e8f08c747620
+    last_modified: 2026-11-11T03:33:26Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -21,8 +21,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:ae50a64b96a9953a
-    last_modified: 2026-11-11T03:07:08Z
+    digest: sha256:d5ca7a1d88470d98
+    last_modified: 2026-11-11T03:33:26Z
   - id: matrix-ts
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
@@ -31,8 +31,8 @@ sources:
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
-    digest: sha256:fff368c4f1dbad5a
-    last_modified: 2026-11-11T02:58:29Z
+    digest: sha256:6904e3c78deffa76
+    last_modified: 2026-11-11T03:24:14Z
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
@@ -103,9 +103,10 @@ The core has no DOM, no Astro and no package imports, so `node --test` runs it a
 
 | File | Holds |
 |---|---|
-| [types.ts](../../src/lib/consortium/types.ts) | `SCHEMA_VERSION` 1, `APPLICATION_ID` 0x43434F4E. Value lists: `climateZones` (capitalised as exported), `regions`, `locales`, `phases`, `strata`, `roles`, `functionIds`, `interactionTypes`, `severities`, `toxicityLevels`, `layerFields`, `layerKinds`, `months`. Site answers `lights`/`soils`/`waters`/`rooms`, each with `unsure` (A7). Records: `PlantId` (the plants.id UUID, never the integer `plant`), `Placement`, `Taxon` (one plant in one climate; `from?` marks a guest, A9), `Traits`, `Warnings`, `Interaction`, `Reason`, `LayerValue`, `Details`, `Labels`, `SourceInfo`, `Matrix`/`MatrixCell` (empty: `gap` or `misfit`), `Flag` |
+| [types.ts](../../src/lib/consortium/types.ts) | `SCHEMA_VERSION` 1, `APPLICATION_ID` 0x43434F4E. Value lists: `climateZones` (capitalised as exported), `regions`, `locales`, `phases`, `strata`, `roles`, `functionIds`, `interactionTypes`, `severities`, `toxicityLevels`, `layerFields`, `layerKinds`, `months`. Site answers `lights`/`soils`/`waters`/`rooms`, each with `unsure` (A7). Records: `PlantId` (the plants.id UUID, never the integer `plant`), `Placement`, `Taxon` (one plant in one climate; `from?` marks a guest, A9), `Traits`, `Warnings`, `Interaction`, `Reason`, `LayerValue`, `Details`, `Labels`, `SourceInfo`, `Matrix`/`MatrixCell` (empty: `gap` or `misfit`), `Flag`. View shapes for S2–S4 (review C5): `Verdict`, `FitReason` (wild height "can grow over N m", "height not recorded"), `Fit`, `JobId`/`jobIds`, `CellRef`, `Alternative` (`alsoFills`, `leavesEmpty`), `JobGap` (missing phases), `ShareState`, `LinkNotice` (`unknownCount`, `cut`, `long`), `DecodedLink`; `Matrix.unplaced` ("No layer yet") |
 | [source.ts](../../src/lib/consortium/source.ts) | `PlantSource`, as in design check §4: `info`, `countries`, `pool`, `interactions`, `placements`, `names`, `details`, `labels`, and `cellCounts` (a test oracle). `loadFailures`: `too-old`, `wasm-blocked`, `fetch`, `stale`, `damaged`, `schema`, one per §5 screen |
-| [index.ts](../../src/lib/consortium/index.ts) | Re-exports types and source. Stream S1 adds the rules here. |
+| [index.ts](../../src/lib/consortium/index.ts) | Re-exports types, source and canopi-file (S4's, exported now so S4 never edits index.ts). Stream S1 adds the rule exports here. |
+| [canopi-file.ts](../../src/lib/consortium/canopi-file.ts) | Stub for S4: `CANOPI_FILE_VERSION` 9 and `canopiFile` (null until S4). Checked against the app's vendored format, [scripts/vendor/canopi-design-format/](../../scripts/vendor/canopi-design-format) (canopi `0c425fb07`, AGPL header, test-only), with its `validate.mjs` |
 | [matrix.ts](../../src/lib/consortium/matrix.ts) | Empty stub for S1 |
 | [install-consortium.mjs](../../scripts/install-consortium.mjs) | The installer, described below |
 | [consortium-schema.mjs](../../scripts/consortium-schema.mjs) | `DDL`: the export's 34 statements, from canopi-data at `ab6bfad` (unchanged since `8a74efd`). `DATA_TABLES`: the 25 counted tables |
@@ -125,7 +126,7 @@ It refuses on the first failure, with nothing written:
   - `format_version` 4 and `schema_version` 1, refused by name otherwise; format 3 was v1's;
   - `release_id` matching `^r-[0-9a-f]{16}$`;
   - `canopi_db_sha256` all zeros only with `--fixture`;
-  - `split` agrees with the number of files, climates are in climate order, and the files' climates equal the manifest's;
+  - `split` false with one file (the page reads `files[0]` and expects every climate, so a split export is refused until it reads one file per climate), climates are in climate order, and the files' climates equal the manifest's;
   - the `try_references` and `source_credits` entries.
 - **Each database file:**
   - its name is `databaseName(release, raw_sha256, climate?)`, i.e. `consortium-v1.<release>.<12 hex of the raw db>.sqlite.gz`;
