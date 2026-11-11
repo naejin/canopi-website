@@ -113,6 +113,8 @@ test('BT-2 (S2 matrix): real Temperate gap, Room Small misfits with reasons, one
     assert.equal(await real.evaluate(() => performance.getEntriesByName('ct:matrix', 'mark').length), 1, 'performance.mark ct:matrix once, at the first matrix paint');
     for (const other of ['side', 'jobs', 'list']) {
       const p2 = await views(v, { view: other });
+      // The mark is set at the first paint (after a frame); wait for it, then require exactly one.
+      await p2.waitForFunction(() => performance.getEntriesByName('ct:matrix', 'mark').length > 0, { timeout: 5_000 }).catch(() => {});
       assert.equal(await p2.evaluate(() => performance.getEntriesByName('ct:matrix', 'mark').length), 1, `ct:matrix once when the page opens on ${other}`);
       await p2.locator(aria('tab', 'Layers × stages')).click();
       assert.equal(await p2.evaluate(() => performance.getEntriesByName('ct:matrix', 'mark').length), 1, 'still once after switching views');
