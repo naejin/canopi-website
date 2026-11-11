@@ -212,10 +212,24 @@ export interface SourceInfo { releaseId: string; schemaVersion: 1; builtAt: stri
 // The strata × phases matrix the store computes (store.ts `matrix`): one row per stratum, top to
 // bottom, seven cells each. An empty cell says why: 'gap' (no plant in the list for this cell yet)
 // or 'misfit' (plants exist, none fits the site: "Show them anyway"). One plant fills a cell.
-export interface MatrixCell { stratum: Stratum; phase: PhaseOrd; members: PlantId[]; empty: 'gap' | 'misfit' | null }
+// inList: the climate's plants that grow in the cell; fitting: those that do not misfit the site (an
+// unknown fits: "Free: N plants fit"); reasons: for a 'misfit' cell, the plants per site answer they
+// misfit; bothReasons: the counts add up to more than inList ("some for both reasons").
+export interface MatrixCell {
+  stratum: Stratum;
+  phase: PhaseOrd;
+  members: PlantId[];
+  empty: 'gap' | 'misfit' | null;
+  inList: number;
+  fitting: number;
+  reasons: Partial<Record<SiteKey, number>>;
+  bothReasons: boolean;
+}
 // unplaced: the climate's plants with no stratum yet (`stratum IS NULL`, 0 today), listed under
 // "No layer yet" rather than dropped (design check §4).
-export interface Matrix { climate: ClimateZone; rows: { stratum: Stratum; cells: MatrixCell[] }[]; filled: number; total: number; unplaced: PlantId[] }
+// The fill meter: filled of total cells that can be filled; free = total − filled; cannot = the empty
+// cells nothing can fill here (gap or misfit), which never count against the reader (28 = total + cannot).
+export interface Matrix { climate: ClimateZone; rows: { stratum: Stratum; cells: MatrixCell[] }[]; filled: number; total: number; free: number; cannot: number; unplaced: PlantId[] }
 
 // A warning on a member (store.ts `flags`): a conflict between two members, a site misfit, an
 // invasive or toxicity warning. Add and Swap ask only about 'misfit' and a high 'conflict'.
@@ -235,7 +249,8 @@ export type JobId = (typeof jobIds)[number];
 export type Verdict = 'fit' | 'misfit' | 'unknown';
 export type FitReason =
   | { key: 'light' | 'soil' | 'water'; verdict: Verdict; trait: keyof Traits | null }
-  | { key: 'room'; verdict: Verdict; kind: 'fits' | 'wild_height'; meters: number }
+  // meters: the plant's wild maximum that decides (height, or width for 'wild_width'); limit: the room's.
+  | { key: 'room'; verdict: Verdict; kind: 'fits' | 'wild_height' | 'wild_width'; meters: number; limit: number }
   | { key: 'room'; verdict: 'unknown'; kind: 'height_not_recorded' };
 export interface Fit { verdict: Verdict; misfits: SiteKey[]; unknowns: SiteKey[]; reasons: FitReason[] }
 
@@ -259,7 +274,10 @@ export interface ShareState {
   kept: PlantId[];
   removed: PlantId[];
   guests: { id: PlantId; from: ClimateZone }[];
+  crops: PlantId[]; // Main crops (at most 3), each also kept
   stage: PhaseOrd | null;
 }
-export interface LinkNotice { unknownCount: number; cut: boolean; long: boolean }
+// outdated: a link of another version (v1 share links are not read: owner row 2026-11-11); its plants
+// are not restored.
+export interface LinkNotice { unknownCount: number; cut: boolean; long: boolean; outdated: boolean }
 export interface DecodedLink { state: ShareState; notice: LinkNotice }

@@ -1,5 +1,4 @@
-// Opening the consortium database in the browser (stream S1 owns this file; commit 0 holds the
-// minimum the shell and probe P1 need). Design check §2: sqlite-wasm OO1 on the main thread, no OPFS,
+// Opening the consortium database in the browser (stream S1). Design check §2: sqlite-wasm OO1 on the main thread, no OPFS,
 // no worker, no COOP/COEP; the gzipped file is fetched whole, its digest checked and decompressed with
 // DecompressionStream unless the server already decoded it (P3: no 1f 8b magic; bytes.ts), deserialized read-only, then checked
 // against the index the page was built with (§4 "open"). Each failure maps to a §5 screen.
@@ -68,10 +67,22 @@ export async function openDatabase(ref: DbRef, expected: Expected): Promise<Open
   if (tooOld()) throw new LoadError('too-old', 'no DecompressionStream');
   if (wasmMissing()) throw new LoadError('wasm-blocked', 'no WebAssembly');
   const [bytes, sqlite3] = await Promise.all([fetchBytes(ref), initSqlite()]);
+  return openWith(sqlite3, bytes, expected);
+}
+
+// Opens raw database bytes already in hand (the tests run it with the package's Node build).
+export async function openBytes(bytes: Uint8Array, expected: Expected): Promise<Opened> {
+  return openWith(await initSqlite(), bytes, expected);
+}
+
+// Deserializes read-only, then checks application_id, user_version, the release id and the climates
+// against the index the page was built with (§4 "open"); never a partial render on a mismatch.
+function openWith(sqlite3: Sqlite3, bytes: Uint8Array, expected: Expected): Opened {
   const { capi, wasm, oo1 } = sqlite3;
   const db = new oo1.DB();
   try {
-    const p = wasm.allocFromTypedArray(bytes);
+    // A Node Buffer is a Uint8Array subclass the wasm helper refuses: copy it into a plain view.
+    const p = wasm.allocFromTypedArray(bytes.constructor === Uint8Array ? bytes : new Uint8Array(bytes));
     const rc = capi.sqlite3_deserialize(db.pointer!, 'main', p, bytes.byteLength, bytes.byteLength,
       capi.SQLITE_DESERIALIZE_FREEONCLOSE | capi.SQLITE_DESERIALIZE_READONLY);
     if (rc) throw new LoadError('damaged', `sqlite3_deserialize returned ${rc}`);
@@ -83,8 +94,13 @@ export async function openDatabase(ref: DbRef, expected: Expected): Promise<Open
       throw new LoadError('damaged', `not a database: ${(err as Error).message}`);
     }
     if (appId !== APPLICATION_ID || userVersion !== SCHEMA_VERSION) throw new LoadError('schema', `application_id ${String(appId)}, user_version ${String(userVersion)}`);
-    const release = db.selectValue("SELECT value FROM meta WHERE key = 'release_id'");
-    const climates = db.selectValues('SELECT id FROM climates ORDER BY ord');
+    let release: unknown, climates: unknown[];
+    try {
+      release = db.selectValue("SELECT value FROM meta WHERE key = 'release_id'");
+      climates = db.selectValues('SELECT id FROM climates ORDER BY ord');
+    } catch (err) {
+      throw new LoadError('schema', `no meta or climates table: ${(err as Error).message}`);
+    }
     if (release !== expected.releaseId || climates.join() !== expected.climates.join())
       throw new LoadError('schema', `release ${String(release)} (${climates.join(', ')}), the page expects ${expected.releaseId} (${expected.climates.join(', ')})`);
     return { sqlite3, db };

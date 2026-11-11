@@ -1,5 +1,5 @@
 // Warnings between and about taxa: interaction rows that pair two members, and invasive records
-// for the user's country. An interaction names its subject and object at a rank (species = the
+// for the reader's country (ported from v1 as is, design check §2). An interaction names its subject and object at a rank (species = the
 // canonical name, genus, family), so a genus row matches every species of the genus.
 // `allelopathy_tolerant` rows record a plant that tolerates another's allelopathy, and
 // `intercropped_yield_gain` rows two species grown together with a yield gain in field trials; both
@@ -88,12 +88,14 @@ export function pairings(taxon: Taxon, others: Taxon[], interactions: Interactio
   return out;
 }
 
-// A medium or high conflict keeps a candidate out of automatic picks; low or unrated ones only warn.
-export const isSerious = (c: Conflict) => c.severity === 'medium' || c.severity === 'high';
+// A serious conflict is a high-severity one (design check A7, coordinator row "v2 mockup choices"
+// 2026-11-11): it keeps a candidate out of automatic picks and makes Add and Swap ask. Medium, low and
+// unrated ones only warn.
+export const isSerious = (c: Pick<Conflict, 'severity'>): boolean => c.severity === 'high';
 
 // true: recorded invasive in the country; false: checked and not recorded there; null: not checked
 // for this taxon, a country GRIIS did not check, or no country given. `checked` is the manifest's
-// countries[code].invasive_checked and must be given as true for a "false": a caller that leaves it
+// PlantSource.countries().get(code).invasiveChecked and must be given as true for a "false": a caller that leaves it
 // out gets null, so "not checked" is never told as "none" (review m7).
 export function invasiveIn(taxon: Taxon, country: string | null | undefined, checked?: boolean): boolean | null {
   const list = taxon.warnings.invasive_in;
