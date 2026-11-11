@@ -743,7 +743,7 @@
   "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
   "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
   "consortium.future.title": "将来の気候",
-  "consortium.future.lede": "各植物を、その生育が及ぶ最も遅い時期について、あなたの土地の予測気候と比べます：2041–2070年、極相の植物は2071–2099年。予測は、制約付きCMIP6モデル群の変化量（Beck ほか、2023）をCHELSA v2.1の1981–2010年の気候に加えたものです。各植物の範囲は栽培地を含め記録のある場所です。推定値で、未確認です。",
+  "consortium.future.lede": "各植物を、その生育が及ぶ最も遅い時期について、あなたの土地の予測気候と比べます：2041–2070年、極相の植物は2071–2099年。予測は、制約付きCMIP6モデル群の変化量（Beck ほか、2023）をCHELSA v2.1の1981–2010年の気候に加えたものです。各植物の範囲は栽培地を含め記録のある場所です。推定値で、専門家の確認は受けていません。",
   "consortium.future.notChecked": "将来の気候は未確認：この場所には気候予測がありません。",
   "consortium.future.scenario": "排出シナリオ",
   "consortium.future.scenario.ssp126": "{name} · 低",

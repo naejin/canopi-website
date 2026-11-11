@@ -72,7 +72,8 @@ export function futureCheck(taxon: Taxon, site: SiteLocation | null, scenario: S
   const already = (today && beyond(taxon, today)?.reasons) || [];
   const fresh = (b: { reasons: FutureReason[] }) => b.reasons.filter((r) => !already.includes(r));
   const why = fresh(mine);
-  const verdict: FutureVerdict = why.length ? 'outside' : already.length ? 'already' : mine.edge && !already.includes('heat') ? 'edge' : 'inside';
+  // A new heat edge outranks "already": a plant already too dry today still shows the edge (with the suffix).
+  const verdict: FutureVerdict = why.length ? 'outside' : mine.edge && !already.includes('heat') ? 'edge' : already.length ? 'already' : 'inside';
   let agree = 0, of = 0;
   for (const s of scenarios) {
     const slot = slotOf(site, period, s);

@@ -89,7 +89,7 @@ function PlantLine({ t, sum }: { t: Taxon; sum: FutureSummary }) {
     : c.verdict === 'already' ? T(`future.already.${reasonKey(c.already)}`)
     : c.verdict === 'edge' ? T('future.long.edge', vars!)
     : T('future.plant.inside', vars!);
-  const also = c?.verdict === 'outside' && c.already.length ? ` · ${T(`future.already.${reasonKey(c.already)}`)}` : '';
+  const also = (c?.verdict === 'outside' || c?.verdict === 'edge') && c.already.length ? ` · ${T(`future.already.${reasonKey(c.already)}`)}` : '';
   return (
     <li data-future-plant={t.id} data-future-verdict={c?.verdict ?? 'not-checked'}>
       <button type="button" class="ct-link-button" aria-haspopup="dialog" onClick={() => openDetails(t.id)}>{nameOf(t)}</button>{' · '}{words}{also}

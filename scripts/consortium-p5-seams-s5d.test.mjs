@@ -67,6 +67,10 @@ test('futureCheck: a reason must be a change from today; a plant already beyond 
   assert.deepEqual(core.futureCheck(withArid(0.5), site([34, 34, 34, 34], undefined, { arid: [0.4, 0.4, 0.4, 0.4], today: hot }), 'ssp245'), check('2071-2099', 'outside', ['arid'], ['heat'], 4, 4));
   // No today slot: nothing is known to be already beyond.
   assert.deepEqual(core.futureCheck(ends('climax'), site([34, 34, 34, 34], undefined, { today: null }), 'ssp245'), check('2071-2099', 'outside', ['heat'], [], 4, 4));
+  // Near the edge today (Q95 + 1), past the margin by the period (Q95 + 3): a change, so outside for heat.
+  assert.deepEqual(core.futureCheck(ends('climax'), site([33, 33, 33, 33], undefined, { today: { tmax: 31, arid: 1 } }), 'ssp245'), check('2071-2099', 'outside', ['heat'], [], 4, 4));
+  // Already too dry today, near the heat edge by the period: the edge still shows, with the dry suffix.
+  assert.deepEqual(core.futureCheck(withArid(0.5), site([31, 31, 31, 31], undefined, { arid: [0.4, 0.4, 0.4, 0.4], today: dry }), 'ssp245'), check('2071-2099', 'edge', [], ['arid'], 4, 4));
 });
 
 test('futureCheck: null ("not checked") without a site, without projections, without a range, or with nothing to compare', () => {
@@ -137,9 +141,10 @@ const counts = (sum) => ({
 });
 
 // Cross-checked with an independent sqlite3 count of the same rule (whole lists of 200). Reasons count
-// only as changes from today: at Lyon 5 of the 7 plants too dry by 2041–2070 are already too dry today.
+// only as changes from today: at Lyon 5 of the 7 plants too dry by 2041–2070 are already too dry today, and
+// one of those is near the heat edge by then, so it is checked (edge, with the dry suffix), not grouped as already.
 const EXPECT = {
-  lyon: { '2041-2070': { n: 23, m: 92, heat: 21, arid: 2 }, '2071-2099': { n: 17, m: 33, heat: 17, arid: 0 }, already: { heat: 5, arid: 5 }, todayOnly: 65, notChecked: 0 },
+  lyon: { '2041-2070': { n: 23, m: 93, heat: 21, arid: 2 }, '2071-2099': { n: 17, m: 33, heat: 17, arid: 0 }, already: { heat: 5, arid: 4 }, todayOnly: 65, notChecked: 0 },
   manaus: { '2041-2070': { n: 2, m: 110, heat: 0, arid: 2 }, '2071-2099': { n: 1, m: 31, heat: 0, arid: 1 }, already: { heat: 0, arid: 0 }, todayOnly: 59, notChecked: 0 },
   seville: { '2041-2070': { n: 49, m: 64, heat: 29, arid: 32 }, '2071-2099': { n: 14, m: 14, heat: 13, arid: 8 }, already: { heat: 51, arid: 49 }, todayOnly: 71, notChecked: 0 },
   oslo: { '2041-2070': { n: 0, m: 102, heat: 0, arid: 0 }, '2071-2099': { n: 0, m: 33, heat: 0, arid: 0 }, already: { heat: 0, arid: 0 }, todayOnly: 65, notChecked: 0 },

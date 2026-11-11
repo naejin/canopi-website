@@ -5,13 +5,13 @@ description: "The consortium v2 page in 11 locales: the static Astro shell, the 
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:10:56Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:33:21Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:21:27Z }
 sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
     digest: sha256:fddd3972e167b271
-    last_modified: 2026-11-11T18:09:28Z
+    last_modified: 2026-11-11T17:58:51Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -96,7 +96,7 @@ sources:
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:04ad31086bbf4313
-    last_modified: 2026-11-11T18:09:28Z
+    last_modified: 2026-11-11T17:58:51Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
@@ -205,8 +205,8 @@ sources:
   - id: future-panel-tsx
     resource: ../../src/islands/consortium/views/future/future.tsx
     title: src/islands/consortium/views/future/future.tsx
-    digest: sha256:f3e0ef8bfaab657a
-    last_modified: 2026-11-11T18:09:28Z
+    digest: sha256:0cae0bf63297175f
+    last_modified: 2026-11-11T18:17:26Z
   - id: plantmarks-tsx
     resource: ../../src/islands/consortium/views/PlantMarks.tsx
     title: src/islands/consortium/views/PlantMarks.tsx
@@ -226,7 +226,7 @@ sources:
     resource: ../../scripts/browser/consortium-p5.browser.test.mjs
     title: scripts/browser/consortium-p5.browser.test.mjs
     digest: sha256:9772070874e1db11
-    last_modified: 2026-11-11T18:09:28Z
+    last_modified: 2026-11-11T18:15:32Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
