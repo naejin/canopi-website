@@ -227,7 +227,7 @@ test('BT-3 (S2 side view): the chosen stage, a drawing with role=img and names, 
     assert.ok(await findAx(page, { name: /Layer is light, not height/ }), '"Layer is light, not height"');
     const keys = (await axNodes(page)).filter((n) => n.role === 'button' && n.name && img.name.includes(n.name) && n.name.length > 2);
     assert.ok(keys.length >= 1, 'the key repeats the drawing\'s names as buttons');
-    assert.ok(await page.$$eval('.ct-sv-key .ct-dim', (els) => els.some((e) => /up to [\d.]+ m in the wild/.test(e.textContent))), 'heights read "up to N m in the wild"');
+    assert.ok(await page.$$eval('.ct-views .ct-sv-key .ct-dim', (els) => els.some((e) => /up to [\d.]+ m in the wild/.test(e.textContent))), 'heights read "up to N m in the wild"');
   });
 });
 
@@ -248,17 +248,17 @@ test('BT-3 (S2 side view): 8, 20 and 30 plants keep the scale: plants at full pl
         const { store: s } = window.__ctViews, ph = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'], p = s.stage.value;
         s.members.value = s.pool.value.filter((x) => x.stratum && x.phases && ph.indexOf(x.phases.start) <= p && p <= ph.indexOf(x.phases.end)).slice(0, k).map((x) => x.id);
       }, count);
-      await page.waitForFunction((k) => document.querySelectorAll('.ct-sv-key li').length === k, { timeout: 5000 }, count);
+      await page.waitForFunction((k) => document.querySelectorAll('.ct-views .ct-sv-key li').length === k, { timeout: 5000 }, count);
       const g = await page.evaluate(() => {
-        const svg = document.querySelector('.ct-sv-svg'), box = svg.getBoundingClientRect();
+        const svg = document.querySelector('.ct-views .ct-sv-svg'), box = svg.getBoundingClientRect();
         const plants = [...svg.querySelectorAll('svg.ct-sv-plant > g')].map((el) => {
           const m = el.getScreenCTM(), r = el.getBoundingClientRect();
           return { scale: m.d, ground: m.f + 72 * m.d, x: m.e, frac: Number(el.dataset.frac), shape: el.dataset.shape, top: r.top, left: r.left, right: r.right };
         });
         const marks = [...svg.querySelectorAll('rect.ct-sv-mark')].map((el) => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, w: r.width }; });
-        const lines = [...svg.querySelectorAll('.ct-sv-line')].map((el) => el.getBoundingClientRect().top);
-        const nums = [...document.querySelectorAll('.ct-sv-nums span')].map((el) => { const r = el.getBoundingClientRect(); return r.left + r.width / 2; });
-        const labels = [...document.querySelectorAll('.ct-sv-scale span')].map((el) => el.getBoundingClientRect().right);
+        const lines = [...svg.querySelectorAll('.ct-views .ct-sv-line')].map((el) => el.getBoundingClientRect().top);
+        const nums = [...document.querySelectorAll('.ct-views .ct-sv-nums span')].map((el) => { const r = el.getBoundingClientRect(); return r.left + r.width / 2; });
+        const labels = [...document.querySelectorAll('.ct-views .ct-sv-scale span')].map((el) => el.getBoundingClientRect().right);
         return { top: box.top, bottom: box.bottom, height: box.height, left: box.left, right: box.right, plants, marks, lines, nums, labels };
       });
       const frac = (m) => Math.log(m / 0.05) / Math.log(60 / 0.05);
