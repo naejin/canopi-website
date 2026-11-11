@@ -1,3 +1,6 @@
+// Ported from canopi-climate (https://github.com/opencanopi/canopi-climate, commit 0908add): the grid's
+// rules re-written in TypeScript. Copyright (C) 2026 Canopi contributors. Licensed under the GNU Affero
+// General Public License, version 3 or (at your option) any later version (THIRD_PARTY_NOTICES.md).
 // Regions layer values (canopi-climate src/regions.rs): the WGSRPD level-3 botanical area and the
 // country (ISO 3166-1 alpha-2) of each 0.05-degree cell, stored as the codes themselves in base 26
 // (letters A = 0 … Z = 25): "FRA" = 5 × 676 + 17 × 26 + 0, "FR" = 5 × 26 + 17.

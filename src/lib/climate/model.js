@@ -1,3 +1,6 @@
+// Ported from canopi-climate (https://github.com/opencanopi/canopi-climate, commit 0908add): the grid's
+// rules re-written in JavaScript. Copyright (C) 2026 Canopi contributors. Licensed under the GNU Affero
+// General Public License, version 3 or (at your option) any later version (THIRD_PARTY_NOTICES.md).
 // What a canopi-climate v0.2 grid stores, as the site's reader expects it. Plain JavaScript so the
 // installer (scripts/install-climate.mjs) and the built-site check import it under plain Node; the
 // TypeScript reader beside it imports it too. Source of truth: canopi-climate src/model.rs

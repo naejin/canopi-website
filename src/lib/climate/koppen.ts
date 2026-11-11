@@ -1,3 +1,6 @@
+// Ported from canopi-climate (https://github.com/opencanopi/canopi-climate, commit 0908add): the grid's
+// rules re-written in TypeScript. Copyright (C) 2026 Canopi contributors. Licensed under the GNU Affero
+// General Public License, version 3 or (at your option) any later version (THIRD_PARTY_NOTICES.md).
 // Köppen-Geiger classes of the grid (canopi-climate src/koppen.rs): the Beck et al. (2023) legend
 // and the check of a stored class against its stored coldest/warmest monthly means.
 

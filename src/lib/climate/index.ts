@@ -1,3 +1,6 @@
+// Ported from canopi-climate (https://github.com/opencanopi/canopi-climate, commit 0908add): the grid's
+// rules re-written in TypeScript. Copyright (C) 2026 Canopi contributors. Licensed under the GNU Affero
+// General Public License, version 3 or (at your option) any later version (THIRD_PARTY_NOTICES.md).
 // The site's climate reader (P5, design check section A): where is a point, what is its climate in
 // each period/scenario, its soil and its botanical area and country, read from the canopi-climate
 // v0.2 tiles installed under /data/climate/<version>-<manifest digest>/ (scripts/install-climate.mjs).
@@ -21,7 +24,7 @@ export * from './koppen.ts';
 export * from './soil.ts';
 export * from './regions.ts';
 export * from './lookup.ts';
-export { decodeRaster, inflateDeflate, TileFormatError, type Raster, type Inflate } from './tiff.ts';
+export { decodeRaster, readTileHeader, inflateDeflate, TileFormatError, type Raster, type Inflate, type TileHeader } from './tiff.ts';
 export { LAYERS, SLOTS, VARIABLES, NODATA } from './model.js';
 
 /** What the reader needs of src/data/climate-index.json: where the tiles are and which exist. */

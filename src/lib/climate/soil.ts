@@ -1,3 +1,6 @@
+// Ported from canopi-climate (https://github.com/opencanopi/canopi-climate, commit 0908add): the grid's
+// rules re-written in TypeScript. Copyright (C) 2026 Canopi contributors. Licensed under the GNU Affero
+// General Public License, version 3 or (at your option) any later version (THIRD_PARTY_NOTICES.md).
 // Soil layer values (canopi-climate src/soil.rs): SoilGrids 2.0 pH in water, sand and clay (0-30 cm)
 // and a fill distance, on the 0.05-degree layer grid; the USDA texture class derived at lookup.
 

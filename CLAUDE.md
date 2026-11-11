@@ -48,6 +48,7 @@ supported filter metadata before copying it under `dist/client/app/`.
 - Responsive breakpoints across the project: `max-width: 639px` (mobile) and `min-width: 960px` (desktop); no tablet tier
 - Web Edition `/app/*` fallback is static `_redirects`; for the Web Edition files under `/app/`, do not add website-side catalog search, storage, DuckDB, Worker, Pages Function, R2, KV, D1, service-worker, or offline catalog behavior. This does not cover the consortium tool (`/consortium/`), which reads its own static SQLite export (`/data/consortium/*.sqlite.gz`) in the browser with sqlite-wasm and keeps the last consortium and the reader's country choice in localStorage; licences in `THIRD_PARTY_NOTICES.md`
 - Web Edition catalog files under `/app/canopi-catalog/` must serve directly as static assets
+- Climate tiles: `npm run install:climate -- <canopi-climate-grid-vX.Y.Z.tar>` installs them under `public/data/climate/<version>-<12 hex>/` and writes `src/data/climate-index.json`; the reader (`src/lib/climate/`) never requests a tile the index does not list. The tiles (~98 MB, 1,257 files) are not in git yet, so a Cloudflare build does not have them
 
 <!-- okf:begin -->
 <!-- Managed by `okf agents install` (okfkit 0.1.0). Edits inside this block are overwritten. -->

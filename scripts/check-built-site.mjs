@@ -3,6 +3,7 @@ import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { builtTarget, splitHref, subdirectories } from './built-links.mjs';
 import { tryListProblem, verifyInstall, INDEX_PATH } from './install-consortium.mjs';
+import { verifyClimateInstall, INDEX_PATH as CLIMATE_INDEX_PATH } from './install-climate.mjs';
 import { consortiumPath } from '../src/i18n/consortium-path.js';
 import { parseTryReferences, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.js';
 import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
@@ -473,5 +474,34 @@ for (const lang of locales) {
   for (const p of graph.keys()) if (!html.includes(`src="${p}"`)) assert.ok(modules.has(p), `${path}: modulepreload ${p}`);
 }
 console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB).`);
+
+// P5 design check A: Workers static assets take at most 20,000 files on the Free plan (100,000 Paid);
+// every file of the build counts, the Web Edition under /app/ and the climate tiles included.
+const MAX_ASSET_FILES = 20_000;
+let assetFiles = 0;
+{
+  const stack = [root];
+  while (stack.length) {
+    const dir = stack.pop();
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.isDirectory()) stack.push(join(dir, e.name));
+      else assetFiles++;
+    }
+  }
+}
+assert.ok(assetFiles <= MAX_ASSET_FILES, `${root} holds ${assetFiles} files, over the ${MAX_ASSET_FILES} static assets a Workers Free plan serves`);
+console.log(`Static assets: ${assetFiles} files in ${root} (limit ${MAX_ASSET_FILES}).`);
+// The canopi-climate tiles (scripts/install-climate.mjs), when installed: every tile of
+// src/data/climate-index.json present with its size, one grid version, nothing else.
+{
+  const climateDir = join(root, 'data', 'climate');
+  const climateIndex = existsSync(CLIMATE_INDEX_PATH) ? JSON.parse(readFileSync(CLIMATE_INDEX_PATH, 'utf8')) : null;
+  if (!existsSync(climateDir)) console.log(`Climate tiles: not installed in ${climateDir}${climateIndex ? ' (the index lists them: run `npm run install:climate -- <canopi-climate-grid tar>` before a deploy that reads them)' : ''}.`);
+  else {
+    assert.ok(climateIndex, `${climateDir} is served but ${CLIMATE_INDEX_PATH} is missing`);
+    const counts = verifyClimateInstall(climateDir, climateIndex);
+    console.log(`Climate tiles: canopi-climate ${climateIndex.release.builder_version} under ${climateIndex.base}, ${counts.climate} climate, ${counts.soil} soil and ${counts.regions} regions tiles, each with its size.`);
+  }
+}
 
 console.log(`Verified 11 locale pages, their bibliography, data sources (${creditRows.length} credited sources, ${tryRows.length} TRY rows each) and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);

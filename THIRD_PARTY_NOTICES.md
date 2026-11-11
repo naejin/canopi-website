@@ -15,6 +15,20 @@ ones pinned in `package.json` / `package-lock.json`.
 The consortium data itself (the SQLite export under `/data/consortium/`) carries its own sources and
 licences, credited on the Data sources page (`/data-sources/`).
 
+## Served data and code of the location lookup (`/data/climate/`, `src/lib/climate/`)
+
+| Component | Version | Licence | Use |
+|---|---|---|---|
+| [canopi-climate](https://github.com/opencanopi/canopi-climate) grid (`canopi-climate-grid-v0.2.0.tar`, installed by `scripts/install-climate.mjs`) | 0.2.0 (manifest `04ec85f4603f…`) | Built by canopi-climate, GNU AGPL v3 or later, Copyright (C) 2026 Canopi contributors; the data keep their sources' licences (rows below, and the release's `ATTRIBUTION.md`) | Climate, soil and botanical area of a location, served as static tiles under `/data/climate/` |
+| `src/lib/climate/` (the tile reader), ported from canopi-climate (commit `0908add`) | — | GNU AGPL v3 or later, Copyright (C) 2026 Canopi contributors (header in each file) | Reads the tiles in the browser with the crate's lookup rules |
+| Beck et al. (2023), Köppen-Geiger maps and monthly climatologies 1901-2099 ([doi:10.6084/m9.figshare.21789074.v2](https://doi.org/10.6084/m9.figshare.21789074.v2)) | figshare v2 (January 2026 correction) | CC BY 4.0 as published on figshare (the authors' GloH2O page links CC BY-NC 4.0; the project has the authors' permission) | Köppen-Geiger classes, temperatures, precipitation, aridity, dry months, every period and scenario |
+| CHELSA V2.1 bioclimatic variables 1981-2010 ([doi:10.16904/envidat.228](https://doi.org/10.16904/envidat.228)) | 2.1 | CC0 1.0 | Baseline of the coldest-month minimum and warmest-month maximum |
+| SoilGrids 2.0 ([isric.org/explore/soilgrids](https://www.isric.org/explore/soilgrids)) | 2.0, 5 km aggregates | CC BY 4.0 | Soil pH, sand and clay, 0-30 cm |
+| WGSRPD level 3 ([github.com/tdwg/wgsrpd](https://github.com/tdwg/wgsrpd)), Brummitt (2001) | Edition 2, polygons at commit `f68afd9` | Not declared upstream (checked 2026-11-11); used with attribution as the TDWG standard's reference geometry | Botanical area of a location |
+| Natural Earth 1:50m Admin 0 - Map Units ([naturalearthdata.com](https://www.naturalearthdata.com/)) | 5.1.2 | Public domain | Country of a location |
+
+The full citations are in the grid's `ATTRIBUTION.md` and in `src/data/climate-index.json` (`credits`).
+
 ## Test-only, never shipped
 
 | Component | Licence | Use |

@@ -1,3 +1,6 @@
+// Ported from canopi-climate (https://github.com/opencanopi/canopi-climate, commit 0908add): the grid's
+// rules re-written in TypeScript. Copyright (C) 2026 Canopi contributors. Licensed under the GNU Affero
+// General Public License, version 3 or (at your option) any later version (THIRD_PARTY_NOTICES.md).
 // The global grids (canopi-climate src/grid.rs and src/layer.rs, manifest.json grid.cell_edges):
 // 0.1-degree climate cells and 0.05-degree site-layer cells in the same 10-degree tiles.
 // - Cell (col, row): col 0 starts at 180 W, row 0 at 90 N. A cell covers longitudes [west, west + d)

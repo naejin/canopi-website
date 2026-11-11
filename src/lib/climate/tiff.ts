@@ -1,3 +1,6 @@
+// Ported from canopi-climate (https://github.com/opencanopi/canopi-climate, commit 0908add): the grid's
+// rules re-written in TypeScript. Copyright (C) 2026 Canopi contributors. Licensed under the GNU Affero
+// General Public License, version 3 or (at your option) any later version (THIRD_PARTY_NOTICES.md).
 // Decodes one canopi-climate tile file: a little-endian classic TIFF, int16, pixel-interleaved,
 // Deflate (zlib) without predictor, one internal tile (112 × 112 climate, 208 × 208 site layers)
 // holding the 100 × 100 or 200 × 200 cells, georeferenced by ModelPixelScale and ModelTiepoint
@@ -108,8 +111,19 @@ const TAG = {
   pixelScale: 33550, tiepoint: 33922,
 } as const;
 
-/** Decodes a whole tile file (the bytes as fetched) into its cells; throws TileFormatError. */
-export async function decodeRaster(file: ArrayBuffer | Uint8Array, shape: RasterShape, inflate: Inflate = inflateDeflate): Promise<Raster> {
+export interface TileHeader {
+  west: number;
+  north: number;
+  /** Internal tile width and length (padding included). */
+  tileWidth: number;
+  tileLength: number;
+  /** Byte range of the compressed tile data. */
+  offset: number;
+  count: number;
+}
+
+/** Reads and checks a tile file's header (layout, encoding, position) without inflating its data. */
+export function readTileHeader(file: ArrayBuffer | Uint8Array, shape: RasterShape): TileHeader {
   const bytes = file instanceof Uint8Array ? file : new Uint8Array(file);
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const tags = fields(view);
@@ -126,9 +140,9 @@ export async function decodeRaster(file: ArrayBuffer | Uint8Array, shape: Raster
   if (one(TAG.compression) !== 8 && one(TAG.compression) !== 32946) fail(`compression ${one(TAG.compression)}, expected Deflate`);
   if (one(TAG.predictor, 1) !== 1) fail('a predictor is set');
   if (one(TAG.planar, 1) !== 1) fail('not pixel-interleaved');
-  const [tw, tl] = [one(TAG.tileWidth), one(TAG.tileLength)];
+  const [tileWidth, tileLength] = [one(TAG.tileWidth), one(TAG.tileLength)];
   const offsets = get(TAG.tileOffsets), counts = get(TAG.tileByteCounts);
-  if (tw < side || tl < side || offsets.length !== 1 || counts.length !== 1) fail('not one internal tile covering the image');
+  if (tileWidth < side || tileLength < side || offsets.length !== 1 || counts.length !== 1) fail('not one internal tile covering the image');
   const [offset, count] = [offsets[0], counts[0]];
   if (offset + count > bytes.byteLength) fail('the tile data lies past the end of the file');
 
@@ -139,7 +153,14 @@ export async function decodeRaster(file: ArrayBuffer | Uint8Array, shape: Raster
   const west = tie[3] - tie[0] * cellDeg, north = tie[4] + tie[1] * cellDeg;
   const rw = Math.round(west / 10) * 10, rn = Math.round(north / 10) * 10;
   if (Math.abs(west - rw) > 1e-6 || Math.abs(north - rn) > 1e-6 || rw < -180 || rw > 170 || rn < -80 || rn > 90) fail(`origin ${west}, ${north} is not a tile corner`);
+  return { west: rw, north: rn, tileWidth, tileLength, offset, count };
+}
 
+/** Decodes a whole tile file (the bytes as fetched) into its cells; throws TileFormatError. */
+export async function decodeRaster(file: ArrayBuffer | Uint8Array, shape: RasterShape, inflate: Inflate = inflateDeflate): Promise<Raster> {
+  const bytes = file instanceof Uint8Array ? file : new Uint8Array(file);
+  const { west, north, tileWidth: tw, tileLength: tl, offset, count } = readTileHeader(bytes, shape);
+  const { side, bands } = shape;
   const expected = tw * tl * bands * 2;
   const raw = await inflate(bytes.subarray(offset, offset + count), expected);
   if (raw.byteLength !== expected) fail(`the tile inflates to ${raw.byteLength} bytes, expected ${expected}`);
@@ -151,5 +172,5 @@ export async function decodeRaster(file: ArrayBuffer | Uint8Array, shape: Raster
       for (let b = 0; b < bands; b++) data[to + b] = pix.getInt16((from + b) * 2, true);
     }
   }
-  return { west: rw, north: rn, side, bands, data };
+  return { west, north, side, bands, data };
 }

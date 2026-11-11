@@ -14,6 +14,7 @@
     "build": "astro build",
     "install:web-edition": "node scripts/install-web-edition.mjs",
     "install:consortium": "node scripts/install-consortium.mjs",
+    "install:climate": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/install-climate.mjs",
     "build:with-web": "npm run build && npm run install:web-edition",
     "preview": "npm run build:with-web && wrangler dev",
     "astro": "astro",

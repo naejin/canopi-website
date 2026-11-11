@@ -2,7 +2,11 @@
 # (consortium v2, design check A3). Every other path keeps the platform default.
 # /_astro/*: Astro's content-hashed bundles. /data/consortium/*: the database and each photo carry
 # a digest of their bytes in their names (scripts/install-consortium.mjs), so new bytes get a new URL.
+# /data/climate/*: the canopi-climate tiles sit under <version>-<12 hex of the grid manifest's sha256>/
+# (scripts/install-climate.mjs), so a new grid gets new URLs.
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
 /data/consortium/*
+  Cache-Control: public, max-age=31536000, immutable
+/data/climate/*
   Cache-Control: public, max-age=31536000, immutable

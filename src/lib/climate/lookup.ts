@@ -1,3 +1,6 @@
+// Ported from canopi-climate (https://github.com/opencanopi/canopi-climate, commit 0908add): the grid's
+// rules re-written in TypeScript. Copyright (C) 2026 Canopi contributors. Licensed under the GNU Affero
+// General Public License, version 3 or (at your option) any later version (THIRD_PARTY_NOTICES.md).
 // Point lookups on decoded tiles, with the semantics of `canopi-climate sample` / `lookup`
 // (src/lookup.rs lookup_across, src/layer.rs nearest, src/soil.rs, src/regions.rs):
 // - climate: the point's cell when complete (every variable of every slot; aridity may be missing),
