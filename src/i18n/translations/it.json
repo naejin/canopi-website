@@ -764,6 +764,7 @@
   "consortium.range.empty.body": "Qui il mese più freddo ha una media di {cold} °C e il più caldo di {hot} °C. Controlla che il luogo sia giusto, oppure cerca tra tutte le piante e aggiungine qualcuna a mano: ognuna fuori dal suo areale osservato mostra un avviso.",
   "consortium.range.empty.search": "Cerca tra tutte le piante",
   "consortium.range.unavailable": "I controlli dell’areale non sono disponibili: una parte dello strumento non si è caricata. Le piante sono elencate senza. Ricarica la pagina per riprovare.",
+  "consortium.range.unavailableBorrowed": "I controlli dell’areale non sono disponibili: una parte dello strumento non si è caricata, e {climate} ne ha bisogno per scegliere le piante, perché le sue piante vengono dagli elenchi più vicini. Ricarica la pagina per riprovare.",
   "consortium.range.needsSite": "{climate} non ha ancora un proprio elenco di piante: serve la posizione del tuo terreno per scegliere le piante. Gli elenchi più vicini vengono allora ridotti alle piante registrate in climi come quello del tuo terreno.",
   "consortium.range.needsSite.go": "Indica la tua posizione",
   "consortium.range.needsSite.pill": "Serve la tua posizione",

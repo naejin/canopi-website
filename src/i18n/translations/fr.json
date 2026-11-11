@@ -764,6 +764,7 @@
   "consortium.range.empty.body": "Ici, le mois le plus froid est en moyenne à {cold} °C et le plus chaud à {hot} °C. Vérifiez que le lieu est le bon, ou cherchez parmi toutes les plantes et ajoutez-en à la main : chacune hors de son aire observée affiche un avertissement.",
   "consortium.range.empty.search": "Chercher parmi toutes les plantes",
   "consortium.range.unavailable": "Les vérifications d’aire sont indisponibles : une partie de l’outil n’a pas pu se charger. Les plantes sont listées sans elles. Rechargez la page pour réessayer.",
+  "consortium.range.unavailableBorrowed": "Les vérifications d’aire sont indisponibles : une partie de l’outil n’a pas pu se charger, et {climate} en a besoin pour choisir des plantes, puisque ses plantes viennent des listes les plus proches. Rechargez la page pour réessayer.",
   "consortium.range.needsSite": "{climate} n’a pas encore sa propre liste de plantes : il faut la localisation de votre site pour choisir des plantes. Les listes les plus proches sont alors réduites aux plantes observées dans des climats comme celui de votre site.",
   "consortium.range.needsSite.go": "Indiquer votre localisation",
   "consortium.range.needsSite.pill": "Localisation nécessaire",

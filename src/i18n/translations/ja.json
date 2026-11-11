@@ -764,6 +764,7 @@
   "consortium.range.empty.body": "ここでは最寒月の平均が {cold} °C、最暖月が {hot} °C です。場所が正しいか確認するか、すべての植物から検索して手で加えてください。観測された分布範囲の外にある植物には警告が出ます。",
   "consortium.range.empty.search": "すべての植物を検索",
   "consortium.range.unavailable": "分布範囲のチェックは利用できません：ツールの一部を読み込めませんでした。植物はチェックなしで表示されています。ページを再読み込みしてもう一度お試しください。",
+  "consortium.range.unavailableBorrowed": "分布範囲のチェックは利用できません：ツールの一部を読み込めませんでした。{climate}の植物は最も近いリストから選ぶため、このチェックが必要です。ページを再読み込みしてもう一度お試しください。",
   "consortium.range.needsSite": "{climate}にはまだ独自の植物リストがありません。植物を選ぶには、あなたの土地の位置が必要です。位置があれば、最も近いリストから、あなたの土地に似た気候で記録された植物だけを残します。",
   "consortium.range.needsSite.go": "位置を指定する",
   "consortium.range.needsSite.pill": "位置が必要です",

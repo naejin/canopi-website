@@ -764,6 +764,7 @@
   "consortium.range.empty.body": "这里最冷月平均 {cold} °C，最热月平均 {hot} °C。请确认位置是否正确，或在全部植物中搜索并手动添加：超出观测分布范围的植物都会显示警告。",
   "consortium.range.empty.search": "搜索全部植物",
   "consortium.range.unavailable": "分布范围检查不可用：工具的一部分未能加载。植物列表未经此检查。请重新加载页面再试。",
+  "consortium.range.unavailableBorrowed": "分布范围检查不可用：工具的一部分未能加载，而{climate}的植物来自最接近的清单，需要这项检查才能挑选植物。请重新加载页面再试。",
   "consortium.range.needsSite": "{climate}还没有自己的植物清单：需要你场地的位置才能挑选植物。届时最接近的清单只保留在与你场地相似的气候中有记录的植物。",
   "consortium.range.needsSite.go": "提供你的位置",
   "consortium.range.needsSite.pill": "需要你的位置",

@@ -764,6 +764,7 @@
   "consortium.range.empty.body": "Hier liegt der kälteste Monat im Mittel bei {cold} °C und der wärmste bei {hot} °C. Prüfe, ob der Ort stimmt, oder suche unter allen Pflanzen und füge einige von Hand hinzu: Jede außerhalb ihres beobachteten Verbreitungsgebiets zeigt einen Hinweis.",
   "consortium.range.empty.search": "Alle Pflanzen durchsuchen",
   "consortium.range.unavailable": "Die Prüfung der Verbreitung ist nicht verfügbar: Ein Teil des Werkzeugs wurde nicht geladen. Die Pflanzen werden ohne sie aufgelistet. Lade die Seite neu, um es erneut zu versuchen.",
+  "consortium.range.unavailableBorrowed": "Die Prüfung der Verbreitung ist nicht verfügbar: Ein Teil des Werkzeugs wurde nicht geladen, und {climate} braucht sie, um Pflanzen auszuwählen, da seine Pflanzen aus den nächstgelegenen Listen stammen. Lade die Seite neu, um es erneut zu versuchen.",
   "consortium.range.needsSite": "{climate} hat noch keine eigene Pflanzenliste: Um Pflanzen auszuwählen, braucht es den Standort deines Grundstücks. Die nächstgelegenen Listen werden dann auf die Pflanzen beschränkt, die in Klimata wie dem deines Grundstücks belegt sind.",
   "consortium.range.needsSite.go": "Standort angeben",
   "consortium.range.needsSite.pill": "Braucht deinen Standort",

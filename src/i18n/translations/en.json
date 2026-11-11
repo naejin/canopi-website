@@ -764,6 +764,7 @@
   "consortium.range.empty.body": "Here the coldest month averages {cold} °C and the warmest {hot} °C. Check that the location is right, or search all plants and add some by hand: each one outside its observed range shows a warning.",
   "consortium.range.empty.search": "Search all plants",
   "consortium.range.unavailable": "Range checks are unavailable: part of the tool did not load. Plants are listed without them. Reload the page to try again.",
+  "consortium.range.unavailableBorrowed": "Range checks are unavailable: part of the tool did not load, and {climate} needs them to pick plants, since its plants come from the nearest lists. Reload the page to try again.",
   "consortium.range.needsSite": "{climate} has no plant list of its own, so it needs your site's location to pick plants: the nearest lists are then kept to the plants recorded in climates like your site's.",
   "consortium.range.needsSite.go": "Give your location",
   "consortium.range.needsSite.pill": "Needs your location",

@@ -16,8 +16,8 @@
 import { effect } from '@preact/signals';
 import type { ClimateZone } from '../../../lib/consortium/index.ts';
 import { hasPlants } from '../../../lib/consortium/index.ts';
-import { location, pool, rangeFailed, rangeRule, siteClimate } from '../store.ts';
-import { backToConsortium, canGoBack, pendingSuggest, zoneOf } from '../memory.ts';
+import { climate, location, pool, rangeFailed, rangeRule, siteClimate } from '../store.ts';
+import { backToConsortium, canGoBack, pendingClimate, pendingSuggest, zoneOf } from '../memory.ts';
 import { T } from '../strings.ts';
 import { lazyPart } from './lazy.tsx';
 import { page, zoneLabel } from './Start.tsx';
@@ -27,44 +27,63 @@ const panel = lazyPart(() => import('./pool/pool.tsx').then((m) => m.PoolPanel),
 const curated = (): ClimateZone[] => page().climates.flatMap((c) => zoneOf(c) ?? []);
 const borrows = (z: ClimateZone): boolean => hasPlants(z, curated()) && !curated().includes(z);
 export const needsSite = (z: ClimateZone): boolean => borrows(z) && !siteClimate.value;
-export const hasList = (z: ClimateZone): boolean => hasPlants(z, curated()) && !needsSite(z);
+// A borrowed climate with a location whose range rule did not load (store.ts rangeFailed): the same
+// reason holds (only the filter fits a borrowed pool to the place), so no palette either; Reload.
+const needsRule = (z: ClimateZone): boolean => borrows(z) && rangeFailed.value;
+export const hasList = (z: ClimateZone): boolean => hasPlants(z, curated()) && !needsSite(z) && !needsRule(z);
 // The card's pill (hand-off H-S5c-5: Start.tsx Climates reads it): Ready, Needs your location, or Not covered yet.
 export const cardPill = (z: ClimateZone): { label: string; ready: boolean } =>
   hasList(z) ? { label: T('start.climate.ready'), ready: true } : { label: needsSite(z) ? T('range.needsSite.pill') : T('start.climate.notYet'), ready: false };
 // The location step (S5b, LocationSlot): its first control, else its heading.
 const toLocation = () => {
-  const step = document.getElementById('ct-loc-h')?.closest('section');
-  const target = step?.querySelector<HTMLElement>('button, input') ?? step;
-  target?.scrollIntoView({ block: 'center' });
-  target?.focus();
+  const heading = document.getElementById('ct-loc-h');
+  if (!heading) return;
+  let target = heading.closest('section')?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])') ?? null;
+  if (!target) { heading.tabIndex = -1; target = heading; }
+  target.scrollIntoView({ block: 'center' });
+  target.focus();
 };
 // Nothing fits (the chosen climate's list, at the site): Start then offers no "Suggest plants" (it could
 // only give an empty matrix); the panel's "Search all plants" is the step.
 export const nothingFits = (): boolean => !!rangeRule.value?.none(pool.value, location.value);
 // A Suggest pressed while the rule loaded, for a site where nothing fits: cleared, so the reader stays
 // on Start with the nothing-fits state (store.ts suggestMembers refuses it too).
-effect(() => { if (pendingSuggest.value && nothingFits()) pendingSuggest.value = false; });
+// So is one for a climate that needs the site's location or the range rule (it would run unasked once
+// they arrive), and one pressed for another climate than the one now chosen (fix review 29b709e, 1).
+const shownZone = () => climate.value ?? pendingClimate.value;
+effect(() => {
+  const z = shownZone();
+  if (pendingSuggest.value && (nothingFits() || (z && (needsSite(z) || needsRule(z))))) pendingSuggest.value = false;
+});
+let lastZone: ClimateZone | null = null;
+effect(() => {
+  const z = shownZone();
+  if (z !== lastZone && lastZone !== null && z !== null) pendingSuggest.value = false;
+  if (z !== null) lastZone = z;
+});
 
 // The panel also says "Not covered yet" for a climate with no list at all (it never happens with the
 // real export, which curates a nearest list for every climate).
 // The range rule's chunk did not load (store.ts rangeFailed): say so here, the panel being that chunk.
 export function PoolSlot({ zone }: { zone: ClimateZone }) {
-  if (rangeFailed.value && hasList(zone)) {
+  if (rangeFailed.value && hasPlants(zone, curated())) {
     return (
       <p class="ct-notice" role="status" data-range-unavailable>
-        {T('range.unavailable')} <button type="button" class="button button-secondary ct-small" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
+        {needsRule(zone) ? T('range.unavailableBorrowed', { climate: zoneLabel(zone) }) : T('range.unavailable')} <button type="button" class="button button-secondary ct-small" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
       </p>
     );
   }
-  if (needsSite(zone)) {
-    return (
-      <p class="ct-notice" role="status" data-needs-site>
-        {T('range.needsSite', { climate: zoneLabel(zone) })}{' '}
-        <button type="button" class="button button-secondary ct-small" onClick={toLocation}>{T('range.needsSite.go')}</button>{' '}
-        <a href={page().start.contact}>{T('start.uncovered.ask')}</a>
-        {canGoBack.value && <> <button type="button" class="link-button ct-link" onClick={backToConsortium}>{T('start.back')}</button></>}
-      </p>
-    );
-  }
-  return !hasList(zone) || !curated().includes(zone) || siteClimate.value ? <panel.View zone={zone} /> : null;
+  return needsSite(zone) ? <NeedsSite zone={zone} /> : !hasList(zone) || !curated().includes(zone) || siteClimate.value ? <panel.View zone={zone} /> : null;
+}
+
+// The needs-location line (Start, and the empty matrix's Suggest: hand-off H-S5c-6, Matrix.tsx EmptyNotice).
+export function NeedsSite({ zone }: { zone: ClimateZone }) {
+  return (
+    <p class="ct-notice" role="status" data-needs-site>
+      {T('range.needsSite', { climate: zoneLabel(zone) })}{' '}
+      <button type="button" class="button button-secondary ct-small" onClick={toLocation}>{T('range.needsSite.go')}</button>{' '}
+      <a href={page().start.contact}>{T('start.uncovered.ask')}</a>
+      {canGoBack.value && <> <button type="button" class="link-button ct-link" onClick={backToConsortium}>{T('start.back')}</button></>}
+    </p>
+  );
 }

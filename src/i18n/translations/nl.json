@@ -764,6 +764,7 @@
   "consortium.range.empty.body": "Hier is de koudste maand gemiddeld {cold} °C en de warmste {hot} °C. Controleer of de locatie klopt, of zoek in alle planten en voeg er zelf een paar toe: elke plant buiten haar waargenomen verspreiding toont een waarschuwing.",
   "consortium.range.empty.search": "Alle planten doorzoeken",
   "consortium.range.unavailable": "Verspreidingscontroles zijn niet beschikbaar: een deel van de tool is niet geladen. De planten staan er zonder deze controle. Herlaad de pagina om het opnieuw te proberen.",
+  "consortium.range.unavailableBorrowed": "Verspreidingscontroles zijn niet beschikbaar: een deel van de tool is niet geladen, en {climate} heeft ze nodig om planten te kiezen, omdat de planten uit de dichtstbijzijnde lijsten komen. Herlaad de pagina om het opnieuw te proberen.",
   "consortium.range.needsSite": "{climate} heeft nog geen eigen plantenlijst: om planten te kiezen is de locatie van je terrein nodig. De dichtstbijzijnde lijsten worden dan beperkt tot de planten die zijn waargenomen in klimaten zoals dat van je terrein.",
   "consortium.range.needsSite.go": "Geef je locatie",
   "consortium.range.needsSite.pill": "Je locatie is nodig",

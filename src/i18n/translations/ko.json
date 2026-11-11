@@ -764,6 +764,7 @@
   "consortium.range.empty.body": "이곳은 가장 추운 달 평균이 {cold} °C, 가장 더운 달이 {hot} °C입니다. 위치가 맞는지 확인하거나, 모든 식물에서 검색해 직접 추가하세요. 관측된 분포 범위 밖의 식물에는 경고가 표시됩니다.",
   "consortium.range.empty.search": "모든 식물 검색",
   "consortium.range.unavailable": "분포 범위 확인을 사용할 수 없습니다: 도구 일부를 불러오지 못했습니다. 식물은 확인 없이 표시됩니다. 페이지를 새로 고쳐 다시 시도하세요.",
+  "consortium.range.unavailableBorrowed": "분포 범위 확인을 사용할 수 없습니다: 도구 일부를 불러오지 못했습니다. {climate}의 식물은 가장 가까운 목록에서 가져오므로 식물을 고르려면 이 확인이 필요합니다. 페이지를 새로 고쳐 다시 시도하세요.",
   "consortium.range.needsSite": "{climate}에는 아직 고유한 식물 목록이 없습니다. 식물을 고르려면 내 부지의 위치가 필요합니다. 위치가 있으면 가장 가까운 목록에서 내 부지와 비슷한 기후에서 기록된 식물만 남깁니다.",
   "consortium.range.needsSite.go": "위치 입력하기",
   "consortium.range.needsSite.pill": "위치가 필요합니다",

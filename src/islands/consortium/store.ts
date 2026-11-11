@@ -253,8 +253,9 @@ export function suggestMembers(): boolean {
   const rule = rangeRule.value;
   // Nothing fits the site: no suggestion (it could only be an empty matrix); Start shows why.
   if (rule?.none(p, location.value)) return false;
-  // A borrowed pool without a site climate: no suggestion until a location filters it (UX audit fix 1).
-  if (!siteClimate.value && p.some((t) => t.estimate)) return false;
+  // A borrowed pool unfiltered (no site climate, or the rule's chunk failed): no suggestion, since only
+  // the range filter fits it to a place (UX audit fix 1; fix review 29b709e, 2).
+  if ((!siteClimate.value || !rule) && p.some((t) => t.estimate)) return false;
   const s = suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
   kept.value = keep;
   members.value = s.members;

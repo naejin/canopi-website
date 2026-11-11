@@ -764,6 +764,7 @@
   "consortium.range.empty.body": "Aquí el mes más frío tiene una media de {cold} °C y el más cálido de {hot} °C. Comprueba que la ubicación es correcta, o busca entre todas las plantas y añade algunas a mano: cada una fuera de su rango observado muestra un aviso.",
   "consortium.range.empty.search": "Buscar entre todas las plantas",
   "consortium.range.unavailable": "Las comprobaciones de rango no están disponibles: una parte de la herramienta no se cargó. Las plantas se muestran sin ellas. Recarga la página para intentarlo de nuevo.",
+  "consortium.range.unavailableBorrowed": "Las comprobaciones de rango no están disponibles: una parte de la herramienta no se cargó, y {climate} las necesita para elegir plantas, porque sus plantas vienen de las listas más cercanas. Recarga la página para intentarlo de nuevo.",
   "consortium.range.needsSite": "{climate} todavía no tiene su propia lista de plantas: hace falta la ubicación de tu terreno para elegir plantas. Las listas más cercanas se reducen entonces a las plantas registradas en climas como el de tu terreno.",
   "consortium.range.needsSite.go": "Indicar tu ubicación",
   "consortium.range.needsSite.pill": "Necesita tu ubicación",

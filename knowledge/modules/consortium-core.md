@@ -6,7 +6,7 @@ resource: ../../src/lib/consortium
 tags: [module, consortium]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:46:17Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:46:28Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T21:11:39Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -97,7 +97,7 @@ sources:
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
     digest: sha256:3cfc2a8028916dc0
-    last_modified: 2026-11-11T20:32:24Z
+    last_modified: 2026-11-11T21:01:51Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -137,7 +137,7 @@ sources:
     resource: ../../src/lib/consortium/range-marks.ts
     title: src/lib/consortium/range-marks.ts
     digest: sha256:509f92edf5980500
-    last_modified: 2026-11-11T20:32:24Z
+    last_modified: 2026-11-11T21:01:51Z
   - id: future-marks-ts
     resource: ../../src/lib/consortium/future-marks.ts
     title: src/lib/consortium/future-marks.ts
@@ -156,8 +156,8 @@ sources:
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
-    digest: sha256:7443a1dfa98cc859
-    last_modified: 2026-11-11T20:33:44Z
+    digest: sha256:fbbfec4a0e1e78a8
+    last_modified: 2026-11-11T21:05:15Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs

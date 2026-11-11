@@ -596,6 +596,15 @@ test('P5-26b (S5c borrowed climate without a location, UX audit fix 1): Start of
   assert.ok(await has(page, '[data-needs-site]', 10_000), 'the needs-location line');
   assert.match(await text(page, '[data-needs-site]') ?? '', /needs your site.s location to pick plants/);
   assert.ok(await has(page, '[data-needs-site] button'), 'a control to the location step');
+  // Fix review 29b709e (3): it lands focus on the location step's first control (S5b's markup, stood in
+  // for here), else on its heading made focusable.
+  await page.evaluate(() => { const s = document.createElement('section'); s.innerHTML = '<h2 id="ct-loc-h">Where is your site?</h2><p>text</p><button type="button" id="ct-test-first">Use my location</button>'; document.querySelector('.ct-start').prepend(s); });
+  await page.click('[data-needs-site] button');
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-test-first', 'focus on the step\'s first control');
+  await page.evaluate(() => { document.getElementById('ct-test-first').remove(); });
+  await page.click('[data-needs-site] button');
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-loc-h', 'no control yet: the heading, focusable');
+  await page.evaluate(() => { document.getElementById('ct-loc-h').parentElement.remove(); });
   assert.equal(await page.$('.ct-cta'), null, 'no Suggest, Start empty or Paste for it');
   assert.equal(await page.$('.ct-chips'), null, 'no crops from an unfiltered borrowed list');
   await page.click('input[name="ct-climate"][value="temperate"]');
@@ -606,6 +615,50 @@ test('P5-26b (S5c borrowed climate without a location, UX audit fix 1): Start of
   await page.click('input[name="ct-climate"][value="subtropical"]');
   assert.ok(await has(page, '.ct-cta', 10_000), 'Subtropical with a location: Suggest');
   assert.equal(await page.$('[data-needs-site]'), null);
+});
+
+test('P5-26d (S5c stale Suggest, fix review 29b709e 1): a Suggest pressed while Temperate waits, then Boreal chosen, never runs later when a location arrives', async () => {
+  const page = await tool();
+  await choose(page, 'Temperate');
+  const cdp = await page.createCDPSession();
+  await cdp.send('Network.enable');
+  // The range rule's chunk is slow, so the pool waits for it and a Suggest pressed now is pending.
+  await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 2500, downloadThroughput: -1, uploadThroughput: -1 });
+  await atSite(page, 'lyon');
+  const suggest = await page.waitForFunction(() => [...document.querySelectorAll('.ct-cta button')].find((b) => b.textContent.trim() === 'Suggest plants'), { timeout: 5_000 }).catch(() => null);
+  assert.ok(suggest, 'Suggest');
+  await suggest.click();
+  assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'start', 'pending');
+  await page.click('input[name="ct-climate"][value="boreal"]');
+  await page.evaluate(() => { window.__ctTest.store.location.value = null; });
+  await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+  assert.ok(await has(page, '[data-needs-site]', 10_000), 'Boreal needs a location');
+  await atSite(page, 'lyon');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.fitPool.value?.length > 0 && window.__ctTest.store.climate.value === 'Boreal', { timeout: 15_000 }).then(() => true, () => false), 'the Boreal pool, filtered');
+  await new Promise((r) => setTimeout(r, 800));
+  assert.deepEqual(await page.evaluate(() => { const { store } = window.__ctTest; return { view: store.view.value, members: store.members.value.length }; }), { view: 'start', members: 0 }, 'no suggestion the reader did not ask for');
+  assert.ok(await has(page, '.ct-cta', 5_000), 'Boreal with a location: Suggest offered');
+  assert.equal(await page.$('.ct-cta button[aria-busy="true"]'), null, 'the old Suggest is no longer pending (it would run at the next pool change)');
+});
+
+test('P5-26e (S5c borrowed climate, range chunk offline, fix review 29b709e 2): with a location but no range rule, a borrowed list offers no Suggest and says why', async () => {
+  const page = await tool();
+  const cdp = await page.createCDPSession();
+  await cdp.send('Network.enable');
+  await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/pool.*'] });
+  await atSite(page, 'seville');
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Arid'; });
+  assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'the notice');
+  assert.match(await text(page, '[data-range-unavailable]') ?? '', /Arid needs them to pick plants/);
+  assert.ok(await has(page, '[data-range-unavailable] button'), 'Reload');
+  assert.equal(await page.$('.ct-cta'), null, 'no Suggest from the unfiltered borrowed list');
+  assert.equal(await page.evaluate(async () => { const { store } = window.__ctTest; await store.loadPool('Arid'); return store.suggestMembers(); }), false, 'suggestMembers refuses');
+});
+
+test('P5-26f (S5c empty matrix on a borrowed list without a location, fix review 29b709e 3): its Suggest is the needs-location line', { todo: 'S5c: waits for hand-off H-S5c-6 (Matrix.tsx EmptyNotice renders PoolSlot NeedsSite)' }, async () => {
+  const page = await tool({ hash: '#v=4&c=subtropical&a=&e=1' });
+  assert.ok(await has(page, '.ct-mx-empty', 15_000), 'the empty matrix');
+  assert.ok(await has(page, '.ct-mx-empty [data-needs-site]', 5_000), 'the needs-location line in place of a silent Suggest');
 });
 
 test('P5-26c (S5c card pill, UX audit fix 1): a borrowed climate\'s card says "Needs your location" until a location is given', { todo: 'S5c: waits for hand-off H-S5c-5 (Start.tsx Climates pill reads PoolSlot cardPill)' }, async () => {
