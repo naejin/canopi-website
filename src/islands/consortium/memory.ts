@@ -25,7 +25,7 @@
 // countryAtStart, the save record, shareState, guessCountry and cropExamples (ported from v1
 // logic.js, memory.js and crops.js). The wiring (startMemory) reads and writes the store's signals.
 import { batch, computed, effect, signal } from '@preact/signals';
-import type { ClimateZone, DecodedLink, LinkNotice, PhaseOrd, PlantId, ShareState, Site, Taxon } from '../../lib/consortium/index.ts';
+import type { ClimateZone, DecodedLink, Interaction, LinkNotice, PhaseOrd, PlantId, ShareState, Site, Taxon } from '../../lib/consortium/index.ts';
 import { climateZones, decodeLink, encodeLink, linkClimates, readPreset, LINK_VERSION, MAX_CROPS } from '../../lib/consortium/index.ts';
 import type { Country } from './store.ts';
 import * as store from './store.ts';
@@ -296,14 +296,33 @@ function applyDecoded(d: DecodedLink, countryFrom: 'link' | 'chosen'): void {
   });
 }
 
-// The ids each climate's list holds, for the link's tokens (the climates must be read first).
+// The ids each climate's list holds, for the link's tokens. Lists already read come from the store;
+// the others are read here, not through store.loadPool, whose failure is app-wide (App then shows the
+// load screen in place of the consortium): a link whose list cannot be read only gets its notice.
+// The store's caches are written once every list is read.
 async function knownFor(zones: ClimateZone[]): Promise<Partial<Record<ClimateZone, PlantId[]>> | null> {
+  const src = store.source.peek();
+  if (!src) return null;
   const out: Partial<Record<ClimateZone, PlantId[]>> = {};
-  for (const z of zones) {
-    const p = await store.loadPool(z);
-    if (!p) return null;
-    out[z] = p.map((t) => t.id);
+  const read: Partial<Record<ClimateZone, [Taxon[], Interaction[]]>> = {};
+  try {
+    for (const z of zones) {
+      const have = store.pools.peek()[z];
+      if (have) { out[z] = have.map((t) => t.id); continue; }
+      const [plants, rows] = await Promise.all([src.pool(z), src.interactions(z)]);
+      read[z] = [plants, rows];
+      out[z] = plants.map((t) => t.id);
+    }
+  } catch (err) {
+    attempt(() => console.error(`Consortium link: ${(err as Error).message}`));
+    return null;
   }
+  if (store.source.peek() !== src) return null;
+  const fresh = Object.entries(read) as [ClimateZone, [Taxon[], Interaction[]]][];
+  if (fresh.length) batch(() => {
+    store.pools.value = { ...store.pools.peek(), ...Object.fromEntries(fresh.map(([z, [p]]) => [z, p])) };
+    store.interactionSets.value = { ...store.interactionSets.peek(), ...Object.fromEntries(fresh.map(([z, [, r]]) => [z, r])) };
+  });
   return out;
 }
 
@@ -332,12 +351,26 @@ const countryFrom = (): CountryFrom => {
   return !c.code || c.source === 'guess' ? null : c.source === 'link' ? 'link' : 'chosen';
 };
 
+// The link's climate while its first-visit restore loads: Start shows it at once (display only;
+// store.climate is set when the link opens, or by the reader).
+export const pendingClimate = signal<ClimateZone | null>(null);
+// Each restore takes a number; only the latest one applies and clears `restoring` (a slower, older
+// restore is dropped), and the reader acting on Start cancels the one in flight (their action wins).
+let restoreGen = 0;
+export function cancelRestore(): void {
+  restoreGen++;
+  batch(() => { restoring.value = false; pendingClimate.value = null; });
+}
+
+export interface RestoreOptions { from: 'link' | 'saved'; src?: CountryFrom; keep?: boolean }
 // Restores a fragment (a link or the save) once its climates are read. Returns whether it opened.
 // src: the saved country's source (a save's country that came from a link keeps that label).
 // keep: a consortium is shown (a link pasted into the open tab, Back/Forward): a link that cannot
 // open changes nothing, says so where the reader is, and the address goes back to the consortium
 // shown, so a reload reopens it. The store changes only once every list the link needs is read.
-async function restore(fragment: string, from: 'link' | 'saved', src: CountryFrom = null, keep = false): Promise<boolean> {
+// Whatever happens, an edit the reader made meanwhile ends saved and in the address.
+export async function restore(fragment: string, { from, src = null, keep = false }: RestoreOptions): Promise<boolean> {
+  const id = ++restoreGen;
   const refuse = (problem: PastedProblem, notice: Partial<Notices>): false => {
     if (keep) { notices.value = { ...notices.peek(), pasted: problem }; writeAddress(true); }
     else notices.value = { ...notices.peek(), ...notice };
@@ -353,12 +386,19 @@ async function restore(fragment: string, from: 'link' | 'saved', src: CountryFro
     return refuse('outdated', from === 'link' ? { outdated: true } : { oldSave: true });
   }
   // A link with no climate (cut before it, or edited): the cut notice, and nothing opens (review 7).
-  if (!zoneOf(new URLSearchParams(fragment).get('c'))) return refuse('cut', { cut: true });
-  restoring.value = true;
+  const climate = zoneOf(new URLSearchParams(fragment).get('c'));
+  if (!climate) return refuse('cut', { cut: true });
+  const before = currentFragment();
+  batch(() => {
+    restoring.value = true;
+    if (!keep && !store.climate.peek()) pendingClimate.value = climate;
+  });
   let opened = false;
   try {
     await waitForSource();
+    if (id !== restoreGen) return false;
     const known = await knownFor(linkClimates(fragment));
+    if (id !== restoreGen) return false;
     if (!known) return refuse('failed', { failed: true });
     const d = decodeLink(fragment, known);
     applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen');
@@ -366,10 +406,12 @@ async function restore(fragment: string, from: 'link' | 'saved', src: CountryFro
     opened = true;
     return true;
   } finally {
-    restoring.value = false;
-    // Saved and written to the address only when it opened (plants no longer in the list are then
-    // left out of the address, §5); a failure leaves the save as it was.
-    if (opened) persist();
+    if (id === restoreGen) {
+      batch(() => { restoring.value = false; pendingClimate.value = null; });
+      // Saved and in the address when it opened (plants no longer in the list are then left out of
+      // the address, §5), or when the reader edited the consortium meanwhile; else left as it was.
+      if (opened || currentFragment() !== before) persist();
+    }
   }
 }
 
@@ -403,6 +445,7 @@ function writeAddress(force = false): void {
 
 // The reader picks a climate on Start: the shared site climate is written (climate-ux; v1 setClimate).
 export function chooseClimate(z: ClimateZone): void {
+  cancelRestore();
   store.climate.value = z;
   memory.write(SITE_CLIMATE, siteId(z));
   attempt(() => { document.documentElement.dataset.climate = siteId(z); });
@@ -418,6 +461,7 @@ export function chooseCountry(code: string | null): void {
 // Start over: the consortium goes, from the store, the save and the address; the climate, the site
 // and the country stay.
 export function startOver(): void {
+  cancelRestore();
   batch(() => {
     store.members.value = [];
     store.kept.value = [];
@@ -432,8 +476,28 @@ export function startOver(): void {
   writeAddress();
 }
 
+// "Start empty and search": an empty consortium and S3's search sheet.
+export function startEmpty(): void {
+  adoptPending();
+  batch(() => {
+    store.members.value = [];
+    store.view.value = 'matrix';
+    store.sheet.value = { kind: 'search', id: null };
+  });
+}
+
 // "Suggest plants": now when the plants are read, else once they are (§5 Loading).
+// The reader acts on Start while a link loads: the restore is cancelled, and the climate the link
+// showed becomes the chosen one (round 3).
+function adoptPending(): void {
+  const shown = pendingClimate.peek();
+  if (!restoring.peek() && !shown) return;
+  cancelRestore();
+  if (shown && !store.climate.peek()) store.climate.value = shown;
+}
+
 export function requestSuggest(): void {
+  adoptPending();
   if (store.suggestMembers()) { store.view.value = 'matrix'; pendingSuggest.value = false; return; }
   pendingSuggest.value = true;
 }
@@ -483,8 +547,8 @@ export function startMemory(): void {
     if (g && g !== store.country.peek().code) store.country.value = { code: g, source: 'guess' };
   });
 
-  if (how.kind === 'link') void restore(how.fragment, 'link');
-  else if (how.kind === 'saved') void restore(how.fragment, 'saved', how.src);
+  if (how.kind === 'link') void restore(how.fragment, { from: 'link' });
+  else if (how.kind === 'saved') void restore(how.fragment, { from: 'saved', src: how.src });
   else if (how.kind === 'outdated') notices.value = { ...notices.peek(), outdated: true };
   else if (how.kind === 'preset') void applyPreset(how.climate, how.plant);
   else if (how.climate) store.climate.value = how.climate;
@@ -495,9 +559,9 @@ export function startMemory(): void {
     const act = hashAction(location.hash, attempt(() => history.state), currentFragment());
     if (act.kind === 'ignore') return;
     const keep = store.view.peek() !== 'start';
-    if (act.kind === 'saved') { void restore(act.fragment, 'saved', act.src, keep); return; }
+    if (act.kind === 'saved') { void restore(act.fragment, { from: 'saved', src: act.src, keep }); return; }
     notices.value = { ...NO_NOTICES };
-    void restore(act.fragment, 'link', null, keep);
+    void restore(act.fragment, { from: 'link', keep });
   });
 
   // "Suggest plants" pressed early runs when the climate's plants (and every guest list) are read.

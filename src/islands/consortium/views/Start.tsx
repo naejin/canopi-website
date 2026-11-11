@@ -15,7 +15,7 @@ import { countryStatus, lights, MAX_CROPS, rooms, soils, waters } from '../../..
 import { climate, country, crops, kept, members, pool, sheet, site, source, view } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import {
-  chooseClimate, chooseCountry, cropExamples, notices, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startMemory, startOver, zoneOf,
+  chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
 } from '../memory.ts';
 
 // ---- page data (ConsortiumPage.astro #ct-data) ----
@@ -108,7 +108,8 @@ export function CountryLine() {
 
 // ---- the climate cards ----
 function Climates() {
-  const chosen = climate.value;
+  // A link's climate shows at once while it loads (memory.pendingClimate).
+  const chosen = climate.value ?? pendingClimate.value;
   return (
     <fieldset class="ct-step ct-climates">
       <legend class="ct-step-title">{T('start.climate.title')}</legend>
@@ -253,7 +254,7 @@ function Head() {
 }
 
 function StartView() {
-  const z = climate.value;
+  const z = climate.value ?? pendingClimate.value;
   const waiting = pendingSuggest.value || restoring.value;
   return (
     <div class="ct-start">
@@ -268,7 +269,7 @@ function StartView() {
           <div class="ct-cta">
             <button type="button" class="button button-primary" aria-busy={waiting ? 'true' : undefined} onClick={requestSuggest}>{T('start.suggest')}</button>
             {members.value.length > 0 && <button type="button" class="button button-secondary" onClick={() => { view.value = 'matrix'; }}>{T('start.back')}</button>}
-            <button type="button" class="button button-secondary" onClick={() => { members.value = []; view.value = 'matrix'; sheet.value = { kind: 'search', id: null }; }}>{T('start.empty')}</button>
+            <button type="button" class="button button-secondary" onClick={startEmpty}>{T('start.empty')}</button>
             <button type="button" class="link-button ct-link" onClick={() => { sheet.value = { kind: 'paste', id: null }; }}>{T('start.paste')}</button>
           </div>
           {waiting && <p class="status-line" role="status">{T('load.plants')}</p>}

@@ -161,3 +161,106 @@ test('a share state round-trips through the #v=4 link', async () => {
   assert.equal(back.state.country, 'FR');
   assert.equal(back.state.stage, 2);
 });
+
+// ---- restore (rounds 2 and 3 of the S4 review), on the real data with a source whose reads can be
+// delayed or made to fail. Node has no location or history: the address is left alone. ----
+const store = await import('../src/islands/consortium/store.ts');
+const storage = fakeStorage();
+let writes = 0;
+globalThis.localStorage = { getItem: storage.getItem, removeItem: storage.removeItem, setItem: (k, v) => { writes++; storage.setItem(k, v); } };
+const delays = {}, failing = new Set();
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const testSource = new Proxy(realSource, {
+  get(t, k) {
+    if (k === 'pool' || k === 'interactions') {
+      return async (c) => {
+        if (delays[c]) await wait(delays[c]);
+        if (failing.has(c)) throw new Error(`${c} unreadable`);
+        return t[k](c);
+      };
+    }
+    const v = t[k];
+    return typeof v === 'function' ? v.bind(t) : v;
+  },
+});
+const UNSURE = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
+const linkOf = async (zone, n, extra = {}) => {
+  const ids = (await realSource.pool(zone)).map((t) => t.id);
+  return encodeLink({ climate: zone, country: null, site: UNSURE, members: ids.slice(0, n), kept: [], removed: [], guests: [], crops: [], stage: null, ...extra }, { [zone]: ids });
+};
+// A Temperate consortium on screen, nothing else read.
+async function shown() {
+  for (const k of Object.keys(delays)) delete delays[k];
+  failing.clear();
+  store.setSource(testSource);
+  store.pools.value = {};
+  store.interactionSets.value = {};
+  store.load.value = { status: 'ready', error: null };
+  const pool = await store.loadPool('Temperate');
+  store.climate.value = 'Temperate';
+  store.members.value = pool.slice(0, 6).map((t) => t.id);
+  store.view.value = 'matrix';
+  m.notices.value = { ...m.notices.peek(), pasted: null, failed: false, cut: false, outdated: false };
+  writes = 0;
+  return pool;
+}
+
+test('restore: a pasted link whose list cannot be read changes nothing, saves nothing and says so (round 2, 3; round 3, 4)', async () => {
+  const pool = await shown();
+  const link = await linkOf('Mediterranean', 5);
+  failing.add('Mediterranean');
+  const before = store.members.peek();
+  assert.equal(await m.restore(link, { from: 'link', keep: true }), false);
+  assert.equal(store.climate.peek(), 'Temperate');
+  assert.deepEqual(store.members.peek(), before);
+  assert.equal(writes, 0, 'nothing saved');
+  assert.equal(m.notices.peek().pasted, 'failed');
+  assert.equal(store.load.peek().status, 'ready', 'the consortium stays on screen: no app-wide failure');
+  assert.equal(m.restoring.peek(), false);
+  assert.ok(pool.length > 0);
+});
+
+test('restore: only the latest link applies; an older, slower one neither applies nor clears restoring (round 3, 2)', async () => {
+  await shown();
+  const older = await linkOf('Tropical', 4), newer = await linkOf('Mediterranean', 3);
+  delays.Tropical = 80;
+  const x = m.restore(older, { from: 'link', keep: true });
+  const y = m.restore(newer, { from: 'link', keep: true });
+  assert.equal(await y, true);
+  assert.equal(m.restoring.peek(), false);
+  assert.equal(await x, false, 'the older restore is dropped');
+  assert.equal(store.climate.peek(), 'Mediterranean');
+  assert.equal(store.members.peek().length, 3);
+});
+
+test('restore: the reader acting during a first-visit load cancels it; the link\'s climate shows at once (round 3, 3)', async () => {
+  await shown();
+  store.view.value = 'start';
+  store.climate.value = null;
+  store.members.value = [];
+  const link = await linkOf('Tropical', 4);
+  delays.Tropical = 80;
+  const r = m.restore(link, { from: 'link' });
+  await wait(5);
+  assert.equal(m.pendingClimate.peek(), 'Tropical', 'Start shows the link\'s climate during the load');
+  m.chooseClimate('Mediterranean');
+  assert.equal(await r, false);
+  assert.equal(store.climate.peek(), 'Mediterranean', 'the reader\'s choice wins');
+  assert.deepEqual(store.members.peek(), []);
+  assert.equal(m.pendingClimate.peek(), null);
+  assert.equal(m.restoring.peek(), false);
+});
+
+test('restore: an edit made while a pasted link loads and fails is saved (round 3, 1)', async () => {
+  const pool = await shown();
+  const link = await linkOf('Mediterranean', 5);
+  failing.add('Mediterranean');
+  delays.Mediterranean = 40;
+  const r = m.restore(link, { from: 'link', keep: true });
+  await wait(5);
+  store.members.value = pool.slice(0, 7).map((t) => t.id);
+  assert.equal(await r, false);
+  const saved = readRecord(storage.getItem(STORE));
+  assert.ok(saved, 'saved');
+  assert.equal(decodeLink(saved.fragment, { Temperate: pool.map((t) => t.id) }).state.members.length, 7, 'the edit is the saved state');
+});
