@@ -4,7 +4,7 @@
    Source Sans 3 / Literata at 400 and 600; breakpoints max-width 639px and min-width 960px. */
 .ct .ct-muted { color: var(--text-muted); }
 .ct .ct-small-text { font-size: 14px; }
-.ct .ct-link { display: inline-flex; align-items: center; min-height: 36px; padding-inline: 2px; font-weight: 600; color: var(--accent-ink); }
+.ct .ct-link { display: inline-flex; align-items: center; min-height: 40px; padding-inline: 2px; font-weight: 600; color: var(--accent-ink); }
 .ct .button.ct-small { min-height: 40px; padding: 0 16px; font-size: 15px; }
 .ct .ct-sci { font-style: italic; font-weight: 400; color: var(--text-muted); font-size: 0.9em; }
 .ct :where(input, select, button, a):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

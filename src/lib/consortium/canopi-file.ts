@@ -17,7 +17,7 @@ import { phases } from './types.ts';
 // The app's design file format version this writer targets (CURRENT_CANOPI_FILE_VERSION at 0c425fb07).
 export const CANOPI_FILE_VERSION = 9;
 // The app's stratum for a plant whose layer is not known yet, and its default phases.
-export const CANOPI_UNASSIGNED = 'unassigned';
+const CANOPI_UNASSIGNED = 'unassigned';
 const DEFAULT_START = 0, DEFAULT_END = 2;
 const MAX_NAME = 120;
 
@@ -34,7 +34,7 @@ export interface CanopiConsortiumEntry {
   end_phase: number;
 }
 
-export function consortiumEntry(t: Taxon): CanopiConsortiumEntry {
+function consortiumEntry(t: Taxon): CanopiConsortiumEntry {
   const target = { kind: 'species' as const, canonical_name: t.canonical_name };
   if (!t.stratum || !t.phases) return { target, stratum: CANOPI_UNASSIGNED, start_phase: DEFAULT_START, end_phase: DEFAULT_END };
   const a = phases.indexOf(t.phases.start), b = phases.indexOf(t.phases.end);

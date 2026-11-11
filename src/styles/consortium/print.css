@@ -2,7 +2,7 @@
    sheet (views/PrintSheet.tsx) is printed: the site header and footer, the tool's head, every control
    and every other view are left out, so no button, field or link is printed. Paper is white and the ink
    dark whatever the theme: the light palette on a white page (:root:root:has(.ct) outranks the
-   dark-theme rules of tokens.css). At 20 plants or fewer the sheet holds the side view drawing and
+   dark-theme rules of tokens.css and base.css). At 20 plants or fewer the sheet holds the side view drawing and
    the table; above 20, "At a glance" and the table. */
 @media print {
   body:has(.ct-print) > :not(main), .grain::after { display: none !important; }
@@ -17,6 +17,12 @@
     background: #FFFFFF; color: #27231D;
   }
   :root:root:has(.ct) body { background: #FFFFFF; color: #27231D; }
+  /* The tool's own inks back to their light values (base.css), so a dark theme prints dark ink. */
+  :root:root:root .ct {
+    --s-emergent-ink: #8A5E00; --s-high-ink: #005C43; --s-medium-ink: #004A75; --s-low-ink: #8E4775;
+    --hatch: rgba(58, 46, 28, 0.10);
+    --bar: #4A4237; --bar-soft: rgba(58, 46, 28, 0.20);
+  }
   .ct .ct-print-title { font-size: 24pt; }
   .ct .ct-print-sub { margin: 4pt 0 2pt; font-size: 12pt; font-weight: 600; }
   .ct .ct-print-basis { margin: 2pt 0; font-size: 10pt; color: var(--text-secondary); }

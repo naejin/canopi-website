@@ -16,7 +16,7 @@ import { P, T, pageLang } from '../strings.ts';
 import { plantName } from '../memory.ts';
 import { basisLine, countryName, page, zoneLabel } from './Start.tsx';
 
-export const PRINT_DRAWING_MAX = 20;
+const PRINT_DRAWING_MAX = 20;
 // Hand-off to the coordinator: S2's side view drawing for print, e.g. `(p) => <SideView stage={p.stage} print />`.
 const Drawing: ComponentType<{ stage: PhaseOrd }> | null = null;
 
@@ -68,7 +68,7 @@ export function PrintSheet() {
       <p class="ct-print-sub">{zoneLabel(zone)} · {P('start.count', members.length)} · {new Date().toLocaleDateString(lang)}</p>
       <p class="ct-print-basis">{basisLine(site.value)}</p>
       <p class="ct-print-basis">
-        {code ? `${T('country.line')} ${countryName(code)}` : `${T('country.line')}: ${T('country.none')}. ${T('country.noneNote')}`}
+        {code ? `${T('country.line')} ${countryName(code)}${country.value.source === 'guess' ? ` (${T('country.guessed')})` : ''}` : `${T('country.line')}: ${T('country.none')}. ${T('country.noneNote')}`}
         {status === 'unchecked' && code ? ` (${T('country.unchecked', { country: countryName(code) })})` : ''}
       </p>
       <p class="ct-print-basis">{T('page.hypothesis')}</p>

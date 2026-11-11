@@ -59,8 +59,6 @@ function ActionsView() {
   );
 }
 
-export function ActionsSlot() {
+export function Actions() {
   return view.value === 'start' ? null : <ActionsView />;
 }
-
-export const Actions = ActionsSlot;
