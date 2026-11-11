@@ -8,9 +8,10 @@
 // the site or has a serious conflict, so a row's "Add anyway" (a guest, labelled "From the {climate}
 // list", A9) asks then; "Add all" adds the found and ticked plants without asking about each one, then
 // says "n added with a warning" with Show (2026-10-28 "Scale build, coordinator choices"). Each added
-// plant is kept. The text is read a moment after typing stops, at most MAX_LINES lines.
+// plant is kept. The text is read a moment after typing stops (and at once on "Add all"), at most
+// MAX_LINES lines.
 // Loaded on first use (Details.tsx).
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { ClimateZone, PlantId, Taxon } from '../../../lib/consortium/index.ts';
@@ -27,6 +28,7 @@ export default function Paste() {
   const members = store.members.value;
   const guests = store.guests.value;
   const [text, setText] = useState('');
+  const box = useRef<HTMLTextAreaElement>(null);
   const [settled, setSettled] = useState('');
   const [column, setColumn] = useState(0);
   const [ticked, setTicked] = useState<PlantId[]>([]);
@@ -36,29 +38,39 @@ export default function Paste() {
   useEffect(() => { for (const z of others) void store.loadPool(z); }, [others.join()]);
   useEffect(() => { const id = setTimeout(() => setSettled(text), SETTLE_MS); return () => clearTimeout(id); }, [text]);
 
-  const table = useMemo(() => pasteTable(settled), [settled]);
+  const table = pasteTable(settled);
   const col = pasteColumn(settled, column);
-  const all = useMemo(() => pasteNames(settled, col), [settled, col]);
-  const capped = all.length > MAX_LINES;
   const lists = others.flatMap((z) => { const l = store.pools.value[z]; return l ? [[z, l] as [ClimateZone, Taxon[]]] : []; });
-  const result = useMemo(() => {
-    if (!pool) return null;
-    const names = capped ? Object.assign(all.slice(0, MAX_LINES), { header: all.header }) : all;
-    return readPaste(names, { here: pool, others: lists, members });
-  }, [all, pool, members, store.pools.value]);
+  const read = (src: string) => {
+    const all = pasteNames(src, pasteColumn(src, column));
+    const names = all.length > MAX_LINES ? Object.assign(all.slice(0, MAX_LINES), { header: all.header, split: all.split }) : all;
+    return { capped: all.length > MAX_LINES, result: pool ? readPaste(names, { here: pool, others: lists, members }) : null };
+  };
+  const { capped, result } = useMemo(() => read(settled), [settled, column, pool, members, store.pools.value]);
   if (!pool || !climate || !result) return null;
 
-  const climateOf = new Map<PlantId, ClimateZone>();
-  for (const c of result.choose) if (c.climate) for (const t of c.taxa) climateOf.set(t.id, c.climate);
-  const chosen = ticked.filter((id) => result.choose.some((c) => c.taxa.some((t) => t.id === id)));
-  const toAdd = [...new Set([...result.found.map((f) => f.taxon.id), ...chosen])].filter((id) => !members.includes(id));
-  const byId = new Map<PlantId, Taxon>([...result.found.map((f) => [f.taxon.id, f.taxon] as const), ...result.choose.flatMap((c) => c.taxa.map((t) => [t.id, c.climate ? { ...t, from: c.climate } : t] as const))]);
+  // What "Add all" adds from a reading: the found plants and the ticked ones, each once.
+  const plan = (r: NonNullable<typeof result>) => {
+    const climateOf = new Map<PlantId, ClimateZone>();
+    for (const c of r.choose) if (c.climate) for (const t of c.taxa) climateOf.set(t.id, c.climate);
+    const chosen = ticked.filter((id) => r.choose.some((c) => c.taxa.some((t) => t.id === id)));
+    const ids = [...new Set([...r.found.map((f) => f.taxon.id), ...chosen])].filter((id) => !members.includes(id));
+    const byId = new Map<PlantId, Taxon>([...r.found.map((f) => [f.taxon.id, f.taxon] as const), ...r.choose.flatMap((c) => c.taxa.map((t) => [t.id, c.climate ? { ...t, from: c.climate } : t] as const))]);
+    return { ids, climateOf, byId };
+  };
+  const toAdd = plan(result).ids;
   const addAll = () => {
+    // The text as it is now, not as it was a moment ago.
+    const current = box.current?.value ?? text;
+    const now = current === settled ? result : read(current).result;
+    if (!now) return;
+    const { ids, climateOf, byId } = plan(now);
+    if (!ids.length) return;
     const from: Partial<Record<PlantId, ClimateZone>> = {};
-    for (const id of toAdd) { const z = climateOf.get(id); if (z) from[id] = z; }
-    const warned = toAdd.filter((id) => { const t = byId.get(id); return t ? asks(flagsOfPlant(t)) : false; });
+    for (const id of ids) { const z = climateOf.get(id); if (z) from[id] = z; }
+    const warned = ids.filter((id) => { const t = byId.get(id); return t ? asks(flagsOfPlant(t)) : false; });
     closeSheet();
-    addMembers(toAdd, from, { warned });
+    addMembers(ids, from, { warned });
   };
   const addGuest = (t: Taxon, from: ClimateZone) => addMembers([t.id], { [t.id]: from });
   const toggle = (id: PlantId) => setTicked((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
@@ -78,11 +90,11 @@ export default function Paste() {
       </div>
       <div class="ct-field">
         <label for="ct-paste-text">{T('paste.label')}</label>
-        <textarea id="ct-paste-text" class="ct-paste-text" rows={6} value={text} onInput={(e) => setText((e.target as HTMLTextAreaElement).value)} />
+        <textarea ref={box} id="ct-paste-text" class="ct-paste-text" rows={6} value={text} onInput={(e) => setText((e.target as HTMLTextAreaElement).value)} />
       </div>
       {table.columns > 1 && (
         <div class="ct-field">
-          <label for="ct-paste-col">{T('paste.columns', { n: table.columns })}</label>
+          <label for="ct-paste-col">{T(table.sep === '\t' ? 'paste.columns' : 'paste.columnsSep', { n: table.columns })}</label>
           <select id="ct-paste-col" value={String(col)} onChange={(e) => setColumn(Number((e.target as HTMLSelectElement).value))}>
             {Array.from({ length: table.columns }, (_, c) => <option value={String(c)}>{T('paste.column', { n: c + 1, sample: sample(c) })}</option>)}
           </select>

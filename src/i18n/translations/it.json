@@ -869,6 +869,7 @@
   "consortium.paste.cap": "Vengono lette solo le prime {n} righe.",
   "consortium.paste.addedWarn": "one: # aggiunta con un avviso. | other: # aggiunte con un avviso.",
   "consortium.paste.show": "Mostra",
+  "consortium.paste.columnsSep": "Il tuo elenco ha {n} colonne. I nomi si leggono dalla",
   "consortium.details.photoAlt": "Foto di {name}",
   "consortium.details.photo": "Foto: {credit}",
   "consortium.details.photoSource": "pagina di origine",

@@ -869,6 +869,7 @@
   "consortium.paste.cap": "Only the first {n} lines are read.",
   "consortium.paste.addedWarn": "one: # added with a warning. | other: # added with a warning.",
   "consortium.paste.show": "Show",
+  "consortium.paste.columnsSep": "Your list has {n} columns. Names are read from",
   "consortium.details.photoAlt": "Photo of {name}",
   "consortium.details.photo": "Photo: {credit}",
   "consortium.details.photoSource": "source page",

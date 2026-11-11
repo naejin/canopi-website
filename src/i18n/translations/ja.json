@@ -869,6 +869,7 @@
   "consortium.paste.cap": "最初の {n} 行だけを読みます。",
   "consortium.paste.addedWarn": "other: うち # 種に警告があります。",
   "consortium.paste.show": "表示",
+  "consortium.paste.columnsSep": "リストは{n}列あります。名前を読む列：",
   "consortium.details.photoAlt": "{name}の写真",
   "consortium.details.photo": "写真：{credit}",
   "consortium.details.photoSource": "出典ページ",

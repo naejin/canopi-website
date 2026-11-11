@@ -869,6 +869,7 @@
   "consortium.paste.cap": "Alleen de eerste {n} regels worden gelezen.",
   "consortium.paste.addedWarn": "one: # toegevoegd met een waarschuwing. | other: # toegevoegd met een waarschuwing.",
   "consortium.paste.show": "Tonen",
+  "consortium.paste.columnsSep": "Je lijst heeft {n} kolommen. Namen worden gelezen uit",
   "consortium.details.photoAlt": "Foto van {name}",
   "consortium.details.photo": "Foto: {credit}",
   "consortium.details.photoSource": "bronpagina",

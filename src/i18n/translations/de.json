@@ -869,6 +869,7 @@
   "consortium.paste.cap": "Nur die ersten {n} Zeilen werden gelesen.",
   "consortium.paste.addedWarn": "one: # davon mit Warnung. | other: # davon mit Warnung.",
   "consortium.paste.show": "Zeigen",
+  "consortium.paste.columnsSep": "Deine Liste hat {n} Spalten. Die Namen kommen aus",
   "consortium.details.photoAlt": "Foto: {name}",
   "consortium.details.photo": "Foto: {credit}",
   "consortium.details.photoSource": "Quellseite",

@@ -869,6 +869,7 @@
   "consortium.paste.cap": "처음 {n}줄만 읽습니다.",
   "consortium.paste.addedWarn": "other: 그중 #개에 경고가 있습니다.",
   "consortium.paste.show": "보기",
+  "consortium.paste.columnsSep": "목록에 열이 {n}개 있습니다. 이름을 읽을 열:",
   "consortium.details.photoAlt": "{name} 사진",
   "consortium.details.photo": "사진: {credit}",
   "consortium.details.photoSource": "출처 페이지",
