@@ -472,7 +472,7 @@ test('P5-19 (S5d not checked): with no future data for the site the panel says "
 
 // ---- S5e: native here and soil likely ----
 
-test('P5-20 (S5e native here, three states): at Lyon (FRA) Details says native, not recorded native, or unknown', { todo: 'S5e: native here not built' }, async () => {
+test('P5-20 (S5e native here, three states): at Lyon (FRA) Details says native, not recorded native, or unknown', { todo: 'S5e: moved to P5.2, after the P5 push; native here not built' }, async () => {
   const page = await tool();
   await atSite(page, 'lyon');
   const pick = await realDb((db) => ({
@@ -488,7 +488,7 @@ test('P5-20 (S5e native here, three states): at Lyon (FRA) Details says native, 
   }
 });
 
-test('P5-21 (S5e soil likely): at Manaus the soil question offers "Likely: acid (pH 4.3, SoilGrids) · Use it" and keeps "Not sure" until used', { todo: 'S5e: soil likely not built' }, async () => {
+test('P5-21 (S5e soil likely): at Manaus the soil question offers "Likely: acid (pH 4.3, SoilGrids) · Use it" and keeps "Not sure" until used', { todo: 'S5e: moved to P5.2, after the P5 push; soil likely not built' }, async () => {
   const page = await tool();
   await atSite(page, 'manaus');
   await choose(page, 'Tropical');
@@ -500,7 +500,7 @@ test('P5-21 (S5e soil likely): at Manaus the soil question offers "Likely: acid 
   for (const q of ['light', 'room']) assert.equal(await page.$(`[data-likely="${q}"]`), null, `${q} is never offered`);
 });
 
-test('P5-22 (S5e soil borderline): at Lyon (pH 5.9, within 0.3 of the acid bound) nothing is offered', { todo: 'S5e: soil likely not built' }, async () => {
+test('P5-22 (S5e soil borderline): at Lyon (pH 5.9, within 0.3 of the acid bound) nothing is offered', { todo: 'S5e: moved to P5.2, after the P5 push; soil likely not built' }, async () => {
   const page = await tool();
   await atSite(page, 'manaus');
   await choose(page, 'Tropical');
