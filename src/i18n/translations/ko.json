@@ -974,5 +974,9 @@
   "consortium.download.name": "컨소시엄 · {climate}",
   "consortium.download.description": "Canopi 컨소시엄 도구(베타)로 만듦, 기후: {climate}, 데이터 버전 {id}. 내 땅에서 시험해 볼 출발점 가설입니다.",
   "consortium.page.hypothesis": "컨소시엄은 내 땅에서 시험해 볼 출발점 가설이며, 검증된 정답이 아닙니다.",
-  "consortium.page.actions": "공유, 인쇄, 내려받기"
+  "consortium.page.actions": "공유, 인쇄, 내려받기",
+  "consortium.share.pasted.outdated": "붙여 넣은 링크는 이전 버전의 도구에서 만들어져 아무것도 바꾸지 않았습니다.",
+  "consortium.share.pasted.cut": "붙여 넣은 링크가 잘려 있고 기후가 없어 아무것도 바꾸지 않았습니다.",
+  "consortium.share.pasted.failed": "붙여 넣은 링크를 열지 못했습니다. 식물 목록을 불러오지 못했습니다. 아무것도 바꾸지 않았습니다.",
+  "consortium.share.failed": "이 링크를 열지 못했습니다. 식물 목록을 불러오지 못했습니다. 나중에 다시 시도하세요."
 }

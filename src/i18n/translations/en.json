@@ -974,5 +974,9 @@
   "consortium.download.name": "Consortium · {climate}",
   "consortium.download.description": "Made with the Canopi consortium tool (beta), {climate} climate, data release {id}. A starting hypothesis to try on your ground.",
   "consortium.page.hypothesis": "A consortium is a starting hypothesis to try on your ground, not a proven recipe.",
-  "consortium.page.actions": "Share, print or download"
+  "consortium.page.actions": "Share, print or download",
+  "consortium.share.pasted.outdated": "The pasted link is from an older version of the tool, so nothing was changed.",
+  "consortium.share.pasted.cut": "The pasted link looks cut off and names no climate, so nothing was changed.",
+  "consortium.share.pasted.failed": "The pasted link could not be opened: its plant list did not load. Nothing was changed.",
+  "consortium.share.failed": "This link could not be opened: its plant list did not load. Try again later."
 }

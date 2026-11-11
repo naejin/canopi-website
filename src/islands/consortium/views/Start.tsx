@@ -229,6 +229,7 @@ function StartNotices() {
     <>
       {n.outdated && <p class="ct-notice" role="status">{T('share.outdated')}</p>}
       {n.cut && <p class="ct-notice" role="status">{T('share.cut')}</p>}
+      {n.failed && <p class="ct-notice" role="status">{T('share.failed')}</p>}
       {n.oldSave && <p class="ct-notice" role="status">{T('start.oldSave')}</p>}
       {n.guideMissing && <p class="ct-notice" role="status">{T('start.guideMissing', { name: n.guideMissing, climate: zoneLabel(climate.value) })}</p>}
       {t && <p class="ct-muted" role="status">{T('start.guideKept', { name: plantName(t, pageLang()) })}</p>}

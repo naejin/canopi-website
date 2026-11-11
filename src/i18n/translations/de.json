@@ -974,5 +974,9 @@
   "consortium.download.name": "Konsortium · {climate}",
   "consortium.download.description": "Erstellt mit dem Konsortium-Werkzeug von Canopi (Beta), Klima „{climate}“, Datenstand {id}. Eine Ausgangshypothese, die du auf deinem Boden ausprobieren kannst.",
   "consortium.page.hypothesis": "Ein Konsortium ist eine Ausgangshypothese, die du auf deinem Boden ausprobierst, kein erprobtes Rezept.",
-  "consortium.page.actions": "Teilen, drucken oder herunterladen"
+  "consortium.page.actions": "Teilen, drucken oder herunterladen",
+  "consortium.share.pasted.outdated": "Der eingefügte Link stammt aus einer älteren Version des Werkzeugs, daher wurde nichts geändert.",
+  "consortium.share.pasted.cut": "Der eingefügte Link scheint abgeschnitten und nennt kein Klima, daher wurde nichts geändert.",
+  "consortium.share.pasted.failed": "Der eingefügte Link ließ sich nicht öffnen: Seine Pflanzenliste wurde nicht geladen. Es wurde nichts geändert.",
+  "consortium.share.failed": "Dieser Link ließ sich nicht öffnen: Seine Pflanzenliste wurde nicht geladen. Versuche es später noch einmal."
 }

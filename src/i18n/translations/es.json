@@ -974,5 +974,9 @@
   "consortium.download.name": "Consorcio · {climate}",
   "consortium.download.description": "Hecho con la herramienta de consorcios de Canopi (beta), clima {climate}, versión de datos {id}. Una hipótesis de partida para probar en tu terreno.",
   "consortium.page.hypothesis": "Un consorcio es una hipótesis de partida para probar en tu terreno, no una receta comprobada.",
-  "consortium.page.actions": "Compartir, imprimir o descargar"
+  "consortium.page.actions": "Compartir, imprimir o descargar",
+  "consortium.share.pasted.outdated": "El enlace pegado es de una versión anterior de la herramienta, así que no se ha cambiado nada.",
+  "consortium.share.pasted.cut": "El enlace pegado parece cortado y no indica ningún clima, así que no se ha cambiado nada.",
+  "consortium.share.pasted.failed": "No se pudo abrir el enlace pegado: su lista de plantas no se cargó. No se ha cambiado nada.",
+  "consortium.share.failed": "No se pudo abrir este enlace: su lista de plantas no se cargó. Inténtalo más tarde."
 }

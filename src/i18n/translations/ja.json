@@ -974,5 +974,9 @@
   "consortium.download.name": "コンソーシアム · {climate}",
   "consortium.download.description": "Canopi のコンソーシアムツール（ベータ版）で作成、気候：{climate}、データ版 {id}。あなたの土地で試すための出発点となる仮説です。",
   "consortium.page.hypothesis": "コンソーシアムは、あなたの土地で試すための出発点となる仮説であり、実証済みのレシピではありません。",
-  "consortium.page.actions": "共有・印刷・ダウンロード"
+  "consortium.page.actions": "共有・印刷・ダウンロード",
+  "consortium.share.pasted.outdated": "貼り付けたリンクは古いバージョンのツールのものなので、何も変更していません。",
+  "consortium.share.pasted.cut": "貼り付けたリンクは途中で切れていて気候が書かれていないため、何も変更していません。",
+  "consortium.share.pasted.failed": "貼り付けたリンクを開けませんでした。植物リストが読み込まれませんでした。何も変更していません。",
+  "consortium.share.failed": "このリンクを開けませんでした。植物リストが読み込まれませんでした。後でもう一度お試しください。"
 }

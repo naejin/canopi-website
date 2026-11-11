@@ -974,5 +974,9 @@
   "consortium.download.name": "Consortium · {climate}",
   "consortium.download.description": "Gemaakt met het consortiumhulpmiddel van Canopi (bèta), klimaat {climate}, gegevensversie {id}. Een beginhypothese om op je grond uit te proberen.",
   "consortium.page.hypothesis": "Een consortium is een beginhypothese om op je grond uit te proberen, geen beproefd recept.",
-  "consortium.page.actions": "Delen, afdrukken of downloaden"
+  "consortium.page.actions": "Delen, afdrukken of downloaden",
+  "consortium.share.pasted.outdated": "De geplakte link komt uit een oudere versie van het hulpmiddel, dus er is niets veranderd.",
+  "consortium.share.pasted.cut": "De geplakte link lijkt afgeknipt en noemt geen klimaat, dus er is niets veranderd.",
+  "consortium.share.pasted.failed": "De geplakte link kon niet worden geopend: de plantenlijst is niet geladen. Er is niets veranderd.",
+  "consortium.share.failed": "Deze link kon niet worden geopend: de plantenlijst is niet geladen. Probeer het later opnieuw."
 }

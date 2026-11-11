@@ -23,6 +23,8 @@ async function suggest(page, climate = 'Temperate') {
 }
 const memberNames = async (page) => (await axNodes(page)).filter((n) => n.role === 'button' && / · /.test(n.name ?? '')).map((n) => n.name).sort();
 const shareLink = async (page) => {
+  // Open the Share panel (closed first if open, so the field is read fresh).
+  if (await page.$('#ct-share-field')) await page.locator(aria('button', 'Share')).click();
   await page.locator(aria('button', 'Share')).click();
   const field = await findAx(page, { role: 'textbox', name: /link/i });
   assert.ok(field?.value?.includes('#v=4'), 'the share field holds a #v=4 link');
@@ -153,11 +155,29 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     assert.ok(await has(mine, aria('button', 'Share'), 8000));
     assert.match(await countryText(mine), /chosen by you/, 'a reload never relabels the reader\'s country (review 1)');
 
+    const own = await mine.evaluate(() => location.hash);
     // A link pasted into the open tab is opened (review 3).
     await mine.evaluate((f) => { location.hash = f; }, staged);
     for (let i = 0; i < 40 && (await mine.evaluate(() => location.hash)) !== `#${staged}`; i++) await new Promise((r) => setTimeout(r, 100));
     await new Promise((r) => setTimeout(r, 800));
     assert.equal(hashOf(await shareLink(mine)), `#${staged}`, 'the pasted link is the consortium shown');
+    assert.match(await countryText(mine), /from the shared link/);
+
+    // Back: the reader's own consortium again, its country still "chosen by you" (round 2, 1).
+    await mine.goBack();
+    await new Promise((r) => setTimeout(r, 1000));
+    assert.equal(hashOf(await shareLink(mine)), own, 'Back reopens the reader\'s own consortium');
+    assert.match(await countryText(mine), /chosen by you/, 'Back never relabels the reader\'s country');
+
+    // With a consortium shown, an older or cut pasted link changes nothing, says so there, and the
+    // address goes back to the consortium shown (round 2, 2 and 4).
+    for (const [bad, words] of [[staged.replace('v=4', 'v=3'), /pasted link is from an older version/], [staged.replace(/c=temperate&/, ''), /pasted link looks cut off/]]) {
+      await mine.evaluate((f) => { location.hash = f; }, bad);
+      assert.ok(await findAx(mine, { name: words }), `the notice for the pasted link (${words})`);
+      for (let i = 0; i < 40 && (await mine.evaluate(() => location.hash)) !== own; i++) await new Promise((r) => setTimeout(r, 100));
+      assert.equal(await mine.evaluate(() => location.hash), own, 'the address is the consortium shown again');
+      assert.equal(hashOf(await shareLink(mine)), own, 'nothing changed');
+    }
     await done(mine);
 
     // A #v=4 link without a climate: the cut notice, and Start (review 7).

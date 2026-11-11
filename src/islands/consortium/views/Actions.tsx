@@ -1,6 +1,7 @@
 /** @jsxImportSource preact */
 // View slot of stream S4, after the matrix (App.tsx renders it once the plant list is ready): the
-// link notices (§5: plants of a link no longer in the list, a cut link), then Share, Print and
+// link notices (§5: plants of a link no longer in the list, a cut link, a pasted link that changed
+// nothing), then Share, Print and
 // "Download for Canopi", the Share panel and the print sheet (hidden on screen). Nothing here while
 // Start is shown.
 import { useState } from 'preact/hooks';
@@ -14,12 +15,13 @@ import { zoneLabel } from './Start.tsx';
 
 function LinkNotices() {
   const n = notices.value;
-  if (!n.unknownCount && !n.cut) return null;
+  if (!n.unknownCount && !n.cut && !n.pasted) return null;
   return (
     <div class="ct-notice" role="status">
+      {n.pasted && <p>{T(`share.pasted.${n.pasted}`)}</p>}
       {n.unknownCount > 0 && <p>{P('share.unknown', n.unknownCount)}</p>}
       {n.cut && <p>{T('share.cut')}</p>}
-      <p><button type="button" class="link-button ct-link" onClick={() => { notices.value = { ...notices.peek(), unknownCount: 0, cut: false }; }}>{T('share.close')}</button></p>
+      <p><button type="button" class="link-button ct-link" onClick={() => { notices.value = { ...notices.peek(), unknownCount: 0, cut: false, pasted: null }; }}>{T('share.close')}</button></p>
     </div>
   );
 }

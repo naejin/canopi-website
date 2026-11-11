@@ -4,16 +4,18 @@
 // copy again on every edit). Its notes: a link above 2,000 characters ("Some apps cut long
 // links…", core isLongLink on the whole URL), and a browser that keeps nothing ("This browser does
 // not keep your consortium; your link does."). Rendered by views/Actions.tsx.
-import { useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { isLongLink } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
-import { currentFragment, shareUrl, storageWorks } from '../memory.ts';
+import { shareUrl, shownFragment, storageWorks } from '../memory.ts';
 
 export function Share({ onClose }: { onClose: () => void }) {
-  const fragment = currentFragment();
+  const fragment = shownFragment.value;
   const url = fragment ? shareUrl(location.href, fragment) : location.href;
   const [copied, setCopied] = useState<'yes' | 'no' | null>(null);
   const field = useRef<HTMLInputElement>(null);
+  // A new link (the consortium changed): "Link copied." no longer holds.
+  useEffect(() => { setCopied(null); }, [url]);
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);

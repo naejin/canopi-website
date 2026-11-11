@@ -24,7 +24,7 @@
 // The pure parts come first (scripts/consortium-memory.test.mjs runs them in Node): arrival,
 // countryAtStart, the save record, shareState, guessCountry and cropExamples (ported from v1
 // logic.js, memory.js and crops.js). The wiring (startMemory) reads and writes the store's signals.
-import { batch, effect, signal } from '@preact/signals';
+import { batch, computed, effect, signal } from '@preact/signals';
 import type { ClimateZone, DecodedLink, LinkNotice, PhaseOrd, PlantId, ShareState, Site, Taxon } from '../../lib/consortium/index.ts';
 import { climateZones, decodeLink, encodeLink, linkClimates, readPreset, LINK_VERSION, MAX_CROPS } from '../../lib/consortium/index.ts';
 import type { Country } from './store.ts';
@@ -141,6 +141,18 @@ export function arrival(loc: { hash: string; search: string }, saved: SavedRecor
   return { kind: 'start', climate: zoneOf(siteClimate) };
 }
 
+// A hashchange (a pasted link, or Back/Forward): the page's own address (history.state.ct, as
+// arrival reads it) reopens as the save with its country source; another link opens as a link; the
+// address of the consortium shown, or a fragment that is no link, is ignored.
+export type HashAction = { kind: 'ignore' } | { kind: 'saved'; fragment: string; src: CountryFrom } | { kind: 'link'; fragment: string };
+export function hashAction(hash: string, state: unknown, current: string | null): HashAction {
+  const f = hash.replace(/^#/, '');
+  if (!f || !isLinkFragment(f) || f === current) return { kind: 'ignore' };
+  const own = ownOf(state);
+  if (own && own.ct === f) return { kind: 'saved', fragment: f, src: own.src };
+  return { kind: 'link', fragment: f };
+}
+
 // The reader's country at start: a link's own (labelled "from the shared link"), else the reader's
 // choice on this device ('-' is "No country"), else a saved consortium's (a guess is never written;
 // a country that came from a link keeps that label), else the browser's guess, else none.
@@ -250,8 +262,11 @@ export const plantName = (t: Pick<Taxon, 'names' | 'canonical_name'>, lang: stri
 // =====================================================================================================
 
 // The notices a link (or the save) left for the reader (Actions shows them; Start shows `outdated`).
-export interface Notices extends LinkNotice { oldSave: boolean; guideMissing: string | null; guideKept: PlantId | null }
-const NO_NOTICES: Notices = { unknownCount: 0, cut: false, outdated: false, oldSave: false, guideMissing: null, guideKept: null };
+// pasted: a link pasted while a consortium was shown that changed nothing (older version, cut with
+// no climate, its plant list not loaded); failed: a link or the save whose plant list did not load.
+export type PastedProblem = 'outdated' | 'cut' | 'failed';
+export interface Notices extends LinkNotice { oldSave: boolean; guideMissing: string | null; guideKept: PlantId | null; pasted: PastedProblem | null; failed: boolean }
+const NO_NOTICES: Notices = { unknownCount: 0, cut: false, outdated: false, oldSave: false, guideMissing: null, guideKept: null, pasted: null, failed: false };
 export const notices = signal<Notices>({ ...NO_NOTICES });
 // Whether this browser keeps the consortium (false: Share says the link does).
 export const storageWorks = signal(true);
@@ -319,38 +334,42 @@ const countryFrom = (): CountryFrom => {
 
 // Restores a fragment (a link or the save) once its climates are read. Returns whether it opened.
 // src: the saved country's source (a save's country that came from a link keeps that label).
-async function restore(fragment: string, from: 'link' | 'saved', src: CountryFrom = null): Promise<boolean> {
-  restoring.value = true;
-  try {
-    const zones = linkClimates(fragment);
-    const v = new URLSearchParams(fragment).get('v');
-    if (v !== null && v !== String(LINK_VERSION)) {
-      // Another version: nothing is restored but what decodeLink still reads (climate, site).
+// keep: a consortium is shown (a link pasted into the open tab, Back/Forward): a link that cannot
+// open changes nothing, says so where the reader is, and the address goes back to the consortium
+// shown, so a reload reopens it. The store changes only once every list the link needs is read.
+async function restore(fragment: string, from: 'link' | 'saved', src: CountryFrom = null, keep = false): Promise<boolean> {
+  const refuse = (problem: PastedProblem, notice: Partial<Notices>): false => {
+    if (keep) { notices.value = { ...notices.peek(), pasted: problem }; writeAddress(true); }
+    else notices.value = { ...notices.peek(), ...notice };
+    return false;
+  };
+  const v = new URLSearchParams(fragment).get('v');
+  if (v !== null && v !== String(LINK_VERSION)) {
+    // Another version: on Start, the climate it names (decodeLink still reads it) and the notice.
+    if (!keep && from === 'link') {
       const d = decodeLink(fragment, {});
-      batch(() => {
-        if (d.state.climate && from === 'link') store.climate.value = d.state.climate;
-        notices.value = { ...notices.peek(), outdated: from === 'link', oldSave: from === 'saved' };
-      });
-      return false;
+      if (d.state.climate) store.climate.value = d.state.climate;
     }
-    // A link with no climate (cut before it, or edited): the cut notice, and Start stays (review 7).
-    const c = zoneOf(new URLSearchParams(fragment).get('c'));
-    if (!c) {
-      notices.value = { ...notices.peek(), cut: true };
-      return false;
-    }
-    store.climate.value = c;
+    return refuse('outdated', from === 'link' ? { outdated: true } : { oldSave: true });
+  }
+  // A link with no climate (cut before it, or edited): the cut notice, and nothing opens (review 7).
+  if (!zoneOf(new URLSearchParams(fragment).get('c'))) return refuse('cut', { cut: true });
+  restoring.value = true;
+  let opened = false;
+  try {
     await waitForSource();
-    const known = await knownFor(zones);
-    if (!known) return false;
+    const known = await knownFor(linkClimates(fragment));
+    if (!known) return refuse('failed', { failed: true });
     const d = decodeLink(fragment, known);
     applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen');
-    notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut };
-    // Plants no longer in the list are left out: the address is rewritten without them (§5).
-    if (d.notice.unknownCount > 0 && from === 'link') writeAddress(true);
+    notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut, pasted: null, failed: false };
+    opened = true;
     return true;
   } finally {
     restoring.value = false;
+    // Saved and written to the address only when it opened (plants no longer in the list are then
+    // left out of the address, §5); a failure leaves the save as it was.
+    if (opened) persist();
   }
 }
 
@@ -419,6 +438,22 @@ export function requestSuggest(): void {
   pendingSuggest.value = true;
 }
 
+// The save and the address bar, for a shown consortium (nothing on Start).
+function persist(): void {
+  if (store.view.peek() === 'start' || !store.pool.peek()) return;
+  const fragment = currentFragment();
+  if (!fragment) return;
+  memory.write(STORE, saveRecord(fragment, new Date().toISOString(), countryFrom()));
+  writeAddress();
+}
+
+// The shown consortium's link, recomputed on every change of what the link holds (Share's field).
+export const shownFragment = computed(() => {
+  void [store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
+    store.guests.value, store.crops.value, store.stage.value, store.view.value, store.pools.value];
+  return currentFragment();
+});
+
 let started = false;
 // Called once by Start when it first mounts (main.ts belongs to S1). Returns nothing: the effects
 // live as long as the page.
@@ -455,11 +490,14 @@ export function startMemory(): void {
   else if (how.climate) store.climate.value = how.climate;
 
   // A link pasted into the open tab: opened, unless it is the page's own address (review 3).
+  // Back/Forward to the page's own address reopens it as the save, its country label kept (round 2).
   window.addEventListener('hashchange', () => {
-    const hash = location.hash.replace(/^#/, '');
-    if (!hash || !isLinkFragment(hash) || hash === currentFragment()) return;
+    const act = hashAction(location.hash, attempt(() => history.state), currentFragment());
+    if (act.kind === 'ignore') return;
+    const keep = store.view.peek() !== 'start';
+    if (act.kind === 'saved') { void restore(act.fragment, 'saved', act.src, keep); return; }
     notices.value = { ...NO_NOTICES };
-    void restore(hash, 'link');
+    void restore(act.fragment, 'link', null, keep);
   });
 
   // "Suggest plants" pressed early runs when the climate's plants (and every guest list) are read.
@@ -477,16 +515,14 @@ export function startMemory(): void {
     attempt(() => performance.mark('ct:pool'));
   });
 
-  // Each change of a shown consortium: the save and the address bar (never while restoring, and
-  // never on Start with nothing chosen: the last consortium stays until another replaces it).
+  // Each change of a shown consortium: the save and the address bar (never while restoring: restore
+  // saves once it has opened; never on Start with nothing chosen: the last consortium stays until
+  // another replaces it).
+  // (It reads the signals themselves, not shownFragment: the view is not in the link, so a computed
+  // fragment would not change when the result first shows.)
   effect(() => {
-    // Read every piece of state the link holds, so the effect runs on each change.
     void [store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
-      store.guests.value, store.crops.value, store.stage.value, store.view.value, store.pools.value, restoring.value];
-    if (restoring.peek() || store.view.peek() === 'start' || !store.pool.peek()) return;
-    const fragment = currentFragment();
-    if (!fragment) return;
-    memory.write(STORE, saveRecord(fragment, new Date().toISOString(), countryFrom()));
-    writeAddress();
+      store.guests.value, store.crops.value, store.stage.value, store.view.value, store.pools.value];
+    if (!restoring.peek()) persist();
   });
 }

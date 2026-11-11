@@ -974,5 +974,9 @@
   "consortium.download.name": "植物组合 · {climate}",
   "consortium.download.description": "用 Canopi 植物组合工具（测试版）制作，气候：{climate}，数据版本 {id}。这是一个起点假设，请在你的土地上试一试。",
   "consortium.page.hypothesis": "植物组合是一个起点假设，需要在你的土地上试验，而不是经过验证的配方。",
-  "consortium.page.actions": "分享、打印或下载"
+  "consortium.page.actions": "分享、打印或下载",
+  "consortium.share.pasted.outdated": "粘贴的链接来自本工具的旧版本，因此没有做任何更改。",
+  "consortium.share.pasted.cut": "粘贴的链接似乎被截断了，且没有指明气候，因此没有做任何更改。",
+  "consortium.share.pasted.failed": "无法打开粘贴的链接：它的植物清单没有加载。没有做任何更改。",
+  "consortium.share.failed": "无法打开此链接：它的植物清单没有加载。请稍后再试。"
 }

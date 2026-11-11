@@ -974,5 +974,9 @@
   "consortium.download.name": "Guilde · {climate}",
   "consortium.download.description": "Faite avec l’outil de guildes de Canopi (bêta), climat {climate}, version des données {id}. Une hypothèse de départ à essayer sur votre terrain.",
   "consortium.page.hypothesis": "Une guilde est une hypothèse de départ à essayer sur votre terrain, pas une recette éprouvée.",
-  "consortium.page.actions": "Partager, imprimer ou télécharger"
+  "consortium.page.actions": "Partager, imprimer ou télécharger",
+  "consortium.share.pasted.outdated": "Le lien collé vient d’une ancienne version de l’outil : rien n’a été changé.",
+  "consortium.share.pasted.cut": "Le lien collé semble coupé et ne nomme aucun climat : rien n’a été changé.",
+  "consortium.share.pasted.failed": "Le lien collé n’a pas pu être ouvert : sa liste de plantes ne s’est pas chargée. Rien n’a été changé.",
+  "consortium.share.failed": "Ce lien n’a pas pu être ouvert : sa liste de plantes ne s’est pas chargée. Réessayez plus tard."
 }

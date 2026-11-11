@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 
 const m = await import('../src/islands/consortium/memory.ts');
-const { guarded, saveRecord, readRecord, oldRecord, arrival, countryAtStart, shareState, shareUrl, guessCountry, cropExamples, plantName, zoneOf, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
+const { guarded, saveRecord, readRecord, oldRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, cropExamples, plantName, zoneOf, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
 const { decodeLink, encodeLink } = await import('../src/lib/consortium/index.ts');
 const { openBytes } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
@@ -80,6 +80,16 @@ test('arrival: the page\'s own address after a reload is the save, not a shared 
   assert.deepEqual(arrival({ hash: '#v=4&c=temperate&k=DE&a=&e=1', search: '' }, null, null, own), { kind: 'link', fragment: 'v=4&c=temperate&k=DE&a=&e=1' }, 'another link in the address is a link');
   assert.deepEqual(arrival({ hash: '#v=4&c=temperate&k=FR&a=&e=1', search: '' }, null, null, { ct: own.ct, src: 'link' }).src, 'link', 'a country first opened from a link stays labelled so');
   assert.equal(arrival({ hash: '#v=4&c=temperate&a=&e=1', search: '' }, null, null, 'junk').kind, 'link');
+});
+
+test('hashchange: own address (Back/Forward) is the save with its source; another link is a link; the shown one is ignored (round 2, 1)', () => {
+  const a = 'v=4&c=temperate&k=FR&a=&e=1', b = 'v=4&c=temperate&k=DE&a=&e=1';
+  assert.deepEqual(hashAction(`#${a}`, { ct: a, src: 'chosen' }, b), { kind: 'saved', fragment: a, src: 'chosen' }, 'Back to the reader\'s own consortium: never relabelled as a link\'s');
+  assert.deepEqual(hashAction(`#${b}`, { ct: a, src: 'chosen' }, a), { kind: 'link', fragment: b });
+  assert.deepEqual(hashAction(`#${b}`, null, a), { kind: 'link', fragment: b });
+  assert.deepEqual(hashAction(`#${a}`, null, a), { kind: 'ignore' }, 'the address the page itself wrote');
+  assert.deepEqual(hashAction('#main', null, a), { kind: 'ignore' });
+  assert.deepEqual(hashAction('', null, a), { kind: 'ignore' });
 });
 
 test('the country at start: a link, the reader\'s choice ("-" is none), the save (with its source), the guess, none', () => {
