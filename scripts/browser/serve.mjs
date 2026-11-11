@@ -55,6 +55,12 @@ export async function serve({ port = portFrom(), log = () => {} } = {}) {
     if (!killed) { try { process.kill(-child.pid, 'SIGKILL'); } catch { /* gone */ } await done; }
   };
 
+  // If this process ends without stop() (a timeout's SIGTERM, Ctrl-C, an uncaught error), the
+  // server's process group and the marker go with it, so no orphan keeps the port.
+  const kill = () => { dropMarker(); if (!exited) { try { process.kill(-child.pid, 'SIGKILL'); } catch { /* gone */ } } };
+  process.once('exit', kill);
+  for (const sig of ['SIGTERM', 'SIGINT', 'SIGHUP']) process.once(sig, () => { kill(); process.exit(128 + (sig === 'SIGINT' ? 2 : sig === 'SIGHUP' ? 1 : 15)); });
+
   const url = `http://127.0.0.1:${port}`;
   const start = Date.now();
   for (;;) {
