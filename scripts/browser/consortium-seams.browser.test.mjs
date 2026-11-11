@@ -150,6 +150,8 @@ test('H16: Remove in All plants takes the plant out with a toast and Undo, which
     await page.locator(aria('button', remove.name)).click();
     assert.ok(await findAx(page, { name: new RegExp(`^${esc(name)} removed`) }), 'the toast says it');
     assert.equal((await memberIds(page)).length, n - 1);
+    await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 3000 }).catch(() => {});
+    assert.notEqual((await focused(page)).tag, 'body', 'focus is not lost with the removed row');
     await page.locator(aria('button', 'Undo')).click();
     assert.ok(await findAx(page, { role: 'button', name: remove.name }), 'Undo brings it back');
     await done(page);
@@ -283,4 +285,42 @@ test('W8, W9, X4, X5: bold is 600, CJK headings keep words whole, sheet and page
     for (const s of heads) assert.match(s, /^keep-all\/|\/strict$/, `${lang}: headings keep words whole (${s})`);
     await done(p);
   }
+});
+
+// What has focus: its tag, its name and the plant it is for.
+const focused = (page) => page.evaluate(() => {
+  const el = document.activeElement;
+  return { tag: el?.tagName.toLowerCase(), name: (el?.getAttribute('aria-label') || el?.textContent || '').trim().slice(0, 80), plant: el?.closest('[data-plant-id]')?.dataset.plantId ?? el?.dataset?.plantId ?? null };
+});
+
+test('W4: after Suggest plants, focus is on the matrix heading or caption, never on <body>', async (t) => {
+  await eachVariant(t, async (v) => {
+    const page = await h.open('/consortium/', { ...v, data: 'fixture' });
+    await page.locator(aria('radio', 'Temperate')).click();
+    assert.equal(await loadState(page), 'ready');
+    await page.locator(aria('button', 'Suggest plants')).click();
+    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000));
+    await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 3000 }).catch(() => {});
+    const f = await focused(page);
+    assert.notEqual(f.tag, 'body', 'focus is not lost');
+    assert.ok(['h2', 'caption', 'table', 'h3'].includes(f.tag) || /consortium/i.test(f.name), `on the matrix heading or caption (${JSON.stringify(f)})`);
+    await done(page);
+  });
+});
+
+test('W4: after Undo, focus is on the restored plant', async (t) => {
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    await page.locator(aria('tab', 'All plants')).click();
+    const remove = (await axNodes(page)).find((n) => n.role === 'button' && /^Remove /.test(n.name ?? ''));
+    const id = await page.$eval(`#ct-root button[aria-label="${remove.name}"]`, (el) => el.closest('[data-plant-id]')?.dataset.plantId);
+    assert.ok(id, 'the row names its plant');
+    await page.locator(aria('button', remove.name)).click();
+    await page.locator(aria('button', 'Undo')).click();
+    await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 3000 }).catch(() => {});
+    const f = await focused(page);
+    assert.notEqual(f.tag, 'body', 'focus is not lost');
+    assert.equal(f.plant, id, `on the restored plant (${JSON.stringify(f)})`);
+    await done(page);
+  });
 });

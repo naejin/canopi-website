@@ -10,6 +10,7 @@
 import * as store from '../store.ts';
 import { hideToast, toast, type ToastWhere as Where } from '../store.ts';
 import { T } from '../strings.ts';
+import { focusPlant } from '../focus.ts';
 
 export { hideToast, showToast, toast, type ToastAction, type ToastLine } from '../store.ts';
 
@@ -21,7 +22,7 @@ export function Toast({ where = 'page' }: { where?: Where }) {
         <div class="ct-toast" key={line.id}>
           <span class="ct-toast-text">{line.text}</span>
           {line.undo && (
-            <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const undo = line.undo; hideToast(); undo?.(); }}>{T('undo')}</button>
+            <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const undo = line.undo; hideToast(); undo?.(); focusPlant(line.focus[0]); }}>{T('undo')}</button>
           )}
           {line.action && (
             <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const run = line.action!.run; hideToast(); run(); }}>{line.action.label}</button>

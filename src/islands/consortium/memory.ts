@@ -29,6 +29,7 @@ import type { ClimateZone, DecodedLink, Interaction, LinkNotice, PhaseOrd, Plant
 import { climateZones, decodeLink, encodeLink, linkClimates, readPreset, LINK_VERSION, MAX_CROPS } from '../../lib/consortium/index.ts';
 import type { Country } from './store.ts';
 import * as store from './store.ts';
+import { focusView } from './focus.ts';
 
 export const STORE = 'canopi-consortium';
 export const COUNTRY_STORE = 'canopi-country';
@@ -511,7 +512,7 @@ function adoptPending(): void {
 // "Suggest plants": now when the plants are read, else once they are (§5 Loading).
 export function requestSuggest(): void {
   adoptPending();
-  if (store.suggestMembers()) { store.view.value = 'matrix'; pendingSuggest.value = false; return; }
+  if (store.suggestMembers()) { store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
   pendingSuggest.value = true;
 }
 
