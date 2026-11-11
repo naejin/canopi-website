@@ -189,9 +189,27 @@ test('cellCounts is the SQL oracle of the core matrix', async () => {
 
 // ---- names and folded search (A6) ----
 
-test('names and search: folded (NFD, no marks, lower case), word prefix, never LIKE', async () => {
+test('names and search: folded (lower case, Latin, Greek and Cyrillic marks off, ß œ æ written out), word prefix, never LIKE', async () => {
   assert.equal(fold('Châtaignier'), 'chataignier');
   assert.equal(fold('TRÈFLE Blanc'), 'trefle blanc');
+  assert.equal(fold('Ёлка'), 'елка', 'Cyrillic marks go');
+  assert.equal(fold('Ἀμπέλι'), 'αμπελι', 'Greek marks go');
+  // Marks stay where they make a different letter: Korean syllables and kana voicing (NFC back).
+  assert.equal(fold('백합'), '백합');
+  assert.ok(!fold('백합').startsWith(fold('배')), '배 (pear) is not a prefix of 백합 (lily)');
+  assert.equal(fold('ばら'), 'ばら');
+  assert.notEqual(fold('ばら'), fold('はら'));
+  // Ligatures and sharp s expand, on names and on the query alike.
+  assert.equal(fold('Weißdorn'), 'weissdorn');
+  assert.equal(fold('Cœur'), 'coeur');
+  assert.equal(fold('Æble'), 'aeble');
+  const extra = searchIndex([{ id: 'a', canonical: 'Crataegus monogyna', names: { de: 'Weißdorn' } }, { id: 'b', canonical: 'Pyrus pyrifolia', names: { ko: '배' } }, { id: 'c', canonical: 'Lilium', names: { ko: '백합' } }, { id: 'd', canonical: 'Rosa', names: { ja: 'ばら' } }, { id: 'e', canonical: 'X', names: { fr: 'Cœur de bœuf' } }]);
+  assert.deepEqual(extra('weissdorn').map((h) => h.id), ['a']);
+  assert.deepEqual(extra('Weißd').map((h) => h.id), ['a']);
+  assert.deepEqual(extra('배').map((h) => h.id), ['b'], 'Korean: the syllable is not decomposed into jamo');
+  assert.deepEqual(extra('はら').map((h) => h.id), [], 'kana voicing is kept');
+  assert.deepEqual(extra('coeur').map((h) => h.id), ['e']);
+  assert.deepEqual(extra('bœuf').map((h) => h.id), ['e']);
   const names = await source.names('fr');
   assert.equal(names.length, oracle.prepare('SELECT count(*) n FROM plants').get().n);
   const chestnut = names.find((n) => n.canonical === 'Castanea sativa');

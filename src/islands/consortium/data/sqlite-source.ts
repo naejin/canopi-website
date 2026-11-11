@@ -3,7 +3,8 @@
 // the core, which computes the matrix, site fit and reason counts itself. No sqlite-wasm import here:
 // it takes any database with OO1's selectObjects, so the tests run it on the package's Node build.
 // Photos come from the index's {uuid: path} map (design check A4), never the export's remote URLs.
-// Search runs in JavaScript over folded names (A6): NFD, marks stripped, lower case, word prefix;
+// Search runs in JavaScript over folded names (A6, `fold`): lower case, Latin/Greek/Cyrillic marks
+// stripped, ß/œ/æ written out, word prefix;
 // never SQL LIKE (ASCII-only folding, a substring match, % and _ unescaped).
 import type {
   ClimateZone, Details, FunctionId, FunctionMethod, Image, Interaction, InvasiveRecord, Labels, LayerScope, LayerValue, Locale, Month, Placement,
@@ -275,8 +276,15 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
 
 // ---- folded-name search (A6) ----
 
-// A name as search compares it: canonical decomposition, combining marks removed, lower case.
-export const fold = (text: string): string => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+// A name as search compares it, the same for names and the query: lower case; ß, œ and æ written
+// out (Weißdorn = weissdorn, cœur = coeur); combining marks removed only after a Latin, Greek or
+// Cyrillic letter (é = e, ё = е, ά = α), then composed again (NFC), so a mark that makes another
+// letter stays: Korean syllables are not split into jamo (배 is no prefix of 백합) and kana keep their
+// voicing (ばら is not はら).
+const MARKED = /([\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}])\p{M}+/gu;
+const WRITTEN_OUT: Record<string, string> = { ß: 'ss', œ: 'oe', æ: 'ae' };
+export const fold = (text: string): string =>
+  text.toLowerCase().replace(/[ßœæ]/g, (c) => WRITTEN_OUT[c]).normalize('NFD').replace(MARKED, '$1').normalize('NFC');
 
 const WORD = /[\p{L}\p{N}]/u;
 // Scripts written without spaces between words: a query in them matches anywhere in a name.
