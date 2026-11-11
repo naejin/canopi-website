@@ -870,6 +870,7 @@
   "consortium.paste.addedWarn": "other: 其中 # 种带有警告。",
   "consortium.paste.show": "查看",
   "consortium.paste.columnsSep": "你的列表有 {n} 列。名称读取自",
+  "consortium.paste.everyCell": "所有单元格",
   "consortium.details.photoAlt": "{name}的照片",
   "consortium.details.photo": "照片：{credit}",
   "consortium.details.photoSource": "来源页面",

@@ -5,6 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+const paste = await import('../src/islands/consortium/views/paste.ts');
 const { pasteNames, pasteTable, binomial, oneOff, matchName, nameIndex, readPaste, looksLikeHeader } = await import('../src/islands/consortium/views/paste.ts');
 const { monthRuns, monthsText, scopeText, layerRows, isEstimate } = await import('../src/islands/consortium/views/layers.ts');
 
@@ -108,6 +109,21 @@ test('comma or semicolon columns: the same count on every line makes a table; a 
   assert.deepEqual(one.found.map((f) => f.taxon.id), ['t1']);
   assert.deepEqual(one.choose, [], 'Tree and Sun are not offered by word prefix');
   assert.deepEqual(one.none.map((x) => x.name), ['Tree', 'Sun']);
+});
+
+test('comma or semicolon columns read every cell unless the reader picks one; tabs keep the first column', () => {
+  const { pasteColumn } = paste;
+  const list = 'Apple, Hawthorn\nRaspberry, Blackberry';
+  assert.equal(pasteColumn(list, null), -1, 'every cell by default');
+  assert.deepEqual([...pasteNames(list, pasteColumn(list, null))], ['Apple', 'Hawthorn', 'Raspberry', 'Blackberry']);
+  assert.deepEqual([...pasteNames(list, pasteColumn(list, 1))], ['Hawthorn', 'Blackberry'], 'a picked column');
+  const csv = 'Malus domestica,Tree,Sun\nCastanea sativa,Tree,Sun\n';
+  const r = readPaste(pasteNames(csv, pasteColumn(csv, null)), { here: temperate, others: [['Tropical', tropical]], members: [] });
+  assert.deepEqual(r.found.map((f) => f.taxon.id), ['t1', 't2']);
+  assert.deepEqual(r.choose, [], 'cells cut from a row skip the word-prefix search');
+  const tabs = 'Malus domestica\t3\nCastanea sativa\t1';
+  assert.equal(pasteColumn(tabs, null), 0, 'tabs: the first column');
+  assert.equal(pasteColumn(tabs, -1), 0);
 });
 
 test('500 unmatched lines against a large list read in well under a second', () => {

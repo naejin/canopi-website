@@ -1,6 +1,6 @@
 /** @jsxImportSource preact */
 // Paste a list (stream S3; mockup 01 `paste`, design check A8): one name per line (or a spreadsheet
-// column, picked when the paste has several), matched against this climate's list, then the other
+// column, picked when the paste has several; comma or semicolon columns read every cell unless one is picked), matched against this climate's list, then the other
 // climates' lists (views/paste.ts on S1's fold and word-prefix search). Each line is found, to choose
 // (a genus, a shared name, a word of a name), found in another climate's list, already in, listed
 // twice, or not found. Every warning stays on its row. Owner and coordinator rows
@@ -16,7 +16,7 @@ import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { ClimateZone, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { asks } from '../../../lib/consortium/index.ts';
-import { pasteColumn, pasteNames, pasteTable, readPaste } from './paste.ts';
+import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, readPaste } from './paste.ts';
 import { Ask, SheetFrame, WARN, addMembers, closeSheet, flagLines, flagsOfPlant, nameOf, zoneName } from './Details.tsx';
 
 const MAX_LINES = 500;
@@ -30,7 +30,7 @@ export default function Paste() {
   const [text, setText] = useState('');
   const box = useRef<HTMLTextAreaElement>(null);
   const [settled, setSettled] = useState('');
-  const [column, setColumn] = useState(0);
+  const [column, setColumn] = useState<number | null>(null); // null: the default (every cell for comma columns)
   const [ticked, setTicked] = useState<PlantId[]>([]);
   const [asking, setAsking] = useState<{ t: Taxon; from: ClimateZone } | null>(null);
   const zones = store.source.value?.info().climates ?? [];
@@ -96,6 +96,7 @@ export default function Paste() {
         <div class="ct-field">
           <label for="ct-paste-col">{T(table.sep === '\t' ? 'paste.columns' : 'paste.columnsSep', { n: table.columns })}</label>
           <select id="ct-paste-col" value={String(col)} onChange={(e) => setColumn(Number((e.target as HTMLSelectElement).value))}>
+            {table.sep !== '\t' && <option value={String(EVERY_CELL)}>{T('paste.everyCell')}</option>}
             {Array.from({ length: table.columns }, (_, c) => <option value={String(c)}>{T('paste.column', { n: c + 1, sample: sample(c) })}</option>)}
           </select>
         </div>

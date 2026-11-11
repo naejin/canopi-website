@@ -870,6 +870,7 @@
   "consortium.paste.addedWarn": "one: # añadida con un aviso. | other: # añadidas con un aviso.",
   "consortium.paste.show": "Ver",
   "consortium.paste.columnsSep": "Tu lista tiene {n} columnas. Los nombres se leen de",
+  "consortium.paste.everyCell": "Todas las celdas",
   "consortium.details.photoAlt": "Foto de {name}",
   "consortium.details.photo": "Foto: {credit}",
   "consortium.details.photoSource": "página de origen",

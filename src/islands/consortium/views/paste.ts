@@ -93,8 +93,16 @@ function readPasteTable(src: string): PasteTable {
   const wide = readTable(src, true);
   return wide.rows.length < strict.rows.length && wide.rows.every((r) => r.length === strict.columns) ? { ...wide, sep: '\t' } : strict;
 }
-// The column names are read from, always one the text has.
-export const pasteColumn = (text: string, column: number): number => (column > 0 && column < pasteTable(text).columns ? column : 0);
+// EVERY_CELL: names come from every cell of every row (a comma or semicolon table's default, so a
+// comma list over several lines never loses names unless the reader picks a column).
+export const EVERY_CELL = -1;
+// The column names are read from, always one the text has: null is the default (every cell for comma
+// or semicolon columns, else the first column).
+export function pasteColumn(text: string, column: number | null): number {
+  const table = pasteTable(text), bySep = table.sep === ',' || table.sep === ';';
+  if (column === null || column === EVERY_CELL) return bySep ? EVERY_CELL : 0;
+  return column > 0 && column < table.columns ? column : 0;
+}
 
 // Column words a list's first row may hold, in the site's 11 languages (folded). A first cell made
 // only of these words (and small joining words) is a header; any other first row is read like every
@@ -124,10 +132,12 @@ export type PastedNames = string[] & { header?: string | null; split?: ReadonlyS
 // is left out and kept as `header`.
 export function pasteNames(text: string, column = 0): PastedNames {
   const out: PastedNames = [], seen = new Set<string>(), split = new Set<string>(), table = pasteTable(text);
-  const head = table.rows.length > 1 && looksLikeHeader(table.rows[0][column]) ? table.rows[0][column].trim() : null;
+  const every = column === EVERY_CELL;
+  const first = table.rows[0] ?? [];
+  const head = table.rows.length > 1 && (every ? first.length > 0 && first.every((c) => looksLikeHeader(c)) && first.join(', ') : looksLikeHeader(first[column]) && first[column].trim()) || null;
   table.rows.forEach((row, r) => {
     if (r === 0 && head) return;
-    const parts = table.sep === ',' || table.sep === ';' ? [String(row[column] ?? '')] : String(row[column] ?? '').split(/[,;]/);
+    const parts = every ? row.map(String) : table.sep === ',' || table.sep === ';' ? [String(row[column] ?? '')] : String(row[column] ?? '').split(/[,;]/);
     for (const part of parts) {
       let name = part.replace(/\s+/g, ' ').trim();
       if ((name.match(/"/g) ?? []).length === 1 && /^"|"$/.test(name)) name = name.replace(/^"|"$/, '').trim();

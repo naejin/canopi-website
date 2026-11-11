@@ -870,6 +870,7 @@
   "consortium.paste.addedWarn": "one: # added with a warning. | other: # added with a warning.",
   "consortium.paste.show": "Show",
   "consortium.paste.columnsSep": "Your list has {n} columns. Names are read from",
+  "consortium.paste.everyCell": "Every cell",
   "consortium.details.photoAlt": "Photo of {name}",
   "consortium.details.photo": "Photo: {credit}",
   "consortium.details.photoSource": "source page",

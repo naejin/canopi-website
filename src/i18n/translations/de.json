@@ -870,6 +870,7 @@
   "consortium.paste.addedWarn": "one: # davon mit Warnung. | other: # davon mit Warnung.",
   "consortium.paste.show": "Zeigen",
   "consortium.paste.columnsSep": "Deine Liste hat {n} Spalten. Die Namen kommen aus",
+  "consortium.paste.everyCell": "Alle Zellen",
   "consortium.details.photoAlt": "Foto: {name}",
   "consortium.details.photo": "Foto: {credit}",
   "consortium.details.photoSource": "Quellseite",

@@ -870,6 +870,7 @@
   "consortium.paste.addedWarn": "one: # из них с предупреждением. | few: # из них с предупреждением. | many: # из них с предупреждением. | other: # из них с предупреждением.",
   "consortium.paste.show": "Показать",
   "consortium.paste.columnsSep": "В списке {n} столбцов. Названия берутся из",
+  "consortium.paste.everyCell": "Все ячейки",
   "consortium.details.photoAlt": "Фото: {name}",
   "consortium.details.photo": "Фото: {credit}",
   "consortium.details.photoSource": "страница источника",

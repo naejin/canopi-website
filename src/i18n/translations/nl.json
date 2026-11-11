@@ -870,6 +870,7 @@
   "consortium.paste.addedWarn": "one: # toegevoegd met een waarschuwing. | other: # toegevoegd met een waarschuwing.",
   "consortium.paste.show": "Tonen",
   "consortium.paste.columnsSep": "Je lijst heeft {n} kolommen. Namen worden gelezen uit",
+  "consortium.paste.everyCell": "Alle cellen",
   "consortium.details.photoAlt": "Foto van {name}",
   "consortium.details.photo": "Foto: {credit}",
   "consortium.details.photoSource": "bronpagina",

@@ -870,6 +870,7 @@
   "consortium.paste.addedWarn": "one: # aggiunta con un avviso. | other: # aggiunte con un avviso.",
   "consortium.paste.show": "Mostra",
   "consortium.paste.columnsSep": "Il tuo elenco ha {n} colonne. I nomi si leggono dalla",
+  "consortium.paste.everyCell": "Tutte le celle",
   "consortium.details.photoAlt": "Foto di {name}",
   "consortium.details.photo": "Foto: {credit}",
   "consortium.details.photoSource": "pagina di origine",
