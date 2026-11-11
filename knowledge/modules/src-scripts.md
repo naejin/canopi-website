@@ -5,9 +5,9 @@ description: Vanilla browser modules for the site's pages (chrome, climate, hero
 resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:19:51Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:34Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:31Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:33Z }
 sources:
   - id: scripts
     resource: ../../src/scripts

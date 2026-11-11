@@ -5,10 +5,10 @@ description: Framework-free logic shared by the Worker endpoints, the page scrip
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:20:10Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:34Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:20:08Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:33Z }
 sources:
   - id: lib
     resource: ../../src/lib

@@ -5,25 +5,25 @@ description: The 11-locale translation tables and the t() lookup used by every c
 resource: ../../src/i18n
 tags: [module, i18n]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:20:04Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:13Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T06:10:16Z }
 sources:
   - id: i18n
     resource: ../../src/i18n
     title: src/i18n/
-    digest: sha256:ca69ba96f3cc9bcb
-    last_modified: 2026-11-11T09:00:47Z
+    digest: sha256:80174edbfde49662
+    last_modified: 2026-11-11T09:37:47Z
   - id: homepage-test
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:21bf6d0ff49076ea
-    last_modified: 2026-11-11T08:21:13Z
+    digest: sha256:275f79c6d9c17d7e
+    last_modified: 2026-11-11T09:49:18Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
-    digest: sha256:d5b3d9f81769b83a
-    last_modified: 2026-11-11T09:00:47Z
+    digest: sha256:ade14814fe51bcce
+    last_modified: 2026-11-11T09:37:47Z
 ---
 
 # Responsibility
@@ -53,7 +53,7 @@ Build-time translation for the 11 locales (en default at `/`; fr, es, pt, it, zh
 - Add every new key to all 11 files: `npm test` (`homepage.test.mjs`) fails if locales differ in keys or in the set of placeholders (a plural repeats them once per form, and zh, ja and ko have one form), if an English key is unused, or if a script string is missing from the page.
 - Bibliography theme labels (`bibliography.theme.<slug>`) must exist for every theme in `src/data/bibliography.md`. Climate strings are site-wide under `climate.*`: `climate.<zone>`, `.about`, `.places` (example cities checked against Köppen, localized per locale) for every zone in `src/data/climates.ts`, plus the picker's `climate.zone`, `yours`, `chip`, `notSet`, `title`, `lede`, `none`, `none.about` (`homepage.test.mjs`).
 - The consortium tool's strings are the `consortium.*` keys at the end of each locale file; `homepage.test.mjs` treats the prefix as dynamic (v1's `consortium-page.test.mjs`, which checked their parity, placeholders and plural forms, was deleted at P2 commit 0; the island's `strings.ts` reads them; the `consortium.load.*` keys of the v2 load screens are in all 11, translated; each file ends with four marker keys `consortium.block.s1`…`s4`, and each v2 stream appends its keys after its own marker (S1's `consortium.load.*` sit between s1 and s2; `homepage.test.mjs` checks the order; the page leaves the markers out of `#ct-data`); see [Consortium page](/modules/consortium-page.md)). The French tool is "guilde", the others "consortium" or a local word; the path is `/consortium/` in every locale (`consortium-path.js`, owner 2026-10-29).
-- The consortium's "Suggest a correction" form uses `correction.*` keys (all 11 files, between the tool's `consortium.*` keys near the end of each file); `ConsortiumPage.astro` passes them, and the `climate.*` names, in `#ct-data` under their own names (v1's `correction.js` is deleted; `check-built-site.mjs` checks each equals the locale's value). `scripts/consortium-keys.test.mjs` fails on a `consortium.*` key no code uses or a key the island names that is missing from a locale (410 unused keys were pruned at the P2 hand-offs). The data release line is `consortium.release` ("Data release {id}"); the layer values add `consortium.est.*` (the word "estimate" and its legend), `consortium.t.*`, `consortium.scope.*`, and the yield-gain pair `consortium.ctype.intercropped_yield_gain` and `consortium.d.yieldGain`.
+- The consortium's "Suggest a correction" form uses `correction.*` keys (all 11 files, between the tool's `consortium.*` keys near the end of each file); `ConsortiumPage.astro` passes them, and the `climate.*` names, in `#ct-data` under their own names (v1's `correction.js` is deleted; `check-built-site.mjs` checks each equals the locale's value). `scripts/consortium-keys.test.mjs` fails on a `consortium.*` key no code uses or a key the island names that is missing from a locale (422 unused keys were pruned at the P2 hand-offs and their review; a key counts as used only when it is in a T( or P( call, matches a template, is read by ConsortiumPage.astro or is in the test's INDIRECT list, and the same check covers `correction.*`). The data release line is `consortium.release` ("Data release {id}"); the layer values add `consortium.est.*` (the word "estimate" and its legend), `consortium.t.*`, `consortium.scope.*`, and the yield-gain pair `consortium.ctype.intercropped_yield_gain` and `consortium.d.yieldGain`.
 - `t()` replaces only the first occurrence of each placeholder.
 - `dataSources.*` is the words around the source credits (`dataSources.credits.*`: title, lede, the used and held headings and five licence statuses) and the TRY citation and list; the citation and the rows stay in their original language and are not keys. `dataSources.title` is the page title and the footer label: it uses each locale's existing word for sources and data (de Datenquellen, ja データの出典, nl Gegevensbronnen). `dataSources.guidelines` keeps the English name of the guidelines in brackets in the other 10 locales. `homepage.test.mjs` checks the sixteen keys in every locale, translated, with no `CC BY`, and that `dataSources.list.lost` shows �.
 - Guide strings are not in the 11 locale files; `guides.test.mjs` checks en/fr key parity. The site-wide `header.guides`, `header.books`, `header.menu`, `bibliography.fieldGuide`, `bibliography.guides` and `start.*` (`start.inEnglish` and `start.all`, now used by the home's entry guides card) keys are in all 11, as are the consortium tool's entry-point keys `nav.consortium` (one short word, after `header.menu`), `nav.consortium.full` (the tool's full name, for the Menu, the footer and the home title; right after it), `learn.consortium.link` (after `bibliography.guides`, starting with the full name) and `home.consortium.*` (before `start.*`), kept apart from the tool page's own `consortium.*` keys at the end of each file; the guide preset strings `consortium.label`, `consortium.link` and `consortium.cell.<climate>.<region>` are in `guides/{en,fr}.json`; the guides index's `section.books` is in `guides/{en,fr}.json` (`homepage.test.mjs` checks both).

@@ -4,9 +4,9 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures), the rules S1 ported, and the format 4 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:19:49Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:34Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T05:55:26Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:32Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
