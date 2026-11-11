@@ -33,7 +33,7 @@
   "download.helpMac": "Menu Apple → Informazioni su questo Mac → Chip o Processore.",
   "download.after": "Dopo il download: {instruction}",
   "download.installWindows": "Apri il programma di installazione nella cartella Download e segui i passaggi.",
-  "download.installMac": "Apri il file .dmg, poi trascina Canopi in Applicazioni.",
+  "download.installMac": "Apri il file .dmg, poi trascina Canopi in Applicazioni. Se macOS dice che Canopi è danneggiato, apri Terminale, esegui xattr -dr com.apple.quarantine /Applications/Canopi.app e riapri Canopi.",
   "download.installLinux": "Nelle proprietà del file AppImage, consenti l’esecuzione come programma, poi aprilo.",
   "download.installDeb": "Apri il file .deb con il gestore software e scegli Installa.",
   "header.skip": "Vai al contenuto",

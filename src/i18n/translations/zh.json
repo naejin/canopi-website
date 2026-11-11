@@ -33,7 +33,7 @@
   "download.helpMac": "苹果菜单 → 关于本机 → 芯片或处理器。",
   "download.after": "下载后：{instruction}",
   "download.installWindows": "在“下载”文件夹中打开安装程序并按步骤操作。",
-  "download.installMac": "打开 .dmg 文件，然后将 Canopi 拖到“应用程序”。",
+  "download.installMac": "打开 .dmg 文件，然后将 Canopi 拖到“应用程序”。 如果 macOS 提示 Canopi 已损坏，请打开“终端”，运行 xattr -dr com.apple.quarantine /Applications/Canopi.app，然后重新打开 Canopi。",
   "download.installLinux": "在 AppImage 文件属性中允许作为程序执行，然后打开文件。",
   "download.installDeb": "使用软件安装程序打开 .deb 文件并选择“安装”。",
   "header.skip": "跳转到正文",

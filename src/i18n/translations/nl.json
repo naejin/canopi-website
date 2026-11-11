@@ -33,7 +33,7 @@
   "download.helpMac": "Apple-menu → Over deze Mac → Chip of Processor.",
   "download.after": "Na het downloaden: {instruction}",
   "download.installWindows": "Open het installatieprogramma in je map Downloads en volg de stappen.",
-  "download.installMac": "Open het .dmg-bestand en sleep Canopi naar Apps.",
+  "download.installMac": "Open het .dmg-bestand en sleep Canopi naar Apps. Meldt macOS dat Canopi beschadigd is, open dan Terminal, voer xattr -dr com.apple.quarantine /Applications/Canopi.app uit en open Canopi opnieuw.",
   "download.installLinux": "Sta in de bestandseigenschappen toe dat de AppImage als programma wordt uitgevoerd en open het bestand.",
   "download.installDeb": "Open het .deb-bestand met je softwarebeheerder en kies Installeren.",
   "header.skip": "Naar inhoud",
