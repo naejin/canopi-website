@@ -110,9 +110,24 @@ export function CountryLine() {
 
 // ---- the climate cards ----
 function Climates() {
-  // A link's climate shows at once while it loads (memory.pendingClimate); a location's suggestion
-  // (store.proposedClimate, S5b) shows checked but is not chosen until the reader confirms it.
-  const chosen = climate.value ?? pendingClimate.value ?? proposedClimate.value;
+  // A link's climate shows at once while it loads (memory.pendingClimate). A location's suggestion
+  // (store.proposedClimate, S5b) shows as proposed, not checked: a click on its card confirms it, as
+  // the result line's "Use" button does (owner answer 1; review round 1, 6).
+  const chosen = climate.value ?? pendingClimate.value;
+  const proposed = chosen ? null : proposedClimate.value;
+  // With a card proposed and none checked (review round 2, 5): Tab lands on the proposed card (the
+  // others leave the tab order), and the arrows move the focus without checking a card; Space, Enter
+  // or a click confirms one.
+  const choose = (z: ClimateZone) => { proposedClimate.value = null; chooseClimate(z); };
+  const keys = (e: KeyboardEvent) => {
+    if (!proposed) return;
+    const r = e.currentTarget as HTMLInputElement;
+    if (e.key === 'Enter') { e.preventDefault(); r.click(); return; }
+    if (!e.key.startsWith('Arrow')) return;
+    e.preventDefault();
+    const all = [...r.closest('fieldset')!.querySelectorAll<HTMLInputElement>('input')];
+    all[(all.indexOf(r) + (/[RD]/.test(e.key[5]) ? 1 : all.length - 1)) % all.length].focus();
+  };
   return (
     <fieldset class="ct-step ct-climates">
       <legend class="ct-step-title">{T('start.climate.title')}</legend>
@@ -122,10 +137,11 @@ function Climates() {
           const z = zoneOf(id)!;
           const ready = hasList(z);
           return (
-            <label class={`ct-card${chosen === z ? ' is-chosen' : ''}`}>
-              <input type="radio" name="ct-climate" value={id} checked={chosen === z} aria-labelledby={`ct-cl-${id}`} aria-describedby={`ct-cl-${id}-d`} onChange={() => chooseClimate(z)} />
+            <label class={`ct-card${chosen === z ? ' is-chosen' : proposed === z ? ' is-proposed' : ''}`} data-proposed={proposed === z ? '' : undefined}>
+              <input type="radio" name="ct-climate" value={id} checked={chosen === z} aria-labelledby={`ct-cl-${id}`} aria-describedby={`ct-cl-${id}-d`} tabIndex={proposed && proposed !== z ? -1 : undefined} onKeyDown={keys} onChange={() => choose(z)} />
               <span class="ct-card-name" id={`ct-cl-${id}`}>{label}</span>
               <span id={`ct-cl-${id}-d`} class="ct-card-desc">
+                {proposed === z && <span class="ct-card-proposed">{T('location.proposed')}</span>}
                 <span class={`ct-pill${ready ? ' is-ready' : ''}`}>{T(ready ? 'start.climate.ready' : 'start.climate.notYet')}</span>
                 <span class="ct-card-places">{places}</span>
               </span>
@@ -241,6 +257,7 @@ function Head() {
         <button type="button" class="link-button ct-link" onClick={changeSite}>{T('start.changeSite')}</button>
         <button type="button" class="link-button ct-link" onClick={startOver}>{T('start.over')}</button>
       </p>
+      <LocationSlot compact />
       <CountryLine />
     </div>
   );

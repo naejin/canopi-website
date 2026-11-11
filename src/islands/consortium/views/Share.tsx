@@ -4,13 +4,20 @@
 // copy again on every edit). Its notes: a link above 2,000 characters ("Some apps cut long
 // links…", core isLongLink on the whole URL), and a browser that keeps nothing ("This browser does
 // not keep your consortium; your link does."). Rendered by views/Actions.tsx.
+// P5 S5b: with a site location, the "include my location" tick (off by default, owner answer 5): the
+// link then carries the site's climate cell centre (`o=`, never the precise position) and a country
+// from the location (`k=`); without it, neither.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { isLongLink } from '../../../lib/consortium/index.ts';
+import { cellCentre, isLongLink } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
-import { shareUrl, shownFragment, storageWorks } from '../memory.ts';
+import { location as site } from '../store.ts';
+import { currentFragment, shareUrl, shownFragment, storageWorks } from '../memory.ts';
 
 export function Share({ onClose }: { onClose: () => void }) {
-  const fragment = shownFragment.value;
+  const shown = shownFragment.value;
+  const [withSite, setWithSite] = useState(false);
+  const origin = cellCentre(site.value?.lookup ?? null);
+  const fragment = withSite && origin ? currentFragment(null, { origin }) ?? shown : shown;
   const url = fragment ? shareUrl(location.href, fragment) : location.href;
   const [copied, setCopied] = useState<'yes' | 'no' | null>(null);
   const field = useRef<HTMLInputElement>(null);
@@ -33,6 +40,12 @@ export function Share({ onClose }: { onClose: () => void }) {
         <input id="ct-share-field" ref={field} class="ct-share-field" type="text" readOnly value={url} onFocus={(e) => (e.currentTarget as HTMLInputElement).select()} />
         <button type="button" class="button button-secondary ct-small" onClick={() => void copy()}>{T('share.copy')}</button>
       </p>
+      {origin && (
+        <p class="ct-share-location">
+          <label><input type="checkbox" data-share-location checked={withSite} onChange={(e) => setWithSite((e.currentTarget as HTMLInputElement).checked)} /> {T('share.location')}</label>
+          {' '}<span class="ct-muted ct-small-text">{T('share.locationNote')}</span>
+        </p>
+      )}
       <p class="ct-muted" role="status">{copied === 'yes' ? T('share.done') : copied === 'no' ? T('share.copyByHand') : ''}</p>
       {isLongLink(url) && <p class="ct-note">{T('share.long')}</p>}
       {!storageWorks.value && <p class="ct-note">{T('share.noStorage')}</p>}

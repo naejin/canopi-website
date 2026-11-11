@@ -52,7 +52,7 @@ test('the host views mount every stream\'s slot, and PlantMarks names its surfac
   assert.match(start, /<LikelySlot question=\{k\} \/>/, 'S5e: LikelySlot in each site question');
   assert.match(start, /\{z && <PoolSlot zone=\{z\} \/>\}\s*\{z && hasList\(z\) && \(/, 'S5c: PoolSlot and hasList decide what follows the cards');
   assert.match(start, /const ready = hasList\(z\);/, 'S5c: the card\'s Ready pill');
-  assert.match(start, /climate\.value \?\? pendingClimate\.value \?\? proposedClimate\.value/, 'S5b: a proposed climate shows checked');
+  assert.match(start, /climate\.value \?\? pendingClimate\.value;[\s\S]*data-proposed/, 'S5b: a proposed climate shows as proposed, not checked (review round 1, 6)');
   assert.match(view('later.ts'), /export \{ FutureSlot \} from '\.\/FutureSlot\.tsx';/, 'S5d: FutureSlot in the later chunk');
   assert.match(view('Matrix.tsx'), /later\(\(\) => import\('\.\/later\.ts'\)\.then\(\(m\) => m\.FutureSlot\), \{ idle: true \}\)/, 'idle: no download before ct:matrix');
   assert.match(view('Matrix.tsx'), /<FutureSlot \/>/);

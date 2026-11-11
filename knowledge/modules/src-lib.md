@@ -5,21 +5,31 @@ description: Framework-free logic shared by the Worker endpoints, the page scrip
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T16:21:23Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:07:22Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:21:29Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:54:25Z }
 sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:b970cfefebf2b1a9
-    last_modified: 2026-11-11T18:17:26Z
+    digest: sha256:7b0ecbfbd01a31cc
+    last_modified: 2026-11-11T20:38:46Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
     digest: sha256:d18d3ee4b6c03e07
     last_modified: 2026-10-14T21:57:40Z
+  - id: registry-ts
+    resource: ../../src/lib/location/registry.ts
+    title: src/lib/location/registry.ts
+    digest: sha256:233e0d11b5b119e1
+    last_modified: 2026-11-11T18:00:01Z
+  - id: maplibre-ts
+    resource: ../../src/lib/location/maplibre.ts
+    title: src/lib/location/maplibre.ts
+    digest: sha256:5d74cb8f32ef1e1a
+    last_modified: 2026-11-11T18:00:01Z
 ---
 
 # Responsibility
@@ -36,6 +46,7 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 - [safe-href.js](../../src/lib/safe-href.js): `safeHref(url)`, http(s) only (moved from the consortium's `logic.js` at P2 commit 0; used by `DataSourcesPage.astro`, `source-credits.js`, `try-references.js` and `check-built-site.mjs`; `src/scripts/consortium/logic.js` re-exports it for the streams; tested by `safe-href.test.mjs`).
 - [consortium/](../../src/lib/consortium): the consortium v2 core: the frozen seams `types.ts`, `source.ts` (`PlantSource`, load failures), `index.ts`, S1's rules (`site`, `conflicts`, `jobs`, `matrix`, `suggest`, `state`: the `#v=4` share link) and S4's `canopi-file.ts` (the `.canopi` v9 file for the app); see [Consortium core](/modules/consortium-core.md).
 - [climate/](../../src/lib/climate): the canopi-climate tile reader (P5): `lookupSite(lat, lon, source)` over `createTileSource({ index })`, ported from the crate's lookup rules (AGPL header in each file); `model.js` is plain JavaScript for the installer; see [Climate reader](/modules/climate-reader.md).
+- [location/](../../src/lib/location): the consortium location step's helpers (P5 S5b), copied from canopi at b039f14 with the AGPL header and a "copied from canopi" line: the geocoding registry (Nominatim, no email, page language), place search (pacing, cache), the fetch transport, geolocation, and the lazy MapLibre loader with `maplibre-entry.ts` (CSS inlined) and `maplibre-worker.ts`; see [Consortium location step](/modules/consortium-location.md).
 - Field Guides (build time only): [guides.ts](../../src/lib/guides.ts) (`publishedGuides(lang)`, `guidesCiting(bookId, lang)`, `slugOf`), [svg.ts](../../src/lib/svg.ts) (seeded `rng`, `grid`, `shuffle`, bean drawing and the other shared seed and leaf shapes — kernel, squash seed, grain, tomato seed, clove, `leafPath`, `lobedLeafPath`, and the soil `crumbPath` and `threadPath` used by the soil hero row and the Soil diagrams — and `wrap` for SVG text lines), [tree-shapes.ts](../../src/lib/tree-shapes.ts) (the tree outlines the carbon farming diagrams share), [rehype-guide-terms.mjs](../../src/lib/rehype-guide-terms.mjs) (places each first `<Term>`'s glossary note and keeps a term with the punctuation touching it), [rehype-guide-checklists.mjs](../../src/lib/rehype-guide-checklists.mjs) (gives each `<Item>` its checklist id; fails on duplicate ids).
 
 # Interfaces

@@ -11,7 +11,9 @@
 //   one marked with a leading "*"; p kept plants that are not members; x removed plants; n Main
 //   crops (at most MAX_CROPS, each also kept); g plants added from another climate's list, one `g`
 //   per list: its two-letter code (GUEST_CODES) then its tokens (each is also in `a`); t the stage
-//   (0–6) the views show; e=1 the end, always last: a link a mail or chat client cut short lacks it.
+//   (0–6) the views show; o the site's climate cell centre "lat,lon" (P5 S5b: only when the reader
+//   ticks "include my location" in Share, owner answer 5; never the precise position), just before
+//   e; e=1 the end, always last: a link a mail or chat client cut short lacks it.
 //
 // Ids. A token is the id's first 36 bits (9 hex digits, dashes aside) in 6 base64url characters, with
 // nothing between tokens. When another id the encoder knows shares those 36 bits, the id is written
@@ -23,7 +25,7 @@
 // (every `g` together), so a hostile link cannot block the page; the rest are counted as unknown.
 // Decoding never throws: a malformed value falls back ("Not sure", no climate, no stage) and a token
 // list that stops mid-token is read up to there and reported as cut.
-import type { ClimateZone, DecodedLink, PhaseOrd, PlantId, ShareState, Site } from './types.ts';
+import type { ClimateZone, DecodedLink, PhaseOrd, PlantId, ShareState, Site, SiteLookup } from './types.ts';
 import { climateZones, lights, rooms, soils, waters } from './types.ts';
 
 export const LINK_VERSION = 4;
@@ -84,8 +86,23 @@ export const tokenOf = (id: PlantId, known: readonly PlantId[]): string => token
 // list's (PlantSource.pool(c) ids). Climates not given match nothing.
 export type KnownIds = Partial<Record<ClimateZone, readonly PlantId[]>>;
 
-// The link's fragment, without "#": "v=4&…&e=1".
-export function encodeLink(state: ShareState, known: KnownIds): string {
+// The site location a link may carry (`o`): a climate cell centre, latitude and longitude in degrees.
+export interface LinkOrigin { lat: number; lon: number }
+// The cell a link carries for "include my location" (owner answer 5): the climate cell's centre, so
+// a link never holds the reader's precise position. null at sea. Here rather than in site-climate.ts
+// so Share (in the island) does not pull the location chunk's core into the island.
+export function cellCentre(lookup: SiteLookup | null): LinkOrigin | null {
+  const c = lookup?.climate;
+  return c ? { lat: c.cellLat, lon: c.cellLon } : null;
+}
+// Written with a literal comma (URLSearchParams would escape it), at most 3 decimals: the 0.1° grid's
+// centres need 2.
+const originText = (o: LinkOrigin): string | null =>
+  Number.isFinite(o.lat) && Number.isFinite(o.lon) && Math.abs(o.lat) <= 90 && Math.abs(o.lon) <= 180 ? `${+o.lat.toFixed(3)},${+o.lon.toFixed(3)}` : null;
+
+// The link's fragment, without "#": "v=4&…&e=1". origin: the site's cell centre, written as `o` only
+// when given (the reader's "include my location" tick, P5 owner answer 5).
+export function encodeLink(state: ShareState, known: KnownIds, { origin = null }: { origin?: LinkOrigin | null } = {}): string {
   const tok = tokens(Object.values(known).flatMap((ids) => [...(ids ?? [])]));
   const list = (ids: Iterable<PlantId>) => [...new Set([...ids].map(tok))].sort().join('');
   const pairs: [string, string][] = [['v', String(LINK_VERSION)]];
@@ -111,8 +128,17 @@ export function encodeLink(state: ShareState, known: KnownIds): string {
     if (ids.length) pairs.push(['g', GUEST_CODES[zone] + list(ids)]);
   }
   if (state.stage !== null) pairs.push(['t', String(state.stage)]);
-  pairs.push([END_KEY, '1']);
-  return new URLSearchParams(pairs).toString();
+  const o = origin && originText(origin);
+  return `${new URLSearchParams(pairs).toString()}${o ? `&o=${o}` : ''}&${END_KEY}=1`;
+}
+
+// The site location a link carries (`o=lat,lon`), or null when it has none or it is not a valid
+// coordinate. A link's `c` and site answers still win over anything derived from it.
+export function linkOrigin(link: string): LinkOrigin | null {
+  const m = /^(-?\d{1,3}(?:\.\d{1,6})?),(-?\d{1,3}(?:\.\d{1,6})?)$/.exec(params(link).get('o')?.trim() ?? '');
+  if (!m) return null;
+  const lat = Number(m[1]), lon = Number(m[2]);
+  return Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon } : null;
 }
 
 // The long-link check, on the whole URL the reader is about to share (never on a link being read).

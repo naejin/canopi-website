@@ -1,3 +1,19 @@
 /* Consortium P5, stream S5b (location: LocationSlot and views/location/). Owned by that stream alone; no other stream edits this file, and
    the stream edits no shared consortium CSS (base, matrix, details, shell, print). Imported once by
    ConsortiumPage.astro. Use the tokens of base.css; the future mark draws in ink, never green. */
+
+/* A climate card the location suggests (review round 1, 6): proposed, not chosen; a click on it confirms. */
+.ct .ct-card.is-proposed { border-style: dashed; border-color: var(--accent); }
+.ct .ct-card-proposed { font-size: 13px; font-weight: 600; color: var(--accent-ink); }
+
+/* The map dialog: the map under a centre pin, ink cross and ochre point (design check §B). */
+.ct-map-dialog {
+  width: min(94vw, 760px); max-width: none; padding: 1rem;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
+}
+.ct-map-frame { position: relative; height: min(60vh, 480px); border: 1px solid var(--border); }
+.ct-map-canvas { position: absolute; inset: 0; }
+.ct-map-pin { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+.ct-map-pin-halo { stroke: var(--surface); stroke-width: 5; fill: none; }
+.ct-map-pin-cross { stroke: var(--text); stroke-width: 2; fill: none; }
+.ct-map-pin-dot { fill: var(--accent); stroke: var(--text); stroke-width: 1.5; }
