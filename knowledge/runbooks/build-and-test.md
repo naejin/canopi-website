@@ -4,7 +4,7 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:12Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:17:24Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:35Z }
@@ -12,8 +12,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:5da4d8acf55b5be6
-    last_modified: 2026-11-06T14:34:09Z
+    digest: sha256:ed10710e2f21129d
+    last_modified: 2026-11-11T03:13:35Z
   - id: readme
     resource: ../../README.md
     title: README.md
@@ -22,13 +22,13 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:84527469ec17724f
-    last_modified: 2026-11-10T06:57:56Z
+    digest: sha256:280f7f2910bb83d2
+    last_modified: 2026-11-11T02:58:29Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
-    digest: sha256:1a8a854b16eadbd9
-    last_modified: 2026-10-26T20:27:21Z
+    digest: sha256:bb767cbdb92ac0a7
+    last_modified: 2026-11-11T03:07:08Z
 enforced_by: [scripts/package.test.mjs]
 ---
 
@@ -49,7 +49,8 @@ Node >= 22.12.0.
 | marketing build | `npm run build` |
 | built-site check | `node scripts/check-built-site.mjs` |
 | bibliography links (network, by hand) | `npm run check:bibliography` |
-| consortium data (network, by hand; output committed) | `npm run install:consortium -- <canopi-data export dir>`, given the original directory under `../canopi-data/data/exports/consortium/`, not a copy: the install runs `canopi release verify` on it from the sibling `../canopi-data` (needs `uv`) and refuses on any exit but 0, showing the reason, older exports with no receipt included (see [Consortium core](/modules/consortium-core.md); tests use `--fixture --no-images --out <tmp>`, which skip that check, need no canopi-data, and are refused for `public/data/consortium/`) |
+| browser tests (after a build; never in `npm test`) | `timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 npm run test:browser`: wrangler dev on 4420 (`CANOPI_BROWSER_PORT`, 4420–4428), headless system Chrome (`CANOPI_CHROME`, default `/usr/bin/google-chrome`) through puppeteer-core; see [Consortium page](/modules/consortium-page.md) |
+| consortium data (network, by hand; output committed) | `npm run install:consortium -- <canopi-data export dir>`, given the original directory under `<canopi-data>/data/exports/consortium/`, not a copy: the install runs `canopi release verify` on it from canopi-data (`CANOPI_DATA_DIR`, else the sibling `../canopi-data`; a git worktree must set it; needs `uv`) and refuses on any exit but 0, showing the reason, older exports with no receipt included (see [Consortium core](/modules/consortium-core.md); tests use `--fixture --no-images --out <tmp>`, which skip that check, need no canopi-data, and are refused for `public/data/consortium/`) |
 | with legacy `/app/` | `CANOPI_WEB_EDITION_ARCHIVE=/path/to/canopi-web-edition-*.tar.gz npm run build:with-web` |
 | preview / manual deploy | `npm run preview` (`wrangler dev`), `npm run deploy` (needs Cloudflare auth) |
 

@@ -4,10 +4,10 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:11Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:17:23Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:33Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:17:22Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -17,8 +17,8 @@ sources:
   - id: guides-2
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:775266072808943b
-    last_modified: 2026-10-29T05:02:41Z
+    digest: sha256:6b76b8ffe29a2894
+    last_modified: 2026-11-11T02:58:29Z
   - id: guides-css
     resource: ../../src/styles/guides.css
     title: src/styles/guides.css
@@ -62,13 +62,13 @@ sources:
   - id: tryconsortium-astro
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
-    digest: sha256:5564864731574a7e
-    last_modified: 2026-10-29T05:02:41Z
+    digest: sha256:7ebcb06064fed9aa
+    last_modified: 2026-11-11T02:58:29Z
   - id: try-consortium-ts
     resource: ../../src/components/guides/try-consortium.ts
     title: src/components/guides/try-consortium.ts
-    digest: sha256:362d911ceadafb27
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:373ca6cca53ab50c
+    last_modified: 2026-11-11T02:58:29Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
@@ -77,8 +77,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:84527469ec17724f
-    last_modified: 2026-11-10T06:57:56Z
+    digest: sha256:280f7f2910bb83d2
+    last_modified: 2026-11-11T02:58:29Z
 ---
 
 # Responsibility

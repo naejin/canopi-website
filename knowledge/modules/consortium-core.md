@@ -1,38 +1,73 @@
 ---
 type: Module
 title: Consortium core
-description: Format 3 types and the pure, dependency-free functions of the consortium tool (climate file lookup, country checks, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
+description: Consortium v2 core seams (types, PlantSource, load failures), the v1 rule modules kept for S1 to port, and the format 4 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:10Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:14:58Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:32Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:653dd32712064a21
-    last_modified: 2026-11-10T07:26:18Z
-  - id: climates-ts
-    resource: ../../src/lib/consortium/climates.ts
-    title: src/lib/consortium/climates.ts
-    digest: sha256:8f5253475ea0a087
-    last_modified: 2026-10-28T13:09:26Z
+    digest: sha256:4a89c38d0ebcab40
+    last_modified: 2026-11-11T03:07:08Z
+  - id: source-ts
+    resource: ../../src/lib/consortium/source.ts
+    title: src/lib/consortium/source.ts
+    digest: sha256:f394eeac07ff7979
+    last_modified: 2026-11-11T03:13:35Z
+  - id: index-ts
+    resource: ../../src/lib/consortium/index.ts
+    title: src/lib/consortium/index.ts
+    digest: sha256:ae50a64b96a9953a
+    last_modified: 2026-11-11T03:07:08Z
+  - id: matrix-ts
+    resource: ../../src/lib/consortium/matrix.ts
+    title: src/lib/consortium/matrix.ts
+    digest: sha256:d568f59992f286c4
+    last_modified: 2026-11-11T03:07:08Z
+  - id: install-consortium-mjs
+    resource: ../../scripts/install-consortium.mjs
+    title: scripts/install-consortium.mjs
+    digest: sha256:fff368c4f1dbad5a
+    last_modified: 2026-11-11T02:58:29Z
+  - id: consortium-schema-mjs
+    resource: ../../scripts/consortium-schema.mjs
+    title: scripts/consortium-schema.mjs
+    digest: sha256:67ac3c2c8af76873
+    last_modified: 2026-11-11T02:58:29Z
+  - id: make-fixture-mjs
+    resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
+    title: scripts/fixtures/consortium-v2/make-fixture.mjs
+    digest: sha256:8d4ded230e94a7b1
+    last_modified: 2026-11-11T02:58:29Z
+  - id: readme-md
+    resource: ../../scripts/fixtures/consortium-v2/README.md
+    title: scripts/fixtures/consortium-v2/README.md
+    digest: sha256:33e5d4a5dbccc049
+    last_modified: 2026-11-11T02:58:29Z
+  - id: consortium-index-json
+    resource: ../../src/data/consortium-index.json
+    title: src/data/consortium-index.json
+    digest: sha256:067b733f9fc92fd8
+    last_modified: 2026-11-11T02:58:29Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
     digest: sha256:4f10399cd9863a0a
     last_modified: 2026-10-27T20:00:11Z
-  - id: jobs-ts
-    resource: ../../src/lib/consortium/jobs.ts
-    title: src/lib/consortium/jobs.ts
-    digest: sha256:ae4b3b9032f4aa31
-    last_modified: 2026-10-27T19:14:44Z
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
     digest: sha256:935fffbd0c6781ea
     last_modified: 2026-11-10T06:50:47Z
+  - id: jobs-ts
+    resource: ../../src/lib/consortium/jobs.ts
+    title: src/lib/consortium/jobs.ts
+    digest: sha256:ae4b3b9032f4aa31
+    last_modified: 2026-10-27T19:14:44Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
@@ -43,72 +78,101 @@ sources:
     title: src/lib/consortium/state.ts
     digest: sha256:608ccc8a28fc24c7
     last_modified: 2026-10-28T14:56:59Z
-  - id: index-ts
-    resource: ../../src/lib/consortium/index.ts
-    title: src/lib/consortium/index.ts
-    digest: sha256:5d2de8846da93bef
-    last_modified: 2026-10-28T12:22:08Z
-  - id: install-consortium-mjs
-    resource: ../../scripts/install-consortium.mjs
-    title: scripts/install-consortium.mjs
-    digest: sha256:e4828f9bc3fa57e0
-    last_modified: 2026-11-10T06:50:47Z
+  - id: consortium-boundary-test-mjs
+    resource: ../../scripts/consortium-boundary.test.mjs
+    title: scripts/consortium-boundary.test.mjs
+    digest: sha256:2204b1125f7911bc
+    last_modified: 2026-11-11T03:07:08Z
 enforced_by:
-  - scripts/consortium.test.mjs
+  - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs
 ---
 
 # Responsibility
 
-The data side of the consortium tool ([plan](/project/consortium-tool-plan.md), [owner decisions](/decisions/consortium-user-decisions.md)):
-types mirroring canopi-data's export format 3 (one plant list per climate, each plant with one
-reason per region; `/home/daylon/projects/canopi-data/docs/consortium-export-format.md`), and pure functions with no DOM, Astro or package
-imports, so `node --test` runs them and the app can reuse them after its 2.1 refactor. Modules
-import each other with `.ts` extensions (Node strips the types). The installer puts a checked
-export under `public/data/consortium/`.
+The data side of consortium v2 ([architecture](/decisions/consortium-v2-architecture.md), [plan](/project/consortium-v2-plan.md), [owner decisions](/decisions/consortium-user-decisions.md)). Since P2 commit 0 (branch `consortium/integration`) it holds:
+- the frozen seams: `types.ts`, `source.ts` and `index.ts`;
+- the installer for canopi-data's format 4 export: one gzipped SQLite database, contract `canopi-data consortium-v2-export:docs/consortium-export-v2.md`.
+
+The core has no DOM, no Astro and no package imports, so `node --test` runs it and it can become a package. `scripts/consortium-boundary.test.mjs` enforces this:
+- every import is `./x.ts` inside `src/lib/consortium/`;
+- no browser global is used;
+- the island imports only `index.ts`, `types.ts` or `source.ts`.
 
 # Key files
 
-| File | Exports |
+| File | Holds |
 |---|---|
-| [types.ts](../../src/lib/consortium/types.ts) | `Manifest` (`climates`, `countries: Record<code, { invasive_checked }>`), `ManifestClimate`, `ClimateFile` (`regions[]`), `Taxon` (`reasons: Reason[]`), `Reason` (`region`, `text`, `sources`), `Traits`, `Warnings`, `Interaction` (`climate_zone`, set on `intercropped_yield_gain`), `Source`, `Labels`, `LayerValue` (`field`, `value`, `scope`, `source`, `kind`), `LayerField`, `LayerScope`, `Month`; value lists `climateZones`, `regions`, `locales`, `phases`, `strata`, `functionIds`, `interactionTypes`; `FORMAT_VERSION` = 3 |
-| [climates.ts](../../src/lib/consortium/climates.ts) | `fileFor(manifest, climate)` → `ManifestClimate \| null`; `isCountry(manifest, code)`; `invasiveChecked(manifest, code)` (GRIIS checked that country); `climateZoneOf`, `siteClimates`, `isSiteClimate` |
-| [site.ts](../../src/lib/consortium/site.ts) | `Site`, `DEFAULT_SITE` (sun, soil and water unsure, large garden), `fits(taxon, site)` → `{ ok, misfits, unknowns }` |
-| [jobs.ts](../../src/lib/consortium/jobs.ts) | `jobs` (six ids), `jobsOf(taxon)`, `jobOfFunction`, `phaseBands`, `bandOf(phase)`, `bandsOf(taxon)` |
-| [conflicts.ts](../../src/lib/consortium/conflicts.ts) | `conflicts(members, interactions)`, `conflictsOf(taxon, others, interactions)` (both skip `allelopathy_tolerant` and `intercropped_yield_gain`, good news), `pairings(taxon, others, interactions)` (the yield-gain pairs with other members, for the details sheet only; `suggest.ts` never reads them), `matches(ref, taxon)`, `isSerious`; each `Conflict` carries the row's `agent_names` (the agent's sourced common names by site locale and their sources, else null); `invasiveIn(taxon, country, checked)` → `true \| false \| null` (null when the country is unchecked, the record unknown, or `checked` is not given as true: a caller that forgets the flag never gets "none") |
-| [suggest.ts](../../src/lib/consortium/suggest.ts) | `gain(taxon, members, site)` (term by term), `suggest(file, { site, kept, removed, country, countryChecked })` → `{ members, limit, gaps }` (the only function that fills), `evaluate(cell, ids, { site, kept, country })` → the same `{ members, limit, gaps }` for a fixed list, never refilled, `alternatives(memberId, consortium, cell, { site, removed, country })`, `flagsFor(cell, id, memberIds, { site, country })` (the flags of one plant against a list: what Add uses to sort and confirm), `SIZE_LIMIT` |
-| [state.ts](../../src/lib/consortium/state.ts) | `ConsortiumState` (`climate`, `country`, `noCountry`, `site`, `kept`, `removed`, `members`, `plants`, `crops`, `guests`), `encodeState(state, cell?, others?)` → `URLSearchParams`, `decodeState(params, cell?, others?)` → `{ state, dropped, version }`, `resolveState(decoded, cell, others?)`, `taxonByName(cell, name)` (a guide's plant: exact canonical name, else case and spacing aside), `resolveIds(tokens, pool, key?, match?)` (one prefix `matcher(pool)` per pool), `END_KEY` = `e` (`encodeState` writes `e=1` last, `decodeState` reports `ended`, so a link cut between two tokens is seen as cut; an unknown `v` reads no plant keys; every `g` value shares one cap and a repeated guest code is dropped as `duplicate`), `shortId(id, cell?)`, `MAX_LINK_IDS` = 2000, `MAX_CROPS` = 3, `GUEST_CODES` (two letters per climate), `LINK_VERSION` = 3, `NO_COUNTRY` = `-` |
-| [index.ts](../../src/lib/consortium/index.ts) | re-exports all of the above |
-| [install-consortium.mjs](../../scripts/install-consortium.mjs) | `npm run install:consortium -- <export-dir> [--fixture [--no-images]] [--out <dir>]`; `installConsortium(...)`, `verifyExport`, `tryListProblem(bytes, { sha256, rows, dataset_ids })`, `tryListDirFor(out, fixture)`, `releaseVerifyProblem(dir, { root, env, log })`, `CANOPI_DATA_DIR`, `verifyInstall(dir, { fixture })` (re-checks an installed folder: manifest, labels, `SHA256SUMS`, each climate file's sha256, regions, shape, counts, sources and `ruleProblem`, every photo a local file that exists; `check-built-site.mjs` runs it on `dist/`), `shapeErrors`, `cellShape` (an interaction's optional `agent_names` is null or `{ names, sources }`, names keyed only by the 11 site locales, at least one name and none empty (canopi-data's schema; review L4), its sources defined like every other; `scripts/consortium-types.check.ts` holds the same rule for the `AgentNames` type under `npm run check`), `ruleProblem(file, climateFile, countries)`, `isHttpUrl`, `thumbnailUrl`, `STAGING_DIR`, `stagingDirFor(out)` |
+| [types.ts](../../src/lib/consortium/types.ts) | `SCHEMA_VERSION` 1, `APPLICATION_ID` 0x43434F4E. Value lists: `climateZones` (capitalised as exported), `regions`, `locales`, `phases`, `strata`, `roles`, `functionIds`, `interactionTypes`, `severities`, `toxicityLevels`, `layerFields`, `layerKinds`, `months`. Site answers `lights`/`soils`/`waters`/`rooms`, each with `unsure` (A7). Records: `PlantId` (the plants.id UUID, never the integer `plant`), `Placement`, `Taxon` (one plant in one climate; `from?` marks a guest, A9), `Traits`, `Warnings`, `Interaction`, `Reason`, `LayerValue`, `Details`, `Labels`, `SourceInfo`, `Matrix`/`MatrixCell` (empty: `gap` or `misfit`), `Flag` |
+| [source.ts](../../src/lib/consortium/source.ts) | `PlantSource`, as in design check §4: `info`, `countries`, `pool`, `interactions`, `placements`, `names`, `details`, `labels`, and `cellCounts` (a test oracle). `loadFailures`: `too-old`, `wasm-blocked`, `fetch`, `stale`, `damaged`, `schema`, one per §5 screen |
+| [index.ts](../../src/lib/consortium/index.ts) | Re-exports types and source. Stream S1 adds the rules here. |
+| [matrix.ts](../../src/lib/consortium/matrix.ts) | Empty stub for S1 |
+| [install-consortium.mjs](../../scripts/install-consortium.mjs) | The installer, described below |
+| [consortium-schema.mjs](../../scripts/consortium-schema.mjs) | `DDL`: the export's 34 statements, from canopi-data at `ab6bfad` (unchanged since `8a74efd`). `DATA_TABLES`: the 25 counted tables |
+| [make-fixture.mjs](../../scripts/fixtures/consortium-v2/make-fixture.mjs) | The invented fixture, 38 plants, built with `node:sqlite`. `buildFixtureDb` and `writeFixtureExport(dir, { edit, userVersion, applicationId, manifest, after })` build the broken variants for tests. The committed `export/` passes canopi-data's `check_export`; coverage is in its README |
 
-# Rules the code fixes (the plan left them open)
+**Kept unimported for S1 to port in place (design check §2):** `site.ts`, `conflicts.ts`, `jobs.ts`, `suggest.ts` and `state.ts`, the v1 modules.
+- `tsconfig.json` excludes them, and nothing imports them. `state.ts` still imports the deleted `climates.ts`.
+- Their v1 rules are documented in this concept at commit `f8e59ba`.
 
-- **Site fit.** Light: sun/part/shade need `sun`/`semi_shade`/`full_shade`. Soil vs `soil_ph`: acid < 6, neutral 6–7.5, chalky > 7.5; a misfit only when the known bound rules out overlap. Water: dry is a misfit for drought tolerance Low/None (or, when that is unknown, moisture use High); wet is a misfit for `well_drained` true with drought tolerance High (or, when that is unknown, moisture use Low: the 2026-10-27 export's thyme, sage and *Asparagus acutifolius*). Room: small ≤ 6 m, large ≤ 12 m on height and width; field anything. An unknown trait is never a misfit, only an unknown.
-- **Gain.** `10·new jobs + 3·empty (stratum × band) cells + 1·cells with one member + 6·new stratum + 8·bands with no food yet (crops) + 4·second doer of feeds_soil/ground/mulch + 1·edibility − 3·weed potential − 0.5·unknowns`, where unknowns are the site checks `fits()` could not decide. Counted in integer tenths so ties are exact. Only plants that fill a gap (a new job, a cell with fewer than two members, a band with no food, a key job with one doer) are picked, until size = 6/9/12; ties go to the plant with more `names` (better known), then `canonical_name` in code-unit order (not `localeCompare`). On the 2026-10-28 format 3 export (three climate files, 200 plants each) the default site (full sun, soil and water not sure) fills every climate to its limit in each room, but 50 of the 432 site combinations (3 climates × 3 lights × 4 soils × 4 waters × 3 rooms) fill fewer places than the room allows, because too few plants fit; the slowest of the 432 took 42 ms (cold). A short consortium is expected, not a bug: the page reports the free places.
-- **Evaluate.** `evaluate()` scores a fixed list (the page's state after a Remove, whose gap stays, or a restored link): members in the order given, repeats and ids not in the file ignored, the same flags as `suggest()` (one shared code path), a gain of what each adds to those before it (null when kept), and the gaps. The ids of a suggestion give that suggestion back.
-- **Suggest.** Kept plants come first and always stay, flagged or not (kept wins over removed; ids not in the cell are ignored). Automatic picks skip misfits, medium/high conflicts with a member, and removed ids; a plant whose only misfit is light is a candidate, and is picked only while the members chosen so far shade it (`siteMisfits(i, strata, site)` read at each pick, scale-b fix2 H12), so Fill and the flags use one shade rule. The country never changes the plants (owner, 2026-10-28): a plant invasive in it is still picked, and carries `flags.invasive === true` as a warning. `flagged` (what keeps a plant out of automatic picks and makes Add or Swap ask first) is a misfit or a medium/high conflict only. A shaded lower layer (decision row "Scale build, coordinator choices"; design-scale.md §2.6 m10, scale-b fix): on a sunny site, a Mid or Low plant that does not take full sun is not a light misfit while another member grows in a layer above it (Emergent or High over Mid; any of them over Low); a top-layer plant, or one with nothing above it, keeps the flag (`shaded`/`siteMisfits` in suggest.ts, read by `evaluate`, `suggest` (its picks too), `flagsFor` and `alternatives` alike; at 200 Temperate plants in a field, "With a warning" counts 29 with France, 26 with no country). Every member carries `flags` (`misfits`, `unknowns`, `invasive`, `conflicts`, `flagged`); `invasive` is null when the country is unset or `countryChecked` is not true; the `Country` option type requires `countryChecked` whenever `country` is a string.
-- **Conflicts.** Rows match at species (canonical name), genus or family, in either member order; a same-genus row pairs two members once. `allelopathy_tolerant` and `intercropped_yield_gain` rows are not conflicts (`pairings()` lists the yield-gain ones for the details sheet). `suggest()`'s exclusion of medium/high partners is built from `conflicts()` over the whole cell, so it matches exactly as the flags do.
-- **Alternatives.** Plants without a flag first, flagged ones (misfit, medium/high conflict) last so the page can list them under a warning; within each, same stratum, then most shared jobs, then gain against the rest, then better known, then name. Members and removed plants are not listed.
-- **Share links (v3, 2026-10-28).** Keys `v c k l s w m a p x n g`; site keys always written. `k` is written only when the state has a country (the page leaves out a guessed one); `k=-` (`NO_COUNTRY`) is "No country", which the page writes only to its local save. `a` is the members in order, a kept member marked with a leading `*` (absent: the page suggests; present: it calls `evaluate()`); `p` kept plants that are not members; `x` removed; `n` main crops (at most `MAX_CROPS`, each a kept member); `g` plants added from another climate's list, one `g` per list: its `GUEST_CODES` code then its tokens. A token is 6 base64url characters (the first 36 bits of the id), or `.` plus 22 characters (the whole id) when another taxon of the pool shares those bits; tokens are joined without a separator. At 200 plants (190 kept, 2 crops) a link is about 1,500 characters, against about 3,600 in v2. At most `MAX_LINK_IDS` tokens are read per key, the rest reported once as `excess` with their count. v2 links (8-hex prefixes joined with `.`, `p` for kept) still decode, with `version: 2`; links from the region era carry `r` and `b`, ignored silently. Decoding never throws; unknown, malformed, ambiguous, duplicate and excess values go to `dropped` (a dropped v3 token is reported as its 9 hex characters).
-- **Guests.** `suggest`, `evaluate`, `flagsFor` and `alternatives` take `guests?: Taxon[]` (plants of another list the page added): they count as members for jobs, layers and conflicts but are never suggested.
-- **Resolution.** The page decodes without the climate file (`c` chooses it), then calls `resolveState(decoded, cell)`: prefixes become full ids, and the list rules are applied again on full ids (kept wins over removed; a member is never removed; with `a`, every kept plant is a member). `decodeState(params, cell)` does the same in one call.
-- **Guide preset.** `?plant=<canonical_name>&climate=<id>`: `climate` is read when `c` is absent (`c` wins, `climate` dropped as a duplicate); `plant` waits in `state.plants` until `resolveState()`, which keeps it when the cell has that canonical name (exact, else case and spacing aside) and drops it as `unknown` otherwise. `encodeState` writes only the short keys.
+# Installer (format 4)
 
-# Installer
+Usage: `node scripts/install-consortium.mjs <export-dir> [--fixture [--no-images]] [--out <dir>]`.
 
-- Refuses, before any work: `--no-images` without `--fixture` (a real install always copies its photos), and an `--out` that exists, is not empty and holds no previous install (the `INSTALLED_BY` mark every install writes; a canopi-data export has a format 3 manifest too and is not in git), and an `--out` that is, holds or sits inside the export directory.
-- Refuses: a file not matching `SHA256SUMS`, a listed file missing, an unlisted `.json`, `format_version` ≠ 3, `canopi_db_sha256` all zeros without `--fixture`, a climate file's sha256, regions or taxa/interactions count differing from the manifest, a climate listed twice, a country key that is not two capitals, a missing required key or wrong type (hand-written from the schema's required lists; extra keys allowed), an `edibility_rating` outside the integers 0–5, a `sources[].url` or `image.source_page_url` that is not an http(s) URL, a `names`, `reasons[].text` or `note` key or a manifest locale outside the 11 site locales, a `labels.json` that is not trait → English value → locale → text, duplicate taxon ids, undefined source ids (reasons included). `ruleProblem` adds the rules the schema cannot express: a taxon's reasons are one per region in region order and each region is in the file's `regions`; the file's `regions` are exactly the union of its reasons' regions; every `invasive_in` country is a manifest country with `invasive_checked: true`.
-- `canopi release verify`: after those checks and before any photo, a real install (every install but `--fixture`, whatever the `--out`) runs `uv run canopi release verify <export dir>` from the sibling `../canopi-data` (`CANOPI_DATA_DIR`; there is no override), on the original directory because the receipt `<date>.receipt.json` stands beside it. Exit 0 may install; any other exit, a signal, no `uv` or no canopi-data refuses with nothing written and shows the message (`releaseVerifyProblem(dir, { root, env, log })`). So a recorded disagreement, a stale release, changed bytes and a missing receipt never reach the site, and any export from before the receipts (before 2026-11-06) is refused. `--fixture` skips it, so the tests need neither canopi-data nor `uv`, and is refused for this checkout's own `public/data/consortium/` and anything in it (symlinks followed); the guard covers this checkout's site only, as `--out` can still name another checkout's. Tests replace the call with `releaseCheck`, and the site folder with `siteDir`, and run `releaseVerifyProblem` against a fake `uv` on `PATH`.
-- Added within format 3 on 2026-11-10: a taxon's optional `layer_values` (field one of `LAYER_FIELDS`, kind `recorded`, `extracted`, `derived` or `llm`, scope null or an object of climate, country, hemisphere, latitude band and region, a source defined in the file; months `Jan` … `Dec` for the month fields, a boolean for `tolerates_wind`); every interaction's `climate_zone` (null or, from an earlier export, absent on the four curated types, refused otherwise); the type `intercropped_yield_gain`, whose `climate_zone` must be the file's and whose two plants must be species taxa of the file; and a `rows` count on `source_credits` that must match the file.
-- Data release (Step 8): the manifest's `release_id` must match `^r-[0-9a-f]{16}$` (`RELEASE_ID`); a real install, and `verifyInstall` on one, refuses a manifest without it; `--fixture` may lack it. Source credits: an optional `source_credits: { file: "source_credits.tsv", sha256 }` entry; when listed, the file must be in `SHA256SUMS`, match the sha256, be UTF-8 and parse with `parseSourceCredits`, or nothing is written; a real install copies it byte for byte to `src/data/source_credits.tsv` (staged like the TRY list) and removes a stale copy when the export lists none; `--out` and `--fixture` never write it.
-- TRY dataset list (`try_references` in the manifest, format 3 unchanged): `try_references.tsv` must be listed in `SHA256SUMS`, match the entry's sha256, rows and dataset_ids and parse with `parseTryReferences`; otherwise the install is refused with nothing written. No entry is refused too (an older export); only `--fixture` may lack one, since the fixture stands for an export from before the list and an entry it does have is still checked. Only a real install (the default output, no `--fixture`) writes `src/data/try_references.tsv` byte for byte and `try_references.meta.json` (`sha256`, `rows`, `dataset_ids`), staged in the install's git-ignored staging directory (a killed run leaves nothing under `src/data/`; the next run sweeps it), moved into place with the install and put back with it on failure; `--out` checks and writes nothing there. The installed manifest keeps the entry, because the installer passes every manifest key through (only climate sha256 values change), and that is what `check-built-site.mjs` and `scripts/try-references.test.mjs` compare the meta with; the file itself is not in `public/data/consortium/`. The installer loads no TypeScript, so plain `node` runs it on the Node floor (`package.test.mjs`).
-- Photos: an image url that is not http(s) (protocol-relative, `data:`) becomes `image: null`. The rest are fetched once per taxon id, one request at a time with a 500 ms pause, `User-Agent: CanopiWebsite/1.0 (https://projectcanopi.com; contact form)`. Commons originals are fetched as **500 px** thumbnails: Commons answers HTTP 400 for non-standard widths such as 640 (https://w.wiki/GHai). SVG thumbnails get `.png`, TIFF `.jpg`. iNaturalist open-data `original.<ext>` photos are fetched as `medium.<ext>` (500 px). Rate limiting (429, 503) is waited out up to 4 retries (`Retry-After`, else 5 s doubling). Only a missing smaller copy (400, 403, 404: a Commons file narrower than 500 px; S3 answers 403 for a missing key) falls back to the original, never a rate-limited one; files over 3 MB (a larger `content-length` refused unread, a body without one cancelled once it passes 3 MB), non-image types and SVG count as failed. Redirects are followed by hand (at most 5) only to the host first asked or to `PHOTO_HOSTS` (upload.wikimedia.org, inaturalist-open-data.s3.amazonaws.com); any other is a failure. Every body not kept (redirects, 429/503 before a retry, errors) is cancelled before the next request. A failed photo becomes `image: null` and is listed in the summary; more than 10% failing stops the install.
-- Changed climate files are re-serialised minified with their sha256 recomputed in the installed manifest; an installed `SHA256SUMS` lists every file, images included. The output is written in a staging directory, `.cache/consortium-install/` (git-ignored, outside `public/`, so `astro build` never ships leftovers; an `--out` outside the repository stages in `.consortium-install/` beside it, as a rename needs one file system), then renamed into place. Each run first removes the staging directory and any `consortium.tmp-<pid>`/`.old-<pid>` folders older versions left beside the output.
+It refuses on the first failure, with nothing written:
+- **Sums:** every `SHA256SUMS` entry exists and matches, and every other file of the directory is listed.
+- **Manifest:**
+  - `format_version` 4 and `schema_version` 1, refused by name otherwise; format 3 was v1's;
+  - `release_id` matching `^r-[0-9a-f]{16}$`;
+  - `canopi_db_sha256` all zeros only with `--fixture`;
+  - `split` agrees with the number of files, climates are in climate order, and the files' climates equal the manifest's;
+  - the `try_references` and `source_credits` entries.
+- **Each database file:**
+  - its name is `databaseName(release, raw_sha256, climate?)`, i.e. `consortium-v1.<release>.<12 hex of the raw db>.sqlite.gz`;
+  - sha256 and bytes match the manifest, and the gzip magic is present;
+  - at most `MAX_GZIP_BYTES` (1,000,000) gzipped and at most `MAX_FILE_BYTES` (25 MiB) raw; raw sha256 and bytes match.
+- **The database read with `node:sqlite`** (`readDatabase`; dynamic import, since Node 22.12 needs a flag):
+  - `application_id`, `user_version`, `integrity_check` and `foreign_key_check`;
+  - every table and column of `consortium-schema.mjs`, and no table outside it;
+  - meta (schema, format, release, `built_at` = `generated_at`, climates), and each table's count against meta and the manifest;
+  - every plant placed, and every placement with a reason;
+  - plant ids are UUIDs, and source and photo-page URLs are http(s);
+  - invasive rows only in countries GRIIS checked.
+- **TRY list and credits:** parsed as the site's build parses them.
+- **Release verify:** a real install then runs `uv run canopi release verify <dir>` from canopi-data before any photo. The location is `CANOPI_DATA_DIR`, else `../canopi-data`; a git worktree needs the variable.
+
+What it writes:
+- `public/data/consortium/`:
+  - the database byte for byte under its own name (never rewritten, so name and digest stay true);
+  - `images/<uuid>.<sha12>.<ext>`;
+  - `INSTALLED_BY`, with the text v1 wrote, so the v1 install is replaced in place.
+  - No manifest, no sums.
+- `src/data/consortium-index.json` (design check A4, read by everything at build time; nothing at build time reads SQLite):
+  - `format_version`, `schema_version`, `release_id`, `generated_at`, `canopi_db_sha256`;
+  - `files[{ file, url, climate_zones, sha256, bytes, raw_sha256, raw_bytes }]`;
+  - `climates` (capitalised, manifest order), `griis_available`;
+  - `names{climate: sorted canonical names}`;
+  - `images{uuid: /data/consortium/images/…}`;
+  - `try_references{sha256, rows, dataset_ids}` and `source_credits{sha256, rows}`.
+  - With `--out` or `--fixture`, the index goes inside the output instead.
+- On a real install, `src/data/`:
+  - `try_references.tsv` with its meta;
+  - `source_credits.tsv`, byte for byte.
+- Photos use v1's code unchanged:
+  - Commons and iNaturalist 500 px copies, a 500 ms pause, rate limiting waited out, a 3 MB cap, redirects only to the photo hosts;
+  - a failed photo is left out of the index; more than 10% failing stops the install.
+- Staging is in `.cache/consortium-install/`, then a rename, with the `src/data/` files put back on failure.
+- `verifyInstall(dir, index)` re-checks a served folder against the index: the mark, each database by sha256, gzip and limits, every indexed photo present, and nothing else. `check-built-site.mjs` runs it on `dist/client/data/consortium/`.
+
+Installed now: release `r-2c6bdf65c35caca3`, `consortium-v1.r-2c6bdf65c35caca3.d1047f1b78b9.sqlite.gz`.
+- 429,481 B gzipped, about 1.66 MB raw.
+- 515 plants, 200 placements per climate (Tropical, Mediterranean, Temperate).
+- 190 photos (179 Commons, 11 iNaturalist).
+
+The export was rebuilt on 2026-11-11 at 03:39, so the digest is not the `6d303e00b6ac` the design check names.
 
 # Gotchas
 
-- Infos are cached per taxon object and site in a `WeakMap`: treat climate file data as immutable once loaded.
-- A taxon may be in several climate files (same id); photos are fetched once per id.
-- Since the 2026-11-05 export every climate file defines `sources.try`, cited by no taxon, with `licence: null` and the citation in `attribution`. Plant details list cited ids only and the site never displays `attribution`, so the reader sees the citation on `/data-sources/`. A null licence is allowed: `consortium-page.test.mjs` checks only licences that are set.
-- Parameters and page variables are still called `cell` (one loaded climate file): a name kept from format 2, not a separate notion.
-- `npm test` covers this module in `scripts/consortium.test.mjs` (fixture data, a 200-taxon synthetic file timed cold against a same-process baseline, under 2.5 times it; `CONSORTIUM_PERF=1` adds the 50 ms budget) and the installer in `scripts/install-consortium.test.mjs` (stub fetch, temporary output; never `public/`).
+- Climate names are capitalised in the export and the index ("Tropical") and lowercase on the site ("tropical"). Map them at the edge only: the page's `#ct-data` and guide presets.
+- The fixture's `edit` hook runs after meta is filled, and the counts are recomputed after it.
+- `scripts/install-consortium.test.mjs` uses the fixture and a stub fetch; it needs no network, `uv` or canopi-data. It also checks that the committed install matches the committed index.

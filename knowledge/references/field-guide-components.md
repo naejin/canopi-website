@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-29T05:02:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:17:05Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:775266072808943b
-    last_modified: 2026-10-29T04:59:27Z
+    digest: sha256:6b76b8ffe29a2894
+    last_modified: 2026-11-11T02:58:29Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -60,13 +60,13 @@ sources:
   - id: tryconsortium-astro
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
-    digest: sha256:5564864731574a7e
-    last_modified: 2026-10-29T04:59:27Z
+    digest: sha256:7ebcb06064fed9aa
+    last_modified: 2026-11-11T02:58:29Z
   - id: try-consortium-ts
     resource: ../../src/components/guides/try-consortium.ts
     title: src/components/guides/try-consortium.ts
-    digest: sha256:362d911ceadafb27
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:373ca6cca53ab50c
+    last_modified: 2026-11-11T02:58:29Z
   - id: en-json
     resource: ../../src/i18n/guides/en.json
     title: src/i18n/guides/en.json
@@ -187,18 +187,18 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
 - `<TryConsortium plant="Artocarpus altilis" climate="tropical" name="Breadfruit" />` — opens the
   consortium tool (beta) with the guide's plant kept and its climate set:
   `consortiumPath(lang)?plant=<canonical_name>&climate=<id>` (`/consortium/`, fr `/fr/consortium/`).
-  `plant` required: a `canonical_name` in a beta climate file (`public/data/consortium/*.json`); `name`
+  `plant` required: a `canonical_name` placed in a beta climate (`names` of `src/data/consortium-index.json`, written by the installer); `name`
   required: the guide's own name for the plant in that file's language (en and fr differ); `climate`
-  optional: the zone of the `<ForClimate>` block it sits in, and the plant must be in that climate's file. Left
-  out (only outside climate blocks, in a guide for every climate), each beta climate whose file has the plant
+  optional: the zone of the `<ForClimate>` block it sits in, and the plant must be placed in that climate. Left
+  out (only outside climate blocks, in a guide for every climate), each beta climate whose list has the plant
   gets a link, so no climate is assumed (never default to temperate). Renders a `.guide-next-inline`
   line: the label "Design a consortium (beta)" (fr « Composer une guilde (bêta) »,
   `consortium.label`) and one link per climate, "<name> · <climate>" (`consortium.link`, the climate from the site-wide
-  `climate.<id>`: "Corn · Temperate", « Maïs · Tempéré »); since format 3 one list serves a climate
+  `climate.<id>`: "Corn · Temperate", « Maïs · Tempéré »); one list serves a climate
   everywhere, so no region is named; each link is described by the label. The links come
-  from `src/components/guides/try-consortium.ts` (`presetClimates`, `presetLinks`): an unknown climate, a
-  plant outside its climate's file or in no file fails the build. `scripts/guides-consortium.test.mjs`
-  checks those links on the real climate files, every preset against them, its block and the en/fr
+  from `src/components/guides/try-consortium.ts` (`presetClimates(index)`, `presetLinks`): an unknown climate, a
+  plant outside its climate's list or in no list fails the build. `scripts/guides-consortium.test.mjs`
+  checks those links on the installed index, every preset against them, its block and the en/fr
   pairing (same plant and climate, once each per guide), that no `consortium.cell.*` name is left, and that a preset in a
   climate block is the last thing in it. Used in guides whose subject is a plant or a planting system
   of a beta climate: as the last thing in a climate block, after its list, its closing sentence and any

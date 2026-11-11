@@ -5,15 +5,15 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T10:20:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:17:05Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:550f1f3e071438cd
-    last_modified: 2026-11-10T06:57:56Z
+    digest: sha256:05fc6518f4ae28bf
+    last_modified: 2026-11-11T02:58:29Z
 ---
 
 # Responsibility
@@ -28,8 +28,9 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 - [bibliography.md](../../src/data/bibliography.md): the hand-edited bibliography (format documented in its header comment).
 - [climates.ts](../../src/data/climates.ts): `climates`, `Climate`, `isClimate`: the one list of the seven climate zones, shared with the Canopi app and used by the bibliography, guides, picker and head script.
 - [bibliography.ts](../../src/data/bibliography.ts): parses the markdown (`?raw` import) into `themes`; book climates are validated against `climates.ts`.
-- [source-credits.ts](../../src/data/source-credits.ts): the source credits on /data-sources/, from `source_credits.tsv`, which only a real `npm run install:consortium` writes, when the export's manifest lists `source_credits` (`{ file, sha256, rows }`). Installed from the 2026-11-10 export, rebuilt from release r-812645d451f45c0c (the owner's height decisions): 36 rows, 24 used and 5 held shown, 7 internal never. Read through `import.meta.glob`, so with no file `sourceCredits` is null and the page lists the TRY datasets alone; no copy is committed by hand.
-- [try_references.tsv](../../src/data/try_references.tsv), [try_references.meta.json](../../src/data/try_references.meta.json), [try-references.ts](../../src/data/try-references.ts): the TRY dataset list. canopi-data's consortium export owns it: a real `npm run install:consortium -- <export-dir>` writes the file byte for byte and the meta (the manifest entry's `sha256`, `rows`, `dataset_ids`), so neither is edited or copied by hand; see [Consortium core](/modules/consortium-core.md). `tryReferences` is parsed when the site builds, by [src/lib](/modules/src-lib.md).
+- [source-credits.ts](../../src/data/source-credits.ts): the source credits on /data-sources/, from `source_credits.tsv`, which only a real `npm run install:consortium` writes, when the export's manifest lists `source_credits` (`{ file, sha256, rows }`, kept in `consortium-index.json`). Installed from release r-2c6bdf65c35caca3 (format 4; the file unchanged since r-812645d451f45c0c): 36 rows, 24 used and 5 held shown, 7 internal never. Read through `import.meta.glob`, so with no file `sourceCredits` is null and the page lists the TRY datasets alone; no copy is committed by hand.
+- [try_references.tsv](../../src/data/try_references.tsv), [try_references.meta.json](../../src/data/try_references.meta.json), [try-references.ts](../../src/data/try-references.ts): the TRY dataset list. canopi-data's consortium export owns it: a real `npm run install:consortium -- <export-dir>` writes the file byte for byte and the meta (the manifest entry's `sha256`, `rows`, `dataset_ids`, also kept in `consortium-index.json`), so neither is edited or copied by hand;
+- [consortium-index.json](../../src/data/consortium-index.json): the installed consortium release as the build sees it (release, database file and digests, climates, canonical names per climate, photo paths, TRY and credits entries); written only by the installer, read by the page, the guide presets, the home note and the checks, never served; see [Consortium core](/modules/consortium-core.md). `tryReferences` is parsed when the site builds, by [src/lib](/modules/src-lib.md).
 - [glossary.ts](../../src/data/glossary.ts): the Field Guides glossary, en and fr (`glossary`, `glossaryEntry(id, lang)`; one id per concept, no aliases).
 - [crops.ts](../../src/data/crops.ts): the 42-row crop table (the guide map's 40 crops plus mustard and flax) behind `CropCards`, `CropTable` and `CropExplorer` (ease, crossing, pollination, life, seed; `crop(id)`; no aliases).
 - [consortium-guides.ts](../../src/data/consortium-guides.ts): the Field Guides the consortium tool links: `consortiumGuides` (plant canonical name to slugs), `jobGuides` (one guide for each of the six jobs, never `null`) and `explainGuide`; see [Consortium page](/modules/consortium-page.md).

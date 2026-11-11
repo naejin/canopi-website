@@ -2,7 +2,9 @@
 type: Project
 title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:12Z }
+status: deprecated
+superseded_by: /project/consortium-v2-plan.md
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:15:41Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:34Z }
 sources:
@@ -39,6 +41,8 @@ sources:
     digest: sha256:42bf1a0578657b37
     last_modified: 2026-11-10T06:50:47Z
 ---
+
+> **Deprecated.** Superseded by [Consortium v2 plan](/project/consortium-v2-plan.md). P2 commit 0 (consortium/integration) replaced the v1 tool and its format 3 data path; the v2 plan keeps this one for history
 
 Owner decisions: [Consortium tool — user decisions](/decisions/consortium-user-decisions.md).
 They win over this plan. Data contract: canopi-data `docs/consortium-export-format.md`

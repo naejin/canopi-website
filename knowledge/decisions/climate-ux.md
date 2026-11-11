@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Climate UX
 description: Every page that changes with the climate uses the app's seven zones, one stored choice set from an on-page chip, and one badge, and it reorders and marks content but never hides it.
 tags: [decision, climate, i18n]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:17:23Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:32Z }
 sources:
@@ -45,18 +45,13 @@ sources:
   - id: homepage-test-mjs
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:965dc856d38b8280
-    last_modified: 2026-11-09T23:58:32Z
+    digest: sha256:5e1f21039645e55c
+    last_modified: 2026-11-11T02:58:29Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
     digest: sha256:2817fe32215561cf
     last_modified: 2026-10-28T09:32:12Z
-  - id: consortium-app-js
-    resource: ../../src/scripts/consortium/app.js
-    title: src/scripts/consortium/app.js
-    digest: sha256:82fe21f30fdb3e98
-    last_modified: 2026-11-10T06:50:47Z
 enforced_by: [scripts/homepage.test.mjs, scripts/guides.test.mjs]
 ---
 
@@ -77,8 +72,8 @@ coherent way to say which climate a piece of advice is for, everywhere it matter
   `html[data-climate]` by an inline head script before the first paint. It is set from a chip
   ("Your climate: …") that appears only on pages the climate changes (the bibliography, the guides
   index and guides with climate blocks), never in the header, and by the consortium tool when the
-  reader picks a climate there (`setClimate` in `src/scripts/consortium/app.js`; the owner decision
-  "Memory: the shared site climate"). The tool also starts from it when nothing else names a
+  reader picks a climate there (the owner decision "Memory: the shared site climate"; v1 did it in
+  app.js `setClimate`, deleted at P2 commit 0; in v2 the Start view of stream S4 must write it). The tool also starts from it when nothing else names a
   climate. A guide's preset climate (`?climate=`) applies to that consortium only and never writes it. The chip opens a dialog with each zone's
   one-line description and three local example cities (Köppen-checked, chosen per locale), plus
   "I'd rather not say". Hidden without JavaScript, where nothing could be kept.

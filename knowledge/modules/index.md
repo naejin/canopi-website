@@ -1,7 +1,7 @@
 # Module
 
-* [Consortium core](consortium-core.md) - Format 3 types and the pure, dependency-free functions of the consortium tool (climate file lookup, country checks, site fit, jobs, conflicts, greedy suggestion, swaps, share-link state), plus the export installer.
-* [Consortium page](consortium-page.md) - The consortium tool's page in 11 locales: routes, the browser app that renders it from the core, its strings, styles and checks.
+* [Consortium core](consortium-core.md) - Consortium v2 core seams (types, PlantSource, load failures), the v1 rule modules kept for S1 to port, and the format 4 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
+* [Consortium page](consortium-page.md) - The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks.
 * [Field Guides](field-guides.md) - The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data.
 * [mockup](mockup.md) - The approved October 2026 static HTML mockup and its implementation contract; a tracked design reference, not shipped by the build.
 * [scripts](scripts.md) - Node build helpers, tests, post-build checks, the legacy Web Edition installer, and Python asset generators.
