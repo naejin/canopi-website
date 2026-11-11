@@ -42,3 +42,24 @@ test('range-marks.ts rangeMarks (stub): no mark on any surface; loaded only thro
   for (const s of core.markSurfaces) assert.deepEqual(rangeMarks(taxon(), ctx({ location: lyon }), s), [], s);
   assert.equal('rangeMarks' in core, false, 'not exported from index.ts, so out of the first run');
 });
+
+test('PlantSource.borrowed (S5c stub, sqlite-source.ts): an uncovered climate\'s pool goes through borrowed(zone, NEAREST_LISTS[zone]), which reads nothing today', async () => {
+  const { gunzipSync } = await import('node:zlib');
+  const dir = new URL('fixtures/consortium-v2/export/', import.meta.url);
+  const manifest = JSON.parse(readFileSync(new URL('manifest.json', dir), 'utf8'));
+  const { openBytes } = await import('../src/islands/consortium/data/load.ts');
+  const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+  const raw = new Uint8Array(gunzipSync(readFileSync(new URL(manifest.files[0].file, dir))));
+  const opened = await openBytes(raw, { releaseId: manifest.release_id, climates: manifest.climates.map((c) => c.climate_zone) });
+  const source = createSqliteSource(opened.db, { images: {} });
+  const asked = [];
+  const real = source.borrowed;
+  source.borrowed = (zone, order) => { asked.push([zone, order]); return real(zone, order); };
+  assert.deepEqual(await source.borrowed('Subtropical', core.NEAREST_LISTS.Subtropical), [], 'stub: nothing borrowed');
+  asked.length = 0;
+  assert.deepEqual(await source.pool('Subtropical'), [], 'today an uncovered climate has no plants');
+  assert.deepEqual(asked, [['Subtropical', core.NEAREST_LISTS.Subtropical]], 'pool() of an uncovered climate asks borrowed()');
+  asked.length = 0;
+  assert.ok((await source.pool('Temperate')).length > 0);
+  assert.deepEqual(asked, [], 'a curated climate reads its own list');
+});

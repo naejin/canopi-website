@@ -629,8 +629,9 @@ test('W8, W9, X4, X5: bold is 600, CJK headings keep words whole, sheet and page
   assert.ok(weights.length > 0, 'the page has bold words');
   assert.deepEqual(weights, ['600'], '<strong> and <b> at 600');
   await page.locator(aria('radio', 'Temperate')).click();
-  // Start's crop search is not the Add sheet's search box (X5): no box drawn around it.
-  const crop = await page.$eval('#ct-root input[type="search"]', (el) => getComputedStyle(el.parentElement).borderTopWidth);
+  // Start's crop search is not the Add sheet's search box (X5): no box drawn around it. It draws once
+  // the card's list is read, so wait for it.
+  const crop = await page.locator('#ct-root input[type="search"]').map((el) => getComputedStyle(el.parentElement).borderTopWidth).wait();
   assert.equal(crop, '0px', 'Start\'s crop search has no sheet search frame');
   await page.locator(aria('button', 'Suggest plants')).click();
   await page.locator(aria('tab', 'All plants')).click();

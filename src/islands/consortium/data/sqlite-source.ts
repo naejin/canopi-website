@@ -10,7 +10,7 @@ import type {
   ClimateRange, ClimateZone, Details, FunctionId, FunctionMethod, Image, Interaction, InvasiveRecord, KoppenShare, Labels, LayerScope, LayerValue, Locale, Month, Placement,
   PlantId, RangeBasis, Reason, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
 } from '../../../lib/consortium/index.ts';
-import { months, phases } from '../../../lib/consortium/index.ts';
+import { months, NEAREST_LISTS, phases } from '../../../lib/consortium/index.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
@@ -203,9 +203,18 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
     info: () => info,
     countries: () => countries,
     async pool(c) {
+      // A climate the export does not curate borrows its nearest lists (P5, S5c's borrowed below).
+      if (!info.climates.includes(c)) return this.borrowed(c, NEAREST_LISTS[c]);
       let p = pools.get(c);
       if (!p) pools.set(c, (p = readPool(c)));
       return p;
+    },
+    // P5 seam (commit 0): stream S5c owns this method's body and nobody else edits it. The plants of a
+    // climate the export does not curate, each placed from the first list of `order` that places it
+    // (core placement.ts placeFor), with Taxon.estimate true and Taxon.placedFrom that list. Stub:
+    // nothing, today's "Not covered yet".
+    async borrowed(_zone, _order) {
+      return [];
     },
     async interactions(c) {
       const rows = db.selectObjects(`SELECT * FROM interactions WHERE interaction IN (${INTERACTIONS_IN}) ORDER BY interaction`, [c]);

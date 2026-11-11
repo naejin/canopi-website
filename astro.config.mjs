@@ -55,8 +55,8 @@ const sqliteMainThreadOnly = {
   },
 };
 
-// P5 commit 0: the roles of the client build's chunks (scripts/built-modules.mjs chunkRoles: S5b's
-// location entry, MapLibre's chunks, worker and CSS, the core's lazy mark providers), read from
+// P5 commit 0: the roles of the client build's chunks (scripts/built-modules.mjs chunkRoles: the
+// P5 feature chunks by entry module, MapLibre's chunks, worker and CSS), read from
 // Rollup's bundle so no budget finds a chunk by its file name. Written beside the served directory
 // (dist/consortium-chunks.json for dist/client), never served; read by the modulepreload writer below
 // and by scripts/check-built-site.mjs.
@@ -77,8 +77,8 @@ const consortiumChunkRoles = {
 // the island its loader, so their chunks would arrive one after another. After the build, every page
 // holding #ct-root gets a <link rel="modulepreload"> for each chunk of its import graph that it does
 // not already load with a <script src>, the sqlite glue included, but not the on-demand chunks (P5:
-// the location chunk and MapLibre, loaded when the reader asks, and the mark providers, loaded when a
-// mark can show; preloading them cost about 0.15 s cold, §8 timing). Other pages are not touched (P7).
+// the feature chunks of built-modules.mjs P5_FEATURE_ENTRIES and MapLibre; preloading the mark
+// providers alone cost about 0.15 s cold, §8 timing). Other pages are not touched (P7).
 // ConsortiumPage.astro preloads the database itself; scripts/check-built-site.mjs checks both.
 /** @type {import('astro').AstroIntegration} */
 const consortiumModulePreload = {
@@ -99,8 +99,8 @@ const consortiumModulePreload = {
           const graph = moduleGraph(root, html);
           const roles = readChunkRoles(root);
           const lazy = onDemandChunks(graph, pageEntries(html), roles);
-          // The mark providers load only once a mark can show (a location, a borrowed list): not preloaded.
-          const onDemand = new Set([...lazy.location, ...lazy.maplibre, ...roles.markProviders]);
+          // The P5 feature chunks load only once a location is given or a climate borrows plants.
+          const onDemand = new Set([...lazy.features, ...lazy.maplibre]);
           const links = [...graph.keys()]
             .filter((m) => !onDemand.has(m) && !html.includes(`src="${m}"`) && !html.includes(`href="${m}"`))
             .map((m) => `<link rel="modulepreload" href="${m}">`).join('');

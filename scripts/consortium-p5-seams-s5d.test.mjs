@@ -16,10 +16,12 @@ test('future.ts futureCheck (S5d stub): null ("not checked") for every plant and
   assert.equal(core.DEFAULT_SCENARIO, 'ssp245');
 });
 
-test('store.scenario (S5d writes) starts at SSP2-4.5; views/FutureSlot.tsx renders nothing', async () => {
+test('store.scenario (S5d writes) starts at SSP2-4.5; views/FutureSlot.tsx is a shell and its panel renders nothing', async () => {
   const store = await import('../src/islands/consortium/store.ts');
   assert.equal(store.scenario.value, 'ssp245');
-  assert.match(view('FutureSlot.tsx'), /return null;/);
+  assert.match(view('FutureSlot.tsx'), /return location\.value \? <panel\.View \/> : null;/, 'a shell: the panel loads only with a location');
+  assert.match(view('FutureSlot.tsx'), /import\('\.\/future\/future\.tsx'\)/, 'its content is the future feature chunk');
+  assert.match(view('future/future.tsx'), /return null;/, 'the panel renders nothing until S5d lands');
 });
 
 test('future-marks.ts futureMarks (stub): no mark on any surface; loaded only through the lazy mark-providers.ts', async () => {

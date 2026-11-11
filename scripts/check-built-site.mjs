@@ -477,13 +477,16 @@ const ISLAND_BUDGET = 60 * 1024;
 // review: 37.6 KB at the time). The 60 KB above counts the lazy chunks too, so moving code to a lazy
 // chunk does not lower it; P5 is to change that metric.
 const FIRST_RUN_BUDGET = 40 * 1024;
-// P5 (decision row "Island JavaScript budget for P5"): the location chunk (S5b, the lazy
-// views/location/location.tsx) and MapLibre load on demand, are not modulepreloaded, are not counted
-// in the 60 KB, and have budgets of their own: location ≤ 20 KB, MapLibre ≤ 330 KB with its worker and
-// the CSS the two import. The chunks are found by their entry module (chunk roles, written by the
-// build: astro.config.mjs canopi:consortium-chunk-roles), never by file name. Vacuous-safe: until
-// src/islands/consortium/views/location/ exists the build holds neither; once it does, both exist.
-// The mark providers (core mark-providers.ts) are lazy: in the island's total, not its first run.
+// P5 (decision row "Island JavaScript budget for P5", amended 2026-11-11): first run ≤ 40 KB; the P2
+// island with the P5 slot shells ≤ 60 KB; the P5 feature chunks (built-modules.mjs
+// P5_FEATURE_ENTRIES: location view, mark providers, future panel, pool, likely and native content),
+// loaded only once a location is given or a climate borrows plants, ≤ 30 KB together and the location
+// chunk alone ≤ 20 KB; MapLibre with its worker and CSS ≤ 330 KB. No feature or MapLibre chunk is
+// modulepreloaded. The chunks are found by their entry module (chunk roles, written by the build:
+// astro.config.mjs canopi:consortium-chunk-roles), never by file name. Vacuous-safe: until
+// src/islands/consortium/views/location/ exists the build holds no location or MapLibre chunk; once
+// it does, both exist and MapLibre counts more than 0 bytes.
+const FEATURES_BUDGET = 30 * 1024;
 const LOCATION_BUDGET = 20 * 1024;
 const MAPLIBRE_BUDGET = 330 * 1024;
 const locationSource = existsSync(new URL('../src/islands/consortium/views/location/', import.meta.url));
@@ -491,8 +494,10 @@ if (locationSource) assert.ok(existsSync(new URL('../src/islands/consortium/view
 assert.ok(existsSync(join(root, '..', CHUNK_ROLES_FILE)), `${join(root, '..', CHUNK_ROLES_FILE)} is missing: the build writes it (astro.config.mjs canopi:consortium-chunk-roles)`);
 assert.ok(!existsSync(join(root, CHUNK_ROLES_FILE)), `${CHUNK_ROLES_FILE} must not be served`);
 const roles = readChunkRoles(root);
-assert.equal(roles.markProviders.length, 1, `one lazy mark-providers chunk, found ${roles.markProviders.join(', ') || 'none'}`);
+for (const kind of ['markProviders', 'future']) assert.equal(roles.features[kind].length, 1, `one ${kind} feature chunk, found ${roles.features[kind].join(', ') || 'none'}`);
 let locationBytes = 0;
+let featureBytes = 0;
+let featureList = [];
 let maplibreBytes = 0;
 let firstRunBytes = 0;
 let islandBytes = 0;
@@ -510,21 +515,25 @@ for (const lang of locales) {
   const all = islandChunks(graph, scripts);
   assert.ok(all.chunks.length > 0, `${path}: the island's chunks are found (else the budget counts nothing)`);
   const lazy = onDemandChunks(graph, scripts, roles);
-  const onDemand = new Set([...lazy.location, ...lazy.maplibre]);
+  const onDemand = new Set([...lazy.features, ...lazy.maplibre]);
+  for (const p of Object.values(roles.features).flat()) assert.ok(!graph.has(p) || lazy.features.includes(p), `${path}: the feature chunk ${p} is reached only through a dynamic import, not from the island's first chunks`);
   const gz = (list) => list.reduce((n, p) => n + gzipSync(graph.get(p).code, { level: 9 }).length, 0);
   const astro = readdirSync(join(root, '_astro')).map((f) => `/_astro/${f}`);
   if (locationSource) {
-    assert.equal(roles.location.length, 1, `${path}: one location chunk (entry views/location/location.tsx), found ${roles.location.length}`);
-    assert.ok(lazy.location.includes(roles.location[0]), `${path}: the location chunk ${roles.location[0]} is in the island's graph and loads on demand`);
+    assert.equal(roles.features.location.length, 1, `${path}: one location chunk (entry views/location/location.tsx), found ${roles.features.location.length}`);
+    assert.ok(lazy.location.includes(roles.features.location[0]), `${path}: the location chunk ${roles.features.location[0]} is in the island's graph and loads on demand`);
     assert.ok(roles.maplibre.length > 0 && lazy.maplibre.length > 0, `${path}: MapLibre is in the build and loads on demand once the location chunk exists`);
   } else {
-    assert.deepEqual([...roles.location, ...roles.maplibre, ...roles.maplibreCss], [], `${path}: no location or MapLibre chunk before S5b lands`);
+    assert.deepEqual([...roles.features.location, ...roles.maplibre, ...roles.maplibreCss], [], `${path}: no location or MapLibre chunk before S5b lands`);
     for (const p of astro.filter((f) => f.endsWith('.js'))) assert.ok(!readFileSync(join(root, p), 'utf8').includes('maplibregl'), `${path}: ${p} holds MapLibre before S5b lands`);
   }
   locationBytes = gz(lazy.location);
   maplibreBytes = gz(lazy.maplibre) + roles.maplibreCss.reduce((n, p) => n + gzipSync(readFileSync(join(root, p)), { level: 9 }).length, 0);
   if (locationSource) assert.ok(maplibreBytes > 0, `${path}: MapLibre counts 0 bytes: its chunks were not found`);
   assert.ok(locationBytes <= LOCATION_BUDGET, `${path}: the location chunk is ${(locationBytes / 1024).toFixed(1)} KB gzip, the budget is 20 KB`);
+  featureBytes = gz(lazy.features);
+  featureList = lazy.features;
+  assert.ok(featureBytes <= FEATURES_BUDGET, `${path}: the P5 feature chunks are ${(featureBytes / 1024).toFixed(1)} KB gzip together, the budget is 30 KB`);
   assert.ok(maplibreBytes <= MAPLIBRE_BUDGET, `${path}: MapLibre is ${(maplibreBytes / 1024).toFixed(1)} KB gzip, the budget is 330 KB`);
   const island = { entry: all.entry, chunks: all.chunks.filter((p) => !onDemand.has(p)) };
   const total = island.chunks.reduce((n, p) => n + gzipSync(graph.get(p).code, { level: 9 }).length, 0);
@@ -532,11 +541,10 @@ for (const lang of locales) {
   // The PlantSource rides in the loader's chunk beside the glue (data/load.ts): a sheet importing
   // from data/sqlite-source.ts would split it into a chunk of its own, counted here.
   for (const p of island.chunks) assert.ok(!graph.get(p).code.includes('climate_zone = ?1'), `${path}: ${p} holds the PlantSource's SQL, which belongs in the loader's chunk`);
-  assert.ok(total < ISLAND_BUDGET, `${path}: island JS (main.ts graph) is ${(total / 1024).toFixed(1)} KB gzip, the budget is 60 KB`);
+  assert.ok(total < ISLAND_BUDGET, `${path}: island JS (main.ts graph, P2 and the P5 slot shells, without the feature chunks) is ${(total / 1024).toFixed(1)} KB gzip, the budget is 60 KB`);
   islandBytes = total;
   const firstRun = firstRunChunks(graph, island);
-  assert.ok(island.chunks.includes(roles.markProviders[0]), `${path}: the mark providers ${roles.markProviders[0]} are counted in the island's total`);
-  assert.ok(!firstRun.includes(roles.markProviders[0]), `${path}: the mark providers are not in the island's first run`);
+  for (const p of lazy.features) assert.ok(!firstRun.includes(p), `${path}: the feature chunk ${p} is not in the island's first run`);
   firstRunBytes = firstRun.reduce((n, p) => n + gzipSync(graph.get(p).code, { level: 9 }).length, 0);
   assert.ok(firstRunBytes < FIRST_RUN_BUDGET, `${path}: the island's first run is ${(firstRunBytes / 1024).toFixed(1)} KB gzip, the budget is 40 KB`);
   const preloads = [...html.matchAll(/<link\b[^>]*\brel="(preload|modulepreload)"[^>]*>/g)].map(([tag, rel]) => ({ rel, tag, href: tag.match(/\bhref="([^"]+)"/)?.[1] }));
@@ -544,11 +552,11 @@ for (const lang of locales) {
   assert.ok(db && db.rel === 'preload' && /\bas="fetch"/.test(db.tag) && /\bcrossorigin\b/.test(db.tag), `${path}: <link rel="preload" as="fetch" crossorigin> for the database`);
   const modules = new Set(preloads.filter((l) => l.rel === 'modulepreload').map((l) => l.href));
   for (const p of graph.keys()) {
-    if (onDemand.has(p) || roles.markProviders.includes(p)) assert.ok(!modules.has(p), `${path}: ${p} loads on demand, not modulepreloaded`);
+    if (onDemand.has(p)) assert.ok(!modules.has(p), `${path}: ${p} loads on demand, not modulepreloaded`);
     else if (!html.includes(`src="${p}"`)) assert.ok(modules.has(p), `${path}: modulepreload ${p}`);
   }
 }
-console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB); first run ${(firstRunBytes / 1024).toFixed(1)} KB (budget 40 KB); on demand: location ${(locationBytes / 1024).toFixed(1)} KB (budget 20 KB${locationSource ? '' : ', none before S5b'}), MapLibre with its worker and CSS ${(maplibreBytes / 1024).toFixed(1)} KB (budget 330 KB).`);
+console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB); first run ${(firstRunBytes / 1024).toFixed(1)} KB (budget 40 KB); P5 feature chunks ${(featureBytes / 1024).toFixed(1)} KB over ${featureList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 30 KB), of which location ${(locationBytes / 1024).toFixed(1)} KB (budget 20 KB${locationSource ? '' : ', none before S5b'}), MapLibre with its worker and CSS ${(maplibreBytes / 1024).toFixed(1)} KB (budget 330 KB).`);
 
 // P5 design check A: Workers static assets take at most 20,000 files on the Free plan (100,000 Paid);
 // every file of the build counts, the Web Edition under /app/ and the climate tiles included.

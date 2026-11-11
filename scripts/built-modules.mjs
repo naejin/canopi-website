@@ -104,54 +104,69 @@ export function firstRunChunks(graph, island) {
 // P5 (commit 0): the roles the build gives chunks, read from Rollup's own bundle in generateBundle
 // (astro.config.mjs canopi:consortium-chunk-roles writes them to <outDir>/consortium-chunks.json,
 // outside the served files), so no chunk is found by its file name:
-// - location: the chunk whose entry module is S5b's lazy views/location/location.tsx;
+// - features: the P5 feature chunks, each found by its entry module (P5_FEATURE_ENTRIES, the one
+//   list): loaded only once the reader gives a location or opens a climate that borrows plants, never
+//   modulepreloaded, ≤ 30 KB together (the location chunk alone ≤ 20 KB), outside the island's 60 KB;
 // - maplibre: the chunks holding node_modules/maplibre-gl modules, and the worker files (emitted .js
 //   assets; maplibre's ?worker&url) that a location or MapLibre chunk names;
 // - maplibreCss: the CSS the location and MapLibre chunks import (maplibre-gl.css; Vite merges a
-//   chunk's CSS into one file), counted in MapLibre's 330 KB;
-// - markProviders: the chunk whose entry module is the core's lazy mark-providers.ts.
-// Paths as the page names them ('/_astro/x.js'), sorted.
+//   chunk's CSS into one file), counted in MapLibre's 330 KB.
+// Paths as the page names them ('/_astro/x.js'), sorted. A stream that moves its content into a
+// feature chunk names its entry file as listed here (a missing entry is simply no chunk).
 export const CHUNK_ROLES_FILE = 'consortium-chunks.json';
-const LOCATION_ENTRY = /\/src\/islands\/consortium\/views\/location\/location\.tsx$/;
-const PROVIDERS_ENTRY = /\/src\/lib\/consortium\/mark-providers\.ts$/;
+export const P5_FEATURE_ENTRIES = {
+  location: /\/src\/islands\/consortium\/views\/location\/location\.tsx$/, // S5b
+  markProviders: /\/src\/lib\/consortium\/mark-providers\.ts$/, // S5c, S5d, S5e marks
+  future: /\/src\/islands\/consortium\/views\/future\/future\.tsx$/, // S5d
+  pool: /\/src\/islands\/consortium\/views\/pool\/pool\.tsx$/, // S5c, if not tiny
+  likely: /\/src\/islands\/consortium\/views\/likely\/likely\.tsx$/, // S5e, if not tiny
+  native: /\/src\/islands\/consortium\/views\/native\/native\.tsx$/, // S5e, if not tiny
+};
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
+const emptyFeatures = () => Object.fromEntries(Object.keys(P5_FEATURE_ENTRIES).map((k) => [k, []]));
 export function chunkRoles(bundle) {
   const files = Object.values(bundle);
   const chunks = files.filter((f) => f.type === 'chunk');
   const id = (f) => (f.facadeModuleId ?? '').split('?')[0].replaceAll('\\', '/');
-  const location = chunks.filter((c) => LOCATION_ENTRY.test(id(c)));
+  const path = (f) => `/${typeof f === 'string' ? f : f.fileName}`;
+  const byRole = Object.fromEntries(Object.entries(P5_FEATURE_ENTRIES).map(([k, re]) => [k, chunks.filter((c) => re.test(id(c)))]));
   const maplibreJs = chunks.filter((c) => (c.moduleIds ?? []).some((m) => MAPLIBRE_MODULE.test(m.replaceAll('\\', '/'))));
-  const named = [...location, ...maplibreJs];
+  const named = [...byRole.location, ...maplibreJs];
   const workers = files.filter((f) => f.type === 'asset' && f.fileName.endsWith('.js') && named.some((c) => c.code.includes(f.fileName.split('/').pop())));
   const css = new Set(named.flatMap((c) => [...(c.viteMetadata?.importedCss ?? [])]));
-  const path = (f) => `/${typeof f === 'string' ? f : f.fileName}`;
   return {
-    location: location.map(path).sort(),
+    features: Object.fromEntries(Object.entries(byRole).map(([k, list]) => [k, list.map(path).sort()])),
     maplibre: [...maplibreJs, ...workers].map(path).sort(),
     maplibreCss: [...css].map(path).sort(),
-    markProviders: chunks.filter((c) => PROVIDERS_ENTRY.test(id(c))).map(path).sort(),
   };
 }
 // The roles of a build (root: the served directory, dist/client or dist-test/client): none when the
-// file is missing (a build without the plugin), so the checks below fail on a missing chunk.
+// file is missing (a build without the plugin), so the checks fail on a missing chunk.
 export function readChunkRoles(root) {
-  const none = { location: [], maplibre: [], maplibreCss: [], markProviders: [] };
+  const none = { features: emptyFeatures(), maplibre: [], maplibreCss: [] };
   for (const file of [join(root, '..', CHUNK_ROLES_FILE), join(root, CHUNK_ROLES_FILE)]) {
-    if (existsSync(file)) return { ...none, ...JSON.parse(readFileSync(file, 'utf8')) };
+    if (existsSync(file)) {
+      const r = JSON.parse(readFileSync(file, 'utf8'));
+      return { ...none, ...r, features: { ...none.features, ...r.features } };
+    }
   }
   return none;
 }
 
-// P5 (commit 0): the chunks loaded only when the reader asks for them, never modulepreloaded and
-// left out of the island's 60 KB, each with its own budget (decision row "Island JavaScript budget
-// for P5"): the location chunk with the chunks only it reaches, and MapLibre (its chunks and worker,
-// roles from chunkRoles) with the chunks only they reach. entries: the page's own entries (its module
-// scripts). Sorted paths.
+// The chunks loaded only when the reader asks for them (paths of a moduleGraph, sorted):
+// - features: every P5 feature chunk and the chunks only feature chunks reach (MapLibre aside);
+// - location: the location chunk and what only it reaches (not shared with another feature);
+// - maplibre: MapLibre's chunks and worker and what only they reach.
+// entries: the page's own entries (its module scripts).
 export function onDemandChunks(graph, entries, roles) {
-  const maplibreRoots = roles.maplibre.filter((p) => graph.has(p));
-  const locationRoots = roles.location.filter((p) => graph.has(p));
-  const always = reachable(graph, entries, new Set([...maplibreRoots, ...locationRoots]));
+  const inGraph = (list) => list.filter((p) => graph.has(p));
+  const maplibreRoots = inGraph(roles.maplibre);
+  const featureRoots = inGraph(Object.values(roles.features).flat());
+  const locationRoots = inGraph(roles.features.location);
+  const always = reachable(graph, entries, new Set([...maplibreRoots, ...featureRoots]));
   const maplibre = [...reachable(graph, maplibreRoots)].filter((p) => !always.has(p));
-  const location = [...reachable(graph, locationRoots, new Set(maplibreRoots))].filter((p) => !always.has(p) && !maplibre.includes(p));
-  return { location: location.sort(), maplibre: maplibre.sort() };
+  const features = [...reachable(graph, featureRoots, new Set(maplibreRoots))].filter((p) => !always.has(p) && !maplibre.includes(p));
+  const others = reachable(graph, featureRoots.filter((p) => !locationRoots.includes(p)), new Set([...maplibreRoots, ...locationRoots]));
+  const location = [...reachable(graph, locationRoots, new Set(maplibreRoots))].filter((p) => !always.has(p) && !maplibre.includes(p) && !others.has(p));
+  return { features: features.sort(), location: location.sort(), maplibre: maplibre.sort() };
 }

@@ -7,8 +7,12 @@ import type { ClimateZone, Details, Interaction, Labels, Locale, Placement, Plan
 export interface PlantSource {
   info(): SourceInfo;
   countries(): ReadonlyMap<string, { invasiveChecked: boolean }>;
-  // The plants placed in climate c, each with c's placement.
+  // The plants placed in climate c, each with c's placement; for a climate the export does not curate
+  // (not in info().climates), borrowed(c, NEAREST_LISTS[c]).
   pool(c: ClimateZone): Promise<Taxon[]>;
+  // P5 seam (commit 0, S5c owns the sqlite-source body): an uncurated climate's plants placed from the
+  // nearest curated lists in `order` (placement.ts), each with estimate true and placedFrom set.
+  borrowed(zone: ClimateZone, order: readonly ClimateZone[]): Promise<Taxon[]>;
   // Interactions that apply in c: every one with no climate, plus c's intercropped yield gains.
   // Ranks (genus, family) are matched in the core.
   interactions(c: ClimateZone): Promise<Interaction[]>;
