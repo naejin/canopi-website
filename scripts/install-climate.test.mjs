@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { installClimate, ensureClimate, readRelease, releaseProblem, verifyClimateInstall, parseArgs, readTar, climateIndexProblem, installDirName, DEFAULT_OUT, DEFAULT_CACHE, INDEX_PATH, RELEASE_PATH, PUBLIC_BASE } from './install-climate.mjs';
+import { installClimate, ensureClimate, loadTiffModule, readRelease, releaseProblem, verifyClimateInstall, parseArgs, readTar, climateIndexProblem, installDirName, DEFAULT_OUT, DEFAULT_CACHE, INDEX_PATH, RELEASE_PATH, PUBLIC_BASE } from './install-climate.mjs';
 import { VARIABLES, SLOTS, SOIL_BANDS, REGION_BANDS } from '../src/lib/climate/model.js';
 
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -365,4 +365,10 @@ test('an install of another grid is replaced by the pinned one', async (t) => {
   const r = await ensure(w, pinFor(cur.archive, cur.manifestSha), { env: { CANOPI_CLIMATE_ARCHIVE: cur.archive } });
   assert.equal(r.action, 'installed');
   assert.deepEqual(readdirSync(w.out).sort(), [installDirName('0.2.0', cur.manifestSha), 'INSTALLED_BY']);
+});
+
+test('the TIFF check loads on a Node that cannot import .ts (TypeScript fallback)', async () => {
+  const { readTileHeader } = await loadTiffModule({ native: false });
+  const h = readTileHeader(TILES['tiles/n50e000.tif'], { side: 100, cellDeg: 0.1, bands: 72 });
+  assert.deepEqual([h.north, h.west], [50, 0]);
 });

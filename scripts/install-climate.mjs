@@ -3,7 +3,8 @@
 // consortium page's reader (src/lib/climate/) fetches single tiles. P5 design check section A; owner
 // decision 2026-11-11: the tiles are fetched at build and verified, never committed.
 //
-//   npm run install:climate                 # what `npm run build` runs first
+//   astro build / npm run build             # runs it first (scripts/climate-integration.mjs)
+//   npm run install:climate                 # by hand
 //   npm run install:climate -- <grid.tar>   # a local archive (same as CANOPI_CLIMATE_ARCHIVE)
 //
 // Where the archive comes from, in order:
@@ -205,10 +206,25 @@ function checkTiles(m, files) {
   return tiles;
 }
 
+/**
+ * The reader's src/lib/climate/tiff.ts (it imports nothing). Astro loads astro.config.mjs, and so this
+ * module, with plain Node, which imports .ts only from 22.18 (22.6 with --experimental-strip-types);
+ * on an older Node 22 it is compiled with TypeScript (a declared dev dependency, installed by the build's npm install) and imported as a data: URL.
+ */
+export async function loadTiffModule({ native = true } = {}) {
+  const url = new URL('../src/lib/climate/tiff.ts', import.meta.url);
+  if (native) {
+    try { return await import(url.href); } catch (err) { if (err?.code !== 'ERR_UNKNOWN_FILE_EXTENSION') throw err; }
+  }
+  const ts = (await import('typescript')).default;
+  const { outputText: code } = ts.transpileModule(readFileSync(url, 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } });
+  return import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
+}
+
 // Each tile's TIFF header: the layout of its layer and the position of its name (the reader's own
-// check, src/lib/climate/tiff.ts; loaded here only, so importing this module needs no TypeScript).
+// check; loaded here only, so importing this module needs no TypeScript).
 async function checkHeaders(tiles) {
-  const { readTileHeader } = await import('../src/lib/climate/tiff.ts');
+  const { readTileHeader } = await loadTiffModule();
   for (const layer of LAYER_IDS) {
     const spec = LAYERS[layer];
     for (const [name, bytes] of tiles[layer]) {
@@ -291,7 +307,7 @@ export function verifyClimateInstall(dir, index) {
   const problem = climateIndexProblem(index);
   if (problem) broken(problem);
   const version = index.base.slice(PUBLIC_BASE.length, -1);
-  if (!existsSync(dir)) broken('the directory is missing: `npm run build` installs the grid (`npm run install:climate` alone).');
+  if (!existsSync(dir)) broken('the directory is missing: `astro build` installs the grid (`npm run install:climate` alone).');
   if (!existsSync(join(dir, INSTALL_MARK))) broken(`${INSTALL_MARK} is missing.`);
   const stray = readdirSync(dir).filter((n) => n !== INSTALL_MARK && n !== version);
   if (stray.length) broken(`entries other than ${version}: ${stray.join(', ')}.`);
@@ -488,7 +504,8 @@ function installedPinned(out, indexPath, release) {
 }
 
 /**
- * Makes public/data/climate/ hold the pinned grid (what `npm run build` runs first). Returns
+ * Makes public/data/climate/ hold the pinned grid (what every `astro build` runs first, through
+ * scripts/climate-integration.mjs). Returns
  * { action: 'up to date' | 'installed', source?: 'CANOPI_CLIMATE_ARCHIVE' | 'cache' | 'download' }.
  * Throws on anything else: a missing or wrong archive, a failed download, a refused grid.
  */

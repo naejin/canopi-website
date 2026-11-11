@@ -491,12 +491,12 @@ let assetFiles = 0;
 }
 assert.ok(assetFiles <= MAX_ASSET_FILES, `${root} holds ${assetFiles} files, over the ${MAX_ASSET_FILES} static assets a Workers Free plan serves`);
 console.log(`Static assets: ${assetFiles} files in ${root} (limit ${MAX_ASSET_FILES}).`);
-// The canopi-climate tiles (scripts/install-climate.mjs, run by `npm run build`): required. The
+// The canopi-climate tiles (scripts/install-climate.mjs, run by every `astro build` through scripts/climate-integration.mjs): required. The
 // index names the pinned release (src/data/climate-release.json) and every tile it lists is served
 // with its size, one grid version, nothing else.
 {
   const climateDir = join(root, 'data', 'climate');
-  assert.ok(existsSync(CLIMATE_INDEX_PATH), `${CLIMATE_INDEX_PATH} is missing: \`npm run build\` installs the climate tiles first (\`npm run install:climate\` alone)`);
+  assert.ok(existsSync(CLIMATE_INDEX_PATH), `${CLIMATE_INDEX_PATH} is missing: \`astro build\` installs the climate tiles first (\`npm run install:climate\` alone)`);
   const climateIndex = JSON.parse(readFileSync(CLIMATE_INDEX_PATH, 'utf8'));
   const pin = readRelease();
   assert.equal(climateIndex.release?.grid_manifest_sha256, pin.grid_manifest_sha256, `${CLIMATE_INDEX_PATH} is not the pinned climate grid ${pin.tag}: rebuild`);

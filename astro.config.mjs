@@ -11,6 +11,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { moduleGraph } from './scripts/built-modules.mjs';
+import { climateTiles } from './scripts/climate-integration.mjs';
 
 // Consortium v2 (design check A1, coordinator row "v2 build setup", 2026-11-11): Preact 11 without
 // @astrojs/preact, whose Astro 6 releases accept only Preact 10. JSX is compiled for Preact in
@@ -101,7 +102,8 @@ export default defineConfig({
   // Field Guides are MDX (src/content/guides/); @astrojs/mdx 5 is the line for Astro 6, so the pin moves with Astro.
   // rehypeGuideTerms places each <Term>'s glossary note beside the block that first uses it;
   // rehypeGuideChecklists tells each checklist <Item> its list, for page-unique checkbox ids.
-  integrations: [mdx({ rehypePlugins: [rehypeGuideTerms, rehypeGuideChecklists] }), sitemap({ filter: (page) => !page.includes('/contact/') }), consortiumModulePreload],
+  // climateTiles installs the pinned canopi-climate grid before every build (and dev, if missing).
+  integrations: [climateTiles(), mdx({ rehypePlugins: [rehypeGuideTerms, rehypeGuideChecklists] }), sitemap({ filter: (page) => !page.includes('/contact/') }), consortiumModulePreload],
   adapter: cloudflare(),
 
   vite: {
