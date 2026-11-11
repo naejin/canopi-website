@@ -1,13 +1,21 @@
 /** @jsxImportSource preact */
 // The consortium island's root (frozen seam, commit 0 of P2). It shows the load state's screens
-// (design check §5) and leaves one slot per stream view. Each slot is a module whose export is null
-// until its stream fills it, so a stream fills its own file and never edits this one.
+// (design check §5) and leaves one slot per stream, in page order. Each slot is a module whose export
+// is null until its stream fills it, so a stream fills its own file and never edits this one:
+// - Start (S4): climate, country line, site, crops and the Suggest / build-your-own start;
+// - Matrix (S2): the matrix and every other S2 view; Matrix.tsx routes the view switch itself
+//   (matrix, phone grid and stepper, side view, Jobs, the plant list) from store.view;
+// - Actions (S4): Share, Download for Canopi, Print (the print sheet) and the link notices (unknown
+//   plants, cut lists), after the matrix;
+// - Details (S3): the plant dialog and every S3 sheet; Details.tsx routes store.sheet itself
+//   (details, Swap, Add, Search, Paste, the toast).
 import type { ComponentType } from 'preact';
 import { load } from './store.ts';
 import { T } from './strings.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
 import { Start } from './views/Start.tsx';
 import { Matrix } from './views/Matrix.tsx';
+import { Actions } from './views/Actions.tsx';
 import { Details } from './views/Details.tsx';
 
 export interface AppProps {
@@ -45,7 +53,7 @@ export function App({ guide, onRetry }: AppProps) {
   return (
     <>
       {slot(Start)}
-      {status !== 'ready' ? <p class="status-line" aria-busy="true">{T('load.plants')}</p> : slot(Matrix)}
+      {status !== 'ready' ? <p class="status-line" aria-busy="true">{T('load.plants')}</p> : <>{slot(Matrix)}{slot(Actions)}</>}
       {slot(Details)}
     </>
   );

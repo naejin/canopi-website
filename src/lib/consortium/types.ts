@@ -213,9 +213,53 @@ export interface SourceInfo { releaseId: string; schemaVersion: 1; builtAt: stri
 // bottom, seven cells each. An empty cell says why: 'gap' (no plant in the list for this cell yet)
 // or 'misfit' (plants exist, none fits the site: "Show them anyway"). One plant fills a cell.
 export interface MatrixCell { stratum: Stratum; phase: PhaseOrd; members: PlantId[]; empty: 'gap' | 'misfit' | null }
-export interface Matrix { climate: ClimateZone; rows: { stratum: Stratum; cells: MatrixCell[] }[]; filled: number; total: number }
+// unplaced: the climate's plants with no stratum yet (`stratum IS NULL`, 0 today), listed under
+// "No layer yet" rather than dropped (design check §4).
+export interface Matrix { climate: ClimateZone; rows: { stratum: Stratum; cells: MatrixCell[] }[]; filled: number; total: number; unplaced: PlantId[] }
 
 // A warning on a member (store.ts `flags`): a conflict between two members, a site misfit, an
 // invasive or toxicity warning. Add and Swap ask only about 'misfit' and a high 'conflict'.
 export type FlagKind = 'conflict' | 'misfit' | 'invasive' | 'toxicity';
 export interface Flag { id: PlantId; kind: FlagKind; other?: PlantId; severity?: Severity }
+
+// ---- Shapes the views need from the rules (review C5; S1 fills them, S2–S4 render them) ----
+
+// The six jobs a consortium does (v1 jobs.ts, ported by S1), in display order.
+export const jobIds = ['feeds_you', 'feeds_soil', 'mulch', 'ground', 'helpers', 'shelter'] as const;
+export type JobId = (typeof jobIds)[number];
+
+// Site fit, three-valued (A7): 'fit', 'misfit' or 'unknown' per site answer, with the reason a view
+// shows. An unknown is never a silent fit: "height not recorded" (no height or width for Room) and
+// "can grow over N m in the wild" (the wild maximum above the room's limit, the plant kept small by
+// pruning) are said aloud. An 'unsure' answer checks nothing.
+export type Verdict = 'fit' | 'misfit' | 'unknown';
+export type FitReason =
+  | { key: 'light' | 'soil' | 'water'; verdict: Verdict; trait: keyof Traits | null }
+  | { key: 'room'; verdict: Verdict; kind: 'fits' | 'wild_height'; meters: number }
+  | { key: 'room'; verdict: 'unknown'; kind: 'height_not_recorded' };
+export interface Fit { verdict: Verdict; misfits: SiteKey[]; unknowns: SiteKey[]; reasons: FitReason[] }
+
+// Swap: a plant that could take a member's place, with what it changes in the matrix ("Also fills…",
+// "Leaves empty…") and its warnings. Cells are [stratum, phase].
+export type CellRef = readonly [Stratum, PhaseOrd];
+export interface Alternative { id: PlantId; sameStratum: boolean; alsoFills: CellRef[]; leavesEmpty: CellRef[]; sharedJobs: JobId[]; flags: Flag[] }
+
+// Jobs table: for each job, the phases where no member does it ("gaps name their stages", BT-4).
+export interface JobGap { job: JobId; members: PlantId[]; missing: PhaseOrd[] }
+
+// Share state (#v=4, state.ts): what a link restores, and what the page must say about it (§5).
+// unknownCount: plants of the link no longer in the list ("2 plants from this link…");
+// cut: the link lost its end marker ("This link looks cut off"); long: over 2,000 characters
+// ("Some apps cut long links…").
+export interface ShareState {
+  climate: ClimateZone | null;
+  country: string | null;
+  site: Site;
+  members: PlantId[];
+  kept: PlantId[];
+  removed: PlantId[];
+  guests: { id: PlantId; from: ClimateZone }[];
+  stage: PhaseOrd | null;
+}
+export interface LinkNotice { unknownCount: number; cut: boolean; long: boolean }
+export interface DecodedLink { state: ShareState; notice: LinkNotice }

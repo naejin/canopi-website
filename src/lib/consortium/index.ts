@@ -7,3 +7,5 @@
 // to port in place (design check §2); tsconfig.json excludes them and nothing imports them until then.
 export * from './types.ts';
 export * from './source.ts';
+// Stream S4's file, exported now so S4 never edits this one (S1 adds the rule exports below).
+export * from './canopi-file.ts';
