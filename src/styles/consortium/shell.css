@@ -53,7 +53,7 @@
 .ct .ct-chip[aria-pressed="true"] .ct-sci { color: inherit; opacity: 0.85; }
 .ct .ct-chip:disabled { opacity: 0.55; cursor: not-allowed; }
 .ct .ct-crops-count { margin: 8px 0; font-size: 14px; }
-.ct .ct-search input { width: 100%; max-width: 460px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
+.ct .ct-crop-search input { width: 100%; max-width: 460px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
 .ct .ct-hits { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; max-width: 460px; }
 .ct .ct-hit { width: 100%; min-height: 40px; padding: 6px 12px; text-align: left; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; }
 .ct .ct-hit:hover { border-color: var(--text); }
@@ -78,9 +78,9 @@
 .ct .ct-basis { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin: 0; font-size: 15px; color: var(--text-secondary); }
 
 /* Actions after the matrix */
-.ct .ct-actions { display: grid; gap: 12px; margin-top: 20px; }
+.ct .ct-page-actions { display: grid; gap: 12px; margin-top: 20px; }
 .ct .ct-action-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.ct .ct-actions > p { margin: 0; }
+.ct .ct-page-actions > p { margin: 0; }
 .ct .ct-share { display: grid; gap: 8px; }
 .ct .ct-share p { margin: 0; }
 .ct .ct-share-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -101,5 +101,5 @@
   .ct .ct-card { min-height: 72px; padding: 10px 12px; }
   .ct .ct-card-places { display: none; }
   .ct .ct-cta .button { flex: 1 1 100%; }
-  .ct .ct-search input, .ct .ct-share-field, .ct .ct-country-pick select { font-size: 16px; }
+  .ct .ct-crop-search input, .ct .ct-share-field, .ct .ct-country-pick select { font-size: 16px; }
 }

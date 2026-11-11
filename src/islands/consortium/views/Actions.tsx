@@ -47,7 +47,7 @@ function download(): void {
 function ActionsView() {
   const [sharing, setSharing] = useState(false);
   return (
-    <section class="ct-actions" aria-label={T('page.actions')}>
+    <section class="ct-page-actions" aria-label={T('page.actions')}>
       <LinkNotices />
       <div class="ct-action-row">
         <button type="button" class="button button-secondary ct-small" aria-expanded={sharing ? 'true' : 'false'} onClick={() => setSharing(!sharing)}>{T('share.button')}</button>

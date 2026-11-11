@@ -179,7 +179,7 @@ function Crops({ zone }: { zone: ClimateZone }) {
             ))}
           </div>
           <p class="ct-muted ct-crops-count" aria-live="polite">{full ? T('crops.limit', { max: MAX_CROPS }) : P('crops.count', chosen.length, { max: MAX_CROPS })}</p>
-          <div class="ct-search">
+          <div class="ct-crop-search">
             <input type="search" value={q} aria-label={T('crops.search', { climate: zoneLabel(zone) })} placeholder={T('crops.search', { climate: zoneLabel(zone) })} disabled={full} onInput={(e) => setQ((e.currentTarget as HTMLInputElement).value)} />
           </div>
           {q.trim() && (

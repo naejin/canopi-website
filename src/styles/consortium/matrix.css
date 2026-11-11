@@ -28,9 +28,9 @@
 .ct .ct-sc { font-style: italic; color: var(--text-muted); }
 
 /* Marks: never colour alone (glyph + hidden or visible words). */
-.ct .ct-glyph, .ct .ct-flag { display: inline-flex; align-items: center; gap: 2px; flex: none; }
-.ct .ct-glyph svg, .ct .ct-flag svg, .ct .ct-tag svg, .ct .ct-key svg { width: 13px; height: 13px; flex: none; }
-.ct .ct-glyph { color: var(--text-secondary); }
+.ct :where(.ct-views) .ct-glyph, .ct .ct-flag { display: inline-flex; align-items: center; gap: 2px; flex: none; }
+.ct :where(.ct-views) :is(.ct-glyph, .ct-tag) svg, .ct .ct-flag svg, .ct .ct-key svg { width: 13px; height: 13px; flex: none; }
+.ct :where(.ct-views) .ct-glyph { color: var(--text-secondary); }
 .ct .ct-flag { color: var(--warning); font-size: 12px; font-weight: 600; }
 .ct .ct-flag svg { width: 14px; height: 14px; }
 .ct .ct-tag {
@@ -195,7 +195,7 @@
 .ct .ct-prow .ct-sc { font-size: 13px; }
 .ct .ct-pempty { padding: 8px 12px 12px; font-size: 14px; color: var(--text-secondary); display: grid; gap: 6px; }
 .ct .ct-pempty strong { color: var(--text); font-weight: 600; }
-.ct .ct-back {
+.ct :where(.ct-views) .ct-back {
   display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; margin-top: 6px; border: 0; background: none; font: inherit;
   color: var(--text); text-decoration: underline; text-underline-offset: 0.18em; cursor: pointer;
 }
@@ -315,6 +315,9 @@
   .ct .ct-tab { padding: 10px 8px; font-size: 14.5px; }
   .ct .ct-jump td button, .ct .ct-jump td.none span { height: var(--cell-phone-h); }
   .ct .ct-explain-btn, .ct .ct-add-cell { min-height: 36px; }
+  /* Primary controls on a phone: 40 px at least (W6). */
+  .ct .ct-btn-sm, .ct .ct-quiet, .ct .ct-mchip { min-height: 40px; }
+  .ct .ct-lname-btn { display: inline-flex; align-items: center; min-height: 40px; }
   .ct .ct-mx-empty { grid-template-columns: 1fr; }
   .ct .ct-link-button { min-height: 36px; display: inline-flex; align-items: center; }
   .ct .ct-sv { padding: 12px; }

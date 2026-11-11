@@ -200,3 +200,87 @@ test('X3: an edit made after "Change site" is saved and in the address', async (
     await done(page);
   });
 });
+
+// Every visible control in #ct-root (outside an open sheet unless inSheet) with its box.
+const controls = (page, inSheet = false) => page.$$eval(inSheet ? 'dialog[open] button, dialog[open] a[href], dialog[open] [role="tab"]' : '#ct-root button, #ct-root a[href], #ct-root [role="tab"]', (els, sheet) => els
+  .filter((el) => sheet || !el.closest('dialog'))
+  .map((el) => { const r = el.getBoundingClientRect(); return { name: (el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 50), h: Math.round(r.height), w: Math.round(r.width), cls: el.className, inline: el.matches('.ct-explain-btn, a.text-link') } ; })
+  .filter((c) => c.h > 0 && c.w > 0), inSheet);
+const small = (list) => list.filter((c) => c.h < (c.inline ? 36 : 40)).map((c) => `${c.name} ${c.w}×${c.h} (${c.cls})`);
+
+test('W6: on a phone, primary controls are at least 40 px tall, inline secondary ones at least 36', async (t) => {
+  const page = await suggested({ width: 390, theme: 'light' });
+  const bad = [];
+  bad.push(...small(await controls(page)).map((s) => `matrix: ${s}`));
+  await page.locator(aria('tab', 'All plants')).click();
+  bad.push(...small(await controls(page)).map((s) => `All plants: ${s}`));
+  await page.locator(aria('tab', 'Jobs')).click();
+  bad.push(...small(await controls(page)).map((s) => `Jobs: ${s}`));
+  await page.locator(aria('tab', 'All plants')).click();
+  await page.locator('#ct-root [data-plant-id] button, #ct-root button[data-plant-id]').click();
+  assert.ok(await findAx(page, { role: 'dialog' }), 'a plant\'s dialog');
+  bad.push(...small(await controls(page, true)).map((s) => `details: ${s}`));
+  assert.deepEqual(bad, []);
+  await done(page);
+});
+
+test('W7: the toast never covers a control', async (t) => {
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    await page.locator(aria('tab', 'All plants')).click();
+    const remove = (await axNodes(page)).find((n) => n.role === 'button' && /^Remove /.test(n.name ?? ''));
+    await page.locator(aria('button', remove.name)).click();
+    assert.ok(await has(page, '.ct-toast'), 'the toast');
+    // Every control of the page: at the page's end none sits under the toast, and one under it
+    // mid-page comes out from under it when it takes focus (Tab).
+    const covered = await page.evaluate(() => {
+      const box = () => document.querySelector('.ct-toast')?.getBoundingClientRect();
+      const hit = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      const all = [...document.querySelectorAll('#ct-root button, #ct-root input, #ct-root select, #ct-root a[href], #ct-root [role="tab"]')]
+        .filter((el) => !el.closest('.ct-toast') && el.getClientRects().length);
+      const name = (el) => (el.getAttribute('aria-label') || el.textContent).trim().slice(0, 40);
+      const out = [];
+      if (!box()?.height) return ['no toast box'];
+      // Measured where a scroll ends (the site scrolls smoothly).
+      document.documentElement.style.scrollBehavior = 'auto';
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      for (const el of all) if (hit(el.getBoundingClientRect(), box())) out.push(`at the end: ${name(el)}`);
+      window.scrollTo(0, 0);
+      for (const el of all) {
+        if (!hit(el.getBoundingClientRect(), box())) continue;
+        el.focus();
+        if (hit(el.getBoundingClientRect(), box())) out.push(`focused: ${name(el)}`);
+        window.scrollTo(0, 0);
+      }
+      return out;
+    });
+    assert.deepEqual(covered, [], 'nothing under the toast');
+    await done(page);
+  });
+});
+
+test('W8, W9, X4, X5: bold is 600, CJK headings keep words whole, sheet and page classes do not leak', async (t) => {
+  const page = await h.open('/consortium/', { width: 1280, theme: 'light', data: 'fixture' });
+  const weights = await page.$$eval('#ct-root strong, #ct-root b', (els) => [...new Set(els.map((e) => getComputedStyle(e).fontWeight))]);
+  assert.ok(weights.length > 0, 'the page has bold words');
+  assert.deepEqual(weights, ['600'], '<strong> and <b> at 600');
+  await page.locator(aria('radio', 'Temperate')).click();
+  // Start's crop search is not the Add sheet's search box (X5): no box drawn around it.
+  const crop = await page.$eval('#ct-root input[type="search"]', (el) => getComputedStyle(el.parentElement).borderTopWidth);
+  assert.equal(crop, '0px', 'Start\'s crop search has no sheet search frame');
+  await page.locator(aria('button', 'Suggest plants')).click();
+  await page.locator(aria('tab', 'All plants')).click();
+  await page.locator('#ct-root [data-plant-id] button, #ct-root button[data-plant-id]').click();
+  assert.ok(await findAx(page, { role: 'dialog' }));
+  // The plant dialog's action row is the sheet's (X4): flex, not the page's actions grid.
+  const row = await page.$eval('dialog[open] .ct-actions', (el) => ({ d: getComputedStyle(el).display, m: getComputedStyle(el).marginTop }));
+  assert.deepEqual(row, { d: 'flex', m: '0px' }, 'the sheet\'s action row');
+  await done(page);
+  for (const lang of ['ja', 'zh', 'ko']) {
+    const p = await h.open(`/${lang}/consortium/`, { width: 390, theme: 'light', data: 'fixture' });
+    const heads = await p.$$eval('h1, #ct-root h2', (els) => els.map((e) => { const s = getComputedStyle(e); return `${s.wordBreak}/${s.lineBreak}`; }));
+    assert.ok(heads.length > 0);
+    for (const s of heads) assert.match(s, /^keep-all\/|\/strict$/, `${lang}: headings keep words whole (${s})`);
+    await done(p);
+  }
+});
