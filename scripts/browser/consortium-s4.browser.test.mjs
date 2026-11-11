@@ -353,7 +353,13 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
 
     // Adjust: the tabs by arrow keys to All plants, then Remove a plant and Undo it.
     await tabTo((a) => a.role === 'tab', 'the view tabs');
-    for (let i = 0; i < 4 && (await active()).text !== 'All plants'; i++) await page.keyboard.press('ArrowRight');
+    // Each press moves the focus once the next view renders (a lazy chunk may still load): wait for it,
+    // so a slow render is not read as the old tab and pressed past (a flake seen twice).
+    for (let i = 0; i < 4 && (await active()).text !== 'All plants'; i++) {
+      await page.evaluate(() => { window.__ctWas = document.activeElement; });
+      await page.keyboard.press('ArrowRight');
+      await page.waitForFunction(() => document.activeElement !== window.__ctWas, { timeout: 4000 }).catch(() => {});
+    }
     assert.equal((await active()).text, 'All plants');
     const before = await page.$$eval('#ct-root [data-plant-id]', (els) => new Set(els.map((e) => e.dataset.plantId)).size);
     const removed = await tabTo((a) => a.text.startsWith('Remove '), 'a Remove button');
