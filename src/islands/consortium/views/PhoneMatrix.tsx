@@ -5,21 +5,28 @@
 // under it; then the stage stepper; then the four layers of the chosen stage as cards, each plant a
 // row with its stage bar (owner row 2026-10-28: phone rows show the stage bar). Tapping a cell jumps
 // to its stage. An empty consortium shows its notice above the grid and the cells count the plants
-// that could go there.
+// that could go there. "Back to the grid" is a button that scrolls to the grid and focuses it: a
+// #fragment link would replace the page's share fragment (S4).
 import type { MatrixCell, Stratum } from '../../../lib/consortium/index.ts';
 import { strata } from '../../../lib/consortium/index.ts';
 import { matrix, memberTaxa, stage } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { PHASE_ORDS, SHARE_AIM, spans } from './tracks.ts';
-import { ChevronIcon, Explain, Marks, StageBar, cellName, layerName, nameOf, openDetails, phasePlain, plantLabel } from './StageBar.tsx';
+import { ChevronIcon, Explain, Marks, StageBar, byName, cellName, layerName, nameOf, openDetails, phasePlain, plantLabel } from './StageBar.tsx';
 import { StageStepper } from './StageStepper.tsx';
-import { CellReason, EmptyNotice, FillMeter, FreeCell, GlyphKey } from './Matrix.tsx';
+import { CellReason, EmptyNotice, FillMeter, FreeCell, GlyphKey, useMatrixMark } from './Matrix.tsx';
 
 const kindOf = (cell: MatrixCell, empty: boolean) => (cell.empty ? 'cannot' : empty ? 'potential' : cell.members.length ? 'filled' : 'free');
 
 export function PhoneMatrix() {
   const m = matrix.value!, s = stage.value, taxa = memberTaxa.value;
   const empty = taxa.length === 0;
+  useMatrixMark();
+  const back = () => {
+    const grid = document.getElementById('ct-overview');
+    grid?.scrollIntoView({ block: 'start' });
+    grid?.focus({ preventScroll: true });
+  };
   const jump = (p: number) => {
     stage.value = p as typeof s;
     document.getElementById('ct-stepper')?.scrollIntoView({ block: 'nearest' });
@@ -27,7 +34,7 @@ export function PhoneMatrix() {
   return (
     <div class="ct-phone">
       {empty && <EmptyNotice phone />}
-      <table class="ct-mini" id="ct-overview">
+      <table class="ct-mini" id="ct-overview" tabIndex={-1}>
         <caption>
           {!empty && <FillMeter m={m} />}
           <span class="ct-cap-line">{T('matrix.captionPhone')}</span>
@@ -72,7 +79,7 @@ export function PhoneMatrix() {
       </p>
       <StageStepper id="ct-stepper" />
       {strata.map((st) => <StageLayer key={st} stratum={st} cell={m.rows[strata.indexOf(st)].cells[s]} empty={empty} />)}
-      <a class="ct-back" href="#ct-overview">{T('matrix.back')}</a>
+      <button type="button" class="ct-back" onClick={back}>{T('matrix.back')}</button>
       <div class="ct-explains"><Explain kind="layer" /><Explain kind="stage" /></div>
       <GlyphKey />
     </div>
@@ -81,7 +88,7 @@ export function PhoneMatrix() {
 
 function StageLayer({ stratum, cell, empty }: { stratum: Stratum; cell: MatrixCell; empty: boolean }) {
   const s = stage.value;
-  const here = memberTaxa.value.filter((t) => t.stratum?.value === stratum && spans(t, s) && cell.members.includes(t.id));
+  const here = memberTaxa.value.filter((t) => t.stratum?.value === stratum && spans(t, s) && cell.members.includes(t.id)).sort(byName);
   const head = (
     <header>
       <h3>{layerName(stratum)} <span class="ct-needs">· {T(`stratum.${stratum}.needs`)}</span></h3>

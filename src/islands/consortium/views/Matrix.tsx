@@ -20,14 +20,16 @@
 // why: "No plant in the list for this cell yet" (data gap) or "No plant fits your site here" with the
 // counted reasons and "Show them anyway" (Add with every plant of the cell, flagged); neighbouring
 // empty cells of one kind merge (colspan + headers). Above MAX_TRACKS tracks a row shows counts, the
-// first chips and "+ N more", which opens the plant list.
-import type { ComponentType } from 'preact';
+// first chips (the plants starting in the cell first) and "+ N more", which opens the plant list.
+import type { ComponentChildren, ComponentType } from 'preact';
+import { useEffect } from 'preact/hooks';
 import type { Matrix as MatrixData, MatrixCell, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
 import { ROOM_LIMIT_M, strata } from '../../../lib/consortium/index.ts';
+import * as store from '../store.ts';
 import { climate, matrix, memberTaxa, members, missingMembers, pool, site, suggestMembers, view, type View } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
-import { COLLAPSED_CHIPS, MAX_TRACKS, PHASE_ORDS, SHARE_AIM, fillPercent, reasonParts, rowPieces, runReasons, spanOf, spans, tracksOf } from './tracks.ts';
-import { Explain, Marks, PinIcon, SproutIcon, WarnIcon, cellName, layerName, listName, nameOf, openAdd, openDetails, phasePlain, phaseTerm, plantLabel } from './StageBar.tsx';
+import { COLLAPSED_CHIPS, MAX_TRACKS, PHASE_ORDS, SHARE_AIM, cellOrder, fillPercent, reasonParts, rowPieces, runReasons, spanOf, spans, tracksOf } from './tracks.ts';
+import { Explain, Marks, PinIcon, SproutIcon, WarnIcon, byName, cellName, layerName, listName, nameOf, openAdd, openDetails, phasePlain, phaseTerm, plantLabel } from './StageBar.tsx';
 import { phone } from './StageStepper.tsx';
 import { PhoneMatrix } from './PhoneMatrix.tsx';
 import { SideView } from './SideView.tsx';
@@ -123,7 +125,7 @@ export function FreeCell({ stratum, phase, fitting }: { stratum: Stratum; phase:
 // Why a cell, or a run of neighbouring cells, cannot be filled: its heading and its sentence.
 export function reasonText(stratum: Stratum, from: number, to: number, kind: 'gap' | 'misfit'): { head: string; body: string } {
   const c = climate.value!;
-  if (kind === 'gap') return { head: T('matrix.gap'), body: T(from === to ? 'matrix.gapBody' : 'matrix.gapBodyRun', { list: listName(c) }) };
+  if (kind === 'gap') return { head: T(from === to ? 'matrix.gap' : 'matrix.gapRun'), body: T(from === to ? 'matrix.gapBody' : 'matrix.gapBodyRun', { list: listName(c) }) };
   const s = site.value, r = runReasons(pool.value ?? [], memberTaxa.value, s, stratum, from, to);
   const limit = ROOM_LIMIT_M[s.room];
   const parts = reasonParts(r.reasons, s).map(({ word, n }) => P(`matrix.why.${word}`, n, { m: Number.isFinite(limit) ? num(limit) : '' }));
@@ -145,10 +147,11 @@ export function CellReason({ stratum, from, to, kind }: { stratum: Stratum; from
   );
 }
 
-// The legend under the matrix: cell states and the glyphs (never colour alone).
-export function GlyphKey() {
+// The legend of the glyphs (never colour alone), after the cell states a view puts first.
+export function GlyphKey({ children }: { children?: ComponentChildren }) {
   return (
     <p class="ct-legend">
+      {children}
       <span class="ct-key"><WarnIcon />{T('matrix.key.warning')}</span>
       <span class="ct-key"><PinIcon />{T('matrix.kept')}</span>
       <span class="ct-key"><SproutIcon />{T('matrix.mainCrop')}</span>
@@ -161,8 +164,20 @@ const keepNumbers = (text: string) => text.split(/(\S*\d\S*)/).map((part, i) => 
 
 const GROUPS: readonly { key: string; span: number }[] = [{ key: 'placenta', span: 3 }, { key: 'secondary', span: 3 }, { key: 'climax', span: 1 }];
 
+// performance.mark('ct:matrix') once, when the matrix (desktop table or phone grid) first painted:
+// S4's timing script waits for it. Effects run after the browser painted the render.
+let marked = false;
+export function useMatrixMark(): void {
+  useEffect(() => {
+    if (marked || typeof performance === 'undefined') return;
+    marked = true;
+    performance.mark('ct:matrix');
+  }, []);
+}
+
 function MatrixTable({ m }: { m: MatrixData }) {
   const taxa = memberTaxa.value, empty = taxa.length === 0;
+  useMatrixMark();
   return (
     <div class="ct-desk">
       {empty && <EmptyNotice />}
@@ -171,7 +186,8 @@ function MatrixTable({ m }: { m: MatrixData }) {
           <span class="ct-cap-fill"><FillMeter m={m} /></span>
           <span class="ct-cap-line">{T('matrix.caption')} <Explain kind="stage" /></span>
         </caption>
-        <colgroup><col class="ct-rh" />{PHASE_ORDS.map((p) => <col key={p} />)}</colgroup>
+        <colgroup><col class="ct-rh" /></colgroup>
+        {GROUPS.map((g) => <colgroup key={g.key} span={g.span} />)}
         <thead>
           <tr class="ct-groups">
             <th class="ct-corner" scope="col" rowSpan={2}><span class="visually-hidden">{T('matrix.layer')}</span><Explain kind="layer" /></th>
@@ -190,21 +206,18 @@ function MatrixTable({ m }: { m: MatrixData }) {
           {m.rows.map((row) => <Row key={row.stratum} stratum={row.stratum} cells={row.cells} taxa={taxa} empty={empty} />)}
         </tbody>
       </table>
-      <p class="ct-legend">
+      <GlyphKey>
         <span class="ct-key"><span class="ct-key-sw filled" aria-hidden="true" />{T('matrix.key.filled')}</span>
         <span class="ct-key"><span class="ct-key-sw free" aria-hidden="true" />{T('matrix.key.free')}</span>
         <span class="ct-key"><span class="ct-key-sw cannot" aria-hidden="true">–</span>{T('matrix.key.cannot')}</span>
-        <span class="ct-key"><WarnIcon />{T('matrix.key.warning')}</span>
-        <span class="ct-key"><PinIcon />{T('matrix.kept')}</span>
-        <span class="ct-key"><SproutIcon />{T('matrix.mainCrop')}</span>
-      </p>
+      </GlyphKey>
     </div>
   );
 }
 
 function Row({ stratum, cells, taxa, empty }: { stratum: Stratum; cells: MatrixCell[]; taxa: Taxon[]; empty: boolean }) {
   const s = strata.indexOf(stratum);
-  const tracks = tracksOf(taxa, stratum, nameOf);
+  const tracks = tracksOf(taxa, stratum, byName);
   const collapsed = tracks.length > MAX_TRACKS;
   return (
     <tr data-stratum-row={stratum}>
@@ -215,10 +228,10 @@ function Row({ stratum, cells, taxa, empty }: { stratum: Stratum; cells: MatrixC
       </th>
       {rowPieces(cells).map((piece) => {
         if (piece.kind === 'run') {
-          const { head, body } = reasonText(stratum, piece.from, piece.to, piece.empty);
+          // Its headers name the row and every column it covers; the cell's words are its content.
           const cols = PHASE_ORDS.filter((p) => p >= piece.from && p <= piece.to).map((p) => `ct-col-${p}`).join(' ');
           return (
-            <td key={piece.from} class="cannot" colSpan={piece.to - piece.from + 1} headers={`ct-row-${s} ${cols}`} aria-label={`${cellName(stratum, piece.from, piece.to)}: ${head}. ${body}`}>
+            <td key={piece.from} class="cannot" colSpan={piece.to - piece.from + 1} headers={`ct-row-${s} ${cols}`}>
               <div class="ct-cell-msg"><CellReason stratum={stratum} from={piece.from} to={piece.to} kind={piece.empty} /></div>
             </td>
           );
@@ -232,7 +245,7 @@ function Row({ stratum, cells, taxa, empty }: { stratum: Stratum; cells: MatrixC
           );
         }
         if (collapsed) {
-          const here = taxa.filter((t) => cell.members.includes(t.id)).sort((a, b) => spanOf(a)!.from - spanOf(b)!.from || nameOf(a).localeCompare(nameOf(b)));
+          const here = cellOrder(taxa.filter((t) => cell.members.includes(t.id)), p, byName);
           return (
             <td key={p}>
               <div class="ct-cell-count">{P('matrix.plants', here.length)}</div>
@@ -260,8 +273,8 @@ function Row({ stratum, cells, taxa, empty }: { stratum: Stratum; cells: MatrixC
   );
 }
 
-// One piece of a plant's bar. Its start piece (or every piece of a collapsed row's start cell) is the
-// button; the others are text with a hidden "continues:".
+// One piece of a plant's bar. Its start piece is the button (in a collapsed row too, where the cell
+// lists its starters first: cellOrder); the others are text with a hidden "continues:".
 function Chip({ taxon: t, phase, compact = false }: { taxon: Taxon; phase: PhaseOrd; compact?: boolean }) {
   const span = spanOf(t)!, start = phase === span.from, end = phase === span.to;
   const cls = ['ct-pchip'];
@@ -280,3 +293,13 @@ function Chip({ taxon: t, phase, compact = false }: { taxon: Taxon; phase: Phase
 }
 
 export const Matrix: ComponentType | null = Views;
+
+// Browser-test hook (stream S3's pattern; review 2026-11-11): a page opened with window.__ctViews =
+// true before the island loaded gets the store there, so the S2 tests set the climate, the site, the
+// members and the view without the start screen. Compiled in only when the site is built with
+// PUBLIC_CT_TEST_HOOK=1 (the browser-test build); a production build drops it as dead code. Its own
+// global, so it never races S3's __ctTest.
+if (import.meta.env.PUBLIC_CT_TEST_HOOK === '1') {
+  const probe = globalThis as { __ctViews?: unknown };
+  if (probe.__ctViews === true) probe.__ctViews = { store };
+}

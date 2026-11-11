@@ -9,13 +9,13 @@
 // - the "What is a layer?" / "What are these stages?" popovers;
 // - openDetails / openAdd: the S3 sheets, opened through store.sheet. Add reads `addRequest` for the
 //   cell, the job or "Show them anyway" that opened it (S3 hand-off: Sheet carries no cell).
-import { computed, signal } from '@preact/signals';
+import { batch, computed, signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { CellRef, ClimateZone, JobId, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
 import { phases } from '../../../lib/consortium/index.ts';
-import { crops, flags, kept, sheet } from '../store.ts';
+import { crops, flags, guests, kept, members, removed, sheet } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
-import { PHASE_ORDS, spanOf, warningCounts } from './tracks.ts';
+import { PHASE_ORDS, collatorFor, spanOf, warningCounts, type Order } from './tracks.ts';
 
 // ---- words ----
 export const phasePlain = (p: number): string => T(`phase.${phases[p]}.plain`);
@@ -30,6 +30,9 @@ export function nameOf(t: Taxon): string {
   const lang = pageLang() as keyof Taxon['names'];
   return t.names[lang] || t.names.en || t.canonical_name;
 }
+
+// Plants by their shown name, with the page language's one collator (tracks.ts collatorFor).
+export const byName: Order = (a, b) => collatorFor(pageLang()).compare(nameOf(a), nameOf(b));
 
 // "Years 3–15 → 60 years on · Secondary 1 – Climax", or one stage's words.
 export function spanWords(t: Taxon): string {
@@ -87,10 +90,10 @@ export function Marks({ taxon, tight = false }: { taxon: Taxon; tight?: boolean 
 
 // ---- the stage bar ----
 // Seven segments, the plant's span filled, the current stage outlined; its name is the span's words.
-export function StageBar({ taxon, current = null, label }: { taxon?: Taxon; current?: PhaseOrd | null; label?: string }) {
-  const s = taxon ? spanOf(taxon) : null;
+export function StageBar({ taxon, current = null }: { taxon: Taxon; current?: PhaseOrd | null }) {
+  const s = spanOf(taxon);
   return (
-    <span class="ct-stagebar" role="img" aria-label={label ?? (taxon ? spanWords(taxon) : '')}>
+    <span class="ct-stagebar" role="img" aria-label={spanWords(taxon)}>
       {PHASE_ORDS.map((p) => <i key={p} class={`${s && s.from <= p && p <= s.to ? 'on' : ''}${p === current ? ' cur' : ''}`} />)}
     </span>
   );
@@ -120,6 +123,19 @@ export function openDetails(id: string): void {
 }
 export function openSwap(id: string): void {
   sheet.value = { kind: 'swap', id };
+}
+// Remove (plant list rows): the member leaves the consortium, its pin and Main crop mark, and a new
+// suggestion leaves it out. S3 (consortium/s3, Details.tsx) has removeMember, the same edit plus the
+// toast with Undo; once merged, this is `removeMember(id)` (hand-off, review 2026-11-11).
+export function removePlant(id: string): void {
+  const without = (xs: readonly string[]) => xs.filter((x) => x !== id);
+  batch(() => {
+    members.value = without(members.peek());
+    kept.value = without(kept.peek());
+    crops.value = without(crops.peek());
+    removed.value = [...without(removed.peek()), id];
+    if (guests.peek()[id]) { const g = { ...guests.peek() }; delete g[id]; guests.value = g; }
+  });
 }
 
 // ---- popovers ----

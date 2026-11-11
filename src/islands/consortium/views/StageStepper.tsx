@@ -18,16 +18,19 @@ const query = typeof matchMedia === 'function' ? matchMedia('(max-width: 639px)'
 export const phone = signal<boolean>(query?.matches ?? false);
 query?.addEventListener('change', (e) => { phone.value = e.matches; });
 
+// At the first or last stage its button stays focusable with aria-disabled and does nothing, so the
+// focus never drops to the page when a step reaches the end.
 export function StageStepper({ id }: { id?: string }) {
   const s = stage.value;
+  const step = (delta: number) => { const next = stepStage(s, delta); if (next !== s) stage.value = next; };
   return (
     <div class="ct-stepper" role="group" aria-label={T('phase.stage')} id={id}>
-      <button type="button" class="ct-stepbtn" aria-label={T('phase.earlier')} disabled={s === 0} onClick={() => { stage.value = stepStage(s, -1); }}><ChevronIcon dir="left" /></button>
+      <button type="button" class="ct-stepbtn" aria-label={T('phase.earlier')} aria-disabled={s === 0 ? 'true' : undefined} onClick={() => step(-1)}><ChevronIcon dir="left" /></button>
       <div class="ct-step-now" aria-live="polite" aria-atomic="true">
         <strong>{phasePlain(s)}</strong>
         <span>{phaseTerm(s)} · {T('phase.stepOf', { i: s + 1 })}</span>
       </div>
-      <button type="button" class="ct-stepbtn" aria-label={T('phase.later')} disabled={s === 6} onClick={() => { stage.value = stepStage(s, 1); }}><ChevronIcon dir="right" /></button>
+      <button type="button" class="ct-stepbtn" aria-label={T('phase.later')} aria-disabled={s === 6 ? 'true' : undefined} onClick={() => step(1)}><ChevronIcon dir="right" /></button>
     </div>
   );
 }
