@@ -222,6 +222,8 @@ export interface MatrixCell {
   empty: 'gap' | 'misfit' | null;
   inList: number;
   fitting: number;
+  // Counted per site key only: the views word each from the site answer (light: "too sunny" on a sun
+  // site, "too shady" on part shade or shade; water: "too dry" on dry, "too wet" on wet).
   reasons: Partial<Record<SiteKey, number>>;
   bothReasons: boolean;
 }
@@ -233,8 +235,21 @@ export interface Matrix { climate: ClimateZone; rows: { stratum: Stratum; cells:
 
 // A warning on a member (store.ts `flags`): a conflict between two members, a site misfit, an
 // invasive or toxicity warning. Add and Swap ask only about 'misfit' and a high 'conflict'.
+// A conflict flag is one per other member, for its worst row, and carries that row's type, agent
+// and note. Low conflicts are flags too: the views decide what to show (they filter low out of chips).
 export type FlagKind = 'conflict' | 'misfit' | 'invasive' | 'toxicity';
-export interface Flag { id: PlantId; kind: FlagKind; other?: PlantId; severity?: Severity }
+export interface Flag {
+  id: PlantId;
+  kind: FlagKind;
+  other?: PlantId;
+  severity?: Severity;
+  type?: Exclude<InteractionType, 'allelopathy_tolerant' | 'intercropped_yield_gain'>;
+  agent?: string | null;
+  note?: Text | null;
+}
+// The reader's country for the invasive check (conflicts.ts countryStatus): none given, given and
+// checked against GRIIS ("not recorded" is then a real answer), or given but not checked.
+export type CountryStatus = 'none' | 'checked' | 'unchecked';
 
 // ---- Shapes the views need from the rules (review C5; S1 fills them, S2–S4 render them) ----
 

@@ -78,7 +78,7 @@ const placementOf = (r: Row): Placement => ({
 
 // A 12-bit month mask read round the year from its first month (canopi-data months_of), so a run
 // over the new year (Nov–Mar) keeps its order.
-export function monthsOf(mask: number, from: number): Month[] {
+function monthsOf(mask: number, from: number): Month[] {
   const out: Month[] = [];
   for (let k = 0; k < 12; k++) { const m = (from + k) % 12; if (mask & (1 << m)) out.push(months[m]); }
   return out;

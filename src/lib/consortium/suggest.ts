@@ -13,11 +13,13 @@
 // member is never picked; invasiveness is a warning only and never scores (owner, 2026-10-28).
 // Guests (plants added from another climate's list) are never picked or offered in Swap; a kept
 // guest is a member like any other and counts for coverage, with its home placement.
-import type { Alternative, CellRef, Fit, Flag, Interaction, JobId, PhaseOrd, PlantId, Site, SiteKey, Stratum, Taxon } from './types.ts';
+import type { Alternative, CellRef, CountryStatus, Fit, Flag, Interaction, JobId, PhaseOrd, PlantId, Site, Stratum, Taxon } from './types.ts';
 import { strata } from './types.ts';
-import { fits, shadedBy } from './site.ts';
+import type { Canopy } from './site.ts';
+import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy } from './site.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { cellKey, cellsOf } from './matrix.ts';
+import type { Conflict } from './conflicts.ts';
 import { conflicts, conflictsOf, invasiveIn, isSerious } from './conflicts.ts';
 
 // Suggestions stay small (owner, 2026-10-28): 6, 9 or 12 plants by room; 9 with Room "Not sure"
@@ -26,8 +28,8 @@ import { conflicts, conflictsOf, invasiveIn, isSerious } from './conflicts.ts';
 export const SIZE_LIMIT: Record<Site['room'], number> = { small: 6, large: 9, field: 12, unsure: 9 };
 
 // What the flags need: the site, the climate's interactions and the reader's country (ISO alpha-2)
-// with PlantSource.countries().get(country).invasiveChecked (only true gives "not recorded").
-export interface FlagContext { site: Site; interactions: Interaction[]; country?: string | null; countryChecked?: boolean }
+// with its countryStatus (only 'checked' gives invasive flags and "not recorded").
+export interface FlagContext { site: Site; interactions: Interaction[]; country?: string | null; countryStatus?: CountryStatus }
 
 export interface SuggestOptions extends FlagContext {
   kept?: PlantId[]; // always members, flagged or not; kept wins over removed
@@ -39,7 +41,7 @@ export interface Suggestion { members: PlantId[]; limit: number }
 export interface Gain { total: number; jobs: number; cells: number; strata: number; food: number; backup: number; edibility: number; weedy: number; unknowns: number }
 
 interface Info { taxon: Taxon; jobs: JobId[]; stratum: Stratum | null; span: number[]; cells: number[]; edibility: number; weedy: boolean; fit: Fit }
-interface Coverage { jobs: Map<JobId, number>; strata: Set<Stratum>; cells: Set<number>; food: Set<number> }
+interface Coverage { jobs: Map<JobId, number>; strata: Set<Stratum>; cells: Set<number>; food: Set<number>; canopy: number[] }
 
 const BACKED_UP: readonly JobId[] = ['feeds_soil', 'ground', 'mulch'];
 
@@ -66,12 +68,13 @@ function infoOf(taxon: Taxon, site: Site): Info {
   return info;
 }
 
-const emptyCoverage = (): Coverage => ({ jobs: new Map(), strata: new Set(), cells: new Set(), food: new Set() });
+const emptyCoverage = (): Coverage => ({ jobs: new Map(), strata: new Set(), cells: new Set(), food: new Set(), canopy: [...canopyOf([])] });
 function add(cov: Coverage, i: Info) {
   for (const j of i.jobs) cov.jobs.set(j, (cov.jobs.get(j) ?? 0) + 1);
   if (i.jobs.includes('feeds_you')) for (const p of i.span) cov.food.add(p);
   if (i.stratum) cov.strata.add(i.stratum);
   for (const c of i.cells) cov.cells.add(c);
+  raise(cov.canopy, i.taxon);
 }
 const coverageOf = (infos: Info[]) => { const cov = emptyCoverage(); for (const i of infos) add(cov, i); return cov; };
 
@@ -101,24 +104,25 @@ const byName = (a: Taxon, b: Taxon) =>
   a.canonical_name < b.canonical_name ? -1 : a.canonical_name > b.canonical_name ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 const byKnownThenName = (a: Taxon, b: Taxon) => known(b) - known(a) || byName(a, b);
 
-// The site answers a plant misfits beside members growing in `strataCount` (counts per stratum,
-// itself included when it is one of them).
-function misfitsAmong(i: Info, site: Site, above: Iterable<Stratum>): SiteKey[] {
-  if (!i.fit.misfits.length) return [];
-  return shadedBy(i.taxon, site, above) ? i.fit.misfits.filter((k) => k !== 'light') : [...i.fit.misfits];
-}
-
 const TOXIC = new Set(['Moderate', 'Severe']);
 
-// One flag per other member for its worst conflict, then misfit, invasive and toxicity flags.
-function flagsWith(i: Info, othersStrata: Iterable<Stratum>, found: { other: PlantId; severity: Flag['severity'] | null }[], ctx: FlagContext): Flag[] {
+// A conflict found for a plant: the other member and the row (severity, type, agent, note).
+interface Found { other: PlantId; c: Conflict }
+const rank = (s: Flag['severity'] | null | undefined) => (s === 'high' ? 3 : s === 'medium' ? 2 : s === 'low' ? 1 : 0);
+
+// One flag per other member for its worst conflict (first row on ties), then misfit, invasive and
+// toxicity flags. `canopy`: the other members' (a plant never shades itself).
+function flagsWith(i: Info, canopy: Canopy, found: Found[], ctx: FlagContext): Flag[] {
   const id = i.taxon.id, out: Flag[] = [];
-  const rank = (s: Flag['severity'] | null | undefined) => (s === 'high' ? 3 : s === 'medium' ? 2 : s === 'low' ? 1 : 0);
-  const worst = new Map<PlantId, Flag['severity'] | null>();
-  for (const c of found) if (!worst.has(c.other) || rank(c.severity) > rank(worst.get(c.other))) worst.set(c.other, c.severity);
-  for (const [other, severity] of worst) out.push(severity ? { id, kind: 'conflict', other, severity } : { id, kind: 'conflict', other });
-  if (misfitsAmong(i, ctx.site, othersStrata).length) out.push({ id, kind: 'misfit' });
-  if (invasiveIn(i.taxon, ctx.country, ctx.countryChecked) === true) out.push({ id, kind: 'invasive' });
+  const worst = new Map<PlantId, Conflict>();
+  for (const f of found) { const w = worst.get(f.other); if (!w || rank(f.c.severity) > rank(w.severity)) worst.set(f.other, f.c); }
+  for (const [other, c] of worst) {
+    const flag: Flag = { id, kind: 'conflict', other };
+    if (c.severity) flag.severity = c.severity;
+    out.push(Object.assign(flag, { type: c.type, agent: c.agent, note: c.note }));
+  }
+  if (misfitsBeside(i.taxon, ctx.site, canopy, i.fit).length) out.push({ id, kind: 'misfit' });
+  if (invasiveIn(i.taxon, ctx.country, ctx.countryStatus === 'checked') === true) out.push({ id, kind: 'invasive' });
   const tox = i.taxon.warnings.toxicity?.level;
   if (tox && TOXIC.has(tox)) out.push({ id, kind: 'toxicity' });
   return out;
@@ -127,30 +131,27 @@ function flagsWith(i: Info, othersStrata: Iterable<Stratum>, found: { other: Pla
 // The flags a plant would carry beside these members (it is left out of them if it is one).
 export function flagsFor(taxon: Taxon, others: Taxon[], ctx: FlagContext): Flag[] {
   const rest = others.filter((o) => o.id !== taxon.id);
-  const found = conflictsOf(taxon, rest, ctx.interactions).map((c) => ({ other: c.a.id === taxon.id ? c.b.id : c.a.id, severity: c.severity }));
-  return flagsWith(infoOf(taxon, ctx.site), rest.flatMap((o) => (o.stratum ? [o.stratum.value] : [])), found, ctx);
+  const found = conflictsOf(taxon, rest, ctx.interactions).map((c) => ({ other: c.a.id === taxon.id ? c.b.id : c.a.id, c }));
+  return flagsWith(infoOf(taxon, ctx.site), canopyOf(rest), found, ctx);
 }
 
 // Every member's flags (store.ts `flags`). Conflicts are matched once for the whole consortium, so
 // 200 members stay within the recompute budget (design check §8).
 export function flagsOf(members: Taxon[], ctx: FlagContext): Flag[] {
-  const byId = new Map<PlantId, { other: PlantId; severity: Flag['severity'] | null }[]>();
+  const byId = new Map<PlantId, Found[]>();
   for (const c of conflicts(members, ctx.interactions)) {
     if (!byId.has(c.a.id)) byId.set(c.a.id, []);
     if (!byId.has(c.b.id)) byId.set(c.b.id, []);
-    byId.get(c.a.id)!.push({ other: c.b.id, severity: c.severity });
-    byId.get(c.b.id)!.push({ other: c.a.id, severity: c.severity });
+    byId.get(c.a.id)!.push({ other: c.b.id, c });
+    byId.get(c.b.id)!.push({ other: c.a.id, c });
   }
-  // A member is shaded when another member grows in a stratum above its own.
-  const count = new Map<Stratum, number>();
-  for (const m of members) if (m.stratum) count.set(m.stratum.value, (count.get(m.stratum.value) ?? 0) + 1);
+  // One canopy for all: a member is shaded only by a higher stratum, so its own entry never counts.
+  const canopy = canopyOf(members);
   const out: Flag[] = [], seen = new Set<PlantId>();
   for (const m of members) {
     if (seen.has(m.id)) continue;
     seen.add(m.id);
-    const own = m.stratum?.value;
-    const above = strata.filter((s) => (count.get(s) ?? 0) > (s === own ? 1 : 0));
-    out.push(...flagsWith(infoOf(m, ctx.site), above, byId.get(m.id) ?? [], ctx));
+    out.push(...flagsWith(infoOf(m, ctx.site), canopy, byId.get(m.id) ?? [], ctx));
   }
   return out;
 }
@@ -188,14 +189,14 @@ export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
   const cov = coverageOf(chosen);
 
   // A plant whose only misfit is the light may still join under a canopy, checked at each pick.
-  const lightOnly = (i: Info) => i.fit.misfits.length === 1 && i.fit.misfits[0] === 'light' && shadedBy(i.taxon, site, strata);
+  const lightOnly = (i: Info) => i.fit.misfits.length === 1 && i.fit.misfits[0] === 'light' && shadedBy(i.taxon, site, FULL_CANOPY);
   const candidates = infos.filter((i) => !memberIds.has(i.taxon.id) && !removedIds.has(i.taxon.id) && (!i.fit.misfits.length || lightOnly(i)));
 
   while (chosen.length < limit) {
     let best: Info | null = null, bestGain = -Infinity;
     for (const i of candidates) {
       if (memberIds.has(i.taxon.id)) continue;
-      if (i.fit.misfits.length && misfitsAmong(i, site, cov.strata).length) continue;
+      if (i.fit.misfits.length && misfitsBeside(i.taxon, site, cov.canopy, i.fit).length) continue;
       const p = partners.get(i.taxon.id);
       if (p) { let clash = false; for (const id of p) if (memberIds.has(id)) { clash = true; break; } if (clash) continue; }
       const t = tenths(i, cov);

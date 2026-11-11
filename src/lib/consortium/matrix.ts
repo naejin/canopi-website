@@ -12,7 +12,7 @@
 // Gap and misfit cells cannot be filled here and never count against the reader in the fill meter.
 import type { ClimateZone, Matrix, MatrixCell, Phase, PhaseOrd, PlantId, Site, SiteKey, Stratum, Taxon, CellRef } from './types.ts';
 import { phases, strata } from './types.ts';
-import { fits, misfitsBeside } from './site.ts';
+import { canopyOf, fits, misfitsBeside } from './site.ts';
 import { phaseSpan } from './jobs.ts';
 
 export const phaseOrd = (p: Phase): PhaseOrd => phases.indexOf(p) as PhaseOrd;
@@ -21,6 +21,12 @@ export const phaseOrd = (p: Phase): PhaseOrd => phases.indexOf(p) as PhaseOrd;
 export function cellsOf(taxon: Taxon): CellRef[] {
   const s = taxon.stratum?.value;
   return s ? phaseSpan(taxon).map((p) => [s, p] as const) : [];
+}
+
+// The cell a plant is listed under (each plant once, under its start; null when it has no placement).
+export function startCell(taxon: Taxon): CellRef | null {
+  const s = taxon.stratum?.value;
+  return s && taxon.phases ? [s, phaseOrd(taxon.phases.start)] : null;
 }
 
 export const cellKey = (stratum: Stratum, phase: number): number => strata.indexOf(stratum) * 7 + phase;
@@ -35,14 +41,8 @@ export function plantsIn(pool: Taxon[], stratum: Stratum, phase: number): Taxon[
   return pool.filter((t) => spans(t, stratum, phase));
 }
 
-export const strataOf = (taxa: Iterable<Taxon>): Stratum[] => {
-  const out: Stratum[] = [];
-  for (const t of taxa) if (t.stratum) out.push(t.stratum.value);
-  return out;
-};
-
 export function buildMatrix(climate: ClimateZone, pool: Taxon[], members: Taxon[], site: Site): Matrix {
-  const memberStrata = strataOf(members);
+  const canopy = canopyOf(members);
   const inList = new Array<number>(28).fill(0), fitting = new Array<number>(28).fill(0);
   const reasons: Partial<Record<SiteKey, number>>[] = Array.from({ length: 28 }, () => ({}));
   const unplaced: PlantId[] = [];
@@ -50,7 +50,7 @@ export function buildMatrix(climate: ClimateZone, pool: Taxon[], members: Taxon[
     const cells = cellsOf(t);
     if (!cells.length) { unplaced.push(t.id); continue; }
     const fit = fits(t, site);
-    const misfits = fit.misfits.length ? misfitsBeside(t, site, memberStrata, fit) : [];
+    const misfits = fit.misfits.length ? misfitsBeside(t, site, canopy, fit) : [];
     for (const [s, p] of cells) {
       const k = cellKey(s, p);
       inList[k]++;

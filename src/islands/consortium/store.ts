@@ -6,7 +6,7 @@
 // S1 conflicts and site).
 import { computed, effect, signal } from '@preact/signals';
 import type { ClimateZone, Flag, FlagContext, Interaction, Matrix, PhaseOrd, PlantId, Site, Taxon } from '../../lib/consortium/index.ts';
-import { buildMatrix, flagsOf, suggest } from '../../lib/consortium/index.ts';
+import { buildMatrix, countryStatus, flagsOf, suggest } from '../../lib/consortium/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 
 // Where the country came from: the reader chose it, a link carried it, or the page guessed it from
@@ -70,14 +70,15 @@ export const memberTaxa = computed<Taxon[]>(() => {
   for (const g of guestTaxa.value) if (!byId.has(g.id)) byId.set(g.id, g);
   return members.value.flatMap((id) => byId.get(id) ?? []);
 });
-// What the flags read: the site, the climate's interactions and the chosen country.
+// What the flags read: the site, the climate's interactions and the chosen country with its
+// countryStatus ('none', 'checked' or 'unchecked': no country is not "not checked").
 export const flagContext = computed<FlagContext>(() => {
   const code = country.value.code;
   return {
     site: site.value,
     interactions: (climate.value && interactionSets.value[climate.value]) || [],
     country: code,
-    countryChecked: code ? source.value?.countries().get(code)?.invasiveChecked === true : false,
+    countryStatus: countryStatus(code, source.value?.countries() ?? new Map()),
   };
 });
 // The strata × phases matrix of the members on this site (core matrix.ts).

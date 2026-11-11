@@ -253,7 +253,7 @@ test('real install: opens with the index, every pool and image path, cell counts
     const temperate = await src.pool('Temperate');
     const m = core.buildMatrix('Temperate', temperate, [], core.UNSURE_SITE);
     assert.equal(m.rows[3].cells[0].empty, 'gap', 'real Temperate low × first 90 days is a data gap');
-    const s = core.suggest(temperate, { site: core.UNSURE_SITE, interactions: await src.interactions('Temperate'), country: null, countryChecked: false });
+    const s = core.suggest(temperate, { site: core.UNSURE_SITE, interactions: await src.interactions('Temperate'), country: null, countryStatus: 'none' });
     assert.equal(s.members.length, 9, 'A7: Room unsure suggests 9');
     const names = await src.names('fr');
     assert.ok(searchIndex(names)('chataig').length >= 1);

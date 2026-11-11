@@ -5,7 +5,7 @@
 // `intercropped_yield_gain` rows two species grown together with a yield gain in field trials; both
 // are good news, not conflicts, so conflicts() and conflictsOf() leave them out. pairings() gives the
 // yield-gain pairs, for display only: nothing in the suggestion reads them.
-import type { AgentNames, Interaction, InteractionType, Severity, Taxon, TaxonRef, Text } from './types.ts';
+import type { AgentNames, CountryStatus, Interaction, InteractionType, Severity, Taxon, TaxonRef, Text } from './types.ts';
 
 export interface Conflict {
   a: Taxon; // matches the row's subject
@@ -97,6 +97,15 @@ export const isSerious = (c: Pick<Conflict, 'severity'>): boolean => c.severity 
 // for this taxon, a country GRIIS did not check, or no country given. `checked` is the manifest's
 // PlantSource.countries().get(code).invasiveChecked and must be given as true for a "false": a caller that leaves it
 // out gets null, so "not checked" is never told as "none" (review m7).
+// Whether the reader's country (ISO alpha-2, any case) was checked for invasives
+// (PlantSource.countries()): 'none' when no country is given, 'unchecked' when it is not listed or
+// its check is not done.
+export function countryStatus(code: string | null | undefined, countries: ReadonlyMap<string, { invasiveChecked: boolean }>): CountryStatus {
+  const c = code?.trim().toUpperCase();
+  if (!c) return 'none';
+  return countries.get(c)?.invasiveChecked === true ? 'checked' : 'unchecked';
+}
+
 export function invasiveIn(taxon: Taxon, country: string | null | undefined, checked?: boolean): boolean | null {
   const list = taxon.warnings.invasive_in;
   if (!country || list === null || checked !== true) return null;

@@ -13,9 +13,9 @@ import { gunzipSync } from 'node:zlib';
 const core = await import('../src/lib/consortium/index.ts');
 const {
   fits, misfitsBeside, ROOM_LIMIT_M, UNSURE_SITE,
-  conflicts, isSerious, invasiveIn, pairings,
+  conflicts, isSerious, invasiveIn, pairings, countryStatus,
   jobsOf, jobGapsByPhase, jobIds,
-  buildMatrix, cellsOf, phaseOrd, plantsIn,
+  buildMatrix, cellsOf, phaseOrd, plantsIn, startCell,
   suggest, SIZE_LIMIT, gain, flagsFor, flagsOf, asks, alternatives,
   encodeLink, decodeLink, linkClimates, readPreset, LINK_VERSION, MAX_LINK_IDS, LONG_LINK, tokenOf, isLongLink, MAX_CROPS,
   strata, phases,
@@ -60,7 +60,7 @@ function make({ name, stratum = 'medium', start = 0, end = 6, role = 'support', 
   };
 }
 const site = (over = {}) => ({ ...UNSURE_SITE, ...over });
-const ctx = (over = {}) => ({ site: site(), interactions: [], country: null, countryChecked: false, ...over });
+const ctx = (over = {}) => ({ site: site(), interactions: [], country: null, countryStatus: 'none', ...over });
 
 // ================= site =================
 
@@ -126,14 +126,27 @@ test('site: room uses the wild maximum height only ("can grow over N m in the wi
   assert.deepEqual(fits(T('Phacelia tanacetifolia'), site({ room: 'small' })).unknowns, ['room']);
 });
 
-test('site: a misfit beats an unknown; a lower layer is not a light misfit under a member above it on a sunny site', () => {
-  const p = make({ stratum: 'low', traits: { sun: false, height_m: { min: 0.1, max: 0.2 } } });
+test('site: a misfit beats an unknown; a lower layer is not a light misfit under a member above it in a shared phase on a sunny site', () => {
+  const p = make({ stratum: 'low', start: 0, end: 2, traits: { sun: false, height_m: { min: 0.1, max: 0.2 } } });
   assert.equal(fits(p, site({ light: 'sun', water: 'dry' })).verdict, 'misfit');
-  assert.deepEqual(misfitsBeside(p, site({ light: 'sun' }), []), ['light']);
-  assert.deepEqual(misfitsBeside(p, site({ light: 'sun' }), ['high']), []);
+  const sun = site({ light: 'sun' });
+  assert.deepEqual(misfitsBeside(p, sun, []), ['light']);
+  assert.deepEqual(misfitsBeside(p, sun, [make({ stratum: 'high', start: 2, end: 6 })]), [], 'shaded in placenta III');
+  assert.deepEqual(misfitsBeside(p, sun, [make({ stratum: 'high', start: 3, end: 6 })]), ['light'], 'no shared phase: nothing above it while it grows');
+  assert.deepEqual(misfitsBeside(p, sun, [make({ stratum: 'low', start: 0, end: 6 })]), ['light'], 'the same layer does not shade');
   const tall = make({ stratum: 'high', traits: { sun: false } });
-  assert.deepEqual(misfitsBeside(tall, site({ light: 'sun' }), ['emergent']), ['light'], 'only medium and low are shaded');
-  assert.deepEqual(misfitsBeside(p, site({ light: 'part' }), ['high']), [], 'part shade: sun false is no part-shade misfit by itself');
+  assert.deepEqual(misfitsBeside(tall, sun, [make({ stratum: 'emergent' })]), ['light'], 'only medium and low are shaded');
+  assert.deepEqual(misfitsBeside(p, site({ light: 'part' }), []), [], 'part shade: sun false is no part-shade misfit by itself');
+  // The matrix and the flags read the same rule.
+  const m = buildMatrix('Temperate', [p], [make({ stratum: 'high', start: 3, end: 6 })], sun);
+  assert.equal(m.rows[3].cells[0].empty, 'misfit');
+  assert.equal(buildMatrix('Temperate', [p], [make({ stratum: 'high', start: 0, end: 0 })], sun).rows[3].cells[0].empty, null);
+  assert.deepEqual(flagsOf([p, make({ stratum: 'high', start: 4, end: 6 })], ctx({ site: sun })).filter((f) => f.kind === 'misfit').map((f) => f.id), [p.id]);
+  assert.deepEqual(flagsOf([p, make({ stratum: 'high', start: 1, end: 6 })], ctx({ site: sun })).filter((f) => f.kind === 'misfit'), []);
+  // suggest: kept above it in a shared phase, it may join; with no shared phase it is never picked.
+  const late = make({ stratum: 'high', start: 3, end: 6 }), early = make({ stratum: 'high', start: 0, end: 6 });
+  assert.ok(!suggest([p, late], ctx({ site: sun, kept: [late.id] })).members.includes(p.id));
+  assert.ok(suggest([p, early], ctx({ site: sun, kept: [early.id] })).members.includes(p.id));
 });
 
 // ================= conflicts =================
@@ -154,6 +167,14 @@ test('conflicts: ranks match, good news is never a conflict, and serious means h
   const pairs2 = pairings(T('Malus domestica'), members, temperateInteractions);
   assert.deepEqual(pairs2.map((p) => p.other.canonical_name), ['Trifolium repens']);
   assert.ok(!temperateInteractions.some((i) => i.type === 'intercropped_yield_gain' && i.climate_zone === 'Tropical'));
+});
+
+test('conflicts: countryStatus keeps "no country" apart from "not checked"', () => {
+  const countries = new Map([['FR', { invasiveChecked: true }], ['TW', { invasiveChecked: false }]]);
+  assert.equal(countryStatus(null, countries), 'none');
+  assert.equal(countryStatus('fr', countries), 'checked');
+  assert.equal(countryStatus('TW', countries), 'unchecked');
+  assert.equal(countryStatus('XX', countries), 'unchecked');
 });
 
 test('conflicts: invasiveIn says "not checked" (null) unless the country was checked', () => {
@@ -211,6 +232,8 @@ test('matrix: one plant fills every cell from its start to its end phase in its 
   const chestnut = T('Castanea sativa'); // emergent, secondary I → climax
   assert.deepEqual(cellsOf(chestnut), [['emergent', 3], ['emergent', 4], ['emergent', 5], ['emergent', 6]]);
   assert.equal(phaseOrd('climax'), 6);
+  assert.deepEqual(startCell(chestnut), ['emergent', 3], 'each plant is listed once under its start cell');
+  assert.equal(startCell(byName(mediterranean, 'Zingiber officinale')), null);
   const m = buildMatrix('Temperate', temperate, [chestnut], UNSURE_SITE);
   const row = m.rows.find((r) => r.stratum === 'emergent');
   assert.deepEqual(row.cells.map((c) => c.members.length), [0, 0, 0, 1, 1, 1, 1]);
@@ -308,7 +331,7 @@ test('suggest: a kept guest counts for coverage; a guest is never picked', () =>
 });
 
 test('flags: a misfit and a high conflict ask before Add or Swap; invasive, toxicity and medium conflicts only warn', () => {
-  const c = ctx({ interactions: temperateInteractions, country: 'FR', countryChecked: true, site: site({ room: 'small' }) });
+  const c = ctx({ interactions: temperateInteractions, country: 'FR', countryStatus: 'checked', site: site({ room: 'small' }) });
   const robinia = T('Robinia pseudoacacia'); // invasive in FR, Severe, 12–25 m
   const fl = flagsFor(robinia, [], c);
   assert.deepEqual(fl.map((f) => f.kind).sort(), ['invasive', 'misfit', 'toxicity']);
@@ -316,16 +339,20 @@ test('flags: a misfit and a high conflict ask before Add or Swap; invasive, toxi
   assert.equal(asks(flagsFor(robinia, [], { ...c, site: UNSURE_SITE })), false, 'invasive and toxicity never ask');
   const malus = T('Malus domestica'), walnut = T('Juglans regia'), hazel = T('Corylus avellana'), chestnut = T('Castanea sativa');
   const high = flagsFor(malus, [walnut], { ...c, site: UNSURE_SITE });
-  assert.deepEqual(high, [{ id: malus.id, kind: 'conflict', other: walnut.id, severity: 'high' }]);
+  assert.deepEqual(high, [{ id: malus.id, kind: 'conflict', other: walnut.id, severity: 'high', type: 'allelopathic_harm', agent: null,
+    note: { en: 'Juglone from walnut roots stunts apples planted under its crown.', fr: 'La juglone des racines du noyer freine les pommiers plantés sous sa couronne.' } }]);
   assert.equal(asks(high), true);
   const medium = flagsFor(hazel, [chestnut], { ...c, site: UNSURE_SITE });
-  assert.deepEqual(medium, [{ id: hazel.id, kind: 'conflict', other: chestnut.id, severity: 'medium' }]);
+  assert.deepEqual(medium, [{ id: hazel.id, kind: 'conflict', other: chestnut.id, severity: 'medium', type: 'shared_pest', agent: 'Curculio nucum', note: null }]);
+  // Low conflicts are flags too; views decide what to show (they leave low out of chips).
+  const low = flagsFor(T('Ribes nigrum'), [T('Rubus idaeus')], { ...c, site: UNSURE_SITE });
+  assert.deepEqual(low.map((f) => f.severity), ['low']);
   assert.equal(asks(medium), false);
   const all = flagsOf([malus, walnut], { ...c, site: UNSURE_SITE });
   assert.deepEqual(all.map((f) => `${f.id === malus.id ? 'malus' : 'walnut'} ${f.kind}`).sort(), ['malus conflict', 'walnut conflict']);
   // No country: no invasive flag (the soft worldwide count is the view's).
   assert.ok(!flagsFor(robinia, [], { ...c, country: null }).some((f) => f.kind === 'invasive'));
-  assert.ok(!flagsFor(robinia, [], { ...c, country: 'TW', countryChecked: false }).some((f) => f.kind === 'invasive'));
+  assert.ok(!flagsFor(robinia, [], { ...c, country: 'TW', countryStatus: 'unchecked' }).some((f) => f.kind === 'invasive'));
 });
 
 test('alternatives: "Also fills" and "Leaves empty" are the cells a swap changes', () => {
@@ -469,7 +496,7 @@ test('recompute: matrix and flags for 200 members, a suggestion and every Swap l
     return { ...t, id: idOf(0x200000 + i), canonical_name: `${t.canonical_name} ${String(i).padStart(3, '0')}` };
   });
   const interactions = [...temperateInteractions];
-  const c = ctx({ interactions, country: 'FR', countryChecked: true, site: site({ light: 'sun', soil: 'neutral', room: 'large' }) });
+  const c = ctx({ interactions, country: 'FR', countryStatus: 'checked', site: site({ light: 'sun', soil: 'neutral', room: 'large' }) });
   const run = (pool) => {
     const m = buildMatrix('Temperate', pool, pool, c.site);
     const f = flagsOf(pool, c);

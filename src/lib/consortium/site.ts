@@ -15,13 +15,14 @@
 //   drought_tolerance High, or moisture_use Low when drought tolerance is unknown); it fits when
 //   well_drained is false, moisture_use is High or drought tolerance is known and not High. Average
 //   checks nothing.
-import type { Fit, FitReason, Site, SiteKey, Stratum, Taxon, Traits, Verdict } from './types.ts';
 // - room: small garden ≤ 6 m, large garden ≤ 12 m, for the height only (the question asks how tall;
 //   mockup app.js:213). Catalog heights are wild maximums, so a taller plant "can grow over N m in the
 //   wild" (a misfit the reader may still choose, pruning it); a missing height is "height not
 //   recorded" (unknown). A climber's recorded size can be a runner length (decision row "Side view"
 //   2026-10-28), so its room verdict is unknown ('climber'). A field takes any size.
+import type { Fit, FitReason, PhaseOrd, Site, SiteKey, Stratum, Taxon, Traits, Verdict } from './types.ts';
 import { siteKeys, strata } from './types.ts';
+import { phaseSpan } from './jobs.ts';
 
 // Every answer "Not sure": the site the page starts from (A7).
 export const UNSURE_SITE: Site = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
@@ -92,20 +93,43 @@ export function fits(taxon: Taxon, site: Site): Fit {
 
 // A lower layer under a canopy (v1 rule, coordinator row "Scale build, coordinator choices"
 // 2026-10-28): on a sunny site, a medium or low plant that does not take full sun is not a light
-// misfit while another member grows in a layer above it. The flags, the matrix and the suggestion all
-// read this, so a plant the flags would not mark is a candidate and one they would is not.
+// misfit while another member grows in a layer above it in at least one phase the two share. The
+// flags, the matrix and the suggestion all read this, so a plant the flags would not mark is a
+// candidate and one they would is not.
+//
+// A Canopy is, per phase, the highest stratum (its index in `strata`, 0 = emergent) any member grows
+// in, or 4 when none: built once, it answers "shaded?" for every plant of a pool in 7 steps.
+export type Canopy = readonly number[];
+const NONE = strata.length;
+export function canopyOf(taxa: Iterable<Taxon>): Canopy {
+  const top = new Array<number>(7).fill(NONE);
+  for (const t of taxa) raise(top, t);
+  return top;
+}
+// Adds one plant to a canopy being built (suggest.ts grows it pick by pick).
+export function raise(top: number[], t: Taxon): void {
+  const s = t.stratum?.value;
+  if (!s) return;
+  const at = strata.indexOf(s);
+  for (const p of phaseSpan(t)) if (at < top[p]) top[p] = at;
+}
+// Every stratum in every phase: whether a plant could be shaded by some member at all.
+export const FULL_CANOPY: Canopy = new Array<number>(7).fill(0);
+
 const SHADED: ReadonlySet<Stratum> = new Set<Stratum>(['medium', 'low']);
-export function shadedBy(taxon: Taxon, site: Site, strataOfOthers: Iterable<Stratum>): boolean {
+export function shadedBy(taxon: Taxon, site: Site, canopy: Canopy): boolean {
   const own = taxon.stratum?.value;
   if (site.light !== 'sun' || !own || !SHADED.has(own)) return false;
   const at = strata.indexOf(own);
-  for (const s of strataOfOthers) if (strata.indexOf(s) < at) return true;
-  return false;
+  return phaseSpan(taxon).some((p: PhaseOrd) => canopy[p] < at);
 }
 
-// The site answers a plant misfits beside the other members: its own misfits, less the light where a
-// layer above it shades it. `fit` may be passed when already computed.
-export function misfitsBeside(taxon: Taxon, site: Site, strataOfOthers: Iterable<Stratum>, fit: Fit = fits(taxon, site)): SiteKey[] {
+// The site answers a plant misfits beside the other members (a Canopy, or the members themselves):
+// its own misfits, less the light where a layer above it in a shared phase shades it. A plant never
+// shades itself (only a higher stratum shades). `fit` may be passed when already computed.
+export function misfitsBeside(taxon: Taxon, site: Site, others: Canopy | Iterable<Taxon>, fit: Fit = fits(taxon, site)): SiteKey[] {
   if (!fit.misfits.length) return [];
-  return shadedBy(taxon, site, strataOfOthers) ? fit.misfits.filter((k) => k !== 'light') : [...fit.misfits];
+  const canopy = isCanopy(others) ? others : canopyOf(others);
+  return shadedBy(taxon, site, canopy) ? fit.misfits.filter((k) => k !== 'light') : [...fit.misfits];
 }
+const isCanopy = (x: Canopy | Iterable<Taxon>): x is Canopy => Array.isArray(x) && (x.length === 0 ? false : typeof x[0] === 'number');
