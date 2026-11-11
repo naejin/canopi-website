@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: Phases, order, exits and session brief for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate.
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:15:29Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:25:29Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -67,7 +67,8 @@ Each phase ships on its own. Repos: W website, D canopi-data, C canopi-climate.
 
 ### P5.1 (W) — filters in Add (owner, 2026-11-11)
 - **Goal for users:** opened from "Add plants", Add can be narrowed like the plant list instead of being one long list plus a search box.
-- **Built:** the plant list's Layer, Stage and Job filters reused in Add (one filter component); a range filter "within range" (default with a location) / "near the edge" / "show all" over P5's one range rule; "native here" once S5e has merged; uses or size only if the export carries them cleanly (design-check row). Context openings ("+ Add" on a cell, a job, "Show them anyway") preset the filters instead of a separate path.
+- **Built:** per the decision row "Filters in Add (P5.1)": one filter rule and component for Add and the plant list; range filter within / near the edge / all; visible "Fits your site"; Native here, Life cycle, Has edible parts, Evergreen (with unknown counts) and Nitrogen fixer.
+- **canopi-data first (its next release, before the P5.1 build):** one reconciled nitrogen-fixer value (trait vs soil-feeding function) used by the filter and the "Feeds the soil" job; evergreen filled where sources allow; the export carries both. Context openings ("+ Add" on a cell, a job, "Show them anyway") preset the filters instead of a separate path.
 - **How:** design check while the P5 streams finish (read-only); build after the P5 push (Add is edited by S5c and S5e); bug and conformance review, fix rounds until clean; coherent with P7a's site adjustments (the range filter reads the adjusted site).
 - **Order:** after the P5 push, before P7a.
 
