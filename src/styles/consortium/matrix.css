@@ -142,7 +142,14 @@
 .ct .ct-cell-count { margin: 0 8px 4px; font-size: 13px; font-weight: 600; color: var(--text-secondary); }
 .ct .ct-more-cell { margin: 4px 6px 0; font-size: 13px; }
 
-/* ---------- Matrix (phone) ---------- */
+/* ---------- Matrix (phone) ----------
+   The phone grid and stage stepper show below 960 px (StageStepper.tsx `phone`; UX audit fix 3), so
+   their rules hang on .ct-phone, not on the 639 px query: a tablet or split screen gets them too. */
+.ct .ct-mx-empty.is-phone { grid-template-columns: 1fr; }
+/* At tablet widths the overview keeps its phone proportions, its labels beside the cells. */
+.ct .ct-phone table.ct-mini { max-width: 540px; }
+.ct .ct-phone :is(.ct-explain-btn, .ct-add-cell) { min-height: 40px; }
+.ct .ct-phone .ct-link-button { min-height: 40px; display: inline-flex; align-items: center; }
 .ct table.ct-mini { border-collapse: separate; border-spacing: 2px; width: calc(100% + 20px); margin-inline: -10px; table-layout: fixed; }
 .ct table.ct-mini caption { text-align: start; font-size: 14px; color: var(--text-secondary); padding: 0 10px 6px; display: table-caption; }
 .ct table.ct-mini caption .ct-fill { margin-bottom: 4px; font-size: 14px; gap: 4px 10px; }
@@ -268,7 +275,9 @@
 .ct .ct-mchip .ct-sc { font-size: 12.5px; }
 .ct .ct-jgap { color: var(--text); display: grid; gap: 6px; padding: 8px 10px; border: 1.5px dashed var(--border-strong); border-radius: var(--cell-radius); font-size: 15px; }
 .ct .ct-jgap strong { font-weight: 600; }
-.ct .ct-phasegap { font-size: 13.5px; color: var(--text-secondary); margin: 6px 0 0; }
+.ct .ct-phasegap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13.5px; color: var(--text-secondary); margin: 6px 0 0; }
+.ct .ct-phasegap p { flex: 1 1 100%; margin: 0; }
+.ct .ct-phasegap .button { white-space: normal; text-align: start; }
 .ct .ct-stagestrip { width: 120px; margin-top: 6px; }
 
 /* ---------- Plant list ---------- */
@@ -318,7 +327,6 @@
   /* Primary controls on a phone: 40 px at least (W6). */
   .ct .ct-btn-sm, .ct .ct-quiet, .ct .ct-mchip { min-height: 40px; }
   .ct .ct-lname-btn { display: inline-flex; align-items: center; min-height: 40px; }
-  .ct .ct-mx-empty { grid-template-columns: 1fr; }
   .ct .ct-link-button { min-height: 40px; display: inline-flex; align-items: center; }
   .ct .ct-sv { padding: 12px; }
   .ct .ct-sv h2 { font-size: 19px; }

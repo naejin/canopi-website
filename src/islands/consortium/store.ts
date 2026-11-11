@@ -267,7 +267,9 @@ export function suggestMembers(): boolean {
 // What a sheet was opened for. Add reads it: a cell or a run of cells of one layer ("+ Add" in a free
 // cell, "Show them anyway" on a blocked cell or run), a job ("Find a soil feeder"), and `anyway`:
 // every plant of the cell, misfits included and flagged, where "+ Add" lists only the plants that fit.
-export interface CellSpan { stratum: Stratum; from: PhaseOrd; to: PhaseOrd }
+// A job's stage gap (Jobs: "Find a soil feeder for Years 15–25 → 60 years on") is a job with a run of
+// stages in any layer: stratum null.
+export interface CellSpan { stratum: Stratum | null; from: PhaseOrd; to: PhaseOrd }
 export interface SheetFor { cell: CellSpan | null; job: JobId | null; anyway: boolean }
 export const FOR_NOTHING: SheetFor = { cell: null, job: null, anyway: false };
 export const sheetCell = signal<SheetFor>(FOR_NOTHING);

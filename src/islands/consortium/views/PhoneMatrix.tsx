@@ -1,6 +1,6 @@
 /** @jsxImportSource preact */
-// The matrix on a phone (max-width 639px; mockup 02 at 390 px, NOTES "Phone pattern"; owner-facing
-// row "v2 mockup choices" 2026-11-11): an overview grid, a real 4 × 7 table whose cells are buttons of
+// The matrix on a phone, a tablet or a split screen (below 960 px, StageStepper.tsx `phone`; mockup
+// 02 at 390 px, NOTES "Phone pattern"; owner-facing row "v2 mockup choices" 2026-11-11): an overview grid, a real 4 × 7 table whose cells are buttons of
 // at least 41 × 40 px showing a count ("+" free, "–" nothing can go here), with its legend right
 // under it; then the stage stepper; then the four layers of the chosen stage as cards, each plant a
 // row with its stage bar (owner row 2026-10-28: phone rows show the stage bar). Tapping a cell jumps
@@ -14,7 +14,7 @@ import { P, T } from '../strings.ts';
 import { PHASE_ORDS, SHARE_AIM, spans } from './tracks.ts';
 import { ChevronIcon, Explain, Marks, StageBar, byName, cellName, layerName, nameOf, openDetails, phasePlain, plantLabel } from './StageBar.tsx';
 import { StageStepper } from './StageStepper.tsx';
-import { CellReason, EmptyNotice, FillMeter, FreeCell, FutureSlot, GlyphKey } from './Matrix.tsx';
+import { CellReason, EmptyNotice, FillMeter, FreeCell, GlyphKey } from './Matrix.tsx';
 
 const kindOf = (cell: MatrixCell, empty: boolean) => (cell.empty ? 'cannot' : empty ? 'potential' : cell.members.length ? 'filled' : 'free');
 
@@ -81,7 +81,6 @@ export function PhoneMatrix() {
       <button type="button" class="ct-back" onClick={back}>{T('matrix.back')}</button>
       <div class="ct-explains"><Explain kind="layer" /><Explain kind="stage" /></div>
       <GlyphKey />
-      <FutureSlot />
     </div>
   );
 }

@@ -949,13 +949,13 @@ test('P5-26e (S5c borrowed climate, range chunk offline, fix review 29b709e 2): 
   assert.equal(await page.evaluate(async () => { const { store } = window.__ctTest; await store.loadPool('Arid'); return store.suggestMembers(); }), false, 'suggestMembers refuses');
 });
 
-test('P5-26f (S5c empty matrix on a borrowed list without a location, fix review 29b709e 3): its Suggest is the needs-location line', { todo: 'S5c: waits for hand-off H-S5c-6 (Matrix.tsx EmptyNotice renders PoolSlot NeedsSite)' }, async () => {
+test('P5-26f (S5c empty matrix on a borrowed list without a location, fix review 29b709e 3): its Suggest is the needs-location line', async () => {
   const page = await tool({ hash: '#v=4&c=subtropical&a=&e=1' });
   assert.ok(await has(page, '.ct-mx-empty', 15_000), 'the empty matrix');
   assert.ok(await has(page, '.ct-mx-empty [data-needs-site]', 5_000), 'the needs-location line in place of a silent Suggest');
 });
 
-test('P5-26c (S5c card pill, UX audit fix 1): a borrowed climate\'s card says "Needs your location" until a location is given', { todo: 'S5c: waits for hand-off H-S5c-5 (Start.tsx Climates pill reads PoolSlot cardPill)' }, async () => {
+test('P5-26c (S5c card pill, UX audit fix 1): a borrowed climate\'s card says "Needs your location" until a location is given', async () => {
   const page = await tool();
   const pill = (v) => page.$eval(`input[name="ct-climate"][value="${v}"] ~ .ct-card-desc .ct-pill`, (e) => e.textContent.trim());
   assert.equal(await pill('subtropical'), 'Needs your location');
@@ -1012,6 +1012,30 @@ test('P5-19 (S5d not checked): with no future data for the site the panel says "
   assert.match(await text(page, '[data-future="not-checked"]'), /not checked/);
   assert.equal(await page.$('[data-future-summary]'), null, 'no count that could read as "fine"');
   assert.equal(await page.$('[data-mark="future"]'), null);
+});
+
+test('P5-19b (S5d future panel, hand-off layout shift): the panel lands below Share, Print and Download, and nothing above it moves when it arrives', async () => {
+  for (const width of [1280, 390]) {
+    const page = await tool({ width });
+    await atSite(page, 'lyon');
+    // The after-the-matrix chunk (the panel's shell) waits, so the page is measured before the panel lands.
+    await page.evaluate(() => window.__ctTest.holdLater());
+    await page.click('input[name="ct-climate"][value="temperate"]');
+    const suggest = await page.waitForFunction(() => [...document.querySelectorAll('.ct-cta button')].find((b) => b.textContent.trim() === 'Suggest plants'), { timeout: 10_000 });
+    await suggest.click();
+    assert.ok(await has(page, '.ct-action-row button', 10_000), `${width} px: the action row`);
+    // Document positions of what a reader may be clicking: the tabs, Add plants, the action row's buttons.
+    const spots = () => page.evaluate(() => [...document.querySelectorAll('.ct-tab, .ct-viewbar button, .ct-action-row button')].map((e) => Math.round(e.getBoundingClientRect().top + scrollY)));
+    const before = await spots();
+    assert.equal(await page.$('[data-future]'), null, `${width} px: measured before the panel`);
+    await page.evaluate(() => window.__ctTest.releaseLater());
+    assert.ok(await has(page, '[data-future-summary]', 10_000), `${width} px: the future panel lands`);
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    assert.deepEqual(await spots(), before, `${width} px: the tabs and the actions stay where they were`);
+    const [row, panel] = await page.evaluate(() => [document.querySelector('.ct-action-row').getBoundingClientRect().bottom, document.querySelector('[data-future]').getBoundingClientRect().top]);
+    assert.ok(panel >= row, `${width} px: the panel is below the action row (${panel} < ${row})`);
+    await page.browserContext().close().catch(() => {});
+  }
 });
 
 // ---- S5e: native here and soil likely ----

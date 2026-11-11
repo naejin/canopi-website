@@ -33,14 +33,12 @@ import { phone } from './StageStepper.tsx';
 import { PhoneMatrix } from './PhoneMatrix.tsx';
 import { later, prefetchLater } from './lazy.tsx';
 import { focusView } from '../focus.ts';
+import { NeedsSite, needsSite } from './PoolSlot.tsx';
 
 // The other three views load after the matrix (views/lazy.tsx).
 const { View: SideView } = later(() => import('./later.ts').then((m) => m.SideView));
 const { View: Jobs } = later(() => import('./later.ts').then((m) => m.Jobs));
 const { View: PlantList } = later(() => import('./later.ts').then((m) => m.PlantList));
-// S5d's slot (views/FutureSlot.tsx): idle, so it shows once prefetchLater() has loaded the later chunk
-// and never starts a download before the matrix is marked drawn (§8 timing).
-export const { View: FutureSlot } = later(() => import('./later.ts').then((m) => m.FutureSlot), { idle: true });
 
 type Tab = Exclude<View, 'start'>;
 const TABS: readonly Tab[] = ['matrix', 'side', 'jobs', 'list'];
@@ -108,14 +106,20 @@ export function FillMeter({ m }: { m: MatrixData }) {
   );
 }
 
+// A climate that borrows its plants, without a location (PoolSlot needsSite): no Suggest, which could
+// only refuse (store.suggestMembers); the needs-location line says why, with its way to the location
+// step (hand-off H-S5c-6).
 export function EmptyNotice({ phone: small = false }: { phone?: boolean }) {
+  const z = climate.value, needs = !!z && needsSite(z);
   return (
     <div class={`ct-mnotice ct-mx-empty${small ? ' is-phone' : ''}`}>
-      <div><strong>{T('matrix.empty')}</strong><p>{T('matrix.emptyBody')}</p></div>
-      <div class="ct-row">
-        <button type="button" class="button button-primary" onClick={() => { if (suggestMembers()) { view.value = 'matrix'; focusView(); } }}>{T('matrix.suggest')}</button>
-        {!small && <button type="button" class="button button-secondary" onClick={() => openAdd()}>{T('matrix.addPlant')}</button>}
-      </div>
+      <div><strong>{T('matrix.empty')}</strong><p>{T('matrix.emptyBody')}</p>{needs && <NeedsSite zone={z} />}</div>
+      {(!needs || !small) && (
+        <div class="ct-row">
+          {!needs && <button type="button" class="button button-primary" onClick={() => { if (suggestMembers()) { view.value = 'matrix'; focusView(); } }}>{T('matrix.suggest')}</button>}
+          {!small && <button type="button" class="button button-secondary" onClick={() => openAdd()}>{T('matrix.addPlant')}</button>}
+        </div>
+      )}
     </div>
   );
 }
@@ -220,7 +224,6 @@ function MatrixTable({ m }: { m: MatrixData }) {
         <span class="ct-key"><span class="ct-key-sw free" aria-hidden="true" />{T('matrix.key.free')}</span>
         <span class="ct-key"><span class="ct-key-sw cannot" aria-hidden="true">–</span>{T('matrix.key.cannot')}</span>
       </GlyphKey>
-      <FutureSlot />
     </div>
   );
 }

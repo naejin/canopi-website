@@ -17,6 +17,12 @@ import { later, laterModule } from './lazy.tsx';
 const share = later(() => import('./later.ts').then((m) => m.Share));
 const print = later(() => import('./later.ts').then((m) => m.PrintSheet), { quiet: true });
 const writer = laterModule(() => import('./later.ts'));
+// S5d's future panel (views/FutureSlot.tsx), under the matrix's view, after this section: it lands
+// once the later chunk and its own feature chunk have loaded, ~150 ms after Suggest, so above the
+// actions it pushed Share, Print and Download down under the reader's pointer (hand-off, found tracing
+// P5-13d). Idle: shown once prefetchLater() has loaded the later chunk, never a download before the
+// matrix is marked drawn (§8 timing).
+const future = later(() => import('./later.ts').then((m) => m.FutureSlot), { idle: true });
 
 function LinkNotices() {
   const n = notices.value;
@@ -91,5 +97,6 @@ function ActionsView() {
 }
 
 export function Actions() {
-  return view.value === 'start' ? null : <ActionsView />;
+  const v = view.value;
+  return v === 'start' ? null : <><ActionsView />{v === 'matrix' && <future.View />}</>;
 }

@@ -24,8 +24,12 @@ export const phaseTerm = (p: number): string => T(`phase.${phases[p]}.term`);
 export const phaseWords = (p: number): string => `${phasePlain(p)} · ${phaseTerm(p)}`;
 export const layerName = (s: Stratum): string => T(`stratum.${s}`);
 export const listName = (c: ClimateZone): string => T(`list.${c.toLowerCase()}`);
-export const cellName = (s: Stratum, from: number, to: number = from): string =>
-  T('matrix.cell', { layer: layerName(s), stage: from === to ? phasePlain(from) : `${phasePlain(from)} → ${phasePlain(to)}` });
+export const stageRun = (from: number, to: number = from): string => (from === to ? phasePlain(from) : `${phasePlain(from)} → ${phasePlain(to)}`);
+export const cellName = (s: Stratum, from: number, to: number = from): string => T('matrix.cell', { layer: layerName(s), stage: stageRun(from, to) });
+// "Find a soil feeder", or for a job's stage gap "Find a soil feeder for Years 15–25 → 60 years on":
+// the Jobs button and the Add sheet it opens say the same.
+export const jobFind = (job: string, run?: { from: number; to: number } | null): string =>
+  run ? T('job.findFor', { find: T(`job.${job}.find`), stages: stageRun(run.from, run.to) }) : T(`job.${job}.find`);
 
 export { nameOf };
 
