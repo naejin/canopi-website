@@ -1,6 +1,6 @@
 {
   "format_version": 4,
-  "schema_version": 1,
+  "schema_version": 2,
   "generated_at": "2026-11-11T00:00:00Z",
   "canopi_db_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "release_id": "r-000000000000f1c7",
@@ -8,22 +8,22 @@
   "max_gzip_bytes": 10000000,
   "files": [
     {
-      "file": "consortium-v1.r-000000000000f1c7.1571d7fafb76.sqlite.gz",
+      "file": "consortium-v2.r-000000000000f1c7.85a70d231d08.sqlite.gz",
       "climate_zones": [
         "Tropical",
         "Mediterranean",
         "Temperate"
       ],
-      "sha256": "b2a930279d08a215ecf0107a44dd34f0b751c8bc552654ed531968f59cf600ac",
-      "bytes": 21157,
-      "raw_sha256": "1571d7fafb76583254251043e0fac27080f97058a35ee75650e0d27341e5204e",
-      "raw_bytes": 200704,
+      "sha256": "82f00f106a3106def4d617feed62113d8ba448b415428a3fc5de71d8a86db57b",
+      "bytes": 29634,
+      "raw_sha256": "85a70d231d08bb1ff35efa294e138354d432b38df60bf175015917b27f76e04f",
+      "raw_bytes": 241664,
       "counts": {
         "climates": 3,
         "climate_regions": 4,
         "strata": 4,
         "phases": 7,
-        "sources": 12,
+        "sources": 13,
         "countries": 14,
         "areas": 9,
         "labels": 14,
@@ -43,7 +43,10 @@
         "interaction_sources": 9,
         "agent_names": 2,
         "agent_name_sources": 2,
-        "layer_values": 8
+        "layer_values": 8,
+        "plant_climate_status": 38,
+        "plant_climate": 185,
+        "plant_koppen": 250
       }
     }
   ],
@@ -94,6 +97,16 @@
     "plants_not_found": [
       "Phacelia tanacetifolia"
     ]
+  },
+  "climate_ranges": {
+    "ranges_review": "estimate_not_reviewed",
+    "ranges_min_cells": "20",
+    "climate_grid_version": "0.2.0",
+    "climate_grid_manifest_sha256": "04ec85f4603f29c5add8eada88c79599d044a61732b518a095f91b68e64b0e4c",
+    "climate_grid_period": "1991-2020 historical",
+    "plants_by_range_source": {
+      "gbif_occurrences": 37
+    }
   },
   "try_references": {
     "file": "try_references.tsv",

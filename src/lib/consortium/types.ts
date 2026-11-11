@@ -1,14 +1,14 @@
 // Consortium v2 core types (frozen seam, commit 0 of P2; design check §4). The core
 // (src/lib/consortium/) reads plants only through PlantSource (./source.ts) as these plain records,
 // imports nothing outside this folder and touches no DOM (scripts/consortium-boundary.test.mjs).
-// The data contract is canopi-data docs/consortium-export-v2.md (format 4, schema 1); the adapter
+// The data contract is canopi-data docs/consortium-export-v2.md (format 4, schema 2); the adapter
 // (src/islands/consortium/data/sqlite-source.ts, stream S1) fills these records from SQL.
 // Streams may add fields; renaming or removing one is a seam change for the coordinator.
 //
 // null means unknown or not recorded. The schema's "no rows" for functions means not curated, never
 // "none": Taxon.functions is null then.
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 // PRAGMA application_id of the export ("CCON"), checked when the database opens.
 export const APPLICATION_ID = 0x43434f4e;
 
@@ -133,6 +133,29 @@ export interface Toxicity { level: ToxicityLevel; sources: string[] }
 // ISO 3166-1 alpha-2 countries from GRIIS; read with countries().invasiveChecked.
 export interface InvasiveRecord { country: string; sources: string[] }
 
+// ---- schema 2: observed climate ranges (P5 commit 0) ----
+
+// How a range was measured: GBIF occurrence cells (every plant today), TreeGOER quantiles or EcoCrop
+// limits (plant_climate.basis).
+export type RangeBasis = 'observed_cells' | 'treegoer_quantiles' | 'ecocrop_limits';
+// One variable's range across a plant's recorded cells, cultivation included (coordinator row
+// "Observed ranges include cultivation"): low and high are the Q05 and Q95 of the cells, median
+// their median; null where not computed.
+export interface ClimateRange { low: number | null; median: number | null; high: number | null; count: number | null; basis: RangeBasis }
+// A plant's observed climate (plant_climate + plant_climate_status), what range, future and native
+// share checks read: coldest-month minimum and warmest-month maximum in °C, the aridity index (P/PET).
+// cells: GBIF cells with records; nativeShare: the share of them inside WCVP native areas.
+export interface TaxonClimate {
+  source: string;
+  tminCold: ClimateRange | null;
+  tmaxWarm: ClimateRange | null;
+  aridity: ClimateRange | null;
+  cells: number | null;
+  nativeShare: number | null;
+}
+// One Köppen class of a plant's observed cells (plant_koppen; Details only, hidden under 1 %).
+export interface KoppenShare { code: string; share: number; cells: number }
+
 export interface Warnings {
   toxicity: Toxicity | null;
   // [] = no record (in a checked country: "not recorded invasive"); null = GRIIS was not read.
@@ -159,6 +182,16 @@ export interface Taxon {
   // A guest: a plant added from another climate's list ("Add anyway"), placed as in that climate and
   // labelled "From the {climate} list" (design check A9). Absent for the climate's own plants.
   from?: ClimateZone;
+  // Schema 2: the observed climate range; null when none is recorded (plant_climate_status.range_source
+  // NULL): "range not recorded", never filtered (owner answer 2, 2026-11-11).
+  climate: TaxonClimate | null;
+  // WCVP matched the plant, so its native areas are known (plants.wcvp_match not NULL); false: "native
+  // here" is unknown, never "not native".
+  areasKnown: boolean;
+  // P5 S5c: the curated climate whose placement a site of an uncovered climate borrowed (placement.ts
+  // placeFor, the nearest-list table), with estimate true ("estimate" label). Absent: its own placement.
+  placedFrom?: ClimateZone;
+  estimate?: true;
 }
 
 export interface TaxonRef { name: string; rank: Rank }
@@ -202,12 +235,15 @@ export interface Details {
   toxicitySources: string[];
   sources: Record<string, Source>; // every source id the sheet cites
   placements: Partial<Record<ClimateZone, Placement>>; // this plant in every curated climate
+  koppen: KoppenShare[]; // schema 2: the Köppen classes of its observed cells, largest share first; [] with no range
 }
 
 // labels: trait field → English value → locale → label (a missing label shows the English value).
 export type Labels = Record<string, Record<string, Partial<Record<Locale, string>>>>;
 
-export interface SourceInfo { releaseId: string; schemaVersion: 1; builtAt: string; climates: ClimateZone[]; griisAvailable: boolean }
+// climateGrid: the canopi-climate grid manifest sha256 the ranges were sampled from (meta); a site
+// lookup from another grid turns range checks off. rangesReview: 'estimate_not_reviewed' today.
+export interface SourceInfo { releaseId: string; schemaVersion: 2; builtAt: string; climates: ClimateZone[]; griisAvailable: boolean; climateGrid: string | null; rangesReview: string | null }
 
 // The strata × phases matrix the store computes (store.ts `matrix`): one row per stratum, top to
 // bottom, seven cells each. An empty cell says why: 'gap' (no plant in the list for this cell yet)
@@ -297,3 +333,47 @@ export interface ShareState {
 // are not restored.
 export interface LinkNotice { unknownCount: number; cut: boolean; outdated: boolean }
 export interface DecodedLink { state: ShareState; notice: LinkNotice }
+
+// ---- P5 seams (commit 0; .local/consortium/v2/p5-owners.md): the reader's site location ----
+
+// The core's view of a climate reader lookup (src/lib/climate/index.ts SiteLookup, which must stay
+// assignable to it: checked at compile time in src/islands/consortium/store.ts). The core never imports
+// the reader (scripts/consortium-boundary.test.mjs), so it names only the fields its rules read.
+export interface SitePeriod {
+  period: string; // '1991-2020', '2041-2070', '2071-2099'
+  scenario: string; // 'historical', 'ssp126', 'ssp245', 'ssp370', 'ssp585'
+  koppen: string; // '' where unclassified
+  koppenTemperatureMarginC: number; // °C inside the class's temperature bounds (borderline under ~0.5)
+  tminColdC: number;
+  tmaxWarmC: number;
+  aridityIndex: number | null; // null on ice: "not checked"
+}
+export interface SiteLookup {
+  lat: number;
+  lon: number;
+  // null: no complete cell within 2 cells (open sea): "pick a point on land".
+  climate: { cellLat: number; cellLon: number; distanceCells: number; periods: SitePeriod[] } | null;
+  // null: no soil within 2 layer cells (sea, ice, a coast).
+  soil: { phH2o: number; texture: string | null; filled: boolean; fillDistanceCells: number; distanceCells: number } | null;
+  // codes null offshore (a coast: climate from the nearest cell, no country).
+  regions: { wgsrpdL3: string | null; isoA2: string | null };
+}
+// Where the reader says the site is (store.location; S5b writes it, S5c, S5d and S5e read it): from the
+// device's location, a place search, a map pick, or a shared link's `o=` cell centre (approximate).
+// lookup: the climate reader's answer, null while it loads or when it failed (manual climate stays).
+export type LocationSource = 'geo' | 'search' | 'map' | 'link';
+export interface SiteLocation { lat: number; lon: number; source: LocationSource; label?: string; lookup: SiteLookup | null }
+
+// Climate scenarios of the future check (canopi-climate slots 1–8), SSP2-4.5 by default (owner row).
+export const scenarios = ['ssp126', 'ssp245', 'ssp370', 'ssp585'] as const;
+export type Scenario = (typeof scenarios)[number];
+export const DEFAULT_SCENARIO: Scenario = 'ssp245';
+
+// A plant's marks beside its name (matrix chips, phone rows, Details, Add), from marks.ts providers:
+// edge "near the edge of its observed range", outside (Add's warning), unknown "range not recorded",
+// estimate (a borrowed placement), future (drawn in ink, apart from the ochre warnings), native.
+// key: a consortium.* string key without its prefix, read with T(key, vars).
+export const markKinds = ['edge', 'outside', 'unknown', 'estimate', 'future', 'native'] as const;
+export type MarkKind = (typeof markKinds)[number];
+export type MarkSeverity = 'note' | 'warning';
+export interface Mark { kind: MarkKind; key: string; vars?: Record<string, string | number>; severity: MarkSeverity }

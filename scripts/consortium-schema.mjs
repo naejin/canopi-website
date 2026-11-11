@@ -1,9 +1,11 @@
-// The consortium export's schema (format 4, schema 1) as the website expects it: the installer
+// The consortium export's schema (format 4, schema 2) as the website expects it: the installer
 // (scripts/install-consortium.mjs) compares every table's columns with it, and the fixture
 // (scripts/fixtures/consortium-v2/make-fixture.mjs) is built from it. A new schema version in
 // canopi-data means a new copy here, and a reader change in src/lib/consortium/.
-// canopi-data consortium_sqlite.ddl() at consortium-v2-export ab6bfad (unchanged since 8a74efd), as
-// SQLite stores it: copied from the sqlite_master of export r-2c6bdf65c35caca3, statement by statement.
+// Schema 2 (P5 commit 0) adds the climate range tables plant_climate_status, plant_climate and
+// plant_koppen, as SQLite stores them: copied from the sqlite_master of export r-e0b162087a79eecf,
+// statement by statement (the schema 1 statements are unchanged from canopi-data
+// consortium_sqlite.ddl() at consortium-v2-export ab6bfad).
 export const DDL = String.raw`
 CREATE TABLE meta (
   key TEXT PRIMARY KEY,
@@ -220,6 +222,39 @@ CREATE TABLE layer_values (
   CHECK ((field = 'tolerates_wind') = (flag IS NOT NULL) AND (months IS NULL) = (flag IS NOT NULL)
          AND (months IS NULL) = (months_from IS NULL))
 );
+CREATE TABLE plant_climate_status (
+  plant INTEGER PRIMARY KEY REFERENCES plants (plant),
+  range_source TEXT REFERENCES sources (id) CHECK (range_source IN ('gbif_occurrences', 'treegoer_ranges', 'ecocrop')),
+  gbif_taxon_key INTEGER,
+  gbif_cells INTEGER CHECK (gbif_cells >= 0),
+  gbif_records INTEGER CHECK (gbif_records >= 0),
+  cells_without_climate INTEGER CHECK (cells_without_climate >= 0),
+  native_share REAL CHECK (native_share BETWEEN 0 AND 1),
+  reason TEXT CHECK (reason <> ''),
+  review TEXT NOT NULL CHECK (review = 'estimate_not_reviewed'),
+  CHECK (range_source IS NOT NULL OR reason IS NOT NULL)
+);
+CREATE TABLE plant_climate (
+  plant INTEGER NOT NULL REFERENCES plants (plant),
+  variable TEXT NOT NULL CHECK (variable IN ('tmin_cold', 'tmax_warm', 'precip', 'aridity', 'dry_months', 'growth_temperature')),
+  source TEXT NOT NULL REFERENCES sources (id),
+  basis TEXT NOT NULL CHECK (basis IN ('observed_cells', 'treegoer_quantiles', 'ecocrop_limits')),
+  count INTEGER CHECK (count > 0),
+  missing INTEGER CHECK (missing >= 0),
+  low REAL,
+  median REAL,
+  high REAL,
+  review TEXT NOT NULL CHECK (review = 'estimate_not_reviewed'),
+  PRIMARY KEY (plant, variable),
+  CHECK (low IS NULL OR high IS NULL OR low <= high)
+) WITHOUT ROWID;
+CREATE TABLE plant_koppen (
+  plant INTEGER NOT NULL REFERENCES plants (plant),
+  koppen TEXT NOT NULL CHECK (length(koppen) BETWEEN 2 AND 3),
+  cells INTEGER NOT NULL CHECK (cells > 0),
+  share REAL NOT NULL CHECK (share BETWEEN 0 AND 1),
+  PRIMARY KEY (plant, koppen)
+) WITHOUT ROWID;
 CREATE INDEX placements_matrix ON placements (climate_zone, stratum, phase_start, phase_end);
 CREATE INDEX placement_reasons_placement ON placement_reasons (plant, climate_zone);
 CREATE INDEX plants_genus ON plants (genus);
@@ -234,5 +269,5 @@ CREATE INDEX layer_values_plant ON layer_values (plant);
 export const DATA_TABLES = ['climates', 'climate_regions', 'strata', 'phases', 'sources', 'countries', 'areas', 'labels', 'plants',
   'plant_names', 'plant_images', 'toxicity_sources', 'plant_invasive', 'plant_areas', 'placements',
   'placement_reasons', 'reason_texts', 'functions', 'function_sources', 'interactions', 'interaction_notes',
-  'interaction_sources', 'agent_names', 'agent_name_sources', 'layer_values'];
+  'interaction_sources', 'agent_names', 'agent_name_sources', 'layer_values', 'plant_climate_status', 'plant_climate', 'plant_koppen'];
 

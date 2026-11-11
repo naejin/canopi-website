@@ -12,3 +12,10 @@ export * from './jobs.ts';
 export * from './matrix.ts';
 export * from './suggest.ts';
 export * from './state.ts';
+// P5 seams (commit 0), each filled by one stream (.local/consortium/v2/p5-owners.md).
+export * from './range.ts';
+export * from './placement.ts';
+export * from './future.ts';
+export * from './native.ts';
+export * from './soil-likely.ts';
+export * from './marks.ts';

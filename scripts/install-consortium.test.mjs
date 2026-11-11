@@ -16,7 +16,7 @@ import {
   installConsortium, verifyInstall, thumbnailUrl, databaseName, indexProblem, releaseVerifyProblem, stagingDirFor,
   DEFAULT_OUT, DATA_DIR, INDEX_PATH, STAGING_DIR, USER_AGENT, CANOPI_DATA_DIR, MAX_GZIP_BYTES,
 } from './install-consortium.mjs';
-import { writeFixtureExport, FIXTURE_RELEASE, FIXTURE_TRY, FIXTURE_CREDITS } from './fixtures/consortium-v2/make-fixture.mjs';
+import { writeFixtureExport, FIXTURE_RELEASE, FIXTURE_TRY, FIXTURE_CREDITS, FIXTURE_GRID_SHA256 } from './fixtures/consortium-v2/make-fixture.mjs';
 
 const committed = fileURLToPath(new URL('fixtures/consortium-v2/export/', import.meta.url));
 const script = fileURLToPath(new URL('install-consortium.mjs', import.meta.url));
@@ -58,7 +58,7 @@ test('the committed fixture is what make-fixture.mjs writes today (rows and byte
 test('the fixture installs with --fixture --no-images --out: the database byte for byte, the mark and the index, nothing else', (t) => {
   const w = workspace(t);
   const stdout = execFileSync(process.execPath, [script, w.src, '--fixture', '--no-images', '--out', w.out], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  assert.match(stdout, /Installed the consortium database consortium-v1\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz \(Tropical 11, Mediterranean 10, Temperate 21\)/);
+  assert.match(stdout, /Installed the consortium database consortium-v2\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz \(Tropical 11, Mediterranean 10, Temperate 21\)/);
   const manifest = JSON.parse(readFileSync(join(w.src, 'manifest.json'), 'utf8'));
   const db = manifest.files[0].file;
   assert.deepEqual(readdirSync(w.out).sort(), ['INSTALLED_BY', 'consortium-index.json', db].sort());
@@ -74,6 +74,10 @@ test('the fixture installs with --fixture --no-images --out: the database byte f
   assert.deepEqual(index.images, {}, 'no photos with --no-images');
   assert.deepEqual(index.try_references, { sha256: sha(Buffer.from(FIXTURE_TRY)), rows: 3, dataset_ids: 2 });
   assert.equal(index.griis_available, true);
+  // Schema 2: the grid the ranges were sampled from (install-climate.mjs checks its own grid against
+  // it) and the ranges' review state, from the database's meta.
+  assert.equal(index.climate_grid_manifest_sha256, FIXTURE_GRID_SHA256);
+  assert.equal(index.ranges_review, 'estimate_not_reviewed');
   assert.ok(!readdirSync(w.root).includes('.consortium-install'), 'no staging left');
 });
 
@@ -105,11 +109,13 @@ test('SHA256SUMS: a changed file, a listed file missing and an unlisted file are
   assert.ok(!existsSync(w.out) && !existsSync(w2.out) && !existsSync(w3.out), 'nothing written');
 });
 
-test('the manifest: format 4 and schema 1 only, by name; release id, split, climates and entries', async (t) => {
+test('the manifest: format 4 and schema 2 only, by name; release id, split, climates and entries', async (t) => {
   const w = workspace(t);
   const cases = [
     [(m) => { m.format_version = 3; }, /format_version is 3; this installer reads format 4 only/],
-    [(m) => { m.schema_version = 2; }, /schema_version is 2; this installer reads schema 1 only/],
+    [(m) => { m.schema_version = 1; }, /schema_version is 1; this installer reads schema 2 only/],
+    // Schema 2 carries the grid its climate ranges were sampled from, in meta and the manifest alike.
+    [(m) => { m.climate_ranges.climate_grid_manifest_sha256 = 'b'.repeat(64); }, /meta\.climate_grid_manifest_sha256 is "04ec85f4[0-9a-f]+", the manifest says "b{64}"/],
     [(m) => { delete m.release_id; }, /release_id undefined is not r- and 16/],
     [(m) => { m.release_id = 'r-XYZ'; }, /release_id "r-XYZ"/],
     [(m) => { m.files.push({ ...m.files[0] }); }, /split is false but lists 2 files/],
@@ -145,7 +151,7 @@ test('the database file: its name, sha256, bytes, gzip magic, size budget and ra
     cpSync(join(dir, m.files[0].file), join(dir, other)); rmSync(join(dir, m.files[0].file));
     m.files[0].file = other; writeFileSync(join(dir, 'manifest.json'), JSON.stringify(m));
   } });
-  await assert.rejects(install({ ...w, src: rename }), /is not named consortium-v1\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz/);
+  await assert.rejects(install({ ...w, src: rename }), /is not named consortium-v2\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz/);
   const plain = await variant(w, 'plain', { after: (dir, m) => {
     const raw = readFileSync(join(dir, m.files[0].file));
     const notGz = Buffer.concat([Buffer.from('xx'), raw.subarray(2)]);
@@ -169,7 +175,7 @@ test('the database file: its name, sha256, bytes, gzip magic, size budget and ra
 test('the database inside: application_id, user_version, schema columns, meta and contract rules', async (t) => {
   const w = workspace(t);
   const cases = [
-    [{ userVersion: 2 }, /user_version is 2, not schema 1/],
+    [{ userVersion: 1 }, /user_version is 1, not schema 2/],
     [{ applicationId: 7 }, /application_id is 7, not 1128484686/],
     [{ edit: (db) => db.exec('ALTER TABLE plants ADD COLUMN extra TEXT') }, /table plants has the columns .*extra, the schema says/],
     [{ edit: (db) => db.exec('CREATE TABLE extra (x)') }, /tables outside the schema: extra/],
@@ -180,6 +186,12 @@ test('the database inside: application_id, user_version, schema columns, meta an
     [{ edit: (db) => db.exec("UPDATE plant_images SET source_page_url = '//commons.wikimedia.org/x' WHERE plant = 1") }, /photo page "\/\/commons\.wikimedia\.org\/x" is not http\(s\)/],
     [{ edit: (db) => db.exec("INSERT INTO plant_invasive VALUES (1, 'TW', 'griis')") }, /Castanea sativa is invasive in TW, a country GRIIS did not check/],
     [{ edit: (db) => db.exec("UPDATE plants SET id = 'not-a-uuid' WHERE plant = 2") }, /plant id "not-a-uuid" is not a UUID/],
+    // Schema 2: the climate range tables, their review state and the grid they were sampled from.
+    [{ edit: (db) => db.exec('DROP TABLE plant_koppen') }, /table plant_koppen is missing/],
+    [{ edit: (db) => db.exec("UPDATE meta SET value = 'reviewed' WHERE key = 'ranges_review'") }, /meta\.ranges_review is "reviewed"; this installer reads "estimate_not_reviewed" ranges only/],
+    [{ edit: (db) => db.exec("DELETE FROM meta WHERE key = 'climate_grid_manifest_sha256'") }, /meta\.climate_grid_manifest_sha256 is undefined, not a sha256/],
+    [{ edit: (db) => db.exec('DELETE FROM plant_climate WHERE plant = 1; DELETE FROM plant_koppen WHERE plant = 1; DELETE FROM plant_climate_status WHERE plant = 1') }, /1 plants have no plant_climate_status row/],
+    [{ edit: (db) => db.exec("UPDATE plant_climate_status SET range_source = NULL, reason = 'no records' WHERE plant = 2") }, /Juglans regia has climate range rows but no range_source/],
   ];
   for (const [i, [opts, message]] of cases.entries()) {
     const src = await variant(w, `d${i}`, opts);
@@ -265,8 +277,8 @@ test('thumbnailUrl: Commons and iNaturalist originals become 500 px copies; svg 
 });
 
 test('databaseName: schema, release, 12 hex digits of the raw database, and the climate when split', () => {
-  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32)), 'consortium-v1.r-0123456789abcdef.abababababab.sqlite.gz');
-  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32), 'Tropical'), 'consortium-v1.r-0123456789abcdef.tropical.abababababab.sqlite.gz');
+  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32)), 'consortium-v2.r-0123456789abcdef.abababababab.sqlite.gz');
+  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32), 'Tropical'), 'consortium-v2.r-0123456789abcdef.tropical.abababababab.sqlite.gz');
 });
 
 test('verifyInstall: a stray file, a changed database, a missing photo and a broken index fail', async (t) => {
@@ -284,6 +296,7 @@ test('verifyInstall: a stray file, a changed database, a missing photo and a bro
   assert.throws(() => verifyInstall(w.out, index), /does not match the index's sha256/);
   assert.throws(() => verifyInstall(w.out, { ...index, images: { x: '/data/consortium/images/a.jpg' } }), /not a plant UUID/);
   assert.throws(() => verifyInstall(w.out, { ...index, release_id: 'r-1' }), /release_id "r-1"/);
+  assert.throws(() => verifyInstall(w.out, { ...index, climate_grid_manifest_sha256: undefined }), /climate_grid_manifest_sha256/);
 });
 
 test('verifyInstall: the committed public/data/consortium/ matches the committed index', () => {

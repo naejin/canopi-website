@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { gunzipSync } from 'node:zlib';
-import { writeFixtureExport } from './fixtures/consortium-v2/make-fixture.mjs';
+import { writeFixtureExport, FIXTURE_GRID_SHA256 } from './fixtures/consortium-v2/make-fixture.mjs';
 
 const { openBytes, LoadError } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
@@ -42,7 +42,7 @@ test('open: application_id, user_version, the release id and the climates are ch
   assert.equal(await failure(openBytes(raw(), { ...expected, climates: ['Tropical', 'Temperate'] })), 'schema');
   const dir = mkdtempSync(join(tmpdir(), 'consortium-variant-'));
   try {
-    for (const [opts, want] of [[{ userVersion: 2 }, 'schema'], [{ applicationId: 0x12345678 }, 'schema']]) {
+    for (const [opts, want] of [[{ userVersion: 1 }, 'schema'], [{ applicationId: 0x12345678 }, 'schema']]) {
       const out = join(dir, String(want) + Object.keys(opts)[0]);
       const { file } = await writeFixtureExport(out, opts);
       const bytes = new Uint8Array(gunzipSync(readFileSync(join(out, file))));
@@ -53,7 +53,7 @@ test('open: application_id, user_version, the release id and the climates are ch
 });
 
 test('info and countries come from meta and the countries table', () => {
-  assert.deepEqual(source.info(), { releaseId: manifest.release_id, schemaVersion: 1, builtAt: manifest.generated_at, climates: expected.climates, griisAvailable: true });
+  assert.deepEqual(source.info(), { releaseId: manifest.release_id, schemaVersion: 2, builtAt: manifest.generated_at, climates: expected.climates, griisAvailable: true, climateGrid: FIXTURE_GRID_SHA256, rangesReview: 'estimate_not_reviewed' });
   const countries = source.countries();
   assert.equal(countries.get('FR').invasiveChecked, true);
   assert.equal(countries.get('TW').invasiveChecked, false);
@@ -117,7 +117,47 @@ test('pool: a Taxon carries names, traits, warnings, functions and the self-host
   assert.equal(zingiber.phases, null);
 });
 
-// ---- interactions, placements, labels ----
+// ---- schema 2: climate ranges, Köppen shares, native areas (P5 commit 0) ----
+
+test('pool: a Taxon carries its observed climate range (cultivation included) or null when none is recorded', async () => {
+  const pool = await source.pool('Temperate');
+  const by = (name) => pool.find((x) => x.canonical_name === name);
+  // The fixture's rule (make-fixture.mjs climateRows): Castanea is plant 1, Temperate, shifted by -1 °C.
+  assert.deepEqual(by('Castanea sativa').climate, {
+    source: 'gbif_occurrences',
+    tminCold: { low: -15, median: -4, high: 2.5, count: 200, basis: 'observed_cells' },
+    tmaxWarm: { low: 18, median: 24, high: 30, count: 200, basis: 'observed_cells' },
+    aridity: { low: 0.55, median: 1.05, high: 2.1, count: 200, basis: 'observed_cells' },
+    cells: 200,
+    nativeShare: 0.2,
+  });
+  assert.equal(by('Phacelia tanacetifolia').climate, null, 'no range_source: "range not recorded", never a fit');
+  assert.equal(by('Castanea sativa').areasKnown, true);
+  assert.equal(by('Phacelia tanacetifolia').areasKnown, false, 'WCVP did not match it: native here is unknown');
+  // No placement borrowed from another climate today (S5c fills placedFrom and estimate).
+  assert.ok(pool.every((t) => t.placedFrom === undefined && t.estimate === undefined));
+});
+
+test('details: the Köppen shares of a plant\'s observed cells, largest first, rare classes included (the view hides < 1 %)', async () => {
+  const d = await source.details(idOf('Castanea sativa'), 'Temperate', 'en');
+  assert.deepEqual(d.koppen[0], { code: 'Cfb', share: 0.5, cells: 100 });
+  assert.deepEqual(d.koppen.map((k) => k.share), [...d.koppen.map((k) => k.share)].sort((a, b) => b - a));
+  assert.ok(d.koppen.some((k) => k.share < 0.01), 'a rare class is read; Details hides it');
+  assert.ok(d.sources.gbif_occurrences, 'the range source is cited');
+  assert.deepEqual((await source.details(idOf('Phacelia tanacetifolia'), 'Temperate', 'en')).koppen, []);
+});
+
+test('nativeIn: the plants WCVP records as native (never introduced) in a level-3 area', () => {
+  const fra = source.nativeIn('FRA');
+  assert.ok(fra.has(idOf('Castanea sativa')));
+  assert.ok(!fra.has(idOf('Inga edulis')), 'native in BZN and PER only');
+  assert.ok(!fra.has(idOf('Phacelia tanacetifolia')), 'no areas: unknown, not native');
+  assert.equal(fra.size, oracle.prepare("SELECT count(DISTINCT plant) n FROM plant_areas WHERE area = 'FRA' AND introduced = 0").get().n);
+  assert.equal(source.nativeIn('GRB').size, 0, 'introduced rows never count as native');
+  assert.equal(source.nativeIn('XXX').size, 0);
+  assert.equal(source.nativeIn('FRA'), fra, 'read once per area');
+});
+
 
 test('interactions: no-climate rows plus this climate\'s yield gains, with notes, agent names and sources in order', async () => {
   const rows = await source.interactions('Temperate');

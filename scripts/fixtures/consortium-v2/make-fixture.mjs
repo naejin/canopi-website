@@ -1,4 +1,4 @@
-// The invented consortium v2 fixture: a canopi-data export of format 4, schema 1 (canopi-data
+// The invented consortium v2 fixture: a canopi-data export of format 4, schema 2 (canopi-data
 // docs/consortium-export-v2.md), small enough to read, built in Node with node:sqlite (coordinator
 // row "v2 build setup", 2026-11-11: no Python on the website). See README.md for what it covers.
 //
@@ -22,6 +22,9 @@ import { DDL, DATA_TABLES } from '../../consortium-schema.mjs';
 
 export const FIXTURE_RELEASE = 'r-000000000000f1c7';
 export const FIXTURE_BUILT_AT = '2026-11-11T00:00:00Z';
+// The grid the ranges claim to be sampled from: the real canopi-climate v0.2.0 manifest digest, so the
+// installed tiles pass install-climate.mjs's grid check against a fixture index too.
+export const FIXTURE_GRID_SHA256 = '04ec85f4603f29c5add8eada88c79599d044a61732b518a095f91b68e64b0e4c';
 export const DEFAULT_EXPORT = join(dirname(fileURLToPath(import.meta.url)), 'export');
 const ZERO_SHA = '0'.repeat(64);
 
@@ -48,7 +51,27 @@ const SOURCES = [
   ['crawford-2010', 'Crawford, Creating a Forest Garden (2010)', null, null, null],
   ['yield-trials', 'Intercropping trials review', 'https://example.org/intercropping-review', null, null],
   ['phenology-photos', 'Dated photographs (derived months)', null, null, null],
+  ['gbif_occurrences', 'GBIF occurrence maps', 'https://www.gbif.org/', 'CC BY 4.0', 'GBIF.org'],
 ];
+
+// Schema 2 climate ranges (invented, by rule): each plant's home climate (its first placement) gives
+// [low, median, high] per variable; tmin_cold and tmax_warm shift by ((i % 5) - 2) / 2 °C, so
+// Castanea (i = 0) is 1 °C colder than the base. count = 200 + 37 i cells. Phacelia has no range
+// (range_source NULL with a reason: "range not recorded").
+const RANGE_BASE = {
+  Temperate: { tmin_cold: [-14, -3, 3.5], tmax_warm: [19, 25, 31], aridity: [0.55, 1.05, 2.1], precip: [450, 800, 1600], dry_months: [0, 1, 4] },
+  Mediterranean: { tmin_cold: [-3, 4, 10], tmax_warm: [25, 31, 37], aridity: [0.25, 0.6, 1.3], precip: [300, 600, 1100], dry_months: [2, 4, 7] },
+  Tropical: { tmin_cold: [11, 19, 24], tmax_warm: [26, 32, 37], aridity: [0.6, 1.5, 3.2], precip: [900, 1900, 3600], dry_months: [0, 3, 6] },
+};
+// Köppen shares of the observed cells per home climate; each list has a rare class (< 1 %), which
+// Details hides.
+const KOPPEN_BASE = {
+  Temperate: [['Cfb', 0.5], ['Dfb', 0.2], ['Cfa', 0.17], ['Csb', 0.07], ['Dfc', 0.035], ['BSk', 0.02], ['ET', 0.005]],
+  Mediterranean: [['Csa', 0.45], ['Csb', 0.25], ['BSk', 0.12], ['Cfa', 0.1], ['BWh', 0.07], ['Cfb', 0.009], ['Dsb', 0.001]],
+  Tropical: [['Aw', 0.4], ['Af', 0.3], ['Am', 0.2], ['Cwa', 0.06], ['BSh', 0.035], ['Cfa', 0.005]],
+};
+const NO_RANGE = { 'Phacelia tanacetifolia': 'fewer than 20 cells with GBIF records' };
+const round3 = (x) => Math.round(x * 1000) / 1000;
 
 // Countries: a handful, with invented GRIIS coverage (TW, PR and AQ unchecked: "not checked", never "none").
 const COUNTRIES = [['AQ', 0], ['AU', 1], ['BR', 1], ['DE', 1], ['ES', 1], ['FR', 1], ['GB', 1], ['IT', 1], ['NZ', 1], ['PR', 0], ['PT', 1], ['TW', 0], ['US', 1], ['ZA', 1]];
@@ -140,7 +163,7 @@ const uuid = (i) => `00000000-f1c7-4000-8000-${String(i + 1).padStart(12, '0')}`
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 // Fills a new database at `path` (absent). Returns nothing; the caller gzips it.
-export async function buildFixtureDb(path, { edit = null, userVersion = 1, applicationId = 0x43434f4e } = {}) {
+export async function buildFixtureDb(path, { edit = null, userVersion = 2, applicationId = 0x43434f4e } = {}) {
   const { DatabaseSync } = await import('node:sqlite');
   const db = new DatabaseSync(path);
   db.exec('PRAGMA page_size = 4096; PRAGMA foreign_keys = ON;');
@@ -185,6 +208,19 @@ export async function buildFixtureDb(path, { edit = null, userVersion = 1, appli
         if (names.fr) run('INSERT INTO reason_texts VALUES (?, ?, ?)', [reason, 'fr', `Raison inventée : ${names.fr.toLowerCase()} dans l’échantillon ${climate}.`]);
       }
     }
+    const homeZone = Object.keys(placements)[0];
+    const count = 200 + 37 * i;
+    if (NO_RANGE[name]) {
+      run('INSERT INTO plant_climate_status VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [plant, null, null, 12, 30, 0, null, NO_RANGE[name], 'estimate_not_reviewed']);
+    } else {
+      run('INSERT INTO plant_climate_status VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [plant, 'gbif_occurrences', 1000000 + i, count, count * 3, i % 4, round3(0.2 + (i % 7) * 0.1), null, 'estimate_not_reviewed']);
+      const shift = ((i % 5) - 2) / 2;
+      for (const [variable, [low, median, high]] of Object.entries(RANGE_BASE[homeZone])) {
+        const d = variable === 'tmin_cold' || variable === 'tmax_warm' ? shift : 0;
+        run('INSERT INTO plant_climate VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [plant, variable, 'gbif_occurrences', 'observed_cells', count, 0, round3(low + d), round3(median + d), round3(high + d), 'estimate_not_reviewed']);
+      }
+      for (const [koppen, share] of KOPPEN_BASE[homeZone]) run('INSERT INTO plant_koppen VALUES (?, ?, ?, ?)', [plant, koppen, Math.max(1, Math.round(share * count)), share]);
+    }
     for (const f of extra.functions ?? []) {
       fn++;
       run('INSERT INTO functions VALUES (?, ?, ?, ?)', [fn, plant, f, f === 'nitrogen_fixer' ? 'import' : 'curated']);
@@ -209,14 +245,18 @@ export async function buildFixtureDb(path, { edit = null, userVersion = 1, appli
   });
   const notFound = P.filter((p) => 'wcvp' in p[5] && p[5].wcvp === null).map((p) => p[0]).join('; ');
   const meta = {
-    schema_version: '1', format_version: '4', release_id: FIXTURE_RELEASE, canopi_db_sha256: ZERO_SHA, built_at: FIXTURE_BUILT_AT,
+    schema_version: '2', format_version: '4', release_id: FIXTURE_RELEASE, canopi_db_sha256: ZERO_SHA, built_at: FIXTURE_BUILT_AT,
     part: 'all', climates: FIXTURE_CLIMATES.join(','), griis_available: '1', areas_source: 'wcvp', wcvp_not_found: notFound,
     wcvp_sha256: ZERO_SHA, wcvp_record: 'WCVP (fixture: invented)', photo_state: 'fixture',
+    ranges_review: 'estimate_not_reviewed', ranges_min_cells: '20', climate_grid_version: '0.2.0', climate_grid_manifest_sha256: FIXTURE_GRID_SHA256,
+    climate_grid_period: '1991-2020 historical',
   };
   run('INSERT INTO meta VALUES (?, ?)', ...Object.entries(meta));
   // A test's edit runs on the filled database, its meta included; the counts are taken after it.
   if (edit) edit(db);
-  for (const table of DATA_TABLES) meta[`count.${table}`] = String(db.prepare(`SELECT count(*) n FROM ${table}`).get().n);
+  // A table an edit dropped counts 0 (the installer then refuses it by name).
+  const has = (table) => !!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(table);
+  for (const table of DATA_TABLES) meta[`count.${table}`] = String(has(table) ? db.prepare(`SELECT count(*) n FROM ${table}`).get().n : 0);
   run('INSERT OR REPLACE INTO meta VALUES (?, ?)', ...DATA_TABLES.map((t) => [`count.${t}`, meta[`count.${t}`]]));
   db.exec('COMMIT');
   db.exec(`PRAGMA application_id = ${applicationId}; PRAGMA user_version = ${userVersion};`);
@@ -237,7 +277,7 @@ export const FIXTURE_CREDITS = 'source\ttags\tname\tcredit\tlicence\tlicence_sta
 
 // Writes a whole export directory (format 4) at `dir`, which must be absent or empty. Returns
 // { dir, file, manifest }.
-export async function writeFixtureExport(dir, { edit = null, userVersion = 1, applicationId = 0x43434f4e, manifest: editManifest = null, after = null } = {}) {
+export async function writeFixtureExport(dir, { edit = null, userVersion = 2, applicationId = 0x43434f4e, manifest: editManifest = null, after = null } = {}) {
   mkdirSync(dir, { recursive: true });
   if (readdirSync(dir).length) throw new Error(`${dir} is not empty`);
   const work = mkdtempSync(join(tmpdir(), 'consortium-fixture-'));
@@ -247,17 +287,18 @@ export async function writeFixtureExport(dir, { edit = null, userVersion = 1, ap
     const rawBytes = readFileSync(raw);
     const gz = gzipSync(rawBytes, { level: 9 });
     const rawSha = sha256(rawBytes);
-    const file = `consortium-v1.${FIXTURE_RELEASE}.${rawSha.slice(0, 12)}.sqlite.gz`;
+    const file = `consortium-v2.${FIXTURE_RELEASE}.${rawSha.slice(0, 12)}.sqlite.gz`;
     writeFileSync(join(dir, file), gz);
     writeFileSync(join(dir, 'try_references.tsv'), FIXTURE_TRY);
     writeFileSync(join(dir, 'source_credits.tsv'), FIXTURE_CREDITS);
     const manifest = {
-      format_version: 4, schema_version: 1, generated_at: FIXTURE_BUILT_AT, canopi_db_sha256: ZERO_SHA, release_id: FIXTURE_RELEASE,
+      format_version: 4, schema_version: 2, generated_at: FIXTURE_BUILT_AT, canopi_db_sha256: ZERO_SHA, release_id: FIXTURE_RELEASE,
       split: false, max_gzip_bytes: 10_000_000,
       files: [{ file, climate_zones: FIXTURE_CLIMATES, sha256: sha256(gz), bytes: gz.length, raw_sha256: rawSha, raw_bytes: rawBytes.length, counts }],
       climates: FIXTURE_CLIMATES.map((c) => ({ climate_zone: c, regions: REGIONS[c], ...perClimate[c] })),
       locales: LOCALES,
       wcvp: { sha256: ZERO_SHA, record: 'WCVP (fixture: invented)', plants_with_areas: counts.plants - 1, plants_not_found: ['Phacelia tanacetifolia'] },
+      climate_ranges: { ranges_review: 'estimate_not_reviewed', ranges_min_cells: '20', climate_grid_version: '0.2.0', climate_grid_manifest_sha256: FIXTURE_GRID_SHA256, climate_grid_period: '1991-2020 historical', plants_by_range_source: { gbif_occurrences: counts.plant_climate_status - Object.keys(NO_RANGE).length } },
       try_references: { file: 'try_references.tsv', sha256: sha256(Buffer.from(FIXTURE_TRY)), rows: 3, dataset_ids: 2 },
       source_credits: { file: 'source_credits.tsv', sha256: sha256(Buffer.from(FIXTURE_CREDITS)), rows: 3 },
     };

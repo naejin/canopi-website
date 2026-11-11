@@ -1,5 +1,5 @@
 // The PlantSource over the opened SQLite database (stream S1; design check §4; canopi-data
-// docs/consortium-export-v2.md, format 4, schema 1). It reads plain records with SQL and hands them to
+// docs/consortium-export-v2.md, format 4, schema 2). It reads plain records with SQL and hands them to
 // the core, which computes the matrix, site fit and reason counts itself. No sqlite-wasm import here:
 // it takes any database with OO1's selectObjects, so the tests run it on the package's Node build.
 // Photos come from the index's {uuid: path} map (design check A4), never the export's remote URLs.
@@ -7,8 +7,8 @@
 // stripped, ß/œ/æ written out, word prefix;
 // never SQL LIKE (ASCII-only folding, a substring match, % and _ unescaped).
 import type {
-  ClimateZone, Details, FunctionId, FunctionMethod, Image, Interaction, InvasiveRecord, Labels, LayerScope, LayerValue, Locale, Month, Placement,
-  PlantId, Reason, Source, SourceInfo, Stratum, Taxon, Text, ToxicityLevel, Traits,
+  ClimateRange, ClimateZone, Details, FunctionId, FunctionMethod, Image, Interaction, InvasiveRecord, KoppenShare, Labels, LayerScope, LayerValue, Locale, Month, Placement,
+  PlantId, RangeBasis, Reason, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
 } from '../../../lib/consortium/index.ts';
 import { months, phases } from '../../../lib/consortium/index.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
@@ -91,6 +91,24 @@ function textOf(rows: Row[] | undefined): Text | null {
   return t.en === undefined ? null : (t as Text);
 }
 
+// Schema 2: one variable's range row, and a plant's observed climate from its status and range rows
+// (null without a range_source: "range not recorded").
+const rangeOf = (r: Row | undefined): ClimateRange | null => (r
+  ? { low: num(r.low), median: num(r.median), high: num(r.high), count: num(r.count), basis: r.basis as RangeBasis }
+  : null);
+function climateOf(status: Row | undefined, ranges: Row[] | undefined): TaxonClimate | null {
+  if (!status || status.range_source === null || status.range_source === undefined) return null;
+  const by = new Map((ranges ?? []).map((r) => [String(r.variable), r]));
+  return {
+    source: String(status.range_source),
+    tminCold: rangeOf(by.get('tmin_cold')),
+    tmaxWarm: rangeOf(by.get('tmax_warm')),
+    aridity: rangeOf(by.get('aridity')),
+    cells: num(status.gbif_cells),
+    nativeShare: num(status.native_share),
+  };
+}
+
 const IN_CLIMATE = 'plant IN (SELECT plant FROM placements WHERE climate_zone = ?1)';
 const INTERACTIONS_IN = 'SELECT interaction FROM interactions WHERE climate_zone IS NULL OR climate_zone = ?1';
 
@@ -98,10 +116,12 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
   const meta = new Map(db.selectObjects('SELECT key, value FROM meta').map((r) => [String(r.key), String(r.value)]));
   const info: SourceInfo = {
     releaseId: meta.get('release_id') ?? '',
-    schemaVersion: 1,
+    schemaVersion: 2,
     builtAt: meta.get('built_at') ?? '',
     climates: db.selectObjects('SELECT id FROM climates ORDER BY ord').map((r) => r.id as ClimateZone),
     griisAvailable: meta.get('griis_available') === '1',
+    climateGrid: meta.get('climate_grid_manifest_sha256') || null,
+    rangesReview: meta.get('ranges_review') || null,
   };
   const countries: ReadonlyMap<string, { invasiveChecked: boolean }> = new Map(
     db.selectObjects('SELECT code, invasive_checked FROM countries ORDER BY code').map((r) => [String(r.code), { invasiveChecked: Number(r.invasive_checked) === 1 }]));
@@ -127,6 +147,8 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
     const invasive = group(db.selectObjects(`SELECT plant, country, source FROM plant_invasive WHERE ${IN_CLIMATE} ORDER BY country, source`, [c]), (r) => Number(r.plant));
     const images = new Map(db.selectObjects(`SELECT * FROM plant_images WHERE ${IN_CLIMATE}`, [c]).map((r) => [Number(r.plant), r]));
     const tox = group(db.selectObjects(`SELECT plant, source FROM toxicity_sources WHERE ${IN_CLIMATE} ORDER BY plant, ord`, [c]), (r) => Number(r.plant));
+    const status = new Map(db.selectObjects(`SELECT * FROM plant_climate_status WHERE ${IN_CLIMATE}`, [c]).map((r) => [Number(r.plant), r]));
+    const ranges = group(db.selectObjects(`SELECT * FROM plant_climate WHERE ${IN_CLIMATE} AND variable IN ('tmin_cold', 'tmax_warm', 'aridity')`, [c]), (r) => Number(r.plant));
     return rows.map((r): Taxon => {
       const plant = Number(r.plant), id = String(r.id);
       const own = Object.fromEntries((names.get(plant) ?? []).map((n) => [n.locale, String(n.name)])) as Partial<Record<Locale, string>>;
@@ -153,6 +175,8 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
           allelopathic: bool(r.allelopathic),
           weed_potential: bool(r.weed_potential),
         },
+        climate: climateOf(status.get(plant), ranges.get(plant)),
+        areasKnown: r.wcvp_match !== null && r.wcvp_match !== undefined,
       };
     });
   }
@@ -171,6 +195,9 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
     }
     return out;
   }
+
+  // Native plants per WGSRPD level-3 area, read once each (schema 2 plant_areas, introduced = 0).
+  const natives = new Map<string, ReadonlySet<PlantId>>();
 
   return {
     info: () => info,
@@ -245,10 +272,13 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       const invasiveIn = invasiveOf(db.selectObjects('SELECT country, source FROM plant_invasive WHERE plant = ?1 ORDER BY country, source', [plant]));
       const toxicitySources = db.selectObjects('SELECT source FROM toxicity_sources WHERE plant = ?1 ORDER BY ord', [plant]).map((r) => String(r.source));
       const placements = placementsOf([id]).get(id) ?? {};
+      const koppen: KoppenShare[] = db.selectObjects('SELECT koppen, share, cells FROM plant_koppen WHERE plant = ?1 ORDER BY share DESC, koppen', [plant])
+        .map((r) => ({ code: String(r.koppen), share: Number(r.share), cells: Number(r.cells) }));
+      const rangeSource = db.selectObjects('SELECT range_source FROM plant_climate_status WHERE plant = ?1 AND range_source IS NOT NULL', [plant]).map((r) => String(r.range_source));
       const fnSources = db.selectObjects('SELECT s.source FROM functions f JOIN function_sources s USING (function_id) WHERE f.plant = ?1', [plant]).map((r) => String(r.source));
       const cited = new Set<string>([
         ...reasons.map((r) => r.source), ...layerValues.map((v) => v.source), ...toxicitySources, ...fnSources,
-        ...(invasiveIn ?? []).flatMap((r) => r.sources), ...Object.values(placements).flatMap((p) => (p?.source ? [p.source] : [])),
+        ...(invasiveIn ?? []).flatMap((r) => r.sources), ...Object.values(placements).flatMap((p) => (p?.source ? [p.source] : [])), ...rangeSource,
       ]);
       const list = [...cited];
       const sources: Record<string, Source> = {};
@@ -257,7 +287,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
           sources[String(r.id)] = { label: String(r.label), url: str(r.url), licence: str(r.licence), attribution: str(r.attribution) };
         }
       }
-      return { id, climate: c, reasons, layerValues, image: imageOf(id, imageRow), invasiveIn, toxicitySources, sources, placements };
+      return { id, climate: c, reasons, layerValues, image: imageOf(id, imageRow), invasiveIn, toxicitySources, sources, placements, koppen };
     },
     async labels(l) {
       const out: Labels = {};
@@ -266,6 +296,14 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         ((out[field] ??= {})[value] ??= {})[l] = String(r.label);
       }
       return out;
+    },
+    nativeIn(l3) {
+      let set = natives.get(l3);
+      if (!set) {
+        set = new Set(db.selectObjects('SELECT DISTINCT p.id FROM plant_areas a JOIN plants p USING (plant) WHERE a.area = ?1 AND a.introduced = 0', [l3]).map((r) => String(r.id)));
+        natives.set(l3, set);
+      }
+      return set;
     },
     async cellCounts(c) {
       return db.selectObjects(`SELECT x.stratum, f.ord phase, count(*) n FROM placements x JOIN phases f ON f.ord BETWEEN x.phase_start AND x.phase_end

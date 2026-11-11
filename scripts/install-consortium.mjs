@@ -12,16 +12,19 @@
 //
 // Checks, in order, and refuses on the first failure (nothing is written then):
 // - SHA256SUMS: every listed file exists and matches; every other file of the directory is listed.
-// - manifest.json: format_version 4 and schema_version 1 (anything else refused by name), release_id
+// - manifest.json: format_version 4 and schema_version 2 (anything else refused by name), release_id
 //   (`r-` and 16 hex digits), canopi_db_sha256 not all zeros unless --fixture, `split` false (the page
-//   reads one file) with one file, the climates of the files those of `climates`, the TRY list and credits entries.
+//   reads one file) with one file, the climates of the files those of `climates`, the TRY list and credits entries,
+//   and `climate_ranges` with the grid the ranges were sampled from.
 // - each database file: a safe name of the contract's form (schema, release, digest of the raw
 //   database), its sha256 and bytes those of the manifest and SHA256SUMS, the gzip magic, at most
 //   MAX_GZIP_BYTES gzipped and under MAX_FILE_BYTES raw; then, read with node:sqlite: application_id,
 //   user_version, integrity_check, foreign_key_check, every table and column of
 //   scripts/consortium-schema.mjs, meta (schema, format, release, climates, built_at), each table's
 //   row count against meta and the manifest, every plant placed and every placement with a reason,
-//   source and photo page urls http(s) only, invasive rows only in countries GRIIS checked.
+//   source and photo page urls http(s) only, invasive rows only in countries GRIIS checked; schema 2:
+//   meta.ranges_review "estimate_not_reviewed", meta.climate_grid_manifest_sha256 a sha256 equal to the
+//   manifest's, a plant_climate_status row for every plant and range rows only beside a range_source.
 // - try_references.tsv and source_credits.tsv: listed, their sha256 and rows those of the manifest
 //   entry, and parsed as the site's build parses them.
 //
@@ -30,7 +33,9 @@
 //   name changes with the content, so public/_headers caches it forever), images/<uuid>.<digest>.<ext>
 //   and the INSTALLED_BY mark. Nothing else: no manifest, no sums (the index holds the digests).
 // - The index, src/data/consortium-index.json (design check A4): release id, the database files with
-//   their sha256, climates, the canonical names placed in each climate, and {plant uuid: photo path}.
+//   their sha256, climates, the canonical names placed in each climate, {plant uuid: photo path}, and
+//   (schema 2) climate_grid_manifest_sha256 and ranges_review from the database's meta: the climate
+//   tiles' installer (install-climate.mjs) and scripts/check-built-site.mjs compare the installed grid with it.
 //   Build-time readers (guide presets, the page, scripts/check-built-site.mjs) read it; nothing at
 //   build time reads SQLite. An install outside the site (--out, --fixture) writes it inside <out>.
 // - On a real install, src/data/: try_references.tsv byte for byte with try_references.meta.json,
@@ -83,7 +88,9 @@ const MAX_IMAGE_BYTES = 3 * 1024 * 1024; // a larger file (a full-size original)
 export const MAX_GZIP_BYTES = 1_000_000;
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const FORMAT_VERSION = 4;
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
+// The only review state schema 2 allows (plant_climate.review CHECK): the site words ranges as estimates.
+export const RANGES_REVIEW = 'estimate_not_reviewed';
 export const APPLICATION_ID = 0x43434f4e; // "CCON"
 const ZERO_SHA = '0'.repeat(64);
 const TRY_LIST_FILE = 'try_references.tsv';
@@ -261,6 +268,8 @@ export function manifestProblem(m, { fixture = false } = {}) {
   if (!isObject(t) || t.file !== TRY_LIST_FILE || typeof t.sha256 !== 'string' || !HEX64.test(t.sha256) || !Number.isInteger(t.rows) || t.rows < 1 || !Number.isInteger(t.dataset_ids) || t.dataset_ids < 1) return `manifest.json try_references is not { file: "${TRY_LIST_FILE}", sha256, rows, dataset_ids }.`;
   const s = m.source_credits;
   if (!isObject(s) || s.file !== CREDIT_FILE || typeof s.sha256 !== 'string' || !HEX64.test(s.sha256) || (s.rows !== undefined && (!Number.isInteger(s.rows) || s.rows < 1))) return `manifest.json source_credits is not { file: "${CREDIT_FILE}", sha256, rows }.`;
+  const r = m.climate_ranges;
+  if (!isObject(r) || typeof r.climate_grid_manifest_sha256 !== 'string' || !HEX64.test(r.climate_grid_manifest_sha256)) return 'manifest.json climate_ranges is not { climate_grid_manifest_sha256, … } (schema 2 names the grid its ranges were sampled from).';
   return null;
 }
 
@@ -314,6 +323,11 @@ export async function readDatabase(path, entry, manifest) {
     if (meta.release_id !== manifest.release_id) return { problem: `${entry.file}: meta.release_id is ${JSON.stringify(meta.release_id)}, the manifest says ${manifest.release_id}.` };
     if (meta.built_at !== manifest.generated_at) return { problem: `${entry.file}: meta.built_at is ${JSON.stringify(meta.built_at)}, the manifest says ${manifest.generated_at}.` };
     if (meta.climates !== entry.climate_zones.join(',')) return { problem: `${entry.file}: meta.climates is ${JSON.stringify(meta.climates)}, the manifest says ${entry.climate_zones.join(',')}.` };
+    // Schema 2: the ranges' review state and the grid they were sampled from (an empty value is missing).
+    if (meta.ranges_review !== RANGES_REVIEW) return { problem: `${entry.file}: meta.ranges_review is ${JSON.stringify(meta.ranges_review)}; this installer reads "${RANGES_REVIEW}" ranges only.` };
+    const grid = meta.climate_grid_manifest_sha256 || undefined;
+    if (typeof grid !== 'string' || !HEX64.test(grid)) return { problem: `${entry.file}: meta.climate_grid_manifest_sha256 is ${JSON.stringify(grid)}, not a sha256.` };
+    if (grid !== manifest.climate_ranges.climate_grid_manifest_sha256) return { problem: `${entry.file}: meta.climate_grid_manifest_sha256 is ${JSON.stringify(grid)}, the manifest says ${JSON.stringify(manifest.climate_ranges.climate_grid_manifest_sha256)}.` };
     const climates = all('SELECT id FROM climates ORDER BY ord').map((r) => r.id);
     if (climates.join() !== entry.climate_zones.join()) return { problem: `${entry.file}: holds the climates ${climates.join(', ')}, the manifest says ${entry.climate_zones.join(', ')}.` };
     for (const table of DATA_TABLES) {
@@ -325,6 +339,11 @@ export async function readDatabase(path, entry, manifest) {
     if (unplaced) return { problem: `${entry.file}: ${unplaced} plants have no placement.` };
     const reasonless = one('SELECT count(*) n FROM placements x WHERE NOT EXISTS (SELECT 1 FROM placement_reasons r WHERE r.plant = x.plant AND r.climate_zone = x.climate_zone)').n;
     if (reasonless) return { problem: `${entry.file}: ${reasonless} placements have no reason.` };
+    const statusless = one('SELECT count(*) n FROM plants WHERE plant NOT IN (SELECT plant FROM plant_climate_status)').n;
+    if (statusless) return { problem: `${entry.file}: ${statusless} plants have no plant_climate_status row.` };
+    const sourceless = one(`SELECT p.canonical_name name FROM plant_climate_status s JOIN plants p USING (plant) WHERE s.range_source IS NULL
+      AND (EXISTS (SELECT 1 FROM plant_climate c WHERE c.plant = s.plant) OR EXISTS (SELECT 1 FROM plant_koppen k WHERE k.plant = s.plant))`);
+    if (sourceless) return { problem: `${entry.file}: ${sourceless.name} has climate range rows but no range_source.` };
     const badIds = all('SELECT id FROM plants').filter((r) => !UUID.test(r.id));
     if (badIds.length) return { problem: `${entry.file}: plant id ${JSON.stringify(badIds[0].id)} is not a UUID.` };
     // prepush m1: the page links these, so only http(s) (the page's safeHref is the second wall).
@@ -335,7 +354,7 @@ export async function readDatabase(path, entry, manifest) {
     if (unchecked) return { problem: `${entry.file}: ${unchecked.name} is invasive in ${unchecked.country}, a country GRIIS did not check.` };
     const names = Object.fromEntries(climates.map((c) => [c, all('SELECT p.canonical_name n FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? ORDER BY p.canonical_name', c).map((r) => r.n)]));
     const images = all('SELECT p.id, p.canonical_name name, i.url FROM plant_images i JOIN plants p USING (plant) ORDER BY p.id');
-    return { climates, names, images, griis: meta.griis_available === '1' };
+    return { climates, names, images, griis: meta.griis_available === '1', grid, rangesReview: meta.ranges_review };
   } finally {
     db.close();
   }
@@ -360,7 +379,7 @@ export async function verifyExport(dir, { fixture = false, work }) {
   if (creditProblem) refuse(creditProblem);
 
   const databases = [];
-  const facts = { names: {}, images: new Map(), griis: true };
+  const facts = { names: {}, images: new Map(), griis: true, grid: null, rangesReview: null };
   for (const entry of manifest.files) {
     if (!sums.has(entry.file)) refuse(`${entry.file} is not listed in SHA256SUMS.`);
     const gz = readFileSync(join(dir, entry.file));
@@ -382,6 +401,8 @@ export async function verifyExport(dir, { fixture = false, work }) {
     Object.assign(facts.names, read.names);
     for (const img of read.images) if (!facts.images.has(img.id)) facts.images.set(img.id, img);
     facts.griis &&= read.griis;
+    facts.grid = read.grid;
+    facts.rangesReview = read.rangesReview;
     databases.push({ entry, gz });
   }
   for (const c of manifest.climates) {
@@ -405,6 +426,8 @@ export function buildIndex(manifest, facts, photos) {
     images: Object.fromEntries([...photos].sort(([a], [b]) => (a < b ? -1 : 1)).map(([id, file]) => [id, `${IMAGE_BASE}${file.name}`])),
     try_references: { sha256: manifest.try_references.sha256, rows: manifest.try_references.rows, dataset_ids: manifest.try_references.dataset_ids },
     source_credits: { sha256: manifest.source_credits.sha256, ...(manifest.source_credits.rows !== undefined ? { rows: manifest.source_credits.rows } : {}) },
+    climate_grid_manifest_sha256: facts.grid,
+    ranges_review: facts.rangesReview,
   };
 }
 
@@ -421,6 +444,7 @@ export function indexProblem(index) {
   if (!Array.isArray(index.climates) || !index.climates.length || index.climates.some((c) => !CLIMATE_ZONES.includes(c))) return 'the index climates are not climate zones.';
   for (const c of index.climates) if (!Array.isArray(index.names?.[c]) || !index.names[c].length) return `the index has no names for ${c}.`;
   if (!isObject(index.images)) return 'the index images is not an object.';
+  if (typeof index.climate_grid_manifest_sha256 !== 'string' || !HEX64.test(index.climate_grid_manifest_sha256)) return `the index climate_grid_manifest_sha256 ${JSON.stringify(index.climate_grid_manifest_sha256)} is not a sha256 (schema 2 names the grid of its ranges).`;
   for (const [id, path] of Object.entries(index.images)) {
     if (!UUID.test(id)) return `the index image key ${JSON.stringify(id)} is not a plant UUID.`;
     if (typeof path !== 'string' || !path.startsWith(IMAGE_BASE) || !SAFE_NAME.test(path.slice(IMAGE_BASE.length))) return `the index image ${JSON.stringify(path)} is not a local ${IMAGE_BASE} file.`;
