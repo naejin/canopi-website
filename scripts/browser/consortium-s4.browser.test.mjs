@@ -268,12 +268,21 @@ test('BT-8 (S4 print): > 20 plants print "At a glance" and the table, ≤ 20 the
   });
 });
 
-test('BT-8 (S4 print, drawing): ≤ 20 plants print the side view drawing', { todo: 'S4 drawing: needs S2 side view; PrintSheet.tsx Drawing is null until it is wired' }, async (t) => {
+test('BT-8 (S4 print, drawing): ≤ 20 plants print the side view drawing', async (t) => {
   await eachVariant(t, async (v) => {
     const small = await h.open('/consortium/', { ...v, data: 'fixture' });
     await suggest(small);
     await h.pdf(small);
-    assert.ok(await findAx(small, { role: 'img' }), '≤ 20 plants: the drawing');
+    const drawing = await small.$eval('.ct-print', (el) => {
+      const img = el.querySelector('[role="img"]');
+      const r = img?.getBoundingClientRect();
+      return img ? { name: img.getAttribute('aria-label'), h: r.height, w: r.width, shapes: el.querySelectorAll('svg *').length } : null;
+    });
+    assert.ok(drawing, '≤ 20 plants: the print sheet has the drawing');
+    assert.match(drawing.name, /^Side view/, 'named as the side view');
+    assert.ok(drawing.h > 50 && drawing.w > 200, `printed at a readable size (${drawing.w} × ${drawing.h})`);
+    assert.ok(drawing.shapes > 4, 'with its plants drawn');
+    await done(small);
   });
 });
 
