@@ -5,15 +5,15 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T16:21:23Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T17:51:05Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T13:07:36Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:3eabd0aacd0dc744
-    last_modified: 2026-11-11T16:20:09Z
+    digest: sha256:153672f1497fea1d
+    last_modified: 2026-11-11T17:27:34Z
   - id: climate-release-json
     resource: ../../src/data/climate-release.json
     title: src/data/climate-release.json
@@ -38,6 +38,7 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 - [climate-page-data.ts](../../src/data/climate-page-data.ts): `climatePageData(index)`, the canopi-climate base and tile names per layer the consortium page writes to `#ct-climate` for the location reader (no sizes or hashes; ≤ 2 KB gzip, `CLIMATE_PAGE_DATA_GZIP_BUDGET`), `null` without an index; tested in `scripts/climate-page-data.test.mjs`.
 - [consortium-index.json](../../src/data/consortium-index.json): the installed consortium release as the build sees it (release, database file and digests, climates, canonical names per climate, photo paths, TRY and credits entries, and since schema 2 `climate_grid_manifest_sha256` and `ranges_review`); written only by the installer, read by the page, the guide presets, the home note and the checks, never served; see [Consortium core](/modules/consortium-core.md). `tryReferences` is parsed when the site builds, by [src/lib](/modules/src-lib.md).
 - [climate-release.json](../../src/data/climate-release.json): the pinned canopi-climate grid release (tag, GitHub asset URL, size, sha256, manifest sha256) that every `astro build` fetches and verifies. `climate-index.json` (git-ignored, written by each fresh install): the installed grid as the build sees it (URL base `/data/climate/<version>-<12 hex>/`, tile names and sizes per layer, variables, slots, release, credits, the consortium grid check); see [Climate reader](/modules/climate-reader.md).
+- [consortium-credits.ts](../../src/data/consortium-credits.ts): the consortium tool's credits on /data-sources/ (P5 S5f): `toolCredits(climateIndex.credits, tag)` (the grid, its five inputs from the climate index, GBIF, OpenFreeMap, Nominatim; a missing known grid source throws), `GBIF` (fetch window and basis of record, checked against the installed export's meta by `scripts/consortium-p5-seams-s5f.test.mjs`); see [Privacy page and tool credits](/modules/privacy-and-credits.md).
 - [glossary.ts](../../src/data/glossary.ts): the Field Guides glossary, en and fr (`glossary`, `glossaryEntry(id, lang)`; one id per concept, no aliases).
 - [crops.ts](../../src/data/crops.ts): the 42-row crop table (the guide map's 40 crops plus mustard and flax) behind `CropCards`, `CropTable` and `CropExplorer` (ease, crossing, pollination, life, seed; `crop(id)`; no aliases).
 - [consortium-guides.ts](../../src/data/consortium-guides.ts): the Field Guides the consortium tool links: `consortiumGuides` (plant canonical name to slugs), `jobGuides` (one guide for each of the six jobs, never `null`) and `explainGuide`; see [Consortium page](/modules/consortium-page.md).

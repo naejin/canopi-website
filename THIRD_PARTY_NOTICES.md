@@ -11,6 +11,8 @@ ones pinned in `package.json` / `package-lock.json`.
 | [@sqlite.org/sqlite-wasm](https://github.com/sqlite/sqlite-wasm) | 3.54.1-build1 | Apache License 2.0 (the npm packaging; SQLite itself is public domain) | The WebAssembly build of SQLite and its loader |
 | [Preact](https://preactjs.com/) | 11.0.1 | MIT, Copyright (c) 2015-present Jason Miller | The consortium tool's interface |
 | [@preact/signals](https://github.com/preactjs/signals) and @preact/signals-core | 2.11.3 / 1.14.5 | MIT, Copyright (c) 2022-present Preact Team | The consortium tool's state |
+| [MapLibre GL JS](https://maplibre.org/) (`maplibre-gl`) | 6.10.0 | BSD-3-Clause, Copyright (c) 2023, MapLibre contributors; contains code from mapbox-gl-js v1.13 and earlier (BSD-3-Clause, Copyright (c) 2020, Mapbox), glfx.js (MIT) and d3-color (ISC); full text below | The map for choosing a site, loaded only when the reader opens it |
+| MapLibre's dependencies, bundled with it: @maplibre/maplibre-gl-style-spec 26.6.0, @maplibre/geojson-vt 6.3.1, @mapbox/point-geometry 1.1.0, earcut 3.2.4, kdbush 4.1.0, potpack 2.1.0, quickselect 3.0.0, tinyqueue 3.0.0 (ISC); @mapbox/tiny-sdf 2.3.0, @mapbox/unitbezier 1.0.0 (BSD-2-Clause); @mapbox/vector-tile 3.0.0, pbf 5.1.2 (BSD-3-Clause); @maplibre/vt-pbf 4.3.3, gl-matrix 3.4.4, bidi-js 1.1.0, murmurhash-js 1.0.0, json-stringify-pretty-compact 4.0.0, protocol-buffers-schema 3.6.1, resolve-protobuf-schema 2.1.0, @mapbox/jsonlint-lines-primitives 2.0.3 (MIT); @maplibre/mlt 1.3.0 (MIT or Apache-2.0) | as locked in `package-lock.json` | as stated per package | Parts of the map |
 
 The consortium data itself (the SQLite export under `/data/consortium/`) carries its own sources and
 licences, credited on the Data sources page (`/data-sources/`).
@@ -28,6 +30,22 @@ licences, credited on the Data sources page (`/data-sources/`).
 | Natural Earth 1:50m Admin 0 - Map Units ([naturalearthdata.com](https://www.naturalearthdata.com/)) | 5.1.2 | Public domain | Country of a location |
 
 The full citations are in the grid's `ATTRIBUTION.md` and in `src/data/climate-index.json` (`credits`).
+
+## Code copied from canopi (the Canopi app)
+
+The owner allowed copying app code into the site (decision "P5 owner answers", answer 6, 2026-11-11).
+Each copied file keeps its licence header and adds a line "copied from canopi <path> at <commit>".
+Stream S5b ("Where is your site?") copies these files from `desktop/web/src/` of
+[canopi](https://github.com/opencanopi/canopi) into `src/lib/location/`; the exact commit of each is
+filled in when S5b merges.
+
+| Copied into | From canopi | At commit | Licence |
+|---|---|---|---|
+| `src/lib/location/` (geocoding registry: the provider interface, Nominatim, URL building, pacing; `email` dropped) | `desktop/web/src/app/geocoding/registry.ts` | TODO (S5b merge) | GNU AGPL v3 or later, Copyright (C) 2026 Canopi contributors; adapted in canopi from [GeoLibre](https://github.com/opengeos/GeoLibre) `packages/core/src/geocoding.ts` at commit `e9df9e2`, MIT License, Copyright (c) 2026 Qiusheng Wu (MIT text below) |
+| `src/lib/location/` (`parseCoordinates`, `shortPlaceLabel`, the pacing and the search controller) | `desktop/web/src/app/geocoding/place-search.ts` | TODO (S5b merge) | GNU AGPL v3 or later, Copyright (C) 2026 Canopi contributors |
+| `src/lib/location/` (the browser transport) | `desktop/web/src/app/geocoding/transport.browser.ts` | TODO (S5b merge) | GNU AGPL v3 or later, Copyright (C) 2026 Canopi contributors |
+| `src/lib/location/` (`geolocationSupported`, `queryGeolocationPermission`) | `desktop/web/src/app/my-location/geolocation.ts` | TODO (S5b merge) | GNU AGPL v3 or later, Copyright (C) 2026 Canopi contributors |
+| `src/islands/consortium/views/location/` (the MapLibre worker setup), if copied | `desktop/web/src/maplibre/loader.ts` | TODO (S5b merge) | GNU AGPL v3 or later, Copyright (C) 2026 Canopi contributors |
 
 ## Test-only, never shipped
 
@@ -224,4 +242,127 @@ incurred by, or claims asserted against, such Contributor by reason of your
 accepting any such warranty or additional liability.
 
 END OF TERMS AND CONDITIONS
+```
+
+## MapLibre GL JS licence
+
+Applies to maplibre-gl 6.10.0 (its `LICENSE.txt`, as published). Full text:
+
+```text
+Copyright (c) 2023, MapLibre contributors
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+    * Neither the name of MapLibre GL JS nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+-------------------------------------------------------------------------------
+
+Contains code from mapbox-gl-js v1.13 and earlier
+
+Version v1.13 of mapbox-gl-js and earlier are licensed under a BSD-3-Clause license
+
+Copyright (c) 2020, Mapbox
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+* Neither the name of Mapbox GL JS nor the names of its contributors
+  may be used to endorse or promote products derived from this software
+  without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+-------------------------------------------------------------------------------
+
+Contains code from glfx.js
+
+Copyright (C) 2011 by Evan Wallace
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+--------------------------------------------------------------------------------
+
+Contains a portion of d3-color https://github.com/d3/d3-color
+
+Copyright 2010-2016 Mike Bostock
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of the author nor the names of contributors may be used to
+  endorse or promote products derived from this software without specific prior
+  written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
