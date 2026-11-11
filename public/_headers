@@ -1,0 +1,8 @@
+# Workers static assets: content-named files are cached for a year and never revalidated
+# (consortium v2, design check A3). Every other path keeps the platform default.
+# /_astro/*: Astro's content-hashed bundles. /data/consortium/*: the database and each photo carry
+# a digest of their bytes in their names (scripts/install-consortium.mjs), so new bytes get a new URL.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+/data/consortium/*
+  Cache-Control: public, max-age=31536000, immutable
