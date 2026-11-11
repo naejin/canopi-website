@@ -3,9 +3,9 @@
 // build) and by scripts/check-built-site.mjs (the island's 60 KB gzip budget).
 //
 // Entries are the page's module scripts (src), its modulepreload links and the imports of its inline
-// module scripts. Each chunk's imports are the static `from "./x.js"` / `import "./x.js"`, the dynamic
-// `import("./x.js")` and the dependency lists of Vite's preload helper ("_astro/x.js"): every string
-// literal naming a .js file of the build.
+// module scripts. Each chunk's imports are the static `from "./x.js"` / `import "./x.js"` and the
+// dynamic `import("./x.js")`: every string literal naming a .js file of the build, except those in
+// Vite's preload lists (__vite__mapDeps), which are preloads, not imports.
 import { existsSync, readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
 
@@ -14,10 +14,25 @@ const SRC = /\bsrc="([^"]+)"/;
 const PRELOAD = /<link\b[^>]*\brel="modulepreload"[^>]*\bhref="([^"]+)"/g;
 const JS_LITERAL = /["'`]((?:\.{1,2}\/|\/)?(?:_astro\/)?[\w.\-/]+\.js)["'`]/g;
 
-// '/_astro/x.js' paths of a chunk's imports, resolved against its own path.
+// Vite's preload list (`__vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=[…])))`): what to preload
+// with each dynamic import, not an import of this chunk. Each listed chunk is still reached through
+// the import() it serves, so a chunk only a feature chunk needs is billed to that feature (S5d
+// hand-off, 2026-11-11). Removed before the literals are read.
+function withoutPreloadLists(code) {
+  let out = code;
+  for (let at = out.indexOf('__vite__mapDeps='); at >= 0; at = out.indexOf('__vite__mapDeps=', at + 1)) {
+    const open = out.indexOf('[', at);
+    const close = open < 0 ? -1 : out.indexOf(']', open);
+    if (close < 0) break;
+    out = out.slice(0, open + 1) + out.slice(close);
+  }
+  return out;
+}
+
+// '/_astro/x.js' paths of a chunk's imports (static and import()), resolved against its own path.
 export function importsOf(code, from = '/_astro/entry.js') {
   const out = new Set();
-  for (const [, spec] of code.matchAll(JS_LITERAL)) {
+  for (const [, spec] of withoutPreloadLists(code).matchAll(JS_LITERAL)) {
     let path;
     if (spec.startsWith('./') || spec.startsWith('../')) path = posix.join(posix.dirname(from), spec);
     else if (spec.startsWith('/_astro/')) path = spec;

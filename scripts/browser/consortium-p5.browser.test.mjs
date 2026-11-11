@@ -140,15 +140,20 @@ test('P5-0c (commit 0 harness): Nominatim and OpenFreeMap are stubbed, WebGL can
   ]), ['failed', 'failed']);
 });
 
-test('P5-0d (commit 0 seams): today the start step shows no location controls, no marks and no likely offers, and calls no third party', async () => {
+test('P5-0d (commit 0 seams): without a location, on a covered climate, no range, future or native mark shows, marks render only through PlantMarks, and nothing calls a third party', async () => {
   const page = await tool({ nominatim: 'fixture', mapTiles: 'stub' });
   assert.equal(await page.$('[data-location-action]'), null);
-  await atSite(page, 'lyon');
   await choose(page, 'Temperate');
   await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
-  assert.ok(await page.waitForFunction(() => document.querySelectorAll('[data-plant-id]').length > 0 && window.__ctTest.store.markProviders.value.length === 3, { timeout: 10_000 }).then(() => true, () => false), 'members in the matrix, and the mark providers loaded for the location');
-  assert.equal(await page.$('[data-mark]:not([data-mark="edge"], [data-mark="outside"], [data-mark="unknown"], [data-mark="estimate"])'), null, 'only the range marks (S5c); the future and native providers are stubs');
-  assert.equal(await page.$('[data-likely]'), null);
+  assert.ok(await page.waitForFunction(() => document.querySelectorAll('[data-plant-id]').length > 0, { timeout: 10_000 }).then(() => true, () => false), 'members in the matrix');
+  const marks = () => page.$$eval('[data-mark]', (els) => els.map((e) => ({ kind: e.getAttribute('data-mark'), surface: e.getAttribute('data-mark-surface') })));
+  const promised = (list) => list.filter((m) => ['outside', 'edge', 'future', 'native'].includes(m.kind));
+  assert.deepEqual(promised(await marks()), [], 'no range, future or native mark without a location');
+  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.markProviders.value.length), 0, 'the providers do not even load without a location on a covered climate');
+  // With a location the providers load; whatever marks they give carry a PlantMarks surface.
+  await atSite(page, 'lyon');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.markProviders.value.length === 3, { timeout: 10_000 }).then(() => true, () => false), 'the providers load for a location');
+  for (const m of await marks()) assert.ok(['chip', 'row', 'add', 'details'].includes(m.surface), `the ${m.kind} mark is drawn by PlantMarks on a surface`);
   assert.deepEqual(page.thirdParty, []);
   assert.deepEqual(page.nominatim, []);
 });
