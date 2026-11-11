@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { buildMatrix, phases } from '../src/lib/consortium/index.ts';
 import { COLLAPSED_CHIPS, MAX_TRACKS, SHARE_AIM, cellOrder, collatorFor, fillPercent, fold, listGroups, matchesFilters, matchesQuery, nameOrder, reasonParts, rowPieces, runReasons, spanOf, startCounts, stepStage, tracksOf, warningCounts } from '../src/islands/consortium/views/tracks.ts';
 import { FALLBACK_HEIGHT, LOG_MAX, MAX_SILHOUETTES, SCALE_LINES, heightFrac, lineTop, quantile, shapeOf, sidePlants, usualHeight } from '../src/islands/consortium/views/side.ts';
-import { PLOT_H, blob, hash, plantStrokes, topOf } from '../src/islands/consortium/views/draw.ts';
+import { PLOT_H, blob, hash, plantStrokes, reachOf, topOf } from '../src/islands/consortium/views/draw.ts';
 
 const UNSURE = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
 const traits = (over = {}) => ({
@@ -178,4 +178,11 @@ test('plants and scale lines share one coordinate system: a tree or a shrub of 5
     const top = topOf(plantStrokes({ id, shape, frac: heightFrac(m), dashed: false }));
     assert.ok(Math.abs(top / PLOT_H * 100 - lineTop(m)) < 1, `${shape} ${id} : ` + `${m} m: tree top ${(top / PLOT_H * 100).toFixed(1)} %, line ${lineTop(m).toFixed(1)} %`);
   }
+});
+
+test('reachOf: how far a plant reaches sideways, strokes included', () => {
+  const tree = plantStrokes({ id: 'r', shape: 'tree', frac: 0.9, dashed: false });
+  const r = reachOf(tree);
+  assert.ok(r > 3.5 && r <= 13 * 1.11 + 1, `a tall tree's crown: ${r}`);
+  assert.ok(reachOf(plantStrokes({ id: 'r', shape: 'herb', frac: 0.1, dashed: false })) < r, 'a low herb reaches less');
 });

@@ -88,26 +88,37 @@ export function plantStrokes({ id, shape, frac, dashed }: { id: string; shape: S
   return out;
 }
 
-// The lowest and highest y a path reaches, sampled along its curves. Reads the M, L, Q and C commands
-// this module writes.
-function yExtent(d: string): [number, number] {
-  let min = Infinity, max = -Infinity, y0 = 0;
+// The x and y ranges a path reaches, sampled along its curves. Reads the M, L, Q and C commands this
+// module writes.
+function extent(d: string): { x: [number, number]; y: [number, number] } {
+  const x: [number, number] = [Infinity, -Infinity], y: [number, number] = [Infinity, -Infinity];
+  let p0: [number, number] = [0, 0];
   for (const [, cmd, args] of d.matchAll(/([MLQCZ])([^MLQCZ]*)/g)) {
-    const ys = [...args.matchAll(/-?\d+(?:\.\d+)?,(-?\d+(?:\.\d+)?)/g)].map((m) => Number(m[1]));
+    const pts = [...args.matchAll(/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)].map((m): [number, number] => [Number(m[1]), Number(m[2])]);
     const k = cmd === 'C' ? 3 : cmd === 'Q' ? 2 : 1;
-    for (let i = 0; i + k <= ys.length; i += k) {
-      const p = [y0, ...ys.slice(i, i + k)];
+    for (let i = 0; i + k <= pts.length; i += k) {
+      const c = [p0, ...pts.slice(i, i + k)];
       for (let j = 0; j <= 24; j++) {
         const t = j / 24, u = 1 - t;
-        const y = k === 3 ? u * u * u * p[0] + 3 * u * u * t * p[1] + 3 * u * t * t * p[2] + t * t * t * p[3] : k === 2 ? u * u * p[0] + 2 * u * t * p[1] + t * t * p[2] : p[1];
-        min = Math.min(min, y);
-        max = Math.max(max, y);
+        for (const a of [0, 1] as const) {
+          const v = k === 3 ? u * u * u * c[0][a] + 3 * u * u * t * c[1][a] + 3 * u * t * t * c[2][a] + t * t * t * c[3][a]
+            : k === 2 ? u * u * c[0][a] + 2 * u * t * c[1][a] + t * t * c[2][a] : c[1][a];
+          const r = a === 0 ? x : y;
+          r[0] = Math.min(r[0], v);
+          r[1] = Math.max(r[1], v);
+        }
       }
-      y0 = p[k];
+      p0 = c[k];
     }
   }
-  return [min, max];
+  return { x, y };
 }
+const yExtent = (d: string): [number, number] => extent(d).y;
 
 // The topmost y any stroke reaches (for tests: a plant tops out at its drawn height).
 export const topOf = (strokes: readonly Stroke[]): number => Math.min(...strokes.map((s) => yExtent(s.d)[0]));
+
+// How far a plant reaches from its column's centre, its strokes' half widths included: the side view
+// narrows a plant (never shortens it) whose reach is wider than its column allows.
+export const reachOf = (strokes: readonly Stroke[]): number =>
+  Math.max(...strokes.map((s) => { const { x } = extent(s.d); return Math.max(-x[0], x[1]) + s.width / 2; }));
