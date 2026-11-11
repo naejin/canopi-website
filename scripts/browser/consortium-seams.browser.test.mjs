@@ -198,18 +198,22 @@ test('X3: a list pasted on Start shows its consortium with Share, saved: a reloa
   });
 });
 
-test('X3: an edit made after "Change site" is saved and in the address', async (t) => {
+// Review R4-3 changed this seam: a site answer given after Change site is the draft's, saved by a
+// commit (Suggest here), not at once; Back keeps the consortium's own answers (D1).
+test('X3: an edit made after "Change site" is saved and in the address once Suggest commits it', async (t) => {
   await eachVariant(t, async (v) => {
     const page = await suggested(v);
     const before = await linkOf(page);
     await page.locator(aria('button', 'Change site')).click();
     await page.locator(aria('radio', 'Shade')).click();
-    await page.waitForFunction((b) => location.hash !== b, { timeout: 4000 }, before).catch(() => {});
+    assert.equal(await linkOf(page), before, 'the draft is not the consortium yet');
+    await page.locator(aria('button', 'Suggest plants')).click();
+    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000));
     const after = await linkOf(page);
-    assert.notEqual(after, before, 'the address follows the edit');
+    assert.notEqual(after, before, 'the address follows the committed edit');
     await page.reload();
     assert.equal(await loadState(page), 'ready');
-    assert.ok(await has(page, aria('button', 'Share'), 8000) || await has(page, aria('button', 'Back to your consortium'), 2000), 'the consortium is restored');
+    assert.ok(await has(page, aria('button', 'Share'), 8000), 'the consortium is restored');
     assert.equal(await linkOf(page), after, 'with the edit');
     await done(page);
   });
