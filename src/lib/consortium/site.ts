@@ -6,17 +6,21 @@
 //
 // Thresholds (ported from v1):
 // - light: sun needs `sun`, part shade `semi_shade`, shade `full_shade`; false is a misfit.
-// - soil, against soil_ph: acid is pH < 6, neutral 6 to 7.5, chalky > 7.5. A misfit when the known
-//   bounds leave no overlap; unknown when the bound that decides is null.
+// - soil, against soil_ph: acid is pH < 6, neutral 6 to 7.5, chalky > 7.5. One known bound can
+//   decide: acid fits when the minimum is below 6 or the maximum is (the plant's whole range is acid),
+//   chalky when the maximum is above 7.5 or the minimum is. A misfit when the known bounds leave no
+//   overlap; otherwise unknown when a bound that decides is null.
 // - water: dry is a misfit for drought_tolerance Low or None, or, when it is unknown, moisture_use
 //   High. Wet is a misfit for a drought-adapted plant that wants good drainage (well_drained and
 //   drought_tolerance High, or moisture_use Low when drought tolerance is unknown); it fits when
 //   well_drained is false, moisture_use is High or drought tolerance is known and not High. Average
 //   checks nothing.
-// - room: small garden ≤ 6 m, large garden ≤ 12 m, for the height and the width. Catalog heights are
-//   wild maximums, so a taller plant "can grow over N m in the wild" (a misfit the reader may still
-//   choose, pruning it); a missing height is "height not recorded" (unknown). A field takes any size.
 import type { Fit, FitReason, Site, SiteKey, Stratum, Taxon, Traits, Verdict } from './types.ts';
+// - room: small garden ≤ 6 m, large garden ≤ 12 m, for the height only (the question asks how tall;
+//   mockup app.js:213). Catalog heights are wild maximums, so a taller plant "can grow over N m in the
+//   wild" (a misfit the reader may still choose, pruning it); a missing height is "height not
+//   recorded" (unknown). A climber's recorded size can be a runner length (decision row "Side view"
+//   2026-10-28), so its room verdict is unknown ('climber'). A field takes any size.
 import { siteKeys, strata } from './types.ts';
 
 // Every answer "Not sure": the site the page starts from (A7).
@@ -41,8 +45,8 @@ const soil: Check = (t, site) => {
   if (site.soil === 'unsure') return null;
   const min = t.traits.soil_ph?.min ?? null, max = t.traits.soil_ph?.max ?? null;
   let verdict: Verdict;
-  if (site.soil === 'acid') verdict = min === null ? 'unknown' : min < ACID_BELOW ? 'fit' : 'misfit';
-  else if (site.soil === 'chalky') verdict = max === null ? 'unknown' : max > CHALKY_ABOVE ? 'fit' : 'misfit';
+  if (site.soil === 'acid') verdict = (min !== null && min < ACID_BELOW) || (max !== null && max < ACID_BELOW) ? 'fit' : min === null ? 'unknown' : 'misfit';
+  else if (site.soil === 'chalky') verdict = (max !== null && max > CHALKY_ABOVE) || (min !== null && min > CHALKY_ABOVE) ? 'fit' : max === null ? 'unknown' : 'misfit';
   else if ((max !== null && max < ACID_BELOW) || (min !== null && min > CHALKY_ABOVE)) verdict = 'misfit';
   else verdict = min === null || max === null ? 'unknown' : 'fit';
   return { key: 'soil', verdict, trait: 'soil_ph' };
@@ -65,9 +69,9 @@ const water: Check = (t, site) => {
 const room: Check = (t, site) => {
   const limit = ROOM_LIMIT_M[site.room];
   if (limit === Infinity) return null;
-  const height = t.traits.height_m?.max ?? null, width = t.traits.width_max_m;
+  if (t.traits.habit === 'Climber') return { key: 'room', verdict: 'unknown', kind: 'climber' };
+  const height = t.traits.height_m?.max ?? null;
   if (height !== null && height > limit) return { key: 'room', verdict: 'misfit', kind: 'wild_height', meters: height, limit };
-  if (width !== null && width > limit) return { key: 'room', verdict: 'misfit', kind: 'wild_width', meters: width, limit };
   if (height === null) return { key: 'room', verdict: 'unknown', kind: 'height_not_recorded' };
   return { key: 'room', verdict: 'fit', kind: 'fits', meters: height, limit };
 };

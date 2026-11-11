@@ -249,9 +249,10 @@ export type JobId = (typeof jobIds)[number];
 export type Verdict = 'fit' | 'misfit' | 'unknown';
 export type FitReason =
   | { key: 'light' | 'soil' | 'water'; verdict: Verdict; trait: keyof Traits | null }
-  // meters: the plant's wild maximum that decides (height, or width for 'wild_width'); limit: the room's.
-  | { key: 'room'; verdict: Verdict; kind: 'fits' | 'wild_height' | 'wild_width'; meters: number; limit: number }
-  | { key: 'room'; verdict: 'unknown'; kind: 'height_not_recorded' };
+  // Room checks the height only. meters: the plant's wild maximum height; limit: the room's.
+  | { key: 'room'; verdict: Verdict; kind: 'fits' | 'wild_height'; meters: number; limit: number }
+  // A climber's recorded size can be a runner length, so its room is unknown, said as such.
+  | { key: 'room'; verdict: 'unknown'; kind: 'height_not_recorded' | 'climber' };
 export interface Fit { verdict: Verdict; misfits: SiteKey[]; unknowns: SiteKey[]; reasons: FitReason[] }
 
 // Swap: a plant that could take a member's place, with what it changes in the matrix ("Also fills…",

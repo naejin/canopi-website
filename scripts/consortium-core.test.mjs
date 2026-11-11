@@ -85,6 +85,11 @@ test('site: light, soil and water are three-valued as in v1', () => {
   assert.equal(fits(acid, site({ soil: 'neutral' })).verdict, 'fit');
   assert.deepEqual(fits(make({ traits: { soil_ph: { min: null, max: 5 } } }), site({ soil: 'neutral' })).misfits, ['soil']);
   assert.deepEqual(fits(make({ traits: { soil_ph: { min: 6, max: null } } }), site({ soil: 'neutral' })).unknowns, ['soil']);
+  // One known bound can decide a fit: a plant whose pH tops out below 6 takes acid soil, one whose
+  // pH starts above 7.5 takes chalky soil, whatever the other bound.
+  assert.equal(fits(make({ traits: { soil_ph: { min: null, max: 5.5 } } }), site({ soil: 'acid' })).verdict, 'fit');
+  assert.equal(fits(make({ traits: { soil_ph: { min: 8, max: null } } }), site({ soil: 'chalky' })).verdict, 'fit');
+  assert.deepEqual(fits(make({ traits: { soil_ph: { min: null, max: 7 } } }), site({ soil: 'acid' })).unknowns, ['soil']);
   const thirsty = make({ traits: { drought_tolerance: 'Low', moisture_use: 'High' } });
   assert.deepEqual(fits(thirsty, site({ water: 'dry' })).misfits, ['water']);
   assert.equal(fits(thirsty, site({ water: 'wet' })).verdict, 'fit');
@@ -96,14 +101,19 @@ test('site: light, soil and water are three-valued as in v1', () => {
   assert.deepEqual(r, { key: 'light', verdict: 'misfit', trait: 'semi_shade' });
 });
 
-test('site: room uses wild maximums ("can grow over N m in the wild"), and an unknown height is said, never a silent fit', () => {
+test('site: room uses the wild maximum height only ("can grow over N m in the wild"); an unknown height or a climber is said, never a silent fit', () => {
   assert.deepEqual(ROOM_LIMIT_M, { small: 6, large: 12, field: Infinity, unsure: Infinity });
   const oak = make({ traits: { height_m: { min: 25, max: 40 }, width_max_m: 25 } });
   const small = fits(oak, site({ room: 'small' }));
   assert.deepEqual(small.misfits, ['room']);
   assert.deepEqual(small.reasons, [{ key: 'room', verdict: 'misfit', kind: 'wild_height', meters: 40, limit: 6 }]);
+  // Height only (the room question asks how tall; mockup app.js:213): a wide, short plant fits.
   const wide = fits(make({ traits: { height_m: { min: 1, max: 3 }, width_max_m: 8 } }), site({ room: 'small' }));
-  assert.deepEqual(wide.reasons, [{ key: 'room', verdict: 'misfit', kind: 'wild_width', meters: 8, limit: 6 }]);
+  assert.deepEqual(wide.reasons, [{ key: 'room', verdict: 'fit', kind: 'fits', meters: 3, limit: 6 }]);
+  // A climber's recorded size can be a runner length (coordinator row "Side view" 2026-10-28): unknown.
+  const vine = fits(make({ traits: { habit: 'Climber', height_m: { min: 5, max: 20 } } }), site({ room: 'small' }));
+  assert.deepEqual(vine.reasons, [{ key: 'room', verdict: 'unknown', kind: 'climber' }]);
+  assert.equal(vine.verdict, 'unknown');
   const noHeight = fits(make({ traits: { width_max_m: 1 } }), site({ room: 'large' }));
   assert.equal(noHeight.verdict, 'unknown');
   assert.deepEqual(noHeight.reasons, [{ key: 'room', verdict: 'unknown', kind: 'height_not_recorded' }]);
