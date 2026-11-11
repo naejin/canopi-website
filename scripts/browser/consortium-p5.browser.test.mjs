@@ -344,14 +344,39 @@ const OUTSIDE = '(nlo - 2 > ?1 OR ?1 > nhi + 2 OR ?2 > xhi + 2)';
 const EDGE = `(NOT ${OUTSIDE} AND (nlo > ?1 OR ?1 > nhi OR ?2 > xhi))`;
 const pickRanged = (where, site, zone) => realDb((db) => db.prepare(`SELECT name FROM (${RANGED}) WHERE ${where} ORDER BY name LIMIT 1`).get(site.tminColdC, site.tmaxWarmC, zone)?.name);
 
-test('P5-14 (S5c nothing fits): at Yakutsk no plant\'s range holds the site: the "nothing fits" state, not an empty matrix', { todo: 'S5c: range filter not built' }, async () => {
+test('P5-14 (S5c nothing fits): at Yakutsk no plant\'s range holds the site: the "nothing fits" state, not an empty matrix', async () => {
   const page = await tool();
   await atSite(page, 'yakutsk');
   await page.evaluate(() => { window.__ctTest.store.climate.value = 'Boreal'; });
   assert.ok(await has(page, '[data-pool-empty]', 10_000), 'the nothing-fits state');
+  // Strengthened (S5c): the state gives a clear next step, a real control that opens the search of
+  // every plant.
+  assert.match(await text(page, '[data-pool-empty]') ?? '', /−?-?39\.8 °C/, 'says why: the site\'s coldest month');
+  await page.click('[data-pool-empty] button');
+  assert.ok(await has(page, '.ct-add .ct-search input', 10_000), 'the next step opens the plant search');
 });
 
-test('P5-15 (S5c near-edge mark): a Mediterranean plant whose range ends within 2 °C of Seville\'s climate carries "near the edge"', { todo: 'S5c: range marks not built' }, async () => {
+test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range, and Add lists none until one is typed, which then asks first', { todo: 'S5c: waits for hand-off H-S5c-1 (store.ts suggestMembers, Add.tsx and Swap.tsx through core withinRange)' }, async () => {
+  const page = await tool();
+  const lookup = await atSite(page, 'seville');
+  const outside = await pickRanged(OUTSIDE, lookup.climate.periods[0], 'Mediterranean');
+  await choose(page, 'Mediterranean');
+  await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
+  assert.ok(await has(page, '[data-mark]', 10_000), 'the marks are loaded (Seville has plants near the edge)');
+  assert.equal(await page.$('[data-mark="outside"]'), null, 'no suggested plant is outside its range');
+  await page.evaluate(() => window.__ctTest.store.openSheet('add'));
+  assert.ok(await has(page, '.ct-add .ct-rows li', 10_000), 'the Add list');
+  await page.click('.ct-add-showall').catch(() => {});
+  assert.equal(await page.$('.ct-add [data-mark="outside"]'), null, 'Add without a query lists no plant outside its range');
+  await page.type('.ct-add .ct-search input', outside);
+  const row = '.ct-add .ct-rows li';
+  assert.ok(await page.waitForFunction((sel, name) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === name && li.querySelector('[data-mark="outside"]') && li.querySelector('button')), { timeout: 10_000 }, row, outside).then(() => true, () => false), `${outside} is found by name, marked "outside", with an Add that asks`);
+  await page.evaluate((sel, name) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === name).querySelector('button').click(), row, outside);
+  assert.ok(await has(page, 'dialog.ct-ask[open]', 5000), 'Add asks first');
+  assert.match(await text(page, 'dialog.ct-ask[open]') ?? '', /outside its observed range/i);
+});
+
+test('P5-15 (S5c near-edge mark): a Mediterranean plant whose range ends within 2 °C of Seville\'s climate carries "near the edge"', async () => {
   const page = await tool();
   const lookup = await atSite(page, 'seville');
   const edge = await pickRanged(EDGE, lookup.climate.periods[0], 'Mediterranean');
@@ -368,7 +393,7 @@ test('P5-15 (S5c near-edge mark): a Mediterranean plant whose range ends within 
   assert.ok(marks.includes('edge'), `${edge} is marked near the edge`);
 });
 
-test('P5-16 (S5c outside-range warning on add): typed in Add, a plant whose range misses the site shows "outside", and adding it still makes it a member', { todo: 'S5c: outside-range warning not built' }, async () => {
+test('P5-16 (S5c outside-range warning on add): typed in Add, a plant whose range misses the site shows "outside", and adding it still makes it a member', async () => {
   const page = await tool();
   const lookup = await atSite(page, 'seville');
   const outside = await pickRanged(OUTSIDE, lookup.climate.periods[0], 'Mediterranean');
@@ -391,7 +416,7 @@ test('P5-16 (S5c outside-range warning on add): typed in Add, a plant whose rang
   assert.ok(await page.waitForFunction((x) => window.__ctTest.store.members.value.includes(x), { timeout: 5000 }, id).then(() => true, () => false), `${outside} joins the members`);
 });
 
-test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from the nearest list and labelled "estimate"', { todo: 'S5c: nearest placements not built' }, async () => {
+test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from the nearest list and labelled "estimate"', async () => {
   const page = await tool();
   await atSite(page, 'lyon');
   const count = await page.evaluate(async () => {
@@ -405,7 +430,7 @@ test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from t
   assert.ok(await has(page, '[data-mark="estimate"]', 10_000));
 });
 
-test('P5-26 (S5c borrowed list from a link): #v=4&c=subtropical without o= opens with borrowed plants marked "estimate", no location needed', { todo: 'S5c: nearest placements not built' }, async () => {
+test('P5-26 (S5c borrowed list from a link): #v=4&c=subtropical without o= opens with borrowed plants marked "estimate", no location needed', async () => {
   const page = await tool({ hash: '#v=4&c=subtropical&a=&e=1' });
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.climate.value === 'Subtropical', { timeout: 10_000 }).then(() => true, () => false), 'the link\'s climate');
   assert.equal(await page.evaluate(() => window.__ctTest.store.location.value), null, 'no location: borrowing depends on the climate only');

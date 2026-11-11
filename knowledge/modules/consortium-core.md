@@ -1,12 +1,12 @@
 ---
 type: Module
 title: Consortium core
-description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range, placement, future, native, soil and lazy marks stubs), the rules S1 ported, and the format 4 schema 2 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
+description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future, native, soil and lazy marks seams), the rules S1 ported, and the format 4 schema 2 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T16:41:40Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T17:39:23Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T15:36:38Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:03:20Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -17,7 +17,7 @@ sources:
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
     digest: sha256:4c334581305a7864
-    last_modified: 2026-11-11T16:37:58Z
+    last_modified: 2026-11-11T17:14:18Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -96,13 +96,13 @@ sources:
   - id: range-ts
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
-    digest: sha256:b8a5487a2a999d4c
-    last_modified: 2026-11-11T16:35:59Z
+    digest: sha256:86a89462d49f753e
+    last_modified: 2026-11-11T17:57:03Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
-    digest: sha256:bd70a2a8fe488a47
-    last_modified: 2026-11-11T14:39:43Z
+    digest: sha256:672a9582428e8097
+    last_modified: 2026-11-11T17:57:03Z
   - id: future-ts
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
@@ -136,8 +136,8 @@ sources:
   - id: range-marks-ts
     resource: ../../src/lib/consortium/range-marks.ts
     title: src/lib/consortium/range-marks.ts
-    digest: sha256:33cb477e7920d8fc
-    last_modified: 2026-11-11T16:35:59Z
+    digest: sha256:b20835b4db2da432
+    last_modified: 2026-11-11T17:57:03Z
   - id: future-marks-ts
     resource: ../../src/lib/consortium/future-marks.ts
     title: src/lib/consortium/future-marks.ts
@@ -156,13 +156,13 @@ sources:
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
-    digest: sha256:de42892a04a78103
-    last_modified: 2026-11-11T16:37:42Z
+    digest: sha256:3bece4fc6cded0fb
+    last_modified: 2026-11-11T18:01:17Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
     digest: sha256:dcab69ddeddd4c2e
-    last_modified: 2026-11-11T16:39:54Z
+    last_modified: 2026-11-11T17:14:18Z
   - id: consortium-p5-seams-s5e-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5e.test.mjs
     title: scripts/consortium-p5-seams-s5e.test.mjs
@@ -203,7 +203,7 @@ The core has no DOM, no Astro and no package imports, so `node --test` runs it a
 | [index.ts](../../src/lib/consortium/index.ts) | Re-exports types, source and canopi-file (S4's, exported now so S4 never edits index.ts). Stream S1 adds the rule exports here. |
 | [canopi-file.ts](../../src/lib/consortium/canopi-file.ts) | S4's `.canopi` writer for the app (format v9, canopi `0c425fb07`): `canopiFile(members, { name, description, at })` returns the JSON text of an empty design whose `consortiums` hold one entry per member (`target {kind: 'species', canonical_name}`, its `stratum` or `unassigned`, `start_phase`/`end_phase` 0–6; app default `unassigned` 0–2), deduplicated by canonical name, with `plants: []` (checked at P2 hand-offs: `PlacedPlant` requires a map `position` the tool does not have, and the app's consortium sync (`app/consortium/workflow.ts` at `0c425fb07`) only adds entries for placed plants and never removes these, so the entries survive until the reader places the plants); `canopiFileName(name)` makes a safe `<name>.canopi`. Pure. Checked in `scripts/consortium-canopi-file.test.mjs` and BT-9 against the app's vendored format, [scripts/vendor/canopi-design-format/](../../scripts/vendor/canopi-design-format) (canopi `0c425fb07`, AGPL header, test-only), with its `validate.mjs` |
 | [site.ts](../../src/lib/consortium/site.ts), [conflicts.ts](../../src/lib/consortium/conflicts.ts), [jobs.ts](../../src/lib/consortium/jobs.ts), [matrix.ts](../../src/lib/consortium/matrix.ts), [suggest.ts](../../src/lib/consortium/suggest.ts), [state.ts](../../src/lib/consortium/state.ts) | Stream S1's rules, exported from `index.ts`: three-valued site fit; conflicts and invasive records; the six jobs and their gaps per phase; `buildMatrix` (4 strata × 7 phases); the greedy suggestion and Swap list; the `#v=4` share link (`encodeLink`, `decodeLink`, `isLongLink` over 2,000 characters, `readPreset` for guide links); `zoneOf(code)` in `state.ts` is the one climate-code lookup (the island's memory.ts and main.ts import it) |
-| [range.ts](../../src/lib/consortium/range.ts), [placement.ts](../../src/lib/consortium/placement.ts), [future.ts](../../src/lib/consortium/future.ts), [native.ts](../../src/lib/consortium/native.ts), [soil-likely.ts](../../src/lib/consortium/soil-likely.ts), [marks.ts](../../src/lib/consortium/marks.ts), [mark-providers.ts](../../src/lib/consortium/mark-providers.ts) | P5 commit 0 seams, each a stub keeping today's behaviour and filled by one stream (`.local/consortium/v2/p5-owners.md`): `rangeFit(taxon, site)` → 'unknown' (S5c); `placeFor(placements, zone, nearestOrder)` → own placement or null, with `NEAREST_LISTS` (Subtropical/Arid → Mediterranean, Tropical, Temperate; Continental/Boreal → Temperate, Mediterranean) (S5c); `futureCheck(taxon, site, scenario)` → null (S5d); `nativeHere(taxon, l3, natives)` → null and `likelyFor(question, lookup)` → null (S5e). Marks: `Mark {kind, key, vars, severity, state?}` (`state` is rendered as `data-mark-state`), `markSurfaces` 'chip' \| 'row' \| 'add' \| 'details', `MarkProvider = (taxon, ctx, surface) => Mark[]`, `plantMarks(taxon, ctx, surface, providers = [])` concatenates the loaded providers. The providers live in their own files, [range-marks.ts](../../src/lib/consortium/range-marks.ts) (S5c), [future-marks.ts](../../src/lib/consortium/future-marks.ts) (S5d) and [native-marks.ts](../../src/lib/consortium/native-marks.ts) (S5e), imported only by `mark-providers.ts`, the lazy chunk `loadMarkProviders()` imports (once); none is exported from `index.ts`, so the first run never holds them (Rollup puts a module in the main chunk if the main entry reaches it statically, even unused). `needsMarkProviders(ctx, curated)`: true with a site location or a climate the export does not curate. `PlantSource.borrowed(zone, order)` ([source.ts](../../src/lib/consortium/source.ts)): an uncurated climate's plants from its nearest lists, marked estimate; `pool(c)` of a climate not in `info().climates` returns `borrowed(c, NEAREST_LISTS[c])`. S5c owns placement.ts and the body of `borrowed` in `sqlite-source.ts` (stub: `[]`, today's "Not covered yet"), so `store.loadPool` is unchanged. Each stream's seam tests are its own file, `scripts/consortium-p5-seams-s5b/c/d/e.test.mjs` (shared inputs in `consortium-p5-fixtures.mjs`); `consortium-p5-seams.test.mjs` pins the shared marks pipeline and where the host views mount each slot |
+| [range.ts](../../src/lib/consortium/range.ts), [placement.ts](../../src/lib/consortium/placement.ts), [future.ts](../../src/lib/consortium/future.ts), [native.ts](../../src/lib/consortium/native.ts), [soil-likely.ts](../../src/lib/consortium/soil-likely.ts), [marks.ts](../../src/lib/consortium/marks.ts), [mark-providers.ts](../../src/lib/consortium/mark-providers.ts) | P5 seams, each filled by one stream (`.local/consortium/v2/p5-owners.md`). S5c (built): `siteToday(site)` (the lookup's historical 1991–2020 period, null without a site climate); `rangeCheck(taxon, site)` → `{verdict, sides, beyond, aridity}` or null, `rangeFit` → 'inside' \| 'edge' \| 'outside' \| 'unknown' (owner answer 2: coldest-month minimum against the plant's tmin_cold low and high, warmest-month maximum against tmax_warm high; passed by up to `RANGE_MARGIN_C` 2 °C 'edge', by more 'outside'; compared in hundredths of a degree, since site values carry one decimal and ranges two, so 9.8 − 7.8 is exactly the margin; no range 'unknown', never filtered; aridity 'drier' \| 'wetter' \| 'inside' \| 'not-checked' (site null, ice) \| 'unknown', a mark only); `withinRange(pool, site, keep = [])`: the pool without the outside plants except `keep`, the same array without a site climate. `placeFor(placements, zone, nearestOrder)` → `{zone, placement, estimate}`: own placement, else the first of `NEAREST_LISTS` (Subtropical/Arid → Mediterranean, Tropical, Temperate; Continental/Boreal → Temperate, Mediterranean) marked estimate, else null; `firstPlaced` is the shared rule; `hasPlants(zone, curated)`: curated or a nearest list is. Real export at the design check's 14 sites (withinRange counts, pinned in `consortium-p5-seams-s5c.test.mjs`): Lyon 339, Dakar 199, Lima 207, Hanoi 208, Montreal 100, Nairobi 181, Perth 117, Seville 101, Oslo 224, Manaus 175, Phoenix 12, Brisbane 265, Yakutsk 0, Chicago 230 (the design check's Montreal 101 and Oslo 227 counted all 515 plants; Continental borrows only Temperate and Mediterranean, 327). `futureCheck(taxon, site, scenario)` → null (S5d); `nativeHere(taxon, l3, natives)` → null and `likelyFor(question, lookup)` → null (S5e). Marks: `Mark {kind, key, vars, severity, state?}` (`state` is rendered as `data-mark-state`), `markSurfaces` 'chip' \| 'row' \| 'add' \| 'details', `MarkProvider = (taxon, ctx, surface) => Mark[]`, `plantMarks(taxon, ctx, surface, providers = [])` concatenates the loaded providers. The providers live in their own files, [range-marks.ts](../../src/lib/consortium/range-marks.ts) (S5c), [future-marks.ts](../../src/lib/consortium/future-marks.ts) (S5d) and [native-marks.ts](../../src/lib/consortium/native-marks.ts) (S5e), imported only by `mark-providers.ts`, the lazy chunk `loadMarkProviders()` imports (once); none is exported from `index.ts`, so the first run never holds them (Rollup puts a module in the main chunk if the main entry reaches it statically, even unused). `needsMarkProviders(ctx, curated)`: true with a site location or a climate the export does not curate. `PlantSource.borrowed(zone, order)` ([source.ts](../../src/lib/consortium/source.ts)): an uncurated climate's plants from its nearest lists, marked estimate; `pool(c)` of a climate not in `info().climates` returns `borrowed(c, NEAREST_LISTS[c])`. S5c's body of `borrowed` in `sqlite-source.ts` reads each curated list of the order once (the same cached pools), keeps every plant once, placed as in the first list of the order that has it (`{...taxon, placedFrom, estimate: true}`), sorted by name, cached per climate; an order with no curated list gives `[]` ("Not covered yet"). `store.loadPool` is unchanged. [range-marks.ts](../../src/lib/consortium/range-marks.ts) (S5c, keys written out as literals): with a site climate 'outside' (warning) and 'edge' (note) with short words on chips (`range.outsideShort`, `range.edgeShort`) and, in Details, the cultivation-included / not-reviewed wording plus one `range.side.cold|mild|hot` line per bound passed with the site and recorded values; 'unknown' (`range.unknown`); aridity `range.drier`/`range.wetter` as kind 'edge' (not on chips) and `range.aridityNotChecked` in Details; 'estimate' on a borrowed plant with or without a location (`estimate.short` on chips, `estimate.fromMediterranean|Tropical|Temperate` elsewhere). Each stream's seam tests are its own file, `scripts/consortium-p5-seams-s5b/c/d/e.test.mjs` (shared inputs in `consortium-p5-fixtures.mjs`); `consortium-p5-seams.test.mjs` pins the shared marks pipeline and where the host views mount each slot |
 | [install-consortium.mjs](../../scripts/install-consortium.mjs) | The installer, described below |
 | [consortium-schema.mjs](../../scripts/consortium-schema.mjs) | `DDL`: schema 2, the export's 37 statements as stored in export `r-e0b162087a79eecf` (schema 1's from canopi-data `ab6bfad`, plus `plant_climate_status`, `plant_climate`, `plant_koppen`). `DATA_TABLES`: the 28 counted tables |
 | [make-fixture.mjs](../../scripts/fixtures/consortium-v2/make-fixture.mjs) | The invented fixture, 38 plants, built with `node:sqlite`; schema 2 ranges by rule from each plant's first placement (`FIXTURE_GRID_SHA256` is the real v0.2.0 grid digest), Phacelia without a range. `buildFixtureDb` and `writeFixtureExport(dir, { edit, userVersion, applicationId, manifest, after })` build the broken variants for tests. The committed `export/` passes canopi-data's `check_export`; coverage is in its README |

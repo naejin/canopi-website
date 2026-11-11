@@ -211,10 +211,29 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
     },
     // P5 seam (commit 0): stream S5c owns this method's body and nobody else edits it. The plants of a
     // climate the export does not curate, each placed from the first list of `order` that places it
-    // (core placement.ts placeFor), with Taxon.estimate true and Taxon.placedFrom that list. Stub:
-    // nothing, today's "Not covered yet".
-    async borrowed(_zone, _order) {
-      return [];
+    // (core placement.ts placeFor), with Taxon.estimate true and Taxon.placedFrom that list. Read once
+    // per climate and kept (the same objects every time), in the curated pools' order (by name). An
+    // order naming no curated climate gives nothing: "Not covered yet".
+    async borrowed(zone, order) {
+      let p = pools.get(zone);
+      if (p) return p;
+      const own = (z: ClimateZone): Taxon[] => {
+        let list = pools.get(z);
+        if (!list) pools.set(z, (list = readPool(z)));
+        return list;
+      };
+      // Each plant in every curated list of the order: zone → its record there.
+      const records = new Map<PlantId, Partial<Record<ClimateZone, Taxon>>>();
+      for (const z of order.filter((x) => info.climates.includes(x))) {
+        for (const t of own(z)) { let r = records.get(t.id); if (!r) records.set(t.id, (r = {})); r[z] = t; }
+      }
+      // The first list of the order that places it (placement.ts placeFor's rule; zone is uncurated).
+      p = [...records.values()].flatMap((r): Taxon[] => {
+        const from = order.find((z) => r[z]);
+        return from ? [{ ...r[from]!, placedFrom: from, estimate: true }] : [];
+      }).sort((a, b) => (a.canonical_name < b.canonical_name ? -1 : a.canonical_name > b.canonical_name ? 1 : 0));
+      pools.set(zone, p);
+      return p;
     },
     async interactions(c) {
       const rows = db.selectObjects(`SELECT * FROM interactions WHERE interaction IN (${INTERACTIONS_IN}) ORDER BY interaction`, [c]);

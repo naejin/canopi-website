@@ -1,65 +1,264 @@
-// P5 commit 0, stream S5c's seams (range.ts, placement.ts, views/PoolSlot.tsx): stubs that keep today's behaviour until S5c lands.
-// S5c owns this file and replaces each stub test with its rules' tests; no other stream edits it.
+// Stream S5c (filtered pool and nearest placements): the range rule (core range.ts, owner answer 2,
+// 2026-11-11), the nearest-list placements (placement.ts and PlantSource.borrowed, owner answer 1),
+// the range and estimate marks (range-marks.ts), the Start slot (views/PoolSlot.tsx and its feature
+// chunk views/pool/pool.tsx), its strings, and the pool sizes the design check measured at 14 sites
+// on the real export (p5-design-check.md §C). S5c owns this file; no other stream edits it.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
 import { ctx, lyon, placement, taxon } from './consortium-p5-fixtures.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
+const { rangeMarks } = await import('../src/lib/consortium/range-marks.ts');
+const { openBytes } = await import('../src/islands/consortium/data/load.ts');
+const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
 const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
-void ctx; void lyon; void placement; void taxon; void view;
 
-test('range.ts rangeFit (S5c stub): every plant is "unknown" against any site until S5c lands, so nothing is filtered', () => {
-  assert.equal(core.rangeFit(taxon(), lyon), 'unknown');
+// A site whose today values are given (the climate reader's historical period first, a future one after).
+const at = (tminColdC, tmaxWarmC, aridityIndex = 1) => ({
+  lat: 0, lon: 0, source: 'map',
+  lookup: {
+    lat: 0, lon: 0, soil: null, regions: { wgsrpdL3: null, isoA2: null },
+    climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods: [
+      { period: '1991-2020', scenario: 'historical', koppen: 'Cfb', koppenTemperatureMarginC: 0, tminColdC, tmaxWarmC, tmeanColdC: 0, tmeanWarmC: 0, aridityIndex },
+      { period: '2071-2099', scenario: 'ssp585', koppen: 'BWh', koppenTemperatureMarginC: 0, tminColdC: tminColdC + 6, tmaxWarmC: tmaxWarmC + 8, tmeanColdC: 0, tmeanWarmC: 0, aridityIndex: 0.1 },
+    ] },
+  },
+});
+
+// ---- the range rule: the fixture plant is recorded with coldest month -15…2.5 °C, warmest month 18…30 °C ----
+
+test('rangeFit: coldest month on both sides and warmest month on the hot side, "edge" within 2 °C beyond Q05/Q95, "outside" beyond', () => {
+  const t = taxon();
+  assert.equal(core.RANGE_MARGIN_C, 2);
+  assert.equal(core.rangeFit(t, at(0, 25)), 'inside');
+  assert.equal(core.rangeFit(t, at(-15, 30)), 'inside', 'on the percentiles is inside');
+  assert.equal(core.rangeFit(t, at(-16, 25)), 'edge', 'colder than recorded, within the margin');
+  assert.equal(core.rangeFit(t, at(-17, 25)), 'edge', 'exactly 2 °C beyond is still the edge');
+  assert.equal(core.rangeFit(t, at(-17.1, 25)), 'outside');
+  assert.equal(core.rangeFit(t, at(4, 25)), 'edge', 'milder winters than recorded');
+  assert.equal(core.rangeFit(t, at(4.6, 25)), 'outside', 'too mild a winter is outside too (both sides)');
+  assert.equal(core.rangeFit(t, at(0, 31.5)), 'edge', 'hotter summers than recorded');
+  assert.equal(core.rangeFit(t, at(0, 32.1)), 'outside');
+  assert.equal(core.rangeFit(t, at(0, 5)), 'inside', 'a cool summer is never checked (hot side only)');
+  assert.deepEqual(core.rangeCheck(t, at(-16, 31)).sides, ['cold', 'hot']);
+  assert.deepEqual(core.rangeCheck(t, at(-18, 31)), { verdict: 'outside', sides: ['cold', 'hot'], beyond: ['cold'], aridity: 'unknown' });
+});
+
+test('rangeFit: today\'s period only (the 1991-2020 historical slot), never a future one', () => {
+  const s = at(0, 25);
+  s.lookup.climate.periods.reverse();
+  assert.equal(core.siteToday(s).scenario, 'historical');
+  assert.equal(core.rangeFit(taxon(), s), 'inside');
+});
+
+test('rangeFit: no range is "unknown", never filtered; no site climate checks nothing', () => {
+  assert.equal(core.rangeFit(taxon({ climate: null }), at(-40, 45)), 'unknown');
+  assert.equal(core.rangeFit(taxon({ climate: { ...taxon().climate, tminCold: null, tmaxWarm: null } }), at(-40, 45)), 'unknown');
   assert.equal(core.rangeFit(taxon(), null), 'unknown');
-  assert.equal(core.rangeFit(taxon({ climate: null }), lyon), 'unknown');
+  assert.equal(core.rangeCheck(taxon(), null), null);
+  assert.equal(core.rangeCheck(taxon(), { ...lyon, lookup: null }), null, 'lookup loading or failed');
+  assert.equal(core.rangeCheck(taxon(), { ...lyon, lookup: { ...lyon.lookup, climate: null } }), null, 'open sea');
   assert.deepEqual(core.rangeVerdicts, ['inside', 'edge', 'outside', 'unknown']);
 });
 
-test('placement.ts placeFor (S5c stub): today\'s own-list placement, never borrowed; the nearest-list table is the owner-agreed one', () => {
-  const placements = { Temperate: placement('high', 'secondary_i', 'secondary_iii'), Mediterranean: placement('medium', 'secondary_i', 'secondary_iii') };
-  assert.deepEqual(core.placeFor(placements, 'Temperate', core.NEAREST_LISTS.Temperate), { zone: 'Temperate', placement: placements.Temperate, estimate: false });
-  // Subtropical is not curated: today nothing is borrowed (S5c reads the nearest list, marked estimate).
-  assert.equal(core.placeFor(placements, 'Subtropical', core.NEAREST_LISTS.Subtropical), null);
-  // P5 engineering choices row (2026-11-11): Subtropical and Arid → Mediterranean, Tropical, Temperate;
-  // Continental and Boreal → Temperate, then Mediterranean.
+test('rangeCheck: aridity is a mark only (drier, wetter, not checked on ice), never the verdict', () => {
+  const arid = { low: 0.5, median: 1, high: 2, count: 200, basis: 'observed_cells' };
+  const t = taxon({ climate: { ...taxon().climate, aridity: arid } });
+  assert.deepEqual(core.rangeCheck(t, at(0, 25, 0.1)), { verdict: 'inside', sides: [], beyond: [], aridity: 'drier' });
+  assert.equal(core.rangeCheck(t, at(0, 25, 3)).aridity, 'wetter');
+  assert.equal(core.rangeCheck(t, at(0, 25, 1)).aridity, 'inside');
+  assert.equal(core.rangeCheck(t, at(0, 25, null)).aridity, 'not-checked');
+  assert.equal(core.rangeCheck(taxon(), at(0, 25, 1)).aridity, 'unknown', 'no aridity recorded');
+});
+
+test('withinRange: leaves out only the plants outside, never a kept one; the same list when nothing is checked', () => {
+  const pool = [taxon({ id: 'a' }), taxon({ id: 'b', climate: null }), taxon({ id: 'c', climate: { ...taxon().climate, tminCold: { low: 5, median: 9, high: 15, count: 9, basis: 'observed_cells' } } })];
+  assert.equal(core.withinRange(pool, null), pool);
+  assert.equal(core.withinRange(pool, { ...lyon, lookup: null }), pool);
+  assert.deepEqual(core.withinRange(pool, at(0, 25)).map((t) => t.id), ['a', 'b']);
+  assert.deepEqual(core.withinRange(pool, at(0, 25), ['c']).map((t) => t.id), ['a', 'b', 'c'], 'a kept plant stays, outside or not');
+});
+
+// ---- nearest placements ----
+
+test('placeFor: a curated climate uses its own placement; an uncovered one borrows the first of its nearest lists, marked estimate', () => {
+  const placements = { Temperate: placement('high', 'secondary_i', 'secondary_iii'), Mediterranean: placement('medium', 'secondary_i', 'secondary_iii'), Tropical: placement('low', 'placenta_i', 'placenta_iii') };
+  assert.deepEqual(core.placeFor(placements, 'Temperate'), { zone: 'Temperate', placement: placements.Temperate, estimate: false });
+  assert.deepEqual(core.placeFor(placements, 'Subtropical'), { zone: 'Mediterranean', placement: placements.Mediterranean, estimate: true });
+  assert.deepEqual(core.placeFor({ Tropical: placements.Tropical, Temperate: placements.Temperate }, 'Arid'), { zone: 'Tropical', placement: placements.Tropical, estimate: true });
+  assert.deepEqual(core.placeFor(placements, 'Continental'), { zone: 'Temperate', placement: placements.Temperate, estimate: true });
+  assert.deepEqual(core.placeFor({ Mediterranean: placements.Mediterranean }, 'Boreal'), { zone: 'Mediterranean', placement: placements.Mediterranean, estimate: true });
+  assert.equal(core.placeFor({ Tropical: placements.Tropical }, 'Boreal'), null, 'Boreal never borrows from the Tropical list');
+  assert.equal(core.placeFor({ Tropical: placements.Tropical }, 'Temperate'), null, 'a curated climate never borrows');
+  // P5 engineering choices row (2026-11-11).
   assert.deepEqual(core.NEAREST_LISTS.Subtropical, ['Mediterranean', 'Tropical', 'Temperate']);
   assert.deepEqual(core.NEAREST_LISTS.Arid, ['Mediterranean', 'Tropical', 'Temperate']);
   assert.deepEqual(core.NEAREST_LISTS.Continental, ['Temperate', 'Mediterranean']);
   assert.deepEqual(core.NEAREST_LISTS.Boreal, ['Temperate', 'Mediterranean']);
   for (const z of ['Tropical', 'Mediterranean', 'Temperate']) assert.deepEqual(core.NEAREST_LISTS[z], [z]);
+  const curated = ['Tropical', 'Mediterranean', 'Temperate'];
+  for (const z of core.climateZones) assert.equal(core.hasPlants(z, curated), true, z);
+  assert.equal(core.hasPlants('Boreal', ['Tropical']), false);
+  assert.equal(core.hasPlants('Arid', ['Tropical']), true);
 });
 
-test('views/PoolSlot.tsx (S5c stub): a climate has a list only when the export curates it; otherwise PoolSlot shows today\'s "Not covered yet" notice', () => {
-  const text = view('PoolSlot.tsx');
-  assert.match(text, /export const hasList = \(z: ClimateZone\): boolean => page\(\)\.climates\.includes\(z\.toLowerCase\(\)\);/);
-  assert.match(text, /if \(hasList\(zone\)\) return null;/);
-  assert.match(text, /start\.uncovered\.title/);
+async function sourceOf(file, expected) {
+  const opened = await openBytes(new Uint8Array(gunzipSync(readFileSync(file))), expected);
+  return createSqliteSource(opened.db, { images: {} });
+}
+const fixtureDir = new URL('fixtures/consortium-v2/export/', import.meta.url);
+const manifest = JSON.parse(readFileSync(new URL('manifest.json', fixtureDir), 'utf8'));
+const fixture = await sourceOf(new URL(manifest.files[0].file, fixtureDir), { releaseId: manifest.release_id, climates: manifest.climates.map((c) => c.climate_zone) });
+
+test('PlantSource.borrowed (sqlite-source.ts): every plant of the nearest lists once, placed as in the first list that has it, estimate and placedFrom set', async () => {
+  const asked = [];
+  const real = fixture.borrowed;
+  fixture.borrowed = (zone, order) => { asked.push([zone, order]); return real(zone, order); };
+  const sub = await fixture.pool('Subtropical');
+  assert.deepEqual(asked, [['Subtropical', core.NEAREST_LISTS.Subtropical]], 'pool() of an uncovered climate asks borrowed()');
+  fixture.borrowed = real;
+  const own = Object.fromEntries(await Promise.all(['Tropical', 'Mediterranean', 'Temperate'].map(async (z) => [z, await fixture.pool(z)])));
+  const all = new Set(Object.values(own).flat().map((t) => t.id));
+  assert.equal(sub.length, all.size, 'every plant of the three lists, once');
+  assert.ok(sub.every((t) => t.estimate === true && t.placedFrom), 'each one an estimate, with the list it comes from');
+  const names = sub.map((t) => t.canonical_name);
+  assert.deepEqual(names, [...names].sort(), 'by name, as a curated pool');
+  const placements = await fixture.placements(sub.map((t) => t.id));
+  for (const t of sub) {
+    const want = core.placeFor(placements.get(t.id), 'Subtropical');
+    assert.equal(t.placedFrom, want.zone, t.canonical_name);
+    assert.equal(t.stratum?.value ?? null, want.placement.stratum, t.canonical_name);
+    assert.equal(t.phases?.start ?? null, want.placement.start, t.canonical_name);
+  }
+  const byName = (list, n) => list.find((t) => t.canonical_name === n);
+  assert.equal(byName(sub, 'Castanea sativa').placedFrom, 'Mediterranean', 'Mediterranean before Temperate');
+  assert.equal(byName(sub, 'Zingiber officinale').placedFrom, 'Mediterranean', 'Mediterranean before Tropical');
+  assert.equal(byName(sub, 'Tropaeolum majus').placedFrom, 'Tropical', 'Tropical before Temperate');
+  const cont = await fixture.pool('Continental');
+  assert.equal(byName(cont, 'Castanea sativa').placedFrom, 'Temperate', 'Continental: Temperate first');
+  assert.equal(byName(cont, 'Carica papaya'), undefined, 'Continental never borrows a Tropical-only plant');
+  assert.equal(await fixture.pool('Subtropical'), sub, 'read once and kept: the same objects');
+  assert.equal(byName(own.Temperate, 'Castanea sativa').estimate, undefined, 'the curated pool itself is not touched');
+  assert.equal(await fixture.borrowed('Boreal', []).then((l) => l.length), 0, 'no curated list in the order: nothing');
 });
 
-test('range-marks.ts rangeMarks (stub): no mark on any surface; loaded only through the lazy mark-providers.ts', async () => {
-  const { rangeMarks } = await import('../src/lib/consortium/range-marks.ts');
-  for (const s of core.markSurfaces) assert.deepEqual(rangeMarks(taxon(), ctx({ location: lyon }), s), [], s);
+// ---- marks ----
+
+test('rangeMarks: edge, outside and unknown with a site climate; estimate on a borrowed placement, with or without a location', () => {
+  const marks = (t, site, surface) => rangeMarks(t, ctx({ location: site }), surface).map((m) => [m.kind, m.key, m.severity]);
+  assert.deepEqual(marks(taxon(), null, 'row'), [], 'no location: no range mark (P2 unchanged)');
+  assert.deepEqual(marks(taxon(), at(0, 25), 'row'), [], 'inside: no mark');
+  assert.deepEqual(marks(taxon(), at(-16, 25), 'chip'), [['edge', 'range.edgeShort', 'note']]);
+  assert.deepEqual(marks(taxon(), at(-16, 25), 'row'), [['edge', 'range.edge', 'note']]);
+  assert.deepEqual(marks(taxon(), at(-20, 25), 'add'), [['outside', 'range.outside', 'warning']]);
+  assert.deepEqual(marks(taxon(), at(-20, 25), 'chip'), [['outside', 'range.outsideShort', 'warning']]);
+  assert.deepEqual(marks(taxon({ climate: null }), at(0, 25), 'add'), [['unknown', 'range.unknown', 'note']]);
+  const details = rangeMarks(taxon(), ctx({ location: at(-20, 31) }), 'details');
+  assert.deepEqual(details.map((m) => [m.kind, m.key]), [['outside', 'range.outsideDetails'], ['outside', 'range.side.cold'], ['edge', 'range.side.hot']]);
+  assert.deepEqual(details[1].vars, { site: -20, bound: -15 });
+  assert.deepEqual(details[2].vars, { site: 31, bound: 30 });
+  const arid = taxon({ climate: { ...taxon().climate, aridity: { low: 0.5, median: 1, high: 2, count: 9, basis: 'observed_cells' } } });
+  assert.deepEqual(marks(arid, at(0, 25, 0.1), 'row'), [['edge', 'range.drier', 'note']], 'aridity: a mark only');
+  assert.deepEqual(marks(arid, at(0, 25, 0.1), 'chip'), [], 'not on the tight chips');
+  assert.deepEqual(marks(arid, at(0, 25, null), 'details'), [['unknown', 'range.aridityNotChecked', 'note']], 'ice: not checked');
+  const borrowed = taxon({ placedFrom: 'Mediterranean', estimate: true });
+  assert.deepEqual(marks(borrowed, null, 'chip'), [['estimate', 'estimate.short', 'note']]);
+  assert.deepEqual(marks(borrowed, null, 'row'), [['estimate', 'estimate.fromMediterranean', 'note']]);
+  assert.deepEqual(marks(borrowed, at(-16, 25), 'chip'), [['edge', 'range.edgeShort', 'note'], ['estimate', 'estimate.short', 'note']]);
   assert.equal('rangeMarks' in core, false, 'not exported from index.ts, so out of the first run');
 });
 
-test('PlantSource.borrowed (S5c stub, sqlite-source.ts): an uncovered climate\'s pool goes through borrowed(zone, NEAREST_LISTS[zone]), which reads nothing today', async () => {
-  const { gunzipSync } = await import('node:zlib');
-  const dir = new URL('fixtures/consortium-v2/export/', import.meta.url);
-  const manifest = JSON.parse(readFileSync(new URL('manifest.json', dir), 'utf8'));
-  const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-  const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
-  const raw = new Uint8Array(gunzipSync(readFileSync(new URL(manifest.files[0].file, dir))));
-  const opened = await openBytes(raw, { releaseId: manifest.release_id, climates: manifest.climates.map((c) => c.climate_zone) });
-  const source = createSqliteSource(opened.db, { images: {} });
-  const asked = [];
-  const real = source.borrowed;
-  source.borrowed = (zone, order) => { asked.push([zone, order]); return real(zone, order); };
-  assert.deepEqual(await source.borrowed('Subtropical', core.NEAREST_LISTS.Subtropical), [], 'stub: nothing borrowed');
-  asked.length = 0;
-  assert.deepEqual(await source.pool('Subtropical'), [], 'today an uncovered climate has no plants');
-  assert.deepEqual(asked, [['Subtropical', core.NEAREST_LISTS.Subtropical]], 'pool() of an uncovered climate asks borrowed()');
-  asked.length = 0;
-  assert.ok((await source.pool('Temperate')).length > 0);
-  assert.deepEqual(asked, [], 'a curated climate reads its own list');
+test('strings: every S5c key sits in its block, in all 11 locales, with the same placeholders and plural forms', () => {
+  const locales = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
+  const blockOf = (l) => {
+    const keys = Object.keys(JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8')));
+    return keys.slice(keys.indexOf('consortium.block.s5c') + 1, keys.indexOf('consortium.block.s5d'));
+  };
+  const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
+  const mine = blockOf('en');
+  // What the code reads: range-marks.ts and pool.tsx keys.
+  const used = ['range.edge', 'range.edgeShort', 'range.edgeDetails', 'range.outside', 'range.outsideShort', 'range.outsideDetails', 'range.unknown', 'range.drier', 'range.wetter', 'range.aridityNotChecked',
+    'range.side.cold', 'range.side.mild', 'range.side.hot', 'range.pool.count', 'range.pool.edge', 'range.pool.left', 'range.pool.caveat', 'range.pool.aridityNotChecked',
+    'range.empty.title', 'range.empty.body', 'range.empty.search', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed'];
+  assert.deepEqual(mine, used.map((k) => `consortium.${k}`));
+  const holes = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().filter((x, i, a) => a.indexOf(x) === i);
+  for (const l of locales) {
+    const strings = JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'));
+    assert.deepEqual(blockOf(l), mine, l);
+    for (const k of mine) {
+      assert.deepEqual(holes(strings[k]), holes(en[k]), `${l} ${k}`);
+      if (/^(one|other):/.test(en[k])) {
+        // The forms the locale's existing plural strings use (P falls back to other).
+        const forms = (s) => s.split(' | ').map((p) => p.split(':')[0]).sort();
+        assert.deepEqual(forms(strings[k]), forms(strings['consortium.paste.addAll']), `${l} ${k} plural forms`);
+      }
+    }
+  }
+  assert.match(en['consortium.range.pool.caveat'], /cultivation included/);
+  assert.match(en['consortium.range.pool.caveat'], /not been reviewed/);
+});
+
+// ---- the Start slot ----
+
+test('views/PoolSlot.tsx: every climate with a curated nearest list has a list (Ready, crops and site questions); the panel is a lazy feature chunk', () => {
+  const slot = view('PoolSlot.tsx');
+  assert.match(slot, /export const hasList = \(z: ClimateZone\): boolean => hasPlants\(z, curated\(\)\);/);
+  assert.match(slot, /lazyPart\(\(\) => import\('\.\/pool\/pool\.tsx'\)/, 'the panel loads on demand (P5_FEATURE_ENTRIES.pool)');
+  assert.match(slot, /!curated\(\)\.includes\(zone\) \|\| siteToday\(location\.value\) \? <panel\.View zone=\{zone\} \/> : null/, 'a curated climate without a site climate: nothing, as in P2');
+  assert.match(slot, /start\.uncovered\.title/, 'no list at all: "Not covered yet"');
+  const panel = view('pool/pool.tsx');
+  assert.match(panel, /data-pool-empty/);
+  assert.match(panel, /onClick=\{startEmpty\}/, 'nothing fits: the next step searches every plant');
+  assert.match(panel, /range\.pool\.caveat/);
+});
+
+// ---- the real export at the design check's 14 sites (p5-design-check.md §C) ----
+
+// Each site's today values as the climate reader answers them on the v0.2.0 tiles (design check
+// scratchpad p5c/*.json, period 1991-2020): Köppen, the climate it maps to, coldest-month minimum,
+// warmest-month maximum, aridity index.
+const SITES = {
+  lyon: ['Cfa', 'Subtropical', 0.1, 26.6, 1.1],
+  dakar: ['BSh', 'Arid', 20.0, 28.6, 0.32],
+  lima: ['BWh', 'Arid', 14.9, 24.9, 0.03],
+  hanoi: ['Cwa', 'Subtropical', 13.4, 32.5, 1.28],
+  montreal: ['Dfa', 'Continental', -13.5, 25.9, 1.61],
+  nairobi: ['Aw', 'Tropical', 12.3, 26.5, 1.02],
+  perth: ['Csa', 'Mediterranean', 9.8, 30.3, 0.82],
+  seville: ['Csa', 'Mediterranean', 5.8, 34.8, 0.58],
+  oslo: ['Dfb', 'Continental', -7.6, 21.1, 1.55],
+  manaus: ['Af', 'Tropical', 24.0, 31.2, 1.3],
+  phoenix: ['BWh', 'Arid', 5.2, 41.6, 0.14],
+  brisbane: ['Cfa', 'Subtropical', 10.8, 28.2, 1.07],
+  yakutsk: ['Dfc', 'Boreal', -39.8, 24.7, 0.48],
+  chicago: ['Dfa', 'Continental', -6.2, 27.8, 1.3],
+};
+// Plants kept (not outside) from the climate's pool, own or borrowed. The design check's numbers
+// match for the curated and the Subtropical/Arid sites (Nairobi, Perth, Seville: "own list" 181, 117,
+// 101); its Montreal 101 and Oslo 227 counted all 515 plants, while Continental borrows from Temperate
+// and Mediterranean only (327 plants): 100 and 224.
+const KEPT = { lyon: 339, dakar: 199, lima: 207, hanoi: 208, montreal: 100, nairobi: 181, perth: 117, seville: 101, oslo: 224, manaus: 175, phoenix: 12, brisbane: 265, yakutsk: 0, chicago: 230 };
+
+const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
+const real = await sourceOf(new URL(`../public${index.files[0].url}`, import.meta.url), { releaseId: index.release_id, climates: index.climates });
+
+test('real export: the pool each site keeps, and a suggestion from it never holds a plant outside its range, a site misfit or a serious conflict', async () => {
+  for (const [name, [koppen, zone, tmin, tmax, ai]] of Object.entries(SITES)) {
+    const site = at(tmin, tmax, ai);
+    site.lookup.climate.periods[0].koppen = koppen;
+    const pool = await real.pool(zone);
+    assert.equal(pool.length > 0, true, `${name}: ${zone} has plants`);
+    assert.equal(pool.every((t) => !!t.estimate === !index.climates.includes(zone)), true, `${name}: borrowed plants are estimates, own ones not`);
+    const kept = core.withinRange(pool, site);
+    assert.equal(kept.length, KEPT[name], `${name} (${koppen} → ${zone})`);
+    const ctxt = { site: { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' }, interactions: await real.interactions(zone), country: null, countryStatus: 'none' };
+    const s = core.suggest(kept, ctxt);
+    const members = s.members.map((id) => kept.find((t) => t.id === id));
+    assert.equal(members.every((t) => t && core.rangeFit(t, site) !== 'outside'), true, `${name}: no suggested plant outside its range`);
+    assert.equal(core.flagsOf(members, ctxt).some((f) => f.kind === 'conflict' && f.severity === 'high'), false, `${name}: no serious conflict`);
+    if (name === 'yakutsk') assert.equal(s.members.length, 0, 'nothing fits at Yakutsk');
+    else assert.ok(s.members.length > 0, `${name}: a suggestion`);
+  }
 });

@@ -1,20 +1,30 @@
 /** @jsxImportSource preact */
-// P5 seam (commit 0), owned by S5c (borrowed lists): what Start shows under the climate cards for the
-// chosen climate's plant list. hasList(zone) says whether the climate has a list to suggest from (Start
-// shows the crops and site questions then, and the card says Ready); PoolSlot renders the "Not covered
-// yet" notice when it has none. Today only the curated climates have lists. S5c lets every climate
-// borrow its nearest curated list (core placement.ts NEAREST_LISTS), so hasList turns true and PoolSlot
-// says which list is borrowed, without editing Start.
+// Stream S5c (a thin shell on Start, under the climate cards): what Start says about the chosen
+// climate's plant list. hasList(zone): the climate has plants to suggest from, its own curated list
+// or a nearest list it borrows (core placement.ts NEAREST_LISTS); Start then shows the crops and the
+// site questions, and the card says Ready. Without any list, the "Not covered yet" notice. The panel
+// (views/pool/pool.tsx, a P5 feature chunk; decision row "Island JavaScript budget for P5") loads
+// only for a climate that borrows its plants or once the site location has a climate: which lists
+// are borrowed, how many plants the site's observed climate keeps, and the "nothing fits" state.
+// Without one, a curated climate shows nothing here, as in P2. (siteToday here keeps the small
+// range.ts in the main chunk: shared by the lazy parts only, it became its own chunk, which the
+// page modulepreloads; that cost about 0.1 s at ct:matrix.)
 import type { ClimateZone } from '../../../lib/consortium/index.ts';
+import { hasPlants, siteToday } from '../../../lib/consortium/index.ts';
+import { location } from '../store.ts';
 import { zoneOf } from '../memory.ts';
 import { T } from '../strings.ts';
+import { lazyPart } from './lazy.tsx';
 import { page, zoneLabel } from './Start.tsx';
 
-export const hasList = (z: ClimateZone): boolean => page().climates.includes(z.toLowerCase());
+const panel = lazyPart(() => import('./pool/pool.tsx').then((m) => m.PoolPanel), { quiet: true });
+
+const curated = (): ClimateZone[] => page().climates.flatMap((c) => zoneOf(c) ?? []);
+export const hasList = (z: ClimateZone): boolean => hasPlants(z, curated());
 
 export function PoolSlot({ zone }: { zone: ClimateZone }) {
-  if (hasList(zone)) return null;
-  const list = page().climates.map((c) => zoneLabel(zoneOf(c))).join(', ');
+  if (hasList(zone)) return !curated().includes(zone) || siteToday(location.value) ? <panel.View zone={zone} /> : null;
+  const list = curated().map(zoneLabel).join(', ');
   return (
     <div class="ct-notice" role="status">
       <p><strong>{T('start.uncovered.title', { climate: zoneLabel(zone) })}</strong></p>
