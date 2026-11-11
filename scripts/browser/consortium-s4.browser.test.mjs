@@ -29,12 +29,22 @@ const shareLink = async (page) => {
   return field.value;
 };
 const hashOf = (url) => new URL(url).hash;
+// Each page is a browser context with its own copy of the database: close it once used, so a test
+// with many pages keeps the browser small.
+const done = async (...pages) => { for (const p of pages) await p.browserContext().close().catch(() => {}); };
+const countryText = (page) => page.$eval('[data-ct="country"]', (el) => el.textContent);
+const fixtureTemperate = () => fixtureDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
+const UNSURE = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
+// A #v=4 link of the first five fixture Temperate plants at stage 3, with a chosen country.
+const stageLink = async () => {
+  const ids = await fixtureTemperate();
+  return encodeLink({ climate: 'Temperate', country: 'FR', site: { ...UNSURE, light: 'sun' }, members: ids.slice(0, 5), kept: [ids[0]], removed: [], guests: [], crops: [], stage: 3 }, { Temperate: ids });
+};
 // A #v=4 link holding every Temperate plant of the fixture (21: above the print drawing's limit).
-const allTemperateLink = () => fixtureDb((db) => {
-  const ids = db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id));
-  const site = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
-  return { count: ids.length, fragment: encodeLink({ climate: 'Temperate', country: null, site, members: ids, kept: [], removed: [], guests: [], crops: [], stage: null }, { Temperate: ids }) };
-});
+const allTemperateLink = async () => {
+  const ids = await fixtureTemperate();
+  return { count: ids.length, fragment: encodeLink({ climate: 'Temperate', country: null, site: UNSURE, members: ids, kept: [], removed: [], guests: [], crops: [], stage: null }, { Temperate: ids }) };
+};
 
 test('BT-1 (S4 start): nothing chosen at start, the country line above the climate cards, real Temperate crops, Arid asks', async (t) => {
   await eachVariant(t, async (v) => {
@@ -49,11 +59,14 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
     });
     assert.ok(country < card, 'the country line sits above the cards');
     await page.locator(aria('radio', 'Temperate')).click();
-    for (const crop of ['Onion', 'European chestnut', 'Sunflower', 'Bilberry']) assert.ok(await findAx(page, { role: 'button', name: new RegExp(crop) }), `Temperate crop example: ${crop} (real)`);
+    assert.ok(await findAx(page, { role: 'button', name: /^Onion / }), 'the crop examples');
+    const chips = (await axNodes(page)).filter((n) => n.role === 'button' && n.pressed !== undefined).map((n) => n.name);
+    assert.deepEqual(chips, ['Onion Allium cepa', 'European chestnut Castanea sativa', 'Sunflower Helianthus annuus', 'Bilberry Vaccinium myrtillus'], 'exactly the real Temperate crop examples, in order');
     assert.equal(await loadState(page), 'ready');
     const arid = await h.open('/consortium/', v);
     await arid.locator(aria('radio', 'Arid')).click();
     assert.ok(await has(arid, aria('link', 'Ask for this climate')), 'Arid shows "Ask for this climate"');
+    await done(page, arid);
   });
 });
 
@@ -80,6 +93,9 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     await page.locator(aria('radio', 'Small garden')).click();
     await suggest(page);
     const link = await shareLink(page);
+    assert.equal(await page.$eval('.ct-share [role="status"]', (el) => el.textContent), '', 'nothing copied before Copy is pressed (review 6)');
+    await page.locator(aria('button', 'Copy')).click();
+    assert.ok(await findAx(page, { name: /^(Link copied\.|Copy the link above by hand\.)$/ }), 'Copy copies, or says to copy by hand');
     assert.match(link, /&m=small&/, 'the site is in the link');
     assert.match(link, /&a=[^&]*\*/, 'the kept crop is marked in the link');
 
@@ -88,18 +104,79 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     const copy = await h.open(`/consortium/?run=${Date.now()}${hashOf(link)}`, { ...v, data: 'fixture' });
     assert.equal(await loadState(copy), 'ready');
     assert.equal(hashOf(await shareLink(copy)), hashOf(link), 'the same consortium');
+    await done(copy);
 
     // An unknown token: the rest restores, with the notice.
     const unknown = await h.open(`/consortium/?run=${Date.now()}${hashOf(link).replace('&a=', '&a=zzzzzz')}`, { ...v, data: 'fixture' });
     assert.ok(await findAx(unknown, { name: /no longer in the list; the rest is restored/ }), 'the unknown-plant notice');
+    await done(unknown);
     // An outdated link (another version): calm copy, nothing restored.
     const old = await h.open(`/consortium/?run=${Date.now()}${hashOf(link).replace('v=4', 'v=3')}`, { ...v, data: 'fixture' });
     assert.ok(await findAx(old, { name: /from an older version of the tool/ }), 'the outdated-link notice');
+    await done(old);
 
     // A reload with no fragment restores the last consortium (storage works).
     await page.goto(new URL('/consortium/', page.url()).href);
     assert.equal(await loadState(page), 'ready');
     assert.equal(hashOf(await shareLink(page)), hashOf(link), 'the last consortium is restored');
+    await done(page);
+
+    // A link with a stage and a country round-trips; a reload of it keeps the country "from the shared
+    // link", and so does the save it leaves (reviews 1, 2, 11).
+    const staged = await stageLink();
+    const shared = await h.open(`/consortium/?run=${Date.now()}#${staged}`, { ...v, data: 'fixture' });
+    assert.equal(await loadState(shared), 'ready');
+    assert.equal(hashOf(await shareLink(shared)), `#${staged}`, 'stage 3, site, kept and country round-trip');
+    assert.match(await countryText(shared), /from the shared link/);
+    await shared.reload();
+    assert.equal(await loadState(shared), 'ready');
+    assert.ok(await has(shared, aria('button', 'Share'), 8000));
+    assert.match(await countryText(shared), /from the shared link/, 'a reload keeps the link label');
+    await shared.goto(new URL('/consortium/', shared.url()).href);
+    assert.ok(await has(shared, aria('button', 'Share'), 8000));
+    assert.match(await countryText(shared), /from the shared link/, 'the save keeps the link label');
+    await done(shared);
+
+    // A country the reader chose, then a reload of the page's own address: still "chosen by you".
+    const mine = await h.open('/consortium/', { ...v, data: 'fixture' });
+    await mine.locator(aria('radio', 'Temperate')).click();
+    assert.equal(await loadState(mine), 'ready');
+    const use = (await axNodes(mine)).find((n) => n.role === 'button' && /^Use /.test(n.name ?? ''));
+    if (use) await mine.locator(aria('button', use.name)).click();
+    else {
+      await mine.locator(aria('button', 'Add your country')).click();
+      await mine.select('#ct-country-select', 'FR');
+    }
+    await suggest(mine);
+    assert.match(await countryText(mine), /chosen by you/);
+    await mine.reload();
+    assert.ok(await has(mine, aria('button', 'Share'), 8000));
+    assert.match(await countryText(mine), /chosen by you/, 'a reload never relabels the reader\'s country (review 1)');
+
+    // A link pasted into the open tab is opened (review 3).
+    await mine.evaluate((f) => { location.hash = f; }, staged);
+    for (let i = 0; i < 40 && (await mine.evaluate(() => location.hash)) !== `#${staged}`; i++) await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 800));
+    assert.equal(hashOf(await shareLink(mine)), `#${staged}`, 'the pasted link is the consortium shown');
+    await done(mine);
+
+    // A #v=4 link without a climate: the cut notice, and Start (review 7).
+    const noClimate = await h.open(`/consortium/?run=${Date.now()}#${staged.replace(/c=temperate&/, '')}`, { ...v, data: 'fixture' });
+    assert.ok(await findAx(noClimate, { name: /looks cut off/ }), 'the cut notice');
+    assert.ok(await has(noClimate, aria('radio', 'Temperate')), 'Start stays');
+    assert.equal(await has(noClimate, aria('button', 'Share'), 500), false, 'no result without a climate');
+    await done(noClimate);
+    // A v1 query link: the outdated notice, nothing restored (review 5).
+    const v1 = await h.open(`/consortium/?v=3&c=temperate&a=AbCdEf`, { ...v, data: 'fixture' });
+    assert.ok(await findAx(v1, { name: /from an older version of the tool/ }), 'the outdated notice for a v1 query link');
+    // A v1 save: said once, then removed (review 4).
+    await v1.evaluate(() => localStorage.setItem('canopi-consortium', JSON.stringify({ q: 'c=temperate&a=AbCdEf', at: '2026-10-01', src: 'chosen' })));
+    await v1.goto(new URL('/consortium/', v1.url()).href);
+    assert.ok(await findAx(v1, { name: /last consortium was made with an older version/ }), 'the old-save notice');
+    await v1.goto(new URL('/consortium/', v1.url()).href);
+    assert.ok(await has(v1, aria('radio', 'Temperate'), 8000));
+    assert.equal(await findAx(v1, { name: /last consortium was made with an older version/ }, 500), null, 'only once');
+    await done(v1);
   });
 });
 
@@ -141,6 +218,7 @@ test('BT-8 (S4 print): > 20 plants print "At a glance" and the table, ≤ 20 the
     assert.ok(pdf.length > 1000, 'it prints');
     assert.deepEqual(await shownTables(small), ['The plants'], '≤ 20 plants: the table, no "At a glance"');
     assert.equal(await printedControls(small), 0, 'no controls printed');
+    await done(small);
 
     const big = await h.open(`/consortium/?run=${Date.now()}#${all.fragment}`, { ...v, data: 'fixture' });
     assert.equal(await loadState(big), 'ready');
@@ -149,6 +227,7 @@ test('BT-8 (S4 print): > 20 plants print "At a glance" and the table, ≤ 20 the
     assert.ok(await has(big, '::-p-aria(At a glance)'), '> 20 plants: "At a glance"');
     assert.deepEqual(await shownTables(big), ['At a glance', 'The plants'], 'the table after "At a glance"');
     assert.equal(await printedControls(big), 0, 'no controls printed');
+    await done(big);
   });
 });
 
@@ -174,6 +253,7 @@ test('BT-9 (S4 .canopi): the download validates against the app schema (canopi 0
     assert.equal(doc.version, CURRENT_CANOPI_FILE_VERSION);
     assert.deepEqual(validate(CANOPI_FILE_SCHEMA, doc), [], 'valid against the app schema');
     assert.ok(doc.consortiums.length > 0, 'the members are in it');
+    await done(page);
   });
 });
 

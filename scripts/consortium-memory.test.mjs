@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 
 const m = await import('../src/islands/consortium/memory.ts');
-const { guarded, saveRecord, readRecord, arrival, countryAtStart, shareState, shareUrl, guessCountry, cropExamples, plantName, zoneOf, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
+const { guarded, saveRecord, readRecord, oldRecord, arrival, countryAtStart, shareState, shareUrl, guessCountry, cropExamples, plantName, zoneOf, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
 const { decodeLink, encodeLink } = await import('../src/lib/consortium/index.ts');
 const { openBytes } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
@@ -45,18 +45,28 @@ test('guarded storage: works, and every call is caught when storage throws (§5 
   assert.equal(guarded(() => null).works(), false);
 });
 
-test('the save record round-trips and refuses anything else', () => {
-  const r = saveRecord('v=4&c=temperate&a=&e=1', '2026-11-11T00:00:00Z');
-  assert.deepEqual(readRecord(r), { fragment: 'v=4&c=temperate&a=&e=1', at: '2026-11-11T00:00:00Z' });
-  for (const bad of [null, '', '{', 'null', '42', '{"q":"c=temperate","at":"x"}', '{"fragment":"","at":"x"}', JSON.stringify({ fragment: 'x'.repeat(30000), at: 'x' })]) assert.equal(readRecord(bad), null, String(bad).slice(0, 40));
+test('the save record round-trips with its country source and refuses anything else', () => {
+  const r = saveRecord('v=4&c=temperate&a=&e=1', '2026-11-11T00:00:00Z', 'link');
+  assert.deepEqual(readRecord(r), { fragment: 'v=4&c=temperate&a=&e=1', at: '2026-11-11T00:00:00Z', src: 'link' });
+  assert.equal(readRecord(saveRecord('v=4&c=temperate&a=&e=1', 'x', null)).src, null);
+  assert.equal(readRecord(JSON.stringify({ fragment: 'v=4&c=temperate&a=&e=1', at: 'x', src: 'weird' })).src, null, 'an unknown source reads as none');
+  for (const bad of [null, '', '{', 'null', '42', '{"q":"c=temperate","at":"x"}', '{"fragment":"","at":"x"}', JSON.stringify({ fragment: 'x'.repeat(30000), at: 'x' }), saveRecord('v=3&c=temperate&a=&e=1', 'x', null)]) assert.equal(readRecord(bad), null, String(bad).slice(0, 40));
 });
 
-test('arrival: a link wins, then a guide preset, then the last consortium, then the site climate, else nothing', () => {
-  const saved = { fragment: 'v=4&c=tropical&a=&e=1', at: 'x' };
+test('an older save is told apart from nothing saved (review 4): v1 {q, at, src} and a v≠4 fragment', () => {
+  assert.equal(oldRecord('{"q":"c=temperate&a=x","at":"2026-10-01","src":"chosen"}'), true);
+  assert.equal(oldRecord(saveRecord('v=3&c=temperate&a=&e=1', 'x', null)), true);
+  for (const no of [null, '', '{', saveRecord('v=4&c=temperate&a=&e=1', 'x', 'chosen'), '42']) assert.equal(oldRecord(no), false, String(no));
+});
+
+test('arrival: a link wins, then a guide preset, then an old query link, then the last consortium, then the site climate, else nothing', () => {
+  const saved = { fragment: 'v=4&c=tropical&a=&e=1', at: 'x', src: null };
   assert.deepEqual(arrival({ hash: '#v=4&c=temperate&e=1', search: '?plant=Allium+cepa&climate=temperate' }, saved, 'arid'), { kind: 'link', fragment: 'v=4&c=temperate&e=1' });
   assert.deepEqual(arrival({ hash: '#v=3&c=temperate', search: '' }, null, null).kind, 'link', 'an older link is still read as a link (decodeLink says outdated)');
   assert.deepEqual(arrival({ hash: '#main', search: '?plant=Allium+cepa&climate=temperate' }, saved, 'arid'), { kind: 'preset', climate: 'Temperate', plant: 'Allium cepa' });
-  assert.deepEqual(arrival({ hash: '', search: '?plant=Allium+cepa&climate=nowhere' }, saved, null), { kind: 'saved', fragment: saved.fragment, at: 'x' }, 'a preset with no climate is no preset');
+  assert.deepEqual(arrival({ hash: '', search: '?plant=Allium+cepa&climate=nowhere' }, saved, null), { kind: 'saved', fragment: saved.fragment, at: 'x', src: null }, 'a preset with no climate is no preset');
+  assert.deepEqual(arrival({ hash: '', search: '?v=3&c=temperate&a=AbCdEf' }, saved, null), { kind: 'outdated' }, 'a v1 query link: the outdated notice, nothing restored (review 5)');
+  assert.deepEqual(arrival({ hash: '', search: '?c=temperate&a=AbCdEf' }, null, null), { kind: 'outdated' });
   assert.deepEqual(arrival({ hash: '', search: '' }, null, 'mediterranean'), { kind: 'start', climate: 'Mediterranean' }, 'the shared site climate when the reader set one');
   assert.deepEqual(arrival({ hash: '', search: '' }, null, null), { kind: 'start', climate: null }, 'nothing chosen: never a default climate');
   assert.deepEqual(arrival({ hash: '', search: '' }, null, 'none'), { kind: 'start', climate: null });
@@ -64,11 +74,20 @@ test('arrival: a link wins, then a guide preset, then the last consortium, then 
   assert.equal(zoneOf('x'), null);
 });
 
-test('the country at start: a link, the reader\'s choice ("-" is none), the save, the guess, none', () => {
+test('arrival: the page\'s own address after a reload is the save, not a shared link (review 1)', () => {
+  const own = { ct: 'v=4&c=temperate&k=FR&a=&e=1', src: 'chosen' };
+  assert.deepEqual(arrival({ hash: '#v=4&c=temperate&k=FR&a=&e=1', search: '' }, null, null, own), { kind: 'saved', fragment: own.ct, at: '', src: 'chosen' });
+  assert.deepEqual(arrival({ hash: '#v=4&c=temperate&k=DE&a=&e=1', search: '' }, null, null, own), { kind: 'link', fragment: 'v=4&c=temperate&k=DE&a=&e=1' }, 'another link in the address is a link');
+  assert.deepEqual(arrival({ hash: '#v=4&c=temperate&k=FR&a=&e=1', search: '' }, null, null, { ct: own.ct, src: 'link' }).src, 'link', 'a country first opened from a link stays labelled so');
+  assert.equal(arrival({ hash: '#v=4&c=temperate&a=&e=1', search: '' }, null, null, 'junk').kind, 'link');
+});
+
+test('the country at start: a link, the reader\'s choice ("-" is none), the save (with its source), the guess, none', () => {
   assert.deepEqual(countryAtStart({ link: 'fr', pref: 'DE', saved: 'ES', guess: 'US' }), { code: 'FR', source: 'link' });
   assert.deepEqual(countryAtStart({ link: null, pref: '-', saved: 'ES', guess: 'US' }), { code: null, source: 'chosen' });
   assert.deepEqual(countryAtStart({ link: 'x', pref: 'DE', saved: 'ES', guess: 'US' }), { code: 'DE', source: 'chosen' }, 'a malformed link code is ignored');
   assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'es', guess: 'US' }), { code: 'ES', source: 'chosen' });
+  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'es', savedFrom: 'link', guess: 'US' }), { code: 'ES', source: 'link' }, 'a saved link country is never shown as chosen (review 2)');
   assert.deepEqual(countryAtStart({ link: null, pref: null, saved: null, guess: 'US' }), { code: 'US', source: 'guess' });
   assert.deepEqual(countryAtStart({ link: null, pref: null, saved: null, guess: null }), { code: null, source: null });
 });

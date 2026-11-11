@@ -1,9 +1,10 @@
 /** @jsxImportSource preact */
-// Share (stream S4; design check §5, BT-7): the #v=4 link of the shown consortium, copied at once and
-// shown in a field to copy by hand. Its notes: a link above 2,000 characters ("Some apps cut long
+// Share (stream S4; design check §5, BT-7): the #v=4 link of the shown consortium, in a field to copy by
+// hand, and copied by the Copy button only (a copy outside a click is refused by Safari, and would
+// copy again on every edit). Its notes: a link above 2,000 characters ("Some apps cut long
 // links…", core isLongLink on the whole URL), and a browser that keeps nothing ("This browser does
 // not keep your consortium; your link does."). Rendered by views/Actions.tsx.
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { isLongLink } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
 import { currentFragment, shareUrl, storageWorks } from '../memory.ts';
@@ -22,7 +23,6 @@ export function Share({ onClose }: { onClose: () => void }) {
       setCopied('no');
     }
   };
-  useEffect(() => { void copy(); }, [url]);
   return (
     <section class="ct-share ct-panel" aria-labelledby="ct-share-h">
       <h2 class="ct-step-title" id="ct-share-h">{T('share.title')}</h2>

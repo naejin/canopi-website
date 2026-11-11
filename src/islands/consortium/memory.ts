@@ -5,8 +5,13 @@
 // - The share link: #v=4 in the address's fragment (core state.ts encodeLink / decodeLink), so it
 //   never reaches a server log. The page keeps the address bar on it while a consortium is shown, so
 //   a reload restores it, and rewrites it after a link with plants no longer in the list (§5).
-// - The last consortium: localStorage STORE, { fragment, at }, written on each change; a visit with
-//   no link opens it. A guide preset (?plant=&climate=, A5) wins over it.
+// - The last consortium: localStorage STORE, { fragment, at, src }, written on each change (src: whether
+//   its country came from a shared link, so it keeps that label); a visit with no link opens it. A
+//   guide preset (?plant=&climate=, A5) wins over it. An older save (v1's { q, at, src }, or another
+//   link version) gives the "older version" notice once and is removed.
+// - The page's own address: replaceState writes history.state { ct: fragment, src }, so a reload of
+//   the page's own link opens as the save (its country label kept), not as a link someone shared
+//   (v1 bca954c). A link pasted into the open tab (hashchange) is opened.
 // - The reader's country choice: localStorage COUNTRY_STORE ('FR', or '-' for "No country"), apart
 //   from the consortium. A guess from the browser is shown as a guess, used for the warnings, and
 //   never written, neither here nor in a link (owner row "Climate first, details").
@@ -59,15 +64,34 @@ export type Memory = ReturnType<typeof guarded>;
 
 // ---- the save record ----
 
-export interface SavedRecord { fragment: string; at: string }
-export const saveRecord = (fragment: string, at: string): string => JSON.stringify({ fragment, at });
-// A record read back, or null when it is not one (an older format, damaged JSON).
-export function readRecord(text: string | null): SavedRecord | null {
+// src: where the saved consortium's country came from ('link': a shared link; 'chosen'; null: none).
+export type CountryFrom = 'link' | 'chosen' | null;
+export interface SavedRecord { fragment: string; at: string; src: CountryFrom }
+export const saveRecord = (fragment: string, at: string, src: CountryFrom): string => JSON.stringify({ fragment, at, src });
+const fromOf = (v: unknown): CountryFrom => (v === 'link' || v === 'chosen' ? v : null);
+const versionOf = (fragment: string): string | null => new URLSearchParams(fragment).get('v');
+const parsed = (text: string | null): Record<string, unknown> | null => {
   if (!text) return null;
   const v = attempt(() => JSON.parse(text) as unknown);
-  if (!v || typeof v !== 'object') return null;
-  const { fragment, at } = v as Record<string, unknown>;
-  return typeof fragment === 'string' && fragment.length > 0 && fragment.length < 20_000 && typeof at === 'string' ? { fragment, at } : null;
+  return v && typeof v === 'object' ? (v as Record<string, unknown>) : null;
+};
+// A record read back, or null when it is not one (an older format, another link version, damaged JSON).
+export function readRecord(text: string | null): SavedRecord | null {
+  const v = parsed(text);
+  if (!v) return null;
+  const { fragment, at, src } = v;
+  if (typeof fragment !== 'string' || !fragment.length || fragment.length >= 20_000 || typeof at !== 'string') return null;
+  const ver = versionOf(fragment);
+  return ver === null || ver === String(LINK_VERSION) ? { fragment, at, src: fromOf(src) } : null;
+}
+// A save from an older version of the tool: v1's { q, at, src }, or a record of another link version.
+export function oldRecord(text: string | null): boolean {
+  const v = parsed(text);
+  if (!v) return false;
+  if (typeof v.q === 'string') return true;
+  if (typeof v.fragment !== 'string') return false;
+  const ver = versionOf(v.fragment);
+  return ver !== null && ver !== String(LINK_VERSION);
 }
 
 // ---- climates at the island edge (the site's lowercase ids) ----
@@ -81,36 +105,51 @@ export const siteId = (z: ClimateZone): string => z.toLowerCase();
 // A fragment is a share link when it holds the link's version or its member list (v1 links carried
 // their state in `c` and the query; v2+ share links put `v` first).
 const isLinkFragment = (hash: string): boolean => {
-  const q = new URLSearchParams(hash.replace(/^#/, ''));
+  const q = new URLSearchParams(hash.replace(/^[#?]/, ''));
   return q.has('v') || q.has('a');
 };
 
 export type Arrival =
   | { kind: 'link'; fragment: string }
   | { kind: 'preset'; climate: ClimateZone; plant: string | null }
-  | { kind: 'saved'; fragment: string; at: string }
+  | { kind: 'outdated' }
+  | { kind: 'saved'; fragment: string; at: string; src: CountryFrom }
   | { kind: 'start'; climate: ClimateZone | null };
 
-// What the page opens with, in order: a share link in the fragment; a guide preset in the query;
-// the last consortium on this device; else Start, on the shared site climate when the reader set one
-// (nothing is chosen otherwise: never a default climate).
-export function arrival(loc: { hash: string; search: string }, saved: SavedRecord | null, siteClimate: string | null): Arrival {
-  if (loc.hash && isLinkFragment(loc.hash)) return { kind: 'link', fragment: loc.hash.replace(/^#/, '') };
+// history.state as replaceState left it: the page's own fragment and its country source.
+export interface OwnAddress { ct: string; src: CountryFrom }
+const ownOf = (v: unknown): OwnAddress | null => {
+  if (!v || typeof v !== 'object') return null;
+  const { ct, src } = v as Record<string, unknown>;
+  return typeof ct === 'string' && ct ? { ct, src: fromOf(src) } : null;
+};
+
+// What the page opens with, in order: the page's own address after a reload (history.state.ct is
+// the fragment: the save, with its country label); a share link in the fragment; a guide preset in
+// the query; a v1 query link (?v=3&c=…&a=…: the outdated notice, nothing restored, owner row
+// 2026-11-11); the last consortium on this device; else Start, on the shared site climate when the
+// reader set one (nothing is chosen otherwise: never a default climate).
+export function arrival(loc: { hash: string; search: string }, saved: SavedRecord | null, siteClimate: string | null, state: unknown = null): Arrival {
+  const hash = loc.hash.replace(/^#/, '');
+  const own = ownOf(state);
+  if (hash && own && own.ct === hash) return { kind: 'saved', fragment: hash, at: '', src: own.src };
+  if (hash && isLinkFragment(hash)) return { kind: 'link', fragment: hash };
   const preset = readPreset(loc.search);
   if (preset.climate) return { kind: 'preset', climate: preset.climate, plant: preset.plant };
-  if (saved) return { kind: 'saved', fragment: saved.fragment, at: saved.at };
+  if (isLinkFragment(loc.search)) return { kind: 'outdated' };
+  if (saved) return { kind: 'saved', fragment: saved.fragment, at: saved.at, src: saved.src };
   return { kind: 'start', climate: zoneOf(siteClimate) };
 }
 
 // The reader's country at start: a link's own (labelled "from the shared link"), else the reader's
-// choice on this device ('-' is "No country"), else a saved consortium's (only a chosen country is
-// ever written), else the browser's guess, else none.
-export function countryAtStart({ link, pref, saved, guess }: { link: string | null; pref: string | null; saved: string | null; guess: string | null }): Country {
+// choice on this device ('-' is "No country"), else a saved consortium's (a guess is never written;
+// a country that came from a link keeps that label), else the browser's guess, else none.
+export function countryAtStart({ link, pref, saved, savedFrom = null, guess }: { link: string | null; pref: string | null; saved: string | null; savedFrom?: CountryFrom; guess: string | null }): Country {
   const code = (c: string | null) => (c && /^[A-Za-z]{2}$/.test(c.trim()) ? c.trim().toUpperCase() : null);
   if (code(link)) return { code: code(link), source: 'link' };
   if (pref === NO_COUNTRY) return { code: null, source: 'chosen' };
   if (code(pref)) return { code: code(pref), source: 'chosen' };
-  if (code(saved)) return { code: code(saved), source: 'chosen' };
+  if (code(saved)) return { code: code(saved), source: savedFrom === 'link' ? 'link' : 'chosen' };
   if (code(guess)) return { code: code(guess), source: 'guess' };
   return { code: null, source: null };
 }
@@ -226,7 +265,7 @@ export const pickingCountry = signal(false);
 const memory = guarded(() => (typeof localStorage === 'undefined' ? null : localStorage));
 
 // Applies a decoded link or save to the store, in one batch, and opens the result.
-function applyDecoded(d: DecodedLink, countryLink: boolean): void {
+function applyDecoded(d: DecodedLink, countryFrom: 'link' | 'chosen'): void {
   const s = d.state;
   batch(() => {
     if (s.climate) store.climate.value = s.climate;
@@ -237,7 +276,7 @@ function applyDecoded(d: DecodedLink, countryLink: boolean): void {
     store.crops.value = s.crops;
     store.guests.value = Object.fromEntries(s.guests.map((g) => [g.id, g.from]));
     if (s.stage !== null) store.stage.value = s.stage;
-    if (s.country) store.country.value = countryLink ? { code: s.country, source: 'link' } : { code: s.country, source: 'chosen' };
+    if (s.country) store.country.value = { code: s.country, source: countryFrom };
     store.view.value = 'matrix';
   });
 }
@@ -272,8 +311,15 @@ export function currentFragment(): string | null {
   }), known);
 }
 
+// Where the shown consortium's country came from, as the save and history.state keep it.
+const countryFrom = (): CountryFrom => {
+  const c = store.country.peek();
+  return !c.code || c.source === 'guess' ? null : c.source === 'link' ? 'link' : 'chosen';
+};
+
 // Restores a fragment (a link or the save) once its climates are read. Returns whether it opened.
-async function restore(fragment: string, from: 'link' | 'saved'): Promise<boolean> {
+// src: the saved country's source (a save's country that came from a link keeps that label).
+async function restore(fragment: string, from: 'link' | 'saved', src: CountryFrom = null): Promise<boolean> {
   restoring.value = true;
   try {
     const zones = linkClimates(fragment);
@@ -287,12 +333,18 @@ async function restore(fragment: string, from: 'link' | 'saved'): Promise<boolea
       });
       return false;
     }
-    if (zones[0]) store.climate.value = zones[0];
+    // A link with no climate (cut before it, or edited): the cut notice, and Start stays (review 7).
+    const c = zoneOf(new URLSearchParams(fragment).get('c'));
+    if (!c) {
+      notices.value = { ...notices.peek(), cut: true };
+      return false;
+    }
+    store.climate.value = c;
     await waitForSource();
     const known = await knownFor(zones);
     if (!known) return false;
     const d = decodeLink(fragment, known);
-    applyDecoded(d, from === 'link');
+    applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen');
     notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut };
     // Plants no longer in the list are left out: the address is rewritten without them (§5).
     if (d.notice.unknownCount > 0 && from === 'link') writeAddress(true);
@@ -325,7 +377,9 @@ function writeAddress(force = false): void {
   if (typeof location === 'undefined') return;
   const fragment = store.view.peek() !== 'start' || force ? currentFragment() : null;
   const next = fragment ? shareUrl(location.href, fragment) : `${location.origin}${location.pathname}${location.search}`;
-  if (next !== location.href) attempt(() => history.replaceState(history.state, '', next));
+  // history.state marks the address as the page's own, so a reload opens it as the save (review 1).
+  const state = fragment ? { ct: fragment, src: countryFrom() } : null;
+  if (next !== location.href || JSON.stringify(attempt(() => history.state)) !== JSON.stringify(state)) attempt(() => history.replaceState(state, '', next));
 }
 
 // The reader picks a climate on Start: the shared site climate is written (climate-ux; v1 setClimate).
@@ -372,13 +426,19 @@ export function startMemory(): void {
   if (started || typeof window === 'undefined') return;
   started = true;
   storageWorks.value = memory.works();
-  const saved = readRecord(memory.read(STORE));
-  const how = arrival({ hash: location.hash, search: location.search }, saved, memory.read(SITE_CLIMATE));
+  const raw = memory.read(STORE);
+  const saved = readRecord(raw);
+  const how = arrival({ hash: location.hash, search: location.search }, saved, memory.read(SITE_CLIMATE), attempt(() => history.state));
+  // An older save: said once, then removed, so the notice does not come back on every visit (review 4).
+  if (how.kind === 'start' && oldRecord(raw)) {
+    notices.value = { ...notices.peek(), oldSave: true };
+    memory.remove(STORE);
+  }
   const linkK = how.kind === 'link' ? new URLSearchParams(how.fragment).get('k') : null;
   const savedK = how.kind === 'saved' ? new URLSearchParams(how.fragment).get('k') : null;
   const languages = attempt(() => [...navigator.languages]) ?? [];
   const zone = attempt(() => Intl.DateTimeFormat().resolvedOptions().timeZone) ?? null;
-  store.country.value = countryAtStart({ link: linkK, pref: memory.read(COUNTRY_STORE), saved: savedK, guess: guessCountry([], { languages }) });
+  store.country.value = countryAtStart({ link: linkK, pref: memory.read(COUNTRY_STORE), saved: savedK, savedFrom: how.kind === 'saved' ? how.src : null, guess: guessCountry([], { languages }) });
 
   // A better guess once the known countries are read (the time zone needs them).
   effect(() => {
@@ -389,9 +449,18 @@ export function startMemory(): void {
   });
 
   if (how.kind === 'link') void restore(how.fragment, 'link');
-  else if (how.kind === 'saved') void restore(how.fragment, 'saved');
+  else if (how.kind === 'saved') void restore(how.fragment, 'saved', how.src);
+  else if (how.kind === 'outdated') notices.value = { ...notices.peek(), outdated: true };
   else if (how.kind === 'preset') void applyPreset(how.climate, how.plant);
   else if (how.climate) store.climate.value = how.climate;
+
+  // A link pasted into the open tab: opened, unless it is the page's own address (review 3).
+  window.addEventListener('hashchange', () => {
+    const hash = location.hash.replace(/^#/, '');
+    if (!hash || !isLinkFragment(hash) || hash === currentFragment()) return;
+    notices.value = { ...NO_NOTICES };
+    void restore(hash, 'link');
+  });
 
   // "Suggest plants" pressed early runs when the climate's plants (and every guest list) are read.
   effect(() => {
@@ -417,7 +486,7 @@ export function startMemory(): void {
     if (restoring.peek() || store.view.peek() === 'start' || !store.pool.peek()) return;
     const fragment = currentFragment();
     if (!fragment) return;
-    memory.write(STORE, saveRecord(fragment, new Date().toISOString()));
+    memory.write(STORE, saveRecord(fragment, new Date().toISOString(), countryFrom()));
     writeAddress();
   });
 }
