@@ -82,3 +82,21 @@ export function islandChunks(graph, pageEntries) {
   const pageWide = reachable(graph, pageEntries, new Set(main));
   return { entry: main[0], chunks: [...reachable(graph, main)].filter((p) => !pageWide.has(p) && !isSqliteGlue(graph.get(p).code)) };
 }
+
+// The island's first run (§8, P2 budget): the chunks its entry imports statically, so evaluated
+// before the matrix can draw; what it imports with import() (the sheets, the views after the matrix)
+// is left out. Static imports in the built code: `import … from "./x.js"`, `import "./x.js"`,
+// `export … from "./x.js"`.
+const STATIC_IMPORT = /(?:^|[^\w$.])(?:import|export)\s*(?:[\w$*{}\s,]+?\s*from\s*)?["']([^"']+\.js)["']/g;
+export function firstRunChunks(graph, island) {
+  const own = new Set(island.chunks);
+  const seen = new Set();
+  const stack = [island.entry];
+  while (stack.length) {
+    const p = stack.pop();
+    if (seen.has(p) || !own.has(p)) continue;
+    seen.add(p);
+    for (const [, spec] of graph.get(p).code.matchAll(STATIC_IMPORT)) stack.push(...importsOf(`"${spec}"`, p));
+  }
+  return [...seen];
+}

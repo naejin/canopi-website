@@ -31,9 +31,12 @@ import { COLLAPSED_CHIPS, MAX_TRACKS, PHASE_ORDS, SHARE_AIM, cellOrder, fillPerc
 import { Explain, Marks, PinIcon, SproutIcon, WarnIcon, byName, cellName, layerName, listName, nameOf, openAdd, openDetails, phasePlain, phaseTerm, plantLabel } from './StageBar.tsx';
 import { phone } from './StageStepper.tsx';
 import { PhoneMatrix } from './PhoneMatrix.tsx';
-import { SideView } from './SideView.tsx';
-import { Jobs } from './Jobs.tsx';
-import { PlantList } from './PlantList.tsx';
+import { later, prefetchLater } from './lazy.tsx';
+
+// The other three views load after the matrix (views/lazy.tsx).
+const { View: SideView } = later(() => import('./later.ts').then((m) => m.SideView));
+const { View: Jobs } = later(() => import('./later.ts').then((m) => m.Jobs));
+const { View: PlantList } = later(() => import('./later.ts').then((m) => m.PlantList));
 
 type Tab = Exclude<View, 'start'>;
 const TABS: readonly Tab[] = ['matrix', 'side', 'jobs', 'list'];
@@ -173,6 +176,7 @@ function FirstPaint() {
     if (marked || typeof performance === 'undefined') return;
     marked = true;
     performance.mark('ct:matrix');
+    prefetchLater();
   }, []);
   return null;
 }

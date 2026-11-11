@@ -252,6 +252,10 @@ test('BT-7 (S4 share, views): the restored members and the kept pin as S2 and S3
   });
 });
 
+// The captions of the tables shown, from the DOM (only a table with a box is on paper).
+const shownTables = (page) => page.$$eval('#ct-root table', (els) => els.filter((el) => el.getBoundingClientRect().height > 0).map((el) => el.querySelector('caption')?.textContent?.trim() ?? ''));
+const printedControls = (page) => page.$$eval('#ct-root button, #ct-root [role="button"], #ct-root input, #ct-root select, #ct-root a', (els) => els.filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; }).length);
+
 test('BT-8 (S4 print): > 20 plants print "At a glance" and the table, ≤ 20 the table; no controls are printed', async (t) => {
   const all = await allTemperateLink();
   assert.ok(all.count > 20, 'the fixture has more than 20 Temperate plants');

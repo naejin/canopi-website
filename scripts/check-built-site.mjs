@@ -9,7 +9,7 @@ import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
 import { createHash } from 'node:crypto';
 import { safeHref } from '../src/lib/safe-href.js';
 import { gzipSync } from 'node:zlib';
-import { islandChunks, isSqliteGlue, moduleGraph, pageEntries } from './built-modules.mjs';
+import { firstRunChunks, islandChunks, isSqliteGlue, moduleGraph, pageEntries } from './built-modules.mjs';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -468,6 +468,10 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 // preloads the database (as=fetch, crossorigin, so the island's fetch reuses it) and modulepreloads
 // the island's chunks, the glue included, so they arrive beside the page script.
 const ISLAND_BUDGET = 60 * 1024;
+// The first run (the entry and its static imports; the sheets and the views after the matrix load
+// with import()) stays under 52 KB, so the matrix does not wait for them (P2 hand-off budget).
+const FIRST_RUN_BUDGET = 52 * 1024;
+let firstRunBytes = 0;
 let islandBytes = 0;
 let islandList = [];
 for (const lang of locales) {
@@ -484,12 +488,14 @@ for (const lang of locales) {
   islandList = island.chunks;
   assert.ok(total < ISLAND_BUDGET, `${path}: island JS (main.ts graph) is ${(total / 1024).toFixed(1)} KB gzip, the budget is 60 KB`);
   islandBytes = total;
+  firstRunBytes = firstRunChunks(graph, island).reduce((n, p) => n + gzipSync(graph.get(p).code, { level: 9 }).length, 0);
+  assert.ok(firstRunBytes < FIRST_RUN_BUDGET, `${path}: the island's first run is ${(firstRunBytes / 1024).toFixed(1)} KB gzip, the budget is 52 KB`);
   const preloads = [...html.matchAll(/<link\b[^>]*\brel="(preload|modulepreload)"[^>]*>/g)].map(([tag, rel]) => ({ rel, tag, href: tag.match(/\bhref="([^"]+)"/)?.[1] }));
   const db = preloads.find((l) => l.href === consortiumIndex.files[0].url);
   assert.ok(db && db.rel === 'preload' && /\bas="fetch"/.test(db.tag) && /\bcrossorigin\b/.test(db.tag), `${path}: <link rel="preload" as="fetch" crossorigin> for the database`);
   const modules = new Set(preloads.filter((l) => l.rel === 'modulepreload').map((l) => l.href));
   for (const p of graph.keys()) if (!html.includes(`src="${p}"`)) assert.ok(modules.has(p), `${path}: modulepreload ${p}`);
 }
-console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB).`);
+console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB); first run ${(firstRunBytes / 1024).toFixed(1)} KB (budget 52 KB).`);
 
 console.log(`Verified 11 locale pages, their bibliography, data sources (${creditRows.length} credited sources, ${tryRows.length} TRY rows each) and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);
