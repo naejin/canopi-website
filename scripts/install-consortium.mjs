@@ -1,101 +1,116 @@
-// Installs a canopi-data consortium export (format 3: one file per climate) into public/data/consortium/, where the
-// consortium page fetches it as static JSON. Run by hand; the output is committed.
+// Installs a canopi-data consortium export (format 4: gzipped SQLite, canopi-data
+// docs/consortium-export-v2.md) into public/data/consortium/, where the consortium page fetches the
+// database whole and opens it with SQLite-WASM. Run by hand; the output is committed.
 //
 //   node scripts/install-consortium.mjs <export-dir> [--fixture [--no-images]] [--out <dir>]
 //
 // A real install (no --fixture) needs canopi-data beside this repository and uv: after the checks
 // below, and before any photo, it runs `uv run canopi release verify <export-dir>` from there, on the
 // original directory, as the receipt stands beside it. Exit 0 may install; anything else refuses and
-// shows the message: a recorded disagreement, a stale release, changed bytes, no receipt (so also any
-// export from before the receipts). --fixture (tests only) skips it, so tests need no canopi-data,
-// and is refused for this checkout's own public/data/consortium/ and anything in it (symlinks followed).
-// That guard covers this checkout's site only: --out can still name another checkout's site.
+// shows the message. --fixture (tests only) skips it and is refused for this checkout's own
+// public/data/consortium/ and anything in it (symlinks followed).
 //
 // Checks, in order, and refuses on the first failure (nothing is written then):
-// - SHA256SUMS: every listed file exists and matches; no .json in the directory is unlisted.
-// - manifest.json: format_version 3, canopi_db_sha256 not all zeros (the invented fixture) unless
-//   --fixture (tests only), one entry per climate, each climate file's sha256, regions and
-//   taxa/interactions counts; `countries` keyed by ISO alpha-2 code, each with invasive_checked.
-// - each climate file: the required keys and types of canopi-data's consortium-export.schema.json,
-//   checked by hand (no dependency); extra keys are allowed, as the format lets the export add
-//   fields; taxon ids unique; every source id it cites (reasons included) defined in `sources`;
-//   every source url and photo page url http(s) (the page links them).
-// - the rules the schema cannot express (canopi-data docs/consortium-export-format.md): a taxon's
-//   reasons are one per region, in region order, each in the file's regions; the file's regions are
-//   the union of its reasons' regions; every invasive_in country is a manifest country that GRIIS
-//   checked (the page's "not checked, never none" rests on it).
-// - the TRY dataset list (manifest try_references): listed in SHA256SUMS, its sha256, rows and
-//   dataset_ids those of the manifest entry, and parsed as the site's build parses it. An export
-//   with no entry is refused; only --fixture may lack one (the fixture is an export from before the
-//   list and never reaches the page).
-// - the release id (manifest release_id, canopi-data ADR 0008): `r-` and 16 lowercase hex digits.
-//   An export with none is refused; only --fixture may lack one. The page shows it under the tool and
-//   a correction report carries it.
-// - the source credits (manifest source_credits, optional until canopi-data ships them): when listed,
-//   listed in SHA256SUMS, its sha256 that of the entry, UTF-8, and parsed as the site's build parses
-//   it (src/lib/source-credits.js). An export that does not list them installs without them.
-// A real install (the default output, no --fixture) also writes that list to src/data/, where the
-// page reads it: try_references.tsv byte for byte, and try_references.meta.json holding the entry's
-// sha256, rows and dataset_ids; and source_credits.tsv byte for byte when the export lists it (a copy
-// an earlier export left is removed when this one lists none). --out and --fixture check them and
-// write nothing there. The manifest keeps the entries, as it keeps every key it is given; the files
-// themselves are not copied to the output.
-// Photos: each taxon's image.url (http or https) is downloaded once per taxon id, one at a time
-// with a half-second pause (rate limiting waited out, see download()), into images/<id>.<ext>, and the installed climate file points to
-// /data/consortium/images/<id>.<ext>; credit, licence and source page stay as they are. Wikimedia
-// Commons and iNaturalist originals are fetched as 500 px copies. A photo that fails becomes image: null (no
-// photo) and is listed in the summary; more than 10% failing stops the install. Installed climate
-// files that changed get their sha256 recomputed in the installed manifest and SHA256SUMS. An image
-// url that is not http(s) becomes image: null. --no-images (allowed only with --fixture, for tests)
-// skips downloads and keeps the other files byte for byte.
-// The output directory is replaced as a whole: written in a staging directory (see STAGING_DIR),
-// then renamed into place. It must be absent, empty or a previous install (its INSTALLED_BY mark):
-// anything else is refused, so a mistyped --out never deletes a folder.
+// - SHA256SUMS: every listed file exists and matches; every other file of the directory is listed.
+// - manifest.json: format_version 4 and schema_version 1 (anything else refused by name), release_id
+//   (`r-` and 16 hex digits), canopi_db_sha256 not all zeros unless --fixture, `split` matching the
+//   number of files, the climates of the files those of `climates`, the TRY list and credits entries.
+// - each database file: a safe name of the contract's form (schema, release, digest of the raw
+//   database), its sha256 and bytes those of the manifest and SHA256SUMS, the gzip magic, at most
+//   MAX_GZIP_BYTES gzipped and under MAX_FILE_BYTES raw; then, read with node:sqlite: application_id,
+//   user_version, integrity_check, foreign_key_check, every table and column of
+//   scripts/consortium-schema.mjs, meta (schema, format, release, climates, built_at), each table's
+//   row count against meta and the manifest, every plant placed and every placement with a reason,
+//   source and photo page urls http(s) only, invasive rows only in countries GRIIS checked.
+// - try_references.tsv and source_credits.tsv: listed, their sha256 and rows those of the manifest
+//   entry, and parsed as the site's build parses them.
+//
+// What it writes:
+// - <out>/ (default public/data/consortium/): each database byte for byte under its own name (the
+//   name changes with the content, so public/_headers caches it forever), images/<uuid>.<digest>.<ext>
+//   and the INSTALLED_BY mark. Nothing else: no manifest, no sums (the index holds the digests).
+// - The index, src/data/consortium-index.json (design check A4): release id, the database files with
+//   their sha256, climates, the canonical names placed in each climate, and {plant uuid: photo path}.
+//   Build-time readers (guide presets, the page, scripts/check-built-site.mjs) read it; nothing at
+//   build time reads SQLite. An install outside the site (--out, --fixture) writes it inside <out>.
+// - On a real install, src/data/: try_references.tsv byte for byte with try_references.meta.json,
+//   and source_credits.tsv byte for byte.
+// Photos: each plant_images url (http or https) is downloaded once per plant, one at a time with a
+// half-second pause (rate limiting waited out), Wikimedia Commons and iNaturalist originals as 500 px
+// copies. A photo that fails is left out of the index (no photo) and listed; more than 10% failing
+// stops the install. The database keeps its remote urls: the page uses the index's local path only.
+// The output is replaced as a whole: staged (see STAGING_DIR), then renamed into place, with the
+// src/data/ files. It must be absent, empty or a previous install (its INSTALLED_BY mark).
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gunzipSync } from 'node:zlib';
 import { parseTryReferences } from '../src/lib/try-references.js';
 import { CREDIT_FILE, parseSourceCredits } from '../src/lib/source-credits.js';
+import { DDL, DATA_TABLES } from './consortium-schema.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DEFAULT_OUT = join(ROOT, 'public', 'data', 'consortium');
-export const TRY_LIST_DIR = join(ROOT, 'src', 'data');
-// Where an install writes the TRY list: only a real one.
-export const tryListDirFor = (out, fixture) => (!fixture && resolve(out) === DEFAULT_OUT ? TRY_LIST_DIR : null);
-export const IMAGE_BASE = '/data/consortium/images/';
-export const CANOPI_DATA_DIR = resolve(ROOT, '..', 'canopi-data');
+export const DATA_DIR = join(ROOT, 'src', 'data');
+// Kept for the TRY list's readers (scripts/try-references.test.mjs).
+export const TRY_LIST_DIR = DATA_DIR;
+export const INDEX_FILE = 'consortium-index.json';
+export const INDEX_PATH = join(DATA_DIR, INDEX_FILE);
+// Where an install writes src/data/: only a real one into the site.
+export const dataDirFor = (out, fixture) => (!fixture && resolve(out) === DEFAULT_OUT ? DATA_DIR : null);
+export const PUBLIC_BASE = '/data/consortium/';
+export const IMAGE_BASE = `${PUBLIC_BASE}images/`;
+// canopi-data beside this checkout; CANOPI_DATA_DIR overrides it (a git worktree sits elsewhere).
+export const CANOPI_DATA_DIR = process.env.CANOPI_DATA_DIR ? resolve(process.env.CANOPI_DATA_DIR) : resolve(ROOT, '..', 'canopi-data');
 // About 5 s, more when uv first has to sync the environment.
 const RELEASE_VERIFY_TIMEOUT_MS = 300_000;
-// Where an install is written before it is renamed into place: outside public/ (so astro build
-// never ships a half-written or leftover copy) and git-ignored (.cache/). An --out outside the
-// repository stages beside it instead, in .consortium-install/, as a rename needs one file system.
+// Where an install is written before it is renamed into place: outside public/ and git-ignored.
 export const STAGING_DIR = join(ROOT, '.cache', 'consortium-install');
 export function stagingDirFor(out) {
   const rel = relative(ROOT, resolve(out));
   return rel && !rel.startsWith('..') && !isAbsolute(rel) ? STAGING_DIR : join(dirname(resolve(out)), '.consortium-install');
 }
-// Commons serves only its standard thumbnail widths (https://w.wiki/GHai: 250, 330, 500, 960, 1280…);
-// 640 answers HTTP 400, so the photos use 500, the nearest standard width below it.
+// Commons serves only its standard thumbnail widths (https://w.wiki/GHai: 250, 330, 500, 960, 1280…).
 export const THUMB_WIDTH = 500;
 export const USER_AGENT = 'CanopiWebsite/1.0 (https://projectcanopi.com; contact form)';
 export const MAX_FAILED_SHARE = 0.1;
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024; // a larger file (a full-size original) counts as failed
+// Design check §8: a database file is at most 1 MB gzipped (the phone budget), and every file the
+// site serves stays under Cloudflare's 25 MiB per static asset (the raw database included, which the
+// browser holds whole).
+export const MAX_GZIP_BYTES = 1_000_000;
+export const MAX_FILE_BYTES = 25 * 1024 * 1024;
+export const FORMAT_VERSION = 4;
+export const SCHEMA_VERSION = 1;
+export const APPLICATION_ID = 0x43434f4e; // "CCON"
 const ZERO_SHA = '0'.repeat(64);
 const TRY_LIST_FILE = 'try_references.tsv';
 const TRY_LIST_META = 'try_references.meta.json';
 export const RELEASE_ID = /^r-[0-9a-f]{16}$/;
 const SAFE_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const HEX64 = /^[0-9a-f]{64}$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export const CLIMATE_ZONES = ['Tropical', 'Subtropical', 'Arid', 'Mediterranean', 'Temperate', 'Continental', 'Boreal'];
 const IMAGE_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' };
 
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+// The contract's database name: consortium-v<schema>.<release>.<12 hex of the raw sha256>.sqlite.gz,
+// with the climate (lowercase) before the digest in a split export.
+export const databaseName = (release, rawSha, climate = null) => `consortium-v${SCHEMA_VERSION}.${release}.${climate ? `${climate.toLowerCase()}.` : ''}${rawSha.slice(0, 12)}.sqlite.gz`;
+
+export const isHttpUrl = (value) => {
+  if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) return false;
+  try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; }
+};
 
 // A smaller copy of a photo, or null when the host has none: a Wikimedia Commons original becomes
-// its thumbnail (500 px wide by default; SVG thumbnails are PNG and TIFF ones JPEG, so those get the
-// extra suffix Commons gives them), an iNaturalist open-data original its 500 px "medium" size
-// (same extension).
+// its thumbnail (SVG thumbnails are PNG and TIFF ones JPEG, so those get the extra suffix Commons
+// gives them), an iNaturalist open-data original its 500 px "medium" size (same extension).
 export function thumbnailUrl(url, width = THUMB_WIDTH) {
   const inat = /^https?:\/\/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/(\d+)\/original\.([A-Za-z]+)$/.exec(url);
   if (inat) return `https://inaturalist-open-data.s3.amazonaws.com/photos/${inat[1]}/medium.${inat[2]}`;
@@ -107,193 +122,18 @@ export function thumbnailUrl(url, width = THUMB_WIDTH) {
   return `https://upload.wikimedia.org/wikipedia/commons/thumb/${h}/${hh}/${file}/${width}px-${file}${suffix}`;
 }
 
-// Shapes from the schema's required lists. A key marked optional may be absent (the schema does
-// not require it); null passes only where the schema allows it.
-const t = (kind) => ({ kind });
-const str = t('string'), num = t('number'), int = t('integer'), bool = t('boolean');
-// A link the page puts in an href (a source, a photo's page): http or https only, so a javascript:,
-// data: or protocol-relative value from upstream never becomes a link on the site's origin.
-const httpUrl = { kind: 'string', url: true };
-export const isHttpUrl = (value) => {
-  if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) return false;
-  try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; }
-};
-const orNull = (s) => ({ ...s, nullable: true });
-const optional = (s) => ({ ...s, optional: true });
-const oneOf = (...values) => ({ kind: 'enum', values });
-const obj = (props) => ({ kind: 'object', props });
-const arr = (items, minItems = 0) => ({ kind: 'array', items, minItems });
-const map = (values, keys) => ({ kind: 'map', values, keys });
-// The 11 site locales: the keys of `names`, of every text (`reasons[].text`, `note`) and of labels.json.
-const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
-const text = { kind: 'map', values: str, props: { en: str }, keys: LOCALES };
-const range = orNull(obj({ min: orNull(num), max: orNull(num) }));
-const sourceIds = arr(str, 1);
-const climateZone = oneOf('Tropical', 'Subtropical', 'Arid', 'Mediterranean', 'Temperate', 'Continental', 'Boreal');
-// WGSRPD level-1 continents, in the export's region order.
-const REGIONS = ['europe', 'africa', 'asia_temperate', 'asia_tropical', 'australasia', 'pacific', 'northern_america', 'southern_america'];
-const region = oneOf(...REGIONS);
-const COUNTRY = /^[A-Z]{2}$/;
-const phase = oneOf('placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax');
-const taxonRef = obj({ name: str, rank: oneOf('species', 'genus', 'family') });
-
-const traits = obj({
-  height_m: range, width_max_m: orNull(num), sun: orNull(bool), semi_shade: orNull(bool), full_shade: orNull(bool),
-  hardiness_zone: range, frost_tender: orNull(bool), soil_ph: range, well_drained: orNull(bool),
-  moisture_use: orNull(str), drought_tolerance: orNull(str), fertility_requirement: orNull(str),
-  deciduous_evergreen: orNull(str), active_growth_period: orNull(str), bloom_period: orNull(str),
-  harvest_period: orNull(str), lifespan: orNull(str), growth_rate: orNull(str), age_of_maturity_years: orNull(num),
-  root_depth_min_cm: orNull(num), taproot_persistent: orNull(bool), root_system_type: orNull(str),
-  mycorrhizal_type: orNull(str), nitrogen_fixer: orNull(bool), edibility_rating: orNull({ ...int, min: 0, max: 5 }), self_fertile: orNull(bool),
-  sexual_system: orNull(str), pollinators: orNull(arr(str)), vegetative_spread_rate: orNull(str),
-  clonal_growth_form: orNull(str), is_annual: orNull(bool), is_perennial: orNull(bool), habit: orNull(str),
-});
-
-// Added within format 3 (2026-11-10): values of canopi-data's layer table beside the traits, each
-// with where it holds (scope: null, everywhere) and how it was got; ruleProblem checks each value
-// against its field (months Jan … Dec, or a boolean for wind).
-export const LAYER_FIELDS = ['bloom_months', 'ripening_or_fruit_seen_months', 'sowing_months', 'tolerates_wind'];
-export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const layerValue = obj({
-  field: oneOf(...LAYER_FIELDS),
-  value: { kind: 'any' },
-  scope: orNull({
-    kind: 'map', values: { kind: 'never' }, keys: ['climate', 'country', 'hemisphere', 'latitude', 'region'],
-    props: {
-      climate: optional(climateZone), country: optional({ kind: 'string', pattern: COUNTRY }), hemisphere: optional(oneOf('N', 'S')),
-      latitude: optional({ kind: 'string', pattern: /^-?\d{1,2}\.\.-?\d{1,2}$/ }), region: optional(region),
-    },
-  }),
-  source: { ...str, minLength: 1 },
-  kind: oneOf('recorded', 'extracted', 'derived', 'llm'),
-});
-
-const taxon = obj({
-  id: { kind: 'string', pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/ },
-  canonical_name: str, genus: str, family: str,
-  names: map(str, LOCALES),
-  image: orNull(obj({ url: str, credit: orNull(str), licence: orNull(str), source_page_url: orNull(httpUrl) })),
-  role: oneOf('crop', 'support'),
-  reasons: arr(obj({ region, text, sources: sourceIds }), 1),
-  stratum: orNull(obj({ value: oneOf('emergent', 'high', 'medium', 'low'), sources: sourceIds })),
-  phases: orNull(obj({ start: phase, end: phase, sources: sourceIds })),
-  functions: orNull(arr(obj({
-    function: oneOf('nitrogen_fixer', 'dynamic_accumulator', 'mulch', 'ground_cover', 'insectary', 'pest_repellent', 'trap_crop', 'pollinator_forage', 'windbreak', 'wildlife_habitat'),
-    method: oneOf('import', 'rule', 'extraction', 'curated'),
-    sources: sourceIds,
-  }))),
-  traits,
-  warnings: obj({
-    toxicity: orNull(obj({ level: oneOf('None', 'Slight', 'Moderate', 'Severe'), note: optional(orNull(text)), sources: sourceIds })),
-    invasive_in: orNull(arr(obj({ country: { kind: 'string', pattern: COUNTRY }, sources: sourceIds }))),
-    allelopathic: orNull(bool),
-    weed_potential: orNull(bool),
-  }),
-  // Absent when no layer source gives a value (never []).
-  layer_values: optional(arr(layerValue, 1)),
-});
-
-// Positive pairs (intercropped_yield_gain, added within format 3 on 2026-11-10) are good news, as
-// allelopathy_tolerant rows are; climate_zone names the file's climate on them and is null (or, in an
-// earlier export, absent) on the four curated types. ruleProblem holds both.
-export const INTERACTION_TYPES = ['allelopathic_harm', 'allelopathy_tolerant', 'alternate_host', 'shared_pest', 'intercropped_yield_gain'];
-const interaction = obj({
-  subject: taxonRef, object: taxonRef,
-  type: oneOf(...INTERACTION_TYPES),
-  climate_zone: optional(orNull(climateZone)),
-  agent: orNull(str),
-  // Added within format 3 (2026-10-28): the agent's common names by site locale, each an EPPO name
-  // chosen by a usage source (canopi-data docs/consortium-export-format.md); absent reads as null.
-  // canopi-data's schema: names has at least one key and no name is empty.
-  agent_names: optional(orNull(obj({ names: { ...map({ ...str, minLength: 1 }, LOCALES), minProps: 1 }, sources: sourceIds }))),
-  severity: orNull(oneOf('low', 'medium', 'high')),
-  note: optional(orNull(text)),
-  sources: sourceIds,
-});
-
-export const cellShape = obj({
-  format_version: oneOf(3),
-  climate_zone: climateZone,
-  regions: arr(region, 1),
-  generated_at: str,
-  sources: map(obj({ label: str, url: optional(orNull(httpUrl)), licence: optional(orNull(str)), attribution: optional(orNull(str)) })),
-  taxa: arr(taxon),
-  interactions: arr(interaction),
-});
-
-const manifestShape = obj({
-  format_version: oneOf(3),
-  generated_at: str,
-  canopi_db_sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ },
-  climates: arr(obj({ climate_zone: climateZone, file: { kind: 'string', pattern: SAFE_NAME }, regions: arr(region, 1), taxa: int, interactions: int, sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ } }), 1),
-  locales: arr(oneOf(...LOCALES)),
-  countries: { kind: 'map', values: obj({ invasive_checked: bool }), keyPattern: COUNTRY },
-  // Required except on the fixture (see tryListEntry): optional here, so the shape reads the same for both.
-  try_references: optional(obj({ file: oneOf(TRY_LIST_FILE), sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ }, rows: { ...int, min: 1 }, dataset_ids: { ...int, min: 1 } })),
-  // Required except on the fixture (see releaseIdEntry).
-  release_id: optional({ kind: 'string', pattern: RELEASE_ID }),
-  // Optional until canopi-data ships it; verified once listed.
-  source_credits: optional(obj({ file: oneOf(CREDIT_FILE), sha256: { kind: 'string', pattern: /^[0-9a-f]{64}$/ }, rows: optional({ ...int, min: 1 }) })),
-});
-
-// labels.json: trait → English value → locale → translation (canopi-data docs/consortium-export-format.md).
-const labelsShape = map(map(map(str, LOCALES)));
-
-const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
-
-// The first problems of a value against a shape, as "path: problem" lines (at most `max`).
-export function shapeErrors(value, shape, path = '$', out = [], max = 20) {
-  const fail = (msg) => { if (out.length < max) out.push(`${path}: ${msg}`); };
-  if (out.length >= max) return out;
-  if (value === null) {
-    if (!shape.nullable) fail('is null');
-    return out;
-  }
-  switch (shape.kind) {
-    case 'string':
-      if (typeof value !== 'string') fail('is not a string');
-      else if (shape.minLength && value.length < shape.minLength) fail('is empty');
-      else if (shape.pattern && !shape.pattern.test(value)) fail(`"${value}" does not match ${shape.pattern}`);
-      else if (shape.url && !isHttpUrl(value)) fail(`${JSON.stringify(value)} is not an http(s) URL`);
-      break;
-    case 'number': if (typeof value !== 'number' || !Number.isFinite(value)) fail('is not a number'); break;
-    case 'integer':
-      if (!Number.isInteger(value)) fail('is not an integer');
-      else if ((shape.min !== undefined && value < shape.min) || (shape.max !== undefined && value > shape.max)) fail(`${value} is outside ${shape.min}–${shape.max}`);
-      break;
-    case 'boolean': if (typeof value !== 'boolean') fail('is not a boolean'); break;
-    case 'enum': if (!shape.values.includes(value)) fail(`${JSON.stringify(value)} is not one of ${shape.values.join(', ')}`); break;
-    case 'array':
-      if (!Array.isArray(value)) fail('is not an array');
-      else {
-        if (value.length < shape.minItems) fail(`has fewer than ${shape.minItems} items`);
-        value.forEach((v, i) => shapeErrors(v, shape.items, `${path}[${i}]`, out, max));
-      }
-      break;
-    case 'map':
-    case 'object':
-      if (!isObject(value)) { fail('is not an object'); break; }
-      if (shape.minProps && Object.keys(value).length < shape.minProps) fail('has no key');
-      if (shape.keys) for (const key of Object.keys(value)) if (!shape.keys.includes(key)) fail(`has a key "${key}" outside ${shape.keys.join(', ')}`);
-      if (shape.keyPattern) for (const key of Object.keys(value)) if (!shape.keyPattern.test(key)) fail(`has a key "${key}" that does not match ${shape.keyPattern}`);
-      for (const [key, s] of Object.entries(shape.props ?? {})) {
-        if (!(key in value)) { if (!s.optional) fail(`misses required key "${key}"`); continue; }
-        shapeErrors(value[key], s, `${path}.${key}`, out, max);
-      }
-      if (shape.kind === 'map') for (const [key, v] of Object.entries(value)) if (!shape.props?.[key]) shapeErrors(v, shape.values, `${path}.${key}`, out, max);
-      break;
-  }
-  return out;
-}
-
-// Written into every install, so --out replaces only a directory this script made (an export has a
-// format 3 manifest too, and canopi-data does not keep its exports in git).
+// Written into every install, so --out replaces only a directory this script made. The text is
+// the one format 3 installs wrote, so the v1 install is replaced in place.
 const INSTALL_MARK = 'INSTALLED_BY';
 const INSTALL_MARK_TEXT = 'scripts/install-consortium.mjs (canopi-website)\n';
 
 // Paths compared where they lead (symlinks, case on macOS), a path as far as it exists.
 const real = (p) => { let tail = ''; while (!existsSync(p)) { tail = join(basename(p), tail); p = dirname(p); } return join(realpathSync.native(p), tail).replace(/[\\/]$/, ''); };
 const inside = (a, b) => a === b || a.startsWith(b + sep);
+
+function refuse(message) {
+  throw new Error(`Consortium export refused: ${message}`);
+}
 
 // An --out that is absent, empty or a previous install; anything else is refused before any work.
 function checkOut(out, exportDir) {
@@ -305,10 +145,6 @@ function checkOut(out, exportDir) {
   let mark = null;
   try { mark = readFileSync(join(out, INSTALL_MARK), 'utf8'); } catch { /* none or unreadable */ }
   if (mark !== INSTALL_MARK_TEXT) refuse(`${out} is not empty and holds no consortium install (no ${INSTALL_MARK} file from this script), so it is not replaced.`);
-}
-
-function refuse(message) {
-  throw new Error(`Consortium export refused: ${message}`);
 }
 
 // What `canopi release verify` says of an export: null when it may install (exit 0), else the reason.
@@ -324,88 +160,31 @@ export function releaseVerifyProblem(dir, { root = CANOPI_DATA_DIR, env = proces
   return said ? `${how}:\n${said}` : `${how}, saying nothing.`;
 }
 
+// SHA256SUMS lines as a Map name -> sha256; `fail` gets the problem.
+function parseSums(text, fail) {
+  const sums = new Map();
+  for (const line of text.split('\n')) {
+    if (!line.trim()) continue;
+    const m = /^([0-9a-f]{64}) [ *](.+)$/.exec(line);
+    if (!m || !SAFE_NAME.test(m[2])) fail(`SHA256SUMS has a malformed line: ${line}`);
+    sums.set(m[2], m[1]);
+  }
+  return sums;
+}
+
 function readSums(dir) {
   const path = join(dir, 'SHA256SUMS');
   if (!existsSync(path)) refuse('SHA256SUMS is missing.');
-  const sums = new Map();
-  for (const line of readFileSync(path, 'utf8').split('\n')) {
-    if (!line.trim()) continue;
-    const m = /^([0-9a-f]{64}) [ *](.+)$/.exec(line);
-    if (!m || !SAFE_NAME.test(m[2])) refuse(`SHA256SUMS has a malformed line: ${line}`);
-    sums.set(m[2], m[1]);
-  }
+  const sums = parseSums(readFileSync(path, 'utf8'), refuse);
   for (const [name, hash] of sums) {
     const file = join(dir, name);
     if (!existsSync(file)) refuse(`${name} is listed in SHA256SUMS but missing.`);
     if (sha256(readFileSync(file)) !== hash) refuse(`${name} does not match its SHA256SUMS checksum.`);
   }
-  const unlisted = readdirSync(dir).filter((f) => f.endsWith('.json') && !sums.has(f));
+  const unlisted = readdirSync(dir).filter((f) => f !== 'SHA256SUMS' && !sums.has(f));
   if (unlisted.length) refuse(`unlisted files: ${unlisted.join(', ')}.`);
-  for (const name of ['manifest.json', 'labels.json']) if (!sums.has(name)) refuse(`SHA256SUMS does not list ${name}.`);
+  if (!sums.has('manifest.json')) refuse('SHA256SUMS does not list manifest.json.');
   return sums;
-}
-
-function parse(dir, name) {
-  try {
-    return JSON.parse(readFileSync(join(dir, name), 'utf8'));
-  } catch (err) {
-    refuse(`${name} is not valid JSON (${err.message}).`);
-  }
-}
-
-// Source ids a climate file cites anywhere, to check against its `sources`.
-function citedSources(cell) {
-  const ids = new Set();
-  const add = (list) => { for (const id of list ?? []) ids.add(id); };
-  for (const t of cell.taxa) {
-    for (const r of t.reasons) add(r.sources);
-    add(t.stratum?.sources);
-    add(t.phases?.sources);
-    for (const f of t.functions ?? []) add(f.sources);
-    add(t.warnings.toxicity?.sources);
-    for (const r of t.warnings.invasive_in ?? []) add(r.sources);
-    for (const v of t.layer_values ?? []) add([v.source]);
-  }
-  for (const i of cell.interactions) { add(i.sources); add(i.agent_names?.sources); }
-  return ids;
-}
-
-// The format's rules the schema cannot express, for one climate file already shape-checked: the
-// first problem as a sentence, or null. `countries` is the manifest's.
-export function ruleProblem(file, cell, countries) {
-  const order = (list) => [...list].sort((a, b) => REGIONS.indexOf(a) - REGIONS.indexOf(b));
-  const named = new Set();
-  for (const t of cell.taxa) {
-    const rs = t.reasons.map((r) => r.region);
-    if (new Set(rs).size !== rs.length || order(rs).join() !== rs.join()) return `${file}: ${t.canonical_name}: its reasons are not one per region in region order (${rs.join(', ')}).`;
-    const outside = rs.find((r) => !cell.regions.includes(r));
-    if (outside) return `${file}: ${t.canonical_name}: a reason for ${outside}, not in the file's regions (${cell.regions.join(', ')}).`;
-    for (const r of rs) named.add(r);
-    for (const { country } of t.warnings.invasive_in ?? []) {
-      if (countries[country]?.invasive_checked !== true) return `${file}: ${t.canonical_name}: invasive in ${country}, a country GRIIS did not check (or one the manifest lacks).`;
-    }
-  }
-  const union = order(named);
-  if (union.join() !== cell.regions.join()) return `${file}: regions ${cell.regions.join(', ')} are not those of its reasons (${union.join(', ')}).`;
-  for (const t of cell.taxa) {
-    for (const v of t.layer_values ?? []) {
-      if (v.field === 'tolerates_wind') { if (typeof v.value !== 'boolean') return `${file}: ${t.canonical_name}: tolerates_wind is not a boolean.`; continue; }
-      const ok = Array.isArray(v.value) && v.value.length > 0 && v.value.every((m) => MONTHS.includes(m)) && new Set(v.value).size === v.value.length;
-      if (!ok) return `${file}: ${t.canonical_name}: ${v.field} is not a list of months Jan … Dec (${JSON.stringify(v.value)}).`;
-    }
-  }
-  const species = new Set(cell.taxa.map((t) => t.canonical_name));
-  for (const i of cell.interactions) {
-    const zone = i.climate_zone ?? null;
-    if (i.type !== 'intercropped_yield_gain') {
-      if (zone !== null) return `${file}: an ${i.type} interaction (${i.subject.name} → ${i.object.name}) has climate_zone ${zone}; only intercropped_yield_gain rows name a climate.`;
-      continue;
-    }
-    const pair = `an intercropped_yield_gain pair (${i.subject.name} + ${i.object.name})`;
-    if (zone !== cell.climate_zone) return `${file}: ${pair} has climate_zone ${zone}, not the file's ${cell.climate_zone}.`;
-    if (![i.subject, i.object].every((r) => r.rank === 'species' && species.has(r.name))) return `${file}: ${pair} names a plant that is not a taxon of the file.`;
-  }
-  return null;
 }
 
 // The TRY list's bytes against { sha256, rows, dataset_ids } (a manifest entry or the meta file): the
@@ -445,134 +224,233 @@ export function creditsProblem(bytes, { sha256: hash, rows }) {
   return null;
 }
 
-// A manifest's release id, or null on a fixture that has none (fail is refuse or broken).
-function releaseIdEntry(manifest, fixture, fail) {
-  if (manifest.release_id !== undefined) return manifest.release_id;
-  if (!fixture) fail('manifest.json has no release_id: an export from before the data releases, or not from canopi-data.');
+// The manifest's shape, by hand (no dependency): the first problem as a sentence, or null.
+export function manifestProblem(m, { fixture = false } = {}) {
+  if (!isObject(m)) return 'manifest.json is not an object.';
+  if (m.format_version !== FORMAT_VERSION) return `manifest.json format_version is ${JSON.stringify(m.format_version)}; this installer reads format ${FORMAT_VERSION} only (format 3 was the v1 tool's).`;
+  if (m.schema_version !== SCHEMA_VERSION) return `manifest.json schema_version is ${JSON.stringify(m.schema_version)}; this installer reads schema ${SCHEMA_VERSION} only.`;
+  if (typeof m.release_id !== 'string' || !RELEASE_ID.test(m.release_id)) return `manifest.json release_id ${JSON.stringify(m.release_id)} is not r- and 16 lowercase hex digits.`;
+  if (typeof m.canopi_db_sha256 !== 'string' || !HEX64.test(m.canopi_db_sha256)) return 'manifest.json canopi_db_sha256 is not a sha256.';
+  if (m.canopi_db_sha256 === ZERO_SHA && !fixture) return 'canopi_db_sha256 is all zeros: this is the invented fixture, never installed for real (tests pass --fixture).';
+  if (typeof m.generated_at !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/.test(m.generated_at)) return 'manifest.json generated_at is not YYYY-MM-DDTHH:MM:SSZ.';
+  if (typeof m.split !== 'boolean') return 'manifest.json split is not a boolean.';
+  if (!Array.isArray(m.files) || !m.files.length) return 'manifest.json lists no database file.';
+  if (!m.split && m.files.length !== 1) return `manifest.json split is false but lists ${m.files.length} files.`;
+  if (!Array.isArray(m.climates) || !m.climates.length) return 'manifest.json lists no climate.';
+  const zones = [];
+  for (const c of m.climates) {
+    if (!isObject(c) || !CLIMATE_ZONES.includes(c.climate_zone)) return `manifest.json climates: ${JSON.stringify(c?.climate_zone)} is not a climate zone.`;
+    if (zones.includes(c.climate_zone)) return `manifest.json lists ${c.climate_zone} twice.`;
+    zones.push(c.climate_zone);
+  }
+  if (zones.join() !== [...zones].sort((a, b) => CLIMATE_ZONES.indexOf(a) - CLIMATE_ZONES.indexOf(b)).join()) return 'manifest.json climates are not in climate order.';
+  const held = [];
+  for (const f of m.files) {
+    if (!isObject(f) || typeof f.file !== 'string' || !SAFE_NAME.test(f.file)) return `manifest.json files: ${JSON.stringify(f?.file)} is not a safe file name.`;
+    for (const key of ['sha256', 'raw_sha256']) if (typeof f[key] !== 'string' || !HEX64.test(f[key])) return `${f.file}: ${key} is not a sha256.`;
+    for (const key of ['bytes', 'raw_bytes']) if (!Number.isInteger(f[key]) || f[key] <= 0) return `${f.file}: ${key} is not a positive integer.`;
+    if (!Array.isArray(f.climate_zones) || !f.climate_zones.length || f.climate_zones.some((z) => !zones.includes(z))) return `${f.file}: climate_zones ${JSON.stringify(f.climate_zones)} are not climates of the manifest.`;
+    if (!isObject(f.counts)) return `${f.file}: counts is not an object.`;
+    held.push(...f.climate_zones);
+  }
+  if ([...held].sort().join() !== [...zones].sort().join()) return `the files hold ${held.join(', ')}, the manifest's climates are ${zones.join(', ')}.`;
+  const t = m.try_references;
+  if (!isObject(t) || t.file !== TRY_LIST_FILE || typeof t.sha256 !== 'string' || !HEX64.test(t.sha256) || !Number.isInteger(t.rows) || t.rows < 1 || !Number.isInteger(t.dataset_ids) || t.dataset_ids < 1) return `manifest.json try_references is not { file: "${TRY_LIST_FILE}", sha256, rows, dataset_ids }.`;
+  const s = m.source_credits;
+  if (!isObject(s) || s.file !== CREDIT_FILE || typeof s.sha256 !== 'string' || !HEX64.test(s.sha256) || (s.rows !== undefined && (!Number.isInteger(s.rows) || s.rows < 1))) return `manifest.json source_credits is not { file: "${CREDIT_FILE}", sha256, rows }.`;
   return null;
 }
 
-// A manifest's try_references, or null on a fixture that has none (fail is refuse or broken).
-function tryListEntry(manifest, fixture, fail) {
-  if (manifest.try_references !== undefined) return manifest.try_references;
-  if (!fixture) fail('manifest.json has no try_references entry: an export from before the TRY dataset list, or not from canopi-data.');
-  return null;
+// The expected schema: each table's column names, from scripts/consortium-schema.mjs.
+let expectedColumns = null;
+async function schemaColumns() {
+  if (expectedColumns) return expectedColumns;
+  const { DatabaseSync } = await import('node:sqlite');
+  const db = new DatabaseSync(':memory:');
+  db.exec(DDL);
+  expectedColumns = columnsOf(db);
+  db.close();
+  return expectedColumns;
+}
+const columnsOf = (db) => new Map(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all()
+  .map(({ name }) => [name, db.prepare(`SELECT name FROM pragma_table_info(?)`).all(name).map((c) => c.name).join(',')]));
+
+// One database, already gunzipped and written at `path`: the first problem as a sentence, or the
+// facts the index needs ({ climates, names, images, griis }).
+export async function readDatabase(path, entry, manifest) {
+  const { DatabaseSync } = await import('node:sqlite');
+  const want = await schemaColumns();
+  let db;
+  try {
+    db = new DatabaseSync(path, { readOnly: true });
+  } catch (err) {
+    return { problem: `${entry.file} does not open as SQLite (${err.message}).` };
+  }
+  try {
+    const one = (sql, ...args) => db.prepare(sql).get(...args);
+    const all = (sql, ...args) => db.prepare(sql).all(...args);
+    let appId;
+    try { appId = one('PRAGMA application_id').application_id; } catch (err) { return { problem: `${entry.file} is not a SQLite database (${err.message}).` }; }
+    if (appId !== APPLICATION_ID) return { problem: `${entry.file}: application_id is ${appId}, not ${APPLICATION_ID} ("CCON").` };
+    const uv = one('PRAGMA user_version').user_version;
+    if (uv !== SCHEMA_VERSION) return { problem: `${entry.file}: user_version is ${uv}, not schema ${SCHEMA_VERSION}.` };
+    const integrity = all('PRAGMA integrity_check').map((r) => r.integrity_check);
+    if (integrity.join() !== 'ok') return { problem: `${entry.file}: integrity_check says ${integrity.slice(0, 3).join('; ')}.` };
+    const fk = all('PRAGMA foreign_key_check');
+    if (fk.length) return { problem: `${entry.file}: foreign_key_check finds ${fk.length} rows, first in ${fk[0].table}.` };
+    const have = columnsOf(db);
+    for (const [table, cols] of want) {
+      if (!have.has(table)) return { problem: `${entry.file}: table ${table} is missing.` };
+      if (have.get(table) !== cols) return { problem: `${entry.file}: table ${table} has the columns ${have.get(table)}, the schema says ${cols}.` };
+    }
+    const extra = [...have.keys()].filter((t) => !want.has(t));
+    if (extra.length) return { problem: `${entry.file}: tables outside the schema: ${extra.join(', ')}.` };
+    const meta = Object.fromEntries(all('SELECT key, value FROM meta').map((r) => [r.key, r.value]));
+    if (meta.schema_version !== String(SCHEMA_VERSION)) return { problem: `${entry.file}: meta.schema_version is ${JSON.stringify(meta.schema_version)}.` };
+    if (meta.format_version !== String(FORMAT_VERSION)) return { problem: `${entry.file}: meta.format_version is ${JSON.stringify(meta.format_version)}.` };
+    if (meta.release_id !== manifest.release_id) return { problem: `${entry.file}: meta.release_id is ${JSON.stringify(meta.release_id)}, the manifest says ${manifest.release_id}.` };
+    if (meta.built_at !== manifest.generated_at) return { problem: `${entry.file}: meta.built_at is ${JSON.stringify(meta.built_at)}, the manifest says ${manifest.generated_at}.` };
+    if (meta.climates !== entry.climate_zones.join(',')) return { problem: `${entry.file}: meta.climates is ${JSON.stringify(meta.climates)}, the manifest says ${entry.climate_zones.join(',')}.` };
+    const climates = all('SELECT id FROM climates ORDER BY ord').map((r) => r.id);
+    if (climates.join() !== entry.climate_zones.join()) return { problem: `${entry.file}: holds the climates ${climates.join(', ')}, the manifest says ${entry.climate_zones.join(', ')}.` };
+    for (const table of DATA_TABLES) {
+      const n = one(`SELECT count(*) n FROM ${table}`).n;
+      if (String(n) !== meta[`count.${table}`]) return { problem: `${entry.file}: ${table} has ${n} rows, meta says ${meta[`count.${table}`]}.` };
+      if (n !== entry.counts[table]) return { problem: `${entry.file}: ${table} has ${n} rows, the manifest says ${entry.counts[table]}.` };
+    }
+    const unplaced = one('SELECT count(*) n FROM plants WHERE plant NOT IN (SELECT plant FROM placements)').n;
+    if (unplaced) return { problem: `${entry.file}: ${unplaced} plants have no placement.` };
+    const reasonless = one('SELECT count(*) n FROM placements x WHERE NOT EXISTS (SELECT 1 FROM placement_reasons r WHERE r.plant = x.plant AND r.climate_zone = x.climate_zone)').n;
+    if (reasonless) return { problem: `${entry.file}: ${reasonless} placements have no reason.` };
+    const badIds = all('SELECT id FROM plants').filter((r) => !UUID.test(r.id));
+    if (badIds.length) return { problem: `${entry.file}: plant id ${JSON.stringify(badIds[0].id)} is not a UUID.` };
+    // prepush m1: the page links these, so only http(s) (the page's safeHref is the second wall).
+    for (const r of all('SELECT id, url FROM sources WHERE url IS NOT NULL')) if (!isHttpUrl(r.url)) return { problem: `${entry.file}: source ${r.id} has the url ${JSON.stringify(r.url)}, not http(s).` };
+    for (const r of all('SELECT p.canonical_name, i.source_page_url u FROM plant_images i JOIN plants p USING (plant) WHERE i.source_page_url IS NOT NULL')) if (!isHttpUrl(r.u)) return { problem: `${entry.file}: ${r.canonical_name}'s photo page ${JSON.stringify(r.u)} is not http(s).` };
+    // The page's "not checked, never none" rests on it.
+    const unchecked = one('SELECT p.canonical_name name, v.country FROM plant_invasive v JOIN plants p USING (plant) JOIN countries c ON c.code = v.country WHERE c.invasive_checked = 0');
+    if (unchecked) return { problem: `${entry.file}: ${unchecked.name} is invasive in ${unchecked.country}, a country GRIIS did not check.` };
+    const names = Object.fromEntries(climates.map((c) => [c, all('SELECT p.canonical_name n FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? ORDER BY p.canonical_name', c).map((r) => r.n)]));
+    const images = all('SELECT p.id, p.canonical_name name, i.url FROM plant_images i JOIN plants p USING (plant) ORDER BY p.id');
+    return { climates, names, images, griis: meta.griis_available === '1' };
+  } finally {
+    db.close();
+  }
 }
 
-// Reads and checks a whole export directory; returns the parsed manifest, labels bytes and climate files.
-export function verifyExport(dir, { fixture = false } = {}) {
+// Reads and checks a whole export directory (the databases read from a scratch copy in `work`).
+export async function verifyExport(dir, { fixture = false, work }) {
   const sums = readSums(dir);
-  const manifest = parse(dir, 'manifest.json');
-  if (!isObject(manifest) || manifest.format_version !== 3) refuse(`manifest.json format_version is ${JSON.stringify(manifest?.format_version)}, not 3.`);
-  const manifestProblems = shapeErrors(manifest, manifestShape, 'manifest.json');
-  if (manifestProblems.length) refuse(manifestProblems.join('; '));
-  if (manifest.canopi_db_sha256 === ZERO_SHA && !fixture) refuse('canopi_db_sha256 is all zeros: this is the invented fixture, never installed for real (tests pass --fixture).');
-  const labelProblems = shapeErrors(parse(dir, 'labels.json'), labelsShape, 'labels.json');
-  if (labelProblems.length) refuse(labelProblems.join('; '));
-  const tryEntry = tryListEntry(manifest, fixture, refuse);
-  let tryList = null;
-  if (tryEntry) {
-    if (!sums.has(tryEntry.file)) refuse(`${tryEntry.file} is not listed in SHA256SUMS.`);
-    const bytes = readFileSync(join(dir, tryEntry.file));
-    const problem = tryListProblem(bytes, tryEntry);
-    if (problem) refuse(problem);
-    tryList = { entry: tryEntry, bytes };
-  }
-  releaseIdEntry(manifest, fixture, refuse);
-  let credits = null;
-  if (manifest.source_credits !== undefined) {
-    const entry = manifest.source_credits;
-    if (!sums.has(entry.file)) refuse(`${entry.file} is not listed in SHA256SUMS.`);
-    const bytes = readFileSync(join(dir, entry.file));
-    const problem = creditsProblem(bytes, entry);
-    if (problem) refuse(problem);
-    credits = { entry, bytes };
-  }
+  let manifest;
+  try { manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8')); } catch (err) { refuse(`manifest.json is not valid JSON (${err.message}).`); }
+  const problem = manifestProblem(manifest, { fixture });
+  if (problem) refuse(problem);
+  const tryEntry = manifest.try_references;
+  if (!sums.has(tryEntry.file)) refuse(`${tryEntry.file} is not listed in SHA256SUMS.`);
+  const tryBytes = readFileSync(join(dir, tryEntry.file));
+  const tryProblem = tryListProblem(tryBytes, tryEntry);
+  if (tryProblem) refuse(tryProblem);
+  const creditEntry = manifest.source_credits;
+  if (!sums.has(creditEntry.file)) refuse(`${creditEntry.file} is not listed in SHA256SUMS.`);
+  const creditBytes = readFileSync(join(dir, creditEntry.file));
+  const creditProblem = creditsProblem(creditBytes, creditEntry);
+  if (creditProblem) refuse(creditProblem);
 
-  const seen = new Set();
-  const cells = manifest.climates.map((entry) => {
-    const where = entry.climate_zone;
-    if (seen.has(where) || seen.has(entry.file)) refuse(`the manifest lists ${where} (${entry.file}) twice.`);
-    seen.add(where).add(entry.file);
+  const databases = [];
+  const facts = { names: {}, images: new Map(), griis: true };
+  for (const entry of manifest.files) {
     if (!sums.has(entry.file)) refuse(`${entry.file} is not listed in SHA256SUMS.`);
-    if (sums.get(entry.file) !== entry.sha256) refuse(`${entry.file} does not match the manifest's sha256.`);
-    const bytes = readFileSync(join(dir, entry.file));
-    const cell = parse(dir, entry.file);
-    const problems = shapeErrors(cell, cellShape, entry.file);
-    if (problems.length) refuse(problems.join('; '));
-    if (cell.climate_zone !== entry.climate_zone) refuse(`${entry.file} is ${cell.climate_zone}, the manifest says ${where}.`);
-    if (cell.regions.join() !== entry.regions.join()) refuse(`${entry.file} has the regions ${cell.regions.join(', ')}, the manifest says ${entry.regions.join(', ')}.`);
-    if (cell.taxa.length !== entry.taxa) refuse(`${entry.file} has ${cell.taxa.length} taxa, the manifest says ${entry.taxa}.`);
-    if (cell.interactions.length !== entry.interactions) refuse(`${entry.file} has ${cell.interactions.length} interactions, the manifest says ${entry.interactions}.`);
-    const ids = new Set(cell.taxa.map((t) => t.id));
-    if (ids.size !== cell.taxa.length) refuse(`${entry.file} lists a taxon id twice.`);
-    const undefinedSources = [...citedSources(cell)].filter((id) => !(id in cell.sources));
-    if (undefinedSources.length) refuse(`${entry.file} cites undefined sources: ${undefinedSources.join(', ')}.`);
-    const rule = ruleProblem(entry.file, cell, manifest.countries);
-    if (rule) refuse(rule);
-    return { entry, cell, bytes };
-  });
-  return { manifest, manifestBytes: readFileSync(join(dir, 'manifest.json')), labelsBytes: readFileSync(join(dir, 'labels.json')), cells, tryList, credits };
+    const gz = readFileSync(join(dir, entry.file));
+    if (sha256(gz) !== entry.sha256 || sums.get(entry.file) !== entry.sha256) refuse(`${entry.file} does not match the manifest's sha256.`);
+    if (gz.length !== entry.bytes) refuse(`${entry.file} is ${gz.length} bytes, the manifest says ${entry.bytes}.`);
+    if (gz[0] !== 0x1f || gz[1] !== 0x8b) refuse(`${entry.file} is not gzip (no 1f 8b magic).`);
+    if (gz.length > MAX_GZIP_BYTES) refuse(`${entry.file} is ${gz.length} bytes gzipped, over the ${MAX_GZIP_BYTES} the page's budget allows (design check §8).`);
+    let raw;
+    try { raw = gunzipSync(gz, { maxOutputLength: MAX_FILE_BYTES + 1 }); } catch (err) { refuse(`${entry.file} does not gunzip (${err.code ?? err.message}).`); }
+    if (raw.length > MAX_FILE_BYTES) refuse(`${entry.file} is over 25 MiB uncompressed.`);
+    if (sha256(raw) !== entry.raw_sha256 || raw.length !== entry.raw_bytes) refuse(`${entry.file}: the database inside does not match the manifest's raw_sha256 and raw_bytes.`);
+    const expected = databaseName(manifest.release_id, entry.raw_sha256, manifest.split ? entry.climate_zones[0] : null);
+    if (entry.file !== expected) refuse(`${entry.file} is not named ${expected} (schema, release and digest of its content).`);
+    const path = join(work, `check-${databases.length}.sqlite`);
+    writeFileSync(path, raw);
+    const read = await readDatabase(path, entry, manifest);
+    rmSync(path, { force: true });
+    if (read.problem) refuse(read.problem);
+    Object.assign(facts.names, read.names);
+    for (const img of read.images) if (!facts.images.has(img.id)) facts.images.set(img.id, img);
+    facts.griis &&= read.griis;
+    databases.push({ entry, gz });
+  }
+  for (const c of manifest.climates) {
+    if ((facts.names[c.climate_zone] ?? []).length !== c.plants) refuse(`${c.climate_zone} has ${(facts.names[c.climate_zone] ?? []).length} plants, the manifest says ${c.plants}.`);
+  }
+  return { manifest, databases, facts, tryList: { entry: tryEntry, bytes: tryBytes }, credits: { entry: creditEntry, bytes: creditBytes } };
+}
+
+// The index the site reads at build time (design check A4). Plain data, stable key order.
+export function buildIndex(manifest, facts, photos) {
+  return {
+    format_version: manifest.format_version,
+    schema_version: manifest.schema_version,
+    release_id: manifest.release_id,
+    generated_at: manifest.generated_at,
+    canopi_db_sha256: manifest.canopi_db_sha256,
+    files: manifest.files.map((f) => ({ file: f.file, url: `${PUBLIC_BASE}${f.file}`, climate_zones: f.climate_zones, sha256: f.sha256, bytes: f.bytes, raw_sha256: f.raw_sha256, raw_bytes: f.raw_bytes })),
+    climates: manifest.climates.map((c) => c.climate_zone),
+    griis_available: facts.griis,
+    names: Object.fromEntries(manifest.climates.map((c) => [c.climate_zone, facts.names[c.climate_zone]])),
+    images: Object.fromEntries([...photos].sort(([a], [b]) => (a < b ? -1 : 1)).map(([id, file]) => [id, `${IMAGE_BASE}${file.name}`])),
+    try_references: { sha256: manifest.try_references.sha256, rows: manifest.try_references.rows, dataset_ids: manifest.try_references.dataset_ids },
+    source_credits: { sha256: manifest.source_credits.sha256, ...(manifest.source_credits.rows !== undefined ? { rows: manifest.source_credits.rows } : {}) },
+  };
+}
+
+// The index's shape, as the build and the built-site check rely on it: the first problem, or null.
+export function indexProblem(index) {
+  if (!isObject(index)) return 'the index is not an object.';
+  if (index.format_version !== FORMAT_VERSION || index.schema_version !== SCHEMA_VERSION) return `the index is format ${index.format_version}, schema ${index.schema_version}.`;
+  if (typeof index.release_id !== 'string' || !RELEASE_ID.test(index.release_id)) return `the index release_id ${JSON.stringify(index.release_id)} is not r- and 16 hex digits.`;
+  if (!Array.isArray(index.files) || !index.files.length) return 'the index lists no database file.';
+  for (const f of index.files) {
+    if (typeof f.file !== 'string' || !SAFE_NAME.test(f.file) || f.url !== `${PUBLIC_BASE}${f.file}`) return `the index file ${JSON.stringify(f.file)} is not a safe name under ${PUBLIC_BASE}.`;
+    if (!HEX64.test(f.sha256 ?? '')) return `the index file ${f.file} has no sha256.`;
+  }
+  if (!Array.isArray(index.climates) || !index.climates.length || index.climates.some((c) => !CLIMATE_ZONES.includes(c))) return 'the index climates are not climate zones.';
+  for (const c of index.climates) if (!Array.isArray(index.names?.[c]) || !index.names[c].length) return `the index has no names for ${c}.`;
+  if (!isObject(index.images)) return 'the index images is not an object.';
+  for (const [id, path] of Object.entries(index.images)) {
+    if (!UUID.test(id)) return `the index image key ${JSON.stringify(id)} is not a plant UUID.`;
+    if (typeof path !== 'string' || !path.startsWith(IMAGE_BASE) || !SAFE_NAME.test(path.slice(IMAGE_BASE.length))) return `the index image ${JSON.stringify(path)} is not a local ${IMAGE_BASE} file.`;
+  }
+  return null;
 }
 
 // Checks an installed directory as the site serves it (scripts/check-built-site.mjs runs it on
-// dist/client/data/consortium/, the tests on public/data/consortium/): the manifest's format and
-// shape, SHA256SUMS line by line, each climate file against its manifest sha256, regions, taxa and
-// interactions counts, the export's shape and the rules the schema cannot express, every photo a
-// local images/ file that exists, and the try_references entry (the file is in src/data/, not here). Throws on the first problem; returns the counts of climate files
-// and photos.
-export function verifyInstall(dir, { fixture = false } = {}) {
+// dist/client/data/consortium/, the tests on public/data/consortium/) against its index: the mark,
+// each database byte for byte by its sha256, the gzip magic and size limits, every photo of the index
+// present, and nothing else in the directory. Throws on the first problem; returns the counts.
+export function verifyInstall(dir, index) {
   const broken = (message) => { throw new Error(`Consortium install broken (${dir}): ${message}`); };
-  const read = (name) => { try { return readFileSync(join(dir, name)); } catch { return broken(`${name} is missing.`); } };
-  const json = (name) => { try { return JSON.parse(read(name).toString('utf8')); } catch (err) { return broken(`${name} is not valid JSON (${err.message}).`); } };
-  const manifest = json('manifest.json');
-  if (!isObject(manifest) || manifest.format_version !== 3) broken(`manifest.json format_version is ${JSON.stringify(manifest?.format_version)}, not 3.`);
-  const manifestProblems = shapeErrors(manifest, manifestShape, 'manifest.json');
-  if (manifestProblems.length) broken(manifestProblems.join('; '));
-  if (manifest.canopi_db_sha256 === ZERO_SHA && !fixture) broken('canopi_db_sha256 is all zeros: the invented fixture is installed.');
-  const labelProblems = shapeErrors(json('labels.json'), labelsShape, 'labels.json');
-  if (labelProblems.length) broken(labelProblems.join('; '));
-  tryListEntry(manifest, fixture, broken);
-  releaseIdEntry(manifest, fixture, broken);
-
-  const sums = new Map();
-  for (const line of read('SHA256SUMS').toString('utf8').split('\n')) {
-    if (!line.trim()) continue;
-    const m = /^([0-9a-f]{64}) [ *](.+)$/.exec(line);
-    if (!m) broken(`SHA256SUMS has a malformed line: ${line}`);
-    sums.set(m[2], m[1]);
+  const problem = indexProblem(index);
+  if (problem) broken(problem);
+  if (!existsSync(join(dir, INSTALL_MARK))) broken(`${INSTALL_MARK} is missing.`);
+  const allowed = new Set([INSTALL_MARK, 'images', INDEX_FILE, ...index.files.map((f) => f.file)]);
+  const stray = readdirSync(dir).filter((n) => !allowed.has(n));
+  if (stray.length) broken(`files the index does not name: ${stray.join(', ')}.`);
+  for (const f of index.files) {
+    let gz;
+    try { gz = readFileSync(join(dir, f.file)); } catch { broken(`${f.file} is missing.`); }
+    if (sha256(gz) !== f.sha256) broken(`${f.file} does not match the index's sha256.`);
+    if (gz[0] !== 0x1f || gz[1] !== 0x8b) broken(`${f.file} is not gzip.`);
+    if (gz.length > MAX_GZIP_BYTES) broken(`${f.file} is over ${MAX_GZIP_BYTES} bytes.`);
   }
-  for (const name of ['manifest.json', 'labels.json', ...manifest.climates.map((c) => c.file)]) if (!sums.has(name)) broken(`SHA256SUMS does not list ${name}.`);
-  if (new Set(manifest.climates.map((c) => c.climate_zone)).size !== manifest.climates.length) broken('the manifest lists a climate twice.');
-
-  let images = 0;
-  for (const entry of manifest.climates) {
-    const bytes = read(entry.file);
-    if (sha256(bytes) !== entry.sha256) broken(`${entry.file} does not match the manifest's sha256.`);
-    let cell;
-    try { cell = JSON.parse(bytes.toString('utf8')); } catch (err) { broken(`${entry.file} is not valid JSON (${err.message}).`); }
-    const problems = shapeErrors(cell, cellShape, entry.file);
-    if (problems.length) broken(problems.join('; '));
-    if (cell.climate_zone !== entry.climate_zone) broken(`${entry.file} is ${cell.climate_zone}, the manifest says ${entry.climate_zone}.`);
-    if (cell.regions.join() !== entry.regions.join()) broken(`${entry.file} has the regions ${cell.regions.join(', ')}, the manifest says ${entry.regions.join(', ')}.`);
-    if (cell.taxa.length !== entry.taxa || cell.interactions.length !== entry.interactions) broken(`${entry.file} has ${cell.taxa.length} taxa and ${cell.interactions.length} interactions, the manifest says ${entry.taxa} and ${entry.interactions}.`);
-    const undefinedSources = [...citedSources(cell)].filter((id) => !(id in cell.sources));
-    if (undefinedSources.length) broken(`${entry.file} cites undefined sources: ${undefinedSources.join(', ')}.`);
-    const rule = ruleProblem(entry.file, cell, manifest.countries);
-    if (rule) broken(rule);
-    for (const t of cell.taxa) {
-      if (!t.image) continue;
-      const name = t.image.url.startsWith(IMAGE_BASE) ? t.image.url.slice(IMAGE_BASE.length) : null;
-      if (!name || !SAFE_NAME.test(name)) broken(`${entry.file}: ${t.canonical_name}'s image.url ${JSON.stringify(t.image.url)} is not a local ${IMAGE_BASE} file.`);
-      if (!existsSync(join(dir, 'images', name))) broken(`${entry.file}: images/${name} is missing (${t.canonical_name}).`);
-      images++;
-    }
-  }
-  for (const [name, hash] of sums) {
-    if (!existsSync(join(dir, name))) broken(`${name} is listed in SHA256SUMS but missing.`);
-    if (sha256(readFileSync(join(dir, name))) !== hash) broken(`${name} does not match SHA256SUMS.`);
-  }
-  return { climates: manifest.climates.length, images };
+  const wanted = new Set(Object.values(index.images).map((p) => p.slice(IMAGE_BASE.length)));
+  const present = existsSync(join(dir, 'images')) ? readdirSync(join(dir, 'images')) : [];
+  for (const name of wanted) if (!present.includes(name)) broken(`images/${name} is missing.`);
+  const extra = present.filter((n) => !wanted.has(n));
+  if (extra.length) broken(`images the index does not name: ${extra.slice(0, 5).join(', ')}.`);
+  for (const name of present) if (statSync(join(dir, 'images', name)).size > MAX_FILE_BYTES) broken(`images/${name} is over 25 MiB.`);
+  return { databases: index.files.length, images: wanted.size };
 }
 
 // Hosts a photo may be fetched from after a redirect, besides the host first asked.
@@ -617,10 +495,9 @@ async function readCapped(res) {
   return Buffer.concat(chunks, size);
 }
 
-// One photo: the Commons thumbnail first, then the original only when the thumbnail does not exist
-// (400, 403 or 404, as for a Commons file narrower than the thumbnail; S3 answers 403 for a missing key). Rate limiting (429, 503) is waited out,
-// up to RETRIES times: Retry-After when the server gives it, else backoffMs doubling. Every body we
-// do not keep is cancelled before the next request. Returns { bytes, ext } or throws.
+// One photo: the thumbnail first, then the original only when the thumbnail does not exist (400,
+// 403 or 404). Rate limiting (429, 503) is waited out, up to RETRIES times: Retry-After when the
+// server gives it, else backoffMs doubling. Returns { bytes, ext } or throws.
 const RETRIES = 4;
 async function download(url, { fetchImpl, delayMs, backoffMs }) {
   const thumb = thumbnailUrl(url);
@@ -652,138 +529,105 @@ async function download(url, { fetchImpl, delayMs, backoffMs }) {
   throw new Error(last ?? `no URL for ${url}`);
 }
 
-// Downloads every photo once per taxon id (a taxon may be in several climate files) and rewrites the files in place. Returns the image files
-// and the failures.
-async function fetchImages(cells, { fetchImpl, delayMs, backoffMs, log, maxFailedShare }) {
-  const wanted = new Map(); // id -> { url, name }
-  for (const { cell } of cells) for (const t of cell.taxa) {
-    if (t.image && /^https?:\/\//i.test(t.image.url) && !wanted.has(t.id)) wanted.set(t.id, { url: t.image.url, name: t.canonical_name });
-  }
+// Downloads every photo once per plant. A url that is not http(s) is never fetched (no photo).
+// Returns { files: Map(uuid -> { name, bytes }), failed, total }.
+async function fetchImages(images, { fetchImpl, delayMs, backoffMs, log, maxFailedShare }) {
+  const wanted = [...images.values()].filter((img) => isHttpUrl(img.url));
   const files = new Map(), failed = [];
-  let first = true;
-  for (const [id, { url, name }] of wanted) {
-    if (!first) await sleep(delayMs);
-    first = false;
+  for (const [i, { id, name, url }] of wanted.entries()) {
+    if (i) await sleep(delayMs);
     try {
       const { bytes, ext } = await download(url, { fetchImpl, delayMs, backoffMs });
-      files.set(id, { name: `${id}.${ext}`, bytes });
+      // The digest in the name lets public/_headers cache the photo forever: new bytes, new url.
+      files.set(id, { name: `${id}.${sha256(bytes).slice(0, 12)}.${ext}`, bytes });
     } catch (err) {
       failed.push({ id, name, url, error: err.message });
       log(`  no photo for ${name}: ${err.message}`);
     }
   }
-  if (wanted.size && failed.length / wanted.size > maxFailedShare)
-    refuse(`${failed.length} of ${wanted.size} photos failed (more than ${maxFailedShare * 100}%): ${failed.slice(0, 5).map((f) => f.name).join(', ')}…`);
-  for (const c of cells) {
-    for (const t of c.cell.taxa) {
-      if (!t.image || !wanted.has(t.id)) continue;
-      const file = files.get(t.id);
-      t.image = file ? { ...t.image, url: `${IMAGE_BASE}${file.name}` } : null;
-      c.changed = true;
-    }
-  }
-  return { files, failed, total: wanted.size };
+  if (wanted.length && failed.length / wanted.length > maxFailedShare)
+    refuse(`${failed.length} of ${wanted.length} photos failed (more than ${maxFailedShare * 100}%): ${failed.slice(0, 5).map((f) => f.name).join(', ')}…`);
+  return { files, failed, total: wanted.length, skipped: images.size - wanted.length };
 }
 
-export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, maxFailedShare = MAX_FAILED_SHARE, stagingDir = null, tryListDir = null, releaseCheck = releaseVerifyProblem, siteDir = DEFAULT_OUT, log = console.log } = {}) {
+export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, maxFailedShare = MAX_FAILED_SHARE, stagingDir = null, dataDir = null, releaseCheck = releaseVerifyProblem, siteDir = DEFAULT_OUT, log = console.log } = {}) {
   if (!exportDir) refuse('no export directory given.');
   if (!images && !fixture) refuse('--no-images is allowed only with --fixture: a real install copies its photos into the site.');
   const dir = resolve(exportDir), out = resolve(outDir);
   checkOut(out, dir);
   if (fixture && inside(real(out), real(resolve(siteDir)))) refuse(`--fixture is for tests and never installs into the site (${out}).`);
-  const { manifest, manifestBytes, labelsBytes, cells, tryList, credits } = verifyExport(dir, { fixture });
-  if (!fixture) {
-    const problem = releaseCheck(dir, { log });
-    if (problem) refuse(problem);
-  }
-  // tryListDir stands in for src/data/ in tests; a fixture never writes the list.
-  const listDir = fixture ? null : tryListDir ?? tryListDirFor(out, fixture);
-  // A photo that is not an http(s) url (protocol-relative, data:, another scheme) is never
-  // downloaded and never served from elsewhere: no photo.
-  for (const c of cells) for (const t of c.cell.taxa) {
-    if (t.image && !/^https?:\/\//i.test(t.image.url)) { t.image = null; c.changed = true; }
-  }
-  const photos = images ? await fetchImages(cells, { fetchImpl, delayMs, backoffMs, log, maxFailedShare }) : { files: new Map(), failed: [], total: 0 };
-
-  // Installed bytes: unchanged climate files byte for byte, changed ones minified (the export's own style)
-  // with their checksum recomputed in the installed manifest.
-  const written = new Map();
-  for (const c of cells) {
-    const bytes = c.changed ? Buffer.from(JSON.stringify(c.cell)) : c.bytes;
-    c.entry.sha256 = sha256(bytes);
-    written.set(c.entry.file, bytes);
-  }
-  const anyChanged = cells.some((c) => c.changed);
-  written.set('manifest.json', anyChanged ? Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`) : manifestBytes);
-  written.set('labels.json', labelsBytes);
-  written.set(INSTALL_MARK, Buffer.from(INSTALL_MARK_TEXT));
-  for (const { name, bytes } of photos.files.values()) written.set(`images/${name}`, bytes);
-  const sums = [...written].sort(([a], [b]) => (a < b ? -1 : 1)).map(([name, bytes]) => `${sha256(bytes)}  ${name}\n`).join('');
-  written.set('SHA256SUMS', Buffer.from(sums));
-
-  // What a killed run left: the whole staging directory, and the sibling folders older versions wrote.
+  // What a killed run left: the whole staging directory.
   const staging = resolve(stagingDir ?? stagingDirFor(out));
   rmSync(staging, { recursive: true, force: true });
-  if (existsSync(dirname(out))) {
-    const leftover = new RegExp(`^${basename(out).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.(tmp|old)-\\d+$`);
-    for (const name of readdirSync(dirname(out))) if (leftover.test(name)) rmSync(join(dirname(out), name), { recursive: true, force: true });
-  }
-  const tmp = join(staging, `new-${process.pid}`), old = join(staging, `old-${process.pid}`);
-  mkdirSync(dirname(out), { recursive: true });
   mkdirSync(staging, { recursive: true });
-  // The list goes in with the install, staged with it: git-ignored, swept by the next run, so a killed
-  // run leaves nothing in src/data/ that git could commit; both are in the repository, one file system.
-  // The credits too, or, when this export lists none, their removal (bytes null): an earlier
-  // export's copy never stays to credit sources this one does not.
-  const listFiles = !listDir || !tryList ? [] : [
-    [TRY_LIST_FILE, tryList.bytes],
-    [TRY_LIST_META, Buffer.from(`${JSON.stringify({ sha256: tryList.entry.sha256, rows: tryList.entry.rows, dataset_ids: tryList.entry.dataset_ids }, null, 2)}\n`)],
-    [CREDIT_FILE, credits ? credits.bytes : null],
-  ].map(([name, bytes]) => {
-    const path = join(listDir, name);
-    let previous = null;
-    try { previous = readFileSync(path); } catch { /* none yet */ }
-    return { path, staged: join(staging, `${name}-${process.pid}`), bytes, previous };
-  });
   try {
+    const { manifest, databases, facts, tryList, credits } = await verifyExport(dir, { fixture, work: staging });
+    if (!fixture) {
+      const problem = releaseCheck(dir, { log });
+      if (problem) refuse(problem);
+    }
+    // dataDir stands in for src/data/ in tests; a fixture never writes there.
+    const listDir = fixture ? null : dataDir ?? dataDirFor(out, fixture);
+    const photos = images ? await fetchImages(facts.images, { fetchImpl, delayMs, backoffMs, log, maxFailedShare }) : { files: new Map(), failed: [], total: 0, skipped: 0 };
+    const index = buildIndex(manifest, facts, photos.files);
+    const indexBytes = Buffer.from(`${JSON.stringify(index, null, 2)}\n`);
+
+    const written = new Map();
+    for (const { entry, gz } of databases) written.set(entry.file, gz);
+    written.set(INSTALL_MARK, Buffer.from(INSTALL_MARK_TEXT));
+    for (const { name, bytes } of photos.files.values()) written.set(`images/${name}`, bytes);
+    if (!listDir) written.set(INDEX_FILE, indexBytes);
+    for (const [name, bytes] of written) if (bytes.length > MAX_FILE_BYTES) refuse(`${name} is over 25 MiB.`);
+
+    const tmp = join(staging, `new-${process.pid}`), old = join(staging, `old-${process.pid}`);
+    mkdirSync(dirname(out), { recursive: true });
+    // The src/data/ files go in with the install, staged with it: git-ignored, swept by the next run.
+    const listFiles = !listDir ? [] : [
+      [INDEX_FILE, indexBytes],
+      [TRY_LIST_FILE, tryList.bytes],
+      [TRY_LIST_META, Buffer.from(`${JSON.stringify({ sha256: tryList.entry.sha256, rows: tryList.entry.rows, dataset_ids: tryList.entry.dataset_ids }, null, 2)}\n`)],
+      [CREDIT_FILE, credits.bytes],
+    ].map(([name, bytes]) => {
+      const path = join(listDir, name);
+      let previous = null;
+      try { previous = readFileSync(path); } catch { /* none yet */ }
+      return { path, staged: join(staging, `${name}-${process.pid}`), bytes, previous };
+    });
     for (const [name, bytes] of written) {
       mkdirSync(dirname(join(tmp, name)), { recursive: true });
       writeFileSync(join(tmp, name), bytes);
     }
-    for (const file of listFiles) if (file.bytes) writeFileSync(file.staged, file.bytes);
+    for (const file of listFiles) writeFileSync(file.staged, file.bytes);
     const hadOut = existsSync(out);
     if (hadOut) renameSync(out, old);
     const moved = [];
     try {
       renameSync(tmp, out);
-      for (const file of listFiles) {
-        if (file.bytes) renameSync(file.staged, file.path);
-        else if (file.previous) rmSync(file.path);
-        moved.push(file);
-      }
+      for (const file of listFiles) { mkdirSync(dirname(file.path), { recursive: true }); renameSync(file.staged, file.path); moved.push(file); }
     } catch (err) {
-      // Put back what was there: the list files already moved or removed and the previous install.
+      // Put back what was there: the src/data/ files already moved and the previous install.
       for (const file of moved) { if (file.previous) writeFileSync(file.path, file.previous); else rmSync(file.path, { force: true }); }
       rmSync(out, { recursive: true, force: true });
       if (hadOut) renameSync(old, out);
       throw err;
     }
+
+    const summary = {
+      out, index: listDir ? join(listDir, INDEX_FILE) : join(out, INDEX_FILE),
+      files: databases.map((d) => d.entry.file),
+      climates: index.climates.map((c) => ({ climate: c, plants: index.names[c].length })),
+      photos: { total: photos.total, downloaded: photos.files.size, failed: photos.failed, skipped: photos.skipped },
+    };
+    log(`Installed the consortium database ${summary.files.join(', ')} (${summary.climates.map((c) => `${c.climate} ${c.plants}`).join(', ')}) in ${out}`);
+    if (images) log(`Photos: ${photos.files.size} of ${photos.total} downloaded${photos.failed.length ? `; no photo for ${photos.failed.map((f) => f.name).join(', ')}` : ''}${photos.skipped ? `; ${photos.skipped} not http(s), left out` : ''}.`);
+    else log('Photos: skipped (--no-images).');
+    log(`Index: ${summary.index}.`);
+    if (listDir) log(`TRY list (${tryList.entry.rows} rows, ${tryList.entry.dataset_ids} DatasetIDs) and ${CREDIT_FILE} written to ${listDir}.`);
+    log(`Data release: ${manifest.release_id}.`);
+    return summary;
   } finally {
     rmSync(staging, { recursive: true, force: true });
   }
-
-  const summary = {
-    out,
-    climates: cells.map((c) => ({ file: c.entry.file, taxa: c.entry.taxa, interactions: c.entry.interactions })),
-    photos: { total: photos.total, downloaded: photos.files.size, failed: photos.failed },
-  };
-  log(`Installed ${cells.length} consortium climates (${cells.map((c) => c.entry.file).join(', ')}) in ${out}`);
-  if (images) log(`Photos: ${photos.files.size} of ${photos.total} downloaded${photos.failed.length ? `; no photo for ${photos.failed.map((f) => f.name).join(', ')}` : ''}.`);
-  else log('Photos: skipped (--no-images).');
-  if (listFiles.length) log(`TRY list: ${tryList.entry.rows} rows, ${tryList.entry.dataset_ids} DatasetIDs, written to ${listDir}.`);
-  if (listFiles.length) log(credits ? `Source credits: ${CREDIT_FILE} written to ${listDir}.` : 'Source credits: none in this export.');
-  log(`Data release: ${manifest.release_id ?? 'none (fixture)'}.`);
-  return summary;
 }
 
 export function parseArgs(argv) {

@@ -1,6 +1,6 @@
 // Guides → consortium tool: <TryConsortium plant climate name> opens the tool with the guide's plant
 // kept and its climate set (?plant=<canonical_name>&climate=<id>). The plant must be in the beta list of
-// that climate (public/data/consortium/), the climate the guide's own (<ForClimate> block), never a default.
+// that climate (src/data/consortium-index.json), the climate the guide's own (<ForClimate> block), never a default.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
@@ -9,15 +9,11 @@ import { join } from 'node:path';
 const repo = new URL('../', import.meta.url).pathname;
 const read = (path) => readFileSync(join(repo, path), 'utf8');
 const guideRoot = join(repo, 'src/content/guides');
-const dataDir = 'public/data/consortium';
 const siteClimates = [...read('src/data/climates.ts').match(/export const climates = \[(.*)\] as const;/)[1].matchAll(/'([a-z]+)'/g)].map((m) => m[1]);
 
-// Site climate id → the canonical names of its beta climate file.
-const manifest = JSON.parse(read(`${dataDir}/manifest.json`));
-const cells = new Map(manifest.climates.map((entry) => [
-  entry.climate_zone.toLowerCase(),
-  new Set(JSON.parse(read(`${dataDir}/${entry.file}`)).taxa.map((taxon) => taxon.canonical_name)),
-]));
+// Site climate id → the canonical names placed in that climate (the installer's index).
+const index = JSON.parse(read('src/data/consortium-index.json'));
+const cells = new Map(index.climates.map((zone) => [zone.toLowerCase(), new Set(index.names[zone])]));
 
 // Every <TryConsortium> of a guide body, with the zones of the <ForClimate> block around it (null outside).
 function presets(body) {
@@ -36,7 +32,7 @@ const guides = existsSync(guideRoot) ? readdirSync(guideRoot, { withFileTypes: t
 const bodies = guides.flatMap((slug) => ['en', 'fr'].map((lang) => ({ slug, lang, file: `${slug}/${lang}.mdx`, body: read(`src/content/guides/${slug}/${lang}.mdx`) })));
 
 test('the consortium climate files name site climates, and their canonical names are what the guides link', () => {
-  assert.ok(cells.size >= 1, 'public/data/consortium/manifest.json lists climates');
+  assert.ok(cells.size >= 1, 'src/data/consortium-index.json lists climates');
   for (const [climate, names] of cells) {
     assert.ok(siteClimates.includes(climate), `cell climate "${climate}" is a site climate`);
     assert.ok(names.size > 0, `the ${climate} cell has plants`);
@@ -99,7 +95,7 @@ test('a preset in a climate block is the last thing in it, after the list and an
 });
 
 const { presetClimates, presetLinks } = await import('../src/components/guides/try-consortium.ts');
-const liveClimates = presetClimates(manifest, (name) => JSON.parse(read(`${dataDir}/${name}`)));
+const liveClimates = presetClimates(index);
 const holders = (plant) => liveClimates.filter((f) => f.names.has(plant));
 
 test('a preset without a climate links every beta climate that has the plant, once each, in the site climate order', () => {

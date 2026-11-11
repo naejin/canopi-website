@@ -4,6 +4,7 @@
 // canopi-data's own check would refuse; the page lists used and held sources, never internal ones.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { parseSourceCredits, shownCredits, CREDIT_COLUMNS } from '../src/lib/source-credits.js';
 
@@ -82,7 +83,8 @@ test('the page reads the copy only when the installer wrote one, and never write
   const data = read('src/data/source-credits.ts');
   assert.match(data, /import\.meta\.glob\('\.\/source_credits\.tsv'/, 'a missing file builds the page without the list');
   if (existsSync(new URL('../src/data/source_credits.tsv', import.meta.url))) {
-    const { sha256 } = JSON.parse(read('public/data/consortium/manifest.json')).source_credits ?? {};
+    const { sha256 } = JSON.parse(read('src/data/consortium-index.json')).source_credits ?? {};
     assert.ok(sha256, 'a copy comes from an installed export that lists it');
+    assert.equal(createHash('sha256').update(readFileSync(new URL('../src/data/source_credits.tsv', import.meta.url))).digest('hex'), sha256, 'the copy is the installed one');
   }
 });

@@ -1,0 +1,109 @@
+{
+  "format_version": 4,
+  "schema_version": 1,
+  "generated_at": "2026-11-11T00:00:00Z",
+  "canopi_db_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "release_id": "r-000000000000f1c7",
+  "split": false,
+  "max_gzip_bytes": 10000000,
+  "files": [
+    {
+      "file": "consortium-v1.r-000000000000f1c7.1571d7fafb76.sqlite.gz",
+      "climate_zones": [
+        "Tropical",
+        "Mediterranean",
+        "Temperate"
+      ],
+      "sha256": "b2a930279d08a215ecf0107a44dd34f0b751c8bc552654ed531968f59cf600ac",
+      "bytes": 21157,
+      "raw_sha256": "1571d7fafb76583254251043e0fac27080f97058a35ee75650e0d27341e5204e",
+      "raw_bytes": 200704,
+      "counts": {
+        "climates": 3,
+        "climate_regions": 4,
+        "strata": 4,
+        "phases": 7,
+        "sources": 12,
+        "countries": 14,
+        "areas": 9,
+        "labels": 14,
+        "plants": 38,
+        "plant_names": 103,
+        "plant_images": 6,
+        "toxicity_sources": 12,
+        "plant_invasive": 9,
+        "plant_areas": 105,
+        "placements": 42,
+        "placement_reasons": 43,
+        "reason_texts": 85,
+        "functions": 42,
+        "function_sources": 42,
+        "interactions": 8,
+        "interaction_notes": 5,
+        "interaction_sources": 9,
+        "agent_names": 2,
+        "agent_name_sources": 2,
+        "layer_values": 8
+      }
+    }
+  ],
+  "climates": [
+    {
+      "climate_zone": "Tropical",
+      "regions": [
+        "southern_america"
+      ],
+      "plants": 11,
+      "interactions": 2
+    },
+    {
+      "climate_zone": "Mediterranean",
+      "regions": [
+        "europe"
+      ],
+      "plants": 10,
+      "interactions": 0
+    },
+    {
+      "climate_zone": "Temperate",
+      "regions": [
+        "europe",
+        "asia_temperate"
+      ],
+      "plants": 21,
+      "interactions": 6
+    }
+  ],
+  "locales": [
+    "en",
+    "fr",
+    "es",
+    "pt",
+    "it",
+    "zh",
+    "de",
+    "ja",
+    "ko",
+    "nl",
+    "ru"
+  ],
+  "wcvp": {
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "record": "WCVP (fixture: invented)",
+    "plants_with_areas": 37,
+    "plants_not_found": [
+      "Phacelia tanacetifolia"
+    ]
+  },
+  "try_references": {
+    "file": "try_references.tsv",
+    "sha256": "4309321126966ed988bd4f5d31c623da4d6af5539ff574cd1627617252f33606",
+    "rows": 3,
+    "dataset_ids": 2
+  },
+  "source_credits": {
+    "file": "source_credits.tsv",
+    "sha256": "9f9486b84fb733a0718c734b6dc45f803bfce065b5673c893fa19c9de5344688",
+    "rows": 3
+  }
+}

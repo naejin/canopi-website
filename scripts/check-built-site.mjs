@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { builtTarget, splitHref, subdirectories } from './built-links.mjs';
-import { tryListProblem, verifyInstall } from './install-consortium.mjs';
+import { tryListProblem, verifyInstall, INDEX_PATH } from './install-consortium.mjs';
 import { consortiumPath } from '../src/i18n/consortium-path.js';
 import { parseTryReferences, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.js';
 import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
@@ -28,16 +28,17 @@ const locales = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru
 const tryMeta = JSON.parse(readFileSync('src/data/try_references.meta.json', 'utf8'));
 const tryBytes = readFileSync('src/data/try_references.tsv');
 assert.equal(tryListProblem(tryBytes, tryMeta), null, 'try_references.tsv matches its meta');
-const { sha256: trySha256, rows: tryRowCount, dataset_ids: tryIdCount } = JSON.parse(readFileSync(join(root, 'data', 'consortium', 'manifest.json'), 'utf8')).try_references;
-assert.deepEqual(tryMeta, { sha256: trySha256, rows: tryRowCount, dataset_ids: tryIdCount }, 'try_references.meta.json is the installed manifest entry');
+// The installer's index (src/data/consortium-index.json, design check A4): what the build read of the
+// installed export. It is never served.
+const consortiumIndex = JSON.parse(readFileSync(INDEX_PATH, 'utf8'));
+assert.deepEqual(tryMeta, consortiumIndex.try_references, 'try_references.meta.json is the installed index entry');
 const tryRows = parseTryReferences(tryBytes.toString('utf8'), tryMeta);
 // The source credits: in src/data/ exactly when the installed export lists them, and its bytes.
-const installedManifest = JSON.parse(readFileSync(join(root, 'data', 'consortium', 'manifest.json'), 'utf8'));
-assert.match(installedManifest.release_id ?? '', /^r-[0-9a-f]{16}$/, 'the installed manifest names its data release');
+assert.match(consortiumIndex.release_id ?? '', /^r-[0-9a-f]{16}$/, 'the installed index names its data release');
 const creditsPath = 'src/data/source_credits.tsv';
-assert.equal(existsSync(creditsPath), installedManifest.source_credits !== undefined, 'source_credits.tsv is in src/data/ exactly when the installed export lists it');
+assert.equal(existsSync(creditsPath), consortiumIndex.source_credits !== undefined, 'source_credits.tsv is in src/data/ exactly when the installed export lists it');
 const credits = existsSync(creditsPath) ? shownCredits(parseSourceCredits(readFileSync(creditsPath, 'utf8'))) : { used: [], held: [] };
-if (existsSync(creditsPath)) assert.equal(createHash('sha256').update(readFileSync(creditsPath)).digest('hex'), installedManifest.source_credits.sha256, 'source_credits.tsv is the installed export\'s');
+if (existsSync(creditsPath)) assert.equal(createHash('sha256').update(readFileSync(creditsPath)).digest('hex'), consortiumIndex.source_credits.sha256, 'source_credits.tsv is the installed export\'s');
 const creditRows = [...credits.used, ...credits.held];
 // A rendered field back to its text: the tags go, and the entities Astro writes become characters once.
 const plainText = (html) => html.replace(/<[^>]*>/g, '').replace(/&(amp|lt|gt|quot|#39|#x27);/g, (_, name) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", '#x27': "'" })[name]);
@@ -272,8 +273,7 @@ const headerOf = (html, from) => {
   assert.ok(panel, `${from}: the phone Menu panel`);
   return { header, panel, inline: header.replace(panel, '') };
 };
-const consortiumClimates = JSON.parse(readFileSync(join(root, 'data', 'consortium', 'manifest.json'), 'utf8')).climates.map((c) => ({ ...c, climate: c.climate_zone }));
-const consortiumTaxa = (file) => new Set(JSON.parse(readFileSync(join(root, 'data', 'consortium', file), 'utf8')).taxa.map((t) => t.canonical_name));
+const consortiumNames = new Map(consortiumIndex.climates.map((zone) => [zone.toLowerCase(), new Set(consortiumIndex.names[zone])]));
 const mainOf = (html) => html.match(/<main\b[\s\S]*?<\/main>/)?.[0] ?? '';
 const linkTo = (html, href) => new RegExp(`<a\\b[^>]*\\shref="${href.replace(/[.?*+^$()[\]{}|\\]/g, '\\$&')}"`).test(html);
 const currentLink = (html, href) => new RegExp(`<a\\b[^>]*\\shref="${href}"[^>]*\\saria-current="page"|<a\\b[^>]*\\saria-current="page"[^>]*\\shref="${href}"`).test(html);
@@ -352,16 +352,15 @@ for (const lang of guideLocales) {
   }
   assert.ok(linkTo(mainOf(index), localized('/bibliography/', lang)), `${lang} guides index: links to the bibliography`);
   assert.ok(linkTo(mainOf(index), consortiumPath(lang)), `${lang} guides index: mentions the consortium tool`);
-  // Guide presets open the tool with a plant of the climate file their climate names.
+  // Guide presets open the tool with a plant placed in the climate they name.
   let presets = 0;
   for (const [html, , from] of pages) {
     for (const [, href] of mainOf(html).matchAll(/<a\b[^>]*\shref="([^"]*\?[^"]*plant=[^"]*)"/g)) {
       const { path: hrefPath, query } = splitHref(href);
       assert.equal(hrefPath, consortiumPath(lang), `${from}: preset link goes to the tool`);
       const params = new URLSearchParams(query), climate = params.get('climate');
-      const file = consortiumClimates.find((c) => c.climate.toLowerCase() === climate);
-      assert.ok(file, `${from}: preset climate ${climate} has a beta climate file`);
-      assert.ok(consortiumTaxa(file.file).has(params.get('plant')), `${from}: ${params.get('plant')} is in ${file.file}`);
+      assert.ok(consortiumNames.has(climate), `${from}: preset climate ${climate} is a beta climate`);
+      assert.ok(consortiumNames.get(climate).has(params.get('plant')), `${from}: ${params.get('plant')} is placed in ${climate}`);
       presets++;
     }
   }
@@ -377,12 +376,18 @@ for (const lang of locales) {
   const words = JSON.parse(readFileSync(`src/i18n/translations/${lang}.json`, 'utf8'));
   const title = words['consortium.title'];
   assert.ok(html.includes(`lang="${lang}"`), `${path}: lang`);
-  // The data release under the tool, and the same id handed to "Suggest a correction".
-  const releaseLine = words['consortium.release'].replace('{id}', installedManifest.release_id);
-  assert.ok(html.includes(`<p class="tool-release">${releaseLine}</p>`), `${path}: the release line names ${installedManifest.release_id}`);
-  assert.ok(html.includes(`"release":"${installedManifest.release_id}"`), `${path}: the correction form gets the release id`);
+  // The data release under the tool, and the same id and database handed to the island (#ct-data).
+  const releaseLine = words['consortium.release'].replace('{id}', consortiumIndex.release_id);
+  assert.ok(html.includes(`<p class="tool-release">${releaseLine}</p>`), `${path}: the release line names ${consortiumIndex.release_id}`);
   assert.ok(html.includes(`<title>${title}`), `${path}: title ${title}`);
-  assert.ok(html.includes('id="ct-app"') && html.includes('id="ct-data"'), `${path}: tool`);
+  assert.ok(html.includes('id="ct-root"') && html.includes('id="ct-data"'), `${path}: tool`);
+  const pageData = JSON.parse(html.match(/<script type="application\/json" id="ct-data">([\s\S]*?)<\/script>/)?.[1] ?? 'null');
+  assert.equal(pageData?.releaseId, consortiumIndex.release_id, `${path}: the island gets the release id`);
+  assert.deepEqual(pageData?.db, { url: consortiumIndex.files[0].url, sha256: consortiumIndex.files[0].sha256, bytes: consortiumIndex.files[0].bytes }, `${path}: the island gets the installed database`);
+  assert.deepEqual(pageData?.climates, consortiumIndex.climates.map((c) => c.toLowerCase()), `${path}: the island gets the installed climates`);
+  // P6: with JavaScript off the page still names itself and links a guide; the loading line is there to replace.
+  assert.ok(/<noscript>[\s\S]*?<a [^>]*href="[^"]*\/guides\/[^"]+"[\s\S]*?<\/noscript>/.test(html), `${path}: noscript links a guide`);
+  assert.ok(html.includes(`<p class="tool-lede">`) && html.includes('aria-busy="true"'), `${path}: lede and loading line`);
   assert.ok(currentLink(html.match(/<header\b[\s\S]*?<\/header>/)?.[0] ?? '', path), `${path}: the header marks the tool as the current page`);
   const alternates = [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => `${m[1]} ${m[2]}`).sort();
   assert.deepEqual(alternates, [...locales.map((l) => `${l} https://projectcanopi.com${consortiumPath(l)}`), 'x-default https://projectcanopi.com/consortium/'].sort(), `${path}: hreflang`);
@@ -406,10 +411,12 @@ assert.ok(!existsSync(join(root, 'fr', 'guilde')), 'no /fr/guilde/: French is /f
   }
   assert.deepEqual(linking, [], 'no built page links to /fr/guilde/');
 }
-// prepush m2: the installed plant data, by the installer's own checks: format 3, a real
-// canopi_db_sha256 (never the fixture's zeros), SHA256SUMS, each climate file's sha256, regions,
-// counts, shape and the format's rules, and every photo a local file that exists.
-const consortiumInstall = verifyInstall(join(root, 'data', 'consortium'));
-assert.ok(consortiumInstall.climates > 0 && consortiumInstall.images > 0, 'consortium: climate files and photos');
+// prepush m2: the installed plant data as served, by the installer's own checks against the index:
+// format 4, each database byte for byte by its sha256, gzip, the size limits, every photo of the index
+// present and nothing else; a real canopi_db_sha256 (never the fixture's zeros); no v1 file left.
+assert.notEqual(consortiumIndex.canopi_db_sha256, '0'.repeat(64), 'consortium: a real install, never the fixture');
+const consortiumInstall = verifyInstall(join(root, 'data', 'consortium'), consortiumIndex);
+assert.ok(consortiumInstall.databases > 0 && consortiumInstall.images > 0, 'consortium: database and photos');
+for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json', 'temperate.json', 'mediterranean.json', 'consortium-index.json']) assert.ok(!existsSync(join(root, 'data', 'consortium', gone)), `consortium: ${gone} is not served`);
 
 console.log(`Verified 11 locale pages, their bibliography, data sources (${creditRows.length} credited sources, ${tryRows.length} TRY rows each) and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);

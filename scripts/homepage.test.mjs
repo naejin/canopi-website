@@ -225,12 +225,12 @@ test('the consortium tool has one short header word and one full name per locale
   }
 });
 
-test('the home section\'s note names exactly the beta climates the manifest lists, and no region', () => {
+test('the home section\'s note names exactly the beta climates the installed index lists, and no region', () => {
   // home.consortium.note spells these climates out in all 11 locales: a climate added to (or dropped
-  // from) public/data/consortium/manifest.json means rewriting the note, and this list, in every locale.
+  // from) src/data/consortium-index.json means rewriting the note, and this list, in every locale.
   const described = ['mediterranean', 'temperate', 'tropical'];
-  const manifest = JSON.parse(readFileSync(new URL('../public/data/consortium/manifest.json', import.meta.url), 'utf8'));
-  assert.deepEqual(manifest.climates.map((c) => c.climate_zone.toLowerCase()).sort(), described);
+  const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
+  assert.deepEqual(index.climates.map((c) => c.toLowerCase()).sort(), described);
   // The note itself, in each locale: the number of climates and their three names.
   const words = {
     en: [/three climates/, /tropical/, /Mediterranean/, /temperate/],

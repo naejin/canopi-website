@@ -2,7 +2,10 @@
 // parser's refusals, which urls link, and that the page never writes the text as markup.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { gunzipSync } from 'node:zlib';
 import { tryListProblem } from './install-consortium.mjs';
 import { parseTryReferences, referenceParts, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.js';
 
@@ -22,8 +25,8 @@ test('the shipped list is what its meta says: hash, rows and DatasetIDs read fro
   assert.deepEqual(rows.map((row) => [row.datasetId, row.dataset, row.custodian, row.reference]), lines, 'each row whole, in order');
 });
 
-test('the list has one owner: the meta is the installed manifest entry, so a hand copy shows', () => {
-  const { sha256, rows, dataset_ids } = JSON.parse(read('public/data/consortium/manifest.json')).try_references;
+test('the list has one owner: the meta is the installed index entry, so a hand copy shows', () => {
+  const { sha256, rows, dataset_ids } = JSON.parse(read('src/data/consortium-index.json')).try_references;
   assert.deepEqual(meta, { sha256, rows, dataset_ids });
 });
 
@@ -68,13 +71,25 @@ test('every reference keeps its text whole; a url links without the punctuation 
   assert.deepEqual(hrefs('http://'), []);
 });
 
-test('the page shows the citation verbatim, no CC BY claim, and never writes the text as markup', () => {
+test('the page shows the citation verbatim, no CC BY claim, and never writes the text as markup', async (t) => {
   assert.equal(`${TRY_CITATION} ${TRY_DOI}`, 'Kattge, J, Bönisch, G, Díaz, S, et al. TRY plant trait database – enhanced coverage and open access. Glob Change Biol. 2020; 26: 119– 188. https://doi.org/10.1111/gcb.14904');
   const page = read('src/components/DataSourcesPage.astro');
   assert.ok(!/set:html/.test(page));
   assert.ok(!/CC BY/.test(page));
   // The citation canopi-data puts in sources.try is this one.
-  const installed = JSON.parse(read('public/data/consortium/temperate.json')).sources.try;
+  const installed = await installedSource(t, 'try');
   assert.equal(installed.licence, null);
   assert.ok(installed.attribution.startsWith(`${TRY_CITATION} ${TRY_DOI}`));
 });
+
+// A sources row of the installed database (src/data/consortium-index.json names it), read with node:sqlite.
+async function installedSource(t, id) {
+  const { DatabaseSync } = await import('node:sqlite');
+  const index = JSON.parse(read('src/data/consortium-index.json'));
+  const dir = mkdtempSync(join(tmpdir(), 'consortium-db-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const path = join(dir, 'db.sqlite');
+  writeFileSync(path, gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url))));
+  const db = new DatabaseSync(path, { readOnly: true });
+  try { return { ...db.prepare('SELECT licence, attribution FROM sources WHERE id = ?').get(id) }; } finally { db.close(); }
+}
