@@ -14,7 +14,7 @@ import { P, T } from '../strings.ts';
 import { PHASE_ORDS, SHARE_AIM, spans } from './tracks.ts';
 import { ChevronIcon, Explain, Marks, StageBar, byName, cellName, layerName, nameOf, openDetails, phasePlain, plantLabel } from './StageBar.tsx';
 import { StageStepper } from './StageStepper.tsx';
-import { CellReason, EmptyNotice, FillMeter, FreeCell, GlyphKey } from './Matrix.tsx';
+import { CellReason, EmptyNotice, FillMeter, FreeCell, FutureSlot, GlyphKey } from './Matrix.tsx';
 
 const kindOf = (cell: MatrixCell, empty: boolean) => (cell.empty ? 'cannot' : empty ? 'potential' : cell.members.length ? 'filled' : 'free');
 
@@ -81,6 +81,7 @@ export function PhoneMatrix() {
       <button type="button" class="ct-back" onClick={back}>{T('matrix.back')}</button>
       <div class="ct-explains"><Explain kind="layer" /><Explain kind="stage" /></div>
       <GlyphKey />
+      <FutureSlot />
     </div>
   );
 }

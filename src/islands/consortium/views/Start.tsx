@@ -12,10 +12,11 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, PlantId, Site, SiteKey, Taxon } from '../../../lib/consortium/index.ts';
 import { countryStatus, lights, MAX_CROPS, rooms, soils, waters } from '../../../lib/consortium/index.ts';
-import { climate, country, crops, kept, members, openSheet, pool, site, source, view } from '../store.ts';
+import { climate, country, crops, proposedClimate, kept, members, openSheet, pool, site, source, view } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { LocationSlot } from './LocationSlot.tsx';
 import { LikelySlot } from './LikelySlot.tsx';
+import { PoolSlot, hasList } from './PoolSlot.tsx';
 import {
   backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
 } from '../memory.ts';
@@ -35,7 +36,6 @@ export function page(): { start: StartData; climates: string[] } {
   return pageData;
 }
 export const zoneLabel = (z: ClimateZone | null): string => (z ? page().start.zones.find((x) => x.id === z.toLowerCase())?.label ?? z : '');
-const covered = (z: ClimateZone) => page().climates.includes(z.toLowerCase());
 
 // ---- words ----
 let regionNames: Intl.DisplayNames | null = null;
@@ -81,7 +81,7 @@ export function CountryLine() {
     <div class="ct-country" data-ct="country">
       {code ? (
         <p class="ct-country-text">
-          <span>{T('country.line')} <strong>{name}</strong> <span class="ct-muted">({T(from === 'guess' ? 'country.guessed' : from === 'link' ? 'country.linked' : 'country.chosen')})</span></span>
+          <span>{T('country.line')} <strong>{name}</strong> <span class="ct-muted">({T(from === 'guess' ? 'country.guessed' : from === 'link' ? 'country.linked' : from === 'location' ? 'country.fromLocation' : 'country.chosen')})</span></span>
           {status === 'unchecked' && <span class="ct-muted ct-country-note">{T('country.unchecked', { country: name })}</span>}
         </p>
       ) : (
@@ -110,8 +110,9 @@ export function CountryLine() {
 
 // ---- the climate cards ----
 function Climates() {
-  // A link's climate shows at once while it loads (memory.pendingClimate).
-  const chosen = climate.value ?? pendingClimate.value;
+  // A link's climate shows at once while it loads (memory.pendingClimate); a location's suggestion
+  // (store.proposedClimate, S5b) shows checked but is not chosen until the reader confirms it.
+  const chosen = climate.value ?? pendingClimate.value ?? proposedClimate.value;
   return (
     <fieldset class="ct-step ct-climates">
       <legend class="ct-step-title">{T('start.climate.title')}</legend>
@@ -119,7 +120,7 @@ function Climates() {
       <div class="ct-cards">
         {page().start.zones.map(({ id, label, places }) => {
           const z = zoneOf(id)!;
-          const ready = covered(z);
+          const ready = hasList(z);
           return (
             <label class={`ct-card${chosen === z ? ' is-chosen' : ''}`}>
               <input type="radio" name="ct-climate" value={id} checked={chosen === z} aria-labelledby={`ct-cl-${id}`} aria-describedby={`ct-cl-${id}-d`} onChange={() => chooseClimate(z)} />
@@ -133,17 +134,6 @@ function Climates() {
         })}
       </div>
     </fieldset>
-  );
-}
-
-function Uncovered({ zone }: { zone: ClimateZone }) {
-  const list = page().climates.map((c) => zoneLabel(zoneOf(c))).join(', ');
-  return (
-    <div class="ct-notice" role="status">
-      <p><strong>{T('start.uncovered.title', { climate: zoneLabel(zone) })}</strong></p>
-      <p>{T('start.uncovered.body', { list })}</p>
-      <p><a class="button button-primary ct-small" href={page().start.contact}>{T('start.uncovered.ask')}</a></p>
-    </div>
   );
 }
 
@@ -265,8 +255,8 @@ function StartView() {
       <StartNotices />
       <LocationSlot />
       <Climates />
-      {z && !covered(z) && <Uncovered zone={z} />}
-      {z && covered(z) && (
+      {z && <PoolSlot zone={z} />}
+      {z && hasList(z) && (
         <>
           <Crops zone={z} />
           <SiteQuestions />

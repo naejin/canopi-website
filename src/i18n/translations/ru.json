@@ -689,6 +689,7 @@
   "consortium.country.line": "Предупреждения об инвазивных видах для",
   "consortium.country.guessed": "определено по браузеру",
   "consortium.country.chosen": "выбрано вами",
+  "consortium.country.fromLocation": "по вашему местоположению",
   "consortium.country.linked": "из присланной ссылки",
   "consortium.country.unchecked": "Не проверено для страны {country}: у GRIIS пока нет списка для неё, поэтому там ни одно растение не отмечено как инвазивное.",
   "consortium.country.none": "Без страны",
@@ -742,5 +743,6 @@
   "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
   "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
   "consortium.block.s5e": "Stream S5e keys (native here, soil likely) follow, up to the next block key.",
-  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, to the end of the file."
+  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, up to consortium.block.end.",
+  "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

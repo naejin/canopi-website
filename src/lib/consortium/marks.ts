@@ -1,11 +1,10 @@
 // P5 seam (commit 0): a plant's marks, the concatenation of the range (S5c), future (S5d) and native
-// (S5e) providers, in that order. The views render them generically (views/PlantMarks.tsx in the
-// matrix chips, phone rows, Details and Add), so a stream adds a mark without touching a view.
-// Empty today: every provider is a stub.
-import type { ClimateZone, Mark, PlantId, Scenario, SiteLocation, Taxon } from './types.ts';
-import { rangeMarks } from './range.ts';
-import { futureMarks } from './future.ts';
-import { nativeMarks } from './native.ts';
+// (S5e) providers, in that order, for one surface (matrix chip, phone or list row, Add, Details). The
+// views render them generically (views/PlantMarks.tsx), so a stream adds a mark without touching a
+// view. The providers sit in their own chunk (mark-providers.ts), loaded only when a mark can show (a
+// site location, or a climate whose plants are borrowed), so they never weigh on the first run
+// (decision row "Island JavaScript budget for P5"). Empty today: every provider is a stub.
+import type { ClimateZone, Mark, MarkSurface, PlantId, Scenario, SiteLocation, Taxon } from './types.ts';
 
 // What the providers read (store.ts markContext): the chosen climate, the site location, the
 // scenario and the source's native-area reader.
@@ -15,10 +14,22 @@ export interface MarkContext {
   scenario: Scenario;
   source: { nativeIn(l3: string): ReadonlySet<PlantId> } | null;
 }
-export type MarkProvider = (taxon: Taxon, ctx: MarkContext) => Mark[];
+export type MarkProvider = (taxon: Taxon, ctx: MarkContext, surface: MarkSurface) => Mark[];
 
-export const markProviders: readonly MarkProvider[] = [rangeMarks, futureMarks, nativeMarks];
+// providers: the loaded ones (store.ts markProviders); none before they load.
+export function plantMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface, providers: readonly MarkProvider[] = []): Mark[] {
+  return providers.flatMap((p) => p(taxon, ctx, surface));
+}
 
-export function plantMarks(taxon: Taxon, ctx: MarkContext, providers: readonly MarkProvider[] = markProviders): Mark[] {
-  return providers.flatMap((p) => p(taxon, ctx));
+// Whether any mark can show: a site location, or a climate the export does not curate (its plants are
+// borrowed and marked "estimate"). curated: SourceInfo.climates.
+export function needsMarkProviders(ctx: Pick<MarkContext, 'climate' | 'location'>, curated: readonly ClimateZone[]): boolean {
+  return ctx.location !== null || (ctx.climate !== null && !curated.includes(ctx.climate));
+}
+
+// The providers' chunk, loaded once.
+let loading: Promise<readonly MarkProvider[]> | null = null;
+export function loadMarkProviders(): Promise<readonly MarkProvider[]> {
+  loading ??= import('./mark-providers.ts').then((m) => m.markProviders, (err: unknown) => { loading = null; throw err; });
+  return loading;
 }

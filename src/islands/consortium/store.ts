@@ -5,8 +5,8 @@
 // inside the computed bodies, the core calls they own (matrix: S1 lib/consortium/matrix.ts; flags:
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
-import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, Matrix, PhaseOrd, PlantId, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
-import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, suggest } from '../../lib/consortium/index.ts';
+import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
+import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, loadMarkProviders, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
@@ -130,7 +130,19 @@ export const matrix = computed<Matrix | null>(() => {
   return buildMatrix(c, p, memberTaxa.value, site.value);
 });
 // What the plant marks read (core marks.ts plantMarks; views/PlantMarks.tsx renders them).
+// A climate the site location suggests (P5 owner answer 1; S5b writes it): its card shows checked,
+// but store.climate stays unset until the reader confirms.
+export const proposedClimate = signal<ClimateZone | null>(null);
 export const markContext = computed<MarkContext>(() => ({ climate: climate.value, location: location.value, scenario: scenario.value, source: source.value }));
+// The mark providers (core mark-providers.ts, their own chunk): none until a mark can show (a site
+// location, or a climate the export does not curate), then loaded once. Off the first run (decision
+// row "Island JavaScript budget for P5").
+export const markProviders = signal<readonly MarkProvider[]>([]);
+export const wantsMarkProviders = computed(() => needsMarkProviders(markContext.value, source.value?.info().climates ?? []));
+effect(() => {
+  if (!wantsMarkProviders.value || markProviders.peek().length) return;
+  loadMarkProviders().then((list) => { markProviders.value = list; }, (err: unknown) => console.error(`Consortium: the plant marks did not load: ${(err as Error).message}`));
+});
 // The warnings on members: conflicts, site misfits, invasive and toxicity (core suggest.ts flagsOf).
 export const flags = computed<Flag[]>(() => {
   if (!pool.value) return [];

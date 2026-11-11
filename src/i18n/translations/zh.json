@@ -689,6 +689,7 @@
   "consortium.country.line": "入侵植物警告适用于",
   "consortium.country.guessed": "根据你的浏览器推测",
   "consortium.country.chosen": "由你选择",
+  "consortium.country.fromLocation": "来自你的位置",
   "consortium.country.linked": "来自分享的链接",
   "consortium.country.unchecked": "未在{country}核查：GRIIS 尚无该国清单，因此那里没有植物被标为入侵植物。",
   "consortium.country.none": "不选国家",
@@ -742,5 +743,6 @@
   "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
   "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
   "consortium.block.s5e": "Stream S5e keys (native here, soil likely) follow, up to the next block key.",
-  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, to the end of the file."
+  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, up to consortium.block.end.",
+  "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

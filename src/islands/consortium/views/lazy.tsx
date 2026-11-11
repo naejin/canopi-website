@@ -20,7 +20,9 @@ async function gate(): Promise<void> {
 type Any = ComponentType<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 export interface LazyPart<C extends Any> { View: C; load: () => Promise<C>; ready: () => C | null }
 
-export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = false } = {}): LazyPart<C> {
+// idle: the part never asks for its chunk itself and shows nothing until prefetchLater() has loaded it
+// (a slot beside the matrix, e.g. S5d's FutureSlot, must not start a download before ct:matrix).
+export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = false, idle = false } = {}): LazyPart<C> {
   const done = signal<C | null>(null);
   let pending: Promise<C> | null = null;
   const load = (): Promise<C> => {
@@ -30,9 +32,9 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
   function LazyView(props: Record<string, unknown>) {
     const [failed, setFailed] = useState(false);
     const C = done.value as ComponentType<Record<string, unknown>> | null;
-    useEffect(() => { if (!C) load().catch((err: unknown) => { console.error(`Consortium: a view did not load: ${(err as Error).message}`); setFailed(true); }); }, [C]);
+    useEffect(() => { if (!C && !idle) load().catch((err: unknown) => { console.error(`Consortium: a view did not load: ${(err as Error).message}`); setFailed(true); }); }, [C]);
     if (C) return <C {...props} />;
-    if (quiet) return null;
+    if (quiet || idle) return null;
     return failed
       ? <p class="ct-notice" role="alert">{T('details.loadFailed')} <button type="button" class="button button-secondary" onClick={() => location.reload()}>{T('details.reload')}</button></p>
       : <p class="status-line" role="status">{T('load.plants')}</p>;
@@ -41,7 +43,7 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
 }
 
 const loaders: (() => Promise<unknown>)[] = [];
-export function later<C extends Any>(importer: () => Promise<C>, opts: { quiet?: boolean } = {}): LazyPart<C> {
+export function later<C extends Any>(importer: () => Promise<C>, opts: { quiet?: boolean; idle?: boolean } = {}): LazyPart<C> {
   const part = lazyPart(importer, opts);
   loaders.push(part.load);
   return part;

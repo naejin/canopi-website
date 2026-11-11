@@ -378,4 +378,9 @@ export const DEFAULT_SCENARIO: Scenario = 'ssp245';
 export const markKinds = ['edge', 'outside', 'unknown', 'estimate', 'future', 'native'] as const;
 export type MarkKind = (typeof markKinds)[number];
 export type MarkSeverity = 'note' | 'warning';
-export interface Mark { kind: MarkKind; key: string; vars?: Record<string, string | number>; severity: MarkSeverity }
+// state: a finer state the views write as data-mark-state (e.g. native: 'native' | 'not_recorded' | 'unknown').
+export interface Mark { kind: MarkKind; key: string; vars?: Record<string, string | number>; severity: MarkSeverity; state?: string }
+// Where a mark is drawn, so a provider can keep a mark to some places: matrix chips and phone rows are
+// tight; Add and Details have room for words.
+export const markSurfaces = ['chip', 'row', 'add', 'details'] as const;
+export type MarkSurface = (typeof markSurfaces)[number];

@@ -8,9 +8,9 @@ import { rehypeGuideChecklists } from './src/lib/rehype-guide-checklists.mjs';
 import cloudflare from '@astrojs/cloudflare';
 import { transformWithEsbuild } from 'vite';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { moduleGraph, onDemandChunks, pageEntries } from './scripts/built-modules.mjs';
+import { CHUNK_ROLES_FILE, chunkRoles, moduleGraph, onDemandChunks, pageEntries, readChunkRoles } from './scripts/built-modules.mjs';
 import { climateTiles } from './scripts/climate-integration.mjs';
 
 // Consortium v2 (design check A1, coordinator row "v2 build setup", 2026-11-11): Preact 11 without
@@ -55,11 +55,30 @@ const sqliteMainThreadOnly = {
   },
 };
 
+// P5 commit 0: the roles of the client build's chunks (scripts/built-modules.mjs chunkRoles: S5b's
+// location entry, MapLibre's chunks, worker and CSS, the core's lazy mark providers), read from
+// Rollup's bundle so no budget finds a chunk by its file name. Written beside the served directory
+// (dist/consortium-chunks.json for dist/client), never served; read by the modulepreload writer below
+// and by scripts/check-built-site.mjs.
+/** @type {import('vite').Plugin} */
+const consortiumChunkRoles = {
+  name: 'canopi:consortium-chunk-roles',
+  apply: 'build',
+  writeBundle(options, bundle) {
+    // @ts-ignore Vite 6+ names the environment a hook runs in; only the browser's bundle has roles.
+    if (this.environment && this.environment.name !== 'client') return;
+    const dir = options.dir ?? '';
+    if (basename(dir) !== 'client') throw new Error(`canopi:consortium-chunk-roles: the client build went to ${dir}, not a client/ directory; ${CHUNK_ROLES_FILE} would be served`);
+    writeFileSync(join(dir, '..', CHUNK_ROLES_FILE), `${JSON.stringify(chunkRoles(bundle), null, 2)}\n`);
+  },
+};
+
 // Design check A2 (review C8): the consortium page loads its island through a dynamic import, and
 // the island its loader, so their chunks would arrive one after another. After the build, every page
 // holding #ct-root gets a <link rel="modulepreload"> for each chunk of its import graph that it does
 // not already load with a <script src>, the sqlite glue included, but not the on-demand chunks (P5:
-// the location chunk and MapLibre, loaded when the reader asks). Other pages are not touched (P7).
+// the location chunk and MapLibre, loaded when the reader asks, and the mark providers, loaded when a
+// mark can show; preloading them cost about 0.15 s cold, §8 timing). Other pages are not touched (P7).
 // ConsortiumPage.astro preloads the database itself; scripts/check-built-site.mjs checks both.
 /** @type {import('astro').AstroIntegration} */
 const consortiumModulePreload = {
@@ -78,8 +97,10 @@ const consortiumModulePreload = {
           const html = readFileSync(p, 'utf8');
           if (!html.includes('id="ct-root"')) continue;
           const graph = moduleGraph(root, html);
-          const lazy = onDemandChunks(graph, pageEntries(html));
-          const onDemand = new Set([...lazy.location, ...lazy.maplibre]);
+          const roles = readChunkRoles(root);
+          const lazy = onDemandChunks(graph, pageEntries(html), roles);
+          // The mark providers load only once a mark can show (a location, a borrowed list): not preloaded.
+          const onDemand = new Set([...lazy.location, ...lazy.maplibre, ...roles.markProviders]);
           const links = [...graph.keys()]
             .filter((m) => !onDemand.has(m) && !html.includes(`src="${m}"`) && !html.includes(`href="${m}"`))
             .map((m) => `<link rel="modulepreload" href="${m}">`).join('');
@@ -119,7 +140,7 @@ export default defineConfig({
   adapter: cloudflare(),
 
   vite: {
-    plugins: [consortiumJsx, sqliteMainThreadOnly],
+    plugins: [consortiumJsx, sqliteMainThreadOnly, consortiumChunkRoles],
     define: { __CT_TEST_HOOK__: JSON.stringify(process.env.CANOPI_BROWSER_TEST === '1') },
     esbuild: { exclude: [/\.js$/, CONSORTIUM_TSX] },
     // sqlite-wasm's own new URL('sqlite3.wasm', import.meta.url) and main.ts's ?url import name the

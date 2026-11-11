@@ -101,17 +101,55 @@ export function firstRunChunks(graph, island) {
   return [...seen];
 }
 
+// P5 (commit 0): the roles the build gives chunks, read from Rollup's own bundle in generateBundle
+// (astro.config.mjs canopi:consortium-chunk-roles writes them to <outDir>/consortium-chunks.json,
+// outside the served files), so no chunk is found by its file name:
+// - location: the chunk whose entry module is S5b's lazy views/location/location.tsx;
+// - maplibre: the chunks holding node_modules/maplibre-gl modules, and the worker files (emitted .js
+//   assets; maplibre's ?worker&url) that a location or MapLibre chunk names;
+// - maplibreCss: the CSS the location and MapLibre chunks import (maplibre-gl.css; Vite merges a
+//   chunk's CSS into one file), counted in MapLibre's 330 KB;
+// - markProviders: the chunk whose entry module is the core's lazy mark-providers.ts.
+// Paths as the page names them ('/_astro/x.js'), sorted.
+export const CHUNK_ROLES_FILE = 'consortium-chunks.json';
+const LOCATION_ENTRY = /\/src\/islands\/consortium\/views\/location\/location\.tsx$/;
+const PROVIDERS_ENTRY = /\/src\/lib\/consortium\/mark-providers\.ts$/;
+const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
+export function chunkRoles(bundle) {
+  const files = Object.values(bundle);
+  const chunks = files.filter((f) => f.type === 'chunk');
+  const id = (f) => (f.facadeModuleId ?? '').split('?')[0].replaceAll('\\', '/');
+  const location = chunks.filter((c) => LOCATION_ENTRY.test(id(c)));
+  const maplibreJs = chunks.filter((c) => (c.moduleIds ?? []).some((m) => MAPLIBRE_MODULE.test(m.replaceAll('\\', '/'))));
+  const named = [...location, ...maplibreJs];
+  const workers = files.filter((f) => f.type === 'asset' && f.fileName.endsWith('.js') && named.some((c) => c.code.includes(f.fileName.split('/').pop())));
+  const css = new Set(named.flatMap((c) => [...(c.viteMetadata?.importedCss ?? [])]));
+  const path = (f) => `/${typeof f === 'string' ? f : f.fileName}`;
+  return {
+    location: location.map(path).sort(),
+    maplibre: [...maplibreJs, ...workers].map(path).sort(),
+    maplibreCss: [...css].map(path).sort(),
+    markProviders: chunks.filter((c) => PROVIDERS_ENTRY.test(id(c))).map(path).sort(),
+  };
+}
+// The roles of a build (root: the served directory, dist/client or dist-test/client): none when the
+// file is missing (a build without the plugin), so the checks below fail on a missing chunk.
+export function readChunkRoles(root) {
+  const none = { location: [], maplibre: [], maplibreCss: [], markProviders: [] };
+  for (const file of [join(root, '..', CHUNK_ROLES_FILE), join(root, CHUNK_ROLES_FILE)]) {
+    if (existsSync(file)) return { ...none, ...JSON.parse(readFileSync(file, 'utf8')) };
+  }
+  return none;
+}
+
 // P5 (commit 0): the chunks loaded only when the reader asks for them, never modulepreloaded and
 // left out of the island's 60 KB, each with its own budget (decision row "Island JavaScript budget
-// for P5"): the location chunk (S5b's lazy views/location/location.tsx, built as location.<hash>.js)
-// with the chunks only it reaches, and MapLibre (maplibre-gl.<hash>.js) with the chunks only it
-// reaches. entries: the page's own entries (its module scripts). Sorted paths.
-export const LOCATION_CHUNK = /^\/_astro\/location\.[\w-]+\.js$/;
-export const MAPLIBRE_CHUNK = /^\/_astro\/maplibre-gl\.[\w-]+\.js$/;
-export function onDemandChunks(graph, entries) {
-  const paths = [...graph.keys()];
-  const maplibreRoots = paths.filter((p) => MAPLIBRE_CHUNK.test(p));
-  const locationRoots = paths.filter((p) => LOCATION_CHUNK.test(p));
+// for P5"): the location chunk with the chunks only it reaches, and MapLibre (its chunks and worker,
+// roles from chunkRoles) with the chunks only they reach. entries: the page's own entries (its module
+// scripts). Sorted paths.
+export function onDemandChunks(graph, entries, roles) {
+  const maplibreRoots = roles.maplibre.filter((p) => graph.has(p));
+  const locationRoots = roles.location.filter((p) => graph.has(p));
   const always = reachable(graph, entries, new Set([...maplibreRoots, ...locationRoots]));
   const maplibre = [...reachable(graph, maplibreRoots)].filter((p) => !always.has(p));
   const location = [...reachable(graph, locationRoots, new Set(maplibreRoots))].filter((p) => !always.has(p) && !maplibre.includes(p));

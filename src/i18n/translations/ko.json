@@ -689,6 +689,7 @@
   "consortium.country.line": "침입 식물 경고 대상",
   "consortium.country.guessed": "브라우저에서 추측함",
   "consortium.country.chosen": "직접 선택함",
+  "consortium.country.fromLocation": "내 위치에서",
   "consortium.country.linked": "공유 링크에서",
   "consortium.country.unchecked": "{country}에서는 확인되지 않음: GRIIS에 아직 이 나라의 목록이 없어 그곳에서 침입종으로 표시된 식물이 없습니다.",
   "consortium.country.none": "나라 없음",
@@ -742,5 +743,6 @@
   "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
   "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
   "consortium.block.s5e": "Stream S5e keys (native here, soil likely) follow, up to the next block key.",
-  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, to the end of the file."
+  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, up to consortium.block.end.",
+  "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

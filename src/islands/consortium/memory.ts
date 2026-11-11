@@ -65,11 +65,13 @@ export type Memory = ReturnType<typeof guarded>;
 
 // ---- the save record ----
 
-// src: where the saved consortium's country came from ('link': a shared link; 'chosen'; null: none).
-export type CountryFrom = 'link' | 'chosen' | null;
-export interface SavedRecord { fragment: string; at: string; src: CountryFrom }
-export const saveRecord = (fragment: string, at: string, src: CountryFrom): string => JSON.stringify({ fragment, at, src });
-const fromOf = (v: unknown): CountryFrom => (v === 'link' || v === 'chosen' ? v : null);
+// src: where the saved consortium's country came from ('link': a shared link; 'chosen'; 'location':
+// the site location (P5 owner answer 5), kept as `country` beside the fragment, never in it; null: none).
+export type CountryFrom = 'link' | 'chosen' | 'location' | null;
+export interface SavedRecord { fragment: string; at: string; src: CountryFrom; country?: string }
+export const saveRecord = (fragment: string, at: string, src: CountryFrom, country: string | null = null): string =>
+  JSON.stringify(src === 'location' && country ? { fragment, at, src, country } : { fragment, at, src });
+const fromOf = (v: unknown): CountryFrom => (v === 'link' || v === 'chosen' || v === 'location' ? v : null);
 const versionOf = (fragment: string): string | null => new URLSearchParams(fragment).get('v');
 const parsed = (text: string | null): Record<string, unknown> | null => {
   if (!text) return null;
@@ -80,10 +82,12 @@ const parsed = (text: string | null): Record<string, unknown> | null => {
 export function readRecord(text: string | null): SavedRecord | null {
   const v = parsed(text);
   if (!v) return null;
-  const { fragment, at, src } = v;
+  const { fragment, at, src, country } = v;
   if (typeof fragment !== 'string' || !fragment.length || fragment.length >= 20_000 || typeof at !== 'string') return null;
   const ver = versionOf(fragment);
-  return ver === null || ver === String(LINK_VERSION) ? { fragment, at, src: fromOf(src) } : null;
+  if (ver !== null && ver !== String(LINK_VERSION)) return null;
+  const from = fromOf(src);
+  return from === 'location' && typeof country === 'string' && /^[A-Z]{2}$/.test(country) ? { fragment, at, src: from, country } : { fragment, at, src: from };
 }
 // A save from an older version of the tool: v1's { q, at, src }, or a record of another link version.
 export function oldRecord(text: string | null): boolean {
@@ -161,7 +165,7 @@ export function countryAtStart({ link, pref, saved, savedFrom = null, guess }: {
   if (code(link)) return { code: code(link), source: 'link' };
   if (pref === NO_COUNTRY) return { code: null, source: 'chosen' };
   if (code(pref)) return { code: code(pref), source: 'chosen' };
-  if (code(saved)) return { code: code(saved), source: savedFrom === 'link' ? 'link' : 'chosen' };
+  if (code(saved)) return { code: code(saved), source: savedFrom === 'link' ? 'link' : savedFrom === 'location' ? 'location' : 'chosen' };
   if (code(guess)) return { code: code(guess), source: 'guess' };
   return { code: null, source: null };
 }
@@ -179,11 +183,14 @@ export interface ShareInput {
   crops: readonly PlantId[];
   stage: PhaseOrd | null;
 }
-// The state a link or the save holds. A guessed country is never written (owner row 2026-10-28).
-export function shareState(s: ShareInput): ShareState {
+// The state a link or the save holds. A guessed country is never written (owner row 2026-10-28); a
+// country from the location only with the reader's "include my location" tick (P5 owner answer 5;
+// S5b passes { location: true }).
+export function shareState(s: ShareInput, { location = false }: { location?: boolean } = {}): ShareState {
+  const written = s.country.source === 'guess' ? false : s.country.source === 'location' ? location : true;
   return {
     climate: s.climate,
-    country: s.country.source === 'guess' ? null : s.country.code,
+    country: written ? s.country.code : null,
     site: { ...s.site },
     members: [...s.members],
     kept: [...s.kept],
@@ -349,7 +356,7 @@ export function currentFragment(of: store.Consortium | null = null): string | nu
 
 // Where the shown consortium's country came from, as the save and history.state keep it.
 const countryFrom = (c: Country = store.country.peek()): CountryFrom => {
-  return !c.code || c.source === 'guess' ? null : c.source === 'link' ? 'link' : 'chosen';
+  return !c.code || c.source === 'guess' ? null : c.source === 'link' ? 'link' : c.source === 'location' ? 'location' : 'chosen';
 };
 
 // ---- restoring a link or the save ----
@@ -607,7 +614,7 @@ function persist(): void {
   if (store.view.peek() !== 'start' && !store.pool.peek()) return;
   writeAddress();
   const mine = own();
-  writeSave(mine ? saveRecord(currentFragment(mine) ?? '', new Date().toISOString(), countryFrom(mine.country)) : 'back');
+  writeSave(mine ? saveRecord(currentFragment(mine) ?? '', new Date().toISOString(), countryFrom(mine.country), mine.country.code) : 'back');
 }
 
 // The shown consortium's link, recomputed on every change of what the link holds (Share's field).
@@ -634,7 +641,8 @@ export function startMemory(): void {
     writeSave(null);
   }
   const linkK = how.kind === 'link' ? new URLSearchParams(how.fragment).get('k') : null;
-  const savedK = how.kind === 'saved' ? new URLSearchParams(how.fragment).get('k') : null;
+  // A location country is kept beside the saved fragment, not in it (owner answer 5).
+  const savedK = how.kind === 'saved' ? new URLSearchParams(how.fragment).get('k') ?? (how.src === 'location' && saved?.fragment === how.fragment ? saved.country ?? null : null) : null;
   const languages = attempt(() => [...navigator.languages]) ?? [];
   const zone = attempt(() => Intl.DateTimeFormat().resolvedOptions().timeZone) ?? null;
   store.country.value = countryAtStart({ link: linkK, pref: memory.read(COUNTRY_STORE), saved: savedK, savedFrom: how.kind === 'saved' ? how.src : null, guess: guessCountry([], { languages }) });

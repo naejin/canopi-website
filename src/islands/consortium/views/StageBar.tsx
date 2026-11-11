@@ -82,7 +82,7 @@ export function Marks({ taxon, tight = false }: { taxon: Taxon; tight?: boolean 
       {isKept && <span class="ct-glyph" title={T('matrix.kept')}><PinIcon /><span class="visually-hidden">{T('matrix.kept')}</span></span>}
       {taxon.from && !tight && <span class="ct-tag">{T('matrix.from', { list: listName(taxon.from) })}</span>}
       {w > 0 && <span class="ct-flag" title={P('matrix.warnings', w)}><WarnIcon /><span aria-hidden="true">{w}</span><span class="visually-hidden">{P('matrix.warnings', w)}</span></span>}
-      <PlantMarks taxon={taxon} />
+      <PlantMarks taxon={taxon} surface={tight ? 'chip' : 'row'} />
     </>
   );
 }

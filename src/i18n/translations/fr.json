@@ -689,6 +689,7 @@
   "consortium.country.line": "Alertes plantes envahissantes pour",
   "consortium.country.guessed": "deviné d’après votre navigateur",
   "consortium.country.chosen": "choisi par vous",
+  "consortium.country.fromLocation": "d’après votre position",
   "consortium.country.linked": "venu du lien partagé",
   "consortium.country.unchecked": "Non vérifié pour ce pays ({country}) : GRIIS n’a pas encore de liste pour lui, donc aucune plante n’y est marquée envahissante.",
   "consortium.country.none": "Aucun pays",
@@ -742,5 +743,6 @@
   "consortium.block.s5c": "Stream S5c keys (range check, nearest lists, estimate) follow, up to the next block key.",
   "consortium.block.s5d": "Stream S5d keys (future check) follow, up to the next block key.",
   "consortium.block.s5e": "Stream S5e keys (native here, soil likely) follow, up to the next block key.",
-  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, to the end of the file."
+  "consortium.block.s5f": "Stream S5f keys (credits and privacy: consortium.*, privacy.*, new dataSources.*) follow, up to consortium.block.end.",
+  "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

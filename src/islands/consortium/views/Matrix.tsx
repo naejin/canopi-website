@@ -38,6 +38,9 @@ import { focusView } from '../focus.ts';
 const { View: SideView } = later(() => import('./later.ts').then((m) => m.SideView));
 const { View: Jobs } = later(() => import('./later.ts').then((m) => m.Jobs));
 const { View: PlantList } = later(() => import('./later.ts').then((m) => m.PlantList));
+// S5d's slot (views/FutureSlot.tsx): idle, so it shows once prefetchLater() has loaded the later chunk
+// and never starts a download before the matrix is marked drawn (§8 timing).
+export const { View: FutureSlot } = later(() => import('./later.ts').then((m) => m.FutureSlot), { idle: true });
 
 type Tab = Exclude<View, 'start'>;
 const TABS: readonly Tab[] = ['matrix', 'side', 'jobs', 'list'];
@@ -217,6 +220,7 @@ function MatrixTable({ m }: { m: MatrixData }) {
         <span class="ct-key"><span class="ct-key-sw free" aria-hidden="true" />{T('matrix.key.free')}</span>
         <span class="ct-key"><span class="ct-key-sw cannot" aria-hidden="true">–</span>{T('matrix.key.cannot')}</span>
       </GlyphKey>
+      <FutureSlot />
     </div>
   );
 }

@@ -18,6 +18,7 @@ import { publishedGuides, slugOf } from '../../lib/guides';
 import { consortiumGuides, explainGuide } from '../../data/consortium-guides';
 import { climates } from '../../data/climates';
 import index from '../../data/consortium-index.json';
+import { climatePageData } from '../../data/climate-page-data';
 import { P, setStrings } from '../../islands/consortium/strings.ts';
 import '../../styles/consortium/base.css';
 import '../../styles/consortium/matrix.css';
@@ -67,6 +68,13 @@ const data = {
     site: new URL(localizedUrl('/consortium/', lang), 'https://projectcanopi.com').href,
   },
 };
+// #ct-climate (P5 commit 0): the canopi-climate base path and tile names per layer, for the location
+// reader (S5b), read at build from the installed index (scripts/install-climate.mjs, run before every
+// build). The index is git-ignored, so a glob, which finds nothing rather than failing when it is
+// absent (null then); not node:fs, which the Cloudflare prerender (workerd) does not have. Its own
+// script, so the strings stay apart.
+const climateIndex = Object.values(import.meta.glob('../../data/climate-index.json', { eager: true, import: 'default' }))[0] ?? null;
+const climate = climatePageData(climateIndex as Parameters<typeof climatePageData>[0]);
 // copy-m2: the number of climates is the installed index's, read at build time.
 setStrings(strings, lang);
 const betaNote = P('betaNote', index.climates.length);
@@ -104,6 +112,7 @@ const betaNote = P('betaNote', index.climates.length);
   <DonateDialog lang={lang} />
   <PageData lang={lang} keys={[]} />
   <script type="application/json" id="ct-data" set:html={JSON.stringify(data).replace(/</g, '\\u003c')} />
+  <script type="application/json" id="ct-climate" set:html={JSON.stringify(climate)} />
   {/* m10: the header (theme, Donate, menus, climate) starts first and on its own, so a failure in
       the tool never takes the header down with it. */}
   <script>

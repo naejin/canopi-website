@@ -146,7 +146,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
                 <div class="ct-row-why">
                   <span>{[spanWords(t), heightWords(t)].join(' · ')}</span>
                   {lines.length > 0 && <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span>}
-                  <PlantMarks taxon={t} />
+                  <PlantMarks taxon={t} surface="add" />
                 </div>
               </li>
             );
@@ -170,7 +170,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
                   <div class="ct-row-why" id={`ct-add-o-${t.id}`}>
                     <span>{T('add.otherLine', { other: zoneName(from), climate: zoneName(climate) })} {T('details.fromList', { climate: zoneName(from) })}.</span>
                     {lines.length > 0 && <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span>}
-                    <PlantMarks taxon={t} />
+                    <PlantMarks taxon={t} surface="add" />
                   </div>
                 </li>
               );

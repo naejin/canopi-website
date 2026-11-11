@@ -62,20 +62,21 @@ test('every BT-1…BT-9 of design check §7 has a test', () => {
   for (let i = 1; i <= 9; i++) assert.ok(titles.some((t) => t.startsWith(`BT-${i} `) || t.includes(`BT-${i} load`) || t.includes(`/ BT-${i} `)), `BT-${i}`);
 });
 
-// P5 (commit 0): every P5 spec names its owner stream and is todo for that stream, with the reason
-// starting with the stream; the commit-0 harness self-checks run; no skip. A stream removes the todo
-// of its own specs when it builds them (they must then pass).
+// P5 (commit 0): every P5 spec names its owner stream; a todo may only name that stream, so a stream
+// removing its own todos passes and no stream marks another's spec; the commit-0 harness checks run;
+// no skip.
 const P5_STREAMS = ['S5b', 'S5c', 'S5d', 'S5e', 'S5f'];
-test('P5 specs: each "P5-n (S5x …)" is todo for its own stream; "P5-0 (commit 0 …)" checks run', () => {
+test('P5 specs: each "P5-n (S5x …)" names its stream, and a todo names only that stream; "P5-0 (commit 0 …)" checks run', () => {
   const text = read('consortium-p5.browser.test.mjs');
   assert.doesNotMatch(text, /\bskip\s*:|\.skip\(|\.todo\(/);
   const tests = testsOf(text);
   const seen = new Set();
   for (const { title, opts } of tests) {
-    if (/^P5-0[a-z]? \(commit 0\b/.test(title)) { assert.doesNotMatch(opts, /\btodo\s*:/, `"${title}" runs`); continue; }
+    const todo = opts.match(/\btodo:\s*'([^']*)'/)?.[1] ?? null;
+    if (/^P5-0[a-z]? \(commit 0\b/.test(title)) { assert.equal(todo, null, `"${title}" runs`); continue; }
     const m = title.match(/^P5-\d+[a-z]? \((S5[b-f])\b/);
     assert.ok(m, `"${title}" names its stream: P5-n (S5x …)`);
-    assert.match(opts, new RegExp(`\\btodo:\\s*'${m[1]}: `), `"${title}" is todo for ${m[1]}`);
+    if (todo !== null) assert.ok(todo.startsWith(`${m[1]}: `), `"${title}": its todo names ${m[1]}, not another stream ("${todo}")`);
     seen.add(m[1]);
   }
   assert.deepEqual([...seen].sort(), P5_STREAMS, 'every P5 stream has specs');

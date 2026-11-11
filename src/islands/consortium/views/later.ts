@@ -6,4 +6,5 @@ export { Jobs } from './Jobs.tsx';
 export { PlantList } from './PlantList.tsx';
 export { PrintSheet } from './PrintSheet.tsx';
 export { Share } from './Share.tsx';
+export { FutureSlot } from './FutureSlot.tsx';
 export { canopiFile, canopiFileName } from '../../../lib/consortium/index.ts';

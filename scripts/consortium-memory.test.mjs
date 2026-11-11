@@ -366,3 +366,21 @@ test('applyPreset: a card the reader picks while the guide\'s plant is read wins
   assert.deepEqual({ crops: store.crops.peek(), kept: store.kept.peek() }, { crops: [], kept: [] }, 'the guide\'s plant is not applied');
   assert.equal(m.notices.peek().guideKept, null);
 });
+
+// P5 owner answer 5 (2026-11-11): a country from the location is labelled "from your location", saved on
+// the device, and written into a link only with the reader's "include my location" tick (S5b passes
+// { location: true } then). The save keeps it beside the fragment, never in it, so the address bar and
+// the save never carry it.
+test('a country from the location: never in a link or the address without the tick, saved on the device as "location"', () => {
+  const base = { climate: 'Temperate', site: { light: 'sun', soil: 'unsure', water: 'unsure', room: 'small' }, members: ['a'], kept: [], removed: [], guests: {}, crops: [], stage: null };
+  const here = { code: 'FR', source: 'location' };
+  assert.equal(shareState({ ...base, country: here }).country, null, 'no k= without the tick');
+  assert.equal(shareState({ ...base, country: here }, { location: true }).country, 'FR', 'k= with the tick');
+  assert.equal(shareState({ ...base, country: { code: 'FR', source: 'chosen' } }, { location: true }).country, 'FR');
+  const r = saveRecord('v=4&c=temperate&a=&e=1', 'x', 'location', 'FR');
+  assert.deepEqual(readRecord(r), { fragment: 'v=4&c=temperate&a=&e=1', at: 'x', src: 'location', country: 'FR' });
+  assert.deepEqual(readRecord(saveRecord('v=4&c=temperate&a=&e=1', 'x', 'chosen')), { fragment: 'v=4&c=temperate&a=&e=1', at: 'x', src: 'chosen' }, 'only a location country is kept beside the fragment');
+  assert.equal(readRecord(JSON.stringify({ fragment: 'v=4&c=temperate&a=&e=1', at: 'x', src: 'location', country: 'nope' })).country, undefined, 'a malformed code is dropped');
+  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'fr', savedFrom: 'location', guess: 'US' }), { code: 'FR', source: 'location' }, 'shown again as "from your location", never as chosen');
+  assert.deepEqual(countryAtStart({ link: 'DE', pref: null, saved: 'fr', savedFrom: 'location', guess: 'US' }), { code: 'DE', source: 'link' }, 'a link\'s own country wins');
+});

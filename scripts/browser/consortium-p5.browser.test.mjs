@@ -13,13 +13,14 @@
 // - S5b: [data-location-action="geo" | "search" | "map"] controls, input[data-location-search], the
 //   result line [data-location-state] ("ready", "denied", "timeout", "unavailable", "no-result",
 //   "offline", "sea", "coast", "polar", "borderline", "failed"), [data-location-privacy] beside each
-//   control, the map dialog [data-location-map] with [data-location-use-centre] (the test hook gains
+//   control (in the same parent), the suggested climate card checked through store.proposedClimate and
+//   committed by [data-location-confirm] (owner answer 1), the map dialog [data-location-map] with [data-location-use-centre] (the test hook gains
 //   mapCentre({ lat, lon }) to move it), the share tick input[data-share-location], and
-//   store.country.value.source 'location';
+//   store.country.value.source 'location' (never in a link without the tick: owner answer 5);
 // - S5c: [data-mark="edge" | "outside" | "estimate" | "unknown"] (views/PlantMarks.tsx), the empty
-//   pool [data-pool-empty];
-// - S5d: [data-future-summary], [data-future="not-checked"];
-// - S5e: [data-native="native" | "not_recorded" | "unknown"] in Details, [data-likely="soil"] with its
+//   pool [data-pool-empty], borrowed lists through views/PoolSlot.tsx;
+// - S5d: [data-future-summary], [data-future="not-checked"] (views/FutureSlot.tsx);
+// - S5e: [data-native="native" | "not_recorded" | "unknown"] in Details (views/NativeSlot.tsx), [data-likely="soil"] with its
 //   "Use it" button [data-likely-use];
 // - S5f: /privacy/ in every locale, the footer link to it, the /data-sources/ credits [data-credit].
 // Headless Chrome on dist-test, capped:
@@ -34,9 +35,10 @@ let h;
 before(async () => { h = await startHarness(); });
 after(async () => { await h?.close(); });
 
-// The tool, loaded, with the test hook (store access) unless hook is false.
-async function tool({ lang = 'en', hook = true, width = 1280, ...opts } = {}) {
-  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { width, ...opts });
+// The tool, loaded, with the test hook (store access) unless hook is false. Map tiles are stubbed for
+// every spec (any other third-party request is aborted and listed in page.thirdParty); hash is a link.
+async function tool({ lang = 'en', hook = true, width = 1280, mapTiles = 'stub', hash = '', ...opts } = {}) {
+  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/${hash}`, { width, mapTiles, ...opts });
   if (hook) {
     await page.evaluateOnNewDocument(() => { window.__ctTest = true; });
     await page.reload({ waitUntil: 'domcontentloaded' });
@@ -70,6 +72,13 @@ async function locationState(page, timeout = 15_000) {
   return page.$eval('[data-location-state]', (e) => e.getAttribute('data-location-state')).catch(() => null);
 }
 const text = (page, sel) => page.$eval(sel, (e) => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => null);
+const checkedCard = (page) => page.$eval('input[name="ct-climate"]:checked', (e) => e.value).catch(() => null);
+const storeClimate = (page) => page.evaluate(() => window.__ctTest.store.climate.value);
+// The result line ready, the suggested card confirmed (owner answer 1), then a consortium in the matrix.
+async function confirmAndSuggest(page) {
+  await page.click('[data-location-confirm]');
+  await page.evaluate(async () => { const { store } = window.__ctTest; await store.loadPool(store.climate.value); store.suggestMembers(); store.view.value = 'matrix'; });
+}
 const search = async (page, q) => {
   await page.type('input[data-location-search]', q);
   await page.keyboard.press('Enter');
@@ -136,6 +145,8 @@ test('P5-0d (commit 0 seams): today the start step shows no location controls, n
   assert.equal(await page.$('[data-location-action]'), null);
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');
+  await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
+  assert.ok(await page.waitForFunction(() => document.querySelectorAll('[data-plant-id]').length > 0 && window.__ctTest.store.markProviders.value.length === 3, { timeout: 10_000 }).then(() => true, () => false), 'members in the matrix, and the mark providers loaded for the location');
   assert.equal(await page.$('[data-mark]'), null, 'the mark providers are stubs');
   assert.equal(await page.$('[data-likely]'), null);
   assert.deepEqual(page.thirdParty, []);
@@ -148,13 +159,16 @@ test('P5-1 (S5b location granted): "Use my location" fills the result line and t
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon } });
   await locationControls(page);
-  assert.ok(await has(page, '[data-location-action="geo"] ~ [data-location-privacy], [data-location-privacy]'), 'a privacy line beside the button');
+  assert.ok(await page.$eval('[data-location-action="geo"]', (b) => !!b.parentElement.querySelector(':scope > [data-location-privacy]')), 'a privacy line beside the button, in its own parent');
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'ready');
   const loc = await page.evaluate(() => window.__ctTest.store.location.value);
   assert.equal(loc.source, 'geo');
   assert.equal(loc.lookup.climate.periods[0].koppen, 'Csa');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.climate.value), 'Mediterranean');
+  assert.equal(await checkedCard(page), 'mediterranean', 'the Mediterranean card is pre-checked');
+  assert.equal(await storeClimate(page), null, 'but not chosen until the reader confirms (owner answer 1)');
+  await page.click('[data-location-confirm]');
+  assert.equal(await storeClimate(page), 'Mediterranean');
   assert.equal(await page.evaluate(() => window.__ctTest.store.country.value.source), 'location', 'the country "from your location"');
 });
 
@@ -165,6 +179,7 @@ test('P5-2 (S5b location denied): a denied permission says so and leaves the man
   assert.equal(await locationState(page), 'denied');
   assert.equal(await page.evaluate(() => window.__ctTest.store.location.value), null);
   assert.ok(await has(page, '.ct-climates input, .ct-climates button'), 'the climate cards stay');
+  assert.equal(await checkedCard(page), null, 'no card pre-checked');
 });
 
 test('P5-3 (S5b location timeout): a location that never comes ends in "timeout", with search and map offered', { todo: 'S5b: location controls not built' }, async () => {
@@ -236,8 +251,11 @@ test('P5-8 (S5b coast): a point offshore takes the nearest cell\'s climate and s
   await locationControls(page);
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'coast');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.climate.value), 'Temperate', 'Cfb from the nearest cell');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.country.value.code), null, 'no country offshore');
+  assert.equal(await checkedCard(page), 'temperate', 'Cfb from the nearest cell, pre-checked');
+  assert.equal(await storeClimate(page), null, 'not chosen until confirmed');
+  const c = await page.evaluate(() => window.__ctTest.store.country.value);
+  assert.notEqual(c.source, 'location', 'no country from the location offshore');
+  assert.ok(c.code === null || c.source !== 'location', 'no country offshore');
 });
 
 test('P5-9 (S5b polar): an ET site has its own state, no curated list claimed', { todo: 'S5b: location result states not built' }, async () => {
@@ -246,6 +264,8 @@ test('P5-9 (S5b polar): an ET site has its own state, no curated list claimed', 
   await locationControls(page);
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'polar');
+  assert.equal(await storeClimate(page), null, 'no climate chosen');
+  assert.equal(await checkedCard(page), null, 'no curated card claimed');
 });
 
 test('P5-10 (S5b borderline): Lyon says "Borderline: check the climate" and keeps the cards open', { todo: 'S5b: location result states not built' }, async () => {
@@ -255,10 +275,14 @@ test('P5-10 (S5b borderline): Lyon says "Borderline: check the climate" and keep
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'borderline');
   assert.ok(await has(page, '.ct-climates'), 'the cards stay open');
+  assert.equal(await checkedCard(page), null, 'no card pre-checked when borderline');
+  assert.equal(await storeClimate(page), null);
   const calm = await tool({ geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
   await locationControls(calm);
   await calm.click('[data-location-action="geo"]');
   assert.equal(await locationState(calm), 'ready', 'Seville is not borderline');
+  assert.equal(await checkedCard(calm), 'mediterranean', 'pre-checked');
+  assert.equal(await storeClimate(calm), null, 'not committed until confirmed');
 });
 
 test('P5-11 (S5b tiles fail): when the climate tiles cannot be read the manual climate stays, with a line saying so', { todo: 'S5b: location result states not built' }, async () => {
@@ -269,18 +293,23 @@ test('P5-11 (S5b tiles fail): when the climate tiles cannot be read the manual c
   assert.equal(await locationState(page), 'failed');
   assert.equal((await page.evaluate(() => window.__ctTest.store.location.value))?.lookup ?? null, null);
   assert.ok(await has(page, '.ct-climates'));
+  assert.equal(await checkedCard(page), null, 'no card pre-checked');
 });
 
-test('P5-12 (S5b share without the tick): a link never carries the location unless asked', { todo: 'S5b: share location tick not built' }, async () => {
+test('P5-12 (S5b share without the tick): a link never carries the location, nor its country, unless asked', { todo: 'S5b: share location tick not built' }, async () => {
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon } });
   await locationControls(page);
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'ready');
-  await page.evaluate(async () => { const { store } = window.__ctTest; await store.loadPool(store.climate.value); store.suggestMembers(); store.view.value = 'matrix'; });
+  await confirmAndSuggest(page);
+  assert.equal(await page.evaluate(() => window.__ctTest.store.country.value.source), 'location');
   assert.ok(await has(page, 'input[data-share-location]', 10_000), 'the "include my location" tick');
   assert.equal(await page.$eval('input[data-share-location]', (e) => e.checked), false);
-  assert.doesNotMatch(await page.$eval('#ct-share-field', (e) => e.value), /[?&#]o=/);
+  const link = await page.$eval('#ct-share-field', (e) => e.value);
+  assert.doesNotMatch(link, /[?&#]o=/, 'no o=');
+  assert.doesNotMatch(link, /[?&#]k=/, 'no k=: the country from the location stays on the device (owner answer 5)');
+  assert.doesNotMatch(await page.evaluate(() => location.hash), /[?&#]k=/, 'nor in the address bar');
 });
 
 test('P5-13 (S5b share with "include my location"): the link carries the cell centre only, and opens as "from the shared link, approximate"', { todo: 'S5b: share location tick not built' }, async () => {
@@ -289,11 +318,12 @@ test('P5-13 (S5b share with "include my location"): the link carries the cell ce
   await locationControls(page);
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'ready');
-  await page.evaluate(async () => { const { store } = window.__ctTest; await store.loadPool(store.climate.value); store.suggestMembers(); store.view.value = 'matrix'; });
+  await confirmAndSuggest(page);
   await page.click('input[data-share-location]');
   const link = await page.$eval('#ct-share-field', (e) => e.value);
   const o = link.match(/[?&#]o=(-?[\d.]+),(-?[\d.]+)/);
   assert.ok(o, 'o= in the link');
+  assert.match(link, /[?&#]k=ES(&|$)/, 'and k=, with the tick');
   const cell = (await lookupAt(lat, lon)).climate;
   assert.deepEqual([Number(o[1]), Number(o[2])], [cell.cellLat, cell.cellLon], 'the cell centre, not the device position');
   const opened = await h.open(new URL(link).pathname + new URL(link).search + new URL(link).hash);
@@ -338,14 +368,27 @@ test('P5-15 (S5c near-edge mark): a Mediterranean plant whose range ends within 
   assert.ok(marks.includes('edge'), `${edge} is marked near the edge`);
 });
 
-test('P5-16 (S5c outside-range warning on add): Add warns before adding a plant whose range misses the site, and still adds it', { todo: 'S5c: outside-range warning not built' }, async () => {
+test('P5-16 (S5c outside-range warning on add): typed in Add, a plant whose range misses the site shows "outside", and adding it still makes it a member', { todo: 'S5c: outside-range warning not built' }, async () => {
   const page = await tool();
   const lookup = await atSite(page, 'seville');
   const outside = await pickRanged(OUTSIDE, lookup.climate.periods[0], 'Mediterranean');
   assert.ok(outside, 'a Mediterranean plant outside its range at Seville');
   await choose(page, 'Mediterranean');
-  await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.openSheet('add'); });
-  assert.ok(await has(page, '.ct-rows [data-mark="outside"]', 10_000), 'the Add list marks outside-range plants');
+  await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; window.__ctTest.store.openSheet('add'); });
+  assert.ok(await has(page, '.ct-add .ct-search input', 10_000), 'the Add sheet');
+  await page.type('.ct-add .ct-search input', outside);
+  const row = `.ct-add .ct-rows li:has(.ct-sci)`;
+  assert.ok(await page.waitForFunction((sel, name) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === name && li.querySelector('[data-mark="outside"]')), { timeout: 10_000 }, row, outside).then(() => true, () => false), `${outside}'s row shows "outside"`);
+  await page.evaluate((sel, name) => {
+    const li = [...document.querySelectorAll(sel)].find((x) => x.querySelector('.ct-sci')?.textContent === name);
+    (li.querySelector('input[type="checkbox"]') ?? li.querySelector('button')).click();
+  }, row, outside);
+  await page.evaluate(() => new Promise((r) => setTimeout(r, 100)));
+  const ask = await page.$('dialog.ct-ask[open] .button-primary') ?? await page.$('.ct-add-bar .button-primary:not([disabled])');
+  assert.ok(ask, 'the warning\'s "Add anyway", or Add selected');
+  await ask.click();
+  const id = await page.evaluate((name) => window.__ctTest.store.pool.value.find((t) => t.canonical_name === name)?.id, outside);
+  assert.ok(await page.waitForFunction((x) => window.__ctTest.store.members.value.includes(x), { timeout: 5000 }, id).then(() => true, () => false), `${outside} joins the members`);
 });
 
 test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from the nearest list and labelled "estimate"', { todo: 'S5c: nearest placements not built' }, async () => {
@@ -360,6 +403,16 @@ test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from t
   assert.ok(count > 0, 'Subtropical borrows Mediterranean placements');
   await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
   assert.ok(await has(page, '[data-mark="estimate"]', 10_000));
+});
+
+test('P5-26 (S5c borrowed list from a link): #v=4&c=subtropical without o= opens with borrowed plants marked "estimate", no location needed', { todo: 'S5c: nearest placements not built' }, async () => {
+  const page = await tool({ hash: '#v=4&c=subtropical&a=&e=1' });
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.climate.value === 'Subtropical', { timeout: 10_000 }).then(() => true, () => false), 'the link\'s climate');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.location.value), null, 'no location: borrowing depends on the climate only');
+  assert.ok(await page.waitForFunction(() => (window.__ctTest.store.pool.value ?? []).some((t) => t.estimate), { timeout: 10_000 }).then(() => true, () => false), 'a borrowed pool');
+  await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
+  assert.ok(await has(page, '[data-mark="estimate"]', 10_000), 'borrowed plants marked "estimate"');
+  assert.equal(await page.$('[data-pool-empty]'), null);
 });
 
 // ---- S5d: future check ----

@@ -2,8 +2,7 @@
 // period × scenario ensemble means, the latest period a plant's phases reach (phase_end ≥ 3 →
 // 2041–2070; = 6 → 2071–2099), SSP2-4.5 by default, warm winters left out, "outside in 3 of 4
 // scenarios". Stub: null ("not checked") for every plant.
-import type { Mark, Scenario, SiteLocation, Taxon } from './types.ts';
-import type { MarkContext } from './marks.ts';
+import type { Scenario, SiteLocation, Taxon } from './types.ts';
 
 export type FuturePeriod = '2041-2070' | '2071-2099';
 export interface FutureCheck {
@@ -16,9 +15,4 @@ export interface FutureCheck {
 
 export function futureCheck(_taxon: Taxon, _site: SiteLocation | null, _scenario: Scenario): FutureCheck | null {
   return null;
-}
-
-// The matrix mark of the future check (marks.ts provider, drawn in ink). Stub: none.
-export function futureMarks(_taxon: Taxon, _ctx: MarkContext): Mark[] {
-  return [];
 }
