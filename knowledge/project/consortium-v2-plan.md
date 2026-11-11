@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: Phases, order, exits and session brief for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate.
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:20:21Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:30:47Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -64,6 +64,20 @@ Each phase ships on its own. Repos: W website, D canopi-data, C canopi-climate.
 - **Hosting:** an installer verifies the canopi-climate release (manifest, checksums) and copies the tiles and lookup files under `public/data/`; the browser never fetches from GitHub at runtime; every file under 25 MiB and the file count measured against the Workers static-assets limit.
 - **Notices and credits:** third-party notices for canopi-climate (AGPL), MapLibre (BSD) and copied files; on-map attribution for OpenStreetMap/OpenFreeMap; credit rows on `/data-sources/` for Beck et al., CHELSA, SoilGrids, WCVP, GBIF, TreeGOER, EIVE, Niinemets & Valladares, EcoCrop and Natural Earth.
 - **Exit:** gates green; real-browser walk-throughs for a site in each of the seven climates; budgets met with the map and WASM loaded lazily.
+
+### P5.1 (W) — filters in Add (owner, 2026-11-11)
+- **Goal for users:** opened from "Add plants", Add can be narrowed like the plant list instead of being one long list plus a search box.
+- **Built:** per the decision row "Filters in Add (P5.1)": one filter rule and component for Add and the plant list; range filter within / near the edge / all; visible "Fits your site"; Native here, Life cycle, Has edible parts, Evergreen (with unknown counts) and Nitrogen fixer.
+- **canopi-data first (its next release, before the P5.1 build):** one reconciled nitrogen-fixer value (trait vs soil-feeding function) used by the filter and the "Feeds the soil" job; evergreen filled where sources allow; the export carries both. Context openings ("+ Add" on a cell, a job, "Show them anyway") preset the filters instead of a separate path.
+- **How:** design check while the P5 streams finish (read-only); build after the P5 push (Add is edited by S5c and S5e); bug and conformance review, fix rounds until clean; coherent with P7a's site adjustments (the range filter reads the adjusted site).
+- **Order:** after the P5 push, before P7a.
+
+### P7 (W, then C + D) — site adjustments, then dry season (owner, 2026-11-11)
+- **Goal for users:** a frost pocket, a hot paved yard or a watered garden changes the suggestions honestly; later, a long dry season is checked like winter cold.
+- **P7a (website):** the three site adjustments of the decision row "Site adjustments and dry season"; one share-link key; range and future checks read the adjusted site through one function; marks and plant details name the adjustment.
+- **P7b (canopi-data QA, then website):** the dry months already shipped (tiles today and future, plant ranges, schema-2 export) checked in canopi-data QA against the drought indicators (EcoCrop, Niinemets & Valladares, EIVE) and on the validation cities (does it separate Mediterranean from monsoon sites at equal aridity?); then a dry-season row in the website's one range rule (today, future, marks). Only if the check fails: new variables in canopi-climate, then `canopi ranges build`, tiles and ranges rebuilt together under one grid sha.
+- **How:** the full loop (design check, architecture review, one question batch, commit 0, streams, a bug and a conformance review per stream with fix rounds until clean, seam reviews, real-browser walk-through, pre-push review); coherence with P5's range rule, future check, share keys and privacy page is a design-check row.
+- **Order:** after the P5 push; P7a before P7b.
 
 ### P6 — close
 - Usefulness pass, receipts, retrospective; measurements note for the app's ADR 0006; follow-ups filed with slots (canopi-data's WCVP distribution fill is stale by 844 rows since the hybrid-sign reader fix of 2026-11-11 and was left unapplied because its `--apply` is a reviewed coordinator step that forces a release rebuild, slot: the next canopi-data release; upstream whitebox fixes, GBIF DOI download with an account, extreme-minimum model, wider curation).

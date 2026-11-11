@@ -476,8 +476,8 @@ const ISLAND_BUDGET = 60 * 1024;
 // with import()) stays under 40 KB, so the matrix does not wait for them (P2 hand-off budget and its
 // review: 37.6 KB at the time). The 60 KB above counts the lazy chunks too, so moving code to a lazy
 // chunk does not lower it; P5 is to change that metric.
-const FIRST_RUN_BUDGET = 40 * 1024;
-// P5 (decision row "Island JavaScript budget for P5", amended 2026-11-11): first run ≤ 40 KB; the P2
+const FIRST_RUN_BUDGET = 42 * 1024;
+// P5 (decision row "Island JavaScript budget for P5", amended 2026-11-11, first run raised to 42 KB by the owner): first run ≤ 42 KB; the P2
 // island with the P5 slot shells ≤ 60 KB; the P5 feature chunks (built-modules.mjs
 // P5_FEATURE_ENTRIES: location view, mark providers, future panel, pool, likely and native content),
 // loaded only once a location is given or a climate borrows plants, ≤ 30 KB together and the location
@@ -546,7 +546,7 @@ for (const lang of locales) {
   const firstRun = firstRunChunks(graph, island);
   for (const p of lazy.features) assert.ok(!firstRun.includes(p), `${path}: the feature chunk ${p} is not in the island's first run`);
   firstRunBytes = firstRun.reduce((n, p) => n + gzipSync(graph.get(p).code, { level: 9 }).length, 0);
-  assert.ok(firstRunBytes < FIRST_RUN_BUDGET, `${path}: the island's first run is ${(firstRunBytes / 1024).toFixed(1)} KB gzip, the budget is 40 KB`);
+  assert.ok(firstRunBytes < FIRST_RUN_BUDGET, `${path}: the island's first run is ${(firstRunBytes / 1024).toFixed(1)} KB gzip, the budget is 42 KB`);
   const preloads = [...html.matchAll(/<link\b[^>]*\brel="(preload|modulepreload)"[^>]*>/g)].map(([tag, rel]) => ({ rel, tag, href: tag.match(/\bhref="([^"]+)"/)?.[1] }));
   const db = preloads.find((l) => l.href === consortiumIndex.files[0].url);
   assert.ok(db && db.rel === 'preload' && /\bas="fetch"/.test(db.tag) && /\bcrossorigin\b/.test(db.tag), `${path}: <link rel="preload" as="fetch" crossorigin> for the database`);
@@ -556,7 +556,7 @@ for (const lang of locales) {
     else if (!html.includes(`src="${p}"`)) assert.ok(modules.has(p), `${path}: modulepreload ${p}`);
   }
 }
-console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB); first run ${(firstRunBytes / 1024).toFixed(1)} KB (budget 40 KB); P5 feature chunks ${(featureBytes / 1024).toFixed(1)} KB over ${featureList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 30 KB), of which location ${(locationBytes / 1024).toFixed(1)} KB (budget 20 KB${locationSource ? '' : ', none before S5b'}), MapLibre with its worker and CSS ${(maplibreBytes / 1024).toFixed(1)} KB (budget 330 KB).`);
+console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB); first run ${(firstRunBytes / 1024).toFixed(1)} KB (budget 42 KB); P5 feature chunks ${(featureBytes / 1024).toFixed(1)} KB over ${featureList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 30 KB), of which location ${(locationBytes / 1024).toFixed(1)} KB (budget 20 KB${locationSource ? '' : ', none before S5b'}), MapLibre with its worker and CSS ${(maplibreBytes / 1024).toFixed(1)} KB (budget 330 KB).`);
 
 // P5 design check A: Workers static assets take at most 20,000 files on the Free plan (100,000 Paid);
 // every file of the build counts, the Web Edition under /app/ and the climate tiles included.

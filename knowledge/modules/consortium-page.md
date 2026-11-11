@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:26:47Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:30:47Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:21:27Z }
@@ -21,7 +21,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:f42e3a4e3912dc4e
-    last_modified: 2026-11-11T19:18:24Z
+    last_modified: 2026-11-11T19:27:07Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -65,8 +65,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:03e318f55b8613e4
-    last_modified: 2026-11-11T17:14:18Z
+    digest: sha256:725ffc9c2ab50b8e
+    last_modified: 2026-11-11T19:30:14Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -101,7 +101,7 @@ sources:
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
     digest: sha256:9cd8222590f391b2
-    last_modified: 2026-11-11T19:12:28Z
+    last_modified: 2026-11-11T19:27:07Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -186,7 +186,7 @@ sources:
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
     digest: sha256:4f682f3b5e15870f
-    last_modified: 2026-11-11T19:18:24Z
+    last_modified: 2026-11-11T19:27:07Z
   - id: futureslot-tsx
     resource: ../../src/islands/consortium/views/FutureSlot.tsx
     title: src/islands/consortium/views/FutureSlot.tsx
@@ -211,7 +211,7 @@ sources:
     resource: ../../src/islands/consortium/views/PlantMarks.tsx
     title: src/islands/consortium/views/PlantMarks.tsx
     digest: sha256:9ab8870160c45b8c
-    last_modified: 2026-11-11T19:18:24Z
+    last_modified: 2026-11-11T19:27:07Z
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
@@ -226,7 +226,7 @@ sources:
     resource: ../../scripts/browser/consortium-p5.browser.test.mjs
     title: scripts/browser/consortium-p5.browser.test.mjs
     digest: sha256:2e4aca48d8393de1
-    last_modified: 2026-11-11T19:26:09Z
+    last_modified: 2026-11-11T19:27:07Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
@@ -241,7 +241,7 @@ sources:
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
     digest: sha256:d832df1245320b48
-    last_modified: 2026-11-11T19:18:24Z
+    last_modified: 2026-11-11T19:27:07Z
 enforced_by:
   - scripts/check-built-site.mjs
   - scripts/browser/consortium-commit0.browser.test.mjs
@@ -304,7 +304,7 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
   - then `verifyInstall` on the served data, a real `canopi_db_sha256`, and no v1 file or index served.
   - exactly one `sqlite3.<hash>.wasm` and no `sqlite3-worker1`/`opfs-async-proxy` file anywhere (review B4);
   - §8: the island's JavaScript through the built import graph, without the chunk holding the sqlite glue, under 60 KB gzip -9, lazy chunks included, and its first run (the entry and what it imports statically) under 40 KB (56.9 and 37.6 KB at `83555c4`). The 60 KB counts lazy chunks, so moving code behind `import()` does not lower it, and it has about 3 KB of headroom; P5 is to change the metric: only the island's own chunks, from its entry chunk (main.ts) without the page-wide chunks (site chrome, page script) or the glue (9.1 KB, the main chunk alone); a serve.mjs marker file left in `dist/client` fails the check, and on every locale page the DB preload and a modulepreload for each chunk.
-  - P5 (commit 0; decision row "Island JavaScript budget for P5", amended): first run ≤ 40 KB; the P2 island with the P5 slot shells ≤ 60 KB (slots stay thin shells); the P5 feature chunks ≤ 30 KB together, the location chunk alone ≤ 20 KB; MapLibre with worker and CSS ≤ 330 KB. Feature chunks are found by entry module through one list, `P5_FEATURE_ENTRIES` in [built-modules.mjs](../../scripts/built-modules.mjs): `location` (`views/location/location.tsx`, S5b), `markProviders` (`src/lib/consortium/mark-providers.ts`), `future` (`views/future/future.tsx`, S5d), and, if a stream's content is not tiny, `pool` (`views/pool/pool.tsx`, S5c), `likely` and `native` (`views/likely/likely.tsx`, `views/native/native.tsx`, S5e). `markProviders` and `future` must exist; no feature chunk is in the first run or modulepreloaded. Chunk roles, never file names. The Vite plugin `canopi:consortium-chunk-roles` (astro.config.mjs, client environment) writes `chunkRoles(bundle)` to `dist/consortium-chunks.json`, beside the served `client/` and never served: `features` (per `P5_FEATURE_ENTRIES` key), `maplibre` (chunks holding `node_modules/maplibre-gl` modules, plus the `.js` worker assets a location or MapLibre chunk names), `maplibreCss` (the CSS the location and MapLibre chunks import). Chunk edges are static and dynamic imports only: `importsOf` drops Vite's `__vite__mapDeps` preload lists, so a chunk only a feature chunk needs bills to the features, not the island. `onDemandChunks(graph, entries, roles)` gives `features` (feature chunks and what only they reach), `location` (what only the location chunk reaches) and `maplibre`; the modulepreload writer skips features and MapLibre. Vacuous-safe: without `src/islands/consortium/views/location/` no location, MapLibre or MapLibre CSS role may exist and no `.js` holds `maplibregl`; with it, one location chunk and MapLibre > 0 bytes. Preloading the mark providers alone cost about 0.15 s cold. At this commit: island 58.2 KB, first run 38.7 KB, feature chunks 0.2 KB (future, mark-providers). With S5d merged on 98a3ec0: island 58.3 KB, first run 38.7 KB, feature chunks 2.6 KB (the future panel, the shared core `future.ts` chunk and mark-providers). With S5c (round 1b, on a5234ea): island 58.7 KB, first run 39.0 KB (38.96; a5234ea 38.74), feature chunks 4.7 KB; the range rule, its number formatting and the "Not covered yet" notice load with the `pool` chunk; ct:matrix at load about 4–5: cold 2,380 vs 2,418 ms, warm 1,280 vs 1,244 ms (a5234ea), no new modulepreload.
+  - P5 (commit 0; decision row "Island JavaScript budget for P5", amended; first run raised to 42 KB by the owner): first run ≤ 42 KB; the P2 island with the P5 slot shells ≤ 60 KB (slots stay thin shells); the P5 feature chunks ≤ 30 KB together, the location chunk alone ≤ 20 KB; MapLibre with worker and CSS ≤ 330 KB. Feature chunks are found by entry module through one list, `P5_FEATURE_ENTRIES` in [built-modules.mjs](../../scripts/built-modules.mjs): `location` (`views/location/location.tsx`, S5b), `markProviders` (`src/lib/consortium/mark-providers.ts`), `future` (`views/future/future.tsx`, S5d), and, if a stream's content is not tiny, `pool` (`views/pool/pool.tsx`, S5c), `likely` and `native` (`views/likely/likely.tsx`, `views/native/native.tsx`, S5e). `markProviders` and `future` must exist; no feature chunk is in the first run or modulepreloaded. Chunk roles, never file names. The Vite plugin `canopi:consortium-chunk-roles` (astro.config.mjs, client environment) writes `chunkRoles(bundle)` to `dist/consortium-chunks.json`, beside the served `client/` and never served: `features` (per `P5_FEATURE_ENTRIES` key), `maplibre` (chunks holding `node_modules/maplibre-gl` modules, plus the `.js` worker assets a location or MapLibre chunk names), `maplibreCss` (the CSS the location and MapLibre chunks import). Chunk edges are static and dynamic imports only: `importsOf` drops Vite's `__vite__mapDeps` preload lists, so a chunk only a feature chunk needs bills to the features, not the island. `onDemandChunks(graph, entries, roles)` gives `features` (feature chunks and what only they reach), `location` (what only the location chunk reaches) and `maplibre`; the modulepreload writer skips features and MapLibre. Vacuous-safe: without `src/islands/consortium/views/location/` no location, MapLibre or MapLibre CSS role may exist and no `.js` holds `maplibregl`; with it, one location chunk and MapLibre > 0 bytes. Preloading the mark providers alone cost about 0.15 s cold. At this commit: island 58.2 KB, first run 38.7 KB, feature chunks 0.2 KB (future, mark-providers). With S5d merged on 98a3ec0: island 58.3 KB, first run 38.7 KB, feature chunks 2.6 KB (the future panel, the shared core `future.ts` chunk and mark-providers). With S5c (round 1b, on a5234ea): island 58.7 KB, first run 39.0 KB (38.96; a5234ea 38.74), feature chunks 4.7 KB; the range rule, its number formatting and the "Not covered yet" notice load with the `pool` chunk; ct:matrix at load about 4–5: cold 2,380 vs 2,418 ms, warm 1,280 vs 1,244 ms (a5234ea), no new modulepreload.
   - `#ct-climate` (ConsortiumPage.astro, [climate-page-data.ts](../../src/data/climate-page-data.ts)): the climate index's `base` and each layer's sorted tile names, the shape `lib/climate` `siteIndex()` reads, read at build through `import.meta.glob` (the index is git-ignored; `node:fs` is not available in the Cloudflare prerender), `null` without an index; the check compares it with the installed index on every locale page, no hashes, ≤ 2 KB gzip (1,288 B on climate 0.2.0).
   - One grid: [consortium-grid-check.mjs](../../scripts/consortium-grid-check.mjs) fails the build unless the consortium index's `climate_grid_manifest_sha256` (missing or empty fails) equals the climate index's grid and its `consortium_grid_check.status` is `matched`.
 - Browser tests, via `npm run test:browser` (capped; never in `npm test`; it runs `npm run build:browser-test` first, so rebuild with `npm run build` before `check-built-site` or a deploy), one file per owner (review C1), enforced by [browser-tests.test.mjs](../../scripts/browser-tests.test.mjs) in `npm test`:
