@@ -6,7 +6,7 @@
 // #ct-data: every consortium.* key of the page language without its prefix, the release id, the
 // installed database (url, sha256, bytes and the raw digest, checked by the island), the climates and the {plant uuid: photo} map, all from
 // src/data/consortium-index.json (scripts/install-consortium.mjs; nothing at build time reads SQLite).
-// Stream S4 owns this file after commit 0.
+// Stream S4 owns this file after commit 0; it adds the Start data (`start`) and print.css.
 import Base from '../../layouts/Base.astro';
 import Header from '../Header.astro';
 import Footer from '../Footer.astro';
@@ -16,12 +16,14 @@ import { t, localizedUrl, type Locale } from '../../i18n/utils';
 import en from '../../i18n/translations/en.json';
 import { publishedGuides, slugOf } from '../../lib/guides';
 import { explainGuide } from '../../data/consortium-guides';
+import { climates } from '../../data/climates';
 import index from '../../data/consortium-index.json';
 import { P, setStrings } from '../../islands/consortium/strings.ts';
 import '../../styles/consortium/base.css';
 import '../../styles/consortium/matrix.css';
 import '../../styles/consortium/details.css';
 import '../../styles/consortium/shell.css';
+import '../../styles/consortium/print.css';
 
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
@@ -46,6 +48,14 @@ const data = {
   climates: index.climates.map((c) => c.toLowerCase()),
   images: index.images,
   guide,
+  // Start (stream S4): every site climate in the site's order with its label and three example
+  // places (site-wide climate.* keys), the contact address for "Ask for this climate", and the
+  // site's own URL for the print foot. Read by views/Start.tsx; nothing here is chosen.
+  start: {
+    zones: climates.map((id) => ({ id, label: t(`climate.${id}`, lang), places: t(`climate.${id}.places`, lang) })),
+    contact,
+    site: new URL(localizedUrl('/consortium/', lang), 'https://projectcanopi.com').href,
+  },
 };
 // copy-m2: the number of climates is the installed index's, read at build time.
 setStrings(strings, lang);

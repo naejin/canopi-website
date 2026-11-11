@@ -1,1 +1,105 @@
-/* Consortium v2, stream S4: start, share, download and the page shell around the island. Tokens in base.css. */
+/* Consortium v2, stream S4: Start (country line, climate cards, Main crops, Your site, the start
+   actions), the result head, the link notices, Share and the action row. Tokens in base.css; the
+   site palette only (no green in chrome: chosen states are ink, the accent marks the main action);
+   Source Sans 3 / Literata at 400 and 600; breakpoints max-width 639px and min-width 960px. */
+.ct .ct-muted { color: var(--text-muted); }
+.ct .ct-small-text { font-size: 14px; }
+.ct .ct-link { display: inline-flex; align-items: center; min-height: 36px; padding-inline: 2px; font-weight: 600; color: var(--accent-ink); }
+.ct .button.ct-small { min-height: 40px; padding: 0 16px; font-size: 15px; }
+.ct .ct-sci { font-style: italic; font-weight: 400; color: var(--text-muted); font-size: 0.9em; }
+.ct :where(input, select, button, a):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.ct .ct-start { display: grid; gap: 18px; }
+.ct .ct-step { margin: 0; min-width: 0; border: 0; padding: 0; }
+.ct .ct-step-title { font-family: var(--font-display); font-size: 24px; font-weight: 400; line-height: 1.2; padding: 0; }
+.ct .ct-step-lede { margin: 4px 0 12px; font-size: 15px; }
+.ct .ct-panel { padding: 20px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+
+/* The country line (above the cards, so the guess is seen before it is used). */
+.ct .ct-country { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-alt); font-size: 15px; }
+.ct .ct-country p { margin: 0; }
+.ct .ct-country-text { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.ct .ct-country-acts, .ct .ct-country-pick { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.ct .ct-country-pick select { min-height: 40px; max-width: 100%; padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
+
+/* Climate cards: a radio group; the chosen card is ink, never green. */
+.ct .ct-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.ct .ct-card {
+  position: relative; display: grid; gap: 4px; align-content: start; min-height: 88px; padding: 14px 16px;
+  border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); cursor: pointer;
+}
+.ct .ct-card input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.ct .ct-card:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ct .ct-card.is-chosen { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+.ct .ct-card-name { font-weight: 600; font-size: 17px; }
+.ct .ct-card-desc { display: grid; gap: 4px; justify-items: start; }
+.ct .ct-card-places { font-size: 14px; color: var(--text-muted); }
+.ct .ct-pill { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 999px; border: 1px solid var(--border-strong); font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+.ct .ct-pill.is-ready { border-color: var(--accent); color: var(--accent-ink); }
+
+/* Notices: neutral callouts, the warning colours only for warnings. */
+.ct .ct-notice { display: grid; gap: 8px; margin: 0; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); }
+.ct .ct-notice p { margin: 0; }
+.ct .ct-note { margin: 0; padding: 8px 12px; border-left: 3px solid var(--warning-line); background: var(--warning-bg); color: var(--text); font-size: 15px; }
+
+/* Main crops */
+.ct .ct-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ct .ct-chips-label { font-size: 14px; }
+.ct .ct-chip {
+  display: inline-flex; align-items: baseline; gap: 6px; min-height: 40px; padding: 8px 14px;
+  border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); cursor: pointer; font-size: 15px;
+}
+.ct .ct-chip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 600; }
+.ct .ct-chip[aria-pressed="true"] .ct-sci { color: inherit; opacity: 0.85; }
+.ct .ct-chip:disabled { opacity: 0.55; cursor: not-allowed; }
+.ct .ct-crops-count { margin: 8px 0; font-size: 14px; }
+.ct .ct-search input { width: 100%; max-width: 460px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
+.ct .ct-hits { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; max-width: 460px; }
+.ct .ct-hit { width: 100%; min-height: 40px; padding: 6px 12px; text-align: left; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; }
+.ct .ct-hit:hover { border-color: var(--text); }
+
+/* Your site: four radio rows; the chosen answer is ink. */
+.ct .ct-site-grid { display: grid; grid-template-columns: 1fr; gap: 14px 24px; }
+.ct .ct-seg { margin: 0; padding: 0; border: 0; min-width: 0; }
+.ct .ct-seg legend { padding: 0; margin-bottom: 6px; font-weight: 600; font-size: 15px; }
+.ct .ct-seg-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.ct .ct-seg label { position: relative; display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: 999px; cursor: pointer; font-size: 15px; background: var(--surface); }
+.ct .ct-seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.ct .ct-seg label:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ct .ct-seg label.is-on { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 600; }
+
+.ct .ct-cta { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; }
+.ct .ct-cta [aria-busy="true"] { cursor: progress; }
+
+/* The result head (Start once a consortium is shown). */
+.ct .ct-result-head { display: grid; gap: 8px; margin-bottom: 16px; }
+.ct .ct-result-title { font-size: 28px; }
+.ct .ct-result-sub { font-family: var(--font-body, inherit); font-size: 17px; }
+.ct .ct-basis { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin: 0; font-size: 15px; color: var(--text-secondary); }
+
+/* Actions after the matrix */
+.ct .ct-actions { display: grid; gap: 12px; margin-top: 20px; }
+.ct .ct-action-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ct .ct-actions > p { margin: 0; }
+.ct .ct-share { display: grid; gap: 8px; }
+.ct .ct-share p { margin: 0; }
+.ct .ct-share-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ct .ct-share-label { flex: 1 0 100%; font-weight: 600; font-size: 15px; }
+.ct .ct-share-field { flex: 1 1 260px; min-width: 0; min-height: 40px; padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface-alt); font-size: 14px; }
+
+/* The print sheet shows only in print (print.css). */
+.ct .ct-print { display: none; }
+
+@media (min-width: 960px) {
+  .ct .ct-site-grid { grid-template-columns: 1fr 1fr; }
+  .ct .ct-cards { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 639px) {
+  .ct .ct-panel { padding: 16px 14px; }
+  .ct .ct-step-title { font-size: 21px; }
+  .ct .ct-cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ct .ct-card { min-height: 72px; padding: 10px 12px; }
+  .ct .ct-card-places { display: none; }
+  .ct .ct-cta .button { flex: 1 1 100%; }
+  .ct .ct-search input, .ct .ct-share-field, .ct .ct-country-pick select { font-size: 16px; }
+}
