@@ -5,15 +5,20 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:10:10Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:33:20Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:1d4cdaba5d2973f9
-    last_modified: 2026-11-11T09:09:11Z
+    digest: sha256:7a885c032a3ee619
+    last_modified: 2026-11-11T09:28:09Z
+  - id: climate-release-json
+    resource: ../../src/data/climate-release.json
+    title: src/data/climate-release.json
+    digest: sha256:f17c3cc7b270a864
+    last_modified: 2026-11-11T09:28:09Z
 ---
 
 # Responsibility
@@ -31,7 +36,7 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 - [source-credits.ts](../../src/data/source-credits.ts): the source credits on /data-sources/, from `source_credits.tsv`, which only a real `npm run install:consortium` writes, when the export's manifest lists `source_credits` (`{ file, sha256, rows }`, kept in `consortium-index.json`). Installed from release r-2c6bdf65c35caca3 (format 4; the file unchanged since r-812645d451f45c0c): 36 rows, 24 used and 5 held shown, 7 internal never. Read through `import.meta.glob`, so with no file `sourceCredits` is null and the page lists the TRY datasets alone; no copy is committed by hand.
 - [try_references.tsv](../../src/data/try_references.tsv), [try_references.meta.json](../../src/data/try_references.meta.json), [try-references.ts](../../src/data/try-references.ts): the TRY dataset list. canopi-data's consortium export owns it: a real `npm run install:consortium -- <export-dir>` writes the file byte for byte and the meta (the manifest entry's `sha256`, `rows`, `dataset_ids`, also kept in `consortium-index.json`), so neither is edited or copied by hand;
 - [consortium-index.json](../../src/data/consortium-index.json): the installed consortium release as the build sees it (release, database file and digests, climates, canonical names per climate, photo paths, TRY and credits entries); written only by the installer, read by the page, the guide presets, the home note and the checks, never served; see [Consortium core](/modules/consortium-core.md). `tryReferences` is parsed when the site builds, by [src/lib](/modules/src-lib.md).
-- [climate-index.json](../../src/data/climate-index.json): the installed canopi-climate grid as the build sees it (URL base `/data/climate/<version>-<12 hex>/`, tile names and sizes per layer, variables, slots, release, credits, the consortium grid check); written only by `npm run install:climate`; see [Climate reader](/modules/climate-reader.md).
+- [climate-release.json](../../src/data/climate-release.json): the pinned canopi-climate grid release (tag, GitHub asset URL, size, sha256, manifest sha256) that `npm run build` fetches and verifies. `climate-index.json` (git-ignored, written by each fresh install): the installed grid as the build sees it (URL base `/data/climate/<version>-<12 hex>/`, tile names and sizes per layer, variables, slots, release, credits, the consortium grid check); see [Climate reader](/modules/climate-reader.md).
 - [glossary.ts](../../src/data/glossary.ts): the Field Guides glossary, en and fr (`glossary`, `glossaryEntry(id, lang)`; one id per concept, no aliases).
 - [crops.ts](../../src/data/crops.ts): the 42-row crop table (the guide map's 40 crops plus mustard and flax) behind `CropCards`, `CropTable` and `CropExplorer` (ease, crossing, pollination, life, seed; `crop(id)`; no aliases).
 - [consortium-guides.ts](../../src/data/consortium-guides.ts): the Field Guides the consortium tool links: `consortiumGuides` (plant canonical name to slugs), `jobGuides` (one guide for each of the six jobs, never `null`) and `explainGuide`; see [Consortium page](/modules/consortium-page.md).

@@ -2,7 +2,7 @@
 type: Module
 title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:10:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:33:19Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
@@ -32,18 +32,28 @@ sources:
   - id: install-climate-mjs
     resource: ../../scripts/install-climate.mjs
     title: scripts/install-climate.mjs
-    digest: sha256:03e07065585a3473
-    last_modified: 2026-11-11T09:09:11Z
+    digest: sha256:f53eb074871f8e5f
+    last_modified: 2026-11-11T09:30:37Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:9d3fae33c85bb59d
-    last_modified: 2026-11-11T09:09:11Z
+    digest: sha256:27937a1911b162b1
+    last_modified: 2026-11-11T09:30:54Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
     digest: sha256:0401c704326e00fb
     last_modified: 2026-11-11T09:09:11Z
+  - id: climate-release-json
+    resource: ../../src/data/climate-release.json
+    title: src/data/climate-release.json
+    digest: sha256:f17c3cc7b270a864
+    last_modified: 2026-11-11T09:28:09Z
+  - id: package-json
+    resource: ../../package.json
+    title: package.json
+    digest: sha256:b49158bb6806ce9a
+    last_modified: 2026-11-11T09:30:54Z
 enforced_by:
   - scripts/climate-reader.test.mjs
   - scripts/install-climate.test.mjs
@@ -68,17 +78,20 @@ P5 stream S5b's data half: a TypeScript reader for the canopi-climate v0.2 grid 
 
 # Installer and served files
 
-- `npm run install:climate -- <canopi-climate-grid-vX.Y.Z.tar>` checks the `.sha256`, tar entries (regular files, safe paths, no duplicates, ≤ 25 MiB), every `SHA256SUMS` line, the manifest against `model.js`, each tile's size, sha256 and TIFF position, then copies to `public/data/climate/<version>-<12 hex manifest sha>/{tiles,soil,regions}/` and writes `src/data/climate-index.json`.
+- The tiles are fetched at build and verified, never committed (owner decision 2026-11-11). [climate-release.json](../../src/data/climate-release.json) pins the release: tag `v0.2.0`, the GitHub asset URL under `github.com/opencanopi/canopi-climate/releases/download/`, 99,194,880 bytes, the tar's sha256 `56f717f1…` and the manifest's sha256 `04ec85f4…`.
+- `npm run build` runs `npm run install:climate` (`ensureClimate`) before `astro build`. It does nothing when `src/data/climate-index.json` names the pinned manifest and archive and every tile is in `public/data/climate/` with its size (the consortium grid check is re-run and the index follows it). Otherwise it takes, in order: `CANOPI_CLIMATE_ARCHIVE` (a local tar; offline and dev; not cached), the cache (`CANOPI_CLIMATE_CACHE`, default `node_modules/.cache/canopi-climate/`), else one plain `fetch` of the URL (no custom headers), streamed to a part file with a running sha256 and cut at the pinned size. The size and sha256 are checked before the tar is read; a corrupt cached tar is downloaded again; a failed download, a mismatch or any refusal fails the build.
+- `npm run install:climate -- <tar>` installs a local archive, verified against the pin as well. `installClimate({ archive })` without `release` (the `.sha256` beside the tar) remains for a hand install of another grid.
+- Then the checks: tar entries (regular files, safe paths, no duplicates, ≤ 25 MiB), every `SHA256SUMS` line, the manifest's sha256 against the pin and its content against `model.js`, each tile's size, sha256 and TIFF position. The tiles go to `public/data/climate/<version>-<12 hex manifest sha>/{tiles,soil,regions}/` and the index to `src/data/climate-index.json`; both are git-ignored and regenerated (the index is deterministic for a grid and a consortium export, and no type check imports it).
 - Consortium grid check: the consortium index's `climate_grid_manifest_sha256` must equal the grid's manifest sha256 (`04ec85f4…` for v0.2.0); while the export does not carry it (schema 1), the install warns and records `consortium_grid_check.status = "unchecked"`.
 - `public/_headers` caches `/data/climate/*` immutably (the directory name changes with the manifest).
-- `scripts/check-built-site.mjs` fails above 20,000 files in `dist/client` (Workers Free) and, when the tiles are installed, checks every index tile and its size (`verifyClimateInstall`).
+- `scripts/check-built-site.mjs` fails above 20,000 files in `dist/client` (Workers Free), and fails when the index is missing, names another grid than the pin, or any tile it lists is missing or of another size (`verifyClimateInstall`).
 - v0.2.0: 464 climate (77.4 MB), 330 soil (19.6 MB), 463 regions (0.8 MB) tiles; the build had 1,795 files without the Web Edition.
 
-# Open: the tiles are not in git
+# A new grid release
 
-`public/data/consortium/` (22 MB) is committed and deployed by Cloudflare Workers Builds from git; the climate tiles (98 MB, 1,257 files) are not committed, so a Cloudflare build has the index but no tiles. The coordinator decides how they reach the deploy.
+Update the pin (tag, file, URL, size, sha256 from the release's `.sha256`, manifest sha256 from `sha256sum manifest.json`); the next build downloads it and replaces the installed version directory. The consortium export must carry the same `climate_grid_manifest_sha256` once it names one.
 
 # Tests
 
 - `scripts/climate-reader.test.mjs`: 52 points compared field by field with `canopi-climate lookup` (`scripts/fixtures/climate/goldens.json`, regenerated by `make-goldens.mjs`), plus 2 refused coordinates; these read the extracted grid at `CANOPI_CLIMATE_GRID` and skip without it (their tiles total 14 MB). Always: the crate's synthetic tiles, fetch policy, LRU, TIFF refusals, grid rules, Köppen, texture and codes.
-- `scripts/install-climate.test.mjs`: a one-tile archive built in the test; each refusal with nothing written; `verifyClimateInstall`.
+- `scripts/install-climate.test.mjs`: a one-tile archive built in the test; each refusal with nothing written; `verifyClimateInstall`; the pin; with a fetch double (no network): one download cached then reused, up-to-date skip, wrong size, sha256, HTTP status or network error refused with nothing installed or cached, a corrupt cache replaced, a wrong manifest refused, `CANOPI_CLIMATE_ARCHIVE` offline and verified, `CANOPI_CLIMATE_CACHE`, another grid replaced.

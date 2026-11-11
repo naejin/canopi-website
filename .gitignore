@@ -1,5 +1,8 @@
 # build output
 dist/
+# canopi-climate grid, fetched and installed by `npm run build` (scripts/install-climate.mjs)
+/public/data/climate/
+/src/data/climate-index.json
 # generated types
 .astro/
 worker-configuration.d.ts

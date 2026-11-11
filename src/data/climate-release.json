@@ -1,0 +1,8 @@
+{
+  "tag": "v0.2.0",
+  "file": "canopi-climate-grid-v0.2.0.tar",
+  "url": "https://github.com/opencanopi/canopi-climate/releases/download/v0.2.0/canopi-climate-grid-v0.2.0.tar",
+  "bytes": 99194880,
+  "sha256": "56f717f1e2618bbdffe8462bc221186729dad419e58073afb58ac239ba8a26d5",
+  "grid_manifest_sha256": "04ec85f4603f29c5add8eada88c79599d044a61732b518a095f91b68e64b0e4c"
+}

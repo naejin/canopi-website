@@ -9,7 +9,7 @@ Landing page for projectcanopi.com — the Canopi agroecological design app.
 
 ## Commands
 - `npm run dev` — dev server
-- `npm run build` — marketing site only
+- `npm run build` — marketing site only; first installs the pinned climate tiles (`npm run install:climate`, see Gotchas)
 - `npm run build:with-web` — build and install a packaged Web Edition artifact
 - `npm test` — Web Edition installer regression tests
 - `npm run check` — type check (`wrangler types`, then `astro check` over `.ts`, `.js` and `.astro` files; not MDX)
@@ -48,7 +48,7 @@ supported filter metadata before copying it under `dist/client/app/`.
 - Responsive breakpoints across the project: `max-width: 639px` (mobile) and `min-width: 960px` (desktop); no tablet tier
 - Web Edition `/app/*` fallback is static `_redirects`; for the Web Edition files under `/app/`, do not add website-side catalog search, storage, DuckDB, Worker, Pages Function, R2, KV, D1, service-worker, or offline catalog behavior. This does not cover the consortium tool (`/consortium/`), which reads its own static SQLite export (`/data/consortium/*.sqlite.gz`) in the browser with sqlite-wasm and keeps the last consortium and the reader's country choice in localStorage; licences in `THIRD_PARTY_NOTICES.md`
 - Web Edition catalog files under `/app/canopi-catalog/` must serve directly as static assets
-- Climate tiles: `npm run install:climate -- <canopi-climate-grid-vX.Y.Z.tar>` installs them under `public/data/climate/<version>-<12 hex>/` and writes `src/data/climate-index.json`; the reader (`src/lib/climate/`) never requests a tile the index does not list. The tiles (~98 MB, 1,257 files) are not in git yet, so a Cloudflare build does not have them
+- Climate tiles are fetched at build, never committed: `npm run build` runs `npm run install:climate`, which installs the release pinned in `src/data/climate-release.json` (tag, GitHub asset URL, size, sha256, manifest sha256) under `public/data/climate/<version>-<12 hex>/` and writes `src/data/climate-index.json` (both git-ignored). It does nothing when the installed index already names the pinned manifest; else it takes `CANOPI_CLIMATE_ARCHIVE` (a local tar, offline), the cache (`CANOPI_CLIMATE_CACHE`, default `node_modules/.cache/canopi-climate/`) or one plain download (~99 MB), and verifies size and sha256 before reading it. A failed download or mismatch fails the build; `check-built-site` fails without the tiles. A new grid release means a new pin
 
 <!-- okf:begin -->
 <!-- Managed by `okf agents install` (okfkit 0.1.0). Edits inside this block are overwritten. -->

@@ -4,8 +4,8 @@ title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:10:35Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:32Z }
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T09:33:21Z }
 sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
@@ -55,8 +55,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:cc25e3608d4deac1
-    last_modified: 2026-11-11T09:09:11Z
+    digest: sha256:b49158bb6806ce9a
+    last_modified: 2026-11-11T09:30:54Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
@@ -65,8 +65,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:9d3fae33c85bb59d
-    last_modified: 2026-11-11T09:09:11Z
+    digest: sha256:27937a1911b162b1
+    last_modified: 2026-11-11T09:30:54Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs

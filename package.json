@@ -11,7 +11,7 @@
     "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test scripts/*.test.mjs",
     "test:browser": "node --test --test-concurrency=1 scripts/browser/*.browser.test.mjs",
     "check:bibliography": "node scripts/check-bibliography-links.mjs",
-    "build": "astro build",
+    "build": "npm run install:climate && astro build",
     "install:web-edition": "node scripts/install-web-edition.mjs",
     "install:consortium": "node scripts/install-consortium.mjs",
     "install:climate": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/install-climate.mjs",

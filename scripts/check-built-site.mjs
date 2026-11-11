@@ -3,7 +3,7 @@ import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { builtTarget, splitHref, subdirectories } from './built-links.mjs';
 import { tryListProblem, verifyInstall, INDEX_PATH } from './install-consortium.mjs';
-import { verifyClimateInstall, INDEX_PATH as CLIMATE_INDEX_PATH } from './install-climate.mjs';
+import { verifyClimateInstall, readRelease, INDEX_PATH as CLIMATE_INDEX_PATH } from './install-climate.mjs';
 import { consortiumPath } from '../src/i18n/consortium-path.js';
 import { parseTryReferences, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.js';
 import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
@@ -491,17 +491,17 @@ let assetFiles = 0;
 }
 assert.ok(assetFiles <= MAX_ASSET_FILES, `${root} holds ${assetFiles} files, over the ${MAX_ASSET_FILES} static assets a Workers Free plan serves`);
 console.log(`Static assets: ${assetFiles} files in ${root} (limit ${MAX_ASSET_FILES}).`);
-// The canopi-climate tiles (scripts/install-climate.mjs), when installed: every tile of
-// src/data/climate-index.json present with its size, one grid version, nothing else.
+// The canopi-climate tiles (scripts/install-climate.mjs, run by `npm run build`): required. The
+// index names the pinned release (src/data/climate-release.json) and every tile it lists is served
+// with its size, one grid version, nothing else.
 {
   const climateDir = join(root, 'data', 'climate');
-  const climateIndex = existsSync(CLIMATE_INDEX_PATH) ? JSON.parse(readFileSync(CLIMATE_INDEX_PATH, 'utf8')) : null;
-  if (!existsSync(climateDir)) console.log(`Climate tiles: not installed in ${climateDir}${climateIndex ? ' (the index lists them: run `npm run install:climate -- <canopi-climate-grid tar>` before a deploy that reads them)' : ''}.`);
-  else {
-    assert.ok(climateIndex, `${climateDir} is served but ${CLIMATE_INDEX_PATH} is missing`);
-    const counts = verifyClimateInstall(climateDir, climateIndex);
-    console.log(`Climate tiles: canopi-climate ${climateIndex.release.builder_version} under ${climateIndex.base}, ${counts.climate} climate, ${counts.soil} soil and ${counts.regions} regions tiles, each with its size.`);
-  }
+  assert.ok(existsSync(CLIMATE_INDEX_PATH), `${CLIMATE_INDEX_PATH} is missing: \`npm run build\` installs the climate tiles first (\`npm run install:climate\` alone)`);
+  const climateIndex = JSON.parse(readFileSync(CLIMATE_INDEX_PATH, 'utf8'));
+  const pin = readRelease();
+  assert.equal(climateIndex.release?.grid_manifest_sha256, pin.grid_manifest_sha256, `${CLIMATE_INDEX_PATH} is not the pinned climate grid ${pin.tag}: rebuild`);
+  const counts = verifyClimateInstall(climateDir, climateIndex);
+  console.log(`Climate tiles: canopi-climate ${climateIndex.release.builder_version} under ${climateIndex.base}, ${counts.climate} climate, ${counts.soil} soil and ${counts.regions} regions tiles, each with its size.`);
 }
 
 console.log(`Verified 11 locale pages, their bibliography, data sources (${creditRows.length} credited sources, ${tryRows.length} TRY rows each) and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);

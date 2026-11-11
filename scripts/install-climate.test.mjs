@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { installClimate, verifyClimateInstall, parseArgs, readTar, climateIndexProblem, installDirName, DEFAULT_OUT, INDEX_PATH, PUBLIC_BASE } from './install-climate.mjs';
+import { installClimate, ensureClimate, readRelease, releaseProblem, verifyClimateInstall, parseArgs, readTar, climateIndexProblem, installDirName, DEFAULT_OUT, DEFAULT_CACHE, INDEX_PATH, RELEASE_PATH, PUBLIC_BASE } from './install-climate.mjs';
 import { VARIABLES, SLOTS, SOIL_BANDS, REGION_BANDS } from '../src/lib/climate/model.js';
 
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -222,9 +222,147 @@ test('readTar refuses truncated archives and bad checksums', () => {
 
 test('the command line and the site defaults', () => {
   assert.deepEqual(parseArgs(['grid.tar']), { archive: 'grid.tar' });
-  assert.throws(() => parseArgs([]), /usage/);
+  assert.deepEqual(parseArgs([]), { archive: null });
   assert.throws(() => parseArgs(['a.tar', 'b.tar']), /one archive/);
   assert.throws(() => parseArgs(['--out', 'x']), /unknown option/);
   assert.match(DEFAULT_OUT, /public[\\/]data[\\/]climate$/);
   assert.match(INDEX_PATH, /src[\\/]data[\\/]climate-index\.json$/);
+  assert.match(DEFAULT_CACHE, /node_modules[\\/]\.cache[\\/]canopi-climate$/);
+});
+
+// --- The pinned release, fetched at build (owner decision 2026-11-11) ---
+
+test('the pinned release names the v0.2.0 grid on GitHub with its size and checksums', () => {
+  const r = readRelease(RELEASE_PATH);
+  assert.equal(r.tag, 'v0.2.0');
+  assert.equal(r.file, 'canopi-climate-grid-v0.2.0.tar');
+  assert.equal(r.url, 'https://github.com/opencanopi/canopi-climate/releases/download/v0.2.0/canopi-climate-grid-v0.2.0.tar');
+  assert.equal(r.bytes, 99194880);
+  assert.equal(r.sha256, '56f717f1e2618bbdffe8462bc221186729dad419e58073afb58ac239ba8a26d5');
+  assert.equal(r.grid_manifest_sha256, '04ec85f4603f29c5add8eada88c79599d044a61732b518a095f91b68e64b0e4c');
+  assert.equal(releaseProblem({ ...r, url: 'http://example.com/x.tar' }) !== null, true);
+  assert.equal(releaseProblem({ ...r, sha256: 'abc' }) !== null, true);
+  assert.equal(releaseProblem({ ...r, bytes: 0 }) !== null, true);
+  assert.equal(releaseProblem({ ...r, file: 'other.tar' }) !== null, true);
+});
+
+// A pin for a test archive, a fetch double that counts its calls, and ensureClimate in the workspace.
+function pinFor(archive, manifestSha) {
+  const bytes = readFileSync(archive);
+  return { tag: 'v0.2.0', file: 'canopi-climate-grid-v0.2.0.tar', url: 'https://github.com/opencanopi/canopi-climate/releases/download/v0.2.0/canopi-climate-grid-v0.2.0.tar', bytes: bytes.length, sha256: sha(bytes), grid_manifest_sha256: manifestSha };
+}
+function fakeFetch(body, { status = 200, chunk = 1000 } = {}) {
+  const calls = [];
+  const fn = async (url, init) => {
+    calls.push({ url, init });
+    if (status !== 200) return new Response('nope', { status });
+    const stream = new ReadableStream({ start(c) { for (let i = 0; i < body.length; i += chunk) c.enqueue(new Uint8Array(body.subarray(i, i + chunk))); c.close(); } });
+    return new Response(stream, { status: 200, headers: { 'content-length': String(body.length) } });
+  };
+  fn.calls = calls;
+  return fn;
+}
+const noFetch = async () => { throw new Error('no network in tests'); };
+const ensure = (w, release, opts = {}) => ensureClimate({ release, env: {}, fetch: noFetch, cacheDir: join(w.root, 'cache'), outDir: w.out, indexPath: w.index, consortiumIndexPath: w.consortiumIndex, stagingDir: w.staging, log: quiet, ...opts });
+
+test('a build downloads the pinned archive once (plain fetch), verifies it, caches it and installs', async (t) => {
+  const w = workspace(t);
+  const src = join(w.root, 'src');
+  mkdirSync(src);
+  const { archive, manifestSha } = writeArchive(src);
+  const body = readFileSync(archive);
+  const release = pinFor(archive, manifestSha);
+  const fetch = fakeFetch(body);
+  const r = await ensure(w, release, { fetch });
+  assert.equal(r.action, 'installed');
+  assert.equal(fetch.calls.length, 1);
+  assert.equal(fetch.calls[0].url, release.url);
+  assert.equal(fetch.calls[0].init?.headers, undefined, 'no custom headers (no user agent, no email)');
+  assert.deepEqual(readFileSync(join(w.root, 'cache', release.file)), body, 'the archive is cached');
+  assert.deepEqual(readdirSync(join(w.root, 'cache')), [release.file], 'no partial download left');
+  const index = JSON.parse(readFileSync(w.index, 'utf8'));
+  assert.equal(index.release.grid_manifest_sha256, manifestSha);
+  assert.equal(index.release.archive_sha256, release.sha256);
+  verifyClimateInstall(w.out, index);
+
+  // Installed and matching: nothing is read or fetched again.
+  const again = await ensure(w, release, { fetch: noFetch });
+  assert.equal(again.action, 'up to date');
+
+  // The tiles gone (a clean checkout with a warm cache): installed from the cache, no fetch.
+  rmSync(w.out, { recursive: true });
+  rmSync(w.index);
+  const cached = await ensure(w, release, { fetch: noFetch });
+  assert.equal(cached.action, 'installed');
+  assert.equal(cached.source, 'cache');
+  verifyClimateInstall(w.out, JSON.parse(readFileSync(w.index, 'utf8')));
+});
+
+test('a download or a cached archive of the wrong size or sha256 is refused; nothing is installed', async (t) => {
+  const w = workspace(t);
+  const src = join(w.root, 'src');
+  mkdirSync(src);
+  const { archive, manifestSha } = writeArchive(src);
+  const body = readFileSync(archive);
+  const release = pinFor(archive, manifestSha);
+
+  const flipped = Buffer.from(body);
+  flipped[600] ^= 1;
+  await assert.rejects(ensure(w, release, { fetch: fakeFetch(flipped) }), /sha256/);
+  await assert.rejects(ensure(w, release, { fetch: fakeFetch(Buffer.concat([body, Buffer.alloc(512)])) }), /bytes/);
+  await assert.rejects(ensure(w, release, { fetch: fakeFetch(body.subarray(0, body.length - 512)) }), /bytes/);
+  await assert.rejects(ensure(w, release, { fetch: fakeFetch(body, { status: 404 }) }), /404/);
+  await assert.rejects(ensure(w, release, { fetch: async () => { throw new Error('getaddrinfo ENOTFOUND'); } }), /ENOTFOUND/);
+  assert.equal(existsSync(w.out), false);
+  assert.equal(existsSync(w.index), false);
+  assert.deepEqual(existsSync(join(w.root, 'cache')) ? readdirSync(join(w.root, 'cache')) : [], [], 'nothing bad is cached');
+
+  // A corrupt cached archive is replaced by a fresh download.
+  mkdirSync(join(w.root, 'cache'), { recursive: true });
+  writeFileSync(join(w.root, 'cache', release.file), flipped);
+  const fetch = fakeFetch(body);
+  assert.equal((await ensure(w, release, { fetch })).source, 'download');
+  assert.equal(fetch.calls.length, 1);
+
+  // A release whose manifest is not the pinned one is refused even when the tar matches.
+  rmSync(w.out, { recursive: true });
+  await assert.rejects(ensure(w, { ...release, grid_manifest_sha256: 'f'.repeat(64) }, { fetch: noFetch }), /manifest/);
+});
+
+test('offline: CANOPI_CLIMATE_ARCHIVE installs a local archive without the network, and is verified too', async (t) => {
+  const w = workspace(t);
+  const src = join(w.root, 'src');
+  mkdirSync(src);
+  const { archive, manifestSha } = writeArchive(src);
+  const release = pinFor(archive, manifestSha);
+  const r = await ensure(w, release, { env: { CANOPI_CLIMATE_ARCHIVE: archive } });
+  assert.equal(r.action, 'installed');
+  assert.equal(r.source, 'CANOPI_CLIMATE_ARCHIVE');
+  assert.equal(existsSync(join(w.root, 'cache')), false, 'a local archive is not copied to the cache');
+  verifyClimateInstall(w.out, JSON.parse(readFileSync(w.index, 'utf8')));
+
+  rmSync(w.out, { recursive: true });
+  await assert.rejects(ensure(w, { ...release, sha256: 'e'.repeat(64) }, { env: { CANOPI_CLIMATE_ARCHIVE: archive } }), /sha256/);
+  await assert.rejects(ensure(w, { ...release, bytes: release.bytes + 1 }, { env: { CANOPI_CLIMATE_ARCHIVE: archive } }), /bytes/);
+  await assert.rejects(ensure(w, release, { env: { CANOPI_CLIMATE_ARCHIVE: join(w.root, 'missing.tar') } }), /CANOPI_CLIMATE_ARCHIVE/);
+  assert.equal(existsSync(w.out), false);
+
+  // CANOPI_CLIMATE_CACHE moves the cache.
+  const fetch = fakeFetch(readFileSync(archive));
+  const r2 = await ensure(w, release, { cacheDir: undefined, env: { CANOPI_CLIMATE_CACHE: join(w.root, 'elsewhere') }, fetch });
+  assert.equal(r2.source, 'download');
+  assert.equal(existsSync(join(w.root, 'elsewhere', release.file)), true);
+});
+
+test('an install of another grid is replaced by the pinned one', async (t) => {
+  const w = workspace(t);
+  const a = join(w.root, 'a'), b = join(w.root, 'b');
+  mkdirSync(a); mkdirSync(b);
+  const old = writeArchive(a, { editManifest: (m) => ({ ...m, built_at: '2026-01-01T00:00:00Z' }) });
+  const cur = writeArchive(b);
+  assert.notEqual(old.manifestSha, cur.manifestSha);
+  await ensure(w, pinFor(old.archive, old.manifestSha), { env: { CANOPI_CLIMATE_ARCHIVE: old.archive } });
+  const r = await ensure(w, pinFor(cur.archive, cur.manifestSha), { env: { CANOPI_CLIMATE_ARCHIVE: cur.archive } });
+  assert.equal(r.action, 'installed');
+  assert.deepEqual(readdirSync(w.out).sort(), [installDirName('0.2.0', cur.manifestSha), 'INSTALLED_BY']);
 });
