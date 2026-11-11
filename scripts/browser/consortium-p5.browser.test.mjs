@@ -91,6 +91,10 @@ async function confirmAndSuggest(page) {
   await page.click('[data-location-confirm]');
   await page.evaluate(async () => { const { store } = window.__ctTest; await store.loadPool(store.climate.value); store.suggestMembers(); store.view.value = 'matrix'; });
   assert.ok(await has(page, '.ct-action-row button', 10_000), 'the matrix\'s actions');
+  // The future panel (S5d, views/FutureSlot.tsx; idle, about 150 ms after the matrix) mounts above the
+  // action row and pushes Share down by ~720 px: clicking before it lands can hit a tick Puppeteer had
+  // scrolled into view a frame earlier ("Node is either not clickable"; P5-13b/13d flake, 2026-11-11).
+  assert.ok(await has(page, '[data-future]', 10_000), 'the future panel has landed');
   await page.click('.ct-action-row button');
   assert.ok(await has(page, '#ct-share-field', 10_000), 'the Share panel');
 }
