@@ -15,7 +15,7 @@ import { countryStatus, lights, MAX_CROPS, rooms, soils, waters } from '../../..
 import { climate, country, crops, kept, members, openSheet, pool, site, source, view } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import {
-  chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
+  backToConsortium, chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
 } from '../memory.ts';
 
 // ---- page data (ConsortiumPage.astro #ct-data) ----
@@ -268,7 +268,7 @@ function StartView() {
           <SiteQuestions />
           <div class="ct-cta">
             <button type="button" class="button button-primary" aria-busy={waiting ? 'true' : undefined} onClick={requestSuggest}>{T('start.suggest')}</button>
-            {members.value.length > 0 && <button type="button" class="button button-secondary" onClick={() => { view.value = 'matrix'; }}>{T('start.back')}</button>}
+            {members.value.length > 0 && <button type="button" class="button button-secondary" onClick={backToConsortium}>{T('start.back')}</button>}
             <button type="button" class="button button-secondary" onClick={startEmpty}>{T('start.empty')}</button>
             <button type="button" class="link-button ct-link" onClick={() => openSheet('paste')}>{T('start.paste')}</button>
           </div>

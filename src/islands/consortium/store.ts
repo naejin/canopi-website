@@ -190,7 +190,7 @@ export function suggestMembers(): boolean {
 // every plant of the cell, misfits included and flagged, where "+ Add" lists only the plants that fit.
 export interface CellSpan { stratum: Stratum; from: PhaseOrd; to: PhaseOrd }
 export interface SheetFor { cell: CellSpan | null; job: JobId | null; anyway: boolean }
-const FOR_NOTHING: SheetFor = { cell: null, job: null, anyway: false };
+export const FOR_NOTHING: SheetFor = { cell: null, job: null, anyway: false };
 export const sheetCell = signal<SheetFor>(FOR_NOTHING);
 // Every sheet opens through here, so what the last one was opened for never leaks into the next.
 export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Partial<SheetFor> = {}): void {
@@ -237,10 +237,12 @@ export function taxonOf(id: PlantId): Taxon | null {
 }
 const nameById = (id: PlantId) => { const t = taxonOf(id); return t ? nameOf(t) : id; };
 
-interface Snapshot { members: PlantId[]; kept: PlantId[]; removed: PlantId[]; crops: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>> }
-const snapshot = (): Snapshot => ({ members: members.peek(), kept: kept.peek(), removed: removed.peek(), crops: crops.peek(), guests: guests.peek() });
+// The view too: Undo of a list pasted on Start goes back to Start, not to an empty matrix (F2).
+interface Snapshot { members: PlantId[]; kept: PlantId[]; removed: PlantId[]; crops: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>>; view: View }
+const snapshot = (): Snapshot => ({ members: members.peek(), kept: kept.peek(), removed: removed.peek(), crops: crops.peek(), guests: guests.peek(), view: view.peek() });
 const restoreSnapshot = (s: Snapshot) => batch(() => {
   members.value = s.members; kept.value = s.kept; removed.value = s.removed; crops.value = s.crops; guests.value = s.guests;
+  if (s.view === 'start' || view.peek() === 'start') view.value = s.view;
 });
 const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.includes(x));
 

@@ -32,6 +32,7 @@ import { Explain, Marks, PinIcon, SproutIcon, WarnIcon, byName, cellName, layerN
 import { phone } from './StageStepper.tsx';
 import { PhoneMatrix } from './PhoneMatrix.tsx';
 import { later, prefetchLater } from './lazy.tsx';
+import { focusView } from '../focus.ts';
 
 // The other three views load after the matrix (views/lazy.tsx).
 const { View: SideView } = later(() => import('./later.ts').then((m) => m.SideView));
@@ -109,7 +110,7 @@ export function EmptyNotice({ phone: small = false }: { phone?: boolean }) {
     <div class={`ct-mnotice ct-mx-empty${small ? ' is-phone' : ''}`}>
       <div><strong>{T('matrix.empty')}</strong><p>{T('matrix.emptyBody')}</p></div>
       <div class="ct-row">
-        <button type="button" class="button button-primary" onClick={() => { if (suggestMembers()) view.value = 'matrix'; }}>{T('matrix.suggest')}</button>
+        <button type="button" class="button button-primary" onClick={() => { if (suggestMembers()) { view.value = 'matrix'; focusView(); } }}>{T('matrix.suggest')}</button>
         {!small && <button type="button" class="button button-secondary" onClick={() => openAdd()}>{T('matrix.addPlant')}</button>}
       </div>
     </div>

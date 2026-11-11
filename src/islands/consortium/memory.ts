@@ -448,6 +448,13 @@ async function applyPreset(climate: ClimateZone, plant: string | null): Promise<
 // with members, whose edits there change it (X3: every edit ends saved and in the address). A fresh
 // Start with no member keeps the last consortium saved until another replaces it.
 const hasConsortium = (): boolean => store.view.peek() !== 'start' || store.members.peek().length > 0;
+// The climate the consortium was last shown in (any view but Start). On Start ("Change site") another
+// climate card is a choice the reader has not acted on yet: nothing is saved under it until Suggest,
+// Start empty or "Back to your consortium" (F1: a save only ever holds members of its own climate).
+let shownIn: ClimateZone | null = null;
+// Whether this page wrote the save since it opened or since Start over: an Undo that takes the
+// consortium back to an empty Start then removes it rather than leave a list the reader undid (F2).
+let savedHere = false;
 
 // The address bar holds the consortium's link (replaceState, no history entry). Same address:
 // nothing written (browsers drop replaceState calls past a rate limit).
@@ -488,7 +495,16 @@ export function startOver(): void {
     notices.value = { ...NO_NOTICES };
   });
   memory.remove(STORE);
+  savedHere = false;
   writeAddress();
+}
+
+// "Back to your consortium" from Start: shown in its own climate again, whatever card was chosen
+// since "Change site" (F1); the focus goes to the view (W4).
+export function backToConsortium(): void {
+  if (shownIn && store.climate.peek() !== shownIn) chooseClimate(shownIn);
+  store.view.value = 'matrix';
+  focusView();
 }
 
 // "Start empty and search": an empty consortium and S3's search sheet.
@@ -517,10 +533,20 @@ export function requestSuggest(): void {
 
 // The save and the address bar, whenever there is a consortium (hasConsortium).
 function persist(): void {
+  const onStart = store.view.peek() === 'start';
+  if (!onStart) shownIn = store.climate.peek();
+  if (onStart && savedHere && !store.members.peek().length) {
+    memory.remove(STORE);
+    savedHere = false;
+    writeAddress();
+    return;
+  }
   if (!hasConsortium() || !store.pool.peek()) return;
+  if (onStart && shownIn && store.climate.peek() !== shownIn) return;
   const fragment = currentFragment();
   if (!fragment) return;
   memory.write(STORE, saveRecord(fragment, new Date().toISOString(), countryFrom()));
+  savedHere = true;
   writeAddress();
 }
 

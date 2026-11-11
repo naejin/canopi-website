@@ -1,10 +1,16 @@
 // Where focus goes when the control that had it leaves the page (W4): never to <body>. Each helper
-// waits for the render the change causes (two frames), then focuses what it finds.
+// waits for the render the change causes (two frames), then focuses what it finds. While a sheet is
+// open the page behind it is inert, so the focus stays in the sheet: on what was found if it is in the
+// sheet, else on the sheet's [data-autofocus] heading (F3). With nothing found and no sheet, the
+// tool's first heading (Start's, after an Undo back to Start).
 import type { PlantId } from '../../lib/consortium/index.ts';
 
 function focusSoon(find: () => HTMLElement | null): void {
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    const el = find();
+    const sheet = document.querySelector<HTMLDialogElement>('dialog[open]');
+    let el = find();
+    if (sheet && el && !sheet.contains(el)) el = null;
+    el ??= sheet ? sheet.querySelector<HTMLElement>('[data-autofocus]') : document.querySelector<HTMLElement>('#ct-root h2');
     if (!el) return;
     if (!el.matches('button, a[href], input, select, textarea, [tabindex]')) el.tabIndex = -1;
     el.focus();
