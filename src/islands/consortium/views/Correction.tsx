@@ -5,54 +5,16 @@
 // (src/lib/correction.mjs, whose contract and tests are unchanged), which mails the owner; nothing is
 // kept on the server. Offline (design check §5): "Not sent: you seem offline. Your text is kept." with
 // Try again. What the reader writes is kept per plant (Details.tsx `drafts`) until it is sent.
-// Words: the correction.* family (S3 block of the locale files), through Details.tsx TS.
+// Words: the correction.* family (S3 block of the locale files), passed by ConsortiumPage.astro.
 import { useEffect, useState } from 'preact/hooks';
-import { pageLang } from '../strings.ts';
+import { pageLang, T } from '../strings.ts';
 import { LIMITS } from '../../../lib/correction.mjs';
 import { EMAIL_RE } from '../../../lib/contact.mjs';
-import { TS, drafts, type CorrectionDraft, type CorrectionField } from './Details.tsx';
+import { drafts, type CorrectionDraft, type CorrectionField } from './Details.tsx';
 
 const ENDPOINT = '/api/correction';
 // The server's limits, as maxlength.
 const MAX = { proposed: LIMITS.proposed_value, note: LIMITS.note, email: LIMITS.email } as const;
-// English for the correction.* keys until the page passes them to the island (see Details.tsx TS).
-const STAND_IN: Record<string, string> = {
-  "correction.title": "Suggest a correction",
-  "correction.lede": "See a value that looks wrong for this plant? Tell us what it should be.",
-  "correction.open": "Suggest a correction",
-  "correction.sent": "Thank you. Your suggestion was sent; we review every one before the data changes.",
-  "correction.another": "Suggest another",
-  "correction.field": "What looks wrong",
-  "correction.fieldChoose": "Choose…",
-  "correction.fieldError": "Choose what looks wrong.",
-  "correction.fieldLayer": "Layer",
-  "correction.fieldTiming": "Succession timing",
-  "correction.fieldName": "Name",
-  "correction.current": "Shown now:",
-  "correction.unknown": "Unknown",
-  "correction.proposed": "What it should be",
-  "correction.proposedError": "Write what the value should be.",
-  "correction.unchanged": "This is the value shown now. Write the one it should be.",
-  "correction.tooLong": "Keep it under {max} characters.",
-  "correction.note": "Note (optional)",
-  "correction.noteHint": "Where it comes from: your own observation, a book, a link.",
-  "correction.email": "Email (optional)",
-  "correction.emailError": "Check the email address, or leave it empty.",
-  "correction.privacy": "Your email is optional and used only to reply to you. It is never published.",
-  "correction.consent": "I agree my suggestion is published under CC BY-SA 4.0",
-  "correction.consentError": "Tick this box to send your suggestion.",
-  "correction.context": "Sent with: {plant} · data release {release} · {climate} · {language}",
-  "correction.honeypot": "Leave this field empty",
-  "correction.send": "Send suggestion",
-  "correction.sending": "Sending…",
-  "correction.cancel": "Cancel",
-  "correction.invalid": "Some fields need a look before this can be sent.",
-  "correction.failed": "Your suggestion could not be sent. Try again in a moment.",
-  "correction.refused": "Your suggestion could not be delivered. Please use the contact form instead.",
-  "correction.offline": "Not sent: you seem offline. Your text is kept.",
-  "correction.tryAgain": "Try again",
-};
-const T = (key: string, vars?: Record<string, string | number>) => TS(key, vars, STAND_IN);
 // The server's field codes, by the form's own field names.
 const FROM_SERVER: Record<string, Name> = { field: 'field', proposed_value: 'proposed', note: 'note', email: 'email', consent: 'consent' };
 type Name = 'field' | 'proposed' | 'note' | 'email' | 'consent';

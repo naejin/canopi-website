@@ -86,7 +86,7 @@ test('every English key is used by a page or a script, and every script string r
   // Keys built from a prefix in components (installer names and details, plant roles, countries, bibliography themes, climate zones).
   // consortium.* keys are asked for without their prefix (T('…') in the island, src/islands/consortium/);
   // the coordinator's used/unused key test for them comes when S4 is done and the v1 keys are pruned.
-  const dynamic = ['edition.installer.', 'download.detail.', 'design.role.', 'network.country.', 'bibliography.theme.', 'climate.', 'consortium.'];
+  const dynamic = ['edition.installer.', 'download.detail.', 'design.role.', 'network.country.', 'bibliography.theme.', 'climate.', 'consortium.', 'correction.'];
   for (const key of Object.keys(en)) {
     const used = source.includes(`'${key}'`) || dynamic.some((prefix) => key.startsWith(prefix));
     assert.ok(used, `unused translation key: ${key}`);

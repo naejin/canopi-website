@@ -371,6 +371,10 @@ for (const lang of guideLocales) {
 
 for (const asset of ['canopi-logo.svg', 'data/featured-designs.json', 'data/plant-symbols.json']) assert.ok(existsSync(join(root, asset)), asset);
 for (const gone of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'screenshot-light.png', 'network']) assert.ok(!existsSync(join(root, gone)), `${gone} is retired`);
+const en = JSON.parse(readFileSync('src/i18n/translations/en.json', 'utf8'));
+// The guide slugs the plant dialog links (src/data/consortium-guides.ts: 'Name': ['slug', …]).
+const consortiumGuideSlugs = new Set([...readFileSync('src/data/consortium-guides.ts', 'utf8').matchAll(/\[([^\]]*)\]/g)].flatMap((m) => [...m[1].matchAll(/'([a-z0-9-]+)'/g)].map((x) => x[1])));
+assert.ok(consortiumGuideSlugs.size > 10, 'consortium-guides.ts lists guide slugs');
 // The consortium tool: one page per locale (/consortium/ in every language, French included), its alternates, and the installed plant data.
 for (const lang of locales) {
   const path = consortiumPath(lang);
@@ -387,6 +391,12 @@ for (const lang of locales) {
   assert.equal(pageData?.releaseId, consortiumIndex.release_id, `${path}: the island gets the release id`);
   assert.deepEqual(pageData?.db, { url: consortiumIndex.files[0].url, sha256: consortiumIndex.files[0].sha256, bytes: consortiumIndex.files[0].bytes, rawSha256: consortiumIndex.files[0].raw_sha256, rawBytes: consortiumIndex.files[0].raw_bytes }, `${path}: the island gets the installed database`);
   assert.deepEqual(pageData?.climates, consortiumIndex.climates.map((c) => c.toLowerCase()), `${path}: the island gets the installed climates`);
+  // H13/H14: the site-wide words the island shows under their own names (the correction form's
+  // correction.*, the climate names) arrive in the page language, so nothing stands in in English.
+  for (const key of Object.keys(en).filter((k) => k.startsWith('correction.') || /^climate\.[a-z]+$/.test(k)))
+    assert.equal(pageData?.strings?.[key], words[key] ?? en[key], `${path}: the island gets ${key} in ${lang}`);
+  for (const slug of consortiumGuideSlugs)
+    assert.equal(typeof pageData?.guideTitles?.[slug], 'string', `${path}: the island gets the title of the guide ${slug}`);
   // P6: with JavaScript off the page still names itself and links a guide; the loading line is there to replace.
   assert.ok(/<noscript>[\s\S]*?<a [^>]*href="[^"]*\/guides\/[^"]+"[\s\S]*?<\/noscript>/.test(html), `${path}: noscript links a guide`);
   assert.ok(html.includes(`<p class="tool-lede">`) && html.includes('aria-busy="true"'), `${path}: lede and loading line`);

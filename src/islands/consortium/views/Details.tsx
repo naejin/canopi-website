@@ -40,21 +40,9 @@ const lang = () => pageLang();
 // The words every view shares live in one place each (H12): a plant's name in strings.ts, the stage
 // words in StageBar.tsx; the sheets take them from here. The store's edits and opener likewise.
 export { addMembers, closeSheet, nameOf, openSheet, plainPhase, removeMember, sheetCell, spanWords, swapMember, taxonOf, toggleKeep };
-// correction.* and climate.<zone> are site-wide keys (the correction family lives in the S3 block of the
-// locale files; the climate names are the site's). Until ConsortiumPage.astro passes them to the island
-// beside consortium.* (hand-off to S4, review item 8), English stands in, so nothing shows a raw key.
-const PENDING: Record<string, string> = {
-  'climate.tropical': 'Tropical', 'climate.subtropical': 'Subtropical', 'climate.arid': 'Arid', 'climate.mediterranean': 'Mediterranean',
-  'climate.temperate': 'Temperate', 'climate.continental': 'Continental', 'climate.boreal': 'Boreal',
-  'correction.title': 'Suggest a correction', 'correction.lede': 'See a value that looks wrong for this plant? Tell us what it should be.',
-  'correction.open': 'Suggest a correction', 'correction.fieldLayer': 'Layer', 'correction.fieldTiming': 'Succession timing', 'correction.fieldName': 'Name',
-};
-export function TS(key: string, vars?: Record<string, string | number>, more: Record<string, string> = {}): string {
-  const own = T(key, vars);
-  const stand = own === key ? PENDING[key] ?? more[key] : undefined;
-  return stand ? stand.replace(/\{(\w+)\}/g, (m, n: string) => (vars && n in vars ? String(vars[n]) : m)) : own;
-}
-export const zoneName = (z: ClimateZone): string => TS(`climate.${z.toLowerCase()}`);
+// correction.* and climate.<zone> are site-wide keys; ConsortiumPage.astro passes them under their own
+// names beside consortium.* (H13).
+export const zoneName = (z: ClimateZone): string => T(`climate.${z.toLowerCase()}`);
 export const listOf = (items: string[]): string => new Intl.ListFormat(lang(), { type: 'conjunction' }).format(items);
 export const num = (n: number): string => new Intl.NumberFormat(lang(), { maximumFractionDigits: 1 }).format(n);
 let regionNames: Intl.DisplayNames | null = null;
@@ -313,15 +301,15 @@ function invasiveSoft(t: Taxon): string[] {
 }
 
 // Guide titles in the guide's language (en or fr), from #ct-data `guideTitles` (slug → title), which
-// ConsortiumPage.astro writes (hand-off to S4, review item 15). Until it does, the slug stands in, in
-// English and marked so.
+// ConsortiumPage.astro writes; the title carries the guide's language. A slug the page did not pass
+// (none should: check-built-site) shows as words, marked English.
 let guideTitles: Record<string, string> | null = null;
 function guideTitleOf(slug: string): { title: string; lang: string | null } {
   if (guideTitles === null) {
     try { guideTitles = (JSON.parse(document.getElementById('ct-data')?.textContent ?? '{}') as { guideTitles?: Record<string, string> }).guideTitles ?? {}; } catch { guideTitles = {}; }
   }
   const own = guideTitles[slug];
-  return own ? { title: own, lang: null } : { title: slug.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()), lang: 'en' };
+  return own ? { title: own, lang: lang() === 'fr' ? 'fr' : 'en' } : { title: slug.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()), lang: 'en' };
 }
 function guideLinks(t: Taxon): { url: string; title: string; titleLang: string | null; hreflang: string | null }[] {
   const own = lang() === 'fr' ? 'fr' : 'en';
@@ -389,9 +377,9 @@ function PlantDetails({ id }: { id: PlantId }) {
   const s = spanOf(t);
   const fields: CorrectionField[] = [
     ...traits.map((x) => ({ field: x.field, label: x.label, current: x.text === T('unknown') ? '' : x.text, raw: x.raw })),
-    { field: 'stratum', label: TS('correction.fieldLayer'), current: t.stratum ? layerName(t) : '', raw: t.stratum?.value ?? null },
-    { field: 'phases', label: TS('correction.fieldTiming'), current: t.phases ? spanWords(t) : '', raw: t.phases ? { start: t.phases.start, end: t.phases.end } : null },
-    { field: `names.${lang()}`, label: TS('correction.fieldName'), current: t.names[lang() as Locale] ?? '', raw: t.names[lang() as Locale] ?? null },
+    { field: 'stratum', label: T('correction.fieldLayer'), current: t.stratum ? layerName(t) : '', raw: t.stratum?.value ?? null },
+    { field: 'phases', label: T('correction.fieldTiming'), current: t.phases ? spanWords(t) : '', raw: t.phases ? { start: t.phases.start, end: t.phases.end } : null },
+    { field: `names.${lang()}`, label: T('correction.fieldName'), current: t.names[lang() as Locale] ?? '', raw: t.names[lang() as Locale] ?? null },
   ];
 
   return (
@@ -523,12 +511,12 @@ function PlantDetails({ id }: { id: PlantId }) {
 
       {release && (
         <section class="ct-correct" aria-labelledby="ct-corr-title">
-          <h3 id="ct-corr-title">{TS('correction.title')}</h3>
+          <h3 id="ct-corr-title">{T('correction.title')}</h3>
           {correcting
             ? <Lazy load={loadCorrection} props={{ fields, plantId: id, plantName: t.canonical_name, plantLabel: nameOf(t), release, climate: zone, climateLabel: zoneName(zone), onCancel: () => setCorrecting(false), focusFirst: byReader.current }} />
             : <>
-                <p class="ct-muted">{TS('correction.lede')}</p>
-                <p><button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => { byReader.current = true; setCorrecting(true); }}>{TS('correction.open')}</button></p>
+                <p class="ct-muted">{T('correction.lede')}</p>
+                <p><button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => { byReader.current = true; setCorrecting(true); }}>{T('correction.open')}</button></p>
               </>}
         </section>
       )}
