@@ -278,7 +278,7 @@ test('restore: a cut or outdated link arriving during a first-visit restore leav
   await wait(5);
   assert.equal(await m.restore('v=4&k=FR', { from: 'link' }), false, 'cut');
   assert.equal(await m.restore('v=1&c=temperate', { from: 'link' }), false, 'outdated');
-  await a;
+  assert.equal(await a, false, 'a newer link, even refused, wins over the older restore');
   assert.equal(m.restoring.peek(), false);
   assert.equal(m.pendingClimate.peek(), null);
   store.climate.value = 'Temperate';
@@ -303,5 +303,39 @@ test('restore: an edit during restore A, superseded by a newer restore B that fa
   assert.equal(await a, false, 'the reader acted: A does not apply');
   assert.equal(store.climate.peek(), 'Temperate');
   assert.equal(decodeLink(readRecord(storage.getItem(STORE)).fragment, { Temperate: pool.map((t) => t.id) }).state.members.length, 8, 'the edit is saved');
+  assert.equal(m.restoring.peek(), false);
+});
+
+for (const [what, act] of [['a site answer', () => { store.site.value = { ...store.site.peek(), light: 'full' }; }], ['a country choice', () => m.chooseCountry('DE')]]) {
+  test(`restore: ${what} during a first-visit restore keeps the link's climate shown (redesign review, 1)`, async () => {
+    await shown();
+    store.view.value = 'start';
+    store.climate.value = null;
+    store.members.value = [];
+    const link = await linkOf('Tropical', 4);
+    delays.Tropical = 60;
+    const a = m.restore(link, { from: 'link' });
+    await wait(5);
+    act();
+    assert.equal(store.climate.peek(), 'Tropical', 'the climate Start showed stays, now chosen');
+    assert.equal(await a, false, 'the reader acted: the link does not apply');
+    assert.equal(store.climate.peek(), 'Tropical');
+  });
+}
+
+test('restore: a newer cut link cancels the older restore and keeps its notice (redesign review, 3)', async () => {
+  await shown();
+  store.view.value = 'start';
+  store.climate.value = null;
+  store.members.value = [];
+  m.notices.value = { ...m.notices.peek(), cut: false, unknownCount: 0 };
+  const link = await linkOf('Tropical', 4);
+  delays.Tropical = 40;
+  const a = m.restore(link, { from: 'link' });
+  await wait(5);
+  assert.equal(await m.restore('v=4&k=FR', { from: 'link' }), false);
+  assert.equal(await a, false);
+  assert.equal(m.notices.peek().cut, true, 'the cut notice stays');
+  assert.deepEqual(store.members.peek(), []);
   assert.equal(m.restoring.peek(), false);
 });

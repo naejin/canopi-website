@@ -367,6 +367,12 @@ const inFlight = signal<{ id: number; climate: ClimateZone | null } | null>(null
 export const restoring = computed(() => inFlight.value !== null);
 export const pendingClimate = computed(() => (store.climate.value ? null : inFlight.value?.climate ?? null));
 
+// Ends the restore in flight without applying it (a newer link that was refused).
+function cancelRestore(): void {
+  restoreGen++;
+  inFlight.value = null;
+}
+
 export interface RestoreOptions { from: 'link' | 'saved'; src?: CountryFrom; keep?: boolean }
 // Restores a fragment (a link or the save) once its climates are read. Returns whether it opened.
 // src: the saved country's source (a save's country that came from a link keeps that label).
@@ -378,19 +384,22 @@ export async function restore(fragment: string, { from, src = null, keep = false
     else notices.value = { ...notices.peek(), ...notice };
     return false;
   };
-  // Refusals come first, take no restore number and leave the one in flight alone.
+  // Refusals take no restore number, never touch saving, and cancel the restore in flight: the
+  // latest link wins even when it cannot open, and its notice stays.
   const v = new URLSearchParams(fragment).get('v');
   if (v !== null && v !== String(LINK_VERSION)) {
-    // Another version: on Start, the climate it names (decodeLink still reads it) and the notice.
+    cancelRestore();
+    // Another version: on Start, the climate it names (decodeLink still reads it; a link, not the
+    // reader acting) and the notice.
     if (!keep && from === 'link') {
       const d = decodeLink(fragment, {});
-      if (d.state.climate) store.climate.value = d.state.climate;
+      if (d.state.climate) quietly(() => { store.climate.value = d.state.climate; });
     }
     return refuse('outdated', from === 'link' ? { outdated: true } : { oldSave: true });
   }
   // A link with no climate (cut before it, or edited): the cut notice, and nothing opens (review 7).
   const climate = zoneOf(new URLSearchParams(fragment).get('c'));
-  if (!climate) return refuse('cut', { cut: true });
+  if (!climate) { cancelRestore(); return refuse('cut', { cut: true }); }
 
   const id = ++restoreGen;
   const began = actions;
@@ -425,11 +434,12 @@ async function applyPreset(climate: ClimateZone, plant: string | null): Promise<
   if (!pool) return;
   const t = pool.find((x) => x.canonical_name === plant);
   if (!t) { notices.value = { ...notices.peek(), guideMissing: plant }; return; }
-  batch(() => {
+  // The guide's plant is the guide's choice, not the reader acting.
+  quietly(() => batch(() => {
     if (t.role === 'crop') store.crops.value = [t.id];
     store.kept.value = [...new Set([...store.kept.peek(), t.id])];
     notices.value = { ...notices.peek(), guideKept: t.id };
-  });
+  }));
 }
 
 // The address bar holds the shown consortium's link (replaceState, no history entry). Same address:
@@ -596,7 +606,14 @@ export function watchStore(): void {
     if (first) { first = false; return; }
     if (quiet) return;
     actions++;
-    untracked(() => { inFlight.value = null; });
+    // The reader acted during a first-visit restore (any Start write: a country, a site answer, a
+    // crop, Suggest): the restore will not apply, and the link's climate Start showed stays, now
+    // chosen, so what Start shows never vanishes without the reader choosing.
+    untracked(() => {
+      const shown = inFlight.peek()?.climate;
+      inFlight.value = null;
+      if (shown && !store.climate.peek()) store.climate.value = shown;
+    });
   });
   effect(() => {
     void [store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
