@@ -40,7 +40,7 @@ import { hookOn, testFault } from '../test-hook.ts';
 const lang = () => pageLang();
 // The words every view shares live in one place each (H12): a plant's name in strings.ts, the stage
 // words in StageBar.tsx; the sheets take them from here. The store's edits and opener likewise.
-export { addMembers, closeSheet, nameOf, openSheet, plainPhase, removeMember, sheetCell, spanWords, swapMember, taxonOf, toggleKeep };
+export { addMembers, closeSheet, nameOf, openSheet, plainPhase, sheetCell, spanWords, swapMember, taxonOf };
 // correction.* and climate.<zone> are site-wide keys; ConsortiumPage.astro passes them under their own
 // names beside consortium.* (H13).
 export const zoneName = (z: ClimateZone): string => T(`climate.${z.toLowerCase()}`);
@@ -62,11 +62,12 @@ export function DataText({ text }: { text: { en: string } & Partial<Record<strin
 }
 
 // The seven-segment stage bar, its span filled, with the span words as its name (mockup 05).
-export function Bar({ taxon, current = -1 }: { taxon: Taxon; current?: number }) {
+// run: the stages Add was opened for (a cell or a run of cells), marked `cur` (X2).
+export function Bar({ taxon, run = null }: { taxon: Taxon; run?: { from: number; to: number } | null }) {
   const s = spanOf(taxon);
   return (
     <span class="ct-bar" role="img" aria-label={spanWords(taxon)}>
-      {phases.map((_, i) => <i class={`${s && s[0] <= i && i <= s[1] ? 'on' : ''}${i === current ? ' cur' : ''}`} />)}
+      {phases.map((_, i) => <i class={`${s && s[0] <= i && i <= s[1] ? 'on' : ''}${run && run.from <= i && i <= run.to ? ' cur' : ''}`} />)}
     </span>
   );
 }
@@ -219,9 +220,8 @@ export function Ask({ title, lines, yes, onYes, onCancel }: { title: string; lin
   );
 }
 
-// Browser-test builds only: makes the next sheet chunk fail to load (the page preloads every chunk,
-// so the network cannot make it fail).
-// A sheet module loaded on first use.
+// A sheet module loaded on first use (a browser-test build can make it fail: test-hook.ts failSheets,
+// since the page preloads every chunk and the network cannot).
 type SheetModule = { default: ComponentType<Record<string, unknown>> };
 const loaded = new Map<() => Promise<SheetModule>, ComponentType<Record<string, unknown>>>();
 function Lazy({ load, props = {} }: { load: () => Promise<SheetModule>; props?: Record<string, unknown> }) {

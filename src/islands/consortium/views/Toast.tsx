@@ -12,8 +12,6 @@ import { hideToast, toast, type ToastWhere as Where } from '../store.ts';
 import { T } from '../strings.ts';
 import { focusPlant } from '../focus.ts';
 
-export { hideToast, showToast, toast, type ToastAction, type ToastLine } from '../store.ts';
-
 // where: 'page' (shown while no sheet is open) or 'sheet' (inside the open sheet).
 export function Toast({ where = 'page' }: { where?: Where }) {
   const here = (store.sheet.value !== null) === (where === 'sheet');

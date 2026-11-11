@@ -19,7 +19,6 @@ import { searchIndex } from '../data/sqlite-source.ts';
 import { Ask, Bar, NotChecked, SheetFrame, WARN, addMembers, closeSheet, flagLines, flagsOfPlant, nameOf, num, plainPhase, sheetCell, spanWords, zoneName } from './Details.tsx';
 
 const FIRST_ROWS = 8;
-const NOTHING = { cell: null, job: null, anyway: false } as const;
 
 // Whether a plant grows in a layer during any stage of from..to.
 const growsIn = (t: Taxon, stratum: string, from: number, to: number) =>
@@ -46,7 +45,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
   const pool = store.pool.value;
   const climate = store.climate.value;
   // What Add was opened for (store.openSheet): a cell or run of one layer, a job, and `anyway`.
-  const { cell, job, anyway } = mode === 'add' ? sheetCell.value : NOTHING;
+  const { cell, job, anyway } = mode === 'add' ? sheetCell.value : store.FOR_NOTHING;
   const members = store.members.value;
   const [query, setQuery] = useState('');
   const [all, setAll] = useState(false);
@@ -72,7 +71,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
       if (!growsIn(t, cell.stratum, cell.from, cell.to)) return false;
       if (anyway) return true;
       const fit = fits(t, site);
-      return !fit.misfits.length || !misfitsBeside(t, site, canopy, fit).length;
+      return !misfitsBeside(t, site, canopy, fit).length;
     });
   }, [pool, cell, job, anyway, site, taxa]);
   const rows = useMemo(() => {
@@ -138,7 +137,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
               <li class={`${asksFirst ? 'flagged' : ''}${on ? ' is-on' : ''}`}>
                 <div class="ct-row-main">
                   <strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i>
-                  <Bar taxon={t} current={cell ? cell.from : -1} />
+                  <Bar taxon={t} run={cell} />
                 </div>
                 {asksFirst
                   ? <button type="button" class="button button-secondary" aria-label={T('addOne', { name: nameOf(t) })} onClick={() => setAsking({ t, from: null })}>{T('add')}</button>

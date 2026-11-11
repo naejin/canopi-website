@@ -314,12 +314,12 @@
   .ct .ct-tabs { flex-wrap: wrap; overflow-x: visible; }
   .ct .ct-tab { padding: 10px 8px; font-size: 14.5px; }
   .ct .ct-jump td button, .ct .ct-jump td.none span { height: var(--cell-phone-h); }
-  .ct .ct-explain-btn, .ct .ct-add-cell { min-height: 36px; }
+  .ct .ct-explain-btn, .ct .ct-add-cell { min-height: 40px; }
   /* Primary controls on a phone: 40 px at least (W6). */
   .ct .ct-btn-sm, .ct .ct-quiet, .ct .ct-mchip { min-height: 40px; }
   .ct .ct-lname-btn { display: inline-flex; align-items: center; min-height: 40px; }
   .ct .ct-mx-empty { grid-template-columns: 1fr; }
-  .ct .ct-link-button { min-height: 36px; display: inline-flex; align-items: center; }
+  .ct .ct-link-button { min-height: 40px; display: inline-flex; align-items: center; }
   .ct .ct-sv { padding: 12px; }
   .ct .ct-sv h2 { font-size: 19px; }
   .ct .ct-sv-phases { display: none; }
