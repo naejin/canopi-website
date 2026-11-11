@@ -110,9 +110,11 @@ export function CountryLine() {
 
 // ---- the climate cards ----
 function Climates() {
-  // A link's climate shows at once while it loads (memory.pendingClimate); a location's suggestion
-  // (store.proposedClimate, S5b) shows checked but is not chosen until the reader confirms it.
-  const chosen = climate.value ?? pendingClimate.value ?? proposedClimate.value;
+  // A link's climate shows at once while it loads (memory.pendingClimate). A location's suggestion
+  // (store.proposedClimate, S5b) shows as proposed, not checked: a click on its card confirms it, as
+  // the result line's "Use" button does (owner answer 1; review round 1, 6).
+  const chosen = climate.value ?? pendingClimate.value;
+  const proposed = chosen ? null : proposedClimate.value;
   return (
     <fieldset class="ct-step ct-climates">
       <legend class="ct-step-title">{T('start.climate.title')}</legend>
@@ -122,10 +124,11 @@ function Climates() {
           const z = zoneOf(id)!;
           const ready = hasList(z);
           return (
-            <label class={`ct-card${chosen === z ? ' is-chosen' : ''}`}>
-              <input type="radio" name="ct-climate" value={id} checked={chosen === z} aria-labelledby={`ct-cl-${id}`} aria-describedby={`ct-cl-${id}-d`} onChange={() => chooseClimate(z)} />
+            <label class={`ct-card${chosen === z ? ' is-chosen' : proposed === z ? ' is-proposed' : ''}`} data-proposed={proposed === z ? '' : undefined}>
+              <input type="radio" name="ct-climate" value={id} checked={chosen === z} aria-labelledby={`ct-cl-${id}`} aria-describedby={`ct-cl-${id}-d`} onChange={() => { proposedClimate.value = null; chooseClimate(z); }} />
               <span class="ct-card-name" id={`ct-cl-${id}`}>{label}</span>
               <span id={`ct-cl-${id}-d`} class="ct-card-desc">
+                {proposed === z && <span class="ct-card-proposed">{T('location.proposed')}</span>}
                 <span class={`ct-pill${ready ? ' is-ready' : ''}`}>{T(ready ? 'start.climate.ready' : 'start.climate.notYet')}</span>
                 <span class="ct-card-places">{places}</span>
               </span>

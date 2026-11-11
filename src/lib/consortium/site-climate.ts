@@ -55,7 +55,10 @@ function across(p: SitePeriod): ClimateZone | null | undefined {
   const found: (ClimateZone | null)[] = [];
   const add = (z: ClimateZone | null | undefined) => { if (z !== undefined) found.push(z); };
   const [g, second = '', third = ''] = k;
-  if ((g === 'A' || g === 'C') && near(p.tmeanColdC, 18)) add(g === 'A' ? 'Subtropical' : 'Tropical');
+  // A → C keeps the dry season (Aw → Cw, As → Cs, Af/Am → Cf) and takes its summer letter from the
+  // warmest month (≥ 22 °C a, else b): a highland Af with a 19 °C warmest month is Cfb, Temperate.
+  const cOf = () => `C${second === 'w' || second === 's' ? second : 'f'}${p.tmeanWarmC >= 22 ? 'a' : 'b'}`;
+  if ((g === 'A' || g === 'C') && near(p.tmeanColdC, 18)) add(g === 'A' ? koppenZone(cOf()) : 'Tropical');
   if ((g === 'C' || g === 'D') && near(p.tmeanColdC, 0)) add(other((g === 'C' ? 'D' : 'C') + second + third));
   if ((g === 'C' || g === 'D') && (third === 'a' || third === 'b') && near(p.tmeanWarmC, 22)) add(other(g + second + (third === 'a' ? 'b' : 'a')));
   if ((g === 'C' || g === 'D') && near(p.tmeanWarmC, 10)) add(null);

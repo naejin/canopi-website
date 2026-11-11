@@ -4,9 +4,9 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range, placement, future, native, soil and lazy marks stubs), the rules S1 ported, and the format 4 schema 2 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T17:46:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:56:24Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T15:36:38Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:25:11Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -87,7 +87,7 @@ sources:
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
     digest: sha256:1945a23122835683
-    last_modified: 2026-11-11T17:41:16Z
+    last_modified: 2026-11-11T18:00:01Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -151,8 +151,8 @@ sources:
   - id: consortium-p5-seams-s5b-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
-    digest: sha256:677ceea6e42d41de
-    last_modified: 2026-11-11T17:41:16Z
+    digest: sha256:37c6c1c2313ef26a
+    last_modified: 2026-11-11T18:23:20Z
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
@@ -176,8 +176,8 @@ sources:
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
-    digest: sha256:387c6dcfc37532b7
-    last_modified: 2026-11-11T17:41:16Z
+    digest: sha256:79e78a387e75a014
+    last_modified: 2026-11-11T18:13:46Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs

@@ -15,8 +15,8 @@ export type GeolocationErrorCode = 1 | 2 | 3
 /** One read, as a site needs it: low accuracy, a fix up to 10 minutes old, 15 s at most. */
 export const SITE_POSITION_OPTIONS: PositionOptions = { enableHighAccuracy: false, maximumAge: 600_000, timeout: 15_000 }
 
-/** Offered only where the browser can answer: a secure context with `navigator.geolocation`. */
-export function geolocationSupported(): boolean {
+/** Offered only where the browser can answer: a secure context with `navigator.geolocation` (module-private; the shell checks the same inline). */
+function geolocationSupported(): boolean {
   return typeof window !== 'undefined' && window.isSecureContext === true
     && typeof navigator !== 'undefined' && Boolean(navigator.geolocation)
 }

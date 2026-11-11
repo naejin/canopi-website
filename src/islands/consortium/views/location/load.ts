@@ -8,6 +8,20 @@ export type LocationStep = typeof import('./location.tsx');
 export const locationStep = signal<LocationStep | null>(null);
 let pending: Promise<LocationStep> | null = null;
 export function loadLocationStep(): Promise<LocationStep> {
-  pending ??= import('./location.tsx').then((m) => (locationStep.value = m), (err: unknown) => { pending = null; throw err; });
+  // A failed load is logged here once for every caller (the shell's controls, memory.ts).
+  pending ??= import('./location.tsx').then((m) => (locationStep.value = m), (err: unknown) => {
+    pending = null;
+    console.error(`Consortium: the location step did not load: ${(err as Error).message}`);
+    throw err;
+  });
   return pending;
+}
+
+// Location steps in flight (a click, a search, a link's or the saved location looked up), from the
+// request until it settles or fails: "Suggest plants" waits for them (memory.requestSuggest), so the
+// suggestion's range filter sees the site (review round 1 addendum).
+export const lookups = signal(0);
+export async function looking<T>(step: () => Promise<T>): Promise<T> {
+  lookups.value++;
+  try { return await step(); } finally { lookups.value--; }
 }

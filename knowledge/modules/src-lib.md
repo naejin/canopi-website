@@ -5,16 +5,16 @@ description: Framework-free logic shared by the Worker endpoints, the page scrip
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T17:46:37Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:56:25Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T16:41:51Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:25:13Z }
 sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:73a1c7cb652d4795
-    last_modified: 2026-11-11T17:44:13Z
+    digest: sha256:06a20ea485f61ce3
+    last_modified: 2026-11-11T18:13:46Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -24,12 +24,12 @@ sources:
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
     digest: sha256:233e0d11b5b119e1
-    last_modified: 2026-11-11T17:22:14Z
+    last_modified: 2026-11-11T18:00:01Z
   - id: maplibre-ts
     resource: ../../src/lib/location/maplibre.ts
     title: src/lib/location/maplibre.ts
     digest: sha256:5d74cb8f32ef1e1a
-    last_modified: 2026-11-11T17:32:51Z
+    last_modified: 2026-11-11T18:00:01Z
 ---
 
 # Responsibility

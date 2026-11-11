@@ -38,6 +38,12 @@ test('site-climate siteClimate: a location suggests a climate only when it is cl
   // Cold side: C/D at 0 °C (Cfb next to Dfb: Temperate/Continental) and A/C at 18 °C.
   assert.deepEqual([sc.siteClimate(at({ koppen: 'Cfb', tmeanColdC: 0.3, tmeanWarmC: 17 })).state, sc.siteClimate(at({ koppen: 'Cfb', tmeanColdC: 0.3, tmeanWarmC: 17 })).near], ['borderline', 'Continental']);
   assert.equal(sc.siteClimate(at({ koppen: 'Aw', tmeanColdC: 18.2, tmeanWarmC: 28 })).near, 'Subtropical');
+  // Review round 1 (8): an A class near 18 °C names the C class it would be: a highland Af whose warmest
+  // month stays under 22 °C is Cfb across the bound (Temperate), not Subtropical; As is Cs.
+  assert.equal(sc.siteClimate(at({ koppen: 'Af', tmeanColdC: 18.2, tmeanWarmC: 19.5 })).near, 'Temperate', 'highland Af → Cfb');
+  assert.equal(sc.siteClimate(at({ koppen: 'Am', tmeanColdC: 17.8, tmeanWarmC: 24 })).near, 'Subtropical', 'Am → Cfa');
+  assert.equal(sc.siteClimate(at({ koppen: 'Aw', tmeanColdC: 18.3, tmeanWarmC: 20 })).near, 'Subtropical', 'Aw → Cwb, still Subtropical');
+  assert.equal(sc.siteClimate(at({ koppen: 'As', tmeanColdC: 18.1, tmeanWarmC: 26 })).near, 'Mediterranean', 'As → Csa');
   // Near the tundra bound (10 °C warmest month), or the class disagreeing with its means: borderline, no zone across.
   assert.deepEqual([sc.siteClimate(at({ koppen: 'Dfc', tmeanColdC: -20, tmeanWarmC: 10.3 })).state, sc.siteClimate(at({ koppen: 'Dfc', tmeanColdC: -20, tmeanWarmC: 10.3 })).near], ['borderline', null]);
   assert.equal(sc.siteClimate(at({ koppen: 'Cfb', tmeanColdC: 5, tmeanWarmC: 17, koppenTemperatureMarginC: 0.3 })).state, 'borderline');
@@ -73,14 +79,15 @@ test('memory.ts: a location country goes into a link only with the tick; the sav
   const input = { climate: 'Mediterranean', country: { code: 'ES', source: 'location' }, site: { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' }, members: [], kept: [], removed: [], guests: {}, crops: [], stage: null };
   assert.equal(m.shareState(input).country, null);
   assert.equal(m.shareState(input, { location: true }).country, 'ES');
-  const rec = m.locationRecord({ lat: 37.3891, lon: -5.9845, source: 'geo' });
-  assert.deepEqual(m.readLocation(rec), { lat: 37.3891, lon: -5.9845, source: 'geo' });
-  assert.deepEqual(m.readLocation(m.locationRecord({ lat: 45.7, lon: 4.8, source: 'search', label: 'Lyon, France' })).label, 'Lyon, France');
-  for (const bad of [null, '', '{', '{"lat":1}', '{"lat":95,"lon":0,"source":"geo"}', '{"lat":1,"lon":2,"source":"gps"}']) assert.equal(m.readLocation(bad), null, String(bad));
+  const keep = await import('../src/islands/consortium/views/location/keep.ts');
+  const rec = keep.locationRecord({ lat: 37.3891, lon: -5.9845, source: 'geo' });
+  assert.deepEqual(keep.readLocation(rec), { lat: 37.3891, lon: -5.9845, source: 'geo' });
+  assert.deepEqual(keep.readLocation(keep.locationRecord({ lat: 45.7, lon: 4.8, source: 'search', label: 'Lyon, France' })).label, 'Lyon, France');
+  for (const bad of [null, '', '{', '{"lat":1}', '{"lat":95,"lon":0,"source":"geo"}', '{"lat":1,"lon":2,"source":"gps"}']) assert.equal(keep.readLocation(bad), null, String(bad));
 });
 
-test('memory.ts locationCountry: replaces a guess or none, never a chosen or linked country; none offshore clears only its own', async () => {
-  const m = await import('../src/islands/consortium/memory.ts');
+test('location/keep.ts locationCountry: replaces a guess or none, never a chosen or linked country; none offshore clears only its own', async () => {
+  const m = await import('../src/islands/consortium/views/location/keep.ts');
   const store = await import('../src/islands/consortium/store.ts');
   const before = store.country.value;
   try {

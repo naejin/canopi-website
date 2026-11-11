@@ -73,6 +73,17 @@ async function locationState(page, timeout = 15_000) {
 }
 const text = (page, sel) => page.$eval(sel, (e) => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => null);
 const checkedCard = (page) => page.$eval('input[name="ct-climate"]:checked', (e) => e.value).catch(() => null);
+// The card a location suggests: shown as proposed (review round 1, 6), never as a checked radio.
+const proposedCard = (page) => page.$eval('[data-proposed] input[name="ct-climate"]', (e) => e.value).catch(() => null);
+const savedLocation = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('canopi-location') ?? 'null'));
+// After page.goto, loadState's wait can end with the navigation (a destroyed context) before the page
+// settles, so it is asked again until ready or 20 s.
+const ready = async (page) => {
+  let st = 'loading';
+  for (const end = Date.now() + 20_000; st !== 'ready' && Date.now() < end;) { st = await loadState(page, 5000); if (st !== 'ready') await new Promise((r) => setTimeout(r, 250)); }
+  assert.equal(st, 'ready');
+  assert.ok(await page.waitForFunction(() => window.__ctTest?.store?.source.value, { timeout: 20_000 }).then(() => true, () => false));
+};
 const storeClimate = (page) => page.evaluate(() => window.__ctTest.store.climate.value);
 // The result line ready, the suggested card confirmed (owner answer 1), then a consortium in the matrix
 // and its Share panel open (S5b: the panel opens on its button; the specs read its field).
@@ -175,13 +186,55 @@ test('P5-1 (S5b location granted): "Use my location" fills the result line and t
   const loc = await page.evaluate(() => window.__ctTest.store.location.value);
   assert.equal(loc.source, 'geo');
   assert.equal(loc.lookup.climate.periods[0].koppen, 'Csa');
-  assert.equal(await checkedCard(page), 'mediterranean', 'the Mediterranean card is pre-checked');
-  assert.equal(await storeClimate(page), null, 'but not chosen until the reader confirms (owner answer 1)');
+  assert.equal(await proposedCard(page), 'mediterranean', 'the Mediterranean card is shown as proposed');
+  assert.equal(await checkedCard(page), null, 'not as a checked radio (review round 1, 6)');
+  assert.equal(await storeClimate(page), null, 'and not chosen until the reader confirms (owner answer 1)');
   await page.click('[data-location-confirm]');
   assert.equal(await storeClimate(page), 'Mediterranean');
   assert.equal(await page.evaluate(() => window.__ctTest.store.country.value.source), 'location', 'the country "from your location"');
 });
+test('P5-1b (S5b review round 1, 6): clicking the proposed card confirms it, like the "Use" button', async () => {
+  const page = await tool({ geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
+  await locationControls(page);
+  await page.click('[data-location-action="geo"]');
+  assert.equal(await locationState(page), 'ready');
+  await page.click('[data-proposed]');
+  assert.equal(await storeClimate(page), 'Mediterranean', 'the click chose it');
+  assert.equal(await checkedCard(page), 'mediterranean');
+  assert.equal(await page.$('[data-location-confirm]'), null, 'nothing left to confirm');
+});
+test('P5-1c (S5b review round 1, 4): a lookup ending while a pasted link restores is not a reader action: the link still opens', async () => {
+  const maker = await tool();
+  await choose(maker, 'Temperate');
+  await maker.evaluate(() => { window.__ctTest.store.suggestMembers(); window.__ctTest.store.view.value = 'matrix'; });
+  assert.ok(await maker.waitForFunction(() => /[#&]v=4/.test(location.hash) && /[#&]a=[^&]/.test(location.hash), { timeout: 10_000 }).then(() => true, () => false), 'the address holds the consortium');
+  const link = await maker.evaluate(() => location.hash);
+  const page = await tool({ geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
+  await locationControls(page);
+  await page.click('[data-location-action="geo"]');
+  await page.evaluate((l) => { location.hash = l; }, link);
+  assert.equal(await locationState(page), 'ready', 'the lookup ends');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'the link restored');
+});
 
+test('P5-1d (S5b review round 1 addendum): Suggest pressed while a location lookup is pending waits for it, so the range filter sees the site', async () => {
+  const page = await h.open('/consortium/', { mapTiles: 'stub', geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
+  // Slow climate tiles: every /data/climate/ fetch waits 3 s.
+  await page.evaluateOnNewDocument(() => {
+    window.__ctTest = true;
+    const f = window.fetch;
+    window.fetch = (input, init) => (/\/data\/climate\//.test(String(input?.url ?? input)) ? new Promise((r) => setTimeout(r, 3000)).then(() => f(input, init)) : f(input, init));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready(page);
+  await page.click('input[name="ct-climate"][value="mediterranean"]');
+  assert.ok(await has(page, '.ct-cta .button-primary', 15_000), 'Suggest shows');
+  await page.evaluate(() => { const { store } = window.__ctTest; window.__firstMembers = undefined; store.members.subscribe((m) => { if (m.length && window.__firstMembers === undefined) window.__firstMembers = !!store.location.peek()?.lookup; }); });
+  await page.click('[data-location-action="geo"]');
+  await page.click('.ct-cta .button-primary');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 20_000 }).then(() => true, () => false), 'the suggestion comes');
+  assert.equal(await page.evaluate(() => window.__firstMembers), true, 'members were built only once the site was read');
+});
 test('P5-2 (S5b location denied): a denied permission says so and leaves the manual climate cards', async () => {
   const page = await tool({ geolocation: 'denied' });
   await locationControls(page);
@@ -190,6 +243,7 @@ test('P5-2 (S5b location denied): a denied permission says so and leaves the man
   assert.equal(await page.evaluate(() => window.__ctTest.store.location.value), null);
   assert.ok(await has(page, '.ct-climates input, .ct-climates button'), 'the climate cards stay');
   assert.equal(await checkedCard(page), null, 'no card pre-checked');
+  assert.equal(await proposedCard(page), null, 'no card pre-checked: none proposed either');
 });
 
 test('P5-3 (S5b location timeout): a location that never comes ends in "timeout", with search and map offered', async () => {
@@ -219,6 +273,21 @@ test('P5-4 (S5b search hit): Enter searches Nominatim once, in the page language
   assert.equal((await page.evaluate(() => window.__ctTest.store.location.value)).source, 'search');
 });
 
+test('P5-4b (S5b review round 1, 3): Enter while an input method is composing (ja, zh, ko) never searches', async () => {
+  const page = await tool({ lang: 'ja', nominatim: 'fixture' });
+  await locationControls(page);
+  await page.type('input[data-location-search]', 'Lyon');
+  await page.$eval('input[data-location-search]', (i) => {
+    i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true, cancelable: true }));
+    i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 229, bubbles: true, cancelable: true }));
+  });
+  await new Promise((r) => setTimeout(r, 1500));
+  assert.deepEqual(page.nominatim, [], 'composition Enter is not a search');
+  assert.equal(await page.$('[data-location-state]'), null);
+  await page.keyboard.press('Enter');
+  assert.equal(await locationState(page), 'borderline', 'a plain Enter still searches');
+  assert.equal(page.nominatim.length, 1);
+});
 test('P5-5 (S5b search no result / offline): an unknown place and an offline search each say so, nothing changed', async () => {
   const page = await tool({ nominatim: 'fixture' });
   await locationControls(page);
@@ -246,6 +315,40 @@ test('P5-6 (S5b map pick and ocean click): "Use the map centre" sets the site; t
   assert.equal(await locationState(page), 'ready');
   assert.equal((await page.evaluate(() => window.__ctTest.store.location.value)).source, 'map');
   assert.ok(page.thirdParty.every((u) => !u.includes('openfreemap')), 'map requests go to the stub');
+  // Review round 1 (5): the dialog closes as Escape would, and focus goes back to the map button.
+  const focusBack = () => page.waitForFunction(() => !document.querySelector('[data-location-map]') && document.activeElement?.getAttribute('data-location-action') === 'map', { timeout: 5000 }).then(() => true, () => false);
+  assert.ok(await focusBack(), '"Use the map centre" closes the dialog and returns focus to the map button');
+  await page.click('[data-location-action="map"]');
+  assert.ok(await has(page, '[data-location-map] canvas', 10_000));
+  await page.click('[data-location-close]');
+  assert.ok(await focusBack(), 'Close returns focus to the map button');
+  await page.click('[data-location-action="map"]');
+  assert.ok(await has(page, '[data-location-map] canvas', 10_000));
+  await page.keyboard.press('Escape');
+  assert.ok(await focusBack(), 'Escape returns focus to the map button');
+});
+test('P5-7c (S5b review round 1, 7): the WebGL probe runs once, outside the result head, and releases its context', async () => {
+  const page = await h.open('/consortium/', { mapTiles: 'stub', geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
+  await page.evaluateOnNewDocument(() => {
+    window.__ctTest = true;
+    window.__gl = [];
+    const get = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (kind, ...rest) {
+      const c = get.call(this, kind, ...rest);
+      if (/webgl/.test(kind) && c && !this.isConnected) window.__gl.push(c);
+      return c;
+    };
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready(page);
+  await locationControls(page);
+  await page.click('[data-location-action="geo"]');
+  assert.equal(await locationState(page), 'ready');
+  await confirmAndSuggest(page);
+  assert.ok(await has(page, '.ct-result-head [data-location-state], [data-location-state]', 10_000));
+  const gl = await page.evaluate(() => window.__gl.map((c) => c.isContextLost()));
+  assert.equal(gl.length, 1, 'one probe, though the result head shows the location line too');
+  assert.deepEqual(gl, [true], 'its context released (WEBGL_lose_context)');
 });
 
 test('P5-7 (S5b no WebGL): without WebGL the map button is hidden, search and location stay', async () => {
@@ -254,6 +357,14 @@ test('P5-7 (S5b no WebGL): without WebGL the map button is hidden, search and lo
   assert.equal(await page.$('[data-location-action="map"]'), null);
   assert.ok(await has(page, 'input[data-location-search]'));
 });
+test('P5-7b (S5b review round 1, 10): without the Geolocation API "Use my location" is hidden, search stays', async () => {
+  const page = await h.open('/consortium/', { mapTiles: 'stub' });
+  await page.evaluateOnNewDocument(() => { window.__ctTest = true; delete Navigator.prototype.geolocation; });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready(page);
+  assert.ok(await has(page, 'input[data-location-search]', 4000), 'search shows');
+  assert.equal(await page.$('[data-location-action="geo"]'), null, 'no location button');
+});
 
 test('P5-8 (S5b coast): a point offshore takes the nearest cell\'s climate and says there is no country or soil there', async () => {
   const [lat, lon] = SITES.coast;
@@ -261,7 +372,7 @@ test('P5-8 (S5b coast): a point offshore takes the nearest cell\'s climate and s
   await locationControls(page);
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'coast');
-  assert.equal(await checkedCard(page), 'temperate', 'Cfb from the nearest cell, pre-checked');
+  assert.equal(await proposedCard(page), 'temperate', 'Cfb from the nearest cell, proposed');
   assert.equal(await storeClimate(page), null, 'not chosen until confirmed');
   const c = await page.evaluate(() => window.__ctTest.store.country.value);
   assert.notEqual(c.source, 'location', 'no country from the location offshore');
@@ -286,12 +397,13 @@ test('P5-10 (S5b borderline): Lyon says "Borderline: check the climate" and keep
   assert.equal(await locationState(page), 'borderline');
   assert.ok(await has(page, '.ct-climates'), 'the cards stay open');
   assert.equal(await checkedCard(page), null, 'no card pre-checked when borderline');
+  assert.equal(await proposedCard(page), null, 'no card pre-checked when borderline: none proposed either');
   assert.equal(await storeClimate(page), null);
   const calm = await tool({ geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
   await locationControls(calm);
   await calm.click('[data-location-action="geo"]');
   assert.equal(await locationState(calm), 'ready', 'Seville is not borderline');
-  assert.equal(await checkedCard(calm), 'mediterranean', 'pre-checked');
+  assert.equal(await proposedCard(calm), 'mediterranean', 'proposed');
   assert.equal(await storeClimate(calm), null, 'not committed until confirmed');
 });
 
@@ -304,6 +416,7 @@ test('P5-11 (S5b tiles fail): when the climate tiles cannot be read the manual c
   assert.equal((await page.evaluate(() => window.__ctTest.store.location.value))?.lookup ?? null, null);
   assert.ok(await has(page, '.ct-climates'));
   assert.equal(await checkedCard(page), null, 'no card pre-checked');
+  assert.equal(await proposedCard(page), null, 'no card pre-checked: none proposed either');
 });
 
 test('P5-12 (S5b share without the tick): a link never carries the location, nor its country, unless asked', async () => {
@@ -339,6 +452,35 @@ test('P5-13 (S5b share with "include my location"): the link carries the cell ce
   const opened = await h.open(new URL(link).pathname + new URL(link).search + new URL(link).hash);
   assert.equal(await loadState(opened), 'ready');
   assert.match(await text(opened, '[data-location-state]') ?? '', /approximate/i);
+});
+test('P5-13b (S5b review round 1, 1 and 2): a link\'s o= lives for the page only: never saved, never a country "from your location"; a link without o= clears it', async () => {
+  const [lat, lon] = SITES.seville;
+  const page = await tool({ geolocation: { lat, lon } });
+  await locationControls(page);
+  await page.click('[data-location-action="geo"]');
+  assert.equal(await locationState(page), 'ready');
+  await confirmAndSuggest(page);
+  await page.click('input[data-share-location]');
+  const link = new URL(await page.$eval('#ct-share-field', (e) => e.value));
+  const mine = await savedLocation(page);
+  assert.deepEqual([mine.lat, mine.lon, mine.source], [lat, lon, 'geo'], 'the reader\'s own location is saved');
+  // The same device opens a link with o= and no k= (someone else's site).
+  const other = `${link.pathname}#${link.hash.slice(1).replace(/&k=[A-Z]{2}/, '').replace(/o=[^&]+/, 'o=45.75,4.85')}`;
+  await page.goto(`${new URL(page.url()).origin}${other}`, { waitUntil: 'domcontentloaded' });
+  await ready(page);
+  await locationState(page);
+  assert.match(await text(page, '[data-location-state]') ?? '', /approximate/i);
+  assert.equal((await page.evaluate(() => window.__ctTest.store.location.value)).source, 'link');
+  assert.deepEqual(await savedLocation(page), mine, 'the reader\'s saved location is untouched');
+  assert.notDeepEqual(await page.evaluate(() => window.__ctTest.store.country.value), { code: 'FR', source: 'location' }, 'no country "from your location" from the link\'s cell (Lyon, FR); the reader\'s own may stay');
+  // A link without o= pasted into the tab: the link's location goes, with its line.
+  await page.evaluate((h) => { location.hash = h; }, link.hash.replace(/&o=[^&]+/, ''));
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value === null, { timeout: 15_000 }).then(() => true, () => false), 'store.location cleared');
+  assert.equal(await page.$('[data-location-state]'), null, 'no stale result line');
+  // A later plain visit: the reader's own site again.
+  await page.goto(`${new URL(page.url()).origin}/consortium/`, { waitUntil: 'domcontentloaded' });
+  await ready(page);
+  assert.ok(await page.waitForFunction((a, b) => { const l = window.__ctTest.store.location.value; return l?.lookup && l.lat === a && l.lon === b && l.source === 'geo'; }, { timeout: 15_000 }, lat, lon).then(() => true, () => false), 'the saved location comes back');
 });
 
 // ---- S5c: filtered pool and nearest placements ----

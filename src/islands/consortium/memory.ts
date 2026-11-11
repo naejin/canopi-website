@@ -31,12 +31,12 @@
 // countryAtStart, the save record, shareState, guessCountry and cropExamples (ported from v1
 // logic.js, memory.js and crops.js). The wiring (startMemory) reads and writes the store's signals.
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
-import type { ClimateZone, DecodedLink, Interaction, LinkNotice, LinkOrigin, LocationSource, PhaseOrd, PlantId, ShareState, Site, SiteLocation, Taxon } from '../../lib/consortium/index.ts';
+import type { ClimateZone, DecodedLink, Interaction, LinkNotice, LinkOrigin, PhaseOrd, PlantId, ShareState, Site, Taxon } from '../../lib/consortium/index.ts';
 import { decodeLink, encodeLink, linkClimates, linkOrigin, readPreset, zoneOf, LINK_VERSION, MAX_CROPS } from '../../lib/consortium/index.ts';
 import type { Country } from './store.ts';
 import * as store from './store.ts';
 import { focusView } from './focus.ts';
-import { loadLocationStep } from './views/location/load.ts';
+import { loadLocationStep, looking, lookups } from './views/location/load.ts';
 
 export const STORE = 'canopi-consortium';
 export const COUNTRY_STORE = 'canopi-country';
@@ -111,24 +111,6 @@ export function oldRecord(text: string | null): boolean {
 
 export { zoneOf };
 export const siteId = (z: ClimateZone): string => z.toLowerCase();
-
-// ---- the saved site location (P5 S5b) ----
-
-export interface SavedLocation { lat: number; lon: number; source: LocationSource; label?: string }
-const LOCATION_SOURCES: readonly LocationSource[] = ['geo', 'search', 'map', 'link'];
-export const locationRecord = (l: Pick<SiteLocation, 'lat' | 'lon' | 'source' | 'label'>): string =>
-  JSON.stringify(l.label ? { lat: l.lat, lon: l.lon, source: l.source, label: l.label } : { lat: l.lat, lon: l.lon, source: l.source });
-// A saved location read back, or null when it is not one.
-export function readLocation(text: string | null): SavedLocation | null {
-  const v = parsed(text);
-  if (!v) return null;
-  const { lat, lon, source, label } = v;
-  if (typeof lat !== 'number' || typeof lon !== 'number' || !(Math.abs(lat) <= 90) || !(Math.abs(lon) <= 180)) return null;
-  if (!LOCATION_SOURCES.includes(source as LocationSource)) return null;
-  const out: SavedLocation = { lat, lon, source: source as LocationSource };
-  if (typeof label === 'string' && label && label.length <= 200) out.label = label;
-  return out;
-}
 
 // ---- how the page opens ----
 
@@ -308,7 +290,7 @@ export const pendingSuggest = signal(false);
 // The country picker on the country line is open.
 export const pickingCountry = signal(false);
 
-const memory = guarded(() => (typeof localStorage === 'undefined' ? null : localStorage));
+export const memory = guarded(() => (typeof localStorage === 'undefined' ? null : localStorage));
 
 // Applies a decoded link or save to the store, in one batch, and opens the result.
 function applyDecoded(d: DecodedLink, countryFrom: 'link' | 'chosen'): void {
@@ -398,7 +380,7 @@ let restoreGen = 0;
 let actions = 0;
 let quiet = false;
 // (Only outside an effect: a write made in an effect reaches the watcher after the effect ends.)
-const quietly = (fn: () => void): void => { quiet = true; try { fn(); } finally { quiet = false; } };
+export const quietly = (fn: () => void): void => { quiet = true; try { fn(); } finally { quiet = false; } };
 // The newest restore in flight, for display only: Start's "reading" line, and the link's climate on
 // Start at once while the plants are read (first visit). Ended by that restore, or by the reader acting.
 const inFlight = signal<{ id: number; climate: ClimateZone | null } | null>(null);
@@ -460,6 +442,9 @@ export async function restore(fragment: string, { from, src = null, keep = false
       applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen');
       notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut, pasted: null, failed: false };
       if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', lookup: null };
+      // A link without `o=` (pasted into the tab): an earlier link's location goes with it, so no
+      // stale line shows and Share cannot attach its cell (review round 1, 2). The reader's own stays.
+      else if (from === 'link' && store.location.peek()?.source === 'link') store.location.value = null;
     }));
     if (origin) void settleLocation('link');
     return true;
@@ -579,31 +564,13 @@ export function chooseCountry(code: string | null): void {
 // ---- the site location (P5 S5b) ----
 
 // The location chunk looks up store.location (a link's `o=`, or the saved location) and settles it.
-// how: 'link' (the link's answers win; no country, no suggestion) or 'saved' (looked up again).
-function settleLocation(how: 'link' | 'saved', saved: SavedLocation | null = null): Promise<void> {
-  return loadLocationStep().then((m) => m.settle(how, saved), (err: unknown) => {
-    attempt(() => console.error(`Consortium: the location step did not load: ${(err as Error).message}`));
+// how: 'link' (the link's answers win; no country, no suggestion) or 'saved' (looked up again; saved:
+// the stored record's text, read by the chunk, views/location/keep.ts).
+function settleLocation(how: 'link' | 'saved', saved: string | null = null): Promise<void> {
+  return looking(() => loadLocationStep()).then((m) => looking(() => m.settle(how, saved)), () => {
     if (how === 'link') store.location.value = null;
   });
 }
-// The site location kept on this device (never in a link), or removed (null).
-export function keepLocation(l: Pick<SiteLocation, 'lat' | 'lon' | 'source' | 'label'> | null): void {
-  if (l) memory.write(LOCATION_STORE, locationRecord(l));
-  else memory.remove(LOCATION_STORE);
-}
-// A country from the site location ("from your location"; null: none there, e.g. offshore). It
-// replaces a guess, no country, or an earlier location's; a country the reader chose or a link
-// carried stays. reader: the reader gave the location now (an action); otherwise (the saved location
-// looked up again) the write is quiet.
-export function locationCountry(code: string | null, reader: boolean): void {
-  const now = store.country.peek();
-  if (now.source === 'chosen' || now.source === 'link') return;
-  const next: Country = code ? { code, source: 'location' } : now.source === 'location' ? { code: null, source: null } : now;
-  if (next.code === now.code && next.source === now.source) return;
-  if (reader) store.country.value = next;
-  else quietly(() => { store.country.value = next; });
-}
-
 // Change site: the consortium set aside, Start's draft seeded from it.
 export function changeSite(): void {
   batch(() => {
@@ -667,7 +634,8 @@ function adoptPending(): void {
 // "Suggest plants": now when the plants are read, else once they are (§5 Loading).
 export function requestSuggest(): void {
   adoptPending();
-  if (store.suggestMembers()) { store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
+  // A location being read: Suggest waits for it (the effect below runs it once lookups settle).
+  if (!lookups.peek() && store.suggestMembers()) { store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
   pendingSuggest.value = true;
 }
 
@@ -721,7 +689,7 @@ export function startMemory(): void {
 
   // The saved site location, looked up again once the plant list is open (so its tiles never compete
   // with the database); a link brings its own location or none.
-  const savedLocation = how.kind === 'link' ? null : readLocation(memory.read(LOCATION_STORE));
+  const savedLocation = how.kind === 'link' ? null : memory.read(LOCATION_STORE);
   if (savedLocation) void waitForSource().then(() => { if (!store.location.peek()) void settleLocation('saved', savedLocation); });
 
   if (how.kind === 'link') void restore(how.fragment, { from: 'link' });
@@ -743,7 +711,7 @@ export function startMemory(): void {
 
   // "Suggest plants" pressed early runs when the climate's plants (and every guest list) are read.
   effect(() => {
-    if (!pendingSuggest.value || !store.pool.value || store.guestsPending.value.length) return;
+    if (!pendingSuggest.value || !store.pool.value || store.guestsPending.value.length || lookups.value) return;
     queueMicrotask(() => { if (pendingSuggest.peek()) requestSuggest(); });
   });
 

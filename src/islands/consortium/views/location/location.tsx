@@ -13,7 +13,10 @@
 // the reader confirms it ([data-location-confirm]); borderline, polar, sea, coast and a failed read
 // each have their own line ([data-location-state]). store.location holds the site; a country from it
 // is "from your location" (memory.locationCountry). A link's location is labelled "from the shared
-// link, approximate" and never changes the link's climate, answers or country.
+// link, approximate" and never changes the link's climate, answers or country; it lives for the page
+// only: never saved over the reader's own location, never a country (review round 1, 1). A lookup's
+// writes are not reader actions (the click was): the country goes through memory's quiet write, so a
+// link pasted while tiles load still restores (review round 1, 4).
 import { batch, signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { siteClimate, type LocationSource, type SiteLocation, type SiteState } from '../../../../lib/consortium/index.ts';
@@ -25,7 +28,9 @@ import { currentPosition, queryGeolocationPermission } from '../../../../lib/loc
 import { loadMapLibreModule } from '../../../../lib/location/maplibre.ts';
 import * as store from '../../store.ts';
 import { T, pageLang } from '../../strings.ts';
-import { chooseClimate, keepLocation, locationCountry, type SavedLocation } from '../../memory.ts';
+import { chooseClimate } from '../../memory.ts';
+import { keepLocation, locationCountry, readLocation } from './keep.ts';
+import { looking } from './load.ts';
 import { zoneLabel } from '../Start.tsx';
 
 // ---- the result line ----
@@ -53,7 +58,10 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
 
 // A position the reader gave (device, search, map): looked up, then the site, its suggestion and its
 // country, in one batch. A failed read clears the site (the manual climate stays, with a line).
-async function locate(lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> {
+// Counted in load.ts `lookups` (Suggest waits for it), whichever way it started (the map centre too).
+const locate = (lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> =>
+  looking(() => locateNow(lat, lon, source, label, extra));
+async function locateNow(lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> {
   const id = ++seq;
   line.value = { state: 'loading', ...extra };
   const lookup = await read(lat, lon);
@@ -68,7 +76,7 @@ async function locate(lat: number, lon: number, source: LocationSource, label: s
   batch(() => {
     store.location.value = loc;
     store.proposedClimate.value = sc.suggested;
-    locationCountry(lookup.regions.isoA2, true);
+    locationCountry(lookup.regions.isoA2, false);
     line.value = { state: sc.state, ...extra };
   });
   keepLocation(loc);
@@ -77,8 +85,8 @@ async function locate(lat: number, lon: number, source: LocationSource, label: s
 // A location the page brings (memory.ts): a link's `o=` (already in store.location, its lookup to
 // come; the link's climate, answers and country stay) or the saved one (looked up again; it suggests
 // a climate only while none is chosen, and its country is written quietly).
-export async function settle(how: 'link' | 'saved', saved: SavedLocation | null): Promise<void> {
-  const start = how === 'link' ? store.location.peek() : saved;
+export async function settle(how: 'link' | 'saved', savedText: string | null): Promise<void> {
+  const start = how === 'link' ? store.location.peek() : readLocation(savedText);
   if (!start) return;
   const id = ++seq;
   line.value = { state: 'loading' };
@@ -89,7 +97,8 @@ export async function settle(how: 'link' | 'saved', saved: SavedLocation | null)
     batch(() => { if (how === 'link' && store.location.peek() === start) store.location.value = null; line.value = { state: lookup ? 'sea' : 'failed' }; });
     return;
   }
-  if (how === 'link' ? store.location.peek() !== start : store.location.peek() !== null) return;
+  // Something else set the site meanwhile (the reader, another link): this lookup's line goes.
+  if (how === 'link' ? store.location.peek() !== start : store.location.peek() !== null) { line.value = null; return; }
   const loc: SiteLocation = { lat: start.lat, lon: start.lon, source: start.source, ...(start.label ? { label: start.label } : {}), lookup };
   batch(() => {
     store.location.value = loc;
@@ -97,7 +106,6 @@ export async function settle(how: 'link' | 'saved', saved: SavedLocation | null)
     line.value = { state: sc.state };
   });
   if (how === 'saved') locationCountry(lookup.regions.isoA2, false);
-  else keepLocation(loc);
 }
 
 // ---- the three ways ----
@@ -129,11 +137,13 @@ export async function searchPlace(q: string): Promise<void> {
 
 export function openMap(): void { mapOpen.value = true; }
 
-// "Forget this location": the site, its suggestion, its country and the saved copy go.
+// "Forget this location": the site, its suggestion, its country and the saved copy go. A link's
+// location goes alone: the reader's own saved location is not the link's to remove.
 function forget(): void {
   seq++;
-  batch(() => { store.location.value = null; store.proposedClimate.value = null; line.value = null; locationCountry(null, true); });
-  keepLocation(null);
+  const own = store.location.peek()?.source !== 'link';
+  batch(() => { store.location.value = null; store.proposedClimate.value = null; line.value = null; if (own) locationCountry(null, true); });
+  if (own) keepLocation(null);
 }
 
 // ---- words ----
@@ -157,9 +167,11 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
   const l = line.value, loc = store.location.value, sc = loc?.lookup ? siteClimate(loc.lookup) : null;
   const site = l && sc && sc.today && loc && l.state === sc.state;
   const proposed = store.proposedClimate.value;
+  // A site line whose site has gone (a link without o= replaced a link's location): nothing to say.
+  const gone = !!l && !loc && (l.state === 'ready' || l.state === 'borderline' || l.state === 'polar' || l.state === 'coast');
   return (
     <>
-      {l && (
+      {l && !gone && (
         <div class="ct-location-result" data-location-state={l.state} role="status" aria-busy={l.state === 'loading' ? 'true' : undefined}>
           {site ? (
             <>
@@ -218,7 +230,9 @@ function MapDialog() {
     }).catch((err: unknown) => { console.error(`Consortium: the map did not load: ${(err as Error).message}`); if (!gone) setFailed(true); });
     return () => { gone = true; map.current?.remove(); map.current = null; };
   }, []);
-  const close = () => { mapOpen.value = false; };
+  // Closed through the dialog itself, as Escape does, so the browser returns focus to the map button
+  // (review round 1, 5); its close event then unmounts it.
+  const close = () => { const d = dialog.current; if (d?.open) d.close(); else mapOpen.value = false; };
   const use = async () => {
     const m = map.current;
     if (!m) return;
@@ -229,21 +243,22 @@ function MapDialog() {
   };
   const state = line.value?.state;
   return (
-    <dialog ref={dialog} class="ct-map-dialog" data-location-map aria-labelledby="ct-map-h" onClose={close}
-      style="width:min(94vw,760px);max-width:none;padding:1rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+    <dialog ref={dialog} class="ct-map-dialog" data-location-map aria-labelledby="ct-map-h" onClose={() => { mapOpen.value = false; }}>
       <h2 class="ct-step-title" id="ct-map-h">{T('location.mapTitle')}</h2>
-      <div style="position:relative;height:min(60vh,480px);border:1px solid var(--border)">
-        <div ref={box} style="position:absolute;inset:0" />
-        <svg aria-hidden="true" width="32" height="32" viewBox="0 0 32 32" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;color:var(--text)">
-          <path d="M16 2v11M16 19v11M2 16h11M19 16h11" stroke="var(--surface)" stroke-width="5" />
-          <path d="M16 2v11M16 19v11M2 16h11M19 16h11" stroke="currentColor" stroke-width="2" />
+      <div class="ct-map-frame">
+        <div ref={box} class="ct-map-canvas" />
+        {/* The site pin at the centre (design check §B): ink cross, ochre point. */}
+        <svg class="ct-map-pin" aria-hidden="true" width="40" height="40" viewBox="0 0 40 40">
+          <path class="ct-map-pin-halo" d="M20 3v12M20 25v12M3 20h12M25 20h12" />
+          <path class="ct-map-pin-cross" d="M20 3v12M20 25v12M3 20h12M25 20h12" />
+          <circle class="ct-map-pin-dot" cx="20" cy="20" r="4" />
         </svg>
       </div>
       {failed && <p class="ct-notice" role="alert">{T('location.mapFailed')}</p>}
       {(state === 'sea' || state === 'failed') && <p class="ct-notice" role="status">{T(`location.state.${state}`)}</p>}
       <p class="ct-location-row">
         <button type="button" class="button button-primary" data-location-use-centre disabled={state === 'loading'} onClick={() => void use()}>{T('location.useCentre')}</button>
-        {' '}<button type="button" class="button button-secondary" onClick={close}>{T('location.close')}</button>
+        {' '}<button type="button" class="button button-secondary" data-location-close onClick={close}>{T('location.close')}</button>
       </p>
     </dialog>
   );

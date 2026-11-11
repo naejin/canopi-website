@@ -11,4 +11,4 @@ if (typeof document !== 'undefined' && !document.querySelector('style[data-mapli
   document.head.appendChild(style);
 }
 
-export { Map, AttributionControl, setWorkerUrl } from 'maplibre-gl';
+export { Map, setWorkerUrl } from 'maplibre-gl';
