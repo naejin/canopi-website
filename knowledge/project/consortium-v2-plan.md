@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: Phases, order, exits and session brief for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate.
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:30:47Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:47:19Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -64,6 +64,9 @@ Each phase ships on its own. Repos: W website, D canopi-data, C canopi-climate.
 - **Hosting:** an installer verifies the canopi-climate release (manifest, checksums) and copies the tiles and lookup files under `public/data/`; the browser never fetches from GitHub at runtime; every file under 25 MiB and the file count measured against the Workers static-assets limit.
 - **Notices and credits:** third-party notices for canopi-climate (AGPL), MapLibre (BSD) and copied files; on-map attribution for OpenStreetMap/OpenFreeMap; credit rows on `/data-sources/` for Beck et al., CHELSA, SoilGrids, WCVP, GBIF, TreeGOER, EIVE, Niinemets & Valladares, EcoCrop and Natural Earth.
 - **Exit:** gates green; real-browser walk-throughs for a site in each of the seven climates; budgets met with the map and WASM loaded lazily.
+
+### P5.2 (W) — soil offer and native here (owner, 2026-11-11)
+- S5e as designed (decision rows "P5 owner answers" 3, "P5 ships without S5e"): SoilGrids soil offered as "Likely: … · Use it" (never prefilled; nothing within ±0.3 pH of a threshold or filled from more than 2 cells away), "native here" from WGSRPD level 3 in plant details. After the P5 push, before or with P5.1.
 
 ### P5.1 (W) — filters in Add (owner, 2026-11-11)
 - **Goal for users:** opened from "Add plants", Add can be narrowed like the plant list instead of being one long list plus a search box.
