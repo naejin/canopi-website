@@ -26,7 +26,7 @@
 // logic.js, memory.js and crops.js). The wiring (startMemory) reads and writes the store's signals.
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
 import type { ClimateZone, DecodedLink, Interaction, LinkNotice, PhaseOrd, PlantId, ShareState, Site, Taxon } from '../../lib/consortium/index.ts';
-import { climateZones, decodeLink, encodeLink, linkClimates, readPreset, LINK_VERSION, MAX_CROPS } from '../../lib/consortium/index.ts';
+import { decodeLink, encodeLink, linkClimates, readPreset, zoneOf, LINK_VERSION, MAX_CROPS } from '../../lib/consortium/index.ts';
 import type { Country } from './store.ts';
 import * as store from './store.ts';
 import { focusView } from './focus.ts';
@@ -97,8 +97,7 @@ export function oldRecord(text: string | null): boolean {
 
 // ---- climates at the island edge (the site's lowercase ids) ----
 
-export const zoneOf = (id: string | null | undefined): ClimateZone | null =>
-  (id ? climateZones.find((z) => z.toLowerCase() === id.trim().toLowerCase()) : undefined) ?? null;
+export { zoneOf };
 export const siteId = (z: ClimateZone): string => z.toLowerCase();
 
 // ---- how the page opens ----
@@ -584,15 +583,6 @@ export function startMemory(): void {
   effect(() => {
     if (!pendingSuggest.value || !store.pool.value || store.guestsPending.value.length) return;
     queueMicrotask(() => { if (pendingSuggest.peek()) requestSuggest(); });
-  });
-
-  // The first time the chosen climate's plants are at hand (the §8 timing script reads this mark
-  // until the matrix's own ct:matrix exists).
-  let marked = false;
-  effect(() => {
-    if (marked || !store.pool.value) return;
-    marked = true;
-    attempt(() => performance.mark('ct:pool'));
   });
 
   watchStore();

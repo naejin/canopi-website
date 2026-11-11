@@ -36,8 +36,8 @@ const hashOf = (url) => new URL(url).hash;
 const done = async (...pages) => { for (const p of pages) await p.browserContext().close().catch(() => {}); };
 const countryText = (page) => page.$eval('[data-ct="country"]', (el) => el.textContent);
 const fixtureTemperate = () => fixtureDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
-// A phase column's header begins with its plain words (Years 1–3) or its short term.
-const PHASE_WORDS = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'].flatMap((p) => [en[`consortium.phase.${p}.plain`], en[`consortium.phase.${p}.short`]].filter(Boolean));
+// A phase column's header begins with its plain words (Years 1–3).
+const PHASE_WORDS = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'].map((p) => en[`consortium.phase.${p}.plain`]);
 const UNSURE = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
 // A #v=4 link of the first five fixture Temperate plants at stage 3, with a chosen country.
 const stageLink = async () => {

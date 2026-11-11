@@ -7,6 +7,7 @@
 import { h, render } from 'preact';
 import { App } from './App.tsx';
 import { load, setSource, watchPools } from './store.ts';
+import { zoneOf } from '../../lib/consortium/index.ts';
 import { setStrings, type Strings } from './strings.ts';
 import type { DbRef } from './data/bytes.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
@@ -22,7 +23,6 @@ export interface PageData {
   guide: { url: string; lang: string } | null;
 }
 
-const zoneOf = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 
 // The loader and the sqlite-wasm glue are a chunk of their own (design check §8 leaves it out of the
 // island's 60 KB budget); its import starts at once, beside the first render, and a failed import
@@ -39,7 +39,7 @@ async function open(data: PageData): Promise<void> {
   try {
     const mod = await getLoader();
     LoadError = mod.LoadError;
-    const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map(zoneOf) });
+    const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map((c) => zoneOf(c) ?? c) });
     setSource(mod.createSqliteSource(opened.db, { images: data.images }), () => opened.db.close());
     load.value = { status: 'ready', error: null };
   } catch (err) {

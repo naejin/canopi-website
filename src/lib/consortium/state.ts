@@ -61,7 +61,9 @@ function b64ToHex(text: string, digits: number): string | null {
   return out;
 }
 
-const zoneOf = (code: string): ClimateZone | null => climateZones.find((z) => z.toLowerCase() === code.trim().toLowerCase()) ?? null;
+// A climate id as the site and links write it ('temperate', any case, spaces around) → its zone.
+export const zoneOf = (code: string | null | undefined): ClimateZone | null =>
+  (code ? climateZones.find((z) => z.toLowerCase() === code.trim().toLowerCase()) : undefined) ?? null;
 const codeZone = new Map(climateZones.map((z) => [GUEST_CODES[z], z] as const));
 
 // The token function for a set of known ids: an id's token is short unless another known id shares
