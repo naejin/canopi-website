@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T12:34:46Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T13:07:48Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:32Z }
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
@@ -10,13 +10,13 @@ sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:c191b6544761f50e
-    last_modified: 2026-11-11T08:21:13Z
+    digest: sha256:525a5e8c2b7fbbcc
+    last_modified: 2026-11-11T13:02:23Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:02f4374b76d404ea
-    last_modified: 2026-11-11T12:33:37Z
+    digest: sha256:c55575d9ed99c030
+    last_modified: 2026-11-11T13:00:26Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
@@ -45,8 +45,8 @@ sources:
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:c28b3735442b8b52
-    last_modified: 2026-11-11T12:33:37Z
+    digest: sha256:215758429bb194e8
+    last_modified: 2026-11-11T12:57:36Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -55,33 +55,33 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:362c1813b3f848f8
-    last_modified: 2026-11-11T09:38:46Z
+    digest: sha256:3d3787bf300478a1
+    last_modified: 2026-11-11T13:04:14Z
   - id: consortium-guides-ts
     resource: ../../src/data/consortium-guides.ts
     title: src/data/consortium-guides.ts
-    digest: sha256:f7e2fc8ce6d55b8c
-    last_modified: 2026-10-28T09:57:25Z
+    digest: sha256:3491730a2a5922b5
+    last_modified: 2026-11-11T13:04:14Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:8962d6e3701f1d22
-    last_modified: 2026-11-11T09:55:29Z
+    digest: sha256:51e9b8f2a8ff1ca3
+    last_modified: 2026-11-11T13:04:14Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
-    digest: sha256:e8197504ca8ce55c
-    last_modified: 2026-11-11T04:29:00Z
+    digest: sha256:44ef2da8460c2f4c
+    last_modified: 2026-11-11T12:57:36Z
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:3dff3f4db2eb275e
-    last_modified: 2026-11-11T11:36:48Z
+    digest: sha256:7b90c0d1818cadb8
+    last_modified: 2026-11-11T12:58:42Z
   - id: consortium-commit0-browser-test-mjs
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:71df9f46f798811b
-    last_modified: 2026-11-11T12:33:37Z
+    digest: sha256:3c2e5d125a605f2b
+    last_modified: 2026-11-11T13:05:39Z
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
@@ -115,13 +115,13 @@ sources:
   - id: printsheet-tsx
     resource: ../../src/islands/consortium/views/PrintSheet.tsx
     title: src/islands/consortium/views/PrintSheet.tsx
-    digest: sha256:0140d480dda962eb
-    last_modified: 2026-11-11T08:23:20Z
+    digest: sha256:9afd67e97cc092d3
+    last_modified: 2026-11-11T13:00:34Z
   - id: memory-ts
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
-    digest: sha256:acea7f33808f16b3
-    last_modified: 2026-11-11T11:36:48Z
+    digest: sha256:03dba7323bf7fdda
+    last_modified: 2026-11-11T13:00:26Z
   - id: shell-css
     resource: ../../src/styles/consortium/shell.css
     title: src/styles/consortium/shell.css
@@ -135,18 +135,18 @@ sources:
   - id: consortium-s4-browser-test-mjs
     resource: ../../scripts/browser/consortium-s4.browser.test.mjs
     title: scripts/browser/consortium-s4.browser.test.mjs
-    digest: sha256:a7472bc905cc6977
-    last_modified: 2026-11-11T11:56:04Z
+    digest: sha256:fe81c5794934b9c0
+    last_modified: 2026-11-11T13:05:39Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
-    digest: sha256:565c204b90ae47ef
-    last_modified: 2026-11-11T09:00:47Z
+    digest: sha256:2e7462745407e0de
+    last_modified: 2026-11-11T12:57:36Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:933a6e4117c2ee21
-    last_modified: 2026-11-11T09:00:47Z
+    digest: sha256:34ff00e03ea59028
+    last_modified: 2026-11-11T12:58:42Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
@@ -170,8 +170,8 @@ sources:
   - id: consortium-seams-browser-test-mjs
     resource: ../../scripts/browser/consortium-seams.browser.test.mjs
     title: scripts/browser/consortium-seams.browser.test.mjs
-    digest: sha256:3ace4dcaaef5fdfd
-    last_modified: 2026-11-11T12:33:37Z
+    digest: sha256:d6d3a3e996ef0109
+    last_modified: 2026-11-11T12:58:42Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
@@ -203,7 +203,7 @@ The v1 tool (app.js and its tests) was deleted in commit 0. Its full description
 
 | File | Role |
 |---|---|
-| [ConsortiumPage.astro](../../src/components/consortium/ConsortiumPage.astro) | The static shell (S4 owns it after commit 0). It renders: title and Beta; the lede (`home.consortium.lede`); `betaNote` counting the index's climates; the feedback and data-sources links; the `noscript` callout with the food-forest guide link; an inline head script setting `#ct-head[data-opens]` (`link` for `#v=4`, `preset` for `?plant=&climate=`, else `start`); `#ct-root` with the loading line (`consortium.loadingTool`, `aria-busy`); and the release line. A `<link rel="preload" as="fetch" crossorigin>` for the database goes into Base's `head` slot (A2). `#ct-data` carries `{ lang, strings (every consortium.* key without prefix, the `consortium.block.*` markers left out, plus `correction.*` and the `climate.<zone>` names under their own keys), guideTitles (title by slug, in the guide's language, for the guides `consortium-guides.ts` links), releaseId, db { url, sha256, bytes, rawSha256, rawBytes }, climates (lowercase), images, guide, start }`, all from `src/data/consortium-index.json` except `start` (S4): `{ zones: [{ id, label, places }] for all 7 climates of src/data/climates, contact, site (the absolute tool URL for the print footer) }`. It imports `src/styles/consortium/print.css`. The page script runs `initChrome()` first, then `import()`s main.ts |
+| [ConsortiumPage.astro](../../src/components/consortium/ConsortiumPage.astro) | The static shell (S4 owns it after commit 0). It renders: title and Beta; the lede (`home.consortium.lede`); `betaNote` counting the index's climates; the feedback and data-sources links; the `noscript` callout with the food-forest guide link; an inline head script setting `#ct-head[data-opens]` (`link` for `#v=4`, `preset` for `?plant=&climate=`, else `start`); `#ct-root` with the loading line (`consortium.loadingTool`, `aria-busy`); and the release line. A `<link rel="preload" as="fetch" crossorigin>` for the database goes into Base's `head` slot (A2). `#ct-data` carries `{ lang, strings (every consortium.* key without prefix, the `consortium.block.*` markers left out, plus `correction.*` and the `climate.<zone>` names under their own keys), guideTitles (title by slug, in the guide's language, for the guides `consortium-guides.ts` links), releaseId, db { url, sha256, bytes, rawSha256, rawBytes }, climates (lowercase), images, guide, start }`, all from `src/data/consortium-index.json` except `start` (S4): `{ zones: [{ id, label, places }] for all 7 climates of src/data/climates, contact, site (the absolute tool URL for the print footer) }`. It imports `src/styles/consortium/print.css`. The page script runs `initChrome()` first, then `import()`s main.ts; if that chunk fails to load (offline, a deploy replaced it), the loading line gives way to a `role=alert` box (`data-load-error="island"`) with `load.toolFailed` and Reload, built from `#ct-data` strings |
 | [main.ts](../../src/islands/consortium/main.ts) | Reads `#ct-data`, sets the strings, renders App into `#ct-root` and opens the database at once. `data/load.ts` is a dynamic import (its own chunk with the sqlite-wasm glue, outside the §8 60 KB budget), retried after a failed import. It maps the index's climates through the core's `zoneOf`. S1 owns it from the follow-up. A loader chunk that fails to import is `stale` (Reload) while `navigator.onLine`, else `fetch` (review B2) |
 | [store.ts](../../src/islands/consortium/store.ts) | The frozen signals of §6. State: `climate`, `country{code,source}`, `site` (`DEFAULT_SITE`: all four `unsure`), `crops`, `members`, `kept`, `removed`, `guests`, `view`, `stage`, `sheet{kind,id}`, `load{status,error}`. Data: `source`, `pools`. Computed: `pool`, `matrix`, `flags`, `memberTaxa`. The one opener: every sheet opens through `openSheet(kind, id, {cell, job, anyway})`, which also sets `sheetCell` (Add filters by the cell's span, the job, or shows the cell anyway); `closeSheet`. The edits `removeMember`, `toggleKeep`, `swapMember`, `addMembers` (which leaves Start for the matrix) show the toast (`showToast`, with Undo); the undo snapshot holds the view, so Undo of a list pasted on Start goes back to Start (F2). `FOR_NOTHING` is the empty `sheetCell` |
 | [strings.ts](../../src/islands/consortium/strings.ts) | `setStrings`, `T(key, vars)`, `P(key, n, vars)` with v1's plural form `one: # x \| other: # xs`; the page uses `P` at build time for the beta note |
@@ -250,7 +250,7 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
 # Gotchas
 
 - P7: the JSX scope alone leaves every other page byte-identical (checked after the pins commit). Deleting app.js drops one export from the shared `chrome` chunk, so that chunk's hash, and the `<script src>` of every page, change. The page contents are otherwise identical.
-- `#ct-data` carries every `consortium.*` string (738 keys per locale after the P2 hand-offs and their review pruned 422 unused ones; `scripts/consortium-keys.test.mjs` keeps it so, counting a key used only when it is in a T( or P( call, a template, ConsortiumPage.astro or its INDIRECT list). S4's keys sit after `consortium.block.s4` with names that differ from the v1 keys (`share.done`, `crops.question`, `print.button`…): a duplicate JSON key would keep the v1 position and break the block-order test in `homepage.test.mjs`.
+- `#ct-data` carries every `consortium.*` string (461 keys per locale after the P2 hand-offs and their review pruned 422 unused ones; `scripts/consortium-keys.test.mjs` keeps it so, counting a key used only when it is in a T( or P( call, a template, ConsortiumPage.astro or its INDIRECT list). S4's keys sit after `consortium.block.s4` with names that differ from the v1 keys (`share.done`, `crops.question`, `print.button`…): a duplicate JSON key would keep the v1 position and break the block-order test in `homepage.test.mjs`.
 - With storage blocked (reading `localStorage` throws), the sqlite-wasm bootstrap's kvvfs setup threw `SecurityError`; `data/load.ts` switches kvvfs and OPFS off through `sqlite3ApiConfig` before init (H1).
 - Each browser-test page is a context with its own copy of the database: the s4 file closes each page's context once used (`done()`); without it, BT-7's many pages were OOM-killed at 3 GB.
 - `helpers.mjs` `axNodes` reads the full accessibility tree (`interestingOnly: false`, skipping none, unnamed generic, InlineTextBox and LineBreak; Chrome's `image` becomes `img`), so tables and cells are visible; BT-8 still reads the shown tables' captions from the DOM.

@@ -4,7 +4,7 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:13Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T13:07:35Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T04:06:19Z }
@@ -12,8 +12,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:362c1813b3f848f8
-    last_modified: 2026-11-11T09:38:46Z
+    digest: sha256:3d3787bf300478a1
+    last_modified: 2026-11-11T13:04:14Z
   - id: readme
     resource: ../../README.md
     title: README.md
@@ -22,13 +22,13 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:8962d6e3701f1d22
-    last_modified: 2026-11-11T09:55:29Z
+    digest: sha256:51e9b8f2a8ff1ca3
+    last_modified: 2026-11-11T13:04:14Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
-    digest: sha256:1a8a854b16eadbd9
-    last_modified: 2026-11-11T09:00:47Z
+    digest: sha256:1936df82d865a497
+    last_modified: 2026-11-11T13:01:31Z
 enforced_by: [scripts/package.test.mjs]
 ---
 
@@ -38,19 +38,19 @@ Setting up a working copy, building, and running checks before pushing to `maste
 
 # Steps
 
-Node >= 22.12.0.
+Node >= 22.13.0 (`node:sqlite` without a flag).
 
 | Purpose | Command |
 |---|---|
 | install | `npm install` |
 | dev server (port 4321) | `npm run dev` |
-| unit/regression tests | `npm test` (`node --experimental-strip-types --test scripts/*.test.mjs`, so it runs on Node 22.12) |
+| unit/regression tests | `npm test` (`node --experimental-strip-types --test scripts/*.test.mjs`, so it runs on Node 22.13) |
 | type check | `npm run check` (`wrangler types` writes the gitignored `worker-configuration.d.ts`, then `astro check` type-checks `.ts`, `.js` and `.astro` files; MDX is not checked) |
 | marketing build | `npm run build` |
 | built-site check | `node scripts/check-built-site.mjs` |
 | bibliography links (network, by hand) | `npm run check:bibliography` |
-| browser tests (after a build; never in `npm test`) | `timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 npm run test:browser` (it runs `npm run build:browser-test` first: `CANOPI_BROWSER_TEST=1 astro build`, which compiles in the `window.__ctTest` hook through the `__CT_TEST_HOOK__` constant defined from that flag only, so rebuild with `npm run build` before deploying or running `check-built-site`): wrangler dev on 4420 (`CANOPI_BROWSER_PORT`, 4420–4498), headless system Chrome (`CANOPI_CHROME`, default `/usr/bin/google-chrome`) through puppeteer-core; one file per owner (every file must pass with no todo or skip: `browser-tests.test.mjs` fails on either; parallel runs keep ports 2 apart, since each server takes the next port for its inspector); if a run is killed, the server's process group is killed with it, and a stray server on the port is never taken for this run's; see [Consortium page](/modules/consortium-page.md) |
-| consortium timing (on demand, after a build; not a test) | `timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 node scripts/browser/consortium-timing.mjs` (same `CANOPI_BROWSER_PORT`): §8 cold and warm load of `/consortium/?climate=Temperate` under 4× CPU, 9 Mbps and 60 ms RTT, median of 5, to `ct:matrix` |
+| browser tests (after a build; never in `npm test`) | `timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 npm run test:browser` (it runs `npm run build:browser-test` first: `CANOPI_BROWSER_TEST=1 astro build`, which compiles in the `window.__ctTest` hook through the `__CT_TEST_HOOK__` constant defined from that flag only, into its own `dist-test/` (gitignored), so `dist/` only ever holds the production build): wrangler dev on 4420 (`CANOPI_BROWSER_PORT`, 4420–4498), headless system Chrome (`CANOPI_CHROME`, default `/usr/bin/google-chrome`) through puppeteer-core; one file per owner (every file must pass with no todo or skip: `browser-tests.test.mjs` fails on either; parallel runs keep ports 2 apart, since each server takes the next port for its inspector); if a run is killed, the server's process group is killed with it, and a stray server on the port is never taken for this run's; see [Consortium page](/modules/consortium-page.md) |
+| consortium timing (on demand, after a build; not a test) | `timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 node scripts/browser/consortium-timing.mjs` (same `CANOPI_BROWSER_PORT`): on the production `dist/` (run `npm run build` first): §8 cold and warm load of a `#v=4` link of 9 Temperate plants under 4× CPU, 9 Mbps and 60 ms RTT, median of 5, to `ct:matrix` |
 | consortium data (network, by hand; output committed) | `npm run install:consortium -- <canopi-data export dir>`, given the original directory under `<canopi-data>/data/exports/consortium/`, not a copy: the install runs `canopi release verify` on it from canopi-data (`CANOPI_DATA_DIR`, else the sibling `../canopi-data`; a git worktree must set it; needs `uv`) and refuses on any exit but 0, showing the reason, older exports with no receipt included (see [Consortium core](/modules/consortium-core.md); tests use `--fixture --no-images --out <tmp>`, which skip that check, need no canopi-data, and are refused for `public/data/consortium/`) |
 | with legacy `/app/` | `CANOPI_WEB_EDITION_ARCHIVE=/path/to/canopi-web-edition-*.tar.gz npm run build:with-web` |
 | preview / manual deploy | `npm run preview` (`wrangler dev`), `npm run deploy` (needs Cloudflare auth) |

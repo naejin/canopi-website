@@ -4,7 +4,7 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures), the rules S1 ported, and the format 4 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:41:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T13:07:34Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:32Z }
 sources:
@@ -86,8 +86,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:3635956601039f11
-    last_modified: 2026-11-11T09:00:47Z
+    digest: sha256:47a850b28f749c9f
+    last_modified: 2026-11-11T13:00:26Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -140,7 +140,7 @@ It refuses on the first failure, with nothing written:
   - its name is `databaseName(release, raw_sha256, climate?)`, i.e. `consortium-v1.<release>.<12 hex of the raw db>.sqlite.gz`;
   - sha256 and bytes match the manifest, and the gzip magic is present;
   - at most `MAX_GZIP_BYTES` (1,000,000) gzipped and at most `MAX_FILE_BYTES` (25 MiB) raw; raw sha256 and bytes match.
-- **The database read with `node:sqlite`** (`readDatabase`; dynamic import, since Node 22.12 needs a flag):
+- **The database read with `node:sqlite`** (`readDatabase`; dynamic import, unflagged from Node 22.13, the engines floor):
   - `application_id`, `user_version`, `integrity_check` and `foreign_key_check`;
   - every table and column of `consortium-schema.mjs`, and no table outside it;
   - meta (schema, format, release, `built_at` = `generated_at`, climates), and each table's count against meta and the manifest;

@@ -5,7 +5,7 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:13Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T13:07:34Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T12:34:48Z }
@@ -18,18 +18,18 @@ sources:
   - id: browser-test
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:71df9f46f798811b
-    last_modified: 2026-11-11T12:33:37Z
+    digest: sha256:3c2e5d125a605f2b
+    last_modified: 2026-11-11T13:05:39Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:1e7df19b64a40c62
-    last_modified: 2026-11-11T12:33:37Z
+    digest: sha256:3b860588bb40dbf4
+    last_modified: 2026-11-11T13:07:00Z
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:362c1813b3f848f8
-    last_modified: 2026-11-11T09:38:46Z
+    digest: sha256:3d3787bf300478a1
+    last_modified: 2026-11-11T13:04:14Z
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs
@@ -53,7 +53,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 | `*.test.mjs` | correction (the `/api/correction` handler: limits, codes, the mail and its JSON block), source-credits (the parser and the page's licence words), try-references (the shipped list against its meta, the meta against the installed index entry, a mismatch failing, each parser refusal, which urls link, the citation verbatim, the installed database's `sources` row `try`), consortium-boundary (the core imports only its own files and no browser global; the island reaches it through index, types or source), consortium-load (the island's byte checks: whole body, empty, gzip magic, digests), consortium-canopi-file (the `.canopi` v9 file against the vendored app schema), consortium-memory (S4's arrival order, country, share state and URL, country guess, crop examples on the real data), consortium-css (consortium styles: breakpoints 639/960 only, a green only in strata tokens or selectors naming a stratum), browser-tests (one browser test file per stream, names and todo owners, BT-1…9 present), canopi-design-format (the vendored app format and its schema reader), contact, featured-designs privacy, homepage/i18n (header keys, width queries only 639/640/959/960 plus the 1200px hero-image query (the named `plants` container query of the plant list is the one exemption), no header item hidden by width except the inline/Menu swap, the menus chrome.js closes, the consortium tool's header word and full name per locale, the home note against the index's climates, the header's global styles, the consortium keys' places), installer, guides (content rules, related lists, glossary, crop table, safety wording and mouth words only inside `<Safety>` boxes, checklist and glossary plugins, shared `wrap()`, mix bar, breakpoints, colours and fonts), guides-consortium (the preset links of `try-consortium.ts` on the installed index and their build failures; every `<TryConsortium>` preset: plant in the beta cell of its climate, climate from its `<ForClimate>` block and last in it, same presets in en and fr; a guide name for every cell), built-links, install-consortium (format 4 on the v2 fixture: each refusal with nothing written, the index, the src/data/ files of a real install only, `--out` and staging, `canopi release verify` through a stub and a fake `uv`, `--fixture` kept off the site, photos through a stub fetch named by plant and digest, `verifyInstall` on the committed install), package (declared static and dynamic imports, Node floor, the type check's tsconfig excludes and `check` script) | `npm test` |
 | [built-links.mjs](../../scripts/built-links.mjs) | `builtTarget(root, pathname)`: resolves an internal link to a built file; a path without trailing slash or extension is an error. `subdirectories(dir)`: folder names only (the guide slugs; a stray `.DS_Store` is not a guide) | `check-built-site.mjs` |
 | [fixtures/consortium-v2/make-fixture.mjs](../../scripts/fixtures/consortium-v2/make-fixture.mjs) | writes the invented format 4 consortium fixture (38 plants in Tropical, Mediterranean and Temperate, gzipped SQLite built with `node:sqlite` from canopi-data's DDL, with its manifest, sums, TRY list and credits; deterministic) and the broken variants the installer test needs; never shipped | `node scripts/fixtures/consortium-v2/make-fixture.mjs [dir]`, see its README |
-| [browser/](../../scripts/browser) | `serve.mjs` (wrangler dev on 4420–4498, stopped by pid), `harness.mjs` (puppeteer-core with the system Chrome, 390/1280 px, light/dark), `helpers.mjs`, and one test file per owner: `consortium-commit0.browser.test.mjs` (probes P1–P3, P6, the BT-9 load screens; no todo) and `consortium-s1…s4.browser.test.mjs` (each stream's §7 tests, todo until built); `consortium-timing.mjs` (§8 cold/warm timing, on demand only, not a test); see [Consortium page](/modules/consortium-page.md) | `npm run test:browser` after a build, capped; never in `npm test` |
+| [browser/](../../scripts/browser) | `serve.mjs` (wrangler dev on 4420–4498 over `dist-test/` by default, the production `dist/` on request, stopped by pid), `harness.mjs` (puppeteer-core with the system Chrome, 390/1280 px, light/dark), `helpers.mjs`, and one test file per owner: `consortium-commit0.browser.test.mjs` (probes P1–P3, P6, the BT-9 load screens), `consortium-s1…s4.browser.test.mjs` (each stream's §7 tests) and `consortium-seams.browser.test.mjs` (tests across streams); `consortium-timing.mjs` (§8 cold/warm timing, on demand only, not a test); see [Consortium page](/modules/consortium-page.md) | `npm run test:browser` after a build, capped; never in `npm test` |
 | [export-featured-designs.py](../../scripts/export-featured-designs.py) | `.canopi` files to privacy-safe `public/data/featured-designs.json` | by hand |
 | [compress-heroes.py](../../scripts/compress-heroes.py), [make-og-images.py](../../scripts/make-og-images.py) | hero JPGs (2400 and 1200 px); 1200x630 social images (painting with the logo and wordmark on a parchment label inside the centre 630 px square, each ≤ 250 KB for WhatsApp) and `public/apple-touch-icon.png`; bump `?v=` on `ogImage` in `Base.astro` when they change, since messaging apps cache by image URL | by hand (Pillow + Inkscape) |
 
@@ -65,7 +65,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 
 # Dependencies
 
-- [src/lib](/modules/src-lib.md) and [src/data](/modules/src-data.md) (tests and checks read them); Node built-ins plus `js-yaml` (declared devDependency; guide frontmatter in `guides.test.mjs`); `parse5`, `domhandler`, `css-select` and `dom-serializer` (declared devDependencies, once the small DOM of the v1 consortium harness, deleted at P2 commit 0); `puppeteer-core` (devDependency, pinned, the browser tests; uses the system Chrome); run every test under a memory cap; `npm run check` uses the devDependencies `typescript` and `@astrojs/check`, after `wrangler types`; Python scripts need Pillow and SQLite. Tests import `.ts` data files directly, so `npm test` passes `--experimental-strip-types` (Node 22.12, the engines floor, does not strip types by default).
+- [src/lib](/modules/src-lib.md) and [src/data](/modules/src-data.md) (tests and checks read them); Node built-ins plus `js-yaml` (declared devDependency; guide frontmatter in `guides.test.mjs`); `parse5`, `domhandler`, `css-select` and `dom-serializer` (declared devDependencies, once the small DOM of the v1 consortium harness, deleted at P2 commit 0); `puppeteer-core` (devDependency, pinned, the browser tests; uses the system Chrome); run every test under a memory cap; `npm run check` uses the devDependencies `typescript` and `@astrojs/check`, after `wrangler types`; Python scripts need Pillow and SQLite. Tests import `.ts` data files directly, so `npm test` passes `--experimental-strip-types` (Node 22.13, the engines floor, does not strip types by default).
 
 # Gotchas
 

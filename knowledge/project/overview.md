@@ -4,7 +4,7 @@ title: canopi-website
 description: Astro marketing site for projectcanopi.com, the home of the Canopi agroecological design app, deployed by Cloudflare Workers Builds on push to master.
 tags: [project]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:34Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T13:07:34Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:35Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:32Z }
@@ -17,13 +17,13 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:362c1813b3f848f8
-    last_modified: 2026-11-11T09:38:46Z
+    digest: sha256:3d3787bf300478a1
+    last_modified: 2026-11-11T13:04:14Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:516c741975e8cbbd
-    last_modified: 2026-11-11T05:54:17Z
+    digest: sha256:b9ff3caf8f9f81ec
+    last_modified: 2026-11-11T13:05:26Z
   - id: context-md
     resource: ../../CONTEXT.md
     title: CONTEXT.md
@@ -45,7 +45,7 @@ The public website of Canopi, an open-source agroecological design app run by a 
 - Astro 6 static output with `@astrojs/cloudflare`, `@astrojs/sitemap` and `@astrojs/mdx` 5 (Field Guides); plain CSS; vanilla JS modules.
 - HelloAsso donations.
 - One Cloudflare Worker `projectcanopi`: serves `dist/client/` and the on-demand `POST /api/contact` and `POST /api/correction` (one send_email binding; nothing stored).
-- Node >= 22.12 for tooling and `node --test`; Python (Pillow) for asset generators.
+- Node >= 22.13 (`node:sqlite` without a flag) for tooling and `node --test`; Python (Pillow) for asset generators.
 - 11 locales (en at `/`, others at `/{lang}/`); the Field Guides are en and fr only (`/guides/`, `/fr/guides/`); field-notebook design with the app's palette and fonts.
 
 # Layout
