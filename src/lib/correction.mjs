@@ -2,9 +2,8 @@
 // imports so node --test can run it (scripts/correction.test.mjs). src/pages/api/correction.ts passes
 // the request and the Worker's env, as contact does.
 //
-// The consortium tool's details dialog (stream S3's views/Correction.tsx; v1's form was
-// src/scripts/consortium/correction.js, kept until S3 ports it) posts one reader's
-// suggested change to one plant value as JSON. It goes out through the same send_email binding EMAIL
+// The consortium tool's plant dialog (src/islands/consortium/views/Correction.tsx, opened from
+// views/Details.tsx) posts one reader's suggested change to one plant value as JSON. It goes out through the same send_email binding EMAIL
 // to MAIL_TO as the contact form, and nothing is stored here. The mail body holds the report twice:
 // lines a person reads, then one JSON block between REPORT_START and REPORT_END that canopi-data
 // imports as a candidate (docs/data-improvement-plan.md, Step 8). The block never holds personal
