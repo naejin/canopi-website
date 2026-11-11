@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: Phases, order, exits and session brief for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate.
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T18:53:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:15:29Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -64,6 +64,12 @@ Each phase ships on its own. Repos: W website, D canopi-data, C canopi-climate.
 - **Hosting:** an installer verifies the canopi-climate release (manifest, checksums) and copies the tiles and lookup files under `public/data/`; the browser never fetches from GitHub at runtime; every file under 25 MiB and the file count measured against the Workers static-assets limit.
 - **Notices and credits:** third-party notices for canopi-climate (AGPL), MapLibre (BSD) and copied files; on-map attribution for OpenStreetMap/OpenFreeMap; credit rows on `/data-sources/` for Beck et al., CHELSA, SoilGrids, WCVP, GBIF, TreeGOER, EIVE, Niinemets & Valladares, EcoCrop and Natural Earth.
 - **Exit:** gates green; real-browser walk-throughs for a site in each of the seven climates; budgets met with the map and WASM loaded lazily.
+
+### P5.1 (W) — filters in Add (owner, 2026-11-11)
+- **Goal for users:** opened from "Add plants", Add can be narrowed like the plant list instead of being one long list plus a search box.
+- **Built:** the plant list's Layer, Stage and Job filters reused in Add (one filter component); a range filter "within range" (default with a location) / "near the edge" / "show all" over P5's one range rule; "native here" once S5e has merged; uses or size only if the export carries them cleanly (design-check row). Context openings ("+ Add" on a cell, a job, "Show them anyway") preset the filters instead of a separate path.
+- **How:** design check while the P5 streams finish (read-only); build after the P5 push (Add is edited by S5c and S5e); bug and conformance review, fix rounds until clean; coherent with P7a's site adjustments (the range filter reads the adjusted site).
+- **Order:** after the P5 push, before P7a.
 
 ### P7 (W, then C + D) — site adjustments, then dry season (owner, 2026-11-11)
 - **Goal for users:** a frost pocket, a hot paved yard or a watered garden changes the suggestions honestly; later, a long dry season is checked like winter cold.
