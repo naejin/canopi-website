@@ -350,6 +350,95 @@ test('R2-4: crops ticked under another climate card are not carried back by "Bac
   });
 });
 
+const param = (fragment, k) => (fragment ? new URLSearchParams(fragment.slice(1)).get(k) : undefined);
+const changeSiteTo = async (page, card) => {
+  await page.locator(aria('button', 'Change site')).click();
+  await page.locator(aria('radio', card)).click();
+  assert.equal(await loadState(page), 'ready');
+};
+
+test('T1 (R3-2): crops of the consortium are not the draft\'s under another card: its chips are free and Suggest saves none of them', async (t) => {
+  await eachVariant(t, async (v) => {
+    const page = await h.open('/consortium/', { ...v, data: 'fixture' });
+    await page.locator(aria('radio', 'Temperate')).click();
+    assert.equal(await loadState(page), 'ready');
+    for (let i = 0; i < 3; i++) await (await page.waitForSelector('.ct-chips .ct-chip[aria-pressed="false"]:not([disabled])')).click();
+    await page.locator(aria('button', 'Suggest plants')).click();
+    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000));
+    assert.ok(param(await savedFragment(page), 'n'), 'three Temperate crops saved');
+    await changeSiteTo(page, 'Tropical');
+    await page.waitForSelector('.ct-chips .ct-chip');
+    assert.deepEqual(await page.$$eval('.ct-chips .ct-chip', (els) => els.filter((e) => e.disabled || e.getAttribute('aria-pressed') === 'true').length), 0, 'no chip pressed or "full"');
+    await page.locator(aria('button', 'Suggest plants')).click();
+    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000));
+    const f = await savedFragment(page);
+    assert.equal(param(f, 'c'), 'tropical');
+    assert.deepEqual({ crops: param(f, 'n'), keptOnly: param(f, 'p') }, { crops: null, keptOnly: null }, 'no Temperate crop or pin in the Tropical save');
+    await done(page);
+  });
+});
+
+test('T2 (R3-3): Undo of a paste under another card, then Back, leaves the consortium and its save exactly as before', async (t) => {
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    const before = await linkOf(page);
+    await changeSiteTo(page, 'Tropical');
+    const chip = await page.waitForSelector('.ct-chips .ct-chip[aria-pressed="false"]');
+    await chip.click();
+    const name = await page.$eval('.ct-chips .ct-chip:last-of-type .ct-sci', (el) => el.textContent.trim());
+    await page.locator(aria('button', 'Paste a list')).click();
+    await page.locator('#ct-paste-text').fill(name);
+    await page.locator(aria('button', 'Add 1 plant')).click();
+    assert.ok(await has(page, aria('button', 'Share'), 5000));
+    await page.locator(aria('button', 'Undo')).click();
+    assert.ok(await has(page, aria('button', 'Back to your consortium'), 4000));
+    assert.equal(await savedFragment(page), before, 'Undo: the save is the consortium as before');
+    await page.locator(aria('button', 'Back to your consortium')).click();
+    assert.ok(await has(page, aria('button', 'Share'), 4000));
+    assert.equal(await linkOf(page), before, 'Back: the consortium as before, no Tropical crop');
+    assert.equal(await savedFragment(page), before);
+    await done(page);
+  });
+});
+
+test('T3 (R3-1): a consortium the reader emptied stays empty, saved, through Change site', async (t) => {
+  await eachVariant(t, async (v) => {
+    const page = await hookedPage(v);
+    await page.locator(aria('radio', 'Temperate')).click();
+    assert.equal(await loadState(page), 'ready');
+    await page.locator(aria('button', 'Suggest plants')).click();
+    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000));
+    await page.reload();
+    assert.equal(await loadState(page), 'ready');
+    assert.ok(await has(page, aria('button', 'Share'), 8000), 'the save reopens');
+    await page.waitForFunction(() => typeof window.__ctTest === 'object');
+    await page.evaluate(() => { const s = window.__ctTest.store; for (const id of s.members.peek()) s.removeMember(id); });
+    const emptied = await savedFragment(page);
+    assert.equal(param(emptied, 'a'), '', 'every member removed, saved so');
+    await page.locator(aria('button', 'Change site')).click();
+    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.equal(await savedFragment(page), emptied, 'Change site does not bring the members back');
+    await done(page);
+  });
+});
+
+test('T4 (R3-1): Start empty under another card is the consortium: Change site keeps it saved', async (t) => {
+  await eachVariant(t, async (v) => {
+    const page = await suggested(v);
+    await changeSiteTo(page, 'Tropical');
+    await page.locator(aria('button', 'Start empty and search')).click();
+    await page.waitForSelector('dialog[open]', { timeout: 8000 });
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('dialog[open]', { hidden: true, timeout: 4000 });
+    const empty = await savedFragment(page);
+    assert.deepEqual({ c: param(empty, 'c'), a: param(empty, 'a') }, { c: 'tropical', a: '' });
+    await page.locator(aria('button', 'Change site')).click();
+    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.equal(await savedFragment(page), empty, 'not the Temperate consortium back');
+    await done(page);
+  });
+});
+
 test('F3: Undo of a plant added in the Paste sheet keeps the focus in the sheet', async (t) => {
   await eachVariant(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });

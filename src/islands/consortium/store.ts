@@ -37,9 +37,13 @@ export const guests = signal<Partial<Record<PlantId, ClimateZone>>>({}); // adde
 export const view = signal<View>('start');
 export const stage = signal<PhaseOrd>(0); // the stage the side view, stepper and print show
 export const sheet = signal<Sheet | null>(null);
-// The consortium's own climate: the climate it was last shown in (memory.ts sets it whenever a view other
-// than Start shows). On Start another card may be picked: the save stays under this one (R2-1).
-export const home = signal<ClimateZone | null>(null);
+// While Start shows (view 'start'), the signals above are the Start draft: the picked card and its
+// crops (and, on the consortium's own card, its plants, which Suggest and a paste build on). The
+// consortium itself is then set aside here: the one shown before Change site, or the save this page
+// opened with but did not show (a guide link's Start: its record as saved); null: none. Only the
+// commit actions turn the draft into the consortium (memory.ts); the save mirrors the consortium.
+export interface Consortium { climate: ClimateZone; members: PlantId[]; kept: PlantId[]; removed: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>>; crops: PlantId[] }
+export const setAside = signal<Consortium | { record: string } | null>(null);
 export const load = signal<Load>({ status: 'idle', error: null });
 
 // ---- data (set once the database is open; S1's load fills them) ----
@@ -240,14 +244,14 @@ export function taxonOf(id: PlantId): Taxon | null {
 }
 const nameById = (id: PlantId) => { const t = taxonOf(id); return t ? nameOf(t) : id; };
 
-// The view and the consortium's climate too: Undo of a list pasted on Start goes back to Start, with
-// the consortium it replaced, if any, under its own climate (F2, R2-1).
-interface Snapshot { members: PlantId[]; kept: PlantId[]; removed: PlantId[]; crops: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>>; view: View; home: ClimateZone | null }
-const snapshot = (): Snapshot => ({ members: members.peek(), kept: kept.peek(), removed: removed.peek(), crops: crops.peek(), guests: guests.peek(), view: view.peek(), home: home.peek() });
+// The view and the consortium set aside too: Undo of a list pasted on Start goes back to Start's
+// draft, with the consortium it replaced, so the save mirrors that one again (F2, R2-1).
+interface Snapshot { members: PlantId[]; kept: PlantId[]; removed: PlantId[]; crops: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>>; view: View; setAside: Consortium | { record: string } | null }
+const snapshot = (): Snapshot => ({ members: members.peek(), kept: kept.peek(), removed: removed.peek(), crops: crops.peek(), guests: guests.peek(), view: view.peek(), setAside: setAside.peek() });
 const restoreSnapshot = (s: Snapshot) => batch(() => {
   members.value = s.members; kept.value = s.kept; removed.value = s.removed; crops.value = s.crops; guests.value = s.guests;
   if (s.view === 'start' || view.peek() === 'start') view.value = s.view;
-  home.value = s.home;
+  setAside.value = s.setAside;
 });
 const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.includes(x));
 
@@ -302,20 +306,16 @@ export function swapMember(oldId: PlantId, newId: PlantId): void {
 // the climate whose list it comes from ("Add anyway", A9). warned: plants added without being asked
 // about a misfit or a serious conflict ("Add all" from a paste, 2026-10-28 "Scale build" row): the
 // toast says "n added with a warning" with Show (the first one's details).
-// A list pasted on Start under another card than the consortium's climate is a start, like Suggest:
-// it becomes that climate's consortium, the old one's plants left out (R2-1; Undo brings it back).
+// On Start, a paste builds on the draft and opens it as the consortium (a commit, like Suggest).
 export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [] }: { warned?: PlantId[] } = {}): void {
   const before = snapshot();
-  const restart = before.view === 'start' && before.home !== null && climate.peek() !== before.home;
-  const base = restart ? { ...before, members: [], kept: without(before.kept, before.members), removed: [], guests: {}, crops: without(before.crops, before.members) } : before;
-  const fresh = ids.filter((id, i) => ids.indexOf(id) === i && !base.members.includes(id));
+  const fresh = ids.filter((id, i) => ids.indexOf(id) === i && !before.members.includes(id));
   if (!fresh.length) return;
   batch(() => {
-    members.value = [...base.members, ...fresh];
-    kept.value = [...base.kept, ...fresh.filter((id) => !base.kept.includes(id))];
-    removed.value = without(base.removed, fresh);
-    if (restart) crops.value = base.crops;
-    const g: Partial<Record<PlantId, ClimateZone>> = { ...base.guests };
+    members.value = [...before.members, ...fresh];
+    kept.value = [...before.kept, ...fresh.filter((id) => !before.kept.includes(id))];
+    removed.value = without(before.removed, fresh);
+    const g = { ...before.guests };
     for (const id of fresh) if (from[id]) g[id] = from[id];
     guests.value = g;
     // A list pasted on Start opens its consortium (Share, Print, the address; X3).
