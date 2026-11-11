@@ -19,7 +19,7 @@ export interface Words {
 }
 
 // The fields in the order the dialog lists them, with the label key each takes.
-export const LAYER_ROWS: readonly [LayerField, string][] = [
+const LAYER_ROWS: readonly [LayerField, string][] = [
   ['bloom_months', 't.bloom'],
   ['ripening_or_fruit_seen_months', 't.fruit'],
   ['sowing_months', 't.sowing'],

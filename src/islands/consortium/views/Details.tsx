@@ -29,7 +29,7 @@ import { P, T, pageLang } from '../strings.ts';
 import type { CellRef, ClimateZone, Details as PlantFacts, Flag, Labels, Locale, PlantId, Site, Taxon } from '../../../lib/consortium/index.ts';
 import { fits, flagsFor, jobsOf, misfitsBeside, pairings, phaseOrd, phases } from '../../../lib/consortium/index.ts';
 import { layerRows, type Words } from './layers.ts';
-import { Toast, showToast } from './Toast.tsx';
+import { Toast, hideToast, showToast, toast, type ToastAction } from './Toast.tsx';
 import { safeHref } from '../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../data/consortium-guides.ts';
 
@@ -37,7 +37,21 @@ import { consortiumGuides } from '../../../data/consortium-guides.ts';
 
 const lang = () => pageLang();
 export const nameOf = (t: Pick<Taxon, 'names' | 'canonical_name'>): string => t.names[lang() as Locale] ?? t.names.en ?? t.canonical_name;
-export const zoneName = (z: ClimateZone): string => T(`details.zone.${z}`);
+// correction.* and climate.<zone> are site-wide keys (the correction family lives in the S3 block of the
+// locale files; the climate names are the site's). Until ConsortiumPage.astro passes them to the island
+// beside consortium.* (hand-off to S4, review item 8), English stands in, so nothing shows a raw key.
+const PENDING: Record<string, string> = {
+  'climate.tropical': 'Tropical', 'climate.subtropical': 'Subtropical', 'climate.arid': 'Arid', 'climate.mediterranean': 'Mediterranean',
+  'climate.temperate': 'Temperate', 'climate.continental': 'Continental', 'climate.boreal': 'Boreal',
+  'correction.title': 'Suggest a correction', 'correction.lede': 'See a value that looks wrong for this plant? Tell us what it should be.',
+  'correction.open': 'Suggest a correction', 'correction.fieldLayer': 'Layer', 'correction.fieldTiming': 'Succession timing', 'correction.fieldName': 'Name',
+};
+export function TS(key: string, vars?: Record<string, string | number>, more: Record<string, string> = {}): string {
+  const own = T(key, vars);
+  const stand = own === key ? PENDING[key] ?? more[key] : undefined;
+  return stand ? stand.replace(/\{(\w+)\}/g, (m, n: string) => (vars && n in vars ? String(vars[n]) : m)) : own;
+}
+export const zoneName = (z: ClimateZone): string => TS(`climate.${z.toLowerCase()}`);
 export const listOf = (items: string[]): string => new Intl.ListFormat(lang(), { type: 'conjunction' }).format(items);
 export const num = (n: number): string => new Intl.NumberFormat(lang(), { maximumFractionDigits: 1 }).format(n);
 let regionNames: Intl.DisplayNames | null = null;
@@ -167,6 +181,26 @@ const nameById = (id: PlantId) => { const t = taxonOf(id); return t ? nameOf(t) 
 
 // Remove: its cells are free again (the gap stays), it is left out of a new suggestion, and Undo
 // brings back the consortium as it was.
+// Undo puts back the snapshot taken before the action, so it is offered only while nothing else has
+// changed the consortium (a pin, a new suggestion, another climate): any change hides the toast.
+let undoAfter: (Snapshot & { climate: ClimateZone | null }) | null = null;
+const SNAP_KEYS = ['members', 'kept', 'removed', 'crops', 'guests'] as const;
+function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null): void {
+  undoAfter = { ...snapshot(), climate: store.climate.peek() };
+  showToast(text, () => { undoAfter = null; restore(before); }, action);
+}
+if (typeof document !== 'undefined') {
+  effect(() => {
+    const now = { members: store.members.value, kept: store.kept.value, removed: store.removed.value, crops: store.crops.value, guests: store.guests.value, climate: store.climate.value };
+    const after = undoAfter;
+    if (!after) return;
+    if (now.climate !== after.climate || SNAP_KEYS.some((k) => now[k] !== after[k])) {
+      undoAfter = null;
+      if (toast.peek()?.undo) hideToast();
+    }
+  });
+}
+
 export function removeMember(id: PlantId): void {
   const before = snapshot(), name = nameById(id);
   batch(() => {
@@ -176,7 +210,7 @@ export function removeMember(id: PlantId): void {
     store.removed.value = [...without(before.removed, [id]), id];
     if (before.guests[id]) { const g = { ...before.guests }; delete g[id]; store.guests.value = g; }
   });
-  showToast(T('details.removed', { name }), () => restore(before));
+  offerUndo(T('details.removed', { name }), before);
 }
 export function toggleKeep(id: PlantId): void {
   const kept = store.kept.peek();
@@ -192,11 +226,13 @@ export function swapMember(oldId: PlantId, newId: PlantId): void {
     store.removed.value = [...without(before.removed, [newId, oldId]), oldId];
     if (before.guests[oldId]) { const g = { ...before.guests }; delete g[oldId]; store.guests.value = g; }
   });
-  showToast(T('swapped', { a, b }), () => restore(before));
+  offerUndo(T('swapped', { a, b }), before);
 }
 // Add: plants chosen by hand join and are kept (a new suggestion keeps them). from: guests, each with
-// the climate whose list it comes from ("Add anyway", A9).
-export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}): void {
+// the climate whose list it comes from ("Add anyway", A9). warned: plants added without being asked
+// about a misfit or a serious conflict ("Add all" from a paste, 2026-10-28 "Scale build" row): the
+// toast says "n added with a warning" with Show (the first one's details).
+export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [] }: { warned?: PlantId[] } = {}): void {
   const before = snapshot();
   const fresh = ids.filter((id, i) => ids.indexOf(id) === i && !before.members.includes(id));
   if (!fresh.length) return;
@@ -208,7 +244,9 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
     for (const id of fresh) if (from[id]) g[id] = from[id];
     store.guests.value = g;
   });
-  showToast(P('paste.added', fresh.length), () => restore(before));
+  const flagged = warned.filter((id) => fresh.includes(id));
+  const text = P('paste.added', fresh.length) + (flagged.length ? ` ${P('paste.addedWarn', flagged.length)}` : '');
+  offerUndo(text, before, flagged.length ? { label: T('paste.show'), run: () => openSheet('details', flagged[0]) } : null);
 }
 
 // ---- sheets ----
@@ -246,6 +284,9 @@ if (typeof document !== 'undefined') {
 // click on the backdrop close it; the element marked data-autofocus (its heading) takes the focus.
 export function SheetFrame({ titleId, head, children, class: cls = '' }: { titleId: string; head?: ComponentChildren; children: ComponentChildren; class?: string }) {
   const ref = useRef<HTMLDialogElement>(null);
+  // A click closes the sheet only when it both starts and ends on the backdrop (a text selection
+  // dragged out of the sheet and released outside does not).
+  const downOnBackdrop = useRef(false);
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
@@ -256,13 +297,16 @@ export function SheetFrame({ titleId, head, children, class: cls = '' }: { title
     return () => { d.removeEventListener('close', onClose); if (d.open) d.close(); };
   }, []);
   return (
-    <dialog ref={ref} class={`ct-sheet ${cls}`} aria-labelledby={titleId} onClick={(e) => { if (e.target === ref.current) closeSheet(); }}>
+    <dialog ref={ref} class={`ct-sheet ${cls}`} aria-labelledby={titleId}
+      onPointerDown={(e) => { downOnBackdrop.current = e.target === ref.current; }}
+      onClick={(e) => { if (e.target === ref.current && downOnBackdrop.current) closeSheet(); downOnBackdrop.current = false; }}>
       <div class="ct-sheet-inner">
         <div class="ct-sheet-head">
           <div class="ct-sheet-head-main">{head}</div>
           <button type="button" class="ct-icon-button" aria-label={T('close')} onClick={closeSheet}>{CLOSE}</button>
         </div>
         <div class="ct-sheet-body">{children}</div>
+        <Toast where="sheet" />
       </div>
     </dialog>
   );
@@ -294,6 +338,9 @@ export function Ask({ title, lines, yes, onYes, onCancel }: { title: string; lin
   );
 }
 
+// Browser-test builds only: makes the next sheet chunk fail to load (the page preloads every chunk,
+// so the network cannot make it fail).
+const testFault = { sheets: false };
 // A sheet module loaded on first use.
 type SheetModule = { default: ComponentType<Record<string, unknown>> };
 const loaded = new Map<() => Promise<SheetModule>, ComponentType<Record<string, unknown>>>();
@@ -302,15 +349,20 @@ function Lazy({ load, props = {} }: { load: () => Promise<SheetModule>; props?: 
   useEffect(() => {
     if (View) return;
     let live = true;
-    load().then((m) => { loaded.set(load, m.default); if (live) setView(() => m.default); })
-      .catch((err: unknown) => console.error(`Consortium: a sheet did not load: ${(err as Error).message}`));
+    const fail = import.meta.env.PUBLIC_CT_TEST_HOOK === '1' && testFault.sheets;
+    (fail ? Promise.reject(new Error('test: sheet chunk blocked')) : load()).then((m) => { loaded.set(load, m.default); if (live) setView(() => m.default); })
+      .catch((err: unknown) => {
+        console.error(`Consortium: a sheet did not load: ${(err as Error).message}`);
+        if (!live) return;
+        closeSheet();
+        showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => location.reload() });
+      });
     return () => { live = false; };
   }, [load]);
   return View ? h(View, props) : null;
 }
 const loadSwap = () => import('./Swap.tsx') as Promise<SheetModule>;
 const loadAdd = () => import('./Add.tsx') as Promise<SheetModule>;
-const loadSearch = () => import('./Search.tsx') as Promise<SheetModule>;
 const loadPaste = () => import('./Paste.tsx') as Promise<SheetModule>;
 const loadCorrection = () => import('./Correction.tsx') as unknown as Promise<SheetModule>;
 
@@ -325,6 +377,11 @@ function labelsOf(): Promise<Labels> | null {
 }
 
 export interface CorrectionField { field: string; label: string; current: string; raw: unknown }
+// Correction drafts by plant id, kept for the page's life: closing the dialog (Escape in the text,
+// the backdrop) or an offline send never loses what the reader wrote. Correction.tsx writes them and
+// drops one once it is sent.
+export interface CorrectionDraft { field: string; proposed: string; note: string; email: string; consent: boolean; website: string }
+export const drafts = new Map<PlantId, CorrectionDraft>();
 interface Trait { field: string; label: string; text: string; raw: unknown }
 
 function traitsOf(t: Taxon, labels: Labels): Trait[] {
@@ -363,13 +420,23 @@ function invasiveSoft(t: Taxon): string[] {
   return out;
 }
 
-function guideLinks(t: Taxon): { url: string; title: string; hreflang: string | null }[] {
+// Guide titles in the guide's language (en or fr), from #ct-data `guideTitles` (slug → title), which
+// ConsortiumPage.astro writes (hand-off to S4, review item 15). Until it does, the slug stands in, in
+// English and marked so.
+let guideTitles: Record<string, string> | null = null;
+function guideTitleOf(slug: string): { title: string; lang: string | null } {
+  if (guideTitles === null) {
+    try { guideTitles = (JSON.parse(document.getElementById('ct-data')?.textContent ?? '{}') as { guideTitles?: Record<string, string> }).guideTitles ?? {}; } catch { guideTitles = {}; }
+  }
+  const own = guideTitles[slug];
+  return own ? { title: own, lang: null } : { title: slug.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()), lang: 'en' };
+}
+function guideLinks(t: Taxon): { url: string; title: string; titleLang: string | null; hreflang: string | null }[] {
   const own = lang() === 'fr' ? 'fr' : 'en';
-  return (consortiumGuides[t.canonical_name] ?? []).map((slug) => ({
-    url: own === 'fr' ? `/fr/guides/${slug}/` : `/guides/${slug}/`,
-    title: slug.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()),
-    hreflang: own !== lang() ? own : null,
-  }));
+  return (consortiumGuides[t.canonical_name] ?? []).map((slug) => {
+    const { title, lang: titleLang } = guideTitleOf(slug);
+    return { url: own === 'fr' ? `/fr/guides/${slug}/` : `/guides/${slug}/`, title, titleLang: titleLang !== lang() ? titleLang : null, hreflang: own !== lang() ? own : null };
+  });
 }
 
 function SourceItem({ id, facts }: { id: string; facts: PlantFacts | null }) {
@@ -384,11 +451,15 @@ function PlantDetails({ id }: { id: PlantId }) {
   const zone = t?.from ?? store.climate.value;
   const [facts, setFacts] = useState<PlantFacts | null>(null);
   const [labels, setLabels] = useState<Labels>({});
-  const [correcting, setCorrecting] = useState(false);
+  // A plant with a draft (closed by Escape or the backdrop) opens with its form and text back.
+  const [correcting, setCorrecting] = useState(() => drafts.has(id));
+  const openButton = useRef<HTMLButtonElement>(null);
+  const reopened = useRef(false);
+  useEffect(() => { if (!correcting && reopened.current) openButton.current?.focus(); reopened.current = correcting; }, [correcting]);
   useEffect(() => {
     const src = store.source.value;
     setFacts(null);
-    setCorrecting(false);
+    setCorrecting(drafts.has(id));
     if (!src || !zone) return;
     let live = true;
     src.details(id, zone, lang() as Locale).then((d) => { if (live) setFacts(d); })
@@ -424,9 +495,9 @@ function PlantDetails({ id }: { id: PlantId }) {
   const s = spanOf(t);
   const fields: CorrectionField[] = [
     ...traits.map((x) => ({ field: x.field, label: x.label, current: x.text === T('unknown') ? '' : x.text, raw: x.raw })),
-    { field: 'stratum', label: T('correction.fieldLayer'), current: t.stratum ? layerName(t) : '', raw: t.stratum?.value ?? null },
-    { field: 'phases', label: T('correction.fieldTiming'), current: t.phases ? spanWords(t) : '', raw: t.phases ? { start: t.phases.start, end: t.phases.end } : null },
-    { field: `names.${lang()}`, label: T('correction.fieldName'), current: t.names[lang() as Locale] ?? '', raw: t.names[lang() as Locale] ?? null },
+    { field: 'stratum', label: TS('correction.fieldLayer'), current: t.stratum ? layerName(t) : '', raw: t.stratum?.value ?? null },
+    { field: 'phases', label: TS('correction.fieldTiming'), current: t.phases ? spanWords(t) : '', raw: t.phases ? { start: t.phases.start, end: t.phases.end } : null },
+    { field: `names.${lang()}`, label: TS('correction.fieldName'), current: t.names[lang() as Locale] ?? '', raw: t.names[lang() as Locale] ?? null },
   ];
 
   return (
@@ -545,7 +616,7 @@ function PlantDetails({ id }: { id: PlantId }) {
       {guides.length > 0 && (
         <section aria-labelledby="ct-d-guides">
           <h3 id="ct-d-guides">{T('details.guides')}</h3>
-          <ul class="ct-plain">{guides.map((g) => <li><a class="text-link" href={g.url} hreflang={g.hreflang ?? undefined}>{g.title}</a></li>)}</ul>
+          <ul class="ct-plain">{guides.map((g) => <li><a class="text-link" href={g.url} hreflang={g.hreflang ?? undefined} lang={g.titleLang ?? undefined}>{g.title}</a></li>)}</ul>
         </section>
       )}
 
@@ -558,12 +629,12 @@ function PlantDetails({ id }: { id: PlantId }) {
 
       {release && (
         <section class="ct-correct" aria-labelledby="ct-corr-title">
-          <h3 id="ct-corr-title">{T('correction.title')}</h3>
+          <h3 id="ct-corr-title">{TS('correction.title')}</h3>
           {correcting
             ? <Lazy load={loadCorrection} props={{ fields, plantId: id, plantName: t.canonical_name, plantLabel: nameOf(t), release, climate: zone, climateLabel: zoneName(zone), onCancel: () => setCorrecting(false) }} />
             : <>
-                <p class="ct-muted">{T('correction.lede')}</p>
-                <p><button type="button" class="button button-secondary" aria-expanded="false" onClick={() => setCorrecting(true)}>{T('correction.open')}</button></p>
+                <p class="ct-muted">{TS('correction.lede')}</p>
+                <p><button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => setCorrecting(true)}>{TS('correction.open')}</button></p>
               </>}
         </section>
       )}
@@ -580,7 +651,7 @@ function Router() {
     case 'details': return s.id ? <PlantDetails key="details" id={s.id} /> : null;
     case 'swap': return s.id ? <Lazy key="swap" load={loadSwap} props={{ id: s.id }} /> : null;
     case 'add': return <Lazy key="add" load={loadAdd} props={{ mode: 'add' }} />;
-    case 'search': return <Lazy key="search" load={loadSearch} />;
+    case 'search': return <Lazy key="search" load={loadAdd} props={{ mode: 'search' }} />;
     case 'paste': return <Lazy key="paste" load={loadPaste} />;
     default: return null; // share and download are stream S4's
   }
@@ -596,5 +667,9 @@ export const Details: ComponentType | null = S3Views;
 // window.__ctTest = true before the island loaded gets the store and openSheet there, so the S3 tests
 // can choose a climate and open sheets while the S2 matrix and S4 start views are not in the build.
 // Nothing in the site sets the flag.
-const probe = globalThis as { __ctTest?: unknown };
-if (probe.__ctTest === true) probe.__ctTest = { store, openSheet };
+// Compiled in only when the site is built with PUBLIC_CT_TEST_HOOK=1 (the browser-test build); the
+// production build replaces the condition with false and drops this block.
+if (import.meta.env.PUBLIC_CT_TEST_HOOK === '1') {
+  const probe = globalThis as { __ctTest?: unknown };
+  if (probe.__ctTest === true) probe.__ctTest = { store, openSheet, failSheets: () => { testFault.sheets = true; } };
+}

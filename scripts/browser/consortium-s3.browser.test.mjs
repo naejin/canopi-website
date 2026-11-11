@@ -25,11 +25,16 @@ const names = await fixtureDb((db) => Object.fromEntries(CANON.map((c) => [c, en
 const chipOf = async (page, name) => (await axNodes(page)).find((n) => n.role === 'button' && (n.name ?? '').startsWith(name));
 
 // The page, with the test hook.
+// The hook is compiled in only when the site is built with PUBLIC_CT_TEST_HOOK=1 (never for production).
 async function open(opts) {
   const page = await h.open('/consortium/', opts);
   await page.evaluateOnNewDocument(() => { window.__ctTest = true; });
   await page.reload({ waitUntil: 'domcontentloaded' });
   return page;
+}
+async function needHook(page) {
+  const ok = await page.waitForFunction(() => typeof window.__ctTest === 'object', { timeout: 20_000 }).then(() => true, () => false);
+  assert.ok(ok, 'no S4 start view and no test hook: build with PUBLIC_CT_TEST_HOOK=1 npm run build');
 }
 const hooked = (page, fn, ...args) => page.evaluate(fn, ...args);
 
@@ -62,6 +67,7 @@ async function start(page, climate = 'Temperate') {
     await page.locator(aria('button', 'Suggest plants')).click();
   } else {
     assert.equal(await loadState(page), 'ready');
+    await needHook(page);
     await page.waitForFunction(() => window.__ctTest?.store?.source.value, { timeout: 20_000 });
     assert.ok(await hooked(page, async (c) => {
       const { store } = window.__ctTest;
@@ -118,16 +124,20 @@ test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and cred
     assert.ok(await findAx(page, { role: 'image', name: `Photo of ${names['Castanea sativa']}` }), 'the photo, with its alt text');
     assert.ok(await findAx(page, { name: /Wikimedia Commons|iNaturalist|CC/ }), 'the photo credit');
     assert.ok(await has(page, '::-p-aria(Placed for the Temperate climate)'));
-    assert.ok(await findAx(page, { name: /With a warning|estimate/ }), 'warning or estimate words');
+    assert.ok(await findAx(page, { role: 'heading', name: 'With a warning' }), 'the warning section');
     assert.ok(await findAx(page, { role: 'heading', name: /Sources/ }), 'the sources');
     await sendCorrection(page, 'The height looks wrong.');
-    assert.ok(await findAx(page, { name: /Thank you|Sent/ }), 'sent');
+    assert.ok(await findAx(page, { name: /^Thank you/ }), 'sent');
     assert.equal(page.correctionPosts.length, 1, 'one POST to /api/correction');
     assert.match(page.correctionPosts[0], new RegExp(fixture().releaseId), 'the post names the data release');
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => !document.querySelector('dialog[open]'));
     await page.waitForFunction((name) => (document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent) === name, { timeout: 2000 }, chip.name).catch(() => {});
     assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent), chip.name, 'focus returns to the chip');
+    // Estimates: Apple's flowering months are derived for latitude bands.
+    await hooked(page, () => { const { store, openSheet } = window.__ctTest; openSheet('details', store.pool.value.find((t) => t.canonical_name === 'Malus domestica').id); });
+    assert.ok(await findAx(page, { name: /^estimate$/ }), 'an estimate tag on a layer value');
+    await page.keyboard.press('Escape');
     await page.close();
   });
 });
@@ -216,4 +226,101 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an 
     }
     await page.close();
   });
+});
+
+const sheetOpen = (page) => page.evaluate(() => !!document.querySelector('dialog[open]'));
+const closed = (page) => page.waitForFunction(() => !document.querySelector('dialog[open]'));
+const setStore = (page, fn, ...args) => hooked(page, fn, ...args);
+
+test('BT-5 (S3 review): the correction draft survives closing; a drag released on the backdrop does not close; focus moves into and out of the form', async () => {
+  const page = await open({ width: 1280, data: 'fixture', correction: 'offline' });
+  await start(page);
+  const chip = await chipOf(page, names['Castanea sativa']);
+  await page.locator(aria('button', chip.name)).click();
+  await page.locator(aria('button', 'Suggest a correction')).click();
+  await page.waitForFunction(() => document.activeElement?.id === 'ct-corr-field', { timeout: 2000 }).catch(() => {});
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-corr-field', 'the first field takes the focus');
+  await page.locator(aria('button', 'Cancel')).click();
+  await page.waitForFunction(() => document.activeElement?.textContent === 'Suggest a correction', { timeout: 2000 }).catch(() => {});
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'Suggest a correction', 'Cancel gives the focus back');
+  await page.locator(aria('button', 'Suggest a correction')).click();
+  await page.locator('::-p-aria([role="textbox"])').fill('A draft');
+  // A text selection dragged out over the backdrop and released there keeps the sheet.
+  const box = await (await page.$('dialog[open] textarea')).boundingBox();
+  await page.mouse.move(box.x + 10, box.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(80, 400, { steps: 4 });
+  await page.mouse.up();
+  assert.ok(await sheetOpen(page), 'a drag released on the backdrop keeps the sheet');
+  await page.keyboard.press('Escape');
+  await closed(page);
+  await page.locator(aria('button', chip.name)).click();
+  await page.waitForSelector('dialog[open] textarea');
+  assert.equal(await page.$eval('dialog[open] textarea', (el) => el.value), 'A draft', 'the draft is back');
+  await page.close();
+});
+
+test('BT-6 (S3 review): Undo goes away when the consortium changes another way; a sheet that fails to load says so with Reload', async () => {
+  const page = await open({ width: 1280, data: 'fixture' });
+  await start(page);
+  const chip = await chipOf(page, names['Castanea sativa']);
+  await page.locator(aria('button', chip.name)).click();
+  await page.locator(aria('button', 'Remove')).click();
+  await closed(page);
+  assert.ok(await has(page, aria('button', 'Undo')), 'Undo after Remove');
+  await setStore(page, () => { const { store } = window.__ctTest; store.kept.value = [...store.kept.value, store.members.value[0]]; });
+  assert.equal(await has(page, aria('button', 'Undo'), 800), false, 'a pin made since hides Undo');
+
+  // The page modulepreloads every chunk, so the hook makes the Swap chunk's import fail.
+  await setStore(page, () => { const { store, openSheet, failSheets } = window.__ctTest; failSheets(); openSheet('swap', store.members.value[0]); });
+  assert.ok(await findAx(page, { name: /could not open/ }), 'the failure is said');
+  assert.ok(await has(page, aria('button', 'Reload')), 'with Reload');
+  assert.equal(await sheetOpen(page), false, 'and the sheet is closed');
+  await page.close();
+});
+
+test('BT-6 (S3 review): "Add anyway" keeps the ticks; a guest that misfits asks first and shows its warning; the toast is heard over a sheet; "Add all" says "added with a warning" with Show', async () => {
+  const page = await open({ width: 1280, data: 'fixture' });
+  await start(page);
+  for (const c of ['Juglans regia', 'Robinia pseudoacacia']) if (await isMember(page, c)) await dropMember(page, c);
+  if (!(await isMember(page, 'Malus domestica'))) await addPlant(page, names['Malus domestica']);
+  await closed(page);
+  await openBy(page, 'Add plants', 'add');
+  await page.locator('::-p-aria([role="searchbox"])').fill(names['Robinia pseudoacacia']);
+  await page.locator(aria('checkbox', `${names['Robinia pseudoacacia']}, Robinia pseudoacacia`)).click();
+  await page.locator('::-p-aria([role="searchbox"])').fill(names['Juglans regia']);
+  await page.locator(aria('button', `Add ${names['Juglans regia']}`)).click();
+  await page.locator(aria('button', 'Add anyway')).click();
+  await closed(page);
+  assert.ok(await isMember(page, 'Juglans regia') && await isMember(page, 'Robinia pseudoacacia'), 'the ticked plant joins with the one confirmed');
+
+  // A query lists 8 rows at most, best match first.
+  await openBy(page, 'Add plants', 'add');
+  await page.locator('::-p-aria([role="searchbox"])').fill('a');
+  const rows = (await axNodes(page)).filter((n) => n.role === 'checkbox' || /^Add (?!\d)/.test(n.name ?? '') && n.role === 'button');
+  assert.ok(rows.length <= 8, `at most 8 rows (${rows.length})`);
+  await page.locator(aria('button', 'Close')).click(); // Escape in a filled search box first clears it
+  await closed(page);
+
+  // Deep shade: a sun plant from the Tropical list misfits, so "Add anyway" asks.
+  await setStore(page, () => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, light: 'shade' }; });
+  await openBy(page, 'Paste a list', 'paste');
+  await page.locator('::-p-aria([role="textbox"])').fill('Inga edulis');
+  assert.ok(await findAx(page, { name: /^Your site:/ }), 'the guest row shows its warning');
+  await page.locator(aria('button', 'Add anyway')).click();
+  assert.ok(await findAx(page, { role: 'alertdialog' }), 'a guest that misfits asks first');
+  await page.locator('dialog[role="alertdialog"] .button-primary').click();
+  assert.ok(await sheetOpen(page), 'the Paste sheet stays');
+  assert.ok(await has(page, aria('button', 'Undo')), 'the toast is reachable over the sheet');
+  assert.equal(await guestFrom(page, 'Inga edulis'), 'Tropical');
+
+  // Pear (a member of the suggestion) is taken out, then pasted back in deep shade: it misfits.
+  if (await isMember(page, 'Pyrus communis')) await dropMember(page, 'Pyrus communis');
+  await page.locator('::-p-aria([role="textbox"])').fill('Pyrus communis');
+  await page.locator(aria('button', 'Add 1 plant')).click();
+  await closed(page);
+  assert.ok(await findAx(page, { name: /1 added with a warning/ }), '"added with a warning"');
+  await page.locator(aria('button', 'Show')).click();
+  assert.ok(await findAx(page, { role: 'dialog' }), 'Show opens the plant');
+  await page.close();
 });

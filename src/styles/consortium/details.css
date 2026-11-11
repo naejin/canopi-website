@@ -42,7 +42,8 @@
   border: 0; background: none; color: var(--accent-ink); font-weight: 600; cursor: pointer;
 }
 .ct .ct-sheet .button, .ct .ct-ask .button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
-.ct .ct-sheet .button[aria-pressed="true"] { background: var(--surface-alt); border-color: var(--text); }
+.ct .ct-sheet .button[aria-pressed="true"] { background: var(--surface-alt); border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+.ct .ct-sheet .button[aria-pressed="true"] .ct-glyph { color: var(--accent-ink); }
 .ct .ct-sheet .button:disabled { opacity: 0.55; cursor: not-allowed; }
 .ct :where(.ct-sheet, .ct-ask) .ct-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
@@ -154,6 +155,8 @@
 }
 .ct .ct-toast .ct-icon-button { color: inherit; }
 .ct .ct-toast svg { width: 16px; height: 16px; }
+/* The region inside an open sheet: above its sticky bar, at the sheet's right edge. */
+.ct .ct-sheet .ct-toast-sheet { left: auto; right: 12px; bottom: 84px; transform: none; max-width: min(496px, calc(100% - 24px)); }
 
 @media (max-width: 639px) {
   .ct .ct-sheet { width: 100%; border-left: 0; }

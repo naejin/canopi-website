@@ -4,28 +4,68 @@
 // release, the climate and the page language. It posts JSON to /api/correction
 // (src/lib/correction.mjs, whose contract and tests are unchanged), which mails the owner; nothing is
 // kept on the server. Offline (design check §5): "Not sent: you seem offline. Your text is kept." with
-// Try again. Words: consortium.correction.* (the correction.* family the island reads).
-import { useState } from 'preact/hooks';
-import { T, pageLang } from '../strings.ts';
-import type { CorrectionField } from './Details.tsx';
+// Try again. What the reader writes is kept per plant (Details.tsx `drafts`) until it is sent.
+// Words: the correction.* family (S3 block of the locale files), through Details.tsx TS.
+import { useEffect, useState } from 'preact/hooks';
+import { pageLang } from '../strings.ts';
+import { LIMITS } from '../../../lib/correction.mjs';
+import { EMAIL_RE } from '../../../lib/contact.mjs';
+import { TS, drafts, type CorrectionDraft, type CorrectionField } from './Details.tsx';
 
-export const ENDPOINT = '/api/correction';
-// The server's limits (src/lib/correction.mjs LIMITS), as maxlength.
-export const MAX = { proposed: 500, note: 2000, email: 254 } as const;
-const EMAIL = /^[^\s@<>"(),;:]+@[^\s@<>"(),;:]+\.[^\s@<>"(),;:]{2,}$/;
+const ENDPOINT = '/api/correction';
+// The server's limits, as maxlength.
+const MAX = { proposed: LIMITS.proposed_value, note: LIMITS.note, email: LIMITS.email } as const;
+// English for the correction.* keys until the page passes them to the island (see Details.tsx TS).
+const STAND_IN: Record<string, string> = {
+  "correction.title": "Suggest a correction",
+  "correction.lede": "See a value that looks wrong for this plant? Tell us what it should be.",
+  "correction.open": "Suggest a correction",
+  "correction.sent": "Thank you. Your suggestion was sent; we review every one before the data changes.",
+  "correction.another": "Suggest another",
+  "correction.field": "What looks wrong",
+  "correction.fieldChoose": "Choose…",
+  "correction.fieldError": "Choose what looks wrong.",
+  "correction.fieldLayer": "Layer",
+  "correction.fieldTiming": "Succession timing",
+  "correction.fieldName": "Name",
+  "correction.current": "Shown now:",
+  "correction.unknown": "Unknown",
+  "correction.proposed": "What it should be",
+  "correction.proposedError": "Write what the value should be.",
+  "correction.unchanged": "This is the value shown now. Write the one it should be.",
+  "correction.tooLong": "Keep it under {max} characters.",
+  "correction.note": "Note (optional)",
+  "correction.noteHint": "Where it comes from: your own observation, a book, a link.",
+  "correction.email": "Email (optional)",
+  "correction.emailError": "Check the email address, or leave it empty.",
+  "correction.privacy": "Your email is optional and used only to reply to you. It is never published.",
+  "correction.consent": "I agree my suggestion is published under CC BY-SA 4.0",
+  "correction.consentError": "Tick this box to send your suggestion.",
+  "correction.context": "Sent with: {plant} · data release {release} · {climate} · {language}",
+  "correction.honeypot": "Leave this field empty",
+  "correction.send": "Send suggestion",
+  "correction.sending": "Sending…",
+  "correction.cancel": "Cancel",
+  "correction.invalid": "Some fields need a look before this can be sent.",
+  "correction.failed": "Your suggestion could not be sent. Try again in a moment.",
+  "correction.refused": "Your suggestion could not be delivered. Please use the contact form instead.",
+  "correction.offline": "Not sent: you seem offline. Your text is kept.",
+  "correction.tryAgain": "Try again",
+};
+const T = (key: string, vars?: Record<string, string | number>) => TS(key, vars, STAND_IN);
 // The server's field codes, by the form's own field names.
 const FROM_SERVER: Record<string, Name> = { field: 'field', proposed_value: 'proposed', note: 'note', email: 'email', consent: 'consent' };
 type Name = 'field' | 'proposed' | 'note' | 'email' | 'consent';
 const ORDER: Name[] = ['field', 'proposed', 'note', 'email', 'consent'];
 
-interface Form { field: string; proposed: string; note: string; email: string; consent: boolean; website: string }
+type Form = CorrectionDraft;
 type Status = 'idle' | 'sending' | 'sent' | 'failed';
 type Errors = Partial<Record<Name, string>>;
 interface Props { fields: CorrectionField[]; plantId: string; plantName: string; plantLabel: string; release: string; climate: string; climateLabel: string; onCancel: () => void }
 
 const fieldOf = (fields: CorrectionField[], id: string) => fields.find((f) => f.field === id) ?? null;
 
-export function checkCorrection(c: Form, fields: CorrectionField[]): Errors {
+function checkCorrection(c: Form, fields: CorrectionField[]): Errors {
   const errors: Errors = {};
   const f = fieldOf(fields, c.field);
   if (!f) errors.field = 'correction.fieldError';
@@ -34,7 +74,7 @@ export function checkCorrection(c: Form, fields: CorrectionField[]): Errors {
   else if (proposed.length > MAX.proposed) errors.proposed = 'correction.tooLong';
   else if (f && proposed.replace(/\s+/g, ' ') === f.current) errors.proposed = 'correction.unchanged';
   if (c.note.trim().length > MAX.note) errors.note = 'correction.tooLong';
-  if (c.email.trim() && !EMAIL.test(c.email.trim())) errors.email = 'correction.emailError';
+  if (c.email.trim() && !EMAIL_RE.test(c.email.trim())) errors.email = 'correction.emailError';
   if (!c.consent) errors.consent = 'correction.consentError';
   return errors;
 }
@@ -64,7 +104,10 @@ let languageNames: Intl.DisplayNames | null = null;
 const languageName = (code: string) => { try { languageNames ??= new Intl.DisplayNames([code], { type: 'language' }); return languageNames.of(code) ?? code; } catch { return code; } };
 
 export default function Correction({ fields, plantId, plantName, plantLabel, release, climate, climateLabel, onCancel }: Props) {
-  const [form, setForm] = useState<Form>({ field: '', proposed: '', note: '', email: '', consent: false, website: '' });
+  const [form, setFormState] = useState<Form>(() => drafts.get(plantId) ?? { field: '', proposed: '', note: '', email: '', consent: false, website: '' });
+  const setForm = (next: (f: Form) => Form) => setFormState((f) => { const n = next(f); if (n.proposed || n.note || n.email) drafts.set(plantId, n); else drafts.delete(plantId); return n; });
+  // The first field takes the focus when the form opens.
+  useEffect(() => { document.getElementById('ct-corr-field')?.focus(); }, []);
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<Errors>({});
@@ -91,6 +134,7 @@ export default function Correction({ fields, plantId, plantName, plantLabel, rel
       proposed_value: form.proposed.trim(), note: form.note.trim(), release_id: release, climate, locale: lang,
       consent: form.consent, email: form.email.trim(), website: form.website,
     });
+    if (res.status === 'sent') drafts.delete(plantId);
     setStatus(res.status);
     setMessage(res.message);
     setErrors(res.errors);
@@ -152,7 +196,7 @@ export default function Correction({ fields, plantId, plantName, plantLabel, rel
         {offline
           ? <button type="submit" class="button button-primary">{T('correction.tryAgain')}</button>
           : <button type="submit" class="button button-primary" aria-disabled={status === 'sending' ? 'true' : undefined}>{T('correction.send')}</button>}
-        <button type="button" class="button button-secondary" onClick={onCancel}>{T('correction.cancel')}</button>
+        <button type="button" class="button button-secondary" onClick={() => { drafts.delete(plantId); onCancel(); }}>{T('correction.cancel')}</button>
       </div>
       <p class={`ct-corr-status${status === 'failed' ? ' is-error' : ''}`} role="status">{status === 'sending' ? T('correction.sending') : message ? T(message) : ''}</p>
     </form>
