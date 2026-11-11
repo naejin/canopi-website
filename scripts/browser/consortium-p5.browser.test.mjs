@@ -394,6 +394,8 @@ test('P5-14c (S5c matrix counts): a cell\'s "N fit" leaves out plants outside th
   const sum = () => page.evaluate(() => window.__ctTest.store.matrix.value.rows.flatMap((r) => r.cells).reduce((a, c) => a + c.inList, 0));
   const before = await sum();
   await atSite(page, 'seville');
+  // The range rule loads with the pool chunk once the site has a climate; the pool waits for it.
+  await page.waitForFunction(() => window.__ctTest.store.matrix.value !== null, { timeout: 10_000 });
   const within = await sum();
   assert.ok(within < before, `fewer plants counted at Seville (${within} cell entries) than without a location (${before})`);
   const counted = await page.evaluate(() => { const { store } = window.__ctTest; return store.fitPool.value.length; });
@@ -464,6 +466,8 @@ test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from t
     const { store } = window.__ctTest;
     store.climate.value = 'Subtropical';
     if (!(await store.loadPool('Subtropical'))) return 0;
+    // The range rule loads with the pool chunk once the site has a climate; the pool waits for it.
+    for (let i = 0; i < 200 && !store.pool.value; i++) await new Promise((r) => setTimeout(r, 50));
     return store.pool.value.filter((t) => t.estimate && t.placedFrom === 'Mediterranean').length;
   });
   assert.ok(count > 0, 'Subtropical borrows Mediterranean placements');

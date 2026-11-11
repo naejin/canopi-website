@@ -261,7 +261,7 @@ function StartView() {
           <Crops zone={z} />
           <SiteQuestions />
           <div class="ct-cta">
-            {!nothingFits(z) && <button type="button" class="button button-primary" aria-busy={waiting ? 'true' : undefined} onClick={requestSuggest}>{T('start.suggest')}</button>}
+            {!nothingFits() && <button type="button" class="button button-primary" aria-busy={waiting ? 'true' : undefined} onClick={requestSuggest}>{T('start.suggest')}</button>}
             {canGoBack.value && <button type="button" class="button button-secondary" onClick={backToConsortium}>{T('start.back')}</button>}
             <button type="button" class="button button-secondary" onClick={startEmpty}>{T('start.empty')}</button>
             <button type="button" class="link-button ct-link" onClick={() => openSheet('paste')}>{T('start.paste')}</button>

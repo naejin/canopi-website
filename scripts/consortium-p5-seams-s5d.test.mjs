@@ -34,7 +34,7 @@ test('futurePeriod: the latest period the phases reach (phase_end ≥ 3 → 2041
   assert.deepEqual(core.futurePeriods, ['2041-2070', '2071-2099']);
   for (const [end, want] of [['placenta_i', null], ['placenta_iii', null], ['secondary_i', '2041-2070'], ['secondary_iii', '2041-2070'], ['climax', '2071-2099']]) assert.equal(core.futurePeriod(ends(end)), want, end);
   assert.equal(core.futurePeriod(taxon({ phases: null })), null);
-  assert.equal(core.FUTURE_HEAT_MARGIN_C, 2, 'the margin of today\'s range check (owner answer 2)');
+  assert.equal(core.RANGE_MARGIN_C, 2, 'the margin of today\'s range check (owner answer 2), which future.ts uses through range.ts passes');
   assert.equal('hasFutureData' in core, false, 'internal');
 });
 

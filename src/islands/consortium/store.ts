@@ -6,7 +6,8 @@
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
 import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
-import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, loadMarkProviders, needsMarkProviders, suggest, withinRange } from '../../lib/consortium/index.ts';
+import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, loadMarkProviders, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
+import type { RangeRule } from './views/pool/pool.tsx';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
@@ -69,17 +70,31 @@ export const interactionSets = signal<Partial<Record<ClimateZone, Interaction[]>
 
 // ---- computed ----
 // The plants of the chosen climate, or null until they are read.
+// P5 S5c: with a site climate, also until the range rule has loaded, so nothing draws from an
+// unfiltered list (a pending "Suggest plants" waits for it as for the pool).
 export const pool = computed<Taxon[] | null>(() => {
   const c = climate.value;
-  return c ? pools.value[c] ?? null : null;
+  const p = c ? pools.value[c] ?? null : null;
+  return p && siteClimate.value && !rangeRule.value ? null : p;
+});
+// The range rule (core range.ts, owner answer 2) arrives with the pool feature chunk, loaded only once
+// the site location has a climate, so it stays off the first run (decision row "Island JavaScript
+// budget for P5"). The page asks it nothing without one.
+export const rangeRule = signal<RangeRule | null>(null);
+// Whether the location gave a climate (core siteToday is non-null; inlined to keep the rule off the first run).
+export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
+effect(() => {
+  if (!siteClimate.value || rangeRule.peek()) return;
+  import('./views/pool/pool.tsx').then((m) => { rangeRule.value = m.rangeRule; }, console.error);
 });
 // What suggestions and lists draw from (P5 S5c, owner answer 2): the pool without the plants outside
 // their observed range at the site location (core range.ts withinRange); the pool itself without one.
 // Members stay: a plant added anyway is never dropped from a list it is in.
 export const fitPool = computed<Taxon[] | null>(() => {
-  const p = pool.value;
-  return p && withinRange(p, location.value, members.value);
+  const p = pool.value, rule = rangeRule.value;
+  return p && (rule ? rule.withinRange(p, location.value, members.value) : p);
 });
+
 // The guests as plants: each with its home climate's placement and `from` set (A9), once that
 // climate's pool is read.
 export const guestTaxa = computed<Taxon[]>(() => {
@@ -220,7 +235,8 @@ export function suggestMembers(): boolean {
   const p = pool.value;
   if (!p || guestsPending.value.length) return false;
   const keep = [...new Set([...crops.value, ...kept.value])];
-  const s = suggest(withinRange(p, location.value, keep), { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
+  const rule = rangeRule.value;
+  const s = suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
   kept.value = keep;
   members.value = s.members;
   return true;

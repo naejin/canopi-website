@@ -13,7 +13,7 @@
 // 4"). No projection, no range or nothing to compare: null, "not checked".
 import type { PlantId, Scenario, SitePeriod, SiteLocation, Taxon } from './types.ts';
 import { phases, scenarios } from './types.ts';
-import { passes, RANGE_MARGIN_C } from './range.ts';
+import { passes } from './range.ts';
 
 export const futurePeriods = ['2041-2070', '2071-2099'] as const;
 export type FuturePeriod = (typeof futurePeriods)[number];
@@ -28,9 +28,8 @@ export interface FutureCheck {
   of: number; // scenarios of the period with data
 }
 
-// °C beyond the warmest-month Q95 before a plant is too hot: today's margin, and today's comparison
-// (range.ts passes, the rule's one owner). The name stays for S5d's seams test.
-export const FUTURE_HEAT_MARGIN_C = RANGE_MARGIN_C;
+// Too hot: beyond the warmest-month Q95 by more than today's margin, through today's comparison
+// (range.ts passes and RANGE_MARGIN_C, the rule's one owner).
 const SECONDARY = phases.indexOf('secondary_i');
 const CLIMAX = phases.indexOf('climax');
 

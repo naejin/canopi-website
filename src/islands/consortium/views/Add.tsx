@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { asks as asksFlags, canopyOf, fits, jobsOf, misfitsBeside, phaseOrd, rangeFit } from '../../../lib/consortium/index.ts';
+import { asks as asksFlags, canopyOf, fits, jobsOf, misfitsBeside, phaseOrd } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/search.ts';
 import { Ask, Bar, NotChecked, SheetFrame, WARN, addMembers, closeSheet, flagLines, flagsOfPlant, nameOf, num, plainPhase, sheetCell, spanWords, zoneName } from './Details.tsx';
 import { PlantMarks } from './PlantMarks.tsx';
@@ -48,7 +48,8 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
   // then asks first ("outside its observed range"; owner answer 2). When nothing fits the site, the
   // search ("Search all plants") lists every plant, each marked, rather than none.
   const loc = store.location.value;
-  const outside = (t: Taxon) => rangeFit(t, loc) === 'outside';
+  const rule = store.rangeRule.value;
+  const outside = (t: Taxon) => !!rule && rule.rangeFit(t, loc) === 'outside';
   const fitting = store.fitPool.value?.some((t) => !outside(t)) ? store.fitPool.value : null;
   const asks = (flags: Flag[], t?: Taxon) => asksFlags(flags) || (!!t && outside(t));
   const askLines = (t: Taxon) => [...flagLines(t, flagsOfPlant(t)).filter((l) => l.asks).map((l) => l.text), ...(outside(t) ? [T('range.outsideDetails')] : [])];

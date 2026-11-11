@@ -6,7 +6,12 @@
 // beyond it by up to the margin: 'edge' ("near the edge of its observed range"). Aridity is a mark
 // only and never changes the verdict. No range: 'unknown' ("range not recorded"), never filtered.
 // No site climate (no location, its lookup loading or failed, open sea): nothing is checked.
-import type { PlantId, SiteLocation, SitePeriod, Taxon } from './types.ts';
+import type { PlantId, SiteLocation, Taxon } from './types.ts';
+import { siteToday } from './site-today.ts';
+
+// siteToday lives in its own module so the first run can ask "has the site a climate?" without the
+// rule, which loads with the pool feature chunk (store.ts rangeRule).
+export { siteToday };
 
 export const rangeVerdicts = ['inside', 'edge', 'outside', 'unknown'] as const;
 export type RangeVerdict = (typeof rangeVerdicts)[number];
@@ -28,13 +33,6 @@ export type Passed = 'inside' | 'edge' | 'beyond';
 export function passes(value: number, bound: number, side: 'below' | 'above'): Passed {
   const cents = Math.round((side === 'below' ? bound - value : value - bound) * 100);
   return cents <= 0 ? 'inside' : cents > RANGE_MARGIN_C * 100 ? 'beyond' : 'edge';
-}
-
-// The site's climate today (the 1991–2020 period), or null when the location gave none.
-export function siteToday(site: SiteLocation | null): SitePeriod | null {
-  const periods = site?.lookup?.climate?.periods;
-  if (!periods?.length) return null;
-  return periods.find((p) => p.scenario === 'historical') ?? periods[0];
 }
 
 // null: nothing to check against (no site climate).
