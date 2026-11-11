@@ -28,9 +28,9 @@ import { currentPosition, queryGeolocationPermission } from '../../../../lib/loc
 import { loadMapLibreModule } from '../../../../lib/location/maplibre.ts';
 import * as store from '../../store.ts';
 import { T, pageLang } from '../../strings.ts';
-import { chooseClimate } from '../../memory.ts';
+import { chooseClimate, pendingClimate } from '../../memory.ts';
 import { keepLocation, locationCountry, readLocation, siteFound } from './keep.ts';
-import { line, liveLookup, looking, nextLookup, unread, type Line } from './load.ts';
+import { line, liveLookup, looking, nextLookup, unlessReplaced, unread, type Line } from './load.ts';
 import { zoneLabel } from '../Start.tsx';
 
 // ---- the result line ----
@@ -66,8 +66,8 @@ const locate = (lat: number, lon: number, source: LocationSource, label: string 
 async function locateNow(lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> {
   const id = nextLookup();
   line.value = { state: 'loading', ...extra };
-  const lookup = await read(lat, lon);
-  if (!liveLookup(id)) return;
+  const lookup = await unlessReplaced(read(lat, lon));
+  if (!liveLookup(id) || lookup === undefined) return;
   if (!lookup) {
     batch(() => { store.location.value = null; store.proposedClimate.value = null; unread.value = false; line.value = { state: 'failed', ...extra }; });
     return;
@@ -91,8 +91,8 @@ export async function settle(how: 'link' | 'saved', savedText: string | null): P
   if (!start) return;
   const id = nextLookup();
   line.value = { state: 'loading' };
-  const lookup = await read(start.lat, start.lon);
-  if (!liveLookup(id)) return;
+  const lookup = await unlessReplaced(read(start.lat, start.lon));
+  if (!liveLookup(id) || lookup === undefined) return;
   const sc = lookup ? siteClimate(lookup) : null;
   if (!lookup || !sc || sc.state === 'sea') {
     batch(() => { if (how === 'link' && store.location.peek() === start) store.location.value = null; unread.value = false; line.value = { state: lookup ? 'sea' : 'failed' }; });
@@ -113,10 +113,11 @@ export async function settle(how: 'link' | 'saved', savedText: string | null): P
 export async function useMyLocation(): Promise<void> {
   const id = nextLookup();
   line.value = { state: 'loading' };
-  const permission = await queryGeolocationPermission();
-  if (permission?.state === 'denied') { if (liveLookup(id)) line.value = { state: 'denied' }; return; }
-  const at = await currentPosition(undefined, permission);
-  if (!liveLookup(id)) return;
+  const permission = await unlessReplaced(queryGeolocationPermission());
+  if (!liveLookup(id) || permission === undefined) return;
+  if (permission?.state === 'denied') { line.value = { state: 'denied' }; return; }
+  const at = await unlessReplaced(currentPosition(undefined, permission));
+  if (!liveLookup(id) || !at) return;
   if ('code' in at) { line.value = { state: at.code === 1 ? 'denied' : at.code === 3 ? 'timeout' : 'unavailable' }; return; }
   await locate(at.lat, at.lon, 'geo', undefined);
 }
@@ -129,7 +130,7 @@ export async function searchPlace(q: string): Promise<void> {
   search ??= createPlaceSearchController({ transport: geocodingTransport, config: { ...defaultGeocoderConfig(), language: pageLang() }, limit: 5 });
   const id = nextLookup();
   line.value = { state: 'loading', query };
-  await search.search(query);
+  await unlessReplaced(search.search(query));
   if (!liveLookup(id)) return;
   const status = search.status.peek(), [first, ...others] = search.results.peek(), attribution = search.attribution.peek();
   if (status === 'error') { line.value = { state: 'offline', query }; return; }
@@ -170,6 +171,8 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
   const l = line.value, loc = store.location.value, sc = loc?.lookup ? siteClimate(loc.lookup) : null;
   const site = l && sc && sc.today && loc && l.state === sc.state;
   const proposed = store.proposedClimate.value;
+  // As Start.tsx's cards: a proposal shows only while no climate is chosen or shown from a link.
+  const picked = !!sc?.zone && proposed === sc.zone && !(store.climate.value ?? pendingClimate.value);
   // A site line whose site has gone (a link without o= replaced a link's location): nothing to say.
   const gone = !!l && !loc && (l.state === 'ready' || l.state === 'borderline' || l.state === 'polar' || l.state === 'coast');
   return (
@@ -184,7 +187,12 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
                 {' '}
                 {sc.state === 'polar' ? T('location.state.polar')
                   // Borderline (UX audit fix 2): both climates named, the class's own pre-selected.
-                  : sc.state === 'borderline' ? (sc.zone && sc.near ? `${T('location.between', { a: zoneLabel(sc.zone), b: zoneLabel(sc.near) })} ${T('location.state.borderline')}` : `${T('location.state.borderline')}${sc.zone ? ` ${T('location.picked', { climate: zoneLabel(sc.zone) })}` : ''}`)
+                  // "We picked X" only while X is the card Start shows as proposed (none chosen;
+                  // review round 4, 2); otherwise both named and a plain "check" (a link's or a saved
+                  // location under a chosen climate, or a card chosen since).
+                  : sc.state === 'borderline' ? (sc.zone && sc.near
+                    ? `${T(picked ? 'location.between' : 'location.betweenCheck', { a: zoneLabel(sc.zone), b: zoneLabel(sc.near) })} ${T('location.state.borderline')}`
+                    : `${T('location.state.borderline')}${picked ? ` ${T('location.picked', { climate: zoneLabel(sc.zone) })}` : ''}`)
                   : T('location.suggests', { climate: zoneLabel(sc.zone) })}
                 {sc.state === 'coast' && ` ${T('location.state.coast')}`}
               </p>

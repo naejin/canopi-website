@@ -21,29 +21,24 @@ function geolocationSupported(): boolean {
     && typeof navigator !== 'undefined' && Boolean(navigator.geolocation)
 }
 
-/** How long an unanswered permission prompt may wait before the read ends as a timeout. */
-export const PROMPT_CAP_MS = 30_000
+/** One cap over the prompt and the fix when the permission was not granted before the press. */
+export const PROMPT_CAP_MS = 45_000
 
 type Position = { lat: number; lon: number } | { code: GeolocationErrorCode }
 /**
  * The device's position once, or the browser's error code (2 when geolocation is not supported).
- * Website change (P5 S5b review rounds 2 and 3): the browser's own timeout does not run while its
- * permission prompt waits, so a prompt left unanswered would hold the read forever. With the
- * permission's status (`queryGeolocationPermission`) in `prompt`, the prompt gets PROMPT_CAP_MS; once
- * it is answered (its `change` event) the browser's timeout governs the fix, with a backstop 5 s after
- * it. Without a status (no Permissions API) nothing says when the prompt is answered, so the one cap
- * covers the prompt and the fix: PROMPT_CAP_MS + the browser's timeout.
+ * Website change (P5 S5b review rounds 2 to 4): the browser's own timeout does not run while its
+ * permission prompt waits, so a prompt left unanswered would hold the read forever. Granted before
+ * the press (`queryGeolocationPermission`): the browser's timeout, with a backstop 5 s after it.
+ * Otherwise one cap, PROMPT_CAP_MS, over the prompt and the fix: a one-time Allow fires no `change`
+ * event in some browsers (Firefox without Remember, Safari's Ask), so nothing tells when the prompt
+ * was answered.
  */
 export function currentPosition(options: PositionOptions = SITE_POSITION_OPTIONS, permission: PermissionStatus | null = null): Promise<Position> {
   if (!geolocationSupported()) return Promise.resolve({ code: 2 })
-  const fix = (options.timeout ?? 15_000) + 5_000
   return new Promise((resolve) => {
-    let cap: ReturnType<typeof setTimeout> | undefined
-    const arm = (ms: number) => { clearTimeout(cap); cap = setTimeout(() => done({ code: 3 }), ms) }
-    const answered = () => { if (permission?.state !== 'prompt') arm(fix) }
-    const done = (r: Position) => { clearTimeout(cap); permission?.removeEventListener('change', answered); resolve(r) }
-    if (permission?.state === 'prompt') { arm(PROMPT_CAP_MS); permission.addEventListener('change', answered) }
-    else arm(permission ? fix : PROMPT_CAP_MS + fix - 5_000)
+    const done = (r: Position) => { clearTimeout(cap); resolve(r) }
+    const cap = setTimeout(() => done({ code: 3 }), permission?.state === 'granted' ? (options.timeout ?? 15_000) + 5_000 : PROMPT_CAP_MS)
     navigator.geolocation.getCurrentPosition(
       (p) => done({ lat: p.coords.latitude, lon: p.coords.longitude }),
       (e) => done({ code: (e.code === 1 || e.code === 3 ? e.code : 2) as GeolocationErrorCode }),

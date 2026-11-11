@@ -286,17 +286,66 @@ test('review round 3 (4): an answered permission prompt leaves the fix to the br
     t.mock.timers.tick(geo.PROMPT_CAP_MS);
     await new Promise((r) => setImmediate(r));
     assert.deepEqual(got, { code: 3 }, 'an ignored prompt ends as a timeout');
-    // No Permissions API: the cap covers the prompt and the browser's 15 s.
+    // No Permissions API: the same one cap, which covers a prompt and the browser's 15 s (round 4, 3).
+    assert.ok(geo.PROMPT_CAP_MS >= 30_000 + 15_000);
     got = null;
     void geo.currentPosition(geo.SITE_POSITION_OPTIONS, null).then((r) => { got = r; });
-    t.mock.timers.tick(geo.PROMPT_CAP_MS + 10_000);
+    t.mock.timers.tick(geo.PROMPT_CAP_MS - 1_000);
     await new Promise((r) => setImmediate(r));
-    assert.equal(got, null, 'no permission signal: still waiting within prompt + 15 s');
-    t.mock.timers.tick(10_000);
+    assert.equal(got, null, 'no permission signal: still waiting within the cap');
+    t.mock.timers.tick(1_000);
     await new Promise((r) => setImmediate(r));
     assert.deepEqual(got, { code: 3 });
   } finally {
     if (realGeo) Object.defineProperty(navigator, 'geolocation', realGeo); else delete navigator.geolocation;
     if (!hadWindow) delete globalThis.window;
   }
+});
+
+test('review round 4 (3): a one-time Allow that fires no change event still gets the browser\'s 15 s for the fix; granted at the press: 15 s + 5 s', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const geo = await import('../src/lib/location/geolocation.ts');
+  const hadWindow = 'window' in globalThis;
+  globalThis.window ??= { isSecureContext: true };
+  const realGeo = Object.getOwnPropertyDescriptor(navigator, 'geolocation');
+  let pending = null;
+  Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition: (ok, fail) => { pending = { ok, fail }; } } });
+  const flush = () => new Promise((r) => setImmediate(r));
+  try {
+    // Allowed once at 25 s with no change event (Firefox without Remember, Safari Ask), a fix 10 s later.
+    let got = null;
+    void geo.currentPosition(geo.SITE_POSITION_OPTIONS, Object.assign(new EventTarget(), { state: 'prompt' })).then((r) => { got = r; });
+    t.mock.timers.tick(35_000);
+    await flush();
+    assert.equal(got, null, 'still waiting at 35 s');
+    pending.ok({ coords: { latitude: 45.75, longitude: 4.85 } });
+    await flush();
+    assert.deepEqual(got, { lat: 45.75, lon: 4.85 });
+    // Granted at the press: the browser's 15 s, a backstop 5 s after it.
+    got = null;
+    void geo.currentPosition(geo.SITE_POSITION_OPTIONS, Object.assign(new EventTarget(), { state: 'granted' })).then((r) => { got = r; });
+    t.mock.timers.tick(19_000);
+    await flush();
+    assert.equal(got, null);
+    t.mock.timers.tick(1_000);
+    await flush();
+    assert.deepEqual(got, { code: 3 });
+  } finally {
+    if (realGeo) Object.defineProperty(navigator, 'geolocation', realGeo); else delete navigator.geolocation;
+    if (!hadWindow) delete globalThis.window;
+  }
+});
+
+test('review round 4 (1): a lookup replaced while it waits (a prompt nobody answers) lets its hold go at once', async () => {
+  const load = await import('../src/islands/consortium/views/location/load.ts');
+  const first = load.looking(async () => { load.nextLookup(); await load.unlessReplaced(new Promise(() => {})); });
+  assert.equal(load.lookups.peek(), 1);
+  await load.looking(async () => { load.nextLookup(); });
+  await first;
+  assert.equal(load.lookups.peek(), 0, 'the replaced wait ended with its replacement');
+  // Dropped (letGo) the same way.
+  const held = load.looking(async () => { load.nextLookup(); await load.unlessReplaced(new Promise(() => {})); });
+  load.letGo(true);
+  await held;
+  assert.equal(load.lookups.peek(), 0);
 });

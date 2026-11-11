@@ -765,6 +765,7 @@
   "consortium.location.why": "{place}：柯本气候类型 {koppen}（{words}）；最冷月夜间平均 {tmin} °C。",
   "consortium.location.suggests": "据此推荐{climate}气候。",
   "consortium.location.between": "介于{a}和{b}之间；我们选择了{a}，请核对。",
+  "consortium.location.betweenCheck": "介于{a}和{b}之间：请核对你的气候是否正确。",
   "consortium.location.picked": "我们选择了{climate}，请核对。",
   "consortium.location.confirm": "使用{climate}",
   "consortium.location.here": "你的位置",

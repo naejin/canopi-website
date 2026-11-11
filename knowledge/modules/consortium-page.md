@@ -5,7 +5,7 @@ description: "The consortium v2 page in 11 locales: the static Astro shell, the 
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:07:20Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:31:08Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:54:23Z }
 sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
@@ -121,7 +121,7 @@ sources:
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
     digest: sha256:fbb8476ab6bd5e58
-    last_modified: 2026-11-11T20:12:15Z
+    last_modified: 2026-11-11T20:31:16Z
   - id: shell-css
     resource: ../../src/styles/consortium/shell.css
     title: src/styles/consortium/shell.css
@@ -216,7 +216,7 @@ sources:
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
     digest: sha256:c50e95d99fd9f486
-    last_modified: 2026-11-11T20:12:15Z
+    last_modified: 2026-11-11T20:31:16Z
   - id: likelyslot-tsx
     resource: ../../src/islands/consortium/views/LikelySlot.tsx
     title: src/islands/consortium/views/LikelySlot.tsx
@@ -225,8 +225,8 @@ sources:
   - id: consortium-p5-browser-test-mjs
     resource: ../../scripts/browser/consortium-p5.browser.test.mjs
     title: scripts/browser/consortium-p5.browser.test.mjs
-    digest: sha256:e2becc9cd9de66c0
-    last_modified: 2026-11-11T20:09:31Z
+    digest: sha256:eba4fa183591fd14
+    last_modified: 2026-11-11T20:50:19Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
@@ -240,8 +240,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:69bb2457af59d25e
-    last_modified: 2026-11-11T20:15:15Z
+    digest: sha256:e96070f03d36f054
+    last_modified: 2026-11-11T20:38:46Z
 enforced_by:
   - scripts/check-built-site.mjs
   - scripts/browser/consortium-commit0.browser.test.mjs

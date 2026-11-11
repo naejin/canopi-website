@@ -765,6 +765,7 @@
   "consortium.location.why": "{place}: 쾨펜 기후 {koppen}({words}); 가장 추운 달의 밤 평균 {tmin} °C.",
   "consortium.location.suggests": "그래서 {climate} 기후를 제안합니다.",
   "consortium.location.between": "{a}와 {b} 사이입니다. {a}를 골랐습니다. 확인하세요.",
+  "consortium.location.betweenCheck": "{a}와 {b} 사이입니다. 기후가 맞는지 확인하세요.",
   "consortium.location.picked": "{climate}를 골랐습니다. 확인하세요.",
   "consortium.location.confirm": "{climate} 사용",
   "consortium.location.here": "내 위치",

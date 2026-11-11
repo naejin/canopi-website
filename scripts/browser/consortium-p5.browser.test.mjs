@@ -273,6 +273,28 @@ test('P5-1f (S5b review round 2, 3): tiles that never answer hold Suggest at mos
   assert.ok(await page.waitForFunction(() => document.querySelector('[data-location-state]')?.getAttribute('data-location-state') === 'failed', { timeout: 15_000 }).then(() => true, () => false), 'the stalled read ends as failed');
   assert.equal(await page.$('[data-location-unread]'), null, 'review round 3 (3): the failed line replaces the "not read" note');
 });
+test('P5-1g (S5b review round 4, 1): a "Use my location" left at its permission prompt and replaced by a search holds nothing: Suggest runs at once, no "not read"', async () => {
+  const page = await tool({ nominatim: 'fixture' });
+  // A prompt nobody answers: the position never comes, the permission stays "prompt".
+  await page.evaluateOnNewDocument(() => {
+    Geolocation.prototype.getCurrentPosition = function () {};
+    const q = Permissions.prototype.query;
+    Permissions.prototype.query = function (d) { return d?.name === 'geolocation' ? Promise.resolve(Object.assign(new EventTarget(), { state: 'prompt', name: 'geolocation' })) : q.call(this, d); };
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready(page);
+  await locationControls(page);
+  await page.click('[data-location-action="geo"]');
+  await search(page, 'Seville');
+  assert.equal(await locationState(page), 'ready', 'Seville read');
+  await page.click('[data-location-confirm]');
+  assert.ok(await has(page, '.ct-cta .button-primary', 15_000));
+  const t0 = Date.now();
+  await page.click('.ct-cta .button-primary');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 8000 }).then(() => true, () => false), 'Suggest ran');
+  assert.ok(Date.now() - t0 < 5000, `at once, not after the 10 s cap (${Date.now() - t0} ms)`);
+  assert.equal(await page.$('[data-location-unread]'), null, 'Seville was read: no "not read" note');
+});
 test('P5-13d (S5b review round 3, 2): Start over drops a link\'s lookup on a stalled network: no loading line, no later "failed", no Suggest hold', async () => {
   const [lat, lon] = SITES.seville;
   const maker = await tool({ geolocation: { lat, lon } });
@@ -280,6 +302,7 @@ test('P5-13d (S5b review round 3, 2): Start over drops a link\'s lookup on a sta
   await maker.click('[data-location-action="geo"]');
   assert.equal(await locationState(maker), 'ready');
   await confirmAndSuggest(maker);
+  await maker.waitForSelector('input[data-share-location]', { visible: true, timeout: 10_000 });
   await maker.click('input[data-share-location]');
   const link = new URL(await maker.$eval('#ct-share-field', (e) => e.value));
   const page = await slowTiles(Infinity);
@@ -472,6 +495,10 @@ test('P5-10 (S5b borderline, UX audit fix 2): Lyon pre-selects Subtropical, says
   await page.click('input[name="ct-climate"][value="temperate"]');
   assert.equal(await storeClimate(page), 'Temperate', 'the other climate, one tap');
   assert.equal(await proposedCard(page), null);
+  // Review round 4 (2): with nothing proposed, the line no longer says "we picked".
+  const after = await page.$eval('[data-location-state]', (e) => e.textContent);
+  assert.doesNotMatch(after, /we picked/i, 'no "we picked" once no card is proposed');
+  assert.match(after, /Between Subtropical and Temperate: check that your climate is right/);
   // Confirming the pre-selected card instead.
   const other = await tool({ geolocation: { lat, lon } });
   await locationControls(other);
@@ -559,6 +586,7 @@ test('P5-13c (S5b review round 2, 4): a link\'s location goes with its consortiu
   await maker.click('[data-location-action="geo"]');
   assert.equal(await locationState(maker), 'ready');
   await confirmAndSuggest(maker);
+  await maker.waitForSelector('input[data-share-location]', { visible: true, timeout: 10_000 });
   await maker.click('input[data-share-location]');
   const link = new URL(await maker.$eval('#ct-share-field', (e) => e.value));
   for (const label of ['Start over', 'Change site']) {

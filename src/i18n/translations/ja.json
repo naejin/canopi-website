@@ -765,6 +765,7 @@
   "consortium.location.why": "{place}：ケッペン区分 {koppen}（{words}）。最も寒い月の夜は平均 {tmin} °C。",
   "consortium.location.suggests": "このため{climate}の気候を提案します。",
   "consortium.location.between": "{a}と{b}の境目です。{a}を選びました。確認してください。",
+  "consortium.location.betweenCheck": "{a}と{b}の境目です。気候が合っているか確認してください。",
   "consortium.location.picked": "{climate}を選びました。確認してください。",
   "consortium.location.confirm": "{climate}を使う",
   "consortium.location.here": "現在地",

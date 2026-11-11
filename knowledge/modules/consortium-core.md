@@ -6,7 +6,7 @@ resource: ../../src/lib/consortium
 tags: [module, consortium]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:07:20Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:31:10Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:54:24Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -151,8 +151,8 @@ sources:
   - id: consortium-p5-seams-s5b-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
-    digest: sha256:727b4e4361e4f680
-    last_modified: 2026-11-11T20:13:07Z
+    digest: sha256:a543283f62fd2157
+    last_modified: 2026-11-11T20:39:01Z
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
@@ -177,7 +177,7 @@ sources:
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
     digest: sha256:cc2231455c1573d7
-    last_modified: 2026-11-11T20:12:25Z
+    last_modified: 2026-11-11T20:31:16Z
   - id: readme-md-2
     resource: ../../scripts/fixtures/consortium-future/README.md
     title: scripts/fixtures/consortium-future/README.md

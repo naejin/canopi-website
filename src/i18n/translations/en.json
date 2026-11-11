@@ -765,6 +765,7 @@
   "consortium.location.why": "{place}: Köppen class {koppen} ({words}); nights in the coldest month average {tmin} °C.",
   "consortium.location.suggests": "This suggests the {climate} climate.",
   "consortium.location.between": "Between {a} and {b}; we picked {a}. Check it.",
+  "consortium.location.betweenCheck": "Between {a} and {b}: check that your climate is right.",
   "consortium.location.picked": "We picked {climate}. Check it.",
   "consortium.location.confirm": "Use {climate}",
   "consortium.location.here": "Your location",

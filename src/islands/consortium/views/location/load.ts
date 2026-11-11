@@ -46,14 +46,22 @@ export const line = signal<Line | null>(null);
 // One lookup at a time owns Start's location state: the newest (nextLookup); an older one that ends
 // later, or one dropped, writes no line, site or notice (liveLookup false).
 let seq = 0;
-export const nextLookup = (): number => ++seq;
+// Settles when the lookup that owns Start is replaced or dropped (unlessReplaced).
+let replaced = () => {};
+let gone = new Promise<void>((r) => { replaced = r; });
+const replace = (): number => { replaced(); gone = new Promise<void>((r) => { replaced = r; }); return ++seq; };
+export const nextLookup = (): number => replace();
 export const liveLookup = (id: number): boolean => id === seq;
+// A wait (a permission prompt, a position, a tile read, a search) that ends the moment its lookup is
+// replaced or dropped, with undefined: the lookup then returns at once, so its hold on Suggest goes
+// with it instead of lasting until the wait settles (review round 4, 1). Call it after nextLookup().
+export const unlessReplaced = <T>(wait: Promise<T>): Promise<T | undefined> => Promise.race([wait, gone.then(() => undefined)]);
 // Start's location state let go (review round 3, 2 and 3): the "not read" note goes; drop (a link's
 // location going with its consortium): its lookup too: no hold on Suggest, no line, no later write.
 export function letGo(drop: boolean): void {
   unread.value = false;
   if (!drop) return;
-  seq++;
+  replace();
   epoch++;
   lookups.value = 0;
   line.value = null;

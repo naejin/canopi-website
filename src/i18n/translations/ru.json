@@ -765,6 +765,7 @@
   "consortium.location.why": "{place}: класс Кёппена {koppen} ({words}); ночи самого холодного месяца в среднем {tmin} °C.",
   "consortium.location.suggests": "Это указывает на климат «{climate}».",
   "consortium.location.between": "Между «{a}» и «{b}»; мы выбрали «{a}». Проверьте.",
+  "consortium.location.betweenCheck": "Между «{a}» и «{b}»: проверьте, что климат выбран верно.",
   "consortium.location.picked": "Мы выбрали «{climate}». Проверьте.",
   "consortium.location.confirm": "Выбрать «{climate}»",
   "consortium.location.here": "Ваше местоположение",

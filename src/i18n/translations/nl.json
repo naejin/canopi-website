@@ -765,6 +765,7 @@
   "consortium.location.why": "{place}: Köppen-klasse {koppen} ({words}); de nachten in de koudste maand liggen gemiddeld op {tmin} °C.",
   "consortium.location.suggests": "Dit wijst op het klimaat {climate}.",
   "consortium.location.between": "Tussen {a} en {b}; we kozen {a}. Controleer het.",
+  "consortium.location.betweenCheck": "Tussen {a} en {b}: controleer of je klimaat klopt.",
   "consortium.location.picked": "We kozen {climate}. Controleer het.",
   "consortium.location.confirm": "{climate} gebruiken",
   "consortium.location.here": "Je locatie",
