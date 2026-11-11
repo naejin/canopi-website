@@ -3,6 +3,7 @@
 // when the address bar may be rewritten, which data urls may be links, where a photo came from, how much of a list shows, what a
 // climate change leaves of a link's notices, when a click is the tail of a double click, the
 // language links' query, where the country comes from at start and the browser's country guess.
+import { safeHref } from '../../lib/safe-href.js';
 
 // How many plants an old link named that the climate files no longer have: the distinct ids of `p`
 // (kept), `a` (members) and `g` (plants from another list) that matched no taxon or several, plus
@@ -103,12 +104,8 @@ export function trimGaps(gaps, addedStrata, free) {
 // loading and error screens: the link that led there stays whole for a reload (M2).
 export const mayPersist = (state) => state.status !== 'loading' && state.status !== 'error' && state.status !== 'boot';
 
-// A url from the data as a link target: an absolute http or https url, else null, so the page shows
-// the text without a link (prepush m1: the installer refuses other schemes; this is the second wall).
-export function safeHref(url) {
-  if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) return null;
-  try { return ['http:', 'https:'].includes(new URL(url).protocol) ? url : null; } catch { return null; }
-}
+// safeHref lives in src/lib/safe-href.js (shared with /data-sources/ and the built-site check).
+export { safeHref };
 
 // The site a photo's source page is on, by name, for its credit line: decided by the parsed url's
 // host, and null for a url that is not http(s) (javascript://commons.wikimedia.org/… has that host too).

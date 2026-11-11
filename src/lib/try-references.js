@@ -1,7 +1,7 @@
 // The TRY citation and the parser of the dataset list behind /data-sources/. Plain JavaScript, free of
 // Astro and Vite, so scripts/install-consortium.mjs and scripts/check-built-site.mjs run it in plain
 // Node on every version engines allows (22.12 to 22.17 cannot import a .ts file without a flag).
-import { safeHref } from '../scripts/consortium/logic.js';
+import { safeHref } from './safe-href.js';
 
 // The short standard reference from the TRY Intellectual Property Guidelines, verbatim: the space
 // in "119– 188" is theirs. The DOI is split off only because the page links it.

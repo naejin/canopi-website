@@ -11,7 +11,7 @@ import DonateDialog from './DonateDialog.astro';
 import PageData from './PageData.astro';
 import { tryReferences, tryDatasetCount } from '../data/try-references';
 import { sourceCredits } from '../data/source-credits';
-import { safeHref } from '../scripts/consortium/logic.js';
+import { safeHref } from '../lib/safe-href.js';
 import { TRY_CITATION, TRY_DOI, referenceParts } from '../lib/try-references';
 import { t, type Locale } from '../i18n/utils';
 interface Props { lang: Locale; }

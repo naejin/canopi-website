@@ -3,7 +3,7 @@
 // lists `source_credits` and copied byte for byte by scripts/install-consortium.mjs to
 // src/data/source_credits.tsv. Plain JavaScript, free of Astro and Vite, so the installer and
 // scripts/check-built-site.mjs run it in plain Node, as src/lib/try-references.js.
-import { safeHref } from '../scripts/consortium/logic.js';
+import { safeHref } from './safe-href.js';
 
 export const CREDIT_FILE = 'source_credits.tsv';
 export const CREDIT_COLUMNS = ['source', 'tags', 'name', 'credit', 'licence', 'licence_status', 'url', 'status'];
