@@ -4,7 +4,7 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T21:58:34Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T22:43:28Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:29:58Z }
@@ -12,8 +12,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:02ddfcb7eee72f4b
-    last_modified: 2026-11-11T15:36:29Z
+    digest: sha256:4a34b88ab7543c68
+    last_modified: 2026-11-11T22:31:55Z
   - id: readme
     resource: ../../README.md
     title: README.md
@@ -50,7 +50,7 @@ Node >= 22.13.0 (`node:sqlite` without a flag).
 | built-site check | `node scripts/check-built-site.mjs` |
 | bibliography links (network, by hand) | `npm run check:bibliography` |
 | browser tests (after a build; never in `npm test`) | `timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 npm run test:browser` (it runs `npm run build:browser-test` first: `CANOPI_BROWSER_TEST=1 astro build`, which compiles in the `window.__ctTest` hook through the `__CT_TEST_HOOK__` constant defined from that flag only, into its own `dist-test/` (gitignored), so `dist/` only ever holds the production build): wrangler dev on 4420 (`CANOPI_BROWSER_PORT`, 4420–4498), headless system Chrome (`CANOPI_CHROME`, default `/usr/bin/google-chrome`) through puppeteer-core; one file per owner (every file must pass with no todo or skip: `browser-tests.test.mjs` fails on either; parallel runs keep ports 2 apart, since each server takes the next port for its inspector); if a run is killed, the server's process group is killed with it, and a stray server on the port is never taken for this run's; see [Consortium page](/modules/consortium-page.md) |
-| consortium timing (on demand, after a build; not a test) | `timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 node scripts/browser/consortium-timing.mjs` (same `CANOPI_BROWSER_PORT`): on the production `dist/` (run `npm run build` first): §8 cold and warm load of a `#v=4` link of 9 Temperate plants under 4× CPU, 9 Mbps and 60 ms RTT, median of 5, to `ct:matrix` |
+| consortium timing (on demand, after a build; not a test) | `timeout 900 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 npm run timing:consortium` (same `CANOPI_BROWSER_PORT`; `CANOPI_TIMING_PROFILES=desktop` or `phone`, `CANOPI_TIMING_RUNS`): on the production `dist/` (run `npm run build` first): §8 first visit and reload of a `#v=4` link of 9 Temperate plants, median of 5, to `ct:matrix`, desktop (1280 px, 4× CPU, 9 Mbps, 60 ms RTT) and slow phone (390 px, 4× CPU, Slow 4G: ~1.6 Mbps down, 400 ms RTT); numbers only |
 | consortium data (network, by hand; output committed) | `npm run install:consortium -- <canopi-data export dir>`, given the original directory under `<canopi-data>/data/exports/consortium/`, not a copy: the install runs `canopi release verify` on it from canopi-data (`CANOPI_DATA_DIR`, else the sibling `../canopi-data`; a git worktree must set it; needs `uv`) and refuses on any exit but 0, showing the reason, older exports with no receipt included (see [Consortium core](/modules/consortium-core.md); tests use `--fixture --no-images --out <tmp>`, which skip that check, need no canopi-data, and are refused for `public/data/consortium/`) |
 | climate tiles (part of every `astro build`, and of `astro dev` when missing, from the archive or cache only; never committed) | the build's integration, or `npm run install:climate` by hand, installs the release pinned in `src/data/climate-release.json` into the git-ignored `public/data/climate/` and `src/data/climate-index.json`: nothing when already installed, else `CANOPI_CLIMATE_ARCHIVE=/path/to/canopi-climate-grid-vX.Y.Z.tar` (offline), the cache (`CANOPI_CLIMATE_CACHE`, default `node_modules/.cache/canopi-climate/`) or one ~99 MB download from GitHub; size and sha256 verified first, any failure fails the build. `npm run install:climate -- <tar>` installs a local tar (verified against the pin). The reader's golden test reads the extracted grid at `CANOPI_CLIMATE_GRID` (default the canopi-cache path) and skips without it; see [Climate reader](/modules/climate-reader.md) |
 | with legacy `/app/` | `CANOPI_WEB_EDITION_ARCHIVE=/path/to/canopi-web-edition-*.tar.gz npm run build:with-web` |

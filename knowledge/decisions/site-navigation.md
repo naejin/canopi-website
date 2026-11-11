@@ -6,7 +6,7 @@ tags: [decision, navigation]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:07:20Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T19:53:08Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T22:43:29Z }
 sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
@@ -36,8 +36,8 @@ sources:
   - id: footer-astro
     resource: ../../src/components/Footer.astro
     title: src/components/Footer.astro
-    digest: sha256:56a42ab06771a82f
-    last_modified: 2026-11-05T23:05:05Z
+    digest: sha256:0376f9cc58f7d532
+    last_modified: 2026-11-11T17:57:36Z
   - id: bibliography-astro
     resource: ../../src/components/Bibliography.astro
     title: src/components/Bibliography.astro
@@ -51,8 +51,8 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:70f7bc4d57e1357c
-    last_modified: 2026-11-11T20:07:03Z
+    digest: sha256:fbb224d3019bb57b
+    last_modified: 2026-11-11T22:02:53Z
 enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 ---
 
