@@ -16,8 +16,10 @@ type Sqlite3 = Awaited<ReturnType<typeof sqlite3InitModule>>;
 export type Database = InstanceType<Sqlite3['oo1']['DB']>;
 export interface Opened { sqlite3: Sqlite3; db: Database }
 
-const WASM_TIMEOUT_MS = 15_000;
-const WASM_FETCH_FAILED = /both async and sync fetching of the wasm failed/;
+// A download fails when it stalls (no byte for STALL_MS: before the response or between chunks), or
+// past BACKSTOP_MS in all; a slow but steady connection is waited for (review R4-4).
+const STALL_MS = 15_000;
+const BACKSTOP_MS = 90_000;
 
 // The browser is too old for the tool (P4: no DecompressionStream). WebAssembly missing is the
 // "turned off" screen instead (P5: iOS Lockdown Mode or a policy removes it from a recent browser).
@@ -28,23 +30,51 @@ export function wasmMissing(): boolean {
   return typeof WebAssembly !== 'object' || typeof WebAssembly.instantiate !== 'function';
 }
 
-async function fetchBytes(ref: DbRef): Promise<Uint8Array> {
-  let res: Response;
+// The whole body of url (bytes null when the status is not ok). Throws when it did not arrive: a
+// network error, a stall, or the backstop.
+async function download(url: string): Promise<{ status: number; bytes: Uint8Array | null }> {
+  const ctrl = new AbortController();
+  let why = '';
+  let stall: ReturnType<typeof setTimeout> | undefined;
+  const arm = () => { clearTimeout(stall); stall = setTimeout(() => { why = `no byte for ${STALL_MS / 1000} s`; ctrl.abort(); }, STALL_MS); };
+  const backstop = setTimeout(() => { why = `not done in ${BACKSTOP_MS / 1000} s`; ctrl.abort(); }, BACKSTOP_MS);
+  arm();
   try {
-    res = await fetch(ref.url);
+    const res = await fetch(url, { signal: ctrl.signal, credentials: 'same-origin' });
+    if (!res.ok) return { status: res.status, bytes: null };
+    if (!res.body) return { status: res.status, bytes: new Uint8Array(await res.arrayBuffer()) };
+    const reader = res.body.getReader(), parts: Uint8Array[] = [];
+    let size = 0;
+    for (;;) {
+      arm();
+      const { done, value } = await reader.read();
+      if (done) break;
+      parts.push(value);
+      size += value.length;
+    }
+    const bytes = new Uint8Array(size);
+    let at = 0;
+    for (const p of parts) { bytes.set(p, at); at += p.length; }
+    return { status: res.status, bytes };
+  } catch (err) {
+    throw new Error(why || (err as Error).message);
+  } finally {
+    clearTimeout(stall);
+    clearTimeout(backstop);
+  }
+}
+
+async function fetchBytes(ref: DbRef): Promise<Uint8Array> {
+  let got: { status: number; bytes: Uint8Array | null };
+  try {
+    got = await download(ref.url);
   } catch (err) {
     throw new LoadError('fetch', `the database did not arrive: ${(err as Error).message}`);
   }
   // A 404 after a deploy: the page is older than the file it names (a stale tab).
-  if (res.status === 404) throw new LoadError('stale', `${ref.url} is gone (404)`);
-  if (!res.ok) throw new LoadError('fetch', `${ref.url}: HTTP ${res.status}`);
-  let body: Uint8Array;
-  try {
-    body = new Uint8Array(await res.arrayBuffer());
-  } catch (err) {
-    throw new LoadError('fetch', `the database stopped arriving: ${(err as Error).message}`);
-  }
-  return decodeDatabase(body, ref);
+  if (got.status === 404) throw new LoadError('stale', `${ref.url} is gone (404)`);
+  if (!got.bytes) throw new LoadError('fetch', `${ref.url}: HTTP ${got.status}`);
+  return decodeDatabase(got.bytes, ref);
 }
 
 async function initSqlite(): Promise<Sqlite3> {
@@ -59,21 +89,43 @@ async function initSqlite(): Promise<Sqlite3> {
   (globalThis as { sqlite3ApiConfig?: unknown }).sqlite3ApiConfig = {
     disable: { vfs: { kvvfs: true, opfs: true, 'opfs-vfs': true, 'opfs-sahpool': true, 'opfs-wl': true } },
   };
+  // The wasm is downloaded here, not by the Emscripten loader, so a stall (not a fixed cap) ends it
+  // and the failure says which: the file did not arrive (wasm-fetch: the tool did not load, Reload)
+  // or WebAssembly refused it (wasm-blocked: compile or instantiate refused). Emscripten never
+  // rejects through this hook, so its failures race the init. The URL is the third argument
+  // (astro.config.mjs canopi:sqlite-main-thread-only).
+  let failed: (err: unknown) => void = () => {};
+  const failure = new Promise<never>((_, reject) => { failed = reject; });
+  const instantiateWasm = (imports: WebAssembly.Imports, ready: (i: WebAssembly.Instance, m: WebAssembly.Module) => void, url?: string) => {
+    void (async () => {
+      if (!url) throw new LoadError('wasm-fetch', 'no sqlite3.wasm URL from the loader');
+      let got: { status: number; bytes: Uint8Array | null };
+      try {
+        got = await download(url);
+      } catch (err) {
+        throw new LoadError('wasm-fetch', `sqlite3.wasm did not arrive: ${(err as Error).message}`);
+      }
+      if (!got.bytes) throw new LoadError('wasm-fetch', `sqlite3.wasm: HTTP ${got.status}`);
+      let module: WebAssembly.Module, instance: WebAssembly.Instance;
+      try {
+        module = await WebAssembly.compile(got.bytes as Uint8Array<ArrayBuffer>);
+        instance = await WebAssembly.instantiate(module, imports);
+      } catch (err) {
+        throw new LoadError('wasm-blocked', `WebAssembly was refused: ${(err as Error).message}`);
+      }
+      ready(instance, module);
+    })().catch(failed);
+    return {};
+  };
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    // Not started in 15 s: a download too slow, not WebAssembly turned off (that fails at once: no
-    // WebAssembly global, or a refused compile or instantiate). The tool did not load; Reload (R3-4).
-    timer = setTimeout(() => reject(new LoadError('wasm-fetch', 'sqlite3.wasm did not start in 15 s')), WASM_TIMEOUT_MS);
+  const backstop = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new LoadError('wasm-fetch', `sqlite3.wasm did not start in ${BACKSTOP_MS / 1000} s`)), BACKSTOP_MS);
   });
   try {
-    return await Promise.race([init({ print: () => {}, printErr: () => {} }), timeout]);
+    return await Promise.race([init({ print: () => {}, printErr: () => {}, instantiateWasm }), failure, backstop]);
   } catch (err) {
     if (err instanceof LoadError) throw err;
-    const message = String((err as Error)?.message ?? err);
-    // The wasm file did not arrive (a 403 from a proxy, offline): the Emscripten loader aborts with
-    // this line once both its fetches failed. That is not WebAssembly turned off (review L1).
-    if (WASM_FETCH_FAILED.test(message)) throw new LoadError('wasm-fetch', `sqlite3.wasm did not arrive: ${message}`);
-    throw new LoadError('wasm-blocked', `WebAssembly was refused: ${message}`);
+    throw new LoadError('wasm-blocked', `WebAssembly was refused: ${String((err as Error)?.message ?? err)}`);
   } finally {
     clearTimeout(timer);
   }

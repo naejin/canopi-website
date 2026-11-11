@@ -60,13 +60,14 @@ export async function fixturePhotos() {
 // - 'corrupt': bytes overwritten inside the gzip stream (does not inflate: damaged);
 // - 'user-version': a valid database with user_version 2 (schema);
 // - 'digest': the right bytes under a wrong sha256 (damaged);
-// - 'empty': an empty 200 body (damaged).
+// - 'empty': an empty 200 body (damaged);
+// - 'stall': no response ever comes (a stalled connection: fetch, after the stall timer).
 export function servedDatabase(kind, fx) {
   let gz = fx.gz, raw = gunzipSync(fx.gz), wrongSha = false;
   if (kind === 'corrupt') gz = Buffer.concat([gz.subarray(0, 64), Buffer.alloc(256, 0x5a), gz.subarray(320)]);
   else if (kind === 'user-version') { raw = Buffer.from(raw); raw.writeUInt32BE(2, 60); gz = gzipSync(raw); }
   else if (kind === 'digest') wrongSha = true;
-  else if (kind === 'empty') gz = Buffer.alloc(0);
+  else if (kind === 'empty' || kind === 'stall') gz = kind === 'empty' ? Buffer.alloc(0) : gz;
   else if (kind) throw new Error(`no database variant "${kind}"`);
   return { bytes: gz, ref: { sha256: wrongSha ? sha256(raw) : sha256(gz), bytes: gz.length, rawSha256: sha256(raw), rawBytes: raw.length } };
 }
@@ -108,7 +109,8 @@ export async function startHarness({ log = () => {} } = {}) {
   // - photos: true gives the fixture's 6 photo plants a self-served PNG (BT-5);
   // - wasm: false removes WebAssembly before any script runs (Lockdown Mode, P5);
   // - loader: 404 | 'offline' fails the island's loader chunk (a deploy; offline, navigator.onLine false);
-  // - wasmFile: 403 | 'offline' fails the fetch of sqlite3.<hash>.wasm (a proxy refusing it; offline);
+  // - wasmFile: 403 | 'offline' | 'stall' fails the fetch of sqlite3.<hash>.wasm (a proxy refusing it;
+  //   offline; never answered, a stalled connection);
   // - storage: false makes localStorage and sessionStorage throw (BT-7's note); the theme then comes
   //   from prefers-color-scheme, which is always emulated as well; storage: 'cookies-blocked' opens
   //   the page in a Chrome whose profile blocks site data (the real setting, not a stub);
@@ -156,6 +158,7 @@ export async function startHarness({ log = () => {} } = {}) {
         const url = new URL(request.url());
         if (fx && url.pathname === `/data/consortium/${fx.file}`) {
           if (!served) return request.respond({ status: 404, contentType: 'text/plain', body: 'Not found' });
+          if (database === 'stall') return; // never answered: the page's stall timer must end it
           return request.respond({ status: 200, contentType: 'application/gzip', body: served.bytes });
         }
         if (photos && url.pathname.startsWith(FIXTURE_PHOTO_PREFIX)) return request.respond({ status: 200, contentType: 'image/png', body: PNG_1PX });
@@ -163,6 +166,7 @@ export async function startHarness({ log = () => {} } = {}) {
           return loader === 'offline' ? request.abort('internetdisconnected') : request.respond({ status: 404, contentType: 'text/plain', body: 'Not found' });
         }
         if (wasmFile && /\/sqlite3\.[\w-]+\.wasm$/.test(url.pathname)) {
+          if (wasmFile === 'stall') return; // never answered: the page's stall timer must end it
           return wasmFile === 'offline' ? request.abort('internetdisconnected') : request.respond({ status: Number(wasmFile), contentType: 'text/plain', body: 'Forbidden' });
         }
         if (correction && url.pathname === '/api/correction' && request.method() === 'POST') {

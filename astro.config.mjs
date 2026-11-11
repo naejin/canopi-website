@@ -50,6 +50,12 @@ const sqliteMainThreadOnly = {
       if (!out.includes(literal)) throw new Error(`canopi:sqlite-main-thread-only: ${literal} is gone from ${id}; check the sqlite-wasm upgrade`);
       out = out.replaceAll(literal, `new URL(${JSON.stringify(name.slice(0, 7))} + ${JSON.stringify(name.slice(7))}, import.meta.url)`);
     }
+    // The page downloads the wasm itself (data/load.ts instantiateWasm: a stall timer, not a fixed cap;
+    // review R4-4), so the hook gets the wasm's URL as a third argument: the package's own
+    // new URL("sqlite3.wasm", import.meta.url), which Vite emits as the one hashed file.
+    const hook = /Module\["instantiateWasm"\]\(info, \(inst, mod\) => \{\s*resolve\(receiveInstance\(inst, mod\)\);\s*\}\)/;
+    if (!hook.test(out)) throw new Error(`canopi:sqlite-main-thread-only: the instantiateWasm call is gone from ${id}; check the sqlite-wasm upgrade`);
+    out = out.replace(hook, (call) => `${call.slice(0, -1)}, new URL("sqlite3.wasm", import.meta.url).href)`);
     return { code: out, map: null };
   },
 };
