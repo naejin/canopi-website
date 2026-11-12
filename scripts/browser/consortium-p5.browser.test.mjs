@@ -174,7 +174,7 @@ test('P5-0d (commit 0 seams): without a location, on a covered climate, no range
   assert.deepEqual(await page.evaluate(() => window.__ctTest.store.markProviders.value.length), 0, 'the providers do not even load without a location on a covered climate');
   // With a location the providers load; whatever marks they give carry a PlantMarks surface.
   await atSite(page, 'lyon');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.markProviders.value.length === 3, { timeout: 10_000 }).then(() => true, () => false), 'the providers load for a location');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.markProviders.value.length === 2, { timeout: 10_000 }).then(() => true, () => false), 'the providers (range and future; native returns with P5.2) load for a location');
   for (const m of await marks()) assert.ok(['chip', 'row', 'add', 'details'].includes(m.surface), `the ${m.kind} mark is drawn by PlantMarks on a surface`);
   assert.deepEqual(page.thirdParty, []);
   assert.deepEqual(page.nominatim, []);
