@@ -829,7 +829,7 @@
   "consortium.range.side.cool": "een koeler jaar hier: jaargemiddelde {site} °C, meestal geregistreerd vanaf {bound} °C",
   "consortium.range.side.summer": "een koelere zomer hier: gemiddelde van de warmste maand {site} °C, meestal geregistreerd vanaf {bound} °C",
   "consortium.range.side.hot": "hetere zomers hier: warmste maand {site} °C, meestal geregistreerd onder {bound} °C",
-  "consortium.range.weak": "Deze grens berust op waarnemingen van weinig plaatsen en markeert dus alleen de rand.",
+  "consortium.range.disputed": "Bronnen zijn het oneens over deze grens; TreeGOER legt die strenger.",
   "consortium.range.source.treegoer": "Die grens komt uit TreeGOER (milieubereiken van bomen) en is hier strenger dan de GBIF-waarnemingen.",
   "consortium.range.pool.count": "one: # van de {total} planten is geregistreerd in klimaten zoals dat van je terrein (koudste maand {cold} °C, warmste maand {hot} °C, jaargemiddelde {mean} °C, met {margin} °C marge). | other: # van de {total} planten zijn geregistreerd in klimaten zoals dat van je terrein (koudste maand {cold} °C, warmste maand {hot} °C, jaargemiddelde {mean} °C, met {margin} °C marge).",
   "consortium.range.pool.edge": "one: # daarvan staat aan de rand van haar waargenomen verspreiding. | other: # daarvan staan aan de rand van hun waargenomen verspreiding.",

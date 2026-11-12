@@ -221,7 +221,7 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
   const mine = blockOf('en');
   // What the code reads: range-marks.ts and pool.tsx keys.
   const used = ['range.edge', 'range.edgeShort', 'range.edgeDetails', 'range.outside', 'range.outsideShort', 'range.outsideDetails', 'range.unknown', 'range.unknownShort', 'range.drier', 'range.wetter', 'range.aridityNotChecked',
-    'range.side.cold', 'range.side.mild', 'range.side.cool', 'range.side.summer', 'range.side.hot', 'range.weak', 'range.source.treegoer', 'range.pool.count', 'range.pool.edge', 'range.pool.left', 'range.pool.caveat', 'range.pool.aridityNotChecked',
+    'range.side.cold', 'range.side.mild', 'range.side.cool', 'range.side.summer', 'range.side.hot', 'range.disputed', 'range.source.treegoer', 'range.pool.count', 'range.pool.edge', 'range.pool.left', 'range.pool.caveat', 'range.pool.aridityNotChecked',
     'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailable', 'range.unavailableBorrowed', 'range.needsSite', 'range.needsSite.go', 'range.needsSite.pill', 'range.annual', 'range.annualShort', 'range.coolSeason', 'range.coolSeasonShort', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed', 'estimate.noSite', 'marks.unavailable'];
   assert.deepEqual(mine, used.map((k) => `consortium.${k}`));
   const holes = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().filter((x, i, a) => a.indexOf(x) === i);
@@ -279,11 +279,13 @@ const SITES = {
 // lyon 349, dakar 259, lima 253, hanoi 252, montreal 145, nairobi 182, perth 131, seville 117, oslo 238,
 // manaus 198, phoenix 80, brisbane 290, yakutsk 59, chicago 239). Nairobi loses its too-cool tropical
 // trees (cacao, coconut); the hot sites keep more under the heat limit.
-// Export r-b958a4239cc68f73 (grown_as_annual crops are annuals; disputed cold and warmth limits are weak
-// rows, at most the edge; annuals' summer warmth; on r-01102782139409b5: lyon 349, dakar 263, lima 273,
-// hanoi 286, montreal 177, nairobi 163, perth 176, seville 198, oslo 236, manaus 199, phoenix 134,
-// brisbane 333, yakutsk 59, chicago 255).
-const KEPT = { lyon: 360, dakar: 313, lima: 320, hanoi: 330, montreal: 191, nairobi: 164, perth: 182, seville: 198, oslo: 237, manaus: 199, phoenix: 150, brisbane: 367, yakutsk: 85, chicago: 256 };
+// Export r-b958a4239cc68f73 (grown_as_annual crops are annuals; annuals' summer warmth; a disputed (weak)
+// row is a bound as any other, coordinator decision 2026-11-12; with the weak cap it was dakar 313,
+// lima 320, hanoi 330, montreal 191, perth 182, oslo 237, brisbane 367, yakutsk 85, chicago 256; on
+// r-01102782139409b5: lyon 349, dakar 263, lima 273, hanoi 286, montreal 177, nairobi 163, perth 176,
+// seville 198, oslo 236, manaus 199, phoenix 134, brisbane 333, yakutsk 59, chicago 255).
+// The same counts with the summer side limited to heat-demanding annuals (coordinator decision 2026-11-12).
+const KEPT = { lyon: 360, dakar: 274, lima: 282, hanoi: 293, montreal: 182, nairobi: 164, perth: 176, seville: 198, oslo: 236, manaus: 199, phoenix: 150, brisbane: 336, yakutsk: 72, chicago: 255 };
 
 const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
 const real = await sourceOf(new URL(`../public${index.files[0].url}`, import.meta.url), { releaseId: index.release_id, climates: index.climates });
@@ -304,17 +306,7 @@ test('real export: the pool each site keeps, and a suggestion from it never hold
     assert.equal(members.every((t) => t && core.rangeFit(t, site) !== 'outside'), true, `${name}: no suggested plant outside its range`);
     assert.equal(core.flagsOf(members, ctxt).some((f) => f.kind === 'conflict' && f.severity === 'high'), false, `${name}: no serious conflict`);
     assert.ok(s.members.length > 0, `${name}: a suggestion`);
-    // Yakutsk: annuals, and (export r-b958a4239cc68f73) perennials whose cold and warmth limits are weak
-    // rows (disputed by TreeGOER), so near the edge however far beyond: loquat, Scots pine. Flagged to
-    // the coordinator (the weak cap has no distance limit); pinned so a change shows.
-    if (name === 'yakutsk') {
-      const perennials = members.filter((t) => !core.isAnnual(t));
-      for (const t of perennials) {
-        const c = core.rangeCheck(t, site);
-        assert.deepEqual(c.beyond, [], `${t.canonical_name}: never outside`);
-        assert.ok(c.sides.every((side) => t.climate[core.RANGE_BOUNDS.find((b) => b.side === side).range].weak), `${t.canonical_name}: only weak rows passed`);
-      }
-    }
+    if (name === 'yakutsk') assert.deepEqual(kept.filter((t) => !core.isAnnual(t)).map((t) => t.canonical_name), [], 'Yakutsk keeps annuals only (a weak row never softens the verdict)');
   }
   assert.deepEqual(got, KEPT, 'the plants each site keeps');
 });

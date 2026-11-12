@@ -7,8 +7,9 @@
 // maximum on the hot side (a heat limit). Annuals skip the cold, mild and cool sides (checksWinter). Beyond a limit by
 // more than RANGE_MARGIN_C: 'outside' (left out of suggestions and lists, still addable with a
 // warning); beyond it by up to the margin: 'edge' ("near the edge of its observed range"). A weak row
-// (ClimateRange.weak: fewer than 20 one-degree blocks, or another raster) never makes a plant outside on
-// its own: beyond it counts as the edge. Aridity is a mark only and never changes the verdict. No
+// (the ClimateRange weak flag, a disputed limit: TreeGOER is stricter by more than 4 °C and the looser bound was
+// kept) is a bound as any other: the doubt is only that it may be too lenient (coordinator decision
+// 2026-11-12), so it never softens a verdict; Details notes it (range-marks.ts). Aridity is a mark only and never changes the verdict. No
 // range: 'unknown' ("range not recorded"), never filtered. No site climate (no location, its lookup
 // loading or failed, open sea): nothing is checked.
 //
@@ -27,8 +28,13 @@
 //   (coolSeason: "Too hot in summer here: grow it in the cool season."); within the margin it is near
 //   the edge, as any plant. It never has the winter sides nor the year's warmth ("Annuals skip the winter-cold check").
 // - An annual's summer (tmean_warm, schema 3; canopi-data docs/consortium-export-v2.md): its low is a
-//   "summer too cool here" limit for annuals only (isAnnual), against the site's warmest-month mean:
-//   taro or ginger grown as annuals would otherwise pass boreal sites. Perennials ignore the row.
+//   "summer too cool here" limit for heat-demanding annuals only (needsSummerHeat), against the site's
+//   warmest-month mean: taro or ginger grown as annuals would otherwise pass boreal sites. Perennials
+//   ignore the row. Coordinator decision 2026-11-12 (canopi-data review): only annuals whose tmean_warm
+//   low is at or above HEAT_DEMAND_C, 18 °C (the chill rule's bound), since one warmest-month value says
+//   nothing about the season length in equatorial highlands: lettuce (16.3), maize (16.8), onion (15.2)
+//   would be "summer too cool" at Quito (14.1) and Bogotá (14.3), where they are staples; taro (19.9),
+//   ginger (23.7), turmeric (21.2), sweet potato (19.5) and okra (23) keep the side.
 import type { PlantId, SiteLocation, SitePeriod, Taxon } from './types.ts';
 import { siteToday } from './site-today.ts';
 
@@ -50,6 +56,9 @@ export interface RangeCheck { verdict: RangeVerdict; sides: RangeSide[]; beyond:
 
 export const RANGE_MARGIN_C = 2;
 export const CHILL_CEILING_C = 18;
+// The tmean_warm low from which an annual needs a warm summer (header, "An annual's summer"): the same
+// 18 °C, coordinator decision 2026-11-12.
+export const HEAT_DEMAND_C = 18;
 
 // The temperature bounds the rule checks, in one place: the plant's range (a TaxonClimate field, read
 // from the export variable named in types.ts RANGE_VARIABLES), which end of it, and the site value it
@@ -82,6 +91,12 @@ export const isAnnual = (taxon: Taxon): boolean => taxon.traits?.is_annual === t
 // every perennial and no annual, cool-season annuals included (owner question pending on checking a
 // cool-season annual's coldest month: then `!isAnnual(t) || annualSeason(t) === 'cool'` for cold).
 export const checksWinter = (taxon: Taxon): boolean => !isAnnual(taxon);
+// Whether the summer side applies (header, "An annual's summer"): an annual recorded only where the
+// warmest month's mean reaches HEAT_DEMAND_C.
+export function needsSummerHeat(taxon: Taxon): boolean {
+  const low = taxon.climate?.tmeanWarm?.low;
+  return isAnnual(taxon) && low != null && low >= HEAT_DEMAND_C;
+}
 // Whether a mild winter can limit the plant (header, "Winter chill"): its tmin_cold Q95 is below the
 // ceiling. No Q95 recorded: nothing to compare.
 export function canNeedChill(taxon: Taxon): boolean {
@@ -98,19 +113,17 @@ export const RANGE_BOUNDS: readonly RangeBound[] = [
   { side: 'cold', range: 'tminCold', end: 'low', site: (p) => p.tminColdC, applies: checksWinter },
   { side: 'mild', range: 'tminCold', end: 'high', site: (p) => p.tminColdC, applies: (t) => checksWinter(t) && canNeedChill(t) },
   { side: 'cool', range: 'tmeanYear', end: 'low', site: yearMeanC, applies: checksWinter },
-  // An annual's summer (header): the site's warmest-month mean against tmean_warm low.
-  { side: 'summer', range: 'tmeanWarm', end: 'low', site: (p) => p.tmeanWarmC, applies: isAnnual },
+  // A heat-demanding annual's summer (header): the site's warmest-month mean against tmean_warm low.
+  { side: 'summer', range: 'tmeanWarm', end: 'low', site: (p) => p.tmeanWarmC, applies: needsSummerHeat },
   HOT_BOUND,
 ];
 
 // One bound against one site slot: inside, edge or beyond, or null when the plant has no value for it
-// or the bound does not apply. Beyond a weak row is the edge (header).
+// or the bound does not apply.
 export function boundPassed(taxon: Taxon, b: RangeBound, slot: SitePeriod): Passed | null {
-  const r = taxon.climate?.[b.range];
-  const v = r?.[b.end];
+  const v = taxon.climate?.[b.range]?.[b.end];
   if (v == null || !b.applies(taxon)) return null;
-  const p = passes(b.site(slot), v, b.end === 'low' ? 'below' : 'above');
-  return p === 'beyond' && r!.weak ? 'edge' : p;
+  return passes(b.site(slot), v, b.end === 'low' ? 'below' : 'above');
 }
 // An annual beyond its heat range is advised to the cool season rather than counted (header).
 export const coolSeasonOf = (taxon: Taxon, b: RangeBound, p: Passed | null): boolean => b.side === 'hot' && p === 'beyond' && isAnnual(taxon);

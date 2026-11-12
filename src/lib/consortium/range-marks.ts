@@ -6,8 +6,9 @@
 //   or wetter than where it is recorded; its own kind, so the edge marks and the panel's "N near the
 //   edge" agree), 'unknown' ("range not recorded"; and in Details, aridity "not checked" on ice).
 //   Details adds one line per bound passed, with the site's and the recorded values (the very values
-//   the verdict compared, to the hundredth, so the gap a reader works out matches it), a line when one
-//   of those bounds rests on few places (a weak row, never more than the edge: 'range.weak'), a line
+//   the verdict compared, to the hundredth, so the gap a reader works out matches it), a line after a
+//   bound whose sources disagree (a weak row: TreeGOER stricter, no value exported, so no number:
+//   'range.disputed'; the verdict is never softened), a line
 //   after a bound taken from TreeGOER ('range.source.treegoer', ClimateRange low/highSource), and says
 //   observed ranges include cultivation and are estimates, not reviewed (export meta ranges_review).
 //   An annual (range.ts isAnnual: is_annual or grown_as_annual; no winter checks) claims no season
@@ -52,17 +53,15 @@ export function rangeMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface)
     }
     if (surface === 'details' && sides.length) {
       const today = siteToday(ctx.location)!, c = taxon.climate!;
-      let weak = false;
       for (const side of sides) {
         const b = SIDE_BOUND[side], range = c[b.range]!;
-        weak ||= range.weak;
         const kind = beyond.includes(side) ? 'outside' : 'edge';
         out.push({ kind, key: SIDE_KEYS[side], vars: { site: deg(b.site(today)), bound: deg(range[b.end]!) }, severity: 'note', state: side });
         // The bound came from TreeGOER (stricter than the thinned GBIF cells there): credited where shown.
         if ((b.end === 'low' ? range.lowSource : range.highSource) === 'treegoer_ranges') out.push({ kind, key: 'range.source.treegoer', severity: 'note', state: 'source' });
+        // Sources disagree on this limit (a weak row): said after it, the verdict unchanged.
+        else if (range.weak) out.push({ kind, key: 'range.disputed', severity: 'note', state: 'disputed' });
       }
-      // A bound from few places (a weak row) is at most the edge: Details says why.
-      if (weak) out.push({ kind: 'edge', key: 'range.weak', severity: 'note', state: 'weak' });
     }
     if (!tight && (aridity === 'drier' || aridity === 'wetter')) out.push({ kind: 'aridity', key: ARIDITY_KEYS[aridity], severity: 'note', state: aridity });
     // The sentence in Details; rows and Add get a short tag, so the note never outgrows a phone row (walk-through F1).

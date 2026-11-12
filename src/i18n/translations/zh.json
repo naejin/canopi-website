@@ -829,7 +829,7 @@
   "consortium.range.side.cool": "这里年均更凉：年平均 {site} °C，有记录的多在 {bound} °C 以上",
   "consortium.range.side.summer": "这里夏季更凉：最热月平均 {site} °C，记录大多从 {bound} °C 起",
   "consortium.range.side.hot": "这里夏季更热：最热月 {site} °C，有记录的多在 {bound} °C 以下",
-  "consortium.range.weak": "这一界限只依据少数地点的记录，因此只标为边缘。",
+  "consortium.range.disputed": "各来源对这一界限看法不一；TreeGOER 给出的更严格。",
   "consortium.range.source.treegoer": "该界限来自 TreeGOER（树木环境范围），此处比 GBIF 记录更严格。",
   "consortium.range.pool.count": "other: {total} 种植物中有 # 种在与你的场地相似的气候中有记录（最冷月 {cold} °C，最热月 {hot} °C，年均 {mean} °C，留有 {margin} °C 余量）。",
   "consortium.range.pool.edge": "other: 其中 # 种接近其观测分布范围的边缘。",

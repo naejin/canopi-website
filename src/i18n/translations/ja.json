@@ -829,7 +829,7 @@
   "consortium.range.side.cool": "ここは年間が涼しい：年平均 {site} °C、記録は主に {bound} °C 以上",
   "consortium.range.side.summer": "ここは夏が涼しい：最暖月の平均 {site} °C、記録の多くは {bound} °C 以上",
   "consortium.range.side.hot": "ここは夏が暑い：最暖月 {site} °C、記録は主に {bound} °C 以下",
-  "consortium.range.weak": "この限界は少数の地点の記録に基づくため、範囲の端としてのみ示します。",
+  "consortium.range.disputed": "この限界は資料によって異なります。TreeGOER はより厳しく見ています。",
   "consortium.range.source.treegoer": "この限界は TreeGOER（樹木の環境範囲）によるもので、ここでは GBIF の記録より厳しくなっています。",
   "consortium.range.pool.count": "other: {total} 種のうち # 種が、あなたの土地に似た気候で記録されています（最寒月 {cold} °C、最暖月 {hot} °C、年平均 {mean} °C、{margin} °C の余裕を含む）。",
   "consortium.range.pool.edge": "other: そのうち # 種は観測された分布範囲の端に近いです。",

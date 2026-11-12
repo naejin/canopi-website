@@ -16,7 +16,7 @@
 // Warming can also lift a site out of "too cool" (the year's warmth, or an annual's summer, schema 3): when today's check
 // has the plant beyond its tmean_year low (an annual: tmean_warm low) and the projected slot passes no bound beyond the margin,
 // the verdict changes and it is said, positively (warmEnough: "Warm enough here by …"); otherwise
-// only losses are listed. The heat check is today's bound (margin and weak-row cap included).
+// only losses are listed. The heat check is today's bound (margin included).
 import type { PlantId, Scenario, SitePeriod, SiteLocation, Taxon } from './types.ts';
 import { phases, scenarios } from './types.ts';
 import { boundPassed, coolSeasonOf, HOT_BOUND as HOT, slotCheck } from './range.ts';

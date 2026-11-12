@@ -829,7 +829,7 @@
   "consortium.range.side.cool": "a cooler year here: year’s mean {site} °C, mostly recorded from {bound} °C",
   "consortium.range.side.summer": "a cooler summer here: warmest month’s mean {site} °C, mostly recorded from {bound} °C",
   "consortium.range.side.hot": "hotter summers here: warmest month {site} °C, mostly recorded up to {bound} °C",
-  "consortium.range.weak": "This limit rests on records from few places, so it only marks the edge.",
+  "consortium.range.disputed": "Sources disagree on this limit; TreeGOER puts it stricter.",
   "consortium.range.source.treegoer": "That limit is from TreeGOER (tree environmental ranges), stricter here than the GBIF records.",
   "consortium.range.pool.count": "one: # plant of {total} is recorded in climates like your site’s (coldest month {cold} °C, warmest month {hot} °C, year’s mean {mean} °C, with a {margin} °C margin). | other: # plants of {total} are recorded in climates like your site’s (coldest month {cold} °C, warmest month {hot} °C, year’s mean {mean} °C, with a {margin} °C margin).",
   "consortium.range.pool.edge": "one: # of them is near the edge of its observed range. | other: # of them are near the edge of their observed range.",

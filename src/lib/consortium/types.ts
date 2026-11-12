@@ -145,8 +145,8 @@ export type RangeBasis = 'thinned_cells' | 'treegoer_quantiles' | 'ecocrop_limit
 // "Observed ranges include cultivation"): low and high are its limits (Q05 and Q95 of the thinned
 // cells; the warmest-month maximum's high is the heat limit, Q99), median their median; null where
 // not computed. blocks: the one-degree blocks the cells fall in; lowSource/highSource: the source of
-// each end (null: the row's own); weak (schema 3): fewer than 20 blocks or another raster, so the row
-// alone never makes a plant "outside" (range.ts: at most "near the edge").
+// each end (null: the row's own); weak (schema 3): a disputed limit (TreeGOER stricter by more than 4 °C,
+// the looser bound kept); range.ts compares it as any row, Details notes it ('range.disputed').
 export interface ClimateRange {
   low: number | null; median: number | null; high: number | null; count: number | null; basis: RangeBasis;
   blocks: number | null; lowSource: string | null; highSource: string | null; weak: boolean;

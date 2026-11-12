@@ -829,7 +829,7 @@
   "consortium.range.side.cool": "un anno più fresco qui: media annua {site} °C, registrata soprattutto da {bound} °C",
   "consortium.range.side.summer": "un’estate più fresca qui: media del mese più caldo {site} °C, registrata per lo più da {bound} °C",
   "consortium.range.side.hot": "estati più calde qui: mese più caldo {site} °C, registrata soprattutto sotto {bound} °C",
-  "consortium.range.weak": "Questo limite si basa su dati di pochi luoghi, quindi segna solo il margine.",
+  "consortium.range.disputed": "Le fonti non concordano su questo limite; TreeGOER lo pone più restrittivo.",
   "consortium.range.source.treegoer": "Quel limite viene da TreeGOER (intervalli ambientali degli alberi), più restrittivo qui delle segnalazioni GBIF.",
   "consortium.range.pool.count": "one: # pianta su {total} è registrata in climi come quello del tuo terreno (mese più freddo {cold} °C, mese più caldo {hot} °C, media annua {mean} °C, con un margine di {margin} °C). | other: # piante su {total} sono registrate in climi come quello del tuo terreno (mese più freddo {cold} °C, mese più caldo {hot} °C, media annua {mean} °C, con un margine di {margin} °C).",
   "consortium.range.pool.edge": "one: # di esse è al limite del suo areale osservato. | other: # di esse sono al limite del loro areale osservato.",

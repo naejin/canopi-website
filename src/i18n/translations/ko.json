@@ -829,7 +829,7 @@
   "consortium.range.side.cool": "이곳은 한 해가 더 서늘함: 연평균 {site} °C, 기록은 주로 {bound} °C 이상",
   "consortium.range.side.summer": "이곳은 여름이 더 서늘함: 가장 더운 달 평균 {site} °C, 기록은 대부분 {bound} °C 이상",
   "consortium.range.side.hot": "이곳은 여름이 더 더움: 가장 더운 달 {site} °C, 기록은 주로 {bound} °C 이하",
-  "consortium.range.weak": "이 한계는 적은 장소의 기록에 근거하므로 가장자리로만 표시합니다.",
+  "consortium.range.disputed": "이 한계는 출처마다 다릅니다. TreeGOER는 더 엄격하게 봅니다.",
   "consortium.range.source.treegoer": "이 한계는 TreeGOER(수목 환경 범위)에서 온 것으로, 여기서는 GBIF 기록보다 엄격합니다.",
   "consortium.range.pool.count": "other: 식물 {total}종 중 #종이 여러분의 터와 비슷한 기후에서 기록되었습니다(가장 추운 달 {cold} °C, 가장 더운 달 {hot} °C, 연평균 {mean} °C, {margin} °C 여유 포함).",
   "consortium.range.pool.edge": "other: 그중 #종은 관측된 분포 범위의 가장자리에 가깝습니다.",

@@ -829,7 +829,7 @@
   "consortium.range.side.cool": "ein kühleres Jahr hier: Jahresmittel {site} °C, meist ab {bound} °C verzeichnet",
   "consortium.range.side.summer": "ein kühlerer Sommer hier: Mittel des wärmsten Monats {site} °C, meist ab {bound} °C verzeichnet",
   "consortium.range.side.hot": "heißere Sommer hier: wärmster Monat {site} °C, meist unterhalb von {bound} °C verzeichnet",
-  "consortium.range.weak": "Diese Grenze beruht auf Funden an wenigen Orten und markiert daher nur den Rand.",
+  "consortium.range.disputed": "Die Quellen sind sich bei dieser Grenze uneinig; TreeGOER setzt sie strenger.",
   "consortium.range.source.treegoer": "Diese Grenze stammt aus TreeGOER (Umweltbereiche von Bäumen) und ist hier enger als die GBIF-Funde.",
   "consortium.range.pool.count": "one: # von {total} Pflanzen ist in Klimaten wie dem deines Standorts verzeichnet (kältester Monat {cold} °C, wärmster Monat {hot} °C, Jahresmittel {mean} °C, mit {margin} °C Spielraum). | other: # von {total} Pflanzen sind in Klimaten wie dem deines Standorts verzeichnet (kältester Monat {cold} °C, wärmster Monat {hot} °C, Jahresmittel {mean} °C, mit {margin} °C Spielraum).",
   "consortium.range.pool.edge": "one: # davon liegt am Rand ihres beobachteten Verbreitungsgebiets. | other: # davon liegen am Rand ihres beobachteten Verbreitungsgebiets.",

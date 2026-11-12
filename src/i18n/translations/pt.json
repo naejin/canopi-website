@@ -829,7 +829,7 @@
   "consortium.range.side.cool": "um ano mais fresco aqui: média anual {site} °C, registrada sobretudo a partir de {bound} °C",
   "consortium.range.side.summer": "um verão mais fresco aqui: média do mês mais quente {site} °C, registada sobretudo a partir de {bound} °C",
   "consortium.range.side.hot": "verões mais quentes aqui: mês mais quente {site} °C, registrada sobretudo abaixo de {bound} °C",
-  "consortium.range.weak": "Este limite assenta em registos de poucos locais, por isso só marca o limite.",
+  "consortium.range.disputed": "As fontes divergem sobre este limite; o TreeGOER coloca-o mais estrito.",
   "consortium.range.source.treegoer": "Esse limite vem do TreeGOER (amplitudes ambientais de árvores), mais estrito aqui do que os registos do GBIF.",
   "consortium.range.pool.count": "one: # planta de {total} está registrada em climas como o do seu terreno (mês mais frio {cold} °C, mês mais quente {hot} °C, média anual {mean} °C, com margem de {margin} °C). | other: # plantas de {total} estão registradas em climas como o do seu terreno (mês mais frio {cold} °C, mês mais quente {hot} °C, média anual {mean} °C, com margem de {margin} °C).",
   "consortium.range.pool.edge": "one: # delas está no limite da sua área observada. | other: # delas estão no limite da sua área observada.",
