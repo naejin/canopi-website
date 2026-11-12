@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: Phases, order, exits and session brief for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate.
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:07:22Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T08:32:39Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -81,6 +81,15 @@ Each phase ships on its own. Repos: W website, D canopi-data, C canopi-climate.
 - **P7b (canopi-data QA, then website):** the dry months already shipped (tiles today and future, plant ranges, schema-2 export) checked in canopi-data QA against the drought indicators (EcoCrop, Niinemets & Valladares, EIVE) and on the validation cities (does it separate Mediterranean from monsoon sites at equal aridity?); then a dry-season row in the website's one range rule (today, future, marks). Only if the check fails: new variables in canopi-climate, then `canopi ranges build`, tiles and ranges rebuilt together under one grid sha.
 - **How:** the full loop (design check, architecture review, one question batch, commit 0, streams, a bug and a conformance review per stream with fix rounds until clean, seam reviews, real-browser walk-through, pre-push review); coherence with P5's range rule, future check, share keys and privacy page is a design-check row.
 - **Order:** after the P5 push; P7a before P7b.
+
+### Feature pipeline (owner, 2026-11-12)
+- **Rule:** new user features are proposed by Claude from growers' needs, each naming the design decision it changes; each goes through a design check against code and data plus an unanchored challenge pass before it enters a phase (decision row "Feature pipeline").
+- **Seasons (in review):** design check and challenge pass in `.local/consortium/v2/seasons-design.md` and `seasons-challenge.md`. Already moved into P5: annual tags follow the plant's growing season (cool / warm / unknown); PFAF months name their source region. Candidates: per-climate cool/warm season for annuals in canopi-data; dry-season and "winter too mild for chill" reasons in the future check; one cool-season and one warm-season plant per placenta cell; food and cover counted per season. Not built: sowing calendars, frost-date estimates, "plant now for later" lists.
+- **Reviewed next, in order:** (1) water across the year (dry months already ship; with P7b); (2) planting for the future climate by phase (weigh the challenge's warning that today's winters can still kill a young tree); (3) fire risk in fire-prone climates (warn, never remove; needs a published flammability source).
+- **Into Suggestion v2:** (4) risk spread (genus, shared diseases, share at risk by 2050); (5) negative interactions (allelopathy, alternate hosts).
+- **With seasons:** (6) goals and a harvest calendar.
+- **With the bundled canopi-data release:** (7) how to start each plant (seed, cutting, grafted; ease).
+- **Later (needs a collection path the static site lacks):** growers' reports feeding canopi-data.
 
 ### P6 — close
 - Usefulness pass, receipts, retrospective; measurements note for the app's ADR 0006; follow-ups filed with slots (canopi-data's WCVP distribution fill is stale by 844 rows since the hybrid-sign reader fix of 2026-11-11 and was left unapplied because its `--apply` is a reviewed coordinator step that forces a release rebuild, slot: the next canopi-data release; upstream whitebox fixes, GBIF DOI download with an account, extreme-minimum model, wider curation).
