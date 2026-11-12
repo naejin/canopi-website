@@ -11,6 +11,7 @@ import type {
   PlantId, RangeBasis, RangeVariable, Reason, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
 } from '../../../lib/consortium/index.ts';
 import { firstPlaced, months, NEAREST_LISTS, phases, RANGE_VARIABLES, severities } from '../../../lib/consortium/index.ts';
+import { SCHEMA_VERSION } from '../../../lib/consortium/types.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
@@ -123,7 +124,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
   const meta = new Map(db.selectObjects('SELECT key, value FROM meta').map((r) => [String(r.key), String(r.value)]));
   const info: SourceInfo = {
     releaseId: meta.get('release_id') ?? '',
-    schemaVersion: 2,
+    schemaVersion: SCHEMA_VERSION,
     builtAt: meta.get('built_at') ?? '',
     climates: db.selectObjects('SELECT id FROM climates ORDER BY ord').map((r) => r.id as ClimateZone),
     griisAvailable: meta.get('griis_available') === '1',

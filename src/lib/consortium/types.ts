@@ -257,9 +257,11 @@ export interface Details {
 // labels: trait field → English value → locale → label (a missing label shows the English value).
 export type Labels = Record<string, Record<string, Partial<Record<Locale, string>>>>;
 
-// climateGrid: the canopi-climate grid manifest sha256 the ranges were sampled from (meta); a site
-// lookup from another grid turns range checks off. rangesReview: 'estimate_not_reviewed' today.
-export interface SourceInfo { releaseId: string; schemaVersion: 2; builtAt: string; climates: ClimateZone[]; griisAvailable: boolean; climateGrid: string | null; rangesReview: string | null }
+// climateGrid: the canopi-climate grid manifest sha256 the ranges were sampled from (meta), for
+// information: the page does not compare it; the build fails unless the consortium index names the same
+// grid as the installed climate tiles (scripts/consortium-grid-check.mjs). rangesReview:
+// 'estimate_not_reviewed' today. schemaVersion: the user_version load.ts accepted (SCHEMA_VERSION).
+export interface SourceInfo { releaseId: string; schemaVersion: typeof SCHEMA_VERSION; builtAt: string; climates: ClimateZone[]; griisAvailable: boolean; climateGrid: string | null; rangesReview: string | null }
 
 // The strata × phases matrix the store computes (store.ts `matrix`): one row per stratum, top to
 // bottom, seven cells each. An empty cell says why: 'gap' (no plant in the list for this cell yet)

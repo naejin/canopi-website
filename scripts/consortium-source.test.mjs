@@ -53,7 +53,7 @@ test('open: application_id, user_version, the release id and the climates are ch
 });
 
 test('info and countries come from meta and the countries table', () => {
-  assert.deepEqual(source.info(), { releaseId: manifest.release_id, schemaVersion: 2, builtAt: manifest.generated_at, climates: expected.climates, griisAvailable: true, climateGrid: FIXTURE_GRID_SHA256, rangesReview: 'estimate_not_reviewed' });
+  assert.deepEqual(source.info(), { releaseId: manifest.release_id, schemaVersion: 3, builtAt: manifest.generated_at, climates: expected.climates, griisAvailable: true, climateGrid: FIXTURE_GRID_SHA256, rangesReview: 'estimate_not_reviewed' });
   const countries = source.countries();
   assert.equal(countries.get('FR').invasiveChecked, true);
   assert.equal(countries.get('TW').invasiveChecked, false);
