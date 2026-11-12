@@ -11,6 +11,7 @@
     "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test scripts/*.test.mjs",
     "build:browser-test": "CANOPI_BROWSER_TEST=1 astro build",
     "test:browser": "npm run build:browser-test && node --experimental-strip-types --disable-warning=ExperimentalWarning --test --test-concurrency=1 scripts/browser/*.browser.test.mjs",
+    "timing:consortium": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/browser/consortium-timing.mjs",
     "check:bibliography": "node scripts/check-bibliography-links.mjs",
     "build": "astro build",
     "install:web-edition": "node scripts/install-web-edition.mjs",

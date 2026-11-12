@@ -112,3 +112,31 @@ test('every privacy and tool-credit string is in all 11 locales, after consortiu
   const fr = json('src/i18n/translations/fr.json');
   for (const key of KEYS) assert.doesNotMatch(fr[key], /consortium/i, `fr: ${key} says guilde`);
 });
+
+// What the location paragraphs claim, checked against the code (ho-misc seam check), in every locale:
+// - the grid cell's size: the climate grid's 0.1° cell is about 11 km north to south (lookup.ts
+//   CLIMATE_GRID, the cell centre a ticked link carries as `o=`);
+// - a ticked link also carries the country the location gave (memory.ts shareState: a location's
+//   country is written only with the tick; state.ts encodeLink `k=`);
+// - the location is read on the device for the climate and the country (location.tsx locateNow:
+//   lookup.regions.isoA2);
+// - the tile downloads hide the precise point, not the point: on a coast or in a town near a tile
+//   edge, the neighbouring tile loads too (src/lib/climate/index.ts lookupSite, searchTiles).
+const COUNTRY = { en: /country/, fr: /pays/, es: /país/, pt: /país/, it: /paese/, zh: /国家/, de: /Land/, ja: /国/, ko: /국가/, nl: /land/, ru: /стран/ };
+const PRECISE = { en: /precise point/, fr: /point précis/, es: /punto exacto/, pt: /ponto exato/, it: /punto preciso/, zh: /精确位置/, de: /genauen Punkt/, ja: /正確な地点/, ko: /정확한 지점/, nl: /precieze punt/, ru: /точное место/ };
+
+test('the location paragraphs say what the code does: an 11 km cell, its country with the tick, climate and country read, the precise point hidden', async () => {
+  const { CLIMATE_GRID } = await import('../src/lib/climate/lookup.ts');
+  const km = Math.round(CLIMATE_GRID.cellDeg * 111.32);
+  assert.equal(km, 11);
+  for (const lang of LOCALES) {
+    const words = json(`src/i18n/translations/${lang}.json`);
+    for (const key of ['privacy.location.link', 'consortium.share.locationNote']) {
+      const sizes = [...words[key].matchAll(/(\d+)\s*(?:km|км|公里)/g)].map((m) => Number(m[1]));
+      assert.deepEqual(sizes, [km], `${lang}: ${key} gives the cell as about ${km} km`);
+      assert.match(words[key], COUNTRY[lang], `${lang}: ${key} names the country the link carries`);
+    }
+    assert.match(words['privacy.location.device'], COUNTRY[lang], `${lang}: privacy.location.device says the country is read too`);
+    assert.match(words['privacy.location.tiles'], PRECISE[lang], `${lang}: privacy.location.tiles hides only the precise point`);
+  }
+});

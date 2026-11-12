@@ -2,33 +2,33 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T21:55:49Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T22:43:27Z }
 sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
     title: src/components/PrivacyPage.astro
     digest: sha256:a4ff4c8928a4c2a3
-    last_modified: 2026-11-11T21:55:25Z
+    last_modified: 2026-11-11T18:06:15Z
   - id: consortium-credits-ts
     resource: ../../src/data/consortium-credits.ts
     title: src/data/consortium-credits.ts
     digest: sha256:6c6427643957bcb9
-    last_modified: 2026-11-11T21:55:25Z
+    last_modified: 2026-11-11T19:53:07Z
   - id: datasourcespage-astro
     resource: ../../src/components/DataSourcesPage.astro
     title: src/components/DataSourcesPage.astro
     digest: sha256:0b8af77a37550326
-    last_modified: 2026-11-11T21:55:25Z
+    last_modified: 2026-11-11T19:53:07Z
   - id: footer-astro
     resource: ../../src/components/Footer.astro
     title: src/components/Footer.astro
     digest: sha256:0376f9cc58f7d532
-    last_modified: 2026-11-11T21:55:25Z
+    last_modified: 2026-11-11T17:57:36Z
   - id: third-party-notices-md
     resource: ../../THIRD_PARTY_NOTICES.md
     title: THIRD_PARTY_NOTICES.md
     digest: sha256:c4eac6579e810512
-    last_modified: 2026-11-11T21:55:25Z
+    last_modified: 2026-11-11T18:10:52Z
   - id: wrangler-jsonc
     resource: ../../wrangler.jsonc
     title: wrangler.jsonc
@@ -53,7 +53,22 @@ sources:
     resource: ../../scripts/maplibre-notices.mjs
     title: scripts/maplibre-notices.mjs
     digest: sha256:20c9ddc2bdcc83bb
-    last_modified: 2026-11-11T21:55:25Z
+    last_modified: 2026-11-11T18:10:52Z
+  - id: climate-index-ts
+    resource: ../../src/lib/climate/index.ts
+    title: src/lib/climate/index.ts
+    digest: sha256:1178c3eff4498001
+    last_modified: 2026-11-11T09:09:11Z
+  - id: consortium-state-ts
+    resource: ../../src/lib/consortium/state.ts
+    title: src/lib/consortium/state.ts
+    digest: sha256:872f411989736b65
+    last_modified: 2026-11-11T19:27:15Z
+  - id: location-tsx
+    resource: ../../src/islands/consortium/views/location/location.tsx
+    title: src/islands/consortium/views/location/location.tsx
+    digest: sha256:e96070f03d36f054
+    last_modified: 2026-11-11T20:54:26Z
   - id: developers-cloudflare-com-workers-observ
     resource: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
 enforced_by:
@@ -77,7 +92,8 @@ The `/privacy/` page in 11 locales (owner answer 4, decision "P5 owner answers",
 # What the page claims, and why it is true
 - Hosting: Cloudflare Workers with observability on (`wrangler.jsonc`): Workers Logs hold request details (address, time, browser, approximate location such as city, country and network) for up to 7 days, Cloudflare's documented maximum (linked on the page); the contact and correction handlers log codes only (`src/lib/contact.mjs`, `src/lib/correction.mjs`). No analytics script; the site's code sets no cookies.
 - Device storage: theme, climate, the language offer (sessionStorage) in `Base.astro`; guide checklists; the tool's consortium, country and site climate (`memory.ts`); share links live in the fragment.
-- Location (S5b, per the P5 design check §B): asked only on click, used and saved on the device; tiles are static files from this site, whole tiles of 100 × 0.1° (climate) and 200 × 0.05° (soil, regions), about 1,000 km, so a download does not reveal the point; a link holds only the 0.1° cell, with the tick. Nominatim on Enter; OpenFreeMap only once the map opens.
+- Location (S5b, per the P5 design check §B): asked only on click, used on the device to read the climate and the country (`location.tsx` `locateNow`: `lookup.regions.isoA2`) and saved only on the device; tiles are static files from this site, whole tiles of 100 × 0.1° (climate) and 200 × 0.05° (soil, regions), about 1,000 km. The page says a download does not reveal the *precise* point, not the point: where the point's own cell has no value (sea, ice, a built-up soil gap) within 2 cells of a tile edge, `lookupSite` (`src/lib/climate/index.ts`) also loads the neighbouring tile, which narrows the place to a strip some 10–20 km wide. With the tick a link holds the 0.1° cell centre (`o=`; about 11 km north to south, the page and `consortium.share.locationNote` say "about 11 km") and the country the location gave (`memory.ts` `shareState` writes a location's country only with the tick; `state.ts` `encodeLink` `k=`). Nominatim on Enter; OpenFreeMap only once the map opens.
+- `consortium-p5-seams-s5f.test.mjs` checks these claims in all 11 locales (the cell size against `CLIMATE_GRID`, the country in the link and device lines, "precise point" in the tiles line); ho-misc's seam check (2026-11-11) fixed "about 10 km", the missing country and the stronger "do not reveal the point".
 - Contact and corrections go by Cloudflare Email Routing to the association's Gmail mailbox; the address is never written in a page.
 
 # Gotchas
