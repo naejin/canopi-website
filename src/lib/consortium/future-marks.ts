@@ -5,6 +5,9 @@
 // scenario with its agreement where words fit (add, details); near the edge is said only there. No
 // location, no projection or an unchecked plant: no mark (the panel says "not checked"); a plant
 // already outside today gets none either (today's range mark, S5c, says it; the panel lists it).
+// An annual beyond its heat range by its period gets the cool-season advice where words fit (add,
+// details), never a loss mark (decision row "Climate ranges fixed before the P5 push"). A plant too
+// cool today that the projection warms within its range gets "Warm enough by …" (short where tight).
 import type { Mark, MarkSurface, Taxon } from './types.ts';
 import type { MarkContext } from './marks.ts';
 import { futureCheck, periodName, scenarioName } from './future.ts';
@@ -12,14 +15,18 @@ import { futureCheck, periodName, scenarioName } from './future.ts';
 export function futureMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface): Mark[] {
   if (!ctx.location) return [];
   const c = futureCheck(taxon, ctx.location, ctx.scenario);
-  if (!c || c.verdict === 'inside' || c.verdict === 'already') return [];
+  if (!c) return [];
   const tight = surface === 'chip' || surface === 'row';
   const period = periodName(c.period);
+  const vars = { period, scenario: scenarioName(ctx.scenario), agree: c.agree, of: c.of };
+  const season: Mark[] = c.coolSeason && !tight ? [{ kind: 'season', key: 'future.coolSeason', vars: { period, scenario: vars.scenario }, severity: 'note', state: 'cool' }] : [];
+  const warm: Mark[] = c.warmEnough ? [{ kind: 'future', key: tight ? 'future.warmEnoughShort' : 'future.warmEnough', vars: tight ? { period } : { period, scenario: vars.scenario }, severity: 'note', state: 'warm' }] : [];
+  if (c.verdict === 'inside' || c.verdict === 'already') return [...warm, ...season];
   if (c.verdict === 'edge') {
-    return tight ? [] : [{ kind: 'future', key: 'future.long.edge', vars: { period, scenario: scenarioName(ctx.scenario), agree: c.agree, of: c.of }, severity: 'note', state: 'edge' }];
+    return tight ? warm : [...warm, { kind: 'future', key: 'future.long.edge', vars, severity: 'note', state: 'edge' }, ...season];
   }
   const reason = c.why.length === 2 ? 'both' : c.why[0];
   return tight
-    ? [{ kind: 'future', key: `future.mark.${reason}`, vars: { period }, severity: 'note', state: 'outside' }]
-    : [{ kind: 'future', key: `future.long.${reason}`, vars: { period, scenario: scenarioName(ctx.scenario), agree: c.agree, of: c.of }, severity: 'note', state: 'outside' }];
+    ? [...warm, { kind: 'future', key: `future.mark.${reason}`, vars: { period }, severity: 'note', state: 'outside' }]
+    : [...warm, { kind: 'future', key: `future.long.${reason}`, vars, severity: 'note', state: 'outside' }, ...season];
 }

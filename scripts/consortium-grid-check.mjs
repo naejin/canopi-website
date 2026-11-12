@@ -10,7 +10,7 @@ const HEX64 = /^[0-9a-f]{64}$/;
 export function consortiumGridProblem(consortiumIndex, climateIndex) {
   const release = consortiumIndex?.release_id ?? 'unknown release';
   const want = consortiumIndex?.climate_grid_manifest_sha256;
-  if (typeof want !== 'string' || !HEX64.test(want)) return `the consortium index (${release}) has no climate_grid_manifest_sha256 (${JSON.stringify(want)}): reinstall a schema 2 export (scripts/install-consortium.mjs).`;
+  if (typeof want !== 'string' || !HEX64.test(want)) return `the consortium index (${release}) has no climate_grid_manifest_sha256 (${JSON.stringify(want)}): reinstall a schema 3 export (scripts/install-consortium.mjs).`;
   const have = climateIndex?.release?.grid_manifest_sha256;
   if (have !== want) return `the consortium export ${release} was sampled from the grid ${want.slice(0, 12)}…, the installed climate tiles are ${String(have).slice(0, 12)}…: install the matching grid or the matching consortium export.`;
   const status = climateIndex?.consortium_grid_check?.status;

@@ -58,7 +58,7 @@ test('the committed fixture is what make-fixture.mjs writes today (rows and byte
 test('the fixture installs with --fixture --no-images --out: the database byte for byte, the mark and the index, nothing else', (t) => {
   const w = workspace(t);
   const stdout = execFileSync(process.execPath, [script, w.src, '--fixture', '--no-images', '--out', w.out], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  assert.match(stdout, /Installed the consortium database consortium-v2\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz \(Tropical 11, Mediterranean 10, Temperate 21\)/);
+  assert.match(stdout, /Installed the consortium database consortium-v3\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz \(Tropical 11, Mediterranean 10, Temperate 21\)/);
   const manifest = JSON.parse(readFileSync(join(w.src, 'manifest.json'), 'utf8'));
   const db = manifest.files[0].file;
   assert.deepEqual(readdirSync(w.out).sort(), ['INSTALLED_BY', 'consortium-index.json', db].sort());
@@ -109,11 +109,11 @@ test('SHA256SUMS: a changed file, a listed file missing and an unlisted file are
   assert.ok(!existsSync(w.out) && !existsSync(w2.out) && !existsSync(w3.out), 'nothing written');
 });
 
-test('the manifest: format 4 and schema 2 only, by name; release id, split, climates and entries', async (t) => {
+test('the manifest: format 4 and schema 3 only, by name; release id, split, climates and entries', async (t) => {
   const w = workspace(t);
   const cases = [
     [(m) => { m.format_version = 3; }, /format_version is 3; this installer reads format 4 only/],
-    [(m) => { m.schema_version = 1; }, /schema_version is 1; this installer reads schema 2 only/],
+    [(m) => { m.schema_version = 2; }, /schema_version is 2; this installer reads schema 3 only/],
     // Schema 2 carries the grid its climate ranges were sampled from, in meta and the manifest alike.
     [(m) => { m.climate_ranges.climate_grid_manifest_sha256 = 'b'.repeat(64); }, /meta\.climate_grid_manifest_sha256 is "04ec85f4[0-9a-f]+", the manifest says "b{64}"/],
     [(m) => { delete m.release_id; }, /release_id undefined is not r- and 16/],
@@ -151,7 +151,7 @@ test('the database file: its name, sha256, bytes, gzip magic, size budget and ra
     cpSync(join(dir, m.files[0].file), join(dir, other)); rmSync(join(dir, m.files[0].file));
     m.files[0].file = other; writeFileSync(join(dir, 'manifest.json'), JSON.stringify(m));
   } });
-  await assert.rejects(install({ ...w, src: rename }), /is not named consortium-v2\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz/);
+  await assert.rejects(install({ ...w, src: rename }), /is not named consortium-v3\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz/);
   const plain = await variant(w, 'plain', { after: (dir, m) => {
     const raw = readFileSync(join(dir, m.files[0].file));
     const notGz = Buffer.concat([Buffer.from('xx'), raw.subarray(2)]);
@@ -175,12 +175,12 @@ test('the database file: its name, sha256, bytes, gzip magic, size budget and ra
 test('the database inside: application_id, user_version, schema columns, meta and contract rules', async (t) => {
   const w = workspace(t);
   const cases = [
-    [{ userVersion: 1 }, /user_version is 1, not schema 2/],
+    [{ userVersion: 2 }, /user_version is 2, not schema 3/],
     [{ applicationId: 7 }, /application_id is 7, not 1128484686/],
     [{ edit: (db) => db.exec('ALTER TABLE plants ADD COLUMN extra TEXT') }, /table plants has the columns .*extra, the schema says/],
     [{ edit: (db) => db.exec('CREATE TABLE extra (x)') }, /tables outside the schema: extra/],
     [{ edit: (db) => db.exec("UPDATE meta SET value = 'r-0000000000000000' WHERE key = 'release_id'") }, /meta\.release_id is "r-0000000000000000"/],
-    [{ edit: (db) => db.exec("INSERT INTO plants (plant, id, canonical_name, genus) VALUES (99, '00000000-f1c7-4000-8000-000000000099', 'Plantus inventus', 'Plantus')") }, /1 plants have no placement/],
+    [{ edit: (db) => db.exec("INSERT INTO plants (plant, id, canonical_name, genus, grown_as_annual) VALUES (99, '00000000-f1c7-4000-8000-000000000099', 'Plantus inventus', 'Plantus', 0)") }, /1 plants have no placement/],
     [{ edit: (db) => db.exec("DELETE FROM reason_texts WHERE reason IN (SELECT reason FROM placement_reasons WHERE plant = 1); DELETE FROM placement_reasons WHERE plant = 1") }, /placements have no reason/],
     [{ edit: (db) => db.exec("UPDATE sources SET url = 'javascript:alert(1)' WHERE id = 'pfaf'") }, /source pfaf has the url "javascript:alert\(1\)", not http\(s\)/],
     [{ edit: (db) => db.exec("UPDATE plant_images SET source_page_url = '//commons.wikimedia.org/x' WHERE plant = 1") }, /photo page "\/\/commons\.wikimedia\.org\/x" is not http\(s\)/],
@@ -277,8 +277,8 @@ test('thumbnailUrl: Commons and iNaturalist originals become 500 px copies; svg 
 });
 
 test('databaseName: schema, release, 12 hex digits of the raw database, and the climate when split', () => {
-  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32)), 'consortium-v2.r-0123456789abcdef.abababababab.sqlite.gz');
-  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32), 'Tropical'), 'consortium-v2.r-0123456789abcdef.tropical.abababababab.sqlite.gz');
+  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32)), 'consortium-v3.r-0123456789abcdef.abababababab.sqlite.gz');
+  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32), 'Tropical'), 'consortium-v3.r-0123456789abcdef.tropical.abababababab.sqlite.gz');
 });
 
 test('verifyInstall: a stray file, a changed database, a missing photo and a broken index fail', async (t) => {

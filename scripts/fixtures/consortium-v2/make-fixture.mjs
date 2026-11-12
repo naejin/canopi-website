@@ -1,4 +1,4 @@
-// The invented consortium v2 fixture: a canopi-data export of format 4, schema 2 (canopi-data
+// The invented consortium v2 fixture: a canopi-data export of format 4, schema 3 (canopi-data
 // docs/consortium-export-v2.md), small enough to read, built in Node with node:sqlite (coordinator
 // row "v2 build setup", 2026-11-11: no Python on the website). See README.md for what it covers.
 //
@@ -59,9 +59,9 @@ const SOURCES = [
 // Castanea (i = 0) is 1 °C colder than the base. count = 200 + 37 i cells. Phacelia has no range
 // (range_source NULL with a reason: "range not recorded").
 const RANGE_BASE = {
-  Temperate: { tmin_cold: [-14, -3, 3.5], tmax_warm: [19, 25, 31], aridity: [0.55, 1.05, 2.1], precip: [450, 800, 1600], dry_months: [0, 1, 4] },
-  Mediterranean: { tmin_cold: [-3, 4, 10], tmax_warm: [25, 31, 37], aridity: [0.25, 0.6, 1.3], precip: [300, 600, 1100], dry_months: [2, 4, 7] },
-  Tropical: { tmin_cold: [11, 19, 24], tmax_warm: [26, 32, 37], aridity: [0.6, 1.5, 3.2], precip: [900, 1900, 3600], dry_months: [0, 3, 6] },
+  Temperate: { tmin_cold: [-14, -3, 3.5], tmax_warm: [19, 25, 31], tmean_year: [5, 10.5, 15], tmean_warm: [12, 18, 23], aridity: [0.55, 1.05, 2.1], precip: [450, 800, 1600], dry_months: [0, 1, 4] },
+  Mediterranean: { tmin_cold: [-3, 4, 10], tmax_warm: [25, 31, 37], tmean_year: [11, 16, 20], tmean_warm: [17, 23, 28], aridity: [0.25, 0.6, 1.3], precip: [300, 600, 1100], dry_months: [2, 4, 7] },
+  Tropical: { tmin_cold: [11, 19, 24], tmax_warm: [26, 32, 37], tmean_year: [20, 25.5, 28.5], tmean_warm: [24, 27, 30], aridity: [0.6, 1.5, 3.2], precip: [900, 1900, 3600], dry_months: [0, 3, 6] },
 };
 // Köppen shares of the observed cells per home climate; each list has a rare class (< 1 %), which
 // Details hides.
@@ -85,7 +85,7 @@ const LABELS = [
 
 // One plant: [canonical, family, traits, placements by climate ([role, stratum|null, start, end]), names, extras].
 // Traits keys: h [min, max] (null: height not recorded), w width, sun/semi/shade, ph [min, max], wd well drained,
-// moist, drought, habit, annual, nfix, tox, allelo, weed, wcvp ('accepted' unless given; null: not found).
+// moist, drought, habit, annual, grownAnnual (grown_as_annual: a crop grown as an annual that is_annual misses), nfix, tox, allelo, weed, wcvp ('accepted' unless given; null: not found).
 const P = [
   // Temperate. Emergent starts at secondary I or later, all taller than 6 m (Room Small: "No plant fits
   // your site here"); low starts at placenta II (Temperate low × placenta I: "No plant in the list
@@ -106,7 +106,7 @@ const P = [
   ['Juniperus communis', 'Cupressaceae', { h: [1, 10], w: 3, sun: 1, semi: 0, shade: 0, ph: [5, 8], wd: 1, moist: 'Low', drought: 'High', habit: 'Shrub' }, { Temperate: ['support', 'medium', 3, 6] }, { en: 'Juniper', fr: 'Genévrier commun' }, { functions: ['wildlife_habitat'] }],
   ['Vaccinium myrtillus', 'Ericaceae', { h: [0.2, 0.6], w: 0.5, sun: 1, semi: 1, shade: 1, ph: [4, 5.5], moist: 'Medium', drought: 'Low', habit: 'Shrub' }, { Temperate: ['crop', 'low', 1, 6] }, { en: 'Bilberry', fr: 'Myrtille', de: 'Heidelbeere' }, { functions: ['ground_cover'] }],
   ['Fragaria vesca', 'Rosaceae', { h: [0.1, 0.3], w: 0.3, sun: 1, semi: 1, shade: 0, ph: [5, 7], moist: 'Medium', drought: 'Low', habit: 'Herb' }, { Temperate: ['crop', 'low', 1, 4] }, { en: 'Wild strawberry', fr: 'Fraisier des bois', de: 'Wald-Erdbeere' }, { image: ['https://upload.wikimedia.org/wikipedia/commons/2/2e/Fragaria_vesca_fixture.jpg', 'Invented Photographer', 'CC BY-SA 3.0', 'https://commons.wikimedia.org/wiki/File:Fragaria_vesca_fixture.jpg'], functions: ['ground_cover'] }],
-  ['Allium cepa', 'Amaryllidaceae', { h: [0.3, 0.6], w: 0.2, sun: 1, semi: 0, shade: 0, ph: [6, 7.5], moist: 'Medium', drought: 'Low', habit: 'Herb', tox: 'Slight' }, { Temperate: ['crop', 'low', 1, 2] }, { en: 'Onion', fr: 'Oignon', de: 'Zwiebel' }, { functions: ['pest_repellent'] }],
+  ['Allium cepa', 'Amaryllidaceae', { grownAnnual: 1, h: [0.3, 0.6], w: 0.2, sun: 1, semi: 0, shade: 0, ph: [6, 7.5], moist: 'Medium', drought: 'Low', habit: 'Herb', tox: 'Slight' }, { Temperate: ['crop', 'low', 1, 2] }, { en: 'Onion', fr: 'Oignon', de: 'Zwiebel' }, { functions: ['pest_repellent'] }],
   ['Trifolium repens', 'Fabaceae', { h: [0.1, 0.2], w: 0.5, sun: 1, semi: 1, shade: 0, ph: [5.5, 7.5], moist: 'Medium', drought: 'Medium', habit: 'Herb', nfix: 1 }, { Temperate: ['support', 'low', 1, 3] }, { en: 'White clover', fr: 'Trèfle blanc' }, { functions: ['nitrogen_fixer', 'ground_cover', 'pollinator_forage'] }],
   ['Symphytum officinale', 'Boraginaceae', { h: [0.6, 1.2], w: 0.6, sun: 1, semi: 1, shade: 0, ph: [6, 7.5], moist: 'High', drought: 'Low', habit: 'Herb', tox: 'Slight' }, { Temperate: ['support', 'low', 2, 6] }, { en: 'Comfrey', fr: 'Consoude officinale' }, { functions: ['dynamic_accumulator', 'mulch'] }],
   // Height not recorded: never a silent fit (design check A7).
@@ -163,7 +163,7 @@ const uuid = (i) => `00000000-f1c7-4000-8000-${String(i + 1).padStart(12, '0')}`
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 // Fills a new database at `path` (absent). Returns nothing; the caller gzips it.
-export async function buildFixtureDb(path, { edit = null, userVersion = 2, applicationId = 0x43434f4e } = {}) {
+export async function buildFixtureDb(path, { edit = null, userVersion = 3, applicationId = 0x43434f4e } = {}) {
   const { DatabaseSync } = await import('node:sqlite');
   const db = new DatabaseSync(path);
   db.exec('PRAGMA page_size = 4096; PRAGMA foreign_keys = ON;');
@@ -178,7 +178,7 @@ export async function buildFixtureDb(path, { edit = null, userVersion = 2, appli
   run('INSERT INTO countries VALUES (?, ?)', ...COUNTRIES);
   run('INSERT INTO areas VALUES (?, ?)', ...AREAS);
   run('INSERT INTO labels VALUES (?, ?, ?, ?)', ...LABELS);
-  const plantSql = 'INSERT INTO plants (plant, id, canonical_name, genus, family, height_min_m, height_max_m, width_max_m, tolerates_full_sun, tolerates_semi_shade, tolerates_full_shade, hardiness_zone_min, hardiness_zone_max, frost_tender, soil_ph_min, soil_ph_max, well_drained, moisture_use, drought_tolerance, deciduous_evergreen, lifespan, edibility_rating, nitrogen_fixer, is_annual, is_perennial, habit, pollinators, toxicity, allelopathic, weed_potential, wcvp_match) VALUES (' + Array(31).fill('?').join(', ') + ')';
+  const plantSql = 'INSERT INTO plants (plant, id, canonical_name, genus, family, height_min_m, height_max_m, width_max_m, tolerates_full_sun, tolerates_semi_shade, tolerates_full_shade, hardiness_zone_min, hardiness_zone_max, frost_tender, soil_ph_min, soil_ph_max, well_drained, moisture_use, drought_tolerance, deciduous_evergreen, lifespan, edibility_rating, nitrogen_fixer, is_annual, is_perennial, grown_as_annual, habit, pollinators, toxicity, allelopathic, weed_potential, wcvp_match) VALUES (' + Array(32).fill('?').join(', ') + ')';
   const v = (x) => (x === undefined ? null : x);
   let reason = 0, fn = 0;
   P.forEach(([name, family, t, placements, names, extra], i) => {
@@ -186,7 +186,7 @@ export async function buildFixtureDb(path, { edit = null, userVersion = 2, appli
     const wcvp = 'wcvp' in extra ? extra.wcvp : 'accepted';
     run(plantSql, [plant, uuid(i), name, name.split(' ')[0], family, t.h?.[0] ?? null, t.h?.[1] ?? null, v(t.w), v(t.sun), v(t.semi), v(t.shade),
       t.frost ? 10 : 5, t.frost ? 12 : 9, t.frost ? 1 : 0, t.ph?.[0] ?? null, t.ph?.[1] ?? null, v(t.wd), v(t.moist), v(t.drought),
-      t.habit === 'Tree' ? (t.ever ? 'Evergreen' : 'Deciduous') : null, t.annual ? 'Annual' : 'Perennial', t.annual ? 3 : 2, t.nfix ?? 0, t.annual ?? 0, t.annual ? 0 : 1,
+      t.habit === 'Tree' ? (t.ever ? 'Evergreen' : 'Deciduous') : null, t.annual ? 'Annual' : 'Perennial', t.annual ? 3 : 2, t.nfix ?? 0, t.annual ?? 0, t.annual ? 0 : 1, t.grownAnnual ?? 0,
       v(t.habit), t.habit === 'Herb' || t.habit === 'Shrub' ? 'Bees, Flies' : 'Bees', v(t.tox), v(t.allelo), v(t.weed), wcvp]);
     for (const [loc, text] of Object.entries(names)) run('INSERT INTO plant_names VALUES (?, ?, ?)', [plant, loc, text]);
     if (extra.image) run('INSERT INTO plant_images VALUES (?, ?, ?, ?, ?)', [plant, ...extra.image]);
@@ -211,13 +211,13 @@ export async function buildFixtureDb(path, { edit = null, userVersion = 2, appli
     const homeZone = Object.keys(placements)[0];
     const count = 200 + 37 * i;
     if (NO_RANGE[name]) {
-      run('INSERT INTO plant_climate_status VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [plant, null, null, 12, 30, 0, null, NO_RANGE[name], 'estimate_not_reviewed']);
+      run('INSERT INTO plant_climate_status VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [plant, null, null, 12, 30, 0, null, null, NO_RANGE[name], 'estimate_not_reviewed']);
     } else {
-      run('INSERT INTO plant_climate_status VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [plant, 'gbif_occurrences', 1000000 + i, count, count * 3, i % 4, round3(0.2 + (i % 7) * 0.1), null, 'estimate_not_reviewed']);
+      run('INSERT INTO plant_climate_status VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [plant, 'gbif_occurrences', 1000000 + i, count, count * 3, i % 4, round3(0.2 + (i % 7) * 0.1), count + 50, null, 'estimate_not_reviewed']);
       const shift = ((i % 5) - 2) / 2;
       for (const [variable, [low, median, high]] of Object.entries(RANGE_BASE[homeZone])) {
         const d = variable === 'tmin_cold' || variable === 'tmax_warm' ? shift : 0;
-        run('INSERT INTO plant_climate VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [plant, variable, 'gbif_occurrences', 'observed_cells', count, 0, round3(low + d), round3(median + d), round3(high + d), 'estimate_not_reviewed']);
+        run('INSERT INTO plant_climate VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [plant, variable, 'gbif_occurrences', 'thinned_cells', count, 40 + i, 0, round3(low + d), round3(median + d), round3(high + d), 'gbif_occurrences', 'gbif_occurrences', 0, 'estimate_not_reviewed']);
       }
       for (const [koppen, share] of KOPPEN_BASE[homeZone]) run('INSERT INTO plant_koppen VALUES (?, ?, ?, ?)', [plant, koppen, Math.max(1, Math.round(share * count)), share]);
     }
@@ -245,10 +245,10 @@ export async function buildFixtureDb(path, { edit = null, userVersion = 2, appli
   });
   const notFound = P.filter((p) => 'wcvp' in p[5] && p[5].wcvp === null).map((p) => p[0]).join('; ');
   const meta = {
-    schema_version: '2', format_version: '4', release_id: FIXTURE_RELEASE, canopi_db_sha256: ZERO_SHA, built_at: FIXTURE_BUILT_AT,
+    schema_version: '3', format_version: '4', release_id: FIXTURE_RELEASE, canopi_db_sha256: ZERO_SHA, built_at: FIXTURE_BUILT_AT,
     part: 'all', climates: FIXTURE_CLIMATES.join(','), griis_available: '1', areas_source: 'wcvp', wcvp_not_found: notFound,
     wcvp_sha256: ZERO_SHA, wcvp_record: 'WCVP (fixture: invented)', photo_state: 'fixture',
-    ranges_review: 'estimate_not_reviewed', ranges_min_cells: '20', climate_grid_version: '0.2.0', climate_grid_manifest_sha256: FIXTURE_GRID_SHA256,
+    ranges_review: 'estimate_not_reviewed', ranges_min_cells: '20', ranges_thinning: 'block_degrees=1.0; weak_blocks=20 (fixture)', climate_grid_version: '0.2.0', climate_grid_manifest_sha256: FIXTURE_GRID_SHA256,
     climate_grid_period: '1991-2020 historical',
   };
   run('INSERT INTO meta VALUES (?, ?)', ...Object.entries(meta));
@@ -277,7 +277,7 @@ export const FIXTURE_CREDITS = 'source\ttags\tname\tcredit\tlicence\tlicence_sta
 
 // Writes a whole export directory (format 4) at `dir`, which must be absent or empty. Returns
 // { dir, file, manifest }.
-export async function writeFixtureExport(dir, { edit = null, userVersion = 2, applicationId = 0x43434f4e, manifest: editManifest = null, after = null } = {}) {
+export async function writeFixtureExport(dir, { edit = null, userVersion = 3, applicationId = 0x43434f4e, manifest: editManifest = null, after = null } = {}) {
   mkdirSync(dir, { recursive: true });
   if (readdirSync(dir).length) throw new Error(`${dir} is not empty`);
   const work = mkdtempSync(join(tmpdir(), 'consortium-fixture-'));
@@ -287,18 +287,18 @@ export async function writeFixtureExport(dir, { edit = null, userVersion = 2, ap
     const rawBytes = readFileSync(raw);
     const gz = gzipSync(rawBytes, { level: 9 });
     const rawSha = sha256(rawBytes);
-    const file = `consortium-v2.${FIXTURE_RELEASE}.${rawSha.slice(0, 12)}.sqlite.gz`;
+    const file = `consortium-v3.${FIXTURE_RELEASE}.${rawSha.slice(0, 12)}.sqlite.gz`;
     writeFileSync(join(dir, file), gz);
     writeFileSync(join(dir, 'try_references.tsv'), FIXTURE_TRY);
     writeFileSync(join(dir, 'source_credits.tsv'), FIXTURE_CREDITS);
     const manifest = {
-      format_version: 4, schema_version: 2, generated_at: FIXTURE_BUILT_AT, canopi_db_sha256: ZERO_SHA, release_id: FIXTURE_RELEASE,
+      format_version: 4, schema_version: 3, generated_at: FIXTURE_BUILT_AT, canopi_db_sha256: ZERO_SHA, release_id: FIXTURE_RELEASE,
       split: false, max_gzip_bytes: 10_000_000,
       files: [{ file, climate_zones: FIXTURE_CLIMATES, sha256: sha256(gz), bytes: gz.length, raw_sha256: rawSha, raw_bytes: rawBytes.length, counts }],
       climates: FIXTURE_CLIMATES.map((c) => ({ climate_zone: c, regions: REGIONS[c], ...perClimate[c] })),
       locales: LOCALES,
       wcvp: { sha256: ZERO_SHA, record: 'WCVP (fixture: invented)', plants_with_areas: counts.plants - 1, plants_not_found: ['Phacelia tanacetifolia'] },
-      climate_ranges: { ranges_review: 'estimate_not_reviewed', ranges_min_cells: '20', climate_grid_version: '0.2.0', climate_grid_manifest_sha256: FIXTURE_GRID_SHA256, climate_grid_period: '1991-2020 historical', plants_by_range_source: { gbif_occurrences: counts.plant_climate_status - Object.keys(NO_RANGE).length } },
+      climate_ranges: { ranges_review: 'estimate_not_reviewed', ranges_min_cells: '20', ranges_thinning: 'block_degrees=1.0; weak_blocks=20 (fixture)', climate_grid_version: '0.2.0', climate_grid_manifest_sha256: FIXTURE_GRID_SHA256, climate_grid_period: '1991-2020 historical', plants_by_range_source: { gbif_occurrences: counts.plant_climate_status - Object.keys(NO_RANGE).length } },
       try_references: { file: 'try_references.tsv', sha256: sha256(Buffer.from(FIXTURE_TRY)), rows: 3, dataset_ids: 2 },
       source_credits: { file: 'source_credits.tsv', sha256: sha256(Buffer.from(FIXTURE_CREDITS)), rows: 3 },
     };

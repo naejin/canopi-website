@@ -29,7 +29,7 @@ test('site-climate koppenZone: the Köppen families of src/data/climates.ts, pol
 test('site-climate siteClimate: a location suggests a climate only when it is clear (owner answer 1)', () => {
   // Lyon: Cfa with its warmest month 0.4 °C above 22 °C: borderline with Temperate; its own class's
   // climate, Subtropical, is pre-selected for the reader to check (UX audit fix 2, review round 3).
-  assert.deepEqual(({ ...sc.siteClimate(lyon.lookup), today: null }), { state: 'borderline', today: null, zone: 'Subtropical', near: 'Temperate', suggested: 'Subtropical' });
+  assert.deepEqual(({ ...sc.siteClimate(lyon.lookup), today: null }), { state: 'borderline', today: null, zone: 'Subtropical', near: 'Temperate', suggested: 'Subtropical', koppen: 'Cfa', mapKoppen: null });
   // Seville-like Csa: ready, the Mediterranean card suggested.
   const seville = sc.siteClimate(at({ koppen: 'Csa', tmeanColdC: 10.6, tmeanWarmC: 27.4, tminColdC: 5.2 }, { regions: { wgsrpdL3: 'SPA', isoA2: 'ES' } }));
   assert.equal(seville.state, 'ready');

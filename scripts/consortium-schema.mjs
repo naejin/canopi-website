@@ -1,11 +1,17 @@
-// The consortium export's schema (format 4, schema 2) as the website expects it: the installer
+// The consortium export's schema (format 4, schema 3) as the website expects it: the installer
 // (scripts/install-consortium.mjs) compares every table's columns with it, and the fixture
 // (scripts/fixtures/consortium-v2/make-fixture.mjs) is built from it. A new schema version in
 // canopi-data means a new copy here, and a reader change in src/lib/consortium/.
 // Schema 2 (P5 commit 0) adds the climate range tables plant_climate_status, plant_climate and
-// plant_koppen, as SQLite stores them: copied from the sqlite_master of export r-e0b162087a79eecf,
+// plant_koppen, as SQLite stores them: copied from the sqlite_master of export r-e0b162087a79eecf;
+// schema 3 (the ranges rebuild, owner "Climate ranges fixed before the P5 push") changes
+// plant_climate_status (documented_cells) and plant_climate (tmean_year, basis thinned_cells, blocks,
+// low_source, high_source, weak), copied from the sqlite_master of export r-01102782139409b5,
 // statement by statement (the schema 1 statements are unchanged from canopi-data
-// consortium_sqlite.ddl() at consortium-v2-export ab6bfad).
+// consortium_sqlite.ddl() at consortium-v2-export ab6bfad). plants.grown_as_annual (last, NOT NULL) is
+// from canopi-data consortium_sqlite.py on ranges-rebuild 4733178 (decision row "Growing months"), and
+// plant_climate's variable tmean_warm (annuals' summer warmth) from export r-b958a4239cc68f73;
+// scripts/consortium-p5-ranges.test.mjs compares this DDL with the installed export, statement by statement.
 export const DDL = String.raw`
 CREATE TABLE meta (
   key TEXT PRIMARY KEY,
@@ -95,7 +101,8 @@ CREATE TABLE plants (
   toxicity TEXT,
   allelopathic INTEGER CHECK (allelopathic IN (0, 1)),
   weed_potential INTEGER CHECK (weed_potential IN (0, 1)),
-  wcvp_match TEXT CHECK (wcvp_match IN ('accepted', 'synonym', 'hybrid'))
+  wcvp_match TEXT CHECK (wcvp_match IN ('accepted', 'synonym', 'hybrid')),
+  grown_as_annual INTEGER NOT NULL CHECK (grown_as_annual IN (0, 1))
 );
 CREATE TABLE plant_names (
   plant INTEGER NOT NULL REFERENCES plants (plant),
@@ -230,20 +237,25 @@ CREATE TABLE plant_climate_status (
   gbif_records INTEGER CHECK (gbif_records >= 0),
   cells_without_climate INTEGER CHECK (cells_without_climate >= 0),
   native_share REAL CHECK (native_share BETWEEN 0 AND 1),
+  documented_cells INTEGER CHECK (documented_cells >= 0),
   reason TEXT CHECK (reason <> ''),
   review TEXT NOT NULL CHECK (review = 'estimate_not_reviewed'),
   CHECK (range_source IS NOT NULL OR reason IS NOT NULL)
 );
 CREATE TABLE plant_climate (
   plant INTEGER NOT NULL REFERENCES plants (plant),
-  variable TEXT NOT NULL CHECK (variable IN ('tmin_cold', 'tmax_warm', 'precip', 'aridity', 'dry_months', 'growth_temperature')),
+  variable TEXT NOT NULL CHECK (variable IN ('tmin_cold', 'tmax_warm', 'tmean_year', 'tmean_warm', 'precip', 'aridity', 'dry_months', 'growth_temperature')),
   source TEXT NOT NULL REFERENCES sources (id),
-  basis TEXT NOT NULL CHECK (basis IN ('observed_cells', 'treegoer_quantiles', 'ecocrop_limits')),
+  basis TEXT NOT NULL CHECK (basis IN ('thinned_cells', 'treegoer_quantiles', 'ecocrop_limits')),
   count INTEGER CHECK (count > 0),
+  blocks INTEGER CHECK (blocks > 0),
   missing INTEGER CHECK (missing >= 0),
   low REAL,
   median REAL,
   high REAL,
+  low_source TEXT REFERENCES sources (id),
+  high_source TEXT REFERENCES sources (id),
+  weak INTEGER NOT NULL CHECK (weak IN (0, 1)),
   review TEXT NOT NULL CHECK (review = 'estimate_not_reviewed'),
   PRIMARY KEY (plant, variable),
   CHECK (low IS NULL OR high IS NULL OR low <= high)

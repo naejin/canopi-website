@@ -78,15 +78,17 @@ test('runReasons counts each plant of a merged run once, beside the members; rea
   const small = { ...UNSURE, room: 'small', light: 'part' };
   const r = runReasons([tall, tall2, low], [], small, 'emergent', 2, 6);
   assert.equal(r.n, 2);
-  assert.deepEqual(r.reasons, { room: 2, light: 1 });
-  assert.equal(r.both, true, '3 reasons for 2 plants');
-  assert.deepEqual(reasonParts(r.reasons, small), [{ word: 'room', n: 2 }, { word: 'light', n: 1 }]);
+  // Room is advisory (owner request 2026-11-12): never a reason.
+  assert.deepEqual(r.reasons, { light: 1 });
+  assert.equal(r.both, false);
+  assert.deepEqual(reasonParts(r.reasons, small), [{ word: 'light', n: 1 }]);
+  assert.deepEqual(reasonParts({ room: 2, light: 1 }, small), [{ word: 'light', n: 1 }], 'a room count, if any, has no word');
   assert.deepEqual(reasonParts({ light: 1 }, { ...UNSURE, light: 'sun' }), [{ word: 'shade', n: 1 }]);
   assert.deepEqual(reasonParts({ water: 3, soil: 1 }, { ...UNSURE, water: 'wet' }), [{ word: 'wet', n: 3 }, { word: 'soil', n: 1 }]);
   assert.deepEqual(reasonParts({ water: 2 }, { ...UNSURE, water: 'dry' }), [{ word: 'dry', n: 2 }]);
-  // The same counts as the core's matrix for a single cell.
+  // The core's matrix agrees: the 20 m plant fits a small garden (advisory), so the cell is free.
   const m = buildMatrix('Temperate', [tall, tall2, low], [], small);
-  assert.deepEqual(m.rows[0].cells[3].reasons, runReasons([tall, tall2, low], [], small, 'emergent', 3, 3).reasons);
+  assert.deepEqual([m.rows[0].cells[3].empty, m.rows[0].cells[3].fitting], [null, 1]);
 });
 
 test('listGroups lists each plant once under its start cell, in matrix order; no placement last', () => {

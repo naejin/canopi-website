@@ -11,15 +11,15 @@ const core = await import('../src/lib/consortium/index.ts');
 const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
 
 test('marks.ts plantMarks: the loaded providers concatenated in order, for one surface; none loaded, no marks', async () => {
-  assert.deepEqual(core.plantMarks(taxon(), ctx(), 'chip'), [], 'no providers loaded');
+  assert.deepEqual(core.plantMarks(taxon(), ctx(), 'chip'), [], 'no providers loaded (the site answers\' marks need a dry site or a sized room)');
   const mark = (kind, state) => ({ kind, key: `test.${kind}`, severity: 'note', ...(state ? { state } : {}) });
   const providers = [() => [mark('edge')], () => [], (t, c, surface) => (c.location && surface !== 'chip' ? [mark('native', 'native')] : [])];
   assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), 'details', providers).map((m) => [m.kind, m.state]), [['edge', undefined], ['native', 'native']]);
   assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), 'chip', providers).map((m) => m.kind), ['edge'], 'a provider keeps a mark off a surface');
   assert.deepEqual(core.markSurfaces, ['chip', 'row', 'add', 'details']);
-  assert.deepEqual(core.markKinds, ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity']);
+  assert.deepEqual(core.markKinds, ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity', 'season', 'water', 'room']);
   const loaded = await core.loadMarkProviders();
-  assert.deepEqual(loaded.map((p) => p.name), ['rangeMarks', 'futureMarks', 'nativeMarks'], 'range (S5c), future (S5d), native (S5e)');
+  assert.deepEqual(loaded.map((p) => p.name), ['rangeMarks', 'futureMarks', 'nativeMarks'], 'range (S5c), future (S5d), native (S5e); the site answers\' marks are on the island path (marks.ts)');
   assert.equal(await core.loadMarkProviders(), loaded, 'loaded once');
   for (const s of core.markSurfaces) assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), s, loaded), [], `the stubs mark nothing (${s})`);
   assert.equal('markProviders' in core, false, 'the providers stay out of index.ts, so out of the first run');
@@ -31,11 +31,12 @@ test('marks.ts needsMarkProviders: the providers load only with a site location 
   assert.equal(core.needsMarkProviders({ climate: 'Temperate', location: null }, curated), false, 'today\'s path loads nothing');
   assert.equal(core.needsMarkProviders({ climate: 'Subtropical', location: null }, curated), true);
   assert.equal(core.needsMarkProviders({ climate: 'Temperate', location: lyon }, curated), true);
+  assert.equal(core.needsMarkProviders({ climate: 'Temperate', location: null, site: { light: 'unsure', soil: 'unsure', water: 'dry', room: 'unsure' } }, curated), false, 'a dry site alone: its marks are on the island path (marks.ts plantMarks)');
 });
 
 test('store: markContext follows the climate, location and scenario; the providers load when a location is set', async () => {
   const store = await import('../src/islands/consortium/store.ts');
-  assert.deepEqual(store.markContext.value, { climate: store.climate.value, location: null, scenario: 'ssp245', source: store.source.value });
+  assert.deepEqual(store.markContext.value, { climate: store.climate.value, location: null, scenario: 'ssp245', source: store.source.value, site: store.site.value });
   assert.deepEqual(store.markProviders.value, [], 'none on the first run');
   store.location.value = lyon;
   try {

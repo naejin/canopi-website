@@ -99,7 +99,6 @@ export function misfitWords(t: Taxon, site: Site = store.site.value): string[] {
     if (r.key === 'light') out.push(T(`misfit.light.${site.light}`));
     else if (r.key === 'soil') out.push(T(`misfit.soil.${site.soil}`, SOIL_PH(t)));
     else if (r.key === 'water') out.push(T(`misfit.water.${site.water}`));
-    else if (r.key === 'room' && r.kind === 'wild_height') out.push(T(`misfit.wild.${site.room}`, { m: num(r.meters), limit: num(r.limit) }));
   }
   return out;
 }

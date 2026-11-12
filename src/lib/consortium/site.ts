@@ -11,14 +11,18 @@
 //   chalky when the maximum is above 7.5 or the minimum is. A misfit when the known bounds leave no
 //   overlap; otherwise unknown when a bound that decides is null.
 // - water: dry is a misfit for drought_tolerance Low or None, or, when it is unknown, moisture_use
-//   High. Wet is a misfit for a drought-adapted plant that wants good drainage (well_drained and
+//   High; Medium fits with the note 'dry_months' ("needs watering in the dry months", owner, decision
+//   row "Climate ranges fixed before the P5 push"; site-marks.ts says it). Wet is a misfit for a drought-adapted plant that wants good drainage (well_drained and
 //   drought_tolerance High, or moisture_use Low when drought tolerance is unknown); it fits when
 //   well_drained is false, moisture_use is High or drought tolerance is known and not High. Average
 //   checks nothing.
 // - room: small garden ≤ 6 m, large garden ≤ 12 m, for the height only (the question asks how tall;
-//   mockup app.js:213). Catalog heights are wild maximums, so a taller plant "can grow over N m in the
-//   wild" (a misfit the reader may still choose, pruning it); a missing height is "height not
-//   recorded" (unknown). A climber's recorded size can be a runner length (decision row "Side view"
+//   mockup app.js:213). Advisory (owner request 2026-11-12): the matrix layers are relative sun
+//   exposure (syntropic strata), not heights (maize fills a small garden's emergent layer in the first
+//   seasons; a 12 m fig is routinely pruned to 3 m), so a taller plant fits, its reason kind
+//   'wild_height' (tallerThanRoom; site-marks.ts says "Grows to N m: keep it pruned, or pick a smaller
+//   plant"), and never makes a cell a misfit, a flag or an ask; only the suggestion leaves it out
+//   (suggest.ts). Catalog heights are wild maximums. A missing height is "height not recorded" (unknown). A climber's recorded size can be a runner length (decision row "Side view"
 //   2026-10-28), so its room verdict is unknown ('climber'). A field takes any size.
 import type { Fit, FitReason, PhaseOrd, Site, SiteKey, Stratum, Taxon, Traits, Verdict } from './types.ts';
 import { siteKeys, strata } from './types.ts';
@@ -57,6 +61,7 @@ const water: Check = (t, site) => {
   if (site.water === 'unsure' || site.water === 'average') return null;
   const { drought_tolerance: dt, moisture_use: mu, well_drained: wd } = t.traits;
   if (site.water === 'dry') {
+    if (dt === 'Medium') return { key: 'water', verdict: 'fit', trait: 'drought_tolerance', note: 'dry_months' };
     if (dt !== null) return { key: 'water', verdict: dt === 'Low' || dt === 'None' ? 'misfit' : 'fit', trait: 'drought_tolerance' };
     return { key: 'water', verdict: mu === 'High' ? 'misfit' : 'unknown', trait: mu === 'High' ? 'moisture_use' : 'drought_tolerance' };
   }
@@ -72,12 +77,15 @@ const room: Check = (t, site) => {
   if (limit === Infinity) return null;
   if (t.traits.habit === 'Climber') return { key: 'room', verdict: 'unknown', kind: 'climber' };
   const height = t.traits.height_m?.max ?? null;
-  if (height !== null && height > limit) return { key: 'room', verdict: 'misfit', kind: 'wild_height', meters: height, limit };
+  if (height !== null && height > limit) return { key: 'room', verdict: 'fit', kind: 'wild_height', meters: height, limit };
   if (height === null) return { key: 'room', verdict: 'unknown', kind: 'height_not_recorded' };
   return { key: 'room', verdict: 'fit', kind: 'fits', meters: height, limit };
 };
 
 const checks: Record<SiteKey, Check> = { light, soil, water, room };
+
+// Whether a fit holds a plant taller than the room (advisory, header).
+export const tallerThanRoom = (fit: Fit): boolean => fit.reasons.some((r) => r.key === 'room' && r.kind === 'wild_height');
 
 export function fits(taxon: Taxon, site: Site): Fit {
   const misfits: SiteKey[] = [], unknowns: SiteKey[] = [], reasons: FitReason[] = [];

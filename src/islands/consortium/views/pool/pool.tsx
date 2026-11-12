@@ -6,7 +6,7 @@
 //   marked "estimate" (owner answer 1; core placement.ts NEAREST_LISTS), with P2's "Ask for this
 //   climate" link kept in that paragraph. No location needed.
 // - With a site climate: how many plants are recorded in a climate like the site's (owner answer 2,
-//   core range.ts: coldest month on both sides, warmest month on the hot side, RANGE_MARGIN_C margin), how many
+//   core range.ts: coldest month on both sides, the year's mean on the cool side, warmest month on the hot side, RANGE_MARGIN_C margin), how many
 //   are near the edge, that the others are left out of suggestions but can still be added with a
 //   warning, and that observed ranges include cultivation and are estimates, not reviewed (export
 //   meta ranges_review 'estimate_not_reviewed'). Aridity on ice: "not checked".
@@ -14,7 +14,7 @@
 // - None of them: the "nothing fits" state [data-pool-empty], with the next step (search all plants).
 import { useEffect } from 'preact/hooks';
 import type { ClimateZone, SiteLocation, Taxon } from '../../../../lib/consortium/index.ts';
-import { hasPlants, NEAREST_LISTS, RANGE_MARGIN_C, rangeFit, siteToday, withinRange } from '../../../../lib/consortium/index.ts';
+import { hasPlants, NEAREST_LISTS, RANGE_MARGIN_C, rangeFit, siteToday, withinRange, yearMeanC } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { startEmpty, zoneOf } from '../../memory.ts';
 import { P, T, pageLang } from '../../strings.ts';
@@ -27,11 +27,6 @@ export const rangeRule = {
   rangeFit,
   // Nothing fits: a list with plants, none of which holds the site.
   none: (list: Taxon[] | null, site: SiteLocation | null): boolean => !!list?.length && withinRange(list, site).length === 0,
-  // A mark's numbers (°C values) in the page language, to the hundredth the rule compares: fr "5,8".
-  local: (vars?: Record<string, string | number>) => {
-    const num = new Intl.NumberFormat(pageLang(), { maximumFractionDigits: 2 });
-    return vars && Object.fromEntries(Object.entries(vars).map(([k, v]) => [k, typeof v === 'number' ? num.format(v) : v]));
-  },
 };
 export type RangeRule = typeof rangeRule;
 
@@ -50,7 +45,7 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
   const loc = store.location.value;
   const today = siteToday(loc);
   const deg = new Intl.NumberFormat(pageLang(), { maximumFractionDigits: 1 });
-  const temps = today ? { cold: deg.format(today.tminColdC), hot: deg.format(today.tmaxWarmC) } : null;
+  const temps = today ? { cold: deg.format(today.tminColdC), hot: deg.format(today.tmaxWarmC), mean: deg.format(yearMeanC(today)) } : null;
   const verdicts = today && list ? list.map((t) => rangeFit(t, loc)) : null;
   const fit = verdicts ? verdicts.filter((v) => v !== 'outside').length : 0;
   const edge = verdicts ? verdicts.filter((v) => v === 'edge').length : 0;

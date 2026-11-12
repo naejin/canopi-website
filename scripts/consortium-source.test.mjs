@@ -117,17 +117,23 @@ test('pool: a Taxon carries names, traits, warnings, functions and the self-host
   assert.equal(zingiber.phases, null);
 });
 
-// ---- schema 2: climate ranges, Köppen shares, native areas (P5 commit 0) ----
+// ---- schemas 2 and 3: climate ranges, Köppen shares, native areas (P5 commit 0; the ranges rebuild) ----
 
 test('pool: a Taxon carries its observed climate range (cultivation included) or null when none is recorded', async () => {
   const pool = await source.pool('Temperate');
   const by = (name) => pool.find((x) => x.canonical_name === name);
   // The fixture's rule (make-fixture.mjs climateRows): Castanea is plant 1, Temperate, shifted by -1 °C.
+  // Schema 3's columns: blocks 40 + i, each end from the row's own source, no weak row.
+  const s3 = { blocks: 40, lowSource: 'gbif_occurrences', highSource: 'gbif_occurrences', weak: false };
   assert.deepEqual(by('Castanea sativa').climate, {
     source: 'gbif_occurrences',
-    tminCold: { low: -15, median: -4, high: 2.5, count: 200, basis: 'observed_cells' },
-    tmaxWarm: { low: 18, median: 24, high: 30, count: 200, basis: 'observed_cells' },
-    aridity: { low: 0.55, median: 1.05, high: 2.1, count: 200, basis: 'observed_cells' },
+    tminCold: { low: -15, median: -4, high: 2.5, count: 200, basis: 'thinned_cells', ...s3 },
+    tmaxWarm: { low: 18, median: 24, high: 30, count: 200, basis: 'thinned_cells', ...s3 },
+    // Schema 3: the year's warmth (not shifted, as aridity).
+    tmeanYear: { low: 5, median: 10.5, high: 15, count: 200, basis: 'thinned_cells', ...s3 },
+    // and an annual's summer warmth (schema 3 tmean_warm; not shifted).
+    tmeanWarm: { low: 12, median: 18, high: 23, count: 200, basis: 'thinned_cells', ...s3 },
+    aridity: { low: 0.55, median: 1.05, high: 2.1, count: 200, basis: 'thinned_cells', ...s3 },
     cells: 200,
     nativeShare: 0.2,
   });

@@ -17,6 +17,7 @@ export const SITES = {
   polar: [78.2232, 15.6267], // Longyearbyen: ET (polar, its own state); SVA
   seville: [37.3891, -5.9845], // Csa: Mediterranean, a curated climate, not borderline; SPA
   manaus: [-3.119, -60.0217], // Af: Tropical; BZN; pH 4.3 (filled from 2 cells): likely acid
+  nairobi: [-1.2864, 36.8172], // stored Aw, but its coldest-month mean is 17.6 °C: Cwb by its means, Subtropical, borderline with Tropical
 };
 
 // Nominatim search answers (format jsonv2), keyed by the lower-cased query. Unknown queries: [].
@@ -54,4 +55,5 @@ export const EXPECTED = {
   polar: { koppen: 'ET', l3: 'SVA', iso: 'SJ' },
   seville: { koppen: 'Csa', l3: 'SPA', iso: 'ES' },
   manaus: { koppen: 'Af', l3: 'BZN', iso: 'BR', ph: 4.3 },
+  nairobi: { koppen: 'Aw', l3: 'KEN', iso: 'KE' },
 };

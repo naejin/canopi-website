@@ -1,14 +1,15 @@
-# Invented consortium fixture (format 4, schema 2)
+# Invented consortium fixture (format 4, schema 3)
 
 Plausible but **invented** plant values for testing consortium v2 without the real export. Never shipped:
 `canopi_db_sha256` is all zeros, which a real install refuses, and the directory sits outside `public/`.
 
 - **Built by** `node scripts/fixtures/consortium-v2/make-fixture.mjs` (Node's `node:sqlite`, no Python on the
   website: coordinator row "v2 build setup", 2026-11-11). The output in `export/` is committed.
-- **Schema:** schema 2 (P5 commit 0), the stored `CREATE` statements of export `r-e0b162087a79eecf`: schema 1's
-  (canopi-data `consortium_sqlite.ddl()` at `consortium-v2-export` ab6bfad) plus `plant_climate_status`,
-  `plant_climate` and `plant_koppen`. canopi-data's `check_export` passed on the schema 1 `export/`; it was not
-  re-run on the schema 2 one.
+- **Schema:** schema 3 (the ranges rebuild), the stored `CREATE` statements of export `r-01102782139409b5`:
+  schema 1's (canopi-data `consortium_sqlite.ddl()` at `consortium-v2-export` ab6bfad) plus `plant_climate_status`
+  (with `documented_cells`), `plant_climate` (variables with `tmean_year`, basis `thinned_cells`, `blocks`,
+  `low_source`, `high_source`, `weak`) and `plant_koppen`. canopi-data's `check_export` passed on the schema 1
+  `export/`; it was not re-run on the schema 2 or 3 ones.
 - **Contract:** canopi-data `docs/consortium-export-v2.md`.
 - **Variants:** tests call `writeFixtureExport(dir, { edit, userVersion, applicationId, manifest, after })` for
   a broken copy rather than keep broken files here.

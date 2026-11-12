@@ -9,14 +9,15 @@
 //
 // Gains are counted in tenths, as integers, so equal gains tie exactly. "Something new" is a new job,
 // a new cell, a phase with food, or a needed second doer; edibility and unknowns only rank.
-// A plant that misfits the site (beside the layers chosen so far) or has a high conflict with a
-// member is never picked; invasiveness is a warning only and never scores (owner, 2026-10-28).
+// A plant that misfits the site (beside the layers chosen so far), grows taller than the room (an
+// advisory note elsewhere, owner request 2026-11-12: the suggestion prefers plants that fit the room
+// naturally) or has a high conflict with a member is never picked; invasiveness is a warning only and never scores (owner, 2026-10-28).
 // Guests (plants added from another climate's list) are never picked or offered in Swap; a kept
 // guest is a member like any other and counts for coverage, with its home placement.
 import type { Alternative, CellRef, CountryStatus, Fit, Flag, Interaction, JobId, PhaseOrd, PlantId, Site, Stratum, Taxon } from './types.ts';
 import { strata } from './types.ts';
 import type { Canopy } from './site.ts';
-import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy } from './site.ts';
+import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy, tallerThanRoom } from './site.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { cellKey, cellsOf } from './matrix.ts';
 import type { Conflict } from './conflicts.ts';
@@ -190,7 +191,7 @@ export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
 
   // A plant whose only misfit is the light may still join under a canopy, checked at each pick.
   const lightOnly = (i: Info) => i.fit.misfits.length === 1 && i.fit.misfits[0] === 'light' && shadedBy(i.taxon, site, FULL_CANOPY);
-  const candidates = infos.filter((i) => !memberIds.has(i.taxon.id) && !removedIds.has(i.taxon.id) && (!i.fit.misfits.length || lightOnly(i)));
+  const candidates = infos.filter((i) => !memberIds.has(i.taxon.id) && !removedIds.has(i.taxon.id) && !tallerThanRoom(i.fit) && (!i.fit.misfits.length || lightOnly(i)));
 
   while (chosen.length < limit) {
     let best: Info | null = null, bestGain = -Infinity;

@@ -3,16 +3,16 @@ type: Architecture Decision
 title: Site navigation
 description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page's Learn and try section holds the consortium tool and the entry guides.
 tags: [decision, navigation]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T07:20:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T10:14:02Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T07:20:59Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T10:14:01Z }
 sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
-    digest: sha256:b1ea457758728418
-    last_modified: 2026-11-11T14:39:43Z
+    digest: sha256:a6f4a60491a03a5c
+    last_modified: 2026-11-12T10:10:38Z
   - id: header-astro
     resource: ../../src/components/Header.astro
     title: src/components/Header.astro
@@ -51,8 +51,8 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:90ad21f0eda7416d
-    last_modified: 2026-11-12T07:18:38Z
+    digest: sha256:ebd6291102b2157c
+    last_modified: 2026-11-12T10:12:06Z
 enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 ---
 

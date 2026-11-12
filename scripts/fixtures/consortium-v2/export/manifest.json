@@ -1,6 +1,6 @@
 {
   "format_version": 4,
-  "schema_version": 2,
+  "schema_version": 3,
   "generated_at": "2026-11-11T00:00:00Z",
   "canopi_db_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "release_id": "r-000000000000f1c7",
@@ -8,16 +8,16 @@
   "max_gzip_bytes": 10000000,
   "files": [
     {
-      "file": "consortium-v2.r-000000000000f1c7.85a70d231d08.sqlite.gz",
+      "file": "consortium-v3.r-000000000000f1c7.d2dadef1512e.sqlite.gz",
       "climate_zones": [
         "Tropical",
         "Mediterranean",
         "Temperate"
       ],
-      "sha256": "82f00f106a3106def4d617feed62113d8ba448b415428a3fc5de71d8a86db57b",
-      "bytes": 29634,
-      "raw_sha256": "85a70d231d08bb1ff35efa294e138354d432b38df60bf175015917b27f76e04f",
-      "raw_bytes": 241664,
+      "sha256": "28cd67ca1af95b558cba68aa6da5320b65fa935cfb18aca52008a2da062c860d",
+      "bytes": 30925,
+      "raw_sha256": "d2dadef1512e264f9129e4a307ece9eacc3596ae3925b16457533494e5e2390c",
+      "raw_bytes": 258048,
       "counts": {
         "climates": 3,
         "climate_regions": 4,
@@ -45,7 +45,7 @@
         "agent_name_sources": 2,
         "layer_values": 8,
         "plant_climate_status": 38,
-        "plant_climate": 185,
+        "plant_climate": 259,
         "plant_koppen": 250
       }
     }
@@ -101,6 +101,7 @@
   "climate_ranges": {
     "ranges_review": "estimate_not_reviewed",
     "ranges_min_cells": "20",
+    "ranges_thinning": "block_degrees=1.0; weak_blocks=20 (fixture)",
     "climate_grid_version": "0.2.0",
     "climate_grid_manifest_sha256": "04ec85f4603f29c5add8eada88c79599d044a61732b518a095f91b68e64b0e4c",
     "climate_grid_period": "1991-2020 historical",

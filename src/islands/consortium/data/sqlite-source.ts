@@ -1,5 +1,5 @@
 // The PlantSource over the opened SQLite database (stream S1; design check §4; canopi-data
-// docs/consortium-export-v2.md, format 4, schema 2). It reads plain records with SQL and hands them to
+// docs/consortium-export-v2.md, format 4, schema 3). It reads plain records with SQL and hands them to
 // the core, which computes the matrix, site fit and reason counts itself. No sqlite-wasm import here:
 // it takes any database with OO1's selectObjects and selectArrays, so the tests run it on the package's Node build.
 // Photos come from the index's {uuid: path} map (design check A4), never the export's remote URLs.
@@ -8,9 +8,9 @@
 // never SQL LIKE (ASCII-only folding, a substring match, % and _ unescaped).
 import type {
   ClimateRange, ClimateZone, Details, FunctionId, FunctionMethod, Image, Interaction, InvasiveRecord, KoppenShare, Labels, LayerScope, LayerValue, Locale, Month, Placement,
-  PlantId, RangeBasis, Reason, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
+  PlantId, RangeBasis, RangeVariable, Reason, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
 } from '../../../lib/consortium/index.ts';
-import { firstPlaced, months, NEAREST_LISTS, phases, severities } from '../../../lib/consortium/index.ts';
+import { firstPlaced, months, NEAREST_LISTS, phases, RANGE_VARIABLES, severities } from '../../../lib/consortium/index.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
@@ -64,6 +64,7 @@ function traitsOf(r: Row): Traits {
     vegetative_spread_rate: str(r.vegetative_spread_rate),
     clonal_growth_form: str(r.clonal_growth_form),
     is_annual: bool(r.is_annual),
+    grown_as_annual: bool(r.grown_as_annual),
     is_perennial: bool(r.is_perennial),
     habit: str(r.habit),
   };
@@ -92,20 +93,22 @@ function textOf(rows: Row[] | undefined): Text | null {
   return t.en === undefined ? null : (t as Text);
 }
 
-// Schema 2: the observed climate of a climate's plants, in one query of arrays (the pool is read
+// Schemas 2 and 3: the observed climate of a climate's plants, in one query of arrays (the pool is read
 // before the matrix draws; objects for every row cost ~0.1 s at 4× CPU). A plant without a
 // range_source is absent: "range not recorded" (Taxon.climate null).
-const CLIMATE_ROWS = `SELECT s.plant, s.range_source, s.gbif_cells, s.native_share, c.variable, c.low, c.median, c.high, c.count, c.basis
-  FROM plant_climate_status s LEFT JOIN plant_climate c ON c.plant = s.plant AND c.variable IN ('tmin_cold', 'tmax_warm', 'aridity')
+// The variables: types.ts RANGE_VARIABLES, the one list (fixed strings, so the query stays a constant).
+const CLIMATE_ROWS = `SELECT s.plant, s.range_source, s.gbif_cells, s.native_share, c.variable, c.low, c.median, c.high, c.count, c.basis,
+  c.blocks, c.low_source, c.high_source, c.weak
+  FROM plant_climate_status s LEFT JOIN plant_climate c ON c.plant = s.plant AND c.variable IN (${Object.keys(RANGE_VARIABLES).map((v) => `'${v}'`).join(', ')})
   WHERE s.range_source IS NOT NULL AND s.plant IN (SELECT plant FROM placements WHERE climate_zone = ?1)`;
-const RANGE_FIELD = { tmin_cold: 'tminCold', tmax_warm: 'tmaxWarm', aridity: 'aridity' } as const;
 function climatesOf(rows: unknown[][]): Map<number, TaxonClimate> {
   const out = new Map<number, TaxonClimate>();
-  for (const [plant, source, cells, share, variable, low, median, high, count, basis] of rows) {
+  for (const [plant, source, cells, share, variable, low, median, high, count, basis, blocks, lowSource, highSource, weak] of rows) {
     let t = out.get(Number(plant));
-    if (!t) out.set(Number(plant), t = { source: String(source), tminCold: null, tmaxWarm: null, aridity: null, cells: num(cells), nativeShare: num(share) });
-    const field = RANGE_FIELD[variable as keyof typeof RANGE_FIELD];
-    if (field) t[field] = { low: num(low), median: num(median), high: num(high), count: num(count), basis: basis as RangeBasis } satisfies ClimateRange;
+    if (!t) out.set(Number(plant), t = { source: String(source), tminCold: null, tmaxWarm: null, tmeanYear: null, tmeanWarm: null, aridity: null, cells: num(cells), nativeShare: num(share) });
+    const field = RANGE_VARIABLES[variable as RangeVariable];
+    if (field) t[field] = { low: num(low), median: num(median), high: num(high), count: num(count), basis: basis as RangeBasis,
+      blocks: num(blocks), lowSource: lowSource == null ? null : String(lowSource), highSource: highSource == null ? null : String(highSource), weak: Number(weak) === 1 } satisfies ClimateRange;
   }
   return out;
 }
