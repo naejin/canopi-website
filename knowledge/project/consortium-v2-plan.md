@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: Phases, the final remaining order after the 2026-11-12 plan review, exits, coordinator choices and owner actions for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate.
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T20:19:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T22:13:46Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -89,9 +89,9 @@ Only one serial chain blocks the first user value: **E1 → E6 → F1a**. E3 and
 | # | Step | Goal | Depends on | Size |
 |---|---|---|---|---|
 | 1 | E0 | this plan, hand-off to canopi-data | plan review | docs only (done with this rewrite) |
-| 2 | E1 | browser suite ≤ 15 min in CI, ≤ 12 min locally; hangs named | E0 | ~12 files (2 spec files split into 7) |
-| 2 | E2 | installer band check; range-rule scenario tests | — | ~6 files |
-| 2 | C1 | canopi-climate tooling, `docs/format.md`, vectors; v0.2.1 | E0; owner: Renovate app | ~14 crate files |
+| 2 | E1 | browser suite ≤ 15 min in CI, ≤ 12 min locally; hangs named | E0 | **live 2026-11-12 at aa72741**: 271 browser tests in 3 min 39 s wall on 3 slots (was ~40 min) |
+| 2 | E2 | installer band check; range-rule scenario tests | — | **live 2026-11-12 at aa72741** (4 scenarios recorded as known limits) |
+| 2 | C1 | canopi-climate tooling, `docs/format.md`, vectors; v0.2.1 | E0; owner: Renovate app (installed 2026-11-12) | **released 2026-11-12**: canopi-climate v0.2.1 (main 5a47016), CI and release jobs green |
 | 3 | E6 | island ready for Palette, P7a, facts and the split; first run ≤ 40 KB | E1 | ~35 files |
 | 3 | E3 | master deploys only when green; tiered hooks | E1; owner: Cloudflare production branch | ~6 files |
 | 3 | E4 | layering, dead-code, duplicate, a11y checks | E1 | ~10 files |
@@ -116,7 +116,7 @@ Loop per step: steps with more than one stream (E6, F1a, F1b, F2, F4, F5, F3) ru
 
 #### E1 — browser test speed and isolation (first engineering step)
 - **Goal (enabling):** the browser suite stops slowing every step (owner "Test and CI time", 2026-11-12, below).
-- **Scope:** one timed full run printed per file; port and storage per worker (`4420 + 2 × shard`), each shard in its own capped scope ≤ 2 GB; `consortium-p5.browser.test.mjs` split into `p5-s5b/-s5c/-s5d/-s5f` and `consortium-seams` into `seams-p2/-layout/-p5` (one file per owner still holds); a **static list of 4 shards** balanced by hand from that run; behaviour checks at one variant, layout checks keep width × theme × language; faults set before navigation by chunk role from `dist/consortium-chunks.json`; injectable timeouts through the test hook (replaces the 16 s sleep and the 15–20 s waits); a per-test timeout with a trace dump (console, network, screenshot); `@real-data` tag run in the data-update tier; a smoke tier against `dist/` with no test hook. A lint rule forbids sleeps over 1 s in specs.
+- **Scope:** one timed full run printed per file; port and storage per worker (a free port pair per slot, slots 8 ports apart; each server its own `cp -al` copy of the build and `--persist-to`; runner `--experimental-test-isolation=none`; specs wait on conditions, never clock deadlines), each shard in its own capped scope ≤ 2 GB; the former P5 spec file split into `p5-s5b/-s5c/-s5d/-s5f` and `consortium-seams` into `seams-p2/-layout/-p5` (one file per owner still holds); a **static list of 4 shards** balanced by hand from that run; behaviour checks at one variant, layout checks keep width × theme × language; faults set before navigation by chunk role from `dist/consortium-chunks.json`; injectable timeouts through the test hook (replaces the 16 s sleep and the 15–20 s waits); a per-test timeout with a trace dump (console, network, screenshot); `@real-data` tag run in the data-update tier; a smoke tier against `dist/` with no test hook. A lint rule forbids sleeps over 1 s in specs.
 - **Filed items folded in:** P5-27b fails alone; BT-7 stuck "loading" 20 s; a full run stalled after the s1 file.
 - **Exit (amended by the E1 design check, 2026-11-12):** each local shard ≤ 9 min (every command is capped at `timeout 600`), local wall ≤ ~11 min with the build on 3 slots of ≤ 2 GB (4 only with ≥ 11 GB available); the ≤ 15 min CI target on 4 matrix jobs is checked at E3; no separate baseline run (node reporters give per-file times and memory peaks from the first split run); each server gets its own wrangler `--persist-to`; the double load of hooked pages and the S5e todo specs' waits are removed; P5-27b passes alone 10 times; a forced hang yields a trace and a named failure; the sleep rule is green. A width × theme × language coverage list is kept only if the variant cut removes a layout assertion.
 - **Touches:** `scripts/browser/{serve,harness}.mjs`, `package.json`, the browser spec files, `src/islands/consortium/test-hook.ts`, `astro.config.mjs`. Concepts "Checks", "Browser harness" updated.
