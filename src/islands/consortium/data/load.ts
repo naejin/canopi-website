@@ -19,10 +19,6 @@ export interface Opened { sqlite3: Sqlite3; db: Database }
 // A download fails when it stalls: no byte for STALL_MS, before the response or between chunks. A
 // slow but steady connection is waited for, however long it takes (review R4-4).
 const STALL_MS = 15_000;
-// The browser-test build lets a test shorten it (window.__ctTimeouts.stall, set before the page
-// loads: E1 design check A4); the typeof guard keeps node unit tests, which have no define, working,
-// and the production build folds this to STALL_MS.
-const stallMs = (): number => (typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { stall?: number } }).__ctTimeouts?.stall) || STALL_MS : STALL_MS);
 
 // The browser is too old for the tool (P4: no DecompressionStream). WebAssembly missing is the
 // "turned off" screen instead (P5: iOS Lockdown Mode or a policy removes it from a recent browser).
@@ -39,7 +35,10 @@ async function download(url: string): Promise<{ status: number; bytes: Uint8Arra
   const ctrl = new AbortController();
   let why = '';
   let stall: ReturnType<typeof setTimeout> | undefined;
-  const ms = stallMs();
+  // The browser-test build lets a test shorten it (window.__ctTimeouts.stall, set before the page
+  // loads: E1 design check A4); the typeof guard keeps node unit tests, which have no define, working,
+  // and the production build folds the expression to STALL_MS (written inline so nothing is left).
+  const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { stall?: number } }).__ctTimeouts?.stall) || STALL_MS : STALL_MS;
   const arm = () => { clearTimeout(stall); stall = setTimeout(() => { why = `no byte for ${ms / 1000} s`; ctrl.abort(); }, ms); };
   arm();
   try {

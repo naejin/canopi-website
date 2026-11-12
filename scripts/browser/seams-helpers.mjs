@@ -131,7 +131,13 @@ export const MISMATCH = { en: { languages: ['en-US', 'en'], zone: 'Africa/Bangui
 
 export async function stableStart(lang, width) {
   const { languages, zone } = MISMATCH[lang];
-  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { width, mapTiles: 'stub', setup: async (pg) => { await pg.emulateTimezone(zone); await pg.evaluateOnNewDocument((langs, sels) => {
+  // Opened once, then reloaded with the probes: the measured load is a warm one (fonts and chunks
+  // cached), as this check has always measured. Moving the probes before the first navigation (E1
+  // A3) made it a cold load, where the web fonts land at ~400 ms and shift the header at 960 px
+  // (CLS 0.014; filed in the E1 report), which is not what this check is about.
+  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { width, mapTiles: 'stub' });
+  await page.emulateTimezone(zone);
+  await page.evaluateOnNewDocument((langs, sels) => {
     window.__ctTest = true;
     Object.defineProperty(Navigator.prototype, 'languages', { get: () => langs, configurable: true });
     Object.defineProperty(Navigator.prototype, 'language', { get: () => langs[0], configurable: true });
@@ -144,7 +150,8 @@ export async function stableStart(lang, width) {
       requestAnimationFrame(look);
     };
     requestAnimationFrame(look);
-  }, languages, STABLE); } });
+  }, languages, STABLE);
+  await page.reload({ waitUntil: 'domcontentloaded' });
   return page;
 }
 

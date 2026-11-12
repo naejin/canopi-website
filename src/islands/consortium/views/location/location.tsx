@@ -45,11 +45,11 @@ function tileSource(): TileSource {
 // A read that has not answered in 15 s fails like any other (review round 2, 3): the reader is told and
 // a waiting Suggest is released. (The climate reader takes no AbortSignal; the late answer is dropped.)
 export const READ_TIMEOUT_MS = 15_000;
-// A browser test may shorten it in the test build (window.__ctTimeouts.read; A4, as in data/load.ts).
-const readTimeoutMs = (): number => (typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { read?: number } }).__ctTimeouts?.read) || READ_TIMEOUT_MS : READ_TIMEOUT_MS);
 async function read(lat: number, lon: number): Promise<SiteLookup | null> {
   let timer = 0;
-  const ms = readTimeoutMs();
+  // A browser test may shorten it in the test build (window.__ctTimeouts.read; A4, as in
+  // data/load.ts); production folds it to READ_TIMEOUT_MS.
+  const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { read?: number } }).__ctTimeouts?.read) || READ_TIMEOUT_MS : READ_TIMEOUT_MS;
   try {
     return await Promise.race([
       // No soil tile until something reads it (P5.2's soil likely restores { soil: true }).

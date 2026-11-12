@@ -668,8 +668,6 @@ let cap: ReturnType<typeof setTimeout> | undefined;
 // empty and search" too), when the plant list fails (the load screen says so), or once its 10 s are
 // up with a kept guest's list still unread (a toast says so). Each wait therefore ends.
 export const SUGGEST_WAIT_MS = 10_000;
-// A browser test may shorten it in the test build (window.__ctTimeouts.suggest; A4, as in data/load.ts).
-const suggestWaitMs = (): number => (typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { suggest?: number } }).__ctTimeouts?.suggest) || SUGGEST_WAIT_MS : SUGGEST_WAIT_MS);
 function dropSuggest(): void {
   if (!pendingSuggest.peek()) return;
   clearTimeout(cap);
@@ -694,7 +692,9 @@ export function requestSuggest(): void {
   if (!pendingSuggest.peek()) { clearTimeout(cap); waited.value = false; }
   const busy = lookups.peek() && !waited.peek();
   if (!busy && store.suggestMembers()) { clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
-  if (!pendingSuggest.peek()) cap = setTimeout(capped, suggestWaitMs());
+  // A browser test may shorten the wait in the test build (window.__ctTimeouts.suggest; A4, as in
+  // data/load.ts); production folds it to SUGGEST_WAIT_MS.
+  if (!pendingSuggest.peek()) cap = setTimeout(capped, typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { suggest?: number } }).__ctTimeouts?.suggest) || SUGGEST_WAIT_MS : SUGGEST_WAIT_MS);
   pendingSuggest.value = true;
 }
 
