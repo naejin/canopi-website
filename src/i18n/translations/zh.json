@@ -904,7 +904,7 @@
   "privacy.contact.title": "联系表单",
   "privacy.contact.body": "联系表单会通过电子邮件把你的姓名、电子邮箱、留言和页面语言发送给 Canopi：由 Cloudflare 投递到 Canopi 在 Gmail（Google）的邮箱。这些信息只用于回复你，本站不保留任何副本。",
   "privacy.correction.title": "建议更正",
-  "privacy.correction.body": "在植物联合体工具中，更正表单会以同样方式通过电子邮件把植物、当前显示的数值、你的建议和备注、数据版本、气候（若植物按其他气候的名单定位，还包括你选择的气候）以及页面语言发送给 Canopi。发送前，你需同意你的建议可以按 CC BY-SA 4.0 许可发布在 Canopi 的植物数据中。",
+  "privacy.correction.body": "在植物联合体工具中，更正表单会以同样方式通过电子邮件把植物、当前显示的数值、你的建议和备注、数据版本、植物定位所依据的名单、你选择的气候以及页面语言发送给 Canopi。发送前，你需同意你的建议可以按 CC BY-SA 4.0 许可发布在 Canopi 的植物数据中。",
   "privacy.correction.email": "电子邮箱是选填项：如果填写，它只用于回复你，绝不会公开。",
   "privacy.donate.title": "捐赠",
   "privacy.donate.body": "捐赠表单由 HelloAsso 提供，这是一家面向协会的法国支付平台。只有在你打开捐赠窗口时才会加载，你在其中填写的内容会发送给 HelloAsso，并适用其自身的隐私政策。",

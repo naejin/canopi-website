@@ -904,7 +904,7 @@
   "privacy.contact.title": "El formulario de contacto",
   "privacy.contact.body": "El formulario de contacto envía tu nombre, tu correo electrónico, tu mensaje y el idioma de la página a Canopi por correo: Cloudflare lo entrega en el buzón de Canopi en Gmail (Google). Solo se usan para responderte, y el sitio no guarda ninguna copia.",
   "privacy.correction.title": "Sugerir una corrección",
-  "privacy.correction.body": "En la herramienta de consorcios, el formulario de corrección envía a Canopi por correo, de la misma manera, la planta, el valor que muestra, tu sugerencia y tu nota, la versión de los datos, el clima (y el clima que elegiste, cuando la planta se ubica según la lista de otro clima) y el idioma de la página. Antes de enviarla, aceptas que tu sugerencia pueda publicarse en los datos de plantas de Canopi bajo CC BY-SA 4.0.",
+  "privacy.correction.body": "En la herramienta de consorcios, el formulario de corrección envía a Canopi por correo, de la misma manera, la planta, el valor que muestra, tu sugerencia y tu nota, la versión de los datos, la lista según la cual se ubica la planta, el clima que elegiste y el idioma de la página. Antes de enviarla, aceptas que tu sugerencia pueda publicarse en los datos de plantas de Canopi bajo CC BY-SA 4.0.",
   "privacy.correction.email": "Tu correo electrónico es opcional: si lo das, solo se usa para responderte y nunca se publica.",
   "privacy.donate.title": "Donaciones",
   "privacy.donate.body": "El formulario de donación es de HelloAsso, una plataforma francesa de pagos para asociaciones. Solo se carga cuando abres la ventana de donación, y lo que escribes allí va a HelloAsso, según su propia política de privacidad.",
