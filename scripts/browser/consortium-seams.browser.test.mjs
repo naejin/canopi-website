@@ -961,3 +961,66 @@ test('Item 8: a sheet\'s late close event never closes the next sheet, opened in
     await done(page);
   });
 });
+
+// P5 walk-through 2, N1 (data loss since P2): the Undo toast sat over the Add sheet's "Add N plants"
+// when a search left few rows, so the click undid the last add and added nothing. A toast never
+// covers a control: in a sheet it sits in the sheet's foot above the action bar, never over it.
+test('Walk-through 2 N1: in the Add sheet the Undo toast never covers "Add N plants" nor any other control (320, 390, 700, 960, 1280 px)', async () => {
+  const plants = await temperate();
+  for (const width of [320, 390, 700, 960, 1280]) {
+    const page = await suggested({ width, theme: 'light' });
+    const members = new Set(await memberIds(page));
+    const candidates = plants.filter((p) => !members.has(p.id) && !plants.some((q) => q !== p && q.name.includes(p.name)));
+    const rows = 'dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li';
+    // Opens Add, searches the next candidate listed with a tick (few rows), and ticks it.
+    const addOne = async () => {
+      await page.click('.ct-viewbar button');
+      await page.waitForSelector('dialog.ct-add[open] .ct-search input');
+      while (candidates.length) {
+        const p = candidates.shift();
+        await page.$eval('dialog.ct-add[open] .ct-search input', (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); });
+        await page.type('dialog.ct-add[open] .ct-search input', p.name);
+        const ok = await page.waitForFunction((sel, n) => { const r = [...document.querySelectorAll(sel)]; return r.length <= 3 && r.some((li) => li.querySelector('.ct-sci')?.textContent.trim() === n && li.querySelector('input[type="checkbox"]')); }, { timeout: 1500 }, rows, p.name).then(() => true, () => false);
+        if (!ok) continue;
+        await page.evaluate((sel, n) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent.trim() === n).querySelector('input[type="checkbox"]').click(), rows, p.name);
+        return p;
+      }
+      assert.fail(`${width} px: no plant to add`);
+    };
+    const a = await addOne();
+    await page.click('dialog.ct-add[open] .ct-add-bar .button-primary');
+    assert.ok(await has(page, '.ct-toast-page .ct-toast'), `${width} px: the first add's toast with Undo`);
+    const b = await addOne();
+    assert.ok(await has(page, 'dialog[open] .ct-toast .ct-toast-undo'), `${width} px: the toast moved into the sheet`);
+    // Where the bar lands depends on the rows above it and the window: every window height from 480 to
+    // 900 px, so the bar passes through the toast's band (Delhi at 1280 × 800 had it there).
+    const covered = [];
+    for (let height = 480; height <= 900; height += 20) {
+      await page.setViewport({ width, height, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const seen = await page.evaluate(() => {
+        const d = document.querySelector('dialog.ct-add[open]');
+        const toast = d.querySelector('.ct-toast').getBoundingClientRect();
+        const btn = d.querySelector('.ct-add-bar .button-primary');
+        const r = btn.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        const meets = (x, y) => x.left < y.right && y.left < x.right && x.top < y.bottom && y.top < x.bottom;
+        const under = [...d.querySelectorAll('button, input, a[href], select, textarea')]
+          .filter((el) => !el.closest('.ct-toast') && el.getClientRects().length && meets(el.getBoundingClientRect(), toast))
+          .map((el) => (el.getAttribute('aria-label') || el.textContent).trim().slice(0, 40));
+        return { onButton: btn.contains(hit), hit: hit?.className ?? null, under };
+      });
+      if (!seen.onButton) covered.push(`${height}: the Add button's centre is ${seen.hit}`);
+      for (const u of seen.under) covered.push(`${height}: ${u}`);
+    }
+    assert.deepEqual(covered, [], `${width} px: no control of the sheet under the toast, at any window height`);
+    await page.setViewport({ width, height: width < 640 ? 844 : 900, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });
+    await page.locator('dialog.ct-add[open] .ct-add-bar .button-primary').click();
+    await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
+    await page.click('#ct-tab-list'); // every member (a phone stage shows only its own)
+    const now = new Set(await memberIds(page));
+    assert.ok(now.has(a.id) && now.has(b.id), `${width} px: both plants are in the consortium (${a.name}: ${now.has(a.id)}, ${b.name}: ${now.has(b.id)})`);
+    await done(page);
+  }
+});
+

@@ -113,9 +113,12 @@
 .ct :where(.ct-sheet) .ct-search input { flex: 1; min-width: 0; min-height: 44px; border: 0; background: transparent; }
 .ct :where(.ct-sheet) .ct-search input:focus { outline: none; }
 .ct :where(.ct-sheet) .ct-search:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* The sheet's foot (SheetFrame foot): stuck to the sheet's bottom, the toast above the action bar, so
+   neither ever covers the other (walk-through 2 N1). */
+.ct .ct-sheet-foot { position: sticky; bottom: 0; z-index: 3; }
 .ct .ct-add-bar {
-  position: sticky; bottom: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
-  margin: 0 -24px -28px; padding: 12px 24px; background: var(--surface); border-top: 1px solid var(--border-strong);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 24px; background: var(--surface); border-top: 1px solid var(--border-strong);
 }
 
 /* Forms: correction and paste */
@@ -161,8 +164,10 @@ html:has(.ct .ct-toast-page .ct-toast) { scroll-padding-bottom: var(--ct-toast-r
 }
 .ct .ct-toast .ct-icon-button { color: inherit; }
 .ct .ct-toast svg { width: 16px; height: 16px; }
-/* The region inside an open sheet: above its sticky bar, at the sheet's right edge. */
-.ct .ct-sheet .ct-toast-sheet { left: auto; right: 12px; bottom: 84px; transform: none; max-width: min(496px, calc(100% - 24px)); }
+/* The region inside an open sheet: in the sheet's foot, above its bar, at the sheet's right edge. In the
+   flow, not fixed: it takes its own room, so it covers no control of the bar. */
+.ct .ct-sheet .ct-toast-sheet { position: static; transform: none; width: auto; max-width: none; }
+.ct .ct-sheet .ct-toast-sheet .ct-toast { width: fit-content; max-width: min(496px, calc(100% - 24px)); margin: 0 12px 12px auto; }
 
 @media (max-width: 639px) {
   .ct .ct-sheet { width: 100%; border-left: 0; }
@@ -170,7 +175,7 @@ html:has(.ct .ct-toast-page .ct-toast) { scroll-padding-bottom: var(--ct-toast-r
   .ct .ct-sheet-body { padding: 16px 16px 24px; }
   .ct .ct-photo { margin: -16px -16px 0; }
   .ct .ct-photo figcaption { padding-inline: 16px; }
-  .ct .ct-add-bar { margin: 0 -16px -24px; padding: 10px 16px; }
+  .ct .ct-add-bar { padding: 10px 16px; }
   .ct .ct-sheet h2 { font-size: 26px; }
   .ct .ct-place .ct-bar i { width: 28px; }
   .ct .ct-traits { grid-template-columns: 1fr; gap: 0 0; }
