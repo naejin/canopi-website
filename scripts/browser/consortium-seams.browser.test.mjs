@@ -787,6 +787,38 @@ test('UX3: below 960 px the matrix is the phone grid, from 960 px the desktop ta
   }
 });
 
+// Walk-through F2 (P5 seam review): at 960 px the desktop table cut real common names to a few letters
+// ("Europea…"). Each start chip's name may wrap to two lines; its 10th character (or its last, if
+// shorter) must be drawn inside the name's box, before any ellipsis, on the real Temperate list.
+test('UX5 (walk-through F2): at 960 and 1024 px the desktop matrix shows at least the first 10 characters of every plant name', async () => {
+  for (const width of [960, 1024]) {
+    const page = await h.open('/consortium/', { width, theme: 'light' });
+    await page.locator(aria('radio', 'Temperate')).click();
+    assert.equal(await loadState(page), 'ready');
+    await page.locator(aria('button', 'Suggest plants')).click();
+    assert.ok(await has(page, 'table.ct-mx button.ct-pchip', 10_000), `${width} px: the desktop table`);
+    const cut = await page.$$eval('table.ct-mx button.ct-pchip .ct-nm > span', (els) => els.flatMap((e) => {
+      const node = e.firstChild, text = e.textContent;
+      if (!node || node.nodeType !== 3) return [];
+      if (e.scrollWidth <= e.clientWidth + 1 && e.scrollHeight <= e.clientHeight + 1) return []; // drawn whole
+      const r = document.createRange();
+      const i = Math.min(10, text.length) - 1;
+      r.setStart(node, i); r.setEnd(node, i + 1);
+      const c = r.getBoundingClientRect(), box = e.getBoundingClientRect();
+      // A range gives where a character is laid out, even under the ellipsis: a cut name leaves the
+      // ellipsis' width at its end ("Europea…" counts 7). Its glyph box is taller than the line
+      // (line-height 1.2), so the line counts by its middle.
+      const ctx = document.createElement('canvas').getContext('2d');
+      ctx.font = getComputedStyle(e).font;
+      const edge = box.right - ctx.measureText('…').width;
+      return c.right <= edge + 0.5 && c.top + c.height / 2 <= box.bottom && c.width > 0 ? [] : [`${text} (${Math.round(box.width)}×${Math.round(box.height)} px)`];
+    }));
+    assert.deepEqual(cut, [], `${width} px: names cut before their 10th character`);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `${width} px: no sideways scroll`);
+    await done(page);
+  }
+});
+
 // UX audit fix 4: the headline counts the jobs done at every stage (it said "6 of 6 jobs are done"
 // above a job missing from three stages), and each run of stages where a job is missing gets its own
 // "Find…", which opens Add for that job and those stages. The suggestion is unchanged.

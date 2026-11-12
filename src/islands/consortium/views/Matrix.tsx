@@ -25,15 +25,15 @@ import type { ComponentChildren, ComponentType } from 'preact';
 import { useEffect } from 'preact/hooks';
 import type { Matrix as MatrixData, MatrixCell, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
 import { ROOM_LIMIT_M, strata } from '../../../lib/consortium/index.ts';
-import { climate, matrix, memberTaxa, members, missingMembers, pool, site, suggestMembers, view, type View } from '../store.ts';
+import { climate, marksFailed, matrix, memberTaxa, members, missingMembers, pool, site, view, type View } from '../store.ts';
+import { pendingSuggest, requestSuggest } from '../memory.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { COLLAPSED_CHIPS, MAX_TRACKS, PHASE_ORDS, SHARE_AIM, cellOrder, fillPercent, reasonParts, rowPieces, runReasons, spanOf, spans, tracksOf } from './tracks.ts';
 import { Explain, Marks, PinIcon, SproutIcon, WarnIcon, byName, cellName, layerName, listName, nameOf, openAdd, openDetails, phasePlain, phaseTerm, plantLabel } from './StageBar.tsx';
 import { phone } from './StageStepper.tsx';
 import { PhoneMatrix } from './PhoneMatrix.tsx';
 import { later, prefetchLater } from './lazy.tsx';
-import { focusView } from '../focus.ts';
-import { NeedsSite, needsSite } from './PoolSlot.tsx';
+import { WhyNoSuggest, suggestBlock } from './PoolSlot.tsx';
 
 // The other three views load after the matrix (views/lazy.tsx).
 const { View: SideView } = later(() => import('./later.ts').then((m) => m.SideView));
@@ -82,9 +82,11 @@ function Views() {
 function Notices() {
   const { loading, unlisted } = missingMembers.value, c = climate.value!;
   const unplaced = memberTaxa.value.filter((t) => !spanOf(t) || !t.stratum);
-  if (!loading.length && !unlisted.length && !unplaced.length) return null;
+  const noMarks = marksFailed.value;
+  if (!loading.length && !unlisted.length && !unplaced.length && !noMarks) return null;
   return (
     <div class="ct-notes" role="status">
+      {noMarks && <p class="ct-notice" data-marks-unavailable>{T('marks.unavailable')} <button type="button" class="button button-secondary ct-small" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button></p>}
       {loading.length > 0 && <p>{P('matrix.loading', loading.length)}</p>}
       {unlisted.length > 0 && <p>{P('matrix.unlisted', unlisted.length, { list: listName(c) })}</p>}
       {unplaced.length > 0 && <p><strong>{T('matrix.noLayer')}.</strong> {T('matrix.noLayerBody', { names: list(unplaced.map(nameOf)) })}</p>}
@@ -106,17 +108,19 @@ export function FillMeter({ m }: { m: MatrixData }) {
   );
 }
 
-// A climate that borrows its plants, without a location (PoolSlot needsSite): no Suggest, which could
-// only refuse (store.suggestMembers); the needs-location line says why, with its way to the location
-// step (hand-off H-S5c-6).
+// The empty matrix: its Suggest only when it can act (PoolSlot suggestBlock, the rule Start's
+// "Suggest plants" reads, seam review 1), and through the same requestSuggest, so a press while a kept
+// guest's list is read waits for it (round 3, 2); otherwise why not, in its place: a borrowed climate needing
+// the site's location (hand-off H-S5c-6) or the range checks that did not load, or nothing on the list
+// fitting the site (after "Search all plants").
 export function EmptyNotice({ phone: small = false }: { phone?: boolean }) {
-  const z = climate.value, needs = !!z && needsSite(z);
+  const z = climate.value, block = z ? suggestBlock(z) : 'noList';
   return (
-    <div class={`ct-mnotice ct-mx-empty${small ? ' is-phone' : ''}`}>
-      <div><strong>{T('matrix.empty')}</strong><p>{T('matrix.emptyBody')}</p>{needs && <NeedsSite zone={z} />}</div>
-      {(!needs || !small) && (
+    <div class={`ct-mnotice ct-mx-empty${small ? ' is-phone' : ''}`} data-suggest-block={block ?? undefined}>
+      <div><strong>{T('matrix.empty')}</strong><p>{T(block === 'nothingFits' ? 'matrix.emptyNoFit' : 'matrix.emptyBody')}</p>{z && block && <WhyNoSuggest zone={z} block={block} />}</div>
+      {(!block || !small) && (
         <div class="ct-row">
-          {!needs && <button type="button" class="button button-primary" onClick={() => { if (suggestMembers()) { view.value = 'matrix'; focusView(); } }}>{T('matrix.suggest')}</button>}
+          {!block && <button type="button" class="button button-primary" aria-busy={pendingSuggest.value ? 'true' : undefined} onClick={requestSuggest}>{T('matrix.suggest')}</button>}
           {!small && <button type="button" class="button button-secondary" onClick={() => openAdd()}>{T('matrix.addPlant')}</button>}
         </div>
       )}

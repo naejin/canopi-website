@@ -28,7 +28,7 @@ import { currentPosition, queryGeolocationPermission } from '../../../../lib/loc
 import { loadMapLibreModule } from '../../../../lib/location/maplibre.ts';
 import * as store from '../../store.ts';
 import { T, pageLang } from '../../strings.ts';
-import { chooseClimate, pendingClimate } from '../../memory.ts';
+import { chooseClimate, pendingClimate, pendingLinkClimate } from '../../memory.ts';
 import { keepLocation, locationCountry, readLocation, siteFound } from './keep.ts';
 import { line, liveLookup, looking, nextLookup, unlessReplaced, unread, type Line } from './load.ts';
 import { zoneLabel } from '../Start.tsx';
@@ -59,7 +59,9 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
 }
 
 // A position the reader gave (device, search, map): looked up, then the site, its suggestion and its
-// country, in one batch. A failed read clears the site (the manual climate stays, with a line).
+// country, in one batch. A failed read or a point at sea changes nothing (seam review 2, 3): a site
+// already read stays in use on the page, in storage and as the country's source, and the line names it
+// ("still using …"); with none, the manual climate cards, with the line.
 // Counted in load.ts `lookups` (Suggest waits for it), whichever way it started (the map centre too).
 const locate = (lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> =>
   looking(() => locateNow(lat, lon, source, label, extra));
@@ -69,7 +71,9 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
   const lookup = await unlessReplaced(read(lat, lon));
   if (!liveLookup(id) || lookup === undefined) return;
   if (!lookup) {
-    batch(() => { store.location.value = null; store.proposedClimate.value = null; unread.value = false; line.value = { state: 'failed', ...extra }; });
+    // A link's location not read yet drives nothing: it goes, as before; a site read stays.
+    const keep = !!store.location.peek()?.lookup;
+    batch(() => { if (!keep) { store.location.value = null; store.proposedClimate.value = null; } unread.value = false; line.value = { state: 'failed', ...extra }; });
     return;
   }
   const sc = siteClimate(lookup);
@@ -78,6 +82,7 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
   siteFound(() => {
     store.location.value = loc;
     store.proposedClimate.value = sc.suggested;
+    store.proposedFromSave.value = false;
     line.value = { state: sc.state, ...extra };
   }, lookup.regions.isoA2);
   keepLocation(loc);
@@ -104,7 +109,10 @@ export async function settle(how: 'link' | 'saved', savedText: string | null): P
   // A link's location brings no country (its link's country stands).
   siteFound(() => {
     store.location.value = loc;
-    if (how === 'saved' && !store.climate.peek()) store.proposedClimate.value = sc.suggested;
+    // Not under a share link's climate still opening either (seam review 5: a link without o= keeps the
+    // saved site); a saved consortium opening still gets it, so a save that fails to open leaves the
+    // card proposed (round 2, 2).
+    if (how === 'saved' && !store.climate.peek() && !pendingLinkClimate.peek()) { store.proposedClimate.value = sc.suggested; store.proposedFromSave.value = true; }
     line.value = { state: sc.state };
   }, how === 'saved' ? lookup.regions.isoA2 : undefined);
 }
@@ -165,6 +173,13 @@ function placeOf(l: SiteLocation): string {
   const where = l.label ?? (l.source === 'geo' ? T('location.here') : coords(l.lat, l.lon));
   return l.source === 'link' ? `${where} (${T('location.fromLink')})` : where;
 }
+// A line with no site of its own (a refusal, a failure, the sea). After a failed read or a point at sea,
+// the site still in use is named (seam review 2, 3: whenever a site drives the pool, marks and future,
+// this panel says which).
+function stateText(l: Line, loc: SiteLocation | null): string {
+  if (loc?.lookup && (l.state === 'sea' || l.state === 'failed')) return T(l.state === 'sea' ? 'location.state.seaKept' : 'location.state.failedKept', { place: placeOf(loc) });
+  return l.state === 'no-result' ? T('location.state.no-result', { q: l.query ?? '' }) : T(`location.state.${l.state}`);
+}
 
 // ---- views ----
 export function LocationResult({ compact = false }: { compact?: boolean }) {
@@ -196,12 +211,13 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
                   : T('location.suggests', { climate: zoneLabel(sc.zone) })}
                 {sc.state === 'coast' && ` ${T('location.state.coast')}`}
               </p>
-              {!compact && proposed && store.climate.value !== proposed && (
+              {/* Not over a link's or save's climate still opening (seam review round 3, 1). */}
+              {!compact && proposed && !pendingClimate.value && store.climate.value !== proposed && (
                 <p><button type="button" class="button button-primary ct-small" data-location-confirm onClick={() => { chooseClimate(proposed); store.proposedClimate.value = null; }}>{T('location.confirm', { climate: zoneLabel(proposed) })}</button></p>
               )}
             </>
           ) : (
-            <p>{l.state === 'no-result' ? T('location.state.no-result', { q: l.query ?? '' }) : T(`location.state.${l.state}`)}</p>
+            <p>{stateText(l, loc)}</p>
           )}
           {!compact && !!l.others?.length && (
             <p class="ct-muted ct-small-text">{T('location.others')}{' '}
@@ -269,7 +285,7 @@ function MapDialog() {
         </svg>
       </div>
       {failed && <p class="ct-notice" role="alert">{T('location.mapFailed')}</p>}
-      {(state === 'sea' || state === 'failed') && <p class="ct-notice" role="status">{T(`location.state.${state}`)}</p>}
+      {(state === 'sea' || state === 'failed') && <p class="ct-notice" role="status">{stateText(line.value!, store.location.value)}</p>}
       <p class="ct-location-row">
         <button type="button" class="button button-primary" data-location-use-centre disabled={state === 'loading'} onClick={() => void use()}>{T('location.useCentre')}</button>
         {' '}<button type="button" class="button button-secondary" data-location-close onClick={close}>{T('location.close')}</button>

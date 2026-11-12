@@ -173,15 +173,28 @@ export const matrix = computed<Matrix | null>(() => {
 // A climate the site location suggests (P5 owner answer 1; S5b writes it): its card shows checked,
 // but store.climate stays unset until the reader confirms.
 export const proposedClimate = signal<ClimateZone | null>(null);
+// Whether that proposal came from the saved site looked up again (not the reader locating): only such
+// a proposal goes when a consortium opens (memory.ts restore; seam review round 4, 2).
+export const proposedFromSave = signal(false);
 export const markContext = computed<MarkContext>(() => ({ climate: climate.value, location: location.value, scenario: scenario.value, source: source.value }));
 // The mark providers (core mark-providers.ts, their own chunk): none until a mark can show (a site
 // location, or a climate the export does not curate), then loaded once. Off the first run (decision
 // row "Island JavaScript budget for P5").
 export const markProviders = signal<readonly MarkProvider[]>([]);
 export const wantsMarkProviders = computed(() => needsMarkProviders(markContext.value, source.value?.info().climates ?? []));
+// The providers' chunk did not load (seam review 6): the range, future and estimate marks it would show
+// are missing, so a notice with Reload says so wherever members show (Matrix.tsx Notices) while marks
+// are wanted, with one toast; as for the range rule, the import is not tried again on this page.
+const marksBroken = signal(false);
+export const marksFailed = computed(() => marksBroken.value && wantsMarkProviders.value);
 effect(() => {
-  if (!wantsMarkProviders.value || markProviders.peek().length) return;
-  loadMarkProviders().then((list) => { markProviders.value = list; }, (err: unknown) => console.error(`Consortium: the plant marks did not load: ${(err as Error).message}`));
+  if (!wantsMarkProviders.value || markProviders.peek().length || marksBroken.peek()) return;
+  loadMarkProviders().then((list) => { markProviders.value = list; }, (err: unknown) => {
+    console.error(`Consortium: the plant marks did not load: ${(err as Error).message}`);
+    if (marksBroken.peek()) return;
+    marksBroken.value = true;
+    showToast(T('marks.unavailable'), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
+  });
 });
 // The warnings on members: conflicts, site misfits, invasive and toxicity (core suggest.ts flagsOf).
 export const flags = computed<Flag[]>(() => {

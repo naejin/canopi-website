@@ -28,7 +28,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
-import { has, realDb } from './helpers.mjs';
+import { aria, has, realDb } from './helpers.mjs';
 import { EXPECTED, NOMINATIM, SITES, lookupAt } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 
@@ -601,7 +601,7 @@ test('P5-13c (S5b review round 2, 4): a link\'s location goes with its consortiu
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value === null, { timeout: 5000 }).then(() => true, () => false), `${label} clears the link's location`);
   }
 });
-test('P5-13b (S5b review round 1, 1 and 2): a link\'s o= lives for the page only: never saved, never a country "from your location"; a link without o= clears it', async () => {
+test('P5-13b (S5b review round 1, 1 and 2): a link\'s o= lives for the page only: never saved, never a country "from your location"; a link without o= clears it and the reader\'s own site returns', async () => {
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon } });
   await locationControls(page);
@@ -621,10 +621,12 @@ test('P5-13b (S5b review round 1, 1 and 2): a link\'s o= lives for the page only
   assert.equal((await page.evaluate(() => window.__ctTest.store.location.value)).source, 'link');
   assert.deepEqual(await savedLocation(page), mine, 'the reader\'s saved location is untouched');
   assert.notDeepEqual(await page.evaluate(() => window.__ctTest.store.country.value), { code: 'FR', source: 'location' }, 'no country "from your location" from the link\'s cell (Lyon, FR); the reader\'s own may stay');
-  // A link without o= pasted into the tab: the link's location goes, with its line.
+  // A link without o= pasted into the tab: the link's location goes, with its line, and the reader's
+  // own saved site comes back, as a fresh open of that link gives (seam review 5).
   await page.evaluate((h) => { location.hash = h; }, link.hash.replace(/&o=[^&]+/, ''));
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value === null, { timeout: 15_000 }).then(() => true, () => false), 'store.location cleared');
-  assert.equal(await page.$('[data-location-state]'), null, 'no stale result line');
+  assert.ok(await page.waitForFunction((a, b) => { const l = window.__ctTest.store.location.value; return l?.lookup && l.lat === a && l.lon === b && l.source === 'geo'; }, { timeout: 15_000 }, lat, lon).then(() => true, () => false), 'the link\'s location replaced by the reader\'s own');
+  await locationState(page);
+  assert.doesNotMatch(await text(page, '[data-location-state]') ?? '', /approximate/i, 'no stale "from the shared link" line');
   // A later plain visit: the reader's own site again.
   await page.goto(`${new URL(page.url()).origin}/consortium/`, { waitUntil: 'domcontentloaded' });
   await ready(page);
@@ -962,6 +964,301 @@ test('P5-26c (S5c card pill, UX audit fix 1): a borrowed climate\'s card says "N
   assert.equal(await pill('temperate'), 'Ready');
   await atSite(page, 'lyon');
   assert.equal(await pill('subtropical'), 'Ready');
+});
+
+// ---- P5 seam review (branch consortium/p5-seam): one test per finding, written to fail first ----
+
+// The empty matrix's buttons and words, at both widths.
+const emptyMatrix = async (page) => {
+  assert.ok(await has(page, '.ct-mx-empty', 15_000), 'the empty matrix');
+  return { buttons: await page.$$eval('.ct-mx-empty button', (els) => els.map((e) => e.textContent.trim())), words: await text(page, '.ct-mx-empty') ?? '' };
+};
+test('P5-27a (S5c seam review 1): where nothing fits, the empty matrix left by "Search all plants" has no dead "Suggest a start"; it says why', async () => {
+  for (const width of [390, 1280]) {
+    const page = await tool({ width });
+    await atNowhere(page);
+    await page.click('input[name="ct-climate"][value="boreal"]');
+    assert.ok(await has(page, '[data-pool-empty] button', 10_000), 'the nothing-fits state');
+    await page.click('[data-pool-empty] button');
+    assert.ok(await has(page, 'dialog.ct-sheet .ct-icon-button', 10_000), 'the plant search');
+    await page.click('dialog.ct-sheet .ct-icon-button');
+    await page.waitForFunction(() => !document.querySelector('dialog.ct-sheet'), { timeout: 5000 });
+    const { buttons, words } = await emptyMatrix(page);
+    assert.equal(buttons.includes('Suggest a start'), false, `${width} px: no Suggest that can only refuse (${buttons.join(', ')})`);
+    assert.match(words, /nothing to suggest/, `${width} px: the empty matrix says why`);
+  }
+});
+test('P5-27b (S5c seam review 1): a borrowed climate whose range chunk failed: the empty matrix says why instead of a dead "Suggest a start"', async () => {
+  for (const width of [390, 1280]) {
+    const page = await tool({ width, hash: '#v=4&c=arid&a=&e=1' });
+    const cdp = await page.createCDPSession();
+    await cdp.send('Network.enable');
+    await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/pool.*'] });
+    await atSite(page, 'seville');
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the range chunk failed');
+    const { buttons, words } = await emptyMatrix(page);
+    assert.equal(buttons.includes('Suggest a start'), false, `${width} px: no Suggest that can only refuse (${buttons.join(', ')})`);
+    assert.match(words, /Arid needs them to pick plants/, `${width} px: it says why`);
+    assert.ok(buttons.includes('Reload'), `${width} px: with Reload`);
+  }
+});
+test('P5-27c (S5b seam review 2): a map centre on the sea keeps the site in use, and the line names it', async () => {
+  const page = await tool({ nominatim: 'fixture', mapTiles: 'stub' });
+  await locationControls(page);
+  await search(page, 'Lyon');
+  assert.equal(await locationState(page), 'borderline');
+  const label = (await page.evaluate(() => window.__ctTest.store.location.value)).label;
+  assert.match(label, /^Lyon/);
+  await page.click('[data-location-action="map"]');
+  assert.ok(await has(page, '[data-location-map] canvas', 10_000));
+  await page.evaluate((c) => window.__ctTest.mapCentre(c), { lat: SITES.ocean[0], lon: SITES.ocean[1] });
+  await page.click('[data-location-use-centre]');
+  assert.equal(await locationState(page), 'sea');
+  await page.click('[data-location-close]');
+  await page.waitForFunction(() => !document.querySelector('[data-location-map]'), { timeout: 5000 });
+  assert.equal((await page.evaluate(() => window.__ctTest.store.location.value)).label, label, 'Lyon still drives the pool and marks');
+  assert.ok((await text(page, '.ct-location [data-location-state]') ?? '').includes(label), `the line names the site in use (${await text(page, '.ct-location [data-location-state]')})`);
+});
+test('P5-27d (S5b seam review 3): a failed tile read keeps the site in use on the page and in storage, says so, and a reload agrees', async () => {
+  const page = await tool({ nominatim: 'fixture' });
+  await locationControls(page);
+  await search(page, 'Lyon');
+  assert.equal(await locationState(page), 'borderline');
+  const before = await page.evaluate(() => ({ loc: window.__ctTest.store.location.value.label, country: window.__ctTest.store.country.value }));
+  assert.deepEqual(before.country, { code: 'FR', source: 'location' });
+  const cdp = await page.createCDPSession();
+  await cdp.send('Network.enable');
+  await cdp.send('Network.setBlockedURLs', { urls: ['*/data/climate/*'] });
+  await page.$eval('input[data-location-search]', (i) => { i.value = ''; });
+  await search(page, 'Seville');
+  assert.equal(await locationState(page), 'failed');
+  const after = await page.evaluate(() => ({ loc: window.__ctTest.store.location.value?.label ?? null, country: window.__ctTest.store.country.value }));
+  assert.deepEqual(after, before, 'the page keeps Lyon and its country');
+  assert.equal((await savedLocation(page))?.label, before.loc, 'storage keeps Lyon too');
+  assert.ok((await text(page, '.ct-location [data-location-state]') ?? '').includes(before.loc), 'the line says Lyon is still in use');
+  await cdp.send('Network.setBlockedURLs', { urls: [] });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready(page);
+  assert.ok(await page.waitForFunction((l) => window.__ctTest.store.location.value?.label === l && window.__ctTest.store.location.value.lookup, { timeout: 15_000 }, before.loc).then(() => true, () => false), 'after a reload: Lyon, as the page showed');
+});
+// A page with the reader's own saved location (Seville, geo) on this device, opened at `hash`.
+async function withSavedSite(hash = '') {
+  const page = await h.open(`/consortium/${hash}`, { mapTiles: 'stub' });
+  await page.evaluateOnNewDocument((rec) => {
+    window.__ctTest = true;
+    if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
+  }, JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready(page);
+  return page;
+}
+const temperateLink = async (origin = null, n = 5) => {
+  const ids = await realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
+  return `#${encodeLink({ climate: 'Temperate', country: null, site: { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' }, members: ids.slice(0, n), kept: [], removed: [], guests: [], crops: [], stage: null }, { Temperate: ids }, { origin })}`;
+};
+const ownSite = (page) => page.waitForFunction((a, b) => { const l = window.__ctTest.store.location.value; return !!l?.lookup && l.lat === a && l.lon === b && l.source === 'geo'; }, { timeout: 15_000 }, ...SITES.seville).then(() => true, () => false);
+test('P5-27e (S5b seam review 5): a link without o= keeps the reader\'s own saved site, opened fresh or pasted into the open tab, and after a reload', async () => {
+  const link = await temperateLink();
+  const fresh = await withSavedSite(link);
+  assert.ok(await fresh.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the link opens');
+  assert.ok(await ownSite(fresh), 'fresh open: the reader\'s own site applies');
+  assert.equal(await fresh.evaluate(() => window.__ctTest.store.climate.value), 'Temperate', 'the link\'s climate stands');
+  await fresh.reload({ waitUntil: 'domcontentloaded' });
+  await ready(fresh);
+  assert.ok(await ownSite(fresh), 'after a reload: the same');
+  const pasted = await withSavedSite();
+  assert.ok(await ownSite(pasted), 'the saved site is read');
+  await pasted.evaluate((hsh) => { location.hash = hsh; }, link);
+  assert.ok(await pasted.waitForFunction(() => window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the pasted link opens');
+  assert.ok(await ownSite(pasted), 'pasted: the reader\'s own site stays');
+  // A link with o= then one without (pasted): the link's location goes and the reader's own comes back.
+  await pasted.evaluate((hsh) => { location.hash = hsh; }, await temperateLink({ lat: 45.75, lon: 4.85 }));
+  assert.ok(await pasted.waitForFunction(() => window.__ctTest.store.location.value?.source === 'link', { timeout: 15_000 }).then(() => true, () => false));
+  await pasted.evaluate((hsh) => { location.hash = hsh; }, await temperateLink(null, 4));
+  assert.ok(await ownSite(pasted), 'the reader\'s own site again, as a reload would give');
+});
+test('P5-27f (S5c seam review 6): if the plant-marks chunk fails, the range warnings it would show are replaced by a notice with Reload', async () => {
+  for (const width of [390, 1280]) {
+    const page = await tool({ width });
+    const cdp = await page.createCDPSession();
+    await cdp.send('Network.enable');
+    await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/mark-providers.*'] });
+    await atSite(page, 'seville');
+    await choose(page, 'Mediterranean');
+    await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
+    assert.ok(await has(page, '[data-plant-id]', 10_000), 'the matrix');
+    assert.ok(await has(page, '[data-marks-unavailable]', 10_000), `${width} px: a notice that the marks did not load`);
+    assert.match(await text(page, '[data-marks-unavailable]') ?? '', /Reload/);
+  }
+});
+// A saved Temperate consortium and a saved site at Seville (which proposes Mediterranean). list: the
+// restore's first list read waits until the saved site is looked up, then 'fail's or 'open's.
+// window.__confirmSeen: whether the location line's "Use …" ever showed.
+async function savedOpening({ list = null } = {}) {
+  const q = (await temperateLink()).slice(1);
+  const page = await h.open('/consortium/', { mapTiles: 'stub' });
+  await page.evaluateOnNewDocument((save, rec, outcome) => {
+    if (!localStorage.getItem('canopi-consortium')) localStorage.setItem('canopi-consortium', save);
+    if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
+    window.__confirmSeen = false;
+    new MutationObserver(() => { if (document.querySelector('[data-location-confirm]')) window.__confirmSeen = true; }).observe(document, { subtree: true, childList: true });
+    let hook = true;
+    Object.defineProperty(window, '__ctTest', { configurable: true, get: () => hook, set: (v) => {
+      hook = v;
+      if (!v?.store || !outcome) return;
+      v.store.source.subscribe((src) => {
+        if (!src || src.wrapped) return;
+        src.wrapped = true;
+        const read = src.interactions.bind(src);
+        let once = true; // the restore's read only; later reads (a card chosen) work
+        src.interactions = (z) => {
+          if (!once) return read(z);
+          once = false;
+          return new Promise((resolve, reject) => { v.store.location.subscribe((l) => { if (l?.lookup) setTimeout(() => (outcome === 'fail' ? reject(new Error('test: list unreadable')) : resolve(read(z))), 50); }); });
+        };
+      });
+    } });
+  }, JSON.stringify({ fragment: q, at: '2026-11-01', src: 'chosen' }), JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }), list);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready(page);
+  return page;
+}
+const savedFailing = () => savedOpening({ list: 'fail' });
+const proposal = (page) => page.evaluate(() => ({ proposed: window.__ctTest.store.proposedClimate.value, climate: window.__ctTest.store.climate.value, seen: window.__confirmSeen, shown: !!document.querySelector('[data-location-confirm]') }));
+test('P5-27k (S5b seam review round 3, 1): the saved site looked up while the saved consortium opens proposes nothing over it, and none comes back after Change site', async () => {
+  // The lookup first (the restore's list read waits for it).
+  const first = await savedOpening({ list: 'open' });
+  assert.ok(await ownSite(first), 'the saved site is read');
+  assert.ok(await first.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the save opens');
+  assert.deepEqual(await proposal(first), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'lookup first: no "Use Mediterranean" over the opening save, no proposal left');
+  for (const page of [first]) {
+    assert.ok(await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Change site'); b?.click(); return !!b; }), 'Change site');
+    await new Promise((r) => setTimeout(r, 300));
+    assert.deepEqual(await proposal(page), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'after Change site: no stale proposal');
+  }
+});
+test('P5-27i (S5b seam review round 2, 2): a saved consortium that fails to open still lets the reader\'s saved site propose its climate card', async () => {
+  const page = await savedFailing();
+  assert.ok(await ownSite(page), 'the saved site is read');
+  assert.ok(await page.waitForFunction(() => !window.__ctTest.store.climate.value && document.querySelector('[data-location-state]'), { timeout: 15_000 }).then(() => true, () => false));
+  await new Promise((r) => setTimeout(r, 500));
+  const { proposed, climate } = await page.evaluate(() => ({ proposed: window.__ctTest.store.proposedClimate.value, climate: window.__ctTest.store.climate.value }));
+  assert.equal(climate, null, 'the saved consortium did not open');
+  assert.ok(proposed, 'the saved site proposes its climate card');
+});
+test('P5-27j (S5b seam review round 2, 3): a fresh link without o= looks the reader\'s saved site up once', async () => {
+  const reads = async (hash) => {
+    const page = await h.open(`/consortium/${hash}`, { mapTiles: 'stub' });
+    await page.evaluateOnNewDocument((rec) => {
+      window.__ctTest = true;
+      if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
+      window.__ownReads = 0;
+      const get = Storage.prototype.getItem;
+      Storage.prototype.getItem = function (k) { if (k === 'canopi-location') window.__ownReads++; return get.call(this, k); };
+    }, JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await ready(page);
+    assert.ok(await ownSite(page));
+    await new Promise((r) => setTimeout(r, 1000));
+    return page.evaluate(() => window.__ownReads);
+  };
+  const plain = await reads('');
+  const linked = await reads(await temperateLink());
+  assert.equal(linked, plain, `the saved site is read as often as on a plain open (${plain}), not twice over`);
+});
+// An empty Temperate matrix with a kept guest from Tropical whose list read is held: window.__guest
+// .release() lets it through, .fail() fails it (as after Start empty, which keeps guests).
+async function guestHeld(width) {
+  const guest = await realDb((db) => String(db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Tropical' ORDER BY 1 LIMIT 1").get().id));
+  const page = await tool({ width, hash: '#v=4&c=temperate&a=&e=1' });
+  assert.ok(await has(page, '.ct-mx-empty .button-primary', 15_000), 'the empty matrix with "Suggest a start"');
+  await page.evaluate((id) => {
+    const { store } = window.__ctTest, src = store.source.value;
+    const pool = src.pool.bind(src), rows = src.interactions.bind(src);
+    let release, fail; const held = new Promise((r, j) => { release = r; fail = j; });
+    held.catch(() => {});
+    window.__guest = { release, fail: () => fail(new Error('test: guest list unreadable')) };
+    src.pool = (z) => (z === 'Tropical' ? held.then(() => pool(z)) : pool(z));
+    src.interactions = (z) => (z === 'Tropical' ? held.then(() => rows(z)) : rows(z));
+    store.guests.value = { [id]: 'Tropical' };
+  }, guest);
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.guestsPending.value.length === 1, { timeout: 5000 }).then(() => true, () => false), 'the guest list is being read');
+  return page;
+}
+const members = (page) => page.evaluate(() => window.__ctTest.store.members.value.length);
+test('P5-27l (S5c seam review round 3, 2): the empty matrix\'s "Suggest a start" pressed while a kept guest\'s list is still read waits for it, then suggests', async () => {
+  for (const width of [390, 1280]) {
+    const page = await guestHeld(width);
+    await page.click('.ct-mx-empty .button-primary');
+    await new Promise((r) => setTimeout(r, 300));
+    await page.evaluate(() => window.__guest.release());
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), `${width} px: the press is not lost: a suggestion once the guest list is read`);
+  }
+});
+test('P5-27m (S5c seam review round 4, 1): a waiting Suggest is dropped when the reader opens Add and adds a plant: the list arriving later changes nothing', async () => {
+  const page = await guestHeld(1280);
+  await page.click('.ct-mx-empty .button-primary');
+  await page.locator(aria('button', 'Add a plant')).click();
+  assert.ok(await has(page, 'dialog.ct-sheet .ct-tick input', 10_000), 'Add');
+  await page.click('dialog.ct-sheet .ct-tick input');
+  await page.locator(aria('button', 'Add 1 plant')).click();
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 1, { timeout: 5000 }).then(() => true, () => false), 'the plant added');
+  await page.evaluate(() => window.__guest.release());
+  await page.waitForFunction(() => window.__ctTest.store.guestsPending.value.length === 0, { timeout: 5000 });
+  await new Promise((r) => setTimeout(r, 1000));
+  assert.equal(await members(page), 1, 'no suggestion fills in around the plant the reader added');
+});
+test('P5-27n (S5c seam review round 4, 1): a waiting Suggest ends when the guest list fails (the load screen says so), and Retry runs nothing unasked', async () => {
+  const page = await guestHeld(1280);
+  await page.click('.ct-mx-empty .button-primary');
+  await page.evaluate(() => window.__guest.fail());
+  assert.ok(await has(page, aria('button', 'Retry'), 10_000), 'the load screen with Retry');
+  await page.locator(aria('button', 'Retry')).click();
+  assert.equal(await loadState(page), 'ready');
+  await page.waitForFunction(() => window.__ctTest.store.source.value && window.__ctTest.store.guestsPending.value.length === 0, { timeout: 15_000 });
+  await new Promise((r) => setTimeout(r, 1000));
+  assert.equal(await members(page), 0, 'no suggestion runs on its own after Retry');
+});
+test('P5-27o (S5c seam review round 4, 1): a waiting Suggest whose guest list never arrives ends after 10 s, says so, and is no longer busy', async () => {
+  const page = await guestHeld(1280);
+  await page.click('.ct-mx-empty .button-primary');
+  assert.equal(await page.$eval('.ct-mx-empty .button-primary', (b) => b.getAttribute('aria-busy')), 'true', 'busy while it waits');
+  assert.ok(await page.waitForFunction(() => /took too long/.test(document.querySelector('.ct-toast-text')?.textContent ?? ''), { timeout: 14_000 }).then(() => true, () => false), 'after 10 s, a message');
+  assert.equal(await page.$eval('.ct-mx-empty .button-primary', (b) => b.getAttribute('aria-busy')), null, 'no longer busy');
+  await page.evaluate(() => window.__guest.release());
+  await new Promise((r) => setTimeout(r, 1000));
+  assert.equal(await members(page), 0, 'the list arriving later runs nothing');
+});
+test('P5-27p (S5b seam review round 4, 2): a card the reader\'s own location proposed stays when a link opens', async () => {
+  const [lat, lon] = SITES.lyon;
+  const page = await tool({ geolocation: { lat, lon } });
+  await locationControls(page);
+  await page.click('[data-location-action="geo"]');
+  assert.equal(await locationState(page), 'borderline');
+  const before = await page.evaluate(() => window.__ctTest.store.proposedClimate.value);
+  assert.ok(before, 'the location proposes a card');
+  await page.evaluate((hsh) => { location.hash = hsh; }, await temperateLink());
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the link opens');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.proposedClimate.value), before, 'the reader\'s own proposal stays');
+});
+
+test('P5-27g (S5c walk-through F1): on phones a member\'s marks wrap or fit: with an annual in the matrix at 320 and 390 px, in en, fr and ja, nothing scrolls sideways', async () => {
+  const [lat, lon] = SITES.lyon;
+  for (const lang of ['en', 'fr', 'ja']) {
+    for (const width of [320, 390]) {
+      const page = await tool({ lang, width, geolocation: { lat, lon } });
+      await locationControls(page);
+      await page.click('[data-location-action="geo"]');
+      assert.equal(await locationState(page), 'borderline');
+      await page.click('[data-location-confirm]');
+      assert.ok(await has(page, '.ct-cta .button-primary', 15_000));
+      await page.click('.ct-cta .button-primary');
+      assert.ok(await has(page, '.ct-prow [data-mark-state="annual"]', 15_000), `${lang} ${width} px: an annual's row mark`);
+      const over = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        marks: [...document.querySelectorAll('#ct-root .ct-tag, #ct-root .ct-flag')].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((e) => e.textContent) }));
+      assert.deepEqual(over, { doc: 0, marks: [] }, `${lang} ${width} px: no sideways scroll, no mark past the edge`);
+    }
+  }
 });
 
 // ---- S5d: future check ----

@@ -36,6 +36,7 @@ import { decodeLink, encodeLink, linkClimates, linkOrigin, readPreset, zoneOf, L
 import type { Country } from './store.ts';
 import * as store from './store.ts';
 import { focusView } from './focus.ts';
+import { T } from './strings.ts';
 import { letGo, loadLocationStep, lookingThrough, lookups, unread } from './views/location/load.ts';
 
 export const STORE = 'canopi-consortium';
@@ -383,9 +384,12 @@ let quiet = false;
 export const quietly = (fn: () => void): void => { quiet = true; try { fn(); } finally { quiet = false; } };
 // The newest restore in flight, for display only: Start's "reading" line, and the link's climate on
 // Start at once while the plants are read (first visit). Ended by that restore, or by the reader acting.
-const inFlight = signal<{ id: number; climate: ClimateZone | null } | null>(null);
+const inFlight = signal<{ id: number; climate: ClimateZone | null; from: 'link' | 'saved' } | null>(null);
 export const restoring = computed(() => inFlight.value !== null);
 export const pendingClimate = computed(() => (store.climate.value ? null : inFlight.value?.climate ?? null));
+// A share link's climate shown on Start while it opens (not the reader's own save): the reader's saved
+// site then proposes no card over it (location.tsx settle; seam review round 2, 2).
+export const pendingLinkClimate = computed(() => (inFlight.value?.from === 'link' ? pendingClimate.value : null));
 
 // Ends the restore in flight without applying it (a newer link that was refused).
 function cancelRestore(): void {
@@ -424,7 +428,7 @@ export async function restore(fragment: string, { from, src = null, keep = false
   const id = ++restoreGen;
   const began = actions;
   const current = (): boolean => id === restoreGen && actions === began;
-  inFlight.value = { id, climate: keep ? null : climate };
+  inFlight.value = { id, climate: keep ? null : climate, from };
   try {
     await waitForSource();
     if (!current()) return false;
@@ -440,6 +444,10 @@ export async function restore(fragment: string, { from, src = null, keep = false
     // left out of the address, §5).
     quietly(() => batch(() => {
       applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen');
+      // A climate is chosen now: a card the saved site proposed while this opened goes (seam review
+      // round 3, 1); only a restore that fails leaves it. One the reader's own locating proposed stays
+      // (round 4, 2).
+      if (store.proposedFromSave.peek()) { store.proposedClimate.value = null; store.proposedFromSave.value = false; }
       notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut, pasted: null, failed: false };
       if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', lookup: null };
       // A link without `o=` (pasted into the tab): an earlier link's location goes with it, so no
@@ -447,6 +455,8 @@ export async function restore(fragment: string, { from, src = null, keep = false
       else if (from === 'link' && store.location.peek()?.source === 'link') store.location.value = null;
     }));
     if (origin) void settleLocation('link');
+    // ... and comes back if a link's location had replaced it: as a fresh open of this link gives.
+    else if (from === 'link') ownLocation();
     return true;
   } finally {
     if (inFlight.peek()?.id === id) inFlight.value = null;
@@ -571,6 +581,18 @@ function settleLocation(how: 'link' | 'saved', saved: string | null = null): Pro
     if (how === 'link') store.location.value = null;
   });
 }
+// The reader's own saved site, looked up again while no other location is set. One rule for a fresh
+// open and a link pasted into the open tab (seam review 5): a link without `o=` leaves the reader's own
+// site in place (their checks are about their site; the link's plants are unchanged); only a link's
+// `o=` stands in for it, for that page.
+// Once at a time: a fresh link without `o=` asks at startup and again when it opens (seam review
+// round 2, 3), and the second ask while the first is looked up would read the tiles again.
+let ownLookup: Promise<void> | null = null;
+function ownLocation(): void {
+  if (ownLookup || store.location.peek()) return;
+  const saved = memory.read(LOCATION_STORE);
+  if (saved) ownLookup = settleLocation('saved', saved).finally(() => { ownLookup = null; });
+}
 // Change site, Start over, Start empty: the "not read" note goes, and a link's location goes with
 // its consortium (review round 2, 4), its lookup dropped (round 3, 2: no line, hold or later write).
 const dropLinkLocation = () => { const link = store.location.peek()?.source === 'link'; letGo(link); if (link) store.location.value = null; };
@@ -640,6 +662,26 @@ function adoptPending(): void {
 // Suggest has waited its 10 s for a location lookup (requestSuggest).
 export const waited = signal(false);
 let cap: ReturnType<typeof setTimeout> | undefined;
+// The waiting Suggest has one owner, here (seam review round 4, 1): requestSuggest starts the wait,
+// the effect in startMemory runs it once its lists are read, and dropSuggest ends it: when the reader
+// changes the plants or opens a sheet (another action: Add, search, Details, paste; Start's "Start
+// empty and search" too), when the plant list fails (the load screen says so), or once its 10 s are
+// up with a kept guest's list still unread (a toast says so). Each wait therefore ends.
+export const SUGGEST_WAIT_MS = 10_000;
+function dropSuggest(): void {
+  if (!pendingSuggest.peek()) return;
+  clearTimeout(cap);
+  waited.value = false;
+  pendingSuggest.value = false;
+}
+function capped(): void {
+  if (!pendingSuggest.peek()) return;
+  // A location lookup no longer holds it (it runs without the site; the line says so) ...
+  waited.value = true;
+  // ... but a guest list never read leaves nothing to run: the wait ends, with a word. (The database
+  // itself, and the range rule, end their own waits: the load screen, rangeFailed.)
+  if (store.pool.peek() && store.guestsPending.peek().length) { dropSuggest(); store.showToast(T('start.suggestStopped')); }
+}
 // "Suggest plants": now when the plants are read, else once they are (§5 Loading).
 export function requestSuggest(): void {
   adoptPending();
@@ -650,7 +692,7 @@ export function requestSuggest(): void {
   if (!pendingSuggest.peek()) { clearTimeout(cap); waited.value = false; }
   const busy = lookups.peek() && !waited.peek();
   if (!busy && store.suggestMembers()) { clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
-  if (busy && !pendingSuggest.peek()) cap = setTimeout(() => { waited.value = true; }, 10_000);
+  if (!pendingSuggest.peek()) cap = setTimeout(capped, SUGGEST_WAIT_MS);
   pendingSuggest.value = true;
 }
 
@@ -703,9 +745,8 @@ export function startMemory(): void {
   });
 
   // The saved site location, looked up again once the plant list is open (so its tiles never compete
-  // with the database); a link brings its own location or none.
-  const savedLocation = how.kind === 'link' ? null : memory.read(LOCATION_STORE);
-  if (savedLocation) void waitForSource().then(() => { if (!store.location.peek()) void settleLocation('saved', savedLocation); });
+  // with the database); a link's `o=` stands in for it on that page (ownLocation).
+  if (!(how.kind === 'link' && linkOrigin(how.fragment))) void waitForSource().then(ownLocation);
 
   if (how.kind === 'link') void restore(how.fragment, { from: 'link' });
   else if (how.kind === 'saved') void restore(how.fragment, { from: 'saved', src: how.src });
@@ -729,6 +770,14 @@ export function startMemory(): void {
     if (!pendingSuggest.value || !store.pool.value || store.guestsPending.value.length || (lookups.value && !waited.value)) return;
     queueMicrotask(() => { if (pendingSuggest.peek()) requestSuggest(); });
   });
+  // ... unless the reader changed the plants, opened a sheet, or the plant list failed meanwhile.
+  let primed = false;
+  effect(() => {
+    void [store.members.value, store.kept.value, store.removed.value, store.guests.value, store.crops.value];
+    if (primed) untracked(dropSuggest);
+    primed = true;
+  });
+  effect(() => { if (store.sheet.value || store.load.value.status === 'failed') untracked(dropSuggest); });
 
   watchStore();
 }
