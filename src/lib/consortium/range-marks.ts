@@ -7,7 +7,7 @@
 //   edge" agree), 'unknown' ("range not recorded"; and in Details, aridity "not checked" on ice).
 //   Details adds one line per bound passed, with the site's and the recorded values (the very values
 //   the verdict compared, to the hundredth, so the gap a reader works out matches it), a line after a
-//   bound whose sources disagree (a weak row: TreeGOER stricter, no value exported, so no number:
+//   low bound whose sources disagree (a weak row: TreeGOER stricter, no value exported, so no number:
 //   'range.disputed'; the verdict is never softened), a line
 //   after a bound taken from TreeGOER ('range.source.treegoer', ClimateRange low/highSource), and says
 //   observed ranges include cultivation and are estimates, not reviewed (export meta ranges_review).
@@ -59,8 +59,9 @@ export function rangeMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface)
         out.push({ kind, key: SIDE_KEYS[side], vars: { site: deg(b.site(today)), bound: deg(range[b.end]!) }, severity: 'note', state: side });
         // The bound came from TreeGOER (stricter than the thinned GBIF cells there): credited where shown.
         if ((b.end === 'low' ? range.lowSource : range.highSource) === 'treegoer_ranges') out.push({ kind, key: 'range.source.treegoer', severity: 'note', state: 'source' });
-        // Sources disagree on this limit (a weak row): said after it, the verdict unchanged.
-        else if (range.weak) out.push({ kind, key: 'range.disputed', severity: 'note', state: 'disputed' });
+        // Sources disagree on this limit (a weak row marks a disputed cold or warmth low, canopi-data
+        // export doc): said after that low only, the verdict unchanged.
+        else if (range.weak && b.end === 'low') out.push({ kind, key: 'range.disputed', severity: 'note', state: 'disputed' });
       }
     }
     if (!tight && (aridity === 'drier' || aridity === 'wetter')) out.push({ kind: 'aridity', key: ARIDITY_KEYS[aridity], severity: 'note', state: aridity });

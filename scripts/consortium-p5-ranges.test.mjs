@@ -230,6 +230,19 @@ test('rangeCheck: the year\'s warmth (tmean_year, the mean of the coldest and wa
   assert.deepEqual([details.key, details.vars], ['range.side.cool', { site: 19.35, bound: 21.4 }]);
 });
 
+test('rangeMarks: the dispute note follows only a low bound (weak marks a disputed cold or warmth limit; the mild side reads the undisputed high of that row: apple at a mild-winter site)', () => {
+  const weakCold = { low: -15.9, median: 2, high: 8.4, count: 40, basis: 'thinned_cells', blocks: 60, lowSource: null, highSource: null, weak: true };
+  const apple = taxon({ climate: { ...taxon().climate, tminCold: weakCold } });
+  const mildSite = siteAt({ ...SEVILLE, tminColdC: 22, tmeanColdC: 26, tmeanWarmC: 28 });
+  const d = rangeMarks(apple, ctx({ location: mildSite }), 'details');
+  assert.ok(d.some((m) => m.key === 'range.side.mild'), 'the mild side is shown');
+  assert.equal(d.some((m) => m.key === 'range.disputed'), false, 'no dispute note after the undisputed high');
+  const coldSite = siteAt({ ...SEVILLE, tminColdC: -30, tmeanColdC: -20, tmeanWarmC: 15 });
+  const c = rangeMarks(apple, ctx({ location: coldSite }), 'details');
+  const at = c.findIndex((m) => m.key === 'range.side.cold');
+  assert.equal(c[at + 1]?.key, 'range.disputed', 'the note follows the disputed low');
+});
+
 test('rangeCheck: a weak row (a disputed limit: TreeGOER stricter by more than 4 °C, our looser bound kept) never softens a verdict; Details notes the dispute after that bound (coordinator decision 2026-11-12)', () => {
   const weakHot = { low: 15, median: 22, high: 25, count: 12, basis: 'thinned_cells', blocks: 8, lowSource: null, highSource: null, weak: true };
   const t = taxon({ climate: { ...taxon().climate, tmaxWarm: weakHot } });
@@ -238,7 +251,8 @@ test('rangeCheck: a weak row (a disputed limit: TreeGOER stricter by more than 4
   assert.deepEqual([c.verdict, c.beyond.includes('hot')], ['outside', true], '34.8 against a weak 25: outside, as for any row');
   const d = rangeMarks(t, ctx({ location: loc }), 'details');
   const at = d.findIndex((m) => m.key === 'range.side.hot');
-  assert.deepEqual(d[at + 1] && [d[at + 1].key, d[at + 1].state, d[at + 1].vars], ['range.disputed', 'disputed', undefined], 'the note follows that bound, with no number (no TreeGOER value is exported)');
+  assert.ok(at >= 0, 'the hot side is shown');
+  assert.equal(d.some((m) => m.key === 'range.disputed'), false, 'weak marks a disputed low only: no note after a high (the low-side note: test above)');
   assert.equal(d.some((m) => m.key === 'range.weak'), false, 'no "only the edge" line any more');
   assert.equal(rangeMarks(taxon(), ctx({ location: loc }), 'details').some((m) => m.key === 'range.disputed'), false, 'a firm row: no note');
   const f = core.futureCheck({ ...t, phases: { start: 'placenta_i', end: 'secondary_i', sources: [] } }, hotFuture, 'ssp245');

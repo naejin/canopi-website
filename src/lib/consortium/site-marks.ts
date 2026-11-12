@@ -1,8 +1,7 @@
 // The site answers' marks (a marks.ts provider): a fit that still asks something of the reader, today
 // drought tolerance Medium on a dry site (site.ts note 'dry_months', owner, decision row "Climate
 // ranges fixed before the P5 push"): "water in dry months" on rows and in Add, "Needs watering in the
-// dry months." in Details, nothing on chips. With or without a location (marks.ts needsMarkProviders
-// loads the providers for a dry site). And a plant taller than a small or large garden (advisory,
+// dry months." in Details, nothing on chips. With or without a location. And a plant taller than a small or large garden (advisory,
 // owner request 2026-11-12): "grows to N m: prune" on rows and in Add, "Grows to N m: keep it pruned,
 // or pick a smaller plant." in Details (N to a tenth: catalog heights are feet converted, 13.716). On the island path: marks.ts plantMarks adds them with or without the providers (small, and fits is
 // already there).
