@@ -187,8 +187,8 @@ const SITES = JSON.parse(readFileSync(new URL('./fixtures/consortium-ranges/site
 const at = (name) => { const s = SITES[name]; return { lat: s.lat, lon: s.lon, source: 'map', lookup: { lat: s.lat, lon: s.lon, climate: s.climate, soil: null, regions: { wgsrpdL3: null, isoA2: null } } }; };
 const verdict = (name, site) => core.rangeCheck(plant(name), at(site));
 
-test('acceptance (owner diagnosis, export r-b958a4239cc68f73): each site\'s plants as the growers know them', () => {
-  assert.equal(index.release_id, 'r-b958a4239cc68f73', 'the schema 3 export with grown_as_annual and tmean_warm is installed');
+test('acceptance (owner diagnosis, export r-60ea417b5a15c3aa, the rows of r-b958a4239cc68f73): each site\'s plants as the growers know them', () => {
+  assert.equal(index.release_id, 'r-60ea417b5a15c3aa', 'the schema 3 export with grown_as_annual and tmean_warm is installed');
   for (const name of ['Theobroma cacao', 'Cocos nucifera']) {
     const c = verdict(name, 'nairobi');
     assert.equal(c.verdict, 'outside', `${name} at Nairobi`);
