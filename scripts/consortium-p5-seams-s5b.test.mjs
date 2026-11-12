@@ -1,6 +1,6 @@
 // P5 stream S5b ("Where is your site?"): the rules behind the location step that Node can run. The
 // page paths (controls, failure lines, map, share tick) are browser specs P5-1…P5-13
-// (scripts/browser/consortium-p5.browser.test.mjs). S5b owns this file; no other stream edits it.
+// (scripts/browser/consortium-p5-s5b.browser.test.mjs). S5b owns this file; no other stream edits it.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

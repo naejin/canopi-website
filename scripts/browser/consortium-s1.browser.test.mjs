@@ -4,7 +4,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
-import { aria, axNodes, eachVariant, findAx, index, realDb } from './helpers.mjs';
+import { aria, axNodes, behaviour, findAx, index, realDb } from './helpers.mjs';
 
 let h;
 before(async () => { h = await startHarness(); });
@@ -14,7 +14,7 @@ after(async () => { await h?.close(); });
 // SQLite-WASM in Chrome, and its PlantSource (data/sqlite-source.ts) gives each climate's plants,
 // self-hosted photos only and the SQL cell counts, against node:sqlite on the same file. The 9-plant
 // suggestion on that list is checked in Node (scripts/consortium-source.test.mjs, real install).
-test('BT-1 (S1 data, in the page): the loader opens the real database and its PlantSource gives every climate\'s list, photos from the index map and the cell counts', async (t) => {
+test('BT-1 (S1 data, in the page): the loader opens the real database and its PlantSource gives every climate\'s list, photos from the index map and the cell counts @real-data', async (t) => {
   const oracle = await realDb((db) => {
     const out = {};
     for (const c of index.climates) {
@@ -25,7 +25,7 @@ test('BT-1 (S1 data, in the page): the loader opens the real database and its Pl
     }
     return out;
   });
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', v);
     assert.equal(await loadState(page), 'ready');
     const got = await page.evaluate(async () => {
@@ -62,11 +62,11 @@ test('BT-1 (S1 data, in the page): the loader opens the real database and its Pl
 });
 
 // The full BT-1 data path through the page: Start's climate radio and Suggest, then the matrix's chips.
-test('BT-1 (S1 data): on the real Temperate list with every site answer unsure, Suggest picks 9 plants placed in Temperate, from the database', async (t) => {
+test('BT-1 (S1 data): on the real Temperate list with every site answer unsure, Suggest picks 9 plants placed in Temperate, from the database @real-data', async (t) => {
   const temperate = new Set(await realDb((db) => db.prepare(
     "SELECT coalesce(n.name, p.canonical_name) name FROM placements x JOIN plants p USING (plant) LEFT JOIN plant_names n ON n.plant = p.plant AND n.locale = 'en' WHERE x.climate_zone = 'Temperate'").all().map((r) => r.name)));
   assert.equal(index.names.Temperate.length, temperate.size);
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', v);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');

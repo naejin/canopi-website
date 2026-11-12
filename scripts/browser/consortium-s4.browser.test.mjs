@@ -4,7 +4,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
-import { aria, axNodes, countAx, eachVariant, en, findAx, fixtureDb, has } from './helpers.mjs';
+import { aria, axNodes, countAx, layoutVariants, behaviour, en, findAx, fixtureDb, has } from './helpers.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 import { CANOPI_FILE_SCHEMA, CURRENT_CANOPI_FILE_VERSION } from '../vendor/canopi-design-format/canopi-design-format.ts';
 import { validate } from '../vendor/canopi-design-format/validate.mjs';
@@ -51,7 +51,7 @@ const allTemperateLink = async () => {
 };
 
 test('BT-1 (S4 start): nothing chosen at start, the country line above the climate cards, real Temperate crops, Arid asks', async (t) => {
-  await eachVariant(t, async (v) => {
+  await layoutVariants(t, async (v) => {
     const page = await h.open('/consortium/', v);
     assert.ok(await has(page, aria('radio', 'Temperate'), 8000), 'the climate cards');
     const radios = (await axNodes(page)).filter((n) => n.role === 'radio');
@@ -79,7 +79,7 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
 });
 
 test('BT-1 (S4 start, matrix half): Suggest gives a captioned 4 × 7 matrix with the fill meter', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', v);
     await suggest(page);
     const table = await findAx(page, { role: 'table' });
@@ -94,7 +94,7 @@ test('BT-1 (S4 start, matrix half): Suggest gives a captioned 4 × 7 matrix with
 });
 
 test('BT-7 (S4 share): a copied link opened as a new document restores the same consortium; an unknown token and an outdated link give their notices; a reload restores the last consortium', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
@@ -206,11 +206,11 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     assert.ok(await has(v1, aria('radio', 'Temperate'), 8000));
     assert.equal(await findAx(v1, { name: /last consortium was made with an older version/ }, 500), null, 'only once');
     await done(v1);
-  });
+  }, { phone: true });
 });
 
 test('BT-7 (S4 share, blocked storage): everything works and Share says the link keeps it', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const blocked = await h.open('/consortium/', { ...v, data: 'fixture', storage: false });
     await suggest(blocked);
     await blocked.locator(aria('button', 'Share')).click();
@@ -237,7 +237,7 @@ test('BT-7 (S4 share, views): the restored members and the kept pin as S2 and S3
     await page.waitForSelector('#ct-root [data-plant-id]');
     return page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort());
   };
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await suggest(page);
     const members = await listed(page);
@@ -263,7 +263,7 @@ const printedControls = (page) => page.$$eval('#ct-root button, #ct-root [role="
 test('BT-8 (S4 print): > 20 plants print "At a glance" and the table, ≤ 20 the table; no controls are printed', async (t) => {
   const all = await allTemperateLink();
   assert.ok(all.count > 20, 'the fixture has more than 20 Temperate plants');
-  await eachVariant(t, async (v) => {
+  await layoutVariants(t, async (v) => {
     const small = await h.open('/consortium/', { ...v, data: 'fixture' });
     await suggest(small);
     const pdf = await h.pdf(small);
@@ -289,7 +289,7 @@ test('BT-8 (S4 print): > 20 plants print "At a glance" and the table, ≤ 20 the
 });
 
 test('BT-8 (S4 print, drawing): ≤ 20 plants print the side view drawing', async (t) => {
-  await eachVariant(t, async (v) => {
+  await layoutVariants(t, async (v) => {
     const small = await h.open('/consortium/', { ...v, data: 'fixture' });
     await suggest(small);
     await h.pdf(small);
@@ -315,7 +315,7 @@ test('BT-8 (S4 print, drawing): ≤ 20 plants print the side view drawing', asyn
 });
 
 test('BT-9 (S4 .canopi): the download validates against the app schema (canopi 0c425fb07), version 9', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await suggest(page);
     await page.locator(aria('button', 'Download for Canopi')).click();
@@ -332,11 +332,9 @@ test('BT-9 (S4 .canopi): the download validates against the app schema (canopi 0
 });
 
 test('Exit walk-through (S4, every stream): on the real install, keyboard only: start → adjust → keep → share (reopened) → print → download', async (t) => {
-  await eachVariant(t, async (v) => {
-    const page = await h.open('/consortium/', v);
+  await layoutVariants(t, async (v) => {
     // The print dialog is the browser's: counted, not opened.
-    await page.evaluateOnNewDocument(() => { window.__printed = 0; window.print = () => { window.__printed++; }; });
-    await page.reload({ waitUntil: 'domcontentloaded' });
+    const page = await h.open('/consortium/', { ...v, setup: (pg) => pg.evaluateOnNewDocument(() => { window.__printed = 0; window.print = () => { window.__printed++; }; }) });
     const active = () => page.evaluate(() => {
       const el = document.activeElement;
       const by = el?.getAttribute('aria-labelledby');

@@ -8,7 +8,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture, loadState, startHarness } from './harness.mjs';
-import { aria, axNodes, eachVariant, englishName, findAx, fixtureDb, has } from './helpers.mjs';
+import { aria, axNodes, behaviour, englishName, findAx, fixtureDb, has } from './helpers.mjs';
 
 let h;
 before(async () => { h = await startHarness(); });
@@ -37,9 +37,7 @@ async function chipOf(page, name) {
 // The page, with the test hook.
 // The hook is compiled in only by npm run build:browser-test (CANOPI_BROWSER_TEST=1; never for production).
 async function open(opts) {
-  const page = await h.open('/consortium/', opts);
-  await page.evaluateOnNewDocument(() => { window.__ctTest = true; });
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  const page = await h.open('/consortium/', { ...opts, hook: true });
   return page;
 }
 const hooked = async (page, fn, ...args) => {
@@ -88,7 +86,7 @@ async function sendCorrection(page, text) {
 }
 
 test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and credit, placement, warning, estimates, sources and a correction form posting the release id; Escape returns focus', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await open({ ...v, data: 'fixture', photos: true, correction: 'ok' });
     await start(page);
     const chip = await chipOf(page, names['Castanea sativa']);
@@ -125,7 +123,7 @@ test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and cred
     assert.ok(estimate, 'an estimate tag on a layer value');
     await page.keyboard.press('Escape');
     await page.close();
-  });
+  }, { phone: true });
 });
 
 test('BT-5 (S3 details, offline): a correction sent offline says "Not sent" and keeps the text with Try again', async () => {
@@ -141,7 +139,7 @@ test('BT-5 (S3 details, offline): a correction sent offline says "Not sent" and 
 });
 
 test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an invasive warning does not, Remove then Undo, Keep pins, "Add 2 plants", Paste offers Add anyway with a labelled chip', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await open({ ...v, data: 'fixture' });
     await start(page);
     // Swap: the first member whose alternatives also fill a cell (the fixture's Temperate list has one).
@@ -223,7 +221,7 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an 
       assert.ok(await findAx(page, { name: /From the Tropical list/ }), 'labelled "From the Tropical list"');
     }
     await page.close();
-  });
+  }, { phone: true });
 });
 
 const sheetOpen = (page) => page.evaluate(() => !!document.querySelector('dialog[open]'));

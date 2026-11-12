@@ -2,9 +2,9 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T17:57:53Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:25:36Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T18:30:27Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:25:08Z }
 sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
@@ -49,8 +49,8 @@ sources:
   - id: memory-ts
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
-    digest: sha256:b2f022e41421c8bc
-    last_modified: 2026-11-12T18:27:37Z
+    digest: sha256:466b82ac71d413ac
+    last_modified: 2026-11-12T21:24:11Z
   - id: maplibre-notices-mjs
     resource: ../../scripts/maplibre-notices.mjs
     title: scripts/maplibre-notices.mjs
@@ -69,8 +69,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:1245a7724169cc02
-    last_modified: 2026-11-12T12:34:53Z
+    digest: sha256:8068e41718b265bd
+    last_modified: 2026-11-12T21:24:11Z
   - id: developers-cloudflare-com-workers-observ
     resource: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
 enforced_by:

@@ -35,7 +35,11 @@ async function download(url: string): Promise<{ status: number; bytes: Uint8Arra
   const ctrl = new AbortController();
   let why = '';
   let stall: ReturnType<typeof setTimeout> | undefined;
-  const arm = () => { clearTimeout(stall); stall = setTimeout(() => { why = `no byte for ${STALL_MS / 1000} s`; ctrl.abort(); }, STALL_MS); };
+  // The browser-test build lets a test shorten it (window.__ctTimeouts.stall, set before the page
+  // loads: E1 design check A4); the typeof guard keeps node unit tests, which have no define, working,
+  // and the production build folds the expression to STALL_MS (written inline so nothing is left).
+  const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { stall?: number } }).__ctTimeouts?.stall) || STALL_MS : STALL_MS;
+  const arm = () => { clearTimeout(stall); stall = setTimeout(() => { why = `no byte for ${ms / 1000} s`; ctrl.abort(); }, ms); };
   arm();
   try {
     const res = await fetch(url, { signal: ctrl.signal, credentials: 'same-origin' });

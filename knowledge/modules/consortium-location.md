@@ -2,9 +2,9 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T17:57:52Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:25:34Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T18:30:26Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:25:07Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
@@ -14,8 +14,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:1245a7724169cc02
-    last_modified: 2026-11-12T12:34:53Z
+    digest: sha256:8068e41718b265bd
+    last_modified: 2026-11-12T21:24:11Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
@@ -34,8 +34,8 @@ sources:
   - id: memory-ts
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
-    digest: sha256:b2f022e41421c8bc
-    last_modified: 2026-11-12T18:27:37Z
+    digest: sha256:466b82ac71d413ac
+    last_modified: 2026-11-12T21:24:11Z
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
@@ -85,7 +85,7 @@ sources:
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
     digest: sha256:6568cfda06984303
-    last_modified: 2026-11-12T18:27:37Z
+    last_modified: 2026-11-12T18:47:57Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -93,7 +93,7 @@ sources:
     last_modified: 2026-11-11T20:03:06Z
 enforced_by:
   - scripts/consortium-p5-seams-s5b.test.mjs
-  - scripts/browser/consortium-p5.browser.test.mjs
+  - scripts/browser/consortium-p5-s5b.browser.test.mjs
 ---
 
 # Consortium location step ("Where is your site?")
@@ -139,4 +139,4 @@ At canopi `b039f14ee612c6090c91d44b9968357cbdd1d33e` (AGPL header and a "copied 
 
 ## Tests
 
-`scripts/consortium-p5-seams-s5b.test.mjs` (node); browser specs P5-0d, P5-1 … P5-13 (round 2: P5-1e, 1f, 10b, 13c; round 3: P5-13d, P5-10 strengthened; round 4: P5-1g; seam review: P5-27c sea keeps and names the site, P5-27d failed read keeps it in page and storage over a reload, P5-27e a link without `o=` keeps the saved site fresh, pasted and reloaded, P5-13b updated) in `scripts/browser/consortium-p5.browser.test.mjs`.
+`scripts/consortium-p5-seams-s5b.test.mjs` (node); browser specs P5-0d, P5-1 … P5-13 (round 2: P5-1e, 1f, 10b, 13c; round 3: P5-13d, P5-10 strengthened; round 4: P5-1g; seam review: P5-27c sea keeps and names the site, P5-27d failed read keeps it in page and storage over a reload, P5-27e a link without `o=` keeps the saved site fresh, pasted and reloaded, P5-13b updated) in `scripts/browser/consortium-p5-s5b.browser.test.mjs` (P5-0d in `consortium-commit0`; shared code in `p5-helpers.mjs`).

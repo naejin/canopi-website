@@ -47,11 +47,14 @@ function tileSource(): TileSource {
 export const READ_TIMEOUT_MS = 15_000;
 async function read(lat: number, lon: number): Promise<SiteLookup | null> {
   let timer = 0;
+  // A browser test may shorten it in the test build (window.__ctTimeouts.read; A4, as in
+  // data/load.ts); production folds it to READ_TIMEOUT_MS.
+  const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { read?: number } }).__ctTimeouts?.read) || READ_TIMEOUT_MS : READ_TIMEOUT_MS;
   try {
     return await Promise.race([
       // No soil tile until something reads it (P5.2's soil likely restores { soil: true }).
       lookupSite(lat, lon, tileSource(), DEFAULT_RADIUS, { soil: false }),
-      new Promise<never>((_, reject) => { timer = window.setTimeout(() => reject(new Error(`no answer in ${READ_TIMEOUT_MS / 1000} s`)), READ_TIMEOUT_MS); }),
+      new Promise<never>((_, reject) => { timer = window.setTimeout(() => reject(new Error(`no answer in ${ms / 1000} s`)), ms); }),
     ]);
   } catch (err) {
     console.error(`Consortium: the site's climate could not be read: ${(err as Error).message}`);

@@ -10,7 +10,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
-import { aria, axNodes, eachVariant, en, findAx, has, realDb } from './helpers.mjs';
+import { aria, axNodes, layoutVariants, behaviour, en, findAx, has, realDb } from './helpers.mjs';
 
 let h;
 before(async () => { h = await startHarness(); });
@@ -25,9 +25,7 @@ const fill = (key, vars) => en[`consortium.${key}`].replace(/\{(\w+)\}/g, (_, k)
 
 // A page of the views through the test hook: climate, room, members (null: "Suggest plants") and view.
 async function views(v, { data = 'fixture', lang = 'en', climate = 'Temperate', room = null, light = null, members = null, view = 'matrix' } = {}) {
-  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { ...v, data });
-  await page.evaluateOnNewDocument(() => { window.__ctTest = true; });
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { ...v, data, hook: true });
   assert.equal(await loadState(page), 'ready');
   const hooked = await page.waitForFunction(() => window.__ctTest?.store?.source.value, { timeout: 20_000 }).then(() => true, () => false);
   assert.ok(hooked, 'no test hook: build with npm run build:browser-test');
@@ -102,7 +100,7 @@ async function cellSays(page, stratum, phase) {
 const focusedId = (page) => page.evaluate(() => document.activeElement?.id ?? document.activeElement?.getAttribute('aria-label') ?? null);
 
 test('BT-2 (S2 matrix): real Temperate gap, Room Small misfits with reasons, one Tab stop per plant with layer and phase words, phone cells ≥ 40 px and a named, announced stepper', async (t) => {
-  await eachVariant(t, async (v) => {
+  await layoutVariants(t, async (v) => {
     const desk = v.width >= 640;
     // Real: Temperate low × "First 90 days" has no plant in the list (a cell on desktop, a grid
     // button on phones); on desktop the cell's headers name its row and columns.
@@ -183,7 +181,7 @@ test('BT-2 (S2 matrix): real Temperate gap, Room Small misfits with reasons, one
 });
 
 test('BT-2 (S2 matrix): a collapsed cell (more than 5 tracks) lists its starters first, each plant one Tab stop', async (t) => {
-  await eachVariant(t, async (v) => {
+  await layoutVariants(t, async (v) => {
     if (v.width < 640) return; // the phone grid has no tracks
     // Every Temperate plant of the medium layer: far more than five tracks.
     const page = await views(v, { data: 'real' });
@@ -210,7 +208,7 @@ test('BT-2 (S2 matrix): the view tabs fit a 390 px phone in every language', asy
 });
 
 test('BT-2 (S2 matrix): "Show them anyway" opens Add with the cell\'s plants', async (t) => {
-  await eachVariant(t, async (v) => {
+  await layoutVariants(t, async (v) => {
     const page = await views(v, { light: 'shade' });
     if (v.width < 640) for (let i = 0; i < 3; i++) await page.locator(aria('button', 'Later stage')).click();
     const btn = await findAx(page, { role: 'button', name: /^Show them anyway/ });
@@ -220,7 +218,7 @@ test('BT-2 (S2 matrix): "Show them anyway" opens Add with the cell\'s plants', a
 });
 
 test('BT-3 (S2 side view): the chosen stage, a drawing with role=img and names, "Layer is light, not height"', async (t) => {
-  await eachVariant(t, async (v) => {
+  await layoutVariants(t, async (v) => {
     const page = await views(v, { view: 'side' });
     if (v.width < 640) {
       await page.locator(aria('button', 'Later stage')).click();
@@ -240,7 +238,7 @@ test('BT-3 (S2 side view): the chosen stage, a drawing with role=img and names, 
 
 test('BT-3 (S2 side view): 8, 20 and 30 plants keep the scale: plants at full plot height, on the lines, at 390 and 1280', async (t) => {
   // The plants of the stage most Temperate plants grow in, from the real list.
-  await eachVariant(t, async (v) => {
+  await layoutVariants(t, async (v) => {
     const page = await views(v, { data: 'real', view: 'side' });
     const stage = await store(page, () => {
       const { store: s } = window.__ctTest, ph = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'];
@@ -291,7 +289,7 @@ test('BT-3 (S2 side view): 8, 20 and 30 plants keep the scale: plants at full pl
 });
 
 test('BT-3 (S2 side view): a name in the key opens its details', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await views(v, { view: 'side' });
     const img = await find(page, { role: IMG, name: /^Side view: / });
     const key = (await axNodes(page)).find((n) => n.role === 'button' && n.name && img.name.includes(n.name) && n.name.length > 2);
@@ -300,13 +298,13 @@ test('BT-3 (S2 side view): a name in the key opens its details', async (t) => {
   });
 });
 
-test('BT-4 (S2 jobs and list): a 6-row Jobs table whose gaps name their stages; 120 real plants listed once each under their start cell; jump, filters and Remove', async (t) => {
+test('BT-4 (S2 jobs and list): a 6-row Jobs table whose gaps name their stages; 120 real plants listed once each under their start cell; jump, filters and Remove @real-data', async (t) => {
   // 120 real Temperate plants with their start cell, from the database.
   const rows120 = await realDb((db) => db.prepare("SELECT p.id, p.canonical_name, x.stratum, x.phase_start, x.phase_end FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' AND x.stratum IS NOT NULL ORDER BY p.canonical_name LIMIT 120").all());
   assert.equal(rows120.length, 120);
   const ids = rows120.map((r) => r.id);
   const heading = Object.fromEntries(rows120.map((r) => [r.id, fill('list.group', { layer: en[`consortium.stratum.${r.stratum}`], stage: plain(r.phase_start) })]));
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await views(v, { view: 'jobs' });
     assert.ok(await find(page, { role: 'table', name: 'Who does what' }), 'the Jobs table');
     assert.equal((await allAx(page)).filter((n) => n.role === 'rowheader').length, 6, 'six jobs');
