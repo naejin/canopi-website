@@ -2,9 +2,9 @@
 type: Module
 title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T17:57:52Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:25:34Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T17:03:58Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:25:09Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
@@ -39,8 +39,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:796d6251ca6ce13f
-    last_modified: 2026-11-12T14:22:18Z
+    digest: sha256:2cee9ad74ec9ad84
+    last_modified: 2026-11-12T20:56:48Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -54,8 +54,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:4a34b88ab7543c68
-    last_modified: 2026-11-11T22:31:55Z
+    digest: sha256:2bf51292628a2fea
+    last_modified: 2026-11-12T20:56:48Z
   - id: climate-integration-mjs
     resource: ../../scripts/climate-integration.mjs
     title: scripts/climate-integration.mjs
@@ -75,7 +75,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:ee3774ca000cf5bc
-    last_modified: 2026-11-12T17:56:02Z
+    last_modified: 2026-11-12T18:47:57Z
 enforced_by:
   - scripts/climate-reader.test.mjs
   - scripts/install-climate.test.mjs
