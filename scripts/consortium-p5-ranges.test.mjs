@@ -244,6 +244,15 @@ test('E2 sites: Yakutsk is the canopi-climate lookup in goldens.json (historical
   assert.deepEqual([SITES.yakutsk.climate.periods[0].tminColdC, SITES.yakutsk.climate.periods[0].koppen], [-39.8, 'Dfc']);
 });
 
+test('E2 scenario setup: the four scenario plants are in the export and Riyadh\'s first future check is 2041–2070 (so a todo never hides a broken setup)', () => {
+  assert.ok(verdict('Pinus sylvestris', 'yakutsk'), 'Scots pine checked at Yakutsk');
+  for (const name of ['Ficus carica', 'Ziziphus jujuba', 'Punica granatum']) {
+    const f = core.futureCheck(plant(name), at('riyadh'), 'ssp245');
+    assert.ok(f, `${name}: checked at Riyadh`);
+    assert.match(String(f.period), /^2041/, `${name}: first future period`);
+  }
+});
+
 test('E2 scenario: Scots pine grows at Yakutsk (coldest month −39.8 °C): not outside today', {
   todo: 'known limit: its tmin_cold row is weak (Q05 −31 °C, TreeGOER disputed) and Yakutsk sits 8.8 °C beyond it, as does its tmean_year row; a weak row never softens a verdict (coordinator 2026-11-12) and any margin that clears Yakutsk (≥ 9 °C) guts the cold check, so no rule change; extreme cold bounds: canopi-data D2b/D6',
 }, () => {
@@ -260,7 +269,8 @@ for (const name of ['Ficus carica', 'Ziziphus jujuba', 'Punica granatum']) {
     const f = core.futureCheck(t, at('riyadh'), 'ssp245');
     assert.ok(f, `${name}: checked at Riyadh`);
     const slot = SITES.riyadh.climate.periods.find((p) => p.period === f.period && p.scenario === 'ssp245');
-    assert.equal(f.why.includes('heat'), false, `${name} at Riyadh by ${f.period}: ${f.verdict} (${f.why.join(', ')}), tmax_warm ${slot?.tmaxWarmC} vs heat bound ${t.climate.tmaxWarm?.high}`);
+    // `already` holds reasons that apply today and are dropped from `why`: heat there is still too hot.
+    assert.equal(f.why.includes('heat') || f.already.includes('heat'), false, `${name} at Riyadh by ${f.period}: ${f.verdict} (${f.why.join(', ')}), tmax_warm ${slot?.tmaxWarmC} vs heat bound ${t.climate.tmaxWarm?.high}`);
   });
 }
 
