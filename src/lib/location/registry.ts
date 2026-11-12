@@ -3,12 +3,12 @@
 // copied from canopi desktop/web/src/app/geocoding/registry.ts at b039f14ee612c6090c91d44b9968357cbdd1d33e
 // Changes for the website (P5 S5b, design check §B): the `email` parameter is dropped (the site never
 // sends the reader's or anyone's email), the request carries `accept-language` (the page language),
-// and the app's semicolon-free style is kept as copied.
+// the Pelias provider (never selected, with its api.geocode.earth endpoint and key) is dropped, and the
+// app's semicolon-free style is kept as copied.
 /*
  * Geocoding provider registry adapted from GeoLibre
  * packages/core/src/geocoding.ts at commit e9df9e2 (forward geocoding only:
- * the provider interface, Nominatim and Pelias providers, URL building and
- * pacing). Copyright (c) 2026 Qiusheng Wu. MIT License; see THIRD_PARTY_NOTICES.md.
+ * the provider interface, the Nominatim provider, URL building and pacing). Copyright (c) 2026 Qiusheng Wu. MIT License; see THIRD_PARTY_NOTICES.md.
  */
 
 const DEFAULT_FORWARD_GEOCODE_ENDPOINT = 'https://nominatim.openstreetmap.org/search'
@@ -18,7 +18,7 @@ export const NOMINATIM_PUBLIC_HOST = 'nominatim.openstreetmap.org'
 export const NOMINATIM_MIN_INTERVAL_MS = 1100
 export const NOMINATIM_ATTRIBUTION = 'Search by Nominatim · © OpenStreetMap contributors'
 
-export type GeocodingProviderId = 'nominatim' | 'pelias'
+export type GeocodingProviderId = 'nominatim'
 const DEFAULT_GEOCODING_PROVIDER_ID: GeocodingProviderId = 'nominatim'
 
 export interface GeocoderConfig {
@@ -26,7 +26,6 @@ export interface GeocoderConfig {
   readonly forwardEndpoint: string
   /** Preferred language of the place names (`accept-language`): the page language. */
   readonly language?: string
-  readonly apiKey?: string
 }
 
 /** A normalized forward-geocoding match. */
@@ -63,15 +62,6 @@ function coerceScore(value: number | string | undefined | null): number | null {
   if (value === undefined || value === null || value === '') return null
   const num = Number(value)
   return Number.isFinite(num) ? num : null
-}
-
-function readString(obj: unknown, key: string): string | undefined {
-  if (obj && typeof obj === 'object' && key in obj) {
-    const value = (obj as Record<string, unknown>)[key]
-    if (typeof value === 'string') return value
-    if (typeof value === 'number') return String(value)
-  }
-  return undefined
 }
 
 /** Build a Nominatim forward-geocoding URL (jsonv2). */
@@ -113,57 +103,8 @@ const nominatimProvider: GeocodingProvider = {
       : [],
 }
 
-function geojsonFeatures(data: unknown): Record<string, unknown>[] {
-  if (data && typeof data === 'object' && Array.isArray((data as { features?: unknown }).features)) {
-    return (data as { features: unknown[] }).features.filter(
-      (feature): feature is Record<string, unknown> => !!feature && typeof feature === 'object',
-    )
-  }
-  return []
-}
-
-function pointCoords(feature: Record<string, unknown>): [number, number] | null {
-  const coords = (feature.geometry as { coordinates?: unknown } | undefined)?.coordinates
-  if (Array.isArray(coords) && coords.length >= 2) {
-    const lon = Number(coords[0])
-    const lat = Number(coords[1])
-    if (Number.isFinite(lon) && Number.isFinite(lat)) return [lon, lat]
-  }
-  return null
-}
-
-/** A Pelias/Photon-style alternative, should Nominatim become unavailable (needs a key). */
-const peliasProvider: GeocodingProvider = {
-  id: 'pelias',
-  label: 'Pelias',
-  attribution: 'Search by Pelias · © OpenStreetMap contributors',
-  defaultForwardEndpoint: 'https://api.geocode.earth/v1/search',
-  buildForwardUrl: (config, query, options) => {
-    const url = new URL(config.forwardEndpoint)
-    url.searchParams.set('text', query)
-    if (options.limit) url.searchParams.set('size', String(options.limit))
-    if (config.language) url.searchParams.set('lang', config.language)
-    if (config.apiKey) url.searchParams.set('api_key', config.apiKey)
-    return url.toString()
-  },
-  parseForward: (data) =>
-    geojsonFeatures(data)
-      .map((feature): GeocodeMatch | null => {
-        const coords = pointCoords(feature)
-        if (!coords) return null
-        const props = (feature.properties as Record<string, unknown>) ?? {}
-        return {
-          lon: coords[0],
-          lat: coords[1],
-          displayName: readString(props, 'label') ?? '',
-          score: coerceScore(props.confidence as number | undefined),
-        }
-      })
-      .filter((match): match is GeocodeMatch => match !== null),
-}
-
-/** Selectable providers, Nominatim first (the default). */
-const GEOCODING_PROVIDERS: readonly GeocodingProvider[] = [nominatimProvider, peliasProvider]
+/** Selectable providers: Nominatim only. */
+const GEOCODING_PROVIDERS: readonly GeocodingProvider[] = [nominatimProvider]
 
 export function getGeocodingProvider(id: GeocodingProviderId | null | undefined): GeocodingProvider {
   return GEOCODING_PROVIDERS.find((provider) => provider.id === id) ?? nominatimProvider

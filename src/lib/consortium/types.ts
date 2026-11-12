@@ -257,9 +257,11 @@ export interface Details {
 // labels: trait field → English value → locale → label (a missing label shows the English value).
 export type Labels = Record<string, Record<string, Partial<Record<Locale, string>>>>;
 
-// climateGrid: the canopi-climate grid manifest sha256 the ranges were sampled from (meta); a site
-// lookup from another grid turns range checks off. rangesReview: 'estimate_not_reviewed' today.
-export interface SourceInfo { releaseId: string; schemaVersion: 2; builtAt: string; climates: ClimateZone[]; griisAvailable: boolean; climateGrid: string | null; rangesReview: string | null }
+// climateGrid: the canopi-climate grid manifest sha256 the ranges were sampled from (meta), for
+// information: the page does not compare it; the build fails unless the consortium index names the same
+// grid as the installed climate tiles (scripts/consortium-grid-check.mjs). rangesReview:
+// 'estimate_not_reviewed' today. schemaVersion: the user_version load.ts accepted (SCHEMA_VERSION).
+export interface SourceInfo { releaseId: string; schemaVersion: typeof SCHEMA_VERSION; builtAt: string; climates: ClimateZone[]; griisAvailable: boolean; climateGrid: string | null; rangesReview: string | null }
 
 // The strata × phases matrix the store computes (store.ts `matrix`): one row per stratum, top to
 // bottom, seven cells each. An empty cell says why: 'gap' (no plant in the list for this cell yet)
@@ -374,7 +376,7 @@ export interface SiteLookup {
   lon: number;
   // null: no complete cell within 2 cells (open sea): "pick a point on land".
   climate: { cellLat: number; cellLon: number; distanceCells: number; periods: SitePeriod[] } | null;
-  // null: no soil within 2 layer cells (sea, ice, a coast).
+  // null: no soil within 2 layer cells (sea, ice, a coast), or not read (the location step until P5.2).
   soil: { phH2o: number; texture: string | null; filled: boolean; fillDistanceCells: number; distanceCells: number } | null;
   // codes null offshore (a coast: climate from the nearest cell, no country).
   regions: { wgsrpdL3: string | null; isoA2: string | null };

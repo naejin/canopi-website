@@ -23,10 +23,6 @@ export interface PlantSource {
   labels(l: Locale): Promise<Labels>;
   // Plants per stratum and phase in c, straight from SQL: a test oracle for the core's matrix.
   cellCounts(c: ClimateZone): Promise<{ stratum: Stratum; phase: number; n: number }[]>;
-  // Schema 2 (P5 commit 0): the plants WCVP records as native (never introduced) in a WGSRPD level-3
-  // area, e.g. 'FRA'; read once per area and kept. A plant with Taxon.areasKnown false is never in it
-  // ("unknown", not "not native"). Synchronous so the marks providers can read it in a computed.
-  nativeIn(l3: string): ReadonlySet<PlantId>;
 }
 
 // Why the data could not be opened, one per screen of design check §5.

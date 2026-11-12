@@ -2,7 +2,7 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T05:58:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T13:14:58Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-12T07:47:19Z }
 sources:
@@ -59,8 +59,8 @@ sources:
   - id: climate-index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:1178c3eff4498001
-    last_modified: 2026-11-11T09:09:11Z
+    digest: sha256:9fffb42bb87f69b5
+    last_modified: 2026-11-12T12:34:53Z
   - id: consortium-state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
@@ -69,8 +69,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:f63c0943d0993101
-    last_modified: 2026-11-12T07:30:44Z
+    digest: sha256:1245a7724169cc02
+    last_modified: 2026-11-12T12:34:53Z
   - id: developers-cloudflare-com-workers-observ
     resource: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
 enforced_by:
@@ -101,6 +101,6 @@ The `/privacy/` page in 11 locales (owner answer 4, decision "P5 owner answers",
 # Gotchas
 - A scoped `<style>` in DataSourcesPage would add `data-astro-cid-*` to every element and break the built-site check's exact TRY citation markup: the tool-credit styles are `is:global` under `.tool-credits`.
 - Tool credit rows must not use `class="credit-row"`: the built-site check counts those against `source_credits.tsv`.
-- A new canopi-data export with new GBIF fetch dates fails `consortium-p5-seams-s5f.test.mjs` until `GBIF` in `consortium-credits.ts` is updated. The GBIF derived-dataset DOI is a follow-up (decision "GBIF credit for the observed ranges").
+- A new canopi-data export with new GBIF fetch dates fails `consortium-p5-seams-s5f.test.mjs` until `GBIF` in `consortium-credits.ts` is updated. P5 ships the GBIF credit without a derived-dataset DOI (coordinator, decision "GBIF credit for the observed ranges"); the public `gbif_occurrences` credit in `source_credits.tsv` carries no note about it (pre-push review 5; `source-credits.test.mjs` refuses follow-up or plan notes in a shown credit).
 - HelloAsso's privacy page could not be linked: every helloasso.com URL answered 403 to scripted fetches (2026-11-11); the page names HelloAsso and its own policy without a link.
 - If S5b's location UI changes what is sent (for example the Nominatim parameters), update the `privacy.location.*` strings in all 11 locales.

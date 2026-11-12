@@ -5,15 +5,15 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T09:56:18Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T13:14:59Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-12T09:56:16Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:c5035d73acad6e4a
-    last_modified: 2026-11-12T09:51:20Z
+    digest: sha256:46c5162f97b9dde6
+    last_modified: 2026-11-12T13:08:43Z
   - id: climate-release-json
     resource: ../../src/data/climate-release.json
     title: src/data/climate-release.json
@@ -33,7 +33,7 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 - [bibliography.md](../../src/data/bibliography.md): the hand-edited bibliography (format documented in its header comment).
 - [climates.ts](../../src/data/climates.ts): `climates`, `Climate`, `isClimate`: the one list of the seven climate zones, shared with the Canopi app and used by the bibliography, guides, picker and head script.
 - [bibliography.ts](../../src/data/bibliography.ts): parses the markdown (`?raw` import) into `themes`; book climates are validated against `climates.ts`.
-- [source-credits.ts](../../src/data/source-credits.ts): the source credits on /data-sources/, from `source_credits.tsv`, which only a real `npm run install:consortium` writes, when the export's manifest lists `source_credits` (`{ file, sha256, rows }`, kept in `consortium-index.json`). Installed from release r-01102782139409b5 (format 4, schema 3; the ranges rebuild; the same 42 rows as r-e0b162087a79eecf, schema 2, P5 commit 0): 42 rows, six more than r-2c6bdf65c35caca3 (`gbif_occurrences`, `canopi_climate`, `treegoer_ranges`, `ecocrop`, `eive`, `niinemets_valladares`); `check-built-site` counts 35 credited sources shown. Read through `import.meta.glob`, so with no file `sourceCredits` is null and the page lists the TRY datasets alone; no copy is committed by hand.
+- [source-credits.ts](../../src/data/source-credits.ts): the source credits on /data-sources/, from `source_credits.tsv`, which only a real `npm run install:consortium` writes, when the export's manifest lists `source_credits` (`{ file, sha256, rows }`, kept in `consortium-index.json`). Installed from release r-01102782139409b5 (format 4, schema 3; the ranges rebuild; the same 42 rows as r-e0b162087a79eecf, schema 2, P5 commit 0): 42 rows, six more than r-2c6bdf65c35caca3 (`gbif_occurrences`, `canopi_climate`, `treegoer_ranges`, `ecocrop`, `eive`, `niinemets_valladares`); `check-built-site` counts 35 credited sources shown. Read through `import.meta.glob`, so with no file `sourceCredits` is null and the page lists the TRY datasets alone; no copy is committed by hand, with one exception: at the P5 pre-push review (5) the `gbif_occurrences` credit's internal note ("A GBIF derived-dataset DOI is pending …") was removed in this copy and in canopi-data's `data/curated/source_credits.tsv` (branch ranges-rebuild, `2e195da`), byte-identical, and `consortium-index.json` `source_credits.sha256` set to the new digest so `check-built-site` and `source-credits.test.mjs` pass; the installed export `r-b958a4239cc68f73` (its manifest and the database's `sources` table, which the site does not show) keeps the old text until the next export is installed.
 - [try_references.tsv](../../src/data/try_references.tsv), [try_references.meta.json](../../src/data/try_references.meta.json), [try-references.ts](../../src/data/try-references.ts): the TRY dataset list. canopi-data's consortium export owns it: a real `npm run install:consortium -- <export-dir>` writes the file byte for byte and the meta (the manifest entry's `sha256`, `rows`, `dataset_ids`, also kept in `consortium-index.json`), so neither is edited or copied by hand;
 - [climate-page-data.ts](../../src/data/climate-page-data.ts): `climatePageData(index)`, the canopi-climate base and tile names per layer the consortium page writes to `#ct-climate` for the location reader (no sizes or hashes; ≤ 2 KB gzip, `CLIMATE_PAGE_DATA_GZIP_BUDGET`), `null` without an index; tested in `scripts/climate-page-data.test.mjs`.
 - [consortium-index.json](../../src/data/consortium-index.json): the installed consortium release as the build sees it (release, database file and digests, climates, canonical names per climate, photo paths, TRY and credits entries, and since schema 2 `climate_grid_manifest_sha256` and `ranges_review`); written only by the installer, read by the page, the guide presets, the home note and the checks, never served; see [Consortium core](/modules/consortium-core.md). `tryReferences` is parsed when the site builds, by [src/lib](/modules/src-lib.md).

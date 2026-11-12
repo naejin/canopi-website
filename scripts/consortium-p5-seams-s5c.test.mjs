@@ -177,6 +177,23 @@ test('PlantSource.borrowed (sqlite-source.ts): every plant of the nearest lists 
   assert.equal(await fixture.borrowed('Boreal', []).then((l) => l.length), 0, 'no curated list in the order: nothing');
 });
 
+test('placementZone: the details query reads the list a plant was placed from (borrowed, then guest, then the climate)', async () => {
+  assert.equal(core.placementZone({ placedFrom: 'Mediterranean', estimate: true }, 'Subtropical'), 'Mediterranean', 'a borrowed placement');
+  assert.equal(core.placementZone({ from: 'Subtropical', placedFrom: 'Tropical', estimate: true }, 'Temperate'), 'Tropical', 'a guest from a borrowed list');
+  assert.equal(core.placementZone({ from: 'Tropical' }, 'Temperate'), 'Tropical', 'a guest');
+  assert.equal(core.placementZone({}, 'Temperate'), 'Temperate', 'its own placement');
+  assert.equal(core.placementZone({}, null), null);
+  // On the fixture: a Subtropical plant has no reasons or climate months of its own; its source list has.
+  const t = (await fixture.pool('Subtropical')).find((x) => x.canonical_name === 'Castanea sativa');
+  const own = await fixture.details(t.id, 'Subtropical', 'en');
+  assert.equal(own.reasons.length, 0, 'no curated reasons for a borrowed climate');
+  const zone = core.placementZone(t, 'Subtropical');
+  const d = await fixture.details(t.id, zone, 'en');
+  assert.equal(zone, 'Mediterranean');
+  assert.ok(d.reasons.length > 0, 'the source list’s reasons');
+  assert.ok(d.layerValues.length >= own.layerValues.length);
+});
+
 // ---- marks ----
 
 test('rangeMarks: edge, outside and unknown with a site climate; estimate on a borrowed placement, with or without a location', () => {

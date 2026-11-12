@@ -20,6 +20,12 @@ export const NEAREST_LISTS: Readonly<Record<ClimateZone, readonly ClimateZone[]>
   Boreal: ['Temperate', 'Mediterranean'],
 };
 
+// The list a plant's placement, reasons and climate months come from: the curated list a borrowed
+// placement was taken from, else a guest's list, else the shown climate. Details queries with it, as
+// only curated lists have reasons; the sheet says when it differs from the reader's climate.
+export const placementZone = (t: { from?: ClimateZone; placedFrom?: ClimateZone }, climate: ClimateZone | null): ClimateZone | null =>
+  t.placedFrom ?? t.from ?? climate;
+
 // Whether a climate has plants to suggest from: curated, or one of its nearest lists is.
 export const hasPlants = (zone: ClimateZone, curated: readonly ClimateZone[]): boolean =>
   curated.includes(zone) || NEAREST_LISTS[zone].some((z) => curated.includes(z));

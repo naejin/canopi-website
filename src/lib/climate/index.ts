@@ -127,7 +127,7 @@ export interface SiteLookup {
   tile: string;
   /** null: no complete climate cell within 2 cells (sea, or the point's tile is not in the index). */
   climate: ClimateAt | null;
-  /** null: no soil value within 2 layer cells (sea, ice, built-up gap wider than the fill). */
+  /** null: no soil value within 2 layer cells (sea, ice, built-up gap wider than the fill), or soil not read ({ soil: false }). */
   soil: SoilAt | null;
   /** Always an object; its codes are null offshore. */
   regions: RegionsAt;
@@ -146,19 +146,21 @@ const LAYER_IDS: LayerId[] = ['climate', 'soil', 'regions'];
  * Looks a point up: climate within `radius` cells (default 2, the crate's), soil and regions within
  * 2 layer cells (the CLI's fixed LAYER_LOOKUP_RADIUS). Rejects with a RangeError for an invalid
  * coordinate (latitude outside [-90, 90], non-finite) and with ClimateTileError when a listed tile
- * cannot be read.
+ * cannot be read. `{ soil: false }` reads no soil tile (soil null): the consortium's location step uses
+ * nothing from soil until P5.2 (soil likely), so it does not download it.
  */
-export async function lookupSite(lat: number, lon: number, source: TileSource, radius = DEFAULT_RADIUS): Promise<SiteLookup> {
+export async function lookupSite(lat: number, lon: number, source: TileSource, radius = DEFAULT_RADIUS, { soil: withSoil = true }: { soil?: boolean } = {}): Promise<SiteLookup> {
   if (!validCoordinate(lat, lon)) throw new RangeError(`invalid coordinate ${lat}, ${lon}`);
   const own = tileNameOf(lat, lon) as string;
   const loaded: Record<LayerId, Map<string, Raster>> = { climate: new Map(), soil: new Map(), regions: new Map() };
   const load = (layer: LayerId, names: string[]) =>
     Promise.all(names.filter((n) => !loaded[layer].has(n) && source.has(layer, n)).map(async (n) => { loaded[layer].set(n, await source.get(layer, n)); }));
+  const layers = withSoil ? LAYER_IDS : LAYER_IDS.filter((l) => l !== 'soil');
 
-  await Promise.all(LAYER_IDS.map((layer) => load(layer, [own])));
+  await Promise.all(layers.map((layer) => load(layer, [own])));
   // Neighbours only where the point's own cell does not answer; the search window leaves the tile
   // only within `radius` cells of its edge.
-  await Promise.all(LAYER_IDS.map((layer) => {
+  await Promise.all(layers.map((layer) => {
     if (ownCellAnswers(layer, loaded[layer].get(own) ?? null, lat, lon)) return null;
     const g = layer === 'climate' ? CLIMATE_GRID : LAYER_GRID;
     return load(layer, searchTiles(g, cellOf(g, lat, lon)!, layer === 'climate' ? radius : LAYER_RADIUS));
@@ -166,7 +168,7 @@ export async function lookupSite(lat: number, lon: number, source: TileSource, r
 
   const getter = (layer: LayerId) => (name: string) => loaded[layer].get(name) ?? null;
   const climate = climateAt(getter('climate'), lat, lon, radius);
-  const soil = soilAt(getter('soil'), lat, lon, LAYER_RADIUS);
+  const soil = withSoil ? soilAt(getter('soil'), lat, lon, LAYER_RADIUS) : null;
   const regions = regionsAt(getter('regions'), lat, lon, LAYER_RADIUS);
   const read = (layer: LayerId) => [...loaded[layer].keys()].sort((a, b) => (a === own ? -1 : b === own ? 1 : 0));
   return {

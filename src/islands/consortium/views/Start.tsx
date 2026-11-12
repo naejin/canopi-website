@@ -16,7 +16,6 @@ import { countryStatus, lights, MAX_CROPS, rooms, soils, waters } from '../../..
 import { climate, country, crops, proposedClimate, kept, members, openSheet, pool, site, source, view } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { LocationSlot } from './LocationSlot.tsx';
-import { LikelySlot } from './LikelySlot.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from './PoolSlot.tsx';
 import {
   backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
@@ -225,7 +224,6 @@ function SiteQuestions() {
                 </label>
               ))}
             </div>
-            <LikelySlot question={k} />
           </fieldset>
         ))}
       </div>

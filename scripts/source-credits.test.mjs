@@ -46,6 +46,11 @@ test('the page shows used then held sources, never internal ones', () => {
   assert.ok(![...shown.used, ...shown.held].some((r) => r.status === 'internal'));
 });
 
+test('the shipped credits read as plain credits: no internal note (pre-push review 5)', { skip: !existsSync(new URL('../src/data/source_credits.tsv', import.meta.url)) && 'no installed copy' }, () => {
+  const { used, held } = shownCredits(parseSourceCredits(read('src/data/source_credits.tsv')));
+  for (const r of [...used, ...held]) assert.doesNotMatch(r.credit, /pending|follow-up|consortium v2|\bP\d\b/i, r.source);
+});
+
 test('the page names a sentence for every licence status a shown row can have', () => {
   const page = read('src/components/DataSourcesPage.astro');
   for (const status of ['confirmed', 'unconfirmed', 'permission', 'per_item', 'terms']) assert.ok(page.includes(`${status}: 'dataSources.credits.licence.${status}'`), status);

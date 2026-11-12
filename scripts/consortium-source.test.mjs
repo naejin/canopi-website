@@ -53,7 +53,7 @@ test('open: application_id, user_version, the release id and the climates are ch
 });
 
 test('info and countries come from meta and the countries table', () => {
-  assert.deepEqual(source.info(), { releaseId: manifest.release_id, schemaVersion: 2, builtAt: manifest.generated_at, climates: expected.climates, griisAvailable: true, climateGrid: FIXTURE_GRID_SHA256, rangesReview: 'estimate_not_reviewed' });
+  assert.deepEqual(source.info(), { releaseId: manifest.release_id, schemaVersion: 3, builtAt: manifest.generated_at, climates: expected.climates, griisAvailable: true, climateGrid: FIXTURE_GRID_SHA256, rangesReview: 'estimate_not_reviewed' });
   const countries = source.countries();
   assert.equal(countries.get('FR').invasiveChecked, true);
   assert.equal(countries.get('TW').invasiveChecked, false);
@@ -152,18 +152,6 @@ test('details: the Köppen shares of a plant\'s observed cells, largest first, r
   assert.ok(d.sources.gbif_occurrences, 'the range source is cited');
   assert.deepEqual((await source.details(idOf('Phacelia tanacetifolia'), 'Temperate', 'en')).koppen, []);
 });
-
-test('nativeIn: the plants WCVP records as native (never introduced) in a level-3 area', () => {
-  const fra = source.nativeIn('FRA');
-  assert.ok(fra.has(idOf('Castanea sativa')));
-  assert.ok(!fra.has(idOf('Inga edulis')), 'native in BZN and PER only');
-  assert.ok(!fra.has(idOf('Phacelia tanacetifolia')), 'no areas: unknown, not native');
-  assert.equal(fra.size, oracle.prepare("SELECT count(DISTINCT plant) n FROM plant_areas WHERE area = 'FRA' AND introduced = 0").get().n);
-  assert.equal(source.nativeIn('GRB').size, 0, 'introduced rows never count as native');
-  assert.equal(source.nativeIn('XXX').size, 0);
-  assert.equal(source.nativeIn('FRA'), fra, 'read once per area');
-});
-
 
 test('interactions: no-climate rows plus this climate\'s yield gains, with notes, agent names and sources in order', async () => {
   const rows = await source.interactions('Temperate');

@@ -20,8 +20,9 @@
 // - S5c: [data-mark="edge" | "outside" | "estimate" | "unknown"] (views/PlantMarks.tsx), the empty
 //   pool [data-pool-empty], borrowed lists through views/PoolSlot.tsx;
 // - S5d: [data-future-summary], [data-future="not-checked"] (views/FutureSlot.tsx);
-// - S5e: [data-native="native" | "not_recorded" | "unknown"] in Details (views/NativeSlot.tsx), [data-likely="soil"] with its
-//   "Use it" button [data-likely-use];
+// - S5e (P5.2; its slots and stubs removed before the P5 push, see consortium-p5-seams-s5e.test.mjs):
+//   [data-native="native" | "not_recorded" | "unknown"] in Details under the plant's name, [data-likely="soil"] with
+//   its "Use it" button [data-likely-use] in each site question on Start;
 // - S5f: /privacy/ in every locale, the footer link to it, the /data-sources/ credits [data-credit].
 // Headless Chrome on dist-test, capped:
 //   timeout 3000 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 npm run test:browser
@@ -173,7 +174,7 @@ test('P5-0d (commit 0 seams): without a location, on a covered climate, no range
   assert.deepEqual(await page.evaluate(() => window.__ctTest.store.markProviders.value.length), 0, 'the providers do not even load without a location on a covered climate');
   // With a location the providers load; whatever marks they give carry a PlantMarks surface.
   await atSite(page, 'lyon');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.markProviders.value.length === 3, { timeout: 10_000 }).then(() => true, () => false), 'the providers load for a location');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.markProviders.value.length === 2, { timeout: 10_000 }).then(() => true, () => false), 'the providers (range and future; native returns with P5.2) load for a location');
   for (const m of await marks()) assert.ok(['chip', 'row', 'add', 'details'].includes(m.surface), `the ${m.kind} mark is drawn by PlantMarks on a surface`);
   assert.deepEqual(page.thirdParty, []);
   assert.deepEqual(page.nominatim, []);
@@ -184,10 +185,14 @@ test('P5-0d (commit 0 seams): without a location, on a covered climate, no range
 test('P5-1 (S5b location granted): "Use my location" fills the result line and the climate card from the reader', async () => {
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon } });
+  const tileRequests = [];
+  page.on('request', (r) => { if (/\/data\/climate\//.test(r.url())) tileRequests.push(new URL(r.url()).pathname); });
   await locationControls(page);
   assert.ok(await page.$eval('[data-location-action="geo"]', (b) => !!b.parentElement.querySelector(':scope > [data-location-privacy]')), 'a privacy line beside the button, in its own parent');
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'ready');
+  assert.ok(tileRequests.some((u) => /\/tiles\//.test(u)), `the climate tile was read (${tileRequests.join(', ')})`);
+  assert.deepEqual(tileRequests.filter((u) => /\/soil\//.test(u)), [], 'no soil tile is fetched until something uses it (pre-push review 3; P5.2)');
   const loc = await page.evaluate(() => window.__ctTest.store.location.value);
   assert.equal(loc.source, 'geo');
   assert.equal(loc.lookup.climate.periods[0].koppen, 'Csa');
@@ -875,6 +880,33 @@ test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from t
   assert.ok(count > 0, 'Subtropical borrows Mediterranean placements');
   await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
   assert.ok(await has(page, '[data-mark="estimate"]', 10_000));
+});
+
+test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a plant\'s Details reads the list it was placed from: its reasons, with a note naming that list', async () => {
+  const page = await tool();
+  await atSite(page, 'lyon');
+  const picked = await page.evaluate(async () => {
+    const { store } = window.__ctTest;
+    store.climate.value = 'Subtropical';
+    if (!(await store.loadPool('Subtropical'))) return null;
+    for (let i = 0; i < 200 && !store.pool.value; i++) await new Promise((r) => setTimeout(r, 50));
+    if (!store.suggestMembers()) return null;
+    store.view.value = 'matrix';
+    // A borrowed member whose source list gives reasons (the visitor's climate has none of its own).
+    for (const t of store.memberTaxa.value) {
+      if (!t.placedFrom) continue;
+      const own = await store.source.value.details(t.id, 'Subtropical', 'en');
+      const d = await store.source.value.details(t.id, t.placedFrom, 'en');
+      if (d.reasons.length && !own.reasons.length) return { id: t.id, from: t.placedFrom };
+    }
+    return null;
+  });
+  assert.ok(picked, 'a Subtropical member borrowed from a curated list that gives reasons');
+  await page.evaluate((id) => window.__ctTest.store.openSheet('details', id), picked.id);
+  assert.ok(await has(page, '.ct-details .ct-reasons li', 10_000), 'the Why section lists the source list\'s reasons, not "no source"');
+  const note = await text(page, `.ct-details [data-why-borrowed="${picked.from.toLowerCase()}"]`);
+  assert.match(note ?? '', new RegExp(`placed as on the ${picked.from} list`, 'i'), 'the Why section says the reasons come from that list');
+  assert.match(await text(page, '#ct-d-place') ?? '', new RegExp(picked.from), '"Placed for" names the list the placement is from, never claims the visitor\'s climate');
 });
 
 test('P5-26 (S5c borrowed list from a link): #v=4&c=subtropical without o= opens with borrowed plants marked "estimate", no location needed', async () => {

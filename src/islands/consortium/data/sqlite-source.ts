@@ -11,6 +11,7 @@ import type {
   PlantId, RangeBasis, RangeVariable, Reason, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
 } from '../../../lib/consortium/index.ts';
 import { firstPlaced, months, NEAREST_LISTS, phases, RANGE_VARIABLES, severities } from '../../../lib/consortium/index.ts';
+import { SCHEMA_VERSION } from '../../../lib/consortium/types.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
@@ -123,7 +124,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
   const meta = new Map(db.selectObjects('SELECT key, value FROM meta').map((r) => [String(r.key), String(r.value)]));
   const info: SourceInfo = {
     releaseId: meta.get('release_id') ?? '',
-    schemaVersion: 2,
+    schemaVersion: SCHEMA_VERSION,
     builtAt: meta.get('built_at') ?? '',
     climates: db.selectObjects('SELECT id FROM climates ORDER BY ord').map((r) => r.id as ClimateZone),
     griisAvailable: meta.get('griis_available') === '1',
@@ -201,9 +202,6 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
     }
     return out;
   }
-
-  // Native plants per WGSRPD level-3 area, read once each (schema 2 plant_areas, introduced = 0).
-  const natives = new Map<string, ReadonlySet<PlantId>>();
 
   return {
     info: () => info,
@@ -344,14 +342,6 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         ((out[field] ??= {})[value] ??= {})[l] = String(r.label);
       }
       return out;
-    },
-    nativeIn(l3) {
-      let set = natives.get(l3);
-      if (!set) {
-        set = new Set(db.selectObjects('SELECT DISTINCT p.id FROM plant_areas a JOIN plants p USING (plant) WHERE a.area = ?1 AND a.introduced = 0', [l3]).map((r) => String(r.id)));
-        natives.set(l3, set);
-      }
-      return set;
     },
     async cellCounts(c) {
       return db.selectObjects(`SELECT x.stratum, f.ord phase, count(*) n FROM placements x JOIN phases f ON f.ord BETWEEN x.phase_start AND x.phase_end

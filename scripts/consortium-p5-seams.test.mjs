@@ -19,7 +19,7 @@ test('marks.ts plantMarks: the loaded providers concatenated in order, for one s
   assert.deepEqual(core.markSurfaces, ['chip', 'row', 'add', 'details']);
   assert.deepEqual(core.markKinds, ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity', 'season', 'water', 'room']);
   const loaded = await core.loadMarkProviders();
-  assert.deepEqual(loaded.map((p) => p.name), ['rangeMarks', 'futureMarks', 'nativeMarks'], 'range (S5c), future (S5d), native (S5e); the site answers\' marks are on the island path (marks.ts)');
+  assert.deepEqual(loaded.map((p) => p.name), ['rangeMarks', 'futureMarks'], 'range (S5c), future (S5d) (native, S5e, in P5.2); the site answers\' marks are on the island path (marks.ts)');
   assert.equal(await core.loadMarkProviders(), loaded, 'loaded once');
   for (const s of core.markSurfaces) assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), s, loaded), [], `the stubs mark nothing (${s})`);
   assert.equal('markProviders' in core, false, 'the providers stay out of index.ts, so out of the first run');
@@ -36,21 +36,20 @@ test('marks.ts needsMarkProviders: the providers load only with a site location 
 
 test('store: markContext follows the climate, location and scenario; the providers load when a location is set', async () => {
   const store = await import('../src/islands/consortium/store.ts');
-  assert.deepEqual(store.markContext.value, { climate: store.climate.value, location: null, scenario: 'ssp245', source: store.source.value, site: store.site.value });
+  assert.deepEqual(store.markContext.value, { climate: store.climate.value, location: null, scenario: 'ssp245', site: store.site.value });
   assert.deepEqual(store.markProviders.value, [], 'none on the first run');
   store.location.value = lyon;
   try {
     assert.equal(store.markContext.value.location, lyon);
     await core.loadMarkProviders();
     await new Promise((r) => setTimeout(r, 0));
-    assert.equal(store.markProviders.value.length, 3);
+    assert.equal(store.markProviders.value.length, 2);
   } finally { store.location.value = null; }
 });
 
 test('the host views mount every stream\'s slot, and PlantMarks names its surface everywhere', () => {
   const start = view('Start.tsx');
   assert.ok(start.indexOf('<LocationSlot />') > 0 && start.indexOf('<LocationSlot />') < start.indexOf('<Climates />'), 'S5b: LocationSlot before the cards');
-  assert.match(start, /<LikelySlot question=\{k\} \/>/, 'S5e: LikelySlot in each site question');
   assert.match(start, /\{z && <PoolSlot zone=\{z\} \/>\}\s*\{z && hasList\(z\) && \(/, 'S5c: PoolSlot and hasList decide what follows the cards');
   assert.match(start, /const pill = cardPill\(z\);/, 'S5c: the card\'s pill from PoolSlot (Ready, Needs your location, Not covered yet; hand-off H-S5c-5)');
   assert.match(start, /climate\.value \?\? pendingClimate\.value;[\s\S]*data-proposed/, 'S5b: a proposed climate shows as proposed, not checked (review round 1, 6)');
@@ -59,7 +58,6 @@ test('the host views mount every stream\'s slot, and PlantMarks names its surfac
   assert.match(view('Actions.tsx'), /later\(\(\) => import\('\.\/later\.ts'\)\.then\(\(m\) => m\.FutureSlot\), \{ idle: true \}\)/, 'idle: no download before ct:matrix');
   assert.match(view('Actions.tsx'), /<ActionsView \/>\{v === 'matrix' && <future\.View \/>\}/, 'S5d: the panel after the actions, under the matrix view');
   assert.doesNotMatch(view('Matrix.tsx') + view('PhoneMatrix.tsx'), /<FutureSlot \/>/, 'not above the actions');
-  assert.match(view('Details.tsx'), /<NativeSlot taxon=\{t\} \/>/, 'S5e: NativeSlot in Details');
   assert.match(view('Details.tsx'), /<PlantMarks taxon=\{t\} surface="details" \/>/);
   assert.equal((view('Add.tsx').match(/<PlantMarks taxon=\{t\} surface="add" \/>/g) ?? []).length, 2);
   assert.match(view('StageBar.tsx'), /<PlantMarks taxon=\{taxon\} surface=\{tight \? 'chip' : 'row'\} \/>/);
