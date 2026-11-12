@@ -4,17 +4,17 @@
 // Headless Chrome through puppeteer-core on the built site served by wrangler dev. Never part of
 // `npm test`; test:browser builds dist-test/ (npm run build:browser-test) first, capped:
 //   timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 npm run test:browser
-import test, { after, before } from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { countPlantsInPage, loadState, startHarness } from './harness.mjs';
+import { countPlantsInPage, loadState } from './harness.mjs';
 import { ROOT } from './serve.mjs';
-import { aria, eachVariant, en, has, index, realDb } from './helpers.mjs';
+import { aria, eachVariant, en, h, has, index, realDb, useHarness } from './helpers.mjs';
+import { EXPECTED, NOMINATIM, SITES, lookupAt } from './location-fixtures.mjs';
+import { atSite, choose, members, search, tool } from './p5-helpers.mjs';
 
-let h;
-before(async () => { h = await startHarness(); });
-after(async () => { await h?.close(); });
+useHarness();
 
 test('P1: SQLite-WASM opens the real install in headless Chrome on wrangler dev, from the one hashed wasm', async () => {
   const wasm = readdirSync(join(ROOT, h.dir, 'client', '_astro')).filter((f) => f.endsWith('.wasm'));
@@ -144,4 +144,81 @@ test('BT-9 load: each failure gives its §5 screen and button', async (t) => {
       });
     });
   }
+});
+
+// ---- P5 commit 0: the harness and the fixtures (moved from consortium-p5, E1 design check A6) ----
+
+// ---- commit 0: the harness and the fixtures (these run) ----
+
+test('P5-0a (commit 0 fixtures): the reader on the built tiles answers each site as the specs expect', async () => {
+  for (const [name, want] of Object.entries(EXPECTED)) {
+    const l = await lookupAt(...SITES[name]);
+    const p = l.climate?.periods[0];
+    if ('climate' in want) assert.equal(l.climate, want.climate, name);
+    if (want.koppen) assert.equal(p?.koppen, want.koppen, name);
+    if (want.tmeanWarmC !== undefined) assert.equal(p?.tmeanWarmC, want.tmeanWarmC, name);
+    if (want.distanceCells !== undefined) assert.equal(l.climate?.distanceCells, want.distanceCells, name);
+    if ('soil' in want) assert.equal(l.soil, want.soil, name);
+    if (want.ph !== undefined) assert.equal(l.soil?.phH2o, want.ph, name);
+    assert.equal(l.regions.wgsrpdL3, want.l3, `${name} level 3`);
+    assert.equal(l.regions.isoA2, want.iso, `${name} country`);
+  }
+});
+
+test('P5-0b (commit 0 harness): geolocation granted, denied, unavailable and timeout reach the page as the browser reports them', async () => {
+  const ask = (page) => page.evaluate(() => new Promise((resolve) => navigator.geolocation.getCurrentPosition(
+    (p) => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }), (e) => resolve({ code: e.code }), { timeout: 800, maximumAge: 600_000, enableHighAccuracy: false })));
+  const [lat, lon] = SITES.lyon;
+  assert.deepEqual(await ask(await tool({ hook: false, geolocation: { lat, lon } })), { lat, lon });
+  assert.deepEqual(await ask(await tool({ hook: false, geolocation: 'denied' })), { code: 1 });
+  assert.deepEqual(await ask(await tool({ hook: false, geolocation: 'unavailable' })), { code: 2 });
+  assert.deepEqual(await ask(await tool({ hook: false, geolocation: 'timeout' })), { code: 3 });
+});
+
+test('P5-0c (commit 0 harness): Nominatim and OpenFreeMap are stubbed, WebGL can be off, climate tiles can fail, nothing else leaves the site', async () => {
+  const page = await tool({ hook: false, nominatim: 'fixture', mapTiles: 'stub', webgl: false, climateTiles: 404 });
+  const seen = await page.evaluate(async () => {
+    const json = async (u) => (await fetch(u)).json();
+    const status = async (u) => (await fetch(u)).status;
+    const fails = async (u) => fetch(u).then(() => false, () => true);
+    const tile = '/data/climate/stub/tiles/n50e000.tif';
+    return {
+      lyon: (await json('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=Lyon'))[0]?.name,
+      none: await json('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=Nowhereville'),
+      style: (await json('https://tiles.openfreemap.org/styles/positron')).version,
+      tileStatus: await status('https://tiles.openfreemap.org/planet/20250101/0/0/0.pbf'),
+      webgl: document.createElement('canvas').getContext('webgl2'),
+      canvas2d: !!document.createElement('canvas').getContext('2d'),
+      climateTile: await status(tile),
+      elsewhere: await fails('https://example.org/'),
+    };
+  });
+  assert.deepEqual(seen, { lyon: 'Lyon', none: [], style: 8, tileStatus: 204, webgl: null, canvas2d: true, climateTile: 404, elsewhere: true });
+  assert.equal(page.nominatim.length, 2);
+  assert.deepEqual(page.thirdParty, ['https://example.org/']);
+  assert.ok(NOMINATIM.lyon[0].display_name.includes('France'));
+  const offline = await tool({ hook: false, nominatim: 'offline', mapTiles: 'offline' });
+  assert.deepEqual(await offline.evaluate(async () => [
+    await fetch('https://nominatim.openstreetmap.org/search?q=Lyon').then(() => 'ok', () => 'failed'),
+    await fetch('https://tiles.openfreemap.org/styles/positron').then(() => 'ok', () => 'failed'),
+  ]), ['failed', 'failed']);
+});
+
+test('P5-0d (commit 0 seams): without a location, on a covered climate, no range, future or native mark shows, marks render only through PlantMarks, and nothing calls a third party before a click (S5b: its controls show, nothing fetched)', async () => {
+  const page = await tool({ nominatim: 'fixture', mapTiles: 'stub' });
+  assert.ok(await has(page, '[data-location-action="search"], [data-location-search]', 4000), 'S5b: the location controls show');
+  assert.deepEqual(await page.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name).filter((n) => /maplibre|\/data\/climate\//.test(n))), [], 'no MapLibre and no climate tile before a click');
+  await choose(page, 'Temperate');
+  await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
+  assert.ok(await page.waitForFunction(() => document.querySelectorAll('[data-plant-id]').length > 0, { timeout: 10_000 }).then(() => true, () => false), 'members in the matrix');
+  const marks = () => page.$$eval('[data-mark]', (els) => els.map((e) => ({ kind: e.getAttribute('data-mark'), surface: e.getAttribute('data-mark-surface') })));
+  const promised = (list) => list.filter((m) => ['outside', 'edge', 'future', 'native'].includes(m.kind));
+  assert.deepEqual(promised(await marks()), [], 'no range, future or native mark without a location');
+  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.markProviders.value.length), 0, 'the providers do not even load without a location on a covered climate');
+  // With a location the providers load; whatever marks they give carry a PlantMarks surface.
+  await atSite(page, 'lyon');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.markProviders.value.length === 2, { timeout: 10_000 }).then(() => true, () => false), 'the providers (range and future; native returns with P5.2) load for a location');
+  for (const m of await marks()) assert.ok(['chip', 'row', 'add', 'details'].includes(m.surface), `the ${m.kind} mark is drawn by PlantMarks on a surface`);
+  assert.deepEqual(page.thirdParty, []);
+  assert.deepEqual(page.nominatim, []);
 });

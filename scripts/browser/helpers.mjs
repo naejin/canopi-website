@@ -4,8 +4,18 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gunzipSync } from 'node:zlib';
-import { fixture, VARIANTS, variantName } from './harness.mjs';
+import { after, before } from 'node:test';
+import { fixture, startHarness, VARIANTS, variantName } from './harness.mjs';
 import { ROOT } from './serve.mjs';
+
+// The file's harness (one wrangler dev and one Chrome per test file), started before its first test
+// and closed after its last; `h` is a live binding, so the shared helper modules (p5-helpers,
+// seams-helpers) reach the same harness as the file that called useHarness().
+export let h;
+export function useHarness(options) {
+  before(async () => { h = await startHarness(options); });
+  after(async () => { await h?.close(); });
+}
 
 export const index = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'consortium-index.json'), 'utf8'));
 export const en = JSON.parse(readFileSync(join(ROOT, 'src', 'i18n', 'translations', 'en.json'), 'utf8'));
