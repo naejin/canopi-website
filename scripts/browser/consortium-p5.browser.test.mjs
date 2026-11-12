@@ -20,8 +20,9 @@
 // - S5c: [data-mark="edge" | "outside" | "estimate" | "unknown"] (views/PlantMarks.tsx), the empty
 //   pool [data-pool-empty], borrowed lists through views/PoolSlot.tsx;
 // - S5d: [data-future-summary], [data-future="not-checked"] (views/FutureSlot.tsx);
-// - S5e: [data-native="native" | "not_recorded" | "unknown"] in Details (views/NativeSlot.tsx), [data-likely="soil"] with its
-//   "Use it" button [data-likely-use];
+// - S5e (P5.2; its slots and stubs removed before the P5 push, see consortium-p5-seams-s5e.test.mjs):
+//   [data-native="native" | "not_recorded" | "unknown"] in Details under the plant's name, [data-likely="soil"] with
+//   its "Use it" button [data-likely-use] in each site question on Start;
 // - S5f: /privacy/ in every locale, the footer link to it, the /data-sources/ credits [data-credit].
 // Headless Chrome on dist-test, capped:
 //   timeout 3000 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 npm run test:browser
@@ -184,10 +185,14 @@ test('P5-0d (commit 0 seams): without a location, on a covered climate, no range
 test('P5-1 (S5b location granted): "Use my location" fills the result line and the climate card from the reader', async () => {
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon } });
+  const tileRequests = [];
+  page.on('request', (r) => { if (/\/data\/climate\//.test(r.url())) tileRequests.push(new URL(r.url()).pathname); });
   await locationControls(page);
   assert.ok(await page.$eval('[data-location-action="geo"]', (b) => !!b.parentElement.querySelector(':scope > [data-location-privacy]')), 'a privacy line beside the button, in its own parent');
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'ready');
+  assert.ok(tileRequests.some((u) => /\/tiles\//.test(u)), `the climate tile was read (${tileRequests.join(', ')})`);
+  assert.deepEqual(tileRequests.filter((u) => /\/soil\//.test(u)), [], 'no soil tile is fetched until something uses it (pre-push review 3; P5.2)');
   const loc = await page.evaluate(() => window.__ctTest.store.location.value);
   assert.equal(loc.source, 'geo');
   assert.equal(loc.lookup.climate.periods[0].koppen, 'Csa');

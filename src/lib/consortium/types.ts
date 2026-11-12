@@ -376,7 +376,7 @@ export interface SiteLookup {
   lon: number;
   // null: no complete cell within 2 cells (open sea): "pick a point on land".
   climate: { cellLat: number; cellLon: number; distanceCells: number; periods: SitePeriod[] } | null;
-  // null: no soil within 2 layer cells (sea, ice, a coast).
+  // null: no soil within 2 layer cells (sea, ice, a coast), or not read (the location step until P5.2).
   soil: { phH2o: number; texture: string | null; filled: boolean; fillDistanceCells: number; distanceCells: number } | null;
   // codes null offshore (a coast: climate from the nearest cell, no country).
   regions: { wgsrpdL3: string | null; isoA2: string | null };

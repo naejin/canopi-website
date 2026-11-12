@@ -1,20 +1,20 @@
-// P5 seam (commit 0): a plant's marks, the concatenation of the range (S5c), future (S5d) and native
-// (S5e) providers and the site answers' marks, in that order, for one surface (matrix chip, phone or list row, Add, Details). The
+// P5 seam (commit 0): a plant's marks, the concatenation of the range (S5c) and future (S5d)
+// providers (P5.2 adds native, S5e) and the site answers' marks, in that order, for one surface (matrix chip, phone or list row, Add, Details). The
 // views render them generically (views/PlantMarks.tsx), so a stream adds a mark without touching a
 // view. The providers sit in their own chunk (mark-providers.ts), loaded only when a mark can show (a
 // site location, or a climate whose plants are borrowed), so they never weigh on the first run
-// (decision row "Island JavaScript budget for P5"). Empty today: every provider is a stub.
-import type { ClimateZone, Mark, MarkSurface, PlantId, Scenario, Site, SiteLocation, Taxon } from './types.ts';
+// (decision row "Island JavaScript budget for P5").
+import type { ClimateZone, Mark, MarkSurface, Scenario, Site, SiteLocation, Taxon } from './types.ts';
 import { siteMarks } from './site-marks.ts';
 
 // What the providers read (store.ts markContext): the chosen climate, the site location, the
-// scenario, the source's native-area reader and the site answers (site-marks.ts; absent: none given).
+// scenario and the site answers (site-marks.ts; absent: none given). P5.2 (native here) adds the
+// source's native-area reader.
 export interface MarkContext {
   climate: ClimateZone | null;
   location: SiteLocation | null;
   site?: Site;
   scenario: Scenario;
-  source: { nativeIn(l3: string): ReadonlySet<PlantId> } | null;
 }
 export type MarkProvider = (taxon: Taxon, ctx: MarkContext, surface: MarkSurface) => Mark[];
 

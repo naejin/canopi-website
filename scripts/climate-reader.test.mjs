@@ -186,6 +186,17 @@ test('synthetic soil and regions tiles: texture, fill flag, codes and the coast 
   assert.deepEqual([sea.soil, sea.regions.wgsrpdL3, sea.regions.isoA2], [null, null, null]);
 });
 
+test('lookupSite with { soil: false } (the location step until P5.2): no soil tile fetched, soil null, climate and regions as before', async () => {
+  const lat = 50 - (100 + 0.5) * 0.05, lon = (10 + 0.5) * 0.05;
+  const all = await C.lookupSite(lat, lon, sourceOver(synthIndex, fromSynth).source);
+  const { source, fetched } = sourceOver(synthIndex, fromSynth);
+  const site = await C.lookupSite(lat, lon, source, C.DEFAULT_RADIUS, { soil: false });
+  assert.deepEqual(fetched.filter((u) => /\/soil\//.test(u)), [], 'no soil request');
+  assert.equal(site.soil, null);
+  assert.deepEqual(site.tilesRead.soil, []);
+  assert.deepEqual([site.climate, site.regions, site.tile], [all.climate, all.regions, all.tile]);
+});
+
 test('tile source: LRU of at most 4 decoded tiles per layer, shared in-flight fetches, failures not cached', async () => {
   const names = ['n50e000', 'n50e010', 'n40e000', 'n40e010', 'n60e000'];
   const index = { base: '/s/', tiles: { climate: new Set(names), soil: new Set(), regions: new Set() } };

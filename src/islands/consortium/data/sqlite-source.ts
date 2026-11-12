@@ -203,9 +203,6 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
     return out;
   }
 
-  // Native plants per WGSRPD level-3 area, read once each (schema 2 plant_areas, introduced = 0).
-  const natives = new Map<string, ReadonlySet<PlantId>>();
-
   return {
     info: () => info,
     countries: () => countries,
@@ -345,14 +342,6 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         ((out[field] ??= {})[value] ??= {})[l] = String(r.label);
       }
       return out;
-    },
-    nativeIn(l3) {
-      let set = natives.get(l3);
-      if (!set) {
-        set = new Set(db.selectObjects('SELECT DISTINCT p.id FROM plant_areas a JOIN plants p USING (plant) WHERE a.area = ?1 AND a.introduced = 0', [l3]).map((r) => String(r.id)));
-        natives.set(l3, set);
-      }
-      return set;
     },
     async cellCounts(c) {
       return db.selectObjects(`SELECT x.stratum, f.ord phase, count(*) n FROM placements x JOIN phases f ON f.ord BETWEEN x.phase_start AND x.phase_end

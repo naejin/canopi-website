@@ -35,7 +35,6 @@ import { safeHref } from '../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../data/consortium-guides.ts';
 import { testFault } from '../test-hook.ts';
 import { PlantMarks } from './PlantMarks.tsx';
-import { NativeSlot } from './NativeSlot.tsx';
 
 // ---- words ----
 
@@ -415,7 +414,6 @@ function PlantDetails({ id }: { id: PlantId }) {
           {lines.filter((l) => l.kind !== 'soft').length > 0 && <span class="ct-flag">{WARN}{P('details.warnCount', lines.filter((l) => l.kind !== 'soft').length)}</span>}
           <PlantMarks taxon={t} surface="details" />
         </p>
-        <NativeSlot taxon={t} />
       </div>
 
       <section class="ct-place" aria-labelledby="ct-d-place">

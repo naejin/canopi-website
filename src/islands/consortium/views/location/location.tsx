@@ -20,7 +20,7 @@
 import { batch, signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { koppenZone, MEANS_MARGIN_C, siteClimate, type LocationSource, type SiteLocation } from '../../../../lib/consortium/index.ts';
-import { createTileSource, lookupSite, siteIndex, type SiteLookup, type TileSource } from '../../../../lib/climate/index.ts';
+import { createTileSource, DEFAULT_RADIUS, lookupSite, siteIndex, type SiteLookup, type TileSource } from '../../../../lib/climate/index.ts';
 import { createPlaceSearchController, type PlaceSearchController, type PlaceSearchResult } from '../../../../lib/location/place-search.ts';
 import { defaultGeocoderConfig } from '../../../../lib/location/registry.ts';
 import { geocodingTransport } from '../../../../lib/location/transport.ts';
@@ -49,7 +49,8 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
   let timer = 0;
   try {
     return await Promise.race([
-      lookupSite(lat, lon, tileSource()),
+      // No soil tile until something reads it (P5.2's soil likely restores { soil: true }).
+      lookupSite(lat, lon, tileSource(), DEFAULT_RADIUS, { soil: false }),
       new Promise<never>((_, reject) => { timer = window.setTimeout(() => reject(new Error(`no answer in ${READ_TIMEOUT_MS / 1000} s`)), READ_TIMEOUT_MS); }),
     ]);
   } catch (err) {

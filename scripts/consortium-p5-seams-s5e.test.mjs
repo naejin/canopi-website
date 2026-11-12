@@ -1,26 +1,31 @@
-// P5 commit 0, stream S5e's seams (native.ts, soil-likely.ts, views/LikelySlot.tsx, views/NativeSlot.tsx): stubs that keep today's behaviour until S5e lands.
-// S5e owns this file and replaces each stub test with its rules' tests; no other stream edits it.
+// Stream S5e (native here, soil likely) moved to P5.2 (decision row "P5 ships without S5e"). Pre-push
+// review 3: P5 ships none of its stubs, and the location step reads no soil tile. P5.2 restores, from
+// commit 0801024: core native.ts (nativeHere), native-marks.ts (nativeMarks, third in mark-providers.ts),
+// soil-likely.ts (likelyFor), views/NativeSlot.tsx (under the name in Details), views/LikelySlot.tsx (in
+// each site question on Start), PlantSource.nativeIn (sqlite-source.ts, plant_areas), MarkContext.source,
+// and lookupSite without { soil: false } in views/location/location.tsx. Replace these tests with its rules'.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { ctx, lyon, placement, taxon } from './consortium-p5-fixtures.mjs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
-const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
-void ctx; void lyon; void placement; void taxon; void view;
+const file = (f) => new URL(`../src/${f}`, import.meta.url);
+const text = (f) => readFileSync(file(f), 'utf8');
+const view = (f) => text(`islands/consortium/views/${f}`);
 
-test('native.ts nativeHere and soil-likely.ts likelyFor (S5e stubs): nothing said, nothing offered', () => {
-  assert.equal(core.nativeHere(taxon(), 'FRA', new Set([taxon().id])), null);
-  for (const q of ['light', 'soil', 'water', 'room']) assert.equal(core.likelyFor(q, lyon.lookup), null, q);
-  assert.equal(core.likelyFor('soil', null), null);
+test('S5e ships nothing in P5: no native or soil-likely module, slot or reader', async () => {
+  for (const f of ['lib/consortium/native.ts', 'lib/consortium/native-marks.ts', 'lib/consortium/soil-likely.ts',
+    'islands/consortium/views/NativeSlot.tsx', 'islands/consortium/views/LikelySlot.tsx']) assert.equal(existsSync(file(f)), false, f);
+  assert.equal('nativeHere' in core, false);
+  assert.equal('likelyFor' in core, false);
+  assert.doesNotMatch(view('Start.tsx'), /LikelySlot/);
+  assert.doesNotMatch(view('Details.tsx'), /NativeSlot/);
+  assert.doesNotMatch(text('islands/consortium/data/sqlite-source.ts'), /nativeIn|plant_areas/);
+  assert.doesNotMatch(text('lib/consortium/source.ts'), /nativeIn/);
+  assert.doesNotMatch(text('lib/consortium/marks.ts'), /nativeIn/);
+  assert.deepEqual((await core.loadMarkProviders()).map((p) => p.name), ['rangeMarks', 'futureMarks']);
 });
 
-test('views/LikelySlot.tsx and views/NativeSlot.tsx (S5e stubs) render nothing', () => {
-  for (const f of ['LikelySlot.tsx', 'NativeSlot.tsx']) assert.match(view(f), /return null;/, f);
-});
-
-test('native-marks.ts nativeMarks (stub): no mark on any surface; loaded only through the lazy mark-providers.ts', async () => {
-  const { nativeMarks } = await import('../src/lib/consortium/native-marks.ts');
-  for (const s of core.markSurfaces) assert.deepEqual(nativeMarks(taxon(), ctx({ location: lyon }), s), [], s);
-  assert.equal('nativeMarks' in core, false, 'not exported from index.ts, so out of the first run');
+test('the location step reads no soil tile until P5.2 (soil likely) uses it', () => {
+  assert.match(view('location/location.tsx'), /lookupSite\(lat, lon, tileSource\(\), DEFAULT_RADIUS, \{ soil: false \}\)/);
 });
