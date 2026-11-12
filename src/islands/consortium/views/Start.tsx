@@ -10,10 +10,10 @@
 // - "Suggest plants" (waits for the plant list while it loads), "Start empty and search", "Paste a list".
 // Once a consortium is shown (store.view is not 'start'), Start shrinks to its head: the title with
 // the count and climate, the site basis with "Change site" and "Start over", and the country line.
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, PlantId, Site, SiteKey, Taxon } from '../../../lib/consortium/index.ts';
 import { countryStatus, lights, MAX_CROPS, rooms, soils, waters } from '../../../lib/consortium/index.ts';
-import { climate, country, crops, proposedClimate, kept, members, openSheet, pool, site, source, view } from '../store.ts';
+import { climate, country, crops, proposedClimate, kept, knownCountries, members, openSheet, pool, site, view } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { LocationSlot } from './LocationSlot.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from './PoolSlot.tsx';
@@ -69,13 +69,13 @@ function cropSearch(list: readonly Taxon[], q: string, lang: string, skip: Reado
 // ---- the country line ----
 export function CountryLine() {
   const { code, source: from } = country.value;
-  const src = source.value;
-  const status = src ? countryStatus(code, src.countries()) : 'none';
+  // The page's list until the database opens (store.knownCountries): the line is final in its first frame.
+  const known = knownCountries.value;
+  const status = countryStatus(code, known);
   const picking = pickingCountry.value;
   const select = useRef<HTMLSelectElement>(null);
   useEffect(() => { if (picking) select.current?.focus(); }, [picking]);
-  const codes = src ? [...src.countries().keys()] : code ? [code] : [];
-  const sorted = codes.map((c) => [c, countryName(c)] as const).sort((a, b) => a[1].localeCompare(b[1], pageLang()));
+  const sorted = [...known.keys()].map((c) => [c, countryName(c)] as const).sort((a, b) => a[1].localeCompare(b[1], pageLang()));
   const name = code ? countryName(code) : '';
   return (
     <div class="ct-country" data-ct="country">
@@ -293,6 +293,8 @@ function StartView() {
 }
 
 export function Start() {
-  useEffect(() => { startMemory(); }, []);
+  // Before the first paint (a layout effect): the country guess, the stored climate and a link's
+  // pending climate are drawn in the first frame, not swapped in after it (N2 layout shift).
+  useLayoutEffect(() => { startMemory(); }, []);
   return view.value === 'start' ? <StartView /> : <Head />;
 }

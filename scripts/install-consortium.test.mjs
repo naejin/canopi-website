@@ -74,6 +74,9 @@ test('the fixture installs with --fixture --no-images --out: the database byte f
   assert.deepEqual(index.images, {}, 'no photos with --no-images');
   assert.deepEqual(index.try_references, { sha256: sha(Buffer.from(FIXTURE_TRY)), rows: 3, dataset_ids: 2 });
   assert.equal(index.griis_available, true);
+  // The known countries and whether GRIIS checked each (the page's first frame reads them: N2).
+  assert.equal(Object.keys(index.countries).length, 14);
+  assert.deepEqual(Object.keys(index.countries).filter((c) => !index.countries[c]), ['AQ', 'PR', 'TW']);
   // Schema 2: the grid the ranges were sampled from (install-climate.mjs checks its own grid against
   // it) and the ranges' review state, from the database's meta.
   assert.equal(index.climate_grid_manifest_sha256, FIXTURE_GRID_SHA256);

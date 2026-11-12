@@ -4,7 +4,7 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T14:21:17Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T17:03:52Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-12T05:53:42Z }
 sources:
@@ -41,8 +41,8 @@ sources:
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
-    digest: sha256:ffdfd9fbfebeccef
-    last_modified: 2026-11-12T09:10:58Z
+    digest: sha256:9de8b0593be83710
+    last_modified: 2026-11-12T17:02:20Z
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
@@ -61,8 +61,8 @@ sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
-    digest: sha256:99facb4378c1fdd8
-    last_modified: 2026-11-12T14:10:09Z
+    digest: sha256:77531bebff7b561b
+    last_modified: 2026-11-12T17:02:20Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -255,6 +255,7 @@ What it writes:
   - `format_version`, `schema_version`, `release_id`, `generated_at`, `canopi_db_sha256`;
   - `files[{ file, url, climate_zones, sha256, bytes, raw_sha256, raw_bytes }]`;
   - `climates` (capitalised, manifest order), `griis_available`;
+  - `countries{ISO code: invasive_checked}` (the database's `countries` table, sorted; `indexProblem` requires it): the page's `#ct-data.countries`, so the guessed country and its "not checked" note are final before the database opens (consortium-page, N2 layout shift);
   - `names{climate: sorted canonical names}`;
   - `images{uuid: /data/consortium/images/…}`;
   - `try_references{sha256, rows, dataset_ids}` and `source_credits{sha256, rows}`;

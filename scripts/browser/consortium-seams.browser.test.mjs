@@ -1107,6 +1107,78 @@ test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gut
   }
 });
 
+// Layout stability (P5 flake investigation, N2): nothing on Start moves after its first paint because
+// data arrived. The page opens with the browser's languages saying one country and its time zone
+// another (a long name, or Puerto Rico, a country GRIIS did not check), so a guess refined when the
+// database opens would change the country line's height and shift every control below it (46 px at
+// en 320 and ja 390) about a second after load. Each control's box in the first frame it exists is
+// compared with its box once the database is open and the guess settled: no movement over 1 px, and
+// the layout-shift entries (PerformanceObserver, buffered) add up to 0.01 at most.
+const STABLE = ['[data-location-action="geo"]', 'input[data-location-search]', '[data-location-action="map"]', '.ct-card:first-of-type', '.ct-card:last-of-type'];
+const MISMATCH = { en: { languages: ['en-US', 'en'], zone: 'Africa/Bangui', guess: 'CF' }, fr: { languages: ['fr-FR', 'fr'], zone: 'America/St_Vincent', guess: 'VC' }, ja: { languages: ['ja-JP', 'ja'], zone: 'America/Puerto_Rico', guess: 'PR' } };
+async function stableStart(lang, width) {
+  const { languages, zone } = MISMATCH[lang];
+  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { width, mapTiles: 'stub' });
+  await page.emulateTimezone(zone);
+  await page.evaluateOnNewDocument((langs, sels) => {
+    window.__ctTest = true;
+    Object.defineProperty(Navigator.prototype, 'languages', { get: () => langs, configurable: true });
+    Object.defineProperty(Navigator.prototype, 'language', { get: () => langs[0], configurable: true });
+    const s = (window.__stable = { shifts: [], first: {} });
+    new PerformanceObserver((list) => { for (const e of list.getEntries()) s.shifts.push({ value: e.value, at: Math.round(e.startTime), from: e.sources?.map((x) => x.node?.className || x.node?.nodeName).join(', ') }); }).observe({ type: 'layout-shift', buffered: true });
+    // Each control's box in the first frame it exists (a rAF callback runs before that frame paints).
+    const box = (el) => { const r = el.getBoundingClientRect(); return { x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height }; };
+    const look = () => {
+      for (const sel of sels) { const el = document.querySelector(sel); if (el && !s.first[sel]) s.first[sel] = box(el); }
+      requestAnimationFrame(look);
+    };
+    requestAnimationFrame(look);
+  }, languages, STABLE);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  return page;
+}
+async function moved(page) {
+  // The database open, the guess refined (a microtask after the source) and twenty frames with
+  // nothing changing.
+  await page.waitForFunction(() => !!window.__ctTest?.store?.source.value, { timeout: 20_000 });
+  await loadState(page);
+  await page.waitForFunction(() => {
+    const key = JSON.stringify([window.__ctTest.store.country.value, document.querySelector('#ct-root')?.getBoundingClientRect().height]);
+    const w = (window.__still ??= { key, n: 0 });
+    if (w.key === key) w.n += 1; else Object.assign(w, { key, n: 0 });
+    return w.n >= 20;
+  }, { polling: 'raf', timeout: 10_000 });
+  return page.evaluate((sels) => {
+    const s = window.__stable, out = [];
+    for (const sel of sels) {
+      const el = document.querySelector(sel), a = s.first[sel];
+      if (!el || !a) continue;
+      const r = el.getBoundingClientRect(), b = { x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height };
+      const d = Math.max(...['x', 'y', 'w', 'h'].map((k) => Math.abs(b[k] - a[k])));
+      if (d > 1) out.push(`${sel}: ${['x', 'y', 'w', 'h'].map((k) => `${Math.round(a[k])}→${Math.round(b[k])}`).join(' ')}`);
+    }
+    const cls = s.shifts.reduce((n, e) => n + e.value, 0);
+    return { out, cls, shifts: s.shifts, country: window.__ctTest.store.country.value, seen: sels.filter((x) => s.first[x]) };
+  }, STABLE);
+}
+test('Layout stability (N2): nothing on Start moves after its first paint when the database opens and the guessed country is refined by the time zone, at 320–1280 px in en, fr and ja', async () => {
+  const bad = [];
+  for (const lang of ['en', 'fr', 'ja']) {
+    for (const width of [320, 390, 700, 960, 1280]) {
+      const at = `${lang} ${width} px`;
+      const page = await stableStart(lang, width);
+      const r = await moved(page);
+      assert.deepEqual(r.seen, STABLE, `${at}: every control measured`);
+      // The time zone's country, not the languages' (the mismatch is real).
+      assert.deepEqual(r.country, { code: MISMATCH[lang].guess, source: 'guess' }, `${at}: the time zone's guess`);
+      bad.push(...r.out.map((x) => `${at}: ${x}`));
+      if (r.cls > 0.01) bad.push(`${at}: CLS ${r.cls.toFixed(3)} (${r.shifts.map((e) => `${e.value.toFixed(3)} at ${e.at} ms by ${e.from}`).join('; ')})`);
+      await done(page);
+    }
+  }
+  assert.deepEqual(bad, []);
+});
+
 // Review of p5-final (low 1): an explanation placed on open is placed again when the window changes
 // (a phone turned, a window narrowed), so it keeps the 16 px gutter without being reopened.
 test('Walk-through 2 N2 (review): an open explanation keeps the 16 px gutter when the window narrows from 844 to 390 px', async () => {

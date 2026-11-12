@@ -699,6 +699,9 @@ export function requestSuggest(): void {
 // The save and the address bar follow the consortium; with none of the page's own, the save goes back.
 function persist(): void {
   if (store.view.peek() !== 'start' && !store.pool.peek()) return;
+  // A link or the save still opening, with no consortium of the page's own yet: the address keeps the
+  // link (a reload in that second opens it again; the restore writes the address when it applies).
+  if (inFlight.peek() && !own()) return;
   writeAddress();
   const mine = own();
   writeSave(mine ? saveRecord(currentFragment(mine) ?? '', new Date().toISOString(), countryFrom(mine.country), mine.country.code) : 'back');
@@ -732,17 +735,10 @@ export function startMemory(): void {
   const savedK = how.kind === 'saved' ? new URLSearchParams(how.fragment).get('k') ?? (how.src === 'location' && saved?.fragment === how.fragment ? saved.country ?? null : null) : null;
   const languages = attempt(() => [...navigator.languages]) ?? [];
   const zone = attempt(() => Intl.DateTimeFormat().resolvedOptions().timeZone) ?? null;
-  store.country.value = countryAtStart({ link: linkK, pref: memory.read(COUNTRY_STORE), saved: savedK, savedFrom: how.kind === 'saved' ? how.src : null, guess: guessCountry([], { languages }) });
-
-  // A better guess once the known countries are read (the time zone needs them).
-  effect(() => {
-    const src = store.source.value;
-    if (!src || store.country.peek().source !== 'guess') return;
-    const g = guessCountry([...src.countries().keys()], { zone, languages });
-    // Written after this effect, not in it: a write made inside an effect reaches the watcher only once
-    // the effect ends, after `quietly`, and a guessed country is not the reader acting.
-    if (g && g !== store.country.peek().code) queueMicrotask(() => quietly(() => { store.country.value = { code: g, source: 'guess' }; }));
-  });
+  // The time zone needs the known countries: the page names them (#ct-data `countries`, the
+  // database's own list), so this guess is final in the first frame, never refined once the database
+  // opens (that refinement shifted all of Start by up to 46 px about a second after load: N2).
+  store.country.value = countryAtStart({ link: linkK, pref: memory.read(COUNTRY_STORE), saved: savedK, savedFrom: how.kind === 'saved' ? how.src : null, guess: guessCountry([...store.knownCountries.peek().keys()], { zone, languages }) });
 
   // The saved site location, looked up again once the plant list is open (so its tiles never compete
   // with the database); a link's `o=` stands in for it on that page (ownLocation).

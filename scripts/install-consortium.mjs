@@ -288,7 +288,7 @@ const columnsOf = (db) => new Map(db.prepare("SELECT name FROM sqlite_master WHE
   .map(({ name }) => [name, db.prepare(`SELECT name FROM pragma_table_info(?)`).all(name).map((c) => c.name).join(',')]));
 
 // One database, already gunzipped and written at `path`: the first problem as a sentence, or the
-// facts the index needs ({ climates, names, images, griis }).
+// facts the index needs ({ climates, names, images, griis, countries }).
 export async function readDatabase(path, entry, manifest) {
   const { DatabaseSync } = await import('node:sqlite');
   const want = await schemaColumns();
@@ -354,7 +354,10 @@ export async function readDatabase(path, entry, manifest) {
     if (unchecked) return { problem: `${entry.file}: ${unchecked.name} is invasive in ${unchecked.country}, a country GRIIS did not check.` };
     const names = Object.fromEntries(climates.map((c) => [c, all('SELECT p.canonical_name n FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? ORDER BY p.canonical_name', c).map((r) => r.n)]));
     const images = all('SELECT p.id, p.canonical_name name, i.url FROM plant_images i JOIN plants p USING (plant) ORDER BY p.id');
-    return { climates, names, images, griis: meta.griis_available === '1', grid, rangesReview: meta.ranges_review };
+    // The known countries and whether GRIIS checked each: the page guesses the reader's country and
+    // says "not checked" from its first frame, before the database opens (layout stability, N2).
+    const countries = Object.fromEntries(all('SELECT code, invasive_checked FROM countries ORDER BY code').map((r) => [String(r.code), Number(r.invasive_checked) === 1]));
+    return { climates, names, images, griis: meta.griis_available === '1', grid, rangesReview: meta.ranges_review, countries };
   } finally {
     db.close();
   }
@@ -379,7 +382,7 @@ export async function verifyExport(dir, { fixture = false, work }) {
   if (creditProblem) refuse(creditProblem);
 
   const databases = [];
-  const facts = { names: {}, images: new Map(), griis: true, grid: null, rangesReview: null };
+  const facts = { names: {}, images: new Map(), griis: true, grid: null, rangesReview: null, countries: {} };
   for (const entry of manifest.files) {
     if (!sums.has(entry.file)) refuse(`${entry.file} is not listed in SHA256SUMS.`);
     const gz = readFileSync(join(dir, entry.file));
@@ -401,6 +404,7 @@ export async function verifyExport(dir, { fixture = false, work }) {
     Object.assign(facts.names, read.names);
     for (const img of read.images) if (!facts.images.has(img.id)) facts.images.set(img.id, img);
     facts.griis &&= read.griis;
+    Object.assign(facts.countries, read.countries);
     facts.grid = read.grid;
     facts.rangesReview = read.rangesReview;
     databases.push({ entry, gz });
@@ -422,6 +426,7 @@ export function buildIndex(manifest, facts, photos) {
     files: manifest.files.map((f) => ({ file: f.file, url: `${PUBLIC_BASE}${f.file}`, climate_zones: f.climate_zones, sha256: f.sha256, bytes: f.bytes, raw_sha256: f.raw_sha256, raw_bytes: f.raw_bytes })),
     climates: manifest.climates.map((c) => c.climate_zone),
     griis_available: facts.griis,
+    countries: Object.fromEntries(Object.entries(facts.countries).sort(([a], [b]) => (a < b ? -1 : 1))),
     names: Object.fromEntries(manifest.climates.map((c) => [c.climate_zone, facts.names[c.climate_zone]])),
     images: Object.fromEntries([...photos].sort(([a], [b]) => (a < b ? -1 : 1)).map(([id, file]) => [id, `${IMAGE_BASE}${file.name}`])),
     try_references: { sha256: manifest.try_references.sha256, rows: manifest.try_references.rows, dataset_ids: manifest.try_references.dataset_ids },
@@ -443,6 +448,7 @@ export function indexProblem(index) {
   }
   if (!Array.isArray(index.climates) || !index.climates.length || index.climates.some((c) => !CLIMATE_ZONES.includes(c))) return 'the index climates are not climate zones.';
   for (const c of index.climates) if (!Array.isArray(index.names?.[c]) || !index.names[c].length) return `the index has no names for ${c}.`;
+  if (!isObject(index.countries) || !Object.keys(index.countries).length || Object.entries(index.countries).some(([c, v]) => !/^[A-Z]{2}$/.test(c) || typeof v !== 'boolean')) return 'the index countries is not { ISO code: invasive checked }.';
   if (!isObject(index.images)) return 'the index images is not an object.';
   if (typeof index.climate_grid_manifest_sha256 !== 'string' || !HEX64.test(index.climate_grid_manifest_sha256)) return `the index climate_grid_manifest_sha256 ${JSON.stringify(index.climate_grid_manifest_sha256)} is not a sha256 (schema 2 names the grid of its ranges).`;
   for (const [id, path] of Object.entries(index.images)) {

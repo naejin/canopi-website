@@ -65,6 +65,17 @@ void readerFitsCore;
 
 // ---- data (set once the database is open; S1's load fills them) ----
 export const source = signal<PlantSource | null>(null);
+// The known countries (code → whether GRIIS checked it): the page's list (#ct-data `countries`, set by
+// main.ts before the first render) until the database is open, then the database's (the same export).
+// So the guessed country and its "not checked" note are final in the first frame (N2 layout shift).
+type Countries = ReadonlyMap<string, { invasiveChecked: boolean }>;
+const pageCountries = signal<Countries>(new Map());
+export function setPageCountries(c?: { checked: string; unchecked: string }): void {
+  const m = new Map<string, { invasiveChecked: boolean }>();
+  if (c) for (const k of ['checked', 'unchecked'] as const) for (const x of c[k].split(' ')) if (x) m.set(x, { invasiveChecked: k < 'u' });
+  pageCountries.value = m;
+}
+export const knownCountries = computed<Countries>(() => source.value?.countries() ?? pageCountries.value);
 // Each climate's plants as PlantSource.pool returned them, cached by climate once read.
 export const pools = signal<Partial<Record<ClimateZone, Taxon[]>>>({});
 // Each climate's interactions (PlantSource.interactions), read with its pool (S1).
@@ -159,7 +170,7 @@ export const flagContext = computed<FlagContext>(() => {
     site: site.value,
     interactions: (climate.value && interactionSets.value[climate.value]) || [],
     country: code,
-    countryStatus: countryStatus(code, source.value?.countries() ?? new Map()),
+    countryStatus: countryStatus(code, knownCountries.value),
   };
 });
 // The strata × phases matrix of the members on this site (core matrix.ts).

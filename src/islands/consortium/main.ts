@@ -10,7 +10,7 @@ import { h, render } from 'preact';
 // scripts/check-built-site.mjs). Here, not in load.ts: Node's unit tests import load.ts.
 import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App } from './App.tsx';
-import { load, setSource, watchPools } from './store.ts';
+import { load, setPageCountries, setSource, watchPools } from './store.ts';
 import { zoneOf } from '../../lib/consortium/index.ts';
 import { setStrings, type Strings } from './strings.ts';
 import type { DbRef } from './data/bytes.ts';
@@ -24,6 +24,7 @@ export interface PageData {
   db: DbRef;
   climates: string[]; // site ids, lowercase ('tropical'), in the export's order
   images: Record<string, string>; // plant uuid → self-hosted photo path
+  countries?: { checked: string; unchecked: string }; // space-separated ISO codes (store.knownCountries)
   guide: { url: string; lang: string } | null;
 }
 
@@ -70,9 +71,12 @@ const raw = document.getElementById('ct-data')?.textContent;
 if (root && raw) {
   const data = JSON.parse(raw) as PageData;
   setStrings(data.strings, data.lang);
+  setPageCountries(data.countries);
   root.textContent = '';
   root.removeAttribute('aria-busy');
-  render(h(App, { guide: data.guide, onRetry: () => void open(data) }), root);
+  // The database opens first (open sets the load state and clears the source at once), then the
+  // render, whose Start runs startMemory in a layout effect, before the first paint (N2 layout shift).
   watchPools();
   void open(data);
+  render(h(App, { guide: data.guide, onRetry: () => void open(data) }), root);
 }

@@ -2,9 +2,9 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T14:21:18Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T17:57:53Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T07:47:19Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T18:30:27Z }
 sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
@@ -49,8 +49,8 @@ sources:
   - id: memory-ts
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
-    digest: sha256:382318b0e6b1ab6b
-    last_modified: 2026-11-12T07:18:38Z
+    digest: sha256:b2f022e41421c8bc
+    last_modified: 2026-11-12T18:27:37Z
   - id: maplibre-notices-mjs
     resource: ../../scripts/maplibre-notices.mjs
     title: scripts/maplibre-notices.mjs

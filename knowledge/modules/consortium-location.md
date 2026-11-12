@@ -2,9 +2,9 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T13:14:57Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T17:57:52Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T11:45:43Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T18:30:26Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
@@ -34,8 +34,8 @@ sources:
   - id: memory-ts
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
-    digest: sha256:382318b0e6b1ab6b
-    last_modified: 2026-11-12T07:18:38Z
+    digest: sha256:b2f022e41421c8bc
+    last_modified: 2026-11-12T18:27:37Z
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
@@ -84,8 +84,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
-    digest: sha256:8d2f3454ffb68c6a
-    last_modified: 2026-11-12T12:34:53Z
+    digest: sha256:6568cfda06984303
+    last_modified: 2026-11-12T18:27:37Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts

@@ -53,12 +53,16 @@ const food = guides.find((entry) => slugOf(entry) === explainGuide);
 const guide = food ? { url: localizedUrl(`/guides/${explainGuide}/`, guideLang), lang: guideLang } : null;
 const contact = localizedUrl('/', lang) + '#contact';
 const db = index.files[0];
+const countryCodes = (c: Record<string, boolean>) => ({ checked: Object.keys(c).filter((k) => c[k]).join(' '), unchecked: Object.keys(c).filter((k) => !c[k]).join(' ') });
 const data = {
   lang,
   strings,
   releaseId: index.release_id,
   db: { url: db.url, sha256: db.sha256, bytes: db.bytes, rawSha256: db.raw_sha256, rawBytes: db.raw_bytes },
   climates: index.climates.map((c) => c.toLowerCase()),
+  // The known countries, those GRIIS checked and those it did not (space-separated ISO codes), so the
+  // country line shows its final guess and "not checked" note in its first frame (N2 layout shift).
+  countries: countryCodes(index.countries),
   images: index.images,
   guide,
   // The title of each guide the plant dialog links (data/consortium-guides.ts), in the guide language

@@ -56,6 +56,25 @@ export async function fixturePhotos() {
   return photoMap;
 }
 
+// The fixture's countries as the page names them (ConsortiumPage.astro countryCodes): space-separated
+// ISO codes GRIIS checked and did not.
+let countryCodes = null;
+export async function fixtureCountries() {
+  if (countryCodes) return countryCodes;
+  const { DatabaseSync } = await import('node:sqlite');
+  const dir = mkdtempSync(join(tmpdir(), 'consortium-fixture-'));
+  try {
+    const path = join(dir, 'db.sqlite');
+    writeFileSync(path, gunzipSync(fixture().gz));
+    const db = new DatabaseSync(path, { readOnly: true });
+    try {
+      const rows = db.prepare('SELECT code, invasive_checked c FROM countries ORDER BY code').all();
+      countryCodes = { checked: rows.filter((r) => r.c === 1).map((r) => r.code).join(' '), unchecked: rows.filter((r) => r.c !== 1).map((r) => r.code).join(' ') };
+    } finally { db.close(); }
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+  return countryCodes;
+}
+
 // The database bytes served for a variant, and the reference the page is told (its digests are those
 // of the served bytes, so each broken copy fails where it is meant to, not at the digest):
 // - 'corrupt': bytes overwritten inside the gzip stream (does not inflate: damaged);
@@ -256,12 +275,14 @@ export async function startHarness({ log = () => {}, dir } = {}) {
         }
         if (fx && request.resourceType() === 'document' && url.origin === site.url && /\/consortium\/$/.test(url.pathname)) {
           const res = await fetch(url, { headers: { 'accept-language': 'en' } });
+          const countries = await fixtureCountries();
           const html = (await res.text()).replace(/(<script type="application\/json" id="ct-data">)([\s\S]*?)(<\/script>)/, (_, start, json, end) => {
             const d = JSON.parse(json);
             d.releaseId = fx.releaseId;
             d.climates = fx.climates;
             d.db = { url: `/data/consortium/${fx.file}`, ...(served?.ref ?? servedDatabase(null, fx).ref) };
             d.images = images;
+            d.countries = countries;
             return start + JSON.stringify(d).replace(/</g, '\\u003c') + end;
           });
           return request.respond({ status: res.status, contentType: 'text/html; charset=utf-8', body: html });
