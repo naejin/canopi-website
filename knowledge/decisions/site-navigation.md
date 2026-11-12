@@ -6,13 +6,13 @@ tags: [decision, navigation]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T12:07:14Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T12:07:13Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T13:54:22Z }
 sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
-    digest: sha256:a6f4a60491a03a5c
-    last_modified: 2026-11-12T10:10:38Z
+    digest: sha256:b0a0e9e370c8cee5
+    last_modified: 2026-11-12T13:08:43Z
   - id: header-astro
     resource: ../../src/components/Header.astro
     title: src/components/Header.astro
