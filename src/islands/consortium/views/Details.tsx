@@ -27,7 +27,7 @@ import * as store from '../store.ts';
 import { addMembers, closeSheet, openSheet, removeMember, sheetCell, showToast, swapMember, taxonOf, toggleKeep } from '../store.ts';
 import { P, T, nameOf, pageLang } from '../strings.ts';
 import type { ClimateZone, Details as PlantFacts, Flag, Labels, Locale, PlantId, Site, Taxon } from '../../../lib/consortium/index.ts';
-import { fits, flagsFor, jobsOf, misfitsBeside, pairings, phaseOrd, phases } from '../../../lib/consortium/index.ts';
+import { fits, flagsFor, jobsOf, misfitsBeside, pairings, phaseOrd, phases, placementZone } from '../../../lib/consortium/index.ts';
 import { layerRows, type Words } from './layers.ts';
 import { Toast } from './Toast.tsx';
 import { phasePlain as plainPhase, spanWords } from './StageBar.tsx';
@@ -338,7 +338,9 @@ function SourceItem({ id, facts }: { id: string; facts: PlantFacts | null }) {
 
 function PlantDetails({ id }: { id: PlantId }) {
   const t = taxonOf(id);
-  const zone = t?.from ?? store.climate.value;
+  // The list the plant was placed from (a borrowed placement's curated list, a guest's list, else the
+  // climate): only curated lists have reasons and climate months, so the sheet reads and names that list.
+  const zone = t ? placementZone(t, store.climate.value) : null;
   const [facts, setFacts] = useState<PlantFacts | null>(null);
   const [labels, setLabels] = useState<Labels>({});
   // A plant with a draft (closed by Escape or the backdrop) opens with its form and text back.
@@ -421,7 +423,7 @@ function PlantDetails({ id }: { id: PlantId }) {
         <p><strong>{layerName(t)}</strong>{t.stratum && <> · {T(`stratum.${t.stratum.value}.needs`)}</>}</p>
         <Bar taxon={t} />
         <p>{spanWords(t)}</p>
-        {t.from && <p class="ct-muted">{T('details.fromListNote')}</p>}
+        {(t.from || t.placedFrom) && <p class="ct-muted">{T('details.fromListNote')}</p>}
       </section>
 
       {member && (
@@ -438,6 +440,7 @@ function PlantDetails({ id }: { id: PlantId }) {
 
       <section aria-labelledby="ct-d-why">
         <h3 id="ct-d-why">{T('why')}</h3>
+        {t.placedFrom && <p class="ct-muted" data-why-borrowed={t.placedFrom.toLowerCase()}>{T(`estimate.from${t.placedFrom}`)}</p>}
         {!facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
           : facts.reasons.length ? (
             <ul class="ct-reasons">

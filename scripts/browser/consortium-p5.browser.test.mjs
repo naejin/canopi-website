@@ -877,6 +877,33 @@ test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from t
   assert.ok(await has(page, '[data-mark="estimate"]', 10_000));
 });
 
+test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a plant\'s Details reads the list it was placed from: its reasons, with a note naming that list', async () => {
+  const page = await tool();
+  await atSite(page, 'lyon');
+  const picked = await page.evaluate(async () => {
+    const { store } = window.__ctTest;
+    store.climate.value = 'Subtropical';
+    if (!(await store.loadPool('Subtropical'))) return null;
+    for (let i = 0; i < 200 && !store.pool.value; i++) await new Promise((r) => setTimeout(r, 50));
+    if (!store.suggestMembers()) return null;
+    store.view.value = 'matrix';
+    // A borrowed member whose source list gives reasons (the visitor's climate has none of its own).
+    for (const t of store.memberTaxa.value) {
+      if (!t.placedFrom) continue;
+      const own = await store.source.value.details(t.id, 'Subtropical', 'en');
+      const d = await store.source.value.details(t.id, t.placedFrom, 'en');
+      if (d.reasons.length && !own.reasons.length) return { id: t.id, from: t.placedFrom };
+    }
+    return null;
+  });
+  assert.ok(picked, 'a Subtropical member borrowed from a curated list that gives reasons');
+  await page.evaluate((id) => window.__ctTest.store.openSheet('details', id), picked.id);
+  assert.ok(await has(page, '.ct-details .ct-reasons li', 10_000), 'the Why section lists the source list\'s reasons, not "no source"');
+  const note = await text(page, `.ct-details [data-why-borrowed="${picked.from.toLowerCase()}"]`);
+  assert.match(note ?? '', new RegExp(`placed as on the ${picked.from} list`, 'i'), 'the Why section says the reasons come from that list');
+  assert.match(await text(page, '#ct-d-place') ?? '', new RegExp(picked.from), '"Placed for" names the list the placement is from, never claims the visitor\'s climate');
+});
+
 test('P5-26 (S5c borrowed list from a link): #v=4&c=subtropical without o= opens with borrowed plants marked "estimate", no location needed', async () => {
   // A consortium made at Lyon on the borrowed Subtropical list, then opened from its link without a location.
   const maker = await tool();
