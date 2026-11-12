@@ -144,16 +144,22 @@ export function slotCheck(taxon: Taxon, slot: SitePeriod): SlotCheck {
   return { sides, beyond, coolSeason };
 }
 
+// A slot's aridity against the plant's (a mark only, never a verdict): today's check and the future
+// one (future.ts, "drier … by …: may need watering") read it, so the rule has one owner.
+export function aridityFit(taxon: Taxon, slot: SitePeriod): AridityFit {
+  const arid = taxon.climate?.aridity;
+  const ai = slot.aridityIndex;
+  return ai === null ? 'not-checked'
+    : !arid || arid.low === null || arid.high === null ? 'unknown'
+    : ai < arid.low ? 'drier' : ai > arid.high ? 'wetter' : 'inside';
+}
+
 // null: nothing to check against (no site climate).
 export function rangeCheck(taxon: Taxon, site: SiteLocation | null): RangeCheck | null {
   const today = siteToday(site);
   if (!today) return null;
   const c = taxon.climate;
-  const arid = c?.aridity;
-  const ai = today.aridityIndex;
-  const aridity: AridityFit = ai === null ? 'not-checked'
-    : !arid || arid.low === null || arid.high === null ? 'unknown'
-    : ai < arid.low ? 'drier' : ai > arid.high ? 'wetter' : 'inside';
+  const aridity = aridityFit(taxon, today);
   if (!c || (!c.tminCold && !c.tmaxWarm && !c.tmeanYear && !c.tmeanWarm)) return { verdict: 'unknown', sides: [], beyond: [], aridity, coolSeason: false };
   const { sides, beyond, coolSeason } = slotCheck(taxon, today);
   return { verdict: beyond.length ? 'outside' : sides.length ? 'edge' : 'inside', sides, beyond, aridity, coolSeason };

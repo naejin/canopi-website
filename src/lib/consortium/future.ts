@@ -3,9 +3,12 @@
 // changes of a constrained CMIP6 model ensemble, Beck et al. 2023, applied to the CHELSA v2.1
 // 1981–2010 climate), for the latest period its phases reach: a plant that lasts into the secondary
 // phases (phase_end ≥ 3) is checked at 2041–2070, a climax plant at 2071–2099; a short-lived one is
-// left to today's check. Two reasons: too hot (the warmest-month maximum beyond the plant's Q95 plus
-// the 2 °C margin of today's range check, owner answer 2) and too dry (the aridity index below its
-// Q05; no edge band, as today's aridity is a mark only). A reason counts only as a change from today:
+// left to today's check. One reason makes a loss: too hot (the warmest-month maximum beyond the plant's
+// Q95 plus the 2 °C margin of today's range check, owner answer 2). Aridity is a note, as today (range.ts
+// aridityFit, its one owner; walk-through 2 N3: at Seville 29 of 39 plants "outside by 2041–2070" were
+// so on dryness alone, strawberry tree, santolina and Phlomis among them): drier under the chosen
+// scenario than where the plant is recorded, and not already today, gives drier ("drier … by
+// 2041–2070: may need watering"), never outside nor a count. A reason counts only as a change from today:
 // a plant already beyond that bound in today's slot is "already" outside, not "too hot by 2041–2070".
 // A warmer coldest month is not a failure, so warm winters are left out. The chosen scenario (SSP2-4.5
 // by default) gives the verdict; the period's other scenarios give its agreement: for outside, those
@@ -19,12 +22,12 @@
 // only losses are listed. The heat check is today's bound (margin included).
 import type { PlantId, Scenario, SitePeriod, SiteLocation, Taxon } from './types.ts';
 import { phases, scenarios } from './types.ts';
-import { boundPassed, coolSeasonOf, HOT_BOUND as HOT, slotCheck } from './range.ts';
+import { aridityFit, boundPassed, coolSeasonOf, HOT_BOUND as HOT, slotCheck } from './range.ts';
 
 export const futurePeriods = ['2041-2070', '2071-2099'] as const;
 export type FuturePeriod = (typeof futurePeriods)[number];
 export type FutureVerdict = 'inside' | 'edge' | 'outside' | 'already';
-export type FutureReason = 'heat' | 'arid';
+export type FutureReason = 'heat';
 export interface FutureCheck {
   period: FuturePeriod;
   verdict: FutureVerdict; // under the chosen scenario
@@ -34,6 +37,7 @@ export interface FutureCheck {
   of: number; // scenarios of the period with data
   coolSeason: boolean; // an annual beyond its heat range under the chosen scenario, and not today (today's mark says it then): the cool-season advice
   warmEnough: boolean; // too cool today, within every bound in the chosen scenario's slot (header)
+  drier: boolean; // drier than the plant's aridity Q05 in the chosen scenario's slot, and not today: a note (header)
 }
 
 // Too hot: beyond the warmest-month Q95 by more than today's margin, through today's bound and
@@ -58,17 +62,13 @@ function hasFutureData(site: SiteLocation | null): boolean {
 const todayOf = (site: SiteLocation | null): SitePeriod | null =>
   site?.lookup?.climate?.periods.find((p) => p.scenario === 'historical') ?? null;
 
-// The reasons a slot is beyond the plant's bounds, or null when nothing can be compared.
+// The reasons a slot is beyond the plant's bounds, or null when nothing can be compared (no heat bound:
+// aridity alone never makes a loss).
 function beyond(taxon: Taxon, slot: SitePeriod): { reasons: FutureReason[]; edge: boolean; coolSeason: boolean } | null {
-  const low = taxon.climate?.aridity?.low ?? null;
   const heat = boundPassed(taxon, HOT, slot);
-  const aridChecked = low !== null && slot.aridityIndex !== null;
-  if (heat === null && !aridChecked) return null;
-  const reasons: FutureReason[] = [];
+  if (heat === null) return null;
   const coolSeason = coolSeasonOf(taxon, HOT, heat);
-  if (heat === 'beyond' && !coolSeason) reasons.push('heat');
-  if (aridChecked && (slot.aridityIndex as number) < low) reasons.push('arid');
-  return { reasons, edge: heat === 'edge', coolSeason };
+  return { reasons: heat === 'beyond' && !coolSeason ? ['heat'] : [], edge: heat === 'edge', coolSeason };
 }
 
 export function futureCheck(taxon: Taxon, site: SiteLocation | null, scenario: Scenario): FutureCheck | null {
@@ -82,7 +82,6 @@ export function futureCheck(taxon: Taxon, site: SiteLocation | null, scenario: S
   const already = now?.reasons ?? [];
   const fresh = (b: { reasons: FutureReason[] }) => b.reasons.filter((r) => !already.includes(r));
   const why = fresh(mine);
-  // A new heat edge outranks "already": a plant already too dry today still shows the edge (with the suffix).
   const verdict: FutureVerdict = why.length ? 'outside' : mine.edge && !already.includes('heat') ? 'edge' : already.length ? 'already' : 'inside';
   let agree = 0, of = 0;
   for (const s of scenarios) {
@@ -94,15 +93,16 @@ export function futureCheck(taxon: Taxon, site: SiteLocation | null, scenario: S
     if (why.length ? f.some((r) => why.includes(r)) : f.length === 0) agree++;
   }
   const warmEnough = !!today && slotCheck(taxon, today).beyond.some((s) => s === 'cool' || s === 'summer') && slotCheck(taxon, own).beyond.length === 0;
-  return { period, verdict, why, already, agree, of, coolSeason: mine.coolSeason && !now?.coolSeason, warmEnough };
+  const drier = aridityFit(taxon, own) === 'drier' && !(today && aridityFit(taxon, today) === 'drier');
+  return { period, verdict, why, already, agree, of, coolSeason: mine.coolSeason && !now?.coolSeason, warmEnough, drier };
 }
 
 // The panel's summary over the members, each in exactly one place: per period those checked (m),
-// those outside (n) and by new reason (a plant both too hot and too dry is under both); already: the
+// those outside (n) and by new reason, and those drier (a note, not a count: any verdict); already: the
 // plants with no new reason that are already beyond a bound today, by reason; todayOnly: short-lived
 // plants; notChecked: no range, nothing to compare, or (available false) no projection for the site.
 // checks: every checked plant's FutureCheck, so the panel's lines never decide again.
-export interface FuturePeriodSummary { period: FuturePeriod; checked: PlantId[]; outside: PlantId[]; heat: PlantId[]; arid: PlantId[] }
+export interface FuturePeriodSummary { period: FuturePeriod; checked: PlantId[]; outside: PlantId[]; heat: PlantId[]; drier: PlantId[] }
 export interface FutureSummary {
   available: boolean; periods: FuturePeriodSummary[]; already: Record<FutureReason, PlantId[]>;
   todayOnly: PlantId[]; notChecked: PlantId[]; checks: Record<PlantId, FutureCheck>;
@@ -111,7 +111,7 @@ export interface FutureSummary {
 export function futureSummary(taxa: readonly Taxon[], site: SiteLocation | null, scenario: Scenario): FutureSummary {
   const available = hasFutureData(site);
   const byPeriod = new Map<FuturePeriod, FuturePeriodSummary>();
-  const already: Record<FutureReason, PlantId[]> = { heat: [], arid: [] };
+  const already: Record<FutureReason, PlantId[]> = { heat: [] };
   const todayOnly: PlantId[] = [], notChecked: PlantId[] = [];
   const checks: Record<PlantId, FutureCheck> = {};
   for (const t of taxa) {
@@ -119,9 +119,11 @@ export function futureSummary(taxa: readonly Taxon[], site: SiteLocation | null,
     const c = available ? futureCheck(t, site, scenario) : null;
     if (!c) { notChecked.push(t.id); continue; }
     checks[t.id] = c;
-    if (c.verdict === 'already') { for (const r of c.already) already[r].push(t.id); continue; }
     let p = byPeriod.get(c.period);
-    if (!p) byPeriod.set(c.period, (p = { period: c.period, checked: [], outside: [], heat: [], arid: [] }));
+    if (!p) byPeriod.set(c.period, (p = { period: c.period, checked: [], outside: [], heat: [], drier: [] }));
+    // The note goes with any verdict (an "already" plant too); the panel skips an n of m with no m.
+    if (c.drier) p.drier.push(t.id);
+    if (c.verdict === 'already') { for (const r of c.already) already[r].push(t.id); continue; }
     p.checked.push(t.id);
     if (c.verdict === 'outside') p.outside.push(t.id);
     for (const w of c.why) p[w].push(t.id);
