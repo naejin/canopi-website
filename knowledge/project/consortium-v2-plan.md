@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: Phases, order, exits and session brief for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate.
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T08:32:39Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T12:05:01Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -85,7 +85,7 @@ Each phase ships on its own. Repos: W website, D canopi-data, C canopi-climate.
 ### Feature pipeline (owner, 2026-11-12)
 - **Rule:** new user features are proposed by Claude from growers' needs, each naming the design decision it changes; each goes through a design check against code and data plus an unanchored challenge pass before it enters a phase (decision row "Feature pipeline").
 - **Seasons (in review):** design check and challenge pass in `.local/consortium/v2/seasons-design.md` and `seasons-challenge.md`. Already moved into P5: annual tags follow the plant's growing season (cool / warm / unknown); PFAF months name their source region. Candidates: per-climate cool/warm season for annuals in canopi-data; dry-season and "winter too mild for chill" reasons in the future check; one cool-season and one warm-season plant per placenta cell; food and cover counted per season. Not built: sowing calendars, frost-date estimates, "plant now for later" lists.
-- **Reviewed next, in order:** (1) water across the year (dry months already ship; with P7b); (2) planting for the future climate by phase (weigh the challenge's warning that today's winters can still kill a young tree); (3) fire risk in fire-prone climates (warn, never remove; needs a published flammability source).
+- **Reviewed next, in order (coordinator choice, owner delegated 2026-11-12):** (1) climate replacements (the core of "planting for the future climate by phase"): when the one range rule says a plant is outside past the margin in its phase's future period under the default scenario (and says whether other scenarios agree), offer plants with the same jobs, layer and stages that fit the site and pass today's climate too; ranked like Suggest, never automatic, honest when none exists; an estimated crossing decade interpolated between today and 2041–2070 (shown as a range across scenarios) tied to the plant's own growth timeline to say when to plant the successor; check whether the climate source publishes 2011–2040; validated on scenario and held-out sites with expectations written first. First because it uses data already shipped. (2) water across the year (with P7b and the monthly layer of canopi-climate v0.3). (3) fire risk in fire-prone climates (warn, never remove; needs a published flammability source).
 - **Into Suggestion v2:** (4) risk spread (genus, shared diseases, share at risk by 2050); (5) negative interactions (allelopathy, alternate hosts).
 - **With seasons:** (6) goals and a harvest calendar.
 - **With the bundled canopi-data release:** (7) how to start each plant (seed, cutting, grafted; ease).
