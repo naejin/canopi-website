@@ -187,7 +187,7 @@
   "bibliography.theme.indigenous-knowledge": "Saberes indígenas",
   "bibliography.theme.plants": "Plantas",
   "home.consortium.lede": "Un consorcio es un grupo de plantas que se ayudan entre sí. Elige tu clima: parte de una sugerencia de 6 a 12 plantas, o crea el tuyo, hasta cientos.",
-  "home.consortium.note": "Una beta con tres climas por ahora: tropical, mediterráneo y templado.",
+  "home.consortium.note": "Una beta con listas de plantas preparadas para tres climas por ahora: tropical, mediterráneo y templado; los demás climas toman la lista más cercana, comprobada con tu ubicación.",
   "home.consortium.action": "Empieza por tu clima",
   "start.all": "Todas las guías de campo",
   "start.inEnglish": "Estas guías están en inglés.",

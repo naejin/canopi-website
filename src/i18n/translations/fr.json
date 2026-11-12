@@ -187,7 +187,7 @@
   "bibliography.theme.indigenous-knowledge": "Savoirs autochtones",
   "bibliography.theme.plants": "Plantes",
   "home.consortium.lede": "Une guilde est un groupe de plantes qui s’entraident. Choisissez votre climat : partez d’une suggestion de 6 à 12 plantes, ou composez la vôtre, jusqu’à des centaines.",
-  "home.consortium.note": "Une bêta qui couvre trois climats pour l’instant : tropical, méditerranéen et tempéré.",
+  "home.consortium.note": "Une bêta avec des listes de plantes établies pour trois climats pour l’instant : tropical, méditerranéen et tempéré ; les autres climats empruntent la liste la plus proche, vérifiée selon votre lieu.",
   "home.consortium.action": "Commencer par votre climat",
   "start.all": "Toutes les fiches de terrain",
   "start.inEnglish": "Ces fiches sont en anglais.",

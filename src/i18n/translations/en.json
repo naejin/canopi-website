@@ -187,7 +187,7 @@
   "bibliography.theme.indigenous-knowledge": "Indigenous knowledge",
   "bibliography.theme.plants": "Plants",
   "home.consortium.lede": "A consortium is a group of plants that help each other. Choose your climate: start from a suggestion of 6 to 12 plants, or build your own, up to hundreds.",
-  "home.consortium.note": "A beta with three climates so far: tropical, Mediterranean and temperate.",
+  "home.consortium.note": "A beta with curated plant lists for three climates so far: tropical, Mediterranean and temperate; the other climates borrow the nearest list, checked against your location.",
   "home.consortium.action": "Start with your climate",
   "start.all": "All field guides",
   "start.inEnglish": "These guides are in English.",

@@ -187,7 +187,7 @@
   "bibliography.theme.indigenous-knowledge": "원주민의 지식",
   "bibliography.theme.plants": "식물",
   "home.consortium.lede": "컨소시엄은 서로 돕는 식물들의 모임입니다. 기후를 고르고, 6~12종 추천으로 시작하거나 수백 종까지 직접 짜 보세요.",
-  "home.consortium.note": "베타 버전이라 지금은 세 기후만 다룹니다: 열대, 지중해성, 온대.",
+  "home.consortium.note": "베타 버전으로, 지금은 세 기후에 맞춘 식물 목록이 있습니다: 열대, 지중해성, 온대. 다른 기후는 가장 가까운 목록을 빌려 쓰고, 당신의 위치로 확인합니다.",
   "home.consortium.action": "내 기후부터 시작하기",
   "start.all": "모든 현장 가이드",
   "start.inEnglish": "가이드는 영어로 되어 있습니다.",
