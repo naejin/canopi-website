@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: Phases, order, exits and session brief for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate.
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T12:09:56Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T12:20:42Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -89,6 +89,7 @@ Each phase ships on its own. Repos: W website, D canopi-data, C canopi-climate.
 - **Into Suggestion v2:** (4) risk spread (genus, shared diseases, share at risk by 2050); (5) negative interactions (allelopathy, alternate hosts).
 - **With seasons:** (6) goals and a harvest calendar.
 - **With the bundled canopi-data release:** (7) how to start each plant (seed, cutting, grafted; ease).
+- **Site-dependent plant facts (bundled canopi-data release, first, with the export split; owner, 2026-11-12):** facts that vary with where a plant grows (annual vs perennial, height in cultivation, leaf habit, growing season, growth speed and lifespan) are computed from the plant's ranges and the site's climate by one rule that works everywhere (e.g. a frost-tender perennial on a site colder than its cold limit is grown as an annual there, replacing the global `grown_as_annual` patch), and stored with a scope (climate, region, country) plus source only where real data exists, the most specific winning (as PFAF months and GRIIS countries already are). One export-format change, designed with the split, keeping the Canopi app's reader compatible; each rule validated on scenario and held-out sites with expectations written first. The owner wants this polished as the generalised approach for worldwide users under a changing climate; once polished and relevant, such features move into the Canopi design app.
 - **Curated lists for the borrowed climates (bundled canopi-data release; coordinator, 2026-11-12):** a coverage target, not a fixed count: on each climate's scenario sites every layer × stage has enough candidates per main job, checked by the scenario script; order Arid (hot and cold sets; needs new plants such as date palm, Prosopis, Faidherbia), Boreal (Amelanchier, Shepherdia…), Continental, Subtropical; new plants get ranges by the rebuilt method; native never a criterion. First a design check on export size: about 1.1 KB gzip per plant (+200 plants ≈ +220 KB ≈ +1.2 s on the slow-phone first visit), so split the export (core first; climate rows and per-climate placements after the location) before adding plants.
 - **Later (needs a collection path the static site lacks):** growers' reports feeding canopi-data.
 
