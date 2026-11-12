@@ -115,7 +115,8 @@
 .ct :where(.ct-sheet) .ct-search:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
 /* The sheet's foot (SheetFrame foot): stuck to the sheet's bottom, the toast above the action bar, so
    neither ever covers the other (walk-through 2 N1). */
-.ct .ct-sheet-foot { position: sticky; bottom: 0; z-index: 3; }
+.ct .ct-sheet-foot { position: sticky; bottom: 0; z-index: 3; pointer-events: none; }
+.ct .ct-sheet-foot .ct-add-bar { pointer-events: auto; } /* the toast card takes clicks by its own rule; the empty area beside it passes them through */
 .ct .ct-add-bar {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
   padding: 12px 24px; background: var(--surface); border-top: 1px solid var(--border-strong);

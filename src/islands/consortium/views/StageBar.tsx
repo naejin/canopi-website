@@ -120,7 +120,7 @@ let popoverSeq = 0;
 // "What is a layer?" / "What are these stages?": a button with aria-expanded and aria-controls; the
 // text closes on Escape, on the button again or on a click outside. Opened under its button, then
 // moved sideways so it stays inside the viewport with the page's 16 px gutter (walk-through 2 N2: the
-// second pill's ran 466 px wide at 390).
+// second pill's ran 466 px wide at 390), and placed again when the window changes (a phone turned).
 const GUTTER = 16;
 export function Explain({ kind }: { kind: 'layer' | 'stage' }) {
   const [open, setOpen] = useState(false);
@@ -129,9 +129,15 @@ export function Explain({ kind }: { kind: 'layer' | 'stage' }) {
   useLayoutEffect(() => {
     const pop = open && ref.current?.querySelector<HTMLElement>('.ct-pop');
     if (!pop) return;
-    const vw = document.documentElement.clientWidth;
-    const r = pop.getBoundingClientRect();
-    pop.style.left = `${Math.max(GUTTER - r.left, Math.min(0, vw - GUTTER - r.right))}px`;
+    const place = () => {
+      pop.style.left = '0';
+      const vw = document.documentElement.clientWidth;
+      const r = pop.getBoundingClientRect();
+      pop.style.left = `${Math.max(GUTTER - r.left, Math.min(0, vw - GUTTER - r.right))}px`;
+    };
+    place();
+    addEventListener('resize', place);
+    return () => removeEventListener('resize', place);
   }, [open]);
   useEffect(() => {
     if (!open) return;
