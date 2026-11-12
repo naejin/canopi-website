@@ -383,9 +383,12 @@ let quiet = false;
 export const quietly = (fn: () => void): void => { quiet = true; try { fn(); } finally { quiet = false; } };
 // The newest restore in flight, for display only: Start's "reading" line, and the link's climate on
 // Start at once while the plants are read (first visit). Ended by that restore, or by the reader acting.
-const inFlight = signal<{ id: number; climate: ClimateZone | null } | null>(null);
+const inFlight = signal<{ id: number; climate: ClimateZone | null; from: 'link' | 'saved' } | null>(null);
 export const restoring = computed(() => inFlight.value !== null);
 export const pendingClimate = computed(() => (store.climate.value ? null : inFlight.value?.climate ?? null));
+// A share link's climate shown on Start while it opens (not the reader's own save): the reader's saved
+// site then proposes no card over it (location.tsx settle; seam review round 2, 2).
+export const pendingLinkClimate = computed(() => (inFlight.value?.from === 'link' ? pendingClimate.value : null));
 
 // Ends the restore in flight without applying it (a newer link that was refused).
 function cancelRestore(): void {
@@ -424,7 +427,7 @@ export async function restore(fragment: string, { from, src = null, keep = false
   const id = ++restoreGen;
   const began = actions;
   const current = (): boolean => id === restoreGen && actions === began;
-  inFlight.value = { id, climate: keep ? null : climate };
+  inFlight.value = { id, climate: keep ? null : climate, from };
   try {
     await waitForSource();
     if (!current()) return false;
@@ -577,9 +580,13 @@ function settleLocation(how: 'link' | 'saved', saved: string | null = null): Pro
 // open and a link pasted into the open tab (seam review 5): a link without `o=` leaves the reader's own
 // site in place (their checks are about their site; the link's plants are unchanged); only a link's
 // `o=` stands in for it, for that page.
+// Once at a time: a fresh link without `o=` asks at startup and again when it opens (seam review
+// round 2, 3), and the second ask while the first is looked up would read the tiles again.
+let ownLookup: Promise<void> | null = null;
 function ownLocation(): void {
+  if (ownLookup || store.location.peek()) return;
   const saved = memory.read(LOCATION_STORE);
-  if (saved && !store.location.peek()) void settleLocation('saved', saved);
+  if (saved) ownLookup = settleLocation('saved', saved).finally(() => { ownLookup = null; });
 }
 // Change site, Start over, Start empty: the "not read" note goes, and a link's location goes with
 // its consortium (review round 2, 4), its lookup dropped (round 3, 2: no line, hold or later write).

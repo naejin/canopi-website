@@ -137,9 +137,11 @@ export async function startHarness({ log = () => {}, dir } = {}) {
   // - webgl: false makes canvas.getContext('webgl'/'webgl2') return null (no WebGL: no map button);
   // - climateTiles: 404 | 'offline' fails every /data/climate/**.tif fetch (the reader fails: manual
   //   climate stays).
+  // - holdChunk: a lazy chunk's name ('pool' for /_astro/pool.<hash>.js): its requests wait until
+  //   page.releaseChunk() (a slow network on that chunk alone; page.chunkHeld() says one waits).
   // page.capturedDownloads() lists the files this page downloaded (BT-9 .canopi), via the CDP
   // download events; pdf(page) prints it to PDF (BT-8).
-  async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, island = null, wasmFile = null, storage = true, correction = null, geolocation = null, nominatim = null, mapTiles = null, webgl = true, climateTiles = null } = {}) {
+  async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, island = null, wasmFile = null, storage = true, correction = null, geolocation = null, nominatim = null, mapTiles = null, webgl = true, climateTiles = null, holdChunk = null } = {}) {
     const real = storage === 'cookies-blocked' ? await blockedBrowser() : null;
     // The blocked profile's setting applies to its default context (an incognito context of it
     // starts from defaults), so that page is opened there.
@@ -197,7 +199,11 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     }
     page.thirdParty = [];
     page.nominatim = [];
-    const p5 = !!(geolocation || nominatim || mapTiles || !webgl || climateTiles);
+    const p5 = !!(geolocation || nominatim || mapTiles || !webgl || climateTiles || holdChunk);
+    const held = [];
+    let releasedChunk = false;
+    page.chunkHeld = () => held.length > 0;
+    page.releaseChunk = () => { releasedChunk = true; for (const r of held.splice(0)) void r.continue(); };
 
     const dir = join(downloadRoot, real ? `blocked-${Date.now()}` : String(opened));
     if (!real) await browserSession.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: dir, browserContextId: context.id, eventsEnabled: true });
@@ -250,6 +256,7 @@ export async function startHarness({ log = () => {}, dir } = {}) {
         if (climateTiles && url.origin === site.url && /^\/data\/climate\/.+\.tif$/.test(url.pathname)) {
           return climateTiles === 'offline' ? request.abort('internetdisconnected') : request.respond({ status: Number(climateTiles), contentType: 'text/plain', body: 'Not found' });
         }
+        if (holdChunk && !releasedChunk && url.origin === site.url && new RegExp(`^/_astro/${holdChunk}\\.[\\w-]+\\.js$`).test(url.pathname)) { held.push(request); return; }
         if (p5 && url.origin !== site.url && /^https?:$/.test(url.protocol)) {
           page.thirdParty.push(url.href);
           return request.abort('blockedbyclient');

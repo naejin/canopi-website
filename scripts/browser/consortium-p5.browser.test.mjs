@@ -1091,6 +1091,77 @@ test('P5-27f (S5c seam review 6): if the plant-marks chunk fails, the range warn
     assert.match(await text(page, '[data-marks-unavailable]') ?? '', /Reload/);
   }
 });
+test('P5-27h (S5c seam review round 2, 1): while the range checks still load the empty matrix is not drawn, so no "Suggest a start" can be lost; once they load it suggests', async () => {
+  for (const width of [390, 1280]) {
+    const page = await tool({ width, hash: '#v=4&c=arid&a=&e=1', holdChunk: 'pool' });
+    assert.ok(await has(page, '.ct-mx-empty', 15_000), 'the empty matrix (needs the site)');
+    await atSite(page, 'seville');
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.siteClimate.value, { timeout: 10_000 }).then(() => true, () => false), 'the site is read');
+    assert.ok(page.chunkHeld(), 'the range checks are still loading');
+    assert.ok(await page.waitForFunction(() => !document.querySelector('.ct-mx-empty'), { timeout: 5000 }).then(() => true, () => false), `${width} px: no empty matrix, no Suggest to press, while they load`);
+    page.releaseChunk();
+    assert.ok(await has(page, '.ct-mx-empty .button-primary', 10_000), `${width} px: "Suggest a start" once they load`);
+    await page.click('.ct-mx-empty .button-primary');
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), `${width} px: a suggestion`);
+  }
+});
+// A saved consortium whose plant list read fails once, after the saved site is looked up.
+async function savedFailing() {
+  const q = (await temperateLink()).slice(1);
+  const page = await h.open('/consortium/', { mapTiles: 'stub' });
+  await page.evaluateOnNewDocument((save, rec) => {
+    if (!localStorage.getItem('canopi-consortium')) localStorage.setItem('canopi-consortium', save);
+    if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
+    let hook = true;
+    Object.defineProperty(window, '__ctTest', { configurable: true, get: () => hook, set: (v) => {
+      hook = v;
+      if (!v?.store) return;
+      v.store.source.subscribe((src) => {
+        if (!src || src.failing) return;
+        src.failing = true;
+        const read = src.interactions.bind(src);
+        let once = true; // the restore's read only; later reads (a card chosen) work
+        src.interactions = (z) => {
+          if (!once) return read(z);
+          once = false;
+          return new Promise((_, reject) => { v.store.location.subscribe((l) => { if (l?.lookup) setTimeout(() => reject(new Error('test: list unreadable')), 50); }); });
+        };
+      });
+    } });
+  }, JSON.stringify({ fragment: q, at: '2026-11-01', src: 'chosen' }), JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready(page);
+  return page;
+}
+test('P5-27i (S5b seam review round 2, 2): a saved consortium that fails to open still lets the reader\'s saved site propose its climate card', async () => {
+  const page = await savedFailing();
+  assert.ok(await ownSite(page), 'the saved site is read');
+  assert.ok(await page.waitForFunction(() => !window.__ctTest.store.climate.value && document.querySelector('[data-location-state]'), { timeout: 15_000 }).then(() => true, () => false));
+  await new Promise((r) => setTimeout(r, 500));
+  const { proposed, climate } = await page.evaluate(() => ({ proposed: window.__ctTest.store.proposedClimate.value, climate: window.__ctTest.store.climate.value }));
+  assert.equal(climate, null, 'the saved consortium did not open');
+  assert.ok(proposed, 'the saved site proposes its climate card');
+});
+test('P5-27j (S5b seam review round 2, 3): a fresh link without o= looks the reader\'s saved site up once', async () => {
+  const reads = async (hash) => {
+    const page = await h.open(`/consortium/${hash}`, { mapTiles: 'stub' });
+    await page.evaluateOnNewDocument((rec) => {
+      window.__ctTest = true;
+      if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
+      window.__ownReads = 0;
+      const get = Storage.prototype.getItem;
+      Storage.prototype.getItem = function (k) { if (k === 'canopi-location') window.__ownReads++; return get.call(this, k); };
+    }, JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await ready(page);
+    assert.ok(await ownSite(page));
+    await new Promise((r) => setTimeout(r, 1000));
+    return page.evaluate(() => window.__ownReads);
+  };
+  const plain = await reads('');
+  const linked = await reads(await temperateLink());
+  assert.equal(linked, plain, `the saved site is read as often as on a plain open (${plain}), not twice over`);
+});
 
 test('P5-27g (S5c walk-through F1): on phones a member\'s marks wrap or fit: with an annual in the matrix at 320 and 390 px, in en, fr and ja, nothing scrolls sideways', async () => {
   const [lat, lon] = SITES.lyon;

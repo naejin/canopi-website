@@ -48,8 +48,10 @@ const toLocation = () => {
 export const nothingFits = (): boolean => !!rangeRule.value?.none(pool.value, location.value);
 // The one rule for "can Suggest now" (seam review 1): why a Suggest for climate z would refuse, or null
 // when it can act. Start's "Suggest plants" and the empty matrix's "Suggest a start" both read it, and
-// show the reason (WhyNoSuggest) in place of a button that could only refuse; store.suggestMembers
-// refuses the same cases.
+// show the reason (WhyNoSuggest) in place of a button that could only refuse. These are the lasting
+// refusals of store.suggestMembers; its passing ones (the pool, a guest list or, with a site climate,
+// the range rule still being read) leave store.pool null, so the matrix and its empty notice are not
+// drawn, and Start's Suggest waits for them (memory.requestSuggest).
 export type SuggestBlock = 'noList' | 'needsSite' | 'needsRule' | 'nothingFits';
 export const suggestBlock = (z: ClimateZone): SuggestBlock | null =>
   !hasPlants(z, curated()) ? 'noList' : needsSite(z) ? 'needsSite' : needsRule(z) ? 'needsRule' : nothingFits() ? 'nothingFits' : null;

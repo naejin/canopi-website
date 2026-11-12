@@ -28,7 +28,7 @@ import { currentPosition, queryGeolocationPermission } from '../../../../lib/loc
 import { loadMapLibreModule } from '../../../../lib/location/maplibre.ts';
 import * as store from '../../store.ts';
 import { T, pageLang } from '../../strings.ts';
-import { chooseClimate, pendingClimate } from '../../memory.ts';
+import { chooseClimate, pendingClimate, pendingLinkClimate } from '../../memory.ts';
 import { keepLocation, locationCountry, readLocation, siteFound } from './keep.ts';
 import { line, liveLookup, looking, nextLookup, unlessReplaced, unread, type Line } from './load.ts';
 import { zoneLabel } from '../Start.tsx';
@@ -108,8 +108,10 @@ export async function settle(how: 'link' | 'saved', savedText: string | null): P
   // A link's location brings no country (its link's country stands).
   siteFound(() => {
     store.location.value = loc;
-    // Not under a link's climate still being restored either (seam review 5: a link without o= keeps the saved site).
-    if (how === 'saved' && !store.climate.peek() && !pendingClimate.peek()) store.proposedClimate.value = sc.suggested;
+    // Not under a share link's climate still opening either (seam review 5: a link without o= keeps the
+    // saved site); a saved consortium opening still gets it, so a save that fails to open leaves the
+    // card proposed (round 2, 2).
+    if (how === 'saved' && !store.climate.peek() && !pendingLinkClimate.peek()) store.proposedClimate.value = sc.suggested;
     line.value = { state: sc.state };
   }, how === 'saved' ? lookup.regions.isoA2 : undefined);
 }
