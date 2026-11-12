@@ -42,9 +42,26 @@ export const SLOTS = Object.freeze([
 /** Bands per climate tile (8 variables × 9 slots). */
 export const CLIMATE_BANDS = VARIABLES.length * SLOTS.length;
 
-/** Site-layer bands in band order (soil: src/soil.rs; regions: src/regions.rs). */
-export const SOIL_BANDS = Object.freeze(['ph_h2o', 'sand', 'clay', 'fill_distance']);
-export const REGION_BANDS = Object.freeze(['wgsrpd_l3', 'iso_a2']);
+/**
+ * Site-layer bands in band order, with their encoding (decoded = stored × scale + offset; soil:
+ * src/pipeline/soil.rs, regions: src/pipeline/regions.rs). The installer refuses a manifest whose
+ * bands differ in id, unit, scale or offset; the reader decodes soil values with these scales.
+ * Region bands hold letter codes (src/lib/climate/regions.ts), so their scale is 1.
+ */
+export const SOIL_BAND_SPECS = Object.freeze([
+  Object.freeze({ id: 'ph_h2o', unit: 'pH', scale: 0.1, offset: 0 }),
+  Object.freeze({ id: 'sand', unit: '%', scale: 0.1, offset: 0 }),
+  Object.freeze({ id: 'clay', unit: '%', scale: 0.1, offset: 0 }),
+  Object.freeze({ id: 'fill_distance', unit: 'cells', scale: 1, offset: 0 }),
+]);
+export const REGION_BAND_SPECS = Object.freeze([
+  Object.freeze({ id: 'wgsrpd_l3', unit: 'code', scale: 1, offset: 0 }),
+  Object.freeze({ id: 'iso_a2', unit: 'code', scale: 1, offset: 0 }),
+]);
+
+/** Site-layer band ids in band order (climate-index.json format 2 lists these). */
+export const SOIL_BANDS = Object.freeze(SOIL_BAND_SPECS.map((b) => b.id));
+export const REGION_BANDS = Object.freeze(REGION_BAND_SPECS.map((b) => b.id));
 
 /**
  * The three layers the site serves: the manifest's directory, cell size, cells per tile side and

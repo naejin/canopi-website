@@ -4,8 +4,16 @@
 // Soil layer values (canopi-climate src/soil.rs): SoilGrids 2.0 pH in water, sand and clay (0-30 cm)
 // and a fill distance, on the 0.05-degree layer grid; the USDA texture class derived at lookup.
 
-/** Band order of a soil tile. */
-export const SOIL_BAND = { ph: 0, sand: 1, clay: 2, fill: 3 } as const;
+import { SOIL_BAND_SPECS } from './model.js';
+
+const bandOf = (id: string): number => {
+  const i = SOIL_BAND_SPECS.findIndex((b) => b.id === id);
+  if (i < 0) throw new Error(`model.js has no soil band ${id}`);
+  return i;
+};
+
+/** Band order of a soil tile (from model.js SOIL_BAND_SPECS, the one owner of the order). */
+export const SOIL_BAND = { ph: bandOf('ph_h2o'), sand: bandOf('sand'), clay: bandOf('clay'), fill: bandOf('fill_distance') } as const;
 
 /** Depth of the stored values. */
 export const SOIL_DEPTH = '0-30 cm';

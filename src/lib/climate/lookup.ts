@@ -10,7 +10,7 @@
 // - regions: each code (WGSRPD level 3, ISO alpha-2) from the nearest cell having it.
 // `get` gives a decoded tile by name, or null when the layer has no tile there (no data).
 
-import { LAYERS, NODATA, SLOTS, VARIABLES } from './model.js';
+import { LAYERS, NODATA, SLOTS, SOIL_BAND_SPECS, VARIABLES } from './model.js';
 import { cellOf, centerLat, centerLon, indexInTile, round6, roundHalfAway, tileName, tileOf, window, type Cell, type GridSpec } from './grid.ts';
 import { koppenSymbol, temperatureMargin, type KoppenSymbol } from './koppen.ts';
 import { SOIL_BAND, SOIL_DEPTH, textureClass, type TextureId } from './soil.ts';
@@ -165,7 +165,9 @@ export function soilAt(get: TileGetter, lat: number, lon: number, radius = DEFAU
   const f = nearest(LAYER_GRID, get, lat, lon, radius, hasSoil);
   if (!f) return null;
   const at = (b: number) => f.raster.data[f.index * f.raster.bands + b];
-  const [ph, sand, clay] = [at(SOIL_BAND.ph) / 10, at(SOIL_BAND.sand) / 10, at(SOIL_BAND.clay) / 10];
+  // hasSoil guarantees pH, sand and clay are stored, so each decodes to a number.
+  const value = (b: number) => decodeValue(at(b), SOIL_BAND_SPECS[b].scale, SOIL_BAND_SPECS[b].offset) as number;
+  const [ph, sand, clay] = [value(SOIL_BAND.ph), value(SOIL_BAND.sand), value(SOIL_BAND.clay)];
   const fill = Math.min(Math.max(at(SOIL_BAND.fill), 0), 255);
   return {
     ...where(LAYER_GRID, f),
