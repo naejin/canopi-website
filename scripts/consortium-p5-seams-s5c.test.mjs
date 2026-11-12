@@ -296,7 +296,7 @@ const SITES = {
 // lyon 349, dakar 259, lima 253, hanoi 252, montreal 145, nairobi 182, perth 131, seville 117, oslo 238,
 // manaus 198, phoenix 80, brisbane 290, yakutsk 59, chicago 239). Nairobi loses its too-cool tropical
 // trees (cacao, coconut); the hot sites keep more under the heat limit.
-// Export r-b958a4239cc68f73 (grown_as_annual crops are annuals; annuals' summer warmth; a disputed (weak)
+// Export r-b958a4239cc68f73 (the same rows on r-60ea417b5a15c3aa) (grown_as_annual crops are annuals; annuals' summer warmth; a disputed (weak)
 // row is a bound as any other, coordinator decision 2026-11-12; with the weak cap it was dakar 313,
 // lima 320, hanoi 330, montreal 191, perth 182, oslo 237, brisbane 367, yakutsk 85, chicago 256; on
 // r-01102782139409b5: lyon 349, dakar 263, lima 273, hanoi 286, montreal 177, nairobi 163, perth 176,

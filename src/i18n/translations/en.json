@@ -904,7 +904,7 @@
   "privacy.contact.title": "The contact form",
   "privacy.contact.body": "The contact form sends your name, your email address, your message and the page’s language to Canopi by email: Cloudflare delivers it to Canopi’s mailbox at Gmail (Google). They are used only to reply to you, and the site keeps no copy.",
   "privacy.correction.title": "Suggesting a correction",
-  "privacy.correction.body": "In the consortium tool, the correction form sends the plant, the value it shows, your suggestion and your note, the data release, the climate and the page’s language to Canopi by email, the same way. Before sending, you agree that your suggestion may be published in Canopi’s plant data under CC BY-SA 4.0.",
+  "privacy.correction.body": "In the consortium tool, the correction form sends the plant, the value it shows, your suggestion and your note, the data release, the list the plant is placed from, the climate you chose and the page’s language to Canopi by email, the same way. Before sending, you agree that your suggestion may be published in Canopi’s plant data under CC BY-SA 4.0.",
   "privacy.correction.email": "Your email address is optional: if you give it, it is used only to reply to you and is never published.",
   "privacy.donate.title": "Donations",
   "privacy.donate.body": "The donation form belongs to HelloAsso, a French payment platform for associations. It loads only when you open the donation window, and what you enter there goes to HelloAsso, under its own privacy policy.",

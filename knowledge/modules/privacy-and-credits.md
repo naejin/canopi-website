@@ -2,7 +2,7 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T13:14:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T14:21:18Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-12T07:47:19Z }
 sources:
@@ -44,8 +44,8 @@ sources:
   - id: correction-mjs
     resource: ../../src/lib/correction.mjs
     title: src/lib/correction.mjs
-    digest: sha256:ff117ab780815384
-    last_modified: 2026-11-11T05:23:20Z
+    digest: sha256:b9d9bb0c78ee6522
+    last_modified: 2026-11-12T14:20:43Z
   - id: memory-ts
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
@@ -97,6 +97,7 @@ The `/privacy/` page in 11 locales (owner answer 4, decision "P5 owner answers",
 - Location (S5b, per the P5 design check §B): asked only on click, used on the device to read the climate and the country (`location.tsx` `locateNow`: `lookup.regions.isoA2`) and saved only on the device; tiles are static files from this site, whole tiles of 100 × 0.1° (climate) and 200 × 0.05° (soil, regions), about 1,000 km. The page says a download does not reveal the *precise* point, not the point: where the point's own cell has no value (sea, ice, a built-up soil gap) within 2 cells of a tile edge, `lookupSite` (`src/lib/climate/index.ts`) also loads the neighbouring tile, which narrows the place to a strip some 10–20 km wide. With the tick a link holds the 0.1° cell centre (`o=`; about 11 km north to south, the page and `consortium.share.locationNote` say "about 11 km") and the country the location gave (`memory.ts` `shareState` writes a location's country only with the tick; `state.ts` `encodeLink` `k=`). Nominatim on Enter; OpenFreeMap only once the map opens.
 - `consortium-p5-seams-s5f.test.mjs` checks these claims in all 11 locales (the cell size against `CLIMATE_GRID`, the country in the link and device lines, "precise point" in the tiles line); ho-misc's seam check (2026-11-11) fixed "about 10 km", the missing country and the stronger "do not reveal the point".
 - Contact and corrections go by Cloudflare Email Routing to the association's Gmail mailbox; the address is never written in a page.
+- `privacy.correction.body` lists what the correction form sends, including the climate the reader chose when the plant is placed from another climate's list (`site_climate`, P5 pre-push item B).
 
 # Gotchas
 - A scoped `<style>` in DataSourcesPage would add `data-astro-cid-*` to every element and break the built-site check's exact TRY citation markup: the tool-credit styles are `is:global` under `.tool-credits`.

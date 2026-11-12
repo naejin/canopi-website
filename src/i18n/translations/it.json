@@ -904,7 +904,7 @@
   "privacy.contact.title": "Il modulo di contatto",
   "privacy.contact.body": "Il modulo di contatto invia il tuo nome, il tuo indirizzo email, il tuo messaggio e la lingua della pagina a Canopi via email: Cloudflare lo consegna alla casella di Canopi su Gmail (Google). Servono solo per risponderti, e il sito non ne conserva copia.",
   "privacy.correction.title": "Suggerire una correzione",
-  "privacy.correction.body": "Nello strumento per i consorzi, il modulo di correzione invia a Canopi via email, allo stesso modo, la pianta, il valore mostrato, il tuo suggerimento e la tua nota, la versione dei dati, il clima e la lingua della pagina. Prima dell’invio accetti che il tuo suggerimento possa essere pubblicato nei dati sulle piante di Canopi con licenza CC BY-SA 4.0.",
+  "privacy.correction.body": "Nello strumento per i consorzi, il modulo di correzione invia a Canopi via email, allo stesso modo, la pianta, il valore mostrato, il tuo suggerimento e la tua nota, la versione dei dati, l’elenco secondo cui la pianta è collocata, il clima che hai scelto e la lingua della pagina. Prima dell’invio accetti che il tuo suggerimento possa essere pubblicato nei dati sulle piante di Canopi con licenza CC BY-SA 4.0.",
   "privacy.correction.email": "Il tuo indirizzo email è facoltativo: se lo indichi, serve solo per risponderti e non viene mai pubblicato.",
   "privacy.donate.title": "Donazioni",
   "privacy.donate.body": "Il modulo di donazione è di HelloAsso, una piattaforma francese di pagamento per le associazioni. Si carica solo quando apri la finestra delle donazioni, e ciò che vi inserisci va a HelloAsso, secondo la sua informativa sulla privacy.",

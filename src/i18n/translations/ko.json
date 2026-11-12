@@ -904,7 +904,7 @@
   "privacy.contact.title": "문의 양식",
   "privacy.contact.body": "문의 양식은 이름, 이메일 주소, 메시지, 페이지 언어를 이메일로 Canopi에 보냅니다. Cloudflare가 이를 Gmail(Google)에 있는 Canopi 메일함으로 전달합니다. 이 정보는 답장에만 쓰이며 사이트에는 사본이 남지 않습니다.",
   "privacy.correction.title": "수정 제안",
-  "privacy.correction.body": "컨소시엄 도구의 수정 양식은 식물, 표시된 값, 제안과 메모, 데이터 버전, 기후, 페이지 언어를 같은 방식으로 이메일로 Canopi에 보냅니다. 보내기 전에, 제안이 CC BY-SA 4.0 라이선스로 Canopi 식물 데이터에 공개될 수 있다는 데 동의하게 됩니다.",
+  "privacy.correction.body": "컨소시엄 도구의 수정 양식은 식물, 표시된 값, 제안과 메모, 데이터 버전, 식물 배치의 기준이 된 목록, 선택한 기후, 페이지 언어를 같은 방식으로 이메일로 Canopi에 보냅니다. 보내기 전에, 제안이 CC BY-SA 4.0 라이선스로 Canopi 식물 데이터에 공개될 수 있다는 데 동의하게 됩니다.",
   "privacy.correction.email": "이메일 주소는 선택 사항입니다. 입력하면 답장에만 쓰이고 절대 공개되지 않습니다.",
   "privacy.donate.title": "후원",
   "privacy.donate.body": "후원 양식은 협회를 위한 프랑스 결제 플랫폼 HelloAsso의 것입니다. 후원 창을 열 때에만 불러오며, 거기에 입력한 내용은 HelloAsso의 개인정보 처리방침에 따라 HelloAsso로 전송됩니다.",

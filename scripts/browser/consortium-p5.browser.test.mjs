@@ -882,8 +882,8 @@ test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from t
   assert.ok(await has(page, '[data-mark="estimate"]', 10_000));
 });
 
-test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a plant\'s Details reads the list it was placed from: its reasons, with a note naming that list', async () => {
-  const page = await tool();
+test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a plant\'s Details reads the list it was placed from: its reasons, with a note naming that list; a correction sends both climates', async () => {
+  const page = await tool({ correction: 'ok' });
   await atSite(page, 'lyon');
   const picked = await page.evaluate(async () => {
     const { store } = window.__ctTest;
@@ -907,6 +907,20 @@ test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a 
   const note = await text(page, `.ct-details [data-why-borrowed="${picked.from.toLowerCase()}"]`);
   assert.match(note ?? '', new RegExp(`placed as on the ${picked.from} list`, 'i'), 'the Why section says the reasons come from that list');
   assert.match(await text(page, '#ct-d-place') ?? '', new RegExp(picked.from), '"Placed for" names the list the placement is from, never claims the visitor\'s climate');
+  // A correction made here names both: the list the placement comes from as `climate`, the visitor's
+  // own climate as `site_climate`, and that the placement is an estimate (pre-push item B; the payload
+  // is tested here, since Correction.tsx builds it inline to stay in the island's 62 KB budget).
+  await page.locator(aria('button', 'Suggest a correction')).click();
+  await page.waitForSelector('dialog select option[value]:not([value=""])');
+  await page.select('dialog select', await page.evaluate(() => document.querySelector('dialog select option:not([value=""])').value));
+  await page.locator('#ct-corr-proposed').fill('A suggested value');
+  await page.locator('#ct-corr-consent').click();
+  await page.locator(aria('button', 'Send suggestion')).click();
+  assert.ok(await page.waitForFunction(() => /^Thank you/.test(document.querySelector('.ct-corr-sent p')?.textContent ?? ''), { timeout: 10_000 }).then(() => true, () => false), 'sent');
+  const sent = JSON.parse(page.correctionPosts[0]);
+  assert.equal(sent.climate, picked.from, 'climate: the list the placement comes from');
+  assert.equal(sent.site_climate, 'Subtropical', 'site_climate: the visitor\'s own climate');
+  assert.equal(sent.placement_estimate, true, 'the placement is an estimate');
 });
 
 test('P5-26 (S5c borrowed list from a link): #v=4&c=subtropical without o= opens with borrowed plants marked "estimate", no location needed', async () => {

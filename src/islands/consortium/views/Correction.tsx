@@ -1,8 +1,9 @@
 /** @jsxImportSource preact */
 // "Suggest a correction" in the plant dialog (stream S3; ported from v1 correction.js): a short form,
 // prefilled with the plant, the facts the dialog shows (one picked), the value shown now, the data
-// release, the climate and the page language. It posts JSON to /api/correction
-// (src/lib/correction.mjs, whose contract and tests are unchanged), which mails the owner; nothing is
+// release, the climate list the placement comes from, the visitor's own climate and whether the
+// placement is an estimate, and the page language. It posts JSON to /api/correction
+// (src/lib/correction.mjs; scripts/correction.test.mjs), which mails the owner; nothing is
 // kept on the server. Offline (design check §5): "Not sent: you seem offline. Your text is kept." with
 // Try again. What the reader writes is kept per plant (Details.tsx `drafts`) until it is sent.
 // Words: the correction.* family (S3 block of the locale files), passed by ConsortiumPage.astro.
@@ -10,6 +11,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { pageLang, T } from '../strings.ts';
 import { LIMITS } from '../../../lib/correction.mjs';
 import { EMAIL_RE } from '../../../lib/contact.mjs';
+import { climate as siteClimate, taxonOf } from '../store.ts';
 import { drafts, type CorrectionDraft, type CorrectionField } from './Details.tsx';
 
 const ENDPOINT = '/api/correction';
@@ -94,7 +96,9 @@ export default function Correction({ fields, plantId, plantName, plantLabel, rel
     const lang = pageLang();
     const res = await post({
       plant_id: plantId, plant_name: plantName, field: form.field, current_value: current?.raw ?? null, current_display: current?.current ?? '',
-      proposed_value: form.proposed.trim(), note: form.note.trim(), release_id: release, climate, locale: lang,
+      // `climate` is the list the placement comes from (Details' placementZone); the visitor's own
+      // climate goes apart, with whether the placement was borrowed (correction.mjs: optional).
+      proposed_value: form.proposed.trim(), note: form.note.trim(), release_id: release, climate, site_climate: siteClimate.value, placement_estimate: !!taxonOf(plantId)?.estimate, locale: lang,
       consent: form.consent, email: form.email.trim(), website: form.website,
     });
     if (res.status === 'sent') drafts.delete(plantId);

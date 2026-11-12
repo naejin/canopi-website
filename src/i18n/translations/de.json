@@ -904,7 +904,7 @@
   "privacy.contact.title": "Das Kontaktformular",
   "privacy.contact.body": "Das Kontaktformular schickt deinen Namen, deine E-Mail-Adresse, deine Nachricht und die Sprache der Seite per E-Mail an Canopi: Cloudflare stellt sie im Postfach von Canopi bei Gmail (Google) zu. Sie dienen nur dazu, dir zu antworten, und die Website behält keine Kopie.",
   "privacy.correction.title": "Eine Korrektur vorschlagen",
-  "privacy.correction.body": "Im Konsortium-Werkzeug schickt das Korrekturformular auf demselben Weg die Pflanze, den angezeigten Wert, deinen Vorschlag und deine Notiz, die Datenversion, das Klima und die Sprache der Seite per E-Mail an Canopi. Vor dem Absenden stimmst du zu, dass dein Vorschlag in den Pflanzendaten von Canopi unter CC BY-SA 4.0 veröffentlicht werden darf.",
+  "privacy.correction.body": "Im Konsortium-Werkzeug schickt das Korrekturformular auf demselben Weg die Pflanze, den angezeigten Wert, deinen Vorschlag und deine Notiz, die Datenversion, die Liste, nach der die Pflanze eingeordnet ist, das von dir gewählte Klima und die Sprache der Seite per E-Mail an Canopi. Vor dem Absenden stimmst du zu, dass dein Vorschlag in den Pflanzendaten von Canopi unter CC BY-SA 4.0 veröffentlicht werden darf.",
   "privacy.correction.email": "Deine E-Mail-Adresse ist freiwillig: Wenn du sie angibst, dient sie nur der Antwort und wird nie veröffentlicht.",
   "privacy.donate.title": "Spenden",
   "privacy.donate.body": "Das Spendenformular stammt von HelloAsso, einer französischen Zahlungsplattform für Vereine. Es lädt erst, wenn du das Spendenfenster öffnest, und was du dort eingibst, geht an HelloAsso, nach dessen eigener Datenschutzerklärung.",
