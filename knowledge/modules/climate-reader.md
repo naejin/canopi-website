@@ -2,15 +2,15 @@
 type: Module
 title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T08:38:32Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T13:14:56Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-12T07:47:20Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:1178c3eff4498001
-    last_modified: 2026-11-11T09:09:11Z
+    digest: sha256:9fffb42bb87f69b5
+    last_modified: 2026-11-12T12:34:53Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -70,12 +70,12 @@ sources:
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
     digest: sha256:e4f1d144fc4ece03
-    last_modified: 2026-11-12T08:15:12Z
+    last_modified: 2026-11-12T09:10:58Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:fd765149314335e3
-    last_modified: 2026-11-12T07:59:10Z
+    digest: sha256:a59f897c65b9c80a
+    last_modified: 2026-11-12T12:34:53Z
 enforced_by:
   - scripts/climate-reader.test.mjs
   - scripts/install-climate.test.mjs
@@ -96,7 +96,7 @@ P5 stream S5b's data half: a TypeScript reader for the canopi-climate v0.2 grid 
 | `koppen.ts`, `soil.ts`, `regions.ts` | Köppen symbols and the temperature margin in f32 (`Math.fround`), USDA texture classes, base-26 region codes |
 | `index.ts` | `siteIndex(json)`, `createTileSource({ index, fetchBytes?, maxTiles = 4 })`, `lookupSite(lat, lon, source)` |
 
-`lookupSite` fetches the point's tile of each layer in parallel (3 requests), then neighbours only when the own cell does not answer and lies within 2 cells of an edge. A tile absent from the index is never requested (no data; a miss would run the Worker). A listed tile that fails rejects with `ClimateTileError` (layer, tile); an invalid coordinate rejects with `RangeError` before any fetch. Result: `{ lat, lon, tile, climate | null, soil | null, regions, tilesRead, crossTile }`; `climate.periods[slot]` has `koppen`, `koppenCode`, `koppenTemperatureMarginC`, `tminColdC`, `tmaxWarmC`, `tmeanColdC`, `tmeanWarmC`, `precipMm`, `aridityIndex | null`, `dryMonths`; `soil` has `phH2o`, `sandPct`, `clayPct`, `siltPct`, `texture`, `filled`, `fillDistanceCells`; `regions` always exists, codes null offshore.
+`lookupSite` fetches the point's tile of each layer in parallel (3 requests), then neighbours only when the own cell does not answer and lies within 2 cells of an edge. A tile absent from the index is never requested (no data; a miss would run the Worker). A listed tile that fails rejects with `ClimateTileError` (layer, tile); an invalid coordinate rejects with `RangeError` before any fetch. `lookupSite(lat, lon, source, radius, { soil: false })` reads no soil tile and answers `soil: null`; the consortium location step passes it until P5.2 (soil likely) reads soil (pre-push review 3: each lookup had downloaded about 37 KB of soil nothing used); the installer, `#ct-climate` and `check-built-site` still carry the soil layer. Result: `{ lat, lon, tile, climate | null, soil | null, regions, tilesRead, crossTile }`; `climate.periods[slot]` has `koppen`, `koppenCode`, `koppenTemperatureMarginC`, `tminColdC`, `tmaxWarmC`, `tmeanColdC`, `tmeanWarmC`, `precipMm`, `aridityIndex | null`, `dryMonths`; `soil` has `phH2o`, `sandPct`, `clayPct`, `siltPct`, `texture`, `filled`, `fillDistanceCells`; `regions` always exists, codes null offshore.
 
 # Installer and served files
 

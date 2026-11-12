@@ -2,7 +2,7 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T07:47:11Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T13:14:57Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-12T11:45:43Z }
 sources:
@@ -14,8 +14,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:f63c0943d0993101
-    last_modified: 2026-11-12T07:59:10Z
+    digest: sha256:1245a7724169cc02
+    last_modified: 2026-11-12T12:34:53Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
@@ -39,8 +39,8 @@ sources:
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
-    digest: sha256:233e0d11b5b119e1
-    last_modified: 2026-11-11T18:00:01Z
+    digest: sha256:ba4588c719d57559
+    last_modified: 2026-11-12T12:35:39Z
   - id: place-search-ts
     resource: ../../src/lib/location/place-search.ts
     title: src/lib/location/place-search.ts
@@ -84,8 +84,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
-    digest: sha256:b416ca11130b3eb3
-    last_modified: 2026-11-12T06:25:28Z
+    digest: sha256:8d2f3454ffb68c6a
+    last_modified: 2026-11-12T12:34:53Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -124,6 +124,7 @@ a climate card and a country, and the reader confirms (owner answers 1, 4, 5). P
 - **Device only**: `localStorage['canopi-location']` `{lat, lon, source, label?}`; looked up again after the plant list opens (`ownLocation` in memory.ts) unless the link opened carries `o=`. One rule for a fresh open and a link pasted into the open tab (seam review 5; coordinator decision row to record): a link without `o=` leaves the reader's own saved site in place (their checks are about their site; the link's plants are unchanged); only a link's `o=` stands in for it, for that page. `ownLocation` runs one lookup at a time (a fresh link without `o=` asks at startup and again when it opens: seam review round 2, 3; P5-27j). A saved site read while a share link's climate is still opening proposes no card (`pendingLinkClimate`); under a saved consortium opening it still does, and the restore's batch clears it when the save opens (only a proposal from that lookup, `store.proposedFromSave`; one the reader's own locating made stays: round 4, 2, P5-27p), so only a save that fails to open leaves the card proposed (round 2, 2; round 3, 1; P5-27i, P5-27k). The line's "Use …" never shows over a climate still opening (`pendingClimate`).
 - **Links**: `o=<lat>,<lon>` (the climate cell centre, ≤ 3 decimals, literal comma, just before `e=1`) and the location country only when the reader ticks Share's `input[data-share-location]`. A link with `o=` sets `store.location` (source `link`, labelled "from the shared link, approximate") in the restore batch; the link's climate, answers and country win. It lives for that page only (coordinator decision, review round 1): never saved over the reader's `canopi-location`, never a country, and Forget leaves the reader's own saved location. A link without `o=` (hashchange) clears a link-sourced location and its line and looks the reader's own saved site up again (`ownLocation`), and so do Change site, Start over and Start empty (`dropLinkLocation` → `letGo(true)`: the link's lookup is dropped too, so no loading line stays, no later "failed" is written and Suggest is not held; review rounds 2, 4 and 3, 2; P5-13c, 13d). Those three, Forget and a failed read also clear the "not read" note; a later plain visit restores the reader's own saved site.
 - **Suggest waits for a lookup**: `memory.requestSuggest` with `lookups` > 0 sets `pendingSuggest` and runs once they settle, so the suggestion's range filter (S5c) sees the site; the result line meanwhile reads "Reading the climate of your site…" (review round 1 addendum, spec P5-1d). A saved or link location holds one lookup from the chunk load through its settle (`lookingThrough`, no gap). The wait is capped at 10 s per press (`waited`, its timer cleared by the next press or when Suggest runs; review round 3, 1): Suggest then runs without the site and `[data-location-unread]` says the climate was not read (P5-1f).
+- **No soil read** (pre-push review 3): location.tsx's `read` calls `lookupSite(…, DEFAULT_RADIUS, { soil: false })`, so a lookup fetches climate and regions tiles only (P5-1 checks it); P5.2's soil likely restores the soil read.
 - **Timeouts** (review round 2, 3): a tile read unanswered in 15 s (`READ_TIMEOUT_MS`, a race in location.tsx's `read`; the climate reader takes no signal) fails like a failed read; a geocoder request is aborted after 15 s (`GEOCODER_TIMEOUT_MS`, transport.ts) and thrown as an error, not an AbortError, so the search shows "offline"; `currentPosition(options, permission)`: the browser's own timeout does not run while its permission prompt waits, so a permission granted before the press gets the browser's 15 s plus a 5 s backstop, and anything else one 45 s cap (`PROMPT_CAP_MS`) over prompt and fix, since a one-time Allow fires no `change` event in some browsers (review round 4, 3).
 - **Keyboard on the cards** (Start.tsx, review round 2, 5): with a card proposed and none checked, only the proposed radio is in the tab order; arrows move the focus without checking; Space, Enter or a click confirms (P5-10b).
 - **Map dialog**: Close, "Use the map centre" and Escape all close the native dialog, so focus returns to the map button; the centre pin (ink cross, ochre point) and the dialog's styles are in `src/styles/consortium/p5/s5b.css`.
@@ -134,7 +135,7 @@ Location chunk 11.0 KB gzip; MapLibre 298.8 KB with worker and CSS; first run 40
 
 ## Copied from canopi
 
-At canopi `b039f14ee612c6090c91d44b9968357cbdd1d33e` (AGPL header and a "copied from canopi" line in each): `desktop/web/src/` `…/registry.ts` (GeoLibre MIT header kept, `email` dropped, `language` added), `place-search.ts` (cache added), `transport.browser.ts`, `my-location/geolocation.ts` (two functions, plus `currentPosition`), `maplibre/loader.ts`.
+At canopi `b039f14ee612c6090c91d44b9968357cbdd1d33e` (AGPL header and a "copied from canopi" line in each): `desktop/web/src/` `…/registry.ts` (GeoLibre MIT header kept, `email` dropped, `language` added, the never-selected Pelias provider and its `api.geocode.earth` endpoint removed at the pre-push review (4), so Nominatim is the only geocoder), `place-search.ts` (cache added), `transport.browser.ts`, `my-location/geolocation.ts` (two functions, plus `currentPosition`), `maplibre/loader.ts`.
 
 ## Tests
 

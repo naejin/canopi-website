@@ -8,13 +8,13 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T10:14:03Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T11:45:45Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T13:15:07Z }
 sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:d1716f0d9715b6ca
-    last_modified: 2026-11-12T11:43:06Z
+    digest: sha256:650069d4b0bf23f1
+    last_modified: 2026-11-12T12:35:39Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -23,8 +23,8 @@ sources:
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
-    digest: sha256:233e0d11b5b119e1
-    last_modified: 2026-11-11T18:00:01Z
+    digest: sha256:ba4588c719d57559
+    last_modified: 2026-11-12T12:35:39Z
   - id: maplibre-ts
     resource: ../../src/lib/location/maplibre.ts
     title: src/lib/location/maplibre.ts
