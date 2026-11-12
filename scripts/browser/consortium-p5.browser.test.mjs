@@ -73,6 +73,12 @@ async function locationState(page, timeout = 15_000) {
   await page.waitForSelector('[data-location-state]:not([data-location-state="loading"])', { timeout }).catch(() => {});
   return page.$eval('[data-location-state]', (e) => e.getAttribute('data-location-state')).catch(() => null);
 }
+// The Add sheet, open and focused: SheetFrame calls showModal() and focuses its heading in an effect,
+// which Preact runs after the next frame, so the sheet's input is in the page inside a closed (not
+// shown) dialog first (measured: there at 13 ms, open with the heading focused at 64 ms, more under
+// load). Typing that starts in that gap loses the keys sent before the heading takes the focus, and
+// the row looked for never shows (P5-27q "Good-King-Henry in Add with its cool-season tag").
+const ADD_OPEN = 'dialog.ct-add[open] .ct-search input';
 const text = (page, sel) => page.$eval(sel, (e) => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => null);
 const checkedCard = (page) => page.$eval('input[name="ct-climate"]:checked', (e) => e.value).catch(() => null);
 // The card a location suggests: shown as proposed (review round 1, 6), never as a checked radio.
@@ -714,7 +720,7 @@ test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant 
   assert.ok(await has(page, '[data-mark]', 10_000), 'the marks are loaded (Seville has plants near the edge)');
   assert.equal(await page.$('[data-mark="outside"]'), null, 'no suggested plant is outside its range');
   await page.evaluate(() => window.__ctTest.store.openSheet('add'));
-  assert.ok(await has(page, '.ct-add .ct-rows li', 10_000), 'the Add list');
+  assert.ok(await has(page, ADD_OPEN, 10_000) && await has(page, '.ct-add .ct-rows li', 10_000), 'the Add list');
   await page.click('.ct-add-showall').catch(() => {});
   assert.equal(await page.$('.ct-add [data-mark="outside"]'), null, 'Add without a query lists no plant outside its range');
   await page.type('.ct-add .ct-search input', outside);
@@ -850,7 +856,7 @@ test('P5-16 (S5c outside-range warning on add): typed in Add, a plant whose rang
   assert.ok(outside, 'a Mediterranean plant outside its range at Seville');
   await choose(page, 'Mediterranean');
   await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; window.__ctTest.store.openSheet('add'); });
-  assert.ok(await has(page, '.ct-add .ct-search input', 10_000), 'the Add sheet');
+  assert.ok(await has(page, ADD_OPEN, 10_000), 'the Add sheet');
   await page.type('.ct-add .ct-search input', outside);
   const row = `.ct-add .ct-rows li:has(.ct-sci)`;
   assert.ok(await page.waitForFunction((sel, name) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === name && li.querySelector('[data-mark="outside"]')), { timeout: 10_000 }, row, outside).then(() => true, () => false), `${outside}'s row shows "outside"`);
@@ -1329,7 +1335,7 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
     await atSite(page, 'seville');
     await choose(page, 'Temperate');
     await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; window.__ctTest.store.openSheet('add'); });
-    assert.ok(await has(page, '.ct-add .ct-search input', 10_000), 'the Add sheet');
+    assert.ok(await has(page, ADD_OPEN, 10_000), 'the Add sheet');
     await page.type('.ct-add .ct-search input', 'Chenopodium bonus-henricus');
     const row = '.ct-add .ct-rows li';
     assert.ok(await page.waitForFunction((sel) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === 'Chenopodium bonus-henricus' && li.querySelector('[data-mark="season"]')), { timeout: 10_000 }, row).then(() => true, () => false), `${width} px: Good-King-Henry in Add with its cool-season tag`);
@@ -1367,7 +1373,7 @@ test('P5-27r (S5c climate ranges, room advisory): in a small garden no cell is b
     await page.evaluate(() => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, room: 'small' }; store.view.value = 'matrix'; });
     assert.equal(await page.evaluate(() => window.__ctTest.store.matrix.value.rows.flatMap((r) => r.cells).some((c) => c.empty === 'misfit')), false, `${width} px: no cell "can't be filled"`);
     await page.evaluate(() => window.__ctTest.store.openSheet('add'));
-    assert.ok(await has(page, '.ct-add .ct-search input', 10_000), 'the Add sheet');
+    assert.ok(await has(page, ADD_OPEN, 10_000), 'the Add sheet');
     // A miss says what the sheet showed then.
     const sheet = () => page.evaluate(() => JSON.stringify({ query: document.querySelector('.ct-add .ct-search input')?.value, focus: document.activeElement?.outerHTML.slice(0, 80),
       bar: document.querySelector('.ct-add-bar .button-primary')?.outerHTML, dialogs: [...document.querySelectorAll('dialog[open]')].map((d) => d.className) }));
