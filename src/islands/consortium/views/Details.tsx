@@ -526,7 +526,7 @@ function PlantDetails({ id }: { id: PlantId }) {
         <section class="ct-correct" aria-labelledby="ct-corr-title">
           <h3 id="ct-corr-title">{T('correction.title')}</h3>
           {correcting
-            ? <Lazy load={loadCorrection} props={{ fields, plantId: id, plantName: t.canonical_name, plantLabel: nameOf(t), release, climate: zone, climateLabel: zoneName(zone), onCancel: () => setCorrecting(false), focusFirst: byReader.current }} />
+            ? <Lazy load={loadCorrection} props={{ fields, plantId: id, plantName: t.canonical_name, plantLabel: nameOf(t), release, climate: zone, climateLabel: zoneName(zone), siteClimate: store.climate.value, siteLabel: store.climate.value ? zoneName(store.climate.value) : null, estimate: !!t.estimate, onCancel: () => setCorrecting(false), focusFirst: byReader.current }} />
             : <>
                 <p class="ct-muted">{T('correction.lede')}</p>
                 <p><button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => { byReader.current = true; setCorrecting(true); }}>{T('correction.open')}</button></p>

@@ -85,7 +85,7 @@ test('the JSON block is the report without personal data: no email, no IP, no na
   assert.match(text, /Reply to this email to answer the reporter\./);
   // A person reads the same values above the block.
   assert.match(text, /^Plant: Malus domestica\nField: height_m\nShown now: 2–10 m\nCatalog value: \{"min":2,"max":10\}\nProposed: 3–8 m\nNote:\n {2}\| Standard rootstock;\n {2}\| see my orchard\n/);
-  assert.match(text, /Release: r-559dd6ac9aef21e1\nClimate: Temperate\nPage language: fr\n/);
+  assert.match(text, /Release: r-559dd6ac9aef21e1\nClimate: Temperate\nSite climate: \(not sent\)\nPage language: fr\n/);
 });
 
 test('with no email there is no reply-to, and the body says so', async () => {
@@ -296,4 +296,71 @@ test('the Worker route passes the request and env to the handler, as contact doe
   assert.match(route, /export const prerender = false;/);
   assert.match(route, /export const POST: APIRoute = \(\{ request \}\) => handleCorrection\(request, env\);/);
   assert.match(route, /from 'cloudflare:workers'/);
+});
+
+// Corrections on a borrowed climate (P5 pre-push): Details sends the list the placement comes from
+// (placementZone) as `climate`, and the visitor's own climate apart, as `site_climate`, with
+// `placement_estimate` saying whether that placement was borrowed. The reviewer reads both in the
+// mail's readable part. The JSON block keeps canopi-correction-report/1's keys exactly (canopi-data's
+// importer, correction_reports.py BLOCK_KEYS, refuses any other), so the two stay out of it.
+const borrowed = { ...valid, climate: 'mediterranean', site_climate: 'subtropical', placement_estimate: true };
+
+test('a borrowed placement: the mail names the list, the visitor\'s site climate and the estimate; the block is unchanged', async () => {
+  const env = fakeEmail();
+  const response = await run(post(borrowed), env);
+  assert.equal(response.status, 200);
+  const { text } = env.sent[0];
+  assert.match(text, /^Climate: Mediterranean$/m);
+  assert.match(text, /^Site climate: Subtropical \(placement borrowed from the Mediterranean list, an estimate\)$/m);
+  const reported = block(text);
+  assert.equal(reported.climate, 'Mediterranean');
+  assert.deepEqual(Object.keys(reported), ['schema', 'received_at', 'release_id', 'plant_id', 'plant_name', 'field', 'current_value',
+    'current_display', 'proposed_value', 'note', 'climate', 'locale', 'licence']);
+});
+
+test('the plant\'s own placement: the site climate is named and the placement is not an estimate', async () => {
+  const env = fakeEmail();
+  await run(post({ ...valid, site_climate: 'Temperate', placement_estimate: false }), env);
+  assert.match(env.sent[0].text, /^Site climate: Temperate \(the plant's own placement\)$/m);
+});
+
+test('old clients send neither field: accepted, and the mail says the site climate was not sent', async () => {
+  const env = fakeEmail();
+  const response = await run(post(valid), env);
+  assert.equal(response.status, 200);
+  assert.match(env.sent[0].text, /^Site climate: \(not sent\)$/m);
+});
+
+test('site_climate must be one of CLIMATES and placement_estimate a boolean', async () => {
+  for (const [extra, fields] of [
+    [{ site_climate: 'lunar' }, { site_climate: 'unknown' }],
+    [{ site_climate: 3 }, { site_climate: 'type' }],
+    [{ placement_estimate: 'yes' }, { placement_estimate: 'type' }],
+    [{ placement_estimate: 1 }, { placement_estimate: 'type' }],
+  ]) {
+    const env = fakeEmail();
+    const response = await run(post({ ...valid, ...extra }), env);
+    assert.equal(response.status, 400, JSON.stringify(extra));
+    assert.deepEqual((await response.json()).fields, fields, JSON.stringify(extra));
+    assert.equal(env.sent.length, 0);
+  }
+});
+
+test('reportBody (what Correction.tsx posts) carries the placement list, the site climate and the estimate, and the endpoint takes it', async () => {
+  const { reportBody } = await import('../src/lib/correction.mjs');
+  const body = reportBody({
+    plantId: valid.plant_id, plantName: valid.plant_name, field: 'height_m', current: { raw: { min: 2, max: 10 }, current: '2–10 m' },
+    form: { proposed: ' 3–8 m ', note: ' n ', email: '', consent: true, website: '' },
+    release: valid.release_id, climate: 'Mediterranean', siteClimate: 'Subtropical', estimate: true, locale: 'en',
+  });
+  assert.equal(body.climate, 'Mediterranean');
+  assert.equal(body.site_climate, 'Subtropical');
+  assert.equal(body.placement_estimate, true);
+  assert.equal(body.proposed_value, '3–8 m');
+  const noSite = reportBody({ plantId: valid.plant_id, plantName: 'x', field: 'height_m', current: null, form: { proposed: 'a', note: '', email: '', consent: true, website: '' }, release: valid.release_id, climate: 'Temperate', siteClimate: null, estimate: false, locale: 'en' });
+  assert.equal(noSite.site_climate, null);
+  assert.equal(noSite.current_value, null);
+  const env = fakeEmail();
+  assert.equal((await run(post(body), env)).status, 200);
+  assert.match(env.sent[0].text, /^Site climate: Subtropical \(placement borrowed from the Mediterranean list, an estimate\)$/m);
 });

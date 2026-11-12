@@ -55,6 +55,12 @@ export function normalise(body) {
   const locale = text('locale', singleLine);
   const email = text('email', singleLine);
   const climate = CLIMATES.find((c) => c.toLowerCase() === climateIn) ?? null;
+  // Optional (older pages send neither): the visitor's own climate, when `climate` is the list a
+  // borrowed or guest placement comes from, and whether that placement was an estimate.
+  const siteIn = text('site_climate', singleLine).toLowerCase();
+  const site_climate = siteIn ? CLIMATES.find((c) => c.toLowerCase() === siteIn) ?? null : null;
+  const estimateIn = body.placement_estimate;
+  const placement_estimate = typeof estimateIn === 'boolean' ? estimateIn : null;
 
   const set = (key, code) => { if (!errors[key]) errors[key] = code; };
   if (!PLANT_ID.test(plant_id)) set('plant_id', 'pattern');
@@ -65,6 +71,8 @@ export function normalise(body) {
   if (!errors.proposed_value && proposed_value === current_display) errors.proposed_value = 'unchanged';
   if (!RELEASE_ID.test(release_id)) set('release_id', 'pattern');
   if (!climate) set('climate', 'unknown');
+  if (siteIn && !site_climate) set('site_climate', 'unknown');
+  if (estimateIn !== undefined && estimateIn !== null && typeof estimateIn !== 'boolean') set('placement_estimate', 'type');
   if (!LOCALES.includes(locale)) set('locale', 'unknown');
   if (body.consent !== true) errors.consent = 'required';
   if (email && !errors.email && !EMAIL_RE.test(email)) errors.email = 'pattern';
@@ -73,7 +81,30 @@ export function normalise(body) {
     schema: REPORT_SCHEMA, received_at: null, release_id, plant_id, plant_name, field,
     current_value, current_display: current_display || null, proposed_value, note: note || null, climate, locale, licence: LICENCE,
   };
-  return { report, email: email || null, errors };
+  // The site climate and the estimate go to the reviewer in the mail's readable part only: the
+  // block keeps canopi-correction-report/1's keys, which canopi-data's importer requires exactly.
+  return { report, email: email || null, site: { site_climate, placement_estimate }, errors };
+}
+
+// What Correction.tsx posts: the placement list as `climate` (Details' placementZone), the visitor's
+// own climate as `site_climate` (null without one) and whether the placement was borrowed.
+export function reportBody({ plantId, plantName, field, current, form, release, climate, siteClimate, estimate, locale }) {
+  return {
+    plant_id: plantId, plant_name: plantName, field, current_value: current?.raw ?? null, current_display: current?.current ?? '',
+    proposed_value: form.proposed.trim(), note: form.note.trim(), release_id: release, climate,
+    site_climate: siteClimate ?? null, placement_estimate: !!estimate, locale,
+    consent: form.consent, email: form.email.trim(), website: form.website,
+  };
+}
+
+// The site climate line of the mail: where the placement came from, as the reviewer needs it to
+// judge a correction made on a borrowed list.
+function siteLine(report, site) {
+  if (!site?.site_climate) return 'Site climate: (not sent)';
+  const how = site.placement_estimate
+    ? `placement borrowed from the ${report.climate} list, an estimate`
+    : site.site_climate === report.climate ? "the plant's own placement" : `placement from the ${report.climate} list`;
+  return `Site climate: ${site.site_climate} (${how})`;
 }
 
 // The block canopi-data imports: its markers on their own lines, the report as indented JSON in
@@ -85,7 +116,7 @@ export const reportBlock = (report) => `${REPORT_START}\n${JSON.stringify(report
 // The readable part. Every value but the note is one line after its label (normalise makes them
 // single-line, JSON.stringify writes the catalog value on one line); the note keeps its lines, each
 // quoted behind "  | ", so no line of the mail starts with text the reporter wrote.
-export function mailText(report, hasEmail) {
+export function mailText(report, hasEmail, site = null) {
   const note = report.note === null ? ['Note: (none)'] : ['Note:', ...report.note.split('\n').map((line) => `  | ${line}`)];
   return [
     `Plant: ${report.plant_name}`,
@@ -97,6 +128,7 @@ export function mailText(report, hasEmail) {
     '',
     `Release: ${report.release_id}`,
     `Climate: ${report.climate}`,
+    siteLine(report, site),
     `Page language: ${report.locale}`,
     `Licence: the reporter agreed to publish it under ${report.licence}.`,
     hasEmail ? 'Reply to this email to answer the reporter.' : 'The reporter left no email.',
@@ -142,7 +174,7 @@ export async function handleCorrection(request, env, { timeoutMs = TIMEOUT_MS, l
     return answer(200, { ok: true, code: 'sent' });
   }
 
-  const { report, email, errors } = normalise(body);
+  const { report, email, site, errors } = normalise(body);
   if (Object.keys(errors).length) return fail(400, 'invalid', { fields: errors });
   report.received_at = now().toISOString();
 
@@ -154,7 +186,7 @@ export async function handleCorrection(request, env, { timeoutMs = TIMEOUT_MS, l
       ...to,
       ...(email ? { replyTo: email } : {}),
       subject: `[Canopi correction] ${report.plant_name} · ${report.field}`,
-      text: mailText(report, !!email),
+      text: mailText(report, !!email, site),
     }), timeoutMs);
     if (typeof result?.messageId !== 'string' || !result.messageId) return fail(502, 'failed');
     return answer(200, { ok: true, code: 'sent' });

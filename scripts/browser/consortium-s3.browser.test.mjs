@@ -106,6 +106,8 @@ test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and cred
     assert.ok(await findAx(page, { name: /^Thank you/ }), 'sent');
     assert.equal(page.correctionPosts.length, 1, 'one POST to /api/correction');
     assert.match(page.correctionPosts[0], new RegExp(fixture().releaseId), 'the post names the data release');
+    const body = JSON.parse(page.correctionPosts[0]);
+    assert.deepEqual([body.climate, body.site_climate, body.placement_estimate], ['Temperate', 'Temperate', false], 'its own placement: the site climate is the list, no estimate');
     await page.keyboard.press('Escape');
     // Wait for the app to take the sheet down, not only for the browser to close the <dialog>: the
     // dialog's open flag drops and the browser puts the focus back on the chip at once, but the
