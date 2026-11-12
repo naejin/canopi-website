@@ -13,9 +13,13 @@
 // 4"). No projection, no range or nothing to compare: null, "not checked".
 // An annual too hot in the projected slot is not a loss: it is advised to the cool season (coolSeason,
 // owner, decision row "Climate ranges fixed before the P5 push"), through range.ts coolSeasonOf.
+// Warming can also lift a site out of "too cool" (the year's warmth, schema 3): when today's check
+// has the plant beyond its tmean_year low and the projected slot passes no bound beyond the margin,
+// the verdict changes and it is said, positively (warmEnough: "Warm enough here by …"); otherwise
+// only losses are listed. The heat check is today's bound (margin and weak-row cap included).
 import type { PlantId, Scenario, SitePeriod, SiteLocation, Taxon } from './types.ts';
 import { phases, scenarios } from './types.ts';
-import { boundPassed, coolSeasonOf, HOT_BOUND as HOT } from './range.ts';
+import { boundPassed, coolSeasonOf, HOT_BOUND as HOT, slotCheck } from './range.ts';
 
 export const futurePeriods = ['2041-2070', '2071-2099'] as const;
 export type FuturePeriod = (typeof futurePeriods)[number];
@@ -29,6 +33,7 @@ export interface FutureCheck {
   agree: number; // the period's scenarios that agree (the chosen one included; see the header)
   of: number; // scenarios of the period with data
   coolSeason: boolean; // an annual beyond its heat range under the chosen scenario: the cool-season advice
+  warmEnough: boolean; // too cool today, within every bound in the chosen scenario's slot (header)
 }
 
 // Too hot: beyond the warmest-month Q95 by more than today's margin, through today's bound and
@@ -87,7 +92,8 @@ export function futureCheck(taxon: Taxon, site: SiteLocation | null, scenario: S
     const f = fresh(b);
     if (why.length ? f.some((r) => why.includes(r)) : f.length === 0) agree++;
   }
-  return { period, verdict, why, already, agree, of, coolSeason: mine.coolSeason };
+  const warmEnough = !!today && slotCheck(taxon, today).beyond.includes('cool') && slotCheck(taxon, own).beyond.length === 0;
+  return { period, verdict, why, already, agree, of, coolSeason: mine.coolSeason, warmEnough };
 }
 
 // The panel's summary over the members, each in exactly one place: per period those checked (m),

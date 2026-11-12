@@ -24,7 +24,7 @@ const OPEN = en['consortium.matrix.open'];
 const fill = (key, vars) => en[`consortium.${key}`].replace(/\{(\w+)\}/g, (_, k) => vars[k]);
 
 // A page of the views through the test hook: climate, room, members (null: "Suggest plants") and view.
-async function views(v, { data = 'fixture', lang = 'en', climate = 'Temperate', room = null, members = null, view = 'matrix' } = {}) {
+async function views(v, { data = 'fixture', lang = 'en', climate = 'Temperate', room = null, light = null, members = null, view = 'matrix' } = {}) {
   const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { ...v, data });
   await page.evaluateOnNewDocument(() => { window.__ctTest = true; });
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -35,12 +35,13 @@ async function views(v, { data = 'fixture', lang = 'en', climate = 'Temperate', 
     const { store } = window.__ctTest;
     store.climate.value = o.climate;
     if (o.room) store.site.value = { ...store.site.value, room: o.room };
+    if (o.light) store.site.value = { ...store.site.value, light: o.light };
     if (!(await store.loadPool(o.climate))) return 'no pool';
     if (o.members) store.members.value = o.members;
     else if (!store.suggestMembers()) return 'no suggestion';
     store.view.value = o.view;
     return 'ok';
-  }, { climate, room, members, view });
+  }, { climate, room, light, members, view });
   assert.equal(set, 'ok');
   assert.ok(await has(page, `#ct-panel-${view === 'start' ? 'matrix' : view} > *`, 10_000), `the ${view} view`);
   return page;
@@ -121,17 +122,23 @@ test('BT-2 (S2 matrix): real Temperate gap, Room Small misfits with reasons, one
       await p2.close();
     }
 
-    // Fixture, Room Small: every emergent plant is over 6 m, so emergent's later stages say why.
-    const page = await views(v, { room: 'small' });
-    const misfit = (await Promise.all([3, 4, 5, 6].map((p) => cellSays(page, 'emergent', p)))).find((c) => /No plant fits your site here/.test(c?.text ?? ''));
+    // Fixture, Shade: no emergent plant takes full shade, so emergent's later stages say why (Room
+    // Small would not: the room is advisory, owner request 2026-11-12).
+    const shade = await views(v, { light: 'shade', room: 'small' });
+    const misfit = (await Promise.all([3, 4, 5, 6].map((p) => cellSays(shade, 'emergent', p)))).find((c) => /No plant fits your site here/.test(c?.text ?? ''));
     assert.ok(misfit, 'a misfit cell');
     if (desk) {
-      assert.match(misfit.text, /grows? taller than 6 m/, 'the reason is counted and worded');
-      assert.ok(await findAx(page, { role: 'button', name: /^Show them anyway: Emergent, / }), '"Show them anyway" names its cell');
-      assert.equal(await page.$$eval('#ct-panel-matrix td.cannot[aria-label]', (els) => els.length), 0, 'a blocked cell is read from its content, never a second copy');
-      assert.deepEqual(await page.$$eval('table.ct-mx > colgroup', (els) => els.map((e) => e.span)), [1, 3, 3, 1], 'column groups for Placenta, Secondary, Climax');
+      assert.match(misfit.text, /needs? more light/, 'the reason is counted and worded');
+      assert.doesNotMatch(misfit.text, /taller than/, 'never the room');
+      assert.ok(await findAx(shade, { role: 'button', name: /^Show them anyway: Emergent, / }), '"Show them anyway" names its cell');
+      assert.equal(await shade.$$eval('#ct-panel-matrix td.cannot[aria-label]', (els) => els.length), 0, 'a blocked cell is read from its content, never a second copy');
+      assert.deepEqual(await shade.$$eval('table.ct-mx > colgroup', (els) => els.map((e) => e.span)), [1, 3, 3, 1], 'column groups for Placenta, Secondary, Climax');
     }
 
+    await shade.close();
+
+    // A small garden: every plant still there (a height never blocks), so the phone's first stage has some.
+    const page = await views(v, { room: 'small' });
     // Tab visits each plant once; each plant's name holds its layer and phase words.
     const chips = (await axNodes(page)).filter((n) => n.role === 'button' && (n.name ?? '').endsWith(OPEN));
     assert.ok(chips.length >= 1, 'plants to visit');
@@ -204,7 +211,7 @@ test('BT-2 (S2 matrix): the view tabs fit a 390 px phone in every language', asy
 
 test('BT-2 (S2 matrix): "Show them anyway" opens Add with the cell\'s plants', async (t) => {
   await eachVariant(t, async (v) => {
-    const page = await views(v, { room: 'small' });
+    const page = await views(v, { light: 'shade' });
     if (v.width < 640) for (let i = 0; i < 3; i++) await page.locator(aria('button', 'Later stage')).click();
     const btn = await findAx(page, { role: 'button', name: /^Show them anyway/ });
     await page.locator(aria('button', btn.name)).click();

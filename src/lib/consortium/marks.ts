@@ -25,7 +25,7 @@ export function plantMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface,
 // Whether any mark can show: a site location, a climate the export does not curate (its plants are
 // borrowed and marked "estimate"), or a dry site (site-marks.ts). curated: SourceInfo.climates.
 export function needsMarkProviders(ctx: Pick<MarkContext, 'climate' | 'location' | 'site'>, curated: readonly ClimateZone[]): boolean {
-  return ctx.location !== null || (ctx.climate !== null && !curated.includes(ctx.climate)) || ctx.site?.water === 'dry';
+  return ctx.location !== null || (ctx.climate !== null && !curated.includes(ctx.climate)) || ctx.site?.water === 'dry' || ctx.site?.room === 'small' || ctx.site?.room === 'large';
 }
 
 // The providers' chunk, loaded once.

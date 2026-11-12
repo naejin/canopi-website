@@ -1,0 +1,772 @@
+{
+ "nairobi": {
+  "lat": -1.29,
+  "lon": 36.82,
+  "climate": {
+   "cellLat": -1.25,
+   "cellLon": 36.85,
+   "distanceCells": 0.0,
+   "periods": [
+    {
+     "period": "1991-2020",
+     "scenario": "historical",
+     "koppen": "Aw",
+     "koppenTemperatureMarginC": 0.4,
+     "tminColdC": 12.3,
+     "tmaxWarmC": 26.5,
+     "tmeanColdC": 17.6,
+     "tmeanWarmC": 21.1,
+     "aridityIndex": 1.02
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp126",
+     "koppen": "Aw",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 13.3,
+     "tmaxWarmC": 27.4,
+     "tmeanColdC": 18.6,
+     "tmeanWarmC": 22.0,
+     "aridityIndex": 1.03
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp245",
+     "koppen": "Aw",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 13.7,
+     "tmaxWarmC": 27.7,
+     "tmeanColdC": 18.9,
+     "tmeanWarmC": 22.4,
+     "aridityIndex": 0.99
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp370",
+     "koppen": "Aw",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 13.9,
+     "tmaxWarmC": 28.0,
+     "tmeanColdC": 19.2,
+     "tmeanWarmC": 22.6,
+     "aridityIndex": 0.97
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp585",
+     "koppen": "Aw",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 14.2,
+     "tmaxWarmC": 28.2,
+     "tmeanColdC": 19.4,
+     "tmeanWarmC": 22.8,
+     "aridityIndex": 0.98
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp126",
+     "koppen": "Aw",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 13.3,
+     "tmaxWarmC": 27.4,
+     "tmeanColdC": 18.6,
+     "tmeanWarmC": 22.0,
+     "aridityIndex": 1.04
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp245",
+     "koppen": "Aw",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 14.3,
+     "tmaxWarmC": 28.2,
+     "tmeanColdC": 19.6,
+     "tmeanWarmC": 22.9,
+     "aridityIndex": 0.99
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp370",
+     "koppen": "Aw",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 15.2,
+     "tmaxWarmC": 29.1,
+     "tmeanColdC": 20.5,
+     "tmeanWarmC": 23.7,
+     "aridityIndex": 0.95
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp585",
+     "koppen": "Aw",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 15.8,
+     "tmaxWarmC": 29.6,
+     "tmeanColdC": 21.1,
+     "tmeanWarmC": 24.2,
+     "aridityIndex": 0.93
+    }
+   ]
+  }
+ },
+ "manaus": {
+  "lat": -3.12,
+  "lon": -60.02,
+  "climate": {
+   "cellLat": -3.15,
+   "cellLon": -60.05,
+   "distanceCells": 0.0,
+   "periods": [
+    {
+     "period": "1991-2020",
+     "scenario": "historical",
+     "koppen": "Af",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 24.0,
+     "tmaxWarmC": 31.2,
+     "tmeanColdC": 26.7,
+     "tmeanWarmC": 28.3,
+     "aridityIndex": 1.3
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp126",
+     "koppen": "Af",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 25.0,
+     "tmaxWarmC": 32.5,
+     "tmeanColdC": 27.8,
+     "tmeanWarmC": 29.7,
+     "aridityIndex": 1.2
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp245",
+     "koppen": "Am",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 25.3,
+     "tmaxWarmC": 33.0,
+     "tmeanColdC": 28.1,
+     "tmeanWarmC": 30.2,
+     "aridityIndex": 1.16
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp370",
+     "koppen": "Am",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 25.6,
+     "tmaxWarmC": 33.4,
+     "tmeanColdC": 28.3,
+     "tmeanWarmC": 30.6,
+     "aridityIndex": 1.12
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp585",
+     "koppen": "Am",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 25.9,
+     "tmaxWarmC": 34.0,
+     "tmeanColdC": 28.6,
+     "tmeanWarmC": 31.1,
+     "aridityIndex": 1.09
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp126",
+     "koppen": "Af",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 25.1,
+     "tmaxWarmC": 32.6,
+     "tmeanColdC": 27.8,
+     "tmeanWarmC": 29.8,
+     "aridityIndex": 1.18
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp245",
+     "koppen": "Am",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 25.8,
+     "tmaxWarmC": 33.9,
+     "tmeanColdC": 28.6,
+     "tmeanWarmC": 31.1,
+     "aridityIndex": 1.12
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp370",
+     "koppen": "Am",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 26.8,
+     "tmaxWarmC": 35.3,
+     "tmeanColdC": 29.6,
+     "tmeanWarmC": 32.4,
+     "aridityIndex": 1.03
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp585",
+     "koppen": "Am",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 27.5,
+     "tmaxWarmC": 36.6,
+     "tmeanColdC": 30.3,
+     "tmeanWarmC": 33.8,
+     "aridityIndex": 0.99
+    }
+   ]
+  }
+ },
+ "singapore": {
+  "lat": 1.35,
+  "lon": 103.85,
+  "climate": {
+   "cellLat": 1.35,
+   "cellLon": 103.85,
+   "distanceCells": 0.0,
+   "periods": [
+    {
+     "period": "1991-2020",
+     "scenario": "historical",
+     "koppen": "Af",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 24.7,
+     "tmaxWarmC": 29.2,
+     "tmeanColdC": 26.4,
+     "tmeanWarmC": 27.9,
+     "aridityIndex": 1.39
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp126",
+     "koppen": "Af",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 25.5,
+     "tmaxWarmC": 30.0,
+     "tmeanColdC": 27.2,
+     "tmeanWarmC": 28.8,
+     "aridityIndex": 1.37
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp245",
+     "koppen": "Af",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 25.8,
+     "tmaxWarmC": 30.4,
+     "tmeanColdC": 27.5,
+     "tmeanWarmC": 29.1,
+     "aridityIndex": 1.33
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp370",
+     "koppen": "Af",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 25.9,
+     "tmaxWarmC": 30.5,
+     "tmeanColdC": 27.6,
+     "tmeanWarmC": 29.3,
+     "aridityIndex": 1.3
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp585",
+     "koppen": "Af",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 26.2,
+     "tmaxWarmC": 30.7,
+     "tmeanColdC": 27.9,
+     "tmeanWarmC": 29.4,
+     "aridityIndex": 1.3
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp126",
+     "koppen": "Af",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 25.5,
+     "tmaxWarmC": 30.1,
+     "tmeanColdC": 27.3,
+     "tmeanWarmC": 28.8,
+     "aridityIndex": 1.36
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp245",
+     "koppen": "Af",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 26.2,
+     "tmaxWarmC": 30.9,
+     "tmeanColdC": 27.9,
+     "tmeanWarmC": 29.6,
+     "aridityIndex": 1.3
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp370",
+     "koppen": "Af",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 26.9,
+     "tmaxWarmC": 31.5,
+     "tmeanColdC": 28.6,
+     "tmeanWarmC": 30.3,
+     "aridityIndex": 1.24
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp585",
+     "koppen": "Af",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 27.4,
+     "tmaxWarmC": 32.2,
+     "tmeanColdC": 29.1,
+     "tmeanWarmC": 30.9,
+     "aridityIndex": 1.21
+    }
+   ]
+  }
+ },
+ "riyadh": {
+  "lat": 24.71,
+  "lon": 46.68,
+  "climate": {
+   "cellLat": 24.75,
+   "cellLon": 46.65,
+   "distanceCells": 0.0,
+   "periods": [
+    {
+     "period": "1991-2020",
+     "scenario": "historical",
+     "koppen": "BWh",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 6.8,
+     "tmaxWarmC": 42.3,
+     "tmeanColdC": 14.4,
+     "tmeanWarmC": 36.6,
+     "aridityIndex": 0.07
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp126",
+     "koppen": "BWh",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 8.2,
+     "tmaxWarmC": 44.1,
+     "tmeanColdC": 15.9,
+     "tmeanWarmC": 38.3,
+     "aridityIndex": 0.07
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp245",
+     "koppen": "BWh",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 8.5,
+     "tmaxWarmC": 44.7,
+     "tmeanColdC": 16.1,
+     "tmeanWarmC": 38.9,
+     "aridityIndex": 0.07
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp370",
+     "koppen": "BWh",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 8.8,
+     "tmaxWarmC": 45.1,
+     "tmeanColdC": 16.4,
+     "tmeanWarmC": 39.3,
+     "aridityIndex": 0.07
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp585",
+     "koppen": "BWh",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 9.1,
+     "tmaxWarmC": 45.6,
+     "tmeanColdC": 16.8,
+     "tmeanWarmC": 39.9,
+     "aridityIndex": 0.07
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp126",
+     "koppen": "BWh",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 8.1,
+     "tmaxWarmC": 44.0,
+     "tmeanColdC": 15.8,
+     "tmeanWarmC": 38.3,
+     "aridityIndex": 0.07
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp245",
+     "koppen": "BWh",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 9.2,
+     "tmaxWarmC": 45.5,
+     "tmeanColdC": 16.9,
+     "tmeanWarmC": 39.8,
+     "aridityIndex": 0.07
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp370",
+     "koppen": "BWh",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 10.3,
+     "tmaxWarmC": 47.0,
+     "tmeanColdC": 17.9,
+     "tmeanWarmC": 41.3,
+     "aridityIndex": 0.07
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp585",
+     "koppen": "BWh",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 11.1,
+     "tmaxWarmC": 48.1,
+     "tmeanColdC": 18.8,
+     "tmeanWarmC": 42.3,
+     "aridityIndex": 0.07
+    }
+   ]
+  }
+ },
+ "minneapolis": {
+  "lat": 44.98,
+  "lon": -93.27,
+  "climate": {
+   "cellLat": 44.95,
+   "cellLon": -93.25,
+   "distanceCells": 0.0,
+   "periods": [
+    {
+     "period": "1991-2020",
+     "scenario": "historical",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -12.6,
+     "tmaxWarmC": 27.9,
+     "tmeanColdC": -9.1,
+     "tmeanWarmC": 23.0,
+     "aridityIndex": 1.24
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp126",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -10.3,
+     "tmaxWarmC": 29.8,
+     "tmeanColdC": -6.8,
+     "tmeanWarmC": 24.9,
+     "aridityIndex": 1.16
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp245",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -9.8,
+     "tmaxWarmC": 30.3,
+     "tmeanColdC": -6.3,
+     "tmeanWarmC": 25.4,
+     "aridityIndex": 1.13
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp370",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -9.5,
+     "tmaxWarmC": 30.6,
+     "tmeanColdC": -6.0,
+     "tmeanWarmC": 25.7,
+     "aridityIndex": 1.1
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp585",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -8.8,
+     "tmaxWarmC": 31.1,
+     "tmeanColdC": -5.3,
+     "tmeanWarmC": 26.2,
+     "aridityIndex": 1.08
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp126",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -10.3,
+     "tmaxWarmC": 29.8,
+     "tmeanColdC": -6.8,
+     "tmeanWarmC": 24.9,
+     "aridityIndex": 1.16
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp245",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -8.6,
+     "tmaxWarmC": 31.2,
+     "tmeanColdC": -5.1,
+     "tmeanWarmC": 26.3,
+     "aridityIndex": 1.09
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp370",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -7.4,
+     "tmaxWarmC": 32.7,
+     "tmeanColdC": -3.9,
+     "tmeanWarmC": 27.8,
+     "aridityIndex": 1.0
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp585",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -6.2,
+     "tmaxWarmC": 33.8,
+     "tmeanColdC": -2.7,
+     "tmeanWarmC": 28.9,
+     "aridityIndex": 0.96
+    }
+   ]
+  }
+ },
+ "rovaniemi": {
+  "lat": 66.5,
+  "lon": 25.73,
+  "climate": {
+   "cellLat": 66.45,
+   "cellLon": 25.75,
+   "distanceCells": 0.0,
+   "periods": [
+    {
+     "period": "1991-2020",
+     "scenario": "historical",
+     "koppen": "Dfc",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -13.3,
+     "tmaxWarmC": 19.1,
+     "tmeanColdC": -10.9,
+     "tmeanWarmC": 15.8,
+     "aridityIndex": 1.19
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp126",
+     "koppen": "Dfc",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -11.1,
+     "tmaxWarmC": 20.5,
+     "tmeanColdC": -8.7,
+     "tmeanWarmC": 17.2,
+     "aridityIndex": 1.16
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp245",
+     "koppen": "Dfc",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -10.4,
+     "tmaxWarmC": 20.8,
+     "tmeanColdC": -7.9,
+     "tmeanWarmC": 17.6,
+     "aridityIndex": 1.14
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp370",
+     "koppen": "Dfc",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -9.9,
+     "tmaxWarmC": 21.2,
+     "tmeanColdC": -7.4,
+     "tmeanWarmC": 17.9,
+     "aridityIndex": 1.14
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp585",
+     "koppen": "Dfb",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -9.3,
+     "tmaxWarmC": 21.5,
+     "tmeanColdC": -6.8,
+     "tmeanWarmC": 18.3,
+     "aridityIndex": 1.13
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp126",
+     "koppen": "Dfc",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -11.1,
+     "tmaxWarmC": 20.6,
+     "tmeanColdC": -8.7,
+     "tmeanWarmC": 17.3,
+     "aridityIndex": 1.15
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp245",
+     "koppen": "Dfb",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -9.3,
+     "tmaxWarmC": 21.7,
+     "tmeanColdC": -6.9,
+     "tmeanWarmC": 18.4,
+     "aridityIndex": 1.12
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp370",
+     "koppen": "Dfb",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -7.7,
+     "tmaxWarmC": 22.7,
+     "tmeanColdC": -5.3,
+     "tmeanWarmC": 19.4,
+     "aridityIndex": 1.12
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp585",
+     "koppen": "Dfb",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -6.7,
+     "tmaxWarmC": 23.4,
+     "tmeanColdC": -4.3,
+     "tmeanWarmC": 20.1,
+     "aridityIndex": 1.1
+    }
+   ]
+  }
+ },
+ "seville": {
+  "lat": 37.39,
+  "lon": -5.98,
+  "climate": {
+   "cellLat": 37.35,
+   "cellLon": -5.95,
+   "distanceCells": 0.0,
+   "periods": [
+    {
+     "period": "1991-2020",
+     "scenario": "historical",
+     "koppen": "Csa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 5.8,
+     "tmaxWarmC": 34.8,
+     "tmeanColdC": 11.0,
+     "tmeanWarmC": 27.8,
+     "aridityIndex": 0.58
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp126",
+     "koppen": "Csa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 6.6,
+     "tmaxWarmC": 36.2,
+     "tmeanColdC": 11.8,
+     "tmeanWarmC": 29.2,
+     "aridityIndex": 0.51
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp245",
+     "koppen": "Csa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 6.9,
+     "tmaxWarmC": 36.6,
+     "tmeanColdC": 12.1,
+     "tmeanWarmC": 29.6,
+     "aridityIndex": 0.47
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp370",
+     "koppen": "Csa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 7.1,
+     "tmaxWarmC": 36.9,
+     "tmeanColdC": 12.3,
+     "tmeanWarmC": 29.8,
+     "aridityIndex": 0.46
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp585",
+     "koppen": "Csa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 7.3,
+     "tmaxWarmC": 37.4,
+     "tmeanColdC": 12.5,
+     "tmeanWarmC": 30.3,
+     "aridityIndex": 0.44
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp126",
+     "koppen": "Csa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 6.7,
+     "tmaxWarmC": 36.2,
+     "tmeanColdC": 11.9,
+     "tmeanWarmC": 29.2,
+     "aridityIndex": 0.51
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp245",
+     "koppen": "Csa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 7.3,
+     "tmaxWarmC": 37.2,
+     "tmeanColdC": 12.5,
+     "tmeanWarmC": 30.2,
+     "aridityIndex": 0.45
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp370",
+     "koppen": "Csa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 8.1,
+     "tmaxWarmC": 38.3,
+     "tmeanColdC": 13.3,
+     "tmeanWarmC": 31.3,
+     "aridityIndex": 0.39
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp585",
+     "koppen": "BSh",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": 8.6,
+     "tmaxWarmC": 39.2,
+     "tmeanColdC": 13.8,
+     "tmeanWarmC": 32.1,
+     "aridityIndex": 0.36
+    }
+   ]
+  }
+ }
+}

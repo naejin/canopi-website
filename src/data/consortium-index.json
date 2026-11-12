@@ -1,22 +1,22 @@
 {
   "format_version": 4,
-  "schema_version": 2,
-  "release_id": "r-e0b162087a79eecf",
-  "generated_at": "2026-11-11T07:59:42Z",
+  "schema_version": 3,
+  "release_id": "r-01102782139409b5",
+  "generated_at": "2026-11-12T07:00:19Z",
   "canopi_db_sha256": "607d9ac3f69a3c9bce8ed910d212dee19024cdc5cd3044f64340ba663348ff0b",
   "files": [
     {
-      "file": "consortium-v2.r-e0b162087a79eecf.7fe89cd1dda2.sqlite.gz",
-      "url": "/data/consortium/consortium-v2.r-e0b162087a79eecf.7fe89cd1dda2.sqlite.gz",
+      "file": "consortium-v3.r-01102782139409b5.a2a7f6690c20.sqlite.gz",
+      "url": "/data/consortium/consortium-v3.r-01102782139409b5.a2a7f6690c20.sqlite.gz",
       "climate_zones": [
         "Tropical",
         "Mediterranean",
         "Temperate"
       ],
-      "sha256": "730f129438639cb7273e20bd686d2180d1ab9f68b490d71bcd3368cc9cd3492a",
-      "bytes": 556862,
-      "raw_sha256": "7fe89cd1dda2bb310ebc78bda24bc7781168751611629e925055938ed95d39cb",
-      "raw_bytes": 2138112
+      "sha256": "5c3f6f5b1fdf09631a63ce6e6ed9ff8757fba0f1ffc6f169df6bc25aa8e075a3",
+      "bytes": 568732,
+      "raw_sha256": "a2a7f6690c20fe00fbd75e755c6f8ed3c22c89f6eb2a76cde61c363cbb2ebb9d",
+      "raw_bytes": 2207744
     }
   ],
   "climates": [

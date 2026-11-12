@@ -107,12 +107,13 @@ export function runReasons(pool: readonly Taxon[], members: readonly Taxon[], si
 // The worded reasons of a misfit cell, most first. A light misfit reads "need shade" on a sunny site
 // and "need more light" in part shade or shade; a water misfit reads "need more water" on dry ground
 // and "want drier ground" on wet ground (types.ts MatrixCell.reasons).
-export type ReasonWord = 'light' | 'shade' | 'soil' | 'dry' | 'wet' | 'room';
+// Room is never a misfit (advisory, site.ts), so it has no word here.
+export type ReasonWord = 'light' | 'shade' | 'soil' | 'dry' | 'wet';
 export function reasonParts(reasons: Partial<Record<SiteKey, number>>, site: Site): { word: ReasonWord; n: number }[] {
   const out: { word: ReasonWord; n: number }[] = [];
   for (const [key, n] of Object.entries(reasons) as [SiteKey, number][]) {
-    if (!n) continue;
-    const word: ReasonWord = key === 'light' ? (site.light === 'sun' ? 'shade' : 'light') : key === 'water' ? (site.water === 'wet' ? 'wet' : 'dry') : key;
+    if (!n || key === 'room') continue;
+    const word: ReasonWord = key === 'light' ? (site.light === 'sun' ? 'shade' : 'light') : key === 'water' ? (site.water === 'wet' ? 'wet' : 'dry') : 'soil';
     out.push({ word, n });
   }
   return out.sort((a, b) => b.n - a.n);

@@ -6,10 +6,13 @@
 //   or wetter than where it is recorded; its own kind, so the edge marks and the panel's "N near the
 //   edge" agree), 'unknown' ("range not recorded"; and in Details, aridity "not checked" on ice).
 //   Details adds one line per bound passed, with the site's and the recorded values (the very values
-//   the verdict compared, to the hundredth, so the gap a reader works out matches it), and says
+//   the verdict compared, to the hundredth, so the gap a reader works out matches it), a line when one
+//   of those bounds rests on few places (a weak row, never more than the edge: 'range.weak'), and says
 //   observed ranges include cultivation and are estimates, not reviewed (export meta ranges_review).
-//   An annual (no winter-cold check): "warm-season annual" on rows and in Add; in Details "grown in the
-//   warm season; check the frost-free season" (not on chips). An annual beyond its heat range
+//   An annual (range.ts isAnnual: is_annual or grown_as_annual; no winter checks) claims no season
+//   (owner, decision row "Growing months" 2026-11-12: the USDA growth period classes too few annuals
+//   and some wrongly): "annual" on rows and in Add, in Details "An annual, re-sown each year: its winter
+//   cold is not checked." (not on chips). An annual beyond its heat range
 //   (rangeCheck coolSeason) gets instead "grow in the cool season" on rows and in Add and "Too hot in
 //   summer here: grow it in the cool season." in Details (decision row "Climate ranges fixed before
 //   the P5 push"); the CSS wraps every non-chip mark, so neither outgrows a phone row.
@@ -18,15 +21,17 @@
 // Chips (desktop matrix) get the short words.
 import type { ClimateZone, Mark, MarkSurface, Taxon } from './types.ts';
 import type { MarkContext } from './marks.ts';
-import type { RangeSide } from './range.ts';
-import { isAnnual, rangeCheck, siteToday } from './range.ts';
+import type { RangeBound, RangeSide } from './range.ts';
+import { isAnnual, RANGE_BOUNDS, rangeCheck, siteToday } from './range.ts';
 
 // Every key written out (consortium.* strings, S5c block), so a key check can find them.
 const VERDICT_KEYS: Record<'edge' | 'outside', Record<MarkSurface, string>> = {
   edge: { chip: 'range.edgeShort', row: 'range.edge', add: 'range.edge', details: 'range.edgeDetails' },
   outside: { chip: 'range.outsideShort', row: 'range.outside', add: 'range.outside', details: 'range.outsideDetails' },
 };
-const SIDE_KEYS: Record<RangeSide, string> = { cold: 'range.side.cold', mild: 'range.side.mild', hot: 'range.side.hot' };
+const SIDE_KEYS: Record<RangeSide, string> = { cold: 'range.side.cold', mild: 'range.side.mild', cool: 'range.side.cool', hot: 'range.side.hot' };
+// The bound each side reads, and the site value it is compared with (range.ts RANGE_BOUNDS).
+const SIDE_BOUND = Object.fromEntries(RANGE_BOUNDS.map((b) => [b.side, b])) as Record<RangeSide, RangeBound>;
 const ARIDITY_KEYS = { drier: 'range.drier', wetter: 'range.wetter' } as const;
 // The curated climates a nearest list can name, each with its own "placed as on the … list" string.
 const ESTIMATE_KEYS: Partial<Record<ClimateZone, string>> = { Mediterranean: 'estimate.fromMediterranean', Tropical: 'estimate.fromTropical', Temperate: 'estimate.fromTemperate' };
@@ -46,11 +51,14 @@ export function rangeMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface)
     }
     if (surface === 'details' && sides.length) {
       const today = siteToday(ctx.location)!, c = taxon.climate!;
+      let weak = false;
       for (const side of sides) {
-        const site = side === 'hot' ? today.tmaxWarmC : today.tminColdC;
-        const bound = side === 'cold' ? c.tminCold!.low! : side === 'mild' ? c.tminCold!.high! : c.tmaxWarm!.high!;
-        out.push({ kind: beyond.includes(side) ? 'outside' : 'edge', key: SIDE_KEYS[side], vars: { site: deg(site), bound: deg(bound) }, severity: 'note', state: side });
+        const b = SIDE_BOUND[side], range = c[b.range]!;
+        weak ||= range.weak;
+        out.push({ kind: beyond.includes(side) ? 'outside' : 'edge', key: SIDE_KEYS[side], vars: { site: deg(b.site(today)), bound: deg(range[b.end]!) }, severity: 'note', state: side });
       }
+      // A bound from few places (a weak row) is at most the edge: Details says why.
+      if (weak) out.push({ kind: 'edge', key: 'range.weak', severity: 'note', state: 'weak' });
     }
     if (!tight && (aridity === 'drier' || aridity === 'wetter')) out.push({ kind: 'aridity', key: ARIDITY_KEYS[aridity], severity: 'note', state: aridity });
     // The sentence in Details; rows and Add get a short tag, so the note never outgrows a phone row (walk-through F1).

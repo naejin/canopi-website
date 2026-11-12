@@ -655,8 +655,8 @@ const pickRanged = (where, site, zone) => realDb((db) => db.prepare(`SELECT name
 async function atNowhere(page) {
   await page.evaluate(() => {
     const { store } = window.__ctTest;
-    const perennials = (p) => Object.fromEntries(Object.entries(p).map(([k, list]) => [k, list?.filter((t) => t.traits.is_annual !== true)]));
-    store.pools.subscribe((p) => { if (Object.values(p).some((list) => list?.some((t) => t.traits.is_annual === true))) store.pools.value = perennials(p); });
+    const perennials = (p) => Object.fromEntries(Object.entries(p).map(([k, list]) => [k, list?.filter((t) => t.traits.is_annual !== true && t.traits.grown_as_annual !== true)]));
+    store.pools.subscribe((p) => { if (Object.values(p).some((list) => list?.some((t) => t.traits.is_annual === true || t.traits.grown_as_annual === true))) store.pools.value = perennials(p); });
   });
   const l = await lookupAt(...SITES.yakutsk);
   const periods = l.climate.periods.map((p) => (p.scenario === 'historical' ? { ...p, tmaxWarmC: 46 } : p));
@@ -682,12 +682,12 @@ test('P5-14 (S5c nothing fits): where no plant\'s range holds the site: the "not
   assert.ok(await has(page, '.ct-add .ct-rows li [data-mark="outside"]', 10_000), 'each one marked outside its range');
 });
 
-test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold check"): at Yakutsk the Boreal pool keeps its annual crops, Suggest uses them, and an annual says to check the frost-free season', async () => {
+test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold check"): at Yakutsk the Boreal pool keeps its annual crops, Suggest uses them, and an annual is tagged "annual", no season claimed (decision row "Growing months")', async () => {
   const page = await tool();
   await atSite(page, 'yakutsk');
   await page.evaluate(async () => { const { store } = window.__ctTest; store.climate.value = 'Boreal'; await store.loadPool('Boreal'); });
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.fitPool.value?.length > 0, { timeout: 10_000 }).then(() => true, () => false), 'the pool keeps plants');
-  const kept = await page.evaluate(() => { const p = window.__ctTest.store.fitPool.value; return { all: p.length, annual: p.filter((t) => t.traits.is_annual).length, perennial: p.filter((t) => t.traits.is_annual !== true).length }; });
+  const kept = await page.evaluate(() => { const p = window.__ctTest.store.fitPool.value; const ann = (t) => t.traits.is_annual === true || t.traits.grown_as_annual === true; return { all: p.length, annual: p.filter(ann).length, perennial: p.filter((t) => !ann(t)).length }; });
   assert.ok(kept.annual >= 50, `annual crops kept (${kept.annual})`);
   assert.equal(kept.perennial, 0, 'no perennial holds a −39.8 °C winter');
   assert.equal(await page.$('[data-pool-empty]'), null, 'not "nothing fits"');
@@ -695,7 +695,7 @@ test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold ch
   const id = await page.evaluate(() => window.__ctTest.store.members.value[0]);
   await page.evaluate((m) => window.__ctTest.openSheet('details', m), id);
   assert.ok(await has(page, '[data-mark-surface="details"][data-mark-state="annual"]', 10_000), 'Details: the annual line');
-  assert.match(await text(page, '[data-mark-surface="details"][data-mark-state="annual"]') ?? '', /warm season.*frost-free season/);
+  assert.match(await text(page, '[data-mark-surface="details"][data-mark-state="annual"]') ?? '', /^An annual, re-sown each year: its winter cold is not checked\.$/);
 });
 
 test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range, and Add lists none until one is typed, which then asks first', async () => {
@@ -729,7 +729,7 @@ test('P5-14c (S5c matrix counts): a cell\'s "N fit" leaves out plants outside th
   const within = await sum();
   assert.ok(within < before, `fewer plants counted at Seville (${within} cell entries) than without a location (${before})`);
   const counted = await page.evaluate(() => { const { store } = window.__ctTest; return store.fitPool.value.length; });
-  assert.equal(counted, 117, 'the matrix counts the 117 of 200 Mediterranean plants kept at Seville (design check §C: 101, before the cool-season annuals)');
+  assert.equal(counted, 198, 'the matrix counts the 198 of 200 Mediterranean plants kept at Seville (design check §C: 101; 117 on the schema 2 export, before the heat limit at Q99)');
   await page.evaluate(() => { window.__ctTest.store.location.value = null; });
   assert.equal(await sum(), before, 'without a location the counts are P2\'s');
 });
@@ -828,9 +828,12 @@ test('P5-15b (S5c range lines in Details, page language): in French, a plant nea
   await choose(page, 'Mediterranean');
   await page.evaluate((n) => { const { store } = window.__ctTest; store.view.value = 'matrix'; store.openSheet('details', store.pool.value.find((x) => x.canonical_name === n).id); }, name);
   assert.ok(await has(page, '[data-mark-surface="details"][data-mark-state="cold"], [data-mark-surface="details"][data-mark-state="mild"]', 10_000), 'a line per bound passed');
-  const line = await text(page, '[data-mark-surface="details"][data-mark-state="cold"], [data-mark-surface="details"][data-mark-state="mild"]');
+  // The verdict mark of a one-sided plant carries the same state ('cold'), so the line is the one with values.
+  const line = await page.$$eval('[data-mark-surface="details"][data-mark-state="cold"], [data-mark-surface="details"][data-mark-state="mild"]', (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()).find((t) => /°C/.test(t)) ?? null);
   assert.match(line, /5,8 °C/, `"${line}" writes the number the French way`);
-  assert.match(await text(page, '[data-mark-surface="details"][data-mark="edge"]:not([data-mark-state="cold"]):not([data-mark-state="mild"]):not([data-mark-state="hot"])') ?? '', /cultures comprises/, 'the Details mark says observed ranges include cultivation');
+  // One of its edge marks (the verdict; the side lines carry values) says what the ranges include.
+  const edges = await page.$$eval('[data-mark-surface="details"][data-mark="edge"]', (els) => els.map((e) => e.textContent));
+  assert.ok(edges.some((t) => /cultures comprises/.test(t)), `the Details mark says observed ranges include cultivation (${edges.join(' | ')})`);
 });
 
 test('P5-16 (S5c outside-range warning on add): typed in Add, a plant whose range misses the site shows "outside", and adding it still makes it a member', async () => {
@@ -1271,7 +1274,7 @@ test('P5-27g (S5c walk-through F1): on phones a member\'s marks wrap or fit: wit
 
 // Decision row "Climate ranges fixed before the P5 push" (2026-11-12): the zone from the cell's own means,
 // annuals beyond their heat range advised to the cool season, drought tolerance Medium on a dry site.
-test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; at Seville lettuce is a cool-season crop in Add and Details; a dry site marks drought tolerance Medium; nothing scrolls sideways', async () => {
+test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; at Seville Good-King-Henry (a recorded annual) is a cool-season crop in Add and Details; a dry site marks drought tolerance Medium; nothing scrolls sideways', async () => {
   const [lat, lon] = SITES.nairobi;
   for (const width of [320, 390, 1280]) {
     const page = await tool({ width, geolocation: { lat, lon } });
@@ -1284,24 +1287,24 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
     assert.match(line, /Between Subtropical and Tropical; we picked Subtropical/);
     assert.match(line, /within 2 °C/);
     assert.equal(await proposedCard(page), 'subtropical', 'Subtropical proposed');
-    // Seville: lettuce (annual, warmest-month Q95 32.1 °C against 34.8 °C) stays, for the cool season.
+    // Seville: Good-King-Henry (stored annual, Temperate list, heat limit 30.2 °C against 34.8 °C) stays, for the cool season.
     await atSite(page, 'seville');
-    await choose(page, 'Mediterranean');
+    await choose(page, 'Temperate');
     await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; window.__ctTest.store.openSheet('add'); });
     assert.ok(await has(page, '.ct-add .ct-search input', 10_000), 'the Add sheet');
-    await page.type('.ct-add .ct-search input', 'Lactuca sativa');
+    await page.type('.ct-add .ct-search input', 'Chenopodium bonus-henricus');
     const row = '.ct-add .ct-rows li';
-    assert.ok(await page.waitForFunction((sel) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === 'Lactuca sativa' && li.querySelector('[data-mark="season"]')), { timeout: 10_000 }, row).then(() => true, () => false), `${width} px: lettuce in Add with its cool-season tag`);
-    const tag = await page.evaluate((sel) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Lactuca sativa').querySelector('[data-mark="season"]').textContent, row);
+    assert.ok(await page.waitForFunction((sel) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === 'Chenopodium bonus-henricus' && li.querySelector('[data-mark="season"]')), { timeout: 10_000 }, row).then(() => true, () => false), `${width} px: Good-King-Henry in Add with its cool-season tag`);
+    const tag = await page.evaluate((sel) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Chenopodium bonus-henricus').querySelector('[data-mark="season"]').textContent, row);
     assert.equal(tag, 'grow in the cool season');
-    assert.equal(await page.evaluate((sel) => !![...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Lactuca sativa').querySelector('[data-mark="outside"]'), row), false, 'not outside');
+    assert.equal(await page.evaluate((sel) => !![...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Chenopodium bonus-henricus').querySelector('[data-mark="outside"]'), row), false, 'not outside');
     const over = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       marks: [...document.querySelectorAll('#ct-root .ct-tag, #ct-root .ct-flag, dialog .ct-tag, dialog .ct-flag')].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((e) => e.textContent) }));
     // doc ≤ 0: with the dialog open on desktop the page's scrollbar is hidden (scrollWidth < clientWidth).
     assert.deepEqual({ doc: Math.max(0, over.doc), marks: over.marks }, { doc: 0, marks: [] }, `${width} px: no sideways scroll, no mark past the edge`);
-    const lettuce = await page.evaluate(() => window.__ctTest.store.pools.value.Mediterranean.find((t) => t.canonical_name === 'Lactuca sativa')?.id);
-    assert.ok(lettuce, 'lettuce is on the Mediterranean list');
-    await page.evaluate((id) => window.__ctTest.store.openSheet('details', id), lettuce);
+    const annual = await page.evaluate(() => window.__ctTest.store.pools.value.Temperate.find((t) => t.canonical_name === 'Chenopodium bonus-henricus')?.id);
+    assert.ok(annual, 'Good-King-Henry is on the Temperate list');
+    await page.evaluate((id) => window.__ctTest.store.openSheet('details', id), annual);
     assert.ok(await has(page, '[data-mark-surface="details"][data-mark="season"]', 10_000), 'Details: the cool-season line');
     assert.equal(await text(page, '[data-mark-surface="details"][data-mark="season"]'), 'Too hot in summer here: grow it in the cool season.');
     assert.equal(await page.$('[data-mark-surface="details"][data-mark-state="annual"]'), null, 'not the warm-season note');
@@ -1317,12 +1320,42 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
   assert.deepEqual(page.thirdParty, []);
 });
 
+// Owner request 2026-11-12: the room answer is advisory. The matrix layers are relative sun exposure,
+// so a small garden never blocks a cell nor hides a tall plant in Add; the plant carries a note.
+test('P5-27r (S5c climate ranges, room advisory): in a small garden no cell is blocked for height, and Add lists a walnut with "grows to … m: prune", never behind "show anyway"', async () => {
+  for (const width of [390, 1280]) {
+    const page = await tool({ width });
+    await choose(page, 'Temperate');
+    await page.evaluate(() => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, room: 'small' }; store.view.value = 'matrix'; });
+    assert.equal(await page.evaluate(() => window.__ctTest.store.matrix.value.rows.flatMap((r) => r.cells).some((c) => c.empty === 'misfit')), false, `${width} px: no cell "can't be filled"`);
+    await page.evaluate(() => window.__ctTest.store.openSheet('add'));
+    assert.ok(await has(page, '.ct-add .ct-search input', 10_000), 'the Add sheet');
+    await page.type('.ct-add .ct-search input', 'Juglans regia');
+    const row = '.ct-add .ct-rows li';
+    assert.ok(await page.waitForFunction((sel) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === 'Juglans regia' && li.querySelector('[data-mark="room"]')), { timeout: 10_000 }, row).then(() => true, () => false), `${width} px: the walnut with its height note`);
+    const tag = await page.evaluate((sel) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Juglans regia').querySelector('[data-mark="room"]').textContent, row);
+    assert.match(tag, /^grows to [\d.]+ m: prune$/);
+    const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    assert.ok(over <= 0, `${width} px: no sideways scroll`);
+    // Its Add does not ask first (a height is never a misfit): the walnut joins at once.
+    await page.evaluate((sel) => { const li = [...document.querySelectorAll(sel)].find((x) => x.querySelector('.ct-sci')?.textContent === 'Juglans regia'); (li.querySelector('input[type="checkbox"]') ?? li.querySelector('button')).click(); }, row);
+    await page.evaluate(() => new Promise((r) => setTimeout(r, 100)));
+    assert.equal(await page.$('dialog.ct-ask[open]'), null, 'no warning to confirm');
+    const bar = await page.$('.ct-add-bar .button-primary:not([disabled])');
+    if (bar) await bar.click();
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.memberTaxa.value.some((t) => t.canonical_name === 'Juglans regia'), { timeout: 5000 }).then(() => true, () => false), 'added without asking');
+    assert.deepEqual(page.thirdParty, []);
+  }
+});
+
 // ---- S5d: future check ----
 
-test('P5-18 (S5d future summary): at Lyon on the Temperate list the panel leads with "n of m outside by 2041–2070" under SSP2-4.5', async () => {
+// At Seville on the Mediterranean list: on the schema 3 ranges (heat limit at Q99) Lyon's Temperate list
+// has 1 plant of 101 outside by 2041–2070, too few for a suggestion to hold one.
+test('P5-18 (S5d future summary): at Seville on the Mediterranean list the panel leads with "n of m outside by 2041–2070" under SSP2-4.5', async () => {
   const page = await tool();
-  await atSite(page, 'lyon');
-  await choose(page, 'Temperate');
+  await atSite(page, 'seville');
+  await choose(page, 'Mediterranean');
   await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
   assert.ok(await has(page, '[data-future-summary]', 10_000), 'the future panel');
   assert.match(await text(page, '[data-future-summary]'), /\d+ of \d+ .*2041–2070/);
@@ -1339,7 +1372,7 @@ test('P5-18 (S5d future summary): at Lyon on the Temperate list the panel leads 
   const verdicts = await page.$$eval('[data-future-verdict]', (els) => els.map((e) => e.getAttribute('data-future-verdict')));
   const members = await page.evaluate(() => window.__ctTest.store.members.value.length);
   assert.equal(verdicts.length, members, 'one line per member');
-  assert.ok(verdicts.includes('outside'), `Lyon's suggestion has a member outside by its period (${verdicts})`);
+  assert.ok(verdicts.includes('outside'), `Seville's suggestion has a member outside by its period (${verdicts})`);
   assert.ok(await has(page, '[data-mark="future"][data-mark-surface="chip"]', 10_000), 'a future mark on a chip');
   assert.equal(await page.$('[data-mark="future"].ct-flag'), null, 'drawn in ink, apart from the ochre warnings');
   // The scenario control: a real radio; SSP5-8.5 never puts fewer plants outside than SSP2-4.5.

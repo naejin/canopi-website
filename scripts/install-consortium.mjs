@@ -12,7 +12,7 @@
 //
 // Checks, in order, and refuses on the first failure (nothing is written then):
 // - SHA256SUMS: every listed file exists and matches; every other file of the directory is listed.
-// - manifest.json: format_version 4 and schema_version 2 (anything else refused by name), release_id
+// - manifest.json: format_version 4 and schema_version 3 (anything else refused by name), release_id
 //   (`r-` and 16 hex digits), canopi_db_sha256 not all zeros unless --fixture, `split` false (the page
 //   reads one file) with one file, the climates of the files those of `climates`, the TRY list and credits entries,
 //   and `climate_ranges` with the grid the ranges were sampled from.
@@ -22,7 +22,7 @@
 //   user_version, integrity_check, foreign_key_check, every table and column of
 //   scripts/consortium-schema.mjs, meta (schema, format, release, climates, built_at), each table's
 //   row count against meta and the manifest, every plant placed and every placement with a reason,
-//   source and photo page urls http(s) only, invasive rows only in countries GRIIS checked; schema 2:
+//   source and photo page urls http(s) only, invasive rows only in countries GRIIS checked; schemas 2 and 3:
 //   meta.ranges_review "estimate_not_reviewed", meta.climate_grid_manifest_sha256 a sha256 equal to the
 //   manifest's, a plant_climate_status row for every plant and range rows only beside a range_source.
 // - try_references.tsv and source_credits.tsv: listed, their sha256 and rows those of the manifest
@@ -34,7 +34,7 @@
 //   and the INSTALLED_BY mark. Nothing else: no manifest, no sums (the index holds the digests).
 // - The index, src/data/consortium-index.json (design check A4): release id, the database files with
 //   their sha256, climates, the canonical names placed in each climate, {plant uuid: photo path}, and
-//   (schema 2) climate_grid_manifest_sha256 and ranges_review from the database's meta: the climate
+//   (schemas 2 and 3) climate_grid_manifest_sha256 and ranges_review from the database's meta: the climate
 //   tiles' installer (install-climate.mjs) and scripts/check-built-site.mjs compare the installed grid with it.
 //   Build-time readers (guide presets, the page, scripts/check-built-site.mjs) read it; nothing at
 //   build time reads SQLite. An install outside the site (--out, --fixture) writes it inside <out>.
@@ -88,8 +88,8 @@ const MAX_IMAGE_BYTES = 3 * 1024 * 1024; // a larger file (a full-size original)
 export const MAX_GZIP_BYTES = 1_000_000;
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const FORMAT_VERSION = 4;
-export const SCHEMA_VERSION = 2;
-// The only review state schema 2 allows (plant_climate.review CHECK): the site words ranges as estimates.
+export const SCHEMA_VERSION = 3;
+// The only review state schemas 2 and 3 allow (plant_climate.review CHECK): the site words ranges as estimates.
 export const RANGES_REVIEW = 'estimate_not_reviewed';
 export const APPLICATION_ID = 0x43434f4e; // "CCON"
 const ZERO_SHA = '0'.repeat(64);
@@ -323,7 +323,7 @@ export async function readDatabase(path, entry, manifest) {
     if (meta.release_id !== manifest.release_id) return { problem: `${entry.file}: meta.release_id is ${JSON.stringify(meta.release_id)}, the manifest says ${manifest.release_id}.` };
     if (meta.built_at !== manifest.generated_at) return { problem: `${entry.file}: meta.built_at is ${JSON.stringify(meta.built_at)}, the manifest says ${manifest.generated_at}.` };
     if (meta.climates !== entry.climate_zones.join(',')) return { problem: `${entry.file}: meta.climates is ${JSON.stringify(meta.climates)}, the manifest says ${entry.climate_zones.join(',')}.` };
-    // Schema 2: the ranges' review state and the grid they were sampled from (an empty value is missing).
+    // Schema 2 and 3: the ranges' review state and the grid they were sampled from (an empty value is missing).
     if (meta.ranges_review !== RANGES_REVIEW) return { problem: `${entry.file}: meta.ranges_review is ${JSON.stringify(meta.ranges_review)}; this installer reads "${RANGES_REVIEW}" ranges only.` };
     const grid = meta.climate_grid_manifest_sha256 || undefined;
     if (typeof grid !== 'string' || !HEX64.test(grid)) return { problem: `${entry.file}: meta.climate_grid_manifest_sha256 is ${JSON.stringify(grid)}, not a sha256.` };

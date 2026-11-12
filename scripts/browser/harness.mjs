@@ -59,7 +59,7 @@ export async function fixturePhotos() {
 // The database bytes served for a variant, and the reference the page is told (its digests are those
 // of the served bytes, so each broken copy fails where it is meant to, not at the digest):
 // - 'corrupt': bytes overwritten inside the gzip stream (does not inflate: damaged);
-// - 'user-version': a valid database with user_version 1 (schema; the page reads schema 2);
+// - 'user-version': a valid database with user_version 1 (schema; the page reads schema 3);
 // - 'digest': the right bytes under a wrong sha256 (damaged);
 // - 'empty': an empty 200 body (damaged);
 // - 'stall': no response ever comes (a stalled connection: fetch, after the stall timer).

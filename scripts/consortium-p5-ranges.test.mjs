@@ -80,7 +80,7 @@ test('location line: names the class the means give and the map class when they 
 // ---- 2. the mild-winter side only for plants that can need winter chill ----
 
 test('rangeCheck: lowland tropical plants are never "edge" from warm winters (cacao and cassava at Manaus and Singapore)', () => {
-  assert.equal(core.CHILL_CEILING_C, 12.5);
+  assert.equal(core.CHILL_CEILING_C, 18, 'the export\'s rule (canopi-data docs/plant-climate-ranges.md): a winter-chill plant has tmin_cold Q95 below 18 °C');
   for (const [where, s] of [['Manaus', MANAUS], ['Singapore', SINGAPORE]]) {
     for (const name of ['Theobroma cacao', 'Manihot esculenta']) {
       const c = core.rangeCheck(plant(name), siteAt(s));
@@ -95,26 +95,27 @@ test('rangeCheck: a plant that can need winter chill keeps the mild-winter side 
   assert.equal(core.canNeedChill(apple), true);
   assert.equal(core.canNeedChill(plant('Theobroma cacao')), false);
   assert.deepEqual(core.rangeCheck(apple, siteAt(NAIROBI)).beyond, ['mild']);
-  assert.equal(core.canNeedChill(taxon({ climate: { ...taxon().climate, tminCold: { low: 0, median: 6, high: null, count: 1, basis: 'observed_cells' } } })), false, 'no recorded Q95: nothing to compare');
+  assert.equal(core.canNeedChill(taxon({ climate: { ...taxon().climate, tminCold: { low: 0, median: 6, high: null, count: 1, basis: 'thinned_cells', blocks: 30, lowSource: null, highSource: null, weak: false } } })), false, 'no recorded Q95: nothing to compare');
 });
 
 // ---- 3. annuals beyond the heat range: the cool season ----
 
-test('rangeCheck: an annual beyond its heat range stays, advised to the cool season (lettuce at Seville: 34.8 vs Q95 32.1)', () => {
-  const lettuce = plant('Lactuca sativa');
+test('rangeCheck: an annual beyond its heat range stays, advised to the cool season (Good-King-Henry, recorded annual, at Seville: 34.8 vs heat limit 30.2)', () => {
+  const annual = plant('Chenopodium bonus-henricus');
   const s = siteAt(SEVILLE);
-  assert.deepEqual(core.rangeCheck(lettuce, s), { verdict: 'inside', sides: [], beyond: [], aridity: 'inside', coolSeason: true });
-  assert.deepEqual(core.withinRange([lettuce], s), [lettuce]);
-  const marks = (surface) => rangeMarks(lettuce, ctx({ location: s }), surface).map((m) => [m.kind, m.key, m.severity]);
+  assert.deepEqual(core.rangeCheck(annual, s), { verdict: 'inside', sides: [], beyond: [], aridity: 'drier', coolSeason: true });
+  assert.deepEqual(core.withinRange([annual], s), [annual]);
+  // (Seville is also drier than where it is recorded: that mark is its own kind, left out here.)
+  const marks = (surface) => rangeMarks(annual, ctx({ location: s }), surface).filter((m) => m.kind !== 'aridity').map((m) => [m.kind, m.key, m.severity]);
   assert.deepEqual(marks('row'), [['season', 'range.coolSeasonShort', 'note']], 'a short tag on rows, instead of "warm-season annual"');
   assert.deepEqual(marks('add'), [['season', 'range.coolSeasonShort', 'note']]);
   assert.deepEqual(marks('details'), [['season', 'range.coolSeason', 'note']], 'the full sentence in Details');
   assert.deepEqual(marks('chip'), []);
   // Within the margin: still the edge, as for any plant.
-  const near = core.rangeCheck(lettuce, siteAt({ ...SEVILLE, tmaxWarmC: 33 }));
+  const near = core.rangeCheck(annual, siteAt({ ...SEVILLE, tmaxWarmC: 31.5 }));
   assert.deepEqual([near.verdict, near.sides, near.coolSeason], ['edge', ['hot'], false]);
   // A perennial with the same range is still outside.
-  assert.equal(core.rangeFit({ ...lettuce, traits: { ...lettuce.traits, is_annual: false } }, s), 'outside');
+  assert.equal(core.rangeFit({ ...annual, traits: { ...annual.traits, is_annual: false } }, s), 'outside');
 });
 
 // A site whose future slots are all hot (today 25 °C).
@@ -124,7 +125,7 @@ const hotFuture = { ...lyon, lookup: { ...lyon.lookup, climate: { ...lyon.lookup
 test('futureCheck: an annual "too hot by …" becomes the cool-season advice, not a loss', () => {
   const annual = taxon({ traits: { is_annual: true }, phases: { start: 'placenta_i', end: 'secondary_i', sources: [] } });
   const c = core.futureCheck(annual, hotFuture, 'ssp245');
-  assert.deepEqual(c, { period: '2041-2070', verdict: 'inside', why: [], already: [], agree: 4, of: 4, coolSeason: true });
+  assert.deepEqual(c, { period: '2041-2070', verdict: 'inside', why: [], already: [], agree: 4, of: 4, coolSeason: true, warmEnough: false });
   const sum = core.futureSummary([annual], hotFuture, 'ssp245');
   assert.deepEqual(sum.periods[0].outside, []);
   assert.deepEqual(sum.periods[0].heat, []);
@@ -163,13 +164,205 @@ test('siteMarks: "Needs watering in the dry months" (short on rows and Add, full
   assert.equal(core.needsMarkProviders({ climate: 'Temperate', location: null, site: { ...DRY, water: 'average' } }, ['Temperate']), false);
 });
 
-// ---- the seam for the warmth bound: one list of range variables ----
+// ---- the seam: one list of range variables ----
 
 test('range variables: the export variables the source reads and the bounds the rule checks are listed once', async () => {
   const types = await import('../src/lib/consortium/types.ts');
-  assert.deepEqual(Object.keys(types.RANGE_VARIABLES), ['tmin_cold', 'tmax_warm', 'aridity']);
-  assert.deepEqual(core.RANGE_BOUNDS.map((b) => b.side), ['cold', 'mild', 'hot']);
+  assert.deepEqual(Object.keys(types.RANGE_VARIABLES), ['tmin_cold', 'tmax_warm', 'tmean_year', 'aridity']);
+  assert.deepEqual(core.RANGE_BOUNDS.map((b) => b.side), ['cold', 'mild', 'cool', 'hot']);
   const source = readFileSync(new URL('../src/islands/consortium/data/sqlite-source.ts', import.meta.url), 'utf8');
   assert.match(source, /RANGE_VARIABLES/);
   assert.doesNotMatch(source, /'tmin_cold', 'tmax_warm'/, 'no second list in the SQL');
+});
+
+// ---- schema 3 (the ranges rebuild): the year's warmth, weak rows, the export's chill rule ----
+
+// The diagnosis sites (canopi-climate 0.2.0 lookups, all 9 slots; Seville from the future fixture).
+const SITES = JSON.parse(readFileSync(new URL('./fixtures/consortium-ranges/sites.json', import.meta.url), 'utf8'));
+const at = (name) => { const s = SITES[name]; return { lat: s.lat, lon: s.lon, source: 'map', lookup: { lat: s.lat, lon: s.lon, climate: s.climate, soil: null, regions: { wgsrpdL3: null, isoA2: null } } }; };
+const verdict = (name, site) => core.rangeCheck(plant(name), at(site));
+
+test('acceptance (owner diagnosis, export r-01102782139409b5): each site\'s plants as the growers know them', () => {
+  assert.equal(index.release_id, 'r-01102782139409b5', 'the schema 3 export is installed');
+  for (const name of ['Theobroma cacao', 'Cocos nucifera']) {
+    const c = verdict(name, 'nairobi');
+    assert.equal(c.verdict, 'outside', `${name} at Nairobi`);
+    assert.ok(c.beyond.includes('cool'), `${name} at Nairobi: too cool (year mean 19.35 °C)`);
+  }
+  for (const name of ['Theobroma cacao', 'Manihot esculenta']) assert.equal(verdict(name, 'manaus').verdict, 'inside', `${name} at Manaus`);
+  for (const name of ['Olea europaea', 'Rosmarinus officinalis', 'Prunus dulcis', 'Ficus carica', 'Punica granatum']) assert.equal(verdict(name, 'seville').verdict, 'inside', `${name} at Seville`);
+  const olive = core.futureCheck(plant('Olea europaea'), at('seville'), 'ssp245');
+  assert.equal(olive.period, '2071-2099');
+  assert.equal(olive.why.includes('heat'), false, 'olive not too hot at Seville by 2071–2099 (SSP2-4.5)');
+  assert.equal(verdict('Ficus carica', 'riyadh').verdict, 'inside', 'fig at Riyadh');
+  for (const name of ['Ziziphus jujuba', 'Punica granatum', 'Moringa oleifera']) assert.equal(verdict(name, 'riyadh').verdict, 'edge', `${name} at Riyadh`);
+  assert.equal(verdict('Malus domestica', 'minneapolis').verdict, 'inside', 'apple at Minneapolis');
+  assert.equal(verdict('Mangifera indica', 'minneapolis').verdict, 'outside', 'mango at Minneapolis');
+  assert.equal(verdict('Ficus carica', 'rovaniemi').verdict, 'outside', 'fig at Rovaniemi');
+  for (const name of ['Theobroma cacao', 'Manihot esculenta', 'Cocos nucifera', 'Mangifera indica', 'Musa acuminata', 'Carica papaya', 'Artocarpus heterophyllus']) {
+    assert.equal(verdict(name, 'singapore').sides.includes('mild'), false, `${name} at Singapore: not "mild"`);
+  }
+});
+
+test('rangeCheck: the year\'s warmth (tmean_year, the mean of the coldest and warmest months\' means) is a low bound for perennials only', () => {
+  const warmth = { low: 21.4, median: 25.2, high: 27.5, count: 499, basis: 'thinned_cells', blocks: 499, lowSource: null, highSource: null, weak: false };
+  const tree = taxon({ climate: { ...taxon().climate, tmeanYear: warmth } });
+  // Nairobi: (17.6 + 21.1) / 2 = 19.35, 2.05 below 21.4: beyond the margin.
+  assert.deepEqual(core.rangeCheck(tree, siteAt(NAIROBI)).beyond.includes('cool'), true);
+  const edge = core.rangeCheck(tree, siteAt({ ...NAIROBI, tmeanColdC: 18, tmeanWarmC: 21.2 }));
+  assert.deepEqual([edge.sides.includes('cool'), edge.beyond.includes('cool')], [true, false], '19.6: within the margin');
+  const annual = taxon({ traits: { is_annual: true }, climate: { ...taxon().climate, tmeanYear: warmth } });
+  assert.equal(core.rangeCheck(annual, siteAt(NAIROBI)).sides.includes('cool'), false, 'annuals skip it, as winter cold');
+  // Details names it with the values compared.
+  const details = rangeMarks(tree, ctx({ location: siteAt(NAIROBI) }), 'details').find((m) => m.state === 'cool');
+  assert.deepEqual([details.key, details.vars], ['range.side.cool', { site: 19.35, bound: 21.4 }]);
+});
+
+test('rangeCheck: a weak row (fewer than 20 one-degree blocks, or another raster) alone never makes a plant outside: at most near the edge', () => {
+  const weakHot = { low: 15, median: 22, high: 25, count: 12, basis: 'thinned_cells', blocks: 8, lowSource: null, highSource: null, weak: true };
+  const t = taxon({ climate: { ...taxon().climate, tmaxWarm: weakHot } });
+  const c = core.rangeCheck(t, siteAt({ ...SEVILLE, tminColdC: 0, tmeanColdC: 5, tmeanWarmC: 20 }));
+  assert.deepEqual([c.verdict, c.sides.includes('hot'), c.beyond.includes('hot')], ['edge', true, false], '34.8 against a weak 25: edge');
+  const note = rangeMarks(t, ctx({ location: siteAt({ ...SEVILLE, tminColdC: 0, tmeanColdC: 5, tmeanWarmC: 20 }) }), 'details').find((m) => m.key === 'range.weak');
+  assert.ok(note, 'Details says the bound rests on few places');
+  // The future heat check keeps the cap.
+  const f = core.futureCheck({ ...t, phases: { start: 'placenta_i', end: 'secondary_i', sources: [] } }, hotFuture, 'ssp245');
+  assert.equal(f.why.includes('heat'), false);
+  assert.equal(f.verdict, 'edge');
+});
+
+test('futureCheck: warming that lifts a site out of "too cool" is said, positively, when it changes the verdict', () => {
+  const warmth = { low: 20, median: 24, high: 27, count: 400, basis: 'thinned_cells', blocks: 400, lowSource: null, highSource: null, weak: false };
+  const tree = taxon({ phases: { start: 'placenta_i', end: 'secondary_i', sources: [] }, climate: { ...taxon().climate, tminCold: null, tmaxWarm: { ...warmth, low: 20, high: 40 }, tmeanYear: warmth } });
+  // Today (3 + 18) / 2 = 10.5: too cool; by 2041–2070, slots at 36 °C with means 18/26: 22, warm enough.
+  const warm = (p) => ({ ...p, tmeanColdC: 18, tmeanWarmC: 26 });
+  const site = { ...hotFuture, lookup: { ...hotFuture.lookup, climate: { ...hotFuture.lookup.climate, periods: hotFuture.lookup.climate.periods.map((p) => p.scenario === 'historical' ? p : warm(p)) } } };
+  assert.equal(core.rangeFit(tree, site), 'outside');
+  const c = core.futureCheck(tree, site, 'ssp245');
+  assert.equal(c.warmEnough, true);
+  assert.deepEqual(c.why, []);
+  const marks = (surface) => futureMarks(tree, ctx({ location: site }), surface).map((m) => [m.kind, m.key, m.state]);
+  assert.deepEqual(marks('details'), [['future', 'future.warmEnough', 'warm']]);
+  assert.deepEqual(marks('row'), [['future', 'future.warmEnoughShort', 'warm']]);
+  // Still too cool in the projection: no word (only losses are listed, as before).
+  const cold = core.futureCheck(tree, hotFuture, 'ssp245');
+  assert.equal(cold.warmEnough, false);
+});
+
+test('schema 3: the reader and the installer read schema 3, the source reads blocks, sources and weak', async () => {
+  const types = await import('../src/lib/consortium/types.ts');
+  assert.equal(types.SCHEMA_VERSION, 3);
+  const cacao = plant('Theobroma cacao').climate;
+  assert.deepEqual(cacao.tmeanYear, { low: 21.4, median: 25.2, high: 27.5, count: cacao.tmeanYear.count, basis: 'thinned_cells', blocks: 499, lowSource: 'treegoer_ranges', highSource: null, weak: false });
+  assert.equal(cacao.tmaxWarm.highSource, 'treegoer_ranges');
+});
+
+// ---- 5. the room answer is advisory (owner request 2026-11-12): the matrix layers are relative sun
+// exposure, not heights, so a tall plant is pruned or replaced, never a misfit ----
+
+const SMALL = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'small' };
+const fig = taxon({ id: 'fig', canonical_name: 'Ficus carica', traits: { height_m: { min: 3, max: 12 } } });
+const short = taxon({ id: 'short', canonical_name: 'Short tree', traits: { height_m: { min: 2, max: 5 } } });
+
+test('room: a plant taller than the room fits, with the height noted; it never makes a cell a misfit, a flag or an ask', () => {
+  const f = core.fits(fig, SMALL);
+  assert.equal(f.verdict, 'fit');
+  assert.deepEqual(f.misfits, []);
+  assert.deepEqual(f.reasons, [{ key: 'room', verdict: 'fit', kind: 'wild_height', meters: 12, limit: 6 }]);
+  assert.equal(core.tallerThanRoom(f), true);
+  assert.equal(core.tallerThanRoom(core.fits(short, SMALL)), false);
+  const m = core.buildMatrix('Temperate', [fig], [], SMALL);
+  const cell = m.rows[0].cells[3];
+  assert.deepEqual([cell.empty, cell.fitting, cell.inList], [null, 1, 1], 'the emergent cell is free, with the fig counted in "N fit"');
+  assert.equal(m.rows.flatMap((r) => r.cells).some((x) => x.empty === 'misfit'), false, 'no cell "can\'t be filled" for the room');
+  const flags = core.flagsOf([fig], { site: SMALL, interactions: [] });
+  assert.equal(flags.some((x) => x.kind === 'misfit'), false, 'no misfit flag');
+  // Light, soil and water still block.
+  assert.equal(core.fits(taxon({ traits: { sun: false, height_m: { min: 3, max: 12 } } }), { ...SMALL, light: 'sun' }).verdict, 'misfit');
+});
+
+test('room: the suggestion still prefers plants that fit the room naturally (a taller one is never picked automatically)', () => {
+  const s = core.suggest([fig, short], { site: SMALL, interactions: [] });
+  assert.deepEqual(s.members, ['short']);
+  assert.equal(s.limit, core.SIZE_LIMIT.small);
+  // Kept by the reader, it stays.
+  assert.ok(core.suggest([fig, short], { site: SMALL, interactions: [], kept: ['fig'] }).members.includes('fig'));
+});
+
+test('room: the height note ("Grows to 12 m: keep it pruned, or pick a smaller plant") on rows, Add and Details; marks load for a sized room', () => {
+  const c = { ...ctx(), site: SMALL };
+  const marks = (surface) => siteMarks(fig, c, surface).map((m) => [m.kind, m.key, m.severity, m.vars]);
+  assert.deepEqual(marks('row'), [['room', 'room.tallShort', 'note', { m: 12 }]]);
+  assert.deepEqual(marks('add'), [['room', 'room.tallShort', 'note', { m: 12 }]]);
+  assert.deepEqual(marks('details'), [['room', 'room.tall', 'note', { m: 12 }]]);
+  assert.deepEqual(marks('chip'), []);
+  assert.deepEqual(siteMarks(short, c, 'details'), []);
+  assert.deepEqual(siteMarks(fig, { ...c, site: { ...SMALL, room: 'field' } }, 'details'), []);
+  assert.equal(core.needsMarkProviders({ climate: 'Temperate', location: null, site: SMALL }, ['Temperate']), true);
+  const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
+  assert.equal(en['consortium.room.tall'], 'Grows to {m} m: keep it pruned, or pick a smaller plant.');
+  for (const k of ['consortium.matrix.why.room', 'consortium.misfit.wild.small', 'consortium.misfit.wild.large']) assert.equal(k in en, false, `${k} is gone: room is never a misfit`);
+  assert.doesNotMatch(view('Details.tsx'), /misfit\.wild/);
+  assert.ok(core.markKinds.includes('room'));
+});
+
+// ---- 6. annuals (owner, decision row "Growing months" 2026-11-12): a plain "annual" tag, no season
+// claimed (the USDA growth period classes 18 of 77 annuals, turnip and rye "warm"); a crop grown as an
+// annual (grown_as_annual, schema 3) is an annual everywhere: range, future, marks ----
+
+test('annual marks: a plain "annual" tag and a season-neutral Details note, whatever the growth period says', () => {
+  const s = siteAt(SEVILLE);
+  const note = (name, surface) => rangeMarks(plant(name), ctx({ location: s }), surface).filter((m) => m.state === 'annual').map((m) => m.key);
+  for (const name of ['Zea mays', 'Hordeum vulgare', 'Vicia faba']) {
+    assert.deepEqual(note(name, 'row'), ['range.annualShort'], name);
+    assert.deepEqual(note(name, 'details'), ['range.annual'], name);
+  }
+  assert.equal(core.annualSeason, undefined, 'no reading of active_growth_period');
+  const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
+  assert.equal(en['consortium.range.annualShort'], 'annual');
+  assert.doesNotMatch(en['consortium.range.annual'], /frost-free|warm season|cool season/);
+  for (const k of ['annualCool', 'annualCoolShort', 'annualPlain', 'annualPlainShort']) assert.equal(en[`consortium.range.${k}`], undefined, k);
+  assert.equal(en['consortium.range.coolSeason'], 'Too hot in summer here: grow it in the cool season.', 'the heat case stays');
+});
+
+test('grown_as_annual: a crop grown as an annual is an annual for the range, the future check and the marks', () => {
+  const warm = { ...taxon().climate, tminCold: { low: 2, median: 8, high: 14, count: 90, basis: 'thinned_cells' }, tmaxWarm: { low: 20, median: 26, high: 30, count: 90, basis: 'thinned_cells' }, tmeanYear: null };
+  const onion = taxon({ traits: { is_annual: false, grown_as_annual: true }, climate: warm });
+  const perennial = taxon({ traits: { is_annual: false, grown_as_annual: false }, climate: warm });
+  assert.equal(core.isAnnual(onion), true);
+  assert.equal(core.isAnnual(perennial), false);
+  const harbin = siteAt({ koppen: 'Dwa', tminColdC: -24, tmaxWarmC: 29, tmeanColdC: -18, tmeanWarmC: 23 });
+  assert.equal(core.rangeFit(perennial, harbin), 'outside', 'a perennial: too cold');
+  assert.equal(core.rangeFit(onion, harbin), 'inside', 'grown as an annual: no winter check');
+  const hot = siteAt({ koppen: 'Csa', tminColdC: 5, tmaxWarmC: 34, tmeanColdC: 11, tmeanWarmC: 27 });
+  assert.equal(core.rangeCheck(onion, hot).coolSeason, true, 'too hot: the cool-season advice, not outside');
+  assert.deepEqual(rangeMarks(onion, ctx({ location: harbin }), 'row').map((m) => m.key), ['range.annualShort']);
+});
+
+test('reader: plants.grown_as_annual reaches Taxon.traits (fixture: onion)', async () => {
+  const dir = new URL('fixtures/consortium-v2/export/', import.meta.url);
+  const m = JSON.parse(readFileSync(new URL('manifest.json', dir), 'utf8'));
+  const o = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(m.files[0].file, dir)))), { releaseId: m.release_id, climates: m.files[0].climate_zones });
+  const src = createSqliteSource(o.db, { images: {} });
+  const pool = await src.pool('Temperate');
+  assert.equal(pool.find((t) => t.canonical_name === 'Allium cepa').traits.grown_as_annual, true);
+  assert.equal(pool.find((t) => t.canonical_name === 'Malus domestica').traits.grown_as_annual, false);
+  assert.equal(core.isAnnual(pool.find((t) => t.canonical_name === 'Allium cepa')), true);
+});
+
+test('range.ts: which checks annuals skip is one switch (checksWinter), read by every winter-side bound', () => {
+  const src = readFileSync(new URL('../src/lib/consortium/range.ts', import.meta.url), 'utf8');
+  assert.equal((src.match(/export const checksWinter = /g) ?? []).length, 1);
+  const bounds = src.slice(src.indexOf('export const RANGE_BOUNDS'), src.indexOf('];', src.indexOf('export const RANGE_BOUNDS')));
+  for (const side of ['cold', 'mild', 'cool']) assert.match(bounds, new RegExp(`side: '${side}'[^\\n]*checksWinter`), side);
+  assert.doesNotMatch(bounds, /isAnnual/, 'no second copy of the rule');
+  assert.doesNotMatch(src.slice(src.indexOf('export const RANGE_BOUNDS')), /is_annual|grown_as_annual/, 'the traits are read once, in isAnnual');
+  assert.equal(core.checksWinter(plant('Hordeum vulgare')), false, 'today: annuals skip the winter sides');
+});
+
+test('month layers: every PFAF month row of the export carries its source region, so Details never says "Everywhere" for it', async () => {
+  const facts = await real.details(plant('Vicia faba').id);
+  const pfaf = facts.layerValues.filter((v) => v.source === 'pfaf');
+  assert.ok(pfaf.length > 0);
+  for (const v of pfaf) assert.deepEqual(v.scope, { country: 'GB' }, `${v.field}: scoped to the UK`);
 });

@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T07:47:12Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T08:48:43Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T21:36:02Z }
@@ -26,7 +26,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:fd765149314335e3
-    last_modified: 2026-11-12T07:28:43Z
+    last_modified: 2026-11-12T07:59:10Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -80,13 +80,13 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:e911f860aa4f620d
-    last_modified: 2026-11-11T15:36:29Z
+    digest: sha256:1d11d37307e96f88
+    last_modified: 2026-11-12T08:15:12Z
   - id: consortium-commit0-browser-test-mjs
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:2082c2b16997dada
-    last_modified: 2026-11-11T15:36:29Z
+    digest: sha256:0d31414eef7a7630
+    last_modified: 2026-11-12T08:15:12Z
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
@@ -175,8 +175,8 @@ sources:
   - id: consortium-seams-browser-test-mjs
     resource: ../../scripts/browser/consortium-seams.browser.test.mjs
     title: scripts/browser/consortium-seams.browser.test.mjs
-    digest: sha256:c127c572c85c1862
-    last_modified: 2026-11-12T06:25:28Z
+    digest: sha256:c47cbd65392c3868
+    last_modified: 2026-11-12T08:26:29Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
@@ -230,23 +230,23 @@ sources:
   - id: consortium-p5-browser-test-mjs
     resource: ../../scripts/browser/consortium-p5.browser.test.mjs
     title: scripts/browser/consortium-p5.browser.test.mjs
-    digest: sha256:380009a610197f02
-    last_modified: 2026-11-12T07:18:38Z
+    digest: sha256:f7e411304fb07c5f
+    last_modified: 2026-11-12T08:36:39Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
-    digest: sha256:9c78519e67188b29
-    last_modified: 2026-11-11T15:36:29Z
+    digest: sha256:fa28606dafe297ca
+    last_modified: 2026-11-12T07:59:10Z
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
-    digest: sha256:d00a6bc0eac9d46b
-    last_modified: 2026-11-11T15:36:29Z
+    digest: sha256:e4f1d144fc4ece03
+    last_modified: 2026-11-12T08:15:12Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
     digest: sha256:f63c0943d0993101
-    last_modified: 2026-11-12T07:30:44Z
+    last_modified: 2026-11-12T07:59:10Z
 enforced_by:
   - scripts/check-built-site.mjs
   - scripts/browser/consortium-commit0.browser.test.mjs
@@ -319,7 +319,7 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
 - Browser tests, via `npm run test:browser` (capped; never in `npm test`; it runs `npm run build:browser-test` first, so rebuild with `npm run build` before `check-built-site` or a deploy), one file per owner (review C1), enforced by [browser-tests.test.mjs](../../scripts/browser-tests.test.mjs) in `npm test`:
   - [consortium-commit0.browser.test.mjs](../../scripts/browser/consortium-commit0.browser.test.mjs), no todo: P1 (515 plants counted in the page from the one hashed wasm), P2 (`application/wasm`, immutable headers), P3 (gzip magic, no content-encoding), P6/BT-9 JS-off shell, a mount with no head shift, and the BT-9 load screens with their buttons (DB 404, corrupt, wrong digest, empty body, `user_version` 2, WebAssembly off, loader chunk 404 online and offline) at all four variants;
   - `consortium-s1…s4.browser.test.mjs`: each stream's §7 tests in full (BT-1 data and start halves, BT-2…BT-8, BT-9 `.canopi` against the vendored app schema, BT-5 offline correction, the exit walk-through); `browser-tests.test.mjs` fails on any todo or skip, and the tests drive real controls wherever one exists: S2 and S3 also use the hook to read the store and to set up a consortium no control makes in one step (a member taken out mid-sheet, deep shade), and the seam tests use it only for the chunk faults;
-  - [consortium-seams.browser.test.mjs](../../scripts/browser/consortium-seams.browser.test.mjs): the P2 hand-off fixes (the one opener and Add's filters, checked against a small garden, Show them anyway on a run with its stage bars, Paste leaving Start, a climate card after Change site not saved (F1), Undo back to Start (F2), focus in an open sheet (F3), the later chunk failing or loading (F4, F5), tap targets at every phone stage, the toast never covering a control, font weights, CJK headings, focus after Suggest, Suggest a start, Back to your consortium, Remove and Undo; P5 hand-off branch: UX3 the phone grid below 960 px and the table from 960 px, no sideways scroll or cut name at 700/959/960/1000 px; UX4 the Jobs headline counts jobs covering every stage and each run of missing stages has "Find a … for {stages}" opening Add for the job and those stages in any layer (`SheetFor.cell.stratum` null); Item 7 a filled cell's own "+" (`[data-add-filled]`, "Add a plant: {cell}", last in the cell, 24 px at least, no name cut at 960/1280 px; phone: "+ Add" ending each filled layer of the stage view) whose plant lands in that cell);
+  - [consortium-seams.browser.test.mjs](../../scripts/browser/consortium-seams.browser.test.mjs): the P2 hand-off fixes (the one opener and Add's filters, checked against shade (the room no longer filters, owner request 2026-11-12), Show them anyway on a run with its stage bars, Paste leaving Start, a climate card after Change site not saved (F1), Undo back to Start (F2), focus in an open sheet (F3), the later chunk failing or loading (F4, F5), tap targets at every phone stage, the toast never covering a control, font weights, CJK headings, focus after Suggest, Suggest a start, Back to your consortium, Remove and Undo; P5 hand-off branch: UX3 the phone grid below 960 px and the table from 960 px, no sideways scroll or cut name at 700/959/960/1000 px; UX4 the Jobs headline counts jobs covering every stage and each run of missing stages has "Find a … for {stages}" opening Add for the job and those stages in any layer (`SheetFor.cell.stratum` null); Item 7 a filled cell's own "+" (`[data-add-filled]`, "Add a plant: {cell}", last in the cell, 24 px at least, no name cut at 960/1280 px; phone: "+ Add" ending each filled layer of the stage view) whose plant lands in that cell);
   - [consortium-s4.browser.test.mjs](../../scripts/browser/consortium-s4.browser.test.mjs) runs: BT-1 start half (real data, the exact four crop examples), BT-7 (a link reopened, an unknown token, an outdated link, a reload restore, a stage 3 link round trip, the country label kept over reloads and saves, a pasted link, a link with no climate, a v1 query link, a v1 save shown once, Copy on click only; compared through the share link), BT-8 (> 20 plants from an encoded link of the fixture's 21 Temperate plants: "At a glance" + table; ≤ 20: the table; no control printed), BT-9 `.canopi`. The exit walk-through runs at all four variants, keyboard only: Remove and Undo (focus on the restored plant), Keep, Share with the copied link reopened in a new page (same members, the pin), Print and a validated Download;
   - [consortium-timing.mjs](../../scripts/browser/consortium-timing.mjs) (`npm run timing:consortium`), on demand only: §8 cold/warm timing of a `#v=4` link of 9 real Temperate plants (built with `encodeLink`; median of 5) to `ct:matrix`, in two profiles (`CANOPI_TIMING_PROFILES`): desktop (1280 px, 4× CPU, 9 Mbps, 60 ms RTT, the numbers below) and phone (390 px mobile, 4× CPU, Slow 4G throughput with a 400 ms RTT). ho-misc reading (2026-11-11, load average 3–5): P2 `b75656c` desktop first visit 2,333 / reload 1,259 ms, phone 7,940 / 1,661; P5 (`7a83167` + ho-misc) desktop 2,371 / 1,210, phone 8,796 / 1,684, so a slow phone's first visit is about 0.85 s (11%) slower in P5 while the desktop numbers hold. Waterfall and trace (ho-misc): the same request chain in both (HTML, then everything preloaded in parallel, then `load.js` fetching `sqlite3.wasm`; the database preloaded from the HTML), the link saturated from about 1 s to the last byte and the main thread mostly idle, the same ~1.2 s from the last byte to `ct:matrix`; the difference is bytes: the schema 2 database is 127 KB gzip larger, 126 KB of it `plant_koppen` (71 KB, read only by Details), `plant_climate` (its unused `precip` and `dry_months` rows 16 KB) and `plant_climate_status`. Preloading the wasm from the HTML changed nothing (median of 7: 8,683 against 8,629 ms). Reading of 2026-11-11 at `83555c4`: cold 2,301 ms, warm 1,096 ms (2,390 and 1,081 before the views were lazy). P5 commit 0 (schema 2, 556,862 B database, load average about 2.5–3): cold 2,277 and 2,290 ms, warm 1,206 and 1,167 ms; reading the ranges as objects cost about 0.1 s cold, so `sqlite-source.ts` reads them in one `selectArrays` query (without any range read: cold 2,227, warm 1,171, so the warm remainder is the larger database). Island 57.5 KB, first run 38.2 KB. After the commit 0 review (seams per stream, lazy providers, `#ct-climate`), same load and machine: cold 2,365 and 2,298 ms against 2,267 and 2,272 at `afcb9a3`, warm 1,295 and 1,219 against 1,240 and 1,228;
   - [consortium-p5.browser.test.mjs](../../scripts/browser/consortium-p5.browser.test.mjs) (P5 commit 0): the P5 streams' specs for design check §B/§C, each `P5-n (S5x …)`, todo for its stream until built; `browser-tests.test.mjs` requires the title and allows a todo only if it names that stream, so a stream removing its own todos passes; `tool()` stubs map tiles for every spec (`mapTiles: 'stub'`; any other third-party request is aborted and listed): S5b location granted/denied/timeout/unavailable, search hit (one request on Enter, page language, no email), no result and offline, map pick and ocean click, no WebGL, coast, polar, borderline (Lyon), tiles failing, share with and without "include my location"; S5b specs also pin owner answers 1 and 5: a Seville location pre-checks the Mediterranean card with `store.climate` null until `[data-location-confirm]`, a borderline site (Lyon) pre-checks the nearest climate and names both, denied and failed lookups pre-check nothing, polar keeps the climate null, offshore gives no location country, the privacy line sits in its button's parent, and no `k=` reaches a link or the address without the tick (`k=` and `o=` with it); S5c nothing fits (Yakutsk; strengthened: it names the site's coldest month and its button opens the plant search), P5-14b (a Seville suggestion holds no plant outside its range, Add lists none until typed, and a typed one asks first), P5-14c (with a location the matrix "N fit" counts leave out plants outside their range; P2 counts without one), near-edge mark (P5-15b: Details lines in French write "5,8"), the outside-range plant typed in Add, shown "outside", added and a member (P5-16), estimate label (Lyon as Subtropical), and P5-26 a `#v=4&c=subtropical` link without `o=` opening with borrowed plants marked estimate; S5d future summary (P5-18: SSP2-4.5 radio checked, the lede wording, one line per member, the uncounted line adding up, an ink future mark on a chip, after the SSP5-8.5 radio every checked line names SSP5-8.5 and never fewer outside, nothing without a location) and "not checked" (P5-19: no summary, no future mark); S5e native here in three states, soil likely (Manaus) and none when borderline (Lyon); S5f /fr/ and /ja/privacy/ (naming Nominatim and OpenFreeMap and linking their privacy policies), the footer link, the /data-sources/ credits (S5f's three specs run: no todo left, see [Privacy page and tool credits](/modules/privacy-and-credits.md)). The page contract they read (`data-location-*`, `data-mark`, `data-future*`, `data-native`, `data-likely`, `data-share-location`, `data-credit`, the hook's `mapCentre`) is in the file's header. `P5-0a…d (commit 0 …)` run: the sites' reader answers on the built tiles ([location-fixtures.mjs](../../scripts/browser/location-fixtures.mjs) `SITES`, `EXPECTED`, `lookupAt`), the geolocation, Nominatim, OpenFreeMap, WebGL and tile stubs, and the commit 0 promise (P5-0d: on a covered climate without a location, members in the matrix, no `outside`, `edge`, `future` or `native` mark and the providers not loaded; with a location they load and every mark carries a PlantMarks surface; no third-party call), which stays true once the streams add marks; S5e's specs (P5-20 to P5-22) are todo "moved to P5.2" (decision row "P5 ships without S5e"); they are not P5 push blockers.
@@ -330,7 +330,7 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
 - A sheet's `<dialog>` closes before the app knows: on Escape the browser drops `open` and restores the focus at once, and SheetFrame's `close` listener (which calls `closeSheet()` for whatever sheet is current) runs a task later. A test must wait for the sheet element (`dialog.ct-sheet`) to go, not for `dialog[open]` to clear, before opening another sheet (S3 BT-5's flaky "estimate tag": the old frame's close event closed the next sheet, 2 in 80 loops under load).
 - The paste cost guard in `scripts/consortium-paste.test.mjs` counts plant field reads through a Proxy (46,000 for 5 or 500 lines; the pre-`4658fdb` code read 3,052,000) instead of timing: a 200 ms wall-clock bound failed under machine load.
 - P7: the JSX scope alone leaves every other page byte-identical (checked after the pins commit). Deleting app.js drops one export from the shared `chrome` chunk, so that chunk's hash, and the `<script src>` of every page, change. The page contents are otherwise identical.
-- `#ct-data` carries every `consortium.*` string (600 keys per locale after the climate-ranges stream, which added `location.means`, `location.meansNear`, `range.coolSeason`, `range.coolSeasonShort`, `future.coolSeason`, `water.dryMonths` and `water.dryMonthsShort`; 593 at the P5 seam review, which added `matrix.emptyNoFit`, `location.state.seaKept`, `location.state.failedKept`, `marks.unavailable`, `range.annualShort` and `start.suggestStopped` (the last at the end of S5c's block); 522 after S5b: the P2 hand-offs and their review pruned 422 unused ones, P5 commit 0 added `country.fromLocation`, S5b 60 `location.*` and `share.location*` keys; `scripts/consortium-keys.test.mjs` keeps it so, counting a key used only when it is in a T( or P( call, a template, ConsortiumPage.astro or its INDIRECT list). Block keys close each locale file in order: `consortium.block.s1`…`s4`, then (P5 commit 0) `s5b`…`s5f` and last `consortium.block.end`, each stream appending after its own block key and before the next, so no stream edits another's last line; S5f's block may also hold `privacy.*` and new `dataSources.*` keys (`homepage.test.mjs`). S4's keys sit after `consortium.block.s4` with names that differ from the v1 keys (`share.done`, `crops.question`, `print.button`…): a duplicate JSON key would keep the v1 position and break the block-order test in `homepage.test.mjs`.
+- `#ct-data` carries every `consortium.*` string (613 keys per locale after the schema 3 ranges and the advisory room (`range.annual` and `range.annualShort` reworded season-neutral, decision row "Growing months"), which added `range.side.cool`, `range.weak`, `future.warmEnough`, `future.warmEnoughShort`, `room.tall` and `room.tallShort` and removed `matrix.why.room`, `misfit.wild.small` and `misfit.wild.large`; 610 after the climate-ranges stream, which added `location.means`, `location.meansNear`, `range.coolSeason`, `range.coolSeasonShort`, `future.coolSeason`, `water.dryMonths` and `water.dryMonthsShort`; 593 at the P5 seam review, which added `matrix.emptyNoFit`, `location.state.seaKept`, `location.state.failedKept`, `marks.unavailable`, `range.annualShort` and `start.suggestStopped` (the last at the end of S5c's block); 522 after S5b: the P2 hand-offs and their review pruned 422 unused ones, P5 commit 0 added `country.fromLocation`, S5b 60 `location.*` and `share.location*` keys; `scripts/consortium-keys.test.mjs` keeps it so, counting a key used only when it is in a T( or P( call, a template, ConsortiumPage.astro or its INDIRECT list). Block keys close each locale file in order: `consortium.block.s1`…`s4`, then (P5 commit 0) `s5b`…`s5f` and last `consortium.block.end`, each stream appending after its own block key and before the next, so no stream edits another's last line; S5f's block may also hold `privacy.*` and new `dataSources.*` keys (`homepage.test.mjs`). S4's keys sit after `consortium.block.s4` with names that differ from the v1 keys (`share.done`, `crops.question`, `print.button`…): a duplicate JSON key would keep the v1 position and break the block-order test in `homepage.test.mjs`.
 - With storage blocked (reading `localStorage` throws), the sqlite-wasm bootstrap's kvvfs setup threw `SecurityError`; `data/load.ts` switches kvvfs and OPFS off through `sqlite3ApiConfig` before init (H1).
 - Each browser-test page is a context with its own copy of the database: the s4 file closes each page's context once used (`done()`); without it, BT-7's many pages were OOM-killed at 3 GB.
 - `helpers.mjs` `axNodes` reads the full accessibility tree (`interestingOnly: false`, skipping none, unnamed generic, InlineTextBox and LineBreak; Chrome's `image` becomes `img`), so tables and cells are visible; BT-8 still reads the shown tables' captions from the DOM.

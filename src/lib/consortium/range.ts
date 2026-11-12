@@ -1,26 +1,31 @@
 // Stream S5c: whether a plant's observed climate range holds the site (owner answer 2, 2026-11-11).
 // The site's today values (the climate reader's historical period) against the plant's observed
-// range (Taxon.climate, GBIF cells, cultivation included), through the bounds of RANGE_BOUNDS: the
-// coldest-month minimum on the cold side, and on the mild side for a plant that can need winter chill
-// (never for an annual), and the warmest-month maximum on the hot side. Beyond the Q05/Q95 percentile
-// by more than RANGE_MARGIN_C: 'outside' (left out of suggestions and lists, still addable with a
-// warning); beyond it by up to the margin: 'edge' ("near the edge of its observed range"). Aridity is
-// a mark only and never changes the verdict. No range: 'unknown' ("range not recorded"), never
-// filtered. No site climate (no location, its lookup loading or failed, open sea): nothing is checked.
+// range (Taxon.climate, GBIF cells thinned per climate cell, cultivation included; schema 3, canopi-data
+// docs/plant-climate-ranges.md), through the bounds of RANGE_BOUNDS: the coldest-month minimum on the
+// cold side (a cold limit), and on the mild side for a plant that can need winter chill; the year's
+// warmth (the mean of the coldest and warmest months' means) on the cool side; the warmest-month
+// maximum on the hot side (a heat limit). Annuals skip the cold, mild and cool sides (checksWinter). Beyond a limit by
+// more than RANGE_MARGIN_C: 'outside' (left out of suggestions and lists, still addable with a
+// warning); beyond it by up to the margin: 'edge' ("near the edge of its observed range"). A weak row
+// (ClimateRange.weak: fewer than 20 one-degree blocks, or another raster) never makes a plant outside on
+// its own: beyond it counts as the edge. Aridity is a mark only and never changes the verdict. No
+// range: 'unknown' ("range not recorded"), never filtered. No site climate (no location, its lookup
+// loading or failed, open sea): nothing is checked.
 //
 // Owner, decision row "Climate ranges fixed before the P5 push" (2026-11-12):
-// - Winter chill. A mild winter limits only a plant that can need winter chill. In the Utah chill
-//   model (Richardson et al. 1974) an hour at 12.5–15.9 °C adds no chill and one above 16 °C takes
-//   some away, so a site whose coldest month's mean daily minimum is at or above CHILL_CEILING_C
-//   (12.5 °C) has, on average, no chilling nights in any month. A plant recorded in such places for
-//   the warmest 5 % of its cells (tmin_cold Q95 ≥ 12.5 °C) grows there without winter chill, so the mild
-//   side is not checked for it (canNeedChill). On the 515-plant export the Q95s split there: below it
-//   apple 4.4, peach 9.4, almond 9.8, olive 10.7; from it loquat 14.7, Opuntia 16, then the lowland
-//   tropics at 20–25 (cacao and cassava 23.9), which were "edge" at Manaus and Singapore before.
+// - Winter chill. A mild winter limits only a plant that can need winter chill: the export's rule
+//   (canopi-data docs/plant-climate-ranges.md, schema 3) reads tmin_cold's high as "winter too mild"
+//   only when it is below CHILL_CEILING_C, 18 °C, the Köppen A/C bound (canNeedChill). A plant recorded
+//   in places whose coldest month stays at or above it grows without winter chill, so the lowland
+//   tropics (cacao 24.1, cassava 24.2 on export r-01102782139409b5) are never "edge" at Manaus or
+//   Singapore, while apple (8.4) and almond (11.7) keep the mild side.
+// - The year's warmth (tmean_year, schema 3). Its low is a "too cool" limit for perennials: the site's
+//   value is the mean of its coldest and warmest months' means, from the slot checked (Nairobi
+//   (17.6 + 21.1) / 2 = 19.35 °C, too cool for cacao, low 21.4).
 // - Annuals. An annual is sown in the season that suits it: beyond its heat range (the warmest-month
 //   maximum past Q95 by more than the margin) it is not outside but advised to the cool season
 //   (coolSeason: "Too hot in summer here: grow it in the cool season."); within the margin it is near
-//   the edge, as any plant. It never has the winter sides ("Annuals skip the winter-cold check").
+//   the edge, as any plant. It never has the winter sides nor the year's warmth ("Annuals skip the winter-cold check").
 import type { PlantId, SiteLocation, SitePeriod, Taxon } from './types.ts';
 import { siteToday } from './site-today.ts';
 
@@ -30,8 +35,8 @@ export { siteToday };
 
 export const rangeVerdicts = ['inside', 'edge', 'outside', 'unknown'] as const;
 export type RangeVerdict = (typeof rangeVerdicts)[number];
-// Which bound the site passes: colder winters than recorded, milder winters, hotter summers.
-export type RangeSide = 'cold' | 'mild' | 'hot';
+// Which bound the site passes: colder winters than recorded, milder winters, a cooler year, hotter summers.
+export type RangeSide = 'cold' | 'mild' | 'cool' | 'hot';
 // The site's aridity index (precipitation / PET; lower is drier) against the plant's: a mark only.
 // 'not-checked': the site has none (ice); 'unknown': the plant has none recorded.
 export type AridityFit = 'inside' | 'drier' | 'wetter' | 'not-checked' | 'unknown';
@@ -40,18 +45,17 @@ export type AridityFit = 'inside' | 'drier' | 'wetter' | 'not-checked' | 'unknow
 export interface RangeCheck { verdict: RangeVerdict; sides: RangeSide[]; beyond: RangeSide[]; aridity: AridityFit; coolSeason: boolean }
 
 export const RANGE_MARGIN_C = 2;
-export const CHILL_CEILING_C = 12.5;
+export const CHILL_CEILING_C = 18;
 
 // The temperature bounds the rule checks, in one place: the plant's range (a TaxonClimate field, read
 // from the export variable named in types.ts RANGE_VARIABLES), which end of it, and the site value it
-// is compared with (a SitePeriod field, read from the climate tiles). future.ts checks the 'hot' bound
-// through this list too. A new bound (a warmth low bound, once canopi-data exports it) is one row here,
-// one in RANGE_VARIABLES, its RangeSide and its site value.
+// is compared with (from a slot of the climate tiles). future.ts checks the bounds through this list
+// too. A new bound is one row here, one in RANGE_VARIABLES, its RangeSide and its site value.
 export interface RangeBound {
   side: RangeSide;
-  range: 'tminCold' | 'tmaxWarm';
+  range: 'tminCold' | 'tmaxWarm' | 'tmeanYear';
   end: 'low' | 'high';
-  site: 'tminColdC' | 'tmaxWarmC';
+  site: (slot: SitePeriod) => number;
   // Whether the bound applies to the plant at all.
   applies: (taxon: Taxon) => boolean;
 }
@@ -66,7 +70,14 @@ export function passes(value: number, bound: number, side: 'below' | 'above'): P
   return cents <= 0 ? 'inside' : cents > RANGE_MARGIN_C * 100 ? 'beyond' : 'edge';
 }
 
-export const isAnnual = (taxon: Taxon): boolean => taxon.traits?.is_annual === true;
+// Annual for the rule everywhere (range, future, marks, notes): is_annual, or grown as an annual
+// (grown_as_annual: onion, garlic, carrot, cabbage, beet, leek, potato; owner, decision row "Growing
+// months" 2026-11-12). No season is claimed for an annual until reviewed crop growing bands ship.
+export const isAnnual = (taxon: Taxon): boolean => taxon.traits?.is_annual === true || taxon.traits?.grown_as_annual === true;
+// The one switch for which plants the winter sides (cold, mild) and the year's warmth check: today
+// every perennial and no annual, cool-season annuals included (owner question pending on checking a
+// cool-season annual's coldest month: then `!isAnnual(t) || annualSeason(t) === 'cool'` for cold).
+export const checksWinter = (taxon: Taxon): boolean => !isAnnual(taxon);
 // Whether a mild winter can limit the plant (header, "Winter chill"): its tmin_cold Q95 is below the
 // ceiling. No Q95 recorded: nothing to compare.
 export function canNeedChill(taxon: Taxon): boolean {
@@ -76,43 +87,56 @@ export function canNeedChill(taxon: Taxon): boolean {
 
 // HOT_BOUND is named for future.ts (a plain constant: a lookup call at module level would count as a
 // side effect and pull this rule into the island's first chunk).
-export const HOT_BOUND: RangeBound = { side: 'hot', range: 'tmaxWarm', end: 'high', site: 'tmaxWarmC', applies: () => true };
+// The year's warmth at a slot (header): the mean of its coldest and warmest months' means.
+export const yearMeanC = (p: SitePeriod): number => (p.tmeanColdC + p.tmeanWarmC) / 2;
+export const HOT_BOUND: RangeBound = { side: 'hot', range: 'tmaxWarm', end: 'high', site: (p) => p.tmaxWarmC, applies: () => true };
 export const RANGE_BOUNDS: readonly RangeBound[] = [
-  { side: 'cold', range: 'tminCold', end: 'low', site: 'tminColdC', applies: (t) => !isAnnual(t) },
-  { side: 'mild', range: 'tminCold', end: 'high', site: 'tminColdC', applies: (t) => !isAnnual(t) && canNeedChill(t) },
+  { side: 'cold', range: 'tminCold', end: 'low', site: (p) => p.tminColdC, applies: checksWinter },
+  { side: 'mild', range: 'tminCold', end: 'high', site: (p) => p.tminColdC, applies: (t) => checksWinter(t) && canNeedChill(t) },
+  { side: 'cool', range: 'tmeanYear', end: 'low', site: yearMeanC, applies: checksWinter },
   HOT_BOUND,
 ];
 
 // One bound against one site slot: inside, edge or beyond, or null when the plant has no value for it
-// or the bound does not apply.
+// or the bound does not apply. Beyond a weak row is the edge (header).
 export function boundPassed(taxon: Taxon, b: RangeBound, slot: SitePeriod): Passed | null {
-  const v = taxon.climate?.[b.range]?.[b.end];
+  const r = taxon.climate?.[b.range];
+  const v = r?.[b.end];
   if (v == null || !b.applies(taxon)) return null;
-  return passes(slot[b.site], v, b.end === 'low' ? 'below' : 'above');
+  const p = passes(b.site(slot), v, b.end === 'low' ? 'below' : 'above');
+  return p === 'beyond' && r!.weak ? 'edge' : p;
 }
 // An annual beyond its heat range is advised to the cool season rather than counted (header).
 export const coolSeasonOf = (taxon: Taxon, b: RangeBound, p: Passed | null): boolean => b.side === 'hot' && p === 'beyond' && isAnnual(taxon);
+
+// Every temperature bound against one slot: the sides passed, those beyond, the cool-season advice.
+// Today's check and the future one (future.ts, "warm enough by …") read it.
+export interface SlotCheck { sides: RangeSide[]; beyond: RangeSide[]; coolSeason: boolean }
+export function slotCheck(taxon: Taxon, slot: SitePeriod): SlotCheck {
+  const sides: RangeSide[] = [], beyond: RangeSide[] = [];
+  let coolSeason = false;
+  for (const b of RANGE_BOUNDS) {
+    const p = boundPassed(taxon, b, slot);
+    if (p === null || p === 'inside') continue;
+    if (coolSeasonOf(taxon, b, p)) { coolSeason = true; continue; }
+    sides.push(b.side);
+    if (p === 'beyond') beyond.push(b.side);
+  }
+  return { sides, beyond, coolSeason };
+}
 
 // null: nothing to check against (no site climate).
 export function rangeCheck(taxon: Taxon, site: SiteLocation | null): RangeCheck | null {
   const today = siteToday(site);
   if (!today) return null;
   const c = taxon.climate;
-  const cold = c?.tminCold, warm = c?.tmaxWarm, arid = c?.aridity;
+  const arid = c?.aridity;
   const ai = today.aridityIndex;
   const aridity: AridityFit = ai === null ? 'not-checked'
     : !arid || arid.low === null || arid.high === null ? 'unknown'
     : ai < arid.low ? 'drier' : ai > arid.high ? 'wetter' : 'inside';
-  if (!c || (!cold && !warm)) return { verdict: 'unknown', sides: [], beyond: [], aridity, coolSeason: false };
-  const sides: RangeSide[] = [], beyond: RangeSide[] = [];
-  let coolSeason = false;
-  for (const b of RANGE_BOUNDS) {
-    const p = boundPassed(taxon, b, today);
-    if (p === null || p === 'inside') continue;
-    if (coolSeasonOf(taxon, b, p)) { coolSeason = true; continue; }
-    sides.push(b.side);
-    if (p === 'beyond') beyond.push(b.side);
-  }
+  if (!c || (!c.tminCold && !c.tmaxWarm && !c.tmeanYear)) return { verdict: 'unknown', sides: [], beyond: [], aridity, coolSeason: false };
+  const { sides, beyond, coolSeason } = slotCheck(taxon, today);
   return { verdict: beyond.length ? 'outside' : sides.length ? 'edge' : 'inside', sides, beyond, aridity, coolSeason };
 }
 

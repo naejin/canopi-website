@@ -24,7 +24,7 @@
 import type { ComponentChildren, ComponentType } from 'preact';
 import { useEffect } from 'preact/hooks';
 import type { Matrix as MatrixData, MatrixCell, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { ROOM_LIMIT_M, strata } from '../../../lib/consortium/index.ts';
+import { strata } from '../../../lib/consortium/index.ts';
 import { climate, marksFailed, matrix, memberTaxa, members, missingMembers, pool, site, view, type View } from '../store.ts';
 import { pendingSuggest, requestSuggest } from '../memory.ts';
 import { P, T, pageLang } from '../strings.ts';
@@ -95,7 +95,6 @@ function Notices() {
 }
 
 const list = (items: string[]) => new Intl.ListFormat(pageLang(), { type: 'conjunction' }).format(items);
-const num = (n: number) => new Intl.NumberFormat(pageLang(), { maximumFractionDigits: 1 }).format(n);
 
 // "24 of 27 cells that can be filled are filled · 3 free · 1 cannot be filled here", with its bar.
 export function FillMeter({ m }: { m: MatrixData }) {
@@ -154,8 +153,7 @@ export function reasonText(stratum: Stratum, from: number, to: number, kind: 'ga
   const c = climate.value!;
   if (kind === 'gap') return { head: T(from === to ? 'matrix.gap' : 'matrix.gapRun'), body: T(from === to ? 'matrix.gapBody' : 'matrix.gapBodyRun', { list: listName(c) }) };
   const s = site.value, r = runReasons(pool.value ?? [], memberTaxa.value, s, stratum, from, to);
-  const limit = ROOM_LIMIT_M[s.room];
-  const parts = reasonParts(r.reasons, s).map(({ word, n }) => P(`matrix.why.${word}`, n, { m: Number.isFinite(limit) ? num(limit) : '' }));
+  const parts = reasonParts(r.reasons, s).map(({ word, n }) => P(`matrix.why.${word}`, n));
   const why = list(parts) + (r.both ? ` ${T('matrix.both')}` : '');
   const body = from === to ? P('matrix.misfitBody', r.n, { why }) : P('matrix.misfitBodyRun', r.n, { why, a: phasePlain(from), b: phasePlain(to) });
   return { head: T('matrix.misfit'), body };

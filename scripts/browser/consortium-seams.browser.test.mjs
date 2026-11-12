@@ -21,7 +21,7 @@ const done = async (...pages) => { for (const p of pages) await p.browserContext
 
 // The fixture's Temperate plants: id, canonical name, stratum, span and jobs.
 const temperate = () => fixtureDb((db) => {
-  const rows = db.prepare("SELECT p.plant, p.id, p.canonical_name name, p.height_max_m h, p.habit, x.role, x.stratum, x.phase_start a, x.phase_end b FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate'").all();
+  const rows = db.prepare("SELECT p.plant, p.id, p.canonical_name name, p.height_max_m h, p.habit, p.tolerates_full_shade shade, x.role, x.stratum, x.phase_start a, x.phase_end b FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate'").all();
   const fns = db.prepare('SELECT plant, function FROM functions').all();
   // A crop feeds you; the other jobs come from its functions (core jobs.ts).
   return rows.map((r) => ({ ...r, jobs: new Set([...(r.role === 'crop' ? ['feeds_you'] : []), ...fns.filter((f) => f.plant === r.plant).map((f) => jobOfFunction[f.function]).filter(Boolean)]) }));
@@ -35,11 +35,12 @@ function cellIn(name) {
   return { stratum: stratumOf[m[1]], from: plainOf[a], to: plainOf[b] };
 }
 
-// Start → a climate → (room) → Suggest, through the controls.
-async function suggested(v, { room = null } = {}) {
+// Start → a climate → (light) → (room) → Suggest, through the controls.
+async function suggested(v, { room = null, light = null } = {}) {
   const page = await h.open('/consortium/', { ...v, data: 'fixture' });
   await page.locator(aria('radio', 'Temperate')).click();
   assert.equal(await loadState(page), 'ready');
+  if (light) await page.locator(aria('radio', light)).click();
   if (room) await page.locator(aria('radio', room)).click();
   await page.locator(aria('button', 'Suggest plants')).click();
   assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000), 'the matrix');
@@ -56,35 +57,36 @@ async function addRows(page) {
   return page.$$eval('.ct-add .ct-sheet-body > ul.ct-rows > li .ct-sci', (els) => els.map((e) => e.textContent.trim()));
 }
 
-// The core's room rule (site.ts): a small garden takes plants up to 6 m; a climber or an unrecorded
-// height is unknown, never a misfit.
-const fitsSmall = (p) => p.habit === 'Climber' || p.h === null || p.h <= 6;
+// The core's light rule (site.ts) in shade: a plant recorded as not taking full shade misfits; an
+// unrecorded one is unknown, never a misfit. The room is advisory (owner request 2026-11-12): a plant
+// taller than a small garden is listed with a note, never left out.
+const fitsShade = (p) => p.shade !== 0;
 
-test('X1/X2: "+ Add" in a free cell opens Add for that cell, and lists only its plants that fit (a small garden)', async (t) => {
+test('X1/X2: "+ Add" in a free cell opens Add for that cell, and lists only its plants that fit (shade; a small garden filters nothing)', async (t) => {
   const plants = await temperate();
   await eachVariant(t, async (v) => {
-    const page = await suggested(v, { room: 'Small garden' });
+    const page = await suggested(v, { light: 'Shade', room: 'Small garden' });
     // The members, read at each phone stage (a stage shows only its own); a filled cell's "+" has the
     // same name as a free cell's, so a cell holding a member is skipped.
     const members = new Set(await memberIds(page));
     const span = (cell) => plants.filter((p) => p.stratum === cell.stratum && p.a <= cell.to && p.b >= cell.from);
     const inCell = (cell) => span(cell).filter((p) => !members.has(p.id));
     const free = (cell) => !span(cell).some((p) => members.has(p.id));
-    // A free cell where the room leaves out at least one of its plants, so the filter is seen working.
+    // A free cell where the light leaves out at least one of its plants, so the filter is seen working.
     let btn = null;
     for (let i = 0; i < 7 && !btn; i++) {
       for (const id of await memberIds(page)) members.add(id);
       const adds = (await axNodes(page)).filter((n) => n.role === 'button' && /^Add a plant: /.test(n.name ?? ''));
-      btn = adds.find((n) => { const c = cellIn(n.name); return free(c) && inCell(c).some((p) => !fitsSmall(p)); }) ?? null;
+      btn = adds.find((n) => { const c = cellIn(n.name); return free(c) && inCell(c).some((p) => !fitsShade(p)); }) ?? null;
       if (!btn && v.width < 640) await page.locator(aria('button', 'Later stage')).click();
     }
-    assert.ok(btn, 'a free cell with "+ Add" holding a plant too tall for a small garden');
+    assert.ok(btn, 'a free cell with "+ Add" holding a plant that does not take shade');
     const cell = cellIn(btn.name);
     await page.locator(aria('button', btn.name)).click();
     const dialog = await findAx(page, { role: 'dialog', name: new RegExp(`^Add to ${esc(en[`consortium.stratum.${cell.stratum}`])} · `) });
     assert.ok(dialog, `"+ Add" opens "Add to {layer} · {phase}" (${btn.name})`);
-    const expected = inCell(cell).filter(fitsSmall).map((p) => p.name).sort();
-    assert.deepEqual((await addRows(page)).sort(), expected, 'the plants of the cell that fit a small garden, and only those');
+    const expected = inCell(cell).filter(fitsShade).map((p) => p.name).sort();
+    assert.deepEqual((await addRows(page)).sort(), expected, 'the plants of the cell that take shade, and only those, the tall ones included');
     await done(page);
   });
 });
@@ -92,7 +94,7 @@ test('X1/X2: "+ Add" in a free cell opens Add for that cell, and lists only its 
 test('X1/X2/X7: "Show them anyway" opens Add for the blocked cell or run, every row in it', async (t) => {
   const plants = await temperate();
   await eachVariant(t, async (v) => {
-    const page = await suggested(v, { room: 'Small garden' });
+    const page = await suggested(v, { light: 'Shade' });
     let btn = null;
     for (let i = 0; i < 7 && !btn; i++) {
       btn = await findAx(page, { role: 'button', name: /^Show them anyway: Emergent.* → / }, 600) ?? await findAx(page, { role: 'button', name: /^Show them anyway: Emergent/ }, 300);

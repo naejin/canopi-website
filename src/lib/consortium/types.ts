@@ -1,14 +1,14 @@
 // Consortium v2 core types (frozen seam, commit 0 of P2; design check §4). The core
 // (src/lib/consortium/) reads plants only through PlantSource (./source.ts) as these plain records,
 // imports nothing outside this folder and touches no DOM (scripts/consortium-boundary.test.mjs).
-// The data contract is canopi-data docs/consortium-export-v2.md (format 4, schema 2); the adapter
+// The data contract is canopi-data docs/consortium-export-v2.md (format 4, schema 3); the adapter
 // (src/islands/consortium/data/sqlite-source.ts, stream S1) fills these records from SQL.
 // Streams may add fields; renaming or removing one is a seam change for the coordinator.
 //
 // null means unknown or not recorded. The schema's "no rows" for functions means not curated, never
 // "none": Taxon.functions is null then.
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 // PRAGMA application_id of the export ("CCON"), checked when the database opens.
 export const APPLICATION_ID = 0x43434f4e;
 
@@ -125,6 +125,8 @@ export interface Traits {
   vegetative_spread_rate: string | null;
   clonal_growth_form: string | null;
   is_annual: boolean | null;
+  // A crop grown as an annual that is_annual misses (onion, carrot, potato; canopi-data, schema 3).
+  grown_as_annual: boolean | null;
   is_perennial: boolean | null;
   habit: string | null;
 }
@@ -133,26 +135,35 @@ export interface Toxicity { level: ToxicityLevel; sources: string[] }
 // ISO 3166-1 alpha-2 countries from GRIIS; read with countries().invasiveChecked.
 export interface InvasiveRecord { country: string; sources: string[] }
 
-// ---- schema 2: observed climate ranges (P5 commit 0) ----
+// ---- schemas 2 and 3: observed climate ranges (P5 commit 0; the ranges rebuild) ----
 
-// How a range was measured: GBIF occurrence cells (every plant today), TreeGOER quantiles or EcoCrop
-// limits (plant_climate.basis).
-export type RangeBasis = 'observed_cells' | 'treegoer_quantiles' | 'ecocrop_limits';
+// How a range was measured: GBIF occurrence cells thinned to one per climate cell and weighed by
+// one-degree block (every plant today; schema 3, canopi-data docs/plant-climate-ranges.md), TreeGOER
+// quantiles or EcoCrop limits (plant_climate.basis).
+export type RangeBasis = 'thinned_cells' | 'treegoer_quantiles' | 'ecocrop_limits';
 // One variable's range across a plant's recorded cells, cultivation included (coordinator row
-// "Observed ranges include cultivation"): low and high are the Q05 and Q95 of the cells, median
-// their median; null where not computed.
-export interface ClimateRange { low: number | null; median: number | null; high: number | null; count: number | null; basis: RangeBasis }
+// "Observed ranges include cultivation"): low and high are its limits (Q05 and Q95 of the thinned
+// cells; the warmest-month maximum's high is the heat limit, Q99), median their median; null where
+// not computed. blocks: the one-degree blocks the cells fall in; lowSource/highSource: the source of
+// each end (null: the row's own); weak (schema 3): fewer than 20 blocks or another raster, so the row
+// alone never makes a plant "outside" (range.ts: at most "near the edge").
+export interface ClimateRange {
+  low: number | null; median: number | null; high: number | null; count: number | null; basis: RangeBasis;
+  blocks: number | null; lowSource: string | null; highSource: string | null; weak: boolean;
+}
 // A plant's observed climate (plant_climate + plant_climate_status), what range, future and native
-// share checks read: coldest-month minimum and warmest-month maximum in °C, the aridity index (P/PET).
+// share checks read: coldest-month minimum, warmest-month maximum and the year's mean temperature
+// (the mean of the coldest and warmest months' means) in °C, the aridity index (P/PET).
 // cells: GBIF cells with records; nativeShare: the share of them inside WCVP native areas.
 // The export's plant_climate variables the source reads (sqlite-source.ts), each with the TaxonClimate
 // field it fills: the one list of range variables (range.ts RANGE_BOUNDS says how each is checked).
-export const RANGE_VARIABLES = { tmin_cold: 'tminCold', tmax_warm: 'tmaxWarm', aridity: 'aridity' } as const;
+export const RANGE_VARIABLES = { tmin_cold: 'tminCold', tmax_warm: 'tmaxWarm', tmean_year: 'tmeanYear', aridity: 'aridity' } as const;
 export type RangeVariable = keyof typeof RANGE_VARIABLES;
 export interface TaxonClimate {
   source: string;
   tminCold: ClimateRange | null;
   tmaxWarm: ClimateRange | null;
+  tmeanYear: ClimateRange | null;
   aridity: ClimateRange | null;
   cells: number | null;
   nativeShare: number | null;
@@ -384,7 +395,7 @@ export const DEFAULT_SCENARIO: Scenario = 'ssp245';
 // season (an annual too hot in summer: "grow it in the cool season"), water (drought tolerance Medium
 // on a dry site: "needs watering in the dry months").
 // key: a consortium.* string key without its prefix, read with T(key, vars).
-export const markKinds = ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity', 'season', 'water'] as const;
+export const markKinds = ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity', 'season', 'water', 'room'] as const;
 export type MarkKind = (typeof markKinds)[number];
 export type MarkSeverity = 'note' | 'warning';
 // state: a finer state the views write as data-mark-state (e.g. native: 'native' | 'not_recorded' | 'unknown').

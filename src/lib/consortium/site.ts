@@ -17,9 +17,12 @@
 //   well_drained is false, moisture_use is High or drought tolerance is known and not High. Average
 //   checks nothing.
 // - room: small garden ≤ 6 m, large garden ≤ 12 m, for the height only (the question asks how tall;
-//   mockup app.js:213). Catalog heights are wild maximums, so a taller plant "can grow over N m in the
-//   wild" (a misfit the reader may still choose, pruning it); a missing height is "height not
-//   recorded" (unknown). A climber's recorded size can be a runner length (decision row "Side view"
+//   mockup app.js:213). Advisory (owner request 2026-11-12): the matrix layers are relative sun
+//   exposure (syntropic strata), not heights (maize fills a small garden's emergent layer in the first
+//   seasons; a 12 m fig is routinely pruned to 3 m), so a taller plant fits, its reason kind
+//   'wild_height' (tallerThanRoom; site-marks.ts says "Grows to N m: keep it pruned, or pick a smaller
+//   plant"), and never makes a cell a misfit, a flag or an ask; only the suggestion leaves it out
+//   (suggest.ts). Catalog heights are wild maximums. A missing height is "height not recorded" (unknown). A climber's recorded size can be a runner length (decision row "Side view"
 //   2026-10-28), so its room verdict is unknown ('climber'). A field takes any size.
 import type { Fit, FitReason, PhaseOrd, Site, SiteKey, Stratum, Taxon, Traits, Verdict } from './types.ts';
 import { siteKeys, strata } from './types.ts';
@@ -74,12 +77,15 @@ const room: Check = (t, site) => {
   if (limit === Infinity) return null;
   if (t.traits.habit === 'Climber') return { key: 'room', verdict: 'unknown', kind: 'climber' };
   const height = t.traits.height_m?.max ?? null;
-  if (height !== null && height > limit) return { key: 'room', verdict: 'misfit', kind: 'wild_height', meters: height, limit };
+  if (height !== null && height > limit) return { key: 'room', verdict: 'fit', kind: 'wild_height', meters: height, limit };
   if (height === null) return { key: 'room', verdict: 'unknown', kind: 'height_not_recorded' };
   return { key: 'room', verdict: 'fit', kind: 'fits', meters: height, limit };
 };
 
 const checks: Record<SiteKey, Check> = { light, soil, water, room };
+
+// Whether a fit holds a plant taller than the room (advisory, header).
+export const tallerThanRoom = (fit: Fit): boolean => fit.reasons.some((r) => r.key === 'room' && r.kind === 'wild_height');
 
 export function fits(taxon: Taxon, site: Site): Fit {
   const misfits: SiteKey[] = [], unknowns: SiteKey[] = [], reasons: FitReason[] = [];

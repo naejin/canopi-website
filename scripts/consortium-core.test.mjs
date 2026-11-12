@@ -101,12 +101,12 @@ test('site: light, soil and water are three-valued as in v1', () => {
   assert.deepEqual(r, { key: 'light', verdict: 'misfit', trait: 'semi_shade' });
 });
 
-test('site: room uses the wild maximum height only ("can grow over N m in the wild"); an unknown height or a climber is said, never a silent fit', () => {
+test('site: room uses the wild maximum height only, advisory (owner request 2026-11-12: a taller plant fits, kind wild_height); an unknown height or a climber is said, never a silent fit', () => {
   assert.deepEqual(ROOM_LIMIT_M, { small: 6, large: 12, field: Infinity, unsure: Infinity });
   const oak = make({ traits: { height_m: { min: 25, max: 40 }, width_max_m: 25 } });
   const small = fits(oak, site({ room: 'small' }));
-  assert.deepEqual(small.misfits, ['room']);
-  assert.deepEqual(small.reasons, [{ key: 'room', verdict: 'misfit', kind: 'wild_height', meters: 40, limit: 6 }]);
+  assert.deepEqual(small.misfits, []);
+  assert.deepEqual(small.reasons, [{ key: 'room', verdict: 'fit', kind: 'wild_height', meters: 40, limit: 6 }]);
   // Height only (the room question asks how tall; mockup app.js:213): a wide, short plant fits.
   const wide = fits(make({ traits: { height_m: { min: 1, max: 3 }, width_max_m: 8 } }), site({ room: 'small' }));
   assert.deepEqual(wide.reasons, [{ key: 'room', verdict: 'fit', kind: 'fits', meters: 3, limit: 6 }]);
@@ -242,16 +242,15 @@ test('matrix: one plant fills every cell from its start to its end phase in its 
   assert.deepEqual(plantsIn(temperate, 'emergent', 3).map((t) => t.canonical_name).sort(), ['Castanea sativa', 'Robinia pseudoacacia']);
 });
 
-test('matrix: Room Small empties the emergent row as a site misfit, with counts per reason', () => {
+test('matrix: Room Small never empties a cell (the layers are relative sun exposure, not heights; owner request 2026-11-12): every emergent plant counts in "N fit"', () => {
   const m = buildMatrix('Temperate', temperate, [], site({ room: 'small' }));
   const row = m.rows.find((r) => r.stratum === 'emergent');
   for (const cell of row.cells.filter((c) => c.inList)) {
-    assert.equal(cell.empty, 'misfit', `emergent ${cell.phase}`);
-    assert.equal(cell.fitting, 0);
-    assert.deepEqual(cell.reasons, { room: cell.inList });
-    assert.equal(cell.bothReasons, false);
+    assert.equal(cell.empty, null, `emergent ${cell.phase}`);
+    assert.equal(cell.fitting, cell.inList);
+    assert.deepEqual(cell.reasons, {});
   }
-  // A filled misfit cell is filled (the reader added it anyway) and counts as fillable.
+  // A light misfit still empties a cell (filled by a member, it is filled).
   const m2 = buildMatrix('Temperate', temperate, [T('Quercus robur')], site({ room: 'small' }));
   const climax = m2.rows.find((r) => r.stratum === 'emergent').cells[6];
   assert.equal(climax.empty, null);
@@ -259,12 +258,12 @@ test('matrix: Room Small empties the emergent row as a site misfit, with counts 
 });
 
 test('matrix: counts that add up to more than the plants say "some for both reasons"', () => {
-  const a = make({ stratum: 'high', start: 2, end: 2, traits: { sun: false, height_m: { min: 10, max: 20 } } });
-  const b = make({ stratum: 'high', start: 2, end: 2, traits: { sun: true, height_m: { min: 10, max: 20 } } });
-  const m = buildMatrix('Temperate', [a, b], [], site({ light: 'sun', room: 'small' }));
+  const a = make({ stratum: 'high', start: 2, end: 2, traits: { sun: false, soil_ph: { min: 7.6, max: 8.5 } } });
+  const b = make({ stratum: 'high', start: 2, end: 2, traits: { sun: true, soil_ph: { min: 7.6, max: 8.5 } } });
+  const m = buildMatrix('Temperate', [a, b], [], site({ light: 'sun', soil: 'acid' }));
   const cell = m.rows[1].cells[2];
   assert.equal(cell.empty, 'misfit');
-  assert.deepEqual(cell.reasons, { light: 1, room: 2 });
+  assert.deepEqual(cell.reasons, { light: 1, soil: 2 });
   assert.equal(cell.bothReasons, true);
   // An unknown (height not recorded) never empties a cell: it fits, and the view says so.
   const c = make({ stratum: 'high', start: 2, end: 2 });
@@ -333,8 +332,10 @@ test('suggest: a kept guest counts for coverage; a guest is never picked', () =>
 test('flags: a misfit and a high conflict ask before Add or Swap; invasive, toxicity and medium conflicts only warn', () => {
   const c = ctx({ interactions: temperateInteractions, country: 'FR', countryStatus: 'checked', site: site({ room: 'small' }) });
   const robinia = T('Robinia pseudoacacia'); // invasive in FR, Severe, 12–25 m
-  const fl = flagsFor(robinia, [], c);
-  assert.deepEqual(fl.map((f) => f.kind).sort(), ['invasive', 'misfit', 'toxicity']);
+  // Taller than a small garden is advisory (owner request 2026-11-12): no misfit flag, no ask.
+  assert.deepEqual(flagsFor(robinia, [], c).map((f) => f.kind).sort(), ['invasive', 'toxicity']);
+  const fl = flagsFor(robinia, [], { ...c, site: site({ light: 'shade' }) });
+  assert.ok(fl.some((f) => f.kind === 'misfit'), 'a light misfit still flags');
   assert.equal(asks(fl), true);
   assert.equal(asks(flagsFor(robinia, [], { ...c, site: UNSURE_SITE })), false, 'invasive and toxicity never ask');
   const malus = T('Malus domestica'), walnut = T('Juglans regia'), hazel = T('Corylus avellana'), chestnut = T('Castanea sativa');

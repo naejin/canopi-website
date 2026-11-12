@@ -27,8 +27,8 @@ function site(mid, late = mid, { arid = [1, 1, 1, 1], tmin = 0, today = { tmax: 
 }
 // The fixture plant: Q95 of the warmest-month maximum 30 °C, so too hot beyond 32 °C; no aridity range.
 const ends = (end) => taxon({ phases: { start: 'placenta_i', end, sources: [] } });
-const withArid = (low) => taxon({ climate: { ...taxon().climate, aridity: { low, median: 1, high: 2, count: 200, basis: 'observed_cells' } } });
-const check = (period, verdict, why, already, agree, of, coolSeason = false) => ({ period, verdict, why, already, agree, of, coolSeason });
+const withArid = (low) => taxon({ climate: { ...taxon().climate, aridity: { low, median: 1, high: 2, count: 200, basis: 'thinned_cells' } } });
+const check = (period, verdict, why, already, agree, of, coolSeason = false, warmEnough = false) => ({ period, verdict, why, already, agree, of, coolSeason, warmEnough });
 
 test('futurePeriod: the latest period the phases reach (phase_end ≥ 3 → 2041–2070; climax → 2071–2099); short-lived plants and unplaced ones none', () => {
   assert.deepEqual(core.futurePeriods, ['2041-2070', '2071-2099']);
@@ -81,7 +81,7 @@ test('futureCheck: null ("not checked") without a site, without projections, wit
   assert.equal(core.futureCheck(t, lyon, 'ssp245'), null, 'today only: no future slot');
   assert.equal(core.futureCheck(taxon({ climate: null }), site([40, 40, 40, 40]), 'ssp245'), null, 'range not recorded');
   assert.equal(core.futureCheck(ends('placenta_iii'), site([40, 40, 40, 40]), 'ssp245'), null, 'short-lived: today\'s climate only');
-  const noHeat = taxon({ climate: { ...taxon().climate, tmaxWarm: null, aridity: { low: 0.5, median: 1, high: 2, count: 9, basis: 'observed_cells' } } });
+  const noHeat = taxon({ climate: { ...taxon().climate, tmaxWarm: null, aridity: { low: 0.5, median: 1, high: 2, count: 9, basis: 'thinned_cells' } } });
   assert.equal(core.futureCheck(noHeat, site([40, 40, 40, 40], undefined, { arid: [null, null, null, null] }), 'ssp245'), null, 'no warmest-month range, and no aridity on ice');
   assert.equal(core.futureCheck(noHeat, site([40, 40, 40, 40], undefined, { arid: [0.4, 0.6, 0.6, 0.6] }), 'ssp245').verdict, 'inside');
   // A missing slot drops out of the agreement; the chosen scenario's own slot missing is "not checked".
@@ -140,16 +140,15 @@ const counts = (sum) => ({
   already: { heat: sum.already.heat.length, arid: sum.already.arid.length }, todayOnly: sum.todayOnly.length, notChecked: sum.notChecked.length,
 });
 
-// Cross-checked with an independent sqlite3 count of the same rule (whole lists of 200). Reasons count
-// only as changes from today: at Lyon 5 of the 7 plants too dry by 2041–2070 are already too dry today, and
-// one of those is near the heat edge by then, so it is checked (edge, with the dry suffix), not grouped as already.
-// An annual too hot is advised to the cool season, never "too hot" nor "already" (decision row "Climate ranges
-// fixed before the P5 push"): at Lyon Chenopodium bonus-henricus (stored annual, phases to secondary_i) moved
-// from already-too-hot to checked within 2041–2070, and at Seville Medicago sativa likewise.
+// Export r-01102782139409b5 (schema 3): the warmest-month high is a heat limit (Q99, thinned cells), so far
+// fewer plants are too hot by 2041–2070 than on the Q95 ranges of r-e0b162087a79eecf (Lyon then 23 of 94
+// outside, 21 too hot; Seville 49 of 65). Reasons count only as changes from today. An annual too hot is
+// advised to the cool season, never "too hot" nor "already" (decision row "Climate ranges fixed before the
+// P5 push").
 const EXPECT = {
-  lyon: { '2041-2070': { n: 23, m: 94, heat: 21, arid: 2 }, '2071-2099': { n: 17, m: 33, heat: 17, arid: 0 }, already: { heat: 4, arid: 4 }, todayOnly: 65, notChecked: 0 },
-  manaus: { '2041-2070': { n: 2, m: 110, heat: 0, arid: 2 }, '2071-2099': { n: 1, m: 31, heat: 0, arid: 1 }, already: { heat: 0, arid: 0 }, todayOnly: 59, notChecked: 0 },
-  seville: { '2041-2070': { n: 49, m: 65, heat: 29, arid: 32 }, '2071-2099': { n: 14, m: 14, heat: 13, arid: 8 }, already: { heat: 50, arid: 49 }, todayOnly: 71, notChecked: 0 },
+  lyon: { '2041-2070': { n: 1, m: 101, heat: 0, arid: 1 }, '2071-2099': { n: 0, m: 33, heat: 0, arid: 0 }, already: { heat: 1, arid: 0 }, todayOnly: 65, notChecked: 0 },
+  manaus: { '2041-2070': { n: 0, m: 110, heat: 0, arid: 0 }, '2071-2099': { n: 0, m: 31, heat: 0, arid: 0 }, already: { heat: 0, arid: 0 }, todayOnly: 59, notChecked: 0 },
+  seville: { '2041-2070': { n: 39, m: 102, heat: 14, arid: 30 }, '2071-2099': { n: 11, m: 25, heat: 6, arid: 7 }, already: { heat: 2, arid: 2 }, todayOnly: 71, notChecked: 0 },
   oslo: { '2041-2070': { n: 0, m: 102, heat: 0, arid: 0 }, '2071-2099': { n: 0, m: 33, heat: 0, arid: 0 }, already: { heat: 0, arid: 0 }, todayOnly: 65, notChecked: 0 },
 };
 
