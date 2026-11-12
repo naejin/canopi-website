@@ -105,6 +105,13 @@ test('location/keep.ts locationCountry: replaces a guess or none, never a chosen
   } finally { store.country.value = before; }
 });
 
+test('registry: Nominatim is the only geocoder; no unused provider or endpoint ships (pre-push review 4)', async () => {
+  const reg = await import('../src/lib/location/registry.ts');
+  const src = readFileSync(new URL('../src/lib/location/registry.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, ''), /pelias|geocode\.earth|api_key|apiKey/i, 'in the code (the header says it was dropped)');
+  assert.equal(reg.getGeocodingProvider('pelias').id, 'nominatim');
+});
+
 test('registry and place search (copied from canopi): Nominatim on request only, 5 answers, page language, no email, paced 1.1 s, cached', async () => {
   const reg = await import('../src/lib/location/registry.ts');
   const ps = await import('../src/lib/location/place-search.ts');
