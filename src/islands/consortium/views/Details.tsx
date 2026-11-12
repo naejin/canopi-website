@@ -165,7 +165,11 @@ if (typeof document !== 'undefined') {
 
 // A sheet: a modal <dialog>, a side sheet on desktop and full screen on phones. Escape, Close and a
 // click on the backdrop close it; the element marked data-autofocus (its heading) takes the focus.
-export function SheetFrame({ titleId, head, children, class: cls = '' }: { titleId: string; head?: ComponentChildren; children: ComponentChildren; class?: string }) {
+// foot: the sheet's action bar (Add, Paste). The foot sticks to the sheet's bottom and holds the
+// sheet's toast above the bar, so a toast never covers the bar's button (walk-through 2 N1: Undo sat
+// over "Add 1 plant" and the click undid the last add). The sheet's scroll padding follows the foot's
+// height, so a control tabbed to near the end is scrolled above the foot, not under it.
+export function SheetFrame({ titleId, head, foot, children, class: cls = '' }: { titleId: string; head?: ComponentChildren; foot?: ComponentChildren; children: ComponentChildren; class?: string }) {
   const ref = useRef<HTMLDialogElement>(null);
   // A click closes the sheet only when it both starts and ends on the backdrop (a text selection
   // dragged out of the sheet and released outside does not).
@@ -177,9 +181,12 @@ export function SheetFrame({ titleId, head, children, class: cls = '' }: { title
     const mine = store.sheet.peek();
     const onClose = () => { if (mine && store.sheet.peek() === mine) closeSheet(); };
     d.addEventListener('close', onClose);
+    const foot = d.querySelector<HTMLElement>('.ct-sheet-foot')!;
+    const room = new ResizeObserver(() => { d.style.scrollPaddingBottom = `${foot.offsetHeight + 8}px`; });
+    room.observe(foot);
     if (!d.open) d.showModal();
     d.querySelector<HTMLElement>('[data-autofocus]')?.focus();
-    return () => { d.removeEventListener('close', onClose); if (d.open) d.close(); };
+    return () => { room.disconnect(); d.removeEventListener('close', onClose); if (d.open) d.close(); };
   }, []);
   return (
     <dialog ref={ref} class={`ct-sheet ${cls}`} aria-labelledby={titleId}
@@ -191,7 +198,7 @@ export function SheetFrame({ titleId, head, children, class: cls = '' }: { title
           <button type="button" class="ct-icon-button" aria-label={T('close')} onClick={closeSheet}>{CLOSE}</button>
         </div>
         <div class="ct-sheet-body">{children}</div>
-        <Toast where="sheet" />
+        <div class="ct-sheet-foot"><Toast where="sheet" />{foot}</div>
       </div>
     </dialog>
   );

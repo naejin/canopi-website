@@ -1375,6 +1375,10 @@ test('P5-18 (S5d future summary): at Seville on the Mediterranean list the panel
   const members = await page.evaluate(() => window.__ctTest.store.members.value.length);
   assert.equal(verdicts.length, members, 'one line per member');
   assert.ok(verdicts.includes('outside'), `Seville's suggestion has a member outside by its period (${verdicts})`);
+  // Drier is a note, never a loss (walk-through 2 N3): no "too dry" anywhere, and the note says watering.
+  assert.doesNotMatch(await text(page, '[data-future]'), /too dry|dry by/i);
+  const drier = await text(page, '[data-future-drier]');
+  if (drier) assert.match(drier, /^Drier than where they are recorded by 20\d\d–20\d\d, may need watering: /);
   assert.ok(await has(page, '[data-mark="future"][data-mark-surface="chip"]', 10_000), 'a future mark on a chip');
   assert.equal(await page.$('[data-mark="future"].ct-flag'), null, 'drawn in ink, apart from the ochre warnings');
   // The scenario control: a real radio; SSP5-8.5 never puts fewer plants outside than SSP2-4.5.

@@ -129,7 +129,12 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
   const n = selected.length;
 
   return (
-    <SheetFrame titleId="ct-add-title" class="ct-add" head={<span class="ct-muted">{T('add.title')}</span>}>
+    <SheetFrame titleId="ct-add-title" class="ct-add" head={<span class="ct-muted">{T('add.title')}</span>} foot={
+      <div class="ct-add-bar">
+        <span aria-live="polite">{P('add.selected', n)}</span>
+        <button type="button" class="button button-primary" disabled={!n} onClick={() => addSelected()}>{P('add.addSel', n)}</button>
+      </div>
+    }>
       <div>
         <h2 id="ct-add-title" tabIndex={-1} data-autofocus>{title}</h2>
         <p class="ct-muted">{T('add.lede', { climate: zoneName(climate) })}</p>
@@ -189,10 +194,6 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
           </ul>
         </section>
       )}
-      <div class="ct-add-bar">
-        <span aria-live="polite">{P('add.selected', n)}</span>
-        <button type="button" class="button button-primary" disabled={!n} onClick={() => addSelected()}>{P('add.addSel', n)}</button>
-      </div>
       {asking && (
         <Ask
           title={T('add.ask')}

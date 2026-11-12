@@ -8,7 +8,7 @@
 
 /* The map dialog: the map under a centre pin, ink cross and ochre point (design check §B). */
 .ct-map-dialog {
-  width: min(94vw, 760px); max-width: none; padding: 1rem;
+  width: min(calc(100vw - 32px), 760px); max-width: none; padding: 1rem; /* the page's 16 px gutter (walk-through 2 N2) */
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
 }
 .ct-map-frame { position: relative; height: min(60vh, 480px); border: 1px solid var(--border); }

@@ -55,7 +55,7 @@
   min-height: 26px; color: var(--text-secondary); font-weight: 600; cursor: pointer; text-transform: none; letter-spacing: 0;
 }
 .ct .ct-pop {
-  position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; width: min(340px, 86vw); padding: 14px;
+  position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; width: min(340px, calc(100vw - 32px)); padding: 14px;
   background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); box-shadow: var(--shadow);
   font-size: 15px; font-weight: 400; display: grid; gap: 8px; text-align: start; color: var(--text); text-transform: none; letter-spacing: 0; line-height: 1.45;
 }

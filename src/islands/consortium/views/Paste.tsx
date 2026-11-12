@@ -83,7 +83,12 @@ export default function Paste() {
   const sample = (c: number) => table.rows.find((r, i) => i > 0 && r[c]?.trim())?.[c]?.trim().slice(0, 24) ?? table.rows[0]?.[c]?.trim().slice(0, 24) ?? '';
 
   return (
-    <SheetFrame titleId="ct-paste-title" class="ct-paste" head={<span class="ct-muted">{T('paste.title')}</span>}>
+    <SheetFrame titleId="ct-paste-title" class="ct-paste" head={<span class="ct-muted">{T('paste.title')}</span>} foot={
+      <div class="ct-add-bar">
+        <span>{P('paste.toAdd', toAdd.length)}</span>
+        <button type="button" class="button button-primary" disabled={!toAdd.length} onClick={addAll}>{P('paste.addAll', toAdd.length)}</button>
+      </div>
+    }>
       <div>
         <h2 id="ct-paste-title" tabIndex={-1} data-autofocus>{T('paste.title')}</h2>
         <p class="ct-muted">{T('paste.lede')}</p>
@@ -185,10 +190,6 @@ export default function Paste() {
             <p class="ct-muted">{T('paste.noneText')}</p>
           </section>
         )}
-      </div>
-      <div class="ct-add-bar">
-        <span>{P('paste.toAdd', toAdd.length)}</span>
-        <button type="button" class="button button-primary" disabled={!toAdd.length} onClick={addAll}>{P('paste.addAll', toAdd.length)}</button>
       </div>
       {asking && (
         <Ask

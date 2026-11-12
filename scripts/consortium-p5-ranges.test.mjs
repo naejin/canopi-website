@@ -127,7 +127,7 @@ const hotFuture = { ...lyon, lookup: { ...lyon.lookup, climate: { ...lyon.lookup
 test('futureCheck: an annual "too hot by …" becomes the cool-season advice, not a loss', () => {
   const annual = taxon({ traits: { is_annual: true }, phases: { start: 'placenta_i', end: 'secondary_i', sources: [] } });
   const c = core.futureCheck(annual, hotFuture, 'ssp245');
-  assert.deepEqual(c, { period: '2041-2070', verdict: 'inside', why: [], already: [], agree: 4, of: 4, coolSeason: true, warmEnough: false });
+  assert.deepEqual(c, { period: '2041-2070', verdict: 'inside', why: [], already: [], agree: 4, of: 4, coolSeason: true, warmEnough: false, drier: false });
   const sum = core.futureSummary([annual], hotFuture, 'ssp245');
   assert.deepEqual(sum.periods[0].outside, []);
   assert.deepEqual(sum.periods[0].heat, []);
@@ -206,6 +206,14 @@ test('acceptance (owner diagnosis, export r-b958a4239cc68f73): each site\'s plan
   const olive = core.futureCheck(plant('Olea europaea'), at('seville'), 'ssp245');
   assert.equal(olive.period, '2071-2099');
   assert.equal(olive.why.includes('heat'), false, 'olive not too hot at Seville by 2071–2099 (SSP2-4.5)');
+  // Walk-through 2 N3: dry-adapted Mediterranean plants were "too dry by 2041–2070" at Seville on aridity
+  // alone; drier is a note now ("may need watering"), never outside, as today. (Lavandula latifolia stays
+  // too hot there by its heat bound, a data question, not this rule.)
+  for (const name of ['Arbutus unedo', 'Santolina chamaecyparissus', 'Phlomis fruticosa', 'Teucrium chamaedrys', 'Rhus coriaria']) {
+    const f = core.futureCheck(plant(name), at('seville'), 'ssp245');
+    assert.ok(f, `${name}: checked at Seville`);
+    assert.notEqual(f.verdict, 'outside', `${name} at Seville by ${f.period}: not outside for dryness`);
+  }
   assert.equal(verdict('Ficus carica', 'riyadh').verdict, 'inside', 'fig at Riyadh');
   for (const name of ['Ziziphus jujuba', 'Punica granatum', 'Moringa oleifera']) assert.equal(verdict(name, 'riyadh').verdict, 'edge', `${name} at Riyadh`);
   assert.equal(verdict('Malus domestica', 'minneapolis').verdict, 'inside', 'apple at Minneapolis');

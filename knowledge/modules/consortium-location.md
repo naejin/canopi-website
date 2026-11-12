@@ -4,7 +4,7 @@ title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T07:47:11Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T22:27:39Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T11:45:43Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
@@ -15,7 +15,7 @@ sources:
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
     digest: sha256:f63c0943d0993101
-    last_modified: 2026-11-12T07:30:44Z
+    last_modified: 2026-11-12T07:59:10Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
@@ -25,7 +25,7 @@ sources:
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
     digest: sha256:eb4395e60994e93b
-    last_modified: 2026-11-12T07:26:56Z
+    last_modified: 2026-11-12T07:59:10Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
@@ -79,8 +79,8 @@ sources:
   - id: s5b-css
     resource: ../../src/styles/consortium/p5/s5b.css
     title: src/styles/consortium/p5/s5b.css
-    digest: sha256:19308b24807af818
-    last_modified: 2026-11-11T19:25:16Z
+    digest: sha256:08df0def03e1b964
+    last_modified: 2026-11-12T11:43:06Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx

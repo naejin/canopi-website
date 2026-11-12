@@ -7,23 +7,23 @@ tags: [module, i18n]
 status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T10:14:03Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T10:14:01Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T12:06:49Z }
 sources:
   - id: i18n
     resource: ../../src/i18n
     title: src/i18n/
-    digest: sha256:adc2ef0753e2006c
-    last_modified: 2026-11-12T10:12:06Z
+    digest: sha256:7231869c4048f0b6
+    last_modified: 2026-11-12T12:06:41Z
   - id: homepage-test
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:2745c3a318cc6167
-    last_modified: 2026-11-11T19:53:07Z
+    digest: sha256:f40b216867b23b7f
+    last_modified: 2026-11-12T12:06:41Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
-    digest: sha256:2fbc36045c70e657
-    last_modified: 2026-11-11T18:21:14Z
+    digest: sha256:bef9b11dfb17ad2e
+    last_modified: 2026-11-12T11:42:50Z
 ---
 
 # Responsibility

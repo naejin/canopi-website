@@ -6,6 +6,7 @@ import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
 import { aria, axNodes, eachVariant, en, findAx, fixtureDb, has } from './helpers.mjs';
+import { readFileSync } from 'node:fs';
 import { jobOfFunction } from '../../src/lib/consortium/jobs.ts';
 
 let h;
@@ -960,4 +961,204 @@ test('Item 8: a sheet\'s late close event never closes the next sheet, opened in
     assert.match((await openName(page)) ?? '(none)', /^Add to /, 'Details → "+": Add stays open');
     await done(page);
   });
+});
+
+// P5 walk-through 2, N1 (data loss since P2): the Undo toast sat over the Add sheet's "Add N plants"
+// when a search left few rows, so the click undid the last add and added nothing. A toast never
+// covers a control: in a sheet it sits in the sheet's foot above the action bar, never over it.
+test('Walk-through 2 N1: in the Add sheet the Undo toast never covers "Add N plants" nor any other control (320, 390, 700, 960, 1280 px)', async () => {
+  const plants = await temperate();
+  for (const width of [320, 390, 700, 960, 1280]) {
+    const page = await suggested({ width, theme: 'light' });
+    const members = new Set(await memberIds(page));
+    const candidates = plants.filter((p) => !members.has(p.id) && !plants.some((q) => q !== p && q.name.includes(p.name)));
+    const rows = 'dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li';
+    // Opens Add, searches the next candidate listed with a tick (few rows), and ticks it.
+    const addOne = async () => {
+      await page.click('.ct-viewbar button');
+      await page.waitForSelector('dialog.ct-add[open] .ct-search input');
+      while (candidates.length) {
+        const p = candidates.shift();
+        await page.$eval('dialog.ct-add[open] .ct-search input', (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); });
+        await page.type('dialog.ct-add[open] .ct-search input', p.name);
+        const ok = await page.waitForFunction((sel, n) => { const r = [...document.querySelectorAll(sel)]; return r.length <= 3 && r.some((li) => li.querySelector('.ct-sci')?.textContent.trim() === n && li.querySelector('input[type="checkbox"]')); }, { timeout: 1500 }, rows, p.name).then(() => true, () => false);
+        if (!ok) continue;
+        await page.evaluate((sel, n) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent.trim() === n).querySelector('input[type="checkbox"]').click(), rows, p.name);
+        return p;
+      }
+      assert.fail(`${width} px: no plant to add`);
+    };
+    const a = await addOne();
+    await page.click('dialog.ct-add[open] .ct-add-bar .button-primary');
+    assert.ok(await has(page, '.ct-toast-page .ct-toast'), `${width} px: the first add's toast with Undo`);
+    const b = await addOne();
+    assert.ok(await has(page, 'dialog[open] .ct-toast .ct-toast-undo'), `${width} px: the toast moved into the sheet`);
+    // Where the bar lands depends on the rows above it and the window: every window height from 480 to
+    // 900 px, so the bar passes through the toast's band (Delhi at 1280 × 800 had it there).
+    const covered = [];
+    for (let height = 480; height <= 900; height += 20) {
+      await page.setViewport({ width, height, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const seen = await page.evaluate(() => {
+        const d = document.querySelector('dialog.ct-add[open]');
+        const toast = d.querySelector('.ct-toast').getBoundingClientRect();
+        const btn = d.querySelector('.ct-add-bar .button-primary');
+        const r = btn.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        const meets = (x, y) => x.left < y.right && y.left < x.right && x.top < y.bottom && y.top < x.bottom;
+        const under = [...d.querySelectorAll('button, input, a[href], select, textarea')]
+          .filter((el) => !el.closest('.ct-toast') && el.getClientRects().length && meets(el.getBoundingClientRect(), toast))
+          .map((el) => (el.getAttribute('aria-label') || el.textContent).trim().slice(0, 40));
+        return { onButton: btn.contains(hit), hit: hit?.className ?? null, under };
+      });
+      if (!seen.onButton) covered.push(`${height}: the Add button's centre is ${seen.hit}`);
+      for (const u of seen.under) covered.push(`${height}: ${u}`);
+    }
+    assert.deepEqual(covered, [], `${width} px: no control of the sheet under the toast, at any window height`);
+    await page.setViewport({ width, height: width < 640 ? 844 : 900, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });
+    await page.locator('dialog.ct-add[open] .ct-add-bar .button-primary').click();
+    await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
+    await page.click('#ct-tab-list'); // every member (a phone stage shows only its own)
+    const now = new Set(await memberIds(page));
+    assert.ok(now.has(a.id) && now.has(b.id), `${width} px: both plants are in the consortium (${a.name}: ${now.has(a.id)}, ${b.name}: ${now.has(b.id)})`);
+    await done(page);
+  }
+});
+
+// P5 walk-through 2, N2: "What are these stages?" ran off phones (466 px wide at 390 en). Every pop-up
+// of the tool stays inside the viewport with the 16 px gutter: the layer and stage explanations (phone
+// matrix and side view), "Add it anyway?" and the map dialog, at 320 and 390 px in en, fr and ja.
+const STRINGS = Object.fromEntries(['en', 'fr', 'ja'].map((l) => [l, JSON.parse(readFileSync(new URL(`../../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'))]));
+test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gutter at 320 and 390 px in en, fr and ja', async () => {
+  const GUTTER = 16;
+  const within = (page, sel) => page.evaluate((s, g) => {
+    const vw = document.documentElement.clientWidth;
+    const out = [];
+    for (const el of document.querySelectorAll(s)) {
+      if (!el.getClientRects().length) continue;
+      const r = el.getBoundingClientRect();
+      if (r.left < g - 0.5 || r.right > vw - g + 0.5) out.push(`${s}: ${Math.round(r.left)}–${Math.round(r.right)} of ${vw}`);
+    }
+    if (document.documentElement.scrollWidth > vw) out.push(`page ${document.documentElement.scrollWidth} px wide`);
+    return out;
+  }, sel, GUTTER);
+  for (const lang of ['en', 'fr', 'ja']) {
+    const S = (k) => STRINGS[lang][`consortium.${k}`];
+    for (const width of [320, 390]) {
+      const at = `${lang} ${width} px`;
+      const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { width, data: 'fixture', mapTiles: 'stub' });
+      const bad = [];
+      // The map dialog (start step).
+      if (await has(page, '[data-location-action="map"]', 4000)) {
+        await page.click('[data-location-action="map"]');
+        assert.ok(await has(page, 'dialog[data-location-map][open]', 8000), `${at}: the map dialog`);
+        bad.push(...await within(page, 'dialog[data-location-map][open]'));
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
+      } else bad.push('no map button');
+      await page.click('input[name="ct-climate"][value="temperate"]');
+      assert.equal(await loadState(page), 'ready');
+      await page.click('input[name="ct-site-light"][value="shade"]');
+      await page.locator(aria('button', S('start.suggest'))).click();
+      assert.ok(await has(page, '#ct-tab-matrix', 8000), `${at}: the matrix`);
+      // Each explanation, opened alone (phone matrix, then side view).
+      for (const tab of ['matrix', 'side']) {
+        await page.click(`#ct-tab-${tab}`);
+        const n = await page.$$eval(`#ct-panel-${tab} .ct-explain-btn`, (bs) => bs.length);
+        assert.ok(n > 0, `${at}: the ${tab} view's explanations`);
+        for (let i = 0; i < n; i++) {
+          await page.evaluate((t, j) => document.querySelectorAll(`#ct-panel-${t} .ct-explain-btn`)[j].click(), tab, i);
+          await page.waitForSelector(`#ct-panel-${tab} .ct-pop`);
+          bad.push(...(await within(page, `#ct-panel-${tab} .ct-pop`)).map((s) => `${tab} #${i}: ${s}`));
+          // Its Escape listener is added after paint (useEffect): two frames, as no reader is faster.
+          await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+          await page.keyboard.press('Escape');
+          assert.ok(await page.waitForFunction((t) => !document.querySelector(`#ct-panel-${t} .ct-pop`), {}, tab).then(() => true, () => false), `${at}: Escape closes ${tab} #${i}`);
+        }
+      }
+      // "Add it anyway?": a plant that does not take full shade asks first.
+      await page.click('#ct-tab-matrix');
+      await page.click('.ct-viewbar button');
+      const ask = await page.waitForSelector('dialog.ct-add[open] li.flagged > button', { timeout: 5000 }).catch(() => null);
+      if (ask) {
+        await ask.click();
+        assert.ok(await has(page, 'dialog.ct-ask[open]'), `${at}: "Add it anyway?"`);
+        bad.push(...await within(page, 'dialog.ct-ask[open]'));
+      } else bad.push('no plant asks first in shade');
+      assert.deepEqual(bad, [], at);
+      await done(page);
+    }
+  }
+});
+
+// Review of p5-final (low 1): an explanation placed on open is placed again when the window changes
+// (a phone turned, a window narrowed), so it keeps the 16 px gutter without being reopened.
+test('Walk-through 2 N2 (review): an open explanation keeps the 16 px gutter when the window narrows from 844 to 390 px', async () => {
+  const page = await suggested({ width: 844, theme: 'light' });
+  const n = await page.$$eval('#ct-panel-matrix .ct-explain-btn', (bs) => bs.length);
+  assert.ok(n > 0, 'the phone matrix\'s explanations');
+  const bad = [];
+  for (let i = 0; i < n; i++) {
+    await page.setViewport({ width: 844, height: 900, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
+    await page.evaluate((j) => document.querySelectorAll('#ct-panel-matrix .ct-explain-btn')[j].click(), i);
+    await page.waitForSelector('#ct-panel-matrix .ct-pop');
+    await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    const r = await page.$eval('#ct-panel-matrix .ct-pop', (el) => { const b = el.getBoundingClientRect(); return { left: b.left, right: b.right, vw: document.documentElement.clientWidth }; });
+    if (r.left < 15.5 || r.right > r.vw - 15.5) bad.push(`#${i}: ${Math.round(r.left)}–${Math.round(r.right)} of ${r.vw}`);
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.querySelector('#ct-panel-matrix .ct-pop'));
+  }
+  assert.deepEqual(bad, [], 'within 16 px of each edge after the resize');
+  await done(page);
+});
+
+// Review of p5-final (low 2): the sheet's sticky foot (toast above the action bar) covers the sheet's
+// bottom, so the sheet keeps that much scroll padding: a control tabbed to near the end is shown above
+// the foot, and the foot's empty area beside the toast passes clicks through.
+test('Walk-through 2 N1 (review): with a toast in the Add sheet, the last controls tabbed to are fully visible above the foot and clickable (390 × 600)', async () => {
+  const plants = await temperate();
+  const page = await suggested({ width: 390, theme: 'light' });
+  await page.click('.ct-viewbar button');
+  await page.waitForSelector('dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li input[type="checkbox"]');
+  await page.click('dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li input[type="checkbox"]');
+  await page.click('dialog.ct-add[open] .ct-add-bar .button-primary');
+  assert.ok(await has(page, '.ct-toast-page .ct-toast'), 'the add\'s toast');
+  await page.click('.ct-viewbar button');
+  assert.ok(await has(page, 'dialog.ct-add[open] .ct-toast'), 'the toast in the sheet');
+  await page.setViewport({ width: 390, height: 600, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  assert.ok(plants.length > 3);
+  const focusables = 'dialog.ct-add[open] .ct-sheet-body :is(button, input, a[href], select, textarea):not([disabled])';
+  const count = await page.$$eval(focusables, (els) => els.filter((e) => e.getClientRects().length).length);
+  assert.ok(count >= 4, 'controls to tab through');
+  await page.evaluate((sel) => { const els = [...document.querySelectorAll(sel)].filter((e) => e.getClientRects().length); els[els.length - 4].focus(); }, focusables);
+  const bad = [];
+  for (let i = 0; i < 3; i++) {
+    await page.keyboard.press('Tab');
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    const seen = await page.evaluate(() => {
+      const el = document.activeElement;
+      const foot = document.querySelector('dialog.ct-add[open] .ct-sheet-foot').getBoundingClientRect();
+      const toast = document.querySelector('dialog.ct-add[open] .ct-toast')?.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      const target = el.closest('label') ?? el;
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      const top = toast ? Math.min(foot.top + (toast.top - foot.top), foot.top) : foot.top;
+      return { name: (el.getAttribute('aria-label') || el.textContent).trim().slice(0, 40), inFoot: !!el.closest('.ct-sheet-foot'), bottom: r.bottom, top, clickable: target.contains(hit) || el.contains(hit) };
+    });
+    if (seen.inFoot) break; // past the body: into the toast and the bar
+    if (seen.bottom > seen.top + 0.5) bad.push(`${seen.name}: bottom ${Math.round(seen.bottom)} under the foot at ${Math.round(seen.top)}`);
+    if (!seen.clickable) bad.push(`${seen.name}: not clickable`);
+  }
+  assert.deepEqual(bad, [], 'each control tabbed to is above the foot and takes the click');
+  // The foot's empty area beside the toast passes a click to what lies under it.
+  const through = await page.evaluate(() => {
+    const d = document.querySelector('dialog.ct-add[open]');
+    const toast = d.querySelector('.ct-toast').getBoundingClientRect();
+    const x = Math.max(4, toast.left - 6), y = toast.top + toast.height / 2;
+    const hit = document.elementFromPoint(x, y);
+    return toast.left > 10 ? !hit?.closest('.ct-sheet-foot') : true;
+  });
+  assert.ok(through, 'the area beside the toast is not the foot');
+  await done(page);
 });
