@@ -8,7 +8,10 @@
 // plant_climate_status (documented_cells) and plant_climate (tmean_year, basis thinned_cells, blocks,
 // low_source, high_source, weak), copied from the sqlite_master of export r-01102782139409b5,
 // statement by statement (the schema 1 statements are unchanged from canopi-data
-// consortium_sqlite.ddl() at consortium-v2-export ab6bfad).
+// consortium_sqlite.ddl() at consortium-v2-export ab6bfad). plants.grown_as_annual (last, NOT NULL) is
+// from canopi-data consortium_sqlite.py on ranges-rebuild 4733178 (decision row "Growing months"), and
+// plant_climate's variable tmean_warm (annuals' summer warmth) from export r-b958a4239cc68f73;
+// scripts/consortium-p5-ranges.test.mjs compares this DDL with the installed export, statement by statement.
 export const DDL = String.raw`
 CREATE TABLE meta (
   key TEXT PRIMARY KEY,
@@ -94,12 +97,12 @@ CREATE TABLE plants (
   clonal_growth_form TEXT,
   is_annual INTEGER CHECK (is_annual IN (0, 1)),
   is_perennial INTEGER CHECK (is_perennial IN (0, 1)),
-  grown_as_annual INTEGER CHECK (grown_as_annual IN (0, 1)),
   habit TEXT,
   toxicity TEXT,
   allelopathic INTEGER CHECK (allelopathic IN (0, 1)),
   weed_potential INTEGER CHECK (weed_potential IN (0, 1)),
-  wcvp_match TEXT CHECK (wcvp_match IN ('accepted', 'synonym', 'hybrid'))
+  wcvp_match TEXT CHECK (wcvp_match IN ('accepted', 'synonym', 'hybrid')),
+  grown_as_annual INTEGER NOT NULL CHECK (grown_as_annual IN (0, 1))
 );
 CREATE TABLE plant_names (
   plant INTEGER NOT NULL REFERENCES plants (plant),
@@ -241,7 +244,7 @@ CREATE TABLE plant_climate_status (
 );
 CREATE TABLE plant_climate (
   plant INTEGER NOT NULL REFERENCES plants (plant),
-  variable TEXT NOT NULL CHECK (variable IN ('tmin_cold', 'tmax_warm', 'tmean_year', 'precip', 'aridity', 'dry_months', 'growth_temperature')),
+  variable TEXT NOT NULL CHECK (variable IN ('tmin_cold', 'tmax_warm', 'tmean_year', 'tmean_warm', 'precip', 'aridity', 'dry_months', 'growth_temperature')),
   source TEXT NOT NULL REFERENCES sources (id),
   basis TEXT NOT NULL CHECK (basis IN ('thinned_cells', 'treegoer_quantiles', 'ecocrop_limits')),
   count INTEGER CHECK (count > 0),

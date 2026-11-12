@@ -131,6 +131,8 @@ test('pool: a Taxon carries its observed climate range (cultivation included) or
     tmaxWarm: { low: 18, median: 24, high: 30, count: 200, basis: 'thinned_cells', ...s3 },
     // Schema 3: the year's warmth (not shifted, as aridity).
     tmeanYear: { low: 5, median: 10.5, high: 15, count: 200, basis: 'thinned_cells', ...s3 },
+    // and an annual's summer warmth (schema 3 tmean_warm; not shifted).
+    tmeanWarm: { low: 12, median: 18, high: 23, count: 200, basis: 'thinned_cells', ...s3 },
     aridity: { low: 0.55, median: 1.05, high: 2.1, count: 200, basis: 'thinned_cells', ...s3 },
     cells: 200,
     nativeShare: 0.2,

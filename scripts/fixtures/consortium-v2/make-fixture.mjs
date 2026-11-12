@@ -59,9 +59,9 @@ const SOURCES = [
 // Castanea (i = 0) is 1 °C colder than the base. count = 200 + 37 i cells. Phacelia has no range
 // (range_source NULL with a reason: "range not recorded").
 const RANGE_BASE = {
-  Temperate: { tmin_cold: [-14, -3, 3.5], tmax_warm: [19, 25, 31], tmean_year: [5, 10.5, 15], aridity: [0.55, 1.05, 2.1], precip: [450, 800, 1600], dry_months: [0, 1, 4] },
-  Mediterranean: { tmin_cold: [-3, 4, 10], tmax_warm: [25, 31, 37], tmean_year: [11, 16, 20], aridity: [0.25, 0.6, 1.3], precip: [300, 600, 1100], dry_months: [2, 4, 7] },
-  Tropical: { tmin_cold: [11, 19, 24], tmax_warm: [26, 32, 37], tmean_year: [20, 25.5, 28.5], aridity: [0.6, 1.5, 3.2], precip: [900, 1900, 3600], dry_months: [0, 3, 6] },
+  Temperate: { tmin_cold: [-14, -3, 3.5], tmax_warm: [19, 25, 31], tmean_year: [5, 10.5, 15], tmean_warm: [12, 18, 23], aridity: [0.55, 1.05, 2.1], precip: [450, 800, 1600], dry_months: [0, 1, 4] },
+  Mediterranean: { tmin_cold: [-3, 4, 10], tmax_warm: [25, 31, 37], tmean_year: [11, 16, 20], tmean_warm: [17, 23, 28], aridity: [0.25, 0.6, 1.3], precip: [300, 600, 1100], dry_months: [2, 4, 7] },
+  Tropical: { tmin_cold: [11, 19, 24], tmax_warm: [26, 32, 37], tmean_year: [20, 25.5, 28.5], tmean_warm: [24, 27, 30], aridity: [0.6, 1.5, 3.2], precip: [900, 1900, 3600], dry_months: [0, 3, 6] },
 };
 // Köppen shares of the observed cells per home climate; each list has a rare class (< 1 %), which
 // Details hides.

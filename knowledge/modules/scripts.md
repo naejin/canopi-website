@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T08:38:33Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T09:56:17Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T08:48:53Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T09:24:50Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -19,12 +19,12 @@ sources:
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
     digest: sha256:0d31414eef7a7630
-    last_modified: 2026-11-12T08:15:12Z
+    last_modified: 2026-11-12T09:10:58Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:d9a069e75df90cd4
-    last_modified: 2026-11-12T08:47:05Z
+    digest: sha256:a961f9b528e9d939
+    last_modified: 2026-11-12T09:56:00Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -39,7 +39,7 @@ sources:
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
     digest: sha256:e4f1d144fc4ece03
-    last_modified: 2026-11-12T08:15:12Z
+    last_modified: 2026-11-12T09:10:58Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs

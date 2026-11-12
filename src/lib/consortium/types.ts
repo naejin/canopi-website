@@ -153,17 +153,18 @@ export interface ClimateRange {
 }
 // A plant's observed climate (plant_climate + plant_climate_status), what range, future and native
 // share checks read: coldest-month minimum, warmest-month maximum and the year's mean temperature
-// (the mean of the coldest and warmest months' means) in °C, the aridity index (P/PET).
+// (the mean of the coldest and warmest months' means) and the warmest month's mean (annuals' summer) in °C, the aridity index (P/PET).
 // cells: GBIF cells with records; nativeShare: the share of them inside WCVP native areas.
 // The export's plant_climate variables the source reads (sqlite-source.ts), each with the TaxonClimate
 // field it fills: the one list of range variables (range.ts RANGE_BOUNDS says how each is checked).
-export const RANGE_VARIABLES = { tmin_cold: 'tminCold', tmax_warm: 'tmaxWarm', tmean_year: 'tmeanYear', aridity: 'aridity' } as const;
+export const RANGE_VARIABLES = { tmin_cold: 'tminCold', tmax_warm: 'tmaxWarm', tmean_year: 'tmeanYear', tmean_warm: 'tmeanWarm', aridity: 'aridity' } as const;
 export type RangeVariable = keyof typeof RANGE_VARIABLES;
 export interface TaxonClimate {
   source: string;
   tminCold: ClimateRange | null;
   tmaxWarm: ClimateRange | null;
   tmeanYear: ClimateRange | null;
+  tmeanWarm: ClimateRange | null;
   aridity: ClimateRange | null;
   cells: number | null;
   nativeShare: number | null;

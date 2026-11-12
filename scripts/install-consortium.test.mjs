@@ -180,7 +180,7 @@ test('the database inside: application_id, user_version, schema columns, meta an
     [{ edit: (db) => db.exec('ALTER TABLE plants ADD COLUMN extra TEXT') }, /table plants has the columns .*extra, the schema says/],
     [{ edit: (db) => db.exec('CREATE TABLE extra (x)') }, /tables outside the schema: extra/],
     [{ edit: (db) => db.exec("UPDATE meta SET value = 'r-0000000000000000' WHERE key = 'release_id'") }, /meta\.release_id is "r-0000000000000000"/],
-    [{ edit: (db) => db.exec("INSERT INTO plants (plant, id, canonical_name, genus) VALUES (99, '00000000-f1c7-4000-8000-000000000099', 'Plantus inventus', 'Plantus')") }, /1 plants have no placement/],
+    [{ edit: (db) => db.exec("INSERT INTO plants (plant, id, canonical_name, genus, grown_as_annual) VALUES (99, '00000000-f1c7-4000-8000-000000000099', 'Plantus inventus', 'Plantus', 0)") }, /1 plants have no placement/],
     [{ edit: (db) => db.exec("DELETE FROM reason_texts WHERE reason IN (SELECT reason FROM placement_reasons WHERE plant = 1); DELETE FROM placement_reasons WHERE plant = 1") }, /placements have no reason/],
     [{ edit: (db) => db.exec("UPDATE sources SET url = 'javascript:alert(1)' WHERE id = 'pfaf'") }, /source pfaf has the url "javascript:alert\(1\)", not http\(s\)/],
     [{ edit: (db) => db.exec("UPDATE plant_images SET source_page_url = '//commons.wikimedia.org/x' WHERE plant = 1") }, /photo page "\/\/commons\.wikimedia\.org\/x" is not http\(s\)/],

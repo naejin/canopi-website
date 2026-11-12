@@ -11,7 +11,7 @@ const core = await import('../src/lib/consortium/index.ts');
 const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
 
 test('marks.ts plantMarks: the loaded providers concatenated in order, for one surface; none loaded, no marks', async () => {
-  assert.deepEqual(core.plantMarks(taxon(), ctx(), 'chip'), [], 'no providers loaded');
+  assert.deepEqual(core.plantMarks(taxon(), ctx(), 'chip'), [], 'no providers loaded (the site answers\' marks need a dry site or a sized room)');
   const mark = (kind, state) => ({ kind, key: `test.${kind}`, severity: 'note', ...(state ? { state } : {}) });
   const providers = [() => [mark('edge')], () => [], (t, c, surface) => (c.location && surface !== 'chip' ? [mark('native', 'native')] : [])];
   assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), 'details', providers).map((m) => [m.kind, m.state]), [['edge', undefined], ['native', 'native']]);
@@ -19,19 +19,19 @@ test('marks.ts plantMarks: the loaded providers concatenated in order, for one s
   assert.deepEqual(core.markSurfaces, ['chip', 'row', 'add', 'details']);
   assert.deepEqual(core.markKinds, ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity', 'season', 'water', 'room']);
   const loaded = await core.loadMarkProviders();
-  assert.deepEqual(loaded.map((p) => p.name), ['rangeMarks', 'futureMarks', 'nativeMarks', 'siteMarks'], 'range (S5c), future (S5d), native (S5e), site answers (site-marks.ts)');
+  assert.deepEqual(loaded.map((p) => p.name), ['rangeMarks', 'futureMarks', 'nativeMarks'], 'range (S5c), future (S5d), native (S5e); the site answers\' marks are on the island path (marks.ts)');
   assert.equal(await core.loadMarkProviders(), loaded, 'loaded once');
   for (const s of core.markSurfaces) assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), s, loaded), [], `the stubs mark nothing (${s})`);
   assert.equal('markProviders' in core, false, 'the providers stay out of index.ts, so out of the first run');
 });
 
-test('marks.ts needsMarkProviders: the providers load only with a site location, a climate whose plants are borrowed, or a dry site', () => {
+test('marks.ts needsMarkProviders: the providers load only with a site location or a climate whose plants are borrowed', () => {
   const curated = ['Tropical', 'Mediterranean', 'Temperate'];
   assert.equal(core.needsMarkProviders({ climate: null, location: null }, curated), false);
   assert.equal(core.needsMarkProviders({ climate: 'Temperate', location: null }, curated), false, 'today\'s path loads nothing');
   assert.equal(core.needsMarkProviders({ climate: 'Subtropical', location: null }, curated), true);
   assert.equal(core.needsMarkProviders({ climate: 'Temperate', location: lyon }, curated), true);
-  assert.equal(core.needsMarkProviders({ climate: 'Temperate', location: null, site: { light: 'unsure', soil: 'unsure', water: 'dry', room: 'unsure' } }, curated), true, 'a dry site (site-marks.ts)');
+  assert.equal(core.needsMarkProviders({ climate: 'Temperate', location: null, site: { light: 'unsure', soil: 'unsure', water: 'dry', room: 'unsure' } }, curated), false, 'a dry site alone: its marks are on the island path (marks.ts plantMarks)');
 });
 
 test('store: markContext follows the climate, location and scenario; the providers load when a location is set', async () => {
@@ -43,7 +43,7 @@ test('store: markContext follows the climate, location and scenario; the provide
     assert.equal(store.markContext.value.location, lyon);
     await core.loadMarkProviders();
     await new Promise((r) => setTimeout(r, 0));
-    assert.equal(store.markProviders.value.length, 4);
+    assert.equal(store.markProviders.value.length, 3);
   } finally { store.location.value = null; }
 });
 

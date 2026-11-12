@@ -25,6 +25,14 @@ type Vars = Record<string, string | number>;
 const fill = (value: string, vars?: Vars) =>
   vars ? value.replace(/\{(\w+)\}/g, (m, name: string) => (name in vars ? String(vars[name]) : m)) : value;
 
+// A mark's numbers in the page language, to the hundredth the range rule compares (fr "5,8"; a height
+// "13,7"): here, not in the range rule's chunk, so a height note reads well without a site climate.
+export function localVars(vars?: Vars): Vars | undefined {
+  if (!vars) return vars;
+  const num = new Intl.NumberFormat(lang, { maximumFractionDigits: 2 });
+  return Object.fromEntries(Object.entries(vars).map(([k, v]) => [k, typeof v === 'number' ? num.format(v) : v]));
+}
+
 // A string with its {name} placeholders replaced (values as given: Preact escapes text).
 export function T(key: string, vars?: Vars): string {
   return fill(strings[key] ?? key, vars);

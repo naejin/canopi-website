@@ -7,7 +7,8 @@
 //   edge" agree), 'unknown' ("range not recorded"; and in Details, aridity "not checked" on ice).
 //   Details adds one line per bound passed, with the site's and the recorded values (the very values
 //   the verdict compared, to the hundredth, so the gap a reader works out matches it), a line when one
-//   of those bounds rests on few places (a weak row, never more than the edge: 'range.weak'), and says
+//   of those bounds rests on few places (a weak row, never more than the edge: 'range.weak'), a line
+//   after a bound taken from TreeGOER ('range.source.treegoer', ClimateRange low/highSource), and says
 //   observed ranges include cultivation and are estimates, not reviewed (export meta ranges_review).
 //   An annual (range.ts isAnnual: is_annual or grown_as_annual; no winter checks) claims no season
 //   (owner, decision row "Growing months" 2026-11-12: the USDA growth period classes too few annuals
@@ -29,7 +30,7 @@ const VERDICT_KEYS: Record<'edge' | 'outside', Record<MarkSurface, string>> = {
   edge: { chip: 'range.edgeShort', row: 'range.edge', add: 'range.edge', details: 'range.edgeDetails' },
   outside: { chip: 'range.outsideShort', row: 'range.outside', add: 'range.outside', details: 'range.outsideDetails' },
 };
-const SIDE_KEYS: Record<RangeSide, string> = { cold: 'range.side.cold', mild: 'range.side.mild', cool: 'range.side.cool', hot: 'range.side.hot' };
+const SIDE_KEYS: Record<RangeSide, string> = { cold: 'range.side.cold', mild: 'range.side.mild', cool: 'range.side.cool', summer: 'range.side.summer', hot: 'range.side.hot' };
 // The bound each side reads, and the site value it is compared with (range.ts RANGE_BOUNDS).
 const SIDE_BOUND = Object.fromEntries(RANGE_BOUNDS.map((b) => [b.side, b])) as Record<RangeSide, RangeBound>;
 const ARIDITY_KEYS = { drier: 'range.drier', wetter: 'range.wetter' } as const;
@@ -55,7 +56,10 @@ export function rangeMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface)
       for (const side of sides) {
         const b = SIDE_BOUND[side], range = c[b.range]!;
         weak ||= range.weak;
-        out.push({ kind: beyond.includes(side) ? 'outside' : 'edge', key: SIDE_KEYS[side], vars: { site: deg(b.site(today)), bound: deg(range[b.end]!) }, severity: 'note', state: side });
+        const kind = beyond.includes(side) ? 'outside' : 'edge';
+        out.push({ kind, key: SIDE_KEYS[side], vars: { site: deg(b.site(today)), bound: deg(range[b.end]!) }, severity: 'note', state: side });
+        // The bound came from TreeGOER (stricter than the thinned GBIF cells there): credited where shown.
+        if ((b.end === 'low' ? range.lowSource : range.highSource) === 'treegoer_ranges') out.push({ kind, key: 'range.source.treegoer', severity: 'note', state: 'source' });
       }
       // A bound from few places (a weak row) is at most the edge: Details says why.
       if (weak) out.push({ kind: 'edge', key: 'range.weak', severity: 'note', state: 'weak' });

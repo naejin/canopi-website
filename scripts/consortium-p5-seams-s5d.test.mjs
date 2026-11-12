@@ -140,7 +140,7 @@ const counts = (sum) => ({
   already: { heat: sum.already.heat.length, arid: sum.already.arid.length }, todayOnly: sum.todayOnly.length, notChecked: sum.notChecked.length,
 });
 
-// Export r-01102782139409b5 (schema 3): the warmest-month high is a heat limit (Q99, thinned cells), so far
+// Export r-01102782139409b5 (schema 3; the same counts on r-b958a4239cc68f73): the warmest-month high is a heat limit (Q99, thinned cells), so far
 // fewer plants are too hot by 2041–2070 than on the Q95 ranges of r-e0b162087a79eecf (Lyon then 23 of 94
 // outside, 21 too hot; Seville 49 of 65). Reasons count only as changes from today. An annual too hot is
 // advised to the cool season, never "too hot" nor "already" (decision row "Climate ranges fixed before the

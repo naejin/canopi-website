@@ -8,16 +8,16 @@
   "max_gzip_bytes": 10000000,
   "files": [
     {
-      "file": "consortium-v3.r-000000000000f1c7.4051825ddf9e.sqlite.gz",
+      "file": "consortium-v3.r-000000000000f1c7.d2dadef1512e.sqlite.gz",
       "climate_zones": [
         "Tropical",
         "Mediterranean",
         "Temperate"
       ],
-      "sha256": "07da7250eafb7f5bbe9f6dbc72682ca47e6b139abef33f22ecf2604be6198ae2",
-      "bytes": 30527,
-      "raw_sha256": "4051825ddf9e4b40a560a79fc1aeb474731a266d5798d10d054094168eacefb3",
-      "raw_bytes": 253952,
+      "sha256": "28cd67ca1af95b558cba68aa6da5320b65fa935cfb18aca52008a2da062c860d",
+      "bytes": 30925,
+      "raw_sha256": "d2dadef1512e264f9129e4a307ece9eacc3596ae3925b16457533494e5e2390c",
+      "raw_bytes": 258048,
       "counts": {
         "climates": 3,
         "climate_regions": 4,
@@ -45,7 +45,7 @@
         "agent_name_sources": 2,
         "layer_values": 8,
         "plant_climate_status": 38,
-        "plant_climate": 222,
+        "plant_climate": 259,
         "plant_koppen": 250
       }
     }

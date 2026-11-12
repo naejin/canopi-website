@@ -26,6 +26,9 @@
 //   maximum past Q95 by more than the margin) it is not outside but advised to the cool season
 //   (coolSeason: "Too hot in summer here: grow it in the cool season."); within the margin it is near
 //   the edge, as any plant. It never has the winter sides nor the year's warmth ("Annuals skip the winter-cold check").
+// - An annual's summer (tmean_warm, schema 3; canopi-data docs/consortium-export-v2.md): its low is a
+//   "summer too cool here" limit for annuals only (isAnnual), against the site's warmest-month mean:
+//   taro or ginger grown as annuals would otherwise pass boreal sites. Perennials ignore the row.
 import type { PlantId, SiteLocation, SitePeriod, Taxon } from './types.ts';
 import { siteToday } from './site-today.ts';
 
@@ -35,8 +38,9 @@ export { siteToday };
 
 export const rangeVerdicts = ['inside', 'edge', 'outside', 'unknown'] as const;
 export type RangeVerdict = (typeof rangeVerdicts)[number];
-// Which bound the site passes: colder winters than recorded, milder winters, a cooler year, hotter summers.
-export type RangeSide = 'cold' | 'mild' | 'cool' | 'hot';
+// Which bound the site passes: colder winters than recorded, milder winters, a cooler year, a cooler
+// summer (annuals), hotter summers.
+export type RangeSide = 'cold' | 'mild' | 'cool' | 'summer' | 'hot';
 // The site's aridity index (precipitation / PET; lower is drier) against the plant's: a mark only.
 // 'not-checked': the site has none (ice); 'unknown': the plant has none recorded.
 export type AridityFit = 'inside' | 'drier' | 'wetter' | 'not-checked' | 'unknown';
@@ -53,7 +57,7 @@ export const CHILL_CEILING_C = 18;
 // too. A new bound is one row here, one in RANGE_VARIABLES, its RangeSide and its site value.
 export interface RangeBound {
   side: RangeSide;
-  range: 'tminCold' | 'tmaxWarm' | 'tmeanYear';
+  range: 'tminCold' | 'tmaxWarm' | 'tmeanYear' | 'tmeanWarm';
   end: 'low' | 'high';
   site: (slot: SitePeriod) => number;
   // Whether the bound applies to the plant at all.
@@ -94,6 +98,8 @@ export const RANGE_BOUNDS: readonly RangeBound[] = [
   { side: 'cold', range: 'tminCold', end: 'low', site: (p) => p.tminColdC, applies: checksWinter },
   { side: 'mild', range: 'tminCold', end: 'high', site: (p) => p.tminColdC, applies: (t) => checksWinter(t) && canNeedChill(t) },
   { side: 'cool', range: 'tmeanYear', end: 'low', site: yearMeanC, applies: checksWinter },
+  // An annual's summer (header): the site's warmest-month mean against tmean_warm low.
+  { side: 'summer', range: 'tmeanWarm', end: 'low', site: (p) => p.tmeanWarmC, applies: isAnnual },
   HOT_BOUND,
 ];
 
@@ -135,7 +141,7 @@ export function rangeCheck(taxon: Taxon, site: SiteLocation | null): RangeCheck 
   const aridity: AridityFit = ai === null ? 'not-checked'
     : !arid || arid.low === null || arid.high === null ? 'unknown'
     : ai < arid.low ? 'drier' : ai > arid.high ? 'wetter' : 'inside';
-  if (!c || (!c.tminCold && !c.tmaxWarm && !c.tmeanYear)) return { verdict: 'unknown', sides: [], beyond: [], aridity, coolSeason: false };
+  if (!c || (!c.tminCold && !c.tmaxWarm && !c.tmeanYear && !c.tmeanWarm)) return { verdict: 'unknown', sides: [], beyond: [], aridity, coolSeason: false };
   const { sides, beyond, coolSeason } = slotCheck(taxon, today);
   return { verdict: beyond.length ? 'outside' : sides.length ? 'edge' : 'inside', sides, beyond, aridity, coolSeason };
 }
