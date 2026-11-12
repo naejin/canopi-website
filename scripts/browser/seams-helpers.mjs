@@ -95,7 +95,7 @@ export const controls = (page, inSheet = false) => page.$$eval(inSheet ? 'dialog
   .filter((el) => sheet || !el.closest('dialog'))
   .map((el) => { const r = el.getBoundingClientRect(); return { name: (el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 50), h: Math.round(r.height), w: Math.round(r.width), cls: el.className, inline: el.matches('.ct-explain-btn, a.text-link') } ; })
   .filter((c) => c.h > 0 && c.w > 0), inSheet);
-const small = (list) => list.filter((c) => c.h < (c.inline ? 36 : 40)).map((c) => `${c.name} ${c.w}×${c.h} (${c.cls})`);
+export const small = (list) => list.filter((c) => c.h < (c.inline ? 36 : 40)).map((c) => `${c.name} ${c.w}×${c.h} (${c.cls})`);
 
 // "What is a layer?", "Show them anyway" and "+ Add" are primary controls of the matrix: 40 px (W6).
 export const MATRIX_40 = /^(What is a |Show them anyway|Add a plant: )/;
@@ -108,9 +108,7 @@ export const focused = (page) => page.evaluate(() => {
 
 // The test hook, on a page opened before the island loads (F4, F5).
 export async function hookedPage(v) {
-  const page = await h.open('/consortium/', { ...v, data: 'fixture' });
-  await page.evaluateOnNewDocument(() => { window.__ctTest = true; });
-  await page.reload();
+  const page = await h.open('/consortium/', { ...v, data: 'fixture', hook: true });
   assert.ok(await page.waitForFunction(() => typeof window.__ctTest === 'object', { timeout: 20_000 }).then(() => true, () => false), 'a build:browser-test build');
   return page;
 }
@@ -133,9 +131,7 @@ export const MISMATCH = { en: { languages: ['en-US', 'en'], zone: 'Africa/Bangui
 
 export async function stableStart(lang, width) {
   const { languages, zone } = MISMATCH[lang];
-  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { width, mapTiles: 'stub' });
-  await page.emulateTimezone(zone);
-  await page.evaluateOnNewDocument((langs, sels) => {
+  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { width, mapTiles: 'stub', setup: async (pg) => { await pg.emulateTimezone(zone); await pg.evaluateOnNewDocument((langs, sels) => {
     window.__ctTest = true;
     Object.defineProperty(Navigator.prototype, 'languages', { get: () => langs, configurable: true });
     Object.defineProperty(Navigator.prototype, 'language', { get: () => langs[0], configurable: true });
@@ -148,8 +144,7 @@ export async function stableStart(lang, width) {
       requestAnimationFrame(look);
     };
     requestAnimationFrame(look);
-  }, languages, STABLE);
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  }, languages, STABLE); } });
   return page;
 }
 

@@ -1,0 +1,58 @@
+{
+  "_comment": "Static shard lists (E1 design check A11; coordinator choice 13: no assigner), balanced by hand from the per-file times scripts/browser/run.mjs prints. Every spec file is in each list exactly once (scripts/browser-tests.test.mjs). ratchet: seconds per shard; above it the runner warns, above 1.5x it asks for a rebalance; nothing fails on time.",
+  "local": [
+    [
+      "consortium-p5-s5b.browser.test.mjs",
+      "consortium-s1.browser.test.mjs",
+      "consortium-p5-s5f.browser.test.mjs",
+      "consortium-p5-s5d.browser.test.mjs"
+    ],
+    [
+      "consortium-seams-p2.browser.test.mjs",
+      "consortium-p5-s5c.browser.test.mjs"
+    ],
+    [
+      "consortium-s2.browser.test.mjs",
+      "consortium-s3.browser.test.mjs",
+      "consortium-s4.browser.test.mjs",
+      "consortium-seams-layout.browser.test.mjs",
+      "consortium-seams-p5.browser.test.mjs",
+      "consortium-commit0.browser.test.mjs"
+    ]
+  ],
+  "ci": [
+    [
+      "consortium-p5-s5b.browser.test.mjs",
+      "consortium-p5-s5d.browser.test.mjs"
+    ],
+    [
+      "consortium-p5-s5c.browser.test.mjs",
+      "consortium-s1.browser.test.mjs",
+      "consortium-p5-s5f.browser.test.mjs"
+    ],
+    [
+      "consortium-seams-p2.browser.test.mjs",
+      "consortium-commit0.browser.test.mjs",
+      "consortium-seams-p5.browser.test.mjs"
+    ],
+    [
+      "consortium-s2.browser.test.mjs",
+      "consortium-s3.browser.test.mjs",
+      "consortium-s4.browser.test.mjs",
+      "consortium-seams-layout.browser.test.mjs"
+    ]
+  ],
+  "ratchet": {
+    "local": {
+      "1": 540,
+      "2": 540,
+      "3": 540
+    },
+    "ci": {
+      "1": 600,
+      "2": 600,
+      "3": 600,
+      "4": 600
+    }
+  }
+}

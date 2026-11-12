@@ -6,17 +6,17 @@
 //   timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 npm run test:browser
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { countPlantsInPage, loadState } from './harness.mjs';
 import { ROOT } from './serve.mjs';
-import { aria, eachVariant, en, h, has, index, realDb, useHarness } from './helpers.mjs';
+import { aria, layoutVariants, behaviour, en, h, has, index, realDb, useHarness } from './helpers.mjs';
 import { EXPECTED, NOMINATIM, SITES, lookupAt } from './location-fixtures.mjs';
 import { atSite, choose, members, search, tool } from './p5-helpers.mjs';
 
 useHarness();
 
-test('P1: SQLite-WASM opens the real install in headless Chrome on wrangler dev, from the one hashed wasm', async () => {
+test('P1: SQLite-WASM opens the real install in headless Chrome on wrangler dev, from the one hashed wasm @real-data', async () => {
   const wasm = readdirSync(join(ROOT, h.dir, 'client', '_astro')).filter((f) => f.endsWith('.wasm'));
   assert.equal(wasm.length, 1, `one wasm in the build: ${wasm.join(', ')}`);
   assert.match(wasm[0], /^sqlite3\.[\w-]{8}\.wasm$/);
@@ -27,7 +27,7 @@ test('P1: SQLite-WASM opens the real install in headless Chrome on wrangler dev,
   assert.equal(plants, 515, 'release r-01102782139409b5 holds 515 plants');
 });
 
-test('P2: the wasm is served as application/wasm, and hashed files and the database as immutable', async () => {
+test('P2: the wasm is served as application/wasm, and hashed files and the database as immutable @real-data', async () => {
   const wasm = readdirSync(join(ROOT, h.dir, 'client', '_astro')).find((f) => f.endsWith('.wasm'));
   const res = await fetch(`${h.url}/_astro/${wasm}`);
   await res.body?.cancel();
@@ -40,7 +40,7 @@ test('P2: the wasm is served as application/wasm, and hashed files and the datab
   assert.doesNotMatch(home.headers.get('cache-control') ?? '', /immutable/, 'pages are not immutable');
 });
 
-test('P3: the database reaches the browser with its gzip magic and no content-encoding', async () => {
+test('P3: the database reaches the browser with its gzip magic and no content-encoding @real-data', async () => {
   const page = await h.open('/consortium/');
   const seen = await page.evaluate(async (url) => {
     const res = await fetch(url);
@@ -52,8 +52,8 @@ test('P3: the database reaches the browser with its gzip magic and no content-en
   assert.equal(seen.length, index.files[0].bytes);
 });
 
-test('P6 / BT-9 JS-off: the title, lede, noscript guide link, release line and loading line are there', async (t) => {
-  await eachVariant(t, async (v) => {
+test('P6 / BT-9 JS-off: the title, lede, noscript guide link, release line and loading line are there @real-data', async (t) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, javaScript: false });
     const shell = await page.evaluate(() => ({
       title: document.querySelector('h1.tool-title')?.textContent,
@@ -71,7 +71,7 @@ test('P6 / BT-9 JS-off: the title, lede, noscript guide link, release line and l
 });
 
 test('the island mounts with JavaScript on, the head does not move, and the fixture opens', async (t) => {
-  await eachVariant(t, async (v) => {
+  await layoutVariants(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     const before = await page.evaluate(() => document.querySelector('.tool-head').getBoundingClientRect().height);
     assert.equal(await loadState(page), 'ready');
@@ -94,16 +94,20 @@ const SCREENS = [
   ['the loader chunk unreachable offline', { data: 'fixture', loader: 'offline' }, 'fetch', 'retry'],
 ];
 test('R3-4, R4-4: a slow but steady download (10 KB/s, the wasm over a minute) loads', async () => {
-  const page = await h.open('/consortium/', { width: 1280, data: 'fixture' });
-  const cdp = await page.createCDPSession();
-  await cdp.send('Network.enable');
-  await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
-  // 10 KB/s: the wasm takes over a minute; no failure while bytes keep coming (no overall cap).
-  await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 400, downloadThroughput: 10_000, uploadThroughput: 10_000 });
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  // Rescaled to the injected stall (A5): with no byte allowed to lag 1.5 s, a wasm that takes over
+  // 10 s at 80 KB/s (879 KB) still loads: no overall cap, as at 10 KB/s against the production 15 s.
+  const STALL = 1500;
+  const t0 = Date.now();
+  const page = await h.open('/consortium/', { width: 1280, data: 'fixture', timeouts: { stall: STALL }, setup: async (pg) => {
+    const cdp = await pg.createCDPSession();
+    await cdp.send('Network.enable');
+    await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
+    await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 400, downloadThroughput: 80_000, uploadThroughput: 80_000 });
+  } });
   // The island itself arrives slowly too: the climate cards may take a while to show.
-  await page.locator(aria('radio', 'Temperate')).setTimeout(120_000).click();
-  assert.equal(await loadState(page, 240_000), 'ready', 'no failure screen while bytes keep arriving');
+  await page.locator(aria('radio', 'Temperate')).setTimeout(60_000).click();
+  assert.equal(await loadState(page, 60_000), 'ready', 'no failure screen while bytes keep arriving');
+  assert.ok(Date.now() - t0 > 4 * STALL, `the download outlasted the stall timer several times over (${Date.now() - t0} ms)`);
   await page.browserContext().close();
 });
 
@@ -112,8 +116,9 @@ for (const [what, opts, screen, button] of [
   ['the database', { database: 'stall' }, 'fetch', 'consortium.load.retry'],
 ]) {
   test(`R4-4: a stalled download of ${what} (no byte for 15 s) gives the failure screen with its button`, async () => {
-    const page = await h.open('/consortium/', { width: 1280, data: 'fixture', ...opts });
-    assert.equal(await loadState(page, 40_000), screen);
+    // The stall timer injected at 1 s (A5) rather than waited out at 15 s.
+    const page = await h.open('/consortium/', { width: 1280, data: 'fixture', timeouts: { stall: 1000 }, ...opts });
+    assert.equal(await loadState(page, 10_000), screen);
     if (opts.wasmFile) assert.equal(await page.$eval('[data-load-error] p', (el) => el.textContent.trim()), en['consortium.load.toolFailed']);
     assert.ok(await has(page, aria('button', en[button]), 500));
     await page.browserContext().close();
@@ -132,7 +137,7 @@ test('pre-push 3: the island chunk failing to load replaces the loading line wit
 test('BT-9 load: each failure gives its §5 screen and button', async (t) => {
   for (const [what, opts, screen, button] of SCREENS) {
     await t.test(what, async (tt) => {
-      await eachVariant(tt, async (v) => {
+      await behaviour(tt, async (v) => {
         const page = await h.open('/consortium/', { ...v, ...opts });
         assert.equal(await loadState(page), screen);
         const retry = await has(page, aria('button', en['consortium.load.retry']), 500);
@@ -221,4 +226,40 @@ test('P5-0d (commit 0 seams): without a location, on a covered climate, no range
   for (const m of await marks()) assert.ok(['chip', 'row', 'add', 'details'].includes(m.surface), `the ${m.kind} mark is drawn by PlantMarks on a surface`);
   assert.deepEqual(page.thirdParty, []);
   assert.deepEqual(page.nominatim, []);
+});
+
+// ---- E1: hang diagnosis and fail-fast (design check A10, failure rows F4, F5, F8) ----
+
+// A fixture spec run as its own node --test process on its own port base (the harness moves up past
+// this file's server); resolves its exit status and output.
+async function runFixture(name, timeoutMs) {
+  const { spawn } = await import('node:child_process');
+  const args = ['--experimental-strip-types', '--disable-warning=ExperimentalWarning', '--test', '--experimental-test-isolation=none', `--test-timeout=${timeoutMs}`, '--test-force-exit', '--test-reporter=spec', join('scripts', 'browser', 'fixtures', name)];
+  const port = Number(new URL(h.url).port) + 2;
+  return new Promise((done) => {
+    const child = spawn(process.execPath, args, { cwd: ROOT, env: { ...process.env, CANOPI_BROWSER_PORT: String(port), FORCE_COLOR: '0' }, stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '';
+    child.stdout.on('data', (c) => { out += c; });
+    child.stderr.on('data', (c) => { out += c; });
+    child.on('close', (code) => done({ code, out }));
+  });
+}
+
+test('E1 forced hang: a test that hangs fails at its timeout by name and leaves console, network and a screenshot', { timeout: 120_000 }, async () => {
+  const dir = join(ROOT, 'test-results', 'browser', 'hang.spec', 'forced-hang-a-page-that-never-shows-what-the-test-waits-for');
+  rmSync(dir, { recursive: true, force: true });
+  const { code, out } = await runFixture('hang.spec.mjs', 8000);
+  assert.notEqual(code, 0, 'the run fails');
+  assert.match(out, /forced hang: a page that never shows what the test waits for/, 'the test is named');
+  assert.match(out, /timed out after 8000ms/);
+  for (const f of ['console.txt', 'network.txt', 'screenshot.png']) assert.ok(existsSync(join(dir, f)), `trace ${f}`);
+  assert.match(readFileSync(join(dir, 'console.txt'), 'utf8'), /hang fixture: the page is up/, 'the page\'s console is in the trace');
+  assert.ok(statSync(join(dir, 'screenshot.png')).size > 1000, 'a screenshot of the page');
+});
+
+test('E1 fail-fast: once wrangler or Chrome is gone, the next page fails at once, naming which', { timeout: 120_000 }, async () => {
+  const { code, out } = await runFixture('fail-fast.spec.mjs', 30_000);
+  assert.equal(code, 0, out);
+  assert.match(out, /fail-fast wrangler: wrangler dev exited/);
+  assert.match(out, /fail-fast chrome: .*Chrome exited/);
 });

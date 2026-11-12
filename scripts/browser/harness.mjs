@@ -11,6 +11,7 @@ import { gunzipSync, gzipSync } from 'node:zlib';
 import { join } from 'node:path';
 import puppeteer from 'puppeteer-core';
 import { ROOT, serve } from './serve.mjs';
+import { dumpTrace, recordTrace } from './trace.mjs';
 import { NOMINATIM } from './location-fixtures.mjs';
 
 export const CHROME = process.env.CANOPI_CHROME ?? '/usr/bin/google-chrome';
@@ -92,6 +93,13 @@ export function servedDatabase(kind, fx) {
   return { bytes: gz, ref: { sha256: wrongSha ? sha256(raw) : sha256(gz), bytes: gz.length, rawSha256: sha256(raw), rawBytes: raw.length } };
 }
 
+// The URLs of each chunk role of a build (consortium-chunks.json beside client/: the feature chunks
+// location, markProviders, future, pool, likely, native, and maplibre), for faults set by role.
+export function chunkRoles(builtDir) {
+  const map = JSON.parse(readFileSync(join(builtDir, 'consortium-chunks.json'), 'utf8'));
+  return { ...map.features, maplibre: map.maplibre ?? [], maplibreCss: map.maplibreCss ?? [] };
+}
+
 export async function startHarness({ log = () => {}, dir } = {}) {
   const site = await serve({ log, dir });
   let browser;
@@ -105,6 +113,20 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     await site.stop();
     throw err;
   }
+  // Fail fast (failure rows F4, F5): once Chrome or wrangler is gone, every later page of the file
+  // fails at once with the reason, instead of each waiting out its timeouts.
+  let chromeGone = false;
+  browser.on('disconnected', () => { chromeGone = true; });
+  const goneWhy = () => {
+    const w = site.exited();
+    return [w ? `wrangler dev exited (${w.code ?? w.signal})` : null, chromeGone ? 'Chrome exited (the browser disconnected)' : null].filter(Boolean).join('; ') || null;
+  };
+  const alive = () => { const why = goneWhy(); if (why) throw new Error(why); };
+  const roles = chunkRoles(site.served);
+  // The traces of the pages opened since the current test began (helpers.mjs useHarness dumps them
+  // when it fails).
+  let traces = [];
+  const t0 = Date.now();
   // Open contexts, oldest first. Only the last KEEP_CONTEXTS stay open: a file opens dozens of pages
   // (four variants per test) and Chrome kept every one until close(), which took a file of real-data
   // pages to the 3 GB cap (P5 commit 0: the s2 file peaked at 3.0 GB, and one run was OOM-killed).
@@ -158,7 +180,25 @@ export async function startHarness({ log = () => {}, dir } = {}) {
   //   climate stays).
   // page.capturedDownloads() lists the files this page downloaded (BT-9 .canopi), via the CDP
   // download events; pdf(page) prints it to PDF (BT-8).
-  async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, island = null, wasmFile = null, storage = true, correction = null, geolocation = null, nominatim = null, mapTiles = null, webgl = true, climateTiles = null } = {}) {
+  // E1 (design check A3, A4, A5, A8):
+  // - hook: true sets window.__ctTest = true before the first navigation (the test build then gives
+  //   the page its test hook), so a hooked page loads once, not goto then reload;
+  // - timeouts: { stall, read, suggest } in ms shortens the page's download stall (data/load.ts), its
+  //   climate tile read (views/location/location.tsx) and Suggest's wait (memory.ts), test build only;
+  // - geoTimeoutMs: with geolocation 'timeout', TIMEOUT comes after min(the call's timeout, this);
+  // - block: { <role>: 404 | 'offline' } fails a chunk role of consortium-chunks.json (pool,
+  //   location, future, markProviders, maplibre, …) from the first request; page.blocked lists each
+  //   URL so answered;
+  // - setup: async (page) => {} runs just before the navigation (extra evaluateOnNewDocument scripts).
+  async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, island = null, wasmFile = null, storage = true, correction = null, geolocation = null, nominatim = null, mapTiles = null, webgl = true, climateTiles = null, hook = false, timeouts = null, geoTimeoutMs = null, block = null, setup = null } = {}) {
+    alive();
+    const blockedUrls = new Map();
+    for (const [role, how] of Object.entries(block ?? {})) {
+      const urls = roles[role];
+      if (!urls) throw new Error(`no chunk role "${role}" in consortium-chunks.json (${Object.keys(roles).join(', ')})`);
+      if (!urls.length) throw new Error(`chunk role "${role}" has no file in this build`);
+      for (const u of urls) blockedUrls.set(u, how);
+    }
     const real = storage === 'cookies-blocked' ? await blockedBrowser() : null;
     // The blocked profile's setting applies to its default context (an incognito context of it
     // starts from defaults), so that page is opened there.
@@ -172,13 +212,18 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     }
     opened += 1;
     const page = await context.newPage();
+    const trace = recordTrace(page, `${path} at ${width}px ${theme}`, t0);
+    traces.push(trace);
+    page.trace = trace;
     // Short waits: a missing control fails in seconds rather than at the test's timeout.
     page.setDefaultTimeout(4000);
     page.setDefaultNavigationTimeout(20_000);
     await page.setViewport({ width, height: width < 640 ? 844 : 900, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: theme }]);
     await page.setJavaScriptEnabled(javaScript);
-    await page.evaluateOnNewDocument((t, keepWasm, online, keepStorage) => {
+    await page.evaluateOnNewDocument((t, keepWasm, online, keepStorage, hooked, waits) => {
+      if (hooked) window.__ctTest = true;
+      if (waits) window.__ctTimeouts = waits;
       try { localStorage.setItem('canopi-theme', t); } catch { /* storage blocked */ }
       if (!keepWasm) { try { delete globalThis.WebAssembly; } catch { /* locked */ } }
       if (!online) Object.defineProperty(Navigator.prototype, 'onLine', { get: () => false, configurable: true });
@@ -187,7 +232,7 @@ export async function startHarness({ log = () => {}, dir } = {}) {
           Object.defineProperty(window, name, { get() { throw new DOMException('The operation is insecure.', 'SecurityError'); }, configurable: true });
         }
       }
-    }, theme, wasm, loader !== 'offline', storage !== false);
+    }, theme, wasm, loader !== 'offline', storage !== false, hook, timeouts);
     if (!webgl) {
       await page.evaluateOnNewDocument(() => {
         const get = HTMLCanvasElement.prototype.getContext;
@@ -195,14 +240,15 @@ export async function startHarness({ log = () => {}, dir } = {}) {
       });
     }
     if (geolocation === 'timeout') {
-      await page.evaluateOnNewDocument(() => {
+      await page.evaluateOnNewDocument((cap) => {
         const fail = (error, options) => {
-          const ms = options && Number.isFinite(options.timeout) ? options.timeout : null;
+          const asked = options && Number.isFinite(options.timeout) ? options.timeout : null;
+          const ms = asked !== null && cap !== null ? Math.min(asked, cap) : asked;
           if (error && ms !== null) setTimeout(() => error({ code: 3, message: 'Timeout expired', PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 }), ms);
         };
         Geolocation.prototype.getCurrentPosition = function (_ok, error, options) { fail(error, options); };
         Geolocation.prototype.watchPosition = function (_ok, error, options) { fail(error, options); return 1; };
-      });
+      }, geoTimeoutMs);
     }
     if (geolocation) {
       const origin = site.url;
@@ -215,6 +261,7 @@ export async function startHarness({ log = () => {}, dir } = {}) {
       }
     }
     page.thirdParty = [];
+    page.blocked = [];
     page.nominatim = [];
     const p5 = !!(geolocation || nominatim || mapTiles || !webgl || climateTiles);
 
@@ -227,11 +274,24 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     const fx = useFixture ? fixture() : null;
     const served = useFixture && database !== 404 ? servedDatabase(database, fx) : null;
     const images = photos ? await fixturePhotos() : {};
-    if (useFixture || loader || island || wasmFile || correction || p5) {
+    if (useFixture || loader || island || wasmFile || correction || p5 || blockedUrls.size) {
       await page.setRequestInterception(true);
+      // Every request is answered (A10, failure row F11): an error in a handler (the fixture document
+      // fetch included, cut at 10 s) answers 502 and is noted in the trace, never left pending.
       page.on('request', async (request) => {
         if (request.isInterceptResolutionHandled()) return;
+        try { await route(request); } catch (err) {
+          trace.note(`interception failed for ${request.url()}: ${err?.message ?? err}`);
+          if (!request.isInterceptResolutionHandled()) await request.respond({ status: 502, contentType: 'text/plain', body: `harness: ${err?.message ?? err}` }).catch(() => {});
+        }
+      });
+      const route = async (request) => {
         const url = new URL(request.url());
+        if (url.origin === site.url && blockedUrls.has(url.pathname)) {
+          const how = blockedUrls.get(url.pathname);
+          page.blocked.push(url.pathname);
+          return how === 'offline' ? request.abort('internetdisconnected') : request.respond({ status: Number(how), contentType: 'text/plain', body: 'Not found' });
+        }
         if (fx && url.pathname === `/data/consortium/${fx.file}`) {
           if (!served) return request.respond({ status: 404, contentType: 'text/plain', body: 'Not found' });
           if (database === 'stall') return; // never answered: the page's stall timer must end it
@@ -274,7 +334,7 @@ export async function startHarness({ log = () => {}, dir } = {}) {
           return request.abort('blockedbyclient');
         }
         if (fx && request.resourceType() === 'document' && url.origin === site.url && /\/consortium\/$/.test(url.pathname)) {
-          const res = await fetch(url, { headers: { 'accept-language': 'en' } });
+          const res = await fetch(url, { headers: { 'accept-language': 'en' }, signal: AbortSignal.timeout(10_000) });
           const countries = await fixtureCountries();
           const html = (await res.text()).replace(/(<script type="application\/json" id="ct-data">)([\s\S]*?)(<\/script>)/, (_, start, json, end) => {
             const d = JSON.parse(json);
@@ -288,11 +348,16 @@ export async function startHarness({ log = () => {}, dir } = {}) {
           return request.respond({ status: res.status, contentType: 'text/html; charset=utf-8', body: html });
         }
         return request.continue();
-      });
+      };
     }
+    if (setup) await setup(page);
     await page.goto(`${site.url}${path}`, { waitUntil: 'domcontentloaded' });
     return page;
   }
+
+  // Called by helpers.mjs useHarness around each test: a new trace list, and the dump on failure.
+  const beginTest = () => { traces = []; };
+  const failTest = (file, title, error) => dumpTrace({ file, title, traces, notes: [goneWhy(), error ? String(error?.message ?? error).split('\n')[0] : null].filter(Boolean) });
 
   // The page printed to PDF (A4, backgrounds on), for BT-8; print media is also emulated so the
   // accessibility tree can be read as printed.
@@ -316,11 +381,12 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     rmSync(downloadRoot, { recursive: true, force: true });
   }
 
-  return { url: site.url, dir: site.dir, browser, open, pdf, close };
+  return { url: site.url, dir: site.dir, served: site.served, site, roles, browser, open, pdf, close, beginTest, failTest, alive };
 }
 
 // The island's load state as the page shows it: 'ready' once the loading line is gone without a
-// failure screen, else the failure's name, or 'loading' after the timeout.
+// failure screen, else the failure's name, 'no-root' when the page has no #ct-root (a wrong page or
+// an error document), or 'loading' after the timeout.
 export async function loadState(page, timeout = 20_000) {
   await page.waitForFunction(() => {
     const root = document.getElementById('ct-root');
@@ -331,6 +397,7 @@ export async function loadState(page, timeout = 20_000) {
     const root = document.getElementById('ct-root');
     const failed = root?.querySelector('[data-load-error]');
     if (failed) return failed.getAttribute('data-load-error');
+    if (!root) return 'no-root';
     return root && !root.hasAttribute('aria-busy') && !root.querySelector('[aria-busy="true"]') ? 'ready' : 'loading';
   });
 }

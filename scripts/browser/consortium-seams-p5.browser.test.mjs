@@ -10,7 +10,7 @@
 // (npm run test:browser runs every file in shards: scripts/browser/run.mjs.)
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { useHarness, aria, axNodes, eachVariant, en, findAx, has } from './helpers.mjs';
+import { useHarness, aria, axNodes, behaviour, en, findAx, has } from './helpers.mjs';
 import { PHASES, done, temperate, suggested, memberIds, addRows } from './seams-helpers.mjs';
 
 useHarness();
@@ -22,7 +22,7 @@ test('UX4: Jobs counts the jobs that cover every stage; each stage gap has a "Fi
   const plants = await temperate();
   const plain = (i) => en[`consortium.phase.${PHASES[i]}.plain`];
   const jobs = ['feeds_you', 'feeds_soil', 'mulch', 'ground', 'helpers', 'shelter'];
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     await page.locator(aria('tab', 'Jobs')).click();
     await page.waitForSelector('.ct-jobs-note', { timeout: 5000 });
@@ -52,7 +52,7 @@ test('UX4: Jobs counts the jobs that cover every stage; each stage gap has a "Fi
     const expected = plants.filter((p) => p.jobs.has(job) && p.a <= r.to && p.b >= r.from && !members.has(p.id)).map((p) => p.name).sort();
     assert.deepEqual((await addRows(page)).sort(), expected, `the plants that do "${job}" in ${label(job, r)}`);
     await done(page);
-  });
+  }, { phone: true });
 });
 
 // Item 8 (ho-misc's flake trace): Escape closes a sheet's <dialog> at once and fires its close event a
@@ -64,7 +64,7 @@ test('Item 8: a sheet\'s late close event never closes the next sheet, opened in
     const d = document.querySelector('dialog.ct-sheet[open]');
     return d ? document.getElementById(d.getAttribute('aria-labelledby'))?.textContent.trim() ?? '' : null;
   });
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     await page.locator(aria('tab', 'All plants')).click();
     const ids = await memberIds(page);

@@ -11,8 +11,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
-import { h, useHarness, aria, axNodes, eachVariant, en, findAx, has, settled } from './helpers.mjs';
-import { esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, MATRIX_40, focused, STRINGS, STABLE, MISMATCH, stableStart, moved } from './seams-helpers.mjs';
+import { h, useHarness, aria, axNodes, layoutVariants, en, findAx, has, settled } from './helpers.mjs';
+import { esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, small, MATRIX_40, focused, STRINGS, STABLE, MISMATCH, stableStart, moved } from './seams-helpers.mjs';
 
 useHarness();
 
@@ -40,7 +40,7 @@ test('W6: on a phone, primary controls are at least 40 px tall, inline secondary
 });
 
 test('W7: the toast never covers a control', async (t) => {
-  await eachVariant(t, async (v) => {
+  await layoutVariants(t, async (v) => {
     const page = await suggested(v);
     await page.locator(aria('tab', 'All plants')).click();
     const remove = (await axNodes(page)).find((n) => n.role === 'button' && /^Remove /.test(n.name ?? ''));
@@ -178,7 +178,7 @@ test('Item 7: a filled cell has its own "+", which opens Add for that cell, and 
     assert.equal(withPlus, await cut(), `${width} px: the "+" cuts no name`);
     await done(page);
   }
-  await eachVariant(t, async (v) => {
+  await layoutVariants(t, async (v) => {
     const page = await suggested(v);
     await page.locator(aria('tab', 'All plants')).click();
     assert.ok(await has(page, '.ct-views [data-plant-id]', 5000));

@@ -11,14 +11,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
-import { h, useHarness, aria, axNodes, eachVariant, en, findAx, has } from './helpers.mjs';
+import { h, useHarness, aria, axNodes, behaviour, en, findAx, has } from './helpers.mjs';
 import { esc, done, temperate, cellIn, suggested, memberIds, addRows, fitsShade, linkOf, saved, savedFragment, tropicalOnly, param, changeSiteTo, OTHER_TAB, otherTabSaves, pasteOne, focused, hookedPage } from './seams-helpers.mjs';
 
 useHarness();
 
 test('X1/X2: "+ Add" in a free cell opens Add for that cell, and lists only its plants that fit (shade; a small garden filters nothing)', async (t) => {
   const plants = await temperate();
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v, { light: 'Shade', room: 'Small garden' });
     // The members, read at each phone stage (a stage shows only its own); a filled cell's "+" has the
     // same name as a free cell's, so a cell holding a member is skipped.
@@ -42,12 +42,12 @@ test('X1/X2: "+ Add" in a free cell opens Add for that cell, and lists only its 
     const expected = inCell(cell).filter(fitsShade).map((p) => p.name).sort();
     assert.deepEqual((await addRows(page)).sort(), expected, 'the plants of the cell that take shade, and only those, the tall ones included');
     await done(page);
-  });
+  }, { phone: true });
 });
 
 test('X1/X2/X7: "Show them anyway" opens Add for the blocked cell or run, every row in it', async (t) => {
   const plants = await temperate();
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v, { light: 'Shade' });
     let btn = null;
     for (let i = 0; i < 7 && !btn; i++) {
@@ -68,13 +68,13 @@ test('X1/X2/X7: "Show them anyway" opens Add for the blocked cell or run, every 
     const run = Array.from({ length: cell.to - cell.from + 1 }, (_, k) => cell.from + k).join();
     for (const m of marked) assert.equal(m, run, `the stage bar marks ${btn.name}`);
     await done(page);
-  });
+  }, { phone: true });
 });
 
 test('X2: a job\'s "Find a …" opens Add with the plants that do that job', async (t) => {
   const plants = await temperate();
   const findLabels = Object.fromEntries(Object.entries(en).filter(([k]) => /^consortium\.job\.\w+\.find$/.test(k)).map(([k, label]) => [label, k.split('.')[2]]));
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
@@ -95,7 +95,7 @@ test('X2: a job\'s "Find a …" opens Add with the plants that do that job', asy
 });
 
 test('X8: a link opened while a sheet is up closes the sheet', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     const before = await page.evaluate(() => location.hash);
     await page.locator(aria('button', 'Add plants')).click();
@@ -113,7 +113,7 @@ test('X8: a link opened while a sheet is up closes the sheet', async (t) => {
 });
 
 test('H16: Remove in All plants takes the plant out with a toast and Undo, which brings it back', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     await page.locator(aria('tab', 'All plants')).click();
     const remove = (await axNodes(page)).find((n) => n.role === 'button' && /^Remove /.test(n.name ?? ''));
@@ -134,7 +134,7 @@ test('H16: Remove in All plants takes the plant out with a toast and Undo, which
 test('X3: a list pasted on Start shows its consortium with Share, saved: a reload keeps it', async (t) => {
   const plants = await temperate();
   const names = plants.slice(0, 3).map((p) => p.name);
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
@@ -160,7 +160,7 @@ test('X3: a list pasted on Start shows its consortium with Share, saved: a reloa
 // (a paste of a plant not in the consortium here) saves it; D1 covers the draft and Back.
 test('X3: a site answer made after "Change site" is saved with the commit, and a reload keeps it', async (t) => {
   const plants = await temperate();
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     const ids = new Set(await memberIds(page));
     const other = plants.find((p) => !ids.has(p.id));
@@ -180,7 +180,7 @@ test('X3: a site answer made after "Change site" is saved with the commit, and a
 });
 
 test('F1: after "Change site", choosing another climate is not saved over the consortium until the reader goes back to it', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     const before = await linkOf(page);
     await page.locator(aria('button', 'Change site')).click();
@@ -204,7 +204,7 @@ test('F1: after "Change site", choosing another climate is not saved over the co
 test('F2: Undo after a list pasted from "Start over" goes back to Start and keeps nothing saved', async (t) => {
   const plants = await temperate();
   const names = plants.slice(0, 3).map((p) => p.name);
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     await page.locator(aria('button', 'Start over')).click();
     await page.locator(aria('button', 'Paste a list')).click();
@@ -227,7 +227,7 @@ test('F2: Undo after a list pasted from "Start over" goes back to Start and keep
 test('R2-1: a list pasted on Start under another climate starts that climate\'s consortium; Undo brings the old one back, saved', async (t) => {
   const [inga] = await tropicalOnly();
   assert.ok(inga, 'a Tropical-only plant in the fixture');
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     const before = await linkOf(page);
     await page.locator(aria('button', 'Change site')).click();
@@ -256,7 +256,7 @@ test('R2-1: a list pasted on Start under another climate starts that climate\'s 
 
 test('R2-2: Undo back to an empty Start leaves alone a save another tab wrote meanwhile', async (t) => {
   const names = (await temperate()).slice(0, 2).map((p) => p.name);
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     await page.locator(aria('button', 'Start over')).click();
     await page.locator(aria('button', 'Paste a list')).click();
@@ -274,7 +274,7 @@ test('R2-2: Undo back to an empty Start leaves alone a save another tab wrote me
 
 test('R2-3: Undo of a paste on a guide link\'s Start puts back the save of an earlier visit', async (t) => {
   const names = (await temperate()).slice(0, 1).map((p) => p.name);
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     const earlier = await saved(page);
     assert.ok(earlier, 'an earlier visit saved its consortium');
@@ -293,7 +293,7 @@ test('R2-3: Undo of a paste on a guide link\'s Start puts back the save of an ea
 });
 
 test('R2-4: crops ticked under another climate card are not carried back by "Back to your consortium"', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     const before = await linkOf(page);
     await page.locator(aria('button', 'Change site')).click();
@@ -310,7 +310,7 @@ test('R2-4: crops ticked under another climate card are not carried back by "Bac
 });
 
 test('T1 (R3-2): crops of the consortium are not the draft\'s under another card: its chips are free and Suggest saves none of them', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
@@ -331,7 +331,7 @@ test('T1 (R3-2): crops of the consortium are not the draft\'s under another card
 });
 
 test('T2 (R3-3): Undo of a paste under another card, then Back, leaves the consortium and its save exactly as before', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     const before = await linkOf(page);
     await changeSiteTo(page, 'Tropical');
@@ -354,7 +354,7 @@ test('T2 (R3-3): Undo of a paste under another card, then Back, leaves the conso
 });
 
 test('T3 (R3-1): a consortium the reader emptied stays empty, saved, through Change site', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await hookedPage(v);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
@@ -375,7 +375,7 @@ test('T3 (R3-1): a consortium the reader emptied stays empty, saved, through Cha
 });
 
 test('T4 (R3-1): Start empty under another card is the consortium: Change site keeps it saved', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     await changeSiteTo(page, 'Tropical');
     await page.locator(aria('button', 'Start empty and search')).click();
@@ -393,7 +393,7 @@ test('T4 (R3-1): Start empty under another card is the consortium: Change site k
 
 test('M1 (R4-1): Undo of a paste on a fresh Start puts back the save another tab wrote before the paste', async (t) => {
   const [first] = await temperate();
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
@@ -408,7 +408,7 @@ test('M1 (R4-1): Undo of a paste on a fresh Start puts back the save another tab
 
 test('M2 (R4-1): on a guide link\'s Start, Undo of a paste puts back the newer save another tab wrote, not the one read at open', async (t) => {
   const [first] = await temperate();
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     await page.goto(page.url().split('#')[0].split('?')[0] + '?climate=temperate', { waitUntil: 'domcontentloaded' });
     assert.equal(await loadState(page), 'ready');
@@ -423,7 +423,7 @@ test('M2 (R4-1): on a guide link\'s Start, Undo of a paste puts back the newer s
 });
 
 test('M3 (R4-2): Start over leaves alone a save another tab wrote since', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     await otherTabSaves(page);
     await page.locator(aria('button', 'Start over')).click();
@@ -434,7 +434,7 @@ test('M3 (R4-2): Start over leaves alone a save another tab wrote since', async 
 });
 
 test('D1 (R4-3): site answers changed in the draft are not saved until a commit; Back keeps the old ones, Suggest takes the new', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     const before = await linkOf(page);
     await changeSiteTo(page, 'Tropical');
@@ -455,7 +455,7 @@ test('D1 (R4-3): site answers changed in the draft are not saved until a commit;
 
 test('pre-push 1: a guest removed from the consortium gives no "no longer in the list" notice after a reload', async (t) => {
   const [guest] = await tropicalOnly();
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await hookedPage(v);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
@@ -477,7 +477,7 @@ test('pre-push 1: a guest removed from the consortium gives no "no longer in the
 });
 
 test('F3: Undo of a plant added in the Paste sheet keeps the focus in the sheet', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
@@ -493,7 +493,7 @@ test('F3: Undo of a plant added in the Paste sheet keeps the focus in the sheet'
 });
 
 test('W4: after Suggest plants, focus is on the matrix heading or caption, never on <body>', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
@@ -504,11 +504,11 @@ test('W4: after Suggest plants, focus is on the matrix heading or caption, never
     assert.notEqual(f.tag, 'body', 'focus is not lost');
     assert.ok(['h2', 'caption', 'table'].includes(f.tag), `on the matrix heading or caption (${JSON.stringify(f)})`);
     await done(page);
-  });
+  }, { phone: true });
 });
 
 test('W4: after Undo, focus is on the restored plant', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await suggested(v);
     await page.locator(aria('tab', 'All plants')).click();
     const remove = (await axNodes(page)).find((n) => n.role === 'button' && /^Remove /.test(n.name ?? ''));
@@ -521,11 +521,11 @@ test('W4: after Undo, focus is on the restored plant', async (t) => {
     assert.notEqual(f.tag, 'body', 'focus is not lost');
     assert.equal(f.plant, id, `on the restored plant (${JSON.stringify(f)})`);
     await done(page);
-  });
+  }, { phone: true });
 });
 
 test('W4: the empty matrix\'s "Suggest a start" and Start\'s "Back to your consortium" move focus to the view', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
@@ -544,11 +544,11 @@ test('W4: the empty matrix\'s "Suggest a start" and Start\'s "Back to your conso
     f = await focused(page);
     assert.ok(['h2', 'caption', 'table'].includes(f.tag), `after "Back to your consortium": the view's heading (${JSON.stringify(f)})`);
     await done(page);
-  });
+  }, { phone: true });
 });
 
 test('F4: when the after-the-matrix chunk fails, the views, Print and Download say so with Reload, and printing keeps the matrix', async (t) => {
-  await eachVariant(t, async (v) => {
+  await behaviour(t, async (v) => {
     const page = await hookedPage(v);
     const rejections = [];
     page.on('pageerror', (e) => rejections.push(e.message));
@@ -573,7 +573,7 @@ test('F4: when the after-the-matrix chunk fails, the views, Print and Download s
     assert.ok(await has(page, '.ct-views [role="alert"] button', 3000), 'a view says so with Reload');
     assert.deepEqual(rejections, [], 'no unhandled rejection');
     await done(page);
-  });
+  }, { phone: true });
 });
 
 test('F5: a view still loading shows the loading line', async () => {

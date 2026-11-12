@@ -23,14 +23,12 @@ import { h, has, realDb } from './helpers.mjs';
 import { SITES, lookupAt } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 
-// The tool, loaded, with the test hook (store access) unless hook is false. Map tiles are stubbed for
-// every spec (any other third-party request is aborted and listed in page.thirdParty); hash is a link.
+// The tool, loaded, with the test hook (store access) unless hook is false: the harness sets the
+// flag before the first navigation, so the page loads once (E1 design check A3). Map tiles are
+// stubbed for every spec (any other third-party request is aborted and listed in page.thirdParty);
+// hash is a link. Other options go to h.open (timeouts, block, setup, …).
 export async function tool({ lang = 'en', hook = true, width = 1280, mapTiles = 'stub', hash = '', ...opts } = {}) {
-  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/${hash}`, { width, mapTiles, ...opts });
-  if (hook) {
-    await page.evaluateOnNewDocument(() => { window.__ctTest = true; });
-    await page.reload({ waitUntil: 'domcontentloaded' });
-  }
+  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/${hash}`, { width, mapTiles, hook, ...opts });
   assert.equal(await loadState(page), 'ready');
   if (hook) assert.ok(await page.waitForFunction(() => window.__ctTest?.store?.source.value, { timeout: 20_000 }).then(() => true, () => false), 'no test hook: build with npm run build:browser-test');
   return page;
@@ -112,17 +110,16 @@ export const search = async (page, q) => {
 };
 
 // A page whose /data/climate/ fetches wait `ms` (Infinity: never answer), optionally with a saved location.
-export async function slowTiles(ms, { saved = null, geolocation = { lat: SITES.seville[0], lon: SITES.seville[1] } } = {}) {
-  const page = await h.open('/consortium/', { mapTiles: 'stub', geolocation });
-  await page.evaluateOnNewDocument((wait, rec) => {
-    window.__ctTest = true;
-    if (rec && !localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
-    const f = window.fetch;
-    window.fetch = (input, init) => (/\/data\/climate\//.test(String(input?.url ?? input))
-      ? (wait === null ? new Promise(() => {}) : new Promise((r) => setTimeout(r, wait)).then(() => f(input, init)))
-      : f(input, init));
-  }, Number.isFinite(ms) ? ms : null, saved);
-  await page.reload({ waitUntil: 'domcontentloaded' });
+// timeouts: the page's shortened waits (h.open timeouts: read, suggest, stall).
+export async function slowTiles(ms, { saved = null, geolocation = { lat: SITES.seville[0], lon: SITES.seville[1] }, timeouts = null } = {}) {
+  const page = await h.open('/consortium/', { mapTiles: 'stub', geolocation, timeouts, setup: (pg) => pg.evaluateOnNewDocument((wait, rec) => {
+      window.__ctTest = true;
+      if (rec && !localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
+      const f = window.fetch;
+      window.fetch = (input, init) => (/\/data\/climate\//.test(String(input?.url ?? input))
+        ? (wait === null ? new Promise(() => {}) : new Promise((r) => setTimeout(r, wait)).then(() => f(input, init)))
+        : f(input, init));
+    }, Number.isFinite(ms) ? ms : null, saved) });
   await ready(page);
   return page;
 }
@@ -139,7 +136,7 @@ export const RANGED = `SELECT p.canonical_name name, n.low nlo, n.high nhi, x.hi
   JOIN placements pl ON pl.plant = p.plant AND pl.climate_zone = ?3
   JOIN plant_climate n ON n.plant = p.plant AND n.variable = 'tmin_cold'
   JOIN plant_climate x ON x.plant = p.plant AND x.variable = 'tmax_warm'`;
-const OUTSIDE = '((NOT annual AND (nlo - 2 > ?1 OR ?1 > nhi + 2)) OR ?2 > xhi + 2)';
+export const OUTSIDE = '((NOT annual AND (nlo - 2 > ?1 OR ?1 > nhi + 2)) OR ?2 > xhi + 2)';
 
 export const EDGE = `(NOT ${OUTSIDE} AND ((NOT annual AND (nlo > ?1 OR ?1 > nhi)) OR ?2 > xhi))`;
 
@@ -171,12 +168,10 @@ export const emptyMatrix = async (page) => {
 
 // A page with the reader's own saved location (Seville, geo) on this device, opened at `hash`.
 export async function withSavedSite(hash = '') {
-  const page = await h.open(`/consortium/${hash}`, { mapTiles: 'stub' });
-  await page.evaluateOnNewDocument((rec) => {
-    window.__ctTest = true;
-    if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
-  }, JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }));
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  const page = await h.open(`/consortium/${hash}`, { mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((rec) => {
+      window.__ctTest = true;
+      if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
+    }, JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' })) });
   await ready(page);
   return page;
 }
@@ -193,30 +188,28 @@ export const ownSite = (page) => page.waitForFunction((a, b) => { const l = wind
 // window.__confirmSeen: whether the location line's "Use …" ever showed.
 export async function savedOpening({ list = null } = {}) {
   const q = (await temperateLink()).slice(1);
-  const page = await h.open('/consortium/', { mapTiles: 'stub' });
-  await page.evaluateOnNewDocument((save, rec, outcome) => {
-    if (!localStorage.getItem('canopi-consortium')) localStorage.setItem('canopi-consortium', save);
-    if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
-    window.__confirmSeen = false;
-    new MutationObserver(() => { if (document.querySelector('[data-location-confirm]')) window.__confirmSeen = true; }).observe(document, { subtree: true, childList: true });
-    let hook = true;
-    Object.defineProperty(window, '__ctTest', { configurable: true, get: () => hook, set: (v) => {
-      hook = v;
-      if (!v?.store || !outcome) return;
-      v.store.source.subscribe((src) => {
-        if (!src || src.wrapped) return;
-        src.wrapped = true;
-        const read = src.interactions.bind(src);
-        let once = true; // the restore's read only; later reads (a card chosen) work
-        src.interactions = (z) => {
-          if (!once) return read(z);
-          once = false;
-          return new Promise((resolve, reject) => { v.store.location.subscribe((l) => { if (l?.lookup) setTimeout(() => (outcome === 'fail' ? reject(new Error('test: list unreadable')) : resolve(read(z))), 50); }); });
-        };
-      });
-    } });
-  }, JSON.stringify({ fragment: q, at: '2026-11-01', src: 'chosen' }), JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }), list);
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  const page = await h.open('/consortium/', { mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((save, rec, outcome) => {
+      if (!localStorage.getItem('canopi-consortium')) localStorage.setItem('canopi-consortium', save);
+      if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
+      window.__confirmSeen = false;
+      new MutationObserver(() => { if (document.querySelector('[data-location-confirm]')) window.__confirmSeen = true; }).observe(document, { subtree: true, childList: true });
+      let hook = true;
+      Object.defineProperty(window, '__ctTest', { configurable: true, get: () => hook, set: (v) => {
+        hook = v;
+        if (!v?.store || !outcome) return;
+        v.store.source.subscribe((src) => {
+          if (!src || src.wrapped) return;
+          src.wrapped = true;
+          const read = src.interactions.bind(src);
+          let once = true; // the restore's read only; later reads (a card chosen) work
+          src.interactions = (z) => {
+            if (!once) return read(z);
+            once = false;
+            return new Promise((resolve, reject) => { v.store.location.subscribe((l) => { if (l?.lookup) setTimeout(() => (outcome === 'fail' ? reject(new Error('test: list unreadable')) : resolve(read(z))), 50); }); });
+          };
+        });
+      } });
+    }, JSON.stringify({ fragment: q, at: '2026-11-01', src: 'chosen' }), JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }), list) });
   await ready(page);
   return page;
 }
@@ -227,9 +220,9 @@ export const proposal = (page) => page.evaluate(() => ({ proposed: window.__ctTe
 
 // An empty Temperate matrix with a kept guest from Tropical whose list read is held: window.__guest
 // .release() lets it through, .fail() fails it (as after Start empty, which keeps guests).
-export async function guestHeld(width) {
+export async function guestHeld(width, { timeouts = null } = {}) {
   const guest = await realDb((db) => String(db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Tropical' ORDER BY 1 LIMIT 1").get().id));
-  const page = await tool({ width, hash: '#v=4&c=temperate&a=&e=1' });
+  const page = await tool({ width, hash: '#v=4&c=temperate&a=&e=1', timeouts });
   assert.ok(await has(page, '.ct-mx-empty .button-primary', 15_000), 'the empty matrix with "Suggest a start"');
   await page.evaluate((id) => {
     const { store } = window.__ctTest, src = store.source.value;

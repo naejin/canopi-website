@@ -16,7 +16,7 @@ import { loadState } from './harness.mjs';
 import { h, useHarness, aria, has, realDb, settled } from './helpers.mjs';
 import { SITES } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
-import { tool, atSite, choose, locationControls, locationState, ADD_OPEN, text, proposedCard, ready, search, RANGED, EDGE, pickRanged, atNowhere, emptyMatrix, guestHeld, members } from './p5-helpers.mjs';
+import { tool, atSite, choose, locationControls, locationState, ADD_OPEN, text, proposedCard, ready, search, RANGED, OUTSIDE, EDGE, pickRanged, atNowhere, emptyMatrix, guestHeld, members } from './p5-helpers.mjs';
 
 useHarness();
 
@@ -39,7 +39,7 @@ test('P5-14 (S5c nothing fits): where no plant\'s range holds the site: the "not
   assert.ok(await has(page, '.ct-add .ct-rows li [data-mark="outside"]', 10_000), 'each one marked outside its range');
 });
 
-test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold check"): at Yakutsk the Boreal pool keeps its annual crops, Suggest uses them, and an annual is tagged "annual", no season claimed (decision row "Growing months")', async () => {
+test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold check"): at Yakutsk the Boreal pool keeps its annual crops, Suggest uses them, and an annual is tagged "annual", no season claimed (decision row "Growing months") @real-data', async () => {
   const page = await tool();
   await atSite(page, 'yakutsk');
   await page.evaluate(async () => { const { store } = window.__ctTest; store.climate.value = 'Boreal'; await store.loadPool('Boreal'); });
@@ -57,7 +57,7 @@ test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold ch
   assert.match(await text(page, '[data-mark-surface="details"][data-mark-state="annual"]') ?? '', /^An annual, re-sown each year: its winter cold is not checked\.$/);
 });
 
-test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range, and Add lists none until one is typed, which then asks first', async () => {
+test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range, and Add lists none until one is typed, which then asks first @real-data', async () => {
   const page = await tool();
   const lookup = await atSite(page, 'seville');
   const outside = await pickRanged(OUTSIDE, lookup.climate.periods[0], 'Mediterranean');
@@ -93,7 +93,7 @@ test('P5-14c (S5c matrix counts): a cell\'s "N fit" leaves out plants outside th
   assert.equal(await sum(), before, 'without a location the counts are P2\'s');
 });
 
-test('P5-14e (S5c range chunk offline): if the pool chunk cannot load, the tool falls back to the unfiltered pool with a notice, and Suggest, Start crops, a link and Swap all work', async () => {
+test('P5-14e (S5c range chunk offline): if the pool chunk cannot load, the tool falls back to the unfiltered pool with a notice, and Suggest, Start crops, a link and Swap all work @real-data', async () => {
   const page = await tool();
   const cdp = await page.createCDPSession();
   await cdp.send('Network.enable');
@@ -132,7 +132,7 @@ test('P5-14g (S5c range chunk offline, fix review 231bead 1–2): Reload is the 
   await atSite(page, 'seville');
   assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'the notice');
   await atSite(page, 'lyon');
-  await new Promise((r) => setTimeout(r, 1500));
+  await new Promise((r) => setTimeout(r, 1000));
   assert.equal(failed.length, 1, 'a new location does not import the chunk the browser remembers as failed');
   assert.equal(await page.evaluate(() => window.__toasts.size), 1, 'never a second toast for the same failure');
   assert.ok(await has(page, '[data-range-unavailable]'), 'the notice stays, with Reload');
@@ -160,7 +160,7 @@ test('P5-14f (S5c Suggest while the range rule loads): when nothing fits, a Sugg
   assert.equal(await page.$('.ct-cta button[aria-busy="true"]'), null, 'the pending Suggest is cleared');
 });
 
-test('P5-15 (S5c near-edge mark): a Mediterranean plant whose range ends within 2 °C of Seville\'s climate carries "near the edge"', async () => {
+test('P5-15 (S5c near-edge mark): a Mediterranean plant whose range ends within 2 °C of Seville\'s climate carries "near the edge" @real-data', async () => {
   const page = await tool();
   const lookup = await atSite(page, 'seville');
   const edge = await pickRanged(EDGE, lookup.climate.periods[0], 'Mediterranean');
@@ -177,7 +177,7 @@ test('P5-15 (S5c near-edge mark): a Mediterranean plant whose range ends within 
   assert.ok(marks.includes('edge'), `${edge} is marked near the edge`);
 });
 
-test('P5-15b (S5c range lines in Details, page language): in French, a plant near the edge at Seville says why with the site\'s values written "5,8"', async () => {
+test('P5-15b (S5c range lines in Details, page language): in French, a plant near the edge at Seville says why with the site\'s values written "5,8" @real-data', async () => {
   const page = await tool({ lang: 'fr' });
   const lookup = await atSite(page, 'seville');
   const p = lookup.climate.periods[0];
@@ -195,7 +195,7 @@ test('P5-15b (S5c range lines in Details, page language): in French, a plant nea
   assert.ok(edges.some((t) => /cultures comprises/.test(t)), `the Details mark says observed ranges include cultivation (${edges.join(' | ')})`);
 });
 
-test('P5-16 (S5c outside-range warning on add): typed in Add, a plant whose range misses the site shows "outside", and adding it still makes it a member', async () => {
+test('P5-16 (S5c outside-range warning on add): typed in Add, a plant whose range misses the site shows "outside", and adding it still makes it a member @real-data', async () => {
   const page = await tool();
   const lookup = await atSite(page, 'seville');
   const outside = await pickRanged(OUTSIDE, lookup.climate.periods[0], 'Mediterranean');
@@ -399,16 +399,16 @@ test('P5-27a (S5c seam review 1): where nothing fits, the empty matrix left by "
 
 test('P5-27b (S5c seam review 1): a borrowed climate whose range chunk failed: the empty matrix says why instead of a dead "Suggest a start"', async () => {
   for (const width of [390, 1280]) {
-    const page = await tool({ width, hash: '#v=4&c=arid&a=&e=1' });
-    const cdp = await page.createCDPSession();
-    await cdp.send('Network.enable');
-    await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/pool.*'] });
+    // The pool chunk fails from the first request (A8): blocking it after the page loaded raced its
+    // modulepreload, so the test passed or failed by timing.
+    const page = await tool({ width, hash: '#v=4&c=arid&a=&e=1', block: { pool: 404 } });
     await atSite(page, 'seville');
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the range chunk failed');
     const { buttons, words } = await emptyMatrix(page);
     assert.equal(buttons.includes('Suggest a start'), false, `${width} px: no Suggest that can only refuse (${buttons.join(', ')})`);
     assert.match(words, /Arid needs them to pick plants/, `${width} px: it says why`);
     assert.ok(buttons.includes('Reload'), `${width} px: with Reload`);
+    assert.ok(page.blocked.some((u) => h.roles.pool.includes(u)), `${width} px: the pool chunk was requested and refused by the block`);
   }
 });
 
@@ -464,10 +464,12 @@ test('P5-27n (S5c seam review round 4, 1): a waiting Suggest ends when the guest
 });
 
 test('P5-27o (S5c seam review round 4, 1): a waiting Suggest whose guest list never arrives ends after 10 s, says so, and is no longer busy', async () => {
-  const page = await guestHeld(1280);
+  // Suggest's production 10 s wait, shortened (A5).
+  const timeouts = { suggest: 1500 };
+  const page = await guestHeld(1280, { timeouts });
   await page.click('.ct-mx-empty .button-primary');
   assert.equal(await page.$eval('.ct-mx-empty .button-primary', (b) => b.getAttribute('aria-busy')), 'true', 'busy while it waits');
-  assert.ok(await page.waitForFunction(() => /took too long/.test(document.querySelector('.ct-toast-text')?.textContent ?? ''), { timeout: 14_000 }).then(() => true, () => false), 'after 10 s, a message');
+  assert.ok(await page.waitForFunction(() => /took too long/.test(document.querySelector('.ct-toast-text')?.textContent ?? ''), { timeout: timeouts.suggest + 4000 }).then(() => true, () => false), 'after the wait, a message');
   assert.equal(await page.$eval('.ct-mx-empty .button-primary', (b) => b.getAttribute('aria-busy')), null, 'no longer busy');
   await page.evaluate(() => window.__guest.release());
   await new Promise((r) => setTimeout(r, 1000));
@@ -495,7 +497,7 @@ test('P5-27g (S5c walk-through F1): on phones a member\'s marks wrap or fit: wit
 
 // Decision row "Climate ranges fixed before the P5 push" (2026-11-12): the zone from the cell's own means,
 // annuals beyond their heat range advised to the cool season, drought tolerance Medium on a dry site.
-test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; at Seville Good-King-Henry (a recorded annual) is a cool-season crop in Add and Details; a dry site marks drought tolerance Medium; nothing scrolls sideways', async () => {
+test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; at Seville Good-King-Henry (a recorded annual) is a cool-season crop in Add and Details; a dry site marks drought tolerance Medium; nothing scrolls sideways @real-data', async () => {
   const [lat, lon] = SITES.nairobi;
   for (const width of [320, 390, 1280]) {
     const page = await tool({ width, geolocation: { lat, lon } });
@@ -543,7 +545,7 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
 
 // Owner request 2026-11-12: the room answer is advisory. The matrix layers are relative sun exposure,
 // so a small garden never blocks a cell nor hides a tall plant in Add; the plant carries a note.
-test('P5-27r (S5c climate ranges, room advisory): in a small garden no cell is blocked for height, and Add lists a walnut with "grows to … m: prune", never behind "show anyway"', async () => {
+test('P5-27r (S5c climate ranges, room advisory): in a small garden no cell is blocked for height, and Add lists a walnut with "grows to … m: prune", never behind "show anyway" @real-data', async () => {
   for (const width of [390, 1280]) {
     const page = await tool({ width });
     await choose(page, 'Temperate');

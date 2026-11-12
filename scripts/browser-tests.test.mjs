@@ -25,7 +25,9 @@ const SPEC_FILES = [
 test('one browser test file for commit 0, one per P2 stream, one per P5 stream and one per seams owner, nothing else', () => {
   assert.deepEqual(files, SPEC_FILES);
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.match(pkg.scripts['test:browser'], /scripts\/browser\/\*\.browser\.test\.mjs/);
+  assert.match(pkg.scripts['test:browser'], /node scripts\/browser\/run\.mjs --list local$/);
+  assert.match(pkg.scripts['test:browser:shard'], /run\.mjs --list ci --no-scope --shard$/);
+  assert.match(pkg.scripts['test:browser:smoke'], /scripts\/browser\/smoke\/consortium\.smoke\.mjs$/);
   assert.doesNotMatch(pkg.scripts.test, /browser/, 'browser tests never run in npm test');
 });
 
@@ -51,7 +53,7 @@ test('the browser tests build their own hook build; only the browser-test flag t
   for (const f of ['../astro.config.mjs', '../src/islands/consortium/test-hook.ts', '../package.json'])
     assert.doesNotMatch(readFileSync(new URL(f, import.meta.url), 'utf8'), /PUBLIC_CT_TEST_HOOK/, f);
   const checker = readFileSync(new URL('./check-built-site.mjs', import.meta.url), 'utf8');
-  for (const word of ['__ctTest', '__ctViews', 'failSheets']) assert.ok(checker.includes(`'${word}'`), `check-built-site looks for ${word}`);
+  for (const word of ['__ctTest', '__ctViews', 'failSheets', '__ctTimeouts']) assert.ok(checker.includes(`'${word}'`), `check-built-site looks for ${word}`);
 });
 
 test('each stream file names its stream in every test', () => {
@@ -107,4 +109,87 @@ test('each seams file holds its owner\'s seams (A6)', () => {
   for (const part of ['p2', 'layout', 'p5']) {
     for (const { title } of testsOf(read(`consortium-seams-${part}.browser.test.mjs`))) assert.equal(owner(title), part, `"${title}" belongs in seams-${owner(title)}`);
   }
+});
+
+// The sleep rule (E1 design check A12): no literal sleep over 1 s in a spec or a spec helper. A test
+// that must outlast a timeout injects a short one through h.open({ timeouts }) and waits with
+// helpers.mjs until(deadline), bound to that value.
+test('no browser spec sleeps longer than 1 s (setTimeout(r, N) with N > 1000)', () => {
+  const specDir = new URL('./browser/', import.meta.url);
+  const sources = [
+    ...files,
+    ...readdirSync(specDir).filter((f) => /helpers\.mjs$/.test(f)),
+    ...readdirSync(new URL('./browser/pending/', import.meta.url)).map((f) => `pending/${f}`),
+  ];
+  const long = [];
+  for (const f of sources) {
+    const text = readFileSync(new URL(f, specDir), 'utf8');
+    for (const m of text.matchAll(/(?:setTimeout\(\s*\w+\s*,|waitForTimeout\()\s*([\d_]+)\s*\)/g)) {
+      if (Number(m[1].replace(/_/g, '')) > 1000) long.push(`${f}: ${m[0]}`);
+    }
+  }
+  assert.deepEqual(long, []);
+});
+
+// Failure row F1: a taken base port moves the server up to the next free even pair.
+test('serve() skips a taken port pair: a listener on the base moves it to base + 2 (F1)', async () => {
+  const { createServer } = await import('node:net');
+  const { freePortPair, portFree } = await import('./browser/serve.mjs');
+  let base = 4480;
+  while (!((await portFree(base)) && (await portFree(base + 1)) && (await portFree(base + 2)) && (await portFree(base + 3)))) base += 4;
+  const busy = createServer();
+  await new Promise((r) => busy.listen({ port: base + 1, host: '127.0.0.1' }, r));
+  try {
+    assert.equal(await freePortPair(base), base + 2, 'the inspector port taken: the pair moves');
+    assert.equal(await freePortPair(base + 1), base + 2, 'an odd base rounds up to even');
+  } finally { await new Promise((r) => busy.close(r)); }
+  assert.equal(await freePortPair(base), base);
+});
+
+// The runner (A11) and its failure rows: F13 every spec file in each list once, F15 fewer slots on
+// little memory, F16 a missing build named, F10 a lingering handle never stalls a file.
+test('shards.json: every spec file is in each list exactly once; 3 local shards, 4 CI (F13)', async () => {
+  const { readShards, specFiles } = await import('./browser/run.mjs');
+  const shards = readShards();
+  assert.equal(shards.local.length, 3);
+  assert.equal(shards.ci.length, 4);
+  for (const list of ['local', 'ci']) assert.deepEqual(shards[list].flat().sort(), specFiles(), `${list}: each file once`);
+});
+
+test('the runner fits its slots to the memory available, at least 1, saying why (F15)', async () => {
+  const { memAvailable, slotsFor } = await import('./browser/run.mjs');
+  const GB = 1024 ** 3;
+  assert.equal(memAvailable('MemTotal:       32000000 kB\nMemAvailable:   12582912 kB\n'), 12 * GB);
+  assert.deepEqual(slotsFor(12 * GB, 3).slots, 3);
+  assert.deepEqual(slotsFor(8 * GB, 3).slots, 2);
+  assert.match(slotsFor(8 * GB, 3).why, /^2 slots, not 3: 8\.0 GB available/);
+  assert.equal(slotsFor(2 * GB, 3).slots, 1, 'never fewer than 1');
+  assert.equal(slotsFor(30 * GB, 3).slots, 3, 'never more than asked');
+});
+
+test('the runner names the build command when dist-test/ is missing (F16)', async () => {
+  const { builtProblem } = await import('./browser/run.mjs');
+  const { mkdtempSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const empty = mkdtempSync(join(tmpdir(), 'canopi-run-'));
+  try { assert.match(builtProblem(empty), /run `npm run build:browser-test` first/); } finally { rmSync(empty, { recursive: true, force: true }); }
+});
+
+test('a spec file whose process keeps a handle open still exits under --test-force-exit (F10)', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const t0 = Date.now();
+  const r = spawnSync(process.execPath, ['--test', '--experimental-test-isolation=none', '--test-force-exit', new URL('./browser/fixtures/linger.spec.mjs', import.meta.url).pathname], { encoding: 'utf8', timeout: 20_000 });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.ok(Date.now() - t0 < 15_000);
+});
+
+// A9: tests whose assertions name real plants or counts carry the title suffix " @real-data" (never a
+// prefix: the stream title rules read the start); after a data reinstall the coordinator runs
+// node scripts/browser/run.mjs -- --test-name-pattern="@real-data".
+test('@real-data is a title suffix only, and the real-data tests carry it (A9)', () => {
+  const titles = files.flatMap((f) => testsOf(read(f)).map((t) => t.title));
+  for (const t of titles.filter((x) => x.includes('@real-data'))) assert.match(t, / @real-data$/, t);
+  assert.ok(titles.filter((x) => x.endsWith(' @real-data')).length >= 10);
+  assert.ok(titles.some((x) => x.startsWith('P1: SQLite-WASM') && x.endsWith('@real-data')));
 });
