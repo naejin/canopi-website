@@ -14,6 +14,23 @@ export const en = JSON.parse(readFileSync(join(ROOT, 'src', 'i18n', 'translation
 export const eachVariant = async (t, fn) => { for (const v of VARIANTS) await t.test(variantName(v), () => fn(v)); };
 
 export const has = async (page, selector, timeout = 2500) => !!(await page.waitForSelector(selector, { timeout }).catch(() => null));
+// Waits until nothing moves under a click aimed at selector: the window's scroll offset and the
+// element's box unchanged over five animation frames. The site scrolls smoothly (global.css html
+// scroll-behavior), so the focus and scrollIntoView a view change makes animate for a few hundred ms,
+// and page.click() measures the box first and presses a moment later: a click aimed during the
+// animation lands where the control was.
+export async function settled(page, selector, timeout = 5000) {
+  await page.waitForFunction((sel) => {
+    const r = document.querySelector(sel)?.getBoundingClientRect();
+    const now = r ? `${scrollX}:${scrollY}:${r.left}:${r.top}` : null;
+    const s = (window.__ctSettle ??= { sel, at: null, n: 0 });
+    if (s.sel !== sel) Object.assign(s, { sel, at: null, n: 0 });
+    if (now !== null && now === s.at) s.n += 1; else { s.at = now; s.n = 0; }
+    if (s.n < 5) return false;
+    delete window.__ctSettle;
+    return true;
+  }, { polling: 'raf', timeout }, selector);
+}
 // A node of the accessibility tree by role and exact name.
 export const aria = (role, name) => `::-p-aria([role="${role}"][name="${name.replace(/"/g, '\\"')}"])`;
 

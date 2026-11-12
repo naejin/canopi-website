@@ -5,7 +5,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
-import { aria, axNodes, eachVariant, en, findAx, fixtureDb, has } from './helpers.mjs';
+import { aria, axNodes, eachVariant, en, findAx, fixtureDb, has, settled } from './helpers.mjs';
 import { readFileSync } from 'node:fs';
 import { jobOfFunction } from '../../src/lib/consortium/jobs.ts';
 
@@ -1048,22 +1048,35 @@ test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gut
       const at = `${lang} ${width} px`;
       const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { width, data: 'fixture', mapTiles: 'stub' });
       const bad = [];
+      // The climate first, and the site questions awaited: they show once the database is open and
+      // the list read. Until then Start moves: the open database refines the guessed country from the
+      // time zone ("Use United States" becomes "Use France" here), and the line's new height shifts
+      // every control below it (46 px at en 320 and ja 390), so a click aimed before the shift misses
+      // the map button. The radio is clicked in the page, which no shift can miss.
+      await page.$eval('input[name="ct-climate"][value="temperate"]', (el) => el.click());
+      assert.ok(await has(page, 'input[name="ct-site-light"][value="shade"]', 20_000), `${at}: the site questions (the list is read)`);
+      assert.equal(await loadState(page), 'ready');
       // The map dialog (start step).
       if (await has(page, '[data-location-action="map"]', 4000)) {
+        await settled(page, '[data-location-action="map"]');
         await page.click('[data-location-action="map"]');
         assert.ok(await has(page, 'dialog[data-location-map][open]', 8000), `${at}: the map dialog`);
         bad.push(...await within(page, 'dialog[data-location-map][open]'));
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
       } else bad.push('no map button');
-      await page.click('input[name="ct-climate"][value="temperate"]');
-      assert.equal(await loadState(page), 'ready');
+      await settled(page, 'input[name="ct-site-light"][value="shade"]');
       await page.click('input[name="ct-site-light"][value="shade"]');
       await page.locator(aria('button', S('start.suggest'))).click();
       assert.ok(await has(page, '#ct-tab-matrix', 8000), `${at}: the matrix`);
-      // Each explanation, opened alone (phone matrix, then side view).
+      // Each explanation, opened alone (phone matrix, then side view). Suggest moves the focus to the
+      // matrix, and the page scrolls there smoothly: each tab is pressed once the page stands still.
       for (const tab of ['matrix', 'side']) {
+        await settled(page, `#ct-tab-${tab}`);
         await page.click(`#ct-tab-${tab}`);
+        assert.ok(await page.waitForFunction((t) => document.getElementById(`ct-tab-${t}`)?.getAttribute('aria-selected') === 'true', {}, tab).then(() => true, () => false), `${at}: the ${tab} tab is selected`);
+        // The side view is in the chunk loaded after the matrix (views/lazy.tsx, later.ts): counted once drawn.
+        await has(page, `#ct-panel-${tab} .ct-explain-btn`, 10_000);
         const n = await page.$$eval(`#ct-panel-${tab} .ct-explain-btn`, (bs) => bs.length);
         assert.ok(n > 0, `${at}: the ${tab} view's explanations`);
         for (let i = 0; i < n; i++) {
@@ -1077,10 +1090,13 @@ test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gut
         }
       }
       // "Add it anyway?": a plant that does not take full shade asks first.
+      await settled(page, '#ct-tab-matrix');
       await page.click('#ct-tab-matrix');
+      await settled(page, '.ct-viewbar button');
       await page.click('.ct-viewbar button');
       const ask = await page.waitForSelector('dialog.ct-add[open] li.flagged > button', { timeout: 5000 }).catch(() => null);
       if (ask) {
+        await settled(page, 'dialog.ct-add[open] li.flagged > button'); // the sheet slides in (details.css ct-sheet-in)
         await ask.click();
         assert.ok(await has(page, 'dialog.ct-ask[open]'), `${at}: "Add it anyway?"`);
         bad.push(...await within(page, 'dialog.ct-ask[open]'));

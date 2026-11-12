@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T14:22:29Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T16:42:54Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T21:36:02Z }
@@ -175,8 +175,8 @@ sources:
   - id: consortium-seams-browser-test-mjs
     resource: ../../scripts/browser/consortium-seams.browser.test.mjs
     title: scripts/browser/consortium-seams.browser.test.mjs
-    digest: sha256:e47b07e8e1ea036c
-    last_modified: 2026-11-12T12:21:14Z
+    digest: sha256:71868d2bffb4c579
+    last_modified: 2026-11-12T16:42:39Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
@@ -220,8 +220,8 @@ sources:
   - id: consortium-p5-browser-test-mjs
     resource: ../../scripts/browser/consortium-p5.browser.test.mjs
     title: scripts/browser/consortium-p5.browser.test.mjs
-    digest: sha256:fc71c73decb39b09
-    last_modified: 2026-11-12T14:20:43Z
+    digest: sha256:6cfab96a64c5dc0b
+    last_modified: 2026-11-12T16:42:39Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
@@ -329,3 +329,4 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
 - Each browser-test page is a context with its own copy of the database: the s4 file closes each page's context once used (`done()`); without it, BT-7's many pages were OOM-killed at 3 GB.
 - `helpers.mjs` `axNodes` reads the full accessibility tree (`interestingOnly: false`, skipping none, unnamed generic, InlineTextBox and LineBreak; Chrome's `image` becomes `img`), so tables and cells are visible; BT-8 still reads the shown tables' captions from the DOM.
 - The site scrolls smoothly: a test that measures positions sets `scrollBehavior = 'auto'` on the root first.
+- A puppeteer `page.click()` measures the box, then presses a moment later; under machine load a page that moves in between takes the click elsewhere. Three movers caused full-suite-only failures: Suggest's focus on the matrix (smooth scroll; N2 "the side view's explanations", reproduced with CPU throttling 10x), "Give your location" scrolling the step to the centre (P5-26b "no control yet"), and the open database refining the guessed country from the time zone, which changes the country line's height and shifts all of Start by about 46 px (N2 "ja 390 px: the map dialog"; en 320 and ja 390 at the fixture). Before such a click, call `helpers.mjs` `settled(page, selector)` (scroll offset and box unchanged over five frames); on Start, wait for the site questions (the list is read, so the database is open) before aiming at a control below the country line. A reader can hit the country-line shift too: it is a layout shift about a second after load on a slow phone. Likewise a sheet's input exists inside a closed `<dialog>` until SheetFrame's effect (after the next frame) calls `showModal()` and focuses the heading: type into a sheet only once `dialog.ct-add[open]` matches (P5 spec `ADD_OPEN`), or the first keys are lost (P5-27q).
