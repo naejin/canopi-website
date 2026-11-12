@@ -17,7 +17,7 @@ import { climate, country, crops, proposedClimate, kept, members, openSheet, poo
 import { P, T, pageLang } from '../strings.ts';
 import { LocationSlot } from './LocationSlot.tsx';
 import { LikelySlot } from './LikelySlot.tsx';
-import { PoolSlot, cardPill, hasList, nothingFits } from './PoolSlot.tsx';
+import { PoolSlot, cardPill, hasList, suggestBlock } from './PoolSlot.tsx';
 import {
   backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
 } from '../memory.ts';
@@ -280,7 +280,8 @@ function StartView() {
           <Crops zone={z} />
           <SiteQuestions />
           <div class="ct-cta">
-            {!nothingFits() && <button type="button" class="button button-primary" aria-busy={waiting ? 'true' : undefined} onClick={requestSuggest}>{T('start.suggest')}</button>}
+            {/* One rule for "can Suggest now" (PoolSlot suggestBlock): here only nothing-fits can block it, PoolSlot saying why. */}
+            {!suggestBlock(z) && <button type="button" class="button button-primary" aria-busy={waiting ? 'true' : undefined} onClick={requestSuggest}>{T('start.suggest')}</button>}
             {canGoBack.value && <button type="button" class="button button-secondary" onClick={backToConsortium}>{T('start.back')}</button>}
             <button type="button" class="button button-secondary" onClick={startEmpty}>{T('start.empty')}</button>
             <button type="button" class="link-button ct-link" onClick={() => openSheet('paste')}>{T('start.paste')}</button>

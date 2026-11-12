@@ -8,7 +8,8 @@
 //   Details adds one line per bound passed, with the site's and the recorded values (the very values
 //   the verdict compared, to the hundredth, so the gap a reader works out matches it), and says
 //   observed ranges include cultivation and are estimates, not reviewed (export meta ranges_review).
-//   An annual (no winter-cold check): "grown in the warm season; check the frost-free season" (not on chips).
+//   An annual (no winter-cold check): "warm-season annual" on rows and in Add; in Details "grown in the
+//   warm season; check the frost-free season" (not on chips).
 // - With or without a location: 'estimate' on a plant placed from a nearest list (placement.ts);
 //   without a site climate, also "give your site's location to check it" (not on chips).
 // Chips (desktop matrix) get the short words.
@@ -49,7 +50,8 @@ export function rangeMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface)
       }
     }
     if (!tight && (aridity === 'drier' || aridity === 'wetter')) out.push({ kind: 'aridity', key: ARIDITY_KEYS[aridity], severity: 'note', state: aridity });
-    if (!tight && isAnnual(taxon)) out.push({ kind: 'unknown', key: 'range.annual', severity: 'note', state: 'annual' });
+    // The sentence in Details; rows and Add get a short tag, so the note never outgrows a phone row (walk-through F1).
+    if (!tight && isAnnual(taxon)) out.push({ kind: 'unknown', key: surface === 'details' ? 'range.annual' : 'range.annualShort', severity: 'note', state: 'annual' });
     if (surface === 'details' && aridity === 'not-checked') out.push({ kind: 'unknown', key: 'range.aridityNotChecked', severity: 'note', state: 'aridity' });
   }
   if (taxon.estimate && taxon.placedFrom) {

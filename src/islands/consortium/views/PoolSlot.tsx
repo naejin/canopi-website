@@ -46,6 +46,13 @@ const toLocation = () => {
 // Nothing fits (the chosen climate's list, at the site): Start then offers no "Suggest plants" (it could
 // only give an empty matrix); the panel's "Search all plants" is the step.
 export const nothingFits = (): boolean => !!rangeRule.value?.none(pool.value, location.value);
+// The one rule for "can Suggest now" (seam review 1): why a Suggest for climate z would refuse, or null
+// when it can act. Start's "Suggest plants" and the empty matrix's "Suggest a start" both read it, and
+// show the reason (WhyNoSuggest) in place of a button that could only refuse; store.suggestMembers
+// refuses the same cases.
+export type SuggestBlock = 'noList' | 'needsSite' | 'needsRule' | 'nothingFits';
+export const suggestBlock = (z: ClimateZone): SuggestBlock | null =>
+  !hasPlants(z, curated()) ? 'noList' : needsSite(z) ? 'needsSite' : needsRule(z) ? 'needsRule' : nothingFits() ? 'nothingFits' : null;
 // A Suggest pressed while the rule loaded, for a site where nothing fits: cleared, so the reader stays
 // on Start with the nothing-fits state (store.ts suggestMembers refuses it too).
 // So is one for a climate that needs the site's location or the range rule (it would run unasked once
@@ -53,7 +60,7 @@ export const nothingFits = (): boolean => !!rangeRule.value?.none(pool.value, lo
 const shownZone = () => climate.value ?? pendingClimate.value;
 effect(() => {
   const z = shownZone();
-  if (pendingSuggest.value && (nothingFits() || (z && (needsSite(z) || needsRule(z))))) pendingSuggest.value = false;
+  if (pendingSuggest.value && (nothingFits() || (z && suggestBlock(z)))) pendingSuggest.value = false;
 });
 let lastZone: ClimateZone | null = null;
 effect(() => {
@@ -66,14 +73,19 @@ effect(() => {
 // real export, which curates a nearest list for every climate).
 // The range rule's chunk did not load (store.ts rangeFailed): say so here, the panel being that chunk.
 export function PoolSlot({ zone }: { zone: ClimateZone }) {
-  if (rangeFailed.value && hasPlants(zone, curated())) {
-    return (
-      <p class="ct-notice" role="status" data-range-unavailable>
-        {needsRule(zone) ? T('range.unavailableBorrowed', { climate: zoneLabel(zone) }) : T('range.unavailable')} <button type="button" class="button button-secondary ct-small" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
-      </p>
-    );
-  }
+  if (rangeFailed.value && hasPlants(zone, curated())) return <RangeUnavailable zone={zone} />;
   return needsSite(zone) ? <NeedsSite zone={zone} /> : !hasList(zone) || !curated().includes(zone) || siteClimate.value ? <panel.View zone={zone} /> : null;
+}
+function RangeUnavailable({ zone }: { zone: ClimateZone }) {
+  return (
+    <p class="ct-notice" role="status" data-range-unavailable>
+      {needsRule(zone) ? T('range.unavailableBorrowed', { climate: zoneLabel(zone) }) : T('range.unavailable')} <button type="button" class="button button-secondary ct-small" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
+    </p>
+  );
+}
+// Why there is no Suggest (the empty matrix; Start shows the same reasons through PoolSlot above).
+export function WhyNoSuggest({ zone, block }: { zone: ClimateZone; block: SuggestBlock }) {
+  return block === 'needsSite' ? <NeedsSite zone={zone} /> : block === 'needsRule' ? <RangeUnavailable zone={zone} /> : null;
 }
 
 // The needs-location line (Start, and the empty matrix's Suggest: hand-off H-S5c-6, Matrix.tsx EmptyNotice).

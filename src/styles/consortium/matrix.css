@@ -38,6 +38,9 @@
   background: var(--surface-alt); border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; flex: none;
 }
 .ct .ct-tag-crop svg { color: var(--accent); }
+/* A plant's marks off the desktop chips (phone rows, side and list views, Add) wrap inside their row
+   rather than push the page sideways (walk-through F1: 417-466 px at 390 px). Chips keep short words. */
+.ct :is(.ct-tag, .ct-flag)[data-mark-surface]:not([data-mark-surface="chip"]) { white-space: normal; flex: 0 1 auto; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 
 /* Stage bar: seven segments, the plant's span filled, the current stage outlined. */
 .ct .ct-stagebar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; width: 112px; margin-top: 4px; }
@@ -110,7 +113,7 @@
 .ct .ct-lshare { display: block; margin-top: 6px; font-size: 12.5px; color: var(--text-muted); }
 .ct .ct-mx td { padding: 6px 0; position: relative; min-width: var(--cell-min-w); }
 .ct .ct-mx td.cannot { background: var(--cell-cannot-bg); }
-.ct .ct-lane { height: 44px; display: flex; align-items: stretch; }
+.ct .ct-lane { height: var(--cell-min-h); display: flex; align-items: stretch; }
 .ct .ct-lane + .ct-lane { margin-top: var(--cell-gap); }
 .ct .ct-pchip {
   flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 2px 8px; margin: 0 6px;
@@ -121,6 +124,10 @@
 .ct button.ct-pchip:hover { border-color: var(--text); }
 .ct .ct-pchip .ct-nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
 .ct .ct-pchip .ct-nm > span:first-child { overflow: hidden; text-overflow: ellipsis; }
+/* A chip's own name (its start piece) takes up to two lines, so narrow cells at 960 px still show a
+   name, not "Europea…" (walk-through F2); the lane is the cell's height (--cell-min-h) to fit them. */
+.ct button.ct-pchip .ct-nm { white-space: normal; }
+.ct button.ct-pchip .ct-nm > span:first-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: break-word; hyphens: auto; }
 .ct .ct-pchip .ct-sc2 { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .ct .ct-pchip .ct-sc { flex: 1 1 auto; min-width: 0; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ct .ct-pchip.cont-r { margin-right: 0; border-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }

@@ -179,9 +179,19 @@ export const markContext = computed<MarkContext>(() => ({ climate: climate.value
 // row "Island JavaScript budget for P5").
 export const markProviders = signal<readonly MarkProvider[]>([]);
 export const wantsMarkProviders = computed(() => needsMarkProviders(markContext.value, source.value?.info().climates ?? []));
+// The providers' chunk did not load (seam review 6): the range, future and estimate marks it would show
+// are missing, so a notice with Reload says so wherever members show (Matrix.tsx Notices) while marks
+// are wanted, with one toast; as for the range rule, the import is not tried again on this page.
+const marksBroken = signal(false);
+export const marksFailed = computed(() => marksBroken.value && wantsMarkProviders.value);
 effect(() => {
-  if (!wantsMarkProviders.value || markProviders.peek().length) return;
-  loadMarkProviders().then((list) => { markProviders.value = list; }, (err: unknown) => console.error(`Consortium: the plant marks did not load: ${(err as Error).message}`));
+  if (!wantsMarkProviders.value || markProviders.peek().length || marksBroken.peek()) return;
+  loadMarkProviders().then((list) => { markProviders.value = list; }, (err: unknown) => {
+    console.error(`Consortium: the plant marks did not load: ${(err as Error).message}`);
+    if (marksBroken.peek()) return;
+    marksBroken.value = true;
+    showToast(T('marks.unavailable'), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
+  });
 });
 // The warnings on members: conflicts, site misfits, invasive and toxicity (core suggest.ts flagsOf).
 export const flags = computed<Flag[]>(() => {

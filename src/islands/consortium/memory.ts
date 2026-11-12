@@ -447,6 +447,8 @@ export async function restore(fragment: string, { from, src = null, keep = false
       else if (from === 'link' && store.location.peek()?.source === 'link') store.location.value = null;
     }));
     if (origin) void settleLocation('link');
+    // ... and comes back if a link's location had replaced it: as a fresh open of this link gives.
+    else if (from === 'link') ownLocation();
     return true;
   } finally {
     if (inFlight.peek()?.id === id) inFlight.value = null;
@@ -570,6 +572,14 @@ function settleLocation(how: 'link' | 'saved', saved: string | null = null): Pro
   return lookingThrough(loadLocationStep, (m) => m.settle(how, saved)).catch(() => {
     if (how === 'link') store.location.value = null;
   });
+}
+// The reader's own saved site, looked up again while no other location is set. One rule for a fresh
+// open and a link pasted into the open tab (seam review 5): a link without `o=` leaves the reader's own
+// site in place (their checks are about their site; the link's plants are unchanged); only a link's
+// `o=` stands in for it, for that page.
+function ownLocation(): void {
+  const saved = memory.read(LOCATION_STORE);
+  if (saved && !store.location.peek()) void settleLocation('saved', saved);
 }
 // Change site, Start over, Start empty: the "not read" note goes, and a link's location goes with
 // its consortium (review round 2, 4), its lookup dropped (round 3, 2: no line, hold or later write).
@@ -703,9 +713,8 @@ export function startMemory(): void {
   });
 
   // The saved site location, looked up again once the plant list is open (so its tiles never compete
-  // with the database); a link brings its own location or none.
-  const savedLocation = how.kind === 'link' ? null : memory.read(LOCATION_STORE);
-  if (savedLocation) void waitForSource().then(() => { if (!store.location.peek()) void settleLocation('saved', savedLocation); });
+  // with the database); a link's `o=` stands in for it on that page (ownLocation).
+  if (!(how.kind === 'link' && linkOrigin(how.fragment))) void waitForSource().then(ownLocation);
 
   if (how.kind === 'link') void restore(how.fragment, { from: 'link' });
   else if (how.kind === 'saved') void restore(how.fragment, { from: 'saved', src: how.src });

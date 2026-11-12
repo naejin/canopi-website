@@ -58,7 +58,8 @@ test('rangeCheck: an annual skips the winter-cold check on both sides, the summe
   const hot = taxon({ traits: { is_annual: true }, climate: { ...warmRange, tmaxWarm: { ...warmRange.tmaxWarm, high: 25 } } });
   assert.equal(core.rangeFit(hot, harbin), 'outside', 'heat: 29 °C against 25 still fails');
   assert.deepEqual(core.withinRange([annual], harbin), [annual], 'kept in the filtered pool');
-  assert.deepEqual(marks(annual, harbin, 'row'), [['unknown', 'range.annual', 'note']], 'its row says it grows in the warm season');
+  assert.deepEqual(marks(annual, harbin, 'row'), [['unknown', 'range.annualShort', 'note']], 'its row says it is a warm-season annual (a short tag: walk-through F1)');
+  assert.deepEqual(marks(annual, harbin, 'details'), [['unknown', 'range.annual', 'note']], 'Details says to check the frost-free season');
   assert.deepEqual(marks(annual, harbin, 'chip'), [], 'not on chips');
 });
 
@@ -220,7 +221,7 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
   // What the code reads: range-marks.ts and pool.tsx keys.
   const used = ['range.edge', 'range.edgeShort', 'range.edgeDetails', 'range.outside', 'range.outsideShort', 'range.outsideDetails', 'range.unknown', 'range.unknownShort', 'range.drier', 'range.wetter', 'range.aridityNotChecked',
     'range.side.cold', 'range.side.mild', 'range.side.hot', 'range.pool.count', 'range.pool.edge', 'range.pool.left', 'range.pool.caveat', 'range.pool.aridityNotChecked',
-    'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailable', 'range.unavailableBorrowed', 'range.needsSite', 'range.needsSite.go', 'range.needsSite.pill', 'range.annual', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed', 'estimate.noSite'];
+    'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailable', 'range.unavailableBorrowed', 'range.needsSite', 'range.needsSite.go', 'range.needsSite.pill', 'range.annual', 'range.annualShort', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed', 'estimate.noSite', 'marks.unavailable'];
   assert.deepEqual(mine, used.map((k) => `consortium.${k}`));
   const holes = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().filter((x, i, a) => a.indexOf(x) === i);
   for (const l of locales) {
