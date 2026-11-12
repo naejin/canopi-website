@@ -768,5 +768,115 @@
     }
    ]
   }
+ },
+ "yakutsk": {
+  "lat": 62.03,
+  "lon": 129.73,
+  "climate": {
+   "cellLat": 62.05,
+   "cellLon": 129.75,
+   "distanceCells": 0.0,
+   "periods": [
+    {
+     "period": "1991-2020",
+     "scenario": "historical",
+     "koppen": "Dfc",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -39.8,
+     "tmaxWarmC": 24.7,
+     "tmeanColdC": -37.6,
+     "tmeanWarmC": 19.8,
+     "aridityIndex": 0.48
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp126",
+     "koppen": "Dfc",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -37.8,
+     "tmaxWarmC": 26.2,
+     "tmeanColdC": -35.6,
+     "tmeanWarmC": 21.3,
+     "aridityIndex": 0.48
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp245",
+     "koppen": "Dfc",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -36.7,
+     "tmaxWarmC": 26.5,
+     "tmeanColdC": -34.4,
+     "tmeanWarmC": 21.5,
+     "aridityIndex": 0.48
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp370",
+     "koppen": "Dfc",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -36.3,
+     "tmaxWarmC": 26.7,
+     "tmeanColdC": -34.1,
+     "tmeanWarmC": 21.8,
+     "aridityIndex": 0.48
+    },
+    {
+     "period": "2041-2070",
+     "scenario": "ssp585",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -35.5,
+     "tmaxWarmC": 27.2,
+     "tmeanColdC": -33.3,
+     "tmeanWarmC": 22.3,
+     "aridityIndex": 0.48
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp126",
+     "koppen": "Dfc",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -37.7,
+     "tmaxWarmC": 26.5,
+     "tmeanColdC": -35.5,
+     "tmeanWarmC": 21.6,
+     "aridityIndex": 0.48
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp245",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -35.6,
+     "tmaxWarmC": 27.3,
+     "tmeanColdC": -33.4,
+     "tmeanWarmC": 22.4,
+     "aridityIndex": 0.48
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp370",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -33.5,
+     "tmaxWarmC": 28.4,
+     "tmeanColdC": -31.3,
+     "tmeanWarmC": 23.4,
+     "aridityIndex": 0.47
+    },
+    {
+     "period": "2071-2099",
+     "scenario": "ssp585",
+     "koppen": "Dfa",
+     "koppenTemperatureMarginC": 0.0,
+     "tminColdC": -31.9,
+     "tmaxWarmC": 29.7,
+     "tmeanColdC": -29.7,
+     "tmeanWarmC": 24.7,
+     "aridityIndex": 0.46
+    }
+   ]
+  }
  }
 }

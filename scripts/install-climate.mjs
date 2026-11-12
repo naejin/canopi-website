@@ -48,7 +48,7 @@ import { createHash } from 'node:crypto';
 import { closeSync, createWriteStream, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GRID_FORMAT, GRID_FORMAT_VERSION, LAYERS, REGION_BANDS, SLOTS, SOIL_BANDS, TILE_NAME, VARIABLES } from '../src/lib/climate/model.js';
+import { GRID_FORMAT, GRID_FORMAT_VERSION, LAYERS, REGION_BAND_SPECS, REGION_BANDS, SLOTS, SOIL_BAND_SPECS, SOIL_BANDS, TILE_NAME, VARIABLES } from '../src/lib/climate/model.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DEFAULT_OUT = join(ROOT, 'public', 'data', 'climate');
@@ -180,12 +180,17 @@ export function manifestProblem(m) {
   if (!Array.isArray(m.tiles) || !m.tiles.length) return 'manifest.json lists no climate tile.';
   if (!Array.isArray(m.sources)) return 'manifest.json sources is not a list.';
   for (const s of m.sources) if (!isObject(s) || typeof s.id !== 'string' || typeof s.title !== 'string' || typeof s.licence !== 'string') return 'manifest.json sources need an id, a title and a licence.';
-  for (const [layer, bands] of [['soil', SOIL_BANDS], ['regions', REGION_BANDS]]) {
+  for (const [layer, specs] of [['soil', SOIL_BAND_SPECS], ['regions', REGION_BAND_SPECS]]) {
+    const bands = specs.map((b) => b.id);
     const l = Array.isArray(m.layers) ? m.layers.find((x) => x?.id === layer) : null;
     if (!l) return `manifest.json has no ${layer} layer.`;
     if (l.directory !== LAYERS[layer].dir || l.cell_deg !== LAYERS[layer].cellDeg || l.tile_cells !== LAYERS[layer].tileCells) return `manifest.json ${layer} layer is not 0.05-degree cells in 200-cell tiles under ${LAYERS[layer].dir}/.`;
     if (!enc(l.encoding, bands.length)) return `manifest.json ${layer} encoding is not int16, nodata -32768, deflate, pixel-interleaved, ${bands.length} bands.`;
     if (!same(Array.isArray(l.bands) ? l.bands.map((b) => b?.id) : null, [...bands])) return `manifest.json ${layer} bands are not ${bands.join(', ')}.`;
+    for (const [i, spec] of specs.entries()) {
+      const b = l.bands[i];
+      if (!same({ id: b?.id, unit: b?.unit, scale: b?.scale, offset: b?.offset }, { ...spec })) return `manifest.json ${layer} band ${spec.id} is ${JSON.stringify({ unit: b?.unit, scale: b?.scale, offset: b?.offset })}; the reader decodes ${JSON.stringify({ unit: spec.unit, scale: spec.scale, offset: spec.offset })}.`;
+    }
     if (!Array.isArray(l.tiles)) return `manifest.json ${layer} tiles is not a list.`;
   }
   return null;

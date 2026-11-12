@@ -186,6 +186,19 @@ test('synthetic soil and regions tiles: texture, fill flag, codes and the coast 
   assert.deepEqual([sea.soil, sea.regions.wgsrpdL3, sea.regions.isoA2], [null, null, null]);
 });
 
+test('soil decodes with model.js band specs: band order, decimal scale exact, fill distance raw (E2 item 1)', async () => {
+  const { SOIL_BAND_SPECS } = await import('../src/lib/climate/model.js');
+  assert.deepEqual(Object.values(C.SOIL_BAND), [0, 1, 2, 3]);
+  assert.deepEqual(['ph_h2o', 'sand', 'clay', 'fill_distance'].map((id) => SOIL_BAND_SPECS.findIndex((b) => b.id === id)), Object.values(C.SOIL_BAND));
+  // One soil cell at (0, 0) of n50e000, values that a × 0.1 decode would leave inexact (25.3 → 25.300000000000004).
+  const side = C.LAYERS.soil.tileCells, bands = C.LAYERS.soil.bands;
+  const data = new Int16Array(side * side * bands).fill(C.NODATA);
+  data.set([73, 253, 147, 3], 0);
+  const raster = { west: 0, north: 50, side, bands, data };
+  const soil = C.soilAt((name) => (name === 'n50e000' ? raster : null), 50 - 0.025, 0.025);
+  assert.deepEqual([soil.phH2o, soil.sandPct, soil.clayPct, soil.siltPct, soil.fillDistanceCells, soil.filled], [7.3, 25.3, 14.7, 60, 3, true]);
+});
+
 test('lookupSite with { soil: false } (the location step until P5.2): no soil tile fetched, soil null, climate and regions as before', async () => {
   const lat = 50 - (100 + 0.5) * 0.05, lon = (10 + 0.5) * 0.05;
   const all = await C.lookupSite(lat, lon, sourceOver(synthIndex, fromSynth).source);

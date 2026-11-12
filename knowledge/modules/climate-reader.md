@@ -2,7 +2,7 @@
 type: Module
 title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:25:34Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T22:06:04Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:25:09Z }
 sources:
@@ -14,8 +14,8 @@ sources:
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
-    digest: sha256:e7f8df4c4da06a9a
-    last_modified: 2026-11-11T09:09:11Z
+    digest: sha256:b79f4f243bdefcb1
+    last_modified: 2026-11-12T20:26:30Z
   - id: tiff-ts
     resource: ../../src/lib/climate/tiff.ts
     title: src/lib/climate/tiff.ts
@@ -29,13 +29,13 @@ sources:
   - id: model-js
     resource: ../../src/lib/climate/model.js
     title: src/lib/climate/model.js
-    digest: sha256:e355c4bf7c5962ab
-    last_modified: 2026-11-11T09:09:11Z
+    digest: sha256:23fa6d9b282cd681
+    last_modified: 2026-11-12T20:26:30Z
   - id: install-climate-mjs
     resource: ../../scripts/install-climate.mjs
     title: scripts/install-climate.mjs
-    digest: sha256:8670ed7d1bcd8d91
-    last_modified: 2026-11-11T14:35:47Z
+    digest: sha256:596d9ed4bffe0aeb
+    last_modified: 2026-11-12T20:26:30Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
@@ -89,11 +89,11 @@ P5 stream S5b's data half: a TypeScript reader for the canopi-climate v0.2 grid 
 
 | File | Role |
 |---|---|
-| `model.js` | variables (ids, scales), slots 0–8, layer specs, band ids; plain JavaScript so the installer and the built-site check import it under plain Node |
+| `model.js` | variables (ids, scales), slots 0–8, layer specs, site-layer band specs `SOIL_BAND_SPECS` and `REGION_BAND_SPECS` (`{id, unit, scale, offset}` from the crate's `src/pipeline/soil.rs` and `regions.rs`: pH and sand and clay at 0.1, fill distance and the two region codes at 1), with `SOIL_BANDS` and `REGION_BANDS` derived from them (the id lists `climate-index.json` writes); plain JavaScript so the installer and the built-site check import it under plain Node |
 | `tiff.ts` | `readTileHeader` and `decodeRaster`: little-endian classic TIFF, int16, pixel-interleaved, Deflate through `DecompressionStream('deflate')` with a byte cap, one internal tile (112² climate, 208² site layers), position from ModelPixelScale/ModelTiepoint |
 | `grid.ts` | cell rules of `manifest.json grid.cell_edges` (west and north edges inclusive, −90 in the last row, 180 wraps to −180), tile names, the radius window (north to south, then west to east) |
-| `lookup.ts` | `climateAt`, `soilAt`, `regionsAt` with the crate's `lookup_across` semantics: own cell if complete (aridity may be missing), else nearest within 2 cells, Euclidean, ties north then west, across tile edges and the antimeridian, never the poles; scale decoding as `src/model.rs` |
-| `koppen.ts`, `soil.ts`, `regions.ts` | Köppen symbols and the temperature margin in f32 (`Math.fround`), USDA texture classes, base-26 region codes |
+| `lookup.ts` | `climateAt`, `soilAt`, `regionsAt` with the crate's `lookup_across` semantics: own cell if complete (aridity may be missing), else nearest within 2 cells, Euclidean, ties north then west, across tile edges and the antimeridian, never the poles; scale decoding as `src/model.rs`; soil pH, sand and clay decode with their `SOIL_BAND_SPECS` scale through `decodeValue` (stream E2; before, a fixed `/10`), the fill distance stays raw |
+| `koppen.ts`, `soil.ts`, `regions.ts` | Köppen symbols and the temperature margin in f32 (`Math.fround`), USDA texture classes (soil.ts takes its `SOIL_BAND` order from `model.js`), base-26 region codes |
 | `index.ts` | `siteIndex(json)`, `createTileSource({ index, fetchBytes?, maxTiles = 4 })`, `lookupSite(lat, lon, source)` |
 
 `lookupSite` fetches the point's tile of each layer in parallel (3 requests), then neighbours only when the own cell does not answer and lies within 2 cells of an edge. A tile absent from the index is never requested (no data; a miss would run the Worker). A listed tile that fails rejects with `ClimateTileError` (layer, tile); an invalid coordinate rejects with `RangeError` before any fetch. `lookupSite(lat, lon, source, radius, { soil: false })` reads no soil tile and answers `soil: null`; the consortium location step passes it until P5.2 (soil likely) reads soil (pre-push review 3: each lookup had downloaded about 37 KB of soil nothing used); the installer, `#ct-climate` and `check-built-site` still carry the soil layer. Result: `{ lat, lon, tile, climate | null, soil | null, regions, tilesRead, crossTile }`; `climate.periods[slot]` has `koppen`, `koppenCode`, `koppenTemperatureMarginC`, `tminColdC`, `tmaxWarmC`, `tmeanColdC`, `tmeanWarmC`, `precipMm`, `aridityIndex | null`, `dryMonths`; `soil` has `phH2o`, `sandPct`, `clayPct`, `siltPct`, `texture`, `filled`, `fillDistanceCells`; `regions` always exists, codes null offshore.
@@ -107,7 +107,7 @@ P5 stream S5b's data half: a TypeScript reader for the canopi-climate v0.2 grid 
 - Integrity: the index (format 2) stores each tile's sha256 (`layers.<id>.sha256`) beside its size; `verifyClimateInstall`, which `ensureClimate`'s up-to-date test and `check-built-site` both use, hashes every tile, so a same-size edit is caught at build and reinstalled. Hashing the 98 MB took 0.24 s (warm cache), so no marker or mtime shortcut is used.
 - No install mark is served: an install is recognised by its shape (`<version>-<12 hex>` directories only); the `INSTALLED_BY` file of earlier installs is accepted once and removed, and `verifyClimateInstall` refuses it in `dist`.
 - `npm run install:climate` installs by hand; `npm run install:climate -- <tar>` installs a local archive, verified against the pin as well. `installClimate({ archive })` without `release` (the `.sha256` beside the tar) remains for a hand install of another grid.
-- Then the checks: tar entries (regular files, safe paths, no duplicates, ≤ 25 MiB), every `SHA256SUMS` line, the manifest's sha256 against the pin and its content against `model.js`, each tile's size, sha256 and TIFF position. The tiles go to `public/data/climate/<version>-<12 hex manifest sha>/{tiles,soil,regions}/` and the index to `src/data/climate-index.json`; both are git-ignored and regenerated (the index is deterministic for a grid and a consortium export, and no type check imports it).
+- Then the checks: tar entries (regular files, safe paths, no duplicates, ≤ 25 MiB), every `SHA256SUMS` line, the manifest's sha256 against the pin and its content against `model.js` (`manifestProblem`: variables and every soil and regions band compared on `{id, unit, scale, offset}`, so a grid storing sand as % or regions at another scale is refused with the band named), each tile's size, sha256 and TIFF position. The tiles go to `public/data/climate/<version>-<12 hex manifest sha>/{tiles,soil,regions}/` and the index to `src/data/climate-index.json`; both are git-ignored and regenerated (the index is deterministic for a grid and a consortium export, and no type check imports it).
 - Consortium grid check: the consortium index's `climate_grid_manifest_sha256` must equal the grid's manifest sha256 (`04ec85f4…` for v0.2.0); since P5 commit 0 the installed export carries it (now schema 3, `r-01102782139409b5`, `04ec85f4…`) and the build records `consortium_grid_check.status = "matched"`. A schema 1 index without it still installs as `"unchecked"`, but `check-built-site.mjs` then fails ([consortium-grid-check.mjs](../../scripts/consortium-grid-check.mjs): a missing or empty sha, another grid, or a status other than `matched`). An empty string there means the same (unknown grid: unchecked, with its own warning), not a different grid; any other value that is not a sha256 is refused.
 - `public/_headers` caches `/data/climate/*` immutably (the directory name changes with the manifest).
 - `scripts/check-built-site.mjs` fails above 20,000 files in `dist/client` (Workers Free), and fails when the index is missing, names another grid than the pin, or any tile it lists is missing or of another size (`verifyClimateInstall`).
@@ -119,6 +119,6 @@ Update the pin (tag, file, URL, size, sha256 from the release's `.sha256`, manif
 
 # Tests
 
-- `scripts/climate-reader.test.mjs`: 52 points compared field by field with `canopi-climate lookup` (`scripts/fixtures/climate/goldens.json`, regenerated by `make-goldens.mjs`), plus 2 refused coordinates; these read the extracted grid at `CANOPI_CLIMATE_GRID` and skip without it (their tiles total 14 MB). Always: the crate's synthetic tiles, fetch policy, LRU, TIFF refusals, grid rules, Köppen, texture and codes.
-- `scripts/install-climate.test.mjs`: a one-tile archive built in the test; each refusal with nothing written; `verifyClimateInstall`; the pin; with a fetch double (no network): one download cached then reused, up-to-date skip, wrong size, sha256, HTTP status or network error refused with nothing installed or cached, a corrupt cache replaced, a wrong manifest refused, `CANOPI_CLIMATE_ARCHIVE` offline and verified, `CANOPI_CLIMATE_CACHE`, another grid replaced; the TypeScript fallback for `tiff.ts`; an empty consortium sha; the legacy mark replaced; a same-size edit caught and reinstalled; per-run staging, three concurrent installs and a dead lock; dev never downloading; a stall, an overall timeout and a fetch that never answers; stale partial downloads.
+- `scripts/climate-reader.test.mjs`: 52 points compared field by field with `canopi-climate lookup` (`scripts/fixtures/climate/goldens.json`, regenerated by `make-goldens.mjs`), plus 2 refused coordinates; these read the extracted grid at `CANOPI_CLIMATE_GRID` and skip without it (their tiles total 14 MB). Always: the crate's synthetic tiles, fetch policy, LRU, TIFF refusals, grid rules, Köppen, texture and codes, and soil decoded with the `model.js` band specs (band order, 25.3 % exact, fill distance raw).
+- `scripts/install-climate.test.mjs`: a one-tile archive built in the test; each refusal with nothing written; `verifyClimateInstall`; the pin; with a fetch double (no network): one download cached then reused, up-to-date skip, wrong size, sha256, HTTP status or network error refused with nothing installed or cached, a corrupt cache replaced, a wrong manifest refused, `CANOPI_CLIMATE_ARCHIVE` offline and verified, `CANOPI_CLIMATE_CACHE`, another grid replaced; the TypeScript fallback for `tiff.ts`; an empty consortium sha; the legacy mark replaced; a same-size edit caught and reinstalled; per-run staging, three concurrent installs and a dead lock; dev never downloading; a stall, an overall timeout and a fetch that never answers; stale partial downloads; site-layer band refusals (sand at scale 1, another unit, an offset, a missing band, a regions scale or order) and, with the extracted grid, the pinned v0.2.0 manifest passing `manifestProblem`.
 - `scripts/climate-integration.test.mjs`: build waits for the install and fails with it; dev passes `allowDownload: false` and warns only; sync and preview do nothing; the config uses the integration and `build` is plain `astro build`.

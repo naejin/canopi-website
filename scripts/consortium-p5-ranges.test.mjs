@@ -224,6 +224,56 @@ test('acceptance (owner diagnosis, export r-60ea417b5a15c3aa, the rows of r-b958
   }
 });
 
+// ---- E2 scenario tests (Consortium v2 plan, stream E2; design check A14): plants growers grow at
+// the site, written expectations first against the real export. A miss is a todo naming its known
+// limit: the rule is not loosened for it (a weak row never softens a verdict, coordinator decision
+// 2026-11-12; a wider margin would gut the cold check everywhere). A todo that starts passing shows
+// as a passed todo: remove its todo then.
+
+test('E2 sites: Yakutsk is the canopi-climate lookup in goldens.json (historical and future slots), not a hand copy', () => {
+  const g = JSON.parse(readFileSync(new URL('./fixtures/climate/goldens.json', import.meta.url), 'utf8')).points.find((p) => p.name === 'Yakutsk');
+  const c = g.expect.climate;
+  const fromGolden = {
+    lat: g.lat, lon: g.lon,
+    climate: {
+      cellLat: c.cell_lat, cellLon: c.cell_lon, distanceCells: c.distance_cells,
+      periods: c.periods.map((p) => ({ period: p.period, scenario: p.scenario, koppen: p.koppen, koppenTemperatureMarginC: p.koppen_temperature_margin_c, tminColdC: p.tmin_cold_c, tmaxWarmC: p.tmax_warm_c, tmeanColdC: p.tmean_cold_c, tmeanWarmC: p.tmean_warm_c, aridityIndex: p.aridity_index })),
+    },
+  };
+  assert.deepEqual(SITES.yakutsk, fromGolden);
+  assert.deepEqual([SITES.yakutsk.climate.periods[0].tminColdC, SITES.yakutsk.climate.periods[0].koppen], [-39.8, 'Dfc']);
+});
+
+test('E2 scenario setup: the four scenario plants are in the export and Riyadh\'s first future check is 2041–2070 (so a todo never hides a broken setup)', () => {
+  assert.ok(verdict('Pinus sylvestris', 'yakutsk'), 'Scots pine checked at Yakutsk');
+  for (const name of ['Ficus carica', 'Ziziphus jujuba', 'Punica granatum']) {
+    const f = core.futureCheck(plant(name), at('riyadh'), 'ssp245');
+    assert.ok(f, `${name}: checked at Riyadh`);
+    assert.match(String(f.period), /^2041/, `${name}: first future period`);
+  }
+});
+
+test('E2 scenario: Scots pine grows at Yakutsk (coldest month −39.8 °C): not outside today', {
+  todo: 'known limit: its tmin_cold row is weak (Q05 −31 °C, TreeGOER disputed) and Yakutsk sits 8.8 °C beyond it, as does its tmean_year row; a weak row never softens a verdict (coordinator 2026-11-12) and any margin that clears Yakutsk (≥ 9 °C) guts the cold check, so no rule change; extreme cold bounds: canopi-data D2b/D6',
+}, () => {
+  const pine = plant('Pinus sylvestris');
+  const c = verdict('Pinus sylvestris', 'yakutsk');
+  assert.notEqual(c.verdict, 'outside', `Scots pine at Yakutsk: ${c.verdict} (${c.beyond.join(', ')}), tmin_cold row low ${pine.climate.tminCold?.low} weak ${pine.climate.tminCold?.weak}`);
+});
+
+for (const name of ['Ficus carica', 'Ziziphus jujuba', 'Punica granatum']) {
+  test(`E2 scenario: ${name} at Riyadh (irrigated oases grow it) is not "too hot" by 2041–2070 (SSP2-4.5)`, {
+    todo: 'known limit: Riyadh\'s 2041–2070 SSP2-4.5 tmax_warm 44.7 °C passes the plant\'s observed Q95 heat bound (fig 42.6, jujube 41.5, pomegranate 41.3 °C) by more than the 2 °C margin; the observed Q95 is not a physiological limit; fix in F2 (future verdicts and wording) and canopi-data D6/D8 extreme bounds, not in the E2 rule',
+  }, () => {
+    const t = plant(name);
+    const f = core.futureCheck(t, at('riyadh'), 'ssp245');
+    assert.ok(f, `${name}: checked at Riyadh`);
+    const slot = SITES.riyadh.climate.periods.find((p) => p.period === f.period && p.scenario === 'ssp245');
+    // `already` holds reasons that apply today and are dropped from `why`: heat there is still too hot.
+    assert.equal(f.why.includes('heat') || f.already.includes('heat'), false, `${name} at Riyadh by ${f.period}: ${f.verdict} (${f.why.join(', ')}), tmax_warm ${slot?.tmaxWarmC} vs heat bound ${t.climate.tmaxWarm?.high}`);
+  });
+}
+
 test('rangeCheck: the year\'s warmth (tmean_year, the mean of the coldest and warmest months\' means) is a low bound for perennials only', () => {
   const warmth = { low: 21.4, median: 25.2, high: 27.5, count: 499, basis: 'thinned_cells', blocks: 499, lowSource: null, highSource: null, weak: false };
   const tree = taxon({ climate: { ...taxon().climate, tmeanYear: warmth } });

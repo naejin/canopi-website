@@ -8,8 +8,8 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { installClimate, ensureClimate, loadTiffModule, readRelease, releaseProblem, verifyClimateInstall, parseArgs, readTar, climateIndexProblem, installDirName, DEFAULT_OUT, DEFAULT_CACHE, INDEX_PATH, RELEASE_PATH, PUBLIC_BASE } from './install-climate.mjs';
-import { VARIABLES, SLOTS, SOIL_BANDS, REGION_BANDS } from '../src/lib/climate/model.js';
+import { installClimate, manifestProblem, ensureClimate, loadTiffModule, readRelease, releaseProblem, verifyClimateInstall, parseArgs, readTar, climateIndexProblem, installDirName, DEFAULT_OUT, DEFAULT_CACHE, INDEX_PATH, RELEASE_PATH, PUBLIC_BASE } from './install-climate.mjs';
+import { VARIABLES, SLOTS, SOIL_BAND_SPECS, REGION_BAND_SPECS } from '../src/lib/climate/model.js';
 
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const quiet = () => {};
@@ -54,10 +54,10 @@ function tar(entries) {
 // The manifest of a one-tile grid, shaped like canopi-climate's (src/manifest.rs).
 function manifestFor(files, edit = (m) => m) {
   const entry = (path) => ({ name: path.split('/')[1].replace('.tif', ''), path, bytes: files[path].length, sha256: sha(files[path]), complete_cells: 1 });
-  const layer = (id, bands) => ({
+  const layer = (id, specs) => ({
     id, description: id, cell_deg: 0.05, tile_cells: 200, directory: id,
-    encoding: { container: 'Cloud Optimized GeoTIFF', sample_format: 'int16', nodata: -32768, compression: 'deflate', interleave: 'pixel', bands: bands.length, band_order: '' },
-    bands: bands.map((b) => ({ id: b, unit: '', scale: 1, offset: 0, description: b })), sources: [],
+    encoding: { container: 'Cloud Optimized GeoTIFF', sample_format: 'int16', nodata: -32768, compression: 'deflate', interleave: 'pixel', bands: specs.length, band_order: '' },
+    bands: specs.map((b) => ({ ...b, description: b.id })), sources: [],
     tiles: Object.keys(files).filter((p) => p.startsWith(`${id}/`)).map(entry), notes: [],
   });
   return edit({
@@ -69,7 +69,7 @@ function manifestFor(files, edit = (m) => m) {
     sources: [{ id: 'beck2023', title: 'Köppen-Geiger maps', citation: 'Beck et al. (2023)', landing: 'https://doi.org/10.6084/m9.figshare.21789074.v2', licence: 'CC BY 4.0', notes: '', files: [] }],
     tiles: Object.keys(files).filter((p) => p.startsWith('tiles/')).map(entry),
     notes: [],
-    layers: [layer('regions', REGION_BANDS), layer('soil', SOIL_BANDS)],
+    layers: [layer('regions', REGION_BAND_SPECS), layer('soil', SOIL_BAND_SPECS)],
   });
 }
 
@@ -194,6 +194,42 @@ test('broken archives are refused before anything is written', async (t) => {
   // A missing .sha256.
   rmSync(`${archive}.sha256`);
   await assert.rejects(install(w, archive), /\.sha256 is missing/);
+});
+
+// One band of one site layer changed (E2 item 1): the reader decodes soil and regions with the
+// manifest's {id, unit, scale, offset}, so any other encoding is refused with the band named.
+const editBand = (layer, id, edit) => (m) => ({ ...m, layers: m.layers.map((l) => (l.id === layer ? { ...l, bands: edit(l.bands, id) } : l)) });
+const setBand = (layer, id, fields) => editBand(layer, id, (bands) => bands.map((b) => (b.id === id ? { ...b, ...fields } : b)));
+
+test('site-layer bands: a manifest whose soil or regions encoding differs is refused, naming the band', async (t) => {
+  const w = workspace(t);
+  const cases = [
+    ['sand stored as % (scale 1)', setBand('soil', 'sand', { scale: 1 }), /soil band sand/],
+    ['clay in g/kg (another unit)', setBand('soil', 'clay', { unit: 'g/kg' }), /soil band clay/],
+    ['pH with an offset', setBand('soil', 'ph_h2o', { offset: 1 }), /soil band ph_h2o/],
+    ['a soil band missing', editBand('soil', 'fill_distance', (bands) => bands.filter((b) => b.id !== 'fill_distance')), /soil bands are not ph_h2o, sand, clay, fill_distance/],
+    ['regions at another scale', setBand('regions', 'iso_a2', { scale: 0.1 }), /regions band iso_a2/],
+    ['regions in another order', editBand('regions', null, (bands) => [...bands].reverse()), /regions bands are not wgsrpd_l3, iso_a2/],
+  ];
+  for (const [what, editManifest, message] of cases) {
+    assert.match(manifestProblem(manifestFor(TILES, editManifest)) ?? '', message, what);
+    const dir = join(w.root, what.replace(/\W+/g, '-'));
+    mkdirSync(dir);
+    const { archive } = writeArchive(dir, { editManifest });
+    await assert.rejects(install(w, archive), message, what);
+    assert.ok(!existsSync(w.out) && !existsSync(w.index), `${what}: nothing written`);
+  }
+  assert.equal(manifestProblem(manifestFor(TILES)), null, 'the crate\'s encoding passes');
+  // JSON writes the crate's 1.0 and 0.0 as 1 and 0; a band's description is not compared.
+  assert.equal(manifestProblem(manifestFor(TILES, setBand('soil', 'sand', { description: 'other words' }))), null);
+});
+
+// P-E2: the pinned v0.2.0 manifest (the extracted grid on the cache disk) passes the band check.
+const REAL_MANIFEST = join(process.env.CANOPI_CLIMATE_GRID ?? '/media/daylon/main_hdd/canopi-cache/climate/out-v0.2', 'manifest.json');
+test('the installed v0.2.0 manifest passes the site-layer band check', { skip: existsSync(REAL_MANIFEST) ? false : `no extracted grid manifest at ${REAL_MANIFEST}` }, () => {
+  const bytes = readFileSync(REAL_MANIFEST);
+  assert.equal(sha(bytes), readRelease().grid_manifest_sha256, 'the extracted manifest is the pinned one');
+  assert.equal(manifestProblem(JSON.parse(bytes)), null);
 });
 
 test('an output that is not a previous install is not replaced', async (t) => {
