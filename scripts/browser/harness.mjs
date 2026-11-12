@@ -13,6 +13,7 @@ import puppeteer from 'puppeteer-core';
 import { ROOT, serve } from './serve.mjs';
 import { dumpTrace, recordTrace } from './trace.mjs';
 import { NOMINATIM } from './location-fixtures.mjs';
+import { readChunkRoles } from '../built-modules.mjs';
 
 export const CHROME = process.env.CANOPI_CHROME ?? '/usr/bin/google-chrome';
 export const WIDTHS = [390, 1280];
@@ -93,12 +94,13 @@ export function servedDatabase(kind, fx) {
   return { bytes: gz, ref: { sha256: wrongSha ? sha256(raw) : sha256(gz), bytes: gz.length, rawSha256: sha256(raw), rawBytes: raw.length } };
 }
 
-// The URLs of each chunk role of a build (consortium-chunks.json beside client/: the feature chunks
-// location, markProviders, future, pool, likely, native, and maplibre), for faults set by role.
-export function chunkRoles(builtDir) {
-  const map = JSON.parse(readFileSync(join(builtDir, 'consortium-chunks.json'), 'utf8'));
-  return { ...map.features, maplibre: map.maplibre ?? [], maplibreCss: map.maplibreCss ?? [] };
-}
+// The URLs of each chunk role of the served build, flat by role name (the feature chunks location,
+// markProviders, future, pool, likely, native, then maplibre and maplibreCss), for faults set by
+// role. The roles are read by their one owner, built-modules.mjs readChunkRoles.
+const roleUrls = (builtDir) => {
+  const { features, maplibre, maplibreCss } = readChunkRoles(join(builtDir, 'client'));
+  return { ...features, maplibre, maplibreCss };
+};
 
 export async function startHarness({ log = () => {}, dir } = {}) {
   const site = await serve({ log, dir });
@@ -122,7 +124,7 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     return [w ? `wrangler dev exited (${w.code ?? w.signal})` : null, chromeGone ? 'Chrome exited (the browser disconnected)' : null].filter(Boolean).join('; ') || null;
   };
   const alive = () => { const why = goneWhy(); if (why) throw new Error(why); };
-  const roles = chunkRoles(site.served);
+  const roles = roleUrls(site.served);
   // The traces of the pages opened since the current test began (helpers.mjs useHarness dumps them
   // when it fails).
   let traces = [];
@@ -381,7 +383,7 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     rmSync(downloadRoot, { recursive: true, force: true });
   }
 
-  return { url: site.url, dir: site.dir, served: site.served, site, roles, browser, open, pdf, close, beginTest, failTest, alive };
+  return { url: site.url, dir: site.dir, site, roles, browser, open, pdf, close, beginTest, failTest };
 }
 
 // The island's load state as the page shows it: 'ready' once the loading line is gone without a

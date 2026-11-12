@@ -1,8 +1,9 @@
 // Serves a built site with `wrangler dev` (the browser tests' dist-test/ from `npm run
 // build:browser-test` by default; consortium-timing.mjs serves the production dist/), as Cloudflare Workers serves
 // it: static assets, public/_headers, _redirects. Browser tests only (design check A10): one server
-// per run on a port in 4420–4499 (CANOPI_BROWSER_PORT, default 4420; the dev server's 4321 is never
-// used), its inspector on the next port. It runs in its own process group and is stopped by its own
+// per spec file's harness (run.mjs runs files in parallel slots, each with its own port base) on a
+// port in 4420–4499 (CANOPI_BROWSER_PORT, default 4420; the dev server's 4321 is never used), its
+// inspector on the next port. It runs in its own process group and is stopped by its own
 // pid, never by port. It serves its own hard-linked copy of the build with its own wrangler state
 // (--persist-to), both removed when it stops, so servers in parallel never disturb each other (probe
 // P-E1a). Before it starts, a file with a random name and content is written into that copy; the
@@ -38,7 +39,7 @@ export const portFree = (port) => new Promise((resolve) => {
   srv.listen({ port, host: '127.0.0.1', exclusive: true }, () => srv.close(() => resolve(true)));
 });
 
-// The first even port from `from` (a slot's base: CANOPI_BROWSER_PORT + 2 × slot) whose port and
+// The first even port from `from` (a slot's base: run.mjs gives slot k CANOPI_BROWSER_PORT + 8k) whose port and
 // port + 1 (the inspector) both bind (design check A2, failure row F1): another worktree's suite or
 // an orphan on the base moves this server up, never onto that server.
 export async function freePortPair(from = portFrom()) {
@@ -50,8 +51,8 @@ export async function freePortPair(from = portFrom()) {
 
 const START_ATTEMPTS = 3;
 
-// Starts wrangler dev and resolves once the site answers; returns { url, pid, dir, served,
-// persistTo, exited(), stop }. The port is the first free pair from `port`; if wrangler exits before
+// Starts wrangler dev and resolves once the site answers; returns { url, port, pid, dir, served,
+// exited(), stop }. The port is the first free pair from `port`; if wrangler exits before
 // serving (a port taken between the probe and its bind), the next pair is tried, 3 times at most.
 export async function serve({ port = portFrom(), log = () => {}, dir = BUILDS.test } = {}) {
   if (!existsSync(join(ROOT, dir, 'client', 'index.html'))) throw new Error(`no built site in ${dir}/: run \`npm run ${dir === BUILDS.test ? 'build:browser-test' : 'build'}\` first`);
@@ -132,7 +133,7 @@ async function serveOn(port, { log, dir }) {
     await new Promise((r) => setTimeout(r, 300));
   }
     // exited(): null while it serves, else { code, signal } (the harness fails the next page at once).
-  return { url, port, pid: child.pid, dir, served: site, persistTo, exited: () => exited, output: () => output, stop };
+  return { url, port, pid: child.pid, dir, served: site, exited: () => exited, stop };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

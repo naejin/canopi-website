@@ -6,8 +6,8 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { ROOT } from './serve.mjs';
 
-export const RING = 200;
-export const TRACE_ROOT = join(ROOT, 'test-results', 'browser');
+const RING = 200;
+const TRACE_ROOT = join(ROOT, 'test-results', 'browser');
 
 const push = (ring, line) => { ring.push(line); if (ring.length > RING) ring.splice(0, ring.length - RING); };
 
@@ -25,7 +25,7 @@ export function recordTrace(page, label, t0 = Date.now()) {
   return trace;
 }
 
-export const slug = (title) => String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'test';
+const slug = (title) => String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'test';
 
 // Writes the traces of the pages a failed test opened. Never throws (a dump must not hide the
 // failure it explains). Returns the directory written.

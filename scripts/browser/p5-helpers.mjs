@@ -109,20 +109,25 @@ export const search = async (page, q) => {
   await page.keyboard.press('Enter');
 };
 
-// A page whose /data/climate/ fetches wait `ms` (Infinity: never answer), optionally with a saved location.
+// A page whose /data/climate/ fetches never answer ('never') or wait until the test calls
+// releaseTiles(page) ('held'), optionally with a saved location. No clock: a test that needs the
+// lookup pending holds it, and one that needs a read to time out injects a short read timeout.
 // timeouts: the page's shortened waits (h.open timeouts: read, suggest, stall).
-export async function slowTiles(ms, { saved = null, geolocation = { lat: SITES.seville[0], lon: SITES.seville[1] }, timeouts = null } = {}) {
-  const page = await h.open('/consortium/', { mapTiles: 'stub', geolocation, timeouts, setup: (pg) => pg.evaluateOnNewDocument((wait, rec) => {
-      window.__ctTest = true;
+export async function slowTiles(mode, { saved = null, geolocation = { lat: SITES.seville[0], lon: SITES.seville[1] }, timeouts = null } = {}) {
+  if (mode !== 'never' && mode !== 'held') throw new Error(`slowTiles('never' | 'held'), got ${mode}`);
+  const page = await h.open('/consortium/', { hook: true, mapTiles: 'stub', geolocation, timeouts, setup: (pg) => pg.evaluateOnNewDocument((held, rec) => {
       if (rec && !localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
+      let open = null;
+      const gate = held ? new Promise((r) => { open = r; }) : new Promise(() => {});
+      window.__releaseTiles = () => open?.();
       const f = window.fetch;
-      window.fetch = (input, init) => (/\/data\/climate\//.test(String(input?.url ?? input))
-        ? (wait === null ? new Promise(() => {}) : new Promise((r) => setTimeout(r, wait)).then(() => f(input, init)))
-        : f(input, init));
-    }, Number.isFinite(ms) ? ms : null, saved) });
-  await ready(page);
+      window.fetch = (input, init) => (/\/data\/climate\//.test(String(input?.url ?? input)) ? gate.then(() => f(input, init)) : f(input, init));
+    }, mode === 'held', saved) });
+  // Not ready(): a held saved lookup keeps its loading line aria-busy, which loadState reads as loading.
+  assert.ok(await page.waitForFunction(() => !!window.__ctTest?.store?.source.value && !!document.querySelector('input[name="ct-climate"]') && !document.querySelector('[data-load-error]'), { timeout: 20_000 }).then(() => true, () => false), 'the tool is up, with the test hook');
   return page;
 }
+export const releaseTiles = (page) => page.evaluate(() => window.__releaseTiles());
 
 export const watchFirstMembers = (page) => page.evaluate(() => { const { store } = window.__ctTest; window.__firstMembers = undefined; store.members.subscribe((m) => { if (m.length && window.__firstMembers === undefined) window.__firstMembers = !!store.location.peek()?.lookup; }); });
 
@@ -168,8 +173,7 @@ export const emptyMatrix = async (page) => {
 
 // A page with the reader's own saved location (Seville, geo) on this device, opened at `hash`.
 export async function withSavedSite(hash = '') {
-  const page = await h.open(`/consortium/${hash}`, { mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((rec) => {
-      window.__ctTest = true;
+  const page = await h.open(`/consortium/${hash}`, { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((rec) => {
       if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
     }, JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' })) });
   await ready(page);

@@ -111,24 +111,74 @@ test('each seams file holds its owner\'s seams (A6)', () => {
   }
 });
 
-// The sleep rule (E1 design check A12): no literal sleep over 1 s in a spec or a spec helper. A test
-// that must outlast a timeout injects a short one through h.open({ timeouts }) and waits with
-// helpers.mjs until(deadline), bound to that value.
-test('no browser spec sleeps longer than 1 s (setTimeout(r, N) with N > 1000)', () => {
-  const specDir = new URL('./browser/', import.meta.url);
-  const sources = [
-    ...files,
-    ...readdirSync(specDir).filter((f) => /helpers\.mjs$/.test(f)),
-    ...readdirSync(new URL('./browser/pending/', import.meta.url)).map((f) => `pending/${f}`),
-  ];
-  const long = [];
-  for (const f of sources) {
-    const text = readFileSync(new URL(f, specDir), 'utf8');
-    for (const m of text.matchAll(/(?:setTimeout\(\s*\w+\s*,|waitForTimeout\()\s*([\d_]+)\s*\)/g)) {
-      if (Number(m[1].replace(/_/g, '')) > 1000) long.push(`${f}: ${m[0]}`);
-    }
+// The sleep rule (E1 design check A12): no sleep over 1 s in a spec or a spec helper, in the test or
+// in the page. A test that must outlast a timeout injects a short one through h.open({ timeouts })
+// and waits for a condition (the timer seen firing, a held request released), never for the clock.
+// A wait passed by name counts too, where its value is in the file: a `const`/`let` number, or the
+// argument a page function (evaluate / evaluateOnNewDocument) receives in that parameter's place.
+const SPEC_DIR = new URL('./browser/', import.meta.url);
+const specSources = () => [
+  ...files,
+  ...readdirSync(SPEC_DIR).filter((f) => /helpers\.mjs$/.test(f)),
+  ...readdirSync(new URL('./browser/pending/', import.meta.url)).map((f) => `pending/${f}`),
+];
+const numberOf = (s) => (/^[\d_]+$/.test(s.trim()) ? Number(s.trim().replace(/_/g, '')) : null);
+// The top-level arguments of the call whose '(' is at `open` (strings, templates and regex literals
+// skipped), as source text.
+function callArgs(text, open) {
+  const args = [];
+  let depth = 0, start = open + 1, quote = null, prev = '(';
+  for (let i = open; i < text.length; i++) {
+    const c = text[i];
+    if (quote) { if (c === '\\') i++; else if (c === quote) quote = null; continue; }
+    if (c === "'" || c === '"' || c === '`') { quote = c; continue; }
+    if (c === '/' && text[i + 1] !== '/' && text[i + 1] !== '*' && /[(,=:[!&|?{};]/.test(prev)) { quote = '/'; continue; }
+    if (!/\s/.test(c)) prev = c;
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) { depth--; if (depth === 0) { args.push(text.slice(start, i)); return args; } }
+    else if (c === ',' && depth === 1) { args.push(text.slice(start, i)); start = i + 1; }
   }
+  return args;
+}
+function longWaits(text) {
+  const long = [];
+  for (const m of text.matchAll(/(?:setTimeout\(\s*\w+\s*,|waitForTimeout\()\s*([\w$]+)\s*\)/g)) {
+    const arg = m[1];
+    let ms = numberOf(arg);
+    if (ms === null) ms = numberOf(text.slice(0, m.index).match(new RegExp(`\\b(?:const|let)\\s+${arg}\\s*=\\s*([\\d_]+)\\s*[;,\\n]`))?.[1] ?? '');
+    if (ms === null) {
+      // The nearest page function before it that takes `arg` as a parameter.
+      const calls = [...text.slice(0, m.index).matchAll(/\.(?:evaluateOnNewDocument|evaluate)\(\s*(?:async\s*)?\(([^)]*)\)\s*=>/g)];
+      for (const c of calls.reverse()) {
+        const params = c[1].split(',').map((p) => p.split('=')[0].trim());
+        const k = params.indexOf(arg);
+        if (k < 0) continue;
+        const args = callArgs(text, c.index + c[0].indexOf('('));
+        ms = numberOf(args[k + 1] ?? '');
+        break;
+      }
+    }
+    if (ms !== null && ms > 1000) long.push(m[0]);
+  }
+  return long;
+}
+test('the sleep rule reads waits passed by name (A12)', () => {
+  assert.deepEqual(longWaits('await new Promise((r) => setTimeout(r, 1500));'), ['setTimeout(r, 1500)']);
+  assert.deepEqual(longWaits('const WAIT = 2_000;\nawait new Promise((r) => setTimeout(r, WAIT));'), ['setTimeout(r, WAIT)']);
+  assert.deepEqual(longWaits("pg.evaluateOnNewDocument((wait) => { window.fetch = (i) => (/\\/x\\//.test(String(i)) ? new Promise((r) => setTimeout(r, wait)) : f(i)); }, 3000)"), ['setTimeout(r, wait)']);
+  assert.deepEqual(longWaits("pg.evaluateOnNewDocument((rec, wait) => { setTimeout(go, wait); }, '[a]', 1000)"), [], '1 s is allowed');
+  assert.deepEqual(longWaits('setTimeout(r, Math.min(250, at - Date.now()))'), [], 'an expression is not read');
+});
+test('no browser spec sleeps longer than 1 s (setTimeout(r, N) with N > 1000, by value or by name)', () => {
+  const long = specSources().flatMap((f) => longWaits(readFileSync(new URL(f, SPEC_DIR), 'utf8')).map((w) => `${f}: ${w}`));
   assert.deepEqual(long, []);
+});
+
+// A3: a spec opens a hooked page with h.open({ hook: true }) (or p5-helpers tool()), so the harness
+// sets the flag before the first navigation; no spec or helper writes window.__ctTest = true itself.
+test('only the harness sets window.__ctTest = true (hook: true, A3)', () => {
+  const own = specSources().filter((f) => /window\.__ctTest\s*=\s*true/.test(readFileSync(new URL(f, SPEC_DIR), 'utf8').replace(/^\s*\/\/.*$/gm, '')));
+  assert.deepEqual(own, []);
 });
 
 // Failure row F1: a taken base port moves the server up to the next free even pair.

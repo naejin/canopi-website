@@ -165,7 +165,7 @@ async function main() {
       let peak = 0;
       for (const file of next.files) {
         if (stopping) break;
-        const r = await runFile(file, { port: base + 2 * slot * 4, scope, extra: opts.extra, tag: `shard ${next.index}`, unit: `canopi-browser-${run}-${slot}-${results.length}` });
+        const r = await runFile(file, { port: base + 8 * slot, scope, extra: opts.extra, tag: `shard ${next.index}`, unit: `canopi-browser-${run}-${slot}-${results.length}` });
         results.push(r);
         peak = Math.max(peak, r.peak ?? 0);
         const status = r.capped ? `KILLED at the ${FILE_CAP_S} s file cap`

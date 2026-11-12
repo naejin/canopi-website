@@ -35,15 +35,8 @@ export const en = JSON.parse(readFileSync(join(ROOT, 'src', 'i18n', 'translation
 // - behaviour: 1280 px light only (theme never changes behaviour), plus 390 px light with
 //   { phone: true } where the DOM differs below 960 px (the phone grid, stepper or sheets).
 export const layoutVariants = async (t, fn) => { for (const v of VARIANTS) await t.test(variantName(v), () => fn(v)); };
-export const BEHAVIOUR_VARIANTS = { desktop: [{ width: 1280, theme: 'light' }], phone: [{ width: 390, theme: 'light' }, { width: 1280, theme: 'light' }] };
+const BEHAVIOUR_VARIANTS = { desktop: [{ width: 1280, theme: 'light' }], phone: [{ width: 390, theme: 'light' }, { width: 1280, theme: 'light' }] };
 export const behaviour = async (t, fn, { phone = false } = {}) => { for (const v of BEHAVIOUR_VARIANTS[phone ? 'phone' : 'desktop']) await t.test(variantName(v), () => fn(v)); };
-
-// Waits until the clock passes `at` (ms since the epoch), in steps of at most 250 ms: for a test that
-// must outlast a timeout it injected (h.open timeouts), bound to that value, never a literal sleep
-// (the sleep rule in scripts/browser-tests.test.mjs forbids literal sleeps over 1 s).
-export async function until(at) {
-  while (Date.now() < at) await new Promise((r) => setTimeout(r, Math.min(250, Math.max(0, at - Date.now()))));
-}
 
 export const has = async (page, selector, timeout = 2500) => !!(await page.waitForSelector(selector, { timeout }).catch(() => null));
 // Waits until nothing moves under a click aimed at selector: the window's scroll offset and the

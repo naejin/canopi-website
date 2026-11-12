@@ -93,7 +93,7 @@ const SCREENS = [
   ['the loader chunk gone after a deploy (online)', { data: 'fixture', loader: 404 }, 'stale', 'reload'],
   ['the loader chunk unreachable offline', { data: 'fixture', loader: 'offline' }, 'fetch', 'retry'],
 ];
-test('R3-4, R4-4: a slow but steady download (10 KB/s, the wasm over a minute) loads', async () => {
+test('R3-4, R4-4: a slow but steady download (80 KB/s, the wasm ~11 s against a 1.5 s stall timer) loads', async () => {
   // Rescaled to the injected stall (A5): with no byte allowed to lag 1.5 s, a wasm that takes over
   // 10 s at 80 KB/s (879 KB) still loads: no overall cap, as at 10 KB/s against the production 15 s.
   const STALL = 1500;
@@ -115,7 +115,7 @@ for (const [what, opts, screen, button] of [
   ['the wasm', { wasmFile: 'stall' }, 'wasm-fetch', 'consortium.load.reload'],
   ['the database', { database: 'stall' }, 'fetch', 'consortium.load.retry'],
 ]) {
-  test(`R4-4: a stalled download of ${what} (no byte for 15 s) gives the failure screen with its button`, async () => {
+  test(`R4-4: a stalled download of ${what} (no byte within the stall timer, 1 s here, 15 s in production) gives the failure screen with its button`, async () => {
     // The stall timer injected at 1 s (A5) rather than waited out at 15 s.
     const page = await h.open('/consortium/', { width: 1280, data: 'fixture', timeouts: { stall: 1000 }, ...opts });
     assert.equal(await loadState(page, 10_000), screen);
