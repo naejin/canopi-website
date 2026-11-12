@@ -1091,48 +1091,58 @@ test('P5-27f (S5c seam review 6): if the plant-marks chunk fails, the range warn
     assert.match(await text(page, '[data-marks-unavailable]') ?? '', /Reload/);
   }
 });
-test('P5-27h (S5c seam review round 2, 1): while the range checks still load the empty matrix is not drawn, so no "Suggest a start" can be lost; once they load it suggests', async () => {
-  for (const width of [390, 1280]) {
-    const page = await tool({ width, hash: '#v=4&c=arid&a=&e=1', holdChunk: 'pool' });
-    assert.ok(await has(page, '.ct-mx-empty', 15_000), 'the empty matrix (needs the site)');
-    await atSite(page, 'seville');
-    assert.ok(await page.waitForFunction(() => window.__ctTest.store.siteClimate.value, { timeout: 10_000 }).then(() => true, () => false), 'the site is read');
-    assert.ok(page.chunkHeld(), 'the range checks are still loading');
-    assert.ok(await page.waitForFunction(() => !document.querySelector('.ct-mx-empty'), { timeout: 5000 }).then(() => true, () => false), `${width} px: no empty matrix, no Suggest to press, while they load`);
-    page.releaseChunk();
-    assert.ok(await has(page, '.ct-mx-empty .button-primary', 10_000), `${width} px: "Suggest a start" once they load`);
-    await page.click('.ct-mx-empty .button-primary');
-    assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), `${width} px: a suggestion`);
-  }
-});
-// A saved consortium whose plant list read fails once, after the saved site is looked up.
-async function savedFailing() {
+// A saved Temperate consortium and a saved site at Seville (which proposes Mediterranean). list: the
+// restore's first list read waits until the saved site is looked up, then 'fail's or 'open's; hold: a
+// lazy chunk held (harness holdChunk: 'location' holds the saved site's lookup until released).
+// window.__confirmSeen: whether the location line's "Use …" ever showed.
+async function savedOpening({ list = null, hold = null } = {}) {
   const q = (await temperateLink()).slice(1);
-  const page = await h.open('/consortium/', { mapTiles: 'stub' });
-  await page.evaluateOnNewDocument((save, rec) => {
+  const page = await h.open('/consortium/', { mapTiles: 'stub', ...(hold ? { holdChunk: hold } : {}) });
+  await page.evaluateOnNewDocument((save, rec, outcome) => {
     if (!localStorage.getItem('canopi-consortium')) localStorage.setItem('canopi-consortium', save);
     if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
+    window.__confirmSeen = false;
+    new MutationObserver(() => { if (document.querySelector('[data-location-confirm]')) window.__confirmSeen = true; }).observe(document, { subtree: true, childList: true });
     let hook = true;
     Object.defineProperty(window, '__ctTest', { configurable: true, get: () => hook, set: (v) => {
       hook = v;
-      if (!v?.store) return;
+      if (!v?.store || !outcome) return;
       v.store.source.subscribe((src) => {
-        if (!src || src.failing) return;
-        src.failing = true;
+        if (!src || src.wrapped) return;
+        src.wrapped = true;
         const read = src.interactions.bind(src);
         let once = true; // the restore's read only; later reads (a card chosen) work
         src.interactions = (z) => {
           if (!once) return read(z);
           once = false;
-          return new Promise((_, reject) => { v.store.location.subscribe((l) => { if (l?.lookup) setTimeout(() => reject(new Error('test: list unreadable')), 50); }); });
+          return new Promise((resolve, reject) => { v.store.location.subscribe((l) => { if (l?.lookup) setTimeout(() => (outcome === 'fail' ? reject(new Error('test: list unreadable')) : resolve(read(z))), 50); }); });
         };
       });
     } });
-  }, JSON.stringify({ fragment: q, at: '2026-11-01', src: 'chosen' }), JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }));
+  }, JSON.stringify({ fragment: q, at: '2026-11-01', src: 'chosen' }), JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }), list);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await ready(page);
   return page;
 }
+const savedFailing = () => savedOpening({ list: 'fail' });
+const proposal = (page) => page.evaluate(() => ({ proposed: window.__ctTest.store.proposedClimate.value, climate: window.__ctTest.store.climate.value, seen: window.__confirmSeen, shown: !!document.querySelector('[data-location-confirm]') }));
+test('P5-27k (S5b seam review round 3, 1): the saved site looked up while the saved consortium opens proposes nothing over it, in either order; none comes back after Change site', async () => {
+  // The lookup first (the restore's list read waits for it).
+  const first = await savedOpening({ list: 'open' });
+  assert.ok(await ownSite(first), 'the saved site is read');
+  assert.ok(await first.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the save opens');
+  assert.deepEqual(await proposal(first), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'lookup first: no "Use Mediterranean" over the opening save, no proposal left');
+  // The save first (the lookup's chunk held until it has opened).
+  const later = await savedOpening({ hold: 'location' });
+  assert.ok(await later.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the save opens');
+  later.releaseChunk();
+  assert.ok(await ownSite(later), 'then the saved site is read');
+  for (const page of [first, later]) {
+    assert.ok(await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Change site'); b?.click(); return !!b; }), 'Change site');
+    await new Promise((r) => setTimeout(r, 300));
+    assert.deepEqual(await proposal(page), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'after Change site: no stale proposal');
+  }
+});
 test('P5-27i (S5b seam review round 2, 2): a saved consortium that fails to open still lets the reader\'s saved site propose its climate card', async () => {
   const page = await savedFailing();
   assert.ok(await ownSite(page), 'the saved site is read');
@@ -1161,6 +1171,29 @@ test('P5-27j (S5b seam review round 2, 3): a fresh link without o= looks the rea
   const plain = await reads('');
   const linked = await reads(await temperateLink());
   assert.equal(linked, plain, `the saved site is read as often as on a plain open (${plain}), not twice over`);
+});
+test('P5-27l (S5c seam review round 3, 2): the empty matrix\'s "Suggest a start" pressed while a kept guest\'s list is still read waits for it, then suggests', async () => {
+  const guest = await realDb((db) => String(db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Tropical' ORDER BY 1 LIMIT 1").get().id));
+  for (const width of [390, 1280]) {
+    const page = await tool({ width, hash: '#v=4&c=temperate&a=&e=1' });
+    assert.ok(await has(page, '.ct-mx-empty .button-primary', 15_000), 'the empty matrix with "Suggest a start"');
+    // A kept guest from Tropical whose list read is held (as after Start empty, which keeps guests).
+    await page.evaluate((id) => {
+      const { store } = window.__ctTest, src = store.source.value;
+      const pool = src.pool.bind(src), rows = src.interactions.bind(src);
+      let release; const held = new Promise((r) => { release = r; });
+      window.__releaseGuest = release;
+      src.pool = (z) => (z === 'Tropical' ? held.then(() => pool(z)) : pool(z));
+      src.interactions = (z) => (z === 'Tropical' ? held.then(() => rows(z)) : rows(z));
+      store.guests.value = { [id]: 'Tropical' };
+    }, guest);
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.guestsPending.value.length === 1, { timeout: 5000 }).then(() => true, () => false), 'the guest list is being read');
+    assert.ok(await has(page, '.ct-mx-empty .button-primary', 5000), `${width} px: "Suggest a start"`);
+    await page.click('.ct-mx-empty .button-primary');
+    await new Promise((r) => setTimeout(r, 300));
+    await page.evaluate(() => window.__releaseGuest());
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), `${width} px: the press is not lost: a suggestion once the guest list is read`);
+  }
 });
 
 test('P5-27g (S5c walk-through F1): on phones a member\'s marks wrap or fit: with an annual in the matrix at 320 and 390 px, in en, fr and ja, nothing scrolls sideways', async () => {

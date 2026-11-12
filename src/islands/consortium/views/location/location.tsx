@@ -210,7 +210,8 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
                   : T('location.suggests', { climate: zoneLabel(sc.zone) })}
                 {sc.state === 'coast' && ` ${T('location.state.coast')}`}
               </p>
-              {!compact && proposed && store.climate.value !== proposed && (
+              {/* Not over a link's or save's climate still opening (seam review round 3, 1). */}
+              {!compact && proposed && !pendingClimate.value && store.climate.value !== proposed && (
                 <p><button type="button" class="button button-primary ct-small" data-location-confirm onClick={() => { chooseClimate(proposed); store.proposedClimate.value = null; }}>{T('location.confirm', { climate: zoneLabel(proposed) })}</button></p>
               )}
             </>

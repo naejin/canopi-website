@@ -25,14 +25,14 @@ import type { ComponentChildren, ComponentType } from 'preact';
 import { useEffect } from 'preact/hooks';
 import type { Matrix as MatrixData, MatrixCell, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
 import { ROOM_LIMIT_M, strata } from '../../../lib/consortium/index.ts';
-import { climate, marksFailed, matrix, memberTaxa, members, missingMembers, pool, site, suggestMembers, view, type View } from '../store.ts';
+import { climate, marksFailed, matrix, memberTaxa, members, missingMembers, pool, site, view, type View } from '../store.ts';
+import { pendingSuggest, requestSuggest } from '../memory.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { COLLAPSED_CHIPS, MAX_TRACKS, PHASE_ORDS, SHARE_AIM, cellOrder, fillPercent, reasonParts, rowPieces, runReasons, spanOf, spans, tracksOf } from './tracks.ts';
 import { Explain, Marks, PinIcon, SproutIcon, WarnIcon, byName, cellName, layerName, listName, nameOf, openAdd, openDetails, phasePlain, phaseTerm, plantLabel } from './StageBar.tsx';
 import { phone } from './StageStepper.tsx';
 import { PhoneMatrix } from './PhoneMatrix.tsx';
 import { later, prefetchLater } from './lazy.tsx';
-import { focusView } from '../focus.ts';
 import { WhyNoSuggest, suggestBlock } from './PoolSlot.tsx';
 
 // The other three views load after the matrix (views/lazy.tsx).
@@ -109,7 +109,8 @@ export function FillMeter({ m }: { m: MatrixData }) {
 }
 
 // The empty matrix: its Suggest only when it can act (PoolSlot suggestBlock, the rule Start's
-// "Suggest plants" reads, seam review 1); otherwise why not, in its place: a borrowed climate needing
+// "Suggest plants" reads, seam review 1), and through the same requestSuggest, so a press while a kept
+// guest's list is read waits for it (round 3, 2); otherwise why not, in its place: a borrowed climate needing
 // the site's location (hand-off H-S5c-6) or the range checks that did not load, or nothing on the list
 // fitting the site (after "Search all plants").
 export function EmptyNotice({ phone: small = false }: { phone?: boolean }) {
@@ -119,7 +120,7 @@ export function EmptyNotice({ phone: small = false }: { phone?: boolean }) {
       <div><strong>{T('matrix.empty')}</strong><p>{T(block === 'nothingFits' ? 'matrix.emptyNoFit' : 'matrix.emptyBody')}</p>{z && block && <WhyNoSuggest zone={z} block={block} />}</div>
       {(!block || !small) && (
         <div class="ct-row">
-          {!block && <button type="button" class="button button-primary" onClick={() => { if (suggestMembers()) { view.value = 'matrix'; focusView(); } }}>{T('matrix.suggest')}</button>}
+          {!block && <button type="button" class="button button-primary" aria-busy={pendingSuggest.value ? 'true' : undefined} onClick={requestSuggest}>{T('matrix.suggest')}</button>}
           {!small && <button type="button" class="button button-secondary" onClick={() => openAdd()}>{T('matrix.addPlant')}</button>}
         </div>
       )}

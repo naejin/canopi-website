@@ -443,6 +443,9 @@ export async function restore(fragment: string, { from, src = null, keep = false
     // left out of the address, §5).
     quietly(() => batch(() => {
       applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen');
+      // A climate is chosen now: a card the saved site proposed while this opened goes (seam review
+      // round 3, 1); only a restore that fails leaves it.
+      store.proposedClimate.value = null;
       notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut, pasted: null, failed: false };
       if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', lookup: null };
       // A link without `o=` (pasted into the tab): an earlier link's location goes with it, so no
