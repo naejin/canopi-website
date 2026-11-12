@@ -19,7 +19,7 @@
 // link pasted while tiles load still restores (review round 1, 4).
 import { batch, signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { siteClimate, type LocationSource, type SiteLocation } from '../../../../lib/consortium/index.ts';
+import { koppenZone, MEANS_MARGIN_C, siteClimate, type LocationSource, type SiteLocation } from '../../../../lib/consortium/index.ts';
 import { createTileSource, lookupSite, siteIndex, type SiteLookup, type TileSource } from '../../../../lib/climate/index.ts';
 import { createPlaceSearchController, type PlaceSearchController, type PlaceSearchResult } from '../../../../lib/location/place-search.ts';
 import { defaultGeocoderConfig } from '../../../../lib/location/registry.ts';
@@ -198,15 +198,17 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
           {site ? (
             <>
               <p>
-                {T('location.why', { place: placeOf(loc), koppen: sc.today!.koppen, words: koppenWords(sc.today!.koppen), tmin: new Intl.NumberFormat(pageLang(), { maximumFractionDigits: 1 }).format(sc.today!.tminColdC) })}
+                {T('location.why', { place: placeOf(loc), koppen: sc.koppen, words: koppenWords(sc.koppen), tmin: new Intl.NumberFormat(pageLang(), { maximumFractionDigits: 1 }).format(sc.today!.tminColdC) })}
                 {' '}
+                {/* The class from the cell's own means, when the map's stored class gives another zone (site-climate.ts). */}
+                {sc.mapKoppen && `${T('location.means', { map: sc.mapKoppen, koppen: sc.koppen })} `}
                 {sc.state === 'polar' ? T('location.state.polar')
                   // Borderline (UX audit fix 2): both climates named, the class's own pre-selected.
                   // "We picked X" only while X is the card Start shows as proposed (none chosen;
                   // review round 4, 2); otherwise both named and a plain "check" (a link's or a saved
                   // location under a chosen climate, or a card chosen since).
                   : sc.state === 'borderline' ? (sc.zone && sc.near
-                    ? `${T(picked ? 'location.between' : 'location.betweenCheck', { a: zoneLabel(sc.zone), b: zoneLabel(sc.near) })} ${T('location.state.borderline')}`
+                    ? `${T(picked ? 'location.between' : 'location.betweenCheck', { a: zoneLabel(sc.zone), b: zoneLabel(sc.near) })} ${T(sc.mapKoppen && sc.near === koppenZone(sc.mapKoppen) ? 'location.meansNear' : 'location.state.borderline', { margin: MEANS_MARGIN_C })}`
                     : `${T('location.state.borderline')}${picked ? ` ${T('location.picked', { climate: zoneLabel(sc.zone) })}` : ''}`)
                   : T('location.suggests', { climate: zoneLabel(sc.zone) })}
                 {sc.state === 'coast' && ` ${T('location.state.coast')}`}

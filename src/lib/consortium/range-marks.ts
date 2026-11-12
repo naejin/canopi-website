@@ -9,7 +9,10 @@
 //   the verdict compared, to the hundredth, so the gap a reader works out matches it), and says
 //   observed ranges include cultivation and are estimates, not reviewed (export meta ranges_review).
 //   An annual (no winter-cold check): "warm-season annual" on rows and in Add; in Details "grown in the
-//   warm season; check the frost-free season" (not on chips).
+//   warm season; check the frost-free season" (not on chips). An annual beyond its heat range
+//   (rangeCheck coolSeason) gets instead "grow in the cool season" on rows and in Add and "Too hot in
+//   summer here: grow it in the cool season." in Details (decision row "Climate ranges fixed before
+//   the P5 push"); the CSS wraps every non-chip mark, so neither outgrows a phone row.
 // - With or without a location: 'estimate' on a plant placed from a nearest list (placement.ts);
 //   without a site climate, also "give your site's location to check it" (not on chips).
 // Chips (desktop matrix) get the short words.
@@ -51,7 +54,8 @@ export function rangeMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface)
     }
     if (!tight && (aridity === 'drier' || aridity === 'wetter')) out.push({ kind: 'aridity', key: ARIDITY_KEYS[aridity], severity: 'note', state: aridity });
     // The sentence in Details; rows and Add get a short tag, so the note never outgrows a phone row (walk-through F1).
-    if (!tight && isAnnual(taxon)) out.push({ kind: 'unknown', key: surface === 'details' ? 'range.annual' : 'range.annualShort', severity: 'note', state: 'annual' });
+    if (!tight && check.coolSeason) out.push({ kind: 'season', key: surface === 'details' ? 'range.coolSeason' : 'range.coolSeasonShort', severity: 'note', state: 'cool' });
+    else if (!tight && isAnnual(taxon)) out.push({ kind: 'unknown', key: surface === 'details' ? 'range.annual' : 'range.annualShort', severity: 'note', state: 'annual' });
     if (surface === 'details' && aridity === 'not-checked') out.push({ kind: 'unknown', key: 'range.aridityNotChecked', severity: 'note', state: 'aridity' });
   }
   if (taxon.estimate && taxon.placedFrom) {

@@ -42,21 +42,22 @@ test('rangeFit: coldest month on both sides and warmest month on the hot side, "
   assert.equal(core.rangeFit(t, at(0, 32.1)), 'outside');
   assert.equal(core.rangeFit(t, at(0, 5)), 'inside', 'a cool summer is never checked (hot side only)');
   assert.deepEqual(core.rangeCheck(t, at(-16, 31)).sides, ['cold', 'hot']);
-  assert.deepEqual(core.rangeCheck(t, at(-18, 31)), { verdict: 'outside', sides: ['cold', 'hot'], beyond: ['cold'], aridity: 'unknown' });
+  assert.deepEqual(core.rangeCheck(t, at(-18, 31)), { verdict: 'outside', sides: ['cold', 'hot'], beyond: ['cold'], aridity: 'unknown', coolSeason: false });
 });
 
-test('rangeCheck: an annual skips the winter-cold check on both sides, the summer heat still applies (owner, "Annuals skip the winter-cold check")', () => {
+test('rangeCheck: an annual skips the winter-cold check on both sides; beyond the summer heat it is advised to the cool season (owner, "Annuals skip the winter-cold check"; "Climate ranges fixed before the P5 push")', () => {
   // Harbin-like values: coldest-month minimum -24 °C, warmest-month maximum 29 °C.
   const harbin = at(-24, 29);
   const marks = (t, site, surface) => rangeMarks(t, ctx({ location: site }), surface).map((m) => [m.kind, m.key, m.severity]);
   const warmRange = { ...taxon().climate, tminCold: { low: -2, median: 5, high: 12, count: 90, basis: 'observed_cells' }, tmaxWarm: { low: 20, median: 27, high: 31, count: 90, basis: 'observed_cells' } };
   const annual = taxon({ traits: { is_annual: true }, climate: warmRange });
-  assert.deepEqual(core.rangeCheck(annual, harbin), { verdict: 'inside', sides: [], beyond: [], aridity: 'unknown' }, 'cold: passes, no cold side');
+  assert.deepEqual(core.rangeCheck(annual, harbin), { verdict: 'inside', sides: [], beyond: [], aridity: 'unknown', coolSeason: false }, 'cold: passes, no cold side');
   assert.equal(core.rangeFit(taxon({ traits: { is_annual: false }, climate: warmRange }), harbin), 'outside', 'a perennial with the same range is still left out');
   const mild = at(18, 29);
   assert.equal(core.rangeCheck(annual, mild).sides.includes('mild'), false, 'nor the mild-winter side');
   const hot = taxon({ traits: { is_annual: true }, climate: { ...warmRange, tmaxWarm: { ...warmRange.tmaxWarm, high: 25 } } });
-  assert.equal(core.rangeFit(hot, harbin), 'outside', 'heat: 29 °C against 25 still fails');
+  assert.deepEqual(core.rangeCheck(hot, harbin), { verdict: 'inside', sides: [], beyond: [], aridity: 'unknown', coolSeason: true }, 'heat: 29 °C against 25 is the cool season, not outside');
+  assert.equal(core.rangeFit(hot, at(-24, 26)), 'edge', 'within the margin: near the edge, as any plant');
   assert.deepEqual(core.withinRange([annual], harbin), [annual], 'kept in the filtered pool');
   assert.deepEqual(marks(annual, harbin, 'row'), [['unknown', 'range.annualShort', 'note']], 'its row says it is a warm-season annual (a short tag: walk-through F1)');
   assert.deepEqual(marks(annual, harbin, 'details'), [['unknown', 'range.annual', 'note']], 'Details says to check the frost-free season');
@@ -98,7 +99,7 @@ test('rangeFit: no range is "unknown", never filtered; no site climate checks no
 test('rangeCheck: aridity is a mark only (drier, wetter, not checked on ice), never the verdict', () => {
   const arid = { low: 0.5, median: 1, high: 2, count: 200, basis: 'observed_cells' };
   const t = taxon({ climate: { ...taxon().climate, aridity: arid } });
-  assert.deepEqual(core.rangeCheck(t, at(0, 25, 0.1)), { verdict: 'inside', sides: [], beyond: [], aridity: 'drier' });
+  assert.deepEqual(core.rangeCheck(t, at(0, 25, 0.1)), { verdict: 'inside', sides: [], beyond: [], aridity: 'drier', coolSeason: false });
   assert.equal(core.rangeCheck(t, at(0, 25, 3)).aridity, 'wetter');
   assert.equal(core.rangeCheck(t, at(0, 25, 1)).aridity, 'inside');
   assert.equal(core.rangeCheck(t, at(0, 25, null)).aridity, 'not-checked');
@@ -221,7 +222,7 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
   // What the code reads: range-marks.ts and pool.tsx keys.
   const used = ['range.edge', 'range.edgeShort', 'range.edgeDetails', 'range.outside', 'range.outsideShort', 'range.outsideDetails', 'range.unknown', 'range.unknownShort', 'range.drier', 'range.wetter', 'range.aridityNotChecked',
     'range.side.cold', 'range.side.mild', 'range.side.hot', 'range.pool.count', 'range.pool.edge', 'range.pool.left', 'range.pool.caveat', 'range.pool.aridityNotChecked',
-    'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailable', 'range.unavailableBorrowed', 'range.needsSite', 'range.needsSite.go', 'range.needsSite.pill', 'range.annual', 'range.annualShort', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed', 'estimate.noSite', 'marks.unavailable'];
+    'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailable', 'range.unavailableBorrowed', 'range.needsSite', 'range.needsSite.go', 'range.needsSite.pill', 'range.annual', 'range.annualShort', 'range.coolSeason', 'range.coolSeasonShort', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed', 'estimate.noSite', 'marks.unavailable'];
   assert.deepEqual(mine, used.map((k) => `consortium.${k}`));
   const holes = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().filter((x, i, a) => a.indexOf(x) === i);
   for (const l of locales) {
@@ -267,7 +268,11 @@ const SITES = {
 // Plants kept (not outside) from the climate's pool, own or borrowed, with annuals exempt from the
 // winter-cold check (owner, "Annuals skip the winter-cold check"; before it: Lyon 339, Montreal 100,
 // Oslo 224, Yakutsk 0, the design check's counts). Yakutsk keeps its 59 annuals and nothing else.
-const KEPT = { lyon: 348, dakar: 247, lima: 253, hanoi: 244, montreal: 145, nairobi: 182, perth: 131, seville: 101, oslo: 238, manaus: 183, phoenix: 13, brisbane: 289, yakutsk: 59, chicago: 238 };
+// Decision row "Climate ranges fixed before the P5 push": annuals beyond their heat range are kept, for
+// the cool season (Phoenix +67, Seville +16, Hanoi +8, Dakar +2, Lyon, Brisbane and Chicago +1; before:
+// Phoenix 13, Seville 101), and the mild-winter side applies only below CHILL_CEILING_C (Manaus +15,
+// Dakar +10; before: Manaus 183, Dakar 247).
+const KEPT = { lyon: 349, dakar: 259, lima: 253, hanoi: 252, montreal: 145, nairobi: 182, perth: 131, seville: 117, oslo: 238, manaus: 198, phoenix: 80, brisbane: 290, yakutsk: 59, chicago: 239 };
 
 const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
 const real = await sourceOf(new URL(`../public${index.files[0].url}`, import.meta.url), { releaseId: index.release_id, climates: index.climates });

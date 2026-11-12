@@ -8,9 +8,9 @@
 // never SQL LIKE (ASCII-only folding, a substring match, % and _ unescaped).
 import type {
   ClimateRange, ClimateZone, Details, FunctionId, FunctionMethod, Image, Interaction, InvasiveRecord, KoppenShare, Labels, LayerScope, LayerValue, Locale, Month, Placement,
-  PlantId, RangeBasis, Reason, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
+  PlantId, RangeBasis, RangeVariable, Reason, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
 } from '../../../lib/consortium/index.ts';
-import { firstPlaced, months, NEAREST_LISTS, phases, severities } from '../../../lib/consortium/index.ts';
+import { firstPlaced, months, NEAREST_LISTS, phases, RANGE_VARIABLES, severities } from '../../../lib/consortium/index.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
@@ -95,16 +95,16 @@ function textOf(rows: Row[] | undefined): Text | null {
 // Schema 2: the observed climate of a climate's plants, in one query of arrays (the pool is read
 // before the matrix draws; objects for every row cost ~0.1 s at 4× CPU). A plant without a
 // range_source is absent: "range not recorded" (Taxon.climate null).
+// The variables: types.ts RANGE_VARIABLES, the one list (fixed strings, so the query stays a constant).
 const CLIMATE_ROWS = `SELECT s.plant, s.range_source, s.gbif_cells, s.native_share, c.variable, c.low, c.median, c.high, c.count, c.basis
-  FROM plant_climate_status s LEFT JOIN plant_climate c ON c.plant = s.plant AND c.variable IN ('tmin_cold', 'tmax_warm', 'aridity')
+  FROM plant_climate_status s LEFT JOIN plant_climate c ON c.plant = s.plant AND c.variable IN (${Object.keys(RANGE_VARIABLES).map((v) => `'${v}'`).join(', ')})
   WHERE s.range_source IS NOT NULL AND s.plant IN (SELECT plant FROM placements WHERE climate_zone = ?1)`;
-const RANGE_FIELD = { tmin_cold: 'tminCold', tmax_warm: 'tmaxWarm', aridity: 'aridity' } as const;
 function climatesOf(rows: unknown[][]): Map<number, TaxonClimate> {
   const out = new Map<number, TaxonClimate>();
   for (const [plant, source, cells, share, variable, low, median, high, count, basis] of rows) {
     let t = out.get(Number(plant));
     if (!t) out.set(Number(plant), t = { source: String(source), tminCold: null, tmaxWarm: null, aridity: null, cells: num(cells), nativeShare: num(share) });
-    const field = RANGE_FIELD[variable as keyof typeof RANGE_FIELD];
+    const field = RANGE_VARIABLES[variable as RangeVariable];
     if (field) t[field] = { low: num(low), median: num(median), high: num(high), count: num(count), basis: basis as RangeBasis } satisfies ClimateRange;
   }
   return out;

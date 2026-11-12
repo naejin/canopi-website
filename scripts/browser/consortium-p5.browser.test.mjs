@@ -173,7 +173,7 @@ test('P5-0d (commit 0 seams): without a location, on a covered climate, no range
   assert.deepEqual(await page.evaluate(() => window.__ctTest.store.markProviders.value.length), 0, 'the providers do not even load without a location on a covered climate');
   // With a location the providers load; whatever marks they give carry a PlantMarks surface.
   await atSite(page, 'lyon');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.markProviders.value.length === 3, { timeout: 10_000 }).then(() => true, () => false), 'the providers load for a location');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.markProviders.value.length === 4, { timeout: 10_000 }).then(() => true, () => false), 'the providers load for a location');
   for (const m of await marks()) assert.ok(['chip', 'row', 'add', 'details'].includes(m.surface), `the ${m.kind} mark is drawn by PlantMarks on a surface`);
   assert.deepEqual(page.thirdParty, []);
   assert.deepEqual(page.nominatim, []);
@@ -647,9 +647,17 @@ const OUTSIDE = '((NOT annual AND (nlo - 2 > ?1 OR ?1 > nhi + 2)) OR ?2 > xhi + 
 const EDGE = `(NOT ${OUTSIDE} AND ((NOT annual AND (nlo > ?1 OR ?1 > nhi)) OR ?2 > xhi))`;
 const pickRanged = (where, site, zone) => realDb((db) => db.prepare(`SELECT name FROM (${RANGED}) WHERE ${where} ORDER BY name LIMIT 1`).get(site.tminColdC, site.tmaxWarmC, zone)?.name);
 
-// Since annuals skip the winter-cold check, every real site keeps some plant: "nothing fits" is shown
-// at Yakutsk's coordinates with a warmest month of 46 °C, above every recorded summer maximum + 2 °C.
+// Since annuals skip the winter-cold check and, beyond their heat range, are advised to the cool season
+// (decision row "Climate ranges fixed before the P5 push"), an annual is never outside, so every real
+// list keeps its annuals anywhere. "Nothing fits" is shown for a list without annuals (the page's
+// pools have their annuals taken out as they load), at Yakutsk's coordinates with a warmest month of
+// 46 °C, above every recorded summer maximum + 2 °C.
 async function atNowhere(page) {
+  await page.evaluate(() => {
+    const { store } = window.__ctTest;
+    const perennials = (p) => Object.fromEntries(Object.entries(p).map(([k, list]) => [k, list?.filter((t) => t.traits.is_annual !== true)]));
+    store.pools.subscribe((p) => { if (Object.values(p).some((list) => list?.some((t) => t.traits.is_annual === true))) store.pools.value = perennials(p); });
+  });
   const l = await lookupAt(...SITES.yakutsk);
   const periods = l.climate.periods.map((p) => (p.scenario === 'historical' ? { ...p, tmaxWarmC: 46 } : p));
   return atSite(page, 'yakutsk', { climate: { ...l.climate, periods } });
@@ -721,7 +729,7 @@ test('P5-14c (S5c matrix counts): a cell\'s "N fit" leaves out plants outside th
   const within = await sum();
   assert.ok(within < before, `fewer plants counted at Seville (${within} cell entries) than without a location (${before})`);
   const counted = await page.evaluate(() => { const { store } = window.__ctTest; return store.fitPool.value.length; });
-  assert.equal(counted, 101, 'the matrix counts the 101 of 200 Mediterranean plants kept at Seville (design check §C)');
+  assert.equal(counted, 117, 'the matrix counts the 117 of 200 Mediterranean plants kept at Seville (design check §C: 101, before the cool-season annuals)');
   await page.evaluate(() => { window.__ctTest.store.location.value = null; });
   assert.equal(await sum(), before, 'without a location the counts are P2\'s');
 });
@@ -1259,6 +1267,54 @@ test('P5-27g (S5c walk-through F1): on phones a member\'s marks wrap or fit: wit
       assert.deepEqual(over, { doc: 0, marks: [] }, `${lang} ${width} px: no sideways scroll, no mark past the edge`);
     }
   }
+});
+
+// Decision row "Climate ranges fixed before the P5 push" (2026-11-12): the zone from the cell's own means,
+// annuals beyond their heat range advised to the cool season, drought tolerance Medium on a dry site.
+test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; at Seville lettuce is a cool-season crop in Add and Details; a dry site marks drought tolerance Medium; nothing scrolls sideways', async () => {
+  const [lat, lon] = SITES.nairobi;
+  for (const width of [320, 390, 1280]) {
+    const page = await tool({ width, geolocation: { lat, lon } });
+    await locationControls(page);
+    await page.click('[data-location-action="geo"]');
+    assert.equal(await locationState(page), 'borderline', `${width} px: Nairobi is borderline`);
+    const line = await text(page, '[data-location-state]') ?? '';
+    assert.match(line, /Köppen class Cwb/, 'the class its means give');
+    assert.match(line, /The climate map gives Aw here/, 'and the map class');
+    assert.match(line, /Between Subtropical and Tropical; we picked Subtropical/);
+    assert.match(line, /within 2 °C/);
+    assert.equal(await proposedCard(page), 'subtropical', 'Subtropical proposed');
+    // Seville: lettuce (annual, warmest-month Q95 32.1 °C against 34.8 °C) stays, for the cool season.
+    await atSite(page, 'seville');
+    await choose(page, 'Mediterranean');
+    await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; window.__ctTest.store.openSheet('add'); });
+    assert.ok(await has(page, '.ct-add .ct-search input', 10_000), 'the Add sheet');
+    await page.type('.ct-add .ct-search input', 'Lactuca sativa');
+    const row = '.ct-add .ct-rows li';
+    assert.ok(await page.waitForFunction((sel) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === 'Lactuca sativa' && li.querySelector('[data-mark="season"]')), { timeout: 10_000 }, row).then(() => true, () => false), `${width} px: lettuce in Add with its cool-season tag`);
+    const tag = await page.evaluate((sel) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Lactuca sativa').querySelector('[data-mark="season"]').textContent, row);
+    assert.equal(tag, 'grow in the cool season');
+    assert.equal(await page.evaluate((sel) => !![...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Lactuca sativa').querySelector('[data-mark="outside"]'), row), false, 'not outside');
+    const over = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      marks: [...document.querySelectorAll('#ct-root .ct-tag, #ct-root .ct-flag, dialog .ct-tag, dialog .ct-flag')].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((e) => e.textContent) }));
+    // doc ≤ 0: with the dialog open on desktop the page's scrollbar is hidden (scrollWidth < clientWidth).
+    assert.deepEqual({ doc: Math.max(0, over.doc), marks: over.marks }, { doc: 0, marks: [] }, `${width} px: no sideways scroll, no mark past the edge`);
+    const lettuce = await page.evaluate(() => window.__ctTest.store.pools.value.Mediterranean.find((t) => t.canonical_name === 'Lactuca sativa')?.id);
+    assert.ok(lettuce, 'lettuce is on the Mediterranean list');
+    await page.evaluate((id) => window.__ctTest.store.openSheet('details', id), lettuce);
+    assert.ok(await has(page, '[data-mark-surface="details"][data-mark="season"]', 10_000), 'Details: the cool-season line');
+    assert.equal(await text(page, '[data-mark-surface="details"][data-mark="season"]'), 'Too hot in summer here: grow it in the cool season.');
+    assert.equal(await page.$('[data-mark-surface="details"][data-mark-state="annual"]'), null, 'not the warm-season note');
+  }
+  // A dry site, no location: drought tolerance Medium (lemon) says to water in the dry months.
+  const page = await tool({ width: 390 });
+  await choose(page, 'Mediterranean');
+  const lemon = await page.evaluate(() => window.__ctTest.store.pools.value.Mediterranean.find((t) => t.canonical_name === 'Citrus limon')?.id);
+  assert.ok(lemon, 'lemon is on the Mediterranean list');
+  await page.evaluate((id) => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, water: 'dry' }; store.openSheet('details', id); }, lemon);
+  assert.ok(await has(page, '[data-mark-surface="details"][data-mark="water"]', 10_000), 'Details: the watering line');
+  assert.equal(await text(page, '[data-mark-surface="details"][data-mark="water"]'), 'Needs watering in the dry months.');
+  assert.deepEqual(page.thirdParty, []);
 });
 
 // ---- S5d: future check ----

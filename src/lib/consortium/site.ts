@@ -11,7 +11,8 @@
 //   chalky when the maximum is above 7.5 or the minimum is. A misfit when the known bounds leave no
 //   overlap; otherwise unknown when a bound that decides is null.
 // - water: dry is a misfit for drought_tolerance Low or None, or, when it is unknown, moisture_use
-//   High. Wet is a misfit for a drought-adapted plant that wants good drainage (well_drained and
+//   High; Medium fits with the note 'dry_months' ("needs watering in the dry months", owner, decision
+//   row "Climate ranges fixed before the P5 push"; site-marks.ts says it). Wet is a misfit for a drought-adapted plant that wants good drainage (well_drained and
 //   drought_tolerance High, or moisture_use Low when drought tolerance is unknown); it fits when
 //   well_drained is false, moisture_use is High or drought tolerance is known and not High. Average
 //   checks nothing.
@@ -57,6 +58,7 @@ const water: Check = (t, site) => {
   if (site.water === 'unsure' || site.water === 'average') return null;
   const { drought_tolerance: dt, moisture_use: mu, well_drained: wd } = t.traits;
   if (site.water === 'dry') {
+    if (dt === 'Medium') return { key: 'water', verdict: 'fit', trait: 'drought_tolerance', note: 'dry_months' };
     if (dt !== null) return { key: 'water', verdict: dt === 'Low' || dt === 'None' ? 'misfit' : 'fit', trait: 'drought_tolerance' };
     return { key: 'water', verdict: mu === 'High' ? 'misfit' : 'unknown', trait: mu === 'High' ? 'moisture_use' : 'drought_tolerance' };
   }

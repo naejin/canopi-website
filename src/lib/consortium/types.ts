@@ -145,6 +145,10 @@ export interface ClimateRange { low: number | null; median: number | null; high:
 // A plant's observed climate (plant_climate + plant_climate_status), what range, future and native
 // share checks read: coldest-month minimum and warmest-month maximum in °C, the aridity index (P/PET).
 // cells: GBIF cells with records; nativeShare: the share of them inside WCVP native areas.
+// The export's plant_climate variables the source reads (sqlite-source.ts), each with the TaxonClimate
+// field it fills: the one list of range variables (range.ts RANGE_BOUNDS says how each is checked).
+export const RANGE_VARIABLES = { tmin_cold: 'tminCold', tmax_warm: 'tmaxWarm', aridity: 'aridity' } as const;
+export type RangeVariable = keyof typeof RANGE_VARIABLES;
 export interface TaxonClimate {
   source: string;
   tminCold: ClimateRange | null;
@@ -299,11 +303,14 @@ export type JobId = (typeof jobIds)[number];
 // pruning) are said aloud. An 'unsure' answer checks nothing.
 export type Verdict = 'fit' | 'misfit' | 'unknown';
 export type FitReason =
-  | { key: 'light' | 'soil' | 'water'; verdict: Verdict; trait: keyof Traits | null }
+  | { key: 'light' | 'soil' | 'water'; verdict: Verdict; trait: keyof Traits | null; note?: FitNote }
   // Room checks the height only. meters: the plant's wild maximum height; limit: the room's.
   | { key: 'room'; verdict: Verdict; kind: 'fits' | 'wild_height'; meters: number; limit: number }
   // A climber's recorded size can be a runner length, so its room is unknown, said as such.
   | { key: 'room'; verdict: 'unknown'; kind: 'height_not_recorded' | 'climber' };
+// A fit that still asks something of the reader: 'dry_months', drought tolerance Medium on a dry site
+// ("needs watering in the dry months", owner, decision row "Climate ranges fixed before the P5 push").
+export type FitNote = 'dry_months';
 export interface Fit { verdict: Verdict; misfits: SiteKey[]; unknowns: SiteKey[]; reasons: FitReason[] }
 
 // Swap: a plant that could take a member's place, with what it changes in the matrix ("Also fills…",
@@ -373,9 +380,11 @@ export const DEFAULT_SCENARIO: Scenario = 'ssp245';
 
 // A plant's marks beside its name (matrix chips, phone rows, Details, Add), from marks.ts providers:
 // edge "near the edge of its observed range", outside (Add's warning), unknown "range not recorded",
-// estimate (a borrowed placement), future (drawn in ink, apart from the ochre warnings), native.
+// estimate (a borrowed placement), future (drawn in ink, apart from the ochre warnings), native,
+// season (an annual too hot in summer: "grow it in the cool season"), water (drought tolerance Medium
+// on a dry site: "needs watering in the dry months").
 // key: a consortium.* string key without its prefix, read with T(key, vars).
-export const markKinds = ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity'] as const;
+export const markKinds = ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity', 'season', 'water'] as const;
 export type MarkKind = (typeof markKinds)[number];
 export type MarkSeverity = 'note' | 'warning';
 // state: a finer state the views write as data-mark-state (e.g. native: 'native' | 'not_recorded' | 'unknown').

@@ -11,9 +11,11 @@
 // by default) gives the verdict; the period's other scenarios give its agreement: for outside, those
 // outside for at least one of the shown reasons; otherwise those not outside ("stays within in 4 of
 // 4"). No projection, no range or nothing to compare: null, "not checked".
+// An annual too hot in the projected slot is not a loss: it is advised to the cool season (coolSeason,
+// owner, decision row "Climate ranges fixed before the P5 push"), through range.ts coolSeasonOf.
 import type { PlantId, Scenario, SitePeriod, SiteLocation, Taxon } from './types.ts';
 import { phases, scenarios } from './types.ts';
-import { passes } from './range.ts';
+import { boundPassed, coolSeasonOf, HOT_BOUND as HOT } from './range.ts';
 
 export const futurePeriods = ['2041-2070', '2071-2099'] as const;
 export type FuturePeriod = (typeof futurePeriods)[number];
@@ -26,10 +28,11 @@ export interface FutureCheck {
   already: FutureReason[]; // beyond the same bound today (verdict 'already' when there is no new reason)
   agree: number; // the period's scenarios that agree (the chosen one included; see the header)
   of: number; // scenarios of the period with data
+  coolSeason: boolean; // an annual beyond its heat range under the chosen scenario: the cool-season advice
 }
 
-// Too hot: beyond the warmest-month Q95 by more than today's margin, through today's comparison
-// (range.ts passes and RANGE_MARGIN_C, the rule's one owner).
+// Too hot: beyond the warmest-month Q95 by more than today's margin, through today's bound and
+// comparison (range.ts HOT_BOUND, one of RANGE_BOUNDS, and boundPassed, the rule's one owner).
 const SECONDARY = phases.indexOf('secondary_i');
 const CLIMAX = phases.indexOf('climax');
 
@@ -51,17 +54,16 @@ const todayOf = (site: SiteLocation | null): SitePeriod | null =>
   site?.lookup?.climate?.periods.find((p) => p.scenario === 'historical') ?? null;
 
 // The reasons a slot is beyond the plant's bounds, or null when nothing can be compared.
-function beyond(taxon: Taxon, slot: SitePeriod): { reasons: FutureReason[]; edge: boolean } | null {
-  const high = taxon.climate?.tmaxWarm?.high ?? null;
+function beyond(taxon: Taxon, slot: SitePeriod): { reasons: FutureReason[]; edge: boolean; coolSeason: boolean } | null {
   const low = taxon.climate?.aridity?.low ?? null;
-  const heatChecked = high !== null;
+  const heat = boundPassed(taxon, HOT, slot);
   const aridChecked = low !== null && slot.aridityIndex !== null;
-  if (!heatChecked && !aridChecked) return null;
+  if (heat === null && !aridChecked) return null;
   const reasons: FutureReason[] = [];
-  const heat = heatChecked ? passes(slot.tmaxWarmC, high, 'above') : 'inside';
-  if (heat === 'beyond') reasons.push('heat');
+  const coolSeason = coolSeasonOf(taxon, HOT, heat);
+  if (heat === 'beyond' && !coolSeason) reasons.push('heat');
   if (aridChecked && (slot.aridityIndex as number) < low) reasons.push('arid');
-  return { reasons, edge: heat !== 'inside' };
+  return { reasons, edge: heat === 'edge', coolSeason };
 }
 
 export function futureCheck(taxon: Taxon, site: SiteLocation | null, scenario: Scenario): FutureCheck | null {
@@ -85,7 +87,7 @@ export function futureCheck(taxon: Taxon, site: SiteLocation | null, scenario: S
     const f = fresh(b);
     if (why.length ? f.some((r) => why.includes(r)) : f.length === 0) agree++;
   }
-  return { period, verdict, why, already, agree, of };
+  return { period, verdict, why, already, agree, of, coolSeason: mine.coolSeason };
 }
 
 // The panel's summary over the members, each in exactly one place: per period those checked (m),

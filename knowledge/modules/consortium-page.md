@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T07:08:23Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T07:47:12Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T21:36:02Z }
@@ -25,8 +25,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:5252c0c9d5824e3b
-    last_modified: 2026-11-12T07:04:24Z
+    digest: sha256:fd765149314335e3
+    last_modified: 2026-11-12T07:28:43Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -81,7 +81,7 @@ sources:
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
     digest: sha256:e911f860aa4f620d
-    last_modified: 2026-11-12T07:03:13Z
+    last_modified: 2026-11-11T15:36:29Z
   - id: consortium-commit0-browser-test-mjs
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
@@ -126,7 +126,7 @@ sources:
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
     digest: sha256:382318b0e6b1ab6b
-    last_modified: 2026-11-12T07:04:24Z
+    last_modified: 2026-11-12T07:18:38Z
   - id: shell-css
     resource: ../../src/styles/consortium/shell.css
     title: src/styles/consortium/shell.css
@@ -231,7 +231,7 @@ sources:
     resource: ../../scripts/browser/consortium-p5.browser.test.mjs
     title: scripts/browser/consortium-p5.browser.test.mjs
     digest: sha256:380009a610197f02
-    last_modified: 2026-11-12T07:03:22Z
+    last_modified: 2026-11-12T07:18:38Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
@@ -245,8 +245,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:202f1e1ffae76695
-    last_modified: 2026-11-12T07:04:24Z
+    digest: sha256:f63c0943d0993101
+    last_modified: 2026-11-12T07:30:44Z
 enforced_by:
   - scripts/check-built-site.mjs
   - scripts/browser/consortium-commit0.browser.test.mjs
@@ -330,7 +330,7 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
 - A sheet's `<dialog>` closes before the app knows: on Escape the browser drops `open` and restores the focus at once, and SheetFrame's `close` listener (which calls `closeSheet()` for whatever sheet is current) runs a task later. A test must wait for the sheet element (`dialog.ct-sheet`) to go, not for `dialog[open]` to clear, before opening another sheet (S3 BT-5's flaky "estimate tag": the old frame's close event closed the next sheet, 2 in 80 loops under load).
 - The paste cost guard in `scripts/consortium-paste.test.mjs` counts plant field reads through a Proxy (46,000 for 5 or 500 lines; the pre-`4658fdb` code read 3,052,000) instead of timing: a 200 ms wall-clock bound failed under machine load.
 - P7: the JSX scope alone leaves every other page byte-identical (checked after the pins commit). Deleting app.js drops one export from the shared `chrome` chunk, so that chunk's hash, and the `<script src>` of every page, change. The page contents are otherwise identical.
-- `#ct-data` carries every `consortium.*` string (593 keys per locale at the P5 seam review, which added `matrix.emptyNoFit`, `location.state.seaKept`, `location.state.failedKept`, `marks.unavailable`, `range.annualShort` and `start.suggestStopped` (the last at the end of S5c's block); 522 after S5b: the P2 hand-offs and their review pruned 422 unused ones, P5 commit 0 added `country.fromLocation`, S5b 60 `location.*` and `share.location*` keys; `scripts/consortium-keys.test.mjs` keeps it so, counting a key used only when it is in a T( or P( call, a template, ConsortiumPage.astro or its INDIRECT list). Block keys close each locale file in order: `consortium.block.s1`…`s4`, then (P5 commit 0) `s5b`…`s5f` and last `consortium.block.end`, each stream appending after its own block key and before the next, so no stream edits another's last line; S5f's block may also hold `privacy.*` and new `dataSources.*` keys (`homepage.test.mjs`). S4's keys sit after `consortium.block.s4` with names that differ from the v1 keys (`share.done`, `crops.question`, `print.button`…): a duplicate JSON key would keep the v1 position and break the block-order test in `homepage.test.mjs`.
+- `#ct-data` carries every `consortium.*` string (600 keys per locale after the climate-ranges stream, which added `location.means`, `location.meansNear`, `range.coolSeason`, `range.coolSeasonShort`, `future.coolSeason`, `water.dryMonths` and `water.dryMonthsShort`; 593 at the P5 seam review, which added `matrix.emptyNoFit`, `location.state.seaKept`, `location.state.failedKept`, `marks.unavailable`, `range.annualShort` and `start.suggestStopped` (the last at the end of S5c's block); 522 after S5b: the P2 hand-offs and their review pruned 422 unused ones, P5 commit 0 added `country.fromLocation`, S5b 60 `location.*` and `share.location*` keys; `scripts/consortium-keys.test.mjs` keeps it so, counting a key used only when it is in a T( or P( call, a template, ConsortiumPage.astro or its INDIRECT list). Block keys close each locale file in order: `consortium.block.s1`…`s4`, then (P5 commit 0) `s5b`…`s5f` and last `consortium.block.end`, each stream appending after its own block key and before the next, so no stream edits another's last line; S5f's block may also hold `privacy.*` and new `dataSources.*` keys (`homepage.test.mjs`). S4's keys sit after `consortium.block.s4` with names that differ from the v1 keys (`share.done`, `crops.question`, `print.button`…): a duplicate JSON key would keep the v1 position and break the block-order test in `homepage.test.mjs`.
 - With storage blocked (reading `localStorage` throws), the sqlite-wasm bootstrap's kvvfs setup threw `SecurityError`; `data/load.ts` switches kvvfs and OPFS off through `sqlite3ApiConfig` before init (H1).
 - Each browser-test page is a context with its own copy of the database: the s4 file closes each page's context once used (`done()`); without it, BT-7's many pages were OOM-killed at 3 GB.
 - `helpers.mjs` `axNodes` reads the full accessibility tree (`interestingOnly: false`, skipping none, unnamed generic, InlineTextBox and LineBreak; Chrome's `image` becomes `img`), so tables and cells are visible; BT-8 still reads the shown tables' captions from the DOM.
