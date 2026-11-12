@@ -222,7 +222,8 @@ test('Walk-through 2 N1: in the Add sheet the Undo toast never covers "Add N pla
     // Opens Add, searches the next candidate listed with a tick (few rows), and ticks it.
     const addOne = async () => {
       await page.click('.ct-viewbar button');
-      await page.waitForSelector('dialog.ct-add[open] .ct-search input');
+      // The Add sheet is a lazy chunk: its first open can pass the 4 s default under a loaded machine.
+      await page.waitForSelector('dialog.ct-add[open] .ct-search input', { timeout: 15_000 });
       while (candidates.length) {
         const p = candidates.shift();
         await page.$eval('dialog.ct-add[open] .ct-search input', (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); });
@@ -396,7 +397,7 @@ test('Walk-through 2 N1 (review): with a toast in the Add sheet, the last contro
   const plants = await temperate();
   const page = await suggested({ width: 390, theme: 'light' });
   await page.click('.ct-viewbar button');
-  await page.waitForSelector('dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li input[type="checkbox"]');
+  await page.waitForSelector('dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li input[type="checkbox"]', { timeout: 15_000 }); // lazy chunk, as in N1
   await page.click('dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li input[type="checkbox"]');
   await page.click('dialog.ct-add[open] .ct-add-bar .button-primary');
   assert.ok(await has(page, '.ct-toast-page .ct-toast'), 'the add\'s toast');
