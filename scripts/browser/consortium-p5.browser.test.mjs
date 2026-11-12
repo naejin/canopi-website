@@ -29,7 +29,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
-import { aria, has, realDb } from './helpers.mjs';
+import { aria, has, realDb, settled } from './helpers.mjs';
 import { EXPECTED, NOMINATIM, SITES, lookupAt } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 
@@ -940,9 +940,13 @@ test('P5-26b (S5c borrowed climate without a location, UX audit fix 1): Start of
   // Fix review 29b709e (3): it lands focus on the location step's first control (S5b's markup, stood in
   // for here), else on its heading made focusable.
   await page.evaluate(() => { const s = document.createElement('section'); s.innerHTML = '<h2 id="ct-loc-h">Where is your site?</h2><p>text</p><button type="button" id="ct-test-first">Use my location</button>'; document.querySelector('.ct-start').prepend(s); });
+  // Each press once the page stands still: the button scrolls the step to the centre, smoothly
+  // (global.css), and a click aimed during that scroll lands beside the button.
+  await settled(page, '[data-needs-site] button');
   await page.click('[data-needs-site] button');
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-test-first', 'focus on the step\'s first control');
   await page.evaluate(() => { document.getElementById('ct-test-first').remove(); });
+  await settled(page, '[data-needs-site] button');
   await page.click('[data-needs-site] button');
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-loc-h', 'no control yet: the heading, focusable');
   await page.evaluate(() => { document.getElementById('ct-loc-h').parentElement.remove(); });
@@ -1364,20 +1368,30 @@ test('P5-27r (S5c climate ranges, room advisory): in a small garden no cell is b
     assert.equal(await page.evaluate(() => window.__ctTest.store.matrix.value.rows.flatMap((r) => r.cells).some((c) => c.empty === 'misfit')), false, `${width} px: no cell "can't be filled"`);
     await page.evaluate(() => window.__ctTest.store.openSheet('add'));
     assert.ok(await has(page, '.ct-add .ct-search input', 10_000), 'the Add sheet');
+    // A miss says what the sheet showed then.
+    const sheet = () => page.evaluate(() => JSON.stringify({ query: document.querySelector('.ct-add .ct-search input')?.value, focus: document.activeElement?.outerHTML.slice(0, 80),
+      bar: document.querySelector('.ct-add-bar .button-primary')?.outerHTML, dialogs: [...document.querySelectorAll('dialog[open]')].map((d) => d.className) }));
     await page.type('.ct-add .ct-search input', 'Juglans regia');
     const row = '.ct-add .ct-rows li';
-    assert.ok(await page.waitForFunction((sel) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === 'Juglans regia' && li.querySelector('[data-mark="room"]')), { timeout: 10_000 }, row).then(() => true, () => false), `${width} px: the walnut with its height note`);
-    const tag = await page.evaluate((sel) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Juglans regia').querySelector('[data-mark="room"]').textContent, row);
+    assert.ok(await page.waitForFunction((sel) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === 'Juglans regia' && li.querySelector('[data-mark="room"]')), { timeout: 10_000 }, row).then(() => true, () => false), `${width} px: the walnut with its height note (${await sheet()})`);
+    const tag = await page.evaluate((sel) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Juglans regia' && li.querySelector('[data-mark="room"]')).querySelector('[data-mark="room"]').textContent, row);
     assert.match(tag, /^grows to [\d.]+ m: prune$/);
     const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     assert.ok(over <= 0, `${width} px: no sideways scroll`);
-    // Its Add does not ask first (a height is never a misfit): the walnut joins at once.
-    await page.evaluate((sel) => { const li = [...document.querySelectorAll(sel)].find((x) => x.querySelector('.ct-sci')?.textContent === 'Juglans regia'); (li.querySelector('input[type="checkbox"]') ?? li.querySelector('button')).click(); }, row);
-    await page.evaluate(() => new Promise((r) => setTimeout(r, 100)));
-    assert.equal(await page.$('dialog.ct-ask[open]'), null, 'no warning to confirm');
-    const bar = await page.$('.ct-add-bar .button-primary:not([disabled])');
-    if (bar) await bar.click();
-    assert.ok(await page.waitForFunction(() => window.__ctTest.store.memberTaxa.value.some((t) => t.canonical_name === 'Juglans regia'), { timeout: 5000 }).then(() => true, () => false), 'added without asking');
+    // Its Add does not ask first (a height is never a misfit): the walnut joins at once. Each step waits
+    // for what the last one causes (no fixed pause, no optional click).
+    const control = await page.evaluate((sel) => {
+      const li = [...document.querySelectorAll(sel)].find((x) => x.querySelector('.ct-sci')?.textContent === 'Juglans regia' && x.querySelector('[data-mark="room"]'));
+      const c = li?.querySelector(':scope > .ct-tick input[type="checkbox"]') ?? li?.querySelector(':scope > button');
+      c?.click();
+      return c ? c.tagName.toLowerCase() : null;
+    }, row);
+    assert.equal(control, 'input', `${width} px: the walnut's row has a tick, not an asking button (${await sheet()})`);
+    const state = await page.waitForFunction(() => (document.querySelector('dialog.ct-ask[open]') ? 'asked' : document.querySelector('.ct-add-bar .button-primary:not([disabled])') ? 'ticked' : null), { timeout: 5000 }).then((r) => r.jsonValue(), () => null);
+    assert.equal(state, 'ticked', `${width} px: ticked, no warning to confirm (${await sheet()})`);
+    await settled(page, '.ct-add-bar .button-primary'); // the sheet slides in (details.css ct-sheet-in)
+    await page.click('.ct-add-bar .button-primary');
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.memberTaxa.value.some((t) => t.canonical_name === 'Juglans regia'), { timeout: 5000 }).then(() => true, () => false), `${width} px: added without asking (${await sheet()})`);
     assert.deepEqual(page.thirdParty, []);
   }
 });
