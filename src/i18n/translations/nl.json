@@ -631,6 +631,7 @@
   "consortium.start.uncovered.body": "Op dit moment heeft het hulpmiddel gecontroleerde plantenlijsten voor: {list}. Je kunt het jouwe aanvragen: elk verzoek wordt gelezen en bepaalt wat er daarna komt.",
   "consortium.start.uncovered.ask": "Vraag om dit klimaat",
   "consortium.start.suggest": "Planten voorstellen",
+  "consortium.start.suggestStopped": "Voorstel gestopt: een plantenlijst deed er te lang over om te laden. Druk nogmaals om het opnieuw te proberen.",
   "consortium.start.back": "Terug naar je consortium",
   "consortium.start.empty": "Leeg beginnen en zoeken",
   "consortium.start.paste": "Lijst plakken",

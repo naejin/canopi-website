@@ -631,6 +631,7 @@
   "consortium.start.uncovered.body": "目前本工具已有经过整理的植物清单：{list}。你可以申请你的气候：每条申请都会被阅读，并决定接下来做什么。",
   "consortium.start.uncovered.ask": "申请这种气候",
   "consortium.start.suggest": "推荐植物",
+  "consortium.start.suggestStopped": "推荐已停止：某个植物列表读取时间过长。请再按一次重试。",
   "consortium.start.back": "返回你的植物联合体",
   "consortium.start.empty": "从空白开始并搜索",
   "consortium.start.paste": "粘贴列表",

@@ -173,6 +173,9 @@ export const matrix = computed<Matrix | null>(() => {
 // A climate the site location suggests (P5 owner answer 1; S5b writes it): its card shows checked,
 // but store.climate stays unset until the reader confirms.
 export const proposedClimate = signal<ClimateZone | null>(null);
+// Whether that proposal came from the saved site looked up again (not the reader locating): only such
+// a proposal goes when a consortium opens (memory.ts restore; seam review round 4, 2).
+export const proposedFromSave = signal(false);
 export const markContext = computed<MarkContext>(() => ({ climate: climate.value, location: location.value, scenario: scenario.value, source: source.value }));
 // The mark providers (core mark-providers.ts, their own chunk): none until a mark can show (a site
 // location, or a climate the export does not curate), then loaded once. Off the first run (decision

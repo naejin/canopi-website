@@ -631,6 +631,7 @@
   "consortium.start.uncovered.body": "現在、このツールには次の気候の精査済み植物リストがあります：{list}。あなたの気候をリクエストできます。リクエストはすべて読まれ、次に何をするかを決めます。",
   "consortium.start.uncovered.ask": "この気候をリクエスト",
   "consortium.start.suggest": "植物を提案",
+  "consortium.start.suggestStopped": "提案を中止しました：植物リストの読み込みに時間がかかりすぎました。もう一度押して再試行してください。",
   "consortium.start.back": "あなたのコンソーシアムに戻る",
   "consortium.start.empty": "空から始めて検索する",
   "consortium.start.paste": "リストを貼り付ける",

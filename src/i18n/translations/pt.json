@@ -631,6 +631,7 @@
   "consortium.start.uncovered.body": "Hoje a ferramenta tem listas de plantas revisadas para: {list}. Você pode pedir o seu: cada pedido é lido e decide o que vem a seguir.",
   "consortium.start.uncovered.ask": "Pedir este clima",
   "consortium.start.suggest": "Sugerir plantas",
+  "consortium.start.suggestStopped": "Sugestão interrompida: uma lista de plantas demorou demasiado a ser lida. Prima de novo para tentar outra vez.",
   "consortium.start.back": "Voltar ao seu consórcio",
   "consortium.start.empty": "Começar do zero e pesquisar",
   "consortium.start.paste": "Colar uma lista",

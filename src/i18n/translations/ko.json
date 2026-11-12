@@ -631,6 +631,7 @@
   "consortium.start.uncovered.body": "지금 이 도구에는 다음 기후의 검토된 식물 목록이 있습니다: {list}. 여러분의 기후를 요청할 수 있습니다. 모든 요청을 읽고 다음 작업을 정합니다.",
   "consortium.start.uncovered.ask": "이 기후 요청하기",
   "consortium.start.suggest": "식물 추천",
+  "consortium.start.suggestStopped": "추천을 멈췄습니다: 식물 목록을 읽는 데 너무 오래 걸렸습니다. 다시 눌러 한 번 더 시도하세요.",
   "consortium.start.back": "내 컨소시엄으로 돌아가기",
   "consortium.start.empty": "빈 상태로 시작해 검색하기",
   "consortium.start.paste": "목록 붙여넣기",

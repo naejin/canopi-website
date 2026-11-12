@@ -631,6 +631,7 @@
   "consortium.start.uncovered.body": "Сейчас у инструмента есть проверенные списки растений для климатов: {list}. Можно попросить ваш: каждую просьбу читают, и она определяет, что будет дальше.",
   "consortium.start.uncovered.ask": "Попросить этот климат",
   "consortium.start.suggest": "Подобрать растения",
+  "consortium.start.suggestStopped": "Подбор остановлен: список растений читался слишком долго. Нажмите ещё раз, чтобы повторить.",
   "consortium.start.back": "Вернуться к вашему консорциуму",
   "consortium.start.empty": "Начать с нуля и искать",
   "consortium.start.paste": "Вставить список",

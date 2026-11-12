@@ -82,6 +82,7 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
   siteFound(() => {
     store.location.value = loc;
     store.proposedClimate.value = sc.suggested;
+    store.proposedFromSave.value = false;
     line.value = { state: sc.state, ...extra };
   }, lookup.regions.isoA2);
   keepLocation(loc);
@@ -111,7 +112,7 @@ export async function settle(how: 'link' | 'saved', savedText: string | null): P
     // Not under a share link's climate still opening either (seam review 5: a link without o= keeps the
     // saved site); a saved consortium opening still gets it, so a save that fails to open leaves the
     // card proposed (round 2, 2).
-    if (how === 'saved' && !store.climate.peek() && !pendingLinkClimate.peek()) store.proposedClimate.value = sc.suggested;
+    if (how === 'saved' && !store.climate.peek() && !pendingLinkClimate.peek()) { store.proposedClimate.value = sc.suggested; store.proposedFromSave.value = true; }
     line.value = { state: sc.state };
   }, how === 'saved' ? lookup.regions.isoA2 : undefined);
 }

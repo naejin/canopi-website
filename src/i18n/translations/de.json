@@ -631,6 +631,7 @@
   "consortium.start.uncovered.body": "Heute hat das Werkzeug geprüfte Pflanzenlisten für: {list}. Du kannst deines anfragen: Jede Anfrage wird gelesen und entscheidet, was als Nächstes kommt.",
   "consortium.start.uncovered.ask": "Dieses Klima anfragen",
   "consortium.start.suggest": "Pflanzen vorschlagen",
+  "consortium.start.suggestStopped": "Vorschlag abgebrochen: Eine Pflanzenliste brauchte zu lange zum Lesen. Erneut drücken, um es noch einmal zu versuchen.",
   "consortium.start.back": "Zurück zu deinem Konsortium",
   "consortium.start.empty": "Leer beginnen und suchen",
   "consortium.start.paste": "Liste einfügen",

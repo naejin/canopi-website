@@ -36,6 +36,7 @@ import { decodeLink, encodeLink, linkClimates, linkOrigin, readPreset, zoneOf, L
 import type { Country } from './store.ts';
 import * as store from './store.ts';
 import { focusView } from './focus.ts';
+import { T } from './strings.ts';
 import { letGo, loadLocationStep, lookingThrough, lookups, unread } from './views/location/load.ts';
 
 export const STORE = 'canopi-consortium';
@@ -444,8 +445,9 @@ export async function restore(fragment: string, { from, src = null, keep = false
     quietly(() => batch(() => {
       applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen');
       // A climate is chosen now: a card the saved site proposed while this opened goes (seam review
-      // round 3, 1); only a restore that fails leaves it.
-      store.proposedClimate.value = null;
+      // round 3, 1); only a restore that fails leaves it. One the reader's own locating proposed stays
+      // (round 4, 2).
+      if (store.proposedFromSave.peek()) { store.proposedClimate.value = null; store.proposedFromSave.value = false; }
       notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut, pasted: null, failed: false };
       if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', lookup: null };
       // A link without `o=` (pasted into the tab): an earlier link's location goes with it, so no
@@ -660,6 +662,26 @@ function adoptPending(): void {
 // Suggest has waited its 10 s for a location lookup (requestSuggest).
 export const waited = signal(false);
 let cap: ReturnType<typeof setTimeout> | undefined;
+// The waiting Suggest has one owner, here (seam review round 4, 1): requestSuggest starts the wait,
+// the effect in startMemory runs it once its lists are read, and dropSuggest ends it: when the reader
+// changes the plants or opens a sheet (another action: Add, search, Details, paste; Start's "Start
+// empty and search" too), when the plant list fails (the load screen says so), or once its 10 s are
+// up with a kept guest's list still unread (a toast says so). Each wait therefore ends.
+export const SUGGEST_WAIT_MS = 10_000;
+function dropSuggest(): void {
+  if (!pendingSuggest.peek()) return;
+  clearTimeout(cap);
+  waited.value = false;
+  pendingSuggest.value = false;
+}
+function capped(): void {
+  if (!pendingSuggest.peek()) return;
+  // A location lookup no longer holds it (it runs without the site; the line says so) ...
+  waited.value = true;
+  // ... but a guest list never read leaves nothing to run: the wait ends, with a word. (The database
+  // itself, and the range rule, end their own waits: the load screen, rangeFailed.)
+  if (store.pool.peek() && store.guestsPending.peek().length) { dropSuggest(); store.showToast(T('start.suggestStopped')); }
+}
 // "Suggest plants": now when the plants are read, else once they are (§5 Loading).
 export function requestSuggest(): void {
   adoptPending();
@@ -670,7 +692,7 @@ export function requestSuggest(): void {
   if (!pendingSuggest.peek()) { clearTimeout(cap); waited.value = false; }
   const busy = lookups.peek() && !waited.peek();
   if (!busy && store.suggestMembers()) { clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
-  if (busy && !pendingSuggest.peek()) cap = setTimeout(() => { waited.value = true; }, 10_000);
+  if (!pendingSuggest.peek()) cap = setTimeout(capped, SUGGEST_WAIT_MS);
   pendingSuggest.value = true;
 }
 
@@ -748,6 +770,14 @@ export function startMemory(): void {
     if (!pendingSuggest.value || !store.pool.value || store.guestsPending.value.length || (lookups.value && !waited.value)) return;
     queueMicrotask(() => { if (pendingSuggest.peek()) requestSuggest(); });
   });
+  // ... unless the reader changed the plants, opened a sheet, or the plant list failed meanwhile.
+  let primed = false;
+  effect(() => {
+    void [store.members.value, store.kept.value, store.removed.value, store.guests.value, store.crops.value];
+    if (primed) untracked(dropSuggest);
+    primed = true;
+  });
+  effect(() => { if (store.sheet.value || store.load.value.status === 'failed') untracked(dropSuggest); });
 
   watchStore();
 }

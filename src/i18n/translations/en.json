@@ -631,6 +631,7 @@
   "consortium.start.uncovered.body": "Today the tool has curated plant lists for {list}. You can ask for yours: every request is read and decides what comes next.",
   "consortium.start.uncovered.ask": "Ask for this climate",
   "consortium.start.suggest": "Suggest plants",
+  "consortium.start.suggestStopped": "Suggest stopped: a plant list took too long to read. Press it again to try once more.",
   "consortium.start.back": "Back to your consortium",
   "consortium.start.empty": "Start empty and search",
   "consortium.start.paste": "Paste a list",

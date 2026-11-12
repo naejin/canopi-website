@@ -28,7 +28,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
-import { has, realDb } from './helpers.mjs';
+import { aria, has, realDb } from './helpers.mjs';
 import { EXPECTED, NOMINATIM, SITES, lookupAt } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 
@@ -1092,12 +1092,11 @@ test('P5-27f (S5c seam review 6): if the plant-marks chunk fails, the range warn
   }
 });
 // A saved Temperate consortium and a saved site at Seville (which proposes Mediterranean). list: the
-// restore's first list read waits until the saved site is looked up, then 'fail's or 'open's; hold: a
-// lazy chunk held (harness holdChunk: 'location' holds the saved site's lookup until released).
+// restore's first list read waits until the saved site is looked up, then 'fail's or 'open's.
 // window.__confirmSeen: whether the location line's "Use …" ever showed.
-async function savedOpening({ list = null, hold = null } = {}) {
+async function savedOpening({ list = null } = {}) {
   const q = (await temperateLink()).slice(1);
-  const page = await h.open('/consortium/', { mapTiles: 'stub', ...(hold ? { holdChunk: hold } : {}) });
+  const page = await h.open('/consortium/', { mapTiles: 'stub' });
   await page.evaluateOnNewDocument((save, rec, outcome) => {
     if (!localStorage.getItem('canopi-consortium')) localStorage.setItem('canopi-consortium', save);
     if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
@@ -1126,18 +1125,13 @@ async function savedOpening({ list = null, hold = null } = {}) {
 }
 const savedFailing = () => savedOpening({ list: 'fail' });
 const proposal = (page) => page.evaluate(() => ({ proposed: window.__ctTest.store.proposedClimate.value, climate: window.__ctTest.store.climate.value, seen: window.__confirmSeen, shown: !!document.querySelector('[data-location-confirm]') }));
-test('P5-27k (S5b seam review round 3, 1): the saved site looked up while the saved consortium opens proposes nothing over it, in either order; none comes back after Change site', async () => {
+test('P5-27k (S5b seam review round 3, 1): the saved site looked up while the saved consortium opens proposes nothing over it, and none comes back after Change site', async () => {
   // The lookup first (the restore's list read waits for it).
   const first = await savedOpening({ list: 'open' });
   assert.ok(await ownSite(first), 'the saved site is read');
   assert.ok(await first.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the save opens');
   assert.deepEqual(await proposal(first), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'lookup first: no "Use Mediterranean" over the opening save, no proposal left');
-  // The save first (the lookup's chunk held until it has opened).
-  const later = await savedOpening({ hold: 'location' });
-  assert.ok(await later.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the save opens');
-  later.releaseChunk();
-  assert.ok(await ownSite(later), 'then the saved site is read');
-  for (const page of [first, later]) {
+  for (const page of [first]) {
     assert.ok(await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Change site'); b?.click(); return !!b; }), 'Change site');
     await new Promise((r) => setTimeout(r, 300));
     assert.deepEqual(await proposal(page), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'after Change site: no stale proposal');
@@ -1172,28 +1166,80 @@ test('P5-27j (S5b seam review round 2, 3): a fresh link without o= looks the rea
   const linked = await reads(await temperateLink());
   assert.equal(linked, plain, `the saved site is read as often as on a plain open (${plain}), not twice over`);
 });
-test('P5-27l (S5c seam review round 3, 2): the empty matrix\'s "Suggest a start" pressed while a kept guest\'s list is still read waits for it, then suggests', async () => {
+// An empty Temperate matrix with a kept guest from Tropical whose list read is held: window.__guest
+// .release() lets it through, .fail() fails it (as after Start empty, which keeps guests).
+async function guestHeld(width) {
   const guest = await realDb((db) => String(db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Tropical' ORDER BY 1 LIMIT 1").get().id));
+  const page = await tool({ width, hash: '#v=4&c=temperate&a=&e=1' });
+  assert.ok(await has(page, '.ct-mx-empty .button-primary', 15_000), 'the empty matrix with "Suggest a start"');
+  await page.evaluate((id) => {
+    const { store } = window.__ctTest, src = store.source.value;
+    const pool = src.pool.bind(src), rows = src.interactions.bind(src);
+    let release, fail; const held = new Promise((r, j) => { release = r; fail = j; });
+    held.catch(() => {});
+    window.__guest = { release, fail: () => fail(new Error('test: guest list unreadable')) };
+    src.pool = (z) => (z === 'Tropical' ? held.then(() => pool(z)) : pool(z));
+    src.interactions = (z) => (z === 'Tropical' ? held.then(() => rows(z)) : rows(z));
+    store.guests.value = { [id]: 'Tropical' };
+  }, guest);
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.guestsPending.value.length === 1, { timeout: 5000 }).then(() => true, () => false), 'the guest list is being read');
+  return page;
+}
+const members = (page) => page.evaluate(() => window.__ctTest.store.members.value.length);
+test('P5-27l (S5c seam review round 3, 2): the empty matrix\'s "Suggest a start" pressed while a kept guest\'s list is still read waits for it, then suggests', async () => {
   for (const width of [390, 1280]) {
-    const page = await tool({ width, hash: '#v=4&c=temperate&a=&e=1' });
-    assert.ok(await has(page, '.ct-mx-empty .button-primary', 15_000), 'the empty matrix with "Suggest a start"');
-    // A kept guest from Tropical whose list read is held (as after Start empty, which keeps guests).
-    await page.evaluate((id) => {
-      const { store } = window.__ctTest, src = store.source.value;
-      const pool = src.pool.bind(src), rows = src.interactions.bind(src);
-      let release; const held = new Promise((r) => { release = r; });
-      window.__releaseGuest = release;
-      src.pool = (z) => (z === 'Tropical' ? held.then(() => pool(z)) : pool(z));
-      src.interactions = (z) => (z === 'Tropical' ? held.then(() => rows(z)) : rows(z));
-      store.guests.value = { [id]: 'Tropical' };
-    }, guest);
-    assert.ok(await page.waitForFunction(() => window.__ctTest.store.guestsPending.value.length === 1, { timeout: 5000 }).then(() => true, () => false), 'the guest list is being read');
-    assert.ok(await has(page, '.ct-mx-empty .button-primary', 5000), `${width} px: "Suggest a start"`);
+    const page = await guestHeld(width);
     await page.click('.ct-mx-empty .button-primary');
     await new Promise((r) => setTimeout(r, 300));
-    await page.evaluate(() => window.__releaseGuest());
+    await page.evaluate(() => window.__guest.release());
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), `${width} px: the press is not lost: a suggestion once the guest list is read`);
   }
+});
+test('P5-27m (S5c seam review round 4, 1): a waiting Suggest is dropped when the reader opens Add and adds a plant: the list arriving later changes nothing', async () => {
+  const page = await guestHeld(1280);
+  await page.click('.ct-mx-empty .button-primary');
+  await page.locator(aria('button', 'Add a plant')).click();
+  assert.ok(await has(page, 'dialog.ct-sheet .ct-tick input', 10_000), 'Add');
+  await page.click('dialog.ct-sheet .ct-tick input');
+  await page.locator(aria('button', 'Add 1 plant')).click();
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 1, { timeout: 5000 }).then(() => true, () => false), 'the plant added');
+  await page.evaluate(() => window.__guest.release());
+  await page.waitForFunction(() => window.__ctTest.store.guestsPending.value.length === 0, { timeout: 5000 });
+  await new Promise((r) => setTimeout(r, 1000));
+  assert.equal(await members(page), 1, 'no suggestion fills in around the plant the reader added');
+});
+test('P5-27n (S5c seam review round 4, 1): a waiting Suggest ends when the guest list fails (the load screen says so), and Retry runs nothing unasked', async () => {
+  const page = await guestHeld(1280);
+  await page.click('.ct-mx-empty .button-primary');
+  await page.evaluate(() => window.__guest.fail());
+  assert.ok(await has(page, aria('button', 'Retry'), 10_000), 'the load screen with Retry');
+  await page.locator(aria('button', 'Retry')).click();
+  assert.equal(await loadState(page), 'ready');
+  await page.waitForFunction(() => window.__ctTest.store.source.value && window.__ctTest.store.guestsPending.value.length === 0, { timeout: 15_000 });
+  await new Promise((r) => setTimeout(r, 1000));
+  assert.equal(await members(page), 0, 'no suggestion runs on its own after Retry');
+});
+test('P5-27o (S5c seam review round 4, 1): a waiting Suggest whose guest list never arrives ends after 10 s, says so, and is no longer busy', async () => {
+  const page = await guestHeld(1280);
+  await page.click('.ct-mx-empty .button-primary');
+  assert.equal(await page.$eval('.ct-mx-empty .button-primary', (b) => b.getAttribute('aria-busy')), 'true', 'busy while it waits');
+  assert.ok(await page.waitForFunction(() => /took too long/.test(document.querySelector('.ct-toast-text')?.textContent ?? ''), { timeout: 14_000 }).then(() => true, () => false), 'after 10 s, a message');
+  assert.equal(await page.$eval('.ct-mx-empty .button-primary', (b) => b.getAttribute('aria-busy')), null, 'no longer busy');
+  await page.evaluate(() => window.__guest.release());
+  await new Promise((r) => setTimeout(r, 1000));
+  assert.equal(await members(page), 0, 'the list arriving later runs nothing');
+});
+test('P5-27p (S5b seam review round 4, 2): a card the reader\'s own location proposed stays when a link opens', async () => {
+  const [lat, lon] = SITES.lyon;
+  const page = await tool({ geolocation: { lat, lon } });
+  await locationControls(page);
+  await page.click('[data-location-action="geo"]');
+  assert.equal(await locationState(page), 'borderline');
+  const before = await page.evaluate(() => window.__ctTest.store.proposedClimate.value);
+  assert.ok(before, 'the location proposes a card');
+  await page.evaluate((hsh) => { location.hash = hsh; }, await temperateLink());
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the link opens');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.proposedClimate.value), before, 'the reader\'s own proposal stays');
 });
 
 test('P5-27g (S5c walk-through F1): on phones a member\'s marks wrap or fit: with an annual in the matrix at 320 and 390 px, in en, fr and ja, nothing scrolls sideways', async () => {

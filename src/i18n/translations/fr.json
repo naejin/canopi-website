@@ -631,6 +631,7 @@
   "consortium.start.uncovered.body": "Aujourd’hui, l’outil a des listes de plantes vérifiées pour : {list}. Vous pouvez demander le vôtre : chaque demande est lue et décide de la suite.",
   "consortium.start.uncovered.ask": "Demander ce climat",
   "consortium.start.suggest": "Suggérer des plantes",
+  "consortium.start.suggestStopped": "Suggestion arrêtée : une liste de plantes a mis trop de temps à se lire. Appuyez de nouveau pour réessayer.",
   "consortium.start.back": "Retour à votre guilde",
   "consortium.start.empty": "Partir de zéro et chercher",
   "consortium.start.paste": "Coller une liste",
