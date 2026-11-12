@@ -345,22 +345,3 @@ test('site_climate must be one of CLIMATES and placement_estimate a boolean', as
     assert.equal(env.sent.length, 0);
   }
 });
-
-test('reportBody (what Correction.tsx posts) carries the placement list, the site climate and the estimate, and the endpoint takes it', async () => {
-  const { reportBody } = await import('../src/lib/correction.mjs');
-  const body = reportBody({
-    plantId: valid.plant_id, plantName: valid.plant_name, field: 'height_m', current: { raw: { min: 2, max: 10 }, current: '2–10 m' },
-    form: { proposed: ' 3–8 m ', note: ' n ', email: '', consent: true, website: '' },
-    release: valid.release_id, climate: 'Mediterranean', siteClimate: 'Subtropical', estimate: true, locale: 'en',
-  });
-  assert.equal(body.climate, 'Mediterranean');
-  assert.equal(body.site_climate, 'Subtropical');
-  assert.equal(body.placement_estimate, true);
-  assert.equal(body.proposed_value, '3–8 m');
-  const noSite = reportBody({ plantId: valid.plant_id, plantName: 'x', field: 'height_m', current: null, form: { proposed: 'a', note: '', email: '', consent: true, website: '' }, release: valid.release_id, climate: 'Temperate', siteClimate: null, estimate: false, locale: 'en' });
-  assert.equal(noSite.site_climate, null);
-  assert.equal(noSite.current_value, null);
-  const env = fakeEmail();
-  assert.equal((await run(post(body), env)).status, 200);
-  assert.match(env.sent[0].text, /^Site climate: Subtropical \(placement borrowed from the Mediterranean list, an estimate\)$/m);
-});

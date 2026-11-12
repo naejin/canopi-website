@@ -545,7 +545,6 @@
   "correction.consent": "我同意以 CC BY-SA 4.0 许可发布我的建议",
   "correction.consentError": "勾选此框以发送你的建议。",
   "correction.context": "随附信息：{plant} · 数据版本 {release} · {climate} · {language}",
-  "correction.contextSite": "随附信息：{plant} · 数据版本 {release} · 按{climate}名单定位 · 你的气候：{site} · {language}",
   "correction.honeypot": "请留空此字段",
   "correction.send": "发送建议",
   "correction.sending": "正在发送…",

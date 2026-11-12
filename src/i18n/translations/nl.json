@@ -545,7 +545,6 @@
   "correction.consent": "Ik ga ermee akkoord dat mijn voorstel onder CC BY-SA 4.0 wordt gepubliceerd",
   "correction.consentError": "Vink dit vakje aan om je voorstel te versturen.",
   "correction.context": "Verstuurd met: {plant} · gegevensversie {release} · {climate} · {language}",
-  "correction.contextSite": "Verstuurd met: {plant} · gegevensversie {release} · geplaatst volgens de lijst {climate} · uw klimaat: {site} · {language}",
   "correction.honeypot": "Laat dit veld leeg",
   "correction.send": "Voorstel versturen",
   "correction.sending": "Versturen…",

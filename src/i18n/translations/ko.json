@@ -545,7 +545,6 @@
   "correction.consent": "내 제안이 CC BY-SA 4.0 라이선스로 공개되는 데 동의합니다",
   "correction.consentError": "제안을 보내려면 이 상자를 선택하세요.",
   "correction.context": "함께 보내는 정보: {plant} · 데이터 버전 {release} · {climate} · {language}",
-  "correction.contextSite": "함께 보내는 정보: {plant} · 데이터 버전 {release} · {climate} 목록 기준 배치 · 내 기후: {site} · {language}",
   "correction.honeypot": "이 칸은 비워 두세요",
   "correction.send": "제안 보내기",
   "correction.sending": "보내는 중…",

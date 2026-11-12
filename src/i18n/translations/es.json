@@ -545,7 +545,6 @@
   "correction.consent": "Acepto que mi sugerencia se publique bajo CC BY-SA 4.0",
   "correction.consentError": "Marca esta casilla para enviar tu sugerencia.",
   "correction.context": "Se envía con: {plant} · versión de datos {release} · {climate} · {language}",
-  "correction.contextSite": "Se envía con: {plant} · versión de datos {release} · ubicada según la lista {climate} · su clima: {site} · {language}",
   "correction.honeypot": "Deja este campo vacío",
   "correction.send": "Enviar sugerencia",
   "correction.sending": "Enviando…",

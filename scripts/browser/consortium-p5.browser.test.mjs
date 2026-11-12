@@ -908,10 +908,10 @@ test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a 
   assert.match(note ?? '', new RegExp(`placed as on the ${picked.from} list`, 'i'), 'the Why section says the reasons come from that list');
   assert.match(await text(page, '#ct-d-place') ?? '', new RegExp(picked.from), '"Placed for" names the list the placement is from, never claims the visitor\'s climate');
   // A correction made here names both: the list the placement comes from as `climate`, the visitor's
-  // own climate as `site_climate`, and that the placement is an estimate (pre-push item B).
+  // own climate as `site_climate`, and that the placement is an estimate (pre-push item B; the payload
+  // is tested here, since Correction.tsx builds it inline to stay in the island's 62 KB budget).
   await page.locator(aria('button', 'Suggest a correction')).click();
   await page.waitForSelector('dialog select option[value]:not([value=""])');
-  assert.match(await text(page, '.ct-corr .ct-small:not(#ct-corr-note-hint):not(#ct-corr-privacy)') ?? '', new RegExp(`placed from the ${picked.from} list · your climate: Subtropical`), 'the form says what is sent: the list and the visitor\'s climate');
   await page.select('dialog select', await page.evaluate(() => document.querySelector('dialog select option:not([value=""])').value));
   await page.locator('#ct-corr-proposed').fill('A suggested value');
   await page.locator('#ct-corr-consent').click();

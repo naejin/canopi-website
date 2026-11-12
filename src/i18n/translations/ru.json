@@ -545,7 +545,6 @@
   "correction.consent": "Я согласен(на) на публикацию моего предложения по лицензии CC BY-SA 4.0",
   "correction.consentError": "Отметьте это поле, чтобы отправить предложение.",
   "correction.context": "Отправляется вместе с: {plant} · версия данных {release} · {climate} · {language}",
-  "correction.contextSite": "Отправляется вместе с: {plant} · версия данных {release} · размещение по списку «{climate}» · ваш климат: {site} · {language}",
   "correction.honeypot": "Оставьте это поле пустым",
   "correction.send": "Отправить предложение",
   "correction.sending": "Отправка…",

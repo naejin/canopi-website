@@ -86,17 +86,6 @@ export function normalise(body) {
   return { report, email: email || null, site: { site_climate, placement_estimate }, errors };
 }
 
-// What Correction.tsx posts: the placement list as `climate` (Details' placementZone), the visitor's
-// own climate as `site_climate` (null without one) and whether the placement was borrowed.
-export function reportBody({ plantId, plantName, field, current, form, release, climate, siteClimate, estimate, locale }) {
-  return {
-    plant_id: plantId, plant_name: plantName, field, current_value: current?.raw ?? null, current_display: current?.current ?? '',
-    proposed_value: form.proposed.trim(), note: form.note.trim(), release_id: release, climate,
-    site_climate: siteClimate ?? null, placement_estimate: !!estimate, locale,
-    consent: form.consent, email: form.email.trim(), website: form.website,
-  };
-}
-
 // The site climate line of the mail: where the placement came from, as the reviewer needs it to
 // judge a correction made on a borrowed list.
 function siteLine(report, site) {

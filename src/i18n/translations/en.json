@@ -545,7 +545,6 @@
   "correction.consent": "I agree my suggestion is published under CC BY-SA 4.0",
   "correction.consentError": "Tick this box to send your suggestion.",
   "correction.context": "Sent with: {plant} · data release {release} · {climate} · {language}",
-  "correction.contextSite": "Sent with: {plant} · data release {release} · placed from the {climate} list · your climate: {site} · {language}",
   "correction.honeypot": "Leave this field empty",
   "correction.send": "Send suggestion",
   "correction.sending": "Sending…",

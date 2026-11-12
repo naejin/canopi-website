@@ -545,7 +545,6 @@
   "correction.consent": "Aceito que a minha sugestão seja publicada sob CC BY-SA 4.0",
   "correction.consentError": "Marque esta caixa para enviar a sua sugestão.",
   "correction.context": "Enviado com: {plant} · versão dos dados {release} · {climate} · {language}",
-  "correction.contextSite": "Enviado com: {plant} · versão dos dados {release} · posicionada pela lista {climate} · o seu clima: {site} · {language}",
   "correction.honeypot": "Deixe este campo vazio",
   "correction.send": "Enviar sugestão",
   "correction.sending": "A enviar…",

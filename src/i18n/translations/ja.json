@@ -545,7 +545,6 @@
   "correction.consent": "提案が CC BY-SA 4.0 の下で公開されることに同意します",
   "correction.consentError": "提案を送信するにはこのボックスにチェックを入れてください。",
   "correction.context": "送信内容：{plant} · データ版 {release} · {climate} · {language}",
-  "correction.contextSite": "送信内容：{plant} · データ版 {release} · {climate}のリストによる配置 · あなたの気候：{site} · {language}",
   "correction.honeypot": "この欄は空のままにしてください",
   "correction.send": "提案を送信",
   "correction.sending": "送信中…",

@@ -1,16 +1,17 @@
 /** @jsxImportSource preact */
 // "Suggest a correction" in the plant dialog (stream S3; ported from v1 correction.js): a short form,
 // prefilled with the plant, the facts the dialog shows (one picked), the value shown now, the data
-// release, the climate list the placement comes from, the visitor's own climate when it differs (with
-// whether the placement is an estimate) and the page language. It posts JSON to /api/correction
-// (src/lib/correction.mjs: reportBody builds the body; scripts/correction.test.mjs), which mails the owner; nothing is
+// release, the climate list the placement comes from, the visitor's own climate and whether the
+// placement is an estimate, and the page language. It posts JSON to /api/correction
+// (src/lib/correction.mjs; scripts/correction.test.mjs), which mails the owner; nothing is
 // kept on the server. Offline (design check §5): "Not sent: you seem offline. Your text is kept." with
 // Try again. What the reader writes is kept per plant (Details.tsx `drafts`) until it is sent.
 // Words: the correction.* family (S3 block of the locale files), passed by ConsortiumPage.astro.
 import { useEffect, useState } from 'preact/hooks';
 import { pageLang, T } from '../strings.ts';
-import { LIMITS, reportBody } from '../../../lib/correction.mjs';
+import { LIMITS } from '../../../lib/correction.mjs';
 import { EMAIL_RE } from '../../../lib/contact.mjs';
+import { climate as siteClimate, taxonOf } from '../store.ts';
 import { drafts, type CorrectionDraft, type CorrectionField } from './Details.tsx';
 
 const ENDPOINT = '/api/correction';
@@ -24,7 +25,7 @@ const ORDER: Name[] = ['field', 'proposed', 'note', 'email', 'consent'];
 type Form = CorrectionDraft;
 type Status = 'idle' | 'sending' | 'sent' | 'failed';
 type Errors = Partial<Record<Name, string>>;
-interface Props { fields: CorrectionField[]; plantId: string; plantName: string; plantLabel: string; release: string; climate: string; climateLabel: string; siteClimate: string | null; siteLabel: string | null; estimate: boolean; onCancel: () => void; focusFirst?: boolean }
+interface Props { fields: CorrectionField[]; plantId: string; plantName: string; plantLabel: string; release: string; climate: string; climateLabel: string; onCancel: () => void; focusFirst?: boolean }
 
 const fieldOf = (fields: CorrectionField[], id: string) => fields.find((f) => f.field === id) ?? null;
 
@@ -66,7 +67,7 @@ async function post(body: unknown): Promise<{ status: 'sent' | 'failed'; message
 let languageNames: Intl.DisplayNames | null = null;
 const languageName = (code: string) => { try { languageNames ??= new Intl.DisplayNames([code], { type: 'language' }); return languageNames.of(code) ?? code; } catch { return code; } };
 
-export default function Correction({ fields, plantId, plantName, plantLabel, release, climate, climateLabel, siteClimate, siteLabel, estimate, onCancel, focusFirst = false }: Props) {
+export default function Correction({ fields, plantId, plantName, plantLabel, release, climate, climateLabel, onCancel, focusFirst = false }: Props) {
   const [form, setFormState] = useState<Form>(() => drafts.get(plantId) ?? { field: '', proposed: '', note: '', email: '', consent: false, website: '' });
   // A draft is unsent text (a field, a value or a note); an email or a tick alone is not one.
   const setForm = (next: (f: Form) => Form) => setFormState((f) => { const n = next(f); if (n.field || n.proposed.trim() || n.note.trim()) drafts.set(plantId, n); else drafts.delete(plantId); return n; });
@@ -93,8 +94,13 @@ export default function Correction({ fields, plantId, plantName, plantLabel, rel
     setStatus('sending');
     setMessage(null);
     const lang = pageLang();
-    // `climate` is the list the placement comes from; the visitor's own climate goes apart.
-    const res = await post(reportBody({ plantId, plantName, field: form.field, current, form, release, climate, siteClimate, estimate, locale: lang }));
+    const res = await post({
+      plant_id: plantId, plant_name: plantName, field: form.field, current_value: current?.raw ?? null, current_display: current?.current ?? '',
+      // `climate` is the list the placement comes from (Details' placementZone); the visitor's own
+      // climate goes apart, with whether the placement was borrowed (correction.mjs: optional).
+      proposed_value: form.proposed.trim(), note: form.note.trim(), release_id: release, climate, site_climate: siteClimate.value, placement_estimate: !!taxonOf(plantId)?.estimate, locale: lang,
+      consent: form.consent, email: form.email.trim(), website: form.website,
+    });
     if (res.status === 'sent') drafts.delete(plantId);
     setStatus(res.status);
     setMessage(res.message);
@@ -149,9 +155,7 @@ export default function Correction({ fields, plantId, plantName, plantLabel, rel
         <label><input id="ct-corr-consent" type="checkbox" checked={form.consent} aria-invalid={!!err('consent')} aria-describedby={described('consent')} onChange={(e) => set('consent', (e.target as HTMLInputElement).checked)} /> <span>{T('correction.consent')}</span></label>
         {errorLine('consent')}
       </div>
-      <p class="ct-muted ct-small">{siteLabel && siteClimate !== climate
-        ? T('correction.contextSite', { plant: plantLabel, release, climate: climateLabel, site: siteLabel, language: languageName(pageLang()) })
-        : T('correction.context', { plant: plantLabel, release, climate: climateLabel, language: languageName(pageLang()) })}</p>
+      <p class="ct-muted ct-small">{T('correction.context', { plant: plantLabel, release, climate: climateLabel, language: languageName(pageLang()) })}</p>
       <div class="ct-hp" aria-hidden="true">
         <label>{T('correction.honeypot')} <input type="text" tabIndex={-1} autocomplete="off" value={form.website} onInput={(e) => set('website', (e.target as HTMLInputElement).value)} /></label>
       </div>
