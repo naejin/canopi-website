@@ -33,7 +33,7 @@
   "download.helpMac": "Меню Apple → Об этом Mac → Чип или Процессор.",
   "download.after": "После загрузки: {instruction}",
   "download.installWindows": "Откройте установщик в папке «Загрузки» и следуйте инструкциям.",
-  "download.installMac": "Откройте файл .dmg и перетащите Canopi в «Программы».",
+  "download.installMac": "Откройте файл .dmg и перетащите Canopi в «Программы». Если macOS сообщает, что Canopi повреждён, откройте «Терминал», выполните xattr -dr com.apple.quarantine /Applications/Canopi.app и снова откройте Canopi.",
   "download.installLinux": "В свойствах файла AppImage разрешите выполнение как программы, затем откройте его.",
   "download.installDeb": "Откройте файл .deb в программе установки пакетов и выберите «Установить».",
   "header.skip": "Перейти к содержимому",

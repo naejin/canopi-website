@@ -33,7 +33,7 @@
   "download.helpMac": "Apple メニュー → この Mac について → チップまたはプロセッサ。",
   "download.after": "ダウンロード後：{instruction}",
   "download.installWindows": "「ダウンロード」フォルダのインストーラを開き、手順に従ってください。",
-  "download.installMac": ".dmg ファイルを開き、Canopi を「アプリケーション」にドラッグしてください。",
+  "download.installMac": ".dmg ファイルを開き、Canopi を「アプリケーション」にドラッグしてください。 macOS で Canopi が壊れていると表示された場合は、「ターミナル」で xattr -dr com.apple.quarantine /Applications/Canopi.app を実行してから、もう一度 Canopi を開いてください。",
   "download.installLinux": "AppImage のファイルプロパティでプログラムとしての実行を許可し、ファイルを開いてください。",
   "download.installDeb": ".deb ファイルをソフトウェアインストーラで開き、「インストール」を選んでください。",
   "header.skip": "本文へ移動",
