@@ -10,7 +10,7 @@
 // - openDetails / openSwap / openAdd: the sheets, through the store's one opener (store.openSheet),
 //   which also says what Add was opened for (a cell or run, a job, "Show them anyway").
 import { computed } from '@preact/signals';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
 import { phases } from '../../../lib/consortium/index.ts';
 import { crops, flags, kept, openSheet, type SheetFor } from '../store.ts';
@@ -118,11 +118,21 @@ export const openSwap = (id: string): void => openSheet('swap', id);
 // ---- popovers ----
 let popoverSeq = 0;
 // "What is a layer?" / "What are these stages?": a button with aria-expanded and aria-controls; the
-// text closes on Escape, on the button again or on a click outside.
+// text closes on Escape, on the button again or on a click outside. Opened under its button, then
+// moved sideways so it stays inside the viewport with the page's 16 px gutter (walk-through 2 N2: the
+// second pill's ran 466 px wide at 390).
+const GUTTER = 16;
 export function Explain({ kind }: { kind: 'layer' | 'stage' }) {
   const [open, setOpen] = useState(false);
   const [id] = useState(() => `ct-pop-${kind}-${++popoverSeq}`);
   const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const pop = open && ref.current?.querySelector<HTMLElement>('.ct-pop');
+    if (!pop) return;
+    const vw = document.documentElement.clientWidth;
+    const r = pop.getBoundingClientRect();
+    pop.style.left = `${Math.max(GUTTER - r.left, Math.min(0, vw - GUTTER - r.right))}px`;
+  }, [open]);
   useEffect(() => {
     if (!open) return;
     const away = (e: Event) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };

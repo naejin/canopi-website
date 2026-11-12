@@ -6,6 +6,7 @@ import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
 import { aria, axNodes, eachVariant, en, findAx, fixtureDb, has } from './helpers.mjs';
+import { readFileSync } from 'node:fs';
 import { jobOfFunction } from '../../src/lib/consortium/jobs.ts';
 
 let h;
@@ -1024,3 +1025,68 @@ test('Walk-through 2 N1: in the Add sheet the Undo toast never covers "Add N pla
   }
 });
 
+// P5 walk-through 2, N2: "What are these stages?" ran off phones (466 px wide at 390 en). Every pop-up
+// of the tool stays inside the viewport with the 16 px gutter: the layer and stage explanations (phone
+// matrix and side view), "Add it anyway?" and the map dialog, at 320 and 390 px in en, fr and ja.
+const STRINGS = Object.fromEntries(['en', 'fr', 'ja'].map((l) => [l, JSON.parse(readFileSync(new URL(`../../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'))]));
+test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gutter at 320 and 390 px in en, fr and ja', async () => {
+  const GUTTER = 16;
+  const within = (page, sel) => page.evaluate((s, g) => {
+    const vw = document.documentElement.clientWidth;
+    const out = [];
+    for (const el of document.querySelectorAll(s)) {
+      if (!el.getClientRects().length) continue;
+      const r = el.getBoundingClientRect();
+      if (r.left < g - 0.5 || r.right > vw - g + 0.5) out.push(`${s}: ${Math.round(r.left)}–${Math.round(r.right)} of ${vw}`);
+    }
+    if (document.documentElement.scrollWidth > vw) out.push(`page ${document.documentElement.scrollWidth} px wide`);
+    return out;
+  }, sel, GUTTER);
+  for (const lang of ['en', 'fr', 'ja']) {
+    const S = (k) => STRINGS[lang][`consortium.${k}`];
+    for (const width of [320, 390]) {
+      const at = `${lang} ${width} px`;
+      const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { width, data: 'fixture', mapTiles: 'stub' });
+      const bad = [];
+      // The map dialog (start step).
+      if (await has(page, '[data-location-action="map"]', 4000)) {
+        await page.click('[data-location-action="map"]');
+        assert.ok(await has(page, 'dialog[data-location-map][open]', 8000), `${at}: the map dialog`);
+        bad.push(...await within(page, 'dialog[data-location-map][open]'));
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
+      } else bad.push('no map button');
+      await page.click('input[name="ct-climate"][value="temperate"]');
+      assert.equal(await loadState(page), 'ready');
+      await page.click('input[name="ct-site-light"][value="shade"]');
+      await page.locator(aria('button', S('start.suggest'))).click();
+      assert.ok(await has(page, '#ct-tab-matrix', 8000), `${at}: the matrix`);
+      // Each explanation, opened alone (phone matrix, then side view).
+      for (const tab of ['matrix', 'side']) {
+        await page.click(`#ct-tab-${tab}`);
+        const n = await page.$$eval(`#ct-panel-${tab} .ct-explain-btn`, (bs) => bs.length);
+        assert.ok(n > 0, `${at}: the ${tab} view's explanations`);
+        for (let i = 0; i < n; i++) {
+          await page.evaluate((t, j) => document.querySelectorAll(`#ct-panel-${t} .ct-explain-btn`)[j].click(), tab, i);
+          await page.waitForSelector(`#ct-panel-${tab} .ct-pop`);
+          bad.push(...(await within(page, `#ct-panel-${tab} .ct-pop`)).map((s) => `${tab} #${i}: ${s}`));
+          // Its Escape listener is added after paint (useEffect): two frames, as no reader is faster.
+          await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+          await page.keyboard.press('Escape');
+          assert.ok(await page.waitForFunction((t) => !document.querySelector(`#ct-panel-${t} .ct-pop`), {}, tab).then(() => true, () => false), `${at}: Escape closes ${tab} #${i}`);
+        }
+      }
+      // "Add it anyway?": a plant that does not take full shade asks first.
+      await page.click('#ct-tab-matrix');
+      await page.click('.ct-viewbar button');
+      const ask = await page.waitForSelector('dialog.ct-add[open] li.flagged > button', { timeout: 5000 }).catch(() => null);
+      if (ask) {
+        await ask.click();
+        assert.ok(await has(page, 'dialog.ct-ask[open]'), `${at}: "Add it anyway?"`);
+        bad.push(...await within(page, 'dialog.ct-ask[open]'));
+      } else bad.push('no plant asks first in shade');
+      assert.deepEqual(bad, [], at);
+      await done(page);
+    }
+  }
+});
