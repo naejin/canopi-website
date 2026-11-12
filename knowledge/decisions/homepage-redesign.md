@@ -2,9 +2,9 @@
 type: Architecture Decision
 title: Home page redesign
 description: The home page answers a visitor's questions in order, shows the app with localized captures of a fictional design, and has no map of designs.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T12:07:14Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:32:13Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T12:07:14Z }
 sources:
   - id: home-astro
     resource: ../../src/components/Home.astro
@@ -45,7 +45,7 @@ sources:
     resource: ../../CONTEXT.md
     title: CONTEXT.md
     digest: sha256:0a5a8181d949ff64
-    last_modified: 2026-11-10T15:30:09Z
+    last_modified: 2026-11-10T15:32:40Z
 ---
 
 # Decision
