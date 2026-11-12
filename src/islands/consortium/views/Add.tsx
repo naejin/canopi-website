@@ -1,6 +1,7 @@
 /** @jsxImportSource preact */
 // Add (stream S3; mockup 05 `add`): the plants of the climate's list, or of one cell (a free cell's
-// "+ Add", "Show them anyway"), with a search over folded names (S1's searchIndex, A6). Multi-select:
+// "+ Add", "Show them anyway"), or of one job (Jobs' "Find…", for a run of stages in any layer when
+// the job has a stage gap), with a search over folded names (S1's searchIndex, A6). Multi-select:
 // tick several, then "Add 2 plants" in the sticky bar; 8 rows, then "Show all N". Warnings are shown
 // on the row and never asked about; only a site misfit or a serious (high) conflict asks "Add it
 // anyway?" (owner row 2026-10-28; coordinator row "v2 mockup choices" 2026-11-11): such a row has an
@@ -18,12 +19,13 @@ import { asks as asksFlags, canopyOf, fits, jobsOf, misfitsBeside, phaseOrd } fr
 import { searchIndex } from '../data/search.ts';
 import { Ask, Bar, NotChecked, SheetFrame, WARN, addMembers, closeSheet, flagLines, flagsOfPlant, nameOf, num, plainPhase, sheetCell, spanWords, zoneName } from './Details.tsx';
 import { PlantMarks } from './PlantMarks.tsx';
+import { jobFind } from './StageBar.tsx';
 
 const FIRST_ROWS = 8;
 
-// Whether a plant grows in a layer during any stage of from..to.
-const growsIn = (t: Taxon, stratum: string, from: number, to: number) =>
-  t.stratum?.value === stratum && !!t.phases && phaseOrd(t.phases.start) <= to && phaseOrd(t.phases.end) >= from;
+// Whether a plant grows in a layer (null: any layer) during any stage of from..to.
+const growsIn = (t: Taxon, stratum: string | null, from: number, to: number) =>
+  (!stratum || t.stratum?.value === stratum) && !!t.phases && phaseOrd(t.phases.start) <= to && phaseOrd(t.phases.end) >= from;
 
 type Search = ReturnType<typeof searchIndex>;
 const searches = new WeakMap<Taxon[], Search>();
@@ -122,8 +124,8 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
     addMembers(ids, from);
   };
   const title = mode === 'search' ? T('add.searchTitle')
-    : cell ? T('add.titleCell', { layer: T(`stratum.${cell.stratum}`), phase: cell.from === cell.to ? plainPhase(cell.from) : `${plainPhase(cell.from)} → ${plainPhase(cell.to)}` })
-    : job ? T(`job.${job}.find`) : T('add.title');
+    : cell?.stratum ? T('add.titleCell', { layer: T(`stratum.${cell.stratum}`), phase: cell.from === cell.to ? plainPhase(cell.from) : `${plainPhase(cell.from)} → ${plainPhase(cell.to)}` })
+    : job ? jobFind(job, cell) : T('add.title');
   const n = selected.length;
 
   return (

@@ -4,15 +4,15 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future, native, soil and lazy marks seams), the rules S1 ported, and the format 4 schema 2 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T21:58:29Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T05:32:35Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:54:24Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T22:27:39Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:36e80b42283d5a89
-    last_modified: 2026-11-11T21:57:48Z
+    last_modified: 2026-11-11T19:08:04Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -97,17 +97,17 @@ sources:
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
     digest: sha256:3cfc2a8028916dc0
-    last_modified: 2026-11-11T21:57:48Z
+    last_modified: 2026-11-11T21:01:51Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
     digest: sha256:a55b5edbf206fab1
-    last_modified: 2026-11-11T21:57:48Z
+    last_modified: 2026-11-11T19:27:07Z
   - id: future-ts
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
     digest: sha256:e809a90edddde9cb
-    last_modified: 2026-11-11T21:57:48Z
+    last_modified: 2026-11-11T19:27:07Z
   - id: native-ts
     resource: ../../src/lib/consortium/native.ts
     title: src/lib/consortium/native.ts
@@ -126,8 +126,8 @@ sources:
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
-    digest: sha256:4a4e0344c5170ac9
-    last_modified: 2026-11-11T21:57:48Z
+    digest: sha256:bd09a69fe6ca662e
+    last_modified: 2026-11-12T05:32:21Z
   - id: mark-providers-ts
     resource: ../../src/lib/consortium/mark-providers.ts
     title: src/lib/consortium/mark-providers.ts
@@ -137,7 +137,7 @@ sources:
     resource: ../../src/lib/consortium/range-marks.ts
     title: src/lib/consortium/range-marks.ts
     digest: sha256:509f92edf5980500
-    last_modified: 2026-11-11T21:57:48Z
+    last_modified: 2026-11-11T21:01:51Z
   - id: future-marks-ts
     resource: ../../src/lib/consortium/future-marks.ts
     title: src/lib/consortium/future-marks.ts
@@ -157,12 +157,12 @@ sources:
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
     digest: sha256:fbbfec4a0e1e78a8
-    last_modified: 2026-11-11T21:57:48Z
+    last_modified: 2026-11-11T21:24:26Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
     digest: sha256:727242c3c971ce8f
-    last_modified: 2026-11-11T21:57:48Z
+    last_modified: 2026-11-11T19:27:07Z
   - id: consortium-p5-seams-s5e-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5e.test.mjs
     title: scripts/consortium-p5-seams-s5e.test.mjs

@@ -2,7 +2,9 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T20:54:22Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T05:32:36Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T22:27:39Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
@@ -13,12 +15,12 @@ sources:
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
     digest: sha256:e96070f03d36f054
-    last_modified: 2026-11-11T20:38:46Z
+    last_modified: 2026-11-11T20:54:26Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
     digest: sha256:37542b4de615647d
-    last_modified: 2026-11-11T20:38:31Z
+    last_modified: 2026-11-11T20:54:26Z
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
@@ -48,7 +50,7 @@ sources:
     resource: ../../src/lib/location/geolocation.ts
     title: src/lib/location/geolocation.ts
     digest: sha256:052230d0cde4bb32
-    last_modified: 2026-11-11T20:38:46Z
+    last_modified: 2026-11-11T20:54:26Z
   - id: maplibre-ts
     resource: ../../src/lib/location/maplibre.ts
     title: src/lib/location/maplibre.ts
@@ -82,8 +84,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
-    digest: sha256:c5dd8225f59470b9
-    last_modified: 2026-11-11T20:03:06Z
+    digest: sha256:8772e41a6c36ed43
+    last_modified: 2026-11-12T05:32:21Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts

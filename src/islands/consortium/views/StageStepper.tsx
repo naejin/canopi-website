@@ -6,15 +6,17 @@
 // The stepper opens on the first stage (stage starts at 0) and keeps the chosen one: store.stage is
 // part of the share state (ShareState.stage), which S4's link and on-device memory restore.
 //
-// `phone` is the site's phone breakpoint (max-width 639px) as a signal, so the matrix renders either
-// the desktop table or the phone grid, never both (one table in the accessibility tree).
+// `phone` is true below the site's desktop breakpoint (max-width 959px; UX audit fix 3: at 700 px the
+// desktop table cut 38 plant names), as a signal, so the matrix renders either the desktop table or
+// the phone grid, never both (one table in the accessibility tree). No new breakpoint: 960 px is the
+// site's desktop one (CLAUDE.md); the grid's CSS hangs on .ct-phone (matrix.css).
 import { signal } from '@preact/signals';
 import { stage } from '../store.ts';
 import { T } from '../strings.ts';
 import { stepStage } from './tracks.ts';
 import { ChevronIcon, phasePlain, phaseTerm } from './StageBar.tsx';
 
-const query = typeof matchMedia === 'function' ? matchMedia('(max-width: 639px)') : null;
+const query = typeof matchMedia === 'function' ? matchMedia('(max-width: 959px)') : null;
 export const phone = signal<boolean>(query?.matches ?? false);
 query?.addEventListener('change', (e) => { phone.value = e.matches; });
 

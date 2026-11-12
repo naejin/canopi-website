@@ -2,7 +2,8 @@
 // View slot of stream S4: Start (design check A8, §5 Loading; mockup 01-start; owner rows "Climate
 // first", "Main crops first", "Crop examples and guide 43", "v2 mockup choices").
 // - The optional country line comes first, so the browser's guess is seen before it is used.
-// - Then the climate cards, nothing chosen (never a default climate): Ready, or Not covered yet with
+// - Then the climate cards, nothing chosen (never a default climate): Ready, Needs your location (a
+//   climate that borrows plants, without a location: PoolSlot cardPill), or Not covered yet with
 //   "Ask for this climate". Picking one writes the shared site climate (memory.chooseClimate).
 // - Then "What do you mainly want to grow?" (up to three of the climate's food plants; examples by
 //   rule, memory.cropExamples) and "Your site" (all four questions start at "Not sure").
@@ -16,7 +17,7 @@ import { climate, country, crops, proposedClimate, kept, members, openSheet, poo
 import { P, T, pageLang } from '../strings.ts';
 import { LocationSlot } from './LocationSlot.tsx';
 import { LikelySlot } from './LikelySlot.tsx';
-import { PoolSlot, hasList, nothingFits } from './PoolSlot.tsx';
+import { PoolSlot, cardPill, hasList, nothingFits } from './PoolSlot.tsx';
 import {
   backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
 } from '../memory.ts';
@@ -135,14 +136,15 @@ function Climates() {
       <div class="ct-cards">
         {page().start.zones.map(({ id, label, places }) => {
           const z = zoneOf(id)!;
-          const ready = hasList(z);
+          // Ready, Needs your location (a borrowed climate without one), or Not covered yet (PoolSlot).
+          const pill = cardPill(z);
           return (
             <label class={`ct-card${chosen === z ? ' is-chosen' : proposed === z ? ' is-proposed' : ''}`} data-proposed={proposed === z ? '' : undefined}>
               <input type="radio" name="ct-climate" value={id} checked={chosen === z} aria-labelledby={`ct-cl-${id}`} aria-describedby={`ct-cl-${id}-d`} tabIndex={proposed && proposed !== z ? -1 : undefined} onKeyDown={keys} onChange={() => choose(z)} />
               <span class="ct-card-name" id={`ct-cl-${id}`}>{label}</span>
               <span id={`ct-cl-${id}-d`} class="ct-card-desc">
                 {proposed === z && <span class="ct-card-proposed">{T('location.proposed')}</span>}
-                <span class={`ct-pill${ready ? ' is-ready' : ''}`}>{T(ready ? 'start.climate.ready' : 'start.climate.notYet')}</span>
+                <span class={`ct-pill${pill.ready ? ' is-ready' : ''}`}>{pill.label}</span>
                 <span class="ct-card-places">{places}</span>
               </span>
             </label>
