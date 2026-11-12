@@ -4,9 +4,9 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T17:03:52Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T22:03:50Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T05:53:42Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T22:03:48Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -42,7 +42,7 @@ sources:
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
     digest: sha256:9de8b0593be83710
-    last_modified: 2026-11-12T17:02:20Z
+    last_modified: 2026-11-12T18:47:57Z
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
@@ -62,7 +62,7 @@ sources:
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
     digest: sha256:77531bebff7b561b
-    last_modified: 2026-11-12T17:02:20Z
+    last_modified: 2026-11-12T18:47:57Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -136,8 +136,8 @@ sources:
   - id: consortium-p5-seams-s5b-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
-    digest: sha256:561ad03ae5382ed6
-    last_modified: 2026-11-12T12:35:39Z
+    digest: sha256:adcfcb04178ce0cd
+    last_modified: 2026-11-12T21:41:00Z
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs

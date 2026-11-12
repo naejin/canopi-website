@@ -5,7 +5,7 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:24:57Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T22:03:53Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-12T17:04:00Z }
@@ -18,13 +18,13 @@ sources:
   - id: browser-test
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:5da7927faa678d26
-    last_modified: 2026-11-12T20:56:48Z
+    digest: sha256:99b17e6c4f590596
+    last_modified: 2026-11-12T21:40:44Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:28d4257896e8d562
-    last_modified: 2026-11-12T21:24:11Z
+    digest: sha256:185c96ac343ff7c8
+    last_modified: 2026-11-12T21:58:53Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -65,7 +65,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 | [maplibre-notices.mjs](../../scripts/maplibre-notices.mjs) | writes the MapLibre block of `THIRD_PARTY_NOTICES.md` (maplibre-gl and its locked dependency tree, versions, licences, shipped licence texts or the README licence section) from `package-lock.json` and a `node_modules` dir | by hand after a maplibre-gl update |
 | [built-links.mjs](../../scripts/built-links.mjs) | `builtTarget(root, pathname)`: resolves an internal link to a built file; a path without trailing slash or extension is an error. `subdirectories(dir)`: folder names only (the guide slugs; a stray `.DS_Store` is not a guide) | `check-built-site.mjs` |
 | [fixtures/consortium-v2/make-fixture.mjs](../../scripts/fixtures/consortium-v2/make-fixture.mjs) | writes the invented format 4 consortium fixture (38 plants in Tropical, Mediterranean and Temperate, gzipped SQLite built with `node:sqlite` from canopi-data's DDL, with its manifest, sums, TRY list and credits; deterministic) and the broken variants the installer test needs; never shipped | `node scripts/fixtures/consortium-v2/make-fixture.mjs [dir]`, see its README |
-| [browser/](../../scripts/browser) | `serve.mjs` (wrangler dev on 4420–4498 over a hard-linked copy of `dist-test/` by default, the production `dist/` on request, stopped by pid), `harness.mjs` (puppeteer-core with the system Chrome), `trace.mjs` (failure traces), `helpers.mjs`, `run.mjs` + `shards.json` (the sharded runner), and one test file per owner: `consortium-commit0.browser.test.mjs` (probes P1–P3, P6, P5-0, the BT-9 load screens, the E1 self-checks over `fixtures/`), `consortium-s1…s4.browser.test.mjs` (each stream's §7 tests), `consortium-p5-s5b/c/d/f` and `consortium-seams-p2/layout/p5` (shared code in `p5-helpers.mjs`, `seams-helpers.mjs`); `smoke/consortium.smoke.mjs` (production `dist/`, `npm run test:browser:smoke`); `probes/parallel-serve.mjs` (P-E1a, by hand); `consortium-timing.mjs` (§8 cold/warm timing, on demand only, not a test); see [Consortium page](/modules/consortium-page.md) | `npm run test:browser` (local shards), `test:browser:shard <n>` (CI), `test:browser:smoke`, capped; never in `npm test` |
+| [browser/](../../scripts/browser) | `serve.mjs` (wrangler dev on 4420–4498 over a hard-linked copy of `dist-test/` by default, the production `dist/` on request, stopped by pid), `harness.mjs` (puppeteer-core with the system Chrome), `trace.mjs` (failure traces), `helpers.mjs`, `run.mjs` + `shards.json` (the sharded runner), and one test file per owner: `consortium-commit0.browser.test.mjs` (probes P1–P3, P6, P5-0, the BT-9 load screens, the E1 self-checks over `fixtures/`), `consortium-s1…s4.browser.test.mjs` (each stream's §7 tests), `consortium-p5-s5b/c/d/f` and `consortium-seams-p2/layout/p5` (shared code in `p5-helpers.mjs`, `seams-helpers.mjs`); `smoke/consortium.smoke.mjs` (production `dist/`, `npm run test:browser:smoke`); `consortium-timing.mjs` (§8 cold/warm timing, on demand only, not a test); see [Consortium page](/modules/consortium-page.md) | `npm run test:browser` (local shards), `test:browser:shard <n>` (CI), `test:browser:smoke`, capped; never in `npm test` |
 | [export-featured-designs.py](../../scripts/export-featured-designs.py) | `.canopi` files to privacy-safe `public/data/featured-designs.json` | by hand |
 | [compress-heroes.py](../../scripts/compress-heroes.py), [make-og-images.py](../../scripts/make-og-images.py) | hero JPGs (2400 and 1200 px); 1200x630 social images (painting with the logo and wordmark on a parchment label inside the centre 630 px square, each ≤ 250 KB for WhatsApp) and `public/apple-touch-icon.png`; bump `?v=` on `ogImage` in `Base.astro` when they change, since messaging apps cache by image URL | by hand (Pillow + Inkscape) |
 
