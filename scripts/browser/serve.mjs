@@ -13,6 +13,7 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { cpSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,9 +31,42 @@ export function portFrom(value = process.env.CANOPI_BROWSER_PORT ?? '4420') {
   return port;
 }
 
-// Starts wrangler dev and resolves once the site answers; returns { url, pid, stop }.
+// Whether a TCP port binds on 127.0.0.1 right now.
+export const portFree = (port) => new Promise((resolve) => {
+  const srv = createServer();
+  srv.once('error', () => resolve(false));
+  srv.listen({ port, host: '127.0.0.1', exclusive: true }, () => srv.close(() => resolve(true)));
+});
+
+// The first even port from `from` (a slot's base: CANOPI_BROWSER_PORT + 2 × slot) whose port and
+// port + 1 (the inspector) both bind (design check A2, failure row F1): another worktree's suite or
+// an orphan on the base moves this server up, never onto that server.
+export async function freePortPair(from = portFrom()) {
+  for (let port = from + (from % 2); port <= PORTS.max - 1; port += 2) {
+    if ((await portFree(port)) && (await portFree(port + 1))) return port;
+  }
+  throw new Error(`no free port pair in ${from}–${PORTS.max}`);
+}
+
+const START_ATTEMPTS = 3;
+
+// Starts wrangler dev and resolves once the site answers; returns { url, pid, dir, served,
+// persistTo, exited(), stop }. The port is the first free pair from `port`; if wrangler exits before
+// serving (a port taken between the probe and its bind), the next pair is tried, 3 times at most.
 export async function serve({ port = portFrom(), log = () => {}, dir = BUILDS.test } = {}) {
   if (!existsSync(join(ROOT, dir, 'client', 'index.html'))) throw new Error(`no built site in ${dir}/: run \`npm run ${dir === BUILDS.test ? 'build:browser-test' : 'build'}\` first`);
+  let from = port;
+  for (let attempt = 1; ; attempt++) {
+    const p = await freePortPair(from);
+    try { return await serveOn(p, { log, dir }); } catch (err) {
+      if (!err.beforeServing || attempt >= START_ATTEMPTS) throw err;
+      log(`wrangler dev exited before serving on ${p}; trying the next port pair\n`);
+      from = p + 2;
+    }
+  }
+}
+
+async function serveOn(port, { log, dir }) {
   // Each server serves its own hard-linked copy of the build (probe P-E1a, design check A2): wrangler
   // watches its assets directory and restarts the worker on any file added or removed, so one shared
   // dist-test/ let another server's marker (written at its start, removed at its stop) drop this
@@ -66,12 +100,16 @@ export async function serve({ port = portFrom(), log = () => {}, dir = BUILDS.te
   let exited = null;
   const done = new Promise((r) => child.on('exit', (code, signal) => { exited = { code, signal }; r(); }));
 
+  // Its stdio is destroyed and unreferenced once it stops, so no pipe keeps a test file's process
+  // alive after its tests (failure row F10).
+  const release = () => { for (const s of [child.stdout, child.stderr]) { s?.destroy(); } child.unref(); };
   const stop = async () => {
     if (!exited) {
       try { process.kill(-child.pid, 'SIGTERM'); } catch { /* already gone */ }
       const killed = await Promise.race([done.then(() => true), new Promise((r) => setTimeout(() => r(false), 5000))]);
       if (!killed) { try { process.kill(-child.pid, 'SIGKILL'); } catch { /* gone */ } await done; }
     }
+    release();
     dropScratch();
   };
 
@@ -84,7 +122,7 @@ export async function serve({ port = portFrom(), log = () => {}, dir = BUILDS.te
   const url = `http://127.0.0.1:${port}`;
   const start = Date.now();
   for (;;) {
-    if (exited) { dropScratch(); throw new Error(`wrangler dev exited (${exited.code ?? exited.signal}) before serving (is port ${port} taken?):\n${output}`); }
+    if (exited) { release(); dropScratch(); throw Object.assign(new Error(`wrangler dev exited (${exited.code ?? exited.signal}) before serving (is port ${port} taken?):\n${output}`), { beforeServing: true }); }
     try {
       const res = await fetch(`${url}${markerPath}`, { signal: AbortSignal.timeout(2000) });
       const body = await res.text();
@@ -93,7 +131,8 @@ export async function serve({ port = portFrom(), log = () => {}, dir = BUILDS.te
     if (Date.now() - start > READY_TIMEOUT_MS) { await stop(); throw new Error(`wrangler dev did not answer on ${url} in ${READY_TIMEOUT_MS / 1000} s:\n${output}`); }
     await new Promise((r) => setTimeout(r, 300));
   }
-  return { url, pid: child.pid, dir, served: site, persistTo, stop };
+    // exited(): null while it serves, else { code, signal } (the harness fails the next page at once).
+  return { url, port, pid: child.pid, dir, served: site, persistTo, exited: () => exited, output: () => output, stop };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
