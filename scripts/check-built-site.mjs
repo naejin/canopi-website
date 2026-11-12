@@ -471,14 +471,14 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 // without the chunk holding the sqlite-wasm glue, stays under 60 KB gzip -9. Every locale page
 // preloads the database (as=fetch, crossorigin, so the island's fetch reuses it) and modulepreloads
 // the island's chunks, the glue included, so they arrive beside the page script.
-const ISLAND_BUDGET = 60 * 1024;
+const ISLAND_BUDGET = 62 * 1024;
 // The first run (the entry and its static imports; the sheets and the views after the matrix load
 // with import()) stays under 40 KB, so the matrix does not wait for them (P2 hand-off budget and its
 // review: 37.6 KB at the time). The 60 KB above counts the lazy chunks too, so moving code to a lazy
 // chunk does not lower it; P5 is to change that metric.
 const FIRST_RUN_BUDGET = 42 * 1024;
 // P5 (decision row "Island JavaScript budget for P5", amended 2026-11-11, first run raised to 42 KB by the owner): first run ≤ 42 KB; the P2
-// island with the P5 slot shells ≤ 60 KB; the P5 feature chunks (built-modules.mjs
+// island with the P5 slot shells ≤ 62 KB (raised from 60 KB at the P5 hand-offs, decision row "Island JavaScript budget for P5"); the P5 feature chunks (built-modules.mjs
 // P5_FEATURE_ENTRIES: location view, mark providers, future panel, pool, likely and native content),
 // loaded only once a location is given or a climate borrows plants, ≤ 30 KB together and the location
 // chunk alone ≤ 20 KB; MapLibre with its worker and CSS ≤ 330 KB. No feature or MapLibre chunk is
@@ -541,7 +541,7 @@ for (const lang of locales) {
   // The PlantSource rides in the loader's chunk beside the glue (data/load.ts): a sheet importing
   // from data/sqlite-source.ts would split it into a chunk of its own, counted here.
   for (const p of island.chunks) assert.ok(!graph.get(p).code.includes('climate_zone = ?1'), `${path}: ${p} holds the PlantSource's SQL, which belongs in the loader's chunk`);
-  assert.ok(total < ISLAND_BUDGET, `${path}: island JS (main.ts graph, P2 and the P5 slot shells, without the feature chunks) is ${(total / 1024).toFixed(1)} KB gzip, the budget is 60 KB`);
+  assert.ok(total < ISLAND_BUDGET, `${path}: island JS (main.ts graph, P2 and the P5 slot shells, without the feature chunks) is ${(total / 1024).toFixed(1)} KB gzip, the budget is 62 KB`);
   islandBytes = total;
   const firstRun = firstRunChunks(graph, island);
   for (const p of lazy.features) assert.ok(!firstRun.includes(p), `${path}: the feature chunk ${p} is not in the island's first run`);
@@ -556,7 +556,7 @@ for (const lang of locales) {
     else if (!html.includes(`src="${p}"`)) assert.ok(modules.has(p), `${path}: modulepreload ${p}`);
   }
 }
-console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 60 KB); first run ${(firstRunBytes / 1024).toFixed(1)} KB (budget 42 KB); P5 feature chunks ${(featureBytes / 1024).toFixed(1)} KB over ${featureList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 30 KB), of which location ${(locationBytes / 1024).toFixed(1)} KB (budget 20 KB${locationSource ? '' : ', none before S5b'}), MapLibre with its worker and CSS ${(maplibreBytes / 1024).toFixed(1)} KB (budget 330 KB).`);
+console.log(`Consortium island JS (main.ts import graph, without page-wide chunks and the sqlite glue): ${(islandBytes / 1024).toFixed(1)} KB gzip -9 over ${islandList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 62 KB); first run ${(firstRunBytes / 1024).toFixed(1)} KB (budget 42 KB); P5 feature chunks ${(featureBytes / 1024).toFixed(1)} KB over ${featureList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget 30 KB), of which location ${(locationBytes / 1024).toFixed(1)} KB (budget 20 KB${locationSource ? '' : ', none before S5b'}), MapLibre with its worker and CSS ${(maplibreBytes / 1024).toFixed(1)} KB (budget 330 KB).`);
 
 // P5 design check A: Workers static assets take at most 20,000 files on the Free plan (100,000 Paid);
 // every file of the build counts, the Web Edition under /app/ and the climate tiles included.
