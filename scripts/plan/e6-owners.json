@@ -71,7 +71,10 @@
             "src/islands/consortium/views/future/future.tsx",
             "src/islands/consortium/strings.ts",
             "src/islands/consortium/main.ts",
-            "scripts/browser/consortium-e6.browser.test.mjs"
+            "scripts/browser/consortium-e6.browser.test.mjs",
+            "scripts/consortium-p5-ranges.test.mjs",
+            "scripts/consortium-tracks.test.mjs",
+            "src/islands/consortium/format.ts"
           ]
         },
         "S1": {
@@ -160,7 +163,7 @@
             "S1",
             "R1"
           ],
-          "duty": "rules/list-query.ts (Add and PlantList; removes the list-query marker), rules/suggest-block.ts, rules/site-fit.ts + SiteFitMessage; kit/flags renders only; loadRangeRule() and role range (A10; P5-27b blocks range); node tests of the three rules",
+          "duty": "rules/list-query.ts (Add and PlantList; removes the list-query marker), rules/suggest-block.ts, rules/site-fit.ts + SiteFitMessage; kit/flags renders only; loadRangeRule() and role range (A10; P5-27b blocks range); node tests of the three rules; state.ts uses zones.ts (zoneOfSiteId, siteIdOf) instead of its own lower-casing, and climateZones moves from types.ts into zones.ts (R1 hand-off)",
           "files": [
             "src/islands/consortium/rules/**",
             "src/islands/consortium/store.ts",
@@ -183,7 +186,8 @@
             "src/lib/consortium/index.ts",
             "scripts/browser/consortium-p5-s5c.browser.test.mjs",
             "scripts/consortium-p5-seams*.test.mjs",
-            "scripts/consortium-list-query.test.mjs"
+            "scripts/consortium-list-query.test.mjs",
+            "src/lib/consortium/state.ts"
           ]
         },
         "S2": {
@@ -279,7 +283,7 @@
             "K3",
             "S3"
           ],
-          "duty": "one placement origin {list, kind} on Taxon; factAt(taxon, site, period) for ADR-6's facts; loadSuggest() (A11) and Swap through it; L8, L9 (removes the E6-6, E6-7 markers); the ct:matrix -> ct:first-view line in Matrix.tsx (B4's duty handed over)",
+          "duty": "one placement origin {list, kind} on Taxon; factAt(taxon, site, period) for ADR-6's facts; loadSuggest() (A11) and Swap through it; L8, L9 (removes the E6-6, E6-7 markers); the ct:matrix -> ct:first-view line in Matrix.tsx (B4's duty handed over); range-marks.ts loses its placedFrom.toLowerCase() with placedFrom (R1 hand-off)",
           "files": [
             "src/lib/consortium/types.ts",
             "src/lib/consortium/placement.ts",
