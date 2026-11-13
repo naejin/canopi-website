@@ -100,6 +100,26 @@ async function temperatePage(opts) {
   return page;
 }
 
+// R4 re-review (low), done in the chunk-5 exit: every Suggest wait ends with a suggestion or one
+// toast, even when the suggest chunk's request never settles (capped() used to keep that wait).
+test('E6-16 (R4 re-review, chunk-5 exit): a suggest chunk that never answers ends Suggest\'s wait at the cap with one toast and Reload', async () => {
+  // A 1.5 s cap (the test build's __ctTimeouts.suggest) for production's 10 s.
+  const cap = { suggest: 1500 };
+  const page = await temperatePage({ block: { suggest: 'hold' }, timeouts: cap });
+  const store = (expr) => page.evaluate(`window.__ctTest.store.${expr}`);
+  try {
+    assert.ok(await until(page, () => window.__ctTest.store.pool.value !== null, 5000), 'Temperate read, its suggest chunk held');
+    await page.locator(aria('button', SUGGEST)).click();
+    const waiting = await suggestBusy(page);
+    const ended = await toastIdle(page);
+    assert.deepEqual({ waiting, ...ended }, { waiting: true, reload: true, idle: true }, 'waits, then the toast with Reload, Suggest idle');
+    await page.releaseHeld();
+    await new Promise((r) => setTimeout(r, 800));
+    const reloads = await page.$$eval('button', (bs, name) => bs.filter((b) => b.textContent.trim() === name).length, RELOAD);
+    assert.deepEqual({ members: await store('members.value.length'), reloads }, { members: 0, reloads: 1 }, 'the late chunk runs no suggestion the reader stopped waiting for, and no second toast');
+  } finally { await page.browserContext().close().catch(() => {}); }
+});
+
 test('E6-12 (R4 seams): the plant list is stored while the suggest chunk is held; a Suggest pressed meanwhile waits, then suggests (A11)', async () => {
   const page = await temperatePage({ block: { suggest: 'hold' } });
   try {
