@@ -416,16 +416,22 @@ export type MarkSurface = (typeof markSurfaces)[number];
 export type PlacementKind = 'own' | 'guest' | 'borrowed';
 export interface PlacementOrigin { list: ClimateZone; kind: PlacementKind }
 
-// One site-fit message (stream R2, rules/site-fit.ts): the one vocabulary Flags (Add, Swap) and site
-// Marks (chips, rows, Details) both derive from. about: the site answer or the climate check it
-// concerns; key: a consortium.* string key without its prefix, read with T(key, vars).
+// One site-fit message (stream R2): the one vocabulary of what the site answers say about a plant, which
+// Flags (Add, Swap, Paste, Details: kit/flags.ts) and site Marks (chips, rows, Details: site-marks.ts)
+// both derive from. Built by site-marks.ts siteFitMessages; rules/site-fit.ts keeps the misfits that hold
+// beside the other members. Three kinds: a misfit (asks: Add and Swap ask before adding), a note
+// (state set: a fit that still asks something of the reader, shown as a site mark), and what the check
+// could not decide (neither). about: the site answer or the climate check it concerns; key: a
+// consortium.* string key without its prefix, read with T(key, vars) (a mark on a short surface
+// appends "Short").
 export interface SiteFitMessage {
   id: PlantId;
   about: SiteKey | 'climate';
   severity: MarkSeverity;
-  asks: boolean; // Add and Swap ask before adding (today's misfit flags)
+  asks: boolean;
   key: string;
   vars?: Record<string, string | number>;
+  state?: string;
 }
 
 // The plant facts that depend on the site and the climate period (ADR-6; owner row "Site- and

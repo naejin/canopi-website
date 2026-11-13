@@ -6,8 +6,9 @@
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
 import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
-import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, loadMarkProviders, loadRangeRule, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
+import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
 import { nothingFits } from './rules/suggest-block.ts';
+import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
@@ -205,6 +206,15 @@ export const flags = computed<Flag[]>(() => {
   if (!pool.value) return [];
   return flagsOf(memberTaxa.value, flagContext.value);
 });
+
+// The flags a plant carries (Add, Swap, Paste, Details): a member's from the flags above, any other
+// plant's beside the members.
+export function flagsOfPlant(t: Taxon): Flag[] {
+  if (members.value.includes(t.id)) return flags.value.filter((f) => f.id === t.id);
+  return flagsFor(t, memberTaxa.value, flagContext.value);
+}
+// What the flags' words read (views/kit/flags.ts flagLines; rules/site-fit.ts FlagScene).
+export const flagScene = computed<FlagScene>(() => ({ site: site.value, members: memberTaxa.value, country: country.value.code, taxonOf }));
 
 // ---- actions (S1) ----
 

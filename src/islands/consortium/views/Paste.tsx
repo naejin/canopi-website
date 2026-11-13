@@ -17,9 +17,9 @@ import { P, T } from '../strings.ts';
 import type { ClimateZone, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { asks } from '../../../lib/consortium/index.ts';
 import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, readPaste } from './paste.ts';
-import { addMembers, closeSheet } from '../store.ts';
+import { addMembers, closeSheet, flagsOfPlant } from '../store.ts';
 import { Ask, SheetFrame, WARN } from './kit/sheet.tsx';
-import { flagLines, flagsOfPlant } from './kit/flags.ts';
+import { flagLines } from './kit/flags.ts';
 import { nameOf, zoneName } from './kit/names.ts';
 
 const MAX_LINES = 500;
@@ -28,6 +28,7 @@ const SETTLE_MS = 200;
 export default function Paste() {
   const pool = store.pool.value;
   const climate = store.climate.value;
+  const scene = store.flagScene.value;
   const members = store.members.value;
   const guests = store.guests.value;
   const [text, setText] = useState('');
@@ -79,7 +80,7 @@ export default function Paste() {
   const toggle = (id: PlantId) => setTicked((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const sci = (t: Taxon) => <i class="ct-sci">{t.canonical_name}</i>;
   const warnings = (t: Taxon) => {
-    const lines = flagLines(t, flagsOfPlant(t));
+    const lines = flagLines(t, flagsOfPlant(t), scene);
     return lines.length ? <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span> : null;
   };
   const empty = !result.found.length && !result.choose.length && !result.other.length && !result.already.length && !result.duplicate.length && !result.none.length;
@@ -197,7 +198,7 @@ export default function Paste() {
       {asking && (
         <Ask
           title={T('add.ask')}
-          lines={flagLines(asking.t, flagsOfPlant(asking.t)).filter((l) => l.asks).map((l) => l.text)}
+          lines={flagLines(asking.t, flagsOfPlant(asking.t), scene).filter((l) => l.asks).map((l) => l.text)}
           yes={T('addAnyway')}
           onYes={() => { const { t, from } = asking; setAsking(null); addGuest(t, from); }}
           onCancel={() => setAsking(null)}

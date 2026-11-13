@@ -38,7 +38,7 @@ import { consortiumGuides } from '../../../data/consortium-guides.ts';
 import { testFault } from '../test-hook.ts';
 import { PlantMarks } from './PlantMarks.tsx';
 import { Bar, SheetFrame } from './kit/sheet.tsx';
-import { flagLines, flagsOfPlant, unknownWords } from './kit/flags.ts';
+import { flagLines, unknownWords } from './kit/flags.ts';
 import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from './kit/names.ts';
 import { PIN, SPROUT, WARN } from './kit/icons.tsx';
 import { drafts, type CorrectionField } from './kit/correction.ts';
@@ -205,10 +205,10 @@ function PlantDetails({ id }: { id: PlantId }) {
   const member = store.members.value.includes(id);
   const kept = store.kept.value.includes(id);
   const crop = store.crops.value.includes(id);
-  const flags = flagsOfPlant(t);
-  const lines = flagLines(t, flags, { low: true });
+  const flags = store.flagsOfPlant(t), scene = store.flagScene.value;
+  const lines = flagLines(t, flags, scene, { low: true });
   const soft = [
-    ...unknownWords(t),
+    ...unknownWords(t, scene.site),
     ...invasiveSoft(t),
     ...(t.warnings.toxicity === null ? [T('d.toxUnk')] : t.warnings.toxicity.level === 'Slight' ? [T('details.tox', { level: T('tox.Slight') })] : []),
     T(t.warnings.allelopathic === true ? 'd.allelo' : t.warnings.allelopathic === false ? 'd.alleloNone' : 'd.alleloUnk'),

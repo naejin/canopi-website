@@ -17,9 +17,9 @@ import { P, T } from '../strings.ts';
 import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { asks as asksFlags } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/search.ts';
-import { addMembers, closeSheet, sheetCell } from '../store.ts';
+import { addMembers, closeSheet, flagsOfPlant, sheetCell } from '../store.ts';
 import { Ask, Bar, NotChecked, SheetFrame, WARN } from './kit/sheet.tsx';
-import { flagLines, flagsOfPlant } from './kit/flags.ts';
+import { flagLines } from './kit/flags.ts';
 import { nameOf, num, phasePlain, spanWords, zoneName } from './kit/names.ts';
 import { PlantMarks } from './PlantMarks.tsx';
 import { jobFind } from './StageBar.tsx';
@@ -52,7 +52,8 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
   const outside = (t: Taxon) => !!rule && rule.rangeFit(t, loc) === 'outside';
   const fitting = store.fitPool.value?.some((t) => !outside(t)) ? store.fitPool.value : null;
   const asks = (flags: Flag[], t?: Taxon) => asksFlags(flags) || (!!t && outside(t));
-  const askLines = (t: Taxon) => [...flagLines(t, flagsOfPlant(t)).filter((l) => l.asks).map((l) => l.text), ...(outside(t) ? [T('range.outsideDetails')] : [])];
+  const scene = store.flagScene.value;
+  const askLines = (t: Taxon) => [...flagLines(t, flagsOfPlant(t), scene).filter((l) => l.asks).map((l) => l.text), ...(outside(t) ? [T('range.outsideDetails')] : [])];
   const climate = store.climate.value;
   // What Add was opened for (store.openSheet): a cell or run of one layer, a job, and `anyway`.
   const { cell, job, anyway } = mode === 'add' ? sheetCell.value : store.FOR_NOTHING;
@@ -136,7 +137,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
       {shown.length > 0 ? (
         <ul class="ct-rows">
           {shown.map(({ t, flags, asks: asksFirst }) => {
-            const lines = flagLines(t, flags);
+            const lines = flagLines(t, flags, scene);
             const on = selected.includes(t.id);
             const label = `${nameOf(t)}, ${t.canonical_name}`;
             return (
@@ -166,7 +167,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
           <h3 id="ct-add-other">{T('otherLists')}</h3>
           <ul class="ct-rows">
             {elsewhere.map(({ t, from, flags }) => {
-              const lines = flagLines(t, flags);
+              const lines = flagLines(t, flags, scene);
               return (
                 <li class={asks(flags, t) ? 'flagged' : ''}>
                   <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
