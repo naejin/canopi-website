@@ -10,7 +10,7 @@ import { transformWithEsbuild } from 'vite';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CHUNK_ROLES_FILE, chunkRoles, moduleGraph, modulepreloadChunks, readChunkRoles } from './scripts/built-modules.mjs';
+import { CHUNK_ROLES_FILE, chunkRoles, moduleGraph, modulepreloadChunks } from './scripts/built-modules.mjs';
 import { climateTiles } from './scripts/climate-integration.mjs';
 
 // Consortium v2 (design check A1, coordinator row "v2 build setup", 2026-11-11): Preact 11 without
@@ -99,8 +99,7 @@ const consortiumModulePreload = {
           if (!e.name.endsWith('.html')) continue;
           const html = readFileSync(p, 'utf8');
           if (!html.includes('id="ct-root"')) continue;
-          // The browser-test build's hook is awaited before the first render: preloaded there too.
-          const links = modulepreloadChunks(moduleGraph(root, html), html, readChunkRoles(root).testHook)
+          const links = modulepreloadChunks(moduleGraph(root, html), html)
             .filter((m) => !html.includes(`href="${m}"`))
             .map((m) => `<link rel="modulepreload" href="${m}">`).join('');
           if (links) writeFileSync(p, html.replace('</head>', `${links}</head>`));
