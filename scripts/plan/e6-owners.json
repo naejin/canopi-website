@@ -195,7 +195,7 @@
             "S1",
             "K1"
           ],
-          "duty": "memory.ts -> state/{persist,restore,arrival,draft,suggest-wait}.ts (re-exports kept for R2's files until chunk 5); location orchestration -> state/location.ts; location.tsx renders only; place-search.ts without signals (A12); one country-source enum; one computed climate shown",
+          "duty": "memory.ts -> state/{persist,restore,arrival,draft,suggest-wait}.ts (re-exports kept for R2's files until chunk 5); location orchestration -> state/location.ts; location.tsx renders only; place-search.ts without signals (A12); one country-source enum; one computed climate shown; the place-search input gets an em width equal to its current width so a late font cannot move the rows after it, and the late-font layout test gets N2's box check back (font fix hand-off)",
           "files": [
             "src/islands/consortium/memory.ts",
             "src/islands/consortium/state/persist.ts",
@@ -211,14 +211,16 @@
             "src/islands/consortium/views/PrintSheet.tsx",
             "src/islands/consortium/focus.ts",
             "src/lib/location/place-search.ts",
-            "scripts/consortium-memory.test.mjs"
+            "scripts/consortium-memory.test.mjs",
+            "src/styles/consortium/base.css",
+            "scripts/browser/consortium-seams-layout.browser.test.mjs"
           ]
         },
         "Q2": {
           "needs": [
             "K1"
           ],
-          "duty": "ast-grep rule: no new Intl.NumberFormat outside views/kit/format.ts, with a rule test; baselines regenerated after K1",
+          "duty": "ast-grep rule: no new Intl.NumberFormat outside src/islands/consortium/format.ts, with a rule test; baselines regenerated after K1",
           "files": [
             "sgconfig.yml",
             "scripts/quality/ast-grep/**",
@@ -235,7 +237,7 @@
             "R2",
             "S2"
           ],
-          "duty": "Details split: first-run router views/Sheets.tsx and lazy views/details/Details.tsx (probe P-E6a first); one loader lazyPart with onFail closeSheet (A6); __ctFaults read inline (A13); prefetch trigger; L1-L7, L12 (removes the E6-3, E6-4, E6-5 markers)",
+          "duty": "Details split: first-run router views/Sheets.tsx and lazy views/details/Details.tsx (probe P-E6a first); one loader lazyPart with onFail closeSheet (A6); __ctFaults read inline (A13); prefetch trigger; L1-L7, L12 (removes the E6-3, E6-4, E6-5 markers); SheetFrame takes onClose and toast props, with views/Sheets.tsx its only caller, so views/kit/sheet.tsx imports neither store.ts nor Toast.tsx (L5; K1 plan check)",
           "files": [
             "src/islands/consortium/views/Details.tsx",
             "src/islands/consortium/views/details/**",
@@ -247,7 +249,8 @@
             "src/islands/consortium/views/Swap.tsx",
             "src/islands/consortium/views/Paste.tsx",
             "src/islands/consortium/views/Correction.tsx",
-            "scripts/browser/consortium-e6.browser.test.mjs"
+            "scripts/browser/consortium-e6.browser.test.mjs",
+            "src/islands/consortium/views/kit/sheet.tsx"
           ]
         },
         "S3": {
@@ -336,7 +339,7 @@
             "B4",
             "Q3"
           ],
-          "duty": "exit: memory.ts re-exports removed and consumers re-pointed; first run lowered to the measured value (<= 40 KB); dependency-cruiser L2/L5/L6/L8 and no-circular to error; knip baseline regenerated (dead plantName etc. deleted); zero expected-fail markers; concepts",
+          "duty": "exit: memory.ts re-exports removed and consumers re-pointed; first run lowered to the measured value (<= 40 KB); dependency-cruiser L2/L5/L6/L8 and no-circular to error; knip baseline regenerated (dead plantName etc. deleted); zero expected-fail markers; concepts; remove forwarders store.ts DEFAULT_SITE/Consortium and memory.ts ShareInput re-exports, memory.ts plantName; shell.css:77 drops var(--font-body)",
           "files": [
             "src/islands/consortium/**",
             "src/lib/consortium/**",

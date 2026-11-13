@@ -5,15 +5,15 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T17:57:53Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:40:10Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-12T17:03:59Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:8f3b4492d7db02c1
-    last_modified: 2026-11-12T17:56:02Z
+    digest: sha256:144f699ba4aacc36
+    last_modified: 2026-11-13T03:45:07Z
   - id: climate-release-json
     resource: ../../src/data/climate-release.json
     title: src/data/climate-release.json
@@ -31,7 +31,7 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 - [site.ts](../../src/data/site.ts): `WEB_URL` (https://web.projectcanopi.com/), `SOURCE_URL`, `DOCS_URL` (null hides the Docs link), HelloAsso URLs, `DONATION_AMOUNTS`, `discordUrl(lang)`.
 - [network.ts](../../src/data/network.ts): `countries`, the agroecology network organisations grouped by region with i18n label keys.
 - [bibliography.md](../../src/data/bibliography.md): the hand-edited bibliography (format documented in its header comment).
-- [climates.ts](../../src/data/climates.ts): `climates`, `Climate`, `isClimate`: the one list of the seven climate zones, shared with the Canopi app and used by the bibliography, guides, picker and head script.
+- [climates.ts](../../src/data/climates.ts): `climates`, `Climate`, `isClimate`: the one list of the seven climate zones, shared with the Canopi app and used by the bibliography, guides, picker and head script. Its ids are type-checked against `SiteId` from `src/lib/consortium/zones.ts` (the zone list); its order is the site's display order (Mediterranean before Arid), not the data order.
 - [bibliography.ts](../../src/data/bibliography.ts): parses the markdown (`?raw` import) into `themes`; book climates are validated against `climates.ts`.
 - [source-credits.ts](../../src/data/source-credits.ts): the source credits on /data-sources/, from `source_credits.tsv`, which only a real `npm run install:consortium` writes, when the export's manifest lists `source_credits` (`{ file, sha256, rows }`, kept in `consortium-index.json`). Installed from release r-01102782139409b5 (format 4, schema 3; the ranges rebuild; the same 42 rows as r-e0b162087a79eecf, schema 2, P5 commit 0): 42 rows, six more than r-2c6bdf65c35caca3 (`gbif_occurrences`, `canopi_climate`, `treegoer_ranges`, `ecocrop`, `eive`, `niinemets_valladares`); `check-built-site` counts 35 credited sources shown. Read through `import.meta.glob`, so with no file `sourceCredits` is null and the page lists the TRY datasets alone; no copy is committed by hand, with one exception: at the P5 pre-push review (5) the `gbif_occurrences` credit's internal note ("A GBIF derived-dataset DOI is pending …") was removed in this copy and in canopi-data's `data/curated/source_credits.tsv` (branch ranges-rebuild, `2e195da`), byte-identical, and `consortium-index.json` `source_credits.sha256` set to the new digest so `check-built-site` and `source-credits.test.mjs` pass; export `r-60ea417b5a15c3aa` (rebuilt from canopi-data master `94a67a5`, installed after it) carries the same text in its manifest and `sources` table, and the installer wrote this file and the digest from its manifest.
 - [try_references.tsv](../../src/data/try_references.tsv), [try_references.meta.json](../../src/data/try_references.meta.json), [try-references.ts](../../src/data/try-references.ts): the TRY dataset list. canopi-data's consortium export owns it: a real `npm run install:consortium -- <export-dir>` writes the file byte for byte and the meta (the manifest entry's `sha256`, `rows`, `dataset_ids`, also kept in `consortium-index.json`), so neither is edited or copied by hand;

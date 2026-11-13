@@ -3,13 +3,15 @@ type: Architecture Decision
 title: Consortium v2 architecture
 description: "How consortium v2 is built: a storage-independent TypeScript core, Preact islands, a gzipped SQLite export read with SQLite-WASM, per-climate placements, and climate matching on one shared grid from canopi-climate."
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T01:59:38Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:40:09Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T03:47:09Z }
 sources:
   - id: climates-ts
     resource: ../../src/data/climates.ts
     title: src/data/climates.ts
-    digest: sha256:42b3b2e5b9af2739
-    last_modified: 2026-10-26T23:34:11Z
+    digest: sha256:8bf60353ef1bf24f
+    last_modified: 2026-11-13T03:45:07Z
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
   - id: wrangler-jsonc

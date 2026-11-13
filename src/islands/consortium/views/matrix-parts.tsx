@@ -67,7 +67,7 @@ export function FreeCell({ stratum, phase, fitting }: { stratum: Stratum; phase:
 }
 
 // Why a cell, or a run of neighbouring cells, cannot be filled: its heading and its sentence.
-export function reasonText(stratum: Stratum, from: number, to: number, kind: 'gap' | 'misfit'): { head: string; body: string } {
+function reasonText(stratum: Stratum, from: number, to: number, kind: 'gap' | 'misfit'): { head: string; body: string } {
   const c = climate.value!;
   if (kind === 'gap') return { head: T(from === to ? 'matrix.gap' : 'matrix.gapRun'), body: T(from === to ? 'matrix.gapBody' : 'matrix.gapBodyRun', { list: listName(c) }) };
   const s = site.value, r = runReasons(pool.value ?? [], memberTaxa.value, s, stratum, from, to);

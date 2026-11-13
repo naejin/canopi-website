@@ -1,10 +1,10 @@
 ---
 type: Project
 title: canopi-website
-description: Astro marketing site for projectcanopi.com, the home of the Canopi agroecological design app, deployed by Cloudflare Workers Builds on push to master.
+description: Astro marketing site for projectcanopi.com, the home of the Canopi agroecological design app, deployed by Cloudflare Workers Builds from the deploy branch, which CI moves to master only when it is green.
 tags: [project]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T02:55:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:39:58Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:35Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T02:55:40Z }
@@ -17,8 +17,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:1f8cb45f50857a14
-    last_modified: 2026-11-13T02:48:00Z
+    digest: sha256:23d753e894636759
+    last_modified: 2026-11-13T03:42:28Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
@@ -34,6 +34,21 @@ sources:
     title: src/pages/api/correction.ts
     digest: sha256:0e218c3a31acfb95
     last_modified: 2026-11-09T23:41:46Z
+  - id: ci-yml
+    resource: ../../.github/workflows/ci.yml
+    title: .github/workflows/ci.yml
+    digest: sha256:fb457b92bae449a2
+    last_modified: 2026-11-13T05:24:17Z
+  - id: node-version
+    resource: ../../.node-version
+    title: .node-version
+    digest: sha256:4137094e7792cb49
+    last_modified: 2026-11-13T03:21:28Z
+  - id: version-json-ts
+    resource: ../../src/pages/version.json.ts
+    title: src/pages/version.json.ts
+    digest: sha256:9774b792a9af6f35
+    last_modified: 2026-11-13T03:21:28Z
 ---
 
 # Purpose
@@ -45,7 +60,8 @@ The public website of Canopi, an open-source agroecological design app run by a 
 - Astro 6 static output with `@astrojs/cloudflare`, `@astrojs/sitemap` and `@astrojs/mdx` 5 (Field Guides); plain CSS; vanilla JS modules.
 - HelloAsso donations.
 - One Cloudflare Worker `projectcanopi`: serves `dist/client/` and the on-demand `POST /api/contact` and `POST /api/correction` (one send_email binding; nothing stored).
-- Node >= 22.13 (`node:sqlite` without a flag) for tooling and `node --test`; Python (Pillow) for asset generators.
+- Node >= 22.13 (`node:sqlite` without a flag) for tooling and `node --test`; `.node-version` pins 22.22.0 for CI (`actions/setup-node`) and Workers Builds; Python (Pillow) for asset generators.
+- Deploys: production builds come from branch `deploy`, which GitHub Actions moves fast-forward to a master commit only once its `gate` check is green (`.github/workflows/ci.yml`; a ruleset on `deploy` refuses any other push). Cloudflare's production branch switch from `master` to `deploy` is pending the owner (2026-11-13); until then master still deploys ungated. See [CI, hooks and the deploy gate](/runbooks/ci-and-deploy-gate.md). `/version.json` names the commit the live site was built from.
 - 11 locales (en at `/`, others at `/{lang}/`); the Field Guides are en and fr only (`/guides/`, `/fr/guides/`); field-notebook design with the app's palette and fonts.
 
 # Layout

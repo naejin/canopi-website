@@ -2,9 +2,9 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:25:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:40:10Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:25:08Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T03:47:07Z }
 sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
@@ -44,13 +44,13 @@ sources:
   - id: correction-mjs
     resource: ../../src/lib/correction.mjs
     title: src/lib/correction.mjs
-    digest: sha256:b9d9bb0c78ee6522
-    last_modified: 2026-11-12T14:20:43Z
+    digest: sha256:5074164f1a7f8c26
+    last_modified: 2026-11-13T03:45:07Z
   - id: memory-ts
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
-    digest: sha256:466b82ac71d413ac
-    last_modified: 2026-11-12T21:24:11Z
+    digest: sha256:b4754548a4d65e22
+    last_modified: 2026-11-13T04:07:29Z
   - id: maplibre-notices-mjs
     resource: ../../scripts/maplibre-notices.mjs
     title: scripts/maplibre-notices.mjs
@@ -69,8 +69,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:8068e41718b265bd
-    last_modified: 2026-11-12T21:24:11Z
+    digest: sha256:20135eb3bab45e5f
+    last_modified: 2026-11-13T03:24:25Z
   - id: developers-cloudflare-com-workers-observ
     resource: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
 enforced_by:

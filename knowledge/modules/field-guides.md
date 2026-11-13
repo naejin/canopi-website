@@ -4,10 +4,10 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:25:35Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:40:09Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T21:25:10Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:40:03Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -57,8 +57,8 @@ sources:
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:b82c42d51e230dda
-    last_modified: 2026-10-27T19:02:45Z
+    digest: sha256:e58e4e13bfecc6bd
+    last_modified: 2026-11-13T04:47:00Z
   - id: tryconsortium-astro
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
@@ -77,8 +77,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:2cee9ad74ec9ad84
-    last_modified: 2026-11-12T20:56:48Z
+    digest: sha256:35715731544c0e23
+    last_modified: 2026-11-13T03:40:44Z
 ---
 
 # Responsibility

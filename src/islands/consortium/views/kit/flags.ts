@@ -17,7 +17,7 @@ export function flagsOfPlant(t: Taxon): Flag[] {
 
 const SOIL_PH = (t: Taxon) => ({ min: t.traits.soil_ph?.min != null ? num(t.traits.soil_ph.min) : '?', max: t.traits.soil_ph?.max != null ? num(t.traits.soil_ph.max) : '?' });
 // The site answers a plant misfits (beside the other members' canopy), each in words.
-export function misfitWords(t: Taxon, site: Site = store.site.value): string[] {
+function misfitWords(t: Taxon, site: Site = store.site.value): string[] {
   const fit = fits(t, site);
   const keys = misfitsBeside(t, site, store.memberTaxa.value.filter((o) => o.id !== t.id), fit);
   const out: string[] = [];

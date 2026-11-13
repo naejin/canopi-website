@@ -4,7 +4,7 @@
 // made once. A leaf beside strings.ts (it imports nothing), outside views/ so the state layer may use it
 // (layer rule L2); views take the page-language form `num` from views/kit/names.ts.
 const formats = new Map<string, Intl.NumberFormat>();
-export function numberFormat(lang: string, max = 1): Intl.NumberFormat {
+function numberFormat(lang: string, max = 1): Intl.NumberFormat {
   const key = `${lang} ${max}`;
   let f = formats.get(key);
   if (!f) { f = new Intl.NumberFormat(lang, { maximumFractionDigits: max }); formats.set(key, f); }

@@ -41,7 +41,7 @@ export function countryName(code: string): string {
 // ---- stage and layer words ----
 export const phasePlain = (p: number): string => T(`phase.${phases[p]}.plain`);
 export const phaseTerm = (p: number): string => T(`phase.${phases[p]}.term`);
-export const phaseWords = (p: number): string => `${phasePlain(p)} · ${phaseTerm(p)}`;
+const phaseWords = (p: number): string => `${phasePlain(p)} · ${phaseTerm(p)}`;
 export const stageRun = (from: number, to: number = from): string => (from === to ? phasePlain(from) : `${phasePlain(from)} → ${phasePlain(to)}`);
 export const layerName = (s: Stratum): string => T(`stratum.${s}`);
 

@@ -3,28 +3,30 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the nine import rules dependency-cruiser enforces and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T02:54:32Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:40:09Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T03:47:07Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:1106ed04bd7ac1a0
-    last_modified: 2026-11-13T02:48:56Z
+    digest: sha256:a62bd5ede235170f
+    last_modified: 2026-11-13T06:33:39Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:baebb1fa439d8fd5
-    last_modified: 2026-11-13T02:48:30Z
+    digest: sha256:7e07bcd15fe69b79
+    last_modified: 2026-11-13T04:15:18Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
-    digest: sha256:2204b1125f7911bc
-    last_modified: 2026-11-11T03:07:08Z
+    digest: sha256:e9e13f5e075ab535
+    last_modified: 2026-11-13T03:30:17Z
   - id: test-seam-d-ts
     resource: ../../src/islands/consortium/test-seam.d.ts
     title: src/islands/consortium/test-seam.d.ts
     digest: sha256:44f2d044599ee37a
-    last_modified: 2026-11-13T02:48:56Z
+    last_modified: 2026-11-13T03:03:27Z
 enforced_by: [scripts/consortium-boundary.test.mjs]
 ---
 
