@@ -187,7 +187,11 @@
             "scripts/browser/consortium-p5-s5c.browser.test.mjs",
             "scripts/consortium-p5-seams*.test.mjs",
             "scripts/consortium-list-query.test.mjs",
-            "src/lib/consortium/state.ts"
+            "src/lib/consortium/state.ts",
+            "scripts/built-modules.mjs",
+            "scripts/built-modules.test.mjs",
+            "src/lib/consortium/zones.ts",
+            "scripts/consortium-tracks.test.mjs"
           ]
         },
         "S2": {
@@ -213,7 +217,9 @@
             "src/lib/location/place-search.ts",
             "scripts/consortium-memory.test.mjs",
             "src/styles/consortium/base.css",
-            "scripts/browser/consortium-seams-layout.browser.test.mjs"
+            "scripts/browser/consortium-seams-layout.browser.test.mjs",
+            "src/islands/consortium/state/lookups.ts",
+            "src/islands/consortium/state/schema.ts"
           ]
         },
         "Q2": {
@@ -258,7 +264,7 @@
             "R2",
             "S2"
           ],
-          "duty": "explicit start() from main.ts for the module-level effects of store.ts and state/*; guarded dynamic import of test-hook.ts (A13); test-hook.ts writes __ctFaults; node tests import state with no effects running",
+          "duty": "explicit start() from main.ts for the module-level effects of store.ts and state/*; guarded dynamic import of test-hook.ts (A13); test-hook.ts writes __ctFaults; node tests import state with no effects running; start() in main.ts calls provideLocationStep explicitly (S2 hand-off: today it is a side effect of importing views/location/load.ts)",
           "files": [
             "src/islands/consortium/store.ts",
             "src/islands/consortium/state/**",
@@ -339,7 +345,7 @@
             "B4",
             "Q3"
           ],
-          "duty": "exit: memory.ts re-exports removed and consumers re-pointed; first run lowered to the measured value (<= 40 KB); dependency-cruiser L2/L5/L6/L8 and no-circular to error; knip baseline regenerated (dead plantName etc. deleted); zero expected-fail markers; concepts; remove forwarders store.ts DEFAULT_SITE/Consortium and memory.ts ShareInput re-exports, memory.ts plantName; shell.css:77 drops var(--font-body)",
+          "duty": "exit: memory.ts re-exports removed and consumers re-pointed; first run lowered to the measured value (<= 40 KB); dependency-cruiser L2/L5/L6/L8 and no-circular to error; knip baseline regenerated (dead plantName etc. deleted); zero expected-fail markers; concepts; remove forwarders store.ts DEFAULT_SITE/Consortium re-exports, memory.ts plantName; shell.css:77 drops var(--font-body); remove forwarders views/location/keep.ts, load.ts re-exports, location.tsx re-exports (settle, useMyLocation, searchPlace) and the memory.ts barrel",
           "files": [
             "src/islands/consortium/**",
             "src/lib/consortium/**",
