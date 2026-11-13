@@ -33,9 +33,10 @@ supported filter metadata before copying it under `dist/client/app/`.
 - Exception: Field Guides are en+fr only; guide-only strings live in `src/i18n/guides/{en,fr}.json` (not the 11 locale files)
 
 ## Design Rules (from app's design system)
-- Colors: exact palette from `canopi/desktop/web/src/styles/global.css`
+- Colors: the app's whole token set from `canopi/desktop/web/src/styles/global.css`, neutral and plant-data colours, with their dark values (owner 2026-11-13: coherence with the app, not restraint)
+- Colour carries meaning: plant roles, layers, marks and status use the app's data colours (edible moss, nitrogen teal, medicinal lavender, sun amber, warning amber, danger brick…); buttons and frames stay ochre and ink, as in the app; green stays plant-data only, as in the app
+- Never colour alone: every colour comes with a word or symbol, and text keeps 4.5:1 contrast in both themes
 - Font: Source Sans 3 (body) + Literata (display headlines), weights 400/600 only
-- No green in UI chrome — green is for nature/plant content only
 - Light/dark theme via `[data-theme="dark"]` + localStorage
 
 ## Release Links

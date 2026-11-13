@@ -4,7 +4,7 @@ title: Existing agent instructions
 description: The durable project rules given to coding agents in AGENTS.md and CLAUDE.md, summarised with where each is enforced.
 tags: [convention, agents]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:37:52Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T20:57:11Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:35:46Z }
 sources:
@@ -16,8 +16,8 @@ sources:
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:67232b45e9d1961a
-    last_modified: 2026-11-13T06:57:03Z
+    digest: sha256:05165e3bc439b2c2
+    last_modified: 2026-11-13T20:56:54Z
 ---
 
 # Rule
@@ -39,8 +39,9 @@ Instruction files: [AGENTS.md](../../AGENTS.md), [CLAUDE.md](../../CLAUDE.md). T
 
 ## Design
 
-- Exact app palette (from `canopi/desktop/web/src/styles/global.css`); Source Sans 3 and Literata, weights 400/600 only.
-- No green in UI chrome (green is for plant content).
+- The app's whole token set (from `canopi/desktop/web/src/styles/global.css`), neutral and plant-data colours with dark values; Source Sans 3 and Literata, weights 400/600 only.
+- Colour carries meaning: roles, layers, marks and status use the app's data colours; buttons and frames stay ochre and ink; green is plant data only, as in the app (owner 2026-11-13).
+- Never colour alone: a word or symbol with each colour; text contrast 4.5:1 in both themes.
 - Light/dark via `[data-theme="dark"]` and `localStorage`.
 - Breakpoints only `max-width: 639px` and `min-width: 960px`.
 - `<body class="grain">` already provides the paper texture; do not add page-level textures.
