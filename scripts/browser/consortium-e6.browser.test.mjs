@@ -1,8 +1,9 @@
 // E6's user paths (design check §4.1 L1–L12, §5.7), written failing in commit 0: each test is marked
 // expected-fail (scripts/expect-fail.mjs failing()) with its owner stream in the title, and the owner
 // removes the marker in the commit that makes it pass (the call becomes test()). Owners per chunk
-// (scripts/plan/e6-owners.json): K1 in chunk 1 (E6-1), K3 in chunk 3 (E6-3…5), B4 in chunk 4 (E6-2);
-// R4's specs are in consortium-e6-r4 (one owner per file per chunk). No subtests inside a marked
+// (scripts/plan/e6-owners.json): K1 in chunk 1 (E6-1), K3 in chunk 3 (E6-3…5; E6-3b…5b, rows L6,
+// L7, L12, added by K3), B4 in chunk 4 (E6-2); R4's specs are in consortium-e6-r4 (one owner per
+// file per chunk). No subtests inside a marked
 // test: one behaviour variant each (1280 px light). Run capped: npm run test:browser.
 //
 // Files each pass needs: E6-1 views/Start.tsx and src/lib/consortium/fold.ts (K1, A9); E6-2
@@ -13,7 +14,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { loadState } from './harness.mjs';
 import { aria, axNodes, en, h, has, realDb, useHarness } from './helpers.mjs';
-import { choose, tool } from './p5-helpers.mjs';
+import { atNowhere, choose, tool } from './p5-helpers.mjs';
 import { failing } from '../expect-fail.mjs';
 import { searchIndex } from '../../src/islands/consortium/data/search.ts';
 
@@ -39,6 +40,16 @@ const chips = async (page) => (await axNodes(page)).filter((n) => n.role === 'bu
 const memberIds = (page) => page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort());
 const dialogOpen = (page) => page.evaluate(() => !!document.querySelector('dialog[open]'));
 const focusedName = (page) => page.evaluate(() => (document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent || '').trim());
+// L1: a chip opens a part that does not load: the sheet closes, the toast says so with Reload, and
+// the focus goes back to the chip.
+async function couldNotOpen(page, chip) {
+  await page.locator(aria('button', chip)).click();
+  assert.ok(await has(page, aria('button', RELOAD), 8000), 'the toast offers Reload');
+  assert.match(await page.$eval('.ct-toast-text', (e) => e.textContent), new RegExp(FAILED.slice(0, 20)));
+  assert.equal(await dialogOpen(page), false, 'the sheet is closed');
+  await page.waitForFunction((name) => (document.activeElement?.getAttribute('aria-label') || '').trim() === name, { timeout: 2000 }, chip).catch(() => {});
+  assert.equal(await focusedName(page), chip, 'focus back on the chip');
+}
 const requestsTo = (log, urls) => log.filter((p) => urls.includes(p));
 const recordRequests = (log) => async (page) => { page.on('request', (r) => { try { log.push(new URL(r.url()).pathname); } catch { /* data: urls */ } }); };
 
@@ -92,12 +103,12 @@ failing('E6-2 (B4 build): before the data is ready, no sheet or after-the-matrix
 
 // E6-3 (L2, L4): Details opened while its chunk is held opens at once with the plant's name and the
 // loading line (a status), then its content; the prefetch and the press share one request.
-failing('E6-3 (K3 lazy Details): Details opened while its chunk is held shows the plant\'s name and a loading line at once, then its content, with one request (L2, L4)', { owner: 'K3', reason: /role `details` has no chunk/ }, async () => {
+test('E6-3 (K3 lazy Details): Details opened while its chunk is held shows the plant\'s name and a loading line at once, then its content, with one request (L2, L4)', async () => {
   assert.ok(h.roles.details.length, 'role `details` has no chunk in this build: Details is still in the first run');
   const log = [];
   const page = await matrixPage({ block: { details: 'hold' }, setup: recordRequests(log) });
   const [chip] = await chips(page);
-  const name = chip.split(' · ')[0];
+  const name = chip.split(' · ')[0].split(', ')[0]; // "European chestnut, Castanea sativa. Emergent, …": the plant's name first
   await page.locator(aria('button', chip)).click();
   await page.waitForSelector('dialog[open]', { timeout: 2000 });
   assert.match(await page.$eval('dialog[open]', (d) => d.textContent), new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), 'the plant\'s name at once');
@@ -113,16 +124,12 @@ failing('E6-3 (K3 lazy Details): Details opened while its chunk is held shows th
 // E6-4 (L1, L7): the Details chunk missing (blocked, or a deploy since the page loaded): the sheet
 // closes, the toast says so with Reload, the focus returns to the chip, and Reload restores the
 // consortium from the save.
-failing('E6-4 (K3 lazy Details): a missing Details chunk closes the sheet with a toast and Reload, focus back on the chip, the consortium restored after Reload (L1)', { owner: 'K3', reason: /role `details` has no chunk/ }, async () => {
+test('E6-4 (K3 lazy Details): a missing Details chunk closes the sheet with a toast and Reload, focus back on the chip, the consortium restored after Reload (L1)', async () => {
   assert.ok(h.roles.details.length, 'role `details` has no chunk in this build: Details is still in the first run');
   const page = await matrixPage({ block: { details: 404 } });
   const before = await memberIds(page);
   const [chip] = await chips(page);
-  await page.locator(aria('button', chip)).click();
-  assert.ok(await has(page, aria('button', RELOAD), 8000), 'the toast offers Reload');
-  assert.match(await page.$eval('.ct-toast-text', (e) => e.textContent), new RegExp(FAILED.slice(0, 20)));
-  assert.equal(await dialogOpen(page), false, 'the sheet is closed');
-  assert.equal(await focusedName(page), chip, 'focus back on the chip');
+  await couldNotOpen(page, chip);
   await page.locator(aria('button', RELOAD)).click();
   await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 20_000 }).catch(() => {});
   assert.equal(await loadState(page), 'ready');
@@ -132,7 +139,7 @@ failing('E6-4 (K3 lazy Details): a missing Details chunk closes the sheet with a
 });
 
 // E6-5 (L3): offline after the idle prefetch, Details still opens.
-failing('E6-5 (K3 lazy Details): offline after the prefetch, Details opens with its content and no toast (L3)', { owner: 'K3', reason: /role `details` has no chunk/ }, async () => {
+test('E6-5 (K3 lazy Details): offline after the prefetch, Details opens with its content and no toast (L3)', async () => {
   assert.ok(h.roles.details.length, 'role `details` has no chunk in this build: Details is still in the first run');
   const log = [];
   const page = await matrixPage({ setup: recordRequests(log) });
@@ -147,5 +154,181 @@ failing('E6-5 (K3 lazy Details): offline after the prefetch, Details opens with 
   await page.waitForFunction((loading) => { const d = document.querySelector('dialog[open]'); return !!d && !d.textContent.includes(loading) && d.querySelectorAll('h3, section').length > 0; }, { timeout: 4000 }, LOADING);
   assert.equal(await has(page, aria('button', RELOAD), 300), false, 'no failure toast');
   await page.setOfflineMode(false);
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-3b (L6): a sheet closed before its chunk arrives writes nothing (no toast, no sheet back); the
+// chunk, once here, opens the next time at once, with no second request.
+test('E6-3b (K3 lazy Details): Details closed while its chunk is held, then released: no toast, no sheet; the next open shows the content at once with one request (L6)', async () => {
+  assert.ok(h.roles.details.length, 'role `details` has a chunk in this build');
+  const log = [];
+  const page = await matrixPage({ block: { details: 'hold' }, setup: recordRequests(log) });
+  const [chip] = await chips(page);
+  await page.locator(aria('button', chip)).click();
+  await page.waitForSelector('dialog[open] [role="status"]', { timeout: 2000 });
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 2000 });
+  await page.releaseHeld();
+  await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
+  assert.equal(await dialogOpen(page), false, 'no sheet opens by itself');
+  assert.equal(await has(page, aria('button', RELOAD), 300), false, 'no failure toast');
+  await page.locator(aria('button', chip)).click();
+  await page.waitForSelector('dialog[open]', { timeout: 2000 });
+  assert.equal(await page.$('dialog[open] .status-line[role="status"]'), null, 'the content at once, no loading line');
+  assert.ok(await has(page, 'dialog[open] section', 1000), 'the dialog\'s sections');
+  for (const u of h.roles.details) assert.equal(requestsTo(log, [u]).length, 1, `one request for ${u}`);
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-4b (L7): the Details part whose import rejects (a chunk that throws while evaluating comes back the
+// same way: the import() promise rejects; the test hook's failSheets) is an L1: the sheet closes, the
+// toast says so with Reload, the focus goes back to the chip.
+test('E6-4b (K3 lazy Details): a Details part whose import rejects closes the sheet with a toast and Reload, focus back on the chip (L7)', async () => {
+  const page = await matrixPage({ hook: true });
+  await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
+  const [chip] = await chips(page);
+  await page.evaluate(() => window.__ctTest.failSheets());
+  await couldNotOpen(page, chip);
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-5b (L12, A6): a visitor who stays on Start (no matrix ever) still gets the prefetch once the data is
+// ready, so Paste a list opens with its content, not a loading line.
+test('E6-5b (K3 lazy parts): on Start only, the data ready, the plant dialog and the sheets are fetched without the matrix; Paste a list opens with its content at once (L12)', async () => {
+  assert.ok(h.roles.details.length && h.roles.sheets.length, 'roles details and sheets have chunks in this build');
+  const log = [];
+  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', setup: recordRequests(log) });
+  await page.locator(aria('radio', 'Temperate')).click();
+  assert.equal(await loadState(page), 'ready');
+  const lazy = [...h.roles.details, ...h.roles.sheets];
+  const deadline = Date.now() + 8000;
+  while (lazy.some((u) => !requestsTo(log, [u]).length) && Date.now() < deadline) await new Promise((r) => setTimeout(r, 100));
+  assert.deepEqual(lazy.filter((u) => !requestsTo(log, [u]).length), [], 'every sheet chunk and the dialog are fetched on Start');
+  assert.equal(await page.evaluate(() => performance.getEntriesByName('ct:matrix').length), 0, 'the matrix was never shown');
+  await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
+  await page.locator(aria('button', 'Paste a list')).click();
+  await page.waitForSelector('dialog[open]', { timeout: 2000 });
+  assert.equal(await page.$('dialog[open] .status-line[role="status"]'), null, 'no loading line');
+  assert.ok(await has(page, 'dialog[open] textarea', 1000), 'the paste box at once');
+  for (const u of lazy) assert.equal(requestsTo(log, [u]).length, 1, `one request for ${u}`);
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-5c (L4, review): a prefetch that failed (a flaky connection: the Details chunk's first request
+// does not come back) is retried when the reader opens a plant, so the dialog opens rather than the
+// L1 toast. The first request (the page's modulepreload or the idle prefetch, whichever asks first)
+// is held, then let through while the page is offline, so it fails; back online, a plant opens.
+test('E6-5c (K3 lazy Details): after the Details chunk\'s first request failed, opening a plant fetches it again and shows its content, not the toast (L4)', async () => {
+  const log = [];
+  const page = await matrixPage({ block: { details: 'hold' }, setup: recordRequests(log) });
+  const deadline = Date.now() + 8000;
+  while (!page.held.length && Date.now() < deadline) await new Promise((r) => setTimeout(r, 100));
+  assert.ok(page.held.length, 'the Details chunk was asked for (held)');
+  await page.setOfflineMode(true);
+  await page.releaseHeld();
+  await page.waitForNetworkIdle({ idleTime: 500, timeout: 5000 }).catch(() => {});
+  await page.setOfflineMode(false);
+  const [chip] = await chips(page);
+  await page.locator(aria('button', chip)).click();
+  await page.waitForFunction(() => !!document.querySelector('dialog[open] section, .ct-toast-text'), { timeout: 8000 }).catch(() => {});
+  assert.equal(await has(page, aria('button', RELOAD), 300), false, `no failure toast (requests for the chunk: ${requestsTo(log, h.roles.details).length})`);
+  assert.ok(await has(page, 'dialog[open] section', 300), `the dialog's content (requests for the chunk: ${requestsTo(log, h.roles.details).length})`);
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-3c (L2, review): a sheet opened before its chunk arrives is one dialog from the loading line to
+// the content: it slides in once and is announced once, its focus inside it throughout.
+test('E6-3c (K3 lazy Details): Details opened while its chunk is held stays one open dialog when its content arrives (one slide-in, one announcement)', async () => {
+  const page = await matrixPage({ block: { details: 'hold' } });
+  const [chip] = await chips(page);
+  await page.locator(aria('button', chip)).click();
+  await page.waitForSelector('dialog[open] [role="status"]', { timeout: 2000 });
+  await page.evaluate(() => { window.__k3Dialog = document.querySelector('dialog[open]'); });
+  await page.releaseHeld();
+  await page.waitForFunction(() => !!document.querySelector('dialog[open] section'), { timeout: 8000 });
+  assert.equal(await page.evaluate(() => document.querySelector('dialog[open]') === window.__k3Dialog), true, 'the same <dialog> shows the content');
+  assert.equal(await page.$$eval('dialog.ct-sheet', (ds) => ds.length), 1, 'one sheet dialog in the page');
+  assert.ok(await page.evaluate(() => document.querySelector('dialog[open]')?.contains(document.activeElement)), 'focus in the dialog');
+  assert.equal(await page.$eval('dialog[open]', (d) => d.getAttribute('aria-labelledby')), 'ct-d-title', 'named by the plant\'s heading');
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-5d (L4, review 2): a sheet chunk's retry (views/lazy.tsx retryable) can only mend the chunk
+// itself: Chromium keeps a failed module of a shared chunk failed, and the retried chunk imports it
+// under its plain URL again. So the sheet chunks import nothing but first-run modules, already loaded;
+// here every other module they import has its first request answered 404 (the prefetch's), and a
+// plant still opens. firstRun: the page's module scripts and everything they import statically.
+const staticImports = (code) => [...code.matchAll(/(?:\bfrom|\bimport)\s*["']\.\/([\w.-]+\.js)["']/g)].map((m) => `/_astro/${m[1]}`);
+async function moduleClosure(roots) {
+  const seen = new Set();
+  const visit = async (u) => {
+    if (seen.has(u)) return;
+    seen.add(u);
+    for (const d of staticImports(await (await fetch(h.url + u)).text())) await visit(d);
+  };
+  for (const r of roots) await visit(r);
+  return seen;
+}
+async function sharedOfSheets() {
+  const html = await (await fetch(`${h.url}/consortium/`)).text();
+  const scripts = [...html.matchAll(/<script type="module" src="([^"]+)"/g)].map((m) => new URL(m[1], h.url).pathname);
+  const entry = await (await fetch(h.url + scripts[0])).text();
+  const island = [...entry.matchAll(/["']\.\/(main\.[\w-]+\.js)["']/g)].map((m) => `/_astro/${m[1]}`);
+  const firstRun = await moduleClosure([...scripts, ...island]);
+  const sheets = [...h.roles.details, ...h.roles.sheets];
+  return [...await moduleClosure(sheets)].filter((u) => !firstRun.has(u) && !sheets.includes(u)).sort();
+}
+// Answers the first request of each URL in `urls` 404 (CDP Fetch at the response stage, after the
+// harness's own interception let it through).
+const fail404Once = (urls, failed) => async (page) => {
+  if (!urls.length) return;
+  const cdp = await page.createCDPSession();
+  await cdp.send('Fetch.enable', { patterns: urls.map((u) => ({ urlPattern: `*${u}`, requestStage: 'Response' })) });
+  cdp.on('Fetch.requestPaused', ({ requestId, request }) => {
+    const p = new URL(request.url).pathname;
+    if (urls.includes(p) && !failed.includes(p)) {
+      failed.push(p);
+      cdp.send('Fetch.fulfillRequest', { requestId, responseCode: 404, body: Buffer.from('Not found').toString('base64') }).catch(() => {});
+    } else cdp.send('Fetch.continueRequest', { requestId }).catch(() => {});
+  });
+};
+test('E6-5d (K3 lazy Details): a module the sheet chunks share failed on its first request, and a plant still opens (sheet chunks import first-run modules only)', async () => {
+  const shared = await sharedOfSheets();
+  const failed = [];
+  const page = await matrixPage({ setup: fail404Once(shared, failed) });
+  await page.waitForNetworkIdle({ idleTime: 500, timeout: 5000 }).catch(() => {});
+  const [chip] = await chips(page);
+  await page.locator(aria('button', chip)).click();
+  await page.waitForFunction(() => !!document.querySelector('dialog[open] section, .ct-toast-text'), { timeout: 8000 }).catch(() => {});
+  assert.ok(await has(page, 'dialog[open] section', 300), `the dialog's content (shared modules answered 404 once: ${failed.join(', ') || 'none'})`);
+  assert.deepEqual(shared, [], 'sheet chunks import only first-run modules');
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-3d (L2, review 2): a sheet opened while its part has nothing to draw (the pool is null while the
+// range rule loads, right after a site with a climate is set) is never an empty modal: an open sheet
+// always has a named heading and a Close button; otherwise it does not open.
+test('E6-3d (K3 lazy sheets): Add, search, Paste and Swap opened while the range rule loads show a named sheet with Close, or no sheet, never an empty modal', async () => {
+  const page = await tool({ block: { range: 'hold' } });
+  await choose(page, 'Temperate');
+  await atNowhere(page);
+  await page.waitForFunction(() => window.__ctTest.store.pool.value === null, { timeout: 5000 });
+  const id = await page.evaluate(() => Object.values(window.__ctTest.store.pools.value).flat()[0]?.id);
+  const seen = [];
+  for (const [kind, plant] of [['add', null], ['search', null], ['paste', null], ['swap', id]]) {
+    await page.evaluate((k, p) => window.__ctTest.store.openSheet(k, p), kind, plant);
+    await new Promise((r) => setTimeout(r, 800));
+    seen.push(`${kind}: ${await page.evaluate(() => {
+      const d = document.querySelector('dialog.ct-sheet[open]');
+      if (!d) return 'closed';
+      const name = document.getElementById(d.getAttribute('aria-labelledby') ?? '')?.textContent.trim();
+      const close = d.querySelector('.ct-sheet-head button[aria-label]');
+      return name && close && d.contains(document.getElementById(d.getAttribute('aria-labelledby'))) ? 'named' : `empty (name: ${name ?? 'none'}, close: ${!!close})`;
+    })}`);
+    await page.evaluate(() => window.__ctTest.store.closeSheet?.() ?? (window.__ctTest.store.sheet.value = null));
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  assert.equal(await page.evaluate(() => window.__ctTest.store.pool.value), null, 'the pool was null throughout (the rule held)');
+  assert.deepEqual(seen.filter((x) => x.includes('empty')), [], seen.join('; '));
   await page.browserContext().close().catch(() => {});
 });

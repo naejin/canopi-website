@@ -10,7 +10,7 @@
 // says "n added with a warning" with Show (2026-10-28 "Scale build, coordinator choices"). Each added
 // plant is kept. The text is read a moment after typing stops (and at once on "Add all"), at most
 // MAX_LINES lines.
-// Loaded on first use (Details.tsx).
+// Loaded on first use (views/Sheets.tsx).
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
@@ -18,14 +18,14 @@ import type { ClimateZone, PlantId, Taxon } from '../../../lib/consortium/index.
 import { asks } from '../../../lib/consortium/index.ts';
 import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, readPaste } from './paste.ts';
 import { addMembers, closeSheet, flagsOfPlant } from '../store.ts';
-import { Ask, SheetFrame, WARN } from './kit/sheet.tsx';
-import { flagLines } from './kit/flags.ts';
+import { Ask, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { nameOf, zoneName } from './kit/names.ts';
+const { flagLines } = shared; // first-run modules (kit/sheet.tsx shared)
 
 const MAX_LINES = 500;
 const SETTLE_MS = 200;
 
-export default function Paste() {
+export default function Paste({ Frame }: { Frame: Frame }) {
   const pool = store.pool.value;
   const climate = store.climate.value;
   const scene = store.flagScene.value;
@@ -51,7 +51,8 @@ export default function Paste() {
     return { capped: all.length > MAX_LINES, result: pool ? readPaste(names, { here: pool, others: lists, members }) : null };
   };
   const { capped, result } = useMemo(() => read(settled), [settled, column, pool, members, store.pools.value]);
-  if (!pool || !climate || !result) return null;
+  if (!climate) return null;
+  if (!pool || !result) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
 
   // What "Add all" adds from a reading: the found plants and the ticked ones, each once.
   const plan = (r: NonNullable<typeof result>) => {
@@ -87,7 +88,7 @@ export default function Paste() {
   const sample = (c: number) => table.rows.find((r, i) => i > 0 && r[c]?.trim())?.[c]?.trim().slice(0, 24) ?? table.rows[0]?.[c]?.trim().slice(0, 24) ?? '';
 
   return (
-    <SheetFrame titleId="ct-paste-title" class="ct-paste" head={<span class="ct-muted">{T('paste.title')}</span>} foot={
+    <Frame titleId="ct-paste-title" class="ct-paste" head={<span class="ct-muted">{T('paste.title')}</span>} foot={
       <div class="ct-add-bar">
         <span>{P('paste.toAdd', toAdd.length)}</span>
         <button type="button" class="button button-primary" disabled={!toAdd.length} onClick={addAll}>{P('paste.addAll', toAdd.length)}</button>
@@ -204,6 +205,6 @@ export default function Paste() {
           onCancel={() => setAsking(null)}
         />
       )}
-    </SheetFrame>
+    </Frame>
   );
 }
