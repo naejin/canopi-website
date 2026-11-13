@@ -1,0 +1,55 @@
+#!/bin/sh
+# Tracked git hook. Enable once in the main checkout (a relative path applies to every worktree):
+#   git config core.hooksPath .githooks        (npm run hooks:install prints the line)
+#
+# Before a push (E3, design check A19; budget 180 s, failing above 270 s, .githooks/lib.sh tier_done):
+# - npm run check (wrangler types + astro check, full: astro check has no incremental mode);
+# - npm test (unit and policy tests);
+# - npm run check:arch (dependency-cruiser's layer rules through scripts/quality/ratchet.mjs);
+# - when a pushed ref is master: node scripts/expect-fail.mjs --zero (no expected-fail marker left).
+# Browser specs run in CI only. A push whose every range is documentation only (the rule of ci.yml's
+# `changes` job: knowledge/**, .beads/**, docs/**, root *.md) skips the first three. Deletions and
+# tags are skipped. Each command runs memory-capped and prints its time. Bypass once with
+# `git push --no-verify` (CI still runs everything, and `deploy` moves only on a green gate).
+cd "$(git rev-parse --show-toplevel)" || exit 1
+. .githooks/lib.sh
+export WRANGLER_SEND_METRICS=false
+
+zero=0000000000000000000000000000000000000000
+run=no
+code=no
+master=no
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_ref" in refs/tags/*) continue ;; esac
+  [ "$local_sha" = "$zero" ] && continue # deletion
+  run=yes
+  [ "$remote_ref" = refs/heads/master ] && master=yes
+  if [ "$remote_sha" = "$zero" ] || ! git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+    # A new branch, or a remote tip this clone has not fetched: compare with master when known.
+    base=$(git merge-base "$local_sha" origin/master 2>/dev/null) || base=""
+  else
+    base=$remote_sha
+  fi
+  if [ -z "$base" ] || ! git diff --name-only "$base" "$local_sha" | docs_only; then
+    code=yes
+  fi
+done
+[ "$run" = yes ] || exit 0
+need_node_modules pre-push || exit 1
+
+start=$(date +%s)
+if [ "$code" = yes ]; then
+  echo "pre-push: check, unit tests, layer rules" >&2
+  step "npm run check" npm run check --silent || exit 1
+  step "npm test" npm test --silent || exit 1
+  step "npm run check:arch" npm run check:arch --silent || exit 1
+else
+  echo "pre-push: documentation only; check, unit tests and layer rules skipped (CI runs its job 1)" >&2
+fi
+if [ "$master" = yes ]; then
+  step "expected-fail markers (push to master)" node scripts/expect-fail.mjs --zero || {
+    echo "pre-push: expected-fail markers are left; master takes none (remove each in the commit that makes it pass)." >&2
+    exit 1
+  }
+fi
+tier_done pre-push "$start" 180
