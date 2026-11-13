@@ -339,7 +339,7 @@ test('E6-3d (K3 lazy sheets): Add, search, Paste and Swap opened while the range
 // E6 exit (B4 hand-off): the test build awaits its hook before the first render; #ct-root keeps
 // aria-busy until that render, so loadState() never reads an empty root as ready, however late the
 // hook's chunk comes (no modulepreload of it needed).
-test('E6-8 (B4 hand-off, done in the chunk-5 exit): in the test build, #ct-root stays aria-busy until the island renders, the test hook\'s chunk held', async () => {
+test('E6-17 (B4 hand-off, done in the chunk-5 exit): in the test build, #ct-root stays aria-busy until the island renders, the test hook\'s chunk held', async () => {
   assert.ok(h.roles.testHook?.length, 'role `testHook` has no chunk in this build (npm run build:browser-test)');
   const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { testHook: 'hold' } });
   await page.waitForFunction(() => document.readyState !== 'loading', { timeout: 4000 });

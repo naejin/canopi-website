@@ -270,7 +270,7 @@ test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a 
   assert.match(await text(page, '#ct-d-place') ?? '', new RegExp(picked.from), '"Placed for" names the list the placement is from, never claims the visitor\'s climate');
   // A correction made here names both: the list the placement comes from as `climate`, the visitor's
   // own climate as `site_climate`, and that the placement is an estimate (pre-push item B; the payload
-  // is tested here, since Correction.tsx builds it inline to stay in the island's 62 KB budget).
+  // is tested here, since Correction.tsx builds it inline).
   await page.locator(aria('button', 'Suggest a correction')).click();
   await page.waitForSelector('dialog select option[value]:not([value=""])');
   await page.select('dialog select', await page.evaluate(() => document.querySelector('dialog select option:not([value=""])').value));

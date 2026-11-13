@@ -18,9 +18,9 @@ import { setStrings } from './strings.ts';
 import { pageData, type PageData } from './views/kit/page.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
 
-// The loader and the sqlite-wasm glue are a chunk of their own (design check §8 leaves it out of the
-// island's 60 KB budget); its import starts at once, beside the first render, and a failed import
-// is tried again on Retry.
+// The loader and the sqlite-wasm glue are a chunk of their own (modulepreloaded, outside the first
+// run's cap: check-built-site.mjs); its import starts at once, beside the first render, and a failed
+// import is tried again on Retry.
 type Loader = typeof import('./data/load.ts');
 let loader: Promise<Loader> | null = null;
 const getLoader = () => (loader ??= import('./data/load.ts').catch((err: unknown) => { loader = null; throw err; }));
