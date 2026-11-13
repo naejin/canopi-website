@@ -17,7 +17,7 @@
 //   known violations E6 removes, ratcheted like the other tools;
 // - each run prints its time against the tool's budget; time warns only, never fails (R6, R10).
 //
-// Keys: arch `rule|from|to` (a cycle: `L7-no-circular|a > b > a`, rotated to start at its smallest
+// Keys: arch `rule|from|to`, a package by its name (a cycle: `L7-no-circular|a > b > a`, rotated to start at its smallest
 // module); dup `fileA <> fileB (n)`, the n-th clone of that file pair, so a line shift or an edit inside
 // a known clone does not make a new key; dead `type|file|symbol`.
 // Every command runs under the memory cap (CLAUDE.md), e.g.
@@ -42,6 +42,18 @@ export function cycleKey(ring) {
   return [...rotated, rotated[0]].join(' > ');
 }
 
+/**
+ * A module path as a key part: a package is its name (`@scope/name` or `name`) after the last
+ * `node_modules/`, so a symlinked node_modules (resolved outside the repo) or a package's moved type
+ * file never turns a known finding into a new key.
+ */
+export function modulePart(path) {
+  const i = path.lastIndexOf('node_modules/');
+  if (i < 0) return path;
+  const [a, b] = path.slice(i + 'node_modules/'.length).split('/');
+  return a.startsWith('@') && b ? `${a}/${b}` : a;
+}
+
 /** dependency-cruiser JSON → { scanned, errors: [key], keys: [key] } (warn-rule keys only). */
 export function archKeys(report) {
   const errors = new Set();
@@ -49,8 +61,8 @@ export function archKeys(report) {
   for (const v of report.summary?.violations ?? []) {
     const rule = v.rule.name;
     const key = v.cycle?.length
-      ? `${rule}|${cycleKey([v.from, ...v.cycle.map((c) => (typeof c === 'string' ? c : c.name))])}`
-      : `${rule}|${v.from}|${v.to}`;
+      ? `${rule}|${cycleKey([v.from, ...v.cycle.map((c) => (typeof c === 'string' ? c : c.name))].map(modulePart))}`
+      : `${rule}|${modulePart(v.from)}|${modulePart(v.to)}`;
     (v.rule.severity === 'error' ? errors : keys).add(key);
   }
   return { scanned: report.summary?.totalCruised ?? 0, errors: [...errors].sort(), keys: [...keys].sort() };

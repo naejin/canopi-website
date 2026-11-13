@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { archKeys, assertScanned, compare, compareCounts, cycleKey, deadKeys, dupKeys, verdict } from './ratchet.mjs';
+import { archKeys, assertScanned, compare, compareCounts, cycleKey, deadKeys, dupKeys, modulePart, verdict } from './ratchet.mjs';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const run = { tool: 'dup', errors: [], seconds: 1, budget: 4 };
@@ -48,6 +48,16 @@ test('arch: an error-rule violation fails everywhere; warn rules are keys', () =
   assert.deepEqual(found.keys, ['L7-no-circular|a > b > c > a', 'L8-test-hook-entry-only|a|h'], 'one cycle reported from two members is one key');
   const v = verdict({ ...run, tool: 'arch', added: [], removed: [], errors: found.errors, ci: false });
   assert.equal(v.fail, true);
+});
+
+test('arch keys name a package, not its resolved path: a symlinked node_modules keeps the known key', () => {
+  const l1 = (to) => archKeys({ summary: { totalCruised: 1, violations: [{ rule: { name: 'L1-lib-no-ui', severity: 'warn' }, from: 'src/lib/location/place-search.ts', to }] } }).keys;
+  const known = l1('node_modules/@preact/signals/dist/signals.d.ts');
+  assert.deepEqual(known, ['L1-lib-no-ui|src/lib/location/place-search.ts|@preact/signals']);
+  assert.deepEqual(l1('../../../../home/u/checkout/node_modules/@preact/signals/dist/signals.d.ts'), known);
+  assert.deepEqual(compare(known, l1('../../wt/node_modules/.pnpm/x/node_modules/@preact/signals/src/index.ts')).added, []);
+  assert.equal(modulePart('node_modules/preact/hooks/src/index.d.ts'), 'preact');
+  assert.equal(modulePart('src/islands/consortium/store.ts'), 'src/islands/consortium/store.ts');
 });
 
 test('cycle keys rotate to the smallest module and keep direction', () => {

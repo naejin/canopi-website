@@ -101,7 +101,8 @@ module.exports = {
     },
   ],
   options: {
-    doNotFollow: { path: '^node_modules/' },
+    // (^|/): a symlinked node_modules resolves outside the repo; never walk into it either way
+    doNotFollow: { path: '(^|/)node_modules/' },
     // .d.ts stays in: npm packages resolve to their type files (preact → node_modules/preact/src/index.d.ts),
     // and L1 reads those edges.
     exclude: { path: ['\\.css$', '\\.svg$'] },

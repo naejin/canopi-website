@@ -2,7 +2,7 @@
   "tool": "dependency-cruiser",
   "version": "18.7.2",
   "keys": [
-    "L1-lib-no-ui|src/lib/location/place-search.ts|node_modules/@preact/signals/dist/signals.d.ts",
+    "L1-lib-no-ui|src/lib/location/place-search.ts|@preact/signals",
     "L2-state-no-views|src/islands/consortium/store.ts|src/islands/consortium/views/pool/pool.tsx",
     "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/memory.ts",
     "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/views/Start.tsx > src/islands/consortium/memory.ts",
