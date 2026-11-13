@@ -6,7 +6,7 @@
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
 import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
-import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
+import { asGuest, buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -119,13 +119,13 @@ export const fitPool = computed<Taxon[] | null>(() => {
   return p && (rule ? rule.withinRange(p, location.value, members.value) : p);
 });
 
-// The guests as plants: each with its home climate's placement and `from` set (A9), once that
-// climate's pool is read.
+// The guests as plants: each with its home climate's placement and a guest origin (A9; ADR-6
+// asGuest), once that climate's pool is read.
 export const guestTaxa = computed<Taxon[]>(() => {
   const out: Taxon[] = [];
   for (const [id, from] of Object.entries(guests.value)) {
     const t = from ? pools.value[from]?.find((x) => x.id === id) : undefined;
-    if (t && from) out.push({ ...t, from });
+    if (t && from) out.push(asGuest(t, from));
   }
   return out;
 });
@@ -339,7 +339,7 @@ export function taxonOf(id: PlantId): Taxon | null {
   if (own) return own;
   for (const [zone, list] of Object.entries(pools.value)) {
     const t = list?.find((x) => x.id === id);
-    if (t) return { ...t, from: zone as ClimateZone };
+    if (t) return asGuest(t, zone as ClimateZone);
   }
   return null;
 }

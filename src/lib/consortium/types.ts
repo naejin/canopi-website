@@ -195,19 +195,18 @@ export interface Taxon {
   functions: TaxonFunction[] | null; // null = not curated (no rows)
   traits: Traits;
   warnings: Warnings;
-  // A guest: a plant added from another climate's list ("Add anyway"), placed as in that climate and
-  // labelled "From the {climate} list" (design check A9). Absent for the climate's own plants.
-  from?: ClimateZone;
   // Schema 2: the observed climate range; null when none is recorded (plant_climate_status.range_source
   // NULL): "range not recorded", never filtered (owner answer 2, 2026-11-11).
   climate: TaxonClimate | null;
   // WCVP matched the plant, so its native areas are known (plants.wcvp_match not NULL); false: "native
   // here" is unknown, never "not native".
   areasKnown: boolean;
-  // P5 S5c: the curated climate whose placement a site of an uncovered climate borrowed (placement.ts
-  // placeFor, the nearest-list table), with estimate true ("estimate" label). Absent: its own placement.
-  placedFrom?: ClimateZone;
-  estimate?: true;
+  // Where its placement comes from when it is not the climate's own (ADR-6, E6 R4; placement.ts reads
+  // it): a guest added from another climate's list ("Add anyway", design check A9: placed as there and
+  // labelled "From the {climate} list"), or, P5 S5c, the curated list a site of an uncovered climate
+  // borrowed it from (placement.ts placeFor, the nearest-list table; the "estimate" label). Absent for
+  // the climate's own plants: they are never stamped.
+  origin?: PlacementOrigin;
 }
 
 export interface TaxonRef { name: string; rank: Rank }
@@ -408,11 +407,12 @@ export interface Mark { kind: MarkKind; key: string; vars?: Record<string, strin
 export const markSurfaces = ['chip', 'row', 'add', 'details'] as const;
 export type MarkSurface = (typeof markSurfaces)[number];
 
-// ---- E6 seams (commit 0; ADR-6, decisions/consortium-site-facts.md): types only, no reader yet ----
+// ---- E6 seams (commit 0; ADR-6, decisions/consortium-placement-origin-and-facts.md; R4 implements them) ----
 
-// Where a plant's placement comes from (stream R4 replaces Taxon.from / placedFrom / estimate with one
-// `origin`): its own climate's list, a guest added from another list ("Add anyway"), or a list a site
-// of an uncovered climate borrowed (an estimate). Non-guests of the climate's own list are not stamped.
+// Where a plant's placement comes from (Taxon.origin, which replaced from / placedFrom / estimate in
+// E6 R4): a guest added from another list ("Add anyway"), or a list a site of an uncovered climate
+// borrowed (an estimate). 'own' names the climate's own list where a caller needs a kind for every
+// plant; Taxon.origin itself is never stamped 'own' (absent instead).
 export type PlacementKind = 'own' | 'guest' | 'borrowed';
 export interface PlacementOrigin { list: ClimateZone; kind: PlacementKind }
 
@@ -441,9 +441,9 @@ export interface FactValues {
   life_cycle: 'annual' | 'perennial' | 'grown_as_annual';
   cold_limit: { tminColdC: number; weak: boolean }; // coldest-month minimum the plant is recorded at
   heat_limit: { tmaxWarmC: number }; // warmest-month maximum
-  water_need: { drought: string; moisture: string | null };
+  water_need: { drought: string | null; moisture: string | null }; // null only when both are unknown
 }
 // A fact as a period sees it (SitePeriod.period: '1991-2020', '2041-2070', '2071-2099'), null when not
-// recorded. Stream R4 implements it returning the stored value; F2 computes per site and period
-// behind the same signature; E7 reads scoped stored facts (most specific wins).
+// recorded. source.ts factAt returns the stored value (E6 R4); F2 computes per site and period behind
+// the same signature; E7 reads scoped stored facts (most specific wins).
 export type FactAt = <K extends FactKey>(key: K, taxon: Taxon, site: SiteLookup | null, period: string) => FactValues[K] | null;

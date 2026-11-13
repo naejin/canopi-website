@@ -8,7 +8,7 @@
 // that could go there. "Back to the grid" is a button that scrolls to the grid and focuses it: a
 // #fragment link would replace the page's share fragment (S4).
 import type { MatrixCell, Stratum } from '../../../lib/consortium/index.ts';
-import { strata } from '../../../lib/consortium/index.ts';
+import { guestOf, strata } from '../../../lib/consortium/index.ts';
 import { matrix, memberTaxa, stage } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { PHASE_ORDS, SHARE_AIM, spans } from './tracks.ts';
@@ -101,7 +101,7 @@ function StageLayer({ stratum, cell, empty }: { stratum: Stratum; cell: MatrixCe
       <section class="ct-pstratum" aria-label={layerName(stratum)}>
         {head}
         {here.map((t) => (
-          <button key={t.id} type="button" data-plant-id={t.id} class={`ct-prow${t.from ? ' is-guest' : ''}`} aria-label={plantLabel(t)} onClick={() => openDetails(t.id)}>
+          <button key={t.id} type="button" data-plant-id={t.id} class={`ct-prow${guestOf(t) ? ' is-guest' : ''}`} aria-label={plantLabel(t)} onClick={() => openDetails(t.id)}>
             <span>
               <span class="ct-nm">{nameOf(t)} <Marks taxon={t} /></span>
               <span class="ct-sc">{t.canonical_name}</span>

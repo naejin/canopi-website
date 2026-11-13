@@ -24,7 +24,7 @@
 import type { ComponentType } from 'preact';
 import { useEffect } from 'preact/hooks';
 import type { Matrix as MatrixData, MatrixCell, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { strata } from '../../../lib/consortium/index.ts';
+import { guestOf, strata } from '../../../lib/consortium/index.ts';
 import { climate, marksFailed, matrix, memberTaxa, members, missingMembers, view, type View } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { COLLAPSED_CHIPS, MAX_TRACKS, PHASE_ORDS, SHARE_AIM, cellOrder, rowPieces, spanOf, spans, tracksOf } from './tracks.ts';
@@ -218,7 +218,7 @@ function Chip({ taxon: t, phase, compact = false }: { taxon: Taxon; phase: Phase
   const span = spanOf(t)!, start = phase === span.from, end = phase === span.to;
   const cls = ['ct-pchip'];
   if (!compact) { if (!end) cls.push('cont-r'); if (!start) cls.push('cont-l'); }
-  if (t.from) cls.push('is-guest');
+  if (guestOf(t)) cls.push('is-guest');
   if (start) {
     return (
       <button type="button" class={cls.join(' ')} data-plant-id={t.id} aria-label={plantLabel(t)} title={`${nameOf(t)} — ${t.canonical_name}`} onClick={() => openDetails(t.id)}>

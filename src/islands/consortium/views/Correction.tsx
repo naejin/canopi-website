@@ -99,7 +99,7 @@ export default function Correction({ drafts, fields, plantId, plantName, plantLa
       plant_id: plantId, plant_name: plantName, field: form.field, current_value: current?.raw ?? null, current_display: current?.current ?? '',
       // `climate` is the list the placement comes from (Details' placementZone); the visitor's own
       // climate goes apart, with whether the placement was borrowed (correction.mjs: optional).
-      proposed_value: form.proposed.trim(), note: form.note.trim(), release_id: release, climate, site_climate: siteClimate.value, placement_estimate: !!taxonOf(plantId)?.estimate, locale: lang,
+      proposed_value: form.proposed.trim(), note: form.note.trim(), release_id: release, climate, site_climate: siteClimate.value, placement_estimate: taxonOf(plantId)?.origin?.kind === 'borrowed', locale: lang,
       consent: form.consent, email: form.email.trim(), website: form.website,
     });
     if (res.status === 'sent') drafts.delete(plantId);

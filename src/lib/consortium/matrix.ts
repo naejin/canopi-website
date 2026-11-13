@@ -1,7 +1,7 @@
 // The strata × phases matrix of a consortium on a site (stream S1; design check §2, §4; coordinator
 // row "v2 mockup choices" 2026-11-11). Four strata, top to bottom, by seven phases. A plant fills
 // every cell of its stratum from its start to its end phase, with the placement it has in the chosen
-// climate, or, for a guest added from another climate's list, its home placement (Taxon.from). One
+// climate, or, for a guest added from another climate's list, its home placement (Taxon.origin). One
 // plant fills a cell: there is no "thin" state.
 //
 // An empty cell says why, from the climate's plants (the pool) that grow there:
