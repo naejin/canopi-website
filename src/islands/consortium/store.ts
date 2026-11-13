@@ -11,6 +11,7 @@ import type { RangeRule } from './views/pool/pool.tsx';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
+import { state } from './state/schema.ts';
 
 // Where the country came from: the reader chose it, a link carried it, the page guessed it from
 // the browser's language (shown as a guess, never assumed), or (P5 S5b) the site location gave it
@@ -34,7 +35,7 @@ export const DEFAULT_SITE: Site = { light: 'unsure', soil: 'unsure', water: 'uns
 export const climate = signal<ClimateZone | null>(null);
 export const country = signal<Country>({ code: null, source: null });
 export const site = signal<Site>({ ...DEFAULT_SITE });
-export const crops = signal<string[]>([]); // the crop examples the reader ticked (Start), as plant ids
+export const crops = state.signals.crops; // the crop examples the reader ticked (Start), as plant ids
 export const members = signal<PlantId[]>([]); // the consortium, in the order added
 export const kept = signal<PlantId[]>([]); // pinned: a new suggestion keeps them
 export const removed = signal<PlantId[]>([]); // taken out by the reader: a new suggestion leaves them out
@@ -347,10 +348,11 @@ const nameById = (id: PlantId) => { const t = taxonOf(id); return t ? nameOf(t) 
 
 // The view and the consortium set aside too: Undo of a list pasted on Start goes back to Start's
 // draft, with the consortium it replaced, so the save mirrors that one again (F2, R2-1).
-interface Snapshot { members: PlantId[]; kept: PlantId[]; removed: PlantId[]; crops: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>>; view: View; setAside: Consortium | null }
-const snapshot = (): Snapshot => ({ members: members.peek(), kept: kept.peek(), removed: removed.peek(), crops: crops.peek(), guests: guests.peek(), view: view.peek(), setAside: setAside.peek() });
+interface Snapshot extends ReturnType<typeof state.snapshot> { members: PlantId[]; kept: PlantId[]; removed: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>>; view: View; setAside: Consortium | null }
+const snapshot = (): Snapshot => ({ ...state.snapshot(), members: members.peek(), kept: kept.peek(), removed: removed.peek(), guests: guests.peek(), view: view.peek(), setAside: setAside.peek() });
 const restoreSnapshot = (s: Snapshot) => batch(() => {
-  members.value = s.members; kept.value = s.kept; removed.value = s.removed; crops.value = s.crops; guests.value = s.guests;
+  state.restore(s);
+  members.value = s.members; kept.value = s.kept; removed.value = s.removed; guests.value = s.guests;
   if (s.view === 'start' || view.peek() === 'start') view.value = s.view;
   setAside.value = s.setAside;
 });
@@ -359,13 +361,14 @@ const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.inc
 // Undo puts back the snapshot taken before the action, so it is offered only while nothing else has
 // changed the consortium (a pin, a new suggestion, another climate): any change hides the toast.
 let undoAfter: (Snapshot & { climate: ClimateZone | null }) | null = null;
-const SNAP_KEYS = ['members', 'kept', 'removed', 'crops', 'guests'] as const;
+const SNAP_KEYS = ['members', 'kept', 'removed', ...state.lists.endsUndo, 'guests'] as const;
 function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = []): void {
   undoAfter = { ...snapshot(), climate: climate.peek() };
   showToast(text, () => { undoAfter = null; restoreSnapshot(before); }, action, focus);
 }
 effect(() => {
-  const now = { members: members.value, kept: kept.value, removed: removed.value, crops: crops.value, guests: guests.value, climate: climate.value };
+  state.track(state.lists.endsUndo);
+  const now = { members: members.value, kept: kept.value, removed: removed.value, ...state.peek(state.lists.endsUndo), guests: guests.value, climate: climate.value };
   const after = undoAfter;
   if (!after) return;
   if (now.climate !== after.climate || SNAP_KEYS.some((k) => now[k] !== after[k])) {

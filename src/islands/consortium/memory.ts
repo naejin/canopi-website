@@ -32,10 +32,11 @@
 // logic.js, memory.js and crops.js). The wiring (startMemory) reads and writes the store's signals.
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
 import type { ClimateZone, DecodedLink, Interaction, LinkNotice, LinkOrigin, PhaseOrd, PlantId, ShareState, Site, Taxon } from '../../lib/consortium/index.ts';
-import { decodeLink, encodeLink, linkClimates, linkOrigin, readPreset, zoneOf, LINK_VERSION, MAX_CROPS } from '../../lib/consortium/index.ts';
+import { decodeLink, encodeLink, linkClimates, linkOrigin, readPreset, zoneOf, LINK_VERSION } from '../../lib/consortium/index.ts';
 import type { Country } from './store.ts';
 import * as store from './store.ts';
 import { focusView } from './focus.ts';
+import { state as schema } from './state/schema.ts';
 import { T } from './strings.ts';
 import { letGo, loadLocationStep, lookingThrough, lookups, unread } from './views/location/load.ts';
 
@@ -205,7 +206,7 @@ export function shareState(s: ShareInput, { location = false }: { location?: boo
     kept: [...s.kept],
     removed: [...s.removed],
     guests: Object.entries(s.guests).flatMap(([id, from]) => (from ? [{ id, from }] : [])),
-    crops: s.crops.slice(0, MAX_CROPS),
+    ...(schema.share(s, { location }) as Pick<ShareState, 'crops'>),
     stage: s.stage,
   };
 }
@@ -302,7 +303,7 @@ function applyDecoded(d: DecodedLink, countryFrom: 'link' | 'chosen'): void {
     store.members.value = s.members;
     store.kept.value = s.kept;
     store.removed.value = s.removed;
-    store.crops.value = s.crops;
+    schema.apply(s, { countryFrom });
     store.guests.value = Object.fromEntries(s.guests.map((g) => [g.id, g.from]));
     if (s.stage !== null) store.stage.value = s.stage;
     if (s.country) store.country.value = { code: s.country, source: countryFrom };
@@ -711,8 +712,8 @@ function persist(): void {
 
 // The shown consortium's link, recomputed on every change of what the link holds (Share's field).
 export const shownFragment = computed(() => {
-  void [store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
-    store.guests.value, store.crops.value, store.stage.value, store.view.value, store.pools.value];
+  void [schema.track(schema.lists.reader), store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
+    store.guests.value, store.stage.value, store.view.value, store.pools.value];
   return currentFragment();
 });
 
@@ -771,7 +772,7 @@ export function startMemory(): void {
   // ... unless the reader changed the plants, opened a sheet, or the plant list failed meanwhile.
   let primed = false;
   effect(() => {
-    void [store.members.value, store.kept.value, store.removed.value, store.guests.value, store.crops.value];
+    void [store.members.value, store.kept.value, store.removed.value, store.guests.value, schema.track(schema.lists.plants)];
     if (primed) untracked(dropSuggest);
     primed = true;
   });
@@ -791,8 +792,8 @@ export function watchStore(): void {
   watching = true;
   let first = true;
   effect(() => {
-    void [store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
-      store.guests.value, store.crops.value, store.stage.value, store.view.value];
+    void [schema.track(schema.lists.reader), store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
+      store.guests.value, store.stage.value, store.view.value];
     if (first) { first = false; return; }
     if (quiet) return;
     actions++;
@@ -806,8 +807,8 @@ export function watchStore(): void {
     });
   });
   effect(() => {
-    void [store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
-      store.guests.value, store.crops.value, store.stage.value, store.view.value, store.pools.value, store.setAside.value];
+    void [schema.track(schema.lists.save), store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
+      store.guests.value, store.stage.value, store.view.value, store.pools.value, store.setAside.value];
     untracked(persist);
   });
 }
