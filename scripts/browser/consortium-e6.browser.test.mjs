@@ -338,8 +338,9 @@ test('E6-3d (K3 lazy sheets): Add, search, Paste and Swap opened while the range
 });
 
 // E6 exit (B4 hand-off): the test build awaits its hook before the first render; #ct-root keeps
-// aria-busy until that render, so loadState() never reads an empty root as ready, however late the
-// hook's chunk comes (no modulepreload of it needed).
+// aria-busy until that render, so loadState() never reads the loading line as ready, however late the
+// hook's chunk comes, modulepreloaded or not (astro.config.mjs preloads it until the coordinator
+// removes that line; nothing here depends on it).
 test('E6-17 (B4 hand-off, done in the chunk-5 exit): in the test build, #ct-root stays aria-busy until the island renders, the test hook\'s chunk held', async () => {
   assert.ok(h.roles.testHook?.length, 'role `testHook` has no chunk in this build (npm run build:browser-test)');
   const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { testHook: 'hold' } });
@@ -356,4 +357,15 @@ test('E6-17 (B4 hand-off, done in the chunk-5 exit): in the test build, #ct-root
   assert.ok(await has(page, aria('radio', 'Temperate'), 4000), 'Start renders once the hook arrives');
   assert.equal(await page.evaluate(() => document.getElementById('ct-root').hasAttribute('aria-busy')), false, 'aria-busy goes with the render');
   await page.browserContext().close().catch(() => {});
+});
+
+// E6 exit fix round: a hook chunk that fails ends the wait with a load error naming it, never a root
+// left busy (loadState would time out reading 'loading').
+test('E6-19 (B4 hand-off, chunk-5 exit fix round): in the test build, a test hook chunk that fails to load leaves #ct-root not busy, with a load error naming the hook', async () => {
+  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { testHook: 404 } });
+  try {
+    assert.equal(await loadState(page, 8000), 'test-hook', 'loadState reads the hook\'s failure');
+    assert.equal(await page.evaluate(() => document.getElementById('ct-root').hasAttribute('aria-busy')), false, 'aria-busy removed');
+    assert.match(await page.$eval('#ct-root [data-load-error]', (p) => p.textContent), /test hook/, 'the line names the test hook');
+  } finally { await page.browserContext().close().catch(() => {}); }
 });

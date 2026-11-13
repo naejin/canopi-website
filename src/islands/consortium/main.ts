@@ -69,13 +69,24 @@ if (root && data) {
   setPageCountries(data.countries);
   watchPools();
   void open(data);
-  // The root stays aria-busy (its static loading line replaced) until App renders into it.
+  // The root keeps its static loading line, aria-busy, until App renders into it.
   const onRetry = () => void open(data);
   const show = () => { root.textContent = ''; render(h(App, { guide: data.guide, onRetry }), root); root.removeAttribute('aria-busy'); };
   // The browser-test build loads the test hook (window.__ctTest, __ctFaults) before the first
-  // render, the root busy meanwhile, so the hook's chunk needs no modulepreload; a production build
-  // folds __CT_TEST_HOOK__ to false and drops the import, so test-hook.ts is in no production chunk
-  // (design check A13) and the render follows at once.
-  if (__CT_TEST_HOOK__) void import('./test-hook.ts').then(show);
-  else show();
+  // render, the root busy meanwhile, so a test that waits for the render (harness loadState) never
+  // reads the loading line as ready, preloaded hook chunk or not; a production build folds
+  // __CT_TEST_HOOK__ to false and drops the import, so test-hook.ts is in no production chunk
+  // (design check A13) and the render follows at once. A hook that fails to load (or a first render
+  // that throws) ends the wait with a load error naming it (harness loadState reads 'test-hook').
+  if (__CT_TEST_HOOK__) {
+    void import('./test-hook.ts').then(show).catch((err: unknown) => {
+      const why = `Consortium test build: the test hook or the first render failed: ${(err as Error)?.message ?? String(err)}`;
+      console.error(why);
+      const p = document.createElement('p');
+      p.dataset.loadError = 'test-hook';
+      p.textContent = why;
+      root.replaceChildren(p);
+      root.removeAttribute('aria-busy');
+    });
+  } else show();
 }
