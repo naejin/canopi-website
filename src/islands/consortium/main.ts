@@ -64,5 +64,10 @@ if (root && data) {
   // render, whose Start runs startMemory in a layout effect, before the first paint (N2 layout shift).
   watchPools();
   void open(data);
-  render(h(App, { guide: data.guide, onRetry: () => void open(data) }), root);
+  // The browser-test build loads the test hook (window.__ctTest, __ctFaults) before the first
+  // render; a production build folds __CT_TEST_HOOK__ to false and drops the import, so test-hook.ts
+  // is in no production chunk (design check A13) and the render follows at once.
+  const onRetry = () => void open(data);
+  if (__CT_TEST_HOOK__) void import('./test-hook.ts').then(() => render(h(App, { guide: data.guide, onRetry }), root));
+  else render(h(App, { guide: data.guide, onRetry }), root);
 }
