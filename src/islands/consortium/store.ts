@@ -444,8 +444,11 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
 
 // The store's own effects, started by main.ts before the first render, in the order they ran when
 // they were module-level; a node test imports the store with none running
-// (scripts/consortium-start.test.mjs). Called once.
+// (scripts/consortium-start.test.mjs). A second call does nothing (each effect would run twice).
+let started = false;
 export function start(): void {
+  if (started) return;
+  started = true;
   // The range rule's chunk, loaded once the location has a climate (rangeRule, rangeBroken).
   effect(() => {
     if (!siteClimate.value || rangeLoad) return;

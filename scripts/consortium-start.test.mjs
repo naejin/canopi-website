@@ -53,3 +53,11 @@ test('store.start registers store.ts\'s effects in their old module order', asyn
   assert.deepEqual(lines, bodies.map((n) => n - 1), 'made in the old order: the range rule, the mark providers, the Undo offer');
   assert.deepEqual(touches, [], 'starting the effects reads no localStorage');
 });
+
+test('a second store.start registers no effect again (each would run its load and the Undo end twice)', async () => {
+  const store = await import(new URL('store.ts', island).href);
+  store.start(); // a no-op or the first start, whichever test ran first
+  const before = effects().length;
+  store.start();
+  assert.equal(effects().length, before, 'start() is guarded: called once');
+});
