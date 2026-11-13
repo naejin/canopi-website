@@ -206,6 +206,8 @@ const testSource = new Proxy(realSource, {
     return typeof v === 'function' ? v.bind(t) : v;
   },
 });
+// The store's own effects (the Undo offer's end among them), as main.ts starts them with store.start() (E6 S3).
+store.start?.();
 // The save and the address follow every change, as startMemory sets them up in the page.
 m.watchStore?.();
 const UNSURE = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };

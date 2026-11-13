@@ -116,10 +116,6 @@ export function oldRecord(text: string | null): boolean {
   return ver !== null && ver !== String(LINK_VERSION);
 }
 
-// ---- climates at the island edge (the site's lowercase ids) ----
-
-export const siteId = (z: ClimateZone): string => z.toLowerCase();
-
 // ---- the share state ----
 
 // The state a link or the save holds, each field as state/schema.ts puts it. A guessed country is

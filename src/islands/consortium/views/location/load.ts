@@ -4,7 +4,6 @@
 // a plain visit (decision row "Island JavaScript budget for P5"). Once loaded, the shell renders its
 // result line from `locationStep`.
 import { signal } from '@preact/signals';
-import { provideLocationStep } from '../../state/restore.ts';
 
 export type LocationStep = typeof import('./location.tsx');
 export const locationStep = signal<LocationStep | null>(null);
@@ -18,10 +17,9 @@ export function loadLocationStep(): Promise<LocationStep> {
   });
   return pending;
 }
-// Island state never imports a view (ADR-1 L2): restore.ts gets this loader from here, the view that
-// owns the chunk. This module is in the first run (LocationSlot imports it), so the loader is in place
-// before startMemory can ask for a location.
-provideLocationStep(loadLocationStep);
+// Island state never imports a view (ADR-1 L2): main.ts hands this loader to restore.ts
+// (provideLocationStep) before the first render, so it is in place before startMemory can ask for a
+// location (E6 S3: nothing is registered because a module was imported).
 
 // The lookups in flight, their line and ownership live in island state (state/lookups.ts); they
 // are re-exported here for the P5 seam tests until chunk 5 points them there.
