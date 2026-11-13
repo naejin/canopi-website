@@ -1,5 +1,5 @@
 {
-  "_comment": "Owners file of F1a (Palette, Add filters, confidence, Balance) of the Consortium v2 plan (knowledge/project/consortium-v2-plan.md section F1a; design check .local/consortium/v2/f1a/design-check.md section 4, gitignored in the main checkout). Path -> stream per chunk: one owner per path per chunk; a path may change hands between chunks. Patterns are repo-relative: '*' stays within a folder, '**' crosses folders. Chunks run in order; streams inside a chunk run in parallel. Streams: pal = 1 Palette and Structure, add = 2 Add filters (add1 = 2a before D2a), conf = 3 confidence, bal = 4 Balance, perf = 5 slow phone and budgets, a11y = 6 accessibility. Chunk 3 waits for the D2a reinstall. 'shared' lists files several streams append to under their own key prefix; the merge agent joins the blocks. Tests sit at the lasting layer (core, state, store actions) with one browser test per user scenario that pins no layout or wording; a replaced screen's old tests are deleted (owner rule, row 'E6 hand-off merge choices'). scripts/plan-owners.test.mjs validates every scripts/plan/*-owners.json; node scripts/plan/owners.mjs check <chunk> <stream> <base> --file scripts/plan/f1a-owners.json fails a stream diff outside its rows. A file found needed mid-build is requested from the main agent, never taken.",
+  "_comment": "Owners file of F1a (Palette, Add filters, confidence, Balance) of the Consortium v2 plan (knowledge/project/consortium-v2-plan.md section F1a; design check .local/consortium/v2/f1a/design-check.md section 4, gitignored in the main checkout). Path -> stream per chunk: one owner per path per chunk; a path may change hands between chunks. Patterns are repo-relative: '*' stays within a folder, '**' crosses folders. Chunks run in order; streams inside a chunk run in parallel. Streams: pal = 1 Palette and Structure, add = 2 Add filters (add1 = 2a before D2a), conf = 3 confidence, bal = 4 Balance, perf = 5 slow phone and budgets, a11y = 6 accessibility. Chunk 3 waits for the D2a reinstall. 'shared' lists the locale files: each listed stream adds keys only under its own consortium.* prefix and changes or deletes only the keys its edits name (checked by owners.mjs check against the chunk base); the merge agent joins the blocks. Tests sit at the lasting layer (core, state, store actions) with one browser test per user scenario that pins no layout or wording; a replaced screen's old tests are deleted (owner rule, row 'E6 hand-off merge choices'). scripts/plan-owners.test.mjs validates every scripts/plan/*-owners.json; node scripts/plan/owners.mjs check <chunk> <stream> <base> --file scripts/plan/f1a-owners.json fails a stream diff outside its rows. A file found needed mid-build is requested from the main agent, never taken.",
   "step": "consortium-v2 F1a",
   "branch": "f1a/int",
   "shared": [
@@ -7,16 +7,63 @@
       "files": [
         "src/i18n/translations/*.json"
       ],
-      "streams": [
-        "pal1",
-        "conf1",
-        "a11y1",
-        "pal2",
-        "conf2",
-        "bal2",
-        "add3"
-      ],
-      "rule": "each stream appends one contiguous block under its own prefix (pal., conf., bal., add.f.; a11y1 uses pal.) and edits only the existing keys its duty names; the merge agent joins the blocks"
+      "streams": {
+        "pal1": {
+          "prefix": "consortium.palette.",
+          "edits": [
+            "consortium.matrix.*",
+            "consortium.list.*",
+            "consortium.jobsHeading",
+            "consortium.room.*",
+            "consortium.site.a.room.*",
+            "consortium.site.basis.room.*"
+          ]
+        },
+        "add1": {
+          "prefix": "consortium.filter.",
+          "edits": []
+        },
+        "conf1": {
+          "prefix": "consortium.conf.",
+          "edits": []
+        },
+        "a11y1": {
+          "prefix": "consortium.a11y.",
+          "edits": []
+        },
+        "pal2": {
+          "prefix": "consortium.palette.",
+          "edits": [
+            "consortium.job.*"
+          ]
+        },
+        "conf2": {
+          "prefix": "consortium.conf.",
+          "edits": [
+            "consortium.est.*",
+            "consortium.estimate.*",
+            "consortium.future.plant.*",
+            "consortium.range.*",
+            "consortium.details.fromList",
+            "consortium.print.fromList"
+          ]
+        },
+        "bal2": {
+          "prefix": "consortium.balance.",
+          "edits": []
+        },
+        "add3": {
+          "prefix": "consortium.filter.",
+          "edits": [
+            "consortium.add.*"
+          ]
+        },
+        "bal3": {
+          "prefix": "consortium.balance.",
+          "edits": []
+        }
+      },
+      "rule": "the 11 flat locale files: a stream adds keys only under its prefix (unique within a chunk) and changes or deletes only the existing keys its edits globs name (the deletions its duty describes: pal1 the four tab labels, the fill line and the All plants list keys it replaces; conf2 est.word, estimate.from{Zone} x3, future.plant.inside and the guest wordings); node scripts/plan/owners.mjs check fails any other key change against the chunk base; another key is requested from the main agent; the merge agent joins the blocks"
     }
   ],
   "chunks": [
@@ -25,10 +72,18 @@
       "streams": {
         "main": {
           "needs": [],
-          "duty": "commit 0: additive seams in core types.ts (rooms value 'pots', View 'start'|'palette'|'structure', ConfidenceTerm/Confidence, BalanceCheck) and ROOM_LIMIT_M in site.ts (one room table, values unchanged); lazy roles 'structure' and 'balance' in ROLE_ENTRIES with caps at their maximum until measured (A1, A2; coordinator = the one budget owner); the six F1a spec files and the three new core test files written failing with expect-fail markers (owner stream in each title; one browser test per user scenario, no layout or wording pinned); shards.json lists the new specs; owners file; plan and decision rows",
+          "duty": "commit 0: additive seams in core types.ts (rooms value 'pots', View 'start'|'palette'|'structure', ConfidenceTerm/Confidence, BalanceCheck, AddPreset {job?, layer?, stage?, filters?, hint?}) and ROOM_LIMIT_M in site.ts (one room table, values unchanged); balance.ts with the check registry's signature (every check 'not-checked' until bal2 fills it) and its index.ts export, so pal2's strip and bal2 build on one seam in chunk 2; focus.ts with the toast-focus helper's signature (today's behaviour) so pal1's store.ts calls what a11y1 implements in the same chunk; the 'balance' lazy part registered in lazy.tsx as retryable with a stub views/balance/BalanceSlot.tsx; empty palette.css and balance.css imported by ConsortiumPage.astro (page-level, no CSS on a lazy chunk); lazy roles 'structure' and 'balance' in ROLE_ENTRIES with caps at their maximum until measured (A1, A2; coordinator = the one budget owner); the six F1a spec files and the three new core test files written failing with expect-fail markers (owner stream in each title; one browser test per user scenario, no layout or wording pinned); shards.json lists the new specs; owners file; plan and decision rows",
           "files": [
             "src/lib/consortium/types.ts",
             "src/lib/consortium/site.ts",
+            "src/lib/consortium/balance.ts",
+            "src/lib/consortium/index.ts",
+            "src/islands/consortium/focus.ts",
+            "src/islands/consortium/views/lazy.tsx",
+            "src/islands/consortium/views/balance/**",
+            "src/styles/consortium/palette.css",
+            "src/styles/consortium/balance.css",
+            "src/components/consortium/ConsortiumPage.astro",
             "scripts/built-modules.mjs",
             "scripts/built-modules.test.mjs",
             "scripts/check-built-site.mjs",
@@ -52,7 +107,7 @@
           "needs": [
             "main"
           ],
-          "duty": "Stream 1 Palette and Structure, view side (base d9e00ca). Probe first: move the matrix (Matrix, PhoneMatrix, matrix-parts, tracks, matrix-only StageBar parts) to the lazy 'structure' role and measure the first run before building Palette (A1). Kit first-view.ts owns ct:first-view, the new ct:start mark and prefetchLater for Palette and Structure. A3 palette.ts (role groups, counts, health summary) with runsOf moved into jobs.ts; A4 cards by role, '+ N more' at 200 plants; A5 the % bar goes; A6 View + saved 'shown', link key w under v4 (no bump, Structure only), writers restore.ts/draft.ts/suggest-wait.ts/store.ts repointed; A7 Head placeholder while restoring, page-head script marks saves; A8 'pots' room, SIZE_LIMIT and site-marks.ts:102 from ROOM_LIMIT_M; A9 chips glyph-only at 960 px, names start with the visible name, list-level 'placed from the {lists} lists' line; A10 + Q1 invasive tie rule in gain() (any GRIIS country with no country chosen, that country with one) with a scenario test and the suggest.ts:13 comment; Q2 a future tie rule after it, only with a location (Suggest waits for the future chunk: new wait and failure row; F3 replaces it); A11 four tabs -> Palette + Structure, All plants into Palette through listQuery, Jobs -> gap list, Side print-only; A12 strip states, FutureSlot failure line + Reload, Notices to the shell; A23 site.ts through factAt (no behaviour change); store.ts calls a11y1's toast-focus helper; ct-tab/panel waits in the old specs and helpers move to the hook, state and ct:first-view; replaced screens' old tests deleted; A26 carried-in gaps (zoneOf regex with double quotes, E6-18 rescheduled Reload toast, Suggest after the cap then the late chunk)",
+          "duty": "Stream 1 Palette and Structure, view side (base d9e00ca). Probe first: move the matrix (Matrix, PhoneMatrix, matrix-parts, tracks, matrix-only StageBar parts) to the lazy 'structure' role and measure the first run before building Palette (A1). Kit first-view.ts owns ct:first-view, the new ct:start mark and prefetchLater for Palette and Structure. A3 palette.ts (role groups, counts, health summary) with runsOf moved into jobs.ts; A4 cards by role, '+ N more' at 200 plants; A5 the % bar goes; A6 View + saved 'shown', link key w under v4 (no bump, Structure only), writers restore.ts/draft.ts/suggest-wait.ts/store.ts repointed; A7 Head placeholder while restoring, page-head script marks saves, and the fr .tool-meta wrap fixed (row 'E1 harness deviations'); A8 'pots' room, SIZE_LIMIT and site-marks.ts:102 from ROOM_LIMIT_M; A9 chips glyph-only at 960 px, names start with the visible name, list-level 'placed from the {lists} lists' line; A10 + Q1 invasive tie rule in gain() (any GRIIS country with no country chosen, that country with one) with a scenario test and the suggest.ts:13 comment; Q2 a future tie rule after it, only with a location (Suggest waits for the future chunk: new wait and failure row; F3 replaces it); A11 four tabs -> Palette + Structure, All plants into Palette through listQuery, Jobs -> gap list, Side print-only; A12 strip states, FutureSlot failure line + Reload, Notices to the shell; A23 site.ts through factAt (no behaviour change); openAdd(preset: AddPreset) in store.ts carries the preset and hint through to Add (A22); store.ts calls the toast-focus helper commit 0 declares in focus.ts; ct-tab/panel waits in the old specs and helpers move to the hook, state and ct:first-view; replaced screens' old tests deleted; A26 carried-in gaps (zoneOf regex with double quotes, E6-18 rescheduled Reload toast, Suggest after the cap then the late chunk); failure rows (design check section 5): a link with an unknown w or m=pots in an old tab opens Palette / 'Not sure' (state test in consortium-memory.test.mjs); Structure pressed before the prefetch shows a loading line with one fetch, and a resize across 960 keeps the stage (both in the Structure-link browser scenario); structure registered retryable in lazy.tsx (re-import as ?retry=n, covered by the 'Structure chunk fails' scenario)",
           "files": [
             "src/islands/consortium/App.tsx",
             "src/islands/consortium/views/Matrix.tsx",
@@ -134,7 +189,7 @@
           "needs": [
             "main"
           ],
-          "duty": "Stream 2a, before D2a (A13): Add's range filter (Add.tsx:52-54) moves into listQuery with the range verdict passed in as SuggestScene passes it, no behaviour change; Add.tsx:42 reads ROOM_LIMIT_M (A8; takes the design check's stream-1 'Add.tsx room test' so Add.tsx has one owner in chunk 1)",
+          "duty": "Stream 2a, before D2a (A13): Add's range filter (Add.tsx:52-54) moves into listQuery with the range verdict passed in as SuggestScene passes it, no behaviour change; Add.tsx:42 reads ROOM_LIMIT_M (A8; takes the design check's stream-1 'Add.tsx room test' so Add.tsx has one owner in chunk 1); Add renders AddPreset.hint as a line under its filters (A22: Balance's 'Find…' passes the check's line)",
           "files": [
             "src/islands/consortium/rules/list-query.ts",
             "src/islands/consortium/views/Add.tsx",
@@ -145,7 +200,7 @@
           "needs": [
             "main"
           ],
-          "duty": "Stream 5 Slow phone and budgets (base d9e00ca; A24, A1 budget side). Probe first: compare the harness's wasm Content-Encoding with production before setting any target. Wasm preload injected after the build in astro.config.mjs; the build asserts href = the fetched URL, matching crossorigin and one wasm; timing reads the new ct:start mark (target <= 6 s first-visit Start, warns) beside ct:first-view (restored link no worse than the E6 hand-off within P-E6b's noise band; <= 6 s moves to E7); load.ts only if compileStreaming is taken; ADR-2 concept. Caps are set by the budget owner at each merge (first run = measured + 0.5 KB after stream 1; a coordinator row above 38 KB, an ADR-2 change above 40 KB)",
+          "duty": "Stream 5 Slow phone and budgets (base d9e00ca; A24, A1 budget side). Probe first: compare the harness's wasm Content-Encoding with production before setting any target. Wasm preload injected after the build in astro.config.mjs; the build asserts href = the fetched URL, matching crossorigin and one wasm; timing reads the new ct:start mark (target <= 6 s first-visit Start, warns) beside ct:first-view (restored link no worse than the E6 hand-off within P-E6b's noise band; <= 6 s moves to E7); load.ts only if compileStreaming is taken; ADR-2 concept. Caps are set by the budget owner at each merge (first run = measured + 0.5 KB after stream 1; a coordinator row above 38 KB, an ADR-2 change above 40 KB); failure row: a wasm 404 after a deploy shows the existing screen with no second error from the preload (one browser scenario in the f1a perf spec)",
           "files": [
             "astro.config.mjs",
             "scripts/browser/consortium-timing.mjs",
@@ -160,7 +215,7 @@
           "needs": [
             "main"
           ],
-          "duty": "Stream 6 Accessibility (base d9e00ca; A25). Probe first: CDP live-region capture on the toast in the pinned Chrome. One focus.ts helper for every hideToast path (focus to the next control, never body); the toast timer pauses on hover and focus; Sheets.tsx:47 uses focusPlant; view jumps call focusView and keep the .ct-tabpanel contract; Details.tsx:315 (this chunk only, before stream 3); CDP live-region log helper; status regions always present, loading line announced once, the two aria-expanded values fixed (in pal1's files by request). The axe page list and baseline belong to the merge agent",
+          "duty": "Stream 6 Accessibility (base d9e00ca; A25). Probe first: CDP live-region capture on the toast in the pinned Chrome. Implements commit 0's focus.ts helper for every hideToast path (focus to the next control, never body); the toast timer pauses on hover and focus; Sheets.tsx:47 uses focusPlant; view jumps call focusView and keep the .ct-tabpanel contract; Details.tsx:315 (this chunk only, before stream 3); CDP live-region log helper; status regions always present, loading line announced once, the two aria-expanded values fixed (in pal1's files by request). The axe page list and baseline belong to the merge agent",
           "files": [
             "src/islands/consortium/focus.ts",
             "src/islands/consortium/views/Toast.tsx",
@@ -181,7 +236,7 @@
             "pal1",
             "a11y1"
           ],
-          "duty": "Stream 1 surfaces: the health strip (checking / unavailable / 'Future not checked: add your location', a future count above Share and Download opening the future panel; a projection of jobGapsByPhase, flags, futureSummary and the core Balance checks, so it works when the balance chunk fails) and the gap list with 'Find…' opening Add preset to the gap; Q5 soil builders (feeds_soil, mulch) and ground covered (ground) are per-stage gaps in this list, not Balance checks; phone folds the list to one 'N gaps' row (space budget section 6)",
+          "duty": "Stream 1 surfaces: the health strip (counts all 7 stages whatever the room, A8; checking / unavailable / 'Future not checked: add your location', a future count above Share and Download opening the future panel; a projection of jobGapsByPhase, flags, futureSummary and the core Balance checks through commit 0's balance.ts signature, so it works when the balance chunk fails) and the gap list with 'Find…' opening Add preset to the gap; Q5 soil builders (feeds_soil, mulch) and ground covered (ground) are per-stage gaps in this list, not Balance checks; phone folds the list to one 'N gaps' row (space budget section 6); places commit 0's BalanceSlot in Palette (the Balance entry); failure row: a guest list still loading (guestsPending) shows 'loading', never a false gap (core test in consortium-palette.test.mjs)",
           "files": [
             "src/islands/consortium/views/Palette.tsx",
             "src/islands/consortium/views/palette/**",
@@ -200,7 +255,7 @@
             "pal1",
             "a11y1"
           ],
-          "duty": "Stream 3 surfaces (A16): Details, PlantLine (future.plant.inside goes), PrintSheet notes and chips/rows (with the spread) read plantMarks; one guest term (row 108(D) label kept); estimate.from{Zone} x3 -> one key with {list}; 'not checked' in Add and Details when the range rule failed; the marks-unavailable notice in Add, Details and Print; site-marks.ts marks (pal1 did the room test in chunk 1); Q4 one mycorrhizal line in Details (dropped from Balance); fr/de/ja/es tell 'not reviewed' from 'not checked'",
+          "duty": "Stream 3 surfaces (A16): Details, PlantLine (future.plant.inside goes), PrintSheet notes and chips/rows (with the spread) read plantMarks; one guest term (row 'E6 hand-off merge choices' (D) label kept); estimate.from{Zone} x3 -> one key with {list}; 'not checked' in Add and Details when the range rule failed; the marks-unavailable notice in Add, Details and Print; site-marks.ts marks (pal1 did the room test in chunk 1); Q4 one mycorrhizal line in Details (dropped from Balance); fr/de/ja/es tell 'not reviewed' from 'not checked'; failure rows: a range rule that succeeds after a failure flips the marks and clears the notice (extends the 'Range rule fails' browser scenario); a sheet closed before the pool loads makes no state write and no toast (pool.tsx)",
           "files": [
             "src/islands/consortium/views/PlantMarks.tsx",
             "src/islands/consortium/views/StageBar.tsx",
@@ -221,7 +276,7 @@
             "pal1",
             "conf1"
           ],
-          "duty": "Stream 4 Balance (A2, A3 balance.ts, A19-A22). Probe first: layerValues for 200 plants within the phone profile, and the balance chunk under its cap. balance.ts registry (BalanceCheck {id, state ok/gap/waiting/not-enough-data/not-checked, n, m, preset}); PlantSource.layerValues(ids, zone) with fakes and the E7 facade; checks: family spread (the rule F3's risk spread reads), climate margin (a range.ts function through factAt, RangeRule widened, passed in as an argument), water mix (factAt('water_need'); Trop 'not enough data'), flowering by country or latitude band, today's records only, 'waiting for data' until canopi-data's hemisphere stamp (A21), food 'fruit and seed crops, where recorded', evergreen/deciduous 'waiting for data' until D2a; waiting checks (roots, insect months, active season) show what is missing; every check without data says 'n of m recorded' and never passes; no mycorrhizal check (Q4) and no soil-builder or ground check (Q5, gap list); 'Find…' with no matching filter opens Add with the nearest approved filter and the check's line as a hint (A22); isAnnual through factAt (A23); fixtures gain hemisphere, country and latitude-band rows; the balance lazy part registered in lazy.tsx",
+          "duty": "Stream 4 Balance (A2, A3 balance.ts, A19-A22). Probe first: layerValues for 200 plants within the phone profile, and the balance chunk under its cap. balance.ts registry (BalanceCheck {id, state ok/gap/waiting/not-enough-data/not-checked, n, m, preset}); PlantSource.layerValues(ids, zone) with fakes and the E7 facade; checks: family spread (the rule F3's risk spread reads), climate margin (a range.ts function through factAt, RangeRule widened, passed in as an argument), water mix (factAt('water_need'); Trop 'not enough data'), flowering by country or latitude band, today's records only, 'waiting for data' until canopi-data's hemisphere stamp (A21), food 'fruit and seed crops, where recorded', evergreen/deciduous 'waiting for data' until D2a (bal3 turns it on); waiting checks (roots, insect months, active season) show what is missing; every check without data says 'n of m recorded' and never passes; no mycorrhizal check (Q4) and no soil-builder or ground check (Q5, gap list); 'Find…' with no matching filter opens Add with the nearest approved filter and the check's line as a hint (A22); isAnnual through factAt (A23); fixtures gain hemisphere, country and latitude-band rows; fills commit 0's balance.ts registry and BalanceSlot; 'Find…' calls openAdd with the nearest filter and the check's line as hint (no Add or store edit); failure rows: the balance chunk re-imports as ?retry=n and Palette unmounted while it resolves makes no stale toast or write (both in the 'Balance chunk fails' browser scenario, the chunk held then released after a switch to Structure)",
           "files": [
             "src/lib/consortium/balance.ts",
             "src/lib/consortium/source.ts",
@@ -229,7 +284,6 @@
             "src/lib/consortium/index.ts",
             "src/islands/consortium/data/sqlite-source.ts",
             "src/islands/consortium/views/balance/**",
-            "src/islands/consortium/views/lazy.tsx",
             "src/styles/consortium/balance.css",
             "scripts/fixtures/consortium-v2/**",
             "scripts/consortium-balance.test.mjs",
@@ -248,18 +302,30 @@
             "add1",
             "conf2"
           ],
-          "duty": "Stream 2 Add filters and site offers, after the D2a reinstall (plan F1a stream 2, A14). Write the persona scenarios first: after D2a, Nitrogen fixer, Life cycle and Holds up each change a decision or are cut (row 131; Nitrogen fixer checked against Job 'Feeds the soil'). Range filter within / near the edge / all; Fits your site; Life cycle, Nitrogen fixer, Has edible parts; Within range, Holds up; Native here (optional, off); context openings preset filters; unknowns as counts; no location hides range and native filters; Evergreen in Details only; soil 'Likely … · Use it' offer; Native line in Details; crop search through the D2a vernacular synonyms; likely/native role entries handed to the budget owner",
+          "duty": "Stream 2 Add filters and site offers, after the D2a reinstall (plan F1a stream 2, A14). Write the persona scenarios first: after D2a, Nitrogen fixer, Life cycle and Holds up each change a decision or are cut (row 'Filters in Add (P5.1)'; Nitrogen fixer checked against Job 'Feeds the soil'). Range filter within / near the edge / all; Fits your site; Life cycle, Nitrogen fixer, Has edible parts; Within range, Holds up; Native here (optional, off); context openings preset filters; unknowns as counts; no location hides range and native filters; Evergreen in Details only; soil 'Likely … · Use it' offer; Native line in Details; crop search through the D2a vernacular synonyms; likely/native role entries handed to the budget owner; LikelySlot and NativeSlot registered in lazy.tsx under the existing likely/native roles",
           "files": [
             "src/islands/consortium/rules/list-query.ts",
             "src/islands/consortium/views/Add.tsx",
             "src/islands/consortium/views/add/**",
             "src/islands/consortium/views/LikelySlot.tsx",
             "src/islands/consortium/views/NativeSlot.tsx",
+            "src/islands/consortium/views/lazy.tsx",
             "src/islands/consortium/views/details/Details.tsx",
             "src/islands/consortium/store.ts",
             "src/islands/consortium/data/search.ts",
             "scripts/consortium-list-query.test.mjs",
             "scripts/browser/consortium-f1a-filters.browser.test.mjs"
+          ]
+        },
+        "bal3": {
+          "needs": [
+            "bal2"
+          ],
+          "duty": "Stream 4 after the D2a reinstall: the evergreen/deciduous check in balance.ts reads D2a's deciduous rule (die-back herbaceous perennials counted deciduous) instead of 'waiting for data'; fixture rows for it; one persona case in consortium-balance.test.mjs (no new browser scenario)",
+          "files": [
+            "src/lib/consortium/balance.ts",
+            "scripts/fixtures/consortium-v2/**",
+            "scripts/consortium-balance.test.mjs"
           ]
         }
       }
@@ -273,6 +339,7 @@
             "conf2",
             "bal2",
             "add3",
+            "bal3",
             "perf1",
             "a11y1"
           ],

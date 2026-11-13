@@ -2,7 +2,7 @@
 // one owner per path per chunk, needs pointing back, patterns repo-relative, shared files apart.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { matches, outside, overlaps, ownersFiles, ownersProblems, readOwners } from './plan/owners.mjs';
+import { keyProblems, matches, outside, overlaps, ownersFiles, ownersProblems, readOwners } from './plan/owners.mjs';
 
 test('every owners file: no path owned by two streams in one chunk; each need is an earlier stream', () => {
   const files = ownersFiles();
@@ -11,7 +11,7 @@ test('every owners file: no path owned by two streams in one chunk; each need is
 });
 
 test('shared files: only the listed streams may change them, and no stream owns them outright', () => {
-  const owners = { shared: [{ files: ['src/i18n/translations/*.json'], streams: ['A'] }], chunks: [
+  const owners = { shared: [{ files: ['src/i18n/translations/*.json'], streams: { A: { prefix: 'consortium.a.', edits: ['consortium.old.*'] } } }], chunks: [
     { chunk: 0, streams: { main: { needs: [], files: ['package.json'] } } },
     { chunk: 1, streams: { A: { needs: ['main'], files: ['src/a.ts'] }, B: { needs: ['main'], files: ['src/b.ts'] } } },
   ] };
@@ -19,10 +19,25 @@ test('shared files: only the listed streams may change them, and no stream owns 
   assert.deepEqual(outside(owners, 1, 'A', ['src/a.ts', 'src/i18n/translations/fr.json']), []);
   assert.deepEqual(outside(owners, 1, 'B', ['src/i18n/translations/fr.json']), ['src/i18n/translations/fr.json']);
   owners.chunks[1].streams.B.files.push('src/i18n/translations/en.json');
-  owners.shared[0].streams.push('Z');
+  owners.shared[0].streams.Z = { prefix: 'consortium.z.', edits: [] };
+  owners.shared[0].streams.B = { prefix: 'consortium.', edits: [] };
   const problems = ownersProblems(owners);
   assert.ok(problems.some((p) => /en\.json \(B\) is also the shared/.test(p)), problems.join('\n'));
   assert.ok(problems.some((p) => /no stream Z/.test(p)), problems.join('\n'));
+  assert.ok(problems.some((p) => /shared keys consortium\.a\.\* \(A\) and consortium\.\* \(B\) overlap/.test(p)), problems.join('\n'));
+});
+
+test('shared keys: a stream adds only under its prefix and changes or deletes only its edits', () => {
+  const spec = { prefix: 'consortium.palette.', edits: ['consortium.matrix.tab.*'] };
+  const base = { 'consortium.matrix.tab.jobs': 'Jobs', 'consortium.list.title': 'All plants', 'consortium.est.word': 'estimate' };
+  const head = { 'consortium.palette.title': 'Palette', 'consortium.balance.x': 'x', 'consortium.list.title': 'Plants', 'consortium.est.word': 'estimate' };
+  assert.deepEqual(keyProblems(spec, base, head), [
+    'added consortium.balance.x outside consortium.palette.',
+    'changed consortium.list.title, not in its edits',
+  ]);
+  assert.deepEqual(keyProblems(spec, base, { ...base, 'consortium.palette.a': 'a' }), []);
+  const { 'consortium.est.word': _gone, ...without } = base;
+  assert.deepEqual(keyProblems(spec, base, without), ['deleted consortium.est.word, not in its edits']);
 });
 
 test('the owners check fails a path two streams own in one chunk, and a need on a later stream', () => {
