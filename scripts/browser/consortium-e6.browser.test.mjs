@@ -213,3 +213,42 @@ test('E6-5b (K3 lazy parts): on Start only, the data ready, the plant dialog and
   for (const u of lazy) assert.equal(requestsTo(log, [u]).length, 1, `one request for ${u}`);
   await page.browserContext().close().catch(() => {});
 });
+
+// E6-5c (L4, review): a prefetch that failed (a flaky connection: the Details chunk's first request
+// does not come back) is retried when the reader opens a plant, so the dialog opens rather than the
+// L1 toast. The first request (the page's modulepreload or the idle prefetch, whichever asks first)
+// is held, then let through while the page is offline, so it fails; back online, a plant opens.
+failing('E6-5c (K3 lazy Details): after the Details chunk\'s first request failed, opening a plant fetches it again and shows its content, not the toast (L4)', { owner: 'K3', reason: /no failure toast \(requests for the chunk: 1\)/ }, async () => {
+  const log = [];
+  const page = await matrixPage({ block: { details: 'hold' }, setup: recordRequests(log) });
+  const deadline = Date.now() + 8000;
+  while (!page.held.length && Date.now() < deadline) await new Promise((r) => setTimeout(r, 100));
+  assert.ok(page.held.length, 'the Details chunk was asked for (held)');
+  await page.setOfflineMode(true);
+  await page.releaseHeld();
+  await page.waitForNetworkIdle({ idleTime: 500, timeout: 5000 }).catch(() => {});
+  await page.setOfflineMode(false);
+  const [chip] = await chips(page);
+  await page.locator(aria('button', chip)).click();
+  await page.waitForFunction(() => !!document.querySelector('dialog[open] section, .ct-toast-text'), { timeout: 8000 }).catch(() => {});
+  assert.equal(await has(page, aria('button', RELOAD), 300), false, `no failure toast (requests for the chunk: ${requestsTo(log, h.roles.details).length})`);
+  assert.ok(await has(page, 'dialog[open] section', 300), `the dialog's content (requests for the chunk: ${requestsTo(log, h.roles.details).length})`);
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-3c (L2, review): a sheet opened before its chunk arrives is one dialog from the loading line to
+// the content: it slides in once and is announced once, its focus inside it throughout.
+failing('E6-3c (K3 lazy Details): Details opened while its chunk is held stays one open dialog when its content arrives (one slide-in, one announcement)', { owner: 'K3', reason: /the same <dialog> shows the content/ }, async () => {
+  const page = await matrixPage({ block: { details: 'hold' } });
+  const [chip] = await chips(page);
+  await page.locator(aria('button', chip)).click();
+  await page.waitForSelector('dialog[open] [role="status"]', { timeout: 2000 });
+  await page.evaluate(() => { window.__k3Dialog = document.querySelector('dialog[open]'); });
+  await page.releaseHeld();
+  await page.waitForFunction(() => !!document.querySelector('dialog[open] section'), { timeout: 8000 });
+  assert.equal(await page.evaluate(() => document.querySelector('dialog[open]') === window.__k3Dialog), true, 'the same <dialog> shows the content');
+  assert.equal(await page.$$eval('dialog.ct-sheet', (ds) => ds.length), 1, 'one sheet dialog in the page');
+  assert.ok(await page.evaluate(() => document.querySelector('dialog[open]')?.contains(document.activeElement)), 'focus in the dialog');
+  assert.equal(await page.$eval('dialog[open]', (d) => d.getAttribute('aria-labelledby')), 'ct-d-title', 'named by the plant\'s heading');
+  await page.browserContext().close().catch(() => {});
+});
