@@ -87,11 +87,18 @@ test('arrival: a link wins, then a guide preset, then an old query link, then th
 });
 
 test('one zoneOf: the island reads climate ids with the core\'s (H15)', async () => {
-  const core = await import('../src/lib/consortium/index.ts');
-  assert.ok(core.zoneOf, 'the core zoneOf, which the views import from the core barrel');
-  assert.doesNotMatch(stateSrc, /const zoneOf\b/, 'island state has no zoneOf of its own');
-  const main = readFileSync(new URL('../src/islands/consortium/main.ts', import.meta.url), 'utf8');
-  assert.doesNotMatch(main, /const zoneOf\b/, 'main.ts has no zoneOf of its own');
+  // Every island file (views, state, main.ts) imports the core's zoneOf: none defines one, imports
+  // one from elsewhere, or re-exports it.
+  const { readdirSync } = await import('node:fs');
+  const dir = new URL('../src/islands/consortium/', import.meta.url);
+  const files = readdirSync(dir, { recursive: true }).filter((f) => /\.tsx?$/.test(f));
+  assert.ok(files.some((f) => f.startsWith('views')), 'the views are scanned');
+  for (const f of files) {
+    const src = readFileSync(new URL(f, dir), 'utf8');
+    assert.doesNotMatch(src, /\b(?:const|let|var|function)\s+zoneOf\b|zoneOf\s*:/, `${f} defines no zoneOf of its own`);
+    assert.doesNotMatch(src, /export\s*\{[^}]*\bzoneOf\b[^}]*\}|export\s*\*\s*from\s*['"][^'"]*lib\/consortium/, `${f} re-exports no zoneOf`);
+    for (const [, from] of src.matchAll(/import\s*\{[^}]*\bzoneOf\b[^}]*\}\s*from\s*'([^']+)'/g)) assert.match(from, /\/lib\/consortium\/index\.ts$/, `${f} imports zoneOf from the core barrel, not ${from}`);
+  }
   assert.doesNotMatch(stateSrc, /ct:pool/, 'no ct:pool mark: the timing script reads ct:first-view');
   assert.doesNotMatch(readFileSync(new URL('./browser/consortium-timing.mjs', import.meta.url), 'utf8'), /ct:pool/, 'the timing script has no ct:pool fallback');
 });
@@ -688,15 +695,24 @@ test('climateShown agrees with the views\' own shown climate in every case (Star
 });
 
 test('location.tsx\'s "Use {climate}" button is not climateShown: it shows for a proposal under a chosen climate (kept as is)', async () => {
+  // The button's own condition, read from location.tsx and evaluated over the real signals, so a
+  // change to that line (to climateShown, say) is what this test sees.
+  const src = readFileSync(new URL('../src/islands/consortium/views/location/location.tsx', import.meta.url), 'utf8');
+  assert.match(src, /const proposed = store\.proposedClimate\.value;/, 'LocationResult\'s proposed is the location\'s proposal');
+  const cond = src.match(/\{!compact && ([^\n]+?) && \(\s*<p><button[^\n]*data-location-confirm/)?.[1];
+  assert.ok(cond, 'the "Use {climate}" button\'s condition is found in location.tsx');
   const store = await import('../src/islands/consortium/store.ts');
+  const button = () => new Function('proposed', 'store', 'pendingClimate', 'climateShown', `return !!(${cond});`)(store.proposedClimate.value, store, persist.pendingClimate, persist.climateShown);
   const before = { climate: store.climate.peek(), proposed: store.proposedClimate.peek(), inFlight: persist.inFlight.peek() };
   try {
     // A reader who chose Temperate, then "Use my location" in Seville: locate() proposes Mediterranean.
     store.climate.value = 'Temperate'; persist.inFlight.value = null; store.proposedClimate.value = 'Mediterranean';
-    const proposed = store.proposedClimate.value;
-    const button = !!proposed && !persist.pendingClimate.value && store.climate.value !== proposed; // location.tsx:85
-    assert.equal(button, true, 'the result line offers "Use Mediterranean"');
+    assert.equal(button(), true, 'the result line offers "Use Mediterranean"');
     assert.equal(persist.climateShown.value.proposed, false, 'climateShown shows the chosen Temperate, no proposal: reading it here would hide the button');
+    store.proposedClimate.value = 'Temperate';
+    assert.equal(button(), false, 'no "Use Temperate" over Temperate chosen');
+    store.climate.value = null; persist.inFlight.value = { id: 1, climate: 'Tropical', from: 'link' }; store.proposedClimate.value = 'Mediterranean';
+    assert.equal(button(), false, 'none over a link\'s climate still opening');
   } finally {
     store.climate.value = before.climate; store.proposedClimate.value = before.proposed; persist.inFlight.value = before.inFlight;
   }
