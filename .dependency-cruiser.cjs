@@ -4,9 +4,10 @@
 // checks the other's rule.
 //
 // Run through the ratchet, never alone in a gate: `npm run check:arch` (scripts/quality/ratchet.mjs arch).
-// An `error` rule fails on any violation. A `warn` rule is a known violation that E6 removes: its
-// current violations are keys in scripts/quality/baselines/arch.json; a new key warns locally and fails
-// in CI (A26). Chunk 5 flips L2/L5/L6/L8 and L7 to `error`; L1 is `error` since Q3 (chunk 3).
+// An `error` rule fails on any violation. A `warn` rule would be a known violation still to remove:
+// its violations are keys in scripts/quality/baselines/arch.json; a new key warns locally and fails in
+// CI (A26). Every rule is `error` since E6 chunk 5 (L1 since Q3, chunk 3; L2/L5/L6/L7/L8 in chunk 5),
+// so the baseline is empty; a new rule may land as `warn` with its keys while code catches up (A25).
 //
 // The edge set (probe P-E4a, 2026-11-13, at 972246a):
 // - tsPreCompilationDeps: true. With `false`, dependency-cruiser parses the transpiled output and loses
@@ -35,7 +36,7 @@ module.exports = {
     },
     {
       name: 'L2-state-no-views',
-      severity: 'warn', // error in chunk 5
+      severity: 'error', // E6 chunk 5
       comment: 'L2: store.ts, state/**, rules/**, focus.ts and strings.ts import nothing under views/, static or dynamic (ADR-1).',
       from: { path: `${ISL}(store\\.ts$|state/|rules/|focus\\.ts$|strings\\.ts$)` },
       to: { path: `${ISL}views/` },
@@ -56,28 +57,28 @@ module.exports = {
     },
     {
       name: 'L5-kit-leaf',
-      severity: 'warn', // error in chunk 5
+      severity: 'error', // E6 chunk 5
       comment: 'L5: views/kit/** imports no other views/ module and no store.ts or state/ (strings and core allowed) (ADR-1).',
       from: { path: `${ISL}views/kit/` },
       to: { path: [`${ISL}views/`, `${ISL}(store\\.ts$|state/)`], pathNot: `${ISL}views/kit/` },
     },
     {
       name: 'L6-sheets-not-details',
-      severity: 'warn', // error in chunk 5
+      severity: 'error', // E6 chunk 5
       comment: 'L6: no module imports views/details/** except views/Sheets.tsx (ADR-1).',
       from: { pathNot: `${ISL}views/(Sheets\\.tsx$|details/)` },
       to: { path: `${ISL}views/details/` },
     },
     {
       name: 'L6-sheets-not-details',
-      severity: 'warn', // error in chunk 5
+      severity: 'error', // E6 chunk 5
       comment: 'L6: views/Sheets.tsx reaches views/details/** only through import() (ADR-1).',
       from: { path: `${ISL}views/Sheets\\.tsx$` },
       to: { path: `${ISL}views/details/`, dependencyTypesNot: ['dynamic-import', 'type-only'] },
     },
     {
       name: 'L7-no-circular',
-      severity: 'warn', // known cycles C1-C5 until E6; error in chunk 5 (choice 15, A24)
+      severity: 'error', // E6 chunk 5 (choice 15, A24; every cycle gone since chunk 2)
       comment: 'L7: no runtime import cycle (static and dynamic edges, type-only edges dropped) in src/islands/consortium and src/lib (ADR-1, A24).',
       from: { path: '^src/(islands/consortium|lib)/' },
       to: {
@@ -88,7 +89,7 @@ module.exports = {
     },
     {
       name: 'L8-test-hook-entry-only',
-      severity: 'warn', // error in chunk 5
+      severity: 'error', // E6 chunk 5
       comment: 'L8: only main.ts imports test-hook.ts (A13; ADR-1).',
       from: { pathNot: `${ISL}(main|test-hook)\\.ts$` },
       to: { path: `${ISL}test-hook\\.ts$` },
