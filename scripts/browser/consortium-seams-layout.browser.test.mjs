@@ -76,6 +76,8 @@ test('W7: the toast never covers a control', async (t) => {
 
 test('W8, W9, X4, X5: bold is 600, CJK headings keep words whole, sheet and page classes do not leak', async (t) => {
   const page = await h.open('/consortium/', { width: 1280, theme: 'light', data: 'fixture' });
+  // The island drawn first (the test build renders after its hook's chunk arrives).
+  assert.equal(await loadState(page), 'ready');
   const weights = await page.$$eval('#ct-root strong, #ct-root b', (els) => [...new Set(els.map((e) => getComputedStyle(e).fontWeight))]);
   assert.ok(weights.length > 0, 'the page has bold words');
   assert.deepEqual(weights, ['600'], '<strong> and <b> at 600');
@@ -301,6 +303,8 @@ test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gut
       const at = `${lang} ${width} px`;
       const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { width, data: 'fixture', mapTiles: 'stub' });
       const bad = [];
+      // Start drawn first (the test build renders after its hook's chunk arrives).
+      assert.ok(await has(page, 'input[name="ct-climate"][value="temperate"]', 20_000), `${at}: Start is drawn`);
       // The climate first, and the site questions awaited: they show once the database is open and
       // the list read. Until then Start moves: the open database refines the guessed country from the
       // time zone ("Use United States" becomes "Use France" here), and the line's new height shifts
