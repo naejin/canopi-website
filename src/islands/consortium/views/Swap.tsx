@@ -5,9 +5,13 @@
 // empty: Months 3–12." Warnings are shown on the row and never asked about; only a site misfit or a
 // serious (high) conflict asks "Swap anyway?" (owner row 2026-10-28, coordinator row "v2 mockup
 // choices" 2026-11-11), and those plants come last. Loaded on first use (views/Sheets.tsx). The list
-// comes from the suggestion's chunk (store.suggestRule, core loadSuggest): while it or the pool loads, the
-// loading line; if the chunk failed, a line says so in place.
-import { useMemo, useState } from 'preact/hooks';
+// comes from the suggestion's chunk (store.suggestRule, core loadSuggest): opening Swap asks for it
+// (store.wantSuggest, which tries a failed one again); while it or the pool loads, the loading line.
+// Every wait for the chunk ends (E6 hand-off B): with the alternatives, or, if it failed or has not
+// come within the Suggest wait's 10 s (state/suggest-wait.ts suggestWaitMs; Swap's own timer, not that
+// wait), with the failed line and Reload the other parts show (views/lazy.tsx LoadFailed). A chunk that
+// comes after that still brings the alternatives.
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { CellRef, PlantId, Taxon } from '../../../lib/consortium/index.ts';
@@ -15,6 +19,8 @@ import { asks } from '../../../lib/consortium/index.ts';
 import { closeSheet, openSheet, swapMember, taxonOf } from '../store.ts';
 import { Ask, BACK, Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { listOf, nameOf, phasePlain, spanWords } from './kit/names.ts';
+import { LoadFailed } from './lazy.tsx';
+import { suggestWaitMs } from '../state/suggest-wait.ts';
 const { flagLines } = shared; // first-run modules (kit/sheet.tsx shared)
 
 const SHOWN = { fit: 7, asking: 2 };
@@ -30,9 +36,16 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const [asking, setAsking] = useState<Taxon | null>(null);
   const fitting = store.fitPool.value;
   const algo = store.suggestRule.value;
+  const [stalled, setStalled] = useState(false);
+  useEffect(() => { store.wantSuggest(); }, []);
+  useEffect(() => {
+    if (algo) return;
+    const cap = setTimeout(() => setStalled(true), suggestWaitMs());
+    return () => clearTimeout(cap);
+  }, [algo]);
   const alts = useMemo(() => (fitting && algo ? algo.alternatives(id, members, fitting, { ...ctx, removed }) : []), [algo, id, fitting, members, ctx, removed]);
   // The range rule (store.pool) or the suggestion's chunk (store.suggestRule) still loading.
-  if (!pool || (!algo && !store.suggestFailed.value)) return <SheetWaiting Frame={Frame} />;
+  if (!pool || (!algo && !store.suggestFailed.value && !stalled)) return <SheetWaiting Frame={Frame} />;
   if (!t) return null;
   const byId = new Map(pool.map((x) => [x.id, x]));
   const fit = alts.filter((a) => !asks(a.flags)), ask = alts.filter((a) => asks(a.flags));
@@ -49,7 +62,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
         <p class="ct-muted">{T('swap.lede')}</p>
         <NotChecked ctx={store.flagContext.value} />
       </div>
-      {!algo ? <p class="ct-muted" role="status">{T('details.loadFailed')}</p> : shown.length ? (
+      {!algo ? <LoadFailed /> : shown.length ? (
         <ul class="ct-rows">
           {shown.map((a) => {
             const x = byId.get(a.id);

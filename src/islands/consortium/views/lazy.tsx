@@ -51,6 +51,12 @@ export interface PartOptions<C extends Any> {
   loading?: ComponentType<PropsOf<C>>;
 }
 
+// The line a part that could not load shows in place, with Reload (L1, L7); Swap shows it too when
+// the suggestion's chunk does not come (views/Swap.tsx).
+export function LoadFailed() {
+  return <p class="ct-notice" role="alert">{T('details.loadFailed')} <button type="button" class="button button-secondary" onClick={() => location.reload()}>{T('details.reload')}</button></p>;
+}
+
 export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = false, idle = false, onFail = 'notice', loading }: PartOptions<C> = {}): LazyPart<C> {
   const kind: Kind = onFail === 'closeSheet' ? 'sheets' : 'later';
   const done = signal<C | null>(null);
@@ -85,7 +91,7 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
     }, [C]);
     if (C) return <C {...props} />;
     if (quiet || idle) return null;
-    if (failed) return <p class="ct-notice" role="alert">{T('details.loadFailed')} <button type="button" class="button button-secondary" onClick={() => location.reload()}>{T('details.reload')}</button></p>;
+    if (failed) return <LoadFailed />;
     if (loading) { const Loading = loading as ComponentType<Record<string, unknown>>; return <Loading {...props} />; }
     return <p class="status-line" role="status">{T(onFail === 'closeSheet' ? 'details.loading' : 'load.plants')}</p>;
   }

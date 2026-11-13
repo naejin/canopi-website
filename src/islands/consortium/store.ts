@@ -108,10 +108,11 @@ export const rangeFailed = computed(() => rangeBroken.value && siteClimate.value
 let rangeLoad: Promise<void> | null = null;
 // The suggestion and the Swap list (core suggest.ts, design check A11): their own chunk (core
 // loadSuggest), off the first run, asked for once a database is open (setSource, as the data turns
-// ready) and again by a Suggest press while it is missing (state/suggest-wait.ts requestSuggest). The
-// plant lists never wait for it: a Suggest pressed before it arrives waits for it, and Swap shows its
-// loading line. suggestFailed: the last try did not load (offline, or a deploy since the page loaded);
-// the waiting Suggest ends with a toast and Reload (L8), Swap says it in place, and the next press
+// ready) and again by a Suggest press or an opened Swap while it is missing (state/suggest-wait.ts
+// requestSuggest, views/Swap.tsx). The plant lists never wait for it: a Suggest pressed before it
+// arrives waits for it, and Swap shows its loading line, 10 s at most. suggestFailed: the last try did
+// not load (offline, or a deploy since the page loaded); the waiting Suggest ends with a toast and
+// Reload (L8), Swap says it in place with Reload, and the next press or Swap
 // imports it again (a retry clears it while it runs; Chrome answers a failed module from its module
 // map without a request, so there the retry fails at once and Reload is the way back).
 export const suggestRule = signal<SuggestRule | null>(null);

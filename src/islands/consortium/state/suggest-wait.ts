@@ -30,7 +30,8 @@ let lateToast: number | null = null;
 const SUGGEST_WAIT_MS = 10_000;
 // A browser test may shorten the wait in the test build (window.__ctTimeouts.suggest; A4, as in
 // data/load.ts); production folds it to SUGGEST_WAIT_MS.
-const waitMs = (): number => (typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { suggest?: number } }).__ctTimeouts?.suggest) || SUGGEST_WAIT_MS : SUGGEST_WAIT_MS);
+// Swap's own wait for the suggestion's chunk ends after as long (views/Swap.tsx; not this wait).
+export const suggestWaitMs = (): number => (typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { suggest?: number } }).__ctTimeouts?.suggest) || SUGGEST_WAIT_MS : SUGGEST_WAIT_MS);
 const reloadToast = (): void => store.showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => globalThis.location.reload() });
 // Ends the wait (the one way to: views call it, as PoolSlot does when Start can no longer suggest).
 export function dropSuggest(): void {
@@ -50,7 +51,7 @@ function capped(): void {
   // the wait ends with Reload (R4 re-review); with the list still being read, it is checked again
   // after another wait (the load screen ends a failed list's wait).
   if (!store.suggestRule.peek()) {
-    if (store.pool.peek()) { dropSuggest(); reloadToast(); lateToast = store.toast.peek()?.id ?? null; } else cap = setTimeout(capped, waitMs());
+    if (store.pool.peek()) { dropSuggest(); reloadToast(); lateToast = store.toast.peek()?.id ?? null; } else cap = setTimeout(capped, suggestWaitMs());
   }
 }
 // "Suggest plants": now when the plants are read, else once they are (§5 Loading).
@@ -65,7 +66,7 @@ export function requestSuggest(): void {
   store.wantSuggest();
   const busy = lookups.peek() && !waited.peek();
   if (!busy && store.suggestMembers()) { clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
-  if (!pendingSuggest.peek()) cap = setTimeout(capped, waitMs());
+  if (!pendingSuggest.peek()) cap = setTimeout(capped, suggestWaitMs());
   pendingSuggest.value = true;
 }
 

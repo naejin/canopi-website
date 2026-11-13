@@ -39,13 +39,10 @@ test('E6-6 (R4 seams): Suggest with its chunk missing shows a toast with Reload 
   assert.ok(idle, 'Suggest is left busy (aria-busy) after the toast');
 });
 
-// E6-7 (L9): Swap opened while the suggest chunk is held shows the loading line, then alternatives.
-// The members are set before the pool is read: Swap waits for both.
-test('E6-7 (R4 seams): Swap opened while the suggest chunk is held shows a loading line, then the alternatives (L9)', async () => {
-  assert.ok(h.roles.suggest.length, 'role `suggest` has no chunk in this build: alternatives() is still in the first run');
+// Swap opened on six Temperate members, the dialog open. The members are set before the pool is
+// read: Swap waits for both.
+async function swapOpen(page) {
   const ids = await temperateIds();
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 'hold' } });
-  assert.equal(await loadState(page), 'ready');
   await page.evaluate((members) => {
     const { store } = window.__ctTest;
     store.climate.value = 'Temperate';
@@ -55,6 +52,14 @@ test('E6-7 (R4 seams): Swap opened while the suggest chunk is held shows a loadi
     store.openSheet('swap', members[0]);
   }, ids.slice(0, 6));
   await page.waitForSelector('dialog[open]', { timeout: 2000 });
+}
+
+// E6-7 (L9): Swap opened while the suggest chunk is held shows the loading line, then alternatives.
+test('E6-7 (R4 seams): Swap opened while the suggest chunk is held shows a loading line, then the alternatives (L9)', async () => {
+  assert.ok(h.roles.suggest.length, 'role `suggest` has no chunk in this build: alternatives() is still in the first run');
+  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 'hold' } });
+  assert.equal(await loadState(page), 'ready');
+  await swapOpen(page);
   assert.ok(await has(page, 'dialog[open] [role="status"]', 2000), 'a loading line (status)');
   assert.match(await page.$eval('dialog[open] [role="status"]', (s) => s.textContent), new RegExp(LOADING.replace('…', '')));
   assert.equal(await page.evaluate(() => window.__ctTest.store.suggestRule.value), null, 'the chunk is held');
@@ -224,5 +229,38 @@ test('E6-15 (R4 seams): a Suggest waiting for the chunk ends in the toast with R
     assert.ok(await suggestBusy(page), 'Suggest waits (aria-busy)');
     ctl.answer(404);
     assert.deepEqual(await toastIdle(page), { reload: true, idle: true });
+  } finally { await page.browserContext().close().catch(() => {}); }
+});
+
+// ---- E6 hand-off B: every Swap wait for the suggest chunk ends (regression vs live) ----
+
+// The failed line other sheets' parts show (views/lazy.tsx LoadFailed): an alert with Reload, in the dialog.
+const swapFailed = (page, timeout) => until(page, (failed, reload) => {
+  const a = document.querySelector('dialog[open] [role="alert"]');
+  return !!a && a.textContent.includes(failed) && [...a.querySelectorAll('button')].some((b) => b.textContent.trim() === reload);
+}, timeout, FAILED, RELOAD);
+
+test('E6-22 (R4 hand-off B): Swap opened while the suggest chunk never answers ends its wait at the cap with the failed line and Reload, then shows the alternatives if the chunk comes', async () => {
+  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 'hold' }, timeouts: { suggest: 1500 } });
+  try {
+    assert.equal(await loadState(page), 'ready');
+    await swapOpen(page);
+    assert.ok(await has(page, 'dialog[open] [role="status"]', 1000), 'the loading line first');
+    assert.ok(await swapFailed(page, 6000), 'the wait ends at the cap with the failed line and Reload');
+    await page.releaseHeld();
+    assert.ok(await until(page, () => (document.querySelector('dialog[open]')?.querySelectorAll('.ct-swap li').length ?? 0) > 0, 8000), 'the late chunk brings the alternatives');
+  } finally { await page.browserContext().close().catch(() => {}); }
+});
+
+test('E6-23 (R4 hand-off B): Swap opened after the suggest chunk failed asks for it again and, failed again, shows the failed line with Reload', async () => {
+  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 404 } });
+  try {
+    assert.equal(await loadState(page), 'ready');
+    assert.ok(await until(page, () => window.__ctTest.store.suggestFailed.value, 8000), 'the load at open failed');
+    // A retry (store.wantSuggest) clears suggestFailed while it runs.
+    await page.evaluate(() => { window.__ctRetried = false; window.__ctTest.store.suggestFailed.subscribe((v) => { if (!v) window.__ctRetried = true; }); window.__ctRetried = false; });
+    await swapOpen(page);
+    assert.ok(await swapFailed(page, 6000), 'the failed line with Reload');
+    assert.equal(await page.evaluate(() => window.__ctRetried), true, 'opening Swap asked for the chunk again');
   } finally { await page.browserContext().close().catch(() => {}); }
 });
