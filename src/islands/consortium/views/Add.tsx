@@ -18,12 +18,11 @@ import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/
 import { asks as asksFlags } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/search.ts';
 import { addMembers, closeSheet, flagsOfPlant, sheetCell } from '../store.ts';
-import { Ask, Bar, NotChecked, WARN, type Frame } from './kit/sheet.tsx';
-import { flagLines } from './kit/flags.ts';
+import { Ask, Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { nameOf, num, phasePlain, spanWords, zoneName } from './kit/names.ts';
 import { PlantMarks } from './PlantMarks.tsx';
 import { jobFind } from './StageBar.tsx';
-import { addOrder, addQuery, listQuery } from '../rules/list-query.ts';
+const { addOrder, addQuery, flagLines, listQuery } = shared; // first-run modules (kit/sheet.tsx shared)
 
 const FIRST_ROWS = 8;
 
@@ -107,7 +106,8 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
     return out;
   }, [pool, q, store.pools.value, members, otherZones.join(), store.flagContext.value, store.site.value]);
 
-  if (!pool || !climate) return null;
+  if (!climate) return null;
+  if (!pool) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
   const shown = all ? rows : rows.slice(0, FIRST_ROWS);
   const toggle = (id: PlantId) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const addSelected = (more: PlantId[] = [], from: Partial<Record<PlantId, ClimateZone>> = {}) => {

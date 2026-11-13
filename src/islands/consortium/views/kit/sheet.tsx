@@ -14,6 +14,15 @@ import { T } from '../../strings.ts';
 import { spanOf } from './span.ts';
 import { CLOSE } from './icons.tsx';
 import { countryName, spanWords } from './names.ts';
+// The modules every sheet chunk shares, imported through here so they ship in the first run (review
+// 2, E6-5d): a sheet chunk's retry (lazy.tsx retryable) mends the chunk itself only, and a shared
+// chunk whose first fetch failed would stay failed for the page's life (Chromium's module map), and
+// every sheet with it. So a sheet chunk imports first-run modules only, already loaded. An object, not
+// re-exports: Rollup places a module by the code that reaches it, and a re-export or a bare import
+// leaves it in a chunk of its own (1.2 KB gzip moved to the first run).
+import { flagLines, unknownWords } from './flags.ts';
+import { addOrder, addQuery, listQuery } from '../../rules/list-query.ts';
+export const shared = { flagLines, unknownWords, addOrder, addQuery, listQuery };
 
 export { BACK, WARN } from './icons.tsx';
 
@@ -51,14 +60,13 @@ export function SheetDialog({ onClose, children }: { onClose: () => void; childr
   // A click closes the sheet only when it both starts and ends on the backdrop (a text selection
   // dragged out of the sheet and released outside does not).
   const downOnBackdrop = useRef(false);
-  // Opened before the browser paints, after the frame inside has named it (children's effects run first).
+  // The frame inside opens it (SheetFrame): a dialog with no frame yet stays closed, never an empty
+  // modal (a part with nothing to draw draws no frame).
   useLayoutEffect(() => {
     const d = ref.current;
     if (!d) return;
     const closed = () => close.current();
     d.addEventListener('close', closed);
-    if (!d.open) d.showModal();
-    d.querySelector<HTMLElement>('[data-autofocus]')?.focus();
     return () => { d.removeEventListener('close', closed); if (d.open) d.close(); };
   }, []);
   return (
@@ -70,6 +78,15 @@ export function SheetDialog({ onClose, children }: { onClose: () => void; childr
   );
 }
 
+// A sheet whose part is not ready to draw (its chunk, or the pool while the range rule loads): its
+// frame with a loading line (a status) that names it, so an open sheet always has a name and Close.
+export function SheetWaiting({ Frame }: { Frame: Frame }) {
+  return (
+    <Frame titleId="ct-sheet-wait">
+      <p id="ct-sheet-wait" class="status-line" role="status" tabIndex={-1} data-autofocus>{T('details.loading')}</p>
+    </Frame>
+  );
+}
 export interface FrameProps { titleId: string; head?: ComponentChildren; foot?: ComponentChildren; children: ComponentChildren; class?: string }
 // The frame a sheet part draws in: SheetFrame bound to its opening's close and toast (views/Sheets.tsx).
 export type Frame = ComponentType<FrameProps>;
@@ -85,9 +102,16 @@ export function SheetFrame({ titleId, head, foot, children, class: cls = '', onC
     d.classList.add(...own);
     const room = new ResizeObserver(() => { d.style.scrollPaddingBottom = `${foot.offsetHeight + 8}px`; });
     room.observe(foot);
-    // A frame replacing the loading frame in an open sheet takes the focus here (the dialog does on opening).
-    if (d.open) ref.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus();
-    return () => { room.disconnect(); d.classList.remove(...own); };
+    // Opened before the browser paints, named first; a frame replacing the loading frame in the open
+    // dialog takes the focus too.
+    if (!d.open) d.showModal();
+    ref.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+    return () => {
+      room.disconnect();
+      d.classList.remove(...own);
+      // A part that stops drawing (no frame replaces this one) leaves no empty modal: the sheet closes.
+      queueMicrotask(() => { if (d.open && !d.querySelector('.ct-sheet-inner')) d.close(); });
+    };
   }, []);
   return (
     <div class="ct-sheet-inner" ref={ref}>

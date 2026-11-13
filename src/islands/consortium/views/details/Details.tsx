@@ -21,13 +21,13 @@ import { spanOf } from '../kit/span.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../../data/consortium-guides.ts';
 import { PlantMarks } from '../PlantMarks.tsx';
-import { Bar, type Frame } from '../kit/sheet.tsx';
-import { flagLines, unknownWords } from '../kit/flags.ts';
+import { Bar, shared, type Frame } from '../kit/sheet.tsx';
 import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from '../kit/names.ts';
 import { PIN, SPROUT, WARN } from '../kit/icons.tsx';
 import { drafts, type CorrectionField } from '../kit/correction.ts';
 import { pageData } from '../kit/page.ts';
 import { later, retryable } from '../lazy.tsx';
+const { flagLines, unknownWords } = shared; // first-run modules (kit/sheet.tsx shared)
 
 // The correction form, a sheet part: a chunk that does not come closes the dialog with the toast.
 const correction = later(retryable(() => import('../Correction.tsx'), (m) => m.default), { onFail: 'closeSheet' });

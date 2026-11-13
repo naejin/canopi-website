@@ -96,10 +96,15 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
 // or modulepreload of a URL failed for the page's life (its module map), so importing it again never
 // fetches, and one dropped request on a flaky connection would keep the part closed until Reload.
 // After a failure, the next call imports the same hashed file under a fresh URL (?retry=n), read from
-// the failed import's error (Chromium and Firefox name the URL; where the error names none, the next
-// call fails again: the toast and Reload). The fresh module is this chunk alone: its own imports
-// resolve to the shared chunks already loaded. pick: the part in the module.
-const failedUrl = (err: unknown): string | null => /https?:\/\/[^\s'"]+?\.js\b/.exec(String((err as Error)?.message ?? err))?.[0] ?? null;
+// the failed import's error (Chromium and Firefox name the URL; where the error names none, or names
+// a file outside this site's /_astro/, the next call fails again: the toast and Reload). This mends
+// the chunk itself only: its static imports keep their plain URLs, so a sheet chunk imports nothing
+// but first-run modules, already loaded (kit/sheet.tsx shared; E6-5d checks it). Were a shared chunk to
+// fail anyway, every retry fails: one toast per open, Reload the fix. pick: the part in the module.
+const failedUrl = (err: unknown): string | null => {
+  const url = /https?:\/\/[^\s'"]+?\.js\b/.exec(String((err as Error)?.message ?? err))?.[0] ?? null;
+  return url?.startsWith(`${location.origin}/_astro/`) ? url : null;
+};
 export function retryable<M, C>(load: () => Promise<M>, pick: (m: M) => C): () => Promise<C> {
   let url: string | null = null, n = 0;
   return () => (url === null ? load() : (import(/* @vite-ignore */ `${url}?retry=${++n}`) as Promise<M>))

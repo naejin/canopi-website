@@ -25,7 +25,7 @@ import * as store from '../store.ts';
 import { closeSheet, taxonOf, type Sheet as Opened, type SheetKind } from '../store.ts';
 import type { PlantId } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
-import { SheetDialog, SheetFrame, type Frame, type FrameProps } from './kit/sheet.tsx';
+import { SheetDialog, SheetFrame, SheetWaiting, type Frame, type FrameProps } from './kit/sheet.tsx';
 import { nameOf } from './kit/names.ts';
 import { Toast } from './Toast.tsx';
 import { later, retryable } from './lazy.tsx';
@@ -53,15 +53,8 @@ if (typeof document !== 'undefined') {
   });
 }
 
-// A sheet whose part is still loading: its frame with a loading line (a status), the plant's name
-// for the dialog (L2), so the reader sees the sheet open at once.
-function Waiting({ Frame }: { Frame: Frame }) {
-  return (
-    <Frame titleId="ct-sheet-wait">
-      <p id="ct-sheet-wait" class="status-line" role="status" tabIndex={-1} data-autofocus>{T('details.loading')}</p>
-    </Frame>
-  );
-}
+// The plant dialog's loading frame names the plant (L2), so the reader sees the sheet open at once
+// (the other sheets: kit/sheet.tsx SheetWaiting).
 function DetailsWaiting({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const t = taxonOf(id);
   return (
@@ -72,7 +65,7 @@ function DetailsWaiting({ id, Frame }: { id: PlantId; Frame: Frame }) {
   );
 }
 
-const sheet = { onFail: 'closeSheet', loading: Waiting } as const;
+const sheet = { onFail: 'closeSheet', loading: SheetWaiting } as const;
 const details = later(retryable(() => import('./details/Details.tsx'), (m) => m.PlantDetails), { onFail: 'closeSheet', loading: DetailsWaiting });
 const swap = later(retryable(() => import('./Swap.tsx'), (m) => m.default), sheet);
 const add = later(retryable(() => import('./Add.tsx'), (m) => m.default), sheet);

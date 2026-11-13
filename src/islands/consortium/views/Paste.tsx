@@ -18,9 +18,9 @@ import type { ClimateZone, PlantId, Taxon } from '../../../lib/consortium/index.
 import { asks } from '../../../lib/consortium/index.ts';
 import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, readPaste } from './paste.ts';
 import { addMembers, closeSheet, flagsOfPlant } from '../store.ts';
-import { Ask, WARN, type Frame } from './kit/sheet.tsx';
-import { flagLines } from './kit/flags.ts';
+import { Ask, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { nameOf, zoneName } from './kit/names.ts';
+const { flagLines } = shared; // first-run modules (kit/sheet.tsx shared)
 
 const MAX_LINES = 500;
 const SETTLE_MS = 200;
@@ -51,7 +51,8 @@ export default function Paste({ Frame }: { Frame: Frame }) {
     return { capped: all.length > MAX_LINES, result: pool ? readPaste(names, { here: pool, others: lists, members }) : null };
   };
   const { capped, result } = useMemo(() => read(settled), [settled, column, pool, members, store.pools.value]);
-  if (!pool || !climate || !result) return null;
+  if (!climate) return null;
+  if (!pool || !result) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
 
   // What "Add all" adds from a reading: the found plants and the ticked ones, each once.
   const plan = (r: NonNullable<typeof result>) => {

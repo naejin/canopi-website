@@ -292,7 +292,7 @@ const fail404Once = (urls, failed) => async (page) => {
     } else cdp.send('Fetch.continueRequest', { requestId }).catch(() => {});
   });
 };
-failing('E6-5d (K3 lazy Details): a module the sheet chunks share failed on its first request, and a plant still opens (sheet chunks import first-run modules only)', { owner: 'K3', reason: /the dialog's content \(shared modules answered 404 once/ }, async () => {
+test('E6-5d (K3 lazy Details): a module the sheet chunks share failed on its first request, and a plant still opens (sheet chunks import first-run modules only)', async () => {
   const shared = await sharedOfSheets();
   const failed = [];
   const page = await matrixPage({ setup: fail404Once(shared, failed) });
@@ -308,7 +308,7 @@ failing('E6-5d (K3 lazy Details): a module the sheet chunks share failed on its 
 // E6-3d (L2, review 2): a sheet opened while its part has nothing to draw (the pool is null while the
 // range rule loads, right after a site with a climate is set) is never an empty modal: an open sheet
 // always has a named heading and a Close button; otherwise it does not open.
-failing('E6-3d (K3 lazy sheets): Add, search, Paste and Swap opened while the range rule loads show a named sheet with Close, or no sheet, never an empty modal', { owner: 'K3', reason: /add: empty/ }, async () => {
+test('E6-3d (K3 lazy sheets): Add, search, Paste and Swap opened while the range rule loads show a named sheet with Close, or no sheet, never an empty modal', async () => {
   const page = await tool({ block: { range: 'hold' } });
   await choose(page, 'Temperate');
   await atNowhere(page);

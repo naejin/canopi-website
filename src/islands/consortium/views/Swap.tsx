@@ -11,9 +11,9 @@ import { P, T } from '../strings.ts';
 import type { CellRef, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { alternatives, asks } from '../../../lib/consortium/index.ts';
 import { closeSheet, openSheet, swapMember, taxonOf } from '../store.ts';
-import { Ask, BACK, Bar, NotChecked, WARN, type Frame } from './kit/sheet.tsx';
-import { flagLines } from './kit/flags.ts';
+import { Ask, BACK, Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { listOf, nameOf, phasePlain, spanWords } from './kit/names.ts';
+const { flagLines } = shared; // first-run modules (kit/sheet.tsx shared)
 
 const SHOWN = { fit: 7, asking: 2 };
 
@@ -28,7 +28,8 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const [asking, setAsking] = useState<Taxon | null>(null);
   const fitting = store.fitPool.value;
   const alts = useMemo(() => (fitting ? alternatives(id, members, fitting, { ...ctx, removed }) : []), [id, fitting, members, ctx, removed]);
-  if (!t || !pool) return null;
+  if (!pool) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
+  if (!t) return null;
   const byId = new Map(pool.map((x) => [x.id, x]));
   const fit = alts.filter((a) => !asks(a.flags)), ask = alts.filter((a) => asks(a.flags));
   const shown = all ? alts : [...fit.slice(0, SHOWN.fit), ...ask.slice(0, SHOWN.asking)];
