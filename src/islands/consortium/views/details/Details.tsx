@@ -309,7 +309,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
         <section class="ct-correct" aria-labelledby="ct-corr-title">
           <h3 id="ct-corr-title">{T('correction.title')}</h3>
           {correcting
-            ? <correction.View fields={fields} plantId={id} plantName={t.canonical_name} plantLabel={nameOf(t)} release={release} climate={zone} climateLabel={zoneName(zone)} onCancel={() => setCorrecting(false)} focusFirst={byReader.current} />
+            ? <correction.View drafts={drafts} fields={fields} plantId={id} plantName={t.canonical_name} plantLabel={nameOf(t)} release={release} climate={zone} climateLabel={zoneName(zone)} onCancel={() => setCorrecting(false)} focusFirst={byReader.current} />
             : <>
                 <p class="ct-muted">{T('correction.lede')}</p>
                 <p><button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => { byReader.current = true; setCorrecting(true); }}>{T('correction.open')}</button></p>

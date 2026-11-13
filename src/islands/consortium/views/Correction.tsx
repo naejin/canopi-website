@@ -5,15 +5,15 @@
 // placement is an estimate, and the page language. It posts JSON to /api/correction
 // (src/lib/correction.mjs; scripts/correction.test.mjs), which mails the owner; nothing is
 // kept on the server. Offline (design check §5): "Not sent: you seem offline. Your text is kept." with
-// Try again. What the reader writes is kept per plant (views/kit/correction.ts `drafts`, which the
-// dialog reads too) until it is sent.
+// Try again. What the reader writes is kept per plant (views/kit/correction.ts `drafts`, passed in by
+// the dialog, so this chunk imports nothing from the dialog's chunk) until it is sent.
 // Words: the correction.* family (S3 block of the locale files), passed by ConsortiumPage.astro.
 import { useEffect, useState } from 'preact/hooks';
 import { pageLang, T } from '../strings.ts';
 import { LIMITS } from '../../../lib/correction.mjs';
 import { EMAIL_RE } from '../../../lib/contact.mjs';
 import { climate as siteClimate, taxonOf } from '../store.ts';
-import { drafts, type CorrectionDraft, type CorrectionField } from './kit/correction.ts';
+import type { CorrectionDraft, CorrectionField } from './kit/correction.ts';
 
 const ENDPOINT = '/api/correction';
 // The server's limits, as maxlength.
@@ -26,7 +26,7 @@ const ORDER: Name[] = ['field', 'proposed', 'note', 'email', 'consent'];
 type Form = CorrectionDraft;
 type Status = 'idle' | 'sending' | 'sent' | 'failed';
 type Errors = Partial<Record<Name, string>>;
-interface Props { fields: CorrectionField[]; plantId: string; plantName: string; plantLabel: string; release: string; climate: string; climateLabel: string; onCancel: () => void; focusFirst?: boolean }
+interface Props { drafts: Map<string, CorrectionDraft>; fields: CorrectionField[]; plantId: string; plantName: string; plantLabel: string; release: string; climate: string; climateLabel: string; onCancel: () => void; focusFirst?: boolean }
 
 const fieldOf = (fields: CorrectionField[], id: string) => fields.find((f) => f.field === id) ?? null;
 
@@ -68,7 +68,7 @@ async function post(body: unknown): Promise<{ status: 'sent' | 'failed'; message
 let languageNames: Intl.DisplayNames | null = null;
 const languageName = (code: string) => { try { languageNames ??= new Intl.DisplayNames([code], { type: 'language' }); return languageNames.of(code) ?? code; } catch { return code; } };
 
-export default function Correction({ fields, plantId, plantName, plantLabel, release, climate, climateLabel, onCancel, focusFirst = false }: Props) {
+export default function Correction({ drafts, fields, plantId, plantName, plantLabel, release, climate, climateLabel, onCancel, focusFirst = false }: Props) {
   const [form, setFormState] = useState<Form>(() => drafts.get(plantId) ?? { field: '', proposed: '', note: '', email: '', consent: false, website: '' });
   // A draft is unsent text (a field, a value or a note); an email or a tick alone is not one.
   const setForm = (next: (f: Form) => Form) => setFormState((f) => { const n = next(f); if (n.field || n.proposed.trim() || n.note.trim()) drafts.set(plantId, n); else drafts.delete(plantId); return n; });
