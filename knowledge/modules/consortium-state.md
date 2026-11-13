@@ -3,9 +3,9 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T15:45:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T18:32:36Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T16:08:56Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T18:32:34Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
@@ -16,7 +16,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:c639f9179f641ff0
-    last_modified: 2026-11-13T16:08:25Z
+    last_modified: 2026-11-13T16:13:32Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
@@ -70,8 +70,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:6d1cd5e2554c64ad
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:c2375e19583bd550
+    last_modified: 2026-11-13T18:17:31Z
 enforced_by:
   - scripts/consortium-memory.test.mjs
   - scripts/consortium-start.test.mjs

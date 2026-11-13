@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T16:08:43Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:32:04Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
@@ -15,8 +15,8 @@ sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:6baa5dd40093224c
-    last_modified: 2026-11-13T10:30:35Z
+    digest: sha256:64d1781172908903
+    last_modified: 2026-11-13T18:18:00Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -26,7 +26,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:c639f9179f641ff0
-    last_modified: 2026-11-13T16:08:25Z
+    last_modified: 2026-11-13T16:13:32Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -70,8 +70,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:0ae4f685772e08b7
-    last_modified: 2026-11-13T14:45:18Z
+    digest: sha256:604d832e631bff06
+    last_modified: 2026-11-13T18:18:33Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -90,8 +90,8 @@ sources:
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:f718f6771005afd4
-    last_modified: 2026-11-13T03:03:27Z
+    digest: sha256:095e1044d4711e92
+    last_modified: 2026-11-13T18:30:54Z
   - id: bytes-ts
     resource: ../../src/islands/consortium/data/bytes.ts
     title: src/islands/consortium/data/bytes.ts
@@ -100,8 +100,8 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:f5e7bb4071bfb5f6
-    last_modified: 2026-11-13T16:08:12Z
+    digest: sha256:521388d051be908d
+    last_modified: 2026-11-13T18:18:33Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
@@ -150,8 +150,8 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:2de16ed80fe906bc
-    last_modified: 2026-11-13T15:36:18Z
+    digest: sha256:b031e4d644fedc76
+    last_modified: 2026-11-13T18:20:07Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -160,8 +160,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:0ddb9de6d3315fba
-    last_modified: 2026-11-11T09:49:18Z
+    digest: sha256:6d2cc09d8428569e
+    last_modified: 2026-11-13T18:20:07Z
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
@@ -186,7 +186,7 @@ sources:
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
     digest: sha256:9fa7809eefcbbd11
-    last_modified: 2026-11-13T16:07:32Z
+    last_modified: 2026-11-13T16:13:32Z
   - id: futureslot-tsx
     resource: ../../src/islands/consortium/views/FutureSlot.tsx
     title: src/islands/consortium/views/FutureSlot.tsx
@@ -211,7 +211,7 @@ sources:
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
     digest: sha256:349ff16b9b85cbc7
-    last_modified: 2026-11-13T16:07:32Z
+    last_modified: 2026-11-13T16:13:32Z
   - id: p5-helpers-mjs
     resource: ../../scripts/browser/p5-helpers.mjs
     title: scripts/browser/p5-helpers.mjs
@@ -440,3 +440,10 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
 - `helpers.mjs` `axNodes` reads the full accessibility tree (`interestingOnly: false`, skipping none, unnamed generic, InlineTextBox and LineBreak; Chrome's `image` becomes `img`), so tables and cells are visible; BT-8 still reads the shown tables' captions from the DOM.
 - The site scrolls smoothly: a test that measures positions sets `scrollBehavior = 'auto'` on the root first.
 - A puppeteer `page.click()` measures the box, then presses a moment later; under machine load a page that moves in between takes the click elsewhere. Three movers caused full-suite-only failures: Suggest's focus on the matrix (smooth scroll; N2 "the side view's explanations", reproduced with CPU throttling 10x), "Give your location" scrolling the step to the centre (P5-26b "no control yet"), and, before the fix below, the open database refining the guessed country from the time zone, which changed the country line's height and shifted all of Start by about 46 px (N2 "ja 390 px: the map dialog"; en 320 and ja 390 at the fixture). Before such a click, call `helpers.mjs` `settled(page, selector)` (scroll offset and box unchanged over five frames); on Start, wait for the site questions (the list is read, so the database is open) before aiming at a control below the country line. A reader could hit the country-line shift too (a layout shift about a second after load on a slow phone; live on master as well, whose country line sits above the cards). Fixed on consortium/p5-shift: the installer's index lists the known countries (`countries{code: invasive checked}`), the page passes them in `#ct-data` as `countries{checked, unchecked}` (space-separated codes), main.ts hands them to `store.setPageCountries`, and `store.knownCountries` (the database's list once open, else the page's) feeds the start guess in `startMemory` (time zone first), CountryLine's status ("not checked" note) and picker, and `flagContext`; the refining effect is gone. Start calls `startMemory()` in a layout effect, so the guess, the stored climate and a link's pending climate are in the first frame; main.ts therefore starts `store.start()`, `provideLocationStep`, `watchPools()` and `open(data)` before `render` (as before, they ran before `startMemory`). With `startMemory` earlier, its first `persist` (the watcher runs once on creation) stripped a link's `#v=4` from the address before the restore applied, so a reload in that second opened plain Start (P5-13c and P5-27e, whose `tool({hash})` reloads at once); `persist` now writes nothing while a restore is in flight and the page has no consortium of its own (the restore writes the address when it applies; a failed one leaves the link in the address). Spec: seams "Layout stability (N2)" (languages and time zone disagree, a long name or Puerto Rico, unchecked; 320/390/700/960/1280 px in en/fr/ja; each control's box in its first frame vs after the database opens, ≤ 1 px; buffered layout-shift sum ≤ 0.01). Still moving on a revisit, not covered: a stored site climate's crop examples replacing "Loading plants" (the site questions and Suggest move down by the examples' height) and a saved site's lookup inserting the location result line and the location country (the cards move by the line's height, 60–120 px measured before the fix). Likewise a sheet's input may exist before its `<dialog>` is open (`SheetFrame`'s layout effect calls `showModal()` and focuses the heading): type into a sheet only once `dialog.ct-add[open]` matches (P5 spec `ADD_OPEN`), or the first keys are lost (P5-27q).
+
+## F1a commit 0 seams
+
+- `views/lazy.tsx` `balancePanel`: the Balance panel, a `lazyPart(retryable(import('./balance/BalanceSlot.tsx')))` marked pure, so the build drops it until stream 1 (pal2) places it in Palette. Its role `balance` stays empty until then. `views/balance/BalanceSlot.tsx` is a stub that stream 4 fills.
+- `focus.ts` `focusAfterToast()`: the toast-focus helper. Stream 1's `store.ts` calls it on every `hideToast` path, and stream 6 implements it. Today it does nothing. It and `balancePanel` carry a knip `@public` tag until their first caller lands.
+- `ConsortiumPage.astro` imports the empty page-level `palette.css` and `balance.css` (no CSS on a lazy chunk).
+- Browser specs `scripts/browser/consortium-f1a-{palette,filters,confidence,balance,perf,a11y}.browser.test.mjs` (shared steps in `f1a-helpers.mjs`) hold one test per user scenario, `F1a-Xn (<owner> …)`, written failing with `failing()`. They read the store, roles and data attributes such as `data-view`, `data-strip`, `data-gap`, `data-find`, `data-balance-check`, `data-filter` and `data-conf`; each file's header names its contract. `scripts/browser-tests.test.mjs` checks each owner against `scripts/plan/f1a-owners.json`.

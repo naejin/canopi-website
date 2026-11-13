@@ -104,7 +104,7 @@ test('site: light, soil and water are three-valued as in v1', () => {
 });
 
 test('site: room uses the wild maximum height only, advisory (owner request 2026-11-12: a taller plant fits, kind wild_height); an unknown height or a climber is said, never a silent fit', () => {
-  assert.deepEqual(ROOM_LIMIT_M, { small: 6, large: 12, field: Infinity, unsure: Infinity });
+  assert.deepEqual(ROOM_LIMIT_M, { pots: 6, small: 6, large: 12, field: Infinity, unsure: Infinity });
   const oak = make({ traits: { height_m: { min: 25, max: 40 }, width_max_m: 25 } });
   const small = fits(oak, site({ room: 'small' }));
   assert.deepEqual(small.misfits, []);
@@ -287,7 +287,7 @@ test('matrix: a placement with no layer yet is listed as unplaced; a guest fills
 // ================= suggest =================
 
 test('suggest: the size follows the room, 9 with Room unsure (A7), and it stops when nothing is new', () => {
-  assert.deepEqual(SIZE_LIMIT, { small: 6, large: 9, field: 12, unsure: 9 });
+  assert.deepEqual(SIZE_LIMIT, { pots: 6, small: 6, large: 9, field: 12, unsure: 9 });
   const s = suggest(temperate, { ...ctx(), interactions: temperateInteractions });
   assert.equal(s.limit, 9);
   assert.ok(s.members.length > 3 && s.members.length <= 9, String(s.members.length));

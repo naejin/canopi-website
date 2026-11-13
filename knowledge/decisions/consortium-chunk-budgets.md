@@ -3,20 +3,20 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T18:00:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T18:32:01Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
 sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:f5e7bb4071bfb5f6
-    last_modified: 2026-11-13T16:13:32Z
+    digest: sha256:521388d051be908d
+    last_modified: 2026-11-13T18:18:33Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:0ae4f685772e08b7
-    last_modified: 2026-11-13T14:45:18Z
+    digest: sha256:604d832e631bff06
+    last_modified: 2026-11-13T18:18:33Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -97,3 +97,5 @@ Coordinator row "F1a design-check choices" in [the decisions](/decisions/consort
 - **First run:** the cap is 38 KB (the plan's "≤ 40 KB" corrected); after stream 1 it becomes measured + 0.5 KB; above 38 KB needs a coordinator row, above 40 KB an ADR-2 change.
 - **One budget owner** (the coordinator) for `scripts/built-modules.mjs`, `scripts/check-built-site.mjs`, `astro.config.mjs` and the timing files.
 - **Timing (A24):** a new `ct:start` mark (first-visit Start, ≤ 6 s target, warns) beside `ct:first-view`; the sqlite wasm preload is injected after the build and the build asserts its `href` is the fetched URL, with matching `crossorigin` and one wasm.
+
+**Commit 0 (applied 2026-11-13):** `ROLE_ENTRIES` has `structure` (`views/Structure.tsx`) and `balance` (`views/balance/BalanceSlot.tsx`). Both roles are empty and capped at 12 KB, the larger A14 maximum, until the merge that gives each one a chunk sets measured + 0.5 KB. `FIRST_RUN_BUDGET` stays at 38 KB.

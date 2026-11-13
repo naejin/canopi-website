@@ -64,12 +64,18 @@ export type Month = (typeof months)[number];
 export const lights = ['sun', 'part', 'shade', 'unsure'] as const;
 export const soils = ['acid', 'neutral', 'chalky', 'unsure'] as const;
 export const waters = ['dry', 'average', 'wet', 'unsure'] as const;
-export const rooms = ['small', 'large', 'field', 'unsure'] as const;
+// Every room value (F1a commit 0, A8): 'pots' ("Balcony or pots") is a value of the type before it is
+// a question: `rooms`, the answers Start offers and a link's `m=` accepts, leaves it out until stream 1
+// (pal1) offers it and gives it its own limits (site.ts ROOM_LIMIT_M, suggest.ts SIZE_LIMIT), so no
+// control or link reaches it yet.
+export const roomValues = ['pots', 'small', 'large', 'field', 'unsure'] as const;
+export type Room = (typeof roomValues)[number];
+export const rooms = ['small', 'large', 'field', 'unsure'] as const satisfies readonly Room[];
 export interface Site {
   light: (typeof lights)[number];
   soil: (typeof soils)[number];
   water: (typeof waters)[number];
-  room: (typeof rooms)[number];
+  room: Room;
 }
 export type SiteKey = keyof Site;
 export const siteKeys: readonly SiteKey[] = ['light', 'soil', 'water', 'room'];
@@ -449,3 +455,47 @@ export interface FactValues {
 // recorded. source.ts factAt returns the stored value (E6 R4); F2 computes per site and period behind
 // the same signature; E7 reads scoped stored facts (most specific wins).
 export type FactAt = <K extends FactKey>(key: K, taxon: Taxon, site: SiteLookup | null, period: string) => FactValues[K] | null;
+
+// ---- F1a seams (commit 0; plan F1a, design check .local/consortium/v2/f1a/design-check.md A3, A6, A15, A22) ----
+
+// The view the main area shows (A6): Start, then Palette (the plants by role, the health strip and the
+// gap list) or Structure (the strata × stages matrix). Stream 1 (pal1) moves the island's own view
+// signal (store.ts) to it; a link writes Structure only (key `w` under v4, no version bump).
+export const views = ['start', 'palette', 'structure'] as const;
+export type View = (typeof views)[number];
+
+// One confidence vocabulary (A15, ADR-7, stream 3): every hedge a surface shows is one of these terms.
+// edge "near the edge" (of the observed range), disputed "sources disagree", estimate "placed by
+// estimate" (a borrowed list), worked-out (replaces est.word), not-reviewed (driven by
+// SourceInfo.rangesReview, never a literal), not-recorded (no data) vs not-checked (the check did not
+// run: a chunk or rule that failed, no location), spread "{agree} of {of} scenarios". No strings here:
+// confidence.ts (conf1) maps each term to its key per surface and its methods-page anchor.
+export const confidenceTerms = ['edge', 'disputed', 'estimate', 'worked-out', 'not-reviewed', 'not-recorded', 'not-checked', 'spread'] as const;
+export type ConfidenceTerm = (typeof confidenceTerms)[number];
+// A term, with the scenario counts the spread reads (agree of `of`).
+export interface Confidence { term: ConfidenceTerm; agree?: number; of?: number }
+
+// What Add opens preset to (A22; store.ts openAdd, stream 1): a job, a layer, a stage, the filters
+// stream 2 defines, and a hint: the line of the Balance check or gap that opened it, a consortium.*
+// key without its prefix with its variables (core holds no strings), shown under Add's filters (add1).
+export interface AddPreset {
+  job?: JobId;
+  layer?: Stratum;
+  stage?: PhaseOrd;
+  filters?: Readonly<Record<string, string | boolean>>;
+  hint?: { key: string; vars?: Record<string, string | number> };
+}
+
+// The Balance checks (A3, A20, stream 4; balance.ts holds the registry): separate checks, no score.
+// family spread, climate margin spread, water-needs mix, flowering calendar, food, evergreen and
+// deciduous, and the checks waiting for data (roots, insect-habitat months, active season).
+export const balanceCheckIds = ['family', 'margin', 'water', 'flowering', 'food', 'evergreen', 'roots', 'insects', 'season'] as const;
+export type BalanceCheckId = (typeof balanceCheckIds)[number];
+// ok and gap are verdicts; waiting: the data is not in the export yet; not-enough-data: too few of the
+// members are recorded to judge ("n of m recorded", never a pass); not-checked: the check did not run
+// (no location for a site check, a rule that failed).
+export const balanceStates = ['ok', 'gap', 'waiting', 'not-enough-data', 'not-checked'] as const;
+export type BalanceState = (typeof balanceStates)[number];
+// One check: n of the m members recorded for it; preset: what its "Find…" opens Add with (null: none);
+// confidence: its hedge (an estimate on a borrowed list).
+export interface BalanceCheck { id: BalanceCheckId; state: BalanceState; n: number; m: number; preset: AddPreset | null; confidence?: Confidence }

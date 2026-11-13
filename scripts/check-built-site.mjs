@@ -493,8 +493,8 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 // Caps (E6 stream B4, 2026-11-13): each role's measured cost at the B4 build (gzip -9) plus 0.5 KB
 // headroom, rounded up to 0.1 KB, never above design check A14's role maximum (sheets, details, later, suggest
 // ≤ 8 KB; a feature ≤ 12 KB; location ≤ 20 KB). A part that outgrows its cap is a coordinator row, not
-// a silent raise. An empty role (likely and native until S5e) has no chunk to cap
-// yet; it gets its A14 maximum.
+// a silent raise. An empty role (likely and native until S5e; structure and balance until F1a's streams)
+// has no chunk to cap yet; it gets its A14 maximum.
 const FIRST_RUN_BUDGET = 38 * 1024;
 const KB = 1024;
 const ROLE_CAPS = {
@@ -509,6 +509,11 @@ const ROLE_CAPS = {
   sheets: 6.3 * KB, // each sheet; the largest (Paste) measured 5,933 B, Add 2,414, Correction 2,380, Swap 1,190 (A14 max 8)
   later: 8 * KB, // measured 7,831 B: the A14 max of 8 KB leaves 0.35 KB headroom
   suggest: 8 * KB, // set before R4's loadSuggest gave it a chunk (1.8 KB at the E6 hand-off build): A14 max
+  // F1a (commit 0; design check A1, A2, coordinator = the one budget owner): empty until measured, at
+  // the larger A14 maximum (a feature's 12 KB; A2 lets the coordinator pick 8 KB lazy or 12 KB feature
+  // for balance); set to measured + 0.5 KB at the merge that gives each its chunk.
+  structure: 12 * KB, // no chunk yet (pal1 moves the matrix to views/Structure.tsx)
+  balance: 12 * KB, // no chunk yet (pal2 places views/lazy.tsx balancePanel; bal2 fills it)
 };
 const LOCATION_BUDGET = 20 * KB;
 const MAPLIBRE_BUDGET = 330 * KB;

@@ -25,7 +25,9 @@ import { asks, conflicts, flagsFor, isSerious } from './conflicts.ts';
 // Suggestions stay small (owner, 2026-10-28): 6, 9 or 12 plants by room; 9 with Room "Not sure"
 // (design check A7, coordinator row "v2 build setup", revertible). The room limits plant size, never
 // the number of plants the reader adds.
-export const SIZE_LIMIT: Record<Site['room'], number> = { small: 6, large: 9, field: 12, unsure: 9 };
+// pots (F1a commit 0; no control or link reaches it yet) takes the small garden's size until stream 1
+// derives these from site.ts ROOM_LIMIT_M (A8).
+export const SIZE_LIMIT: Record<Site['room'], number> = { pots: 6, small: 6, large: 9, field: 12, unsure: 9 };
 
 export interface SuggestOptions extends FlagContext {
   kept?: PlantId[]; // always members, flagged or not; kept wins over removed

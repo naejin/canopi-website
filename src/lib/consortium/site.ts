@@ -31,7 +31,10 @@ import { phaseSpan } from './jobs.ts';
 // Every answer "Not sure": the site the page starts from (A7).
 export const UNSURE_SITE: Site = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
 
-export const ROOM_LIMIT_M: Record<Site['room'], number> = { small: 6, large: 12, field: Infinity, unsure: Infinity };
+// The one room table (F1a A8): Suggest's sizes, the height notes and Add derive from it in stream 1.
+// pots (no control or link reaches it yet, types.ts roomValues) holds the small garden's limit until
+// pal1 gives it its own.
+export const ROOM_LIMIT_M: Record<Site['room'], number> = { pots: 6, small: 6, large: 12, field: Infinity, unsure: Infinity };
 export const ACID_BELOW = 6;
 export const CHALKY_ABOVE = 7.5;
 

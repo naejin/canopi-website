@@ -5,7 +5,7 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T18:10:50Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T18:32:01Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T16:08:57Z }
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:52917d8dd32b08b6
-    last_modified: 2026-11-13T18:10:18Z
+    digest: sha256:dc647db21e151f1b
+    last_modified: 2026-11-13T18:31:05Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -43,8 +43,8 @@ sources:
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:c67f5c03a6148b9a
-    last_modified: 2026-11-13T16:13:32Z
+    digest: sha256:b2cddacc3db3d444
+    last_modified: 2026-11-13T18:18:43Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
@@ -73,8 +73,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:0ae4f685772e08b7
-    last_modified: 2026-11-13T14:45:18Z
+    digest: sha256:604d832e631bff06
+    last_modified: 2026-11-13T18:18:33Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
@@ -85,6 +85,21 @@ sources:
     title: sgconfig.yml
     digest: sha256:2c703f0a6786cc90
     last_modified: 2026-11-13T06:47:29Z
+  - id: consortium-palette-test-mjs
+    resource: ../../scripts/consortium-palette.test.mjs
+    title: scripts/consortium-palette.test.mjs
+    digest: sha256:392b6ba12538f01e
+    last_modified: 2026-11-13T18:22:33Z
+  - id: consortium-balance-test-mjs
+    resource: ../../scripts/consortium-balance.test.mjs
+    title: scripts/consortium-balance.test.mjs
+    digest: sha256:396e254fffeff1d1
+    last_modified: 2026-11-13T18:21:29Z
+  - id: consortium-confidence-test-mjs
+    resource: ../../scripts/consortium-confidence.test.mjs
+    title: scripts/consortium-confidence.test.mjs
+    digest: sha256:b68941e2f1c61256
+    last_modified: 2026-11-13T18:22:01Z
 ---
 
 # Responsibility
@@ -130,3 +145,5 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 - The installer validates the `/app/` artifact contract only (manifest, checksums, Cloudflare limits, filter metadata, no raw DuckDB WASM); it is not valid for the root `web.projectcanopi.com` artifact.
 - The exporter writes metres from the design centre and a pin rounded to 0.1 degree; `featured-designs.test.mjs` enforces the allowed fields. Publish a design only with its owner's consent.
 - Hero PNG originals stay outside git.
+
+F1a commit 0 adds three core tests written failing for the streams: `consortium-palette.test.mjs` (pal1/pal2: role groups, health summary, invasive tie), `consortium-balance.test.mjs` (bal2: the registry shape passes; the checks are marked) and `consortium-confidence.test.mjs` (conf1: the term table). It also adds six F1a browser specs (see [Consortium page](/modules/consortium-page.md)).

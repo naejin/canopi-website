@@ -161,6 +161,9 @@ export const ROLE_ENTRIES = {
   sheets: /\/src\/islands\/consortium\/views\/(Add|Swap|Paste|Correction)\.tsx$/, // K3
   later: /\/src\/islands\/consortium\/views\/later\.ts$/, // K3: the views after the matrix
   suggest: /\/src\/lib\/consortium\/suggest\.ts$/, // R4: loadSuggest
+  // F1a lazy parts (design check A1, A2; empty roles from commit 0 until their stream gives them a chunk)
+  structure: /\/src\/islands\/consortium\/views\/Structure\.tsx$/, // pal1: the matrix, off the first run
+  balance: /\/src\/islands\/consortium\/views\/balance\/BalanceSlot\.tsx$/, // bal2: views/lazy.tsx balancePanel
 };
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
 // The browser-test hook (main.ts imports it with import() under __CT_TEST_HOOK__ and awaits it before

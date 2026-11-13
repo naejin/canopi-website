@@ -26,6 +26,8 @@ export * from './fold.ts';
 export { siteIdOf, zoneOfSiteId, type SiteId } from './zones.ts';
 // E6 R1: the nearest-list table, a leaf.
 export * from './nearest.ts';
+// F1a commit 0: the Balance checks' registry (A3), filled by stream 4; the strip and the panel read it.
+export * from './balance.ts';
 
 // E6 R4 (design check A11): the suggestion and the Swap list (suggest.ts), their own chunk (role
 // `suggest`, scripts/built-modules.mjs ROLE_ENTRIES), off the first run, so this barrel does not

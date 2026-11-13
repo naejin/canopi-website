@@ -9,6 +9,8 @@
 // E6 (commit 0): consortium-e6 (owners K1, K3, B4 by chunk) and consortium-e6-r4 (R4) hold E6's user
 // paths, each "E6-n (<owner> …)", written failing with scripts/expect-fail.mjs failing() (the
 // expected-fail marker, owner in the title); a marker turns red once its test passes.
+// F1a (commit 0): consortium-f1a-{palette,filters,confidence,balance,perf,a11y} hold one user scenario
+// per test, each "F1a-<letter><n> (<owner> …)" for a stream the owners file gives that file.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -22,11 +24,13 @@ const testsOf = (text) => [...text.matchAll(/^(test|failing)\('((?:\\'|[^'])+)',
 const SPEC_FILES = [
   'consortium-commit0.browser.test.mjs',
   'consortium-e6-r4.browser.test.mjs', 'consortium-e6.browser.test.mjs',
+  'consortium-f1a-a11y.browser.test.mjs', 'consortium-f1a-balance.browser.test.mjs', 'consortium-f1a-confidence.browser.test.mjs',
+  'consortium-f1a-filters.browser.test.mjs', 'consortium-f1a-palette.browser.test.mjs', 'consortium-f1a-perf.browser.test.mjs',
   'consortium-p5-s5b.browser.test.mjs', 'consortium-p5-s5c.browser.test.mjs', 'consortium-p5-s5d.browser.test.mjs', 'consortium-p5-s5f.browser.test.mjs',
   'consortium-s1.browser.test.mjs', 'consortium-s2.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs',
   'consortium-seams-layout.browser.test.mjs', 'consortium-seams-p2.browser.test.mjs', 'consortium-seams-p5.browser.test.mjs',
 ];
-test('one browser test file for commit 0, one per P2 stream, one per P5 stream, one per seams owner and two for E6, nothing else', () => {
+test('one browser test file for commit 0, one per P2 stream, one per P5 stream, one per seams owner, two for E6 and six for F1a, nothing else', () => {
   assert.deepEqual(files, SPEC_FILES);
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.match(pkg.scripts['test:browser'], /node scripts\/browser\/run\.mjs --list local$/);
@@ -38,7 +42,7 @@ test('one browser test file for commit 0, one per P2 stream, one per P5 stream, 
 test('every browser test runs: no todo, no skip, in any file but a P5 stream\'s (H8)', () => {
   for (const file of files.filter((f) => !f.startsWith('consortium-p5-'))) {
     const text = read(file);
-    assert.ok(testsOf(text).length >= (/-(s1|seams-p5|e6-r4)\./.test(file) ? 2 : 5), file);
+    assert.ok(testsOf(text).length >= (/-(s1|seams-p5|e6-r4|f1a-[a-z0-9]+)\./.test(file) ? 2 : 5), file);
     assert.doesNotMatch(text, /\btodo\s*:|\bskip\s*:|\.todo\(|\.skip\(/, file);
   }
 });
@@ -270,6 +274,27 @@ test('E6 specs: each "E6-n (<owner> …)" names an owner its file holds; each ma
   for (const [file, list] of Object.entries(E6_OWNERS)) {
     for (const owner of list) {
       assert.ok(owners.chunks.some((c) => c.streams[owner]?.files.includes(`scripts/browser/${file}`)), `the owners file gives ${file} to ${owner} in its chunk`);
+    }
+  }
+});
+
+// F1a (commit 0, plan F1a "Tests"): each F1a spec names its owner stream, one the owners file
+// (scripts/plan/f1a-owners.json) gives that file in some chunk; a marked spec's marker names the owner
+// of its title. One user scenario per test; the markers are counted (zero before a push to master).
+const F1A_FILES = files.filter((f) => f.startsWith('consortium-f1a-'));
+test('F1a specs: each "F1a-Xn (<owner> …)" names an owner the owners file gives its file; each marker names the owner of its title', async () => {
+  const { markers } = await import('./expect-fail.mjs');
+  const owners = JSON.parse(readFileSync(new URL('./plan/f1a-owners.json', import.meta.url), 'utf8'));
+  const { matches } = await import('./plan/owners.mjs');
+  assert.equal(F1A_FILES.length, 6);
+  const marked = markers().filter((m) => m.file.startsWith('browser/consortium-f1a-'));
+  for (const file of F1A_FILES) {
+    const holders = owners.chunks.flatMap((c) => Object.entries(c.streams).filter(([, st]) => st.files.some((p) => matches(p, `scripts/browser/${file}`))).map(([name]) => name)).filter((n) => n !== 'main');
+    assert.ok(holders.length, `the owners file gives ${file} to a stream`);
+    for (const { title, marked: isMarked } of testsOf(read(file))) {
+      const owner = title.match(/^F1a-[A-Z]\d+ \((\w+)\b/)?.[1];
+      assert.ok(owner && holders.includes(owner), `${file}: "${title}" names one of ${holders.join(', ')}: F1a-Xn (<owner> …)`);
+      if (isMarked) assert.ok(marked.some((m) => m.title === title && m.owner === owner), `"${title}": its marker names ${owner}`);
     }
   }
 });

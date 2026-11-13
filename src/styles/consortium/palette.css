@@ -1,0 +1,4 @@
+/* Consortium F1a, stream 1 (Palette and Structure): the Palette view, its cards by role, the health strip
+   and the gap list (pal1 in chunk 1, pal2 in chunk 2; scripts/plan/f1a-owners.json). Page-level,
+   imported once by ConsortiumPage.astro, never by a lazy chunk (A14: a late stylesheet would flash).
+   Empty until stream 1 builds. Use the tokens of base.css; no green in the strip. */

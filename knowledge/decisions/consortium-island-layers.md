@@ -3,20 +3,20 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the nine import rules dependency-cruiser enforces and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T14:30:41Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T18:32:35Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T16:08:58Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T18:32:32Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:d41eeed9f53d9b07
-    last_modified: 2026-11-13T16:08:25Z
+    digest: sha256:11e603cc50e3fe33
+    last_modified: 2026-11-13T18:20:07Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:6d1cd5e2554c64ad
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:c2375e19583bd550
+    last_modified: 2026-11-13T18:17:31Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -65,8 +65,8 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:2de16ed80fe906bc
-    last_modified: 2026-11-13T15:36:18Z
+    digest: sha256:b031e4d644fedc76
+    last_modified: 2026-11-13T18:20:07Z
   - id: arch-json
     resource: ../../scripts/quality/baselines/arch.json
     title: scripts/quality/baselines/arch.json
