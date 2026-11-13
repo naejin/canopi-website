@@ -3,14 +3,14 @@
 // #ct-root (replacing the static loading line) and opens the database at once, in parallel with the
 // first render (design check A2), so Start works while the plant list loads. Once open, the database is wrapped in the PlantSource
 // (data/sqlite-source.ts) and set on the store, which then reads the chosen climate's plants
-// (store.watchPools). The other streams add their wiring to the store and views, not here.
+// (store.watchPools). The store's effects start here (store.start), none on import (E6 S3).
 import { h, render } from 'preact';
 // The wasm's URL, for the loader to download it itself (a stall timer; review R4-4). Vite emits the one
 // sqlite3.<hash>.wasm the package's own new URL('sqlite3.wasm', import.meta.url) names (checked by
 // scripts/check-built-site.mjs). Here, not in load.ts: Node's unit tests import load.ts.
 import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App } from './App.tsx';
-import { load, setPageCountries, setSource, watchPools } from './store.ts';
+import { load, setPageCountries, setSource, start, watchPools } from './store.ts';
 import { zoneOf } from '../../lib/consortium/index.ts';
 import { setStrings } from './strings.ts';
 import { pageData, type PageData } from './views/kit/page.ts';
@@ -53,15 +53,18 @@ async function open(data: PageData): Promise<void> {
   }
 }
 
+// What the page starts, in order (E6 S3: no module starts anything when imported): the store's
+// effects (store.start), the pools watcher, the database, then the render, whose Start runs
+// startMemory (state/arrival.ts: the waiting Suggest, the save and address watchers) in a layout
+// effect, before the first paint (N2 layout shift).
 const root = document.getElementById('ct-root');
 const data = pageData() as PageData | null;
 if (root && data) {
+  start();
   setStrings(data.strings, data.lang);
   setPageCountries(data.countries);
   root.textContent = '';
   root.removeAttribute('aria-busy');
-  // The database opens first (open sets the load state and clears the source at once), then the
-  // render, whose Start runs startMemory in a layout effect, before the first paint (N2 layout shift).
   watchPools();
   void open(data);
   // The browser-test build loads the test hook (window.__ctTest, __ctFaults) before the first
