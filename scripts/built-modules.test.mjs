@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 const graphOf = (edges) => new Map(Object.entries(edges).map(([p, imports]) => [p, { code: '', imports }]));
 const noFeatures = { location: [], markProviders: [], future: [], pool: [], likely: [], native: [], range: [], details: [], sheets: [], later: [], suggest: [] };
-const none = { features: noFeatures, maplibre: [], maplibreCss: [], css: {} };
+const none = { features: noFeatures, maplibre: [], maplibreCss: [], css: {}, testHook: [] };
 const sets = ({ parts, location, maplibre }) => ({ parts, location, maplibre });
 const roles = (features, maplibre = []) => ({ ...none, features: { ...noFeatures, ...features }, maplibre });
 
@@ -35,6 +35,7 @@ test('chunkRoles: the location entry and the mark providers by their entry modul
     maplibre: ['/_astro/index.e.js', '/_astro/maplibre-gl-worker.d.js'],
     maplibreCss: ['/_astro/where.c.css'],
     css: { '/_astro/where.b.js': ['/_astro/where.c.css'] },
+    testHook: [],
   });
   assert.deepEqual(Object.keys(ROLE_ENTRIES), Object.keys(noFeatures), 'the role entries, listed once');
   assert.deepEqual(chunkRoles({ '_astro/main.a.js': bundle['_astro/main.a.js'] }), none, 'no location, MapLibre or providers chunk: no roles');
@@ -56,6 +57,7 @@ test('chunkRoles: the lazy island parts by their entry module, in the one role l
   assert.deepEqual(r.features, { ...noFeatures, details: ['/_astro/Details.d.js'], sheets: ['/_astro/Add.a.js', '/_astro/Swap.b.js'], later: ['/_astro/later.c.js'], suggest: ['/_astro/suggest.e.js'] });
   assert.deepEqual(r.css, { '/_astro/later.c.js': ['/_astro/later.x.css'] }, 'a stylesheet attached to a lazy part is reported (check-built-site refuses it)');
   assert.equal(r.lazy, undefined, 'one role list: no separate lazy table');
+  assert.deepEqual(chunkRoles({ ...bundle, '_astro/test-hook.t.js': chunk('_astro/test-hook.t.js', `${root}/src/islands/consortium/test-hook.ts`) }).testHook, ['/_astro/test-hook.t.js'], 'the browser-test hook by its module');
 });
 
 // K3 hand-off: once Correction imports the drafts that live in the plant dialog's chunk, Rollup drops
@@ -193,6 +195,14 @@ test('modulepreloadChunks: the first-run closure, the loader with the glue and t
   });
 });
 
+test('modulepreloadChunks: in the browser-test build, the hook the entry awaits before its first render is preloaded too', () => {
+  const files = { ...PAGE_FILES, 'main.c.js': `${PAGE_FILES['main.c.js']}import("./test-hook.z.js");`, 'test-hook.z.js': 'import{h}from"./main.c.js";window.__ctTest={};' };
+  withBuild(files, PAGE_HTML, (graph) => {
+    assert.deepEqual(modulepreloadChunks(graph, PAGE_HTML, ['/_astro/test-hook.z.js']), ['/_astro/chrome.b.js', '/_astro/load.e.js', '/_astro/main.c.js', '/_astro/preact.d.js', '/_astro/test-hook.z.js']);
+    assert.ok(!modulepreloadChunks(graph, PAGE_HTML).includes('/_astro/test-hook.z.js'), 'not without being named');
+  });
+});
+
 test('modulepreloadChunks: a page without the island entry fails rather than preloading nothing', () => {
   withBuild({ 'page.a.js': 'import("./x.b.js");', 'x.b.js': '' }, PAGE_HTML, (graph) => {
     assert.throws(() => modulepreloadChunks(graph, PAGE_HTML), /one island entry chunk expected, found 0/);
@@ -234,6 +244,8 @@ test('L11: the dist-test chunk graph is the production graph plus the test hook\
   const extra = [...graphs.test.keys()].filter((p) => !stems(graphs.production).includes(stem(p)));
   assert.equal(extra.length, 1, `one chunk more in dist-test (the hook's): ${extra.join(', ')}`);
   assert.match(graphs.test.get(extra[0]).code, /__ctTest/, `${extra[0]} is the test hook's chunk`);
+  assert.deepEqual(readChunkRoles(BUILT.test).testHook, [extra[0]], 'the roles name it');
+  assert.deepEqual(readChunkRoles(BUILT.production).testHook, [], 'none in dist');
   assert.deepEqual(stems(graphs.test).filter((s) => s !== stem(extra[0])), stems(graphs.production), 'the same chunks otherwise');
   const counts = (d) => Object.fromEntries(Object.entries(readChunkRoles(d).features).map(([k, v]) => [k, v.length]));
   assert.deepEqual(counts(BUILT.test), counts(BUILT.production), 'the same roles, with the same number of chunks');

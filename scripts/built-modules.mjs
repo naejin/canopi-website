@@ -131,7 +131,8 @@ export const staticClosure = (graph, roots, stop = new Set()) => [...walk(graph,
 // - maplibreCss: the CSS the location and MapLibre chunks import (maplibre-gl.css; Vite merges a
 //   chunk's CSS into one file), counted in MapLibre's 330 KB;
 // - css: the CSS files Vite attaches to any role chunk ({ '/_astro/x.js': ['/_astro/y.css'] }), so
-//   check-built-site can refuse a stylesheet that arrives with a lazy part (A14: it would flash).
+//   check-built-site can refuse a stylesheet that arrives with a lazy part (A14: it would flash);
+// - testHook: the browser-test hook's chunk (dist-test only; none in a production build, L11).
 // A role's chunks are those whose facade is a module its pattern names, and those holding such a module
 // that is reached only through import() (moduleInfo: Rollup's this.getModuleInfo; no module imports it
 // statically): when another chunk imports a binding from an entry module's chunk (Correction importing
@@ -160,6 +161,9 @@ export const ROLE_ENTRIES = {
   suggest: /\/src\/lib\/consortium\/suggest\.ts$/, // R4: loadSuggest
 };
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
+// The browser-test hook (main.ts imports it with import() under __CT_TEST_HOOK__ and awaits it before
+// the first render), in the browser-test build only: not a part, never in dist/ (L11).
+const TEST_HOOK = /\/src\/islands\/consortium\/test-hook\.ts$/;
 const emptyRoles = () => Object.fromEntries(Object.keys(ROLE_ENTRIES).map((k) => [k, []]));
 const norm = (id) => (id ?? '').split('?')[0].replaceAll('\\', '/');
 /**
@@ -184,12 +188,13 @@ export function chunkRoles(bundle, moduleInfo = null) {
     maplibre: [...maplibreJs, ...workers].map(path).sort(),
     maplibreCss: [...css].map(path).sort(),
     css: roleCss,
+    testHook: chunks.filter((c) => TEST_HOOK.test(norm(c.facadeModuleId))).map(path).sort(),
   };
 }
 // The roles of a build (root: the served directory, dist/client or dist-test/client): none when the
 // file is missing (a build without the plugin), so the checks fail on a missing chunk.
 export function readChunkRoles(root) {
-  const none = { features: emptyRoles(), maplibre: [], maplibreCss: [], css: {} };
+  const none = { features: emptyRoles(), maplibre: [], maplibreCss: [], css: {}, testHook: [] };
   for (const file of [join(root, '..', CHUNK_ROLES_FILE), join(root, CHUNK_ROLES_FILE)]) {
     if (existsSync(file)) {
       const r = JSON.parse(readFileSync(file, 'utf8'));
@@ -234,7 +239,10 @@ export function onDemandChunks(graph, entries, roles, size = () => 0) {
 // can draw) with its static imports. Nothing else reached only through import() is preloaded: not the
 // sheets, the plant dialog, the views after the matrix, suggest, the P5 features or MapLibre (one rule,
 // not a role list). The module scripts themselves are already loaded by their <script src>.
-export function modulepreloadChunks(graph, html) {
+// awaited: chunks the entry imports with import() and awaits before its first render (the browser-test
+// hook, in the browser-test build only: without its preload the page sat empty and not busy for a
+// round trip, which the specs' loadState read as ready).
+export function modulepreloadChunks(graph, html, awaited = []) {
   const scripts = [];
   const inline = [];
   for (const [tag, body] of html.matchAll(MODULE_SCRIPT)) {
@@ -244,5 +252,5 @@ export function modulepreloadChunks(graph, html) {
   }
   const island = islandChunks(graph, scripts);
   const glue = [...graph].filter(([, m]) => isSqliteGlue(m.code)).map(([p]) => p);
-  return staticClosure(graph, [...scripts, ...inline, island.entry, ...glue]).filter((p) => !scripts.includes(p)).sort();
+  return staticClosure(graph, [...scripts, ...inline, island.entry, ...glue, ...awaited.filter((p) => graph.has(p))]).filter((p) => !scripts.includes(p)).sort();
 }

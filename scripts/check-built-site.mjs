@@ -518,6 +518,7 @@ if (locationSource) assert.ok(existsSync(new URL('../src/islands/consortium/view
 assert.ok(existsSync(join(root, '..', CHUNK_ROLES_FILE)), `${join(root, '..', CHUNK_ROLES_FILE)} is missing: the build writes it (astro.config.mjs canopi:consortium-chunk-roles)`);
 assert.ok(!existsSync(join(root, CHUNK_ROLES_FILE)), `${CHUNK_ROLES_FILE} must not be served`);
 const roles = readChunkRoles(root);
+assert.deepEqual(roles.testHook, [], `the browser-test hook's chunk is in a production build (${roles.testHook.join(', ')}): build with npm run build`);
 assert.deepEqual(Object.keys(ROLE_CAPS).sort(), Object.keys(roles.features).sort(), 'every chunk role has a cap (ROLE_CAPS) and every cap a role');
 for (const kind of ['markProviders', 'future', 'details', 'later', 'range']) assert.equal(roles.features[kind].length, 1, `one ${kind} chunk, found ${roles.features[kind].join(', ') || 'none'}`);
 assert.equal(roles.features.sheets.length, 4, `four sheet chunks (Add, Swap, Paste, Correction), found ${roles.features.sheets.join(', ') || 'none'}`);
