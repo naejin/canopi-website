@@ -47,7 +47,7 @@ function cropSearch(list: readonly Taxon[], q: string, lang: string, skip: Reado
 }
 
 // ---- the country line ----
-export function CountryLine() {
+function CountryLine() {
   const { code, source: from } = country.value;
   // The page's list until the database opens (store.knownCountries): the line is final in its first frame.
   const known = knownCountries.value;

@@ -39,7 +39,7 @@ export function T(key: string, vars?: Vars): string {
 }
 
 // The forms of a plural string: { one: '# plant', other: '# plants' }.
-export function pluralForms(value: string): Partial<Record<Intl.LDMLPluralRule, string>> {
+function pluralForms(value: string): Partial<Record<Intl.LDMLPluralRule, string>> {
   const forms: Partial<Record<Intl.LDMLPluralRule, string>> = {};
   for (const part of value.split(' | ')) {
     const m = /^(zero|one|two|few|many|other)\s*:\s*([\s\S]*)$/.exec(part.trim());
