@@ -1,5 +1,5 @@
 # The master zero expected-fail marker switch (coordinator row, E3/E4/E5a/E6 batch): `warn` reports the
 # markers left (CI warning annotation, pre-push message) without failing; `fail` blocks a master push
-# and the CI gate while any marker is left. The batch's chunk-5 exit commit flips the line below to
-# `fail` (read by .githooks/lib.sh zero_markers, used by .githooks/pre-push and ci.yml job 1).
-warn
+# and the CI gate while any marker is left. `fail` since the batch's chunk-5 exit (0 markers left; read
+# by .githooks/lib.sh zero_markers, used by .githooks/pre-push and ci.yml job 1).
+fail
