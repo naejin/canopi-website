@@ -230,14 +230,15 @@ test('staticClosure: static imports only, import() not followed', () => {
 });
 
 // E6 L11: the browser-test build differs from the production build only by the test hook's chunk
-// (main.ts imports test-hook.ts with import() under __CT_TEST_HOOK__). Read when both builds are here
-// (npm run build and npm run build:browser-test); skipped otherwise. Chunks compared by their name
+// (main.ts imports test-hook.ts with import() under __CT_TEST_HOOK__). Runs only with CANOPI_REQUIRE_BUILDS=1
+// after fresh builds (npm run build and npm run build:browser-test): leftover builds from an older commit
+// would fail it in a plain `npm test`. Chunks compared by their name
 // without the hash (the hook changes main's hash and so every importer's), roles by their count.
 const BUILT = { production: 'dist/client', test: 'dist-test/client' };
 // CI's job 4 sets CANOPI_REQUIRE_BUILDS=1 with both builds present, so a missing build fails there.
 const builtHere = Object.values(BUILT).every((d) => existsSync(join(d, 'consortium', 'index.html')));
 const requireBuilds = process.env.CANOPI_REQUIRE_BUILDS === '1';
-test('L11: the dist-test chunk graph is the production graph plus the test hook\'s chunk, and the hook is absent from dist', { skip: builtHere || requireBuilds ? false : 'needs dist/ and dist-test/ (npm run build, npm run build:browser-test)' }, () => {
+test('L11: the dist-test chunk graph is the production graph plus the test hook\'s chunk, and the hook is absent from dist', { skip: requireBuilds ? false : 'set CANOPI_REQUIRE_BUILDS=1 after npm run build and npm run build:browser-test' }, () => {
   assert.ok(builtHere, `CANOPI_REQUIRE_BUILDS=1 but ${Object.values(BUILT).filter((d) => !existsSync(join(d, 'consortium', 'index.html'))).join(' and ')} is missing`);
   const stem = (p) => p.replace('/_astro/', '').replace(/\.[\w-]{8}\.js$/, '');
   const graphs = Object.fromEntries(Object.entries(BUILT).map(([k, d]) => [k, moduleGraph(d, readFileSync(join(d, 'consortium', 'index.html'), 'utf8'))]));

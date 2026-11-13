@@ -7,7 +7,7 @@ name: CI
 #   1 unit         check, climate install, unit and policy tests, layer/duplicate/dead-code ratchets
 #   2 browser-build  one build:browser-test, kept as an artifact for job 3
 #   3 browser      the 4 static CI shards of scripts/browser/shards.json
-#   4 site         production build, budgets (check-built-site), smoke tier, axe, tile vectors
+#   4 site         production build, budgets (check-built-site), smoke tier, axe, tile vectors, L11 graph test
 #   gate           green when every job above is (2-4 may be skipped only for documentation)
 #   deploy         master only: moves the `deploy` branch to this commit, fast-forward only
 #   live           master only: waits for https://projectcanopi.com/version.json to report it
@@ -206,7 +206,7 @@ jobs:
 
   site:
     name: 4 build, budgets, smoke, axe, vectors
-    needs: changes
+    needs: [changes, browser-build]
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -240,6 +240,16 @@ jobs:
         env:
           CANOPI_REQUIRE_VECTORS: '1'
         run: npm run test:vectors
+      # L11 (E6 B4): the browser-test build differs from dist/ only by the test-hook chunk. It needs both
+      # builds, so it runs here after the production build; the artifact also carries the same climate index.
+      - uses: actions/download-artifact@v8
+        with:
+          name: browser-test-build
+          path: .
+      - name: Test build differs only by the test hook (L11)
+        env:
+          CANOPI_REQUIRE_BUILDS: '1'
+        run: node --test scripts/built-modules.test.mjs
 
   gate:
     # The ruleset on `deploy` requires this check by name: rename it and every deploy is refused (D11).
