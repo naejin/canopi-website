@@ -31,11 +31,13 @@
 // countryAtStart, the save record, shareState, guessCountry and cropExamples (ported from v1
 // logic.js, memory.js and crops.js). The wiring (startMemory) reads and writes the store's signals.
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
-import type { ClimateZone, DecodedLink, Interaction, LinkNotice, LinkOrigin, PhaseOrd, PlantId, ShareState, Site, Taxon } from '../../lib/consortium/index.ts';
-import { decodeLink, encodeLink, linkClimates, linkOrigin, readPreset, zoneOf, LINK_VERSION, MAX_CROPS } from '../../lib/consortium/index.ts';
+import type { ClimateZone, DecodedLink, Interaction, LinkNotice, LinkOrigin, PlantId, ShareState, Taxon } from '../../lib/consortium/index.ts';
+import { decodeLink, encodeLink, linkClimates, linkOrigin, readPreset, zoneOf, LINK_VERSION } from '../../lib/consortium/index.ts';
 import type { Country } from './store.ts';
 import * as store from './store.ts';
 import { focusView } from './focus.ts';
+import { state as schema } from './state/schema.ts';
+import type { ShareInput } from './state/schema.ts';
 import { T } from './strings.ts';
 import { letGo, loadLocationStep, lookingThrough, lookups, unread } from './views/location/load.ts';
 
@@ -174,40 +176,20 @@ export function countryAtStart({ link, pref, saved, savedFrom = null, guess }: {
   if (code(link)) return { code: code(link), source: 'link' };
   if (pref === NO_COUNTRY) return { code: null, source: 'chosen' };
   if (code(pref)) return { code: code(pref), source: 'chosen' };
-  if (code(saved)) return { code: code(saved), source: savedFrom === 'link' ? 'link' : savedFrom === 'location' ? 'location' : 'chosen' };
+  if (code(saved)) return { code: code(saved), source: savedFrom === 'link' || savedFrom === 'location' ? savedFrom : 'chosen' };
   if (code(guess)) return { code: code(guess), source: 'guess' };
   return { code: null, source: null };
 }
 
 // ---- the share state ----
 
-export interface ShareInput {
-  climate: ClimateZone | null;
-  country: Country;
-  site: Site;
-  members: readonly PlantId[];
-  kept: readonly PlantId[];
-  removed: readonly PlantId[];
-  guests: Partial<Record<PlantId, ClimateZone>>;
-  crops: readonly PlantId[];
-  stage: PhaseOrd | null;
-}
-// The state a link or the save holds. A guessed country is never written (owner row 2026-10-28); a
-// country from the location only with the reader's "include my location" tick (P5 owner answer 5;
-// S5b passes { location: true }).
+// The linked fields' values (state/schema.ts CONSORTIUM_FIELDS).
+export type { ShareInput } from './state/schema.ts';
+// The state a link or the save holds, each field as state/schema.ts puts it. A guessed country is
+// never written (owner row 2026-10-28); a country from the location only with the reader's "include
+// my location" tick (P5 owner answer 5; S5b passes { location: true }).
 export function shareState(s: ShareInput, { location = false }: { location?: boolean } = {}): ShareState {
-  const written = s.country.source === 'guess' ? false : s.country.source === 'location' ? location : true;
-  return {
-    climate: s.climate,
-    country: written ? s.country.code : null,
-    site: { ...s.site },
-    members: [...s.members],
-    kept: [...s.kept],
-    removed: [...s.removed],
-    guests: Object.entries(s.guests).flatMap(([id, from]) => (from ? [{ id, from }] : [])),
-    crops: s.crops.slice(0, MAX_CROPS),
-    stage: s.stage,
-  };
+  return schema.share(s, { location }) as unknown as ShareState;
 }
 
 // The address of a link: the page without its query (a guide preset is used once) and the fragment.
@@ -295,17 +277,8 @@ export const memory = guarded(() => (typeof localStorage === 'undefined' ? null 
 
 // Applies a decoded link or save to the store, in one batch, and opens the result.
 function applyDecoded(d: DecodedLink, countryFrom: 'link' | 'chosen'): void {
-  const s = d.state;
   batch(() => {
-    if (s.climate) store.climate.value = s.climate;
-    store.site.value = { ...s.site };
-    store.members.value = s.members;
-    store.kept.value = s.kept;
-    store.removed.value = s.removed;
-    store.crops.value = s.crops;
-    store.guests.value = Object.fromEntries(s.guests.map((g) => [g.id, g.from]));
-    if (s.stage !== null) store.stage.value = s.stage;
-    if (s.country) store.country.value = { code: s.country, source: countryFrom };
+    schema.apply(d.state, { countryFrom });
     store.view.value = 'matrix';
     // A sheet left open would show a plant of the consortium replaced (X8).
     store.closeSheet();
@@ -351,23 +324,19 @@ const waitForSource = (): Promise<void> => new Promise((resolve) => {
 // centre, given only for Share's "include my location" tick: the link then carries `o=` and a country
 // from the location (owner answer 5); the address bar and the save never pass it.
 export function currentFragment(of: store.Consortium | null = null, { origin = null }: { origin?: LinkOrigin | null } = {}): string | null {
-  const c = of?.climate ?? store.climate.peek();
-  if (!c) return null;
-  const guests = of?.guests ?? store.guests.peek();
+  const now = of ?? own(true);
+  if (!now) return null;
   const known: Partial<Record<ClimateZone, PlantId[]>> = {};
-  for (const z of new Set<ClimateZone>([c, ...Object.values(guests).filter((x): x is ClimateZone => !!x)])) {
+  for (const z of new Set<ClimateZone>([now.climate, ...Object.values(now.guests).filter((x): x is ClimateZone => !!x)])) {
     const p = store.pools.peek()[z];
     if (p) known[z] = p.map((t) => t.id);
   }
-  return encodeLink(shareState({
-    climate: c, country: of?.country ?? store.country.peek(), site: of?.site ?? store.site.peek(), members: of?.members ?? store.members.peek(),
-    kept: of?.kept ?? store.kept.peek(), removed: of?.removed ?? store.removed.peek(), guests, crops: of?.crops ?? store.crops.peek(), stage: of?.stage ?? store.stage.peek(),
-  }, { location: origin !== null }), known, { origin });
+  return encodeLink(shareState(now, { location: origin !== null }), known, { origin });
 }
 
 // Where the shown consortium's country came from, as the save and history.state keep it.
 const countryFrom = (c: Country = store.country.peek()): CountryFrom => {
-  return !c.code || c.source === 'guess' ? null : c.source === 'link' ? 'link' : c.source === 'location' ? 'location' : 'chosen';
+  return !c.code || c.source === 'guess' ? null : c.source === 'link' || c.source === 'location' ? c.source : 'chosen';
 };
 
 // ---- restoring a link or the save ----
@@ -491,14 +460,12 @@ export async function applyPreset(climate: ClimateZone, plant: string | null): P
 // every change of it; Undo restores the consortium (and the view), so it rewrites the save too.
 // Every write of the save goes through writeSave, which holds the one multi-tab rule.
 
-// The consortium this page shows or set aside on Start (null: none of its own).
-function own(): store.Consortium | null {
-  if (store.view.peek() !== 'start') {
+// The consortium this page shows or set aside on Start (null: none of its own). shown: the store's
+// consortium fields whatever the view (Start's draft too), as a link of them reads.
+function own(shown = false): store.Consortium | null {
+  if (shown || store.view.peek() !== 'start') {
     const climate = store.climate.peek();
-    return climate && {
-      climate, members: store.members.peek(), kept: store.kept.peek(), removed: store.removed.peek(), guests: store.guests.peek(), crops: store.crops.peek(),
-      site: store.site.peek(), country: store.country.peek(), stage: store.stage.peek(),
-    };
+    return climate && (schema.peek(schema.lists.saved) as store.Consortium);
   }
   return store.setAside.peek();
 }
@@ -551,14 +518,7 @@ export function chooseClimate(z: ClimateZone): void {
   const aside = store.view.peek() === 'start' ? own() : null;
   batch(() => {
     store.climate.value = z;
-    if (aside) {
-      const same = aside.climate === z;
-      store.members.value = same ? aside.members : [];
-      store.kept.value = same ? aside.kept : [];
-      store.removed.value = same ? aside.removed : [];
-      store.guests.value = same ? aside.guests : {};
-      store.crops.value = same ? aside.crops : [];
-    }
+    if (aside) schema.write(schema.valuesOf(schema.lists.plants, aside.climate === z ? aside : undefined));
   });
   memory.write(SITE_CLIMATE, siteId(z));
   attempt(() => { document.documentElement.dataset.climate = siteId(z); });
@@ -611,11 +571,7 @@ export function startOver(): void {
   writeSave(null);
   batch(() => {
     store.setAside.value = null;
-    store.members.value = [];
-    store.kept.value = [];
-    store.removed.value = [];
-    store.guests.value = {};
-    store.crops.value = [];
+    schema.write(schema.valuesOf(schema.lists.plants));
     store.closeSheet();
     store.view.value = 'start';
     dropLinkLocation();
@@ -631,10 +587,9 @@ export function backToConsortium(): void {
   const aside = own();
   batch(() => {
     if (aside) {
+      // Its climate and plants (chooseClimate seeds the plants from it), then the rest of it.
       chooseClimate(aside.climate);
-      store.site.value = aside.site;
-      store.country.value = aside.country;
-      store.stage.value = aside.stage;
+      schema.write(aside);
     }
     store.view.value = 'matrix';
   });
@@ -711,8 +666,7 @@ function persist(): void {
 
 // The shown consortium's link, recomputed on every change of what the link holds (Share's field).
 export const shownFragment = computed(() => {
-  void [store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
-    store.guests.value, store.crops.value, store.stage.value, store.view.value, store.pools.value];
+  void [schema.track(schema.lists.reader), store.pools.value];
   return currentFragment();
 });
 
@@ -771,7 +725,7 @@ export function startMemory(): void {
   // ... unless the reader changed the plants, opened a sheet, or the plant list failed meanwhile.
   let primed = false;
   effect(() => {
-    void [store.members.value, store.kept.value, store.removed.value, store.guests.value, store.crops.value];
+    void schema.track(schema.lists.plants);
     if (primed) untracked(dropSuggest);
     primed = true;
   });
@@ -791,8 +745,7 @@ export function watchStore(): void {
   watching = true;
   let first = true;
   effect(() => {
-    void [store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
-      store.guests.value, store.crops.value, store.stage.value, store.view.value];
+    void schema.track(schema.lists.reader);
     if (first) { first = false; return; }
     if (quiet) return;
     actions++;
@@ -806,8 +759,7 @@ export function watchStore(): void {
     });
   });
   effect(() => {
-    void [store.climate.value, store.country.value, store.site.value, store.members.value, store.kept.value, store.removed.value,
-      store.guests.value, store.crops.value, store.stage.value, store.view.value, store.pools.value, store.setAside.value];
+    void [schema.track(schema.lists.save), store.pools.value];
     untracked(persist);
   });
 }
