@@ -1,0 +1,18 @@
+# number-format-only-in-format (E6 design check §3 Q2, §7.1 "Number formatters (7)"): the consortium and
+# its library write numbers through one formatter, src/islands/consortium/format.ts (formatNumber; views
+# take `num` from views/kit/names.ts). Any other Intl.NumberFormat, with or without `new`, is a second
+# formatter. Shape from the app's number-format-only-in-utils rule (policy/ast-grep/rules/), without its
+# toFixed/toPrecision branch: those calls here write SVG and URL numbers, not reader text.
+# The rest of the site (src/components/*.astro, src/scripts/home.js) is out of scope.
+id: number-format-only-in-format.typescript
+language: typescript
+severity: error
+message: "number-format-only-in-format: format numbers with formatNumber (src/islands/consortium/format.ts) or num (views/kit/names.ts), not a new Intl.NumberFormat."
+files:
+  - "src/islands/consortium/**/*.ts"
+  - "src/lib/**/*.ts"
+ignores:
+  - "src/islands/consortium/format.ts"
+rule:
+  kind: member_expression
+  regex: ^Intl\s*\.\s*NumberFormat$
