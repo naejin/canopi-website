@@ -201,6 +201,15 @@ test('modulepreloadChunks: in the browser-test build, the hook the entry awaits 
   });
 });
 
+// E6 hand-off H: the entry is found by main.ts's own "ct-root" literal, not by #ct-data, whose reader
+// (views/kit/page.ts) Rollup may put in a chunk of its own.
+test('modulepreloadChunks: the island entry is found when the #ct-data reader is in a chunk of its own', () => {
+  const files = { ...PAGE_FILES, 'main.c.js': PAGE_FILES['main.c.js'].replace('const ids=["ct-root","ct-data"];', 'import{pd}from"./kit.p.js";const id="ct-root";'), 'kit.p.js': 'export const pd=()=>document.getElementById("ct-data");' };
+  withBuild(files, PAGE_HTML, (graph) => {
+    assert.deepEqual(modulepreloadChunks(graph, PAGE_HTML), ['/_astro/chrome.b.js', '/_astro/kit.p.js', '/_astro/load.e.js', '/_astro/main.c.js', '/_astro/preact.d.js']);
+  });
+});
+
 test('modulepreloadChunks: a page without the island entry fails rather than preloading nothing', () => {
   withBuild({ 'page.a.js': 'import("./x.b.js");', 'x.b.js': '' }, PAGE_HTML, (graph) => {
     assert.throws(() => modulepreloadChunks(graph, PAGE_HTML), /one island entry chunk expected, found 0/);

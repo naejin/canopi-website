@@ -94,9 +94,12 @@ export const reachable = (graph, from, stop = new Set()) => walk(graph, from, st
 
 // The island's own chunks (§8): everything reachable from its entry chunk (the one that mounts into
 // #ct-root, src/islands/consortium/main.ts), less what the page loads without it (the site chrome,
-// the page script with Vite's preload helper) and less the sqlite glue.
+// the page script with Vite's preload helper) and less the sqlite glue. The entry is the one chunk with
+// the bare "ct-root" literal: main.ts's own getElementById, and an entry module's code is always in its
+// entry chunk (the page script names it as the selector '#ct-root'). Not by "ct-data", whose reader
+// (views/kit/page.ts) is in the entry only while Rollup inlines it there (E6 hand-off H).
 export function islandChunks(graph, pageEntries) {
-  const main = [...graph].filter(([, m]) => m.code.includes('"ct-root"') && m.code.includes('"ct-data"')).map(([p]) => p);
+  const main = [...graph].filter(([, m]) => m.code.includes('"ct-root"')).map(([p]) => p);
   if (main.length !== 1) throw new Error(`one island entry chunk expected, found ${main.length}: ${main.join(', ')}`);
   const pageWide = reachable(graph, pageEntries, new Set(main));
   return { entry: main[0], chunks: [...reachable(graph, main)].filter((p) => !pageWide.has(p) && !isSqliteGlue(graph.get(p).code)) };
