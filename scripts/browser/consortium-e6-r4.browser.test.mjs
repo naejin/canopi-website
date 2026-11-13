@@ -96,7 +96,7 @@ const temperateIds = () => fixtureDb((db) => db.prepare("SELECT p.id FROM placem
 // left busy, the reader's choices unchanged. Still marked: clearing the waiting Suggest is
 // state/suggest-wait.ts's (requestSuggest: no wait once store.suggestFailed), a file R4 does not own in
 // chunk 4 (hand-off in R4's report); everything before it passes.
-failing('E6-6 (R4 seams): Suggest with its chunk missing shows a toast with Reload and is not left busy; the choices stay (L8)', { owner: 'R4', reason: /Suggest is left busy/ }, async () => {
+test('E6-6 (R4 seams): Suggest with its chunk missing shows a toast with Reload and is not left busy; the choices stay (L8)', async () => {
   assert.ok(h.roles.suggest.length, 'role `suggest` has no chunk in this build: suggest() is still in the first run');
   const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 404 } });
   await page.locator(aria('radio', 'Temperate')).click();
