@@ -1,17 +1,23 @@
 // The owners file of a multi-stream step (scripts/plan/<step>-owners.json; runbook "agentic
 // delivery"): path -> stream per chunk. One owner per path per chunk; a path may change hands between
-// chunks. scripts/plan-owners.test.mjs runs the file checks in npm test; the command line checks a
-// stream's diff against its rows:
+// chunks. An optional top-level "shared" list names files several streams append to under their own
+// key prefix (the locale files), with the streams allowed; the merge agent joins their blocks.
+// scripts/plan-owners.test.mjs runs the file checks on every scripts/plan/*-owners.json in npm test;
+// the command line validates owners files or checks a stream's diff against its rows:
 //
+//   node scripts/plan/owners.mjs validate [--file <owners.json>]   (default: every *-owners.json)
 //   node scripts/plan/owners.mjs check <chunk> <stream> <base> [--file scripts/plan/e6-owners.json]
 //
-// exits 1 naming each changed path (git diff --name-only <base>...HEAD) the stream does not own in
-// that chunk. Patterns are repo-relative: '*' stays within a folder, '**' crosses folders.
+// check exits 1 naming each changed path (git diff --name-only <base>...HEAD) the stream does not own
+// in that chunk. Patterns are repo-relative: '*' stays within a folder, '**' crosses folders.
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 export const DEFAULT_FILE = fileURLToPath(new URL('./e6-owners.json', import.meta.url));
+const PLAN_DIR = fileURLToPath(new URL('./', import.meta.url));
+// Every owners file of the plan folder, sorted.
+export const ownersFiles = () => readdirSync(PLAN_DIR).filter((f) => f.endsWith('-owners.json')).sort().map((f) => PLAN_DIR + f);
 
 const isGlob = (p) => p.includes('*');
 export function patternRegex(pattern) {
@@ -66,6 +72,15 @@ export function ownersProblems(owners) {
     }
     for (const [name] of streams) earlier.add(name);
   });
+  for (const [k, sh] of (owners.shared ?? []).entries()) {
+    if (!Array.isArray(sh.files) || !sh.files.length || !Array.isArray(sh.streams) || !sh.streams.length) { problems.push(`shared ${k}: needs files and streams`); continue; }
+    for (const n of sh.streams) if (!earlier.has(n)) problems.push(`shared ${k}: no stream ${n}`);
+    owners.chunks.forEach((chunk, i) => {
+      for (const [name, s] of Object.entries(chunk.streams ?? {})) {
+        for (const f of s.files ?? []) for (const g of sh.files) if (overlaps(f, g)) problems.push(`chunk ${i}: ${f} (${name}) is also the shared ${g}; a shared file has no single owner`);
+      }
+    });
+  }
   return problems;
 }
 
@@ -73,16 +88,27 @@ export function ownersProblems(owners) {
 export function outside(owners, chunk, stream, paths) {
   const rows = owners.chunks[chunk]?.streams?.[stream];
   if (!rows) throw new Error(`no stream ${stream} in chunk ${chunk}`);
-  return paths.filter((p) => !rows.files.some((f) => matches(f, p)));
+  const shared = (owners.shared ?? []).filter((sh) => sh.streams.includes(stream)).flatMap((sh) => sh.files);
+  return paths.filter((p) => ![...rows.files, ...shared].some((f) => matches(f, p)));
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const at = args.indexOf('--file');
-  const file = at >= 0 ? args.splice(at, 2)[1] : DEFAULT_FILE;
+  const given = at >= 0 ? args.splice(at, 2)[1] : undefined;
+  const file = given ?? DEFAULT_FILE;
   const [cmd, chunk, stream, base] = args;
+  if (cmd === 'validate') {
+    let bad = 0;
+    for (const f of given ? [given] : ownersFiles()) {
+      const problems = ownersProblems(readOwners(f));
+      if (problems.length) { bad++; console.error(`${f}:\n${problems.map((p) => `  ${p}`).join('\n')}`); }
+      else console.log(`${f}: ok`);
+    }
+    process.exit(bad ? 1 : 0);
+  }
   if (cmd !== 'check' || chunk === undefined || !stream || !base) {
-    console.error('usage: node scripts/plan/owners.mjs check <chunk> <stream> <base> [--file <owners.json>]');
+    console.error('usage: node scripts/plan/owners.mjs validate [--file <owners.json>]\n       node scripts/plan/owners.mjs check <chunk> <stream> <base> [--file <owners.json>]');
     process.exit(2);
   }
   const owners = readOwners(file);

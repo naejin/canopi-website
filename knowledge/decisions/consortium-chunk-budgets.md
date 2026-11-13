@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T16:08:42Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T18:00:54Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
 sources:
@@ -11,7 +11,7 @@ sources:
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:f5e7bb4071bfb5f6
-    last_modified: 2026-11-13T16:08:12Z
+    last_modified: 2026-11-13T16:13:32Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
@@ -87,3 +87,13 @@ Before B4 the consortium page had a first-run cap (43 KB gzip, 40 KB from the ch
 - Adding a lazy chunk costs nothing in the first run beyond its hashed name; moving code into a lazy part lowers what the first view waits for.
 - A new lazy entry must be named in `ROLE_ENTRIES` (and capped in `ROLE_CAPS`), or the build fails.
 - The roles file keeps its `features` key because the browser harness reads it.
+
+## F1a amendments (planned, design check 2026-11-13)
+
+Coordinator row "F1a design-check choices" in [the decisions](/decisions/consortium-user-decisions.md); applied by F1a stream 5 and the budget owner at its merges ([plan](/project/consortium-v2-plan.md) F1a).
+
+- **New lazy role `structure` (A1):** Matrix, PhoneMatrix, matrix-parts, tracks and the matrix-only StageBar parts leave the first run so Palette can be the first view; `ct:first-view` and `prefetchLater` move to a kit `first-view` module both views call. Commit 0 adds the role (cap at its maximum until measured).
+- **New lazy role `balance` (A2):** 8 KB as a lazy part or 12 KB as a feature, the coordinator picks; `later` takes nothing new, and its cap falls to measured + 0.5 KB once Side and Jobs leave.
+- **First run:** the cap is 38 KB (the plan's "≤ 40 KB" corrected); after stream 1 it becomes measured + 0.5 KB; above 38 KB needs a coordinator row, above 40 KB an ADR-2 change.
+- **One budget owner** (the coordinator) for `scripts/built-modules.mjs`, `scripts/check-built-site.mjs`, `astro.config.mjs` and the timing files.
+- **Timing (A24):** a new `ct:start` mark (first-visit Start, ≤ 6 s target, warns) beside `ct:first-view`; the sqlite wasm preload is injected after the build and the build asserts its `href` is the fetched URL, with matching `crossorigin` and one wasm.

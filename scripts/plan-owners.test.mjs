@@ -1,11 +1,28 @@
-// The owners file of the E3/E4/E5a/E6 batch (scripts/plan/e6-owners.json; plan section "E3 + E4 +
-// E5a + E6 — one batch"): one owner per path per chunk, needs pointing back, patterns repo-relative.
+// The owners files of multi-stream steps (scripts/plan/*-owners.json: the E3/E4/E5a/E6 batch, F1a):
+// one owner per path per chunk, needs pointing back, patterns repo-relative, shared files apart.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { matches, outside, overlaps, ownersProblems, readOwners } from './plan/owners.mjs';
+import { matches, outside, overlaps, ownersFiles, ownersProblems, readOwners } from './plan/owners.mjs';
 
-test('the batch owners file: no path owned by two streams in one chunk; each need is an earlier stream', () => {
-  assert.deepEqual(ownersProblems(readOwners()), []);
+test('every owners file: no path owned by two streams in one chunk; each need is an earlier stream', () => {
+  const files = ownersFiles();
+  assert.ok(files.some((f) => f.endsWith('/e6-owners.json')) && files.some((f) => f.endsWith('/f1a-owners.json')), files.join('\n'));
+  for (const f of files) assert.deepEqual(ownersProblems(readOwners(f)), [], f);
+});
+
+test('shared files: only the listed streams may change them, and no stream owns them outright', () => {
+  const owners = { shared: [{ files: ['src/i18n/translations/*.json'], streams: ['A'] }], chunks: [
+    { chunk: 0, streams: { main: { needs: [], files: ['package.json'] } } },
+    { chunk: 1, streams: { A: { needs: ['main'], files: ['src/a.ts'] }, B: { needs: ['main'], files: ['src/b.ts'] } } },
+  ] };
+  assert.deepEqual(ownersProblems(owners), []);
+  assert.deepEqual(outside(owners, 1, 'A', ['src/a.ts', 'src/i18n/translations/fr.json']), []);
+  assert.deepEqual(outside(owners, 1, 'B', ['src/i18n/translations/fr.json']), ['src/i18n/translations/fr.json']);
+  owners.chunks[1].streams.B.files.push('src/i18n/translations/en.json');
+  owners.shared[0].streams.push('Z');
+  const problems = ownersProblems(owners);
+  assert.ok(problems.some((p) => /en\.json \(B\) is also the shared/.test(p)), problems.join('\n'));
+  assert.ok(problems.some((p) => /no stream Z/.test(p)), problems.join('\n'));
 });
 
 test('the owners check fails a path two streams own in one chunk, and a need on a later stream', () => {
