@@ -16,7 +16,7 @@ import { signal } from '@preact/signals';
 
 const broken = signal(false);
 // The whole step, chunk load included, counts as a lookup in flight (state/lookups.ts `lookups`).
-const run = (f: (m: LocationStep) => unknown) => lookingThrough(() => loadLocationStep().catch(() => { broken.value = true; return null; }), async (m) => { if (m) await f(m); });
+const run = (f: (m: LocationStep) => unknown) => lookingThrough(() => loadLocationStep().then((m) => { broken.value = false; return m; }, () => { broken.value = true; return null; }), async (m) => { if (m) await f(m); });
 let gl: boolean | undefined;
 const webgl = (): boolean => {
   if (gl === undefined) {
