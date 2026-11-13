@@ -11,6 +11,8 @@ import { h, render } from 'preact';
 import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App } from './App.tsx';
 import { load, setPageCountries, setSource, start, watchPools } from './store.ts';
+import { provideLocationStep } from './state/restore.ts';
+import { loadLocationStep } from './views/location/load.ts';
 import { zoneOf } from '../../lib/consortium/index.ts';
 import { setStrings } from './strings.ts';
 import { pageData, type PageData } from './views/kit/page.ts';
@@ -54,13 +56,15 @@ async function open(data: PageData): Promise<void> {
 }
 
 // What the page starts, in order (E6 S3: no module starts anything when imported): the store's
-// effects (store.start), the pools watcher, the database, then the render, whose Start runs
+// effects (store.start), the location step's loader handed to the restore (island state never
+// imports a view, ADR-1 L2), the pools watcher, the database, then the render, whose Start runs
 // startMemory (state/arrival.ts: the waiting Suggest, the save and address watchers) in a layout
 // effect, before the first paint (N2 layout shift).
 const root = document.getElementById('ct-root');
 const data = pageData() as PageData | null;
 if (root && data) {
   start();
+  provideLocationStep(loadLocationStep);
   setStrings(data.strings, data.lang);
   setPageCountries(data.countries);
   root.textContent = '';

@@ -5,10 +5,11 @@
 // the save.
 import { batch, computed, signal } from '@preact/signals';
 import type { ClimateZone, PlantId, Taxon } from '../../../lib/consortium/index.ts';
+import { siteIdOf } from '../../../lib/consortium/index.ts';
 import * as store from '../store.ts';
 import { focusView } from '../focus.ts';
 import { state as schema } from './schema.ts';
-import { adoptPending, attempt, memory, own, siteId, writeSave, COUNTRY_STORE, NO_COUNTRY, SITE_CLIMATE } from './persist.ts';
+import { adoptPending, attempt, memory, own, writeSave, COUNTRY_STORE, NO_COUNTRY, SITE_CLIMATE } from './persist.ts';
 import { notices, NO_NOTICES } from './restore.ts';
 import { letGo } from './lookups.ts';
 
@@ -24,8 +25,8 @@ export function chooseClimate(z: ClimateZone): void {
     store.climate.value = z;
     if (aside) schema.write(schema.valuesOf(schema.lists.plants, aside.climate === z ? aside : undefined));
   });
-  memory.write(SITE_CLIMATE, siteId(z));
-  attempt(() => { document.documentElement.dataset.climate = siteId(z); });
+  memory.write(SITE_CLIMATE, siteIdOf(z));
+  attempt(() => { document.documentElement.dataset.climate = siteIdOf(z); });
 }
 
 // The reader chooses a country (null: "No country"); kept on this device, apart from the consortium.
