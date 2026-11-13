@@ -1,0 +1,33 @@
+{
+  "tool": "axe-core",
+  "version": "4.14.0",
+  "tags": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa",
+    "wcag22aa"
+  ],
+  "counts": {
+    "bibliography @ 1280px dark|label-content-name-mismatch": 40,
+    "bibliography @ 1280px light|label-content-name-mismatch": 40,
+    "consortium fr start @ 1280px dark|label-content-name-mismatch": 1,
+    "consortium fr start @ 1280px light|label-content-name-mismatch": 1,
+    "consortium matrix @ 1280px dark|label-content-name-mismatch": 10,
+    "consortium matrix @ 1280px light|label-content-name-mismatch": 10,
+    "consortium start @ 1280px dark|label-content-name-mismatch": 1,
+    "consortium start @ 1280px light|label-content-name-mismatch": 1,
+    "data sources @ 1280px dark|label-content-name-mismatch": 1,
+    "data sources @ 1280px light|label-content-name-mismatch": 1,
+    "guide @ 1280px dark|label-content-name-mismatch": 1,
+    "guide @ 1280px light|label-content-name-mismatch": 1,
+    "guides @ 1280px dark|label-content-name-mismatch": 1,
+    "guides @ 1280px light|label-content-name-mismatch": 1,
+    "home @ 1280px dark|label-content-name-mismatch": 1,
+    "home @ 1280px light|label-content-name-mismatch": 1,
+    "home fr @ 1280px dark|label-content-name-mismatch": 1,
+    "home fr @ 1280px light|label-content-name-mismatch": 1,
+    "privacy @ 1280px dark|label-content-name-mismatch": 1,
+    "privacy @ 1280px light|label-content-name-mismatch": 1
+  }
+}
