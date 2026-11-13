@@ -63,7 +63,7 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
   const [all, setAll] = useState(false);
   const [selected, setSelected] = useState<PlantId[]>([]);
   const [asking, setAsking] = useState<{ t: Taxon; from: ClimateZone | null } | null>(null);
-  const zones = store.source.value?.info().climates ?? [];
+  const zones = store.curatedClimates.value;
   const otherZones = zones.filter((z) => z !== climate);
   const q = query.trim();
 

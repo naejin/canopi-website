@@ -4,13 +4,16 @@
 // a plain visit (decision row "Island JavaScript budget for P5"). Once loaded, the shell renders its
 // result line from `locationStep`.
 import { signal } from '@preact/signals';
+import { retryable } from '../lazy.tsx';
 
 export type LocationStep = typeof import('./location.tsx');
 export const locationStep = signal<LocationStep | null>(null);
 let pending: Promise<LocationStep> | null = null;
+// retryable (views/lazy.tsx): after a failed load, the next ask fetches the chunk again.
+const importStep = retryable(() => import('./location.tsx'), (m) => m);
 export function loadLocationStep(): Promise<LocationStep> {
   // A failed load is logged here once for every caller (the shell's controls, state/restore.ts).
-  pending ??= import('./location.tsx').then((m) => (locationStep.value = m), (err: unknown) => {
+  pending ??= importStep().then((m) => (locationStep.value = m), (err: unknown) => {
     pending = null;
     console.error(`Consortium: the location step did not load: ${(err as Error).message}`);
     throw err;

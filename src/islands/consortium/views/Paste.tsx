@@ -37,7 +37,7 @@ export default function Paste({ Frame }: { Frame: Frame }) {
   const [column, setColumn] = useState<number | null>(null); // null: the default (every cell for comma columns)
   const [ticked, setTicked] = useState<PlantId[]>([]);
   const [asking, setAsking] = useState<{ t: Taxon; from: ClimateZone } | null>(null);
-  const zones = store.source.value?.info().climates ?? [];
+  const zones = store.curatedClimates.value;
   const others = zones.filter((z) => z !== climate);
   useEffect(() => { for (const z of others) void store.loadPool(z); }, [others.join()]);
   useEffect(() => { const id = setTimeout(() => setSettled(text), SETTLE_MS); return () => clearTimeout(id); }, [text]);

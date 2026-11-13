@@ -34,11 +34,12 @@ import { AddMore, CellReason, EmptyNotice, FillMeter, FreeCell, GlyphKey } from 
 import { phone } from './StageStepper.tsx';
 import { PhoneMatrix } from './PhoneMatrix.tsx';
 import { later, prefetchLater } from './lazy.tsx';
+import { laterChunk } from './later-chunk.ts';
 
-// The other three views load after the matrix (views/lazy.tsx).
-const { View: SideView } = later(() => import('./later.ts').then((m) => m.SideView));
-const { View: Jobs } = later(() => import('./later.ts').then((m) => m.Jobs));
-const { View: PlantList } = later(() => import('./later.ts').then((m) => m.PlantList));
+// The other three views load after the matrix (views/lazy.tsx), through the later chunk's one loader (views/later-chunk.ts).
+const { View: SideView } = later(() => laterChunk().then((m) => m.SideView));
+const { View: Jobs } = later(() => laterChunk().then((m) => m.Jobs));
+const { View: PlantList } = later(() => laterChunk().then((m) => m.PlantList));
 
 type Tab = Exclude<View, 'start'>;
 const TABS: readonly Tab[] = ['matrix', 'side', 'jobs', 'list'];

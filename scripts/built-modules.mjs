@@ -94,9 +94,12 @@ export const reachable = (graph, from, stop = new Set()) => walk(graph, from, st
 
 // The island's own chunks (§8): everything reachable from its entry chunk (the one that mounts into
 // #ct-root, src/islands/consortium/main.ts), less what the page loads without it (the site chrome,
-// the page script with Vite's preload helper) and less the sqlite glue.
+// the page script with Vite's preload helper) and less the sqlite glue. The entry is the one chunk with
+// the bare "ct-root" literal: main.ts's own getElementById, and an entry module's code is always in its
+// entry chunk (the page script names it as the selector '#ct-root'). Not by "ct-data", whose reader
+// (views/kit/page.ts) is in the entry only while Rollup inlines it there (E6 hand-off H).
 export function islandChunks(graph, pageEntries) {
-  const main = [...graph].filter(([, m]) => m.code.includes('"ct-root"') && m.code.includes('"ct-data"')).map(([p]) => p);
+  const main = [...graph].filter(([, m]) => m.code.includes('"ct-root"')).map(([p]) => p);
   if (main.length !== 1) throw new Error(`one island entry chunk expected, found ${main.length}: ${main.join(', ')}`);
   const pageWide = reachable(graph, pageEntries, new Set(main));
   return { entry: main[0], chunks: [...reachable(graph, main)].filter((p) => !pageWide.has(p) && !isSqliteGlue(graph.get(p).code)) };
@@ -133,11 +136,12 @@ export const staticClosure = (graph, roots, stop = new Set()) => [...walk(graph,
 // - testHook: the browser-test hook's chunk (dist-test only; none in a production build, L11).
 // A role's chunks are those whose facade is a module its pattern names, and those holding such a module
 // that is reached only through import() (moduleInfo: Rollup's this.getModuleInfo; no module imports it
-// statically): when another chunk imports a binding from an entry module's chunk (Correction importing
-// the correction drafts that live in the plant dialog's chunk), Rollup drops that chunk's facade
-// (facadeModuleId null), and only its module list still names the entry (K3 hand-off, measured
-// 2026-11-13). A module also imported statically (suggest.ts, in the island's entry until R4's
-// loadSuggest) gives no chunk its role: the role stays empty, and check-built-site says so.
+// statically): were another chunk to import a binding from an entry module's chunk, Rollup would drop
+// that chunk's facade (facadeModuleId null), and only its module list would still name the entry (K3
+// hand-off, measured 2026-11-13, when Correction imported the drafts from the plant dialog's chunk;
+// they now live in the first run, views/kit/correction.ts). A module also imported statically gives no
+// chunk its role: the role stays empty, and check-built-site says so (it asks for exactly one chunk of
+// each role that has an entry today, suggest and pool included).
 // Paths as the page names them ('/_astro/x.js'), sorted. A stream that moves code into a part names
 // its entry file here (a missing entry is simply no chunk).
 export const CHUNK_ROLES_FILE = 'consortium-chunks.json';
@@ -205,8 +209,8 @@ export function readChunkRoles(root) {
 // - maplibre: MapLibre's chunks and worker and what only they reach;
 // - costs: per role chunk, the gzip bytes a first use of it fetches: the chunk and its static imports
 //   that the page has not loaded already (not in the always-loaded set, not MapLibre). Its import()s,
-//   and another role chunk it imports statically (the correction form importing the drafts from the
-//   plant dialog's chunk, which opened it), are other parts, costed on their own.
+//   and any other role chunk it imports statically (none today: check-built-site forbids it for the
+//   sheets and the plant dialog), are other parts, costed on their own.
 // entries: the page's own entries (its module scripts). size: (path) => bytes.
 export function onDemandChunks(graph, entries, roles, size = () => 0) {
   const inGraph = (list) => list.filter((p) => graph.has(p));

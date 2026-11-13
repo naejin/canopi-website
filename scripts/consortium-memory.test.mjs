@@ -718,3 +718,22 @@ test('location.tsx\'s "Use {climate}" button is not climateShown: it shows for a
     store.climate.value = before.climate; store.proposedClimate.value = before.proposed; persist.inFlight.value = before.inFlight;
   }
 });
+
+// E6 hand-off F: the waiting Suggest has one owner (state/suggest-wait.ts). A view that must end it
+// (PoolSlot: nothing fits, a blocked climate, another climate chosen) calls dropSuggest, which also
+// clears the wait's timer and its "waited" mark; nothing else writes pendingSuggest.
+test('the waiting Suggest ends through dropSuggest only; no other island module writes pendingSuggest', async () => {
+  assert.equal(typeof m.dropSuggest, 'function', 'suggest-wait.ts exports dropSuggest');
+  m.pendingSuggest.value = true;
+  m.waited.value = true;
+  m.dropSuggest();
+  assert.deepEqual({ pending: m.pendingSuggest.value, waited: m.waited.value }, { pending: false, waited: false });
+  const { readdirSync, statSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+  const root = fileURLToPath(new URL('../src/islands/consortium/', import.meta.url));
+  const writers = [];
+  const walk = (dir) => { for (const f of readdirSync(dir)) { const p = join(dir, f); if (statSync(p).isDirectory()) walk(p); else if (/\.tsx?$/.test(f) && /pendingSuggest\.value\s*=(?!=)/.test(readFileSync(p, 'utf8'))) writers.push(p.slice(root.length)); } };
+  walk(root);
+  assert.deepEqual(writers.sort(), ['state/suggest-wait.ts']);
+});

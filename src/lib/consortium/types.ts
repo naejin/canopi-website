@@ -412,9 +412,11 @@ export type MarkSurface = (typeof markSurfaces)[number];
 // Where a plant's placement comes from (Taxon.origin, which replaced from / placedFrom / estimate in
 // E6 R4): a guest added from another list ("Add anyway"), or a list a site of an uncovered climate
 // borrowed (an estimate). 'own' names the climate's own list where a caller needs a kind for every
-// plant; Taxon.origin itself is never stamped 'own' (absent instead).
+// plant; Taxon.origin itself is never stamped 'own' (absent instead). guest: the list a guest was
+// picked in when its placement is borrowed (kind 'borrowed', list the curated list it came from), so
+// it keeps its "From the {climate} list" label (placement.ts asGuest, guestOf; E6 hand-off D).
 export type PlacementKind = 'own' | 'guest' | 'borrowed';
-export interface PlacementOrigin { list: ClimateZone; kind: PlacementKind }
+export interface PlacementOrigin { list: ClimateZone; kind: PlacementKind; guest?: ClimateZone }
 
 // One site-fit message (stream R2): the one vocabulary of what the site answers say about a plant, which
 // Flags (Add, Swap, Paste, Details: kit/flags.ts) and site Marks (chips, rows, Details: site-marks.ts)

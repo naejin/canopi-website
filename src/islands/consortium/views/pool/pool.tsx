@@ -14,7 +14,7 @@
 // - None of them: the "nothing fits" state [data-pool-empty], with the next step (search all plants).
 import { useEffect } from 'preact/hooks';
 import type { ClimateZone } from '../../../../lib/consortium/index.ts';
-import { hasPlants, NEAREST_LISTS, RANGE_MARGIN_C, rangeFit, siteToday, yearMeanC, zoneOf } from '../../../../lib/consortium/index.ts';
+import { hasPlants, NEAREST_LISTS, RANGE_MARGIN_C, rangeFit, siteToday, yearMeanC } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { startEmpty } from '../../state/draft.ts';
 import { P, T } from '../../strings.ts';
@@ -25,7 +25,7 @@ import { poolCounts } from '../../rules/suggest-block.ts';
 export function PoolPanel({ zone }: { zone: ClimateZone }) {
   const list = store.pools.value[zone];
   useEffect(() => { void store.loadPool(zone); }, [zone, store.source.value]);
-  const curated = page().climates.flatMap((c) => zoneOf(c) ?? []);
+  const curated = store.curatedClimates.value;
   const own = curated.includes(zone);
   if (!hasPlants(zone, curated)) return (
     <div class="ct-notice" role="status">

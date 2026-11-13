@@ -13,11 +13,12 @@ export * from './placed.ts';
 // The placement origin (Taxon.origin, ADR-6): its one reader and writer. Absent: the climate's own plant.
 type HasOrigin = { origin?: PlacementOrigin };
 // A plant as a guest of the consortium, added from `list` ("Add anyway", A9): a copy, so the list's own
-// record stays unstamped. A plant whose placement was borrowed keeps that origin: where its placement,
-// reasons and estimate mark come from wins over the list it was picked in.
-export const asGuest = <T extends HasOrigin>(t: T, list: ClimateZone): T => ({ ...t, origin: t.origin ?? { list, kind: 'guest' } });
+// record stays unstamped. A plant whose placement was borrowed keeps that origin (where its placement,
+// reasons and estimate mark come from wins over the list it was picked in) and notes that list as
+// `guest`, so it is labelled as a guest in every view (E6 hand-off D).
+export const asGuest = <T extends HasOrigin>(t: T, list: ClimateZone): T => ({ ...t, origin: t.origin ? { ...t.origin, guest: list } : { list, kind: 'guest' } });
 // The list a guest was added from ("From the {climate} list"), else null.
-export const guestOf = (t: HasOrigin): ClimateZone | null => (t.origin?.kind === 'guest' ? t.origin.list : null);
+export const guestOf = (t: HasOrigin): ClimateZone | null => (t.origin?.kind === 'guest' ? t.origin.list : t.origin?.guest ?? null);
 // The curated list a borrowed placement was taken from (the "estimate" mark and note), else null.
 export const borrowedFrom = (t: HasOrigin): ClimateZone | null => (t.origin?.kind === 'borrowed' ? t.origin.list : null);
 

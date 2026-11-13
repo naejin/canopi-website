@@ -210,6 +210,22 @@ test('PlantSource.borrowed (sqlite-source.ts): every plant of the nearest lists 
   assert.equal(await fixture.borrowed('Boreal', []).then((l) => l.length), 0, 'no curated list in the order: nothing');
 });
 
+// E6 hand-off D (live 087d2b7 kept both `from` and `placedFrom`): a guest picked from an uncurated
+// climate's list (a borrowed placement) keeps its guest label, so every view (Details, the matrix,
+// the phone rows, the chip's name: guestOf) says "From the {list}" as the print sheet does, while its
+// placement still comes from the curated list it was borrowed from (borrowedFrom, placementZone).
+test('asGuest: a guest from a borrowed list is labelled with the list it was picked in, its placement unchanged', () => {
+  const borrowed = { origin: { list: 'Mediterranean', kind: 'borrowed' } };
+  const g = core.asGuest(borrowed, 'Subtropical');
+  assert.equal(core.guestOf(g), 'Subtropical', 'labelled "From the Subtropical list"');
+  assert.equal(core.borrowedFrom(g), 'Mediterranean', 'still an estimate from the Mediterranean placement');
+  assert.equal(core.placementZone(g, 'Temperate'), 'Mediterranean', 'placed from the curated list');
+  assert.deepEqual(borrowed, { origin: { list: 'Mediterranean', kind: 'borrowed' } }, 'the list\'s own record stays unstamped');
+  const own = core.asGuest({}, 'Tropical');
+  assert.deepEqual({ guest: core.guestOf(own), borrowed: core.borrowedFrom(own), zone: core.placementZone(own, 'Temperate') }, { guest: 'Tropical', borrowed: null, zone: 'Tropical' }, 'a guest from a curated list');
+  assert.equal(core.guestOf(borrowed), null, 'a borrowed plant of the climate\'s own pool is no guest');
+});
+
 test('placementZone: the details query reads the list a plant was placed from (borrowed, then guest, then the climate)', async () => {
   assert.equal(core.placementZone({ origin: { list: 'Mediterranean', kind: 'borrowed' } }, 'Subtropical'), 'Mediterranean', 'a borrowed placement');
   assert.equal(core.placementZone(core.asGuest({ origin: { list: 'Tropical', kind: 'borrowed' } }, 'Subtropical'), 'Temperate'), 'Tropical', 'a guest from a borrowed list');

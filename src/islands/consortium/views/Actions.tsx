@@ -11,18 +11,20 @@ import { P, T } from '../strings.ts';
 import { notices } from '../state/restore.ts';
 import { zoneName } from './kit/names.ts';
 import { later, laterModule } from './lazy.tsx';
+import { laterChunk } from './later-chunk.ts';
 
 // Share, the print sheet and the .canopi writer load after the matrix (views/lazy.tsx); the print
 // sheet is in the page as soon as it has loaded, so the browser's own Print menu prints it too.
-const share = later(() => import('./later.ts').then((m) => m.Share));
-const print = later(() => import('./later.ts').then((m) => m.PrintSheet), { quiet: true });
-const writer = laterModule(() => import('./later.ts'));
+// All through the later chunk's one loader (views/later-chunk.ts): one retry state for every part.
+const share = later(() => laterChunk().then((m) => m.Share));
+const print = later(() => laterChunk().then((m) => m.PrintSheet), { quiet: true });
+const writer = laterModule(laterChunk);
 // S5d's future panel (views/FutureSlot.tsx), under the matrix's view, after this section: it lands
 // once the later chunk and its own feature chunk have loaded, ~150 ms after Suggest, so above the
 // actions it pushed Share, Print and Download down under the reader's pointer (hand-off, found tracing
 // P5-13d). Idle: shown once prefetchLater() has loaded the later chunk, never a download before the
 // matrix is marked drawn (§8 timing).
-const future = later(() => import('./later.ts').then((m) => m.FutureSlot), { idle: true });
+const future = later(() => laterChunk().then((m) => m.FutureSlot), { idle: true });
 
 function LinkNotices() {
   const n = notices.value;
@@ -45,6 +47,8 @@ async function download(): Promise<void> {
   let mod: Awaited<ReturnType<typeof writer>>;
   try { mod = await writer(); } catch (err) { failed(err); return; }
   const { canopiFile, canopiFileName } = mod;
+  // A retry that fetched another file than the later chunk (lazy.tsx retryable): said, not thrown.
+  if (typeof canopiFile !== 'function') { failed(new Error('the .canopi writer is not in the module that loaded')); return; }
   const zone = zoneName(climate.peek());
   const name = T('download.name', { climate: zone });
   const text = canopiFile(memberTaxa.peek(), {

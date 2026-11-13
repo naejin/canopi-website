@@ -6,7 +6,7 @@
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
 import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, SuggestRule, Taxon } from '../../lib/consortium/index.ts';
-import { asGuest, buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, needsMarkProviders } from '../../lib/consortium/index.ts';
+import { asGuest, buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, needsMarkProviders, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -67,6 +67,17 @@ export function setPageCountries(c?: { checked: string; unchecked: string }): vo
   pageCountries.value = m;
 }
 export const knownCountries = computed<Countries>(() => source.value?.countries() ?? pageCountries.value);
+// The climates with plants of their own (the export's curated climates; E6 hand-off E: their one
+// owner): the open database's list, else the one the page names (main.ts setPageClimates; site ids),
+// so Start can show its cards before the database opens. The loader refuses a database whose list
+// differs from the page's (data/load.ts), so the two never disagree once both are here. Start's pill
+// and Suggest (views/PoolSlot.tsx), the pool panel, Add, Paste, the mark providers and suggestMembers
+// all read this.
+const pageClimates = signal<ClimateZone[]>([]);
+export function setPageClimates(ids: readonly string[]): void {
+  pageClimates.value = ids.flatMap((c) => zoneOf(c) ?? []);
+}
+export const curatedClimates = computed<ClimateZone[]>(() => source.value?.info().climates ?? pageClimates.value);
 // Each climate's plants as PlantSource.pool returned them, cached by climate once read.
 export const pools = signal<Partial<Record<ClimateZone, Taxon[]>>>({});
 // Each climate's interactions (PlantSource.interactions), read with its pool (S1).
@@ -97,10 +108,11 @@ export const rangeFailed = computed(() => rangeBroken.value && siteClimate.value
 let rangeLoad: Promise<void> | null = null;
 // The suggestion and the Swap list (core suggest.ts, design check A11): their own chunk (core
 // loadSuggest), off the first run, asked for once a database is open (setSource, as the data turns
-// ready) and again by a Suggest press while it is missing (state/suggest-wait.ts requestSuggest). The
-// plant lists never wait for it: a Suggest pressed before it arrives waits for it, and Swap shows its
-// loading line. suggestFailed: the last try did not load (offline, or a deploy since the page loaded);
-// the waiting Suggest ends with a toast and Reload (L8), Swap says it in place, and the next press
+// ready) and again by a Suggest press or an opened Swap while it is missing (state/suggest-wait.ts
+// requestSuggest, views/Swap.tsx). The plant lists never wait for it: a Suggest pressed before it
+// arrives waits for it, and Swap shows its loading line, 10 s at most. suggestFailed: the last try did
+// not load (offline, or a deploy since the page loaded); the waiting Suggest ends with a toast and
+// Reload (L8), Swap says it in place with Reload, and the next press or Swap
 // imports it again (a retry clears it while it runs; Chrome answers a failed module from its module
 // map without a request, so there the retry fails at once and Reload is the way back).
 export const suggestRule = signal<SuggestRule | null>(null);
@@ -205,7 +217,7 @@ export const markContext = computed<MarkContext>(() => ({ climate: climate.value
 // location, or a climate the export does not curate), then loaded once. Off the first run (decision
 // row "Island JavaScript budget for P5").
 export const markProviders = signal<readonly MarkProvider[]>([]);
-export const wantsMarkProviders = computed(() => needsMarkProviders(markContext.value, source.value?.info().climates ?? []));
+export const wantsMarkProviders = computed(() => needsMarkProviders(markContext.value, curatedClimates.value));
 // The providers' chunk did not load (seam review 6): the range, future and estimate marks it would show
 // are missing, so a notice with Reload says so wherever members show (Matrix.tsx Notices) while marks
 // are wanted, with one toast; as for the range rule, the import is not tried again on this page.
@@ -298,9 +310,9 @@ export function suggestMembers(): boolean {
   if (nothingFits(p, location.value, rule)) return false;
   // A borrowed pool unfiltered (no site climate, or the rule's chunk failed): no suggestion, since only
   // the range filter fits it to a place (UX audit fix 1; fix review 29b709e, 2). The rule Start reads
-  // (rules/suggest-block.ts), over the export's curated climates; with a pool and a site climate, a
-  // missing rule is a failed one (store.pool waits for it otherwise).
-  const scene = { curated: source.peek()?.info().climates ?? [], siteClimate: siteClimate.value, rangeFailed: !rule, nothingFits: false };
+  // (rules/suggest-block.ts), over the curated climates Start reads (curatedClimates); with a pool and
+  // a site climate, a missing rule is a failed one (store.pool waits for it otherwise).
+  const scene = { curated: curatedClimates.peek(), siteClimate: siteClimate.value, rangeFailed: !rule, nothingFits: false };
   if (needsSite(climate.value!, scene) || needsRule(climate.value!, scene)) return false;
   // The suggestion's chunk (suggestRule) not here: Suggest waits for it, or says it failed
   // (state/suggest-wait.ts).
@@ -354,15 +366,20 @@ export function hideToast(): void {
 
 // ---- edits (Remove, Keep, Swap, Add), each undoable ----
 
-// A plant as the consortium has it (a guest with its home placement), else the climate's list, else
-// another climate's list already read.
+// A plant as the consortium has it (a member; a guest with its recorded list's placement), else the
+// climate's list, else another climate's list already read (a guest of it). The climate's own list read (pools) counts as
+// its own even while store.pool waits for the range rule: such a plant is never a guest (review 4).
 export function taxonOf(id: PlantId): Taxon | null {
   const m = memberTaxa.value.find((t) => t.id === id);
   if (m) return m;
-  const own = pool.value?.find((t) => t.id === id);
+  // A guest from the list it was added from (guests[id]), never the first other list holding it.
+  const g = guestTaxa.value.find((t) => t.id === id);
+  if (g) return g;
+  const c = climate.value;
+  const own = c ? pools.value[c]?.find((t) => t.id === id) : undefined;
   if (own) return own;
   for (const [zone, list] of Object.entries(pools.value)) {
-    const t = list?.find((x) => x.id === id);
+    const t = zone === c ? undefined : list?.find((x) => x.id === id);
     if (t) return asGuest(t, zone as ClimateZone);
   }
   return null;
