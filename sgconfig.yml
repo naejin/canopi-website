@@ -1,0 +1,7 @@
+# ast-grep (E4/E6): the repository's code rules. `ast-grep scan` runs them (CI job 1, and the
+# pre-commit hook on staged files); `ast-grep test` runs each rule's valid/invalid snippets, and
+# scripts/quality/ast-grep/rules.test.mjs checks the file scopes on a planted tree.
+ruleDirs:
+  - scripts/quality/ast-grep/rules
+testConfigs:
+  - testDir: scripts/quality/ast-grep/rule-tests

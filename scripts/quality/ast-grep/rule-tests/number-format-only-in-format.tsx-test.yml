@@ -1,0 +1,15 @@
+id: number-format-only-in-format.tsx
+valid:
+  - |
+    export const text = (n) => formatNumber(n, 'fr')
+  - |
+    export const order = new Intl.Collator('fr')
+  - |
+    export const NumberFormat = 1
+invalid:
+  - |
+    export const f = new Intl.NumberFormat('fr')
+  - |
+    export const f = Intl.NumberFormat('fr', { maximumFractionDigits: 2 })
+  - |
+    const Make = Intl . NumberFormat
