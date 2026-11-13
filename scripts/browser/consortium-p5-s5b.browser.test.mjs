@@ -155,6 +155,10 @@ test('P5-13d (S5b review round 3, 2): Start over drops a link\'s lookup on a sta
   });
   await page.evaluate((hash) => { location.hash = hash; }, link.hash);
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.source === 'link' && window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'the link opens, its lookup stalled');
+  // The read itself has started (its timer armed): the location chunk's own loading line, not the
+  // slot's placeholder while that chunk loads. Pressed earlier, Start over drops the lookup before any
+  // read, and no timer is left to fire (seen on CI, push B).
+  assert.ok(await page.waitForSelector('.ct-location-result[data-location-state="loading"]', { timeout: 15_000 }).then(() => true, () => false), 'the stalled read has started');
   const started = await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Start over'); b?.click(); return { clicked: !!b, early: window.__readTimedOut }; });
   assert.ok(started.clicked, 'Start over');
   assert.equal(started.early, false, `Start over pressed while the read was still pending (before its ${READ} ms timer)`);
