@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { loadState } from './harness.mjs';
 import { aria, axNodes, en, h, has, realDb, useHarness } from './helpers.mjs';
-import { choose, tool } from './p5-helpers.mjs';
+import { atNowhere, choose, tool } from './p5-helpers.mjs';
 import { failing } from '../expect-fail.mjs';
 import { searchIndex } from '../../src/islands/consortium/data/search.ts';
 
@@ -250,5 +250,85 @@ test('E6-3c (K3 lazy Details): Details opened while its chunk is held stays one 
   assert.equal(await page.$$eval('dialog.ct-sheet', (ds) => ds.length), 1, 'one sheet dialog in the page');
   assert.ok(await page.evaluate(() => document.querySelector('dialog[open]')?.contains(document.activeElement)), 'focus in the dialog');
   assert.equal(await page.$eval('dialog[open]', (d) => d.getAttribute('aria-labelledby')), 'ct-d-title', 'named by the plant\'s heading');
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-5d (L4, review 2): a sheet chunk's retry (views/lazy.tsx retryable) can only mend the chunk
+// itself: Chromium keeps a failed module of a shared chunk failed, and the retried chunk imports it
+// under its plain URL again. So the sheet chunks import nothing but first-run modules, already loaded;
+// here every other module they import has its first request answered 404 (the prefetch's), and a
+// plant still opens. firstRun: the page's module scripts and everything they import statically.
+const staticImports = (code) => [...code.matchAll(/(?:\bfrom|\bimport)\s*["']\.\/([\w.-]+\.js)["']/g)].map((m) => `/_astro/${m[1]}`);
+async function moduleClosure(roots) {
+  const seen = new Set();
+  const visit = async (u) => {
+    if (seen.has(u)) return;
+    seen.add(u);
+    for (const d of staticImports(await (await fetch(h.url + u)).text())) await visit(d);
+  };
+  for (const r of roots) await visit(r);
+  return seen;
+}
+async function sharedOfSheets() {
+  const html = await (await fetch(`${h.url}/consortium/`)).text();
+  const scripts = [...html.matchAll(/<script type="module" src="([^"]+)"/g)].map((m) => new URL(m[1], h.url).pathname);
+  const entry = await (await fetch(h.url + scripts[0])).text();
+  const island = [...entry.matchAll(/["']\.\/(main\.[\w-]+\.js)["']/g)].map((m) => `/_astro/${m[1]}`);
+  const firstRun = await moduleClosure([...scripts, ...island]);
+  const sheets = [...h.roles.details, ...h.roles.sheets];
+  return [...await moduleClosure(sheets)].filter((u) => !firstRun.has(u) && !sheets.includes(u)).sort();
+}
+// Answers the first request of each URL in `urls` 404 (CDP Fetch at the response stage, after the
+// harness's own interception let it through).
+const fail404Once = (urls, failed) => async (page) => {
+  if (!urls.length) return;
+  const cdp = await page.createCDPSession();
+  await cdp.send('Fetch.enable', { patterns: urls.map((u) => ({ urlPattern: `*${u}`, requestStage: 'Response' })) });
+  cdp.on('Fetch.requestPaused', ({ requestId, request }) => {
+    const p = new URL(request.url).pathname;
+    if (urls.includes(p) && !failed.includes(p)) {
+      failed.push(p);
+      cdp.send('Fetch.fulfillRequest', { requestId, responseCode: 404, body: Buffer.from('Not found').toString('base64') }).catch(() => {});
+    } else cdp.send('Fetch.continueRequest', { requestId }).catch(() => {});
+  });
+};
+failing('E6-5d (K3 lazy Details): a module the sheet chunks share failed on its first request, and a plant still opens (sheet chunks import first-run modules only)', { owner: 'K3', reason: /the dialog's content \(shared modules answered 404 once/ }, async () => {
+  const shared = await sharedOfSheets();
+  const failed = [];
+  const page = await matrixPage({ setup: fail404Once(shared, failed) });
+  await page.waitForNetworkIdle({ idleTime: 500, timeout: 5000 }).catch(() => {});
+  const [chip] = await chips(page);
+  await page.locator(aria('button', chip)).click();
+  await page.waitForFunction(() => !!document.querySelector('dialog[open] section, .ct-toast-text'), { timeout: 8000 }).catch(() => {});
+  assert.ok(await has(page, 'dialog[open] section', 300), `the dialog's content (shared modules answered 404 once: ${failed.join(', ') || 'none'})`);
+  assert.deepEqual(shared, [], 'sheet chunks import only first-run modules');
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-3d (L2, review 2): a sheet opened while its part has nothing to draw (the pool is null while the
+// range rule loads, right after a site with a climate is set) is never an empty modal: an open sheet
+// always has a named heading and a Close button; otherwise it does not open.
+failing('E6-3d (K3 lazy sheets): Add, search, Paste and Swap opened while the range rule loads show a named sheet with Close, or no sheet, never an empty modal', { owner: 'K3', reason: /add: empty/ }, async () => {
+  const page = await tool({ block: { range: 'hold' } });
+  await choose(page, 'Temperate');
+  await atNowhere(page);
+  await page.waitForFunction(() => window.__ctTest.store.pool.value === null, { timeout: 5000 });
+  const id = await page.evaluate(() => Object.values(window.__ctTest.store.pools.value).flat()[0]?.id);
+  const seen = [];
+  for (const [kind, plant] of [['add', null], ['search', null], ['paste', null], ['swap', id]]) {
+    await page.evaluate((k, p) => window.__ctTest.store.openSheet(k, p), kind, plant);
+    await new Promise((r) => setTimeout(r, 800));
+    seen.push(`${kind}: ${await page.evaluate(() => {
+      const d = document.querySelector('dialog.ct-sheet[open]');
+      if (!d) return 'closed';
+      const name = document.getElementById(d.getAttribute('aria-labelledby') ?? '')?.textContent.trim();
+      const close = d.querySelector('.ct-sheet-head button[aria-label]');
+      return name && close && d.contains(document.getElementById(d.getAttribute('aria-labelledby'))) ? 'named' : `empty (name: ${name ?? 'none'}, close: ${!!close})`;
+    })}`);
+    await page.evaluate(() => window.__ctTest.store.closeSheet?.() ?? (window.__ctTest.store.sheet.value = null));
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  assert.equal(await page.evaluate(() => window.__ctTest.store.pool.value), null, 'the pool was null throughout (the rule held)');
+  assert.deepEqual(seen.filter((x) => x.includes('empty')), [], seen.join('; '));
   await page.browserContext().close().catch(() => {});
 });
