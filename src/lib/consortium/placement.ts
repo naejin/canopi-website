@@ -6,10 +6,9 @@ import type { ClimateZone } from './types.ts';
 import { NEAREST_LISTS } from './nearest.ts';
 
 // The placement rule itself (firstPlaced, placeFor) is in placed.ts, used by the PlantSource's chunk
-// and the tests, so it stays out of the first run; re-exported here for index.ts, with the table
-// (nearest.ts, a leaf both read).
+// and the tests, so it stays out of the first run; re-exported here for index.ts. The table is in
+// the leaf nearest.ts, which both read and index.ts exports.
 export * from './placed.ts';
-export { NEAREST_LISTS } from './nearest.ts';
 
 // The list a plant's placement, reasons and climate months come from: the curated list a borrowed
 // placement was taken from, else a guest's list, else the shown climate. Details queries with it, as
