@@ -140,6 +140,26 @@ test('the manifest: format 4 and schema 3 only, by name; release id, split, clim
   assert.ok(!existsSync(w.out), 'nothing written');
 });
 
+// E6 R1: the zone list (src/lib/consortium/zones.ts; the installer keeps a copy, checked equal by
+// consortium-zones.test.mjs) is the only climate ids an export may name. A zone id outside it in the
+// manifest is refused before anything is written; the committed index (today's export) names only
+// zones of the list.
+test('a zone id outside the zone list is refused, in the manifest and the index; today\'s export passes', async (t) => {
+  const w = workspace(t);
+  const rename = (z) => (z === 'Temperate' ? 'Polar' : z);
+  // The database cannot hold it (the schema's CHECK on climates.id lists the zones), so the manifest
+  // is where an export could name one.
+  const src = await variant(w, 'polar', {
+    manifest: (m) => { m.climates.forEach((c) => { c.climate_zone = rename(c.climate_zone); }); m.files[0].climate_zones = m.files[0].climate_zones.map(rename); },
+  });
+  await assert.rejects(install({ ...w, src }), /manifest\.json climates: "Polar" is not a climate zone/);
+  await assert.rejects(install({ ...w, src: await variant(w, 'polar-file', { manifest: (m) => { m.files[0].climate_zones = [...m.files[0].climate_zones, 'Polar']; } }) }), /climate_zones .*"Polar".* are not climates of the manifest/);
+  assert.ok(!existsSync(w.out), 'nothing written');
+  const index = JSON.parse(readFileSync(INDEX_PATH, 'utf8'));
+  assert.equal(indexProblem(index), null, 'today\'s committed index');
+  assert.equal(indexProblem({ ...index, climates: [...index.climates, 'Polar'], names: { ...index.names, Polar: ['Plantus inventus'] } }), 'the index climates are not climate zones.');
+});
+
 test('without --fixture, the all-zeros canopi_db_sha256 of the fixture is refused before verify is asked', async (t) => {
   const w = workspace(t);
   let asked = false;
