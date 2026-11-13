@@ -97,6 +97,10 @@ async function cellSays(page, stratum, phase) {
     return td ? { text: td.textContent.replace(/\s+/g, ' ').trim(), headers: td.getAttribute('headers') } : null;
   }, stratum, phase);
 }
+// The first-view mark (E6 A7: ct:matrix renamed ct:first-view, emitted where the consortium is first on
+// screen). Until stream R4's Matrix.tsx line merges (E6 chunk 4), the old name counts too: exactly one
+// of the two, once. Chunk 5 drops the old name.
+const firstViewMarks = () => performance.getEntriesByName('ct:first-view', 'mark').length + performance.getEntriesByName('ct:matrix', 'mark').length;
 const focusedId = (page) => page.evaluate(() => document.activeElement?.id ?? document.activeElement?.getAttribute('aria-label') ?? null);
 
 test('BT-2 (S2 matrix): real Temperate gap, Room Small misfits with reasons, one Tab stop per plant with layer and phase words, phone cells ≥ 40 px and a named, announced stepper', async (t) => {
@@ -109,14 +113,14 @@ test('BT-2 (S2 matrix): real Temperate gap, Room Small misfits with reasons, one
     assert.match(gap?.text ?? '', /No plant in the list for (this cell|these cells) yet/, `the gap is Temperate low × "First 90 days": ${gap?.text}`);
     if (desk) assert.match(gap.headers, /^ct-row-3 ct-col-0( |$)/, 'the merged cell names its row and columns');
     else assert.match(gap.text, new RegExp(`^Low, ${esc(plain(0))}: `), 'the phone cell names its layer and stage');
-    assert.equal(await real.evaluate(() => performance.getEntriesByName('ct:matrix', 'mark').length), 1, 'performance.mark ct:matrix once, at the first matrix paint');
+    assert.equal(await real.evaluate(firstViewMarks), 1, 'performance.mark ct:first-view once, at the first paint of the consortium');
     for (const other of ['side', 'jobs', 'list']) {
       const p2 = await views(v, { view: other });
       // The mark is set at the first paint (after a frame); wait for it, then require exactly one.
-      await p2.waitForFunction(() => performance.getEntriesByName('ct:matrix', 'mark').length > 0, { timeout: 5_000 }).catch(() => {});
-      assert.equal(await p2.evaluate(() => performance.getEntriesByName('ct:matrix', 'mark').length), 1, `ct:matrix once when the page opens on ${other}`);
+      await p2.waitForFunction(firstViewMarks, { timeout: 5_000 }).catch(() => {});
+      assert.equal(await p2.evaluate(firstViewMarks), 1, `ct:first-view once when the page opens on ${other}`);
       await p2.locator(aria('tab', 'Layers × stages')).click();
-      assert.equal(await p2.evaluate(() => performance.getEntriesByName('ct:matrix', 'mark').length), 1, 'still once after switching views');
+      assert.equal(await p2.evaluate(firstViewMarks), 1, 'still once after switching views');
       await p2.close();
     }
 

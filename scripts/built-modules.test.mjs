@@ -241,3 +241,22 @@ test('L11: the dist-test chunk graph is the production graph plus the test hook\
   for (const f of readdirSync(join(BUILT.production, '_astro')).filter((x) => x.endsWith('.js'))) assert.doesNotMatch(readFileSync(join(BUILT.production, '_astro', f), 'utf8'), /__ctTest|__ctFaults/, `_astro/${f}: no test hook in dist`);
 });
 
+// The time-to-first-view ratchet (E6 A8, ADR-2, R10; scripts/browser/consortium-timing.mjs --ratchet
+// scripts/browser/timing.json): the build stream's other budget, tested here with the chunk caps.
+test('timing ratchet: within, a warning above, a failure only above 1.5×; null is not compared; the committed file is valid', async () => {
+  const { compare, checkRatchet, parseArgs, FAIL_FACTOR } = await import('./browser/consortium-timing.mjs');
+  assert.equal(FAIL_FACTOR, 1.5);
+  assert.equal(compare(4000, 4000).level, 'ok');
+  assert.equal(compare(4001, 4000).level, 'warn');
+  assert.equal(compare(6000, 4000).level, 'warn', 'exactly 1.5× still warns');
+  assert.equal(compare(6001, 4000).level, 'fail');
+  assert.equal(compare(9000, null).level, 'none', 'no runner value yet');
+  const file = JSON.parse(readFileSync(new URL('./browser/timing.json', import.meta.url), 'utf8'));
+  assert.doesNotThrow(() => checkRatchet(file), 'scripts/browser/timing.json: a value or null per profile and visit');
+  assert.throws(() => checkRatchet({ desktop: { cold: 1 }, phone: { cold: null, warm: null } }), /desktop\.warm/);
+  assert.throws(() => checkRatchet({ desktop: { cold: -1, warm: 1 }, phone: { cold: null, warm: null } }), /desktop\.cold is -1/);
+  assert.deepEqual(parseArgs(['--ratchet', 'scripts/browser/timing.json', '--dir', '/tmp/x']), { ratchet: 'scripts/browser/timing.json', dir: '/tmp/x' });
+  assert.deepEqual(parseArgs([]), { ratchet: null, dir: null });
+  assert.throws(() => parseArgs(['--ratchet']), /needs a value/);
+  assert.throws(() => parseArgs(['--fast']), /unknown argument --fast/);
+});
