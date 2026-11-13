@@ -18,7 +18,7 @@ import { P, T, pageLang } from '../strings.ts';
 import { searchIndex } from '../data/search.ts';
 import { LocationSlot } from './LocationSlot.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from './PoolSlot.tsx';
-import { pendingClimate, restoring } from '../state/persist.ts';
+import { climateShown, restoring } from '../state/persist.ts';
 import { notices } from '../state/restore.ts';
 import { startMemory } from '../state/arrival.ts';
 import { backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, pickingCountry, startEmpty, startOver } from '../state/draft.ts';
@@ -90,11 +90,12 @@ export function CountryLine() {
 
 // ---- the climate cards ----
 function Climates() {
-  // A link's climate shows at once while it loads (state/persist.ts pendingClimate). A location's suggestion
-  // (store.proposedClimate, S5b) shows as proposed, not checked: a click on its card confirms it, as
-  // the result line's "Use" button does (owner answer 1; review round 1, 6).
-  const chosen = climate.value ?? pendingClimate.value;
-  const proposed = chosen ? null : proposedClimate.value;
+  // The one shown climate (state/persist.ts climateShown): the chosen one, else a link's while it loads,
+  // else a location's suggestion (store.proposedClimate, S5b), shown as proposed, not checked: a click
+  // on its card confirms it, as the result line's "Use" button does (owner answer 1; review round 1, 6).
+  const shown = climateShown.value;
+  const chosen = shown.proposed ? null : shown.zone;
+  const proposed = shown.proposed ? shown.zone : null;
   // With a card proposed and none checked (review round 2, 5): Tab lands on the proposed card (the
   // others leave the tab order), and the arrows move the focus without checking a card; Space, Enter
   // or a click confirms one.
@@ -244,7 +245,7 @@ function Head() {
 }
 
 function StartView() {
-  const z = climate.value ?? pendingClimate.value;
+  const z = climateShown.value.proposed ? null : climateShown.value.zone;
   const waiting = pendingSuggest.value || restoring.value;
   return (
     <div class="ct-start">
