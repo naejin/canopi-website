@@ -3,86 +3,16 @@
 // marker in the commit that makes it pass. Its own file so R4 and B4 (consortium-e6, E6-2) never edit
 // one file in chunk 4 (scripts/plan/e6-owners.json). Run capped: npm run test:browser.
 //
-// Files each pass needs: src/lib/consortium/{suggest,index}.ts (the barrel stops re-exporting
-// suggest/alternatives), a core loadSuggest() (role `suggest`, scripts/built-modules.mjs
-// LAZY_ENTRIES), views/Swap.tsx (alternatives through it, a loading line), store.ts (Suggest through
-// it, pendingSuggest cleared on failure).
+// The suggestion and the Swap list come from their own chunk (role `suggest`, core loadSuggest(); the
+// core barrel does not re-export suggest.ts): Swap shows a loading line while it is missing, and a
+// Suggest pressed before it arrives waits for it (state/suggest-wait.ts) and ends in a toast with
+// Reload if it fails. ADR-6's seams (origin, factAt) are node tests: consortium-p5-seams-s5c,
+// consortium-source and consortium-core.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { gunzipSync } from 'node:zlib';
 import { loadState } from './harness.mjs';
 import { aria, en, fixtureDb, h, has, useHarness } from './helpers.mjs';
-import { failing } from '../expect-fail.mjs';
-import { ctx, taxon } from '../consortium-p5-fixtures.mjs';
-
-const core = await import('../../src/lib/consortium/index.ts');
-const { rangeMarks } = await import('../../src/lib/consortium/range-marks.ts');
-const { openBytes } = await import('../../src/islands/consortium/data/load.ts');
-const { createSqliteSource } = await import('../../src/islands/consortium/data/sqlite-source.ts');
-
-// ---- ADR-6 seams in node (R4 owns no node test file this chunk, so they run here, before the browser) ----
-
-const fixtureDir = new URL('../fixtures/consortium-v2/export/', import.meta.url);
-const manifest = JSON.parse(readFileSync(new URL('manifest.json', fixtureDir), 'utf8'));
-const fixture = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(manifest.files[0].file, fixtureDir)))), { releaseId: manifest.release_id, climates: manifest.climates.map((c) => c.climate_zone) })
-  .then((o) => createSqliteSource(o.db, { images: {} }));
-const OLD_FIELDS = ['from', 'placedFrom', 'estimate'];
-
-test('E6-8 (R4 seams): placement origin: a borrowed plant carries origin {list, kind: borrowed}; the climate\'s own plants carry none (never stamped)', async () => {
-  const sub = await fixture.pool('Subtropical');
-  assert.ok(sub.length > 0);
-  for (const t of sub) {
-    assert.equal(t.origin?.kind, 'borrowed', t.canonical_name);
-    assert.ok(manifest.climates.some((c) => c.climate_zone === t.origin.list), `${t.canonical_name}: borrowed from a curated list`);
-    for (const k of OLD_FIELDS) assert.equal(k in t, false, `${t.canonical_name}: no ${k}`);
-  }
-  assert.equal(sub.find((t) => t.canonical_name === 'Castanea sativa').origin.list, 'Mediterranean', 'the first list of the nearest order');
-  for (const t of await fixture.pool('Temperate')) assert.equal('origin' in t, false, `${t.canonical_name}: own plants are not stamped`);
-});
-
-test('E6-9 (R4 seams): placement origin: asGuest stamps a guest (a borrowed origin wins), placementZone reads the origin', () => {
-  const own = taxon();
-  const guest = core.asGuest(own, 'Tropical');
-  assert.deepEqual(guest.origin, { list: 'Tropical', kind: 'guest' });
-  assert.equal('origin' in own, false, 'the record itself is not touched');
-  assert.equal(core.guestOf(guest), 'Tropical');
-  assert.equal(core.borrowedFrom(guest), null);
-  const borrowed = taxon({ origin: { list: 'Mediterranean', kind: 'borrowed' } });
-  assert.equal(core.asGuest(borrowed, 'Subtropical').origin, borrowed.origin, 'a guest from a borrowed list keeps where its placement comes from');
-  assert.equal(core.borrowedFrom(borrowed), 'Mediterranean');
-  assert.equal(core.guestOf(borrowed), null);
-  assert.equal(core.placementZone(borrowed, 'Subtropical'), 'Mediterranean', 'a borrowed placement');
-  assert.equal(core.placementZone(guest, 'Temperate'), 'Tropical', 'a guest');
-  assert.equal(core.placementZone(own, 'Temperate'), 'Temperate', 'its own placement');
-  assert.equal(core.placementZone(own, null), null);
-});
-
-test('E6-10 (R4 seams): rangeMarks: the estimate mark reads the origin; its state is the site id (zones.ts), a guest gets none', () => {
-  const marks = (t, surface) => rangeMarks(t, ctx(), surface).map((m) => [m.kind, m.key, m.state]);
-  const borrowed = taxon({ origin: { list: 'Mediterranean', kind: 'borrowed' } });
-  assert.deepEqual(marks(borrowed, 'chip'), [['estimate', 'estimate.short', 'mediterranean']]);
-  assert.deepEqual(marks(borrowed, 'row'), [['estimate', 'estimate.fromMediterranean', 'mediterranean'], ['estimate', 'estimate.noSite', 'no-site']]);
-  assert.deepEqual(marks(core.asGuest(taxon(), 'Tropical'), 'row'), [], 'a guest is no estimate');
-});
-
-test('E6-11 (R4 seams): factAt: the stored value of each ADR-6 fact, null when not recorded (never a misfit)', () => {
-  const site = null, period = core.TODAY_PERIOD;
-  const t = taxon({ traits: { is_annual: false, grown_as_annual: true, is_perennial: true, drought_tolerance: 'Medium', moisture_use: null } });
-  assert.equal(period, '1991-2020');
-  assert.equal(core.factAt('life_cycle', t, site, period), 'grown_as_annual');
-  assert.equal(core.factAt('life_cycle', taxon({ traits: { is_annual: true, is_perennial: true } }), site, period), 'annual');
-  assert.equal(core.factAt('life_cycle', taxon({ traits: { is_perennial: true } }), site, period), 'perennial');
-  assert.equal(core.factAt('life_cycle', taxon(), site, period), null);
-  assert.deepEqual(core.factAt('cold_limit', t, site, period), { tminColdC: -15, weak: false });
-  assert.deepEqual(core.factAt('heat_limit', t, site, period), { tmaxWarmC: 30 });
-  assert.deepEqual(core.factAt('water_need', t, site, period), { drought: 'Medium', moisture: null });
-  assert.deepEqual(core.factAt('water_need', taxon({ traits: { drought_tolerance: null, moisture_use: 'High' } }), site, period), { drought: null, moisture: 'High' });
-  const bare = taxon({ climate: null });
-  for (const key of ['life_cycle', 'cold_limit', 'heat_limit', 'water_need']) assert.equal(core.factAt(key, bare, site, period), null, key);
-  const weak = taxon({ climate: { ...taxon().climate, tminCold: { low: -8, median: 0, high: 4, count: 9, basis: 'thinned_cells', weak: true } } });
-  assert.deepEqual(core.factAt('cold_limit', weak, site, period), { tminColdC: -8, weak: true });
-});
+import { atSite } from './p5-helpers.mjs';
 
 useHarness();
 
@@ -93,9 +23,7 @@ const SUGGEST = en['consortium.start.suggest'];
 const temperateIds = () => fixtureDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY p.canonical_name").all().map((r) => String(r.id)));
 
 // E6-6 (L8): the suggest chunk missing at the first Suggest press: a toast with Reload, Suggest not
-// left busy, the reader's choices unchanged. Still marked: clearing the waiting Suggest is
-// state/suggest-wait.ts's (requestSuggest: no wait once store.suggestFailed), a file R4 does not own in
-// chunk 4 (hand-off in R4's report); everything before it passes.
+// left busy, the reader's choices unchanged.
 test('E6-6 (R4 seams): Suggest with its chunk missing shows a toast with Reload and is not left busy; the choices stay (L8)', async () => {
   assert.ok(h.roles.suggest.length, 'role `suggest` has no chunk in this build: suggest() is still in the first run');
   const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 404 } });
@@ -112,7 +40,7 @@ test('E6-6 (R4 seams): Suggest with its chunk missing shows a toast with Reload 
 });
 
 // E6-7 (L9): Swap opened while the suggest chunk is held shows the loading line, then alternatives.
-// The plant list waits for the chunk (store.pool, as for the range rule), so the pool is not awaited here.
+// The members are set before the pool is read: Swap waits for both.
 test('E6-7 (R4 seams): Swap opened while the suggest chunk is held shows a loading line, then the alternatives (L9)', async () => {
   assert.ok(h.roles.suggest.length, 'role `suggest` has no chunk in this build: alternatives() is still in the first run');
   const ids = await temperateIds();
@@ -133,4 +61,95 @@ test('E6-7 (R4 seams): Swap opened while the suggest chunk is held shows a loadi
   await page.releaseHeld();
   await page.waitForFunction((loading) => { const d = document.querySelector('dialog[open]'); return !!d && !d.textContent.includes(loading) && d.querySelectorAll('.ct-swap li').length > 0; }, { timeout: 8000 }, LOADING);
   await page.browserContext().close().catch(() => {});
+});
+
+// ---- R4 fix round: the suggest chunk never holds the lists; every Suggest it fails ends in the toast ----
+
+// The suggest chunk's responses, steered by the test (CDP Fetch at the response stage, after the
+// harness let the request through): request n gets plan[n] (the last repeats): 404, 'pass', or 'hold'
+// until answer(404 | 'pass').
+const steer = (plan) => {
+  const ctl = { requests: 0, held: [], answer: () => {} };
+  ctl.setup = async (page) => {
+    const urls = h.roles.suggest;
+    const cdp = await page.createCDPSession();
+    const reply = (requestId, how) => (how === 'pass'
+      ? cdp.send('Fetch.continueRequest', { requestId })
+      : cdp.send('Fetch.fulfillRequest', { requestId, responseCode: 404, body: Buffer.from('Not found').toString('base64') })).catch(() => {});
+    ctl.answer = (how) => { for (const id of ctl.held.splice(0)) void reply(id, how); };
+    await cdp.send('Fetch.enable', { patterns: urls.map((u) => ({ urlPattern: `*${u}`, requestStage: 'Response' })) });
+    cdp.on('Fetch.requestPaused', ({ requestId, request }) => {
+      if (!urls.includes(new URL(request.url).pathname)) return void reply(requestId, 'pass');
+      const how = plan[Math.min(ctl.requests++, plan.length - 1)];
+      if (how === 'hold') ctl.held.push(requestId);
+      else void reply(requestId, how);
+    });
+  };
+  return ctl;
+};
+const until = (page, fn, timeout, ...args) => page.waitForFunction(fn, { timeout }, ...args).then(() => true, () => false);
+const suggestBusy = (page) => page.evaluate((name) => [...document.querySelectorAll('#ct-root button')].some((b) => b.textContent.trim() === name && b.getAttribute('aria-busy') === 'true'), SUGGEST);
+const toastIdle = async (page) => ({
+  reload: await has(page, aria('button', RELOAD), 8000),
+  idle: await until(page, (name) => [...document.querySelectorAll('#ct-root button')].some((b) => b.textContent.trim() === name && b.getAttribute('aria-busy') !== 'true'), 4000, SUGGEST),
+});
+async function temperatePage(opts) {
+  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, ...opts });
+  assert.equal(await loadState(page), 'ready');
+  await page.locator(aria('radio', 'Temperate')).click();
+  return page;
+}
+
+test('E6-12 (R4 seams): the plant list is stored while the suggest chunk is held; a Suggest pressed meanwhile waits, then suggests (A11)', async () => {
+  const page = await temperatePage({ block: { suggest: 'hold' } });
+  try {
+    assert.ok(await until(page, () => !!window.__ctTest.store.pool.value, 5000), 'the Temperate list is stored without the suggest chunk');
+    assert.equal(await page.evaluate(() => window.__ctTest.store.suggestRule.value), null, 'the chunk is held');
+    await page.locator(aria('button', SUGGEST)).click();
+    assert.ok(await suggestBusy(page), 'Suggest waits (aria-busy)');
+    await page.releaseHeld();
+    assert.ok(await until(page, () => window.__ctTest.store.members.value.length > 0, 8000), 'the suggestion runs once the chunk arrives');
+  } finally { await page.browserContext().close().catch(() => {}); }
+});
+
+// The store keeps no failed load (core loadSuggest clears its promise), so the press imports again.
+// Chrome keeps a failed module in its module map and answers the second import from it without a
+// request, so on today's Chrome the press ends in the toast; a browser that fetches again suggests.
+test('E6-13 (R4 seams): a Suggest press after the chunk failed tries it again: a suggestion, or the toast with Reload', async () => {
+  const ctl = steer([404, 'pass']);
+  const page = await temperatePage({ setup: ctl.setup });
+  const tries = [];
+  page.on('console', (m) => { if (m.text().includes('the suggestion did not load')) tries.push(m.text()); });
+  try {
+    assert.ok(await until(page, () => window.__ctTest.store.suggestFailed.value && !!window.__ctTest.store.pool.value, 8000), 'the load at open failed');
+    const failedAtOpen = tries.length;
+    await page.locator(aria('button', SUGGEST)).click();
+    const suggested = await until(page, () => window.__ctTest.store.members.value.length > 0, 3000);
+    if (!suggested) assert.deepEqual(await toastIdle(page), { reload: true, idle: true });
+    assert.equal(tries.length - failedAtOpen + (suggested ? 1 : 0), 1, `the press imported again (${ctl.requests} requests, ${tries.length} failures)`);
+  } finally { await page.browserContext().close().catch(() => {}); }
+});
+
+test('E6-14 (R4 seams): Suggest pressed with the chunk failed while the range rule loads (no pool) ends in the toast with Reload, never silence', async () => {
+  const page = await temperatePage({ block: { range: 'hold', suggest: 404 } });
+  try {
+    assert.ok(await until(page, () => !!window.__ctTest.store.pool.value, 5000));
+    await atSite(page, 'lyon');
+    assert.ok(await until(page, () => window.__ctTest.store.pool.value === null && window.__ctTest.store.suggestFailed.value, 5000), 'no pool (the rule held), the chunk failed');
+    await page.locator(aria('button', SUGGEST)).click();
+    assert.deepEqual(await toastIdle(page), { reload: true, idle: true });
+  } finally { await page.browserContext().close().catch(() => {}); }
+});
+
+test('E6-15 (R4 seams): a Suggest waiting for the chunk ends in the toast with Reload when the chunk fails after the lists were stored', async () => {
+  const ctl = steer(['hold']);
+  const page = await temperatePage({ setup: ctl.setup });
+  try {
+    assert.ok(await until(page, () => !!window.__ctTest.store.pool.value, 5000), 'the list stored without the chunk');
+    assert.equal(ctl.held.length, 1, 'the chunk held');
+    await page.locator(aria('button', SUGGEST)).click();
+    assert.ok(await suggestBusy(page), 'Suggest waits (aria-busy)');
+    ctl.answer(404);
+    assert.deepEqual(await toastIdle(page), { reload: true, idle: true });
+  } finally { await page.browserContext().close().catch(() => {}); }
 });

@@ -16,10 +16,12 @@ const {
   conflicts, isSerious, invasiveIn, pairings, countryStatus,
   jobsOf, jobGapsByPhase, jobIds,
   buildMatrix, cellsOf, phaseOrd, plantsIn, startCell,
-  suggest, SIZE_LIMIT, gain, flagsFor, flagsOf, asks, alternatives,
+  flagsFor, flagsOf, asks,
   encodeLink, decodeLink, linkClimates, readPreset, LINK_VERSION, MAX_LINK_IDS, LONG_LINK, tokenOf, isLongLink, MAX_CROPS,
   strata, phases,
 } = core;
+// The suggestion and the Swap list: their own chunk on the page (core loadSuggest), not in the barrel.
+const { suggest, SIZE_LIMIT, gain, alternatives } = await import('../src/lib/consortium/suggest.ts');
 
 // ---- the fixture through the adapter ----
 const fixtureDir = new URL('fixtures/consortium-v2/export/', import.meta.url);
@@ -544,4 +546,33 @@ test('core leaves: nearest.ts imports only types; placed.ts never imports placem
     assert.equal(core[name], conflictsMod[name], `the index exports conflicts.ts's ${name}`);
   }
   assert.equal(core.NEAREST_LISTS, (await import('../src/lib/consortium/nearest.ts')).NEAREST_LISTS);
+});
+
+// E6 R4 (design check A11): the page reaches suggest.ts only through loadSuggest (its own chunk); the
+// barrel re-exports none of it, so no first-run import can pull it back.
+test('core barrel: suggest.ts is not re-exported; loadSuggest gives suggest and alternatives', async () => {
+  for (const name of ['suggest', 'alternatives', 'SIZE_LIMIT', 'gain']) assert.equal(name in core, false, `index.ts does not export ${name}`);
+  const rule = await core.loadSuggest();
+  assert.deepEqual(Object.keys(rule).sort(), ['alternatives', 'suggest']);
+  assert.equal(rule.suggest, suggest);
+});
+
+// ADR-6: the four facts a view reads through factAt (source.ts), the stored value today.
+test('factAt: the stored value of each ADR-6 fact, null when not recorded (never a misfit)', async () => {
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
+  const at = null, period = core.TODAY_PERIOD;
+  const t = taxon({ traits: { is_annual: false, grown_as_annual: true, is_perennial: true, drought_tolerance: 'Medium', moisture_use: null } });
+  assert.equal(period, '1991-2020');
+  assert.equal(core.factAt('life_cycle', t, at, period), 'grown_as_annual');
+  assert.equal(core.factAt('life_cycle', taxon({ traits: { is_annual: true, is_perennial: true } }), at, period), 'annual');
+  assert.equal(core.factAt('life_cycle', taxon({ traits: { is_perennial: true } }), at, period), 'perennial');
+  assert.equal(core.factAt('life_cycle', taxon(), at, period), null);
+  assert.deepEqual(core.factAt('cold_limit', t, at, period), { tminColdC: -15, weak: false });
+  assert.deepEqual(core.factAt('heat_limit', t, at, period), { tmaxWarmC: 30 });
+  assert.deepEqual(core.factAt('water_need', t, at, period), { drought: 'Medium', moisture: null });
+  assert.deepEqual(core.factAt('water_need', taxon({ traits: { drought_tolerance: null, moisture_use: 'High' } }), at, period), { drought: null, moisture: 'High' });
+  const bare = taxon({ climate: null });
+  for (const key of ['life_cycle', 'cold_limit', 'heat_limit', 'water_need']) assert.equal(core.factAt(key, bare, at, period), null, key);
+  const weak = taxon({ climate: { ...taxon().climate, tminCold: { low: -8, median: 0, high: 4, count: 9, basis: 'thinned_cells', weak: true } } });
+  assert.deepEqual(core.factAt('cold_limit', weak, at, period), { tminColdC: -8, weak: true });
 });

@@ -15,6 +15,7 @@ const { openBytes, LoadError } = await import('../src/islands/consortium/data/lo
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
 const { fold, searchIndex } = await import('../src/islands/consortium/data/search.ts');
 const core = await import('../src/lib/consortium/index.ts');
+const { suggest } = await import('../src/lib/consortium/suggest.ts');
 
 const fixtureDir = new URL('fixtures/consortium-v2/export/', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('manifest.json', fixtureDir), 'utf8'));
@@ -288,7 +289,7 @@ test('real install: opens with the index, every pool and image path, cell counts
     const temperate = await src.pool('Temperate');
     const m = core.buildMatrix('Temperate', temperate, [], core.UNSURE_SITE);
     assert.equal(m.rows[3].cells[0].empty, 'gap', 'real Temperate low × first 90 days is a data gap');
-    const s = core.suggest(temperate, { site: core.UNSURE_SITE, interactions: await src.interactions('Temperate'), country: null, countryStatus: 'none' });
+    const s = suggest(temperate, { site: core.UNSURE_SITE, interactions: await src.interactions('Temperate'), country: null, countryStatus: 'none' });
     assert.equal(s.members.length, 9, 'A7: Room unsure suggests 9');
     const names = await src.names('fr');
     assert.ok(searchIndex(names)('chataig').length >= 1);

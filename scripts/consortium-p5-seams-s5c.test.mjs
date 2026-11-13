@@ -10,6 +10,7 @@ import { gunzipSync } from 'node:zlib';
 import { ctx, lyon, placement, taxon } from './consortium-p5-fixtures.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
+const { suggest } = await import('../src/lib/consortium/suggest.ts');
 const { rangeMarks } = await import('../src/lib/consortium/range-marks.ts');
 const { openBytes } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
@@ -257,6 +258,9 @@ test('rangeMarks: edge, outside and unknown with a site climate; estimate on a b
   assert.deepEqual(marks(borrowed, null, 'row'), [['estimate', 'estimate.fromMediterranean', 'note'], ['estimate', 'estimate.noSite', 'note']], 'without a location: give one to check it (UX audit fix 1)');
   assert.deepEqual(marks(borrowed, null, 'details'), [['estimate', 'estimate.fromMediterranean', 'note'], ['estimate', 'estimate.noSite', 'note']]);
   assert.deepEqual(marks(borrowed, at(-16, 25), 'chip'), [['edge', 'range.edgeShort', 'note'], ['estimate', 'estimate.short', 'note']]);
+  // The estimate's state is the list's site id (zones.ts siteIdOf); a guest is no estimate.
+  assert.deepEqual(rangeMarks(borrowed, ctx(), 'row').map((m) => m.state), ['mediterranean', 'no-site']);
+  assert.deepEqual(rangeMarks(core.asGuest(taxon(), 'Tropical'), ctx(), 'row'), []);
   assert.equal('rangeMarks' in core, false, 'not exported from index.ts, so out of the first run');
 });
 
@@ -350,7 +354,7 @@ test('real export: the pool each site keeps, and a suggestion from it never hold
     const kept = core.withinRange(pool, site);
     got[name] = kept.length;
     const ctxt = { site: { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' }, interactions: await real.interactions(zone), country: null, countryStatus: 'none' };
-    const s = core.suggest(kept, ctxt);
+    const s = suggest(kept, ctxt);
     const members = s.members.map((id) => kept.find((t) => t.id === id));
     assert.equal(members.every((t) => t && core.rangeFit(t, site) !== 'outside'), true, `${name}: no suggested plant outside its range`);
     assert.equal(core.flagsOf(members, ctxt).some((f) => f.kind === 'conflict' && f.severity === 'high'), false, `${name}: no serious conflict`);

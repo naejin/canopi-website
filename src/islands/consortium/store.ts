@@ -100,20 +100,24 @@ export const rangeFailed = computed(() => rangeBroken.value && siteClimate.value
 let rangeLoad: Promise<void> | null = null;
 // The suggestion and the Swap list (core suggest.ts, design check A11): their own chunk (core
 // loadSuggest), off the first run, asked for once a database is open (setSource, as the data turns
-// ready). loadPool stores a list only once the chunk is here or has
-// failed (and its promise settles after it), so in the common case Suggest and Swap act at once
-// wherever a pool shows. A list a restore stored itself (state/restore.ts) can show a moment before:
-// Suggest then waits (suggestMembers returns false) and Swap shows its loading line. suggestFailed: the
-// chunk did not load (offline, or a deploy since the page loaded); the lists show anyway, Suggest says
-// so with Reload and changes nothing (L8), and Swap says it in place. The import is not tried again on
-// this page (a browser remembers a failed module).
+// ready) and again by a Suggest press while it is missing (state/suggest-wait.ts requestSuggest). The
+// plant lists never wait for it: a Suggest pressed before it arrives waits for it, and Swap shows its
+// loading line. suggestFailed: the last try did not load (offline, or a deploy since the page loaded);
+// the waiting Suggest ends with a toast and Reload (L8), Swap says it in place, and the next press
+// imports it again (a retry clears it while it runs; Chrome answers a failed module from its module
+// map without a request, so there the retry fails at once and Reload is the way back).
 export const suggestRule = signal<SuggestRule | null>(null);
 export const suggestFailed = signal(false);
 let suggestLoad: Promise<void> | null = null;
-const withSuggest = (): Promise<void> => (suggestLoad ??= loadSuggest().then((r) => { suggestRule.value = r; }, (err: unknown) => {
-  console.error(`Consortium: the suggestion did not load: ${(err as Error).message}`);
-  suggestFailed.value = true;
-}));
+export function wantSuggest(): void {
+  if (suggestRule.peek() || suggestLoad) return;
+  suggestFailed.value = false;
+  suggestLoad = loadSuggest().then((r) => { suggestRule.value = r; }, (err: unknown) => {
+    suggestLoad = null;
+    console.error(`Consortium: the suggestion did not load: ${(err as Error).message}`);
+    suggestFailed.value = true;
+  });
+}
 const withRule = <T>(p: Promise<T>): Promise<T> => (siteClimate.peek() && !rangeRule.peek() && rangeLoad ? Promise.all([p, rangeLoad]).then(([x]) => x) : p);
 // Whether the location gave a climate (core siteToday is non-null; inlined to keep the rule off the first run).
 export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
@@ -235,13 +239,12 @@ const reading = new Map<ClimateZone, Promise<Taxon[] | null>>();
 export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
   const src = source.peek();
   if (!src) return Promise.resolve(null);
-  const ready = withSuggest();
   const have = pools.peek()[c];
-  if (have) return withRule(ready.then(() => have));
+  if (have) return withRule(Promise.resolve(have));
   let p = reading.get(c);
   if (!p) {
     // A read of a source replaced meanwhile (Retry) neither writes nor fails the new load.
-    p = Promise.all([src.pool(c), src.interactions(c), ready]).then(([plants, rows]) => {
+    p = Promise.all([src.pool(c), src.interactions(c)]).then(([plants, rows]) => {
       if (source.peek() !== src) return null;
       pools.value = { ...pools.peek(), [c]: plants };
       interactionSets.value = { ...interactionSets.peek(), [c]: rows };
@@ -271,7 +274,7 @@ export function setSource(next: PlantSource | null, close: (() => void) | null =
   closeCurrent = next ? close : null;
   // The suggestion's chunk, once a database is open (main.ts sets the source as the data turns ready;
   // nothing lazy before it, L5).
-  if (next) void withSuggest();
+  if (next) wantSuggest();
 }
 
 // Keeps the chosen climate's pool and every guest list's pool read as soon as the database is open,
@@ -302,14 +305,10 @@ export function suggestMembers(): boolean {
   // missing rule is a failed one (store.pool waits for it otherwise).
   const scene = { curated: source.peek()?.info().climates ?? [], siteClimate: siteClimate.value, rangeFailed: !rule, nothingFits: false };
   if (needsSite(climate.value!, scene) || needsRule(climate.value!, scene)) return false;
-  // The suggestion's chunk (suggestRule): still coming (a restore's list), wait; failed, say so and
-  // change nothing.
+  // The suggestion's chunk (suggestRule) not here: Suggest waits for it, or says it failed
+  // (state/suggest-wait.ts).
   const algo = suggestRule.value;
-  if (!algo) {
-    if (suggestFailed.value) showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => globalThis.location.reload() });
-    else void withSuggest();
-    return false;
-  }
+  if (!algo) return false;
   const s = algo.suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
   kept.value = keep;
   members.value = s.members;

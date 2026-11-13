@@ -11,6 +11,7 @@ import { gunzipSync } from 'node:zlib';
 import { ctx, lyon, taxon } from './consortium-p5-fixtures.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
+const { SIZE_LIMIT, suggest } = await import('../src/lib/consortium/suggest.ts');
 const sc = await import('../src/lib/consortium/site-climate.ts');
 const { rangeMarks } = await import('../src/lib/consortium/range-marks.ts');
 const { futureMarks } = await import('../src/lib/consortium/future-marks.ts');
@@ -374,11 +375,11 @@ test('room: a plant taller than the room fits, with the height noted; it never m
 });
 
 test('room: the suggestion still prefers plants that fit the room naturally (a taller one is never picked automatically)', () => {
-  const s = core.suggest([fig, short], { site: SMALL, interactions: [] });
+  const s = suggest([fig, short], { site: SMALL, interactions: [] });
   assert.deepEqual(s.members, ['short']);
-  assert.equal(s.limit, core.SIZE_LIMIT.small);
+  assert.equal(s.limit, SIZE_LIMIT.small);
   // Kept by the reader, it stays.
-  assert.ok(core.suggest([fig, short], { site: SMALL, interactions: [], kept: ['fig'] }).members.includes('fig'));
+  assert.ok(suggest([fig, short], { site: SMALL, interactions: [], kept: ['fig'] }).members.includes('fig'));
 });
 
 test('room: the height note ("Grows to 12 m: keep it pruned, or pick a smaller plant") on rows, Add and Details; marks load for a sized room', () => {
