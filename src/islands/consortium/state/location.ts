@@ -1,6 +1,6 @@
 // "Where is your site?": the location step's state and its lookups (P5 stream S5b; design check §B
 // and its failure states; owner answers 1, 4, 5; E6 S2 moved it here from views/location/location.tsx
-// and keep.ts, which now render and re-export). It lives in the lazy location chunk: only
+// which now renders and re-exports its three actions). It lives in the lazy location chunk: only
 // views/location/location.tsx imports it, and that chunk loads on the reader's first click or Enter
 // (views/LocationSlot.tsx) or for a link's `o=` or the saved location (restore.ts). What the first run
 // needs of it (the lookups in flight, their line and ownership) is in lookups.ts.

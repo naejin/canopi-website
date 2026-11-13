@@ -149,13 +149,13 @@ test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that ord
 
 // ---- nearest placements ----
 
-test('placeFor: a curated climate uses its own placement; an uncovered one borrows the first of its nearest lists, marked estimate', () => {
+test('placeFor: a curated climate uses its own placement; an uncovered one borrows the first of its nearest lists (a zone other than its own)', () => {
   const placements = { Temperate: placement('high', 'secondary_i', 'secondary_iii'), Mediterranean: placement('medium', 'secondary_i', 'secondary_iii'), Tropical: placement('low', 'placenta_i', 'placenta_iii') };
-  assert.deepEqual(core.placeFor(placements, 'Temperate'), { zone: 'Temperate', placement: placements.Temperate, estimate: false });
-  assert.deepEqual(core.placeFor(placements, 'Subtropical'), { zone: 'Mediterranean', placement: placements.Mediterranean, estimate: true });
-  assert.deepEqual(core.placeFor({ Tropical: placements.Tropical, Temperate: placements.Temperate }, 'Arid'), { zone: 'Tropical', placement: placements.Tropical, estimate: true });
-  assert.deepEqual(core.placeFor(placements, 'Continental'), { zone: 'Temperate', placement: placements.Temperate, estimate: true });
-  assert.deepEqual(core.placeFor({ Mediterranean: placements.Mediterranean }, 'Boreal'), { zone: 'Mediterranean', placement: placements.Mediterranean, estimate: true });
+  assert.deepEqual(core.placeFor(placements, 'Temperate'), { zone: 'Temperate', placement: placements.Temperate });
+  assert.deepEqual(core.placeFor(placements, 'Subtropical'), { zone: 'Mediterranean', placement: placements.Mediterranean });
+  assert.deepEqual(core.placeFor({ Tropical: placements.Tropical, Temperate: placements.Temperate }, 'Arid'), { zone: 'Tropical', placement: placements.Tropical });
+  assert.deepEqual(core.placeFor(placements, 'Continental'), { zone: 'Temperate', placement: placements.Temperate });
+  assert.deepEqual(core.placeFor({ Mediterranean: placements.Mediterranean }, 'Boreal'), { zone: 'Mediterranean', placement: placements.Mediterranean });
   assert.equal(core.placeFor({ Tropical: placements.Tropical }, 'Boreal'), null, 'Boreal never borrows from the Tropical list');
   assert.equal(core.placeFor({ Tropical: placements.Tropical }, 'Temperate'), null, 'a curated climate never borrows');
   // P5 engineering choices row (2026-11-11).

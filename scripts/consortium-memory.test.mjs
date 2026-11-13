@@ -5,7 +5,7 @@
 // v1 (guessCountry, cropExamples). The real crop examples are read from the installed export.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 
 // The state modules themselves (E6 S2 split memory.ts into state/), merged into one namespace `m`.
@@ -17,7 +17,7 @@ const m = {
   ...(await import('../src/islands/consortium/state/draft.ts')),
   ...(await import('../src/islands/consortium/state/suggest-wait.ts')),
 };
-const { guarded, saveRecord, readRecord, oldRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, cropExamples, plantName, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
+const { guarded, saveRecord, readRecord, oldRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, cropExamples, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
 // Island state, all of it (the text checks below).
 const stateSrc = ['persist', 'restore', 'arrival', 'draft', 'suggest-wait', 'lookups', 'location']
   .map((f) => readFileSync(new URL(`../src/islands/consortium/state/${f}.ts`, import.meta.url), 'utf8')).join('\n');
@@ -87,12 +87,18 @@ test('arrival: a link wins, then a guide preset, then an old query link, then th
 });
 
 test('one zoneOf: the island reads climate ids with the core\'s (H15)', async () => {
-  const core = await import('../src/lib/consortium/index.ts');
-  const memory = await import('../src/islands/consortium/memory.ts');
-  assert.equal(memory.zoneOf, core.zoneOf, 'memory.ts re-exports the core zoneOf (for the views until chunk 5), no copy');
-  assert.doesNotMatch(stateSrc, /const zoneOf\b/, 'island state has no zoneOf of its own');
-  const main = readFileSync(new URL('../src/islands/consortium/main.ts', import.meta.url), 'utf8');
-  assert.doesNotMatch(main, /const zoneOf\b/, 'main.ts has no zoneOf of its own');
+  // Every island file (views, state, main.ts) imports the core's zoneOf: none defines one, imports
+  // one from elsewhere, or re-exports it.
+  const { readdirSync } = await import('node:fs');
+  const dir = new URL('../src/islands/consortium/', import.meta.url);
+  const files = readdirSync(dir, { recursive: true }).filter((f) => /\.tsx?$/.test(f));
+  assert.ok(files.some((f) => f.startsWith('views')), 'the views are scanned');
+  for (const f of files) {
+    const src = readFileSync(new URL(f, dir), 'utf8');
+    assert.doesNotMatch(src, /\b(?:const|let|var|function)\s+zoneOf\b|zoneOf\s*:/, `${f} defines no zoneOf of its own`);
+    assert.doesNotMatch(src, /export\s*\{[^}]*\bzoneOf\b[^}]*\}|export\s*\*\s*from\s*['"][^'"]*lib\/consortium/, `${f} re-exports no zoneOf`);
+    for (const [, from] of src.matchAll(/import\s*\{[^}]*\bzoneOf\b[^}]*\}\s*from\s*'([^']+)'/g)) assert.match(from, /\/lib\/consortium\/index\.ts$/, `${f} imports zoneOf from the core barrel, not ${from}`);
+  }
   assert.doesNotMatch(stateSrc, /ct:pool/, 'no ct:pool mark: the timing script reads ct:first-view');
   assert.doesNotMatch(readFileSync(new URL('./browser/consortium-timing.mjs', import.meta.url), 'utf8'), /ct:pool/, 'the timing script has no ct:pool fallback');
 });
@@ -156,7 +162,7 @@ const realSource = createSqliteSource(real.db, { images: {} });
 test('cropExamples on the real Temperate list: Onion, European chestnut, Sunflower, Bilberry (owner row 2026-10-29)', async () => {
   const pool = await realSource.pool('Temperate');
   const ex = cropExamples(pool);
-  assert.deepEqual(ex.map((t) => plantName(t, 'en')), ['Onion', 'European chestnut', 'Sunflower', 'Bilberry']);
+  assert.deepEqual(ex.map((t) => t.names.en ?? t.canonical_name), ['Onion', 'European chestnut', 'Sunflower', 'Bilberry']);
   assert.ok(ex.every((t) => t.role === 'crop'), 'food plants only');
   assert.equal(new Set(ex.map((t) => t.genus)).size, ex.length, 'one per genus');
   assert.equal(new Set(ex.map((t) => t.stratum?.value)).size, ex.length, 'spread across the layers');
@@ -595,15 +601,13 @@ for (const [from, country] of [['saved', { code: 'FR', source: 'chosen' }], ['li
 
 // ---- E6 S2: the memory split (state/persist, restore, arrival, draft, suggest-wait, lookups; state/location) ----
 
-test('the split: island state imports nothing under views/, statically or through import() (ADR-1 L2); memory.ts only re-exports', () => {
+test('the split: island state imports nothing under views/, statically or through import() (ADR-1 L2); memory.ts is gone (E6 chunk 5)', () => {
   const dir = new URL('../src/islands/consortium/state/', import.meta.url);
   for (const f of ['persist.ts', 'restore.ts', 'arrival.ts', 'draft.ts', 'suggest-wait.ts', 'lookups.ts', 'location.ts']) {
     const src = readFileSync(new URL(f, dir), 'utf8');
     assert.doesNotMatch(src, /(from|import\()\s*'[^']*\/views\//, `state/${f} imports a view`);
   }
-  const mem = readFileSync(new URL('../src/islands/consortium/memory.ts', import.meta.url), 'utf8');
-  const code = mem.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
-  assert.ok(code.every((l) => /^export \{[^}]+\} from '[^']+';$/.test(l)), `memory.ts holds re-exports only: ${code.filter((l) => !/^export \{/.test(l)).join(' | ')}`);
+  assert.equal(existsSync(new URL('../src/islands/consortium/memory.ts', import.meta.url)), false, 'no memory.ts barrel: consumers import state/ modules directly');
   assert.doesNotMatch(readFileSync(new URL('../src/lib/location/place-search.ts', import.meta.url), 'utf8'), /@preact\/signals/, 'the location service imports no UI framework (A12)');
 });
 
@@ -665,4 +669,52 @@ test('a link\'s o= is looked up through the location step the view hands in (res
     assert.ok(logged.some((l) => /no location step was provided/.test(l)), `never silent: ${logged}`);
     assert.equal(store.location.peek(), null);
   } finally { store.location.value = null; restoreModule.provideLocationStep(before); }
+});
+
+// ---- E6 chunk 5: the one shown climate (S2/R2 seam) ----
+
+test('climateShown agrees with the views\' own shown climate in every case (Start\'s cards and head, PoolSlot)', async () => {
+  const store = await import('../src/islands/consortium/store.ts');
+  const before = { climate: store.climate.peek(), proposed: store.proposedClimate.peek(), inFlight: persist.inFlight.peek() };
+  try {
+    for (const climate of [null, 'Temperate', 'Mediterranean']) for (const pending of [null, 'Temperate', 'Tropical']) for (const proposed of [null, 'Temperate', 'Mediterranean']) {
+      store.climate.value = climate;
+      persist.inFlight.value = pending ? { id: 1, climate: pending, from: 'link' } : null;
+      store.proposedClimate.value = proposed;
+      const at = `climate ${climate}, link ${pending}, proposed ${proposed}`;
+      // What Start.tsx Climates/StartView and PoolSlot.tsx shownZone computed before chunk 5.
+      const chosen = store.climate.value ?? persist.pendingClimate.value;
+      const wasProposed = chosen ? null : store.proposedClimate.value;
+      const shown = persist.climateShown.value;
+      assert.equal(shown.proposed ? null : shown.zone, chosen, `${at}: the chosen (or link's) climate`);
+      assert.equal(persist.climateChosen.value, chosen, `${at}: climateChosen, which Start and PoolSlot read`);
+      assert.equal(shown.proposed ? shown.zone : null, wasProposed, `${at}: the proposed card`);
+    }
+  } finally {
+    store.climate.value = before.climate; store.proposedClimate.value = before.proposed; persist.inFlight.value = before.inFlight;
+  }
+});
+
+test('location.tsx\'s "Use {climate}" button is not climateShown: it shows for a proposal under a chosen climate (kept as is)', async () => {
+  // The button's own condition, read from location.tsx and evaluated over the real signals, so a
+  // change to that line (to climateShown, say) is what this test sees.
+  const src = readFileSync(new URL('../src/islands/consortium/views/location/location.tsx', import.meta.url), 'utf8');
+  assert.match(src, /const proposed = store\.proposedClimate\.value;/, 'LocationResult\'s proposed is the location\'s proposal');
+  const cond = src.match(/\{!compact && ([^\n]+?) && \(\s*<p><button[^\n]*data-location-confirm/)?.[1];
+  assert.ok(cond, 'the "Use {climate}" button\'s condition is found in location.tsx');
+  const store = await import('../src/islands/consortium/store.ts');
+  const button = () => new Function('proposed', 'store', 'pendingClimate', 'climateShown', `return !!(${cond});`)(store.proposedClimate.value, store, persist.pendingClimate, persist.climateShown);
+  const before = { climate: store.climate.peek(), proposed: store.proposedClimate.peek(), inFlight: persist.inFlight.peek() };
+  try {
+    // A reader who chose Temperate, then "Use my location" in Seville: locate() proposes Mediterranean.
+    store.climate.value = 'Temperate'; persist.inFlight.value = null; store.proposedClimate.value = 'Mediterranean';
+    assert.equal(button(), true, 'the result line offers "Use Mediterranean"');
+    assert.equal(persist.climateShown.value.proposed, false, 'climateShown shows the chosen Temperate, no proposal: reading it here would hide the button');
+    store.proposedClimate.value = 'Temperate';
+    assert.equal(button(), false, 'no "Use Temperate" over Temperate chosen');
+    store.climate.value = null; persist.inFlight.value = { id: 1, climate: 'Tropical', from: 'link' }; store.proposedClimate.value = 'Mediterranean';
+    assert.equal(button(), false, 'none over a link\'s climate still opening');
+  } finally {
+    store.climate.value = before.climate; store.proposedClimate.value = before.proposed; persist.inFlight.value = before.inFlight;
+  }
 });

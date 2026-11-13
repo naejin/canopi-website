@@ -10,7 +10,7 @@ import { existsSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs
 import { join } from 'node:path';
 import { countPlantsInPage, loadState } from './harness.mjs';
 import { ROOT } from './serve.mjs';
-import { aria, layoutVariants, behaviour, en, h, has, index, realDb, useHarness } from './helpers.mjs';
+import { aria, behaviour, en, h, has, index, layoutVariants, realDb, suggestDirect, useHarness } from './helpers.mjs';
 import { EXPECTED, NOMINATIM, SITES, lookupAt } from './location-fixtures.mjs';
 import { atSite, choose, members, search, tool } from './p5-helpers.mjs';
 
@@ -214,7 +214,7 @@ test('P5-0d (commit 0 seams): without a location, on a covered climate, no range
   assert.ok(await has(page, '[data-location-action="search"], [data-location-search]', 4000), 'S5b: the location controls show');
   assert.deepEqual(await page.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name).filter((n) => /maplibre|\/data\/climate\//.test(n))), [], 'no MapLibre and no climate tile before a click');
   await choose(page, 'Temperate');
-  await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
+  await suggestDirect(page);
   assert.ok(await page.waitForFunction(() => document.querySelectorAll('[data-plant-id]').length > 0, { timeout: 10_000 }).then(() => true, () => false), 'members in the matrix');
   const marks = () => page.$$eval('[data-mark]', (els) => els.map((e) => ({ kind: e.getAttribute('data-mark'), surface: e.getAttribute('data-mark-surface') })));
   const promised = (list) => list.filter((m) => ['outside', 'edge', 'future', 'native'].includes(m.kind));

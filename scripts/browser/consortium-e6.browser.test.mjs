@@ -89,7 +89,8 @@ test('E6-1 (K1 kit): Start\'s crop search finds what Add\'s search finds for the
 test('E6-2 (B4 build): before the data is ready, no lazy part (sheets, plant dialog, after-the-matrix views, features) is modulepreloaded or requested (L5)', async () => {
   const { sheets, later, details } = h.roles;
   assert.ok(sheets.length && later.length && details.length, 'roles sheets, later and details have chunks in this build');
-  const lazy = [...new Set(Object.entries(h.roles).filter(([k]) => k !== 'maplibreCss').flatMap(([, list]) => list))];
+  // testHook: the test build's hook, awaited before the first render (main.ts), so not a lazy part.
+  const lazy = [...new Set(Object.entries(h.roles).filter(([k]) => k !== 'maplibreCss' && k !== 'testHook').flatMap(([, list]) => list))];
   const log = [];
   const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', database: 'stall', hook: true, setup: recordRequests(log) });
   await page.waitForFunction(() => performance.getEntriesByType('resource').some((e) => /\/_astro\/load\.[\w-]+\.js$/.test(e.name)), { timeout: 10_000 });
@@ -334,4 +335,37 @@ test('E6-3d (K3 lazy sheets): Add, search, Paste and Swap opened while the range
   assert.equal(await page.evaluate(() => window.__ctTest.store.pool.value), null, 'the pool was null throughout (the rule held)');
   assert.deepEqual(seen.filter((x) => x.includes('empty')), [], seen.join('; '));
   await page.browserContext().close().catch(() => {});
+});
+
+// E6 exit (B4 hand-off): the test build awaits its hook before the first render; #ct-root keeps
+// aria-busy until that render, so loadState() never reads the loading line as ready, however late the
+// hook's chunk comes, modulepreloaded or not (astro.config.mjs preloads it until the coordinator
+// removes that line; nothing here depends on it).
+test('E6-17 (B4 hand-off, done in the chunk-5 exit): in the test build, #ct-root stays aria-busy until the island renders, the test hook\'s chunk held', async () => {
+  assert.ok(h.roles.testHook?.length, 'role `testHook` has no chunk in this build (npm run build:browser-test)');
+  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { testHook: 'hold' } });
+  await page.waitForFunction(() => document.readyState !== 'loading', { timeout: 4000 });
+  await new Promise((r) => setTimeout(r, 1000));
+  const held = await page.evaluate(() => {
+    const root = document.getElementById('ct-root');
+    return { busy: root?.getAttribute('aria-busy'), radios: root?.querySelectorAll('input[type="radio"]').length ?? 0 };
+  });
+  assert.ok(page.held.length > 0, 'the hook\'s chunk was requested and held');
+  assert.deepEqual(held, { busy: 'true', radios: 0 }, 'not rendered yet, and #ct-root says it is busy');
+  await page.releaseHeld();
+  assert.equal(await loadState(page), 'ready');
+  assert.ok(await has(page, aria('radio', 'Temperate'), 4000), 'Start renders once the hook arrives');
+  assert.equal(await page.evaluate(() => document.getElementById('ct-root').hasAttribute('aria-busy')), false, 'aria-busy goes with the render');
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6 exit fix round: a hook chunk that fails ends the wait with a load error naming it, never a root
+// left busy (loadState would time out reading 'loading').
+test('E6-19 (B4 hand-off, chunk-5 exit fix round): in the test build, a test hook chunk that fails to load leaves #ct-root not busy, with a load error naming the hook', async () => {
+  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { testHook: 404 } });
+  try {
+    assert.equal(await loadState(page, 8000), 'test-hook', 'loadState reads the hook\'s failure');
+    assert.equal(await page.evaluate(() => document.getElementById('ct-root').hasAttribute('aria-busy')), false, 'aria-busy removed');
+    assert.match(await page.$eval('#ct-root [data-load-error]', (p) => p.textContent), /test hook/, 'the line names the test hook');
+  } finally { await page.browserContext().close().catch(() => {}); }
 });

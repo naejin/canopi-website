@@ -1,6 +1,6 @@
 /** @jsxImportSource preact */
 // The future panel (stream S5d), a P5 feature chunk: FutureSlot.tsx loads it only once a site location
-// exists (scripts/built-modules.mjs P5_FEATURE_ENTRIES.future, outside the island's 60 KB). Summary
+// exists (scripts/built-modules.mjs ROLE_ENTRIES.future, its own cap in check-built-site.mjs). Summary
 // first ("3 of 7 outside their range by 2041–2070", then the plants too hot, those drier than where they
 // are recorded (a note: "may need watering", never counted as outside; walk-through 2 N3), those already
 // outside today, and a count of the members not checked, so the numbers add up), then plant by plant;

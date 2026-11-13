@@ -74,7 +74,7 @@
 /* The result head (Start once a consortium is shown). */
 .ct .ct-result-head { display: grid; gap: 8px; margin-bottom: 16px; }
 .ct .ct-result-title { font-size: 28px; }
-.ct .ct-result-sub { display: block; margin-top: 4px; font-family: var(--font-body, inherit); font-size: 17px; }
+.ct .ct-result-sub { display: block; margin-top: 4px; font-size: 17px; }
 .ct .ct-basis { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin: 0; font-size: 15px; color: var(--text-secondary); }
 
 /* Actions after the matrix */

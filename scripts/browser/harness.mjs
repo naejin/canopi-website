@@ -94,13 +94,13 @@ export function servedDatabase(kind, fx) {
   return { bytes: gz, ref: { sha256: wrongSha ? sha256(raw) : sha256(gz), bytes: gz.length, rawSha256: sha256(raw), rawBytes: raw.length } };
 }
 
-// The URLs of each chunk role of the served build, flat by role name (the feature chunks location,
-// markProviders, future, pool, likely, native, then maplibre and maplibreCss, then the E6 lazy parts
-// details, sheets, later, suggest, range), for faults set by role. The roles are read by their one
-// owner, built-modules.mjs readChunkRoles.
+// The URLs of each chunk role of the served build, flat by role name (every on-demand part under
+// `features`, built-modules.mjs ROLE_ENTRIES: location, markProviders, future, pool, likely, native,
+// range, details, sheets, later, suggest; then maplibre, maplibreCss and testHook, the test build's
+// hook), for faults set by role. The roles are read by their one owner, built-modules.mjs readChunkRoles.
 const roleUrls = (builtDir) => {
-  const { features, maplibre, maplibreCss, lazy } = readChunkRoles(join(builtDir, 'client'));
-  return { ...features, maplibre, maplibreCss, ...lazy };
+  const { features, maplibre, maplibreCss, testHook } = readChunkRoles(join(builtDir, 'client'));
+  return { ...features, maplibre, maplibreCss, testHook };
 };
 
 export async function startHarness({ log = () => {}, dir } = {}) {
@@ -187,10 +187,10 @@ export async function startHarness({ log = () => {}, dir } = {}) {
   // - hook: true sets window.__ctTest = true before the first navigation (the test build then gives
   //   the page its test hook), so a hooked page loads once, not goto then reload;
   // - timeouts: { stall, read, suggest } in ms shortens the page's download stall (data/load.ts), its
-  //   climate tile read (views/location/location.tsx) and Suggest's wait (memory.ts), test build only;
+  //   climate tile read (views/location/location.tsx) and Suggest's wait (state/suggest-wait.ts), test build only;
   // - geoTimeoutMs: with geolocation 'timeout', TIMEOUT comes after min(the call's timeout, this);
   // - block: { <role>: 404 | 'offline' | 'hold' } fails a chunk role of consortium-chunks.json (pool,
-  //   location, future, markProviders, maplibre, details, sheets, later, suggest, range, …) from the
+  //   location, future, markProviders, maplibre, details, sheets, later, suggest, range, testHook, …) from the
   //   first request; page.blocked lists each URL so answered; 'hold' (E6 commit 0) answers nothing
   //   until `await page.releaseHeld()` lets every held request through (and any later one), and
   //   page.held lists the URLs held;

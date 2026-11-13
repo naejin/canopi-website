@@ -1,6 +1,6 @@
-// The folded-name search (A6; stream S1), apart from the PlantSource: Add and Paste use it, and were
-// it in data/sqlite-source.ts, that module would leave the loader's chunk (outside the island's 60 KB
-// budget, beside the sqlite glue it needs) for a chunk shared with the sheets, counted in the budget.
+// The folded-name search (A6; stream S1), apart from the PlantSource: Add, Paste and Start's crop
+// search use it, and were it in data/sqlite-source.ts, that module would leave the loader's chunk
+// (beside the sqlite glue it needs, off the first run) for a chunk shared with the views.
 import { fold, type Locale, type PlantId } from '../../../lib/consortium/index.ts';
 
 // fold lives in the core leaf src/lib/consortium/fold.ts (E6 design check A9), re-exported here for

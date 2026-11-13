@@ -299,6 +299,7 @@ test('real install: opens with the index, every pool and image path, cell counts
 // ---- store: pool loading, guests, country status, source replacement (src/islands/consortium/store.ts) ----
 
 const store = await import('../src/islands/consortium/store.ts');
+const { DEFAULT_SITE } = await import('../src/islands/consortium/state/schema.ts');
 const tick = () => new Promise((r) => setTimeout(r, 0));
 // A PlantSource over the fixture that counts pool reads and can fail them.
 function counting(base = source, { fail = () => false } = {}) {
@@ -325,7 +326,7 @@ function reset() {
   store.crops.value = [];
   store.removed.value = [];
   store.country.value = { code: null, source: null };
-  store.site.value = { ...store.DEFAULT_SITE };
+  store.site.value = { ...DEFAULT_SITE };
   store.load.value = { status: 'ready', error: null };
 }
 const quiet = async (fn) => { const e = console.error; console.error = () => {}; try { return await fn(); } finally { console.error = e; } };

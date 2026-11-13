@@ -3,7 +3,7 @@
 // commit 0801024: core native.ts (nativeHere), native-marks.ts (nativeMarks, third in mark-providers.ts),
 // soil-likely.ts (likelyFor), views/NativeSlot.tsx (under the name in Details), views/LikelySlot.tsx (in
 // each site question on Start), PlantSource.nativeIn (sqlite-source.ts, plant_areas), MarkContext.source,
-// and lookupSite without { soil: false } in views/location/location.tsx. Replace these tests with its rules'.
+// and lookupSite without { soil: false } in state/location.ts. Replace these tests with its rules'.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
@@ -27,9 +27,8 @@ test('S5e ships nothing in P5: no native or soil-likely module, slot or reader',
 });
 
 test('the location step reads no soil tile until P5.2 (soil likely) uses it', () => {
-  // The lookup sits in views/location/location.tsx until S2 moves it to state/location.ts: either file,
-  // in code (comments left out), not in a comment.
-  const code = ['views/location/location.tsx', 'state/location.ts'].map((f) => new URL(`../src/islands/consortium/${f}`, import.meta.url)).filter((u) => existsSync(u))
+  // The lookup (state/location.ts), in code (comments left out), not in a comment.
+  const code = ['state/location.ts'].map((f) => new URL(`../src/islands/consortium/${f}`, import.meta.url)).filter((u) => existsSync(u))
     .map((u) => readFileSync(u, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')).join('\n');
   assert.match(code, /lookupSite\(lat, lon, tileSource\(\), DEFAULT_RADIUS, \{ soil: false \}\)/);
 });

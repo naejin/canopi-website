@@ -29,12 +29,9 @@ export interface Sheet { kind: SheetKind; id: PlantId | null; n: number }
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'failed';
 export interface Load { status: LoadStatus; error: LoadFailure | null }
 
-export { DEFAULT_SITE } from './state/schema.ts';
-
 // ---- state ----
 // The consortium's fields are declared once in state/schema.ts (what each is, whether Undo, the save
 // and the link hold it, who watches it); their signals are re-exported here under their names.
-export type { Consortium } from './state/schema.ts';
 // climate, country, site; the plant lists members (in the order added), kept (pinned: a new suggestion
 // keeps them), removed (taken out: a new suggestion leaves them out), guests (from another climate's
 // list, A9) and crops (the crop examples the reader ticked on Start); the stage the side view, stepper
@@ -45,7 +42,7 @@ export const sheet = signal<Sheet | null>(null);
 // crops and site answers (and, on the consortium's own card, its plants, which Suggest and a paste
 // build on). The consortium shown before Change site is then in setAside, with its own site
 // answers, country and stage; null: none. Only the
-// commit actions turn the draft into the consortium (memory.ts); the save mirrors the consortium.
+// commit actions turn the draft into the consortium (state/draft.ts); the save mirrors the consortium.
 export const load = signal<Load>({ status: 'idle', error: null });
 // P5 (commit 0 seam): where the site is. S5b writes it (device location, place search, map pick, a
 // link's `o=`); S5c (range check, nearest lists), S5d (future check) and S5e (native here, soil
@@ -201,7 +198,7 @@ export const matrix = computed<Matrix | null>(() => {
 // but store.climate stays unset until the reader confirms.
 export const proposedClimate = signal<ClimateZone | null>(null);
 // Whether that proposal came from the saved site looked up again (not the reader locating): only such
-// a proposal goes when a consortium opens (memory.ts restore; seam review round 4, 2).
+// a proposal goes when a consortium opens (state/restore.ts restore; seam review round 4, 2).
 export const proposedFromSave = signal(false);
 export const markContext = computed<MarkContext>(() => ({ climate: climate.value, location: location.value, scenario: scenario.value, site: site.value }));
 // The mark providers (core mark-providers.ts, their own chunk): none until a mark can show (a site
@@ -447,8 +444,11 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
 
 // The store's own effects, started by main.ts before the first render, in the order they ran when
 // they were module-level; a node test imports the store with none running
-// (scripts/consortium-start.test.mjs). Called once.
+// (scripts/consortium-start.test.mjs). A second call does nothing (each effect would run twice).
+let started = false;
 export function start(): void {
+  if (started) return;
+  started = true;
   // The range rule's chunk, loaded once the location has a climate (rangeRule, rangeBroken).
   effect(() => {
     if (!siteClimate.value || rangeLoad) return;

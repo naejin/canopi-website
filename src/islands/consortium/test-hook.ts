@@ -14,8 +14,8 @@ declare global { const __CT_TEST_HOOK__: boolean }
 
 // sheets: the next sheet chunk fails (views/lazy.tsx lazyPart). later: the after-the-matrix chunk
 // (views/lazy.tsx) fails, or waits until released.
-// The same object is globalThis.__ctFaults (test-seam.d.ts), which the loaders read inline under
-// __CT_TEST_HOOK__ (A13); the export stays until views/lazy.tsx and Details' loader read the global.
+// The same object is globalThis.__ctFaults (test-seam.d.ts), which views/lazy.tsx reads inline under
+// __CT_TEST_HOOK__ (A13); nothing imports it.
 const testFault: { sheets: boolean; later: 'fail' | 'hold' | null; release: Promise<void> | null } = { sheets: false, later: null, release: null };
 
 if (__CT_TEST_HOOK__) {

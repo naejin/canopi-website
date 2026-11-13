@@ -6,7 +6,9 @@
 // (src/lib/correction.mjs; scripts/correction.test.mjs), which mails the owner; nothing is
 // kept on the server. Offline (design check §5): "Not sent: you seem offline. Your text is kept." with
 // Try again. What the reader writes is kept per plant (views/kit/correction.ts `drafts`, passed in by
-// the dialog, so this chunk imports nothing from the dialog's chunk) until it is sent.
+// the dialog, so this chunk imports nothing from the dialog's chunk: importing them made the Details
+// chunk export them, and a Details chunk re-imported after a failed request then showed nothing,
+// E6-5c) until it is sent.
 // Words: the correction.* family (S3 block of the locale files), passed by ConsortiumPage.astro.
 import { useEffect, useState } from 'preact/hooks';
 import { pageLang, T } from '../strings.ts';

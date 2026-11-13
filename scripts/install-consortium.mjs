@@ -59,8 +59,6 @@ import { DDL, DATA_TABLES } from './consortium-schema.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DEFAULT_OUT = join(ROOT, 'public', 'data', 'consortium');
 export const DATA_DIR = join(ROOT, 'src', 'data');
-// Kept for the TRY list's readers (scripts/try-references.test.mjs).
-export const TRY_LIST_DIR = DATA_DIR;
 export const INDEX_FILE = 'consortium-index.json';
 export const INDEX_PATH = join(DATA_DIR, INDEX_FILE);
 // Where an install writes src/data/: only a real one into the site.

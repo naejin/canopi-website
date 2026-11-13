@@ -18,9 +18,9 @@ import { setStrings } from './strings.ts';
 import { pageData, type PageData } from './views/kit/page.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
 
-// The loader and the sqlite-wasm glue are a chunk of their own (design check §8 leaves it out of the
-// island's 60 KB budget); its import starts at once, beside the first render, and a failed import
-// is tried again on Retry.
+// The loader and the sqlite-wasm glue are a chunk of their own (modulepreloaded, outside the first
+// run's cap: check-built-site.mjs); its import starts at once, beside the first render, and a failed
+// import is tried again on Retry.
 type Loader = typeof import('./data/load.ts');
 let loader: Promise<Loader> | null = null;
 const getLoader = () => (loader ??= import('./data/load.ts').catch((err: unknown) => { loader = null; throw err; }));
@@ -67,14 +67,26 @@ if (root && data) {
   provideLocationStep(loadLocationStep);
   setStrings(data.strings, data.lang);
   setPageCountries(data.countries);
-  root.textContent = '';
-  root.removeAttribute('aria-busy');
   watchPools();
   void open(data);
-  // The browser-test build loads the test hook (window.__ctTest, __ctFaults) before the first
-  // render; a production build folds __CT_TEST_HOOK__ to false and drops the import, so test-hook.ts
-  // is in no production chunk (design check A13) and the render follows at once.
+  // The root keeps its static loading line, aria-busy, until App renders into it.
   const onRetry = () => void open(data);
-  if (__CT_TEST_HOOK__) void import('./test-hook.ts').then(() => render(h(App, { guide: data.guide, onRetry }), root));
-  else render(h(App, { guide: data.guide, onRetry }), root);
+  const show = () => { root.textContent = ''; render(h(App, { guide: data.guide, onRetry }), root); root.removeAttribute('aria-busy'); };
+  // The browser-test build loads the test hook (window.__ctTest, __ctFaults) before the first
+  // render, the root busy meanwhile, so a test that waits for the render (harness loadState) never
+  // reads the loading line as ready, preloaded hook chunk or not; a production build folds
+  // __CT_TEST_HOOK__ to false and drops the import, so test-hook.ts is in no production chunk
+  // (design check A13) and the render follows at once. A hook that fails to load (or a first render
+  // that throws) ends the wait with a load error naming it (harness loadState reads 'test-hook').
+  if (__CT_TEST_HOOK__) {
+    void import('./test-hook.ts').then(show).catch((err: unknown) => {
+      const why = `Consortium test build: the test hook or the first render failed: ${(err as Error)?.message ?? String(err)}`;
+      console.error(why);
+      const p = document.createElement('p');
+      p.dataset.loadError = 'test-hook';
+      p.textContent = why;
+      root.replaceChildren(p);
+      root.removeAttribute('aria-busy');
+    });
+  } else show();
 }

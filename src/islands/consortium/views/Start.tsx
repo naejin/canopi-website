@@ -4,23 +4,25 @@
 // - The optional country line comes first, so the browser's guess is seen before it is used.
 // - Then the climate cards, nothing chosen (never a default climate): Ready, Needs your location (a
 //   climate that borrows plants, without a location: PoolSlot cardPill), or Not covered yet with
-//   "Ask for this climate". Picking one writes the shared site climate (memory.chooseClimate).
+//   "Ask for this climate". Picking one writes the shared site climate (state/draft.ts chooseClimate).
 // - Then "What do you mainly want to grow?" (up to three of the climate's food plants; examples by
-//   rule, memory.cropExamples) and "Your site" (all four questions start at "Not sure").
+//   rule, state/draft.ts cropExamples) and "Your site" (all four questions start at "Not sure").
 // - "Suggest plants" (waits for the plant list while it loads), "Start empty and search", "Paste a list".
 // Once a consortium is shown (store.view is not 'start'), Start shrinks to its head: the title with
 // the count and climate, the site basis with "Change site" and "Start over", and the country line.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Locale, PlantId, Site, SiteKey, Taxon } from '../../../lib/consortium/index.ts';
-import { countryStatus, lights, MAX_CROPS, rooms, soils, waters } from '../../../lib/consortium/index.ts';
+import { countryStatus, lights, MAX_CROPS, rooms, soils, waters, zoneOf } from '../../../lib/consortium/index.ts';
 import { climate, country, crops, proposedClimate, kept, knownCountries, members, openSheet, pool, site, view } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { searchIndex } from '../data/search.ts';
 import { LocationSlot } from './LocationSlot.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from './PoolSlot.tsx';
-import {
-  backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
-} from '../memory.ts';
+import { climateChosen, climateShown, restoring } from '../state/persist.ts';
+import { notices } from '../state/restore.ts';
+import { startMemory } from '../state/arrival.ts';
+import { backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, pickingCountry, startEmpty, startOver } from '../state/draft.ts';
+import { pendingSuggest, requestSuggest } from '../state/suggest-wait.ts';
 import { page } from './kit/page.ts';
 import { basisLine, countryName, nameOf, zoneName } from './kit/names.ts';
 
@@ -45,7 +47,7 @@ function cropSearch(list: readonly Taxon[], q: string, lang: string, skip: Reado
 }
 
 // ---- the country line ----
-export function CountryLine() {
+function CountryLine() {
   const { code, source: from } = country.value;
   // The page's list until the database opens (store.knownCountries): the line is final in its first frame.
   const known = knownCountries.value;
@@ -88,11 +90,12 @@ export function CountryLine() {
 
 // ---- the climate cards ----
 function Climates() {
-  // A link's climate shows at once while it loads (memory.pendingClimate). A location's suggestion
-  // (store.proposedClimate, S5b) shows as proposed, not checked: a click on its card confirms it, as
-  // the result line's "Use" button does (owner answer 1; review round 1, 6).
-  const chosen = climate.value ?? pendingClimate.value;
-  const proposed = chosen ? null : proposedClimate.value;
+  // The one shown climate (state/persist.ts climateShown): the chosen one, else a link's while it loads,
+  // else a location's suggestion (store.proposedClimate, S5b), shown as proposed, not checked: a click
+  // on its card confirms it, as the result line's "Use" button does (owner answer 1; review round 1, 6).
+  const shown = climateShown.value;
+  const chosen = climateChosen.value;
+  const proposed = shown.proposed ? shown.zone : null;
   // With a card proposed and none checked (review round 2, 5): Tab lands on the proposed card (the
   // others leave the tab order), and the arrows move the focus without checking a card; Space, Enter
   // or a click confirms one.
@@ -225,6 +228,8 @@ function StartNotices() {
   );
 }
 
+// Head and the guide notice name store.climate, not climateShown: a consortium (and a guide preset's
+// notice) shows only under a chosen climate, where the two are the same.
 function Head() {
   const n = members.value.length;
   return (
@@ -242,7 +247,7 @@ function Head() {
 }
 
 function StartView() {
-  const z = climate.value ?? pendingClimate.value;
+  const z = climateChosen.value;
   const waiting = pendingSuggest.value || restoring.value;
   return (
     <div class="ct-start">

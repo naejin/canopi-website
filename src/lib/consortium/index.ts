@@ -28,7 +28,7 @@ export { siteIdOf, zoneOfSiteId, type SiteId } from './zones.ts';
 export * from './nearest.ts';
 
 // E6 R4 (design check A11): the suggestion and the Swap list (suggest.ts), their own chunk (role
-// `suggest`, scripts/built-modules.mjs LAZY_ENTRIES), off the first run, so this barrel does not
+// `suggest`, scripts/built-modules.mjs ROLE_ENTRIES), off the first run, so this barrel does not
 // re-export them: this loader is the page's only way in (store.ts suggestRule); node tests import
 // suggest.ts directly. Loaded once; a failed load clears the promise, so the next call tries again.
 export interface SuggestRule { suggest: typeof import('./suggest.ts').suggest; alternatives: typeof import('./suggest.ts').alternatives }

@@ -30,10 +30,10 @@
 import { computed, effect, signal, untracked } from '@preact/signals';
 import type { ClimateZone, LinkOrigin, PlantId, ShareState } from '../../../lib/consortium/index.ts';
 import { encodeLink, LINK_VERSION } from '../../../lib/consortium/index.ts';
-import type { Consortium, Country, CountrySource } from '../store.ts';
+import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
-import type { ShareInput } from './schema.ts';
+import type { Consortium, ShareInput } from './schema.ts';
 
 export const STORE = 'canopi-consortium';
 export const COUNTRY_STORE = 'canopi-country';
@@ -153,8 +153,10 @@ export const pendingLinkClimate = computed(() => (inFlight.value?.from === 'link
 // The climate Start shows, from its four sources, one computed (design check §7.1 "Which climate
 // now"): the reader's choice, else a link's still opening, else the card a location proposes
 // (proposed: shown as a suggestion, not chosen). The four signals stay (owner answer 1).
+// climateChosen: its zone when not a proposal (the reader's choice, else the link's), null otherwise.
+export const climateChosen = computed(() => store.climate.value ?? pendingClimate.value);
 export const climateShown = computed((): { zone: ClimateZone | null; proposed: boolean } => {
-  const chosen = store.climate.value ?? pendingClimate.value;
+  const chosen = climateChosen.value;
   return chosen ? { zone: chosen, proposed: false } : { zone: store.proposedClimate.value, proposed: store.proposedClimate.value !== null };
 });
 
