@@ -368,6 +368,66 @@ test('Layout stability (N2): nothing on Start moves after its first paint when t
   assert.deepEqual(bad, []);
 });
 
+// Late web fonts (E6 font; CI failed N2 above with "en 320 px: CLS 0.085 at 111 ms by header-nav"): on
+// a slow line Source Sans 3 and Literata arrive after the first paint, and the swap from the fallback
+// stack (the metric-matched 'Source Sans 3 Fallback' and 'Literata Fallback' faces, fonts.css) must
+// not move the page. Every /fonts/*.woff2 request of the browser is held FONT_HOLD_MS before it goes on
+// (CDP Fetch on the browser target, so both loads of stableStart are held), so the swap comes after the
+// island has drawn Start too, the hardest case; the check runs once every held font is through and laid
+// out, and asserts the first paint came before any font.
+// The budget is LATE_CLS, not N2's 0.01: a matched fallback keeps each string within about 1% of its
+// width, not to the pixel, so a paragraph whose last word sits at the edge can still gain or lose a
+// line (at en 320 px Start's lede: 0.0102); a header that wraps, as on CI (0.085), is far over it. The
+// box check of N2 is not repeated here: the place search input takes its width from the font's
+// average character width (no CSS width), which no fallback face can match (reported, E6 font).
+const FONT_HOLD_MS = 800;
+const LATE_CLS = 0.015;
+async function holdFonts() {
+  const session = await h.browser.target().createCDPSession();
+  const timers = new Set();
+  let held = 0;
+  session.on('Fetch.requestPaused', ({ requestId }) => {
+    held += 1;
+    const timer = setTimeout(() => {
+      timers.delete(timer);
+      session.send('Fetch.continueRequest', { requestId }).catch(() => {}); // its page may be gone (the first load)
+    }, FONT_HOLD_MS);
+    timers.add(timer);
+  });
+  await session.send('Fetch.enable', { patterns: [{ urlPattern: '*/fonts/*.woff2', requestStage: 'Request' }] });
+  return {
+    // Resolves once at least one font was held and none is still held.
+    through: async () => { while (held === 0 || timers.size) await new Promise((r) => setTimeout(r, 50)); },
+    stop: async () => { await session.send('Fetch.disable').catch(() => {}); await session.detach().catch(() => {}); },
+  };
+}
+
+test('Layout stability (N2, late fonts): when the web fonts arrive after the first paint, Start and the header shift no more than one line of reflow (CLS 0.015), at 320–1280 px in en, fr and ja', { timeout: 240_000 }, async () => {
+  const hold = await holdFonts();
+  const bad = [];
+  try {
+    for (const lang of ['en', 'fr', 'ja']) {
+      for (const width of [320, 390, 700, 960, 1280]) {
+        const at = `${lang} ${width} px`;
+        const page = await stableStart(lang, width);
+        await hold.through();
+        const late = await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))).then(() => {
+          const fcp = performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? null;
+          const fonts = performance.getEntriesByType('resource').filter((e) => /\/fonts\/[^/]+\.woff2$/.test(e.name)).map((e) => e.responseEnd);
+          return { fcp, firstFont: fonts.length ? Math.min(...fonts) : null, used: [...document.fonts].filter((f) => f.status === 'loaded').map((f) => `${f.family} ${f.weight}`) };
+        }));
+        assert.ok(late.fcp !== null && late.firstFont !== null && late.fcp < late.firstFont, `${at}: the first paint (${late.fcp} ms) came before the first font (${late.firstFont} ms)`);
+        assert.ok(late.used.some((f) => f.startsWith('"Source Sans 3"') || f.startsWith('Source Sans 3')), `${at}: Source Sans 3 loaded (${late.used})`);
+        const r = await moved(page);
+        assert.deepEqual(r.seen, STABLE, `${at}: every control measured`);
+        if (r.cls > LATE_CLS) bad.push(`${at}: CLS ${r.cls.toFixed(3)} (${r.shifts.map((e) => `${e.value.toFixed(3)} at ${e.at} ms by ${e.from}`).join('; ')})`);
+        await done(page);
+      }
+    }
+  } finally { await hold.stop(); }
+  assert.deepEqual(bad, []);
+});
+
 // Review of p5-final (low 1): an explanation placed on open is placed again when the window changes
 // (a phone turned, a window narrowed), so it keeps the 16 px gutter without being reopened.
 test('Walk-through 2 N2 (review): an open explanation keeps the 16 px gutter when the window narrows from 844 to 390 px', async () => {

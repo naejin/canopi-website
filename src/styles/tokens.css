@@ -47,8 +47,8 @@
   --soil-worm: #B5705C;
   --soil-worm-band: #9A5A48;
 
-  --font-sans: 'Source Sans 3', 'Noto Sans', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Literata', 'Noto Serif', 'Noto Serif SC', Georgia, serif;
+  --font-sans: 'Source Sans 3', 'Source Sans 3 Fallback', 'Noto Sans', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Literata', 'Literata Fallback', 'Noto Serif', 'Noto Serif SC', Georgia, serif;
   --radius: 7px;
   --gutter: clamp(16px, 4vw, 40px);
   --max: 1200px;
