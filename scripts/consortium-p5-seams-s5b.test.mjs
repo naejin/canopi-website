@@ -3,7 +3,7 @@
 // (scripts/browser/consortium-p5-s5b.browser.test.mjs). S5b owns this file; no other stream edits it.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { lyon } from './consortium-p5-fixtures.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
@@ -195,8 +195,11 @@ test('review round 2 (2): one pending lookup from the chunk load through its set
     await load.lookingThrough(tick, tick);
     assert.deepEqual(seen, [1, 0], 'lookingThrough: one lookup from load to settle');
   } finally { stop(); }
-  const memory = readFileSync(new URL('../src/islands/consortium/memory.ts', import.meta.url), 'utf8');
-  assert.match(memory, /lookingThrough\(/, 'settleLocation holds one lookup through load and settle');
+  // settleLocation sits in memory.ts until S2's split moves it to state/restore.ts: either file, in code
+  // (comments left out), not in a comment.
+  const code = ['memory.ts', 'state/restore.ts'].map((f) => new URL(`../src/islands/consortium/${f}`, import.meta.url)).filter((u) => existsSync(u))
+    .map((u) => readFileSync(u, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')).join('\n');
+  assert.match(code, /lookingThrough\(/, 'settleLocation holds one lookup through load and settle');
 });
 
 test('review round 2 (3): a geocoder request unanswered in 15 s fails as an error (a failed search), not as a silent abort', async (t) => {

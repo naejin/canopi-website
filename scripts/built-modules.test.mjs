@@ -13,8 +13,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const graphOf = (edges) => new Map(Object.entries(edges).map(([p, imports]) => [p, { code: '', imports }]));
-const noFeatures = { location: [], markProviders: [], future: [], pool: [], likely: [], native: [] };
-const noLazy = { details: [], sheets: [], later: [], suggest: [], range: [] };
+const noFeatures = { location: [], markProviders: [], future: [], pool: [], likely: [], native: [], range: [] };
+const noLazy = { details: [], sheets: [], later: [], suggest: [] };
 const none = { features: noFeatures, maplibre: [], maplibreCss: [], lazy: noLazy };
 const roles = (features, maplibre = []) => ({ ...none, features: { ...noFeatures, ...features }, maplibre });
 
@@ -51,10 +51,9 @@ test('chunkRoles: the lazy island parts by their entry module (E6 commit 0), apa
     ['_astro/later.c.js', `${root}/src/islands/consortium/views/later.ts`],
     ['_astro/Details.d.js', `${root}/src/islands/consortium/views/details/Details.tsx`],
     ['_astro/suggest.e.js', `${root}/src/lib/consortium/suggest.ts`],
-    ['_astro/range.f.js', `${root}/src/lib/consortium/range.ts`],
     ['_astro/shared.g.js', null],
   ].map(([f, id]) => [f, chunk(f, id)]));
-  assert.deepEqual(chunkRoles(bundle).lazy, { details: ['/_astro/Details.d.js'], sheets: ['/_astro/Add.a.js', '/_astro/Swap.b.js'], later: ['/_astro/later.c.js'], suggest: ['/_astro/suggest.e.js'], range: ['/_astro/range.f.js'] });
+  assert.deepEqual(chunkRoles(bundle).lazy, { details: ['/_astro/Details.d.js'], sheets: ['/_astro/Add.a.js', '/_astro/Swap.b.js'], later: ['/_astro/later.c.js'], suggest: ['/_astro/suggest.e.js'] });
   assert.deepEqual(chunkRoles(bundle).features, noFeatures, 'a lazy part is not a P5 feature (budgets unchanged until B4)');
   assert.deepEqual(Object.keys(LAZY_ENTRIES), Object.keys(noLazy), 'the lazy entries, listed once');
 });

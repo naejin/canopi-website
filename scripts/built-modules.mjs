@@ -136,19 +136,21 @@ export const P5_FEATURE_ENTRIES = {
   pool: /\/src\/islands\/consortium\/views\/pool\/pool\.tsx$/, // S5c, if not tiny
   likely: /\/src\/islands\/consortium\/views\/likely\/likely\.tsx$/, // S5e, if not tiny
   native: /\/src\/islands\/consortium\/views\/native\/native\.tsx$/, // S5e, if not tiny
+  // The range rule (core marks.ts loadRangeRule; E6 design check A10): loaded once the site location
+  // has a climate, like the features, so never modulepreloaded and outside the island's 62 KB.
+  range: /\/src\/lib\/consortium\/range\.ts$/, // R2
 };
 // E6 commit 0 (design check A3, A10, A11; L1-L12): the lazy island parts, each found by its entry
 // module like the features, for faults by role (the harness's `block`) and, from stream B4, the
 // per-chunk caps and the modulepreload filter. Kept apart from the features until B4 merges them,
 // so the P5 feature budget and onDemandChunks are unchanged. Empty where the entry is not its own
-// chunk yet: details (K3 moves Details there), suggest (R4's loadSuggest), range (R2's loadRangeRule).
+// chunk yet: details (K3 moves Details there), suggest (R4's loadSuggest). (range, R2's loadRangeRule, is a P5 feature above.)
 // sheets: the sheet modules Details loads on first use today; later: views/later.ts (views/lazy.tsx).
 export const LAZY_ENTRIES = {
   details: /\/src\/islands\/consortium\/views\/details\/Details\.tsx$/, // K3
   sheets: /\/src\/islands\/consortium\/views\/(Add|Swap|Paste|Correction)\.tsx$/, // K3
   later: /\/src\/islands\/consortium\/views\/later\.ts$/, // K3
   suggest: /\/src\/lib\/consortium\/suggest\.ts$/, // R4
-  range: /\/src\/lib\/consortium\/range\.ts$/, // R2
 };
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
 const emptyFeatures = () => Object.fromEntries(Object.keys(P5_FEATURE_ENTRIES).map((k) => [k, []]));

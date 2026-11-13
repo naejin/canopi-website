@@ -22,6 +22,7 @@ export default function Swap({ id }: { id: PlantId }) {
   const pool = store.pool.value;
   const members = store.memberTaxa.value;
   const ctx = store.flagContext.value;
+  const scene = store.flagScene.value;
   const removed = store.removed.value;
   const [all, setAll] = useState(false);
   const [asking, setAsking] = useState<Taxon | null>(null);
@@ -48,7 +49,7 @@ export default function Swap({ id }: { id: PlantId }) {
           {shown.map((a) => {
             const x = byId.get(a.id);
             if (!x) return null;
-            const lines = flagLines(x, a.flags);
+            const lines = flagLines(x, a.flags, scene);
             const asksFirst = asks(a.flags);
             return (
               <li class={asksFirst ? 'flagged' : ''}>
@@ -74,7 +75,7 @@ export default function Swap({ id }: { id: PlantId }) {
       {asking && (
         <Ask
           title={T('swap.ask')}
-          lines={flagLines(asking, alts.find((a) => a.id === asking.id)?.flags ?? []).filter((l) => l.asks).map((l) => l.text)}
+          lines={flagLines(asking, alts.find((a) => a.id === asking.id)?.flags ?? [], scene).filter((l) => l.asks).map((l) => l.text)}
           yes={T('swap.yes')}
           onYes={() => swap(asking)}
           onCancel={() => setAsking(null)}

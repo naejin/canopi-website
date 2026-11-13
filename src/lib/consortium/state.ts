@@ -26,7 +26,8 @@
 // Decoding never throws: a malformed value falls back ("Not sure", no climate, no stage) and a token
 // list that stops mid-token is read up to there and reported as cut.
 import type { ClimateZone, DecodedLink, PhaseOrd, PlantId, ShareState, Site, SiteLookup } from './types.ts';
-import { climateZones, lights, rooms, soils, waters } from './types.ts';
+import { lights, rooms, soils, waters } from './types.ts';
+import { climateZones, siteIdOf, zoneOfSiteId } from './zones.ts';
 
 export const LINK_VERSION = 4;
 export const MAX_CROPS = 3; // "What do you mainly want to grow?" takes up to three (owner, 2026-10-28)
@@ -63,9 +64,9 @@ function b64ToHex(text: string, digits: number): string | null {
   return out;
 }
 
-// A climate id as the site and links write it ('temperate', any case, spaces around) → its zone.
-export const zoneOf = (code: string | null | undefined): ClimateZone | null =>
-  (code ? climateZones.find((z) => z.toLowerCase() === code.trim().toLowerCase()) : undefined) ?? null;
+// A climate id as the site and links write it ('temperate', any case, spaces around) → its zone: the
+// one site-id mapping (zones.ts), under the name the island reads.
+export const zoneOf: (code: string | null | undefined) => ClimateZone | null = zoneOfSiteId;
 const codeZone = new Map(climateZones.map((z) => [GUEST_CODES[z], z] as const));
 
 // The token function for a set of known ids: an id's token is short unless another known id shares
@@ -106,7 +107,7 @@ export function encodeLink(state: ShareState, known: KnownIds, { origin = null }
   const tok = tokens(Object.values(known).flatMap((ids) => [...(ids ?? [])]));
   const list = (ids: Iterable<PlantId>) => [...new Set([...ids].map(tok))].sort().join('');
   const pairs: [string, string][] = [['v', String(LINK_VERSION)]];
-  if (state.climate) pairs.push(['c', state.climate.toLowerCase()]);
+  if (state.climate) pairs.push(['c', siteIdOf(state.climate)]);
   if (state.country) pairs.push(['k', state.country.toUpperCase()]);
   pairs.push(['l', state.site.light], ['s', state.site.soil], ['w', state.site.water], ['m', state.site.room]);
   const crops = [...new Set(state.crops)].slice(0, MAX_CROPS);

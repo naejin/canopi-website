@@ -9,8 +9,8 @@
 // - listGroups: each plant once, under the cell where it starts (owner row "v2 mockup choices");
 // - warningCounts: the warnings a chip counts (low conflicts are not shown on chips, types.ts Flag);
 // - nameOrder: plants by name with one Intl.Collator per page language, shared by every view.
-import type { Flag, JobId, MatrixCell, PhaseOrd, PlantId, Site, SiteKey, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { fits, fold, jobsOf, misfitsBeside, plantsIn, startCell, strata } from '../../../lib/consortium/index.ts';
+import type { Flag, MatrixCell, PhaseOrd, PlantId, Site, SiteKey, Stratum, Taxon } from '../../../lib/consortium/index.ts';
+import { fits, fold, misfitsBeside, plantsIn, startCell, strata } from '../../../lib/consortium/index.ts';
 import { spanOf, spans } from './kit/span.ts';
 
 // Names sort in the page's language ("Äpfel" before "Birne" in German, after "Zitron" in Swedish):
@@ -133,16 +133,6 @@ export function listGroups(members: readonly Taxon[], byName: Order): ListGroup[
   if (none.plants.length) out.push(none);
   for (const g of out) g.plants.sort(byName);
   return out;
-}
-
-// The plant list's Layer / Stage / Job filters (mockup NOTES "All plants"): its layer, a stage it
-// grows in (its span holds the stage), one of its jobs; null filters nothing.
-export interface ListFilters { layer: Stratum | null; stage: PhaseOrd | null; job: JobId | null }
-export function matchesFilters(t: Taxon, f: ListFilters): boolean {
-  if (f.layer !== null && t.stratum?.value !== f.layer) return false;
-  if (f.stage !== null && !spans(t, f.stage)) return false;
-  if (f.job !== null && !jobsOf(t).includes(f.job)) return false;
-  return true;
 }
 
 // The warnings a plant's chip and row count: every flag but a low conflict.

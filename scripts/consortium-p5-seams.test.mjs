@@ -63,3 +63,40 @@ test('the host views mount every stream\'s slot, and PlantMarks names its surfac
   assert.match(view('StageBar.tsx'), /<PlantMarks taxon=\{taxon\} surface=\{tight \? 'chip' : 'row'\} \/>/);
   assert.match(view('PlantMarks.tsx'), /data-mark=\{m\.kind\} data-mark-state=\{m\.state\}/);
 });
+
+// ---- E6 R2: the one site-fit vocabulary (core site-marks.ts siteFitMessages, rules/site-fit.ts) ----
+test('E6 R2 site-fit: one vocabulary of misfits, unknowns and notes; the flags keep the misfits that hold beside the canopy; the site marks are its notes', async () => {
+  const { siteFit, misfitsOf, unknownsOf } = await import('../src/islands/consortium/rules/site-fit.ts');
+  const { siteMarks } = await import('../src/lib/consortium/site-marks.ts');
+  const traits = { sun: true, semi_shade: false, full_shade: false, soil_ph: { min: 7.8, max: 8.4 }, drought_tolerance: 'Medium', moisture_use: null, well_drained: null, height_m: { max: 13.716 }, habit: 'Tree' };
+  const low = taxon({ id: 'low', stratum: { value: 'low', sources: [] }, phases: { start: 'placenta_i', end: 'climax', sources: [] }, traits });
+  const site = { light: 'part', soil: 'acid', water: 'dry', room: 'small' };
+  const ms = core.siteFitMessages(low, site);
+  assert.deepEqual(ms.map((m) => [m.about, m.key, m.asks, m.severity, m.state ?? null]), [
+    ['light', 'misfit.light.part', true, 'warning', null],
+    ['soil', 'misfit.soil.acid', true, 'warning', null],
+    ['water', 'water.dryMonths', false, 'note', 'dry_months'],
+    ['room', 'room.tall', false, 'note', 'tall'],
+  ]);
+  assert.deepEqual(ms[1].vars, { min: 7.8, max: 8.4 }, 'the soil misfit names the plant\'s pH range');
+  assert.deepEqual(ms[3].vars, { m: 13.7 }, 'the height to a tenth');
+  assert.deepEqual(core.siteFitMessages(taxon({ traits: { ...traits, soil_ph: { min: 7.8, max: null } } }), site)[1].vars, { min: 7.8, max: '?' }, 'a missing end is "?"');
+  // What the check could not decide: neither a misfit nor a note.
+  const unknown = taxon({ traits: { sun: null, habit: 'Climber' } });
+  const um = core.siteFitMessages(unknown, { light: 'sun', soil: 'unsure', water: 'unsure', room: 'large' });
+  assert.deepEqual(unknownsOf(um).map((m) => m.key), ['misfit.unk.light', 'misfit.unk.climber']);
+  assert.deepEqual(misfitsOf(um), []);
+  // Beside the members: on a sunny site a lower plant under a member's canopy is not a light misfit.
+  const sunny = { ...site, light: 'sun', soil: 'unsure' };
+  const shy = taxon({ id: 'shy', stratum: { value: 'low', sources: [] }, phases: { start: 'placenta_i', end: 'climax', sources: [] }, traits: { ...traits, sun: false, semi_shade: true } });
+  const canopy = taxon({ id: 'tall', stratum: { value: 'emergent', sources: [] }, phases: { start: 'placenta_i', end: 'climax', sources: [] } });
+  assert.deepEqual(misfitsOf(siteFit(shy, sunny, [])).map((m) => m.key), ['misfit.light.sun'], 'alone: a light misfit');
+  assert.deepEqual(misfitsOf(siteFit(shy, sunny, [canopy])), [], 'under the canopy: none');
+  assert.deepEqual(siteFit(shy, sunny, [canopy]).map((m) => m.key), ['water.dryMonths', 'room.tall'], 'the notes stay');
+  // The site marks are the notes of the same messages: full words in Details, "Short" elsewhere.
+  const c = { ...ctx(), site };
+  assert.deepEqual(siteMarks(low, c, 'details').map((m) => [m.kind, m.key, m.state]), [['water', 'water.dryMonths', 'dry_months'], ['room', 'room.tall', 'tall']]);
+  assert.deepEqual(siteMarks(low, c, 'row').map((m) => m.key), ['water.dryMonthsShort', 'room.tallShort']);
+  assert.deepEqual(siteMarks(low, c, 'chip'), []);
+  assert.equal('vars' in siteMarks(low, c, 'row')[0], false, 'a note without vars carries none');
+});

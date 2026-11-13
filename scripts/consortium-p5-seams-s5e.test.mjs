@@ -27,5 +27,9 @@ test('S5e ships nothing in P5: no native or soil-likely module, slot or reader',
 });
 
 test('the location step reads no soil tile until P5.2 (soil likely) uses it', () => {
-  assert.match(view('location/location.tsx'), /lookupSite\(lat, lon, tileSource\(\), DEFAULT_RADIUS, \{ soil: false \}\)/);
+  // The lookup sits in views/location/location.tsx until S2 moves it to state/location.ts: either file,
+  // in code (comments left out), not in a comment.
+  const code = ['views/location/location.tsx', 'state/location.ts'].map((f) => new URL(`../src/islands/consortium/${f}`, import.meta.url)).filter((u) => existsSync(u))
+    .map((u) => readFileSync(u, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')).join('\n');
+  assert.match(code, /lookupSite\(lat, lon, tileSource\(\), DEFAULT_RADIUS, \{ soil: false \}\)/);
 });

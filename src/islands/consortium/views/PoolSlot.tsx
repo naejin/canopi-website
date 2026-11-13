@@ -12,11 +12,14 @@
 // for a climate that borrows its plants once the site has a climate, or when it has no list:
 // which lists are borrowed, how many plants the site's observed climate keeps, and the "nothing
 // fits" state. Without a location, a curated climate shows nothing here, as in P2. (store.ts
-// siteClimate; the range rule itself loads with the panel's chunk, store.ts rangeRule.)
+// siteClimate; the range rule loads with its own chunk, store.ts rangeRule. The rule of "can Suggest
+// now" and the list a climate has: rules/suggest-block.ts.)
 import { effect } from '@preact/signals';
 import type { ClimateZone } from '../../../lib/consortium/index.ts';
 import { hasPlants } from '../../../lib/consortium/index.ts';
 import { climate, location, pool, rangeFailed, rangeRule, siteClimate } from '../store.ts';
+import * as rule from '../rules/suggest-block.ts';
+import type { SuggestBlock, SuggestScene } from '../rules/suggest-block.ts';
 import { backToConsortium, canGoBack, pendingClimate, pendingSuggest, zoneOf } from '../memory.ts';
 import { T } from '../strings.ts';
 import { lazyPart } from './lazy.tsx';
@@ -26,12 +29,19 @@ import { zoneName } from './kit/names.ts';
 const panel = lazyPart(() => import('./pool/pool.tsx').then((m) => m.PoolPanel), { quiet: true });
 
 const curated = (): ClimateZone[] => page().climates.flatMap((c) => zoneOf(c) ?? []);
-const borrows = (z: ClimateZone): boolean => hasPlants(z, curated()) && !curated().includes(z);
-export const needsSite = (z: ClimateZone): boolean => borrows(z) && !siteClimate.value;
-// A borrowed climate with a location whose range rule did not load (store.ts rangeFailed): the same
-// reason holds (only the filter fits a borrowed pool to the place), so no palette either; Reload.
-const needsRule = (z: ClimateZone): boolean => borrows(z) && rangeFailed.value;
-export const hasList = (z: ClimateZone): boolean => hasPlants(z, curated()) && !needsSite(z) && !needsRule(z);
+// Nothing fits (the chosen climate's list, at the site; rules/suggest-block.ts nothingFits).
+const nothingFits = (): boolean => rule.nothingFits(pool.value, location.value, rangeRule.value);
+// What the rule reads, from the store's signals: getters, so a view or effect calling these reads (and
+// tracks) only the signals the rule reaches, and the range check over the pool runs only when asked.
+const scene: SuggestScene = {
+  get curated() { return curated(); },
+  get siteClimate() { return siteClimate.value; },
+  get rangeFailed() { return !!rangeFailed.value; },
+  get nothingFits() { return nothingFits(); },
+};
+const needsSite = (z: ClimateZone): boolean => rule.needsSite(z, scene);
+const needsRule = (z: ClimateZone): boolean => rule.needsRule(z, scene);
+export const hasList = (z: ClimateZone): boolean => rule.hasList(z, scene);
 // The card's pill (hand-off H-S5c-5: Start.tsx Climates reads it): Ready, Needs your location, or Not covered yet.
 export const cardPill = (z: ClimateZone): { label: string; ready: boolean } =>
   hasList(z) ? { label: T('start.climate.ready'), ready: true } : { label: needsSite(z) ? T('range.needsSite.pill') : T('start.climate.notYet'), ready: false };
@@ -44,18 +54,11 @@ const toLocation = () => {
   target.scrollIntoView({ block: 'center' });
   target.focus();
 };
-// Nothing fits (the chosen climate's list, at the site): Start then offers no "Suggest plants" (it could
-// only give an empty matrix); the panel's "Search all plants" is the step.
-export const nothingFits = (): boolean => !!rangeRule.value?.none(pool.value, location.value);
-// The one rule for "can Suggest now" (seam review 1): why a Suggest for climate z would refuse, or null
-// when it can act. Start's "Suggest plants" and the empty matrix's "Suggest a start" both read it, and
-// show the reason (WhyNoSuggest) in place of a button that could only refuse. These are the lasting
-// refusals of store.suggestMembers; its passing ones (the pool or, with a site climate, the range rule
-// still being read, which leave store.pool null; a kept guest's list still being read, which does not)
-// are waited for: both buttons call memory.requestSuggest, which runs the suggestion once they are read.
-export type SuggestBlock = 'noList' | 'needsSite' | 'needsRule' | 'nothingFits';
-export const suggestBlock = (z: ClimateZone): SuggestBlock | null =>
-  !hasPlants(z, curated()) ? 'noList' : needsSite(z) ? 'needsSite' : needsRule(z) ? 'needsRule' : nothingFits() ? 'nothingFits' : null;
+// The one rule for "can Suggest now" (seam review 1; rules/suggest-block.ts): why a Suggest for climate
+// z would refuse, or null when it can act. Start's "Suggest plants" and the empty matrix's "Suggest a
+// start" both read it, and show the reason (WhyNoSuggest) in place of a button that could only refuse;
+// both call memory.requestSuggest, which waits for what is still being read.
+export const suggestBlock = (z: ClimateZone): SuggestBlock | null => rule.suggestBlock(z, scene);
 // A Suggest pressed while the rule loaded, for a site where nothing fits: cleared, so the reader stays
 // on Start with the nothing-fits state (store.ts suggestMembers refuses it too).
 // So is one for a climate that needs the site's location or the range rule (it would run unasked once
@@ -92,7 +95,7 @@ export function WhyNoSuggest({ zone, block }: { zone: ClimateZone; block: Sugges
 }
 
 // The needs-location line (Start, and the empty matrix's Suggest: hand-off H-S5c-6, Matrix.tsx EmptyNotice).
-export function NeedsSite({ zone }: { zone: ClimateZone }) {
+function NeedsSite({ zone }: { zone: ClimateZone }) {
   return (
     <p class="ct-notice" role="status" data-needs-site>
       {T('range.needsSite', { climate: zoneName(zone) })}{' '}

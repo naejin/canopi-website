@@ -5,9 +5,10 @@
 // inside the computed bodies, the core calls they own (matrix: S1 lib/consortium/matrix.ts; flags:
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
-import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
-import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, loadMarkProviders, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
-import type { RangeRule } from './views/pool/pool.tsx';
+import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
+import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
+import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
+import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
@@ -84,9 +85,9 @@ export const pool = computed<Taxon[] | null>(() => {
   const p = c ? pools.value[c] ?? null : null;
   return p && siteClimate.value && !rangeRule.value && !rangeFailed.value ? null : p;
 });
-// The range rule (core range.ts, owner answer 2) arrives with the pool feature chunk, loaded only once
-// the site location has a climate, so it stays off the first run (decision row "Island JavaScript
-// budget for P5"). The page asks it nothing without one.
+// The range rule (core range.ts, owner answer 2) arrives with its own chunk (core marks.ts
+// loadRangeRule), loaded only once the site location has a climate, so it stays off the first run
+// (decision row "Island JavaScript budget for P5"). The page asks it nothing without one.
 export const rangeRule = signal<RangeRule | null>(null);
 // The rule's chunk did not load (rangeBroken, once per page: a browser remembers a failed module URL,
 // so the import is never tried again and Reload is the only retry, one toast for the failure).
@@ -102,12 +103,21 @@ const withRule = <T>(p: Promise<T>): Promise<T> => (siteClimate.peek() && !range
 export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
 effect(() => {
   if (!siteClimate.value || rangeLoad) return;
-  rangeLoad = import('./views/pool/pool.tsx').then((m) => { rangeRule.value = m.rangeRule; }, (err: unknown) => {
+  rangeLoad = loadRangeRule().then((rule) => { rangeRule.value = rule; }, (err: unknown) => {
     console.error(err);
     rangeBroken.value = true;
-    showToast(T('range.unavailable'), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
+    chunkToast('range.unavailable');
   });
 });
+// One toast, with Reload, for the P5 chunks that did not load: the range rule's chunk is also a static
+// import of the mark providers' chunk, so one missing file (offline, or a deploy since the page loaded)
+// fails both; the notices still say each (PoolSlot, Matrix.tsx Notices).
+let chunkToasted = false;
+function chunkToast(key: string): void {
+  if (chunkToasted) return;
+  chunkToasted = true;
+  showToast(T(key), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
+}
 // What suggestions and lists draw from (P5 S5c, owner answer 2): the pool without the plants outside
 // their observed range at the site location (core range.ts withinRange); the pool itself without one.
 // Members stay: a plant added anyway is never dropped from a list it is in.
@@ -197,7 +207,7 @@ effect(() => {
     console.error(`Consortium: the plant marks did not load: ${(err as Error).message}`);
     if (marksBroken.peek()) return;
     marksBroken.value = true;
-    showToast(T('marks.unavailable'), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
+    chunkToast('marks.unavailable');
   });
 });
 // The warnings on members: conflicts, site misfits, invasive and toxicity (core suggest.ts flagsOf).
@@ -205,6 +215,15 @@ export const flags = computed<Flag[]>(() => {
   if (!pool.value) return [];
   return flagsOf(memberTaxa.value, flagContext.value);
 });
+
+// The flags a plant carries (Add, Swap, Paste, Details): a member's from the flags above, any other
+// plant's beside the members.
+export function flagsOfPlant(t: Taxon): Flag[] {
+  if (members.value.includes(t.id)) return flags.value.filter((f) => f.id === t.id);
+  return flagsFor(t, memberTaxa.value, flagContext.value);
+}
+// What the flags' words read (views/kit/flags.ts flagLines; rules/site-fit.ts FlagScene).
+export const flagScene = computed<FlagScene>(() => ({ site: site.value, members: memberTaxa.value, country: country.value.code, taxonOf }));
 
 // ---- actions (S1) ----
 
@@ -271,10 +290,13 @@ export function suggestMembers(): boolean {
   const keep = [...new Set([...crops.value, ...kept.value])];
   const rule = rangeRule.value;
   // Nothing fits the site: no suggestion (it could only be an empty matrix); Start shows why.
-  if (rule?.none(p, location.value)) return false;
+  if (nothingFits(p, location.value, rule)) return false;
   // A borrowed pool unfiltered (no site climate, or the rule's chunk failed): no suggestion, since only
-  // the range filter fits it to a place (UX audit fix 1; fix review 29b709e, 2).
-  if ((!siteClimate.value || !rule) && p.some((t) => t.estimate)) return false;
+  // the range filter fits it to a place (UX audit fix 1; fix review 29b709e, 2). The rule Start reads
+  // (rules/suggest-block.ts), over the export's curated climates; with a pool and a site climate, a
+  // missing rule is a failed one (store.pool waits for it otherwise).
+  const scene = { curated: source.peek()?.info().climates ?? [], siteClimate: siteClimate.value, rangeFailed: !rule, nothingFits: false };
+  if (needsSite(climate.value!, scene) || needsRule(climate.value!, scene)) return false;
   const s = suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
   kept.value = keep;
   members.value = s.members;

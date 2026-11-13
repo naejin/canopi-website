@@ -13,7 +13,8 @@ import type { JobId, PhaseOrd, Stratum } from '../../../lib/consortium/index.ts'
 import { jobIds, jobsOf, strata } from '../../../lib/consortium/index.ts';
 import { kept, memberTaxa } from '../store.ts';
 import { P, T } from '../strings.ts';
-import { PHASE_ORDS, listGroups, matchesFilters, matchesQuery, startCounts, type ListFilters } from './tracks.ts';
+import { PHASE_ORDS, listGroups, matchesQuery, startCounts } from './tracks.ts';
+import { filtersQuery, listMatch, type ListFilters } from '../rules/list-query.ts';
 import { Marks, StageBar, byName, openDetails, openSwap, warnings } from './StageBar.tsx';
 import { layerName, nameOf, phasePlain, phaseTerm } from './kit/names.ts';
 import { removeMember } from '../store.ts';
@@ -63,9 +64,10 @@ export function PlantList() {
   const all = listGroups(taxa, byName);
   const counts = startCounts(all);
   const warnedN = taxa.filter((t) => (w.get(t.id) ?? 0) > 0).length;
+  const passes = listMatch(filtersQuery(filters));
   const groups = all.map((g) => ({
     ...g,
-    plants: g.plants.filter((t) => (!warnedOnly || (w.get(t.id) ?? 0) > 0) && (!keptOnly || keep.has(t.id)) && matchesFilters(t, filters)
+    plants: g.plants.filter((t) => (!warnedOnly || (w.get(t.id) ?? 0) > 0) && (!keptOnly || keep.has(t.id)) && passes(t)
       && matchesQuery([nameOf(t), t.canonical_name, ...Object.values(t.names).filter((n): n is string => !!n)], query)),
   })).filter((g) => g.plants.length);
   const visible = startCounts(groups); // per start cell, the plants the filters leave

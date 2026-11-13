@@ -114,6 +114,38 @@ test('withinRange: leaves out only the plants outside, never a kept one; the sam
   assert.deepEqual(core.withinRange(pool, at(0, 25), ['c']).map((t) => t.id), ['a', 'b', 'c'], 'a kept plant stays, outside or not');
 });
 
+// ---- "can Suggest now" (E6 R2, rules/suggest-block.ts): the rule views/PoolSlot.tsx and the store read ----
+
+test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that order; hasList; nothingFits once the rule is in; the pool counts', async () => {
+  const rules = await import('../src/islands/consortium/rules/suggest-block.ts');
+  const rule = await core.loadRangeRule();
+  assert.equal(rule.withinRange, core.withinRange, 'loadRangeRule gives the core rule');
+  assert.equal(await core.loadRangeRule(), rule, 'loaded once');
+  const scene = (over = {}) => ({ curated: ['Mediterranean', 'Temperate'], siteClimate: false, rangeFailed: false, nothingFits: false, ...over });
+  // Boreal borrows Temperate (NEAREST_LISTS); Tropical's nearest lists are not curated here.
+  const borrowed = 'Boreal', none = 'Tropical';
+  assert.ok(core.hasPlants(borrowed, scene().curated) && !core.hasPlants(none, scene().curated), 'fixture climates');
+  assert.equal(rules.suggestBlock(none, scene({ siteClimate: true, rangeFailed: true, nothingFits: true })), 'noList');
+  assert.equal(rules.suggestBlock(borrowed, scene({ rangeFailed: true, nothingFits: true })), 'needsSite');
+  assert.equal(rules.suggestBlock(borrowed, scene({ siteClimate: true, rangeFailed: true, nothingFits: true })), 'needsRule');
+  assert.equal(rules.suggestBlock(borrowed, scene({ siteClimate: true, nothingFits: true })), 'nothingFits');
+  assert.equal(rules.suggestBlock(borrowed, scene({ siteClimate: true })), null);
+  assert.equal(rules.suggestBlock('Temperate', scene({ rangeFailed: true })), null, 'a curated climate needs neither the location nor the rule');
+  assert.deepEqual(['Temperate', borrowed, none].map((z) => rules.hasList(z, scene())), [true, false, false]);
+  assert.deepEqual(['Temperate', borrowed, none].map((z) => rules.hasList(z, scene({ siteClimate: true }))), [true, true, false]);
+  assert.equal(rules.needsSite(borrowed, scene()), true);
+  assert.equal(rules.needsRule(borrowed, scene({ siteClimate: true, rangeFailed: true })), true);
+  // nothingFits: a list with plants, none holding the site, once the rule is in.
+  const pool = [taxon({ id: 'a' }), taxon({ id: 'c', climate: { ...taxon().climate, tminCold: { low: 5, median: 9, high: 15, count: 9, basis: 'thinned_cells' } } })];
+  assert.equal(rules.nothingFits(pool, at(-30, 25), rule), true, 'colder than every plant');
+  assert.equal(rules.nothingFits(pool, at(-30, 25), null), false, 'not before the rule arrives');
+  assert.equal(rules.nothingFits(pool, at(0, 25), rule), false);
+  assert.equal(rules.nothingFits([], at(-30, 25), rule), false, 'an empty list is not "nothing fits"');
+  assert.equal(rules.nothingFits(pool, null, rule), false, 'no site climate: nothing is checked');
+  assert.deepEqual(rules.poolCounts(['inside', 'edge', 'outside', 'unknown', 'edge']), { fit: 4, edge: 2 });
+  assert.deepEqual(rules.poolCounts([]), { fit: 0, edge: 0 });
+});
+
 // ---- nearest placements ----
 
 test('placeFor: a curated climate uses its own placement; an uncovered one borrows the first of its nearest lists, marked estimate', () => {

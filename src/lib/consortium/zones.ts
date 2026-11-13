@@ -4,12 +4,11 @@
 // (src/lib/correction.mjs CLIMATES) and the site list (src/data/climates.ts) read this file; the
 // installer (scripts/install-consortium.mjs, plain node) keeps a copy that
 // scripts/consortium-zones.test.mjs checks equal.
-import { climateZones, type ClimateZone } from './types.ts';
 
-// The list itself is declared in types.ts (a frozen seam other streams own); this file is where the
-// order and the site-id mapping are read from.
-export { climateZones };
-export type { ClimateZone };
+// The export's climate zones in canopi-data order (climates.ord). The site names them in lowercase
+// ('tropical', src/data/climates.ts); the mapping happens here, at the edge, never elsewhere in the core.
+export const climateZones = ['Tropical', 'Subtropical', 'Arid', 'Mediterranean', 'Temperate', 'Continental', 'Boreal'] as const;
+export type ClimateZone = (typeof climateZones)[number];
 
 // A zone's site id: the export id in lowercase ('Temperate' → 'temperate').
 export type SiteId = Lowercase<ClimateZone>;
