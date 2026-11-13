@@ -8,7 +8,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T15:45:05Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:21:32Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T16:08:57Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:d9304cade1f8f1ec
-    last_modified: 2026-11-13T15:42:27Z
+    digest: sha256:8eb89cd2f17732f9
+    last_modified: 2026-11-13T16:08:22Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -43,8 +43,8 @@ sources:
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:e0ba6cbb67f316d8
-    last_modified: 2026-11-13T14:45:18Z
+    digest: sha256:c67f5c03a6148b9a
+    last_modified: 2026-11-13T16:08:12Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs

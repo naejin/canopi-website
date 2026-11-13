@@ -5,7 +5,7 @@ description: "The consortium island's state layer under src/islands/consortium/s
 tags: [consortium, state]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T15:45:05Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:45Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T16:08:56Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
@@ -15,8 +15,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:0e7baa0e285b6f28
-    last_modified: 2026-11-13T15:32:49Z
+    digest: sha256:c639f9179f641ff0
+    last_modified: 2026-11-13T16:08:25Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs

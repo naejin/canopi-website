@@ -238,9 +238,9 @@ export function onDemandChunks(graph, entries, roles, size = () => 0) {
 // can draw) with its static imports. Nothing else reached only through import() is preloaded: not the
 // sheets, the plant dialog, the views after the matrix, suggest, the P5 features or MapLibre (one rule,
 // not a role list). The module scripts themselves are already loaded by their <script src>.
-// awaited: chunks the entry imports with import() and awaits before its first render (the browser-test
-// hook, in the browser-test build only: without its preload the page sat empty and not busy for a
-// round trip, which the specs' loadState read as ready).
+// awaited: chunks the entry imports with import() and awaits before its first render, preloaded too
+// (no build passes any now: the browser-test build stopped preloading its test hook at the E6 chunk-5
+// merge, since #ct-root stays aria-busy until the island renders).
 export function modulepreloadChunks(graph, html, awaited = []) {
   const scripts = [];
   const inline = [];

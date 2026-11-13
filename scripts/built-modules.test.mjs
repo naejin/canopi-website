@@ -58,9 +58,9 @@ test('chunkRoles: the lazy island parts by their entry module, in the one role l
   assert.deepEqual(chunkRoles({ ...bundle, '_astro/test-hook.t.js': chunk('_astro/test-hook.t.js', `${root}/src/islands/consortium/test-hook.ts`) }).testHook, ['/_astro/test-hook.t.js'], 'the browser-test hook by its module');
 });
 
-// K3 hand-off: once Correction imports the drafts that live in the plant dialog's chunk, Rollup drops
-// that chunk's facade (facadeModuleId null; measured on the B4 build, 2026-11-13). The chunk still
-// holds Details.tsx, so it keeps its role.
+// K3 hand-off: when another chunk imports from the plant dialog's chunk, Rollup drops that chunk's
+// facade (facadeModuleId null; measured on the B4 build, 2026-11-13, when Correction imported the
+// drafts). The chunk still holds Details.tsx, so it keeps its role.
 test('chunkRoles: a chunk holding a role\'s entry module reached only through import() keeps the role without being its facade; a facade-only chunk too; a module also imported statically gives no role', () => {
   const root = '/w/k3';
   const details = `${root}/src/islands/consortium/views/details/Details.tsx`;
@@ -193,7 +193,7 @@ test('modulepreloadChunks: the first-run closure, the loader with the glue and t
   });
 });
 
-test('modulepreloadChunks: in the browser-test build, the hook the entry awaits before its first render is preloaded too', () => {
+test('modulepreloadChunks: a chunk named in `awaited` is preloaded too, and only when named', () => {
   const files = { ...PAGE_FILES, 'main.c.js': `${PAGE_FILES['main.c.js']}import("./test-hook.z.js");`, 'test-hook.z.js': 'import{h}from"./main.c.js";window.__ctTest={};' };
   withBuild(files, PAGE_HTML, (graph) => {
     assert.deepEqual(modulepreloadChunks(graph, PAGE_HTML, ['/_astro/test-hook.z.js']), ['/_astro/chrome.b.js', '/_astro/load.e.js', '/_astro/main.c.js', '/_astro/preact.d.js', '/_astro/test-hook.z.js']);
