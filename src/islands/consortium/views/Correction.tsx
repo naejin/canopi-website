@@ -5,14 +5,14 @@
 // placement is an estimate, and the page language. It posts JSON to /api/correction
 // (src/lib/correction.mjs; scripts/correction.test.mjs), which mails the owner; nothing is
 // kept on the server. Offline (design check §5): "Not sent: you seem offline. Your text is kept." with
-// Try again. What the reader writes is kept per plant (Details.tsx `drafts`) until it is sent.
+// Try again. What the reader writes is kept per plant (views/kit/correction.ts `drafts`) until it is sent.
 // Words: the correction.* family (S3 block of the locale files), passed by ConsortiumPage.astro.
 import { useEffect, useState } from 'preact/hooks';
 import { pageLang, T } from '../strings.ts';
 import { LIMITS } from '../../../lib/correction.mjs';
 import { EMAIL_RE } from '../../../lib/contact.mjs';
 import { climate as siteClimate, taxonOf } from '../store.ts';
-import { drafts, type CorrectionDraft, type CorrectionField } from './Details.tsx';
+import { drafts, type CorrectionDraft, type CorrectionField } from './kit/correction.ts';
 
 const ENDPOINT = '/api/correction';
 // The server's limits, as maxlength.

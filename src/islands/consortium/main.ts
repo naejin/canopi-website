@@ -1,7 +1,7 @@
 // The consortium island's entry (commit 0 of P2; stream S1 owns it from here). ConsortiumPage.astro
-// imports it from its page script. It reads #ct-data, renders App into #ct-root (replacing the static
-// loading line) and opens the database at once, in parallel with the first render (design check A2),
-// so Start works while the plant list loads. Once open, the database is wrapped in the PlantSource
+// imports it from its page script. It reads #ct-data (views/kit/page.ts PageData), renders App into
+// #ct-root (replacing the static loading line) and opens the database at once, in parallel with the
+// first render (design check A2), so Start works while the plant list loads. Once open, the database is wrapped in the PlantSource
 // (data/sqlite-source.ts) and set on the store, which then reads the chosen climate's plants
 // (store.watchPools). The other streams add their wiring to the store and views, not here.
 import { h, render } from 'preact';
@@ -12,22 +12,9 @@ import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App } from './App.tsx';
 import { load, setPageCountries, setSource, watchPools } from './store.ts';
 import { zoneOf } from '../../lib/consortium/index.ts';
-import { setStrings, type Strings } from './strings.ts';
-import type { DbRef } from './data/bytes.ts';
+import { setStrings } from './strings.ts';
+import { pageData, type PageData } from './views/kit/page.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
-
-// What the page hands the island (ConsortiumPage.astro, checked by scripts/check-built-site.mjs).
-export interface PageData {
-  lang: string;
-  strings: Strings;
-  releaseId: string;
-  db: DbRef;
-  climates: string[]; // site ids, lowercase ('tropical'), in the export's order
-  images: Record<string, string>; // plant uuid → self-hosted photo path
-  countries?: { checked: string; unchecked: string }; // space-separated ISO codes (store.knownCountries)
-  guide: { url: string; lang: string } | null;
-}
-
 
 // The loader and the sqlite-wasm glue are a chunk of their own (design check §8 leaves it out of the
 // island's 60 KB budget); its import starts at once, beside the first render, and a failed import
@@ -67,9 +54,8 @@ async function open(data: PageData): Promise<void> {
 }
 
 const root = document.getElementById('ct-root');
-const raw = document.getElementById('ct-data')?.textContent;
-if (root && raw) {
-  const data = JSON.parse(raw) as PageData;
+const data = pageData() as PageData | null;
+if (root && data) {
   setStrings(data.strings, data.lang);
   setPageCountries(data.countries);
   root.textContent = '';

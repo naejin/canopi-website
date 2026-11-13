@@ -18,33 +18,13 @@ import { P, T, pageLang } from '../strings.ts';
 import { LocationSlot } from './LocationSlot.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from './PoolSlot.tsx';
 import {
-  backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, plantName, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
+  backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
 } from '../memory.ts';
-
-// ---- page data (ConsortiumPage.astro #ct-data) ----
-export interface StartData { zones: { id: string; label: string; places: string }[]; contact: string; site: string }
-let pageData: { start: StartData; climates: string[] } | null = null;
-export function page(): { start: StartData; climates: string[] } {
-  if (!pageData) {
-    try {
-      const d = JSON.parse(document.getElementById('ct-data')?.textContent ?? '{}') as Partial<{ start: StartData; climates: string[] }>;
-      pageData = { start: d.start ?? { zones: [], contact: '/', site: location.href }, climates: d.climates ?? [] };
-    } catch {
-      pageData = { start: { zones: [], contact: '/', site: '' }, climates: [] };
-    }
-  }
-  return pageData;
-}
-export const zoneLabel = (z: ClimateZone | null): string => (z ? page().start.zones.find((x) => x.id === z.toLowerCase())?.label ?? z : '');
+import { page } from './kit/page.ts';
+import { basisLine, countryName, nameOf, zoneName } from './kit/names.ts';
 
 // ---- words ----
-let regionNames: Intl.DisplayNames | null = null;
-export function countryName(code: string): string {
-  try { regionNames ??= new Intl.DisplayNames([pageLang(), 'en'], { type: 'region' }); return regionNames.of(code) ?? code; } catch { return code; }
-}
 const options: Record<SiteKey, readonly string[]> = { light: lights, soil: soils, water: waters, room: rooms };
-// "light: not sure · acid soil · …": what the matrix is based on.
-export const basisLine = (s: Site): string => (['light', 'soil', 'water', 'room'] as SiteKey[]).map((k) => T(`site.basis.${k}.${s[k]}`)).join(' · ');
 
 // Search folding: lower case, Latin/Greek/Cyrillic marks stripped (S1's A6 fold, kept small here so
 // the start view does not pull the data adapter into the island chunk).
@@ -54,7 +34,7 @@ function cropSearch(list: readonly Taxon[], q: string, lang: string, skip: Reado
   if (!f) return [];
   const rank = (t: Taxon) => {
     let best = 9;
-    for (const n of [plantName(t, lang), t.names.en ?? '', t.canonical_name]) {
+    for (const n of [nameOf(t), t.names.en ?? '', t.canonical_name]) {
       const x = fold(n);
       const at = x.indexOf(f);
       if (at === 0) best = Math.min(best, 0);
@@ -63,7 +43,7 @@ function cropSearch(list: readonly Taxon[], q: string, lang: string, skip: Reado
     return best;
   };
   return list.filter((t) => t.role === 'crop' && !skip.has(t.id)).map((t) => [t, rank(t)] as const).filter(([, r]) => r < 9)
-    .sort((a, b) => a[1] - b[1] || plantName(a[0], lang).localeCompare(plantName(b[0], lang), lang)).slice(0, max).map(([t]) => t);
+    .sort((a, b) => a[1] - b[1] || nameOf(a[0]).localeCompare(nameOf(b[0]), lang)).slice(0, max).map(([t]) => t);
 }
 
 // ---- the country line ----
@@ -176,27 +156,27 @@ function Crops({ zone }: { zone: ClimateZone }) {
   return (
     <section class="ct-step ct-panel" aria-labelledby="ct-crops-h">
       <h2 class="ct-step-title" id="ct-crops-h">{T('crops.question')}</h2>
-      <p class="ct-muted ct-step-lede">{T('crops.intro', { max: MAX_CROPS, climate: zoneLabel(zone) })}</p>
+      <p class="ct-muted ct-step-lede">{T('crops.intro', { max: MAX_CROPS, climate: zoneName(zone) })}</p>
       {!list ? <p class="status-line" aria-busy="true">{T('load.plants')}</p> : (
         <>
           <div class="ct-chips" role="group" aria-label={T('crops.forExample')}>
             <span class="ct-muted ct-chips-label">{T('crops.forExample')}</span>
             {shown.map((t) => (
               <button type="button" class="ct-chip" aria-pressed={chosen.includes(t.id) ? 'true' : 'false'} disabled={!chosen.includes(t.id) && full} onClick={() => toggle(t.id)}>
-                {plantName(t, lang)} <i class="ct-sci">{t.canonical_name}</i>
+                {nameOf(t)} <i class="ct-sci">{t.canonical_name}</i>
               </button>
             ))}
           </div>
           <p class="ct-muted ct-crops-count" aria-live="polite">{full ? T('crops.limit', { max: MAX_CROPS }) : P('crops.count', chosen.length, { max: MAX_CROPS })}</p>
           <div class="ct-crop-search">
-            <input type="search" value={q} aria-label={T('crops.search', { climate: zoneLabel(zone) })} placeholder={T('crops.search', { climate: zoneLabel(zone) })} disabled={full} onInput={(e) => setQ((e.currentTarget as HTMLInputElement).value)} />
+            <input type="search" value={q} aria-label={T('crops.search', { climate: zoneName(zone) })} placeholder={T('crops.search', { climate: zoneName(zone) })} disabled={full} onInput={(e) => setQ((e.currentTarget as HTMLInputElement).value)} />
           </div>
           {q.trim() && (
             hits.length ? (
               <ul class="ct-hits" aria-label={T('crops.results')}>
-                {hits.map((t) => <li><button type="button" class="ct-hit" onClick={() => { toggle(t.id); setQ(''); }}>{plantName(t, lang)} <i class="ct-sci">{t.canonical_name}</i></button></li>)}
+                {hits.map((t) => <li><button type="button" class="ct-hit" onClick={() => { toggle(t.id); setQ(''); }}>{nameOf(t)} <i class="ct-sci">{t.canonical_name}</i></button></li>)}
               </ul>
-            ) : <p class="ct-muted" role="status">{T('crops.noHit', { q: q.trim(), climate: zoneLabel(zone) })}</p>
+            ) : <p class="ct-muted" role="status">{T('crops.noHit', { q: q.trim(), climate: zoneName(zone) })}</p>
           )}
         </>
       )}
@@ -241,8 +221,8 @@ function StartNotices() {
       {n.cut && <p class="ct-notice" role="status">{T('share.cut')}</p>}
       {n.failed && <p class="ct-notice" role="status">{T('share.failed')}</p>}
       {n.oldSave && <p class="ct-notice" role="status">{T('start.oldSave')}</p>}
-      {n.guideMissing && <p class="ct-notice" role="status">{T('start.guideMissing', { name: n.guideMissing, climate: zoneLabel(climate.value) })}</p>}
-      {t && <p class="ct-muted" role="status">{T('start.guideKept', { name: plantName(t, pageLang()) })}</p>}
+      {n.guideMissing && <p class="ct-notice" role="status">{T('start.guideMissing', { name: n.guideMissing, climate: zoneName(climate.value) })}</p>}
+      {t && <p class="ct-muted" role="status">{T('start.guideKept', { name: nameOf(t) })}</p>}
     </>
   );
 }
@@ -251,7 +231,7 @@ function Head() {
   const n = members.value.length;
   return (
     <div class="ct-result-head">
-      <h2 class="ct-result-title">{T('start.yours')} <span class="ct-muted ct-result-sub">{P('start.count', n)} · {zoneLabel(climate.value)}</span></h2>
+      <h2 class="ct-result-title">{T('start.yours')} <span class="ct-muted ct-result-sub">{P('start.count', n)} · {zoneName(climate.value)}</span></h2>
       <p class="ct-basis">
         <span>{basisLine(site.value)}</span>
         <button type="button" class="link-button ct-link" onClick={changeSite}>{T('start.changeSite')}</button>

@@ -13,130 +13,47 @@
 //
 // Sheets are native <dialog>s opened with showModal (focus moves in, the page behind is inert, Escape
 // closes). Details and the toast ship with the island; Correction, Swap, Add, Search and Paste are
-// loaded when first opened, so the island stays within its JS budget (design check §8).
+// loaded when first opened, so the island stays within its JS budget (design check §8). What the
+// sheets share (the frame, the ask, the stage bar, the warnings in words, the shared words) is in
+// views/kit/, which they import instead of this module (E6 design check: cycle C4).
 //
 // Owner rows (knowledge/decisions/consortium-user-decisions.md): warn rather than remove dangerous
 // information; Add and Swap never ask about invasiveness, and "not checked in {country}" is said once
 // per view and in details, never as a chip; a guest added from another climate's list is labelled
 // "From the {climate} list"; pairings are yield-gain field trials only (no companion folklore).
-import type { ComponentChildren, ComponentType } from 'preact';
+import type { ComponentType } from 'preact';
 import { h } from 'preact';
 import { effect } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import * as store from '../store.ts';
-import { addMembers, closeSheet, openSheet, removeMember, sheetCell, showToast, swapMember, taxonOf, toggleKeep } from '../store.ts';
-import { P, T, nameOf, pageLang } from '../strings.ts';
-import type { ClimateZone, Details as PlantFacts, Flag, Labels, Locale, PlantId, Site, Taxon } from '../../../lib/consortium/index.ts';
-import { fits, flagsFor, jobsOf, misfitsBeside, pairings, phaseOrd, phases, placementZone } from '../../../lib/consortium/index.ts';
+import { closeSheet, openSheet, removeMember, showToast, taxonOf, toggleKeep } from '../store.ts';
+import { P, T, pageLang } from '../strings.ts';
+import type { ClimateZone, Details as PlantFacts, Labels, Locale, PlantId, Taxon } from '../../../lib/consortium/index.ts';
+import { jobsOf, pairings, phaseOrd, placementZone } from '../../../lib/consortium/index.ts';
 import { layerRows, type Words } from './layers.ts';
 import { Toast } from './Toast.tsx';
-import { phasePlain as plainPhase, spanWords } from './StageBar.tsx';
+import { spanOf } from './tracks.ts';
 import { safeHref } from '../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../data/consortium-guides.ts';
 import { testFault } from '../test-hook.ts';
 import { PlantMarks } from './PlantMarks.tsx';
+import { Bar, SheetFrame } from './kit/sheet.tsx';
+import { flagLines, flagsOfPlant, unknownWords } from './kit/flags.ts';
+import { countryName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from './kit/names.ts';
+import { PIN, SPROUT, WARN } from './kit/icons.tsx';
+import { drafts, type CorrectionField } from './kit/correction.ts';
+import { pageData } from './kit/page.ts';
 
 // ---- words ----
 
 const lang = () => pageLang();
-// The words every view shares live in one place each (H12): a plant's name in strings.ts, the stage
-// words in StageBar.tsx; the sheets take them from here. The store's edits and opener likewise.
-export { addMembers, closeSheet, nameOf, openSheet, plainPhase, sheetCell, spanWords, swapMember, taxonOf };
-// correction.* and climate.<zone> are site-wide keys; ConsortiumPage.astro passes them under their own
-// names beside consortium.* (H13).
-export const zoneName = (z: ClimateZone): string => T(`climate.${z.toLowerCase()}`);
-export const listOf = (items: string[]): string => new Intl.ListFormat(lang(), { type: 'conjunction' }).format(items);
-export const num = (n: number): string => new Intl.NumberFormat(lang(), { maximumFractionDigits: 1 }).format(n);
-let regionNames: Intl.DisplayNames | null = null;
-export function countryName(code: string): string {
-  try { regionNames ??= new Intl.DisplayNames([lang()], { type: 'region' }); return regionNames.of(code) ?? code; } catch { return code; }
-}
-export const layerName = (t: Taxon): string => T(t.stratum ? `stratum.${t.stratum.value}` : 'stratum.none');
-export function spanOf(t: Taxon): [number, number] | null {
-  return t.phases ? [phaseOrd(t.phases.start), phaseOrd(t.phases.end)] : null;
-}
-export const words = (): Words => ({ lang: lang(), T, climate: (z) => zoneName(z as ClimateZone), country: countryName, region: (r) => T(`region.${r}`), num });
+// A layer's name for a plant ("No layer yet" without one).
+const layerName = (t: Taxon): string => T(t.stratum ? `stratum.${t.stratum.value}` : 'stratum.none');
+const words = (): Words => ({ lang: lang(), T, climate: (z) => zoneName(z as ClimateZone), country: countryName, region: (r) => T(`region.${r}`), num });
 // A text from the data in the page language, else in English (marked).
-export function DataText({ text }: { text: { en: string } & Partial<Record<string, string>> }) {
+function DataText({ text }: { text: { en: string } & Partial<Record<string, string>> }) {
   const own = text[lang()];
   return own ? <>{own}</> : <span lang="en">{text.en}</span>;
-}
-
-// The seven-segment stage bar, its span filled, with the span words as its name (mockup 05).
-// run: the stages Add was opened for (a cell or a run of cells), marked `cur` (X2).
-export function Bar({ taxon, run = null }: { taxon: Taxon; run?: { from: number; to: number } | null }) {
-  const s = spanOf(taxon);
-  return (
-    <span class="ct-bar" role="img" aria-label={spanWords(taxon)}>
-      {phases.map((_, i) => <i class={`${s && s[0] <= i && i <= s[1] ? 'on' : ''}${run && run.from <= i && i <= run.to ? ' cur' : ''}`} />)}
-    </span>
-  );
-}
-
-const PIN = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1.5h6l-1 4 3 3H3l3-3z M8 8.5V15" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>;
-const SPROUT = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 15V7" stroke="currentColor" stroke-width="1.8" /><path d="M8 8C8 4.5 5.5 2.5 2 2.5c0 3.5 2.5 5.5 6 5.5zM8 9.5c0-3 2.2-5 6-5 0 3-2.2 5-6 5z" fill="currentColor" /></svg>;
-export const WARN = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.6 15 14H1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /><path d="M8 6v4" stroke="currentColor" stroke-width="1.7" /><circle cx="8" cy="12" r="1" fill="currentColor" /></svg>;
-const CLOSE = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 3 10 10M13 3 3 13" stroke="currentColor" stroke-width="1.8" /></svg>;
-export const BACK = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" /></svg>;
-
-// ---- plants and their warnings ----
-
-// The flags a plant carries: a member's from the store, any other plant's beside the members.
-export function flagsOfPlant(t: Taxon): Flag[] {
-  if (store.members.value.includes(t.id)) return store.flags.value.filter((f) => f.id === t.id);
-  return flagsFor(t, store.memberTaxa.value, store.flagContext.value);
-}
-
-const SOIL_PH = (t: Taxon) => ({ min: t.traits.soil_ph?.min != null ? num(t.traits.soil_ph.min) : '?', max: t.traits.soil_ph?.max != null ? num(t.traits.soil_ph.max) : '?' });
-// The site answers a plant misfits (beside the other members' canopy), each in words.
-export function misfitWords(t: Taxon, site: Site = store.site.value): string[] {
-  const fit = fits(t, site);
-  const keys = misfitsBeside(t, site, store.memberTaxa.value.filter((o) => o.id !== t.id), fit);
-  const out: string[] = [];
-  for (const r of fit.reasons) {
-    if (r.verdict !== 'misfit' || !keys.includes(r.key)) continue;
-    if (r.key === 'light') out.push(T(`misfit.light.${site.light}`));
-    else if (r.key === 'soil') out.push(T(`misfit.soil.${site.soil}`, SOIL_PH(t)));
-    else if (r.key === 'water') out.push(T(`misfit.water.${site.water}`));
-  }
-  return out;
-}
-// What the site check could not decide, said aloud (never a silent fit, A7).
-export function unknownWords(t: Taxon, site: Site = store.site.value): string[] {
-  return fits(t, site).reasons.filter((r) => r.verdict === 'unknown').map((r) =>
-    r.key === 'room' ? T(r.kind === 'climber' ? 'misfit.unk.climber' : 'misfit.unk.room') : T(`misfit.unk.${r.key}`));
-}
-
-export interface Line { text: string; kind: Flag['kind'] | 'soft'; asks: boolean }
-// A plant's flags as lines: misfits, conflicts (high ones "serious"), invasive here, toxicity.
-// Low conflicts are left to details (soft: false keeps them, for the dialog).
-export function flagLines(t: Taxon, flags: Flag[], { low = false } = {}): Line[] {
-  const out: Line[] = [];
-  for (const f of flags) {
-    if (f.kind === 'misfit') for (const w of misfitWords(t)) out.push({ text: T('details.misfit', { why: w }), kind: 'misfit', asks: true });
-    else if (f.kind === 'conflict') {
-      if (f.severity === 'low' && !low) continue;
-      const other = f.other ? taxonOf(f.other) : null;
-      const note = f.note ? (f.note[lang() as Locale] ?? f.note.en) : T(`ctype.${f.type}`);
-      const serious = f.severity === 'high';
-      let text = T('details.conflict', { other: other ? nameOf(other) : '?', text: note });
-      if (f.agent) text += ` ${T('d.agent', { agent: f.agent })}.`;
-      if (serious) text += ` (${T('details.serious')})`;
-      out.push({ text, kind: f.severity === 'low' ? 'soft' : 'conflict', asks: serious });
-    } else if (f.kind === 'invasive') {
-      out.push({ text: T('d.invHere', { country: countryName(store.country.value.code ?? '') }), kind: 'invasive', asks: false });
-    } else if (f.kind === 'toxicity' && t.warnings.toxicity) {
-      out.push({ text: T('details.tox', { level: T(`tox.${t.warnings.toxicity.level}`) }), kind: 'toxicity', asks: false });
-    }
-  }
-  return out;
-}
-
-// "Not checked in {country}": once per view (the Add and Swap sheets' top line, the dialog).
-export function NotChecked() {
-  const ctx = store.flagContext.value;
-  if (ctx.countryStatus !== 'unchecked' || !ctx.country) return null;
-  return <p class="ct-note">{T('add.notChecked', { country: countryName(ctx.country) })}</p>;
 }
 
 // Focus back to the opener when the last sheet closes.
@@ -160,73 +77,6 @@ if (typeof document !== 'undefined') {
     }
     wasOpen = !!s;
   });
-}
-
-// A sheet: a modal <dialog>, a side sheet on desktop and full screen on phones. Escape, Close and a
-// click on the backdrop close it; the element marked data-autofocus (its heading) takes the focus.
-// foot: the sheet's action bar (Add, Paste). The foot sticks to the sheet's bottom and holds the
-// sheet's toast above the bar, so a toast never covers the bar's button (walk-through 2 N1: Undo sat
-// over "Add 1 plant" and the click undid the last add). The sheet's scroll padding follows the foot's
-// height, so a control tabbed to near the end is scrolled above the foot, not under it.
-export function SheetFrame({ titleId, head, foot, children, class: cls = '' }: { titleId: string; head?: ComponentChildren; foot?: ComponentChildren; children: ComponentChildren; class?: string }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  // A click closes the sheet only when it both starts and ends on the backdrop (a text selection
-  // dragged out of the sheet and released outside does not).
-  const downOnBackdrop = useRef(false);
-  useEffect(() => {
-    const d = ref.current;
-    if (!d) return;
-    // Its own sheet only: the close event comes a task after Escape, maybe once another sheet opened.
-    const mine = store.sheet.peek();
-    const onClose = () => { if (mine && store.sheet.peek() === mine) closeSheet(); };
-    d.addEventListener('close', onClose);
-    const foot = d.querySelector<HTMLElement>('.ct-sheet-foot')!;
-    const room = new ResizeObserver(() => { d.style.scrollPaddingBottom = `${foot.offsetHeight + 8}px`; });
-    room.observe(foot);
-    if (!d.open) d.showModal();
-    d.querySelector<HTMLElement>('[data-autofocus]')?.focus();
-    return () => { room.disconnect(); d.removeEventListener('close', onClose); if (d.open) d.close(); };
-  }, []);
-  return (
-    <dialog ref={ref} class={`ct-sheet ${cls}`} aria-labelledby={titleId}
-      onPointerDown={(e) => { downOnBackdrop.current = e.target === ref.current; }}
-      onClick={(e) => { if (e.target === ref.current && downOnBackdrop.current) closeSheet(); downOnBackdrop.current = false; }}>
-      <div class="ct-sheet-inner">
-        <div class="ct-sheet-head">
-          <div class="ct-sheet-head-main">{head}</div>
-          <button type="button" class="ct-icon-button" aria-label={T('close')} onClick={closeSheet}>{CLOSE}</button>
-        </div>
-        <div class="ct-sheet-body">{children}</div>
-        <div class="ct-sheet-foot"><Toast where="sheet" />{foot}</div>
-      </div>
-    </dialog>
-  );
-}
-
-// "Add it anyway?" / "Swap anyway?": a small alertdialog over the sheet, naming what asks.
-export function Ask({ title, lines, yes, onYes, onCancel }: { title: string; lines: string[]; yes: string; onYes: () => void; onCancel: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const cancel = useRef(onCancel);
-  cancel.current = onCancel;
-  useEffect(() => {
-    const d = ref.current;
-    if (!d) return;
-    const onClose = () => cancel.current();
-    d.addEventListener('close', onClose);
-    d.showModal();
-    d.querySelector<HTMLElement>('[data-cancel]')?.focus();
-    return () => { d.removeEventListener('close', onClose); if (d.open) d.close(); };
-  }, []);
-  return (
-    <dialog ref={ref} class="ct-ask" role="alertdialog" aria-labelledby="ct-ask-title" aria-describedby="ct-ask-why">
-      <h3 id="ct-ask-title">{title}</h3>
-      <ul id="ct-ask-why" class="ct-warnlist">{lines.map((l) => <li>{l}</li>)}</ul>
-      <div class="ct-actions">
-        <button type="button" class="button button-primary" onClick={onYes}>{yes}</button>
-        <button type="button" class="button button-secondary" data-cancel onClick={() => ref.current?.close()}>{T('cancel')}</button>
-      </div>
-    </dialog>
-  );
 }
 
 // A sheet module loaded on first use (a browser-test build can make it fail: test-hook.ts failSheets,
@@ -265,12 +115,6 @@ function labelsOf(): Promise<Labels> | null {
   return labelsFor.labels;
 }
 
-export interface CorrectionField { field: string; label: string; current: string; raw: unknown }
-// Correction drafts by plant id, kept for the page's life: closing the dialog (Escape in the text,
-// the backdrop) or an offline send never loses what the reader wrote. Correction.tsx writes them and
-// drops one once it is sent.
-export interface CorrectionDraft { field: string; proposed: string; note: string; email: string; consent: boolean; website: string }
-export const drafts = new Map<PlantId, CorrectionDraft>();
 interface Trait { field: string; label: string; text: string; raw: unknown }
 
 function traitsOf(t: Taxon, labels: Labels): Trait[] {
@@ -312,12 +156,8 @@ function invasiveSoft(t: Taxon): string[] {
 // Guide titles in the guide's language (en or fr), from #ct-data `guideTitles` (slug → title), which
 // ConsortiumPage.astro writes; the title carries the guide's language. A slug the page did not pass
 // (none should: check-built-site) shows as words, marked English.
-let guideTitles: Record<string, string> | null = null;
 function guideTitleOf(slug: string): { title: string; lang: string | null } {
-  if (guideTitles === null) {
-    try { guideTitles = (JSON.parse(document.getElementById('ct-data')?.textContent ?? '{}') as { guideTitles?: Record<string, string> }).guideTitles ?? {}; } catch { guideTitles = {}; }
-  }
-  const own = guideTitles[slug];
+  const own = pageData()?.guideTitles?.[slug];
   return own ? { title: own, lang: lang() === 'fr' ? 'fr' : 'en' } : { title: slug.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()), lang: 'en' };
 }
 function guideLinks(t: Taxon): { url: string; title: string; titleLang: string | null; hreflang: string | null }[] {
@@ -394,7 +234,7 @@ function PlantDetails({ id }: { id: PlantId }) {
   ];
 
   return (
-    <SheetFrame titleId="ct-d-title" class="ct-details" head={<span class="ct-muted">{layerName(t)}{s ? ` · ${plainPhase(s[0])}` : ''}</span>}>
+    <SheetFrame titleId="ct-d-title" class="ct-details" head={<span class="ct-muted">{layerName(t)}{s ? ` · ${phasePlain(s.from)}` : ''}</span>}>
       {image && (
         <figure class="ct-photo">
           <img src={image.url} alt={T('details.photoAlt', { name: nameOf(t) })} loading="lazy" decoding="async" width={480} height={360} />
@@ -501,7 +341,7 @@ function PlantDetails({ id }: { id: PlantId }) {
               <li>{T('details.otherPlacement', {
                 climate: zoneName(z as ClimateZone),
                 layer: p!.stratum ? T(`stratum.${p!.stratum}`) : T('stratum.none'),
-                span: p!.start && p!.end ? (p!.start === p!.end ? plainPhase(phaseOrd(p!.start)) : `${plainPhase(phaseOrd(p!.start))} → ${plainPhase(phaseOrd(p!.end))}`) : T('timingUnknown'),
+                span: p!.start && p!.end ? (p!.start === p!.end ? phasePlain(phaseOrd(p!.start)) : `${phasePlain(phaseOrd(p!.start))} → ${phasePlain(phaseOrd(p!.end))}`) : T('timingUnknown'),
               })}</li>
             ))}
           </ul>

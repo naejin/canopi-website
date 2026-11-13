@@ -14,7 +14,8 @@ import { signal } from '@preact/signals';
 import { stage } from '../store.ts';
 import { T } from '../strings.ts';
 import { stepStage } from './tracks.ts';
-import { ChevronIcon, phasePlain, phaseTerm } from './StageBar.tsx';
+import { phasePlain, phaseTerm } from './kit/names.ts';
+import { ChevronIcon } from './kit/icons.tsx';
 
 const query = typeof matchMedia === 'function' ? matchMedia('(max-width: 959px)') : null;
 export const phone = signal<boolean>(query?.matches ?? false);

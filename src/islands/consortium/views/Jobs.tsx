@@ -12,11 +12,11 @@
 import type { PhaseOrd } from '../../../lib/consortium/index.ts';
 import { jobGapsByPhase, jobIds } from '../../../lib/consortium/index.ts';
 import { memberTaxa } from '../store.ts';
-import { P, T, pageLang } from '../strings.ts';
+import { P, T } from '../strings.ts';
 import { PHASE_ORDS } from './tracks.ts';
-import { StageStrip, jobFind, nameOf, openAdd, openDetails, phasePlain } from './StageBar.tsx';
+import { StageStrip, jobFind, openAdd, openDetails } from './StageBar.tsx';
+import { listOf, nameOf, phasePlain } from './kit/names.ts';
 
-const list = (items: string[]) => new Intl.ListFormat(pageLang(), { type: 'conjunction' }).format(items);
 // The missing stages as runs of neighbours: [0, 1, 5] → 0–1, 5.
 function runsOf(missing: PhaseOrd[]): { from: PhaseOrd; to: PhaseOrd }[] {
   const out: { from: PhaseOrd; to: PhaseOrd }[] = [];
@@ -45,7 +45,7 @@ export function Jobs() {
           {gaps.map((g) => {
             const missing = new Set(g.missing);
             const words = g.missing.map(phasePlain);
-            const label = !g.members.length ? T('job.never') : g.missing.length ? T('job.missing', { list: list(words) }) : T('job.every');
+            const label = !g.members.length ? T('job.never') : g.missing.length ? T('job.missing', { list: listOf(words) }) : T('job.every');
             return (
               <tr role="row" key={g.job}>
                 <th role="rowheader" scope="row">
@@ -62,7 +62,7 @@ export function Jobs() {
                       </div>
                       {g.missing.length > 0 && (
                         <div class="ct-phasegap">
-                          <p>{T('job.missing', { list: list(words) })}</p>
+                          <p>{T('job.missing', { list: listOf(words) })}</p>
                           {runsOf(g.missing).map((run) => (
                             <button key={run.from} type="button" class="button button-secondary ct-btn-sm" onClick={() => openAdd({ job: g.job, cell: { stratum: null, ...run } })}>{jobFind(g.job, run)}</button>
                           ))}

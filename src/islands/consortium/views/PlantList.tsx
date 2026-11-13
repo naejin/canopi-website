@@ -14,7 +14,8 @@ import { jobIds, jobsOf, strata } from '../../../lib/consortium/index.ts';
 import { kept, memberTaxa } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { PHASE_ORDS, listGroups, matchesFilters, matchesQuery, startCounts, type ListFilters } from './tracks.ts';
-import { Marks, StageBar, byName, layerName, nameOf, openDetails, openSwap, phasePlain, phaseTerm, warnings } from './StageBar.tsx';
+import { Marks, StageBar, byName, openDetails, openSwap, warnings } from './StageBar.tsx';
+import { layerName, nameOf, phasePlain, phaseTerm } from './kit/names.ts';
 import { removeMember } from '../store.ts';
 
 const groupId = (s: string | null, p: number | null) => (s ? `ct-g-${s}-${p}` : 'ct-g-none');
