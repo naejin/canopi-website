@@ -318,7 +318,11 @@
             "src/islands/consortium/views/Correction.tsx",
             "src/islands/consortium/views/Add.tsx",
             "src/islands/consortium/views/layers.ts",
-            "scripts/browser/consortium-e6-r4.browser.test.mjs"
+            "scripts/browser/consortium-e6-r4.browser.test.mjs",
+            "scripts/browser/consortium-p5-s5c.browser.test.mjs",
+            "scripts/consortium-p5-seams-s5c.test.mjs",
+            "scripts/consortium-source.test.mjs",
+            "src/islands/consortium/state/suggest-wait.ts"
           ]
         },
         "B4": {
