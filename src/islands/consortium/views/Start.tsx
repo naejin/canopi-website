@@ -11,10 +11,11 @@
 // Once a consortium is shown (store.view is not 'start'), Start shrinks to its head: the title with
 // the count and climate, the site basis with "Change site" and "Start over", and the country line.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
-import type { ClimateZone, PlantId, Site, SiteKey, Taxon } from '../../../lib/consortium/index.ts';
+import type { ClimateZone, Locale, PlantId, Site, SiteKey, Taxon } from '../../../lib/consortium/index.ts';
 import { countryStatus, lights, MAX_CROPS, rooms, soils, waters } from '../../../lib/consortium/index.ts';
 import { climate, country, crops, proposedClimate, kept, knownCountries, members, openSheet, pool, site, view } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
+import { searchIndex } from '../data/search.ts';
 import { LocationSlot } from './LocationSlot.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from './PoolSlot.tsx';
 import {
@@ -26,24 +27,21 @@ import { basisLine, countryName, nameOf, zoneName } from './kit/names.ts';
 // ---- words ----
 const options: Record<SiteKey, readonly string[]> = { light: lights, soil: soils, water: waters, room: rooms };
 
-// Search folding: lower case, Latin/Greek/Cyrillic marks stripped (S1's A6 fold, kept small here so
-// the start view does not pull the data adapter into the island chunk).
-const fold = (s: string) => s.toLowerCase().normalize('NFD').replace(/([\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}])\p{M}+/gu, '$1').normalize('NFC');
+// The crop search: Add's search (data/search.ts searchIndex: the one fold, src/lib/consortium/fold.ts,
+// and the same matching, E6 design check A9) over the climate's crops by the names Start shows (the
+// page language, English, the scientific name); best match first, then by shown name, `max` of them.
+type CropSearch = { search: ReturnType<typeof searchIndex>; byId: Map<PlantId, Taxon> };
+const cropSearches = new WeakMap<readonly Taxon[], CropSearch>();
 function cropSearch(list: readonly Taxon[], q: string, lang: string, skip: ReadonlySet<PlantId>, max = 8): Taxon[] {
-  const f = fold(q.trim());
-  if (!f) return [];
-  const rank = (t: Taxon) => {
-    let best = 9;
-    for (const n of [nameOf(t), t.names.en ?? '', t.canonical_name]) {
-      const x = fold(n);
-      const at = x.indexOf(f);
-      if (at === 0) best = Math.min(best, 0);
-      else if (at > 0 && /[\s\-'’(]/.test(x[at - 1])) best = Math.min(best, 1);
-    }
-    return best;
-  };
-  return list.filter((t) => t.role === 'crop' && !skip.has(t.id)).map((t) => [t, rank(t)] as const).filter(([, r]) => r < 9)
-    .sort((a, b) => a[1] - b[1] || nameOf(a[0]).localeCompare(nameOf(b[0]), lang)).slice(0, max).map(([t]) => t);
+  let c = cropSearches.get(list);
+  if (!c) {
+    const own = list.filter((t) => t.role === 'crop');
+    c = { search: searchIndex(own.map((t) => ({ id: t.id, canonical: t.canonical_name, names: { en: t.names.en, [lang as Locale]: t.names[lang as Locale] } }))), byId: new Map(own.map((t) => [t.id, t])) };
+    cropSearches.set(list, c);
+  }
+  const byId = c.byId;
+  return c.search(q).filter((h) => !skip.has(h.id))
+    .sort((a, b) => a.score - b.score || nameOf(byId.get(a.id)!).localeCompare(nameOf(byId.get(b.id)!), lang)).slice(0, max).map((h) => byId.get(h.id)!);
 }
 
 // ---- the country line ----

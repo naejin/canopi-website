@@ -8,10 +8,10 @@
 // - runReasons / reasonParts: why a run of misfit cells is empty, counted once per plant;
 // - listGroups: each plant once, under the cell where it starts (owner row "v2 mockup choices");
 // - warningCounts: the warnings a chip counts (low conflicts are not shown on chips, types.ts Flag);
-// - fold: accent- and case-folded text for the list's search (design check A6: never LIKE);
+// - fold: the core's search fold, for the list's search (design check A6: never LIKE);
 // - nameOrder: plants by name with one Intl.Collator per page language, shared by every view.
 import type { Flag, JobId, MatrixCell, PhaseOrd, PlantId, Site, SiteKey, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { fits, jobsOf, misfitsBeside, phaseSpan, plantsIn, startCell, strata } from '../../../lib/consortium/index.ts';
+import { fits, fold, jobsOf, misfitsBeside, phaseSpan, plantsIn, startCell, strata } from '../../../lib/consortium/index.ts';
 
 // Names sort in the page's language ("Äpfel" before "Birne" in German, after "Zitron" in Swedish):
 // one collator per language, made once.
@@ -172,16 +172,9 @@ export const stepStage = (stage: number, delta: number): PhaseOrd => Math.min(6,
 // The fill meter's bar, in percent of the cells that can be filled.
 export const fillPercent = (filled: number, total: number): number => (total > 0 ? Math.round((filled / total) * 100) : 0);
 
-// Lower case, marks stripped after Latin, Greek and Cyrillic letters, ß œ æ written out, so "chataig"
-// finds Châtaignier and "trefle" Trèfle (A6). CJK text is left as it is.
-export function fold(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/([A-Za-zÀ-ɏͰ-ϿЀ-ӿ])[̀-ͯ]+/g, '$1')
-    .toLowerCase()
-    .replace(/ß/g, 'ss').replace(/œ/g, 'oe').replace(/æ/g, 'ae')
-    .normalize('NFC');
-}
+// The one search fold (src/lib/consortium/fold.ts, E6 design check A9), so "chataig" finds
+// Châtaignier and "trefle" Trèfle; re-exported for the callers that read it from here.
+export { fold };
 
 // Does a plant match a folded query: every word of the query starts a word of one of its names.
 export function matchesQuery(names: readonly string[], query: string): boolean {

@@ -10,6 +10,7 @@
 // E6-3…5 views/Sheets.tsx, views/details/**, views/lazy.tsx (K3; A6) and the `details` role
 // (scripts/built-modules.mjs LAZY_ENTRIES, commit 0).
 import assert from 'node:assert/strict';
+import { test } from 'node:test';
 import { loadState } from './harness.mjs';
 import { aria, axNodes, en, h, has, realDb, useHarness } from './helpers.mjs';
 import { choose, tool } from './p5-helpers.mjs';
@@ -53,7 +54,7 @@ const CROP_CASES = [
 const cropsOf = (climate, lang) => realDb((db) => db.prepare(`SELECT p.id, p.canonical_name c,
   (SELECT name FROM plant_names n WHERE n.plant = p.plant AND n.locale = ?) l, (SELECT name FROM plant_names n WHERE n.plant = p.plant AND n.locale = 'en') en
   FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? AND x.role = 'crop'`).all(lang, climate));
-failing('E6-1 (K1 kit): Start\'s crop search finds what Add\'s search finds for the same words: "sussholz" finds Süßholz, an unspaced CJK substring finds its crops @real-data', { owner: 'K1', reason: /Start finds no crop for "sussholz"/ }, async () => {
+test('E6-1 (K1 kit): Start\'s crop search finds what Add\'s search finds for the same words: "sussholz" finds Süßholz, an unspaced CJK substring finds its crops @real-data', async () => {
   for (const { lang, climate, q } of CROP_CASES) {
     const crops = await cropsOf(climate, lang);
     const byId = new Map(crops.map((r) => [String(r.id), r.c]));
