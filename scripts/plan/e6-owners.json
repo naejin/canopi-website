@@ -269,7 +269,12 @@
             "src/islands/consortium/store.ts",
             "src/islands/consortium/state/**",
             "src/islands/consortium/main.ts",
-            "src/islands/consortium/test-hook.ts"
+            "src/islands/consortium/test-hook.ts",
+            "scripts/consortium-start.test.mjs",
+            "scripts/consortium-memory.test.mjs",
+            "scripts/consortium-p5-seams.test.mjs",
+            "src/islands/consortium/views/location/load.ts",
+            "src/lib/consortium/index.ts"
           ]
         },
         "Q3": {

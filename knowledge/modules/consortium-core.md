@@ -4,7 +4,7 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T07:42:20Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T08:06:14Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-12T22:03:48Z }
 sources:
@@ -91,8 +91,8 @@ sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
-    digest: sha256:e9e13f5e075ab535
-    last_modified: 2026-11-13T03:30:17Z
+    digest: sha256:8165db4fcb8d590c
+    last_modified: 2026-11-13T07:53:00Z
   - id: range-ts
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
@@ -223,6 +223,8 @@ The core has no DOM, no Astro and no package imports, so `node --test` runs it a
 - every import is `./x.ts` inside `src/lib/consortium/`;
 - no browser global is used;
 - the island imports only `index.ts`, `types.ts` or `source.ts`.
+
+Since E6 Q3 the same test keeps `src/lib/climate` and `src/lib/location` imports inside their own folder (packages allowed) and checks their key files exist; the no-preact/islands/components rule for all three folders is dependency-cruiser L1 alone, at `error` ([island layers](/decisions/consortium-island-layers.md)).
 
 # Key files
 

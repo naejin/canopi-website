@@ -69,13 +69,13 @@ test('dependency-cruiser rules L1-L9 catch one breach each, allow their neighbou
     assert.ok(scanned >= Object.keys(FILES).length - 2, `scanned ${scanned}`);
     const I = 'src/islands/consortium';
     assert.deepEqual(errors, [
+      'L1-lib-no-ui|src/lib/location/p.ts|@preact/signals',
       `L3-data-down|${I}/data/x.ts|${I}/store.ts`,
       `L4-views-core-entry|${I}/views/v.tsx|src/lib/consortium/a.ts`,
       'L9-no-build-scripts-in-src|src/pages/z.ts|scripts/tool.mjs',
     ]);
     assert.ok(scanned < 100, `scanned ${scanned}: the symlinked node_modules is not walked`);
     assert.deepEqual(keys, [
-      'L1-lib-no-ui|src/lib/location/p.ts|@preact/signals',
       `L2-state-no-views|${I}/store.ts|${I}/views/v.tsx`,
       `L5-kit-leaf|${I}/views/kit/k.ts|${I}/views/v.tsx`,
       `L6-sheets-not-details|${I}/views/Other.tsx|${I}/views/details/D.tsx`,

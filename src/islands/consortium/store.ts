@@ -101,14 +101,7 @@ let rangeLoad: Promise<void> | null = null;
 const withRule = <T>(p: Promise<T>): Promise<T> => (siteClimate.peek() && !rangeRule.peek() && rangeLoad ? Promise.all([p, rangeLoad]).then(([x]) => x) : p);
 // Whether the location gave a climate (core siteToday is non-null; inlined to keep the rule off the first run).
 export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
-effect(() => {
-  if (!siteClimate.value || rangeLoad) return;
-  rangeLoad = loadRangeRule().then((rule) => { rangeRule.value = rule; }, (err: unknown) => {
-    console.error(err);
-    rangeBroken.value = true;
-    chunkToast('range.unavailable');
-  });
-});
+// (Its load starts in start(), at the end of this file, once the location has a climate.)
 // One toast, with Reload, for the P5 chunks that did not load: the range rule's chunk is also a static
 // import of the mark providers' chunk, so one missing file (offline, or a deploy since the page loaded)
 // fails both; the notices still say each (PoolSlot, Matrix.tsx Notices).
@@ -201,15 +194,7 @@ export const wantsMarkProviders = computed(() => needsMarkProviders(markContext.
 // are wanted, with one toast; as for the range rule, the import is not tried again on this page.
 const marksBroken = signal(false);
 export const marksFailed = computed(() => marksBroken.value && wantsMarkProviders.value);
-effect(() => {
-  if (!wantsMarkProviders.value || markProviders.peek().length || marksBroken.peek()) return;
-  loadMarkProviders().then((list) => { markProviders.value = list; }, (err: unknown) => {
-    console.error(`Consortium: the plant marks did not load: ${(err as Error).message}`);
-    if (marksBroken.peek()) return;
-    marksBroken.value = true;
-    chunkToast('marks.unavailable');
-  });
-});
+// (Their load starts in start(), at the end of this file, once a mark can show.)
 // The warnings on members: conflicts, site misfits, invasive and toxicity (core suggest.ts flagsOf).
 export const flags = computed<Flag[]>(() => {
   if (!pool.value) return [];
@@ -376,15 +361,7 @@ function offerUndo(text: string, before: Snapshot, action: ToastAction | null = 
   undoAfter = state.peek(SNAP_KEYS);
   showToast(text, () => { undoAfter = null; state.restore(before); }, action, focus);
 }
-effect(() => {
-  const now = state.track(SNAP_KEYS);
-  const after = undoAfter;
-  if (!after) return;
-  if (SNAP_KEYS.some((k) => now[k] !== after[k])) {
-    undoAfter = null;
-    if (toast.peek()?.undo) hideToast();
-  }
-});
+// (The effect that ends the offer starts in start(), at the end of this file.)
 
 // Remove (details, the plant list): its cells are free again (the gap stays), it is left out of a new
 // suggestion, and Undo brings back the consortium as it was.
@@ -437,4 +414,41 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
   const flagged = warned.filter((id) => fresh.includes(id));
   const text = P('paste.added', fresh.length) + (flagged.length ? ` ${P('paste.addedWarn', flagged.length)}` : '');
   offerUndo(text, before, flagged.length ? { label: T('paste.show'), run: () => openSheet('details', flagged[0]) } : null);
+}
+
+// ---- start (E6 S3): nothing runs because this module was imported ----
+
+// The store's own effects, started by main.ts before the first render, in the order they ran when
+// they were module-level; a node test imports the store with none running
+// (scripts/consortium-start.test.mjs). Called once.
+export function start(): void {
+  // The range rule's chunk, loaded once the location has a climate (rangeRule, rangeBroken).
+  effect(() => {
+    if (!siteClimate.value || rangeLoad) return;
+    rangeLoad = loadRangeRule().then((rule) => { rangeRule.value = rule; }, (err: unknown) => {
+      console.error(err);
+      rangeBroken.value = true;
+      chunkToast('range.unavailable');
+    });
+  });
+  // The mark providers' chunk, loaded once a mark can show (markProviders, marksBroken).
+  effect(() => {
+    if (!wantsMarkProviders.value || markProviders.peek().length || marksBroken.peek()) return;
+    loadMarkProviders().then((list) => { markProviders.value = list; }, (err: unknown) => {
+      console.error(`Consortium: the plant marks did not load: ${(err as Error).message}`);
+      if (marksBroken.peek()) return;
+      marksBroken.value = true;
+      chunkToast('marks.unavailable');
+    });
+  });
+  // The Undo offer ends on any other change of the plant lists or the climate (offerUndo).
+  effect(() => {
+    const now = state.track(SNAP_KEYS);
+    const after = undoAfter;
+    if (!after) return;
+    if (SNAP_KEYS.some((k) => now[k] !== after[k])) {
+      undoAfter = null;
+      if (toast.peek()?.undo) hideToast();
+    }
+  });
 }

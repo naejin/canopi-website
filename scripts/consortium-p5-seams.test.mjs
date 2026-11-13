@@ -36,6 +36,7 @@ test('marks.ts needsMarkProviders: the providers load only with a site location 
 
 test('store: markContext follows the climate, location and scenario; the providers load when a location is set', async () => {
   const store = await import('../src/islands/consortium/store.ts');
+  store.start?.(); // the providers' load is an effect store.start() starts (main.ts; E6 S3)
   assert.deepEqual(store.markContext.value, { climate: store.climate.value, location: null, scenario: 'ssp245', site: store.site.value });
   assert.deepEqual(store.markProviders.value, [], 'none on the first run');
   store.location.value = lyon;
