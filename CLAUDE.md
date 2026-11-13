@@ -4,7 +4,7 @@ Landing page for projectcanopi.com — the Canopi agroecological design app.
 
 ## Stack
 - Astro (static output) + pure CSS (no Tailwind)
-- Hosted on Cloudflare Workers Builds (`projectcanopi`); pushes to `master` deploy the marketing build automatically.
+- Hosted on Cloudflare Workers Builds (`projectcanopi`), production branch `deploy`. A push to `master` runs CI (`.github/workflows/ci.yml`); a green `gate` moves `deploy`, and Cloudflare builds that. A ruleset refuses any other push to `deploy`. Runbook: `knowledge/runbooks/ci-and-deploy-gate.md`.
 - Design: field notebook aesthetic from the Canopi app (ochre/parchment/ink palette)
 
 ## Commands

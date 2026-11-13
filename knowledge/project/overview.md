@@ -4,7 +4,7 @@ title: canopi-website
 description: Astro marketing site for projectcanopi.com, the home of the Canopi agroecological design app, deployed by Cloudflare Workers Builds from the deploy branch, which CI moves to master only when it is green.
 tags: [project]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:39:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:57:02Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:35Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T02:55:40Z }
@@ -17,13 +17,13 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:23d753e894636759
-    last_modified: 2026-11-13T03:42:28Z
+    digest: sha256:cd62373a66839519
+    last_modified: 2026-11-13T06:49:01Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:d688c0718a0cd93b
-    last_modified: 2026-11-11T14:35:47Z
+    digest: sha256:67232b45e9d1961a
+    last_modified: 2026-11-13T06:57:02Z
   - id: context-md
     resource: ../../CONTEXT.md
     title: CONTEXT.md
@@ -61,7 +61,7 @@ The public website of Canopi, an open-source agroecological design app run by a 
 - HelloAsso donations.
 - One Cloudflare Worker `projectcanopi`: serves `dist/client/` and the on-demand `POST /api/contact` and `POST /api/correction` (one send_email binding; nothing stored).
 - Node >= 22.13 (`node:sqlite` without a flag) for tooling and `node --test`; `.node-version` pins 22.22.0 for CI (`actions/setup-node`) and Workers Builds; Python (Pillow) for asset generators.
-- Deploys: production builds come from branch `deploy`, which GitHub Actions moves fast-forward to a master commit only once its `gate` check is green (`.github/workflows/ci.yml`; a ruleset on `deploy` refuses any other push). Cloudflare's production branch switch from `master` to `deploy` is pending the owner (2026-11-13); until then master still deploys ungated. See [CI, hooks and the deploy gate](/runbooks/ci-and-deploy-gate.md). `/version.json` names the commit the live site was built from.
+- Deploys: production builds come from branch `deploy`, which GitHub Actions moves fast-forward to a master commit only once its `gate` check is green (`.github/workflows/ci.yml`; a ruleset on `deploy` refuses any other push). Cloudflare's production branch is `deploy` since 2026-11-13 (owner switch; previews off); probe P-E3a confirmed a master push alone deploys nothing. See [CI, hooks and the deploy gate](/runbooks/ci-and-deploy-gate.md). `/version.json` names the commit the live site was built from.
 - 11 locales (en at `/`, others at `/{lang}/`); the Field Guides are en and fr only (`/guides/`, `/fr/guides/`); field-notebook design with the app's palette and fonts.
 
 # Layout

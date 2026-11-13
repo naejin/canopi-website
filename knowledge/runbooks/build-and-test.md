@@ -4,7 +4,7 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:39:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:57:02Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-12T14:22:28Z }
@@ -12,8 +12,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:23d753e894636759
-    last_modified: 2026-11-13T03:42:28Z
+    digest: sha256:cd62373a66839519
+    last_modified: 2026-11-13T06:49:01Z
   - id: readme
     resource: ../../README.md
     title: README.md
@@ -79,7 +79,7 @@ enforced_by: [scripts/package.test.mjs]
 
 # When to use
 
-Setting up a working copy, building, and running checks before pushing to `master`. A push to master runs CI; a green `gate` moves the `deploy` branch, which Cloudflare builds as production once the owner has switched its production branch (pending 2026-11-13; until then master deploys directly). See [CI, hooks and the deploy gate](/runbooks/ci-and-deploy-gate.md).
+Setting up a working copy, building, and running checks before pushing to `master`. A push to master runs CI; a green `gate` moves the `deploy` branch, which Cloudflare builds as production (switched 2026-11-13). See [CI, hooks and the deploy gate](/runbooks/ci-and-deploy-gate.md).
 
 # Steps
 
