@@ -218,7 +218,7 @@ test('E6-5b (K3 lazy parts): on Start only, the data ready, the plant dialog and
 // does not come back) is retried when the reader opens a plant, so the dialog opens rather than the
 // L1 toast. The first request (the page's modulepreload or the idle prefetch, whichever asks first)
 // is held, then let through while the page is offline, so it fails; back online, a plant opens.
-failing('E6-5c (K3 lazy Details): after the Details chunk\'s first request failed, opening a plant fetches it again and shows its content, not the toast (L4)', { owner: 'K3', reason: /no failure toast \(requests for the chunk: 1\)/ }, async () => {
+test('E6-5c (K3 lazy Details): after the Details chunk\'s first request failed, opening a plant fetches it again and shows its content, not the toast (L4)', async () => {
   const log = [];
   const page = await matrixPage({ block: { details: 'hold' }, setup: recordRequests(log) });
   const deadline = Date.now() + 8000;
@@ -238,7 +238,7 @@ failing('E6-5c (K3 lazy Details): after the Details chunk\'s first request faile
 
 // E6-3c (L2, review): a sheet opened before its chunk arrives is one dialog from the loading line to
 // the content: it slides in once and is announced once, its focus inside it throughout.
-failing('E6-3c (K3 lazy Details): Details opened while its chunk is held stays one open dialog when its content arrives (one slide-in, one announcement)', { owner: 'K3', reason: /the same <dialog> shows the content/ }, async () => {
+test('E6-3c (K3 lazy Details): Details opened while its chunk is held stays one open dialog when its content arrives (one slide-in, one announcement)', async () => {
   const page = await matrixPage({ block: { details: 'hold' } });
   const [chip] = await chips(page);
   await page.locator(aria('button', chip)).click();

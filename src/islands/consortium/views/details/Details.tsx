@@ -27,10 +27,10 @@ import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zon
 import { PIN, SPROUT, WARN } from '../kit/icons.tsx';
 import { drafts, type CorrectionField } from '../kit/correction.ts';
 import { pageData } from '../kit/page.ts';
-import { later } from '../lazy.tsx';
+import { later, retryable } from '../lazy.tsx';
 
 // The correction form, a sheet part: a chunk that does not come closes the dialog with the toast.
-const correction = later(() => import('../Correction.tsx').then((m) => m.default), { onFail: 'closeSheet' });
+const correction = later(retryable(() => import('../Correction.tsx'), (m) => m.default), { onFail: 'closeSheet' });
 
 // ---- words ----
 

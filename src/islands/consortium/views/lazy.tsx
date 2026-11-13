@@ -19,9 +19,6 @@ import { useEffect, useState } from 'preact/hooks';
 import { effect, signal } from '@preact/signals';
 import { closeSheet, load as dataLoad, showToast } from '../store.ts';
 import { T } from '../strings.ts';
-// Installs the browser-test hook until main.ts imports it (stream S3, A13: `if (__CT_TEST_HOOK__)
-// await import('./test-hook.ts')`); the chunk-3 merge drops this line. Nothing here reads it.
-import '../test-hook.ts';
 
 type Kind = 'sheets' | 'later';
 // Browser-test builds only (A13): a part's chunk fails, or waits until the test releases it
@@ -93,6 +90,21 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
     return <p class="status-line" role="status">{T(onFail === 'closeSheet' ? 'details.loading' : 'load.plants')}</p>;
   }
   return { View: LazyView as unknown as C, load, ready: () => (faultOf(kind) ? null : done.peek()), prefetch };
+}
+
+// A chunk's import() that a failed fetch does not poison (L4, review): Chromium keeps a failed import()
+// or modulepreload of a URL failed for the page's life (its module map), so importing it again never
+// fetches, and one dropped request on a flaky connection would keep the part closed until Reload.
+// After a failure, the next call imports the same hashed file under a fresh URL (?retry=n), read from
+// the failed import's error (Chromium and Firefox name the URL; where the error names none, the next
+// call fails again: the toast and Reload). The fresh module is this chunk alone: its own imports
+// resolve to the shared chunks already loaded. pick: the part in the module.
+const failedUrl = (err: unknown): string | null => /https?:\/\/[^\s'"]+?\.js\b/.exec(String((err as Error)?.message ?? err))?.[0] ?? null;
+export function retryable<M, C>(load: () => Promise<M>, pick: (m: M) => C): () => Promise<C> {
+  let url: string | null = null, n = 0;
+  return () => (url === null ? load() : (import(/* @vite-ignore */ `${url}?retry=${++n}`) as Promise<M>))
+    .catch((err: unknown) => { url ??= failedUrl(err); throw err; })
+    .then(pick);
 }
 
 // What prefetchLater() loads: each registered part's chunk.

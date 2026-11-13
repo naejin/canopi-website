@@ -1,7 +1,7 @@
 /** @jsxImportSource preact */
-// The sheets' router, in the first run (E6 design check §3 K3, A6): store.sheet → the sheet frame
-// (views/kit/sheet.tsx SheetFrame, called only here) with the sheet's part inside, and the toast under
-// the tool. App.tsx renders it always.
+// The sheets' router, in the first run (E6 design check §3 K3, A6): store.sheet → the sheet's dialog
+// and frame (views/kit/sheet.tsx SheetDialog and SheetFrame, called only here) with the sheet's part
+// inside, and the toast under the tool. App.tsx renders it always.
 //
 // Every view opens a sheet with the store's one opener, store.openSheet(kind, id, target): 'details'
 // and 'swap' take a plant id; 'add' takes what it was opened for (a cell or run of one layer, a job,
@@ -22,13 +22,13 @@
 import { effect } from '@preact/signals';
 import { useMemo } from 'preact/hooks';
 import * as store from '../store.ts';
-import { closeSheet, taxonOf, type Sheet as Opened } from '../store.ts';
+import { closeSheet, taxonOf, type Sheet as Opened, type SheetKind } from '../store.ts';
 import type { PlantId } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
-import { SheetFrame, type Frame, type FrameProps } from './kit/sheet.tsx';
+import { SheetDialog, SheetFrame, type Frame, type FrameProps } from './kit/sheet.tsx';
 import { nameOf } from './kit/names.ts';
 import { Toast } from './Toast.tsx';
-import { later } from './lazy.tsx';
+import { later, retryable } from './lazy.tsx';
 
 // Focus back to the opener when the last sheet closes.
 let opener: HTMLElement | null = null, openerPlant: PlantId | null = null, wasOpen = false;
@@ -73,33 +73,41 @@ function DetailsWaiting({ id, Frame }: { id: PlantId; Frame: Frame }) {
 }
 
 const sheet = { onFail: 'closeSheet', loading: Waiting } as const;
-const details = later(() => import('./details/Details.tsx').then((m) => m.PlantDetails), { onFail: 'closeSheet', loading: DetailsWaiting });
-const swap = later(() => import('./Swap.tsx').then((m) => m.default), sheet);
-const add = later(() => import('./Add.tsx').then((m) => m.default), sheet);
-const paste = later(() => import('./Paste.tsx').then((m) => m.default), sheet);
+const details = later(retryable(() => import('./details/Details.tsx'), (m) => m.PlantDetails), { onFail: 'closeSheet', loading: DetailsWaiting });
+const swap = later(retryable(() => import('./Swap.tsx'), (m) => m.default), sheet);
+const add = later(retryable(() => import('./Add.tsx'), (m) => m.default), sheet);
+const paste = later(retryable(() => import('./Paste.tsx'), (m) => m.default), sheet);
 
-// One opening: its frame closes this sheet only (Escape fires `close` a task later, maybe once
-// another sheet opened), with the sheet's toast region in its foot.
+// One opening: one <dialog> (SheetDialog: one slide-in, one announcement), closing this sheet only
+// (Escape fires `close` a task later, maybe once another sheet opened), and the frame its part draws
+// in, with the sheet's toast region in its foot. A part that arrives replaces its loading frame
+// inside the same dialog.
 function Opening({ s }: { s: Opened }) {
-  const Frame = useMemo<Frame>(() => {
-    const onClose = () => { if (store.sheet.peek() === s) closeSheet(); };
-    return (p: FrameProps) => <SheetFrame {...p} onClose={onClose} toast={<Toast where="sheet" />} />;
+  const [onClose, Frame] = useMemo<[() => void, Frame]>(() => {
+    const close = () => { if (store.sheet.peek() === s) closeSheet(); };
+    return [close, (p: FrameProps) => <SheetFrame {...p} onClose={close} toast={<Toast where="sheet" />} />];
   }, [s]);
+  return <SheetDialog onClose={onClose}><Part s={s} Frame={Frame} /></SheetDialog>;
+}
+function Part({ s, Frame }: { s: Opened; Frame: Frame }) {
   switch (s.kind) {
-    case 'details': return s.id ? <details.View id={s.id} Frame={Frame} /> : null;
-    case 'swap': return s.id ? <swap.View id={s.id} Frame={Frame} /> : null;
+    case 'details': return <details.View id={s.id!} Frame={Frame} />;
+    case 'swap': return <swap.View id={s.id!} Frame={Frame} />;
     case 'add': return <add.View mode="add" Frame={Frame} />;
     case 'search': return <add.View mode="search" Frame={Frame} />;
     case 'paste': return <paste.View Frame={Frame} />;
-    default: return null; // share and download are not sheets
+    default: return null;
   }
 }
 
+const SHEETS: readonly SheetKind[] = ['details', 'swap', 'add', 'search', 'paste'];
+const WITH_PLANT: readonly SheetKind[] = ['details', 'swap'];
 function Router() {
   const s = store.sheet.value;
   if (!s || store.load.value.status !== 'ready') return null;
   // Keyed by opening: every sheet opened (details → Swap, one plant → another) mounts a fresh dialog
   // whose close listener knows its own sheet.
+  if (!SHEETS.includes(s.kind) || (WITH_PLANT.includes(s.kind) && !s.id)) return null; // share and download are not sheets
   return <Opening key={`${s.kind}:${s.n}`} s={s} />;
 }
 
