@@ -17,8 +17,9 @@ import type { ClimateZone, SiteLocation, Taxon } from '../../../../lib/consortiu
 import { hasPlants, NEAREST_LISTS, RANGE_MARGIN_C, rangeFit, siteToday, withinRange, yearMeanC } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { startEmpty, zoneOf } from '../../memory.ts';
-import { P, T, pageLang } from '../../strings.ts';
-import { page, zoneLabel } from '../Start.tsx';
+import { P, T } from '../../strings.ts';
+import { page } from '../kit/page.ts';
+import { num, zoneName } from '../kit/names.ts';
 
 // The range rule for the first run's store (store.ts rangeRule loads this chunk once the site has a
 // climate), so the rule and its marks text stay out of the first run.
@@ -37,15 +38,14 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
   const own = curated.includes(zone);
   if (!hasPlants(zone, curated)) return (
     <div class="ct-notice" role="status">
-      <p><strong>{T('start.uncovered.title', { climate: zoneLabel(zone) })}</strong></p>
-      <p>{T('start.uncovered.body', { list: curated.map(zoneLabel).join(', ') })}</p>
+      <p><strong>{T('start.uncovered.title', { climate: zoneName(zone) })}</strong></p>
+      <p>{T('start.uncovered.body', { list: curated.map(zoneName).join(', ') })}</p>
       <p><a class="button button-primary ct-small" href={page().start.contact}>{T('start.uncovered.ask')}</a></p>
     </div>
   );
   const loc = store.location.value;
   const today = siteToday(loc);
-  const deg = new Intl.NumberFormat(pageLang(), { maximumFractionDigits: 1 });
-  const temps = today ? { cold: deg.format(today.tminColdC), hot: deg.format(today.tmaxWarmC), mean: deg.format(yearMeanC(today)) } : null;
+  const temps = today ? { cold: num(today.tminColdC), hot: num(today.tmaxWarmC), mean: num(yearMeanC(today)) } : null;
   const verdicts = today && list ? list.map((t) => rangeFit(t, loc)) : null;
   const fit = verdicts ? verdicts.filter((v) => v !== 'outside').length : 0;
   const edge = verdicts ? verdicts.filter((v) => v === 'edge').length : 0;
@@ -53,7 +53,7 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
     <div class="ct-pool" data-pool={zone.toLowerCase()}>
       {!own && (
         <p class="ct-muted" data-pool-borrowed>
-          {T('estimate.borrowed', { climate: zoneLabel(zone), lists: NEAREST_LISTS[zone].filter((z) => curated.includes(z)).map(zoneLabel).join(', ') })}
+          {T('estimate.borrowed', { climate: zoneName(zone), lists: NEAREST_LISTS[zone].filter((z) => curated.includes(z)).map(zoneName).join(', ') })}
           {' '}<a href={page().start.contact}>{T('start.uncovered.ask')}</a>
         </p>
       )}
@@ -65,7 +65,7 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
         </div>
       ) : (
         <p data-pool-fit={fit}>
-          {P('range.pool.count', fit, { total: deg.format(verdicts.length), margin: deg.format(RANGE_MARGIN_C), ...temps })}
+          {P('range.pool.count', fit, { total: num(verdicts.length), margin: num(RANGE_MARGIN_C), ...temps })}
           {edge > 0 && <> {P('range.pool.edge', edge)}</>}
           {fit < verdicts.length && <> {T('range.pool.left')}</>}
         </p>

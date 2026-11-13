@@ -20,7 +20,8 @@ import { climate, location, pool, rangeFailed, rangeRule, siteClimate } from '..
 import { backToConsortium, canGoBack, pendingClimate, pendingSuggest, zoneOf } from '../memory.ts';
 import { T } from '../strings.ts';
 import { lazyPart } from './lazy.tsx';
-import { page, zoneLabel } from './Start.tsx';
+import { page } from './kit/page.ts';
+import { zoneName } from './kit/names.ts';
 
 const panel = lazyPart(() => import('./pool/pool.tsx').then((m) => m.PoolPanel), { quiet: true });
 
@@ -81,7 +82,7 @@ export function PoolSlot({ zone }: { zone: ClimateZone }) {
 function RangeUnavailable({ zone }: { zone: ClimateZone }) {
   return (
     <p class="ct-notice" role="status" data-range-unavailable>
-      {needsRule(zone) ? T('range.unavailableBorrowed', { climate: zoneLabel(zone) }) : T('range.unavailable')} <button type="button" class="button button-secondary ct-small" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
+      {needsRule(zone) ? T('range.unavailableBorrowed', { climate: zoneName(zone) }) : T('range.unavailable')} <button type="button" class="button button-secondary ct-small" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
     </p>
   );
 }
@@ -94,7 +95,7 @@ export function WhyNoSuggest({ zone, block }: { zone: ClimateZone; block: Sugges
 export function NeedsSite({ zone }: { zone: ClimateZone }) {
   return (
     <p class="ct-notice" role="status" data-needs-site>
-      {T('range.needsSite', { climate: zoneLabel(zone) })}{' '}
+      {T('range.needsSite', { climate: zoneName(zone) })}{' '}
       <button type="button" class="button button-secondary ct-small" onClick={toLocation}>{T('range.needsSite.go')}</button>{' '}
       <a href={page().start.contact}>{T('start.uncovered.ask')}</a>
       {canGoBack.value && <> <button type="button" class="link-button ct-link" onClick={backToConsortium}>{T('start.back')}</button></>}

@@ -1,47 +1,31 @@
 /** @jsxImportSource preact */
 // The stage bar (owner row "Scale, owner answers" 2026-10-28: phone rows show it, with an accessible
-// name) and the words and marks every stream S2 view shares, kept in this leaf module so the views
-// never import each other in a cycle:
-// - stage words: plain time first, the app's term beside it ("Years 1–3 · Placenta 3", owner row
-//   "Phases" 2026-10-27); a span reads "Years 3–15 → 60 years on · Secondary 1 – Climax";
-// - a plant's name, its marks (Main crop is a sprout, Kept a pin, never colour alone; a warning
+// name) and the marks every stream S2 view shares, kept in this leaf module so the views never import
+// each other in a cycle (the shared words and glyphs are in views/kit/names.ts and kit/icons.tsx):
+// - a plant's marks (Main crop is a sprout, Kept a pin, never colour alone; a warning
 //   triangle with its count; "From the Tropical list" for a guest) and its full accessible name;
 // - the "What is a layer?" / "What are these stages?" popovers;
 // - openDetails / openSwap / openAdd: the sheets, through the store's one opener (store.openSheet),
 //   which also says what Add was opened for (a cell or run, a job, "Show them anyway").
 import { computed } from '@preact/signals';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import type { ClimateZone, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { phases } from '../../../lib/consortium/index.ts';
+import type { PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
 import { crops, flags, kept, openSheet, type SheetFor } from '../store.ts';
-import { P, T, nameOf, pageLang } from '../strings.ts';
+import { P, T, pageLang } from '../strings.ts';
 import { PlantMarks } from './PlantMarks.tsx';
 import { PHASE_ORDS, collatorFor, spanOf, warningCounts, type Order } from './tracks.ts';
+import { layerName, listName, nameOf, spanWords, stageRun } from './kit/names.ts';
+import { PinIcon, SproutIcon, WarnIcon } from './kit/icons.tsx';
 
 // ---- words ----
-export const phasePlain = (p: number): string => T(`phase.${phases[p]}.plain`);
-export const phaseTerm = (p: number): string => T(`phase.${phases[p]}.term`);
-export const phaseWords = (p: number): string => `${phasePlain(p)} · ${phaseTerm(p)}`;
-export const layerName = (s: Stratum): string => T(`stratum.${s}`);
-export const listName = (c: ClimateZone): string => T(`list.${c.toLowerCase()}`);
-export const stageRun = (from: number, to: number = from): string => (from === to ? phasePlain(from) : `${phasePlain(from)} → ${phasePlain(to)}`);
 export const cellName = (s: Stratum, from: number, to: number = from): string => T('matrix.cell', { layer: layerName(s), stage: stageRun(from, to) });
 // "Find a soil feeder", or for a job's stage gap "Find a soil feeder for Years 15–25 → 60 years on":
 // the Jobs button and the Add sheet it opens say the same.
 export const jobFind = (job: string, run?: { from: number; to: number } | null): string =>
   run ? T('job.findFor', { find: T(`job.${job}.find`), stages: stageRun(run.from, run.to) }) : T(`job.${job}.find`);
 
-export { nameOf };
-
 // Plants by their shown name, with the page language's one collator (tracks.ts collatorFor).
 export const byName: Order = (a, b) => collatorFor(pageLang()).compare(nameOf(a), nameOf(b));
-
-// "Years 3–15 → 60 years on · Secondary 1 – Climax", or one stage's words.
-export function spanWords(t: Taxon): string {
-  const s = spanOf(t);
-  if (!s) return T('timingUnknown');
-  return s.from === s.to ? phaseWords(s.from) : `${phasePlain(s.from)} → ${phasePlain(s.to)} · ${phaseTerm(s.from)} – ${phaseTerm(s.to)}`;
-}
 
 // Warnings per member, as chips count them (no low conflicts).
 export const warnings = computed(() => warningCounts(flags.value));
@@ -59,20 +43,6 @@ export function plantLabel(t: Taxon): string {
   parts.push(T('matrix.open'));
   return parts.join(' ');
 }
-
-// ---- glyphs (aria-hidden; the text beside or the hidden label carries the meaning) ----
-export const WarnIcon = () => (
-  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.6 15 14H1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /><path d="M8 6v4" stroke="currentColor" stroke-width="1.7" /><circle cx="8" cy="12" r="1" fill="currentColor" /></svg>
-);
-export const PinIcon = () => (
-  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 1.5h6l-1 4 3 3H3l3-3z M8 8.5V15" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
-);
-export const SproutIcon = () => (
-  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 15V7" stroke="currentColor" stroke-width="1.8" /><path d="M8 8C8 4.5 5.5 2.5 2 2.5c0 3.5 2.5 5.5 6 5.5zM8 9.5c0-3 2.2-5 6-5 0 3-2.2 5-6 5z" fill="currentColor" /></svg>
-);
-export const ChevronIcon = ({ dir }: { dir: 'left' | 'right' }) => (
-  <svg class="ct-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d={dir === 'left' ? 'M10 3 5 8l5 5' : 'm6 3 5 5-5 5'} fill="none" stroke="currentColor" stroke-width="1.8" /></svg>
-);
 
 // A plant's marks. tight (matrix chips): glyphs with hidden words; else the Main crop tag in words.
 export function Marks({ taxon, tight = false }: { taxon: Taxon; tight?: boolean }) {

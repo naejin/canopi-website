@@ -31,7 +31,7 @@ import { T, pageLang } from '../../strings.ts';
 import { chooseClimate, pendingClimate, pendingLinkClimate } from '../../memory.ts';
 import { keepLocation, locationCountry, readLocation, siteFound } from './keep.ts';
 import { line, liveLookup, looking, nextLookup, unlessReplaced, unread, type Line } from './load.ts';
-import { zoneLabel } from '../Start.tsx';
+import { num, zoneName } from '../kit/names.ts';
 
 // ---- the result line ----
 export const mapOpen = signal(false);
@@ -164,8 +164,7 @@ function forget(): void {
 
 // ---- words ----
 const coords = (lat: number, lon: number): string => {
-  const n = new Intl.NumberFormat(pageLang(), { maximumFractionDigits: 2 });
-  return T('location.coords', { lat: n.format(Math.abs(lat)), lon: n.format(Math.abs(lon)), ns: T(lat < 0 ? 'location.dir.s' : 'location.dir.n'), ew: T(lon < 0 ? 'location.dir.w' : 'location.dir.e') });
+  return T('location.coords', { lat: num(Math.abs(lat), 2), lon: num(Math.abs(lon), 2), ns: T(lat < 0 ? 'location.dir.s' : 'location.dir.n'), ew: T(lon < 0 ? 'location.dir.w' : 'location.dir.e') });
 };
 // The class in plain words: its type (Af, BW, Cs, Df, ET…), then its temperature letter where it has one.
 function koppenWords(k: string): string {
@@ -202,7 +201,7 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
           {site ? (
             <>
               <p>
-                {T('location.why', { place: placeOf(loc), koppen: sc.koppen, words: koppenWords(sc.koppen), tmin: new Intl.NumberFormat(pageLang(), { maximumFractionDigits: 1 }).format(sc.today!.tminColdC) })}
+                {T('location.why', { place: placeOf(loc), koppen: sc.koppen, words: koppenWords(sc.koppen), tmin: num(sc.today!.tminColdC) })}
                 {' '}
                 {/* The class from the cell's own means, when the map's stored class gives another zone (site-climate.ts). */}
                 {sc.mapKoppen && `${T('location.means', { map: sc.mapKoppen, koppen: sc.koppen })} `}
@@ -212,14 +211,14 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
                   // review round 4, 2); otherwise both named and a plain "check" (a link's or a saved
                   // location under a chosen climate, or a card chosen since).
                   : sc.state === 'borderline' ? (sc.zone && sc.near
-                    ? `${T(picked ? 'location.between' : 'location.betweenCheck', { a: zoneLabel(sc.zone), b: zoneLabel(sc.near) })} ${T(sc.mapKoppen && sc.near === koppenZone(sc.mapKoppen) ? 'location.meansNear' : 'location.state.borderline', { margin: MEANS_MARGIN_C })}`
-                    : `${T('location.state.borderline')}${picked ? ` ${T('location.picked', { climate: zoneLabel(sc.zone) })}` : ''}`)
-                  : T('location.suggests', { climate: zoneLabel(sc.zone) })}
+                    ? `${T(picked ? 'location.between' : 'location.betweenCheck', { a: zoneName(sc.zone), b: zoneName(sc.near) })} ${T(sc.mapKoppen && sc.near === koppenZone(sc.mapKoppen) ? 'location.meansNear' : 'location.state.borderline', { margin: MEANS_MARGIN_C })}`
+                    : `${T('location.state.borderline')}${picked ? ` ${T('location.picked', { climate: zoneName(sc.zone) })}` : ''}`)
+                  : T('location.suggests', { climate: zoneName(sc.zone) })}
                 {sc.state === 'coast' && ` ${T('location.state.coast')}`}
               </p>
               {/* Not over a link's or save's climate still opening (seam review round 3, 1). */}
               {!compact && proposed && !pendingClimate.value && store.climate.value !== proposed && (
-                <p><button type="button" class="button button-primary ct-small" data-location-confirm onClick={() => { chooseClimate(proposed); store.proposedClimate.value = null; }}>{T('location.confirm', { climate: zoneLabel(proposed) })}</button></p>
+                <p><button type="button" class="button button-primary ct-small" data-location-confirm onClick={() => { chooseClimate(proposed); store.proposedClimate.value = null; }}>{T('location.confirm', { climate: zoneName(proposed) })}</button></p>
               )}
             </>
           ) : (

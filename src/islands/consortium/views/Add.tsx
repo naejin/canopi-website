@@ -17,7 +17,10 @@ import { P, T } from '../strings.ts';
 import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { asks as asksFlags, canopyOf, fits, jobsOf, misfitsBeside, phaseOrd } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/search.ts';
-import { Ask, Bar, NotChecked, SheetFrame, WARN, addMembers, closeSheet, flagLines, flagsOfPlant, nameOf, num, plainPhase, sheetCell, spanWords, zoneName } from './Details.tsx';
+import { addMembers, closeSheet, sheetCell } from '../store.ts';
+import { Ask, Bar, NotChecked, SheetFrame, WARN } from './kit/sheet.tsx';
+import { flagLines, flagsOfPlant } from './kit/flags.ts';
+import { nameOf, num, phasePlain, spanWords, zoneName } from './kit/names.ts';
 import { PlantMarks } from './PlantMarks.tsx';
 import { jobFind } from './StageBar.tsx';
 
@@ -124,7 +127,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
     addMembers(ids, from);
   };
   const title = mode === 'search' ? T('add.searchTitle')
-    : cell?.stratum ? T('add.titleCell', { layer: T(`stratum.${cell.stratum}`), phase: cell.from === cell.to ? plainPhase(cell.from) : `${plainPhase(cell.from)} → ${plainPhase(cell.to)}` })
+    : cell?.stratum ? T('add.titleCell', { layer: T(`stratum.${cell.stratum}`), phase: cell.from === cell.to ? phasePlain(cell.from) : `${phasePlain(cell.from)} → ${phasePlain(cell.to)}` })
     : job ? jobFind(job, cell) : T('add.title');
   const n = selected.length;
 

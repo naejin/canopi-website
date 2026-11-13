@@ -11,10 +11,9 @@ import type { Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { jobsOf, phases, strata } from '../../../lib/consortium/index.ts';
 import { climate, country, crops, flags, guests, kept, matrix, memberTaxa, site, source, stage } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
-import { plantName } from '../memory.ts';
-import { basisLine, countryName, page, zoneLabel } from './Start.tsx';
+import { page } from './kit/page.ts';
+import { basisLine, countryName, nameOf, phasePlain, phaseTerm, zoneName } from './kit/names.ts';
 import { SideDrawing } from './SideView.tsx';
-import { phasePlain, phaseTerm } from './StageBar.tsx';
 
 const PRINT_DRAWING_MAX = 20;
 
@@ -52,7 +51,7 @@ export function PrintSheet() {
   const members = memberTaxa.value;
   const lang = pageLang();
   const zone = climate.value;
-  const names = new Map(members.map((t) => [t.id, plantName(t, lang)]));
+  const names = new Map(members.map((t) => [t.id, nameOf(t)]));
   const byPlant = new Map<PlantId, Flag[]>();
   for (const f of flags.value) byPlant.set(f.id, [...(byPlant.get(f.id) ?? []), f]);
   const code = country.value.code;
@@ -63,7 +62,7 @@ export function PrintSheet() {
   return (
     <section class="ct-print" aria-labelledby="ct-print-h">
       <h2 id="ct-print-h" class="ct-print-title">{T('print.title')}</h2>
-      <p class="ct-print-sub">{zoneLabel(zone)} · {P('start.count', members.length)} · {new Date().toLocaleDateString(lang)}</p>
+      <p class="ct-print-sub">{zoneName(zone)} · {P('start.count', members.length)} · {new Date().toLocaleDateString(lang)}</p>
       <p class="ct-print-basis">{basisLine(site.value)}</p>
       <p class="ct-print-basis">
         {code ? `${T('country.line')} ${countryName(code)}${country.value.source === 'guess' ? ` (${T('country.guessed')})` : ''}` : `${T('country.line')}: ${T('country.none')}. ${T('country.noneNote')}`}
@@ -85,11 +84,11 @@ export function PrintSheet() {
         </thead>
         <tbody>
           {members.map((t) => {
-            const marks = [cropSet.has(t.id) ? T('print.mainCrop') : keptSet.has(t.id) ? T('print.kept') : '', guests.value[t.id] ? T('print.fromList', { climate: zoneLabel(guests.value[t.id]!) }) : ''].filter(Boolean);
+            const marks = [cropSet.has(t.id) ? T('print.mainCrop') : keptSet.has(t.id) ? T('print.kept') : '', guests.value[t.id] ? T('print.fromList', { climate: zoneName(guests.value[t.id]!) }) : ''].filter(Boolean);
             const notes = (byPlant.get(t.id) ?? []).map((f) => flagWords(f, names, code));
             return (
               <tr>
-                <th scope="row"><span class="ct-print-name">{plantName(t, lang)}</span> <i class="ct-sci">{t.canonical_name}</i>{marks.length ? <span class="ct-print-marks"> · {marks.join(' · ')}</span> : null}</th>
+                <th scope="row"><span class="ct-print-name">{nameOf(t)}</span> <i class="ct-sci">{t.canonical_name}</i>{marks.length ? <span class="ct-print-marks"> · {marks.join(' · ')}</span> : null}</th>
                 <td>{t.stratum ? T(`stratum.${t.stratum.value}`) : T('stratum.none')}</td>
                 <td>{phaseWords(t)}</td>
                 <td>{jobsOf(t).map((j) => T(`job.${j}`)).join(', ') || '–'}</td>

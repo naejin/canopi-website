@@ -13,10 +13,9 @@
 import type { FutureCheck, FutureSummary, Taxon } from '../../../../lib/consortium/index.ts';
 import { futureSummary, periodName, scenarioName, scenarios } from '../../../../lib/consortium/index.ts';
 import { location, memberTaxa, scenario } from '../../store.ts';
-import { P, T, pageLang } from '../../strings.ts';
-import { nameOf, openDetails } from '../StageBar.tsx';
-
-const list = (items: string[]) => new Intl.ListFormat(pageLang(), { type: 'conjunction' }).format(items);
+import { P, T } from '../../strings.ts';
+import { openDetails } from '../StageBar.tsx';
+import { listOf, nameOf } from '../kit/names.ts';
 
 export function FuturePanel() {
   const site = location.value;
@@ -25,7 +24,7 @@ export function FuturePanel() {
   const chosen = scenario.value;
   const sum = futureSummary(taxa, site, chosen);
   const byId = new Map(taxa.map((t) => [t.id, t]));
-  const names = (ids: string[]) => list(ids.flatMap((id) => { const t = byId.get(id); return t ? [nameOf(t)] : []; }));
+  const names = (ids: string[]) => listOf(ids.flatMap((id) => { const t = byId.get(id); return t ? [nameOf(t)] : []; }));
   return (
     <section class="ct-panel ct-future" aria-labelledby="ct-future-h" data-future={sum.available ? 'checked' : 'not-checked'}>
       <h2 class="ct-step-title" id="ct-future-h">{T('future.title')}</h2>

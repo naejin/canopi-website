@@ -21,14 +21,14 @@ import { useLayoutEffect, useState } from 'preact/hooks';
 import type { PhaseOrd } from '../../../lib/consortium/index.ts';
 import { strata } from '../../../lib/consortium/index.ts';
 import { memberTaxa, pool, stage } from '../store.ts';
-import { T, pageLang } from '../strings.ts';
+import { T } from '../strings.ts';
 import { PHASE_ORDS } from './tracks.ts';
 import { MAX_SILHOUETTES, SCALE_LINES, lineTop, sidePlants, type SidePlant } from './side.ts';
 import { DASH, MIN_COL, PLOT_H, plantStrokes, reachOf } from './draw.ts';
-import { Explain, Marks, byName, layerName, nameOf, openDetails, phasePlain, phaseTerm } from './StageBar.tsx';
+import { Explain, Marks, byName, openDetails } from './StageBar.tsx';
+import { layerName, nameOf, num, phasePlain, phaseTerm } from './kit/names.ts';
 import { StageStepper } from './StageStepper.tsx';
 
-const num = (n: number) => new Intl.NumberFormat(pageLang(), { maximumFractionDigits: 1 }).format(n);
 const pct = (x: number) => `${+x.toFixed(3)}%`;
 
 // room: how far, in drawing units, the plant may reach from its column's centre (null: not measured).

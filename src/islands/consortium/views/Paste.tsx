@@ -17,7 +17,10 @@ import { P, T } from '../strings.ts';
 import type { ClimateZone, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { asks } from '../../../lib/consortium/index.ts';
 import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, readPaste } from './paste.ts';
-import { Ask, SheetFrame, WARN, addMembers, closeSheet, flagLines, flagsOfPlant, nameOf, zoneName } from './Details.tsx';
+import { addMembers, closeSheet } from '../store.ts';
+import { Ask, SheetFrame, WARN } from './kit/sheet.tsx';
+import { flagLines, flagsOfPlant } from './kit/flags.ts';
+import { nameOf, zoneName } from './kit/names.ts';
 
 const MAX_LINES = 500;
 const SETTLE_MS = 200;

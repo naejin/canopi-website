@@ -12,9 +12,11 @@ import { strata } from '../../../lib/consortium/index.ts';
 import { matrix, memberTaxa, stage } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { PHASE_ORDS, SHARE_AIM, spans } from './tracks.ts';
-import { ChevronIcon, Explain, Marks, StageBar, byName, cellName, layerName, nameOf, openDetails, phasePlain, plantLabel } from './StageBar.tsx';
+import { Explain, Marks, StageBar, byName, cellName, openDetails, plantLabel } from './StageBar.tsx';
+import { layerName, nameOf, phasePlain } from './kit/names.ts';
+import { ChevronIcon } from './kit/icons.tsx';
 import { StageStepper } from './StageStepper.tsx';
-import { AddMore, CellReason, EmptyNotice, FillMeter, FreeCell, GlyphKey } from './Matrix.tsx';
+import { AddMore, CellReason, EmptyNotice, FillMeter, FreeCell, GlyphKey } from './matrix-parts.tsx';
 
 const kindOf = (cell: MatrixCell, empty: boolean) => (cell.empty ? 'cannot' : empty ? 'potential' : cell.members.length ? 'filled' : 'free');
 

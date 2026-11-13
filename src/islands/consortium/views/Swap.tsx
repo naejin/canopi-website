@@ -10,7 +10,10 @@ import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { CellRef, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { alternatives, asks } from '../../../lib/consortium/index.ts';
-import { Ask, BACK, Bar, NotChecked, SheetFrame, WARN, closeSheet, flagLines, listOf, nameOf, openSheet, plainPhase, spanWords, swapMember, taxonOf } from './Details.tsx';
+import { closeSheet, openSheet, swapMember, taxonOf } from '../store.ts';
+import { Ask, BACK, Bar, NotChecked, SheetFrame, WARN } from './kit/sheet.tsx';
+import { flagLines } from './kit/flags.ts';
+import { listOf, nameOf, phasePlain, spanWords } from './kit/names.ts';
 
 const SHOWN = { fit: 7, asking: 2 };
 
@@ -28,7 +31,7 @@ export default function Swap({ id }: { id: PlantId }) {
   const byId = new Map(pool.map((x) => [x.id, x]));
   const fit = alts.filter((a) => !asks(a.flags)), ask = alts.filter((a) => asks(a.flags));
   const shown = all ? alts : [...fit.slice(0, SHOWN.fit), ...ask.slice(0, SHOWN.asking)];
-  const cellWords = (cells: readonly CellRef[]) => listOf(cells.map(([s, p]) => (s === t.stratum?.value ? plainPhase(p) : `${T(`stratum.${s}`)} · ${plainPhase(p)}`)));
+  const cellWords = (cells: readonly CellRef[]) => listOf(cells.map(([s, p]) => (s === t.stratum?.value ? phasePlain(p) : `${T(`stratum.${s}`)} · ${phasePlain(p)}`)));
   const swap = (x: Taxon) => { closeSheet(); swapMember(id, x.id); };
 
   return (

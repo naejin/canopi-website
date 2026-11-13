@@ -9,7 +9,7 @@ import { signal } from '@preact/signals';
 import { climate, memberTaxa, source, view } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { notices } from '../memory.ts';
-import { zoneLabel } from './Start.tsx';
+import { zoneName } from './kit/names.ts';
 import { later, laterModule } from './lazy.tsx';
 
 // Share, the print sheet and the .canopi writer load after the matrix (views/lazy.tsx); the print
@@ -45,7 +45,7 @@ async function download(): Promise<void> {
   let mod: Awaited<ReturnType<typeof writer>>;
   try { mod = await writer(); } catch (err) { failed(err); return; }
   const { canopiFile, canopiFileName } = mod;
-  const zone = zoneLabel(climate.peek());
+  const zone = zoneName(climate.peek());
   const name = T('download.name', { climate: zone });
   const text = canopiFile(memberTaxa.peek(), {
     name,
