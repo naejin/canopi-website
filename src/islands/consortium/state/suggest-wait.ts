@@ -20,7 +20,8 @@ let lateToast: number | null = null;
 // The waiting Suggest has one owner, here (seam review round 4, 1): requestSuggest starts the wait,
 // the effect in watchSuggest runs it once its lists are read, and dropSuggest ends it: when the reader
 // changes the plants or opens a sheet (another action: Add, search, Details, paste; Start's "Start
-// empty and search" too), when the plant list fails (the load screen says so), or once its 10 s are
+// empty and search" too), when the plant list fails (the load screen says so), when Start can no
+// longer suggest for the chosen climate or another is chosen (views/PoolSlot.tsx), or once its 10 s are
 // up with a kept guest's list still unread (a toast says so), or when the suggestion's chunk fails or
 // has not come once its 10 s are up with the list read (a toast with Reload). Each wait therefore
 // ends, with a suggestion or one toast. That last toast is taken down if the chunk then arrives
@@ -31,7 +32,8 @@ const SUGGEST_WAIT_MS = 10_000;
 // data/load.ts); production folds it to SUGGEST_WAIT_MS.
 const waitMs = (): number => (typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { suggest?: number } }).__ctTimeouts?.suggest) || SUGGEST_WAIT_MS : SUGGEST_WAIT_MS);
 const reloadToast = (): void => store.showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => globalThis.location.reload() });
-function dropSuggest(): void {
+// Ends the wait (the one way to: views call it, as PoolSlot does when Start can no longer suggest).
+export function dropSuggest(): void {
   if (!pendingSuggest.peek()) return;
   clearTimeout(cap);
   waited.value = false;

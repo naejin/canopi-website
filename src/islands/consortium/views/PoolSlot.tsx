@@ -14,7 +14,7 @@
 // fits" state. Without a location, a curated climate shows nothing here, as in P2. (store.ts
 // siteClimate; the range rule loads with its own chunk, store.ts rangeRule. The rule of "can Suggest
 // now" and the list a climate has: rules/suggest-block.ts.)
-import { effect } from '@preact/signals';
+import { effect, untracked } from '@preact/signals';
 import type { ClimateZone } from '../../../lib/consortium/index.ts';
 import { hasPlants } from '../../../lib/consortium/index.ts';
 import { curatedClimates, location, pool, rangeFailed, rangeRule, siteClimate } from '../store.ts';
@@ -22,7 +22,7 @@ import * as rule from '../rules/suggest-block.ts';
 import type { SuggestBlock, SuggestScene } from '../rules/suggest-block.ts';
 import { climateChosen } from '../state/persist.ts';
 import { backToConsortium, canGoBack } from '../state/draft.ts';
-import { pendingSuggest } from '../state/suggest-wait.ts';
+import { dropSuggest, pendingSuggest } from '../state/suggest-wait.ts';
 import { T } from '../strings.ts';
 import { lazyPart } from './lazy.tsx';
 import { page } from './kit/page.ts';
@@ -68,12 +68,12 @@ export const suggestBlock = (z: ClimateZone): SuggestBlock | null => rule.sugges
 // they arrive), and one pressed for another climate than the one now chosen (fix review 29b709e, 1).
 effect(() => {
   const z = climateChosen.value;
-  if (pendingSuggest.value && (nothingFits() || (z && suggestBlock(z)))) pendingSuggest.value = false;
+  if (pendingSuggest.value && (nothingFits() || (z && suggestBlock(z)))) untracked(dropSuggest);
 });
 let lastZone: ClimateZone | null = null;
 effect(() => {
   const z = climateChosen.value;
-  if (z !== lastZone && lastZone !== null && z !== null) pendingSuggest.value = false;
+  if (z !== lastZone && lastZone !== null && z !== null) untracked(dropSuggest);
   if (z !== null) lastZone = z;
 });
 
