@@ -133,11 +133,13 @@ test('P5-14g (S5c range chunk offline, fix review 231bead 1–2): Reload is the 
   await atSite(page, 'seville');
   assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'the notice');
   await new Promise((r) => setTimeout(r, 1000));
-  // The store's rule and the Mediterranean panel import the same chunk: Chrome 155 reuses the first
-  // failure for the second import, the CI runner's Chrome sends a second request. Either way it is
-  // one or two requests at the first location, and none more after a new one.
+  // Three importers reach the same chunk at the first location: the store's rule, the Mediterranean
+  // panel (future.ts) and the mark providers (range-marks.ts), each its own chunk since E6 B4. Chrome
+  // 155 reuses the first failure for later imports; the CI runner's Chrome sends one request per
+  // importer. Either way it is one to three requests at the first location, and none more after a
+  // new one.
   const before = failed.length;
-  assert.ok(before >= 1 && before <= 2, `the chunk was requested at Seville (${before})`);
+  assert.ok(before >= 1 && before <= 3, `the chunk was requested at Seville (${before})`);
   await atSite(page, 'lyon');
   await new Promise((r) => setTimeout(r, 1000));
   assert.equal(failed.length, before, 'a new location does not import the chunk again');
