@@ -318,7 +318,14 @@
             "src/islands/consortium/views/Correction.tsx",
             "src/islands/consortium/views/Add.tsx",
             "src/islands/consortium/views/layers.ts",
-            "scripts/browser/consortium-e6-r4.browser.test.mjs"
+            "scripts/browser/consortium-e6-r4.browser.test.mjs",
+            "scripts/browser/consortium-p5-s5c.browser.test.mjs",
+            "scripts/consortium-p5-seams-s5c.test.mjs",
+            "scripts/consortium-source.test.mjs",
+            "src/islands/consortium/state/suggest-wait.ts",
+            "scripts/consortium-core.test.mjs",
+            "scripts/consortium-p5-ranges.test.mjs",
+            "src/islands/consortium/views/Paste.tsx"
           ]
         },
         "B4": {
@@ -352,7 +359,7 @@
             "B4",
             "Q3"
           ],
-          "duty": "exit: memory.ts re-exports removed and consumers re-pointed; first run lowered to the measured value (<= 40 KB); dependency-cruiser L2/L5/L6/L8 and no-circular to error; knip baseline regenerated (dead plantName etc. deleted); zero expected-fail markers; concepts; remove forwarders store.ts DEFAULT_SITE/Consortium re-exports, memory.ts plantName; shell.css:77 drops var(--font-body); remove forwarders views/location/keep.ts, load.ts re-exports, location.tsx re-exports (settle, useMyLocation, searchPlace) and the memory.ts barrel; Start.tsx and PoolSlot.tsx read climateShown (state/persist.ts) instead of computing the shown climate (S2/R2 seam); location.tsx:85 uses it too; store.start() guarded against a second call (S3 review, low); drop the testFault export once K3 reads __ctFaults inline (S3 hand-off); main.ts test-hook comment true only after K3 removes the static imports in Details.tsx/lazy.tsx",
+          "duty": "exit: memory.ts re-exports removed and consumers re-pointed; first run lowered to the measured value (<= 40 KB); dependency-cruiser L2/L5/L6/L8 and no-circular to error; knip baseline regenerated (dead plantName etc. deleted); zero expected-fail markers; concepts; remove forwarders store.ts DEFAULT_SITE/Consortium re-exports, memory.ts plantName; shell.css:77 drops var(--font-body); remove forwarders views/location/keep.ts, load.ts re-exports, location.tsx re-exports (settle, useMyLocation, searchPlace) and the memory.ts barrel; Start.tsx and PoolSlot.tsx read climateShown (state/persist.ts) instead of computing the shown climate (S2/R2 seam); location.tsx:85 uses it too; store.start() guarded against a second call (S3 review, low); drop the testFault export once K3 reads __ctFaults inline (S3 hand-off); main.ts test-hook comment true only after K3 removes the static imports in Details.tsx/lazy.tsx; main.ts keeps #ct-root aria-busy until render so the test build needs no testHook preload (B4 hand-off); Correction drops its drafts prop (B4 probe: the role finder keeps details); stale ct:matrix and loader comments (marks.ts:43, future.tsx:3, main.ts:22, load.ts:10, search.ts:2, later.ts:2, lazy.tsx, harness.mjs:98); placed.ts drops the derived estimate flag (tests read origin)",
           "files": [
             "src/islands/consortium/**",
             "src/lib/consortium/**",
