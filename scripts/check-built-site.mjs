@@ -481,9 +481,9 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 //   lazy chunk with no role fails here (give its entry a role);
 // - no role chunk sits in the first run, and no island chunk's preload list (__vite__mapDeps) loads a
 //   stylesheet with a lazy part (A14: a late stylesheet would flash), MapLibre's CSS aside;
-// - a plant dialog or sheet chunk statically imports only first-run, sheet or dialog chunks (K3 round-2
-//   review: a failed shared chunk would break every sheet until Reload, since Chromium never refetches
-//   a failed module; views/lazy.tsx retryable mends the part's own chunk only);
+// - a plant dialog or sheet chunk statically imports only first-run chunks, not another sheet's or the
+//   dialog's (K3 round-2 review: a failed shared chunk would break every sheet until Reload, since
+//   Chromium never refetches a failed module; views/lazy.tsx retryable mends the part's own chunk only);
 // - the modulepreload links (A5, L5) carry the first run and the data loader with the sqlite glue, and
 //   no lazy part, feature or MapLibre chunk, so nothing lazy competes with the database on a slow
 //   phone (checked from the graph and the roles, not from modulepreloadChunks, which writes them);
@@ -493,7 +493,7 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 // Caps (E6 stream B4, 2026-11-13): each role's measured cost at the B4 build (gzip -9) plus 0.5 KB
 // headroom, rounded up to 0.1 KB, never above design check A14's role maximum (sheets, details, later, suggest
 // ≤ 8 KB; a feature ≤ 12 KB; location ≤ 20 KB). A part that outgrows its cap is a coordinator row, not
-// a silent raise. An empty role (likely and native until S5e, suggest until R4) has no chunk to cap
+// a silent raise. An empty role (likely and native until S5e) has no chunk to cap
 // yet; it gets its A14 maximum.
 const FIRST_RUN_BUDGET = 38 * 1024;
 const KB = 1024;
@@ -508,7 +508,7 @@ const ROLE_CAPS = {
   details: 6.7 * KB, // measured 6,296 B (A14 max 8)
   sheets: 6.3 * KB, // each sheet; the largest (Paste) measured 5,933 B, Add 2,414, Correction 2,380, Swap 1,190 (A14 max 8)
   later: 8 * KB, // measured 7,831 B: the A14 max of 8 KB leaves 0.35 KB headroom
-  suggest: 8 * KB, // no chunk before R4's loadSuggest: A14 max
+  suggest: 8 * KB, // set before R4's loadSuggest gave it a chunk (1.8 KB at the E6 hand-off build): A14 max
 };
 const LOCATION_BUDGET = 20 * KB;
 const MAPLIBRE_BUDGET = 330 * KB;
@@ -520,7 +520,7 @@ assert.ok(!existsSync(join(root, CHUNK_ROLES_FILE)), `${CHUNK_ROLES_FILE} must n
 const roles = readChunkRoles(root);
 assert.deepEqual(roles.testHook, [], `the browser-test hook's chunk is in a production build (${roles.testHook.join(', ')}): build with npm run build`);
 assert.deepEqual(Object.keys(ROLE_CAPS).sort(), Object.keys(roles.features).sort(), 'every chunk role has a cap (ROLE_CAPS) and every cap a role');
-for (const kind of ['markProviders', 'future', 'details', 'later', 'range']) assert.equal(roles.features[kind].length, 1, `one ${kind} chunk, found ${roles.features[kind].join(', ') || 'none'}`);
+for (const kind of ['markProviders', 'future', 'details', 'later', 'range', 'suggest', 'pool']) assert.equal(roles.features[kind].length, 1, `one ${kind} chunk, found ${roles.features[kind].join(', ') || 'none'}`);
 assert.equal(roles.features.sheets.length, 4, `four sheet chunks (Add, Swap, Paste, Correction), found ${roles.features.sheets.join(', ') || 'none'}`);
 const report = { firstRun: 0, firstRunList: [], costs: {}, location: 0, maplibre: 0, preloads: [] };
 for (const lang of locales) {
@@ -586,12 +586,13 @@ for (const lang of locales) {
     const css = lists.flatMap((l) => [...l.matchAll(/["']([^"']+\.css)["']/g)].map((m) => `/${m[1].replace(/^\//, '')}`)).filter((c) => !roles.maplibreCss.includes(c));
     assert.deepEqual(css, [], `${path}: ${p} loads the stylesheet ${css.join(', ')} with a lazy part: it would arrive late and flash`);
   }
-  // K3 round-2 review: a plant dialog or sheet chunk statically imports only first-run, sheet or
-  // plant dialog chunks (and the page-wide chunks the first run imports).
+  // K3 round-2 review (E6 hand-off A): a plant dialog or sheet chunk statically imports only first-run
+  // chunks (and the page-wide chunks the first run imports), never another sheet's or the dialog's:
+  // retryable mends the part's own chunk only, so a failed shared chunk would stay failed.
   const firstRunAll = new Set(staticClosure(graph, [...scripts, all.entry]));
   const sheetLike = new Set([...roles.features.details, ...roles.features.sheets]);
   for (const p of sheetLike) {
-    const stray = staticClosure(graph, [p]).filter((q) => !firstRunAll.has(q) && !sheetLike.has(q));
+    const stray = staticClosure(graph, [p]).filter((q) => q !== p && !firstRunAll.has(q));
     assert.deepEqual(stray, [], `${path}: the sheet or plant dialog chunk ${p} statically imports ${stray.join(', ')}, outside the first run: a failed request for it would break that sheet until Reload`);
   }
   // A5 (L5): the first run and the loader with the glue are preloaded; no lazy part, feature or
