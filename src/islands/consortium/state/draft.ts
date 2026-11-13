@@ -116,7 +116,3 @@ export function cropExamples(pool: readonly Taxon[], n = 4, chosen: readonly Pla
   }
   return out;
 }
-
-// The name a plant shows in the page language, else English, else its scientific name.
-export const plantName = (t: Pick<Taxon, 'names' | 'canonical_name'>, lang: string): string =>
-  t.names[lang as keyof Taxon['names']] ?? t.names.en ?? t.canonical_name;

@@ -17,7 +17,7 @@ const m = {
   ...(await import('../src/islands/consortium/state/draft.ts')),
   ...(await import('../src/islands/consortium/state/suggest-wait.ts')),
 };
-const { guarded, saveRecord, readRecord, oldRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, cropExamples, plantName, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
+const { guarded, saveRecord, readRecord, oldRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, cropExamples, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
 // Island state, all of it (the text checks below).
 const stateSrc = ['persist', 'restore', 'arrival', 'draft', 'suggest-wait', 'lookups', 'location']
   .map((f) => readFileSync(new URL(`../src/islands/consortium/state/${f}.ts`, import.meta.url), 'utf8')).join('\n');
@@ -155,7 +155,7 @@ const realSource = createSqliteSource(real.db, { images: {} });
 test('cropExamples on the real Temperate list: Onion, European chestnut, Sunflower, Bilberry (owner row 2026-10-29)', async () => {
   const pool = await realSource.pool('Temperate');
   const ex = cropExamples(pool);
-  assert.deepEqual(ex.map((t) => plantName(t, 'en')), ['Onion', 'European chestnut', 'Sunflower', 'Bilberry']);
+  assert.deepEqual(ex.map((t) => t.names.en ?? t.canonical_name), ['Onion', 'European chestnut', 'Sunflower', 'Bilberry']);
   assert.ok(ex.every((t) => t.role === 'crop'), 'food plants only');
   assert.equal(new Set(ex.map((t) => t.genus)).size, ex.length, 'one per genus');
   assert.equal(new Set(ex.map((t) => t.stratum?.value)).size, ex.length, 'spread across the layers');
