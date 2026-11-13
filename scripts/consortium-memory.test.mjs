@@ -663,3 +663,41 @@ test('a link\'s o= is looked up through the location step the view hands in (res
     assert.equal(store.location.peek(), null);
   } finally { store.location.value = null; restoreModule.provideLocationStep(before); }
 });
+
+// ---- E6 chunk 5: the one shown climate (S2/R2 seam) ----
+
+test('climateShown agrees with the views\' own shown climate in every case (Start\'s cards and head, PoolSlot)', async () => {
+  const store = await import('../src/islands/consortium/store.ts');
+  const before = { climate: store.climate.peek(), proposed: store.proposedClimate.peek(), inFlight: persist.inFlight.peek() };
+  try {
+    for (const climate of [null, 'Temperate', 'Mediterranean']) for (const pending of [null, 'Temperate', 'Tropical']) for (const proposed of [null, 'Temperate', 'Mediterranean']) {
+      store.climate.value = climate;
+      persist.inFlight.value = pending ? { id: 1, climate: pending, from: 'link' } : null;
+      store.proposedClimate.value = proposed;
+      const at = `climate ${climate}, link ${pending}, proposed ${proposed}`;
+      // What Start.tsx Climates/StartView and PoolSlot.tsx shownZone computed before chunk 5.
+      const chosen = store.climate.value ?? persist.pendingClimate.value;
+      const wasProposed = chosen ? null : store.proposedClimate.value;
+      const shown = persist.climateShown.value;
+      assert.equal(shown.proposed ? null : shown.zone, chosen, `${at}: the chosen (or link's) climate`);
+      assert.equal(shown.proposed ? shown.zone : null, wasProposed, `${at}: the proposed card`);
+    }
+  } finally {
+    store.climate.value = before.climate; store.proposedClimate.value = before.proposed; persist.inFlight.value = before.inFlight;
+  }
+});
+
+test('location.tsx\'s "Use {climate}" button is not climateShown: it shows for a proposal under a chosen climate (kept as is)', async () => {
+  const store = await import('../src/islands/consortium/store.ts');
+  const before = { climate: store.climate.peek(), proposed: store.proposedClimate.peek(), inFlight: persist.inFlight.peek() };
+  try {
+    // A reader who chose Temperate, then "Use my location" in Seville: locate() proposes Mediterranean.
+    store.climate.value = 'Temperate'; persist.inFlight.value = null; store.proposedClimate.value = 'Mediterranean';
+    const proposed = store.proposedClimate.value;
+    const button = !!proposed && !persist.pendingClimate.value && store.climate.value !== proposed; // location.tsx:85
+    assert.equal(button, true, 'the result line offers "Use Mediterranean"');
+    assert.equal(persist.climateShown.value.proposed, false, 'climateShown shows the chosen Temperate, no proposal: reading it here would hide the button');
+  } finally {
+    store.climate.value = before.climate; store.proposedClimate.value = before.proposed; persist.inFlight.value = before.inFlight;
+  }
+});
