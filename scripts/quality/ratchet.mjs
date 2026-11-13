@@ -98,6 +98,22 @@ export function compare(baseline, current) {
 }
 
 /**
+ * Counted keys (axe: `page|rule` → nodes, row R8): a new key or a higher count is a rise; a lower count
+ * or a key gone is stale.
+ */
+export function compareCounts(baseline, current) {
+  const rises = [];
+  const stale = [];
+  for (const [key, n] of Object.entries(current)) {
+    const was = baseline[key] ?? 0;
+    if (n > was) rises.push(`${key}: ${was} → ${n}`);
+    else if (n < was) stale.push(`${key}: ${was} → ${n}`);
+  }
+  for (const [key, was] of Object.entries(baseline)) if (!(key in current)) stale.push(`${key}: ${was} → 0`);
+  return { rises: rises.sort(), stale: stale.sort() };
+}
+
+/**
  * The verdict of one run: messages and whether it fails.
  * @param {{ tool: string, added: string[], removed: string[], errors?: string[], ci: boolean, seconds: number, budget: number }} run
  */

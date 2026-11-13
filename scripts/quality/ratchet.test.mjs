@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { archKeys, assertScanned, compare, cycleKey, deadKeys, dupKeys, verdict } from './ratchet.mjs';
+import { archKeys, assertScanned, compare, compareCounts, cycleKey, deadKeys, dupKeys, verdict } from './ratchet.mjs';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const run = { tool: 'dup', errors: [], seconds: 1, budget: 4 };
@@ -82,6 +82,13 @@ test('R4: an empty scan or a missing count fails, never a silent pass', () => {
   assert.throws(() => assertScanned(dupKeys({ duplicates: [] }), 'jscpd'), /scanned no files/);
   assert.throws(() => assertScanned(archKeys({}), 'dependency-cruiser'), /scanned no files/);
   assert.equal(assertScanned({ scanned: 1, keys: [] }, 'knip').scanned, 1);
+});
+
+test('R8: axe counts by page and rule: a new rule id or a higher count rises; lower or gone is stale', () => {
+  const base = { 'home|color-contrast': 3, 'guide|region': 1 };
+  assert.deepEqual(compareCounts(base, { 'home|color-contrast': 3, 'guide|region': 1 }), { rises: [], stale: [] });
+  assert.deepEqual(compareCounts(base, { 'home|color-contrast': 4, 'guide|region': 1, 'home|label': 1 }), { rises: ['home|color-contrast: 3 → 4', 'home|label: 0 → 1'], stale: [] });
+  assert.deepEqual(compareCounts(base, { 'home|color-contrast': 2 }), { rises: [], stale: ['guide|region: 1 → 0', 'home|color-contrast: 3 → 2'] });
 });
 
 test('R6/R10: over the time budget warns, never fails', () => {
