@@ -8,7 +8,7 @@ import { useState } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import { climate, memberTaxa, source, view } from '../store.ts';
 import { P, T } from '../strings.ts';
-import { notices } from '../memory.ts';
+import { notices } from '../state/restore.ts';
 import { zoneName } from './kit/names.ts';
 import { later, laterModule } from './lazy.tsx';
 

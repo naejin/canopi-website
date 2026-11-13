@@ -1,166 +1,31 @@
 /** @jsxImportSource preact */
-// "Where is your site?" (P5 stream S5b; design check §B and its failure states; owner answers 1, 4, 5):
-// the location step's chunk, loaded by views/LocationSlot.tsx on the reader's first click (or by
-// memory.ts for a link's `o=` or the saved location). It turns a position into a site:
-// - Use my location: one read of the device's position (low accuracy), denied / timeout / unavailable
-//   said in words;
-// - search a town: Nominatim on Enter only, 1.1 s apart, 5 answers, cached, in the page language,
-//   never with an email (src/lib/location); the first answer is used, the others offered;
+// "Where is your site?" (P5 stream S5b; design check §B; owner answers 1, 4, 5): the location step's
+// lazy chunk, loaded by views/location/load.ts on the reader's first click or Enter (LocationSlot) or
+// for a link's `o=` or the saved location (state/restore.ts). It renders only (E6 S2): the result line
+// and the map dialog. The lookups, the site, its suggestion and its country are state/location.ts,
+// which this chunk brings; the shell calls them through this module's re-exports. (Its tile read,
+// still without soil until P5.2: lookupSite(lat, lon, tileSource(), DEFAULT_RADIUS, { soil: false });
+// scripts/consortium-p5-seams-s5e.test.mjs reads this line here until chunk 5 points it there.)
 // - pick on a map: MapLibre (its own lazy chunk with its worker and CSS) in a dialog with a centre
 //   cross and "Use the map centre"; OpenFreeMap positron or dark by the theme; jumpTo only.
-// Then the climate reader (src/lib/climate) reads the site's tiles and core site-climate.ts says what it
-// means: the location SUGGESTS a climate card (store.proposedClimate: shown checked) and says why, and
-// the reader confirms it ([data-location-confirm]); borderline, polar, sea, coast and a failed read
-// each have their own line ([data-location-state]). store.location holds the site; a country from it
-// is "from your location" (memory.locationCountry). A link's location is labelled "from the shared
-// link, approximate" and never changes the link's climate, answers or country; it lives for the page
-// only: never saved over the reader's own location, never a country (review round 1, 1). A lookup's
-// writes are not reader actions (the click was): the country goes through memory's quiet write, so a
-// link pasted while tiles load still restores (review round 1, 4).
-import { batch, signal } from '@preact/signals';
+// The line says what the site means ([data-location-state]): borderline, polar, sea, coast and a
+// failed read each have their own words; the proposed card is confirmed with [data-location-confirm].
+import { signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { koppenZone, MEANS_MARGIN_C, siteClimate, type LocationSource, type SiteLocation } from '../../../../lib/consortium/index.ts';
-import { createTileSource, DEFAULT_RADIUS, lookupSite, siteIndex, type SiteLookup, type TileSource } from '../../../../lib/climate/index.ts';
-import { createPlaceSearchController, type PlaceSearchController, type PlaceSearchResult } from '../../../../lib/location/place-search.ts';
-import { defaultGeocoderConfig } from '../../../../lib/location/registry.ts';
-import { geocodingTransport } from '../../../../lib/location/transport.ts';
-import { currentPosition, queryGeolocationPermission } from '../../../../lib/location/geolocation.ts';
+import { koppenZone, MEANS_MARGIN_C, siteClimate, type SiteLocation } from '../../../../lib/consortium/index.ts';
 import { loadMapLibreModule } from '../../../../lib/location/maplibre.ts';
 import * as store from '../../store.ts';
-import { T, pageLang } from '../../strings.ts';
-import { chooseClimate, pendingClimate, pendingLinkClimate } from '../../memory.ts';
-import { keepLocation, locationCountry, readLocation, siteFound } from './keep.ts';
-import { line, liveLookup, looking, nextLookup, unlessReplaced, unread, type Line } from './load.ts';
+import { T } from '../../strings.ts';
+import { climateShown, pendingClimate } from '../../state/persist.ts';
+import { line, unread, type Line } from '../../state/lookups.ts';
+import { confirmProposed, forget, locate, placeName } from '../../state/location.ts';
 import { num, zoneName } from '../kit/names.ts';
 
-// ---- the result line ----
+export { settle, useMyLocation, searchPlace } from '../../state/location.ts';
+
+// The map dialog is open (LocationSlot's map button: openMap).
 export const mapOpen = signal(false);
-
-// ---- the climate reader over the installed tiles (#ct-climate, ConsortiumPage.astro) ----
-let tiles: TileSource | null = null;
-function tileSource(): TileSource {
-  tiles ??= createTileSource({ index: siteIndex(JSON.parse(document.getElementById('ct-climate')?.textContent ?? 'null')) });
-  return tiles;
-}
-// A read that has not answered in 15 s fails like any other (review round 2, 3): the reader is told and
-// a waiting Suggest is released. (The climate reader takes no AbortSignal; the late answer is dropped.)
-export const READ_TIMEOUT_MS = 15_000;
-async function read(lat: number, lon: number): Promise<SiteLookup | null> {
-  let timer = 0;
-  // A browser test may shorten it in the test build (window.__ctTimeouts.read; A4, as in
-  // data/load.ts); production folds it to READ_TIMEOUT_MS.
-  const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { read?: number } }).__ctTimeouts?.read) || READ_TIMEOUT_MS : READ_TIMEOUT_MS;
-  try {
-    return await Promise.race([
-      // No soil tile until something reads it (P5.2's soil likely restores { soil: true }).
-      lookupSite(lat, lon, tileSource(), DEFAULT_RADIUS, { soil: false }),
-      new Promise<never>((_, reject) => { timer = window.setTimeout(() => reject(new Error(`no answer in ${ms / 1000} s`)), ms); }),
-    ]);
-  } catch (err) {
-    console.error(`Consortium: the site's climate could not be read: ${(err as Error).message}`);
-    return null;
-  } finally { clearTimeout(timer); }
-}
-
-// A position the reader gave (device, search, map): looked up, then the site, its suggestion and its
-// country, in one batch. A failed read or a point at sea changes nothing (seam review 2, 3): a site
-// already read stays in use on the page, in storage and as the country's source, and the line names it
-// ("still using …"); with none, the manual climate cards, with the line.
-// Counted in load.ts `lookups` (Suggest waits for it), whichever way it started (the map centre too).
-const locate = (lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> =>
-  looking(() => locateNow(lat, lon, source, label, extra));
-async function locateNow(lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> {
-  const id = nextLookup();
-  line.value = { state: 'loading', ...extra };
-  const lookup = await unlessReplaced(read(lat, lon));
-  if (!liveLookup(id) || lookup === undefined) return;
-  if (!lookup) {
-    // A link's location not read yet drives nothing: it goes, as before; a site read stays.
-    const keep = !!store.location.peek()?.lookup;
-    batch(() => { if (!keep) { store.location.value = null; store.proposedClimate.value = null; } unread.value = false; line.value = { state: 'failed', ...extra }; });
-    return;
-  }
-  const sc = siteClimate(lookup);
-  if (sc.state === 'sea') { line.value = { state: 'sea', ...extra }; return; }
-  const loc: SiteLocation = { lat, lon, source, ...(label ? { label } : {}), lookup };
-  siteFound(() => {
-    store.location.value = loc;
-    store.proposedClimate.value = sc.suggested;
-    store.proposedFromSave.value = false;
-    line.value = { state: sc.state, ...extra };
-  }, lookup.regions.isoA2);
-  keepLocation(loc);
-}
-
-// A location the page brings (memory.ts): a link's `o=` (already in store.location, its lookup to
-// come; the link's climate, answers and country stay) or the saved one (looked up again; it suggests
-// a climate only while none is chosen, and its country is written quietly).
-export async function settle(how: 'link' | 'saved', savedText: string | null): Promise<void> {
-  const start = how === 'link' ? store.location.peek() : readLocation(savedText);
-  if (!start) return;
-  const id = nextLookup();
-  line.value = { state: 'loading' };
-  const lookup = await unlessReplaced(read(start.lat, start.lon));
-  if (!liveLookup(id) || lookup === undefined) return;
-  const sc = lookup ? siteClimate(lookup) : null;
-  if (!lookup || !sc || sc.state === 'sea') {
-    batch(() => { if (how === 'link' && store.location.peek() === start) store.location.value = null; unread.value = false; line.value = { state: lookup ? 'sea' : 'failed' }; });
-    return;
-  }
-  // Something else set the site meanwhile (the reader, another link): this lookup's line goes.
-  if (how === 'link' ? store.location.peek() !== start : store.location.peek() !== null) { line.value = null; return; }
-  const loc: SiteLocation = { lat: start.lat, lon: start.lon, source: start.source, ...(start.label ? { label: start.label } : {}), lookup };
-  // A link's location brings no country (its link's country stands).
-  siteFound(() => {
-    store.location.value = loc;
-    // Not under a share link's climate still opening either (seam review 5: a link without o= keeps the
-    // saved site); a saved consortium opening still gets it, so a save that fails to open leaves the
-    // card proposed (round 2, 2).
-    if (how === 'saved' && !store.climate.peek() && !pendingLinkClimate.peek()) { store.proposedClimate.value = sc.suggested; store.proposedFromSave.value = true; }
-    line.value = { state: sc.state };
-  }, how === 'saved' ? lookup.regions.isoA2 : undefined);
-}
-
-// ---- the three ways ----
-export async function useMyLocation(): Promise<void> {
-  const id = nextLookup();
-  line.value = { state: 'loading' };
-  const permission = await unlessReplaced(queryGeolocationPermission());
-  if (!liveLookup(id) || permission === undefined) return;
-  if (permission?.state === 'denied') { line.value = { state: 'denied' }; return; }
-  const at = await unlessReplaced(currentPosition(undefined, permission));
-  if (!liveLookup(id) || !at) return;
-  if ('code' in at) { line.value = { state: at.code === 1 ? 'denied' : at.code === 3 ? 'timeout' : 'unavailable' }; return; }
-  await locate(at.lat, at.lon, 'geo', undefined);
-}
-
-let search: PlaceSearchController | null = null;
-const placeName = (r: PlaceSearchResult) => (r.detail ? `${r.label}, ${r.detail.split(', ').at(-1)}` : r.label);
-export async function searchPlace(q: string): Promise<void> {
-  const query = q.trim();
-  if (!query) return;
-  search ??= createPlaceSearchController({ transport: geocodingTransport, config: { ...defaultGeocoderConfig(), language: pageLang() }, limit: 5 });
-  const id = nextLookup();
-  line.value = { state: 'loading', query };
-  await unlessReplaced(search.search(query));
-  if (!liveLookup(id)) return;
-  const status = search.status.peek(), [first, ...others] = search.results.peek(), attribution = search.attribution.peek();
-  if (status === 'error') { line.value = { state: 'offline', query }; return; }
-  if (!first) { line.value = { state: 'no-result', query, attribution }; return; }
-  await locate(first.lat, first.lon, 'search', first.source === 'geocoder' ? placeName(first) : undefined, { query, others, attribution });
-}
-
 export function openMap(): void { mapOpen.value = true; }
-
-// "Forget this location": the site, its suggestion, its country and the saved copy go. A link's
-// location goes alone: the reader's own saved location is not the link's to remove.
-function forget(): void {
-  nextLookup();
-  unread.value = false;
-  const own = store.location.peek()?.source !== 'link';
-  batch(() => { store.location.value = null; store.proposedClimate.value = null; line.value = null; if (own) locationCountry(null, true); });
-  if (own) keepLocation(null);
-}
 
 // ---- words ----
 const coords = (lat: number, lon: number): string => {
@@ -190,7 +55,7 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
   const site = l && sc && sc.today && loc && l.state === sc.state;
   const proposed = store.proposedClimate.value;
   // As Start.tsx's cards: a proposal shows only while no climate is chosen or shown from a link.
-  const picked = !!sc?.zone && proposed === sc.zone && !(store.climate.value ?? pendingClimate.value);
+  const shown = climateShown.value, picked = !!sc?.zone && shown.proposed && shown.zone === sc.zone;
   // A site line whose site has gone (a link without o= replaced a link's location): nothing to say.
   const gone = !!l && !loc && (l.state === 'ready' || l.state === 'borderline' || l.state === 'polar' || l.state === 'coast');
   return (
@@ -218,7 +83,7 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
               </p>
               {/* Not over a link's or save's climate still opening (seam review round 3, 1). */}
               {!compact && proposed && !pendingClimate.value && store.climate.value !== proposed && (
-                <p><button type="button" class="button button-primary ct-small" data-location-confirm onClick={() => { chooseClimate(proposed); store.proposedClimate.value = null; }}>{T('location.confirm', { climate: zoneName(proposed) })}</button></p>
+                <p><button type="button" class="button button-primary ct-small" data-location-confirm onClick={() => confirmProposed(proposed)}>{T('location.confirm', { climate: zoneName(proposed) })}</button></p>
               )}
             </>
           ) : (

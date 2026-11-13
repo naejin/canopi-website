@@ -2,7 +2,7 @@
 // "Where is your site?" (P5 stream S5b; design check §B; owner answers 1, 4, 5), above the climate
 // cards. A thin shell in the P2 island: the three controls, each with one line naming what it
 // contacts (owner answer 4; the privacy page, /privacy/, says more), and nothing third-party until a
-// click. The step itself (lookups, the result line, the map) is the lazy chunk views/location/location.tsx,
+// click. The step itself (its lookups in state/location.ts, the result line and the map in views/location/location.tsx) is a lazy chunk,
 // loaded on the first click or Enter (views/location/load.ts). The map button shows only with WebGL
 // (probed once, its context released), "Use my location" only with the Geolocation API (checked here,
 // not through lib/location/geolocation.ts, which would bring that module into the first run); Enter while
@@ -10,11 +10,12 @@
 // compact (the result head, once a consortium shows): the result line alone, no probe.
 import { location } from '../store.ts';
 import { T, pageLang } from '../strings.ts';
-import { loadLocationStep, locationStep, lookingThrough, type LocationStep } from './location/load.ts';
+import { loadLocationStep, locationStep, type LocationStep } from './location/load.ts';
+import { lookingThrough } from '../state/lookups.ts';
 import { signal } from '@preact/signals';
 
 const broken = signal(false);
-// The whole step, chunk load included, counts as a lookup in flight (load.ts `lookups`).
+// The whole step, chunk load included, counts as a lookup in flight (state/lookups.ts `lookups`).
 const run = (f: (m: LocationStep) => unknown) => lookingThrough(() => loadLocationStep().catch(() => { broken.value = true; return null; }), async (m) => { if (m) await f(m); });
 let gl: boolean | undefined;
 const webgl = (): boolean => {
@@ -46,7 +47,7 @@ export function LocationSlot({ compact = false }: { compact?: boolean }) {
       <p class="ct-muted ct-step-lede">{T('location.lede')} <a href={`${lang === 'en' ? '' : `/${lang}`}/privacy/`}>{T('location.privacyLink')}</a></p>
       {isSecureContext && navigator.geolocation && row('geo', T('location.geo'), T('location.geoPrivacy'))}
       <p class="ct-location-row">
-        <input type="search" data-location-search enterKeyHint="search" aria-label={T('location.search')} placeholder={T('location.searchHint')}
+        <input type="search" class="ct-location-search" data-location-search enterKeyHint="search" aria-label={T('location.search')} placeholder={T('location.searchHint')}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); const q = e.currentTarget.value; void run((x) => x.searchPlace(q)); } }} />
         {' '}<span class="ct-muted ct-small-text" data-location-privacy>{T('location.searchPrivacy')}</span>
       </p>

@@ -1,0 +1,69 @@
+// "Suggest plants" pressed while something it needs is still being read (stream S4, P5 S5b; E6 S2
+// split it out of memory.ts): the plant lists, and the location lookups in flight (lookups.ts).
+import { effect, signal, untracked } from '@preact/signals';
+import * as store from '../store.ts';
+import { focusView } from '../focus.ts';
+import { T } from '../strings.ts';
+import { state as schema } from './schema.ts';
+import { adoptPending } from './persist.ts';
+import { lookups, unread } from './lookups.ts';
+
+// ---- the waiting Suggest ----
+
+// "Suggest plants" pressed while the plant list loads: the suggestion runs once it is ready (§5).
+export const pendingSuggest = signal(false);
+// Suggest has waited its 10 s for a location lookup (requestSuggest).
+export const waited = signal(false);
+let cap: ReturnType<typeof setTimeout> | undefined;
+// The waiting Suggest has one owner, here (seam review round 4, 1): requestSuggest starts the wait,
+// the effect in watchSuggest runs it once its lists are read, and dropSuggest ends it: when the reader
+// changes the plants or opens a sheet (another action: Add, search, Details, paste; Start's "Start
+// empty and search" too), when the plant list fails (the load screen says so), or once its 10 s are
+// up with a kept guest's list still unread (a toast says so). Each wait therefore ends.
+const SUGGEST_WAIT_MS = 10_000;
+function dropSuggest(): void {
+  if (!pendingSuggest.peek()) return;
+  clearTimeout(cap);
+  waited.value = false;
+  pendingSuggest.value = false;
+}
+function capped(): void {
+  if (!pendingSuggest.peek()) return;
+  // A location lookup no longer holds it (it runs without the site; the line says so) ...
+  waited.value = true;
+  // ... but a guest list never read leaves nothing to run: the wait ends, with a word. (The database
+  // itself, and the range rule, end their own waits: the load screen, rangeFailed.)
+  if (store.pool.peek() && store.guestsPending.peek().length) { dropSuggest(); store.showToast(T('start.suggestStopped')); }
+}
+// "Suggest plants": now when the plants are read, else once they are (§5 Loading).
+export function requestSuggest(): void {
+  adoptPending();
+  // A location being read: Suggest waits for it (the effect below runs it once lookups settle), 10 s
+  // at most; then it runs without it, and the location line says the climate was not read (review
+  // round 2, 3).
+  // Each press has its own 10 s: an earlier press's timer is cleared (review round 3, 1).
+  if (!pendingSuggest.peek()) { clearTimeout(cap); waited.value = false; }
+  const busy = lookups.peek() && !waited.peek();
+  if (!busy && store.suggestMembers()) { clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
+  // A browser test may shorten the wait in the test build (window.__ctTimeouts.suggest; A4, as in
+  // data/load.ts); production folds it to SUGGEST_WAIT_MS.
+  if (!pendingSuggest.peek()) cap = setTimeout(capped, typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { suggest?: number } }).__ctTimeouts?.suggest) || SUGGEST_WAIT_MS : SUGGEST_WAIT_MS);
+  pendingSuggest.value = true;
+}
+
+// The wait's effects, set up once by startMemory (arrival.ts).
+export function watchSuggest(): void {
+  // "Suggest plants" pressed early runs when the climate's plants (and every guest list) are read.
+  effect(() => {
+    if (!pendingSuggest.value || !store.pool.value || store.guestsPending.value.length || (lookups.value && !waited.value)) return;
+    queueMicrotask(() => { if (pendingSuggest.peek()) requestSuggest(); });
+  });
+  // ... unless the reader changed the plants, opened a sheet, or the plant list failed meanwhile.
+  let primed = false;
+  effect(() => {
+    void schema.track(schema.lists.plants);
+    if (primed) untracked(dropSuggest);
+    primed = true;
+  });
+  effect(() => { if (store.sheet.value || store.load.value.status === 'failed') untracked(dropSuggest); });
+}
