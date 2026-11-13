@@ -3,9 +3,9 @@
 // lazy chunk, loaded by views/location/load.ts on the reader's first click or Enter (LocationSlot) or
 // for a link's `o=` or the saved location (state/restore.ts). It renders only (E6 S2): the result line
 // and the map dialog. The lookups, the site, its suggestion and its country are state/location.ts,
-// which this chunk brings; the shell calls them through this module's re-exports. (Its tile read,
-// still without soil until P5.2: lookupSite(lat, lon, tileSource(), DEFAULT_RADIUS, { soil: false });
-// scripts/consortium-p5-seams-s5e.test.mjs reads this line here until chunk 5 points it there.)
+// which this chunk brings; the shell (LocationSlot) and restore.ts (settle) call them through this
+// module's three re-exports below, the chunk's entry: a separate import of state/location.ts would split
+// it into a second lazy chunk. (Its tile read, without soil until P5.2, is in state/location.ts.)
 // - pick on a map: MapLibre (its own lazy chunk with its worker and CSS) in a dialog with a centre
 //   cross and "Use the map centre"; OpenFreeMap positron or dark by the theme; jumpTo only.
 // The line says what the site means ([data-location-state]): borderline, polar, sea, coast and a

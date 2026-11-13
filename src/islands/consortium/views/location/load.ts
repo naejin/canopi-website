@@ -21,6 +21,3 @@ export function loadLocationStep(): Promise<LocationStep> {
 // (provideLocationStep) before the first render, so it is in place before startMemory can ask for a
 // location (E6 S3: nothing is registered because a module was imported).
 
-// The lookups in flight, their line and ownership live in island state (state/lookups.ts); they
-// are re-exported here for the P5 seam tests until chunk 5 points them there.
-export { letGo, line, liveLookup, looking, lookingThrough, lookups, nextLookup, unlessReplaced, unread } from '../../state/lookups.ts';
