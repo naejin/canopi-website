@@ -21,7 +21,7 @@
 // on screen) shows neither: Print says it. An idle part never asks for its chunk itself and shows
 // nothing until the prefetch has loaded it (a slot beside the matrix must not start a download).
 import type { ComponentType } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { effect, signal } from '@preact/signals';
 import { closeSheet, load as dataLoad, showToast } from '../store.ts';
 import { T } from '../strings.ts';
@@ -63,17 +63,23 @@ export function LoadFailed() {
   return <p class="ct-notice" role="alert">{T('details.loadFailed')} <button type="button" class="button button-secondary" onClick={() => location.reload()}>{T('details.reload')}</button></p>;
 }
 
-// Counts the parts (and modules) loaded: an idle part whose own prefetch failed asks again on each
-// (below), so it gets another chance without being mounted again, and never loops on its own failure.
+// Counts the parts (and modules) loaded: an idle part whose own prefetch failed asks again when it has
+// moved since that failure (below), so it gets another chance without being mounted again, and never
+// loops on its own failure.
 const loadedTick = signal(0);
 
 export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = false, idle = false, onFail = 'notice', loading }: PartOptions<C> = {}): LazyPart<C> {
   const kind: Kind = onFail === 'closeSheet' ? 'sheets' : 'later';
   const done = signal<C | null>(null);
   let pending: Promise<C> | null = null;
-  let lastFailed = false;
+  // lastFailed: the last load failed, when loadedTick read failedAt.
+  let lastFailed = false, failedAt = 0;
   const prefetch = (): Promise<C> => {
-    pending ??= (lastFailed = false, importer().then((c) => { done.value = c; loadedTick.value++; return c; }, (err: unknown) => { pending = null; lastFailed = true; throw err; }));
+    // A module without the part (a retry that fetched another file than the part's chunk: retryable
+    // reads the URL from the error) is a failure, with its failed line, never a blank part.
+    pending ??= (lastFailed = false, importer()
+      .then((c) => { if (c == null) throw new Error('the part is not in the module that loaded'); return c; })
+      .then((c) => { done.value = c; loadedTick.value++; return c; }, (err: unknown) => { pending = null; lastFailed = true; failedAt = loadedTick.peek(); throw err; }));
     return pending;
   };
   const load = (): Promise<C> => gate(kind).then(prefetch);
@@ -83,16 +89,22 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
     const fault = faultOf(kind);
     const C = (fault ? null : done.value) as ComponentType<Record<string, unknown>> | null;
     const tick = idle && !C ? loadedTick.value : 0;
+    const askedHere = useRef(false); // this mount re-asked after a failure
     useEffect(() => {
       if (C) return;
       let live = true;
       if (idle) {
         // An idle part waits for the prefetch (done), in idle time, or, held by a test, for the
         // release. Only once its own prefetch failed does it ask again itself: when another part (or
-        // module) has loaded since (loadedTick), the connection is back; a failed retry waits for the
-        // next one, so it never loops (E6 hand-off review 2).
+        // module) has loaded since that failure (loadedTick moved past failedAt: the connection is
+        // back), and once per mount (everything may have failed offline, and nothing would move the
+        // tick). A failed retry records the tick again and waits for it to move, so it never loops
+        // (E6 hand-off review 2).
         if (fault === 'hold') gate(kind).then(() => { if (live) wake((n) => n + 1); }, () => {});
-        else if (lastFailed && tick > 0) prefetch().then(() => { if (live) wake((n) => n + 1); }, () => {});
+        else if (lastFailed && (tick !== failedAt || !askedHere.current)) {
+          askedHere.current = true;
+          prefetch().then(() => { if (live) wake((n) => n + 1); }, () => {});
+        }
         return () => { live = false; };
       }
       load().then(() => { if (live) wake((n) => n + 1); }, (err: unknown) => {
@@ -124,7 +136,9 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
 // but first-run modules, already loaded (kit/sheet.tsx shared; E6-5d checks it), nor does the later
 // chunk (E6 hand-off C, measured). The future and pool parts statically import the range rule's chunk
 // (and future the chunk it shares with the mark providers): were one of those to fail, every retry
-// fails, Reload the fix. pick: the part in the module.
+// fails, Reload the fix; were an error to name such a dependency, the retry would import that file,
+// which lacks the part: lazyPart counts the missing part as a failure (its failed line with Reload),
+// and Download says it (Actions.tsx). pick: the part in the module.
 const failedUrl = (err: unknown): string | null => {
   const url = /https?:\/\/[^\s'"]+?\.js\b/.exec(String((err as Error)?.message ?? err))?.[0] ?? null;
   return url?.startsWith(`${location.origin}/_astro/`) ? url : null;
