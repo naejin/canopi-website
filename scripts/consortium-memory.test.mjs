@@ -1,4 +1,4 @@
-// What the consortium tool keeps and how it opens (src/islands/consortium/memory.ts, stream S4;
+// What the consortium tool keeps and how it opens (src/islands/consortium/state/*.ts, split from memory.ts by E6 S2; stream S4;
 // design check §5, BT-7; owner row "Memory", 2026-10-27): the guarded storage, the save record, the
 // arrival order (link, guide preset, the last consortium, the shared site climate, else nothing),
 // the country at start (a guess is never written), the share state, and the pure parts ported from
@@ -8,9 +8,20 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 
-const m = await import('../src/islands/consortium/memory.ts');
-const { guarded, saveRecord, readRecord, oldRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, cropExamples, plantName, zoneOf, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
-const { decodeLink, encodeLink } = await import('../src/lib/consortium/index.ts');
+// The state modules themselves (E6 S2 split memory.ts into state/), merged into one namespace `m`.
+const persist = await import('../src/islands/consortium/state/persist.ts');
+const restoreModule = await import('../src/islands/consortium/state/restore.ts');
+const m = {
+  ...persist, ...restoreModule,
+  ...(await import('../src/islands/consortium/state/arrival.ts')),
+  ...(await import('../src/islands/consortium/state/draft.ts')),
+  ...(await import('../src/islands/consortium/state/suggest-wait.ts')),
+};
+const { guarded, saveRecord, readRecord, oldRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, cropExamples, plantName, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
+// Island state, all of it (the text checks below).
+const stateSrc = ['persist', 'restore', 'arrival', 'draft', 'suggest-wait', 'lookups', 'location']
+  .map((f) => readFileSync(new URL(`../src/islands/consortium/state/${f}.ts`, import.meta.url), 'utf8')).join('\n');
+const { decodeLink, encodeLink, zoneOf } = await import('../src/lib/consortium/index.ts');
 const { openBytes } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
 
@@ -77,10 +88,12 @@ test('arrival: a link wins, then a guide preset, then an old query link, then th
 
 test('one zoneOf: the island reads climate ids with the core\'s (H15)', async () => {
   const core = await import('../src/lib/consortium/index.ts');
-  assert.equal(zoneOf, core.zoneOf, 'memory.ts re-exports the core zoneOf, no copy');
+  const memory = await import('../src/islands/consortium/memory.ts');
+  assert.equal(memory.zoneOf, core.zoneOf, 'memory.ts re-exports the core zoneOf (for the views until chunk 5), no copy');
+  assert.doesNotMatch(stateSrc, /const zoneOf\b/, 'island state has no zoneOf of its own');
   const main = readFileSync(new URL('../src/islands/consortium/main.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(main, /const zoneOf\b/, 'main.ts has no zoneOf of its own');
-  assert.doesNotMatch(readFileSync(new URL('../src/islands/consortium/memory.ts', import.meta.url), 'utf8'), /ct:pool/, 'no ct:pool mark: the timing script reads ct:matrix');
+  assert.doesNotMatch(stateSrc, /ct:pool/, 'no ct:pool mark: the timing script reads ct:matrix');
   assert.doesNotMatch(readFileSync(new URL('./browser/consortium-timing.mjs', import.meta.url), 'utf8'), /ct:pool/, 'the timing script has no ct:pool fallback');
 });
 
@@ -411,8 +424,8 @@ test('schema: the saved fields are exactly the ShareState the core link codec re
     'a field put into the link needs the core codec (lib/consortium/state.ts) to carry it');
 });
 
-test('schema: store.ts and memory.ts list no state field by hand', () => {
-  const memSrc = readFileSync(new URL('../src/islands/consortium/memory.ts', import.meta.url), 'utf8');
+test('schema: store.ts and island state (state/*.ts) list no state field by hand', () => {
+  const memSrc = stateSrc;
   const storeSrc = readFileSync(new URL('../src/islands/consortium/store.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(memSrc, /void \[store\./, 'watcher lists come from schema.lists');
   assert.doesNotMatch(memSrc, /store\.(crops|kept|members)\.value = (s\.|same)/, 'the link and the draft write fields through the schema');
@@ -578,13 +591,11 @@ for (const [from, country] of [['saved', { code: 'FR', source: 'chosen' }], ['li
   });
 }
 
-// ---- E6 S2: the memory split (state/persist, restore, arrival, draft, suggest-wait; state/location) ----
-const persist = await import('../src/islands/consortium/state/persist.ts');
-const restoreModule = await import('../src/islands/consortium/state/restore.ts');
+// ---- E6 S2: the memory split (state/persist, restore, arrival, draft, suggest-wait, lookups; state/location) ----
 
 test('the split: island state imports nothing under views/, statically or through import() (ADR-1 L2); memory.ts only re-exports', () => {
   const dir = new URL('../src/islands/consortium/state/', import.meta.url);
-  for (const f of ['persist.ts', 'restore.ts', 'arrival.ts', 'draft.ts', 'suggest-wait.ts', 'location.ts']) {
+  for (const f of ['persist.ts', 'restore.ts', 'arrival.ts', 'draft.ts', 'suggest-wait.ts', 'lookups.ts', 'location.ts']) {
     const src = readFileSync(new URL(f, dir), 'utf8');
     assert.doesNotMatch(src, /(from|import\()\s*'[^']*\/views\//, `state/${f} imports a view`);
   }
@@ -621,9 +632,9 @@ test('one climate shown: the reader\'s choice, else a link\'s still opening, els
 test('a link\'s o= is looked up through the location step the view hands in (restore.ts provideLocationStep), its lookup held until it settles', async () => {
   await shown();
   const calls = [];
-  const suggestWait = await import('../src/islands/consortium/state/suggest-wait.ts');
+  const lookupsModule = await import('../src/islands/consortium/state/lookups.ts');
   let held = null;
-  restoreModule.provideLocationStep(async () => ({ settle: (how, saved) => { calls.push([how, saved, suggestWait.lookups.peek()]); return new Promise((r) => { held = r; }); } }));
+  const before = restoreModule.provideLocationStep(async () => ({ settle: (how, saved) => { calls.push([how, saved, lookupsModule.lookups.peek()]); return new Promise((r) => { held = r; }); } }));
   try {
     const ids = (await realSource.pool('Mediterranean')).map((t) => t.id);
     const link = encodeLink({ climate: 'Mediterranean', country: null, site: UNSURE, members: ids.slice(0, 3), kept: [], removed: [], guests: [], crops: [], stage: null }, { Mediterranean: ids }, { origin: { lat: 37.39, lon: -5.98 } });
@@ -635,11 +646,21 @@ test('a link\'s o= is looked up through the location step the view hands in (res
     assert.equal(calls[0][2], 1, 'one lookup held while it settles');
     held();
     await wait(0);
-    assert.equal(suggestWait.lookups.peek(), 0, 'released once settled');
+    assert.equal(lookupsModule.lookups.peek(), 0, 'released once settled');
     // A step that fails to load drops the link's location (as the chunk 404 did before the split).
     restoreModule.provideLocationStep(() => Promise.reject(new Error('chunk gone')));
     assert.equal(await m.restore(link + '&', { from: 'link', keep: true }), true);
     await wait(0);
     assert.equal(store.location.peek(), null, 'a link\'s location whose step cannot load goes');
-  } finally { store.location.value = null; }
+    // None handed in: said in the console, then the link's location goes the same way.
+    restoreModule.provideLocationStep(null);
+    const logged = [], error = console.error;
+    console.error = (msg) => { logged.push(String(msg)); };
+    try {
+      assert.equal(await m.restore(link + '&&', { from: 'link', keep: true }), true);
+      await wait(0);
+    } finally { console.error = error; }
+    assert.ok(logged.some((l) => /no location step was provided/.test(l)), `never silent: ${logged}`);
+    assert.equal(store.location.peek(), null);
+  } finally { store.location.value = null; restoreModule.provideLocationStep(before); }
 });

@@ -80,7 +80,7 @@ const KEPT_SOURCES: readonly CountrySource[] = ['link', 'chosen', 'location'];
 export const fromOf = (v: unknown): CountryFrom => (KEPT_SOURCES.includes(v as CountrySource) ? (v as Exclude<CountrySource, 'guess'>) : null);
 // Where a country came from, as the save and history.state keep it.
 const countryFrom = (c: Country = store.country.peek()): CountryFrom =>
-  (!c.code || c.source === 'guess' ? null : c.source === 'link' || c.source === 'location' ? c.source : 'chosen');
+  (!c.code || c.source === 'guess' ? null : fromOf(c.source) ?? 'chosen');
 
 // ---- the save record ----
 

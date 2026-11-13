@@ -3,7 +3,7 @@
 // and keep.ts, which now render and re-export). It lives in the lazy location chunk: only
 // views/location/location.tsx imports it, and that chunk loads on the reader's first click or Enter
 // (views/LocationSlot.tsx) or for a link's `o=` or the saved location (restore.ts). What the first run
-// needs of it (the lookups in flight, their line and ownership) is in suggest-wait.ts.
+// needs of it (the lookups in flight, their line and ownership) is in lookups.ts.
 //
 // It turns a position into a site:
 // - Use my location: one read of the device's position (low accuracy), denied / timeout / unavailable
@@ -33,7 +33,7 @@ import * as store from '../store.ts';
 import { pageLang } from '../strings.ts';
 import { memory, pendingLinkClimate, quietly, LOCATION_STORE } from './persist.ts';
 import { chooseClimate } from './draft.ts';
-import { line, liveLookup, looking, nextLookup, unlessReplaced, unread, type Line } from './suggest-wait.ts';
+import { line, liveLookup, looking, nextLookup, unlessReplaced, unread, type Line } from './lookups.ts';
 
 // ---- the site location kept on this device, and the country from it ----
 
@@ -113,7 +113,7 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
 // country, in one batch. A failed read or a point at sea changes nothing (seam review 2, 3): a site
 // already read stays in use on the page, in storage and as the country's source, and the line names it
 // ("still using …"); with none, the manual climate cards, with the line.
-// Counted in suggest-wait.ts `lookups` (Suggest waits for it), whichever way it started (the map centre too).
+// Counted in lookups.ts `lookups` (Suggest waits for it), whichever way it started (the map centre too).
 export const locate = (lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> =>
   looking(() => locateNow(lat, lon, source, label, extra));
 async function locateNow(lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> {

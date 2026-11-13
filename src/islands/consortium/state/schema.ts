@@ -23,11 +23,11 @@ import { batch, signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
 import type { ClimateZone, PhaseOrd, PlantId, ShareState, Site } from '../../../lib/consortium/index.ts';
 import { MAX_CROPS } from '../../../lib/consortium/index.ts';
-import type { Country, View } from '../store.ts';
+import type { Country, CountrySource, View } from '../store.ts';
 
 // What the link's put and take may read: the reader's "include my location" tick (share) and where
 // a decoded link or save came from (apply).
-export interface LinkOptions { location?: boolean; countryFrom?: 'link' | 'chosen' }
+export interface LinkOptions { location?: boolean; countryFrom?: Extract<CountrySource, 'link' | 'chosen'> }
 export interface Field<T> {
   initial: () => T;
   undo?: true | ((before: T, now: T) => T);

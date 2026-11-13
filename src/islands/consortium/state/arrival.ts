@@ -73,7 +73,7 @@ export function countryAtStart({ link, pref, saved, savedFrom = null, guess }: {
   if (code(link)) return { code: code(link), source: 'link' };
   if (pref === NO_COUNTRY) return { code: null, source: 'chosen' };
   if (code(pref)) return { code: code(pref), source: 'chosen' };
-  if (code(saved)) return { code: code(saved), source: savedFrom === 'link' || savedFrom === 'location' ? savedFrom : 'chosen' };
+  if (code(saved)) return { code: code(saved), source: fromOf(savedFrom) ?? 'chosen' };
   if (code(guess)) return { code: code(guess), source: 'guess' };
   return { code: null, source: null };
 }

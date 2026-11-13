@@ -17,7 +17,7 @@ import { loadMapLibreModule } from '../../../../lib/location/maplibre.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import { climateShown, pendingClimate } from '../../state/persist.ts';
-import { line, unread, type Line } from '../../state/suggest-wait.ts';
+import { line, unread, type Line } from '../../state/lookups.ts';
 import { confirmProposed, forget, locate, placeName } from '../../state/location.ts';
 import { num, zoneName } from '../kit/names.ts';
 

@@ -383,17 +383,19 @@ test('Layout stability (N2): nothing on Start moves after its first paint when t
 // width), which no fallback face matches (206 px before Source Sans 3, 179 px after), so the rows after
 // it moved; its width is now set in em (.ct-location-search, base.css; E6 S2). A button's width follows
 // its own label, which the matched fallback keeps within about 1.5% (fr: 158 -> 160 px), so buttons get
-// that much; every height holds to the pixel. Positions are left to LATE_CLS: one line of reflow above
-// a control (en 320 px: the lede) moves it down without resizing anything.
+// that much; every height holds to the pixel. A control whose top did not move keeps its left within
+// the same 2% (a label before it on its line may grow by that much). Vertical moves are left to
+// LATE_CLS: one line of reflow above a control (en 320 px: the lede) moves it down without resizing it.
 const LABEL_SLACK = 0.02;
 const sized = (page) => page.evaluate((sels, slack) => {
   const out = [];
   for (const sel of sels) {
     const el = document.querySelector(sel), a = window.__stable.first[sel];
     if (!el || !a) continue;
-    const r = el.getBoundingClientRect();
+    const r = el.getBoundingClientRect(), x = r.left + scrollX, y = r.top + scrollY;
     const wSlack = el.matches('button') ? Math.max(1, a.w * slack) : 1;
     if (Math.abs(r.width - a.w) > wSlack || Math.abs(r.height - a.h) > 1) out.push(`${sel}: size ${Math.round(a.w)}×${Math.round(a.h)} → ${Math.round(r.width)}×${Math.round(r.height)}`);
+    if (Math.abs(y - a.y) <= 1 && Math.abs(x - a.x) > Math.max(1, a.x * slack)) out.push(`${sel}: left ${Math.round(a.x)} → ${Math.round(x)} on the same line`);
   }
   return out;
 }, STABLE, LABEL_SLACK);

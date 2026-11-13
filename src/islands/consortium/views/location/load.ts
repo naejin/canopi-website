@@ -23,6 +23,6 @@ export function loadLocationStep(): Promise<LocationStep> {
 // before startMemory can ask for a location.
 provideLocationStep(loadLocationStep);
 
-// The lookups in flight, their line and ownership live in island state (state/suggest-wait.ts); they
+// The lookups in flight, their line and ownership live in island state (state/lookups.ts); they
 // are re-exported here for the P5 seam tests until chunk 5 points them there.
-export { letGo, line, liveLookup, looking, lookingThrough, lookups, nextLookup, unlessReplaced, unread } from '../../state/suggest-wait.ts';
+export { letGo, line, liveLookup, looking, lookingThrough, lookups, nextLookup, unlessReplaced, unread } from '../../state/lookups.ts';

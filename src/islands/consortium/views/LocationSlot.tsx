@@ -11,11 +11,11 @@
 import { location } from '../store.ts';
 import { T, pageLang } from '../strings.ts';
 import { loadLocationStep, locationStep, type LocationStep } from './location/load.ts';
-import { lookingThrough } from '../state/suggest-wait.ts';
+import { lookingThrough } from '../state/lookups.ts';
 import { signal } from '@preact/signals';
 
 const broken = signal(false);
-// The whole step, chunk load included, counts as a lookup in flight (state/suggest-wait.ts `lookups`).
+// The whole step, chunk load included, counts as a lookup in flight (state/lookups.ts `lookups`).
 const run = (f: (m: LocationStep) => unknown) => lookingThrough(() => loadLocationStep().catch(() => { broken.value = true; return null; }), async (m) => { if (m) await f(m); });
 let gl: boolean | undefined;
 const webgl = (): boolean => {

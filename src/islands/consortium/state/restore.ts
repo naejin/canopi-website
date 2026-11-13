@@ -7,10 +7,11 @@
 import { batch, effect, signal } from '@preact/signals';
 import type { ClimateZone, DecodedLink, Interaction, LinkNotice, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { decodeLink, linkClimates, linkOrigin, zoneOf, LINK_VERSION } from '../../../lib/consortium/index.ts';
+import type { CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
 import { actionCount, attempt, inFlight, memory, quietly, writeAddress, LOCATION_STORE, type CountryFrom } from './persist.ts';
-import { lookingThrough } from './suggest-wait.ts';
+import { lookingThrough } from './lookups.ts';
 
 // The notices a link (or the save) left for the reader (Actions shows them; Start shows `outdated`).
 // pasted: a link pasted while a consortium was shown that changed nothing (older version, cut with
@@ -27,8 +28,19 @@ export const notices = signal<Notices>({ ...NO_NOTICES });
 // never imports a view, statically or through import() (ADR-1 L2), and no cycle closes through it.
 export interface LocationSettle { settle(how: 'link' | 'saved', saved: string | null): Promise<void> }
 let loadStep: (() => Promise<LocationSettle>) | null = null;
-export const provideLocationStep = (load: () => Promise<LocationSettle>): void => { loadStep = load; };
-const stepLoaded = (): Promise<LocationSettle> => (loadStep ? loadStep() : Promise.reject(new Error('no location step')));
+// Returns the loader it replaces (a test puts it back).
+export const provideLocationStep = (load: (() => Promise<LocationSettle>) | null): (() => Promise<LocationSettle>) | null => {
+  const before = loadStep;
+  loadStep = load;
+  return before;
+};
+// None handed in (a view that never loaded): said in the console, never silent; the link's location
+// then goes as a failed load leaves it.
+const stepLoaded = (): Promise<LocationSettle> => {
+  if (loadStep) return loadStep();
+  attempt(() => console.error('Consortium: no location step was provided; the location is not looked up'));
+  return Promise.reject(new Error('no location step'));
+};
 
 // The location chunk looks up store.location (a link's `o=`, or the saved location) and settles it.
 // how: 'link' (the link's answers win; no country, no suggestion) or 'saved' (looked up again; saved:
@@ -55,7 +67,7 @@ export function ownLocation(): void {
 // ---- restoring a link or the save ----
 
 // Applies a decoded link or save to the store, in one batch, and opens the result.
-function applyDecoded(d: DecodedLink, countryFrom: 'link' | 'chosen'): void {
+function applyDecoded(d: DecodedLink, countryFrom: Extract<CountrySource, 'link' | 'chosen'>): void {
   batch(() => {
     schema.apply(d.state, { countryFrom });
     store.view.value = 'matrix';

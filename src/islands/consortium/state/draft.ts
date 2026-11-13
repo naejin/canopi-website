@@ -10,7 +10,7 @@ import { focusView } from '../focus.ts';
 import { state as schema } from './schema.ts';
 import { adoptPending, attempt, memory, own, siteId, writeSave, COUNTRY_STORE, NO_COUNTRY, SITE_CLIMATE } from './persist.ts';
 import { notices, NO_NOTICES } from './restore.ts';
-import { letGo } from './suggest-wait.ts';
+import { letGo } from './lookups.ts';
 
 // The country picker on the country line is open.
 export const pickingCountry = signal(false);
