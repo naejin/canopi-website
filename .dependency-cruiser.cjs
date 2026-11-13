@@ -1,6 +1,7 @@
 // Layer direction and cycles of the website's code (E4; ADR-1; design check E6 §7.2, A24, A25).
-// dependency-cruiser owns direction and cycles only; scripts/consortium-boundary.test.mjs owns "core
-// imports stay in their folder" and "no browser globals in core" (A27). Neither checks the other's rule.
+// dependency-cruiser owns direction and cycles only; scripts/consortium-boundary.test.mjs owns "core,
+// climate and location imports stay in their folder" and "no browser globals in core" (A27). Neither
+// checks the other's rule.
 //
 // Run through the ratchet, never alone in a gate: `npm run check:arch` (scripts/quality/ratchet.mjs arch).
 // An `error` rule fails on any violation. A `warn` rule is a known violation that E6 removes: its
