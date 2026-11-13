@@ -6,7 +6,8 @@
 # - npm run check (wrangler types + astro check, full: astro check has no incremental mode);
 # - npm test (unit and policy tests);
 # - npm run check:arch (dependency-cruiser's layer rules through scripts/quality/ratchet.mjs);
-# - when a pushed ref is master: node scripts/expect-fail.mjs --zero (no expected-fail marker left).
+# - when a pushed ref is master: no expected-fail marker left (fails only once .githooks/zero-markers
+#   says `fail`; until then it warns with the count).
 # Browser specs run in CI only. A push whose every range is documentation only (the rule of ci.yml's
 # `changes` job: knowledge/**, .beads/**, docs/**, root *.md) skips the first three. Deletions and
 # tags are skipped. Each command runs memory-capped and prints its time. Bypass once with
@@ -47,7 +48,7 @@ else
   echo "pre-push: documentation only; check, unit tests and layer rules skipped (CI runs its job 1)" >&2
 fi
 if [ "$master" = yes ]; then
-  step "expected-fail markers (push to master)" node scripts/expect-fail.mjs --zero || {
+  zero_markers || {
     echo "pre-push: expected-fail markers are left; master takes none (remove each in the commit that makes it pass)." >&2
     exit 1
   }

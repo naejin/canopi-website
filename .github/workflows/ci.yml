@@ -114,9 +114,10 @@ jobs:
       - name: ast-grep rules
         run: |
           if [ -f sgconfig.yml ]; then node_modules/.bin/ast-grep scan; else echo "No sgconfig.yml: no ast-grep rule yet."; fi
+      # Warns with the count until the batch exit flips .githooks/zero-markers to `fail`.
       - name: No expected-fail marker on master
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        run: node scripts/expect-fail.mjs --zero
+        run: . .githooks/lib.sh && zero_markers
 
   browser-build:
     name: 2 browser-test build

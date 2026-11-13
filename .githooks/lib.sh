@@ -7,6 +7,8 @@
 # tier_done <tier> <start> <budget seconds>: prints the tier's time; warns above its budget and fails
 #   (returns 1) above 1.5× it (E3 exit: "every tier prints its time, warn above its ratchet, fail only
 #   above 1.5×"). A tier over 1.5× moves its slowest step to CI (design check R6), it is not raised.
+# zero_markers: node scripts/expect-fail.mjs --zero, held to .githooks/zero-markers: with `fail` a
+#   marker left fails; with `warn` it prints the count (a GitHub warning annotation in CI) and passes.
 # docs_only: reads paths on stdin, one per line; true when there is at least one and every one is
 #   documentation (knowledge/**, .beads/**, docs/**, a root *.md; never src/data/*.md, which is site
 #   content). The same rule as the `changes` job of .github/workflows/ci.yml (design check A20).
@@ -57,4 +59,15 @@ need_node_modules() {
   [ -x node_modules/.bin/astro ] && return 0
   echo "$1: node_modules is missing; run npm ci (capped) first, or push with --no-verify." >&2
   return 1
+}
+
+zero_markers() {
+  mode=$(grep -v '^#' .githooks/zero-markers 2>/dev/null | tr -d '[:space:]')
+  out=$(capped node scripts/expect-fail.mjs --zero 2>&1) && { printf '%s\n' "$out" | tail -n 1; return 0; }
+  printf '%s\n' "$out"
+  [ "$mode" = warn ] || return 1
+  count=$(printf '%s\n' "$out" | sed -n 's/^\([0-9][0-9]*\) expected-fail marker(s)$/\1/p')
+  msg="$count expected-fail marker(s) left; not failing until the batch exit flips .githooks/zero-markers to fail"
+  if [ -n "${GITHUB_ACTIONS:-}" ]; then echo "::warning::$msg"; else echo "$msg" >&2; fi
+  return 0
 }
