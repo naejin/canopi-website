@@ -67,14 +67,15 @@ if (root && data) {
   provideLocationStep(loadLocationStep);
   setStrings(data.strings, data.lang);
   setPageCountries(data.countries);
-  root.textContent = '';
-  root.removeAttribute('aria-busy');
   watchPools();
   void open(data);
-  // The browser-test build loads the test hook (window.__ctTest, __ctFaults) before the first
-  // render; a production build folds __CT_TEST_HOOK__ to false and drops the import, so test-hook.ts
-  // is in no production chunk (design check A13) and the render follows at once.
+  // The root stays aria-busy (its static loading line replaced) until App renders into it.
   const onRetry = () => void open(data);
-  if (__CT_TEST_HOOK__) void import('./test-hook.ts').then(() => render(h(App, { guide: data.guide, onRetry }), root));
-  else render(h(App, { guide: data.guide, onRetry }), root);
+  const show = () => { root.textContent = ''; render(h(App, { guide: data.guide, onRetry }), root); root.removeAttribute('aria-busy'); };
+  // The browser-test build loads the test hook (window.__ctTest, __ctFaults) before the first
+  // render, the root busy meanwhile, so the hook's chunk needs no modulepreload; a production build
+  // folds __CT_TEST_HOOK__ to false and drops the import, so test-hook.ts is in no production chunk
+  // (design check A13) and the render follows at once.
+  if (__CT_TEST_HOOK__) void import('./test-hook.ts').then(show);
+  else show();
 }

@@ -335,3 +335,24 @@ test('E6-3d (K3 lazy sheets): Add, search, Paste and Swap opened while the range
   assert.deepEqual(seen.filter((x) => x.includes('empty')), [], seen.join('; '));
   await page.browserContext().close().catch(() => {});
 });
+
+// E6 exit (B4 hand-off): the test build awaits its hook before the first render; #ct-root keeps
+// aria-busy until that render, so loadState() never reads an empty root as ready, however late the
+// hook's chunk comes (no modulepreload of it needed).
+test('E6-8 (B4 hand-off, done in the chunk-5 exit): in the test build, #ct-root stays aria-busy until the island renders, the test hook\'s chunk held', async () => {
+  assert.ok(h.roles.testHook?.length, 'role `testHook` has no chunk in this build (npm run build:browser-test)');
+  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { testHook: 'hold' } });
+  await page.waitForFunction(() => document.readyState !== 'loading', { timeout: 4000 });
+  await new Promise((r) => setTimeout(r, 1000));
+  const held = await page.evaluate(() => {
+    const root = document.getElementById('ct-root');
+    return { busy: root?.getAttribute('aria-busy'), radios: root?.querySelectorAll('input[type="radio"]').length ?? 0 };
+  });
+  assert.ok(page.held.length > 0, 'the hook\'s chunk was requested and held');
+  assert.deepEqual(held, { busy: 'true', radios: 0 }, 'not rendered yet, and #ct-root says it is busy');
+  await page.releaseHeld();
+  assert.equal(await loadState(page), 'ready');
+  assert.ok(await has(page, aria('radio', 'Temperate'), 4000), 'Start renders once the hook arrives');
+  assert.equal(await page.evaluate(() => document.getElementById('ct-root').hasAttribute('aria-busy')), false, 'aria-busy goes with the render');
+  await page.browserContext().close().catch(() => {});
+});
