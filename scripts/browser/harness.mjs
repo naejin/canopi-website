@@ -94,13 +94,13 @@ export function servedDatabase(kind, fx) {
   return { bytes: gz, ref: { sha256: wrongSha ? sha256(raw) : sha256(gz), bytes: gz.length, rawSha256: sha256(raw), rawBytes: raw.length } };
 }
 
-// The URLs of each chunk role of the served build, flat by role name (the feature chunks location,
-// markProviders, future, pool, likely, native, then maplibre and maplibreCss, then the E6 lazy parts
-// details, sheets, later, suggest, range), for faults set by role. The roles are read by their one
-// owner, built-modules.mjs readChunkRoles.
+// The URLs of each chunk role of the served build, flat by role name (every on-demand part under
+// `features`, built-modules.mjs ROLE_ENTRIES: location, markProviders, future, pool, likely, native,
+// range, details, sheets, later, suggest; then maplibre and maplibreCss), for faults set by role. The
+// roles are read by their one owner, built-modules.mjs readChunkRoles.
 const roleUrls = (builtDir) => {
-  const { features, maplibre, maplibreCss, lazy } = readChunkRoles(join(builtDir, 'client'));
-  return { ...features, maplibre, maplibreCss, ...lazy };
+  const { features, maplibre, maplibreCss } = readChunkRoles(join(builtDir, 'client'));
+  return { ...features, maplibre, maplibreCss };
 };
 
 export async function startHarness({ log = () => {}, dir } = {}) {
