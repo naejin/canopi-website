@@ -1,0 +1,360 @@
+name: CI
+
+# Consortium v2 step E3 (knowledge/project/consortium-v2-plan.md; design check A15-A20, rows D1-D15).
+# Tiers: pre-commit ast-grep and pre-push check + unit tests + layer rules run locally (.githooks);
+# this workflow runs everything on each push to master or ci-probe/**, and on each pull request:
+#   changes        marks a documentation-only range (.githooks/lib.sh docs_only); jobs 2-4 skip then
+#   1 unit         check, climate install, unit and policy tests, layer/duplicate/dead-code ratchets
+#   2 browser-build  one build:browser-test, kept as an artifact for job 3
+#   3 browser      the 4 static CI shards of scripts/browser/shards.json
+#   4 site         production build, budgets (check-built-site), smoke tier, axe, tile vectors
+#   gate           green when every job above is (2-4 may be skipped only for documentation)
+#   deploy         master only: moves the `deploy` branch to this commit, fast-forward only
+#   live           master only: waits for https://projectcanopi.com/version.json to report it
+# Cloudflare Workers Builds builds the `deploy` branch (production branch, set by the owner), so
+# master deploys only through `gate`. A ruleset on `deploy` refuses force pushes, deletions and any
+# push of a commit whose `gate` check is not green: renaming the `gate` job blocks every deploy (D11).
+# A commit that weakens this file gates itself (D13, ADR-3): reviews catch it.
+on:
+  push:
+    branches: [master, 'ci-probe/**']
+  pull_request:
+  workflow_dispatch:
+
+# One run per ref: a newer push cancels an older run, except on master, where every run has its own
+# group and finishes (D4). The deploy job has its own group and is never cancelled.
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.ref == 'refs/heads/master' && github.run_id || 'latest' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+# Read-only everywhere; only `deploy` writes (fork pull requests get a read token and never deploy, D14).
+permissions:
+  contents: read
+
+env:
+  WRANGLER_SEND_METRICS: 'false'
+  CANOPI_CHROME: /usr/bin/google-chrome
+
+jobs:
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      docs_only: ${{ steps.range.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: range
+        name: Documentation-only range?
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          BEFORE: ${{ github.event.before }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+        # On master the base is the tip of `deploy` (the last commit tested green and deployed), not the
+        # previous push: a documentation-only commit after a red code commit, or after a --no-verify
+        # push, must not move deploy onto untested code (scripts/ci-deploy.test.mjs).
+        run: |
+          . .githooks/lib.sh
+          case "$EVENT" in
+            push)
+              if [ "$REF" = refs/heads/master ]; then
+                if git fetch --no-tags -q origin +refs/heads/deploy:refs/remotes/origin/deploy 2>/dev/null; then
+                  base=$(git rev-parse refs/remotes/origin/deploy)
+                else
+                  echo "No deploy branch to compare with yet."
+                  base=
+                fi
+              else
+                base=$BEFORE
+              fi ;;
+            pull_request) base=$PR_BASE ;;
+            *) base= ;;
+          esac
+          docs_only=false
+          # No deploy branch, a new branch, a force push or a manual run: no usable base, everything runs.
+          if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
+            git diff --name-only "$base" "$GITHUB_SHA" > "$RUNNER_TEMP/changed.txt"
+            if docs_only < "$RUNNER_TEMP/changed.txt"; then docs_only=true; fi
+            echo "Changed paths since $base:"; cat "$RUNNER_TEMP/changed.txt"
+          else
+            echo "No base commit to compare with: every job runs."
+          fi
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+          echo "Documentation only: $docs_only"
+
+  unit:
+    name: 1 check, unit and policy tests
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      # The climate archive (99 MB) lives outside node_modules, which npm ci deletes (A16).
+      - id: climate
+        name: Climate cache location and pin
+        run: |
+          echo "CANOPI_CLIMATE_CACHE=$RUNNER_TEMP/canopi-climate" >> "$GITHUB_ENV"
+          echo "sha256=$(jq -r .sha256 src/data/climate-release.json)" >> "$GITHUB_OUTPUT"
+      - id: climate-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/canopi-climate
+          key: canopi-climate-${{ steps.climate.outputs.sha256 }}
+      - run: npm ci --no-audit --no-fund
+      # Installs the grid into public/data/climate and src/data/climate-index.json, so the unit tests
+      # that need them run instead of skipping.
+      - run: npm run install:climate
+      - if: steps.climate-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/canopi-climate
+          key: canopi-climate-${{ steps.climate.outputs.sha256 }}
+      - run: npm run check
+      - run: npm test
+      # Ratchets (scripts/quality/ratchet.mjs): a new finding key fails in CI, a removed one warns.
+      - run: npm run check:arch
+      - run: npm run check:dup
+      - run: npm run check:dead
+      - name: ast-grep rules
+        run: |
+          if [ -f sgconfig.yml ]; then node_modules/.bin/ast-grep scan; else echo "No sgconfig.yml: no ast-grep rule yet."; fi
+      # Warns with the count until the batch exit flips .githooks/zero-markers to `fail`.
+      - name: No expected-fail marker on master
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: . .githooks/lib.sh && zero_markers
+
+  browser-build:
+    name: 2 browser-test build
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - id: climate
+        name: Climate cache location and pin
+        run: |
+          echo "CANOPI_CLIMATE_CACHE=$RUNNER_TEMP/canopi-climate" >> "$GITHUB_ENV"
+          echo "sha256=$(jq -r .sha256 src/data/climate-release.json)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/canopi-climate
+          key: canopi-climate-${{ steps.climate.outputs.sha256 }}
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:browser-test
+      # dist-test/ (with its hidden .assetsignore) and the climate index the location fixtures read.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: browser-test-build
+          path: |
+            dist-test/
+            src/data/climate-index.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  browser:
+    name: 3 browser shard ${{ matrix.shard }}
+    needs: [changes, browser-build]
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    # Target: each shard within 15 min (P-E3d); run.mjs warns above its ratchet in shards.json.
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/download-artifact@v8
+        with:
+          name: browser-test-build
+          path: .
+      # Chrome from the runner image (/usr/bin/google-chrome); wrangler/workerd from node_modules.
+      - run: npm run test:browser:shard -- ${{ matrix.shard }}
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-results-${{ matrix.shard }}
+          path: test-results/browser/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  site:
+    name: 4 build, budgets, smoke, axe, vectors
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - id: climate
+        name: Climate cache location and pin
+        run: |
+          echo "CANOPI_CLIMATE_CACHE=$RUNNER_TEMP/canopi-climate" >> "$GITHUB_ENV"
+          echo "sha256=$(jq -r .sha256 src/data/climate-release.json)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/canopi-climate
+          key: canopi-climate-${{ steps.climate.outputs.sha256 }}
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - name: Budgets and built pages
+        run: node scripts/check-built-site.mjs
+      - name: Smoke tier against dist/
+        run: npm run test:browser:smoke
+      - name: Accessibility (axe)
+        run: npm run test:axe
+      # A missing grid fails here instead of skipping (design check V3).
+      - name: Tile vectors
+        env:
+          CANOPI_REQUIRE_VECTORS: '1'
+        run: npm run test:vectors
+
+  gate:
+    # The ruleset on `deploy` requires this check by name: rename it and every deploy is refused (D11).
+    name: gate
+    needs: [changes, unit, browser-build, browser, site]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every job green (jobs 2-4 skipped only for documentation)
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          DOCS_ONLY: ${{ needs.changes.outputs.docs_only }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          bad=$(echo "$NEEDS" | jq -r --arg docs "$DOCS_ONLY" 'to_entries[]
+            | select(.value.result != "success")
+            | select(($docs == "true" and .value.result == "skipped" and (.key | IN("changes", "unit") | not)) | not)
+            | .key')
+          if [ -n "$bad" ]; then
+            echo "::error::not green: $(echo $bad)"
+            exit 1
+          fi
+          echo "gate: green (documentation only: $DOCS_ONLY)"
+
+  deploy:
+    name: deploy
+    needs: gate
+    # Only a push to master moves `deploy` (never a pull request, a probe branch or a manual run).
+    if: ${{ !cancelled() && needs.gate.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    # Never cancelled mid-way. GitHub keeps one pending job per concurrency group: with three quick
+    # green pushes, the middle push's deploy job, still waiting, is cancelled when the third queues.
+    # That is the right outcome (the newer deploy contains it); its run shows cancelled, not red (D4).
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    steps:
+      # The one job that keeps the token: it pushes `deploy` (a GITHUB_TOKEN push still reaches
+      # Cloudflare's GitHub app; probe P-E3a).
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Move deploy to this commit (fast-forward only)
+        run: |
+          set -eu
+          sha=$GITHUB_SHA
+          status=0
+          git ls-remote --exit-code --heads origin deploy > /dev/null || status=$?
+          case $status in
+            0)
+              git fetch --no-tags origin +refs/heads/deploy:refs/remotes/origin/deploy
+              tip=$(git rev-parse refs/remotes/origin/deploy)
+              if git merge-base --is-ancestor "$sha" "$tip"; then
+                echo "deploy is at $tip, which already contains $sha (a newer run moved it): nothing to do."
+                exit 0
+              fi
+              if ! git merge-base --is-ancestor "$tip" "$sha"; then
+                echo "::error::$sha does not descend from deploy ($tip): deploy moves fast-forward only. Find why master and deploy diverged; never force-push deploy."
+                exit 1
+              fi
+              echo "Moving deploy from $tip to $sha." ;;
+            2)
+              echo "deploy does not exist yet: creating it at $sha." ;;
+            *)
+              echo "::error::git ls-remote failed (exit $status)."
+              exit 1 ;;
+          esac
+          git push origin "$sha:refs/heads/deploy"
+
+  live:
+    name: live
+    needs: deploy
+    if: ${{ !cancelled() && needs.deploy.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # Cloudflare deployments carry no commit id; src/pages/version.json.ts writes it (A15). Green
+      # when the live site reports this commit or a newer one that contains it. Red after 20 min
+      # (D6: Cloudflare did not ship a green commit; the live site is unchanged): dashboard ->
+      # projectcanopi -> Deployments -> the failed build -> Retry build, or push an empty commit.
+      - name: Wait for /version.json to report this commit
+        run: |
+          set -u
+          url=https://projectcanopi.com/version.json
+          deadline=$(($(date +%s) + 20 * 60))
+          i=0
+          live=
+          while :; do
+            i=$((i + 1))
+            live=$(curl -fsS --max-time 15 -H 'Cache-Control: no-cache' "$url?ci=$GITHUB_RUN_ID-$i" 2>/dev/null | jq -r '.sha // empty' 2>/dev/null || true)
+            if [ "$live" = "$GITHUB_SHA" ]; then
+              echo "Live: $GITHUB_SHA (after $i checks)."
+              echo "Live at projectcanopi.com: \`$GITHUB_SHA\`." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if [ -n "$live" ]; then
+              git cat-file -e "$live^{commit}" 2>/dev/null || git fetch -q --no-tags origin "$live" 2>/dev/null || true
+              if git merge-base --is-ancestor "$GITHUB_SHA" "$live" 2>/dev/null; then
+                echo "Live: $live, a newer commit that contains $GITHUB_SHA."
+                echo "Live at projectcanopi.com: \`$live\`, which contains \`$GITHUB_SHA\`." >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              fi
+            fi
+            [ "$(date +%s)" -lt "$deadline" ] || break
+            sleep 30
+          done
+          msg="projectcanopi.com/version.json still reports ${live:-nothing readable} 20 min after deploy moved to $GITHUB_SHA: Cloudflare did not ship it. Dashboard: projectcanopi -> Deployments -> the failed build -> Retry build (or push an empty commit to master)."
+          echo "::error::$msg"
+          echo "$msg" >> "$GITHUB_STEP_SUMMARY"
+          exit 1

@@ -1,0 +1,29 @@
+#!/bin/sh
+# Tracked git hook. Enable once in the main checkout (a relative path applies to every worktree):
+#   git config core.hooksPath .githooks        (npm run hooks:install prints the line)
+# No `prepare` script does it: Workers Builds' npm ci must not run git config.
+#
+# Before a commit (E3, design check A19; budget 10 s): ast-grep's rules (sgconfig.yml) on the staged
+# script files only, as they are in the working tree. Nothing to run until a rule exists. No format or
+# lint step: the repository has neither (D-2). Commands run memory-capped (.githooks/lib.sh). Bypass
+# once with `git commit --no-verify`.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+. .githooks/lib.sh
+
+[ -f sgconfig.yml ] || exit 0
+start=$(date +%s)
+set --
+while IFS= read -r f; do
+  [ -n "$f" ] && [ -f "$f" ] && set -- "$@" "$f"
+done <<EOF
+$(git diff --cached --name-only --diff-filter=ACMR -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs')
+EOF
+[ $# -gt 0 ] || exit 0
+need_node_modules pre-commit || exit 1
+
+echo "pre-commit: ast-grep on $# staged file(s)" >&2
+step "ast-grep scan" node_modules/.bin/ast-grep scan "$@" || {
+  echo "pre-commit: ast-grep found an error-level rule above; fix it, or commit with --no-verify." >&2
+  exit 1
+}
+tier_done pre-commit "$start" 10
