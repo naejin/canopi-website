@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the nine import rules dependency-cruiser enforces and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T07:42:23Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T08:06:14Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T03:47:07Z }
 sources:
@@ -20,8 +20,8 @@ sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
-    digest: sha256:e9e13f5e075ab535
-    last_modified: 2026-11-13T03:30:17Z
+    digest: sha256:8165db4fcb8d590c
+    last_modified: 2026-11-13T07:53:00Z
   - id: test-seam-d-ts
     resource: ../../src/islands/consortium/test-seam.d.ts
     title: src/islands/consortium/test-seam.d.ts
@@ -50,8 +50,8 @@ sources:
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
-    digest: sha256:517adcc45c2e6ade
-    last_modified: 2026-11-13T03:41:34Z
+    digest: sha256:a490c80ab1fce8f6
+    last_modified: 2026-11-13T08:05:03Z
 enforced_by: [scripts/consortium-boundary.test.mjs, sgconfig.yml]
 ---
 
@@ -77,7 +77,7 @@ Rules (dependency-cruiser, `.dependency-cruiser.cjs`, E4; boundary facts in `scr
 
 | Rule | Statement | Severity |
 |---|---|---|
-| L1 lib-no-ui | `src/lib/{consortium,climate,location}/**` import no `preact`, `@preact/signals`, `src/islands/**`, `src/components/**` | warn, error from S2's merge |
+| L1 lib-no-ui | `src/lib/{consortium,climate,location}/**` import no `preact`, `@preact/signals`, `src/islands/**`, `src/components/**` | error since Q3 (E6 chunk 3) |
 | L2 state-no-views | L3 imports nothing under `views/**`, static or dynamic | warn, error at E6's exit |
 | L3 data-down | `data/**` imports no `views/**`, `state/**`, `store.ts` | error |
 | L4 views-core-entry | views import the core only through `src/lib/consortium/index.ts` (and `types.ts`) | error |

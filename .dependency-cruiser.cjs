@@ -6,7 +6,7 @@
 // Run through the ratchet, never alone in a gate: `npm run check:arch` (scripts/quality/ratchet.mjs arch).
 // An `error` rule fails on any violation. A `warn` rule is a known violation that E6 removes: its
 // current violations are keys in scripts/quality/baselines/arch.json; a new key warns locally and fails
-// in CI (A26). Chunk 5 flips L2/L5/L6/L8 and L7 to `error`; Q3 flips L1 after S2's merge.
+// in CI (A26). Chunk 5 flips L2/L5/L6/L8 and L7 to `error`; L1 is `error` since Q3 (chunk 3).
 //
 // The edge set (probe P-E4a, 2026-11-13, at 972246a):
 // - tsPreCompilationDeps: true. With `false`, dependency-cruiser parses the transpiled output and loses
@@ -27,7 +27,7 @@ module.exports = {
   forbidden: [
     {
       name: 'L1-lib-no-ui',
-      severity: 'warn', // error after S2's merge (Q3): place-search.ts imports @preact/signals until then (A12)
+      severity: 'error', // Q3 (E6 chunk 3): S2 removed place-search.ts's signals (A12)
       comment: 'L1: src/lib/{consortium,climate,location} import no preact, @preact/signals, src/islands or src/components (ADR-1).',
       from: { path: '^src/lib/(consortium|climate|location)/' },
       // (^|/): a package reached through a symlinked node_modules resolves outside the repo
