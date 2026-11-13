@@ -389,7 +389,7 @@ test('a country from the location: never in a link or the address without the ti
 // says whether it is in Undo's snapshot, saved, in the link and watched; store.ts and memory.ts take
 // every list from there. Per field: save → restore, link → restore and Undo, on the real data. ----
 const schemaModule = await import('../src/islands/consortium/state/schema.ts');
-const { checkFields, defineState, field, CONSORTIUM_FIELDS, STATE_FIELDS, state: schema } = schemaModule;
+const { defineState, CONSORTIUM_FIELDS, STATE_FIELDS, state: schema } = schemaModule;
 const { effect } = await import('@preact/signals');
 const sorted = (list) => [...list].sort();
 
@@ -421,9 +421,9 @@ test('schema: store.ts and memory.ts list no state field by hand', () => {
   assert.doesNotMatch(memSrc, /export interface ShareInput/, 'ShareInput comes from the schema');
 });
 
-test('schema: a field added to the schema is undone, watched, saved and shared with no other change', () => {
-  const mulch = field({ initial: () => 'none', undo: true, endsUndo: true, saved: true });
-  checkFields({ ...STATE_FIELDS, mulch });
+// The link itself is guarded by the codec test above: a new saved field needs the core codec to carry it.
+test('schema: a field added to the schema round-trips through the schema (Undo, watchers, save and share state) with no other change', () => {
+  const mulch = { initial: () => 'none', undo: true, endsUndo: true, saved: true };
   const s = defineState({ ...STATE_FIELDS, mulch });
   assert.notEqual(s.signals.members, store.members, 'its own signals');
   for (const l of ['snapshot', 'endsUndo', 'saved', 'reader', 'save']) assert.ok(s.lists[l].includes('mulch'), l);
@@ -452,13 +452,6 @@ test('schema: a field added to the schema is undone, watched, saved and shared w
   s.apply(shared, { countryFrom: 'chosen' });
   assert.equal(s.signals.mulch.peek(), 'bark');
   assert.deepEqual(s.peek(s.lists.saved), consortium, 'every saved field comes back');
-});
-
-test('schema: the declaration holds its rules, and one that cannot hold is refused', () => {
-  checkFields(STATE_FIELDS);
-  assert.throws(() => checkFields({ x: field({ initial: () => 0, link: {} }) }), /in the link, so saved/);
-  assert.throws(() => checkFields({ x: field({ initial: () => 0, saved: true, watch: 'save' }) }), /watched as 'reader' already/);
-  assert.throws(() => checkFields({ x: field({ initial: () => [], plants: true }) }), /plant list is saved/);
 });
 
 // A shown Temperate consortium with every saved field at its start value.

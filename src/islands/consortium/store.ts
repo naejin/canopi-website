@@ -340,10 +340,8 @@ const nameById = (id: PlantId) => { const t = taxonOf(id); return t ? nameOf(t) 
 
 // The view and the consortium set aside too: Undo of a list pasted on Start goes back to Start's
 // draft, with the consortium it replaced, so the save mirrors that one again (F2, R2-1).
-// (The Snapshot holds the fields state/schema.ts marks undo 'restore' or 'both'.)
+// (The Snapshot holds the fields state/schema.ts marks `undo`, and the plant lists.)
 type Snapshot = ReturnType<typeof state.snapshot>;
-const snapshot = state.snapshot;
-const restoreSnapshot = state.restore;
 const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.includes(x));
 
 // Undo puts back the snapshot taken before the action, so it is offered only while nothing else has
@@ -351,10 +349,10 @@ const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.inc
 // The fields whose change ends the offer (endsUndo or plants in state/schema.ts): the plant lists and
 // the climate.
 const SNAP_KEYS = state.lists.endsUndo;
-let undoAfter: ReturnType<typeof state.snapshot> | null = null;
+let undoAfter: ReturnType<typeof state.peek<(typeof SNAP_KEYS)[number]>> | null = null;
 function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = []): void {
   undoAfter = state.peek(SNAP_KEYS);
-  showToast(text, () => { undoAfter = null; restoreSnapshot(before); }, action, focus);
+  showToast(text, () => { undoAfter = null; state.restore(before); }, action, focus);
 }
 effect(() => {
   const now = state.track(SNAP_KEYS);
@@ -369,7 +367,7 @@ effect(() => {
 // Remove (details, the plant list): its cells are free again (the gap stays), it is left out of a new
 // suggestion, and Undo brings back the consortium as it was.
 export function removeMember(id: PlantId): void {
-  const before = snapshot(), name = nameById(id);
+  const before = state.snapshot(), name = nameById(id);
   batch(() => {
     members.value = without(before.members, [id]);
     kept.value = without(before.kept, [id]);
@@ -386,7 +384,7 @@ export function toggleKeep(id: PlantId): void {
 // Swap: the new plant takes the old one's place in the order (and its pin); the old one is left out
 // of a new suggestion. A main crop is never swapped from the dialog (owner row).
 export function swapMember(oldId: PlantId, newId: PlantId): void {
-  const before = snapshot(), a = nameById(oldId), b = nameById(newId);
+  const before = state.snapshot(), a = nameById(oldId), b = nameById(newId);
   batch(() => {
     members.value = before.members.map((x) => (x === oldId ? newId : x)).filter((x, i, all) => all.indexOf(x) === i);
     if (before.kept.includes(oldId)) kept.value = before.kept.map((x) => (x === oldId ? newId : x));
@@ -401,7 +399,7 @@ export function swapMember(oldId: PlantId, newId: PlantId): void {
 // toast says "n added with a warning" with Show (the first one's details).
 // On Start, a paste builds on the draft and opens it as the consortium (a commit, like Suggest).
 export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [] }: { warned?: PlantId[] } = {}): void {
-  const before = snapshot();
+  const before = state.snapshot();
   const fresh = ids.filter((id, i) => ids.indexOf(id) === i && !before.members.includes(id));
   if (!fresh.length) return;
   batch(() => {
