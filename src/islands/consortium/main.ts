@@ -10,7 +10,7 @@ import { h, render } from 'preact';
 // scripts/check-built-site.mjs). Here, not in load.ts: Node's unit tests import load.ts.
 import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App } from './App.tsx';
-import { load, setPageCountries, setSource, start, watchPools } from './store.ts';
+import { load, setPageClimates, setPageCountries, setSource, start, watchPools } from './store.ts';
 import { provideLocationStep } from './state/restore.ts';
 import { loadLocationStep } from './views/location/load.ts';
 import { zoneOf } from '../../lib/consortium/index.ts';
@@ -67,6 +67,7 @@ if (root && data) {
   provideLocationStep(loadLocationStep);
   setStrings(data.strings, data.lang);
   setPageCountries(data.countries);
+  setPageClimates(data.climates);
   watchPools();
   void open(data);
   // The root keeps its static loading line, aria-busy, until App renders into it.

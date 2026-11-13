@@ -1,7 +1,7 @@
 // The island's one reader of #ct-data (E6 design check §7.1: "#ct-data readers (3)"): what
 // ConsortiumPage.astro hands the island, parsed once. main.ts reads the whole object (strings,
-// database, countries); Start, PoolSlot, the pool panel and the print sheet read `start` and
-// `climates` through page(); the plant dialog reads `guideTitles`. A page without the element (or
+// database, countries, climates: handed to the store, store.setPageClimates); Start, PoolSlot, the
+// pool panel and the print sheet read `start` through page(); the plant dialog reads `guideTitles`. A page without the element (or
 // with text that does not parse) reads as null, and page() then gives empty defaults.
 import type { DbRef } from '../../data/bytes.ts';
 import type { Strings } from '../../strings.ts';
@@ -37,11 +37,11 @@ export function pageData(): Partial<PageData> | null {
   return read;
 }
 
-let shown: { start: StartData; climates: string[] } | null = null;
-export function page(): { start: StartData; climates: string[] } {
+let shown: { start: StartData } | null = null;
+export function page(): { start: StartData } {
   if (!shown) {
     const d = pageData() ?? {};
-    shown = { start: d.start ?? { zones: [], contact: '/', site: location.href }, climates: d.climates ?? [] };
+    shown = { start: d.start ?? { zones: [], contact: '/', site: location.href } };
   }
   return shown;
 }

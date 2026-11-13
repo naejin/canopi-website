@@ -6,7 +6,7 @@
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
 import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, SuggestRule, Taxon } from '../../lib/consortium/index.ts';
-import { asGuest, buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, needsMarkProviders } from '../../lib/consortium/index.ts';
+import { asGuest, buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, needsMarkProviders, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -67,6 +67,17 @@ export function setPageCountries(c?: { checked: string; unchecked: string }): vo
   pageCountries.value = m;
 }
 export const knownCountries = computed<Countries>(() => source.value?.countries() ?? pageCountries.value);
+// The climates with plants of their own (the export's curated climates; E6 hand-off E: their one
+// owner): the open database's list, else the one the page names (main.ts setPageClimates; site ids),
+// so Start can show its cards before the database opens. The loader refuses a database whose list
+// differs from the page's (data/load.ts), so the two never disagree once both are here. Start's pill
+// and Suggest (views/PoolSlot.tsx), the pool panel, Add, Paste, the mark providers and suggestMembers
+// all read this.
+const pageClimates = signal<ClimateZone[]>([]);
+export function setPageClimates(ids: readonly string[]): void {
+  pageClimates.value = ids.flatMap((c) => zoneOf(c) ?? []);
+}
+export const curatedClimates = computed<ClimateZone[]>(() => source.value?.info().climates ?? pageClimates.value);
 // Each climate's plants as PlantSource.pool returned them, cached by climate once read.
 export const pools = signal<Partial<Record<ClimateZone, Taxon[]>>>({});
 // Each climate's interactions (PlantSource.interactions), read with its pool (S1).
@@ -205,7 +216,7 @@ export const markContext = computed<MarkContext>(() => ({ climate: climate.value
 // location, or a climate the export does not curate), then loaded once. Off the first run (decision
 // row "Island JavaScript budget for P5").
 export const markProviders = signal<readonly MarkProvider[]>([]);
-export const wantsMarkProviders = computed(() => needsMarkProviders(markContext.value, source.value?.info().climates ?? []));
+export const wantsMarkProviders = computed(() => needsMarkProviders(markContext.value, curatedClimates.value));
 // The providers' chunk did not load (seam review 6): the range, future and estimate marks it would show
 // are missing, so a notice with Reload says so wherever members show (Matrix.tsx Notices) while marks
 // are wanted, with one toast; as for the range rule, the import is not tried again on this page.
@@ -298,9 +309,9 @@ export function suggestMembers(): boolean {
   if (nothingFits(p, location.value, rule)) return false;
   // A borrowed pool unfiltered (no site climate, or the rule's chunk failed): no suggestion, since only
   // the range filter fits it to a place (UX audit fix 1; fix review 29b709e, 2). The rule Start reads
-  // (rules/suggest-block.ts), over the export's curated climates; with a pool and a site climate, a
-  // missing rule is a failed one (store.pool waits for it otherwise).
-  const scene = { curated: source.peek()?.info().climates ?? [], siteClimate: siteClimate.value, rangeFailed: !rule, nothingFits: false };
+  // (rules/suggest-block.ts), over the curated climates Start reads (curatedClimates); with a pool and
+  // a site climate, a missing rule is a failed one (store.pool waits for it otherwise).
+  const scene = { curated: curatedClimates.peek(), siteClimate: siteClimate.value, rangeFailed: !rule, nothingFits: false };
   if (needsSite(climate.value!, scene) || needsRule(climate.value!, scene)) return false;
   // The suggestion's chunk (suggestRule) not here: Suggest waits for it, or says it failed
   // (state/suggest-wait.ts).
