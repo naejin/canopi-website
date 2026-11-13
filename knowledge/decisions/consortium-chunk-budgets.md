@@ -3,20 +3,20 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:40:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T07:42:27Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:40:03Z }
 sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:a186dcf980c5f47e
-    last_modified: 2026-11-13T03:03:27Z
+    digest: sha256:9834cc1ed62755f8
+    last_modified: 2026-11-13T07:22:58Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:35715731544c0e23
-    last_modified: 2026-11-13T03:40:44Z
+    digest: sha256:b4d7298f973ebedf
+    last_modified: 2026-11-13T07:37:21Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -24,11 +24,11 @@ sources:
     last_modified: 2026-11-11T22:31:55Z
 ---
 
-ADR-2 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, design check A14, A7, A8; written in commit 0, 2026-11-13). Applied by stream B4 in chunk 4 and the exit in chunk 5; until then `scripts/check-built-site.mjs` keeps today's sums.
+ADR-2 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, design check A14, A7, A8; written in commit 0, 2026-11-13). Applied by stream B4 in chunk 4 and the exit in chunk 5; until then `scripts/check-built-site.mjs` keeps today's sums, with the island sum raised from 62 to 63 KB at the chunk-2 merge (temporary: R2's rule modules sit in the main chunk until K3 moves Details out; coordinator row "E6 chunk-2 merge choices" in [the decisions](/decisions/consortium-user-decisions.md), revertible). The assertion's message there still says "the budget is 62 KB".
 
 ## Context
 
-The consortium page had a first-run cap (43 KB gzip), an island sum (`ISLAND_BUDGET`, 62 KB) and a features sum (`FEATURES_BUDGET`, 30 KB together). The sums grow with every lazy chunk the reader may never load, and hide one chunk swelling behind another shrinking. Chunk roles come from `chunkRoles()` in `scripts/built-modules.mjs` (features, plus the lazy roles `details`, `sheets`, `later`, `suggest`, `range` added in commit 0).
+The consortium page had a first-run cap (43 KB gzip), an island sum (`ISLAND_BUDGET`, 62 KB) and a features sum (`FEATURES_BUDGET`, 30 KB together). The sums grow with every lazy chunk the reader may never load, and hide one chunk swelling behind another shrinking. Chunk roles come from `chunkRoles()` in `scripts/built-modules.mjs` (features, plus the lazy roles `details`, `sheets`, `later`, `suggest` added in commit 0; `range`, added there too, moved into `P5_FEATURE_ENTRIES` at chunk 2 so its chunk, loaded by core `loadRangeRule()`, is never modulepreloaded and counts with the features, design check A10).
 
 ## Decision
 
@@ -38,7 +38,7 @@ The consortium page had a first-run cap (43 KB gzip), an island sum (`ISLAND_BUD
 |---|---|
 | first run (modulepreloaded set) | 43 KB through chunk 4; lowered in chunk 5 to the measured value plus 0.3 KB slack per lazy chunk (≤ 40 KB) |
 | each of `sheets`, `details`, `later`, `suggest` | 8 KB |
-| each feature except `location` | 12 KB |
+| each feature except `location` (`range` included) | 12 KB |
 | `location` | 20 KB |
 | MapLibre | 330 KB |
 

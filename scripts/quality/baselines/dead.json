@@ -20,9 +20,6 @@
     "exports|src/data/release.ts|CANOPI_RELEASE_TAG",
     "exports|src/i18n/utils.ts|isLocale",
     "exports|src/islands/consortium/strings.ts|pluralForms",
-    "exports|src/islands/consortium/views/PoolSlot.tsx|NeedsSite",
-    "exports|src/islands/consortium/views/PoolSlot.tsx|needsSite",
-    "exports|src/islands/consortium/views/PoolSlot.tsx|nothingFits",
     "exports|src/islands/consortium/views/Start.tsx|CountryLine",
     "exports|src/lib/climate/model.js|CLIMATE_BANDS",
     "exports|src/lib/contact.mjs|LIMITS",
@@ -33,7 +30,6 @@
     "exports|src/lib/correction.mjs|mailText",
     "exports|src/lib/correction.mjs|normalise",
     "exports|src/lib/guides.ts|langOf",
-    "exports|src/lib/location/place-search.ts|WEB_MERCATOR_MAX_LATITUDE_DEG",
     "exports|src/lib/source-credits.js|CREDIT_STATUSES",
     "exports|src/lib/source-credits.js|LICENCE_STATUSES",
     "exports|src/scripts/chrome.js|isDark",
@@ -42,10 +38,7 @@
     "types|src/components/guides/planting-mix.ts|MixTone",
     "types|src/data/crops.ts|EaseTier",
     "types|src/data/crops.ts|L10n",
-    "types|src/islands/consortium/views/location/load.ts|LineState",
     "types|src/lib/location/geolocation.ts|GeolocationErrorCode",
-    "types|src/lib/location/place-search.ts|PlaceSearchStatus",
-    "unlisted|astro.config.mjs|vite",
-    "unresolved|scripts/consortium-list-query.test.mjs|../src/islands/consortium/rules/list-query.ts"
+    "unlisted|astro.config.mjs|vite"
   ]
 }

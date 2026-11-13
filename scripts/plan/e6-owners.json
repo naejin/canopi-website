@@ -264,7 +264,7 @@
             "R2",
             "S2"
           ],
-          "duty": "explicit start() from main.ts for the module-level effects of store.ts and state/*; guarded dynamic import of test-hook.ts (A13); test-hook.ts writes __ctFaults; node tests import state with no effects running; start() in main.ts calls provideLocationStep explicitly (S2 hand-off: today it is a side effect of importing views/location/load.ts)",
+          "duty": "explicit start() from main.ts for the module-level effects of store.ts and state/*; guarded dynamic import of test-hook.ts (A13); test-hook.ts writes __ctFaults; node tests import state with no effects running; start() in main.ts calls provideLocationStep explicitly (S2 hand-off: today it is a side effect of importing views/location/load.ts); state/persist.ts siteId uses zones.ts siteIdOf instead of lower-casing by hand (R1 hand-off)",
           "files": [
             "src/islands/consortium/store.ts",
             "src/islands/consortium/state/**",
@@ -345,7 +345,7 @@
             "B4",
             "Q3"
           ],
-          "duty": "exit: memory.ts re-exports removed and consumers re-pointed; first run lowered to the measured value (<= 40 KB); dependency-cruiser L2/L5/L6/L8 and no-circular to error; knip baseline regenerated (dead plantName etc. deleted); zero expected-fail markers; concepts; remove forwarders store.ts DEFAULT_SITE/Consortium re-exports, memory.ts plantName; shell.css:77 drops var(--font-body); remove forwarders views/location/keep.ts, load.ts re-exports, location.tsx re-exports (settle, useMyLocation, searchPlace) and the memory.ts barrel",
+          "duty": "exit: memory.ts re-exports removed and consumers re-pointed; first run lowered to the measured value (<= 40 KB); dependency-cruiser L2/L5/L6/L8 and no-circular to error; knip baseline regenerated (dead plantName etc. deleted); zero expected-fail markers; concepts; remove forwarders store.ts DEFAULT_SITE/Consortium re-exports, memory.ts plantName; shell.css:77 drops var(--font-body); remove forwarders views/location/keep.ts, load.ts re-exports, location.tsx re-exports (settle, useMyLocation, searchPlace) and the memory.ts barrel; Start.tsx and PoolSlot.tsx read climateShown (state/persist.ts) instead of computing the shown climate (S2/R2 seam); location.tsx:85 uses it too",
           "files": [
             "src/islands/consortium/**",
             "src/lib/consortium/**",

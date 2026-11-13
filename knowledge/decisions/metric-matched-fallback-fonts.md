@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Metric-matched fallback fonts
 description: Local Arial and Times New Roman (or their metric twins) scaled to Source Sans 3's and Literata's metrics come first in the fallback stacks, so the late web-font swap does not shift the layout on slow phones.
 tags: [fonts, performance, layout]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:39:34Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T07:42:23Z }
 sources:
   - id: fonts-css
     resource: ../../src/styles/fonts.css
@@ -23,13 +23,18 @@ sources:
   - id: consortium-seams-layout-browser-test-mjs
     resource: ../../scripts/browser/consortium-seams-layout.browser.test.mjs
     title: scripts/browser/consortium-seams-layout.browser.test.mjs
-    digest: sha256:698aa5c6c0ca731b
-    last_modified: 2026-11-13T04:47:00Z
+    digest: sha256:65e284777a37799b
+    last_modified: 2026-11-13T07:21:50Z
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
     digest: sha256:44c049911b38bbe1
     last_modified: 2026-11-11T03:28:04Z
+  - id: base-css
+    resource: ../../src/styles/consortium/base.css
+    title: src/styles/consortium/base.css
+    digest: sha256:745c147106da28e6
+    last_modified: 2026-11-13T06:57:55Z
 enforced_by: [scripts/browser/consortium-seams-layout.browser.test.mjs]
 ---
 
@@ -48,10 +53,10 @@ Source Sans 3 (body) and Literata (display) are self-hosted woff2 files with `fo
 
 # Consequences
 
-- The late-font swap moves text by at most about 1% of a string's width, not to the pixel: a paragraph whose last word sits at the edge can still gain or lose a line (Start's lede at en 320 px: CLS 0.0102). The spec "Layout stability (N2, late fonts)" in [consortium-seams-layout.browser.test.mjs](../../scripts/browser/consortium-seams-layout.browser.test.mjs) holds every `/fonts/*.woff2` request 800 ms, asserts the first paint came before any font, and allows CLS 0.015 at 320, 390, 700, 960 and 1280 px in en, fr and ja (N2's own budget is 0.01).
+- The late-font swap moves text by at most about 1% of a string's width, not to the pixel: a paragraph whose last word sits at the edge can still gain or lose a line (Start's lede at en 320 px: CLS 0.0102). The spec "Layout stability (N2, late fonts)" in [consortium-seams-layout.browser.test.mjs](../../scripts/browser/consortium-seams-layout.browser.test.mjs) holds every `/fonts/*.woff2` request 800 ms, asserts the first paint came before any font, and allows CLS 0.015 at 320, 390, 700, 960 and 1280 px in en, fr and ja (N2's own budget is 0.01). Since E6 S2 it also checks sizes (`sized`): no control on Start resizes when the fonts swap; every height and the place-search input's width hold to the pixel, a button's width within 2 % (`LABEL_SLACK`; French labels change about 2 px, 158 → 160), and a control whose top did not move keeps its left within 2 %. Vertical moves are left to the CLS budget.
 
 # Known gaps
 
 - **Android** ships neither Arial nor Times New Roman (nor Liberation), so the matched faces do not apply there and the stack falls to Roboto / Noto Serif unmatched. Roboto- and Noto-Serif-matched faces are a follow-up (F1a).
-- **Place-search input width:** the location step's search input has no CSS width, so it takes its width from the font's average character width, which no fallback face can match; it needs an em width (F1a). The late-font spec therefore skips N2's per-control box check.
+- **Place-search input width (fixed in E6 S2):** the input took its width from `size=20`, the font's average character width (206 px in the fallback, 179 px in Source Sans 3), which no fallback face can match. `.ct .ct-location-search { width: 11.2em; max-width: 100%; }` in [base.css](../../src/styles/consortium/base.css) now fixes it, and the late-font spec checks sizes. Any input sized by `size=` has the same problem.
 - The 640 px header fit in [Site navigation](/decisions/site-navigation.md) was measured against the Noto fallback, not re-measured with the matched faces.

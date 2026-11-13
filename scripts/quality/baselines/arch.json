@@ -2,17 +2,8 @@
   "tool": "dependency-cruiser",
   "version": "18.7.2",
   "keys": [
-    "L1-lib-no-ui|src/lib/location/place-search.ts|@preact/signals",
-    "L2-state-no-views|src/islands/consortium/store.ts|src/islands/consortium/views/pool/pool.tsx",
-    "L5-kit-leaf|src/islands/consortium/views/kit/flags.ts|src/islands/consortium/store.ts",
     "L5-kit-leaf|src/islands/consortium/views/kit/sheet.tsx|src/islands/consortium/store.ts",
     "L5-kit-leaf|src/islands/consortium/views/kit/sheet.tsx|src/islands/consortium/views/Toast.tsx",
-    "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/memory.ts",
-    "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/memory.ts",
-    "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/views/location/keep.ts > src/islands/consortium/memory.ts",
-    "L7-no-circular|src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/store.ts",
-    "L7-no-circular|src/islands/consortium/views/location/keep.ts > src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/views/location/keep.ts",
-    "L7-no-circular|src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/views/location/load.ts",
     "L8-test-hook-entry-only|src/islands/consortium/views/Details.tsx|src/islands/consortium/test-hook.ts",
     "L8-test-hook-entry-only|src/islands/consortium/views/lazy.tsx|src/islands/consortium/test-hook.ts"
   ]

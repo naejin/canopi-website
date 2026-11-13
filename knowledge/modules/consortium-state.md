@@ -1,36 +1,87 @@
 ---
 type: Module
-title: Consortium state schema
-description: "The consortium island's state schema: each field declared once with its initial value and whether Undo, the save, the #v=4 link and the watchers hold it, from which store.ts and memory.ts derive every field list."
+title: Consortium state (schema and state/ modules)
+description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of memory.ts for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:39:12Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T07:42:17Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:7dcc125460b48c23
-    last_modified: 2026-11-13T04:26:28Z
+    digest: sha256:41febe1d6c1f775e
+    last_modified: 2026-11-13T07:21:50Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:5377832f342adfbb
-    last_modified: 2026-11-13T04:26:28Z
+    digest: sha256:62381e5804f174a1
+    last_modified: 2026-11-13T07:27:10Z
   - id: memory-ts
     resource: ../../src/islands/consortium/memory.ts
     title: src/islands/consortium/memory.ts
-    digest: sha256:b4754548a4d65e22
-    last_modified: 2026-11-13T04:07:29Z
+    digest: sha256:86f1a81beb63e1a1
+    last_modified: 2026-11-13T07:21:50Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:3333bfba6ba3d50a
-    last_modified: 2026-11-13T04:26:28Z
+    digest: sha256:2394478d1865f77b
+    last_modified: 2026-11-13T07:21:50Z
+  - id: persist-ts
+    resource: ../../src/islands/consortium/state/persist.ts
+    title: src/islands/consortium/state/persist.ts
+    digest: sha256:2e5f6097c9baff44
+    last_modified: 2026-11-13T07:21:50Z
+  - id: restore-ts
+    resource: ../../src/islands/consortium/state/restore.ts
+    title: src/islands/consortium/state/restore.ts
+    digest: sha256:a619541fb59bd906
+    last_modified: 2026-11-13T07:21:50Z
+  - id: arrival-ts
+    resource: ../../src/islands/consortium/state/arrival.ts
+    title: src/islands/consortium/state/arrival.ts
+    digest: sha256:01b03b1fde6c2a62
+    last_modified: 2026-11-13T07:21:50Z
+  - id: draft-ts
+    resource: ../../src/islands/consortium/state/draft.ts
+    title: src/islands/consortium/state/draft.ts
+    digest: sha256:3d841313dafe55e7
+    last_modified: 2026-11-13T07:21:50Z
+  - id: suggest-wait-ts
+    resource: ../../src/islands/consortium/state/suggest-wait.ts
+    title: src/islands/consortium/state/suggest-wait.ts
+    digest: sha256:c9f254a067a76df9
+    last_modified: 2026-11-13T07:21:50Z
+  - id: lookups-ts
+    resource: ../../src/islands/consortium/state/lookups.ts
+    title: src/islands/consortium/state/lookups.ts
+    digest: sha256:9b4b17c87a85f603
+    last_modified: 2026-11-13T07:21:50Z
+  - id: location-ts
+    resource: ../../src/islands/consortium/state/location.ts
+    title: src/islands/consortium/state/location.ts
+    digest: sha256:ca30b03006dfdeeb
+    last_modified: 2026-11-13T07:21:50Z
 enforced_by: [scripts/consortium-memory.test.mjs]
 ---
 
 # Responsibility
 
-The consortium island's state, declared once in [state/schema.ts](../../src/islands/consortium/state/schema.ts) (E6 stream S1; design check §7.1 "Consortium state"). Each field says what it holds and where it goes; everything that used to list the fields by hand (store.ts's signals and Undo snapshot, memory.ts's share state, link apply, set-aside, Start over and watchers) derives from it. Part of the [Consortium page](/modules/consortium-page.md).
+The consortium island's state, declared once in [state/schema.ts](../../src/islands/consortium/state/schema.ts) (E6 stream S1; design check §7.1 "Consortium state"). Each field says what it holds and where it goes; everything that used to list the fields by hand (store.ts's signals and Undo snapshot, the share state, link apply, set-aside, Start over and watchers) derives from it. Part of the [Consortium page](/modules/consortium-page.md); layer L3 of [ADR-1](/decisions/consortium-island-layers.md) (no module here imports a view).
+
+# The state/ modules (E6 S2)
+
+E6 stream S2 split `memory.ts` (about 780 lines) into the modules below; `memory.ts` is now a re-export barrel of the names the views and `scripts/consortium-p5-seams-s5b.test.mjs` import, until chunk 5 points them at `state/` and deletes it.
+
+| Module | Holds |
+|---|---|
+| [state/persist.ts](../../src/islands/consortium/state/persist.ts) | Storage keys (`canopi-consortium`, `canopi-country`, `canopi-climate`, `canopi-location`), guarded storage (`memory`, `attempt`, `storageWorks`), the saved record (`saveRecord`, `readRecord`, `oldRecord`), `CountryFrom` (derived from the store's `CountrySource` without `'guess'`; `fromOf`), `shareState` (`schema.share`), `shareUrl`, the restore in flight (`inFlight`, `restoring`, `pendingClimate`, `pendingLinkClimate`), `climateShown` (the card Start shows, chosen or proposed), `own()`, `currentFragment`, `writeSave`, `writeAddress`, `shownFragment`, `watchStore` and the reader's action count (`actionCount`, `quietly`). Below restore.ts and the location step so neither imports the other |
+| [state/restore.ts](../../src/islands/consortium/state/restore.ts) | `notices`, `restore(fragment, {from, src, keep})` (reads everything first, applies in one batch only if still the newest restore and the reader has not acted), `applyPreset` (guide `?plant=&climate=`), `ownLocation` (the saved site looked up again), `waitForSource`, and `provideLocationStep(load)`: `views/location/load.ts` hands it the location chunk's loader, so state never imports a view (ADR-1 L2); a missing step logs an error |
+| [state/arrival.ts](../../src/islands/consortium/state/arrival.ts) | How the page opens: pure `arrival()`, `hashAction()`, `countryAtStart()`, `guessCountry()` (Node-tested), and `startMemory()`, which wires them once |
+| [state/draft.ts](../../src/islands/consortium/state/draft.ts) | Start's draft: `chooseClimate`, `chooseCountry`, `pickingCountry`, `changeSite`, `startOver`, `canGoBack`, `backToConsortium`, `startEmpty` (each drops a link's location through `dropLinkLocation` → `letGo`), `cropExamples`, `plantName` |
+| [state/suggest-wait.ts](../../src/islands/consortium/state/suggest-wait.ts) | The waiting Suggest, one owner: `pendingSuggest`, `waited`, `requestSuggest` (waits for the plant lists and the location lookups, capped at 10 s), `watchSuggest` |
+| [state/lookups.ts](../../src/islands/consortium/state/lookups.ts) | The location lookups in flight, in the first run (the location module is lazy): `lookups`, `looking`, `lookingThrough`, `unread`, the result `line`, `nextLookup`/`liveLookup`, `unlessReplaced`, `letGo(drop)`. Moved out of `views/location/load.ts`, which re-exports them for the seam tests |
+| [state/location.ts](../../src/islands/consortium/state/location.ts) | The location step's state, in the lazy location chunk (only `views/location/location.tsx` imports it): `readLocation`, `locationRecord`, `siteFound`, `locationCountry`, the tile `read` (15 s cap, no soil until P5.2), `locate`, `settle`, `useMyLocation`, `searchPlace`, `placeName`, `confirmProposed`, `forget`. See [Consortium location step](/modules/consortium-location.md) |
+
+All L7 cycles are gone after chunk 2 (coordinator row "E6 chunk-2 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)).
 
 # Field options
 
@@ -52,7 +103,7 @@ The derived lists: `snapshot`, `endsUndo`, `saved`, `plants`, `reader`, `save`. 
 - `CONSORTIUM_FIELDS`: `climate` (saved, endsUndo), `country` (saved; `put` never writes a guessed country and a location country only with the "include my location" tick, owner row 2026-10-28 and P5 owner answer 5; `take` labels a link's country by where it came from), `site` (saved, `DEFAULT_SITE` all `unsure`), the plant lists `members`, `kept`, `removed`, `guests` (link form `[{id, from}]`), `crops` (link keeps `MAX_CROPS`, three), and `stage` (saved).
 - `STATE_FIELDS` adds `view` (watched `reader`, undo only to or from Start) and `setAside` (undo, watched `save`).
 - Types: `Consortium` (the consortium fields with a non-null climate), `ShareInput` (stage may be null).
-- `state = defineState(STATE_FIELDS)`; [store.ts](../../src/islands/consortium/store.ts) re-exports each signal by name, and `SNAP_KEYS` is `state.lists.endsUndo`; [memory.ts](../../src/islands/consortium/memory.ts) `shareState` is `schema.share`, `applyDecoded` calls `schema.apply`, `own()` peeks `lists.saved`, `chooseClimate`/`startOver` write `valuesOf(lists.plants, …)`, and `shownFragment`, `watchStore` and the Suggest-drop effect `track` the `reader`, `save` and `plants` lists.
+- `state = defineState(STATE_FIELDS)`; [store.ts](../../src/islands/consortium/store.ts) re-exports each signal by name, and `SNAP_KEYS` is `state.lists.endsUndo`; in [state/persist.ts](../../src/islands/consortium/state/persist.ts) `shareState` is `schema.share`, `own()` peeks `lists.saved`, and `shownFragment` and `watchStore` `track` the `reader` and `save` lists; [state/restore.ts](../../src/islands/consortium/state/restore.ts) applies a decoded link or save with `schema.apply`; [state/draft.ts](../../src/islands/consortium/state/draft.ts) `chooseClimate`/`startOver` write `valuesOf(lists.plants, …)`; [state/suggest-wait.ts](../../src/islands/consortium/state/suggest-wait.ts) tracks `plants` to drop a waiting Suggest.
 
 # Adding a field
 
@@ -60,4 +111,4 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
 
 # Tests
 
-`scripts/consortium-memory.test.mjs`: each field declares its part once; the saved fields are exactly the core `ShareState`; store.ts and memory.ts list no state field by hand; a test-only extra field round-trips through Undo, watchers, save and share state; per saved field save → restore and link → restore; Undo per snapshot field; any `endsUndo` change hides the Undo toast; saves and `#v=4` links written before the schema open as they did.
+`scripts/consortium-memory.test.mjs`: each field declares its part once; the saved fields are exactly the core `ShareState`; store.ts and the state/ modules list no state field by hand; a test-only extra field round-trips through Undo, watchers, save and share state; per saved field save → restore and link → restore; Undo per snapshot field; any `endsUndo` change hides the Undo toast; saves and `#v=4` links written before the schema open as they did.

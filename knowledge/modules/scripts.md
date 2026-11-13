@@ -5,7 +5,7 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:39:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T07:42:24Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T03:47:09Z }
@@ -23,13 +23,13 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:cdcfe859fe8a8f42
-    last_modified: 2026-11-13T06:35:57Z
+    digest: sha256:20ae864e5257d12c
+    last_modified: 2026-11-13T07:38:26Z
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:23d753e894636759
-    last_modified: 2026-11-13T03:42:28Z
+    digest: sha256:cd62373a66839519
+    last_modified: 2026-11-13T06:49:01Z
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs
@@ -43,8 +43,8 @@ sources:
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:711c9593e2586e9f
-    last_modified: 2026-11-13T03:03:27Z
+    digest: sha256:9ff2040fb1206f47
+    last_modified: 2026-11-13T07:22:58Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
@@ -73,8 +73,18 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:35715731544c0e23
-    last_modified: 2026-11-13T03:40:44Z
+    digest: sha256:b4d7298f973ebedf
+    last_modified: 2026-11-13T07:37:21Z
+  - id: rules-test-mjs
+    resource: ../../scripts/quality/ast-grep/rules.test.mjs
+    title: scripts/quality/ast-grep/rules.test.mjs
+    digest: sha256:9a944293ae6767b0
+    last_modified: 2026-11-13T06:47:29Z
+  - id: sgconfig-yml
+    resource: ../../sgconfig.yml
+    title: sgconfig.yml
+    digest: sha256:2c703f0a6786cc90
+    last_modified: 2026-11-13T06:47:29Z
 ---
 
 # Responsibility
@@ -98,7 +108,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 | [browser/](../../scripts/browser) | `serve.mjs` (wrangler dev on 4420–4498 over a hard-linked copy of `dist-test/` by default, the production `dist/` on request, stopped by pid), `harness.mjs` (puppeteer-core with the system Chrome), `trace.mjs` (failure traces), `helpers.mjs`, `run.mjs` + `shards.json` (the sharded runner: `--list local|ci`, `--shard N`, `--slots K`, `--no-scope`), and one test file per owner: `consortium-commit0.browser.test.mjs` (probes P1–P3, P6, P5-0, the BT-9 load screens, the E1 self-checks over `fixtures/`), `consortium-s1…s4.browser.test.mjs` (each stream's §7 tests), `consortium-p5-s5b/c/d/f` and `consortium-seams-p2/layout/p5` (shared code in `p5-helpers.mjs`, `seams-helpers.mjs`); `smoke/consortium.smoke.mjs` (production `dist/`, `npm run test:browser:smoke`); `smoke/axe.smoke.mjs` (axe-core WCAG A/AA on the production `dist/` against `quality/baselines/axe.json`, `npm run test:axe`); `consortium-e6.browser.test.mjs` and `consortium-e6-r4.browser.test.mjs` (E6's user paths, written failing with `failing()` markers in E6 commit 0); `consortium-timing.mjs` (§8 cold/warm timing, on demand only, not a test); see [Consortium page](/modules/consortium-page.md) | `npm run test:browser` (local shards), `test:browser:shard <n>` (CI), `test:browser:smoke`, capped; never in `npm test` |
 | [plan/](../../scripts/plan) | `e6-owners.json`: the owners file of the E3/E4/E5a/E6 batch (path → stream per chunk, with each stream's needs and duty; one owner per path per chunk); `owners.mjs`: its checks (`ownersProblems`, used by `plan-owners.test.mjs` in `npm test`) and `node scripts/plan/owners.mjs check <chunk> <stream> <base>`, which fails a stream diff outside its rows; see [Consortium v2 plan](/project/consortium-v2-plan.md) | `npm test`; the main agent at each stream merge |
 | [expect-fail.mjs](../../scripts/expect-fail.mjs) | the expected-fail marker (E6 commit 0): `failing(title, { owner, reason }, fn)` wraps `test()`, passes only while `fn` throws a message matching `reason`, turns red with "now passes: remove the marker (owner X)" or "fails for another reason"; the title must name the owner stream; `markers()` lists every marker in `scripts/**/*.test.mjs`; `node scripts/expect-fail.mjs [--zero]` prints them (`--zero` fails if any is left, the gate before a push to master). Markers in commit 0: `consortium-zones` (R1), `consortium-list-query` (R2), `climate-vectors` (V, `npm run test:vectors`), and the browser specs E6-1…7 in `browser/consortium-e6{,-r4}.browser.test.mjs` (K1, B4, K3, R4); after chunk 1 (R1, V and K1 merged) `consortium-list-query` (R2) and E6-2…7 (B4, K3, R4) are left | `npm test`, `npm run test:browser` |
-| [quality/](../../scripts/quality) | `ratchet.mjs` (E4): runs dependency-cruiser (`.dependency-cruiser.cjs`, layer rules L1–L9), jscpd (`.jscpd.json`) or knip (`knip.json`, through `knip-reporter.mjs`) and compares their findings, as sorted keys, with `baselines/{arch,dup,dead}.json`: a new key warns locally and fails in CI, a gone key prints "baseline stale", an `error` arch rule fails everywhere, a crash or empty scan fails, the tool's version must equal the baseline's; `--write` (merge agent only) rewrites a baseline; `baselines/axe.json` is the axe smoke's. `arch-rules.test.mjs` runs L1–L9 on a fixture tree (one breach and one allowed neighbour per rule); `ratchet.test.mjs` tests the comparison | `npm run check:arch`, `check:dup`, `check:dead`; the tests in `npm test` |
+| [quality/](../../scripts/quality) | `ratchet.mjs` (E4): runs dependency-cruiser (`.dependency-cruiser.cjs`, layer rules L1–L9), jscpd (`.jscpd.json`) or knip (`knip.json`, through `knip-reporter.mjs`) and compares their findings, as sorted keys, with `baselines/{arch,dup,dead}.json`: a new key warns locally and fails in CI, a gone key prints "baseline stale", an `error` arch rule fails everywhere, a crash or empty scan fails, the tool's version must equal the baseline's; `--write` (merge agent only) rewrites a baseline; `baselines/axe.json` is the axe smoke's. `arch-rules.test.mjs` runs L1–L9 on a fixture tree (one breach and one allowed neighbour per rule); `ratchet.test.mjs` tests the comparison; `ast-grep/` (E6 Q2): the ast-grep rules `sgconfig.yml` names (`rules/number-format-only-in-format.{typescript,tsx,javascript}.yml`), their snippet tests (`rule-tests/`, `ast-grep test`) and `rules.test.mjs`, which plants a tree with the rules, scans it for the file scopes and the `format.ts` exemption, and scans the real tree | `npm run check:arch`, `check:dup`, `check:dead`; the tests in `npm test` |
 | [ci-deploy.test.mjs](../../scripts/ci-deploy.test.mjs) | runs ci.yml's `deploy` job script against a fixture remote (fast-forward only) and checks the job names and settings the `deploy` ruleset and concurrency need, and the `changes` job's documentation-only rule; see [CI, hooks and the deploy gate](/runbooks/ci-and-deploy-gate.md) | `npm test` |
 | [fixtures/climate/](../../scripts/fixtures/climate) | the crate's synthetic tiles, `synthetic-expected.json` (canopi-climate 5a47016, v0.2.1), `lookup.json` + `lookup.json.sha256` (the v0.2.1 release vectors) and `vectors.mjs` (runs them through the reader); read by `climate-reader.test.mjs`, `climate-vectors.test.mjs` and `consortium-p5-ranges.test.mjs`; see [Climate reader](/modules/climate-reader.md) | `npm test`, `npm run test:vectors` |
 | [font-fallback-metrics.mjs](../../scripts/font-fallback-metrics.mjs) | prints the metric-matched `@font-face` rules of `src/styles/fonts.css` ('Source Sans 3 Fallback', 'Literata Fallback'): size-adjust from the site's character-frequency-weighted advances, hhea ascent/descent per weight and subset, read from the woff2 files and Liberation Sans/Serif (`--liberation <dir>`); see [Metric-matched fallback fonts](/decisions/metric-matched-fallback-fonts.md) | by hand when a font file or the site's text changes; paste the output over fonts.css |
