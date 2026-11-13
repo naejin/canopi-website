@@ -11,7 +11,7 @@
     "check:arch": "node scripts/quality/ratchet.mjs arch",
     "check:dup": "node scripts/quality/ratchet.mjs dup",
     "check:dead": "node scripts/quality/ratchet.mjs dead",
-    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test scripts/*.test.mjs scripts/quality/*.test.mjs",
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test scripts/*.test.mjs scripts/quality/*.test.mjs scripts/quality/ast-grep/*.test.mjs",
     "test:vectors": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test scripts/climate-vectors.test.mjs",
     "build:browser-test": "CANOPI_BROWSER_TEST=1 astro build",
     "test:browser": "npm run build:browser-test && node scripts/browser/run.mjs --list local",
