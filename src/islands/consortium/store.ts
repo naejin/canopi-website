@@ -5,7 +5,7 @@
 // inside the computed bodies, the core calls they own (matrix: S1 lib/consortium/matrix.ts; flags:
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
-import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
+import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
 import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, loadMarkProviders, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
 import type { RangeRule } from './views/pool/pool.tsx';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -28,31 +28,23 @@ export interface Sheet { kind: SheetKind; id: PlantId | null; n: number }
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'failed';
 export interface Load { status: LoadStatus; error: LoadFailure | null }
 
-// Every site question starts at "unsure" (design check A7): it filters nothing.
-export const DEFAULT_SITE: Site = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
+export { DEFAULT_SITE } from './state/schema.ts';
 
 // ---- state ----
-export const climate = signal<ClimateZone | null>(null);
-export const country = signal<Country>({ code: null, source: null });
-export const site = signal<Site>({ ...DEFAULT_SITE });
-export const crops = state.signals.crops; // the crop examples the reader ticked (Start), as plant ids
-export const members = signal<PlantId[]>([]); // the consortium, in the order added
-export const kept = signal<PlantId[]>([]); // pinned: a new suggestion keeps them
-export const removed = signal<PlantId[]>([]); // taken out by the reader: a new suggestion leaves them out
-export const guests = signal<Partial<Record<PlantId, ClimateZone>>>({}); // added from another climate's list (A9)
-export const view = signal<View>('start');
-export const stage = signal<PhaseOrd>(0); // the stage the side view, stepper and print show
+// The consortium's fields are declared once in state/schema.ts (what each is, whether Undo, the save
+// and the link hold it, who watches it); their signals are re-exported here under their names.
+export type { Consortium } from './state/schema.ts';
+// climate, country, site; the plant lists members (in the order added), kept (pinned: a new suggestion
+// keeps them), removed (taken out: a new suggestion leaves them out), guests (from another climate's
+// list, A9) and crops (the crop examples the reader ticked on Start); the stage the side view, stepper
+// and print show; the view; setAside (see below).
+export const { climate, country, site, crops, members, kept, removed, guests, view, stage, setAside } = state.signals;
 export const sheet = signal<Sheet | null>(null);
 // While Start shows (view 'start'), the signals above are the Start draft: the picked card, its
 // crops and site answers (and, on the consortium's own card, its plants, which Suggest and a paste
-// build on). The consortium shown before Change site is then set aside here, with its own site
+// build on). The consortium shown before Change site is then in setAside, with its own site
 // answers, country and stage; null: none. Only the
 // commit actions turn the draft into the consortium (memory.ts); the save mirrors the consortium.
-export interface Consortium {
-  climate: ClimateZone; members: PlantId[]; kept: PlantId[]; removed: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>>; crops: PlantId[];
-  site: Site; country: Country; stage: PhaseOrd;
-}
-export const setAside = signal<Consortium | null>(null);
 export const load = signal<Load>({ status: 'idle', error: null });
 // P5 (commit 0 seam): where the site is. S5b writes it (device location, place search, map pick, a
 // link's `o=`); S5c (range check, nearest lists), S5d (future check) and S5e (native here, soil
@@ -348,30 +340,27 @@ const nameById = (id: PlantId) => { const t = taxonOf(id); return t ? nameOf(t) 
 
 // The view and the consortium set aside too: Undo of a list pasted on Start goes back to Start's
 // draft, with the consortium it replaced, so the save mirrors that one again (F2, R2-1).
-interface Snapshot extends ReturnType<typeof state.snapshot> { members: PlantId[]; kept: PlantId[]; removed: PlantId[]; guests: Partial<Record<PlantId, ClimateZone>>; view: View; setAside: Consortium | null }
-const snapshot = (): Snapshot => ({ ...state.snapshot(), members: members.peek(), kept: kept.peek(), removed: removed.peek(), guests: guests.peek(), view: view.peek(), setAside: setAside.peek() });
-const restoreSnapshot = (s: Snapshot) => batch(() => {
-  state.restore(s);
-  members.value = s.members; kept.value = s.kept; removed.value = s.removed; guests.value = s.guests;
-  if (s.view === 'start' || view.peek() === 'start') view.value = s.view;
-  setAside.value = s.setAside;
-});
+// (The Snapshot holds the fields state/schema.ts marks undo 'restore' or 'both'.)
+type Snapshot = ReturnType<typeof state.snapshot>;
+const snapshot = state.snapshot;
+const restoreSnapshot = state.restore;
 const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.includes(x));
 
 // Undo puts back the snapshot taken before the action, so it is offered only while nothing else has
 // changed the consortium (a pin, a new suggestion, another climate): any change hides the toast.
-let undoAfter: (Snapshot & { climate: ClimateZone | null }) | null = null;
-const SNAP_KEYS = ['members', 'kept', 'removed', ...state.lists.endsUndo, 'guests'] as const;
+// The fields whose change ends the offer (endsUndo or plants in state/schema.ts): the plant lists and
+// the climate.
+const SNAP_KEYS = state.lists.endsUndo;
+let undoAfter: ReturnType<typeof state.snapshot> | null = null;
 function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = []): void {
-  undoAfter = { ...snapshot(), climate: climate.peek() };
+  undoAfter = state.peek(SNAP_KEYS);
   showToast(text, () => { undoAfter = null; restoreSnapshot(before); }, action, focus);
 }
 effect(() => {
-  state.track(state.lists.endsUndo);
-  const now = { members: members.value, kept: kept.value, removed: removed.value, ...state.peek(state.lists.endsUndo), guests: guests.value, climate: climate.value };
+  const now = state.track(SNAP_KEYS);
   const after = undoAfter;
   if (!after) return;
-  if (now.climate !== after.climate || SNAP_KEYS.some((k) => now[k] !== after[k])) {
+  if (SNAP_KEYS.some((k) => now[k] !== after[k])) {
     undoAfter = null;
     if (toast.peek()?.undo) hideToast();
   }

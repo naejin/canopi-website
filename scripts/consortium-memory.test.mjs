@@ -384,3 +384,203 @@ test('a country from the location: never in a link or the address without the ti
   assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'fr', savedFrom: 'location', guess: 'US' }), { code: 'FR', source: 'location' }, 'shown again as "from your location", never as chosen');
   assert.deepEqual(countryAtStart({ link: 'DE', pref: null, saved: 'fr', savedFrom: 'location', guess: 'US' }), { code: 'DE', source: 'link' }, 'a link\'s own country wins');
 });
+
+// ---- E6 S1: the consortium's state declared once (src/islands/consortium/state/schema.ts). Each field
+// says whether it is in Undo's snapshot, saved, in the link and watched; store.ts and memory.ts take
+// every list from there. Per field: save → restore, link → restore and Undo, on the real data. ----
+const schemaModule = await import('../src/islands/consortium/state/schema.ts');
+const { checkFields, defineState, field, CONSORTIUM_FIELDS, STATE_FIELDS, state: schema } = schemaModule;
+const { effect } = await import('@preact/signals');
+const sorted = (list) => [...list].sort();
+
+test('schema: each field declares its part once (snapshot, Undo, saved, link, watched, plant list)', () => {
+  const L = schema.lists;
+  assert.deepEqual(sorted(L.snapshot), sorted(['members', 'kept', 'removed', 'crops', 'guests', 'view', 'setAside']), 'Undo puts these back');
+  assert.deepEqual(sorted(L.endsUndo), sorted(['climate', 'members', 'kept', 'removed', 'crops', 'guests']), 'a change to these ends the Undo offer');
+  const saved = ['climate', 'country', 'site', 'members', 'kept', 'removed', 'guests', 'crops', 'stage'];
+  assert.deepEqual(sorted(L.saved), sorted(saved), 'the Consortium the save keeps and Change site sets aside');
+  assert.deepEqual(sorted(Object.keys(CONSORTIUM_FIELDS)), sorted(saved), 'CONSORTIUM_FIELDS (the Consortium type) holds the saved fields');
+  assert.deepEqual(sorted(L.reader), sorted([...saved, 'view']), 'a write to these is the reader acting');
+  assert.deepEqual(sorted(L.save), sorted([...saved, 'view', 'setAside']), 'the save and the address follow these');
+  assert.deepEqual(sorted(L.plants), sorted(['members', 'kept', 'removed', 'guests', 'crops']));
+  for (const k of Object.keys(STATE_FIELDS)) assert.equal(store[k], schema.signals[k], `store.${k} is the schema's signal`);
+});
+
+test('schema: the saved fields are exactly the ShareState the core link codec reads and writes', () => {
+  assert.deepEqual(sorted(schema.lists.saved), sorted(Object.keys(decodeLink('v=4&c=temperate&e=1', {}).state)),
+    'a field put into the link needs the core codec (lib/consortium/state.ts) to carry it');
+});
+
+test('schema: store.ts and memory.ts list no state field by hand', () => {
+  const memSrc = readFileSync(new URL('../src/islands/consortium/memory.ts', import.meta.url), 'utf8');
+  const storeSrc = readFileSync(new URL('../src/islands/consortium/store.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(memSrc, /void \[store\./, 'watcher lists come from schema.lists');
+  assert.doesNotMatch(memSrc, /store\.(crops|kept|members)\.value = (s\.|same)/, 'the link and the draft write fields through the schema');
+  assert.doesNotMatch(storeSrc, /SNAP_KEYS = \[/, 'SNAP_KEYS comes from schema.lists');
+  assert.doesNotMatch(storeSrc, /interface Snapshot \{/, 'Snapshot comes from the schema');
+  assert.doesNotMatch(memSrc, /export interface ShareInput/, 'ShareInput comes from the schema');
+});
+
+test('schema: a field added to the schema is undone, watched, saved and shared with no other change', () => {
+  const mulch = field({ initial: () => 'none', undo: true, endsUndo: true, saved: true });
+  checkFields({ ...STATE_FIELDS, mulch });
+  const s = defineState({ ...STATE_FIELDS, mulch });
+  assert.notEqual(s.signals.members, store.members, 'its own signals');
+  for (const l of ['snapshot', 'endsUndo', 'saved', 'reader', 'save']) assert.ok(s.lists[l].includes('mulch'), l);
+  // Undo: in the snapshot, put back, and a change ends the offer.
+  const before = s.snapshot(), then = s.peek(s.lists.endsUndo);
+  s.signals.mulch.value = 'straw';
+  assert.notEqual(s.peek(s.lists.endsUndo).mulch, then.mulch, 'a change SNAP_KEYS sees');
+  s.restore(before);
+  assert.equal(s.signals.mulch.peek(), 'none');
+  // Watched: the reader's watcher and the save's watcher re-run on it.
+  for (const l of ['reader', 'save']) {
+    let runs = 0;
+    const stop = effect(() => { s.track(s.lists[l]); runs++; });
+    s.signals.mulch.value = s.signals.mulch.peek() === 'bark' ? 'leaves' : 'bark';
+    stop();
+    assert.equal(runs, 2, `${l} watcher`);
+  }
+  // Saved and shared: in the consortium, put into the link's state and taken back out of it.
+  s.signals.climate.value = 'Temperate';
+  s.signals.mulch.value = 'bark';
+  const consortium = s.peek(s.lists.saved);
+  assert.equal(consortium.mulch, 'bark');
+  const shared = s.share(consortium, { location: false });
+  assert.equal(shared.mulch, 'bark');
+  s.signals.mulch.value = 'none';
+  s.apply(shared, { countryFrom: 'chosen' });
+  assert.equal(s.signals.mulch.peek(), 'bark');
+  assert.deepEqual(s.peek(s.lists.saved), consortium, 'every saved field comes back');
+});
+
+test('schema: the declaration holds its rules, and one that cannot hold is refused', () => {
+  checkFields(STATE_FIELDS);
+  assert.throws(() => checkFields({ x: field({ initial: () => 0, link: {} }) }), /in the link, so saved/);
+  assert.throws(() => checkFields({ x: field({ initial: () => 0, saved: true, watch: 'save' }) }), /watched as 'reader' already/);
+  assert.throws(() => checkFields({ x: field({ initial: () => [], plants: true }) }), /plant list is saved/);
+});
+
+// A shown Temperate consortium with every saved field at its start value.
+async function blankShown() {
+  const pool = await shown();
+  await store.loadPool('Tropical');
+  await store.loadPool('Mediterranean');
+  store.country.value = { code: null, source: null };
+  store.site.value = { ...UNSURE };
+  store.kept.value = [];
+  store.removed.value = [];
+  store.guests.value = {};
+  store.crops.value = [];
+  store.stage.value = 0;
+  store.setAside.value = null;
+  return pool;
+}
+const SITE = { light: 'part', soil: 'acid', water: 'wet', room: 'large' };
+// Per saved field: the change, and the value it reads back (from a link, `link`: a country is labelled so).
+const CASES = {
+  climate: { change: async () => { const p = await store.loadPool('Mediterranean'); store.climate.value = 'Mediterranean'; store.members.value = p.slice(0, 4).map((t) => t.id); }, want: 'Mediterranean' },
+  country: { change: () => { store.country.value = { code: 'DE', source: 'chosen' }; }, want: { code: 'DE', source: 'chosen' }, link: { code: 'DE', source: 'link' } },
+  site: { change: () => { store.site.value = { ...SITE }; }, want: SITE },
+  members: { change: (p) => { store.members.value = p.slice(10, 14).map((t) => t.id); }, want: (p) => p.slice(10, 14).map((t) => t.id) },
+  kept: { change: (p) => { store.kept.value = [p[2].id]; }, want: (p) => [p[2].id] },
+  removed: { change: (p) => { store.removed.value = [p[30].id]; }, want: (p) => [p[30].id] },
+  guests: { change: async () => { const g = (await store.loadPool('Tropical'))[5].id; store.members.value = [...store.members.peek(), g]; store.guests.value = { [g]: 'Tropical' }; }, want: async () => ({ [(await store.loadPool('Tropical'))[5].id]: 'Tropical' }) },
+  crops: { change: (p) => { store.crops.value = [p[1].id]; }, want: (p) => [p[1].id] },
+  stage: { change: () => { store.stage.value = 4; }, want: 4 },
+};
+const valueOf = async (w, p) => (typeof w === 'function' ? w(p) : w);
+
+test('every saved field has a round-trip case below', () => {
+  assert.deepEqual(sorted(Object.keys(CASES)), sorted(schema.lists.saved));
+});
+
+for (const [k, c] of Object.entries(CASES)) {
+  test(`save → restore keeps ${k}`, async () => {
+    const pool = await blankShown();
+    await c.change(pool);
+    const want = await valueOf(c.want, pool);
+    assert.deepEqual(store[k].peek(), want);
+    const rec = readRecord(storage.getItem(STORE));
+    assert.ok(rec, 'saved');
+    await blankShown();
+    assert.notDeepEqual(store[k].peek(), want, 'changed back before the restore');
+    assert.equal(await m.restore(rec.fragment, { from: 'saved', src: rec.src }), true);
+    assert.deepEqual(store[k].peek(), want);
+  });
+  test(`link → restore keeps ${k}`, async () => {
+    const pool = await blankShown();
+    await c.change(pool);
+    const link = m.currentFragment();
+    assert.equal(m.shownFragment.value, link, 'Share shows the same link');
+    const want = await valueOf(c.link ?? c.want, pool);
+    await blankShown();
+    assert.equal(await m.restore(link, { from: 'link' }), true);
+    assert.deepEqual(store[k].peek(), want);
+  });
+}
+
+test('Undo puts back each snapshot field; the view only to or from Start', async () => {
+  const pool = await blankShown();
+  const ids = pool.slice(0, 3).map((t) => t.id);
+  const aside = { climate: 'Temperate', members: ids, kept: [], removed: [], guests: {}, crops: [], site: { ...UNSURE }, country: { code: null, source: null }, stage: 0 };
+  const values = { members: ids, kept: [ids[0]], removed: [ids[2]], crops: [ids[1]], guests: { [ids[1]]: 'Tropical' }, setAside: aside };
+  for (const [k, v] of Object.entries(values)) {
+    const before = schema.snapshot();
+    store[k].value = v;
+    schema.restore(before);
+    assert.deepEqual(store[k].peek(), before[k], k);
+  }
+  store.view.value = 'start';
+  let before = schema.snapshot();
+  store.view.value = 'matrix';
+  schema.restore(before);
+  assert.equal(store.view.peek(), 'start', 'back to Start');
+  store.view.value = 'matrix';
+  before = schema.snapshot();
+  store.view.value = 'side';
+  schema.restore(before);
+  assert.equal(store.view.peek(), 'side', 'a view change between two consortium views stays');
+});
+
+test('a change to any field that ends Undo hides the Undo toast', async () => {
+  const changes = {
+    climate: () => { store.climate.value = 'Mediterranean'; },
+    members: (p) => { store.members.value = [p[40].id]; },
+    kept: (p) => { store.kept.value = [p[41].id]; },
+    removed: (p) => { store.removed.value = [p[42].id]; },
+    crops: (p) => { store.crops.value = [p[43].id]; },
+    guests: (p) => { store.guests.value = { [p[44].id]: 'Tropical' }; },
+  };
+  assert.deepEqual(sorted(Object.keys(changes)), sorted(schema.lists.endsUndo));
+  for (const [k, change] of Object.entries(changes)) {
+    const pool = await blankShown();
+    store.removeMember(store.members.peek()[0]);
+    assert.ok(store.toast.peek()?.undo, `${k}: Undo offered`);
+    change(pool);
+    assert.equal(store.toast.peek(), null, `${k}: Undo withdrawn`);
+  }
+  store.hideToast();
+});
+
+// Saved data of today's visitors (written before the schema, 2026-11-12) still opens the same way.
+const TODAY_SAVE = '{"fragment":"v=4&c=temperate&k=FR&l=part&s=acid&w=wet&m=large&a=*dhUvw6*hMnoF4cGXxubT_4pfUIFAvOY&x=Tc-F92&n=dhUvw6&g=trIFAvOY&t=2&e=1","at":"2026-11-12T10:00:00.000Z","src":"chosen"}';
+const TODAY = {
+  climate: 'Temperate', site: SITE, stage: 2,
+  members: ['76152fc3-ac02-491f-9130-cc294c13730e', '84c9e817-8dda-434a-954e-73959c39abfd', '7065f1b9-b178-42fd-8c55-4517deae30e9', '4ffe297d-4c34-4da4-83c7-cb549dee5bd0', '20502f39-8694-4322-be9c-655dce7de501'],
+  kept: ['76152fc3-ac02-491f-9130-cc294c13730e', '84c9e817-8dda-434a-954e-73959c39abfd'],
+  removed: ['4dcf85f7-685c-4347-9489-280b6b08c99a'],
+  guests: { '20502f39-8694-4322-be9c-655dce7de501': 'Tropical' },
+  crops: ['76152fc3-ac02-491f-9130-cc294c13730e'],
+};
+for (const [from, country] of [['saved', { code: 'FR', source: 'chosen' }], ['link', { code: 'FR', source: 'link' }]]) {
+  test(`a ${from === 'saved' ? 'save' : '#v=4 link'} written before the schema opens as it did`, async () => {
+    await blankShown();
+    const rec = readRecord(TODAY_SAVE);
+    assert.ok(rec);
+    assert.equal(await m.restore(rec.fragment, { from, src: rec.src }), true);
+    for (const [k, v] of Object.entries({ ...TODAY, country })) assert.deepEqual(store[k].peek(), v, k);
+    assert.equal(store.view.peek(), 'matrix');
+    assert.equal(m.currentFragment(), rec.fragment, 'and writes the same link back');
+  });
+}
