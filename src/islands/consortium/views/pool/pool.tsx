@@ -45,9 +45,7 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
   );
   const loc = store.location.value;
   const today = siteToday(loc);
-  // The degrees in the page language (kit/names.ts num; scripts/consortium-p5-ranges.test.mjs reads `deg.format`).
-  const deg = { format: (n: number) => num(n) };
-  const temps = today ? { cold: deg.format(today.tminColdC), hot: deg.format(today.tmaxWarmC), mean: deg.format(yearMeanC(today)) } : null;
+  const temps = today ? { cold: num(today.tminColdC), hot: num(today.tmaxWarmC), mean: num(yearMeanC(today)) } : null;
   const verdicts = today && list ? list.map((t) => rangeFit(t, loc)) : null;
   const fit = verdicts ? verdicts.filter((v) => v !== 'outside').length : 0;
   const edge = verdicts ? verdicts.filter((v) => v === 'edge').length : 0;
@@ -67,7 +65,7 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
         </div>
       ) : (
         <p data-pool-fit={fit}>
-          {P('range.pool.count', fit, { total: deg.format(verdicts.length), margin: deg.format(RANGE_MARGIN_C), ...temps })}
+          {P('range.pool.count', fit, { total: num(verdicts.length), margin: num(RANGE_MARGIN_C), ...temps })}
           {edge > 0 && <> {P('range.pool.edge', edge)}</>}
           {fit < verdicts.length && <> {T('range.pool.left')}</>}
         </p>

@@ -12,7 +12,7 @@ import * as store from '../../store.ts';
 import { closeSheet } from '../../store.ts';
 import { T } from '../../strings.ts';
 import { Toast } from '../Toast.tsx';
-import { spanOf } from '../tracks.ts';
+import { spanOf } from './span.ts';
 import { CLOSE } from './icons.tsx';
 import { countryName, spanWords } from './names.ts';
 

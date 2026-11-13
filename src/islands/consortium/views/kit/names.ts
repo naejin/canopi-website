@@ -8,14 +8,15 @@
 import type { ClimateZone, Site, SiteKey, Stratum, Taxon } from '../../../../lib/consortium/index.ts';
 import { phases } from '../../../../lib/consortium/index.ts';
 import { T, nameOf, pageLang } from '../../strings.ts';
-import { spanOf } from '../tracks.ts';
-import { formatNumber } from './format.ts';
+import { formatNumber } from '../../format.ts';
+import { spanOf } from './span.ts';
 
-// A plant's name in the page language, else English, else its scientific name (defined in strings.ts,
-// which the store reads too).
+// A plant's name in the page language, else English, else its scientific name. Defined in strings.ts,
+// because the store reads it and the state layer imports no view (layer rule L2); re-exported here so
+// every view takes its words from the kit.
 export { nameOf };
 
-// A number in the page language, to at most `max` decimals (kit/format.ts).
+// A number in the page language, to at most `max` decimals (src/islands/consortium/format.ts).
 export const num = (n: number, max = 1): string => formatNumber(n, pageLang(), max);
 // "a, b and c" in the page language.
 export const listOf = (items: string[]): string => new Intl.ListFormat(pageLang(), { type: 'conjunction' }).format(items);

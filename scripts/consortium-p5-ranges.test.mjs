@@ -514,7 +514,7 @@ test('range marks: a bound from TreeGOER says so in Details; the data-sources le
     assert.match(d['consortium.range.pool.count'], /\{mean\}/, `${l}: the pool line names the year's mean`);
     assert.match(d['consortium.range.empty.body'], /\{mean\}/, l);
   }
-  assert.match(readFileSync(new URL('../src/islands/consortium/views/pool/pool.tsx', import.meta.url), 'utf8'), /mean: deg\.format\(yearMeanC\(today\)\)/);
+  assert.match(readFileSync(new URL('../src/islands/consortium/views/pool/pool.tsx', import.meta.url), 'utf8'), /mean: num\(yearMeanC\(today\)\)/);
 });
 
 test('future marks: an annual already too hot today gets the cool-season advice once (today\'s mark), not again for the future', () => {

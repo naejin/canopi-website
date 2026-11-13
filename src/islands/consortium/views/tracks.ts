@@ -8,10 +8,10 @@
 // - runReasons / reasonParts: why a run of misfit cells is empty, counted once per plant;
 // - listGroups: each plant once, under the cell where it starts (owner row "v2 mockup choices");
 // - warningCounts: the warnings a chip counts (low conflicts are not shown on chips, types.ts Flag);
-// - fold: the core's search fold, for the list's search (design check A6: never LIKE);
 // - nameOrder: plants by name with one Intl.Collator per page language, shared by every view.
 import type { Flag, JobId, MatrixCell, PhaseOrd, PlantId, Site, SiteKey, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { fits, fold, jobsOf, misfitsBeside, phaseSpan, plantsIn, startCell, strata } from '../../../lib/consortium/index.ts';
+import { fits, fold, jobsOf, misfitsBeside, plantsIn, startCell, strata } from '../../../lib/consortium/index.ts';
+import { spanOf, spans } from './kit/span.ts';
 
 // Names sort in the page's language ("Äpfel" before "Birne" in German, after "Zitron" in Swedish):
 // one collator per language, made once.
@@ -39,15 +39,8 @@ export const COLLAPSED_CHIPS = 3;
 
 export const PHASE_ORDS: readonly PhaseOrd[] = [0, 1, 2, 3, 4, 5, 6];
 
-// A plant's span as phase numbers, or null when it has no placement yet ("no layer yet").
-export function spanOf(t: Taxon): { from: PhaseOrd; to: PhaseOrd } | null {
-  const span = phaseSpan(t);
-  return span.length ? { from: span[0], to: span[span.length - 1] } : null;
-}
-export const spans = (t: Taxon, phase: number): boolean => {
-  const s = spanOf(t);
-  return !!s && s.from <= phase && phase <= s.to;
-};
+// A plant's span (views/kit/span.ts, the one spanOf), re-exported for the views and tests reading it here.
+export { spanOf, spans };
 
 // The members of one stratum on tracks: sorted by start, longer first, then by name; each plant goes
 // on the first track whose last plant ends before it starts. Plants with no placement are left out.
@@ -172,9 +165,6 @@ export const stepStage = (stage: number, delta: number): PhaseOrd => Math.min(6,
 // The fill meter's bar, in percent of the cells that can be filled.
 export const fillPercent = (filled: number, total: number): number => (total > 0 ? Math.round((filled / total) * 100) : 0);
 
-// The one search fold (src/lib/consortium/fold.ts, E6 design check A9), so "chataig" finds
-// Châtaignier and "trefle" Trèfle; re-exported for the callers that read it from here.
-export { fold };
 
 // Does a plant match a folded query: every word of the query starts a word of one of its names.
 export function matchesQuery(names: readonly string[], query: string): boolean {

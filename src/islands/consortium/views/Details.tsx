@@ -32,14 +32,14 @@ import type { ClimateZone, Details as PlantFacts, Labels, Locale, PlantId, Taxon
 import { jobsOf, pairings, phaseOrd, placementZone } from '../../../lib/consortium/index.ts';
 import { layerRows, type Words } from './layers.ts';
 import { Toast } from './Toast.tsx';
-import { spanOf } from './tracks.ts';
+import { spanOf } from './kit/span.ts';
 import { safeHref } from '../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../data/consortium-guides.ts';
 import { testFault } from '../test-hook.ts';
 import { PlantMarks } from './PlantMarks.tsx';
 import { Bar, SheetFrame } from './kit/sheet.tsx';
 import { flagLines, flagsOfPlant, unknownWords } from './kit/flags.ts';
-import { countryName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from './kit/names.ts';
+import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from './kit/names.ts';
 import { PIN, SPROUT, WARN } from './kit/icons.tsx';
 import { drafts, type CorrectionField } from './kit/correction.ts';
 import { pageData } from './kit/page.ts';
@@ -48,7 +48,7 @@ import { pageData } from './kit/page.ts';
 
 const lang = () => pageLang();
 // A layer's name for a plant ("No layer yet" without one).
-const layerName = (t: Taxon): string => T(t.stratum ? `stratum.${t.stratum.value}` : 'stratum.none');
+const layerOf = (t: Taxon): string => (t.stratum ? layerName(t.stratum.value) : T('stratum.none'));
 const words = (): Words => ({ lang: lang(), T, climate: (z) => zoneName(z as ClimateZone), country: countryName, region: (r) => T(`region.${r}`), num });
 // A text from the data in the page language, else in English (marked).
 function DataText({ text }: { text: { en: string } & Partial<Record<string, string>> }) {
@@ -228,13 +228,13 @@ function PlantDetails({ id }: { id: PlantId }) {
   const s = spanOf(t);
   const fields: CorrectionField[] = [
     ...traits.map((x) => ({ field: x.field, label: x.label, current: x.text === T('unknown') ? '' : x.text, raw: x.raw })),
-    { field: 'stratum', label: T('correction.fieldLayer'), current: t.stratum ? layerName(t) : '', raw: t.stratum?.value ?? null },
+    { field: 'stratum', label: T('correction.fieldLayer'), current: t.stratum ? layerOf(t) : '', raw: t.stratum?.value ?? null },
     { field: 'phases', label: T('correction.fieldTiming'), current: t.phases ? spanWords(t) : '', raw: t.phases ? { start: t.phases.start, end: t.phases.end } : null },
     { field: `names.${lang()}`, label: T('correction.fieldName'), current: t.names[lang() as Locale] ?? '', raw: t.names[lang() as Locale] ?? null },
   ];
 
   return (
-    <SheetFrame titleId="ct-d-title" class="ct-details" head={<span class="ct-muted">{layerName(t)}{s ? ` · ${phasePlain(s.from)}` : ''}</span>}>
+    <SheetFrame titleId="ct-d-title" class="ct-details" head={<span class="ct-muted">{layerOf(t)}{s ? ` · ${phasePlain(s.from)}` : ''}</span>}>
       {image && (
         <figure class="ct-photo">
           <img src={image.url} alt={T('details.photoAlt', { name: nameOf(t) })} loading="lazy" decoding="async" width={480} height={360} />
@@ -258,7 +258,7 @@ function PlantDetails({ id }: { id: PlantId }) {
 
       <section class="ct-place" aria-labelledby="ct-d-place">
         <h3 id="ct-d-place">{T('details.placedFor', { climate: zoneName(zone) })}</h3>
-        <p><strong>{layerName(t)}</strong>{t.stratum && <> · {T(`stratum.${t.stratum.value}.needs`)}</>}</p>
+        <p><strong>{layerOf(t)}</strong>{t.stratum && <> · {T(`stratum.${t.stratum.value}.needs`)}</>}</p>
         <Bar taxon={t} />
         <p>{spanWords(t)}</p>
         {(t.from || t.placedFrom) && <p class="ct-muted">{T('details.fromListNote')}</p>}

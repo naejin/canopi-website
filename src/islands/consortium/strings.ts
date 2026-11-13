@@ -2,7 +2,7 @@
 // the page language, without its prefix, into #ct-data `strings`; T and P read them. Plural strings
 // use the v1 form "one: # plant | other: # plants" (Intl.PluralRules picks the form, # is the number).
 // A missing key shows the key itself, so a gap is visible rather than blank.
-import { formatNumber } from './views/kit/format.ts';
+import { formatNumber } from './format.ts';
 
 export type Strings = Record<string, string>;
 

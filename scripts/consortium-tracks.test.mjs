@@ -4,8 +4,8 @@
 // with v2's dashed first stage and dashed unknown height). No DOM, no browser.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMatrix, phases } from '../src/lib/consortium/index.ts';
-import { COLLAPSED_CHIPS, MAX_TRACKS, SHARE_AIM, cellOrder, collatorFor, fillPercent, fold, listGroups, matchesFilters, matchesQuery, nameOrder, reasonParts, rowPieces, runReasons, spanOf, startCounts, stepStage, tracksOf, warningCounts } from '../src/islands/consortium/views/tracks.ts';
+import { buildMatrix, fold, phases } from '../src/lib/consortium/index.ts';
+import { COLLAPSED_CHIPS, MAX_TRACKS, SHARE_AIM, cellOrder, collatorFor, fillPercent, listGroups, matchesFilters, matchesQuery, nameOrder, reasonParts, rowPieces, runReasons, spanOf, startCounts, stepStage, tracksOf, warningCounts } from '../src/islands/consortium/views/tracks.ts';
 import { FALLBACK_HEIGHT, LOG_MAX, MAX_SILHOUETTES, SCALE_LINES, heightFrac, lineTop, quantile, shapeOf, sidePlants, usualHeight } from '../src/islands/consortium/views/side.ts';
 import { PLOT_H, blob, hash, plantStrokes, reachOf, topOf } from '../src/islands/consortium/views/draw.ts';
 
