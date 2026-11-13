@@ -216,11 +216,21 @@ test('Walk-through 2 N1: in the Add sheet the Undo toast never covers "Add N pla
   const plants = await temperate();
   for (const width of [320, 390, 700, 960, 1280]) {
     const page = await suggested({ width, theme: 'light' });
+    // No smooth scrolling (global.css: off under reduced motion): closing the sheet sends the focus back
+    // to "Add plants" in a frame and the page's toast padding scrolls it, and a smooth scroll still
+    // running moved the button between puppeteer's measure and its click (the click hit .ct-tabs).
+    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }, { name: 'prefers-reduced-motion', value: 'reduce' }]);
     const members = new Set(await memberIds(page));
     const candidates = plants.filter((p) => !members.has(p.id) && !plants.some((q) => q !== p && q.name.includes(p.name)));
     const rows = 'dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li';
     // Opens Add, searches the next candidate listed with a tick (few rows), and ticks it.
     const addOne = async () => {
+      // Clicked once its box and the page's scroll held still for two frames.
+      await page.waitForFunction(() => new Promise((done) => {
+        const box = () => JSON.stringify([scrollY, document.querySelector('.ct-viewbar button')?.getBoundingClientRect()]);
+        const before = box();
+        requestAnimationFrame(() => requestAnimationFrame(() => done(box() === before)));
+      }), { timeout: 5000, polling: 50 });
       await page.click('.ct-viewbar button');
       // The Add sheet is a lazy chunk: its first open can pass the 4 s default under a loaded machine.
       await page.waitForSelector('dialog.ct-add[open] .ct-search input', { timeout: 15_000 });
