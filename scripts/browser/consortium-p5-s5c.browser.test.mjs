@@ -233,7 +233,7 @@ test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from t
     if (!(await store.loadPool('Subtropical'))) return 0;
     // The range rule loads with its chunk (core loadRangeRule) once the site has a climate; the pool waits for it.
     for (let i = 0; i < 200 && !store.pool.value; i++) await new Promise((r) => setTimeout(r, 50));
-    return store.pool.value.filter((t) => t.estimate && t.placedFrom === 'Mediterranean').length;
+    return store.pool.value.filter((t) => t.origin?.kind === 'borrowed' && t.origin.list === 'Mediterranean').length;
   });
   assert.ok(count > 0, 'Subtropical borrows Mediterranean placements');
   await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
@@ -252,10 +252,11 @@ test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a 
     store.view.value = 'matrix';
     // A borrowed member whose source list gives reasons (the visitor's climate has none of its own).
     for (const t of store.memberTaxa.value) {
-      if (!t.placedFrom) continue;
+      const from = t.origin?.kind === 'borrowed' ? t.origin.list : null;
+      if (!from) continue;
       const own = await store.source.value.details(t.id, 'Subtropical', 'en');
-      const d = await store.source.value.details(t.id, t.placedFrom, 'en');
-      if (d.reasons.length && !own.reasons.length) return { id: t.id, from: t.placedFrom };
+      const d = await store.source.value.details(t.id, from, 'en');
+      if (d.reasons.length && !own.reasons.length) return { id: t.id, from };
     }
     return null;
   });

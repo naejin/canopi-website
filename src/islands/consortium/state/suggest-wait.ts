@@ -45,6 +45,9 @@ export function requestSuggest(): void {
   if (!pendingSuggest.peek()) { clearTimeout(cap); waited.value = false; }
   const busy = lookups.peek() && !waited.peek();
   if (!busy && store.suggestMembers()) { clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
+  // The suggestion's chunk did not load (store.suggestFailed; suggestMembers' toast says so, L8): nothing
+  // to wait for.
+  if (!busy && store.suggestFailed.peek()) { clearTimeout(cap); waited.value = false; pendingSuggest.value = false; return; }
   // A browser test may shorten the wait in the test build (window.__ctTimeouts.suggest; A4, as in
   // data/load.ts); production folds it to SUGGEST_WAIT_MS.
   if (!pendingSuggest.peek()) cap = setTimeout(capped, typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { suggest?: number } }).__ctTimeouts?.suggest) || SUGGEST_WAIT_MS : SUGGEST_WAIT_MS);
@@ -55,6 +58,7 @@ export function requestSuggest(): void {
 export function watchSuggest(): void {
   // "Suggest plants" pressed early runs when the climate's plants (and every guest list) are read.
   effect(() => {
+    void store.suggestRule.value; // the suggestion's chunk arriving after a restore's list (store.ts suggestRule)
     if (!pendingSuggest.value || !store.pool.value || store.guestsPending.value.length || (lookups.value && !waited.value)) return;
     queueMicrotask(() => { if (pendingSuggest.peek()) requestSuggest(); });
   });

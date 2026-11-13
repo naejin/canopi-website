@@ -177,7 +177,7 @@ const fixtureDir = new URL('fixtures/consortium-v2/export/', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('manifest.json', fixtureDir), 'utf8'));
 const fixture = await sourceOf(new URL(manifest.files[0].file, fixtureDir), { releaseId: manifest.release_id, climates: manifest.climates.map((c) => c.climate_zone) });
 
-test('PlantSource.borrowed (sqlite-source.ts): every plant of the nearest lists once, placed as in the first list that has it, estimate and placedFrom set', async () => {
+test('PlantSource.borrowed (sqlite-source.ts): every plant of the nearest lists once, placed as in the first list that has it, with a borrowed origin naming that list', async () => {
   const asked = [];
   const real = fixture.borrowed;
   fixture.borrowed = (zone, order) => { asked.push([zone, order]); return real(zone, order); };
@@ -187,32 +187,32 @@ test('PlantSource.borrowed (sqlite-source.ts): every plant of the nearest lists 
   const own = Object.fromEntries(await Promise.all(['Tropical', 'Mediterranean', 'Temperate'].map(async (z) => [z, await fixture.pool(z)])));
   const all = new Set(Object.values(own).flat().map((t) => t.id));
   assert.equal(sub.length, all.size, 'every plant of the three lists, once');
-  assert.ok(sub.every((t) => t.estimate === true && t.placedFrom), 'each one an estimate, with the list it comes from');
+  assert.ok(sub.every((t) => t.origin?.kind === 'borrowed' && t.origin.list), 'each one an estimate (a borrowed origin), with the list it comes from');
   const names = sub.map((t) => t.canonical_name);
   assert.deepEqual(names, [...names].sort(), 'by name, as a curated pool');
   const placements = await fixture.placements(sub.map((t) => t.id));
   for (const t of sub) {
     const want = core.placeFor(placements.get(t.id), 'Subtropical');
-    assert.equal(t.placedFrom, want.zone, t.canonical_name);
+    assert.equal(t.origin.list, want.zone, t.canonical_name);
     assert.equal(t.stratum?.value ?? null, want.placement.stratum, t.canonical_name);
     assert.equal(t.phases?.start ?? null, want.placement.start, t.canonical_name);
   }
   const byName = (list, n) => list.find((t) => t.canonical_name === n);
-  assert.equal(byName(sub, 'Castanea sativa').placedFrom, 'Mediterranean', 'Mediterranean before Temperate');
-  assert.equal(byName(sub, 'Zingiber officinale').placedFrom, 'Mediterranean', 'Mediterranean before Tropical');
-  assert.equal(byName(sub, 'Tropaeolum majus').placedFrom, 'Tropical', 'Tropical before Temperate');
+  assert.equal(byName(sub, 'Castanea sativa').origin.list, 'Mediterranean', 'Mediterranean before Temperate');
+  assert.equal(byName(sub, 'Zingiber officinale').origin.list, 'Mediterranean', 'Mediterranean before Tropical');
+  assert.equal(byName(sub, 'Tropaeolum majus').origin.list, 'Tropical', 'Tropical before Temperate');
   const cont = await fixture.pool('Continental');
-  assert.equal(byName(cont, 'Castanea sativa').placedFrom, 'Temperate', 'Continental: Temperate first');
+  assert.equal(byName(cont, 'Castanea sativa').origin.list, 'Temperate', 'Continental: Temperate first');
   assert.equal(byName(cont, 'Carica papaya'), undefined, 'Continental never borrows a Tropical-only plant');
   assert.equal(await fixture.pool('Subtropical'), sub, 'read once and kept: the same objects');
-  assert.equal(byName(own.Temperate, 'Castanea sativa').estimate, undefined, 'the curated pool itself is not touched');
+  assert.equal('origin' in byName(own.Temperate, 'Castanea sativa'), false, 'the curated pool itself is not touched');
   assert.equal(await fixture.borrowed('Boreal', []).then((l) => l.length), 0, 'no curated list in the order: nothing');
 });
 
 test('placementZone: the details query reads the list a plant was placed from (borrowed, then guest, then the climate)', async () => {
-  assert.equal(core.placementZone({ placedFrom: 'Mediterranean', estimate: true }, 'Subtropical'), 'Mediterranean', 'a borrowed placement');
-  assert.equal(core.placementZone({ from: 'Subtropical', placedFrom: 'Tropical', estimate: true }, 'Temperate'), 'Tropical', 'a guest from a borrowed list');
-  assert.equal(core.placementZone({ from: 'Tropical' }, 'Temperate'), 'Tropical', 'a guest');
+  assert.equal(core.placementZone({ origin: { list: 'Mediterranean', kind: 'borrowed' } }, 'Subtropical'), 'Mediterranean', 'a borrowed placement');
+  assert.equal(core.placementZone(core.asGuest({ origin: { list: 'Tropical', kind: 'borrowed' } }, 'Subtropical'), 'Temperate'), 'Tropical', 'a guest from a borrowed list');
+  assert.equal(core.placementZone(core.asGuest({}, 'Tropical'), 'Temperate'), 'Tropical', 'a guest');
   assert.equal(core.placementZone({}, 'Temperate'), 'Temperate', 'its own placement');
   assert.equal(core.placementZone({}, null), null);
   // On the fixture: a Subtropical plant has no reasons or climate months of its own; its source list has.
@@ -252,7 +252,7 @@ test('rangeMarks: edge, outside and unknown with a site climate; estimate on a b
   assert.deepEqual(marks(arid, at(0, 25, 0.1), 'row'), [['aridity', 'range.drier', 'note']], 'aridity: a mark only, of its own kind, so "N near the edge" and the edge marks agree');
   assert.deepEqual(marks(arid, at(0, 25, 0.1), 'chip'), [], 'not on the tight chips');
   assert.deepEqual(marks(arid, at(0, 25, null), 'details'), [['unknown', 'range.aridityNotChecked', 'note']], 'ice: not checked');
-  const borrowed = taxon({ placedFrom: 'Mediterranean', estimate: true });
+  const borrowed = taxon({ origin: { list: 'Mediterranean', kind: 'borrowed' } });
   assert.deepEqual(marks(borrowed, null, 'chip'), [['estimate', 'estimate.short', 'note']]);
   assert.deepEqual(marks(borrowed, null, 'row'), [['estimate', 'estimate.fromMediterranean', 'note'], ['estimate', 'estimate.noSite', 'note']], 'without a location: give one to check it (UX audit fix 1)');
   assert.deepEqual(marks(borrowed, null, 'details'), [['estimate', 'estimate.fromMediterranean', 'note'], ['estimate', 'estimate.noSite', 'note']]);
@@ -346,7 +346,7 @@ test('real export: the pool each site keeps, and a suggestion from it never hold
     site.lookup.climate.periods[0].koppen = koppen;
     const pool = await real.pool(zone);
     assert.equal(pool.length > 0, true, `${name}: ${zone} has plants`);
-    assert.equal(pool.every((t) => !!t.estimate === !index.climates.includes(zone)), true, `${name}: borrowed plants are estimates, own ones not`);
+    assert.equal(pool.every((t) => (t.origin?.kind === 'borrowed') === !index.climates.includes(zone)), true, `${name}: borrowed plants are estimates, own ones not`);
     const kept = core.withinRange(pool, site);
     got[name] = kept.length;
     const ctxt = { site: { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' }, interactions: await real.interactions(zone), country: null, countryStatus: 'none' };

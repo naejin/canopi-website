@@ -74,7 +74,7 @@ test('pool: every plant placed in the climate, with that climate\'s placement', 
   assert.equal(t.stratum.value, 'high');
   assert.equal(m.stratum.value, 'medium');
   assert.deepEqual(t.phases, { start: 'secondary_i', end: 'secondary_iii', sources: ['sample-review'] });
-  assert.equal(t.from, undefined);
+  assert.equal('origin' in t, false, 'the climate\'s own plant is not stamped');
 });
 
 test('pool: a Taxon carries names, traits, warnings, functions and the self-hosted image only', async () => {
@@ -140,8 +140,8 @@ test('pool: a Taxon carries its observed climate range (cultivation included) or
   assert.equal(by('Phacelia tanacetifolia').climate, null, 'no range_source: "range not recorded", never a fit');
   assert.equal(by('Castanea sativa').areasKnown, true);
   assert.equal(by('Phacelia tanacetifolia').areasKnown, false, 'WCVP did not match it: native here is unknown');
-  // No placement borrowed from another climate today (S5c fills placedFrom and estimate).
-  assert.ok(pool.every((t) => t.placedFrom === undefined && t.estimate === undefined));
+  // No placement borrowed from another climate in a curated pool (S5c gives borrowed plants an origin).
+  assert.ok(pool.every((t) => t.origin === undefined));
 });
 
 test('details: the Köppen shares of a plant\'s observed cells, largest first, rare classes included (the view hides < 1 %)', async () => {
@@ -386,7 +386,7 @@ test('store: a guest whose list is still loading is never dropped silently; Sugg
   await store.loadPool('Mediterranean');
   assert.deepEqual(store.guestsPending.value, []);
   assert.deepEqual(store.missingMembers.value, { loading: [], unlisted: [] });
-  assert.equal(store.memberTaxa.value[0].from, 'Mediterranean');
+  assert.deepEqual(store.memberTaxa.value[0].origin, { list: 'Mediterranean', kind: 'guest' });
   assert.equal(store.suggestMembers(), true);
   assert.equal(store.members.value[0], vitis, 'the kept guest is a member of the suggestion');
   assert.ok(store.members.value.length > 1);
