@@ -28,7 +28,8 @@ import { lazyPart, retryable } from './lazy.tsx';
 import { page } from './kit/page.ts';
 import { zoneName } from './kit/names.ts';
 
-const panel = lazyPart(retryable(() => import('./pool/pool.tsx'), (m) => m.PoolPanel), { quiet: true });
+// Nothing while its chunk loads; a failed chunk shows the failed line with Reload (pre-push review 1).
+const panel = lazyPart(retryable(() => import('./pool/pool.tsx'), (m) => m.PoolPanel), { loading: () => null });
 
 // The climates with plants of their own: the store's one owner, which suggestMembers reads too.
 const curated = (): ClimateZone[] => curatedClimates.value;
@@ -79,7 +80,8 @@ effect(() => {
 
 // The panel also says "Not covered yet" for a climate with no list at all (it never happens with the
 // real export, which curates a nearest list for every climate).
-// The range rule's chunk did not load (store.ts rangeFailed): say so here, the panel being that chunk.
+// The range rule's chunk did not load (store.ts rangeFailed): say so here, in place of the panel,
+// which needs that chunk; the panel's own chunk failing shows its failed line (lazy.tsx LoadFailed).
 export function PoolSlot({ zone }: { zone: ClimateZone }) {
   if (rangeFailed.value && hasPlants(zone, curated())) return <RangeUnavailable zone={zone} />;
   return needsSite(zone) ? <NeedsSite zone={zone} /> : !hasList(zone) || !curated().includes(zone) || siteClimate.value ? <panel.View zone={zone} /> : null;

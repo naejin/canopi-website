@@ -118,7 +118,7 @@ test('every privacy and tool-credit string is in all 11 locales, after consortiu
 //   CLIMATE_GRID, the cell centre a ticked link carries as `o=`);
 // - a ticked link also carries the country the location gave (state/persist.ts shareState: a location's
 //   country is written only with the tick; state.ts encodeLink `k=`);
-// - the location is read on the device for the climate and the country (location.tsx locateNow:
+// - the location is read on the device for the climate and the country (state/location.ts locateNow:
 //   lookup.regions.isoA2);
 // - the tile downloads hide the precise point, not the point: on a coast or in a town near a tile
 //   edge, the neighbouring tile loads too (src/lib/climate/index.ts lookupSite, searchTiles).

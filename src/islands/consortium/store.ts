@@ -224,7 +224,7 @@ export const wantsMarkProviders = computed(() => needsMarkProviders(markContext.
 const marksBroken = signal(false);
 export const marksFailed = computed(() => marksBroken.value && wantsMarkProviders.value);
 // (Their load starts in start(), at the end of this file, once a mark can show.)
-// The warnings on members: conflicts, site misfits, invasive and toxicity (core suggest.ts flagsOf).
+// The warnings on members: conflicts, site misfits, invasive and toxicity (core conflicts.ts flagsOf).
 export const flags = computed<Flag[]>(() => {
   if (!pool.value) return [];
   return flagsOf(memberTaxa.value, flagContext.value);

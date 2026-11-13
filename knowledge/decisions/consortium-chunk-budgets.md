@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T15:45:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T16:08:42Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
 sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:53c295f09b3c0bc7
-    last_modified: 2026-11-13T14:45:18Z
+    digest: sha256:f5e7bb4071bfb5f6
+    last_modified: 2026-11-13T16:08:12Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
@@ -75,7 +75,7 @@ Before B4 the consortium page had a first-run cap (43 KB gzip, 40 KB from the ch
 - Every role has a cap and every cap a role; `markProviders`, `future`, `details`, `later`, `range`, `suggest` and `pool` must have exactly one chunk each (suggest and pool since the E6 hand-off), `sheets` four.
 - **An island chunk with no role fails the build**: every island chunk is first run, the sqlite glue's (and its static imports), a part's cost or MapLibre's.
 - No role chunk is in the first run.
-- **Sheet and Details imports**: a `details` or `sheets` chunk statically imports only first-run chunks (and the page-wide chunks the first run imports), never another sheet's or the Details chunk (tightened at the E6 hand-off, A): `views/lazy.tsx` `retryable` mends the part's own chunk only, and Chromium never refetches a failed module, so a failed shared chunk would break every sheet until Reload; `kit/sheet.tsx` `shared` keeps `flags` and `list-query` in the first run, and the correction drafts live in the first run (`views/kit/correction.ts`).
+- **Sheet and Details imports**: a `details` or `sheets` chunk statically imports only first-run chunks (and the page-wide chunks the first run imports), never another sheet's or the Details chunk (tightened at the E6 hand-off, A): `views/lazy.tsx` `retryable` mends the part's own chunk only, and Chromium never refetches a failed module, so a failed shared chunk would break every sheet until Reload; `kit/sheet.tsx` `shared` keeps `flags` and `list-query` in the first run, and the correction drafts live in `views/kit/correction.ts` but ship in the Details chunk, their only importer (the correction form gets them as a prop).
 - **Finding the island entry**: `islandChunks` takes the one chunk holding the bare `"ct-root"` literal (main.ts's own `getElementById`; an entry module's code is always in its entry chunk). It no longer also requires `"ct-data"`, whose reader (`views/kit/page.ts`) sits in the entry only while Rollup inlines it there (E6 hand-off H).
 - **No late stylesheet**: no island chunk's `__vite__mapDeps` preload list names a CSS file (MapLibre's CSS aside), read from the built output.
 - **Modulepreload (A5, L5)**: consortium pages preload only what the first view awaits (`modulepreloadChunks`: the page script's static imports, the island entry and its static imports, the data loader with the sqlite glue); no part, feature or MapLibre chunk. The check asserts the first run and glue are preloaded and no lazy chunk is (from the graph and roles; the exact list comparison was dropped as circular).

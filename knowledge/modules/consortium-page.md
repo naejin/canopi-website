@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T15:45:18Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T16:08:43Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
@@ -25,8 +25,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:0e7baa0e285b6f28
-    last_modified: 2026-11-13T15:32:49Z
+    digest: sha256:c639f9179f641ff0
+    last_modified: 2026-11-13T16:08:25Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -100,8 +100,8 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:53c295f09b3c0bc7
-    last_modified: 2026-11-13T14:45:18Z
+    digest: sha256:f5e7bb4071bfb5f6
+    last_modified: 2026-11-13T16:08:12Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
@@ -185,8 +185,8 @@ sources:
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
-    digest: sha256:b2c97ea39aafa623
-    last_modified: 2026-11-13T14:56:35Z
+    digest: sha256:9fa7809eefcbbd11
+    last_modified: 2026-11-13T16:07:32Z
   - id: futureslot-tsx
     resource: ../../src/islands/consortium/views/FutureSlot.tsx
     title: src/islands/consortium/views/FutureSlot.tsx
@@ -210,8 +210,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:d8e6a16440cc39a5
-    last_modified: 2026-11-13T07:21:50Z
+    digest: sha256:349ff16b9b85cbc7
+    last_modified: 2026-11-13T16:07:32Z
   - id: p5-helpers-mjs
     resource: ../../scripts/browser/p5-helpers.mjs
     title: scripts/browser/p5-helpers.mjs
@@ -412,7 +412,7 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
   - hreflang, header and links;
   - then `verifyInstall` on the served data, a real `canopi_db_sha256`, and no v1 file or index served.
   - exactly one `sqlite3.<hash>.wasm` and no `sqlite3-worker1`/`opfs-async-proxy` file anywhere (review B4);
-  - §8, P5 and E6 B4 ([ADR-2](/decisions/consortium-chunk-budgets.md)): the island's JavaScript through the built import graph of each locale page (module scripts, modulepreload links, static, dynamic and preload-helper imports; `importsOf` drops Vite's `__vite__mapDeps` lists), only the island's own chunks from its entry (main.ts) without the page-wide chunks or the sqlite glue. Caps per chunk, no total (the island sum, 60 → 62 → 63 → 65 KB, and the 30 KB feature sum are gone since the B4 merge): the first run (entry plus static imports) under `FIRST_RUN_BUDGET` 38 KB (43 KB at the P5 push, 40 since the E6 chunk-3 merge, 38 since the chunk-5 exit at 37.6 KB measured); each on-demand part, by role (`ROLE_ENTRIES` in built-modules.mjs: P5 features `location`, `markProviders`, `future`, `pool`, `likely`, `native`, `range`; E6 lazy parts `details`, `sheets`, `later`, `suggest`), costs what a first use fetches (`onDemandChunks(...).costs`: the role chunk and its static imports the page has not loaded) under its `ROLE_CAPS` value (measured at the B4 build plus 0.5 KB, at most the A14 maximum; the table is in ADR-2); the location part with what only it reaches ≤ 20 KB; MapLibre with worker and CSS ≤ 330 KB. Also: every role has a cap; one chunk each for `markProviders`, `future`, `details`, `later`, `range`, four for `sheets`; no role chunk in the first run; an island chunk outside the first run, the glue's closure, a part's cost and MapLibre fails (no role); no chunk but the loader's holds the PlantSource's SQL; no `__vite__mapDeps` list names a CSS file (MapLibre's aside); a Details or sheet chunk statically imports only first-run chunks, never another sheet's or the Details chunk (E6 hand-off A); `suggest` and `pool` have one chunk each; the island entry is the one chunk with the bare `"ct-root"` literal (E6 hand-off H); the modulepreload links include the first run and the glue and no part, feature or MapLibre chunk; the DB preload (`as="fetch"`, crossorigin); a serve.mjs marker file left in `dist/client` fails. Chunk roles, never file names: the Vite plugin `canopi:consortium-chunk-roles` (client environment) writes `chunkRoles(bundle, this.getModuleInfo)` to `dist/consortium-chunks.json`, beside the served `client/` and never served: `features` (every part, per `ROLE_ENTRIES` key; the key keeps its P5 name because the harness reads it), `maplibre`, `maplibreCss`, `testHook`. A role's chunks are those whose facade matches its pattern, or that hold a matching module reached only through `import()` (Rollup drops a chunk's facade when another chunk imports from it, as Correction does from Details' drafts). Vacuous-safe: without `views/location/` no location or MapLibre role and no `maplibregl` in any `.js`. The line printed lists the first run, each role's largest cost against its cap, location, MapLibre and the preloads. History before B4: island 58.2 → 63.4 KB and first run 38.7 → 43.0 KB over P5 (pre-push 63,447 B of 63,488 and 43,001 B of 43,008), 64.1 KB and 38.7 KB at the E6 chunk-3 merge; P5 feature chunks 16.7 KB, location 11.4 KB, MapLibre 298.8 KB; preloading the mark providers alone cost about 0.15 s cold.
+  - §8, P5 and E6 B4 ([ADR-2](/decisions/consortium-chunk-budgets.md)): the island's JavaScript through the built import graph of each locale page (module scripts, modulepreload links, static, dynamic and preload-helper imports; `importsOf` drops Vite's `__vite__mapDeps` lists), only the island's own chunks from its entry (main.ts) without the page-wide chunks or the sqlite glue. Caps per chunk, no total (the island sum, 60 → 62 → 63 → 65 KB, and the 30 KB feature sum are gone since the B4 merge): the first run (entry plus static imports) under `FIRST_RUN_BUDGET` 38 KB (43 KB at the P5 push, 40 since the E6 chunk-3 merge, 38 since the chunk-5 exit at 37.6 KB measured); each on-demand part, by role (`ROLE_ENTRIES` in built-modules.mjs: P5 features `location`, `markProviders`, `future`, `pool`, `likely`, `native`, `range`; E6 lazy parts `details`, `sheets`, `later`, `suggest`), costs what a first use fetches (`onDemandChunks(...).costs`: the role chunk and its static imports the page has not loaded) under its `ROLE_CAPS` value (measured at the B4 build plus 0.5 KB, at most the A14 maximum; the table is in ADR-2); the location part with what only it reaches ≤ 20 KB; MapLibre with worker and CSS ≤ 330 KB. Also: every role has a cap; one chunk each for `markProviders`, `future`, `details`, `later`, `range`, four for `sheets`; no role chunk in the first run; an island chunk outside the first run, the glue's closure, a part's cost and MapLibre fails (no role); no chunk but the loader's holds the PlantSource's SQL; no `__vite__mapDeps` list names a CSS file (MapLibre's aside); a Details or sheet chunk statically imports only first-run chunks, never another sheet's or the Details chunk (E6 hand-off A); `suggest` and `pool` have one chunk each; the island entry is the one chunk with the bare `"ct-root"` literal (E6 hand-off H); the modulepreload links include the first run and the glue and no part, feature or MapLibre chunk; the DB preload (`as="fetch"`, crossorigin); a serve.mjs marker file left in `dist/client` fails. Chunk roles, never file names: the Vite plugin `canopi:consortium-chunk-roles` (client environment) writes `chunkRoles(bundle, this.getModuleInfo)` to `dist/consortium-chunks.json`, beside the served `client/` and never served: `features` (every part, per `ROLE_ENTRIES` key; the key keeps its P5 name because the harness reads it), `maplibre`, `maplibreCss`, `testHook`. A role's chunks are those whose facade matches its pattern, or that hold a matching module reached only through `import()` (Rollup drops a chunk's facade when another chunk imports from it). Vacuous-safe: without `views/location/` no location or MapLibre role and no `maplibregl` in any `.js`. The line printed lists the first run, each role's largest cost against its cap, location, MapLibre and the preloads. History before B4: island 58.2 → 63.4 KB and first run 38.7 → 43.0 KB over P5 (pre-push 63,447 B of 63,488 and 43,001 B of 43,008), 64.1 KB and 38.7 KB at the E6 chunk-3 merge; P5 feature chunks 16.7 KB, location 11.4 KB, MapLibre 298.8 KB; preloading the mark providers alone cost about 0.15 s cold.
   - `#ct-climate` (ConsortiumPage.astro, [climate-page-data.ts](../../src/data/climate-page-data.ts)): the climate index's `base` and each layer's sorted tile names, the shape `lib/climate` `siteIndex()` reads, read at build through `import.meta.glob` (the index is git-ignored; `node:fs` is not available in the Cloudflare prerender), `null` without an index; the check compares it with the installed index on every locale page, no hashes, ≤ 2 KB gzip (1,288 B on climate 0.2.0).
   - One grid: [consortium-grid-check.mjs](../../scripts/consortium-grid-check.mjs) fails the build unless the consortium index's `climate_grid_manifest_sha256` (missing or empty fails) equals the climate index's grid and its `consortium_grid_check.status` is `matched`.
 - Browser tests, via `npm run test:browser` (capped; never in `npm test`; it runs `npm run build:browser-test` first, so rebuild with `npm run build` before `check-built-site` or a deploy), one file per owner (review C1), enforced by [browser-tests.test.mjs](../../scripts/browser-tests.test.mjs) in `npm test`:
