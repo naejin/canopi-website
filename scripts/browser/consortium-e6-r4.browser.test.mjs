@@ -217,6 +217,8 @@ test('E6-15 (R4 seams): a Suggest waiting for the chunk ends in the toast with R
   const page = await temperatePage({ setup: ctl.setup });
   try {
     assert.ok(await until(page, () => !!window.__ctTest.store.pool.value, 5000), 'the list stored without the chunk');
+    // The chunk's response reaches CDP's response stage on its own clock: under load, after the list.
+    for (const end = Date.now() + 5000; !ctl.held.length && Date.now() < end;) await new Promise((r) => setTimeout(r, 50));
     assert.equal(ctl.held.length, 1, 'the chunk held');
     await page.locator(aria('button', SUGGEST)).click();
     assert.ok(await suggestBusy(page), 'Suggest waits (aria-busy)');
