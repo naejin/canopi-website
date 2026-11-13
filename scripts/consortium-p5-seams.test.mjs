@@ -56,7 +56,7 @@ test('the host views mount every stream\'s slot, and PlantMarks names its surfac
   assert.match(start, /climate\.value \?\? pendingClimate\.value;[\s\S]*data-proposed/, 'S5b: a proposed climate shows as proposed, not checked (review round 1, 6)');
   assert.match(view('later.ts'), /export \{ FutureSlot \} from '\.\/FutureSlot\.tsx';/, 'S5d: FutureSlot in the later chunk');
   // Under the matrix's view, after Share, Print and Download, so they never move when it lands (hand-off branch).
-  assert.match(view('Actions.tsx'), /later\(\(\) => import\('\.\/later\.ts'\)\.then\(\(m\) => m\.FutureSlot\), \{ idle: true \}\)/, 'idle: no download before ct:matrix');
+  assert.match(view('Actions.tsx'), /later\(\(\) => import\('\.\/later\.ts'\)\.then\(\(m\) => m\.FutureSlot\), \{ idle: true \}\)/, 'idle: no download before ct:first-view or the data ready');
   assert.match(view('Actions.tsx'), /<ActionsView \/>\{v === 'matrix' && <future\.View \/>\}/, 'S5d: the panel after the actions, under the matrix view');
   assert.doesNotMatch(view('Matrix.tsx') + view('PhoneMatrix.tsx'), /<FutureSlot \/>/, 'not above the actions');
   assert.match(view('details/Details.tsx'), /<PlantMarks taxon=\{t\} surface="details" \/>/);

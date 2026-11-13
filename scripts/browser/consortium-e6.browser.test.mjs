@@ -1,4 +1,4 @@
-// E6's user paths (design check §4.1 L1–L12, §5.7), written failing in commit 0: each test is marked
+// E6's user paths (design check §4.1 L1–L12, §5.7), written failing in commit 0: each test was marked
 // expected-fail (scripts/expect-fail.mjs failing()) with its owner stream in the title, and the owner
 // removes the marker in the commit that makes it pass (the call becomes test()). Owners per chunk
 // (scripts/plan/e6-owners.json): K1 in chunk 1 (E6-1), K3 in chunk 3 (E6-3…5; E6-3b…5b, rows L6,
@@ -9,13 +9,12 @@
 // Files each pass needs: E6-1 views/Start.tsx and src/lib/consortium/fold.ts (K1, A9); E6-2
 // astro.config.mjs (modulepreload filter) and views/lazy.tsx's prefetch trigger (B4, K3; A5, A6);
 // E6-3…5 views/Sheets.tsx, views/details/**, views/lazy.tsx (K3; A6) and the `details` role
-// (scripts/built-modules.mjs LAZY_ENTRIES, commit 0).
+// (scripts/built-modules.mjs ROLE_ENTRIES).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { loadState } from './harness.mjs';
 import { aria, axNodes, en, h, has, realDb, useHarness } from './helpers.mjs';
 import { atNowhere, choose, tool } from './p5-helpers.mjs';
-import { failing } from '../expect-fail.mjs';
 import { searchIndex } from '../../src/islands/consortium/data/search.ts';
 
 useHarness();
@@ -83,21 +82,25 @@ test('E6-1 (K1 kit): Start\'s crop search finds what Add\'s search finds for the
   }
 });
 
-// E6-2 (L5, A5): before the data is ready nothing lazy is fetched: no modulepreload link for a sheet
-// or the after-the-matrix part, and no request for one, while the database download is held.
-failing('E6-2 (B4 build): before the data is ready, no sheet or after-the-matrix chunk is modulepreloaded or requested (L5)', { owner: 'B4', reason: /modulepreloaded before the data is ready \(preloaded today\)/ }, async () => {
-  const { sheets, later } = h.roles;
-  assert.ok(sheets.length && later.length, 'roles sheets and later have chunks in this build');
-  const lazy = [...sheets, ...later];
+// E6-2 (L5, A5): before the data is ready nothing lazy is fetched: no modulepreload link for any lazy
+// part (every chunk role: the sheets, the plant dialog, the views after the matrix, suggest, the P5
+// features, MapLibre), and no request for one, while the database download is held. The page's
+// modulepreload links are the first view's chunks only (the island's entry and the data loader).
+test('E6-2 (B4 build): before the data is ready, no lazy part (sheets, plant dialog, after-the-matrix views, features) is modulepreloaded or requested (L5)', async () => {
+  const { sheets, later, details } = h.roles;
+  assert.ok(sheets.length && later.length && details.length, 'roles sheets, later and details have chunks in this build');
+  const lazy = [...new Set(Object.entries(h.roles).filter(([k]) => k !== 'maplibreCss').flatMap(([, list]) => list))];
   const log = [];
   const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', database: 'stall', hook: true, setup: recordRequests(log) });
   await page.waitForFunction(() => performance.getEntriesByType('resource').some((e) => /\/_astro\/load\.[\w-]+\.js$/.test(e.name)), { timeout: 10_000 });
   await page.waitForNetworkIdle({ idleTime: 500, timeout: 10_000, concurrency: 1 }).catch(() => {});
   assert.notEqual(await loadState(page, 100), 'ready', 'the database is still held');
+  assert.equal(await page.evaluate(() => performance.getEntriesByName('ct:first-view').length + performance.getEntriesByName('ct:matrix').length), 0, 'nothing on screen yet');
   const preloaded = await page.$$eval('link[rel="modulepreload"]', (links) => links.map((l) => new URL(l.href).pathname));
   const early = lazy.filter((u) => preloaded.includes(u));
-  assert.deepEqual(early, [], `sheet and after-the-matrix chunks modulepreloaded before the data is ready (preloaded today): ${early.join(', ')}`);
-  assert.deepEqual(requestsTo(log, lazy), [], 'sheet and after-the-matrix chunks requested before the data is ready');
+  assert.deepEqual(early, [], `lazy parts modulepreloaded before the data is ready: ${early.join(', ')}`);
+  assert.ok(preloaded.some((u) => /\/_astro\/load\.[\w-]+\.js$/.test(u)), 'the data loader is modulepreloaded (the first view waits for it)');
+  assert.deepEqual(requestsTo(log, lazy), [], 'lazy parts requested before the data is ready');
   await page.browserContext().close().catch(() => {});
 });
 
@@ -204,7 +207,7 @@ test('E6-5b (K3 lazy parts): on Start only, the data ready, the plant dialog and
   const deadline = Date.now() + 8000;
   while (lazy.some((u) => !requestsTo(log, [u]).length) && Date.now() < deadline) await new Promise((r) => setTimeout(r, 100));
   assert.deepEqual(lazy.filter((u) => !requestsTo(log, [u]).length), [], 'every sheet chunk and the dialog are fetched on Start');
-  assert.equal(await page.evaluate(() => performance.getEntriesByName('ct:matrix').length), 0, 'the matrix was never shown');
+  assert.equal(await page.evaluate(() => performance.getEntriesByName('ct:first-view').length + performance.getEntriesByName('ct:matrix').length), 0, 'the consortium was never shown (no first-view mark, under either name until R4\'s rename merges)');
   await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
   await page.locator(aria('button', 'Paste a list')).click();
   await page.waitForSelector('dialog[open]', { timeout: 2000 });

@@ -93,7 +93,7 @@ test('one zoneOf: the island reads climate ids with the core\'s (H15)', async ()
   assert.doesNotMatch(stateSrc, /const zoneOf\b/, 'island state has no zoneOf of its own');
   const main = readFileSync(new URL('../src/islands/consortium/main.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(main, /const zoneOf\b/, 'main.ts has no zoneOf of its own');
-  assert.doesNotMatch(stateSrc, /ct:pool/, 'no ct:pool mark: the timing script reads ct:matrix');
+  assert.doesNotMatch(stateSrc, /ct:pool/, 'no ct:pool mark: the timing script reads ct:first-view');
   assert.doesNotMatch(readFileSync(new URL('./browser/consortium-timing.mjs', import.meta.url), 'utf8'), /ct:pool/, 'the timing script has no ct:pool fallback');
 });
 

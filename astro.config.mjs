@@ -10,7 +10,7 @@ import { transformWithEsbuild } from 'vite';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CHUNK_ROLES_FILE, chunkRoles, moduleGraph, onDemandChunks, pageEntries, readChunkRoles } from './scripts/built-modules.mjs';
+import { CHUNK_ROLES_FILE, chunkRoles, moduleGraph, modulepreloadChunks, readChunkRoles } from './scripts/built-modules.mjs';
 import { climateTiles } from './scripts/climate-integration.mjs';
 
 // Consortium v2 (design check A1, coordinator row "v2 build setup", 2026-11-11): Preact 11 without
@@ -55,11 +55,11 @@ const sqliteMainThreadOnly = {
   },
 };
 
-// P5 commit 0: the roles of the client build's chunks (scripts/built-modules.mjs chunkRoles: the
-// P5 feature chunks by entry module, MapLibre's chunks, worker and CSS), read from
-// Rollup's bundle so no budget finds a chunk by its file name. Written beside the served directory
-// (dist/consortium-chunks.json for dist/client), never served; read by the modulepreload writer below
-// and by scripts/check-built-site.mjs.
+// The roles of the client build's chunks (scripts/built-modules.mjs chunkRoles: every on-demand part
+// of the island by entry module, MapLibre's chunks, worker and CSS, the test hook's chunk), read
+// from Rollup's bundle so no budget finds a chunk by its file name. Written beside the served directory
+// (dist/consortium-chunks.json for dist/client), never served; read by scripts/check-built-site.mjs
+// and the browser harness (faults by role).
 /** @type {import('vite').Plugin} */
 const consortiumChunkRoles = {
   name: 'canopi:consortium-chunk-roles',
@@ -69,17 +69,20 @@ const consortiumChunkRoles = {
     if (this.environment && this.environment.name !== 'client') return;
     const dir = options.dir ?? '';
     if (basename(dir) !== 'client') throw new Error(`canopi:consortium-chunk-roles: the client build went to ${dir}, not a client/ directory; ${CHUNK_ROLES_FILE} would be served`);
-    writeFileSync(join(dir, '..', CHUNK_ROLES_FILE), `${JSON.stringify(chunkRoles(bundle), null, 2)}\n`);
+    writeFileSync(join(dir, '..', CHUNK_ROLES_FILE), `${JSON.stringify(chunkRoles(bundle, (/** @type {string} */ id) => this.getModuleInfo(id)), null, 2)}\n`);
   },
 };
 
-// Design check A2 (review C8): the consortium page loads its island through a dynamic import, and
-// the island its loader, so their chunks would arrive one after another. After the build, every page
-// holding #ct-root gets a <link rel="modulepreload"> for each chunk of its import graph that it does
-// not already load with a <script src>, the sqlite glue included, but not the on-demand chunks (P5:
-// the feature chunks of built-modules.mjs P5_FEATURE_ENTRIES and MapLibre; preloading the mark
-// providers alone cost about 0.15 s cold, §8 timing). Other pages are not touched (P7).
-// ConsortiumPage.astro preloads the database itself; scripts/check-built-site.mjs checks both.
+// Design check A2 (review C8) and E6 A5 (L5): the consortium page loads its island through a dynamic
+// import, and the island its data loader, so their chunks would arrive one after another. After the
+// build, every page holding #ct-root gets a <link rel="modulepreload"> for each chunk the first view
+// waits for, and only those (scripts/built-modules.mjs modulepreloadChunks: the island's entry and its
+// static imports, the loader chunk with the sqlite glue, the page script's static imports). Nothing
+// reached only through import() is preloaded (the sheets, the plant dialog, the views after the
+// matrix, suggest, the P5 features, MapLibre), so on a slow phone nothing lazy competes with the
+// database download; views/lazy.tsx prefetches those parts once the data is ready. Other pages are not
+// touched (P7). ConsortiumPage.astro preloads the database itself; scripts/check-built-site.mjs checks
+// both.
 /** @type {import('astro').AstroIntegration} */
 const consortiumModulePreload = {
   name: 'canopi:consortium-modulepreload',
@@ -96,13 +99,9 @@ const consortiumModulePreload = {
           if (!e.name.endsWith('.html')) continue;
           const html = readFileSync(p, 'utf8');
           if (!html.includes('id="ct-root"')) continue;
-          const graph = moduleGraph(root, html);
-          const roles = readChunkRoles(root);
-          const lazy = onDemandChunks(graph, pageEntries(html), roles);
-          // The P5 feature chunks load only once a location is given or a climate borrows plants.
-          const onDemand = new Set([...lazy.features, ...lazy.maplibre]);
-          const links = [...graph.keys()]
-            .filter((m) => !onDemand.has(m) && !html.includes(`src="${m}"`) && !html.includes(`href="${m}"`))
+          // The browser-test build's hook is awaited before the first render: preloaded there too.
+          const links = modulepreloadChunks(moduleGraph(root, html), html, readChunkRoles(root).testHook)
+            .filter((m) => !html.includes(`href="${m}"`))
             .map((m) => `<link rel="modulepreload" href="${m}">`).join('');
           if (links) writeFileSync(p, html.replace('</head>', `${links}</head>`));
         }

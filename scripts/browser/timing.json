@@ -1,0 +1,5 @@
+{
+  "_comment": "Time to first view ratchet (E6 design check A8, ADR-2, plan choice 11): median milliseconds to performance.mark('ct:first-view') per profile, cold (first visit) and warm (reload), read by scripts/browser/consortium-timing.mjs --ratchet (nightly.yml). Above a value: a warning; above 1.5x: exit 1. Values come from the nightly runner's `timing-json:` line only, never from a local run (another CPU under the same 4x slowdown); null = no runner value yet, printed and not compared. Set by the coordinator from the first nightly run after push B.",
+  "desktop": { "cold": null, "warm": null },
+  "phone": { "cold": null, "warm": null }
+}
