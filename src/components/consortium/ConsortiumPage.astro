@@ -66,7 +66,7 @@ const data = {
   images: index.images,
   guide,
   // The title of each guide the plant dialog links (data/consortium-guides.ts), in the guide language
-  // (slug → title; views/Details.tsx).
+  // (slug → title; views/details/Details.tsx).
   guideTitles: Object.fromEntries(guides.filter((e) => linkedGuides.has(slugOf(e))).map((e) => [slugOf(e), e.data.title])),
   // Start (stream S4): every site climate in the site's order with its label and three example
   // places (site-wide climate.* keys), the contact address for "Ask for this climate", and the

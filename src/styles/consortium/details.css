@@ -1,5 +1,5 @@
 /* Consortium v2, stream S3: the details dialog, swap, add, search, paste and toast. Tokens in base.css.
-   Sheets are native <dialog>s (views/Details.tsx SheetFrame): a side sheet on the right, full screen
+   Sheets are native <dialog>s (views/kit/sheet.tsx SheetDialog and SheetFrame): a side sheet on the right, full screen
    on phones (max-width 639px). Everything is scoped to .ct .ct-sheet / .ct-ask / .ct-toast-region so
    the shared class names (.ct-bar, .ct-tag) do not leak into the matrix (S2). No green in chrome:
    warnings use the site's --warning tokens, pairings the ink. */

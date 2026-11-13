@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the nine import rules dependency-cruiser enforces and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T08:29:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T10:18:12Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T03:47:07Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:447f2e046923a645
-    last_modified: 2026-11-13T08:21:53Z
+    digest: sha256:646580d82308f4c9
+    last_modified: 2026-11-13T10:14:16Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -25,8 +25,8 @@ sources:
   - id: test-seam-d-ts
     resource: ../../src/islands/consortium/test-seam.d.ts
     title: src/islands/consortium/test-seam.d.ts
-    digest: sha256:44f2d044599ee37a
-    last_modified: 2026-11-13T03:03:27Z
+    digest: sha256:6927df0858d92504
+    last_modified: 2026-11-13T10:14:16Z
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
@@ -52,6 +52,31 @@ sources:
     title: .dependency-cruiser.cjs
     digest: sha256:a490c80ab1fce8f6
     last_modified: 2026-11-13T08:06:19Z
+  - id: sheets-tsx
+    resource: ../../src/islands/consortium/views/Sheets.tsx
+    title: src/islands/consortium/views/Sheets.tsx
+    digest: sha256:eac7a62f73ab6cc3
+    last_modified: 2026-11-13T09:54:42Z
+  - id: sheet-tsx
+    resource: ../../src/islands/consortium/views/kit/sheet.tsx
+    title: src/islands/consortium/views/kit/sheet.tsx
+    digest: sha256:fbdf09611bf250a1
+    last_modified: 2026-11-13T09:54:42Z
+  - id: lazy-tsx
+    resource: ../../src/islands/consortium/views/lazy.tsx
+    title: src/islands/consortium/views/lazy.tsx
+    digest: sha256:2f7b12ddd17900c4
+    last_modified: 2026-11-13T09:54:42Z
+  - id: arch-json
+    resource: ../../scripts/quality/baselines/arch.json
+    title: scripts/quality/baselines/arch.json
+    digest: sha256:d0cf34534fce6bf9
+    last_modified: 2026-11-13T07:45:51Z
+  - id: test-hook-ts
+    resource: ../../src/islands/consortium/test-hook.ts
+    title: src/islands/consortium/test-hook.ts
+    digest: sha256:21c91f912dda996c
+    last_modified: 2026-11-13T10:14:16Z
 enforced_by: [scripts/consortium-boundary.test.mjs, sgconfig.yml]
 ---
 
@@ -95,4 +120,5 @@ dependency-cruiser owns layer direction and cycles; the boundary test owns "core
 - `rules/**` (E6 R2) are pure functions over core types: they import only the core entry, never the store or a view; the store and views pass signals in as arguments (`FlagScene`, `SuggestScene`). `views/kit/flags.ts` renders only: `flagsOfPlant` and `flagScene` live in `store.ts`.
 - Feature code is loaded through core loaders (`loadMarkProviders`, `loadRangeRule` (chunk 2: the one import of `range.ts` outside the feature chunks that use it statically), `loadSuggest`), never by state importing a view; where a view owns a chunk, it hands its loader to state (`provideLocationStep` in `state/restore.ts`, given `views/location/load.ts`'s `loadLocationStep` by main.ts before the first render; since E6 S3 no module hands anything over at import).
 - After chunk 2: the cycles C1-C5 are gone (L7 still `warn` until chunk 5), `store.ts` no longer imports `views/pool/pool.tsx`, and `src/lib/location/place-search.ts` imports no `@preact/signals` (plain read-only boxes), so L1 holds although its severity in `.dependency-cruiser.cjs` is still `warn`.
-- Test faults are globals read under `__CT_TEST_HOOK__`; no production module imports the hook.
+- After chunk 3 (K3): L5, L6 and L8 have no findings (severities unchanged until chunk 5). The kit is a leaf: `views/kit/sheet.tsx` takes what closes a sheet and its toast region as props (`onClose`, `toast`) from `views/Sheets.tsx`, the only caller of `SheetDialog`/`SheetFrame`, and imports neither `store.ts` nor `Toast.tsx`; its `shared` object reaches `rules/list-query.ts` (L3, allowed). Only `views/Sheets.tsx` reaches `views/details/**`, through `import()`. Only `main.ts` imports `test-hook.ts`. `scripts/quality/baselines/arch.json` still lists the four keys K3 removed (L5 `kit/sheet.tsx` → `store.ts` and → `Toast.tsx`, L8 `views/Details.tsx` and `views/lazy.tsx` → `test-hook.ts`); the ratchet reports them "baseline stale" (never a failure) until the merge agent rewrites the baseline.
+- Test faults are globals read under `__CT_TEST_HOOK__` (`globalThis.__ctFaults`, read inline by `views/lazy.tsx` each time a part is used); no production module imports the hook, and `test-hook.ts` no longer exports `testFault`.

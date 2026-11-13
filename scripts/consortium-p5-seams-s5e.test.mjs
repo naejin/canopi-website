@@ -19,7 +19,7 @@ test('S5e ships nothing in P5: no native or soil-likely module, slot or reader',
   assert.equal('nativeHere' in core, false);
   assert.equal('likelyFor' in core, false);
   assert.doesNotMatch(view('Start.tsx'), /LikelySlot/);
-  assert.doesNotMatch(view('Details.tsx'), /NativeSlot/);
+  assert.doesNotMatch(view('details/Details.tsx'), /NativeSlot/);
   assert.doesNotMatch(text('islands/consortium/data/sqlite-source.ts'), /nativeIn|plant_areas/);
   assert.doesNotMatch(text('lib/consortium/source.ts'), /nativeIn/);
   assert.doesNotMatch(text('lib/consortium/marks.ts'), /nativeIn/);

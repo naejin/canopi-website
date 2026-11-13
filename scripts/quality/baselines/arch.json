@@ -1,10 +1,5 @@
 {
   "tool": "dependency-cruiser",
   "version": "18.7.2",
-  "keys": [
-    "L5-kit-leaf|src/islands/consortium/views/kit/sheet.tsx|src/islands/consortium/store.ts",
-    "L5-kit-leaf|src/islands/consortium/views/kit/sheet.tsx|src/islands/consortium/views/Toast.tsx",
-    "L8-test-hook-entry-only|src/islands/consortium/views/Details.tsx|src/islands/consortium/test-hook.ts",
-    "L8-test-hook-entry-only|src/islands/consortium/views/lazy.tsx|src/islands/consortium/test-hook.ts"
-  ]
+  "keys": []
 }

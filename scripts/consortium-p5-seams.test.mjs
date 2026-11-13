@@ -59,7 +59,7 @@ test('the host views mount every stream\'s slot, and PlantMarks names its surfac
   assert.match(view('Actions.tsx'), /later\(\(\) => import\('\.\/later\.ts'\)\.then\(\(m\) => m\.FutureSlot\), \{ idle: true \}\)/, 'idle: no download before ct:matrix');
   assert.match(view('Actions.tsx'), /<ActionsView \/>\{v === 'matrix' && <future\.View \/>\}/, 'S5d: the panel after the actions, under the matrix view');
   assert.doesNotMatch(view('Matrix.tsx') + view('PhoneMatrix.tsx'), /<FutureSlot \/>/, 'not above the actions');
-  assert.match(view('Details.tsx'), /<PlantMarks taxon=\{t\} surface="details" \/>/);
+  assert.match(view('details/Details.tsx'), /<PlantMarks taxon=\{t\} surface="details" \/>/);
   assert.equal((view('Add.tsx').match(/<PlantMarks taxon=\{t\} surface="add" \/>/g) ?? []).length, 2);
   assert.match(view('StageBar.tsx'), /<PlantMarks taxon=\{taxon\} surface=\{tight \? 'chip' : 'row'\} \/>/);
   assert.match(view('PlantMarks.tsx'), /data-mark=\{m\.kind\} data-mark-state=\{m\.state\}/);

@@ -6,7 +6,7 @@
 // page behind it inert, so a line shown while a sheet is open, as after Paste's "Add anyway", is shown
 // and heard in the sheet). A line is announced once, by the region it first shows in: moved into a
 // sheet or back out, it is shown outside that region's live part, so it is not read again. A toast goes away by itself after a while, on Dismiss, or on its action.
-// Details.tsx renders both regions; the store's edits call showToast (store.ts).
+// views/Sheets.tsx renders both regions; the store's edits call showToast (store.ts).
 import * as store from '../store.ts';
 import { hideToast, toast, type ToastWhere as Where } from '../store.ts';
 import { T } from '../strings.ts';

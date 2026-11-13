@@ -4,9 +4,9 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T08:29:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T10:18:56Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T22:03:48Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T10:18:47Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -116,8 +116,8 @@ sources:
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
-    digest: sha256:b1c20b562ccd92fe
-    last_modified: 2026-11-13T08:21:53Z
+    digest: sha256:09fcea971fdca141
+    last_modified: 2026-11-13T10:13:52Z
   - id: mark-providers-ts
     resource: ../../src/lib/consortium/mark-providers.ts
     title: src/lib/consortium/mark-providers.ts
@@ -151,8 +151,8 @@ sources:
   - id: consortium-p5-seams-s5e-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5e.test.mjs
     title: scripts/consortium-p5-seams-s5e.test.mjs
-    digest: sha256:3b75ac4d8d42ecab
-    last_modified: 2026-11-13T07:25:07Z
+    digest: sha256:fbbd2cd9a4b37929
+    last_modified: 2026-11-13T10:13:52Z
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
@@ -176,8 +176,8 @@ sources:
   - id: consortium-p5-ranges-test-mjs
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
-    digest: sha256:97936e9cc8c33da5
-    last_modified: 2026-11-13T03:45:14Z
+    digest: sha256:34300292e761fa67
+    last_modified: 2026-11-13T10:13:52Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts

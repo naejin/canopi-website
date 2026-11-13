@@ -4,8 +4,8 @@
 // if a name reaches dist/. The harness (scripts/browser/harness.mjs) sets them before the first
 // navigation; test-hook.ts (imported only by main.ts, in the test build) writes __ctFaults.
 // - __ctTimeouts: shorter waits in ms (data/load.ts stall, the location tile read, Suggest's wait);
-// - __ctFaults: chunk faults by part (stream K3/S3 move views/lazy.tsx and Details' sheet loader onto
-//   it, replacing test-hook.ts's exported testFault).
+// - __ctFaults: chunk faults by part, read inline by views/lazy.tsx lazyPart each time a part is used
+//   (E6 K3/S3).
 export {};
 
 declare global {

@@ -326,7 +326,7 @@
             "K3",
             "S3"
           ],
-          "duty": "A5 modulepreload filter; roles details/sheets/later/suggest/range filled and merged with the feature roles; A14 per-chunk caps (first run stays 43); ct:first-view in the timing script and tests (A7); timing ratchet (A8); CSS-on-lazy-chunk assertion; L5, L11 (removes the E6-2 marker)",
+          "duty": "A5 modulepreload filter; roles details/sheets/later/suggest/range filled and merged with the feature roles; A14 per-chunk caps (first run cap 40 KB since the chunk-3 merge; replace the 65 KB island sum); ct:first-view in the timing script and tests (A7); timing ratchet (A8); CSS-on-lazy-chunk assertion; L5, L11 (removes the E6-2 marker); check-built-site asserts a details or sheet chunk statically imports only first-run (or sheet/details) chunks (K3 round-2 review); the role finder survives Correction importing drafts (K3 hand-off, then Correction may drop its drafts prop)",
           "files": [
             "astro.config.mjs",
             "scripts/built-modules.mjs",

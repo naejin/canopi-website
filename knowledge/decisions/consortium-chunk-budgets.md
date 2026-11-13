@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T07:42:27Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T10:18:13Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:40:03Z }
 sources:
@@ -15,16 +15,21 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:b4d7298f973ebedf
-    last_modified: 2026-11-13T07:37:21Z
+    digest: sha256:6c135be340fc4375
+    last_modified: 2026-11-13T10:14:16Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
     digest: sha256:1dd6abb876c88df0
     last_modified: 2026-11-11T22:31:55Z
+  - id: sheet-tsx
+    resource: ../../src/islands/consortium/views/kit/sheet.tsx
+    title: src/islands/consortium/views/kit/sheet.tsx
+    digest: sha256:fbdf09611bf250a1
+    last_modified: 2026-11-13T09:54:42Z
 ---
 
-ADR-2 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, design check A14, A7, A8; written in commit 0, 2026-11-13). Applied by stream B4 in chunk 4 and the exit in chunk 5; until then `scripts/check-built-site.mjs` keeps today's sums, with the island sum raised from 62 to 63 KB at the chunk-2 merge (temporary: R2's rule modules sit in the main chunk until K3 moves Details out; coordinator row "E6 chunk-2 merge choices" in [the decisions](/decisions/consortium-user-decisions.md), revertible). The assertion's message there still says "the budget is 62 KB".
+ADR-2 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, design check A14, A7, A8; written in commit 0, 2026-11-13). Applied by stream B4 in chunk 4 and the exit in chunk 5; until then `scripts/check-built-site.mjs` keeps today's sums, temporary and revertible (coordinator rows in [the decisions](/decisions/consortium-user-decisions.md)): the island sum `ISLAND_BUDGET` was raised from 62 to 63 KB at the chunk-2 merge (R2's rule modules sat in the main chunk) and to 65 KB at the chunk-3 merge (64.1 KB measured: K3's split of Details and the sheets into their own chunks adds per-chunk overhead to the sum), while the first-run cap `FIRST_RUN_BUDGET` dropped from 43 to 40 KB at the chunk-3 merge (38.7 KB measured once Details left the first run). B4 also adds a build assertion that a `details` or sheet chunk statically imports only first-run (or sheet/details) chunks (`kit/sheet.tsx` `shared` keeps `flags` and `list-query` in the first run), and its role finder must survive Correction importing `drafts` (until then Correction takes `drafts` as a prop). The first-run assertion's message there still says "the budget is 43 KB" (the island sum's message reads `ISLAND_BUDGET`).
 
 ## Context
 
@@ -36,7 +41,7 @@ The consortium page had a first-run cap (43 KB gzip), an island sum (`ISLAND_BUD
 
 | Role | Cap (gzip) |
 |---|---|
-| first run (modulepreloaded set) | 43 KB through chunk 4; lowered in chunk 5 to the measured value plus 0.3 KB slack per lazy chunk (≤ 40 KB) |
+| first run (modulepreloaded set) | 40 KB since the chunk-3 merge (43 KB before); lowered in chunk 5 to the measured value plus 0.3 KB slack per lazy chunk (≤ 40 KB) |
 | each of `sheets`, `details`, `later`, `suggest` | 8 KB |
 | each feature except `location` (`range` included) | 12 KB |
 | `location` | 20 KB |

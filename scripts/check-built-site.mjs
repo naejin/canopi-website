@@ -472,14 +472,16 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 // without the chunk holding the sqlite-wasm glue, stays under 60 KB gzip -9. Every locale page
 // preloads the database (as=fetch, crossorigin, so the island's fetch reuses it) and modulepreloads
 // the island's chunks, the glue included, so they arrive beside the page script.
-// Raised from 62 to 63 KB at the E6 chunk-2 merge (coordinator row 2026-11-13, revertible): the rule
-// modules R2 extracted sit in main until K3 moves Details out; B4's per-chunk caps (A14) replace this sum.
-const ISLAND_BUDGET = 63 * 1024;
+// Raised from 62 to 63 KB at the E6 chunk-2 merge and to 65 KB at the chunk-3 merge (coordinator rows
+// 2026-11-13, revertible): splitting Details and the sheets into their own chunks adds per-chunk overhead
+// to this sum while the first run shrinks; B4's per-chunk caps (A14) replace this sum.
+const ISLAND_BUDGET = 65 * 1024;
 // The first run (the entry and its static imports; the sheets and the views after the matrix load
 // with import()) stays under 40 KB, so the matrix does not wait for them (P2 hand-off budget and its
 // review: 37.6 KB at the time). The 60 KB above counts the lazy chunks too, so moving code to a lazy
 // chunk does not lower it; P5 is to change that metric.
-const FIRST_RUN_BUDGET = 43 * 1024;
+// Lowered from 43 to 40 KB at the E6 chunk-3 merge (K3 moved Details out: 38.7 KB measured).
+const FIRST_RUN_BUDGET = 40 * 1024;
 // Raised 42 → 43 KB at the P5 push (coordinator row "First-run budget at the P5 push", 2026-11-12, revertible): the first run
 // was 2 B over only because lazy chunk file names are written inside the main chunk; the UX step lazy-loads first.
 // P5 (decision row "Island JavaScript budget for P5", amended 2026-11-11, first run raised to 42 KB by the owner): first run ≤ 42 KB; the P2
@@ -551,7 +553,7 @@ for (const lang of locales) {
   const firstRun = firstRunChunks(graph, island);
   for (const p of lazy.features) assert.ok(!firstRun.includes(p), `${path}: the feature chunk ${p} is not in the island's first run`);
   firstRunBytes = firstRun.reduce((n, p) => n + gzipSync(graph.get(p).code, { level: 9 }).length, 0);
-  assert.ok(firstRunBytes < FIRST_RUN_BUDGET, `${path}: the island's first run is ${(firstRunBytes / 1024).toFixed(1)} KB gzip, the budget is 43 KB`);
+  assert.ok(firstRunBytes < FIRST_RUN_BUDGET, `${path}: the island's first run is ${(firstRunBytes / 1024).toFixed(1)} KB gzip, the budget is ${FIRST_RUN_BUDGET / 1024} KB`);
   const preloads = [...html.matchAll(/<link\b[^>]*\brel="(preload|modulepreload)"[^>]*>/g)].map(([tag, rel]) => ({ rel, tag, href: tag.match(/\bhref="([^"]+)"/)?.[1] }));
   const db = preloads.find((l) => l.href === consortiumIndex.files[0].url);
   assert.ok(db && db.rel === 'preload' && /\bas="fetch"/.test(db.tag) && /\bcrossorigin\b/.test(db.tag), `${path}: <link rel="preload" as="fetch" crossorigin> for the database`);

@@ -395,7 +395,7 @@ test('room: the height note ("Grows to 12 m: keep it pruned, or pick a smaller p
   const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
   assert.equal(en['consortium.room.tall'], 'Grows to {m} m: keep it pruned, or pick a smaller plant.');
   for (const k of ['consortium.matrix.why.room', 'consortium.misfit.wild.small', 'consortium.misfit.wild.large']) assert.equal(k in en, false, `${k} is gone: room is never a misfit`);
-  assert.doesNotMatch(view('Details.tsx'), /misfit\.wild/);
+  assert.doesNotMatch(view('details/Details.tsx'), /misfit\.wild/);
   assert.ok(core.markKinds.includes('room'));
 });
 
