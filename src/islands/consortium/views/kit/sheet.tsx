@@ -3,15 +3,13 @@
 // on first use (Add, Swap, Paste, Correction) import the kit and not the plant dialog's module (cycle
 // C4): the sheet frame, the "Add it anyway?" ask, the stage bar of a sheet row, and "Not checked in
 // {country}". Sheets are native <dialog>s opened with showModal (focus moves in, the page behind is
-// inert, Escape closes).
-import type { ComponentChildren } from 'preact';
-import { useEffect, useRef } from 'preact/hooks';
+// inert, Escape closes). A leaf (E6 design check L5): what closes a sheet and its toast region come
+// in as props from views/Sheets.tsx, SheetFrame's only caller, which hands each sheet part its frame.
+import type { ComponentChildren, ComponentType } from 'preact';
+import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import type { Taxon } from '../../../../lib/consortium/index.ts';
 import { phases } from '../../../../lib/consortium/index.ts';
-import * as store from '../../store.ts';
-import { closeSheet } from '../../store.ts';
 import { T } from '../../strings.ts';
-import { Toast } from '../Toast.tsx';
 import { spanOf } from './span.ts';
 import { CLOSE } from './icons.tsx';
 import { countryName, spanWords } from './names.ts';
@@ -30,48 +28,53 @@ export function Bar({ taxon, run = null }: { taxon: Taxon; run?: { from: number;
 }
 
 // "Not checked in {country}": once per view (the Add and Swap sheets' top line, the dialog).
-export function NotChecked() {
-  const ctx = store.flagContext.value;
+// ctx: the store's flag context (store.flagContext).
+export function NotChecked({ ctx }: { ctx: { country?: string | null; countryStatus?: string } }) {
   if (ctx.countryStatus !== 'unchecked' || !ctx.country) return null;
   return <p class="ct-note">{T('add.notChecked', { country: countryName(ctx.country) })}</p>;
 }
 
 // A sheet: a modal <dialog>, a side sheet on desktop and full screen on phones. Escape, Close and a
-// click on the backdrop close it; the element marked data-autofocus (its heading) takes the focus.
-// foot: the sheet's action bar (Add, Paste). The foot sticks to the sheet's bottom and holds the
-// sheet's toast above the bar, so a toast never covers the bar's button (walk-through 2 N1: Undo sat
-// over "Add 1 plant" and the click undid the last add). The sheet's scroll padding follows the foot's
-// height, so a control tabbed to near the end is scrolled above the foot, not under it.
-export function SheetFrame({ titleId, head, foot, children, class: cls = '' }: { titleId: string; head?: ComponentChildren; foot?: ComponentChildren; children: ComponentChildren; class?: string }) {
+// click on the backdrop close it (onClose); the element marked data-autofocus (its heading) takes the
+// focus. foot: the sheet's action bar (Add, Paste). The foot sticks to the sheet's bottom and holds the
+// sheet's toast region (toast) above the bar, so a toast never covers the bar's button (walk-through 2
+// N1: Undo sat over "Add 1 plant" and the click undid the last add). The sheet's scroll padding
+// follows the foot's height, so a control tabbed to near the end is scrolled above the foot, not under it.
+export interface FrameProps { titleId: string; head?: ComponentChildren; foot?: ComponentChildren; children: ComponentChildren; class?: string }
+// The frame a sheet part draws in: SheetFrame bound to its opening's close and toast (views/Sheets.tsx).
+export type Frame = ComponentType<FrameProps>;
+export function SheetFrame({ titleId, head, foot, children, class: cls = '', onClose, toast }: FrameProps & { onClose: () => void; toast: ComponentChildren }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
   // A click closes the sheet only when it both starts and ends on the backdrop (a text selection
   // dragged out of the sheet and released outside does not).
   const downOnBackdrop = useRef(false);
-  useEffect(() => {
+  // Opened before the browser paints: when a sheet's part arrives, its frame replaces the loading
+  // frame in the same paint, so the page never shows without the sheet in between.
+  useLayoutEffect(() => {
     const d = ref.current;
     if (!d) return;
-    // Its own sheet only: the close event comes a task after Escape, maybe once another sheet opened.
-    const mine = store.sheet.peek();
-    const onClose = () => { if (mine && store.sheet.peek() === mine) closeSheet(); };
-    d.addEventListener('close', onClose);
+    const closed = () => close.current();
+    d.addEventListener('close', closed);
     const foot = d.querySelector<HTMLElement>('.ct-sheet-foot')!;
     const room = new ResizeObserver(() => { d.style.scrollPaddingBottom = `${foot.offsetHeight + 8}px`; });
     room.observe(foot);
     if (!d.open) d.showModal();
     d.querySelector<HTMLElement>('[data-autofocus]')?.focus();
-    return () => { room.disconnect(); d.removeEventListener('close', onClose); if (d.open) d.close(); };
+    return () => { room.disconnect(); d.removeEventListener('close', closed); if (d.open) d.close(); };
   }, []);
   return (
     <dialog ref={ref} class={`ct-sheet ${cls}`} aria-labelledby={titleId}
       onPointerDown={(e) => { downOnBackdrop.current = e.target === ref.current; }}
-      onClick={(e) => { if (e.target === ref.current && downOnBackdrop.current) closeSheet(); downOnBackdrop.current = false; }}>
+      onClick={(e) => { if (e.target === ref.current && downOnBackdrop.current) close.current(); downOnBackdrop.current = false; }}>
       <div class="ct-sheet-inner">
         <div class="ct-sheet-head">
           <div class="ct-sheet-head-main">{head}</div>
-          <button type="button" class="ct-icon-button" aria-label={T('close')} onClick={closeSheet}>{CLOSE}</button>
+          <button type="button" class="ct-icon-button" aria-label={T('close')} onClick={() => close.current()}>{CLOSE}</button>
         </div>
         <div class="ct-sheet-body">{children}</div>
-        <div class="ct-sheet-foot"><Toast where="sheet" />{foot}</div>
+        <div class="ct-sheet-foot">{toast}{foot}</div>
       </div>
     </dialog>
   );

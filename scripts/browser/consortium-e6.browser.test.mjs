@@ -92,12 +92,12 @@ failing('E6-2 (B4 build): before the data is ready, no sheet or after-the-matrix
 
 // E6-3 (L2, L4): Details opened while its chunk is held opens at once with the plant's name and the
 // loading line (a status), then its content; the prefetch and the press share one request.
-failing('E6-3 (K3 lazy Details): Details opened while its chunk is held shows the plant\'s name and a loading line at once, then its content, with one request (L2, L4)', { owner: 'K3', reason: /role `details` has no chunk/ }, async () => {
+test('E6-3 (K3 lazy Details): Details opened while its chunk is held shows the plant\'s name and a loading line at once, then its content, with one request (L2, L4)', async () => {
   assert.ok(h.roles.details.length, 'role `details` has no chunk in this build: Details is still in the first run');
   const log = [];
   const page = await matrixPage({ block: { details: 'hold' }, setup: recordRequests(log) });
   const [chip] = await chips(page);
-  const name = chip.split(' · ')[0];
+  const name = chip.split(' · ')[0].split(', ')[0]; // "European chestnut, Castanea sativa. Emergent, …": the plant's name first
   await page.locator(aria('button', chip)).click();
   await page.waitForSelector('dialog[open]', { timeout: 2000 });
   assert.match(await page.$eval('dialog[open]', (d) => d.textContent), new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), 'the plant\'s name at once');
@@ -113,7 +113,7 @@ failing('E6-3 (K3 lazy Details): Details opened while its chunk is held shows th
 // E6-4 (L1, L7): the Details chunk missing (blocked, or a deploy since the page loaded): the sheet
 // closes, the toast says so with Reload, the focus returns to the chip, and Reload restores the
 // consortium from the save.
-failing('E6-4 (K3 lazy Details): a missing Details chunk closes the sheet with a toast and Reload, focus back on the chip, the consortium restored after Reload (L1)', { owner: 'K3', reason: /role `details` has no chunk/ }, async () => {
+test('E6-4 (K3 lazy Details): a missing Details chunk closes the sheet with a toast and Reload, focus back on the chip, the consortium restored after Reload (L1)', async () => {
   assert.ok(h.roles.details.length, 'role `details` has no chunk in this build: Details is still in the first run');
   const page = await matrixPage({ block: { details: 404 } });
   const before = await memberIds(page);
@@ -132,7 +132,7 @@ failing('E6-4 (K3 lazy Details): a missing Details chunk closes the sheet with a
 });
 
 // E6-5 (L3): offline after the idle prefetch, Details still opens.
-failing('E6-5 (K3 lazy Details): offline after the prefetch, Details opens with its content and no toast (L3)', { owner: 'K3', reason: /role `details` has no chunk/ }, async () => {
+test('E6-5 (K3 lazy Details): offline after the prefetch, Details opens with its content and no toast (L3)', async () => {
   assert.ok(h.roles.details.length, 'role `details` has no chunk in this build: Details is still in the first run');
   const log = [];
   const page = await matrixPage({ setup: recordRequests(log) });

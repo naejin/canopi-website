@@ -10,7 +10,7 @@
 // list"; it asks first too when it misfits or has a serious conflict (a single Add asks, 2026-10-28
 // "Scale build" row), and its warnings stay on its row. With a query, rows come best match first
 // (S1's score), 8 of them, then "Show all N". Search mode (Start's "Start empty and search", routed
-// here by Details.tsx) is the same sheet with its own title.
+// here by views/Sheets.tsx) is the same sheet with its own title.
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
@@ -18,7 +18,7 @@ import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/
 import { asks as asksFlags } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/search.ts';
 import { addMembers, closeSheet, flagsOfPlant, sheetCell } from '../store.ts';
-import { Ask, Bar, NotChecked, SheetFrame, WARN } from './kit/sheet.tsx';
+import { Ask, Bar, NotChecked, WARN, type Frame } from './kit/sheet.tsx';
 import { flagLines } from './kit/flags.ts';
 import { nameOf, num, phasePlain, spanWords, zoneName } from './kit/names.ts';
 import { PlantMarks } from './PlantMarks.tsx';
@@ -29,7 +29,7 @@ const FIRST_ROWS = 8;
 
 type Search = ReturnType<typeof searchIndex>;
 const searches = new WeakMap<Taxon[], Search>();
-export function searchOf(list: Taxon[]): Search {
+function searchOf(list: Taxon[]): Search {
   let s = searches.get(list);
   if (!s) searches.set(list, (s = searchIndex(list.map((t) => ({ id: t.id, canonical: t.canonical_name, names: t.names })))));
   return s;
@@ -44,7 +44,7 @@ function heightWords(t: Taxon): string {
   return T(room === 'small' || room === 'large' ? 'misfit.unk.room' : 'details.heightNR');
 }
 
-export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
+export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; Frame: Frame }) {
   const pool = store.pool.value;
   // P5 S5c: a plant outside its observed range at the site is listed only once its name is typed, and
   // then asks first ("outside its observed range"; owner answer 2). When nothing fits the site, the
@@ -121,7 +121,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
   const n = selected.length;
 
   return (
-    <SheetFrame titleId="ct-add-title" class="ct-add" head={<span class="ct-muted">{T('add.title')}</span>} foot={
+    <Frame titleId="ct-add-title" class="ct-add" head={<span class="ct-muted">{T('add.title')}</span>} foot={
       <div class="ct-add-bar">
         <span aria-live="polite">{P('add.selected', n)}</span>
         <button type="button" class="button button-primary" disabled={!n} onClick={() => addSelected()}>{P('add.addSel', n)}</button>
@@ -130,7 +130,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
       <div>
         <h2 id="ct-add-title" tabIndex={-1} data-autofocus>{title}</h2>
         <p class="ct-muted">{T('add.lede', { climate: zoneName(climate) })}</p>
-        <NotChecked />
+        <NotChecked ctx={store.flagContext.value} />
       </div>
       <div class="ct-search">
         <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="m10.5 10.5 3.5 3.5" stroke="currentColor" stroke-width="1.6" /></svg>
@@ -195,6 +195,6 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
           onCancel={() => setAsking(null)}
         />
       )}
-    </SheetFrame>
+    </Frame>
   );
 }

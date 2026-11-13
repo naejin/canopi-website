@@ -4,20 +4,20 @@
 // the jobs they share). Each says what it does to the matrix: "Also fills: Years 25–60." or "Leaves
 // empty: Months 3–12." Warnings are shown on the row and never asked about; only a site misfit or a
 // serious (high) conflict asks "Swap anyway?" (owner row 2026-10-28, coordinator row "v2 mockup
-// choices" 2026-11-11), and those plants come last. Loaded on first use (Details.tsx).
+// choices" 2026-11-11), and those plants come last. Loaded on first use (views/Sheets.tsx).
 import { useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { CellRef, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { alternatives, asks } from '../../../lib/consortium/index.ts';
 import { closeSheet, openSheet, swapMember, taxonOf } from '../store.ts';
-import { Ask, BACK, Bar, NotChecked, SheetFrame, WARN } from './kit/sheet.tsx';
+import { Ask, BACK, Bar, NotChecked, WARN, type Frame } from './kit/sheet.tsx';
 import { flagLines } from './kit/flags.ts';
 import { listOf, nameOf, phasePlain, spanWords } from './kit/names.ts';
 
 const SHOWN = { fit: 7, asking: 2 };
 
-export default function Swap({ id }: { id: PlantId }) {
+export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const t = taxonOf(id);
   const pool = store.pool.value;
   const members = store.memberTaxa.value;
@@ -36,13 +36,13 @@ export default function Swap({ id }: { id: PlantId }) {
   const swap = (x: Taxon) => { closeSheet(); swapMember(id, x.id); };
 
   return (
-    <SheetFrame titleId="ct-sw-title" class="ct-swap" head={
+    <Frame titleId="ct-sw-title" class="ct-swap" head={
       <button type="button" class="button-quiet ct-back" onClick={() => openSheet('details', id)}>{BACK}{T('swap.back', { name: nameOf(t) })}</button>
     }>
       <div>
         <h2 id="ct-sw-title" tabIndex={-1} data-autofocus>{T('swap.title', { name: nameOf(t) })}</h2>
         <p class="ct-muted">{T('swap.lede')}</p>
-        <NotChecked />
+        <NotChecked ctx={store.flagContext.value} />
       </div>
       {shown.length ? (
         <ul class="ct-rows">
@@ -81,6 +81,6 @@ export default function Swap({ id }: { id: PlantId }) {
           onCancel={() => setAsking(null)}
         />
       )}
-    </SheetFrame>
+    </Frame>
   );
 }

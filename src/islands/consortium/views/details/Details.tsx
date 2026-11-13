@@ -1,48 +1,36 @@
 /** @jsxImportSource preact */
-// View slot of stream S3: the plant dialog and every S3 sheet. This module routes store.sheet itself
-// (details with the correction form, Swap, Add, Search, Paste, the toast), so App.tsx needs no slot
-// per sheet. App.tsx renders it whenever it is set.
-//
-// Every view opens a sheet with the store's one opener, store.openSheet(kind, id, target): 'details'
-// and 'swap' take a plant id; 'add' takes what it was opened for (a cell or run of one layer, a job,
-// "Show them anyway"); 'search' (Start's "Start empty and search") and 'paste' ("Paste a list") take
-// none. Nothing writes store.sheet directly, so what one sheet was opened for never leaks into the next. Whatever had the focus when a sheet opened (a chip) gets it back when the
-// sheet closes (Escape, Close, the backdrop); a chip that is gone by then is found again by
-// `data-plant-id`, else the toast's Undo takes the focus. removeMember, toggleKeep, swapMember and
-// addMembers are the store's edits (store.ts), each with its toast and Undo.
-//
-// Sheets are native <dialog>s opened with showModal (focus moves in, the page behind is inert, Escape
-// closes). Details and the toast ship with the island; Correction, Swap, Add, Search and Paste are
-// loaded when first opened, so the island stays within its JS budget (design check §8). What the
-// sheets share (the frame, the ask, the stage bar, the warnings in words, the shared words) is in
-// views/kit/, which they import instead of this module (E6 design check: cycle C4).
+// The plant dialog (stream S3), loaded on first use: views/Sheets.tsx, the first-run router, opens it
+// in the sheet frame it passes (`Frame`) and shows the plant's name and a loading line until this
+// chunk is here (E6 design check A6, L2). The dialog's correction form (views/Correction.tsx) is its
+// own chunk, loaded when the form first opens. What the sheets share (the stage bar, the warnings in
+// words, the shared words) is in views/kit/; layers.ts and src/data/consortium-guides.ts are read only
+// here, so they come with this chunk.
 //
 // Owner rows (knowledge/decisions/consortium-user-decisions.md): warn rather than remove dangerous
-// information; Add and Swap never ask about invasiveness, and "not checked in {country}" is said once
-// per view and in details, never as a chip; a guest added from another climate's list is labelled
-// "From the {climate} list"; pairings are yield-gain field trials only (no companion folklore).
-import type { ComponentType } from 'preact';
-import { h } from 'preact';
-import { effect } from '@preact/signals';
+// information; "not checked in {country}" is said once per view and in details, never as a chip; a
+// guest added from another climate's list is labelled "From the {climate} list"; pairings are
+// yield-gain field trials only (no companion folklore).
 import { useEffect, useRef, useState } from 'preact/hooks';
-import * as store from '../store.ts';
-import { closeSheet, openSheet, removeMember, showToast, taxonOf, toggleKeep } from '../store.ts';
-import { P, T, pageLang } from '../strings.ts';
-import type { ClimateZone, Details as PlantFacts, Labels, Locale, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { jobsOf, pairings, phaseOrd, placementZone } from '../../../lib/consortium/index.ts';
-import { layerRows, type Words } from './layers.ts';
-import { Toast } from './Toast.tsx';
-import { spanOf } from './kit/span.ts';
-import { safeHref } from '../../../lib/safe-href.js';
-import { consortiumGuides } from '../../../data/consortium-guides.ts';
-import { testFault } from '../test-hook.ts';
-import { PlantMarks } from './PlantMarks.tsx';
-import { Bar, SheetFrame } from './kit/sheet.tsx';
-import { flagLines, unknownWords } from './kit/flags.ts';
-import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from './kit/names.ts';
-import { PIN, SPROUT, WARN } from './kit/icons.tsx';
-import { drafts, type CorrectionField } from './kit/correction.ts';
-import { pageData } from './kit/page.ts';
+import * as store from '../../store.ts';
+import { closeSheet, openSheet, removeMember, taxonOf, toggleKeep } from '../../store.ts';
+import { P, T, pageLang } from '../../strings.ts';
+import type { ClimateZone, Details as PlantFacts, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
+import { jobsOf, pairings, phaseOrd, placementZone } from '../../../../lib/consortium/index.ts';
+import { layerRows, type Words } from '../layers.ts';
+import { spanOf } from '../kit/span.ts';
+import { safeHref } from '../../../../lib/safe-href.js';
+import { consortiumGuides } from '../../../../data/consortium-guides.ts';
+import { PlantMarks } from '../PlantMarks.tsx';
+import { Bar, type Frame } from '../kit/sheet.tsx';
+import { flagLines, unknownWords } from '../kit/flags.ts';
+import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from '../kit/names.ts';
+import { PIN, SPROUT, WARN } from '../kit/icons.tsx';
+import { drafts, type CorrectionField } from '../kit/correction.ts';
+import { pageData } from '../kit/page.ts';
+import { later } from '../lazy.tsx';
+
+// The correction form, a sheet part: a chunk that does not come closes the dialog with the toast.
+const correction = later(() => import('../Correction.tsx').then((m) => m.default), { onFail: 'closeSheet' });
 
 // ---- words ----
 
@@ -55,55 +43,6 @@ function DataText({ text }: { text: { en: string } & Partial<Record<string, stri
   const own = text[lang()];
   return own ? <>{own}</> : <span lang="en">{text.en}</span>;
 }
-
-// Focus back to the opener when the last sheet closes.
-let opener: HTMLElement | null = null, openerPlant: PlantId | null = null, wasOpen = false;
-if (typeof document !== 'undefined') {
-  effect(() => {
-    const s = store.sheet.value;
-    if (s && !wasOpen) {
-      const a = document.activeElement;
-      opener = a instanceof HTMLElement && a !== document.body ? a : null;
-      openerPlant = s.id;
-    }
-    if (!s && wasOpen) {
-      const back = opener, plant = openerPlant;
-      opener = null;
-      requestAnimationFrame(() => {
-        const again = plant ? document.querySelector<HTMLElement>(`[data-plant-id="${CSS.escape(plant)}"]`) : null;
-        const target = back?.isConnected ? back : again ?? document.querySelector<HTMLElement>('.ct-toast-undo');
-        target?.focus();
-      });
-    }
-    wasOpen = !!s;
-  });
-}
-
-// A sheet module loaded on first use (a browser-test build can make it fail: test-hook.ts failSheets,
-// since the page preloads every chunk and the network cannot).
-type SheetModule = { default: ComponentType<Record<string, unknown>> };
-const loaded = new Map<() => Promise<SheetModule>, ComponentType<Record<string, unknown>>>();
-function Lazy({ load, props = {} }: { load: () => Promise<SheetModule>; props?: Record<string, unknown> }) {
-  const [View, setView] = useState<ComponentType<Record<string, unknown>> | null>(() => loaded.get(load) ?? null);
-  useEffect(() => {
-    if (View) return;
-    let live = true;
-    const fail = __CT_TEST_HOOK__ && testFault.sheets;
-    (fail ? Promise.reject(new Error('test: sheet chunk blocked')) : load()).then((m) => { loaded.set(load, m.default); if (live) setView(() => m.default); })
-      .catch((err: unknown) => {
-        console.error(`Consortium: a sheet did not load: ${(err as Error).message}`);
-        if (!live) return;
-        closeSheet();
-        showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => location.reload() });
-      });
-    return () => { live = false; };
-  }, [load]);
-  return View ? h(View, props) : null;
-}
-const loadSwap = () => import('./Swap.tsx') as Promise<SheetModule>;
-const loadAdd = () => import('./Add.tsx') as Promise<SheetModule>;
-const loadPaste = () => import('./Paste.tsx') as Promise<SheetModule>;
-const loadCorrection = () => import('./Correction.tsx') as unknown as Promise<SheetModule>;
 
 // ---- the plant dialog ----
 
@@ -175,7 +114,7 @@ function SourceItem({ id, facts }: { id: string; facts: PlantFacts | null }) {
   return href ? <a class="text-link" href={href} rel="noopener">{s.label}</a> : <>{s.label}</>;
 }
 
-function PlantDetails({ id }: { id: PlantId }) {
+export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const t = taxonOf(id);
   // The list the plant was placed from (a borrowed placement's curated list, a guest's list, else the
   // climate): only curated lists have reasons and climate months, so the sheet reads and names that list.
@@ -234,7 +173,7 @@ function PlantDetails({ id }: { id: PlantId }) {
   ];
 
   return (
-    <SheetFrame titleId="ct-d-title" class="ct-details" head={<span class="ct-muted">{layerOf(t)}{s ? ` · ${phasePlain(s.from)}` : ''}</span>}>
+    <Frame titleId="ct-d-title" class="ct-details" head={<span class="ct-muted">{layerOf(t)}{s ? ` · ${phasePlain(s.from)}` : ''}</span>}>
       {image && (
         <figure class="ct-photo">
           <img src={image.url} alt={T('details.photoAlt', { name: nameOf(t) })} loading="lazy" decoding="async" width={480} height={360} />
@@ -366,7 +305,7 @@ function PlantDetails({ id }: { id: PlantId }) {
         <section class="ct-correct" aria-labelledby="ct-corr-title">
           <h3 id="ct-corr-title">{T('correction.title')}</h3>
           {correcting
-            ? <Lazy load={loadCorrection} props={{ fields, plantId: id, plantName: t.canonical_name, plantLabel: nameOf(t), release, climate: zone, climateLabel: zoneName(zone), onCancel: () => setCorrecting(false), focusFirst: byReader.current }} />
+            ? <correction.View drafts={drafts} fields={fields} plantId={id} plantName={t.canonical_name} plantLabel={nameOf(t)} release={release} climate={zone} climateLabel={zoneName(zone)} onCancel={() => setCorrecting(false)} focusFirst={byReader.current} />
             : <>
                 <p class="ct-muted">{T('correction.lede')}</p>
                 <p><button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => { byReader.current = true; setCorrecting(true); }}>{T('correction.open')}</button></p>
@@ -374,27 +313,6 @@ function PlantDetails({ id }: { id: PlantId }) {
         </section>
       )}
       <p class="ct-muted ct-small">{T('release', { id: release })}</p>
-    </SheetFrame>
+    </Frame>
   );
 }
-
-function Router() {
-  const s = store.sheet.value;
-  if (!s || store.load.value.status !== 'ready') return null;
-  switch (s.kind) {
-    // Keyed by opening: every sheet opened (details → Swap, one plant → another) mounts a fresh dialog
-    // whose close listener knows its own sheet (SheetFrame).
-    case 'details': return s.id ? <PlantDetails key={`details:${s.n}`} id={s.id} /> : null;
-    case 'swap': return s.id ? <Lazy key={`swap:${s.n}`} load={loadSwap} props={{ id: s.id }} /> : null;
-    case 'add': return <Lazy key={`add:${s.n}`} load={loadAdd} props={{ mode: 'add' }} />;
-    case 'search': return <Lazy key={`search:${s.n}`} load={loadAdd} props={{ mode: 'search' }} />;
-    case 'paste': return <Lazy key={`paste:${s.n}`} load={loadPaste} />;
-    default: return null; // share and download are stream S4's
-  }
-}
-
-function S3Views() {
-  return <><Router /><Toast /></>;
-}
-
-export const Details: ComponentType | null = S3Views;

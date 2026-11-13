@@ -7,8 +7,8 @@
 //   (matrix, phone grid and stepper, side view, Jobs, the plant list) from store.view;
 // - Actions (S4): Share, Download for Canopi, Print (the print sheet) and the link notices (unknown
 //   plants, cut lists), after the matrix;
-// - Details (S3): the plant dialog and every S3 sheet; Details.tsx routes store.sheet itself
-//   (details, Swap, Add, Search, Paste, the toast).
+// - Sheets: the sheets' router and the toast; views/Sheets.tsx routes store.sheet itself (the plant
+//   dialog, Swap, Add, Search, Paste, each loaded on first use) and renders the toast.
 import type { ComponentType } from 'preact';
 import { load } from './store.ts';
 import { T } from './strings.ts';
@@ -16,7 +16,7 @@ import type { LoadFailure } from '../../lib/consortium/source.ts';
 import { Start } from './views/Start.tsx';
 import { Matrix } from './views/Matrix.tsx';
 import { Actions } from './views/Actions.tsx';
-import { Details } from './views/Details.tsx';
+import { Sheets } from './views/Sheets.tsx';
 
 export interface AppProps {
   // The noscript guide link, reused under the failure screens.
@@ -55,7 +55,7 @@ export function App({ guide, onRetry }: AppProps) {
     <>
       {slot(Start)}
       {status !== 'ready' ? <p class="status-line" aria-busy="true">{T('load.plants')}</p> : <>{slot(Matrix)}{slot(Actions)}</>}
-      {slot(Details)}
+      <Sheets />
     </>
   );
 }
