@@ -19,3 +19,5 @@ export * from './future.ts';
 export * from './marks.ts';
 // S5b: the location core (Köppen zone, borderline).
 export * from './site-climate.ts';
+// E6 commit 0: the one search fold (Add, Start's crop search, the plant list; design check A9).
+export * from './fold.ts';

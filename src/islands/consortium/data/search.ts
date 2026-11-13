@@ -1,17 +1,11 @@
 // The folded-name search (A6; stream S1), apart from the PlantSource: Add and Paste use it, and were
 // it in data/sqlite-source.ts, that module would leave the loader's chunk (outside the island's 60 KB
 // budget, beside the sqlite glue it needs) for a chunk shared with the sheets, counted in the budget.
-import type { Locale, PlantId } from '../../../lib/consortium/index.ts';
+import { fold, type Locale, type PlantId } from '../../../lib/consortium/index.ts';
 
-// A name as search compares it, the same for names and the query: lower case; ß, œ and æ written
-// out (Weißdorn = weissdorn, cœur = coeur); combining marks removed only after a Latin, Greek or
-// Cyrillic letter (é = e, ё = е, ά = α), then composed again (NFC), so a mark that makes another
-// letter stays: Korean syllables are not split into jamo (배 is no prefix of 백합) and kana keep their
-// voicing (ばら is not はら).
-const MARKED = /([\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}])\p{M}+/gu;
-const WRITTEN_OUT: Record<string, string> = { ß: 'ss', œ: 'oe', æ: 'ae' };
-export const fold = (text: string): string =>
-  text.toLowerCase().replace(/[ßœæ]/g, (c) => WRITTEN_OUT[c]).normalize('NFD').replace(MARKED, '$1').normalize('NFC');
+// fold lives in the core leaf src/lib/consortium/fold.ts (E6 design check A9), re-exported here for
+// the callers that read it from this module (paste.ts).
+export { fold };
 
 const WORD = /[\p{L}\p{N}]/u;
 // Scripts written without spaces between words: a query in them matches anywhere in a name.

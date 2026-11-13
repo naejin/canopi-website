@@ -7,14 +7,15 @@
 // JavaScript budget for P5", amended; check-built-site.mjs).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chunkRoles, importsOf, moduleGraph, onDemandChunks, P5_FEATURE_ENTRIES } from './built-modules.mjs';
+import { chunkRoles, importsOf, LAZY_ENTRIES, moduleGraph, onDemandChunks, P5_FEATURE_ENTRIES } from './built-modules.mjs';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const graphOf = (edges) => new Map(Object.entries(edges).map(([p, imports]) => [p, { code: '', imports }]));
 const noFeatures = { location: [], markProviders: [], future: [], pool: [], likely: [], native: [] };
-const none = { features: noFeatures, maplibre: [], maplibreCss: [] };
+const noLazy = { details: [], sheets: [], later: [], suggest: [], range: [] };
+const none = { features: noFeatures, maplibre: [], maplibreCss: [], lazy: noLazy };
 const roles = (features, maplibre = []) => ({ ...none, features: { ...noFeatures, ...features }, maplibre });
 
 test('chunkRoles: the location entry and the mark providers by their entry module, MapLibre by its modules, its worker and the CSS they import', () => {
@@ -34,10 +35,28 @@ test('chunkRoles: the location entry and the mark providers by their entry modul
     features: { ...noFeatures, location: ['/_astro/where.b.js'], markProviders: ['/_astro/mark-providers.f.js'], future: ['/_astro/f.h.js'] },
     maplibre: ['/_astro/index.e.js', '/_astro/maplibre-gl-worker.d.js'],
     maplibreCss: ['/_astro/where.c.css'],
+    lazy: noLazy,
   });
   assert.deepEqual(Object.keys(P5_FEATURE_ENTRIES), Object.keys(noFeatures), 'the feature entries, listed once');
   assert.deepEqual(chunkRoles({ '_astro/main.a.js': bundle['_astro/main.a.js'] }), none, 'no location, MapLibre or providers chunk: no roles');
   assert.deepEqual(chunkRoles({ 'a.js': chunk('a.js', '/x.ts', ['/x.ts'], [], 'new Worker("/_astro/other.g.js")'), '_astro/other.g.js': bundle['_astro/other.g.js'] }), none, 'a worker no location or MapLibre chunk names is not MapLibre\'s');
+});
+
+test('chunkRoles: the lazy island parts by their entry module (E6 commit 0), apart from the features', () => {
+  const root = '/w/e6';
+  const chunk = (fileName, facadeModuleId) => ({ type: 'chunk', fileName, facadeModuleId, moduleIds: [facadeModuleId ?? '/x.ts'], code: '', viteMetadata: { importedCss: new Set(), importedAssets: new Set() } });
+  const bundle = Object.fromEntries([
+    ['_astro/Add.a.js', `${root}/src/islands/consortium/views/Add.tsx`],
+    ['_astro/Swap.b.js', `${root}/src/islands/consortium/views/Swap.tsx`],
+    ['_astro/later.c.js', `${root}/src/islands/consortium/views/later.ts`],
+    ['_astro/Details.d.js', `${root}/src/islands/consortium/views/details/Details.tsx`],
+    ['_astro/suggest.e.js', `${root}/src/lib/consortium/suggest.ts`],
+    ['_astro/range.f.js', `${root}/src/lib/consortium/range.ts`],
+    ['_astro/shared.g.js', null],
+  ].map(([f, id]) => [f, chunk(f, id)]));
+  assert.deepEqual(chunkRoles(bundle).lazy, { details: ['/_astro/Details.d.js'], sheets: ['/_astro/Add.a.js', '/_astro/Swap.b.js'], later: ['/_astro/later.c.js'], suggest: ['/_astro/suggest.e.js'], range: ['/_astro/range.f.js'] });
+  assert.deepEqual(chunkRoles(bundle).features, noFeatures, 'a lazy part is not a P5 feature (budgets unchanged until B4)');
+  assert.deepEqual(Object.keys(LAZY_ENTRIES), Object.keys(noLazy), 'the lazy entries, listed once');
 });
 
 test('onDemandChunks: no roles, nothing is on demand', () => {

@@ -6,6 +6,9 @@
 // paths and failure states), each "P5-n (S5x …)" for that file's stream; the harness self-checks
 // "P5-0… (commit 0 …)" are in consortium-commit0. S5e's specs (P5.2) wait, todo, outside the glob in
 // pending/. The seams are split by owner too: consortium-seams-p2/-layout/-p5 (E1 design check A6).
+// E6 (commit 0): consortium-e6 (owners K1, K3, B4 by chunk) and consortium-e6-r4 (R4) hold E6's user
+// paths, each "E6-n (<owner> …)", written failing with scripts/expect-fail.mjs failing() (the
+// expected-fail marker, owner in the title); a marker turns red once its test passes.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -14,15 +17,16 @@ const dir = new URL('./browser/', import.meta.url);
 const files = readdirSync(dir).filter((f) => f.endsWith('.browser.test.mjs')).sort();
 const read = (f) => readFileSync(new URL(f, dir), 'utf8');
 // Top-level test titles and their options text: test('title', { … }, …) or test('title', async …).
-const testsOf = (text) => [...text.matchAll(/^test\('((?:\\'|[^'])+)',\s*(\{[^}]*\})?/gm)].map(([, title, opts]) => ({ title: title.replace(/\\'/g, "'"), opts: opts ?? '' }));
+const testsOf = (text) => [...text.matchAll(/^(test|failing)\('((?:\\'|[^'])+)',\s*(\{[^}]*\})?/gm)].map(([, kind, title, opts]) => ({ title: title.replace(/\\'/g, "'"), opts: opts ?? '', marked: kind === 'failing' }));
 
 const SPEC_FILES = [
   'consortium-commit0.browser.test.mjs',
+  'consortium-e6-r4.browser.test.mjs', 'consortium-e6.browser.test.mjs',
   'consortium-p5-s5b.browser.test.mjs', 'consortium-p5-s5c.browser.test.mjs', 'consortium-p5-s5d.browser.test.mjs', 'consortium-p5-s5f.browser.test.mjs',
   'consortium-s1.browser.test.mjs', 'consortium-s2.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs',
   'consortium-seams-layout.browser.test.mjs', 'consortium-seams-p2.browser.test.mjs', 'consortium-seams-p5.browser.test.mjs',
 ];
-test('one browser test file for commit 0, one per P2 stream, one per P5 stream and one per seams owner, nothing else', () => {
+test('one browser test file for commit 0, one per P2 stream, one per P5 stream, one per seams owner and two for E6, nothing else', () => {
   assert.deepEqual(files, SPEC_FILES);
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.match(pkg.scripts['test:browser'], /node scripts\/browser\/run\.mjs --list local$/);
@@ -34,7 +38,7 @@ test('one browser test file for commit 0, one per P2 stream, one per P5 stream a
 test('every browser test runs: no todo, no skip, in any file but a P5 stream\'s (H8)', () => {
   for (const file of files.filter((f) => !f.startsWith('consortium-p5-'))) {
     const text = read(file);
-    assert.ok(testsOf(text).length >= (/-(s1|seams-p5)\./.test(file) ? 2 : 5), file);
+    assert.ok(testsOf(text).length >= (/-(s1|seams-p5|e6-r4)\./.test(file) ? 2 : 5), file);
     assert.doesNotMatch(text, /\btodo\s*:|\bskip\s*:|\.todo\(|\.skip\(/, file);
   }
 });
@@ -242,4 +246,30 @@ test('@real-data is a title suffix only, and the real-data tests carry it (A9)',
   for (const t of titles.filter((x) => x.includes('@real-data'))) assert.match(t, / @real-data$/, t);
   assert.ok(titles.filter((x) => x.endsWith(' @real-data')).length >= 10);
   assert.ok(titles.some((x) => x.startsWith('P1: SQLite-WASM') && x.endsWith('@real-data')));
+});
+
+// E6 (commit 0, design check §5.6): each E6 spec names its owner, the one its file holds in the owners
+// file (consortium-e6: K1, K3, B4; consortium-e6-r4: R4); a marked spec is a failing() call whose
+// owner is the one in its title, and the markers are counted (zero before a push to master:
+// node scripts/expect-fail.mjs --zero).
+const E6_OWNERS = { 'consortium-e6.browser.test.mjs': ['K1', 'K3', 'B4'], 'consortium-e6-r4.browser.test.mjs': ['R4'] };
+test('E6 specs: each "E6-n (<owner> …)" names an owner its file holds; each marker names the owner of its title', async () => {
+  const { markers } = await import('./expect-fail.mjs');
+  const marked = markers().filter((m) => m.file.startsWith('browser/consortium-e6'));
+  for (const [file, owners] of Object.entries(E6_OWNERS)) {
+    const tests = testsOf(read(file));
+    assert.ok(tests.length >= 2, `${file} has tests`);
+    for (const { title, marked: isMarked } of tests) {
+      const owner = title.match(/^E6-\d+[a-z]? \((\w+)\b/)?.[1];
+      assert.ok(owner && owners.includes(owner), `${file}: "${title}" names one of ${owners.join(', ')}: E6-n (<owner> …)`);
+      if (isMarked) assert.ok(marked.some((m) => m.title === title && m.owner === owner && m.file === `browser/${file}`), `"${title}": its marker names ${owner}`);
+    }
+  }
+  const { readFileSync: read2 } = await import('node:fs');
+  const owners = JSON.parse(read2(new URL('./plan/e6-owners.json', import.meta.url), 'utf8'));
+  for (const [file, list] of Object.entries(E6_OWNERS)) {
+    for (const owner of list) {
+      assert.ok(owners.chunks.some((c) => c.streams[owner]?.files.includes(`scripts/browser/${file}`)), `the owners file gives ${file} to ${owner} in its chunk`);
+    }
+  }
 });

@@ -17,7 +17,9 @@
     [
       "consortium-s2.browser.test.mjs",
       "consortium-seams-layout.browser.test.mjs",
-      "consortium-commit0.browser.test.mjs"
+      "consortium-commit0.browser.test.mjs",
+      "consortium-e6.browser.test.mjs",
+      "consortium-e6-r4.browser.test.mjs"
     ]
   ],
   "ci": [
@@ -34,7 +36,9 @@
     [
       "consortium-p5-s5c.browser.test.mjs",
       "consortium-commit0.browser.test.mjs",
-      "consortium-s1.browser.test.mjs"
+      "consortium-s1.browser.test.mjs",
+      "consortium-e6.browser.test.mjs",
+      "consortium-e6-r4.browser.test.mjs"
     ],
     [
       "consortium-s2.browser.test.mjs",

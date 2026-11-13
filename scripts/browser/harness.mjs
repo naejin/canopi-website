@@ -95,11 +95,12 @@ export function servedDatabase(kind, fx) {
 }
 
 // The URLs of each chunk role of the served build, flat by role name (the feature chunks location,
-// markProviders, future, pool, likely, native, then maplibre and maplibreCss), for faults set by
-// role. The roles are read by their one owner, built-modules.mjs readChunkRoles.
+// markProviders, future, pool, likely, native, then maplibre and maplibreCss, then the E6 lazy parts
+// details, sheets, later, suggest, range), for faults set by role. The roles are read by their one
+// owner, built-modules.mjs readChunkRoles.
 const roleUrls = (builtDir) => {
-  const { features, maplibre, maplibreCss } = readChunkRoles(join(builtDir, 'client'));
-  return { ...features, maplibre, maplibreCss };
+  const { features, maplibre, maplibreCss, lazy } = readChunkRoles(join(builtDir, 'client'));
+  return { ...features, maplibre, maplibreCss, ...lazy };
 };
 
 export async function startHarness({ log = () => {}, dir } = {}) {
@@ -188,9 +189,11 @@ export async function startHarness({ log = () => {}, dir } = {}) {
   // - timeouts: { stall, read, suggest } in ms shortens the page's download stall (data/load.ts), its
   //   climate tile read (views/location/location.tsx) and Suggest's wait (memory.ts), test build only;
   // - geoTimeoutMs: with geolocation 'timeout', TIMEOUT comes after min(the call's timeout, this);
-  // - block: { <role>: 404 | 'offline' } fails a chunk role of consortium-chunks.json (pool,
-  //   location, future, markProviders, maplibre, …) from the first request; page.blocked lists each
-  //   URL so answered;
+  // - block: { <role>: 404 | 'offline' | 'hold' } fails a chunk role of consortium-chunks.json (pool,
+  //   location, future, markProviders, maplibre, details, sheets, later, suggest, range, …) from the
+  //   first request; page.blocked lists each URL so answered; 'hold' (E6 commit 0) answers nothing
+  //   until `await page.releaseHeld()` lets every held request through (and any later one), and
+  //   page.held lists the URLs held;
   // - setup: async (page) => {} runs just before the navigation (extra evaluateOnNewDocument scripts).
   async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, island = null, wasmFile = null, storage = true, correction = null, geolocation = null, nominatim = null, mapTiles = null, webgl = true, climateTiles = null, hook = false, timeouts = null, geoTimeoutMs = null, block = null, setup = null } = {}) {
     alive();
@@ -264,6 +267,13 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     }
     page.thirdParty = [];
     page.blocked = [];
+    page.held = [];
+    const heldRequests = [];
+    let holding = true;
+    page.releaseHeld = async () => {
+      holding = false;
+      for (const r of heldRequests.splice(0)) if (!r.isInterceptResolutionHandled()) await r.continue().catch(() => {});
+    };
     page.nominatim = [];
     const p5 = !!(geolocation || nominatim || mapTiles || !webgl || climateTiles);
 
@@ -291,6 +301,12 @@ export async function startHarness({ log = () => {}, dir } = {}) {
         const url = new URL(request.url());
         if (url.origin === site.url && blockedUrls.has(url.pathname)) {
           const how = blockedUrls.get(url.pathname);
+          if (how === 'hold') {
+            if (!holding) return request.continue();
+            page.held.push(url.pathname);
+            heldRequests.push(request);
+            return;
+          }
           page.blocked.push(url.pathname);
           return how === 'offline' ? request.abort('internetdisconnected') : request.respond({ status: Number(how), contentType: 'text/plain', body: 'Not found' });
         }

@@ -407,3 +407,37 @@ export interface Mark { kind: MarkKind; key: string; vars?: Record<string, strin
 // tight; Add and Details have room for words.
 export const markSurfaces = ['chip', 'row', 'add', 'details'] as const;
 export type MarkSurface = (typeof markSurfaces)[number];
+
+// ---- E6 seams (commit 0; ADR-6, decisions/consortium-site-facts.md): types only, no reader yet ----
+
+// Where a plant's placement comes from (stream R4 replaces Taxon.from / placedFrom / estimate with one
+// `origin`): its own climate's list, a guest added from another list ("Add anyway"), or a list a site
+// of an uncovered climate borrowed (an estimate). Non-guests of the climate's own list are not stamped.
+export type PlacementKind = 'own' | 'guest' | 'borrowed';
+export interface PlacementOrigin { list: ClimateZone; kind: PlacementKind }
+
+// One site-fit message (stream R2, rules/site-fit.ts): the one vocabulary Flags (Add, Swap) and site
+// Marks (chips, rows, Details) both derive from. about: the site answer or the climate check it
+// concerns; key: a consortium.* string key without its prefix, read with T(key, vars).
+export interface SiteFitMessage {
+  id: PlantId;
+  about: SiteKey | 'climate';
+  severity: MarkSeverity;
+  asks: boolean; // Add and Swap ask before adding (today's misfit flags)
+  key: string;
+  vars?: Record<string, string | number>;
+}
+
+// The plant facts that depend on the site and the climate period (ADR-6; owner row "Site- and
+// time-dependent plant facts"): only these go through factAt; other traits stay plain reads.
+export type FactKey = 'life_cycle' | 'cold_limit' | 'heat_limit' | 'water_need';
+export interface FactValues {
+  life_cycle: 'annual' | 'perennial' | 'grown_as_annual';
+  cold_limit: { tminColdC: number; weak: boolean }; // coldest-month minimum the plant is recorded at
+  heat_limit: { tmaxWarmC: number }; // warmest-month maximum
+  water_need: { drought: string; moisture: string | null };
+}
+// A fact as a period sees it (SitePeriod.period: '1991-2020', '2041-2070', '2071-2099'), null when not
+// recorded. Stream R4 implements it returning the stored value; F2 computes per site and period
+// behind the same signature; E7 reads scoped stored facts (most specific wins).
+export type FactAt = <K extends FactKey>(key: K, taxon: Taxon, site: SiteLookup | null, period: string) => FactValues[K] | null;

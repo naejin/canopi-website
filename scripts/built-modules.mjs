@@ -137,8 +137,22 @@ export const P5_FEATURE_ENTRIES = {
   likely: /\/src\/islands\/consortium\/views\/likely\/likely\.tsx$/, // S5e, if not tiny
   native: /\/src\/islands\/consortium\/views\/native\/native\.tsx$/, // S5e, if not tiny
 };
+// E6 commit 0 (design check A3, A10, A11; L1-L12): the lazy island parts, each found by its entry
+// module like the features, for faults by role (the harness's `block`) and, from stream B4, the
+// per-chunk caps and the modulepreload filter. Kept apart from the features until B4 merges them,
+// so the P5 feature budget and onDemandChunks are unchanged. Empty where the entry is not its own
+// chunk yet: details (K3 moves Details there), suggest (R4's loadSuggest), range (R2's loadRangeRule).
+// sheets: the sheet modules Details loads on first use today; later: views/later.ts (views/lazy.tsx).
+export const LAZY_ENTRIES = {
+  details: /\/src\/islands\/consortium\/views\/details\/Details\.tsx$/, // K3
+  sheets: /\/src\/islands\/consortium\/views\/(Add|Swap|Paste|Correction)\.tsx$/, // K3
+  later: /\/src\/islands\/consortium\/views\/later\.ts$/, // K3
+  suggest: /\/src\/lib\/consortium\/suggest\.ts$/, // R4
+  range: /\/src\/lib\/consortium\/range\.ts$/, // R2
+};
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
 const emptyFeatures = () => Object.fromEntries(Object.keys(P5_FEATURE_ENTRIES).map((k) => [k, []]));
+const emptyLazy = () => Object.fromEntries(Object.keys(LAZY_ENTRIES).map((k) => [k, []]));
 export function chunkRoles(bundle) {
   const files = Object.values(bundle);
   const chunks = files.filter((f) => f.type === 'chunk');
@@ -153,16 +167,17 @@ export function chunkRoles(bundle) {
     features: Object.fromEntries(Object.entries(byRole).map(([k, list]) => [k, list.map(path).sort()])),
     maplibre: [...maplibreJs, ...workers].map(path).sort(),
     maplibreCss: [...css].map(path).sort(),
+    lazy: Object.fromEntries(Object.entries(LAZY_ENTRIES).map(([k, re]) => [k, chunks.filter((c) => re.test(id(c))).map(path).sort()])),
   };
 }
 // The roles of a build (root: the served directory, dist/client or dist-test/client): none when the
 // file is missing (a build without the plugin), so the checks fail on a missing chunk.
 export function readChunkRoles(root) {
-  const none = { features: emptyFeatures(), maplibre: [], maplibreCss: [] };
+  const none = { features: emptyFeatures(), maplibre: [], maplibreCss: [], lazy: emptyLazy() };
   for (const file of [join(root, '..', CHUNK_ROLES_FILE), join(root, CHUNK_ROLES_FILE)]) {
     if (existsSync(file)) {
       const r = JSON.parse(readFileSync(file, 'utf8'));
-      return { ...none, ...r, features: { ...none.features, ...r.features } };
+      return { ...none, ...r, features: { ...none.features, ...r.features }, lazy: { ...none.lazy, ...r.lazy } };
     }
   }
   return none;
