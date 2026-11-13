@@ -338,7 +338,15 @@ jobs:
           live=
           while :; do
             i=$((i + 1))
-            live=$(curl -fsS --max-time 15 -H 'Cache-Control: no-cache' "$url?ci=$GITHUB_RUN_ID-$i" 2>/dev/null | jq -r '.sha // empty' 2>/dev/null || true)
+            # The status and the start of any other answer are printed: a block (a bot challenge on the
+            # runner's address) must read as that, not as "Cloudflare did not ship it".
+            code=$(curl -sS --max-time 15 -A 'canopi-website-ci (GitHub Actions)' -H 'Cache-Control: no-cache' -o body.json -w '%{http_code}' "$url?ci=$GITHUB_RUN_ID-$i" 2>curl.err || true)
+            if [ "$code" = 200 ]; then
+              live=$(jq -r '.sha // empty' body.json 2>/dev/null || true)
+            else
+              live=
+              echo "check $i: HTTP ${code:-none} $(head -c 200 body.json 2>/dev/null | tr -s '\n' ' ') $(head -c 200 curl.err)"
+            fi
             if [ "$live" = "$GITHUB_SHA" ]; then
               echo "Live: $GITHUB_SHA (after $i checks)."
               echo "Live at projectcanopi.com: \`$GITHUB_SHA\`." >> "$GITHUB_STEP_SUMMARY"
