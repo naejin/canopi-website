@@ -29,12 +29,9 @@ export interface Sheet { kind: SheetKind; id: PlantId | null; n: number }
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'failed';
 export interface Load { status: LoadStatus; error: LoadFailure | null }
 
-export { DEFAULT_SITE } from './state/schema.ts';
-
 // ---- state ----
 // The consortium's fields are declared once in state/schema.ts (what each is, whether Undo, the save
 // and the link hold it, who watches it); their signals are re-exported here under their names.
-export type { Consortium } from './state/schema.ts';
 // climate, country, site; the plant lists members (in the order added), kept (pinned: a new suggestion
 // keeps them), removed (taken out: a new suggestion leaves them out), guests (from another climate's
 // list, A9) and crops (the crop examples the reader ticked on Start); the stage the side view, stepper

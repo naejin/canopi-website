@@ -30,10 +30,10 @@
 import { computed, effect, signal, untracked } from '@preact/signals';
 import type { ClimateZone, LinkOrigin, PlantId, ShareState } from '../../../lib/consortium/index.ts';
 import { encodeLink, LINK_VERSION } from '../../../lib/consortium/index.ts';
-import type { Consortium, Country, CountrySource } from '../store.ts';
+import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
-import type { ShareInput } from './schema.ts';
+import type { Consortium, ShareInput } from './schema.ts';
 
 export const STORE = 'canopi-consortium';
 export const COUNTRY_STORE = 'canopi-country';
