@@ -1,6 +1,6 @@
 // The JavaScript a built page loads, followed through its import graph (review C8, design check §8
-// and A2). Used by astro.config.mjs (the consortium page's modulepreload links, written after the
-// build) and by scripts/check-built-site.mjs (the island's 60 KB gzip budget).
+// and A2; E6 A5, A14). Used by astro.config.mjs (the consortium page's modulepreload links, written
+// after the build, and the chunk roles) and by scripts/check-built-site.mjs (the per-chunk caps).
 //
 // Entries are the page's module scripts (src), its modulepreload links and the imports of its inline
 // module scripts. Each chunk's imports are the static `from "./x.js"` / `import "./x.js"` and the
@@ -71,8 +71,8 @@ export function moduleGraph(root, html) {
   return graph;
 }
 
-// The chunk holding the sqlite-wasm glue (and the loader that imports it statically): left out of
-// the island's budget (§8) and loaded only once the island asks for it.
+// The chunk holding the sqlite-wasm glue (and the loader that imports it statically): outside the
+// island's caps (§8), modulepreloaded because the first view waits for it.
 export const isSqliteGlue = (code) => code.includes('sqlite3_deserialize') && /sqlite3\.[\w-]+\.wasm/.test(code);
 
 // The chunks reachable from `from` without entering any chunk of `stop` (paths of a moduleGraph).
@@ -98,8 +98,8 @@ export function islandChunks(graph, pageEntries) {
   return { entry: main[0], chunks: [...reachable(graph, main)].filter((p) => !pageWide.has(p) && !isSqliteGlue(graph.get(p).code)) };
 }
 
-// The island's first run (§8, P2 budget): the chunks its entry imports statically, so evaluated
-// before the matrix can draw; what it imports with import() (the sheets, the views after the matrix)
+// The island's first run (§8, P2 budget; 40 KB cap): the chunks its entry imports statically, so
+// evaluated before the matrix can draw; what it imports with import() (the sheets, the views after the matrix)
 // is left out. Static imports in the built code: `import … from "./x.js"`, `import "./x.js"`,
 // `export … from "./x.js"`.
 const STATIC_IMPORT = /(?:^|[^\w$.])(?:import|export)\s*(?:[\w$*{}\s,]+?\s*from\s*)?["']([^"']+\.js)["']/g;
@@ -116,20 +116,33 @@ export function firstRunChunks(graph, island) {
   return [...seen];
 }
 
-// P5 (commit 0): the roles the build gives chunks, read from Rollup's own bundle in generateBundle
-// (astro.config.mjs canopi:consortium-chunk-roles writes them to <outDir>/consortium-chunks.json,
-// outside the served files), so no chunk is found by its file name:
-// - features: the P5 feature chunks, each found by its entry module (P5_FEATURE_ENTRIES, the one
-//   list): loaded only once the reader gives a location or opens a climate that borrows plants, never
-//   modulepreloaded, ≤ 30 KB together (the location chunk alone ≤ 20 KB), outside the island's 60 KB;
+// The roles the build gives chunks (P5 commit 0; E6 stream B4 merged the lazy island parts in), read
+// from Rollup's own bundle in writeBundle (astro.config.mjs canopi:consortium-chunk-roles writes them to
+// <outDir>/consortium-chunks.json, outside the served files), so no chunk is found by its file name:
+// - features: every on-demand part of the island, by role (ROLE_ENTRIES, the one list): the P5
+//   features (loaded once the reader gives a location or opens a climate that borrows plants) and the
+//   E6 lazy parts (the plant dialog, the sheets, the views after the matrix, suggest; views/lazy.tsx
+//   prefetches them once the data is ready or the consortium is first on screen). None is
+//   modulepreloaded; each has its own cap (check-built-site.mjs ROLE_CAPS). The key keeps its P5 name
+//   because the browser harness reads it (harness.mjs roleUrls);
 // - maplibre: the chunks holding node_modules/maplibre-gl modules, and the worker files (emitted .js
 //   assets; maplibre's ?worker&url) that a location or MapLibre chunk names;
 // - maplibreCss: the CSS the location and MapLibre chunks import (maplibre-gl.css; Vite merges a
-//   chunk's CSS into one file), counted in MapLibre's 330 KB.
-// Paths as the page names them ('/_astro/x.js'), sorted. A stream that moves its content into a
-// feature chunk names its entry file as listed here (a missing entry is simply no chunk).
+//   chunk's CSS into one file), counted in MapLibre's 330 KB;
+// - css: the CSS files Vite attaches to any role chunk ({ '/_astro/x.js': ['/_astro/y.css'] }), so
+//   check-built-site can refuse a stylesheet that arrives with a lazy part (A14: it would flash).
+// A role's chunks are those whose facade is a module its pattern names, and those holding such a module
+// that is reached only through import() (moduleInfo: Rollup's this.getModuleInfo; no module imports it
+// statically): when another chunk imports a binding from an entry module's chunk (Correction importing
+// the correction drafts that live in the plant dialog's chunk), Rollup drops that chunk's facade
+// (facadeModuleId null), and only its module list still names the entry (K3 hand-off, measured
+// 2026-11-13). A module also imported statically (suggest.ts, in the island's entry until R4's
+// loadSuggest) gives no chunk its role: the role stays empty, and check-built-site says so.
+// Paths as the page names them ('/_astro/x.js'), sorted. A stream that moves code into a part names
+// its entry file here (a missing entry is simply no chunk).
 export const CHUNK_ROLES_FILE = 'consortium-chunks.json';
-export const P5_FEATURE_ENTRIES = {
+export const ROLE_ENTRIES = {
+  // P5 features
   location: /\/src\/islands\/consortium\/views\/location\/location\.tsx$/, // S5b
   markProviders: /\/src\/lib\/consortium\/mark-providers\.ts$/, // S5c, S5d, S5e marks
   future: /\/src\/islands\/consortium\/views\/future\/future\.tsx$/, // S5d
@@ -137,68 +150,108 @@ export const P5_FEATURE_ENTRIES = {
   likely: /\/src\/islands\/consortium\/views\/likely\/likely\.tsx$/, // S5e, if not tiny
   native: /\/src\/islands\/consortium\/views\/native\/native\.tsx$/, // S5e, if not tiny
   // The range rule (core marks.ts loadRangeRule; E6 design check A10): loaded once the site location
-  // has a climate, like the features, so never modulepreloaded and outside the island's 62 KB.
+  // has a climate.
   range: /\/src\/lib\/consortium\/range\.ts$/, // R2
-};
-// E6 commit 0 (design check A3, A10, A11; L1-L12): the lazy island parts, each found by its entry
-// module like the features, for faults by role (the harness's `block`) and, from stream B4, the
-// per-chunk caps and the modulepreload filter. Kept apart from the features until B4 merges them,
-// so the P5 feature budget and onDemandChunks are unchanged. Empty where the entry is not its own
-// chunk yet: details (K3 moves Details there), suggest (R4's loadSuggest). (range, R2's loadRangeRule, is a P5 feature above.)
-// sheets: the sheet modules Details loads on first use today; later: views/later.ts (views/lazy.tsx).
-export const LAZY_ENTRIES = {
-  details: /\/src\/islands\/consortium\/views\/details\/Details\.tsx$/, // K3
+  // E6 lazy island parts (design check A5, A6, A11; L1-L12)
+  details: /\/src\/islands\/consortium\/views\/details\/Details\.tsx$/, // K3: the plant dialog
   sheets: /\/src\/islands\/consortium\/views\/(Add|Swap|Paste|Correction)\.tsx$/, // K3
-  later: /\/src\/islands\/consortium\/views\/later\.ts$/, // K3
-  suggest: /\/src\/lib\/consortium\/suggest\.ts$/, // R4
+  later: /\/src\/islands\/consortium\/views\/later\.ts$/, // K3: the views after the matrix
+  suggest: /\/src\/lib\/consortium\/suggest\.ts$/, // R4: loadSuggest
 };
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
-const emptyFeatures = () => Object.fromEntries(Object.keys(P5_FEATURE_ENTRIES).map((k) => [k, []]));
-const emptyLazy = () => Object.fromEntries(Object.keys(LAZY_ENTRIES).map((k) => [k, []]));
-export function chunkRoles(bundle) {
+const emptyRoles = () => Object.fromEntries(Object.keys(ROLE_ENTRIES).map((k) => [k, []]));
+const norm = (id) => (id ?? '').split('?')[0].replaceAll('\\', '/');
+export function chunkRoles(bundle, moduleInfo = null) {
   const files = Object.values(bundle);
   const chunks = files.filter((f) => f.type === 'chunk');
-  const id = (f) => (f.facadeModuleId ?? '').split('?')[0].replaceAll('\\', '/');
   const path = (f) => `/${typeof f === 'string' ? f : f.fileName}`;
-  const byRole = Object.fromEntries(Object.entries(P5_FEATURE_ENTRIES).map(([k, re]) => [k, chunks.filter((c) => re.test(id(c)))]));
-  const maplibreJs = chunks.filter((c) => (c.moduleIds ?? []).some((m) => MAPLIBRE_MODULE.test(m.replaceAll('\\', '/'))));
+  const lazyOnly = (m) => { const info = moduleInfo?.(m); return !!info && info.dynamicImporters.length > 0 && info.importers.length === 0; };
+  const holds = (c, re) => re.test(norm(c.facadeModuleId)) || (c.moduleIds ?? []).some((m) => re.test(norm(m)) && lazyOnly(m));
+  const byRole = Object.fromEntries(Object.entries(ROLE_ENTRIES).map(([k, re]) => [k, chunks.filter((c) => holds(c, re))]));
+  const maplibreJs = chunks.filter((c) => (c.moduleIds ?? []).some((m) => MAPLIBRE_MODULE.test(norm(m))));
   const named = [...byRole.location, ...maplibreJs];
   const workers = files.filter((f) => f.type === 'asset' && f.fileName.endsWith('.js') && named.some((c) => c.code.includes(f.fileName.split('/').pop())));
-  const css = new Set(named.flatMap((c) => [...(c.viteMetadata?.importedCss ?? [])]));
+  const cssOf = (c) => [...(c.viteMetadata?.importedCss ?? [])];
+  const css = new Set(named.flatMap(cssOf));
+  const roleCss = Object.fromEntries([...new Set(Object.values(byRole).flat())].filter((c) => cssOf(c).length).map((c) => [path(c), cssOf(c).map(path).sort()]).sort(([a], [b]) => a.localeCompare(b)));
   return {
     features: Object.fromEntries(Object.entries(byRole).map(([k, list]) => [k, list.map(path).sort()])),
     maplibre: [...maplibreJs, ...workers].map(path).sort(),
     maplibreCss: [...css].map(path).sort(),
-    lazy: Object.fromEntries(Object.entries(LAZY_ENTRIES).map(([k, re]) => [k, chunks.filter((c) => re.test(id(c))).map(path).sort()])),
+    css: roleCss,
   };
 }
 // The roles of a build (root: the served directory, dist/client or dist-test/client): none when the
 // file is missing (a build without the plugin), so the checks fail on a missing chunk.
 export function readChunkRoles(root) {
-  const none = { features: emptyFeatures(), maplibre: [], maplibreCss: [], lazy: emptyLazy() };
+  const none = { features: emptyRoles(), maplibre: [], maplibreCss: [], css: {} };
   for (const file of [join(root, '..', CHUNK_ROLES_FILE), join(root, CHUNK_ROLES_FILE)]) {
     if (existsSync(file)) {
       const r = JSON.parse(readFileSync(file, 'utf8'));
-      return { ...none, ...r, features: { ...none.features, ...r.features }, lazy: { ...none.lazy, ...r.lazy } };
+      return { ...none, ...r, features: { ...none.features, ...r.features } };
     }
   }
   return none;
 }
 
 // The chunks loaded only when the reader asks for them (paths of a moduleGraph, sorted):
-// - features: every P5 feature chunk and the chunks only feature chunks reach (MapLibre aside);
-// - location: the location chunk and what only it reaches (not shared with another feature);
-// - maplibre: MapLibre's chunks and worker and what only they reach.
-// entries: the page's own entries (its module scripts).
-export function onDemandChunks(graph, entries, roles) {
+// - parts: every role chunk and the chunks only role chunks reach (MapLibre aside);
+// - location: the location chunk and what only it reaches (not shared with another part);
+// - maplibre: MapLibre's chunks and worker and what only they reach;
+// - costs: per role chunk, the gzip bytes a first use of it fetches: the chunk and its static imports
+//   that the page has not loaded already (not in the always-loaded set, not MapLibre). Its import()s,
+//   and another role chunk it imports statically (the correction form importing the drafts from the
+//   plant dialog's chunk, which opened it), are other parts, costed on their own.
+// entries: the page's own entries (its module scripts). size: (path) => bytes.
+export function onDemandChunks(graph, entries, roles, size = () => 0) {
   const inGraph = (list) => list.filter((p) => graph.has(p));
   const maplibreRoots = inGraph(roles.maplibre);
-  const featureRoots = inGraph(Object.values(roles.features).flat());
-  const locationRoots = inGraph(roles.features.location);
-  const always = reachable(graph, entries, new Set([...maplibreRoots, ...featureRoots]));
+  const partRoots = inGraph(Object.values(roles.features).flat());
+  const locationRoots = inGraph(roles.features.location ?? []);
+  const always = reachable(graph, entries, new Set([...maplibreRoots, ...partRoots]));
   const maplibre = [...reachable(graph, maplibreRoots)].filter((p) => !always.has(p));
-  const features = [...reachable(graph, featureRoots, new Set(maplibreRoots))].filter((p) => !always.has(p) && !maplibre.includes(p));
-  const others = reachable(graph, featureRoots.filter((p) => !locationRoots.includes(p)), new Set([...maplibreRoots, ...locationRoots]));
+  const parts = [...reachable(graph, partRoots, new Set(maplibreRoots))].filter((p) => !always.has(p) && !maplibre.includes(p));
+  const others = reachable(graph, partRoots.filter((p) => !locationRoots.includes(p)), new Set([...maplibreRoots, ...locationRoots]));
   const location = [...reachable(graph, locationRoots, new Set(maplibreRoots))].filter((p) => !always.has(p) && !maplibre.includes(p) && !others.has(p));
-  return { features: features.sort(), location: location.sort(), maplibre: maplibre.sort() };
+  const loaded = new Set([...always, ...maplibre]);
+  const costs = Object.fromEntries([...new Set(partRoots)].sort().map((r) => {
+    const own = staticClosure(graph, [r], new Set(partRoots.filter((p) => p !== r))).filter((p) => !loaded.has(p));
+    return [r, { chunks: own.sort(), bytes: own.reduce((n, p) => n + size(p), 0) }];
+  }));
+  return { parts: parts.sort(), location: location.sort(), maplibre: maplibre.sort(), costs };
+}
+
+// The chunks `roots` need before they can run: themselves and their static imports, transitively
+// (paths of a moduleGraph; import() is not followed), without entering a chunk of `stop`.
+export function staticClosure(graph, roots, stop = new Set()) {
+  const seen = new Set();
+  const stack = [...roots];
+  while (stack.length) {
+    const p = stack.pop();
+    if (seen.has(p) || stop.has(p) || !graph.has(p)) continue;
+    seen.add(p);
+    for (const [, spec] of graph.get(p).code.matchAll(STATIC_IMPORT)) stack.push(...importsOf(`"${spec}"`, p));
+  }
+  return [...seen];
+}
+
+// Design check A5 (L5): the modulepreload links of a page holding #ct-root: the first-run closure only,
+// so nothing lazy competes with the database download on a slow phone. That is what the first view
+// waits for: the page's module scripts' static imports (the site chrome), the island's entry chunk
+// (imported by the page script with import()) and its static imports, and the chunk holding the data
+// loader with the sqlite-wasm glue (imported by the entry with import(), awaited before the matrix
+// can draw) with its static imports. Nothing else reached only through import() is preloaded: not the
+// sheets, the plant dialog, the views after the matrix, suggest, the P5 features or MapLibre (one rule,
+// not a role list). The module scripts themselves are already loaded by their <script src>.
+export function modulepreloadChunks(graph, html) {
+  const scripts = [];
+  const inline = [];
+  for (const [tag, body] of html.matchAll(MODULE_SCRIPT)) {
+    const src = tag.slice(0, tag.indexOf('>')).match(SRC)?.[1];
+    if (src) scripts.push(src);
+    else for (const [, spec] of body.matchAll(STATIC_IMPORT)) inline.push(...importsOf(`"${spec}"`, '/index.js'));
+  }
+  const island = islandChunks(graph, scripts);
+  const glue = [...graph].filter(([, m]) => isSqliteGlue(m.code)).map(([p]) => p);
+  return staticClosure(graph, [...scripts, ...inline, island.entry, ...glue]).filter((p) => !scripts.includes(p)).sort();
 }
