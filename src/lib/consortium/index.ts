@@ -10,7 +10,6 @@ export * from './site.ts';
 export * from './conflicts.ts';
 export * from './jobs.ts';
 export * from './matrix.ts';
-export * from './suggest.ts';
 export * from './state.ts';
 // P5 seams (commit 0), each filled by one stream (.local/consortium/v2/p5-owners.md).
 export * from './range.ts';
@@ -27,3 +26,15 @@ export * from './fold.ts';
 export { siteIdOf, zoneOfSiteId, type SiteId } from './zones.ts';
 // E6 R1: the nearest-list table, a leaf.
 export * from './nearest.ts';
+
+// E6 R4 (design check A11): the suggestion and the Swap list (suggest.ts), their own chunk (role
+// `suggest`, scripts/built-modules.mjs LAZY_ENTRIES), off the first run, so this barrel does not
+// re-export them: this loader is the page's only way in (store.ts suggestRule); node tests import
+// suggest.ts directly. Loaded once; a failed load clears the promise, so the next call tries again.
+export interface SuggestRule { suggest: typeof import('./suggest.ts').suggest; alternatives: typeof import('./suggest.ts').alternatives }
+let suggestLoading: Promise<SuggestRule> | null = null;
+export function loadSuggest(): Promise<SuggestRule> {
+  // Destructured, so Rollup keeps only these two exports of the chunk's facade.
+  suggestLoading ??= import('./suggest.ts').then(({ suggest, alternatives }): SuggestRule => ({ suggest, alternatives }), (err: unknown) => { suggestLoading = null; throw err; });
+  return suggestLoading;
+}

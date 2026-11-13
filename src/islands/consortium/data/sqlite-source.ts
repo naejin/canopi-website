@@ -215,7 +215,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
     },
     // P5 seam (commit 0): stream S5c owns this method's body and nobody else edits it. The plants of a
     // climate the export does not curate, each placed from the first list of `order` that places it
-    // (core placement.ts placeFor), with Taxon.estimate true and Taxon.placedFrom that list. Read once
+    // (core placement.ts placeFor), with Taxon.origin { list: that list, kind: 'borrowed' }. Read once
     // per climate and kept (the same objects every time), in the curated pools' order (by name). An
     // order naming no curated climate gives nothing: "Not covered yet".
     async borrowed(zone, order) {
@@ -234,7 +234,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       // The first list of the order that places it (placement.ts firstPlaced, placeFor's one rule; zone is uncurated).
       p = [...records.values()].flatMap((r): Taxon[] => {
         const hit = firstPlaced(r, zone, order);
-        return hit ? [{ ...hit.value, placedFrom: hit.zone, estimate: true }] : [];
+        return hit ? [{ ...hit.value, origin: { list: hit.zone, kind: 'borrowed' } }] : [];
       }).sort((a, b) => (a.canonical_name < b.canonical_name ? -1 : a.canonical_name > b.canonical_name ? 1 : 0));
       pools.set(zone, p);
       return p;

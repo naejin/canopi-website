@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { asks as asksFlags } from '../../../lib/consortium/index.ts';
+import { asGuest, asks as asksFlags } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/search.ts';
 import { addMembers, closeSheet, flagsOfPlant, sheetCell } from '../store.ts';
 import { Ask, Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
@@ -100,7 +100,7 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
         if (own.has(hit.id) || seen.has(hit.id) || members.includes(hit.id)) continue;
         seen.add(hit.id);
         const t = byId.get(hit.id);
-        if (t) { const g = { ...t, from: z }; out.push({ t: g, from: z, flags: flagsOfPlant(g) }); }
+        if (t) { const g = asGuest(t, z); out.push({ t: g, from: z, flags: flagsOfPlant(g) }); }
       }
     }
     return out;

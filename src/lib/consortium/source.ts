@@ -2,7 +2,7 @@
 // implements it with SQL over the gzipped SQLite export (src/islands/consortium/data/sqlite-source.ts,
 // stream S1); the app can implement it over its own catalogue later. Plain records only: the core
 // computes the matrix, site fit and reason counts from pool(), so every source gets them free.
-import type { ClimateZone, Details, Interaction, Labels, Locale, Placement, PlantId, SourceInfo, Stratum, Taxon } from './types.ts';
+import type { ClimateZone, Details, FactAt, FactKey, FactValues, Interaction, Labels, Locale, Placement, PlantId, SourceInfo, Stratum, Taxon } from './types.ts';
 
 export interface PlantSource {
   info(): SourceInfo;
@@ -11,7 +11,7 @@ export interface PlantSource {
   // (not in info().climates), borrowed(c, NEAREST_LISTS[c]).
   pool(c: ClimateZone): Promise<Taxon[]>;
   // P5 seam (commit 0, S5c owns the sqlite-source body): an uncurated climate's plants placed from the
-  // nearest curated lists in `order` (placement.ts), each with estimate true and placedFrom set.
+  // nearest curated lists in `order` (placement.ts), each with origin { list, kind: 'borrowed' }.
   borrowed(zone: ClimateZone, order: readonly ClimateZone[]): Promise<Taxon[]>;
   // Interactions that apply in c: every one with no climate, plus c's intercropped yield gains.
   // Ranks (genus, family) are matched in the core.
@@ -32,3 +32,29 @@ export interface PlantSource {
 // differ from the index (the Reload screen, never a partial render).
 export const loadFailures = ['too-old', 'wasm-blocked', 'wasm-fetch', 'fetch', 'stale', 'damaged', 'schema'] as const;
 export type LoadFailure = (typeof loadFailures)[number];
+
+// ---- factAt (ADR-6, E6 R4): the plant facts that depend on the site and the climate period ----
+
+// The period a view reads today's facts for (SitePeriod.period of the historical scenario).
+export const TODAY_PERIOD = '1991-2020';
+// Each fact as the PlantSource stored it (null: not recorded, never a misfit). Read through factAt only,
+// so F2 (per site and period) and E7 (scoped stored facts) change one place, not the views.
+const STORED: { [K in FactKey]: (t: Taxon) => FactValues[K] | null } = {
+  life_cycle: ({ traits: tr }) =>
+    tr.is_annual === true ? 'annual' : tr.grown_as_annual === true ? 'grown_as_annual' : tr.is_perennial === true ? 'perennial' : null,
+  cold_limit: ({ climate }) => {
+    const r = climate?.tminCold;
+    return r && r.low !== null ? { tminColdC: r.low, weak: r.weak === true } : null;
+  },
+  heat_limit: ({ climate }) => {
+    const high = climate?.tmaxWarm?.high ?? null;
+    return high === null ? null : { tmaxWarmC: high };
+  },
+  water_need: ({ traits: tr }) => {
+    const drought = tr.drought_tolerance ?? null, moisture = tr.moisture_use ?? null;
+    return drought === null && moisture === null ? null : { drought, moisture };
+  },
+};
+// A fact of a plant at a site in a period: today the stored value whatever the site and period (the
+// signature is the seam F2 and E7 fill).
+export const factAt: FactAt = (key, taxon) => STORED[key](taxon);

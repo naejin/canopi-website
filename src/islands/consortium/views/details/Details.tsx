@@ -15,7 +15,7 @@ import * as store from '../../store.ts';
 import { closeSheet, openSheet, removeMember, taxonOf, toggleKeep } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Details as PlantFacts, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { jobsOf, pairings, phaseOrd, placementZone } from '../../../../lib/consortium/index.ts';
+import { TODAY_PERIOD, borrowedFrom, factAt, guestOf, jobsOf, pairings, phaseOrd, placementZone, siteIdOf } from '../../../../lib/consortium/index.ts';
 import { layerRows, type Words } from '../layers.ts';
 import { spanOf } from '../kit/span.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
@@ -58,6 +58,9 @@ interface Trait { field: string; label: string; text: string; raw: unknown }
 
 function traitsOf(t: Taxon, labels: Labels): Trait[] {
   const tr = t.traits, unknown = T('unknown');
+  // Water need is a site- and period-dependent fact (ADR-6): read through factAt, today's value.
+  const water = factAt('water_need', t, store.location.value?.lookup ?? null, TODAY_PERIOD);
+  const drought = water?.drought ?? null, moisture = water?.moisture ?? null;
   const label = (field: string, v: string | null) => (v === null ? unknown : labels[field]?.[v]?.[lang() as Locale] ?? v);
   const light = [tr.sun && T('details.sun'), tr.semi_shade && T('details.semiShade'), tr.full_shade && T('details.shade')].filter((x): x is string => !!x);
   const ph = tr.soil_ph && (tr.soil_ph.min !== null || tr.soil_ph.max !== null) ? `${tr.soil_ph.min !== null ? num(tr.soil_ph.min) : '?'}–${tr.soil_ph.max !== null ? num(tr.soil_ph.max) : '?'}` : unknown;
@@ -68,8 +71,8 @@ function traitsOf(t: Taxon, labels: Labels): Trait[] {
     { field: 'width_max_m', label: T('t.width'), text: tr.width_max_m != null ? T('meters', { v: num(tr.width_max_m) }) : unknown, raw: tr.width_max_m },
     { field: 'sun', label: T('t.light'), text: light.length ? listOf(light) : unknown, raw: { sun: tr.sun, semi_shade: tr.semi_shade, full_shade: tr.full_shade } },
     { field: 'soil_ph', label: T('t.ph'), text: ph, raw: tr.soil_ph },
-    { field: 'drought_tolerance', label: T('t.drought'), text: label('drought_tolerance', tr.drought_tolerance), raw: tr.drought_tolerance },
-    { field: 'moisture_use', label: T('t.moisture'), text: label('moisture_use', tr.moisture_use), raw: tr.moisture_use },
+    { field: 'drought_tolerance', label: T('t.drought'), text: label('drought_tolerance', drought), raw: drought },
+    { field: 'moisture_use', label: T('t.moisture'), text: label('moisture_use', moisture), raw: moisture },
     { field: 'habit', label: T('t.habit'), text: label('habit', tr.habit), raw: tr.habit },
     { field: 'deciduous_evergreen', label: T('t.leaf'), text: label('deciduous_evergreen', tr.deciduous_evergreen), raw: tr.deciduous_evergreen },
     { field: 'hardiness_zone', label: T('details.hardiness'), text: zone, raw: tr.hardiness_zone },
@@ -119,6 +122,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   // The list the plant was placed from (a borrowed placement's curated list, a guest's list, else the
   // climate): only curated lists have reasons and climate months, so the sheet reads and names that list.
   const zone = t ? placementZone(t, store.climate.value) : null;
+  const guest = t && guestOf(t), borrowed = t && borrowedFrom(t);
   const [facts, setFacts] = useState<PlantFacts | null>(null);
   const [labels, setLabels] = useState<Labels>({});
   // A plant with a draft (closed by Escape or the backdrop) opens with its form and text back.
@@ -189,7 +193,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
         <p class="ct-marks">
           {crop && <span class="ct-tag">{SPROUT}{T('mainCrop')}</span>}
           {!crop && kept && <span class="ct-tag">{PIN}{T('keptTag')}</span>}
-          {t.from && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(t.from) })}</span>}
+          {guest && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(guest) })}</span>}
           {lines.filter((l) => l.kind !== 'soft').length > 0 && <span class="ct-flag">{WARN}{P('details.warnCount', lines.filter((l) => l.kind !== 'soft').length)}</span>}
           <PlantMarks taxon={t} surface="details" />
         </p>
@@ -200,7 +204,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
         <p><strong>{layerOf(t)}</strong>{t.stratum && <> · {T(`stratum.${t.stratum.value}.needs`)}</>}</p>
         <Bar taxon={t} />
         <p>{spanWords(t)}</p>
-        {(t.from || t.placedFrom) && <p class="ct-muted">{T('details.fromListNote')}</p>}
+        {t.origin && <p class="ct-muted">{T('details.fromListNote')}</p>}
       </section>
 
       {member && (
@@ -217,7 +221,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
 
       <section aria-labelledby="ct-d-why">
         <h3 id="ct-d-why">{T('why')}</h3>
-        {t.placedFrom && <p class="ct-muted" data-why-borrowed={t.placedFrom.toLowerCase()}>{T(`estimate.from${t.placedFrom}`)}</p>}
+        {borrowed && <p class="ct-muted" data-why-borrowed={siteIdOf(borrowed)}>{T(`estimate.from${borrowed}`)}</p>}
         {!facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
           : facts.reasons.length ? (
             <ul class="ct-reasons">

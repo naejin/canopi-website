@@ -10,6 +10,7 @@
 import { computed } from '@preact/signals';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import type { PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
+import { guestOf } from '../../../lib/consortium/index.ts';
 import { crops, flags, kept, openSheet, type SheetFor } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { PlantMarks } from './PlantMarks.tsx';
@@ -37,7 +38,8 @@ export function plantLabel(t: Taxon): string {
   parts.push(`${t.stratum ? layerName(t.stratum.value) : T('matrix.noLayer')}, ${spanWords(t)}.`);
   if (crops.value.includes(t.id)) parts.push(`${T('matrix.mainCrop')}.`);
   else if (kept.value.includes(t.id)) parts.push(`${T('matrix.kept')}.`);
-  if (t.from) parts.push(`${T('matrix.from', { list: listName(t.from) })}.`);
+  const guest = guestOf(t);
+  if (guest) parts.push(`${T('matrix.from', { list: listName(guest) })}.`);
   const w = warnings.value.get(t.id) ?? 0;
   if (w) parts.push(`${P('matrix.warnings', w)}.`);
   parts.push(T('matrix.open'));
@@ -47,14 +49,14 @@ export function plantLabel(t: Taxon): string {
 // A plant's marks. tight (matrix chips): glyphs with hidden words; else the Main crop tag in words.
 export function Marks({ taxon, tight = false }: { taxon: Taxon; tight?: boolean }) {
   const isCrop = crops.value.includes(taxon.id), isKept = !isCrop && kept.value.includes(taxon.id);
-  const w = warnings.value.get(taxon.id) ?? 0;
+  const w = warnings.value.get(taxon.id) ?? 0, guest = guestOf(taxon);
   return (
     <>
       {isCrop && (tight
         ? <span class="ct-glyph" title={T('matrix.mainCrop')}><SproutIcon /><span class="visually-hidden">{T('matrix.mainCrop')}</span></span>
         : <span class="ct-tag ct-tag-crop"><SproutIcon />{T('matrix.mainCrop')}</span>)}
       {isKept && <span class="ct-glyph" title={T('matrix.kept')}><PinIcon /><span class="visually-hidden">{T('matrix.kept')}</span></span>}
-      {taxon.from && !tight && <span class="ct-tag">{T('matrix.from', { list: listName(taxon.from) })}</span>}
+      {guest && !tight && <span class="ct-tag">{T('matrix.from', { list: listName(guest) })}</span>}
       {w > 0 && <span class="ct-flag" title={P('matrix.warnings', w)}><WarnIcon /><span aria-hidden="true">{w}</span><span class="visually-hidden">{P('matrix.warnings', w)}</span></span>}
       <PlantMarks taxon={taxon} surface={tight ? 'chip' : 'row'} />
     </>

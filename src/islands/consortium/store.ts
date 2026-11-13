@@ -5,8 +5,8 @@
 // inside the computed bodies, the core calls they own (matrix: S1 lib/consortium/matrix.ts; flags:
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
-import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
-import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
+import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, SuggestRule, Taxon } from '../../lib/consortium/index.ts';
+import { asGuest, buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, needsMarkProviders } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -98,6 +98,26 @@ export const rangeFailed = computed(() => rangeBroken.value && siteClimate.value
 // The rule's load in flight (settled once rangeRule or rangeBroken is set): loadPool waits for it, so a
 // caller that awaited the pool finds it readable.
 let rangeLoad: Promise<void> | null = null;
+// The suggestion and the Swap list (core suggest.ts, design check A11): their own chunk (core
+// loadSuggest), off the first run, asked for once a database is open (setSource, as the data turns
+// ready) and again by a Suggest press while it is missing (state/suggest-wait.ts requestSuggest). The
+// plant lists never wait for it: a Suggest pressed before it arrives waits for it, and Swap shows its
+// loading line. suggestFailed: the last try did not load (offline, or a deploy since the page loaded);
+// the waiting Suggest ends with a toast and Reload (L8), Swap says it in place, and the next press
+// imports it again (a retry clears it while it runs; Chrome answers a failed module from its module
+// map without a request, so there the retry fails at once and Reload is the way back).
+export const suggestRule = signal<SuggestRule | null>(null);
+export const suggestFailed = signal(false);
+let suggestLoad: Promise<void> | null = null;
+export function wantSuggest(): void {
+  if (suggestRule.peek() || suggestLoad) return;
+  suggestFailed.value = false;
+  suggestLoad = loadSuggest().then((r) => { suggestRule.value = r; }, (err: unknown) => {
+    suggestLoad = null;
+    console.error(`Consortium: the suggestion did not load: ${(err as Error).message}`);
+    suggestFailed.value = true;
+  });
+}
 const withRule = <T>(p: Promise<T>): Promise<T> => (siteClimate.peek() && !rangeRule.peek() && rangeLoad ? Promise.all([p, rangeLoad]).then(([x]) => x) : p);
 // Whether the location gave a climate (core siteToday is non-null; inlined to keep the rule off the first run).
 export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
@@ -119,13 +139,13 @@ export const fitPool = computed<Taxon[] | null>(() => {
   return p && (rule ? rule.withinRange(p, location.value, members.value) : p);
 });
 
-// The guests as plants: each with its home climate's placement and `from` set (A9), once that
-// climate's pool is read.
+// The guests as plants: each with its home climate's placement and a guest origin (A9; ADR-6
+// asGuest), once that climate's pool is read.
 export const guestTaxa = computed<Taxon[]>(() => {
   const out: Taxon[] = [];
   for (const [id, from] of Object.entries(guests.value)) {
     const t = from ? pools.value[from]?.find((x) => x.id === id) : undefined;
-    if (t && from) out.push({ ...t, from });
+    if (t && from) out.push(asGuest(t, from));
   }
   return out;
 });
@@ -252,6 +272,9 @@ export function setSource(next: PlantSource | null, close: (() => void) | null =
   try { prev?.(); } catch (err) { console.error(`Consortium data: closing the previous database: ${(err as Error).message}`); }
   source.value = next;
   closeCurrent = next ? close : null;
+  // The suggestion's chunk, once a database is open (main.ts sets the source as the data turns ready;
+  // nothing lazy before it, L5).
+  if (next) wantSuggest();
 }
 
 // Keeps the chosen climate's pool and every guest list's pool read as soon as the database is open,
@@ -282,7 +305,11 @@ export function suggestMembers(): boolean {
   // missing rule is a failed one (store.pool waits for it otherwise).
   const scene = { curated: source.peek()?.info().climates ?? [], siteClimate: siteClimate.value, rangeFailed: !rule, nothingFits: false };
   if (needsSite(climate.value!, scene) || needsRule(climate.value!, scene)) return false;
-  const s = suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
+  // The suggestion's chunk (suggestRule) not here: Suggest waits for it, or says it failed
+  // (state/suggest-wait.ts).
+  const algo = suggestRule.value;
+  if (!algo) return false;
+  const s = algo.suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
   kept.value = keep;
   members.value = s.members;
   return true;
@@ -339,7 +366,7 @@ export function taxonOf(id: PlantId): Taxon | null {
   if (own) return own;
   for (const [zone, list] of Object.entries(pools.value)) {
     const t = list?.find((x) => x.id === id);
-    if (t) return { ...t, from: zone as ClimateZone };
+    if (t) return asGuest(t, zone as ClimateZone);
   }
   return null;
 }

@@ -19,7 +19,8 @@ let cap: ReturnType<typeof setTimeout> | undefined;
 // the effect in watchSuggest runs it once its lists are read, and dropSuggest ends it: when the reader
 // changes the plants or opens a sheet (another action: Add, search, Details, paste; Start's "Start
 // empty and search" too), when the plant list fails (the load screen says so), or once its 10 s are
-// up with a kept guest's list still unread (a toast says so). Each wait therefore ends.
+// up with a kept guest's list still unread (a toast says so), or when the suggestion's chunk fails (a
+// toast with Reload). Each wait therefore ends.
 const SUGGEST_WAIT_MS = 10_000;
 function dropSuggest(): void {
   if (!pendingSuggest.peek()) return;
@@ -43,6 +44,8 @@ export function requestSuggest(): void {
   // round 2, 3).
   // Each press has its own 10 s: an earlier press's timer is cleared (review round 3, 1).
   if (!pendingSuggest.peek()) { clearTimeout(cap); waited.value = false; }
+  // The suggestion's chunk still missing (or failed before: tried again, L8): this press waits for it.
+  store.wantSuggest();
   const busy = lookups.peek() && !waited.peek();
   if (!busy && store.suggestMembers()) { clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
   // A browser test may shorten the wait in the test build (window.__ctTimeouts.suggest; A4, as in
@@ -55,8 +58,15 @@ export function requestSuggest(): void {
 export function watchSuggest(): void {
   // "Suggest plants" pressed early runs when the climate's plants (and every guest list) are read.
   effect(() => {
+    void store.suggestRule.value; // the suggestion's chunk arriving after a restore's list (store.ts suggestRule)
     if (!pendingSuggest.value || !store.pool.value || store.guestsPending.value.length || (lookups.value && !waited.value)) return;
     queueMicrotask(() => { if (pendingSuggest.peek()) requestSuggest(); });
+  });
+  // ... or ends, with a toast and Reload, when the suggestion's chunk fails (L8): a press whose chunk
+  // failed always says so, whatever else it waited for.
+  effect(() => {
+    if (!store.suggestFailed.value || !untracked(() => pendingSuggest.value)) return;
+    untracked(() => { dropSuggest(); store.showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => globalThis.location.reload() }); });
   });
   // ... unless the reader changed the plants, opened a sheet, or the plant list failed meanwhile.
   let primed = false;

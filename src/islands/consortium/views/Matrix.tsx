@@ -24,7 +24,7 @@
 import type { ComponentType } from 'preact';
 import { useEffect } from 'preact/hooks';
 import type { Matrix as MatrixData, MatrixCell, PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { strata } from '../../../lib/consortium/index.ts';
+import { guestOf, strata } from '../../../lib/consortium/index.ts';
 import { climate, marksFailed, matrix, memberTaxa, members, missingMembers, view, type View } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { COLLAPSED_CHIPS, MAX_TRACKS, PHASE_ORDS, SHARE_AIM, cellOrder, rowPieces, spanOf, spans, tracksOf } from './tracks.ts';
@@ -99,15 +99,16 @@ const keepNumbers = (text: string) => text.split(/(\S*\d\S*)/).map((part, i) => 
 
 const GROUPS: readonly { key: string; span: number }[] = [{ key: 'placenta', span: 3 }, { key: 'secondary', span: 3 }, { key: 'climax', span: 1 }];
 
-// performance.mark('ct:matrix') once per page, when the consortium is first on screen, whichever view
-// shows it (the matrix, the side view, Jobs or the list): S4's timing script waits for it. Rendered
+// performance.mark('ct:first-view') once per page, when the consortium is first on screen, whichever
+// view shows it (the matrix, the side view, Jobs or the list; Palette in F1a): the timing script waits
+// for it (design check A7, renamed from ct:matrix). Rendered
 // inside the views, so its effect runs after the browser painted them.
 let marked = false;
 function FirstPaint() {
   useEffect(() => {
     if (marked || typeof performance === 'undefined') return;
     marked = true;
-    performance.mark('ct:matrix');
+    performance.mark('ct:first-view');
     prefetchLater();
   }, []);
   return null;
@@ -218,7 +219,7 @@ function Chip({ taxon: t, phase, compact = false }: { taxon: Taxon; phase: Phase
   const span = spanOf(t)!, start = phase === span.from, end = phase === span.to;
   const cls = ['ct-pchip'];
   if (!compact) { if (!end) cls.push('cont-r'); if (!start) cls.push('cont-l'); }
-  if (t.from) cls.push('is-guest');
+  if (guestOf(t)) cls.push('is-guest');
   if (start) {
     return (
       <button type="button" class={cls.join(' ')} data-plant-id={t.id} aria-label={plantLabel(t)} title={`${nameOf(t)} — ${t.canonical_name}`} onClick={() => openDetails(t.id)}>

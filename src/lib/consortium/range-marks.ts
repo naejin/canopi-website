@@ -18,13 +18,16 @@
 //   (rangeCheck coolSeason) gets instead "grow in the cool season" on rows and in Add and "Too hot in
 //   summer here: grow it in the cool season." in Details (decision row "Climate ranges fixed before
 //   the P5 push"); the CSS wraps every non-chip mark, so neither outgrows a phone row.
-// - With or without a location: 'estimate' on a plant placed from a nearest list (placement.ts);
+// - With or without a location: 'estimate' on a plant placed from a nearest list (Taxon.origin
+//   borrowed, placement.ts borrowedFrom);
 //   without a site climate, also "give your site's location to check it" (not on chips).
 // Chips (desktop matrix) get the short words.
 import type { ClimateZone, Mark, MarkSurface, Taxon } from './types.ts';
 import type { MarkContext } from './marks.ts';
 import type { RangeBound, RangeSide } from './range.ts';
 import { isAnnual, RANGE_BOUNDS, rangeCheck, siteToday } from './range.ts';
+import { borrowedFrom } from './placement.ts';
+import { siteIdOf } from './zones.ts';
 
 // Every key written out (consortium.* strings, S5c block), so a key check can find them.
 const VERDICT_KEYS: Record<'edge' | 'outside', Record<MarkSurface, string>> = {
@@ -70,9 +73,10 @@ export function rangeMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface)
     else if (!tight && isAnnual(taxon)) out.push({ kind: 'unknown', key: surface === 'details' ? 'range.annual' : 'range.annualShort', severity: 'note', state: 'annual' });
     if (surface === 'details' && aridity === 'not-checked') out.push({ kind: 'unknown', key: 'range.aridityNotChecked', severity: 'note', state: 'aridity' });
   }
-  if (taxon.estimate && taxon.placedFrom) {
-    const key = (!tight && ESTIMATE_KEYS[taxon.placedFrom]) || 'estimate.short';
-    out.push({ kind: 'estimate', key, severity: 'note', state: taxon.placedFrom.toLowerCase() });
+  const from = borrowedFrom(taxon);
+  if (from) {
+    const key = (!tight && ESTIMATE_KEYS[from]) || 'estimate.short';
+    out.push({ kind: 'estimate', key, severity: 'note', state: siteIdOf(from) });
     // A borrowed plant with no site climate (a link or a saved consortium opened without a location):
     // nothing checked it against a real place yet (decision row "P5 fixes from the UX audit" (1)).
     if (!tight && !siteToday(ctx.location)) out.push({ kind: 'estimate', key: 'estimate.noSite', severity: 'note', state: 'no-site' });
