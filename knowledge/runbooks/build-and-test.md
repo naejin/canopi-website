@@ -4,7 +4,7 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:21:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T14:30:44Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
@@ -22,8 +22,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d93324757e80faab
-    last_modified: 2026-11-13T12:00:16Z
+    digest: sha256:757da247c4d5eb7a
+    last_modified: 2026-11-13T13:05:42Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -98,7 +98,7 @@ sources:
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
     digest: sha256:c6e5a6214d2abebc
-    last_modified: 2026-11-13T12:18:58Z
+    last_modified: 2026-11-13T12:33:29Z
 enforced_by:
   - scripts/package.test.mjs
   - sgconfig.yml
@@ -111,7 +111,7 @@ Setting up a working copy, building, and running checks before pushing to `maste
 
 # Steps
 
-Node >= 22.13.0 (`node:sqlite` without a flag); `.node-version` pins 22.22.0 for CI and Workers Builds. Hooks: run `git config core.hooksPath .githooks` once in the main checkout (`npm run hooks:install` prints it); `.githooks/pre-commit` runs ast-grep on staged scripts, `.githooks/pre-push` runs `npm run check`, `npm test` and `npm run check:arch` (skipped for documentation-only ranges) and the zero-marker check on master pushes (`.githooks/zero-markers`: `warn` today).
+Node >= 22.13.0 (`node:sqlite` without a flag); `.node-version` pins 22.22.0 for CI and Workers Builds. Hooks: run `git config core.hooksPath .githooks` once in the main checkout (`npm run hooks:install` prints it); `.githooks/pre-commit` runs ast-grep on staged scripts, `.githooks/pre-push` runs `npm run check`, `npm test` and `npm run check:arch` (skipped for documentation-only ranges) and the zero-marker check on master pushes (`.githooks/zero-markers`: `fail` since the E6 chunk-5 exit, so any expected-fail marker left blocks a master push).
 
 | Purpose | Command |
 |---|---|

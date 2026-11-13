@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: Phases, the final remaining order after the 2026-11-12 plan review, exits, coordinator choices and owner actions for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate.
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T11:55:43Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T14:30:44Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -188,6 +188,7 @@ Loop per step: steps with more than one stream (E6, F1a, F1b, F2, F4, F5, F3) ru
   3. **One confidence model (ADR-7, written here):** one vocabulary for edge, estimate, disputed (today's `weak` rows; the D7 marker read later), not checked, scenario spread, borrowed list; applied to marks, rows and Details.
   4. **Balance panel:** separate checks, no score, each for the site and its period: family spread; climate-margin spread; flowering calendar with gaps (months shown only when recorded in the site's hemisphere, "recorded in {region}" otherwise, never shifted; when few plants have months the check says "not enough data: n of m plants recorded" instead of drawing a calendar); mycorrhizal mix; ground covered and evergreen/deciduous mix; soil builders; water-needs mix; food across the year where ripening months are recorded. Checks waiting for data (roots, insect-habitat months, active season) show what is missing, never a pass. Each check says what to add, and "Find…" opens Add with presets.
 - **Carried in from E6 (coordinator, 2026-11-13):** the slow-phone path's next lever is preloading the 398 KB sqlite wasm (`<link rel="preload" as="fetch" crossorigin>` in `ConsortiumPage.astro`; it starts at about 3.9 s and ends at about 7.5 s after the database today, B4 measurement, about 1 s to gain); the `later` chunk sits 0.35 KB under its 8 KB A14 maximum, so F1a's new views go into their own lazy parts (one role and cap each, ADR-2) rather than growing `later.ts`, and raising the 8 KB maximum is an ADR-2 change, not a cap edit.
+- **Carried in from E6 chunk 5 (coordinator, 2026-11-13; row "E6 chunk-5 merge choices" (f)):** a removed toast drops keyboard focus to `body` (every `hideToast` path, now reached also by the late suggest chunk); test gaps: the one-`zoneOf` import regex reads single quotes only, E6-18 does not prove the rescheduled wait's Reload toast, and no test covers a new Suggest press after the cap followed by the late chunk.
 - **Accessibility:** audited in this step (screen readers, matrix as a table, contrast in both themes, reduced motion, keyboard paths); axe at zero new violations.
 - **Exit:** persona walk-throughs pass with expectations written first; slow-phone first view **≤ 6 s** (8.6 s at P5; an improving target, measured by `consortium-timing.mjs`); per-chunk caps hold; no open serious a11y finding; each filter changes a decision in at least one persona scenario or is cut; strings in all 11 locales with French warning texts in the owner's review queue (ships marked for review meanwhile).
 - **Depends on:** E6; E3 and E4 live before its push; D2a for stream 2. Builds on today's export otherwise (not on D4 or D7).

@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:21:23Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T14:30:41Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
 sources:
@@ -15,13 +15,13 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d93324757e80faab
-    last_modified: 2026-11-13T12:00:16Z
+    digest: sha256:757da247c4d5eb7a
+    last_modified: 2026-11-13T13:05:42Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
     digest: sha256:c6e5a6214d2abebc
-    last_modified: 2026-11-13T12:18:58Z
+    last_modified: 2026-11-13T12:33:29Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
@@ -30,8 +30,8 @@ sources:
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:87542372e31a049e
-    last_modified: 2026-11-13T12:00:16Z
+    digest: sha256:4cb69b1de23bccb2
+    last_modified: 2026-11-13T14:25:59Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json
@@ -58,7 +58,7 @@ Before B4 the consortium page had a first-run cap (43 KB gzip, 40 KB from the ch
 
 | Role | Cap (gzip) | Measured at B4 | A14 maximum |
 |---|---|---|---|
-| first run (the island entry and its static imports), `FIRST_RUN_BUDGET` | 40 KB | — | lowered in chunk 5 to measured plus slack |
+| first run (the island entry and its static imports), `FIRST_RUN_BUDGET` | 38 KB (40 KB from the chunk-3 merge to the chunk-5 exit) | 38,538 B (37.6 KB) at the E6 chunk-5 exit | measured rounded up to the next 0.5 KB |
 | `location` | 11.8 KB | 11,493 B | 20 KB (also: the location part with what only it reaches ≤ 20 KB) |
 | `markProviders` | 2.9 KB | 2,375 B (with the chunk it shares with `future`) | 12 KB |
 | `future` | 2.8 KB | 2,275 B | 12 KB |
@@ -78,7 +78,7 @@ Before B4 the consortium page had a first-run cap (43 KB gzip, 40 KB from the ch
 - **Sheet and Details imports**: a `details` or `sheets` chunk statically imports only first-run, sheet or Details chunks (a failed shared chunk would break every sheet until Reload; `kit/sheet.tsx` `shared` keeps `flags` and `list-query` in the first run).
 - **No late stylesheet**: no island chunk's `__vite__mapDeps` preload list names a CSS file (MapLibre's CSS aside), read from the built output.
 - **Modulepreload (A5, L5)**: consortium pages preload only what the first view awaits (`modulepreloadChunks`: the page script's static imports, the island entry and its static imports, the data loader with the sqlite glue); no part, feature or MapLibre chunk. The check asserts the first run and glue are preloaded and no lazy chunk is (from the graph and roles; the exact list comparison was dropped as circular).
-- **Test hook**: the `testHook` role (`test-hook.ts`) exists only in the browser-test build, which alone preloads it; a production build with it fails.
+- **Test hook**: the `testHook` role (`test-hook.ts`) exists only in the browser-test build; a production build with it fails. Since E6 chunk 5 no build preloads it (`astro.config.mjs` passes no extra chunk to `modulepreloadChunks`): main.ts awaits it with `#ct-root` `aria-busy`, and the browser tests that read Start wait for the render (coordinator row "E6 chunk-5 merge choices"). E6-2 leaves the role out of the lazy parts it checks.
 - **First-view ratchet.** The mark `ct:matrix` becomes `ct:first-view`, emitted where the consortium is first on screen (the matrix today, Palette in F1a); R4 renamed it in Matrix.tsx, and the timing script and browser tests read only `ct:first-view` (the `ct:matrix` fallbacks dropped at the R4 merge). `consortium-timing.mjs --ratchet scripts/browser/timing.json` compares cold and warm medians per profile (desktop, phone): above a value a warning, above 1.5× exit 1. The file ships with null values (not compared; a `::warning::` annotation when all are null) until the coordinator copies the first nightly runner's `timing-json:` line after push B. Values come from CI runner runs only, never local ones.
 
 ## Consequences

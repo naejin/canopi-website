@@ -2,7 +2,7 @@
 type: Runbook
 title: CI, hooks and the deploy gate
 description: How the website's tiered hooks, GitHub Actions CI and the deploy branch gate production deploys on Cloudflare Workers Builds, and what to do when something fails.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:44Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T14:30:45Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
 sources:
@@ -34,8 +34,8 @@ sources:
   - id: zero-markers
     resource: ../../.githooks/zero-markers
     title: .githooks/zero-markers
-    digest: sha256:3127011e9fa251e0
-    last_modified: 2026-11-13T03:34:49Z
+    digest: sha256:887667b4d3bb33f9
+    last_modified: 2026-11-13T13:02:56Z
   - id: version-json-ts
     resource: ../../src/pages/version.json.ts
     title: src/pages/version.json.ts
@@ -71,7 +71,7 @@ Master deploys only through a green `gate` check. GitHub Actions moves the `depl
 | Job | Runs | Notes |
 |---|---|---|
 | `changes` | always | `docs_only=true` when every changed path is `knowledge/**`, `.beads/**`, `docs/**` or a root `*.md` (never `src/data/*.md`). On master the base is the tip of `deploy` (the last commit tested green), not the previous push, so a documentation-only commit after a red code commit (or after a `--no-verify` push) still runs jobs 2–4. It is false when there is no base (no `deploy` yet, new branch, force push, manual run). Tested in `scripts/ci-deploy.test.mjs`. |
-| 1 `unit` | always | climate install, `npm run check`, `npm test` (0 skips), `check:arch`, `check:dup`, `check:dead`, ast-grep, and the zero-marker check on master pushes (warns with the count while `.githooks/zero-markers` says `warn`; the batch's chunk-5 exit commit flips it to `fail`) |
+| 1 `unit` | always | climate install, `npm run check`, `npm test` (0 skips), `check:arch`, `check:dup`, `check:dead`, ast-grep, and the zero-marker check on master pushes (`.githooks/zero-markers` says `fail` since the E3/E4/E5a/E6 batch's chunk-5 exit, with 0 markers left: any expected-fail marker blocks a master push and fails the job; `warn` would only report the count) |
 | 2 `browser-build` | code ranges | `npm run build:browser-test`; artifact `browser-test-build`: `dist-test/` + `src/data/climate-index.json` (1 day), read by jobs 3 and 4 |
 | 3 `browser` ×4 | code ranges | `npm run test:browser:shard -- N`; results artifact always |
 | 4 `site` | code ranges; waits for job 2 (`needs: [changes, browser-build]`) | `npm run build` → `check-built-site` → `test:browser:smoke` → `test:axe` → `test:vectors` with `CANOPI_REQUIRE_VECTORS=1` → downloads job 2's `browser-test-build` artifact → the L11 graph test, `node --test scripts/built-modules.test.mjs` with `CANOPI_REQUIRE_BUILDS=1` (the test build's chunk graph is the production graph plus the test hook's chunk; a missing build fails) |

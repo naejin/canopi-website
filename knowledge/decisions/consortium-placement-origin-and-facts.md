@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:21:21Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T14:29:53Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -32,6 +32,11 @@ sources:
     last_modified: 2026-11-13T10:58:21Z
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
+  - id: placed-ts
+    resource: ../../src/lib/consortium/placed.ts
+    title: src/lib/consortium/placed.ts
+    digest: sha256:faefdfc3640d75cc
+    last_modified: 2026-11-13T12:43:29Z
 ---
 
 ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, written in commit 0, 2026-11-13). Commit 0 added the types only (`src/lib/consortium/types.ts`); stream R4 implemented and wired them, merged in chunk 4 (coordinator row "E6 R4 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)). Core: [Consortium core](/modules/consortium-core.md).
@@ -53,5 +58,6 @@ ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, writ
 ## Consequences
 
 - No on-screen change in E6; each type is the named seam for F2/F4/E7, which is why they pass the usefulness test.
+- `placed.ts` `placeFor` and `firstPlaced` return `{zone, placement}` / `{zone, value}` with no `estimate` flag since E6 chunk 5: the origin is the one place the estimate lives.
 - Views test the origin through the helpers (`guestOf` for the guest tag and `is-guest` class, `borrowedFrom` for the estimate mark and the Why line), and the correction's `placement_estimate` is `origin.kind === 'borrowed'`.
 - `factAt` returning `null` means unknown, never a misfit.

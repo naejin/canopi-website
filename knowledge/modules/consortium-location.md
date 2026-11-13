@@ -2,7 +2,7 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T08:29:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T14:30:42Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:40:02Z }
 sources:
@@ -14,13 +14,13 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:ad7f96e776183e2f
-    last_modified: 2026-11-13T07:21:50Z
+    digest: sha256:bbe76cbff60dc5ec
+    last_modified: 2026-11-13T12:40:55Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
-    digest: sha256:2114e50c62db6905
-    last_modified: 2026-11-13T08:21:53Z
+    digest: sha256:af053fa7d534903e
+    last_modified: 2026-11-13T12:40:55Z
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
@@ -31,11 +31,6 @@ sources:
     title: src/lib/consortium/state.ts
     digest: sha256:c2cbea481ff85e20
     last_modified: 2026-11-13T07:25:07Z
-  - id: memory-ts
-    resource: ../../src/islands/consortium/memory.ts
-    title: src/islands/consortium/memory.ts
-    digest: sha256:86f1a81beb63e1a1
-    last_modified: 2026-11-13T07:21:50Z
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
@@ -71,11 +66,6 @@ sources:
     title: src/islands/consortium/views/Share.tsx
     digest: sha256:f0d3cd50792d563b
     last_modified: 2026-11-13T07:08:17Z
-  - id: keep-ts
-    resource: ../../src/islands/consortium/views/location/keep.ts
-    title: src/islands/consortium/views/location/keep.ts
-    digest: sha256:f3436779571fcadd
-    last_modified: 2026-11-13T07:08:17Z
   - id: s5b-css
     resource: ../../src/styles/consortium/p5/s5b.css
     title: src/styles/consortium/p5/s5b.css
@@ -84,8 +74,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
-    digest: sha256:4831acd8fb73927d
-    last_modified: 2026-11-13T03:25:36Z
+    digest: sha256:f066e75444fb4cce
+    last_modified: 2026-11-13T14:01:32Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -94,8 +84,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:ca30b03006dfdeeb
-    last_modified: 2026-11-13T07:21:50Z
+    digest: sha256:bdf71e540c290ea1
+    last_modified: 2026-11-13T12:40:55Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -127,10 +117,10 @@ a climate card and a country, and the reader confirms (owner answers 1, 4, 5). P
 | File | Role |
 |---|---|
 | `src/islands/consortium/views/LocationSlot.tsx` | Thin shell in the island (first run): the three controls (the search input `.ct-location-search` is `11.2em` wide in `base.css`, so a late web font cannot resize it; [fallback fonts](/decisions/metric-matched-fallback-fonts.md)), each with a `[data-location-privacy]` line naming the service, the privacy link (`/privacy/`, S5f), a loading line while a link's or saved location is looked up. "Use my location" shows only with the Geolocation API (an inline `isSecureContext && navigator.geolocation` check: importing lib/location/geolocation.ts would put that module in the first run); the map button only with WebGL, probed once (a `webgl` context, released with `WEBGL_lose_context`), never in `compact`. Enter while an input method composes (`isComposing`, keyCode 229) is not a search. `compact` (result head): the result line only |
-| `src/islands/consortium/state/location.ts` | Since E6 S2 the location step's state, in the lazy location chunk (only location.tsx imports it): `readLocation`, `locationRecord`, `keepLocation`, `locationCountry` (uses persist.ts's `memory` and `quietly`), `siteFound(write, code?)` (a lookup's writes in one batch, then the country quietly, outside it), the tile `read` (15 s `READ_TIMEOUT_MS`, `{ soil: false }`), `locate`, `settle(how, saved)`, `useMyLocation`, `searchPlace`, `placeName`, `confirmProposed`, `forget`. `views/location/keep.ts` only re-exports four of these for the seam tests until chunk 5 |
+| `src/islands/consortium/state/location.ts` | Since E6 S2 the location step's state, in the lazy location chunk (only location.tsx imports it): `readLocation`, `locationRecord`, `keepLocation`, `locationCountry` (uses persist.ts's `memory` and `quietly`), `siteFound(write, code?)` (a lookup's writes in one batch, then the country quietly, outside it), the tile `read` (15 s `READ_TIMEOUT_MS`, `{ soil: false }`), `locate`, `settle(how, saved)`, `useMyLocation`, `searchPlace`, `placeName`, `confirmProposed`, `forget`. The seam tests import it directly (`views/location/keep.ts` deleted in E6 chunk 5) |
 | `src/islands/consortium/state/lookups.ts` | In the first run: `lookups`/`looking(step)`: location steps in flight (a click, a search, a map centre, a link's or the saved location), counted until they settle or fail; `lookingThrough(load, run)` holds one count from the chunk load through its settle; `unread` (Suggest ran without the site's climate); the result `line`; `nextLookup`/`liveLookup` (one lookup at a time owns Start's location state: an older or dropped one writes nothing); `unlessReplaced(wait)` (a prompt, position, tile read or search ends with `undefined` the moment its lookup is replaced or dropped; review round 4, 1, P5-1g); `letGo(drop)` |
-| `src/islands/consortium/views/location/load.ts` | `loadLocationStep()` (cached `import('./location.tsx')`, a failure logged once and not cached), the `locationStep` signal, and `loadLocationStep`, which main.ts hands to `state/restore.ts` with `provideLocationStep` before the first render (state imports no view, ADR-1 L2; since E6 S3 this module registers nothing at import, and the loader is in place before `startMemory`). Re-exports the `state/lookups.ts` names for the seam tests until chunk 5 |
-| `src/islands/consortium/views/location/location.tsx` | The lazy chunk's entry (≤ 20 KB); renders only since E6 S2, re-exporting `settle`, `useMyLocation`, `searchPlace` from `state/location.ts` for the shell: `openMap`, `stateText`, `LocationResult` (`[data-location-state]`, `[data-location-confirm]`), the map dialog (`[data-location-map]`, crosshair, `[data-location-use-centre]`; test hook `mapCentre`) |
+| `src/islands/consortium/views/location/load.ts` | `loadLocationStep()` (cached `import('./location.tsx')`, a failure logged once and not cached), the `locationStep` signal, and `loadLocationStep`, which main.ts hands to `state/restore.ts` with `provideLocationStep` before the first render (state imports no view, ADR-1 L2; since E6 S3 this module registers nothing at import, and the loader is in place before `startMemory`). Its re-exports of the `state/lookups.ts` names were removed in E6 chunk 5 (the seam tests import `state/lookups.ts`) |
+| `src/islands/consortium/views/location/location.tsx` | The lazy chunk's entry (≤ 20 KB); renders only since E6 S2, re-exporting `settle`, `useMyLocation`, `searchPlace` from `state/location.ts`: the shell (LocationSlot) and `state/restore.ts` (settle) call them through these three, the lazy chunk's interface (a direct import of `state/location.ts` would split it into a second, role-less lazy chunk; kept at the E6 chunk-5 merge, coordinator row "E6 chunk-5 merge choices"): `openMap`, `stateText`, `LocationResult` (`[data-location-state]`, `[data-location-confirm]`), the map dialog (`[data-location-map]`, crosshair, `[data-location-use-centre]`; test hook `mapCentre`) |
 | `src/lib/consortium/site-climate.ts` | `siteClimate(lookup)`: state `sea` / `polar` / `borderline` / `coast` / `ready`, `zone`, `near`, `suggested`; `koppenZone(k)` |
 | `src/lib/consortium/state.ts` | `o=` in links: `encodeLink(…, { origin })`, `linkOrigin(link)`, `cellCentre(lookup)` |
 | `src/lib/location/*` | Copied from canopi (see below): registry, place search, transport, geolocation, MapLibre loader; `maplibre-entry.ts`, `maplibre-worker.ts` |
@@ -152,7 +142,7 @@ a climate card and a country, and the reader confirms (owner answers 1, 4, 5). P
 
 ## Budgets (production build, 2026-11-11)
 
-Location chunk 11.0 KB gzip; MapLibre 298.8 KB with worker and CSS; first run 40.2 KB of 42 (after moving keep.ts out of memory.ts and keeping geolocation.ts out of the shell). The CSS is imported `?inline` and injected on load: a plain CSS import was hoisted by Astro into a page `<link>`. The worker is `maplibre-worker.ts`, a chunk sharing `maplibre-gl-shared` (a `?worker&url` bundle duplicated it, 420 KB total).
+At S5b: location chunk 11.0 KB gzip, MapLibre 298.8 KB with worker and CSS (geolocation.ts kept out of the shell). Today's caps and measures are in `scripts/check-built-site.mjs` (location role cap 11.8 KB, measured 11,493 B; first run under 38 KB since the E6 chunk-5 exit; [chunk budgets](/decisions/consortium-chunk-budgets.md)). The CSS is imported `?inline` and injected on load: a plain CSS import was hoisted by Astro into a page `<link>`. The worker is `maplibre-worker.ts`, a chunk sharing `maplibre-gl-shared` (a `?worker&url` bundle duplicated it, 420 KB total).
 
 ## Copied from canopi
 
