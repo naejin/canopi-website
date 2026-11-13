@@ -326,7 +326,7 @@
             "K3",
             "S3"
           ],
-          "duty": "A5 modulepreload filter; roles details/sheets/later/suggest/range filled and merged with the feature roles; A14 per-chunk caps (first run cap 40 KB since the chunk-3 merge; replace the 65 KB island sum); ct:first-view in the timing script and tests (A7); timing ratchet (A8); CSS-on-lazy-chunk assertion; L5, L11 (removes the E6-2 marker); check-built-site asserts a details or sheet chunk statically imports only first-run (or sheet/details) chunks (K3 round-2 review); the role finder survives Correction importing drafts (K3 hand-off, then Correction may drop its drafts prop)",
+          "duty": "A5 modulepreload filter; roles details/sheets/later/suggest/range filled and merged with the feature roles; A14 per-chunk caps (first run cap 40 KB since the chunk-3 merge; replace the 65 KB island sum); ct:first-view in the timing script and tests (A7); timing ratchet (A8); CSS-on-lazy-chunk assertion; L5, L11 (removes the E6-2 marker); check-built-site asserts a details or sheet chunk statically imports only first-run (or sheet/details) chunks (K3 round-2 review); the role finder survives Correction importing drafts (K3 hand-off, then Correction may drop its drafts prop); shard balance: shard 4 is 238 s of its 240 s ratchet at the chunk-3 merge (consortium-seams-layout alone 159 s, shard 2 144 s): rebalance scripts/browser/shards.json or speed the file",
           "files": [
             "astro.config.mjs",
             "scripts/built-modules.mjs",
@@ -337,7 +337,8 @@
             "scripts/browser/consortium-s2.browser.test.mjs",
             "scripts/browser/consortium-e6.browser.test.mjs",
             "scripts/consortium-memory.test.mjs",
-            "scripts/consortium-p5-seams.test.mjs"
+            "scripts/consortium-p5-seams.test.mjs",
+            "scripts/browser/shards.json"
           ]
         }
       }
