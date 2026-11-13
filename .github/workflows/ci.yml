@@ -51,17 +51,31 @@ jobs:
         name: Documentation-only range?
         env:
           EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
           BEFORE: ${{ github.event.before }}
           PR_BASE: ${{ github.event.pull_request.base.sha }}
+        # On master the base is the tip of `deploy` (the last commit tested green and deployed), not the
+        # previous push: a documentation-only commit after a red code commit, or after a --no-verify
+        # push, must not move deploy onto untested code (scripts/ci-deploy.test.mjs).
         run: |
           . .githooks/lib.sh
           case "$EVENT" in
-            push) base=$BEFORE ;;
+            push)
+              if [ "$REF" = refs/heads/master ]; then
+                if git fetch --no-tags -q origin +refs/heads/deploy:refs/remotes/origin/deploy 2>/dev/null; then
+                  base=$(git rev-parse refs/remotes/origin/deploy)
+                else
+                  echo "No deploy branch to compare with yet."
+                  base=
+                fi
+              else
+                base=$BEFORE
+              fi ;;
             pull_request) base=$PR_BASE ;;
             *) base= ;;
           esac
           docs_only=false
-          # A new branch, a force push or a manual run has no usable base: everything runs.
+          # No deploy branch, a new branch, a force push or a manual run: no usable base, everything runs.
           if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
             git diff --name-only "$base" "$GITHUB_SHA" > "$RUNNER_TEMP/changed.txt"
             if docs_only < "$RUNNER_TEMP/changed.txt"; then docs_only=true; fi
@@ -259,6 +273,9 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: write
+    # Never cancelled mid-way. GitHub keeps one pending job per concurrency group: with three quick
+    # green pushes, the middle push's deploy job, still waiting, is cancelled when the third queues.
+    # That is the right outcome (the newer deploy contains it); its run shows cancelled, not red (D4).
     concurrency:
       group: deploy
       cancel-in-progress: false

@@ -629,4 +629,21 @@ console.log(`Static assets: ${assetFiles} files in ${root} (limit ${MAX_ASSET_FI
   }
 }
 
+// ---------- Version marker (E3, design check A15) ----------
+// /version.json (src/pages/version.json.ts): exactly { sha, built_at, node }. A build with a commit id
+// in its environment (WORKERS_CI_COMMIT_SHA in Workers Builds, else GITHUB_SHA in CI) carries that
+// 40-hex sha, which CI's live job polls for; without one, sha may be null (a worktree, a tarball).
+{
+  const marker = JSON.parse(readFileSync(join(root, 'version.json'), 'utf8'));
+  assert.deepEqual(Object.keys(marker), ['sha', 'built_at', 'node'], '/version.json: sha, built_at and node only');
+  assert.ok(marker.sha === null || /^[0-9a-f]{40}$/.test(marker.sha), `/version.json: sha ${marker.sha} is a 40-hex commit id or null`);
+  assert.ok(!Number.isNaN(Date.parse(marker.built_at)) && marker.built_at.endsWith('Z'), `/version.json: built_at ${marker.built_at} is an ISO time in UTC`);
+  assert.ok(marker.node === null || /^v\d+\.\d+\.\d+$/.test(marker.node), `/version.json: node ${marker.node} is a version or null`);
+  const fromEnv = [process.env.WORKERS_CI_COMMIT_SHA, process.env.GITHUB_SHA].map((s) => (s ?? '').trim().toLowerCase()).find((s) => /^[0-9a-f]{40}$/.test(s));
+  if (fromEnv) assert.equal(marker.sha, fromEnv, '/version.json: the build environment names a commit, so the marker carries it');
+  const headers = readFileSync(join(root, '_headers'), 'utf8');
+  assert.match(headers, /^\/version\.json\n {2}Cache-Control: no-store$/m, '_headers: /version.json is served no-store');
+  console.log(`Version marker: sha ${marker.sha ?? 'null (no commit id in the build environment)'}, node ${marker.node ?? 'null'}.`);
+}
+
 console.log(`Verified 11 locale pages, their bibliography, data sources (${creditRows.length} credited sources, ${tryRows.length} TRY rows each) and contact result pages, ${guideSlugs.length} field guide${guideSlugs.length === 1 ? "" : "s"} in en and fr, v${version} permanent installer links, Web Edition URL, paintings, social images, contact form, network links, static assets and the consortium tool in ${locales.length} locales.`);

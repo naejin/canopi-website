@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -84,6 +84,51 @@ test('deploy: an unreachable remote fails instead of creating anything', (t) => 
   const r = deploy(f, f.B);
   assert.equal(r.code, 1, r.out);
   assert.match(r.out, /ls-remote failed/);
+});
+
+// The `changes` job's step, run as written against a fixture remote. On a master push it compares with
+// the tip of `deploy` (what was last tested green and deployed), not with the previous push: a
+// documentation-only commit after a red code commit (or a --no-verify push) must run every job.
+const rangeScript = workflow.jobs.changes.steps.find((s) => s.id === 'range')?.run;
+function changes(f, { sha, before, ref = 'refs/heads/master', event = 'push' }) {
+  const out = join(f.dir, 'output.txt');
+  writeFileSync(out, '');
+  const r = spawnSync('bash', ['-e', '-c', rangeScript], {
+    cwd: f.work, encoding: 'utf8',
+    env: { ...process.env, EVENT: event, BEFORE: before ?? '', PR_BASE: '', REF: ref, GITHUB_SHA: sha, RUNNER_TEMP: f.dir, GITHUB_OUTPUT: out },
+  });
+  assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
+  return readFileSync(out, 'utf8').match(/^docs_only=(true|false)$/m)?.[1];
+}
+function commitFile(f, path, message) {
+  mkdirSync(join(f.work, path, '..'), { recursive: true });
+  writeFileSync(join(f.work, path), `${message}\n`);
+  git(f.work, 'add', path);
+  git(f.work, 'commit', '-q', '-m', message);
+  return git(f.work, 'rev-parse', 'HEAD');
+}
+
+test('changes: on master, a documentation-only commit after an untested code commit runs every job', (t) => {
+  const f = fixture();
+  t.after(() => rmSync(f.dir, { recursive: true, force: true }));
+  mkdirSync(join(f.work, '.githooks'), { recursive: true });
+  copyFileSync(join(ROOT, '.githooks', 'lib.sh'), join(f.work, '.githooks', 'lib.sh'));
+  // No deploy branch yet: everything runs, whatever the previous push was.
+  const docs0 = commitFile(f, 'knowledge/a.md', 'docs 0');
+  git(f.work, 'push', '-q', 'origin', 'master');
+  assert.equal(changes(f, { sha: docs0, before: f.B }), 'false', 'no deploy branch: every job runs');
+  git(f.work, 'push', '-q', 'origin', `${docs0}:refs/heads/deploy`);
+  // Right after deploy: a documentation-only commit is documentation only.
+  const docs1 = commitFile(f, 'knowledge/b.md', 'docs 1');
+  git(f.work, 'push', '-q', 'origin', 'master');
+  assert.equal(changes(f, { sha: docs1, before: docs0 }), 'true');
+  // A code commit whose run was red (deploy stays at docs0), then a documentation-only commit.
+  const code = commitFile(f, 'src/x.ts', 'code, red');
+  const docs2 = commitFile(f, 'README.md', 'docs 2');
+  git(f.work, 'push', '-q', 'origin', 'master');
+  assert.equal(changes(f, { sha: docs2, before: code }), 'false', 'the untested code commit since deploy runs jobs 2-4');
+  // A pull request or a probe branch still compares with its own base.
+  assert.equal(changes(f, { sha: docs2, before: code, ref: 'refs/heads/ci-probe/x' }), 'true');
 });
 
 test('the gate, deploy and live jobs keep what the ruleset and concurrency rely on (D4, D11, D14)', () => {
