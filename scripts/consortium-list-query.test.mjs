@@ -1,16 +1,16 @@
 // E6 stream R2 (design check §3 chunk 2, §7.1 "Add/PlantList filter rule"): one filter rule,
 // src/islands/consortium/rules/list-query.ts, for Add's rows (a cell or run of one layer, a job,
 // "Show them anyway": the misfits beside the members' canopy left out unless anyway) and the plant
-// list's filters (layer, stage, job). Written failing in commit 0 (expected-fail, owner R2); R2
-// removes the marker in the commit that adds the module. The oracle below is today's code, copied
-// from views/Add.tsx (base) and views/tracks.ts (matchesFilters), so the rule returns today's results.
+// list's filters (layer, stage, job). Written failing in commit 0 (expected-fail, owner R2); R2 removed
+// the marker in the commit that added the module. The oracle below is the code before it, copied from
+// views/Add.tsx (base) and views/tracks.ts (matchesFilters), so the rule returns those results.
 //
 // The contract this test fixes (R2 may rename within its chunk, keeping the cases):
 //   listQuery(pool, { stratum, from, to, job, site, canopy, anyway }) -> Taxon[] in pool order
 //   - stratum/from/to: a cell or run (Add) or a layer and one stage (the list); null: any;
 //   - site: the site answers, or null for no fit filter (the plant list); canopy: the members' taxa.
 import assert from 'node:assert/strict';
-import { failing } from './expect-fail.mjs';
+import test from 'node:test';
 import { canopyOf, fits, jobsOf, misfitsBeside, phaseOrd } from '../src/lib/consortium/index.ts';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
@@ -64,7 +64,7 @@ const LIST_CASES = [
   { layer: 'high', stage: 3, job: 'feeds_you' },
 ];
 
-failing('E6 list-query (R2 rules): one listQuery returns Add\'s and the plant list\'s current results on fixture cases', { owner: 'R2', reason: /Cannot find module|ERR_MODULE_NOT_FOUND|list-query\.ts/ }, async () => {
+test('E6 list-query (R2 rules): one listQuery returns Add\'s and the plant list\'s current results on fixture cases', async () => {
   const { listQuery } = await import('../src/islands/consortium/rules/list-query.ts');
   const ids = (list) => list.map((t) => t.id);
   for (const c of ADD_CASES) {
@@ -75,4 +75,22 @@ failing('E6 list-query (R2 rules): one listQuery returns Add\'s and the plant li
     const got = listQuery(POOL, { stratum: f.layer, from: f.stage, to: f.stage, job: f.job, site: null, canopy: [], anyway: true });
     assert.deepEqual(ids(got), ids(listBase(POOL, f)), `plant list: ${JSON.stringify(f)}`);
   }
+});
+
+test('E6 list-query (R2 rules): Add\'s and the plant list\'s queries as the views build them, and Add\'s row order', async () => {
+  const { addOrder, addQuery, filtersQuery, listQuery, matchesFilters } = await import('../src/islands/consortium/rules/list-query.ts');
+  const ids = (list) => list.map((t) => t.id);
+  for (const c of ADD_CASES) {
+    assert.deepEqual(ids(listQuery(POOL, addQuery({ cell: c.cell, job: c.job, anyway: c.anyway }, c.site, c.canopy))), ids(addBase(POOL, c)), `Add: ${c.name}`);
+  }
+  for (const f of LIST_CASES) {
+    assert.deepEqual(ids(listQuery(POOL, filtersQuery(f))), ids(listBase(POOL, f)), `plant list: ${JSON.stringify(f)}`);
+    assert.deepEqual(ids(POOL.filter((t) => matchesFilters(t, f))), ids(listBase(POOL, f)), `matchesFilters: ${JSON.stringify(f)}`);
+  }
+  // A job's stage gap: a run of stages in any layer (stratum null); a plant with no placement is out.
+  assert.deepEqual(ids(listQuery(POOL, addQuery({ cell: { stratum: null, from: 0, to: 0 }, job: null, anyway: true }, SITE, []))), ids(POOL.filter((t) => t.phases && phaseOrd(t.phases.start) === 0)));
+  // Asking rows last, then named in more languages, then by scientific name.
+  const named = (id, names, canonical) => ({ t: { id, names, canonical_name: canonical }, asks: false });
+  const rows = [{ ...named('a', { en: 'A' }, 'Zeta'), asks: true }, named('b', {}, 'Beta'), named('c', { en: 'C', fr: 'C' }, 'Gamma'), named('d', {}, 'Alpha')];
+  assert.deepEqual(addOrder(rows).map((r) => r.t.id), ['c', 'd', 'b', 'a']);
 });

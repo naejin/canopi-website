@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { asks as asksFlags, canopyOf, fits, jobsOf, misfitsBeside, phaseOrd } from '../../../lib/consortium/index.ts';
+import { asks as asksFlags } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/search.ts';
 import { addMembers, closeSheet, sheetCell } from '../store.ts';
 import { Ask, Bar, NotChecked, SheetFrame, WARN } from './kit/sheet.tsx';
@@ -23,12 +23,9 @@ import { flagLines, flagsOfPlant } from './kit/flags.ts';
 import { nameOf, num, phasePlain, spanWords, zoneName } from './kit/names.ts';
 import { PlantMarks } from './PlantMarks.tsx';
 import { jobFind } from './StageBar.tsx';
+import { addOrder, addQuery, listQuery } from '../rules/list-query.ts';
 
 const FIRST_ROWS = 8;
-
-// Whether a plant grows in a layer (null: any layer) during any stage of from..to.
-const growsIn = (t: Taxon, stratum: string | null, from: number, to: number) =>
-  (!stratum || t.stratum?.value === stratum) && !!t.phases && phaseOrd(t.phases.start) <= to && phaseOrd(t.phases.end) >= from;
 
 type Search = ReturnType<typeof searchIndex>;
 const searches = new WeakMap<Taxon[], Search>();
@@ -37,8 +34,6 @@ export function searchOf(list: Taxon[]): Search {
   if (!s) searches.set(list, (s = searchIndex(list.map((t) => ({ id: t.id, canonical: t.canonical_name, names: t.names })))));
   return s;
 }
-// The order of rows: plants that ask last, then the better known (named in more languages).
-const known = (t: Taxon) => Object.keys(t.names).length;
 
 function heightWords(t: Taxon): string {
   const h = t.traits.height_m?.max;
@@ -77,18 +72,9 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
   // matrix counts them (core matrix.ts: a misfit beside the members' canopy); "Show them anyway"
   // lists every plant of the cell or run, the misfits flagged and asking first.
   const site = store.site.value, taxa = store.memberTaxa.value;
-  const base = useMemo(() => {
-    if (!pool) return [];
-    const canopy = canopyOf(taxa);
-    return (query.trim() ? pool : fitting ?? pool).filter((t) => {
-      if (job && !jobsOf(t).includes(job)) return false;
-      if (!cell) return true;
-      if (!growsIn(t, cell.stratum, cell.from, cell.to)) return false;
-      if (anyway) return true;
-      const fit = fits(t, site);
-      return !misfitsBeside(t, site, canopy, fit).length;
-    });
-  }, [pool, fitting, query.trim() !== '', cell, job, anyway, site, taxa]);
+  // (rules/list-query.ts, the one filter rule of Add and the plant list.)
+  const base = useMemo(() => (pool ? listQuery(query.trim() ? pool : fitting ?? pool, addQuery({ cell, job, anyway }, site, taxa)) : []),
+    [pool, fitting, query.trim() !== '', cell, job, anyway, site, taxa]);
   const rows = useMemo(() => {
     if (!pool) return [];
     const list = base.filter((t) => !members.includes(t.id)).map((t) => ({ t, flags: flagsOfPlant(t) })).map((r) => ({ ...r, asks: asks(r.flags, r.t) }));
@@ -97,7 +83,7 @@ export default function Add({ mode = 'add' }: { mode?: 'add' | 'search' }) {
       const score = new Map(searchOf(pool)(q).map((x, i) => [x.id, i]));
       return list.filter((r) => score.has(r.t.id)).sort((a, b) => score.get(a.t.id)! - score.get(b.t.id)!);
     }
-    return list.sort((a, b) => Number(a.asks) - Number(b.asks) || known(b.t) - known(a.t) || (a.t.canonical_name < b.t.canonical_name ? -1 : 1));
+    return addOrder(list);
   }, [pool, base, members, q, store.flagContext.value, store.site.value]);
   // The other climates' matches not in this list: "Add anyway", each from the first list that has it.
   const elsewhere = useMemo(() => {
