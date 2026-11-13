@@ -459,8 +459,11 @@ export type FactAt = <K extends FactKey>(key: K, taxon: Taxon, site: SiteLookup 
 // ---- F1a seams (commit 0; plan F1a, design check .local/consortium/v2/f1a/design-check.md A3, A6, A15, A22) ----
 
 // The view the main area shows (A6): Start, then Palette (the plants by role, the health strip and the
-// gap list) or Structure (the strata × stages matrix). Stream 1 (pal1) moves the island's own view
-// signal (store.ts) to it; a link writes Structure only (key `w` under v4, no version bump).
+// gap list; readers see it as "By role", owner row "Plant palette name"; the internal id stays
+// 'palette') or Structure (the strata × stages matrix). Stream 1 (pal1) moves the island's own view
+// signal to it and removes store.ts's older View ('start' | 'matrix' | 'side' | 'jobs' | 'list'); a link
+// writes Structure only (a free key under v4, not `w`, which v4 writes for the water answer; no version
+// bump).
 export const views = ['start', 'palette', 'structure'] as const;
 export type View = (typeof views)[number];
 
@@ -475,13 +478,18 @@ export type ConfidenceTerm = (typeof confidenceTerms)[number];
 // A term, with the scenario counts the spread reads (agree of `of`).
 export interface Confidence { term: ConfidenceTerm; agree?: number; of?: number }
 
-// What Add opens preset to (A22; store.ts openAdd, stream 1): a job, a layer, a stage, the filters
-// stream 2 defines, and a hint: the line of the Balance check or gap that opened it, a consortium.*
-// key without its prefix with its variables (core holds no strings), shown under Add's filters (add1).
+// A cell or a run of cells: one layer (stratum null: any layer, as a job's stage gap) over the stages
+// from..to. What a sheet is opened for (store.ts SheetFor.cell: "+ Add" in a free cell, "Show them
+// anyway" on a blocked run, a job's stage gap) and what Add opens preset to.
+export interface CellSpan { stratum: Stratum | null; from: PhaseOrd; to: PhaseOrd }
+
+// What Add opens preset to (A22; store.ts openAdd, stream 1): a job, a cell span (the sheet's target
+// today, store.ts SheetFor.cell), the filters stream 2 defines, and a hint: the line of the Balance
+// check or gap that opened it, a consortium.* key without its prefix with its variables (core holds no
+// strings), shown under Add's filters (add1).
 export interface AddPreset {
   job?: JobId;
-  layer?: Stratum;
-  stage?: PhaseOrd;
+  cell?: CellSpan;
   filters?: Readonly<Record<string, string | boolean>>;
   hint?: { key: string; vars?: Record<string, string | number> };
 }
@@ -496,6 +504,17 @@ export type BalanceCheckId = (typeof balanceCheckIds)[number];
 // (no location for a site check, a rule that failed).
 export const balanceStates = ['ok', 'gap', 'waiting', 'not-enough-data', 'not-checked'] as const;
 export type BalanceState = (typeof balanceStates)[number];
-// One check: n of the m members recorded for it; preset: what its "Find…" opens Add with (null: none);
-// confidence: its hedge (an estimate on a borrowed list).
-export interface BalanceCheck { id: BalanceCheckId; state: BalanceState; n: number; m: number; preset: AddPreset | null; confidence?: Confidence }
+// What a check's line names behind its verdict, whichever check it is: the members it is about (the six
+// legumes of a family-spread gap, the plants with no record), the families (the one too many share),
+// the months (a flowering gap's empty months) and any count the line's key reads ({share}, {of}).
+// Each list in a stable order; empty or absent: nothing to name. Core holds no strings: the panel turns
+// it into words.
+export interface BalanceDetail {
+  plants?: readonly PlantId[];
+  families?: readonly string[];
+  months?: readonly Month[];
+  vars?: Readonly<Record<string, string | number>>;
+}
+// One check: n of the m members recorded for it; detail: what its line names; preset: what its
+// "Find…" opens Add with (null: none); confidence: its hedge (an estimate on a borrowed list).
+export interface BalanceCheck { id: BalanceCheckId; state: BalanceState; n: number; m: number; detail: BalanceDetail; preset: AddPreset | null; confidence?: Confidence }

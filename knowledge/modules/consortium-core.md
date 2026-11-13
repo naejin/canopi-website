@@ -4,15 +4,15 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T18:31:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:32Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:46Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:6aeac88f48396662
-    last_modified: 2026-11-13T18:16:59Z
+    digest: sha256:4fd64f9b817c4320
+    last_modified: 2026-11-13T19:47:53Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -22,7 +22,7 @@ sources:
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
     digest: sha256:c2375e19583bd550
-    last_modified: 2026-11-13T18:17:31Z
+    last_modified: 2026-11-13T19:32:13Z
   - id: matrix-ts
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
@@ -67,7 +67,7 @@ sources:
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
     digest: sha256:7c81165a13deeae4
-    last_modified: 2026-11-13T18:17:06Z
+    last_modified: 2026-11-13T19:32:13Z
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
@@ -82,7 +82,7 @@ sources:
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
     digest: sha256:b230ad6ff500d7d6
-    last_modified: 2026-11-13T18:17:13Z
+    last_modified: 2026-11-13T19:32:13Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
@@ -216,8 +216,8 @@ sources:
   - id: balance-ts
     resource: ../../src/lib/consortium/balance.ts
     title: src/lib/consortium/balance.ts
-    digest: sha256:d3f756a8fa6f9146
-    last_modified: 2026-11-13T18:17:24Z
+    digest: sha256:8fdecbce896d793e
+    last_modified: 2026-11-13T19:47:53Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs
@@ -331,5 +331,5 @@ Installed now: release `r-60ea417b5a15c3aa`, schema 3, `consortium-v3.r-60ea417b
 
 ## F1a commit 0 seams
 
-- `types.ts`: `roomValues`/`Room` with `pots` ("Balcony or pots", A8). `Site.room` is a `Room`, but `rooms` (the answers Start offers and the answers a link's `m=` accepts) leaves `pots` out until stream 1 offers it. `ROOM_LIMIT_M` and `suggest.ts` `SIZE_LIMIT` give `pots` the small garden's values until then. Also `views`/`View` (`start | palette | structure`, A6), `confidenceTerms`/`ConfidenceTerm`/`Confidence` (A15), `AddPreset {job?, layer?, stage?, filters?, hint?}` (hint: a key with vars, A22), `balanceCheckIds`, `balanceStates` and `BalanceCheck {id, state, n, m, preset, confidence?}` (A3).
+- `types.ts`: `roomValues`/`Room` with `pots` ("Balcony or pots", A8). `Site.room` is a `Room`, but `rooms` (the answers Start offers and the answers a link's `m=` accepts) leaves `pots` out until stream 1 offers it. `ROOM_LIMIT_M` and `suggest.ts` `SIZE_LIMIT` give `pots` the small garden's values until then. Also `views`/`View` (`start | palette | structure`, A6), `confidenceTerms`/`ConfidenceTerm`/`Confidence` (A15), `CellSpan {stratum, from, to}` (moved from `store.ts`, which re-exports it), `AddPreset {job?, cell?, filters?, hint?}` (cell: the span Add opens on; hint: a key with vars, A22), `balanceCheckIds`, `balanceStates`, `BalanceDetail {plants?, families?, months?, vars?}` (what a check's line names) and `BalanceCheck {id, state, n, m, detail, preset, confidence?}` (A3).
 - `balance.ts` (exported by `index.ts`): `BalanceContext {climate, location, period, factAt}`, `BalanceRule`, the `balanceRules` registry and `balanceChecks(members, ctx)`. Every check returns `not-checked` until stream 4 fills its rule. Tests: `scripts/consortium-balance.test.mjs`.

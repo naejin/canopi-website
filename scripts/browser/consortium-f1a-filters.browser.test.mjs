@@ -6,7 +6,8 @@
 // removes each marker in the commit that makes it pass. No layout or wording is pinned. The contract:
 // - each filter in the Add sheet is a control [data-filter="<id>"] (fits, range, holds, life-cycle,
 //   nitrogen, edible, native) whose state is aria-pressed or :checked;
-// - [data-filter-unknown="<id>"]: the count of plants the filter cannot judge (shown, never hidden);
+// - [data-filter-unknown="<id>"] with data-count: the number of plants the filter cannot judge (shown,
+//   never hidden; the test reads the attribute, never the words around the number);
 // - Add's rows: dialog[open] .ct-rows li, each with its [data-plant-id].
 import assert from 'node:assert/strict';
 import { has, useHarness } from './helpers.mjs';
@@ -52,7 +53,7 @@ failing('F1a-F3 (add3 Nairobi smallholding, P5.1 A14): "Has edible parts" and a 
 failing('F1a-F4 (add3 unknowns as counts, P5.1): a filter that cannot judge some plants says how many, never hides them silently', { owner: 'add3', reason: /Add: no filter controls/ }, async () => {
   const page = await addAt('seville', 'Mediterranean');
   await toggle(page, 'edible');
-  const n = await page.$eval('dialog[open] [data-filter-unknown="edible"]', (e) => Number(e.textContent.replace(/\D+/g, ''))).catch(() => null);
+  const n = await page.$eval('dialog[open] [data-filter-unknown="edible"]', (e) => (e.dataset.count === undefined ? null : Number(e.dataset.count))).catch(() => null);
   assert.ok(Number.isInteger(n) && n >= 0, 'the unknowns are counted');
 });
 

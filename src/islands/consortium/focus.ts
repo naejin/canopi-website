@@ -35,8 +35,8 @@ export function focusPlant(id: PlantId | undefined): void {
 }
 
 // F1a seam (commit 0; A25): where focus goes when the toast leaves (dismissed, its action or Undo run,
-// its timer fired, replaced). Every hideToast path calls it while the toast is still on the page (store.ts,
-// stream 1); stream 6 (a11y1) implements it: when the focus was inside the toast, it moves to the next
-// control after the render, never to <body>. Today's behaviour until then: nothing moves.
-/** @public until stream 1's store.ts calls it (knip: a commit-0 seam; the caller drops this tag) */
+// its timer fired). store.ts hideToast and the toast timer call it (commit 0) while the toast is still on
+// the page; stream 6 (a11y1) implements it: when the focus was inside the toast, it moves to the next
+// control after the render, never to <body>. The node tests call hideToast with no DOM, so it does
+// nothing without a document. Today's behaviour until then: nothing moves.
 export function focusAfterToast(): void {}

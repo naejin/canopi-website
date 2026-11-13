@@ -6,7 +6,8 @@
 //
 // The contract (commit 0; bal2 may widen BalanceContext within its chunk, keeping the cases):
 //   balanceChecks(members, { climate, location, period, factAt }) -> BalanceCheck[] in balanceCheckIds order
-//   BalanceCheck { id, state: ok | gap | waiting | not-enough-data | not-checked, n, m, preset, confidence? }
+//   BalanceCheck { id, state: ok | gap | waiting | not-enough-data | not-checked, n, m, detail, preset, confidence? }
+//   - detail: what the check's line names (the plants, families, months behind it; types.ts BalanceDetail);
 //   - n of the m members are recorded for the check; a check without data never passes (A20);
 //   - preset: what its "Find…" opens Add with (A22): the nearest approved filter and the check's line as hint.
 import assert from 'node:assert/strict';
@@ -37,6 +38,9 @@ test('F1a balance registry (commit 0, A3): one check per id in order, each state
         assert.ok(Number.isInteger(c.n) && c.n >= 0 && c.n <= c.m, `${c.id}: ${c.n} of ${c.m}`);
         assert.equal(c.m, members.length, `${c.id}: m counts the members`);
         assert.ok(c.preset === null || typeof c.preset === 'object', `${c.id}: a preset or null`);
+        const ids = new Set(members.map((t) => t.id));
+        assert.ok(c.detail && typeof c.detail === 'object', `${c.id}: a detail`);
+        assert.ok((c.detail.plants ?? []).every((id) => ids.has(id)), `${c.id}: the plants it names are members`);
       }
     }
   }
@@ -58,6 +62,8 @@ failing('F1a-B1 (bal2 family spread, A20): six of eight members in one family is
   assert.equal(heavy.state, 'gap', `family spread: six of eight in Fabaceae is a gap (${heavy.state} today)`);
   assert.equal(heavy.n, 8, 'every member has a family recorded');
   assert.ok(heavy.preset?.hint?.key, '"Find…" carries the check\'s line as a hint (A22)');
+  assert.deepEqual(heavy.detail.families, ['Fabaceae'], 'the line names the family too many share');
+  assert.equal(heavy.detail.plants?.length, 6, 'and the six members in it');
   assert.equal(check(diverse(), 'family').state, 'ok', 'eight families pass');
 });
 
@@ -68,6 +74,8 @@ failing('F1a-B2 (bal2 water mix, A20): a Tropical palette with two of ten water 
   assert.deepEqual([water.n, water.m], [2, 10]);
 });
 
+// bal3 (chunk 3, after the D2a reinstall) turns the evergreen check on: it takes 'evergreen' out of this
+// list in the same commit as its persona case (owners file, bal3's duty).
 failing('F1a-B3 (bal2 waiting checks, A20, A21): roots, insect-habitat months, active season, flowering (until the hemisphere stamp) and evergreen (until D2a) wait for data', { owner: 'bal2', reason: /is waiting for data \(not-checked today\)/ }, () => {
   const checks = balanceChecks(diverse(), ctx());
   for (const id of ['roots', 'insects', 'season', 'flowering', 'evergreen']) {

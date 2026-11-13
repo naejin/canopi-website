@@ -3,7 +3,8 @@
 // (scripts/expect-fail.mjs failing()) for its owner bal2 (chunk 2; scripts/plan/f1a-owners.json) with its
 // plan label (F1a-Bn). bal2 removes each marker in the commit that makes it pass. No layout or wording
 // is pinned. The page contract:
-// - the panel [data-balance] on Palette (views/lazy.tsx balancePanel, role `balance`; pal2 places it);
+// - the panel [data-balance] on Palette (views/lazy.tsx balancePanel, role `balance`; pal1 places it in
+//   chunk 1, so these need only bal2's needs, pal1 and conf1, never pal2's strip or gap list);
 // - one [data-balance-check="<id>"] per check (types.ts balanceCheckIds) with data-state its
 //   BalanceState (core balance.ts, the same checks the strip reads), and its "Find…" [data-find];
 // - Add opened by "Find…": store.sheet kind 'add', store.addPreset.value.hint set (A22);
@@ -65,8 +66,9 @@ failing('F1a-B8 (bal2 borrowed climate, A15 A20): on a borrowed list the checks 
   assert.ok(await has(page, '[data-balance] [data-conf="estimate"]', 4000), 'the Balance panel says its checks are estimates');
 });
 
-failing('F1a-B9 (bal2 Balance chunk fails, A3 §5 Unreadable/Retried/Unmounted): the panel says it could not load with Reload, the strip still works, the next use fetches it again as ?retry=n, and a panel left while its chunk loads writes nothing', { owner: 'bal2', reason: /the balance role has a chunk in this build/ }, async () => {
-  assert.ok(h.roles.balance.length, 'the balance role has a chunk in this build (none until pal2 places the panel)');
+// The strip working without the chunk is pal2's F1a-P10 (the strip is pal2's).
+failing('F1a-B9 (bal2 Balance chunk fails, A3 §5 Unreadable/Retried/Unmounted): the panel says it could not load with Reload, Palette stays usable, the next use fetches it again as ?retry=n, and a panel left while its chunk loads writes nothing', { owner: 'bal2', reason: /the balance role has a chunk in this build|Balance: no panel on Palette/ }, async () => {
+  assert.ok(h.roles.balance.length, 'the balance role has a chunk in this build (none until pal1 places the panel)');
   const urls = [];
   const page = await tool({ block: { balance: 404 }, setup: async (pg) => { pg.on('request', (r) => urls.push(r.url())); } });
   await atSite(page, 'seville');
@@ -74,7 +76,7 @@ failing('F1a-B9 (bal2 Balance chunk fails, A3 §5 Unreadable/Retried/Unmounted):
   await suggestReady(page);
   await page.click('.ct-cta .button-primary');
   assert.ok(await has(page, '[data-balance] .ct-notice[role="alert"] button', 10_000), 'the failed line with Reload');
-  assert.ok(await page.waitForFunction(() => document.querySelector('[data-strip]')?.dataset.stripState === 'ready', { timeout: 15_000 }).then(() => true, () => false), 'the strip still works (its checks are core)');
+  assert.ok(await has(page, '[data-view="palette"] [data-plant-id]', 4000), 'Palette stays usable');
   await page.click('[data-view-switch="structure"]');
   await page.click('[data-view-switch="palette"]');
   for (let i = 0; i < 40 && !urls.some((u) => /\?retry=\d+$/.test(u)); i++) await new Promise((r) => setTimeout(r, 200));
@@ -90,6 +92,9 @@ failing('F1a-B9 (bal2 Balance chunk fails, A3 §5 Unreadable/Retried/Unmounted):
   await held.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
   assert.equal(await held.evaluate(() => window.__ctTest.store.toast.value), null, 'no stale toast');
   assert.equal(await held.evaluate(() => JSON.stringify(window.__ctTest.store.members.value)), before, 'no state write');
+  // Back on Palette, the released chunk draws its checks (bal2's panel, not the empty commit-0 stub).
+  await held.click('[data-view-switch="palette"]');
+  assert.ok(await has(held, '[data-balance] [data-balance-check]', 8000), PANEL);
 });
 
 failing('F1a-B10 (bal2 Tropical water, A20): at Manaus the water-needs mix says there is not enough data, never a pass', { owner: 'bal2', reason: /Balance: no panel on Palette/ }, async () => {

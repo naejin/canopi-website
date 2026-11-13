@@ -10,13 +10,17 @@
 // - store.view.value: 'start' | 'palette' | 'structure' (types.ts View, A6); a Structure link carries
 //   its view under v4 with no version bump (VIEW_KEY below: the plan's `w` is v4's water key, so pal1
 //   picks the key and the token; old links open Palette);
-// - [data-view="palette" | "structure"] on each view's root; [data-view-switch="palette" | "structure"]
-//   the two controls that switch them;
+// - [data-view="palette" | "structure"] on each view's root, drawn by the shell (outside the view's lazy
+//   chunk), so Structure's loading line ([role="status"]) shows inside it while its chunk loads, and its
+//   grid is a table (role table or grid) once drawn; [data-view-switch="palette" | "structure"] the two
+//   controls that switch them;
 // - Palette: [data-group="<job>" | "none"] per role group (A4) with the cards ([data-plant-id]) in it,
 //   [data-more] a folded group's "+ N more", input[data-palette-search], [data-remove] on a card;
 // - the health strip [data-strip] with data-strip-state 'checking' | 'ready' | 'unavailable' (A12); the
 //   gap list's rows [data-gap="<job>"], each with its "Find…" [data-find];
 // - store.sheet.value.kind 'add' and store.addPreset.value (the AddPreset openAdd carried, A22);
+// - the Balance panel [data-balance] placed on Palette by pal1 (views/lazy.tsx balancePanel, commit 0),
+//   so bal2 (chunk 2, needs pal1) fills it without pal2;
 // - [data-head-placeholder] while a saved consortium restores (A7); the room answer 'pots' (A8) as
 //   input[name="ct-site-room"][value="pots"].
 // Run capped: npm run test:browser (scripts/browser/run.mjs), or this file alone with node --test.
@@ -24,13 +28,15 @@ import assert from 'node:assert/strict';
 import { h, has, suggestReady, useHarness } from './helpers.mjs';
 import { atSite, choose, temperateLink, tool } from './p5-helpers.mjs';
 import { failing } from '../expect-fail.mjs';
-import { suggestedAt } from './f1a-helpers.mjs';
+import { liveLog, saidTwice, suggestedAt, watchLiveRegions } from './f1a-helpers.mjs';
 
 useHarness();
 
 // The link key of the view (A6). The plan names `w`, which v4 already uses for the water answer
 // (state.ts encodeLink: l, s, w, m), so pal1 picks a free key and sets it here with the token.
 const VIEW_KEY = 'y';
+// Structure drawn: its grid, by role (the desk table or the phone grid), inside the view.
+const STRUCTURE_GRID = '[data-view="structure"] ::-p-aria([role="table"]), [data-view="structure"] ::-p-aria([role="grid"])';
 const storeView = (page) => page.evaluate(() => window.__ctTest.store.view.value);
 const memberCount = (page) => page.evaluate(() => window.__ctTest.store.members.value.length);
 
@@ -81,9 +87,9 @@ failing('F1a-P3 (pal1 Structure link at 390 px, A6 §5): the phone grid at the s
   await suggestReady(held);
   await held.click('.ct-cta .button-primary');
   await held.click('[data-view-switch="structure"]');
-  assert.ok(await has(held, '[data-view="structure"] [role="status"], [role="status"]', 4000), 'a loading line while Structure loads');
+  assert.ok(await has(held, '[data-view="structure"] [role="status"]', 4000), 'a loading line in Structure while it loads');
   await held.releaseHeld();
-  assert.ok(await has(held, '[data-view="structure"] table', 10_000), 'Structure draws once its chunk comes');
+  assert.ok(await has(held, STRUCTURE_GRID, 10_000), 'Structure draws once its chunk comes');
   assert.equal(requests.filter((p) => h.roles.structure.includes(p)).length, 1, 'one request for the structure chunk');
 });
 
@@ -170,4 +176,27 @@ failing('F1a-P8 (pal2 keyboard journey, A25): with the keyboard only, the view s
   await page.keyboard.press('Escape');
   assert.ok(await page.waitForFunction(() => document.activeElement?.matches('[data-find]'), { timeout: 4000 }).then(() => true, () => false), 'closing Add returns the focus to "Find…"');
   assert.equal(await page.$('dialog[open]'), null, 'no dialog left open');
+});
+
+// The live regions of Start and the views (pal1's files: Start's crops count and loading line, PoolSlot's
+// notices, the lazy parts' loading and failed lines, Actions); the toast's and the sheets' regions are
+// a11y1's F1a-A2. Moved here from A2 (commit 0 review) so the stream that owns the regions owns the test.
+failing('F1a-P9 (pal1 status regions on Start and the views, A25): from Start to the placed consortium, every live region is on the page before its message, and each line is announced once per reader\'s event', { owner: 'pal1', reason: /inserted with its message/ }, async () => {
+  const page = await tool({ setup: watchLiveRegions });
+  await choose(page, 'Temperate');
+  await suggestReady(page);
+  await page.click('.ct-cta .button-primary');
+  await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 });
+  const live = await liveLog(page);
+  assert.deepEqual(live.inserted, [], `a live region was inserted with its message (${live.inserted.length}: ${live.inserted.slice(0, 3).join(' | ')})`);
+  assert.deepEqual(saidTwice(live.said), [], 'each line is announced once per reader\'s event');
+});
+
+// The strip's checks are core (balance.ts, commit 0), so the strip works with the Balance chunk refused
+// (A3). The Balance panel's own failed line, Reload and ?retry=n are bal2's F1a-B9.
+failing('F1a-P10 (pal2 Balance chunk fails, A3 §5 Unreadable): the health strip still settles and Palette stays usable', { owner: 'pal2', reason: /the balance role has a chunk in this build|the strip settles without the Balance chunk/ }, async () => {
+  assert.ok(h.roles.balance.length, 'the balance role has a chunk in this build (none until pal1 places the panel)');
+  const page = await suggestedAt(null, 'Temperate', { block: { balance: 404 } });
+  assert.ok(await has(page, '[data-view="palette"] [data-plant-id]', 8000), 'Palette is usable');
+  assert.ok(await page.waitForFunction(() => document.querySelector('[data-strip]')?.dataset.stripState === 'ready', { timeout: 15_000 }).then(() => true, () => false), 'the strip settles without the Balance chunk');
 });

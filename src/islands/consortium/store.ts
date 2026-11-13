@@ -5,7 +5,7 @@
 // inside the computed bodies, the core calls they own (matrix: S1 lib/consortium/matrix.ts; flags:
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
-import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, SuggestRule, Taxon } from '../../lib/consortium/index.ts';
+import type { CellSpan, ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon } from '../../lib/consortium/index.ts';
 import { asGuest, buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, needsMarkProviders, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
@@ -13,6 +13,7 @@ import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
 import { state } from './state/schema.ts';
+import { focusAfterToast } from './focus.ts';
 
 // Where the country came from: the reader chose it, a link carried it, the page guessed it from
 // the browser's language (shown as a guess, never assumed), or (P5 S5b) the site location gave it
@@ -330,8 +331,8 @@ export function suggestMembers(): boolean {
 // cell, "Show them anyway" on a blocked cell or run), a job ("Find a soil feeder"), and `anyway`:
 // every plant of the cell, misfits included and flagged, where "+ Add" lists only the plants that fit.
 // A job's stage gap (Jobs: "Find a soil feeder for Years 15–25 → 60 years on") is a job with a run of
-// stages in any layer: stratum null.
-export interface CellSpan { stratum: Stratum | null; from: PhaseOrd; to: PhaseOrd }
+// stages in any layer: stratum null. (CellSpan is core's, types.ts: Add's preset carries it too, F1a A22.)
+export type { CellSpan };
 export interface SheetFor { cell: CellSpan | null; job: JobId | null; anyway: boolean }
 export const FOR_NOTHING: SheetFor = { cell: null, job: null, anyway: false };
 export const sheetCell = signal<SheetFor>(FOR_NOTHING);
@@ -356,11 +357,14 @@ export function showToast(text: string, undo: (() => void) | null = null, action
   if (toastTimer) clearTimeout(toastTimer);
   const line: ToastLine = { id: toastSeq++, text, undo, action, where: sheet.peek() !== null ? 'sheet' : 'page', focus };
   toast.value = line;
-  toastTimer = setTimeout(() => { if (toast.peek()?.id === line.id) toast.value = null; }, TOAST_MS);
+  toastTimer = setTimeout(() => { if (toast.peek()?.id === line.id) { focusAfterToast(); toast.value = null; } }, TOAST_MS);
 }
+// Every path that takes the toast away (Dismiss, Undo, its action, the timer above) tells focus.ts
+// first, while the toast is still on the page (F1a commit 0 seam, A25; stream 6 implements it).
 export function hideToast(): void {
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = null;
+  focusAfterToast();
   toast.value = null;
 }
 

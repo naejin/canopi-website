@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:37:52Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T20:25:25Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
@@ -25,8 +25,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:c639f9179f641ff0
-    last_modified: 2026-11-13T16:13:32Z
+    digest: sha256:6864030b5d82d224
+    last_modified: 2026-11-13T19:47:53Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -70,8 +70,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:604d832e631bff06
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:9b609001749f13dc
+    last_modified: 2026-11-13T19:47:53Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -105,8 +105,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
-    digest: sha256:f066e75444fb4cce
-    last_modified: 2026-11-13T14:01:32Z
+    digest: sha256:8f3f6a4316c5229c
+    last_modified: 2026-11-13T20:05:11Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -150,8 +150,8 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:b031e4d644fedc76
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:dc5dd142bb174926
+    last_modified: 2026-11-13T19:47:53Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -160,8 +160,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:6d2cc09d8428569e
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:dc512a822aa08263
+    last_modified: 2026-11-13T19:47:53Z
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
@@ -443,7 +443,10 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
 
 ## F1a commit 0 seams
 
-- `views/lazy.tsx` `balancePanel`: the Balance panel, a `lazyPart(retryable(import('./balance/BalanceSlot.tsx')))` marked pure, so the build drops it until stream 1 (pal2) places it in Palette. Its role `balance` stays empty until then. `views/balance/BalanceSlot.tsx` is a stub that stream 4 fills.
-- `focus.ts` `focusAfterToast()`: the toast-focus helper. Stream 1's `store.ts` calls it on every `hideToast` path, and stream 6 implements it. Today it does nothing. It and `balancePanel` carry a knip `@public` tag until their first caller lands.
+- `views/lazy.tsx` `balancePanel`: the Balance panel, a `lazyPart(retryable(import('./balance/BalanceSlot.tsx')))` marked pure, so the build drops it until stream 1 (pal1, chunk 1) places it in Palette. Its role `balance` stays empty until then. `views/balance/BalanceSlot.tsx` is a stub that stream 4 fills.
+- `focus.ts` `focusAfterToast()`: the toast-focus helper. `store.ts` calls it on every `hideToast` path and from the toast timer, while the toast is still on the page, and stream 6 implements it. Today it does nothing. `balancePanel` carries a knip `@public` tag until stream 1 places it.
+- `views/kit/start-mark.ts` `markStart()`: the `ct:start` timing mark. The Start form calls it on every render (a plain call, so the build drops it while empty), and stream 5 implements it (once per page, after the paint). Today it does nothing.
+- `store.ts` re-exports core's `CellSpan` (`types.ts`), which Add's preset (`AddPreset.cell`) carries too.
+- `f1a-helpers.mjs` `watchLiveRegions`, `liveLog`, `resetLive`, `saidTwice`: the live-region watcher of F1a-A2 (the toast's and the sheets' regions, a11y1) and F1a-P9 (Start's and the views' regions, pal1). Each line said is tagged with the reader's event (toast id, sheet opening), so the same line for a new toast is a new announcement.
 - `ConsortiumPage.astro` imports the empty page-level `palette.css` and `balance.css` (no CSS on a lazy chunk).
 - Browser specs `scripts/browser/consortium-f1a-{palette,filters,confidence,balance,perf,a11y}.browser.test.mjs` (shared steps in `f1a-helpers.mjs`) hold one test per user scenario, `F1a-Xn (<owner> …)`, written failing with `failing()`. They read the store, roles and data attributes such as `data-view`, `data-strip`, `data-gap`, `data-find`, `data-balance-check`, `data-filter` and `data-conf`; each file's header names its contract. `scripts/browser-tests.test.mjs` checks each owner against `scripts/plan/f1a-owners.json`.

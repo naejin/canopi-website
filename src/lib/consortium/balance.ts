@@ -19,7 +19,7 @@ export interface BalanceContext {
 export type BalanceRule = (members: readonly Taxon[], ctx: BalanceContext) => BalanceCheck;
 
 // A check that has not run: none of the members judged.
-const notChecked = (id: BalanceCheckId, members: readonly Taxon[]): BalanceCheck => ({ id, state: 'not-checked', n: 0, m: members.length, preset: null });
+const notChecked = (id: BalanceCheckId, members: readonly Taxon[]): BalanceCheck => ({ id, state: 'not-checked', n: 0, m: members.length, detail: {}, preset: null });
 
 // One rule per check id; bal2 replaces each entry with its rule (and bal3 the evergreen one after D2a).
 // A literal of functions, never built by a call (Object.fromEntries), so the build drops the registry

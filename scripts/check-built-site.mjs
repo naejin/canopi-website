@@ -513,7 +513,7 @@ const ROLE_CAPS = {
   // the larger A14 maximum (a feature's 12 KB; A2 lets the coordinator pick 8 KB lazy or 12 KB feature
   // for balance); set to measured + 0.5 KB at the merge that gives each its chunk.
   structure: 12 * KB, // no chunk yet (pal1 moves the matrix to views/Structure.tsx)
-  balance: 12 * KB, // no chunk yet (pal2 places views/lazy.tsx balancePanel; bal2 fills it)
+  balance: 12 * KB, // no chunk yet (pal1 places views/lazy.tsx balancePanel; bal2 fills it)
 };
 const LOCATION_BUDGET = 20 * KB;
 const MAPLIBRE_BUDGET = 330 * KB;

@@ -3,61 +3,69 @@
 // (scripts/expect-fail.mjs failing()) for its owner a11y1 (chunk 1; scripts/plan/f1a-owners.json) with
 // its plan label (F1a-An); a11y1 removes each marker in the commit that makes it pass. The screen-reader
 // proxy is the focus and the live regions as the page writes them (a11y1 adds its CDP live-region log,
-// scripts/browser/live-regions.mjs, and may move these tests onto it). The keyboard journey through
-// Palette ("Find…", closing a sheet back to its card) is pal2's F1a-P8; the axe page list is the merge
-// agent's. No layout or wording is pinned.
+// scripts/browser/live-regions.mjs, and may move these tests onto it; the watcher is f1a-helpers.mjs
+// watchLiveRegions). A2 covers the regions of a11y1's files (the toast, the sheets' loading lines); the
+// live regions of Start and the views (Start's crops count and loading line, the lazy parts' lines) are
+// pal1's files and pal1's F1a-P9. The keyboard journey through Palette ("Find…", closing a sheet back to
+// its card) is pal2's F1a-P8; the axe page list is the merge agent's. No layout or wording is pinned:
+// controls are found by role and accessible name (the name read from the locale file).
 import assert from 'node:assert/strict';
-import { suggestReady, useHarness } from './helpers.mjs';
+import { aria, en, suggestReady, useHarness } from './helpers.mjs';
 import { choose, tool } from './p5-helpers.mjs';
 import { failing } from '../expect-fail.mjs';
+import { liveLog, resetLive, saidTwice, watchLiveRegions } from './f1a-helpers.mjs';
 
 useHarness();
 
-// Records every live region ([role=status], [role=alert], [aria-live]) added to the page with its text
-// already in it (a screen reader may never read a message that arrives with its region), and every
-// text a live region shows, in order.
-const watchLiveRegions = async (pg) => pg.evaluateOnNewDocument(() => {
-  const LIVE = '[role="status"], [role="alert"], [aria-live]';
-  window.__live = { inserted: [], said: [] };
-  const say = (el) => { const t = el.textContent.replace(/\s+/g, ' ').trim(); if (t && window.__live.said.at(-1) !== t) window.__live.said.push(t); };
-  new MutationObserver((records) => {
-    for (const r of records) {
-      for (const n of r.addedNodes) {
-        if (!(n instanceof Element)) continue;
-        for (const el of [n, ...n.querySelectorAll(LIVE)].filter((e) => e.matches(LIVE))) if (el.textContent.trim()) window.__live.inserted.push(el.textContent.replace(/\s+/g, ' ').trim().slice(0, 80));
-      }
-      const region = (r.target instanceof Element ? r.target : r.target.parentElement)?.closest(LIVE);
-      if (region) say(region);
-    }
-  }).observe(document, { subtree: true, childList: true, characterData: true });
-});
-
-failing('F1a-A1 (a11y1 toast focus, A25): dismissing the toast with the keyboard keeps the focus on a control of the tool, never <body>', { owner: 'a11y1', reason: /focus fell to <body>/ }, async () => {
-  const page = await tool();
+const DISMISS = aria('button', en['consortium.dismiss']);
+const placed = async (page) => {
   await choose(page, 'Temperate');
   await suggestReady(page);
   await page.click('.ct-cta .button-primary');
   await page.waitForFunction(() => window.__ctTest.store.members.value.length > 1, { timeout: 15_000 });
+};
+const frames = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
+
+// Needs only commit 0 and a11y1's files: store.ts hideToast calls focus.ts focusAfterToast (commit 0),
+// which a11y1 implements.
+failing('F1a-A1 (a11y1 toast focus, A25): dismissing the toast with the keyboard keeps the focus on a control of the tool, never <body>', { owner: 'a11y1', reason: /focus fell to <body>/ }, async () => {
+  const page = await tool();
+  await placed(page);
   await page.evaluate(() => { const { store } = window.__ctTest; store.removeMember(store.members.value[0]); });
   await page.waitForFunction(() => window.__ctTest.store.toast.value !== null, { timeout: 4000 });
-  const dismiss = await page.waitForSelector('#ct-root [role="status"] button:last-of-type', { timeout: 4000 });
+  const dismiss = await page.waitForSelector(DISMISS, { timeout: 4000 });
   await dismiss.focus();
   await page.keyboard.press('Enter');
   await page.waitForFunction(() => window.__ctTest.store.toast.value === null, { timeout: 4000 });
-  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
+  await frames(page);
   const at = await page.evaluate(() => ({ body: document.activeElement === document.body || !document.activeElement, inTool: !!document.activeElement?.closest('#ct-root') }));
   assert.equal(at.body, false, 'the toast dismissed: focus fell to <body>');
   assert.equal(at.inTool, true, 'the focus stays in the tool');
 });
 
-failing('F1a-A2 (a11y1 status regions, A25): every live region is on the page before its message, and the loading line is announced once', { owner: 'a11y1', reason: /inserted with its message/ }, async () => {
-  const page = await tool({ setup: watchLiveRegions });
-  await choose(page, 'Temperate');
-  await suggestReady(page);
-  await page.click('.ct-cta .button-primary');
-  await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 });
-  const live = await page.evaluate(() => window.__live);
+// Once the consortium is placed (Start's regions are pal1's F1a-P9): a plant's sheet opened while its
+// chunk loads, then the same plant removed, put back with Undo and removed again (two toasts with the
+// same line: two announcements, one each).
+failing('F1a-A2 (a11y1 status regions, A25): the toast\'s and the sheets\' live regions are on the page before their message, and each line is announced once per toast or opening', { owner: 'a11y1', reason: /inserted with its message/ }, async () => {
+  const page = await tool({ setup: watchLiveRegions, block: { details: 'hold' } });
+  await placed(page);
+  await resetLive(page);
+  const id = await page.evaluate(() => window.__ctTest.store.members.value[0]);
+  await page.evaluate((x) => window.__ctTest.openSheet('details', x), id);
+  await page.waitForFunction(() => window.__live.said.length > 0 || window.__live.inserted.length > 0, { timeout: 4000 }).catch(() => {});
+  await page.releaseHeld();
+  await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
+  await frames(page);
+  await page.evaluate(() => window.__ctTest.store.closeSheet());
+  for (let i = 0; i < 2; i++) {
+    await page.evaluate((x) => window.__ctTest.store.removeMember(x), id);
+    await page.waitForFunction(() => window.__ctTest.store.toast.value !== null, { timeout: 4000 });
+    await frames(page);
+    await page.evaluate(() => { const { store } = window.__ctTest; const { undo } = store.toast.value; store.hideToast(); undo(); });
+    await page.waitForFunction((x) => window.__ctTest.store.members.value.includes(x), { timeout: 4000 }, id);
+  }
+  const live = await liveLog(page);
   assert.deepEqual(live.inserted, [], `a live region was inserted with its message (${live.inserted.length}: ${live.inserted.slice(0, 3).join(' | ')})`);
-  const loading = live.said.filter((t, i) => live.said.indexOf(t) !== i);
-  assert.deepEqual(loading, [], 'each line is announced once');
+  assert.ok(live.said.length >= 2, 'each toast was announced');
+  assert.deepEqual(saidTwice(live.said), [], 'each line is announced once per toast or opening');
 });

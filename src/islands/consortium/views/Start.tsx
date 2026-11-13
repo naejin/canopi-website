@@ -24,6 +24,7 @@ import { startMemory } from '../state/arrival.ts';
 import { backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, pickingCountry, startEmpty, startOver } from '../state/draft.ts';
 import { pendingSuggest, requestSuggest } from '../state/suggest-wait.ts';
 import { page } from './kit/page.ts';
+import { markStart } from './kit/start-mark.ts';
 import { basisLine, countryName, nameOf, zoneName } from './kit/names.ts';
 
 // ---- words ----
@@ -249,6 +250,9 @@ function Head() {
 function StartView() {
   const z = climateChosen.value;
   const waiting = pendingSuggest.value || restoring.value;
+  // The ct:start timing mark (F1a commit 0 seam, perf1), told on every render of the form; perf1 marks
+  // once per page, after the paint. A plain call, not an effect: the empty seam costs the first run nothing.
+  markStart();
   return (
     <div class="ct-start">
       <CountryLine />
