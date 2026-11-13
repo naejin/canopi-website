@@ -39,16 +39,6 @@ test('E5a vectors: the committed lookup.json matches its sha256 pin and the inst
   assert.match(vectors.cli, /^canopi-climate 0\.2\.1$/);
 });
 
-// A21 retires goldens.json (54 points, canopi-climate 0.2.0) for lookup.json (the same 54 points plus
-// own_tile and tables). Until its last reader (consortium-p5-ranges.test.mjs, Yakutsk site) reads
-// lookup.json, it must stay the vectors' points exactly; then goldens.json, make-goldens.mjs and this
-// test go together.
-test('E5a vectors: goldens.json, kept for its last reader, holds lookup.json\'s points exactly', () => {
-  const goldens = JSON.parse(readFileSync(new URL('goldens.json', FIXTURES), 'utf8'));
-  assert.equal(goldens.grid_manifest_sha256, vectors.grid_manifest_sha256);
-  assert.deepEqual(goldens.points, vectors.points.map(({ own_tile, ...p }) => p));
-});
-
 test('E5a vectors: every rule-table row of lookup.json (legend, margins, texture, codes, decoding)', () => {
   assert.ok(checkTables(C, vectors.tables) > 100);
 });

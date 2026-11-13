@@ -230,17 +230,17 @@ test('acceptance (owner diagnosis, export r-60ea417b5a15c3aa, the rows of r-b958
 // 2026-11-12; a wider margin would gut the cold check everywhere). A todo that starts passing shows
 // as a passed todo: remove its todo then.
 
-test('E2 sites: Yakutsk is the canopi-climate lookup in goldens.json (historical and future slots), not a hand copy', () => {
-  const g = JSON.parse(readFileSync(new URL('./fixtures/climate/goldens.json', import.meta.url), 'utf8')).points.find((p) => p.name === 'Yakutsk');
+test('E2 sites: Yakutsk is the canopi-climate lookup in the crate\'s lookup.json vectors (historical and future slots), not a hand copy', () => {
+  const g = JSON.parse(readFileSync(new URL('./fixtures/climate/lookup.json', import.meta.url), 'utf8')).points.find((p) => p.name === 'Yakutsk');
   const c = g.expect.climate;
-  const fromGolden = {
+  const fromVectors = {
     lat: g.lat, lon: g.lon,
     climate: {
       cellLat: c.cell_lat, cellLon: c.cell_lon, distanceCells: c.distance_cells,
       periods: c.periods.map((p) => ({ period: p.period, scenario: p.scenario, koppen: p.koppen, koppenTemperatureMarginC: p.koppen_temperature_margin_c, tminColdC: p.tmin_cold_c, tmaxWarmC: p.tmax_warm_c, tmeanColdC: p.tmean_cold_c, tmeanWarmC: p.tmean_warm_c, aridityIndex: p.aridity_index })),
     },
   };
-  assert.deepEqual(SITES.yakutsk, fromGolden);
+  assert.deepEqual(SITES.yakutsk, fromVectors);
   assert.deepEqual([SITES.yakutsk.climate.periods[0].tminColdC, SITES.yakutsk.climate.periods[0].koppen], [-39.8, 'Dfc']);
 });
 
