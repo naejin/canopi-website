@@ -22,12 +22,13 @@ test('store.curatedClimates: the page\'s list before the database opens, the dat
 });
 
 // No second reader: the island reads neither the database's info().climates nor the page's climates
-// anywhere but in store.ts (and main.ts, which hands the page's list over and checks the database).
-test('no island module but store.ts and main.ts reads info().climates or page().climates', () => {
+// anywhere but in store.ts (main.ts hands the page's list over as data.climates, which is not a read
+// of either).
+test('no island module but store.ts reads info().climates or page().climates', () => {
   const root = fileURLToPath(island);
   const files = [];
   const walk = (dir) => { for (const f of readdirSync(dir)) { const p = join(dir, f); if (statSync(p).isDirectory()) walk(p); else if (/\.tsx?$/.test(f)) files.push(p); } };
   walk(root);
-  const readers = files.filter((p) => /info\(\)\.climates|page\(\)\.climates/.test(readFileSync(p, 'utf8'))).map((p) => p.slice(root.length)).sort();
+  const readers = files.filter((p) => /\binfo\(\)\??\.climates|\bpage\(\)\??\.climates/.test(readFileSync(p, 'utf8'))).map((p) => p.slice(root.length)).sort();
   assert.deepEqual(readers, ['store.ts'], 'read store.curatedClimates instead');
 });
