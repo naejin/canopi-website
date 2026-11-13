@@ -78,8 +78,8 @@ test('state.ts o=: the cell centre only when given, just before e=1; v=4 decoder
   for (const bad of ['o=91,0', 'o=0,181', 'o=abc', 'o=1;2', 'o=', 'c=temperate']) assert.equal(core.linkOrigin(`v=4&${bad}&e=1`), null, bad);
 });
 
-test('memory.ts: a location country goes into a link only with the tick; the saved location record', async () => {
-  const m = await import('../src/islands/consortium/memory.ts');
+test('state/persist.ts and state/location.ts: a location country goes into a link only with the tick; the saved location record', async () => {
+  const m = await import('../src/islands/consortium/state/persist.ts');
   const input = { climate: 'Mediterranean', country: { code: 'ES', source: 'location' }, site: { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' }, members: [], kept: [], removed: [], guests: {}, crops: [], stage: null };
   assert.equal(m.shareState(input).country, null);
   assert.equal(m.shareState(input, { location: true }).country, 'ES');
@@ -154,7 +154,7 @@ test('the location step stays off the first run: the shell imports its chunk onl
 });
 
 test('review round 2 (1): a lookup\'s writes are quiet even in a batch: a restore in flight survives them', async () => {
-  const m = await import('../src/islands/consortium/memory.ts');
+  const m = { ...await import('../src/islands/consortium/state/persist.ts'), ...await import('../src/islands/consortium/state/restore.ts') };
   const store = await import('../src/islands/consortium/store.ts');
   const keep = await import('../src/islands/consortium/views/location/keep.ts');
   const { batch } = await import('@preact/signals');
@@ -195,9 +195,8 @@ test('review round 2 (2): one pending lookup from the chunk load through its set
     await load.lookingThrough(tick, tick);
     assert.deepEqual(seen, [1, 0], 'lookingThrough: one lookup from load to settle');
   } finally { stop(); }
-  // settleLocation sits in memory.ts until S2's split moves it to state/restore.ts: either file, in code
-  // (comments left out), not in a comment.
-  const code = ['memory.ts', 'state/restore.ts'].map((f) => new URL(`../src/islands/consortium/${f}`, import.meta.url)).filter((u) => existsSync(u))
+  // settleLocation (state/restore.ts), in code (comments left out), not in a comment.
+  const code = ['state/restore.ts'].map((f) => new URL(`../src/islands/consortium/${f}`, import.meta.url)).filter((u) => existsSync(u))
     .map((u) => readFileSync(u, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')).join('\n');
   assert.match(code, /lookingThrough\(/, 'settleLocation holds one lookup through load and settle');
 });
@@ -222,7 +221,7 @@ test('review round 2 (3): a geocoder request unanswered in 15 s fails as an erro
 
 test('review round 3 (1): the Suggest cap is 10 s per press: an earlier press\'s timer never releases a later one', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
-  const m = await import('../src/islands/consortium/memory.ts');
+  const m = await import('../src/islands/consortium/state/suggest-wait.ts');
   const store = await import('../src/islands/consortium/store.ts');
   const load = await import('../src/islands/consortium/views/location/load.ts');
   assert.equal(store.pool.peek(), null, 'no plant list read: Suggest stays pending');
@@ -241,7 +240,7 @@ test('review round 3 (1): the Suggest cap is 10 s per press: an earlier press\'s
 });
 
 test('review round 3 (2, 3): Start over, Change site and Start empty drop a link\'s lookup (its hold, its line, its later writes) and the "not read" note', async (t) => {
-  const m = await import('../src/islands/consortium/memory.ts');
+  const m = await import('../src/islands/consortium/state/draft.ts');
   const store = await import('../src/islands/consortium/store.ts');
   const load = await import('../src/islands/consortium/views/location/load.ts');
   const raf = globalThis.requestAnimationFrame;

@@ -5,7 +5,7 @@
 // v1 (guessCountry, cropExamples). The real crop examples are read from the installed export.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 
 // The state modules themselves (E6 S2 split memory.ts into state/), merged into one namespace `m`.
@@ -88,8 +88,7 @@ test('arrival: a link wins, then a guide preset, then an old query link, then th
 
 test('one zoneOf: the island reads climate ids with the core\'s (H15)', async () => {
   const core = await import('../src/lib/consortium/index.ts');
-  const memory = await import('../src/islands/consortium/memory.ts');
-  assert.equal(memory.zoneOf, core.zoneOf, 'memory.ts re-exports the core zoneOf (for the views until chunk 5), no copy');
+  assert.ok(core.zoneOf, 'the core zoneOf, which the views import from the core barrel');
   assert.doesNotMatch(stateSrc, /const zoneOf\b/, 'island state has no zoneOf of its own');
   const main = readFileSync(new URL('../src/islands/consortium/main.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(main, /const zoneOf\b/, 'main.ts has no zoneOf of its own');
@@ -595,15 +594,13 @@ for (const [from, country] of [['saved', { code: 'FR', source: 'chosen' }], ['li
 
 // ---- E6 S2: the memory split (state/persist, restore, arrival, draft, suggest-wait, lookups; state/location) ----
 
-test('the split: island state imports nothing under views/, statically or through import() (ADR-1 L2); memory.ts only re-exports', () => {
+test('the split: island state imports nothing under views/, statically or through import() (ADR-1 L2); memory.ts is gone (E6 chunk 5)', () => {
   const dir = new URL('../src/islands/consortium/state/', import.meta.url);
   for (const f of ['persist.ts', 'restore.ts', 'arrival.ts', 'draft.ts', 'suggest-wait.ts', 'lookups.ts', 'location.ts']) {
     const src = readFileSync(new URL(f, dir), 'utf8');
     assert.doesNotMatch(src, /(from|import\()\s*'[^']*\/views\//, `state/${f} imports a view`);
   }
-  const mem = readFileSync(new URL('../src/islands/consortium/memory.ts', import.meta.url), 'utf8');
-  const code = mem.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
-  assert.ok(code.every((l) => /^export \{[^}]+\} from '[^']+';$/.test(l)), `memory.ts holds re-exports only: ${code.filter((l) => !/^export \{/.test(l)).join(' | ')}`);
+  assert.equal(existsSync(new URL('../src/islands/consortium/memory.ts', import.meta.url)), false, 'no memory.ts barrel: consumers import state/ modules directly');
   assert.doesNotMatch(readFileSync(new URL('../src/lib/location/place-search.ts', import.meta.url), 'utf8'), /@preact\/signals/, 'the location service imports no UI framework (A12)');
 });
 

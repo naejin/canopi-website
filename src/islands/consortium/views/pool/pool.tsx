@@ -14,9 +14,9 @@
 // - None of them: the "nothing fits" state [data-pool-empty], with the next step (search all plants).
 import { useEffect } from 'preact/hooks';
 import type { ClimateZone } from '../../../../lib/consortium/index.ts';
-import { hasPlants, NEAREST_LISTS, RANGE_MARGIN_C, rangeFit, siteToday, yearMeanC } from '../../../../lib/consortium/index.ts';
+import { hasPlants, NEAREST_LISTS, RANGE_MARGIN_C, rangeFit, siteToday, yearMeanC, zoneOf } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
-import { startEmpty, zoneOf } from '../../memory.ts';
+import { startEmpty } from '../../state/draft.ts';
 import { P, T } from '../../strings.ts';
 import { page } from '../kit/page.ts';
 import { num, zoneName } from '../kit/names.ts';

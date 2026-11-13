@@ -4,23 +4,25 @@
 // - The optional country line comes first, so the browser's guess is seen before it is used.
 // - Then the climate cards, nothing chosen (never a default climate): Ready, Needs your location (a
 //   climate that borrows plants, without a location: PoolSlot cardPill), or Not covered yet with
-//   "Ask for this climate". Picking one writes the shared site climate (memory.chooseClimate).
+//   "Ask for this climate". Picking one writes the shared site climate (state/draft.ts chooseClimate).
 // - Then "What do you mainly want to grow?" (up to three of the climate's food plants; examples by
-//   rule, memory.cropExamples) and "Your site" (all four questions start at "Not sure").
+//   rule, state/draft.ts cropExamples) and "Your site" (all four questions start at "Not sure").
 // - "Suggest plants" (waits for the plant list while it loads), "Start empty and search", "Paste a list".
 // Once a consortium is shown (store.view is not 'start'), Start shrinks to its head: the title with
 // the count and climate, the site basis with "Change site" and "Start over", and the country line.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Locale, PlantId, Site, SiteKey, Taxon } from '../../../lib/consortium/index.ts';
-import { countryStatus, lights, MAX_CROPS, rooms, soils, waters } from '../../../lib/consortium/index.ts';
+import { countryStatus, lights, MAX_CROPS, rooms, soils, waters, zoneOf } from '../../../lib/consortium/index.ts';
 import { climate, country, crops, proposedClimate, kept, knownCountries, members, openSheet, pool, site, view } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { searchIndex } from '../data/search.ts';
 import { LocationSlot } from './LocationSlot.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from './PoolSlot.tsx';
-import {
-  backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, notices, pendingClimate, pendingSuggest, pickingCountry, requestSuggest, restoring, startEmpty, startMemory, startOver, zoneOf,
-} from '../memory.ts';
+import { pendingClimate, restoring } from '../state/persist.ts';
+import { notices } from '../state/restore.ts';
+import { startMemory } from '../state/arrival.ts';
+import { backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, pickingCountry, startEmpty, startOver } from '../state/draft.ts';
+import { pendingSuggest, requestSuggest } from '../state/suggest-wait.ts';
 import { page } from './kit/page.ts';
 import { basisLine, countryName, nameOf, zoneName } from './kit/names.ts';
 
@@ -88,7 +90,7 @@ export function CountryLine() {
 
 // ---- the climate cards ----
 function Climates() {
-  // A link's climate shows at once while it loads (memory.pendingClimate). A location's suggestion
+  // A link's climate shows at once while it loads (state/persist.ts pendingClimate). A location's suggestion
   // (store.proposedClimate, S5b) shows as proposed, not checked: a click on its card confirms it, as
   // the result line's "Use" button does (owner answer 1; review round 1, 6).
   const chosen = climate.value ?? pendingClimate.value;

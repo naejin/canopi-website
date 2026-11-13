@@ -45,7 +45,7 @@ export const sheet = signal<Sheet | null>(null);
 // crops and site answers (and, on the consortium's own card, its plants, which Suggest and a paste
 // build on). The consortium shown before Change site is then in setAside, with its own site
 // answers, country and stage; null: none. Only the
-// commit actions turn the draft into the consortium (memory.ts); the save mirrors the consortium.
+// commit actions turn the draft into the consortium (state/draft.ts); the save mirrors the consortium.
 export const load = signal<Load>({ status: 'idle', error: null });
 // P5 (commit 0 seam): where the site is. S5b writes it (device location, place search, map pick, a
 // link's `o=`); S5c (range check, nearest lists), S5d (future check) and S5e (native here, soil
@@ -201,7 +201,7 @@ export const matrix = computed<Matrix | null>(() => {
 // but store.climate stays unset until the reader confirms.
 export const proposedClimate = signal<ClimateZone | null>(null);
 // Whether that proposal came from the saved site looked up again (not the reader locating): only such
-// a proposal goes when a consortium opens (memory.ts restore; seam review round 4, 2).
+// a proposal goes when a consortium opens (state/restore.ts restore; seam review round 4, 2).
 export const proposedFromSave = signal(false);
 export const markContext = computed<MarkContext>(() => ({ climate: climate.value, location: location.value, scenario: scenario.value, site: site.value }));
 // The mark providers (core mark-providers.ts, their own chunk): none until a mark can show (a site

@@ -116,7 +116,7 @@ test('every privacy and tool-credit string is in all 11 locales, after consortiu
 // What the location paragraphs claim, checked against the code (ho-misc seam check), in every locale:
 // - the grid cell's size: the climate grid's 0.1° cell is about 11 km north to south (lookup.ts
 //   CLIMATE_GRID, the cell centre a ticked link carries as `o=`);
-// - a ticked link also carries the country the location gave (memory.ts shareState: a location's
+// - a ticked link also carries the country the location gave (state/persist.ts shareState: a location's
 //   country is written only with the tick; state.ts encodeLink `k=`);
 // - the location is read on the device for the climate and the country (location.tsx locateNow:
 //   lookup.regions.isoA2);

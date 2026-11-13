@@ -187,7 +187,7 @@ export async function startHarness({ log = () => {}, dir } = {}) {
   // - hook: true sets window.__ctTest = true before the first navigation (the test build then gives
   //   the page its test hook), so a hooked page loads once, not goto then reload;
   // - timeouts: { stall, read, suggest } in ms shortens the page's download stall (data/load.ts), its
-  //   climate tile read (views/location/location.tsx) and Suggest's wait (memory.ts), test build only;
+  //   climate tile read (views/location/location.tsx) and Suggest's wait (state/suggest-wait.ts), test build only;
   // - geoTimeoutMs: with geolocation 'timeout', TIMEOUT comes after min(the call's timeout, this);
   // - block: { <role>: 404 | 'offline' | 'hold' } fails a chunk role of consortium-chunks.json (pool,
   //   location, future, markProviders, maplibre, details, sheets, later, suggest, range, …) from the

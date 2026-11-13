@@ -6,7 +6,7 @@
 import type { ComponentChildren } from 'preact';
 import type { Matrix as MatrixData, PhaseOrd, Stratum } from '../../../lib/consortium/index.ts';
 import { climate, memberTaxa, pool, site } from '../store.ts';
-import { pendingSuggest, requestSuggest } from '../memory.ts';
+import { pendingSuggest, requestSuggest } from '../state/suggest-wait.ts';
 import { P, T } from '../strings.ts';
 import { fillPercent, reasonParts, runReasons } from './tracks.ts';
 import { cellName, openAdd } from './StageBar.tsx';

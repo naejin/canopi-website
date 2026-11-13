@@ -16,11 +16,13 @@
 // now" and the list a climate has: rules/suggest-block.ts.)
 import { effect } from '@preact/signals';
 import type { ClimateZone } from '../../../lib/consortium/index.ts';
-import { hasPlants } from '../../../lib/consortium/index.ts';
+import { hasPlants, zoneOf } from '../../../lib/consortium/index.ts';
 import { climate, location, pool, rangeFailed, rangeRule, siteClimate } from '../store.ts';
 import * as rule from '../rules/suggest-block.ts';
 import type { SuggestBlock, SuggestScene } from '../rules/suggest-block.ts';
-import { backToConsortium, canGoBack, pendingClimate, pendingSuggest, zoneOf } from '../memory.ts';
+import { pendingClimate } from '../state/persist.ts';
+import { backToConsortium, canGoBack } from '../state/draft.ts';
+import { pendingSuggest } from '../state/suggest-wait.ts';
 import { T } from '../strings.ts';
 import { lazyPart } from './lazy.tsx';
 import { page } from './kit/page.ts';
@@ -57,7 +59,7 @@ const toLocation = () => {
 // The one rule for "can Suggest now" (seam review 1; rules/suggest-block.ts): why a Suggest for climate
 // z would refuse, or null when it can act. Start's "Suggest plants" and the empty matrix's "Suggest a
 // start" both read it, and show the reason (WhyNoSuggest) in place of a button that could only refuse;
-// both call memory.requestSuggest, which waits for what is still being read.
+// both call state/suggest-wait.ts requestSuggest, which waits for what is still being read.
 export const suggestBlock = (z: ClimateZone): SuggestBlock | null => rule.suggestBlock(z, scene);
 // A Suggest pressed while the rule loaded, for a site where nothing fits: cleared, so the reader stays
 // on Start with the nothing-fits state (store.ts suggestMembers refuses it too).

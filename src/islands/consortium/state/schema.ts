@@ -6,13 +6,13 @@
 // - undo: Undo puts it back (in the Snapshot); a function says what Undo writes from the value
 //   before and the value now. endsUndo: a change to it ends the Undo offer (SNAP_KEYS).
 // - saved: part of the Consortium the save keeps and Change site sets aside. The save is the link's
-//   fragment (memory.ts saveRecord), so a saved field is in the link, under its own name in the core
+//   fragment (persist.ts saveRecord), so a saved field is in the link, under its own name in the core
 //   ShareState (lib/consortium/state.ts encodeLink and decodeLink write and read the #v=4 pairs), and
-//   watched as 'reader'. link: how it goes in (`put`, default: as it is; memory.ts shareState) and
+//   watched as 'reader'. link: how it goes in (`put`, default: as it is; persist.ts shareState) and
 //   comes back (`take`, default: the link's value, or the current one when the link has none;
-//   memory.ts applyDecoded).
+//   restore.ts applyDecoded).
 // - watched, for a field not saved: 'reader' (a write to it is the reader acting, and the save, the
-//   address and Share's link follow it: memory.ts watchStore and shownFragment) or 'save' (the save
+//   address and Share's link follow it: persist.ts watchStore and shownFragment) or 'save' (the save
 //   and the address follow it).
 // - plants: one of the plant lists. It is saved, Undo puts it back and a change ends the Undo offer;
 //   Change site's draft seeds it, Start over empties it, and a change ends a waiting Suggest.
@@ -139,7 +139,7 @@ export const CONSORTIUM_FIELDS = {
 
 // The consortium as the save keeps it and Change site sets it aside, with a climate.
 export type Consortium = Omit<ValuesOf<typeof CONSORTIUM_FIELDS>, 'climate'> & { climate: ClimateZone };
-// What memory.ts shareState takes (a share input may leave the stage unset: the link then has none).
+// What persist.ts shareState takes (a share input may leave the stage unset: the link then has none).
 export type ShareInput = Omit<ValuesOf<typeof CONSORTIUM_FIELDS>, 'stage'> & { stage: PhaseOrd | null };
 
 // The page's state: the consortium, and what is not saved.
