@@ -60,7 +60,7 @@ export default function Paste({ Frame }: { Frame: Frame }) {
     for (const c of r.choose) if (c.climate) for (const t of c.taxa) climateOf.set(t.id, c.climate);
     const chosen = ticked.filter((id) => r.choose.some((c) => c.taxa.some((t) => t.id === id)));
     const ids = [...new Set([...r.found.map((f) => f.taxon.id), ...chosen])].filter((id) => !members.includes(id));
-    const byId = new Map<PlantId, Taxon>([...r.found.map((f) => [f.taxon.id, f.taxon] as const), ...r.choose.flatMap((c) => c.taxa.map((t) => [t.id, c.climate ? { ...t, from: c.climate } : t] as const))]);
+    const byId = new Map<PlantId, Taxon>([...r.found.map((f) => [f.taxon.id, f.taxon] as const), ...r.choose.flatMap((c) => c.taxa.map((t) => [t.id, t] as const))]);
     return { ids, climateOf, byId };
   };
   const toAdd = plan(result).ids;
@@ -134,16 +134,15 @@ export default function Paste({ Frame }: { Frame: Frame }) {
               {result.choose.map((c) => (
                 <li><strong>{c.name}</strong>
                   <ul class="ct-plain">
-                    {c.taxa.map((t) => {
-                      const shown = c.climate ? { ...t, from: c.climate } : t;
-                      return members.includes(t.id)
+                    {c.taxa.map((t) => (
+                      members.includes(t.id)
                         ? <li class="ct-muted">{nameOf(t)} {sci(t)} · {T('inConsortium')}</li>
                         : (
                           <li><label class="ct-check"><input type="checkbox" checked={ticked.includes(t.id)} onChange={() => toggle(t.id)} /> {nameOf(t)} {sci(t)}
                             {c.climate && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(c.climate) })}</span>}</label>
-                            {warnings(shown)}</li>
-                        );
-                    })}
+                            {warnings(t)}</li>
+                        )
+                    ))}
                   </ul>
                 </li>
               ))}
@@ -155,14 +154,13 @@ export default function Paste({ Frame }: { Frame: Frame }) {
             <h3 id="ct-p-other">{T('otherLists')}</h3>
             <ul class="ct-rows ct-paste-rows">
               {result.other.map((o) => {
-                const guest = { ...o.taxon, from: o.climate };
                 return (
-                  <li class={asks(flagsOfPlant(guest)) ? 'flagged' : ''}>
+                  <li class={asks(flagsOfPlant(o.taxon)) ? 'flagged' : ''}>
                     <span><strong>{o.name}</strong> → {nameOf(o.taxon)} {sci(o.taxon)}</span>
                     <span id={`ct-p-o-${o.taxon.id}`}>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate) })}</span>
-                    {warnings(guest)}
+                    {warnings(o.taxon)}
                     <button type="button" class="button button-secondary" aria-describedby={`ct-p-o-${o.taxon.id}`}
-                      onClick={() => (asks(flagsOfPlant(guest)) ? setAsking({ t: guest, from: o.climate }) : addGuest(o.taxon, o.climate))}>{T('addAnyway')}</button>
+                      onClick={() => (asks(flagsOfPlant(o.taxon)) ? setAsking({ t: o.taxon, from: o.climate }) : addGuest(o.taxon, o.climate))}>{T('addAnyway')}</button>
                   </li>
                 );
               })}
