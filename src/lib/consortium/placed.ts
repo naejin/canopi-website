@@ -1,7 +1,7 @@
 // Stream S5c: the nearest-list placement rule (placement.ts re-exports it): a curated climate uses its
 // own placement; an uncovered one the first curated placement in its NEAREST_LISTS order, marked estimate.
 import type { ClimateZone, Placement } from './types.ts';
-import { NEAREST_LISTS } from './placement.ts';
+import { NEAREST_LISTS } from './nearest.ts';
 
 // The first of `order` that has a value: the rule placeFor and PlantSource.borrowed share, over
 // placements or over whole records of each curated climate.

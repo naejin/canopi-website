@@ -14,23 +14,18 @@
 // naturally) or has a high conflict with a member is never picked; invasiveness is a warning only and never scores (owner, 2026-10-28).
 // Guests (plants added from another climate's list) are never picked or offered in Swap; a kept
 // guest is a member like any other and counts for coverage, with its home placement.
-import type { Alternative, CellRef, CountryStatus, Fit, Flag, Interaction, JobId, PhaseOrd, PlantId, Site, Stratum, Taxon } from './types.ts';
+import type { Alternative, CellRef, Fit, Interaction, JobId, PhaseOrd, PlantId, Site, Stratum, Taxon } from './types.ts';
 import { strata } from './types.ts';
-import type { Canopy } from './site.ts';
 import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy, tallerThanRoom } from './site.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { cellKey, cellsOf } from './matrix.ts';
-import type { Conflict } from './conflicts.ts';
-import { conflicts, conflictsOf, invasiveIn, isSerious } from './conflicts.ts';
+import type { FlagContext } from './conflicts.ts';
+import { asks, conflicts, flagsFor, isSerious } from './conflicts.ts';
 
 // Suggestions stay small (owner, 2026-10-28): 6, 9 or 12 plants by room; 9 with Room "Not sure"
 // (design check A7, coordinator row "v2 build setup", revertible). The room limits plant size, never
 // the number of plants the reader adds.
 export const SIZE_LIMIT: Record<Site['room'], number> = { small: 6, large: 9, field: 12, unsure: 9 };
-
-// What the flags need: the site, the climate's interactions and the reader's country (ISO alpha-2)
-// with its countryStatus (only 'checked' gives invasive flags and "not recorded").
-export interface FlagContext { site: Site; interactions: Interaction[]; country?: string | null; countryStatus?: CountryStatus }
 
 export interface SuggestOptions extends FlagContext {
   kept?: PlantId[]; // always members, flagged or not; kept wins over removed
@@ -104,62 +99,6 @@ const known = (t: Taxon) => Object.keys(t.names).length;
 const byName = (a: Taxon, b: Taxon) =>
   a.canonical_name < b.canonical_name ? -1 : a.canonical_name > b.canonical_name ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 const byKnownThenName = (a: Taxon, b: Taxon) => known(b) - known(a) || byName(a, b);
-
-const TOXIC = new Set(['Moderate', 'Severe']);
-
-// A conflict found for a plant: the other member and the row (severity, type, agent, note).
-interface Found { other: PlantId; c: Conflict }
-const rank = (s: Flag['severity'] | null | undefined) => (s === 'high' ? 3 : s === 'medium' ? 2 : s === 'low' ? 1 : 0);
-
-// One flag per other member for its worst conflict (first row on ties), then misfit, invasive and
-// toxicity flags. `canopy`: the other members' (a plant never shades itself).
-function flagsWith(i: Info, canopy: Canopy, found: Found[], ctx: FlagContext): Flag[] {
-  const id = i.taxon.id, out: Flag[] = [];
-  const worst = new Map<PlantId, Conflict>();
-  for (const f of found) { const w = worst.get(f.other); if (!w || rank(f.c.severity) > rank(w.severity)) worst.set(f.other, f.c); }
-  for (const [other, c] of worst) {
-    const flag: Flag = { id, kind: 'conflict', other };
-    if (c.severity) flag.severity = c.severity;
-    out.push(Object.assign(flag, { type: c.type, agent: c.agent, note: c.note }));
-  }
-  if (misfitsBeside(i.taxon, ctx.site, canopy, i.fit).length) out.push({ id, kind: 'misfit' });
-  if (invasiveIn(i.taxon, ctx.country, ctx.countryStatus === 'checked') === true) out.push({ id, kind: 'invasive' });
-  const tox = i.taxon.warnings.toxicity?.level;
-  if (tox && TOXIC.has(tox)) out.push({ id, kind: 'toxicity' });
-  return out;
-}
-
-// The flags a plant would carry beside these members (it is left out of them if it is one).
-export function flagsFor(taxon: Taxon, others: Taxon[], ctx: FlagContext): Flag[] {
-  const rest = others.filter((o) => o.id !== taxon.id);
-  const found = conflictsOf(taxon, rest, ctx.interactions).map((c) => ({ other: c.a.id === taxon.id ? c.b.id : c.a.id, c }));
-  return flagsWith(infoOf(taxon, ctx.site), canopyOf(rest), found, ctx);
-}
-
-// Every member's flags (store.ts `flags`). Conflicts are matched once for the whole consortium, so
-// 200 members stay within the recompute budget (design check §8).
-export function flagsOf(members: Taxon[], ctx: FlagContext): Flag[] {
-  const byId = new Map<PlantId, Found[]>();
-  for (const c of conflicts(members, ctx.interactions)) {
-    if (!byId.has(c.a.id)) byId.set(c.a.id, []);
-    if (!byId.has(c.b.id)) byId.set(c.b.id, []);
-    byId.get(c.a.id)!.push({ other: c.b.id, c });
-    byId.get(c.b.id)!.push({ other: c.a.id, c });
-  }
-  // One canopy for all: a member is shaded only by a higher stratum, so its own entry never counts.
-  const canopy = canopyOf(members);
-  const out: Flag[] = [], seen = new Set<PlantId>();
-  for (const m of members) {
-    if (seen.has(m.id)) continue;
-    seen.add(m.id);
-    out.push(...flagsWith(infoOf(m, ctx.site), canopy, byId.get(m.id) ?? [], ctx));
-  }
-  return out;
-}
-
-// Add and Swap ask first only for a site misfit or a high conflict, never for an invasive or toxicity
-// warning (owner row 2026-10-28; coordinator row "v2 mockup choices" 2026-11-11).
-export const asks = (flags: Flag[]): boolean => flags.some((f) => f.kind === 'misfit' || (f.kind === 'conflict' && f.severity === 'high'));
 
 // For each plant id, the ids it has a high conflict with (either side of the row).
 function seriousPartners(taxa: Taxon[], interactions: Interaction[]): Map<PlantId, Set<PlantId>> {
