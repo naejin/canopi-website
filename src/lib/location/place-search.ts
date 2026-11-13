@@ -4,8 +4,9 @@
 // (parseCoordinates, shortPlaceLabel, the pacing and the controller). Changes for the website (P5 S5b,
 // design check §B): the Web Mercator bound is a local constant (the app reads it from its generated
 // design format), and the controller keeps an in-memory cache of answers per query, read before the
-// pacing, so asking again for a place sends nothing.
-import { signal, type ReadonlySignal } from '@preact/signals'
+// pacing, so asking again for a place sends nothing; and the controller's results, status and
+// attribution are plain read-only boxes ({ value, peek() }) in place of the app's signals, so this
+// location service imports no UI framework (ADR-1 L1, E6 A12); its caller reads them after search().
 import {
   defaultGeocoderConfig,
   geocodeForward,
@@ -31,11 +32,17 @@ export interface PlaceSearchResult {
 
 export type PlaceSearchStatus = 'idle' | 'searching' | 'results' | 'no-results' | 'error'
 
+/** A value the controller sets and its caller reads (the app's ReadonlySignal, without a framework). */
+interface ReadonlyBox<T> {
+  readonly value: T
+  peek(): T
+}
+
 export interface PlaceSearchController {
-  readonly results: ReadonlySignal<readonly PlaceSearchResult[]>
-  readonly status: ReadonlySignal<PlaceSearchStatus>
+  readonly results: ReadonlyBox<readonly PlaceSearchResult[]>
+  readonly status: ReadonlyBox<PlaceSearchStatus>
   /** Credit to show with geocoder results; null for coordinates. */
-  readonly attribution: ReadonlySignal<string | null>
+  readonly attribution: ReadonlyBox<string | null>
   /** Runs one search; called on Enter only, never while typing. */
   search(query: string): Promise<void>
   clear(): void
@@ -114,10 +121,19 @@ function abortableSleep(ms: number, signal: AbortSignal): Promise<void> {
   })
 }
 
+function box<T>(initial: T): ReadonlyBox<T> & { value: T } {
+  let current = initial
+  return {
+    get value() { return current },
+    set value(next: T) { current = next },
+    peek: () => current,
+  }
+}
+
 export function createPlaceSearchController(options: PlaceSearchOptions): PlaceSearchController {
-  const results = signal<readonly PlaceSearchResult[]>([])
-  const status = signal<PlaceSearchStatus>('idle')
-  const attribution = signal<string | null>(null)
+  const results = box<readonly PlaceSearchResult[]>([])
+  const status = box<PlaceSearchStatus>('idle')
+  const attribution = box<string | null>(null)
   const config = options.config ?? defaultGeocoderConfig()
   const now = options.now ?? (() => Date.now())
   const sleep = options.sleep ?? abortableSleep

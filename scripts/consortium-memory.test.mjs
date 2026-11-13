@@ -577,3 +577,69 @@ for (const [from, country] of [['saved', { code: 'FR', source: 'chosen' }], ['li
     assert.equal(m.currentFragment(), rec.fragment, 'and writes the same link back');
   });
 }
+
+// ---- E6 S2: the memory split (state/persist, restore, arrival, draft, suggest-wait; state/location) ----
+const persist = await import('../src/islands/consortium/state/persist.ts');
+const restoreModule = await import('../src/islands/consortium/state/restore.ts');
+
+test('the split: island state imports nothing under views/, statically or through import() (ADR-1 L2); memory.ts only re-exports', () => {
+  const dir = new URL('../src/islands/consortium/state/', import.meta.url);
+  for (const f of ['persist.ts', 'restore.ts', 'arrival.ts', 'draft.ts', 'suggest-wait.ts', 'location.ts']) {
+    const src = readFileSync(new URL(f, dir), 'utf8');
+    assert.doesNotMatch(src, /(from|import\()\s*'[^']*\/views\//, `state/${f} imports a view`);
+  }
+  const mem = readFileSync(new URL('../src/islands/consortium/memory.ts', import.meta.url), 'utf8');
+  const code = mem.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
+  assert.ok(code.every((l) => /^export \{[^}]+\} from '[^']+';$/.test(l)), `memory.ts holds re-exports only: ${code.filter((l) => !/^export \{/.test(l)).join(' | ')}`);
+  assert.doesNotMatch(readFileSync(new URL('../src/lib/location/place-search.ts', import.meta.url), 'utf8'), /@preact\/signals/, 'the location service imports no UI framework (A12)');
+});
+
+test('one country-source enum: the save keeps store.ts CountrySource without the guess; any other source reads as none', () => {
+  for (const src of ['link', 'chosen', 'location']) assert.equal(persist.fromOf(src), src, src);
+  for (const src of ['guess', 'weird', null, undefined, 1]) assert.equal(persist.fromOf(src), null, String(src));
+  assert.equal(readRecord(saveRecord('v=4&c=temperate&a=&e=1', 'x', 'location', 'ES')).country, 'ES', 'a location country beside the fragment');
+});
+
+test('one climate shown: the reader\'s choice, else a link\'s still opening, else the location\'s proposal (shown as proposed), else none', async () => {
+  await shown();
+  const before = { climate: store.climate.peek(), proposed: store.proposedClimate.peek() };
+  try {
+    store.proposedClimate.value = 'Arid';
+    assert.deepEqual(persist.climateShown.peek(), { zone: 'Temperate', proposed: false }, 'chosen wins over a proposal');
+    store.climate.value = null;
+    assert.deepEqual(persist.climateShown.peek(), { zone: 'Arid', proposed: true }, 'the proposal, marked proposed');
+    delays.Tropical = 50;
+    const opening = m.restore(await linkOf('Tropical', 3), { from: 'link' });
+    assert.deepEqual(persist.climateShown.peek(), { zone: 'Tropical', proposed: false }, 'a link\'s climate while it opens');
+    assert.equal(await opening, true);
+    store.proposedClimate.value = null;
+    store.climate.value = null;
+    assert.deepEqual(persist.climateShown.peek(), { zone: null, proposed: false }, 'none');
+  } finally { store.climate.value = before.climate ?? 'Temperate'; store.proposedClimate.value = before.proposed; }
+});
+
+test('a link\'s o= is looked up through the location step the view hands in (restore.ts provideLocationStep), its lookup held until it settles', async () => {
+  await shown();
+  const calls = [];
+  const suggestWait = await import('../src/islands/consortium/state/suggest-wait.ts');
+  let held = null;
+  restoreModule.provideLocationStep(async () => ({ settle: (how, saved) => { calls.push([how, saved, suggestWait.lookups.peek()]); return new Promise((r) => { held = r; }); } }));
+  try {
+    const ids = (await realSource.pool('Mediterranean')).map((t) => t.id);
+    const link = encodeLink({ climate: 'Mediterranean', country: null, site: UNSURE, members: ids.slice(0, 3), kept: [], removed: [], guests: [], crops: [], stage: null }, { Mediterranean: ids }, { origin: { lat: 37.39, lon: -5.98 } });
+    assert.equal(await m.restore(link, { from: 'link', keep: true }), true);
+    assert.equal(store.location.peek()?.source, 'link', 'the link\'s site, its lookup to come');
+    await wait(0);
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0].slice(0, 2), ['link', null]);
+    assert.equal(calls[0][2], 1, 'one lookup held while it settles');
+    held();
+    await wait(0);
+    assert.equal(suggestWait.lookups.peek(), 0, 'released once settled');
+    // A step that fails to load drops the link's location (as the chunk 404 did before the split).
+    restoreModule.provideLocationStep(() => Promise.reject(new Error('chunk gone')));
+    assert.equal(await m.restore(link + '&', { from: 'link', keep: true }), true);
+    await wait(0);
+    assert.equal(store.location.peek(), null, 'a link\'s location whose step cannot load goes');
+  } finally { store.location.value = null; }
+});

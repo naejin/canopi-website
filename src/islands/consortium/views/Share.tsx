@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { cellCentre, isLongLink } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
 import { location as site } from '../store.ts';
-import { currentFragment, shareUrl, shownFragment, storageWorks } from '../memory.ts';
+import { currentFragment, shareUrl, shownFragment, storageWorks } from '../state/persist.ts';
 
 export function Share({ onClose }: { onClose: () => void }) {
   const shown = shownFragment.value;
