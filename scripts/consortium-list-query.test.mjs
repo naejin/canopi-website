@@ -78,14 +78,13 @@ test('E6 list-query (R2 rules): one listQuery returns Add\'s and the plant list\
 });
 
 test('E6 list-query (R2 rules): Add\'s and the plant list\'s queries as the views build them, and Add\'s row order', async () => {
-  const { addOrder, addQuery, filtersQuery, listQuery, matchesFilters } = await import('../src/islands/consortium/rules/list-query.ts');
+  const { addOrder, addQuery, filtersQuery, listQuery } = await import('../src/islands/consortium/rules/list-query.ts');
   const ids = (list) => list.map((t) => t.id);
   for (const c of ADD_CASES) {
     assert.deepEqual(ids(listQuery(POOL, addQuery({ cell: c.cell, job: c.job, anyway: c.anyway }, c.site, c.canopy))), ids(addBase(POOL, c)), `Add: ${c.name}`);
   }
   for (const f of LIST_CASES) {
     assert.deepEqual(ids(listQuery(POOL, filtersQuery(f))), ids(listBase(POOL, f)), `plant list: ${JSON.stringify(f)}`);
-    assert.deepEqual(ids(POOL.filter((t) => matchesFilters(t, f))), ids(listBase(POOL, f)), `matchesFilters: ${JSON.stringify(f)}`);
   }
   // A job's stage gap: a run of stages in any layer (stratum null); a plant with no placement is out.
   assert.deepEqual(ids(listQuery(POOL, addQuery({ cell: { stratum: null, from: 0, to: 0 }, job: null, anyway: true }, SITE, []))), ids(POOL.filter((t) => t.phases && phaseOrd(t.phases.start) === 0)));
@@ -93,4 +92,17 @@ test('E6 list-query (R2 rules): Add\'s and the plant list\'s queries as the view
   const named = (id, names, canonical) => ({ t: { id, names, canonical_name: canonical }, asks: false });
   const rows = [{ ...named('a', { en: 'A' }, 'Zeta'), asks: true }, named('b', {}, 'Beta'), named('c', { en: 'C', fr: 'C' }, 'Gamma'), named('d', {}, 'Alpha')];
   assert.deepEqual(addOrder(rows).map((r) => r.t.id), ['c', 'd', 'b', 'a']);
+});
+
+// Moved from consortium-tracks.test.mjs (the plant list's filters left views/tracks.ts for this rule).
+test('E6 list-query (R2 rules): the plant list\'s filters: layer, a stage the plant grows in, and a job; null filters nothing', async () => {
+  const { filtersQuery, listMatch } = await import('../src/islands/consortium/rules/list-query.ts');
+  const passes = (t, f) => listMatch(filtersQuery(f))(t);
+  const fixer = plant('high', 'placenta_iii', 'secondary_iii', { functions: [{ function: 'nitrogen_fixer', method: 'curated', sources: [] }] });
+  const none = { layer: null, stage: null, job: null };
+  assert.ok(passes(fixer, none));
+  assert.ok(passes(fixer, { ...none, layer: 'high' }) && !passes(fixer, { ...none, layer: 'low' }));
+  assert.ok(passes(fixer, { ...none, stage: 4 }) && !passes(fixer, { ...none, stage: 1 }));
+  assert.ok(passes(fixer, { ...none, job: 'feeds_soil' }) && !passes(fixer, { ...none, job: 'mulch' }));
+  assert.ok(!passes(plant(null, null, null), { ...none, stage: 1 }), 'no placement: in no stage');
 });

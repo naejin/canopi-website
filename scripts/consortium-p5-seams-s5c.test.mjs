@@ -142,8 +142,8 @@ test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that ord
   assert.equal(rules.nothingFits(pool, at(0, 25), rule), false);
   assert.equal(rules.nothingFits([], at(-30, 25), rule), false, 'an empty list is not "nothing fits"');
   assert.equal(rules.nothingFits(pool, null, rule), false, 'no site climate: nothing is checked');
-  assert.deepEqual(rules.poolCounts(['inside', 'edge', 'outside', 'unknown', 'edge']), { fit: 4, edge: 2, total: 5 });
-  assert.deepEqual(rules.poolCounts([]), { fit: 0, edge: 0, total: 0 });
+  assert.deepEqual(rules.poolCounts(['inside', 'edge', 'outside', 'unknown', 'edge']), { fit: 4, edge: 2 });
+  assert.deepEqual(rules.poolCounts([]), { fit: 0, edge: 0 });
 });
 
 // ---- nearest placements ----

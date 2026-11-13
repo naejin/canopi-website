@@ -7,7 +7,7 @@
 import { batch, computed, effect, signal } from '@preact/signals';
 import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
 import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
-import { nothingFits } from './rules/suggest-block.ts';
+import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
@@ -292,8 +292,11 @@ export function suggestMembers(): boolean {
   // Nothing fits the site: no suggestion (it could only be an empty matrix); Start shows why.
   if (nothingFits(p, location.value, rule)) return false;
   // A borrowed pool unfiltered (no site climate, or the rule's chunk failed): no suggestion, since only
-  // the range filter fits it to a place (UX audit fix 1; fix review 29b709e, 2).
-  if ((!siteClimate.value || !rule) && p.some((t) => t.estimate)) return false;
+  // the range filter fits it to a place (UX audit fix 1; fix review 29b709e, 2). The rule Start reads
+  // (rules/suggest-block.ts), over the export's curated climates; with a pool and a site climate, a
+  // missing rule is a failed one (store.pool waits for it otherwise).
+  const scene = { curated: source.peek()?.info().climates ?? [], siteClimate: siteClimate.value, rangeFailed: !rule, nothingFits: false };
+  if (needsSite(climate.value!, scene) || needsRule(climate.value!, scene)) return false;
   const s = suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
   kept.value = keep;
   members.value = s.members;

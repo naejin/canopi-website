@@ -35,6 +35,8 @@ export function searchOf(list: Taxon[]): Search {
   return s;
 }
 
+// A row's height words, not a site-fit message: it says the height even for a climber (whose room the
+// site check leaves unknown, 'misfit.unk.climber'), so it is kept apart from siteFitMessages (E6 R2).
 function heightWords(t: Taxon): string {
   const h = t.traits.height_m?.max;
   if (h != null) return T('details.heightV', { m: num(h) });

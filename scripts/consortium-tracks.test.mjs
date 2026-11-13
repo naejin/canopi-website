@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildMatrix, fold, phases } from '../src/lib/consortium/index.ts';
-import { COLLAPSED_CHIPS, MAX_TRACKS, SHARE_AIM, cellOrder, collatorFor, fillPercent, listGroups, matchesFilters, matchesQuery, nameOrder, reasonParts, rowPieces, runReasons, spanOf, startCounts, stepStage, tracksOf, warningCounts } from '../src/islands/consortium/views/tracks.ts';
+import { COLLAPSED_CHIPS, MAX_TRACKS, SHARE_AIM, cellOrder, collatorFor, fillPercent, listGroups, matchesQuery, nameOrder, reasonParts, rowPieces, runReasons, spanOf, startCounts, stepStage, tracksOf, warningCounts } from '../src/islands/consortium/views/tracks.ts';
 import { FALLBACK_HEIGHT, LOG_MAX, MAX_SILHOUETTES, SCALE_LINES, heightFrac, lineTop, quantile, shapeOf, sidePlants, usualHeight } from '../src/islands/consortium/views/side.ts';
 import { PLOT_H, blob, hash, plantStrokes, reachOf, topOf } from '../src/islands/consortium/views/draw.ts';
 
@@ -60,17 +60,6 @@ test('nameOrder sorts with one Intl.Collator per page language', () => {
   assert.deepEqual(names.slice().sort(nameOrder(nameOf, 'de')).map(nameOf), ['Äpfel', 'Birne', 'Zitrone']);
   const sv = ['Zitron', 'Äpple'].map((x) => plant(x, 'low', 0, 1));
   assert.deepEqual(sv.slice().sort(nameOrder(nameOf, 'sv')).map(nameOf), ['Zitron', 'Äpple'], 'the language decides');
-});
-
-test('matchesFilters: layer, a stage the plant grows in, and a job; null filters nothing', () => {
-  const fixer = plant('Alder', 'high', 2, 5, { nitrogen_fixer: true });
-  fixer.functions = [{ function: 'nitrogen_fixer', sources: [] }];
-  const none = { layer: null, stage: null, job: null };
-  assert.ok(matchesFilters(fixer, none));
-  assert.ok(matchesFilters(fixer, { ...none, layer: 'high' }) && !matchesFilters(fixer, { ...none, layer: 'low' }));
-  assert.ok(matchesFilters(fixer, { ...none, stage: 4 }) && !matchesFilters(fixer, { ...none, stage: 1 }));
-  assert.ok(matchesFilters(fixer, { ...none, job: 'feeds_soil' }) && !matchesFilters(fixer, { ...none, job: 'mulch' }));
-  assert.ok(!matchesFilters(plant('N', null, null, null), { ...none, stage: 1 }), 'no placement: in no stage');
 });
 
 test('runReasons counts each plant of a merged run once, beside the members; reasonParts words light and water from the site', () => {

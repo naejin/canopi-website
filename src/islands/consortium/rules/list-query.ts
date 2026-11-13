@@ -45,7 +45,6 @@ export const addQuery = ({ cell, job, anyway }: AddFor, site: Site, canopy: read
 export interface ListFilters { layer: Stratum | null; stage: PhaseOrd | null; job: JobId | null }
 export const filtersQuery = (f: ListFilters): ListQuery =>
   ({ stratum: f.layer, from: f.stage, to: f.stage, job: f.job, site: null, canopy: [], anyway: true });
-export const matchesFilters = (t: Taxon, f: ListFilters): boolean => listMatch(filtersQuery(f))(t);
 
 // Add's row order with no query: plants that ask first last, then the better known (named in more
 // languages), then by scientific name.

@@ -1,7 +1,7 @@
 // "Can Suggest now" (E6 R2; design check §7.1): why a Suggest for a climate would refuse, the pool
 // counts Start says under the climate cards, and "nothing fits". Pure functions over core types
 // (ADR-1: rules import the core only); the store's signals and the page's curated climates come in as
-// arguments (views/PoolSlot.tsx, store.ts suggestMembers). scripts/consortium-rules.test.mjs runs them.
+// arguments (views/PoolSlot.tsx, store.ts suggestMembers). scripts/consortium-p5-seams-s5c.test.mjs runs them.
 //
 // A climate has a list to suggest from when it is curated, or borrows a nearest list (core
 // placement.ts NEAREST_LISTS) once the site location has a climate: only the range rule fits a
@@ -36,9 +36,9 @@ export const suggestBlock = (z: ClimateZone, s: SuggestScene): SuggestBlock | nu
   !hasPlants(z, s.curated) ? 'noList' : needsSite(z, s) ? 'needsSite' : needsRule(z, s) ? 'needsRule' : s.nothingFits ? 'nothingFits' : null;
 
 // The pool under the climate cards (views/pool/pool.tsx): how many of its plants fit the site (not
-// outside their observed range), how many of those are near the edge, of how many.
-export function poolCounts(verdicts: readonly RangeVerdict[]): { fit: number; edge: number; total: number } {
+// outside their observed range) and how many of those are near the edge.
+export function poolCounts(verdicts: readonly RangeVerdict[]): { fit: number; edge: number } {
   let fit = 0, edge = 0;
   for (const v of verdicts) { if (v !== 'outside') fit++; if (v === 'edge') edge++; }
-  return { fit, edge, total: verdicts.length };
+  return { fit, edge };
 }
