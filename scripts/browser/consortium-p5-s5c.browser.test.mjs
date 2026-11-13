@@ -39,6 +39,15 @@ test('P5-14 (S5c nothing fits): where no plant\'s range holds the site: the "not
   assert.ok(await has(page, '.ct-add .ct-rows li [data-mark="outside"]', 10_000), 'each one marked outside its range');
 });
 
+test('P5-14i (S5c pool panel chunk offline, pre-push review 1): where nothing fits and only the panel\'s chunk fails, Start says it could not load, with Reload', async () => {
+  const page = await tool({ block: { pool: 404 } });
+  await atNowhere(page);
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Boreal'; });
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeRule.value, { timeout: 10_000 }).then(() => true, () => false), 'the range rule loaded');
+  assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('.ct-notice[role="alert"]')].some((e) => /Reload/.test(e.textContent)), { timeout: 10_000 }).then(() => true, () => false), 'the failed line with Reload');
+  assert.ok(page.blocked.some((u) => h.roles.pool.includes(u)), 'the pool chunk was requested and refused by the block');
+});
+
 test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold check"): at Yakutsk the Boreal pool keeps its annual crops, Suggest uses them, and an annual is tagged "annual", no season claimed (decision row "Growing months") @real-data', async () => {
   const page = await tool();
   await atSite(page, 'yakutsk');
