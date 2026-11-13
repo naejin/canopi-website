@@ -471,8 +471,8 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 // of each built locale page (module scripts, modulepreload links, static, dynamic and preload-helper
 // imports). Caps per chunk, no total (the island sum, 65 KB until E6 stream B4, is gone: moving code
 // into a lazy part must lower what the first view waits for, not raise a sum):
-// - the first run (the island's entry and its static imports) under FIRST_RUN_BUDGET (40 KB since the
-//   E6 chunk-3 merge; chunk 5 lowers it to the measured value plus slack);
+// - the first run (the island's entry and its static imports) under FIRST_RUN_BUDGET: 38 KB since the
+//   E6 chunk-5 exit (37.6 KB measured, rounded up to the next 0.5 KB; 40 KB from the chunk-3 merge);
 // - each on-demand part, by role (built-modules.mjs ROLE_ENTRIES), costs what a first use fetches (the
 //   role chunk and its static imports the page has not loaded already) under its role's cap,
 //   ROLE_CAPS; MapLibre with its worker and CSS ≤ 330 KB; the location part with what only it reaches
@@ -495,7 +495,7 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 // ≤ 8 KB; a feature ≤ 12 KB; location ≤ 20 KB). A part that outgrows its cap is a coordinator row, not
 // a silent raise. An empty role (likely and native until S5e, suggest until R4) has no chunk to cap
 // yet; it gets its A14 maximum.
-const FIRST_RUN_BUDGET = 40 * 1024;
+const FIRST_RUN_BUDGET = 38 * 1024;
 const KB = 1024;
 const ROLE_CAPS = {
   location: 11.8 * KB, // measured 11,493 B (A14 max 20)
