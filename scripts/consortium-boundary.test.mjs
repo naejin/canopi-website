@@ -2,6 +2,9 @@
 // framework-free, so node --test runs it and it can move into a package unchanged. Every import of a
 // core file stays inside the folder (no package, no node: module, no ../), and no core file touches a
 // DOM or browser global. The island (src/islands/consortium/) may import the core, never the reverse.
+// E4 (design check E6 A27): src/lib/climate/ imports no UI framework and nothing from src/islands or
+// src/components either. Layer direction and cycles belong to dependency-cruiser (.dependency-cruiser.cjs,
+// npm run check:arch); this file keeps the folder and browser-global rules it cannot see.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -10,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 const core = fileURLToPath(new URL('../src/lib/consortium/', import.meta.url));
 const islands = fileURLToPath(new URL('../src/islands/consortium/', import.meta.url));
+const climate = fileURLToPath(new URL('../src/lib/climate/', import.meta.url));
 const files = (dir) => readdirSync(dir, { recursive: true }).filter((f) => /\.(ts|tsx|js|mjs)$/.test(f)).map((f) => ({ name: f, text: readFileSync(join(dir, f), 'utf8') }));
 
 // Comments and string contents removed, so a word in prose or a message is not a use.
@@ -56,7 +60,18 @@ test('the core never imports the island; the island reaches the core through its
   }
 });
 
+// A UI framework or a page/island module, by package name or by path.
+const UI = /^(preact|react|react-dom|solid-js|svelte|vue|@preact\/[\w.-]+|@astrojs\/(preact|react|solid-js|svelte|vue))(\/|$)|(^|\/)(islands|components)\//;
+export const uiImportsOf = (text) => importsOf(text).filter((spec) => UI.test(spec));
+
+test('src/lib/climate imports no UI framework and nothing from src/islands or src/components', () => {
+  const list = files(climate);
+  assert.ok(list.some((f) => f.name === 'index.ts') && list.some((f) => f.name === 'lookup.ts'), 'the climate reader exists');
+  for (const { name, text } of list) assert.deepEqual(uiImportsOf(text), [], `${name}: the climate reader stays framework-free`);
+});
+
 test('the boundary readers catch what they guard against', () => {
+  assert.deepEqual(uiImportsOf("import { h } from 'preact';\nimport { signal } from '@preact/signals';\nimport { x } from '../../islands/consortium/store.ts';\nimport { y } from '../../components/A.astro';\nimport { k } from './koppen.ts';\nimport { s } from 'preact-like';"), ['preact', '@preact/signals', '../../islands/consortium/store.ts', '../../components/A.astro']);
   assert.deepEqual(importsOf("import { a } from '../x.ts';\nexport * from './y.ts';\nimport 'z';\nconst m = await import('preact');"), ['../x.ts', './y.ts', 'z', 'preact']);
   assert.deepEqual(globalsOf("const w = window.innerWidth; // document in a comment\nconst s = 'location';\nfoo.document = 1;"), ['window']);
   assert.deepEqual(globalsOf('interface X { location: string }'), []);
