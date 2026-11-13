@@ -99,15 +99,16 @@ const keepNumbers = (text: string) => text.split(/(\S*\d\S*)/).map((part, i) => 
 
 const GROUPS: readonly { key: string; span: number }[] = [{ key: 'placenta', span: 3 }, { key: 'secondary', span: 3 }, { key: 'climax', span: 1 }];
 
-// performance.mark('ct:matrix') once per page, when the consortium is first on screen, whichever view
-// shows it (the matrix, the side view, Jobs or the list): S4's timing script waits for it. Rendered
+// performance.mark('ct:first-view') once per page, when the consortium is first on screen, whichever
+// view shows it (the matrix, the side view, Jobs or the list; Palette in F1a): the timing script waits
+// for it (design check A7, renamed from ct:matrix). Rendered
 // inside the views, so its effect runs after the browser painted them.
 let marked = false;
 function FirstPaint() {
   useEffect(() => {
     if (marked || typeof performance === 'undefined') return;
     marked = true;
-    performance.mark('ct:matrix');
+    performance.mark('ct:first-view');
     prefetchLater();
   }, []);
   return null;
