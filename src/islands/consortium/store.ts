@@ -106,9 +106,18 @@ effect(() => {
   rangeLoad = loadRangeRule().then((rule) => { rangeRule.value = rule; }, (err: unknown) => {
     console.error(err);
     rangeBroken.value = true;
-    showToast(T('range.unavailable'), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
+    chunkToast('range.unavailable');
   });
 });
+// One toast, with Reload, for the P5 chunks that did not load: the range rule's chunk is also a static
+// import of the mark providers' chunk, so one missing file (offline, or a deploy since the page loaded)
+// fails both; the notices still say each (PoolSlot, Matrix.tsx Notices).
+let chunkToasted = false;
+function chunkToast(key: string): void {
+  if (chunkToasted) return;
+  chunkToasted = true;
+  showToast(T(key), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
+}
 // What suggestions and lists draw from (P5 S5c, owner answer 2): the pool without the plants outside
 // their observed range at the site location (core range.ts withinRange); the pool itself without one.
 // Members stay: a plant added anyway is never dropped from a list it is in.
@@ -198,7 +207,7 @@ effect(() => {
     console.error(`Consortium: the plant marks did not load: ${(err as Error).message}`);
     if (marksBroken.peek()) return;
     marksBroken.value = true;
-    showToast(T('marks.unavailable'), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
+    chunkToast('marks.unavailable');
   });
 });
 // The warnings on members: conflicts, site misfits, invasive and toxicity (core suggest.ts flagsOf).
