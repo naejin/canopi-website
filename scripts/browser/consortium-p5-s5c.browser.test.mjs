@@ -13,7 +13,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
-import { h, useHarness, aria, has, realDb, settled } from './helpers.mjs';
+import { aria, h, has, realDb, settled, suggestDirect, suggestReady, useHarness } from './helpers.mjs';
 import { SITES } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 import { tool, atSite, choose, locationControls, locationState, ADD_OPEN, text, proposedCard, ready, search, RANGED, OUTSIDE, EDGE, pickRanged, atNowhere, emptyMatrix, guestHeld, members } from './p5-helpers.mjs';
@@ -50,6 +50,7 @@ test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold ch
   // perennials with weak cold rows (loquat, Scots pine, ...) are gone.
   assert.deepEqual(kept.perennial, [], 'no perennial holds a −39.8 °C winter');
   assert.equal(await page.$('[data-pool-empty]'), null, 'not "nothing fits"');
+  await suggestReady(page);
   assert.equal(await page.evaluate(() => { const { store } = window.__ctTest; const ok = store.suggestMembers(); store.view.value = 'matrix'; return ok && store.members.value.length > 0; }), true, 'Suggest gives a consortium');
   const id = await page.evaluate(() => window.__ctTest.store.members.value[0]);
   await page.evaluate((m) => window.__ctTest.openSheet('details', m), id);
@@ -62,7 +63,7 @@ test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant 
   const lookup = await atSite(page, 'seville');
   const outside = await pickRanged(OUTSIDE, lookup.climate.periods[0], 'Mediterranean');
   await choose(page, 'Mediterranean');
-  await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
+  await suggestDirect(page);
   assert.ok(await has(page, '[data-mark]', 10_000), 'the marks are loaded (Seville has plants near the edge)');
   assert.equal(await page.$('[data-mark="outside"]'), null, 'no suggested plant is outside its range');
   await page.evaluate(() => window.__ctTest.store.openSheet('add'));
@@ -236,13 +237,14 @@ test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from t
     return store.pool.value.filter((t) => t.origin?.kind === 'borrowed' && t.origin.list === 'Mediterranean').length;
   });
   assert.ok(count > 0, 'Subtropical borrows Mediterranean placements');
-  await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
+  await suggestDirect(page);
   assert.ok(await has(page, '[data-mark="estimate"]', 10_000));
 });
 
 test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a plant\'s Details reads the list it was placed from: its reasons, with a note naming that list; a correction sends both climates', async () => {
   const page = await tool({ correction: 'ok' });
   await atSite(page, 'lyon');
+  await suggestReady(page);
   const picked = await page.evaluate(async () => {
     const { store } = window.__ctTest;
     store.climate.value = 'Subtropical';
@@ -287,6 +289,7 @@ test('P5-26 (S5c borrowed list from a link): #v=4&c=subtropical without o= opens
   const maker = await tool();
   await atSite(maker, 'lyon');
   await maker.evaluate(async () => { const { store } = window.__ctTest; store.climate.value = 'Subtropical'; await store.loadPool('Subtropical'); });
+  await suggestReady(maker);
   assert.equal(await maker.evaluate(() => { const { store } = window.__ctTest; const ok = store.suggestMembers(); store.view.value = 'matrix'; return ok; }), true, 'with a location, Subtropical suggests');
   assert.ok(await maker.waitForFunction(() => /[#&]c=subtropical/.test(location.hash) && /[#&]m=|[#&]a=./.test(location.hash), { timeout: 10_000 }).then(() => true, () => false), 'the address bar holds the link');
   const hash = await maker.evaluate(() => location.hash);
@@ -300,6 +303,7 @@ test('P5-26 (S5c borrowed list from a link): #v=4&c=subtropical without o= opens
   await page.evaluate(() => { const { store } = window.__ctTest; store.openSheet('details', store.members.value[0]); });
   assert.ok(await has(page, '[data-mark-surface="details"][data-mark-state="no-site"]', 10_000), 'Details says to give a location to check it');
   assert.match(await text(page, '[data-mark-surface="details"][data-mark-state="no-site"]') ?? '', /give your site.s location to check/i);
+  await suggestReady(page);
   assert.equal(await page.evaluate(() => window.__ctTest.store.suggestMembers()), false, 'no new suggestion from a borrowed list without a location');
   assert.equal(await page.$('[data-pool-empty]'), null);
 });
@@ -370,6 +374,7 @@ test('P5-26e (S5c borrowed climate, range chunk offline, fix review 29b709e 2): 
   assert.match(await text(page, '[data-range-unavailable]') ?? '', /Arid needs them to pick plants/);
   assert.ok(await has(page, '[data-range-unavailable] button'), 'Reload');
   assert.equal(await page.$('.ct-cta'), null, 'no Suggest from the unfiltered borrowed list');
+  await suggestReady(page);
   assert.equal(await page.evaluate(async () => { const { store } = window.__ctTest; await store.loadPool('Arid'); return store.suggestMembers(); }), false, 'suggestMembers refuses');
 });
 
@@ -427,7 +432,7 @@ test('P5-27f (S5c seam review 6): if the plant-marks chunk fails, the range warn
     await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/mark-providers.*'] });
     await atSite(page, 'seville');
     await choose(page, 'Mediterranean');
-    await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
+    await suggestDirect(page);
     assert.ok(await has(page, '[data-plant-id]', 10_000), 'the matrix');
     assert.ok(await has(page, '[data-marks-unavailable]', 10_000), `${width} px: a notice that the marks did not load`);
     assert.match(await text(page, '[data-marks-unavailable]') ?? '', /Reload/);

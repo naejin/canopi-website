@@ -10,7 +10,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
-import { aria, axNodes, layoutVariants, behaviour, en, findAx, has, realDb } from './helpers.mjs';
+import { aria, axNodes, behaviour, en, findAx, has, layoutVariants, realDb, suggestReady } from './helpers.mjs';
 
 let h;
 before(async () => { h = await startHarness(); });
@@ -29,6 +29,7 @@ async function views(v, { data = 'fixture', lang = 'en', climate = 'Temperate', 
   assert.equal(await loadState(page), 'ready');
   const hooked = await page.waitForFunction(() => window.__ctTest?.store?.source.value, { timeout: 20_000 }).then(() => true, () => false);
   assert.ok(hooked, 'no test hook: build with npm run build:browser-test');
+  if (!members) await suggestReady(page);
   const set = await page.evaluate(async (o) => {
     const { store } = window.__ctTest;
     store.climate.value = o.climate;
@@ -36,12 +37,7 @@ async function views(v, { data = 'fixture', lang = 'en', climate = 'Temperate', 
     if (o.light) store.site.value = { ...store.site.value, light: o.light };
     if (!(await store.loadPool(o.climate))) return 'no pool';
     if (o.members) store.members.value = o.members;
-    else {
-      // The suggest chunk loads beside the pool and nothing waits for it (E6 R4); a reader's press waits
-      // through suggest-wait.ts, this direct call waits here.
-      for (let i = 0; i < 200 && !store.suggestRule.value && !store.suggestFailed.value; i++) await new Promise((r) => setTimeout(r, 50));
-      if (!store.suggestMembers()) return 'no suggestion';
-    }
+    else if (!store.suggestMembers()) return 'no suggestion'; // the suggest chunk waited for above (helpers.mjs suggestReady)
     store.view.value = o.view;
     return 'ok';
   }, { climate, room, light, members, view });

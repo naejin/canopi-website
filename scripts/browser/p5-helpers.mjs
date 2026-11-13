@@ -19,7 +19,7 @@
 // - S5f: /privacy/ in every locale, the footer link to it, the /data-sources/ credits [data-credit].
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
-import { h, has, realDb } from './helpers.mjs';
+import { h, has, realDb, suggestReady } from './helpers.mjs';
 import { SITES, lookupAt } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 
@@ -94,6 +94,7 @@ export const storeClimate = (page) => page.evaluate(() => window.__ctTest.store.
 // and its Share panel open (S5b: the panel opens on its button; the specs read its field).
 export async function confirmAndSuggest(page) {
   await page.click('[data-location-confirm]');
+  await suggestReady(page);
   await page.evaluate(async () => { const { store } = window.__ctTest; await store.loadPool(store.climate.value); store.suggestMembers(); store.view.value = 'matrix'; });
   assert.ok(await has(page, '.ct-action-row button', 10_000), 'the matrix\'s actions');
   // The future panel (S5d, views/FutureSlot.tsx; idle, about 150 ms after the matrix) mounts above the

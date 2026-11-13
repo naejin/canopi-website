@@ -39,6 +39,17 @@ const BEHAVIOUR_VARIANTS = { desktop: [{ width: 1280, theme: 'light' }], phone: 
 export const behaviour = async (t, fn, { phone = false } = {}) => { for (const v of BEHAVIOUR_VARIANTS[phone ? 'phone' : 'desktop']) await t.test(variantName(v), () => fn(v)); };
 
 export const has = async (page, selector, timeout = 2500) => !!(await page.waitForSelector(selector, { timeout }).catch(() => null));
+
+// Before a test calls store.suggestMembers() itself: the suggestion's chunk (store.suggestRule, its own
+// lazy chunk since E6 R4) loads beside the pool and nothing waits for it, so a direct call made
+// before it lands refuses (false). A reader's press waits through state/suggest-wait.ts; a direct
+// call waits here, for the rule or its failure.
+export const suggestReady = (page, timeout = 10_000) => page.waitForFunction(() => { const s = window.__ctTest?.store; return !!s && (!!s.suggestRule.value || s.suggestFailed.value); }, { timeout });
+// The usual direct call: wait for the chunk, suggest, show the matrix; whether it suggested.
+export async function suggestDirect(page) {
+  await suggestReady(page);
+  return page.evaluate(() => { const { store } = window.__ctTest; const ok = store.suggestMembers(); store.view.value = 'matrix'; return ok; });
+}
 // Waits until nothing moves under a click aimed at selector: the window's scroll offset and the
 // element's box unchanged over five animation frames. The site scrolls smoothly (global.css html
 // scroll-behavior), so the focus and scrollIntoView a view change makes animate for a few hundred ms,

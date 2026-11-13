@@ -13,7 +13,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
-import { h, useHarness, has } from './helpers.mjs';
+import { h, has, suggestReady, useHarness } from './helpers.mjs';
 import { SITES, lookupAt } from './location-fixtures.mjs';
 import { tool, choose, locationControls, locationState, text, checkedCard, proposedCard, savedLocation, ready, storeClimate, confirmAndSuggest, search, slowTiles, releaseTiles, watchFirstMembers, withSavedSite, temperateLink, ownSite, savedOpening, savedFailing, proposal, members } from './p5-helpers.mjs';
 
@@ -57,6 +57,7 @@ test('P5-1b (S5b review round 1, 6): clicking the proposed card confirms it, lik
 test('P5-1c (S5b review round 1, 4): a lookup ending while a pasted link restores is not a reader action: the link still opens', async () => {
   const maker = await tool();
   await choose(maker, 'Temperate');
+  await suggestReady(maker);
   await maker.evaluate(() => { window.__ctTest.store.suggestMembers(); window.__ctTest.store.view.value = 'matrix'; });
   assert.ok(await maker.waitForFunction(() => /[#&]v=4/.test(location.hash) && /[#&]a=[^&]/.test(location.hash), { timeout: 10_000 }).then(() => true, () => false), 'the address holds the consortium');
   const link = await maker.evaluate(() => location.hash);

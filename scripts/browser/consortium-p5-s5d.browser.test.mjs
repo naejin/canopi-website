@@ -12,7 +12,7 @@
 // (npm run test:browser runs every file in shards: scripts/browser/run.mjs.)
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { h, useHarness, has } from './helpers.mjs';
+import { h, has, suggestDirect, useHarness } from './helpers.mjs';
 import { SITES, lookupAt } from './location-fixtures.mjs';
 import { tool, atSite, choose, text, members } from './p5-helpers.mjs';
 
@@ -26,7 +26,7 @@ test('P5-18 (S5d future summary): at Seville on the Mediterranean list the panel
   const page = await tool();
   await atSite(page, 'seville');
   await choose(page, 'Mediterranean');
-  await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
+  await suggestDirect(page);
   assert.ok(await has(page, '[data-future-summary]', 10_000), 'the future panel');
   assert.match(await text(page, '[data-future-summary]'), /\d+ of \d+ .*2041–2070/);
   assert.equal(await page.evaluate(() => window.__ctTest.store.scenario.value), 'ssp245');
@@ -67,7 +67,7 @@ test('P5-19 (S5d not checked): with no future data for the site the panel says "
   const full = await lookupAt(...SITES.lyon);
   await atSite(page, 'lyon', { climate: { ...full.climate, periods: full.climate.periods.slice(0, 1) } });
   await choose(page, 'Temperate');
-  await page.evaluate(() => { const { store } = window.__ctTest; store.suggestMembers(); store.view.value = 'matrix'; });
+  await suggestDirect(page);
   assert.ok(await has(page, '[data-future="not-checked"]', 10_000), 'the future panel says "not checked"');
   assert.match(await text(page, '[data-future="not-checked"]'), /not checked/);
   assert.equal(await page.$('[data-future-summary]'), null, 'no count that could read as "fine"');
