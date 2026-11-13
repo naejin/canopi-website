@@ -3,7 +3,7 @@
 // lazyPart: the views after the matrix (one chunk, views/later.ts), the sheets (views/Sheets.tsx: the
 // plant dialog, Swap, Add, Paste; the dialog's correction form) and the slots' feature chunks.
 // prefetchLater() loads every part registered with later() once, in the browser's idle time, on the
-// first of: the consortium first on screen (Matrix, ct:matrix) or the data ready (store.load =
+// first of: the consortium first on screen (Matrix, ct:first-view) or the data ready (store.load =
 // ready), so a reader who stays on Start has Search and Paste at hand too, and nothing lazy competes
 // with the database download. A part used before its prefetch finished loads on demand through the
 // same promise (one request per chunk); a failed load clears it, so the next use asks again (L4).
@@ -134,7 +134,7 @@ export function laterModule<M>(importer: () => Promise<M>): () => Promise<M> {
   return () => gate('later').then(fetch);
 }
 
-// Once, on the first of the consortium on screen (Matrix calls it at ct:matrix) or the data ready
+// Once, on the first of the consortium on screen (Matrix calls it at ct:first-view) or the data ready
 // (below): every later part, in the browser's idle time.
 export function prefetchLater(): void {
   if (started) return;

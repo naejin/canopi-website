@@ -7,8 +7,7 @@
 // build, e.g. a copy of dist/ kept from before a change, for a local before/after comparison.) Each
 // run opens a #v=4 link of 9 real Temperate plants (built with the core's encodeLink, so the page
 // restores a consortium and draws its matrix) and reads the time of `performance.mark('ct:first-view')`
-// (the consortium is first on screen; `ct:matrix`, its name until E6 stream R4's rename merges, is
-// read when the new name is absent) from the start of navigation; a page that never sets it fails the
+// (the consortium is first on screen) from the start of navigation; a page that never sets it fails the
 // run. Cold: a fresh browser context (empty cache), a first visit. Warm: the same context reloaded
 // (HTTP cache filled). Prints the median of 5 of each, per profile:
 // - desktop: 1280 px, 4× CPU slowdown, 9 Mbps down and up, 60 ms RTT (the §8 numbers so far);
@@ -22,7 +21,7 @@ import { readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const MARKS = ['ct:first-view', 'ct:matrix'];
+const MARKS = ['ct:first-view'];
 // Above the ratchet: a warning; above this many times it: a failure (plan choice 11, R10).
 export const FAIL_FACTOR = 1.5;
 // Network throughput in bytes per second (CDP Network.emulateNetworkConditions), latency in ms.

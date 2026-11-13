@@ -36,7 +36,12 @@ async function views(v, { data = 'fixture', lang = 'en', climate = 'Temperate', 
     if (o.light) store.site.value = { ...store.site.value, light: o.light };
     if (!(await store.loadPool(o.climate))) return 'no pool';
     if (o.members) store.members.value = o.members;
-    else if (!store.suggestMembers()) return 'no suggestion';
+    else {
+      // The suggest chunk loads beside the pool and nothing waits for it (E6 R4); a reader's press waits
+      // through suggest-wait.ts, this direct call waits here.
+      for (let i = 0; i < 200 && !store.suggestRule.value && !store.suggestFailed.value; i++) await new Promise((r) => setTimeout(r, 50));
+      if (!store.suggestMembers()) return 'no suggestion';
+    }
     store.view.value = o.view;
     return 'ok';
   }, { climate, room, light, members, view });
@@ -98,9 +103,8 @@ async function cellSays(page, stratum, phase) {
   }, stratum, phase);
 }
 // The first-view mark (E6 A7: ct:matrix renamed ct:first-view, emitted where the consortium is first on
-// screen). Until stream R4's Matrix.tsx line merges (E6 chunk 4), the old name counts too: exactly one
-// of the two, once. Chunk 5 drops the old name.
-const firstViewMarks = () => performance.getEntriesByName('ct:first-view', 'mark').length + performance.getEntriesByName('ct:matrix', 'mark').length;
+// screen), set once.
+const firstViewMarks = () => performance.getEntriesByName('ct:first-view', 'mark').length;
 const focusedId = (page) => page.evaluate(() => document.activeElement?.id ?? document.activeElement?.getAttribute('aria-label') ?? null);
 
 test('BT-2 (S2 matrix): real Temperate gap, Room Small misfits with reasons, one Tab stop per plant with layer and phase words, phone cells ≥ 40 px and a named, announced stepper', async (t) => {

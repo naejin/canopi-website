@@ -1,23 +1,40 @@
 ---
 type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
-description: One placement origin on guest plants replaces three fields, and views read four site- and period-dependent facts through factAt instead of raw traits.
+description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T07:42:27Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:21:21Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:1b0f5a558733f838
-    last_modified: 2026-11-13T07:25:07Z
+    digest: sha256:b93a273295a29136
+    last_modified: 2026-11-13T10:58:21Z
   - id: site-marks-ts
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
     digest: sha256:794b69777641c2ce
     last_modified: 2026-11-13T07:02:37Z
+  - id: placement-ts
+    resource: ../../src/lib/consortium/placement.ts
+    title: src/lib/consortium/placement.ts
+    digest: sha256:600ac21a1ea7e5f0
+    last_modified: 2026-11-13T10:58:21Z
+  - id: source-ts
+    resource: ../../src/lib/consortium/source.ts
+    title: src/lib/consortium/source.ts
+    digest: sha256:19a8b751b1c19196
+    last_modified: 2026-11-13T10:58:21Z
+  - id: details-tsx
+    resource: ../../src/islands/consortium/views/details/Details.tsx
+    title: src/islands/consortium/views/details/Details.tsx
+    digest: sha256:f75cba06496a7a41
+    last_modified: 2026-11-13T10:58:21Z
+  - id: decisions-consortium-user-decisions
+    resource: /decisions/consortium-user-decisions.md
 ---
 
-ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, written in commit 0, 2026-11-13). Commit 0 adds the types only (`src/lib/consortium/types.ts`); stream R4 implements and wires them in chunk 4. Core: [Consortium core](/modules/consortium-core.md).
+ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, written in commit 0, 2026-11-13). Commit 0 added the types only (`src/lib/consortium/types.ts`); stream R4 implemented and wired them, merged in chunk 4 (coordinator row "E6 R4 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)). Core: [Consortium core](/modules/consortium-core.md).
 
 ## Context
 
@@ -26,12 +43,15 @@ ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, writ
 
 ## Decision
 
-- **Placement origin.** One `PlacementOrigin { list: ClimateZone; kind: PlacementKind }` on `Taxon`, replacing `from`/`placedFrom`/`estimate`. Only a plant placed from another climate's list (a guest) carries it; non-guests are not stamped.
-- **`factAt`.** `FactAt = (key, taxon, site, period) => FactValues[key] | null`. In E6 it returns the stored value; views read these facts through it instead of `t.traits.*`. Later steps make it site- and period-dependent behind the same signature.
-- **Its fact list, and only it** (`FactKey`): `life_cycle`, `cold_limit`, `heat_limit`, `water_need`. Other traits stay direct reads; a fact joins the list only when a step needs it site- or period-dependent.
+- **Placement origin.** One `Taxon.origin?: PlacementOrigin { list: ClimateZone; kind: PlacementKind }`, replacing `from`/`placedFrom`/`estimate`. Only a guest (`kind: 'guest'`, added from another climate's list, "Add anyway") or a borrowed placement (`kind: 'borrowed'`, a site of an uncovered climate placed from a nearest curated list, the "estimate" mark) carries it; the climate's own plants are never stamped (`'own'` exists for callers that need a kind for every plant).
+- **One reader and writer**, core `placement.ts`: `asGuest(t, list)` (a copy, so the list's record stays unstamped), `guestOf(t)`, `borrowedFrom(t)`, `placementZone(t, climate)` (`origin.list`, else the climate). The PlantSource's `borrowed()` writes the borrowed origin.
+- **Borrowed wins over guest.** A plant that is both (reachable only through a member found in an earlier borrowed pool) keeps its borrowed origin, since its placement, reasons and estimate mark come from that list; Details then drops the "From the X list" tag (cosmetic). Nothing persisted changed: saves hold only the guests map.
+- **`factAt`.** `FactAt = (key, taxon, site, period) => FactValues[key] | null`, implemented in core `source.ts` (beside the `PlantSource` that stores the facts) with `TODAY_PERIOD` `'1991-2020'`. In E6 it returns the stored value whatever the site and period; views read these facts through it instead of `t.traits.*`. Only Details reads it so far (water need); F2 routes site fit and range through it and computes per site and period behind the same signature, and E7 reads scoped stored facts (most specific wins).
+- **Its fact list, and only it** (`FactKey`): `life_cycle` (`annual`, `grown_as_annual` or `perennial` from the traits), `cold_limit` (`tminColdC`, `weak`), `heat_limit` (`tmaxWarmC`), `water_need` (`drought` and `moisture`, each `string | null`; widened from `drought: string` in R4 so a plant with only a moisture value still answers, and null only when both are unknown). Other traits stay direct reads; a fact joins the list only when a step needs it site- or period-dependent.
 - **`SiteFitMessage`** `{ id, about, severity, asks, key, vars?, state? }`: one shape for site-fit lines (light, room, climate) so the views stop composing them. In use since E6 R2: core `site-marks.ts` `siteFitMessages` builds them, `rules/site-fit.ts` and `views/kit/flags.ts` word the flags from them, and `siteMarks` turns the notes (`state` set) into marks.
 
 ## Consequences
 
 - No on-screen change in E6; each type is the named seam for F2/F4/E7, which is why they pass the usefulness test.
+- Views test the origin through the helpers (`guestOf` for the guest tag and `is-guest` class, `borrowedFrom` for the estimate mark and the Why line), and the correction's `placement_estimate` is `origin.kind === 'borrowed'`.
 - `factAt` returning `null` means unknown, never a misfit.

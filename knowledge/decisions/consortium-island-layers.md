@@ -3,20 +3,20 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the nine import rules dependency-cruiser enforces and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T10:18:12Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:21:33Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T03:47:07Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:21:31Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:646580d82308f4c9
-    last_modified: 2026-11-13T10:14:16Z
+    digest: sha256:a96b1533a3a56457
+    last_modified: 2026-11-13T12:19:07Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:816f7842acc7c951
-    last_modified: 2026-11-13T08:21:53Z
+    digest: sha256:4742cf4d4deea61e
+    last_modified: 2026-11-13T12:16:37Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -26,7 +26,7 @@ sources:
     resource: ../../src/islands/consortium/test-seam.d.ts
     title: src/islands/consortium/test-seam.d.ts
     digest: sha256:6927df0858d92504
-    last_modified: 2026-11-13T10:14:16Z
+    last_modified: 2026-11-13T10:30:35Z
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
@@ -65,18 +65,18 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:2f7b12ddd17900c4
-    last_modified: 2026-11-13T09:54:42Z
+    digest: sha256:35212a41aa54895d
+    last_modified: 2026-11-13T12:19:07Z
   - id: arch-json
     resource: ../../scripts/quality/baselines/arch.json
     title: scripts/quality/baselines/arch.json
-    digest: sha256:d0cf34534fce6bf9
-    last_modified: 2026-11-13T07:45:51Z
+    digest: sha256:207ecca44742d6dd
+    last_modified: 2026-11-13T10:30:35Z
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
     digest: sha256:21c91f912dda996c
-    last_modified: 2026-11-13T10:14:16Z
+    last_modified: 2026-11-13T10:30:35Z
 enforced_by: [scripts/consortium-boundary.test.mjs, sgconfig.yml]
 ---
 

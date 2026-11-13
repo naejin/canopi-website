@@ -95,7 +95,7 @@ test('E6-2 (B4 build): before the data is ready, no lazy part (sheets, plant dia
   await page.waitForFunction(() => performance.getEntriesByType('resource').some((e) => /\/_astro\/load\.[\w-]+\.js$/.test(e.name)), { timeout: 10_000 });
   await page.waitForNetworkIdle({ idleTime: 500, timeout: 10_000, concurrency: 1 }).catch(() => {});
   assert.notEqual(await loadState(page, 100), 'ready', 'the database is still held');
-  assert.equal(await page.evaluate(() => performance.getEntriesByName('ct:first-view').length + performance.getEntriesByName('ct:matrix').length), 0, 'nothing on screen yet');
+  assert.equal(await page.evaluate(() => performance.getEntriesByName('ct:first-view').length), 0, 'nothing on screen yet');
   const preloaded = await page.$$eval('link[rel="modulepreload"]', (links) => links.map((l) => new URL(l.href).pathname));
   const early = lazy.filter((u) => preloaded.includes(u));
   assert.deepEqual(early, [], `lazy parts modulepreloaded before the data is ready: ${early.join(', ')}`);
@@ -207,7 +207,7 @@ test('E6-5b (K3 lazy parts): on Start only, the data ready, the plant dialog and
   const deadline = Date.now() + 8000;
   while (lazy.some((u) => !requestsTo(log, [u]).length) && Date.now() < deadline) await new Promise((r) => setTimeout(r, 100));
   assert.deepEqual(lazy.filter((u) => !requestsTo(log, [u]).length), [], 'every sheet chunk and the dialog are fetched on Start');
-  assert.equal(await page.evaluate(() => performance.getEntriesByName('ct:first-view').length + performance.getEntriesByName('ct:matrix').length), 0, 'the consortium was never shown (no first-view mark, under either name until R4\'s rename merges)');
+  assert.equal(await page.evaluate(() => performance.getEntriesByName('ct:first-view').length), 0, 'the consortium was never shown (no first-view mark)');
   await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
   await page.locator(aria('button', 'Paste a list')).click();
   await page.waitForSelector('dialog[open]', { timeout: 2000 });

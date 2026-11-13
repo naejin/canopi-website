@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:12:22Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:21:23Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
 sources:
@@ -20,8 +20,8 @@ sources:
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
-    digest: sha256:d49b7e5ce27ce23a
-    last_modified: 2026-11-13T12:00:16Z
+    digest: sha256:c6e5a6214d2abebc
+    last_modified: 2026-11-13T12:18:58Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
@@ -68,7 +68,7 @@ Before B4 the consortium page had a first-run cap (43 KB gzip, 40 KB from the ch
 | `details` | 6.7 KB | 6,296 B | 8 KB |
 | `sheets` (each) | 6.3 KB | largest Paste 5,933 B (Add 2,414, Correction 2,380, Swap 1,190) | 8 KB |
 | `later` | 8 KB | 7,831 B (0.35 KB headroom: F1a adds lazy parts rather than growing it) | 8 KB |
-| `suggest` | 8 KB | no chunk until R4's `loadSuggest` | 8 KB |
+| `suggest` | 8 KB | own chunk since R4's `loadSuggest` (core `index.ts`; off the first run, loaded once a database is open); not yet measured here | 8 KB |
 | MapLibre with its worker and CSS | 330 KB | — | 330 KB |
 
 - A part above its cap is a coordinator row, never a silent raise.
@@ -79,7 +79,7 @@ Before B4 the consortium page had a first-run cap (43 KB gzip, 40 KB from the ch
 - **No late stylesheet**: no island chunk's `__vite__mapDeps` preload list names a CSS file (MapLibre's CSS aside), read from the built output.
 - **Modulepreload (A5, L5)**: consortium pages preload only what the first view awaits (`modulepreloadChunks`: the page script's static imports, the island entry and its static imports, the data loader with the sqlite glue); no part, feature or MapLibre chunk. The check asserts the first run and glue are preloaded and no lazy chunk is (from the graph and roles; the exact list comparison was dropped as circular).
 - **Test hook**: the `testHook` role (`test-hook.ts`) exists only in the browser-test build, which alone preloads it; a production build with it fails.
-- **First-view ratchet.** The mark `ct:matrix` becomes `ct:first-view`, emitted where the consortium is first on screen (the matrix today, Palette in F1a); the timing script reads `ct:first-view` and falls back to `ct:matrix` until R4's rename merges. `consortium-timing.mjs --ratchet scripts/browser/timing.json` compares cold and warm medians per profile (desktop, phone): above a value a warning, above 1.5× exit 1. The file ships with null values (not compared; a `::warning::` annotation when all are null) until the coordinator copies the first nightly runner's `timing-json:` line after push B. Values come from CI runner runs only, never local ones.
+- **First-view ratchet.** The mark `ct:matrix` becomes `ct:first-view`, emitted where the consortium is first on screen (the matrix today, Palette in F1a); R4 renamed it in Matrix.tsx, and the timing script and browser tests read only `ct:first-view` (the `ct:matrix` fallbacks dropped at the R4 merge). `consortium-timing.mjs --ratchet scripts/browser/timing.json` compares cold and warm medians per profile (desktop, phone): above a value a warning, above 1.5× exit 1. The file ships with null values (not compared; a `::warning::` annotation when all are null) until the coordinator copies the first nightly runner's `timing-json:` line after push B. Values come from CI runner runs only, never local ones.
 
 ## Consequences
 
