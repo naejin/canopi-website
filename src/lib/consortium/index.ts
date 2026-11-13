@@ -23,7 +23,7 @@ export { siteFitMessages } from './site-marks.ts';
 export * from './site-climate.ts';
 // E6 commit 0: the one search fold (Add, Start's crop search, the plant list; design check A9).
 export * from './fold.ts';
-// E6 R1: the site-id mapping of the one zone list (the list itself comes with types.ts).
+// E6 R1: the site-id mapping of the one zone list (the list itself, declared in zones.ts, comes through types.ts).
 export { zoneOfSiteId, type SiteId } from './zones.ts';
 // E6 R1: the nearest-list table, a leaf.
 export * from './nearest.ts';

@@ -12,10 +12,10 @@ export const SCHEMA_VERSION = 3;
 // PRAGMA application_id of the export ("CCON"), checked when the database opens.
 export const APPLICATION_ID = 0x43434f4e;
 
-// The export's climate zones in canopi-data order (climates.ord). The site names them in lowercase
-// ('tropical', src/data/climates.ts); the mapping happens at the island edge, never in the core.
-export const climateZones = ['Tropical', 'Subtropical', 'Arid', 'Mediterranean', 'Temperate', 'Continental', 'Boreal'] as const;
-export type ClimateZone = (typeof climateZones)[number];
+// The export's climate zones: declared once in zones.ts (E6 R2), with their order and the site-id
+// mapping; re-exported here for the readers of this file.
+import type { ClimateZone } from './zones.ts';
+export { climateZones, type ClimateZone } from './zones.ts';
 
 // WGSRPD level-1 continents (Antarctica excluded), in the export's region order. A region labels the
 // reasons a plant was placed (one per accepted cell of its climate); it never filters plants.
