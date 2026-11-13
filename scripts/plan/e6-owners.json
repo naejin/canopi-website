@@ -119,7 +119,9 @@
             ".githooks/**",
             ".node-version",
             "src/pages/version.json.ts",
-            "public/_headers"
+            "public/_headers",
+            "scripts/ci-deploy.test.mjs",
+            "scripts/check-built-site.mjs"
           ]
         },
         "Q1": {

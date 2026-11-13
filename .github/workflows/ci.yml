@@ -62,7 +62,8 @@ jobs:
           case "$EVENT" in
             push)
               if [ "$REF" = refs/heads/master ]; then
-                if git fetch --no-tags -q origin +refs/heads/deploy:refs/remotes/origin/deploy 2>/dev/null; then
+                # fetch-depth: 0 already brought refs/remotes/origin/deploy; no second fetch to fail silently.
+                if git rev-parse -q --verify refs/remotes/origin/deploy >/dev/null; then
                   base=$(git rev-parse refs/remotes/origin/deploy)
                 else
                   echo "No deploy branch to compare with yet."
