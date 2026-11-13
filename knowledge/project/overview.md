@@ -7,7 +7,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:57:02Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:35Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T02:55:40Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:45Z }
 sources:
   - id: readme
     resource: ../../README.md
@@ -23,7 +23,7 @@ sources:
     resource: ../../CLAUDE.md
     title: CLAUDE.md
     digest: sha256:67232b45e9d1961a
-    last_modified: 2026-11-13T06:57:02Z
+    last_modified: 2026-11-13T06:57:03Z
   - id: context-md
     resource: ../../CONTEXT.md
     title: CONTEXT.md
@@ -37,8 +37,8 @@ sources:
   - id: ci-yml
     resource: ../../.github/workflows/ci.yml
     title: .github/workflows/ci.yml
-    digest: sha256:fb457b92bae449a2
-    last_modified: 2026-11-13T05:24:17Z
+    digest: sha256:f54c110957ab8614
+    last_modified: 2026-11-13T12:11:05Z
   - id: node-version
     resource: ../../.node-version
     title: .node-version

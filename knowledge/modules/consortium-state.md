@@ -4,6 +4,8 @@ title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of memory.ts for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T08:28:41Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:45Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
@@ -23,8 +25,8 @@ sources:
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:0dde5368e5a077c5
-    last_modified: 2026-11-13T08:21:53Z
+    digest: sha256:29c0fba5d33f99b7
+    last_modified: 2026-11-13T11:02:09Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts

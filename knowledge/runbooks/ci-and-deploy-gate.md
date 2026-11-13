@@ -2,13 +2,15 @@
 type: Runbook
 title: CI, hooks and the deploy gate
 description: How the website's tiered hooks, GitHub Actions CI and the deploy branch gate production deploys on Cloudflare Workers Builds, and what to do when something fails.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T03:42:27Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:44Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
 sources:
   - id: ci-yml
     resource: ../../.github/workflows/ci.yml
     title: .github/workflows/ci.yml
-    digest: sha256:027128f242d729c2
-    last_modified: 2026-11-13T03:42:03Z
+    digest: sha256:f54c110957ab8614
+    last_modified: 2026-11-13T12:11:05Z
   - id: nightly-yml
     resource: ../../.github/workflows/nightly.yml
     title: .github/workflows/nightly.yml
@@ -58,7 +60,7 @@ Master deploys only through a green `gate` check. GitHub Actions moves the `depl
 | pre-commit | `.githooks/pre-commit` | ast-grep (`sgconfig.yml`) on the staged script files; nothing until a rule exists; no format or lint step (the repo has none) | 10 s |
 | pre-push | `.githooks/pre-push` | `npm run check`, `npm test`, `npm run check:arch`; skipped when every pushed range is documentation only; the zero-marker check when master is pushed (same `.githooks/zero-markers` switch) | 180 s |
 | CI | `.github/workflows/ci.yml` | everything below, on each push to master or `ci-probe/**` and each pull request | each shard within 15 min |
-| nightly | `.github/workflows/nightly.yml` | time to first view (desktop and phone, ratchet `scripts/browser/timing.json` once it exists, values from runner runs only) and the `@real-data` browser tests | — |
+| nightly | `.github/workflows/nightly.yml` | time to first view (desktop and phone, `--ratchet scripts/browser/timing.json`: warn above a value, fail above 1.5×; the file ships with null values, so the run only warns until the coordinator copies the first runner's `timing-json:` line after push B; values from runner runs only) and the `@real-data` browser tests | — |
 
 - Hooks are enabled once in the main checkout: `git config core.hooksPath .githooks` (`npm run hooks:install` prints it). The relative path applies to every worktree. There is no `prepare` script, because Workers Builds' `npm ci` must not run git config.
 - `.githooks/lib.sh`: `zero_markers` (the switch above), `capped` (systemd-run with 3 GB and no swap when it works, plain in CI), `step` (prints each command's time), `tier_done` (warns above the budget, fails above 1.5×), `docs_only` (the documentation-only rule, which ci.yml's `changes` job sources too).
@@ -70,9 +72,9 @@ Master deploys only through a green `gate` check. GitHub Actions moves the `depl
 |---|---|---|
 | `changes` | always | `docs_only=true` when every changed path is `knowledge/**`, `.beads/**`, `docs/**` or a root `*.md` (never `src/data/*.md`). On master the base is the tip of `deploy` (the last commit tested green), not the previous push, so a documentation-only commit after a red code commit (or after a `--no-verify` push) still runs jobs 2–4. It is false when there is no base (no `deploy` yet, new branch, force push, manual run). Tested in `scripts/ci-deploy.test.mjs`. |
 | 1 `unit` | always | climate install, `npm run check`, `npm test` (0 skips), `check:arch`, `check:dup`, `check:dead`, ast-grep, and the zero-marker check on master pushes (warns with the count while `.githooks/zero-markers` says `warn`; the batch's chunk-5 exit commit flips it to `fail`) |
-| 2 `browser-build` | code ranges | `npm run build:browser-test`; artifact `dist-test/` + `src/data/climate-index.json` (1 day) |
+| 2 `browser-build` | code ranges | `npm run build:browser-test`; artifact `browser-test-build`: `dist-test/` + `src/data/climate-index.json` (1 day), read by jobs 3 and 4 |
 | 3 `browser` ×4 | code ranges | `npm run test:browser:shard -- N`; results artifact always |
-| 4 `site` | code ranges | `npm run build` → `check-built-site` → `test:browser:smoke` → `test:axe` → `test:vectors` with `CANOPI_REQUIRE_VECTORS=1` |
+| 4 `site` | code ranges; waits for job 2 (`needs: [changes, browser-build]`) | `npm run build` → `check-built-site` → `test:browser:smoke` → `test:axe` → `test:vectors` with `CANOPI_REQUIRE_VECTORS=1` → downloads job 2's `browser-test-build` artifact → the L11 graph test, `node --test scripts/built-modules.test.mjs` with `CANOPI_REQUIRE_BUILDS=1` (the test build's chunk graph is the production graph plus the test hook's chunk; a missing build fails) |
 | `gate` | always | green when every job is green; jobs 2–4 may be skipped only when `docs_only` is true. **The ruleset requires this name: renaming it blocks every deploy.** |
 | `deploy` | master push, gate green | `contents: write`; concurrency group `deploy`, never cancelled. If `deploy` already contains the sha, it exits 0. If the sha does not descend from `deploy`, it fails naming both. Otherwise `git push origin <sha>:refs/heads/deploy` (never `--force`). It creates `deploy` on the first run. |
 | `live` | after deploy | polls `https://projectcanopi.com/version.json` every 30 s for up to 20 min. Green when the live site reports this sha or a newer one that contains it. Red otherwise, and GitHub emails the pusher. |

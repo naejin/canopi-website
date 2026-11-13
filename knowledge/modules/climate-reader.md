@@ -4,7 +4,7 @@ title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T10:18:55Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T10:18:48Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:46Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
@@ -39,8 +39,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:6c135be340fc4375
-    last_modified: 2026-11-13T10:14:16Z
+    digest: sha256:d93324757e80faab
+    last_modified: 2026-11-13T12:00:16Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -64,8 +64,8 @@ sources:
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:ad2fea270b47646a
-    last_modified: 2026-11-11T17:14:18Z
+    digest: sha256:87542372e31a049e
+    last_modified: 2026-11-13T12:00:16Z
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
@@ -100,7 +100,7 @@ sources:
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
     digest: sha256:34300292e761fa67
-    last_modified: 2026-11-13T10:13:52Z
+    last_modified: 2026-11-13T10:30:35Z
 enforced_by:
   - scripts/climate-reader.test.mjs
   - scripts/install-climate.test.mjs
