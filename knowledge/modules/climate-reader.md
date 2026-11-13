@@ -4,7 +4,7 @@ title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:21:33Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T14:30:53Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T15:45:23Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
@@ -39,8 +39,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:757da247c4d5eb7a
-    last_modified: 2026-11-13T13:05:42Z
+    digest: sha256:0ae4f685772e08b7
+    last_modified: 2026-11-13T14:45:18Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -74,8 +74,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:46d259fac1563ec1
-    last_modified: 2026-11-13T12:48:34Z
+    digest: sha256:0e7baa0e285b6f28
+    last_modified: 2026-11-13T15:32:49Z
   - id: vectors-mjs
     resource: ../../scripts/fixtures/climate/vectors.mjs
     title: scripts/fixtures/climate/vectors.mjs
