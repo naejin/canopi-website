@@ -37,7 +37,10 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const fitting = store.fitPool.value;
   const algo = store.suggestRule.value;
   const [stalled, setStalled] = useState(false);
-  useEffect(() => { store.wantSuggest(); }, []);
+  // Asked once this opening rendered: until then an earlier failure reads as waiting, so the failed
+  // line is announced once per opening, after this ask (review 3).
+  const [asked, setAsked] = useState(false);
+  useEffect(() => { store.wantSuggest(); setAsked(true); }, []);
   useEffect(() => {
     if (algo) return;
     const cap = setTimeout(() => setStalled(true), suggestWaitMs());
@@ -45,7 +48,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   }, [algo]);
   const alts = useMemo(() => (fitting && algo ? algo.alternatives(id, members, fitting, { ...ctx, removed }) : []), [algo, id, fitting, members, ctx, removed]);
   // The range rule (store.pool) or the suggestion's chunk (store.suggestRule) still loading.
-  if (!pool || (!algo && !store.suggestFailed.value && !stalled)) return <SheetWaiting Frame={Frame} />;
+  if (!pool || (!algo && !(asked && store.suggestFailed.value) && !stalled)) return <SheetWaiting Frame={Frame} />;
   if (!t) return null;
   const byId = new Map(pool.map((x) => [x.id, x]));
   const fit = alts.filter((a) => !asks(a.flags)), ask = alts.filter((a) => asks(a.flags));
