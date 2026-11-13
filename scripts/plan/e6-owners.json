@@ -256,7 +256,8 @@
             "src/islands/consortium/views/Paste.tsx",
             "src/islands/consortium/views/Correction.tsx",
             "scripts/browser/consortium-e6.browser.test.mjs",
-            "src/islands/consortium/views/kit/sheet.tsx"
+            "src/islands/consortium/views/kit/sheet.tsx",
+            "scripts/browser/consortium-seams-layout.browser.test.mjs"
           ]
         },
         "S3": {
