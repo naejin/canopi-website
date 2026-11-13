@@ -1,8 +1,9 @@
 // E6's user paths (design check §4.1 L1–L12, §5.7), written failing in commit 0: each test is marked
 // expected-fail (scripts/expect-fail.mjs failing()) with its owner stream in the title, and the owner
 // removes the marker in the commit that makes it pass (the call becomes test()). Owners per chunk
-// (scripts/plan/e6-owners.json): K1 in chunk 1 (E6-1), K3 in chunk 3 (E6-3…5), B4 in chunk 4 (E6-2);
-// R4's specs are in consortium-e6-r4 (one owner per file per chunk). No subtests inside a marked
+// (scripts/plan/e6-owners.json): K1 in chunk 1 (E6-1), K3 in chunk 3 (E6-3…5; E6-3b…5b, rows L6,
+// L7, L12, added by K3), B4 in chunk 4 (E6-2); R4's specs are in consortium-e6-r4 (one owner per
+// file per chunk). No subtests inside a marked
 // test: one behaviour variant each (1280 px light). Run capped: npm run test:browser.
 //
 // Files each pass needs: E6-1 views/Start.tsx and src/lib/consortium/fold.ts (K1, A9); E6-2
@@ -39,6 +40,16 @@ const chips = async (page) => (await axNodes(page)).filter((n) => n.role === 'bu
 const memberIds = (page) => page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort());
 const dialogOpen = (page) => page.evaluate(() => !!document.querySelector('dialog[open]'));
 const focusedName = (page) => page.evaluate(() => (document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent || '').trim());
+// L1: a chip opens a part that does not load: the sheet closes, the toast says so with Reload, and
+// the focus goes back to the chip.
+async function couldNotOpen(page, chip) {
+  await page.locator(aria('button', chip)).click();
+  assert.ok(await has(page, aria('button', RELOAD), 8000), 'the toast offers Reload');
+  assert.match(await page.$eval('.ct-toast-text', (e) => e.textContent), new RegExp(FAILED.slice(0, 20)));
+  assert.equal(await dialogOpen(page), false, 'the sheet is closed');
+  await page.waitForFunction((name) => (document.activeElement?.getAttribute('aria-label') || '').trim() === name, { timeout: 2000 }, chip).catch(() => {});
+  assert.equal(await focusedName(page), chip, 'focus back on the chip');
+}
 const requestsTo = (log, urls) => log.filter((p) => urls.includes(p));
 const recordRequests = (log) => async (page) => { page.on('request', (r) => { try { log.push(new URL(r.url()).pathname); } catch { /* data: urls */ } }); };
 
@@ -118,11 +129,7 @@ test('E6-4 (K3 lazy Details): a missing Details chunk closes the sheet with a to
   const page = await matrixPage({ block: { details: 404 } });
   const before = await memberIds(page);
   const [chip] = await chips(page);
-  await page.locator(aria('button', chip)).click();
-  assert.ok(await has(page, aria('button', RELOAD), 8000), 'the toast offers Reload');
-  assert.match(await page.$eval('.ct-toast-text', (e) => e.textContent), new RegExp(FAILED.slice(0, 20)));
-  assert.equal(await dialogOpen(page), false, 'the sheet is closed');
-  assert.equal(await focusedName(page), chip, 'focus back on the chip');
+  await couldNotOpen(page, chip);
   await page.locator(aria('button', RELOAD)).click();
   await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 20_000 }).catch(() => {});
   assert.equal(await loadState(page), 'ready');
@@ -147,5 +154,62 @@ test('E6-5 (K3 lazy Details): offline after the prefetch, Details opens with its
   await page.waitForFunction((loading) => { const d = document.querySelector('dialog[open]'); return !!d && !d.textContent.includes(loading) && d.querySelectorAll('h3, section').length > 0; }, { timeout: 4000 }, LOADING);
   assert.equal(await has(page, aria('button', RELOAD), 300), false, 'no failure toast');
   await page.setOfflineMode(false);
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-3b (L6): a sheet closed before its chunk arrives writes nothing (no toast, no sheet back); the
+// chunk, once here, opens the next time at once, with no second request.
+test('E6-3b (K3 lazy Details): Details closed while its chunk is held, then released: no toast, no sheet; the next open shows the content at once with one request (L6)', async () => {
+  assert.ok(h.roles.details.length, 'role `details` has a chunk in this build');
+  const log = [];
+  const page = await matrixPage({ block: { details: 'hold' }, setup: recordRequests(log) });
+  const [chip] = await chips(page);
+  await page.locator(aria('button', chip)).click();
+  await page.waitForSelector('dialog[open] [role="status"]', { timeout: 2000 });
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 2000 });
+  await page.releaseHeld();
+  await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
+  assert.equal(await dialogOpen(page), false, 'no sheet opens by itself');
+  assert.equal(await has(page, aria('button', RELOAD), 300), false, 'no failure toast');
+  await page.locator(aria('button', chip)).click();
+  await page.waitForSelector('dialog[open]', { timeout: 2000 });
+  assert.equal(await page.$('dialog[open] .status-line[role="status"]'), null, 'the content at once, no loading line');
+  assert.ok(await has(page, 'dialog[open] section', 1000), 'the dialog\'s sections');
+  for (const u of h.roles.details) assert.equal(requestsTo(log, [u]).length, 1, `one request for ${u}`);
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-4b (L7): the Details part whose import rejects (a chunk that throws while evaluating comes back the
+// same way: the import() promise rejects; the test hook's failSheets) is an L1: the sheet closes, the
+// toast says so with Reload, the focus goes back to the chip.
+test('E6-4b (K3 lazy Details): a Details part whose import rejects closes the sheet with a toast and Reload, focus back on the chip (L7)', async () => {
+  const page = await matrixPage({ hook: true });
+  await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
+  const [chip] = await chips(page);
+  await page.evaluate(() => window.__ctTest.failSheets());
+  await couldNotOpen(page, chip);
+  await page.browserContext().close().catch(() => {});
+});
+
+// E6-5b (L12, A6): a visitor who stays on Start (no matrix ever) still gets the prefetch once the data is
+// ready, so Paste a list opens with its content, not a loading line.
+test('E6-5b (K3 lazy parts): on Start only, the data ready, the plant dialog and the sheets are fetched without the matrix; Paste a list opens with its content at once (L12)', async () => {
+  assert.ok(h.roles.details.length && h.roles.sheets.length, 'roles details and sheets have chunks in this build');
+  const log = [];
+  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', setup: recordRequests(log) });
+  await page.locator(aria('radio', 'Temperate')).click();
+  assert.equal(await loadState(page), 'ready');
+  const lazy = [...h.roles.details, ...h.roles.sheets];
+  const deadline = Date.now() + 8000;
+  while (lazy.some((u) => !requestsTo(log, [u]).length) && Date.now() < deadline) await new Promise((r) => setTimeout(r, 100));
+  assert.deepEqual(lazy.filter((u) => !requestsTo(log, [u]).length), [], 'every sheet chunk and the dialog are fetched on Start');
+  assert.equal(await page.evaluate(() => performance.getEntriesByName('ct:matrix').length), 0, 'the matrix was never shown');
+  await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
+  await page.locator(aria('button', 'Paste a list')).click();
+  await page.waitForSelector('dialog[open]', { timeout: 2000 });
+  assert.equal(await page.$('dialog[open] .status-line[role="status"]'), null, 'no loading line');
+  assert.ok(await has(page, 'dialog[open] textarea', 1000), 'the paste box at once');
+  for (const u of lazy) assert.equal(requestsTo(log, [u]).length, 1, `one request for ${u}`);
   await page.browserContext().close().catch(() => {});
 });
