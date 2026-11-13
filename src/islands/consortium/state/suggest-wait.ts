@@ -15,13 +15,17 @@ export const pendingSuggest = signal(false);
 // Suggest has waited its 10 s for a location lookup (requestSuggest).
 export const waited = signal(false);
 let cap: ReturnType<typeof setTimeout> | undefined;
+// The id of the toast capped() showed for a suggest chunk that had not come, until the chunk comes.
+let lateToast: number | null = null;
 // The waiting Suggest has one owner, here (seam review round 4, 1): requestSuggest starts the wait,
 // the effect in watchSuggest runs it once its lists are read, and dropSuggest ends it: when the reader
 // changes the plants or opens a sheet (another action: Add, search, Details, paste; Start's "Start
 // empty and search" too), when the plant list fails (the load screen says so), or once its 10 s are
 // up with a kept guest's list still unread (a toast says so), or when the suggestion's chunk fails or
 // has not come once its 10 s are up with the list read (a toast with Reload). Each wait therefore
-// ends, with a suggestion or one toast.
+// ends, with a suggestion or one toast. That last toast is taken down if the chunk then arrives
+// (lateToast; the wait stays ended, so it runs no suggestion), and only while it is still the toast
+// shown: a newer one stays.
 const SUGGEST_WAIT_MS = 10_000;
 // A browser test may shorten the wait in the test build (window.__ctTimeouts.suggest; A4, as in
 // data/load.ts); production folds it to SUGGEST_WAIT_MS.
@@ -44,7 +48,7 @@ function capped(): void {
   // the wait ends with Reload (R4 re-review); with the list still being read, it is checked again
   // after another wait (the load screen ends a failed list's wait).
   if (!store.suggestRule.peek()) {
-    if (store.pool.peek()) { dropSuggest(); reloadToast(); } else cap = setTimeout(capped, waitMs());
+    if (store.pool.peek()) { dropSuggest(); reloadToast(); lateToast = store.toast.peek()?.id ?? null; } else cap = setTimeout(capped, waitMs());
   }
 }
 // "Suggest plants": now when the plants are read, else once they are (§5 Loading).
@@ -76,6 +80,13 @@ export function watchSuggest(): void {
   effect(() => {
     if (!store.suggestFailed.value || !untracked(() => pendingSuggest.value)) return;
     untracked(() => { dropSuggest(); reloadToast(); });
+  });
+  // The chunk capped() gave up on arrives after all: its "did not load" toast goes, if still shown.
+  effect(() => {
+    if (!store.suggestRule.value || lateToast === null) return;
+    const id = lateToast;
+    lateToast = null;
+    if (untracked(() => store.toast.value?.id) === id) untracked(store.hideToast);
   });
   // ... unless the reader changed the plants, opened a sheet, or the plant list failed meanwhile.
   let primed = false;
