@@ -69,7 +69,7 @@ const consortiumChunkRoles = {
     if (this.environment && this.environment.name !== 'client') return;
     const dir = options.dir ?? '';
     if (basename(dir) !== 'client') throw new Error(`canopi:consortium-chunk-roles: the client build went to ${dir}, not a client/ directory; ${CHUNK_ROLES_FILE} would be served`);
-    writeFileSync(join(dir, '..', CHUNK_ROLES_FILE), `${JSON.stringify(chunkRoles(bundle, (id) => this.getModuleInfo(id)), null, 2)}\n`);
+    writeFileSync(join(dir, '..', CHUNK_ROLES_FILE), `${JSON.stringify(chunkRoles(bundle, (/** @type {string} */ id) => this.getModuleInfo(id)), null, 2)}\n`);
   },
 };
 

@@ -75,18 +75,22 @@ export function moduleGraph(root, html) {
 // island's caps (§8), modulepreloaded because the first view waits for it.
 export const isSqliteGlue = (code) => code.includes('sqlite3_deserialize') && /sqlite3\.[\w-]+\.wasm/.test(code);
 
-// The chunks reachable from `from` without entering any chunk of `stop` (paths of a moduleGraph).
-export function reachable(graph, from, stop = new Set()) {
+// The chunks reached from `from` through `next` (a chunk's edges) without entering any chunk of
+// `stop` (paths of a moduleGraph), in visit order.
+function walk(graph, from, stop, next) {
   const seen = new Set();
   const stack = [...from];
   while (stack.length) {
     const p = stack.pop();
     if (seen.has(p) || stop.has(p) || !graph.has(p)) continue;
     seen.add(p);
-    stack.push(...graph.get(p).imports);
+    stack.push(...next(p));
   }
   return seen;
 }
+
+// The chunks reachable from `from` (static and import() edges) without entering any chunk of `stop`.
+export const reachable = (graph, from, stop = new Set()) => walk(graph, from, stop, (p) => graph.get(p).imports);
 
 // The island's own chunks (§8): everything reachable from its entry chunk (the one that mounts into
 // #ct-root, src/islands/consortium/main.ts), less what the page loads without it (the site chrome,
@@ -105,16 +109,13 @@ export function islandChunks(graph, pageEntries) {
 const STATIC_IMPORT = /(?:^|[^\w$.])(?:import|export)\s*(?:[\w$*{}\s,]+?\s*from\s*)?["']([^"']+\.js)["']/g;
 export function firstRunChunks(graph, island) {
   const own = new Set(island.chunks);
-  const seen = new Set();
-  const stack = [island.entry];
-  while (stack.length) {
-    const p = stack.pop();
-    if (seen.has(p) || !own.has(p)) continue;
-    seen.add(p);
-    for (const [, spec] of graph.get(p).code.matchAll(STATIC_IMPORT)) stack.push(...importsOf(`"${spec}"`, p));
-  }
-  return [...seen];
+  return staticClosure(graph, [island.entry], new Set([...graph.keys()].filter((p) => !own.has(p))));
 }
+
+// The chunks `roots` need before they can run: themselves and their static imports, transitively
+// (paths of a moduleGraph; import() is not followed), without entering a chunk of `stop`.
+const staticImportsOf = (graph, p) => [...graph.get(p).code.matchAll(STATIC_IMPORT)].flatMap(([, spec]) => importsOf(`"${spec}"`, p));
+export const staticClosure = (graph, roots, stop = new Set()) => [...walk(graph, roots, stop, (p) => staticImportsOf(graph, p))];
 
 // The roles the build gives chunks (P5 commit 0; E6 stream B4 merged the lazy island parts in), read
 // from Rollup's own bundle in writeBundle (astro.config.mjs canopi:consortium-chunk-roles writes them to
@@ -161,6 +162,10 @@ export const ROLE_ENTRIES = {
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
 const emptyRoles = () => Object.fromEntries(Object.keys(ROLE_ENTRIES).map((k) => [k, []]));
 const norm = (id) => (id ?? '').split('?')[0].replaceAll('\\', '/');
+/**
+ * @param {Record<string, any>} bundle Rollup's output bundle
+ * @param {((id: string) => { importers: readonly string[], dynamicImporters: readonly string[] } | null) | null} [moduleInfo] Rollup's this.getModuleInfo
+ */
 export function chunkRoles(bundle, moduleInfo = null) {
   const files = Object.values(bundle);
   const chunks = files.filter((f) => f.type === 'chunk');
@@ -219,20 +224,6 @@ export function onDemandChunks(graph, entries, roles, size = () => 0) {
     return [r, { chunks: own.sort(), bytes: own.reduce((n, p) => n + size(p), 0) }];
   }));
   return { parts: parts.sort(), location: location.sort(), maplibre: maplibre.sort(), costs };
-}
-
-// The chunks `roots` need before they can run: themselves and their static imports, transitively
-// (paths of a moduleGraph; import() is not followed), without entering a chunk of `stop`.
-export function staticClosure(graph, roots, stop = new Set()) {
-  const seen = new Set();
-  const stack = [...roots];
-  while (stack.length) {
-    const p = stack.pop();
-    if (seen.has(p) || stop.has(p) || !graph.has(p)) continue;
-    seen.add(p);
-    for (const [, spec] of graph.get(p).code.matchAll(STATIC_IMPORT)) stack.push(...importsOf(`"${spec}"`, p));
-  }
-  return [...seen];
 }
 
 // Design check A5 (L5): the modulepreload links of a page holding #ct-root: the first-run closure only,
