@@ -5,8 +5,8 @@
 // empty: Months 3–12." Warnings are shown on the row and never asked about; only a site misfit or a
 // serious (high) conflict asks "Swap anyway?" (owner row 2026-10-28, coordinator row "v2 mockup
 // choices" 2026-11-11), and those plants come last. Loaded on first use (views/Sheets.tsx). The list
-// comes from the suggestion's chunk (store.suggestRule, core loadSuggest), read with the plant list: while
-// the pool waits, the loading line; if the chunk failed, a line says so in place.
+// comes from the suggestion's chunk (store.suggestRule, core loadSuggest): while it or the pool loads, the
+// loading line; if the chunk failed, a line says so in place.
 import { useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
@@ -31,7 +31,8 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const fitting = store.fitPool.value;
   const algo = store.suggestRule.value;
   const alts = useMemo(() => (fitting && algo ? algo.alternatives(id, members, fitting, { ...ctx, removed }) : []), [algo, id, fitting, members, ctx, removed]);
-  if (!pool) return <SheetWaiting Frame={Frame} />; // the range rule or the suggestion's chunk still loading (store.pool)
+  // The range rule (store.pool) or the suggestion's chunk (store.suggestRule) still loading.
+  if (!pool || (!algo && !store.suggestFailed.value)) return <SheetWaiting Frame={Frame} />;
   if (!t) return null;
   const byId = new Map(pool.map((x) => [x.id, x]));
   const fit = alts.filter((a) => !asks(a.flags)), ask = alts.filter((a) => asks(a.flags));
