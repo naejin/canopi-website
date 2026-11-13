@@ -27,3 +27,16 @@ export * from './fold.ts';
 export { siteIdOf, zoneOfSiteId, type SiteId } from './zones.ts';
 // E6 R1: the nearest-list table, a leaf.
 export * from './nearest.ts';
+
+// E6 R4 (design check A11): the suggestion and the Swap list (suggest.ts), their own chunk (role
+// `suggest`, scripts/built-modules.mjs LAZY_ENTRIES), off the first run. This loader is the way in for
+// the page (store.ts suggestRule); the `export *` above stays for node tests and builds no edge, as
+// long as no first-run module takes `suggest` or `alternatives` from this barrel (check-built-site's
+// role `suggest` would then find no chunk). Loaded once; a failed load clears the promise.
+export interface SuggestRule { suggest: typeof import('./suggest.ts').suggest; alternatives: typeof import('./suggest.ts').alternatives }
+let suggestLoading: Promise<SuggestRule> | null = null;
+export function loadSuggest(): Promise<SuggestRule> {
+  // Destructured, so Rollup keeps only these two exports of the chunk's facade.
+  suggestLoading ??= import('./suggest.ts').then(({ suggest, alternatives }): SuggestRule => ({ suggest, alternatives }), (err: unknown) => { suggestLoading = null; throw err; });
+  return suggestLoading;
+}

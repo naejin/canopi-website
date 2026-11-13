@@ -5,8 +5,8 @@
 // inside the computed bodies, the core calls they own (matrix: S1 lib/consortium/matrix.ts; flags:
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
-import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
-import { asGuest, buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
+import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, SuggestRule, Taxon } from '../../lib/consortium/index.ts';
+import { asGuest, buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, needsMarkProviders } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -83,6 +83,7 @@ export const interactionSets = signal<Partial<Record<ClimateZone, Interaction[]>
 export const pool = computed<Taxon[] | null>(() => {
   const c = climate.value;
   const p = c ? pools.value[c] ?? null : null;
+  if (p && !suggestRule.value && !suggestFailed.value) return null; // the suggestion's chunk (suggestRule)
   return p && siteClimate.value && !rangeRule.value && !rangeFailed.value ? null : p;
 });
 // The range rule (core range.ts, owner answer 2) arrives with its own chunk (core marks.ts
@@ -98,6 +99,20 @@ export const rangeFailed = computed(() => rangeBroken.value && siteClimate.value
 // The rule's load in flight (settled once rangeRule or rangeBroken is set): loadPool waits for it, so a
 // caller that awaited the pool finds it readable.
 let rangeLoad: Promise<void> | null = null;
+// The suggestion and the Swap list (core suggest.ts, design check A11): their own chunk (core
+// loadSuggest), off the first run, asked for with the first plant list (loadPool, after the database is
+// ready), and `pool` waits for it as for the range rule, so wherever a pool shows, Suggest and Swap act
+// at once (no wait of their own: a pending Suggest waits for the pool, as before; loadPool's promise
+// settles after it). suggestFailed: the chunk did not load (offline, or a deploy since the page loaded);
+// the pool shows anyway, Suggest says so with Reload and changes nothing (L8), and Swap says it in
+// place. The import is not tried again on this page (a browser remembers a failed module).
+export const suggestRule = signal<SuggestRule | null>(null);
+export const suggestFailed = signal(false);
+let suggestLoad: Promise<void> | null = null;
+const withSuggest = (): Promise<void> => (suggestLoad ??= loadSuggest().then((r) => { suggestRule.value = r; }, (err: unknown) => {
+  console.error(`Consortium: the suggestion did not load: ${(err as Error).message}`);
+  suggestFailed.value = true;
+}));
 const withRule = <T>(p: Promise<T>): Promise<T> => (siteClimate.peek() && !rangeRule.peek() && rangeLoad ? Promise.all([p, rangeLoad]).then(([x]) => x) : p);
 // Whether the location gave a climate (core siteToday is non-null; inlined to keep the rule off the first run).
 export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
@@ -219,8 +234,9 @@ const reading = new Map<ClimateZone, Promise<Taxon[] | null>>();
 export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
   const src = source.peek();
   if (!src) return Promise.resolve(null);
+  const ready = withSuggest();
   const have = pools.peek()[c];
-  if (have) return withRule(Promise.resolve(have));
+  if (have) return withRule(ready.then(() => have));
   let p = reading.get(c);
   if (!p) {
     // A read of a source replaced meanwhile (Retry) neither writes nor fails the new load.
@@ -229,7 +245,7 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
       pools.value = { ...pools.peek(), [c]: plants };
       interactionSets.value = { ...interactionSets.peek(), [c]: rows };
       return plants;
-    }).catch((err: unknown) => {
+    }).then(async (plants) => { await ready; return plants; }).catch((err: unknown) => {
       if (source.peek() !== src) return null;
       reading.delete(c);
       console.error(`Consortium data ${src.info().releaseId}: ${c}: ${(err as Error).message}`);
@@ -282,7 +298,13 @@ export function suggestMembers(): boolean {
   // missing rule is a failed one (store.pool waits for it otherwise).
   const scene = { curated: source.peek()?.info().climates ?? [], siteClimate: siteClimate.value, rangeFailed: !rule, nothingFits: false };
   if (needsSite(climate.value!, scene) || needsRule(climate.value!, scene)) return false;
-  const s = suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
+  // The suggestion's chunk failed with the plant list (suggestRule): say so, change nothing.
+  const algo = suggestRule.value;
+  if (!algo) {
+    showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => globalThis.location.reload() });
+    return false;
+  }
+  const s = algo.suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
   kept.value = keep;
   members.value = s.members;
   return true;
