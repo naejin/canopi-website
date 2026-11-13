@@ -5,9 +5,9 @@
 // loaded only once a site location exists (decision row "Island JavaScript budget for P5"); keep this
 // file a shell.
 import { location } from '../store.ts';
-import { lazyPart } from './lazy.tsx';
+import { lazyPart, retryable } from './lazy.tsx';
 
-const panel = lazyPart(() => import('./future/future.tsx').then((m) => m.FuturePanel), { quiet: true });
+const panel = lazyPart(retryable(() => import('./future/future.tsx'), (m) => m.FuturePanel), { quiet: true });
 
 export function FutureSlot() {
   return location.value ? <panel.View /> : null;

@@ -33,12 +33,12 @@ import { layerName, listName, listOf, nameOf, phasePlain, phaseTerm } from './ki
 import { AddMore, CellReason, EmptyNotice, FillMeter, FreeCell, GlyphKey } from './matrix-parts.tsx';
 import { phone } from './StageStepper.tsx';
 import { PhoneMatrix } from './PhoneMatrix.tsx';
-import { later, prefetchLater } from './lazy.tsx';
+import { later, prefetchLater, retryable } from './lazy.tsx';
 
-// The other three views load after the matrix (views/lazy.tsx).
-const { View: SideView } = later(() => import('./later.ts').then((m) => m.SideView));
-const { View: Jobs } = later(() => import('./later.ts').then((m) => m.Jobs));
-const { View: PlantList } = later(() => import('./later.ts').then((m) => m.PlantList));
+// The other three views load after the matrix (views/lazy.tsx; retryable: a failed chunk is asked again).
+const { View: SideView } = later(retryable(() => import('./later.ts'), (m) => m.SideView));
+const { View: Jobs } = later(retryable(() => import('./later.ts'), (m) => m.Jobs));
+const { View: PlantList } = later(retryable(() => import('./later.ts'), (m) => m.PlantList));
 
 type Tab = Exclude<View, 'start'>;
 const TABS: readonly Tab[] = ['matrix', 'side', 'jobs', 'list'];

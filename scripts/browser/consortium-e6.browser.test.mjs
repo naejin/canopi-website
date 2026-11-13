@@ -369,3 +369,19 @@ test('E6-19 (B4 hand-off, chunk-5 exit fix round): in the test build, a test hoo
     assert.match(await page.$eval('#ct-root [data-load-error]', (p) => p.textContent), /test hook/, 'the line names the test hook');
   } finally { await page.browserContext().close().catch(() => {}); }
 });
+
+// E6 hand-off C: the parts outside the sheets mend a chunk that failed once (views/lazy.tsx retryable),
+// as the sheets do: the later chunk's first request (the prefetch's, at the data ready) is answered 404,
+// and the Jobs tab still opens on the next use, not "did not load" until Reload.
+test('E6-24 (K3 hand-off C): the views after the matrix open on the next use after their chunk failed once', async () => {
+  const failed = [];
+  const page = await matrixPage({ setup: fail404Once(h.roles.later, failed) });
+  try {
+    for (const end = Date.now() + 5000; !failed.length && Date.now() < end;) await new Promise((r) => setTimeout(r, 50));
+    assert.equal(failed.length, 1, 'the later chunk\'s first request answered 404');
+    await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
+    await page.locator(aria('tab', 'Jobs')).click();
+    await page.waitForFunction(() => !!document.querySelector('#ct-panel-jobs .ct-jobs-view, #ct-panel-jobs [role="alert"]'), { timeout: 8000 }).catch(() => {});
+    assert.ok(await has(page, '#ct-panel-jobs .ct-jobs-view', 300), 'the Jobs view, not the failed line');
+  } finally { await page.browserContext().close().catch(() => {}); }
+});

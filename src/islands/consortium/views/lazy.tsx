@@ -6,7 +6,12 @@
 // first of: the consortium first on screen (Matrix, ct:first-view) or the data ready (store.load =
 // ready), so a reader who stays on Start has Search and Paste at hand too, and nothing lazy competes
 // with the database download. A part used before its prefetch finished loads on demand through the
-// same promise (one request per chunk); a failed load clears it, so the next use asks again (L4).
+// same promise (one request per chunk); a failed load clears it, so the next use asks again (L4), and,
+// for a part whose import() is wrapped in retryable() (below: every lazyPart and later() in views/, and
+// the location step's loader), fetches again even in Chromium. The core's own loaders (marks.ts: the
+// mark providers and the range rule; lib/consortium/index.ts loadSuggest) stay plain, since lib may
+// not import views: in Chromium a failed one needs Reload (Swap and Suggest offer it; the range rule
+// says so in PoolSlot).
 //
 // While loading, a part shows its loading line (F5; a sheet its frame, views/Sheets.tsx); one that
 // fails says so with Reload, in place (a view), or, onFail 'closeSheet' (a sheet part), by closing
@@ -75,8 +80,11 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
       if (C) return;
       let live = true;
       if (idle) {
-        // An idle part waits for the prefetch (done), or, held by a test, for the release.
+        // An idle part waits for the prefetch (done), or, held by a test, for the release. Once the
+        // prefetch has started, it asks again itself (the same promise while one runs): a prefetch
+        // that failed would otherwise leave it blank for the page's life.
         if (fault === 'hold') gate(kind).then(() => { if (live) wake((n) => n + 1); }, () => {});
+        else if (started) prefetch().then(() => { if (live) wake((n) => n + 1); }, () => {});
         return () => { live = false; };
       }
       load().then(() => { if (live) wake((n) => n + 1); }, (err: unknown) => {
@@ -105,8 +113,10 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
 // the failed import's error (Chromium and Firefox name the URL; where the error names none, or names
 // a file outside this site's /_astro/, the next call fails again: the toast and Reload). This mends
 // the chunk itself only: its static imports keep their plain URLs, so a sheet chunk imports nothing
-// but first-run modules, already loaded (kit/sheet.tsx shared; E6-5d checks it). Were a shared chunk to
-// fail anyway, every retry fails: one toast per open, Reload the fix. pick: the part in the module.
+// but first-run modules, already loaded (kit/sheet.tsx shared; E6-5d checks it), nor does the later
+// chunk (E6 hand-off C, measured). The future and pool parts statically import the range rule's chunk
+// (and future the chunk it shares with the mark providers): were one of those to fail, every retry
+// fails, Reload the fix. pick: the part in the module.
 const failedUrl = (err: unknown): string | null => {
   const url = /https?:\/\/[^\s'"]+?\.js\b/.exec(String((err as Error)?.message ?? err))?.[0] ?? null;
   return url?.startsWith(`${location.origin}/_astro/`) ? url : null;

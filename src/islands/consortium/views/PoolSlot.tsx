@@ -24,11 +24,11 @@ import { climateChosen } from '../state/persist.ts';
 import { backToConsortium, canGoBack } from '../state/draft.ts';
 import { dropSuggest, pendingSuggest } from '../state/suggest-wait.ts';
 import { T } from '../strings.ts';
-import { lazyPart } from './lazy.tsx';
+import { lazyPart, retryable } from './lazy.tsx';
 import { page } from './kit/page.ts';
 import { zoneName } from './kit/names.ts';
 
-const panel = lazyPart(() => import('./pool/pool.tsx').then((m) => m.PoolPanel), { quiet: true });
+const panel = lazyPart(retryable(() => import('./pool/pool.tsx'), (m) => m.PoolPanel), { quiet: true });
 
 // The climates with plants of their own: the store's one owner, which suggestMembers reads too.
 const curated = (): ClimateZone[] => curatedClimates.value;
