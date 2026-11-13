@@ -687,6 +687,7 @@ test('climateShown agrees with the views\' own shown climate in every case (Star
       const wasProposed = chosen ? null : store.proposedClimate.value;
       const shown = persist.climateShown.value;
       assert.equal(shown.proposed ? null : shown.zone, chosen, `${at}: the chosen (or link's) climate`);
+      assert.equal(persist.climateChosen.value, chosen, `${at}: climateChosen, which Start and PoolSlot read`);
       assert.equal(shown.proposed ? shown.zone : null, wasProposed, `${at}: the proposed card`);
     }
   } finally {

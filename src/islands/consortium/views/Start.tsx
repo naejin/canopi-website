@@ -18,7 +18,7 @@ import { P, T, pageLang } from '../strings.ts';
 import { searchIndex } from '../data/search.ts';
 import { LocationSlot } from './LocationSlot.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from './PoolSlot.tsx';
-import { climateShown, restoring } from '../state/persist.ts';
+import { climateChosen, climateShown, restoring } from '../state/persist.ts';
 import { notices } from '../state/restore.ts';
 import { startMemory } from '../state/arrival.ts';
 import { backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, pickingCountry, startEmpty, startOver } from '../state/draft.ts';
@@ -94,7 +94,7 @@ function Climates() {
   // else a location's suggestion (store.proposedClimate, S5b), shown as proposed, not checked: a click
   // on its card confirms it, as the result line's "Use" button does (owner answer 1; review round 1, 6).
   const shown = climateShown.value;
-  const chosen = shown.proposed ? null : shown.zone;
+  const chosen = climateChosen.value;
   const proposed = shown.proposed ? shown.zone : null;
   // With a card proposed and none checked (review round 2, 5): Tab lands on the proposed card (the
   // others leave the tab order), and the arrows move the focus without checking a card; Space, Enter
@@ -228,6 +228,8 @@ function StartNotices() {
   );
 }
 
+// Head and the guide notice name store.climate, not climateShown: a consortium (and a guide preset's
+// notice) shows only under a chosen climate, where the two are the same.
 function Head() {
   const n = members.value.length;
   return (
@@ -245,7 +247,7 @@ function Head() {
 }
 
 function StartView() {
-  const z = climateShown.value.proposed ? null : climateShown.value.zone;
+  const z = climateChosen.value;
   const waiting = pendingSuggest.value || restoring.value;
   return (
     <div class="ct-start">

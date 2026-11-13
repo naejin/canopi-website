@@ -20,7 +20,7 @@ import { hasPlants, zoneOf } from '../../../lib/consortium/index.ts';
 import { location, pool, rangeFailed, rangeRule, siteClimate } from '../store.ts';
 import * as rule from '../rules/suggest-block.ts';
 import type { SuggestBlock, SuggestScene } from '../rules/suggest-block.ts';
-import { climateShown } from '../state/persist.ts';
+import { climateChosen } from '../state/persist.ts';
 import { backToConsortium, canGoBack } from '../state/draft.ts';
 import { pendingSuggest } from '../state/suggest-wait.ts';
 import { T } from '../strings.ts';
@@ -65,14 +65,13 @@ export const suggestBlock = (z: ClimateZone): SuggestBlock | null => rule.sugges
 // on Start with the nothing-fits state (store.ts suggestMembers refuses it too).
 // So is one for a climate that needs the site's location or the range rule (it would run unasked once
 // they arrive), and one pressed for another climate than the one now chosen (fix review 29b709e, 1).
-const shownZone = () => (climateShown.value.proposed ? null : climateShown.value.zone);
 effect(() => {
-  const z = shownZone();
+  const z = climateChosen.value;
   if (pendingSuggest.value && (nothingFits() || (z && suggestBlock(z)))) pendingSuggest.value = false;
 });
 let lastZone: ClimateZone | null = null;
 effect(() => {
-  const z = shownZone();
+  const z = climateChosen.value;
   if (z !== lastZone && lastZone !== null && z !== null) pendingSuggest.value = false;
   if (z !== null) lastZone = z;
 });
