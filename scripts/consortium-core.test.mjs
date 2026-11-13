@@ -526,3 +526,22 @@ test('recompute: matrix and flags for 200 members, a suggestion and every Swap l
   assert.ok(ratio < 2.5, `cold run ${work.toFixed(1)} ms is ${ratio.toFixed(2)}x the baseline's ${base.toFixed(1)} ms (ceiling 2.5x)`);
   if (process.env.CONSORTIUM_PERF === '1') assert.ok(work < 50, `${work.toFixed(1)} ms (budget 50 ms)`);
 });
+
+// E6 R1 (design check §3 chunk 1): the nearest-list table is a leaf both placement files read (cycle
+// C1 placed.ts ⇄ placement.ts gone), and the flags live beside conflicts.ts, so the store's flags
+// reach no suggestion code. Imports are read as text: a static or dynamic import is an edge.
+test('core leaves: nearest.ts imports only types; placed.ts never imports placement.ts; flags come from conflicts.ts', async () => {
+  const src = (f) => readFileSync(new URL(`../src/lib/consortium/${f}`, import.meta.url), 'utf8');
+  const edges = (f) => [...src(f).matchAll(/(?:from|import)\s*\(?\s*['"]\.\/([^'"]+)['"]/g)].map((m) => m[1]);
+  assert.deepEqual(edges('nearest.ts'), ['types.ts']);
+  assert.ok(!edges('placed.ts').includes('placement.ts'), 'placed.ts reads the table from nearest.ts');
+  assert.ok(!edges('conflicts.ts').includes('suggest.ts'), 'conflicts.ts does not reach the suggestion');
+  const conflictsMod = await import('../src/lib/consortium/conflicts.ts');
+  const suggestMod = await import('../src/lib/consortium/suggest.ts');
+  for (const name of ['flagsOf', 'flagsFor', 'asks']) {
+    assert.equal(typeof conflictsMod[name], 'function', `conflicts.ts exports ${name}`);
+    assert.equal(suggestMod[name], undefined, `suggest.ts no longer declares ${name}`);
+    assert.equal(core[name], conflictsMod[name], `the index exports conflicts.ts's ${name}`);
+  }
+  assert.equal(core.NEAREST_LISTS, (await import('../src/lib/consortium/nearest.ts')).NEAREST_LISTS);
+});

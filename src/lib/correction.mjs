@@ -10,6 +10,7 @@
 // data: the reporter's optional email is only the reply-to address, and no IP or name is read.
 // Answers JSON { ok, code, fields? }; logs carry codes only, never report content.
 import { CONTROL, EMAIL_RE, FROM, LOCALES, PERMANENT, TIMEOUT_MS, withTimeout } from './contact.mjs';
+import { climateZones, zoneOfSiteId } from './consortium/zones.ts';
 
 export { LOCALES };
 export const MAX_BODY = 16 * 1024;
@@ -20,8 +21,9 @@ export const REPORT_START = '-----BEGIN CANOPI CORRECTION REPORT-----';
 export const REPORT_END = '-----END CANOPI CORRECTION REPORT-----';
 // What the reader agreed to; the form's consent line says the same.
 export const LICENCE = 'CC BY-SA 4.0';
-// The climates of the site (src/data/climates.ts), written in the block as the export names them.
-export const CLIMATES = ['Tropical', 'Subtropical', 'Mediterranean', 'Arid', 'Temperate', 'Continental', 'Boreal'];
+// The climates of the site, written in the block as the export names them: the zone list
+// (src/lib/consortium/zones.ts), derived, never copied.
+export const CLIMATES = [...climateZones];
 const PLANT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const RELEASE_ID = /^r-[0-9a-f]{16}$/;
 // A field id: a catalog field name of the consortium export (a trait or warning key such as height_m
@@ -51,14 +53,14 @@ export function normalise(body) {
   const proposed_value = text('proposed_value', singleLine);
   const note = text('note', multiLine);
   const release_id = text('release_id', singleLine);
-  const climateIn = text('climate', singleLine).toLowerCase();
+  const climateIn = text('climate', singleLine);
   const locale = text('locale', singleLine);
   const email = text('email', singleLine);
-  const climate = CLIMATES.find((c) => c.toLowerCase() === climateIn) ?? null;
+  const climate = zoneOfSiteId(climateIn);
   // Optional (older pages send neither): the visitor's own climate, when `climate` is the list a
   // borrowed or guest placement comes from, and whether that placement was an estimate.
-  const siteIn = text('site_climate', singleLine).toLowerCase();
-  const site_climate = siteIn ? CLIMATES.find((c) => c.toLowerCase() === siteIn) ?? null : null;
+  const siteIn = text('site_climate', singleLine);
+  const site_climate = siteIn ? zoneOfSiteId(siteIn) : null;
   const estimateIn = body.placement_estimate;
   const placement_estimate = typeof estimateIn === 'boolean' ? estimateIn : null;
 

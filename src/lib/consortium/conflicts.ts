@@ -5,7 +5,11 @@
 // `intercropped_yield_gain` rows two species grown together with a yield gain in field trials; both
 // are good news, not conflicts, so conflicts() and conflictsOf() leave them out. pairings() gives the
 // yield-gain pairs, for display only: nothing in the suggestion reads them.
-import type { AgentNames, CountryStatus, Interaction, InteractionType, Severity, Taxon, TaxonRef, Text } from './types.ts';
+// The flags a member carries (flagsOf, flagsFor; moved here from suggest.ts by E6 R1, so the store's
+// flags never pull the suggestion in) sit at the end.
+import type { AgentNames, CountryStatus, Fit, Flag, Interaction, InteractionType, PlantId, Severity, Site, Taxon, TaxonRef, Text } from './types.ts';
+import type { Canopy } from './site.ts';
+import { canopyOf, fits, misfitsBeside } from './site.ts';
 
 export interface Conflict {
   a: Taxon; // matches the row's subject
@@ -112,3 +116,63 @@ export function invasiveIn(taxon: Taxon, country: string | null | undefined, che
   const code = country.toUpperCase();
   return list.some((r) => r.country === code);
 }
+
+// What the flags need: the site, the climate's interactions and the reader's country (ISO alpha-2)
+// with its countryStatus (only 'checked' gives invasive flags and "not recorded").
+export interface FlagContext { site: Site; interactions: Interaction[]; country?: string | null; countryStatus?: CountryStatus }
+
+const TOXIC = new Set(['Moderate', 'Severe']);
+
+// A conflict found for a plant: the other member and the row (severity, type, agent, note).
+interface Found { other: PlantId; c: Conflict }
+const rank = (s: Flag['severity'] | null | undefined) => (s === 'high' ? 3 : s === 'medium' ? 2 : s === 'low' ? 1 : 0);
+
+// One flag per other member for its worst conflict (first row on ties), then misfit, invasive and
+// toxicity flags. `canopy`: the other members' (a plant never shades itself).
+function flagsWith(taxon: Taxon, fit: Fit, canopy: Canopy, found: Found[], ctx: FlagContext): Flag[] {
+  const id = taxon.id, out: Flag[] = [];
+  const worst = new Map<PlantId, Conflict>();
+  for (const f of found) { const w = worst.get(f.other); if (!w || rank(f.c.severity) > rank(w.severity)) worst.set(f.other, f.c); }
+  for (const [other, c] of worst) {
+    const flag: Flag = { id, kind: 'conflict', other };
+    if (c.severity) flag.severity = c.severity;
+    out.push(Object.assign(flag, { type: c.type, agent: c.agent, note: c.note }));
+  }
+  if (misfitsBeside(taxon, ctx.site, canopy, fit).length) out.push({ id, kind: 'misfit' });
+  if (invasiveIn(taxon, ctx.country, ctx.countryStatus === 'checked') === true) out.push({ id, kind: 'invasive' });
+  const tox = taxon.warnings.toxicity?.level;
+  if (tox && TOXIC.has(tox)) out.push({ id, kind: 'toxicity' });
+  return out;
+}
+
+// The flags a plant would carry beside these members (it is left out of them if it is one).
+export function flagsFor(taxon: Taxon, others: Taxon[], ctx: FlagContext): Flag[] {
+  const rest = others.filter((o) => o.id !== taxon.id);
+  const found = conflictsOf(taxon, rest, ctx.interactions).map((c) => ({ other: c.a.id === taxon.id ? c.b.id : c.a.id, c }));
+  return flagsWith(taxon, fits(taxon, ctx.site), canopyOf(rest), found, ctx);
+}
+
+// Every member's flags (store.ts `flags`). Conflicts are matched once for the whole consortium, so
+// 200 members stay within the recompute budget (design check §8).
+export function flagsOf(members: Taxon[], ctx: FlagContext): Flag[] {
+  const byId = new Map<PlantId, Found[]>();
+  for (const c of conflicts(members, ctx.interactions)) {
+    if (!byId.has(c.a.id)) byId.set(c.a.id, []);
+    if (!byId.has(c.b.id)) byId.set(c.b.id, []);
+    byId.get(c.a.id)!.push({ other: c.b.id, c });
+    byId.get(c.b.id)!.push({ other: c.a.id, c });
+  }
+  // One canopy for all: a member is shaded only by a higher stratum, so its own entry never counts.
+  const canopy = canopyOf(members);
+  const out: Flag[] = [], seen = new Set<PlantId>();
+  for (const m of members) {
+    if (seen.has(m.id)) continue;
+    seen.add(m.id);
+    out.push(...flagsWith(m, fits(m, ctx.site), canopy, byId.get(m.id) ?? [], ctx));
+  }
+  return out;
+}
+
+// Add and Swap ask first only for a site misfit or a high conflict, never for an invasive or toxicity
+// warning (owner row 2026-10-28; coordinator row "v2 mockup choices" 2026-11-11).
+export const asks = (flags: Flag[]): boolean => flags.some((f) => f.kind === 'misfit' || (f.kind === 'conflict' && f.severity === 'high'));
