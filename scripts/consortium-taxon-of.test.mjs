@@ -34,3 +34,27 @@ test('taxonOf: a plant of the chosen climate\'s own list is not a guest while th
     store.pools.value = {};
   }
 });
+
+// Re-review 1: a guest is labelled and placed from the list it was added from (guests[id]), not from
+// the first other list read that also holds it, in and out of the range rule's window.
+test('taxonOf: a guest resolves from its recorded list, in and out of the range rule\'s window', () => {
+  const inMed = plant('g-1', { list: 'Mediterranean', kind: 'borrowed' });
+  const inTrop = plant('g-1');
+  try {
+    store.pools.value = { Subtropical: [plant('own-1')], Mediterranean: [inMed], Tropical: [inTrop] };
+    store.climate.value = 'Subtropical';
+    store.guests.value = { 'g-1': 'Tropical' };
+    store.location.value = { lat: 0, lon: 0, source: 'map', lookup: { climate: { periods: [{}] } } };
+    assert.equal(store.pool.value, null, 'the window');
+    const g = store.taxonOf('g-1');
+    assert.deepEqual({ guest: guestOf(g), borrowed: borrowedFrom(g) }, { guest: 'Tropical', borrowed: null }, 'in the window');
+    store.location.value = null;
+    const h = store.taxonOf('g-1');
+    assert.deepEqual({ guest: guestOf(h), borrowed: borrowedFrom(h) }, { guest: 'Tropical', borrowed: null }, 'out of the window');
+  } finally {
+    store.location.value = null;
+    store.climate.value = null;
+    store.guests.value = {};
+    store.pools.value = {};
+  }
+});

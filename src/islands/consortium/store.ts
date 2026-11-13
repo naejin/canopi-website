@@ -366,12 +366,15 @@ export function hideToast(): void {
 
 // ---- edits (Remove, Keep, Swap, Add), each undoable ----
 
-// A plant as the consortium has it (a guest with its home placement), else the climate's list, else
-// another climate's list already read (a guest of it). The climate's own list read (pools) counts as
+// A plant as the consortium has it (a member; a guest with its recorded list's placement), else the
+// climate's list, else another climate's list already read (a guest of it). The climate's own list read (pools) counts as
 // its own even while store.pool waits for the range rule: such a plant is never a guest (review 4).
 export function taxonOf(id: PlantId): Taxon | null {
   const m = memberTaxa.value.find((t) => t.id === id);
   if (m) return m;
+  // A guest from the list it was added from (guests[id]), never the first other list holding it.
+  const g = guestTaxa.value.find((t) => t.id === id);
+  if (g) return g;
   const c = climate.value;
   const own = c ? pools.value[c]?.find((t) => t.id === id) : undefined;
   if (own) return own;
