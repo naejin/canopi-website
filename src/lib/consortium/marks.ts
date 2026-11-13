@@ -38,3 +38,16 @@ export function loadMarkProviders(): Promise<readonly MarkProvider[]> {
   loading ??= import('./mark-providers.ts').then((m) => m.markProviders, (err: unknown) => { loading = null; throw err; });
   return loading;
 }
+
+// The range rule (range.ts: withinRange, rangeFit; owner answer 2), its own chunk (role `range`,
+// scripts/built-modules.mjs LAZY_ENTRIES), loaded once, the store asking for it only once the site
+// location has a climate (store.ts rangeRule), so it stays off the first run (decision row "Island
+// JavaScript budget for P5"; E6 design check A10: a core loader, as the providers' above). The one
+// import of the rule outside the feature chunks that use it statically. A failed load is not cached.
+export interface RangeRule { withinRange: typeof import('./range.ts').withinRange; rangeFit: typeof import('./range.ts').rangeFit }
+let ruleLoading: Promise<RangeRule> | null = null;
+export function loadRangeRule(): Promise<RangeRule> {
+  // Destructured, so Rollup keeps only these two exports of the chunk's facade.
+  ruleLoading ??= import('./range.ts').then(({ withinRange, rangeFit }): RangeRule => ({ withinRange, rangeFit }), (err: unknown) => { ruleLoading = null; throw err; });
+  return ruleLoading;
+}

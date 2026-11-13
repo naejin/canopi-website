@@ -39,7 +39,7 @@ import type { PlantId, SiteLocation, SitePeriod, Taxon } from './types.ts';
 import { siteToday } from './site-today.ts';
 
 // siteToday lives in its own module so the first run can ask "has the site a climate?" without the
-// rule, which loads with the pool feature chunk (store.ts rangeRule).
+// rule, which loads with its own chunk (marks.ts loadRangeRule; store.ts rangeRule).
 export { siteToday };
 
 export const rangeVerdicts = ['inside', 'edge', 'outside', 'unknown'] as const;

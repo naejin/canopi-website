@@ -137,7 +137,7 @@ export function listGroups(members: readonly Taxon[], byName: Order): ListGroup[
 
 // The plant list's Layer / Stage / Job filters: the one list rule (rules/list-query.ts), re-exported for
 // the tests reading it here.
-export { matchesFilters, type ListFilters } from '../rules/list-query.ts';
+export { matchesFilters } from '../rules/list-query.ts';
 
 // The warnings a plant's chip and row count: every flag but a low conflict.
 export function warningCounts(flags: readonly Flag[]): Map<PlantId, number> {

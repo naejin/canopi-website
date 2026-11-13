@@ -5,9 +5,9 @@
 // inside the computed bodies, the core calls they own (matrix: S1 lib/consortium/matrix.ts; flags:
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
-import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
-import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, loadMarkProviders, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
-import type { RangeRule } from './views/pool/pool.tsx';
+import type { ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PhaseOrd, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, Stratum, Taxon } from '../../lib/consortium/index.ts';
+import { buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsOf, loadMarkProviders, loadRangeRule, needsMarkProviders, suggest } from '../../lib/consortium/index.ts';
+import { nothingFits } from './rules/suggest-block.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
@@ -84,9 +84,9 @@ export const pool = computed<Taxon[] | null>(() => {
   const p = c ? pools.value[c] ?? null : null;
   return p && siteClimate.value && !rangeRule.value && !rangeFailed.value ? null : p;
 });
-// The range rule (core range.ts, owner answer 2) arrives with the pool feature chunk, loaded only once
-// the site location has a climate, so it stays off the first run (decision row "Island JavaScript
-// budget for P5"). The page asks it nothing without one.
+// The range rule (core range.ts, owner answer 2) arrives with its own chunk (core marks.ts
+// loadRangeRule), loaded only once the site location has a climate, so it stays off the first run
+// (decision row "Island JavaScript budget for P5"). The page asks it nothing without one.
 export const rangeRule = signal<RangeRule | null>(null);
 // The rule's chunk did not load (rangeBroken, once per page: a browser remembers a failed module URL,
 // so the import is never tried again and Reload is the only retry, one toast for the failure).
@@ -102,7 +102,7 @@ const withRule = <T>(p: Promise<T>): Promise<T> => (siteClimate.peek() && !range
 export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
 effect(() => {
   if (!siteClimate.value || rangeLoad) return;
-  rangeLoad = import('./views/pool/pool.tsx').then((m) => { rangeRule.value = m.rangeRule; }, (err: unknown) => {
+  rangeLoad = loadRangeRule().then((rule) => { rangeRule.value = rule; }, (err: unknown) => {
     console.error(err);
     rangeBroken.value = true;
     showToast(T('range.unavailable'), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
@@ -271,7 +271,7 @@ export function suggestMembers(): boolean {
   const keep = [...new Set([...crops.value, ...kept.value])];
   const rule = rangeRule.value;
   // Nothing fits the site: no suggestion (it could only be an empty matrix); Start shows why.
-  if (rule?.none(p, location.value)) return false;
+  if (nothingFits(p, location.value, rule)) return false;
   // A borrowed pool unfiltered (no site climate, or the rule's chunk failed): no suggestion, since only
   // the range filter fits it to a place (UX audit fix 1; fix review 29b709e, 2).
   if ((!siteClimate.value || !rule) && p.some((t) => t.estimate)) return false;

@@ -13,23 +13,14 @@
 // - No list at all (none with the real export): P2's "Not covered yet" notice, moved here off the first run.
 // - None of them: the "nothing fits" state [data-pool-empty], with the next step (search all plants).
 import { useEffect } from 'preact/hooks';
-import type { ClimateZone, SiteLocation, Taxon } from '../../../../lib/consortium/index.ts';
-import { hasPlants, NEAREST_LISTS, RANGE_MARGIN_C, rangeFit, siteToday, withinRange, yearMeanC } from '../../../../lib/consortium/index.ts';
+import type { ClimateZone } from '../../../../lib/consortium/index.ts';
+import { hasPlants, NEAREST_LISTS, RANGE_MARGIN_C, rangeFit, siteToday, yearMeanC } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { startEmpty, zoneOf } from '../../memory.ts';
 import { P, T } from '../../strings.ts';
 import { page } from '../kit/page.ts';
 import { num, zoneName } from '../kit/names.ts';
-
-// The range rule for the first run's store (store.ts rangeRule loads this chunk once the site has a
-// climate), so the rule and its marks text stay out of the first run.
-export const rangeRule = {
-  withinRange,
-  rangeFit,
-  // Nothing fits: a list with plants, none of which holds the site.
-  none: (list: Taxon[] | null, site: SiteLocation | null): boolean => !!list?.length && withinRange(list, site).length === 0,
-};
-export type RangeRule = typeof rangeRule;
+import { poolCounts } from '../../rules/suggest-block.ts';
 
 export function PoolPanel({ zone }: { zone: ClimateZone }) {
   const list = store.pools.value[zone];
@@ -47,8 +38,7 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
   const today = siteToday(loc);
   const temps = today ? { cold: num(today.tminColdC), hot: num(today.tmaxWarmC), mean: num(yearMeanC(today)) } : null;
   const verdicts = today && list ? list.map((t) => rangeFit(t, loc)) : null;
-  const fit = verdicts ? verdicts.filter((v) => v !== 'outside').length : 0;
-  const edge = verdicts ? verdicts.filter((v) => v === 'edge').length : 0;
+  const { fit, edge } = poolCounts(verdicts ?? []);
   return (
     <div class="ct-pool" data-pool={zone.toLowerCase()}>
       {!own && (

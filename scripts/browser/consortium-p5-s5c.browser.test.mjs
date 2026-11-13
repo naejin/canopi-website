@@ -83,7 +83,7 @@ test('P5-14c (S5c matrix counts): a cell\'s "N fit" leaves out plants outside th
   const sum = () => page.evaluate(() => window.__ctTest.store.matrix.value.rows.flatMap((r) => r.cells).reduce((a, c) => a + c.inList, 0));
   const before = await sum();
   await atSite(page, 'seville');
-  // The range rule loads with the pool chunk once the site has a climate; the pool waits for it.
+  // The range rule loads with its chunk (core loadRangeRule) once the site has a climate; the pool waits for it.
   await page.waitForFunction(() => window.__ctTest.store.matrix.value !== null, { timeout: 10_000 });
   const within = await sum();
   assert.ok(within < before, `fewer plants counted at Seville (${within} cell entries) than without a location (${before})`);
@@ -93,11 +93,11 @@ test('P5-14c (S5c matrix counts): a cell\'s "N fit" leaves out plants outside th
   assert.equal(await sum(), before, 'without a location the counts are P2\'s');
 });
 
-test('P5-14e (S5c range chunk offline): if the pool chunk cannot load, the tool falls back to the unfiltered pool with a notice, and Suggest, Start crops, a link and Swap all work @real-data', async () => {
+test('P5-14e (S5c range chunk offline): if the range chunk cannot load, the tool falls back to the unfiltered pool with a notice, and Suggest, Start crops, a link and Swap all work @real-data', async () => {
   const page = await tool();
   const cdp = await page.createCDPSession();
   await cdp.send('Network.enable');
-  await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/pool.*'] });
+  await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/range.*'] });
   await choose(page, 'Mediterranean');
   await atSite(page, 'seville');
   assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'a notice on Start: range checks unavailable');
@@ -124,9 +124,9 @@ test('P5-14g (S5c range chunk offline, fix review 231bead 1–2): Reload is the 
   const cdp = await page.createCDPSession();
   const urls = new Map(), failed = [];
   cdp.on('Network.requestWillBeSent', (e) => urls.set(e.requestId, e.request.url));
-  cdp.on('Network.loadingFailed', (e) => { if (/\/_astro\/pool\./.test(urls.get(e.requestId) ?? '')) failed.push(e.blockedReason); });
+  cdp.on('Network.loadingFailed', (e) => { if (/\/_astro\/range\./.test(urls.get(e.requestId) ?? '')) failed.push(e.blockedReason); });
   await cdp.send('Network.enable');
-  await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/pool.*'] });
+  await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/range.*'] });
   await page.evaluate(() => { window.__toasts = new Set(); window.__ctTest.store.toast.subscribe((t) => { if (t) window.__toasts.add(t.id); }); });
   await choose(page, 'Mediterranean');
   await atSite(page, 'seville');
@@ -231,7 +231,7 @@ test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from t
     const { store } = window.__ctTest;
     store.climate.value = 'Subtropical';
     if (!(await store.loadPool('Subtropical'))) return 0;
-    // The range rule loads with the pool chunk once the site has a climate; the pool waits for it.
+    // The range rule loads with its chunk (core loadRangeRule) once the site has a climate; the pool waits for it.
     for (let i = 0; i < 200 && !store.pool.value; i++) await new Promise((r) => setTimeout(r, 50));
     return store.pool.value.filter((t) => t.estimate && t.placedFrom === 'Mediterranean').length;
   });
@@ -362,7 +362,7 @@ test('P5-26e (S5c borrowed climate, range chunk offline, fix review 29b709e 2): 
   const page = await tool();
   const cdp = await page.createCDPSession();
   await cdp.send('Network.enable');
-  await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/pool.*'] });
+  await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/range.*'] });
   await atSite(page, 'seville');
   await page.evaluate(() => { window.__ctTest.store.climate.value = 'Arid'; });
   assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'the notice');
@@ -405,16 +405,16 @@ test('P5-27a (S5c seam review 1): where nothing fits, the empty matrix left by "
 
 test('P5-27b (S5c seam review 1): a borrowed climate whose range chunk failed: the empty matrix says why instead of a dead "Suggest a start"', async () => {
   for (const width of [390, 1280]) {
-    // The pool chunk fails from the first request (A8): blocking it after the page loaded raced its
+    // The range chunk fails from the first request (A8): blocking it after the page loaded raced its
     // modulepreload, so the test passed or failed by timing.
-    const page = await tool({ width, hash: '#v=4&c=arid&a=&e=1', block: { pool: 404 } });
+    const page = await tool({ width, hash: '#v=4&c=arid&a=&e=1', block: { range: 404 } });
     await atSite(page, 'seville');
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the range chunk failed');
     const { buttons, words } = await emptyMatrix(page);
     assert.equal(buttons.includes('Suggest a start'), false, `${width} px: no Suggest that can only refuse (${buttons.join(', ')})`);
     assert.match(words, /Arid needs them to pick plants/, `${width} px: it says why`);
     assert.ok(buttons.includes('Reload'), `${width} px: with Reload`);
-    assert.ok(page.blocked.some((u) => h.roles.pool.includes(u)), `${width} px: the pool chunk was requested and refused by the block`);
+    assert.ok(page.blocked.some((u) => h.roles.range.includes(u)), `${width} px: the range chunk was requested and refused by the block`);
   }
 });
 
