@@ -252,11 +252,16 @@ test('E6-22 (R4 hand-off B): Swap opened while the suggest chunk never answers e
   } finally { await page.browserContext().close().catch(() => {}); }
 });
 
-test('E6-23 (R4 hand-off B): Swap opened after the suggest chunk failed asks for it again and, failed again, shows the failed line with Reload', async () => {
+// The fixture tool with the suggest chunk answered 404, its load at open failed.
+async function suggestFailedPage() {
   const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 404 } });
+  assert.equal(await loadState(page), 'ready');
+  assert.ok(await until(page, () => window.__ctTest.store.suggestFailed.value, 8000), 'the load at open failed');
+  return page;
+}
+test('E6-23 (R4 hand-off B): Swap opened after the suggest chunk failed asks for it again and, failed again, shows the failed line with Reload', async () => {
+  const page = await suggestFailedPage();
   try {
-    assert.equal(await loadState(page), 'ready');
-    assert.ok(await until(page, () => window.__ctTest.store.suggestFailed.value, 8000), 'the load at open failed');
     // A retry (store.wantSuggest) clears suggestFailed while it runs.
     await page.evaluate(() => { window.__ctRetried = false; window.__ctTest.store.suggestFailed.subscribe((v) => { if (!v) window.__ctRetried = true; }); window.__ctRetried = false; });
     await swapOpen(page);
@@ -268,10 +273,8 @@ test('E6-23 (R4 hand-off B): Swap opened after the suggest chunk failed asks for
 // Hand-off review 3: Swap opened with the chunk already failed says "did not load" once per opening
 // (its first render does not show the old failure before asking again).
 test('E6-28 (R4 hand-off review 3): Swap opened after the suggest chunk failed announces the failed line once', async () => {
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 404 } });
+  const page = await suggestFailedPage();
   try {
-    assert.equal(await loadState(page), 'ready');
-    assert.ok(await until(page, () => window.__ctTest.store.suggestFailed.value, 8000), 'the load at open failed');
     await page.evaluate(() => {
       window.__ctAlerts = 0;
       new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && (n.matches('[role="alert"]') || n.querySelector('[role="alert"]'))) window.__ctAlerts += 1; })

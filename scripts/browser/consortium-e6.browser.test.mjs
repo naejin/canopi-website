@@ -428,7 +428,7 @@ test('E6-26 (K3 hand-off review 2): the idle future part waits for idle time on 
     const seen = futureRequests(page);
     await atSite(page, 'lyon');
     await page.waitForFunction(() => !!window.__ctTest.store.rangeRule.value, { timeout: 8000 });
-    await new Promise((r) => setTimeout(r, 2000));
+    await page.waitForNetworkIdle({ idleTime: 1000, timeout: 6000 }).catch(() => {});
     assert.deepEqual(seen, [], 'no future chunk before the idle prefetch');
   } finally { await page.browserContext().close().catch(() => {}); }
 });
