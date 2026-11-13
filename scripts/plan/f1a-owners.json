@@ -1,5 +1,5 @@
 {
-  "_comment": "Owners file of F1a (Palette, Add filters, confidence, Balance) of the Consortium v2 plan (knowledge/project/consortium-v2-plan.md section F1a; design check .local/consortium/v2/f1a/design-check.md section 4, gitignored in the main checkout). Path -> stream per chunk: one owner per path per chunk; a path may change hands between chunks. Patterns are repo-relative: '*' stays within a folder, '**' crosses folders. Chunks run in order; streams inside a chunk run in parallel. Streams: pal = 1 Palette and Structure, add = 2 Add filters (add1 = 2a before D2a), conf = 3 confidence, bal = 4 Balance, perf = 5 slow phone and budgets, a11y = 6 accessibility. Chunk 3 waits for the D2a reinstall. 'shared' lists the locale files: each listed stream adds keys only under its own consortium.* prefix and changes or deletes only the keys its edits name (checked by owners.mjs check against the chunk base); the merge agent joins the blocks. Tests sit at the lasting layer (core, state, store actions) with one browser test per user scenario that pins no layout or wording; a replaced screen's old tests are deleted (owner rule, row 'E6 hand-off merge choices'). scripts/plan-owners.test.mjs validates every scripts/plan/*-owners.json; node scripts/plan/owners.mjs check <chunk> <stream> <base> --file scripts/plan/f1a-owners.json fails a stream diff outside its rows. A file found needed mid-build is requested from the main agent, never taken.",
+  "_comment": "Owners file of F1a (Plant palette: By role and Structure, Add filters, confidence, Balance) of the Consortium v2 plan (knowledge/project/consortium-v2-plan.md section F1a; design check .local/consortium/v2/f1a/design-check.md section 4, gitignored in the main checkout). Path -> stream per chunk: one owner per path per chunk; a path may change hands between chunks. Patterns are repo-relative: '*' stays within a folder, '**' crosses folders. Chunks run in order; streams inside a chunk run in parallel. Streams: pal = 1 By role and Structure, with the 'Plant palette' rename and the /palette/ move in pal1, add = 2 Add filters (add1 = 2a before D2a), conf = 3 confidence, bal = 4 Balance, perf = 5 slow phone and budgets, a11y = 6 accessibility. Chunk 3 waits for the D2a reinstall. 'shared' lists the locale files: each listed stream adds keys only under its own consortium.* prefix and changes or deletes only the keys its edits name (checked by owners.mjs check against the chunk base); the merge agent joins the blocks. Tests sit at the lasting layer (core, state, store actions) with one browser test per user scenario that pins no layout or wording; a replaced screen's old tests are deleted (owner rule, row 'E6 hand-off merge choices'). scripts/plan-owners.test.mjs validates every scripts/plan/*-owners.json; node scripts/plan/owners.mjs check <chunk> <stream> <base> --file scripts/plan/f1a-owners.json fails a stream diff outside its rows. A file found needed mid-build is requested from the main agent, never taken.",
   "step": "consortium-v2 F1a",
   "branch": "f1a/int",
   "shared": [
@@ -16,7 +16,23 @@
             "consortium.jobsHeading",
             "consortium.room.*",
             "consortium.site.a.room.*",
-            "consortium.site.basis.room.*"
+            "consortium.site.basis.room.*",
+            "nav.consortium",
+            "nav.consortium.full",
+            "home.consortium.*",
+            "learn.consortium.*",
+            "consortium.title",
+            "consortium.description",
+            "consortium.inConsortium",
+            "consortium.paste.g.already",
+            "consortium.start.*",
+            "consortium.share.*",
+            "consortium.print.title",
+            "consortium.page.*",
+            "consortium.block.*",
+            "privacy.tool.*",
+            "privacy.correction.body",
+            "dataSources.tool.*"
           ]
         },
         "add1": {
@@ -63,7 +79,7 @@
           "edits": []
         }
       },
-      "rule": "the 11 flat locale files: a stream adds keys only under its prefix (unique within a chunk) and changes or deletes only the existing keys its edits globs name (the deletions its duty describes: pal1 the four tab labels, the fill line and the All plants list keys it replaces; conf2 est.word, estimate.from{Zone} x3, future.plant.inside and the guest wordings); node scripts/plan/owners.mjs check fails any other key change against the chunk base; another key is requested from the main agent; the merge agent joins the blocks"
+      "rule": "the 11 flat locale files: a stream adds keys only under its prefix (unique within a chunk) and changes or deletes only the existing keys its edits globs name (the deletions its duty describes: pal1 the four tab labels, the fill line and the All plants list keys it replaces, and the reader-facing tool name 'Plant palette' with the in-tool words for the reader's design (owner row 'Plant palette name'; consortium.download.* and what.plan.text keep the app's term); conf2 est.word, estimate.from{Zone} x3, future.plant.inside and the guest wordings); node scripts/plan/owners.mjs check fails any other key change against the chunk base; another key is requested from the main agent; the merge agent joins the blocks"
     }
   ],
   "chunks": [
@@ -110,7 +126,7 @@
           "needs": [
             "main"
           ],
-          "duty": "Stream 1 Palette and Structure, view side (base d9e00ca). Probe first: move the matrix (Matrix, PhoneMatrix, matrix-parts, tracks, matrix-only StageBar parts) to the lazy 'structure' role and measure the first run before building Palette (A1). Kit first-view.ts owns ct:first-view, the new ct:start mark and prefetchLater for Palette and Structure. A3 palette.ts (role groups, counts, health summary) with runsOf moved into jobs.ts; A4 cards by role, '+ N more' at 200 plants; A5 the % bar goes; A6 View + saved 'shown', a view link key under v4 (no bump, Structure only; not w, which v4 writes for the water answer: pal1 picks a free key and sets it in the palette spec's VIEW_KEY), writers restore.ts/draft.ts/suggest-wait.ts/store.ts repointed; A7 Head placeholder while restoring, page-head script marks saves, and the fr .tool-meta wrap fixed (row 'E1 harness deviations'); A8 'pots' room, SIZE_LIMIT and site-marks.ts:102 from ROOM_LIMIT_M; A9 chips glyph-only at 960 px, names start with the visible name, list-level 'placed from the {lists} lists' line; A10 + Q1 invasive tie rule in gain() (any GRIIS country with no country chosen, that country with one) with a scenario test and the suggest.ts:13 comment; Q2 a future tie rule after it, only with a location (Suggest waits for the future chunk: new wait and failure row; F3 replaces it); A11 four tabs -> Palette + Structure, All plants into Palette through listQuery, Jobs -> gap list, Side print-only; A12 strip states, FutureSlot failure line + Reload, Notices to the shell; A23 site.ts through factAt (no behaviour change); openAdd(preset: AddPreset) in store.ts carries the preset and hint through to Add (A22); store.ts calls the toast-focus helper commit 0 declares in focus.ts; ct-tab/panel waits in the old specs and helpers move to the hook, state and ct:first-view; replaced screens' old tests deleted; A26 carried-in gaps (zoneOf regex with double quotes, E6-18 rescheduled Reload toast, Suggest after the cap then the late chunk); failure rows (design check section 5): a link with an unknown w or m=pots in an old tab opens Palette / 'Not sure' (state test in consortium-memory.test.mjs); Structure pressed before the prefetch shows a loading line with one fetch, and a resize across 960 keeps the stage (both in the Structure-link browser scenario); structure registered retryable in lazy.tsx (re-import as ?retry=n, covered by the 'Structure chunk fails' scenario)",
+          "duty": "Stream 1 By role and Structure (the first view, planned 'Palette', is named 'By role'), view side (base d9e00ca). Probe first: move the matrix (Matrix, PhoneMatrix, matrix-parts, tracks, matrix-only StageBar parts) to the lazy 'structure' role and measure the first run before building Palette (A1). Kit first-view.ts owns ct:first-view, the new ct:start mark and prefetchLater for Palette and Structure. A3 palette.ts (role groups, counts, health summary) with runsOf moved into jobs.ts; A4 cards by role, '+ N more' at 200 plants; A5 the % bar goes; A6 View + saved 'shown', a view link key under v4 (no bump, Structure only; not w, which v4 writes for the water answer: pal1 picks a free key and sets it in the palette spec's VIEW_KEY), writers restore.ts/draft.ts/suggest-wait.ts/store.ts repointed; A7 Head placeholder while restoring, page-head script marks saves, and the fr .tool-meta wrap fixed (row 'E1 harness deviations'); A8 'pots' room, SIZE_LIMIT and site-marks.ts:102 from ROOM_LIMIT_M; A9 chips glyph-only at 960 px, names start with the visible name, list-level 'placed from the {lists} lists' line; A10 + Q1 invasive tie rule in gain() (any GRIIS country with no country chosen, that country with one) with a scenario test and the suggest.ts:13 comment; Q2 a future tie rule after it, only with a location (Suggest waits for the future chunk: new wait and failure row; F3 replaces it); A11 four tabs -> Palette + Structure, All plants into Palette through listQuery, Jobs -> gap list, Side print-only; A12 strip states, FutureSlot failure line + Reload, Notices to the shell; A23 site.ts through factAt (no behaviour change); openAdd(preset: AddPreset) in store.ts carries the preset and hint through to Add (A22); store.ts calls the toast-focus helper commit 0 declares in focus.ts; ct-tab/panel waits in the old specs and helpers move to the hook, state and ct:first-view; replaced screens' old tests deleted; A26 carried-in gaps (zoneOf regex with double quotes, E6-18 rescheduled Reload toast, Suggest after the cap then the late chunk); failure rows (design check section 5): a link with an unknown w or m=pots in an old tab opens Palette / 'Not sure' (state test in consortium-memory.test.mjs); Structure pressed before the prefetch shows a loading line with one fetch, and a resize across 960 keeps the stage (both in the Structure-link browser scenario); structure registered retryable in lazy.tsx (re-import as ?retry=n, covered by the 'Structure chunk fails' scenario); rename and move (owner row 'Plant palette name', plan F1a stream 1 'Rename and move'): readers see 'Plant palette' in 11 locales; pages move to src/pages/palette.astro and src/pages/[lang]/palette.astro; consortiumPath returns /palette/ and /{lang}/palette/; ConsortiumPage.astro's '/consortium/' literals go through it (canonical, hreflang, og:url, sitemap follow); public/_redirects gets /consortium/ and /consortium -> /palette/ 301 for each of the 11 locales written out (no :lang placeholder or splat: it would catch /data/consortium/*; /app/:route stays; no Language=); the four guide MDX files that link the tool and the guides' consortium.label/link strings; titles, meta, nav, home, Learn, privacy and data-sources words; the Header's short label re-measured at 640 px in 11 locales; check-built-site, built-modules.test, built-links.test, guides-consortium.test and every browser spec or helper that opens /consortium/ (the harness's fixture route included) move to /palette/; one scenario in the palette spec: an old /consortium/ and /fr/consortium/ share link lands on /palette/ with the same palette and view, a ?plant=&climate= preset and a ?v=3 link keep their query. Internal names stay consortium (folders, storage keys, /data/consortium/, key prefixes, chunk roles)",
           "files": [
             "src/islands/consortium/App.tsx",
             "src/islands/consortium/views/Matrix.tsx",
@@ -162,7 +178,36 @@
             "scripts/browser/consortium-p5-s5d.browser.test.mjs",
             "scripts/browser/seams-helpers.mjs",
             "scripts/browser/p5-helpers.mjs",
-            "scripts/browser/helpers.mjs"
+            "scripts/browser/helpers.mjs",
+            "src/pages/consortium.astro",
+            "src/pages/palette.astro",
+            "src/pages/[lang]/consortium.astro",
+            "src/pages/[lang]/palette.astro",
+            "src/i18n/consortium-path.js",
+            "src/i18n/utils.ts",
+            "src/i18n/guides/en.json",
+            "src/i18n/guides/fr.json",
+            "public/_redirects",
+            "src/components/Header.astro",
+            "src/components/guides/TryConsortium.astro",
+            "src/content/guides/garden-helpers/en.mdx",
+            "src/content/guides/garden-helpers/fr.mdx",
+            "src/content/guides/flowers-for-pollinators/en.mdx",
+            "src/content/guides/flowers-for-pollinators/fr.mdx",
+            "scripts/check-built-site.mjs",
+            "scripts/built-modules.test.mjs",
+            "scripts/built-links.test.mjs",
+            "scripts/guides-consortium.test.mjs",
+            "scripts/browser/harness.mjs",
+            "scripts/browser/consortium-commit0.browser.test.mjs",
+            "scripts/browser/consortium-p5-s5b.browser.test.mjs",
+            "scripts/browser/consortium-p5-s5f.browser.test.mjs",
+            "scripts/browser/consortium-seams-layout.browser.test.mjs",
+            "scripts/browser/consortium-seams-p2.browser.test.mjs",
+            "scripts/browser/fixtures/fail-fast.spec.mjs",
+            "scripts/browser/fixtures/hang.spec.mjs",
+            "scripts/browser/smoke/consortium.smoke.mjs",
+            "scripts/browser/smoke/axe.smoke.mjs"
           ]
         },
         "conf1": {
@@ -203,7 +248,7 @@
           "needs": [
             "main"
           ],
-          "duty": "Stream 5 Slow phone and budgets (base d9e00ca; A24, A1 budget side). Probe first: compare the harness's wasm Content-Encoding with production before setting any target. Wasm preload injected after the build in astro.config.mjs; the build asserts href = the fetched URL, matching crossorigin and one wasm; timing reads the new ct:start mark (target <= 6 s first-visit Start, warns) beside ct:first-view (restored link no worse than the E6 hand-off within P-E6b's noise band; <= 6 s moves to E7); load.ts only if compileStreaming is taken; ADR-2 concept. Caps are set by the budget owner at each merge (first run = measured + 0.5 KB after stream 1; a coordinator row above 38 KB, an ADR-2 change above 40 KB); failure row: a wasm 404 after a deploy shows the existing screen with no second error from the preload (one browser scenario in the f1a perf spec)",
+          "duty": "Stream 5 Slow phone and budgets (base d9e00ca; A24, A1 budget side). Probe first: compare the harness's wasm Content-Encoding with production before setting any target. Wasm preload injected after the build in astro.config.mjs; the build asserts href = the fetched URL, matching crossorigin and one wasm; timing reads the new ct:start mark (target <= 6 s first-visit Start, warns) beside ct:first-view (restored link no worse than the E6 hand-off within P-E6b's noise band; <= 6 s moves to E7); load.ts only if compileStreaming is taken; ADR-2 concept. Caps are set by the budget owner at each merge (first run = measured + 0.5 KB after stream 1; a coordinator row above 38 KB, an ADR-2 change above 40 KB); failure row: a wasm 404 after a deploy shows the existing screen with no second error from the preload (one browser scenario in the f1a perf spec); the tool's move to /palette/ (owner row 'Plant palette name'): consortium-timing.mjs and the f1a perf spec open /palette/, never /consortium/ (a redirect hop would skew timings)",
           "files": [
             "astro.config.mjs",
             "scripts/browser/consortium-timing.mjs",

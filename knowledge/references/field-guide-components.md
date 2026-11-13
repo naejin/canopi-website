@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:17:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:37:54Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
@@ -186,7 +186,7 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   so a section may name a guide before it is written; nothing renders if none is published.
 - `<TryConsortium plant="Artocarpus altilis" climate="tropical" name="Breadfruit" />` — opens the
   consortium tool (beta) with the guide's plant kept and its climate set:
-  `consortiumPath(lang)?plant=<canonical_name>&climate=<id>` (`/consortium/`, fr `/fr/consortium/`).
+  `consortiumPath(lang)?plant=<canonical_name>&climate=<id>` (`/consortium/`, fr `/fr/consortium/`; planned to become `/palette/` and `/fr/palette/` in F1a stream 1, [decision row "Plant palette name"](/decisions/consortium-user-decisions.md), with the old paths 301-redirected, query kept).
   `plant` required: a `canonical_name` placed in a beta climate (`names` of `src/data/consortium-index.json`, written by the installer); `name`
   required: the guide's own name for the plant in that file's language (en and fr differ); `climate`
   optional: the zone of the `<ForClimate>` block it sits in, and the plant must be placed in that climate. Left

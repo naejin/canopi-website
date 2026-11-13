@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:32:04Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:37:52Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
@@ -16,7 +16,7 @@ sources:
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
     digest: sha256:64d1781172908903
-    last_modified: 2026-11-13T18:18:00Z
+    last_modified: 2026-11-13T19:32:13Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -71,7 +71,7 @@ sources:
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:604d832e631bff06
-    last_modified: 2026-11-13T18:18:33Z
+    last_modified: 2026-11-13T19:32:13Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -91,7 +91,7 @@ sources:
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
     digest: sha256:095e1044d4711e92
-    last_modified: 2026-11-13T18:30:54Z
+    last_modified: 2026-11-13T19:32:13Z
   - id: bytes-ts
     resource: ../../src/islands/consortium/data/bytes.ts
     title: src/islands/consortium/data/bytes.ts
@@ -101,7 +101,7 @@ sources:
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:521388d051be908d
-    last_modified: 2026-11-13T18:18:33Z
+    last_modified: 2026-11-13T19:32:13Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
@@ -151,7 +151,7 @@ sources:
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
     digest: sha256:b031e4d644fedc76
-    last_modified: 2026-11-13T18:20:07Z
+    last_modified: 2026-11-13T19:32:13Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -161,7 +161,7 @@ sources:
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
     digest: sha256:6d2cc09d8428569e
-    last_modified: 2026-11-13T18:20:07Z
+    last_modified: 2026-11-13T19:32:13Z
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
@@ -356,7 +356,7 @@ enforced_by:
 
 # Responsibility
 
-The consortium tool's page, `/consortium/` and `/{lang}/consortium/` in 11 locales (French included; `/fr/guilde/` was never published). Since P2 commit 0 (branch `consortium/integration`) it is the v2 shell:
+The consortium tool's page, `/consortium/` and `/{lang}/consortium/` in 11 locales (French included; `/fr/guilde/` was never published; **planned move**, F1a stream 1 ([decision row "Plant palette name"](/decisions/consortium-user-decisions.md)): readers see it as "Plant palette" at `/palette/` and `/{lang}/palette/`, with 301 redirects from the old paths; internal names stay "consortium"). Since P2 commit 0 (branch `consortium/integration`) it is the v2 shell:
 - Astro renders a static page;
 - a Preact 11 island, mounted from the page script, renders the tool ([architecture](/decisions/consortium-v2-architecture.md), design check A1);
 - all plant logic comes from the [Consortium core](/modules/consortium-core.md).

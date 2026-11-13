@@ -5,7 +5,7 @@ description: Astro routes; thin per-locale wrappers around components, the prere
 resource: ../../src/pages
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:39:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:37:54Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-27T21:39:27Z }
 sources:
@@ -41,7 +41,7 @@ Map URLs to components for all 11 locales. Pages hold no markup or logic of thei
 | `/contact/sent/`, `/contact/failed/` (+ `/{lang}/`) | `contact/*.astro`, `[lang]/contact/*.astro` | `ContactResult.astro` |
 | `/guides/`, `/fr/guides/` | [guides/index.astro](../../src/pages/guides/index.astro), `[lang]/guides/index.astro` | `GuidesIndex.astro` |
 | `/guides/<slug>/`, `/fr/guides/<slug>/` | `guides/[slug].astro`, `[lang]/guides/[slug].astro` | `GuideLayout.astro` |
-| `/consortium/`, `/{lang}/consortium/` (the 10 others, French included: owner, 2026-10-29) | [consortium.astro](../../src/pages/consortium.astro), `[lang]/consortium.astro` | `ConsortiumPage.astro`, see [Consortium page](/modules/consortium-page.md) |
+| `/consortium/`, `/{lang}/consortium/` (the 10 others, French included: owner, 2026-10-29) | [consortium.astro](../../src/pages/consortium.astro), `[lang]/consortium.astro` | `ConsortiumPage.astro`, see [Consortium page](/modules/consortium-page.md); **planned** (F1a stream 1, [decision row "Plant palette name"](/decisions/consortium-user-decisions.md)): `palette.astro` and `[lang]/palette.astro` at `/palette/`, `/{lang}/palette/`, the old paths 301-redirected in `public/_redirects` |
 | `/version.json` | [version.json.ts](../../src/pages/version.json.ts) | The version marker (E3): `{ sha, built_at, node }`, prerendered in workerd; `sha` from `WORKERS_CI_COMMIT_SHA`, else `GITHUB_SHA`, else the checkout's `.git/HEAD` (a detached sha, or the loose ref of master or deploy, read with `import.meta.glob`), else null; `node` from `npm_config_user_agent`, else null; anything not a 40-hex sha or plain version becomes null. CI's `live` job polls it; `public/_headers` serves it `no-store`; `check-built-site.mjs` checks its shape. See [CI, hooks and the deploy gate](/runbooks/ci-and-deploy-gate.md) |
 | `POST /api/contact` | `api/contact.ts` | `handleContact(request, env)` |
 | `POST /api/correction` | `api/correction.ts` | `handleCorrection(request, env)` (the consortium tool's "Suggest a correction"; see [src/lib](/modules/src-lib.md)) |
