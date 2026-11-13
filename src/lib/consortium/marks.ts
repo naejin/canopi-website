@@ -40,7 +40,7 @@ export function loadMarkProviders(): Promise<readonly MarkProvider[]> {
 }
 
 // The range rule (range.ts: withinRange, rangeFit; owner answer 2), its own chunk (role `range`,
-// scripts/built-modules.mjs LAZY_ENTRIES), loaded once, the store asking for it only once the site
+// scripts/built-modules.mjs P5_FEATURE_ENTRIES), loaded once, the store asking for it only once the site
 // location has a climate (store.ts rangeRule), so it stays off the first run (decision row "Island
 // JavaScript budget for P5"; E6 design check A10: a core loader, as the providers' above). The one
 // import of the rule outside the feature chunks that use it statically. A failed load is not cached.
