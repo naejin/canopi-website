@@ -2,22 +2,25 @@
 // .local/consortium/v2/p5-design-check.md section A; coordinator row "P5 engineering choices").
 //
 // - Always: the crate's synthetic tiles (scripts/fixtures/climate/synthetic-*.tif, copied from
-//   canopi-climate tests/fixtures/, values from src/tile.rs and src/layer.rs `synthetic`), the cell
-//   rules, Köppen margins, USDA texture and region codes, the fetch policy and the LRU.
-// - With the extracted grid (CANOPI_CLIMATE_GRID, default the canopi-cache path): 54 points compared
-//   field by field with `canopi-climate lookup` (scripts/fixtures/climate/goldens.json, made by
-//   make-goldens.mjs). Without it those tests skip with a message: `npm test` never needs the 98 MB grid.
+//   canopi-climate tests/fixtures/) against the crate's answers on them, synthetic-expected.json
+//   (canopi-climate tests/fixtures/synthetic-expected.json at commit 5a47016, tag v0.2.1: 48 points
+//   and the rule tables, run by scripts/fixtures/climate/vectors.mjs), the cell rules, Köppen margins,
+//   USDA texture and region codes, the fetch policy and the LRU.
+// - With the extracted grid (CANOPI_CLIMATE_GRID, default the canopi-cache path): the decode probe
+//   and the fetch policy over the 54 points of the release vectors (lookup.json). The answers at those
+//   points are scripts/climate-vectors.test.mjs's (installed grid). Without the extracted grid these
+//   tests skip with a message: `npm test` never needs the 98 MB grid.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { checkPoints, checkTables, readVectors } from './fixtures/climate/vectors.mjs';
 
 const C = await import('../src/lib/climate/index.ts');
 const FIXTURES = new URL('./fixtures/climate/', import.meta.url);
 const GRID = process.env.CANOPI_CLIMATE_GRID ?? '/media/daylon/main_hdd/canopi-cache/climate/out-v0.2';
 const hasGrid = existsSync(join(GRID, 'manifest.json'));
-const noGrid = hasGrid ? false : `no extracted canopi-climate v0.2 grid at ${GRID} (set CANOPI_CLIMATE_GRID to run the golden comparison)`;
-const goldens = JSON.parse(readFileSync(new URL('goldens.json', FIXTURES), 'utf8'));
+const noGrid = hasGrid ? false : `no extracted canopi-climate v0.2 grid at ${GRID} (set CANOPI_CLIMATE_GRID to run the probe and the fetch policy)`;
 
 const shapeOf = (layer) => ({ side: C.LAYERS[layer].tileCells, cellDeg: C.LAYERS[layer].cellDeg, bands: C.LAYERS[layer].bands });
 const fixture = (name) => readFileSync(new URL(name, FIXTURES));
@@ -43,14 +46,6 @@ const fromGrid = (url) => {
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
 };
 
-// The CLI's JSON in the reader's names: snake_case keys to camelCase, the echoed lat/lon dropped.
-const camel = (s) => s.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
-function fromCli(value) {
-  if (Array.isArray(value)) return value.map(fromCli);
-  if (value === null || typeof value !== 'object') return value;
-  return Object.fromEntries(Object.entries(value).filter(([k]) => k !== 'lat' && k !== 'lon').map(([k, v]) => [camel(k), fromCli(v)]));
-}
-
 test('probe: n50e000 decodes with DecompressionStream and matches the CLI at Lyon', { skip: noGrid }, async () => {
   const file = readFileSync(join(GRID, 'tiles', 'n50e000.tif'));
   const t0 = performance.now();
@@ -61,26 +56,6 @@ test('probe: n50e000 decodes with DecompressionStream and matches the CLI at Lyo
   const at = (band) => r.data[(42 * 100 + 48) * 72 + band];
   assert.deepEqual([at(0), at(9) / 10, at(18) / 10, at(45), at(54) / 100], [14, 0.1, 26.6, 809, 1.1]);
   console.log(`probe: n50e000 ${file.byteLength} B decoded in ${(t1 - t0).toFixed(1)} ms (Node ${process.version})`);
-});
-
-test('goldens: every field of 54 points matches canopi-climate lookup', { skip: noGrid }, async () => {
-  assert.equal(goldens.points.length, 54);
-  const m = readFileSync(join(GRID, 'manifest.json'));
-  const { createHash } = await import('node:crypto');
-  assert.equal(createHash('sha256').update(m).digest('hex'), goldens.grid_manifest_sha256, 'the goldens were made from this grid');
-  const { source } = sourceOver(gridIndex(), fromGrid);
-  let compared = 0;
-  for (const p of goldens.points) {
-    if (p.expect === 'invalid') {
-      await assert.rejects(C.lookupSite(p.lat, p.lon, source), RangeError, p.name);
-      continue;
-    }
-    const got = await C.lookupSite(p.lat, p.lon, source);
-    for (const layer of ['climate', 'soil']) if (p.expect[layer]) assert.deepEqual([p.expect[layer].lat, p.expect[layer].lon], [p.lat, p.lon]);
-    assert.deepEqual({ climate: got.climate, soil: got.soil, regions: got.regions }, fromCli(p.expect), p.name);
-    compared++;
-  }
-  assert.equal(compared, 52);
 });
 
 test('fetch policy: three tiles inland, neighbours only for an incomplete cell near an edge, never an unlisted tile', { skip: noGrid }, async () => {
@@ -108,9 +83,9 @@ test('fetch policy: three tiles inland, neighbours only for an incomplete cell n
   assert.equal(r.site.climate, null);
   assert.equal(r.site.soil, null);
   assert.deepEqual([r.site.regions.wgsrpdL3, r.site.regions.isoA2], [null, null]);
-  // Every point of the goldens: only listed tiles.
+  // Every point of the release vectors: only listed tiles.
   const { source, fetched } = sourceOver(index, fromGrid, { maxTiles: 4 });
-  for (const p of goldens.points) if (p.expect !== 'invalid') await C.lookupSite(p.lat, p.lon, source);
+  for (const p of readVectors('lookup.json').points) if (p.expect !== 'invalid') await C.lookupSite(p.lat, p.lon, source);
   for (const url of fetched) {
     const [, dir, name] = /^\/grid\/(tiles|soil|regions)\/(\w+)\.tif$/.exec(url);
     const layer = dir === 'tiles' ? 'climate' : dir;
@@ -132,9 +107,17 @@ const fromSynth = (url) => {
   if (!b) throw new Error(`404 ${url}`);
   return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
 };
-// src/tile.rs synthetic::value: the value stored at cell (x, y) of the tile for a slot.
-const synthValue = { tmin_cold: (_x, y, s) => -20 + 0.3 * y + 0.5 * s, tmax_warm: (x, _y, s) => 15 + 0.2 * x + 0.6 * s, precip: (x, _y, s) => 200 + 10 * x - 5 * s, dry_months: (x, y, s) => (x + y + s) % 13, koppen: (x, y) => 1 + ((Math.floor(x / 4) + Math.floor(y / 4)) % 30) };
 const at = (x, y) => [50 - (y + 0.5) * 0.1, (x + 0.5) * 0.1];
+const synthetic = readVectors('synthetic-expected.json');
+
+test('synthetic-expected.json: every point the crate answers on the synthetic tiles, field by field, and every rule-table row', async () => {
+  assert.deepEqual(Object.values(synthetic.tiles).map((t) => t.split('/').pop()).sort(), ['synthetic-n50e000.tif', 'synthetic-regions-n50e000.tif', 'synthetic-soil-n50e000.tif']);
+  const { source } = sourceOver(synthIndex, fromSynth);
+  // The points outside n50e000 (own_tile false, or another tile with no file) are compared too: the
+  // reader searches across tile edges like the crate's lookup_across, which wrote the file.
+  assert.deepEqual(await checkPoints(C, synthetic.points, source), { compared: 46, invalid: 2, crossTile: 2 });
+  assert.ok(checkTables(C, synthetic.tables) > 100);
+});
 
 test('synthetic climate tile: values, ocean snapping within 2 cells, incomplete cells skipped, tile edges', async () => {
   const { source } = sourceOver(synthIndex, fromSynth);
@@ -144,11 +127,7 @@ test('synthetic climate tile: values, ocean snapping within 2 cells, incomplete 
   assert.equal(site.climate.periods.length, 9);
   const p0 = site.climate.periods[0], p8 = site.climate.periods[8];
   assert.deepEqual([p0.period, p0.scenario, p8.period, p8.scenario], ['1991-2020', 'historical', '2071-2099', 'ssp585']);
-  assert.ok(Math.abs(p0.tminColdC - synthValue.tmin_cold(50, 40, 0)) < 0.051);
-  assert.ok(Math.abs(p8.tmaxWarmC - synthValue.tmax_warm(50, 40, 8)) < 0.051);
-  assert.ok(Math.abs(p0.precipMm - synthValue.precip(50, 40, 0)) < 0.51);
-  assert.equal(p8.dryMonths, synthValue.dry_months(50, 40, 8));
-  assert.equal(p0.koppenCode, synthValue.koppen(50, 40));
+  // The values are synthetic-expected.json's (test above); here, the reader's own fields.
   assert.equal(p0.koppen, C.koppenSymbol(p0.koppenCode));
   // Land block x 20..80, y 30..70: two cells west of it snaps, three does not, a 2.83-cell diagonal does not.
   site = await C.lookupSite(...at(18, 40), source);
