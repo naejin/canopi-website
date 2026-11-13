@@ -5,7 +5,7 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T22:06:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T02:47:05Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-12T17:04:00Z }
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:8012264ab1c370d7
-    last_modified: 2026-11-12T22:05:56Z
+    digest: sha256:b3a67ca62c57fde6
+    last_modified: 2026-11-13T02:46:43Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -66,6 +66,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 | [built-links.mjs](../../scripts/built-links.mjs) | `builtTarget(root, pathname)`: resolves an internal link to a built file; a path without trailing slash or extension is an error. `subdirectories(dir)`: folder names only (the guide slugs; a stray `.DS_Store` is not a guide) | `check-built-site.mjs` |
 | [fixtures/consortium-v2/make-fixture.mjs](../../scripts/fixtures/consortium-v2/make-fixture.mjs) | writes the invented format 4 consortium fixture (38 plants in Tropical, Mediterranean and Temperate, gzipped SQLite built with `node:sqlite` from canopi-data's DDL, with its manifest, sums, TRY list and credits; deterministic) and the broken variants the installer test needs; never shipped | `node scripts/fixtures/consortium-v2/make-fixture.mjs [dir]`, see its README |
 | [browser/](../../scripts/browser) | `serve.mjs` (wrangler dev on 4420–4498 over a hard-linked copy of `dist-test/` by default, the production `dist/` on request, stopped by pid), `harness.mjs` (puppeteer-core with the system Chrome), `trace.mjs` (failure traces), `helpers.mjs`, `run.mjs` + `shards.json` (the sharded runner), and one test file per owner: `consortium-commit0.browser.test.mjs` (probes P1–P3, P6, P5-0, the BT-9 load screens, the E1 self-checks over `fixtures/`), `consortium-s1…s4.browser.test.mjs` (each stream's §7 tests), `consortium-p5-s5b/c/d/f` and `consortium-seams-p2/layout/p5` (shared code in `p5-helpers.mjs`, `seams-helpers.mjs`); `smoke/consortium.smoke.mjs` (production `dist/`, `npm run test:browser:smoke`); `consortium-timing.mjs` (§8 cold/warm timing, on demand only, not a test); see [Consortium page](/modules/consortium-page.md) | `npm run test:browser` (local shards), `test:browser:shard <n>` (CI), `test:browser:smoke`, capped; never in `npm test` |
+| [plan/](../../scripts/plan) | `e6-owners.json`: the owners file of the E3/E4/E5a/E6 batch (path → stream per chunk, with each stream's needs and duty; one owner per path per chunk); `owners.mjs`: its checks (`ownersProblems`, used by `plan-owners.test.mjs` in `npm test`) and `node scripts/plan/owners.mjs check <chunk> <stream> <base>`, which fails a stream diff outside its rows; see [Consortium v2 plan](/project/consortium-v2-plan.md) | `npm test`; the main agent at each stream merge |
 | [export-featured-designs.py](../../scripts/export-featured-designs.py) | `.canopi` files to privacy-safe `public/data/featured-designs.json` | by hand |
 | [compress-heroes.py](../../scripts/compress-heroes.py), [make-og-images.py](../../scripts/make-og-images.py) | hero JPGs (2400 and 1200 px); 1200x630 social images (painting with the logo and wordmark on a parchment label inside the centre 630 px square, each ≤ 250 KB for WhatsApp) and `public/apple-touch-icon.png`; bump `?v=` on `ogImage` in `Base.astro` when they change, since messaging apps cache by image URL | by hand (Pillow + Inkscape) |
 

@@ -1,0 +1,306 @@
+{
+  "_comment": "Owners file of the E3/E4/E5a/E6 batch of the Consortium v2 plan (knowledge/project/consortium-v2-plan.md; design check .local/consortium/v2/e6/design-check.md section 3, gitignored in the main checkout). Path -> stream per chunk: one owner per path per chunk; a path may change hands between chunks. Patterns are repo-relative: '*' stays within a folder, '**' crosses folders. Chunks run in order; streams inside a chunk run in parallel. scripts/plan-owners.test.mjs fails a path two streams own in one chunk; node scripts/plan/owners.mjs check <chunk> <stream> <base> fails a stream diff outside its rows. A file found needed mid-build is requested from the main agent, never taken.",
+  "step": "consortium-v2 E3+E4+E5a+E6",
+  "branch": "e6/int",
+  "chunks": [
+    {
+      "chunk": 0,
+      "streams": {
+        "main": {
+          "needs": [],
+          "duty": "commit 0 (design check section 5): devDependency pins and script slots, fold.ts leaf, additive types, test-seam.d.ts, lazy chunk roles, expect-fail helper, failing tests, shards, ADR-1/2/6",
+          "files": [
+            "package.json",
+            "package-lock.json",
+            "src/lib/consortium/fold.ts",
+            "src/islands/consortium/data/search.ts",
+            "src/lib/consortium/types.ts",
+            "src/islands/consortium/test-seam.d.ts",
+            "scripts/built-modules.mjs",
+            "scripts/built-modules.test.mjs",
+            "scripts/browser/harness.mjs",
+            "scripts/browser/consortium-e6.browser.test.mjs",
+            "scripts/browser/consortium-e6-r4.browser.test.mjs",
+            "scripts/browser/shards.json",
+            "scripts/browser-tests.test.mjs",
+            "scripts/expect-fail.mjs",
+            "scripts/expect-fail.test.mjs",
+            "scripts/consortium-zones.test.mjs",
+            "scripts/consortium-list-query.test.mjs",
+            "scripts/climate-vectors.test.mjs",
+            "scripts/plan/**",
+            "scripts/plan-owners.test.mjs",
+            "knowledge/**"
+          ]
+        }
+      }
+    },
+    {
+      "chunk": 1,
+      "streams": {
+        "K1": {
+          "needs": ["main"],
+          "duty": "views/kit (sheet frame, flags, names, icons, format, page reader); sheets import the kit, not Details (C4); matrix-parts.tsx (C3); page/zoneLabel out of Start (C2); Start and tracks use fold.ts with Add's matcher (A9; removes the E6-1 marker); one spanOf; Details re-exports of store actions removed",
+          "files": [
+            "src/islands/consortium/views/Details.tsx",
+            "src/islands/consortium/views/Add.tsx",
+            "src/islands/consortium/views/Swap.tsx",
+            "src/islands/consortium/views/Paste.tsx",
+            "src/islands/consortium/views/Correction.tsx",
+            "src/islands/consortium/views/StageBar.tsx",
+            "src/islands/consortium/views/Start.tsx",
+            "src/islands/consortium/views/PoolSlot.tsx",
+            "src/islands/consortium/views/PrintSheet.tsx",
+            "src/islands/consortium/views/Actions.tsx",
+            "src/islands/consortium/views/Matrix.tsx",
+            "src/islands/consortium/views/PhoneMatrix.tsx",
+            "src/islands/consortium/views/SideView.tsx",
+            "src/islands/consortium/views/Jobs.tsx",
+            "src/islands/consortium/views/PlantList.tsx",
+            "src/islands/consortium/views/StageStepper.tsx",
+            "src/islands/consortium/views/tracks.ts",
+            "src/islands/consortium/views/side.ts",
+            "src/islands/consortium/views/layers.ts",
+            "src/islands/consortium/views/kit/**",
+            "src/islands/consortium/views/matrix-parts.tsx",
+            "src/islands/consortium/views/location/location.tsx",
+            "src/islands/consortium/views/pool/pool.tsx",
+            "src/islands/consortium/views/future/future.tsx",
+            "src/islands/consortium/strings.ts",
+            "src/islands/consortium/main.ts",
+            "scripts/browser/consortium-e6.browser.test.mjs"
+          ]
+        },
+        "S1": {
+          "needs": ["main"],
+          "duty": "one declaration state/schema.ts driving Consortium, Snapshot/SNAP_KEYS, ShareInput/shareState and the watcher lists; save/restore and link round-trip node tests per field (probe P-E6c first)",
+          "files": [
+            "src/islands/consortium/store.ts",
+            "src/islands/consortium/memory.ts",
+            "src/islands/consortium/state/schema.ts",
+            "scripts/consortium-memory.test.mjs"
+          ]
+        },
+        "R1": {
+          "needs": ["main"],
+          "duty": "nearest.ts leaf (C1); zones.ts one zone list and order (correction.mjs, climates.ts and the installer agree; installer refuses an unknown zone id; removes the zones marker); flagsOf beside conflicts.ts",
+          "files": [
+            "src/lib/consortium/nearest.ts",
+            "src/lib/consortium/placed.ts",
+            "src/lib/consortium/placement.ts",
+            "src/lib/consortium/zones.ts",
+            "src/lib/consortium/conflicts.ts",
+            "src/lib/consortium/suggest.ts",
+            "src/lib/consortium/index.ts",
+            "src/lib/correction.mjs",
+            "src/data/climates.ts",
+            "scripts/install-consortium.mjs",
+            "scripts/consortium-core.test.mjs",
+            "scripts/correction.test.mjs",
+            "scripts/install-consortium.test.mjs",
+            "scripts/consortium-zones.test.mjs"
+          ]
+        },
+        "CI": {
+          "needs": ["main"],
+          "duty": "ci.yml (changes, 1 check+install:climate+unit+policy, 2 build:browser-test artifact, 3 four shards, 4 build+budgets+smoke+axe+vectors, gate, deploy, live); nightly.yml; .githooks (lib.sh, pre-commit, pre-push); .node-version; version marker and its _headers line (A15-A20)",
+          "files": [
+            ".github/workflows/ci.yml",
+            ".github/workflows/nightly.yml",
+            ".githooks/**",
+            ".node-version",
+            "src/pages/version.json.ts",
+            "public/_headers"
+          ]
+        },
+        "Q1": {
+          "needs": ["main"],
+          "duty": "dependency-cruiser L1-L9 at A25 severities (probe P-E4a first); knip and jscpd configs and key baselines; scripts/quality/ratchet.mjs (the check:arch/check:dup/check:dead wrapper); boundary test extended to src/lib/climate; axe smoke with a baseline",
+          "files": [
+            ".dependency-cruiser.cjs",
+            "knip.json",
+            ".jscpd.json",
+            "scripts/quality/**",
+            "scripts/consortium-boundary.test.mjs",
+            "scripts/browser/smoke/axe.smoke.mjs"
+          ]
+        },
+        "V": {
+          "needs": ["main"],
+          "duty": "A21-A23: committed lookup.json + .sha256 + synthetic-expected.json; climate-reader.test.mjs reads synthetic-expected.json; climate-vectors.test.mjs (removes its marker); goldens.json and make-goldens.mjs deleted (probe P-E5a first)",
+          "files": [
+            "scripts/climate-reader.test.mjs",
+            "scripts/climate-vectors.test.mjs",
+            "scripts/fixtures/climate/**"
+          ]
+        }
+      }
+    },
+    {
+      "chunk": 2,
+      "streams": {
+        "R2": {
+          "needs": ["K1", "S1", "R1"],
+          "duty": "rules/list-query.ts (Add and PlantList; removes the list-query marker), rules/suggest-block.ts, rules/site-fit.ts + SiteFitMessage; kit/flags renders only; loadRangeRule() and role range (A10; P5-27b blocks range); node tests of the three rules",
+          "files": [
+            "src/islands/consortium/rules/**",
+            "src/islands/consortium/store.ts",
+            "src/islands/consortium/views/Add.tsx",
+            "src/islands/consortium/views/PlantList.tsx",
+            "src/islands/consortium/views/PoolSlot.tsx",
+            "src/islands/consortium/views/Start.tsx",
+            "src/islands/consortium/views/Matrix.tsx",
+            "src/islands/consortium/views/Details.tsx",
+            "src/islands/consortium/views/Swap.tsx",
+            "src/islands/consortium/views/Paste.tsx",
+            "src/islands/consortium/views/tracks.ts",
+            "src/islands/consortium/views/pool/pool.tsx",
+            "src/islands/consortium/views/kit/flags.ts",
+            "src/lib/consortium/site.ts",
+            "src/lib/consortium/site-marks.ts",
+            "src/lib/consortium/range.ts",
+            "src/lib/consortium/marks.ts",
+            "src/lib/consortium/types.ts",
+            "src/lib/consortium/index.ts",
+            "scripts/browser/consortium-p5-s5c.browser.test.mjs",
+            "scripts/consortium-p5-seams*.test.mjs",
+            "scripts/consortium-list-query.test.mjs"
+          ]
+        },
+        "S2": {
+          "needs": ["S1", "K1"],
+          "duty": "memory.ts -> state/{persist,restore,arrival,draft,suggest-wait}.ts (re-exports kept for R2's files until chunk 5); location orchestration -> state/location.ts; location.tsx renders only; place-search.ts without signals (A12); one country-source enum; one computed climate shown",
+          "files": [
+            "src/islands/consortium/memory.ts",
+            "src/islands/consortium/state/persist.ts",
+            "src/islands/consortium/state/restore.ts",
+            "src/islands/consortium/state/arrival.ts",
+            "src/islands/consortium/state/draft.ts",
+            "src/islands/consortium/state/suggest-wait.ts",
+            "src/islands/consortium/state/location.ts",
+            "src/islands/consortium/views/location/**",
+            "src/islands/consortium/views/LocationSlot.tsx",
+            "src/islands/consortium/views/Actions.tsx",
+            "src/islands/consortium/views/Share.tsx",
+            "src/islands/consortium/views/PrintSheet.tsx",
+            "src/islands/consortium/focus.ts",
+            "src/lib/location/place-search.ts",
+            "scripts/consortium-memory.test.mjs"
+          ]
+        },
+        "Q2": {
+          "needs": ["K1"],
+          "duty": "ast-grep rule: no new Intl.NumberFormat outside views/kit/format.ts, with a rule test; baselines regenerated after K1",
+          "files": [
+            "sgconfig.yml",
+            "scripts/quality/ast-grep/**",
+            "scripts/quality/baselines/**"
+          ]
+        }
+      }
+    },
+    {
+      "chunk": 3,
+      "streams": {
+        "K3": {
+          "needs": ["R2", "S2"],
+          "duty": "Details split: first-run router views/Sheets.tsx and lazy views/details/Details.tsx (probe P-E6a first); one loader lazyPart with onFail closeSheet (A6); __ctFaults read inline (A13); prefetch trigger; L1-L7, L12 (removes the E6-3, E6-4, E6-5 markers)",
+          "files": [
+            "src/islands/consortium/views/Details.tsx",
+            "src/islands/consortium/views/details/**",
+            "src/islands/consortium/views/Sheets.tsx",
+            "src/islands/consortium/views/lazy.tsx",
+            "src/islands/consortium/views/later.ts",
+            "src/islands/consortium/App.tsx",
+            "src/islands/consortium/views/Add.tsx",
+            "src/islands/consortium/views/Swap.tsx",
+            "src/islands/consortium/views/Paste.tsx",
+            "src/islands/consortium/views/Correction.tsx",
+            "scripts/browser/consortium-e6.browser.test.mjs"
+          ]
+        },
+        "S3": {
+          "needs": ["R2", "S2"],
+          "duty": "explicit start() from main.ts for the module-level effects of store.ts and state/*; guarded dynamic import of test-hook.ts (A13); test-hook.ts writes __ctFaults; node tests import state with no effects running",
+          "files": [
+            "src/islands/consortium/store.ts",
+            "src/islands/consortium/state/**",
+            "src/islands/consortium/main.ts",
+            "src/islands/consortium/test-hook.ts"
+          ]
+        },
+        "Q3": {
+          "needs": ["S2"],
+          "duty": "boundary test extended to src/lib/location (A27); L1 lib-no-ui flipped to error",
+          "files": [
+            "scripts/consortium-boundary.test.mjs",
+            ".dependency-cruiser.cjs"
+          ]
+        }
+      }
+    },
+    {
+      "chunk": 4,
+      "streams": {
+        "R4": {
+          "needs": ["K3", "S3"],
+          "duty": "one placement origin {list, kind} on Taxon; factAt(taxon, site, period) for ADR-6's facts; loadSuggest() (A11) and Swap through it; L8, L9 (removes the E6-6, E6-7 markers); the ct:matrix -> ct:first-view line in Matrix.tsx (B4's duty handed over)",
+          "files": [
+            "src/lib/consortium/types.ts",
+            "src/lib/consortium/placement.ts",
+            "src/lib/consortium/placed.ts",
+            "src/lib/consortium/matrix.ts",
+            "src/lib/consortium/range-marks.ts",
+            "src/lib/consortium/source.ts",
+            "src/lib/consortium/suggest.ts",
+            "src/lib/consortium/index.ts",
+            "src/islands/consortium/data/sqlite-source.ts",
+            "src/islands/consortium/store.ts",
+            "src/islands/consortium/views/details/**",
+            "src/islands/consortium/views/Matrix.tsx",
+            "src/islands/consortium/views/PhoneMatrix.tsx",
+            "src/islands/consortium/views/StageBar.tsx",
+            "src/islands/consortium/views/Swap.tsx",
+            "src/islands/consortium/views/Correction.tsx",
+            "src/islands/consortium/views/Add.tsx",
+            "src/islands/consortium/views/layers.ts",
+            "scripts/browser/consortium-e6-r4.browser.test.mjs"
+          ]
+        },
+        "B4": {
+          "needs": ["K3", "S3"],
+          "duty": "A5 modulepreload filter; roles details/sheets/later/suggest/range filled and merged with the feature roles; A14 per-chunk caps (first run stays 43); ct:first-view in the timing script and tests (A7); timing ratchet (A8); CSS-on-lazy-chunk assertion; L5, L11 (removes the E6-2 marker)",
+          "files": [
+            "astro.config.mjs",
+            "scripts/built-modules.mjs",
+            "scripts/built-modules.test.mjs",
+            "scripts/check-built-site.mjs",
+            "scripts/browser/consortium-timing.mjs",
+            "scripts/browser/timing.json",
+            "scripts/browser/consortium-s2.browser.test.mjs",
+            "scripts/browser/consortium-e6.browser.test.mjs",
+            "scripts/consortium-memory.test.mjs",
+            "scripts/consortium-p5-seams.test.mjs"
+          ]
+        }
+      }
+    },
+    {
+      "chunk": 5,
+      "streams": {
+        "main": {
+          "needs": ["R4", "B4", "Q3"],
+          "duty": "exit: memory.ts re-exports removed and consumers re-pointed; first run lowered to the measured value (<= 40 KB); dependency-cruiser L2/L5/L6/L8 and no-circular to error; knip baseline regenerated (dead plantName etc. deleted); zero expected-fail markers; concepts",
+          "files": [
+            "src/islands/consortium/**",
+            "src/lib/consortium/**",
+            "scripts/check-built-site.mjs",
+            ".dependency-cruiser.cjs",
+            "scripts/quality/baselines/**",
+            "knowledge/**"
+          ]
+        }
+      }
+    }
+  ]
+}
