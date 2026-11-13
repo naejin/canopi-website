@@ -2,9 +2,10 @@
 // framework-free, so node --test runs it and it can move into a package unchanged. Every import of a
 // core file stays inside the folder (no package, no node: module, no ../), and no core file touches a
 // DOM or browser global. The island (src/islands/consortium/) may import the core, never the reverse.
-// E4 (design check E6 A27): src/lib/climate/ imports no UI framework and nothing from src/islands or
-// src/components either. Layer direction and cycles belong to dependency-cruiser (.dependency-cruiser.cjs,
-// npm run check:arch); this file keeps the folder and browser-global rules it cannot see.
+// Design check E6 A27, one owner per rule: src/lib/climate/ and src/lib/location/ keep their relative
+// imports inside their own folder (packages allowed). "No preact, @preact/signals, src/islands or
+// src/components in src/lib" is dependency-cruiser's L1 (.dependency-cruiser.cjs, npm run check:arch),
+// as are layer direction and cycles; this file keeps the folder and browser-global rules it cannot see.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -17,6 +18,7 @@ const SRC = join(fileURLToPath(import.meta.url), '..', '..', 'src');
 const core = join(SRC, 'lib', 'consortium');
 const islands = join(SRC, 'islands', 'consortium');
 const climate = join(SRC, 'lib', 'climate');
+const place = join(SRC, 'lib', 'location');
 const files = (dir) => readdirSync(dir, { recursive: true }).filter((f) => /\.(ts|tsx|js|mjs)$/.test(f)).map((f) => ({ name: f, text: readFileSync(join(dir, f), 'utf8') }));
 
 // Comments and string contents removed, so a word in prose or a message is not a use.
@@ -63,18 +65,19 @@ test('the core never imports the island; the island reaches the core through its
   }
 });
 
-// A UI framework or a page/island module, by package name or by path.
-const UI = /^(preact|react|react-dom|solid-js|svelte|vue|@preact\/[\w.-]+|@astrojs\/(preact|react|solid-js|svelte|vue))(\/|$)|(^|\/)(islands|components)\//;
-export const uiImportsOf = (text) => importsOf(text).filter((spec) => UI.test(spec));
+// A relative import that leaves the folder (../). A package or a ./ file stays in.
+export const outsideImportsOf = (text) => importsOf(text).filter((spec) => spec.startsWith('.') && !spec.startsWith('./') || spec.includes('..'));
 
-test('src/lib/climate imports no UI framework and nothing from src/islands or src/components', () => {
-  const list = files(climate);
-  assert.ok(list.some((f) => f.name === 'index.ts') && list.some((f) => f.name === 'lookup.ts'), 'the climate reader exists');
-  for (const { name, text } of list) assert.deepEqual(uiImportsOf(text), [], `${name}: the climate reader stays framework-free`);
+test('src/lib/climate and src/lib/location import only their own files and packages', () => {
+  for (const [dir, seams] of [[climate, ['index.ts', 'lookup.ts']], [place, ['place-search.ts', 'geolocation.ts', 'maplibre.ts']]]) {
+    const list = files(dir);
+    for (const seam of seams) assert.ok(list.some((f) => f.name === seam), `${dir}/${seam} exists`);
+    for (const { name, text } of list) assert.deepEqual(outsideImportsOf(text), [], `${name}: imports leave ${dir}`);
+  }
 });
 
 test('the boundary readers catch what they guard against', () => {
-  assert.deepEqual(uiImportsOf("import { h } from 'preact';\nimport { signal } from '@preact/signals';\nimport { x } from '../../islands/consortium/store.ts';\nimport { y } from '../../components/A.astro';\nimport { k } from './koppen.ts';\nimport { s } from 'preact-like';"), ['preact', '@preact/signals', '../../islands/consortium/store.ts', '../../components/A.astro']);
+  assert.deepEqual(outsideImportsOf("import { x } from '../../islands/consortium/store.ts';\nimport { k } from './koppen.ts';\nimport c from 'maplibre-gl/dist/maplibre-gl.css?inline';\nimport { z } from './a/../../b.ts';\nconst m = await import('../climate/index.ts');"), ['../../islands/consortium/store.ts', './a/../../b.ts', '../climate/index.ts']);
   assert.deepEqual(importsOf("import { a } from '../x.ts';\nexport * from './y.ts';\nimport 'z';\nconst m = await import('preact');"), ['../x.ts', './y.ts', 'z', 'preact']);
   assert.deepEqual(globalsOf("const w = window.innerWidth; // document in a comment\nconst s = 'location';\nfoo.document = 1;"), ['window']);
   assert.deepEqual(globalsOf('interface X { location: string }'), []);
