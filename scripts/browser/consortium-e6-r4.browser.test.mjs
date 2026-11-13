@@ -264,3 +264,22 @@ test('E6-23 (R4 hand-off B): Swap opened after the suggest chunk failed asks for
     assert.equal(await page.evaluate(() => window.__ctRetried), true, 'opening Swap asked for the chunk again');
   } finally { await page.browserContext().close().catch(() => {}); }
 });
+
+// Hand-off review 3: Swap opened with the chunk already failed says "did not load" once per opening
+// (its first render does not show the old failure before asking again).
+test('E6-28 (R4 hand-off review 3): Swap opened after the suggest chunk failed announces the failed line once', async () => {
+  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 404 } });
+  try {
+    assert.equal(await loadState(page), 'ready');
+    assert.ok(await until(page, () => window.__ctTest.store.suggestFailed.value, 8000), 'the load at open failed');
+    await page.evaluate(() => {
+      window.__ctAlerts = 0;
+      new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && (n.matches('[role="alert"]') || n.querySelector('[role="alert"]'))) window.__ctAlerts += 1; })
+        .observe(document.body, { childList: true, subtree: true });
+    });
+    await swapOpen(page);
+    assert.ok(await swapFailed(page, 6000), 'the failed line with Reload');
+    await new Promise((r) => setTimeout(r, 800));
+    assert.equal(await page.evaluate(() => window.__ctAlerts), 1, 'one alert inserted');
+  } finally { await page.browserContext().close().catch(() => {}); }
+});

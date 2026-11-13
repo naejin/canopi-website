@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { loadState } from './harness.mjs';
 import { aria, axNodes, en, h, has, realDb, useHarness } from './helpers.mjs';
-import { atNowhere, choose, tool } from './p5-helpers.mjs';
+import { atNowhere, atSite, choose, tool } from './p5-helpers.mjs';
 import { searchIndex } from '../../src/islands/consortium/data/search.ts';
 
 useHarness();
@@ -383,5 +383,72 @@ test('E6-24 (K3 hand-off C): the views after the matrix open on the next use aft
     await page.locator(aria('tab', 'Jobs')).click();
     await page.waitForFunction(() => !!document.querySelector('#ct-panel-jobs .ct-jobs-view, #ct-panel-jobs [role="alert"]'), { timeout: 8000 }).catch(() => {});
     assert.ok(await has(page, '#ct-panel-jobs .ct-jobs-view', 300), 'the Jobs view, not the failed line');
+  } finally { await page.browserContext().close().catch(() => {}); }
+});
+
+// ---- E6 hand-off review 1, 2: the later chunk's parts share one retry; an idle part waits for idle time ----
+
+// Answers the first n requests for `urls` (any query, ?retry=k included) 404; log lists each request.
+const failFirst = (urls, n, log) => async (page) => {
+  const cdp = await page.createCDPSession();
+  await cdp.send('Fetch.enable', { patterns: urls.map((u) => ({ urlPattern: `*${u}*`, requestStage: 'Response' })) });
+  cdp.on('Fetch.requestPaused', ({ requestId, request }) => {
+    const u = new URL(request.url);
+    if (!urls.includes(u.pathname)) return void cdp.send('Fetch.continueRequest', { requestId }).catch(() => {});
+    log.push(u.pathname + u.search);
+    if (log.length <= n) cdp.send('Fetch.fulfillRequest', { requestId, responseCode: 404, body: Buffer.from('Not found').toString('base64') }).catch(() => {});
+    else cdp.send('Fetch.continueRequest', { requestId }).catch(() => {});
+  });
+};
+const waitFor = async (cond, ms) => { for (const end = Date.now() + ms; !cond() && Date.now() < end;) await new Promise((r) => setTimeout(r, 50)); return cond(); };
+// Every request the page makes for the future part's chunk.
+const futureRequests = (page) => { const seen = []; page.on('request', (r) => { if (h.roles.future.includes(new URL(r.url()).pathname)) seen.push(r.url()); }); return seen; };
+
+test('E6-25 (K3 hand-off review 1): the later chunk\'s parts share one retry: after a failed retry, Jobs fetches the next one rather than a URL Chromium remembers as failed', async () => {
+  const log = [];
+  const page = await matrixPage({ setup: failFirst(h.roles.later, 2, log) });
+  try {
+    assert.ok(await waitFor(() => log.length >= 1, 5000), 'the later chunk\'s first request');
+    await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
+    // Side view's use retries (another part may have retried first: the idle future part, once a
+    // sheet chunk loaded); whichever retry failed, the next use asks for a URL not yet tried.
+    await page.locator(aria('tab', 'Side view')).click();
+    await page.waitForFunction(() => !!document.querySelector('#ct-panel-side .ct-sv, #ct-panel-side [role="alert"]'), { timeout: 8000 }).catch(() => {});
+    assert.ok(log.length >= 2, `a retry was asked for and failed (${log.join(', ')})`);
+    await page.locator(aria('tab', 'Jobs')).click();
+    await page.waitForFunction(() => !!document.querySelector('#ct-panel-jobs .ct-jobs-view, #ct-panel-jobs [role="alert"]'), { timeout: 8000 }).catch(() => {});
+    assert.ok(await has(page, '#ct-panel-jobs .ct-jobs-view', 300), `the Jobs view on the next retry (${log.join(', ')})`);
+    assert.equal(new Set(log).size, log.length, `no URL asked for twice (${log.join(', ')})`);
+  } finally { await page.browserContext().close().catch(() => {}); }
+});
+
+test('E6-26 (K3 hand-off review 2): the idle future part waits for idle time on a normal load: with no idle callback, its chunk is never asked for', async () => {
+  const page = await matrixPage({ hook: true, setup: (p) => p.evaluateOnNewDocument(() => { window.requestIdleCallback = () => 0; }) });
+  try {
+    const seen = futureRequests(page);
+    await atSite(page, 'lyon');
+    await page.waitForFunction(() => !!window.__ctTest.store.rangeRule.value, { timeout: 8000 });
+    await new Promise((r) => setTimeout(r, 2000));
+    assert.deepEqual(seen, [], 'no future chunk before the idle prefetch');
+  } finally { await page.browserContext().close().catch(() => {}); }
+});
+
+test('E6-27 (K3 hand-off review 2): the idle future part whose prefetch failed shows once another part has loaded, without leaving the matrix', async () => {
+  const log = [];
+  // The site set before Suggest, so the future part mounts once with the matrix and is not mounted
+  // again (the pool reads null while the range rule loads).
+  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, setup: failFirst(h.roles.later, 1, log) });
+  try {
+    const seen = futureRequests(page);
+    await page.locator(aria('radio', 'Temperate')).click();
+    assert.equal(await loadState(page), 'ready');
+    await atSite(page, 'lyon');
+    await page.waitForFunction(() => !!window.__ctTest.store.rangeRule.value && !!window.__ctTest.store.pool.value, { timeout: 8000 });
+    await page.locator(aria('button', 'Suggest plants')).click();
+    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000), 'the matrix');
+    assert.ok(await waitFor(() => log.length >= 1, 5000), 'the later chunk\'s first request');
+    // Another later part loading (Share; or a sheet chunk's prefetch already) gives it its chance.
+    await page.locator(aria('button', en['consortium.share.button'])).click();
+    assert.ok(await waitFor(() => seen.length > 0, 8000), `the future part asks again (${log.join(', ')})`);
   } finally { await page.browserContext().close().catch(() => {}); }
 });

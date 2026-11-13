@@ -10,20 +10,21 @@ import { climate, memberTaxa, source, view } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { notices } from '../state/restore.ts';
 import { zoneName } from './kit/names.ts';
-import { later, laterModule, retryable } from './lazy.tsx';
+import { later, laterModule } from './lazy.tsx';
+import { laterChunk } from './later-chunk.ts';
 
 // Share, the print sheet and the .canopi writer load after the matrix (views/lazy.tsx); the print
 // sheet is in the page as soon as it has loaded, so the browser's own Print menu prints it too.
-// retryable: a later chunk that failed is asked again on the next use.
-const share = later(retryable(() => import('./later.ts'), (m) => m.Share));
-const print = later(retryable(() => import('./later.ts'), (m) => m.PrintSheet), { quiet: true });
-const writer = laterModule(retryable(() => import('./later.ts'), (m) => m));
+// All through the later chunk's one loader (views/later-chunk.ts): one retry state for every part.
+const share = later(() => laterChunk().then((m) => m.Share));
+const print = later(() => laterChunk().then((m) => m.PrintSheet), { quiet: true });
+const writer = laterModule(laterChunk);
 // S5d's future panel (views/FutureSlot.tsx), under the matrix's view, after this section: it lands
 // once the later chunk and its own feature chunk have loaded, ~150 ms after Suggest, so above the
 // actions it pushed Share, Print and Download down under the reader's pointer (hand-off, found tracing
 // P5-13d). Idle: shown once prefetchLater() has loaded the later chunk, never a download before the
 // matrix is marked drawn (§8 timing).
-const future = later(retryable(() => import('./later.ts'), (m) => m.FutureSlot), { idle: true });
+const future = later(() => laterChunk().then((m) => m.FutureSlot), { idle: true });
 
 function LinkNotices() {
   const n = notices.value;

@@ -7,8 +7,9 @@
 // ready), so a reader who stays on Start has Search and Paste at hand too, and nothing lazy competes
 // with the database download. A part used before its prefetch finished loads on demand through the
 // same promise (one request per chunk); a failed load clears it, so the next use asks again (L4), and,
-// for a part whose import() is wrapped in retryable() (below: every lazyPart and later() in views/, and
-// the location step's loader), fetches again even in Chromium. The core's own loaders (marks.ts: the
+// for a part whose import() is wrapped in retryable() (below: every lazyPart and later() in views/, the
+// later chunk's parts through its one loader, views/later-chunk.ts, and the location step's loader),
+// fetches again even in Chromium. The core's own loaders (marks.ts: the
 // mark providers and the range rule; lib/consortium/index.ts loadSuggest) stay plain, since lib may
 // not import views: in Chromium a failed one needs Reload (Swap and Suggest offer it; the range rule
 // says so in PoolSlot).
@@ -62,12 +63,17 @@ export function LoadFailed() {
   return <p class="ct-notice" role="alert">{T('details.loadFailed')} <button type="button" class="button button-secondary" onClick={() => location.reload()}>{T('details.reload')}</button></p>;
 }
 
+// Counts the parts (and modules) loaded: an idle part whose own prefetch failed asks again on each
+// (below), so it gets another chance without being mounted again, and never loops on its own failure.
+const loadedTick = signal(0);
+
 export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = false, idle = false, onFail = 'notice', loading }: PartOptions<C> = {}): LazyPart<C> {
   const kind: Kind = onFail === 'closeSheet' ? 'sheets' : 'later';
   const done = signal<C | null>(null);
   let pending: Promise<C> | null = null;
+  let lastFailed = false;
   const prefetch = (): Promise<C> => {
-    pending ??= importer().then((c) => { done.value = c; return c; }, (err: unknown) => { pending = null; throw err; });
+    pending ??= (lastFailed = false, importer().then((c) => { done.value = c; loadedTick.value++; return c; }, (err: unknown) => { pending = null; lastFailed = true; throw err; }));
     return pending;
   };
   const load = (): Promise<C> => gate(kind).then(prefetch);
@@ -76,15 +82,17 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
     const [, wake] = useState(0);
     const fault = faultOf(kind);
     const C = (fault ? null : done.value) as ComponentType<Record<string, unknown>> | null;
+    const tick = idle && !C ? loadedTick.value : 0;
     useEffect(() => {
       if (C) return;
       let live = true;
       if (idle) {
-        // An idle part waits for the prefetch (done), or, held by a test, for the release. Once the
-        // prefetch has started, it asks again itself (the same promise while one runs): a prefetch
-        // that failed would otherwise leave it blank for the page's life.
+        // An idle part waits for the prefetch (done), in idle time, or, held by a test, for the
+        // release. Only once its own prefetch failed does it ask again itself: when another part (or
+        // module) has loaded since (loadedTick), the connection is back; a failed retry waits for the
+        // next one, so it never loops (E6 hand-off review 2).
         if (fault === 'hold') gate(kind).then(() => { if (live) wake((n) => n + 1); }, () => {});
-        else if (started) prefetch().then(() => { if (live) wake((n) => n + 1); }, () => {});
+        else if (lastFailed && tick > 0) prefetch().then(() => { if (live) wake((n) => n + 1); }, () => {});
         return () => { live = false; };
       }
       load().then(() => { if (live) wake((n) => n + 1); }, (err: unknown) => {
@@ -96,7 +104,7 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
         } else setFailed(true);
       });
       return () => { live = false; };
-    }, [C]);
+    }, [C, tick]);
     if (C) return <C {...props} />;
     if (quiet || idle) return null;
     if (failed) return <LoadFailed />;
@@ -121,10 +129,12 @@ const failedUrl = (err: unknown): string | null => {
   const url = /https?:\/\/[^\s'"]+?\.js\b/.exec(String((err as Error)?.message ?? err))?.[0] ?? null;
   return url?.startsWith(`${location.origin}/_astro/`) ? url : null;
 };
+// One attempt at a time, shared by every caller (several parts may share one loader: views/later-chunk.ts),
+// and the module kept once it came, so no later call imports a second copy under ?retry=n+1.
 export function retryable<M, C>(load: () => Promise<M>, pick: (m: M) => C): () => Promise<C> {
-  let url: string | null = null, n = 0;
-  return () => (url === null ? load() : (import(/* @vite-ignore */ `${url}?retry=${++n}`) as Promise<M>))
-    .catch((err: unknown) => { url ??= failedUrl(err); throw err; })
+  let url: string | null = null, n = 0, attempt: Promise<M> | null = null;
+  return () => (attempt ??= (url === null ? load() : (import(/* @vite-ignore */ `${url}?retry=${++n}`) as Promise<M>))
+    .catch((err: unknown) => { attempt = null; url ??= failedUrl(err); throw err; }))
     .then(pick);
 }
 
@@ -145,7 +155,7 @@ export function later<C extends Any>(importer: () => Promise<C>, opts: PartOptio
 // A module that is not a view (the .canopi writer): loaded once, prefetched with the views.
 export function laterModule<M>(importer: () => Promise<M>): () => Promise<M> {
   let pending: Promise<M> | null = null;
-  const fetch = (): Promise<M> => (pending ??= importer().catch((err: unknown) => { pending = null; throw err; }));
+  const fetch = (): Promise<M> => (pending ??= importer().then((m) => { loadedTick.value++; return m; }, (err: unknown) => { pending = null; throw err; }));
   register(fetch);
   return () => gate('later').then(fetch);
 }
