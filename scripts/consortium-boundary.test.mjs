@@ -11,9 +11,12 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const core = fileURLToPath(new URL('../src/lib/consortium/', import.meta.url));
-const islands = fileURLToPath(new URL('../src/islands/consortium/', import.meta.url));
-const climate = fileURLToPath(new URL('../src/lib/climate/', import.meta.url));
+// Folder paths built with join, not new URL('../src/…/', import.meta.url): knip reads that form as an
+// import of the folder's index.ts and would count every export of the core and the climate reader as used.
+const SRC = join(fileURLToPath(import.meta.url), '..', '..', 'src');
+const core = join(SRC, 'lib', 'consortium');
+const islands = join(SRC, 'islands', 'consortium');
+const climate = join(SRC, 'lib', 'climate');
 const files = (dir) => readdirSync(dir, { recursive: true }).filter((f) => /\.(ts|tsx|js|mjs)$/.test(f)).map((f) => ({ name: f, text: readFileSync(join(dir, f), 'utf8') }));
 
 // Comments and string contents removed, so a word in prose or a message is not a use.
