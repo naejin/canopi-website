@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "scripts/**/*.mjs!",
+    "src/islands/consortium/main.ts!",
+    "src/components/guides/diagrams/*/*.astro!"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx,js,mjs,astro,mdx}!",
+    "scripts/**/*.mjs!"
+  ],
+  "ignoreBinaries": ["systemd-run", "uv"],
+  "ignoreDependencies": ["jscpd", "@ast-grep/cli"]
+}

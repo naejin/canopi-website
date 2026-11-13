@@ -1,0 +1,32 @@
+{
+  "tool": "dependency-cruiser",
+  "version": "18.7.2",
+  "keys": [
+    "L1-lib-no-ui|src/lib/location/place-search.ts|node_modules/@preact/signals/dist/signals.d.ts",
+    "L2-state-no-views|src/islands/consortium/store.ts|src/islands/consortium/views/pool/pool.tsx",
+    "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/memory.ts",
+    "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/views/Start.tsx > src/islands/consortium/memory.ts",
+    "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/views/Start.tsx > src/islands/consortium/views/LocationSlot.tsx > src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/views/location/keep.ts > src/islands/consortium/memory.ts",
+    "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/memory.ts",
+    "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/memory.ts",
+    "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/views/Start.tsx > src/islands/consortium/views/LocationSlot.tsx > src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/memory.ts",
+    "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/views/Start.tsx > src/islands/consortium/views/PoolSlot.tsx > src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/memory.ts",
+    "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/views/Start.tsx > src/islands/consortium/views/PoolSlot.tsx > src/islands/consortium/views/lazy.tsx > src/islands/consortium/test-hook.ts > src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/memory.ts",
+    "L7-no-circular|src/islands/consortium/memory.ts > src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/views/location/keep.ts > src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/memory.ts",
+    "L7-no-circular|src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/store.ts",
+    "L7-no-circular|src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/views/Start.tsx > src/islands/consortium/store.ts",
+    "L7-no-circular|src/islands/consortium/store.ts > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/views/Start.tsx > src/islands/consortium/views/LocationSlot.tsx > src/islands/consortium/store.ts",
+    "L7-no-circular|src/islands/consortium/views/Add.tsx > src/islands/consortium/views/Details.tsx > src/islands/consortium/views/Add.tsx",
+    "L7-no-circular|src/islands/consortium/views/Correction.tsx > src/islands/consortium/views/Details.tsx > src/islands/consortium/views/Correction.tsx",
+    "L7-no-circular|src/islands/consortium/views/Details.tsx > src/islands/consortium/views/Paste.tsx > src/islands/consortium/views/Details.tsx",
+    "L7-no-circular|src/islands/consortium/views/Details.tsx > src/islands/consortium/views/Swap.tsx > src/islands/consortium/views/Details.tsx",
+    "L7-no-circular|src/islands/consortium/views/Matrix.tsx > src/islands/consortium/views/PhoneMatrix.tsx > src/islands/consortium/views/Matrix.tsx",
+    "L7-no-circular|src/islands/consortium/views/PoolSlot.tsx > src/islands/consortium/views/Start.tsx > src/islands/consortium/views/PoolSlot.tsx",
+    "L7-no-circular|src/islands/consortium/views/PoolSlot.tsx > src/islands/consortium/views/pool/pool.tsx > src/islands/consortium/views/Start.tsx > src/islands/consortium/views/PoolSlot.tsx",
+    "L7-no-circular|src/islands/consortium/views/location/keep.ts > src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/views/location/keep.ts",
+    "L7-no-circular|src/islands/consortium/views/location/load.ts > src/islands/consortium/views/location/location.tsx > src/islands/consortium/views/location/load.ts",
+    "L7-no-circular|src/lib/consortium/placed.ts > src/lib/consortium/placement.ts > src/lib/consortium/placed.ts",
+    "L8-test-hook-entry-only|src/islands/consortium/views/Details.tsx|src/islands/consortium/test-hook.ts",
+    "L8-test-hook-entry-only|src/islands/consortium/views/lazy.tsx|src/islands/consortium/test-hook.ts"
+  ]
+}

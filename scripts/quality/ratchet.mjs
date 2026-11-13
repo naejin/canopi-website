@@ -208,7 +208,7 @@ function main(argv) {
     for (const pair of new Set(added.map((k) => k.replace(/ \(\d+\)$/, '')))) v.lines.push(`  clones of ${pair}:`, ...found.detail[pair].map((s) => `    ${s}`));
   }
   for (const line of v.lines) (line.startsWith('FAIL') ? console.error : console.log)(line);
-  console.log(`${name}: ${v.fail ? 'FAIL' : 'ok'}, ${tool.pkg} ${version}, ${found.scanned} files, ${found.keys.length} known finding(s), ${v.time}${ci ? ', CI mode' : ''}`);
+  console.log(`${name}: ${v.fail ? 'FAIL' : 'ok'}, ${tool.pkg} ${version}, ${found.scanned} files, ${found.keys.length} finding(s) (baseline ${baseline.keys.length}), ${v.time}${ci ? ', CI mode' : ''}`);
   return v.fail ? 1 : 0;
 }
 
