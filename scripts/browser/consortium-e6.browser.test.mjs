@@ -89,7 +89,8 @@ test('E6-1 (K1 kit): Start\'s crop search finds what Add\'s search finds for the
 test('E6-2 (B4 build): before the data is ready, no lazy part (sheets, plant dialog, after-the-matrix views, features) is modulepreloaded or requested (L5)', async () => {
   const { sheets, later, details } = h.roles;
   assert.ok(sheets.length && later.length && details.length, 'roles sheets, later and details have chunks in this build');
-  const lazy = [...new Set(Object.entries(h.roles).filter(([k]) => k !== 'maplibreCss').flatMap(([, list]) => list))];
+  // testHook: the test build's hook, awaited before the first render (main.ts), so not a lazy part.
+  const lazy = [...new Set(Object.entries(h.roles).filter(([k]) => k !== 'maplibreCss' && k !== 'testHook').flatMap(([, list]) => list))];
   const log = [];
   const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', database: 'stall', hook: true, setup: recordRequests(log) });
   await page.waitForFunction(() => performance.getEntriesByType('resource').some((e) => /\/_astro\/load\.[\w-]+\.js$/.test(e.name)), { timeout: 10_000 });
