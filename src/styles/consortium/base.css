@@ -41,6 +41,10 @@
 .ct { display: block; padding-bottom: 24px; }
 .ct h1, .ct h2, .ct h3, .ct h4 { margin: 0; font-family: var(--font-display); font-weight: 400; line-height: 1.12; text-wrap: balance; }
 :where(.ct) :where(button, input, select, textarea) { font: inherit; color: inherit; }
+/* The place search's width in em, not from size=20 (the font's average character width): a web font
+   arriving after the first paint would resize it and move the rows after it (late-font N2 check). 11.2em
+   is its Source Sans 3 width at 16 px (179 px, border-box). */
+.ct .ct-location-search { width: 11.2em; max-width: 100%; }
 .ct .text-link { display: inline-block; padding-block: 6px; font-weight: 600; color: var(--accent-ink); }
 
 /* The static shell: head, lede, release line. Its height is kept when the island mounts (P6). */

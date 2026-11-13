@@ -377,9 +377,26 @@ test('Layout stability (N2): nothing on Start moves after its first paint when t
 // out, and asserts the first paint came before any font.
 // The budget is LATE_CLS, not N2's 0.01: a matched fallback keeps each string within about 1% of its
 // width, not to the pixel, so a paragraph whose last word sits at the edge can still gain or lose a
-// line (at en 320 px Start's lede: 0.0102); a header that wraps, as on CI (0.085), is far over it. The
-// box check of N2 is not repeated here: the place search input takes its width from the font's
-// average character width (no CSS width), which no fallback face can match (reported, E6 font).
+// line (at en 320 px Start's lede: 0.0102); a header that wraps, as on CI (0.085), is far over it.
+// N2's box check, as sizes (sized): no control on Start may resize when the fonts swap. The place search
+// keeps its box to the pixel: it took its width from the font's average character width (size=20, no CSS
+// width), which no fallback face matches (206 px before Source Sans 3, 179 px after), so the rows after
+// it moved; its width is now set in em (.ct-location-search, base.css; E6 S2). A button's width follows
+// its own label, which the matched fallback keeps within about 1.5% (fr: 158 -> 160 px), so buttons get
+// that much; every height holds to the pixel. Positions are left to LATE_CLS: one line of reflow above
+// a control (en 320 px: the lede) moves it down without resizing anything.
+const LABEL_SLACK = 0.02;
+const sized = (page) => page.evaluate((sels, slack) => {
+  const out = [];
+  for (const sel of sels) {
+    const el = document.querySelector(sel), a = window.__stable.first[sel];
+    if (!el || !a) continue;
+    const r = el.getBoundingClientRect();
+    const wSlack = el.matches('button') ? Math.max(1, a.w * slack) : 1;
+    if (Math.abs(r.width - a.w) > wSlack || Math.abs(r.height - a.h) > 1) out.push(`${sel}: size ${Math.round(a.w)}×${Math.round(a.h)} → ${Math.round(r.width)}×${Math.round(r.height)}`);
+  }
+  return out;
+}, STABLE, LABEL_SLACK);
 const FONT_HOLD_MS = 800;
 const LATE_CLS = 0.015;
 async function holdFonts() {
@@ -402,7 +419,7 @@ async function holdFonts() {
   };
 }
 
-test('Layout stability (N2, late fonts): when the web fonts arrive after the first paint, Start and the header shift no more than one line of reflow (CLS 0.015), at 320–1280 px in en, fr and ja', { timeout: 240_000 }, async () => {
+test('Layout stability (N2, late fonts): when the web fonts arrive after the first paint, no control on Start resizes and Start and the header shift no more than one line of reflow (CLS 0.015), at 320–1280 px in en, fr and ja', { timeout: 240_000 }, async () => {
   const hold = await holdFonts();
   const bad = [];
   try {
@@ -420,6 +437,7 @@ test('Layout stability (N2, late fonts): when the web fonts arrive after the fir
         assert.ok(late.used.some((f) => f.startsWith('"Source Sans 3"') || f.startsWith('Source Sans 3')), `${at}: Source Sans 3 loaded (${late.used})`);
         const r = await moved(page);
         assert.deepEqual(r.seen, STABLE, `${at}: every control measured`);
+        bad.push(...(await sized(page)).map((x) => `${at}: ${x}`));
         if (r.cls > LATE_CLS) bad.push(`${at}: CLS ${r.cls.toFixed(3)} (${r.shifts.map((e) => `${e.value.toFixed(3)} at ${e.at} ms by ${e.from}`).join('; ')})`);
         await done(page);
       }

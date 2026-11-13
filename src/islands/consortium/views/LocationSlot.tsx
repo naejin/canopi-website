@@ -46,7 +46,7 @@ export function LocationSlot({ compact = false }: { compact?: boolean }) {
       <p class="ct-muted ct-step-lede">{T('location.lede')} <a href={`${lang === 'en' ? '' : `/${lang}`}/privacy/`}>{T('location.privacyLink')}</a></p>
       {isSecureContext && navigator.geolocation && row('geo', T('location.geo'), T('location.geoPrivacy'))}
       <p class="ct-location-row">
-        <input type="search" data-location-search enterKeyHint="search" aria-label={T('location.search')} placeholder={T('location.searchHint')}
+        <input type="search" class="ct-location-search" data-location-search enterKeyHint="search" aria-label={T('location.search')} placeholder={T('location.searchHint')}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); const q = e.currentTarget.value; void run((x) => x.searchPlace(q)); } }} />
         {' '}<span class="ct-muted ct-small-text" data-location-privacy>{T('location.searchPrivacy')}</span>
       </p>
