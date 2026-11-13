@@ -130,8 +130,6 @@ export const staticClosure = (graph, roots, stop = new Set()) => [...walk(graph,
 //   assets; maplibre's ?worker&url) that a location or MapLibre chunk names;
 // - maplibreCss: the CSS the location and MapLibre chunks import (maplibre-gl.css; Vite merges a
 //   chunk's CSS into one file), counted in MapLibre's 330 KB;
-// - css: the CSS files Vite attaches to any role chunk ({ '/_astro/x.js': ['/_astro/y.css'] }), so
-//   check-built-site can refuse a stylesheet that arrives with a lazy part (A14: it would flash);
 // - testHook: the browser-test hook's chunk (dist-test only; none in a production build, L11).
 // A role's chunks are those whose facade is a module its pattern names, and those holding such a module
 // that is reached only through import() (moduleInfo: Rollup's this.getModuleInfo; no module imports it
@@ -180,21 +178,18 @@ export function chunkRoles(bundle, moduleInfo = null) {
   const maplibreJs = chunks.filter((c) => (c.moduleIds ?? []).some((m) => MAPLIBRE_MODULE.test(norm(m))));
   const named = [...byRole.location, ...maplibreJs];
   const workers = files.filter((f) => f.type === 'asset' && f.fileName.endsWith('.js') && named.some((c) => c.code.includes(f.fileName.split('/').pop())));
-  const cssOf = (c) => [...(c.viteMetadata?.importedCss ?? [])];
-  const css = new Set(named.flatMap(cssOf));
-  const roleCss = Object.fromEntries([...new Set(Object.values(byRole).flat())].filter((c) => cssOf(c).length).map((c) => [path(c), cssOf(c).map(path).sort()]).sort(([a], [b]) => a.localeCompare(b)));
+  const css = new Set(named.flatMap((c) => [...(c.viteMetadata?.importedCss ?? [])]));
   return {
     features: Object.fromEntries(Object.entries(byRole).map(([k, list]) => [k, list.map(path).sort()])),
     maplibre: [...maplibreJs, ...workers].map(path).sort(),
     maplibreCss: [...css].map(path).sort(),
-    css: roleCss,
     testHook: chunks.filter((c) => TEST_HOOK.test(norm(c.facadeModuleId))).map(path).sort(),
   };
 }
 // The roles of a build (root: the served directory, dist/client or dist-test/client): none when the
 // file is missing (a build without the plugin), so the checks fail on a missing chunk.
 export function readChunkRoles(root) {
-  const none = { features: emptyRoles(), maplibre: [], maplibreCss: [], css: {}, testHook: [] };
+  const none = { features: emptyRoles(), maplibre: [], maplibreCss: [], testHook: [] };
   for (const file of [join(root, '..', CHUNK_ROLES_FILE), join(root, CHUNK_ROLES_FILE)]) {
     if (existsSync(file)) {
       const r = JSON.parse(readFileSync(file, 'utf8'));

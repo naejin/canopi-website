@@ -11,7 +11,7 @@ import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
 import { createHash } from 'node:crypto';
 import { safeHref } from '../src/lib/safe-href.js';
 import { gzipSync } from 'node:zlib';
-import { firstRunChunks, islandChunks, isSqliteGlue, modulepreloadChunks, moduleGraph, onDemandChunks, readChunkRoles, staticClosure, CHUNK_ROLES_FILE } from './built-modules.mjs';
+import { firstRunChunks, islandChunks, isSqliteGlue, moduleGraph, onDemandChunks, readChunkRoles, staticClosure, CHUNK_ROLES_FILE } from './built-modules.mjs';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -479,15 +479,15 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 //   ≤ 20 KB;
 // - every other island chunk is the sqlite glue's (outside the budget, §8) or belongs to a part: a
 //   lazy chunk with no role fails here (give its entry a role);
-// - no role chunk sits in the first run, and none (location aside, with MapLibre's CSS) has a
-//   stylesheet attached (A14: a late stylesheet would flash);
+// - no role chunk sits in the first run, and no island chunk's preload list (__vite__mapDeps) loads a
+//   stylesheet with a lazy part (A14: a late stylesheet would flash), MapLibre's CSS aside;
 // - a plant dialog or sheet chunk statically imports only first-run, sheet or dialog chunks (K3 round-2
 //   review: a failed shared chunk would break every sheet until Reload, since Chromium never refetches
 //   a failed module; views/lazy.tsx retryable mends the part's own chunk only);
-// - the modulepreload links are exactly built-modules.mjs modulepreloadChunks (A5, L5): the first-run
-//   closure, the data loader with the sqlite glue and the page's own static imports, so nothing lazy
-//   competes with the database on a slow phone; and every page preloads the database (as=fetch,
-//   crossorigin, so the island's fetch reuses it).
+// - the modulepreload links (A5, L5) carry the first run and the data loader with the sqlite glue, and
+//   no lazy part, feature or MapLibre chunk, so nothing lazy competes with the database on a slow
+//   phone (checked from the graph and the roles, not from modulepreloadChunks, which writes them);
+//   and every page preloads the database (as=fetch, crossorigin, so the island's fetch reuses it).
 // The chunks are found by their entry module (chunk roles, written by the build: astro.config.mjs
 // canopi:consortium-chunk-roles), never by file name.
 // Caps (E6 stream B4, 2026-11-13): each role's measured cost at the B4 build (gzip -9) plus 0.5 KB
@@ -522,8 +522,6 @@ assert.deepEqual(roles.testHook, [], `the browser-test hook's chunk is in a prod
 assert.deepEqual(Object.keys(ROLE_CAPS).sort(), Object.keys(roles.features).sort(), 'every chunk role has a cap (ROLE_CAPS) and every cap a role');
 for (const kind of ['markProviders', 'future', 'details', 'later', 'range']) assert.equal(roles.features[kind].length, 1, `one ${kind} chunk, found ${roles.features[kind].join(', ') || 'none'}`);
 assert.equal(roles.features.sheets.length, 4, `four sheet chunks (Add, Swap, Paste, Correction), found ${roles.features.sheets.join(', ') || 'none'}`);
-// A14: no stylesheet arrives with a lazy part; the location part's is MapLibre's, counted in its 330 KB.
-for (const [chunk, css] of Object.entries(roles.css)) assert.ok(roles.features.location.includes(chunk) || roles.maplibre.includes(chunk), `${chunk} (a lazy consortium part) has the stylesheet ${css.join(', ')} attached: it would arrive late and flash; move its CSS into the page's stylesheet`);
 const report = { firstRun: 0, firstRunList: [], costs: {}, location: 0, maplibre: 0, preloads: [] };
 for (const lang of locales) {
   const path = `${consortiumPath(lang)}index.html`;
@@ -540,8 +538,8 @@ for (const lang of locales) {
   const all = islandChunks(graph, scripts);
   assert.ok(all.chunks.length > 0, `${path}: the island's chunks are found (else the budget counts nothing)`);
   const lazy = onDemandChunks(graph, scripts, roles, gzOne);
-  const roleChunks = Object.values(roles.features).flat().filter((p) => graph.has(p));
-  for (const p of Object.values(roles.features).flat()) assert.ok(graph.has(p), `${path}: the role chunk ${p} is not in the page's graph`);
+  const roleChunks = Object.values(roles.features).flat();
+  for (const p of roleChunks) assert.ok(graph.has(p), `${path}: the role chunk ${p} is not in the page's graph`);
   const astro = readdirSync(join(root, '_astro')).map((f) => `/_astro/${f}`);
   if (locationSource) {
     assert.equal(roles.features.location.length, 1, `${path}: one location chunk (entry views/location/location.tsx), found ${roles.features.location.length}`);
@@ -579,8 +577,10 @@ for (const lang of locales) {
   for (const p of all.chunks) assert.ok(glue.includes(p) || !graph.get(p).code.includes('climate_zone = ?1'), `${path}: ${p} holds the PlantSource's SQL, which belongs in the loader's chunk`);
   // A14: no stylesheet loads with a lazy part. Astro puts the CSS a lazy island module imports into the
   // page itself (probe, B4 build 2026-11-13: a CSS import in Paste.tsx landed in the page's <style>,
-  // none attached to the chunk); were Vite to attach one, the chunk's preload list (__vite__mapDeps)
-  // would name it and the stylesheet would arrive with the part, late. MapLibre's CSS aside.
+  // none attached to the chunk); were that to change (an Astro or Vite upgrade, cssCodeSplit), the
+  // import() would load the stylesheet through its preload list (__vite__mapDeps), late. This reads
+  // that list in the built output, what the browser runs, rather than Vite's chunk metadata (which
+  // the roles plugin would only copy); MapLibre's CSS aside.
   for (const p of all.chunks) {
     const lists = [...graph.get(p).code.matchAll(/__vite__mapDeps=\([^[]*\[([^\]]*)\]/g)].map((m) => m[1]);
     const css = lists.flatMap((l) => [...l.matchAll(/["']([^"']+\.css)["']/g)].map((m) => `/${m[1].replace(/^\//, '')}`)).filter((c) => !roles.maplibreCss.includes(c));
@@ -594,13 +594,12 @@ for (const lang of locales) {
     const stray = staticClosure(graph, [p]).filter((q) => !firstRunAll.has(q) && !sheetLike.has(q));
     assert.deepEqual(stray, [], `${path}: the sheet or plant dialog chunk ${p} statically imports ${stray.join(', ')}, outside the first run: a failed request for it would break that sheet until Reload`);
   }
-  // A5 (L5): the modulepreload links are the first-run closure, the loader with the glue and the
-  // page's own static imports; no lazy part and no feature or MapLibre chunk.
+  // A5 (L5): the first run and the loader with the glue are preloaded; no lazy part, feature or
+  // MapLibre chunk is.
   const preloads = [...html.matchAll(/<link\b[^>]*\brel="(preload|modulepreload)"[^>]*>/g)].map(([tag, rel]) => ({ rel, tag, href: tag.match(/\bhref="([^"]+)"/)?.[1] }));
   const db = preloads.find((l) => l.href === consortiumIndex.files[0].url);
   assert.ok(db && db.rel === 'preload' && /\bas="fetch"/.test(db.tag) && /\bcrossorigin\b/.test(db.tag), `${path}: <link rel="preload" as="fetch" crossorigin> for the database`);
   const modules = preloads.filter((l) => l.rel === 'modulepreload').map((l) => l.href).sort();
-  assert.deepEqual(modules, modulepreloadChunks(graph, html), `${path}: modulepreload exactly the first-run closure, the data loader with the sqlite glue and the page's static imports`);
   for (const p of [...lazy.parts, ...lazy.maplibre]) assert.ok(!modules.includes(p), `${path}: ${p} loads on demand, not modulepreloaded`);
   for (const p of [...firstRun, ...glue]) assert.ok(modules.includes(p), `${path}: modulepreload ${p}`);
   report.preloads = modules;

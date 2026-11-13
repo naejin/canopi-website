@@ -56,7 +56,7 @@ const sqliteMainThreadOnly = {
 };
 
 // The roles of the client build's chunks (scripts/built-modules.mjs chunkRoles: every on-demand part
-// of the island by entry module, MapLibre's chunks, worker and CSS, the CSS attached to a part), read
+// of the island by entry module, MapLibre's chunks, worker and CSS, the test hook's chunk), read
 // from Rollup's bundle so no budget finds a chunk by its file name. Written beside the served directory
 // (dist/consortium-chunks.json for dist/client), never served; read by scripts/check-built-site.mjs
 // and the browser harness (faults by role).

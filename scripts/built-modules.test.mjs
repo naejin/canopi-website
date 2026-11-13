@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 const graphOf = (edges) => new Map(Object.entries(edges).map(([p, imports]) => [p, { code: '', imports }]));
 const noFeatures = { location: [], markProviders: [], future: [], pool: [], likely: [], native: [], range: [], details: [], sheets: [], later: [], suggest: [] };
-const none = { features: noFeatures, maplibre: [], maplibreCss: [], css: {}, testHook: [] };
+const none = { features: noFeatures, maplibre: [], maplibreCss: [], testHook: [] };
 const sets = ({ parts, location, maplibre }) => ({ parts, location, maplibre });
 const roles = (features, maplibre = []) => ({ ...none, features: { ...noFeatures, ...features }, maplibre });
 
@@ -34,7 +34,6 @@ test('chunkRoles: the location entry and the mark providers by their entry modul
     features: { ...noFeatures, location: ['/_astro/where.b.js'], markProviders: ['/_astro/mark-providers.f.js'], future: ['/_astro/f.h.js'] },
     maplibre: ['/_astro/index.e.js', '/_astro/maplibre-gl-worker.d.js'],
     maplibreCss: ['/_astro/where.c.css'],
-    css: { '/_astro/where.b.js': ['/_astro/where.c.css'] },
     testHook: [],
   });
   assert.deepEqual(Object.keys(ROLE_ENTRIES), Object.keys(noFeatures), 'the role entries, listed once');
@@ -55,7 +54,6 @@ test('chunkRoles: the lazy island parts by their entry module, in the one role l
   ].map(([f, id, css]) => [f, chunk(f, id, css)]));
   const r = chunkRoles(bundle);
   assert.deepEqual(r.features, { ...noFeatures, details: ['/_astro/Details.d.js'], sheets: ['/_astro/Add.a.js', '/_astro/Swap.b.js'], later: ['/_astro/later.c.js'], suggest: ['/_astro/suggest.e.js'] });
-  assert.deepEqual(r.css, { '/_astro/later.c.js': ['/_astro/later.x.css'] }, 'a stylesheet attached to a lazy part is reported (check-built-site refuses it)');
   assert.equal(r.lazy, undefined, 'one role list: no separate lazy table');
   assert.deepEqual(chunkRoles({ ...bundle, '_astro/test-hook.t.js': chunk('_astro/test-hook.t.js', `${root}/src/islands/consortium/test-hook.ts`) }).testHook, ['/_astro/test-hook.t.js'], 'the browser-test hook by its module');
 });
@@ -236,8 +234,11 @@ test('staticClosure: static imports only, import() not followed', () => {
 // (npm run build and npm run build:browser-test); skipped otherwise. Chunks compared by their name
 // without the hash (the hook changes main's hash and so every importer's), roles by their count.
 const BUILT = { production: 'dist/client', test: 'dist-test/client' };
+// CI's job 4 sets CANOPI_REQUIRE_BUILDS=1 with both builds present, so a missing build fails there.
 const builtHere = Object.values(BUILT).every((d) => existsSync(join(d, 'consortium', 'index.html')));
-test('L11: the dist-test chunk graph is the production graph plus the test hook\'s chunk, and the hook is absent from dist', { skip: builtHere ? false : 'needs dist/ and dist-test/ (npm run build, npm run build:browser-test)' }, () => {
+const requireBuilds = process.env.CANOPI_REQUIRE_BUILDS === '1';
+test('L11: the dist-test chunk graph is the production graph plus the test hook\'s chunk, and the hook is absent from dist', { skip: builtHere || requireBuilds ? false : 'needs dist/ and dist-test/ (npm run build, npm run build:browser-test)' }, () => {
+  assert.ok(builtHere, `CANOPI_REQUIRE_BUILDS=1 but ${Object.values(BUILT).filter((d) => !existsSync(join(d, 'consortium', 'index.html'))).join(' and ')} is missing`);
   const stem = (p) => p.replace('/_astro/', '').replace(/\.[\w-]{8}\.js$/, '');
   const graphs = Object.fromEntries(Object.entries(BUILT).map(([k, d]) => [k, moduleGraph(d, readFileSync(join(d, 'consortium', 'index.html'), 'utf8'))]));
   const stems = (g) => [...g.keys()].map(stem).sort();
@@ -256,7 +257,10 @@ test('L11: the dist-test chunk graph is the production graph plus the test hook\
 // The time-to-first-view ratchet (E6 A8, ADR-2, R10; scripts/browser/consortium-timing.mjs --ratchet
 // scripts/browser/timing.json): the build stream's other budget, tested here with the chunk caps.
 test('timing ratchet: within, a warning above, a failure only above 1.5×; null is not compared; the committed file is valid', async () => {
-  const { compare, checkRatchet, parseArgs, FAIL_FACTOR } = await import('./browser/consortium-timing.mjs');
+  const { compare, checkRatchet, parseArgs, nullRatchetWarning, FAIL_FACTOR } = await import('./browser/consortium-timing.mjs');
+  const allNull = { desktop: { cold: null, warm: null }, phone: { cold: null, warm: null } };
+  assert.match(nullRatchetWarning(allNull, 'scripts/browser/timing.json'), /^::warning file=scripts\/browser\/timing\.json::.*every value in scripts\/browser\/timing\.json is null\. The coordinator fills it from a nightly runner run/);
+  assert.equal(nullRatchetWarning({ ...allNull, phone: { cold: 6000, warm: null } }, 'x'), null, 'one value set: no warning');
   assert.equal(FAIL_FACTOR, 1.5);
   assert.equal(compare(4000, 4000).level, 'ok');
   assert.equal(compare(4001, 4000).level, 'warn');

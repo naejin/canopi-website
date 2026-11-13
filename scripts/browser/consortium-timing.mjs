@@ -16,7 +16,7 @@
 //   up, 400 ms RTT). The plan's slow-phone goal is ≤ 6 s cold by F1a's exit.
 // --ratchet <file> (A8, R10): compares each median with the file's value for its profile and visit
 // (milliseconds): above it, a warning; above 1.5× it, exit 1. A null value (not measured on a CI
-// runner yet) is printed and not compared. The values come from the nightly runner's output only
+// runner yet) is printed and not compared; when all are null, a ::warning:: annotation says so. The values come from the nightly runner's output only
 // (the `timing-json:` line), never from a local run (a different CPU under the same 4× slowdown).
 import { readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
@@ -66,6 +66,14 @@ export function compare(value, limit) {
   return { level: 'ok', text: `within the ratchet of ${limit} ms` };
 }
 
+// Every value null: nothing is compared, so say so where the nightly run shows it (a GitHub Actions
+// warning annotation; exit status unchanged). None when at least one value is set.
+export function nullRatchetWarning(r, file) {
+  const all = Object.keys(PROFILES).flatMap((name) => ['cold', 'warm'].map((visit) => r[name][visit]));
+  if (all.some((v) => v !== null)) return null;
+  return `::warning file=${file}::Time to first view is not compared: every value in ${file} is null. The coordinator fills it from a nightly runner run's timing-json line (never from a local run).`;
+}
+
 const median = (xs) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
 
 async function markTime(page) {
@@ -90,6 +98,8 @@ async function main() {
   const { encodeLink } = await import('../../src/lib/consortium/state.ts');
   const opts = parseArgs(process.argv.slice(2));
   const ratchet = opts.ratchet ? checkRatchet(JSON.parse(readFileSync(opts.ratchet, 'utf8')), opts.ratchet) : null;
+  const unset = ratchet ? nullRatchetWarning(ratchet, opts.ratchet) : null;
+  if (unset) console.log(unset);
   const dir = opts.dir ? relative(ROOT, resolve(opts.dir)) : BUILDS.production;
   const RUNS = Number(process.env.CANOPI_TIMING_RUNS ?? 5);
   const chosen = (process.env.CANOPI_TIMING_PROFILES ?? 'desktop,phone').split(',').map((x) => x.trim()).filter(Boolean);
