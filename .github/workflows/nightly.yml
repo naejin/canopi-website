@@ -1,0 +1,97 @@
+name: Nightly
+
+# Consortium v2 step E3 (design check A8): what is too slow or too noisy for every push.
+#   timing     time to first view, desktop and slow-phone profiles, on the production build. The
+#              ratchet (scripts/browser/timing.json, ADR-2) takes its values from these runner runs,
+#              never from local ones; the output is kept as an artifact to read them from.
+#   real-data  the browser tests titled " @real-data" (real plants and counts of the installed export),
+#              every CI shard, on the browser-test build.
+# Never deploys; read-only token.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  WRANGLER_SEND_METRICS: 'false'
+  CANOPI_CHROME: /usr/bin/google-chrome
+
+jobs:
+  timing:
+    name: time to first view
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - id: climate
+        name: Climate cache location and pin
+        run: |
+          echo "CANOPI_CLIMATE_CACHE=$RUNNER_TEMP/canopi-climate" >> "$GITHUB_ENV"
+          echo "sha256=$(jq -r .sha256 src/data/climate-release.json)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/canopi-climate
+          key: canopi-climate-${{ steps.climate.outputs.sha256 }}
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      # Both profiles (desktop, phone); against the ratchet once scripts/browser/timing.json exists:
+      # warn above it, fail only above 1.5x.
+      - name: Time to first view
+        run: |
+          mkdir -p test-results
+          if [ -f scripts/browser/timing.json ]; then set -- --ratchet scripts/browser/timing.json; else set --; fi
+          npm run timing:consortium -- "$@" 2>&1 | tee test-results/timing.txt
+        # bash -eo pipefail: the timing script's exit status, not tee's.
+        shell: bash
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: timing
+          path: test-results/timing.txt
+          if-no-files-found: ignore
+          retention-days: 30
+
+  real-data:
+    name: '@real-data browser tests'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - id: climate
+        name: Climate cache location and pin
+        run: |
+          echo "CANOPI_CLIMATE_CACHE=$RUNNER_TEMP/canopi-climate" >> "$GITHUB_ENV"
+          echo "sha256=$(jq -r .sha256 src/data/climate-release.json)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/canopi-climate
+          key: canopi-climate-${{ steps.climate.outputs.sha256 }}
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:browser-test
+      - run: node scripts/browser/run.mjs --list ci --no-scope --slots 2 -- --test-name-pattern=@real-data
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: real-data-results
+          path: test-results/browser/
+          if-no-files-found: ignore
+          retention-days: 7
