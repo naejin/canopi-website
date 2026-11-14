@@ -34,10 +34,18 @@ test('PP-B: the importers of what a chunk deletes are owned in that chunk; b1b w
   const v = 'src/islands/consortium/views/';
   // Chunk 0 deletes views/kit/span.ts; kit/sheet.tsx imports spanOf from it.
   for (const p of [`${v}kit/span.ts`, `${v}kit/sheet.tsx`]) assert.ok(owns(0, 'main', p), `chunk 0 main owns ${p}`);
-  // b3 deletes the matrix, Jobs and PlantList: App.tsx imports Matrix, later.ts re-exports Jobs and
-  // PlantList, and Palette.tsx mounts their replacements.
-  for (const p of ['src/islands/consortium/App.tsx', `${v}later.ts`, `${v}later-chunk.ts`, `${v}palette/Palette.tsx`, `${v}Matrix.tsx`, `${v}Jobs.tsx`, `${v}PlantList.tsx`])
-    assert.ok(owns(2, 'b3', p), `chunk 2 b3 owns ${p}`);
+  // Delete first (owner, 2026-11-14): chunk 0 (commit 0a') deletes the old screens, so it owns each
+  // deleted file and every importer it trims: App.tsx imports Matrix, later.ts re-exports SideView, Jobs
+  // and PlantList, SideView imports StageStepper, PrintSheet reads the matrix, Details and Start hold
+  // Kept and Main crops, suggest.ts takes their options, ConsortiumPage.astro imports matrix.css.
+  const deleted = ['Matrix.tsx', 'PhoneMatrix.tsx', 'matrix-parts.tsx', 'tracks.ts', 'Jobs.tsx', 'PlantList.tsx', 'StageStepper.tsx'].map((f) => v + f);
+  const trimmed = ['src/islands/consortium/App.tsx', 'src/islands/consortium/store.ts', `${v}later.ts`, `${v}Actions.tsx`, `${v}SideView.tsx`, `${v}StageBar.tsx`, `${v}PrintSheet.tsx`, `${v}details/Details.tsx`, `${v}Start.tsx`,
+    'src/lib/consortium/matrix.ts', 'src/lib/consortium/suggest.ts', 'src/lib/consortium/source.ts', 'src/islands/consortium/data/sqlite-source.ts', 'src/components/consortium/ConsortiumPage.astro',
+    'src/styles/consortium/matrix.css', 'src/styles/consortium/shell.css', 'scripts/browser/consortium-s2.browser.test.mjs', 'scripts/built-modules.mjs', 'scripts/check-built-site.mjs'];
+  for (const p of [...deleted, ...trimmed]) assert.ok(owns(0, 'main', p), `chunk 0 main owns ${p}`);
+  // No stream deletes an old screen any more: b3 builds Your plants only, b2 takes print, b1b Suggest's gain.
+  for (const p of deleted) for (const [c, s] of [[1, 'b1a'], [1, 'b2'], [2, 'b1b'], [2, 'b3']]) assert.ok(!owns(c, s, p), `${s} does not own ${p}`);
+  assert.ok(owns(2, 'b3', `${v}palette/Palette.tsx`) && owns(1, 'b2', `${v}PrintSheet.tsx`) && owns(2, 'b1b', 'src/lib/consortium/suggest.ts'));
   // b1b ports the pool panel onto b2's verdict engine, so it runs after b2 (recheck 5).
   assert.ok(ppb.chunks[2].streams.b1b.needs.includes('b2'));
   for (const p of [`${v}pool/pool.tsx`, `${v}PoolSlot.tsx`]) assert.ok(owns(2, 'b1b', p) && !owns(1, 'b1a', p), p);
@@ -107,13 +115,13 @@ test('a stream diff outside its rows is named', () => {
 // once; a parked or deleted one is no longer in the tree, a moved one is in its stream's file under
 // its new owner, and every entry points at its source line (PP-C commit 0 asserts the parked ones are
 // restored or deleted).
-test('parked markers: 24 parked, 7 moved, 8 deleted; none parked or deleted is left in the tree', async () => {
+test('parked markers: 21 parked, 7 moved, 11 deleted; none parked or deleted is left in the tree', async () => {
   const { readFileSync } = await import('node:fs');
   const { execFileSync } = await import('node:child_process');
   const { markers } = await import('./expect-fail.mjs');
   const root = fileURLToPath(new URL('../', import.meta.url));
   const list = JSON.parse(readFileSync(new URL('./plan/parked-markers.json', import.meta.url), 'utf8'));
-  assert.deepEqual([list.parked.length, list.moved.length, list.deleted.length], [24, 7, 8]);
+  assert.deepEqual([list.parked.length, list.moved.length, list.deleted.length], [21, 7, 11]);
   const all = [...list.parked, ...list.moved, ...list.deleted];
   assert.equal(new Set(all.map((m) => `${m.file}:${m.line}`)).size, 39, 'each F1a marker once');
   const live = markers();

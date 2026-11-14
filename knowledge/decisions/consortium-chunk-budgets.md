@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:53:50Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:21:01Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:25Z }
 sources:
@@ -11,12 +11,12 @@ sources:
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:b11c523506084a53
-    last_modified: 2026-11-14T10:30:46Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:26d25b93b11f82d7
-    last_modified: 2026-11-14T10:30:46Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -26,7 +26,7 @@ sources:
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
     digest: sha256:aa7bf345c7e16873
-    last_modified: 2026-11-14T10:24:22Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -111,4 +111,4 @@ Coordinator row "F1a design-check choices" in [the decisions](/decisions/consort
   - matrix 5.5 KB, verdict 0.2 KB, details 6.4 of 6.7 KB
 - **Over its cap:** the later part is 8.7 KB against 8.0 KB. The cause is `views/tracks.ts`, now a chunk shared by the matrix and the later views (about 0.8 KB).
   - The cap was not raised. It needs a coordinator row, or tracks' list helpers moved out of the later views (PlantList and Jobs, which chunk 0 does not own).
-  - b3 deletes `tracks.ts` with the matrix.
+  - Commit 0a' deletes `tracks.ts` with the matrix and the `matrix` role (owner, 2026-11-14, "Delete first"; [user decisions](/decisions/consortium-user-decisions.md)), so the cap stays 8 KB and the first run and every role are re-measured after 0a'; `Actions` returns to the first run until b2 hosts it.

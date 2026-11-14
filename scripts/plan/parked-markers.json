@@ -1,5 +1,5 @@
 {
-  "_comment": "Expected-fail markers parked by PP-B commit 0 (knowledge/project/plant-palette-slices.md section 1; zero markers before each push: park by splitting out). Each parked marker was removed from the tree at its source commit's file and line; its owner restores it with `git show 648baf2:<file>` in its stream's first commit, retitled with the owner and with its reason rewritten against the new seam's empty state (`rewrite`). PP-C commit 0 asserts every entry of `parked` is restored or deleted. `moved` and `deleted` record the other F1a markers (moved unchanged after a capped run showed each still fails for its stated reason; deleted with the plan's reason).",
+  "_comment": "Expected-fail markers parked by PP-B commit 0 (knowledge/project/plant-palette-slices.md section 1; zero markers before each push: park by splitting out). Each parked marker was removed from the tree at its source commit's file and line; its owner restores it with `git show 648baf2:<file>` in its stream's first commit, retitled with the owner and with its reason rewritten against the new seam's empty state (`rewrite`). PP-C commit 0 asserts every entry of `parked` is restored or deleted. `moved` and `deleted` record the other F1a markers (moved unchanged after a capped run showed each still fails for its stated reason; deleted with the plan's reason). Amended 2026-11-14 by the owner's 'Delete first': a marker whose subject is a deleted screen is deleted, never parked (P5, P6 and P10 unit moved from parked to deleted).",
   "source_commit": "648baf2",
   "parked": [
     {
@@ -10,15 +10,6 @@
       "push": "PP-B",
       "owner": "b2",
       "rewrite": "first view = the palette page"
-    },
-    {
-      "id": "F1a-P10",
-      "file": "scripts/consortium-palette.test.mjs",
-      "line": 32,
-      "title": "F1a-P10 (pal1 cards by role, A4): Main crops and food first, then each plant under its first job with the others as \"also\", each plant once",
-      "push": "PP-B",
-      "owner": "b3",
-      "rewrite": "\"Your plants\" lists each plant once, warnings first, no Main crop group"
     },
     {
       "id": "F1a-P11",
@@ -37,24 +28,6 @@
       "push": "PP-B",
       "owner": "b2",
       "rewrite": "after \"Start from a small suggested palette\", Next step names one hole and opens Add preset to it through store.openSheet('add', null, {job, cell}); no hole a suggestion filled is the Next step"
-    },
-    {
-      "id": "F1a-P5",
-      "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
-      "line": 117,
-      "title": "F1a-P5 (pal1 200-plant palette, A4 A11): groups fold to \"+ N more\", the palette search finds a plant, and Remove takes it out",
-      "push": "PP-B",
-      "owner": "b3",
-      "rewrite": "\"Your plants\" folds to \"+ N more\", Remove takes a plant out; \"pictures stay readable\" moves to b2's 200-plant fold vector"
-    },
-    {
-      "id": "F1a-P6",
-      "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
-      "line": 137,
-      "title": "F1a-P6 (pal1 Structure chunk fails, §5 Unreadable/Retried): Palette stays usable, Structure says it could not load with Reload, and the next press fetches it again as ?retry=n",
-      "push": "PP-B",
-      "owner": "b2",
-      "rewrite": "the palette chunk refused: Place stays usable, \"could not load\" with Reload, next press fetches ?retry=n"
     },
     {
       "id": "F1a-P7",
@@ -333,6 +306,27 @@
       "line": 100,
       "title": "F1a-B10 (bal2 Tropical water, A20): at Manaus the water-needs mix says there is not enough data, never a pass",
       "why": "no Balance panel"
+    },
+    {
+      "id": "F1a-P10",
+      "file": "scripts/consortium-palette.test.mjs",
+      "line": 32,
+      "title": "F1a-P10 (pal1 cards by role, A4): Main crops and food first, then each plant under its first job with the others as \"also\", each plant once",
+      "why": "owner 'Delete first' (2026-11-14): its subject, the cards by role with Main crops, is deleted; new form: b3's unit case 'Your plants lists each plant once, warnings first'"
+    },
+    {
+      "id": "F1a-P5",
+      "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
+      "line": 117,
+      "title": "F1a-P5 (pal1 200-plant palette, A4 A11): groups fold to \"+ N more\", the palette search finds a plant, and Remove takes it out",
+      "why": "owner 'Delete first' (2026-11-14): its subject, the 'By role' groups and their palette search, is deleted; new form: b3's PP-B23 (Your plants folds to '+ N more', Remove)"
+    },
+    {
+      "id": "F1a-P6",
+      "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
+      "line": 137,
+      "title": "F1a-P6 (pal1 Structure chunk fails, §5 Unreadable/Retried): Palette stays usable, Structure says it could not load with Reload, and the next press fetches it again as ?retry=n",
+      "why": "owner 'Delete first' (2026-11-14): its subject, the Structure view's chunk, is deleted; new form: b2's PP-B24 (the palette chunk refused)"
     }
   ]
 }

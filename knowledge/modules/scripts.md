@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:10Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:21:01Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T09:22:00Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:20:56Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,13 +23,13 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:07a4819d91320836
-    last_modified: 2026-11-14T10:43:49Z
+    digest: sha256:aaf36f4deedab270
+    last_modified: 2026-11-14T11:20:33Z
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:cd62373a66839519
-    last_modified: 2026-11-13T06:49:01Z
+    digest: sha256:a54f837af2a33c43
+    last_modified: 2026-11-14T11:12:40Z
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs
@@ -44,7 +44,7 @@ sources:
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
     digest: sha256:dcef16e5d39349c1
-    last_modified: 2026-11-14T10:30:58Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
@@ -74,7 +74,7 @@ sources:
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:26d25b93b11f82d7
-    last_modified: 2026-11-14T10:30:46Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
@@ -103,18 +103,18 @@ sources:
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json
-    digest: sha256:76bcf1c4c32f4864
-    last_modified: 2026-11-14T10:42:49Z
+    digest: sha256:343ead63d250aab9
+    last_modified: 2026-11-14T11:20:12Z
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
     digest: sha256:e4291993bd99bb01
-    last_modified: 2026-11-14T10:35:15Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
     digest: sha256:fa7eb7481800cabf
-    last_modified: 2026-11-14T10:37:35Z
+    last_modified: 2026-11-14T10:56:09Z
 ---
 
 # Responsibility

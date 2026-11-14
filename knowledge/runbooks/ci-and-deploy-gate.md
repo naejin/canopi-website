@@ -2,7 +2,7 @@
 type: Runbook
 title: CI, hooks and the deploy gate
 description: How the website's tiered hooks, GitHub Actions CI and the deploy branch gate production deploys on Cloudflare Workers Builds, and what to do when something fails.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T14:30:45Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:21:05Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
 sources:
@@ -62,7 +62,7 @@ Master deploys only through a green `gate` check. GitHub Actions moves the `depl
 | CI | `.github/workflows/ci.yml` | everything below, on each push to master or `ci-probe/**` and each pull request | each shard within 15 min |
 | nightly | `.github/workflows/nightly.yml` | time to first view (desktop and phone, `--ratchet scripts/browser/timing.json`: warn above a value, fail above 1.5×; the file ships with null values, so the run only warns until the coordinator copies the first runner's `timing-json:` line after push B; values from runner runs only) and the `@real-data` browser tests | — |
 
-- Hooks are enabled once in the main checkout: `git config core.hooksPath .githooks` (`npm run hooks:install` prints it). The relative path applies to every worktree. There is no `prepare` script, because Workers Builds' `npm ci` must not run git config.
+- Hooks are enabled once in the main checkout: `git config core.hooksPath .githooks` (`npm run hooks:install` prints it). The relative path applies to every worktree. There is no `prepare` script, because Workers Builds' `npm ci` must not run git config. Check it with `git config --get core.hooksPath` (it prints `.githooks`): on 2026-11-14 the main checkout had it unset, so no hook ran until the coordinator set it again (decision row "Data and climate hand-off replies").
 - `.githooks/lib.sh`: `zero_markers` (the switch above), `capped` (systemd-run with 3 GB and no swap when it works, plain in CI), `step` (prints each command's time), `tier_done` (warns above the budget, fails above 1.5×), `docs_only` (the documentation-only rule, which ci.yml's `changes` job sources too).
 - Bypass a hook once with `--no-verify`. CI still runs everything.
 
