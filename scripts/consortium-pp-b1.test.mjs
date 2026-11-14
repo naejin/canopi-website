@@ -6,7 +6,6 @@ import test from 'node:test';
 import { UNSURE_SITE } from '../src/lib/consortium/index.ts';
 import { suggest } from '../src/lib/consortium/suggest.ts';
 import { taxon } from './consortium-p5-fixtures.mjs';
-import { failing } from './expect-fail.mjs';
 
 let n = 0;
 const fn = (f) => ({ function: f, method: 'curated', sources: [] });
@@ -425,7 +424,7 @@ test('b1a bugs-7: "Show my palette" after an emptied draft offers one Undo that 
 
 // r2-2 (review round 2): the offer goes when the save is replaced, not on any answer: a room or country
 // answer on Place writes no save while the page has no palette of its own.
-failing('b1a bugs-8 / r2-2: "Open my saved palette instead" and "Back to mine" stay through Place answers that write no save, and go once a plant added replaces the save', { owner: 'b1a', reason: /gone after a Place answer that wrote no save/ }, async () => {
+test('b1a bugs-8 / r2-2: "Open my saved palette instead" and "Back to mine" stay through Place answers that write no save, and go once a plant added replaces the save', async () => {
   // As a fresh page opened over the reader's save: the save it read is the stored one.
   const fresh = async () => {
     const pool = await mine(5);
@@ -506,7 +505,7 @@ test('b1a bugs-10: "Use my own place" pressed while "Use it" is still working ch
 
 // ---- review round 2 (b1a-review-r2: r2-4, r2-5) ----
 
-failing('b1a r2-4: "Use it" says the place is kept on this device only when it was; the status line clears on the reader\'s next action and the next arrival', { owner: 'b1a', reason: /said "kept on this device"|status line still says/ }, async () => {
+test('b1a r2-4: "Use it" says the place is kept on this device only when it was; the status line clears on the reader\'s next action and the next arrival', async () => {
   // (a) The location chunk fails to load: the link's cell is not kept.
   const before = await arriveWithPlace();
   restoreM.provideLocationStep(() => Promise.reject(new Error('chunk failed')));
@@ -539,7 +538,7 @@ failing('b1a r2-4: "Use it" says the place is kept on this device only when it w
   } finally { restoreM.provideLocationStep(third); store.location.value = null; }
 });
 
-failing('b1a r2-5: arrivalPlan works out the arrival: the reader\'s own country before a link\'s, the link\'s cell, and the ask after a reload', { owner: 'b1a', reason: /arrivalPlan is not a function/ }, async () => {
+test('b1a r2-5: arrivalPlan works out the arrival: the reader\'s own country before a link\'s, the link\'s cell, and the ask after a reload', async () => {
   let reads = 0;
   const PARIS = { lat: 48.85, lon: 2.35 };
   const cell = () => { reads++; return PARIS; };

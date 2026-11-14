@@ -563,6 +563,7 @@
   "consortium.place.climate.other": "Niet dit klimaat? Kies een ander",
   "consortium.place.climate.without": "Zonder locatie krijg je toch een palet. Je krijgt niet: de controle van elke plant tegen je klimaat, de latere perioden, je plek in cijfers. Je kunt op elk moment een locatie toevoegen.",
   "consortium.place.usedLink": "Deze pagina gebruikt nu de plek uit de link en bewaart die op dit apparaat.",
+  "consortium.place.usedLinkUnkept": "Deze pagina gebruikt nu de plek uit de link, maar die kon niet op dit apparaat worden bewaard.",
   "consortium.place.usedMine": "Je eigen plek is terug.",
   "consortium.place.openedSaved": "Je bewaarde palet is open.",
   "consortium.place.backToMine": "Terug naar het mijne",

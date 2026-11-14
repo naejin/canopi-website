@@ -12,15 +12,15 @@ import * as store from '../store.ts';
 import { focusView } from '../focus.ts';
 import { state as schema } from './schema.ts';
 import { T } from '../strings.ts';
-import { adoptPending, attempt, linkPlace, memory, own, placeSeed, release, writeSave, COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE } from './persist.ts';
+import { adoptPending, attempt, linkPlace, memory, own, placeSaid, placeSeed, release, writeSave, COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE } from './persist.ts';
 import { adoptLinkLocation, notices, ownLocation, restore, savedInstead, NO_NOTICES } from './restore.ts';
 import { letGo } from './lookups.ts';
 
 // The country picker on the country line is open.
 export const pickingCountry = signal(false);
-// What the last answer to an arrival notice did, for Place's status line (the notice's button leaves
-// the page with its line, so the focus moves on and this says what happened: A25). '' for nothing.
-export const placeSaid = signal('');
+// What the last answer to an arrival notice did, for Place's status line (persist.ts keeps it, so the
+// reader's next action and the next arrival clear it).
+export { placeSaid };
 // An answer to the link-place notice is still working ("Use it" waits for the location step): both
 // buttons are disabled, so the other answer never lands half-way through it.
 export const answering = signal(false);
@@ -107,14 +107,16 @@ export async function useLinkPlace(): Promise<void> {
   if (!pending || answering.peek()) return;
   answering.value = true;
   try {
-    if (store.location.peek()?.source === 'link') await adoptLinkLocation();
+    // Kept on this device unless the link's cell could not be (the location chunk failed, or storage
+    // refused it): the line then says so (review round 2, 4).
+    const kept = store.location.peek()?.source === 'link' ? await adoptLinkLocation() : true;
     if (linkPlace.peek() !== pending) return;
     const c = store.country.peek();
     if (c.code && c.source === 'link') chooseCountry(c.code);
-    memory.write(PLACE_STORE, placeSeed());
+    const seeded = memory.write(PLACE_STORE, placeSeed());
     linkPlace.value = null;
     release();
-    answered(T('place.usedLink'));
+    answered(T(kept && seeded ? 'place.usedLink' : 'place.usedLinkUnkept'));
   } finally { answering.value = false; }
 }
 

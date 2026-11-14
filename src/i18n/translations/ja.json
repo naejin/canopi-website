@@ -563,6 +563,7 @@
   "consortium.place.climate.other": "この気候ではない場合は別の気候を選ぶ",
   "consortium.place.climate.without": "場所がなくてもパレットは作れます。ただし、各植物とあなたの気候との照合、将来の期間、あなたの場所の数値は得られません。場所はいつでも追加できます。",
   "consortium.place.usedLink": "このページはリンクの場所を使い、この端末に保存しました。",
+  "consortium.place.usedLinkUnkept": "このページはリンクの場所を使っていますが、この端末には保存できませんでした。",
   "consortium.place.usedMine": "自分の場所に戻りました。",
   "consortium.place.openedSaved": "保存したパレットを開きました。",
   "consortium.place.backToMine": "自分のものに戻る",

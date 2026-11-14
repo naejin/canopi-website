@@ -56,9 +56,8 @@ export const locationRecord = (l: Pick<SiteLocation, 'lat' | 'lon' | 'source' | 
   JSON.stringify(l.label ? { lat: l.lat, lon: l.lon, source: l.source, label: l.label } : { lat: l.lat, lon: l.lon, source: l.source });
 
 // The reader's own site location kept on this device (never in a link, never a link's), or removed.
-function keepLocation(l: Pick<SiteLocation, 'lat' | 'lon' | 'source' | 'label'> | null): void {
-  if (l) memory.write(LOCATION_STORE, locationRecord(l));
-  else memory.remove(LOCATION_STORE);
+function keepLocation(l: Pick<SiteLocation, 'lat' | 'lon' | 'source' | 'label'> | null): boolean {
+  return l ? memory.write(LOCATION_STORE, locationRecord(l)) : memory.remove(LOCATION_STORE);
 }
 
 // A lookup's result: its writes (write: the site, its suggestion, its line) in one batch, then the
@@ -228,10 +227,11 @@ export function forget(): void {
 
 // "Use it" on a link that brings a place (8.3; coordinator row 2026-11-14): the link's cell becomes
 // the reader's own location on this device, kept as a map pick (its centre, never a finer point).
-export function adoptLinkLocation(): void {
+// Returns whether it was kept on this device (storage may refuse it).
+export function adoptLinkLocation(): boolean {
   const l = store.location.peek();
-  if (l?.source !== 'link') return;
+  if (l?.source !== 'link') return false;
   const mine: SiteLocation = { ...l, source: 'map' };
   quietly(() => { store.location.value = mine; });
-  keepLocation(mine);
+  return keepLocation(mine);
 }

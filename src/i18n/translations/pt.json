@@ -563,6 +563,7 @@
   "consortium.place.climate.other": "Não é este clima? Escolha outro",
   "consortium.place.climate.without": "Sem localização, você ainda tem uma paleta. Você não tem: a checagem de cada planta frente ao seu clima, os períodos futuros, o seu lugar em números. Você pode adicionar uma localização a qualquer momento.",
   "consortium.place.usedLink": "Esta página agora usa o lugar do link e o guarda neste dispositivo.",
+  "consortium.place.usedLinkUnkept": "Esta página agora usa o lugar do link, mas não foi possível guardá-lo neste dispositivo.",
   "consortium.place.usedMine": "O seu próprio lugar está de volta.",
   "consortium.place.openedSaved": "A sua paleta salva está aberta.",
   "consortium.place.backToMine": "Voltar para a minha",

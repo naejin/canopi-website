@@ -256,9 +256,16 @@ export interface OwnPlace { spot: Spot; soil: SoilAnswer; country: Country; loca
 export const linkPlace = signal<{ own: OwnPlace } | null>(null);
 // The reader's readable save when the page opened on something else (a guide preset, a newer or
 // unreadable link): "Open my saved palette instead" / "Back to mine" (draft.ts openSavedInstead)
-// restores it. null once used, once the reader works on the page shown (watchStore), or when there is
-// none. Kept here, below restore.ts, so the watcher can end it.
+// restores it. null once used, once this page replaces or removes the save (writeSave: the reader's
+// work saved over it), or when there is none; a Place answer that writes no save (a room, a country, a
+// card while the page has no palette of its own) keeps it (review round 2, 2). Kept here, beside
+// writeSave.
 export const savedInstead = signal<SavedRecord | null>(null);
+// What the last answer to an arrival notice did, for Place's status line (draft.ts answered: the
+// notice's button leaves the page with its line, so the focus moves on and this says what happened:
+// A25). '' for nothing. Kept here, below restore.ts, so the reader's next action (watchStore) and the
+// next arrival (restore.ts restore) clear it (review round 2, 4).
+export const placeSaid = signal('');
 // Arriving by a link writes no save until the reader acts (8.3): restore.ts holds it when a link
 // applies (and for a reload or Back/Forward of that page: history.state hold); the reader's next
 // action (watchStore) or a restore of the save lets it go.
@@ -287,12 +294,17 @@ export function writeSave(next: string | null | 'back'): void {
     const to = next === 'back' ? beneath : null;
     beneath = undefined;
     if (to === undefined || now !== lastSave) return;
-    if (to === null ? memory.remove(STORE) : memory.write(STORE, to)) lastSave = to;
+    if (to === null ? memory.remove(STORE) : memory.write(STORE, to)) replaced(to);
     return;
   }
   if (sameSave(next, lastSave)) return;
   if (beneath === undefined || now !== lastSave) beneath = now;
-  if (memory.write(STORE, next)) lastSave = next;
+  if (memory.write(STORE, next)) replaced(next);
+}
+// The save this page wrote: the save offered back (savedInstead) is no longer there to open.
+function replaced(to: string | null): void {
+  lastSave = to;
+  if (savedInstead.peek()) savedInstead.value = null;
 }
 
 // The address bar holds the consortium's link (replaceState, no history entry). Same address:
@@ -352,7 +364,8 @@ export function watchStore(): void {
     if (quiet) return;
     actions++;
     held = false;
-    savedInstead.value = null;
+    // What an earlier notice's answer did is said no more (a later answer sets it again after this).
+    placeSaid.value = '';
     // The reader acted during a first-visit restore (any Start write: a country, a site answer, a
     // crop, Suggest): the restore will not apply, and the link's climate Start showed stays, now
     // chosen, so what Start shows never vanishes without the reader choosing.

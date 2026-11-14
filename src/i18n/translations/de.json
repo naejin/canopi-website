@@ -563,6 +563,7 @@
   "consortium.place.climate.other": "Nicht dieses Klima? Wähle ein anderes",
   "consortium.place.climate.without": "Ohne Ort bekommst du trotzdem eine Palette. Du bekommst nicht: die Prüfung jeder Pflanze gegen dein Klima, die späteren Zeiträume, deinen Ort in Zahlen. Du kannst jederzeit einen Ort hinzufügen.",
   "consortium.place.usedLink": "Diese Seite nutzt jetzt den Ort des Links und behält ihn auf diesem Gerät.",
+  "consortium.place.usedLinkUnkept": "Diese Seite nutzt jetzt den Ort des Links, aber er konnte auf diesem Gerät nicht behalten werden.",
   "consortium.place.usedMine": "Dein eigener Ort ist zurück.",
   "consortium.place.openedSaved": "Deine gespeicherte Palette ist offen.",
   "consortium.place.backToMine": "Zurück zu meiner",

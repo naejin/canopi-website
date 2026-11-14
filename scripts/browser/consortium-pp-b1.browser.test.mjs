@@ -130,7 +130,7 @@ test('PP-B2 (b1a place first, a climate already chosen): with no location, a cli
 // r2-1 (review round 2): a climate kept on this device and a saved location: the cards are decided from
 // what the page knows at start (the saved location counts as a place), so the saved location's lookup,
 // which returns about a second later, never closes them under the grower's thumb.
-failing('PP-B2 (b1a r2-1 a kept climate and a saved location): the cards\' visibility does not change when the saved location\'s lookup returns', { owner: 'b1a', reason: /changed when the saved location's lookup returned/ }, async () => {
+test('PP-B2 (b1a r2-1 a kept climate and a saved location): the cards\' visibility does not change when the saved location\'s lookup returns', async () => {
   const rec = JSON.stringify({ lat: 37.3891, lon: -5.9845, source: 'search', label: 'Sevilla' });
   const page = await h.open('/palette/', { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((r) => {
     if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('canopi-climate', 'temperate'); localStorage.setItem('canopi-location', r); }
@@ -156,7 +156,7 @@ failing('PP-B2 (b1a r2-1 a kept climate and a saved location): the cards\' visib
 
 // r2-3 (review round 2): the link's words and the "without a location" line follow a climate read from
 // the location, not a location object (tiles that fail, a lookup still loading).
-failing('PP-B2 (b1a r2-3 a location with no climate read): the link says "No location? Choose a climate" and the cards say what a grower without one loses', { owner: 'b1a', reason: /a location with no climate read/ }, async () => {
+test('PP-B2 (b1a r2-3 a location with no climate read): the link says "No location? Choose a climate" and the cards say what a grower without one loses', async () => {
   const page = await tool();
   const [lat, lon] = [37.3891, -5.9845];
   await page.evaluate((at) => { window.__ctTest.store.location.value = { ...at, source: 'map', lookup: null }; }, { lat, lon });

@@ -563,6 +563,7 @@
   "consortium.place.climate.other": "Not this climate? Choose another",
   "consortium.place.climate.without": "Without a location you still get a palette. You do not get: the check of each plant against your climate, the later periods, your place in figures. You can add a location at any time.",
   "consortium.place.usedLink": "This page now uses the link’s place, and keeps it on this device.",
+  "consortium.place.usedLinkUnkept": "This page now uses the link’s place, but it could not be kept on this device.",
   "consortium.place.usedMine": "Your own place is back.",
   "consortium.place.openedSaved": "Your saved palette is open.",
   "consortium.place.backToMine": "Back to mine",

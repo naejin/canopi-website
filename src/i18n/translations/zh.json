@@ -563,6 +563,7 @@
   "consortium.place.climate.other": "不是这种气候？选择另一种",
   "consortium.place.climate.without": "没有地点，你仍然会得到一个植物搭配。但你得不到：每种植物与你的气候的比对、未来时段、你那里的数据。你随时可以添加地点。",
   "consortium.place.usedLink": "本页现在使用链接中的地方，并保存在这台设备上。",
+  "consortium.place.usedLinkUnkept": "本页现在使用链接中的地方，但无法保存在这台设备上。",
   "consortium.place.usedMine": "你自己的地方已恢复。",
   "consortium.place.openedSaved": "你保存的植物搭配已打开。",
   "consortium.place.backToMine": "回到我自己的",

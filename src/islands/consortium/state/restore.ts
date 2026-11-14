@@ -10,7 +10,7 @@ import { bringsPlace, decodeLink, emptyPlace, linkClimates, linkOrigin, linkVers
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
-import { actionCount, attempt, holdSave, inFlight, linkPlace, memory, quietly, savedInstead, writeAddress, LOCATION_STORE, type CountryFrom, type OwnPlace } from './persist.ts';
+import { actionCount, attempt, holdSave, inFlight, linkPlace, memory, placeSaid, quietly, savedInstead, writeAddress, LOCATION_STORE, type CountryFrom, type OwnPlace } from './persist.ts';
 import { lookingThrough } from './lookups.ts';
 
 // The notices a link (or the save) left for the reader (Place shows them).
@@ -32,8 +32,9 @@ export { linkPlace, savedInstead };
 // The location step (state/location.ts, in the lazy location chunk) as the first run calls it. Its
 // loader is handed in by the view that owns the chunk (views/location/load.ts), so island state
 // never imports a view, statically or through import() (ADR-1 L2), and no cycle closes through it.
-// adopt: "Use it" on a link's place keeps the link's cell as the reader's own location (8.3).
-export interface LocationSettle { settle(how: 'link' | 'saved', saved: string | null): Promise<void>; adopt(): void }
+// adopt: "Use it" on a link's place keeps the link's cell as the reader's own location (8.3); whether
+// it was kept on this device.
+export interface LocationSettle { settle(how: 'link' | 'saved', saved: string | null): Promise<void>; adopt(): boolean }
 let loadStep: (() => Promise<LocationSettle>) | null = null;
 // Returns the loader it replaces (a test puts it back).
 export const provideLocationStep = (load: (() => Promise<LocationSettle>) | null): (() => Promise<LocationSettle>) | null => {
@@ -58,18 +59,25 @@ function settleLocation(how: 'link' | 'saved', saved: string | null = null): Pro
     if (how === 'link') store.location.value = null;
   });
 }
-// "Use it": the link's cell kept as the reader's own location, through the location step.
-export const adoptLinkLocation = (): Promise<void> => stepLoaded().then((m) => m.adopt(), () => {});
+// "Use it": the link's cell kept as the reader's own location, through the location step. Whether it
+// was kept on this device (false: the chunk did not load, or storage refused it).
+export const adoptLinkLocation = (): Promise<boolean> => stepLoaded().then((m) => m.adopt(), () => false);
 
 // The reader's own site, as a link's cell is compared with it (8.3): their location on the page (never
 // a link's), else the one kept on this device (canopi-location; a link's `o=` stands in for it on the
-// page before it is looked up again), else none.
-export function ownCell(): LinkOrigin | null {
+// page before it is looked up again), else none. text: canopi-location as already read (startMemory
+// reads it once), else it is read here.
+export function ownCell(text?: string | null): LinkOrigin | null {
   const at = store.location.peek();
   if (at && at.source !== 'link') return { lat: at.lat, lon: at.lon };
-  const kept = attempt(() => JSON.parse(memory.read(LOCATION_STORE) ?? 'null') as { lat?: unknown; lon?: unknown } | null);
+  const kept = attempt(() => JSON.parse((text === undefined ? memory.read(LOCATION_STORE) : text) ?? 'null') as { lat?: unknown; lon?: unknown } | null);
   return kept && typeof kept.lat === 'number' && typeof kept.lon === 'number' ? { lat: kept.lat, lon: kept.lon } : null;
 }
+
+// Whether the page opened with a location kept on this device (startMemory): Place counts it as a place
+// before its lookup returns, so the climate cards are decided once and never close under the grower
+// when the lookup comes back (review round 2, 1).
+export const locationAtStart = signal(false);
 
 // The reader's own saved site, looked up again while no other location is set. One rule for a fresh
 // open and a link pasted into the open tab (seam review 5): a link without `o=` leaves the reader's own
@@ -77,10 +85,11 @@ export function ownCell(): LinkOrigin | null {
 // `o=` stands in for it, for that page.
 // Once at a time: a fresh link without `o=` asks at startup and again when it opens (seam review
 // round 2, 3), and the second ask while the first is looked up would read the tiles again.
+// text: canopi-location as startMemory read it (so a plain open reads it once), else read here.
 let ownLookup: Promise<void> | null = null;
-export function ownLocation(): void {
+export function ownLocation(text?: string | null): void {
   if (ownLookup || store.location.peek()) return;
-  const saved = memory.read(LOCATION_STORE);
+  const saved = text === undefined ? memory.read(LOCATION_STORE) : text;
   if (saved) ownLookup = settleLocation('saved', saved).finally(() => { ownLookup = null; });
 }
 
@@ -150,6 +159,8 @@ export interface RestoreOptions { from: 'link' | 'saved'; src?: CountryFrom; kee
 // stays held (8.3). country: the reader's own country, worked out before a link's was shown (startMemory),
 // which the notice gives back and the held save keeps.
 export async function restore(fragment: string, { from, src = null, keep = false, place = null, ask = undefined, hold = false, country = undefined }: RestoreOptions): Promise<boolean> {
+  // A new arrival: what an earlier notice's answer did is said no more (review round 2, 4).
+  placeSaid.value = '';
   const refuse = (problem: PastedProblem, notice: Partial<Notices>): false => {
     if (keep) { notices.value = { ...notices.peek(), pasted: problem }; writeAddress(true); }
     else notices.value = { ...notices.peek(), ...notice };

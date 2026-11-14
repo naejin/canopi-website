@@ -9,9 +9,10 @@
 //   (LocationSlot: search, map, device), which can be skipped; then the country line, so the browser's
 //   guess is seen before it is used.
 // - The climate cards one link away (boards Place, PlaceDesk, ClimateHand): "No location? Choose a
-//   climate", or "Not this climate? Choose another" once a location gives one; they stay open when a
-//   link, a save or the shared site climate already chose one and there is no location. Behind the
-//   link, without a location, what a grower without one loses; then the cards, nothing chosen (never a
+//   climate", or "Not this climate? Choose another" once a location gives one (a climate read from it);
+//   they open when a link, a save or the shared site climate already chose one and there is no
+//   location, on the page or kept on this device, and then stay open. Behind the link, without a
+//   climate read from a location, what a grower without one loses; then the cards, nothing chosen (never a
 //   default climate): Ready, Needs your location (a climate that borrows plants, without a location:
 //   PoolSlot cardPill), or Not covered yet with "Ask for this climate". Picking one writes the shared
 //   site climate (state/draft.ts chooseClimate).
@@ -35,7 +36,7 @@ import { formatArea, formatLength, parsePlotSize } from '../../format.ts';
 import { LocationSlot } from '../LocationSlot.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from '../PoolSlot.tsx';
 import { climateChosen, climateShown, linkPlace, restoring } from '../../state/persist.ts';
-import { notices, savedInstead } from '../../state/restore.ts';
+import { locationAtStart, notices, savedInstead } from '../../state/restore.ts';
 import { startMemory } from '../../state/arrival.ts';
 import { addOwnPlant, answering, backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, openSavedInstead, pickingCountry, placeSaid, showPalette, startOver, useLinkPlace, useOwnPlace } from '../../state/draft.ts';
 import { pendingSuggest, suggestPalette } from '../../state/suggest-wait.ts';
@@ -88,6 +89,10 @@ function CountryLine() {
 // ---- the climate cards, one link away ----
 // Opened by the reader on this page (the link); kept open for the page.
 const cardsAsked = signal(false);
+// Opened by the page (a climate chosen and no place): latched, so a location that comes later (the
+// saved location's lookup, about a second after load) never closes cards already open under the
+// grower's thumb (review round 2, 1).
+let cardsLatched = false;
 function openCards(): void {
   cardsAsked.value = true;
   // The link leaves with the press: the focus goes to the card Tab would land on (A25: never <body>).
@@ -118,22 +123,27 @@ function Climates() {
     all[(all.indexOf(r) + (/[RD]/.test(e.key[5]) ? 1 : all.length - 1)) % all.length].focus();
   };
   // Open once asked for, or when a climate is already chosen (a link, a save, the shared site climate)
-  // and no location could stand for it. The cards stay in the page while closed (hidden), so the link
-  // names what it opens.
+  // and no place could stand for it: none on the page and none kept on this device when the page
+  // opened (state/restore.ts locationAtStart: a saved location counts before its lookup returns, review
+  // round 2, 1). The cards stay in the page while closed (hidden), so the link names what it opens.
   const where = siteLocation.value;
-  const open = cardsAsked.value || (!!chosen && !where);
+  if (!!chosen && !where && !locationAtStart.value) cardsLatched = true;
+  const open = cardsAsked.value || cardsLatched;
+  // The words follow a climate read from the location (its lookup), not a location object: a location
+  // whose tiles failed, or still loading, gives none of the checks (review round 2, 3).
+  const read = !!where?.lookup;
   return (
     <>
       {!open && (
         <p class="ct-place-climates">
           <button type="button" class="link-button ct-link" data-place-climates aria-expanded="false" aria-controls="ct-climates" onClick={openCards}>
-            {T(where || proposed ? 'place.climate.other' : 'place.climate.open')}
+            {T(proposed || (read && chosen) ? 'place.climate.other' : 'place.climate.open')}
           </button>
         </p>
       )}
     <fieldset class="ct-step ct-climates" id="ct-climates" hidden={!open}>
       <legend class="ct-step-title">{T('start.climate.title')}</legend>
-      {!where && <p class="ct-step-lede">{T('place.climate.without')}</p>}
+      {!read && <p class="ct-step-lede">{T('place.climate.without')}</p>}
       <p class="ct-muted ct-step-lede">{T('start.climate.lede')}</p>
       <div class="ct-cards">
         {page().start.zones.map(({ id, label, places }) => {
