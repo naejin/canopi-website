@@ -244,3 +244,73 @@ test('PP-B (b2 probe): verdicts and holes for 200 plants of the real export take
   const ms = performance.now() - t0;
   assert.ok(ms < 150, `${ms.toFixed(1)} ms`);
 });
+
+// ---- the picture model (rules/picture.ts, picture-years.ts, picture-jobs.ts, change-summary.ts) ----
+const pictures = async () => ({
+  ...await import('../src/islands/consortium/rules/picture.ts'),
+  ...await import('../src/islands/consortium/rules/picture-years.ts'),
+  ...await import('../src/islands/consortium/rules/picture-jobs.ts'),
+  ...await import('../src/islands/consortium/rules/change-summary.ts'),
+});
+const { sameCells } = await import('./picture-table.mjs');
+const nameOf = (t) => t.canonical_name;
+const palette = ['tree_all', 'high_any', 'crop_early', 'crop_late'].map(hPlant);
+const pictureOf = (P, kind, members) => P[kind]({ members, holes: core.holes({ members, verdicts: null, pending: false }), nameOf });
+
+failing('PP-B (b2 pictures, 3.4): Through the years has a row per light level, bands in years, open holes in empty judged cells, and the table form has the same cells (P17)', { owner: 'b2', reason: /Cannot find module|picture/ }, async () => {
+  const P = await pictures();
+  const p = pictureOf(P, 'yearsPicture', palette);
+  assert.deepEqual(p.rows.map((r) => r.key), ['emergent', 'high', 'medium', 'low']);
+  assert.equal(p.columns.length, 7);
+  assert.deepEqual(p.columns[3], core.yearsLine(3, 15));
+  const low = p.rows.find((r) => r.key === 'low');
+  assert.deepEqual(low.marks.map((m) => [m.name, m.from, m.to]), [['Crop early', 0, 3]], 'a band from year 0 to year 3');
+  const medium = p.rows.find((r) => r.key === 'medium');
+  assert.deepEqual(medium.cells.map((c) => c.hole), [null, null, 'light:medium:0-60', 'light:medium:0-60', 'light:medium:0-60', 'light:medium:0-60', null], 'holes only in judged steps');
+  assert.deepEqual(p.rows.find((r) => r.key === 'emergent').cells.map((c) => c.ids.length), [1, 1, 1, 1, 1, 1, 1]);
+  sameCells(p, P.tableOf(p));
+  const bare = pictureOf(P, 'yearsPicture', [...palette, plantOf('nolayer', { name: 'No layer', role: 'crop', phase_start: 'placenta_i', phase_end: 'climax' })]);
+  assert.equal(bare.rows.at(-1).state, 'not-recorded', 'plants with no light level are a row of their own, never dropped');
+  assert.deepEqual(bare.summary[0], { key: 'consortium.palette.years.summary', vars: {}, count: 5 });
+  sameCells(bare, P.tableOf(bare));
+});
+
+failing('PP-B (b2 pictures, 3.4): the jobs picture has a row per job, a plant in each of its jobs, its job holes, and the same cells in its table', { owner: 'b2', reason: /Cannot find module|picture/ }, async () => {
+  const P = await pictures();
+  const p = pictureOf(P, 'jobsPicture', palette);
+  assert.deepEqual(p.rows.map((r) => r.key), [...core.jobIds, 'none'], 'a row per job, then the plants with no job (High any), never dropped');
+  assert.equal(p.rows.at(-1).state, 'not-recorded');
+  assert.ok(p.rows.filter((r) => r.cells.some((c) => c.ids.includes('tree_all'))).length === 5, 'the tree in each of its five jobs');
+  const food = p.rows.find((r) => r.key === 'feeds_you');
+  assert.equal(food.cells[3].hole, 'job:feeds_you:3-15');
+  assert.deepEqual(food.head, { key: 'consortium.job.feeds_you', vars: {} });
+  sameCells(p, P.tableOf(p));
+});
+
+failing('PP-B (b2 pictures stay readable, moved from P5): 200 plants on one light level draw at most PICTURE_LANE_MAX per lane, "+ n more" holds the rest, the table lists every plant', { owner: 'b2', reason: /Cannot find module|picture/ }, async () => {
+  const P = await pictures();
+  const many = Array.from({ length: 200 }, (_, i) => plantOf(`p${String(i).padStart(3, '0')}`, { name: `Plant ${String(i).padStart(3, '0')}`, role: i % 2 ? 'crop' : 'support', stratum: 'low', phase_start: 'placenta_i', phase_end: 'climax' }));
+  for (const kind of ['yearsPicture', 'jobsPicture']) {
+    const p = pictureOf(P, kind, many);
+    for (const r of p.rows) {
+      assert.ok(r.cells.every((c) => c.ids.length <= P.PICTURE_LANE_MAX), `${kind} ${r.key}: at most ${P.PICTURE_LANE_MAX} drawn`);
+      assert.ok(r.marks.length <= P.PICTURE_LANE_MAX);
+    }
+    const lane = p.rows.find((r) => r.key === (kind === 'yearsPicture' ? 'low' : 'none'));
+    assert.equal(lane.more.count, (kind === 'yearsPicture' ? 200 : 100) - P.PICTURE_LANE_MAX);
+    assert.deepEqual(lane.more.line, core.moreLine(lane.more.count));
+    if (kind === 'yearsPicture') assert.ok(lane.marks.slice(0, 12).every((m) => m.job === 'feeds_you'), 'the main job first, then name');
+    sameCells(p, P.tableOf(p), kind);
+    assert.equal(P.plantsIn(p).size, 200, 'the table lists every plant');
+  }
+});
+
+failing('PP-B (b2 changeSummary, 3.4): nothing changed says nothing; a plant added says the plants and the holes that changed; another time step says its years first', { owner: 'b2', reason: /Cannot find module|changeSummary/ }, async () => {
+  const P = await pictures();
+  const before = pictureOf(P, 'yearsPicture', palette);
+  assert.deepEqual(P.changeSummary(before, before), []);
+  const after = pictureOf(P, 'yearsPicture', [...palette, plantOf('mid', { name: 'Mid', role: 'support', stratum: 'medium', phase_start: 'placenta_i', phase_end: 'climax' })]);
+  assert.deepEqual(P.changeSummary(before, after), [{ key: 'consortium.palette.change.plants', vars: {}, count: 5 }, { key: 'consortium.palette.change.holes', vars: {}, count: 1 }]);
+  const s3 = P.columnOf(before, 2), s4 = P.columnOf(before, 3);
+  assert.deepEqual(P.changeSummary(s3, s4), [core.yearsLine(3, 15), { key: 'consortium.palette.change.plants', vars: {}, count: 2 }, { key: 'consortium.palette.change.holes', vars: {}, count: 2 }], 'years 3-15: the tree and High any; no one in some shade or low');
+});
