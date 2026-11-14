@@ -4,9 +4,9 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:46:51Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:40Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:46:58Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:05:31Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -52,8 +52,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:b69001f4ccc35e08
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:f2cafc31e8878494
+    last_modified: 2026-11-14T21:05:18Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -142,8 +142,8 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:3607cd88692db279
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:2277cf3363de4243
+    last_modified: 2026-11-14T21:05:18Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
@@ -177,8 +177,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:af8a72c79d13c573
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:1afe77755f5cad27
+    last_modified: 2026-11-14T21:05:18Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -327,8 +327,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:2f08c35425c5c8bd
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:fdbe406a5ad7fa67
+    last_modified: 2026-11-14T21:05:18Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts

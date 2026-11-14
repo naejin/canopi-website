@@ -4,10 +4,10 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:27Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:07:00Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:04Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:04Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -22,8 +22,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:b69001f4ccc35e08
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:f2cafc31e8878494
+    last_modified: 2026-11-14T21:05:18Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -62,8 +62,8 @@ sources:
   - id: axe-smoke-mjs
     resource: ../../scripts/browser/smoke/axe.smoke.mjs
     title: scripts/browser/smoke/axe.smoke.mjs
-    digest: sha256:cdb6434db87ad56a
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:77a63fddedca8e5a
+    last_modified: 2026-11-14T15:16:44Z
   - id: climate-vectors-test-mjs
     resource: ../../scripts/climate-vectors.test.mjs
     title: scripts/climate-vectors.test.mjs

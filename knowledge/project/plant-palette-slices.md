@@ -4,9 +4,9 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:07:11Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:56Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:47:00Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:05:58Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -106,8 +106,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:b69001f4ccc35e08
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:f2cafc31e8878494
+    last_modified: 2026-11-14T21:05:18Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -226,8 +226,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:af8a72c79d13c573
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:1afe77755f5cad27
+    last_modified: 2026-11-14T21:05:18Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
@@ -316,8 +316,8 @@ sources:
   - id: index-ts-2
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:2f08c35425c5c8bd
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:fdbe406a5ad7fa67
+    last_modified: 2026-11-14T21:05:18Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts

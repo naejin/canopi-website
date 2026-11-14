@@ -2,10 +2,10 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T18:46:38Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:50Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:46:54Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:05:45Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -15,8 +15,8 @@ sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:898479852e2410ee
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:4b70e05e68a84a3c
+    last_modified: 2026-11-14T21:05:18Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -25,8 +25,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:af8a72c79d13c573
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:1afe77755f5cad27
+    last_modified: 2026-11-14T21:05:18Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -70,8 +70,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:b69001f4ccc35e08
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:f2cafc31e8878494
+    last_modified: 2026-11-14T21:05:18Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -145,8 +145,8 @@ sources:
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:4d4b3e5befddbd34
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:37e1b11071730a71
+    last_modified: 2026-11-14T21:05:18Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
@@ -245,8 +245,8 @@ sources:
   - id: page-ts
     resource: ../../src/islands/consortium/views/kit/page.ts
     title: src/islands/consortium/views/kit/page.ts
-    digest: sha256:dd780bce9cb7e966
-    last_modified: 2026-11-13T14:46:32Z
+    digest: sha256:b5cf054e1acccfd2
+    last_modified: 2026-11-14T21:05:18Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
