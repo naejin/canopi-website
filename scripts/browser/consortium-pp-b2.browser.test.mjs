@@ -893,7 +893,7 @@ test('PP-B47 (b2 review r2 print-1): beforeprint without print media mounts the 
 
 // r3-hash-1: a Back between two entries with the same address (a sheet's) fires popstate and no
 // hashchange; the page must not then swallow a later hashchange the reader makes to that address.
-failing('PP-B48 (b2 review r3 hash-1): a shared link, Details opened and closed with Back, a plant removed, then the same link pasted: the link opens again', { owner: 'b2', reason: /the pasted link opens again/ }, async () => {
+test('PP-B48 (b2 review r3 hash-1): a shared link, Details opened and closed with Back, a plant removed, then the same link pasted: the link opens again', async () => {
   const page = await tool({ width: 390, hash: await temperateLink() });
   assert.ok(await onPage(page), 'the palette page');
   await settled(page);

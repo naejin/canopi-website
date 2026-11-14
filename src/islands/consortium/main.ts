@@ -104,13 +104,29 @@ if (root && data) {
   // never reaching the memory's listener, which would read the address landed on as a link to
   // restore (on Place it holds the set-aside palette's link, not the one shown: review r2 hist-1,
   // an Undo back to Place leaving the palette step's entry). Told by the address written here.
+  // Only a move whose hashchange will come arms that (review r3 hash-1): a Back between two entries
+  // with the same address (a sheet's, pushed with the current href) fires popstate and no hashchange,
+  // and an address left armed would swallow the reader's own later hashchange to it (that link pasted
+  // after an edit rewrote the address in place). The browser fires hashchange when the fragment
+  // landed on differs from the one shown before the move; by popstate the address already holds the
+  // one landed on, so the one before is read at the Navigation API's navigate event (a traversal,
+  // the address not yet changed). Without the Navigation API the address before is unknown: every
+  // move arms it, as before r3 (a stale swallow there, never the set-aside palette restored).
   let moveAddress: string | null = null;
+  let shownBefore: string | null = null;
+  try {
+    (globalThis as { navigation?: EventTarget }).navigation?.addEventListener('navigate', (e) => {
+      if ((e as Event & { navigationType?: string }).navigationType === 'traverse') shownBefore = location.hash;
+    });
+  } catch { /* no Navigation API: shownBefore stays null */ }
   addEventListener('popstate', () => {
+    const before = shownBefore, landed = location.hash;
+    shownBefore = null;
     const moved = historyMoved();
     if (!moved) return;
     if (moved.place) changeSite();
     writeAddress(moved.force);
-    moveAddress = location.hash;
+    moveAddress = before === null || before !== landed ? location.hash : null;
     pushWaiting();
   });
   addEventListener('hashchange', (e) => {
