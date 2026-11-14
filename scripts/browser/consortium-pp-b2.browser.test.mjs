@@ -893,8 +893,8 @@ test('PP-B47 (b2 review r2 print-1): beforeprint without print media mounts the 
 
 // r3-hash-1: a Back between two entries with the same address (a sheet's) fires popstate and no
 // hashchange; the page must not then swallow a later hashchange the reader makes to that address.
-test('PP-B48 (b2 review r3 hash-1): a shared link, Details opened and closed with Back, a plant removed, then the same link pasted: the link opens again', async () => {
-  const page = await tool({ width: 390, hash: await temperateLink() });
+async function pasteAgain({ noNavigationApi }) {
+  const page = await tool({ width: 390, hash: await temperateLink(), ...(noNavigationApi ? { setup: (p) => p.evaluateOnNewDocument(() => { Object.defineProperty(window, 'navigation', { value: undefined, configurable: true }); }) } : {}) });
   assert.ok(await onPage(page), 'the palette page');
   await settled(page);
   const link = await page.evaluate(() => location.hash);
@@ -907,6 +907,8 @@ test('PP-B48 (b2 review r3 hash-1): a shared link, Details opened and closed wit
   await settled(page);
   assert.equal(await sheetKind(page), null, 'Back closes Details');
   assert.equal(await page.evaluate(() => location.hash), link, 'the address still holds the link');
+  // The reader's press in the page (the remove's own tap), then the remove.
+  await page.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })));
   await page.evaluate(() => window.__ctTest.store.removeMember(window.__ctTest.store.members.value[0]));
   assert.ok(await page.waitForFunction((l) => window.__ctTest.store.members.value.length === l - 1, { timeout: 4000 }, n).then(() => true, () => false), 'one plant removed');
   await settled(page);
@@ -914,7 +916,10 @@ test('PP-B48 (b2 review r3 hash-1): a shared link, Details opened and closed wit
   await page.evaluate((l) => { location.hash = l; }, link);
   assert.ok(await page.waitForFunction((l) => window.__ctTest.store.members.value.length === l, { timeout: 8000 }, n).then(() => true, () => false), `the pasted link opens again with its ${n} plants (kept ${await page.evaluate(() => window.__ctTest.store.members.value.length)})`);
   await done(page);
-});
+}
+
+test('PP-B48 (b2 review r3 hash-1): a shared link, Details opened and closed with Back, a plant removed, then the same link pasted: the link opens again', () => pasteAgain({ noNavigationApi: false }));
+test('PP-B48b (b2 review r3 hash-1, no Navigation API): the same, in a browser without the Navigation API (the reader\'s press disarms the swallow)', () => pasteAgain({ noNavigationApi: true }));
 
 // ---- scale (owner directive 2026-11-14: smooth to 200 plants), CPU throttled 4× through CDP ----
 // The shared 200-plant palette (scripts/palette-200.mjs), saved, reopened at 390 and 1280 px. Budgets:

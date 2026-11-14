@@ -111,7 +111,7 @@ if (root && data) {
   // landed on differs from the one shown before the move; by popstate the address already holds the
   // one landed on, so the one before is read at the Navigation API's navigate event (a traversal,
   // the address not yet changed). Without the Navigation API the address before is unknown: every
-  // move arms it, as before r3 (a stale swallow there, never the set-aside palette restored).
+  // move arms it until the reader's next input in the page (below).
   let moveAddress: string | null = null;
   let shownBefore: string | null = null;
   try {
@@ -119,9 +119,19 @@ if (root && data) {
       if ((e as Event & { navigationType?: string }).navigationType === 'traverse') shownBefore = location.hash;
     });
   } catch { /* no Navigation API: shownBefore stays null */ }
-  addEventListener('popstate', () => {
+  // Where the address before is unknown, the reader's next press or key in the page disarms it: a
+  // move's own hashchange is queued with the traversal, before any later input, and the stale case
+  // needs an edit in the page (a press) before the paste.
+  const disarm = () => { moveAddress = null; };
+  addEventListener('pointerdown', disarm, { capture: true, passive: true });
+  addEventListener('keydown', disarm, { capture: true, passive: true });
+  addEventListener('popstate', (e) => {
     const before = shownBefore, landed = location.hash;
     shownBefore = null;
+    // A link opened in the tab (pasted, or a same-page link) fires popstate before its hashchange,
+    // onto a new entry with no state: not a move across the page's entries (every one of those holds
+    // the state persist.ts writes). Without the Navigation API historyMoved would read it as a Back.
+    if (e.state == null) return;
     const moved = historyMoved();
     if (!moved) return;
     if (moved.place) changeSite();

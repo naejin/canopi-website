@@ -495,7 +495,12 @@ const lastOf = (kind: Entry) => { for (let i = known.length - 1; i >= 0; i--) if
 function pushEntry(kind: Entry): void {
   if (typeof history === 'undefined' || typeof globalThis.location === 'undefined') return;
   const before = here();
-  try { history.pushState({ ...(history.state ?? {}), sheet: kind }, '', globalThis.location.href); } catch { return; }
+  try {
+    // The entry under it gets a state too (an empty one when the page wrote none yet), so a move back
+    // onto it is told from a link opened in the tab, whose new entry has none (main.ts popstate).
+    if (history.state == null) history.replaceState({}, '', globalThis.location.href);
+    history.pushState({ ...(history.state ?? {}), sheet: kind }, '', globalThis.location.href);
+  } catch { return; }
   pos = before + 1;
   const at = here();
   if (base === null || before < base) { base = before; known.length = 0; }
