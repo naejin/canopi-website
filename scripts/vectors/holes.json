@@ -1,0 +1,64 @@
+{
+  "schema": "canopi-palette-holes/1",
+  "source": "knowledge/architecture/plant-palette-architecture.md section 3.3 (holes, HOLE_ORDER, ids, not-judged and pending, fills and fillers); concept.md Rules (rank order); owner: judged from year 1 to year 60. Written by PP-B stream b2.",
+  "thresholds": {
+    "judged_from_year": 1,
+    "judged_to_year": 60,
+    "phase_years": [[0, 0.25], [0.25, 1], [1, 3], [3, 15], [15, 25], [25, 60], [60, null]],
+    "rank_order": [
+      { "kind": "job", "whole": true, "rank": 1 },
+      { "kind": "light", "whole": true, "rank": 2 },
+      { "kind": "flowering", "rank": 3 },
+      { "kind": "job", "whole": false, "rank": 4 },
+      { "kind": "light", "whole": false, "rank": 4 },
+      { "kind": "cool", "rank": 5 },
+      { "kind": "soil", "rank": 6 }
+    ]
+  },
+  "plants": {
+    "tree_all": { "name": "Tree all", "role": "support", "stratum": "emergent", "phase_start": "placenta_i", "phase_end": "climax", "functions": ["nitrogen_fixer", "mulch", "ground_cover", "insectary", "windbreak"] },
+    "high_any": { "name": "High any", "role": "support", "stratum": "high", "phase_start": "placenta_i", "phase_end": "climax" },
+    "medium_any": { "name": "Medium any", "role": "support", "stratum": "medium", "phase_start": "placenta_i", "phase_end": "climax" },
+    "low_any": { "name": "Low any", "role": "support", "stratum": "low", "phase_start": "placenta_i", "phase_end": "climax" },
+    "crop_early": { "name": "Crop early", "role": "crop", "stratum": "low", "phase_start": "placenta_i", "phase_end": "placenta_iii" },
+    "crop_late": { "name": "Crop late", "role": "crop", "stratum": "high", "phase_start": "secondary_ii", "phase_end": "climax" },
+    "crop_from_1": { "name": "Crop from 1", "role": "crop", "stratum": "low", "phase_start": "placenta_iii", "phase_end": "secondary_iii" },
+    "crop_skip": { "name": "Crop skip", "role": "crop", "stratum": "low", "phase_start": "placenta_i", "phase_end": "placenta_i" },
+    "crop_to_60": { "name": "Crop to 60", "role": "crop", "stratum": "low", "phase_start": "placenta_i", "phase_end": "secondary_iii" },
+    "crop_all": { "name": "Crop all", "role": "crop", "stratum": "high", "phase_start": "placenta_i", "phase_end": "climax" },
+    "fit_a": { "name": "Beta", "role": "crop", "stratum": "low", "phase_start": "secondary_i", "phase_end": "secondary_i" },
+    "fit_b": { "name": "Alpha", "role": "crop", "stratum": "low", "phase_start": "secondary_i", "phase_end": "secondary_i" },
+    "fit_c": { "name": "Zeta", "role": "crop", "stratum": "medium", "phase_start": "secondary_i", "phase_end": "secondary_ii" },
+    "fit_e": { "name": "Gamma", "role": "crop", "stratum": "low", "phase_start": "secondary_i", "phase_end": "secondary_i" },
+    "invasive_in_range": { "name": "Invasive in range", "role": "crop", "stratum": "low", "phase_start": "secondary_i", "phase_end": "secondary_i", "invasive_in": ["FR"] },
+    "mild_toxic": { "name": "Mild toxic", "role": "crop", "stratum": "low", "phase_start": "secondary_i", "phase_end": "secondary_i", "toxicity": "Slight" },
+    "invasive_outside": { "name": "Invasive outside", "role": "crop", "stratum": "low", "phase_start": "secondary_i", "phase_end": "secondary_i", "invasive_in": ["FR"] },
+    "not_checked": { "name": "Not checked", "role": "crop", "stratum": "low", "phase_start": "secondary_i", "phase_end": "secondary_i" },
+    "too_early": { "name": "Too early", "role": "crop", "stratum": "low", "phase_start": "placenta_i", "phase_end": "placenta_iii" },
+    "no_food": { "name": "No food", "role": "support", "stratum": "low", "phase_start": "secondary_i", "phase_end": "secondary_i" }
+  },
+  "places": {},
+  "cases": [
+    { "name": "a job missing in years 3-15 is one hole", "covers": "3.3", "input": { "members": ["tree_all", "high_any", "medium_any", "low_any", "crop_early", "crop_late"] }, "expect": { "holes": [{ "id": "job:feeds_you:3-15", "rank": 4, "state": "open", "from": 3, "to": 15 }], "next": "job:feeds_you:3-15" } },
+    { "name": "a gap in years 0-1 is not judged", "covers": "3.3 judged window", "input": { "members": ["tree_all", "high_any", "medium_any", "low_any", "crop_from_1"] }, "expect": { "holes": [{ "id": "job:feeds_you:0-1", "rank": 4, "state": "not-judged", "from": 0, "to": 1 }], "next": null } },
+    { "name": "a gap in months 3-12 is not judged", "covers": "3.3 judged window", "input": { "members": ["tree_all", "high_any", "medium_any", "low_any", "crop_skip", "crop_from_1"] }, "expect": { "holes": [{ "id": "job:feeds_you:0.25-1", "rank": 4, "state": "not-judged", "from": 0.25, "to": 1 }], "next": null } },
+    { "name": "nothing after year 60 is a hole", "covers": "3.3 judged window", "input": { "members": ["tree_all", "high_any", "medium_any", "low_any", "crop_to_60"] }, "expect": { "holes": [], "next": null } },
+    { "name": "an empty palette: every whole job before every whole light level", "covers": "HOLE_ORDER 1-2", "input": { "members": [] }, "expect": { "ranks": [1, 1, 1, 1, 1, 1, 2, 2, 2, 2], "next": "job:feeds_you:0-60" } },
+    { "name": "a whole light level before a job missing for part of the years, then by first year and id", "covers": "HOLE_ORDER 2-4", "input": { "members": ["tree_all", "high_any", "crop_early"] }, "expect": { "order": ["light:medium:0-60", "job:feeds_you:3-60", "light:low:3-60"], "next": "light:medium:0-60" } },
+    { "name": "a member outside its climate range fills nothing", "covers": "3.3, inventory M2", "input": { "members": ["tree_all", "high_any", "medium_any", "low_any", "crop_all"], "levels": { "crop_all": "outside" } }, "expect": { "holes": [{ "id": "job:feeds_you:0-60", "rank": 1, "state": "open", "from": 0, "to": 60 }], "next": "job:feeds_you:0-60" } },
+    { "name": "a member needing a second look still fills", "covers": "3.3", "input": { "members": ["tree_all", "high_any", "medium_any", "low_any", "crop_all"], "levels": { "crop_all": "look" } }, "expect": { "holes": [], "next": null } },
+    { "name": "P11: while a guest list loads every hole is pending, never a false hole", "covers": "P11", "input": { "members": ["tree_all", "high_any", "medium_any", "low_any"], "pending": true }, "expect": { "holes": [{ "id": "job:feeds_you:0-60", "rank": 1, "state": "pending", "from": 0, "to": 60 }], "next": null } },
+    { "name": "ids with a month suffix are kept apart (June-July)", "covers": "3.3 ids", "input": { "id": { "kind": "flowering", "what": "", "from": 1, "to": 60, "months": ["Jun", "Jul"] } }, "expect": { "id": "flowering::1-60:m60" } },
+    { "name": "ids with a month suffix are kept apart (July-August)", "covers": "3.3 ids", "input": { "id": { "kind": "flowering", "what": "", "from": 1, "to": 60, "months": ["Jul", "Aug"] } }, "expect": { "id": "flowering::1-60:mc0" } },
+    { "name": "fillers: groups and ranking (holes filled, holds to the latest period, name)", "covers": "3.3 fillers",
+      "input": {
+        "members": ["tree_all", "high_any", "low_any", "crop_early", "crop_late"],
+        "hole": "job:feeds_you:3-15",
+        "pool": ["fit_a", "fit_b", "fit_c", "fit_e", "invasive_in_range", "mild_toxic", "invasive_outside", "not_checked", "too_early", "no_food", "crop_early"],
+        "levels": { "fit_a": "fits", "fit_b": "fits", "fit_c": "fits", "fit_e": "fits", "invasive_in_range": "fits", "mild_toxic": "fits", "invasive_outside": "outside", "too_early": "fits", "no_food": "fits", "crop_early": "fits" },
+        "holds": { "fit_a": true, "fit_b": false, "fit_c": false, "fit_e": true },
+        "warned": ["invasive_in_range", "mild_toxic", "invasive_outside"]
+      },
+      "expect": { "fits": ["fit_c", "fit_a", "fit_e", "fit_b"], "look": ["invasive_in_range", "mild_toxic"], "outside": ["invasive_outside"], "unknown": ["not_checked"] } }
+  ]
+}
