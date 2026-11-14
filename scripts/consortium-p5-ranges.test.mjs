@@ -103,8 +103,9 @@ test('rangeCheck: a plant that can need winter chill keeps the mild-winter side 
 
 // ---- 3. annuals beyond the heat range: the cool season ----
 
-test('rangeCheck: an annual beyond its heat range stays, advised to the cool season (Good-King-Henry, recorded annual, at Seville: 34.8 vs heat limit 30.2)', () => {
-  const annual = plant('Chenopodium bonus-henricus');
+// Siberian purslane since D2d (r-f3c6dd8b3c4391be): Good-King-Henry, the earlier case, is recorded perennial now.
+test('rangeCheck: an annual beyond its heat range stays, advised to the cool season (Siberian purslane, recorded annual, at Seville: 34.8 vs heat limit 31.7)', () => {
+  const annual = plant('Claytonia sibirica');
   const s = siteAt(SEVILLE);
   assert.deepEqual(core.rangeCheck(annual, s), { verdict: 'inside', sides: [], beyond: [], aridity: 'drier', coolSeason: true });
   assert.deepEqual(core.withinRange([annual], s), [annual]);
@@ -115,7 +116,7 @@ test('rangeCheck: an annual beyond its heat range stays, advised to the cool sea
   assert.deepEqual(marks('details'), [['season', 'range.coolSeason', 'note']], 'the full sentence in Details');
   assert.deepEqual(marks('chip'), []);
   // Within the margin: still the edge, as for any plant.
-  const near = core.rangeCheck(annual, siteAt({ ...SEVILLE, tmaxWarmC: 31.5 }));
+  const near = core.rangeCheck(annual, siteAt({ ...SEVILLE, tmaxWarmC: 33.0 }));
   assert.deepEqual([near.verdict, near.sides, near.coolSeason], ['edge', ['hot'], false]);
   // A perennial with the same range is still outside.
   assert.equal(core.rangeFit({ ...annual, traits: { ...annual.traits, is_annual: false } }, s), 'outside');
@@ -188,8 +189,9 @@ const SITES = JSON.parse(readFileSync(new URL('./fixtures/consortium-ranges/site
 const at = (name) => { const s = SITES[name]; return { lat: s.lat, lon: s.lon, source: 'map', lookup: { lat: s.lat, lon: s.lon, climate: s.climate, soil: null, regions: { wgsrpdL3: null, isoA2: null } } }; };
 const verdict = (name, site) => core.rangeCheck(plant(name), at(site));
 
-test('acceptance (owner diagnosis, export r-60ea417b5a15c3aa, the rows of r-b958a4239cc68f73): each site\'s plants as the growers know them', () => {
-  assert.equal(index.release_id, 'r-60ea417b5a15c3aa', 'the schema 3 export with grown_as_annual and tmean_warm is installed');
+// Written on r-60ea417b5a15c3aa (the rows of r-b958a4239cc68f73); it holds on every later schema-3
+// export: the grown_as_annual and tmean_warm cases below need those columns, so no release pin.
+test('acceptance (owner diagnosis, on the installed export): each site\'s plants as the growers know them', () => {
   for (const name of ['Theobroma cacao', 'Cocos nucifera']) {
     const c = verdict(name, 'nairobi');
     assert.equal(c.verdict, 'outside', `${name} at Nairobi`);

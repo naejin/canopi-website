@@ -125,13 +125,14 @@ async function kiambuStore() {
   return store;
 }
 // Open point for the coordinator: the boards' figure (concept P1, growers.md) came from the mock-up rule
-// (tmin_cold both sides, tmax_warm hot side); the live rule gives 307. Parked until the plan's figure is
+// (tmin_cold both sides, tmax_warm hot side); the live rule gives 305 on r-f3c6dd8b3c4391be (307 on
+// r-60ea417b5a15c3aa). Parked until the plan's figure is
 // confirmed or changed; never weakened.
-failing('PP-B (b2 countFits, real data): Kiambu, 324 of the 515 plants on the nearest lists fit or need a second look today', { owner: 'b2', reason: /^307 \(the live range rule/ }, async () => {
+failing('PP-B (b2 countFits, real data): Kiambu, 324 of the 515 plants on the nearest lists fit or need a second look today', { owner: 'b2', reason: /^\d+ \(the live range rule/ }, async () => {
   const store = await kiambuStore();
   const n = store.countFits.value;
   assert.equal(n.of, 515);
-  assert.equal(n.fits + n.look, 324, `${n.fits + n.look} (the live range rule since the P5 decision row of 2026-11-12, cool and chill sides, gives 307; the boards' 324 used the earlier rule)`);
+  assert.equal(n.fits + n.look, 324, `${n.fits + n.look} (the live range rule since the P5 decision row of 2026-11-12, cool and chill sides, gives 305 on r-f3c6dd8b3c4391be; the boards' 324 used the earlier rule)`);
 });
 test('PP-B (b2 countFits, real data): Kiambu, countFits counts what the pool panel\'s range rule keeps (inside or near the edge)', async () => {
   const store = await kiambuStore();

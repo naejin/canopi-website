@@ -4,7 +4,7 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:18Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:19:31Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:12Z }
 sources:
@@ -41,8 +41,8 @@ sources:
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
-    digest: sha256:ea8d089c04b977c8
-    last_modified: 2026-11-13T13:04:08Z
+    digest: sha256:dd18c4fd263f21cf
+    last_modified: 2026-11-14T21:49:00Z
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
@@ -61,8 +61,8 @@ sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
-    digest: sha256:77531bebff7b561b
-    last_modified: 2026-11-12T18:47:57Z
+    digest: sha256:9dff8162d35386ce
+    last_modified: 2026-11-14T21:54:28Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -141,8 +141,8 @@ sources:
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
-    digest: sha256:13687fa487bc0d40
-    last_modified: 2026-11-13T14:45:08Z
+    digest: sha256:83638646275badbd
+    last_modified: 2026-11-14T22:15:12Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
@@ -176,8 +176,8 @@ sources:
   - id: consortium-p5-ranges-test-mjs
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
-    digest: sha256:02d0b7d13ee848ff
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:b7ba8d57d358f1ec
+    last_modified: 2026-11-14T22:14:28Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -236,8 +236,8 @@ sources:
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
-    digest: sha256:fbbd5cb7acd35672
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:950058cbfed10592
+    last_modified: 2026-11-14T22:14:36Z
   - id: country-zones-ts
     resource: ../../src/lib/consortium/country-zones.ts
     title: src/lib/consortium/country-zones.ts
@@ -320,7 +320,7 @@ It refuses on the first failure, with nothing written:
   - plant ids are UUIDs, and source and photo-page URLs are http(s);
   - invasive rows only in countries GRIIS checked.
 - **TRY list and credits:** parsed as the site's build parses them.
-- **Release verify:** a real install then runs `uv run canopi release verify <dir>` from canopi-data before any photo. The location is `CANOPI_DATA_DIR`, else `../canopi-data`; a git worktree needs the variable.
+- **Release verify:** a real install then runs `uv run canopi release verify <dir>` from canopi-data before any photo. The location is `CANOPI_DATA_DIR`, else `../canopi-data`; a git worktree needs the variable. `CANOPI_DATA_DB` (optional) passes `--db-path` to verify, for a canopi-data worktree whose database lives in the main checkout.
 
 What it writes:
 - `public/data/consortium/`:
@@ -347,7 +347,11 @@ What it writes:
 - Staging is in `.cache/consortium-install/`, then a rename, with the `src/data/` files put back on failure.
 - `verifyInstall(dir, index)` re-checks a served folder against the index: the mark, each database by sha256, gzip and limits, every indexed photo present, and nothing else. `check-built-site.mjs` runs it on `dist/client/data/consortium/`.
 
-Installed now: release `r-60ea417b5a15c3aa`, schema 3, `consortium-v3.r-60ea417b5a15c3aa.977fc4ceccc7.sqlite.gz`, rebuilt from canopi-data master `94a67a5` for the GBIF credit (`2e195da`).
+Installed now: release `r-f3c6dd8b3c4391be` (D2d), schema 3, `consortium-v3.r-f3c6dd8b3c4391be.7be9df0e298f.sqlite.gz`, 620,573 B gzipped, 515 plants (25 `grown_as_annual`), the same 190 photos. canopi-data exported it from its schema3-last worktree; installed with `CANOPI_DATA_DIR` set to that worktree and `CANOPI_DATA_DB` to the main checkout's `data/canopi.db`.
+- Against `r-60ea417b5a15c3aa`, plant fields moved: hardiness_zone_min 131, frost_tender 79, toxicity 74 (Slight 20→57, Moderate 14→39, Severe 2→8), nitrogen_fixer 22, deciduous_evergreen 14, is_annual 5 (Good-King-Henry is perennial now).
+- Figures re-pinned on it: seven sites' kept pools (1–4 fewer), the cool-season annual case (Siberian purslane), Kiambu countFits 305 (marker), PP-B39 now waits on b3's Slight flag.
+
+Previous install: release `r-60ea417b5a15c3aa`, schema 3, `consortium-v3.r-60ea417b5a15c3aa.977fc4ceccc7.sqlite.gz`, rebuilt from canopi-data master `94a67a5` for the GBIF credit (`2e195da`).
 - Against `r-b958a4239cc68f73` (the ranges rebuild's final rows) only `meta.built_at`, `meta.release_id` and the `gbif_occurrences` row of `sources` (the DOI follow-up sentence removed) differ; DDL and every other table are equal (audited table by table), so every count pinned on `r-b958a4239cc68f73` holds.
 - 578,005 B gzipped (`r-b958a4239cc68f73` 578,040 B; `r-01102782139409b5` 568,732 B; schema 2's `r-e0b162087a79eecf` 556,862 B).
 - 515 plants (24 `grown_as_annual`), 200 placements per climate (Tropical, Mediterranean, Temperate); 3,605 range rows (7 variables, 56 weak), 8,549 Köppen rows, 34,176 area rows.
@@ -377,7 +381,7 @@ This section supersedes the statements above where they disagree.
   - `verdict.ts`, `verdict-line.ts`, `verdict-load.ts`, `years.ts`, `holes.ts` and `weigh.ts` are seams tagged `@public`. b2 writes their bodies.
   - `PlantSource.layerValues` is stubbed in `sqlite-source.ts`.
 - **Balance deleted**: `balance.ts`, its types, `BalanceSlot`, `balance.css` and `scripts/consortium-balance.test.mjs` are gone, so the "F1a commit 0 seams" bullet on `balance.ts` above no longer holds.
-- **Range verdict vectors**: `scripts/vectors/range-verdicts.json` is a verbatim copy of canopi-data `tests/vectors/range_verdicts.json`. Its sha, schema and release id are checked against `src/data/consortium-index.json` in `install-consortium.test.mjs`.
+- **Range verdict vectors**: `scripts/vectors/range-verdicts.json` is a verbatim copy of canopi-data's range verdicts for the installed release (for `r-f3c6dd8b3c4391be`: `r-f3c6dd8b3c4391be.range_verdicts.json` beside the export, regenerated by canopi-data; only its source block differs from the export's own copy, which names `r-c3b3da5b6f36eed3`). Its sha, schema and release id are checked against `src/data/consortium-index.json` in `install-consortium.test.mjs`.
 
 ### Link v5 contract additions (coordinator review of 0a, 2026-11-14)
 

@@ -416,7 +416,8 @@
             "scripts/browser/consortium-pp-b3.browser.test.mjs",
             "scripts/consortium-css.test.mjs",
             "scripts/browser-tests.test.mjs",
-            "scripts/browser/shards.json"
+            "scripts/browser/shards.json",
+            "scripts/browser/consortium-pp-b2.browser.test.mjs"
           ]
         }
       }

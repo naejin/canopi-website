@@ -354,7 +354,9 @@ const SITES = {
 // r-01102782139409b5: lyon 349, dakar 263, lima 273, hanoi 286, montreal 177, nairobi 163, perth 176,
 // seville 198, oslo 236, manaus 199, phoenix 134, brisbane 333, yakutsk 59, chicago 255).
 // The same counts with the summer side limited to heat-demanding annuals (coordinator decision 2026-11-12).
-const KEPT = { lyon: 360, dakar: 274, lima: 282, hanoi: 293, montreal: 182, nairobi: 164, perth: 176, seville: 198, oslo: 236, manaus: 199, phoenix: 150, brisbane: 336, yakutsk: 72, chicago: 255 };
+// r-f3c6dd8b3c4391be (D2d: hardiness, frost-tender and annual flags refreshed) keeps 1–4 fewer at seven
+// sites (r-60ea417b5a15c3aa: dakar 274, lima 282, hanoi 293, montreal 182, phoenix 150, brisbane 336, yakutsk 72).
+const KEPT = { lyon: 360, dakar: 270, lima: 278, hanoi: 289, montreal: 181, nairobi: 164, perth: 176, seville: 198, oslo: 236, manaus: 199, phoenix: 147, brisbane: 334, yakutsk: 68, chicago: 255 };
 
 const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
 const real = await sourceOf(new URL(`../public${index.files[0].url}`, import.meta.url), { releaseId: index.release_id, climates: index.climates });

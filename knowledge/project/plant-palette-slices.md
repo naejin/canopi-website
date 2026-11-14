@@ -6,13 +6,13 @@ tags: [consortium]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:56Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:30Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:19:41Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
     title: scripts/plan/pp-b-owners.json
-    digest: sha256:fe5af03b3a8f801f
-    last_modified: 2026-11-14T16:49:53Z
+    digest: sha256:687ecb9e74c58484
+    last_modified: 2026-11-14T22:18:42Z
   - id: f1a-owners-json
     resource: ../../scripts/plan/f1a-owners.json
     title: scripts/plan/f1a-owners.json
@@ -106,8 +106,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:f2cafc31e8878494
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:73d0a99d6422b186
+    last_modified: 2026-11-14T21:33:54Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs

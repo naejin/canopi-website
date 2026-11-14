@@ -360,6 +360,11 @@ test('release verify: runs `uv run canopi release verify <dir>` from the canopi-
   fake(3, 'disagreement');
   assert.match(releaseVerifyProblem('/x/export', { root, env, log: quiet }), /exited 3:[\s\S]*disagreement/);
   assert.match(releaseVerifyProblem('/x/export', { root: join(root, 'none'), env, log: quiet }), /canopi-data was not found/);
+  // A canopi-data checkout without its own data/ (a worktree at an older tag) names the database.
+  fake(0, 'fine');
+  const named = [];
+  assert.equal(releaseVerifyProblem('/x/export', { root, env: { ...env, CANOPI_DATA_DB: '/d/canopi.db' }, log: (m) => named.push(m) }), null);
+  assert.match(named[0], new RegExp(`^${root} run canopi release verify /x/export --db-path /d/canopi.db`));
   if (!process.env.CANOPI_DATA_DIR) assert.equal(CANOPI_DATA_DIR, fileURLToPath(new URL('../../canopi-data', import.meta.url)));
 });
 
@@ -372,12 +377,13 @@ test('the command line: a real export is refused when verify cannot say yes, and
 });
 
 // PP-B commit 0 (palette-vectors convention): canopi-data's range-verdict vectors, a stamped copy of
-// its tests/vectors/range_verdicts.json (canopi-data 4e9ba16, sha256 below) until install-consortium.mjs
+// its range_verdicts.json for the installed release (r-f3c6dd8b3c4391be: canopi-data's regenerated
+// copy beside the export, schema3-last code; sha256 below) until install-consortium.mjs
 // reads them from the installed release. The copy must be for the release the site installs: a new
 // export pin without new vectors fails here, never silently (b2 runs the cases).
 test('the stamped range-verdict vectors are for the installed consortium release', () => {
   const bytes = readFileSync(new URL('vectors/range-verdicts.json', import.meta.url));
-  assert.equal(createHash('sha256').update(bytes).digest('hex'), 'fbbd5cb7acd35672d1c861f3eaae4d6747da4617f9e5b0af1cf214d144038f9a', 'the copy is canopi-data\'s file, unedited');
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), '950058cbfed105924eb01a11b467fca0794aca31898cc4759a55e5bb8c49ecb2', 'the copy is canopi-data\'s file, unedited');
   const vectors = JSON.parse(bytes.toString('utf8'));
   const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
   assert.equal(vectors.schema, 'canopi-range-verdicts/1');
