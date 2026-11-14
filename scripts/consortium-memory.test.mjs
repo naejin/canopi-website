@@ -127,13 +127,13 @@ test('hashchange: own address (Back/Forward) is the save with its source; anothe
 });
 
 test('the country at start: a link, the reader\'s choice ("-" is none), the save (with its source), the guess, none', () => {
-  assert.deepEqual(countryAtStart({ link: 'fr', pref: 'DE', saved: 'ES', guess: 'US' }), { code: 'FR', source: 'link' });
-  assert.deepEqual(countryAtStart({ link: null, pref: '-', saved: 'ES', guess: 'US' }), { code: null, source: 'chosen' });
-  assert.deepEqual(countryAtStart({ link: 'x', pref: 'DE', saved: 'ES', guess: 'US' }), { code: 'DE', source: 'chosen' }, 'a malformed link code is ignored');
-  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'es', guess: 'US' }), { code: 'ES', source: 'chosen' });
-  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'es', savedFrom: 'link', guess: 'US' }), { code: 'ES', source: 'link' }, 'a saved link country is never shown as chosen (review 2)');
-  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: null, guess: 'US' }), { code: 'US', source: 'guess' });
-  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: null, guess: null }), { code: null, source: null });
+  assert.deepEqual(countryAtStart({ link: 'fr', pref: 'DE', saved: 'ES', guess: () => 'US' }), { code: 'FR', source: 'link' });
+  assert.deepEqual(countryAtStart({ link: null, pref: '-', saved: 'ES', guess: () => 'US' }), { code: null, source: 'chosen' });
+  assert.deepEqual(countryAtStart({ link: 'x', pref: 'DE', saved: 'ES', guess: () => 'US' }), { code: 'DE', source: 'chosen' }, 'a malformed link code is ignored');
+  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'es', guess: () => 'US' }), { code: 'ES', source: 'chosen' });
+  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'es', savedFrom: 'link', guess: () => 'US' }), { code: 'ES', source: 'link' }, 'a saved link country is never shown as chosen (review 2)');
+  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: null, guess: () => 'US' }), { code: 'US', source: 'guess' });
+  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: null, guess: () => null }), { code: null, source: null });
 });
 
 const SUN_SPOT = { light: 'sun', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
@@ -379,7 +379,7 @@ test('applyPreset: a card the reader picks while the guide\'s plant is read wins
   await p;
   assert.equal(store.climate.peek(), 'Mediterranean', 'the reader\'s card');
   assert.deepEqual(store.members.peek(), [], 'the guide\'s plant is not applied');
-  assert.equal(m.notices.peek().guideKept, null);
+  assert.equal(m.notices.peek().guidePlant, null);
 });
 
 // P5 owner answer 5 (2026-11-11): a country from the location is labelled "from your location", saved on
@@ -397,8 +397,8 @@ test('a country from the location: never in a link or the address without the ti
   assert.equal(readRecord(saveRecord('v=5&c=temperate&a=&e=1', 'x', 'link', 'DE')).country, 'DE', 'a link\'s country is kept beside the fragment too');
   assert.deepEqual(readRecord(saveRecord('v=5&c=temperate&a=&e=1', 'x', 'chosen', 'FR')), { fragment: 'v=5&c=temperate&a=&e=1', place: '', at: 'x', src: 'chosen' }, 'a chosen country is not: canopi-country holds it');
   assert.equal(readRecord(JSON.stringify({ fragment: 'v=5&c=temperate&a=&e=1', at: 'x', src: 'location', country: 'nope' })).country, undefined, 'a malformed code is dropped');
-  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'fr', savedFrom: 'location', guess: 'US' }), { code: 'FR', source: 'location' }, 'shown again as "from your location", never as chosen');
-  assert.deepEqual(countryAtStart({ link: 'DE', pref: null, saved: 'fr', savedFrom: 'location', guess: 'US' }), { code: 'DE', source: 'link' }, 'a link\'s own country wins');
+  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'fr', savedFrom: 'location', guess: () => 'US' }), { code: 'FR', source: 'location' }, 'shown again as "from your location", never as chosen');
+  assert.deepEqual(countryAtStart({ link: 'DE', pref: null, saved: 'fr', savedFrom: 'location', guess: () => 'US' }), { code: 'DE', source: 'link' }, 'a link\'s own country wins');
 });
 
 // ---- E6 S1: the consortium's state declared once (src/islands/consortium/state/schema.ts). Each field
@@ -504,7 +504,7 @@ const CASES = {
   // link only with the tick, and applied only with a place (k alone keeps the reader's country, 8.3).
   country: {
     change: () => { store.country.value = { code: 'DE', source: 'location' }; store.spot.value = { ...PART_WET }; }, want: { code: 'DE', source: 'location' },
-    fromSave: (rec) => countryAtStart({ link: null, pref: null, saved: rec.country ?? null, savedFrom: rec.src, guess: null }),
+    fromSave: (rec) => countryAtStart({ link: null, pref: null, saved: rec.country ?? null, savedFrom: rec.src, guess: () => null }),
     place: true, link: { code: 'DE', source: 'link' },
   },
   room: { change: () => { store.room.value = 'large'; }, want: 'large' },

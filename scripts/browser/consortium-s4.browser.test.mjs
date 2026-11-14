@@ -5,6 +5,7 @@ import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
 import { aria, axNodes, countAx, layoutVariants, behaviour, en, findAx, fixtureDb, has } from './helpers.mjs';
+import { openCards } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 import { CANOPI_FILE_SCHEMA, CURRENT_CANOPI_FILE_VERSION } from '../vendor/canopi-design-format/canopi-design-format.ts';
 import { validate } from '../vendor/canopi-design-format/validate.mjs';
@@ -13,21 +14,28 @@ let h;
 before(async () => { h = await startHarness(); });
 after(async () => { await h?.close(); });
 
-// Choose a climate and press Suggest: the result shows with its action row (Share, Print, Download for
-// Canopi).
+// Choose a climate and press "Start from a small suggested palette" (Place, PP-B b1a): the palette
+// shows with its action row (Share, Print, Download for Canopi).
+const SUGGEST = en['consortium.start.suggest'];
 async function suggest(page, climate = 'Temperate') {
+  await openCards(page);
   await page.locator(aria('radio', climate)).click();
   assert.equal(await loadState(page), 'ready');
-  await page.locator(aria('button', 'Suggest plants')).click();
+  await page.locator(aria('button', SUGGEST)).click();
   assert.ok(await has(page, aria('button', 'Share'), 8000), 'the result and its actions');
 }
 const memberNames = async (page) => (await axNodes(page)).filter((n) => n.role === 'button' && / · /.test(n.name ?? '')).map((n) => n.name).sort();
-const shareLink = async (page) => {
+// The share link; with `place`, "Include my place" ticked first (PP-B b1a: off by default).
+const shareLink = async (page, { place = false } = {}) => {
   // Open the Share panel (closed first if open, so the field is read fresh).
   if (await page.$('#ct-share-field')) await page.locator(aria('button', 'Share')).click();
   await page.locator(aria('button', 'Share')).click();
+  if (place) {
+    await page.waitForSelector('input[data-share-location]', { timeout: 4000 });
+    if (!(await page.$eval('input[data-share-location]', (el) => el.checked))) await page.click('input[data-share-location]');
+  }
   const field = await findAx(page, { role: 'textbox', name: /link/i });
-  assert.ok(field?.value?.includes('#v=4'), 'the share field holds a #v=4 link');
+  assert.ok(field?.value?.includes('#v=5'), 'the share field holds a #v=5 link');
   return field.value;
 };
 const hashOf = (url) => new URL(url).hash;
@@ -38,21 +46,20 @@ const countryText = (page) => page.$eval('[data-ct="country"]', (el) => el.textC
 const fixtureTemperate = () => fixtureDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
 // A phase column's header begins with its plain words (Years 1–3).
 const PHASE_WORDS = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'].map((p) => en[`consortium.phase.${p}.plain`]);
-const UNSURE = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
-// A #v=4 link of the first five fixture Temperate plants at stage 3, with a chosen country.
+const UNSURE_SPOT = { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
+// A #v=5 link of the first five fixture Temperate plants that brings a place: a country and a sun
+// answer (the stage and Keep went in PP-B commit 0a').
 const stageLink = async () => {
   const ids = await fixtureTemperate();
-  return encodeLink({ climate: 'Temperate', country: 'FR', site: { ...UNSURE, light: 'sun' }, members: ids.slice(0, 5), kept: [ids[0]], removed: [], guests: [], crops: [], stage: 3 }, { Temperate: ids });
-};
-// A #v=4 link holding every Temperate plant of the fixture (21: above the print drawing's limit).
-const allTemperateLink = async () => {
-  const ids = await fixtureTemperate();
-  return { count: ids.length, fragment: encodeLink({ climate: 'Temperate', country: null, site: UNSURE, members: ids, kept: [], removed: [], guests: [], crops: [], stage: null }, { Temperate: ids }) };
+  return encodeLink({ climate: 'Temperate', country: 'FR', room: 'small', plot: null, period: '1991-2020', spot: { ...UNSURE_SPOT, light: 'sun' }, soil: null, members: ids.slice(0, 5), removed: [], guests: [] }, { Temperate: ids }, { place: true });
 };
 
 test('BT-1 (S4 start): nothing chosen at start, the country line above the climate cards, Arid asks', async (t) => {
   await layoutVariants(t, async (v) => {
     const page = await h.open('/palette/', v);
+    // Place first (owner drop 10): the cards one link away.
+    assert.ok(await has(page, '[data-place-climates]', 8000), 'the climate cards, one link away');
+    await openCards(page);
     assert.ok(await has(page, aria('radio', 'Temperate'), 8000), 'the climate cards');
     const radios = (await axNodes(page)).filter((n) => n.role === 'radio');
     assert.ok(radios.length >= 7, 'every climate is a choice');
@@ -66,6 +73,7 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
     // (The crop examples went with the Main crops picker in PP-B commit 0a'.)
     assert.equal(await loadState(page), 'ready');
     const arid = await h.open('/palette/', v);
+    await openCards(arid);
     await arid.locator(aria('radio', 'Arid')).click();
     // P5 owner answer 1: an uncovered climate borrows the nearest curated lists (S5c), once a location
     // filters them (UX audit fix 1); without one, Arid says it needs the site's location, no palette.
@@ -76,23 +84,24 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
   });
 });
 
-test('BT-7 (S4 share): a copied link opened as a new document restores the same consortium; an unknown token and an outdated link give their notices; a reload restores the last consortium', async (t) => {
+test('BT-7 (S4 share): a copied link opened as a new document restores the same palette; an unknown token and an outdated link give their notices; a reload restores the last palette', async (t) => {
   await behaviour(t, async (v) => {
     const page = await h.open('/palette/', { ...v, data: 'fixture' });
+    await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
-    await page.locator(aria('radio', 'Small garden')).click();
+    await page.click('input[name="ct-site-room"][value="small"]');
     await suggest(page);
     const link = await shareLink(page);
     assert.equal(await page.$eval('.ct-share [role="status"]', (el) => el.textContent), '', 'nothing copied before Copy is pressed (review 6)');
     await page.locator(aria('button', 'Copy')).click();
     assert.ok(await findAx(page, { name: /^(Link copied\.|Copy the link above by hand\.)$/ }), 'Copy copies, or says to copy by hand');
-    assert.match(link, /&m=small&/, 'the site is in the link');
+    assert.match(link, /&m=small&/, 'the room is in the link');
 
     // A new document: a unique query before the fragment, so nothing is reused from the first page.
-    // The restored consortium writes back the very same link (members, kept, crops, site, stage).
+    // The restored palette writes back the very same link (climate, room, members).
     const copy = await h.open(`/palette/?run=${Date.now()}${hashOf(link)}`, { ...v, data: 'fixture' });
     assert.equal(await loadState(copy), 'ready');
-    assert.equal(hashOf(await shareLink(copy)), hashOf(link), 'the same consortium');
+    assert.equal(hashOf(await shareLink(copy)), hashOf(link), 'the same palette');
     await done(copy);
 
     // An unknown token: the rest restores, with the notice.
@@ -100,37 +109,43 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     assert.ok(await findAx(unknown, { name: /no longer in the list; the rest is restored/ }), 'the unknown-plant notice');
     await done(unknown);
     // An outdated link (another version): calm copy, nothing restored.
-    const old = await h.open(`/palette/?run=${Date.now()}${hashOf(link).replace('v=4', 'v=3')}`, { ...v, data: 'fixture' });
+    const old = await h.open(`/palette/?run=${Date.now()}${hashOf(link).replace('v=5', 'v=3')}`, { ...v, data: 'fixture' });
     assert.ok(await findAx(old, { name: /from an older version of the tool/ }), 'the outdated-link notice');
     await done(old);
 
-    // A reload with no fragment restores the last consortium (storage works).
+    // A reload with no fragment restores the last palette (storage works).
     await page.goto(new URL('/palette/', page.url()).href);
     assert.equal(await loadState(page), 'ready');
-    assert.equal(hashOf(await shareLink(page)), hashOf(link), 'the last consortium is restored');
+    assert.equal(hashOf(await shareLink(page)), hashOf(link), 'the last palette is restored');
     await done(page);
 
-    // A link with a stage and a country round-trips; a reload of it keeps the country "from the shared
-    // link", and so does the save it leaves (reviews 1, 2, 11).
+    // A link that brings a place (a country and a spot answer) round-trips with "Include my place"
+    // ticked; a reload of it keeps the country "from the shared link". Nothing of the link's place is
+    // saved before the reader answers "Use it" (PP-B b1a), which makes the country the reader's.
     const staged = await stageLink();
     const shared = await h.open(`/palette/?run=${Date.now()}#${staged}`, { ...v, data: 'fixture' });
     assert.equal(await loadState(shared), 'ready');
-    assert.equal(hashOf(await shareLink(shared)), `#${staged}`, 'stage 3, site, kept and country round-trip');
+    assert.equal(hashOf(await shareLink(shared, { place: true })), `#${staged}`, 'room, members, country and spot round-trip');
     assert.match(await countryText(shared), /from the shared link/);
     await shared.reload();
     assert.equal(await loadState(shared), 'ready');
     assert.ok(await has(shared, aria('button', 'Share'), 8000));
     assert.match(await countryText(shared), /from the shared link/, 'a reload keeps the link label');
+    await shared.locator(aria('button', en['consortium.place.useIt'])).click();
+    await shared.waitForFunction(() => !document.querySelector('[data-place-notice="linkPlace"]'), { timeout: 4000 });
+    assert.match(await countryText(shared), /chosen by you/, '"Use it" makes the link\'s country the reader\'s');
     await shared.goto(new URL('/palette/', shared.url()).href);
     assert.ok(await has(shared, aria('button', 'Share'), 8000));
-    assert.match(await countryText(shared), /from the shared link/, 'the save keeps the link label');
+    assert.match(await countryText(shared), /chosen by you/, 'the save keeps the country the reader took');
     await done(shared);
 
     // A country the reader chose, then a reload of the page's own address: still "chosen by you".
     const mine = await h.open('/palette/', { ...v, data: 'fixture' });
+    await openCards(mine);
     await mine.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(mine), 'ready');
-    const use = (await axNodes(mine)).find((n) => n.role === 'button' && /^Use /.test(n.name ?? ''));
+    // The country's "Use {country}", not the location step's "Use my location" (now above it, owner drop 10).
+    const use = (await axNodes(mine)).find((n) => n.role === 'button' && /^Use /.test(n.name ?? '') && n.name !== en['consortium.location.geo'] && n.name !== en['consortium.location.useCentre']);
     if (use) await mine.locator(aria('button', use.name)).click();
     else {
       await mine.locator(aria('button', 'Add your country')).click();
@@ -147,30 +162,31 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     await mine.evaluate((f) => { location.hash = f; }, staged);
     for (let i = 0; i < 40 && (await mine.evaluate(() => location.hash)) !== `#${staged}`; i++) await new Promise((r) => setTimeout(r, 100));
     await new Promise((r) => setTimeout(r, 800));
-    assert.equal(hashOf(await shareLink(mine)), `#${staged}`, 'the pasted link is the consortium shown');
+    assert.equal(hashOf(await shareLink(mine, { place: true })), `#${staged}`, 'the pasted link is the palette shown');
     assert.match(await countryText(mine), /from the shared link/);
 
-    // Back: the reader's own consortium again, its country still "chosen by you" (round 2, 1).
+    // Back: the reader's own palette again, its country still "chosen by you" (round 2, 1).
     await mine.goBack();
     await new Promise((r) => setTimeout(r, 1000));
-    assert.equal(hashOf(await shareLink(mine)), own, 'Back reopens the reader\'s own consortium');
+    assert.equal(hashOf(await shareLink(mine)), own, 'Back reopens the reader\'s own palette');
     assert.match(await countryText(mine), /chosen by you/, 'Back never relabels the reader\'s country');
 
-    // With a consortium shown, an older or cut pasted link changes nothing, says so there, and the
-    // address goes back to the consortium shown (round 2, 2 and 4).
-    for (const [bad, words] of [[staged.replace('v=4', 'v=3'), /pasted link is from an older version/], [staged.replace(/c=temperate&/, ''), /pasted link looks cut off/]]) {
+    // With a palette shown, an older or cut pasted link changes nothing, says so there, and the
+    // address goes back to the palette shown (round 2, 2 and 4).
+    for (const [bad, words] of [[staged.replace('v=5', 'v=3'), /pasted link is from an older version/], [staged.replace(/c=temperate&/, ''), /pasted link looks cut off/]]) {
       await mine.evaluate((f) => { location.hash = f; }, bad);
       assert.ok(await findAx(mine, { name: words }), `the notice for the pasted link (${words})`);
       for (let i = 0; i < 40 && (await mine.evaluate(() => location.hash)) !== own; i++) await new Promise((r) => setTimeout(r, 100));
-      assert.equal(await mine.evaluate(() => location.hash), own, 'the address is the consortium shown again');
+      assert.equal(await mine.evaluate(() => location.hash), own, 'the address is the palette shown again');
       assert.equal(hashOf(await shareLink(mine)), own, 'nothing changed');
     }
     await done(mine);
 
-    // A #v=4 link without a climate: the cut notice, and Start (review 7).
+    // A #v=5 link without a climate: the cut notice, and Place (review 7).
     const noClimate = await h.open(`/palette/?run=${Date.now()}#${staged.replace(/c=temperate&/, '')}`, { ...v, data: 'fixture' });
     assert.ok(await findAx(noClimate, { name: /looks cut off/ }), 'the cut notice');
-    assert.ok(await has(noClimate, aria('radio', 'Temperate')), 'Start stays');
+    await openCards(noClimate);
+    assert.ok(await has(noClimate, aria('radio', 'Temperate')), 'Place stays');
     assert.equal(await has(noClimate, aria('button', 'Share'), 500), false, 'no result without a climate');
     await done(noClimate);
     // A v1 query link: the outdated notice, nothing restored (review 5).
@@ -179,10 +195,11 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     // A v1 save: said once, then removed (review 4).
     await v1.evaluate(() => localStorage.setItem('canopi-consortium', JSON.stringify({ q: 'c=temperate&a=AbCdEf', at: '2026-10-01', src: 'chosen' })));
     await v1.goto(new URL('/palette/', v1.url()).href);
-    assert.ok(await findAx(v1, { name: /last consortium was made with an older version/ }), 'the old-save notice');
+    assert.ok(await findAx(v1, { name: /last palette was made with an older version/ }), 'the old-save notice');
     await v1.goto(new URL('/palette/', v1.url()).href);
+    await openCards(v1);
     assert.ok(await has(v1, aria('radio', 'Temperate'), 8000));
-    assert.equal(await findAx(v1, { name: /last consortium was made with an older version/ }, 500), null, 'only once');
+    assert.equal(await findAx(v1, { name: /last palette was made with an older version/ }, 500), null, 'only once');
     await done(v1);
   }, { phone: true });
 });
@@ -192,7 +209,7 @@ test('BT-7 (S4 share, blocked storage): everything works and Share says the link
     const blocked = await h.open('/palette/', { ...v, data: 'fixture', storage: false });
     await suggest(blocked);
     await blocked.locator(aria('button', 'Share')).click();
-    assert.ok(await findAx(blocked, { name: /This browser does not keep your consortium; your link does/ }));
+    assert.ok(await findAx(blocked, { name: /This browser does not keep your palette; your link does/ }));
     await done(blocked);
   });
   // Chrome's own cookie block (site data refused for every site), not a stub (H1/W1): sqlite-wasm
@@ -203,7 +220,7 @@ test('BT-7 (S4 share, blocked storage): everything works and Share says the link
       assert.equal(await page.evaluate(() => { try { void localStorage.length; return 'works'; } catch (e) { return e.name; } }), 'SecurityError', 'the profile blocks site data');
       await suggest(page);
       await page.locator(aria('button', 'Share')).click();
-      assert.ok(await findAx(page, { name: /This browser does not keep your consortium; your link does/ }));
+      assert.ok(await findAx(page, { name: /This browser does not keep your palette; your link does/ }));
     } finally { await page.close(); }
   });
 });
@@ -244,13 +261,17 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
       }
       assert.fail(`${what} is reachable by Tab`);
     };
-    // Start: Tab into the climate choices, arrows to Temperate (an arrow checks it); Suggest plants, Enter.
-    await tabTo((a) => a.type === 'radio', 'the climate choices');
+    // Place: Tab to "No location? Choose a climate", Enter (the focus moves into the cards, owner drop
+    // 10), arrows to Temperate (an arrow checks it); "Start from a small suggested palette", Enter.
+    await tabTo((a) => a.text === en['consortium.place.climate.open'], 'the link to the climate choices');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.activeElement?.type === 'radio', { timeout: 4000 }).catch(() => {});
+    assert.equal((await active()).type, 'radio', 'Enter moves the focus into the climate choices');
     for (let i = 0; i < 12 && !(await active()).text.startsWith('Temperate'); i++) await page.keyboard.press('ArrowDown');
     assert.ok((await active()).text.startsWith('Temperate'), 'Temperate by arrow keys');
     if (!(await page.evaluate(() => document.activeElement.checked))) await page.keyboard.press('Space');
     assert.equal(await loadState(page), 'ready');
-    await tabTo((a) => a.text === 'Suggest plants', 'Suggest plants');
+    await tabTo((a) => a.text === SUGGEST, SUGGEST);
     await page.keyboard.press('Enter');
     assert.ok(await findAx(page, { role: 'table' }, 8000), 'the matrix, reached by keyboard');
     assert.notEqual((await active()).tag, 'body', 'focus moves to the matrix');
@@ -282,15 +303,15 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
     // (The keep step went with Keep in PP-B commit 0a'.)
     const members = await page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort());
 
-    // Share: the link field holds the consortium.
+    // Share: the link field holds the palette.
     await tabTo((a) => a.text === 'Share', 'Share');
     await page.keyboard.press('Enter');
     const field = await findAx(page, { role: 'textbox', name: /link/i });
-    assert.match(field?.value ?? '', /#v=4/, 'the share field holds the link');
+    assert.match(field?.value ?? '', /#v=5/, 'the share field holds the link');
     // The copied link, opened as a new document: the same members.
     const copy = await h.open(`/palette/?run=${Date.now()}${hashOf(field.value)}`, v);
     assert.equal(await loadState(copy), 'ready');
-    assert.ok(await has(copy, aria('button', 'Share'), 8000), 'the link reopens the consortium');
+    assert.ok(await has(copy, aria('button', 'Share'), 8000), 'the link reopens the palette');
     await copy.locator(aria('tab', 'All plants')).click();
     await copy.waitForSelector('#ct-root [data-plant-id]');
     assert.deepEqual(await copy.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort()), members, 'the same members');

@@ -18,7 +18,9 @@
 // - The page's own address: replaceState writes history.state { ct: fragment, src, pl: place }, so a
 //   reload of the page's own link opens as the save (its country label and this tab's place kept),
 //   not as a link someone shared (v1 bca954c). A link pasted into the open tab (hashchange) is opened
-//   (arrival.ts).
+//   (arrival.ts). While a link's place waits on the reader (ask: 1, with the link's cell `o` in pl) or
+//   the save is held for a link the reader has not acted on (hold: 1), a reload or Back/Forward keeps
+//   it so (plant-palette-architecture 8.3: arriving by a link writes nothing until the reader acts).
 // - The reader's country choice: localStorage COUNTRY_STORE ('FR', or '-' for "No country"), apart
 //   from the consortium. A guess from the browser is shown as a guess, used for the warnings, and
 //   never written, neither here nor in a link (owner row "Climate first, details").
@@ -35,7 +37,7 @@
 // in flight (what Start shows while a link opens) and the count of the reader's actions, which the
 // store watcher (watchStore) keeps.
 import { computed, effect, signal, untracked } from '@preact/signals';
-import type { ClimateZone, LinkOrigin, PlantId, ShareState } from '../../../lib/consortium/index.ts';
+import type { ClimateZone, LinkOrigin, PlantId, ShareState, SoilAnswer, Spot } from '../../../lib/consortium/index.ts';
 import { encodeLink, encodePlace, linkVersionStatus } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
@@ -223,12 +225,52 @@ export function currentPlace(of: Consortium | null = null): string {
   if (!now) return '';
   return encodePlace({ ...shareState(now, { place: true }), country: null });
 }
+// history.state.pl: the tab's place, with a link's country (`k`) too, so a reload of a link's page keeps
+// the country "from the shared link" (the address holds none of `k o l w q r h s`; the reader's own
+// country is kept on the device, COUNTRY_STORE, and in the save record's `country`).
+// While a link's place waits on the reader, its cell (`o`) too, so "Use it" after a reload still has it
+// (per tab, never in the save).
+function addressPlace(of: Consortium | null): string {
+  const now = of ?? own(true);
+  if (!now) return '';
+  const at = store.location.peek();
+  const o = linkPlace.peek() && at?.source === 'link' ? { lat: at.lat, lon: at.lon } : null;
+  return encodePlace({ ...shareState(now, { place: true }), country: now.country.source === 'link' ? now.country.code : null }, o);
+}
 // The canopi-place seed: room, plot size, spot and soil (`m z l w q r h s`), without the country.
-export function placeSeed(): string {
+// answers: the spot and soil to seed in place of the store's (the reader's own while a link's place waits).
+export function placeSeed(answers: { spot: Spot; soil: SoilAnswer } | null = null): string {
   const s = schema.peek(['room', 'plot', 'spot', 'soil']);
-  const pairs = [`m=${s.room}`, ...(s.plot !== null ? [`z=${s.plot}`] : []), encodePlace({ country: null, spot: s.spot, soil: s.soil })].filter(Boolean);
+  const { spot, soil } = answers ?? s;
+  const pairs = [`m=${s.room}`, ...(s.plot !== null ? [`z=${s.plot}`] : []), encodePlace({ country: null, spot, soil })].filter(Boolean);
   return pairs.join('&');
 }
+
+// ---- a link that brings a place, and the save held until the reader acts (plant-palette-architecture 8.3) ----
+
+// A link that brings a place applies it to this page only, with the notice "Use it" / "Use my own
+// place" (restore.ts sets it; draft.ts useLinkPlace / useOwnPlace end it). own: the reader's place,
+// country and site cell (location: their own, never a link's) just before the link applied; the save
+// keeps them until the reader chooses.
+export interface OwnPlace { spot: Spot; soil: SoilAnswer; country: Country; location: LinkOrigin | null }
+export const linkPlace = signal<{ own: OwnPlace } | null>(null);
+// The reader's readable save when the page opened on something else (a guide preset, a newer or
+// unreadable link): "Open my saved palette instead" / "Back to mine" (draft.ts openSavedInstead)
+// restores it. null once used, once this page replaces or removes the save (writeSave: the reader's
+// work saved over it), or when there is none; a Place answer that writes no save (a room, a country, a
+// card while the page has no palette of its own) keeps it (review round 2, 2). Kept here, beside
+// writeSave.
+export const savedInstead = signal<SavedRecord | null>(null);
+// What the last answer to an arrival notice did, for Place's status line (draft.ts answered: the
+// notice's button leaves the page with its line, so the focus moves on and this says what happened:
+// A25). '' for nothing. Kept here, below restore.ts, so the reader's next action (watchStore) and the
+// next arrival (restore.ts restore) clear it (review round 2, 4).
+export const placeSaid = signal('');
+// Arriving by a link writes no save until the reader acts (8.3): restore.ts holds it when a link
+// applies (and for a reload or Back/Forward of that page: history.state hold); the reader's next
+// action (watchStore) or a restore of the save lets it go.
+let held = false;
+export const holdSave = (on: boolean): void => { held = on; };
 
 // The save as this page last wrote it, or read it when it opened (openedWith).
 let lastSave: string | null = null;
@@ -252,12 +294,17 @@ export function writeSave(next: string | null | 'back'): void {
     const to = next === 'back' ? beneath : null;
     beneath = undefined;
     if (to === undefined || now !== lastSave) return;
-    if (to === null ? memory.remove(STORE) : memory.write(STORE, to)) lastSave = to;
+    if (to === null ? memory.remove(STORE) : memory.write(STORE, to)) replaced(to);
     return;
   }
   if (sameSave(next, lastSave)) return;
   if (beneath === undefined || now !== lastSave) beneath = now;
-  if (memory.write(STORE, next)) lastSave = next;
+  if (memory.write(STORE, next)) replaced(next);
+}
+// The save this page wrote: the save offered back (savedInstead) is no longer there to open.
+function replaced(to: string | null): void {
+  lastSave = to;
+  if (savedInstead.peek()) savedInstead.value = null;
 }
 
 // The address bar holds the consortium's link (replaceState, no history entry). Same address:
@@ -269,19 +316,30 @@ export function writeAddress(force = false): void {
   const next = fragment ? shareUrl(location.href, fragment) : `${location.origin}${location.pathname}${location.search}`;
   // history.state marks the address as the page's own, so a reload opens it as the save (review 1),
   // with this tab's place (pl: the save is shared by every tab; plant-palette-architecture 8.3).
-  const state = fragment ? { ct: fragment, src: countryFrom(mine?.country), pl: currentPlace(mine) } : null;
+  // ask: a link's place waits on the reader; hold: the save is held for a link they have not acted on.
+  const state = fragment ? { ct: fragment, src: countryFrom(mine?.country), pl: addressPlace(mine), ...(linkPlace.peek() ? { ask: 1 } : held ? { hold: 1 } : {}) } : null;
   if (next !== location.href || JSON.stringify(attempt(() => history.state)) !== JSON.stringify(state)) attempt(() => history.replaceState(state, '', next));
 }
 
 // The save and the address bar follow the consortium; with none of the page's own, the save goes back.
+// While a link's place waits on the reader's choice, the save keeps the reader's own place and country.
 function persist(): void {
   if (store.view.peek() !== 'start' && !store.pool.peek()) return;
   // A link or the save still opening, with no consortium of the page's own yet: the address keeps the
   // link (a reload in that second opens it again; the restore writes the address when it applies).
   if (inFlight.peek() && !own()) return;
   writeAddress();
+  if (held) return;
   const mine = own();
-  writeSave(mine ? saveRecord(currentFragment(mine) ?? '', new Date().toISOString(), countryFrom(mine.country), mine.country.code, currentPlace(mine)) : 'back');
+  if (!mine) { writeSave('back'); return; }
+  const pending = linkPlace.peek()?.own;
+  const kept = pending ? { ...mine, spot: pending.spot, soil: pending.soil, country: pending.country } : mine;
+  writeSave(saveRecord(currentFragment(mine) ?? '', new Date().toISOString(), countryFrom(kept.country), kept.country.code, currentPlace(kept)));
+}
+// A reader's choice made outside the store's fields (a notice's button): the save is no longer held.
+export function release(): void {
+  held = false;
+  persist();
 }
 
 // The shown consortium's link, recomputed on every change of what the link holds (Share's field).
@@ -305,6 +363,9 @@ export function watchStore(): void {
     if (first) { first = false; return; }
     if (quiet) return;
     actions++;
+    held = false;
+    // What an earlier notice's answer did is said no more (a later answer sets it again after this).
+    placeSaid.value = '';
     // The reader acted during a first-visit restore (any Start write: a country, a site answer, a
     // crop, Suggest): the restore will not apply, and the link's climate Start showed stays, now
     // chosen, so what Start shows never vanishes without the reader choosing.
@@ -314,18 +375,39 @@ export function watchStore(): void {
       if (shown && !store.climate.peek()) store.climate.value = shown;
     });
   });
+  // A change the reader made (not quiet) lets a held save go, here as well as in the watcher above,
+  // since the two effects run in no set order for one write.
+  let firstSave = true;
   effect(() => {
-    void [schema.track(schema.lists.save), store.pools.value];
+    void schema.track(schema.lists.save);
+    if (!firstSave && !quiet) held = false;
+    firstSave = false;
+    untracked(persist);
+  });
+  effect(() => {
+    void store.pools.value;
+    void linkPlace.value;
     untracked(persist);
   });
   // canopi-place follows the place the reader gives (a restore applying a link's or a save's place is
-  // not the reader: it seeds nothing).
-  let firstPlace = true;
+  // not the reader: it seeds nothing). While a link's place waits on the reader's choice, a room or
+  // plot change seeds the reader's own spot and soil with it, never the link's (8.3: the link's place
+  // is for this page only); a spot or soil answer the reader gives makes the place shown theirs.
+  // (Below: that answer ends the notice, and the save takes that place.)
+  let firstPlace = true, lastAnswers = '';
   effect(() => {
-    void schema.track(['room', 'plot', 'spot', 'soil']);
+    const now = schema.track(['room', 'plot', 'spot', 'soil']);
+    const answers = JSON.stringify([now.spot, now.soil]), answered = answers !== lastAnswers;
+    lastAnswers = answers;
     if (firstPlace) { firstPlace = false; return; }
     if (quiet) return;
-    untracked(() => memory.write(PLACE_STORE, placeSeed()));
+    untracked(() => { const waiting = linkPlace.peek(); memory.write(PLACE_STORE, placeSeed(waiting && !answered ? waiting.own : null)); });
+  });
+  let firstSpot = true;
+  effect(() => {
+    void schema.track(['spot', 'soil']);
+    if (firstSpot) { firstSpot = false; return; }
+    if (!quiet && untracked(() => linkPlace.peek())) linkPlace.value = null;
   });
 }
 
