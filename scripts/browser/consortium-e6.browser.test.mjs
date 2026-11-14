@@ -34,8 +34,9 @@ async function matrixPage(opts = {}) {
   assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
   return page;
 }
-// The members' chips on the palette page (Through the years; their accessible name is the plant's name).
-const chips = async (page) => page.$$eval('.ct-years .ct-chip[data-plant-id]', (els) => [...new Set(els.map((e) => e.textContent.trim()))]);
+// The members' chips on the palette page (Through the years): their accessible names (the plant's name,
+// its main job, and its fit when it warns: kit/chart.tsx aria-label).
+const chips = async (page) => page.$$eval('.ct-years .ct-chip[data-plant-id]', (els) => [...new Set(els.map((e) => e.getAttribute('aria-label') ?? e.textContent.trim()))]);
 const memberIds = (page) => page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort());
 const dialogOpen = (page) => page.evaluate(() => !!document.querySelector('dialog[open]'));
 const focusedName = (page) => page.evaluate(() => (document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent || '').trim());

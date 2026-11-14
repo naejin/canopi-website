@@ -10,6 +10,9 @@
 //
 // palette200() opens the export with Node's sqlite (as the page does with sqlite-wasm) and returns the
 // taxa; savedRecord200() gives the canopi-consortium save record (link v5) a browser test writes.
+// { own: 4 } gives the same palette's first 4 own plants and the same 6 guests (the same three lists
+// read): the 10-plant palette that parts the fixed cost of a load or an Add from the per-plant cost
+// (review r1 perf-11).
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 
@@ -47,11 +50,11 @@ function mixed(pool, n) {
 }
 
 // { climate, members (200 taxa, guests last), ids, guests ({ id: list }), pools ({ list: taxa }) }.
-export async function palette200() {
+export async function palette200({ own: count = MEMBERS } = {}) {
   const src = await source();
   const pools = Object.fromEntries(await Promise.all([PALETTE_CLIMATE, ...GUEST_LISTS].map(async (c) => [c, await src.pool(c)])));
-  const own = mixed(pools[PALETTE_CLIMATE], MEMBERS);
-  if (own.length < MEMBERS) throw new Error(`the ${PALETTE_CLIMATE} list has ${own.length} plants, fewer than ${MEMBERS}`);
+  const own = mixed(pools[PALETTE_CLIMATE], MEMBERS).slice(0, count);
+  if (own.length < count) throw new Error(`the ${PALETTE_CLIMATE} list has ${own.length} plants, fewer than ${count}`);
   const inOwn = new Set(pools[PALETTE_CLIMATE].map((t) => t.id));
   const guests = {}, guestTaxa = [];
   for (const c of GUEST_LISTS) {
@@ -65,9 +68,9 @@ export async function palette200() {
 }
 
 // The save record (state/persist.ts saveRecord) of the 200-plant palette, link v5, no place answers.
-export async function savedRecord200() {
+export async function savedRecord200({ own = MEMBERS } = {}) {
   const core = await import('../src/lib/consortium/index.ts');
-  const p = await palette200();
+  const p = await palette200({ own });
   const known = Object.fromEntries(Object.entries(p.pools).map(([c, list]) => [c, list.map((t) => t.id)]));
   const fragment = core.encodeLink({
     climate: p.climate, country: null, room: 'unsure', plot: null, period: '1991-2020', spot: null, soil: null,

@@ -223,6 +223,9 @@ test('PP-B (b2 lines, 3.2): fitLine, holeLine and yearsLine give one key under c
   assert.deepEqual(L.holeLine(hole(0, 60)), { key: 'consortium.line.holeAlways', vars: {} });
   assert.deepEqual(L.holeLine(hole(0, 3)), { key: 'consortium.line.holeFirst', vars: {}, count: 3 });
   assert.deepEqual(L.holeLine(hole(15, 60)), { key: 'consortium.line.holeAfter', vars: { from: 15 } });
+  // A gap from under a year to 60 covers every judged year (review r1 conformance-4): never "after year 0.25".
+  assert.deepEqual(L.holeLine(hole(0.25, 60)), { key: 'consortium.line.holeAfterMonth', vars: { month: 3 } });
+  assert.deepEqual(L.holeLine(hole(1, 60)), { key: 'consortium.line.holeAfter', vars: { from: 1 } });
   assert.deepEqual(L.holeLine(hole(0, 1, 'not-judged')), { key: 'consortium.line.holeNotJudged', vars: {} });
   assert.deepEqual(L.holeLine(hole(3, 15, 'pending')), { key: 'consortium.line.holePending', vars: {} });
   assert.deepEqual(L.yearsLine(3, 15), { key: 'consortium.line.yearsSpan', vars: { from: 3, to: 15 } });
@@ -285,6 +288,17 @@ test('PP-B (b2 pictures, 3.4): the jobs picture has a row per job, a plant in ea
   assert.equal(food.cells[3].hole, 'job:feeds_you:3-15');
   assert.deepEqual(food.head, { key: 'consortium.job.feeds_you', vars: {} });
   sameCells(p, P.tableOf(p));
+});
+
+// Review r1 conformance-6: colour never alone. The band colour and the chip's icon and word read the
+// main job from the picture itself (Picture.jobs), the same job the band is drawn with.
+test('PP-B (b2 pictures, review r1 conformance-6): each picture names every plant\'s main job, the one its band is drawn with', async () => {
+  const P = await pictures();
+  for (const kind of ['yearsPicture', 'jobsPicture']) {
+    const p = pictureOf(P, kind, palette);
+    assert.deepEqual(p.jobs, Object.fromEntries(palette.map((t) => [t.id, P.mainJob(t)])), `${kind}: the main job of every plant`);
+    for (const r of p.rows) for (const m of r.marks) assert.equal(m.job, p.jobs[m.id], `${kind} ${r.key}: ${m.id}'s band and its job agree`);
+  }
 });
 
 test('PP-B (b2 pictures stay readable, moved from P5): 200 plants on one light level draw at most PICTURE_LANE_MAX per lane, "+ n more" holds the rest, the table lists every plant', async () => {
@@ -354,4 +368,20 @@ test('PP-B (b2 scale, 200 plants): verdicts and holes under 150 ms, every pictur
   t.diagnostic(`200 plants: verdicts + holes ${probe.toFixed(1)} ms; one added, verdicts + holes + both pictures ${add.toFixed(1)} ms (median of 5)`);
   assert.ok(probe < 150, `verdicts + holes ${probe.toFixed(1)} ms`);
   assert.ok(add < 30, `one plant added re-derives in ${add.toFixed(1)} ms`);
+});
+
+test('PP-B (b2 years, review r1 conformance-12): phaseOfYear is the one year → time step rule (a start year, an end year, past 60 the last step)', () => {
+  core.PHASE_YEARS.forEach(([from, to], i) => {
+    assert.equal(core.phaseOfYear(from), i, `year ${from} starts step ${i}`);
+    assert.equal(core.phaseOfYear(to, true), i, `year ${to} ends step ${i}`);
+  });
+  assert.equal(core.phaseOfYear(null, true), core.PHASE_YEARS.length - 1, 'past 60: the last step');
+});
+
+test('PP-B (b2 scale fixture, review r1 perf-11): the 10-plant palette is the 200-plant one\'s first 4 own plants and the same 6 guests, from the same three lists', async () => {
+  const [big, small] = await Promise.all([p200.palette200(), p200.palette200({ own: 4 })]);
+  assert.equal(small.members.length, 10);
+  assert.deepEqual(small.ids.slice(0, 4), big.ids.slice(0, 4));
+  assert.deepEqual(small.guests, big.guests);
+  assert.deepEqual(Object.keys(small.pools).sort(), Object.keys(big.pools).sort());
 });
