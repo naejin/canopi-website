@@ -6,6 +6,7 @@ import test from 'node:test';
 import { UNSURE_SITE } from '../src/lib/consortium/index.ts';
 import { suggest } from '../src/lib/consortium/suggest.ts';
 import { taxon } from './consortium-p5-fixtures.mjs';
+import { failing } from './expect-fail.mjs';
 
 let n = 0;
 const fn = (f) => ({ function: f, method: 'curated', sources: [] });
@@ -575,4 +576,32 @@ test('b1a r2-5: arrivalPlan works out the arrival: the reader\'s own country bef
   // No save: the seed stands for the reader's own place.
   const n = plan({ kind: 'saved', fragment: link, at: '', src: 'link', place: pl, ask: true }, { pref: 'KE', seed: 'w=dry' });
   assert.equal(n.ask.spot.water, 'dry');
+});
+
+// perf-1 (b2's review, confirmed): the browser's guess walks every country's time zones (about 0.4 s,
+// 1.6 s on a slow phone) before the database opens; it runs only when no link, choice or save names one.
+failing('b1a perf-1: the browser\'s country guess is worked out only when no link, choice or save names a country', { owner: 'b1a', reason: /is not a function|guess was worked out/ }, async () => {
+  let calls = 0;
+  const guess = () => { calls++; return 'US'; };
+  const { countryAtStart } = arrivalM;
+  assert.deepEqual(countryAtStart({ link: 'fr', pref: null, saved: null, guess }), { code: 'FR', source: 'link' });
+  assert.deepEqual(countryAtStart({ link: null, pref: 'DE', saved: null, guess }), { code: 'DE', source: 'chosen' });
+  assert.deepEqual(countryAtStart({ link: null, pref: '-', saved: null, guess }), { code: null, source: 'chosen' });
+  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'es', savedFrom: 'location', guess }), { code: 'ES', source: 'location' });
+  assert.equal(calls, 0, 'the guess was worked out although a country was named');
+  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: null, guess }), { code: 'US', source: 'guess' });
+  assert.equal(calls, 1);
+  // Through arrivalPlan: a saved country (a location's, kept beside the save) needs no guess, also
+  // with a link that brings a place (its own country and the reader's own both worked out).
+  calls = 0;
+  const f = await linkWith('Temperate', 2);
+  const rec = { fragment: f, place: '', at: '2026-11-14', src: 'location', country: 'KE' };
+  const p = arrivalM.arrivalPlan({ kind: 'saved', fragment: f, at: rec.at, src: 'location', place: '' }, { saved: rec, pref: null, guess, seed: null, cell: () => null });
+  assert.deepEqual(p.country, { code: 'KE', source: 'location' });
+  const link = await linkWith('Temperate', 3, { country: 'FR', spot: { ...emptyPlace.spot, light: 'shade' } }, { place: true });
+  arrivalM.arrivalPlan({ kind: 'link', fragment: link }, { saved: null, pref: 'KE', guess, seed: null, cell: () => null });
+  assert.equal(calls, 0, 'the guess was worked out although a country was saved or chosen');
+  // No country anywhere: worked out once, though both the link's and the reader's own are decided.
+  arrivalM.arrivalPlan({ kind: 'link', fragment: link }, { saved: null, pref: null, guess, seed: null, cell: () => null });
+  assert.equal(calls, 1, 'the guess was worked out more than once');
 });
