@@ -6,7 +6,7 @@ tags: [consortium]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:07:11Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:51Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:47:00Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -57,7 +57,7 @@ sources:
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
     digest: sha256:2c99fd3247301a97
-    last_modified: 2026-11-14T18:47:50Z
+    last_modified: 2026-11-14T20:07:28Z
   - id: consortium-f1a-a11y-browser-test-mjs
     resource: ../../scripts/browser/consortium-f1a-a11y.browser.test.mjs
     title: scripts/browser/consortium-f1a-a11y.browser.test.mjs
@@ -201,8 +201,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:cbff125d8053baef
-    last_modified: 2026-11-14T18:43:41Z
+    digest: sha256:652b11feed4df3eb
+    last_modified: 2026-11-14T20:46:26Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
@@ -226,8 +226,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:7f2498d4ce545ed5
-    last_modified: 2026-11-14T18:46:01Z
+    digest: sha256:af8a72c79d13c573
+    last_modified: 2026-11-14T20:46:26Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx

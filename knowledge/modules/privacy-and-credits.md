@@ -4,7 +4,7 @@ title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:42Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:37Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:46:53Z }
 sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
@@ -71,8 +71,8 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:63830dd2eb81c36e
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:c9c83d75e02ad46f
+    last_modified: 2026-11-14T20:46:26Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts

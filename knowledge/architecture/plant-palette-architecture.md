@@ -4,9 +4,9 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T18:46:37Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:46:51Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:37Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:46:58Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -122,8 +122,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:cbff125d8053baef
-    last_modified: 2026-11-14T18:43:41Z
+    digest: sha256:652b11feed4df3eb
+    last_modified: 2026-11-14T20:46:26Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
@@ -142,13 +142,13 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:8f6ca0803a6f32ce
-    last_modified: 2026-11-14T15:12:09Z
+    digest: sha256:3607cd88692db279
+    last_modified: 2026-11-14T20:46:26Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
     digest: sha256:ad8040288e389492
-    last_modified: 2026-11-14T18:46:01Z
+    last_modified: 2026-11-14T20:07:28Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -157,8 +157,8 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:63830dd2eb81c36e
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:c9c83d75e02ad46f
+    last_modified: 2026-11-14T20:46:26Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
@@ -173,12 +173,12 @@ sources:
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
     digest: sha256:914a0961338ae564
-    last_modified: 2026-11-14T18:46:01Z
+    last_modified: 2026-11-14T20:07:28Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:7f2498d4ce545ed5
-    last_modified: 2026-11-14T18:46:01Z
+    digest: sha256:af8a72c79d13c573
+    last_modified: 2026-11-14T20:46:26Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -832,7 +832,7 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 - **A link without a place** is judged against the open palette's `place`, else `canopi-place`, plus the device location: the location half works today (`restore.ts:52-58`). The link "brings a place" when it has `o` or at least one spot or soil answer that is not `unsure` (decided on the decoded state, not on keys present). `m` and `z` never count as bringing a place: they belong to the palette, are always in the link and the save, and a link's or save's `m` and `z` win. A `k` with no `o` and no answer other than `unsure` does not bring a place, and the reader's country is kept. Vectors: every answer `unsure`; only `m` and `z`; `k` alone; `k` with `l=sun`.
 - **Forget this location** runs today's `forget()` (`state/location.ts`) and also clears `canopi-place` and the open palette's `place`. **Start over** keeps the palette's `place`.
 - **A link that brings a place** (Arrivals board): it applies to that page only (`history.state.pl`, `location.source = 'link'`), with the notice "Use it" / "Use my own place"; `writeSave` keeps the save's own `place` until the reader chooses; "Use it" writes the link's spot and soil answers into the palette's `place`, its `o` into `canopi-location` through `state/location.ts` and its `k` through `state/draft.ts`, so they hold across reloads (coordinator row 2026-11-14: this reverses the [location module](/modules/consortium-location.md) rule that a link's `o=` is never saved over the reader's `canopi-location`). "Send the link to my computer" (P11) is `encodeLink(…, { origin, place: true })`, the grower's own link, and takes the same path. Unit tests: a palette edit keeps `l=sun`; "Use it" gives `l=shade` and the link's cell after reload; "Use my own place" restores the reader's own.
-- **Sheets and browser history** (inventory K7; coordinator decision 2026-11-14, built in b2 review r1, `store.ts` history block, `main.ts` popstate): a sheet (Details, Swap, Add, search, Paste) pushes one entry with the same address (`{ ...history.state, sheet: 'sheet' }`); Back closes it and keeps every edit, a second Back leaves the page; Forward never reopens a stale sheet; popstate closes the sheet, then `writeAddress(true)` rewrites the entry landed on synchronously (before the hashchange reads it); closing by its button calls `history.back()`. The step from Your place to Your palette pushes one entry (`watchSteps`), so Back returns to Place; a return visit's or a link's own opening pushes nothing (`arrivalOpensPalette`). The model (review r2 hist-1): `known` holds only the page's entries at or below the one shown; `historyMoved` drops the entries above the one landed on and keeps their Navigation API keys, and a Forward onto one of them is refused (`history.go` back to the entry shown, after the landed entry is rewritten with the current link), so Forward never shows a stale sheet or palette step. Every palette to Place change leaves the palette step's entry, and any sheet's above it, in one `history.go`: "Your place" through `leaveEntry('palette')`, and a change made outside history (Undo back to Place, Start over) through `watchSteps`; after that last move the landed entry takes the address as the change wrote it (`historyMoved` `force` false: no forced link, so an Undo to an empty Start leaves no palette in the address). The hashchange that follows a move the page handled stops in `main.ts` (told by the address it wrote), so `state/arrival.ts` never reads the address landed on as a link to restore (on Place it holds the set-aside palette's link, not the one shown). An entry asked for while the page's own Back is on its way waits for it (`pushWaiting`). A link opened in the tab ends those entries (`forgetEntries`). Not handled: a reload on a sheet entry (the page opens without the sheet; its Back stays on the page), and a guest added by Paste's one-tap Add on an open sheet is lost by Back after a reload, because `state/persist.ts` `writeAddress` replaces `history.state` and drops the `sheet` marker (review r2 hist-2, handed off: persist.ts is not b2's). Browser cases PP-B31 (K7), PP-B32 (Place step), PP-B40 (a sheet on a palette the reader made, then "Your place") and PP-B41 (Undo of a paste made on Place) in `consortium-pp-b2.browser.test.mjs`.
+- **Sheets and browser history** (inventory K7; coordinator decision 2026-11-14, simplified by the owner's simplify pass the same day; `store.ts` history block, `main.ts` popstate and hashchange): a sheet (Details, Swap, Add, search, Paste) pushes one entry with the same address; Back closes it and keeps every edit, a second Back leaves the page. The step from Your place to Your palette pushes one entry (`watchSteps`), so Back returns to Place; a return visit's or a link's own opening pushes nothing (`arrivalOpensPalette`). The model: each pushed entry records the page's entries up to it in its own `history.state.pp` (for example `['palette', 'sheet']`), and `state/persist.ts` `writeAddress` keeps `pp` through every rewrite, so `historyMoved(state)` reads where a Back or Forward landed from the entry itself: no position counting, no Navigation API, and a reload keeps the entries (review r2 hist-2 closed). popstate closes a sheet the landed entry has not, or shows Place when it has no palette step, then `writeAddress` rewrites the landed entry with the current link (`force` false only after an Undo back to Place, which wrote the address it wants), then `pushWaiting` pushes an entry asked for while the page's own Back was on its way. The hashchange that may follow lands on the fragment the page last wrote (`persist.lastWritten`) and stops in `main.ts`, so `state/arrival.ts` never reads it as a link; any other hashchange is the reader's link and ends the entries (`forgetEntries`). Forward onto an entry the page left is allowed and changes nothing on screen (owner 2026-11-14: no refused Forward). Every palette to Place change leaves the palette step's entry, and any sheet's above it, in one `history.go` (`leaveEntry('palette')`: "Your place", and `watchSteps` for a change made outside history). Browser cases PP-B31 (K7), PP-B32 (Place step), PP-B40, PP-B41 and PP-B48/48b (a link pasted again, with and without the Navigation API) in `consortium-pp-b2.browser.test.mjs`.
 - **Guide presets** (`?plant=&climate=`, `readPreset` `state.ts:279`, `applyPreset` `restore.ts:189-204`): the plant joins `members` inside the existing `quietly(batch())`; `guideKept` becomes `guidePlant`, and b1a replaces `consortium.start.guideKept` with a `consortium.place.` key that does not say "Kept". A preset gives `members == [id]` and no save until the reader acts.
 
 ### 8.4 The move to `/palette/` (PP-B commit 0)
@@ -896,7 +896,7 @@ Section 8.1 as built (coordinator review of 0a): any `o` is snapped to its 0.1°
 
 ## As built in PP-B b2 review round 2 (2026-11-14)
 
-- **Browser history (hist-1):** see section 8.3 "Sheets and browser history"; the history model lives in `store.ts` only (`historyMoved`, `leaveEntry`, `watchSteps`), `main.ts` only calls it.
+- **Browser history (hist-1):** see section 8.3 "Sheets and browser history"; the history model lives in `store.ts` only (`historyMoved`, `leaveEntry`, `watchSteps`, entries in `history.state.pp`), `main.ts` only calls it.
 - **Swap (swap-1):** the outside-range group has its own fold: its first 7, then its own "Show all N", whatever the in-range list shows (PP-B42).
 - **Jobs picture colour (colour-1):** each band is drawn in its row's job (`lane` option `markJob`; the "No job recorded" row neutral), the job its lane head names with icon and word. Chosen over a neutral fill because the row's colour then repeats what the row already says in words, so colour is never alone and still ties a band to its row; the plant's main job stays in each chip's accessible name (`Picture.jobs`). Through the years keeps the main job with its key (PP-B43 and a unit case).
 - **Empty and first view (empty-1):** the Next step is "empty" only with no member (`store.members`); `ct:first-view` waits until no member's list is loading or failed (PP-B44; PP-B26 waits for the fit card itself).
