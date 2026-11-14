@@ -153,7 +153,10 @@ test('parked markers: 21 parked, 7 moved, 11 deleted; none parked or deleted is 
   for (const m of [...list.parked, ...list.deleted]) assert.ok(!live.some((x) => x.title.startsWith(`${m.id} `)), `${m.id} is not in the tree`);
   for (const m of list.parked) assert.match(`${m.push} ${m.owner}`, /^(PP-B (b1a|b1b|b2|b3)|PP-C (c1|c2))$/, m.id);
   for (const m of list.moved) {
+    // Still a marker under its owner, or passing: its owner removed the marker in the commit that made
+    // it pass, so it is a plain test with the same title in the same file.
     const now = live.find((x) => x.title.startsWith(`${m.id} → PP-B (${m.owner} `));
-    assert.ok(now && `scripts/${now.file}` === m.to && now.owner === m.owner, `${m.id} moved to ${m.to} under ${m.owner}`);
+    const passing = !now && readFileSync(new URL(`../${m.to}`, import.meta.url), 'utf8').includes(`${m.id} → PP-B (${m.owner} `);
+    assert.ok((now && `scripts/${now.file}` === m.to && now.owner === m.owner) || passing, `${m.id} moved to ${m.to} under ${m.owner}`);
   }
 });

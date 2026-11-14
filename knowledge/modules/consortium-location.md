@@ -2,9 +2,9 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:41Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:41Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:11:02Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:35Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
@@ -14,8 +14,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:bbe76cbff60dc5ec
-    last_modified: 2026-11-13T12:40:55Z
+    digest: sha256:f24acddf0d01b4f7
+    last_modified: 2026-11-14T13:27:54Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
@@ -30,7 +30,7 @@ sources:
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
     digest: sha256:9a4b50c369042a6a
-    last_modified: 2026-11-14T11:39:20Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
@@ -64,18 +64,18 @@ sources:
   - id: share-tsx
     resource: ../../src/islands/consortium/views/Share.tsx
     title: src/islands/consortium/views/Share.tsx
-    digest: sha256:f0d3cd50792d563b
-    last_modified: 2026-11-13T07:08:17Z
+    digest: sha256:1d678d60b53d7406
+    last_modified: 2026-11-14T13:27:54Z
   - id: s5b-css
     resource: ../../src/styles/consortium/p5/s5b.css
     title: src/styles/consortium/p5/s5b.css
     digest: sha256:08df0def03e1b964
     last_modified: 2026-11-12T11:43:06Z
   - id: start-tsx
-    resource: ../../src/islands/consortium/views/Start.tsx
-    title: src/islands/consortium/views/Start.tsx
-    digest: sha256:45e569e00714492c
-    last_modified: 2026-11-14T11:40:42Z
+    resource: ../../src/islands/consortium/views/place/Place.tsx
+    title: src/islands/consortium/views/place/Place.tsx
+    digest: sha256:98c1da7a5cf55c02
+    last_modified: 2026-11-14T15:02:17Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -84,8 +84,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:bdf71e540c290ea1
-    last_modified: 2026-11-13T12:40:55Z
+    digest: sha256:b5d16f20a23a4903
+    last_modified: 2026-11-14T15:02:17Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -94,8 +94,8 @@ sources:
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:4b57cc74b77d753f
-    last_modified: 2026-11-14T11:40:16Z
+    digest: sha256:ff56dae40b77fd8a
+    last_modified: 2026-11-14T15:02:17Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
@@ -137,7 +137,7 @@ a climate card and a country, and the reader confirms (owner answers 1, 4, 5). P
 - **Suggest waits for a lookup**: `requestSuggest` (state/suggest-wait.ts) with `lookups` > 0 sets `pendingSuggest` and runs once they settle, so the suggestion's range filter (S5c) sees the site; the result line meanwhile reads "Reading the climate of your site…" (review round 1 addendum, spec P5-1d). A saved or link location holds one lookup from the chunk load through its settle (`lookingThrough`, no gap). The wait is capped at 10 s per press (`waited`, its timer cleared by the next press or when Suggest runs; review round 3, 1): Suggest then runs without the site and `[data-location-unread]` says the climate was not read (P5-1f).
 - **No soil read** (pre-push review 3): state/location.ts's `read` calls `lookupSite(…, DEFAULT_RADIUS, { soil: false })`, so a lookup fetches climate and regions tiles only (P5-1 checks it); P5.2's soil likely restores the soil read.
 - **Timeouts** (review round 2, 3): a tile read unanswered in 15 s (`READ_TIMEOUT_MS`, a race in state/location.ts's `read`; the climate reader takes no signal) fails like a failed read; a geocoder request is aborted after 15 s (`GEOCODER_TIMEOUT_MS`, transport.ts) and thrown as an error, not an AbortError, so the search shows "offline"; `currentPosition(options, permission)`: the browser's own timeout does not run while its permission prompt waits, so a permission granted before the press gets the browser's 15 s plus a 5 s backstop, and anything else one 45 s cap (`PROMPT_CAP_MS`) over prompt and fix, since a one-time Allow fires no `change` event in some browsers (review round 4, 3).
-- **Keyboard on the cards** (Start.tsx, review round 2, 5): with a card proposed and none checked, only the proposed radio is in the tab order; arrows move the focus without checking; Space, Enter or a click confirms (P5-10b).
+- **Keyboard on the cards** (views/place/Place.tsx, formerly Start.tsx; review round 2, 5): with a card proposed and none checked, only the proposed radio is in the tab order; arrows move the focus without checking; Space, Enter or a click confirms (P5-10b).
 - **Map dialog**: Close, "Use the map centre" and Escape all close the native dialog, so focus returns to the map button; the centre pin (ink cross, ochre point) and the dialog's styles are in `src/styles/consortium/p5/s5b.css`.
 
 ## Budgets (production build, 2026-11-11)
@@ -151,3 +151,9 @@ At canopi `b039f14ee612c6090c91d44b9968357cbdd1d33e` (AGPL header and a "copied 
 ## Tests
 
 `scripts/consortium-p5-seams-s5b.test.mjs` (node); browser specs P5-0d, P5-1 … P5-13 (round 2: P5-1e, 1f, 10b, 13c; round 3: P5-13d, P5-10 strengthened; round 4: P5-1g; seam review: P5-27c sea keeps and names the site, P5-27d failed read keeps it in page and storage over a reload, P5-27e a link without `o=` keeps the saved site fresh, pasted and reloaded, P5-13b updated) in `scripts/browser/consortium-p5-s5b.browser.test.mjs` (P5-0d in `consortium-commit0`; shared code in `p5-helpers.mjs`).
+
+## PP-B b1a (2026-11-14)
+
+- **"Use it" for a link's place** reverses the old rule that a link's `o=` is never saved over the reader's `canopi-location` (coordinator row 2026-11-14): `state/location.ts` `adoptLinkLocation()` turns a `link` location into the reader's own (`source: 'map'`, kept with `keepLocation`); `views/location/location.tsx` re-exports it as `adopt`, reached through restore.ts's `LocationSettle.adopt`.
+- **Forget this location** also clears the palette's place (spot answers to unsure, soil to the map) and `canopi-place`, besides `canopi-location`.
+- Share's tick is "Include my place" (place, not only location): ticked, the link carries `k o l w q r h s`; unticked none of them.

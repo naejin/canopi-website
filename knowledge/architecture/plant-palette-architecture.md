@@ -4,7 +4,9 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:39Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:37Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -140,28 +142,28 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:cd2bd5da5bcdbfd5
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:8f6ca0803a6f32ce
+    last_modified: 2026-11-14T15:12:09Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:31a413ffec3ce0e4
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:00c47b7d18a045f1
+    last_modified: 2026-11-14T15:02:17Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:bdf71e540c290ea1
-    last_modified: 2026-11-13T12:40:55Z
+    digest: sha256:b5d16f20a23a4903
+    last_modified: 2026-11-14T15:02:17Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:5cc847af70dbb553
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:63830dd2eb81c36e
+    last_modified: 2026-11-14T15:02:17Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:4b57cc74b77d753f
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:ff56dae40b77fd8a
+    last_modified: 2026-11-14T15:02:17Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
@@ -170,8 +172,8 @@ sources:
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:f83b76f23d227291
-    last_modified: 2026-11-13T14:56:35Z
+    digest: sha256:5684543301efc5d0
+    last_modified: 2026-11-14T13:27:54Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
@@ -405,13 +407,13 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:c9c8db612ed9a0f6
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:112488cf7fc1f78d
+    last_modified: 2026-11-14T13:27:54Z
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:7601664a85fd6d88
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:096df107f940cfdd
+    last_modified: 2026-11-14T15:16:26Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -805,8 +807,8 @@ Not unreadable: an empty `a` (a valid empty palette); tokens that parse but are 
 
 The privacy text this storage must match is `privacy.tool.device`, owner-approved 2026-11-14 (plan, "Privacy text shipped in PP-B"): the palette (height limit, plot size, spot answers), country, location and site climate on this device; the last spot answers kept to start the next palette; "Forget this location" clears the location and the spot answers.
 
-- The address bar holds the public form only (inventory K7). `history.state` becomes `{ ct, src, pl }` (`state/arrival.ts:31-37` reads `{ct, src}`); `pl` keeps a link's place for this tab (tab isolation: `writeSave` is shared across tabs).
-- The save rule stays: a remove or put-back happens only while the save is what this page last wrote or read (`state/persist.ts:219-235`). Arriving by a link or a guide preset writes nothing until the reader acts; "Open my saved palette instead" calls `restore(saved.fragment, { from: 'saved' })` (`state/restore.ts:125`).
+- The address bar holds the public form only (inventory K7). `history.state` becomes `{ ct, src, pl, ask?, hold? }` (`state/arrival.ts` ownOf reads them); `pl` keeps a link's place for this tab (tab isolation: `writeSave` is shared across tabs); `ask: 1` while a link's place still waits on the reader (a reload asks again, against the reader's own place, country and cell, never the link's), `hold: 1` while the save is held for an arrival the reader has not acted on (a reload or Back keeps holding it; b1a review round 1, bugs-2 and 3). The address's `o` while the link's place waits is the link's cell, its `k` the link's country.
+- The save rule stays: a remove or put-back happens only while the save is what this page last wrote or read (`state/persist.ts:219-235`). Arriving by a link or a guide preset writes nothing until the reader acts; "Open my saved palette instead" calls `restore(saved.fragment, { from: 'saved' })`. The saved palette on offer is `savedInstead` (`state/persist.ts`, re-exported by `restore.ts`): set by a guide preset over a save and by a newer (`v=6`) or unreadable link over a save, where it shows as "Back to mine" on that line; it goes when this page replaces or removes the save (`writeSave`), so a Place answer that writes no save (room, plot, country, a card while the page has no palette of its own) keeps it (b1a review round 2, 2). A guide preset's climate is written quietly (not a reader action), so the offer stays.
 - **A link without a place** is judged against the open palette's `place`, else `canopi-place`, plus the device location: the location half works today (`restore.ts:52-58`). The link "brings a place" when it has `o` or at least one spot or soil answer that is not `unsure` (decided on the decoded state, not on keys present). `m` and `z` never count as bringing a place: they belong to the palette, are always in the link and the save, and a link's or save's `m` and `z` win. A `k` with no `o` and no answer other than `unsure` does not bring a place, and the reader's country is kept. Vectors: every answer `unsure`; only `m` and `z`; `k` alone; `k` with `l=sun`.
 - **Forget this location** runs today's `forget()` (`state/location.ts`) and also clears `canopi-place` and the open palette's `place`. **Start over** keeps the palette's `place`.
 - **A link that brings a place** (Arrivals board): it applies to that page only (`history.state.pl`, `location.source = 'link'`), with the notice "Use it" / "Use my own place"; `writeSave` keeps the save's own `place` until the reader chooses; "Use it" writes the link's spot and soil answers into the palette's `place`, its `o` into `canopi-location` through `state/location.ts` and its `k` through `state/draft.ts`, so they hold across reloads (coordinator row 2026-11-14: this reverses the [location module](/modules/consortium-location.md) rule that a link's `o=` is never saved over the reader's `canopi-location`). "Send the link to my computer" (P11) is `encodeLink(…, { origin, place: true })`, the grower's own link, and takes the same path. Unit tests: a palette edit keeps `l=sun`; "Use it" gives `l=shade` and the link's cell after reload; "Use my own place" restores the reader's own.
@@ -831,7 +833,7 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 | `verdict` chunk fails | — | every fit line says "not checked", never "fits" (marker C6); holes computed without verdicts say so; Reload works (PP-B20, `block: { verdict: 404 }`) | b2, c2 |
 | Guest lists | holes `pending`, "Loading the other lists" (inventory L2) | the list is named as missing; its plants "not checked" (PP-B21) | b2 |
 | Location lookup | asking, refused, timed out, unavailable, sea, coast, polar, between two climates (D2, D9) | search offline or failed, map could not load (D4, D6) | b1a |
-| No location | Place shows the climate cards; range factors `unknown`; the period switch and the climate picture say "needs your place" (today `views/FutureSlot.tsx:13` renders nothing) | — | b1a, e1 |
+| No location | Place leads with "Where is your place?" (skippable); the climate cards sit behind "No location? Choose a climate" (or "Not this climate? Choose another" once a location proposes one), in the DOM with `hidden`, open at once when a climate is chosen and no location is set on the page or kept on this device when the page opened (`restore.ts` `locationAtStart`), and then latched open, so a saved location's lookup never closes them (b1a review round 2, 1); the link says "Not this climate?" and the without-location line goes only once a climate is read from the location (its `lookup`), not for a location object alone; the focus moved to the checked, proposed or first card; "Use it" says "kept on this device" only when the link's cell and place were kept (else `place.usedLinkUnkept`); range factors `unknown`; the period switch and the climate picture say "needs your place" (today `views/FutureSlot.tsx:13` renders nothing) | — | b1a, e1 |
 | Soil tile | "Reading the soil map" | "The soil map has no value here" (sea, coast, ice: `types.ts:382-384`); answer stays `map`, `basis: 'none'`, soil factors `unknown` | f1 |
 | `layerValues` | grey year picture | "Months could not be read" with Reload; flowering "n of m recorded", never a pass | g1 |
 | Suggest | the live wait and its 10 s stop (`state/suggest-wait.ts`) | "Suggest stopped" (inventory J2) | b1a |

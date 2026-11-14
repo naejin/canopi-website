@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { h, useHarness, aria, axNodes, layoutVariants, en, findAx, has, settled } from './helpers.mjs';
 import { esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, small, MATRIX_40, focused, STRINGS, STABLE, MISMATCH, stableStart, moved } from './seams-helpers.mjs';
+import { openCards } from './location-fixtures.mjs';
 
 useHarness();
 
@@ -81,6 +82,7 @@ test('W8, W9, X4, X5: bold is 600, CJK headings keep words whole, sheet and page
   const weights = await page.$$eval('#ct-root strong, #ct-root b', (els) => [...new Set(els.map((e) => getComputedStyle(e).fontWeight))]);
   assert.ok(weights.length > 0, 'the page has bold words');
   assert.deepEqual(weights, ['600'], '<strong> and <b> at 600');
+  await openCards(page);
   await page.locator(aria('radio', 'Temperate')).click();
   // Start's crop search is not the Add sheet's search box (X5): no box drawn around it. It draws once
   // the card's list is read, so wait for it.

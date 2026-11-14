@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { aria, en, fixtureDb, h, has, useHarness } from './helpers.mjs';
 import { atSite } from './p5-helpers.mjs';
+import { openCards } from './location-fixtures.mjs';
 
 useHarness();
 
@@ -27,6 +28,7 @@ const temperateIds = () => fixtureDb((db) => db.prepare("SELECT p.id FROM placem
 test('E6-6 (R4 seams): Suggest with its chunk missing shows a toast with Reload and is not left busy; the choices stay (L8)', async () => {
   assert.ok(h.roles.suggest.length, 'role `suggest` has no chunk in this build: suggest() is still in the first run');
   const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 404 } });
+  await openCards(page);
   await page.locator(aria('radio', 'Temperate')).click();
   assert.equal(await loadState(page), 'ready');
   const before = await page.evaluate(() => ({ climate: window.__ctTest.store.climate.value, members: [...window.__ctTest.store.members.value], crops: [...window.__ctTest.store.crops.value] }));
@@ -101,6 +103,7 @@ const toastIdle = async (page) => ({
 async function temperatePage(opts) {
   const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, ...opts });
   assert.equal(await loadState(page), 'ready');
+  await openCards(page);
   await page.locator(aria('radio', 'Temperate')).click();
   return page;
 }

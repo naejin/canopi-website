@@ -12,6 +12,7 @@ import { aria, en, h, has, layoutVariants, suggestReady, useHarness } from './he
 import { choose, temperateLink, tool } from './p5-helpers.mjs';
 import { failing } from '../expect-fail.mjs';
 import { liveLog, resetLive, saidTwice, watchLiveRegions } from './f1a-helpers.mjs';
+import { openCards } from './location-fixtures.mjs';
 
 useHarness();
 
@@ -114,6 +115,7 @@ failing('F1a-P2 → PP-B (b2 return visit, A7): a saved consortium reopens on Pa
 test('PP-B18 (b2 / BT-8 print, drawing; moved from S4 in commit 0a\'): ≤ 20 plants print the side view drawing', async (t) => {
   await layoutVariants(t, async (v) => {
     const small = await h.open('/palette/', { ...v, data: 'fixture' });
+    await openCards(small);
     await small.locator(aria('radio', 'Temperate')).click();
     await small.locator(aria('button', 'Suggest plants')).click();
     assert.ok(await has(small, aria('button', 'Share'), 8000), 'the result and its actions');

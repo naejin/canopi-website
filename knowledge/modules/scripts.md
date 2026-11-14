@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:42Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:03Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:47Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -18,13 +18,13 @@ sources:
   - id: browser-test
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:9dc0dfd7b4ab33b9
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:75aa91ed85c6c17a
+    last_modified: 2026-11-14T15:15:38Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:cfcbfeacf6bdf8d5
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:5e59fb05069323f7
+    last_modified: 2026-11-14T15:16:26Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -113,8 +113,8 @@ sources:
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:fa7eb7481800cabf
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:06d6221baafdb020
+    last_modified: 2026-11-14T15:12:09Z
 ---
 
 # Responsibility

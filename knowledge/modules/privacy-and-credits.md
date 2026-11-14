@@ -2,9 +2,9 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:01Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:42Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:11:03Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:37Z }
 sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
@@ -64,20 +64,20 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:bbe76cbff60dc5ec
-    last_modified: 2026-11-13T12:40:55Z
+    digest: sha256:f24acddf0d01b4f7
+    last_modified: 2026-11-14T13:27:54Z
   - id: developers-cloudflare-com-workers-observ
     resource: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:5cc847af70dbb553
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:63830dd2eb81c36e
+    last_modified: 2026-11-14T15:02:17Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:bdf71e540c290ea1
-    last_modified: 2026-11-13T12:40:55Z
+    digest: sha256:b5d16f20a23a4903
+    last_modified: 2026-11-14T15:02:17Z
 enforced_by:
   - scripts/consortium-p5-seams-s5f.test.mjs
   - scripts/check-built-site.mjs
@@ -110,3 +110,7 @@ The `/privacy/` page in 11 locales (owner answer 4, decision "P5 owner answers",
 - A new canopi-data export with new GBIF fetch dates fails `consortium-p5-seams-s5f.test.mjs` until `GBIF` in `consortium-credits.ts` is updated. P5 ships the GBIF credit without a derived-dataset DOI (coordinator, decision "GBIF credit for the observed ranges"); the public `gbif_occurrences` credit in `source_credits.tsv` carries no note about it (pre-push review 5; `source-credits.test.mjs` refuses follow-up or plan notes in a shown credit).
 - HelloAsso's privacy page could not be linked: every helloasso.com URL answered 403 to scripted fetches (2026-11-11); the page names HelloAsso and its own policy without a link.
 - If S5b's location UI changes what is sent (for example the Nominatim parameters), update the `privacy.location.*` strings in all 11 locales.
+
+## PP-B b1a (2026-11-14)
+
+`privacy.location.link` now reads, in English: "A share link includes your place only if you tick 'Include my place', and then only as the centre of its climate-grid square (about 11 km north to south, narrower toward the poles), its country, your spot answers and your soil test." (owner-approved EN and FR; the other nine translated). `scripts/consortium-p5-seams-s5f.test.mjs` checks the 11 km figure and the country word in every locale.

@@ -67,11 +67,9 @@ export const waters = ['dry', 'average', 'wet', 'unsure'] as const;
 // Every room value (F1a commit 0, A8; a height word only, owner revision 4: area is Place.plotM2).
 // `roomValues` is every room a palette holds and a link's `m=` carries: 'pots' ("Balcony or pots";
 // site.ts ROOM_LIMIT_M and suggest.ts SIZE_LIMIT give it the small garden's limits) is read and kept
-// since PP-B commit 0. `rooms` is what today's Start offers, without 'pots' so the live form is
-// unchanged (Start.tsx reads it); b1a offers 'pots' on Place and sets rooms = roomValues.
+// since PP-B commit 0; Place offers every value (b1a).
 export const roomValues = ['pots', 'small', 'large', 'field', 'unsure'] as const;
 export type Room = (typeof roomValues)[number];
-export const rooms = ['small', 'large', 'field', 'unsure'] as const satisfies readonly Room[];
 // The derived input of site.ts fits() (no longer stored since PP-B commit 0: place.ts siteFor builds it
 // from the palette's Place; plant-palette-architecture 3.1), removed in PP-C with its last readers.
 export interface Site {

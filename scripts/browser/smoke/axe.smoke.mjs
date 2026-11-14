@@ -14,6 +14,7 @@ import { loadState } from '../harness.mjs';
 import { BUILDS } from '../serve.mjs';
 import { aria, en, h, has, useHarness } from '../helpers.mjs';
 import { compareCounts } from '../../quality/ratchet.mjs';
+import { openCards } from '../location-fixtures.mjs';
 
 const require = createRequire(import.meta.url);
 const AXE_FILE = require.resolve('axe-core/axe.min.js');
@@ -64,6 +65,7 @@ test('axe (dist/, WCAG 2.x A/AA): no new rule id and no higher count than the ba
       const page = await h.open(p.path, v);
       if (p.ready) assert.equal(await loadState(page), 'ready', `${p.name}: the tool loads`);
       if (p.matrix) {
+        await openCards(page);
         await page.locator(aria('radio', 'Temperate')).click();
         await page.locator(aria('button', en['consortium.start.suggest'])).click();
         assert.ok(await has(page, '#ct-root [data-plant-id]', 15_000), `${p.name}: members in the matrix`);

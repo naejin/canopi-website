@@ -5,6 +5,7 @@ import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
 import { aria, axNodes, behaviour, findAx, index, realDb } from './helpers.mjs';
+import { openCards } from './location-fixtures.mjs';
 
 let h;
 before(async () => { h = await startHarness(); });
@@ -68,6 +69,7 @@ test('BT-1 (S1 data): on the real Temperate list with every site answer unsure, 
   assert.equal(index.names.Temperate.length, temperate.size);
   await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', v);
+    await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await page.locator(aria('button', 'Suggest plants')).click();

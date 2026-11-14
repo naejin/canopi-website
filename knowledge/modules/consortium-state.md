@@ -3,9 +3,9 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:42Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:05Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:36Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
@@ -20,33 +20,33 @@ sources:
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:679a7fb98526c862
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:37e1b11071730a71
+    last_modified: 2026-11-14T15:12:09Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:5cc847af70dbb553
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:63830dd2eb81c36e
+    last_modified: 2026-11-14T15:02:17Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:4b57cc74b77d753f
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:ff56dae40b77fd8a
+    last_modified: 2026-11-14T15:02:17Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:cd2bd5da5bcdbfd5
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:8f6ca0803a6f32ce
+    last_modified: 2026-11-14T15:12:09Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:31a413ffec3ce0e4
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:00c47b7d18a045f1
+    last_modified: 2026-11-14T15:02:17Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:f83b76f23d227291
-    last_modified: 2026-11-13T14:56:35Z
+    digest: sha256:5684543301efc5d0
+    last_modified: 2026-11-14T13:27:54Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -55,8 +55,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:bdf71e540c290ea1
-    last_modified: 2026-11-13T12:40:55Z
+    digest: sha256:b5d16f20a23a4903
+    last_modified: 2026-11-14T15:02:17Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -87,9 +87,9 @@ E6 stream S2 split `memory.ts` (about 780 lines) into the modules below. E6 chun
 
 | Module | Holds |
 |---|---|
-| [state/persist.ts](../../src/islands/consortium/state/persist.ts) | Storage keys (`canopi-consortium`, `canopi-country`, `canopi-climate`, `canopi-location`), guarded storage (`memory`, `attempt`, `storageWorks`), the saved record (`saveRecord`, `readRecord`, `oldRecord`), `CountryFrom` (derived from the store's `CountrySource` without `'guess'`; `fromOf`), `shareState` (`schema.share`), `shareUrl`, the restore in flight (`inFlight`, `restoring`, `pendingClimate`, `pendingLinkClimate`), `climateChosen` (the reader's climate, else a link's still opening; null otherwise, never a proposal) and `climateShown` (the card Start shows, chosen or proposed, built on `climateChosen`), `own()`, `currentFragment`, `writeSave`, `writeAddress`, `shownFragment`, `watchStore` and the reader's action count (`actionCount`, `quietly`). Below restore.ts and the location step so neither imports the other |
+| [state/persist.ts](../../src/islands/consortium/state/persist.ts) | Storage keys (`canopi-consortium`, `canopi-country`, `canopi-climate`, `canopi-location`), guarded storage (`memory`, `attempt`, `storageWorks`), the saved record (`saveRecord`, `readRecord`, `oldRecord`), `CountryFrom` (derived from the store's `CountrySource` without `'guess'`; `fromOf`), `shareState` (`schema.share`), `shareUrl`, the restore in flight (`inFlight`, `restoring`, `pendingClimate`, `pendingLinkClimate`), `climateChosen` (the reader's climate, else a link's still opening; null otherwise, never a proposal) and `climateShown` (the card Start shows, chosen or proposed, built on `climateChosen`), `own()`, `currentFragment`, `writeSave`, `writeAddress`, `shownFragment`, `watchStore` and the reader's action count (`actionCount`, `quietly`), and the arrival answers' signals: `linkPlace`, `savedInstead` (cleared when this page replaces or removes the save, never by a Place answer that writes none) and `placeSaid` (Place's status line after a notice's answer, cleared by the reader's next action and by the next `restore`). Below restore.ts and the location step so neither imports the other |
 | [state/restore.ts](../../src/islands/consortium/state/restore.ts) | `notices`, `restore(fragment, {from, src, keep})` (reads everything first, applies in one batch only if still the newest restore and the reader has not acted), `applyPreset` (guide `?plant=&climate=`), `ownLocation` (the saved site looked up again), `waitForSource`, and `provideLocationStep(load)`: main.ts hands it `views/location/load.ts`'s loader before the first render (E6 S3), so state never imports a view (ADR-1 L2); a missing step logs an error |
-| [state/arrival.ts](../../src/islands/consortium/state/arrival.ts) | How the page opens: pure `arrival()`, `hashAction()`, `countryAtStart()`, `guessCountry()` (Node-tested), and `startMemory()`, which wires them once |
+| [state/arrival.ts](../../src/islands/consortium/state/arrival.ts) | How the page opens: pure `arrival()`, `hashAction()`, `countryAtStart()`, `guessCountry()` and `arrivalPlan(how, { saved, pref, guess, seed, cell })` (`guess` and `cell` are functions: `countryAtStart` calls the browser's guess, which walks every country's time zones, about 0.4 s and 1.6 s on a slow phone, only when no link, choice or save names a country, at most once per arrival; b2 review perf-1) (the arrival's decisions: the country shown, the reader's own country worked out without a link's, the link's cell, and the ask of a reload while a link's place waits; Node-tested in `scripts/consortium-pp-b1.test.mjs`, b1a review round 2), and `startMemory()`, which wires them once and reads `canopi-location` once (`locationAtStart`, the ask's own cell, the saved location's lookup) |
 | [state/draft.ts](../../src/islands/consortium/state/draft.ts) | Start's draft: `chooseClimate`, `chooseCountry`, `pickingCountry`, `changeSite`, `startOver`, `canGoBack`, `backToConsortium`, `startEmpty` (each drops a link's location through `dropLinkLocation` → `letGo`), `cropExamples` (`plantName` removed in chunk 5: unused) |
 | [state/suggest-wait.ts](../../src/islands/consortium/state/suggest-wait.ts) | The waiting Suggest, one owner: `pendingSuggest`, `waited`, `requestSuggest` (asks the store for the suggestion's chunk, `store.wantSuggest()`, then waits for the plant lists, the location lookups and that chunk, capped at 10 s, `suggestWaitMs()` (exported since the E6 hand-off: Swap's own wait for the chunk lasts as long), shortened in the test build by `window.__ctTimeouts.suggest`), `dropSuggest` (exported since the E6 hand-off: the one way a wait ends; `views/PoolSlot.tsx` calls it, untracked, when Start can no longer suggest for the chosen climate or another is chosen; no other island module writes `pendingSuggest`, checked by `scripts/consortium-memory.test.mjs`), `watchSuggest` (reruns a waiting Suggest when `store.suggestRule` arrives; since E6 R4 ends every waiting Suggest with the `details.loadFailed` toast and Reload when `store.suggestFailed`, L8). See the wait cap rule below |
 | [state/lookups.ts](../../src/islands/consortium/state/lookups.ts) | The location lookups in flight, in the first run (the location module is lazy): `lookups`, `looking`, `lookingThrough`, `unread`, the result `line`, `nextLookup`/`liveLookup`, `unlessReplaced`, `letGo(drop)`. Moved out of `views/location/load.ts` (its re-exports for the seam tests removed in chunk 5) |
@@ -163,3 +163,12 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
 - `canopi-place` only seeds a new palette.
 - `history.state.pl` is carried by `persist.ts` and `arrival.ts`.
 - Until b1a and b2 rewrite them, 31 tests in `consortium-core`, `consortium-memory` and `consortium-p5-seams-s5b` still assert v4 literals. The plan assigns them to b1a and b2.
+
+## PP-B b1a (2026-11-14)
+
+- **A link that brings a place** (`bringsPlace`) and differs from the reader's own (`samePlace`): `restore.ts` applies it to the page, sets `linkPlace` (persist.ts, `{ own }`: the reader's spot, soil and country just before) and `holdSave(true)`; persist() keeps writing the address but the save keeps the reader's own place until "Use it" (`draft.ts useLinkPlace`: the link's country becomes chosen, its cell the device location, `canopi-place` reseeded) or "Use my own place" (`useOwnPlace`), each ending with `release()`. A reader edit of spot or soil ends the notice too.
+- **Reload while it waits**: `writeAddress` puts `ask: 1` in `history.state` and a link's country as `k` in `pl`; `arrival()` returns `ask: true` and `startMemory()` restores with `ask` set to the reader's own place (the held save's `place`, else the seed, and the country chosen at start), so the notice comes back and the save stays held.
+- **Back or another link while it waits**: the reader's own spot, soil and country are put back before the next palette applies.
+- **One Undo for Place's moves**: `draft.ts offerPlaceUndo` (Start over: "Your palette was cleared; your place stays."; the suggested palette in `suggest-wait.ts`). store.ts keeps its own `offerUndo` private (b2 owns store.ts in chunk 1).
+- **Guide preset over a save**: `savedInstead` keeps the save one press away ("Open my saved palette instead", `draft.ts openSavedInstead`); `notices.guidePlant` replaces `guideKept`.
+- **Forget** (`state/location.ts forget`) clears `canopi-location`, `canopi-place` and the palette's spot and soil.

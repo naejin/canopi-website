@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 import { h, has, suggestDirect, useHarness } from './helpers.mjs';
 import { SITES, lookupAt } from './location-fixtures.mjs';
 import { tool, atSite, choose, text, members } from './p5-helpers.mjs';
+import { openCards } from './location-fixtures.mjs';
 
 useHarness();
 
@@ -80,6 +81,7 @@ test('P5-19b (S5d future panel, hand-off layout shift): the panel lands below Sh
     await atSite(page, 'lyon');
     // The after-the-matrix chunk (the panel's shell) waits, so the page is measured before the panel lands.
     await page.evaluate(() => window.__ctTest.holdLater());
+    await openCards(page);
     await page.click('input[name="ct-climate"][value="temperate"]');
     const suggest = await page.waitForFunction(() => [...document.querySelectorAll('.ct-cta button')].find((b) => b.textContent.trim() === 'Suggest plants'), { timeout: 10_000 });
     await suggest.click();

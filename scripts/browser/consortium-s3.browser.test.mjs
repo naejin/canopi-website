@@ -9,6 +9,7 @@ import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture, loadState, startHarness } from './harness.mjs';
 import { aria, axNodes, behaviour, englishName, findAx, fixtureDb, has } from './helpers.mjs';
+import { openCards } from './location-fixtures.mjs';
 
 let h;
 before(async () => { h = await startHarness(); });
@@ -47,6 +48,7 @@ const hooked = async (page, fn, ...args) => {
 };
 
 async function start(page, climate = 'Temperate') {
+  await openCards(page);
   await page.locator(aria('radio', climate)).click();
   assert.equal(await loadState(page), 'ready');
   await page.locator(aria('button', 'Suggest plants')).click();

@@ -4,6 +4,7 @@ import { loadState } from './harness.mjs';
 import { h, aria, en, fixtureDb, has, settled } from './helpers.mjs';
 import { readFileSync } from 'node:fs';
 import { jobOfFunction } from '../../src/lib/consortium/jobs.ts';
+import { openCards } from './location-fixtures.mjs';
 
 export const PHASES = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'];
 
@@ -36,6 +37,7 @@ export function cellIn(name) {
 // Start → a climate → (light) → (room) → Suggest, through the controls.
 export async function suggested(v, { room = null, light = null } = {}) {
   const page = await h.open('/palette/', { ...v, data: 'fixture' });
+  await openCards(page);
   await page.locator(aria('radio', 'Temperate')).click();
   assert.equal(await loadState(page), 'ready');
   if (light) await page.locator(aria('radio', light)).click();
@@ -74,6 +76,7 @@ export const param = (fragment, k) => (fragment ? new URLSearchParams(fragment.s
 
 export const changeSiteTo = async (page, card) => {
   await page.locator(aria('button', 'Change site')).click();
+  await openCards(page);
   await page.locator(aria('radio', card)).click();
   assert.equal(await loadState(page), 'ready');
 };

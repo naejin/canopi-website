@@ -16,6 +16,7 @@ import { loadState } from './harness.mjs';
 import { aria, axNodes, en, h, has, realDb, useHarness } from './helpers.mjs';
 import { atNowhere, atSite, choose, tool } from './p5-helpers.mjs';
 import { searchIndex } from '../../src/islands/consortium/data/search.ts';
+import { openCards } from './location-fixtures.mjs';
 
 useHarness();
 
@@ -28,6 +29,7 @@ const RELOAD = en['consortium.details.reload'];
 // suggested(), with harness options: block, setup).
 async function matrixPage(opts = {}) {
   const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', ...opts });
+  await openCards(page);
   await page.locator(aria('radio', 'Temperate')).click();
   assert.equal(await loadState(page), 'ready');
   await page.locator(aria('button', 'Suggest plants')).click();
@@ -184,6 +186,7 @@ test('E6-5b (K3 lazy parts): on Start only, the data ready, the plant dialog and
   assert.ok(h.roles.details.length && h.roles.sheets.length, 'roles details and sheets have chunks in this build');
   const log = [];
   const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', setup: recordRequests(log) });
+  await openCards(page);
   await page.locator(aria('radio', 'Temperate')).click();
   assert.equal(await loadState(page), 'ready');
   const lazy = [...h.roles.details, ...h.roles.sheets];
@@ -406,6 +409,7 @@ test('E6-27 (K3 hand-off review 2): the idle future part whose prefetch failed s
   const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', hook: true, setup: failFirst(h.roles.later, 1, log) });
   try {
     const seen = futureRequests(page);
+    await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await atSite(page, 'lyon');

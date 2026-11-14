@@ -4,7 +4,9 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:01Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:43Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:51Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -45,7 +47,7 @@ sources:
     resource: ../../CLAUDE.md
     title: CLAUDE.md
     digest: sha256:a090fc09acf02ec7
-    last_modified: 2026-11-14T12:24:22Z
+    last_modified: 2026-11-14T12:25:38Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -134,8 +136,8 @@ sources:
   - id: plan-owners-test-mjs
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
-    digest: sha256:6c31b6d99f63ff25
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:da06005f1e01d596
+    last_modified: 2026-11-14T15:16:26Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
@@ -219,8 +221,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:bdf71e540c290ea1
-    last_modified: 2026-11-13T12:40:55Z
+    digest: sha256:b5d16f20a23a4903
+    last_modified: 2026-11-14T15:02:17Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
@@ -369,8 +371,8 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:c9c8db612ed9a0f6
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:112488cf7fc1f78d
+    last_modified: 2026-11-14T13:27:54Z
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json

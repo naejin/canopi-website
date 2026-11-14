@@ -4,20 +4,20 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:10:49Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:40Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:46Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:33:09Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:7601664a85fd6d88
-    last_modified: 2026-11-14T11:39:20Z
+    digest: sha256:096df107f940cfdd
+    last_modified: 2026-11-14T15:16:26Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
     digest: sha256:feb8e2ad064adef0
-    last_modified: 2026-11-14T11:38:45Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -27,7 +27,7 @@ sources:
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
     digest: sha256:c948918a08ee50b3
-    last_modified: 2026-11-14T11:38:37Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
@@ -81,13 +81,13 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:c9c8db612ed9a0f6
-    last_modified: 2026-11-14T11:40:02Z
+    digest: sha256:112488cf7fc1f78d
+    last_modified: 2026-11-14T13:27:54Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
     digest: sha256:9a4b50c369042a6a
-    last_modified: 2026-11-14T11:39:20Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -117,7 +117,7 @@ sources:
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
     digest: sha256:842b6e18d2030121
-    last_modified: 2026-11-14T11:48:54Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: mark-providers-ts
     resource: ../../src/lib/consortium/mark-providers.ts
     title: src/lib/consortium/mark-providers.ts
@@ -137,7 +137,7 @@ sources:
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
     digest: sha256:c610211fbc99a8db
-    last_modified: 2026-11-14T11:48:58Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
@@ -151,8 +151,8 @@ sources:
   - id: consortium-p5-seams-s5e-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5e.test.mjs
     title: scripts/consortium-p5-seams-s5e.test.mjs
-    digest: sha256:0ff0efe4344f9345
-    last_modified: 2026-11-13T12:40:55Z
+    digest: sha256:735dba51041f008b
+    last_modified: 2026-11-14T13:27:54Z
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
@@ -177,7 +177,7 @@ sources:
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
     digest: sha256:02d0b7d13ee848ff
-    last_modified: 2026-11-14T11:48:43Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -207,7 +207,7 @@ sources:
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:476f116c5e449766
-    last_modified: 2026-11-14T11:38:37Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
@@ -374,3 +374,7 @@ This section supersedes the statements above where they disagree.
 - **Duplicate keys: the first is read.** `g` is the exception: it is read once per list, and a list given twice marks the link cut.
 - **Height metres are dropped.** `h=higher.650` reads as `higher` and is re-encoded as `h=higher` until CLIM-4.
 - **Limits are tests, not vectors.** `MAX_LINK_IDS` and `LONG_LINK` are tested in the test file, because a vector at the token cap would be 12,000 characters.
+
+## PP-B b1a: the invasive tie in suggest.ts (2026-11-14)
+
+Of two candidates that bring the same gain, the suggestion picks the one that is not invasive: with a chosen country GRIIS checked (`countryStatus` 'checked'), "invasive" means invasive there (`invasiveIn(t, country, true)`); with no country (or one not checked), invasive in any GRIIS country. Unit tests F1a-P12 and F1a-P13 in `scripts/consortium-pp-b1.test.mjs`.

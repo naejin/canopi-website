@@ -13,6 +13,7 @@ import { ROOT } from './serve.mjs';
 import { aria, behaviour, en, h, has, index, layoutVariants, realDb, suggestDirect, useHarness } from './helpers.mjs';
 import { EXPECTED, NOMINATIM, SITES, lookupAt } from './location-fixtures.mjs';
 import { atSite, choose, members, search, tool } from './p5-helpers.mjs';
+import { openCards } from './location-fixtures.mjs';
 
 useHarness();
 
@@ -105,6 +106,7 @@ test('R3-4, R4-4: a slow but steady download (80 KB/s, the wasm ~11 s against a 
     await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 400, downloadThroughput: 80_000, uploadThroughput: 80_000 });
   } });
   // The island itself arrives slowly too: the climate cards may take a while to show.
+  await openCards(page);
   await page.locator(aria('radio', 'Temperate')).setTimeout(60_000).click();
   assert.equal(await loadState(page, 60_000), 'ready', 'no failure screen while bytes keep arriving');
   assert.ok(Date.now() - t0 > 4 * STALL, `the download outlasted the stall timer several times over (${Date.now() - t0} ms)`);

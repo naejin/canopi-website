@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { h, useHarness, aria, axNodes, behaviour, en, findAx, has } from './helpers.mjs';
 import { esc, done, temperate, cellIn, suggested, memberIds, addRows, fitsShade, linkOf, saved, savedFragment, tropicalOnly, param, changeSiteTo, OTHER_TAB, otherTabSaves, pasteOne, focused, hookedPage } from './seams-helpers.mjs';
+import { openCards } from './location-fixtures.mjs';
 
 useHarness();
 
@@ -39,6 +40,7 @@ test('X3: a list pasted on Start shows its consortium with Share, saved: a reloa
   const names = plants.slice(0, 3).map((p) => p.name);
   await behaviour(t, async (v) => {
     const page = await h.open('/palette/', { ...v, data: 'fixture' });
+    await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await page.locator(aria('button', 'Paste a list')).click();
@@ -69,6 +71,7 @@ test('X3: a site answer made after "Change site" is saved with the commit, and a
     const other = plants.find((p) => !ids.has(p.id));
     assert.ok(other, 'a Temperate plant not in the consortium');
     await page.locator(aria('button', 'Change site')).click();
+    await openCards(page);
     await page.locator(aria('radio', 'Shade')).click();
     await pasteOne(page, other.name);
     const after = await savedFragment(page);
@@ -87,6 +90,7 @@ test('F1: after "Change site", choosing another climate is not saved over the co
     const page = await suggested(v);
     const before = await linkOf(page);
     await page.locator(aria('button', 'Change site')).click();
+    await openCards(page);
     await page.locator(aria('radio', 'Tropical')).click();
     await new Promise((r) => setTimeout(r, 400));
     assert.equal(await linkOf(page), before, 'the address keeps the Temperate consortium');
@@ -96,6 +100,7 @@ test('F1: after "Change site", choosing another climate is not saved over the co
     assert.equal(await linkOf(page), before, 'with its own climate, no plant lost');
     // "Back to your consortium" after choosing another card shows it in its own climate.
     await page.locator(aria('button', 'Change site')).click();
+    await openCards(page);
     await page.locator(aria('radio', 'Tropical')).click();
     await page.locator(aria('button', 'Back to your consortium')).click();
     assert.ok(await has(page, aria('button', 'Share'), 4000));
@@ -134,6 +139,7 @@ test('R2-1: a list pasted on Start under another climate starts that climate\'s 
     const page = await suggested(v);
     const before = await linkOf(page);
     await page.locator(aria('button', 'Change site')).click();
+    await openCards(page);
     await page.locator(aria('radio', 'Tropical')).click();
     assert.equal(await loadState(page), 'ready');
     await page.locator(aria('button', 'Paste a list')).click();
@@ -221,6 +227,7 @@ test('T2 (R3-3): Undo of a paste under another card, then Back, leaves the conso
 test('T3 (R3-1): a consortium the reader emptied stays empty, saved, through Change site', async (t) => {
   await behaviour(t, async (v) => {
     const page = await hookedPage(v);
+    await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await page.locator(aria('button', 'Suggest plants')).click();
@@ -260,6 +267,7 @@ test('M1 (R4-1): Undo of a paste on a fresh Start puts back the save another tab
   const [first] = await temperate();
   await behaviour(t, async (v) => {
     const page = await h.open('/palette/', { ...v, data: 'fixture' });
+    await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await otherTabSaves(page);
@@ -322,6 +330,7 @@ test('pre-push 1: a guest removed from the consortium gives no "no longer in the
   const [guest] = await tropicalOnly();
   await behaviour(t, async (v) => {
     const page = await hookedPage(v);
+    await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await page.locator(aria('button', 'Suggest plants')).click();
@@ -344,6 +353,7 @@ test('pre-push 1: a guest removed from the consortium gives no "no longer in the
 test('F3: Undo of a plant added in the Paste sheet keeps the focus in the sheet', async (t) => {
   await behaviour(t, async (v) => {
     const page = await h.open('/palette/', { ...v, data: 'fixture' });
+    await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await page.locator(aria('button', 'Paste a list')).click();
