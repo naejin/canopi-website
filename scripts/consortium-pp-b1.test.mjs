@@ -6,6 +6,7 @@ import test from 'node:test';
 import { UNSURE_SITE } from '../src/lib/consortium/index.ts';
 import { suggest } from '../src/lib/consortium/suggest.ts';
 import { taxon } from './consortium-p5-fixtures.mjs';
+import { failing } from './expect-fail.mjs';
 
 let n = 0;
 const fn = (f) => ({ function: f, method: 'curated', sources: [] });
@@ -44,7 +45,7 @@ test('F1a-P13 → PP-B (b1a invasive tie, owner Q1): with no country chosen, the
 // storage double; Node has no location or history, so the address is left alone. ----
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { emptyPlace, siteFor, encodeLink } from '../src/lib/consortium/index.ts';
+import { emptyPlace, siteFor, encodeLink, encodePlace, linkOrigin } from '../src/lib/consortium/index.ts';
 
 test('b1a siteFor: today\'s three answers and the room reach fits(); varies and the soil map check nothing', () => {
   assert.equal(Object.isFrozen(emptyPlace), true);
@@ -325,8 +326,17 @@ test('b1a bugs-2: a link\'s country never stands for the reader\'s own (k=FR ove
   store.removeMember(store.members.peek()[0]);
   await wait(0);
   assert.equal(saved()?.src, 'chosen', 'the held save took the link\'s country');
+  assert.notEqual(saved()?.country, 'FR', 'the held save keeps the link\'s country beside it');
   draft.useOwnPlace();
   assert.deepEqual(store.country.peek(), KE, '"Use my own place" gave back the link\'s country');
+  // A reader whose own country came from their location (kept beside the save): the held save keeps KE.
+  await mine(5);
+  persist.quietly(() => { store.country.value = { code: 'FR', source: 'link' }; });
+  assert.equal(await restoreM.restore(link, { from: 'link', country: { code: 'KE', source: 'location' } }), true);
+  store.removeMember(store.members.peek()[0]);
+  await wait(0);
+  assert.equal(saved()?.src, 'location', 'the held save took the link\'s country source');
+  assert.equal(saved()?.country, 'KE', 'the held save took the link\'s country');
   // A link whose only difference is its country asks too.
   await mine(5);
   persist.quietly(() => { store.country.value = { code: 'DE', source: 'link' }; });
@@ -413,17 +423,47 @@ test('b1a bugs-7: "Show my palette" after an emptied draft offers one Undo that 
   void pool;
 });
 
-test('b1a bugs-8: "Open my saved palette instead" goes once the grower works on the preset', async () => {
-  const pool = await mine(5);
-  const save = saved();
-  persist.quietly(() => { store.view.value = 'start'; store.climate.value = null; store.members.value = []; store.removed.value = []; });
-  await wait(0);
-  restoreM.savedInstead.value = save;
+// r2-2 (review round 2): the offer goes when the save is replaced, not on any answer: a room or country
+// answer on Place writes no save while the page has no palette of its own.
+failing('b1a bugs-8 / r2-2: "Open my saved palette instead" and "Back to mine" stay through Place answers that write no save, and go once a plant added replaces the save', { owner: 'b1a', reason: /gone after a Place answer that wrote no save/ }, async () => {
+  // As a fresh page opened over the reader's save: the save it read is the stored one.
+  const fresh = async () => {
+    const pool = await mine(5);
+    await wait(0);
+    const text = kept.get(STORE);
+    persist.quietly(() => { store.view.value = 'start'; store.setAside.value = null; store.climate.value = null; store.members.value = []; store.removed.value = []; });
+    await wait(0);
+    kept.set(STORE, text);
+    persist.openedWith(text);
+    return [pool, text];
+  };
+  // (a) A guide preset over the save.
+  const [pool, text] = await fresh();
+  restoreM.savedInstead.value = readRecord(text);
   await restoreM.applyPreset('Temperate', pool[3].canonical_name);
   assert.ok(restoreM.savedInstead.peek(), 'offered after the preset');
-  store.members.value = [...store.members.peek(), pool[4].id];
+  store.room.value = 'large';
   await wait(0);
-  assert.equal(restoreM.savedInstead.peek(), null, '"Open my saved palette instead" still offered after the grower worked on the preset');
+  assert.ok(restoreM.savedInstead.peek(), '"Open my saved palette instead" gone after a Place answer that wrote no save (room)');
+  draft.chooseCountry('KE');
+  await wait(0);
+  assert.ok(restoreM.savedInstead.peek(), '"Open my saved palette instead" gone after a Place answer that wrote no save (country)');
+  assert.equal(kept.get(STORE), text, 'the save is untouched');
+  // A plant added (as "Add a plant by name" does) opens the palette, whose save replaces the reader's.
+  store.addMembers([pool[4].id]);
+  await wait(0);
+  assert.notEqual(kept.get(STORE), text, 'the palette is saved');
+  assert.equal(restoreM.savedInstead.peek(), null, '"Open my saved palette instead" still offered after the save was replaced');
+  // (b) A newer link over the save: "Back to mine" through a country and a card.
+  const [, text2] = await fresh();
+  assert.equal(await restoreM.restore('v=6&c=temperate&a=abcdef&e=1', { from: 'link' }), false);
+  restoreM.savedInstead.value = readRecord(text2);
+  draft.chooseCountry('KE');
+  draft.chooseClimate('Mediterranean');
+  await wait(0);
+  assert.ok(restoreM.savedInstead.peek(), '"Back to mine" gone after a Place answer that wrote no save (country, card)');
+  assert.equal(kept.get(STORE), text2, 'the save is untouched');
+  restoreM.savedInstead.value = null;
 });
 
 test('b1a bugs-9: a reload while the notice waits keeps the link\'s cell, so "Use it" still adopts it', async () => {
@@ -462,4 +502,78 @@ test('b1a bugs-10: "Use my own place" pressed while "Use it" is still working ch
     const light = store.spot.peek().light;
     assert.ok(seed === '' || seed.includes(`l=${light}`), `half-way: the page shows l=${light} but canopi-place holds ${seed}`);
   } finally { restoreM.provideLocationStep(slow); restoreM.provideLocationStep(before); store.location.value = null; }
+});
+
+// ---- review round 2 (b1a-review-r2: r2-4, r2-5) ----
+
+failing('b1a r2-4: "Use it" says the place is kept on this device only when it was; the status line clears on the reader\'s next action and the next arrival', { owner: 'b1a', reason: /said "kept on this device"|status line still says/ }, async () => {
+  // (a) The location chunk fails to load: the link's cell is not kept.
+  const before = await arriveWithPlace();
+  restoreM.provideLocationStep(() => Promise.reject(new Error('chunk failed')));
+  try {
+    assert.ok(restoreM.linkPlace.peek(), 'no link-place notice');
+    await draft.useLinkPlace();
+    await wait(0);
+    assert.equal(kept.get(LOCATION_STORE), undefined, 'the cell is not kept');
+    assert.notEqual(draft.placeSaid.peek(), 'place.usedLink', 'said "kept on this device" although the location was not kept');
+    assert.equal(draft.placeSaid.peek(), 'place.usedLinkUnkept');
+  } finally { restoreM.provideLocationStep(before); store.location.value = null; }
+  // With the location kept, the line says so.
+  const again = await arriveWithPlace();
+  try {
+    await draft.useLinkPlace();
+    assert.equal(draft.placeSaid.peek(), 'place.usedLink');
+    // (b) The reader's next action clears it.
+    store.removeMember(store.members.peek()[0]);
+    await wait(0);
+    assert.equal(draft.placeSaid.peek(), '', 'the status line still says what an earlier answer did after the reader acted');
+  } finally { restoreM.provideLocationStep(again); store.location.value = null; }
+  // (c) The next arrival clears it.
+  const third = await arriveWithPlace();
+  try {
+    draft.useOwnPlace();
+    assert.equal(draft.placeSaid.peek(), 'place.usedMine');
+    const other = await linkWith('Temperate', 2);
+    assert.equal(await restoreM.restore(other, { from: 'link', keep: true }), true);
+    assert.equal(draft.placeSaid.peek(), '', 'the status line still says what an earlier answer did after another link opened');
+  } finally { restoreM.provideLocationStep(third); store.location.value = null; }
+});
+
+failing('b1a r2-5: arrivalPlan works out the arrival: the reader\'s own country before a link\'s, the link\'s cell, and the ask after a reload', { owner: 'b1a', reason: /arrivalPlan is not a function/ }, async () => {
+  let reads = 0;
+  const PARIS = { lat: 48.85, lon: 2.35 };
+  const cell = () => { reads++; return PARIS; };
+  const plan = (how, over = {}) => arrivalM.arrivalPlan(how, { saved: null, pref: null, guess: null, seed: null, cell, ...over });
+  // A link that brings a place (k=FR, l=shade, o=): the link's country shown, the reader's own (KE) kept.
+  const shade = { ...emptyPlace.spot, light: 'shade' };
+  const link = await linkWith('Temperate', 3, { country: 'FR', spot: shade }, { origin: { lat: 37.39, lon: -5.98 }, place: true });
+  const p = plan({ kind: 'link', fragment: link }, { pref: 'KE', guess: 'DE' });
+  assert.deepEqual(p.country, { code: 'FR', source: 'link' });
+  assert.deepEqual(p.own, { code: 'KE', source: 'chosen' }, 'the reader\'s own country');
+  assert.deepEqual(p.linkCell, linkOrigin(link));
+  assert.ok(p.linkCell, 'the link\'s cell');
+  assert.equal(p.ask, undefined);
+  assert.equal(reads, 0, 'canopi-location read on a plain link arrival');
+  // k alone brings no place: the reader's own country (else the guess).
+  const kOnly = await linkWith('Temperate', 3, { country: 'DE' }, { place: true });
+  assert.deepEqual(plan({ kind: 'link', fragment: kOnly }, { pref: 'KE' }).country, { code: 'KE', source: 'chosen' });
+  assert.deepEqual(plan({ kind: 'link', fragment: kOnly }, { guess: 'ES' }).country, { code: 'ES', source: 'guess' });
+  // The save with a location's country beside it.
+  const f = await linkWith('Temperate', 2);
+  const rec = { fragment: f, place: 'l=sun', at: '2026-11-14', src: 'location', country: 'KE' };
+  const s = plan({ kind: 'saved', fragment: f, at: rec.at, src: 'location', place: rec.place }, { saved: rec, guess: 'DE' });
+  assert.deepEqual(s.country, { code: 'KE', source: 'location' });
+  assert.equal(s.linkCell, null);
+  assert.equal(s.ask, undefined);
+  // A reload while a link's place waited (history.state ask, the link's cell in pl): the link's cell,
+  // and the ask against the reader's own place (the held save's), country and own cell.
+  const pl = encodePlace({ country: 'FR', spot: shade, soil: { from: 'map' } }, { lat: 37.35, lon: -5.95 });
+  const r = plan({ kind: 'saved', fragment: link, at: '', src: 'link', place: pl, ask: true }, { saved: rec, pref: 'KE', seed: 'w=dry' });
+  assert.deepEqual(r.linkCell, linkOrigin(pl));
+  assert.ok(r.linkCell, 'the link\'s cell from the tab\'s place');
+  assert.equal(reads, 1, 'the reader\'s own cell read once for the ask');
+  assert.deepEqual(r.ask, { spot: { ...emptyPlace.spot, light: 'sun' }, soil: { from: 'map' }, country: { code: 'KE', source: 'chosen' }, location: PARIS });
+  // No save: the seed stands for the reader's own place.
+  const n = plan({ kind: 'saved', fragment: link, at: '', src: 'link', place: pl, ask: true }, { pref: 'KE', seed: 'w=dry' });
+  assert.equal(n.ask.spot.water, 'dry');
 });

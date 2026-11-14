@@ -188,6 +188,7 @@ test('P5-2 (S5b location denied): a denied permission says so and leaves the man
   assert.equal(await locationState(page), 'denied');
   assert.equal(await page.evaluate(() => window.__ctTest.store.location.value), null);
   assert.ok(await has(page, '[data-place-climates]'), 'the climate cards stay, one link away');
+  assert.equal(await text(page, '[data-place-climates]'), 'No location? Choose a climate');
   assert.equal(await checkedCard(page), null, 'no card pre-checked');
   assert.equal(await proposedCard(page), null, 'no card pre-checked: none proposed either');
 });
@@ -405,6 +406,7 @@ test('P5-11 (S5b tiles fail): when the climate tiles cannot be read the manual c
   assert.equal(await locationState(page), 'failed');
   assert.equal((await page.evaluate(() => window.__ctTest.store.location.value))?.lookup ?? null, null);
   assert.ok(await has(page, '[data-place-climates]'), 'the manual climate cards, one link away');
+  assert.equal(await text(page, '[data-place-climates]'), 'No location? Choose a climate', 'no climate came from the location: the link never says "Not this climate?"');
   assert.equal(await checkedCard(page), null, 'no card pre-checked');
   assert.equal(await proposedCard(page), null, 'no card pre-checked: none proposed either');
 });

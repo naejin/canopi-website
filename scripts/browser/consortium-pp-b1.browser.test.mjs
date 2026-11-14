@@ -127,6 +127,46 @@ test('PP-B2 (b1a place first, a climate already chosen): with no location, a cli
   assert.equal(await page.$(OPEN_CARDS), null, 'no link to open what is open');
 });
 
+// r2-1 (review round 2): a climate kept on this device and a saved location: the cards are decided from
+// what the page knows at start (the saved location counts as a place), so the saved location's lookup,
+// which returns about a second later, never closes them under the grower's thumb.
+failing('PP-B2 (b1a r2-1 a kept climate and a saved location): the cards\' visibility does not change when the saved location\'s lookup returns', { owner: 'b1a', reason: /changed when the saved location's lookup returned/ }, async () => {
+  const rec = JSON.stringify({ lat: 37.3891, lon: -5.9845, source: 'search', label: 'Sevilla' });
+  const page = await h.open('/palette/', { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((r) => {
+    if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('canopi-climate', 'temperate'); localStorage.setItem('canopi-location', r); }
+    let open = null;
+    const gate = new Promise((res) => { open = res; });
+    window.__releaseTiles = () => open?.();
+    const f = window.fetch;
+    window.fetch = (input, init) => (/\/data\/climate\//.test(String(input?.url ?? input)) ? gate.then(() => f(input, init)) : f(input, init));
+  }, rec) });
+  assert.ok(await until(page, () => window.__ctTest?.store?.source.value && window.__ctTest.store.climate.value === 'Temperate' && !!document.querySelector('input[name="ct-climate"]'), 20_000), 'the kept climate on Place');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.location.value), null, 'the saved location is still being looked up');
+  const frames = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await frames();
+  const before = await cardsShown(page);
+  await page.evaluate(() => window.__releaseTiles());
+  assert.ok(await until(page, () => !!window.__ctTest.store.location.value?.lookup), 'the saved location was read');
+  await frames();
+  const after = await cardsShown(page);
+  assert.equal(after, before, `the cards' visibility changed when the saved location's lookup returned (${before} then ${after})`);
+  assert.equal(before, false, 'with a saved location the cards wait behind the link');
+  assert.equal(await words(page, OPEN_CARDS), 'Not this climate? Choose another');
+});
+
+// r2-3 (review round 2): the link's words and the "without a location" line follow a climate read from
+// the location, not a location object (tiles that fail, a lookup still loading).
+failing('PP-B2 (b1a r2-3 a location with no climate read): the link says "No location? Choose a climate" and the cards say what a grower without one loses', { owner: 'b1a', reason: /a location with no climate read/ }, async () => {
+  const page = await tool();
+  const [lat, lon] = [37.3891, -5.9845];
+  await page.evaluate((at) => { window.__ctTest.store.location.value = { ...at, source: 'map', lookup: null }; }, { lat, lon });
+  assert.ok(await has(page, OPEN_CARDS, 8000), 'the link to the cards');
+  assert.equal(await words(page, OPEN_CARDS), 'No location? Choose a climate', 'the link says "Not this climate?" for a location with no climate read');
+  await page.click(OPEN_CARDS);
+  assert.ok(await until(page, () => [...document.querySelectorAll('input[name="ct-climate"]')].some((r) => r.checkVisibility()), 4000), 'the link opens the cards');
+  assert.match(await words(page, '.ct-climates') ?? '', /Without a location you still get a palette/, 'no "without a location" line for a location with no climate read');
+});
+
 test('PP-B3 (b1a suggested palette): "Start from a small suggested palette" adds plants, and one Undo takes them all away', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
