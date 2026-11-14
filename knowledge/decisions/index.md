@@ -1,7 +1,7 @@
 # Architecture Decision
 
 * [Climate UX](climate-ux.md) - Every page that changes with the climate uses the app's seven zones, one stored choice set from an on-page chip, and one badge, and it reorders and marks content but never hides it.
-* [Consortium island layers (ADR-1)](consortium-island-layers.md) - The consortium island's layers L0-L4, the nine import rules dependency-cruiser enforces and their severities by stage, so state never imports views and the core imports no UI framework.
+* [Consortium island layers (ADR-1)](consortium-island-layers.md) - The consortium island's layers L0-L4, the import rules dependency-cruiser enforces (L1-L9, and L10 as warn since PP-B commit 0a) and their severities by stage, so state never imports views and the core imports no UI framework.
 * [Consortium per-chunk caps and first-view ratchet (ADR-2)](consortium-chunk-budgets.md) - The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 * [Consortium placement origin and factAt (ADR-6)](consortium-placement-origin-and-facts.md) - One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 * [Consortium tool — user decisions](consortium-user-decisions.md) - Dated decisions the project owner made about the consortium design tool; they change only when the owner changes them.

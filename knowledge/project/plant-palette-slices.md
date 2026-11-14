@@ -4,13 +4,13 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:05:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:11Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
     title: scripts/plan/pp-b-owners.json
     digest: sha256:3abcf22751434e10
-    last_modified: 2026-11-14T09:55:17Z
+    last_modified: 2026-11-14T10:06:00Z
   - id: f1a-owners-json
     resource: ../../scripts/plan/f1a-owners.json
     title: scripts/plan/f1a-owners.json
@@ -34,8 +34,8 @@ sources:
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
-    digest: sha256:f1cf582755f15220
-    last_modified: 2026-11-13T13:00:56Z
+    digest: sha256:29cbaf3dbda18ec2
+    last_modified: 2026-11-14T10:31:30Z
   - id: zero-markers
     resource: ../../.githooks/zero-markers
     title: .githooks/zero-markers
@@ -54,8 +54,8 @@ sources:
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:095e1044d4711e92
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:bf869e31497ee7dc
+    last_modified: 2026-11-14T10:43:38Z
   - id: consortium-f1a-a11y-browser-test-mjs
     resource: ../../scripts/browser/consortium-f1a-a11y.browser.test.mjs
     title: scripts/browser/consortium-f1a-a11y.browser.test.mjs
@@ -89,23 +89,23 @@ sources:
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
-    digest: sha256:4c2cbb619c1a5e54
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:3ee88662d81a483e
+    last_modified: 2026-11-14T10:38:44Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:521388d051be908d
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:b11c523506084a53
+    last_modified: 2026-11-14T10:30:46Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:b2cddacc3db3d444
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:dcef16e5d39349c1
+    last_modified: 2026-11-14T10:30:58Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:9b609001749f13dc
-    last_modified: 2026-11-13T20:25:47Z
+    digest: sha256:26d25b93b11f82d7
+    last_modified: 2026-11-14T10:30:46Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -134,8 +134,8 @@ sources:
   - id: plan-owners-test-mjs
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
-    digest: sha256:3004360a5f69f373
-    last_modified: 2026-11-14T09:55:27Z
+    digest: sha256:107a98803bc8bef6
+    last_modified: 2026-11-14T10:43:49Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
@@ -149,8 +149,8 @@ sources:
   - id: arch-rules-test-mjs
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
-    digest: sha256:9a6e855001d6f465
-    last_modified: 2026-11-13T13:00:56Z
+    digest: sha256:174d28aca3493758
+    last_modified: 2026-11-14T10:31:30Z
   - id: axe-json
     resource: ../../scripts/quality/baselines/axe.json
     title: scripts/quality/baselines/axe.json
@@ -174,8 +174,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:14fb4e9bf04c09d0
-    last_modified: 2026-11-13T08:14:37Z
+    digest: sha256:684064f3a1a2633d
+    last_modified: 2026-11-14T10:50:20Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -189,8 +189,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:fb9a67dce315c4f6
-    last_modified: 2026-11-13T10:58:21Z
+    digest: sha256:8610c9279fbe06ae
+    last_modified: 2026-11-14T10:15:43Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -224,8 +224,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:6864030b5d82d224
-    last_modified: 2026-11-13T20:25:47Z
+    digest: sha256:57827d5b5b419c07
+    last_modified: 2026-11-14T10:27:19Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
@@ -264,8 +264,8 @@ sources:
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:fbdf09611bf250a1
-    last_modified: 2026-11-13T09:54:42Z
+    digest: sha256:aa7bf345c7e16873
+    last_modified: 2026-11-14T10:24:22Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -284,8 +284,8 @@ sources:
   - id: tracks-ts
     resource: ../../src/islands/consortium/views/tracks.ts
     title: src/islands/consortium/views/tracks.ts
-    digest: sha256:6d1748c57b67ff96
-    last_modified: 2026-11-13T07:27:10Z
+    digest: sha256:f377c6df6e9eb4e0
+    last_modified: 2026-11-14T10:24:27Z
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
@@ -319,8 +319,8 @@ sources:
   - id: index-ts-2
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:c2375e19583bd550
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:2f08c35425c5c8bd
+    last_modified: 2026-11-14T10:16:43Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -339,8 +339,8 @@ sources:
   - id: matrix-ts
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
-    digest: sha256:baa54a05e2f52746
-    last_modified: 2026-11-13T10:58:21Z
+    digest: sha256:1b7088eeb8448e53
+    last_modified: 2026-11-14T10:15:21Z
   - id: range-marks-ts
     resource: ../../src/lib/consortium/range-marks.ts
     title: src/lib/consortium/range-marks.ts
@@ -369,13 +369,18 @@ sources:
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:19a8b751b1c19196
-    last_modified: 2026-11-13T10:58:21Z
+    digest: sha256:e1a451eee42a1ee5
+    last_modified: 2026-11-14T10:15:43Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
     digest: sha256:b230ad6ff500d7d6
     last_modified: 2026-11-13T19:32:13Z
+  - id: parked-markers-json
+    resource: ../../scripts/plan/parked-markers.json
+    title: scripts/plan/parked-markers.json
+    digest: sha256:76bcf1c4c32f4864
+    last_modified: 2026-11-14T10:42:49Z
 ---
 
 Pushes of the [Plant palette redesign](/project/consortium-v2-plan.md), in order: **PP-B, PP-C, PP-D, PP-E, PP-F, PP-G** (owner answers of 2026-11-14: no separate push A; later climates, then soil and your spot, then through the year). Module names, shapes and link keys: [Plant palette architecture](/architecture/plant-palette-architecture.md); use them exactly. Boards are named by file in `.local/consortium/v2/f1a/mockups-v3/project/<Name>.dc.html` (main checkout, gitignored); inventory rows are those of `mockups-v3/ux-inventory.md`. Citations are at `f1a/int` 648baf2. Amended 2026-11-14 by the plan recheck and the look-ahead check and by the owner's plan check answers (decision rows "Plant palette plan check answers" and "Plant palette plan amendments").
@@ -557,3 +562,17 @@ Q1 watering and ±3 °C adjustments (F4, link v6 or the requires key `u=`), Q2 r
 ## 9. Stream brief (the coordinator fills one per stream)
 
 The implementing agent (Opus 5.5 medium; Fable 5.2 only advises) gets, and needs nothing else: (1) the outcome in one sentence, its boards (reference for content and wording, not markup) and inventory rows; (2) read first: `CLAUDE.md`, this concept's push section, the architecture sections named, `okf context --path` for each owned folder, ADR-1, the owner answers file; (3) worktree `canopi-website-wt/<stream>`, branch `pp/<letter>-<stream>` cut from commit 0, owned paths from the owners file, locale prefix and edits, the seams it must not change (stop and report if one is wrong); (4) tests first as markers with the stream id, inherited markers restored from 648baf2; (5) the first-commit probe and its threshold (stop and report on failure); (6) rules: layers, one owner per concept, pictures as pure models plus a table, every state (loading, empty, failed with a way out, unknown never shown as a fit), warnings in words with an icon never hiding a plant, never temperate by default, colours only from the token block (architecture 3.5), measures only through `format.ts`, verdict, hole and year words only through `verdict-line.ts`, pictures as models in `rules/` with `scripts/picture-table.mjs`, nothing scrolling sideways at 320 px, no Worker, server call or storage key beyond the plan's, its chunk's cap; (7) gates, each capped, one at a time; browser and build runs only in the coordinator's slot; `okf impact` and `check`; (8) stop and report when a seam does not fit, a board and the plan disagree, a probe fails, a budget cannot be met, or a test passes only by weakening it; (9) a final report: outcome, probe figure, commits, tests and markers, gates with sizes, boards, locale key counts, concepts, open points.
+
+## Commit 0a as built (2026-11-14)
+
+- **Markers.** 7 PP-B markers were moved; each still fails for its stated reason in one capped run after 0a. There are 24 parked and 8 deleted (`scripts/plan/parked-markers.json`).
+- **Spec gaps resolved:**
+  - `pots` is in `roomValues` (the `Room` type and the link codec) but not yet in `rooms`, so Start's form stays as today until b1a.
+  - An `origin` passed to `encodeLink` implies the place tick.
+  - The save keeps the country for the link and location sources.
+  - `--light-medium` and `--light-none` keep the app's values.
+  - Matrix and Actions are 2 chunks of role `matrix`.
+  - `range-verdicts.json` is a stamped copy until the installer carries the file.
+- **Still for chunk 1:**
+  - 31 v4-literal tests in `consortium-core`, `consortium-memory` and `consortium-p5-seams-s5b` (b1a, b2).
+  - The later part is 0.7 KB over its 8 KB cap through the shared `tracks.ts` chunk ([chunk budgets](/decisions/consortium-chunk-budgets.md)).

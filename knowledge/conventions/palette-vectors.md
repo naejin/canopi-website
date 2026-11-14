@@ -3,12 +3,27 @@ type: Convention
 title: Palette vector files
 description: Every JSON vector file of the Plant palette under scripts/vectors/ uses one envelope, modelled on canopi-data's range-verdict vectors, so the app's Rust code and canopi-data can run the same cases.
 tags: [consortium, tests, vectors]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:05:01Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:09Z }
 sources:
   - id: architecture-plant-palette-architecture
     resource: /architecture/plant-palette-architecture.md
   - id: project-plant-palette-slices
     resource: /project/plant-palette-slices.md
+  - id: link-v5-json
+    resource: ../../scripts/vectors/link-v5.json
+    title: scripts/vectors/link-v5.json
+    digest: sha256:265be2916c586b4e
+    last_modified: 2026-11-14T10:29:14Z
+  - id: range-verdicts-json
+    resource: ../../scripts/vectors/range-verdicts.json
+    title: scripts/vectors/range-verdicts.json
+    digest: sha256:fbbd5cb7acd35672
+    last_modified: 2026-11-14T10:35:27Z
+  - id: consortium-link-v5-test-mjs
+    resource: ../../scripts/consortium-link-v5.test.mjs
+    title: scripts/consortium-link-v5.test.mjs
+    digest: sha256:a891534f6b3154d5
+    last_modified: 2026-11-14T10:30:24Z
 ---
 
 # Palette vector files
@@ -47,3 +62,12 @@ Modelled on canopi-data's `tests/vectors/range_verdicts.json` (sibling repositor
 | `weigh.json` | things to weigh | PP-B b3 |
 | `plan.json` | planting plan | PP-D d1 |
 | `season.json` | seasons and latitude bands | PP-G g1 |
+
+## Files present (PP-B commit 0a, 2026-11-14)
+
+- `scripts/vectors/link-v5.json` (schema `canopi-palette-link/5`) has five plants and five places.
+  - About 63 named cases: the version-status table, decode cases (expected notice, state, `brings_place` or `same_as`) and encode cases.
+  - `scripts/consortium-link-v5.test.mjs` runs it, and `npm run test:vectors` checks the envelope.
+- `scripts/vectors/range-verdicts.json` is the stamped copy of canopi-data's `range_verdicts.json` (release `r-60ea417b5a15c3aa`).
+  - It stays in canopi-data's own shape, and `install-consortium.test.mjs` checks its sha and release id.
+  - b2 reads it from the installed release once the installer carries it.

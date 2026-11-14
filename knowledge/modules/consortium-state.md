@@ -3,20 +3,20 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:35Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:53:30Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:24Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:1e1c7db0e6fbafe3
-    last_modified: 2026-11-13T12:38:43Z
+    digest: sha256:03a26424e490c4b2
+    last_modified: 2026-11-14T10:20:58Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:6864030b5d82d224
-    last_modified: 2026-11-13T19:47:53Z
+    digest: sha256:57827d5b5b419c07
+    last_modified: 2026-11-14T10:27:19Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
@@ -25,18 +25,18 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:47db2d603b231370
-    last_modified: 2026-11-13T14:01:32Z
+    digest: sha256:71692851abfe9d07
+    last_modified: 2026-11-14T10:21:39Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:a619541fb59bd906
-    last_modified: 2026-11-13T07:21:50Z
+    digest: sha256:c1a196208665309e
+    last_modified: 2026-11-14T10:22:12Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:01b03b1fde6c2a62
-    last_modified: 2026-11-13T07:21:50Z
+    digest: sha256:cd2bd5da5bcdbfd5
+    last_modified: 2026-11-14T10:22:35Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
@@ -70,8 +70,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:c2375e19583bd550
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:2f08c35425c5c8bd
+    last_modified: 2026-11-14T10:16:43Z
 enforced_by:
   - scripts/consortium-memory.test.mjs
   - scripts/consortium-start.test.mjs
@@ -151,3 +151,15 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
 # Tests
 
 `scripts/consortium-memory.test.mjs`: each field declares its part once; the saved fields are exactly the core `ShareState`; store.ts and the state/ modules list no state field by hand; a test-only extra field round-trips through Undo, watchers, save and share state; per saved field save → restore and link → restore; Undo per snapshot field; any `endsUndo` change hides the Undo toast; saves and `#v=4` links written before the schema open as they did.
+
+## PP-B commit 0a (2026-11-14)
+
+- Links and the save record use `#v=5`; the `#v=4` lines above describe the old format. `persist.ts` `readRecord`/`oldRecord` and `restore.ts` follow `linkVersionStatus`:
+  - v1–v4 are "older": the notice is said once and the save is removed, as v1–v3 were before.
+  - newer and unreadable versions leave the save untouched.
+- The save record is `{ fragment, place, at, src, country? }`. `place` holds `l w q r h s`. Room and plot travel as the fragment's `m` and `z`. The country is kept for both the `link` and `location` sources.
+- `schema.ts` adds the fields `room`, `plot`, `spot`, `soil` and `period`, and marks `kept`, `crops` and `stage` deprecated (not written to v5).
+- `site` stays a derived signal that is not saved.
+- `canopi-place` only seeds a new palette.
+- `history.state.pl` is carried by `persist.ts` and `arrival.ts`.
+- Until b1a and b2 rewrite them, 31 tests in `consortium-core`, `consortium-memory` and `consortium-p5-seams-s5b` still assert v4 literals. The plan assigns them to b1a and b2.

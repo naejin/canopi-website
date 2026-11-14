@@ -2,9 +2,9 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T16:08:43Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:42Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T10:18:52Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:31Z }
 sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
@@ -59,8 +59,8 @@ sources:
   - id: consortium-state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:c2cbea481ff85e20
-    last_modified: 2026-11-13T07:25:07Z
+    digest: sha256:8f8e239324c14251
+    last_modified: 2026-11-14T10:41:21Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
@@ -71,8 +71,8 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:47db2d603b231370
-    last_modified: 2026-11-13T14:01:32Z
+    digest: sha256:71692851abfe9d07
+    last_modified: 2026-11-14T10:21:39Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts

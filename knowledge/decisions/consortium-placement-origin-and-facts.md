@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:40Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:24Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:33Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:4fd64f9b817c4320
-    last_modified: 2026-11-13T19:47:53Z
+    digest: sha256:eec01df763e8b398
+    last_modified: 2026-11-14T10:41:21Z
   - id: site-marks-ts
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
@@ -25,13 +25,13 @@ sources:
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:19a8b751b1c19196
-    last_modified: 2026-11-13T10:58:21Z
+    digest: sha256:e1a451eee42a1ee5
+    last_modified: 2026-11-14T10:15:43Z
   - id: details-tsx
     resource: ../../src/islands/consortium/views/details/Details.tsx
     title: src/islands/consortium/views/details/Details.tsx
-    digest: sha256:f75cba06496a7a41
-    last_modified: 2026-11-13T10:58:21Z
+    digest: sha256:1e1fa65473673efb
+    last_modified: 2026-11-14T10:24:22Z
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
   - id: placed-ts
@@ -42,8 +42,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:6864030b5d82d224
-    last_modified: 2026-11-13T19:47:53Z
+    digest: sha256:57827d5b5b419c07
+    last_modified: 2026-11-14T10:27:19Z
   - id: taxon-of-test
     resource: ../../scripts/consortium-taxon-of.test.mjs
     title: scripts/consortium-taxon-of.test.mjs

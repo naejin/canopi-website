@@ -5,7 +5,7 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:05:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:10Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T09:22:00Z }
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:896b9859c1e5b6da
-    last_modified: 2026-11-14T09:55:27Z
+    digest: sha256:07a4819d91320836
+    last_modified: 2026-11-14T10:43:49Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -43,8 +43,8 @@ sources:
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:b2cddacc3db3d444
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:dcef16e5d39349c1
+    last_modified: 2026-11-14T10:30:58Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
@@ -73,8 +73,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:9b609001749f13dc
-    last_modified: 2026-11-13T20:25:47Z
+    digest: sha256:26d25b93b11f82d7
+    last_modified: 2026-11-14T10:30:46Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
@@ -100,6 +100,21 @@ sources:
     title: scripts/consortium-confidence.test.mjs
     digest: sha256:807eeb2fe9a1172e
     last_modified: 2026-11-13T19:32:13Z
+  - id: parked-markers-json
+    resource: ../../scripts/plan/parked-markers.json
+    title: scripts/plan/parked-markers.json
+    digest: sha256:76bcf1c4c32f4864
+    last_modified: 2026-11-14T10:42:49Z
+  - id: harness-mjs
+    resource: ../../scripts/browser/harness.mjs
+    title: scripts/browser/harness.mjs
+    digest: sha256:e4291993bd99bb01
+    last_modified: 2026-11-14T10:35:15Z
+  - id: consortium-pp-b1-test-mjs
+    resource: ../../scripts/consortium-pp-b1.test.mjs
+    title: scripts/consortium-pp-b1.test.mjs
+    digest: sha256:fa7eb7481800cabf
+    last_modified: 2026-11-14T10:37:35Z
 ---
 
 # Responsibility
@@ -147,3 +162,16 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 - Hero PNG originals stay outside git.
 
 F1a commit 0 adds three core tests written failing for the streams: `consortium-palette.test.mjs` (pal1/pal2: role groups, health summary, invasive tie), `consortium-balance.test.mjs` (bal2: the registry shape passes; the checks are marked) and `consortium-confidence.test.mjs` (conf1: the term table). It also adds six F1a browser specs (see [Consortium page](/modules/consortium-page.md)).
+
+## PP-B commit 0a (2026-11-14)
+
+- **Deleted:** `consortium-palette.test.mjs`, `consortium-confidence.test.mjs`, `consortium-balance.test.mjs` and the six `browser/consortium-f1a-*.browser.test.mjs` specs.
+  - Their markers are moved, parked or dropped. Each one is listed in `scripts/plan/parked-markers.json` (source commit `648baf2`), which `plan-owners.test.mjs` checks.
+- **Added:**
+  - `consortium-link-v5.test.mjs`
+  - `consortium-pp-b1.test.mjs` (P12, P13; owner b1a)
+  - `browser/consortium-pp-b1.browser.test.mjs` (P4)
+  - `browser/consortium-pp-b2.browser.test.mjs` (A1, A2, S1, P2; owner b2)
+  - `vectors/link-v5.json` and `vectors/range-verdicts.json`
+- **harness.mjs:** `database: 'hold'` holds the database request until `page.releaseHeld()`.
+- **Import rules:** the rules are L1–L10. L10 is a warn rule ([island layers](/decisions/consortium-island-layers.md)).

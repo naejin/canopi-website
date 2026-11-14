@@ -3,20 +3,20 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:30Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:53:50Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:25Z }
 sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:521388d051be908d
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:b11c523506084a53
+    last_modified: 2026-11-14T10:30:46Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:9b609001749f13dc
-    last_modified: 2026-11-13T19:47:53Z
+    digest: sha256:26d25b93b11f82d7
+    last_modified: 2026-11-14T10:30:46Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -25,8 +25,8 @@ sources:
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:fbdf09611bf250a1
-    last_modified: 2026-11-13T09:54:42Z
+    digest: sha256:aa7bf345c7e16873
+    last_modified: 2026-11-14T10:24:22Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -99,3 +99,16 @@ Coordinator row "F1a design-check choices" in [the decisions](/decisions/consort
 - **Timing (A24):** a new `ct:start` mark (first-visit Start, ≤ 6 s target, warns) beside `ct:first-view`; the sqlite wasm preload is injected after the build and the build asserts its `href` is the fetched URL, with matching `crossorigin` and one wasm.
 
 **Commit 0 (applied 2026-11-13):** `ROLE_ENTRIES` has `structure` (`views/Structure.tsx`) and `balance` (`views/balance/BalanceSlot.tsx`). Both roles are empty and capped at 12 KB, the larger A14 maximum, until the merge that gives each one a chunk sets measured + 0.5 KB. `FIRST_RUN_BUDGET` stays at 38 KB.
+
+## PP-B commit 0a roles and figures (2026-11-14)
+
+- **Roles.** `structure` and `balance` are removed. Three roles are added, each capped at 12 KB:
+  - `matrix` (`views/Matrix.tsx` and `Actions.tsx`, which must be 2 chunks)
+  - `palette` (`views/palette/Palette.tsx`)
+  - `verdict` (`src/lib/consortium/verdict.ts`, one chunk)
+- **Measured after 0a** (gzip -9, matrix behind `lazyPart`):
+  - first run 35.5 KB (36,396 B) of 38 KB, down from 38.0 KB at f1a/int
+  - matrix 5.5 KB, verdict 0.2 KB, details 6.4 of 6.7 KB
+- **Over its cap:** the later part is 8.7 KB against 8.0 KB. The cause is `views/tracks.ts`, now a chunk shared by the matrix and the later views (about 0.8 KB).
+  - The cap was not raised. It needs a coordinator row, or tracks' list helpers moved out of the later views (PlantList and Jobs, which chunk 0 does not own).
+  - b3 deletes `tracks.ts` with the matrix.

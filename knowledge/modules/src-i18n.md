@@ -5,9 +5,9 @@ description: The 11-locale translation tables and the t() lookup used by every c
 resource: ../../src/i18n
 tags: [module, i18n]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:37:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:42Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-12T14:24:51Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:32Z }
 sources:
   - id: i18n
     resource: ../../src/i18n
@@ -22,8 +22,8 @@ sources:
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
-    digest: sha256:bef9b11dfb17ad2e
-    last_modified: 2026-11-12T11:42:50Z
+    digest: sha256:5ce75b604ceabf36
+    last_modified: 2026-11-14T10:34:58Z
 ---
 
 # Responsibility

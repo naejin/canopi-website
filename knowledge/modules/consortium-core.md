@@ -4,30 +4,30 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:32Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:53:29Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:46Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:4fd64f9b817c4320
-    last_modified: 2026-11-13T19:47:53Z
+    digest: sha256:eec01df763e8b398
+    last_modified: 2026-11-14T10:41:21Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:19a8b751b1c19196
-    last_modified: 2026-11-13T10:58:21Z
+    digest: sha256:e1a451eee42a1ee5
+    last_modified: 2026-11-14T10:15:43Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:c2375e19583bd550
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:2f08c35425c5c8bd
+    last_modified: 2026-11-14T10:16:43Z
   - id: matrix-ts
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
-    digest: sha256:baa54a05e2f52746
-    last_modified: 2026-11-13T10:58:21Z
+    digest: sha256:1b7088eeb8448e53
+    last_modified: 2026-11-14T10:15:21Z
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
@@ -86,8 +86,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:c2cbea481ff85e20
-    last_modified: 2026-11-13T07:25:07Z
+    digest: sha256:8f8e239324c14251
+    last_modified: 2026-11-14T10:41:21Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -206,8 +206,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:fb9a67dce315c4f6
-    last_modified: 2026-11-13T10:58:21Z
+    digest: sha256:8610c9279fbe06ae
+    last_modified: 2026-11-14T10:15:43Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
@@ -218,6 +218,26 @@ sources:
     title: src/lib/consortium/balance.ts
     digest: sha256:8fdecbce896d793e
     last_modified: 2026-11-13T19:47:53Z
+  - id: place-ts
+    resource: ../../src/lib/consortium/place.ts
+    title: src/lib/consortium/place.ts
+    digest: sha256:b664e3442aa10d97
+    last_modified: 2026-11-14T10:16:06Z
+  - id: link-v5-json
+    resource: ../../scripts/vectors/link-v5.json
+    title: scripts/vectors/link-v5.json
+    digest: sha256:265be2916c586b4e
+    last_modified: 2026-11-14T10:29:14Z
+  - id: consortium-link-v5-test-mjs
+    resource: ../../scripts/consortium-link-v5.test.mjs
+    title: scripts/consortium-link-v5.test.mjs
+    digest: sha256:a891534f6b3154d5
+    last_modified: 2026-11-14T10:30:24Z
+  - id: range-verdicts-json
+    resource: ../../scripts/vectors/range-verdicts.json
+    title: scripts/vectors/range-verdicts.json
+    digest: sha256:fbbd5cb7acd35672
+    last_modified: 2026-11-14T10:35:27Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs
@@ -333,3 +353,16 @@ Installed now: release `r-60ea417b5a15c3aa`, schema 3, `consortium-v3.r-60ea417b
 
 - `types.ts`: `roomValues`/`Room` with `pots` ("Balcony or pots", A8). `Site.room` is a `Room`, but `rooms` (the answers Start offers and the answers a link's `m=` accepts) leaves `pots` out until stream 1 offers it. `ROOM_LIMIT_M` and `suggest.ts` `SIZE_LIMIT` give `pots` the small garden's values until then. Also `views`/`View` (`start | palette | structure`, A6), `confidenceTerms`/`ConfidenceTerm`/`Confidence` (A15), `CellSpan {stratum, from, to}` (moved from `store.ts`, which re-exports it), `AddPreset {job?, cell?, filters?, hint?}` (cell: the span Add opens on; hint: a key with vars, A22), `balanceCheckIds`, `balanceStates`, `BalanceDetail {plants?, families?, months?, vars?}` (what a check's line names) and `BalanceCheck {id, state, n, m, detail, preset, confidence?}` (A3).
 - `balance.ts` (exported by `index.ts`): `BalanceContext {climate, location, period, factAt}`, `BalanceRule`, the `balanceRules` registry and `balanceChecks(members, ctx)`. Every check returns `not-checked` until stream 4 fills its rule. Tests: `scripts/consortium-balance.test.mjs`.
+
+## PP-B commit 0a (2026-11-14): what changed
+
+This section supersedes the statements above where they disagree.
+
+- **Link v5** in `state.ts`: `encodeLink` writes `#v=5`. The place keys `k o l w q r h s` are written only with `place: true`, and an `origin` implies the place tick. `linkVersionStatus(v)` returns `current`, `older` (v1–v4 only), `newer` or `unreadable`. Unknown keys are ignored, and a key with an unreadable value falls back on its own. The decoder reads `m=` through `roomValues`, so `pots` is accepted. `kept`, `crops` and `stage` are deprecated and not written. Contract: `scripts/vectors/link-v5.json` (schema `canopi-palette-link/5`) and `scripts/consortium-link-v5.test.mjs`.
+- **types.ts**: `rooms` still leaves `pots` out because Start's form is unchanged until b1a. `roomValues` (with `pots`) is the `Room` type and what the codec reads.
+- **New modules:**
+  - `place.ts` has real bodies: `emptyPlace`, `siteFor` (today's light, soil and water answers passed to `fits()`), a minimal `resolveSoil` and `climateFor`.
+  - `verdict.ts`, `verdict-line.ts`, `verdict-load.ts`, `years.ts`, `holes.ts` and `weigh.ts` are seams tagged `@public`. b2 writes their bodies.
+  - `PlantSource.layerValues` is stubbed in `sqlite-source.ts`.
+- **Balance deleted**: `balance.ts`, its types, `BalanceSlot`, `balance.css` and `scripts/consortium-balance.test.mjs` are gone, so the "F1a commit 0 seams" bullet on `balance.ts` above no longer holds.
+- **Range verdict vectors**: `scripts/vectors/range-verdicts.json` is a verbatim copy of canopi-data `tests/vectors/range_verdicts.json`. Its sha, schema and release id are checked against `src/data/consortium-index.json` in `install-consortium.test.mjs`.

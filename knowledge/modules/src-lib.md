@@ -5,7 +5,7 @@ description: Framework-free logic shared by the Worker endpoints, the page scrip
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:28Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:30Z }
@@ -13,8 +13,8 @@ sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:17dae712ad53be77
-    last_modified: 2026-11-13T19:47:53Z
+    digest: sha256:1b279cb8fea7cc20
+    last_modified: 2026-11-14T10:41:21Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -35,6 +35,11 @@ sources:
     title: src/lib/location/place-search.ts
     digest: sha256:973b9ec88284376b
     last_modified: 2026-11-13T07:08:17Z
+  - id: index-ts
+    resource: ../../src/lib/consortium/index.ts
+    title: src/lib/consortium/index.ts
+    digest: sha256:2f08c35425c5c8bd
+    last_modified: 2026-11-14T10:16:43Z
 ---
 
 # Responsibility
@@ -73,3 +78,5 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 - Permanent mailer error codes map to `refused`, others to `failed`. Logs carry codes only, never message content or the address.
 - `guides.ts` is the exception to "no Astro imports": it reads `astro:content` and runs only at build time.
 - Installer detection returns `null` (keep the chooser) for mobile, ChromeOS, touch Macs, 32-bit, Windows/Linux ARM, and Macs without a known architecture: never guess.
+
+Since PP-B commit 0a (2026-11-14), `state.ts` writes the `#v=5` link and treats v1–v4 as older. The core also holds the place seams (`place.ts`), plus the verdict, years, holes and weigh seams that b2 fills ([consortium core](/modules/consortium-core.md)).

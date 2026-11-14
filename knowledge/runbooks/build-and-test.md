@@ -4,7 +4,7 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:37Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:27Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:29Z }
@@ -22,8 +22,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:9b609001749f13dc
-    last_modified: 2026-11-13T19:47:53Z
+    digest: sha256:26d25b93b11f82d7
+    last_modified: 2026-11-14T10:30:46Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -99,6 +99,16 @@ sources:
     title: scripts/browser/consortium-timing.mjs
     digest: sha256:c6e5a6214d2abebc
     last_modified: 2026-11-13T12:33:29Z
+  - id: dependency-cruiser-cjs
+    resource: ../../.dependency-cruiser.cjs
+    title: .dependency-cruiser.cjs
+    digest: sha256:29cbaf3dbda18ec2
+    last_modified: 2026-11-14T10:31:30Z
+  - id: shards-json
+    resource: ../../scripts/browser/shards.json
+    title: scripts/browser/shards.json
+    digest: sha256:3ee88662d81a483e
+    last_modified: 2026-11-14T10:38:44Z
 enforced_by:
   - scripts/package.test.mjs
   - sgconfig.yml
@@ -152,3 +162,5 @@ Node >= 22.13.0 (`node:sqlite` without a flag); `.node-version` pins 22.22.0 for
 - Build fails with `No such module "node:fs"` from the prerender server: a page imported something that imports `src/content.config.ts` or a Node built-in; keep shared constants out of the content config.
 - `astro preview` answers 500 after a rebuild: restart the preview you started (by its pid, never by port).
 - Local contact send reports failure under `wrangler dev`: expected, the email simulator returns no message id.
+
+Since PP-B commit 0a (2026-11-14), `check:arch` runs rules L1–L10, with L10 as a warning. The palette's vector files under `scripts/vectors/` are checked by their own tests in `npm test`; `test:vectors` still covers only the climate vectors. Browser test files for PP-B are `scripts/browser/consortium-pp-b1.browser.test.mjs` and `consortium-pp-b2.browser.test.mjs`. Both run in CI shard 2.
