@@ -4,13 +4,13 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:10:50Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:01Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
     title: scripts/plan/pp-b-owners.json
-    digest: sha256:1e28ec7c77332145
-    last_modified: 2026-11-14T11:37:48Z
+    digest: sha256:6aa36407af22b433
+    last_modified: 2026-11-14T12:22:11Z
   - id: f1a-owners-json
     resource: ../../scripts/plan/f1a-owners.json
     title: scripts/plan/f1a-owners.json
@@ -44,8 +44,8 @@ sources:
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:05165e3bc439b2c2
-    last_modified: 2026-11-13T20:57:13Z
+    digest: sha256:a090fc09acf02ec7
+    last_modified: 2026-11-14T12:24:22Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -55,7 +55,7 @@ sources:
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
     digest: sha256:6c83ba538a6be488
-    last_modified: 2026-11-14T11:54:14Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: consortium-f1a-a11y-browser-test-mjs
     resource: ../../scripts/browser/consortium-f1a-a11y.browser.test.mjs
     title: scripts/browser/consortium-f1a-a11y.browser.test.mjs
@@ -90,22 +90,22 @@ sources:
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
     digest: sha256:278d03d94f6bfc36
-    last_modified: 2026-11-14T11:54:14Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:e6e2dd373870d866
-    last_modified: 2026-11-14T11:45:53Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
     digest: sha256:a51ff392be603f0e
-    last_modified: 2026-11-14T11:45:56Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:0f3014353a94fa8d
-    last_modified: 2026-11-14T11:45:53Z
+    digest: sha256:b69001f4ccc35e08
+    last_modified: 2026-11-14T12:22:23Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -125,7 +125,7 @@ sources:
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
     digest: sha256:842b6e18d2030121
-    last_modified: 2026-11-14T11:48:54Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: consortium-palette-test-mjs
     resource: ../../scripts/consortium-palette.test.mjs
     title: scripts/consortium-palette.test.mjs
@@ -135,7 +135,7 @@ sources:
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
     digest: sha256:6c31b6d99f63ff25
-    last_modified: 2026-11-14T11:54:31Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
@@ -159,13 +159,13 @@ sources:
   - id: datasourcespage-astro
     resource: ../../src/components/DataSourcesPage.astro
     title: src/components/DataSourcesPage.astro
-    digest: sha256:0b8af77a37550326
-    last_modified: 2026-11-11T19:53:07Z
+    digest: sha256:60c7d25fd06f12e0
+    last_modified: 2026-11-14T12:22:11Z
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
     title: src/components/PrivacyPage.astro
-    digest: sha256:21d3855ef5060909
-    last_modified: 2026-11-13T14:25:59Z
+    digest: sha256:e7e62bb8151b31fd
+    last_modified: 2026-11-14T12:22:11Z
   - id: climate-release-json
     resource: ../../src/data/climate-release.json
     title: src/data/climate-release.json
@@ -175,7 +175,7 @@ sources:
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
     digest: sha256:5bf1dfad1494463b
-    last_modified: 2026-11-14T12:02:08Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -190,7 +190,7 @@ sources:
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:476f116c5e449766
-    last_modified: 2026-11-14T11:38:37Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -205,7 +205,7 @@ sources:
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
     digest: sha256:be4bbd1d3c23e9c1
-    last_modified: 2026-11-14T12:03:22Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
@@ -225,7 +225,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:d11d0a245a854604
-    last_modified: 2026-11-14T11:39:47Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
@@ -265,12 +265,12 @@ sources:
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
     digest: sha256:403cb0593e62df98
-    last_modified: 2026-11-14T12:00:42Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
     digest: sha256:14a41ad260f237ba
-    last_modified: 2026-11-14T11:42:40Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: layers-ts
     resource: ../../src/islands/consortium/views/layers.ts
     title: src/islands/consortium/views/layers.ts
@@ -335,7 +335,7 @@ sources:
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
     digest: sha256:c948918a08ee50b3
-    last_modified: 2026-11-14T11:38:37Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: range-marks-ts
     resource: ../../src/lib/consortium/range-marks.ts
     title: src/lib/consortium/range-marks.ts
@@ -365,12 +365,12 @@ sources:
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
     digest: sha256:feb8e2ad064adef0
-    last_modified: 2026-11-14T11:38:45Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
     digest: sha256:c9c8db612ed9a0f6
-    last_modified: 2026-11-14T11:40:02Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json
@@ -464,7 +464,7 @@ A stream never deletes a whole spec file: it empties it of its cases; main delet
   - **Probe:** one `npm run build` and `node scripts/check-built-site.mjs` after 0a' measure the first run and every role; the `later` part is expected back under its 8 KB cap with `tracks.ts` gone, so no raise is recorded unless the measure says otherwise (budget rule).
   - **Built (0a', measured 2026-11-14):** first run 33.2 KB of 38 KB (`Actions` back in it); later 5.3/8.0 KB, details 6.3/6.7, sheets 5.7/6.3, location 11.2/11.8, future 2.2/2.8, suggest 1.8/8.0, verdict 0.2/12, palette none; no cap raised. `App.tsx` keeps the two keep-alive imports (`PlantMarks.tsx`, `StageBar.tsx`): without them the future part costs 3.1 KB of its 2.8 KB cap (one build). `kit/sheet.tsx` `shared` (now `Object.freeze`d) also holds `data/search.ts` (`searchIndex`, `fold`), which Start's crop search had kept in the first run: without it Add's chunk imports a `fold` chunk off the first run (K3). Browser after 0a': `consortium-pp-b2` (the four markers, PP-B18) and `-pp-b1` pass; `consortium-s3` (every case waits for the "Layers × stages" tab) and the `consortium-s4` exit walk-through wait for b2's palette page (risk accepted below); `consortium-s4` BT-7 and `consortium-p5-s5b` P5-1c still expect `#v=4` links (b1a's).
   - **Gates after 0a':** `npm run check`, `npm test` (with the `ct-*` class coverage case), `check:arch`, `check:dead`, `check:dup`; a `grep -rn` for each deleted name (`buildMatrix`, `plantsIn`, `startCell`, `cellCounts`, `toggleKeep`, `PhoneMatrix`, `StageStepper`, `PlantList`, `tracks.ts`, `keptTag`, `mainCrop`) finds none in `src/` and in main's chunk-0 files; the stream-owned specs that still name them (section 1b: `consortium-s1`, `-e6-r4`, `-p5-s5b`, `-p5-s5c`, the helpers) are exempt, each named in its stream's row (check deletion-8); `plan-owners.test.mjs` asserts no `src/` file reads a removed store export (`matrix`, `toggleKeep`, `kept`, `crops`, `marksFailed`).
-- **0b the move:** architecture 8.4, including the wrangler-dev probe and its stub-page fallback (stubs at `/consortium/` and `/<lang>/consortium/`, each pointing to `consortiumPath(lang)`; 302 considered until the production `curl` check passes), the 22 redirect lines, the page-head link check (`ConsortiumPage.astro:117`), the rename words in 11 locales, `privacy.tool.device` as owner-approved (below), and the harness, helpers, specs and checks that name the old path.
+- **0b the move (built 2026-11-14, 6ff4f19 and 34e0d6e; 301 redirects kept the query and the fragment on wrangler dev, so no stub pages; the probe and the production `curl` check are in the runbook [CI and deploy gate](/runbooks/ci-and-deploy-gate.md); names: en Plant palette, fr Palette végétale, es Paleta vegetal, pt Paleta de plantas, it Palette vegetale, de Pflanzenpalette, nl Plantenpalet, ru Палитра растений, zh 植物搭配, ja 植栽パレット, ko 식물 팔레트, header word Palette/Paleta/Palet/Палитра/팔레트 or the whole name):** architecture 8.4, including the wrangler-dev probe and its stub-page fallback (stubs at `/consortium/` and `/<lang>/consortium/`, each pointing to `consortiumPath(lang)`; 302 considered until the production `curl` check passes), the 22 redirect lines, the page-head link check (`ConsortiumPage.astro:117`), the rename words in 11 locales, `privacy.tool.device` as owner-approved (below), and the harness, helpers, specs and checks that name the old path.
 - Commit-0 unit tests (in `scripts/consortium-link-v5.test.mjs`, plus `place.ts`'s `emptyPlace` and `siteFor` cases): `linkVersionStatus` table (incl. `null` → `absent`); `arrival()` with a v4 record gives the older line once and removes the save, with a v6 record keeps it; `readRecord` and `oldRecord` with v4, v5, v6 fragments, a fragment with no `v` and a save with no `v`; unreadable vectors (not a whole `v`; `e=1` with a malformed non-empty `a`; not for an empty `a`, unknown tokens or a cut); unknown key ignored (`…&e=1&zz=3`); per-key fallback (`m=huge` → `unsure`, `s=own.65.loam.ec2` → own, 6.5, loam); period vectors (`y=2041-2070`, `y=2071-2099` round-trip; `y=2011-2040`, `y=2055`, `y=1`, `y=` → today with the period notice; absent → today, no notice); `u=` with an unknown key → the newer line with plants restored; `k` gating (chosen + unticked → none; location + ticked → `k`; guess + ticked → none); spot grammar (`h=higher.650`, `w=irrigated`); a link whose answers are all `unsure` brings no place; `m` and `z` alone bring no place; `k` alone brings no place and keeps the reader's country.
 
 | Stream | Owns (summary; exact rows in the owners file) | Tests first |

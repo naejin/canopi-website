@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:37:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:24:43Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:6b76b8ffe29a2894
-    last_modified: 2026-11-11T02:58:29Z
+    digest: sha256:dc4770be6cded2ce
+    last_modified: 2026-11-14T12:22:23Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -60,8 +60,8 @@ sources:
   - id: tryconsortium-astro
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
-    digest: sha256:7ebcb06064fed9aa
-    last_modified: 2026-11-11T02:58:29Z
+    digest: sha256:125cb10a8e1203ac
+    last_modified: 2026-11-14T12:22:23Z
   - id: try-consortium-ts
     resource: ../../src/components/guides/try-consortium.ts
     title: src/components/guides/try-consortium.ts
@@ -70,8 +70,8 @@ sources:
   - id: en-json
     resource: ../../src/i18n/guides/en.json
     title: src/i18n/guides/en.json
-    digest: sha256:e4517e6dee214755
-    last_modified: 2026-10-28T12:22:08Z
+    digest: sha256:30ad344240283d10
+    last_modified: 2026-11-14T12:22:23Z
 enforced_by:
   - scripts/guides.test.mjs
   - scripts/check-built-site.mjs
@@ -185,14 +185,14 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
 - `<NextGuides slugs={["saving-seed"]} />` — `slugs` required; only published guides are listed,
   so a section may name a guide before it is written; nothing renders if none is published.
 - `<TryConsortium plant="Artocarpus altilis" climate="tropical" name="Breadfruit" />` — opens the
-  consortium tool (beta) with the guide's plant kept and its climate set:
-  `consortiumPath(lang)?plant=<canonical_name>&climate=<id>` (`/consortium/`, fr `/fr/consortium/`; planned to become `/palette/` and `/fr/palette/` in F1a stream 1, [decision row "Plant palette name"](/decisions/consortium-user-decisions.md), with the old paths 301-redirected, query kept).
+  consortium tool ("Plant palette", beta) with the guide's plant kept and its climate set:
+  `consortiumPath(lang)?plant=<canonical_name>&climate=<id>` (`/palette/`, fr `/fr/palette/` since PP-B commit 0b, [decision row "Plant palette name"](/decisions/consortium-user-decisions.md); the old `/consortium/` paths 301-redirect with the query kept).
   `plant` required: a `canonical_name` placed in a beta climate (`names` of `src/data/consortium-index.json`, written by the installer); `name`
   required: the guide's own name for the plant in that file's language (en and fr differ); `climate`
   optional: the zone of the `<ForClimate>` block it sits in, and the plant must be placed in that climate. Left
   out (only outside climate blocks, in a guide for every climate), each beta climate whose list has the plant
   gets a link, so no climate is assumed (never default to temperate). Renders a `.guide-next-inline`
-  line: the label "Design a consortium (beta)" (fr « Composer une guilde (bêta) »,
+  line: the label "Plant palette (beta)" (fr « Palette végétale (bêta) »,
   `consortium.label`) and one link per climate, "<name> · <climate>" (`consortium.link`, the climate from the site-wide
   `climate.<id>`: "Corn · Temperate", « Maïs · Tempéré »); one list serves a climate
   everywhere, so no region is named; each link is described by the label. The links come

@@ -3,15 +3,15 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:38Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:24Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:50:29Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:04Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
     title: src/content/guides/
-    digest: sha256:ed6176f3515735a8
-    last_modified: 2026-10-29T05:02:41Z
+    digest: sha256:caa9e456f926548c
+    last_modified: 2026-11-14T12:22:23Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
@@ -32,8 +32,8 @@ sources:
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs
-    digest: sha256:54b8fd886c66eeb7
-    last_modified: 2026-11-11T03:33:26Z
+    digest: sha256:8062525e2cccb015
+    last_modified: 2026-11-14T12:22:23Z
   - id: en-mdx
     resource: ../../src/content/guides/homes-for-pollinators/en.mdx
     title: src/content/guides/homes-for-pollinators/en.mdx

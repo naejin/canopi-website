@@ -4,7 +4,7 @@ title: canopi-website
 description: Astro marketing site for projectcanopi.com, the home of the Canopi agroecological design app, deployed by Cloudflare Workers Builds from the deploy branch, which CI moves to master only when it is green.
 tags: [project]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:57:02Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:27Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:35Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:45Z }
@@ -17,13 +17,13 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:cd62373a66839519
-    last_modified: 2026-11-13T06:49:01Z
+    digest: sha256:a54f837af2a33c43
+    last_modified: 2026-11-14T11:12:40Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:67232b45e9d1961a
-    last_modified: 2026-11-13T06:57:03Z
+    digest: sha256:a090fc09acf02ec7
+    last_modified: 2026-11-14T12:24:22Z
   - id: context-md
     resource: ../../CONTEXT.md
     title: CONTEXT.md
@@ -53,7 +53,7 @@ sources:
 
 # Purpose
 
-The public website of Canopi, an open-source agroecological design app run by a non-profit association. Visitors (growers, designers, the agroecology community) learn what Canopi is, download Canopi Desktop for their OS, open Canopi Web at `web.projectcanopi.com`, see what the app does and browse featured designs, read a curated bibliography and practical Field Guides (English and French), design a plant consortium for their climate (beta tool, with a "Suggest a correction" form for its plant data), and contact or donate to the project. [^readme]
+The public website of Canopi, an open-source agroecological design app run by a non-profit association. Visitors (growers, designers, the agroecology community) learn what Canopi is, download Canopi Desktop for their OS, open Canopi Web at `web.projectcanopi.com`, see what the app does and browse featured designs, read a curated bibliography and practical Field Guides (English and French), make a plant palette for their site and climate (the beta "Plant palette" tool at `/palette/`, with a "Suggest a correction" form for its plant data), and contact or donate to the project. [^readme]
 
 # Tech stack
 

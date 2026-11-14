@@ -3,35 +3,35 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:10:50Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:26Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:24Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:05Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
     digest: sha256:b6b3c4a07c8b9b9d
-    last_modified: 2026-11-14T11:39:20Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:d11d0a245a854604
-    last_modified: 2026-11-14T11:39:47Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:40df8909c9e3e690
-    last_modified: 2026-11-14T11:47:18Z
+    digest: sha256:679a7fb98526c862
+    last_modified: 2026-11-14T12:22:23Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:5cc847af70dbb553
-    last_modified: 2026-11-14T11:40:16Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
     digest: sha256:4b57cc74b77d753f
-    last_modified: 2026-11-14T11:40:16Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
@@ -41,7 +41,7 @@ sources:
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
     digest: sha256:31a413ffec3ce0e4
-    last_modified: 2026-11-14T11:40:20Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts

@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:21:01Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:26Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:11:04Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:03Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -18,13 +18,13 @@ sources:
   - id: browser-test
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:c460057454bb6077
-    last_modified: 2026-11-13T13:00:15Z
+    digest: sha256:9dc0dfd7b4ab33b9
+    last_modified: 2026-11-14T12:22:23Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:938046a217aedf52
-    last_modified: 2026-11-14T12:08:29Z
+    digest: sha256:cfcbfeacf6bdf8d5
+    last_modified: 2026-11-14T12:22:23Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -33,8 +33,8 @@ sources:
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs
-    digest: sha256:54b8fd886c66eeb7
-    last_modified: 2026-11-11T03:33:26Z
+    digest: sha256:8062525e2cccb015
+    last_modified: 2026-11-14T12:22:23Z
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
@@ -44,7 +44,7 @@ sources:
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
     digest: sha256:a51ff392be603f0e
-    last_modified: 2026-11-14T11:45:56Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
@@ -73,8 +73,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:0f3014353a94fa8d
-    last_modified: 2026-11-14T11:45:53Z
+    digest: sha256:b69001f4ccc35e08
+    last_modified: 2026-11-14T12:22:23Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
@@ -108,8 +108,8 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:e4291993bd99bb01
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:9d29791375862387
+    last_modified: 2026-11-14T12:22:23Z
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs

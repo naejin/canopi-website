@@ -4,10 +4,10 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:27Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:27Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:11:06Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:04Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -22,8 +22,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:0f3014353a94fa8d
-    last_modified: 2026-11-14T11:45:53Z
+    digest: sha256:b69001f4ccc35e08
+    last_modified: 2026-11-14T12:22:23Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -62,8 +62,8 @@ sources:
   - id: axe-smoke-mjs
     resource: ../../scripts/browser/smoke/axe.smoke.mjs
     title: scripts/browser/smoke/axe.smoke.mjs
-    digest: sha256:bbf6211852cf8a8f
-    last_modified: 2026-11-13T03:26:34Z
+    digest: sha256:cdb6434db87ad56a
+    last_modified: 2026-11-14T12:22:23Z
   - id: climate-vectors-test-mjs
     resource: ../../scripts/climate-vectors.test.mjs
     title: scripts/climate-vectors.test.mjs
@@ -97,8 +97,8 @@ sources:
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
-    digest: sha256:c6e5a6214d2abebc
-    last_modified: 2026-11-13T12:33:29Z
+    digest: sha256:5c744fec4a232c42
+    last_modified: 2026-11-14T12:22:23Z
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
@@ -108,7 +108,7 @@ sources:
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
     digest: sha256:278d03d94f6bfc36
-    last_modified: 2026-11-14T11:54:14Z
+    last_modified: 2026-11-14T12:12:11Z
 enforced_by:
   - scripts/package.test.mjs
   - sgconfig.yml

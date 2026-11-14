@@ -2,15 +2,15 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:42Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:01Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:11:03Z }
 sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
     title: src/components/PrivacyPage.astro
-    digest: sha256:21d3855ef5060909
-    last_modified: 2026-11-13T14:25:59Z
+    digest: sha256:e7e62bb8151b31fd
+    last_modified: 2026-11-14T12:22:11Z
   - id: consortium-credits-ts
     resource: ../../src/data/consortium-credits.ts
     title: src/data/consortium-credits.ts
@@ -19,8 +19,8 @@ sources:
   - id: datasourcespage-astro
     resource: ../../src/components/DataSourcesPage.astro
     title: src/components/DataSourcesPage.astro
-    digest: sha256:0b8af77a37550326
-    last_modified: 2026-11-11T19:53:07Z
+    digest: sha256:60c7d25fd06f12e0
+    last_modified: 2026-11-14T12:22:11Z
   - id: footer-astro
     resource: ../../src/components/Footer.astro
     title: src/components/Footer.astro
@@ -60,7 +60,7 @@ sources:
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
     digest: sha256:9a4b50c369042a6a
-    last_modified: 2026-11-14T11:39:20Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
@@ -72,7 +72,7 @@ sources:
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:5cc847af70dbb553
-    last_modified: 2026-11-14T11:40:16Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -98,7 +98,7 @@ The `/privacy/` page in 11 locales (owner answer 4, decision "P5 owner answers",
 
 # What the page claims, and why it is true
 - Hosting: Cloudflare Workers with observability on (`wrangler.jsonc`): Workers Logs hold request details (address, time, browser, approximate location such as city, country and network) for up to 7 days, Cloudflare's documented maximum (linked on the page); the contact and correction handlers log codes only (`src/lib/contact.mjs`, `src/lib/correction.mjs`). No analytics script; the site's code sets no cookies.
-- Device storage: theme, climate, the language offer (sessionStorage) in `Base.astro`; guide checklists; the tool's consortium, country and site climate (`state/persist.ts`, split from the old `memory.ts` in E6 S2; the privacy page's source comment names it since E6 chunk 5) and site location (`state/location.ts`); share links live in the fragment.
+- Device storage: theme, climate, the language offer (sessionStorage) in `Base.astro`; guide checklists; the tool's consortium, country and site climate (`state/persist.ts`, split from the old `memory.ts` in E6 S2; the privacy page's source comment names it since E6 chunk 5) and site location (`state/location.ts`); share links live in the fragment. Since PP-B commit 0b `privacy.tool.device` is the owner-approved text of 2026-11-14 (EN and FR exact, the 9 others translated, pt Brazilian): it also names the soil files, the palette's height limit, plot size and spot answers, the last spot answers kept to seed the next palette (`canopi-place`), and what "Forget this location" clears, ahead of the streams that build them (b1a, f2); the tool's reader-facing name is "Plant palette" (`privacy.tool.title`, `dataSources.tool.title`).
 - Location (S5b, per the P5 design check §B): asked only on click, used on the device to read the climate and the country (`state/location.ts` `locateNow`: `lookup.regions.isoA2`) and saved only on the device; tiles are static files from this site, whole tiles of 100 × 0.1° (climate) and 200 × 0.05° (soil, regions), about 1,000 km. The page says a download does not reveal the *precise* point, not the point: where the point's own cell has no value (sea, ice, a built-up soil gap) within 2 cells of a tile edge, `lookupSite` (`src/lib/climate/index.ts`) also loads the neighbouring tile, which narrows the place to a strip some 10–20 km wide. With the tick a link holds the 0.1° cell centre (`o=`; about 11 km north to south, the page and `consortium.share.locationNote` say "about 11 km") and the country the location gave (`state/persist.ts` `shareState` writes a location's country only with the tick; `state.ts` `encodeLink` `k=`). Nominatim on Enter; OpenFreeMap only once the map opens.
 - `consortium-p5-seams-s5f.test.mjs` checks these claims in all 11 locales (the cell size against `CLIMATE_GRID`, the country in the link and device lines, "precise point" in the tiles line); ho-misc's seam check (2026-11-11) fixed "about 10 km", the missing country and the stronger "do not reveal the point".
 - Contact and corrections go by Cloudflare Email Routing to the association's Gmail mailbox; the address is never written in a page.

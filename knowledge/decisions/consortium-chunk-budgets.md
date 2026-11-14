@@ -3,30 +3,30 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:10:49Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:25Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:25Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:03Z }
 sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:e6e2dd373870d866
-    last_modified: 2026-11-14T11:45:53Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:0f3014353a94fa8d
-    last_modified: 2026-11-14T11:45:53Z
+    digest: sha256:b69001f4ccc35e08
+    last_modified: 2026-11-14T12:22:23Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
-    digest: sha256:c6e5a6214d2abebc
-    last_modified: 2026-11-13T12:33:29Z
+    digest: sha256:5c744fec4a232c42
+    last_modified: 2026-11-14T12:22:23Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
     digest: sha256:403cb0593e62df98
-    last_modified: 2026-11-14T12:00:42Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs

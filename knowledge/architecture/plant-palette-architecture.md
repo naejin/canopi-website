@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:10:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:00Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -20,8 +20,8 @@ sources:
   - id: redirects
     resource: ../../public/_redirects
     title: public/_redirects
-    digest: sha256:1989f035d8389357
-    last_modified: 2026-10-29T05:02:41Z
+    digest: sha256:c15c0a1a12820dd3
+    last_modified: 2026-11-14T12:22:23Z
   - id: consortium-f1a-palette-browser-test-mjs
     resource: ../../scripts/browser/consortium-f1a-palette.browser.test.mjs
     title: scripts/browser/consortium-f1a-palette.browser.test.mjs
@@ -30,8 +30,8 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:e4291993bd99bb01
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:9d29791375862387
+    last_modified: 2026-11-14T12:22:23Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -40,18 +40,18 @@ sources:
   - id: built-links-test-mjs
     resource: ../../scripts/built-links.test.mjs
     title: scripts/built-links.test.mjs
-    digest: sha256:88cbfde377899ff2
-    last_modified: 2026-10-29T05:02:41Z
+    digest: sha256:c633635424669a25
+    last_modified: 2026-11-14T12:22:23Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:e6e2dd373870d866
-    last_modified: 2026-11-14T11:45:53Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:0f3014353a94fa8d
-    last_modified: 2026-11-14T11:45:53Z
+    digest: sha256:b69001f4ccc35e08
+    last_modified: 2026-11-14T12:22:23Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -65,8 +65,8 @@ sources:
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs
-    digest: sha256:54b8fd886c66eeb7
-    last_modified: 2026-11-11T03:33:26Z
+    digest: sha256:8062525e2cccb015
+    last_modified: 2026-11-14T12:22:23Z
   - id: arch-rules-test-mjs
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
@@ -80,18 +80,18 @@ sources:
   - id: tryconsortium-astro
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
-    digest: sha256:7ebcb06064fed9aa
-    last_modified: 2026-11-11T02:58:29Z
+    digest: sha256:125cb10a8e1203ac
+    last_modified: 2026-11-14T12:22:23Z
   - id: consortium-path-js
     resource: ../../src/i18n/consortium-path.js
     title: src/i18n/consortium-path.js
-    digest: sha256:00ce49df9e856b0e
-    last_modified: 2026-10-29T05:02:41Z
+    digest: sha256:f2e51ba89fdab93e
+    last_modified: 2026-11-14T12:22:23Z
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
     digest: sha256:5bf1dfad1494463b
-    last_modified: 2026-11-14T12:02:08Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -106,7 +106,7 @@ sources:
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:476f116c5e449766
-    last_modified: 2026-11-14T11:38:37Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -126,7 +126,7 @@ sources:
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
     digest: sha256:be4bbd1d3c23e9c1
-    last_modified: 2026-11-14T12:03:22Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
@@ -146,7 +146,7 @@ sources:
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
     digest: sha256:31a413ffec3ce0e4
-    last_modified: 2026-11-14T11:40:20Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -156,17 +156,17 @@ sources:
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:5cc847af70dbb553
-    last_modified: 2026-11-14T11:40:16Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
     digest: sha256:4b57cc74b77d753f
-    last_modified: 2026-11-14T11:40:16Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
     digest: sha256:b6b3c4a07c8b9b9d
-    last_modified: 2026-11-14T11:39:20Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -176,7 +176,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:d11d0a245a854604
-    last_modified: 2026-11-14T11:39:47Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -186,7 +186,7 @@ sources:
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
     digest: sha256:b28baf4eed1d35b0
-    last_modified: 2026-11-14T11:42:40Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
@@ -221,22 +221,22 @@ sources:
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
     digest: sha256:09389a4dd2aadea2
-    last_modified: 2026-11-14T11:42:25Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: sideview-tsx
     resource: ../../src/islands/consortium/views/SideView.tsx
     title: src/islands/consortium/views/SideView.tsx
     digest: sha256:7eda8141dbfbca81
-    last_modified: 2026-11-14T11:41:37Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: stagebar-tsx
     resource: ../../src/islands/consortium/views/StageBar.tsx
     title: src/islands/consortium/views/StageBar.tsx
     digest: sha256:c6b0c27307229a27
-    last_modified: 2026-11-14T11:56:25Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
     digest: sha256:45e569e00714492c
-    last_modified: 2026-11-14T11:40:42Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: toast-tsx
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
@@ -261,7 +261,7 @@ sources:
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
     digest: sha256:14a41ad260f237ba
-    last_modified: 2026-11-14T11:42:40Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: layers-ts
     resource: ../../src/islands/consortium/views/layers.ts
     title: src/islands/consortium/views/layers.ts
@@ -271,7 +271,7 @@ sources:
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
     digest: sha256:3b70a449e0863414
-    last_modified: 2026-11-14T11:42:46Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
@@ -281,7 +281,7 @@ sources:
     resource: ../../src/islands/consortium/views/side.ts
     title: src/islands/consortium/views/side.ts
     digest: sha256:5ba2eb0af05f06bd
-    last_modified: 2026-11-14T12:03:22Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -346,7 +346,7 @@ sources:
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
     digest: sha256:c948918a08ee50b3
-    last_modified: 2026-11-14T11:38:37Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: nearest-ts
     resource: ../../src/lib/consortium/nearest.ts
     title: src/lib/consortium/nearest.ts
@@ -396,22 +396,22 @@ sources:
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
     digest: sha256:feb8e2ad064adef0
-    last_modified: 2026-11-14T11:38:45Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
     digest: sha256:9a4b50c369042a6a
-    last_modified: 2026-11-14T11:39:20Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
     digest: sha256:c9c8db612ed9a0f6
-    last_modified: 2026-11-14T11:40:02Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:7601664a85fd6d88
-    last_modified: 2026-11-14T11:39:20Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -849,7 +849,7 @@ Files and messages that sit on growers' disks, in other repositories or in the a
 | Vector files `scripts/vectors/<kind>.json` | the shared envelope `{ schema: 'canopi-palette-<kind>/<n>', source?, thresholds?, plants, places, cases }` ([palette vectors](/conventions/palette-vectors.md)) | adding cases or optional fields keeps `/n`; a change of meaning or a removed field is `/n+1`; a loader refuses an unknown schema id | each file's stream |
 | `.canopi` hand-off | a root key `projectcanopi_palette` = `{ schema: 1, plot_m2: number \| null, period: PeriodId, spacing: { <canonical_name>: { full_m, close_m, basis: 'rule' \| 'source' } } }`; a plant with no width is left out of `spacing`; today written as `'1991-2020'`; no `link` field (it would leak the place outside the tick) | readers ignore unknown fields; a new optional field keeps `schema`; a rename or change of meaning bumps it; the app keeps unknown root fields (canopi-types `design.rs:345-349`, snake_case registry `desktop/web/src/app/design-edit/extra-keys.ts:13-16`, at the pinned app commit 0c425fb07) and a hand-off note naming the key goes to the app | d2 |
 | Save record `period` | the same `PeriodId` string as the link's `y` and the `.canopi` `period`, today `'1991-2020'` | as the link | 0a; d2's unit test checks the two agree |
-| Correction report `/2` | `/1` plus `kind` (required: `correction` \| `feedback`; a `feedback` report needs a `note`, and its plant fields are null together), `site_climate`, `placement_estimate` and an optional `context` object with the exact keys sent to canopi-data on 2026-11-14 (D5, before its merge): `period` (a `PeriodId`), `scenario`, `verdict_level`, `limiting_factor`, `limiting_basis`, `winter_night_adjust_c` and `summer_day_adjust_c` (integers −3..3), `dry_season_watered`, `soil_basis` (`map` \| `test` \| `pots` \| `none`), `origin_kind` (`own` \| `guest` \| `borrowed`); no coordinates, place name, pH or spot answers; a null climate is sent as null, never as `"unknown"` (`src/lib/correction.mjs:75-76` changes in F1b) | the top level stays exact; inside `context` a known key with a wrong value refuses the report; unknown keys are kept when at most 8, named `^[a-z][a-z0-9_]{0,31}$`, scalar, a string at most 64 characters, the whole `context` at most 1024 bytes, and a key whose value matches the personal-data check is dropped, so later keys need no `/3`; one shared fixture in both repos; a unit test checks the form's keys against canopi-data's importer set (`src/canopi/curated/correction_reports.py:43-52` `BLOCK_KEYS`); the F1b "Sent with" line lists every value sent | F1b with canopi-data D5 (DATA-16) |
+| Correction report `/2` | `/1` plus `kind` (required: `correction` \| `feedback`; a `feedback` report needs a `note`, and its plant fields are null together), `site_climate`, `placement_estimate` and an optional `context` object with the exact keys sent to canopi-data on 2026-11-14 (D5, delivered the same day at canopi-data master 6589705, hand-off `docs/website-handoff/2026-11-14-d5-correction-report-v2.md`): `period` (a `PeriodId`), `scenario`, `verdict_level`, `limiting_factor`, `limiting_basis`, `winter_night_adjust_c` and `summer_day_adjust_c` (integers −3..3), `dry_season_watered`, `soil_basis` (`map` \| `test` \| `pots` \| `none`), `origin_kind` (`own` \| `guest` \| `borrowed`); no coordinates, place name, pH or spot answers; a null climate is sent as null, never as `"unknown"` (`src/lib/correction.mjs:75-76` changes in F1b, at the `/2` switch) | the top level stays exact; inside `context` a known key with a wrong value refuses the report; unknown keys are kept when at most 8, named `^[a-z][a-z0-9_]{0,31}$`, scalar, a string at most 64 characters, the whole `context` at most 1024 bytes, and a key whose value matches the personal-data check is dropped, so later keys need no `/3`; canopi-data also drops an unknown key by name when any of its `_` tokens is in its rule-4 table (recorded in `context_dropped`), a backstop only: the form never sends unknown keys in those categories; `/1` reports stay byte-identical; `/2` requires `kind`; one shared fixture set in both repos (F1b mirrors D5's `tests/test_curated/correction_report_fixtures/`: `v1.json`, `v1_queued.jsonl`, `v2.json`, `v2_app.json`, `v2_context.json`, `v2_feedback.json`, `v2_context_dropped.json`); a unit test checks the form's keys against canopi-data's importer set (`src/canopi/curated/correction_reports.py:43-52` `BLOCK_KEYS`); the F1b "Sent with" line lists every value sent | F1b with canopi-data D5 (DATA-16) |
 | CSV of the palette (F1b-1) | stable English column ids including the plant UUID and scientific name, units in the header, the period as a `PeriodId`, columns only ever appended, recorded in a vectors file | appending only | F1b-1's design check |
 
 ## As built in PP-B commit 0a (2026-11-14)

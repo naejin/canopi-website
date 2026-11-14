@@ -2,9 +2,9 @@
 type: Module
 title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:41Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:26Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:11:05Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:05Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
@@ -39,8 +39,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:0f3014353a94fa8d
-    last_modified: 2026-11-14T11:45:53Z
+    digest: sha256:b69001f4ccc35e08
+    last_modified: 2026-11-14T12:22:23Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -75,7 +75,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:d11d0a245a854604
-    last_modified: 2026-11-14T11:39:47Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: vectors-mjs
     resource: ../../scripts/fixtures/climate/vectors.mjs
     title: scripts/fixtures/climate/vectors.mjs
@@ -100,7 +100,7 @@ sources:
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
     digest: sha256:02d0b7d13ee848ff
-    last_modified: 2026-11-14T11:48:43Z
+    last_modified: 2026-11-14T12:12:11Z
 enforced_by:
   - scripts/climate-reader.test.mjs
   - scripts/install-climate.test.mjs

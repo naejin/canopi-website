@@ -2,7 +2,7 @@
 type: Runbook
 title: CI, hooks and the deploy gate
 description: How the website's tiered hooks, GitHub Actions CI and the deploy branch gate production deploys on Cloudflare Workers Builds, and what to do when something fails.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:21:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:23:30Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
 sources:
@@ -46,6 +46,16 @@ sources:
     title: scripts/ci-deploy.test.mjs
     digest: sha256:9b06ba6820941ce1
     last_modified: 2026-11-13T03:40:44Z
+  - id: redirects
+    resource: ../../public/_redirects
+    title: public/_redirects
+    digest: sha256:c15c0a1a12820dd3
+    last_modified: 2026-11-14T12:22:23Z
+  - id: serve-mjs
+    resource: ../../scripts/browser/serve.mjs
+    title: scripts/browser/serve.mjs
+    digest: sha256:2fbd78dfb558f1ec
+    last_modified: 2026-11-12T22:04:52Z
 enforced_by: [.github/workflows/ci.yml, scripts/ci-deploy.test.mjs]
 ---
 
@@ -130,3 +140,20 @@ Master deploys only through a green `gate` check. GitHub Actions moves the `depl
 | GitHub Actions outage (D12) | no deploys | Cloudflare rollback if needed; never push `deploy` by hand (the ruleset refuses it anyway) |
 | `deploy` job: "does not descend from deploy" | `deploy` unchanged | find why master and `deploy` diverged (a force push on master?); never force-push `deploy` |
 | A commit weakens `ci.yml` (D13) | the new workflow gates itself | caught by reviews (ADR-3) |
+
+## After a push that moves a page: the /palette/ move (PP-B commit 0b)
+
+The Plant palette moved from `/consortium/` to `/palette/` (and `/<lang>/palette/`). The old addresses answer with **301 redirects** (`public/_redirects`, 22 lines: 11 locales, with and without the trailing slash, no splat). The stub-page fallback of [the architecture](/architecture/plant-palette-architecture.md) section 8.4 is **not** used; never put a stub page and a redirect on one path.
+
+- **Probe on wrangler dev (2026-11-14, before the push):** `scripts/browser/serve.mjs` on the production `dist/`. `/consortium/?plant=Zea+mays&climate=temperate` answered `301 Location: /palette/?plant=Zea+mays&climate=temperate`. `/fr/consortium/?v=3&c=temperate&a=AbCdEf` answered `301 /fr/palette/?v=3&c=temperate&a=AbCdEf`. In Chrome, `/consortium/#v=5&c=temperate&e=1` landed on `/palette/#v=5&c=temperate&e=1`. `/consortium` without the slash also redirected, and `/data/consortium/` was untouched.
+- **Production check, once `version.json` shows PP-B's sha:**
+
+  ```sh
+  curl -sI 'https://projectcanopi.com/consortium/?plant=Zea+mays&climate=temperate' | grep -iE '^(HTTP|location)'
+  curl -sI 'https://projectcanopi.com/fr/consortium/?v=3&c=temperate' | grep -iE '^(HTTP|location)'
+  curl -sI 'https://projectcanopi.com/ru/consortium' | grep -iE '^(HTTP|location)'
+  curl -sI 'https://projectcanopi.com/palette/' | grep -iE '^HTTP'
+  ```
+
+  Expect `301` with `location: /palette/?plant=Zea+mays&climate=temperate`, `/fr/palette/?v=3&c=temperate` and `/ru/palette/`, then `200` for `/palette/`. A fragment never reaches the server, so check it in a browser: `https://projectcanopi.com/consortium/#v=5&c=temperate` should end on `/palette/#v=5&c=temperate`.
+- **If production drops the query string:** change the 22 lines to `302` until the check passes (architecture 8.4). If it still drops it, switch to the stub fallback: remove the 22 lines, add the stub pages, and have `check-built-site.mjs` expect the stubs.
