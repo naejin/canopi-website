@@ -402,6 +402,10 @@ for (const lang of locales) {
   assert.equal(pageData?.releaseId, consortiumIndex.release_id, `${path}: the island gets the release id`);
   assert.deepEqual(pageData?.db, { url: consortiumIndex.files[0].url, sha256: consortiumIndex.files[0].sha256, bytes: consortiumIndex.files[0].bytes, rawSha256: consortiumIndex.files[0].raw_sha256, rawBytes: consortiumIndex.files[0].raw_bytes }, `${path}: the island gets the installed database`);
   assert.deepEqual(pageData?.climates, consortiumIndex.climates.map((c) => c.toLowerCase()), `${path}: the island gets the installed climates`);
+  // The country guess reads each country's time zones from the page, built at build time, never
+  // asking the browser for all of them (about 0.5 s of main thread; 2026-11-14 load profile).
+  const zones = pageData?.countries?.zones ?? {};
+  assert.ok(Object.keys(zones).length >= 200 && zones.FR?.split(' ').includes('Europe/Paris') && zones.BR?.split(' ').includes('America/Sao_Paulo'), `${path}: the island gets each country's time zones`);
   // H13/H14: the site-wide words the island shows under their own names (the correction form's
   // correction.*, the climate names) arrive in the page language, so nothing stands in in English.
   for (const key of Object.keys(en).filter((k) => k.startsWith('correction.') || /^climate\.[a-z]+$/.test(k))) {

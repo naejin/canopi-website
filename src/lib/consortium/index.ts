@@ -7,6 +7,7 @@ export * from './source.ts';
 // Stream S4's file, exported here so S4 never edits this one.
 export * from './canopi-file.ts';
 export * from './site.ts';
+export * from './country-zones.ts';
 export * from './conflicts.ts';
 export * from './jobs.ts';
 export * from './matrix.ts';

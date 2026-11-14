@@ -18,7 +18,7 @@ export interface PageData {
   db: DbRef;
   climates: string[]; // site ids, lowercase ('tropical'), in the export's order
   images: Record<string, string>; // plant uuid → self-hosted photo path
-  countries?: { checked: string; unchecked: string }; // space-separated ISO codes (store.knownCountries)
+  countries?: { checked: string; unchecked: string; zones?: Record<string, string> }; // space-separated ISO codes (store.knownCountries); each country's time zones (store.zonesOfCountry)
   guide: { url: string; lang: string } | null;
   guideTitles?: Record<string, string>; // guide slug → title in the guide's language (en or fr)
   start?: StartData;

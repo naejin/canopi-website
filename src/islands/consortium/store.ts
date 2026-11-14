@@ -102,10 +102,16 @@ export const source = signal<PlantSource | null>(null);
 // So the guessed country and its "not checked" note are final in the first frame (N2 layout shift).
 type Countries = ReadonlyMap<string, { invasiveChecked: boolean }>;
 const pageCountries = signal<Countries>(new Map());
-export function setPageCountries(c?: { checked: string; unchecked: string }): void {
+// zones: each country's time zones (space-separated), worked out at build time from the same CLDR data
+// the browser has (ConsortiumPage.astro), so the country guess reads them instead of asking the
+// browser for every country's (about 0.5 s of main thread; Firefox has none: state/arrival.ts).
+let pageZones: Record<string, string> = {};
+export const zonesOfCountry = (c: string): string[] | null => (pageZones[c] ? pageZones[c].split(' ') : null);
+export function setPageCountries(c?: { checked: string; unchecked: string; zones?: Record<string, string> }): void {
   const m = new Map<string, { invasiveChecked: boolean }>();
   if (c) for (const k of ['checked', 'unchecked'] as const) for (const x of c[k].split(' ')) if (x) m.set(x, { invasiveChecked: k < 'u' });
   pageCountries.value = m;
+  pageZones = c?.zones ?? {};
 }
 export const knownCountries = computed<Countries>(() => source.value?.countries() ?? pageCountries.value);
 // The climates with plants of their own (the export's curated climates; E6 hand-off E: their one

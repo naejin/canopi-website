@@ -17,6 +17,7 @@ import en from '../../i18n/translations/en.json';
 import { publishedGuides, slugOf } from '../../lib/guides';
 import { consortiumGuides, explainGuide } from '../../data/consortium-guides';
 import { climates } from '../../data/climates';
+import { countryZones } from '../../lib/consortium/country-zones.ts';
 import index from '../../data/consortium-index.json';
 import { climatePageData } from '../../data/climate-page-data';
 import { P, setStrings } from '../../islands/consortium/strings.ts';
@@ -58,7 +59,12 @@ const food = guides.find((entry) => slugOf(entry) === explainGuide);
 const guide = food ? { url: localizedUrl(`/guides/${explainGuide}/`, guideLang), lang: guideLang } : null;
 const contact = localizedUrl('/', lang) + '#contact';
 const db = index.files[0];
-const countryCodes = (c: Record<string, boolean>) => ({ checked: Object.keys(c).filter((k) => c[k]).join(' '), unchecked: Object.keys(c).filter((k) => !c[k]).join(' ') });
+const countryCodes = (c: Record<string, boolean>) => ({ checked: Object.keys(c).filter((k) => c[k]).join(' '), unchecked: Object.keys(c).filter((k) => !c[k]).join(' '), zones: zonesByCountry(Object.keys(c)) });
+// Each country's time zones from Node's CLDR data (the same the browser's Intl.Locale has), so the
+// island's country guess never asks the browser for all of them (store.zonesOfCountry; about 3.4 KB gzip).
+function zonesByCountry(codes: string[]): Record<string, string> {
+  return Object.fromEntries(codes.map((c) => [c, countryZones(c).join(' ')]).filter(([, z]) => z));
+}
 const data = {
   lang,
   strings,
