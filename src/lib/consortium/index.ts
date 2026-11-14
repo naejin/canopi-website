@@ -2,12 +2,14 @@
 // conflicts, jobs, the strata × phases matrix, the suggestion and Swap list, share state and the
 // .canopi writer. No DOM, no Astro, no import outside this folder (scripts/consortium-boundary.test.mjs),
 // so node --test runs it and it can move to a canopi-consortium package unchanged.
+import { retryableImport } from './retry-import.ts';
 export * from './types.ts';
 export * from './source.ts';
 // Stream S4's file, exported here so S4 never edits this one.
 export * from './canopi-file.ts';
 export * from './site.ts';
 export * from './country-zones.ts';
+export * from './retry-import.ts';
 export * from './conflicts.ts';
 export * from './jobs.ts';
 export * from './matrix.ts';
@@ -40,11 +42,6 @@ export * from './weigh.ts';
 // E6 R4 (design check A11): the suggestion and the Swap list (suggest.ts), their own chunk (role
 // `suggest`, scripts/built-modules.mjs ROLE_ENTRIES), off the first run, so this barrel does not
 // re-export them: this loader is the page's only way in (store.ts suggestRule); node tests import
-// suggest.ts directly. Loaded once; a failed load clears the promise, so the next call tries again.
+// suggest.ts directly. Loaded once; a failed load is tried again under a fresh URL (retry-import.ts).
 export interface SuggestRule { suggest: typeof import('./suggest.ts').suggest; alternatives: typeof import('./suggest.ts').alternatives }
-let suggestLoading: Promise<SuggestRule> | null = null;
-export function loadSuggest(): Promise<SuggestRule> {
-  // Destructured, so Rollup keeps only these two exports of the chunk's facade.
-  suggestLoading ??= import('./suggest.ts').then(({ suggest, alternatives }): SuggestRule => ({ suggest, alternatives }), (err: unknown) => { suggestLoading = null; throw err; });
-  return suggestLoading;
-}
+export const loadSuggest: () => Promise<SuggestRule> = retryableImport(() => import('./suggest.ts'), ({ suggest, alternatives }): SuggestRule => ({ suggest, alternatives }));

@@ -6,6 +6,7 @@
 // (decision row "Island JavaScript budget for P5").
 import type { ClimateZone, Mark, MarkSurface, Scenario, Site, SiteLocation, Taxon } from './types.ts';
 import { siteMarks } from './site-marks.ts';
+import { retryableImport } from './retry-import.ts';
 
 // What the providers read (store.ts markContext): the chosen climate, the site location, the
 // scenario and the site answers (site-marks.ts; absent: none given). P5.2 (native here) adds the
@@ -33,21 +34,12 @@ export function needsMarkProviders(ctx: Pick<MarkContext, 'climate' | 'location'
 }
 
 // The providers' chunk, loaded once.
-let loading: Promise<readonly MarkProvider[]> | null = null;
-export function loadMarkProviders(): Promise<readonly MarkProvider[]> {
-  loading ??= import('./mark-providers.ts').then((m) => m.markProviders, (err: unknown) => { loading = null; throw err; });
-  return loading;
-}
+export const loadMarkProviders: () => Promise<readonly MarkProvider[]> = retryableImport(() => import('./mark-providers.ts'), (m) => m.markProviders);
 
 // The range rule (range.ts: withinRange, rangeFit; owner answer 2), its own chunk (role `range`,
 // scripts/built-modules.mjs ROLE_ENTRIES), loaded once, the store asking for it only once the site
 // location has a climate (store.ts rangeRule), so it stays off the first run (decision row "Island
 // JavaScript budget for P5"; E6 design check A10: a core loader, as the providers' above). The one
-// import of the rule outside the feature chunks that use it statically. A failed load is not cached.
+// import of the rule outside the feature chunks that use it statically. A failed load is tried again (retry-import.ts).
 export interface RangeRule { withinRange: typeof import('./range.ts').withinRange; rangeFit: typeof import('./range.ts').rangeFit }
-let ruleLoading: Promise<RangeRule> | null = null;
-export function loadRangeRule(): Promise<RangeRule> {
-  // Destructured, so Rollup keeps only these two exports of the chunk's facade.
-  ruleLoading ??= import('./range.ts').then(({ withinRange, rangeFit }): RangeRule => ({ withinRange, rangeFit }), (err: unknown) => { ruleLoading = null; throw err; });
-  return ruleLoading;
-}
+export const loadRangeRule: () => Promise<RangeRule> = retryableImport(() => import('./range.ts'), ({ withinRange, rangeFit }): RangeRule => ({ withinRange, rangeFit }));

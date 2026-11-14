@@ -68,7 +68,7 @@ async function download(): Promise<void> {
   let mod: Awaited<ReturnType<typeof writer>>;
   try { mod = await writer(); } catch (err) { failed(err); return; }
   const { canopiFile, canopiFileName } = mod;
-  // A retry that fetched another file than the later chunk (lazy.tsx retryable): said, not thrown.
+  // A retry that fetched another file than the later chunk (core retry-import.ts): said, not thrown.
   if (typeof canopiFile !== 'function') { failed(new Error('the .canopi writer is not in the module that loaded')); return; }
   const zone = zoneName(climate.peek());
   const name = T('download.name', { climate: zone });

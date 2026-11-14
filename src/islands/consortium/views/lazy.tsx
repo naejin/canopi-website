@@ -7,7 +7,7 @@
 // ready), so a reader who stays on Start has Search and Paste at hand too, and nothing lazy competes
 // with the database download. A part used before its prefetch finished loads on demand through the
 // same promise (one request per chunk); a failed load clears it, so the next use asks again (L4), and,
-// for a part whose import() is wrapped in retryable() (below: every lazyPart and later() in views/, the
+// for a part whose import() is wrapped in retryableImport() (core retry-import.ts: every lazyPart and later() in views/, the
 // later chunk's parts through its one loader, views/later-chunk.ts, and the location step's loader),
 // fetches again even in Chromium. The core's own loaders (marks.ts: the
 // mark providers and the range rule; lib/consortium/index.ts loadSuggest) stay plain, since lib may
@@ -56,7 +56,7 @@ export interface PartOptions<C extends Any> {
   onFail?: 'notice' | 'closeSheet';
   // What shows while the chunk loads (default: the loading line); it gets the part's props.
   loading?: ComponentType<PropsOf<C>>;
-  retry?: boolean; // the importer is retryable(): a failed part is tried again in place
+  retry?: boolean; // the importer is retryableImport(): a failed part is tried again in place
   page?: boolean; // the palette page (App.tsx): no later test fault holds or fails it
 }
 
@@ -89,7 +89,7 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
   // lastFailed: the last load failed, when loadedTick read failedAt.
   let lastFailed = false, failedAt = 0;
   const prefetch = (): Promise<C> => {
-    // A module without the part (a retry that fetched another file than the part's chunk: retryable
+    // A module without the part (a retry that fetched another file than the part's chunk: retryableImport
     // reads the URL from the error) is a failure, with its failed line, never a blank part.
     pending ??= (lastFailed = false, importer()
       .then((c) => { if (c == null) throw new Error('the part is not in the module that loaded'); return c; })
@@ -128,7 +128,7 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
         if (onFail === 'closeSheet') {
           closeSheet();
           // Offline, a Reload would lose the page (architecture 9): it says it needs a connection; the
-          // sheet's next opening asks for its chunk again (retryable).
+          // sheet's next opening asks for its chunk again (retryableImport).
           if (offline.peek()) showToast(T('load.needsConnection'), null);
           else showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => location.reload() });
         } else setFailed(true);
@@ -144,31 +144,6 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
   return { View: LazyView as unknown as C, load, ready: () => (faultOf(kind) ? null : done.peek()), prefetch };
 }
 
-// A chunk's import() that a failed fetch does not poison (L4, review): Chromium keeps a failed import()
-// or modulepreload of a URL failed for the page's life (its module map), so importing it again never
-// fetches, and one dropped request on a flaky connection would keep the part closed until Reload.
-// After a failure, the next call imports the same hashed file under a fresh URL (?retry=n), read from
-// the failed import's error (Chromium and Firefox name the URL; where the error names none, or names
-// a file outside this site's /_astro/, the next call fails again: the toast and Reload). This mends
-// the chunk itself only: its static imports keep their plain URLs, so a sheet chunk imports nothing
-// but first-run modules, already loaded (kit/sheet.tsx shared; E6-5d checks it), nor does the later
-// chunk (E6 hand-off C, measured). The future and pool parts statically import the range rule's chunk
-// (and future the chunk it shares with the mark providers): were one of those to fail, every retry
-// fails, Reload the fix; were an error to name such a dependency, the retry would import that file,
-// which lacks the part: lazyPart counts the missing part as a failure (its failed line with Reload),
-// and Download says it (Actions.tsx). pick: the part in the module.
-const failedUrl = (err: unknown): string | null => {
-  const url = /https?:\/\/[^\s'"]+?\.js\b/.exec(String((err as Error)?.message ?? err))?.[0] ?? null;
-  return url?.startsWith(`${location.origin}/_astro/`) ? url : null;
-};
-// One attempt at a time, shared by every caller (several parts may share one loader: views/later-chunk.ts),
-// and the module kept once it came, so no later call imports a second copy under ?retry=n+1.
-export function retryable<M, C>(load: () => Promise<M>, pick: (m: M) => C): () => Promise<C> {
-  let url: string | null = null, n = 0, attempt: Promise<M> | null = null;
-  return () => (attempt ??= (url === null ? load() : (import(/* @vite-ignore */ `${url}?retry=${++n}`) as Promise<M>))
-    .catch((err: unknown) => { attempt = null; url ??= failedUrl(err); throw err; }))
-    .then(pick);
-}
 
 // What prefetchLater() loads: each registered part's chunk.
 const loaders: (() => Promise<unknown>)[] = [];

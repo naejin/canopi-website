@@ -28,7 +28,8 @@ import { T } from '../strings.ts';
 import { LiveLine, SheetDialog, SheetFrame, SheetWaiting, type Frame, type FrameProps } from './kit/sheet.tsx';
 import { nameOf } from './kit/names.ts';
 import { Toast } from './Toast.tsx';
-import { later, retryable } from './lazy.tsx';
+import { later } from './lazy.tsx';
+import { retryableImport } from '../../../lib/consortium/index.ts';
 
 // Focus back to the opener when the last sheet closes.
 let opener: HTMLElement | null = null, openerPlant: PlantId | null = null, wasOpen = false;
@@ -66,10 +67,10 @@ function DetailsWaiting({ id, Frame }: { id: PlantId; Frame: Frame }) {
 }
 
 const sheet = { onFail: 'closeSheet', loading: SheetWaiting } as const;
-const details = later(retryable(() => import('./details/Details.tsx'), (m) => m.PlantDetails), { onFail: 'closeSheet', loading: DetailsWaiting });
-const swap = later(retryable(() => import('./Swap.tsx'), (m) => m.default), sheet);
-const add = later(retryable(() => import('./Add.tsx'), (m) => m.default), sheet);
-const paste = later(retryable(() => import('./Paste.tsx'), (m) => m.default), sheet);
+const details = later(retryableImport(() => import('./details/Details.tsx'), (m) => m.PlantDetails), { onFail: 'closeSheet', loading: DetailsWaiting });
+const swap = later(retryableImport(() => import('./Swap.tsx'), (m) => m.default), sheet);
+const add = later(retryableImport(() => import('./Add.tsx'), (m) => m.default), sheet);
+const paste = later(retryableImport(() => import('./Paste.tsx'), (m) => m.default), sheet);
 
 // One opening: one <dialog> (SheetDialog: one slide-in, one announcement), closing this sheet only
 // (Escape fires `close` a task later, maybe once another sheet opened), and the frame its part draws

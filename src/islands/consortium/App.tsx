@@ -15,15 +15,16 @@ import { computed } from '@preact/signals';
 import { load, offline, opening, slow, step } from './store.ts';
 import { T } from './strings.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
+import { retryableImport } from '../../lib/consortium/index.ts';
 import { Place } from './views/place/Place.tsx';
 import { Actions } from './views/Actions.tsx';
 import { Sheets } from './views/Sheets.tsx';
-import { lazyPart, retryable } from './views/lazy.tsx';
+import { lazyPart } from './views/lazy.tsx';
 import { Placeholder } from './views/palette/Placeholder.tsx';
 
 // The palette page, its own chunk (role `palette`): if it does not load, Place stays usable and the
 // failed line's Reload fetches it again in place (`?retry=n`; PP-B24).
-export const PalettePage = lazyPart(retryable(() => import('./views/palette/Palette.tsx'), (m) => m.Palette), { retry: true, page: true, loading: Placeholder });
+export const PalettePage = lazyPart(retryableImport(() => import('./views/palette/Palette.tsx'), (m) => m.Palette), { retry: true, page: true, loading: Placeholder });
 // Kept in the first run: modules the sheets, the later views and the future panel share, which no
 // first-run module imports since the matrix went (PP-B commit 0a'), so no part pays for them on first
 // use and no sheet imports a lazy chunk statically (check-built-site's K3 rule).

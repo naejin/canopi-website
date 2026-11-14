@@ -24,12 +24,13 @@ import { climateChosen } from '../state/persist.ts';
 import { backToConsortium, canGoBack } from '../state/draft.ts';
 import { dropSuggest, pendingSuggest } from '../state/suggest-wait.ts';
 import { T } from '../strings.ts';
-import { lazyPart, retryable } from './lazy.tsx';
+import { lazyPart } from './lazy.tsx';
+import { retryableImport } from '../../../lib/consortium/index.ts';
 import { page } from './kit/page.ts';
 import { zoneName } from './kit/names.ts';
 
 // Nothing while its chunk loads; a failed chunk shows the failed line with Reload (pre-push review 1).
-const panel = lazyPart(retryable(() => import('./pool/pool.tsx'), (m) => m.PoolPanel), { loading: () => null });
+const panel = lazyPart(retryableImport(() => import('./pool/pool.tsx'), (m) => m.PoolPanel), { loading: () => null });
 
 // The climates with plants of their own: the store's one owner, which suggestMembers reads too.
 const curated = (): ClimateZone[] => curatedClimates.value;

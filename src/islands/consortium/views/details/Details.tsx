@@ -25,11 +25,12 @@ import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zon
 import { WARN } from '../kit/icons.tsx';
 import { drafts, type CorrectionField } from '../kit/correction.ts';
 import { pageData } from '../kit/page.ts';
-import { later, retryable } from '../lazy.tsx';
+import { later } from '../lazy.tsx';
+import { retryableImport } from '../../../../lib/consortium/index.ts';
 const { flagLines, unknownWords } = shared; // first-run modules (kit/sheet.tsx shared)
 
 // The correction form, a sheet part: a chunk that does not come closes the dialog with the toast.
-const correction = later(retryable(() => import('../Correction.tsx'), (m) => m.default), { onFail: 'closeSheet' });
+const correction = later(retryableImport(() => import('../Correction.tsx'), (m) => m.default), { onFail: 'closeSheet' });
 
 // ---- words ----
 

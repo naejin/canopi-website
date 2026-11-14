@@ -14,7 +14,7 @@ import { T } from '../../strings.ts';
 import { CLOSE } from './icons.tsx';
 import { countryName, spanWords } from './names.ts';
 // The modules every sheet chunk shares, imported through here so they ship in the first run (review
-// 2, E6-5d): a sheet chunk's retry (lazy.tsx retryable) mends the chunk itself only, and a shared
+// 2, E6-5d): a sheet chunk's retry (core retry-import.ts) mends the chunk itself only, and a shared
 // chunk whose first fetch failed would stay failed for the page's life (Chromium's module map), and
 // every sheet with it. So a sheet chunk imports first-run modules only, already loaded. An object, not
 // re-exports: Rollup places a module by the code that reaches it, and a re-export or a bare import
