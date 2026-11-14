@@ -1,7 +1,7 @@
 // How the page opens (stream S4; E6 S2 split it out of memory.ts): what it opens with (a reload of
 // its own address, a share link, a guide preset, an outdated v1 link, the last consortium, else
 // Start), the reader's country at start and the browser's guess, a link pasted into the open tab, and
-// startMemory, which wires all of it once. The pure parts (arrival, hashAction, countryAtStart,
+// startMemory, which reads the page once and wires all of it (openWith). The pure parts (arrival, hashAction, countryAtStart,
 // guessCountry, ported from v1 logic.js and memory.js; arrivalPlan) run in Node
 // (scripts/consortium-memory.test.mjs, scripts/consortium-pp-b1.test.mjs).
 import type { ClimateZone, LinkOrigin } from '../../../lib/consortium/index.ts';
@@ -159,41 +159,19 @@ export function arrivalPlan(how: Arrival, { saved, pref, guess, seed, cell }: Ar
 
 // ---- the wiring ----
 
-let started = false;
-// Called once by Start when it first mounts (main.ts belongs to S1). Returns nothing: the effects
-// live as long as the page.
-export function startMemory(): void {
-  if (started || typeof window === 'undefined') return;
-  started = true;
-  storageWorks.value = memory.works();
-  const raw = memory.read(STORE);
-  const saved = readRecord(raw);
-  openedWith(raw);
-  const how = arrival({ hash: location.hash, search: location.search }, saved, memory.read(SITE_CLIMATE), attempt(() => history.state));
-  // An older save: said once, then removed, so the notice does not come back on every visit (review 4).
-  if (how.kind === 'start' && oldRecord(raw)) {
-    notices.value = { ...notices.peek(), oldSave: true };
-    writeSave(null);
-  }
-  const languages = attempt(() => [...navigator.languages]) ?? [];
-  const zone = attempt(() => Intl.DateTimeFormat().resolvedOptions().timeZone) ?? null;
-  // The time zone needs the known countries: the page names them (#ct-data `countries`, the
-  // database's own list), so this guess is final in the first frame, never refined once the database
-  // opens (that refinement shifted all of Start by up to 46 px about a second after load: N2).
-  // Each country's zones come from the page (built from the same CLDR data); the browser's own only
-  // for a country the page has none for, or a page built without them.
-  const guess = (): string | null => guessCountry([...store.knownCountries.peek().keys()], { zone, languages, zonesOf: (c) => store.zonesOfCountry(c) ?? countryZones(c) });
-  const seed = memory.read(PLACE_STORE);
-  // canopi-location, read once here: whether the page opens with a location (Place's climate cards),
-  // the reader's own cell for a reload's ask, and the lookup below.
-  const keptLocation = memory.read(LOCATION_STORE);
-  locationAtStart.value = ownCell(keptLocation) !== null;
-  const plan = arrivalPlan(how, { saved, pref: memory.read(COUNTRY_STORE), guess, seed, cell: () => ownCell(keptLocation) });
+// What the page opens with, wired (startMemory calls it once with what it read; a unit test calls it
+// with a spy location step, review round 3, 3): the country shown, the saved location looked up again
+// unless a link's cell stands for it, the place seed, and the restore of a link or the save, a guide
+// preset, or the shared site climate. keptLocation: canopi-location as read once.
+export interface Opening { how: Arrival; plan: ArrivalPlan; saved: SavedRecord | null; seed: string | null; keptLocation: string | null }
+export function openWith({ how, plan, saved, seed, keptLocation }: Opening): void {
   store.country.value = plan.country;
 
   // The saved site location, looked up again once the plant list is open (so its tiles never compete
   // with the database); a link's `o=` stands in for it on that page (ownLocation), also after a reload
-  // while its place still waits (the cell kept in the tab's place).
+  // while its place still waits (the cell kept in the tab's place). Until that lookup settles, Place
+  // counts the kept location as a place (restore.ts locationAtStart).
+  locationAtStart.value = !plan.linkCell && ownCell(keptLocation) !== null;
   if (!plan.linkCell) void waitForSource().then(() => ownLocation(keptLocation));
 
   // A palette that starts with no place of its own takes the reader's last place answers as its seed
@@ -218,6 +196,39 @@ export function startMemory(): void {
     void applyPreset(how.climate, how.plant);
   }
   else if (how.climate) store.climate.value = how.climate;
+}
+
+let started = false;
+// Called once by main.ts, before the first render (so the country guess, the stored climate and a
+// link's pending climate are drawn in the first frame: N2 layout shift), right after the database's
+// open has started. Returns nothing: the effects live as long as the page.
+export function startMemory(): void {
+  if (started || typeof window === 'undefined') return;
+  started = true;
+  storageWorks.value = memory.works();
+  const raw = memory.read(STORE);
+  const saved = readRecord(raw);
+  openedWith(raw);
+  const how = arrival({ hash: location.hash, search: location.search }, saved, memory.read(SITE_CLIMATE), attempt(() => history.state));
+  // An older save: said once, then removed, so the notice does not come back on every visit (review 4).
+  if (how.kind === 'start' && oldRecord(raw)) {
+    notices.value = { ...notices.peek(), oldSave: true };
+    writeSave(null);
+  }
+  const languages = attempt(() => [...navigator.languages]) ?? [];
+  const zone = attempt(() => Intl.DateTimeFormat().resolvedOptions().timeZone) ?? null;
+  // The time zone needs the known countries: the page names them (#ct-data `countries`, the
+  // database's own list), so this guess is final in the first frame, never refined once the database
+  // opens (that refinement shifted all of Start by up to 46 px about a second after load: N2).
+  // Each country's zones come from the page (built from the same CLDR data); the browser's own only
+  // for a country the page has none for, or a page built without them.
+  const guess = (): string | null => guessCountry([...store.knownCountries.peek().keys()], { zone, languages, zonesOf: (c) => store.zonesOfCountry(c) ?? countryZones(c) });
+  const seed = memory.read(PLACE_STORE);
+  // canopi-location, read once here: whether Place's climate cards wait for its lookup, the reader's
+  // own cell for a reload's ask, and the lookup itself.
+  const keptLocation = memory.read(LOCATION_STORE);
+  const plan = arrivalPlan(how, { saved, pref: memory.read(COUNTRY_STORE), guess, seed, cell: () => ownCell(keptLocation) });
+  openWith({ how, plan, saved, seed, keptLocation });
 
   // A link pasted into the open tab: opened, unless it is the page's own address (review 3).
   // Back/Forward to the page's own address reopens it as the save, its country label kept (round 2).

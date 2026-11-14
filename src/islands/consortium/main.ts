@@ -62,9 +62,10 @@ async function open(data: PageData): Promise<void> {
 
 // What the page starts, in order (E6 S3: no module starts anything when imported): the store's
 // effects (store.start), the location step's loader handed to the restore (island state never
-// imports a view, ADR-1 L2), the pools watcher, the database, then the render, whose Start runs
-// startMemory (state/arrival.ts: the waiting Suggest, the save and address watchers) in a layout
-// effect, before the first paint (N2 layout shift).
+// imports a view, ADR-1 L2), the pools and steps watchers, the database's open (its loader chunk's
+// import starts at once, before open's first await), then startMemory (state/arrival.ts: the
+// arrival, the waiting Suggest, the save and address watchers), then the first render, so the country
+// guess and a stored or linked climate are in its first frame (N2 layout shift).
 const root = document.getElementById('ct-root');
 const data = pageData() as PageData | null;
 if (root && data) {
@@ -76,7 +77,7 @@ if (root && data) {
   watchPools();
   watchSteps();
   // A return visit (a save or a link to restore) opens on the palette page's placeholder, never the
-  // Place form (P2): the memory starts before the first render, and the placeholder stays until the
+  // Place form (P2): the placeholder stays until the
   // palette shows, the load fails, or the restore has had its time once the plants are read.
   const how = arrival({ hash: location.hash, search: location.search }, readRecord(memory.read(STORE)), null, (() => { try { return history.state; } catch { return null; } })());
   opening.value = how.kind === 'saved' || how.kind === 'link';

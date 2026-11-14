@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:15Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:39:25Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:05:31Z }
 sources:
@@ -52,8 +52,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:f2cafc31e8878494
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:73d0a99d6422b186
+    last_modified: 2026-11-14T21:33:54Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -122,8 +122,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:652b11feed4df3eb
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:0b7db36679f25fcc
+    last_modified: 2026-11-14T21:52:54Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
@@ -142,33 +142,33 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:2277cf3363de4243
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:d7dd93580455ffe8
+    last_modified: 2026-11-14T21:55:10Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:ad8040288e389492
-    last_modified: 2026-11-14T20:07:28Z
+    digest: sha256:a97de2c82f12d653
+    last_modified: 2026-11-14T22:37:57Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:b5d16f20a23a4903
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:534a06a167bf1509
+    last_modified: 2026-11-14T21:51:58Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:c9c83d75e02ad46f
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:5c240108275b42b7
+    last_modified: 2026-11-14T21:52:20Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:ff56dae40b77fd8a
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:337229af28a158c8
+    last_modified: 2026-11-14T21:51:58Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:b6b3c4a07c8b9b9d
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:5e8602c72249ab40
+    last_modified: 2026-11-14T21:52:26Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -177,8 +177,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:1afe77755f5cad27
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:c109e9db6f45090c
+    last_modified: 2026-11-14T22:37:57Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -222,8 +222,8 @@ sources:
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
-    digest: sha256:75ccb83d8615591a
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:08784025942a4880
+    last_modified: 2026-11-14T21:53:49Z
   - id: sideview-tsx
     resource: ../../src/islands/consortium/views/SideView.tsx
     title: src/islands/consortium/views/SideView.tsx
@@ -242,8 +242,8 @@ sources:
   - id: toast-tsx
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
-    digest: sha256:385653ccb2aee61b
-    last_modified: 2026-11-14T14:41:58Z
+    digest: sha256:51143f60a8813762
+    last_modified: 2026-11-14T22:08:25Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
@@ -853,7 +853,7 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 | `verdict` chunk fails | — | every fit line says "not checked", never "fits" (marker C6); holes computed without verdicts say so; Retry in place fetches the chunk again under `?retry=n` (core `verdict-load.ts`, the URL read from the error); offline "Needs a connection", asked again on `online`, never a page reload (PP-B20, `block: { verdict: 404 }`) | b2, c2 |
 | Guest lists | holes `pending`, "Loading the other lists" (inventory L2) | the list is named as missing; its plants "not checked" (PP-B21); a palette of such plants only is never "empty" (PP-B44); removing a failed list's last plant takes it off `failedPools`, so the notice and "not checked" go, and the list is read afresh if a plant of it comes back (PP-B45) | b2 |
 | Location lookup | asking, refused, timed out, unavailable, sea, coast, polar, between two climates (D2, D9) | search offline or failed, map could not load (D4, D6) | b1a |
-| No location | Place leads with "Where is your place?" (skippable); the climate cards sit behind "No location? Choose a climate" (or "Not this climate? Choose another" once a location proposes one), in the DOM with `hidden`, open at once when a climate is chosen and no location is set on the page or kept on this device when the page opened (`restore.ts` `locationAtStart`), and then latched open, so a saved location's lookup never closes them (b1a review round 2, 1); the link says "Not this climate?" and the without-location line goes only once a climate is read from the location (its `lookup`), not for a location object alone; the focus moved to the checked, proposed or first card; "Use it" says "kept on this device" only when the link's cell and place were kept (else `place.usedLinkUnkept`); range factors `unknown`; the period switch and the climate picture say "needs your place" (today `views/FutureSlot.tsx:13` renders nothing) | — | b1a, e1 |
+| No location | Place leads with "Where is your place?" (skippable); the climate cards sit behind "No location? Choose a climate" (or "Not this climate? Choose another" once a location proposes one), in the DOM with `hidden`, open at once when a climate is chosen and no location is set on the page and no location kept on this device is still being looked up (`restore.ts` `locationAtStart`, cleared when that lookup settles or Forget removes it), and then latched open until Start over (`draft.ts` `cardsLatched`), so a saved location's lookup never closes them and Forget opens them (b1a review rounds 2, 1 and 3, 1); the link says "Not this climate?" and the without-location line goes only once a climate is read from the location (its `lookup`), not for a location object alone; the focus moved to the checked, proposed or first card; "Use it" says "kept on this device" only when the link's cell and place were kept (else `place.usedLinkUnkept`); range factors `unknown`; the period switch and the climate picture say "needs your place" (today `views/FutureSlot.tsx:13` renders nothing) | — | b1a, e1 |
 | Soil tile | "Reading the soil map" | "The soil map has no value here" (sea, coast, ice: `types.ts:382-384`); answer stays `map`, `basis: 'none'`, soil factors `unknown` | f1 |
 | `layerValues` | grey year picture | "Months could not be read" with Reload; flowering "n of m recorded", never a pass | g1 |
 | Suggest | the live wait and its 10 s stop (`state/suggest-wait.ts`) | "Suggest stopped" (inventory J2) | b1a |

@@ -33,6 +33,7 @@ import * as store from '../store.ts';
 import { pageLang } from '../strings.ts';
 import { memory, pendingLinkClimate, quietly, LOCATION_STORE, PLACE_STORE } from './persist.ts';
 import { chooseClimate } from './draft.ts';
+import { locationAtStart } from './restore.ts';
 import { line, liveLookup, looking, nextLookup, unlessReplaced, unread, type Line } from './lookups.ts';
 
 // ---- the site location kept on this device, and the country from it ----
@@ -207,8 +208,8 @@ export function confirmProposed(z: ClimateZone): void {
 // location goes alone: the reader's own saved location is not the link's to remove.
 // "Forget this location" also clears the last place answers (canopi-place) and the open palette's
 // place, its spot and soil (plant-palette-architecture 8.3; privacy.tool.device), the palette set aside
-// on Change site included (its save and the tab's place follow it); the room and plot size are the
-// palette's and stay.
+// when the reader went back to Place included (its save and the tab's place follow it); the room and
+// plot size are the palette's and stay. The kept location no longer holds Place's climate cards.
 export function forget(): void {
   nextLookup();
   unread.value = false;
@@ -221,7 +222,7 @@ export function forget(): void {
     store.soil.value = { from: 'map' };
     if (aside) store.setAside.value = { ...aside, spot: { ...emptyPlace.spot }, soil: { from: 'map' } };
   });
-  if (own) keepLocation(null);
+  if (own) { keepLocation(null); locationAtStart.value = false; }
   memory.remove(PLACE_STORE);
 }
 

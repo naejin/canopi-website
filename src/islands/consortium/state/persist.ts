@@ -184,8 +184,7 @@ export function adoptPending(): void {
 // ---- the consortium and the save ----
 // Two states: the consortium, and Start's draft (the picked card and its answers) while Start shows.
 // Change site sets the consortium aside (store.setAside) and opens a draft seeded from it; the draft
-// never changes the consortium or the save. Only Suggest, Start empty, a paste and Back to your
-// consortium (which discards the draft) end it. The save always encodes the consortium, written on
+// never changes the consortium or the save. Only Suggest, Start empty and Show my palette end it. The save always encodes the consortium, written on
 // every change of it; Undo restores the consortium (and the view), so it rewrites the save too.
 // Every write of the save goes through writeSave, which holds the one multi-tab rule.
 
@@ -257,7 +256,7 @@ export const linkPlace = signal<{ own: OwnPlace } | null>(null);
 // The reader's readable save when the page opened on something else (a guide preset, a newer or
 // unreadable link): "Open my saved palette instead" / "Back to mine" (draft.ts openSavedInstead)
 // restores it. null once used, once this page replaces or removes the save (writeSave: the reader's
-// work saved over it), or when there is none; a Place answer that writes no save (a room, a country, a
+// work saved over it; offered again if the save is written back as it was), or when there is none; a Place answer that writes no save (a room, a country, a
 // card while the page has no palette of its own) keeps it (review round 2, 2). Kept here, beside
 // writeSave.
 export const savedInstead = signal<SavedRecord | null>(null);
@@ -294,17 +293,25 @@ export function writeSave(next: string | null | 'back'): void {
     const to = next === 'back' ? beneath : null;
     beneath = undefined;
     if (to === undefined || now !== lastSave) return;
-    if (to === null ? memory.remove(STORE) : memory.write(STORE, to)) replaced(to);
+    if (to === null ? memory.remove(STORE) : memory.write(STORE, to)) {
+      replaced(to);
+      // The reader's save offered back, written back as it was (Undo to a Place with no palette of the
+      // page's own): offered again (review round 3, 2).
+      if (offered && sameSave(to, offered.text)) savedInstead.value = offered.record;
+    }
     return;
   }
   if (sameSave(next, lastSave)) return;
   if (beneath === undefined || now !== lastSave) beneath = now;
   if (memory.write(STORE, next)) replaced(next);
 }
-// The save this page wrote: the save offered back (savedInstead) is no longer there to open.
+// The save this page wrote: the save offered back (savedInstead) is no longer there to open; it is
+// kept (offered) in case the save goes back to it.
+let offered: { record: SavedRecord; text: string | null } | null = null;
 function replaced(to: string | null): void {
+  const was = savedInstead.peek();
+  if (was) { offered = { record: was, text: lastSave }; savedInstead.value = null; }
   lastSave = to;
-  if (savedInstead.peek()) savedInstead.value = null;
 }
 
 // The address bar holds the consortium's link (replaceState, no history entry). Same address:

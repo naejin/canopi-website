@@ -29,7 +29,8 @@ export type View = 'start' | 'matrix';
 // step values: 'start' is the place, 'matrix' the palette page (b2, additive seam).
 export type Step = 'place' | 'palette';
 // The open dialog, if any: what it shows and for which plant (null for sheets about no one plant).
-export type SheetKind = 'details' | 'swap' | 'add' | 'search' | 'paste' | 'share' | 'download';
+// 'place': the "Your place" sheet (views/place/Place.tsx PlaceSheet), which changes the palette's place in place.
+export type SheetKind = 'details' | 'swap' | 'add' | 'search' | 'paste' | 'place' | 'share' | 'download';
 // n: which opening this is (openSheet counts them), so a dialog's late close event closes its own
 // sheet only, never one opened since (Escape closes the <dialog> at once and fires `close` a task later).
 export interface Sheet { kind: SheetKind; id: PlantId | null; n: number }
@@ -517,8 +518,8 @@ export function historyMoved(state: unknown): { place: boolean; force: boolean }
   return { place, force: !(asked === 'palette' && step.peek() === 'place') };
 }
 // After a move and the rewrite: the entries asked for while the page's own Back was on its way (a push
-// then would race the traversal): the palette step (Paste's Add closes the sheet, then the palette
-// opens), then a sheet opened again.
+// then would race the traversal): the palette step (an action that closes a sheet, then opens the
+// palette), then a sheet opened again.
 let paletteWaits = false;
 export function pushWaiting(): void {
   if (paletteWaits && step.peek() === 'palette' && !shown.includes('palette')) pushEntry('palette');
@@ -554,7 +555,7 @@ export function watchSteps(): () => void {
 
 // Every sheet opens through here, so what the last one was opened for never leaks into the next.
 // Share and Download are not sheets (no entry).
-const SHEET_KINDS: readonly SheetKind[] = ['details', 'swap', 'add', 'search', 'paste'];
+const SHEET_KINDS: readonly SheetKind[] = ['details', 'swap', 'add', 'search', 'paste', 'place'];
 let opened = 0;
 export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Partial<SheetFor> = {}): void {
   if (SHEET_KINDS.includes(kind) && !onEntry('sheet')) pushEntry('sheet');
@@ -584,8 +585,13 @@ export function showToast(text: string, undo: (() => void) | null = null, action
   toast.value = line;
   armToast(line.id);
 }
+// A notice (an action and no Undo: a part that could not load, with Reload) has no timer: it stays until
+// its action or Dismiss, in the page's flow (views/Toast.tsx; b1a UI hand-off).
 function armToast(id: number): void {
   if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = null;
+  const line = toast.peek();
+  if (line?.id === id && line.action && !line.undo) return;
   // The browser-test build lets a test shorten it (window.__ctTimeouts.toast), as data/load.ts's stall.
   const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { toast?: number } }).__ctTimeouts?.toast) || TOAST_MS : TOAST_MS;
   toastTimer = setTimeout(() => { if (toast.peek()?.id === id) { focusAfterToast(); toast.value = null; } }, ms);
@@ -673,7 +679,7 @@ export function swapMember(oldId: PlantId, newId: PlantId): void {
 // the climate whose list it comes from ("Add anyway", A9). warned: plants added without being asked
 // about a misfit or a serious conflict ("Add all" from a paste, 2026-10-28 "Scale build" row): the
 // toast says "n added with a warning" with Show (the first one's details).
-// On Start, a paste builds on the draft and opens it as the consortium (a commit, like Suggest).
+// On Place, an add (search or paste) builds on the draft and leaves the view alone.
 // text: the toast's own words (the Next step names the plant it added), else paste.added's count;
 // the warned count follows either.
 export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [], text: said }: { warned?: PlantId[]; text?: string } = {}): void {
@@ -684,13 +690,13 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
     members.value = [...before.members, ...fresh];
     removed.value = without(before.removed, fresh);
     // The guests change only when a guest joins (a new object would rebuild every guest's record).
+    // (On Place the grower stays there, each plant listed under "What grows there already": b1a review
+    // r1 conformance-2; "Show my palette" opens the palette.)
     if (fresh.some((id) => from[id])) {
       const g = { ...before.guests };
       for (const id of fresh) if (from[id]) g[id] = from[id];
       guests.value = g;
     }
-    // A list pasted on Start opens its consortium (the palette slot: Share, Print, the address; X3).
-    if (view.peek() === 'start') view.value = 'matrix';
   });
   const flagged = warned.filter((id) => fresh.includes(id));
   const text = (said ?? P('paste.added', fresh.length)) + (flagged.length ? ` ${P('paste.addedWarn', flagged.length)}` : '');

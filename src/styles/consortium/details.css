@@ -152,8 +152,12 @@
    or tabbed out from under it, and only the card itself takes clicks. */
 .ct .ct-toast-region { position: fixed; left: 50%; bottom: 20px; z-index: 50; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); pointer-events: none; }
 .ct .ct-toast-region .ct-toast { pointer-events: auto; }
-.ct #ct-root:has(.ct-toast-page .ct-toast) { padding-bottom: var(--ct-toast-room); }
-html:has(.ct .ct-toast-page .ct-toast) { scroll-padding-bottom: var(--ct-toast-room); }
+/* A notice (a part that could not load, with Reload; views/Toast.tsx): in the flow at the end of the
+   tool, so it covers nothing at any width (b1a UI hand-off), and no toast room is kept for it. */
+.ct .ct-toast-page:has(.ct-toast-notice) { position: static; transform: none; width: auto; max-width: none; margin: 16px 0 0; }
+.ct .ct-toast-page .ct-toast-notice { width: fit-content; max-width: 100%; flex-wrap: wrap; overflow-wrap: anywhere; }
+.ct #ct-root:has(.ct-toast-page .ct-toast:not(.ct-toast-notice)) { padding-bottom: var(--ct-toast-room); }
+html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bottom: var(--ct-toast-room); }
 :root { --ct-toast-room: 96px; }
 .ct .ct-toast {
   display: flex; align-items: center; gap: 6px 12px; padding: 6px 6px 6px 16px; border-radius: 10px;

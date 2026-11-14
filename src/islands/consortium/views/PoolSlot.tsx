@@ -21,7 +21,6 @@ import { curatedClimates, location, pool, rangeFailed, rangeRule, siteClimate } 
 import * as rule from '../rules/suggest-block.ts';
 import type { SuggestBlock, SuggestScene } from '../rules/suggest-block.ts';
 import { climateChosen } from '../state/persist.ts';
-import { backToConsortium, canGoBack } from '../state/draft.ts';
 import { dropSuggest, pendingSuggest } from '../state/suggest-wait.ts';
 import { T } from '../strings.ts';
 import { lazyPart } from './lazy.tsx';
@@ -102,7 +101,6 @@ function NeedsSite({ zone }: { zone: ClimateZone }) {
       {T('range.needsSite', { climate: zoneName(zone) })}{' '}
       <button type="button" class="button button-secondary ct-small" onClick={toLocation}>{T('range.needsSite.go')}</button>{' '}
       <a href={page().start.contact}>{T('start.uncovered.ask')}</a>
-      {canGoBack.value && <> <button type="button" class="link-button ct-link" onClick={backToConsortium}>{T('start.back')}</button></>}
     </p>
   );
 }

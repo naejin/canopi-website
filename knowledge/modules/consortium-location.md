@@ -2,7 +2,7 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:20Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:37:16Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:35Z }
 sources:
@@ -74,8 +74,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:98c1da7a5cf55c02
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:66e5404cce5f49d8
+    last_modified: 2026-11-14T21:54:34Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -84,8 +84,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:b5d16f20a23a4903
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:534a06a167bf1509
+    last_modified: 2026-11-14T21:51:58Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -94,8 +94,8 @@ sources:
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:ff56dae40b77fd8a
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:337229af28a158c8
+    last_modified: 2026-11-14T21:51:58Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
@@ -133,7 +133,7 @@ a climate card and a country, and the reader confirms (owner answers 1, 4, 5). P
 - **Sea** (no climate cell): "pick a point on land"; the store is left alone, and with a site already read the line names it: "… Still using {place}." (`location.state.seaKept`). **Coast** (a climate but no country): the nearest cell's climate, no country or soil. **Tiles failed**: a site already read stays in use everywhere (store, `canopi-location`, its location country) and the line says so (`location.state.failedKept`, "… Still using {place}."), so a reload agrees with the page; with none, or a link's location not read yet, location and proposal cleared, manual cards with a note (`location.state.failed`). Invariant (seam review 2, 3): whenever a site drives the pool, marks and future, the panel names it; `stateText` in views/location/location.tsx writes these lines, in the result line and the map dialog.
 - **Country from the location**: `locationCountry` (state/location.ts) sets `{code, source: 'location'}` over a guess, none or an earlier location country, never over `chosen` or `link`. A lookup's writes are quiet (the click was the reader's action), so a link pasted while tiles load still restores; only Forget is a reader write. The country goes through `siteFound`, after the batch: `quietly()` is synchronous and a batch flushes after it resets, so a write inside a batch is counted as the reader acting (review round 2, 1).
 - **Device only**: `localStorage['canopi-location']` `{lat, lon, source, label?}`; looked up again after the plant list opens (`ownLocation` in state/restore.ts) unless the link opened carries `o=`. One rule for a fresh open and a link pasted into the open tab (seam review 5; coordinator decision row to record): a link without `o=` leaves the reader's own saved site in place (their checks are about their site; the link's plants are unchanged); only a link's `o=` stands in for it, for that page. `ownLocation` runs one lookup at a time (a fresh link without `o=` asks at startup and again when it opens: seam review round 2, 3; P5-27j). A saved site read while a share link's climate is still opening proposes no card (`pendingLinkClimate`); under a saved consortium opening it still does, and the restore's batch clears it when the save opens (only a proposal from that lookup, `store.proposedFromSave`; one the reader's own locating made stays: round 4, 2, P5-27p), so only a save that fails to open leaves the card proposed (round 2, 2; round 3, 1; P5-27i, P5-27k). The line's "Use …" never shows over a climate still opening (`pendingClimate`).
-- **Links**: `o=<lat>,<lon>` (the climate cell centre, ≤ 3 decimals, literal comma, just before `e=1`) and the location country only when the reader ticks Share's `input[data-share-location]`. A link with `o=` sets `store.location` (source `link`, labelled "from the shared link, approximate") in the restore batch; the link's climate, answers and country win. It lives for that page only (coordinator decision, review round 1): never saved over the reader's `canopi-location`, never a country, and Forget leaves the reader's own saved location. A link without `o=` (hashchange) clears a link-sourced location and its line and looks the reader's own saved site up again (`ownLocation`), and so do Change site, Start over and Start empty (`dropLinkLocation` → `letGo(true)`: the link's lookup is dropped too, so no loading line stays, no later "failed" is written and Suggest is not held; review rounds 2, 4 and 3, 2; P5-13c, 13d). Those three, Forget and a failed read also clear the "not read" note; a later plain visit restores the reader's own saved site.
+- **Links**: `o=<lat>,<lon>` (the climate cell centre, ≤ 3 decimals, literal comma, just before `e=1`) and the location country only when the reader ticks Share's `input[data-share-location]`. A link with `o=` sets `store.location` (source `link`, labelled "from the shared link, approximate") in the restore batch; the link's climate, answers and country win. It lives for that page only (coordinator decision, review round 1): never saved over the reader's `canopi-location`, never a country, and Forget leaves the reader's own saved location. A link without `o=` (hashchange) clears a link-sourced location and its line and looks the reader's own saved site up again (`ownLocation`), and so do Change site (the palette's step 1 back to Place), Start over and Start empty (`dropLinkLocation` → `letGo(true)`: the link's lookup is dropped too, so no loading line stays, no later "failed" is written and Suggest is not held; review rounds 2, 4 and 3, 2; P5-13c, 13d). Those three, Forget and a failed read also clear the "not read" note; a later plain visit restores the reader's own saved site.
 - **Suggest waits for a lookup**: `requestSuggest` (state/suggest-wait.ts) with `lookups` > 0 sets `pendingSuggest` and runs once they settle, so the suggestion's range filter (S5c) sees the site; the result line meanwhile reads "Reading the climate of your site…" (review round 1 addendum, spec P5-1d). A saved or link location holds one lookup from the chunk load through its settle (`lookingThrough`, no gap). The wait is capped at 10 s per press (`waited`, its timer cleared by the next press or when Suggest runs; review round 3, 1): Suggest then runs without the site and `[data-location-unread]` says the climate was not read (P5-1f).
 - **No soil read** (pre-push review 3): state/location.ts's `read` calls `lookupSite(…, DEFAULT_RADIUS, { soil: false })`, so a lookup fetches climate and regions tiles only (P5-1 checks it); P5.2's soil likely restores the soil read.
 - **Timeouts** (review round 2, 3): a tile read unanswered in 15 s (`READ_TIMEOUT_MS`, a race in state/location.ts's `read`; the climate reader takes no signal) fails like a failed read; a geocoder request is aborted after 15 s (`GEOCODER_TIMEOUT_MS`, transport.ts) and thrown as an error, not an AbortError, so the search shows "offline"; `currentPosition(options, permission)`: the browser's own timeout does not run while its permission prompt waits, so a permission granted before the press gets the browser's 15 s plus a 5 s backstop, and anything else one 45 s cap (`PROMPT_CAP_MS`) over prompt and fix, since a one-time Allow fires no `change` event in some browsers (review round 4, 3).
@@ -155,5 +155,5 @@ At canopi `b039f14ee612c6090c91d44b9968357cbdd1d33e` (AGPL header and a "copied 
 ## PP-B b1a (2026-11-14)
 
 - **"Use it" for a link's place** reverses the old rule that a link's `o=` is never saved over the reader's `canopi-location` (coordinator row 2026-11-14): `state/location.ts` `adoptLinkLocation()` turns a `link` location into the reader's own (`source: 'map'`, kept with `keepLocation`); `views/location/location.tsx` re-exports it as `adopt`, reached through restore.ts's `LocationSettle.adopt`.
-- **Forget this location** also clears the palette's place (spot answers to unsure, soil to the map) and `canopi-place`, besides `canopi-location`.
+- **Forget this location** also clears the palette's place (spot answers to unsure, soil to the map) and `canopi-place`, besides `canopi-location`; forgetting the reader's own kept location also clears `restore.ts` `locationAtStart`, so Place's climate cards open when a climate is chosen (b1a review round 3, 1).
 - Share's tick is "Include my place" (place, not only location): ticked, the link carries `k o l w q r h s`; unticked none of them.

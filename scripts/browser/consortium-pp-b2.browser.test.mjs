@@ -147,6 +147,9 @@ test('PP-B18 (b2 / BT-8 print, drawing; moved from S4 in commit 0a\'): ≤ 20 pl
 
 const PAGE = '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]';
 const onPage = (page, timeout = 15_000) => has(page, PAGE, timeout);
+// Plants added on Place stay there (b1a conformance-2): "Show my palette", as the reader does, opens
+// the palette page (nothing to press when the page already shows it).
+const showPalette = async (page) => { const show = await page.$('[data-place-show]'); if (show) await show.click(); };
 const plural = (v, n) => { const m = /other:\s*([^|]*)/.exec(v); return (m ? m[1] : v).replace('#', String(n)).trim(); };
 const nextHole = (page) => page.$eval('.ct-next', (e) => e.dataset.hole ?? null).catch(() => null);
 // Whatever passes the right edge (or makes the page wider than the window), in words.
@@ -223,6 +226,7 @@ test('PP-B28 (b2 keyboard journey, F1a-P8 restored, A25): with the keyboard only
   const page = await tool();
   await choose(page, 'Temperate');
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(2));
+  await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
   assert.ok(await has(page, '.ct-next-actions .button', 8000), 'the Next step has See all');
   await page.focus('.ct-next-actions .button');
@@ -239,6 +243,7 @@ test('PP-B6 (b2 Lyon, own plants): three plants pasted; the Next step names the 
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(3));
+  await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForFunction(() => document.querySelector('.ct-next')?.dataset.hole, { timeout: 10_000 });
   const first = await nextHole(page);
@@ -318,6 +323,7 @@ test('PP-B16 (b2 offline): the offline line shows, added plants stay, and a chun
   assert.ok(await page.waitForFunction((t) => document.querySelector('.ct-offline')?.textContent.includes(t), { timeout: 4000 }, en['consortium.load.offline']).then(() => true, () => false), 'the offline line');
   const ids = await own(3);
   await page.evaluate((x) => window.__ctTest.store.addMembers(x), ids);
+  await showPalette(page);
   assert.ok(await page.waitForFunction((t) => document.querySelector('#ct-root')?.textContent.includes(t), { timeout: 8000 }, en['consortium.load.needsConnection']).then(() => true, () => false), '"Needs a connection" where the palette page goes');
   assert.deepEqual(await page.evaluate(() => window.__ctTest.store.members.value), ids, 'the added plants stay');
   await net(true);
@@ -330,6 +336,7 @@ test('PP-B17 (b2 toast): a toast stays while the focus is in it, then the focus 
   const page = await tool({ timeouts: { toast: 300 } });
   await choose(page, 'Temperate');
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(2));
+  await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForSelector('.ct-fillers li .button-primary', { timeout: 8000 });
   await page.evaluate(() => { window.__ctTest.store.hideToast(); document.querySelector('.ct-fillers li .button-primary').dataset.raiser = ''; });
@@ -357,6 +364,7 @@ test('PP-B20 (b2 verdict chunk refused; review r1 bugs-5): fit lines say "Not ch
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(2));
+  await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.verdictFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the verdict chunk failed');
   assert.ok(await has(page, '.ct-notice[role="alert"]', 4000), 'said once');
@@ -389,6 +397,7 @@ test('PP-B21 (b2 a guest list fails): the list is named as missing and its plant
     store.addMembers([...ids, g], { [g]: 'Mediterranean' });
     store.loadPool('Mediterranean');
   }, String(guest), await own(2));
+  await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
   const line = en['consortium.palette.listFailed'].split('{lists}')[0].replace(/^(one|other):\s*/, '').trim();
   assert.ok(await page.waitForFunction((t) => [...document.querySelectorAll('.ct-notice')].some((n) => n.textContent.includes(t) && n.textContent.includes('Mediterranean')), { timeout: 8000 }, line).then(() => true, () => false), 'the Mediterranean list named as missing');
@@ -427,6 +436,7 @@ test('PP-B24 (b2 palette chunk refused): Place stays usable, the page says it co
   const page = await tool({ block: { palette: 404 }, setup: async (pg) => { pg.on('request', (r) => log.push({ url: r.url() })); } });
   await choose(page, 'Temperate');
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(2));
+  await showPalette(page);
   assert.ok(await page.waitForFunction((t) => document.querySelector('#ct-root')?.textContent.includes(t), { timeout: 8000 }, en['consortium.details.loadFailed']).then(() => true, () => false), '"could not load" where the palette page goes');
   assert.ok(await has(page, `#ct-root ${aria('button', en['consortium.palette.stepPlace'])}, #ct-root ${aria('button', en['consortium.details.reload'])}`, 2000), 'a control still answers');
   await page.click(`#ct-root .ct-notice ${aria('button', en['consortium.details.reload'])}`);
@@ -462,6 +472,7 @@ test('PP-B25 (b2 inform, don\'t block): an outside-range plant added from a hole
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(1));
+  await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
   await page.evaluate(() => window.__ctTest.store.hideToast());
@@ -540,6 +551,7 @@ test('PP-B32 (b2 header step and Back; review r1 bugs-1): the step from Your pla
   await choose(page, 'Temperate');
   const arrived = await entry(page);
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(2));
+  await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
   assert.equal(await entry(page), arrived + 1, 'one entry for the step');
   await back(page);
@@ -558,6 +570,7 @@ const readerPalette = async () => {
   await choose(page, 'Temperate');
   const arrived = await entry(page);
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(3));
+  await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
   assert.equal(await entry(page), arrived + 1, 'one entry for the step');
   return { page, arrived };
@@ -585,7 +598,7 @@ test('PP-B40 (b2 review r2 hist-1, K7): from a palette the reader made, a sheet 
 });
 
 // (Suggest offers no Undo on this branch; a paste's Add on Place does: store.addMembers, as Paste's
-// Add calls it, opens the palette with Undo back to Place.)
+// Add calls it, then "Show my palette"; the add's Undo goes back to Place.)
 test('PP-B41 (b2 review r2 hist-1): plants pasted on Your place, then Undo from the toast: Place on the page\'s first entry, so the next Back leaves the page', async () => {
   const { page, arrived } = await readerPalette();
   await page.click(aria('button', en['consortium.undo']));
@@ -599,6 +612,7 @@ test('PP-B33 (b2 keyboard Add from the Next step; review r1 bugs-2, conformance-
   const page = await tool({ timeouts: { toast: 300 } });
   await choose(page, 'Temperate');
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(2));
+  await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForSelector('.ct-fillers li .button-primary', { timeout: 8000 });
   await page.evaluate(() => window.__ctTest.store.hideToast());
@@ -623,6 +637,7 @@ test('PP-B34 (b2 Lyon "See all", a dry shady spot; review r1 bugs-3, conformance
   await choose(page, 'Temperate');
   await page.evaluate(() => { const { store } = window.__ctTest; store.spot.value = { ...store.spot.value, light: 'shade', water: 'dry' }; });
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(3));
+  await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value && document.querySelector('.ct-next')?.dataset.hole, { timeout: 10_000 });
   await page.evaluate(() => window.__ctTest.store.hideToast());
@@ -659,6 +674,7 @@ const swapPage = async (site) => {
   await atSite(page, site);
   await choose(page, 'Temperate');
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(4));
+  await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
   return page;
@@ -751,6 +767,7 @@ test('PP-B39 (b2 a second look; review r1 conformance-2): a filler with a warnin
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(1));
+  await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value && document.querySelector('.ct-next')?.dataset.hole, { timeout: 10_000 });
   await page.evaluate(() => window.__ctTest.store.hideToast());
@@ -827,7 +844,7 @@ const failMediterranean = (page, ids, from) => page.evaluate((all, gs) => {
   src.pool = (c) => (c === 'Mediterranean' ? Promise.reject(new Error('test: list unreadable')) : read(c));
   store.addMembers(all, Object.fromEntries(gs.map((g) => [g, 'Mediterranean'])));
   store.loadPool('Mediterranean');
-}, ids, from);
+}, ids, from).then(() => showPalette(page));
 const mediterranean = (n) => realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Mediterranean' AND p.plant NOT IN (SELECT plant FROM placements WHERE climate_zone = 'Temperate') ORDER BY 1 LIMIT ?").all(n).map((r) => String(r.id)));
 const listMissing = (page) => page.waitForFunction((t) => [...document.querySelectorAll('.ct-notice')].some((n) => n.textContent.includes(t) && n.textContent.includes('Mediterranean')), { timeout: 8000 }, en['consortium.palette.listFailed'].split('{lists}')[0].replace(/^(one|other):\s*/, '').trim()).then(() => true, () => false);
 

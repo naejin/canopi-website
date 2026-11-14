@@ -74,9 +74,10 @@ export function ownCell(text?: string | null): LinkOrigin | null {
   return kept && typeof kept.lat === 'number' && typeof kept.lon === 'number' ? { lat: kept.lat, lon: kept.lon } : null;
 }
 
-// Whether the page opened with a location kept on this device (startMemory): Place counts it as a place
-// before its lookup returns, so the climate cards are decided once and never close under the grower
-// when the lookup comes back (review round 2, 1).
+// A location kept on this device whose lookup is still on the way (set by arrival.ts openWith, when the
+// page will look it up; cleared when that lookup settles, found or not, and by Forget): Place counts it
+// as a place meanwhile, so the climate cards never close under the grower when the lookup comes back
+// (review round 2, 1), and open once nothing stands for a place any more (review round 3, 1).
 export const locationAtStart = signal(false);
 
 // The reader's own saved site, looked up again while no other location is set. One rule for a fresh
@@ -90,7 +91,7 @@ let ownLookup: Promise<void> | null = null;
 export function ownLocation(text?: string | null): void {
   if (ownLookup || store.location.peek()) return;
   const saved = text === undefined ? memory.read(LOCATION_STORE) : text;
-  if (saved) ownLookup = settleLocation('saved', saved).finally(() => { ownLookup = null; });
+  if (saved) ownLookup = settleLocation('saved', saved).finally(() => { ownLookup = null; locationAtStart.value = false; });
 }
 
 // ---- restoring a link or the save ----

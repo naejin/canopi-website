@@ -7,17 +7,24 @@
 // and heard in the sheet). A line is announced once, by the region it first shows in: moved into a
 // sheet or back out, it is shown outside that region's live part, so it is not read again. A toast goes away by itself after a while, on Dismiss, or on its action.
 // views/Sheets.tsx renders both regions; the store's edits call showToast (store.ts).
+// A notice (a line with an action and no Undo: a part that could not load, with Reload) is not a passing
+// line: it stays until its action or Dismiss (store.ts armToast), and in the page it sits in the flow at
+// the end of the tool, never over the page (b1a UI hand-off; details.css), brought into view once.
 import * as store from '../store.ts';
 import { hideToast, holdToast, toast, type ToastWhere as Where } from '../store.ts';
 import { T } from '../strings.ts';
 import { focusPlant } from '../focus.ts';
+import { useEffect, useRef } from 'preact/hooks';
 
 // where: 'page' (shown while no sheet is open) or 'sheet' (inside the open sheet).
 export function Toast({ where = 'page' }: { where?: Where }) {
   const here = (store.sheet.value !== null) === (where === 'sheet');
   const line = here ? toast.value : null;
+  const notice = !!line && !line.undo && !!line.action;
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (notice && where === 'page') ref.current?.querySelector('.ct-toast')?.scrollIntoView({ block: 'nearest' }); }, [line?.id]);
   const card = line && (
-        <div class="ct-toast" key={line.id} onPointerEnter={() => holdToast(true)} onPointerLeave={() => holdToast(false)}
+        <div class={notice ? 'ct-toast ct-toast-notice' : 'ct-toast'} key={line.id} onPointerEnter={() => holdToast(true)} onPointerLeave={() => holdToast(false)}
           onFocusIn={() => holdToast(true)} onFocusOut={(e) => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node | null)) holdToast(false); }}>
           <span class="ct-toast-text">{line.text}</span>
           {line.undo && (
@@ -33,7 +40,7 @@ export function Toast({ where = 'page' }: { where?: Where }) {
   );
   const heard = line?.where === where;
   return (
-    <div class={`ct-toast-region ct-toast-${where}`}>
+    <div class={`ct-toast-region ct-toast-${where}`} ref={ref}>
       <div role="status" aria-live="polite">{heard && card}</div>
       {!heard && card}
     </div>

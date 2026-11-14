@@ -4,9 +4,9 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:56Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:39:36Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:30Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:37:31Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -106,8 +106,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:f2cafc31e8878494
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:73d0a99d6422b186
+    last_modified: 2026-11-14T21:33:54Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -201,8 +201,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:652b11feed4df3eb
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:0b7db36679f25fcc
+    last_modified: 2026-11-14T21:52:54Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
@@ -221,13 +221,13 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:b5d16f20a23a4903
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:534a06a167bf1509
+    last_modified: 2026-11-14T21:51:58Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:1afe77755f5cad27
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:c109e9db6f45090c
+    last_modified: 2026-11-14T22:37:57Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
@@ -256,8 +256,8 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:3677ffab554a9095
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:0648114874935a3a
+    last_modified: 2026-11-14T21:53:49Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts

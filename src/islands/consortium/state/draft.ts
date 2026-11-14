@@ -1,11 +1,12 @@
 // Start's draft and the reader's moves around it (stream S4; E6 S2 split it out of memory.ts): the
-// climate card and the country the reader picks, Change site (the consortium set aside, a draft
-// seeded from it), Back to your palette, Start over (with one Undo), Show my palette and Add a plant; the answers to
-// the arrival notices (PP-B b1a): "Use it" / "Use my own place" for a link's place and "Open my saved
-// palette instead".
+// climate card and the country the reader picks, Change site (the palette set aside when the reader
+// goes back to Place, a draft seeded from it), Start over (with one Undo), Show my palette and Add a
+// plant; the answers to the arrival notices (PP-B b1a): "Use it" / "Use my own place" for a link's place
+// and "Open my saved palette instead". (The palette's place changes in place in the "Your place" sheet,
+// views/place/Place.tsx PlaceSheet, which sets nothing aside: b1a review r1 conformance-4.)
 // The consortium and the draft are two states (persist.ts): the draft never changes the consortium or
 // the save.
-import { batch, computed, effect, signal } from '@preact/signals';
+import { batch, signal } from '@preact/signals';
 import type { ClimateZone } from '../../../lib/consortium/index.ts';
 import { siteIdOf } from '../../../lib/consortium/index.ts';
 import * as store from '../store.ts';
@@ -25,15 +26,11 @@ export { placeSaid };
 // buttons are disabled, so the other answer never lands half-way through it.
 export const answering = signal(false);
 
-// The reader picks a climate on Start: the shared site climate is written (climate-ux; v1 setClimate).
-// With a consortium set aside, the draft follows the card: the consortium's own card seeds it from
-// the consortium again, another card starts it empty (its plants are that card's).
+// The reader picks a climate (Place, or the "Your place" sheet): the shared site climate is written
+// (climate-ux; v1 setClimate). The plants stay: changing the place never removes a plant (board
+// ChangePlace; b1a review r1 conformance-4); the palette checks them against the new climate.
 export function chooseClimate(z: ClimateZone): void {
-  const aside = store.view.peek() === 'start' ? own() : null;
-  batch(() => {
-    store.climate.value = z;
-    if (aside) schema.write(schema.valuesOf(schema.lists.plants, aside.climate === z ? aside : undefined));
-  });
+  store.climate.value = z;
   memory.write(SITE_CLIMATE, siteIdOf(z));
   attempt(() => { document.documentElement.dataset.climate = siteIdOf(z); });
 }
@@ -48,7 +45,8 @@ export function chooseCountry(code: string | null): void {
 // Change site, Start over, Start empty: the "not read" note goes, and a link's location goes with
 // its consortium (review round 2, 4), its lookup dropped (round 3, 2: no line, hold or later write).
 const dropLinkLocation = () => { const link = store.location.peek()?.source === 'link'; letGo(link); if (link) store.location.value = null; };
-// Change site: the consortium set aside, Start's draft seeded from it.
+// Change site (the reader back on Place from the palette: its "Your place" step, the phone's Back):
+// the consortium set aside, Start's draft seeded from it.
 export function changeSite(): void {
   placeSaid.value = '';
   batch(() => {
@@ -58,11 +56,18 @@ export function changeSite(): void {
   });
 }
 
+// Place's climate cards opened by the page (a climate chosen and no location): latched, so a location
+// that comes later (the saved location's lookup, about a second after load) never closes cards already
+// open under the grower's thumb (review round 2, 1). Place writes it; Start over lets the page decide
+// the cards afresh (review round 3, 1).
+export const cardsLatched = signal(false);
+
 // Start over: the consortium goes, from the store, the save and the address; the climate, the
 // palette's place and the country stay. One Undo puts it back (with its save).
 export function startOver(): void {
   const before = schema.snapshot();
   placeSaid.value = '';
+  cardsLatched.value = false;
   writeSave(null);
   batch(() => {
     store.setAside.value = null;
@@ -131,23 +136,6 @@ function answered(line: string): void {
   focusView();
 }
 
-// "Back to your consortium" from Start: the draft discarded, the consortium shown in its own climate
-// again, whatever card was chosen since "Change site", with its own site answers and country
-// (F1, R2-4, R4-3); the focus goes to the view (W4).
-export const canGoBack = computed(() => store.view.value === 'start' && store.setAside.value !== null);
-export function backToConsortium(): void {
-  const aside = own();
-  batch(() => {
-    if (aside) {
-      // Its climate and plants (chooseClimate seeds the plants from it), then the rest of it.
-      chooseClimate(aside.climate);
-      schema.write(aside);
-    }
-    store.view.value = 'matrix';
-  });
-  focusView();
-}
-
 // "Start empty and search" (the pool panel's "nothing fits" line): an empty palette and S3's search
 // sheet.
 export function startEmpty(): void {
@@ -161,8 +149,8 @@ export function startEmpty(): void {
 }
 
 // "Show my palette": the palette with the grower's own plants (none is a valid start); the focus goes
-// to it (W4). A palette set aside on Change site that this draft replaces (another card emptied it)
-// gets one Undo, which goes back to Place with it still set aside.
+// to it (W4). A palette set aside on Change site that this draft replaces (another card, a plant added
+// or removed on Place) gets one Undo, which goes back to Place with it still set aside.
 export function showPalette(): void {
   const before = schema.snapshot();
   const aside = store.setAside.peek();
@@ -173,8 +161,8 @@ export function showPalette(): void {
   if (replaced) store.offerUndo(T('place.asideReplaced'), before);
 }
 
-// "Add a plant by name" on Place: the search sheet (S3); a plant added opens the palette (store.ts
-// addMembers).
+// "Add a plant by name" on Place: the search sheet (S3); a plant added joins the list on Place
+// (store.ts addMembers leaves the view alone; b1a review r1 conformance-2).
 export function addOwnPlant(): void {
   adoptPending();
   store.openSheet('search');

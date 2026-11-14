@@ -15,7 +15,7 @@
 //   address and Share's link follow it: persist.ts watchStore and shownFragment) or 'save' (the save
 //   and the address follow it).
 // - plants: one of the plant lists. It is saved, Undo puts it back and a change ends the Undo offer;
-//   Change site's draft seeds it, Start over empties it, and a change ends a waiting Suggest.
+//   Start over empties it, and a change ends a waiting Suggest.
 //
 // defineState takes the declaration and returns the signals and the lists; a test defines its own
 // state with one more field and sees it round-trip through the schema.
@@ -171,8 +171,7 @@ export const STATE_FIELDS = {
     undo: (before: View, now: View) => (before === 'start' || now === 'start' ? before : now),
   } satisfies Field<View>,
   // While Start shows, the consortium shown before Change site, with its own site answers and country
-  // (null: none). Undo of a list pasted on Start brings it back with Start's draft; the save
-  // follows it.
+  // (null: none). Undo of "Show my palette" brings it back with Start's draft; the save follows it.
   setAside: { initial: (): Consortium | null => null, undo: true, watched: 'save' } satisfies Field<Consortium | null>,
   // The stage print draws the side drawing at (unsaved, not in Undo; nothing on the page sets it since
   // the stepper went in PP-B commit 0a'): b2 points print at the year step of Through the years (PP-B18)

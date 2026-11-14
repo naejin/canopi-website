@@ -390,7 +390,7 @@ test('b1a bugs-4: a room or plot change while the notice waits seeds canopi-plac
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
 
-test('b1a bugs-5: Forget on Change site also clears the set-aside palette\'s place', async () => {
+test('b1a bugs-5: Forget on Place (back from the palette) also clears the set-aside palette\'s place', async () => {
   await mine(5);
   await wait(0);
   assert.equal(saved()?.place, 'l=sun');
@@ -398,28 +398,53 @@ test('b1a bugs-5: Forget on Change site also clears the set-aside palette\'s pla
   locationM.forget();
   await wait(0);
   assert.equal(saved()?.place, '', 'the set-aside palette kept its place in the save');
-  draft.backToConsortium();
+  draft.showPalette();
   await wait(0);
-  assert.deepEqual(store.spot.peek(), emptyPlace.spot, 'the set-aside palette kept its place: Back brought the spot answers back');
+  assert.deepEqual(store.spot.peek(), emptyPlace.spot, 'the set-aside palette kept its place: the spot answers came back');
   assert.deepEqual(store.soil.peek(), { from: 'map' });
   assert.equal(store.room.peek(), 'small', 'the room stays');
-  assert.equal(saved()?.place, '', 'the set-aside palette kept its place in the save after Back');
+  assert.equal(saved()?.place, '', 'the palette kept its place in the save after "Show my palette"');
 });
 
-test('b1a bugs-7: "Show my palette" after an emptied draft offers one Undo that gives the set-aside palette back', async () => {
-  const pool = await mine(5);
+test('b1a bugs-7: "Show my palette" under another card keeps every plant and offers one Undo back to Place, the set-aside palette saved', async () => {
+  await mine(5);
   const before = store.members.peek();
   draft.changeSite();
   draft.chooseClimate('Mediterranean');
-  assert.equal(store.members.peek().length, 0, 'another card starts the draft empty');
+  assert.deepEqual(store.members.peek(), before, 'another card keeps the plants');
   draft.showPalette();
+  assert.deepEqual(store.members.peek(), before, 'the palette under the new card keeps every plant');
   assert.ok(store.toast.peek()?.undo, 'no Undo after "Show my palette" replaced the set-aside palette');
   store.toast.peek().undo();
+  await wait(0);
   assert.equal(store.view.peek(), 'start', 'Undo goes back to Place');
-  draft.backToConsortium();
-  assert.deepEqual(store.members.peek(), before, 'and the set-aside palette is there to go back to');
-  assert.equal(store.climate.peek(), 'Temperate');
-  void pool;
+  assert.equal(store.setAside.peek()?.climate, 'Temperate', 'the set-aside palette is back');
+  assert.match(saved()?.fragment ?? '', /(^|&)c=temperate(&|$)/, 'and saved again');
+});
+
+// conformance-2 (b1a review r1): the grower lists their own plants on Place (boards Place, PlaceDesk):
+// each plant added from Place stays there as a chip, with the spot questions and "Show my palette".
+test('b1a conformance-2: plants added on Place keep the grower on Place, every one listed', async () => {
+  const pool = await mine(0);
+  persist.quietly(() => { store.view.value = 'start'; store.setAside.value = null; });
+  store.addMembers([pool[1].id]);
+  store.addMembers([pool[2].id]);
+  assert.equal(store.view.peek(), 'start', 'adding a plant on Place opened the palette');
+  assert.deepEqual(store.memberTaxa.peek().map((t) => t.id), [pool[1].id, pool[2].id]);
+});
+
+// conformance-4 (b1a review r1; board ChangePlace): changing the place never removes a plant, and the
+// dropped "Back to your palette" control is gone.
+test('b1a conformance-4: another climate keeps every plant, on the palette and on Place; no "Back to your palette"', async () => {
+  await mine(5);
+  const before = store.members.peek();
+  draft.chooseClimate('Mediterranean');
+  assert.deepEqual(store.members.peek(), before, 'a climate chosen on the palette removed plants');
+  draft.changeSite();
+  draft.chooseClimate('Tropical');
+  assert.deepEqual(store.members.peek(), before, 'a climate chosen on Place removed plants');
+  assert.equal(draft.backToConsortium, undefined, 'backToConsortium is still exported');
+  assert.equal(draft.canGoBack, undefined, 'canGoBack is still exported');
 });
 
 // r2-2 (review round 2): the offer goes when the save is replaced, not on any answer: a room or country
@@ -448,11 +473,23 @@ test('b1a bugs-8 / r2-2: "Open my saved palette instead" and "Back to mine" stay
   await wait(0);
   assert.ok(restoreM.savedInstead.peek(), '"Open my saved palette instead" gone after a Place answer that wrote no save (country)');
   assert.equal(kept.get(STORE), text, 'the save is untouched');
-  // A plant added (as "Add a plant by name" does) opens the palette, whose save replaces the reader's.
+  // A plant added on Place (as "Add a plant by name" does) stays on Place and writes no save.
   store.addMembers([pool[4].id]);
+  await wait(0);
+  assert.equal(kept.get(STORE), text, 'a plant added on Place wrote a save');
+  assert.ok(restoreM.savedInstead.peek(), '"Open my saved palette instead" gone after a plant added on Place');
+  // "Show my palette": the palette's save replaces the reader's, and the offer goes.
+  draft.showPalette();
   await wait(0);
   assert.notEqual(kept.get(STORE), text, 'the palette is saved');
   assert.equal(restoreM.savedInstead.peek(), null, '"Open my saved palette instead" still offered after the save was replaced');
+  // r3-2 (review round 3): Undo takes the page back to Place with no palette of its own, so the
+  // reader's save is written back: the offer comes back with it.
+  assert.ok(store.toast.peek()?.undo, 'the add\'s Undo is still offered');
+  store.toast.peek().undo();
+  await wait(0);
+  assert.equal(kept.get(STORE), text, 'Undo did not write the reader\'s save back');
+  assert.equal(restoreM.savedInstead.peek()?.fragment, readRecord(text).fragment, '"Open my saved palette instead" did not come back with the save');
   // (b) A newer link over the save: "Back to mine" through a country and a card.
   const [, text2] = await fresh();
   assert.equal(await restoreM.restore('v=6&c=temperate&a=abcdef&e=1', { from: 'link' }), false);
@@ -603,4 +640,74 @@ test('b1a perf-1: the browser\'s country guess is worked out only when no link, 
   // No country anywhere: worked out once, though both the link's and the reader's own are decided.
   arrivalM.arrivalPlan({ kind: 'link', fragment: link }, { saved: null, pref: null, guess, seed: null, cell: () => null });
   assert.equal(calls, 1, 'the guess was worked out more than once');
+});
+
+// ---- review round 3 (b1a-review-r3: r3-1, r3-3; r3-2 is in bugs-8 above) ----
+
+// r3-1: "a location kept on this device" counts for Place's climate cards only while its lookup is on
+// the way: once it settles (found or not), or Forget removes it, a climate chosen with no location
+// opens the cards again; Start over lets the page decide them afresh.
+test('b1a r3-1: the kept location stops holding the climate cards once its lookup settles or Forget removes it; Start over resets the cards', async () => {
+  const before = instantStep();
+  try {
+    await mine(5);
+    store.location.value = null;
+    const PARIS = JSON.stringify({ lat: 48.85, lon: 2.35, source: 'geo' });
+    restoreM.locationAtStart.value = true;
+    restoreM.ownLocation(PARIS);
+    await wait(0);
+    await wait(0);
+    assert.equal(restoreM.locationAtStart.peek(), false, 'the kept location still holds the cards after its lookup settled');
+    restoreM.locationAtStart.value = true;
+    kept.set(LOCATION_STORE, PARIS);
+    locationM.forget();
+    assert.equal(restoreM.locationAtStart.peek(), false, 'the kept location still holds the cards after Forget');
+    draft.cardsLatched.value = true;
+    draft.startOver();
+    assert.equal(draft.cardsLatched.peek(), false, 'the cards stay latched open after Start over');
+  } finally { restoreM.provideLocationStep(before); store.location.value = null; }
+});
+
+// r3-3: the arrival's wiring (arrival.ts openWith, which startMemory calls with what it read), run with
+// a spy location step: (a) a link that brings a place restores with the reader's own country, so the
+// held save and "Use my own place" never take the link's; (b) a reload while a link's place waited
+// looks up no saved location over the link's cell.
+test('b1a r3-3: startMemory\'s wiring passes the reader\'s own country to a link\'s restore and looks up no saved location over a link\'s cell', async () => {
+  const settled = [];
+  const before = restoreM.provideLocationStep(async () => ({ settle: async (how) => { settled.push(how); }, adopt: () => false }));
+  const restoreAddress = fakeAddress();
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await wait(5); };
+  try {
+    // (a) canopi-country KE, a k=FR link with a spot answer.
+    await mine(5);
+    await wait(0);
+    const link = await linkWith('Temperate', 3, { country: 'FR', spot: { ...emptyPlace.spot, light: 'shade' } }, { place: true });
+    const how = arrivalM.arrival({ hash: `#${link}`, search: '' }, saved(), null);
+    const plan = arrivalM.arrivalPlan(how, { saved: saved(), pref: 'KE', guess: () => null, seed: null, cell: () => null });
+    arrivalM.openWith({ how, plan, saved: saved(), seed: null, keptLocation: null });
+    await until(() => restoreM.linkPlace.peek());
+    assert.ok(restoreM.linkPlace.peek(), 'no link-place notice');
+    store.removeMember(store.members.peek()[0]);
+    await wait(0);
+    assert.notEqual(saved()?.country, 'FR', 'the held save took the link\'s country');
+    assert.equal(saved()?.src, 'chosen', 'the held save took the link\'s country source');
+    draft.useOwnPlace();
+    assert.deepEqual(store.country.peek(), { code: 'KE', source: 'chosen' }, '"Use my own place" did not give the reader\'s own country');
+    // (b) A reload while a link's place waited, with a location kept on this device.
+    await mine(5);
+    await wait(0);
+    store.location.value = null;
+    settled.length = 0;
+    const pl = encodePlace({ country: 'FR', spot: { ...emptyPlace.spot, light: 'shade' }, soil: { from: 'map' } }, { lat: 37.35, lon: -5.95 });
+    const f = await linkWith('Temperate', 3);
+    const reload = arrivalM.arrival({ hash: `#${f}`, search: '' }, saved(), null, { ct: f, src: 'link', pl, ask: 1 });
+    assert.equal(reload.ask, true);
+    const PARIS = JSON.stringify({ lat: 48.85, lon: 2.35, source: 'geo' });
+    const plan2 = arrivalM.arrivalPlan(reload, { saved: saved(), pref: null, guess: () => null, seed: null, cell: () => restoreM.ownCell(PARIS) });
+    arrivalM.openWith({ how: reload, plan: plan2, saved: saved(), seed: null, keptLocation: PARIS });
+    await until(() => store.location.peek()?.source === 'link');
+    await wait(20);
+    assert.deepEqual(settled.filter((x) => x === 'saved'), [], 'the saved location was looked up over the link\'s cell');
+    assert.equal(restoreM.locationAtStart.peek(), false, 'a location kept on this device that is not looked up holds the cards');
+  } finally { restoreAddress(); restoreM.provideLocationStep(before); store.location.value = null; persist.linkPlace.value = null; }
 });

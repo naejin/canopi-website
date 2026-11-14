@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the import rules dependency-cruiser enforces (L1-L9, and L10 as warn since PP-B commit 0a) and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:44Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:39:28Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:28Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:37:24Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:c030eb81ae8774ae
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:28a3700dbcf669e5
+    last_modified: 2026-11-14T22:37:57Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -55,8 +55,8 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:3677ffab554a9095
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:0648114874935a3a
+    last_modified: 2026-11-14T21:53:49Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
