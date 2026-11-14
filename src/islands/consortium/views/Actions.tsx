@@ -10,14 +10,32 @@ import { climate, memberTaxa, source, view } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { notices } from '../state/restore.ts';
 import { zoneName } from './kit/names.ts';
-import { later, laterModule, prefetchLater } from './lazy.tsx';
+import { later, laterModule, LoadFailed } from './lazy.tsx';
 import { laterChunk } from './later-chunk.ts';
 
-// Share, the print sheet and the .canopi writer load after the first view (views/lazy.tsx); the print
-// sheet is in the page as soon as it has loaded, so the browser's own Print menu prints it too.
-// All through the later chunk's one loader (views/later-chunk.ts): one retry state for every part.
+// Share, the print sheet and the .canopi writer load after the first view (views/lazy.tsx), all through
+// the later chunk's one loader (views/later-chunk.ts): one retry state for every part. The print sheet
+// (idle: never a download of its own) is in the page only while printing: Print, the browser's own
+// Print menu (beforeprint) or print media (review r1 perf-4: a hidden 200-row sheet re-rendered on
+// every add); once the chunk is in, mounting it is synchronous, before the print layout.
 const share = later(() => laterChunk().then((m) => m.Share));
-const print = later(() => laterChunk().then((m) => m.PrintSheet), { quiet: true });
+const print = later(() => laterChunk().then((m) => m.PrintSheet), { idle: true });
+const printing = signal(false);
+const printMedia = (): boolean => typeof matchMedia === 'function' && matchMedia('print').matches;
+function PrintHost() {
+  useEffect(() => {
+    const on = () => { printing.value = true; };
+    const off = () => { printing.value = printMedia(); };
+    const media = typeof matchMedia === 'function' ? matchMedia('print') : null;
+    const change = (e: MediaQueryListEvent) => (e.matches ? on() : off());
+    addEventListener('beforeprint', on);
+    addEventListener('afterprint', off);
+    media?.addEventListener('change', change);
+    if (printMedia()) on();
+    return () => { removeEventListener('beforeprint', on); removeEventListener('afterprint', off); media?.removeEventListener('change', change); };
+  }, []);
+  return printing.value ? <print.View /> : null;
+}
 const writer = laterModule(laterChunk);
 // S5d's future panel (views/FutureSlot.tsx), after this section: it lands
 // once the later chunk and its own feature chunk have loaded, ~150 ms after Suggest, so above the
@@ -39,8 +57,11 @@ function LinkNotices() {
   );
 }
 
-// Print or Download when the chunk they need did not load: said here, with Reload (F4).
+// Print or Download when the chunk they need did not load: said here with lazy.tsx's LoadFailed
+// (F4): Reload online; offline "Needs a connection", never a reload (review r2 offline-1), and the
+// line goes once back online, so the next press tries the chunk again.
 const partFailed = signal(false);
+const clearFailed = (): void => { partFailed.value = false; };
 const failed = (err: unknown): void => { console.error(`Consortium: a part did not load: ${(err as Error).message}`); partFailed.value = true; };
 
 async function download(): Promise<void> {
@@ -66,18 +87,18 @@ async function download(): Promise<void> {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
-// Print: the sheet first (already there once prefetched), then the browser's dialog after it renders.
-// One at a time: a second press while the sheet loads does nothing.
-let printing = false;
+// Print: the sheet first (already there once prefetched), mounted, then the browser's dialog after it
+// renders. One at a time: a second press while the sheet loads does nothing.
+let asking = false;
 async function printNow(): Promise<void> {
-  if (print.ready()) { window.print(); return; }
-  if (printing) return;
-  printing = true;
+  if (asking) return;
+  asking = true;
   try {
-    await print.load();
-    requestAnimationFrame(() => requestAnimationFrame(() => { printing = false; window.print(); }));
+    if (!print.ready()) await print.load();
+    printing.value = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => { asking = false; window.print(); }));
   } catch (err) {
-    printing = false;
+    asking = false;
     failed(err);
   }
 }
@@ -92,29 +113,15 @@ function ActionsView() {
         <button type="button" class="button button-secondary ct-small" onClick={() => void printNow()}>{T('print.button')}</button>
         <button type="button" class="button button-secondary ct-small" onClick={() => void download()}>{T('download.button')}</button>
       </div>
-      {partFailed.value && <p class="ct-notice" role="alert">{T('details.loadFailed')} <button type="button" class="button button-secondary" onClick={() => location.reload()}>{T('details.reload')}</button></p>}
+      {partFailed.value && <LoadFailed retry={clearFailed} />}
       <p class="ct-muted ct-small-text">{T('download.note')}</p>
       {sharing && <share.View onClose={() => setSharing(false)} />}
-      <print.View />
+      <PrintHost />
     </section>
   );
 }
 
-// performance.mark('ct:first-view') once per page, when the consortium is first on screen (the
-// palette slot; moved here from Matrix.tsx in PP-B commit 0a' until b2 marks the palette page): the
-// timing script waits for it (design check A7), and the later chunk is prefetched then. Rendered inside
-// the slot, so its effect runs after the browser painted it.
-let marked = false;
-function FirstPaint() {
-  useEffect(() => {
-    if (marked || typeof performance === 'undefined') return;
-    marked = true;
-    performance.mark('ct:first-view');
-    prefetchLater();
-  }, []);
-  return null;
-}
-
+// (ct:first-view is the palette page's: views/palette/Palette.tsx, once its Next step shows.)
 export function Actions() {
-  return view.value === 'start' ? null : <><FirstPaint /><ActionsView /><future.View /></>;
+  return view.value === 'start' ? null : <><ActionsView /><future.View /></>;
 }

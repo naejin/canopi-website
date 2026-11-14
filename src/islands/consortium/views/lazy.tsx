@@ -3,7 +3,7 @@
 // lazyPart: the views after the matrix (one chunk, views/later.ts), the sheets (views/Sheets.tsx: the
 // plant dialog, Swap, Add, Paste; the dialog's correction form) and the slots' feature chunks.
 // prefetchLater() loads every part registered with later() once, in the browser's idle time, on the
-// first of: the consortium first on screen (the palette slot, Actions.tsx FirstPaint at ct:first-view) or the data ready (store.load =
+// first of: the consortium first on screen (the palette page's Next step, views/palette/Palette.tsx at ct:first-view) or the data ready (store.load =
 // ready), so a reader who stays on Start has Search and Paste at hand too, and nothing lazy competes
 // with the database download. A part used before its prefetch finished loads on demand through the
 // same promise (one request per chunk); a failed load clears it, so the next use asks again (L4), and,
@@ -23,16 +23,17 @@
 import type { ComponentType } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { effect, signal } from '@preact/signals';
-import { closeSheet, load as dataLoad, showToast } from '../store.ts';
+import { closeSheet, load as dataLoad, offline, showToast } from '../store.ts';
 import { T } from '../strings.ts';
 
-type Kind = 'sheets' | 'later';
+type Kind = 'sheets' | 'later' | 'page';
 // Browser-test builds only (A13): a part's chunk fails, or waits until the test releases it
 // (globalThis.__ctFaults, written by test-hook.ts; `sheets` for sheet parts, `later` for the others).
 // Read when a part is used, not when it is fetched, so a part the prefetch already loaded still fails
-// or waits as if its chunk had not come.
+// or waits as if its chunk had not come. The palette page itself (`page`) takes neither: the later
+// faults stand for the chunks after the first view.
 function faultOf(kind: Kind): 'fail' | 'hold' | null {
-  if (!__CT_TEST_HOOK__) return null;
+  if (!__CT_TEST_HOOK__ || kind === 'page') return null;
   const f = globalThis.__ctFaults;
   return kind === 'sheets' ? (f?.sheets ? 'fail' : null) : (f?.later ?? null);
 }
@@ -55,12 +56,25 @@ export interface PartOptions<C extends Any> {
   onFail?: 'notice' | 'closeSheet';
   // What shows while the chunk loads (default: the loading line); it gets the part's props.
   loading?: ComponentType<PropsOf<C>>;
+  retry?: boolean; // the importer is retryable(): a failed part is tried again in place
+  page?: boolean; // the palette page (App.tsx): no later test fault holds or fails it
 }
 
 // The line a part that could not load shows in place, with Reload (L1, L7); Swap shows it too when
 // the suggestion's chunk does not come (views/Swap.tsx).
-export function LoadFailed() {
-  return <p class="ct-notice" role="alert">{T('details.loadFailed')} <button type="button" class="button button-secondary" onClick={() => location.reload()}>{T('details.reload')}</button></p>;
+// A part that did not load. Offline, it says it needs a connection and tries again by itself once the
+// browser is back online, never reloading the page (architecture 9; PP-B16). Online, Reload tries the
+// part again in place when the part can (`inPlace`: a retryable importer fetches `?retry=n`, PP-B24),
+// else reloads the page.
+export function LoadFailed({ retry, inPlace = false }: { retry?: () => void; inPlace?: boolean }) {
+  const off = offline.value;
+  useEffect(() => {
+    if (!off || !retry) return;
+    addEventListener('online', retry, { once: true });
+    return () => removeEventListener('online', retry);
+  }, [off, retry]);
+  if (off) return <p class="ct-notice" role="alert">{T('load.needsConnection')}</p>;
+  return <p class="ct-notice" role="alert">{T('details.loadFailed')} <button type="button" class="button button-secondary" onClick={() => (retry && inPlace ? retry() : location.reload())}>{T('details.reload')}</button></p>;
 }
 
 // Counts the parts (and modules) loaded: an idle part whose own prefetch failed asks again when it has
@@ -68,8 +82,8 @@ export function LoadFailed() {
 // loops on its own failure.
 const loadedTick = signal(0);
 
-export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = false, idle = false, onFail = 'notice', loading }: PartOptions<C> = {}): LazyPart<C> {
-  const kind: Kind = onFail === 'closeSheet' ? 'sheets' : 'later';
+export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = false, idle = false, onFail = 'notice', loading, retry = false, page = false }: PartOptions<C> = {}): LazyPart<C> {
+  const kind: Kind = onFail === 'closeSheet' ? 'sheets' : page ? 'page' : 'later';
   const done = signal<C | null>(null);
   let pending: Promise<C> | null = null;
   // lastFailed: the last load failed, when loadedTick read failedAt.
@@ -86,6 +100,7 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
   function LazyView(props: Record<string, unknown>) {
     const [failed, setFailed] = useState(false);
     const [, wake] = useState(0);
+    const [attempt, setAttempt] = useState(0);
     const fault = faultOf(kind);
     const C = (fault ? null : done.value) as ComponentType<Record<string, unknown>> | null;
     const tick = idle && !C ? loadedTick.value : 0;
@@ -112,14 +127,17 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
         if (!live) return;
         if (onFail === 'closeSheet') {
           closeSheet();
-          showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => location.reload() });
+          // Offline, a Reload would lose the page (architecture 9): it says it needs a connection; the
+          // sheet's next opening asks for its chunk again (retryable).
+          if (offline.peek()) showToast(T('load.needsConnection'), null);
+          else showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => location.reload() });
         } else setFailed(true);
       });
       return () => { live = false; };
-    }, [C, tick]);
+    }, [C, tick, attempt]);
     if (C) return <C {...props} />;
     if (quiet || idle) return null;
-    if (failed) return <LoadFailed />;
+    if (failed) return <LoadFailed inPlace={retry} retry={() => { setFailed(false); setAttempt((n) => n + 1); }} />;
     if (loading) { const Loading = loading as ComponentType<Record<string, unknown>>; return <Loading {...props} />; }
     return <p class="status-line" role="status">{T(onFail === 'closeSheet' ? 'details.loading' : 'load.plants')}</p>;
   }
@@ -174,7 +192,7 @@ export function laterModule<M>(importer: () => Promise<M>): () => Promise<M> {
   return () => gate('later').then(fetch);
 }
 
-// Once, on the first of the consortium on screen (Actions.tsx FirstPaint calls it at ct:first-view) or the data ready
+// Once, on the first of the consortium on screen (views/palette/Palette.tsx calls it at ct:first-view) or the data ready
 // (below): every later part, in the browser's idle time.
 export function prefetchLater(): void {
   if (started) return;

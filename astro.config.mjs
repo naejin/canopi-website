@@ -90,6 +90,12 @@ const consortiumModulePreload = {
     'astro:build:done': ({ dir }) => {
       const out = fileURLToPath(dir);
       const root = existsSync(join(out, '_astro')) ? out : join(out, 'client');
+      // The sqlite wasm, preloaded with the URL and the request mode the loader's fetch uses (S1, A24):
+      // asked for with the HTML, before the loader chunk, and requested once. Build check: exactly one
+      // wasm, and every tool page carries its link with crossorigin.
+      const wasms = existsSync(join(root, '_astro')) ? readdirSync(join(root, '_astro')).filter((f) => /^sqlite3\.[\w-]+\.wasm$/.test(f)) : [];
+      if (wasms.length > 1) throw new Error(`canopi:consortium-modulepreload: ${wasms.length} sqlite wasm files in _astro (${wasms.join(', ')}); the preload names one`);
+      const wasmLink = wasms.length ? `<link rel="preload" href="/_astro/${wasms[0]}" as="fetch" type="application/wasm" crossorigin>` : '';
       const stack = [root];
       while (stack.length) {
         const d = /** @type {string} */ (stack.pop());
@@ -102,7 +108,10 @@ const consortiumModulePreload = {
           const links = modulepreloadChunks(moduleGraph(root, html), html)
             .filter((m) => !html.includes(`href="${m}"`))
             .map((m) => `<link rel="modulepreload" href="${m}">`).join('');
-          if (links) writeFileSync(p, html.replace('</head>', `${links}</head>`));
+          if (!wasmLink) throw new Error(`canopi:consortium-modulepreload: ${p} has the tool but the build has no sqlite wasm to preload`);
+          const needs = !html.includes(wasmLink);
+          if (needs || links) writeFileSync(p, html.replace('<head>', needs ? `<head>${wasmLink}` : '<head>').replace('</head>', `${links}</head>`));
+          if (!readFileSync(p, 'utf8').includes(wasmLink)) throw new Error(`canopi:consortium-modulepreload: the wasm preload did not reach ${p}`);
         }
       }
     },

@@ -33,11 +33,12 @@ async function matrixPage(opts = {}) {
   await page.locator(aria('radio', 'Temperate')).click();
   assert.equal(await loadState(page), 'ready');
   await page.locator(aria('button', 'Suggest plants')).click();
-  assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000), 'the matrix');
+  assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
   return page;
 }
-// The members' chips (accessible name "Plant · …").
-const chips = async (page) => (await axNodes(page)).filter((n) => n.role === 'button' && / · /.test(n.name ?? '')).map((n) => n.name);
+// The members' chips on the palette page (Through the years): their accessible names (the plant's name,
+// its main job, and its fit when it warns: kit/chart.tsx aria-label).
+const chips = async (page) => page.$$eval('.ct-years .ct-chip[data-plant-id]', (els) => [...new Set(els.map((e) => e.getAttribute('aria-label') ?? e.textContent.trim()))]);
 const memberIds = (page) => page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort());
 const dialogOpen = (page) => page.evaluate(() => !!document.querySelector('dialog[open]'));
 const focusedName = (page) => page.evaluate(() => (document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent || '').trim());
@@ -121,7 +122,7 @@ test('E6-4 (K3 lazy Details): a missing Details chunk closes the sheet with a to
   await page.locator(aria('button', RELOAD)).click();
   await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 20_000 }).catch(() => {});
   assert.equal(await loadState(page), 'ready');
-  assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000), 'the matrix again');
+  assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page again');
   assert.deepEqual(await memberIds(page), before, 'the consortium restored from the save');
   await page.browserContext().close().catch(() => {});
 });
@@ -373,20 +374,27 @@ const waitFor = async (cond, ms) => { for (const end = Date.now() + ms; !cond() 
 // Every request the page makes for the future part's chunk.
 const futureRequests = (page) => { const seen = []; page.on('request', (r) => { if (h.roles.future.includes(new URL(r.url()).pathname)) seen.push(r.url()); }); return seen; };
 
-test('E6-25 (K3 hand-off review 1): the later chunk\'s parts share one retry: after a failed retry, Jobs fetches the next one rather than a URL Chromium remembers as failed', async () => {
+test('E6-25 (K3 hand-off review 1): the later chunk\'s parts share one retry: after a failed retry, Share opened again fetches the next one rather than a URL Chromium remembers as failed', async () => {
+  // Retargeted by PP-B b2: the matrix's Side view and Jobs tabs went; Share (the palette page's
+  // actions) is a part of the same later chunk.
   const log = [];
   const page = await matrixPage({ setup: failFirst(h.roles.later, 2, log) });
   try {
     assert.ok(await waitFor(() => log.length >= 1, 5000), 'the later chunk\'s first request');
     await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
-    // Side view's use retries (another part may have retried first: the idle future part, once a
-    // sheet chunk loaded); whichever retry failed, the next use asks for a URL not yet tried.
-    await page.locator(aria('tab', 'Side view')).click();
-    await page.waitForFunction(() => !!document.querySelector('#ct-panel-side .ct-sv, #ct-panel-side [role="alert"]'), { timeout: 8000 }).catch(() => {});
+    const share = aria('button', en['consortium.share.button']);
+    const shown = () => page.waitForFunction(() => !!document.querySelector('.ct-page-actions .ct-share, .ct-page-actions [role="alert"]'), { timeout: 8000 }).catch(() => {});
+    // Share's use retries (another part may have retried first: the idle future part); whichever
+    // retry failed, the next use asks for a URL not yet tried.
+    await page.locator(share).click();
+    await shown();
     assert.ok(log.length >= 2, `a retry was asked for and failed (${log.join(', ')})`);
-    await page.locator(aria('tab', 'Jobs')).click();
-    await page.waitForFunction(() => !!document.querySelector('#ct-panel-jobs .ct-jobs-view, #ct-panel-jobs [role="alert"]'), { timeout: 8000 }).catch(() => {});
-    assert.ok(await has(page, '#ct-panel-jobs .ct-jobs-view', 300), `the Jobs view on the next retry (${log.join(', ')})`);
+    if (!(await has(page, '.ct-page-actions .ct-share', 300))) {
+      await page.locator(share).click();
+      await page.locator(share).click();
+      await page.waitForFunction(() => !!document.querySelector('.ct-page-actions .ct-share'), { timeout: 8000 }).catch(() => {});
+    }
+    assert.ok(await has(page, '.ct-page-actions .ct-share', 300), `the Share panel on the next retry (${log.join(', ')})`);
     assert.equal(new Set(log).size, log.length, `no URL asked for twice (${log.join(', ')})`);
   } finally { await page.browserContext().close().catch(() => {}); }
 });
@@ -415,7 +423,7 @@ test('E6-27 (K3 hand-off review 2): the idle future part whose prefetch failed s
     await atSite(page, 'lyon');
     await page.waitForFunction(() => !!window.__ctTest.store.rangeRule.value && !!window.__ctTest.store.pool.value, { timeout: 8000 });
     await page.locator(aria('button', 'Suggest plants')).click();
-    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000), 'the matrix');
+    assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
     assert.ok(await waitFor(() => log.length >= 1, 5000), 'the later chunk\'s first request');
     // Another later part loading (Share; or a sheet chunk's prefetch already) gives it its chance.
     await page.locator(aria('button', en['consortium.share.button'])).click();

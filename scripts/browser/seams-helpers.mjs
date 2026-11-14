@@ -43,12 +43,21 @@ export async function suggested(v, { room = null, light = null } = {}) {
   if (light) await page.locator(aria('radio', light)).click();
   if (room) await page.locator(aria('radio', room)).click();
   await page.locator(aria('button', 'Suggest plants')).click();
-  assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000), 'the matrix');
+  assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
   return page;
 }
 
-// The members shown, as plant ids (chips, phone rows and list rows carry data-plant-id).
-export const memberIds = (page) => page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))]);
+// The members shown, as plant ids: the palette page's picture chips carry data-plant-id (the Next
+// step's fillers carry it too, but they are not members, so only the pictures are read).
+export const memberIds = (page) => page.$$eval('#ct-root .ct-chart [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))]);
+// Opens Add through the store's opener (the page must be opened with hook: true): the palette page has
+// no general "Add plants" button until Your plants (PP-B b3, chunk 2).
+export async function openAdd(page) {
+  if (await has(page, aria('button', 'Add plants'), 300)) return page.locator(aria('button', 'Add plants')).click();
+  const ok = await page.waitForFunction(() => typeof window.__ctTest === 'object', { timeout: 20_000 }).then(() => true, () => false);
+  assert.ok(ok, 'the test hook: build with npm run build:browser-test');
+  await page.evaluate(() => window.__ctTest.openSheet('add'));
+}
 
 // The Add sheet's own rows (not "In other lists"), every one (after "Show all N").
 export async function addRows(page) {
@@ -69,6 +78,8 @@ export const linkOf = (page) => page.evaluate(() => location.hash);
 export const saved = (page) => page.evaluate(() => localStorage.getItem('canopi-consortium'));
 
 export const savedFragment = async (page) => { const raw = await saved(page); return raw ? `#${JSON.parse(raw).fragment}` : null; };
+// The save's private place answers (link v5 keeps the spot and the soil beside the fragment, in `place`).
+export const savedPlace = async (page) => { const raw = await saved(page); return raw ? `#${JSON.parse(raw).place ?? ''}` : null; };
 
 export const tropicalOnly = () => fixtureDb((db) => db.prepare("SELECT p.canonical_name name FROM plants p WHERE EXISTS (SELECT 1 FROM placements x WHERE x.plant = p.plant AND x.climate_zone = 'Tropical') AND NOT EXISTS (SELECT 1 FROM placements x WHERE x.plant = p.plant AND x.climate_zone = 'Temperate')").all().map((r) => r.name));
 
@@ -118,7 +129,7 @@ export async function hookedPage(v) {
 
 // P5 walk-through 2, N2: "What are these stages?" ran off phones (466 px wide at 390 en). Every pop-up
 // of the tool stays inside the viewport with the 16 px gutter: the layer and stage explanations (phone
-// matrix and side view), "Add it anyway?" and the map dialog, at 320 and 390 px in en, fr and ja.
+// matrix and side view) and the map dialog ("Add it anyway?" went, owner 2026-11-14), at 320 and 390 px in en, fr and ja.
 export const STRINGS = Object.fromEntries(['en', 'fr', 'ja'].map((l) => [l, JSON.parse(readFileSync(new URL(`../../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'))]));
 
 // Layout stability (P5 flake investigation, N2): nothing on Start moves after its first paint because

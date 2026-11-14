@@ -124,12 +124,24 @@ async function initSqlite(wasmUrl?: string): Promise<Sqlite3> {
   }
 }
 
-// Fetches, opens and checks the database; throws a LoadError naming its §5 screen.
-export async function openDatabase(ref: DbRef, expected: Expected, wasmUrl?: string): Promise<Opened> {
+// The page says "Still loading" when the database is not open after SLOW_MS (architecture 9; PP-B15):
+// the wait goes on (the stall above still fails it at 15 s without a byte). The browser-test build
+// lets a test shorten it (window.__ctTimeouts.slow), as the stall.
+const SLOW_MS = 5_000;
+
+// Fetches, opens and checks the database; throws a LoadError naming its §5 screen. `slow` runs once
+// if it is still under way after SLOW_MS.
+export async function openDatabase(ref: DbRef, expected: Expected, wasmUrl?: string, slow?: () => void): Promise<Opened> {
   if (tooOld()) throw new LoadError('too-old', 'no DecompressionStream');
   if (wasmMissing()) throw new LoadError('wasm-blocked', 'no WebAssembly');
-  const [bytes, sqlite3] = await Promise.all([fetchBytes(ref), initSqlite(wasmUrl)]);
-  return openWith(sqlite3, bytes, expected);
+  const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { slow?: number } }).__ctTimeouts?.slow) || SLOW_MS : SLOW_MS;
+  const timer = slow ? setTimeout(slow, ms) : undefined;
+  try {
+    const [bytes, sqlite3] = await Promise.all([fetchBytes(ref), initSqlite(wasmUrl)]);
+    return openWith(sqlite3, bytes, expected);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // Opens raw database bytes already in hand (the tests run it with the package's Node build).

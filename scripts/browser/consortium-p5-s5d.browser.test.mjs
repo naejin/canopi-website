@@ -48,8 +48,14 @@ test('P5-18 (S5d future summary): at Seville on the Mediterranean list the panel
   assert.doesNotMatch(await text(page, '[data-future]'), /too dry|dry by/i);
   const drier = await text(page, '[data-future-drier]');
   if (drier) assert.match(drier, /^Drier than where they are recorded by 20\d\d–20\d\d, may need watering: /);
-  assert.ok(await has(page, '[data-mark="future"][data-mark-surface="chip"]', 10_000), 'a future mark on a chip');
+  // A member outside by its period carries the future mark in its dialog (the matrix chips that carried
+  // it went in PP-B commit 0a'; the palette page's chips carry the fit line, Your plants' rows the marks).
+  const out = await page.$eval('[data-future-verdict="outside"]', (e) => e.dataset.futurePlant);
+  await page.evaluate((id) => window.__ctTest.openSheet('details', id), out);
+  assert.ok(await has(page, 'dialog[open] [data-mark="future"]', 10_000), 'a future mark in a member\'s dialog');
   assert.equal(await page.$('[data-mark="future"].ct-flag'), null, 'drawn in ink, apart from the ochre warnings');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('dialog[open], dialog.ct-sheet'), { timeout: 5000 });
   // The scenario control: a real radio; SSP5-8.5 never puts fewer plants outside than SSP2-4.5.
   const outside = () => page.$$eval('[data-future-verdict="outside"]', (els) => els.length);
   const before = await outside();
@@ -83,17 +89,19 @@ test('P5-19b (S5d future panel, hand-off layout shift): the panel lands below Sh
     await page.evaluate(() => window.__ctTest.holdLater());
     await openCards(page);
     await page.click('input[name="ct-climate"][value="temperate"]');
-    const suggest = await page.waitForFunction(() => [...document.querySelectorAll('.ct-cta button')].find((b) => b.textContent.trim() === 'Suggest plants'), { timeout: 10_000 });
+    const suggest = await page.waitForFunction(() => document.querySelector('[data-place-suggest]') ?? [...document.querySelectorAll('.ct-cta button')].find((b) => b.textContent.trim() === 'Suggest plants'), { timeout: 10_000 }); // b1a's Place: data-place-suggest
     await suggest.click();
     assert.ok(await has(page, '.ct-action-row button', 10_000), `${width} px: the action row`);
-    // Document positions of what a reader may be clicking: the tabs, Add plants, the action row's buttons.
-    const spots = () => page.evaluate(() => [...document.querySelectorAll('.ct-tab, .ct-viewbar button, .ct-action-row button')].map((e) => Math.round(e.getBoundingClientRect().top + scrollY)));
+    assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 10_000), `${width} px: the palette page`);
+    // Document positions of what a reader may be clicking: the palette page's steps and Next step, the
+    // action row's buttons (the matrix's tabs and Add plants went in PP-B commit 0a').
+    const spots = () => page.evaluate(() => [...document.querySelectorAll('.ct-steps .ct-step, .ct-next button, .ct-action-row button')].map((e) => Math.round(e.getBoundingClientRect().top + scrollY)));
     const before = await spots();
     assert.equal(await page.$('[data-future]'), null, `${width} px: measured before the panel`);
     await page.evaluate(() => window.__ctTest.releaseLater());
     assert.ok(await has(page, '[data-future-summary]', 10_000), `${width} px: the future panel lands`);
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-    assert.deepEqual(await spots(), before, `${width} px: the tabs and the actions stay where they were`);
+    assert.deepEqual(await spots(), before, `${width} px: the palette page and the actions stay where they were`);
     const [row, panel] = await page.evaluate(() => [document.querySelector('.ct-action-row').getBoundingClientRect().bottom, document.querySelector('[data-future]').getBoundingClientRect().top]);
     assert.ok(panel >= row, `${width} px: the panel is below the action row (${panel} < ${row})`);
     await page.browserContext().close().catch(() => {});

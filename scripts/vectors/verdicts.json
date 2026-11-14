@@ -1,0 +1,63 @@
+{
+  "schema": "canopi-palette-verdicts/1",
+  "source": "knowledge/architecture/plant-palette-architecture.md section 3.2 (verdict rules, shade relief, notes, judgedPeriod, holdsBy); website cases only: DATA-1's range_verdicts.json holds the climate sides and is run from its own file, never copied here. Written by PP-B stream b2.",
+  "thresholds": {
+    "margin_c": 2,
+    "today_period": "1991-2020",
+    "scenario": "ssp245"
+  },
+  "plants": {
+    "herb_sun": { "role": "crop", "stratum": "medium", "phase_start": "placenta_iii", "phase_end": "secondary_ii", "sun": true, "semi_shade": false, "full_shade": false, "aridity": { "low": 0.6, "high": 2 }, "tmin_cold": { "low": -10, "high": 8 }, "tmax_warm": { "low": 18, "high": 32 } },
+    "canopy_tree": { "role": "crop", "stratum": "emergent", "phase_start": "secondary_i", "phase_end": "climax", "sun": true, "tmin_cold": { "low": -15, "high": 6 }, "tmax_warm": { "low": 18, "high": 33 } },
+    "shrub_no_sun": { "role": "crop", "stratum": "medium", "phase_start": "placenta_iii", "phase_end": "secondary_iii", "sun": false, "semi_shade": false, "full_shade": true, "tmin_cold": { "low": -10, "high": 8 }, "tmax_warm": { "low": 18, "high": 32 } },
+    "edge_cold": { "role": "crop", "stratum": "low", "phase_start": "placenta_ii", "phase_end": "secondary_i", "tmin_cold": { "low": 1, "high": 10 }, "tmax_warm": { "low": 18, "high": 32 } },
+    "beyond_cold": { "role": "crop", "stratum": "low", "phase_start": "placenta_ii", "phase_end": "secondary_i", "tmin_cold": { "low": 4, "high": 15 }, "tmax_warm": { "low": 18, "high": 32 } },
+    "annual_hot": { "role": "crop", "stratum": "low", "phase_start": "placenta_i", "phase_end": "placenta_ii", "is_annual": true, "tmin_cold": { "low": -5, "high": 10 }, "tmax_warm": { "low": 14, "high": 24 } },
+    "tall_tree": { "role": "crop", "stratum": "emergent", "phase_start": "secondary_i", "phase_end": "climax", "height_max_m": 30, "tmin_cold": { "low": -15, "high": 6 }, "tmax_warm": { "low": 18, "high": 33 } },
+    "near_cold_limit": { "role": "crop", "stratum": "high", "phase_start": "secondary_i", "phase_end": "climax", "tmin_cold": { "low": -1, "high": 8 }, "tmax_warm": { "low": 18, "high": 33 } },
+    "no_range": { "role": "crop", "stratum": "low", "phase_start": "placenta_ii", "phase_end": "secondary_i" },
+    "secondary_heat": { "role": "crop", "stratum": "high", "phase_start": "placenta_iii", "phase_end": "secondary_iii", "tmin_cold": { "low": -10, "high": 8 }, "tmax_warm": { "low": 18, "high": 27.5 } },
+    "short_lived": { "role": "crop", "stratum": "low", "phase_start": "placenta_i", "phase_end": "placenta_iii", "tmin_cold": { "low": -10, "high": 8 }, "tmax_warm": { "low": 18, "high": 28.5 } }
+  },
+  "places": {
+    "sun": { "l": "sun" },
+    "part": { "l": "part" },
+    "unsure": {},
+    "town_higher": { "h": "higher" },
+    "hollow": { "h": "hollow" }
+  },
+  "climates": {
+    "temperate": [
+      { "period": "1991-2020", "scenario": "historical", "tmin_cold_c": 0, "tmax_warm_c": 28, "tmean_cold_c": 4, "tmean_warm_c": 21, "aridity_index": 1.1 },
+      { "period": "2041-2070", "scenario": "ssp245", "tmin_cold_c": 1.5, "tmax_warm_c": 30, "tmean_cold_c": 5.5, "tmean_warm_c": 22.5, "aridity_index": 1 },
+      { "period": "2071-2099", "scenario": "ssp245", "tmin_cold_c": 2.5, "tmax_warm_c": 31.5, "tmean_cold_c": 6.5, "tmean_warm_c": 24, "aridity_index": 0.9 }
+    ],
+    "temperate_dry": [
+      { "period": "1991-2020", "scenario": "historical", "tmin_cold_c": 0, "tmax_warm_c": 28, "tmean_cold_c": 4, "tmean_warm_c": 21, "aridity_index": 0.3 }
+    ]
+  },
+  "cases": [
+    { "name": "shade relief: a sun spot and a taller member sharing its years drops the light factor", "covers": "3.2 shade relief", "input": { "plant": "shrub_no_sun", "place": "sun", "climate": "temperate", "members": ["canopy_tree"] }, "expect": { "level": "fits", "light_factor": false } },
+    { "name": "shade relief: a sun spot with no taller member keeps the light factor, a second look", "covers": "3.2 shade relief", "input": { "plant": "shrub_no_sun", "place": "sun", "climate": "temperate", "members": [] }, "expect": { "level": "look", "limiting": "light", "light_factor": true } },
+    { "name": "shade relief: a part-shade spot keeps the light factor under a taller member", "covers": "3.2 shade relief", "input": { "plant": "herb_sun", "place": "part", "climate": "temperate", "members": ["canopy_tree"] }, "expect": { "level": "look", "limiting": "light", "light_factor": true } },
+    { "name": "inside every side: fits", "covers": "3.2 levels", "input": { "plant": "herb_sun", "place": "sun", "climate": "temperate", "members": [] }, "expect": { "level": "fits", "light_factor": true } },
+    { "name": "within the margin of the cold limit: a second look", "covers": "3.2 levels", "input": { "plant": "edge_cold", "place": "unsure", "climate": "temperate", "members": [] }, "expect": { "level": "look", "limiting": "cold" } },
+    { "name": "beyond the cold limit by more than the margin: outside", "covers": "3.2 levels", "input": { "plant": "beyond_cold", "place": "unsure", "climate": "temperate", "members": [] }, "expect": { "level": "outside", "limiting": "cold" } },
+    { "name": "no location: not checked, never fits", "covers": "3.2 unknown", "input": { "plant": "herb_sun", "place": "unsure", "climate": null, "members": [] }, "expect": { "level": "unknown", "factors": [] } },
+    { "name": "no range recorded: not checked", "covers": "3.2 unknown", "input": { "plant": "no_range", "place": "unsure", "climate": "temperate", "members": [] }, "expect": { "level": "unknown", "factors": [] } },
+    { "name": "an annual beyond its heat range fits, advised to the cool season", "covers": "3.2 cool season", "input": { "plant": "annual_hot", "place": "unsure", "climate": "temperate", "members": [] }, "expect": { "level": "fits", "notes": ["cool-season", "annual"] } },
+    { "name": "taller than the room is a note, never a level", "covers": "3.2 room", "input": { "plant": "tall_tree", "place": "unsure", "room": "small", "climate": "temperate", "members": [] }, "expect": { "level": "fits", "notes": ["room-tall"] } },
+    { "name": "higher than the town, near its cold limit: the cold-air note", "covers": "3.2 cold air", "input": { "plant": "near_cold_limit", "place": "town_higher", "climate": "temperate", "members": [] }, "expect": { "level": "fits", "notes": ["cold-air"] } },
+    { "name": "a hollow, near its cold limit: the cold-air note", "covers": "3.2 cold air", "input": { "plant": "near_cold_limit", "place": "hollow", "climate": "temperate", "members": [] }, "expect": { "level": "fits", "notes": ["cold-air"] } },
+    { "name": "far from its cold limit: no cold-air note in a hollow", "covers": "3.2 cold air", "input": { "plant": "canopy_tree", "place": "hollow", "climate": "temperate", "members": [] }, "expect": { "level": "fits", "notes": [] } },
+    { "name": "a drier place than its range is a note, never a level", "covers": "3.2 aridity", "input": { "plant": "herb_sun", "place": "unsure", "climate": "temperate_dry", "members": [] }, "expect": { "level": "fits", "notes": ["drier"] } },
+    { "name": "judgedPeriod: a climax plant on the 2071-2099 page is judged at 2071-2099", "covers": "3.2 judgedPeriod", "input": { "plant": "canopy_tree", "page": "2071-2099" }, "expect": { "judged": "2071-2099" } },
+    { "name": "judgedPeriod: a plant gone by year 60 on the 2071-2099 page is judged at 2041-2070", "covers": "3.2 judgedPeriod", "input": { "plant": "secondary_heat", "page": "2071-2099" }, "expect": { "judged": "2041-2070" } },
+    { "name": "judgedPeriod: a short-lived plant is judged on today", "covers": "3.2 judgedPeriod", "input": { "plant": "short_lived", "page": "2071-2099" }, "expect": { "judged": "1991-2020" } },
+    { "name": "judgedPeriod: never later than the page", "covers": "3.2 judgedPeriod", "input": { "plant": "canopy_tree", "page": "1991-2020" }, "expect": { "judged": "1991-2020" } },
+    { "name": "holdsBy: inside its range in 2041-2070", "covers": "3.2 holdsBy", "input": { "plant": "herb_sun", "climate": "temperate", "holds_by": "2041-2070" }, "expect": { "holds": true } },
+    { "name": "holdsBy: loses heat by 2041-2070", "covers": "3.2 holdsBy", "input": { "plant": "secondary_heat", "climate": "temperate", "holds_by": "2071-2099" }, "expect": { "holds": false } },
+    { "name": "holdsBy: no location is never a guess that it holds", "covers": "3.2 holdsBy", "input": { "plant": "herb_sun", "climate": null, "holds_by": "2041-2070" }, "expect": { "holds": false } },
+    { "name": "holdsBy: a short-lived plant is judged on today", "covers": "3.2 holdsBy", "input": { "plant": "short_lived", "climate": "temperate", "holds_by": "2071-2099" }, "expect": { "holds": true } }
+  ]
+}

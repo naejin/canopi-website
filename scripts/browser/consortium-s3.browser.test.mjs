@@ -52,15 +52,18 @@ async function start(page, climate = 'Temperate') {
   await page.locator(aria('radio', climate)).click();
   assert.equal(await loadState(page), 'ready');
   await page.locator(aria('button', 'Suggest plants')).click();
-  assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000), 'the matrix');
+  assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
 }
-// Opens a sheet by its button: "Add plants" on the views; "Paste a list" on Start (Change site).
+// Opens a sheet by its button: "Paste a list" on Start (Change site); "Add plants" through the store's
+// opener (store.openSheet('add')) while the palette page has no general Add button (the matrix's went in
+// PP-B commit 0a'; Your plants, b3 in chunk 2, brings it back), so these cases keep testing the Add sheet.
 async function openBy(page, button) {
   if (button === 'Paste a list' && !(await has(page, aria('button', button), 300))) await page.locator(aria('button', 'Change site')).click();
-  await page.locator(aria('button', button)).click();
+  if (button === 'Add plants' && !(await has(page, aria('button', button), 300))) await hooked(page, () => window.__ctTest.openSheet('add'));
+  else await page.locator(aria('button', button)).click();
   assert.ok(await findAx(page, { role: 'dialog' }), `the ${button} sheet`);
 }
-// Add one plant: tick it and "Add 1 plant", or, on a row that asks, its "Add {name}" button.
+// Add one plant: tick it and "Add 1 plant", or, on another list's row, its "Add {name}" button.
 async function addPlant(page, name) {
   await openBy(page, 'Add plants');
   await page.locator('::-p-aria([role="searchbox"])').fill(name);
@@ -140,7 +143,7 @@ test('BT-5 (S3 details, offline): a correction sent offline says "Not sent" and 
   await page.close();
 });
 
-test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an invasive warning does not, Remove then Undo, "Add 2 plants", Paste offers Add anyway with a labelled chip', async (t) => {
+test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict and an invasive warning add in one tap with the reason on the row, Remove then Undo, "Add 2 plants", Paste offers Add anyway with a labelled chip', async (t) => {
   await behaviour(t, async (v) => {
     const page = await open({ ...v, data: 'fixture' });
     await start(page);
@@ -165,16 +168,22 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an 
     }
     assert.ok(fills, 'Swap shows "Also fills…"');
 
-    // Juglans next to Malus: a high conflict (genus allelopathic harm) asks first.
+    // Juglans next to Malus: a high conflict (genus allelopathic harm) is said on its row, and one tap
+    // adds it with the Undo toast (inform, don't block; owner 2026-11-14 replaced the ask).
     for (const c of ['Juglans regia', 'Robinia pseudoacacia']) if (await isMember(page, c)) await dropMember(page, c);
-    if (!(await chipOf(page, names['Malus domestica']))) await addPlant(page, names['Malus domestica']);
-    assert.ok(await chipOf(page, names['Malus domestica']), 'Malus is in');
-    await addPlant(page, names['Juglans regia']);
-    assert.ok(await findAx(page, { role: 'alertdialog' }) ?? await findAx(page, { role: 'dialog', name: /conflict|harm/i }), 'a high conflict asks');
-    assert.ok(await findAx(page, { name: /hold back|serious/ }), 'the ask names the conflict');
-    await page.keyboard.press('Escape');
-    assert.equal(await isMember(page, 'Juglans regia'), false, 'Cancel adds nothing');
-    // Robinia: an invasive warning is shown but never asks (France: recorded invasive).
+    if (!(await isMember(page, 'Malus domestica'))) { await addPlant(page, names['Malus domestica']); await closed(page); }
+    assert.ok(await isMember(page, 'Malus domestica'), 'Malus is in');
+    await openBy(page, 'Add plants');
+    await page.locator('::-p-aria([role="searchbox"])').fill(names['Juglans regia']);
+    assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('dialog[open] .ct-rows li')].some((li) => /Juglans regia/.test(li.textContent) && /hold back|serious/i.test(li.textContent)), { timeout: 4000 }).then(() => true, () => false), 'the row names the conflict');
+    await page.locator(aria('checkbox', `${names['Juglans regia']}, Juglans regia`)).click();
+    await page.locator(aria('button', 'Add 1 plant')).click();
+    assert.equal(await findAx(page, { role: 'alertdialog' }, 800), null, 'a high conflict does not ask');
+    await closed(page);
+    assert.ok(await isMember(page, 'Juglans regia'), 'Juglans is added in one tap');
+    assert.ok(await has(page, aria('button', 'Undo')), 'with Undo');
+    await dropMember(page, 'Juglans regia');
+    // Robinia: an invasive warning is shown and adds in one tap too (France: recorded invasive).
     if (await sheetOpen(page)) await page.locator('dialog[open] ' + aria('button', 'Close')).click();
     await closed(page);
     await page.locator(aria('button', 'Change site')).click();
@@ -271,7 +280,7 @@ test('BT-6 (S3 review): Undo goes away when the consortium changes another way; 
   await page.close();
 });
 
-test('BT-6 (S3 review): "Add anyway" keeps the ticks; a guest that misfits asks first and shows its warning; the toast is heard over a sheet; "Add all" says "added with a warning" with Show', async () => {
+test('BT-6 (S3 review): ticks add together, a serious conflict among them; a pasted guest that misfits asks first and shows its warning; the toast is heard over a sheet; "Add all" says "added with a warning" with Show', async () => {
   const page = await open({ width: 1280, data: 'fixture' });
   await start(page);
   for (const c of ['Juglans regia', 'Robinia pseudoacacia']) if (await isMember(page, c)) await dropMember(page, c);
@@ -281,10 +290,10 @@ test('BT-6 (S3 review): "Add anyway" keeps the ticks; a guest that misfits asks 
   await page.locator('::-p-aria([role="searchbox"])').fill(names['Robinia pseudoacacia']);
   await page.locator(aria('checkbox', `${names['Robinia pseudoacacia']}, Robinia pseudoacacia`)).click();
   await page.locator('::-p-aria([role="searchbox"])').fill(names['Juglans regia']);
-  await page.locator(aria('button', `Add ${names['Juglans regia']}`)).click();
-  await page.locator(aria('button', 'Add anyway')).click();
+  await page.locator(aria('checkbox', `${names['Juglans regia']}, Juglans regia`)).click();
+  await page.locator(aria('button', 'Add 2 plants')).click();
   await closed(page);
-  assert.ok(await isMember(page, 'Juglans regia') && await isMember(page, 'Robinia pseudoacacia'), 'the ticked plant joins with the one confirmed');
+  assert.ok(await isMember(page, 'Juglans regia') && await isMember(page, 'Robinia pseudoacacia'), 'both ticked plants join, the serious conflict too (nothing asks)');
 
   // A query lists 8 rows at most, best match first.
   await openBy(page, 'Add plants');

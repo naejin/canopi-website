@@ -26,8 +26,7 @@ test('Item 8: a sheet\'s late close event never closes the next sheet, opened in
   });
   await behaviour(t, async (v) => {
     const page = await suggested(v);
-    await page.locator(aria('tab', 'All plants')).click();
-    const ids = await memberIds(page);
+    const ids = await memberIds(page); // the palette page's chips (All plants went in PP-B commit 0a')
     assert.ok(ids.length >= 2, 'two plants to open');
     await page.locator(`#ct-root [data-plant-id="${ids[0]}"] button, #ct-root button[data-plant-id="${ids[0]}"]`).click();
     await page.waitForSelector('dialog.ct-sheet[open]', { timeout: 8000 });
@@ -42,18 +41,19 @@ test('Item 8: a sheet\'s late close event never closes the next sheet, opened in
     assert.ok(name.includes(second) || second.includes(name), `the second plant's sheet ("${name}", "${second}")`);
     assert.equal(await page.evaluate(() => document.querySelectorAll('dialog.ct-sheet[open]').length), 1);
 
-    // Details → Add: a filled cell's "+" opened as the plant's sheet closes.
+    // Details → Add: the Next step's "See all" (Add preset to the hole; the matrix's "+" went in PP-B
+    // commit 0a') opened as the plant's sheet closes.
     await page.locator('dialog.ct-sheet[open] .ct-sheet-head .ct-icon-button').click();
     await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
-    await page.locator(aria('tab', 'Layers × stages')).click();
-    await page.click('#ct-root [data-plant-id] button, #ct-root button[data-plant-id]');
+    await page.click('#ct-root .ct-chart button[data-plant-id]');
     await page.waitForSelector('dialog.ct-sheet[open]', { timeout: 8000 });
+    assert.ok(await page.$('.ct-next .ct-next-actions .button'), 'a Next step with See all');
     await page.evaluate(() => {
-      const plus = document.querySelector('#ct-root [data-add-filled]');
+      const all = document.querySelector('.ct-next .ct-next-actions .button');
       document.querySelector('dialog.ct-sheet[open]').close();
-      plus.click();
+      all.click();
     });
-    assert.match((await openName(page)) ?? '(none)', /^Add to /, 'Details → "+": Add stays open');
+    assert.ok((await openName(page)) !== null && await page.$('dialog.ct-add[open]'), 'Details → See all: Add stays open');
     await done(page);
   });
 });

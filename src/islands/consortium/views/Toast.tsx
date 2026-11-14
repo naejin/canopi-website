@@ -8,7 +8,7 @@
 // sheet or back out, it is shown outside that region's live part, so it is not read again. A toast goes away by itself after a while, on Dismiss, or on its action.
 // views/Sheets.tsx renders both regions; the store's edits call showToast (store.ts).
 import * as store from '../store.ts';
-import { hideToast, toast, type ToastWhere as Where } from '../store.ts';
+import { hideToast, holdToast, toast, type ToastWhere as Where } from '../store.ts';
 import { T } from '../strings.ts';
 import { focusPlant } from '../focus.ts';
 
@@ -17,7 +17,8 @@ export function Toast({ where = 'page' }: { where?: Where }) {
   const here = (store.sheet.value !== null) === (where === 'sheet');
   const line = here ? toast.value : null;
   const card = line && (
-        <div class="ct-toast" key={line.id}>
+        <div class="ct-toast" key={line.id} onPointerEnter={() => holdToast(true)} onPointerLeave={() => holdToast(false)}
+          onFocusIn={() => holdToast(true)} onFocusOut={(e) => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node | null)) holdToast(false); }}>
           <span class="ct-toast-text">{line.text}</span>
           {line.undo && (
             <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const undo = line.undo; hideToast(); undo?.(); focusPlant(line.focus[0]); }}>{T('undo')}</button>

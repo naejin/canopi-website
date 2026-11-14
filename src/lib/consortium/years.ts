@@ -13,6 +13,9 @@ export const JUDGED_FROM_YEAR = 1;
 export const JUDGED_TO_YEAR = 60;
 
 export const phaseOrd = (p: Phase): PhaseOrd => phases.indexOf(p) as PhaseOrd;
+// The time step a year starts (end false) or ends (end true) on; a year past 60 (null) ends the last.
+export const phaseOfYear = (y: number | null, end = false): PhaseOrd =>
+  (y === null ? PHASE_YEARS.length - 1 : Math.max(0, PHASE_YEARS.findIndex((p) => p[end ? 1 : 0] === y))) as PhaseOrd;
 
 // A plant's span as phase numbers (core phaseSpan's first and last), or null when it has no placement
 // yet ("no layer yet"): the one spanOf every view reads (E6 design check §7.1).
@@ -28,7 +31,6 @@ export const spans = (t: Taxon, phase: number): boolean => {
 
 // The years a plant stands in, from the start of the first stage it is present in to the end of the
 // last (null: it lasts past 60 years); null when it has no placement yet.
-/** @public forward seam for b2 (picture-years, holes); b2 drops the tag. */
 export function yearsOf(t: Taxon): { from: number; to: number | null } | null {
   const s = spanOf(t);
   return s ? { from: PHASE_YEARS[s.from][0], to: PHASE_YEARS[s.to][1] } : null;

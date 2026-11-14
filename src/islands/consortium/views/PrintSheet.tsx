@@ -6,10 +6,11 @@
 // - above 20: the table only ("At a glance" read the matrix and went with it in PP-B commit 0a').
 // No control is printed. Rendered by views/Actions.tsx.
 //
-// The drawing is the side view's own (views/SideView.tsx SideDrawing), of the chosen stage (H6).
+// The drawing is the side view's own (views/SideView.tsx SideDrawing), at the time step chosen in
+// Through the years (store.yearStep; PP-B18).
 import type { Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { jobsOf } from '../../../lib/consortium/index.ts';
-import { climate, country, flags, guests, memberTaxa, site, source, stage } from '../store.ts';
+import { climate, country, flags, guests, memberTaxa, site, source, yearStep } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { page } from './kit/page.ts';
 import { basisLine, countryName, nameOf, phasePlain, phaseTerm, zoneName } from './kit/names.ts';
@@ -51,8 +52,8 @@ export function PrintSheet() {
         {status === 'unchecked' && code ? ` (${T('country.unchecked', { country: countryName(code) })})` : ''}
       </p>
       <p class="ct-print-basis">{T('page.hypothesis')}</p>
-      {small && <p class="ct-print-basis ct-print-stage">{T('side.title', { stage: phasePlain(stage.value) })} · {phaseTerm(stage.value)}</p>}
-      {small && <SideDrawing stage={stage.value} />}
+      {small && <p class="ct-print-basis ct-print-stage">{T('side.title', { stage: phasePlain(yearStep.value) })} · {phaseTerm(yearStep.value)}</p>}
+      {small && <SideDrawing stage={yearStep.value} />}
       <table class="ct-print-table">
         <caption>{T('print.plants')}</caption>
         <thead>
