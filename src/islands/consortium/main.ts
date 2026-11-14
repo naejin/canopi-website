@@ -129,9 +129,11 @@ if (root && data) {
     const before = shownBefore, landed = location.hash;
     shownBefore = null;
     // A link opened in the tab (pasted, or a same-page link) fires popstate before its hashchange,
-    // onto a new entry with no state: not a move across the page's entries (every one of those holds
-    // the state persist.ts writes). Without the Navigation API historyMoved would read it as a Back.
-    if (e.state == null) return;
+    // onto a new entry with a fragment and no state: not a move across the page's entries, since the
+    // page writes a state with every fragment it writes (persist.ts writeAddress; it writes no state
+    // only with no fragment: Start over, an Undo back to an empty palette, review r4 null-1). Without
+    // the Navigation API historyMoved would read it as a Back.
+    if (e.state == null && location.hash.length > 1) return;
     const moved = historyMoved();
     if (!moved) return;
     if (moved.place) changeSite();
