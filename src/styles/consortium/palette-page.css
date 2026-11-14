@@ -1,8 +1,10 @@
 /* the Plant palette page (stream b2): page-level, imported by src/components/consortium/ConsortiumPage.astro (PP-B commit 0).
    Colours only from the token block of src/styles/tokens.css (plant-palette-architecture 3.5). */
 
-/* The page: steps, then the Next step, Through the years and the jobs, one column at every width. */
+/* The page: steps, then the Next step, Through the years and the jobs: one column on a phone and a
+   tablet; on a laptop the Next step stands beside the pictures, as on the boards (review r1 conformance-7). */
 .ct .ct-palette-page { display: grid; gap: 24px; min-width: 0; }
+.ct .ct-palette-body, .ct .ct-palette-pictures { display: grid; gap: 24px; min-width: 0; align-items: start; }
 .ct .ct-palette-page > h2 { margin: 0; font-family: var(--font-display); font-size: 28px; font-weight: 400; line-height: 1.2; }
 .ct .ct-steps ol { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font-size: 15px; }
 .ct .ct-steps li { display: flex; align-items: center; min-width: 0; }
@@ -25,6 +27,11 @@
 .ct .ct-next-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
 .ct .ct-other-holes ul { display: grid; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
 .ct .ct-other-holes summary { min-height: 40px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+/* The warning mark at text size (details.css sizes it in the sheets only). */
+.ct .ct-palette-page .ct-glyph { display: inline-block; width: 16px; height: 16px; flex: none; vertical-align: -3px; }
+.ct .ct-fillers .ct-flag-line .ct-glyph { margin-top: 2px; }
+.ct .ct-fillers-head { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; font-size: 15px; font-weight: 600; color: var(--level-look); }
+.ct .ct-fillers .ct-flag-line { flex: 1 0 100%; display: inline-flex; gap: 6px; align-items: flex-start; font-size: 14px; color: var(--level-look); }
 
 /* A fit line: its icon and its words (colour never alone). */
 .ct .ct-fit { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--level-fits); }
@@ -42,11 +49,12 @@
 .ct .ct-chart-columns li { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; text-align: center; }
 .ct .ct-chart-svg { display: block; width: 100%; height: auto; min-height: 60px; }
 .ct .ct-chart-lane { fill: var(--surface); stroke: var(--border); stroke-width: 1; }
-.ct .ct-chart-lane[data-lane="emergent"] { stroke: var(--light-emergent); }
-.ct .ct-chart-lane[data-lane="high"] { stroke: var(--light-high); }
-.ct .ct-chart-lane[data-lane="medium"] { stroke: var(--light-medium); }
-.ct .ct-chart-lane[data-lane="low"] { stroke: var(--light-low); }
-.ct .ct-chart-lane[data-lane="none"] { stroke: var(--light-none); }
+/* Light levels: filled swatches with their outline, the level's words beside them (tokens.css rule). */
+.ct .ct-chart-swatch { fill: var(--light-none); stroke: var(--light-outline); stroke-width: 1; }
+.ct .ct-chart-swatch[data-lane="emergent"], .ct .ct-light-swatch[data-lane="emergent"] { fill: var(--light-emergent); background: var(--light-emergent); }
+.ct .ct-chart-swatch[data-lane="high"], .ct .ct-light-swatch[data-lane="high"] { fill: var(--light-high); background: var(--light-high); }
+.ct .ct-chart-swatch[data-lane="medium"], .ct .ct-light-swatch[data-lane="medium"] { fill: var(--light-medium); background: var(--light-medium); }
+.ct .ct-chart-swatch[data-lane="low"], .ct .ct-light-swatch[data-lane="low"] { fill: var(--light-low); background: var(--light-low); }
 .ct .ct-chart-unjudged { stroke: var(--text-secondary); stroke-width: 1; }
 .ct .ct-chart-hole { fill: none; stroke: var(--level-look); stroke-width: 2; stroke-dasharray: 6 4; }
 .ct .ct-chart-band { fill: var(--text-secondary); }
@@ -57,12 +65,25 @@
 .ct .ct-chart-band[data-job="helpers"] { fill: var(--role-helpers); }
 .ct .ct-chart-band[data-job="shelter"] { fill: var(--role-shelter); }
 .ct .ct-chart-lanes { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.ct .ct-chart-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 0 6px 10px; border-left: 4px solid var(--light-none); min-width: 0; }
-.ct .ct-chart-row[data-lane="emergent"] { border-left-color: var(--light-emergent); }
-.ct .ct-chart-row[data-lane="high"] { border-left-color: var(--light-high); }
-.ct .ct-chart-row[data-lane="medium"] { border-left-color: var(--light-medium); }
-.ct .ct-chart-row[data-lane="low"] { border-left-color: var(--light-low); }
-.ct .ct-chart-head { flex: 1 0 100%; font-weight: 600; font-size: 15px; }
+.ct .ct-chart-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 0; min-width: 0; }
+.ct .ct-chart-head { flex: 1 0 100%; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
+.ct .ct-light-swatch { flex: none; width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--light-outline); background: var(--light-none); }
+/* The key: what colour and icon mean (each main job, its icon and word). */
+.ct .ct-chart-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 14px; color: var(--text-secondary); }
+.ct .ct-chart-key p { margin: 0; }
+.ct .ct-chart-key ul { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; color: var(--text); }
+.ct .ct-chart-key li { display: inline-flex; align-items: center; gap: 6px; }
+.ct .ct-job-icon { display: inline-block; flex: none; width: 16px; height: 16px; color: var(--text-secondary); background: currentColor; -webkit-mask: var(--job-mark) center / contain no-repeat; mask: var(--job-mark) center / contain no-repeat; }
+@media (forced-colors: active) { .ct .ct-job-icon { forced-color-adjust: none; background: CanvasText; } }
+.ct .ct-job-icon[data-job="feeds_you"] { color: var(--role-food); --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 5.5c-2.8 0-4.5 1.9-4.5 4.3S5.4 14 8 14s4.5-1.8 4.5-4.2S10.8 5.5 8 5.5zM8 5.5V2.5m0 1c.9-.9 2.2-1 3-.8' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.ct .ct-job-icon[data-job="feeds_soil"] { color: var(--role-soil); --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 12.5h12M8 12.5V7m0 0c0-2.4-1.8-3.5-4-3.5 0 2.1 1.6 3.5 4 3.5zm0 2c0-2 1.5-3 3.5-3 0 2-1.5 3-3.5 3z' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.ct .ct-job-icon[data-job="mulch"] { color: var(--role-mulch); --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 13c0-5.5 3.8-8.8 10-10-.8 6-4.2 10-10 10zm0 0 5.5-5.5' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.ct .ct-job-icon[data-job="ground"] { color: var(--role-ground); --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 9.5c2.2-2 4.3-2 6.5 0s4.3 2 6.5 0M1.5 13h13' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.ct .ct-job-icon[data-job="helpers"] { color: var(--role-helpers); --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 6.3a1.7 1.7 0 1 0 0 3.4 1.7 1.7 0 0 0 0-3.4zM8 2v3M8 11v3M2 8h3m6 0h3' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.ct .ct-job-icon[data-job="shelter"] { color: var(--role-shelter); --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 8.5 8 3l6 5.5M4 7.2V13h8V7.2' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.ct .ct-job-icon[data-job="none"] { --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8h8' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.ct .ct-chip { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.ct .ct-chart-columns li[data-at] { color: var(--text); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .ct .ct-chip, .ct .ct-hole-button { min-height: 40px; max-width: 100%; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; cursor: pointer; overflow-wrap: anywhere; text-align: start; }
 .ct .ct-chip-more { font-weight: 600; }
 .ct .ct-hole-button { border-style: dashed; border-color: var(--level-look); border-radius: 6px; }
@@ -71,13 +92,23 @@
 .ct .ct-chart-table th, .ct .ct-chart-table td { padding: 6px 8px; border: 1px solid var(--border); text-align: start; vertical-align: top; overflow-wrap: anywhere; }
 .ct .ct-chart-table th { font-weight: 600; }
 
-/* Through the years on a phone: one time step, with Earlier and Later. */
+/* Through the years: the time step chosen (on a phone, the one shown), with Earlier and Later. */
 .ct .ct-years { display: grid; gap: 10px; min-width: 0; }
 .ct .ct-stepper { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ct .ct-stepper-at { font-weight: 600; }
+.ct .ct-stepper-note { color: var(--text-secondary); font-size: 14px; }
+.ct .ct-stepper [aria-disabled="true"] { opacity: 0.55; cursor: default; }
+
+@media (min-width: 960px) {
+  .ct .ct-palette-body[data-pictures] { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); }
+  .ct .ct-palette-body[data-pictures] > .ct-next { grid-column: 2; grid-row: 1; }
+  .ct .ct-palette-body[data-pictures] > .ct-palette-pictures { grid-column: 1; grid-row: 1; }
+}
 
 @media (max-width: 639px) {
   .ct .ct-next { padding: 16px; }
+  /* Tap targets of 44 px on a phone (review r1 bugs-14). */
+  .ct .ct-chip, .ct .ct-hole-button, .ct .ct-steps .ct-step, .ct .ct-other-holes summary { min-height: 44px; }
   /* The table as blocks: each row a card, each cell named by its column, so nothing scrolls sideways. */
   .ct .ct-chart-table, .ct .ct-chart-table tbody, .ct .ct-chart-table tr, .ct .ct-chart-table th, .ct .ct-chart-table td { display: block; width: auto; }
   .ct .ct-chart-table thead { display: none; }

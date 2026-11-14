@@ -3,7 +3,7 @@
 // lazyPart: the views after the matrix (one chunk, views/later.ts), the sheets (views/Sheets.tsx: the
 // plant dialog, Swap, Add, Paste; the dialog's correction form) and the slots' feature chunks.
 // prefetchLater() loads every part registered with later() once, in the browser's idle time, on the
-// first of: the consortium first on screen (the palette slot, Actions.tsx FirstPaint at ct:first-view) or the data ready (store.load =
+// first of: the consortium first on screen (the palette page's Next step, views/palette/Palette.tsx at ct:first-view) or the data ready (store.load =
 // ready), so a reader who stays on Start has Search and Paste at hand too, and nothing lazy competes
 // with the database download. A part used before its prefetch finished loads on demand through the
 // same promise (one request per chunk); a failed load clears it, so the next use asks again (L4), and,
@@ -127,7 +127,10 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
         if (!live) return;
         if (onFail === 'closeSheet') {
           closeSheet();
-          showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => location.reload() });
+          // Offline, a Reload would lose the page (architecture 9): it says it needs a connection; the
+          // sheet's next opening asks for its chunk again (retryable).
+          if (offline.peek()) showToast(T('load.needsConnection'), null);
+          else showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => location.reload() });
         } else setFailed(true);
       });
       return () => { live = false; };
@@ -189,7 +192,7 @@ export function laterModule<M>(importer: () => Promise<M>): () => Promise<M> {
   return () => gate('later').then(fetch);
 }
 
-// Once, on the first of the consortium on screen (Actions.tsx FirstPaint calls it at ct:first-view) or the data ready
+// Once, on the first of the consortium on screen (views/palette/Palette.tsx calls it at ct:first-view) or the data ready
 // (below): every later part, in the browser's idle time.
 export function prefetchLater(): void {
   if (started) return;

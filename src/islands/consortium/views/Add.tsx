@@ -1,7 +1,9 @@
 /** @jsxImportSource preact */
-// Add (stream S3; mockup 05 `add`): the plants of the climate's list, or of one cell (a free cell's
-// "+ Add", "Show them anyway"), or of one job (Jobs' "Find…", for a run of stages in any layer when
-// the job has a stage gap), with a search over folded names (S1's searchIndex, A6). Multi-select:
+// Add (stream S3; mockup 05 `add`): the plants of the climate's list, or the plants that fill one hole
+// (the palette page's Next step, "See all" and Find, the pictures' hole buttons: core holes.ts fills, handed as the sheet's `fits`,
+// the rule the Next step counts with, so "See all N" lists N), with a search over folded names (S1's
+// searchIndex, A6). Site misfits are never left out (inform, don't block; review r1 bugs-3): they come
+// last with their reason. Multi-select:
 // tick several, then "Add 2 plants" in the sticky bar; 8 rows, then "Show all N". Inform, don't block
 // (owner decision 2026-11-14; it replaces the 2026-10-28 "Add it anyway?" rule): every row has a tick
 // and nothing asks; a site misfit, a serious conflict or an outside-range plant keeps its reason on
@@ -19,7 +21,7 @@ import { asGuest, asks as sortsLast } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/search.ts';
 import { addMembers, closeSheet, flagsOfPlant, sheetCell } from '../store.ts';
 import { Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
-import { FitLine } from './kit/fit.tsx';
+import { FitLine, holeWords } from './kit/fit.tsx';
 import { nameOf, num, phasePlain, spanWords, zoneName } from './kit/names.ts';
 import { PlantMarks } from './PlantMarks.tsx';
 import { jobFind } from './StageBar.tsx';
@@ -46,21 +48,21 @@ function heightWords(t: Taxon): string {
 
 export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; Frame: Frame }) {
   const pool = store.pool.value;
-  // A plant outside its observed range at the site is listed behind "Show N outside their climate
-  // range", or found by name, marked in words (owner 2026-11-14). When nothing fits the site, the
-  // search ("Search all plants") lists every plant, each marked, rather than none.
+  // A plant outside its climate range at the site is listed behind "Show N outside their climate
+  // range", or found by name, marked in words (owner 2026-11-14). Outside as its verdict says (for the
+  // page's period, as the Next step groups it; review r1 bugs-13), or, before the verdict rule is here,
+  // as the range rule says today. When nothing on the list fits, every plant is listed, each marked.
   const loc = store.location.value;
   const rule = store.rangeRule.value;
-  const outside = (t: Taxon) => !!rule && rule.rangeFit(t, loc) === 'outside';
-  const fitting = store.fitPool.value?.some((t) => !outside(t)) ? store.fitPool.value : null;
+  const verdicts = store.poolVerdicts.value;
+  const outside = (t: Taxon) => (verdicts ? verdicts.get(t.id)?.level === 'outside' : !!rule && rule.rangeFit(t, loc) === 'outside');
   // The list order only (rules/list-query.ts addOrder): misfits, serious conflicts and outside-range
   // plants come after the others; nothing asks.
   const last = (flags: Flag[], t?: Taxon) => sortsLast(flags) || (!!t && outside(t));
   const scene = store.flagScene.value;
-  const verdicts = store.poolVerdicts.value;
   const climate = store.climate.value;
-  // What Add was opened for (store.openSheet): a cell or run of one layer, a job, and `anyway`.
-  const { cell, job, anyway } = mode === 'add' ? sheetCell.value : store.FOR_NOTHING;
+  // What Add was opened for (store.openSheet): a hole (its plants), else a job or a run of one layer.
+  const { cell, job, hole, fits } = mode === 'add' ? sheetCell.value : store.FOR_NOTHING;
   const members = store.members.value;
   const [query, setQuery] = useState('');
   const [all, setAll] = useState(false);
@@ -73,29 +75,26 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
   // Another climate's list is read only once a name is typed (it can only answer a query).
   useEffect(() => { if (q) for (const z of otherZones) void store.loadPool(z); }, [q !== '', otherZones.join()]);
 
-  // A cell's "+ Add" lists the plants that fit the site there (the cell's "N fit"), counted as the
-  // matrix counts them (core matrix.ts: a misfit beside the members' canopy); "Show them anyway"
-  // lists every plant of the cell or run, the misfits flagged.
+  // A hole lists the plants that fill it (holes.ts fills, via the sheet's `fits`); otherwise the list's plants of the job or
+  // run (rules/list-query.ts), every site misfit included (`anyway`: nothing is hidden for the site).
   const site = store.site.value, taxa = store.memberTaxa.value;
-  // (rules/list-query.ts, the one filter rule of Add and the plant list.)
-  const base = useMemo(() => (pool ? listQuery(query.trim() ? pool : fitting ?? pool, addQuery({ cell, job, anyway }, site, taxa)) : []),
-    [pool, fitting, query.trim() !== '', cell, job, anyway, site, taxa]);
+  const base = useMemo(() => (!pool ? [] : hole && fits ? pool.filter(fits) : listQuery(pool, addQuery({ cell, job, anyway: true }, site, taxa))),
+    [pool, hole, fits, cell, job, site, taxa]);
+  // Without a query, the plants outside their range go behind "Show N outside their climate range"
+  // (when any other plant is listed): Add's rows and that group together are what "See all N" counts.
+  const grouped = useMemo(() => !q && base.some((t) => !members.includes(t.id) && !outside(t)), [base, q, members, verdicts, rule, loc]);
   const rows = useMemo(() => {
     if (!pool) return [];
-    const list = base.filter((t) => !members.includes(t.id)).map((t) => ({ t, flags: flagsOfPlant(t) })).map((r) => ({ ...r, asks: last(r.flags, r.t) }));
+    const list = base.filter((t) => !members.includes(t.id) && !(grouped && outside(t))).map((t) => ({ t, flags: flagsOfPlant(t) })).map((r) => ({ ...r, asks: last(r.flags, r.t) }));
     if (q) {
       // Best match first (S1's score: whole name, name prefix, word prefix, then by name).
       const score = new Map(searchOf(pool)(q).map((x, i) => [x.id, i]));
       return list.filter((r) => score.has(r.t.id)).sort((a, b) => score.get(a.t.id)! - score.get(b.t.id)!);
     }
     return addOrder(list);
-  }, [pool, base, members, q, store.flagContext.value, store.site.value]);
-  // Without a query, the list's plants outside their range at the site for what Add was opened for
-  // (the fitting list leaves them out): behind "Show N outside their climate range".
-  const outsideRows = useMemo(() => {
-    if (!pool || q || !fitting) return [];
-    return listQuery(pool, addQuery({ cell, job, anyway }, site, taxa)).filter((t) => outside(t) && !members.includes(t.id)).map((t) => ({ t, flags: flagsOfPlant(t), asks: true }));
-  }, [pool, q, fitting, cell, job, anyway, site, taxa, members, rule, loc]);
+  }, [pool, base, grouped, members, q, store.flagContext.value, store.site.value, verdicts]);
+  const outsideRows = useMemo(() => (!grouped ? [] : base.filter((t) => outside(t) && !members.includes(t.id)).map((t) => ({ t, flags: flagsOfPlant(t), asks: true }))),
+    [base, grouped, members, verdicts, rule, loc]);
   // The other climates' matches not in this list: one-tap Add, each from the first list that has it.
   const elsewhere = useMemo(() => {
     if (!pool || !q) return [];
@@ -124,7 +123,8 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
     closeSheet();
     addMembers(ids, from);
   };
-  const title = mode === 'search' ? T('add.searchTitle')
+  // Opened for a hole: titled with the hole in the Next step's words (review r1 conformance-10).
+  const title = mode === 'search' ? T('add.searchTitle') : hole ? holeWords(hole)
     : cell?.stratum ? T('add.titleCell', { layer: T(`stratum.${cell.stratum}`), phase: cell.from === cell.to ? phasePlain(cell.from) : `${phasePlain(cell.from)} → ${phasePlain(cell.to)}` })
     : job ? jobFind(job, cell) : T('add.title');
   const n = selected.length;

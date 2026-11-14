@@ -4,7 +4,7 @@
 // light level recorded are a row of their own, counted, never dropped. Pure; words are Lines.
 import type { Hole, Line, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { PHASE_YEARS, strata, spans, yearsLine, yearsOf } from '../../../lib/consortium/index.ts';
-import { holeAt, judgedColumn, lane, type Picture } from './picture.ts';
+import { holeAt, judgedColumn, lane, namesAndJobs, type Picture } from './picture.ts';
 
 const L = (key: string, count?: number): Line => (count === undefined ? { key: `consortium.palette.${key}`, vars: {} } : { key: `consortium.palette.${key}`, vars: {}, count });
 
@@ -22,6 +22,6 @@ export function yearsPicture({ members, holes, nameOf, first }: PictureInput): P
   return {
     title: 'consortium.palette.yearsTitle', columns, rows,
     summary: [L('yearsSummary', members.length), L('yearsHoles', open)],
-    names: Object.fromEntries(members.map((t) => [t.id, nameOf(t)])),
+    ...namesAndJobs(members, nameOf),
   };
 }

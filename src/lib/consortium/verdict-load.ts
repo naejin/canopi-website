@@ -12,12 +12,23 @@ export interface VerdictRule {
   judgedPeriod(taxon: Taxon, page: PeriodId): PeriodId;
 }
 
-let loading: Promise<VerdictRule> | null = null;
+// Chromium keeps a failed import() of a URL for the page's life, so a plain second import() never
+// fetches: after a failure the next call imports the same hashed file under a fresh URL (?retry=n),
+// read from the error (views/lazy.tsx retryable does the same for the views; lib may not import views,
+// nor read the browser's location). An error naming no /_astro/ chunk leaves the plain import, which
+// fails again (the page then says so).
+let loading: Promise<VerdictRule> | null = null, failed: string | null = null, tries = 0;
+const chunkOf = (err: unknown): string | null => {
+  const url = /https?:\/\/[^\s'"]+?\.js\b/.exec(String((err as Error)?.message ?? err))?.[0] ?? null;
+  return url && /\/_astro\/[\w.-]+\.js$/.test(url) ? url : null;
+};
 export function loadVerdictRule(): Promise<VerdictRule> {
+  if (loading) return loading;
+  const chunk = failed === null ? import('./verdict.ts') : (import(/* @vite-ignore */ `${failed}?retry=${++tries}`) as Promise<typeof import('./verdict.ts')>);
   // Destructured, so Rollup keeps only these exports of the chunk's facade.
-  loading ??= import('./verdict.ts').then(
+  loading = chunk.then(
     ({ verdicts, holdsBy, asksBefore, judgedPeriod }): VerdictRule => ({ verdicts, holdsBy, asksBefore, judgedPeriod }),
-    (err: unknown) => { loading = null; throw err; },
+    (err: unknown) => { loading = null; failed ??= chunkOf(err); throw err; },
   );
   return loading;
 }

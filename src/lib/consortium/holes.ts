@@ -72,7 +72,9 @@ function holesOf(kind: 'job' | 'light', what: JobId | Stratum, doers: readonly T
   const covered = new Set<number>(doers.flatMap((t) => phaseSpan(t)));
   return gaps(covered).map(({ from, to }) => {
     const notJudged = to <= JUDGED_FROM_YEAR;
-    const whole = from === 0 && to === JUDGED_TO_YEAR;
+    // Whole: the gap covers every judged year (year 1 to 60), so a job done only in the first months
+    // is a job nobody does (rank 1), never "part of the years".
+    const whole = from <= JUDGED_FROM_YEAR && to === JUDGED_TO_YEAR;
     const id = holeId(kind, what, from, to);
     const hole: Hole = {
       id, kind, rank: holeRank(kind, whole), fromYear: from, toYear: to,

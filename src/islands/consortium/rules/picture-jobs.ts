@@ -4,7 +4,7 @@
 // recorded are a row of their own, counted, never dropped. Pure; words are Lines.
 import type { Line } from '../../../lib/consortium/index.ts';
 import { jobIds, jobsOf, PHASE_YEARS, spans, yearsLine, yearsOf } from '../../../lib/consortium/index.ts';
-import { holeAt, judgedColumn, lane, type Picture } from './picture.ts';
+import { holeAt, judgedColumn, lane, namesAndJobs, type Picture } from './picture.ts';
 import type { PictureInput } from './picture-years.ts';
 
 export function jobsPicture({ members, holes, nameOf, first }: PictureInput): Picture {
@@ -20,6 +20,6 @@ export function jobsPicture({ members, holes, nameOf, first }: PictureInput): Pi
   return {
     title: 'consortium.palette.jobsTitle', columns, rows,
     summary: [head('jobsSummary', members.length), head('jobsHoles', open)],
-    names: Object.fromEntries(members.map((t) => [t.id, nameOf(t)])),
+    ...namesAndJobs(members, nameOf),
   };
 }

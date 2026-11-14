@@ -5,7 +5,8 @@
 // tool's first heading (Start's, after an Undo back to Start).
 import type { PlantId } from '../../lib/consortium/index.ts';
 
-function focusSoon(find: () => HTMLElement | null): void {
+// then: told the element focused (the Next step's Add hands the toast's way back to it).
+function focusSoon(find: () => HTMLElement | null, then?: (el: HTMLElement) => void): void {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     const sheet = document.querySelector<HTMLDialogElement>('dialog[open]');
     let el = find();
@@ -14,6 +15,7 @@ function focusSoon(find: () => HTMLElement | null): void {
     if (!el) return;
     if (!el.matches('button, a[href], input, select, textarea, [tabindex]')) el.tabIndex = -1;
     el.focus();
+    then?.(el);
   }));
 }
 
@@ -44,6 +46,13 @@ export function focusPlant(id: PlantId | undefined): void {
 // toast goes while the focus is in it (or was lost to <body>): else the page title, never <body>
 // (architecture 9; A25, PP-B17).
 let opener: HTMLElement | null = null;
+// After a Next step's Add (its row and button leave as the plant joins): the Next step's title, which
+// every state of the card shows (its next hole, or none left), else the page title; the toast hands
+// the focus back there, not to the removed button (Focus board; slices b2 P8).
+export function focusNextStep(): void {
+  if (typeof document === 'undefined') return;
+  focusSoon(() => document.getElementById('ct-next-t') ?? viewHeading(), (el) => { opener = el; });
+}
 export function noteToastOpener(): void {
   if (typeof document === 'undefined') return;
   const at = document.activeElement as HTMLElement | null;

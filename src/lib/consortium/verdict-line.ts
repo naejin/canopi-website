@@ -25,6 +25,8 @@ export function holeLine(h: Hole): Line {
   const { fromYear: from, toYear: to } = h;
   if (from === 0 && to >= 60) return { key: K('holeAlways'), vars: {} };
   if (from === 0) return { key: K('holeFirst'), vars: {}, count: to };
+  // From under a year to 60: every judged year, said as "after month n", never "after year 0.25".
+  if (from < 1 && to >= 60) return { key: K('holeAfterMonth'), vars: { month: monthOf(from) } };
   if (to >= 60) return { key: K('holeAfter'), vars: { from } };
   if (from < 1) return { key: K('holeFromMonth'), vars: { month: monthOf(from), to } };
   return { key: K('holeBetween'), vars: { from, to } };

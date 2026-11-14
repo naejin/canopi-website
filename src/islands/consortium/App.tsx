@@ -11,6 +11,7 @@
 // - Sheets: the sheets' router and the toast; views/Sheets.tsx routes store.sheet itself (the plant
 //   dialog, Swap, Add, Search, Paste, each loaded on first use) and renders the toast.
 import type { ComponentType } from 'preact';
+import { computed } from '@preact/signals';
 import { load, offline, opening, slow, step } from './store.ts';
 import { T } from './strings.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
@@ -22,7 +23,7 @@ import { Placeholder } from './views/palette/Placeholder.tsx';
 
 // The palette page, its own chunk (role `palette`): if it does not load, Place stays usable and the
 // failed line's Reload fetches it again in place (`?retry=n`; PP-B24).
-const PalettePage = lazyPart(retryable(() => import('./views/palette/Palette.tsx'), (m) => m.Palette), { retry: true, page: true, loading: Placeholder });
+export const PalettePage = lazyPart(retryable(() => import('./views/palette/Palette.tsx'), (m) => m.Palette), { retry: true, page: true, loading: Placeholder });
 // Kept in the first run: modules the sheets, the later views and the future panel share, which no
 // first-run module imports since the matrix went (PP-B commit 0a'), so no part pays for them on first
 // use and no sheet imports a lazy chunk statically (check-built-site's K3 rule).
@@ -48,6 +49,24 @@ const screens: Record<LoadFailure, { text: string; action: 'retry' | 'reload' | 
 
 const slot = (View: ComponentType | null) => (View ? <View /> : null);
 
+// App reads only what changes the screens (perf-6): the offline line, the loading line and the
+// restoring switch read their own signals in small parts, so going offline, "Still loading" or the
+// return visit's end never re-renders the palette page.
+const restoring = computed(() => opening.value && step.value !== 'palette');
+const ready = computed(() => load.value.status === 'ready');
+function OfflineLine() {
+  return <p class="ct-offline" role="status">{offline.value ? T('load.offline') : ''}</p>;
+}
+// The database still loading: one status line on the page from the start, its words switching to
+// "Still loading" after the threshold, so the change is announced (bugs-12).
+function LoadingLine() {
+  const busy = !ready.value;
+  return <p class="status-line" role="status" aria-busy={busy ? 'true' : undefined}>{busy ? T(slow.value ? 'load.slow' : 'load.plants') : ''}</p>;
+}
+function PlaceOrPlaceholder() {
+  return restoring.value ? <Placeholder /> : slot(Place);
+}
+
 export function App({ guide, onRetry }: AppProps) {
   const { status, error } = load.value;
   if (status === 'failed' && error) {
@@ -64,14 +83,13 @@ export function App({ guide, onRetry }: AppProps) {
   }
   // A return visit restoring shows the palette's placeholder, never the Place form (P2), and so does
   // the palette page until the plants are read and its chunk is in.
-  const onPalette = step.value === 'palette', restoring = opening.value && !onPalette;
-  const loadingLine = status !== 'ready' && <p class="status-line" aria-busy="true">{T(slow.value ? 'load.slow' : 'load.plants')}</p>;
+  const onPalette = step.value === 'palette';
   return (
     <>
-      <p class="ct-offline" role="status">{offline.value ? T('load.offline') : ''}</p>
-      {restoring ? <Placeholder /> : slot(Place)}
+      <OfflineLine />
+      <PlaceOrPlaceholder />
       {onPalette && status !== 'ready' && <Placeholder />}
-      {loadingLine}
+      <LoadingLine />
       {status === 'ready' && (
         <>
           {onPalette && <PalettePage.View />}

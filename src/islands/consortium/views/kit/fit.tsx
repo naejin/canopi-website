@@ -4,8 +4,8 @@
 // core's verdict-line.ts (plant-palette-architecture 3.2): no view writes its own. Numbers are
 // formatted for the page language by strings.ts. Unknown is never drawn as a fit: "Not checked"
 // has its own icon and the plain text colour.
-import type { Level, Line, PlantVerdict } from '../../../../lib/consortium/index.ts';
-import { fitLine } from '../../../../lib/consortium/index.ts';
+import type { Hole, JobId, Level, Line, PlantVerdict } from '../../../../lib/consortium/index.ts';
+import { fitLine, holeLine } from '../../../../lib/consortium/index.ts';
 import { P, T } from '../../strings.ts';
 
 // A Line's words. Keys come whole (consortium.<group>.<name>); strings.ts takes them without the
@@ -34,3 +34,16 @@ export function FitLine({ v, known }: { v: PlantVerdict | null | undefined; know
   const level: Level = v?.level ?? known ?? 'unknown';
   return <span class="ct-fit" data-level={level}><LevelIcon level={level} />{say(v ? fitLine(v) : { key: `consortium.line.${level}`, vars: {} })}</span>;
 }
+
+// A hole in words: its lane (a job, a light level) and its years. The Next step, the hole buttons and
+// Add's title (opened for a hole) all say it the same way.
+export const holeWords = (h: Hole): string => `${T(h.kind === 'job' ? `job.${h.job}` : `palette.light_${h.stratum}`)}: ${say(holeLine(h))}`;
+
+// A plant's main job as an icon in the job's colour (palette-page.css [data-job]: one element, the
+// job's mark drawn as a mask, so 200 plants' chips stay light; 200-plant scale), always beside its word
+// or with the word in the control's name (colour and icon never alone; board Main's key).
+export function JobIcon({ job }: { job: JobId | null }) {
+  return <span class="ct-job-icon" data-job={job ?? 'none'} aria-hidden="true" />;
+}
+// A main job's word (the jobs picture's "No job recorded" for none).
+export const jobWord = (job: JobId | null): string => (job ? T(`job.${job}`) : T('palette.jobsNone'));

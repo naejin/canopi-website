@@ -70,8 +70,9 @@ function isColdLimited(taxon: Taxon, tmin: number): boolean {
 }
 
 // The spot and soil hints asked today (light, water, a soil word), each at most 'look'.
-function hintFactors(taxon: Taxon, ctx: VerdictContext): { factors: FactorVerdict[]; roomTall: boolean } {
-  const site = siteFor(ctx.place, ctx.lookup);
+// site: siteFor(ctx.place, ctx.lookup), read once per verdicts() call (resolveSoil runs in it).
+type SiteOf = ReturnType<typeof siteFor>;
+function hintFactors(taxon: Taxon, ctx: VerdictContext, site: SiteOf): { factors: FactorVerdict[]; roomTall: boolean } {
   const fit = fits(taxon, site);
   const shaded = !!ctx.canopy && shadedBy(taxon, site, ctx.canopy);
   const factors: FactorVerdict[] = [];
@@ -89,14 +90,19 @@ const worst = (fs: readonly FactorVerdict[]): FactorVerdict | null =>
   fs.reduce<FactorVerdict | null>((w, f) => (ORDER[f.level] > (w ? ORDER[w.level] : 0) ? f : w), null);
 
 export function verdict(taxon: Taxon, ctx: VerdictContext): PlantVerdict {
+  return verdictAt(taxon, ctx, siteFor(ctx.place, ctx.lookup));
+}
+function verdictAt(taxon: Taxon, ctx: VerdictContext, site: SiteOf): PlantVerdict {
   const judged = judgedPeriod(taxon, ctx.period);
   const climate = climateFactors(taxon, ctx, judged, ctx.scenario);
-  const hints = hintFactors(taxon, ctx);
+  const hints = hintFactors(taxon, ctx, site);
   const factors = [...(climate?.factors ?? []), ...hints.factors];
   const notes: VerdictNote[] = [...new Set<VerdictNote>(climate?.notes ?? [])];
   if (hints.roomTall) notes.push('room-tall');
   if (isAnnual(taxon)) notes.push('annual');
   const limiting = worst(factors);
+  // A range recorded with no side that applies (an annual with only its winter cold) is 'fits': the
+  // canopi-data range-verdict contract (DATA-1, SYN:annual.grown_as_annual: "inside") says so.
   const level: Level = limiting ? limiting.level : climate ? 'fits' : 'unknown';
   const out: PlantVerdict = { id: taxon.id, judged, ownYears: judged !== ctx.period, level, limiting, factors, notes };
   // The scenarios that agree on a later period (each scenario's slot judged the same way).
@@ -115,7 +121,8 @@ export function verdict(taxon: Taxon, ctx: VerdictContext): PlantVerdict {
 }
 
 export function verdicts(taxa: readonly Taxon[], ctx: VerdictContext): Map<PlantId, PlantVerdict> {
-  return new Map(taxa.map((t) => [t.id, verdict(t, ctx)]));
+  const site = siteFor(ctx.place, ctx.lookup);
+  return new Map(taxa.map((t) => [t.id, verdictAt(t, ctx, site)]));
 }
 
 // Whether a plant stays within its climate range through a period (P34, P35): judged for the years it

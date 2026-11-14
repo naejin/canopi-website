@@ -3,8 +3,8 @@
 // render loop. Views read and set these signals; only the actions a stream adds write several at once.
 // Renaming or removing a signal is a seam change for the coordinator; streams may add actions and,
 // inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
-import { batch, computed, effect, signal } from '@preact/signals';
-import type { CellSpan, ClimateZone, PhaseOrd, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, PlantId, PlantVerdict, RangeRule, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
+import { batch, computed, effect, signal, untracked } from '@preact/signals';
+import type { CellSpan, ClimateZone, Hole, PhaseOrd, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, PlantId, PlantVerdict, RangeRule, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
 import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, loadVerdictRule, needsMarkProviders, siteFor, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
@@ -24,10 +24,10 @@ export interface Country { code: string | null; source: CountrySource | null }
 // empty palette slot since PP-B commit 0a' deleted the old screens (its writers: state/draft.ts,
 // restore.ts, suggest-wait.ts, addMembers below); b2 replaces the type with 'place' | 'palette' | 'plan'.
 export type View = 'start' | 'matrix';
-// The header step the page is on (Your place, Your palette, Planting plan; PP-B P1). Read from `view`
-// until its writers (state/draft.ts, restore.ts, suggest-wait.ts) take the step values: 'start' is the
-// place, 'matrix' the palette page (b2, additive seam).
-export type Step = 'place' | 'palette' | 'plan';
+// The header step the page is on (Your place, Your palette; PP-B P1; the Planting plan step comes with
+// its page). Read from `view` until its writers (state/draft.ts, restore.ts, suggest-wait.ts) take the
+// step values: 'start' is the place, 'matrix' the palette page (b2, additive seam).
+export type Step = 'place' | 'palette';
 // The open dialog, if any: what it shows and for which plant (null for sheets about no one plant).
 export type SheetKind = 'details' | 'swap' | 'add' | 'search' | 'paste' | 'share' | 'download';
 // n: which opening this is (openSheet counts them), so a dialog's late close event closes its own
@@ -209,22 +209,41 @@ export const verdictFailed = signal(false);
 let verdictLoad: Promise<void> | null = null;
 // Its load always settles, so a pool read waiting for it (withRule) never fails with it.
 // Also called by the palette page once it shows (its fit lines and holes read the rule; without a
-// location every plant is "not checked"): an action, not a start() effect.
+// location every plant is "not checked"), and by main.ts beside the database download on a return
+// visit or a link (perf: the chunk is there when the page mounts): an action, not a start() effect.
+// A failed load is not kept: the next call tries again (retryVerdict; core verdict-load.ts fetches the
+// chunk again under ?retry=n).
 export function wantVerdict(): void {
   if (verdictLoad) return;
   verdictLoad = loadVerdictRule().then((rule) => { verdictRule.value = rule; }, (err: unknown) => {
     console.error(`Consortium: the verdict rule did not load: ${(err as Error).message}`);
+    verdictLoad = null;
     verdictFailed.value = true;
   });
 }
+// The palette page's Try again (online) and the browser back online: the verdict chunk asked again,
+// in place, never a page reload (architecture 9).
+export function retryVerdict(): void {
+  if (verdictLoad || verdictRule.peek()) return;
+  verdictFailed.value = false;
+  wantVerdict();
+}
 // What every verdict reads: the palette's place, the location's lookup, the period shown, the
 // scenario, and the members' canopy (shade relief, 3.2).
+// The canopy kept by value: most adds leave it as it was, and a new array would recompute every
+// verdict and everything keyed on them (holes, fillers, both pictures) on each add.
+let lastCanopy: ReturnType<typeof canopyOf> | null = null;
+const canopy = computed(() => {
+  const next = canopyOf(memberTaxa.value), prev = lastCanopy;
+  if (prev && prev.length === next.length && prev.every((x, i) => x === next[i])) return prev;
+  return (lastCanopy = next);
+});
 export const verdictContext = computed<VerdictContext>(() => ({
   place: { room: room.value, plotM2: plot.value, spot: spot.value, soil: soil.value },
   lookup: location.value?.lookup ?? null,
   period: period.value,
   scenario: scenario.value,
-  canopy: canopyOf(memberTaxa.value),
+  canopy: canopy.value,
 }));
 export const memberVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
   const rule = verdictRule.value;
@@ -427,21 +446,119 @@ export function suggestMembers(): boolean {
 
 // ---- sheets: the one opener (H3, H7, H11, H12; seam review X1, X2) ----
 
-// What a sheet was opened for. Add reads it: a cell or a run of cells of one layer ("+ Add" in a free
-// cell, "Show them anyway" on a blocked cell or run), a job ("Find a soil feeder"), and `anyway`:
-// every plant of the cell, misfits included and flagged, where "+ Add" lists only the plants that fit.
-// A job's stage gap (Jobs: "Find a soil feeder for Years 15–25 → 60 years on") is a job with a run of
-// stages in any layer: stratum null. (CellSpan is core's, types.ts: Add's preset carries it too, F1a A22.)
+// What a sheet was opened for. Add reads it: a light level over a run of time steps (a light hole), a
+// job (a job hole: a run of time steps in any layer, stratum null). (CellSpan is core's, types.ts: Add's preset carries it too, F1a A22.)
 export type { CellSpan };
-export interface SheetFor { cell: CellSpan | null; job: JobId | null; anyway: boolean }
-export const FOR_NOTHING: SheetFor = { cell: null, job: null, anyway: false };
+// hole: the hole Add was opened for (the Next step, a hole button), whose words title the sheet.
+// Add lists every plant of the cell, run or job, site misfits included and flagged (inform, don't
+// block; owner 2026-11-14): nothing hides a plant, so nothing needs "Show them anyway".
+// `fits`: the hole's own test (core holes.ts fills), handed by the palette page so the sheet chunks
+// never import holes.ts, a module only the palette chunk has (E6-5d: sheets import first-run modules).
+export interface SheetFor { cell: CellSpan | null; job: JobId | null; hole: Hole | null; fits: ((t: Taxon) => boolean) | null }
+export const FOR_NOTHING: SheetFor = { cell: null, job: null, hole: null, fits: null };
 export const sheetCell = signal<SheetFor>(FOR_NOTHING);
+
+// ---- browser history (coordinator row 2026-11-14, "Sheets and browser history", inventory K7) ----
+// A sheet (full screen on a phone) and the step from Your place to Your palette each push one history
+// entry with the same address, so the phone's Back closes the sheet, every edit made in it kept, or
+// returns to Place; a second Back leaves the page. The address writer (state/persist.ts writeAddress)
+// keeps writing the palette's link onto the entry on top. main.ts listens: on a move back or forward
+// across these entries (historyMoved) it closes the sheet or goes back to Place, then rewrites the
+// entry it landed on with the current link before the hashchange that follows, so an entry under a
+// sheet never brings back the palette as it was before the edits; Forward never reopens a sheet.
+// Positions are the Navigation API's entry index where the browser has it, else this page's own
+// count (every move then read as a Back).
+type Entry = 'sheet' | 'palette';
+const navIndex = (): number | null => {
+  try { const i = (globalThis as { navigation?: { currentEntry?: { index: number } | null } }).navigation?.currentEntry?.index; return typeof i === 'number' && i >= 0 ? i : null; } catch { return null; }
+};
+let pos = 0, base: number | null = null;
+const known: { kind: Entry; at: number }[] = [];
+const here = (): number => navIndex() ?? pos;
+const lastOf = (kind: Entry) => { for (let i = known.length - 1; i >= 0; i--) if (known[i].kind === kind) return known[i]; return null; };
+function pushEntry(kind: Entry): void {
+  if (typeof history === 'undefined' || typeof globalThis.location === 'undefined') return;
+  const before = here();
+  try { history.pushState({ ...(history.state ?? {}), sheet: kind }, '', globalThis.location.href); } catch { return; }
+  pos = before + 1;
+  const at = here();
+  if (base === null || before < base) { base = before; known.length = 0; }
+  while (known.length && known[known.length - 1].at >= at) known.pop(); // the push cut the entries ahead
+  known.push({ kind, at });
+}
+// Whether the entry shown is one this page pushed for `kind`.
+const onEntry = (kind: Entry): boolean => { const e = lastOf(kind); return !!e && known[known.length - 1] === e && e.at === here(); };
+// Leaves the entry `kind` pushed (history.back(); the move then closes the sheet or shows Place):
+// false when the entry shown is not one. `leaving` remembers the page asked for that move, so a sheet
+// opened again before it lands (Swap's "Back to" Details) is not closed by it.
+let leaving: Entry | null = null;
+export function leaveEntry(kind: Entry): boolean {
+  if (!onEntry(kind)) return false;
+  try { history.back(); leaving = kind; return true; } catch { return false; }
+}
+// A Back or Forward (popstate): null when it is not a move across this page's entries (a link of an
+// earlier visit: the hashchange opens it); else what main.ts does: `place` (back past the palette
+// step: Your place shows), then the rewrite of the entry landed on with the current link, then
+// pushWaiting. An open sheet the move left closes here (not one opened again after the page's own Back).
+export function historyMoved(): { place: boolean } | null {
+  const asked = leaving;
+  leaving = null;
+  if (base === null) return null;
+  const now = navIndex() ?? (pos = Math.max(base, pos - 1));
+  const top = known.length ? known[known.length - 1].at : base;
+  if (now < base || now > top) { forgetEntries(); return null; }
+  const s = lastOf('sheet'), p = lastOf('palette');
+  const below = !s || now < s.at;
+  if (asked !== 'sheet' && sheet.peek() && below) sheet.value = null;
+  return { place: !paletteWaits && !!p && now < p.at && step.peek() === 'palette' };
+}
+// After a move and the rewrite: the entries asked for while the page's own Back was on its way (a
+// push then would race the traversal): the palette step (Paste's Add closes the sheet, then the
+// palette opens), then a sheet opened again.
+let paletteWaits = false;
+export function pushWaiting(): void {
+  if (paletteWaits && step.peek() === 'palette' && !onEntry('palette')) pushEntry('palette');
+  paletteWaits = false;
+  if (sheet.peek() && !onEntry('sheet') && SHEET_KINDS.includes(sheet.peek()!.kind)) pushEntry('sheet');
+}
+// A link opened in the tab (a new entry this page did not push): the entries above are another
+// palette's history now; Back from it is the hashchange's (state/arrival.ts).
+export function forgetEntries(): void { base = null; known.length = 0; leaving = null; paletteWaits = false; }
+// A return visit or a link opens on the palette page by itself: that first step is not the reader's
+// and pushes nothing (main.ts sets it; the step's effect in start() reads it once).
+let arrivalStep = false;
+export function arrivalOpensPalette(on: boolean): void { arrivalStep = on; }
+// The reader's step from Your place to Your palette pushes one history entry, so Back returns to
+// Place (coordinator row 2026-11-14); a return visit's or a link's own opening does not. Started by
+// main.ts beside watchPools (the page's history, not one of start()'s effects). Returns the disposer.
+export function watchSteps(): () => void {
+  let was = step.peek();
+  return effect(() => {
+    const now = step.value;
+    if (was === 'place' && now === 'palette') {
+      if (arrivalStep) arrivalStep = false;
+      else if (leaving) paletteWaits = true; // after the Back on its way (pushWaiting)
+      else untracked(() => pushEntry('palette'));
+    }
+    was = now;
+  });
+}
+
 // Every sheet opens through here, so what the last one was opened for never leaks into the next.
+// Share and Download are not sheets (no entry).
+const SHEET_KINDS: readonly SheetKind[] = ['details', 'swap', 'add', 'search', 'paste'];
 let opened = 0;
 export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Partial<SheetFor> = {}): void {
+  if (SHEET_KINDS.includes(kind) && !onEntry('sheet')) pushEntry('sheet');
   batch(() => { sheetCell.value = { ...FOR_NOTHING, ...target }; sheet.value = { kind, id, n: ++opened }; });
 }
-export const closeSheet = (): void => { sheet.value = null; };
+// Close (its button, Escape, the backdrop, an action that ends it): the sheet goes at once, and its
+// history entry with history.back() (main.ts then rewrites the entry under it with the current link).
+export const closeSheet = (): void => {
+  const had = sheet.peek() !== null;
+  sheet.value = null;
+  if (had) leaveEntry('sheet');
+};
 
 // ---- the toast (one short line under the tool, with Undo when the change can be taken back) ----
 
@@ -549,21 +666,26 @@ export function swapMember(oldId: PlantId, newId: PlantId): void {
 // about a misfit or a serious conflict ("Add all" from a paste, 2026-10-28 "Scale build" row): the
 // toast says "n added with a warning" with Show (the first one's details).
 // On Start, a paste builds on the draft and opens it as the consortium (a commit, like Suggest).
-export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [] }: { warned?: PlantId[] } = {}): void {
+// text: the toast's own words (the Next step names the plant it added), else paste.added's count;
+// the warned count follows either.
+export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [], text: said }: { warned?: PlantId[]; text?: string } = {}): void {
   const before = state.snapshot();
   const fresh = ids.filter((id, i) => ids.indexOf(id) === i && !before.members.includes(id));
   if (!fresh.length) return;
   batch(() => {
     members.value = [...before.members, ...fresh];
     removed.value = without(before.removed, fresh);
-    const g = { ...before.guests };
-    for (const id of fresh) if (from[id]) g[id] = from[id];
-    guests.value = g;
+    // The guests change only when a guest joins (a new object would rebuild every guest's record).
+    if (fresh.some((id) => from[id])) {
+      const g = { ...before.guests };
+      for (const id of fresh) if (from[id]) g[id] = from[id];
+      guests.value = g;
+    }
     // A list pasted on Start opens its consortium (the palette slot: Share, Print, the address; X3).
     if (view.peek() === 'start') view.value = 'matrix';
   });
   const flagged = warned.filter((id) => fresh.includes(id));
-  const text = P('paste.added', fresh.length) + (flagged.length ? ` ${P('paste.addedWarn', flagged.length)}` : '');
+  const text = (said ?? P('paste.added', fresh.length)) + (flagged.length ? ` ${P('paste.addedWarn', flagged.length)}` : '');
   offerUndo(text, before, flagged.length ? { label: T('paste.show'), run: () => openSheet('details', flagged[0]) } : null);
 }
 

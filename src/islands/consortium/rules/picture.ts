@@ -26,15 +26,29 @@ export interface PictureRow {
   state: 'data' | 'not-recorded' | 'not-judged';
   more?: { count: number; ids: PlantId[]; line: Line };
 }
-export interface Picture { title: string; summary: Line[]; columns: Line[]; rows: PictureRow[]; names: Record<PlantId, string> }
+// names: each plant's full name; jobs: each plant's main job (the band colour and the chip icon read
+// it here, so no view works it out again).
+export interface Picture { title: string; summary: Line[]; columns: Line[]; rows: PictureRow[]; names: Record<PlantId, string>; jobs: Record<PlantId, JobId | null> }
 
 // A plant's main job: its first in jobIds order, or null.
 export const mainJob = (t: Taxon): JobId | null => jobsOf(t)[0] ?? null;
 
-// The fold order (hole fillers, main job, name) and the split into drawn and folded plants.
+// The names and main jobs of a picture's plants (both pictures build them the same way).
+export function namesAndJobs(members: readonly Taxon[], nameOf: (t: Taxon) => string): Pick<Picture, 'names' | 'jobs'> {
+  const names: Record<PlantId, string> = {}, jobs: Record<PlantId, JobId | null> = {};
+  for (const t of members) { names[t.id] = nameOf(t); jobs[t.id] = mainJob(t); }
+  return { names, jobs };
+}
+
+// One collator for every lane (String#localeCompare builds one per call; 200 plants sort thousands of times).
+const collator = typeof Intl !== 'undefined' ? new Intl.Collator() : null;
+// The fold order (hole fillers, main job, name) and the split into drawn and folded plants. Each
+// plant's sort key is read once, then the lane is sorted on the keys.
 export function foldLane(plants: readonly Taxon[], nameOf: (t: Taxon) => string, first: ReadonlySet<PlantId> = new Set()): { shown: Taxon[]; folded: Taxon[] } {
-  const job = (t: Taxon) => { const j = mainJob(t); return j ? jobIds.indexOf(j) : jobIds.length; };
-  const sorted = [...plants].sort((a, b) => Number(first.has(b.id)) - Number(first.has(a.id)) || job(a) - job(b) || nameOf(a).localeCompare(nameOf(b)));
+  const keyed = plants.map((t) => { const j = mainJob(t); return { t, first: first.has(t.id) ? 0 : 1, job: j ? jobIds.indexOf(j) : jobIds.length, name: nameOf(t) }; });
+  const byName = collator ? collator.compare : (a: string, b: string) => a.localeCompare(b);
+  keyed.sort((a, b) => a.first - b.first || a.job - b.job || byName(a.name, b.name));
+  const sorted = keyed.map((k) => k.t);
   return { shown: sorted.slice(0, PICTURE_LANE_MAX), folded: sorted.slice(PICTURE_LANE_MAX) };
 }
 
