@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:17Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:33:50Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:05:38Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:f2cafc31e8878494
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:73d0a99d6422b186
+    last_modified: 2026-11-14T21:32:06Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -63,7 +63,7 @@ Before B4 the consortium page had a first-run cap (43 KB gzip, 40 KB from the ch
 
 | Role | Cap (gzip) | Measured at B4 | A14 maximum |
 |---|---|---|---|
-| first run (the island entry and its static imports), `FIRST_RUN_BUDGET` | 38 KB (40 KB from the chunk-3 merge to the chunk-5 exit) | 38,538 B (37.6 KB) at the E6 chunk-5 exit; 38,836 B (~37.9 KB) at the E6 hand-off build, 76 B under the cap: the next feature that adds to the first run needs a coordinator row to raise it | measured rounded up to the next 0.5 KB |
+| first run (the island entry and its static imports), `FIRST_RUN_BUDGET` | 40 KB since the owner's call of 2026-11-14 (PP-B; 38 KB from the E6 chunk-5 exit; 40 KB from the chunk-3 merge to the chunk-5 exit) | 38,538 B (37.6 KB) at the E6 chunk-5 exit; 38,836 B (~37.9 KB) at the E6 hand-off build, 76 B under the cap: the next feature that adds to the first run needs a coordinator row to raise it | measured rounded up to the next 0.5 KB |
 | `location` | 11.8 KB | 11,493 B | 20 KB (also: the location part with what only it reaches ≤ 20 KB) |
 | `markProviders` | 2.9 KB | 2,375 B (with the chunk it shares with `future`) | 12 KB |
 | `future` | 2.8 KB | 2,275 B | 12 KB |
@@ -120,3 +120,4 @@ Coordinator row "F1a design-check choices" in [the decisions](/decisions/consort
 - **Measured after 0a'** (gzip -9, 2026-11-14): first run 33.2 KB of 38 KB, with `Actions` back in it; later 5.3 of 8.0 KB (back under its cap with `tracks.ts` gone); details 6.3 of 6.7; sheets 5.7 of 6.3; location 11.2 of 11.8; markProviders 2.3 of 2.9; future 2.2 of 2.8; pool 0.8 of 1.4; range 1.1 of 1.6; suggest 1.8 of 8.0; verdict 0.2 of 12; palette none. The `matrix` role is deleted. No cap was raised.
 
 - **Measured after PP-B b2 chunk 1** (gzip -9, 2026-11-14): first run 35.0 KB of 38 KB (kit/fit.tsx held there through kit/sheet.tsx `shared`, which Add reads); palette 5.2 of 12.0 KB; verdict 2.3 of 12.0 KB; later 5.3 of 8.0; sheets 5.7 of 6.3; details 6.3 of 6.7. The palette page is a retryable part (`lazyPart(..., { retry: true, page: true })`); `page` keeps the later test faults off it.
+- **Owner call 2026-11-14 (PP-B, revertible):** `FIRST_RUN_BUDGET` 38 → 40 KB, the ADR-2 ceiling. Measured 38.9 KB (gzip -9) after the simplify pass (39.5 KB at the b2 merge: Place's location step +2.8 KB from b1a, the palette shell +3.5 KB from b2, over 33.2 KB at 0a′). Above 40 KB needs an ADR-2 change.
