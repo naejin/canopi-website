@@ -17,7 +17,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { asGuest, asks as sortsLast } from '../../../lib/consortium/index.ts';
+import { asGuest, warns } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/search.ts';
 import { addMembers, closeSheet, flagsOfPlant, sheetCell } from '../store.ts';
 import { Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
@@ -58,7 +58,7 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
   const outside = (t: Taxon) => (verdicts ? verdicts.get(t.id)?.level === 'outside' : !!rule && rule.rangeFit(t, loc) === 'outside');
   // The list order only (rules/list-query.ts addOrder): misfits, serious conflicts and outside-range
   // plants come after the others; nothing asks.
-  const last = (flags: Flag[], t?: Taxon) => sortsLast(flags) || (!!t && outside(t));
+  const last = (flags: Flag[], t?: Taxon) => warns(flags) || (!!t && outside(t));
   const scene = store.flagScene.value;
   const climate = store.climate.value;
   // What Add was opened for (store.openSheet): a hole (its plants), else a job or a run of one layer.
@@ -85,7 +85,7 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
   const grouped = useMemo(() => !q && base.some((t) => !members.includes(t.id) && !outside(t)), [base, q, members, verdicts, rule, loc]);
   const rows = useMemo(() => {
     if (!pool) return [];
-    const list = base.filter((t) => !members.includes(t.id) && !(grouped && outside(t))).map((t) => ({ t, flags: flagsOfPlant(t) })).map((r) => ({ ...r, asks: last(r.flags, r.t) }));
+    const list = base.filter((t) => !members.includes(t.id) && !(grouped && outside(t))).map((t) => ({ t, flags: flagsOfPlant(t) })).map((r) => ({ ...r, warns: last(r.flags, r.t) }));
     if (q) {
       // Best match first (S1's score: whole name, name prefix, word prefix, then by name).
       const score = new Map(searchOf(pool)(q).map((x, i) => [x.id, i]));
@@ -93,7 +93,7 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
     }
     return addOrder(list);
   }, [pool, base, grouped, members, q, store.flagContext.value, store.site.value, verdicts]);
-  const outsideRows = useMemo(() => (!grouped ? [] : base.filter((t) => outside(t) && !members.includes(t.id)).map((t) => ({ t, flags: flagsOfPlant(t), asks: true }))),
+  const outsideRows = useMemo(() => (!grouped ? [] : base.filter((t) => outside(t) && !members.includes(t.id)).map((t) => ({ t, flags: flagsOfPlant(t), warns: true }))),
     [base, grouped, members, verdicts, rule, loc]);
   // The other climates' matches not in this list: one-tap Add, each from the first list that has it.
   const elsewhere = useMemo(() => {
@@ -129,7 +129,7 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
     : job ? jobFind(job, cell) : T('add.title');
   const n = selected.length;
   // One row: a tick (nothing asks), its reasons in words, an outside-range plant's verdict with an icon.
-  const row = ({ t, flags, asks: flagged }: { t: Taxon; flags: Flag[]; asks: boolean }) => {
+  const row = ({ t, flags, warns: flagged }: { t: Taxon; flags: Flag[]; warns: boolean }) => {
     const lines = flagLines(t, flags, scene);
     const on = selected.includes(t.id);
     const label = `${nameOf(t)}, ${t.canonical_name}`;

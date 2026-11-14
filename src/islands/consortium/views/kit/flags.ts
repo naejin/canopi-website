@@ -17,14 +17,14 @@ const words = (m: SiteFitMessage): string => T(m.key, m.vars && Object.fromEntri
 // What the site check could not decide, said aloud (never a silent fit, A7).
 export const unknownWords = (t: Taxon, site: Site): string[] => unknownsOf(siteFitMessages(t, site)).map(words);
 
-export interface Line { text: string; kind: Flag['kind'] | 'soft'; asks: boolean }
+export interface Line { text: string; kind: Flag['kind'] | 'soft' }
 // A plant's flags as lines: misfits, conflicts (high ones "serious"), invasive here, toxicity.
 // Low conflicts are left to details (soft: false keeps them, for the dialog).
 export function flagLines(t: Taxon, flags: Flag[], scene: FlagScene, { low = false } = {}): Line[] {
   const out: Line[] = [];
   for (const f of flags) {
     if (f.kind === 'misfit') {
-      for (const m of misfitsOf(siteFit(t, scene.site, scene.members.filter((o) => o.id !== t.id)))) out.push({ text: T('details.misfit', { why: words(m) }), kind: 'misfit', asks: true });
+      for (const m of misfitsOf(siteFit(t, scene.site, scene.members.filter((o) => o.id !== t.id)))) out.push({ text: T('details.misfit', { why: words(m) }), kind: 'misfit' });
     }
     else if (f.kind === 'conflict') {
       if (f.severity === 'low' && !low) continue;
@@ -34,11 +34,11 @@ export function flagLines(t: Taxon, flags: Flag[], scene: FlagScene, { low = fal
       let text = T('details.conflict', { other: other ? nameOf(other) : '?', text: note });
       if (f.agent) text += ` ${T('d.agent', { agent: f.agent })}.`;
       if (serious) text += ` (${T('details.serious')})`;
-      out.push({ text, kind: f.severity === 'low' ? 'soft' : 'conflict', asks: serious });
+      out.push({ text, kind: f.severity === 'low' ? 'soft' : 'conflict' });
     } else if (f.kind === 'invasive') {
-      out.push({ text: T('d.invHere', { country: countryName(scene.country ?? '') }), kind: 'invasive', asks: false });
+      out.push({ text: T('d.invHere', { country: countryName(scene.country ?? '') }), kind: 'invasive' });
     } else if (f.kind === 'toxicity' && t.warnings.toxicity) {
-      out.push({ text: T('details.tox', { level: T(`tox.${t.warnings.toxicity.level}`) }), kind: 'toxicity', asks: false });
+      out.push({ text: T('details.tox', { level: T(`tox.${t.warnings.toxicity.level}`) }), kind: 'toxicity' });
     }
   }
   return out;

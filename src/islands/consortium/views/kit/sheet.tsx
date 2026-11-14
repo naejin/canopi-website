@@ -1,7 +1,7 @@
 /** @jsxImportSource preact */
 // The parts every sheet shares (moved from Details.tsx; E6 design check §3 K1), so the sheets loaded
 // on first use (Add, Swap, Paste, Correction) import the kit and not the plant dialog's module (cycle
-// C4): the sheet frame, the "Add it anyway?" ask, the stage bar of a sheet row, and "Not checked in
+// C4): the sheet frame, the stage bar of a sheet row, and "Not checked in
 // {country}". Sheets are native <dialog>s opened with showModal (focus moves in, the page behind is
 // inert, Escape closes). A leaf (E6 design check L5): what closes a sheet and its toast region come
 // in as props from views/Sheets.tsx, the only caller of SheetDialog and SheetFrame, which hands each
@@ -135,31 +135,5 @@ export function SheetFrame({ titleId, head, foot, children, class: cls = '', onC
       <div class="ct-sheet-body">{children}</div>
       <div class="ct-sheet-foot">{toast}{foot}</div>
     </div>
-  );
-}
-
-// "Add it anyway?" / "Swap anyway?": a small alertdialog over the sheet, naming what asks.
-export function Ask({ title, lines, yes, onYes, onCancel }: { title: string; lines: string[]; yes: string; onYes: () => void; onCancel: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const cancel = useRef(onCancel);
-  cancel.current = onCancel;
-  useEffect(() => {
-    const d = ref.current;
-    if (!d) return;
-    const onClose = () => cancel.current();
-    d.addEventListener('close', onClose);
-    d.showModal();
-    d.querySelector<HTMLElement>('[data-cancel]')?.focus();
-    return () => { d.removeEventListener('close', onClose); if (d.open) d.close(); };
-  }, []);
-  return (
-    <dialog ref={ref} class="ct-ask" role="alertdialog" aria-labelledby="ct-ask-title" aria-describedby="ct-ask-why">
-      <h3 id="ct-ask-title">{title}</h3>
-      <ul id="ct-ask-why" class="ct-warnlist">{lines.map((l) => <li>{l}</li>)}</ul>
-      <div class="ct-actions">
-        <button type="button" class="button button-primary" onClick={onYes}>{yes}</button>
-        <button type="button" class="button button-secondary" data-cancel onClick={() => ref.current?.close()}>{T('cancel')}</button>
-      </div>
-    </dialog>
   );
 }

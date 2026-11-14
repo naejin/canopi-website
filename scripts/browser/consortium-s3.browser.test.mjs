@@ -286,7 +286,7 @@ test('BT-6 (S3 review): Undo goes away when the consortium changes another way; 
   await page.close();
 });
 
-test('BT-6 (S3 review): ticks add together, a serious conflict among them; a pasted guest that misfits asks first and shows its warning; the toast is heard over a sheet; "Add all" says "added with a warning" with Show', async () => {
+test('BT-6 (S3 review): ticks add together, a serious conflict among them; a pasted guest that misfits joins in one tap with its warning in words, no confirm step; the toast is heard over a sheet; "Add all" says "added with a warning" with Show', async () => {
   const page = await open({ width: 1280, data: 'fixture' });
   await start(page);
   for (const c of ['Juglans regia', 'Robinia pseudoacacia']) if (await isMember(page, c)) await dropMember(page, c);
@@ -309,17 +309,18 @@ test('BT-6 (S3 review): ticks add together, a serious conflict among them; a pas
   await page.locator(aria('button', 'Close')).click(); // Escape in a filled search box first clears it
   await closed(page);
 
-  // Deep shade: a sun plant from the Tropical list misfits, so "Add anyway" asks.
+  // Deep shade: a sun plant from the Tropical list misfits. Inform, don't block (owner 2026-11-14):
+  // its row says why in words, one tap on "Add anyway" adds it, and the toast names the warning.
   await setStore(page, () => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, light: 'shade' }; });
   await openBy(page, 'Paste a list');
   await page.locator('::-p-aria([role="textbox"])').fill('Inga edulis');
-  assert.ok(await findAx(page, { name: /^Your site:/ }), 'the guest row shows its warning');
+  assert.ok(await findAx(page, { name: /^Your site:/ }), 'the guest row shows its warning in words');
   await page.locator(aria('button', 'Add anyway')).click();
-  assert.ok(await findAx(page, { role: 'alertdialog' }), 'a guest that misfits asks first');
-  await page.locator('dialog[role="alertdialog"] .button-primary').click();
+  assert.equal(await guestFrom(page, 'Inga edulis'), 'Tropical', 'the guest joins at once');
+  assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'no confirm step');
   assert.ok(await sheetOpen(page), 'the Paste sheet stays');
+  assert.ok(await findAx(page, { name: /1 added with a warning/ }), 'the toast names the warning');
   assert.ok(await has(page, aria('button', 'Undo')), 'the toast is reachable over the sheet');
-  assert.equal(await guestFrom(page, 'Inga edulis'), 'Tropical');
 
   // Pear (a member of the suggestion) is taken out, then pasted back in deep shade: it misfits.
   if (await isMember(page, 'Pyrus communis')) await dropMember(page, 'Pyrus communis');

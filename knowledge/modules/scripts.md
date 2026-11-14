@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:55Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:05:12Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:36Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:04:45Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:7aaba57bdb65cbb8
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:fb14d6360b0d398f
+    last_modified: 2026-11-14T21:48:58Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -73,8 +73,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:f2cafc31e8878494
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:73d0a99d6422b186
+    last_modified: 2026-11-14T21:33:54Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs

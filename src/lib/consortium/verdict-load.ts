@@ -3,18 +3,16 @@
 // `verdict`, scripts/built-modules.mjs ROLE_ENTRIES) and off the first run. A failed load is never
 // cached: the next call tries again (retry-import.ts). Outlives marks.ts (deleted in c2).
 import type { PeriodId, PlantId, PlantVerdict, Taxon, VerdictContext } from './types.ts';
-import type { Conflict } from './conflicts.ts';
 import { retryableImport } from './retry-import.ts';
 
 export interface VerdictRule {
   verdicts(taxa: readonly Taxon[], ctx: VerdictContext): Map<PlantId, PlantVerdict>;
   holdsBy(taxon: Taxon, ctx: VerdictContext, period: PeriodId): boolean;
-  asksBefore(v: PlantVerdict, conflicts: readonly Conflict[]): boolean;
   judgedPeriod(taxon: Taxon, page: PeriodId): PeriodId;
 }
 
 // A failed load is tried again under a fresh URL (retry-import.ts, shared with the views' parts).
 export const loadVerdictRule: () => Promise<VerdictRule> = retryableImport(
   () => import('./verdict.ts'),
-  ({ verdicts, holdsBy, asksBefore, judgedPeriod }): VerdictRule => ({ verdicts, holdsBy, asksBefore, judgedPeriod }),
+  ({ verdicts, holdsBy, judgedPeriod }): VerdictRule => ({ verdicts, holdsBy, judgedPeriod }),
 );

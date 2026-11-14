@@ -3,9 +3,9 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:33:50Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:04:58Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:05:38Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:04:27Z }
 sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
@@ -16,7 +16,7 @@ sources:
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:73d0a99d6422b186
-    last_modified: 2026-11-14T21:32:06Z
+    last_modified: 2026-11-14T21:33:54Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -25,8 +25,8 @@ sources:
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:9e33f71621450529
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:1bbd681174e63de4
+    last_modified: 2026-11-14T21:47:12Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs

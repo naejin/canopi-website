@@ -3,20 +3,20 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:45Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:05:00Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:27Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:096df107f940cfdd
-    last_modified: 2026-11-14T15:16:44Z
+    digest: sha256:39f3e985aba0677c
+    last_modified: 2026-11-14T21:48:21Z
   - id: site-marks-ts
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
-    digest: sha256:794b69777641c2ce
-    last_modified: 2026-11-13T07:02:37Z
+    digest: sha256:d89b0b8086198a1e
+    last_modified: 2026-11-14T21:48:21Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -66,7 +66,7 @@ ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, writ
 - **Which record a view gets** (`store.ts` `taxonOf`, E6 hand-off re-review 1 and review 4): the member, else the guest's record from the list it was added from (`guestTaxa`, from the consortium's guests map once that list is read), else the chosen climate's own list as read in `pools` (never a guest, even while `store.pool` waits for the range rule), else another climate's list already read, through `asGuest`. A guest is therefore never resolved from the first other list that happens to hold it. Tested by `scripts/consortium-taxon-of.test.mjs`.
 - **`factAt`.** `FactAt = (key, taxon, site, period) => FactValues[key] | null`, implemented in core `source.ts` (beside the `PlantSource` that stores the facts) with `TODAY_PERIOD` `'1991-2020'`. In E6 it returns the stored value whatever the site and period; views read these facts through it instead of `t.traits.*`. Only Details reads it so far (water need); F2 routes site fit and range through it and computes per site and period behind the same signature, and E7 reads scoped stored facts (most specific wins).
 - **Its fact list, and only it** (`FactKey`): `life_cycle` (`annual`, `grown_as_annual` or `perennial` from the traits), `cold_limit` (`tminColdC`, `weak`), `heat_limit` (`tmaxWarmC`), `water_need` (`drought` and `moisture`, each `string | null`; widened from `drought: string` in R4 so a plant with only a moisture value still answers, and null only when both are unknown). Other traits stay direct reads; a fact joins the list only when a step needs it site- or period-dependent.
-- **`SiteFitMessage`** `{ id, about, severity, asks, key, vars?, state? }`: one shape for site-fit lines (light, room, climate) so the views stop composing them. In use since E6 R2: core `site-marks.ts` `siteFitMessages` builds them, `rules/site-fit.ts` and `views/kit/flags.ts` word the flags from them, and `siteMarks` turns the notes (`state` set) into marks.
+- **`SiteFitMessage`** `{ id, about, severity, misfit, key, vars?, state? }` (`misfit` was `asks` until the 2026-11-14 "Inform, don't block" row: a misfit warns in words, never asks): one shape for site-fit lines (light, room, climate) so the views stop composing them. In use since E6 R2: core `site-marks.ts` `siteFitMessages` builds them, `rules/site-fit.ts` and `views/kit/flags.ts` word the flags from them, and `siteMarks` turns the notes (`state` set) into marks.
 
 ## Consequences
 
