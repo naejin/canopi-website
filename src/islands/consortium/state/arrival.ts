@@ -12,7 +12,7 @@ import {
   COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE, STORE, type CountryFrom, type SavedRecord,
 } from './persist.ts';
 import { state as schema } from './schema.ts';
-import { applyPreset, notices, ownLocation, restore, waitForSource, NO_NOTICES } from './restore.ts';
+import { applyPreset, notices, ownLocation, restore, savedInstead, waitForSource, NO_NOTICES } from './restore.ts';
 import { watchSuggest } from './suggest-wait.ts';
 
 // A fragment is a share link when it holds the link's version or its member list (v1 links carried
@@ -26,16 +26,18 @@ export type Arrival =
   | { kind: 'link'; fragment: string }
   | { kind: 'preset'; climate: ClimateZone; plant: string | null }
   | { kind: 'outdated' }
-  | { kind: 'saved'; fragment: string; at: string; src: CountryFrom; place: string }
+  | { kind: 'saved'; fragment: string; at: string; src: CountryFrom; place: string; ask?: true }
   | { kind: 'start'; climate: ClimateZone | null };
 
 // history.state as replaceState left it: the page's own fragment, its country source and this tab's
-// place (pl: the private place answers, kept per tab since the save is shared by every tab; '' none).
-interface OwnAddress { ct: string; src: CountryFrom; pl: string }
+// place (pl: the private place answers, kept per tab since the save is shared by every tab; '' none;
+// with a link's country `k`); ask: a link's place still waits on "Use it" / "Use my own place", so a
+// reload asks again and the save stays held (persist.ts writeAddress).
+interface OwnAddress { ct: string; src: CountryFrom; pl: string; ask: boolean }
 const ownOf = (v: unknown): OwnAddress | null => {
   if (!v || typeof v !== 'object') return null;
-  const { ct, src, pl } = v as Record<string, unknown>;
-  return typeof ct === 'string' && ct ? { ct, src: fromOf(src), pl: typeof pl === 'string' && pl.length < 2_000 ? pl : '' } : null;
+  const { ct, src, pl, ask } = v as Record<string, unknown>;
+  return typeof ct === 'string' && ct ? { ct, src: fromOf(src), pl: typeof pl === 'string' && pl.length < 2_000 ? pl : '', ask: ask === 1 } : null;
 };
 
 // What the page opens with, in order: the page's own address after a reload (history.state.ct is
@@ -46,7 +48,7 @@ const ownOf = (v: unknown): OwnAddress | null => {
 export function arrival(loc: { hash: string; search: string }, saved: SavedRecord | null, siteClimate: string | null, state: unknown = null): Arrival {
   const hash = loc.hash.replace(/^#/, '');
   const own = ownOf(state);
-  if (hash && own && own.ct === hash) return { kind: 'saved', fragment: hash, at: '', src: own.src, place: own.pl };
+  if (hash && own && own.ct === hash) return { kind: 'saved', fragment: hash, at: '', src: own.src, place: own.pl, ...(own.ask ? { ask: true as const } : {}) };
   if (hash && isLinkFragment(hash)) return { kind: 'link', fragment: hash };
   const preset = readPreset(loc.search);
   if (preset.climate) return { kind: 'preset', climate: preset.climate, plant: preset.plant };
@@ -161,9 +163,19 @@ export function startMemory(): void {
   if (how.kind !== 'saved') seedPlace(memory.read(PLACE_STORE));
 
   if (how.kind === 'link') void restore(how.fragment, { from: 'link' });
-  else if (how.kind === 'saved') void restore(how.fragment, { from: 'saved', src: how.src, place: how.place });
+  else if (how.kind === 'saved') {
+    // A reload while a link's place still waited on the reader: asked again, against the reader's own
+    // place (the held save's, else the seed) and the country chosen above, never the link's.
+    const mine = how.ask ? placeOfSeed(saved?.place || memory.read(PLACE_STORE)) : null;
+    const ask = how.ask ? { spot: mine?.spot ?? schema.valuesOf(['spot']).spot, soil: mine?.soil ?? { from: 'map' as const }, country: store.country.peek() } : undefined;
+    void restore(how.fragment, { from: 'saved', src: how.src, place: how.place, ask });
+  }
   else if (how.kind === 'outdated') notices.value = { ...notices.peek(), outdated: true };
-  else if (how.kind === 'preset') void applyPreset(how.climate, how.plant);
+  else if (how.kind === 'preset') {
+    // A guide preset over a saved palette: the save stays untouched, one press away (8.3).
+    savedInstead.value = saved;
+    void applyPreset(how.climate, how.plant);
+  }
   else if (how.climate) store.climate.value = how.climate;
 
   // A link pasted into the open tab: opened, unless it is the page's own address (review 3).

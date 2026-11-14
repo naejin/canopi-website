@@ -22,7 +22,7 @@
 // (review round 1, 4).
 import { batch } from '@preact/signals';
 import type { ClimateZone, LocationSource, SiteLocation } from '../../../lib/consortium/index.ts';
-import { siteClimate } from '../../../lib/consortium/index.ts';
+import { emptyPlace, siteClimate } from '../../../lib/consortium/index.ts';
 import { createTileSource, DEFAULT_RADIUS, lookupSite, siteIndex, type SiteLookup, type TileSource } from '../../../lib/climate/index.ts';
 import { createPlaceSearchController, type PlaceSearchController, type PlaceSearchResult } from '../../../lib/location/place-search.ts';
 import { defaultGeocoderConfig } from '../../../lib/location/registry.ts';
@@ -31,7 +31,7 @@ import { currentPosition, queryGeolocationPermission } from '../../../lib/locati
 import type { Country } from '../store.ts';
 import * as store from '../store.ts';
 import { pageLang } from '../strings.ts';
-import { memory, pendingLinkClimate, quietly, LOCATION_STORE } from './persist.ts';
+import { memory, pendingLinkClimate, quietly, LOCATION_STORE, PLACE_STORE } from './persist.ts';
 import { chooseClimate } from './draft.ts';
 import { line, liveLookup, looking, nextLookup, unlessReplaced, unread, type Line } from './lookups.ts';
 
@@ -206,10 +206,29 @@ export function confirmProposed(z: ClimateZone): void {
 
 // "Forget this location": the site, its suggestion, its country and the saved copy go. A link's
 // location goes alone: the reader's own saved location is not the link's to remove.
+// "Forget this location" also clears the last place answers (canopi-place) and the open palette's
+// place, its spot and soil (plant-palette-architecture 8.3; privacy.tool.device); the room and plot
+// size are the palette's and stay.
 export function forget(): void {
   nextLookup();
   unread.value = false;
   const own = store.location.peek()?.source !== 'link';
-  batch(() => { store.location.value = null; store.proposedClimate.value = null; line.value = null; if (own) locationCountry(null, true); });
+  batch(() => {
+    store.location.value = null; store.proposedClimate.value = null; line.value = null;
+    if (own) locationCountry(null, true);
+    store.spot.value = { ...emptyPlace.spot };
+    store.soil.value = { from: 'map' };
+  });
   if (own) keepLocation(null);
+  memory.remove(PLACE_STORE);
+}
+
+// "Use it" on a link that brings a place (8.3; coordinator row 2026-11-14): the link's cell becomes
+// the reader's own location on this device, kept as a map pick (its centre, never a finer point).
+export function adoptLinkLocation(): void {
+  const l = store.location.peek();
+  if (l?.source !== 'link') return;
+  const mine: SiteLocation = { ...l, source: 'map' };
+  quietly(() => { store.location.value = mine; });
+  keepLocation(mine);
 }

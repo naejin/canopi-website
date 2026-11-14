@@ -49,7 +49,7 @@ async function suggestFromPlace(page) {
   assert.ok(await until(page, () => window.__ctTest.store.members.value.length > 0), 'the suggestion placed plants');
 }
 
-failing('F1a-P4 → PP-B (b1a Seville pots, A8): "Pots or a balcony" suggests plants within its height', { owner: 'b1a', reason: /no "Pots or a balcony" room answer on Place/ }, async () => {
+test('F1a-P4 → PP-B (b1a Seville pots, A8): "Pots or a balcony" suggests plants within its height', async () => {
   const page = await tool();
   await atSite(page, 'seville');
   await choose(page, 'Mediterranean');
@@ -66,7 +66,7 @@ failing('F1a-P4 → PP-B (b1a Seville pots, A8): "Pots or a balcony" suggests pl
 // its notices and the location line); the palette page's regions are b2's A2. Titled under PP-B3
 // (its journey): plan-owners.test.mjs refuses a parked id at the start of a title, and
 // browser-tests.test.mjs wants F1a-Xn → PP-B or PP-Bn there.
-failing('PP-B3 (b1a status regions on Place, F1a-P9 restored, A25): from Place to the suggested palette, every live region is on the page before its message, and each line is announced once per reader\'s event', { owner: 'b1a', reason: /no "Start from a small suggested palette" on Place|inserted with its message/ }, async () => {
+test('PP-B3 (b1a status regions on Place, F1a-P9 restored, A25): from Place to the suggested palette, every live region is on the page before its message, and each line is announced once per reader\'s event', async () => {
   const page = await tool({ setup: watchLiveRegions });
   await choose(page, 'Temperate');
   await suggestFromPlace(page);
@@ -75,7 +75,7 @@ failing('PP-B3 (b1a status regions on Place, F1a-P9 restored, A25): from Place t
   assert.deepEqual(saidTwice(live.said), [], 'each line is announced once per reader\'s event');
 });
 
-failing('PP-B2 (b1a no location): with no location Place offers the climate cards, then the grower\'s own plants first', { owner: 'b1a', reason: /no own-plants step on Place/ }, async () => {
+test('PP-B2 (b1a no location): with no location Place offers the climate cards, then the grower\'s own plants first', async () => {
   const page = await tool();
   assert.ok(await has(page, aria('radio', 'Temperate'), 8000), 'the climate cards');
   await page.locator(aria('radio', 'Temperate')).click();
@@ -89,7 +89,7 @@ failing('PP-B2 (b1a no location): with no location Place offers the climate card
   assert.equal(await members(page), 0, 'nothing is chosen for the grower');
 });
 
-failing('PP-B3 (b1a suggested palette): "Start from a small suggested palette" adds plants, and one Undo takes them all away', { owner: 'b1a', reason: /no "Start from a small suggested palette" on Place/ }, async () => {
+test('PP-B3 (b1a suggested palette): "Start from a small suggested palette" adds plants, and one Undo takes them all away', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   await suggestFromPlace(page);
@@ -101,7 +101,7 @@ failing('PP-B3 (b1a suggested palette): "Start from a small suggested palette" a
   assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'start', 'back on Place');
 });
 
-failing('PP-B4 (b1a older save): a v4 saved palette says the older line once, and the tool is empty', { owner: 'b1a', reason: /no older-save line on Place/ }, async () => {
+test('PP-B4 (b1a older save): a v4 saved palette says the older line once, and the tool is empty', async () => {
   const save = JSON.stringify({ fragment: 'v=4&c=temperate&m=large&a=dhUvw6&e=1', at: '2026-11-12T10:00:00.000Z', src: 'chosen' });
   const page = await withStorage({ 'canopi-consortium': save });
   assert.ok(await has(page, '[data-place-notice="oldSave"]', 8000), 'no older-save line on Place');
@@ -114,7 +114,7 @@ failing('PP-B4 (b1a older save): a v4 saved palette says the older line once, an
   assert.equal(await page.$('[data-place-notice="oldSave"]'), null, 'said once');
 });
 
-failing('PP-B5 (b1a reloads): three reloads keep the room and spot answers while the address holds none of k o l w q r h s', { owner: 'b1a', reason: /no own-plants step on Place/ }, async () => {
+test('PP-B5 (b1a reloads): three reloads keep the room and spot answers while the address holds none of k o l w q r h s', async () => {
   const page = await tool();
   await page.locator(aria('radio', 'Temperate')).click();
   assert.ok(await has(page, '[data-place-plants]', 8000), 'no own-plants step on Place');
@@ -150,7 +150,7 @@ failing('PP-B5 (b1a shade answer, needs b2\'s verdicts): a "shade" answer moves 
   assert.ok(await until(page, (id) => window.__ctTest?.store?.memberVerdicts.value?.get(id)?.level === 'look', 15_000, sunOnly), 'still "needs a second look" after reload');
 });
 
-failing('PP-B10 (b1a share): with "Include my place" off the link holds none of k o l w q r h s; on, it holds them and the sheet says so in words', { owner: 'b1a', reason: /no "Include my place" tick/ }, async () => {
+test('PP-B10 (b1a share): with "Include my place" off the link holds none of k o l w q r h s; on, it holds them and the sheet says so in words', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   await suggestReady(page);
@@ -168,7 +168,7 @@ failing('PP-B10 (b1a share): with "Include my place" off the link holds none of 
   assert.match(await words(page, '.ct-share'), /spot answers/, 'the sheet says what travels, in words');
 });
 
-failing('PP-B11 (b1a Start over): Start over shows a toast with Undo, and Undo brings the palette back', { owner: 'b1a', reason: /no Undo after Start over/ }, async () => {
+test('PP-B11 (b1a Start over): Start over shows a toast with Undo, and Undo brings the palette back', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   await suggestReady(page);
@@ -182,7 +182,7 @@ failing('PP-B11 (b1a Start over): Start over shows a toast with Undo, and Undo b
   assert.ok(await until(page, (b) => window.__ctTest.store.members.value.join() === b, 4000, before), 'Undo brings the palette back');
 });
 
-failing('PP-B12 (b1a guide over a save): a guide link with a saved palette offers "Open my saved palette instead", which restores it', { owner: 'b1a', reason: /no "Open my saved palette instead"/ }, async () => {
+test('PP-B12 (b1a guide over a save): a guide link with a saved palette offers "Open my saved palette instead", which restores it', async () => {
   const fragment = await v5(4);
   const name = await temperateName(10);
   const page = await withStorage({ 'canopi-consortium': JSON.stringify({ fragment, place: '', at: '2026-11-13', src: null }) }, `/palette/?plant=${encodeURIComponent(name)}&climate=temperate`);
@@ -193,7 +193,7 @@ failing('PP-B12 (b1a guide over a save): a guide link with a saved palette offer
   assert.ok(await until(page, () => window.__ctTest.store.members.value.length === 4), 'the saved palette is back');
 });
 
-failing('PP-B13 (b1a newer and unreadable links): v=6 and an unreadable link each say their line, the tool stays empty and the save untouched', { owner: 'b1a', reason: /no newer-version line/ }, async () => {
+test('PP-B13 (b1a newer and unreadable links): v=6 and an unreadable link each say their line, the tool stays empty and the save untouched', async () => {
   const save = JSON.stringify({ fragment: await v5(3), place: '', at: '2026-11-13', src: null });
   for (const [hash, kind, key] of [['#v=6&c=temperate&a=abcdef&e=1', 'newer', 'place.newer'], ['#v=x5&c=temperate&a=abcdef&e=1', 'unreadable', 'place.unreadable']]) {
     const page = await withStorage({ 'canopi-consortium': save }, `/palette/${hash}`);
@@ -216,7 +216,7 @@ test('PP-B14 (b1a guide link): ?plant=…&climate=… opens on /palette/ (also f
 
 // Place at 320 px (WCAG 1.4.10): nothing scrolls sideways and no control or plant name passes the
 // right edge, in en, de, ru and ja (long words, Cyrillic, CJK).
-failing('PP-B19 (b1a Place at 320 px): in en, de, ru and ja nothing scrolls sideways and no control passes the right edge', { owner: 'b1a', reason: /scrolls sideways|controls pass the right edge/ }, async () => {
+test('PP-B19 (b1a Place at 320 px): in en, de, ru and ja nothing scrolls sideways and no control passes the right edge', async () => {
   for (const lang of ['en', 'de', 'ru', 'ja']) {
     const page = await tool({ lang, width: 320 });
     await choose(page, 'Temperate');

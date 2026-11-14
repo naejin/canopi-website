@@ -1,23 +1,27 @@
 /** @jsxImportSource preact */
-// Share (stream S4; design check §5, BT-7): the #v=4 link of the shown consortium, in a field to copy by
+// Share (stream S4; design check §5, BT-7): the #v=5 link of the shown palette, in a field to copy by
 // hand, and copied by the Copy button only (a copy outside a click is refused by Safari, and would
 // copy again on every edit). Its notes: a link above 2,000 characters ("Some apps cut long
 // links…", core isLongLink on the whole URL), and a browser that keeps nothing ("This browser does
-// not keep your consortium; your link does."). Rendered by views/Actions.tsx.
-// P5 S5b: with a site location, the "include my location" tick (off by default, owner answer 5): the
-// link then carries the site's climate cell centre (`o=`, never the precise position) and a country
-// from the location (`k=`); without it, neither.
+// not keep your palette; your link does."). Rendered by views/Actions.tsx.
+// "Include my place" (PP-B b1a; plant-palette-architecture 8.3; Share board), off by default and shown
+// when there is a place to include (a location, a spot or soil answer, a country the reader gave):
+// ticked, the link also carries the climate-grid square's centre (`o=`, never the precise position),
+// the country (`k=`), the spot answers and the soil test; unticked, none of `k o l w q r h s`. The
+// sheet says both in words.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { cellCentre, isLongLink } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
-import { location as site } from '../store.ts';
+import { country, location as site, soil, spot } from '../store.ts';
 import { currentFragment, shareUrl, shownFragment, storageWorks } from '../state/persist.ts';
 
 export function Share({ onClose }: { onClose: () => void }) {
   const shown = shownFragment.value;
-  const [withSite, setWithSite] = useState(false);
+  const [withPlace, setWithPlace] = useState(false);
   const origin = cellCentre(site.value?.lookup ?? null);
-  const fragment = withSite && origin ? currentFragment(null, { origin }) ?? shown : shown;
+  const c = country.value;
+  const hasPlace = origin !== null || Object.values(spot.value).some((v) => v !== 'unsure') || soil.value.from !== 'map' || (c.code !== null && c.source !== 'guess');
+  const fragment = withPlace && hasPlace ? currentFragment(null, { origin, place: true }) ?? shown : shown;
   const url = fragment ? shareUrl(location.href, fragment) : location.href;
   const [copied, setCopied] = useState<'yes' | 'no' | null>(null);
   const field = useRef<HTMLInputElement>(null);
@@ -40,9 +44,9 @@ export function Share({ onClose }: { onClose: () => void }) {
         <input id="ct-share-field" ref={field} class="ct-share-field" type="text" readOnly value={url} onFocus={(e) => (e.currentTarget as HTMLInputElement).select()} />
         <button type="button" class="button button-secondary ct-small" onClick={() => void copy()}>{T('share.copy')}</button>
       </p>
-      {origin && (
+      {hasPlace && (
         <p class="ct-share-location">
-          <label><input type="checkbox" data-share-location checked={withSite} onChange={(e) => setWithSite((e.currentTarget as HTMLInputElement).checked)} /> {T('share.location')}</label>
+          <label><input type="checkbox" data-share-location checked={withPlace} onChange={(e) => setWithPlace((e.currentTarget as HTMLInputElement).checked)} /> {T('share.location')}</label>
           {' '}<span class="ct-muted ct-small-text">{T('share.locationNote')}</span>
         </p>
       )}

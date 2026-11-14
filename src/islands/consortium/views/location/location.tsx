@@ -4,7 +4,7 @@
 // for a link's `o=` or the saved location (state/restore.ts). It renders only (E6 S2): the result line
 // and the map dialog. The lookups, the site, its suggestion and its country are state/location.ts,
 // which this chunk brings; the shell (LocationSlot) and restore.ts (settle) call them through this
-// module's three re-exports below, the chunk's entry: a separate import of state/location.ts would split
+// module's four re-exports below, the chunk's entry: a separate import of state/location.ts would split
 // it into a second lazy chunk. (Its tile read, without soil until P5.2, is in state/location.ts.)
 // - pick on a map: MapLibre (its own lazy chunk with its worker and CSS) in a dialog with a centre
 //   cross and "Use the map centre"; OpenFreeMap positron or dark by the theme; jumpTo only.
@@ -21,7 +21,7 @@ import { line, unread, type Line } from '../../state/lookups.ts';
 import { confirmProposed, forget, locate, placeName } from '../../state/location.ts';
 import { num, zoneName } from '../kit/names.ts';
 
-export { settle, useMyLocation, searchPlace } from '../../state/location.ts';
+export { settle, useMyLocation, searchPlace, adoptLinkLocation as adopt } from '../../state/location.ts';
 
 // The map dialog is open (LocationSlot's map button: openMap).
 export const mapOpen = signal(false);
@@ -54,7 +54,7 @@ export function LocationResult({ compact = false }: { compact?: boolean }) {
   const l = line.value, loc = store.location.value, sc = loc?.lookup ? siteClimate(loc.lookup) : null;
   const site = l && sc && sc.today && loc && l.state === sc.state;
   const proposed = store.proposedClimate.value;
-  // As Start.tsx's cards: a proposal shows only while no climate is chosen or shown from a link.
+  // As Place's climate cards (views/place/Place.tsx): a proposal shows only while no climate is chosen or shown from a link.
   const shown = climateShown.value, picked = !!sc?.zone && shown.proposed && shown.zone === sc.zone;
   // A site line whose site has gone (a link without o= replaced a link's location): nothing to say.
   const gone = !!l && !loc && (l.state === 'ready' || l.state === 'borderline' || l.state === 'polar' || l.state === 'coast');

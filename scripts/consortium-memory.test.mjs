@@ -379,7 +379,7 @@ test('applyPreset: a card the reader picks while the guide\'s plant is read wins
   await p;
   assert.equal(store.climate.peek(), 'Mediterranean', 'the reader\'s card');
   assert.deepEqual(store.members.peek(), [], 'the guide\'s plant is not applied');
-  assert.equal(m.notices.peek().guideKept, null);
+  assert.equal(m.notices.peek().guidePlant, null);
 });
 
 // P5 owner answer 5 (2026-11-11): a country from the location is labelled "from your location", saved on

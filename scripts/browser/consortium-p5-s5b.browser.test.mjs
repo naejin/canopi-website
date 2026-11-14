@@ -59,7 +59,7 @@ test('P5-1c (S5b review round 1, 4): a lookup ending while a pasted link restore
   await choose(maker, 'Temperate');
   await suggestReady(maker);
   await maker.evaluate(() => { window.__ctTest.store.suggestMembers(); window.__ctTest.store.view.value = 'matrix'; });
-  assert.ok(await maker.waitForFunction(() => /[#&]v=4/.test(location.hash) && /[#&]a=[^&]/.test(location.hash), { timeout: 10_000 }).then(() => true, () => false), 'the address holds the consortium');
+  assert.ok(await maker.waitForFunction(() => /[#&]v=5/.test(location.hash) && /[#&]a=[^&]/.test(location.hash), { timeout: 10_000 }).then(() => true, () => false), 'the address holds the palette');
   const link = await maker.evaluate(() => location.hash);
   const page = await tool({ geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
   await locationControls(page);
@@ -73,10 +73,10 @@ test('P5-1d (S5b review round 1 addendum): Suggest pressed while a location look
   // The climate tiles held until the test releases them: the lookup is surely pending when Suggest is pressed.
   const page = await slowTiles('held');
   await page.click('input[name="ct-climate"][value="mediterranean"]');
-  assert.ok(await has(page, '.ct-cta .button-primary', 15_000), 'Suggest shows');
+  assert.ok(await has(page, '[data-place-suggest]', 15_000), 'Suggest shows');
   await watchFirstMembers(page);
   await page.click('[data-location-action="geo"]');
-  await page.click('.ct-cta .button-primary');
+  await page.click('[data-place-suggest]');
   await releaseTiles(page);
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 20_000 }).then(() => true, () => false), 'the suggestion comes');
   assert.equal(await page.evaluate(() => window.__firstMembers), true, 'members were built only once the site was read');
@@ -85,10 +85,10 @@ test('P5-1d (S5b review round 1 addendum): Suggest pressed while a location look
 test('P5-1e (S5b review round 2, 2): Suggest pressed while the saved location is looked up again waits for the site', async () => {
   const page = await slowTiles('held', { saved: JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }) });
   await page.click('input[name="ct-climate"][value="mediterranean"]');
-  assert.ok(await has(page, '.ct-cta .button-primary', 15_000));
+  assert.ok(await has(page, '[data-place-suggest]', 15_000));
   await watchFirstMembers(page);
   assert.ok(await page.waitForFunction(() => !!document.querySelector('[data-location-state="loading"]'), { timeout: 10_000 }).then(() => true, () => false), 'the saved site is being looked up (its tiles held)');
-  await page.click('.ct-cta .button-primary');
+  await page.click('[data-place-suggest]');
   await releaseTiles(page);
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 20_000 }).then(() => true, () => false));
   assert.equal(await page.evaluate(() => window.__firstMembers), true, 'members built once the saved site was read');
@@ -102,10 +102,10 @@ test('P5-1f (S5b review round 2, 3): tiles that never answer hold Suggest at mos
   const timeouts = { suggest: 1500, read: 6000 };
   const page = await slowTiles('never', { timeouts });
   await page.click('input[name="ct-climate"][value="mediterranean"]');
-  assert.ok(await has(page, '.ct-cta .button-primary', 15_000));
+  assert.ok(await has(page, '[data-place-suggest]', 15_000));
   await page.click('[data-location-action="geo"]');
   const t0 = Date.now();
-  await page.click('.ct-cta .button-primary');
+  await page.click('[data-place-suggest]');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: timeouts.suggest + 4000 }).then(() => true, () => false), 'Suggest ran within the cap');
   assert.ok(Date.now() - t0 >= timeouts.suggest * 0.8, 'after waiting for the site first');
   assert.ok(await has(page, '[data-location-unread]', 4000), 'a line says the climate was not read');
@@ -125,9 +125,9 @@ test('P5-1g (S5b review round 4, 1): a "Use my location" left at its permission 
   await search(page, 'Seville');
   assert.equal(await locationState(page), 'ready', 'Seville read');
   await page.click('[data-location-confirm]');
-  assert.ok(await has(page, '.ct-cta .button-primary', 15_000));
+  assert.ok(await has(page, '[data-place-suggest]', 15_000));
   const t0 = Date.now();
-  await page.click('.ct-cta .button-primary');
+  await page.click('[data-place-suggest]');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 8000 }).then(() => true, () => false), 'Suggest ran');
   assert.ok(Date.now() - t0 < 5000, `at once, not after the 10 s cap (${Date.now() - t0} ms)`);
   assert.equal(await page.$('[data-location-unread]'), null, 'Seville was read: no "not read" note');
@@ -173,9 +173,9 @@ test('P5-13d (S5b review round 3, 2): Start over drops a link\'s lookup on a sta
   assert.equal(await page.$('[data-location-state]'), null, 'no later "failed" line');
   // Suggest is not held by it.
   await page.click('input[name="ct-climate"][value="mediterranean"]');
-  assert.ok(await has(page, '.ct-cta .button-primary', 15_000));
+  assert.ok(await has(page, '[data-place-suggest]', 15_000));
   const t0 = Date.now();
-  await page.click('.ct-cta .button-primary');
+  await page.click('[data-place-suggest]');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0 && window.__ctTest.store.view.value === 'matrix', { timeout: 8000 }).then(() => true, () => false), 'Suggest runs at once');
   assert.ok(Date.now() - t0 < 8000);
 });
@@ -276,7 +276,7 @@ test('P5-6 (S5b map pick and ocean click): "Use the map centre" sets the site; t
 });
 
 test('P5-7c (S5b review round 1, 7): the WebGL probe runs once, outside the result head, and releases its context', async () => {
-  const page = await h.open('/consortium/', { hook: true, mapTiles: 'stub', geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] }, setup: (pg) => pg.evaluateOnNewDocument(() => {
+  const page = await h.open('/palette/', { hook: true, mapTiles: 'stub', geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] }, setup: (pg) => pg.evaluateOnNewDocument(() => {
     window.__gl = [];
     const get = HTMLCanvasElement.prototype.getContext;
     HTMLCanvasElement.prototype.getContext = function (kind, ...rest) {
@@ -304,7 +304,7 @@ test('P5-7 (S5b no WebGL): without WebGL the map button is hidden, search and lo
 });
 
 test('P5-7b (S5b review round 1, 10): without the Geolocation API "Use my location" is hidden, search stays', async () => {
-  const page = await h.open('/consortium/', { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument(() => { delete Navigator.prototype.geolocation; }) });
+  const page = await h.open('/palette/', { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument(() => { delete Navigator.prototype.geolocation; }) });
   await ready(page);
   assert.ok(await has(page, 'input[data-location-search]', 4000), 'search shows');
   assert.equal(await page.$('[data-location-action="geo"]'), null, 'no location button');
@@ -483,7 +483,7 @@ test('P5-13b (S5b review round 1, 1 and 2): a link\'s o= lives for the page only
   await locationState(page);
   assert.doesNotMatch(await text(page, '[data-location-state]') ?? '', /approximate/i, 'no stale "from the shared link" line');
   // A later plain visit: the reader's own site again.
-  await page.goto(`${new URL(page.url()).origin}/consortium/`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${new URL(page.url()).origin}/palette/`, { waitUntil: 'domcontentloaded' });
   await ready(page);
   assert.ok(await page.waitForFunction((a, b) => { const l = window.__ctTest.store.location.value; return l?.lookup && l.lat === a && l.lon === b && l.source === 'geo'; }, { timeout: 15_000 }, lat, lon).then(() => true, () => false), 'the saved location comes back');
 });
@@ -575,7 +575,7 @@ test('P5-27i (S5b seam review round 2, 2): a saved consortium that fails to open
 
 test('P5-27j (S5b seam review round 2, 3): a fresh link without o= looks the reader\'s saved site up once', async () => {
   const reads = async (hash) => {
-    const page = await h.open(`/consortium/${hash}`, { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((rec) => {
+    const page = await h.open(`/palette/${hash}`, { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((rec) => {
       if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
       window.__ownReads = 0;
       const get = Storage.prototype.getItem;

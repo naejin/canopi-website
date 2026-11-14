@@ -11,7 +11,9 @@
 // a new cell, a phase with food, or a needed second doer; edibility and unknowns only rank.
 // A plant that misfits the site (beside the layers chosen so far), grows taller than the room (an
 // advisory note elsewhere, owner request 2026-11-12: the suggestion prefers plants that fit the room
-// naturally) or has a high conflict with a member is never picked; invasiveness is a warning only and never scores (owner, 2026-10-28).
+// naturally) or has a high conflict with a member is never picked; invasiveness is a warning only and never scores
+// (owner, 2026-10-28), except on an exact tie (A10, owner Q1): of two plants that bring the same, the one
+// not invasive in the chosen country (checked), or, with none, invasive in no GRIIS country, is picked.
 // Guests (plants added from another climate's list) are never picked or offered in Swap; a seeded
 // guest is a member like any other and counts for coverage, with its home placement.
 import type { Alternative, CellRef, Fit, Interaction, JobId, PhaseOrd, PlantId, Site, Stratum, Taxon } from './types.ts';
@@ -20,13 +22,13 @@ import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy, tallerThan
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { cellKey, cellsOf } from './matrix.ts';
 import type { FlagContext } from './conflicts.ts';
-import { asks, conflicts, flagsFor, isSerious } from './conflicts.ts';
+import { asks, conflicts, flagsFor, invasiveIn, isSerious } from './conflicts.ts';
 
 // Suggestions stay small (owner, 2026-10-28): 6, 9 or 12 plants by room; 9 with Room "Not sure"
 // (design check A7, coordinator row "v2 build setup", revertible). The room limits plant size, never
 // the number of plants the reader adds.
-// pots (F1a commit 0; no control or link reaches it yet) takes the small garden's size until stream 1
-// derives these from site.ts ROOM_LIMIT_M (A8).
+// Pots or a balcony (offered by Place since PP-B b1a) takes the small garden's count; its plant height
+// limit is site.ts ROOM_LIMIT_M, which tallerThanRoom applies.
 export const SIZE_LIMIT: Record<Site['room'], number> = { pots: 6, small: 6, large: 9, field: 12, unsure: 9 };
 
 export interface SuggestOptions extends FlagContext {
@@ -109,8 +111,17 @@ function seriousPartners(taxa: Taxon[], interactions: Interaction[]): Map<PlantI
   return out;
 }
 
+// Whether the plant loses a tie for invasiveness: invasive in the chosen country when GRIIS was checked
+// for it; otherwise (no country, or one not checked) invasive in any GRIIS country.
+function tieInvasive(options: FlagContext): (t: Taxon) => boolean {
+  const { country, countryStatus } = options;
+  if (country && countryStatus === 'checked') return (t) => invasiveIn(t, country, true) === true;
+  return (t) => (t.warnings.invasive_in?.length ?? 0) > 0;
+}
+
 export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
   const { site } = options;
+  const invasive = tieInvasive(options);
   const limit = SIZE_LIMIT[site.room];
   const seedIds = new Set(options.seed ?? []);
   const removedIds = new Set(options.removed ?? []);
@@ -140,7 +151,7 @@ export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
       if (p) { let clash = false; for (const id of p) if (memberIds.has(id)) { clash = true; break; } if (clash) continue; }
       const t = tenths(i, cov);
       if (!isNew(t)) continue;
-      if (t.total > bestGain) { best = i; bestGain = t.total; }
+      if (t.total > bestGain || (t.total === bestGain && best && invasive(best.taxon) && !invasive(i.taxon))) { best = i; bestGain = t.total; }
     }
     if (!best) break;
     chosen.push(best);

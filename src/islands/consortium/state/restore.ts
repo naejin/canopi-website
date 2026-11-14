@@ -6,29 +6,36 @@
 // has to be cleared on the way out for saving to work again.
 import { batch, effect, signal } from '@preact/signals';
 import type { ClimateZone, DecodedLink, Interaction, LinkNotice, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { bringsPlace, decodeLink, linkClimates, linkOrigin, linkVersionStatus, zoneOf } from '../../../lib/consortium/index.ts';
+import { bringsPlace, decodeLink, emptyPlace, linkClimates, linkOrigin, linkVersionStatus, zoneOf } from '../../../lib/consortium/index.ts';
 import type { CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
-import { actionCount, attempt, inFlight, memory, quietly, writeAddress, LOCATION_STORE, type CountryFrom } from './persist.ts';
+import { actionCount, attempt, holdSave, inFlight, linkPlace, memory, quietly, writeAddress, LOCATION_STORE, type CountryFrom, type OwnPlace, type SavedRecord } from './persist.ts';
 import { lookingThrough } from './lookups.ts';
 
-// The notices a link (or the save) left for the reader (Actions shows them; Start shows `outdated`).
-// newer, unreadable and period (link v5, plant-palette-architecture 8.2) are set here; b1a words them.
+// The notices a link (or the save) left for the reader (Place shows them).
+// newer, unreadable and period (link v5, plant-palette-architecture 8.2) are set here.
+// guidePlant: the plant a guide preset put in the palette (8.3; not "kept").
 // pasted: a link pasted while a consortium was shown that changed nothing (older or newer version,
 // unreadable, cut with no climate, its plant list not loaded); failed: a link or the save whose plant
 // list did not load.
 type PastedProblem = 'outdated' | 'newer' | 'unreadable' | 'cut' | 'failed';
-export interface Notices extends LinkNotice { oldSave: boolean; guideMissing: string | null; guideKept: PlantId | null; pasted: PastedProblem | null; failed: boolean }
-export const NO_NOTICES: Notices = { unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false, oldSave: false, guideMissing: null, guideKept: null, pasted: null, failed: false };
+export interface Notices extends LinkNotice { oldSave: boolean; guideMissing: string | null; guidePlant: PlantId | null; pasted: PastedProblem | null; failed: boolean }
+export const NO_NOTICES: Notices = { unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false, oldSave: false, guideMissing: null, guidePlant: null, pasted: null, failed: false };
 export const notices = signal<Notices>({ ...NO_NOTICES });
+// A link that brings a place (persist.ts keeps the signal, below this module, so the save follows it).
+export { linkPlace };
+// The reader's readable save when the page opened on something else (a guide preset): "Open my saved
+// palette instead" (draft.ts openSavedInstead) restores it. null once used or when there is none.
+export const savedInstead = signal<SavedRecord | null>(null);
 
 // ---- the site location a page brings (P5 S5b) ----
 
 // The location step (state/location.ts, in the lazy location chunk) as the first run calls it. Its
 // loader is handed in by the view that owns the chunk (views/location/load.ts), so island state
 // never imports a view, statically or through import() (ADR-1 L2), and no cycle closes through it.
-export interface LocationSettle { settle(how: 'link' | 'saved', saved: string | null): Promise<void> }
+// adopt: "Use it" on a link's place keeps the link's cell as the reader's own location (8.3).
+export interface LocationSettle { settle(how: 'link' | 'saved', saved: string | null): Promise<void>; adopt(): void }
 let loadStep: (() => Promise<LocationSettle>) | null = null;
 // Returns the loader it replaces (a test puts it back).
 export const provideLocationStep = (load: (() => Promise<LocationSettle>) | null): (() => Promise<LocationSettle>) | null => {
@@ -53,6 +60,9 @@ function settleLocation(how: 'link' | 'saved', saved: string | null = null): Pro
     if (how === 'link') store.location.value = null;
   });
 }
+// "Use it": the link's cell kept as the reader's own location, through the location step.
+export const adoptLinkLocation = (): Promise<void> => stepLoaded().then((m) => m.adopt(), () => {});
+
 // The reader's own saved site, looked up again while no other location is set. One rule for a fresh
 // open and a link pasted into the open tab (seam review 5): a link without `o=` leaves the reader's own
 // site in place (their checks are about their site; the link's plants are unchanged); only a link's
@@ -120,13 +130,15 @@ function cancelRestore(): void {
   inFlight.value = null;
 }
 
-export interface RestoreOptions { from: 'link' | 'saved'; src?: CountryFrom; keep?: boolean; place?: string | null }
+export interface RestoreOptions { from: 'link' | 'saved'; src?: CountryFrom; keep?: boolean; place?: string | null; ask?: OwnPlace }
 // Restores a fragment (a link or the save) once its climates are read. Returns whether it opened.
 // src: the saved country's source (a save's country that came from a link keeps that label).
 // place: the private place kept apart from a saved fragment (the record's `place`, history.state.pl).
 // keep: a consortium is shown (a link pasted into the open tab, Back/Forward): a link that cannot
 // open changes nothing, says so where the reader is, and the address goes back to the consortium shown.
-export async function restore(fragment: string, { from, src = null, keep = false, place = null }: RestoreOptions): Promise<boolean> {
+// ask: a reload of a page whose link place still waited (history.state ask): the notice again, against
+// this own place, and the save held.
+export async function restore(fragment: string, { from, src = null, keep = false, place = null, ask = undefined }: RestoreOptions): Promise<boolean> {
   const refuse = (problem: PastedProblem, notice: Partial<Notices>): false => {
     if (keep) { notices.value = { ...notices.peek(), pasted: problem }; writeAddress(true); }
     else notices.value = { ...notices.peek(), ...notice };
@@ -173,15 +185,27 @@ export async function restore(fragment: string, { from, src = null, keep = false
     // A save's place is the palette's own (a record without one: every answer unsure); a link's
     // applies only when it brings one (8.3).
     const brings = from === 'saved' || bringsPlace(fragment, d);
+    // A link's place that differs from the reader's own: applied to this page only, with the notice;
+    // the save keeps the reader's own until they choose (8.3).
+    const waiting = linkPlace.peek();
+    const mine: OwnPlace = ask ?? waiting?.own ?? { spot: store.spot.peek(), soil: store.soil.peek(), country: store.country.peek() };
+    const asks = (from === 'link' || !!ask) && brings && !samePlace(mine, d);
+    // Arriving by a link writes no save until the reader acts; opening the save lets it go.
+    holdSave(from === 'link' || !!ask);
     // One batch; the watcher then saves it and writes the address (plants no longer in the list are
     // left out of the address, §5).
+    // A link's place still waiting when another palette opens (Back to the reader's own, another link):
+    // the reader's own place and country come back first, so nothing of the earlier link stays.
     quietly(() => batch(() => {
+      if (waiting && !ask) { store.spot.value = waiting.own.spot; store.soil.value = waiting.own.soil; store.country.value = waiting.own.country; }
       applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen', brings);
       // A climate is chosen now: a card the saved site proposed while this opened goes (seam review
       // round 3, 1); only a restore that fails leaves it. One the reader's own locating proposed stays
       // (round 4, 2).
       if (store.proposedFromSave.peek()) { store.proposedClimate.value = null; store.proposedFromSave.value = false; }
       notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut, newer: d.notice.newer, period: d.notice.period, unreadable: false, pasted: null, failed: false };
+      linkPlace.value = asks ? { own: mine } : null;
+      if (from === 'saved') savedInstead.value = null;
       if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', lookup: null };
       // A link without `o=` (pasted into the tab): an earlier link's location goes with it, so no
       // stale line shows and Share cannot attach its cell (review round 1, 2). The reader's own stays.
@@ -194,6 +218,13 @@ export async function restore(fragment: string, { from, src = null, keep = false
   } finally {
     if (inFlight.peek()?.id === id) inFlight.value = null;
   }
+}
+
+// Whether a decoded link's place is the reader's own already (its spot, soil and country).
+const json = (v: unknown): string => JSON.stringify(v ?? null);
+function samePlace(mine: OwnPlace, d: DecodedLink): boolean {
+  const s = d.state;
+  return json(s.spot ?? emptyPlace.spot) === json(mine.spot) && json(s.soil ?? { from: 'map' }) === json(mine.soil) && (!s.country || s.country === mine.country.code);
 }
 
 // A guide preset: the climate for this consortium only (never the shared site climate), and the
@@ -212,6 +243,6 @@ export async function applyPreset(climate: ClimateZone, plant: string | null): P
   // The guide's plant is the guide's choice, not the reader acting.
   quietly(() => batch(() => {
     store.members.value = [...new Set([...store.members.peek(), t.id])];
-    notices.value = { ...notices.peek(), guideKept: t.id };
+    notices.value = { ...notices.peek(), guidePlant: t.id };
   }));
 }

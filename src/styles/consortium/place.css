@@ -1,2 +1,45 @@
 /* Place (stream b1a): page-level, imported by src/components/consortium/ConsortiumPage.astro (PP-B commit 0).
-   Colours only from the token block of src/styles/tokens.css (plant-palette-architecture 3.5). */
+   Colours only from the token block of src/styles/tokens.css (plant-palette-architecture 3.5); Source Sans 3 /
+   Literata at 400 and 600; breakpoints max-width 639px and min-width 960px only; nothing wider than the
+   page at 320 px (long words wrap: ru, de). */
+.ct .ct-place { min-width: 0; }
+.ct .ct-place-lede { margin: 0; font-size: 17px; max-width: 62ch; }
+.ct .ct-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ct .ct-place :is(h2, p, label, legend, button) { overflow-wrap: anywhere; }
+
+/* How much room: each answer shows its height limit under its name (a two-line pill). */
+.ct .ct-room { margin: 0 0 8px; }
+.ct .ct-room-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 8px; }
+.ct .ct-room .ct-room-row label { display: grid; align-content: center; gap: 2px; min-height: 56px; padding: 8px 14px; border-radius: 10px; min-width: 0; }
+.ct .ct-room-name { font-weight: 600; }
+.ct .ct-room-limit { font-size: 13.5px; color: var(--text-muted); }
+.ct .ct-room label.is-on .ct-room-limit { color: inherit; }
+
+/* Plot size (optional). */
+.ct .ct-plot { display: grid; gap: 6px; margin: 12px 0 0; max-width: 34rem; }
+.ct .ct-plot-field { min-height: 40px; max-width: 14rem; width: 100%; padding: 0 12px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; }
+.ct .ct-plot-field[aria-invalid="true"] { border-color: var(--danger); }
+
+/* The grower's own plants. */
+.ct .ct-own { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; padding: 0; list-style: none; }
+.ct .ct-own-chip { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; min-width: 0; padding: 0 2px 0 12px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); font-size: 15px; }
+.ct .ct-own-chip > span { overflow-wrap: anywhere; min-width: 0; }
+.ct .ct-own-chip .ct-link { min-width: 40px; justify-content: center; }
+.ct .ct-own-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0; }
+.ct .ct-place .button { white-space: normal; max-width: 100%; min-width: 0; text-align: center; padding-block: 8px; }
+
+/* "No plants in mind?" and its link to a small suggested palette. */
+.ct .ct-place-suggest { margin: 0; }
+
+/* Arrival lines: one live region always on the page (never display:none, so a line added later is read). */
+.ct .ct-place-notices { display: grid; gap: 10px; }
+.ct .ct-place-notices .ct-notice { display: block; overflow-wrap: anywhere; }
+.ct .ct-notice-calm { border-color: var(--border); background: var(--surface-alt); }
+.ct .ct-notice-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.ct .ct-place-status { min-height: 0; }
+
+@media (max-width: 639px) {
+  .ct .ct-place-lede { font-size: 16px; }
+  .ct .ct-plot-field { font-size: 16px; max-width: none; }
+  .ct .ct-own-acts .button { flex: 1 1 100%; }
+}

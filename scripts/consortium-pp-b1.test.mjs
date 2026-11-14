@@ -1,12 +1,10 @@
 // PP-B streams b1a (your place, arriving and sharing) and b1b (the pool count into Place): their unit
-// tests (plant-palette-slices, PP-B rows). Commit 0 moved two F1a markers here unchanged (they still
-// fail for their stated reason after 0a): the suggestion's invasive tie, which b1a makes pass in
-// suggest.ts (expected-fail, owner in each title, scripts/expect-fail.mjs failing(); the owner removes
-// the marker in the commit that makes it pass).
+// tests (plant-palette-slices, PP-B rows). Commit 0 moved two F1a markers here (the suggestion's
+// invasive tie); b1a made them pass in suggest.ts and removed the markers.
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import { UNSURE_SITE } from '../src/lib/consortium/index.ts';
 import { suggest } from '../src/lib/consortium/suggest.ts';
-import { failing } from './expect-fail.mjs';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
 let n = 0;
@@ -27,14 +25,14 @@ const tied = () => {
 };
 const suggestCtx = (over) => ({ site: UNSURE_SITE, interactions: [], country: null, countryStatus: 'none', ...over });
 
-failing('F1a-P12 → PP-B (b1a invasive tie, A10): of two plants that bring the same, the suggestion picks the one not invasive in the chosen country', { owner: 'b1a', reason: /picked the plant invasive in FR on a tie/ }, () => {
+test('F1a-P12 → PP-B (b1a invasive tie, A10): of two plants that bring the same, the suggestion picks the one not invasive in the chosen country', () => {
   const [inv, plain] = tied();
   const picked = suggest([inv, plain], suggestCtx({ country: 'FR', countryStatus: 'checked' })).members;
   assert.ok(!picked.includes(inv.id), `picked the plant invasive in FR on a tie (${picked.length} picked)`);
   assert.ok(picked.includes(plain.id));
 });
 
-failing('F1a-P13 → PP-B (b1a invasive tie, owner Q1): with no country chosen, the tie goes to the plant invasive in no GRIIS country', { owner: 'b1a', reason: /picked the plant invasive in a GRIIS country on a tie/ }, () => {
+test('F1a-P13 → PP-B (b1a invasive tie, owner Q1): with no country chosen, the tie goes to the plant invasive in no GRIIS country', () => {
   const [inv, plain] = tied();
   const picked = suggest([inv, plain], suggestCtx()).members;
   assert.ok(!picked.includes(inv.id), `picked the plant invasive in a GRIIS country on a tie (${picked.length} picked)`);
@@ -44,7 +42,6 @@ failing('F1a-P13 → PP-B (b1a invasive tie, owner Q1): with no country chosen, 
 // ---- b1a: the place, arriving, Start over, the link's place, Forget (plant-palette-slices section 2,
 // row b1a; plant-palette-architecture 3.1, 8.3, 9). The state modules on the installed export, with a
 // storage double; Node has no location or history, so the address is left alone. ----
-import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { emptyPlace, siteFor, encodeLink } from '../src/lib/consortium/index.ts';
@@ -78,6 +75,9 @@ test('b1a arrival with the v5 record { fragment, place, at, src, country? }: the
   assert.deepEqual(arrivalM.arrival({ hash: '', search: '' }, rec, null), { kind: 'saved', fragment: rec.fragment, at: '2026-11-14', src: 'location', place: 'l=shade&w=dry' });
   // A reload of the page's own address: the tab's place (history.state.pl), not the shared save's.
   assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, rec, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'chosen', pl: 'l=sun' }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', at: '', src: 'chosen', place: 'l=sun' });
+  // A reload while a link's place still waited (history.state ask: 1, with the link's country in pl):
+  // asked again, so the save stays held until the reader chooses.
+  assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, rec, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'link', pl: 'k=FR&l=sun', ask: 1 }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', at: '', src: 'link', place: 'k=FR&l=sun', ask: true });
   // A save with no v, and v4 / v6 saves: not a record; v4 alone is the older one.
   for (const f of ['c=temperate&a=&e=1', 'v=4&c=temperate&a=&e=1', 'v=6&c=temperate&a=&e=1']) assert.equal(readRecord(saveRecord(f, 'x', null)), null, f);
   assert.deepEqual(['c=temperate&a=&e=1', 'v=4&c=temperate&a=&e=1', 'v=6&c=temperate&a=&e=1'].map((f) => oldRecord(saveRecord(f, 'x', null))), [false, true, false]);
@@ -129,7 +129,7 @@ const linkWith = async (zone, n, extra = {}, opts = {}) => {
   return encodeLink({ climate: zone, country: null, room: 'unsure', plot: null, period: '1991-2020', spot: null, soil: null, members: k[zone].slice(0, n), removed: [], guests: [], ...extra }, k, opts);
 };
 
-failing('b1a Start over then one Undo: members, removed and guests come back, the palette\'s place stays', { owner: 'b1a', reason: /no Undo offered after Start over/ }, async () => {
+test('b1a Start over then one Undo: members, removed and guests come back, the palette\'s place stays', async () => {
   const pool = await mine(5);
   const before = { members: store.members.peek(), removed: store.removed.peek(), guests: { [pool[50].id]: 'Tropical' } };
   store.guests.value = before.guests;
@@ -152,10 +152,11 @@ failing('b1a Start over then one Undo: members, removed and guests come back, th
   assert.equal(store.toast.peek()?.undo ?? null, null, 'a change ends the Undo offer');
 });
 
-failing('b1a a guide preset gives members == [id] and writes no save until the reader acts', { owner: 'b1a', reason: /the preset wrote a save/ }, async () => {
+test('b1a a guide preset gives members == [id] and writes no save until the reader acts', async () => {
   const pool = await mine(5);
-  const before = kept.get(STORE);
   persist.quietly(() => { store.view.value = 'start'; store.climate.value = null; store.members.value = []; store.removed.value = []; });
+  await wait(0);
+  const before = kept.get(STORE);
   await restoreM.applyPreset('Temperate', pool[3].canonical_name);
   assert.deepEqual(store.members.peek(), [pool[3].id]);
   await wait(0);
@@ -173,7 +174,7 @@ async function arriveWithPlace() {
   assert.equal(await restoreM.restore(link, { from: 'link' }), true);
   return before;
 }
-failing('b1a link place (a): a palette edit while the notice shows keeps the reader\'s own l=sun in the save', { owner: 'b1a', reason: /no link-place notice/ }, async () => {
+test('b1a link place (a): a palette edit while the notice shows keeps the reader\'s own l=sun in the save', async () => {
   const before = await arriveWithPlace();
   try {
     assert.ok(restoreM.linkPlace?.peek(), 'no link-place notice');
@@ -183,7 +184,7 @@ failing('b1a link place (a): a palette edit while the notice shows keeps the rea
     assert.equal(saved()?.place, 'l=sun', 'the save keeps its own place until the reader chooses');
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
-failing('b1a link place (b): "Use it" makes l=shade the palette\'s place and the link\'s cell the device location', { owner: 'b1a', reason: /no link-place notice/ }, async () => {
+test('b1a link place (b): "Use it" makes l=shade the palette\'s place and the link\'s cell the device location', async () => {
   const before = await arriveWithPlace();
   try {
     assert.ok(restoreM.linkPlace?.peek(), 'no link-place notice');
@@ -198,7 +199,7 @@ failing('b1a link place (b): "Use it" makes l=shade the palette\'s place and the
     assert.match(kept.get(PLACE_STORE) ?? '', /l=shade/, 'and it seeds the next palette');
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
-failing('b1a link place (c): "Use my own place" gives back the reader\'s own answers', { owner: 'b1a', reason: /no link-place notice/ }, async () => {
+test('b1a link place (c): "Use my own place" gives back the reader\'s own answers', async () => {
   const before = await arriveWithPlace();
   try {
     assert.ok(restoreM.linkPlace?.peek(), 'no link-place notice');
@@ -209,6 +210,18 @@ failing('b1a link place (c): "Use my own place" gives back the reader\'s own ans
     assert.deepEqual(store.country.peek(), { code: 'FR', source: 'chosen' });
     assert.notEqual(store.location.peek()?.source, 'link', 'the link\'s location goes');
     assert.equal(saved()?.place, 'l=sun');
+  } finally { restoreM.provideLocationStep(before); store.location.value = null; }
+});
+
+test('b1a link place (d): Back to the reader\'s own palette while the notice shows gives back their own answers and country', async () => {
+  const before = await arriveWithPlace();
+  try {
+    assert.ok(restoreM.linkPlace?.peek(), 'no link-place notice');
+    const own = saved();
+    assert.equal(await restoreM.restore(own.fragment, { from: 'saved', src: own.src, place: own.place }), true);
+    assert.equal(restoreM.linkPlace.peek(), null, 'the notice goes');
+    assert.deepEqual(store.spot.peek(), SUN);
+    assert.deepEqual(store.country.peek(), { code: 'FR', source: 'chosen' }, 'never the link\'s country');
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
 
@@ -224,7 +237,7 @@ test('b1a a link\'s m and z never bring a place; k alone keeps the reader\'s cou
   }
 });
 
-failing('b1a Forget this location clears canopi-location, canopi-place and the palette\'s place', { owner: 'b1a', reason: /Forget left canopi-place/ }, async () => {
+test('b1a Forget this location clears canopi-location, canopi-place and the palette\'s place', async () => {
   await mine(5);
   kept.set(PLACE_STORE, 'm=small&l=sun');
   kept.set(LOCATION_STORE, JSON.stringify({ lat: 37.39, lon: -5.98, source: 'geo' }));
