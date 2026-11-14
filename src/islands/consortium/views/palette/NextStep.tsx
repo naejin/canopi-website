@@ -62,7 +62,9 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
     return { ...fillers(next, cands, pv ?? new Map(), holds, warned, members, open), warned };
   }, [next, pool, pv, rule, ctx, code, members, open]);
 
-  if (!members.length) {
+  // Empty: no member at all; plants of a guest list still loading or that failed are members too, only
+  // not read yet (review r2 empty-1), so the branches after this one say so.
+  if (!store.members.value.length) {
     return (
       <Card>
         <Title />
@@ -75,7 +77,7 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
     );
   }
   // A guest list that could not be read: its plants may fill a hole, so no hole is named (PP-B21).
-  if (store.failedPools.value.length) return <Card><Title /><p class="status-line">{T('palette.holesListMissing')}</p></Card>;
+  if (store.failedMembers.value.length) return <Card><Title /><p class="status-line">{T('palette.holesListMissing')}</p></Card>;
   if (store.guestsPending.value.length || store.missingMembers.value.loading.length) {
     return <Card><Title /><p class="status-line">{T('palette.holesPending')}</p></Card>;
   }

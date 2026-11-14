@@ -408,13 +408,20 @@ export function setSource(next: PlantSource | null, close: (() => void) | null =
 
 // Keeps the chosen climate's pool and every guest list's pool read as soon as the database is open,
 // so Start works while the plant list loads. Re-runs only when the source, the climate or the guests
-// change (never on a pool arriving, so a failed read is not retried in a loop). Returns the disposer.
+// change (never on a pool arriving, so a failed read is not retried in a loop); a failed list no guest
+// comes from leaves failedPools here. Returns the disposer.
 export function watchPools(): () => void {
   return effect(() => {
     if (!source.value) return;
     const c = climate.value;
+    const used = new Set(Object.values(guests.value));
+    // A failed guest list no member comes from any more (its last plant removed or swapped) is no
+    // longer missing: off failedPools, so its notice and "not checked" go, and read afresh if a plant
+    // of it comes back (Undo; review r2 empty-2).
+    const failed = failedPools.peek(), gone = failed.filter((z) => !used.has(z));
+    if (gone.length) { for (const z of gone) reading.delete(z); failedPools.value = failed.filter((z) => used.has(z)); }
     if (c) void loadPool(c);
-    for (const from of new Set(Object.values(guests.value))) if (from) void loadPool(from);
+    for (const from of used) if (from) void loadPool(from);
   });
 }
 
@@ -465,15 +472,24 @@ export const sheetCell = signal<SheetFor>(FOR_NOTHING);
 // keeps writing the palette's link onto the entry on top. main.ts listens: on a move back or forward
 // across these entries (historyMoved) it closes the sheet or goes back to Place, then rewrites the
 // entry it landed on with the current link before the hashchange that follows, so an entry under a
-// sheet never brings back the palette as it was before the edits; Forward never reopens a sheet.
+// sheet never brings back the palette as it was before the edits.
+// The model (review r2 hist-1): `known` holds the page's entries at or below the one shown, never
+// more. A move back drops the entries above it (they are Forward's only); a Forward onto one of them
+// (told by its Navigation API key) is refused, back to the entry shown, so Forward never shows a stale
+// sheet or palette step. Every change from the palette to Place leaves the palette step's entry
+// (and any sheet's above it) in one move: "Your place" (leaveEntry('palette')), and a change made
+// outside history (an Undo back to Place; watchSteps).
 // Positions are the Navigation API's entry index where the browser has it, else this page's own
-// count (every move then read as a Back).
+// count (every move then read as a Back, or as the move the page asked for).
 type Entry = 'sheet' | 'palette';
-const navIndex = (): number | null => {
-  try { const i = (globalThis as { navigation?: { currentEntry?: { index: number } | null } }).navigation?.currentEntry?.index; return typeof i === 'number' && i >= 0 ? i : null; } catch { return null; }
+type Nav = { currentEntry?: { index: number; key?: string } | null };
+const navEntry = (): { index: number; key?: string } | null => {
+  try { const e = (globalThis as { navigation?: Nav }).navigation?.currentEntry; return e && typeof e.index === 'number' && e.index >= 0 ? e : null; } catch { return null; }
 };
+const navIndex = (): number | null => navEntry()?.index ?? null;
 let pos = 0, base: number | null = null;
-const known: { kind: Entry; at: number }[] = [];
+const known: { kind: Entry; at: number; key: string | null }[] = [];
+const dropped = new Set<string>(); // keys of the page's entries a move back left (Forward's only)
 const here = (): number => navIndex() ?? pos;
 const lastOf = (kind: Entry) => { for (let i = known.length - 1; i >= 0; i--) if (known[i].kind === kind) return known[i]; return null; };
 function pushEntry(kind: Entry): void {
@@ -484,53 +500,81 @@ function pushEntry(kind: Entry): void {
   const at = here();
   if (base === null || before < base) { base = before; known.length = 0; }
   while (known.length && known[known.length - 1].at >= at) known.pop(); // the push cut the entries ahead
-  known.push({ kind, at });
+  dropped.clear(); // and every entry ahead with them
+  known.push({ kind, at, key: navEntry()?.key ?? null });
 }
 // Whether the entry shown is one this page pushed for `kind`.
 const onEntry = (kind: Entry): boolean => { const e = lastOf(kind); return !!e && known[known.length - 1] === e && e.at === here(); };
-// Leaves the entry `kind` pushed (history.back(); the move then closes the sheet or shows Place):
-// false when the entry shown is not one. `leaving` remembers the page asked for that move, so a sheet
-// opened again before it lands (Swap's "Back to" Details) is not closed by it.
-let leaving: Entry | null = null;
+// Leaves the entry `kind` pushed (the move then closes the sheet or shows Place): false when it is not
+// the page's. A sheet: its entry, shown (history.back()). The palette step: back to the entry under it,
+// past any sheet's above it, in one move. `leaving` remembers the page asked for that move, so a sheet
+// opened again before it lands (Swap's "Back to" Details) is not closed by it; `aim` is where it lands
+// (this page's count, without the Navigation API).
+let leaving: Entry | null = null, aim: number | null = null;
 export function leaveEntry(kind: Entry): boolean {
-  if (!onEntry(kind)) return false;
-  try { history.back(); leaving = kind; return true; } catch { return false; }
+  const now = here(), e = lastOf(kind);
+  if (kind === 'sheet' ? !onEntry('sheet') : !e || known[known.length - 1].at !== now) return false;
+  const by = kind === 'sheet' ? -1 : e!.at - 1 - now;
+  try { history.go(by); leaving = kind; aim = now + by; return true; } catch { return false; }
 }
 // A Back or Forward (popstate): null when it is not a move across this page's entries (a link of an
-// earlier visit: the hashchange opens it); else what main.ts does: `place` (back past the palette
-// step: Your place shows), then the rewrite of the entry landed on with the current link, then
-// pushWaiting. An open sheet the move left closes here (not one opened again after the page's own Back).
-export function historyMoved(): { place: boolean } | null {
-  const asked = leaving;
+// earlier visit: the hashchange opens it), or the page's own move back from a refused Forward; else
+// what main.ts does:
+// `place` (back past the palette step: Your place shows), then the rewrite of the entry landed on with
+// the current link, then pushWaiting. An open sheet the move left closes here (not one opened again
+// after the page's own Back). The entries above the one landed on leave `known`.
+// `force`: main.ts rewrites the landed entry with the current link even with no palette of the page's
+// own (writeAddress(true): Place after Back keeps the palette's link), except after the page left the
+// palette step's entry for a change made outside history (an Undo back to Place): that change wrote
+// the address it wants (state/persist.ts), so the entry takes it as it is.
+let bouncing = false;
+export function historyMoved(): { place: boolean; force: boolean } | null {
+  const asked = leaving, aimed = aim;
   leaving = null;
+  aim = null;
+  if (bouncing) { bouncing = false; return null; }
   if (base === null) return null;
-  const now = navIndex() ?? (pos = Math.max(base, pos - 1));
+  const was = pos;
+  const now = navIndex() ?? aimed ?? Math.max(base, pos - 1);
   const top = known.length ? known[known.length - 1].at : base;
-  if (now < base || now > top) { forgetEntries(); return null; }
+  if (now > top) {
+    const key = navEntry()?.key;
+    // Refused: back to the entry shown; main.ts rewrites this one with the current link first, so
+    // the hashchange that follows never opens the older palette it held.
+    if (key && dropped.has(key)) { try { history.go(was - now); bouncing = true; } catch { /* stays */ } return { place: false, force: true }; }
+    forgetEntries();
+    return null;
+  }
+  pos = now;
+  if (now < base) { forgetEntries(); return null; }
   const s = lastOf('sheet'), p = lastOf('palette');
   const below = !s || now < s.at;
   if (asked !== 'sheet' && sheet.peek() && below) sheet.value = null;
-  return { place: !paletteWaits && !!p && now < p.at && step.peek() === 'palette' };
+  const place = !paletteWaits && !!p && now < p.at && step.peek() === 'palette';
+  while (known.length && known[known.length - 1].at > now) { const k = known.pop()!.key; if (k) dropped.add(k); }
+  return { place, force: !(asked === 'palette' && step.peek() === 'place') };
 }
 // After a move and the rewrite: the entries asked for while the page's own Back was on its way (a
 // push then would race the traversal): the palette step (Paste's Add closes the sheet, then the
 // palette opens), then a sheet opened again.
 let paletteWaits = false;
 export function pushWaiting(): void {
+  if (bouncing) return; // a refused Forward: the move back to the entry shown comes first
   if (paletteWaits && step.peek() === 'palette' && !onEntry('palette')) pushEntry('palette');
   paletteWaits = false;
   if (sheet.peek() && !onEntry('sheet') && SHEET_KINDS.includes(sheet.peek()!.kind)) pushEntry('sheet');
 }
 // A link opened in the tab (a new entry this page did not push): the entries above are another
 // palette's history now; Back from it is the hashchange's (state/arrival.ts).
-export function forgetEntries(): void { base = null; known.length = 0; leaving = null; paletteWaits = false; }
+export function forgetEntries(): void { base = null; known.length = 0; dropped.clear(); leaving = null; aim = null; paletteWaits = false; bouncing = false; }
 // A return visit or a link opens on the palette page by itself: that first step is not the reader's
 // and pushes nothing (main.ts sets it; the step's effect in start() reads it once).
 let arrivalStep = false;
 export function arrivalOpensPalette(on: boolean): void { arrivalStep = on; }
 // The reader's step from Your place to Your palette pushes one history entry, so Back returns to
-// Place (coordinator row 2026-11-14); a return visit's or a link's own opening does not. Started by
-// main.ts beside watchPools (the page's history, not one of start()'s effects). Returns the disposer.
+// Place (coordinator row 2026-11-14); a return visit's or a link's own opening does not. The way back
+// made outside history (an Undo to Place, Start over) leaves that entry, as "Your place" does. Started
+// by main.ts beside watchPools (the page's history, not one of start()'s effects). Returns the disposer.
 export function watchSteps(): () => void {
   let was = step.peek();
   return effect(() => {
@@ -539,6 +583,9 @@ export function watchSteps(): () => void {
       if (arrivalStep) arrivalStep = false;
       else if (leaving) paletteWaits = true; // after the Back on its way (pushWaiting)
       else untracked(() => pushEntry('palette'));
+    } else if (was === 'palette' && now === 'place') {
+      paletteWaits = false;
+      if (!leaving) untracked(() => leaveEntry('palette')); // false once a move back already left it
     }
     was = now;
   });

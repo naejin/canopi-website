@@ -523,9 +523,9 @@ test('PP-B31 (b2 sheets and Back, K7; review r1 bugs-1): Back closes the Add she
   await forward(page);
   assert.equal(await sheetKind(page), null, 'Forward never reopens the sheet');
   assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), before + 2, 'nor an older palette');
+  // Forward is refused (review r2 hist-1): the page goes back to the entry it shows.
+  assert.ok(await page.waitForFunction((a) => navigation.currentEntry.index === a, { timeout: 4000 }, arrived).then(() => true, () => false), 'Forward refused: back on the page\'s first entry');
   // Reloading the address the Back left shows the plants added.
-  await page.evaluate(() => history.back());
-  await page.waitForFunction((a) => navigation.currentEntry.index === a, { timeout: 4000 }, arrived);
   await page.reload();
   assert.ok(await page.waitForFunction((n) => window.__ctTest?.store?.members.value.length === n, { timeout: 20_000 }, before + 2).then(() => true, () => false), 'the address keeps the plants added in the sheet');
   await done(page);
@@ -559,7 +559,7 @@ const readerPalette = async () => {
   return { page, arrived };
 };
 const settled = async (page) => { await frames(page); await new Promise((r) => setTimeout(r, 300)); };
-failing('PP-B40 (b2 review r2 hist-1, K7): from a palette the reader made, a sheet opened and closed, then "Your place": Place on the page\'s first entry, so the next Back leaves the page, and Forward never shows a stale entry', { owner: 'b2', reason: /"Your place" went back in history/ }, async () => {
+test('PP-B40 (b2 review r2 hist-1, K7): from a palette the reader made, a sheet opened and closed, then "Your place": Place on the page\'s first entry, so the next Back leaves the page, and Forward never shows a stale entry', async () => {
   const { page, arrived } = await readerPalette();
   await page.evaluate(() => window.__ctTest.store.hideToast());
   await page.waitForSelector('.ct-chart .ct-chip[data-plant-id]', { timeout: 8000 });
@@ -582,7 +582,7 @@ failing('PP-B40 (b2 review r2 hist-1, K7): from a palette the reader made, a she
 
 // (Suggest offers no Undo on this branch; a paste's Add on Place does: store.addMembers, as Paste's
 // Add calls it, opens the palette with Undo back to Place.)
-failing('PP-B41 (b2 review r2 hist-1): plants pasted on Your place, then Undo from the toast: Place on the page\'s first entry, so the next Back leaves the page', { owner: 'b2', reason: /Undo went back in history/ }, async () => {
+test('PP-B41 (b2 review r2 hist-1): plants pasted on Your place, then Undo from the toast: Place on the page\'s first entry, so the next Back leaves the page', async () => {
   const { page, arrived } = await readerPalette();
   await page.click(aria('button', en['consortium.undo']));
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.step.value === 'place', { timeout: 4000 }).then(() => true, () => false), 'Undo returns to Your place');
@@ -774,7 +774,7 @@ test('PP-B39 (b2 a second look; review r1 conformance-2): a filler with a warnin
 
 // r2-swap-1: the outside group reaches every outside plant through its own "Show all N", whatever the
 // in-range count. At Yakutsk (Dfc) the Temperate list leaves few plants in range and many outside.
-failing('PP-B42 (b2 review r2 swap-1): with few alternatives in range and more than 7 outside, Swap\'s outside group has its own "Show all N" and lists all N', { owner: 'b2', reason: /the outside rows reach all/, timeout: 120_000 }, async () => {
+test('PP-B42 (b2 review r2 swap-1): with few alternatives in range and more than 7 outside, Swap\'s outside group has its own "Show all N" and lists all N', { timeout: 120_000 }, async () => {
   const page = await swapPage('yakutsk');
   let seen = null;
   for await (const label of swaps(page)) {
@@ -798,7 +798,7 @@ failing('PP-B42 (b2 review r2 swap-1): with few alternatives in range and more t
 
 // r2-colour-1: the jobs picture's bands are drawn in their row's job (the lane head's icon and word),
 // so no band says a job by colour alone; the plants with no job recorded are neutral.
-failing('PP-B43 (b2 review r2 colour-1): the jobs picture fills each band with its row\'s job, the colour its lane head names', { owner: 'b2', reason: /bands in a job other than their row's/ }, async () => {
+test('PP-B43 (b2 review r2 colour-1): the jobs picture fills each band with its row\'s job, the colour its lane head names', async () => {
   const page = await tool({ hash: await temperateLink(null, 8) });
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForSelector('.ct-chart [data-plant-id]', { timeout: 8000 });
@@ -828,7 +828,7 @@ const mediterranean = (n) => realDb((db) => db.prepare("SELECT p.id FROM placeme
 const listMissing = (page) => page.waitForFunction((t) => [...document.querySelectorAll('.ct-notice')].some((n) => n.textContent.includes(t) && n.textContent.includes('Mediterranean')), { timeout: 8000 }, en['consortium.palette.listFailed'].split('{lists}')[0].replace(/^(one|other):\s*/, '').trim()).then(() => true, () => false);
 
 // r2-empty-1: the empty check counts every member, the plants of a pending or failed guest list too.
-failing('PP-B44 (b2 review r2 empty-1): a palette made only of plants from a guest list that fails is never called empty; the Next step says the holes wait for the list, and ct:first-view is not marked on it', { owner: 'b2', reason: /called empty|first-view marked/ }, async () => {
+test('PP-B44 (b2 review r2 empty-1): a palette made only of plants from a guest list that fails is never called empty; the Next step says the holes wait for the list, and ct:first-view is not marked on it', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   const gs = await mediterranean(2);
@@ -845,7 +845,7 @@ failing('PP-B44 (b2 review r2 empty-1): a palette made only of plants from a gue
 });
 
 // r2-empty-2: removing a failed list's last plant clears its "not checked" state.
-failing('PP-B45 (b2 review r2 empty-2): once the grower removes the plants of a list that failed, the notice goes and the Next step names a hole', { owner: 'b2', reason: /stays "not checked"/ }, async () => {
+test('PP-B45 (b2 review r2 empty-2): once the grower removes the plants of a list that failed, the notice goes and the Next step names a hole', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   const [g] = await mediterranean(1);
@@ -860,7 +860,7 @@ failing('PP-B45 (b2 review r2 empty-2): once the grower removes the plants of a 
 });
 
 // r2-offline-1: Actions' could-not-load line is lazy.tsx's LoadFailed: offline, never Reload.
-failing('PP-B46 (b2 review r2 offline-1): offline, a Download whose chunk cannot come says "Needs a connection", with no Reload', { owner: 'b2', reason: /Reload offline/ }, async () => {
+test('PP-B46 (b2 review r2 offline-1): offline, a Download whose chunk cannot come says "Needs a connection", with no Reload', async () => {
   const page = await tool({ hash: await temperateLink() });
   assert.ok(await onPage(page), 'the palette page');
   await page.evaluate(() => { window.__ctFaults.later = 'fail'; });

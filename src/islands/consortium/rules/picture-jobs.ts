@@ -2,6 +2,10 @@
 // plot and for how long, one row per job, the seven time steps as columns. An empty judged cell is
 // an open job hole. A plant doing several jobs stands in each of their rows; plants with no job
 // recorded are a row of their own, counted, never dropped. Pure; words are Lines.
+// Each band is drawn in its row's job, the job its lane head names with its icon and word (the "No
+// job recorded" row neutral): this picture has no key, so a band in the plant's main job would say
+// that job by colour alone, against its row (review r2 colour-1). Each plant's main job stays in its
+// accessible name (Picture.jobs).
 import type { Line } from '../../../lib/consortium/index.ts';
 import { jobIds, jobsOf, PHASE_YEARS, spans, yearsLine, yearsOf } from '../../../lib/consortium/index.ts';
 import { holeAt, judgedColumn, lane, namesAndJobs, type Picture } from './picture.ts';
@@ -11,11 +15,11 @@ export function jobsPicture({ members, holes, nameOf, first }: PictureInput): Pi
   const columns = PHASE_YEARS.map(([from, to]) => yearsLine(from, to));
   const common = { nameOf, first, at: spans, judged: judgedColumn, years: yearsOf };
   const rows = jobIds.map((j) => lane(j, { key: `consortium.job.${j}`, vars: {} }, members.filter((t) => jobsOf(t).includes(j)), columns.length, {
-    ...common, holeAt: (c: number) => holeAt(holes, (h) => h.kind === 'job' && h.job === j, c),
+    ...common, markJob: j, holeAt: (c: number) => holeAt(holes, (h) => h.kind === 'job' && h.job === j, c),
   }));
   const none = members.filter((t) => !jobsOf(t).length);
   const head = (key: string, count?: number): Line => ({ key: `consortium.palette.${key}`, vars: {}, ...(count === undefined ? {} : { count }) });
-  if (none.length) rows.push(lane('none', head('jobsNone'), none, columns.length, { ...common, holeAt: () => null, state: 'not-recorded' }));
+  if (none.length) rows.push(lane('none', head('jobsNone'), none, columns.length, { ...common, markJob: null, holeAt: () => null, state: 'not-recorded' }));
   const open = holes.filter((h) => h.kind === 'job' && h.state === 'open').length;
   return {
     title: 'consortium.palette.jobsTitle', columns, rows,

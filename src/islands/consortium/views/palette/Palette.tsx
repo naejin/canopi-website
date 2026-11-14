@@ -47,7 +47,8 @@ function VerdictNotice() {
   );
 }
 
-// ct:first-view, once the palette page shows its Next step from the verdicts (or says they failed):
+// ct:first-view, once the palette page shows its Next step from the verdicts (or says they failed),
+// never on a card still waiting for a member's list:
 // the effect runs after that render is committed (review r1 perf-5); the later parts are prefetched
 // then (lazy.tsx; the data ready already started them on a first visit).
 function FirstView() {
@@ -55,8 +56,8 @@ function FirstView() {
   return null;
 }
 
-// "Your place": Back when the step to the palette took a history entry (so the browser's Forward
-// returns), else the step itself.
+// "Your place": back in history past the palette step's entry, and any sheet's above it, when the page
+// pushed it (store.leaveEntry: the next Back then leaves the page), else the step itself.
 const toPlace = (): void => { if (!store.leaveEntry('palette')) changeSite(); };
 
 export function Palette() {
@@ -79,7 +80,9 @@ export function Palette() {
   }, [members, holes, verdicts]);
   const failedLists = store.failedPools.value;
   const off = store.offline.value;
-  const shown = !!verdicts || store.verdictFailed.value;
+  // Every member read (none loading, none of a list that failed: review r2 empty-1), so the Next step
+  // shows from the verdicts, or says they failed.
+  const shown = (!!verdicts || store.verdictFailed.value) && !pending;
   return (
     <div class="ct-palette-page">
       <nav class="ct-steps" aria-label={T('palette.stepsLabel')}>

@@ -26,8 +26,9 @@ export interface PictureRow {
   state: 'data' | 'not-recorded' | 'not-judged';
   more?: { count: number; ids: PlantId[]; line: Line };
 }
-// names: each plant's full name; jobs: each plant's main job (the band colour and the chip icon read
-// it here, so no view works it out again).
+// names: each plant's full name; jobs: each plant's main job (the chip's icon and accessible name read
+// it here, so no view works it out again). A band's colour is its Mark's job: the main job in Through
+// the years (with its key), the row's job in the jobs picture (picture-jobs.ts).
 export interface Picture { title: string; summary: Line[]; columns: Line[]; rows: PictureRow[]; names: Record<PlantId, string>; jobs: Record<PlantId, JobId | null> }
 
 // A plant's main job: its first in jobIds order, or null.
@@ -57,6 +58,7 @@ export function foldLane(plants: readonly Taxon[], nameOf: (t: Taxon) => string,
 export function lane(key: string, head: Line, plants: readonly Taxon[], columns: number, opts: {
   nameOf: (t: Taxon) => string; at: (t: Taxon, column: number) => boolean; judged: (column: number) => boolean;
   holeAt: (column: number) => string | null; years: (t: Taxon) => { from: number; to: number | null } | null; first?: ReadonlySet<PlantId>; state?: PictureRow['state'];
+  markJob?: JobId | null; // every band's job (the jobs picture: its row's); else each plant's main job
 }): PictureRow {
   const { shown, folded } = foldLane(plants, opts.nameOf, opts.first);
   const cells: Cell[] = [];
@@ -65,7 +67,7 @@ export function lane(key: string, head: Line, plants: readonly Taxon[], columns:
     const judged = opts.judged(c);
     cells.push({ ids, hidden, hole: ids.length || hidden.length || !judged ? null : opts.holeAt(c), judged });
   }
-  const marks = shown.flatMap((t) => { const y = opts.years(t); return y ? [{ id: t.id, name: opts.nameOf(t), job: mainJob(t), from: y.from, to: y.to }] : []; });
+  const marks = shown.flatMap((t) => { const y = opts.years(t); return y ? [{ id: t.id, name: opts.nameOf(t), job: opts.markJob === undefined ? mainJob(t) : opts.markJob, from: y.from, to: y.to }] : []; });
   const row: PictureRow = { key, head, cells, marks, state: opts.state ?? 'data' };
   if (folded.length) row.more = { count: folded.length, ids: folded.map((t) => t.id), line: moreLine(folded.length) };
   return row;

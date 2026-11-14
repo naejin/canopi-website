@@ -10,7 +10,7 @@ import { climate, memberTaxa, source, view } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { notices } from '../state/restore.ts';
 import { zoneName } from './kit/names.ts';
-import { later, laterModule } from './lazy.tsx';
+import { later, laterModule, LoadFailed } from './lazy.tsx';
 import { laterChunk } from './later-chunk.ts';
 
 // Share, the print sheet and the .canopi writer load after the first view (views/lazy.tsx), all through
@@ -57,8 +57,11 @@ function LinkNotices() {
   );
 }
 
-// Print or Download when the chunk they need did not load: said here, with Reload (F4).
+// Print or Download when the chunk they need did not load: said here with lazy.tsx's LoadFailed
+// (F4): Reload online; offline "Needs a connection", never a reload (review r2 offline-1), and the
+// line goes once back online, so the next press tries the chunk again.
 const partFailed = signal(false);
+const clearFailed = (): void => { partFailed.value = false; };
 const failed = (err: unknown): void => { console.error(`Consortium: a part did not load: ${(err as Error).message}`); partFailed.value = true; };
 
 async function download(): Promise<void> {
@@ -110,7 +113,7 @@ function ActionsView() {
         <button type="button" class="button button-secondary ct-small" onClick={() => void printNow()}>{T('print.button')}</button>
         <button type="button" class="button button-secondary ct-small" onClick={() => void download()}>{T('download.button')}</button>
       </div>
-      {partFailed.value && <p class="ct-notice" role="alert">{T('details.loadFailed')} <button type="button" class="button button-secondary" onClick={() => location.reload()}>{T('details.reload')}</button></p>}
+      {partFailed.value && <LoadFailed retry={clearFailed} />}
       <p class="ct-muted ct-small-text">{T('download.note')}</p>
       {sharing && <share.View onClose={() => setSharing(false)} />}
       <PrintHost />

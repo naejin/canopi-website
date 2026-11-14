@@ -305,7 +305,7 @@ test('PP-B (b2 pictures, review r1 conformance-6): each picture names every plan
 // Review r2 colour-1: the jobs picture shows no key (its lanes are the jobs), so a band in the plant's
 // main job would say that job by colour alone, against the row it stands in. Each band takes its row's
 // job (the lane head's icon and word); the "No job recorded" row is neutral (null).
-failing('PP-B (b2 pictures, review r2 colour-1): the jobs picture draws each band in its row\'s job, the no-job row neutral', { owner: 'b2', reason: /band in its row's job/ }, async () => {
+test('PP-B (b2 pictures, review r2 colour-1): the jobs picture draws each band in its row\'s job, the no-job row neutral', async () => {
   const P = await pictures();
   const p = pictureOf(P, 'jobsPicture', palette);
   for (const r of p.rows) for (const m of r.marks) assert.equal(m.job, r.key === 'none' ? null : r.key, `jobsPicture ${r.key}: ${m.id}'s band in its row's job`);

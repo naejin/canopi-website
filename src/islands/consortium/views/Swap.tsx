@@ -37,6 +37,9 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const removed = store.removed.value;
   const [all, setAll] = useState(false);
   const [showOutside, setShowOutside] = useState(false);
+  // The outside group's own fold (review r2 swap-1): its "Show all N" reaches every outside plant,
+  // whatever the in-range list shows.
+  const [allOutside, setAllOutside] = useState(false);
   const verdicts = store.poolVerdicts.value;
   const rule = store.rangeRule.value, loc = store.location.value;
   const outside = (x: Taxon) => (verdicts ? verdicts.get(x.id)?.level === 'outside' : !!rule && rule.rangeFit(x, loc) === 'outside');
@@ -106,9 +109,14 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
       {!all && alts.length > shown.length && (
         <p><button type="button" class="button button-secondary" onClick={() => setAll(true)}>{P('add.showAll', alts.length)}</button></p>
       )}
-      {algo && outsideAlts.length > 0 && (showOutside
-        ? <ul class="ct-rows" data-outside="">{(all ? outsideAlts : outsideAlts.slice(0, SHOWN.fit)).map((a) => row(a, true))}</ul>
-        : <p><button type="button" class="button button-secondary" onClick={() => setShowOutside(true)}>{P('palette.showOutside', outsideAlts.length)}</button></p>)}
+      {algo && outsideAlts.length > 0 && (showOutside ? (
+        <>
+          <ul class="ct-rows" data-outside="">{(allOutside ? outsideAlts : outsideAlts.slice(0, SHOWN.fit)).map((a) => row(a, true))}</ul>
+          {!allOutside && outsideAlts.length > SHOWN.fit && (
+            <p><button type="button" class="button button-secondary" onClick={() => setAllOutside(true)}>{P('add.showAll', outsideAlts.length)}</button></p>
+          )}
+        </>
+      ) : <p><button type="button" class="button button-secondary" onClick={() => setShowOutside(true)}>{P('palette.showOutside', outsideAlts.length)}</button></p>)}
     </Frame>
   );
 }

@@ -100,14 +100,23 @@ if (root && data) {
   // coordinator row 2026-11-14): the sheet closes or Place shows, then the entry landed on takes the
   // current link at once, before the hashchange that follows reads it. Registered before the memory's
   // own hashchange listener: a link opened in the tab (not the page's own address) ends those entries.
+  // The hashchange of such a move (entries whose addresses differ) is the page's own: it stops here,
+  // never reaching the memory's listener, which would read the address landed on as a link to
+  // restore (on Place it holds the set-aside palette's link, not the one shown: review r2 hist-1,
+  // an Undo back to Place leaving the palette step's entry). Told by the address written here.
+  let moveAddress: string | null = null;
   addEventListener('popstate', () => {
     const moved = historyMoved();
     if (!moved) return;
     if (moved.place) changeSite();
-    writeAddress(true);
+    writeAddress(moved.force);
+    moveAddress = location.hash;
     pushWaiting();
   });
-  addEventListener('hashchange', () => {
+  addEventListener('hashchange', (e) => {
+    const mine = moveAddress !== null && location.hash === moveAddress;
+    moveAddress = null;
+    if (mine) { e.stopImmediatePropagation(); return; }
     const f = location.hash.slice(1);
     if (f && f !== currentFragment()) forgetEntries();
   });
