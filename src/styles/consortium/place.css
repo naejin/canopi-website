@@ -9,7 +9,7 @@
 
 /* How much room: each answer shows its height limit under its name (a two-line pill). */
 .ct .ct-room { margin: 0 0 8px; }
-.ct .ct-room-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 8px; }
+.ct .ct-room-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); gap: 8px; }
 .ct .ct-room .ct-room-row label { display: grid; align-content: center; gap: 2px; min-height: 56px; padding: 8px 14px; border-radius: 10px; min-width: 0; }
 .ct .ct-room-name { font-weight: 600; }
 .ct .ct-room-limit { font-size: 13.5px; color: var(--text-muted); }
