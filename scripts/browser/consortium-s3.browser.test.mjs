@@ -393,33 +393,40 @@ test('BT-6 (S3 review 2): a toast moving into a sheet is not announced again; "A
   await page.close();
 });
 
-// W4 (review paste-2): "Add anyway" leaves the list as the plant joins, so the focus moves on, never to
-// <body>: to the next row's "Add anyway", else the "Already in" heading. The toast hands it back there.
-test('BT-6 (S3 paste focus): Enter on "Add anyway" moves the focus to the next row\'s "Add anyway", then to the "Already in" heading, never to <body>', async () => {
+// W4 (review paste-2, pf-2): "Add anyway" leaves the list as the plant joins, so the focus moves on, never
+// to <body> and never stays on the pressed (removed) button: to the next row's "Add anyway", else the
+// row before's, else the "Already in" heading. Rows are keyed by plant, so the pressed node leaves.
+test('BT-6 (S3 paste focus): Enter on "Add anyway" moves the focus to the next row\'s, else the row before\'s, then to the "Already in" heading, never to <body> or the pressed button', async () => {
   const page = await open({ width: 1280, data: 'fixture' });
   await start(page);
-  for (const c of ['Inga edulis', 'Musa acuminata']) if (await isMember(page, c)) await dropMember(page, c);
+  const [A, B, C] = ['Inga edulis', 'Musa acuminata', 'Carica papaya'];
+  for (const c of [A, B, C]) if (await isMember(page, c)) await dropMember(page, c);
   await openBy(page, 'Paste a list');
-  await page.locator('::-p-aria([role="textbox"])').fill('Inga edulis\nMusa acuminata');
-  assert.ok(await page.waitForFunction(() => document.querySelectorAll('dialog[open] [aria-labelledby="ct-p-other"] li button').length === 2, { timeout: 5000 }).then(() => true, () => false), 'two rows from another list');
+  await page.locator('::-p-aria([role="textbox"])').fill([A, B, C].join('\n'));
+  const rows = 'dialog[open] [aria-labelledby="ct-p-other"] li';
+  assert.ok(await page.waitForFunction((sel) => document.querySelectorAll(`${sel} button`).length === 3, { timeout: 5000 }, rows).then(() => true, () => false), 'three rows from another list');
+  // The "Add anyway" of a plant's row, by its scientific name.
+  const buttonOf = (name) => page.evaluate((sel, n) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === n)?.querySelector('button')?.getAttribute('aria-describedby') ?? null, rows, name);
+  const settle = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 50)))));
   const focused = () => page.evaluate(() => {
     const a = document.activeElement;
-    return { body: !a || a === document.body, inSheet: !!a?.closest('dialog[open]'), tag: a?.tagName ?? null, text: a?.textContent?.trim() ?? '', describedby: a?.getAttribute('aria-describedby') ?? null };
+    return { body: !a || a === document.body, inSheet: !!a?.closest('dialog[open]'), pressed: a?.dataset?.pressed === '1', tag: a?.tagName ?? null, text: a?.textContent?.trim() ?? '', describedby: a?.getAttribute('aria-describedby') ?? null };
   });
-  const settle = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 50)))));
-  const second = await page.$eval('dialog[open] [aria-labelledby="ct-p-other"] li:nth-child(2) button', (b) => b.getAttribute('aria-describedby'));
-  await page.focus('dialog[open] [aria-labelledby="ct-p-other"] li:first-child button');
-  await page.keyboard.press('Enter');
-  await settle();
-  let at = await focused();
-  assert.ok(!at.body && at.inSheet, `the focus stays in the sheet (${JSON.stringify(at)})`);
-  assert.equal(at.describedby, second, `on the next row's "Add anyway" (${JSON.stringify(at)})`);
-  await page.keyboard.press('Enter');
-  await settle();
-  at = await focused();
-  assert.ok(!at.body && at.inSheet, `the focus stays in the sheet (${JSON.stringify(at)})`);
-  assert.equal(at.tag, 'H3', `on the "Already in" heading (${JSON.stringify(at)})`);
+  // Presses a row's "Add anyway" by keyboard, the button tagged so the focus is never found on it again.
+  const press = async (name) => {
+    await page.evaluate((sel, n) => { const b = [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === n).querySelector('button'); b.dataset.pressed = '1'; b.focus(); }, rows, name);
+    await page.keyboard.press('Enter');
+    await settle();
+    const at = await focused();
+    assert.ok(!at.body && at.inSheet && !at.pressed, `after ${name}: the focus stays in the sheet, off the pressed button (${JSON.stringify(at)})`);
+    assert.ok(await isMember(page, name), `${name} joined`);
+    return at;
+  };
+  const b = await buttonOf(B);
+  assert.equal((await press(C)).describedby, b, 'the last row: the focus goes to the row before\'s "Add anyway"');
+  assert.equal((await press(A)).describedby, b, 'the first row: the focus goes to the next row\'s');
+  const at = await press(B);
+  assert.equal(at.tag, 'H3', `the list empty: the "Already in" heading (${JSON.stringify(at)})`);
   assert.match(at.text, /Already in/i);
-  assert.ok(await isMember(page, 'Inga edulis') && await isMember(page, 'Musa acuminata'), 'both joined');
   await page.close();
 });

@@ -6,7 +6,7 @@ tags: [consortium, architecture]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:16:49Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:16:43Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:41:05Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -113,7 +113,7 @@ sources:
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
     digest: sha256:662426a9e2d6b05e
-    last_modified: 2026-11-14T22:12:57Z
+    last_modified: 2026-11-14T22:28:42Z
   - id: format-ts
     resource: ../../src/islands/consortium/format.ts
     title: src/islands/consortium/format.ts
@@ -212,8 +212,8 @@ sources:
   - id: paste-tsx
     resource: ../../src/islands/consortium/views/Paste.tsx
     title: src/islands/consortium/views/Paste.tsx
-    digest: sha256:e5f7bb539384882a
-    last_modified: 2026-11-14T22:12:57Z
+    digest: sha256:904e8e3e5a71ad0b
+    last_modified: 2026-11-14T22:35:49Z
   - id: plantmarks-tsx
     resource: ../../src/islands/consortium/views/PlantMarks.tsx
     title: src/islands/consortium/views/PlantMarks.tsx

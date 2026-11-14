@@ -76,8 +76,9 @@ export default function Paste({ Frame }: { Frame: Frame }) {
     closeSheet();
     addMembers(ids, from, { warned });
   };
-  // The row leaves for "Already in" as the plant joins, so the focus moves on (W4): to the next row's
-  // "Add anyway" (next: its plant), else the "Already in" heading, else the sheet's title.
+  // The row leaves for "Already in" as the plant joins (rows keyed by plant, so its node goes), and the
+  // focus moves on (W4): to the next row's "Add anyway" (next: its plant, else the row before's), else
+  // the "Already in" heading, else the sheet's title.
   const addGuest = (t: Taxon, from: ClimateZone, next?: Taxon) => {
     addMembers([t.id], { [t.id]: from }, { warned: warns(flagsOfPlant(t)) ? [t.id] : [] });
     focusAfterAdd(() => (next && document.querySelector<HTMLElement>(`button[aria-describedby="ct-p-o-${next.id}"]`)) || document.getElementById('ct-p-already'));
@@ -123,7 +124,7 @@ export default function Paste({ Frame }: { Frame: Frame }) {
             <h3 id="ct-p-found">{T('paste.g.found')}</h3>
             <ul class="ct-rows ct-paste-rows">
               {result.found.map((f) => (
-                <li><span><strong>{f.name}</strong> → {nameOf(f.taxon)} {sci(f.taxon)}</span>
+                <li key={f.taxon.id}><span><strong>{f.name}</strong> → {nameOf(f.taxon)} {sci(f.taxon)}</span>
                   {f.close && <span class="ct-muted">{T('paste.close', { name: f.close })}</span>}
                   {warnings(f.taxon)}</li>
               ))}
@@ -159,7 +160,7 @@ export default function Paste({ Frame }: { Frame: Frame }) {
             <ul class="ct-rows ct-paste-rows">
               {result.other.map((o, i) => {
                 return (
-                  <li class={warns(flagsOfPlant(o.taxon)) ? 'flagged' : ''}>
+                  <li key={o.taxon.id} class={warns(flagsOfPlant(o.taxon)) ? 'flagged' : ''}>
                     <span><strong>{o.name}</strong> → {nameOf(o.taxon)} {sci(o.taxon)}</span>
                     <span id={`ct-p-o-${o.taxon.id}`}>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate) })}</span>
                     {warnings(o.taxon)}
@@ -176,7 +177,7 @@ export default function Paste({ Frame }: { Frame: Frame }) {
             <h3 id="ct-p-already" tabIndex={-1}>{T('paste.g.already')}</h3>
             <ul class="ct-rows ct-paste-rows">
               {result.already.map((a) => (
-                <li><span><strong>{a.name}</strong> → {nameOf(a.taxon)} {sci(a.taxon)}</span>
+                <li key={a.taxon.id}><span><strong>{a.name}</strong> → {nameOf(a.taxon)} {sci(a.taxon)}</span>
                   {guests[a.taxon.id] && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(guests[a.taxon.id]!) })}</span>}</li>
               ))}
             </ul>

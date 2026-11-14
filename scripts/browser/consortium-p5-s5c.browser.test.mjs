@@ -103,6 +103,7 @@ async function addTypedOutside(page, outside) {
   assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'no confirm step');
   const id = await page.evaluate((name) => window.__ctTest.store.pool.value.find((t) => t.canonical_name === name)?.id, outside);
   assert.ok(await page.waitForFunction((x) => window.__ctTest.store.members.value.includes(x), { timeout: 5000 }, id).then(() => true, () => false), `${outside} joins the members`);
+  assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'nothing asked after it joined either');
 }
 
 test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range, and Add lists none until one is typed, which then says so in words and joins when ticked and added, nothing asking @real-data', async () => {
