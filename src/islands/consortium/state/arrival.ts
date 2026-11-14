@@ -74,15 +74,17 @@ export function hashAction(hash: string, state: unknown, current: string | null)
 
 // The reader's country at start: a link's own (labelled "from the shared link"), else the reader's
 // choice on this device ('-' is "No country"), else a saved consortium's (a guess is never written;
-// a country that came from a link keeps that label), else the browser's guess, else none.
-export function countryAtStart({ link, pref, saved, savedFrom = null, guess }: { link: string | null; pref: string | null; saved: string | null; savedFrom?: CountryFrom; guess: string | null }): Country {
+// a country that came from a link keeps that label), else the browser's guess, else none. guess is
+// called only when none of the others names a country: guessCountry walks every country's time zones
+// (about 0.4 s, 1.6 s on a slow phone) before the database opens (b2 review perf-1).
+export function countryAtStart({ link, pref, saved, savedFrom = null, guess }: { link: string | null; pref: string | null; saved: string | null; savedFrom?: CountryFrom; guess: () => string | null }): Country {
   const code = (c: string | null) => (c && /^[A-Za-z]{2}$/.test(c.trim()) ? c.trim().toUpperCase() : null);
   if (code(link)) return { code: code(link), source: 'link' };
   if (pref === NO_COUNTRY) return { code: null, source: 'chosen' };
   if (code(pref)) return { code: code(pref), source: 'chosen' };
   if (code(saved)) return { code: code(saved), source: fromOf(savedFrom) ?? 'chosen' };
-  if (code(guess)) return { code: code(guess), source: 'guess' };
-  return { code: null, source: null };
+  const guessed = code(guess());
+  return guessed ? { code: guessed, source: 'guess' } : { code: null, source: null };
 }
 
 // ---- ported from v1 logic.js: the browser's country ----
@@ -130,9 +132,10 @@ function seedPlace(seed: string | null): void {
 // ---- the arrival's decisions (review round 2, 5) ----
 
 // What startMemory reads before it decides: the save record, the reader's country choice on this
-// device (canopi-country), the browser's guess, the place seed (canopi-place), and the reader's own
-// cell (restore.ts ownCell), called only when a reload asks again.
-export interface ArrivalInputs { saved: SavedRecord | null; pref: string | null; guess: string | null; seed: string | null; cell: () => LinkOrigin | null }
+// device (canopi-country), the browser's guess (called at most once, and only when nothing else names
+// a country: countryAtStart), the place seed (canopi-place), and the reader's own cell (restore.ts
+// ownCell), called only when a reload asks again.
+export interface ArrivalInputs { saved: SavedRecord | null; pref: string | null; guess: () => string | null; seed: string | null; cell: () => LinkOrigin | null }
 // country: the country the page shows (a link's that brings a place, else the reader's own); own: the
 // reader's own, worked out without the link (bugs-2: a link's country never stands for the reader's
 // own, so the notice gives this one back); linkCell: a link's `o=`, or after a reload while its place
@@ -146,7 +149,9 @@ export function arrivalPlan(how: Arrival, { saved, pref, guess, seed, cell }: Ar
   // A location's or a link's country is kept beside the saved fragment, never in it (owner answer 5;
   // the fragment is public in link v5).
   const savedK = how.kind === 'saved' && (how.src === 'location' || how.src === 'link') && saved?.fragment === how.fragment ? saved.country ?? null : null;
-  const countries = { pref, saved: savedK, savedFrom: how.kind === 'saved' ? how.src : null, guess };
+  let guessed: { code: string | null } | null = null;
+  const once = (): string | null => (guessed ??= { code: guess() }).code;
+  const countries = { pref, saved: savedK, savedFrom: how.kind === 'saved' ? how.src : null, guess: once };
   const own = countryAtStart({ link: null, ...countries });
   const country = linkK ? countryAtStart({ link: linkK, ...countries }) : own;
   const linkCell = how.kind === 'link' ? linkOrigin(how.fragment) : how.kind === 'saved' && how.ask ? linkOrigin(how.place) : null;
@@ -178,7 +183,7 @@ export function startMemory(): void {
   // The time zone needs the known countries: the page names them (#ct-data `countries`, the
   // database's own list), so this guess is final in the first frame, never refined once the database
   // opens (that refinement shifted all of Start by up to 46 px about a second after load: N2).
-  const guess = guessCountry([...store.knownCountries.peek().keys()], { zone, languages });
+  const guess = (): string | null => guessCountry([...store.knownCountries.peek().keys()], { zone, languages });
   const seed = memory.read(PLACE_STORE);
   // canopi-location, read once here: whether the page opens with a location (Place's climate cards),
   // the reader's own cell for a reload's ask, and the lookup below.
