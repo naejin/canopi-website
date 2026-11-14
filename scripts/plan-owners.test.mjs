@@ -1,13 +1,29 @@
-// The owners files of multi-stream steps (scripts/plan/*-owners.json: the E3/E4/E5a/E6 batch, F1a):
-// one owner per path per chunk, needs pointing back, patterns repo-relative, shared files apart.
+// The owners files of multi-stream steps (scripts/plan/*-owners.json: the E3/E4/E5a/E6 batch, F1a
+// (superseded), the Plant palette redesign's pushes): one owner per path per chunk, needs pointing back,
+// patterns repo-relative, shared files apart.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { keyProblems, matches, outside, overlaps, ownersFiles, ownersProblems, readOwners } from './plan/owners.mjs';
 
 test('every owners file: no path owned by two streams in one chunk; each need is an earlier stream', () => {
   const files = ownersFiles();
-  assert.ok(files.some((f) => f.endsWith('/e6-owners.json')) && files.some((f) => f.endsWith('/f1a-owners.json')), files.join('\n'));
+  assert.ok(files.some((f) => f.endsWith('/e6-owners.json')) && files.some((f) => f.endsWith('/pp-b-owners.json')), files.join('\n'));
   for (const f of files) assert.deepEqual(ownersProblems(readOwners(f)), [], f);
+});
+
+test('a superseded owners file names the owners file that replaced it, and that file is live', () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const f1a = readOwners(ownersFiles().find((f) => f.endsWith('/f1a-owners.json')));
+  assert.equal(f1a.superseded_by, 'scripts/plan/pp-b-owners.json', 'F1a is superseded by the Plant palette redesign (2026-11-14)');
+  for (const f of ownersFiles()) {
+    const o = readOwners(f);
+    if (o.superseded_by === undefined) continue;
+    assert.match(o.superseded_by, /^scripts\/plan\/[a-z0-9-]+-owners\.json$/, f);
+    assert.ok(existsSync(root + o.superseded_by), `${f}: ${o.superseded_by} does not exist`);
+    assert.equal(readOwners(root + o.superseded_by).superseded_by, undefined, `${f}: ${o.superseded_by} is itself superseded`);
+  }
 });
 
 test('shared files: only the listed streams may change them, and no stream owns them outright', () => {

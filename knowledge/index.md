@@ -4,6 +4,7 @@ okf_version: "0.2"
 
 # Subdirectories
 
+* [architecture](architecture/index.md) - System-level structure: components, data flow, boundaries.
 * [conventions](conventions/index.md) - A rule the codebase follows (style, patterns, do/don't).
 * [decisions](decisions/index.md) - An ADR: a decision, its context, and its consequences.
 * [modules](modules/index.md) - A code module/package/service: responsibility and interfaces.

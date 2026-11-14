@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium v2 architecture
 description: "How consortium v2 is built: a storage-independent TypeScript core, Preact islands, a gzipped SQLite export read with SQLite-WASM, per-climate placements, and climate matching on one shared grid from canopi-climate."
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T06:40:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T09:21:30Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T03:47:09Z }
 sources:
@@ -19,6 +19,8 @@ sources:
     title: wrangler.jsonc
     digest: sha256:b43a72aa23fee185
     last_modified: 2026-10-14T21:57:40Z
+  - id: architecture-plant-palette-architecture
+    resource: /architecture/plant-palette-architecture.md
 ---
 
 Owner decisions behind this: [Consortium tool — user decisions](/decisions/consortium-user-decisions.md), rows of 2026-11-10 and 2026-11-11. Plan: [Consortium v2 plan](/project/consortium-v2-plan.md). Also read (sibling repository canopi at 0c425fb07, 2026-11-11): `docs/adr/0006-species-catalog-storage.md`, `docs/architecture.md`, `docs/guides/editions.md`.
@@ -36,6 +38,20 @@ Owner decisions behind this: [Consortium tool — user decisions](/decisions/con
 5. **Climate on one grid.** `canopi-climate` (Rust, opencanopi, AGPL-3.0-or-later) owns the grid and the derived measures. Plants' observed climate ranges are computed in canopi-data by sampling the same grid at GBIF occurrence cells (`canopi-climate sample`), so a site and a plant are compared on the same variable from the same raster (coldest-month minimum, warmest-month maximum, aridity). TreeGOER and EcoCrop are cross-checks and fallbacks. Wording is "inside / outside the observed range", never "will not grow". There is no site USDA zone (2026-11-11 row); the site shows its coldest-month minimum in °C, and a plant's catalogue zone, if shown, is labelled approximate.
 6. **Location.** Geolocation, a lazily loaded MapLibre + OpenFreeMap map, typed coordinates and place search through the geocoding registry the app copied from GeoLibre (copied again with its MIT header; the website never imports app modules). The location sets the climate (Köppen class mapped to the seven zones of `src/data/climates.ts`), the country, "native here" (WGSRPD level 3), and soil defaults; the manual climate choice stays.
 7. **Files.** Climate and soil tiles are fetched whole, one tile per lookup; tile and data files carry checksums in a manifest installed like the consortium export.
+
+## Changes (2026-11-14, Plant palette redesign)
+Each row is revertible on its own (coordinator rows under the owner's approval of the grower-first design, decision rows of 2026-11-14 in [user decisions](/decisions/consortium-user-decisions.md)); detail in [Plant palette architecture](/architecture/plant-palette-architecture.md) section 2, pushes in [Plant palette slices](/project/plant-palette-slices.md). Decisions 2, 4, 5, 6 and 7 are unchanged.
+
+| # | Change | Lands | Reverted by |
+|---|---|---|---|
+| 1 | Decision 1, core: "matrix fill" gives way to place, verdict, years, holes and weigh modules (`place.ts`, `verdict.ts`, `verdict-line.ts`, `years.ts`, `holes.ts`, `weigh.ts`; later `plan.ts`, `season.ts`); `matrix.ts` and `PlantSource.cellCounts` deleted | PP-B (b3 deletes) | restoring `matrix.ts` from 648baf2 |
+| 2 | Decision 3, UI: one palette page with pictures, each with a "Show as a table" form, replaces the matrix view and the tabs; the tool is "Plant palette" at `/palette/` (22 redirect lines in `public/_redirects`; internal names stay "consortium") | PP-B | owner row |
+| 3 | ADR-1 gains rule **L10 one-verdict**: inside the core only the rule files, `verdict*.ts`, `place.ts`, `suggest.ts`, `site-climate.ts` (and `matrix.ts` until deleted) import `range.ts`, `future.ts` or `site.ts`; `warn` in PP-B commit 0, `error` at the end of PP-C | PP-B, PP-C | dropping the rule from `.dependency-cruiser.cjs` |
+| 4 | ADR-1 statement: L3 holds the picture models `rules/picture-*.ts` (pure, numbers and keys); a view draws and never computes a position from plant data; no first-run module statically imports `verdict.ts` (reached through `loadVerdictRule()`) | PP-B | row removed |
+| 5 | ADR-2 roles: `balance` deleted; `structure` renamed `matrix` (temporary, then deleted); `palette` and `verdict` added (PP-B); `find` replaces `sheets` (PP-C); `plan` and `take` from `later` (PP-D); `climate` replaces `future` (PP-E); `soil` (PP-F); `year` (PP-G); `range` and `markProviders` fold into `verdict`; `pool` deleted; no `charts` role (a shared kit module is counted in each importing role) | each push's commit 0 | restoring the role list in `scripts/built-modules.mjs` |
+| 6 | ADR-2 caps: any cap may be raised during the redesign, each raise a row in the plan's budget log and a coordinator row; a size optimisation step follows PP-G (owner, 2026-11-14) | PP-B to PP-G | the optimisation step |
+| 7 | Share links: v5 (place withheld unless "Include my place"; one `linkVersionStatus` helper; v1–v4 "older", nothing restored); F2/F4 take v6 | PP-B, F4 | owner row |
+| 8 | Storage: a `canopi-place` key for place answers given before any plant, cleared by "Forget this location"; `history.state.pl` keeps a tab's place | PP-B | removing the key and its privacy line |
 
 ## Alternatives rejected
 - **DuckDB-WASM + Parquet** (the app's Web choice): 7 MB engine from jsDelivr plus an extension host, and its partial reads never apply on this host.

@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T20:25:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T09:21:59Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
@@ -26,7 +26,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:6864030b5d82d224
-    last_modified: 2026-11-13T19:47:53Z
+    last_modified: 2026-11-13T20:25:47Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -71,7 +71,7 @@ sources:
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:9b609001749f13dc
-    last_modified: 2026-11-13T19:47:53Z
+    last_modified: 2026-11-13T20:25:47Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -106,7 +106,7 @@ sources:
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
     digest: sha256:8f3f6a4316c5229c
-    last_modified: 2026-11-13T20:05:11Z
+    last_modified: 2026-11-13T20:25:47Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -151,7 +151,7 @@ sources:
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
     digest: sha256:dc5dd142bb174926
-    last_modified: 2026-11-13T19:47:53Z
+    last_modified: 2026-11-13T20:25:47Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -161,7 +161,7 @@ sources:
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
     digest: sha256:dc512a822aa08263
-    last_modified: 2026-11-13T19:47:53Z
+    last_modified: 2026-11-13T20:25:47Z
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
@@ -342,6 +342,8 @@ sources:
     title: src/islands/consortium/views/Matrix.tsx
     digest: sha256:cd10e40f01f541ca
     last_modified: 2026-11-13T15:18:17Z
+  - id: project-plant-palette-slices
+    resource: /project/plant-palette-slices.md
 enforced_by:
   - scripts/check-built-site.mjs
   - scripts/browser/consortium-commit0.browser.test.mjs
@@ -356,7 +358,7 @@ enforced_by:
 
 # Responsibility
 
-The consortium tool's page, `/consortium/` and `/{lang}/consortium/` in 11 locales (French included; `/fr/guilde/` was never published; **planned move**, F1a stream 1 ([decision row "Plant palette name"](/decisions/consortium-user-decisions.md)): readers see it as "Plant palette" at `/palette/` and `/{lang}/palette/`, with 301 redirects from the old paths; internal names stay "consortium"). Since P2 commit 0 (branch `consortium/integration`) it is the v2 shell:
+The consortium tool's page, `/consortium/` and `/{lang}/consortium/` in 11 locales (French included; `/fr/guilde/` was never published; **planned move**, now in PP-B commit 0b of the [Plant palette redesign](/project/plant-palette-slices.md) ([decision row "Plant palette name"](/decisions/consortium-user-decisions.md)): readers see it as "Plant palette" at `/palette/` and `/{lang}/palette/`, with 301 redirects from the old paths; internal names stay "consortium"). Since P2 commit 0 (branch `consortium/integration`) it is the v2 shell:
 - Astro renders a static page;
 - a Preact 11 island, mounted from the page script, renders the tool ([architecture](/decisions/consortium-v2-architecture.md), design check A1);
 - all plant logic comes from the [Consortium core](/modules/consortium-core.md).
@@ -442,6 +444,8 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
 - A puppeteer `page.click()` measures the box, then presses a moment later; under machine load a page that moves in between takes the click elsewhere. Three movers caused full-suite-only failures: Suggest's focus on the matrix (smooth scroll; N2 "the side view's explanations", reproduced with CPU throttling 10x), "Give your location" scrolling the step to the centre (P5-26b "no control yet"), and, before the fix below, the open database refining the guessed country from the time zone, which changed the country line's height and shifted all of Start by about 46 px (N2 "ja 390 px: the map dialog"; en 320 and ja 390 at the fixture). Before such a click, call `helpers.mjs` `settled(page, selector)` (scroll offset and box unchanged over five frames); on Start, wait for the site questions (the list is read, so the database is open) before aiming at a control below the country line. A reader could hit the country-line shift too (a layout shift about a second after load on a slow phone; live on master as well, whose country line sits above the cards). Fixed on consortium/p5-shift: the installer's index lists the known countries (`countries{code: invasive checked}`), the page passes them in `#ct-data` as `countries{checked, unchecked}` (space-separated codes), main.ts hands them to `store.setPageCountries`, and `store.knownCountries` (the database's list once open, else the page's) feeds the start guess in `startMemory` (time zone first), CountryLine's status ("not checked" note) and picker, and `flagContext`; the refining effect is gone. Start calls `startMemory()` in a layout effect, so the guess, the stored climate and a link's pending climate are in the first frame; main.ts therefore starts `store.start()`, `provideLocationStep`, `watchPools()` and `open(data)` before `render` (as before, they ran before `startMemory`). With `startMemory` earlier, its first `persist` (the watcher runs once on creation) stripped a link's `#v=4` from the address before the restore applied, so a reload in that second opened plain Start (P5-13c and P5-27e, whose `tool({hash})` reloads at once); `persist` now writes nothing while a restore is in flight and the page has no consortium of its own (the restore writes the address when it applies; a failed one leaves the link in the address). Spec: seams "Layout stability (N2)" (languages and time zone disagree, a long name or Puerto Rico, unchecked; 320/390/700/960/1280 px in en/fr/ja; each control's box in its first frame vs after the database opens, ≤ 1 px; buffered layout-shift sum ≤ 0.01). Still moving on a revisit, not covered: a stored site climate's crop examples replacing "Loading plants" (the site questions and Suggest move down by the examples' height) and a saved site's lookup inserting the location result line and the location country (the cards move by the line's height, 60–120 px measured before the fix). Likewise a sheet's input may exist before its `<dialog>` is open (`SheetFrame`'s layout effect calls `showModal()` and focuses the heading): type into a sheet only once `dialog.ct-add[open]` matches (P5 spec `ADD_OPEN`), or the first keys are lost (P5-27q).
 
 ## F1a commit 0 seams
+
+F1a is superseded by the Plant palette redesign (owner, 2026-11-14): PP-B commit 0 keeps `pots`, `ROOM_LIMIT_M`, `Confidence` and the `focusAfterToast` seam, deletes the Balance and Structure seams below, and moves or parks the 39 markers ([Plant palette slices](/project/plant-palette-slices.md) section 1). Until that commit lands, the list below describes the code.
 
 - `views/lazy.tsx` `balancePanel`: the Balance panel, a `lazyPart(retryable(import('./balance/BalanceSlot.tsx')))` marked pure, so the build drops it until stream 1 (pal1, chunk 1) places it in Palette. Its role `balance` stays empty until then. `views/balance/BalanceSlot.tsx` is a stub that stream 4 fills.
 - `focus.ts` `focusAfterToast()`: the toast-focus helper. `store.ts` calls it on every `hideToast` path and from the toast timer, while the toast is still on the page, and stream 6 implements it. Today it does nothing. `balancePanel` carries a knip `@public` tag until stream 1 places it.
