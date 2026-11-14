@@ -57,3 +57,27 @@ export const EXPECTED = {
   manaus: { koppen: 'Af', l3: 'BZN', iso: 'BR', ph: 4.3 },
   nairobi: { koppen: 'Aw', l3: 'KEN', iso: 'KE' },
 };
+
+// Place's climate cards sit one link away (PP-B b1a, owner drop 10): "No location? Choose a climate",
+// or "Not this climate? Choose another" once a location gives one. Pressed as a grower would when the
+// link shows; nothing to do when the cards are open already (a climate chosen and no location).
+export async function openCards(page) {
+  await page.waitForSelector('[data-place-climates], #ct-climates:not([hidden])', { timeout: 8000 });
+  if (!(await page.$('[data-place-climates]'))) return;
+  // A locator click waits for the link to stop moving: a location line rendering just above it
+  // shifts it, and a plain click then lands on what took its place (its Forget, seen at 1280 px).
+  await page.locator('[data-place-climates]').click();
+  await page.waitForSelector('#ct-climates:not([hidden])', { timeout: 4000 });
+  // The press moves the focus into the cards two frames later, which may scroll the page: a click
+  // computed before that lands beside its card (seen at 1280 px).
+  await page.waitForFunction(() => !!document.activeElement?.closest('#ct-climates'), { timeout: 4000 });
+}
+// A climate card picked by its value (input[name="ct-climate"], e.g. 'mediterranean'), the cards opened first.
+export async function pickCard(page, value) {
+  await openCards(page);
+  // Centred first: a card left at the bottom edge can sit under a fixed notice (a failed chunk's toast,
+  // its close button over the card at 1280 px), which a grower would scroll past.
+  const card = `input[name="ct-climate"][value="${value}"]`;
+  await page.$eval(card, (e) => e.scrollIntoView({ block: 'center' }));
+  await page.click(card);
+}

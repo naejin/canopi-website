@@ -5,6 +5,7 @@ import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
 import { aria, axNodes, countAx, layoutVariants, behaviour, en, findAx, fixtureDb, has } from './helpers.mjs';
+import { openCards } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 import { CANOPI_FILE_SCHEMA, CURRENT_CANOPI_FILE_VERSION } from '../vendor/canopi-design-format/canopi-design-format.ts';
 import { validate } from '../vendor/canopi-design-format/validate.mjs';
@@ -17,6 +18,7 @@ after(async () => { await h?.close(); });
 // shows with its action row (Share, Print, Download for Canopi).
 const SUGGEST = en['consortium.start.suggest'];
 async function suggest(page, climate = 'Temperate') {
+  await openCards(page);
   await page.locator(aria('radio', climate)).click();
   assert.equal(await loadState(page), 'ready');
   await page.locator(aria('button', SUGGEST)).click();
@@ -55,6 +57,9 @@ const stageLink = async () => {
 test('BT-1 (S4 start): nothing chosen at start, the country line above the climate cards, Arid asks', async (t) => {
   await layoutVariants(t, async (v) => {
     const page = await h.open('/palette/', v);
+    // Place first (owner drop 10): the cards one link away.
+    assert.ok(await has(page, '[data-place-climates]', 8000), 'the climate cards, one link away');
+    await openCards(page);
     assert.ok(await has(page, aria('radio', 'Temperate'), 8000), 'the climate cards');
     const radios = (await axNodes(page)).filter((n) => n.role === 'radio');
     assert.ok(radios.length >= 7, 'every climate is a choice');
@@ -68,6 +73,7 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
     // (The crop examples went with the Main crops picker in PP-B commit 0a'.)
     assert.equal(await loadState(page), 'ready');
     const arid = await h.open('/palette/', v);
+    await openCards(arid);
     await arid.locator(aria('radio', 'Arid')).click();
     // P5 owner answer 1: an uncovered climate borrows the nearest curated lists (S5c), once a location
     // filters them (UX audit fix 1); without one, Arid says it needs the site's location, no palette.
@@ -81,6 +87,7 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
 test('BT-7 (S4 share): a copied link opened as a new document restores the same palette; an unknown token and an outdated link give their notices; a reload restores the last palette', async (t) => {
   await behaviour(t, async (v) => {
     const page = await h.open('/palette/', { ...v, data: 'fixture' });
+    await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
     await page.click('input[name="ct-site-room"][value="small"]');
     await suggest(page);
@@ -134,9 +141,11 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
 
     // A country the reader chose, then a reload of the page's own address: still "chosen by you".
     const mine = await h.open('/palette/', { ...v, data: 'fixture' });
+    await openCards(mine);
     await mine.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(mine), 'ready');
-    const use = (await axNodes(mine)).find((n) => n.role === 'button' && /^Use /.test(n.name ?? ''));
+    // The country's "Use {country}", not the location step's "Use my location" (now above it, owner drop 10).
+    const use = (await axNodes(mine)).find((n) => n.role === 'button' && /^Use /.test(n.name ?? '') && n.name !== en['consortium.location.geo'] && n.name !== en['consortium.location.useCentre']);
     if (use) await mine.locator(aria('button', use.name)).click();
     else {
       await mine.locator(aria('button', 'Add your country')).click();
@@ -176,6 +185,7 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     // A #v=5 link without a climate: the cut notice, and Place (review 7).
     const noClimate = await h.open(`/palette/?run=${Date.now()}#${staged.replace(/c=temperate&/, '')}`, { ...v, data: 'fixture' });
     assert.ok(await findAx(noClimate, { name: /looks cut off/ }), 'the cut notice');
+    await openCards(noClimate);
     assert.ok(await has(noClimate, aria('radio', 'Temperate')), 'Place stays');
     assert.equal(await has(noClimate, aria('button', 'Share'), 500), false, 'no result without a climate');
     await done(noClimate);
@@ -187,6 +197,7 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     await v1.goto(new URL('/palette/', v1.url()).href);
     assert.ok(await findAx(v1, { name: /last palette was made with an older version/ }), 'the old-save notice');
     await v1.goto(new URL('/palette/', v1.url()).href);
+    await openCards(v1);
     assert.ok(await has(v1, aria('radio', 'Temperate'), 8000));
     assert.equal(await findAx(v1, { name: /last palette was made with an older version/ }, 500), null, 'only once');
     await done(v1);
@@ -250,9 +261,12 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
       }
       assert.fail(`${what} is reachable by Tab`);
     };
-    // Place: Tab into the climate choices, arrows to Temperate (an arrow checks it); "Start from a small
-    // suggested palette", Enter.
-    await tabTo((a) => a.type === 'radio', 'the climate choices');
+    // Place: Tab to "No location? Choose a climate", Enter (the focus moves into the cards, owner drop
+    // 10), arrows to Temperate (an arrow checks it); "Start from a small suggested palette", Enter.
+    await tabTo((a) => a.text === en['consortium.place.climate.open'], 'the link to the climate choices');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.activeElement?.type === 'radio', { timeout: 4000 }).catch(() => {});
+    assert.equal((await active()).type, 'radio', 'Enter moves the focus into the climate choices');
     for (let i = 0; i < 12 && !(await active()).text.startsWith('Temperate'); i++) await page.keyboard.press('ArrowDown');
     assert.ok((await active()).text.startsWith('Temperate'), 'Temperate by arrow keys');
     if (!(await page.evaluate(() => document.activeElement.checked))) await page.keyboard.press('Space');

@@ -14,7 +14,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { h, has, suggestReady, useHarness } from './helpers.mjs';
-import { SITES, lookupAt } from './location-fixtures.mjs';
+import { SITES, lookupAt, openCards, pickCard } from './location-fixtures.mjs';
 import { tool, choose, locationControls, locationState, text, checkedCard, proposedCard, savedLocation, ready, storeClimate, confirmAndSuggest, search, slowTiles, releaseTiles, watchFirstMembers, withSavedSite, temperateLink, ownSite, savedOpening, savedFailing, proposal, members } from './p5-helpers.mjs';
 
 useHarness();
@@ -48,6 +48,7 @@ test('P5-1b (S5b review round 1, 6): clicking the proposed card confirms it, lik
   await locationControls(page);
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'ready');
+  await openCards(page);
   await page.click('[data-proposed]');
   assert.equal(await storeClimate(page), 'Mediterranean', 'the click chose it');
   assert.equal(await checkedCard(page), 'mediterranean');
@@ -72,7 +73,7 @@ test('P5-1c (S5b review round 1, 4): a lookup ending while a pasted link restore
 test('P5-1d (S5b review round 1 addendum): Suggest pressed while a location lookup is pending waits for it, so the range filter sees the site', async () => {
   // The climate tiles held until the test releases them: the lookup is surely pending when Suggest is pressed.
   const page = await slowTiles('held');
-  await page.click('input[name="ct-climate"][value="mediterranean"]');
+  await pickCard(page, 'mediterranean');
   assert.ok(await has(page, '[data-place-suggest]', 15_000), 'Suggest shows');
   await watchFirstMembers(page);
   await page.click('[data-location-action="geo"]');
@@ -84,7 +85,7 @@ test('P5-1d (S5b review round 1 addendum): Suggest pressed while a location look
 
 test('P5-1e (S5b review round 2, 2): Suggest pressed while the saved location is looked up again waits for the site', async () => {
   const page = await slowTiles('held', { saved: JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }) });
-  await page.click('input[name="ct-climate"][value="mediterranean"]');
+  await pickCard(page, 'mediterranean');
   assert.ok(await has(page, '[data-place-suggest]', 15_000));
   await watchFirstMembers(page);
   assert.ok(await page.waitForFunction(() => !!document.querySelector('[data-location-state="loading"]'), { timeout: 10_000 }).then(() => true, () => false), 'the saved site is being looked up (its tiles held)');
@@ -101,7 +102,7 @@ test('P5-1f (S5b review round 2, 3): tiles that never answer hold Suggest at mos
   // even on a loaded machine.
   const timeouts = { suggest: 1500, read: 6000 };
   const page = await slowTiles('never', { timeouts });
-  await page.click('input[name="ct-climate"][value="mediterranean"]');
+  await pickCard(page, 'mediterranean');
   assert.ok(await has(page, '[data-place-suggest]', 15_000));
   await page.click('[data-location-action="geo"]');
   const t0 = Date.now();
@@ -172,7 +173,7 @@ test('P5-13d (S5b review round 3, 2): Start over drops a link\'s lookup on a sta
   assert.equal(await page.evaluate(() => window.__lateLine), false, 'the dead lookup wrote no line after its timeout');
   assert.equal(await page.$('[data-location-state]'), null, 'no later "failed" line');
   // Suggest is not held by it.
-  await page.click('input[name="ct-climate"][value="mediterranean"]');
+  await pickCard(page, 'mediterranean');
   assert.ok(await has(page, '[data-place-suggest]', 15_000));
   const t0 = Date.now();
   await page.click('[data-place-suggest]');
@@ -186,7 +187,7 @@ test('P5-2 (S5b location denied): a denied permission says so and leaves the man
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'denied');
   assert.equal(await page.evaluate(() => window.__ctTest.store.location.value), null);
-  assert.ok(await has(page, '.ct-climates input, .ct-climates button'), 'the climate cards stay');
+  assert.ok(await has(page, '[data-place-climates]'), 'the climate cards stay, one link away');
   assert.equal(await checkedCard(page), null, 'no card pre-checked');
   assert.equal(await proposedCard(page), null, 'no card pre-checked: none proposed either');
 });
@@ -347,9 +348,10 @@ test('P5-10 (S5b borderline, UX audit fix 2): Lyon pre-selects Subtropical, says
   assert.equal(await checkedCard(page), null, 'proposed, not checked');
   assert.equal(await storeClimate(page), null, 'nothing applied until confirmed');
   assert.equal(await page.evaluate(() => window.__ctTest.store.country.value?.source ?? null), 'location', 'the country from the location (quiet), as for a clear site');
-  assert.ok(await has(page, '.ct-climates'), 'the cards stay open');
+  // The cards one link away (owner drop 10): "Not this climate? Choose another".
+  await openCards(page);
   assert.equal(await page.$$eval('input[name="ct-climate"]', (r) => r.filter((x) => !x.disabled).length), await page.$$eval('input[name="ct-climate"]', (r) => r.length), 'every other card one tap away');
-  await page.click('input[name="ct-climate"][value="temperate"]');
+  await pickCard(page, 'temperate');
   assert.equal(await storeClimate(page), 'Temperate', 'the other climate, one tap');
   assert.equal(await proposedCard(page), null);
   // Review round 4 (2): with nothing proposed, the line no longer says "we picked".
@@ -377,10 +379,14 @@ test('P5-10b (S5b review round 2, 5): with a card proposed and none checked, Tab
   await locationControls(page);
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'ready');
-  // From the last control before the cards (the result line's Forget), Tab enters the card group.
+  // From the result line's Forget, Tab reaches "Not this climate?
+  // Choose another" (owner drop 10); Enter opens the cards with the focus on the proposed one.
   await page.evaluate(() => [...document.querySelectorAll('.ct-location button')].at(-1).focus());
-  await page.keyboard.press('Tab');
-  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('value')), 'mediterranean', 'Tab lands on the proposed card');
+  // The country line sits between them (its buttons a Tab each).
+  for (let i = 0; i < 6 && !(await page.evaluate(() => document.activeElement?.hasAttribute('data-place-climates'))); i++) await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement?.hasAttribute('data-place-climates')), true, 'Tab reaches the link to the cards');
+  await page.keyboard.press('Enter');
+  assert.ok(await page.waitForFunction(() => document.activeElement?.getAttribute('value') === 'mediterranean', { timeout: 4000 }).then(() => true, () => false), 'Enter lands on the proposed card');
   await page.keyboard.press('ArrowRight');
   const moved = await page.evaluate(() => document.activeElement?.getAttribute('value'));
   assert.ok(moved && moved !== 'mediterranean', 'the arrow moves the focus');
@@ -398,7 +404,7 @@ test('P5-11 (S5b tiles fail): when the climate tiles cannot be read the manual c
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'failed');
   assert.equal((await page.evaluate(() => window.__ctTest.store.location.value))?.lookup ?? null, null);
-  assert.ok(await has(page, '.ct-climates'));
+  assert.ok(await has(page, '[data-place-climates]'), 'the manual climate cards, one link away');
   assert.equal(await checkedCard(page), null, 'no card pre-checked');
   assert.equal(await proposedCard(page), null, 'no card pre-checked: none proposed either');
 });

@@ -5,11 +5,14 @@
 // removed in the commit that makes each pass.
 //
 // The page contract b1a's Place keeps (views/place/**):
+// - "Where is your place?" (#ct-loc-h) first, the climate cards (#ct-climates) behind
+//   [data-place-climates] ("No location? Choose a climate" / "Not this climate? Choose another");
 // - the room answers as input[name="ct-site-room"] (pots among them); "Show my palette"
 //   [data-place-show]; "Start from a small suggested palette" [data-place-suggest]; the own-plants
 //   step [data-place-plants] with its "Add a plant" [data-place-add];
 // - each arrival line as [data-place-notice="outdated" | "oldSave" | "newer" | "unreadable" | "period" |
-//   "guide" | "linkPlace" | …], "Open my saved palette instead" [data-open-saved], "Use it"
+//   "guide" | "linkPlace" | …], "Open my saved palette instead" [data-open-saved], "Back to mine"
+//   [data-back-mine] on the newer and unreadable lines over a saved palette, "Use it"
 //   [data-use-link-place] and "Use my own place" [data-use-own-place]; Start over [data-start-over];
 // - Share's "Include my place" tick input[data-share-location].
 // Run capped: npm run test:browser (scripts/browser/run.mjs).
@@ -17,6 +20,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { aria, en, h, has, realDb, suggestReady, useHarness } from './helpers.mjs';
 import { atSite, choose, tool } from './p5-helpers.mjs';
+import { openCards } from './location-fixtures.mjs';
 import { liveLog, saidTwice, watchLiveRegions } from './f1a-helpers.mjs';
 import { failing } from '../expect-fail.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
@@ -79,7 +83,7 @@ test('PP-B3 (b1a status regions on Place, F1a-P9 restored, A25): from Place to t
 // question comes first and can be skipped; the climate cards are one link away.
 const OPEN_CARDS = '[data-place-climates]';
 const cardsShown = (page) => page.evaluate(() => [...document.querySelectorAll('input[name="ct-climate"]')].some((r) => r.checkVisibility()));
-failing('PP-B2 (b1a no location, Place first): "Where is your place?" comes first; the climate cards sit behind "No location? Choose a climate", which opens them with what a grower without a location loses; then the grower\'s own plants', { owner: 'b1a', reason: /the climate cards show before the grower asks/ }, async () => {
+test('PP-B2 (b1a no location, Place first): "Where is your place?" comes first; the climate cards sit behind "No location? Choose a climate", which opens them with what a grower without a location loses; then the grower\'s own plants', async () => {
   const page = await tool();
   assert.ok(await has(page, 'input[data-location-search]', 8000), 'the location step');
   await page.waitForSelector('input[name="ct-climate"]', { timeout: 8000 }).catch(() => {});
@@ -104,7 +108,7 @@ failing('PP-B2 (b1a no location, Place first): "Where is your place?" comes firs
   assert.equal(await members(page), 0, 'nothing is chosen for the grower');
 });
 
-failing('PP-B2 (b1a place first with a location): with a location the cards stay hidden until "Not this climate? Choose another" is pressed', { owner: 'b1a', reason: /the climate cards show before the grower asks/ }, async () => {
+test('PP-B2 (b1a place first with a location): with a location the cards stay hidden until "Not this climate? Choose another" is pressed', async () => {
   const page = await tool();
   await atSite(page, 'seville');
   await page.evaluate(() => { window.__ctTest.store.proposedClimate.value = 'Mediterranean'; });
@@ -144,12 +148,14 @@ test('PP-B4 (b1a older save): a v4 saved palette says the older line once, and t
   assert.equal(await members(page), 0, 'nothing restored');
   assert.equal(await page.evaluate(() => localStorage.getItem('canopi-consortium')), null, 'the older save is removed');
   await page.reload();
+  await openCards(page);
   assert.ok(await has(page, aria('radio', 'Temperate'), 8000));
   assert.equal(await page.$('[data-place-notice="oldSave"]'), null, 'said once');
 });
 
 test('PP-B5 (b1a reloads): three reloads keep the room and spot answers while the address holds none of k o l w q r h s', async () => {
   const page = await tool();
+  await openCards(page);
   await page.locator(aria('radio', 'Temperate')).click();
   assert.ok(await has(page, '[data-place-plants]', 8000), 'no own-plants step on Place');
   await page.click('input[name="ct-site-room"][value="large"]');
@@ -163,7 +169,7 @@ test('PP-B5 (b1a reloads): three reloads keep the room and spot answers while th
     assert.deepEqual(placeKeysIn(await page.evaluate(() => location.hash)), [], `${label}: the address holds no place answer`);
   };
   await reload('before any plant');
-  if (!(await page.evaluate(() => window.__ctTest.store.climate.value))) await page.locator(aria('radio', 'Temperate')).click();
+  if (!(await page.evaluate(() => window.__ctTest.store.climate.value))) { await openCards(page); await page.locator(aria('radio', 'Temperate')).click(); }
   await suggestFromPlace(page);
   assert.deepEqual(placeKeysIn(await page.evaluate(() => location.hash)), [], 'with plants: the address holds no place answer');
   await reload('with plants');
@@ -227,7 +233,7 @@ test('PP-B12 (b1a guide over a save): a guide link with a saved palette offers "
   assert.ok(await until(page, () => window.__ctTest.store.members.value.length === 4), 'the saved palette is back');
 });
 
-failing('PP-B13 (b1a newer and unreadable links): v=6 and an unreadable link each say their line, the tool stays empty and the save untouched, and "Back to mine" opens the saved palette', { owner: 'b1a', reason: /no "Back to mine"/ }, async () => {
+test('PP-B13 (b1a newer and unreadable links): v=6 and an unreadable link each say their line, the tool stays empty and the save untouched, and "Back to mine" opens the saved palette', async () => {
   const save = JSON.stringify({ fragment: await v5(3), place: '', at: '2026-11-13', src: null });
   for (const [hash, kind, key] of [['#v=6&c=temperate&a=abcdef&e=1', 'newer', 'place.newer'], ['#v=x5&c=temperate&a=abcdef&e=1', 'unreadable', 'place.unreadable']]) {
     const page = await withStorage({ 'canopi-consortium': save }, `/palette/${hash}`);
@@ -243,7 +249,7 @@ failing('PP-B13 (b1a newer and unreadable links): v=6 and an unreadable link eac
 
 // Keyboard and screen-reader growers (bugs-6; section 9 A25): the notice's button leaves the page with
 // its line, so the focus moves on (never to <body>) and the status line says what happened.
-failing('PP-B12 (b1a keyboard answers): Enter on "Use my own place" or "Open my saved palette instead" leaves the focus on the page and the status line says what happened', { owner: 'b1a', reason: /the focus fell to <body>/ }, async () => {
+test('PP-B12 (b1a keyboard answers): Enter on "Use my own place" or "Open my saved palette instead" leaves the focus on the page and the status line says what happened', async () => {
   const focusOnBody = (page) => page.evaluate(() => !document.activeElement || document.activeElement === document.body);
   const link = await v5(3, { spot: { light: 'shade', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' } }, { place: true });
   const page = await tool({ hash: `#${link}` });

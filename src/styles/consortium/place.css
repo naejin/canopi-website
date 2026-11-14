@@ -37,6 +37,8 @@
 .ct .ct-notice-calm { border-color: var(--border); background: var(--surface-alt); }
 .ct .ct-notice-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .ct .ct-place-status { min-height: 0; }
+/* The link to the climate cards (Place first, owner drop 10): a line of its own under the location step. */
+.ct .ct-place-climates { margin: 12px 0 0; }
 
 @media (max-width: 639px) {
   .ct .ct-place-lede { font-size: 16px; }

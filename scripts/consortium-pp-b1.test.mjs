@@ -259,7 +259,6 @@ test('b1a Forget this location clears canopi-location, canopi-place and the pale
 });
 
 // ---- review round 1 (b1a-review-r1: bugs-1 to bugs-5, bugs-7 to bugs-10) ----
-import { failing } from './expect-fail.mjs';
 
 // focus.ts waits two frames before it moves the focus; Node has no frames (and no document to focus).
 globalThis.requestAnimationFrame ??= () => 0;
@@ -279,7 +278,7 @@ const instantStep = () => restoreM.provideLocationStep(async () => ({
   adopt: locationM.adoptLinkLocation,
 }));
 
-failing('b1a bugs-1: a link the reader has not acted on keeps their save held across a reload and Back/Forward', { owner: 'b1a', reason: /wrote over their save/ }, async () => {
+test('b1a bugs-1: a link the reader has not acted on keeps their save held across a reload and Back/Forward', async () => {
   const restoreAddress = fakeAddress();
   try {
     // A link that brings no place, and one whose place is the reader's own: neither shows the notice.
@@ -314,7 +313,7 @@ failing('b1a bugs-1: a link the reader has not acted on keeps their save held ac
   } finally { restoreAddress(); }
 });
 
-failing('b1a bugs-2: a link\'s country never stands for the reader\'s own (k=FR over a chosen KE)', { owner: 'b1a', reason: /the link's country/ }, async () => {
+test('b1a bugs-2: a link\'s country never stands for the reader\'s own (k=FR over a chosen KE)', async () => {
   const KE = { code: 'KE', source: 'chosen' };
   await mine(5);
   // As startMemory opens a link that brings a place: the reader's own country worked out first, then
@@ -336,7 +335,7 @@ failing('b1a bugs-2: a link\'s country never stands for the reader\'s own (k=FR 
   assert.ok(restoreM.linkPlace.peek(), 'a link that differs only by its country gave no notice: the link\'s country was taken as the reader\'s');
 });
 
-failing('b1a bugs-3: a link\'s cell is compared with the reader\'s own cell, and "Use my own place" brings their location back', { owner: 'b1a', reason: /no link-place notice for a link whose cell differs/ }, async () => {
+test('b1a bugs-3: a link\'s cell is compared with the reader\'s own cell, and "Use my own place" brings their location back', async () => {
   const before = instantStep();
   try {
     const PARIS = { lat: 48.85, lon: 2.35, source: 'geo' };
@@ -361,7 +360,7 @@ failing('b1a bugs-3: a link\'s cell is compared with the reader\'s own cell, and
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
 
-failing('b1a bugs-4: a room or plot change while the notice waits seeds canopi-place with the reader\'s own spot, never the link\'s', { owner: 'b1a', reason: /the link's spot answers seeded/ }, async () => {
+test('b1a bugs-4: a room or plot change while the notice waits seeds canopi-place with the reader\'s own spot, never the link\'s', async () => {
   const before = await arriveWithPlace();
   try {
     assert.ok(restoreM.linkPlace.peek(), 'no link-place notice');
@@ -382,7 +381,7 @@ failing('b1a bugs-4: a room or plot change while the notice waits seeds canopi-p
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
 
-failing('b1a bugs-5: Forget on Change site also clears the set-aside palette\'s place', { owner: 'b1a', reason: /the set-aside palette kept its place/ }, async () => {
+test('b1a bugs-5: Forget on Change site also clears the set-aside palette\'s place', async () => {
   await mine(5);
   await wait(0);
   assert.equal(saved()?.place, 'l=sun');
@@ -398,7 +397,7 @@ failing('b1a bugs-5: Forget on Change site also clears the set-aside palette\'s 
   assert.equal(saved()?.place, '', 'the set-aside palette kept its place in the save after Back');
 });
 
-failing('b1a bugs-7: "Show my palette" after an emptied draft offers one Undo that gives the set-aside palette back', { owner: 'b1a', reason: /no Undo/ }, async () => {
+test('b1a bugs-7: "Show my palette" after an emptied draft offers one Undo that gives the set-aside palette back', async () => {
   const pool = await mine(5);
   const before = store.members.peek();
   draft.changeSite();
@@ -414,7 +413,7 @@ failing('b1a bugs-7: "Show my palette" after an emptied draft offers one Undo th
   void pool;
 });
 
-failing('b1a bugs-8: "Open my saved palette instead" goes once the grower works on the preset', { owner: 'b1a', reason: /still offered/ }, async () => {
+test('b1a bugs-8: "Open my saved palette instead" goes once the grower works on the preset', async () => {
   const pool = await mine(5);
   const save = saved();
   persist.quietly(() => { store.view.value = 'start'; store.climate.value = null; store.members.value = []; store.removed.value = []; });
@@ -427,7 +426,7 @@ failing('b1a bugs-8: "Open my saved palette instead" goes once the grower works 
   assert.equal(restoreM.savedInstead.peek(), null, '"Open my saved palette instead" still offered after the grower worked on the preset');
 });
 
-failing('b1a bugs-9: a reload while the notice waits keeps the link\'s cell, so "Use it" still adopts it', { owner: 'b1a', reason: /the link's cell was lost/ }, async () => {
+test('b1a bugs-9: a reload while the notice waits keeps the link\'s cell, so "Use it" still adopts it', async () => {
   const restoreAddress = fakeAddress();
   let before = null;
   try {
@@ -448,7 +447,7 @@ failing('b1a bugs-9: a reload while the notice waits keeps the link\'s cell, so 
   } finally { restoreAddress(); restoreM.provideLocationStep(before); store.location.value = null; }
 });
 
-failing('b1a bugs-10: "Use my own place" pressed while "Use it" is still working changes nothing half-way', { owner: 'b1a', reason: /half-way/ }, async () => {
+test('b1a bugs-10: "Use my own place" pressed while "Use it" is still working changes nothing half-way', async () => {
   const before = await arriveWithPlace();
   const slow = restoreM.provideLocationStep(async () => { await wait(30); return { settle: async () => {}, adopt: locationM.adoptLinkLocation }; });
   try {

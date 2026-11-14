@@ -18,6 +18,12 @@ import { letGo } from './lookups.ts';
 
 // The country picker on the country line is open.
 export const pickingCountry = signal(false);
+// What the last answer to an arrival notice did, for Place's status line (the notice's button leaves
+// the page with its line, so the focus moves on and this says what happened: A25). '' for nothing.
+export const placeSaid = signal('');
+// An answer to the link-place notice is still working ("Use it" waits for the location step): both
+// buttons are disabled, so the other answer never lands half-way through it.
+export const answering = signal(false);
 
 // The reader picks a climate on Start: the shared site climate is written (climate-ux; v1 setClimate).
 // With a consortium set aside, the draft follows the card: the consortium's own card seeds it from
@@ -44,6 +50,7 @@ export function chooseCountry(code: string | null): void {
 const dropLinkLocation = () => { const link = store.location.peek()?.source === 'link'; letGo(link); if (link) store.location.value = null; };
 // Change site: the consortium set aside, Start's draft seeded from it.
 export function changeSite(): void {
+  placeSaid.value = '';
   batch(() => {
     dropLinkLocation();
     store.setAside.value = own();
@@ -76,6 +83,7 @@ export function offerPlaceUndo(text: string, before: ReturnType<typeof schema.sn
 // palette's place and the country stay. One Undo puts it back (with its save).
 export function startOver(): void {
   const before = schema.snapshot();
+  placeSaid.value = '';
   writeSave(null);
   batch(() => {
     store.setAside.value = null;
@@ -93,21 +101,28 @@ export function startOver(): void {
 // "Use it": the link's place becomes the palette's (the save's place), its cell the reader's own
 // location on this device and its country the reader's choice, so they hold across reloads; the
 // place answers then seed the next palette.
+// The location step comes first; nothing is written until it is back and the notice still waits.
 export async function useLinkPlace(): Promise<void> {
-  if (!linkPlace.peek()) return;
-  const c = store.country.peek();
-  if (c.code && c.source === 'link') chooseCountry(c.code);
-  if (store.location.peek()?.source === 'link') await adoptLinkLocation();
-  memory.write(PLACE_STORE, placeSeed());
-  linkPlace.value = null;
-  release();
+  const pending = linkPlace.peek();
+  if (!pending || answering.peek()) return;
+  answering.value = true;
+  try {
+    if (store.location.peek()?.source === 'link') await adoptLinkLocation();
+    if (linkPlace.peek() !== pending) return;
+    const c = store.country.peek();
+    if (c.code && c.source === 'link') chooseCountry(c.code);
+    memory.write(PLACE_STORE, placeSeed());
+    linkPlace.value = null;
+    release();
+    answered(T('place.usedLink'));
+  } finally { answering.value = false; }
 }
 
 // "Use my own place": the reader's own spot, soil and country come back, the link's location goes and
 // the reader's own is looked up again.
 export function useOwnPlace(): void {
   const pending = linkPlace.peek();
-  if (!pending) return;
+  if (!pending || answering.peek()) return;
   batch(() => {
     store.spot.value = pending.own.spot;
     store.soil.value = pending.own.soil;
@@ -117,16 +132,22 @@ export function useOwnPlace(): void {
   });
   release();
   ownLocation();
+  answered(T('place.usedMine'));
 }
 
-// "Open my saved palette instead" (a guide preset opened over a saved palette): the save restored as
-// on a visit with no link.
+// "Open my saved palette instead" (a guide preset opened over a saved palette) and "Back to mine" (a
+// newer or unreadable link over one): the save restored as on a visit with no link.
 export async function openSavedInstead(): Promise<void> {
   const saved = savedInstead.peek();
   if (!saved) return;
   savedInstead.value = null;
-  notices.value = { ...notices.peek(), guidePlant: null, guideMissing: null };
-  await restore(saved.fragment, { from: 'saved', src: saved.src, place: saved.place });
+  notices.value = { ...notices.peek(), guidePlant: null, guideMissing: null, newer: false, unreadable: false };
+  if (await restore(saved.fragment, { from: 'saved', src: saved.src, place: saved.place })) answered(T('place.openedSaved'));
+}
+// An answer given: said on Place's status line, the focus on the view (never on <body>).
+function answered(line: string): void {
+  placeSaid.value = line;
+  focusView();
 }
 
 // "Back to your consortium" from Start: the draft discarded, the consortium shown in its own climate
@@ -159,11 +180,16 @@ export function startEmpty(): void {
 }
 
 // "Show my palette": the palette with the grower's own plants (none is a valid start); the focus goes
-// to it (W4).
+// to it (W4). A palette set aside on Change site that this draft replaces (another card emptied it)
+// gets one Undo, which goes back to Place with it still set aside.
 export function showPalette(): void {
+  const before = schema.snapshot();
+  const aside = store.setAside.peek();
   adoptPending();
   store.view.value = 'matrix';
   focusView();
+  const replaced = !!aside?.members.length && (aside.climate !== store.climate.peek() || JSON.stringify(aside.members) !== JSON.stringify(store.members.peek()));
+  if (replaced) offerPlaceUndo(T('place.asideReplaced'), before);
 }
 
 // "Add a plant by name" on Place: the search sheet (S3); a plant added opens the palette (store.ts

@@ -12,7 +12,7 @@ import {
   COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE, STORE, type CountryFrom, type SavedRecord,
 } from './persist.ts';
 import { state as schema } from './schema.ts';
-import { applyPreset, notices, ownLocation, restore, savedInstead, waitForSource, NO_NOTICES } from './restore.ts';
+import { applyPreset, notices, ownCell, ownLocation, restore, savedInstead, waitForSource, NO_NOTICES } from './restore.ts';
 import { watchSuggest } from './suggest-wait.ts';
 
 // A fragment is a share link when it holds the link's version or its member list (v1 links carried
@@ -26,18 +26,19 @@ export type Arrival =
   | { kind: 'link'; fragment: string }
   | { kind: 'preset'; climate: ClimateZone; plant: string | null }
   | { kind: 'outdated' }
-  | { kind: 'saved'; fragment: string; at: string; src: CountryFrom; place: string; ask?: true }
+  | { kind: 'saved'; fragment: string; at: string; src: CountryFrom; place: string; ask?: true; hold?: true }
   | { kind: 'start'; climate: ClimateZone | null };
 
 // history.state as replaceState left it: the page's own fragment, its country source and this tab's
 // place (pl: the private place answers, kept per tab since the save is shared by every tab; '' none;
-// with a link's country `k`); ask: a link's place still waits on "Use it" / "Use my own place", so a
-// reload asks again and the save stays held (persist.ts writeAddress).
-interface OwnAddress { ct: string; src: CountryFrom; pl: string; ask: boolean }
+// with a link's country `k`, and its cell `o` while its place waits); ask: a link's place still waits
+// on "Use it" / "Use my own place", so a reload asks again and the save stays held; hold: a link the
+// reader has not acted on, so a reload or Back/Forward keeps the save held (persist.ts writeAddress).
+interface OwnAddress { ct: string; src: CountryFrom; pl: string; ask: boolean; hold: boolean }
 const ownOf = (v: unknown): OwnAddress | null => {
   if (!v || typeof v !== 'object') return null;
-  const { ct, src, pl, ask } = v as Record<string, unknown>;
-  return typeof ct === 'string' && ct ? { ct, src: fromOf(src), pl: typeof pl === 'string' && pl.length < 2_000 ? pl : '', ask: ask === 1 } : null;
+  const { ct, src, pl, ask, hold } = v as Record<string, unknown>;
+  return typeof ct === 'string' && ct ? { ct, src: fromOf(src), pl: typeof pl === 'string' && pl.length < 2_000 ? pl : '', ask: ask === 1, hold: hold === 1 } : null;
 };
 
 // What the page opens with, in order: the page's own address after a reload (history.state.ct is
@@ -48,7 +49,7 @@ const ownOf = (v: unknown): OwnAddress | null => {
 export function arrival(loc: { hash: string; search: string }, saved: SavedRecord | null, siteClimate: string | null, state: unknown = null): Arrival {
   const hash = loc.hash.replace(/^#/, '');
   const own = ownOf(state);
-  if (hash && own && own.ct === hash) return { kind: 'saved', fragment: hash, at: '', src: own.src, place: own.pl, ...(own.ask ? { ask: true as const } : {}) };
+  if (hash && own && own.ct === hash) return { kind: 'saved', fragment: hash, at: '', src: own.src, place: own.pl, ...(own.ask ? { ask: true as const } : {}), ...(own.hold ? { hold: true as const } : {}) };
   if (hash && isLinkFragment(hash)) return { kind: 'link', fragment: hash };
   const preset = readPreset(loc.search);
   if (preset.climate) return { kind: 'preset', climate: preset.climate, plant: preset.plant };
@@ -59,13 +60,14 @@ export function arrival(loc: { hash: string; search: string }, saved: SavedRecor
 
 // A hashchange (a pasted link, or Back/Forward): the page's own address (history.state.ct, as
 // arrival reads it) reopens as the save with its country source; another link opens as a link; the
-// address of the consortium shown, or a fragment that is no link, is ignored.
-export type HashAction = { kind: 'ignore' } | { kind: 'saved'; fragment: string; src: CountryFrom; place: string } | { kind: 'link'; fragment: string };
+// address of the consortium shown, or a fragment that is no link, is ignored. hold: the entry is a
+// link's the reader had not acted on (or whose place still waited), so its save stays held (8.3).
+export type HashAction = { kind: 'ignore' } | { kind: 'saved'; fragment: string; src: CountryFrom; place: string; hold?: true } | { kind: 'link'; fragment: string };
 export function hashAction(hash: string, state: unknown, current: string | null): HashAction {
   const f = hash.replace(/^#/, '');
   if (!f || !isLinkFragment(f) || f === current) return { kind: 'ignore' };
   const own = ownOf(state);
-  if (own && own.ct === f) return { kind: 'saved', fragment: f, src: own.src, place: own.pl };
+  if (own && own.ct === f) return { kind: 'saved', fragment: f, src: own.src, place: own.pl, ...(own.hold || own.ask ? { hold: true as const } : {}) };
   return { kind: 'link', fragment: f };
 }
 
@@ -152,23 +154,35 @@ export function startMemory(): void {
   // The time zone needs the known countries: the page names them (#ct-data `countries`, the
   // database's own list), so this guess is final in the first frame, never refined once the database
   // opens (that refinement shifted all of Start by up to 46 px about a second after load: N2).
-  store.country.value = countryAtStart({ link: linkK, pref: memory.read(COUNTRY_STORE), saved: savedK, savedFrom: how.kind === 'saved' ? how.src : null, guess: guessCountry([...store.knownCountries.peek().keys()], { zone, languages }) });
+  // The reader's own country first: a link's is shown on the page, and the notice gives the reader's
+  // back (bugs-2: a link's country never stands for the reader's own).
+  const countries = { pref: memory.read(COUNTRY_STORE), saved: savedK, savedFrom: how.kind === 'saved' ? how.src : null, guess: guessCountry([...store.knownCountries.peek().keys()], { zone, languages }) };
+  const ownCountry = countryAtStart({ link: null, ...countries });
+  store.country.value = linkK ? countryAtStart({ link: linkK, ...countries }) : ownCountry;
 
   // The saved site location, looked up again once the plant list is open (so its tiles never compete
-  // with the database); a link's `o=` stands in for it on that page (ownLocation).
-  if (!(how.kind === 'link' && linkOrigin(how.fragment))) void waitForSource().then(ownLocation);
+  // with the database); a link's `o=` stands in for it on that page (ownLocation), also after a reload
+  // while its place still waits (the cell kept in the tab's place).
+  const linkCell = how.kind === 'link' ? linkOrigin(how.fragment) : how.kind === 'saved' && how.ask ? linkOrigin(how.place) : null;
+  if (!linkCell) void waitForSource().then(ownLocation);
 
   // A palette that starts with no place of its own takes the reader's last place answers as its seed
   // (canopi-place, plant-palette-architecture 8.3); a link's room, plot and place still win over it.
   if (how.kind !== 'saved') seedPlace(memory.read(PLACE_STORE));
 
-  if (how.kind === 'link') void restore(how.fragment, { from: 'link' });
+  if (how.kind === 'link') {
+    // A newer or unreadable link over a readable save: "Back to mine" (Arrivals board).
+    void restore(how.fragment, { from: 'link', country: ownCountry }).then((opened) => {
+      const n = notices.peek();
+      if (!opened && saved && (n.newer || n.unreadable)) savedInstead.value = saved;
+    });
+  }
   else if (how.kind === 'saved') {
     // A reload while a link's place still waited on the reader: asked again, against the reader's own
-    // place (the held save's, else the seed) and the country chosen above, never the link's.
+    // place (the held save's, else the seed), the country chosen above and their own cell, never the link's.
     const mine = how.ask ? placeOfSeed(saved?.place || memory.read(PLACE_STORE)) : null;
-    const ask = how.ask ? { spot: mine?.spot ?? schema.valuesOf(['spot']).spot, soil: mine?.soil ?? { from: 'map' as const }, country: store.country.peek() } : undefined;
-    void restore(how.fragment, { from: 'saved', src: how.src, place: how.place, ask });
+    const ask = how.ask ? { spot: mine?.spot ?? schema.valuesOf(['spot']).spot, soil: mine?.soil ?? { from: 'map' as const }, country: store.country.peek(), location: ownCell() } : undefined;
+    void restore(how.fragment, { from: 'saved', src: how.src, place: how.place, ask, hold: how.hold });
   }
   else if (how.kind === 'outdated') notices.value = { ...notices.peek(), outdated: true };
   else if (how.kind === 'preset') {
@@ -184,7 +198,7 @@ export function startMemory(): void {
     const act = hashAction(location.hash, attempt(() => history.state), currentFragment());
     if (act.kind === 'ignore') return;
     const keep = own() !== null;
-    if (act.kind === 'saved') { void restore(act.fragment, { from: 'saved', src: act.src, keep, place: act.place }); return; }
+    if (act.kind === 'saved') { void restore(act.fragment, { from: 'saved', src: act.src, keep, place: act.place, hold: act.hold }); return; }
     notices.value = { ...NO_NOTICES };
     void restore(act.fragment, { from: 'link', keep });
   });

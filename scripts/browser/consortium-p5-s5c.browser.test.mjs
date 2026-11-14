@@ -14,7 +14,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { aria, h, has, realDb, settled, suggestDirect, suggestReady, useHarness } from './helpers.mjs';
-import { SITES } from './location-fixtures.mjs';
+import { SITES, pickCard } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 import { tool, atSite, choose, locationControls, locationState, ADD_OPEN, text, proposedCard, ready, search, RANGED, OUTSIDE, EDGE, pickRanged, atNowhere, members } from './p5-helpers.mjs';
 
@@ -342,7 +342,7 @@ test('P5-26 (S5c borrowed list from a link): #v=5&c=subtropical without o= opens
 
 test('P5-26b (S5c borrowed climate without a location, UX audit fix 1): Start offers no Suggest, no crops and no Start empty, and says the climate needs the site\'s location; a curated climate is as in P2', async () => {
   const page = await tool();
-  await page.click('input[name="ct-climate"][value="subtropical"]');
+  await pickCard(page, 'subtropical');
   assert.ok(await has(page, '[data-needs-site]', 10_000), 'the needs-location line');
   assert.match(await text(page, '[data-needs-site]') ?? '', /needs your site.s location to pick plants/);
   assert.ok(await has(page, '[data-needs-site] button'), 'a control to the location step');
@@ -361,12 +361,12 @@ test('P5-26b (S5c borrowed climate without a location, UX audit fix 1): Start of
   await page.evaluate(() => { document.getElementById('ct-loc-h').parentElement.remove(); });
   assert.equal(await page.$('.ct-cta'), null, 'no Suggest, Start empty or Paste for it');
   assert.equal(await page.$('.ct-chips'), null, 'no crops from an unfiltered borrowed list');
-  await page.click('input[name="ct-climate"][value="temperate"]');
+  await pickCard(page, 'temperate');
   assert.ok(await has(page, '.ct-cta', 10_000), 'Temperate without a location: Suggest as in P2');
   assert.equal(await page.$('[data-needs-site]'), null);
   // With a location the borrowed climate is offered (filtered by the range rule).
   await atSite(page, 'lyon');
-  await page.click('input[name="ct-climate"][value="subtropical"]');
+  await pickCard(page, 'subtropical');
   assert.ok(await has(page, '.ct-cta', 10_000), 'Subtropical with a location: Suggest');
   assert.equal(await page.$('[data-needs-site]'), null);
 });
@@ -383,7 +383,7 @@ test('P5-26d (S5c stale Suggest, fix review 29b709e 1): a Suggest pressed while 
   assert.ok(suggest, 'Suggest');
   await suggest.click();
   assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'start', 'pending');
-  await page.click('input[name="ct-climate"][value="boreal"]');
+  await pickCard(page, 'boreal');
   await page.evaluate(() => { window.__ctTest.store.location.value = null; });
   await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
   assert.ok(await has(page, '[data-needs-site]', 10_000), 'Boreal needs a location');
@@ -412,7 +412,7 @@ test('P5-26e (S5c borrowed climate, range chunk offline, fix review 29b709e 2): 
 
 test('P5-26f (S5c borrowed list without a location, fix review 29b709e 3; on Place, PP-B b1a): its Suggest is the needs-location line, and a location brings it back', async () => {
   const page = await tool();
-  await page.click('input[name="ct-climate"][value="subtropical"]');
+  await pickCard(page, 'subtropical');
   assert.ok(await has(page, '[data-needs-site]', 15_000), 'the needs-location line');
   assert.equal(await page.$('[data-place-suggest]'), null, 'in place of a silent "Start from a small suggested palette"');
   await atSite(page, 'lyon');
@@ -433,7 +433,7 @@ test('P5-27a (S5c seam review 1; on Place, PP-B b1a): where nothing fits, Place 
   for (const width of [390, 1280]) {
     const page = await tool({ width });
     await atNowhere(page);
-    await page.click('input[name="ct-climate"][value="boreal"]');
+    await pickCard(page, 'boreal');
     assert.ok(await has(page, '[data-pool-empty] button', 10_000), `${width} px: the nothing-fits state`);
     assert.equal(await page.$('[data-place-suggest]'), null, `${width} px: no Suggest that can only refuse`);
     assert.match(await text(page, '[data-pool-empty]') ?? '', /−?-?39\.8 °C/, `${width} px: it says why`);
@@ -448,7 +448,7 @@ test('P5-27b (S5c seam review 1; on Place, PP-B b1a): a borrowed climate whose r
     // modulepreload, so the test passed or failed by timing.
     const page = await tool({ width, block: { range: 404 } });
     await atSite(page, 'seville');
-    await page.click('input[name="ct-climate"][value="arid"]');
+    await pickCard(page, 'arid');
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the range chunk failed');
     assert.ok(await has(page, '[data-range-unavailable]', 10_000), `${width} px: the notice`);
     assert.equal(await page.$('[data-place-suggest]'), null, `${width} px: no Suggest that can only refuse`);
