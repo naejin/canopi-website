@@ -114,3 +114,7 @@
   .ct .ct-link-button { min-height: 40px; display: inline-flex; align-items: center; }
   .ct .ct-share-field, .ct .ct-country-pick select { font-size: 16px; }
 }
+
+/* Offline (b2): one persistent status line, empty while online. */
+.ct .ct-offline { margin: 0; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface-alt); font-size: 15px; }
+.ct .ct-offline:empty { padding: 0; border: 0; }

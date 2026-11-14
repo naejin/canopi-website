@@ -2,23 +2,24 @@
 // Add (stream S3; mockup 05 `add`): the plants of the climate's list, or of one cell (a free cell's
 // "+ Add", "Show them anyway"), or of one job (Jobs' "Find…", for a run of stages in any layer when
 // the job has a stage gap), with a search over folded names (S1's searchIndex, A6). Multi-select:
-// tick several, then "Add 2 plants" in the sticky bar; 8 rows, then "Show all N". Warnings are shown
-// on the row and never asked about; only a site misfit or a serious (high) conflict asks "Add it
-// anyway?" (owner row 2026-10-28; coordinator row "v2 mockup choices" 2026-11-11): such a row has an
-// "Add" button instead of a tick. A name found only in another climate's list is offered with "Add
-// anyway" (it stays, owner row 2026-10-28 and design check A9): a guest, labelled "From the {climate}
-// list"; it asks first too when it misfits or has a serious conflict (a single Add asks, 2026-10-28
-// "Scale build" row), and its warnings stay on its row. With a query, rows come best match first
+// tick several, then "Add 2 plants" in the sticky bar; 8 rows, then "Show all N". Inform, don't block
+// (owner decision 2026-11-14; it replaces the 2026-10-28 "Add it anyway?" rule): every row has a tick
+// and nothing asks; a site misfit, a serious conflict or an outside-range plant keeps its reason on
+// its row in words with an icon, and the add shows the Undo toast. Outside-range plants are grouped
+// behind "Show N outside their climate range" (visible, not hidden). A name found only in another
+// climate's list is offered with one-tap Add (design check A9): a guest, labelled "From the {climate}
+// list", its warnings on its row. With a query, rows come best match first
 // (S1's score), 8 of them, then "Show all N". Search mode (Start's "Start empty and search", routed
 // here by views/Sheets.tsx) is the same sheet with its own title.
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { ClimateZone, Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { asGuest, asks as asksFlags } from '../../../lib/consortium/index.ts';
+import { asGuest, asks as sortsLast } from '../../../lib/consortium/index.ts';
 import { searchIndex } from '../data/search.ts';
 import { addMembers, closeSheet, flagsOfPlant, sheetCell } from '../store.ts';
-import { Ask, Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
+import { Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
+import { FitLine } from './kit/fit.tsx';
 import { nameOf, num, phasePlain, spanWords, zoneName } from './kit/names.ts';
 import { PlantMarks } from './PlantMarks.tsx';
 import { jobFind } from './StageBar.tsx';
@@ -45,16 +46,18 @@ function heightWords(t: Taxon): string {
 
 export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; Frame: Frame }) {
   const pool = store.pool.value;
-  // P5 S5c: a plant outside its observed range at the site is listed only once its name is typed, and
-  // then asks first ("outside its observed range"; owner answer 2). When nothing fits the site, the
+  // A plant outside its observed range at the site is listed behind "Show N outside their climate
+  // range", or found by name, marked in words (owner 2026-11-14). When nothing fits the site, the
   // search ("Search all plants") lists every plant, each marked, rather than none.
   const loc = store.location.value;
   const rule = store.rangeRule.value;
   const outside = (t: Taxon) => !!rule && rule.rangeFit(t, loc) === 'outside';
   const fitting = store.fitPool.value?.some((t) => !outside(t)) ? store.fitPool.value : null;
-  const asks = (flags: Flag[], t?: Taxon) => asksFlags(flags) || (!!t && outside(t));
+  // The list order only (rules/list-query.ts addOrder): misfits, serious conflicts and outside-range
+  // plants come after the others; nothing asks.
+  const last = (flags: Flag[], t?: Taxon) => sortsLast(flags) || (!!t && outside(t));
   const scene = store.flagScene.value;
-  const askLines = (t: Taxon) => [...flagLines(t, flagsOfPlant(t), scene).filter((l) => l.asks).map((l) => l.text), ...(outside(t) ? [T('range.outsideDetails')] : [])];
+  const verdicts = store.poolVerdicts.value;
   const climate = store.climate.value;
   // What Add was opened for (store.openSheet): a cell or run of one layer, a job, and `anyway`.
   const { cell, job, anyway } = mode === 'add' ? sheetCell.value : store.FOR_NOTHING;
@@ -62,7 +65,7 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
   const [query, setQuery] = useState('');
   const [all, setAll] = useState(false);
   const [selected, setSelected] = useState<PlantId[]>([]);
-  const [asking, setAsking] = useState<{ t: Taxon; from: ClimateZone | null } | null>(null);
+  const [showOutside, setShowOutside] = useState(false);
   const zones = store.curatedClimates.value;
   const otherZones = zones.filter((z) => z !== climate);
   const q = query.trim();
@@ -72,14 +75,14 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
 
   // A cell's "+ Add" lists the plants that fit the site there (the cell's "N fit"), counted as the
   // matrix counts them (core matrix.ts: a misfit beside the members' canopy); "Show them anyway"
-  // lists every plant of the cell or run, the misfits flagged and asking first.
+  // lists every plant of the cell or run, the misfits flagged.
   const site = store.site.value, taxa = store.memberTaxa.value;
   // (rules/list-query.ts, the one filter rule of Add and the plant list.)
   const base = useMemo(() => (pool ? listQuery(query.trim() ? pool : fitting ?? pool, addQuery({ cell, job, anyway }, site, taxa)) : []),
     [pool, fitting, query.trim() !== '', cell, job, anyway, site, taxa]);
   const rows = useMemo(() => {
     if (!pool) return [];
-    const list = base.filter((t) => !members.includes(t.id)).map((t) => ({ t, flags: flagsOfPlant(t) })).map((r) => ({ ...r, asks: asks(r.flags, r.t) }));
+    const list = base.filter((t) => !members.includes(t.id)).map((t) => ({ t, flags: flagsOfPlant(t) })).map((r) => ({ ...r, asks: last(r.flags, r.t) }));
     if (q) {
       // Best match first (S1's score: whole name, name prefix, word prefix, then by name).
       const score = new Map(searchOf(pool)(q).map((x, i) => [x.id, i]));
@@ -87,7 +90,13 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
     }
     return addOrder(list);
   }, [pool, base, members, q, store.flagContext.value, store.site.value]);
-  // The other climates' matches not in this list: "Add anyway", each from the first list that has it.
+  // Without a query, the list's plants outside their range at the site for what Add was opened for
+  // (the fitting list leaves them out): behind "Show N outside their climate range".
+  const outsideRows = useMemo(() => {
+    if (!pool || q || !fitting) return [];
+    return listQuery(pool, addQuery({ cell, job, anyway }, site, taxa)).filter((t) => outside(t) && !members.includes(t.id)).map((t) => ({ t, flags: flagsOfPlant(t), asks: true }));
+  }, [pool, q, fitting, cell, job, anyway, site, taxa, members, rule, loc]);
+  // The other climates' matches not in this list: one-tap Add, each from the first list that has it.
   const elsewhere = useMemo(() => {
     if (!pool || !q) return [];
     const own = new Set(pool.map((t) => t.id)), seen = new Set<PlantId>();
@@ -119,6 +128,27 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
     : cell?.stratum ? T('add.titleCell', { layer: T(`stratum.${cell.stratum}`), phase: cell.from === cell.to ? phasePlain(cell.from) : `${phasePlain(cell.from)} → ${phasePlain(cell.to)}` })
     : job ? jobFind(job, cell) : T('add.title');
   const n = selected.length;
+  // One row: a tick (nothing asks), its reasons in words, an outside-range plant's verdict with an icon.
+  const row = ({ t, flags, asks: flagged }: { t: Taxon; flags: Flag[]; asks: boolean }) => {
+    const lines = flagLines(t, flags, scene);
+    const on = selected.includes(t.id);
+    const label = `${nameOf(t)}, ${t.canonical_name}`;
+    return (
+      <li key={t.id} class={`${flagged ? 'flagged' : ''}${on ? ' is-on' : ''}`}>
+        <div class="ct-row-main">
+          <strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i>
+          <Bar taxon={t} run={cell} />
+        </div>
+        <label class="ct-tick"><input type="checkbox" checked={on} aria-label={label} onChange={() => toggle(t.id)} /></label>
+        <div class="ct-row-why">
+          <span>{[spanWords(t), heightWords(t)].join(' · ')}</span>
+          {outside(t) && <FitLine v={verdicts?.get(t.id)} known="outside" />}
+          {lines.length > 0 && <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span>}
+          <PlantMarks taxon={t} surface="add" />
+        </div>
+      </li>
+    );
+  };
 
   return (
     <Frame titleId="ct-add-title" class="ct-add" head={<span class="ct-muted">{T('add.title')}</span>} foot={
@@ -138,31 +168,14 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
       </div>
       {shown.length > 0 ? (
         <ul class="ct-rows">
-          {shown.map(({ t, flags, asks: asksFirst }) => {
-            const lines = flagLines(t, flags, scene);
-            const on = selected.includes(t.id);
-            const label = `${nameOf(t)}, ${t.canonical_name}`;
-            return (
-              <li class={`${asksFirst ? 'flagged' : ''}${on ? ' is-on' : ''}`}>
-                <div class="ct-row-main">
-                  <strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i>
-                  <Bar taxon={t} run={cell} />
-                </div>
-                {asksFirst
-                  ? <button type="button" class="button button-secondary" aria-label={T('addOne', { name: nameOf(t) })} onClick={() => setAsking({ t, from: null })}>{T('add')}</button>
-                  : <label class="ct-tick"><input type="checkbox" checked={on} aria-label={label} onChange={() => toggle(t.id)} /></label>}
-                <div class="ct-row-why">
-                  <span>{[spanWords(t), heightWords(t)].join(' · ')}</span>
-                  {lines.length > 0 && <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span>}
-                  <PlantMarks taxon={t} surface="add" />
-                </div>
-              </li>
-            );
-          })}
+          {shown.map((r) => row(r))}
         </ul>
       ) : <p class="ct-muted">{T('emptyList')}</p>}
-      {!all && rows.length > shown.length && (
-        <p><button type="button" class="button button-secondary ct-add-showall" onClick={() => setAll(true)}>{P('add.showAll', rows.length)}</button></p>
+      {outsideRows.length > 0 && (showOutside
+        ? <ul class="ct-rows" data-outside="">{(all ? outsideRows : outsideRows.slice(0, FIRST_ROWS)).map((r) => row(r))}</ul>
+        : <p><button type="button" class="button button-secondary" onClick={() => setShowOutside(true)}>{P('palette.showOutside', outsideRows.length)}</button></p>)}
+      {!all && (rows.length > shown.length || (showOutside && outsideRows.length > FIRST_ROWS)) && (
+        <p><button type="button" class="button button-secondary ct-add-showall" onClick={() => setAll(true)}>{P('add.showAll', rows.length + (showOutside ? outsideRows.length : 0))}</button></p>
       )}
       {elsewhere.length > 0 && (
         <section aria-labelledby="ct-add-other">
@@ -171,10 +184,10 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
             {elsewhere.map(({ t, from, flags }) => {
               const lines = flagLines(t, flags, scene);
               return (
-                <li class={asks(flags, t) ? 'flagged' : ''}>
+                <li class={last(flags, t) ? 'flagged' : ''}>
                   <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
-                  <button type="button" class="button button-secondary" aria-describedby={`ct-add-o-${t.id}`}
-                    onClick={() => (asks(flags, t) ? setAsking({ t, from }) : addSelected([t.id], { [t.id]: from }))}>{T('addAnyway')}</button>
+                  <button type="button" class="button button-secondary" aria-label={T('addOne', { name: nameOf(t) })} aria-describedby={`ct-add-o-${t.id}`}
+                    onClick={() => addSelected([t.id], { [t.id]: from })}>{T('add')}</button>
                   <div class="ct-row-why" id={`ct-add-o-${t.id}`}>
                     <span>{T('add.otherLine', { other: zoneName(from), climate: zoneName(climate) })} {T('details.fromList', { climate: zoneName(from) })}.</span>
                     {lines.length > 0 && <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span>}
@@ -185,15 +198,6 @@ export default function Add({ mode = 'add', Frame }: { mode?: 'add' | 'search'; 
             })}
           </ul>
         </section>
-      )}
-      {asking && (
-        <Ask
-          title={T('add.ask')}
-          lines={askLines(asking.t)}
-          yes={T('addAnyway')}
-          onYes={() => { const { t, from } = asking; addSelected([t.id], from ? { [t.id]: from } : {}); }}
-          onCancel={() => setAsking(null)}
-        />
       )}
     </Frame>
   );

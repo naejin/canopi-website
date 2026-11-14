@@ -26,14 +26,14 @@ const temperateIds = () => fixtureDb((db) => db.prepare("SELECT p.id FROM placem
 // left busy, the reader's choices unchanged.
 test('E6-6 (R4 seams): Suggest with its chunk missing shows a toast with Reload and is not left busy; the choices stay (L8)', async () => {
   assert.ok(h.roles.suggest.length, 'role `suggest` has no chunk in this build: suggest() is still in the first run');
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 404 } });
+  const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 404 } });
   await page.locator(aria('radio', 'Temperate')).click();
   assert.equal(await loadState(page), 'ready');
-  const before = await page.evaluate(() => ({ climate: window.__ctTest.store.climate.value, members: [...window.__ctTest.store.members.value], crops: [...window.__ctTest.store.crops.value] }));
+  const before = await page.evaluate(() => ({ climate: window.__ctTest.store.climate.value, members: [...window.__ctTest.store.members.value] })); // (Main crops went in PP-B commit 0a')
   await page.locator(aria('button', SUGGEST)).click();
   assert.ok(await has(page, aria('button', RELOAD), 8000), 'the toast offers Reload');
   const idle = await page.waitForFunction((name) => [...document.querySelectorAll('#ct-root button')].some((b) => b.textContent.trim() === name && b.getAttribute('aria-busy') !== 'true'), { timeout: 4000 }, SUGGEST).then(() => true, () => false);
-  const after = await page.evaluate(() => ({ climate: window.__ctTest.store.climate.value, members: [...window.__ctTest.store.members.value], crops: [...window.__ctTest.store.crops.value] }));
+  const after = await page.evaluate(() => ({ climate: window.__ctTest.store.climate.value, members: [...window.__ctTest.store.members.value] }));
   assert.deepEqual(after, before, 'the reader\'s choices unchanged');
   await page.browserContext().close().catch(() => {});
   assert.ok(idle, 'Suggest is left busy (aria-busy) after the toast');
@@ -254,7 +254,7 @@ test('E6-22 (R4 hand-off B): Swap opened while the suggest chunk never answers e
 
 // The fixture tool with the suggest chunk answered 404, its load at open failed.
 async function suggestFailedPage() {
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 404 } });
+  const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 404 } });
   assert.equal(await loadState(page), 'ready');
   assert.ok(await until(page, () => window.__ctTest.store.suggestFailed.value, 8000), 'the load at open failed');
   return page;

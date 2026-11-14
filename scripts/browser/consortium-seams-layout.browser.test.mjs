@@ -12,27 +12,26 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { h, useHarness, aria, axNodes, layoutVariants, en, findAx, has, settled } from './helpers.mjs';
-import { esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, small, MATRIX_40, focused, STRINGS, STABLE, MISMATCH, stableStart, moved } from './seams-helpers.mjs';
+import { esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, small, focused, openAdd, STRINGS, STABLE, MISMATCH, stableStart, moved } from './seams-helpers.mjs';
 
 useHarness();
 
 test('W6: on a phone, primary controls are at least 40 px tall, inline secondary ones at least 36', async (t) => {
+  // Retargeted by PP-B b2 onto the palette page: its steps, the Next step, each time step of Through
+  // the years (Earlier / Later), the jobs, the actions, then a plant's dialog (the matrix went in 0a').
   const page = await suggested({ width: 390, theme: 'light' });
   const bad = [];
   const seen = new Set();
-  for (let i = 0; i < 7; i++) {
+  const later = aria('button', en['consortium.palette.later']);
+  for (let i = 0; i < 6; i++) {
     const list = await controls(page);
-    for (const c of list) if (MATRIX_40.test(c.name)) { seen.add(c.name.replace(/:.*/, '')); if (c.h < 40) bad.push(`matrix stage ${i + 1}: ${c.name} ${c.w}×${c.h} (${c.cls})`); }
-    bad.push(...small(list).map((s) => `matrix stage ${i + 1}: ${s}`));
-    if (await has(page, aria('button', 'Later stage'), 300)) await page.locator(aria('button', 'Later stage')).click().catch(() => {});
+    for (const c of list) seen.add(c.cls.includes('ct-chip') ? 'chip' : c.name);
+    bad.push(...small(list).map((s) => `time step ${i + 1}: ${s}`));
+    if (await page.$eval('.ct-years', (el) => !!el.querySelector('button[disabled]') && i > 0).catch(() => false)) break;
+    if (await has(page, later, 300)) await page.locator(later).click().catch(() => {});
   }
-  assert.ok([...seen].some((n) => n.startsWith('What is a')) && seen.has('Add a plant'), `the matrix controls were measured (${[...seen]})`);
-  await page.locator(aria('tab', 'All plants')).click();
-  bad.push(...small(await controls(page)).map((s) => `All plants: ${s}`));
-  await page.locator(aria('tab', 'Jobs')).click();
-  bad.push(...small(await controls(page)).map((s) => `Jobs: ${s}`));
-  await page.locator(aria('tab', 'All plants')).click();
-  await page.locator('#ct-root [data-plant-id] button, #ct-root button[data-plant-id]').click();
+  assert.ok(seen.has('chip') && seen.has(en['consortium.palette.later']) && seen.has(en['consortium.palette.showTable']), `the palette page's controls were measured (${[...seen].slice(0, 12)})`);
+  await page.locator('#ct-root .ct-chart button[data-plant-id]').click();
   assert.ok(await findAx(page, { role: 'dialog' }), 'a plant\'s dialog');
   bad.push(...small(await controls(page, true)).map((s) => `details: ${s}`));
   assert.deepEqual(bad, []);
@@ -42,9 +41,10 @@ test('W6: on a phone, primary controls are at least 40 px tall, inline secondary
 test('W7: the toast never covers a control', async (t) => {
   await layoutVariants(t, async (v) => {
     const page = await suggested(v);
-    await page.locator(aria('tab', 'All plants')).click();
-    const remove = (await axNodes(page)).find((n) => n.role === 'button' && /^Remove /.test(n.name ?? ''));
-    await page.locator(aria('button', remove.name)).click();
+    // A plant removed from its dialog (the palette page's pictures open it; All plants went in 0a').
+    await page.locator('#ct-root .ct-chart button[data-plant-id]').click();
+    await page.locator('dialog[open] ' + aria('button', 'Remove')).click();
+    await page.waitForFunction(() => !document.querySelector('dialog[open], dialog.ct-sheet'));
     assert.ok(await has(page, '.ct-toast'), 'the toast');
     // Every control of the page: at the page's end none sits under the toast, and one under it
     // mid-page comes out from under it when it takes focus (Tab).
@@ -74,7 +74,7 @@ test('W7: the toast never covers a control', async (t) => {
   });
 });
 
-test('W8, W9, X4, X5: bold is 600, CJK headings keep words whole, sheet and page classes do not leak', async (t) => {
+test('W8, W9, X4: bold is 600, CJK headings keep words whole, sheet and page classes do not leak', async (t) => {
   const page = await h.open('/palette/', { width: 1280, theme: 'light', data: 'fixture' });
   // The island drawn first (the test build renders after its hook's chunk arrives).
   assert.equal(await loadState(page), 'ready');
@@ -82,13 +82,9 @@ test('W8, W9, X4, X5: bold is 600, CJK headings keep words whole, sheet and page
   assert.ok(weights.length > 0, 'the page has bold words');
   assert.deepEqual(weights, ['600'], '<strong> and <b> at 600');
   await page.locator(aria('radio', 'Temperate')).click();
-  // Start's crop search is not the Add sheet's search box (X5): no box drawn around it. It draws once
-  // the card's list is read, so wait for it.
-  const crop = await page.locator('#ct-root input[type="search"]').map((el) => getComputedStyle(el.parentElement).borderTopWidth).wait();
-  assert.equal(crop, '0px', 'Start\'s crop search has no sheet search frame');
-  await page.locator(aria('button', 'Suggest plants')).click();
-  await page.locator(aria('tab', 'All plants')).click();
-  await page.locator('#ct-root [data-plant-id] button, #ct-root button[data-plant-id]').click();
+  // (X5, Start's crop search without the sheet's search frame, went with that search in PP-B commit 0a'.)
+  await page.locator('[data-place-suggest], .ct-cta .button-primary').click();
+  await page.locator('#ct-root .ct-chart button[data-plant-id]').click();
   assert.ok(await findAx(page, { role: 'dialog' }));
   // The plant dialog's action row is the sheet's (X4): flex, not the page's actions grid.
   const row = await page.$eval('dialog[open] .ct-actions', (el) => ({ d: getComputedStyle(el).display, m: getComputedStyle(el).marginTop }));
@@ -109,7 +105,7 @@ test('W8, W9, X4, X5: bold is 600, CJK headings keep words whole, sheet and page
 test('Walk-through 2 N1: in the Add sheet the Undo toast never covers "Add N plants" nor any other control (320, 390, 700, 960, 1280 px)', async () => {
   const plants = await temperate();
   for (const width of [320, 390, 700, 960, 1280]) {
-    const page = await suggested({ width, theme: 'light' });
+    const page = await suggested({ width, theme: 'light', hook: true });
     // No smooth scrolling (global.css: off under reduced motion): closing the sheet sends the focus back
     // to "Add plants" in a frame and the page's toast padding scrolls it, and a smooth scroll still
     // running moved the button between puppeteer's measure and its click (the click hit .ct-tabs).
@@ -119,13 +115,9 @@ test('Walk-through 2 N1: in the Add sheet the Undo toast never covers "Add N pla
     const rows = 'dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li';
     // Opens Add, searches the next candidate listed with a tick (few rows), and ticks it.
     const addOne = async () => {
-      // Clicked once its box and the page's scroll held still for two frames.
-      await page.waitForFunction(() => new Promise((done) => {
-        const box = () => JSON.stringify([scrollY, document.querySelector('.ct-viewbar button')?.getBoundingClientRect()]);
-        const before = box();
-        requestAnimationFrame(() => requestAnimationFrame(() => done(box() === before)));
-      }), { timeout: 5000, polling: 50 });
-      await page.click('.ct-viewbar button');
+      // Add through the store's opener: the palette page has no general Add button until Your plants
+      // (PP-B b3, chunk 2); the matrix's view bar it pressed went in 0a'.
+      await openAdd(page);
       // The Add sheet is a lazy chunk: its first open can pass the 4 s default under a loaded machine.
       await page.waitForSelector('dialog.ct-add[open] .ct-search input', { timeout: 15_000 });
       while (candidates.length) {
@@ -169,7 +161,6 @@ test('Walk-through 2 N1: in the Add sheet the Undo toast never covers "Add N pla
     await page.setViewport({ width, height: width < 640 ? 844 : 900, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });
     await page.locator('dialog.ct-add[open] .ct-add-bar .button-primary').click();
     await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
-    await page.click('#ct-tab-list'); // every member (a phone stage shows only its own)
     const now = new Set(await memberIds(page));
     assert.ok(now.has(a.id) && now.has(b.id), `${width} px: both plants are in the consortium (${a.name}: ${now.has(a.id)}, ${b.name}: ${now.has(b.id)})`);
     await done(page);
@@ -217,39 +208,16 @@ test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gut
       await settled(page, 'input[name="ct-site-light"][value="shade"]');
       await page.click('input[name="ct-site-light"][value="shade"]');
       await page.locator(aria('button', S('start.suggest'))).click();
-      assert.ok(await has(page, '#ct-tab-matrix', 8000), `${at}: the matrix`);
-      // Each explanation, opened alone (phone matrix, then side view). Suggest moves the focus to the
-      // matrix, and the page scrolls there smoothly: each tab is pressed once the page stands still.
-      for (const tab of ['matrix', 'side']) {
-        await settled(page, `#ct-tab-${tab}`);
-        await page.click(`#ct-tab-${tab}`);
-        assert.ok(await page.waitForFunction((t) => document.getElementById(`ct-tab-${t}`)?.getAttribute('aria-selected') === 'true', {}, tab).then(() => true, () => false), `${at}: the ${tab} tab is selected`);
-        // The side view is in the chunk loaded after the matrix (views/lazy.tsx, later.ts): counted once drawn.
-        await has(page, `#ct-panel-${tab} .ct-explain-btn`, 10_000);
-        const n = await page.$$eval(`#ct-panel-${tab} .ct-explain-btn`, (bs) => bs.length);
-        assert.ok(n > 0, `${at}: the ${tab} view's explanations`);
-        for (let i = 0; i < n; i++) {
-          await page.evaluate((t, j) => document.querySelectorAll(`#ct-panel-${t} .ct-explain-btn`)[j].click(), tab, i);
-          await page.waitForSelector(`#ct-panel-${tab} .ct-pop`);
-          bad.push(...(await within(page, `#ct-panel-${tab} .ct-pop`)).map((s) => `${tab} #${i}: ${s}`));
-          // Its Escape listener is added after paint (useEffect): two frames, as no reader is faster.
-          await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-          await page.keyboard.press('Escape');
-          assert.ok(await page.waitForFunction((t) => !document.querySelector(`#ct-panel-${t} .ct-pop`), {}, tab).then(() => true, () => false), `${at}: Escape closes ${tab} #${i}`);
-        }
-      }
-      // "Add it anyway?": a plant that does not take full shade asks first.
-      await settled(page, '#ct-tab-matrix');
-      await page.click('#ct-tab-matrix');
-      await settled(page, '.ct-viewbar button');
-      await page.click('.ct-viewbar button');
-      const ask = await page.waitForSelector('dialog.ct-add[open] li.flagged > button', { timeout: 5000 }).catch(() => null);
-      if (ask) {
-        await settled(page, 'dialog.ct-add[open] li.flagged > button'); // the sheet slides in (details.css ct-sheet-in)
-        await ask.click();
-        assert.ok(await has(page, 'dialog.ct-ask[open]'), `${at}: "Add it anyway?"`);
-        bad.push(...await within(page, 'dialog.ct-ask[open]'));
-      } else bad.push('no plant asks first in shade');
+      // The palette page (the matrix's and the side view's explanations went in PP-B commit 0a'): it
+      // and the plant dialog stay within the gutter, nothing wider than the window.
+      assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), `${at}: the palette page`);
+      bad.push(...await within(page, '.ct-palette-page'));
+      await settled(page, '#ct-root .ct-chart button[data-plant-id]');
+      await page.click('#ct-root .ct-chart button[data-plant-id]');
+      assert.ok(await has(page, 'dialog[open]', 8000), `${at}: a plant's dialog`);
+      bad.push(...(await page.evaluate(() => { const d = document.querySelector('dialog[open]'); return d && d.scrollWidth > d.clientWidth + 0.5 ? [`dialog ${d.scrollWidth} px wide in ${d.clientWidth}`] : []; })));
+      await page.keyboard.press('Escape');
+      // ("Add it anyway?" went: inform, don't block; owner decision 2026-11-14.)
       assert.deepEqual(bad, [], at);
       await done(page);
     }
@@ -354,40 +322,22 @@ test('Layout stability (N2, late fonts): when the web fonts arrive after the fir
   assert.deepEqual(bad, []);
 });
 
-// Review of p5-final (low 1): an explanation placed on open is placed again when the window changes
-// (a phone turned, a window narrowed), so it keeps the 16 px gutter without being reopened.
-test('Walk-through 2 N2 (review): an open explanation keeps the 16 px gutter when the window narrows from 844 to 390 px', async () => {
-  const page = await suggested({ width: 844, theme: 'light' });
-  const n = await page.$$eval('#ct-panel-matrix .ct-explain-btn', (bs) => bs.length);
-  assert.ok(n > 0, 'the phone matrix\'s explanations');
-  const bad = [];
-  for (let i = 0; i < n; i++) {
-    await page.setViewport({ width: 844, height: 900, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
-    await page.evaluate((j) => document.querySelectorAll('#ct-panel-matrix .ct-explain-btn')[j].click(), i);
-    await page.waitForSelector('#ct-panel-matrix .ct-pop');
-    await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
-    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-    const r = await page.$eval('#ct-panel-matrix .ct-pop', (el) => { const b = el.getBoundingClientRect(); return { left: b.left, right: b.right, vw: document.documentElement.clientWidth }; });
-    if (r.left < 15.5 || r.right > r.vw - 15.5) bad.push(`#${i}: ${Math.round(r.left)}–${Math.round(r.right)} of ${r.vw}`);
-    await page.keyboard.press('Escape');
-    await page.waitForFunction(() => !document.querySelector('#ct-panel-matrix .ct-pop'));
-  }
-  assert.deepEqual(bad, [], 'within 16 px of each edge after the resize');
-  await done(page);
-});
+// (Review of p5-final low 1, an open explanation placed again when the window narrows, went with the
+// matrix's and the side view's explanations in PP-B commit 0a'; nothing on the palette page pops up.)
 
 // Review of p5-final (low 2): the sheet's sticky foot (toast above the action bar) covers the sheet's
 // bottom, so the sheet keeps that much scroll padding: a control tabbed to near the end is shown above
 // the foot, and the foot's empty area beside the toast passes clicks through.
 test('Walk-through 2 N1 (review): with a toast in the Add sheet, the last controls tabbed to are fully visible above the foot and clickable (390 × 600)', async () => {
   const plants = await temperate();
-  const page = await suggested({ width: 390, theme: 'light' });
-  await page.click('.ct-viewbar button');
+  const page = await suggested({ width: 390, theme: 'light', hook: true });
+  await openAdd(page); // the store's opener, as in N1
   await page.waitForSelector('dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li input[type="checkbox"]', { timeout: 15_000 }); // lazy chunk, as in N1
   await page.click('dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li input[type="checkbox"]');
   await page.click('dialog.ct-add[open] .ct-add-bar .button-primary');
   assert.ok(await has(page, '.ct-toast-page .ct-toast'), 'the add\'s toast');
-  await page.click('.ct-viewbar button');
+  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
+  await openAdd(page);
   assert.ok(await has(page, 'dialog.ct-add[open] .ct-toast'), 'the toast in the sheet');
   await page.setViewport({ width: 390, height: 600, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
   assert.ok(plants.length > 3);

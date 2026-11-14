@@ -4,7 +4,7 @@
 // Renaming or removing a signal is a seam change for the coordinator; streams may add actions and,
 // inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
-import type { CellSpan, ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, PlantId, PlantVerdict, RangeRule, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
+import type { CellSpan, ClimateZone, PhaseOrd, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, PlantId, PlantVerdict, RangeRule, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
 import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, loadVerdictRule, needsMarkProviders, siteFor, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
@@ -13,7 +13,7 @@ import type { TextureId as ReaderTexture } from '../../lib/climate/soil.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
 import { state } from './state/schema.ts';
-import { focusAfterToast } from './focus.ts';
+import { focusAfterToast, noteToastOpener } from './focus.ts';
 
 // Where the country came from: the reader chose it, a link carried it, the page guessed it from
 // the browser's language (shown as a guess, never assumed), or (P5 S5b) the site location gave it
@@ -24,6 +24,10 @@ export interface Country { code: string | null; source: CountrySource | null }
 // empty palette slot since PP-B commit 0a' deleted the old screens (its writers: state/draft.ts,
 // restore.ts, suggest-wait.ts, addMembers below); b2 replaces the type with 'place' | 'palette' | 'plan'.
 export type View = 'start' | 'matrix';
+// The header step the page is on (Your place, Your palette, Planting plan; PP-B P1). Read from `view`
+// until its writers (state/draft.ts, restore.ts, suggest-wait.ts) take the step values: 'start' is the
+// place, 'matrix' the palette page (b2, additive seam).
+export type Step = 'place' | 'palette' | 'plan';
 // The open dialog, if any: what it shows and for which plant (null for sheets about no one plant).
 export type SheetKind = 'details' | 'swap' | 'add' | 'search' | 'paste' | 'share' | 'download';
 // n: which opening this is (openSheet counts them), so a dialog's late close event closes its own
@@ -40,6 +44,17 @@ export interface Load { status: LoadStatus; error: LoadFailure | null }
 // around them), removed (taken out: a new suggestion leaves them out) and guests (from another
 // climate's list, A9); the view; setAside; the stage print draws (unsaved, until PP-B18).
 export const { climate, country, room, plot, spot, soil, period, members, removed, guests, view, stage, setAside } = state.signals;
+export const step = computed<Step>(() => (view.value === 'start' ? 'place' : 'palette'));
+// The time step Through the years shows (PhaseOrd; unsaved, not in Undo): the phone's stepper and
+// print's side drawing read it (PP-B18; replaces the deprecated `stage`). Opens on years 1-3.
+export const yearStep = signal<PhaseOrd>(2);
+// The page's shell states (architecture 9): the database still loading after 5 s (main.ts sets it
+// from data/load.ts's slow callback), and a return visit restoring (main.ts; App shows the palette
+// placeholder, never the Place form, P2).
+export const slow = signal(false);
+export const opening = signal(false);
+// The holes put off with "Not now" (this page only, never saved).
+export const notNow = signal<ReadonlySet<string>>(new Set());
 export const sheet = signal<Sheet | null>(null);
 // While Start shows (view 'start'), the signals above are the Start draft: the picked card, its
 // site answers (and, on the consortium's own card, its plants, which Suggest and a paste
@@ -107,6 +122,8 @@ export const curatedClimates = computed<ClimateZone[]>(() => source.value?.info(
 // Each climate's plants as PlantSource.pool returned them, cached by climate once read.
 export const pools = signal<Partial<Record<ClimateZone, Taxon[]>>>({});
 // Each climate's interactions (PlantSource.interactions), read with its pool (S1).
+// The guest climates whose list could not be read (PP-B21; read again with Retry, setSource).
+export const failedPools = signal<ClimateZone[]>([]);
 export const interactionSets = signal<Partial<Record<ClimateZone, Interaction[]>>>({});
 
 // ---- computed ----
@@ -188,11 +205,12 @@ export const fitPool = computed<Taxon[] | null>(() => {
 // the range rule; b2 decides the final trigger). Its bodies are b2's: until then every plant is "not
 // checked". verdictFailed: its chunk did not load (b2 says it).
 export const verdictRule = signal<VerdictRule | null>(null);
-/** @public seam for b2 (the verdict chunk refused, PP-B20), which drops the tag. */
 export const verdictFailed = signal(false);
 let verdictLoad: Promise<void> | null = null;
 // Its load always settles, so a pool read waiting for it (withRule) never fails with it.
-function wantVerdict(): void {
+// Also called by the palette page once it shows (its fit lines and holes read the rule; without a
+// location every plant is "not checked"): an action, not a start() effect.
+export function wantVerdict(): void {
   if (verdictLoad) return;
   verdictLoad = loadVerdictRule().then((rule) => { verdictRule.value = rule; }, (err: unknown) => {
     console.error(`Consortium: the verdict rule did not load: ${(err as Error).message}`);
@@ -208,7 +226,6 @@ export const verdictContext = computed<VerdictContext>(() => ({
   scenario: scenario.value,
   canopy: canopyOf(memberTaxa.value),
 }));
-/** @public seam for b2 (the palette page reads it), which drops the tag. */
 export const memberVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
   const rule = verdictRule.value;
   return rule ? rule.verdicts(memberTaxa.value, verdictContext.value) : null;
@@ -229,8 +246,7 @@ export const countFits = computed<{ fits: number; look: number; of: number } | n
   for (const x of v.values()) { if (x.level === 'fits') fits++; else if (x.level === 'look') look++; }
   return { fits, look, of: v.size };
 });
-// Whether the browser is offline (b2 wires navigator.onLine and its events; App.tsx shows the line).
-/** @public seam for b2, which drops the tag. */
+// Whether the browser is offline (navigator.onLine and its events, wired in start(); App shows the line).
 export const offline = signal(false);
 
 // The guests as plants: each with its home climate's placement and a guest origin (A9; ADR-6
@@ -247,22 +263,25 @@ export const guestTaxa = computed<Taxon[]>(() => {
 // memberTaxa and the flags, and "Suggest plants" waits (suggestMembers returns false).
 export const guestsPending = computed<ClimateZone[]>(() => {
   const out: ClimateZone[] = [];
-  for (const from of Object.values(guests.value)) if (from && !pools.value[from] && !out.includes(from)) out.push(from);
+  for (const from of Object.values(guests.value)) if (from && !pools.value[from] && !failedPools.value.includes(from) && !out.includes(from)) out.push(from);
   return out;
 });
 // Members memberTaxa leaves out, never silently: `loading` while their list is read (a guest climate
-// in guestsPending, or the chosen climate's pool), `unlisted` once read and not in it.
+// in guestsPending, or the chosen climate's pool), `unlisted` once read and not in it; a guest whose list failed is in failedMembers.
 export const missingMembers = computed<{ loading: PlantId[]; unlisted: PlantId[] }>(() => {
   const own = pool.value, loading: PlantId[] = [], unlisted: PlantId[] = [];
   const found = new Set(memberTaxa.value.map((t) => t.id));
   for (const id of members.value) {
     if (found.has(id)) continue;
     const from = guests.value[id];
+    if (from && failedPools.value.includes(from)) continue;
     if (!own || (from && !pools.value[from])) loading.push(id);
     else unlisted.push(id);
   }
   return { loading, unlisted };
 });
+// Members whose guest list could not be read (failedPools): missing, not checked (PP-B21; additive).
+export const failedMembers = computed<PlantId[]>(() => members.value.filter((id) => { const from = guests.value[id]; return !!from && failedPools.value.includes(from); }));
 // The members as plants, in order: the climate's own, or a guest's home record. Ids not at hand are
 // left out here and listed in missingMembers (b2's palette page says so, PP-B21).
 export const memberTaxa = computed<Taxon[]>(() => {
@@ -340,7 +359,10 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
       if (source.peek() !== src) return null;
       reading.delete(c);
       console.error(`Consortium data ${src.info().releaseId}: ${c}: ${(err as Error).message}`);
-      load.value = { status: 'failed', error: 'damaged' };
+      // A guest's list only: the palette names it as missing and its plants "not checked" (PP-B21);
+      // the chosen climate's list is the tool's own: its failure screen.
+      if (c !== climate.peek() && Object.values(guests.peek()).includes(c)) failedPools.value = [...failedPools.peek().filter((x) => x !== c), c];
+      else load.value = { status: 'failed', error: 'damaged' };
       return null;
     });
     reading.set(c, p);
@@ -356,6 +378,7 @@ export function setSource(next: PlantSource | null, close: (() => void) | null =
   closeCurrent = null;
   source.value = null;
   reading.clear();
+  failedPools.value = [];
   try { prev?.(); } catch (err) { console.error(`Consortium data: closing the previous database: ${(err as Error).message}`); }
   source.value = next;
   closeCurrent = next ? close : null;
@@ -431,10 +454,23 @@ const TOAST_MS = 12_000; // long enough to reach Undo with a keyboard or a scree
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 let toastSeq = 1;
 export function showToast(text: string, undo: (() => void) | null = null, action: ToastAction | null = null, focus: PlantId[] = []): void {
-  if (toastTimer) clearTimeout(toastTimer);
+  noteToastOpener();
   const line: ToastLine = { id: toastSeq++, text, undo, action, where: sheet.peek() !== null ? 'sheet' : 'page', focus };
   toast.value = line;
-  toastTimer = setTimeout(() => { if (toast.peek()?.id === line.id) { focusAfterToast(); toast.value = null; } }, TOAST_MS);
+  armToast(line.id);
+}
+function armToast(id: number): void {
+  if (toastTimer) clearTimeout(toastTimer);
+  // The browser-test build lets a test shorten it (window.__ctTimeouts.toast), as data/load.ts's stall.
+  const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { toast?: number } }).__ctTimeouts?.toast) || TOAST_MS : TOAST_MS;
+  toastTimer = setTimeout(() => { if (toast.peek()?.id === id) { focusAfterToast(); toast.value = null; } }, ms);
+}
+// The toast waits while the pointer is on it or the focus is in it, and runs its full time again
+// after (architecture 9; PP-B17).
+export function holdToast(held: boolean): void {
+  const line = toast.peek();
+  if (!line) return;
+  if (held) { if (toastTimer) clearTimeout(toastTimer); toastTimer = null; } else armToast(line.id);
 }
 // Every path that takes the toast away (Dismiss, Undo, its action, the timer above) tells focus.ts
 // first, while the toast is still on the page (F1a commit 0 seam, A25; stream 6 implements it).
@@ -479,7 +515,8 @@ const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.inc
 // the climate.
 const SNAP_KEYS = state.lists.endsUndo;
 let undoAfter: ReturnType<typeof state.peek<(typeof SNAP_KEYS)[number]>> | null = null;
-function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = []): void {
+/** @public seam for b1a (state/draft.ts switches its offerPlaceUndo to it at the chunk-1 merge), which drops the tag. */
+export function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = []): void {
   undoAfter = state.peek(SNAP_KEYS);
   showToast(text, () => { undoAfter = null; state.restore(before); }, action, focus);
 }
@@ -547,9 +584,14 @@ export function start(): void {
       rangeBroken.value = true;
       chunkToast('range.unavailable');
     });
-    // The verdict rule's chunk, on the same trigger (PP-B commit 0; b2 may move it).
     wantVerdict();
   });
+  // Offline (architecture 9): the page says so; what is loaded still works.
+  if (typeof navigator !== 'undefined' && typeof addEventListener === 'function') {
+    offline.value = navigator.onLine === false;
+    addEventListener('online', () => { offline.value = false; });
+    addEventListener('offline', () => { offline.value = true; });
+  }
   // The mark providers' chunk, loaded once a mark can show (markProviders, marksBroken).
   effect(() => {
     if (!wantsMarkProviders.value || markProviders.peek().length || marksBroken.peek()) return;

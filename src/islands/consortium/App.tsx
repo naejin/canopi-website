@@ -11,12 +11,18 @@
 // - Sheets: the sheets' router and the toast; views/Sheets.tsx routes store.sheet itself (the plant
 //   dialog, Swap, Add, Search, Paste, each loaded on first use) and renders the toast.
 import type { ComponentType } from 'preact';
-import { load } from './store.ts';
+import { load, offline, opening, slow, step } from './store.ts';
 import { T } from './strings.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
 import { Place } from './views/place/Place.tsx';
 import { Actions } from './views/Actions.tsx';
 import { Sheets } from './views/Sheets.tsx';
+import { lazyPart, retryable } from './views/lazy.tsx';
+import { Placeholder } from './views/palette/Placeholder.tsx';
+
+// The palette page, its own chunk (role `palette`): if it does not load, Place stays usable and the
+// failed line's Reload fetches it again in place (`?retry=n`; PP-B24).
+const PalettePage = lazyPart(retryable(() => import('./views/palette/Palette.tsx'), (m) => m.Palette), { retry: true, page: true, loading: Placeholder });
 // Kept in the first run: modules the sheets, the later views and the future panel share, which no
 // first-run module imports since the matrix went (PP-B commit 0a'), so no part pays for them on first
 // use and no sheet imports a lazy chunk statically (check-built-site's K3 rule).
@@ -56,10 +62,22 @@ export function App({ guide, onRetry }: AppProps) {
       </div>
     );
   }
+  // A return visit restoring shows the palette's placeholder, never the Place form (P2), and so does
+  // the palette page until the plants are read and its chunk is in.
+  const onPalette = step.value === 'palette', restoring = opening.value && !onPalette;
+  const loadingLine = status !== 'ready' && <p class="status-line" aria-busy="true">{T(slow.value ? 'load.slow' : 'load.plants')}</p>;
   return (
     <>
-      {slot(Place)}
-      {status !== 'ready' ? <p class="status-line" aria-busy="true">{T('load.plants')}</p> : slot(Actions)}
+      <p class="ct-offline" role="status">{offline.value ? T('load.offline') : ''}</p>
+      {restoring ? <Placeholder /> : slot(Place)}
+      {onPalette && status !== 'ready' && <Placeholder />}
+      {loadingLine}
+      {status === 'ready' && (
+        <>
+          {onPalette && <PalettePage.View />}
+          {slot(Actions)}
+        </>
+      )}
       <Sheets />
     </>
   );

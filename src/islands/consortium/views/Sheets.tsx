@@ -25,7 +25,7 @@ import * as store from '../store.ts';
 import { closeSheet, taxonOf, type Sheet as Opened, type SheetKind } from '../store.ts';
 import type { PlantId } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
-import { SheetDialog, SheetFrame, SheetWaiting, type Frame, type FrameProps } from './kit/sheet.tsx';
+import { LiveLine, SheetDialog, SheetFrame, SheetWaiting, type Frame, type FrameProps } from './kit/sheet.tsx';
 import { nameOf } from './kit/names.ts';
 import { Toast } from './Toast.tsx';
 import { later, retryable } from './lazy.tsx';
@@ -60,7 +60,7 @@ function DetailsWaiting({ id, Frame }: { id: PlantId; Frame: Frame }) {
   return (
     <Frame titleId="ct-d-title" class="ct-details">
       <div class="ct-d-name"><h2 id="ct-d-title" tabIndex={-1} data-autofocus>{t ? nameOf(t) : ''}</h2></div>
-      <p class="status-line" role="status">{T('details.loading')}</p>
+      <LiveLine text={T('details.loading')} />
     </Frame>
   );
 }

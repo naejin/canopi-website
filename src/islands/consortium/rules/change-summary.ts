@@ -7,7 +7,7 @@
 import type { Line } from '../../../lib/consortium/index.ts';
 import { holesIn, plantsIn, type Picture } from './picture.ts';
 
-const L = (key: string, count: number): Line => ({ key: `consortium.palette.change.${key}`, vars: {}, count });
+const L = (key: string, count: number): Line => ({ key: `consortium.palette.change_${key}`, vars: {}, count });
 
 export function changeSummary(before: Picture, after: Picture): Line[] {
   const moved = JSON.stringify(before.columns) !== JSON.stringify(after.columns);

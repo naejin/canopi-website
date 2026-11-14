@@ -12,21 +12,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { h, useHarness, aria, axNodes, behaviour, en, findAx, has } from './helpers.mjs';
-import { esc, done, temperate, cellIn, suggested, memberIds, addRows, fitsShade, linkOf, saved, savedFragment, tropicalOnly, param, changeSiteTo, OTHER_TAB, otherTabSaves, pasteOne, focused, hookedPage } from './seams-helpers.mjs';
+import { esc, done, temperate, cellIn, suggested, memberIds, addRows, fitsShade, linkOf, saved, savedFragment, tropicalOnly, param, changeSiteTo, OTHER_TAB, otherTabSaves, pasteOne, focused, hookedPage, openAdd, savedPlace } from './seams-helpers.mjs';
 
 useHarness();
 
 test('X8: a link opened while a sheet is up closes the sheet', async (t) => {
   await behaviour(t, async (v) => {
-    const page = await suggested(v);
+    const page = await suggested({ ...v, hook: true });
     const before = await page.evaluate(() => location.hash);
-    await page.locator(aria('button', 'Add plants')).click();
+    await openAdd(page);
     assert.ok(await findAx(page, { role: 'dialog', name: 'Add plants' }));
     // Back to the address with one plant fewer: the page's own link, opened as a restore.
     await page.locator('.ct-add input[type="checkbox"]').click();
     await page.locator('.ct-add-bar .button-primary').click();
     await page.waitForFunction((b) => location.hash !== b, {}, before);
-    await page.locator(aria('button', 'Add plants')).click();
+    await openAdd(page);
     assert.ok(await findAx(page, { role: 'dialog', name: 'Add plants' }));
     await page.evaluate((f) => { history.pushState(null, '', f); window.dispatchEvent(new HashChangeEvent('hashchange')); }, before);
     await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
@@ -48,12 +48,11 @@ test('X3: a list pasted on Start shows its consortium with Share, saved: a reloa
     await page.locator(aria('button', add.name)).click();
     assert.ok(await has(page, aria('button', 'Share'), 5000), 'the consortium is shown, with Share');
     const link = await linkOf(page);
-    assert.match(link, /^#v=4/, 'the address holds it');
+    assert.match(link, /^#v=5/, 'the address holds it');
     await page.reload();
     assert.equal(await loadState(page), 'ready');
     assert.ok(await has(page, aria('button', 'Share'), 8000), 'a reload restores it');
     assert.equal(await linkOf(page), link, 'the same consortium');
-    await page.locator(aria('tab', 'All plants')).click();
     assert.equal((await memberIds(page)).length, 3, 'the three pasted plants');
     await done(page);
   });
@@ -72,12 +71,13 @@ test('X3: a site answer made after "Change site" is saved with the commit, and a
     await page.locator(aria('radio', 'Shade')).click();
     await pasteOne(page, other.name);
     const after = await savedFragment(page);
-    assert.equal(param(after, 'l'), 'shade', 'the draft\'s answer is saved with the commit');
+    assert.equal(param(await savedPlace(page), 'l'), 'shade', `the draft's answer is saved with the commit (place ${await savedPlace(page)})`);
     assert.equal(await linkOf(page), after, 'and in the address');
     await page.reload();
     assert.equal(await loadState(page), 'ready');
     assert.ok(await has(page, aria('button', 'Share'), 8000), 'the consortium is restored');
-    assert.equal(await linkOf(page), after, 'with the answer');
+    assert.equal(await linkOf(page), after, 'the same palette');
+    assert.equal(param(await savedPlace(page), 'l'), 'shade', 'with the answer (link v5 keeps it in the save\'s place, never the address)');
     await done(page);
   });
 });
@@ -142,7 +142,6 @@ test('R2-1: a list pasted on Start under another climate starts that climate\'s 
     assert.ok(add, `${inga} is found in the Tropical list`);
     await page.locator(aria('button', add.name)).click();
     assert.ok(await has(page, aria('button', 'Share'), 5000), 'the pasted consortium is shown');
-    await page.locator(aria('tab', 'All plants')).click();
     assert.equal((await memberIds(page)).length, 1, 'only the pasted plant: no Temperate member carried over');
     assert.match(await linkOf(page), /[#&]c=tropical/, 'under Tropical');
     await page.locator(aria('button', 'Undo')).click();
@@ -196,13 +195,12 @@ test('R2-3: Undo of a paste on a guide link\'s Start puts back the save of an ea
 });
 
 test('T2 (R3-3): Undo of a paste under another card, then Back, leaves the consortium and its save exactly as before', async (t) => {
+  // A Tropical-only plant (Start's crop chips, which this picked from, went in PP-B commit 0a').
+  const [name] = await tropicalOnly();
   await behaviour(t, async (v) => {
     const page = await suggested(v);
     const before = await linkOf(page);
     await changeSiteTo(page, 'Tropical');
-    const chip = await page.waitForSelector('.ct-chips .ct-chip[aria-pressed="false"]');
-    await chip.click();
-    const name = await page.$eval('.ct-chips .ct-chip:last-of-type .ct-sci', (el) => el.textContent.trim());
     await page.locator(aria('button', 'Paste a list')).click();
     await page.locator('#ct-paste-text').fill(name);
     await page.locator(aria('button', 'Add 1 plant')).click();
@@ -224,7 +222,7 @@ test('T3 (R3-1): a consortium the reader emptied stays empty, saved, through Cha
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await page.locator(aria('button', 'Suggest plants')).click();
-    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000));
+    assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000));
     await page.reload();
     assert.equal(await loadState(page), 'ready');
     assert.ok(await has(page, aria('button', 'Share'), 8000), 'the save reopens');
@@ -312,8 +310,8 @@ test('D1 (R4-3): site answers changed in the draft are not saved until a commit;
     await page.locator('input[name="ct-site-water"]:not(:checked)').click();
     const water = await page.$eval('input[name="ct-site-water"]:checked', (el) => el.value);
     await page.locator(aria('button', 'Suggest plants')).click();
-    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000));
-    assert.equal(param(await savedFragment(page), 'w'), water, 'Suggest commits the draft\'s answer');
+    assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000));
+    assert.equal(param(await savedPlace(page), 'w'), water, `Suggest commits the draft's answer (place ${await savedPlace(page)})`);
     await done(page);
   });
 });
@@ -325,7 +323,7 @@ test('pre-push 1: a guest removed from the consortium gives no "no longer in the
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await page.locator(aria('button', 'Suggest plants')).click();
-    assert.ok(await has(page, aria('tab', 'Layers × stages'), 8000));
+    assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000));
     await page.evaluate(async (name) => {
       const s = window.__ctTest.store;
       const id = (await s.loadPool('Tropical')).find((x) => x.canonical_name === name).id;

@@ -10,7 +10,10 @@ import { h, render } from 'preact';
 // scripts/check-built-site.mjs). Here, not in load.ts: Node's unit tests import load.ts.
 import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App } from './App.tsx';
-import { load, setPageClimates, setPageCountries, setSource, start, watchPools } from './store.ts';
+import { effect } from '@preact/signals';
+import { load, opening, setPageClimates, setPageCountries, setSource, slow, start, view, watchPools } from './store.ts';
+import { arrival, startMemory } from './state/arrival.ts';
+import { memory, readRecord, STORE } from './state/persist.ts';
 import { provideLocationStep } from './state/restore.ts';
 import { loadLocationStep } from './views/location/load.ts';
 import { zoneOf } from '../../lib/consortium/index.ts';
@@ -28,12 +31,13 @@ const getLoader = () => (loader ??= import('./data/load.ts').catch((err: unknown
 // Retry opens a new database: the one opened before is closed first (store.setSource).
 async function open(data: PageData): Promise<void> {
   load.value = { status: 'loading', error: null };
+  slow.value = false;
   setSource(null);
   let LoadError: Loader['LoadError'] | null = null;
   try {
     const mod = await getLoader();
     LoadError = mod.LoadError;
-    const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map((c) => zoneOf(c) ?? c) }, wasmUrl);
+    const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map((c) => zoneOf(c) ?? c) }, wasmUrl, () => { slow.value = true; });
     let source;
     try {
       source = mod.createSqliteSource(opened.db, { images: data.images });
@@ -69,6 +73,20 @@ if (root && data) {
   setPageCountries(data.countries);
   setPageClimates(data.climates);
   watchPools();
+  // A return visit (a save or a link to restore) opens on the palette page's placeholder, never the
+  // Place form (P2): the memory starts before the first render, and the placeholder stays until the
+  // palette shows, the load fails, or the restore has had its time once the plants are read.
+  const how = arrival({ hash: location.hash, search: location.search }, readRecord(memory.read(STORE)), null, (() => { try { return history.state; } catch { return null; } })());
+  opening.value = how.kind === 'saved' || how.kind === 'link';
+  if (opening.peek()) {
+    let after: ReturnType<typeof setTimeout> | undefined;
+    const stop = effect(() => {
+      const { status } = load.value;
+      if (view.value !== 'start' || status === 'failed') { clearTimeout(after); opening.value = false; queueMicrotask(() => stop()); }
+      else if (status === 'ready' && after === undefined) after = setTimeout(() => { opening.value = false; }, 3000);
+    });
+  }
+  startMemory();
   void open(data);
   // The root keeps its static loading line, aria-busy, until App renders into it.
   const onRetry = () => void open(data);

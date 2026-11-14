@@ -271,7 +271,7 @@ test('PP-B (b2 pictures, 3.4): Through the years has a row per light level, band
   sameCells(p, P.tableOf(p));
   const bare = pictureOf(P, 'yearsPicture', [...palette, plantOf('nolayer', { name: 'No layer', role: 'crop', phase_start: 'placenta_i', phase_end: 'climax' })]);
   assert.equal(bare.rows.at(-1).state, 'not-recorded', 'plants with no light level are a row of their own, never dropped');
-  assert.deepEqual(bare.summary[0], { key: 'consortium.palette.years.summary', vars: {}, count: 5 });
+  assert.deepEqual(bare.summary[0], { key: 'consortium.palette.yearsSummary', vars: {}, count: 5 });
   sameCells(bare, P.tableOf(bare));
 });
 
@@ -310,7 +310,48 @@ test('PP-B (b2 changeSummary, 3.4): nothing changed says nothing; a plant added 
   const before = pictureOf(P, 'yearsPicture', palette);
   assert.deepEqual(P.changeSummary(before, before), []);
   const after = pictureOf(P, 'yearsPicture', [...palette, plantOf('mid', { name: 'Mid', role: 'support', stratum: 'medium', phase_start: 'placenta_i', phase_end: 'climax' })]);
-  assert.deepEqual(P.changeSummary(before, after), [{ key: 'consortium.palette.change.plants', vars: {}, count: 5 }, { key: 'consortium.palette.change.holes', vars: {}, count: 1 }]);
+  assert.deepEqual(P.changeSummary(before, after), [{ key: 'consortium.palette.change_plants', vars: {}, count: 5 }, { key: 'consortium.palette.change_holes', vars: {}, count: 1 }]);
   const s3 = P.columnOf(before, 2), s4 = P.columnOf(before, 3);
-  assert.deepEqual(P.changeSummary(s3, s4), [core.yearsLine(3, 15), { key: 'consortium.palette.change.plants', vars: {}, count: 2 }, { key: 'consortium.palette.change.holes', vars: {}, count: 2 }], 'years 3-15: the tree and High any; no one in some shade or low');
+  assert.deepEqual(P.changeSummary(s3, s4), [core.yearsLine(3, 15), { key: 'consortium.palette.change_plants', vars: {}, count: 2 }, { key: 'consortium.palette.change_holes', vars: {}, count: 2 }], 'years 3-15: the tree and High any; no one in some shade or low');
+});
+
+// ---- scale (owner directive 2026-11-14: smooth to 200 plants), on the shared 200-plant palette ----
+// (scripts/palette-200.mjs: real export ids, mixed light levels and roles, 6 guests; b3 reuses it.)
+const p200 = await import('./palette-200.mjs');
+const derive = (P, members) => {
+  const ctx = { place: core.emptyPlace, lookup: p200.KIAMBU.lookup, period: '1991-2020', scenario: 'ssp245', canopy: core.canopyOf(members) };
+  const v = verdicts(members, ctx);
+  const holes = core.holes({ members, verdicts: v, pending: false });
+  core.nextStep(holes);
+  return { v, holes, years: P.yearsPicture({ members, holes, nameOf }), jobs: P.jobsPicture({ members, holes, nameOf }) };
+};
+test('PP-B (b2 scale, 200 plants): verdicts and holes under 150 ms, every picture folds and its table lists all 200, and one plant added re-derives under 30 ms', async (t) => {
+  const P = await pictures();
+  const { members } = await p200.palette200();
+  assert.equal(members.length, 200);
+  derive(P, members.slice(0, 20)); // warm the modules' code paths once
+  const t0 = performance.now();
+  const ctx = { place: core.emptyPlace, lookup: p200.KIAMBU.lookup, period: '1991-2020', scenario: 'ssp245', canopy: core.canopyOf(members) };
+  const v = verdicts(members, ctx);
+  core.nextStep(core.holes({ members, verdicts: v, pending: false }));
+  const probe = performance.now() - t0;
+  const levels = new Set([...v.values()].map((x) => x.level));
+  assert.ok(levels.size >= 2, `the verdicts mix (${[...levels]})`);
+  const d = derive(P, members);
+  for (const [kind, p] of [['years', d.years], ['jobs', d.jobs]]) {
+    for (const r of p.rows) {
+      assert.ok(r.marks.length <= P.PICTURE_LANE_MAX && r.cells.every((c) => c.ids.length <= P.PICTURE_LANE_MAX), `${kind} ${r.key}: at most ${P.PICTURE_LANE_MAX} drawn`);
+      const drawn = new Set(r.cells.flatMap((c) => c.ids)), all = new Set(r.cells.flatMap((c) => [...c.ids, ...c.hidden]));
+      if (all.size > drawn.size) assert.ok(r.more && r.more.count >= all.size - drawn.size, `${kind} ${r.key}: "+ k more" holds the rest`);
+    }
+    sameCells(p, P.tableOf(p), kind);
+    assert.equal(P.plantsIn(p).size, 200, `${kind}: the table lists all 200`);
+  }
+  const extra = (await p200.palette200()).pools.Tropical.find((x) => !members.some((m) => m.id === x.id));
+  // The median of five runs: npm test runs the files in parallel, and one run can lose the CPU.
+  const runs = Array.from({ length: 5 }, () => { const t1 = performance.now(); derive(P, [...members, extra]); return performance.now() - t1; }).sort((a, b) => a - b);
+  const add = runs[2];
+  t.diagnostic(`200 plants: verdicts + holes ${probe.toFixed(1)} ms; one added, verdicts + holes + both pictures ${add.toFixed(1)} ms (median of 5)`);
+  assert.ok(probe < 150, `verdicts + holes ${probe.toFixed(1)} ms`);
+  assert.ok(add < 30, `one plant added re-derives in ${add.toFixed(1)} ms`);
 });

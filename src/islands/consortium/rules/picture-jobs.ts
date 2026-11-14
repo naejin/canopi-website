@@ -15,11 +15,11 @@ export function jobsPicture({ members, holes, nameOf, first }: PictureInput): Pi
   }));
   const none = members.filter((t) => !jobsOf(t).length);
   const head = (key: string, count?: number): Line => ({ key: `consortium.palette.${key}`, vars: {}, ...(count === undefined ? {} : { count }) });
-  if (none.length) rows.push(lane('none', head('jobs.none'), none, columns.length, { ...common, holeAt: () => null, state: 'not-recorded' }));
+  if (none.length) rows.push(lane('none', head('jobsNone'), none, columns.length, { ...common, holeAt: () => null, state: 'not-recorded' }));
   const open = holes.filter((h) => h.kind === 'job' && h.state === 'open').length;
   return {
-    title: 'consortium.palette.jobs.title', columns, rows,
-    summary: [head('jobs.summary', members.length), head('jobs.holes', open)],
+    title: 'consortium.palette.jobsTitle', columns, rows,
+    summary: [head('jobsSummary', members.length), head('jobsHoles', open)],
     names: Object.fromEntries(members.map((t) => [t.id, nameOf(t)])),
   };
 }

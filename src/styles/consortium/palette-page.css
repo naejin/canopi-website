@@ -1,2 +1,88 @@
 /* the Plant palette page (stream b2): page-level, imported by src/components/consortium/ConsortiumPage.astro (PP-B commit 0).
    Colours only from the token block of src/styles/tokens.css (plant-palette-architecture 3.5). */
+
+/* The page: steps, then the Next step, Through the years and the jobs, one column at every width. */
+.ct .ct-palette-page { display: grid; gap: 24px; min-width: 0; }
+.ct .ct-palette-page > h2 { margin: 0; font-family: var(--font-display); font-size: 28px; font-weight: 400; line-height: 1.2; }
+.ct .ct-steps ol { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font-size: 15px; }
+.ct .ct-steps li { display: flex; align-items: center; min-width: 0; }
+.ct .ct-steps .ct-step { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; background: none; color: var(--text-secondary); font: inherit; }
+.ct .ct-steps button.ct-step { cursor: pointer; color: var(--accent-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.ct .ct-steps [aria-current="step"] .ct-step { color: var(--text); font-weight: 600; }
+.ct .ct-step-later { opacity: 0.75; }
+.ct .ct-step-n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--border-strong); font-size: 13px; font-weight: 600; }
+.ct .ct-steps [aria-current="step"] .ct-step-n { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+.ct .ct-placeholder { opacity: 0.9; }
+
+/* The Next step: the hole in words, its best fillers, See all and Not now. */
+.ct .ct-next { display: grid; gap: 12px; padding: 20px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); min-width: 0; }
+.ct .ct-next h3, .ct .ct-chart h3 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 400; line-height: 1.25; }
+.ct .ct-next-count { font-family: var(--font-sans); font-size: 14px; color: var(--text-secondary); }
+.ct .ct-next-hole { margin: 0; font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.ct .ct-fillers { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ct .ct-fillers li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 0; border-top: 1px solid var(--border); }
+.ct .ct-filler-name { flex: 1 1 12em; min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-next-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.ct .ct-other-holes ul { display: grid; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.ct .ct-other-holes summary { min-height: 40px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+
+/* A fit line: its icon and its words (colour never alone). */
+.ct .ct-fit { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--level-fits); }
+.ct .ct-fit[data-level="look"] { color: var(--level-look); }
+.ct .ct-fit[data-level="outside"] { color: var(--level-outside); }
+.ct .ct-fit[data-level="unknown"] { color: var(--level-unknown); }
+.ct .ct-level-icon { flex: none; width: 16px; height: 16px; }
+
+/* A picture: the drawing (decorative to the keyboard), its lanes as buttons, or the table. */
+.ct .ct-chart { display: grid; gap: 10px; min-width: 0; }
+.ct .ct-chart-intro { margin: 0; color: var(--text-secondary); max-width: 62ch; }
+.ct .ct-chart-toggle[aria-pressed="true"] { border-color: var(--accent); }
+.ct .ct-chart-body { display: grid; gap: 8px; min-width: 0; }
+.ct .ct-chart-columns { display: flex; margin: 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--text-secondary); }
+.ct .ct-chart-columns li { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; text-align: center; }
+.ct .ct-chart-svg { display: block; width: 100%; height: auto; min-height: 60px; }
+.ct .ct-chart-lane { fill: var(--surface); stroke: var(--border); stroke-width: 1; }
+.ct .ct-chart-lane[data-lane="emergent"] { stroke: var(--light-emergent); }
+.ct .ct-chart-lane[data-lane="high"] { stroke: var(--light-high); }
+.ct .ct-chart-lane[data-lane="medium"] { stroke: var(--light-medium); }
+.ct .ct-chart-lane[data-lane="low"] { stroke: var(--light-low); }
+.ct .ct-chart-lane[data-lane="none"] { stroke: var(--light-none); }
+.ct .ct-chart-unjudged { stroke: var(--text-secondary); stroke-width: 1; }
+.ct .ct-chart-hole { fill: none; stroke: var(--level-look); stroke-width: 2; stroke-dasharray: 6 4; }
+.ct .ct-chart-band { fill: var(--text-secondary); }
+.ct .ct-chart-band[data-job="feeds_you"] { fill: var(--role-food); }
+.ct .ct-chart-band[data-job="feeds_soil"] { fill: var(--role-soil); }
+.ct .ct-chart-band[data-job="mulch"] { fill: var(--role-mulch); }
+.ct .ct-chart-band[data-job="ground"] { fill: var(--role-ground); }
+.ct .ct-chart-band[data-job="helpers"] { fill: var(--role-helpers); }
+.ct .ct-chart-band[data-job="shelter"] { fill: var(--role-shelter); }
+.ct .ct-chart-lanes { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ct .ct-chart-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 0 6px 10px; border-left: 4px solid var(--light-none); min-width: 0; }
+.ct .ct-chart-row[data-lane="emergent"] { border-left-color: var(--light-emergent); }
+.ct .ct-chart-row[data-lane="high"] { border-left-color: var(--light-high); }
+.ct .ct-chart-row[data-lane="medium"] { border-left-color: var(--light-medium); }
+.ct .ct-chart-row[data-lane="low"] { border-left-color: var(--light-low); }
+.ct .ct-chart-head { flex: 1 0 100%; font-weight: 600; font-size: 15px; }
+.ct .ct-chip, .ct .ct-hole-button { min-height: 40px; max-width: 100%; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; cursor: pointer; overflow-wrap: anywhere; text-align: start; }
+.ct .ct-chip-more { font-weight: 600; }
+.ct .ct-hole-button { border-style: dashed; border-color: var(--level-look); border-radius: 6px; }
+.ct .ct-chart-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ct .ct-chart-table caption { text-align: start; padding-bottom: 6px; color: var(--text-secondary); }
+.ct .ct-chart-table th, .ct .ct-chart-table td { padding: 6px 8px; border: 1px solid var(--border); text-align: start; vertical-align: top; overflow-wrap: anywhere; }
+.ct .ct-chart-table th { font-weight: 600; }
+
+/* Through the years on a phone: one time step, with Earlier and Later. */
+.ct .ct-years { display: grid; gap: 10px; min-width: 0; }
+.ct .ct-stepper { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ct .ct-stepper-at { font-weight: 600; }
+
+@media (max-width: 639px) {
+  .ct .ct-next { padding: 16px; }
+  /* The table as blocks: each row a card, each cell named by its column, so nothing scrolls sideways. */
+  .ct .ct-chart-table, .ct .ct-chart-table tbody, .ct .ct-chart-table tr, .ct .ct-chart-table th, .ct .ct-chart-table td { display: block; width: auto; }
+  .ct .ct-chart-table thead { display: none; }
+  .ct .ct-chart-table tr { margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; }
+  .ct .ct-chart-table th, .ct .ct-chart-table td { border: 0; border-top: 1px solid var(--border); }
+  .ct .ct-chart-table tr > :first-child { border-top: 0; }
+  .ct .ct-chart-table td::before { content: attr(data-col); display: block; font-size: 12.5px; color: var(--text-secondary); }
+}

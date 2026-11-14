@@ -49,7 +49,9 @@ test('store: markContext follows the climate, location and scenario; the provide
 });
 
 test('the host views mount every stream\'s slot, and PlantMarks names its surface everywhere', () => {
-  const start = view('Start.tsx');
+  // The Place step (views/place/Place.tsx; b1a deletes Start.tsx): until b1a's merge Place.tsx re-exports Start.
+  const place = view('place/Place.tsx');
+  const start = place.includes("from '../Start.tsx'") ? view('Start.tsx') : place;
   assert.ok(start.indexOf('<LocationSlot />') > 0 && start.indexOf('<LocationSlot />') < start.indexOf('<Climates />'), 'S5b: LocationSlot before the cards');
   assert.match(start, /\{z && <PoolSlot zone=\{z\} \/>\}\s*\{z && hasList\(z\) && \(/, 'S5c: PoolSlot and hasList decide what follows the cards');
   assert.match(start, /const pill = cardPill\(z\);/, 'S5c: the card\'s pill from PoolSlot (Ready, Needs your location, Not covered yet; hand-off H-S5c-5)');

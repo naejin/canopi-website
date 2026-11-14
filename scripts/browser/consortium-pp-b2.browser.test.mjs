@@ -35,7 +35,7 @@ const done = async (...pages) => { for (const p of pages) await p.browserContext
 
 // Needs only commit 0 and a11y1's files: store.ts hideToast calls focus.ts focusAfterToast (commit 0),
 // which a11y1 implements.
-failing('F1a-A1 → PP-B (b2 toast focus, A25): dismissing the toast with the keyboard keeps the focus on a control of the tool, never <body>', { owner: 'b2', reason: /focus fell to <body>/ }, async () => {
+test('F1a-A1 → PP-B (b2 toast focus, A25): dismissing the toast with the keyboard keeps the focus on a control of the tool, never <body>', async () => {
   const page = await tool();
   await placed(page);
   await page.evaluate(() => { const { store } = window.__ctTest; store.removeMember(store.members.value[0]); });
@@ -53,7 +53,7 @@ failing('F1a-A1 → PP-B (b2 toast focus, A25): dismissing the toast with the ke
 // Once the consortium is placed (Start's regions are pal1's F1a-P9): a plant's sheet opened while its
 // chunk loads, then the same plant removed, put back with Undo and removed again (two toasts with the
 // same line: two announcements, one each).
-failing('F1a-A2 → PP-B (b2 status regions, A25): the toast\'s and the sheets\' live regions are on the page before their message, and each line is announced once per toast or opening', { owner: 'b2', reason: /inserted with its message/ }, async () => {
+test('F1a-A2 → PP-B (b2 status regions, A25): the toast\'s and the sheets\' live regions are on the page before their message, and each line is announced once per toast or opening', async () => {
   const page = await tool({ setup: watchLiveRegions, block: { details: 'hold' } });
   await placed(page);
   await resetLive(page);
@@ -77,7 +77,7 @@ failing('F1a-A2 → PP-B (b2 status regions, A25): the toast\'s and the sheets\'
   assert.deepEqual(saidTwice(live.said), [], 'each line is announced once per toast or opening');
 });
 
-failing('F1a-S1 → PP-B (b2 wasm preload, A24): the sqlite wasm is preloaded with the URL the loader fetches, requested once, and asked for before the loader chunk', { owner: 'b2', reason: /no wasm preload link on the page/ }, async () => {
+test('F1a-S1 → PP-B (b2 wasm preload, A24): the sqlite wasm is preloaded with the URL the loader fetches, requested once, and asked for before the loader chunk', async () => {
   const log = [];
   const page = await tool({ ...PHONE, setup: logRequests(log) });
   const preload = await page.$eval('link[rel="preload"][href*=".wasm"]', (l) => ({ href: new URL(l.href).pathname, crossorigin: l.getAttribute('crossorigin') })).catch(() => null);
@@ -90,7 +90,7 @@ failing('F1a-S1 → PP-B (b2 wasm preload, A24): the sqlite wasm is preloaded wi
   assert.ok(loader && wasm[0].at <= loader.at, 'the wasm is asked for before the loader chunk');
 });
 
-failing('F1a-P2 → PP-B (b2 return visit, A7): a saved palette reopens on the palette page with its placeholder while it restores; the Place form never shows', { owner: 'b2', reason: /return visit: / }, async () => {
+test('F1a-P2 → PP-B (b2 return visit, A7): a saved palette reopens on the palette page with its placeholder while it restores; the Place form never shows', async () => {
   const save = JSON.stringify({ fragment: (await temperateLink()).slice(1), at: '2026-11-13T00:00:00.000Z', src: null });
   const page = await h.open('/palette/', { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((s) => {
     if (!localStorage.getItem('canopi-consortium')) localStorage.setItem('canopi-consortium', s);
@@ -158,7 +158,7 @@ const pastEdge = (page) => page.evaluate(() => {
 // Three Temperate plants of the real export (the paste a grower makes with their own list).
 const own = (n = 3) => realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY p.canonical_name LIMIT ?").all(n).map((r) => String(r.id)));
 
-failing('PP-B26 (b2 marks, F1a-S2 restored, A24): ct:start fires once on a first visit, and ct:first-view once when the palette is first on screen', { owner: 'b2', reason: /ct:start once on Place/ }, async () => {
+test('PP-B26 (b2 marks, F1a-S2 restored, A24): ct:start fires once on a first visit, and ct:first-view once when the palette is first on screen', async () => {
   const page = await tool(PHONE);
   const marks = (name) => page.evaluate((n) => performance.getEntriesByName(n, 'mark').length, name);
   await frames(page);
@@ -169,7 +169,7 @@ failing('PP-B26 (b2 marks, F1a-S2 restored, A24): ct:start fires once on a first
   await done(page);
 });
 
-failing('PP-B27 (b2 Lyon first visit, F1a-P1 restored): after Suggest the palette page shows the Next step and both pictures, and a hole\'s Find opens Add preset to it', { owner: 'b2', reason: /Suggest opens the palette page/ }, async () => {
+test('PP-B27 (b2 Lyon first visit, F1a-P1 restored): after Suggest the palette page shows the Next step and both pictures, and a hole\'s Find opens Add preset to it', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   assert.ok(await onPage(page), 'Suggest opens the palette page');
   assert.equal(await page.evaluate(() => window.__ctTest.store.step.value), 'palette');
@@ -182,7 +182,7 @@ failing('PP-B27 (b2 Lyon first visit, F1a-P1 restored): after Suggest the palett
   await done(page);
 });
 
-failing('PP-B28 (b2 keyboard journey, F1a-P8 restored, A25): with the keyboard only, the Next step\'s "See all" opens Add and closing it returns the focus to the button', { owner: 'b2', reason: /the palette page/ }, async () => {
+test('PP-B28 (b2 keyboard journey, F1a-P8 restored, A25): with the keyboard only, the Next step\'s "See all" opens Add and closing it returns the focus to the button', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(2));
@@ -197,7 +197,7 @@ failing('PP-B28 (b2 keyboard journey, F1a-P8 restored, A25): with the keyboard o
   await done(page);
 });
 
-failing('PP-B6 (b2 Lyon, own plants): three plants pasted; the Next step names the first hole in words and years, and filling it moves the Next step on', { owner: 'b2', reason: /the palette page/ }, async () => {
+test('PP-B6 (b2 Lyon, own plants): three plants pasted; the Next step names the first hole in words and years, and filling it moves the Next step on', async () => {
   const page = await tool();
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');
@@ -214,7 +214,7 @@ failing('PP-B6 (b2 Lyon, own plants): three plants pasted; the Next step names t
   await done(page);
 });
 
-failing('PP-B7 (b2 phone 390 px): Through the years shows one time step at a time, with Earlier and Later', { owner: 'b2', reason: /the palette page/ }, async () => {
+test('PP-B7 (b2 phone 390 px): Through the years shows one time step at a time, with Earlier and Later', async () => {
   const page = await tool({ width: 390, hash: await temperateLink() });
   assert.ok(await onPage(page), 'the palette page');
   assert.ok(await has(page, '.ct-years .ct-stepper', 8000), 'the stepper on a phone');
@@ -229,7 +229,7 @@ failing('PP-B7 (b2 phone 390 px): Through the years shows one time step at a tim
   await done(page);
 });
 
-failing('PP-B8 (b2 tables): "Show as a table" gives each picture\'s plants, holes and time steps as a table with headers', { owner: 'b2', reason: /the palette page/ }, async () => {
+test('PP-B8 (b2 tables): "Show as a table" gives each picture\'s plants, holes and time steps as a table with headers', async () => {
   const page = await tool({ hash: await temperateLink() });
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForSelector('.ct-chart [data-plant-id]', { timeout: 8000 });
@@ -251,7 +251,7 @@ failing('PP-B8 (b2 tables): "Show as a table" gives each picture\'s plants, hole
   await done(page);
 });
 
-failing('PP-B15 (b2 slow database): the database still coming after the threshold says "Still loading", then the tool', { owner: 'b2', reason: /reading 'replace'/ }, async () => {
+test('PP-B15 (b2 slow database): the database still coming after the threshold says "Still loading", then the tool', async () => {
   const page = await h.open('/palette/', { hook: true, mapTiles: 'stub', database: 'hold', timeouts: { slow: 400 } });
   const slow = plural(en['consortium.load.slow'], 0);
   assert.ok(await page.waitForFunction((t) => document.querySelector('#ct-root')?.textContent.includes(t), { timeout: 8000 }, slow).then(() => true, () => false), '"Still loading"');
@@ -261,7 +261,7 @@ failing('PP-B15 (b2 slow database): the database still coming after the threshol
   await done(page);
 });
 
-failing('PP-B16 (b2 offline): the offline line shows, added plants stay, and a chunk that cannot come says "Needs a connection" and loads once back online', { owner: 'b2', reason: /the offline line/ }, async () => {
+test('PP-B16 (b2 offline): the offline line shows, added plants stay, and a chunk that cannot come says "Needs a connection" and loads once back online', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   // The browser offline (navigator.onLine false, its events, every request failing), then back.
@@ -278,7 +278,7 @@ failing('PP-B16 (b2 offline): the offline line shows, added plants stay, and a c
   await done(page);
 });
 
-failing('PP-B17 (b2 toast): a toast stays while the focus is in it, then the focus returns to the control that raised it', { owner: 'b2', reason: /the palette page/ }, async () => {
+test('PP-B17 (b2 toast): a toast stays while the focus is in it, then the focus returns to the control that raised it', async () => {
   const page = await tool({ timeouts: { toast: 300 } });
   await choose(page, 'Temperate');
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(2));
@@ -301,7 +301,7 @@ failing('PP-B17 (b2 toast): a toast stays while the focus is in it, then the foc
   await done(page);
 });
 
-failing('PP-B20 (b2 verdict chunk refused): fit lines say "Not checked", never "Fits", the holes say they were computed without it, and Reload works', { owner: 'b2', reason: /the palette page/ }, async () => {
+test('PP-B20 (b2 verdict chunk refused): fit lines say "Not checked", never "Fits", the holes say they were computed without it, and Reload works', async () => {
   const page = await tool({ block: { verdict: 404 } });
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');
@@ -317,7 +317,7 @@ failing('PP-B20 (b2 verdict chunk refused): fit lines say "Not checked", never "
   await done(page);
 });
 
-failing('PP-B21 (b2 a guest list fails): the list is named as missing and its plants are not checked; the tool stays', { owner: 'b2', reason: /the palette page/ }, async () => {
+test('PP-B21 (b2 a guest list fails): the list is named as missing and its plants are not checked; the tool stays', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   const guest = await realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Mediterranean' AND p.plant NOT IN (SELECT plant FROM placements WHERE climate_zone = 'Temperate') ORDER BY 1 LIMIT 1").get()?.id);
@@ -336,7 +336,7 @@ failing('PP-B21 (b2 a guest list fails): the list is named as missing and its pl
   await done(page);
 });
 
-failing('PP-B22 (b2 320 px): the palette page, its steps, pictures, tables and a sheet fit 320 px in en, de, ru and ja', { owner: 'b2', reason: /en: the palette page/ }, async () => {
+test('PP-B22 (b2 320 px): the palette page, its steps, pictures, tables and a sheet fit 320 px in en, de, ru and ja', async () => {
   const hash = await temperateLink(null, 8);
   for (const lang of ['en', 'de', 'ru', 'ja']) {
     const page = await tool({ lang, width: 320, hash });
@@ -358,7 +358,7 @@ failing('PP-B22 (b2 320 px): the palette page, its steps, pictures, tables and a
   }
 });
 
-failing('PP-B24 (b2 palette chunk refused): Place stays usable, the page says it could not load with Reload, and the next press fetches ?retry=n', { owner: 'b2', reason: /chunk role "palette" has no file/ }, async () => {
+test('PP-B24 (b2 palette chunk refused): Place stays usable, the page says it could not load with Reload, and the next press fetches ?retry=n', async () => {
   const log = [];
   const page = await tool({ block: { palette: 404 }, setup: async (pg) => { pg.on('request', (r) => log.push({ url: r.url() })); } });
   await choose(page, 'Temperate');
@@ -375,7 +375,7 @@ failing('PP-B24 (b2 palette chunk refused): Place stays usable, the page says it
 });
 
 const PHASES = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'];
-failing('PP-B18 (b2 print at the year step): print draws the side view at the time step chosen in Through the years, named above it', { owner: 'b2', reason: /the palette page/ }, async () => {
+test('PP-B18 (b2 print at the year step): print draws the side view at the time step chosen in Through the years, named above it', async () => {
   const page = await tool({ width: 390, hash: await temperateLink() });
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForSelector('.ct-stepper', { timeout: 8000 });
@@ -392,7 +392,7 @@ failing('PP-B18 (b2 print at the year step): print draws the side view at the ti
 });
 
 // Owner decision 2026-11-14, "inform, don't block; the grower decides": nothing asks "Add it anyway?".
-failing('PP-B25 (b2 inform, don\'t block): an outside-range plant added from a hole in one tap keeps "Outside its climate range" in words on its row, and Undo removes it', { owner: 'b2', reason: /the palette page/ }, async () => {
+test('PP-B25 (b2 inform, don\'t block): an outside-range plant added from a hole in one tap keeps "Outside its climate range" in words on its row, and Undo removes it', async () => {
   const page = await tool();
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');
@@ -419,4 +419,62 @@ failing('PP-B25 (b2 inform, don\'t block): an outside-range plant added from a h
   await page.click(aria('button', en['consortium.undo']));
   assert.ok(await page.waitForFunction((x) => !window.__ctTest.store.members.value.includes(x), { timeout: 4000 }, id).then(() => true, () => false), 'Undo removes it');
   await done(page);
+});
+
+// ---- scale (owner directive 2026-11-14: smooth to 200 plants), CPU throttled 4× through CDP ----
+// The shared 200-plant palette (scripts/palette-200.mjs), saved, reopened at 390 and 1280 px. Budgets:
+// navigation → Next step visible 2.5 s; one Add from the Next step → the page updated 300 ms; no long task
+// over 200 ms after the page is up; the palette page's DOM at most SCALE_DOM (measured + 20 %).
+const SCALE_DOM = { 390: 393, 1280: 462 }; // measured 327 and 385 on 2026-11-14, + 20 %
+// Marker (owner b2): the first measures miss the load, Add and long-task budgets (report of 2026-11-14:
+// at load arrival.ts's country guess calls Intl.Locale getTimeZones for every country, ~0.4 s unthrottled).
+failing('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette shows its Next step within 2.5 s, one Add updates the page within 300 ms, no long task over 200 ms, the DOM within budget @real-data', { owner: 'b2', reason: /scale budgets missed/, timeout: 240_000 }, async (t) => {
+  const { savedRecord200 } = await import('../palette-200.mjs');
+  const record = await savedRecord200();
+  const figures = [], misses = [];
+  for (const width of [390, 1280]) {
+    const page = await h.open('/palette/', { width, hook: true, setup: async (p) => {
+      const cdp = await p.createCDPSession();
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+      await p.evaluateOnNewDocument((rec) => {
+        if (!sessionStorage.getItem('ct-scale-saved')) { localStorage.setItem('canopi-consortium', rec); sessionStorage.setItem('ct-scale-saved', '1'); }
+        window.__scale = { nextAt: null, long: [] };
+        new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__scale.long.push({ at: e.startTime, ms: e.duration }); }).observe({ type: 'longtask', buffered: true });
+        new MutationObserver((_, o) => { if (document.querySelector('.ct-next')) { window.__scale.nextAt = performance.now(); o.disconnect(); } }).observe(document, { childList: true, subtree: true });
+      }, record);
+    } });
+    try {
+      assert.ok(await page.waitForFunction(() => window.__scale?.nextAt !== null, { timeout: 30_000 }).then(() => true, () => false), `${width} px: the Next step`);
+      const next = await page.evaluate(() => window.__scale.nextAt);
+      await page.waitForNetworkIdle({ idleTime: 500, timeout: 15_000 }).catch(() => {});
+      const dom = await page.evaluate(() => document.querySelectorAll('.ct-palette-page *').length);
+      const members = await page.evaluate(() => JSON.parse(localStorage.getItem('canopi-consortium')).fragment.length);
+      figures.push(`${width} px: Next step ${Math.round(next)} ms, DOM ${dom}`);
+      // One Add from the Next step's filler; 200 plants of this palette leave no hole, so then from the Add
+      // sheet (ticked, "Add 1 plant"): measured from the press to the second frame after the toast.
+      let press = '.ct-next .ct-fillers button';
+      if (!(await has(page, press, 1000))) {
+        await page.evaluate(() => window.__ctTest.openSheet('add'));
+        await page.waitForSelector('dialog.ct-add[open] .ct-rows input[type="checkbox"]', { timeout: 20_000 });
+        await page.click('dialog.ct-add[open] .ct-rows input[type="checkbox"]');
+        press = 'dialog.ct-add[open] .ct-add-bar .button-primary';
+      }
+      const add = await page.evaluate((sel) => new Promise((done) => {
+        const t0 = performance.now();
+        new MutationObserver((_, o) => { if (document.querySelector('.ct-toast')) { o.disconnect(); requestAnimationFrame(() => requestAnimationFrame(() => done(performance.now() - t0))); } }).observe(document.body, { childList: true, subtree: true });
+        document.querySelector(sel).click();
+      }), press);
+      await new Promise((r) => setTimeout(r, 900));
+      const long = await page.evaluate(() => window.__scale.long.filter((e) => e.at > window.__scale.nextAt && e.ms > 200).map((e) => Math.round(e.ms)));
+      figures.push(`${width} px: Add ${Math.round(add)} ms, long tasks over 200 ms after load: ${long.length ? long.join(', ') : 'none'} (save ${members} chars)`);
+      if (next >= 2500) misses.push(`${width} px: Next step visible in ${Math.round(next)} ms (budget 2500, throttled 4×)`);
+      if (add >= 300) misses.push(`${width} px: one Add updates the page in ${Math.round(add)} ms (budget 300)`);
+      if (dom > SCALE_DOM[width]) misses.push(`${width} px: ${dom} elements on the palette page (budget ${SCALE_DOM[width]})`);
+      if (long.length) misses.push(`${width} px: long tasks over 200 ms after load (${long.join(', ')} ms)`);
+    } finally {
+      t.diagnostic(figures.join(' | '));
+      await page.browserContext().close().catch(() => {});
+    }
+  }
+  assert.deepEqual(misses, [], `scale budgets missed: ${misses.join('; ')}`);
 });

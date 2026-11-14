@@ -7,7 +7,7 @@
 // in as props from views/Sheets.tsx, the only caller of SheetDialog and SheetFrame, which hands each
 // sheet part its frame.
 import type { ComponentChildren, ComponentType } from 'preact';
-import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import type { Taxon } from '../../../../lib/consortium/index.ts';
 import { phases, spanOf } from '../../../../lib/consortium/index.ts';
 import { T } from '../../strings.ts';
@@ -26,7 +26,9 @@ import { countryName, spanWords } from './names.ts';
 import { flagLines, unknownWords } from './flags.ts';
 import { addOrder, addQuery, listQuery } from '../../rules/list-query.ts';
 import { fold, searchIndex } from '../../data/search.ts';
-export const shared = Object.freeze({ flagLines, unknownWords, addOrder, addQuery, listQuery, searchIndex, fold });
+// The fit line (kit/fit.tsx), read by Add and the palette page (inform, don't block; owner 2026-11-14).
+import { FitLine } from './fit.tsx';
+export const shared = Object.freeze({ flagLines, unknownWords, addOrder, addQuery, listQuery, searchIndex, fold, FitLine });
 
 export { BACK, WARN } from './icons.tsx';
 
@@ -87,9 +89,16 @@ export function SheetDialog({ onClose, children }: { onClose: () => void; childr
 export function SheetWaiting({ Frame }: { Frame: Frame }) {
   return (
     <Frame titleId="ct-sheet-wait">
-      <p id="ct-sheet-wait" class="status-line" role="status" tabIndex={-1} data-autofocus>{T('details.loading')}</p>
+      <LiveLine id="ct-sheet-wait" text={T('details.loading')} focus />
     </Frame>
   );
+}
+// A status line put on the page empty and given its words just after (A2): a live region inserted with
+// its message is not announced by every screen reader.
+export function LiveLine({ text, id, focus = false }: { text: string; id?: string; focus?: boolean }) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => { setShown(true); }, []);
+  return <p id={id} class="status-line" role="status" tabIndex={focus ? -1 : undefined} data-autofocus={focus ? '' : undefined}>{shown ? text : ''}</p>;
 }
 export interface FrameProps { titleId: string; head?: ComponentChildren; foot?: ComponentChildren; children: ComponentChildren; class?: string }
 // The frame a sheet part draws in: SheetFrame bound to its opening's close and toast (views/Sheets.tsx).
