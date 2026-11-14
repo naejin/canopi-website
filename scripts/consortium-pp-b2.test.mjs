@@ -61,7 +61,7 @@ test('verdicts.json: a known schema id, and every plant, place and climate a cas
   assert.equal(V.thresholds.margin_c, core.RANGE_MARGIN_C);
 });
 
-failing('PP-B (b2 verdict engine, 3.2): verdicts.json, website cases (shade relief, levels, not checked, notes, judgedPeriod, holdsBy)', { owner: 'b2', reason: /verdict stub|level|judged|holds/ }, () => {
+test('PP-B (b2 verdict engine, 3.2): verdicts.json, website cases (shade relief, levels, not checked, notes, judgedPeriod, holdsBy)', () => {
   for (const c of V.cases) {
     const t = vPlant(c.input.plant);
     if ('page' in c.input) { assert.equal(judgedPeriod(t, c.input.page), c.expect.judged, c.name); continue; }
@@ -80,7 +80,7 @@ failing('PP-B (b2 verdict engine, 3.2): verdicts.json, website cases (shade reli
 // outside → outside, unknown → not checked; each side as the vector gives it.
 const LEVEL_OF = { inside: 'fits', edge: 'look', outside: 'outside', unknown: 'unknown' };
 const SIDE_OF = { fits: 'inside', look: 'edge', outside: 'beyond' };
-failing('PP-B (b2 verdict engine, DATA-1): every range-verdict vector of the installed release gives its verdict and sides through verdict()', { owner: 'b2', reason: /verdict stub|level|side/ }, () => {
+test('PP-B (b2 verdict engine, DATA-1): every range-verdict vector of the installed release gives its verdict and sides through verdict()', () => {
   assert.equal(RV.thresholds.margin_c, core.RANGE_MARGIN_C);
   let run = 0;
   for (const x of RV.vectors) {
@@ -124,13 +124,16 @@ async function kiambuStore() {
   store.verdictRule.value = await core.loadVerdictRule();
   return store;
 }
-failing('PP-B (b2 countFits, real data): Kiambu, 324 of the 515 plants on the nearest lists fit or need a second look today', { owner: 'b2', reason: /307|324/ }, async () => {
+// Open point for the coordinator: the boards' figure (concept P1, growers.md) came from the mock-up rule
+// (tmin_cold both sides, tmax_warm hot side); the live rule gives 307. Parked until the plan's figure is
+// confirmed or changed; never weakened.
+failing('PP-B (b2 countFits, real data): Kiambu, 324 of the 515 plants on the nearest lists fit or need a second look today', { owner: 'b2', reason: /^307 \(the live range rule/ }, async () => {
   const store = await kiambuStore();
   const n = store.countFits.value;
   assert.equal(n.of, 515);
   assert.equal(n.fits + n.look, 324, `${n.fits + n.look} (the live range rule since the P5 decision row of 2026-11-12, cool and chill sides, gives 307; the boards' 324 used the earlier rule)`);
 });
-failing('PP-B (b2 countFits, real data): Kiambu, countFits counts what the pool panel\'s range rule keeps (inside or near the edge)', { owner: 'b2', reason: /verdict stub|countFits/ }, async () => {
+test('PP-B (b2 countFits, real data): Kiambu, countFits counts what the pool panel\'s range rule keeps (inside or near the edge)', async () => {
   const store = await kiambuStore();
   const n = store.countFits.value;
   const kept = store.pools.value.Subtropical.filter((t) => ['inside', 'edge'].includes(core.rangeFit(t, KIAMBU))).length;
@@ -152,7 +155,7 @@ test('holes.json: a known schema id, the thresholds are the core\'s, and every p
   for (const c of H.cases) for (const k of [...(c.input.members ?? []), ...(c.input.pool ?? []), ...Object.keys(c.input.levels ?? {}), ...(c.input.warned ?? [])]) assert.ok(H.plants[k], `${c.name}: plant ${k}`);
 });
 
-failing('PP-B (b2 holes, 3.3): holes.json (one hole for a job missing in years 3-15, not judged under a year, nothing after 60, rank order, outside members, P11 pending, month ids, fillers)', { owner: 'b2', reason: /holes is not a function|fills is not a function|fillers is not a function|holeId is not a function/ }, () => {
+test('PP-B (b2 holes, 3.3): holes.json (one hole for a job missing in years 3-15, not judged under a year, nothing after 60, rank order, outside members, P11 pending, month ids, fillers)', () => {
   for (const c of H.cases) {
     const i = c.input, e = c.expect;
     if (i.id) { assert.equal(core.holeId(i.id.kind, i.id.what, i.id.from, i.id.to, i.id.months), e.id, c.name); continue; }
@@ -172,7 +175,7 @@ failing('PP-B (b2 holes, 3.3): holes.json (one hole for a job missing in years 3
   }
 });
 
-failing('PP-B (b2 holes, 3.3): each neighbouring HOLE_ORDER pair ranks in order, and a hole\'s rank is read from the table', { owner: 'b2', reason: /holeRank|holes is not a function/ }, () => {
+test('PP-B (b2 holes, 3.3): each neighbouring HOLE_ORDER pair ranks in order, and a hole\'s rank is read from the table', () => {
   const order = [['job', true], ['light', true], ['flowering', false], ['job', false], ['cool', false], ['soil', false]];
   for (let i = 1; i < order.length; i++) assert.ok(core.holeRank(...order[i - 1]) < core.holeRank(...order[i]), `${order[i - 1]} before ${order[i]}`);
   assert.equal(core.holeRank('light', false), core.holeRank('job', false), 'a job or a light level empty for part of the years rank together');
@@ -181,14 +184,14 @@ failing('PP-B (b2 holes, 3.3): each neighbouring HOLE_ORDER pair ranks in order,
   assert.ok(list.every((h) => h.kind !== 'job' || (h.preset.job === h.job && h.preset.hole === h.id)), 'a job hole opens Add preset to its job and hole');
 });
 
-failing('PP-B (b2 holes, P11 restored): while a guest list loads the holes are pending, never a false hole; with every list read, the holes', { owner: 'b2', reason: /holes is not a function/ }, () => {
+test('PP-B (b2 holes, P11 restored): while a guest list loads the holes are pending, never a false hole; with every list read, the holes', () => {
   const members = [hPlant('crop_all')];
   assert.ok(core.holes({ members, verdicts: null, pending: true }).every((h) => h.state !== 'open'), 'loading: no open hole');
   assert.equal(core.nextStep(core.holes({ members, verdicts: null, pending: true })), null);
   assert.ok(core.holes({ members, verdicts: null, pending: false }).some((h) => h.state === 'open'), 'read: the holes');
 });
 
-failing('PP-B (b2 holes, 3.3): fills is the one predicate (the job or light level in some year of the hole); a member is never its own filler; no hole a filler filled stays the next step', { owner: 'b2', reason: /fills is not a function|holes is not a function/ }, () => {
+test('PP-B (b2 holes, 3.3): fills is the one predicate (the job or light level in some year of the hole); a member is never its own filler; no hole a filler filled stays the next step', () => {
   const members = ['tree_all', 'high_any', 'medium_any', 'low_any', 'crop_early', 'crop_late'].map(hPlant);
   const [hole] = core.holes({ members, verdicts: null, pending: false });
   assert.ok(core.fills(hole, hPlant('fit_a')));
@@ -198,7 +201,7 @@ failing('PP-B (b2 holes, 3.3): fills is the one predicate (the job or light leve
   assert.equal(core.nextStep(after), null, 'filled: no next step');
 });
 
-failing('PP-B (b2 holes, 7.3): jobGapsByPhase moved to holes.ts (one gap engine), still exported from the core', { owner: 'b2', reason: /jobGapsByPhase|function/ }, async () => {
+test('PP-B (b2 holes, 7.3): jobGapsByPhase moved to holes.ts (one gap engine), still exported from the core', async () => {
   const jobs = readFileSync(new URL('../src/lib/consortium/jobs.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(jobs, /export function jobGapsByPhase/);
   const holes = await import('../src/lib/consortium/holes.ts');
@@ -209,7 +212,7 @@ failing('PP-B (b2 holes, 7.3): jobGapsByPhase moved to holes.ts (one gap engine)
 // ---- verdict-line.ts: the only words of verdicts, holes and years ----
 const pv = (level, judged = '1991-2020') => ({ id: 'x', level, judged, ownYears: false, limiting: null, factors: [], notes: [] });
 const hole = (fromYear, toYear, state = 'open') => ({ id: `job:mulch:${fromYear}-${toYear}`, kind: 'job', rank: 4, job: 'mulch', fromYear, toYear, state, preset: {} });
-failing('PP-B (b2 lines, 3.2): fitLine, holeLine and yearsLine give one key under consortium.line. with numbers and counts, never "fits" for not checked', { owner: 'b2', reason: /Cannot read|undefined|line/ }, () => {
+test('PP-B (b2 lines, 3.2): fitLine, holeLine and yearsLine give one key under consortium.line. with numbers and counts, never "fits" for not checked', () => {
   const L = core;
   assert.deepEqual(L.fitLine(pv('fits')), { key: 'consortium.line.fits', vars: {} });
   assert.deepEqual(L.fitLine(pv('fits', '2071-2099')), { key: 'consortium.line.fitsTo', vars: { year: 2099 } });
@@ -231,7 +234,7 @@ failing('PP-B (b2 lines, 3.2): fitLine, holeLine and yearsLine give one key unde
 });
 
 // The probe (slices "Probes", b2): verdicts + holes for a 200-plant palette, target under 150 ms.
-failing('PP-B (b2 probe): verdicts and holes for 200 plants of the real export take under 150 ms', { owner: 'b2', reason: /holes is not a function|ms/ }, async () => {
+test('PP-B (b2 probe): verdicts and holes for 200 plants of the real export take under 150 ms', async () => {
   const store = await kiambuStore();
   const members = store.pools.value.Subtropical.slice(0, 200);
   const ctx = { place: core.emptyPlace, lookup: KIAMBU.lookup, period: '1991-2020', scenario: 'ssp245', canopy: core.canopyOf(members) };
