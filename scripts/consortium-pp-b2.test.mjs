@@ -292,13 +292,23 @@ test('PP-B (b2 pictures, 3.4): the jobs picture has a row per job, a plant in ea
 
 // Review r1 conformance-6: colour never alone. The band colour and the chip's icon and word read the
 // main job from the picture itself (Picture.jobs), the same job the band is drawn with.
-test('PP-B (b2 pictures, review r1 conformance-6): each picture names every plant\'s main job, the one its band is drawn with', async () => {
+test('PP-B (b2 pictures, review r1 conformance-6): each picture names every plant\'s main job; Through the years draws each band with it', async () => {
   const P = await pictures();
   for (const kind of ['yearsPicture', 'jobsPicture']) {
     const p = pictureOf(P, kind, palette);
     assert.deepEqual(p.jobs, Object.fromEntries(palette.map((t) => [t.id, P.mainJob(t)])), `${kind}: the main job of every plant`);
-    for (const r of p.rows) for (const m of r.marks) assert.equal(m.job, p.jobs[m.id], `${kind} ${r.key}: ${m.id}'s band and its job agree`);
   }
+  const years = pictureOf(P, 'yearsPicture', palette);
+  for (const r of years.rows) for (const m of r.marks) assert.equal(m.job, years.jobs[m.id], `yearsPicture ${r.key}: ${m.id}'s band and its job agree`);
+});
+
+// Review r2 colour-1: the jobs picture shows no key (its lanes are the jobs), so a band in the plant's
+// main job would say that job by colour alone, against the row it stands in. Each band takes its row's
+// job (the lane head's icon and word); the "No job recorded" row is neutral (null).
+failing('PP-B (b2 pictures, review r2 colour-1): the jobs picture draws each band in its row\'s job, the no-job row neutral', { owner: 'b2', reason: /band in its row's job/ }, async () => {
+  const P = await pictures();
+  const p = pictureOf(P, 'jobsPicture', palette);
+  for (const r of p.rows) for (const m of r.marks) assert.equal(m.job, r.key === 'none' ? null : r.key, `jobsPicture ${r.key}: ${m.id}'s band in its row's job`);
 });
 
 test('PP-B (b2 pictures stay readable, moved from P5): 200 plants on one light level draw at most PICTURE_LANE_MAX per lane, "+ n more" holds the rest, the table lists every plant', async () => {

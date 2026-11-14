@@ -160,10 +160,15 @@ const pastEdge = (page) => page.evaluate(() => {
 const own = (n = 3) => realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY p.canonical_name LIMIT ?").all(n).map((r) => String(r.id)));
 
 test('PP-B26 (b2 marks, F1a-S2 restored, A24; review r1 perf-5): ct:start fires once on a first visit, and ct:first-view once, only when the palette page shows its Next step', async () => {
-  const page = await tool({ ...PHONE, setup: (pg) => pg.evaluateOnNewDocument(() => {
+  // The fit card itself (a hole named, or "No holes"), never the title every branch shows (review r2
+  // test-1: a pending or list-missing card has the same h3).
+  const page = await tool({ ...PHONE, setup: (pg) => pg.evaluateOnNewDocument((none) => {
     window.__nextAt = null;
-    new MutationObserver((_, o) => { if (document.querySelector('.ct-next h3')) { window.__nextAt = performance.now(); o.disconnect(); } }).observe(document, { childList: true, subtree: true });
-  }) });
+    new MutationObserver((_, o) => {
+      const n = document.querySelector('.ct-next');
+      if (n && (n.dataset.hole || n.textContent.includes(none))) { window.__nextAt = performance.now(); o.disconnect(); }
+    }).observe(document, { childList: true, subtree: true });
+  }, en['consortium.palette.noHoles']) });
   const marks = (name) => page.evaluate((n) => performance.getEntriesByName(n, 'mark').length, name);
   await frames(page);
   assert.equal(await marks('ct:start'), 1, 'ct:start once on Place');
@@ -539,6 +544,53 @@ test('PP-B32 (b2 header step and Back; review r1 bugs-1): the step from Your pla
   await done(page);
 });
 
+// Review r2 hist-1: the history model holds from a palette the reader made (the palette step's entry
+// is the page's), not only from a link: a sheet opened and closed above it, then "Your place", goes
+// back in history, so the next Back leaves the page; a palette -> Place change made outside history
+// (Undo of plants pasted on Place) drops the step's entry too; Forward never shows a stale entry.
+// Place at 390 px, then three plants added there (as Paste's Add): the palette step's own entry.
+const readerPalette = async () => {
+  const page = await tool(PHONE);
+  await choose(page, 'Temperate');
+  const arrived = await entry(page);
+  await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(3));
+  assert.ok(await onPage(page), 'the palette page');
+  assert.equal(await entry(page), arrived + 1, 'one entry for the step');
+  return { page, arrived };
+};
+const settled = async (page) => { await frames(page); await new Promise((r) => setTimeout(r, 300)); };
+failing('PP-B40 (b2 review r2 hist-1, K7): from a palette the reader made, a sheet opened and closed, then "Your place": Place on the page\'s first entry, so the next Back leaves the page, and Forward never shows a stale entry', { owner: 'b2', reason: /"Your place" went back in history/ }, async () => {
+  const { page, arrived } = await readerPalette();
+  await page.evaluate(() => window.__ctTest.store.hideToast());
+  await page.waitForSelector('.ct-chart .ct-chip[data-plant-id]', { timeout: 8000 });
+  await page.click('.ct-chart .ct-chip[data-plant-id]');
+  await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind === 'details', { timeout: 8000 });
+  assert.equal(await entry(page), arrived + 2, 'the sheet took one entry');
+  await page.evaluate(() => window.__ctTest.store.closeSheet());
+  assert.ok(await page.waitForFunction((a) => navigation.currentEntry.index === a && !window.__ctTest.store.sheet.value, { timeout: 4000 }, arrived + 1).then(() => true, () => false), 'closing the sheet leaves its entry');
+  await page.click('.ct-steps button.ct-step');
+  await page.waitForFunction(() => window.__ctTest.store.step.value === 'place', { timeout: 4000 });
+  await settled(page);
+  assert.equal(await entry(page), arrived, '"Your place" went back in history: on the page\'s first entry, the next Back leaves the page');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), 3, 'the plants kept');
+  await forward(page);
+  await settled(page);
+  assert.equal(await entry(page), arrived, 'Forward never shows the stale palette or sheet entry');
+  assert.deepEqual([await page.evaluate(() => window.__ctTest.store.step.value), await sheetKind(page)], ['place', null], 'still Your place, no sheet');
+  await done(page);
+});
+
+// (Suggest offers no Undo on this branch; a paste's Add on Place does: store.addMembers, as Paste's
+// Add calls it, opens the palette with Undo back to Place.)
+failing('PP-B41 (b2 review r2 hist-1): plants pasted on Your place, then Undo from the toast: Place on the page\'s first entry, so the next Back leaves the page', { owner: 'b2', reason: /Undo went back in history/ }, async () => {
+  const { page, arrived } = await readerPalette();
+  await page.click(aria('button', en['consortium.undo']));
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.step.value === 'place', { timeout: 4000 }).then(() => true, () => false), 'Undo returns to Your place');
+  await settled(page);
+  assert.equal(await entry(page), arrived, 'Undo went back in history: on the page\'s first entry, the next Back leaves the page');
+  await done(page);
+});
+
 test('PP-B33 (b2 keyboard Add from the Next step; review r1 bugs-2, conformance-3, conformance-9): the focus moves to the Next step, never <body>; the toast names the plant and hands the focus back there', async () => {
   const page = await tool({ timeouts: { toast: 300 } });
   await choose(page, 'Temperate');
@@ -596,27 +648,41 @@ test('PP-B34 (b2 Lyon "See all", a dry shady spot; review r1 bugs-3, conformance
   await done(page);
 });
 
-test('PP-B35 (b2 Swap; review r1 bugs-4): alternatives outside their climate range are offered behind "Show N outside their climate range", each saying so in words, one tap swaps', async () => {
+// A palette of four Temperate plants at a site, its verdicts in; then each member's Swap opened in
+// turn, yielding the label of its "Show N outside their climate range" ('' when none).
+const swapPage = async (site) => {
   const page = await tool();
-  await atSite(page, 'lyon');
+  await atSite(page, site);
   await choose(page, 'Temperate');
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(4));
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
-  let found = false;
+  return page;
+};
+async function* swaps(page) {
   for (const id of await page.evaluate(() => window.__ctTest.store.members.value.slice())) {
     await page.evaluate((x) => window.__ctTest.openSheet('swap', x), id);
     await page.waitForSelector('dialog.ct-swap[open] h2', { timeout: 10_000 });
     await page.waitForFunction(() => document.querySelector('dialog.ct-swap[open] .ct-rows, dialog.ct-swap[open] .ct-muted:last-child'), { timeout: 15_000 }).catch(() => {});
-    const show = await page.evaluateHandle(() => [...document.querySelectorAll('dialog.ct-swap[open] .button')].find((b) => /outside/i.test(b.textContent)) ?? null);
-    if (await show.evaluate((b) => !!b)) {
-      await show.click();
-      const row = await page.waitForSelector('dialog.ct-swap[open] [data-outside] li', { timeout: 4000 }).then((e) => e.evaluate((x) => x.textContent));
+    yield await page.evaluate(() => [...document.querySelectorAll('dialog.ct-swap[open] .button')].find((b) => /outside/i.test(b.textContent))?.textContent ?? '');
+    await page.evaluate(() => window.__ctTest.store.closeSheet());
+  }
+}
+const showOutside = async (page) => {
+  await page.evaluate(() => [...document.querySelectorAll('dialog.ct-swap[open] .button')].find((b) => /outside/i.test(b.textContent)).click());
+  return page.waitForSelector('dialog.ct-swap[open] [data-outside] li', { timeout: 4000 });
+};
+
+test('PP-B35 (b2 Swap; review r1 bugs-4): alternatives outside their climate range are offered behind "Show N outside their climate range", each saying so in words, one tap swaps', async () => {
+  const page = await swapPage('lyon');
+  let found = false;
+  for await (const label of swaps(page)) {
+    if (label) {
+      const row = await (await showOutside(page)).evaluate((x) => x.textContent);
       assert.match(row, new RegExp(en['consortium.line.outside']), 'the row says it is outside its range');
       found = true;
       break;
     }
-    await page.evaluate(() => window.__ctTest.store.closeSheet());
   }
   assert.ok(found, 'a member whose alternatives include plants outside their range offers them');
   await done(page);
@@ -701,6 +767,127 @@ test('PP-B39 (b2 a second look; review r1 conformance-2): a filler with a warnin
   await li.$eval('.button-primary', (b) => b.click());
   assert.equal(await page.$('dialog[open]'), null, 'nothing asks');
   assert.ok(await page.evaluate((x) => window.__ctTest.store.members.value.includes(x), id), 'added in one tap');
+  await done(page);
+});
+
+// ---- review r2 (2026-11-14) ----
+
+// r2-swap-1: the outside group reaches every outside plant through its own "Show all N", whatever the
+// in-range count. At Yakutsk (Dfc) the Temperate list leaves few plants in range and many outside.
+failing('PP-B42 (b2 review r2 swap-1): with few alternatives in range and more than 7 outside, Swap\'s outside group has its own "Show all N" and lists all N', { owner: 'b2', reason: /the outside rows reach all/, timeout: 120_000 }, async () => {
+  const page = await swapPage('yakutsk');
+  let seen = null;
+  for await (const label of swaps(page)) {
+    const n = Number(/\d+/.exec(label)?.[0] ?? 0);
+    if (n > 7) {
+      await showOutside(page);
+      // The group's own "Show all N" (after its list), never the in-range list's.
+      await page.evaluate((t) => {
+        const ul = document.querySelector('dialog.ct-swap[open] [data-outside]');
+        [...document.querySelectorAll('dialog.ct-swap[open] button')].find((b) => b.textContent.trim() === t && ul.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)?.click();
+      }, plural(en['consortium.add.showAll'], n));
+      await frames(page);
+      seen = { n, rows: await page.$$eval('dialog.ct-swap[open] [data-outside] li', (els) => els.length), inRange: await page.$$eval('dialog.ct-swap[open] .ct-rows:not([data-outside]) li', (els) => els.length) };
+      break;
+    }
+  }
+  assert.ok(seen, 'a member with more than 7 alternatives outside their range');
+  assert.equal(seen.rows, seen.n, `the outside rows reach all ${seen.n} the button counts (got ${seen.rows}; ${seen.inRange} in range)`);
+  await done(page);
+});
+
+// r2-colour-1: the jobs picture's bands are drawn in their row's job (the lane head's icon and word),
+// so no band says a job by colour alone; the plants with no job recorded are neutral.
+failing('PP-B43 (b2 review r2 colour-1): the jobs picture fills each band with its row\'s job, the colour its lane head names', { owner: 'b2', reason: /bands in a job other than their row's/ }, async () => {
+  const page = await tool({ hash: await temperateLink(null, 8) });
+  assert.ok(await onPage(page), 'the palette page');
+  await page.waitForSelector('.ct-chart [data-plant-id]', { timeout: 8000 });
+  const odd = await page.$$eval('.ct-palette-pictures > :not(.ct-years) .ct-chart-svg', (svgs) => {
+    const out = [];
+    for (const svg of svgs) {
+      let lane = null;
+      for (const el of svg.children) {
+        if (el.classList.contains('ct-chart-lane')) lane = el.dataset.lane;
+        else if (el.classList.contains('ct-chart-band') && el.dataset.job !== lane) out.push(`${lane}: ${el.dataset.job}`);
+      }
+    }
+    return out;
+  });
+  assert.ok(await page.$('.ct-palette-pictures > :not(.ct-years) .ct-chart-band'), 'the jobs picture draws bands');
+  assert.deepEqual(odd, [], `bands in a job other than their row's: ${odd.join(', ')}`);
+  await done(page);
+});
+
+const failMediterranean = (page, ids, from) => page.evaluate((all, gs) => {
+  const { store } = window.__ctTest, src = store.source.value, read = src.pool.bind(src);
+  src.pool = (c) => (c === 'Mediterranean' ? Promise.reject(new Error('test: list unreadable')) : read(c));
+  store.addMembers(all, Object.fromEntries(gs.map((g) => [g, 'Mediterranean'])));
+  store.loadPool('Mediterranean');
+}, ids, from);
+const mediterranean = (n) => realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Mediterranean' AND p.plant NOT IN (SELECT plant FROM placements WHERE climate_zone = 'Temperate') ORDER BY 1 LIMIT ?").all(n).map((r) => String(r.id)));
+const listMissing = (page) => page.waitForFunction((t) => [...document.querySelectorAll('.ct-notice')].some((n) => n.textContent.includes(t) && n.textContent.includes('Mediterranean')), { timeout: 8000 }, en['consortium.palette.listFailed'].split('{lists}')[0].replace(/^(one|other):\s*/, '').trim()).then(() => true, () => false);
+
+// r2-empty-1: the empty check counts every member, the plants of a pending or failed guest list too.
+failing('PP-B44 (b2 review r2 empty-1): a palette made only of plants from a guest list that fails is never called empty; the Next step says the holes wait for the list, and ct:first-view is not marked on it', { owner: 'b2', reason: /called empty|first-view marked/ }, async () => {
+  const page = await tool();
+  await choose(page, 'Temperate');
+  const gs = await mediterranean(2);
+  assert.equal(gs.length, 2, 'two Mediterranean plants');
+  await failMediterranean(page, gs, gs);
+  assert.ok(await onPage(page), 'the palette page');
+  assert.ok(await listMissing(page), 'the Mediterranean list named as missing');
+  await page.waitForFunction(() => window.__ctTest.store.verdictRule.value, { timeout: 10_000 }).catch(() => {});
+  await settled(page);
+  const text = await page.$eval('.ct-next', (e) => e.textContent);
+  assert.ok(!text.includes(en['consortium.palette.empty']) && text.includes(en['consortium.palette.holesListMissing']), `called empty while its plants wait for their list ("${text.slice(0, 80)}")`);
+  assert.equal(await page.evaluate(() => performance.getEntriesByName('ct:first-view', 'mark').length), 0, 'ct:first-view marked on a palette whose plants are not read');
+  await done(page);
+});
+
+// r2-empty-2: removing a failed list's last plant clears its "not checked" state.
+failing('PP-B45 (b2 review r2 empty-2): once the grower removes the plants of a list that failed, the notice goes and the Next step names a hole', { owner: 'b2', reason: /stays "not checked"/ }, async () => {
+  const page = await tool();
+  await choose(page, 'Temperate');
+  const [g] = await mediterranean(1);
+  await failMediterranean(page, [...await own(2), g], [g]);
+  assert.ok(await onPage(page), 'the palette page');
+  assert.ok(await listMissing(page), 'the Mediterranean list named as missing');
+  await page.evaluate((x) => window.__ctTest.store.removeMember(x), g);
+  const ok = await page.waitForFunction(() => document.querySelector('.ct-next')?.dataset.hole, { timeout: 6000 }).then(() => true, () => false);
+  const notice = await page.evaluate(() => [...document.querySelectorAll('.ct-notice')].some((n) => n.textContent.includes('Mediterranean')));
+  assert.ok(ok && !notice, `the palette stays "not checked" with no plant of that list left (hole named ${ok}, notice ${notice})`);
+  await done(page);
+});
+
+// r2-offline-1: Actions' could-not-load line is lazy.tsx's LoadFailed: offline, never Reload.
+failing('PP-B46 (b2 review r2 offline-1): offline, a Download whose chunk cannot come says "Needs a connection", with no Reload', { owner: 'b2', reason: /Reload offline/ }, async () => {
+  const page = await tool({ hash: await temperateLink() });
+  assert.ok(await onPage(page), 'the palette page');
+  await page.evaluate(() => { window.__ctFaults.later = 'fail'; });
+  await page.setOfflineMode(true);
+  await page.click(aria('button', en['consortium.download.button']));
+  assert.ok(await has(page, '.ct-page-actions .ct-notice', 4000), 'the line says it did not load');
+  const reload = await page.$(`.ct-page-actions .ct-notice ${aria('button', en['consortium.details.reload'])}`);
+  const text = await page.$eval('.ct-page-actions .ct-notice', (e) => e.textContent);
+  assert.ok(!reload && text.includes(en['consortium.load.needsConnection']), `Reload offline would replace the tool with the browser's offline page ("${text}")`);
+  await page.setOfflineMode(false);
+  await done(page);
+});
+
+// r2-print-1 (hardening): the browser's own Print (Ctrl+P: beforeprint, no print media emulated)
+// mounts the print sheet in the same task, before the print layout, once its chunk is in.
+test('PP-B47 (b2 review r2 print-1): beforeprint without print media mounts the print sheet, with every plant, before the print layout', async () => {
+  const page = await tool({ hash: await temperateLink() });
+  assert.ok(await onPage(page), 'the palette page');
+  const n = await page.evaluate(() => window.__ctTest.store.members.value.length);
+  // The first time loads the chunk; then afterprint takes the sheet away.
+  await page.evaluate(() => dispatchEvent(new Event('beforeprint')));
+  await page.waitForSelector('.ct-print tbody tr', { timeout: 8000 });
+  await page.evaluate(() => dispatchEvent(new Event('afterprint')));
+  await page.waitForFunction(() => !document.querySelector('.ct-print'), { timeout: 4000 });
+  const rows = await page.evaluate(() => { dispatchEvent(new Event('beforeprint')); return Promise.resolve().then(() => document.querySelectorAll('.ct-print tbody tr').length); });
+  assert.equal(rows, n, 'every plant in the sheet by the time the print layout runs');
+  await page.evaluate(() => dispatchEvent(new Event('afterprint')));
   await done(page);
 });
 
