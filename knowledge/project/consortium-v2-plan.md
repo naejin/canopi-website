@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: "Phases, the remaining order after the 2026-11-12 plan review (revised 2026-11-14: the Plant palette redesign replaces F1a as pushes PP-B to PP-G, F2 with F4 on link v6, F1b split, new curated order), exits, coordinator choices and owner actions for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:21:02Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:37:36Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -19,8 +19,8 @@ sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
     title: scripts/plan/pp-b-owners.json
-    digest: sha256:cee69ec4fed241f7
-    last_modified: 2026-11-14T11:20:02Z
+    digest: sha256:1e28ec7c77332145
+    last_modified: 2026-11-14T11:37:27Z
 ---
 
 Architecture: [Consortium v2 architecture](/decisions/consortium-v2-architecture.md). Owner decisions (final, dated): [user decisions](/decisions/consortium-user-decisions.md). Adapter: [agentic delivery](/runbooks/agentic-delivery.md) (branch prefix `consortium/` instead of `guides/`). v1 plan for history: [Consortium tool plan](/project/consortium-tool-plan.md).
@@ -233,7 +233,7 @@ Loop per step: steps with more than one stream (E6, each Plant palette push, F1b
 
 **Risks and first-commit probes (each push's full list: slices).** PP-B: first-run size with the shell states (probe at commit 0, a raise row if needed); the redirect on wrangler dev (probe at 0b, stub-page fallback); verdicts + holes under 150 ms for 200 plants (b2 probe, unverified); `countFits` equals the pool panel's count for Kiambu (b1b probe); the v5 vectors and their extension rule are public contract (coordinator review before streams); a removed v4 save is data loss the owner accepted, a v5 save is never removed without a new owner answer; a moved marker failing for another reason is parked, never weakened. PP-C: `searchIndex` over all locales under 100 ms on a throttled phone (c1 probe); D2a not installed; the schema-4 reader owned by PP-C commit 0. PP-D: share of plants with `width_max_m` per list (d1 probe). PP-E: `hotterZone` on the pinned tiles for the nine scenario places (e1 probe). PP-F: soil tile bytes at the location step (f1 probe, over 150 KB → fetched when shown). PP-G: bloom-month coverage per list (g1 probe).
 
-**Deletions.** PP-B commit 0: F1a's Balance and Structure seams (0a); the old screens first (0a': the matrix views and CSS, view tabs, Jobs, PlantList, the stepper, the on-screen side view, "At a glance"; `matrix.ts` but `cellsOf` and `cellKey` (gone in c2), `PlantSource.cellCounts`; Kept and Main crops: state, UI, link keys `p`, `n`, `t`, the `*` mark; the `matrix` role; `store.ts` `matrix`, `fitPool`, `toggleKeep` and the matrix views of `View`); the `/consortium/` pages (0b). PP-B streams: `jobGapsByPhase` (moved, b2); the `pool` role (b1b). PP-C: the mark providers and their roles, `views/Add.tsx`, `rules/list-query.ts`, the derived `site` signal. PP-D: the `later` name. PP-E: `views/future/**`, `FutureSlot`, the `future` role. Kept from F1a commit 0: `pots`, `ROOM_LIMIT_M`, `SIZE_LIMIT`, `Confidence`, the `focusAfterToast` seam, `scripts/expect-fail.mjs`, `scripts/plan/owners.mjs`.
+**Deletions.** PP-B commit 0: F1a's Balance and Structure seams (0a); the old screens first (0a': the matrix views and CSS, view tabs, Jobs, PlantList, the stepper, the on-screen side view, "At a glance"; `matrix.ts` but `cellsOf` and `cellKey` (gone in c2), `PlantSource.cellCounts`; Kept and Main crops: state, UI, link keys `p`, `n`, `t`, the `*` mark; the `matrix` role; `store.ts` `matrix`, `toggleKeep`, `marksFailed` and the tab values of `View`; `fitPool` stays for Add and Swap until PP-C); the `/consortium/` pages (0b). PP-B streams: `jobGapsByPhase` (moved, b2); the `pool` role (b1b). PP-C: the mark providers and their roles, `views/Add.tsx`, `rules/list-query.ts`, the derived `site` signal. PP-D: the `later` name. PP-E: `views/future/**`, `FutureSlot`, the `future` role. Kept from F1a commit 0: `pots`, `ROOM_LIMIT_M`, `SIZE_LIMIT`, `Confidence`, the `focusAfterToast` seam, `scripts/expect-fail.mjs`, `scripts/plan/owners.mjs`.
 
 **Amendments not applied, or applied in another form (the check's numbering):**
 - 3: applied as one `linkVersionStatus(v): 'current' | 'older' | 'newer' | 'unreadable'` used by `decodeLink`, `readRecord`, `oldRecord` and `restore.ts`, with no `'migrate'` value: v4 is "older" (owner, no migration code).
