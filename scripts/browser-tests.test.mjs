@@ -29,7 +29,7 @@ const SPEC_FILES = [
   'consortium-e6-r4.browser.test.mjs', 'consortium-e6.browser.test.mjs',
   'consortium-p5-s5b.browser.test.mjs', 'consortium-p5-s5c.browser.test.mjs', 'consortium-p5-s5d.browser.test.mjs', 'consortium-p5-s5f.browser.test.mjs',
   'consortium-pp-b1.browser.test.mjs', 'consortium-pp-b2.browser.test.mjs',
-  'consortium-s1.browser.test.mjs', 'consortium-s2.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs',
+  'consortium-s1.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs',
   'consortium-seams-layout.browser.test.mjs', 'consortium-seams-p2.browser.test.mjs', 'consortium-seams-p5.browser.test.mjs',
 ];
 test('one browser test file for commit 0, one per P2 stream, one per P5 stream, one per seams owner, two for E6 and one per PP-B stream file, nothing else', () => {
@@ -44,9 +44,10 @@ test('one browser test file for commit 0, one per P2 stream, one per P5 stream, 
 test('every browser test runs: no todo, no skip, in any file but a P5 stream\'s (H8)', () => {
   for (const file of files.filter((f) => !f.startsWith('consortium-p5-'))) {
     const text = read(file);
-    // A stream file under rewrite (s2 and s3 lose their matrix cases to b3) needs 2; a PP-B stream
-    // file starts with the markers commit 0 moved into it (pp-b1 holds one) and grows with its stream.
-    assert.ok(testsOf(text).length >= (/-pp-b\d\./.test(file) ? 1 : /-(s1|s2|s3|seams-p5|e6-r4)\./.test(file) ? 2 : 5), file);
+    // A stream file under rewrite (s3 loses its matrix cases to b3) needs 2; a PP-B stream file starts
+    // with the markers commit 0 moved into it (pp-b1 holds one) and grows with its stream; seams-p5 kept
+    // one case when PP-B commit 0a' deleted UX4 with Jobs (consortium-s2 went whole).
+    assert.ok(testsOf(text).length >= (/-(pp-b\d|seams-p5)\./.test(file) ? 1 : /-(s1|s3|e6-r4)\./.test(file) ? 2 : 5), file);
     assert.doesNotMatch(text, /\btodo\s*:|\bskip\s*:|\.todo\(|\.skip\(/, file);
   }
 });
@@ -68,10 +69,11 @@ test('the browser tests build their own hook build; only the browser-test flag t
   for (const word of ['__ctTest', '__ctViews', 'failSheets', '__ctTimeouts']) assert.ok(checker.includes(`'${word}'`), `check-built-site looks for ${word}`);
 });
 
-// Loosened by PP-B commit 0: b3 empties s2 and s3 of their matrix cases (a stream never deletes a whole
-// spec file; main deletes emptied files at the chunk-3 exit), so a stream file may be left with none.
+// Loosened by PP-B commit 0: b3 empties s3 of its matrix cases (a stream never deletes a whole spec
+// file; main deletes emptied files at the chunk-3 exit), so a stream file may be left with none.
+// consortium-s2 went whole in commit 0a' (every case was about a deleted screen).
 test('each stream file names its stream in every test', () => {
-  for (const n of [1, 2, 3, 4]) {
+  for (const n of [1, 3, 4]) {
     const tests = testsOf(read(`consortium-s${n}.browser.test.mjs`));
     if (n === 1 || n === 4) assert.ok(tests.length, `S${n} has tests`);
     for (const { title, opts } of tests) {
@@ -80,8 +82,9 @@ test('each stream file names its stream in every test', () => {
   }
 });
 
-// Loosened by PP-B commit 0: BT-2…BT-6 live in s2 and s3, whose matrix cases b3 removes with the
-// matrix (PP-B b3 replaces them with Your plants' scenarios); the others stay required.
+// Loosened by PP-B commit 0: BT-2…BT-6 lived in s2 and s3; commit 0a' deleted s2 (BT-2…BT-4) with the
+// matrix, and b3 removes s3's matrix cases (PP-B b3 replaces them with Your plants' scenarios); the
+// others stay required (BT-8's drawing moved to consortium-pp-b2 in 0a').
 const BT_UNDER_REWRITE = new Set([2, 3, 4, 5, 6]);
 test('every BT-1…BT-9 of design check §7 has a test (BT-2…BT-6 may go with the matrix in PP-B b3)', () => {
   const titles = files.flatMap((f) => testsOf(read(f)).map((t) => t.title));

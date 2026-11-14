@@ -87,7 +87,7 @@ test('state.ts o=: the cell centre only when given, among the place keys; the de
 
 test('state/persist.ts and state/location.ts: a location country goes into a link only with the tick; the saved location record', async () => {
   const m = await import('../src/islands/consortium/state/persist.ts');
-  const input = { climate: 'Mediterranean', country: { code: 'ES', source: 'location' }, room: 'unsure', plot: null, period: '1991-2020', spot: { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' }, soil: { from: 'map' }, members: [], kept: [], removed: [], guests: {}, crops: [], stage: null };
+  const input = { climate: 'Mediterranean', country: { code: 'ES', source: 'location' }, room: 'unsure', plot: null, period: '1991-2020', spot: { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' }, soil: { from: 'map' }, members: [], removed: [], guests: {} };
   assert.equal(m.shareState(input).country, null);
   assert.equal(m.shareState(input, { place: true }).country, 'ES', 'with "Include my place" (link v5)');
   const keep = await import('../src/islands/consortium/state/location.ts');

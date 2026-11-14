@@ -1,12 +1,11 @@
 // The consortium page's one store (frozen seam, design check §6): every piece of state is a signal,
-// and pool, matrix and flags are computed from them, so views re-render by reading, with no hand
+// and pool, verdicts and flags are computed from them, so views re-render by reading, with no hand
 // render loop. Views read and set these signals; only the actions a stream adds write several at once.
 // Renaming or removing a signal is a seam change for the coordinator; streams may add actions and,
-// inside the computed bodies, the core calls they own (matrix: S1 lib/consortium/matrix.ts; flags:
-// S1 conflicts and site).
+// inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
-import type { CellSpan, ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PlantId, PlantVerdict, RangeRule, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
-import { asGuest, buildMatrix, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, loadVerdictRule, needsMarkProviders, siteFor, zoneOf } from '../../lib/consortium/index.ts';
+import type { CellSpan, ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, PlantId, PlantVerdict, RangeRule, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
+import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, loadVerdictRule, needsMarkProviders, siteFor, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -21,8 +20,10 @@ import { focusAfterToast } from './focus.ts';
 // ("from your location"; in a link only with "include my location").
 export type CountrySource = 'chosen' | 'link' | 'guess' | 'location';
 export interface Country { code: string | null; source: CountrySource | null }
-// Which view fills the main area once a climate is chosen (Start comes first).
-export type View = 'start' | 'matrix' | 'side' | 'jobs' | 'list';
+// Which view fills the main area once a climate is chosen (Start comes first). 'matrix' names the
+// empty palette slot since PP-B commit 0a' deleted the old screens (its writers: state/draft.ts,
+// restore.ts, suggest-wait.ts, addMembers below); b2 replaces the type with 'place' | 'palette' | 'plan'.
+export type View = 'start' | 'matrix';
 // The open dialog, if any: what it shows and for which plant (null for sheets about no one plant).
 export type SheetKind = 'details' | 'swap' | 'add' | 'search' | 'paste' | 'share' | 'download';
 // n: which opening this is (openSheet counts them), so a dialog's late close event closes its own
@@ -35,16 +36,15 @@ export interface Load { status: LoadStatus; error: LoadFailure | null }
 // The consortium's fields are declared once in state/schema.ts (what each is, whether Undo, the save
 // and the link hold it, who watches it); their signals are re-exported here under their names.
 // climate, country; the place (PP-B commit 0, plant-palette-architecture 3.6): room, plot (m²), spot,
-// soil and the period shown; the plant lists members (in the order added), kept (pinned: a new
-// suggestion keeps them; deprecated), removed (taken out: a new suggestion leaves them out), guests
-// (from another climate's list, A9) and crops (the crop examples the reader ticked on Start;
-// deprecated); the stage the side view, stepper and print show (deprecated); the view; setAside.
-export const { climate, country, room, plot, spot, soil, period, crops, members, kept, removed, guests, view, stage, setAside } = state.signals;
+// soil and the period shown; the plant lists members (in the order added; a new suggestion is built
+// around them), removed (taken out: a new suggestion leaves them out) and guests (from another
+// climate's list, A9); the view; setAside; the stage print draws (unsaved, until PP-B18).
+export const { climate, country, room, plot, spot, soil, period, members, removed, guests, view, stage, setAside } = state.signals;
 export const sheet = signal<Sheet | null>(null);
 // While Start shows (view 'start'), the signals above are the Start draft: the picked card, its
-// crops and site answers (and, on the consortium's own card, its plants, which Suggest and a paste
+// site answers (and, on the consortium's own card, its plants, which Suggest and a paste
 // build on). The consortium shown before Change site is then in setAside, with its own site
-// answers, country and stage; null: none. Only the
+// answers and country; null: none. Only the
 // commit actions turn the draft into the consortium (state/draft.ts); the save mirrors the consortium.
 export const load = signal<Load>({ status: 'idle', error: null });
 // P5 (commit 0 seam): where the site is. S5b writes it (device location, place search, map pick, a
@@ -62,7 +62,7 @@ const texturesAgree: Same<CoreTexture, ReaderTexture> = true;
 void texturesAgree;
 
 // The old site answers (site.ts fits()'s Site), derived from the place (place.ts siteFor), never
-// stored: its readers (Add, the matrix, the flags, rules/site-fit.ts) read `site.value`; Start's
+// stored: its readers (Add, the flags, rules/site-fit.ts) read `site.value`; Start's
 // three questions write it, each answer into the place (light → spot.light, water → spot.water, a
 // soil word → an own answer, "not sure" → the soil map, room → room). Removed in PP-C with its readers.
 const siteNow = computed<Site>(() => siteFor({ room: room.value, plotM2: plot.value, spot: spot.value, soil: soil.value }, location.value?.lookup ?? null));
@@ -166,7 +166,7 @@ export const siteClimate = computed(() => !!location.value?.lookup?.climate?.per
 // (Its load starts in start(), at the end of this file, once the location has a climate.)
 // One toast, with Reload, for the P5 chunks that did not load: the range rule's chunk is also a static
 // import of the mark providers' chunk, so one missing file (offline, or a deploy since the page loaded)
-// fails both; the notices still say each (PoolSlot, Matrix.tsx Notices).
+// fails both; PoolSlot still says the range rule's.
 let chunkToasted = false;
 function chunkToast(key: string): void {
   if (chunkToasted) return;
@@ -175,7 +175,8 @@ function chunkToast(key: string): void {
 }
 // What suggestions and lists draw from (P5 S5c, owner answer 2): the pool without the plants outside
 // their observed range at the site location (core range.ts withinRange); the pool itself without one.
-// Members stay: a plant added anyway is never dropped from a list it is in.
+// Members stay: a plant added anyway is never dropped from a list it is in. Add and Swap read it until
+// PP-C rebuilds them on verdicts.
 export const fitPool = computed<Taxon[] | null>(() => {
   const p = pool.value, rule = rangeRule.value;
   return p && (rule ? rule.withinRange(p, location.value, members.value) : p);
@@ -243,7 +244,7 @@ export const guestTaxa = computed<Taxon[]>(() => {
   return out;
 });
 // The guest climates whose plant list is not read yet: while any is, guests from it are missing from
-// memberTaxa, the matrix and the flags, and "Suggest plants" waits (suggestMembers returns false).
+// memberTaxa and the flags, and "Suggest plants" waits (suggestMembers returns false).
 export const guestsPending = computed<ClimateZone[]>(() => {
   const out: ClimateZone[] = [];
   for (const from of Object.values(guests.value)) if (from && !pools.value[from] && !out.includes(from)) out.push(from);
@@ -263,7 +264,7 @@ export const missingMembers = computed<{ loading: PlantId[]; unlisted: PlantId[]
   return { loading, unlisted };
 });
 // The members as plants, in order: the climate's own, or a guest's home record. Ids not at hand are
-// left out here and listed in missingMembers (the views say so).
+// left out here and listed in missingMembers (b2's palette page says so, PP-B21).
 export const memberTaxa = computed<Taxon[]>(() => {
   const own = pool.value;
   if (!own) return [];
@@ -282,13 +283,6 @@ export const flagContext = computed<FlagContext>(() => {
     countryStatus: countryStatus(code, knownCountries.value),
   };
 });
-// The strata × phases matrix of the members on this site (core matrix.ts).
-export const matrix = computed<Matrix | null>(() => {
-  const c = climate.value, p = fitPool.value;
-  if (!c || !p) return null;
-  // P5 S5c: with a site location, a cell's "N fit" leaves out plants outside their observed range.
-  return buildMatrix(c, p, memberTaxa.value, site.value);
-});
 // What the plant marks read (core marks.ts plantMarks; views/PlantMarks.tsx renders them).
 // A climate the site location suggests (P5 owner answer 1; S5b writes it): its card shows checked,
 // but store.climate stays unset until the reader confirms.
@@ -303,10 +297,10 @@ export const markContext = computed<MarkContext>(() => ({ climate: climate.value
 export const markProviders = signal<readonly MarkProvider[]>([]);
 export const wantsMarkProviders = computed(() => needsMarkProviders(markContext.value, curatedClimates.value));
 // The providers' chunk did not load (seam review 6): the range, future and estimate marks it would show
-// are missing, so a notice with Reload says so wherever members show (Matrix.tsx Notices) while marks
-// are wanted, with one toast; as for the range rule, the import is not tried again on this page.
+// are missing, said by one toast with Reload; as for the range rule, the import is not tried again on
+// this page. (The notice that stayed under the members, inventory L3, went with Matrix.tsx in PP-B
+// commit 0a'; PP-C c2 brings it back.)
 const marksBroken = signal(false);
-export const marksFailed = computed(() => marksBroken.value && wantsMarkProviders.value);
 // (Their load starts in start(), at the end of this file, once a mark can show.)
 // The warnings on members: conflicts, site misfits, invasive and toxicity (core conflicts.ts flagsOf).
 export const flags = computed<Flag[]>(() => {
@@ -382,15 +376,16 @@ export function watchPools(): () => void {
   });
 }
 
-// "Suggest plants": a new suggestion around the kept plants and Main crops (which become kept),
-// leaving out removed plants (core suggest.ts). Needs the climate's pool and every guest climate's
-// (a kept guest must count); false, changing nothing, while any is not read (guestsPending).
+// "Suggest plants": a suggestion built around every plant already in the palette (the members are
+// its seed; inventory C6), leaving out removed plants (core suggest.ts). Needs the climate's pool and
+// every guest climate's (a guest must count); false, changing nothing, while any is not read
+// (guestsPending).
 export function suggestMembers(): boolean {
   const p = pool.value;
   if (!p || guestsPending.value.length) return false;
-  const keep = [...new Set([...crops.value, ...kept.value])];
+  const seed = members.value;
   const rule = rangeRule.value;
-  // Nothing fits the site: no suggestion (it could only be an empty matrix); Start shows why.
+  // Nothing fits the site: no suggestion (it could only be an empty palette); Start shows why.
   if (nothingFits(p, location.value, rule)) return false;
   // A borrowed pool unfiltered (no site climate, or the rule's chunk failed): no suggestion, since only
   // the range filter fits it to a place (UX audit fix 1; fix review 29b709e, 2). The rule Start reads
@@ -402,8 +397,7 @@ export function suggestMembers(): boolean {
   // (state/suggest-wait.ts).
   const algo = suggestRule.value;
   if (!algo) return false;
-  const s = algo.suggest(rule ? rule.withinRange(p, location.value, keep) : p, { ...flagContext.value, kept: keep, crops: crops.value, removed: removed.value, guests: guestTaxa.value });
-  kept.value = keep;
+  const s = algo.suggest(rule ? rule.withinRange(p, location.value, seed) : p, { ...flagContext.value, seed, removed: removed.value, guests: guestTaxa.value });
   members.value = s.members;
   return true;
 }
@@ -451,7 +445,7 @@ export function hideToast(): void {
   toast.value = null;
 }
 
-// ---- edits (Remove, Keep, Swap, Add), each undoable ----
+// ---- edits (Remove, Swap, Add), each undoable ----
 
 // A plant as the consortium has it (a member; a guest with its recorded list's placement), else the
 // climate's list, else another climate's list already read (a guest of it). The climate's own list read (pools) counts as
@@ -480,7 +474,7 @@ type Snapshot = ReturnType<typeof state.snapshot>;
 const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.includes(x));
 
 // Undo puts back the snapshot taken before the action, so it is offered only while nothing else has
-// changed the consortium (a pin, a new suggestion, another climate): any change hides the toast.
+// changed the consortium (another edit, a new suggestion, another climate): any change hides the toast.
 // The fields whose change ends the offer (endsUndo or plants in state/schema.ts): the plant lists and
 // the climate.
 const SNAP_KEYS = state.lists.endsUndo;
@@ -497,30 +491,23 @@ export function removeMember(id: PlantId): void {
   const before = state.snapshot(), name = nameById(id);
   batch(() => {
     members.value = without(before.members, [id]);
-    kept.value = without(before.kept, [id]);
-    crops.value = without(before.crops, [id]);
     removed.value = [...without(before.removed, [id]), id];
     if (before.guests[id]) { const g = { ...before.guests }; delete g[id]; guests.value = g; }
   });
   offerUndo(T('details.removed', { name }), before, null, [id]);
 }
-export function toggleKeep(id: PlantId): void {
-  const k = kept.peek();
-  kept.value = k.includes(id) ? without(k, [id]) : [...k, id];
-}
-// Swap: the new plant takes the old one's place in the order (and its pin); the old one is left out
-// of a new suggestion. A main crop is never swapped from the dialog (owner row).
+// Swap: the new plant takes the old one's place in the order; the old one is left out of a new
+// suggestion.
 export function swapMember(oldId: PlantId, newId: PlantId): void {
   const before = state.snapshot(), a = nameById(oldId), b = nameById(newId);
   batch(() => {
     members.value = before.members.map((x) => (x === oldId ? newId : x)).filter((x, i, all) => all.indexOf(x) === i);
-    if (before.kept.includes(oldId)) kept.value = before.kept.map((x) => (x === oldId ? newId : x));
     removed.value = [...without(before.removed, [newId, oldId]), oldId];
     if (before.guests[oldId]) { const g = { ...before.guests }; delete g[oldId]; guests.value = g; }
   });
   offerUndo(T('swapped', { a, b }), before, null, [oldId]);
 }
-// Add: plants chosen by hand join and are kept (a new suggestion keeps them). from: guests, each with
+// Add: plants chosen by hand join (a new suggestion is built around them). from: guests, each with
 // the climate whose list it comes from ("Add anyway", A9). warned: plants added without being asked
 // about a misfit or a serious conflict ("Add all" from a paste, 2026-10-28 "Scale build" row): the
 // toast says "n added with a warning" with Show (the first one's details).
@@ -531,12 +518,11 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
   if (!fresh.length) return;
   batch(() => {
     members.value = [...before.members, ...fresh];
-    kept.value = [...before.kept, ...fresh.filter((id) => !before.kept.includes(id))];
     removed.value = without(before.removed, fresh);
     const g = { ...before.guests };
     for (const id of fresh) if (from[id]) g[id] = from[id];
     guests.value = g;
-    // A list pasted on Start opens its consortium (Share, Print, the address; X3).
+    // A list pasted on Start opens its consortium (the palette slot: Share, Print, the address; X3).
     if (view.peek() === 'start') view.value = 'matrix';
   });
   const flagged = warned.filter((id) => fresh.includes(id));

@@ -1,134 +1,43 @@
 /** @jsxImportSource preact */
-// The stage bar (owner row "Scale, owner answers" 2026-10-28: phone rows show it, with an accessible
-// name) and the marks every stream S2 view shares, kept in this leaf module so the views never import
-// each other in a cycle (the shared words and glyphs are in views/kit/names.ts and kit/icons.tsx):
-// - a plant's marks (Main crop is a sprout, Kept a pin, never colour alone; a warning
-//   triangle with its count; "From the Tropical list" for a guest) and its full accessible name;
-// - the "What is a layer?" / "What are these stages?" popovers;
-// - openDetails / openSwap / openAdd: the sheets, through the store's one opener (store.openSheet),
-//   which also says what Add was opened for (a cell or run, a job, "Show them anyway").
+// The words and marks the kept views share (Add's job title, the future panel's Details opener,
+// print's side drawing key), kept in this leaf module so the views never import each other in a
+// cycle (the shared words and glyphs are in views/kit/names.ts and kit/icons.tsx). The stage bar, the
+// popovers and the matrix views that read the rest went in PP-B commit 0a'; the file goes when its
+// last readers move (Add in PP-C, the future panel in PP-E, print in b2/d2).
 import { computed } from '@preact/signals';
-import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import type { PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { guestOf, spanOf } from '../../../lib/consortium/index.ts';
-import { crops, flags, kept, openSheet, type SheetFor } from '../store.ts';
+import type { Taxon } from '../../../lib/consortium/index.ts';
+import { guestOf } from '../../../lib/consortium/index.ts';
+import { flags, openSheet } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { PlantMarks } from './PlantMarks.tsx';
-import { PHASE_ORDS, warningCounts } from './kit/phase.ts';
-import { collatorFor, layerName, listName, nameOf, spanWords, stageRun, type Order } from './kit/names.ts';
-import { PinIcon, SproutIcon, WarnIcon } from './kit/icons.tsx';
+import { warningCounts } from './kit/phase.ts';
+import { collatorFor, listName, nameOf, stageRun, type Order } from './kit/names.ts';
+import { WarnIcon } from './kit/icons.tsx';
 
 // ---- words ----
-export const cellName = (s: Stratum, from: number, to: number = from): string => T('matrix.cell', { layer: layerName(s), stage: stageRun(from, to) });
 // "Find a soil feeder", or for a job's stage gap "Find a soil feeder for Years 15–25 → 60 years on":
-// the Jobs button and the Add sheet it opens say the same.
+// the Add sheet's title when opened for a job.
 export const jobFind = (job: string, run?: { from: number; to: number } | null): string =>
   run ? T('job.findFor', { find: T(`job.${job}.find`), stages: stageRun(run.from, run.to) }) : T(`job.${job}.find`);
 
-// Plants by their shown name, with the page language's one collator (tracks.ts collatorFor).
+// Plants by their shown name, with the page language's one collator (kit/names.ts collatorFor).
 export const byName: Order = (a, b) => collatorFor(pageLang()).compare(nameOf(a), nameOf(b));
 
-// Warnings per member, as chips count them (no low conflicts).
-export const warnings = computed(() => warningCounts(flags.value));
+// Warnings per member, as the marks count them (no low conflicts).
+const warnings = computed(() => warningCounts(flags.value));
 
-// The full name of a plant's chip or row: "European chestnut, Castanea sativa. High, Years 3–15 →
-// 60 years on · Secondary 1 – Climax. Main crop. 1 warning. Open details".
-export function plantLabel(t: Taxon): string {
-  const parts = [`${nameOf(t)}, ${t.canonical_name}.`];
-  parts.push(`${t.stratum ? layerName(t.stratum.value) : T('matrix.noLayer')}, ${spanWords(t)}.`);
-  if (crops.value.includes(t.id)) parts.push(`${T('matrix.mainCrop')}.`);
-  else if (kept.value.includes(t.id)) parts.push(`${T('matrix.kept')}.`);
-  const guest = guestOf(t);
-  if (guest) parts.push(`${T('matrix.from', { list: listName(guest) })}.`);
-  const w = warnings.value.get(t.id) ?? 0;
-  if (w) parts.push(`${P('matrix.warnings', w)}.`);
-  parts.push(T('matrix.open'));
-  return parts.join(' ');
-}
-
-// A plant's marks. tight (matrix chips): glyphs with hidden words; else the Main crop tag in words.
-export function Marks({ taxon, tight = false }: { taxon: Taxon; tight?: boolean }) {
-  const isCrop = crops.value.includes(taxon.id), isKept = !isCrop && kept.value.includes(taxon.id);
+// A plant's marks (print's side drawing key): the guest's list, the warning count with its words, the
+// plant marks.
+export function Marks({ taxon }: { taxon: Taxon }) {
   const w = warnings.value.get(taxon.id) ?? 0, guest = guestOf(taxon);
   return (
     <>
-      {isCrop && (tight
-        ? <span class="ct-glyph" title={T('matrix.mainCrop')}><SproutIcon /><span class="visually-hidden">{T('matrix.mainCrop')}</span></span>
-        : <span class="ct-tag ct-tag-crop"><SproutIcon />{T('matrix.mainCrop')}</span>)}
-      {isKept && <span class="ct-glyph" title={T('matrix.kept')}><PinIcon /><span class="visually-hidden">{T('matrix.kept')}</span></span>}
-      {guest && !tight && <span class="ct-tag">{T('matrix.from', { list: listName(guest) })}</span>}
+      {guest && <span class="ct-tag">{T('matrix.from', { list: listName(guest) })}</span>}
       {w > 0 && <span class="ct-flag" title={P('matrix.warnings', w)}><WarnIcon /><span aria-hidden="true">{w}</span><span class="visually-hidden">{P('matrix.warnings', w)}</span></span>}
-      <PlantMarks taxon={taxon} surface={tight ? 'chip' : 'row'} />
+      <PlantMarks taxon={taxon} surface="row" />
     </>
   );
 }
 
-// ---- the stage bar ----
-// Seven segments, the plant's span filled, the current stage outlined; its name is the span's words.
-export function StageBar({ taxon, current = null }: { taxon: Taxon; current?: PhaseOrd | null }) {
-  const s = spanOf(taxon);
-  return (
-    <span class="ct-stagebar" role="img" aria-label={spanWords(taxon)}>
-      {PHASE_ORDS.map((p) => <i key={p} class={`${s && s.from <= p && p <= s.to ? 'on' : ''}${p === current ? ' cur' : ''}`} />)}
-    </span>
-  );
-}
-// A strip of seven segments from booleans (the Jobs table: the stages where someone does the job).
-export function StageStrip({ on, label }: { on: boolean[]; label: string }) {
-  return (
-    <span class="ct-stagebar ct-stagestrip" role="img" aria-label={label}>
-      {on.map((x, p) => <i key={p} class={x ? 'on' : ''} />)}
-    </span>
-  );
-}
-
 // ---- sheets ----
-export const openAdd = (target: Partial<SheetFor> = {}): void => openSheet('add', null, target);
 export const openDetails = (id: string): void => openSheet('details', id);
-export const openSwap = (id: string): void => openSheet('swap', id);
-
-// ---- popovers ----
-let popoverSeq = 0;
-// "What is a layer?" / "What are these stages?": a button with aria-expanded and aria-controls; the
-// text closes on Escape, on the button again or on a click outside. Opened under its button, then
-// moved sideways so it stays inside the viewport with the page's 16 px gutter (walk-through 2 N2: the
-// second pill's ran 466 px wide at 390), and placed again when the window changes (a phone turned).
-const GUTTER = 16;
-export function Explain({ kind }: { kind: 'layer' | 'stage' }) {
-  const [open, setOpen] = useState(false);
-  const [id] = useState(() => `ct-pop-${kind}-${++popoverSeq}`);
-  const ref = useRef<HTMLSpanElement>(null);
-  useLayoutEffect(() => {
-    const pop = open && ref.current?.querySelector<HTMLElement>('.ct-pop');
-    if (!pop) return;
-    const place = () => {
-      pop.style.left = '0';
-      const vw = document.documentElement.clientWidth;
-      const r = pop.getBoundingClientRect();
-      pop.style.left = `${Math.max(GUTTER - r.left, Math.min(0, vw - GUTTER - r.right))}px`;
-    };
-    place();
-    addEventListener('resize', place);
-    return () => removeEventListener('resize', place);
-  }, [open]);
-  useEffect(() => {
-    if (!open) return;
-    const away = (e: Event) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); ref.current?.querySelector('button')?.focus(); } };
-    document.addEventListener('click', away);
-    document.addEventListener('keydown', esc);
-    return () => { document.removeEventListener('click', away); document.removeEventListener('keydown', esc); };
-  }, [open]);
-  const k = kind === 'layer' ? 'Layer' : 'Stage';
-  return (
-    <span class="ct-explain" ref={ref}>
-      <button type="button" class="ct-explain-btn" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>{T(`matrix.what${k}`)}</button>
-      {open && (
-        <span class="ct-pop" id={id} role="note">
-          <strong class="ct-pop-title">{T(`matrix.${kind}Title`)}</strong>
-          <span>{T(`matrix.${kind}Body`)}</span>
-        </span>
-      )}
-    </span>
-  );
-}

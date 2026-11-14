@@ -1,8 +1,9 @@
 // The consortium v2 core (src/lib/consortium/, stream S1 of P2): site fit, conflicts, jobs, the
-// strata × phases matrix, the suggestion and Swap alternatives, and the #v=5 share state, through the
+// cells a plant fills, the suggestion and Swap alternatives, and the #v=5 share state, through the
 // core's public index. Plants come from two places: invented records made here for one rule at a
 // time, and the invented fixture database (scripts/fixtures/consortium-v2/export/) read through the
-// island's SQLite adapter, so the matrix is checked against the adapter's SQL cell counts.
+// island's SQLite adapter. (The matrix and its cases, checked against the adapter's SQL cell counts,
+// went in PP-B commit 0a'.)
 // Design check (.local/consortium/v2/p2-design-check.md) §2, §4, A7, §8; coordinator rows "v2 mockup
 // choices" and "v2 build setup" (2026-11-11).
 import test from 'node:test';
@@ -15,9 +16,8 @@ const {
   fits, misfitsBeside, ROOM_LIMIT_M, UNSURE_SITE,
   conflicts, isSerious, invasiveIn, pairings, countryStatus,
   jobsOf, jobGapsByPhase, jobIds,
-  buildMatrix, cellsOf, phaseOrd, plantsIn, startCell,
   flagsFor, flagsOf, asks,
-  encodeLink, decodeLink, linkClimates, readPreset, LINK_VERSION, MAX_LINK_IDS, LONG_LINK, tokenOf, isLongLink, MAX_CROPS,
+  encodeLink, decodeLink, linkClimates, readPreset, LINK_VERSION, MAX_LINK_IDS, LONG_LINK, tokenOf, isLongLink,
   strata, phases,
 } = core;
 // The suggestion and the Swap list: their own chunk on the page (core loadSuggest), not in the barrel.
@@ -139,16 +139,13 @@ test('site: a misfit beats an unknown; a lower layer is not a light misfit under
   const tall = make({ stratum: 'high', traits: { sun: false } });
   assert.deepEqual(misfitsBeside(tall, sun, [make({ stratum: 'emergent' })]), ['light'], 'only medium and low are shaded');
   assert.deepEqual(misfitsBeside(p, site({ light: 'part' }), []), [], 'part shade: sun false is no part-shade misfit by itself');
-  // The matrix and the flags read the same rule.
-  const m = buildMatrix('Temperate', [p], [make({ stratum: 'high', start: 3, end: 6 })], sun);
-  assert.equal(m.rows[3].cells[0].empty, 'misfit');
-  assert.equal(buildMatrix('Temperate', [p], [make({ stratum: 'high', start: 0, end: 0 })], sun).rows[3].cells[0].empty, null);
+  // The flags read the same rule.
   assert.deepEqual(flagsOf([p, make({ stratum: 'high', start: 4, end: 6 })], ctx({ site: sun })).filter((f) => f.kind === 'misfit').map((f) => f.id), [p.id]);
   assert.deepEqual(flagsOf([p, make({ stratum: 'high', start: 1, end: 6 })], ctx({ site: sun })).filter((f) => f.kind === 'misfit'), []);
-  // suggest: kept above it in a shared phase, it may join; with no shared phase it is never picked.
+  // suggest: seeded above it in a shared phase, it may join; with no shared phase it is never picked.
   const late = make({ stratum: 'high', start: 3, end: 6 }), early = make({ stratum: 'high', start: 0, end: 6 });
-  assert.ok(!suggest([p, late], ctx({ site: sun, kept: [late.id] })).members.includes(p.id));
-  assert.ok(suggest([p, early], ctx({ site: sun, kept: [early.id] })).members.includes(p.id));
+  assert.ok(!suggest([p, late], ctx({ site: sun, seed: [late.id] })).members.includes(p.id));
+  assert.ok(suggest([p, early], ctx({ site: sun, seed: [early.id] })).members.includes(p.id));
 });
 
 // ================= conflicts =================
@@ -209,81 +206,6 @@ test('jobs: gaps name the stages where nobody does the job', () => {
   assert.deepEqual(of('shelter').missing, [0, 1, 2, 3, 4, 5, 6]);
 });
 
-// ================= matrix =================
-
-test('matrix: 4 strata × 7 phases; with no member, empty cells are data gaps exactly where the SQL counts none', async () => {
-  const m = buildMatrix('Temperate', temperate, [], UNSURE_SITE);
-  assert.deepEqual(m.rows.map((r) => r.stratum), [...strata]);
-  assert.ok(m.rows.every((r) => r.cells.length === 7 && r.cells.every((c, i) => c.phase === i && c.stratum === r.stratum)));
-  const counts = new Map((await source.cellCounts('Temperate')).map((r) => [`${r.stratum} ${r.phase}`, r.n]));
-  for (const row of m.rows) for (const cell of row.cells) {
-    const n = counts.get(`${cell.stratum} ${cell.phase}`) ?? 0;
-    assert.equal(cell.inList, n, `${cell.stratum} ${cell.phase}`);
-    assert.equal(cell.empty, n ? null : 'gap');
-    assert.deepEqual(cell.members, []);
-  }
-  const gaps = m.rows.flatMap((r) => r.cells.filter((c) => c.empty === 'gap').map((c) => `${c.stratum} ${c.phase}`));
-  assert.ok(gaps.includes('low 0'), 'Temperate low × placenta I is a data gap, as in the real export');
-  assert.equal(m.filled, 0);
-  assert.equal(m.cannot, gaps.length);
-  assert.equal(m.total, 28 - gaps.length);
-  assert.equal(m.free, m.total);
-});
-
-test('matrix: one plant fills every cell from its start to its end phase in its stratum', () => {
-  const chestnut = T('Castanea sativa'); // emergent, secondary I → climax
-  assert.deepEqual(cellsOf(chestnut), [['emergent', 3], ['emergent', 4], ['emergent', 5], ['emergent', 6]]);
-  assert.equal(phaseOrd('climax'), 6);
-  assert.deepEqual(startCell(chestnut), ['emergent', 3], 'each plant is listed once under its start cell');
-  assert.equal(startCell(byName(mediterranean, 'Zingiber officinale')), null);
-  const m = buildMatrix('Temperate', temperate, [chestnut], UNSURE_SITE);
-  const row = m.rows.find((r) => r.stratum === 'emergent');
-  assert.deepEqual(row.cells.map((c) => c.members.length), [0, 0, 0, 1, 1, 1, 1]);
-  assert.equal(m.filled, 4);
-  assert.equal(m.free, m.total - 4);
-  assert.deepEqual(plantsIn(temperate, 'emergent', 3).map((t) => t.canonical_name).sort(), ['Castanea sativa', 'Robinia pseudoacacia']);
-});
-
-test('matrix: Room Small never empties a cell (the layers are relative sun exposure, not heights; owner request 2026-11-12): every emergent plant counts in "N fit"', () => {
-  const m = buildMatrix('Temperate', temperate, [], site({ room: 'small' }));
-  const row = m.rows.find((r) => r.stratum === 'emergent');
-  for (const cell of row.cells.filter((c) => c.inList)) {
-    assert.equal(cell.empty, null, `emergent ${cell.phase}`);
-    assert.equal(cell.fitting, cell.inList);
-    assert.deepEqual(cell.reasons, {});
-  }
-  // A light misfit still empties a cell (filled by a member, it is filled).
-  const m2 = buildMatrix('Temperate', temperate, [T('Quercus robur')], site({ room: 'small' }));
-  const climax = m2.rows.find((r) => r.stratum === 'emergent').cells[6];
-  assert.equal(climax.empty, null);
-  assert.deepEqual(climax.members, [T('Quercus robur').id]);
-});
-
-test('matrix: counts that add up to more than the plants say "some for both reasons"', () => {
-  const a = make({ stratum: 'high', start: 2, end: 2, traits: { sun: false, soil_ph: { min: 7.6, max: 8.5 } } });
-  const b = make({ stratum: 'high', start: 2, end: 2, traits: { sun: true, soil_ph: { min: 7.6, max: 8.5 } } });
-  const m = buildMatrix('Temperate', [a, b], [], site({ light: 'sun', soil: 'acid' }));
-  const cell = m.rows[1].cells[2];
-  assert.equal(cell.empty, 'misfit');
-  assert.deepEqual(cell.reasons, { light: 1, soil: 2 });
-  assert.equal(cell.bothReasons, true);
-  // An unknown (height not recorded) never empties a cell: it fits, and the view says so.
-  const c = make({ stratum: 'high', start: 2, end: 2 });
-  assert.equal(buildMatrix('Temperate', [c], [], site({ room: 'small' })).rows[1].cells[2].empty, null);
-});
-
-test('matrix: a placement with no layer yet is listed as unplaced; a guest fills cells with its home placement', () => {
-  const zingiber = byName(mediterranean, 'Zingiber officinale');
-  assert.equal(zingiber.stratum, null);
-  const m = buildMatrix('Mediterranean', mediterranean, [], UNSURE_SITE);
-  assert.deepEqual(m.unplaced, [zingiber.id]);
-  const inga = { ...byName(tropical, 'Inga edulis'), from: 'Tropical' }; // high, placenta II → secondary II
-  const m2 = buildMatrix('Temperate', temperate, [inga], UNSURE_SITE);
-  const high = m2.rows.find((r) => r.stratum === 'high');
-  assert.deepEqual(high.cells.map((c) => c.members.length), [0, 1, 1, 1, 1, 1, 0]);
-  assert.equal(high.cells[1].empty, null, 'a cell with no Temperate plant is filled by the guest');
-});
-
 // ================= suggest =================
 
 test('suggest: the size follows the room, 9 with Room unsure (A7), and it stops when nothing is new', () => {
@@ -309,24 +231,24 @@ test('suggest: the size follows the room, 9 with Room unsure (A7), and it stops 
   assert.deepEqual(suggest(temperate, { ...ctx(), interactions: temperateInteractions }), s, 'deterministic');
 });
 
-test('suggest: kept and main crops are members first; removed plants are never picked; a small room picks no misfit', () => {
+test('suggest: the seed (the plants already there) are members first; removed plants are never picked; a small room picks no misfit', () => {
   const onion = T('Allium cepa').id, oak = T('Quercus robur').id, walnut = T('Juglans regia').id;
-  const s = suggest(temperate, { ...ctx({ site: site({ room: 'small' }) }), interactions: temperateInteractions, kept: [oak], crops: [onion], removed: [T('Corylus avellana').id, oak] });
+  const s = suggest(temperate, { ...ctx({ site: site({ room: 'small' }) }), interactions: temperateInteractions, seed: [oak, onion], removed: [T('Corylus avellana').id, oak] });
   assert.equal(s.limit, 6);
   assert.ok(s.members.length <= 6);
-  assert.deepEqual(s.members.slice(0, 2).sort(), [oak, onion].sort(), 'kept (over removed) and crops first, a misfit kept anyway');
+  assert.deepEqual(s.members.slice(0, 2).sort(), [oak, onion].sort(), 'the seed first (over removed), a misfit kept anyway');
   assert.ok(!s.members.includes(T('Corylus avellana').id));
   const others = s.members.slice(2).map((id) => temperate.find((t) => t.id === id));
   assert.ok(others.every((t) => fits(t, site({ room: 'small' })).misfits.length === 0));
-  // A high conflict with a kept plant keeps a candidate out (Juglans harms Malus).
-  const s2 = suggest(temperate, { ...ctx(), interactions: temperateInteractions, kept: [walnut] });
+  // A high conflict with a seeded plant keeps a candidate out (Juglans harms Malus).
+  const s2 = suggest(temperate, { ...ctx(), interactions: temperateInteractions, seed: [walnut] });
   assert.ok(!s2.members.includes(T('Malus domestica').id));
 });
 
-test('suggest: a kept guest counts for coverage; a guest is never picked', () => {
+test('suggest: a seeded guest counts for coverage; a guest is never picked', () => {
   const inga = { ...byName(tropical, 'Inga edulis'), from: 'Tropical' };
   const musa = { ...byName(tropical, 'Musa acuminata'), from: 'Tropical' };
-  const s = suggest(temperate, { ...ctx(), interactions: temperateInteractions, kept: [inga.id], guests: [inga, musa] });
+  const s = suggest(temperate, { ...ctx(), interactions: temperateInteractions, seed: [inga.id], guests: [inga, musa] });
   assert.equal(s.members[0], inga.id);
   assert.ok(!s.members.includes(musa.id));
 });
@@ -384,17 +306,18 @@ test('alternatives: "Also fills" and "Leaves empty" are the cells a swap changes
 // ================= share state =================
 
 // Link v5 (PP-B commit 0a): the place keys (k, o, the spot answers, the soil) only with the place tick;
-// kept, crops and stage are deprecated, never written (scripts/consortium-link-v5.test.mjs holds the contract).
+// kept, crops and stage were never written and went from the share state in PP-B commit 0a'
+// (scripts/consortium-link-v5.test.mjs holds the contract).
 const V5_SPOT = { light: 'sun', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
 const shareV5 = (over = {}) => ({
   climate: 'Temperate', country: 'FR', room: 'small', plot: null, period: '1991-2020', spot: V5_SPOT, soil: null,
-  members: [], removed: [], guests: [], kept: [], crops: [], stage: null, ...over,
+  members: [], removed: [], guests: [], ...over,
 });
 const NO_NOTICE = { unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false };
 
 const known = (extra = {}) => ({ Temperate: ids(temperate), Tropical: ids(tropical), ...extra });
 
-test('state: #v=5 round-trips members, removed, guests, room, country and the spot; kept, crops and stage are not written', () => {
+test('state: #v=5 round-trips members, removed, guests, room, country and the spot; kept, crops and stage are neither written nor read', () => {
   const inga = byName(tropical, 'Inga edulis').id;
   const st = shareV5({
     members: [T('Castanea sativa').id, T('Allium cepa').id, inga, T('Malus domestica').id],
@@ -410,11 +333,11 @@ test('state: #v=5 round-trips members, removed, guests, room, country and the sp
   assert.deepEqual(back.notice, NO_NOTICE);
   assert.deepEqual(back.state, st);
   assert.deepEqual(decodeLink('#' + link, known()).state, st, 'a leading # is read');
-  // The deprecated fields given to encodeLink leave the link unchanged and read back empty.
+  // v4's kept, crops and stage given to encodeLink leave the link unchanged and are not read back.
   const old = { ...st, kept: [T('Castanea sativa').id, inga], crops: [T('Allium cepa').id], stage: 3 };
   assert.equal(encodeLink(old, known(), { place: true }), link);
-  const deprecated = decodeLink(encodeLink(old, known(), { place: true }), known()).state;
-  assert.deepEqual([deprecated.kept, deprecated.crops, deprecated.stage], [[], [], null]);
+  const back4 = decodeLink(encodeLink(old, known(), { place: true }), known()).state;
+  assert.deepEqual(['kept', 'crops', 'stage'].filter((k) => k in back4), []);
   // Without the tick the link is the public form: no country and no spot.
   const pub = decodeLink(encodeLink(st, known()), known()).state;
   assert.deepEqual([pub.country, pub.spot, pub.members], [null, null, st.members]);
@@ -435,12 +358,12 @@ test('state: tokens are 36 bits in 6 base64url characters, whole ids ("." + 22) 
 
 test('state: an unknown plant is counted and left out; the rest is restored', () => {
   const gone = 'abcdef01-2345-4678-8000-000000000999';
-  const st = shareV5({ members: [T('Castanea sativa').id, gone], kept: [gone] });
+  const st = shareV5({ members: [T('Castanea sativa').id, gone], removed: [gone] });
   const link = encodeLink(st, { Temperate: [...ids(temperate), gone] });
   const back = decodeLink(link, known());
   assert.deepEqual(back.state.members, [T('Castanea sativa').id]);
-  assert.deepEqual(back.state.kept, []);
-  assert.equal(back.notice.unknownCount, 1, 'one plant, counted once though kept and a member');
+  assert.deepEqual(back.state.removed, []);
+  assert.equal(back.notice.unknownCount, 1, 'one plant, counted once though removed and a member');
   assert.equal(back.notice.cut, false);
 });
 
@@ -486,16 +409,15 @@ test('state: at most MAX_LINK_IDS tokens per key are read; malformed values fall
   assert.equal(e.state.climate, null);
   assert.equal(e.state.room, 'unsure');
   assert.equal(e.state.spot, null, 'an unknown light word reads as unsure, so no spot');
-  assert.equal(e.state.stage, null);
+  assert.equal('stage' in e.state, false, 't= (v4\'s stage) is a reserved letter, not read');
   assert.equal(e.state.country, null);
 });
 
-test('state: v5 reads no Main crops (n is a reserved letter): crops stay empty, nothing counted unknown', () => {
+test('state: v5 reads no Main crops (n is a reserved letter): no crops, nothing counted unknown', () => {
   const five = [0, 1, 2, 3, 4].map((i) => idOf(0x300 + i * 0x1000000));
   const n = five.map((id) => tokenOf(id, five)).join('');
   const d = decodeLink(`v=5&c=temperate&a=&n=${n}&e=1`, { Temperate: five });
-  assert.equal(MAX_CROPS, 3);
-  assert.deepEqual(d.state.crops, []);
+  assert.equal('crops' in d.state, false);
   assert.equal(d.notice.unknownCount, 0);
   assert.deepEqual(d.notice, NO_NOTICE);
 });
@@ -508,7 +430,7 @@ test('state: guide presets keep ?plant=&climate=', () => {
 
 // ================= §8 recompute budget =================
 
-test('recompute: matrix and flags for 200 members, a suggestion and every Swap list stay fast (≤ 2.5× a same-process baseline; CONSORTIUM_PERF=1 holds 50 ms)', () => {
+test('recompute: flags for 200 members, a suggestion and every Swap list stay fast (≤ 2.5× a same-process baseline; CONSORTIUM_PERF=1 holds 50 ms)', () => {
   const all = [...temperate, ...tropical, ...mediterranean];
   const fresh = () => Array.from({ length: 200 }, (_, i) => {
     const t = structuredClone(all[i % all.length]);
@@ -517,12 +439,11 @@ test('recompute: matrix and flags for 200 members, a suggestion and every Swap l
   const interactions = [...temperateInteractions];
   const c = ctx({ interactions, country: 'FR', countryStatus: 'checked', site: site({ light: 'sun', soil: 'neutral', room: 'large' }) });
   const run = (pool) => {
-    const m = buildMatrix('Temperate', pool, pool, c.site);
     const f = flagsOf(pool, c);
     const s = suggest(pool, c);
     const members = s.members.map((id) => pool.find((t) => t.id === id));
     for (const id of s.members) alternatives(id, members, pool, c);
-    return { m, f, s };
+    return { f, s };
   };
   const baseline = () => {
     const m = new Map(); let x = 0;
@@ -539,7 +460,7 @@ test('recompute: matrix and flags for 200 members, a suggestion and every Swap l
     work = Math.min(work, w); out = o;
     base = Math.min(base, time(baseline)[0]);
   }
-  assert.ok(out.m.filled > 0 && out.s.members.length >= 3);
+  assert.ok(out.f.length > 0 && out.s.members.length >= 3);
   const ratio = work / base;
   assert.ok(ratio < 2.5, `cold run ${work.toFixed(1)} ms is ${ratio.toFixed(2)}x the baseline's ${base.toFixed(1)} ms (ceiling 2.5x)`);
   if (process.env.CONSORTIUM_PERF === '1') assert.ok(work < 50, `${work.toFixed(1)} ms (budget 50 ms)`);

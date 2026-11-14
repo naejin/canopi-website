@@ -8,7 +8,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:21:01Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:20:56Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:11:04Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:aaf36f4deedab270
-    last_modified: 2026-11-14T11:20:33Z
+    digest: sha256:938046a217aedf52
+    last_modified: 2026-11-14T12:08:29Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -43,8 +43,8 @@ sources:
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:dcef16e5d39349c1
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:a51ff392be603f0e
+    last_modified: 2026-11-14T11:45:56Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
@@ -73,8 +73,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:26d25b93b11f82d7
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:0f3014353a94fa8d
+    last_modified: 2026-11-14T11:45:53Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
@@ -104,7 +104,7 @@ sources:
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json
     digest: sha256:343ead63d250aab9
-    last_modified: 2026-11-14T11:20:12Z
+    last_modified: 2026-11-14T11:21:32Z
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs

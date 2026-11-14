@@ -5,13 +5,13 @@ description: One placement origin on guest and borrowed plants replaces three fi
 tags: [consortium, architecture]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:40Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:33Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:11:04Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:eec01df763e8b398
-    last_modified: 2026-11-14T10:41:21Z
+    digest: sha256:7601664a85fd6d88
+    last_modified: 2026-11-14T11:39:20Z
   - id: site-marks-ts
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
@@ -25,13 +25,13 @@ sources:
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:e1a451eee42a1ee5
-    last_modified: 2026-11-14T10:15:43Z
+    digest: sha256:feb8e2ad064adef0
+    last_modified: 2026-11-14T11:38:45Z
   - id: details-tsx
     resource: ../../src/islands/consortium/views/details/Details.tsx
     title: src/islands/consortium/views/details/Details.tsx
-    digest: sha256:1e1fa65473673efb
-    last_modified: 2026-11-14T10:24:22Z
+    digest: sha256:a56126876f006e99
+    last_modified: 2026-11-14T11:40:54Z
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
   - id: placed-ts
@@ -42,8 +42,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:57827d5b5b419c07
-    last_modified: 2026-11-14T10:27:19Z
+    digest: sha256:d11d0a245a854604
+    last_modified: 2026-11-14T11:39:47Z
   - id: taxon-of-test
     resource: ../../scripts/consortium-taxon-of.test.mjs
     title: scripts/consortium-taxon-of.test.mjs

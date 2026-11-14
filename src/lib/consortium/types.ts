@@ -271,30 +271,6 @@ export type Labels = Record<string, Record<string, Partial<Record<Locale, string
 // 'estimate_not_reviewed' today. schemaVersion: the user_version load.ts accepted (SCHEMA_VERSION).
 export interface SourceInfo { releaseId: string; schemaVersion: typeof SCHEMA_VERSION; builtAt: string; climates: ClimateZone[]; griisAvailable: boolean; climateGrid: string | null; rangesReview: string | null }
 
-// The strata × phases matrix the store computes (store.ts `matrix`): one row per stratum, top to
-// bottom, seven cells each. An empty cell says why: 'gap' (no plant in the list for this cell yet)
-// or 'misfit' (plants exist, none fits the site: "Show them anyway"). One plant fills a cell.
-// inList: the climate's plants that grow in the cell; fitting: those that do not misfit the site (an
-// unknown fits: "Free: N plants fit"); reasons: for a 'misfit' cell, the plants per site answer they
-// misfit; bothReasons: the counts add up to more than inList ("some for both reasons").
-export interface MatrixCell {
-  stratum: Stratum;
-  phase: PhaseOrd;
-  members: PlantId[];
-  empty: 'gap' | 'misfit' | null;
-  inList: number;
-  fitting: number;
-  // Counted per site key only: the views word each from the site answer (light: "too sunny" on a sun
-  // site, "too shady" on part shade or shade; water: "too dry" on dry, "too wet" on wet).
-  reasons: Partial<Record<SiteKey, number>>;
-  bothReasons: boolean;
-}
-// unplaced: the climate's plants with no stratum yet (`stratum IS NULL`, 0 today), listed under
-// "No layer yet" rather than dropped (design check §4).
-// The fill meter: filled of total cells that can be filled; free = total − filled; cannot = the empty
-// cells nothing can fill here (gap or misfit), which never count against the reader (28 = total + cannot).
-export interface Matrix { climate: ClimateZone; rows: { stratum: Stratum; cells: MatrixCell[] }[]; filled: number; total: number; free: number; cannot: number; unplaced: PlantId[] }
-
 // A warning on a member (store.ts `flags`): a conflict between two members, a site misfit, an
 // invasive or toxicity warning. Add and Swap ask only about 'misfit' and a high 'conflict'.
 // A conflict flag is one per other member, for its worst row, and carries that row's type, agent
@@ -359,12 +335,6 @@ export interface ShareState {
   members: PlantId[];
   removed: PlantId[];
   guests: { id: PlantId; from: ClimateZone }[];
-  /** @deprecated PP-B commit 0: Kept is not written to link v5 and never read from it; b3 removes it with its readers. */
-  kept?: PlantId[];
-  /** @deprecated PP-B commit 0: Main crops are not written to link v5; b3 removes them with their readers. */
-  crops?: PlantId[];
-  /** @deprecated PP-B commit 0: the stage is not written to link v5; b3 removes it with its readers. */
-  stage?: PhaseOrd | null;
 }
 // unknownCount: plants of the link no longer in the list ("2 plants from this link…"); cut: the link
 // lost its end marker ("This link looks cut off"). "Some apps cut long links…" is not a notice of a

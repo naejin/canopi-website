@@ -180,7 +180,7 @@ export function adoptPending(): void {
 }
 
 // ---- the consortium and the save ----
-// Two states: the consortium, and Start's draft (the picked card and its crops) while Start shows.
+// Two states: the consortium, and Start's draft (the picked card and its answers) while Start shows.
 // Change site sets the consortium aside (store.setAside) and opens a draft seeded from it; the draft
 // never changes the consortium or the save. Only Suggest, Start empty, a paste and Back to your
 // consortium (which discards the draft) end it. The save always encodes the consortium, written on

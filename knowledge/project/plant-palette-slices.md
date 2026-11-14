@@ -4,13 +4,13 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:37:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:10:50Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
     title: scripts/plan/pp-b-owners.json
     digest: sha256:1e28ec7c77332145
-    last_modified: 2026-11-14T11:37:27Z
+    last_modified: 2026-11-14T11:37:48Z
   - id: f1a-owners-json
     resource: ../../scripts/plan/f1a-owners.json
     title: scripts/plan/f1a-owners.json
@@ -54,8 +54,8 @@ sources:
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:bf869e31497ee7dc
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:6c83ba538a6be488
+    last_modified: 2026-11-14T11:54:14Z
   - id: consortium-f1a-a11y-browser-test-mjs
     resource: ../../scripts/browser/consortium-f1a-a11y.browser.test.mjs
     title: scripts/browser/consortium-f1a-a11y.browser.test.mjs
@@ -89,23 +89,23 @@ sources:
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
-    digest: sha256:3ee88662d81a483e
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:278d03d94f6bfc36
+    last_modified: 2026-11-14T11:54:14Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:b11c523506084a53
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:e6e2dd373870d866
+    last_modified: 2026-11-14T11:45:53Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:dcef16e5d39349c1
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:a51ff392be603f0e
+    last_modified: 2026-11-14T11:45:56Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:26d25b93b11f82d7
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:0f3014353a94fa8d
+    last_modified: 2026-11-14T11:45:53Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -124,8 +124,8 @@ sources:
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
-    digest: sha256:6b88a9789527076a
-    last_modified: 2026-11-13T15:21:17Z
+    digest: sha256:842b6e18d2030121
+    last_modified: 2026-11-14T11:48:54Z
   - id: consortium-palette-test-mjs
     resource: ../../scripts/consortium-palette.test.mjs
     title: scripts/consortium-palette.test.mjs
@@ -134,8 +134,8 @@ sources:
   - id: plan-owners-test-mjs
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
-    digest: sha256:ee0a64141a39ea97
-    last_modified: 2026-11-14T11:21:32Z
+    digest: sha256:6c31b6d99f63ff25
+    last_modified: 2026-11-14T11:54:31Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
@@ -174,8 +174,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:684064f3a1a2633d
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:5bf1dfad1494463b
+    last_modified: 2026-11-14T12:02:08Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -189,8 +189,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:8610c9279fbe06ae
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:476f116c5e449766
+    last_modified: 2026-11-14T11:38:37Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -204,8 +204,8 @@ sources:
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
-    digest: sha256:0bbcc4c3700be1ab
-    last_modified: 2026-11-13T07:27:10Z
+    digest: sha256:be4bbd1d3c23e9c1
+    last_modified: 2026-11-14T12:03:22Z
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
@@ -224,8 +224,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:57827d5b5b419c07
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:d11d0a245a854604
+    last_modified: 2026-11-14T11:39:47Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
@@ -264,13 +264,13 @@ sources:
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:aa7bf345c7e16873
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:403cb0593e62df98
+    last_modified: 2026-11-14T12:00:42Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
-    digest: sha256:3e823c31afb6e73f
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:14a41ad260f237ba
+    last_modified: 2026-11-14T11:42:40Z
   - id: layers-ts
     resource: ../../src/islands/consortium/views/layers.ts
     title: src/islands/consortium/views/layers.ts
@@ -281,11 +281,6 @@ sources:
     title: src/islands/consortium/views/paste.ts
     digest: sha256:e5ac19644e8ab579
     last_modified: 2026-11-11T09:55:29Z
-  - id: tracks-ts
-    resource: ../../src/islands/consortium/views/tracks.ts
-    title: src/islands/consortium/views/tracks.ts
-    digest: sha256:f377c6df6e9eb4e0
-    last_modified: 2026-11-14T10:56:09Z
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
@@ -339,8 +334,8 @@ sources:
   - id: matrix-ts
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
-    digest: sha256:1b7088eeb8448e53
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:c948918a08ee50b3
+    last_modified: 2026-11-14T11:38:37Z
   - id: range-marks-ts
     resource: ../../src/lib/consortium/range-marks.ts
     title: src/lib/consortium/range-marks.ts
@@ -369,13 +364,13 @@ sources:
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:e1a451eee42a1ee5
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:feb8e2ad064adef0
+    last_modified: 2026-11-14T11:38:45Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:b230ad6ff500d7d6
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:c9c8db612ed9a0f6
+    last_modified: 2026-11-14T11:40:02Z
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json
@@ -439,7 +434,7 @@ PP-B commit 0 moves 7 PP-B markers unchanged into their stream's files (A1, A2, 
 | Push | Tests | Owner |
 |---|---|---|
 | PP-B commit 0a | the f1a spec files and `consortium-balance`, `consortium-palette`, `consortium-confidence` unit files (deleted after the marker moves, done); the 31 v4-literal cases of `consortium-core`, `consortium-memory`, `consortium-p5-seams-s5b` rewritten to link v5 (done, 362fe3f); `browser-tests.test.mjs` (`SPEC_FILES` `:26-36`, the minimum-2 regex `:45` gains `s2` and `s3`, the BT-coverage check `:75-78` and the s1…s4 naming check `:65-73` loosened, the F1a owner block `:284-298` → PP-B block); `consortium-css` (token rule), `consortium-keys` (unit policy); `built-modules.test.mjs` (`:16`, `:58-60`); `plan-owners.test.mjs` | main |
-| PP-B commit 0a' (delete first) | **deleted** with the screens they test (owner, 2026-11-14): unit `consortium-core` matrix cases (`matrix:` ×5), the Main-crops ordering and the crops list of three in the `suggest:` cases, the matrix part of `recompute:` (the seeded-plant cases are **rewritten on `seed`, not deleted** (check coverage-2): shading under a seeded plant (`:148-151`), the seeded oak first despite removed, removed hazel never picked, the small room picks no misfit, a high conflict with a seeded walnut keeps Malus out (`:312-323`), a seeded guest counts and comes first (`:326-331`), and `consortium-p5-ranges` `:382` a seeded tall fig stays); `consortium-source` `cellCounts is the SQL oracle…` and the real-install cell counts; `consortium-tracks.test.mjs` **deleted with `tracks.ts`** (`tracksOf`, `rowPieces`, `cellOrder`, `runReasons`, `listGroups`, `stepStage` go), its side scale, `sidePlants`, `reachOf`, draw and `warningCounts` cases moved into a new `scripts/consortium-print.test.mjs` importing `side.ts`, `draw.ts` and `kit/phase.ts` (b2's in chunk 1, check coverage-5 and deletion-5); `consortium-list-query` the plant list's queries and filters (Add's stay until PP-C); `consortium-memory` the crops-to-three and `cropExamples` cases deleted, and two lasting cases **trimmed, not deleted** (check coverage-7): `:139` the share state (its kept, crops and stage fields out; the no-place privacy and guests assertions stay) and `:580` Undo of each snapshot field (kept, crops, stage out; 'only to or from Start' on the views that remain); `consortium-p5-seams` the host-views slot case (rewritten for the slots that remain); `consortium-p5-ranges` the matrix and "rows" parts of the two `room:` cases (the room rule stays); the kept, crops and view assertions left in item 1's v5 rewrites. Browser: `consortium-s2` whole (BT-2 matrix, BT-3 on-screen side view, BT-4 Jobs and list; main deletes the file with `browser-tests.test.mjs` and `shards.json`); in `consortium-s4` "matrix half", "share, views" (the kept pin), "print" ("At a glance") and the exit walk-through's keep step; in `consortium-seams-p2` X1/X2/X7 (cell Add, "Show them anyway"), X2 a job's "Find a …" (`:74`, opened from the Jobs tab; its "only the plants that do that job" assertion goes into b2's rewritten P1), H16 (Remove in All plants), R2-4 and T1 (crops under another card), W4 ×3 (matrix focus) and F4/F5 (after-the-matrix chunk, view loading); in `consortium-seams-layout` UX3, UX5, Item 7; in `consortium-seams-p5` UX4 (Jobs; `browser-tests.test.mjs` lowers the file's minimum to 1); in `consortium-e6` E6-1 (Start's crop search), E6-24 and E6-25 (views after the matrix); in `consortium-s3` the "Keep pins" step of BT-6 (`:141`) and the Keep press in BT-6 review (`:270`, another plant's Remove ends Undo instead). In `consortium-s4` the "BT-8 drawing" case moves unchanged into `consortium-pp-b2.browser.test.mjs` (b2's; b2 rewrites its "printed above the drawing" assertion for the year step in PP-B18, so b1a never edits a print case). Other specs still name removed things and are **their streams' to retarget, not 0a''s** (owners in this table): `consortium-s1` `cellCounts` in BT-1 and the matrix table (b2), `consortium-e6-r4` `store.crops` (b2), `consortium-p5-s5c` `store.matrix` rows and `view 'matrix'` (b1a; its `fitPool` cases stay valid), `consortium-p5-s5b` view checks (b1a), `p5-helpers.mjs` and `seams-helpers.mjs` matrix waits (b2). Kept: every lasting-layer unit test (link, storage, state, seams, place, climate, soil, location, keys, harness, vectors), and the browser cases of Place, the location step, sheets, Details, Share and print, which are retargeted when a stream rebuilds their entry point. `consortium-css` and `built-modules.test.mjs` lose the matrix stylesheet and role | main |
+| PP-B commit 0a' (delete first) | **deleted** with the screens they test (owner, 2026-11-14): unit `consortium-core` matrix cases (`matrix:` ×5), the Main-crops ordering and the crops list of three in the `suggest:` cases, the matrix part of `recompute:` (the seeded-plant cases are **rewritten on `seed`, not deleted** (check coverage-2): shading under a seeded plant (`:148-151`), the seeded oak first despite removed, removed hazel never picked, the small room picks no misfit, a high conflict with a seeded walnut keeps Malus out (`:312-323`), a seeded guest counts and comes first (`:326-331`), and `consortium-p5-ranges` `:382` a seeded tall fig stays); `consortium-source` `cellCounts is the SQL oracle…` and the real-install cell counts; `consortium-tracks.test.mjs` **deleted with `tracks.ts`** (`tracksOf`, `rowPieces`, `cellOrder`, `runReasons`, `listGroups`, `stepStage` go), its side scale, `sidePlants`, `reachOf`, draw and `warningCounts` cases moved into a new `scripts/consortium-print.test.mjs` importing `side.ts`, `draw.ts` and `kit/phase.ts` (b2's in chunk 1, check coverage-5 and deletion-5); `consortium-list-query` the plant list's queries and filters (Add's stay until PP-C); `consortium-memory` the crops-to-three and `cropExamples` cases deleted, and two lasting cases **trimmed, not deleted** (check coverage-7): `:139` the share state (its kept, crops and stage fields out; the no-place privacy and guests assertions stay) and `:580` Undo of each snapshot field (kept, crops, stage out; 'only to or from Start' on the views that remain); `consortium-p5-seams` the host-views slot case (rewritten for the slots that remain); `consortium-p5-ranges` the matrix and "rows" parts of the two `room:` cases (the room rule stays); the kept, crops and view assertions left in item 1's v5 rewrites. Browser: `consortium-s2` whole (BT-2 matrix, BT-3 on-screen side view, BT-4 Jobs and list; main deletes the file with `browser-tests.test.mjs` and `shards.json`); in `consortium-s4` "matrix half", "share, views" (the kept pin), "print" ("At a glance") and the exit walk-through's keep step; in `consortium-seams-p2` X1/X2/X7 (cell Add, "Show them anyway"), X2 a job's "Find a …" (`:74`, opened from the Jobs tab; its "only the plants that do that job" assertion goes into b2's rewritten P1), H16 (Remove in All plants), R2-4 and T1 (crops under another card), W4 ×3 (matrix focus) and F4/F5 (after-the-matrix chunk, view loading); in `consortium-seams-layout` UX3, UX5, Item 7; in `consortium-seams-p5` UX4 (Jobs; `browser-tests.test.mjs` lowers the file's minimum to 1); in `consortium-e6` E6-1 (Start's crop search), E6-24 and E6-25 (views after the matrix); in `consortium-s3` the "Keep pins" step of BT-6 (`:141`) and the Keep press in BT-6 review (`:270`; built: a member removed through the test hook's store ends Undo instead, since a Remove press shows its own Undo). In `consortium-s4` the "BT-8 drawing" case moves (retitled PP-B18, its climate and Suggest presses inlined) into `consortium-pp-b2.browser.test.mjs` (b2's; b2 rewrites its "printed above the drawing" assertion for the year step in PP-B18, so b1a never edits a print case). Other specs still name removed things and are **their streams' to retarget, not 0a''s** (owners in this table): `consortium-s1` `cellCounts` in BT-1 and the matrix table (b2), `consortium-e6-r4` `store.crops` (b2), `consortium-p5-s5c` `store.matrix` rows and `view 'matrix'` (b1a; its `fitPool` cases stay valid), `consortium-p5-s5b` view checks (b1a), `p5-helpers.mjs` and `seams-helpers.mjs` matrix waits (b2). Kept: every lasting-layer unit test (link, storage, state, seams, place, climate, soil, location, keys, harness, vectors), and the browser cases of Place, the location step, sheets, Details, Share and print, which are retargeted when a stream rebuilds their entry point. `consortium-css` and `built-modules.test.mjs` lose the matrix stylesheet and role | main |
 | PP-B commit 0b | `guides-consortium`, `built-links`; the specs and helpers that open `/consortium/` | main |
 | PP-B b1a | `consortium-memory`, `-keys`, `-start`, `-p5-seams-s5b/-s5c/-s5e/-s5f` (unit); `consortium-s4`, `-p5-s5b/-s5c/-s5f` (browser); P5-27g and P5-27q (`consortium-p5-s5c.browser.test.mjs:502-525`, 320 px reflow and long words) replaced by PP-B19 for Place; P5-26f, P5-27a, P5-27b and P5-27l (the empty matrix's Suggest: the needs-location line, why nothing can be suggested, busy while a guest list is read) **retargeted** onto Place's "Start from a small suggested palette", not deleted; P5-14 and P5-14c (`fitPool`, matrix counts) left for b1b, which moves them to `countFits`; the `view 'matrix'` writes in `p5-s5b`/`p5-s5c` follow b2's `View` | b1a |
 | PP-B b1b | owns in chunk 2 (check coverage-4) `scripts/browser/consortium-p5-s5c.browser.test.mjs` (the pool panel's cases, P5-14, P5-14c), `scripts/consortium-p5-seams-s5c.test.mjs` (the `suggest-block` case and the S5c strings case), `scripts/consortium-p5-seams.test.mjs` (the `PoolSlot` and `cardPill` assertions, `:54-55`) and `scripts/consortium-p5-ranges.test.mjs` (the `pool.count` and `empty.body` `{mean}` checks and the `pool.tsx` read, `:515-518`; the matrix parts of that file went in 0a'), each case deleted or rewritten against the Place count line; `consortium-core` `suggest:` and `alternatives:` cases when the gain moves onto `fills`; `store.ts`'s import of `suggest-block` (`:10`) goes through the coordinator (b3 owns `store.ts` in chunk 2) in the merge that deletes `suggest-block.ts` | b1b |
@@ -463,10 +458,11 @@ A stream never deletes a whole spec file: it empties it of its cases; main delet
 - **0a seams (built 2026-11-14, 50be21a to 362fe3f; the temporary matrix `lazyPart` and role it added are undone by 0a'):** types of architecture 3.1–3.3 (with `Line`, `VerdictContext.canopy`, `LinkNotice.period`); `place.ts` with real bodies for `emptyPlace`, `siteFor` (today's light, soil and water answers passed to `fits()`) and a minimal `resolveSoil` (basis `'none'` for the map, `'pots'` for pots), and `climateFor` passing the slot through (the arch-rules grep line that only `place.ts` reads `lookup.periods`, `warn`); empty-bodied `verdict.ts`, `verdict-load.ts` (exported from `index.ts`; b2 writes the body), `verdict-line.ts` with the `fitLine`, `holeLine`, `yearsLine` signatures, `years.ts` (with `phaseOrd` and `spanOf` moved in, `views/kit/span.ts` deleted and `views/kit/sheet.tsx` repointed, `yearsOf` = first to last stage present), `holes.ts` (with `HOLE_ORDER`), `weigh.ts`; `PlantSource.layerValues` with a stub; `SitePeriod` gains `precipMm`, `dryMonths`; `pots` in `rooms`; the whole link v5 codec under the extension rule (architecture 8.1: unknown keys ignored, per-key fallback, `u=` reserved, reserved letters, `y` = `PeriodId` span string), `encodePlace` (`k` from `store.country`, `o` from `store.location`) and `linkVersionStatus` (classifies `v` only, `null` = `absent`, older = v1–v4) with `scripts/vectors/link-v5.json` in the shared envelope (reviewed by the coordinator before any stream starts) and its consumers in `persist.ts` (`:99-118`) and `restore.ts` (`:131-143`); state fields and the place rule; `site` derived; `kept`, `crops`, `stage` deprecated; the save record `{ fragment, place, at, src, country? }`, `canopi-place` as the seed of a new palette, `history.state.pl`; `applyPreset` adds the guide plant; store seams (`verdictContext` with `canopy`, `verdictRule`, `memberVerdicts`, `poolVerdicts`, `countFits`, an empty `offline`), `withRule` waits on `verdict`; `views/place/Place.tsx` re-exporting Start; the matrix behind `lazyPart` (role `structure` renamed `matrix`, 12 KB); `views/tracks.ts` helpers to `views/kit/phase.ts` and `names.ts`; the Balance seams deleted; roles `palette`, `verdict` (12 KB); L10 as `warn` with `index.ts` allowed for named re-exports (`index` in `pathNot`, an arch-rules fixture), keys written by `ratchet.mjs arch --write`; the colour token block in `src/styles/tokens.css` (architecture 3.5) with `consortium-css.test.mjs`'s new rule; `format.ts` unit formatters and `parsePlotSize` with the unit-after-placeholder policy in `consortium-keys.test.mjs`; the harness's `database: 'hold'` with `page.releaseHeld()` (and `timeouts.slow` if needed); `range_verdicts.json` read from the installed release (stamped copy with a release-id test until the installer change lands); empty page-level stylesheets; the marker moves and parking of section 1 with `scripts/plan/parked-markers.json`.
 - **0a' delete first (owner, 2026-11-14, row "Delete first"; one commit, or a few if review needs it, before 0b):** the old screens go with their tests (section 1b) and their keys; the shell, the place step, the sheets, Details, Share, print and the lasting layer stay with their tests. Exports left without a reader are deleted in the same commit so `check:dead` holds; a later stream re-adds what it needs.
   - **Files deleted (11):** `views/Matrix.tsx`, `PhoneMatrix.tsx`, `matrix-parts.tsx`, `tracks.ts`, `Jobs.tsx`, `PlantList.tsx`, `StageStepper.tsx` (its readers are Matrix, PhoneMatrix and the on-screen side view only); `src/styles/consortium/matrix.css` and the empty F1a `palette.css`; `scripts/consortium-tracks.test.mjs` (its kept cases move to `scripts/consortium-print.test.mjs`, section 1b); `scripts/browser/consortium-s2.browser.test.mjs`.
-  - **CSS moved before matrix.css goes (check deletion-4, measured on the classes kept code uses):** to `shell.css`: `.ct-dim`, `.ct-icon` (every glyph of `kit/icons.tsx`), `.ct-link-button` (with its phone 40 px rule), `.ct-sc`, the unscoped `.ct-flag`, `.ct-tag`, `.ct-key svg` and mark-surface rules (the `:where(.ct-views)` ones match nothing once the tabs go), `.ct-stagebar`, `.ct-explain`, `.ct-explain-btn` (with its phone rule), `.ct-pop`, `.ct-pop-title`; to `print.css`, outside `@media print`: the side drawing `SideDrawing` draws, `.ct-sv-figure`, `.ct-sv-plot` (`is-marks`), `.ct-sv-scale`, `.ct-sv-svg`, `.ct-sv-line`, `.ct-sv-mark` (`is-dashed`), `.ct-sv-nums`, `.ct-sv-note`, `.ct-sv-key`, `.ct-sv-n`, `.ct-sv-sw`, every `[data-stratum]` fill, stroke and swatch rule and the phone plot rules. Deleted with the screens: `.ct-sv`, `.ct-sv-term`, `.ct-sv-layer`, `.ct-sv-phases`, `.ct-sv-stepper`, `.ct-stchip`, `.ct-chip-term`, `.ct-tag-crop`, `.ct-stagestrip` and every matrix, phone grid, stepper, Jobs and list rule (`.ct-nw`, `.ct-row`, `.ct-quiet`, `.ct-btn-sm` have no reader left). A new case in `consortium-css.test.mjs` collects every `ct-*` class literal in `src/islands/consortium/**` and asserts each is defined in a sheet under `src/styles/`, except a listed set of hook-only names (ids, JS hooks, prefixes built at run time).
-  - **Trimmed:** `App.tsx` (the matrix `lazyPart` and the keep-alive imports the build no longer needs out; `Actions` mounted statically again, so it rejoins the first run until b2 hosts it under the palette page; the keep-alive imports that check-built-site's K3 rule still needs stay, decided by one build); `views/later.ts` (the `SideView`, `Jobs` and `PlantList` re-exports out); `views/Actions.tsx` (the view-tab reads out; it takes `FirstPaint`, the `ct:first-view` mark and `prefetchLater()` the timing script and the later prefetch wait for, from Matrix.tsx, until b2 marks the palette page); `views/SideView.tsx` keeps only `SideDrawing` (print), the on-screen side view and its stage chips go (inventory drop "on-screen side view (print only)"); `views/StageBar.tsx` loses `StageStrip`, `cellName`, `plantLabel`, `openSwap` (its only reader was PlantList; Details opens Swap through `openSheet`) and the kept and main-crop marks (`StageBar`, `Marks`, `warnings`, `Explain`, `openAdd`, `openDetails`, `jobFind`, `byName` stay for Add, Details, the future panel and print until PP-C and PP-E); `views/kit/phase.ts` loses `stepStage` and whatever else check:dead flags; **`warningCounts` stays** (StageBar's `warnings` and `Marks` read it, and `SideDrawing` draws `Marks` for print; check deletion-5); `views/kit/icons.tsx` loses `ChevronIcon`, `PinIcon`, `SproutIcon` and `PIN` once nothing reads them, and `views/PoolSlot.tsx` loses `WhyNoSuggest` (its only reader was matrix-parts; b1b re-adds from git what Place needs), both files main's in chunk 0 (check deletion-6); `views/PrintSheet.tsx` loses "At a glance" (it read `matrix`) and the kept and main-crop labels, keeps the plant table and the side drawing for ≤ 20 plants, drawn at the store's `stage` until b2 points it at the year step chosen in Through the years (PP-B18); `views/details/Details.tsx` loses the Keep button and the crop branch (`details.cropNoSwap`); `views/Start.tsx` loses the Main crops picker (the `.crops.*` keys go); core `matrix.ts` keeps only `cellsOf` and `cellKey` (Suggest's gain until b1b and Swap's "Also fills" until c2; `buildMatrix`, `plantsIn`, `startCell`, the Matrix types go), `source.ts` and `data/sqlite-source.ts` lose `cellCounts`, **`suggest.ts` turns `kept` and `crops` into one `seed` option** (the current members: always members, flagged or not, the seed wins over `removed`; guests are members only when seeded; seeded plants first in tie order, then seeded guests; only the Main-crops-first loop goes), so Suggest builds around every plant already there (inventory C6, drop 5; check coverage-2), `types.ts` loses the Matrix types and the core `views` list, `state.ts` loses the deprecated `kept`, `crops` and `stage` share fields (the codec already writes none and ignores `p`, `n`, `t`); `store.ts` narrows `View` to `'start' | 'matrix'` (**`'matrix'` now names the empty palette slot**: `suggest-wait.ts:68`, `draft.ts`, `restore.ts` and `store.ts:540` keep writing it, so 0a' edits no b1a file (check deletion-2, option (a)); b2 replaces the type with `'place' | 'palette' | 'plan'` in chunk 1 and the b1a-owned writers switch in the same chunk through the coordinator), loses `matrix`, `toggleKeep`, `kept`, `crops`, their keep logic and `marksFailed` (its only reader was Matrix.tsx's notices); **`fitPool` stays** (the range-filtered pool Add and Swap read until PP-C rebuilds them on verdicts; check deletion-1); `suggestMembers` seeds from `members`; `missingMembers` stays (b2 shows its L2 lines on the palette page, PP-B21); `stage` stays an unsaved signal for print until PP-B18; `state/schema.ts`, `restore.ts` (a guide's crop role adds a member), `persist.ts`, `draft.ts` follow; `rules/list-query.ts` loses the plant list's query; `ConsortiumPage.astro` drops the two stylesheets; `scripts/built-modules.mjs`, `check-built-site.mjs` and `built-modules.test.mjs` drop the `matrix` role; the 11 locale files drop the keys only deleted code read, found by `consortium-keys.test.mjs` "no consortium key is left unused (H9)" run on the trimmed tree: the 64 `consortium.matrix.*` (the view tabs included; a key a kept view or print still reads stays), 23 `.list.*`, 11 `.side.*` (those `SideDrawing` reads stay), 8 `.crops.*`, `.keptTag`, `.mainCrop`, and (check deletion-3) `consortium.job.*.about`, `.job.*.gap`, `.job.col.*`, `.phase.group.*`, `.phase.earlier`, `.phase.later`, `.phase.stepOf`, `.phase.stage`, `.print.glance`, `.print.kept`, `.print.mainCrop`, `.details.keep`, `.details.cropNoSwap`. `consortium.marks.unavailable` **stays**: `store.ts`'s chunk toast still says it (listed in INDIRECT in `consortium-keys.test.mjs`); the persistent line with Reload (inventory L3) goes with Matrix.tsx and PP-C c2 restores it from git with `marksFailed` (check deletion-7). The E6 and E4 wordings b2 reuses go with the matrix keys; b2 writes new `consortium.line.*` keys and copies the wording and 11 translations from git (EN at 1311317: `matrix.more` "+ {n} more", `matrix.gap` "A data gap, not your site", `matrix.misfit` "No plant fits your site here", `matrix.gapBody` as in `en.json`; check deletion-9).
+  - **CSS moved before matrix.css goes (check deletion-4, measured on the classes kept code uses):** to `shell.css`: `.ct-dim`, `.ct-icon` (every glyph of `kit/icons.tsx`), `.ct-link-button` (with its phone 40 px rule), `.ct-sc`, the unscoped `.ct-flag` and `.ct-tag` (as `:where(.ct) .ct-flag` and `:where(.ct) .ct-tag`: `details.css` loads before `shell.css`, so a moved rule of equal weight would override the sheets' own) and the mark-surface rules (the `:where(.ct-views)` ones match nothing once the tabs go); built: `.ct-key svg`, `.ct-stagebar`, `.ct-explain*` and `.ct-pop*` were dropped, not moved, since no kept code writes them; to `print.css`, outside `@media print`: the side drawing `SideDrawing` draws, `.ct-sv-figure`, `.ct-sv-plot` (`is-marks`), `.ct-sv-scale`, `.ct-sv-svg`, `.ct-sv-line`, `.ct-sv-mark` (`is-dashed`), `.ct-sv-nums`, `.ct-sv-note`, `.ct-sv-key`, `.ct-sv-n`, `.ct-sv-sw`, every `[data-stratum]` fill, stroke and swatch rule and the phone plot rules. Deleted with the screens: `.ct-sv`, `.ct-sv-term`, `.ct-sv-layer`, `.ct-sv-phases`, `.ct-sv-stepper`, `.ct-stchip`, `.ct-chip-term`, `.ct-tag-crop`, `.ct-stagestrip` and every matrix, phone grid, stepper, Jobs and list rule (`.ct-nw`, `.ct-row`, `.ct-quiet`, `.ct-btn-sm` have no reader left). A new case in `consortium-css.test.mjs` collects every `ct-*` class literal in `src/islands/consortium/**` and asserts each is defined in a sheet under `src/styles/`, except a listed set of hook-only names (ids, JS hooks, prefixes built at run time).
+  - **Trimmed:** `App.tsx` (the matrix `lazyPart` and the keep-alive imports the build no longer needs out; `Actions` mounted statically again, so it rejoins the first run until b2 hosts it under the palette page; the keep-alive imports that check-built-site's K3 rule still needs stay, decided by one build); `views/later.ts` (the `SideView`, `Jobs` and `PlantList` re-exports out); `views/Actions.tsx` (the view-tab reads out; it takes `FirstPaint`, the `ct:first-view` mark and `prefetchLater()` the timing script and the later prefetch wait for, from Matrix.tsx, until b2 marks the palette page); `views/SideView.tsx` keeps only `SideDrawing` (print), the on-screen side view and its stage chips go (inventory drop "on-screen side view (print only)"); `views/StageBar.tsx` loses `StageStrip`, `cellName`, `plantLabel`, `openSwap` (its only reader was PlantList; Details opens Swap through `openSheet`) and the kept and main-crop marks (`Marks`, `warnings`, `openDetails`, `jobFind`, `byName` stay for Add, Details, the future panel and print until PP-C and PP-E; built: `StageBar`, `Explain` and `openAdd` had no reader left and went too, and `warnings` is module-private); `views/kit/phase.ts` loses `stepStage` and whatever else check:dead flags; **`warningCounts` stays** (StageBar's `warnings` and `Marks` read it, and `SideDrawing` draws `Marks` for print; check deletion-5); `views/kit/icons.tsx` loses `ChevronIcon`, `PinIcon`, `SproutIcon` and `PIN` once nothing reads them, and `views/PoolSlot.tsx` loses `WhyNoSuggest` (its only reader was matrix-parts; b1b re-adds from git what Place needs), both files main's in chunk 0 (check deletion-6); `views/PrintSheet.tsx` loses "At a glance" (it read `matrix`) and the kept and main-crop labels, keeps the plant table and the side drawing for ≤ 20 plants, drawn at the store's `stage` until b2 points it at the year step chosen in Through the years (PP-B18); `views/details/Details.tsx` loses the Keep button and the crop branch (`details.cropNoSwap`); `views/Start.tsx` loses the Main crops picker (the `.crops.*` keys go); core `matrix.ts` keeps only `cellsOf` and `cellKey` (Suggest's gain until b1b and Swap's "Also fills" until c2; `buildMatrix`, `plantsIn`, `startCell`, the Matrix types go), `source.ts` and `data/sqlite-source.ts` lose `cellCounts`, **`suggest.ts` turns `kept` and `crops` into one `seed` option** (the current members: always members, flagged or not, the seed wins over `removed`; guests are members only when seeded; seeded plants first in tie order, then seeded guests; only the Main-crops-first loop goes), so Suggest builds around every plant already there (inventory C6, drop 5; check coverage-2), `types.ts` loses the Matrix types and the core `views` list, `state.ts` loses the deprecated `kept`, `crops` and `stage` share fields (the codec already writes none and ignores `p`, `n`, `t`); `store.ts` narrows `View` to `'start' | 'matrix'` (**`'matrix'` now names the empty palette slot**: `suggest-wait.ts:68`, `draft.ts`, `restore.ts` and `store.ts:540` keep writing it, so 0a' edits no b1a file (check deletion-2, option (a)); b2 replaces the type with `'place' | 'palette' | 'plan'` in chunk 1 and the b1a-owned writers switch in the same chunk through the coordinator), loses `matrix`, `toggleKeep`, `kept`, `crops`, their keep logic and `marksFailed` (its only reader was Matrix.tsx's notices); **`fitPool` stays** (the range-filtered pool Add and Swap read until PP-C rebuilds them on verdicts; check deletion-1); `suggestMembers` seeds from `members`; `missingMembers` stays (b2 shows its L2 lines on the palette page, PP-B21); `stage` stays an unsaved signal for print until PP-B18; `state/schema.ts`, `restore.ts` (a guide's crop role adds a member), `persist.ts`, `draft.ts` follow; `rules/list-query.ts` loses the plant list's query; `ConsortiumPage.astro` drops the two stylesheets; `scripts/built-modules.mjs`, `check-built-site.mjs` and `built-modules.test.mjs` drop the `matrix` role; the 11 locale files drop the keys only deleted code read, found by `consortium-keys.test.mjs` "no consortium key is left unused (H9)" run on the trimmed tree: the 62 `consortium.matrix.*` (the view tabs included; a key a kept view or print still reads stays), 16 `.list.*` (the 7 climate names `list.*` stay), `.side.layer` (the other `.side.*` keys `SideDrawing` reads stay), the 5 `.job.title`, `.job.covered`, `.job.missing`, `.job.every`, `.job.never` (built: Jobs' own, missed by H9 behind a template), 8 `.crops.*`, `.keptTag`, `.mainCrop`, and (check deletion-3) `consortium.job.*.about`, `.job.*.gap`, `.job.col.*`, `.phase.group.*`, `.phase.earlier`, `.phase.later`, `.phase.stepOf`, `.phase.stage`, `.print.glance`, `.print.kept`, `.print.mainCrop`, `.details.keep`, `.details.cropNoSwap`: 121 keys in each of the 11 files (built). `consortium.marks.unavailable` **stays**: `store.ts`'s chunk toast still says it (listed in INDIRECT in `consortium-keys.test.mjs`); the persistent line with Reload (inventory L3) goes with Matrix.tsx and PP-C c2 restores it from git with `marksFailed` (check deletion-7). The E6 and E4 wordings b2 reuses go with the matrix keys; b2 writes new `consortium.line.*` keys and copies the wording and 11 translations from git (EN at 1311317: `matrix.more` "+ {n} more", `matrix.gap` "A data gap, not your site", `matrix.misfit` "No plant fits your site here", `matrix.gapBody` as in `en.json`; check deletion-9).
   - **Not deleted, though old:** `views/Add.tsx`, `Paste.tsx`, `paste.ts`, `Swap.tsx`, `Sheets.tsx`, `kit/sheet.tsx` (rewritten in PP-C), `views/future/**` and `FutureSlot.tsx` (PP-E), `PoolSlot.tsx`, `views/pool/**` and `rules/suggest-block.ts` (b1b folds the count into Place), `views/details/**` (the new page opens Details), `Share.tsx`, `PrintSheet.tsx`, `side.ts`, `draw.ts` (print is kept: board `Print`, BT-8, d2 in PP-D), `PlantMarks.tsx`, `layers.ts`, `Correction.tsx`.
   - **Probe:** one `npm run build` and `node scripts/check-built-site.mjs` after 0a' measure the first run and every role; the `later` part is expected back under its 8 KB cap with `tracks.ts` gone, so no raise is recorded unless the measure says otherwise (budget rule).
+  - **Built (0a', measured 2026-11-14):** first run 33.2 KB of 38 KB (`Actions` back in it); later 5.3/8.0 KB, details 6.3/6.7, sheets 5.7/6.3, location 11.2/11.8, future 2.2/2.8, suggest 1.8/8.0, verdict 0.2/12, palette none; no cap raised. `App.tsx` keeps the two keep-alive imports (`PlantMarks.tsx`, `StageBar.tsx`): without them the future part costs 3.1 KB of its 2.8 KB cap (one build). `kit/sheet.tsx` `shared` (now `Object.freeze`d) also holds `data/search.ts` (`searchIndex`, `fold`), which Start's crop search had kept in the first run: without it Add's chunk imports a `fold` chunk off the first run (K3). Browser after 0a': `consortium-pp-b2` (the four markers, PP-B18) and `-pp-b1` pass; `consortium-s3` (every case waits for the "Layers × stages" tab) and the `consortium-s4` exit walk-through wait for b2's palette page (risk accepted below); `consortium-s4` BT-7 and `consortium-p5-s5b` P5-1c still expect `#v=4` links (b1a's).
   - **Gates after 0a':** `npm run check`, `npm test` (with the `ct-*` class coverage case), `check:arch`, `check:dead`, `check:dup`; a `grep -rn` for each deleted name (`buildMatrix`, `plantsIn`, `startCell`, `cellCounts`, `toggleKeep`, `PhoneMatrix`, `StageStepper`, `PlantList`, `tracks.ts`, `keptTag`, `mainCrop`) finds none in `src/` and in main's chunk-0 files; the stream-owned specs that still name them (section 1b: `consortium-s1`, `-e6-r4`, `-p5-s5b`, `-p5-s5c`, the helpers) are exempt, each named in its stream's row (check deletion-8); `plan-owners.test.mjs` asserts no `src/` file reads a removed store export (`matrix`, `toggleKeep`, `kept`, `crops`, `marksFailed`).
 - **0b the move:** architecture 8.4, including the wrangler-dev probe and its stub-page fallback (stubs at `/consortium/` and `/<lang>/consortium/`, each pointing to `consortiumPath(lang)`; 302 considered until the production `curl` check passes), the 22 redirect lines, the page-head link check (`ConsortiumPage.astro:117`), the rename words in 11 locales, `privacy.tool.device` as owner-approved (below), and the harness, helpers, specs and checks that name the old path.
 - Commit-0 unit tests (in `scripts/consortium-link-v5.test.mjs`, plus `place.ts`'s `emptyPlace` and `siteFor` cases): `linkVersionStatus` table (incl. `null` → `absent`); `arrival()` with a v4 record gives the older line once and removes the save, with a v6 record keeps it; `readRecord` and `oldRecord` with v4, v5, v6 fragments, a fragment with no `v` and a save with no `v`; unreadable vectors (not a whole `v`; `e=1` with a malformed non-empty `a`; not for an empty `a`, unknown tokens or a cut); unknown key ignored (`…&e=1&zz=3`); per-key fallback (`m=huge` → `unsure`, `s=own.65.loam.ec2` → own, 6.5, loam); period vectors (`y=2041-2070`, `y=2071-2099` round-trip; `y=2011-2040`, `y=2055`, `y=1`, `y=` → today with the period notice; absent → today, no notice); `u=` with an unknown key → the newer line with plants restored; `k` gating (chosen + unticked → none; location + ticked → `k`; guess + ticked → none); spot grammar (`h=higher.650`, `w=irrigated`); a link whose answers are all `unsure` brings no place; `m` and `z` alone bring no place; `k` alone brings no place and keeps the reader's country.

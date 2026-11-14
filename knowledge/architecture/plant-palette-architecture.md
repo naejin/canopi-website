@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:37:35Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:10:48Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -45,13 +45,13 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:b11c523506084a53
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:e6e2dd373870d866
+    last_modified: 2026-11-14T11:45:53Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:26d25b93b11f82d7
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:0f3014353a94fa8d
+    last_modified: 2026-11-14T11:45:53Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -90,8 +90,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:684064f3a1a2633d
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:5bf1dfad1494463b
+    last_modified: 2026-11-14T12:02:08Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -105,8 +105,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:8610c9279fbe06ae
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:476f116c5e449766
+    last_modified: 2026-11-14T11:38:37Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -125,8 +125,8 @@ sources:
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
-    digest: sha256:0bbcc4c3700be1ab
-    last_modified: 2026-11-13T07:27:10Z
+    digest: sha256:be4bbd1d3c23e9c1
+    last_modified: 2026-11-14T12:03:22Z
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
@@ -145,8 +145,8 @@ sources:
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:71240eecc1058a74
-    last_modified: 2026-11-13T12:46:47Z
+    digest: sha256:31a413ffec3ce0e4
+    last_modified: 2026-11-14T11:40:20Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -155,18 +155,18 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:71692851abfe9d07
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:5cc847af70dbb553
+    last_modified: 2026-11-14T11:40:16Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:c1a196208665309e
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:4b57cc74b77d753f
+    last_modified: 2026-11-14T11:40:16Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:03a26424e490c4b2
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:b6b3c4a07c8b9b9d
+    last_modified: 2026-11-14T11:39:20Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -175,8 +175,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:57827d5b5b419c07
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:d11d0a245a854604
+    last_modified: 2026-11-14T11:39:47Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -185,8 +185,8 @@ sources:
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
-    digest: sha256:c71e2cc14ae09396
-    last_modified: 2026-11-13T15:36:18Z
+    digest: sha256:b28baf4eed1d35b0
+    last_modified: 2026-11-14T11:42:40Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
@@ -207,11 +207,6 @@ sources:
     title: src/islands/consortium/views/LocationSlot.tsx
     digest: sha256:349ff16b9b85cbc7
     last_modified: 2026-11-13T16:13:32Z
-  - id: matrix-tsx
-    resource: ../../src/islands/consortium/views/Matrix.tsx
-    title: src/islands/consortium/views/Matrix.tsx
-    digest: sha256:cd10e40f01f541ca
-    last_modified: 2026-11-13T15:18:17Z
   - id: paste-tsx
     resource: ../../src/islands/consortium/views/Paste.tsx
     title: src/islands/consortium/views/Paste.tsx
@@ -225,23 +220,23 @@ sources:
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
-    digest: sha256:9fa7809eefcbbd11
-    last_modified: 2026-11-13T16:13:32Z
+    digest: sha256:09389a4dd2aadea2
+    last_modified: 2026-11-14T11:42:25Z
   - id: sideview-tsx
     resource: ../../src/islands/consortium/views/SideView.tsx
     title: src/islands/consortium/views/SideView.tsx
-    digest: sha256:807cfc6433011d74
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:7eda8141dbfbca81
+    last_modified: 2026-11-14T11:41:37Z
   - id: stagebar-tsx
     resource: ../../src/islands/consortium/views/StageBar.tsx
     title: src/islands/consortium/views/StageBar.tsx
-    digest: sha256:07a0894aa953ddd0
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:c6b0c27307229a27
+    last_modified: 2026-11-14T11:56:25Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
-    digest: sha256:8f3f6a4316c5229c
-    last_modified: 2026-11-13T20:25:47Z
+    digest: sha256:45e569e00714492c
+    last_modified: 2026-11-14T11:40:42Z
   - id: toast-tsx
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
@@ -265,8 +260,8 @@ sources:
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
-    digest: sha256:3e823c31afb6e73f
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:14a41ad260f237ba
+    last_modified: 2026-11-14T11:42:40Z
   - id: layers-ts
     resource: ../../src/islands/consortium/views/layers.ts
     title: src/islands/consortium/views/layers.ts
@@ -275,13 +270,8 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:2de16ed80fe906bc
-    last_modified: 2026-11-14T10:56:09Z
-  - id: matrix-parts-tsx
-    resource: ../../src/islands/consortium/views/matrix-parts.tsx
-    title: src/islands/consortium/views/matrix-parts.tsx
-    digest: sha256:4e7e0e322bf7d64f
-    last_modified: 2026-11-13T12:38:43Z
+    digest: sha256:3b70a449e0863414
+    last_modified: 2026-11-14T11:42:46Z
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
@@ -290,13 +280,8 @@ sources:
   - id: side-ts
     resource: ../../src/islands/consortium/views/side.ts
     title: src/islands/consortium/views/side.ts
-    digest: sha256:18a80fac1f69e7c4
-    last_modified: 2026-11-14T10:56:09Z
-  - id: tracks-ts
-    resource: ../../src/islands/consortium/views/tracks.ts
-    title: src/islands/consortium/views/tracks.ts
-    digest: sha256:f377c6df6e9eb4e0
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:5ba2eb0af05f06bd
+    last_modified: 2026-11-14T12:03:22Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -360,8 +345,8 @@ sources:
   - id: matrix-ts
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
-    digest: sha256:1b7088eeb8448e53
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:c948918a08ee50b3
+    last_modified: 2026-11-14T11:38:37Z
   - id: nearest-ts
     resource: ../../src/lib/consortium/nearest.ts
     title: src/lib/consortium/nearest.ts
@@ -410,23 +395,23 @@ sources:
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:e1a451eee42a1ee5
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:feb8e2ad064adef0
+    last_modified: 2026-11-14T11:38:45Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:7948c11860e62e4c
-    last_modified: 2026-11-14T11:07:02Z
+    digest: sha256:9a4b50c369042a6a
+    last_modified: 2026-11-14T11:39:20Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:b230ad6ff500d7d6
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:c9c8db612ed9a0f6
+    last_modified: 2026-11-14T11:40:02Z
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:eec01df763e8b398
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:7601664a85fd6d88
+    last_modified: 2026-11-14T11:39:20Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -477,7 +462,7 @@ The ADR-1 stack and layers stay: a storage-independent TypeScript core (`src/lib
 | L3 rules | `rules/find-query.ts` (PP-C, replaces `rules/list-query.ts`) | the one filter and grouping rule of Find, Swap and "plants that fill this hole" | core entry |
 | L3 state | `state/schema.ts`, `persist.ts`, `restore.ts`, `arrival.ts`, `draft.ts`, `location.ts`, `suggest-wait.ts` | fields, save record, the `canopi-place` key, arrival | as today |
 | L4 views | `views/place/**`, `views/palette/**`, `views/find/**` (PP-C), `views/plan/**` and `views/take/**` (PP-D), `views/climate/**` (PP-E), `views/soil/**` (PP-F), `views/year/**` (PP-G), `views/details/**` | one folder per chunk | core through `index.ts` only (L4) |
-| L4 kit | `views/kit/chart.tsx` (band chart with its "Show as a table" form, P17), `views/kit/fit.tsx` (fit line, P16), `views/kit/phase.ts` (from `views/tracks.ts`) | leaf parts (L5) | kit leaf |
+| L4 kit | `views/kit/chart.tsx` (band chart with its "Show as a table" form, P17), `views/kit/fit.tsx` (fit line, P16), `views/kit/phase.ts` (from `views/tracks.ts`; only `warningCounts` after commit 0a') | leaf parts (L5) | kit leaf |
 
 The core stays flat (no subfolder of `src/lib/consortium/`): whether the boundary test globs it flat is unverified (`scripts/consortium-boundary.test.mjs`).
 
@@ -719,8 +704,8 @@ A module exported from `index.ts` but used by one lazy chunk only lives in that 
 | `views/pool/pool.tsx`, `PoolSlot.tsx`, `rules/suggest-block.ts` | port to `poolVerdicts`; the count folds into Place, then the pool role and panel go | b1b (chunk 2, after b2's verdict engine) |
 | `views/LocationSlot.tsx`, `views/location/**` | keep, inside Place | b1a |
 | `views/Matrix.tsx`, `PhoneMatrix.tsx`, `matrix-parts.tsx`, `Jobs.tsx`, `PlantList.tsx`, `StageStepper.tsx`, `matrix.css` (the shared rules kept views use to `shell.css`, the side drawing's rules to `print.css`, slices section 2), `palette.css` (F1a era, empty) | delete first (owner, 2026-11-14): commit 0a' deletes them with their tests and owns their importers (the matrix `lazyPart` in `App.tsx`, the `SideView`, Jobs and PlantList re-exports in `views/later.ts`, `ConsortiumPage.astro`'s two imports); b3 later mounts YourPlants and Weigh in `views/palette/Palette.tsx` | commit 0a' |
-| `views/tracks.ts` | helpers moved in commit 0a: `PHASE_ORDS` (`:40`), `Order`, `collatorFor`, `nameOrder` (`:18-30`), `warningCounts` (`:139`), `stepStage` (`:153`) to `views/kit/phase.ts` and `names.ts`; `spanOf` to `years.ts` (`views/kit/span.ts` deleted; `side.ts`, `SideView`, `StageBar`, `StageStepper` and `views/kit/sheet.tsx` (`:14`) repointed to `years.ts` `spanOf`); deleted in 0a' with `scripts/consortium-tracks.test.mjs` (its print cases move to `scripts/consortium-print.test.mjs`); `stepStage` deleted in 0a'; `warningCounts` stays in `kit/phase.ts` (StageBar's `warnings` and `Marks`, drawn in print) | commit 0a, 0a' |
-| `views/StageBar.tsx` | commit 0a' deletes `StageStrip`, `cellName`, `plantLabel`, `openSwap` (no reader after PlantList) and the kept and main-crop marks; `StageBar`, `Marks`, `warnings`, `Explain`, `openDetails`, `openAdd`, `jobFind`, `byName` stay until their last readers go (`future.tsx:17` in PP-E, `Add.tsx:24` in PP-C, print) | commit 0a', c1, e2 |
+| `views/tracks.ts` | helpers moved in commit 0a: `PHASE_ORDS` (`:40`), `Order`, `collatorFor`, `nameOrder` (`:18-30`), `warningCounts` (`:139`), `stepStage` (`:153`) to `views/kit/phase.ts` and `names.ts`; `spanOf` to `years.ts` (`views/kit/span.ts` deleted; `side.ts`, `SideView`, `StageBar`, `StageStepper` and `views/kit/sheet.tsx` (`:14`) repointed to `years.ts` `spanOf`); deleted in 0a' with `scripts/consortium-tracks.test.mjs` (its print cases move to `scripts/consortium-print.test.mjs`); `stepStage` and `PHASE_ORDS` deleted in 0a'; `warningCounts` stays in `kit/phase.ts` (StageBar's `warnings` and `Marks`, drawn in print) | commit 0a, 0a' |
+| `views/StageBar.tsx` | commit 0a' deletes `StageStrip`, `cellName`, `plantLabel`, `openSwap` (no reader after PlantList) and the kept and main-crop marks, and (built) `StageBar`, `Explain` and `openAdd`, which had no reader left; `Marks`, `warnings` (module-private), `openDetails`, `jobFind`, `byName` stay until their last readers go (`future.tsx:17` in PP-E, `Add.tsx:24` in PP-C, print); `App.tsx` imports it and `PlantMarks.tsx` to keep them in the first run (the future part's cap, one build) | commit 0a', c1, e2 |
 | `views/SideView.tsx`, `side.ts`, `draw.ts`, `PrintSheet.tsx` | print only: commit 0a' deletes the on-screen side view (its stage chips) and "At a glance" (`PrintSheet.tsx:34` reads `matrix`), keeping `SideDrawing` and the plant table; the side drawing shows the year step chosen in Through the years (coordinator choice, 2026-11-14; inventory E9 keeps it), the jobs and years tables follow in d2 | commit 0a', b2 (off `stage`, PP-B18), d2 (print) |
 | `views/Actions.tsx`, `views/FutureSlot.tsx` | hosted by the palette page | b2 until PP-E; `FutureSlot` deleted by e2 |
 | `views/later.ts`, `later-chunk.ts`, `Share.tsx` | `Share.tsx` wording and the "Include my place" tick in b1a; commit 0a' drops the SideView, Jobs and PlantList re-exports; files renamed into `views/take/**` | b1a, commit 0a', d2 |

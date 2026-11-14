@@ -4,7 +4,7 @@ title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:41Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:34Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:11:05Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
@@ -39,8 +39,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:26d25b93b11f82d7
-    last_modified: 2026-11-14T10:30:46Z
+    digest: sha256:0f3014353a94fa8d
+    last_modified: 2026-11-14T11:45:53Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -54,8 +54,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:cd62373a66839519
-    last_modified: 2026-11-13T06:49:01Z
+    digest: sha256:a54f837af2a33c43
+    last_modified: 2026-11-14T11:12:40Z
   - id: climate-integration-mjs
     resource: ../../scripts/climate-integration.mjs
     title: scripts/climate-integration.mjs
@@ -74,8 +74,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:57827d5b5b419c07
-    last_modified: 2026-11-14T10:27:19Z
+    digest: sha256:d11d0a245a854604
+    last_modified: 2026-11-14T11:39:47Z
   - id: vectors-mjs
     resource: ../../scripts/fixtures/climate/vectors.mjs
     title: scripts/fixtures/climate/vectors.mjs
@@ -99,8 +99,8 @@ sources:
   - id: consortium-p5-ranges-test-mjs
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
-    digest: sha256:028b59056081d482
-    last_modified: 2026-11-13T12:16:37Z
+    digest: sha256:02d0b7d13ee848ff
+    last_modified: 2026-11-14T11:48:43Z
 enforced_by:
   - scripts/climate-reader.test.mjs
   - scripts/install-climate.test.mjs

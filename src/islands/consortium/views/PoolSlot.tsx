@@ -59,9 +59,10 @@ const toLocation = () => {
   target.focus();
 };
 // The one rule for "can Suggest now" (seam review 1; rules/suggest-block.ts): why a Suggest for climate
-// z would refuse, or null when it can act. Start's "Suggest plants" and the empty matrix's "Suggest a
-// start" both read it, and show the reason (WhyNoSuggest) in place of a button that could only refuse;
-// both call state/suggest-wait.ts requestSuggest, which waits for what is still being read.
+// z would refuse, or null when it can act. Start's "Suggest plants" reads it and shows the reason (the
+// panel below) in place of a button that could only refuse; it calls state/suggest-wait.ts
+// requestSuggest, which waits for what is still being read. (The empty matrix's "Suggest a start" and
+// its WhyNoSuggest went in PP-B commit 0a'; b1a retargets them onto Place.)
 export const suggestBlock = (z: ClimateZone): SuggestBlock | null => rule.suggestBlock(z, scene);
 // A Suggest pressed while the rule loaded, for a site where nothing fits: cleared, so the reader stays
 // on Start with the nothing-fits state (store.ts suggestMembers refuses it too).
@@ -93,12 +94,7 @@ function RangeUnavailable({ zone }: { zone: ClimateZone }) {
     </p>
   );
 }
-// Why there is no Suggest (the empty matrix; Start shows the same reasons through PoolSlot above).
-export function WhyNoSuggest({ zone, block }: { zone: ClimateZone; block: SuggestBlock }) {
-  return block === 'needsSite' ? <NeedsSite zone={zone} /> : block === 'needsRule' ? <RangeUnavailable zone={zone} /> : null;
-}
-
-// The needs-location line (Start, and the empty matrix's Suggest: hand-off H-S5c-6, Matrix.tsx EmptyNotice).
+// The needs-location line (Start; hand-off H-S5c-6).
 function NeedsSite({ zone }: { zone: ClimateZone }) {
   return (
     <p class="ct-notice" role="status" data-needs-site>

@@ -40,8 +40,6 @@ import { periodIds, roomValues, soilWords, spotGrounds, spotHeights, spotLights,
 import { climateZones, siteIdOf, zoneOfSiteId } from './zones.ts';
 
 export const LINK_VERSION = 5;
-/** @deprecated PP-B commit 0: Main crops are not in link v5; b3 removes them with MAX_CROPS. */
-export const MAX_CROPS = 3; // "What do you mainly want to grow?" takes up to three (owner, 2026-10-28)
 export const MAX_LINK_IDS = 2000;
 // Above this many characters, some apps cut links (design check §5: "Some apps cut long links…").
 export const LONG_LINK = 2000;
@@ -281,7 +279,7 @@ function readSoil(v: string | null): SoilAnswer | null {
 }
 
 // A state that restores nothing: no climate, no plants, every answer as it starts.
-const emptyState = (): ShareState => ({ climate: null, country: null, room: 'unsure', plot: null, period: TODAY_PERIOD_ID, spot: null, soil: null, members: [], removed: [], guests: [], kept: [], crops: [], stage: null });
+const emptyState = (): ShareState => ({ climate: null, country: null, room: 'unsure', plot: null, period: TODAY_PERIOD_ID, spot: null, soil: null, members: [], removed: [], guests: [] });
 const noNotice = (): LinkNotice => ({ unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false });
 
 // Reads a link (with or without its "#") against the ids at hand (see linkClimates). Never throws.

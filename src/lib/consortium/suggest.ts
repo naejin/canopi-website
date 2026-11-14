@@ -1,7 +1,7 @@
 // The consortium suggestion and the Swap list (stream S1; design check §2: the v1 greedy structure,
-// rewritten for the 4 × 7 matrix). The suggestion is a deterministic greedy fill around the plants
-// the reader keeps (Main crops are kept): at each step it adds the plant with the highest gain, and
-// it stops at the room's size or when no plant brings anything new.
+// rewritten for the 4 × 7 grid). The suggestion is a deterministic greedy fill around the plants
+// already in the palette (the seed; inventory C6, PP-B commit 0a'): at each step it adds the plant
+// with the highest gain, and it stops at the room's size or when no plant brings anything new.
 //
 //   gain = 10·new jobs + 3·new cells (stratum × phase; one plant fills a cell) + 6·new stratum
 //          + 4·phases with nothing to eat yet (crops) + 4·second doer of feeds-soil, ground or mulch
@@ -12,7 +12,7 @@
 // A plant that misfits the site (beside the layers chosen so far), grows taller than the room (an
 // advisory note elsewhere, owner request 2026-11-12: the suggestion prefers plants that fit the room
 // naturally) or has a high conflict with a member is never picked; invasiveness is a warning only and never scores (owner, 2026-10-28).
-// Guests (plants added from another climate's list) are never picked or offered in Swap; a kept
+// Guests (plants added from another climate's list) are never picked or offered in Swap; a seeded
 // guest is a member like any other and counts for coverage, with its home placement.
 import type { Alternative, CellRef, Fit, Interaction, JobId, PhaseOrd, PlantId, Site, Stratum, Taxon } from './types.ts';
 import { strata } from './types.ts';
@@ -30,10 +30,9 @@ import { asks, conflicts, flagsFor, isSerious } from './conflicts.ts';
 export const SIZE_LIMIT: Record<Site['room'], number> = { pots: 6, small: 6, large: 9, field: 12, unsure: 9 };
 
 export interface SuggestOptions extends FlagContext {
-  kept?: PlantId[]; // always members, flagged or not; kept wins over removed
-  crops?: PlantId[]; // Main crops: kept, and listed first
+  seed?: PlantId[]; // the plants already in the palette: always members, flagged or not; the seed wins over removed
   removed?: PlantId[]; // never picked automatically
-  guests?: Taxon[]; // plants from other climates' lists, with `from` set; members only when kept
+  guests?: Taxon[]; // plants from other climates' lists, with `from` set; members only when seeded
 }
 export interface Suggestion { members: PlantId[]; limit: number }
 export interface Gain { total: number; jobs: number; cells: number; strata: number; food: number; backup: number; edibility: number; weedy: number; unknowns: number }
@@ -113,7 +112,7 @@ function seriousPartners(taxa: Taxon[], interactions: Interaction[]): Map<PlantI
 export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
   const { site } = options;
   const limit = SIZE_LIMIT[site.room];
-  const keptIds = new Set([...(options.crops ?? []), ...(options.kept ?? [])]);
+  const seedIds = new Set(options.seed ?? []);
   const removedIds = new Set(options.removed ?? []);
   const own = new Set(pool.map((t) => t.id));
   const guests = (options.guests ?? []).filter((g, i, all) => !own.has(g.id) && all.findIndex((x) => x.id === g.id) === i);
@@ -121,13 +120,11 @@ export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
   const infos = sorted.map((t) => infoOf(t, site));
   const partners = seriousPartners([...pool, ...guests], options.interactions);
 
-  // Main crops first in the order chosen, then the other kept plants in tie order, then kept guests.
+  // The seeded plants in tie order, then the seeded guests.
   const all = [...infos, ...[...guests].sort(byKnownThenName).map((t) => infoOf(t, site))];
-  const byId = new Map(all.map((i) => [i.taxon.id, i]));
   const chosen: Info[] = [];
   const memberIds = new Set<PlantId>();
-  for (const id of options.crops ?? []) { const i = byId.get(id); if (i && !memberIds.has(id)) { chosen.push(i); memberIds.add(id); } }
-  for (const i of all) if (keptIds.has(i.taxon.id) && !memberIds.has(i.taxon.id)) { chosen.push(i); memberIds.add(i.taxon.id); }
+  for (const i of all) if (seedIds.has(i.taxon.id) && !memberIds.has(i.taxon.id)) { chosen.push(i); memberIds.add(i.taxon.id); }
   const cov = coverageOf(chosen);
 
   // A plant whose only misfit is the light may still join under a canopy, checked at each pick.

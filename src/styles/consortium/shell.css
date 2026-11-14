@@ -1,4 +1,4 @@
-/* Consortium v2, stream S4: Start (country line, climate cards, Main crops, Your site, the start
+/* Consortium v2, stream S4: Start (country line, climate cards, Your site, the start
    actions), the result head, the link notices, Share and the action row. Tokens in base.css; the
    site palette only (no green in chrome: chosen states are ink, the accent marks the main action);
    Source Sans 3 / Literata at 400 and 600; breakpoints max-width 639px and min-width 960px. */
@@ -42,21 +42,8 @@
 .ct .ct-notice p { margin: 0; }
 .ct .ct-note { margin: 0; padding: 8px 12px; border-left: 3px solid var(--warning-line); background: var(--warning-bg); color: var(--text); font-size: 15px; }
 
-/* Main crops */
+/* Chips in a row (Details' pairings; the Main crops chips and search went in PP-B commit 0a'). */
 .ct .ct-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.ct .ct-chips-label { font-size: 14px; }
-.ct .ct-chip {
-  display: inline-flex; align-items: baseline; gap: 6px; min-height: 40px; padding: 8px 14px;
-  border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); cursor: pointer; font-size: 15px;
-}
-.ct .ct-chip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 600; }
-.ct .ct-chip[aria-pressed="true"] .ct-sci { color: inherit; opacity: 0.85; }
-.ct .ct-chip:disabled { opacity: 0.55; cursor: not-allowed; }
-.ct .ct-crops-count { margin: 8px 0; font-size: 14px; }
-.ct .ct-crop-search input { width: 100%; max-width: 460px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
-.ct .ct-hits { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; max-width: 460px; }
-.ct .ct-hit { width: 100%; min-height: 40px; padding: 6px 12px; text-align: left; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; }
-.ct .ct-hit:hover { border-color: var(--text); }
 
 /* Your site: four radio rows; the chosen answer is ink. */
 .ct .ct-site-grid { display: grid; grid-template-columns: 1fr; gap: 14px 24px; }
@@ -90,6 +77,29 @@
 /* The print sheet shows only in print (print.css). */
 .ct .ct-print { display: none; }
 
+/* Shared bits and marks (moved from matrix.css in PP-B commit 0a' with the matrix's deletion; the
+   kept views read them: Toast and the sheets' icons, the future panel's names, print's side drawing
+   key, the marks of Add, Details, Swap and Paste). Marks are never colour alone (glyph + hidden or
+   visible words). The base .ct-tag and .ct-flag rules are lowered with :where(.ct) so details.css's
+   sheet rules, of equal weight before the move but earlier in the page now, still win in the sheets. */
+.ct .ct-dim { color: var(--text-muted); }
+.ct .ct-icon { width: 16px; height: 16px; flex: none; }
+.ct .ct-link-button {
+  padding: 4px 2px; margin: -4px -2px; min-height: 28px; border: 0; background: none; color: inherit; font: inherit;
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.18em; text-align: start; cursor: pointer;
+}
+.ct .ct-link-button:hover { color: var(--accent-ink); }
+.ct .ct-sc { font-style: italic; color: var(--text-muted); }
+:where(.ct) .ct-flag { display: inline-flex; align-items: center; gap: 2px; flex: none; color: var(--warning); font-size: 12px; font-weight: 600; }
+.ct .ct-flag svg { width: 14px; height: 14px; flex: none; }
+:where(.ct) .ct-tag {
+  display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; border-radius: 4px; font-size: 11.5px; font-weight: 600;
+  background: var(--surface-alt); border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; flex: none;
+}
+/* A plant's marks off the chips (rows, Add, Details) wrap inside their row rather than push the page
+   sideways (walk-through F1: 417-466 px at 390 px). */
+.ct :is(.ct-tag, .ct-flag)[data-mark-surface]:not([data-mark-surface="chip"]) { white-space: normal; flex: 0 1 auto; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+
 @media (min-width: 960px) {
   .ct .ct-site-grid { grid-template-columns: 1fr 1fr; }
   .ct .ct-cards { grid-template-columns: repeat(4, 1fr); }
@@ -101,5 +111,6 @@
   .ct .ct-card { min-height: 72px; padding: 10px 12px; }
   .ct .ct-card-places { display: none; }
   .ct .ct-cta .button { flex: 1 1 100%; }
-  .ct .ct-crop-search input, .ct .ct-share-field, .ct .ct-country-pick select { font-size: 16px; }
+  .ct .ct-link-button { min-height: 40px; display: inline-flex; align-items: center; }
+  .ct .ct-share-field, .ct .ct-country-pick select { font-size: 16px; }
 }

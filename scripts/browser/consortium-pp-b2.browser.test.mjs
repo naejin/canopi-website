@@ -7,7 +7,8 @@
 // (store.view 'palette', [data-head-placeholder]); b2 rewrites them against the palette page.
 // Run capped: npm run test:browser (scripts/browser/run.mjs).
 import assert from 'node:assert/strict';
-import { aria, en, h, suggestReady, useHarness } from './helpers.mjs';
+import { test } from 'node:test';
+import { aria, en, h, has, layoutVariants, suggestReady, useHarness } from './helpers.mjs';
 import { choose, temperateLink, tool } from './p5-helpers.mjs';
 import { failing } from '../expect-fail.mjs';
 import { liveLog, resetLive, saidTwice, watchLiveRegions } from './f1a-helpers.mjs';
@@ -30,6 +31,9 @@ const LOADER = /\/_astro\/load\.[\w-]+\.js$/;
 const logRequests = (log) => async (pg) => { pg.on('request', (r) => { try { log.push({ path: new URL(r.url()).pathname, at: performance.now() }); } catch { /* data: */ } }); };
 
 const storeView = (page) => page.evaluate(() => window.__ctTest.store.view.value);
+
+// Close each page's context once used (BT-8, as consortium-s4 does).
+const done = async (...pages) => { for (const p of pages) await p.browserContext().close().catch(() => {}); };
 
 // Needs only commit 0 and a11y1's files: store.ts hideToast calls focus.ts focusAfterToast (commit 0),
 // which a11y1 implements.
@@ -103,4 +107,34 @@ failing('F1a-P2 → PP-B (b2 return visit, A7): a saved consortium reopens on Pa
   assert.equal(seen.start, false, 'return visit: the Start form showed while restoring');
   assert.equal(seen.placeholder, true, 'return visit: no Head placeholder while restoring');
   assert.equal(await storeView(page), 'palette', 'return visit: opens Palette');
+});
+
+// Moved unchanged from consortium-s4 in PP-B commit 0a' (plant-palette-slices 1b), so b1a never edits a
+// print case; b2 rewrites "printed above the drawing" for the year step of Through the years (PP-B18).
+test('PP-B18 (b2 / BT-8 print, drawing; moved from S4 in commit 0a\'): ≤ 20 plants print the side view drawing', async (t) => {
+  await layoutVariants(t, async (v) => {
+    const small = await h.open('/consortium/', { ...v, data: 'fixture' });
+    await small.locator(aria('radio', 'Temperate')).click();
+    await small.locator(aria('button', 'Suggest plants')).click();
+    assert.ok(await has(small, aria('button', 'Share'), 8000), 'the result and its actions');
+    await h.pdf(small);
+    const drawing = await small.$eval('.ct-print', (el) => {
+      const img = el.querySelector('[role="img"]');
+      const r = img?.getBoundingClientRect();
+      return img ? { name: img.getAttribute('aria-label'), h: r.height, w: r.width, shapes: el.querySelectorAll('svg *').length } : null;
+    });
+    assert.ok(drawing, '≤ 20 plants: the print sheet has the drawing');
+    assert.match(drawing.name, /^Side view/, 'named as the side view');
+    assert.ok(drawing.h > 50 && drawing.w > 200, `printed at a readable size (${drawing.w} × ${drawing.h})`);
+    assert.ok(drawing.shapes > 4, 'with its plants drawn');
+    // Which stage the drawing shows is printed above it (pre-push review 5).
+    const above = await small.$eval('.ct-print [role="img"]', (img) => {
+      let el = img;
+      while (el && !el.previousElementSibling) el = el.parentElement;
+      return el?.previousElementSibling?.textContent.trim() ?? '';
+    });
+    const stages = Object.keys(en).filter((k) => /^consortium\.phase\.\w+\.plain$/.test(k));
+    assert.ok(stages.some((k) => above.includes(en[k]) && above.includes(en[k.replace('.plain', '.term')])), `the stage named above the drawing (got "${above}")`);
+    await done(small);
+  });
 });

@@ -50,7 +50,7 @@ const allTemperateLink = async () => {
   return { count: ids.length, fragment: encodeLink({ climate: 'Temperate', country: null, site: UNSURE, members: ids, kept: [], removed: [], guests: [], crops: [], stage: null }, { Temperate: ids }) };
 };
 
-test('BT-1 (S4 start): nothing chosen at start, the country line above the climate cards, real Temperate crops, Arid asks', async (t) => {
+test('BT-1 (S4 start): nothing chosen at start, the country line above the climate cards, Arid asks', async (t) => {
   await layoutVariants(t, async (v) => {
     const page = await h.open('/consortium/', v);
     assert.ok(await has(page, aria('radio', 'Temperate'), 8000), 'the climate cards');
@@ -63,9 +63,7 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
     });
     assert.ok(country < card, 'the country line sits above the cards');
     await page.locator(aria('radio', 'Temperate')).click();
-    assert.ok(await findAx(page, { role: 'button', name: /^Onion / }), 'the crop examples');
-    const chips = (await axNodes(page)).filter((n) => n.role === 'button' && n.pressed !== undefined).map((n) => n.name);
-    assert.deepEqual(chips, ['Onion Allium cepa', 'European chestnut Castanea sativa', 'Sunflower Helianthus annuus', 'Bilberry Vaccinium myrtillus'], 'exactly the real Temperate crop examples, in order');
+    // (The crop examples went with the Main crops picker in PP-B commit 0a'.)
     assert.equal(await loadState(page), 'ready');
     const arid = await h.open('/consortium/', v);
     await arid.locator(aria('radio', 'Arid')).click();
@@ -78,29 +76,10 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
   });
 });
 
-test('BT-1 (S4 start, matrix half): Suggest gives a captioned 4 × 7 matrix with the fill meter', async (t) => {
-  await behaviour(t, async (v) => {
-    const page = await h.open('/consortium/', v);
-    await suggest(page);
-    const table = await findAx(page, { role: 'table' });
-    assert.ok(table?.name, 'the table has a caption');
-    assert.equal(await countAx(page, (n) => n.role === 'rowheader'), 4, 'four strata');
-    const cols = (await axNodes(page)).filter((n) => n.role === 'columnheader').map((n) => n.name);
-    assert.equal(cols.filter((c) => PHASE_WORDS.some((w) => c.startsWith(w))).length, 7, `seven phases (${cols.join(' | ')})`);
-    // The fill meter is words in the caption (its bar is drawn for the eye only).
-    const fill = new RegExp(en['consortium.matrix.fill'].replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\{[ft]\\\}/g, '\\d+'));
-    assert.match(table.name, fill, `the fill meter in the caption (${table.name})`);
-  });
-});
-
 test('BT-7 (S4 share): a copied link opened as a new document restores the same consortium; an unknown token and an outdated link give their notices; a reload restores the last consortium', async (t) => {
   await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
     await page.locator(aria('radio', 'Temperate')).click();
-    assert.equal(await loadState(page), 'ready');
-    const crop = (await axNodes(page)).find((n) => n.role === 'button' && n.pressed === false);
-    assert.ok(crop, 'a crop example to keep');
-    await page.locator(aria('button', crop.name)).click();
     await page.locator(aria('radio', 'Small garden')).click();
     await suggest(page);
     const link = await shareLink(page);
@@ -108,7 +87,6 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     await page.locator(aria('button', 'Copy')).click();
     assert.ok(await findAx(page, { name: /^(Link copied\.|Copy the link above by hand\.)$/ }), 'Copy copies, or says to copy by hand');
     assert.match(link, /&m=small&/, 'the site is in the link');
-    assert.match(link, /&a=[^&]*\*/, 'the kept crop is marked in the link');
 
     // A new document: a unique query before the fragment, so nothing is reused from the first page.
     // The restored consortium writes back the very same link (members, kept, crops, site, stage).
@@ -230,90 +208,6 @@ test('BT-7 (S4 share, blocked storage): everything works and Share says the link
   });
 });
 
-test('BT-7 (S4 share, views): the restored members and the kept pin as S2 and S3 show them', async (t) => {
-  // Read in All plants, which lists every member at every width (data-plant-id on each row).
-  const listed = async (page) => {
-    await page.locator(aria('tab', 'All plants')).click();
-    await page.waitForSelector('#ct-root [data-plant-id]');
-    return page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort());
-  };
-  await behaviour(t, async (v) => {
-    const page = await h.open('/consortium/', { ...v, data: 'fixture' });
-    await suggest(page);
-    const members = await listed(page);
-    const first = await page.$eval('#ct-root [data-plant-id] button', (el) => el.closest('[data-plant-id]').dataset.plantId);
-    await page.locator(`#ct-root [data-plant-id="${first}"] button`).click();
-    await page.locator(aria('button', 'Keep')).click();
-    await page.keyboard.press('Escape');
-    await page.waitForFunction(() => !document.querySelector('dialog[open]'));
-    const copy = await h.open(`/consortium/?run=${Date.now()}${hashOf(await shareLink(page))}`, { ...v, data: 'fixture' });
-    assert.equal(await loadState(copy), 'ready');
-    assert.ok(await has(copy, aria('button', 'Share'), 8000), 'the restored consortium');
-    assert.deepEqual(await listed(copy), members, 'the same members');
-    const pinned = await copy.$eval(`#ct-root [data-plant-id="${first}"]`, (el) => el.textContent + ' ' + [...el.querySelectorAll('[aria-label], [title]')].map((x) => x.getAttribute('aria-label') ?? x.getAttribute('title')).join(' '));
-    assert.match(pinned, /Kept/, 'the kept pin');
-    await done(page, copy);
-  });
-});
-
-// The captions of the tables shown, from the DOM (only a table with a box is on paper).
-const shownTables = (page) => page.$$eval('#ct-root table', (els) => els.filter((el) => el.getBoundingClientRect().height > 0).map((el) => el.querySelector('caption')?.textContent?.trim() ?? ''));
-const printedControls = (page) => page.$$eval('#ct-root button, #ct-root [role="button"], #ct-root input, #ct-root select, #ct-root a', (els) => els.filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; }).length);
-
-test('BT-8 (S4 print): > 20 plants print "At a glance" and the table, ≤ 20 the table; no controls are printed', async (t) => {
-  const all = await allTemperateLink();
-  assert.ok(all.count > 20, 'the fixture has more than 20 Temperate plants');
-  await layoutVariants(t, async (v) => {
-    const small = await h.open('/consortium/', { ...v, data: 'fixture' });
-    await suggest(small);
-    const pdf = await h.pdf(small);
-    assert.ok(pdf.length > 1000, 'it prints');
-    assert.deepEqual(await shownTables(small), ['The plants'], '≤ 20 plants: the table, no "At a glance"');
-    const inks = await small.$eval('.ct', (el) => ['--bar', '--s-high-ink', '--hatch'].map((k) => getComputedStyle(el).getPropertyValue(k).replace(/\s/g, '').replace(/,0?\.10?\)/, ',.1)').toUpperCase()));
-    assert.deepEqual(inks, ['#4A4237', '#005C43', 'RGBA(58,46,28,.1)'], 'light inks on paper in either theme (review 8)');
-    const printed = await small.$eval('.ct-print', (el) => el.textContent);
-    const guessed = await small.$eval('[data-ct="country"]', (el) => /guessed from your browser/.test(el.textContent)).catch(() => false);
-    if (guessed) assert.match(printed, /\(guessed from your browser\)/, 'a guessed country is labelled so on paper');
-    assert.equal(await printedControls(small), 0, 'no controls printed');
-    await done(small);
-
-    const big = await h.open(`/consortium/?run=${Date.now()}#${all.fragment}`, { ...v, data: 'fixture' });
-    assert.equal(await loadState(big), 'ready');
-    assert.ok(await has(big, aria('button', 'Share'), 8000), 'the restored consortium');
-    await h.pdf(big);
-    assert.ok(await has(big, '::-p-aria(At a glance)'), '> 20 plants: "At a glance"');
-    assert.deepEqual(await shownTables(big), ['At a glance', 'The plants'], 'the table after "At a glance"');
-    assert.equal(await printedControls(big), 0, 'no controls printed');
-    await done(big);
-  });
-});
-
-test('BT-8 (S4 print, drawing): ≤ 20 plants print the side view drawing', async (t) => {
-  await layoutVariants(t, async (v) => {
-    const small = await h.open('/consortium/', { ...v, data: 'fixture' });
-    await suggest(small);
-    await h.pdf(small);
-    const drawing = await small.$eval('.ct-print', (el) => {
-      const img = el.querySelector('[role="img"]');
-      const r = img?.getBoundingClientRect();
-      return img ? { name: img.getAttribute('aria-label'), h: r.height, w: r.width, shapes: el.querySelectorAll('svg *').length } : null;
-    });
-    assert.ok(drawing, '≤ 20 plants: the print sheet has the drawing');
-    assert.match(drawing.name, /^Side view/, 'named as the side view');
-    assert.ok(drawing.h > 50 && drawing.w > 200, `printed at a readable size (${drawing.w} × ${drawing.h})`);
-    assert.ok(drawing.shapes > 4, 'with its plants drawn');
-    // Which stage the drawing shows is printed above it (pre-push review 5).
-    const above = await small.$eval('.ct-print [role="img"]', (img) => {
-      let el = img;
-      while (el && !el.previousElementSibling) el = el.parentElement;
-      return el?.previousElementSibling?.textContent.trim() ?? '';
-    });
-    const stages = Object.keys(en).filter((k) => /^consortium\.phase\.\w+\.plain$/.test(k));
-    assert.ok(stages.some((k) => above.includes(en[k]) && above.includes(en[k.replace('.plain', '.term')])), `the stage named above the drawing (got "${above}")`);
-    await done(small);
-  });
-});
-
 test('BT-9 (S4 .canopi): the download validates against the app schema (canopi 0c425fb07), version 9', async (t) => {
   await behaviour(t, async (v) => {
     const page = await h.open('/consortium/', { ...v, data: 'fixture' });
@@ -331,7 +225,7 @@ test('BT-9 (S4 .canopi): the download validates against the app schema (canopi 0
   });
 });
 
-test('Exit walk-through (S4, every stream): on the real install, keyboard only: start → adjust → keep → share (reopened) → print → download', async (t) => {
+test('Exit walk-through (S4, every stream): on the real install, keyboard only: start → adjust → share (reopened) → print → download', async (t) => {
   await layoutVariants(t, async (v) => {
     // The print dialog is the browser's: counted, not opened.
     const page = await h.open('/consortium/', { ...v, setup: (pg) => pg.evaluateOnNewDocument(() => { window.__printed = 0; window.print = () => { window.__printed++; }; }) });
@@ -385,15 +279,7 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
     await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 2000 }).catch(() => {});
     assert.equal((await active()).plant, removed.plant, 'focus is on the restored plant');
 
-    // Keep: a plant's name opens its dialog; Keep pins it; Escape closes the dialog.
-    const named = await tabTo((a) => a.cls.includes('ct-lname-btn'), 'a plant\'s name in All plants');
-    await page.keyboard.press('Enter');
-    assert.ok(await findAx(page, { role: 'dialog' }), `${named.text}: its dialog`);
-    await tabTo((a) => a.inSheet && a.text === 'Keep', 'Keep in the dialog', 40);
-    await page.keyboard.press('Enter');
-    await page.waitForFunction(() => document.activeElement?.getAttribute('aria-pressed') === 'true', { timeout: 2000 });
-    await page.keyboard.press('Escape');
-    await page.waitForFunction(() => !document.querySelector('dialog[open]'));
+    // (The keep step went with Keep in PP-B commit 0a'.)
     const members = await page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort());
 
     // Share: the link field holds the consortium.
@@ -401,15 +287,13 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
     await page.keyboard.press('Enter');
     const field = await findAx(page, { role: 'textbox', name: /link/i });
     assert.match(field?.value ?? '', /#v=4/, 'the share field holds the link');
-    // The copied link, opened as a new document: the same members, the kept plant pinned.
+    // The copied link, opened as a new document: the same members.
     const copy = await h.open(`/consortium/?run=${Date.now()}${hashOf(field.value)}`, v);
     assert.equal(await loadState(copy), 'ready');
     assert.ok(await has(copy, aria('button', 'Share'), 8000), 'the link reopens the consortium');
     await copy.locator(aria('tab', 'All plants')).click();
     await copy.waitForSelector('#ct-root [data-plant-id]');
     assert.deepEqual(await copy.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort()), members, 'the same members');
-    const pin = await copy.$eval(`#ct-root [data-plant-id="${named.plant}"]`, (el) => el.textContent + ' ' + [...el.querySelectorAll('[aria-label], [title]')].map((x) => x.getAttribute('aria-label') ?? x.getAttribute('title')).join(' '));
-    assert.match(pin, /Kept/, 'the kept pin');
     await done(copy);
     // Print.
     await tabTo((a) => a.text === 'Print', 'Print');

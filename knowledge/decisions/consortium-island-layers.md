@@ -5,18 +5,18 @@ description: The consortium island's layers L0-L4, the import rules dependency-c
 tags: [consortium, architecture]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:08Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T20:25:41Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:11:02Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:be1d7396dba2344c
-    last_modified: 2026-11-14T10:50:20Z
+    digest: sha256:f10909e36fc169ae
+    last_modified: 2026-11-14T12:03:22Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
     digest: sha256:2f08c35425c5c8bd
-    last_modified: 2026-11-14T10:16:43Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -51,7 +51,7 @@ sources:
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
     digest: sha256:29cbaf3dbda18ec2
-    last_modified: 2026-11-14T10:31:30Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
@@ -60,18 +60,18 @@ sources:
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:aa7bf345c7e16873
-    last_modified: 2026-11-14T10:24:22Z
+    digest: sha256:403cb0593e62df98
+    last_modified: 2026-11-14T12:00:42Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:2de16ed80fe906bc
-    last_modified: 2026-11-14T10:23:24Z
+    digest: sha256:3b70a449e0863414
+    last_modified: 2026-11-14T11:42:46Z
   - id: arch-json
     resource: ../../scripts/quality/baselines/arch.json
     title: scripts/quality/baselines/arch.json
     digest: sha256:d909d5cc883162f8
-    last_modified: 2026-11-14T10:31:43Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
@@ -81,7 +81,7 @@ sources:
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
     digest: sha256:174d28aca3493758
-    last_modified: 2026-11-14T10:31:30Z
+    last_modified: 2026-11-14T10:56:09Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - sgconfig.yml

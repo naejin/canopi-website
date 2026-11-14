@@ -1,29 +1,29 @@
 /** @jsxImportSource preact */
-// View slot of stream S4, after the matrix (App.tsx renders it once the plant list is ready): the
-// link notices (§5: plants of a link no longer in the list, a cut link, a pasted link that changed
-// nothing), then Share, Print and
-// "Download for Canopi", the Share panel and the print sheet (hidden on screen). Nothing here while
-// Start is shown.
-import { useState } from 'preact/hooks';
+// View slot of stream S4, in the palette slot (App.tsx renders it once the plant list is ready; the
+// matrix it followed went in PP-B commit 0a', and b2 hosts it under the palette page): the link
+// notices (§5: plants of a link no longer in the list, a cut link, a pasted link that changed
+// nothing), then Share, Print and "Download for Canopi", the Share panel and the print sheet (hidden
+// on screen), then the future panel. Nothing here while Start is shown.
+import { useEffect, useState } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import { climate, memberTaxa, source, view } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { notices } from '../state/restore.ts';
 import { zoneName } from './kit/names.ts';
-import { later, laterModule } from './lazy.tsx';
+import { later, laterModule, prefetchLater } from './lazy.tsx';
 import { laterChunk } from './later-chunk.ts';
 
-// Share, the print sheet and the .canopi writer load after the matrix (views/lazy.tsx); the print
+// Share, the print sheet and the .canopi writer load after the first view (views/lazy.tsx); the print
 // sheet is in the page as soon as it has loaded, so the browser's own Print menu prints it too.
 // All through the later chunk's one loader (views/later-chunk.ts): one retry state for every part.
 const share = later(() => laterChunk().then((m) => m.Share));
 const print = later(() => laterChunk().then((m) => m.PrintSheet), { quiet: true });
 const writer = laterModule(laterChunk);
-// S5d's future panel (views/FutureSlot.tsx), under the matrix's view, after this section: it lands
+// S5d's future panel (views/FutureSlot.tsx), after this section: it lands
 // once the later chunk and its own feature chunk have loaded, ~150 ms after Suggest, so above the
 // actions it pushed Share, Print and Download down under the reader's pointer (hand-off, found tracing
 // P5-13d). Idle: shown once prefetchLater() has loaded the later chunk, never a download before the
-// matrix is marked drawn (§8 timing).
+// first view is marked drawn (§8 timing).
 const future = later(() => laterChunk().then((m) => m.FutureSlot), { idle: true });
 
 function LinkNotices() {
@@ -100,7 +100,21 @@ function ActionsView() {
   );
 }
 
+// performance.mark('ct:first-view') once per page, when the consortium is first on screen (the
+// palette slot; moved here from Matrix.tsx in PP-B commit 0a' until b2 marks the palette page): the
+// timing script waits for it (design check A7), and the later chunk is prefetched then. Rendered inside
+// the slot, so its effect runs after the browser painted it.
+let marked = false;
+function FirstPaint() {
+  useEffect(() => {
+    if (marked || typeof performance === 'undefined') return;
+    marked = true;
+    performance.mark('ct:first-view');
+    prefetchLater();
+  }, []);
+  return null;
+}
+
 export function Actions() {
-  const v = view.value;
-  return v === 'start' ? null : <><ActionsView />{v === 'matrix' && <future.View />}</>;
+  return view.value === 'start' ? null : <><FirstPaint /><ActionsView /><future.View /></>;
 }

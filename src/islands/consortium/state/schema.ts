@@ -22,7 +22,7 @@
 import { batch, signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
 import type { ClimateZone, PeriodId, PhaseOrd, PlantId, Room, ShareState, Site, SoilAnswer, Spot } from '../../../lib/consortium/index.ts';
-import { emptyPlace, periodIds, MAX_CROPS } from '../../../lib/consortium/index.ts';
+import { emptyPlace, periodIds } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource, View } from '../store.ts';
 
 // What the link's put and take may read: the reader's "Include my place" tick (share: place), where a
@@ -143,8 +143,6 @@ export const CONSORTIUM_FIELDS = {
   period: { initial: (): PeriodId => TODAY, saved: true, link: { take: (s: ShareState) => s.period } } satisfies Field<PeriodId>,
   // The consortium, in the order added.
   members: PLANT_LIST,
-  /** @deprecated PP-B commit 0: Kept is not in link v5 (a restore empties it); b3 removes it with its readers. */
-  kept: PLANT_LIST,
   // Taken out by the reader: a new suggestion leaves them out.
   removed: PLANT_LIST,
   // Added from another climate's list (A9), with that climate.
@@ -155,30 +153,31 @@ export const CONSORTIUM_FIELDS = {
       take: (s: ShareState) => Object.fromEntries(s.guests.map((g) => [g.id, g.from])),
     },
   } satisfies Field<Partial<Record<PlantId, ClimateZone>>>,
-  /** @deprecated PP-B commit 0: Main crops are not in link v5; b3 removes them with their readers. */
-  crops: { ...PLANT_LIST, link: { put: (v: PlantId[]) => v.slice(0, MAX_CROPS) } } satisfies Field<PlantId[]>,
-  /** @deprecated PP-B commit 0: the stage is not in link v5 (a restore keeps the page's); b3 removes it. */
-  stage: { initial: (): PhaseOrd => 0, saved: true } satisfies Field<PhaseOrd>,
 };
 
 // The consortium as the save keeps it and Change site sets it aside, with a climate.
 export type Consortium = Omit<ValuesOf<typeof CONSORTIUM_FIELDS>, 'climate'> & { climate: ClimateZone };
-// What persist.ts shareState takes (a share input may leave the stage unset: the link then has none).
-export type ShareInput = Omit<ValuesOf<typeof CONSORTIUM_FIELDS>, 'stage'> & { stage: PhaseOrd | null };
+// What persist.ts shareState takes.
+export type ShareInput = ValuesOf<typeof CONSORTIUM_FIELDS>;
 
 // The page's state: the consortium, and what is not saved.
 export const STATE_FIELDS = {
   ...CONSORTIUM_FIELDS,
-  // Which view fills the main area (Start comes first). Not saved: a restore opens the matrix. Undo
-  // goes back to Start, or away from it, but never between two views of a consortium.
+  // Which view fills the main area (Start comes first; 'matrix' is the empty palette slot since PP-B
+  // commit 0a', until b2's 'place' | 'palette' | 'plan'). Not saved: a restore opens the palette slot.
+  // Undo goes back to Start, or away from it, but never between two views of a consortium.
   view: {
     initial: (): View => 'start', watched: 'reader',
     undo: (before: View, now: View) => (before === 'start' || now === 'start' ? before : now),
   } satisfies Field<View>,
-  // While Start shows, the consortium shown before Change site, with its own site answers, country
-  // and stage (null: none). Undo of a list pasted on Start brings it back with Start's draft; the save
+  // While Start shows, the consortium shown before Change site, with its own site answers and country
+  // (null: none). Undo of a list pasted on Start brings it back with Start's draft; the save
   // follows it.
   setAside: { initial: (): Consortium | null => null, undo: true, watched: 'save' } satisfies Field<Consortium | null>,
+  // The stage print draws the side drawing at (unsaved, not in Undo; nothing on the page sets it since
+  // the stepper went in PP-B commit 0a'): b2 points print at the year step of Through the years (PP-B18)
+  // and removes it.
+  stage: { initial: (): PhaseOrd => 0 } satisfies Field<PhaseOrd>,
 };
 
 export const state = defineState(STATE_FIELDS);

@@ -1,27 +1,25 @@
 /** @jsxImportSource preact */
 // View slot of stream S4: Start (design check A8, §5 Loading; mockup 01-start; owner rows "Climate
-// first", "Main crops first", "Crop examples and guide 43", "v2 mockup choices").
+// first", "v2 mockup choices"; the Main crops question went in PP-B commit 0a').
 // - The optional country line comes first, so the browser's guess is seen before it is used.
 // - Then the climate cards, nothing chosen (never a default climate): Ready, Needs your location (a
 //   climate that borrows plants, without a location: PoolSlot cardPill), or Not covered yet with
 //   "Ask for this climate". Picking one writes the shared site climate (state/draft.ts chooseClimate).
-// - Then "What do you mainly want to grow?" (up to three of the climate's food plants; examples by
-//   rule, state/draft.ts cropExamples) and "Your site" (all four questions start at "Not sure").
+// - Then "Your site" (all four questions start at "Not sure").
 // - "Suggest plants" (waits for the plant list while it loads), "Start empty and search", "Paste a list".
 // Once a consortium is shown (store.view is not 'start'), Start shrinks to its head: the title with
 // the count and climate, the site basis with "Change site" and "Start over", and the country line.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
-import type { ClimateZone, Locale, PlantId, Site, SiteKey, Taxon } from '../../../lib/consortium/index.ts';
-import { countryStatus, lights, MAX_CROPS, rooms, soils, waters, zoneOf } from '../../../lib/consortium/index.ts';
-import { climate, country, crops, proposedClimate, kept, knownCountries, members, openSheet, pool, site, view } from '../store.ts';
+import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
+import type { ClimateZone, Site, SiteKey } from '../../../lib/consortium/index.ts';
+import { countryStatus, lights, rooms, soils, waters, zoneOf } from '../../../lib/consortium/index.ts';
+import { climate, country, proposedClimate, knownCountries, members, openSheet, pool, site, view } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
-import { searchIndex } from '../data/search.ts';
 import { LocationSlot } from './LocationSlot.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from './PoolSlot.tsx';
 import { climateChosen, climateShown, restoring } from '../state/persist.ts';
 import { notices } from '../state/restore.ts';
 import { startMemory } from '../state/arrival.ts';
-import { backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, cropExamples, pickingCountry, startEmpty, startOver } from '../state/draft.ts';
+import { backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, pickingCountry, startEmpty, startOver } from '../state/draft.ts';
 import { pendingSuggest, requestSuggest } from '../state/suggest-wait.ts';
 import { page } from './kit/page.ts';
 import { markStart } from './kit/start-mark.ts';
@@ -29,23 +27,6 @@ import { basisLine, countryName, nameOf, zoneName } from './kit/names.ts';
 
 // ---- words ----
 const options: Record<SiteKey, readonly string[]> = { light: lights, soil: soils, water: waters, room: rooms };
-
-// The crop search: Add's search (data/search.ts searchIndex: the one fold, src/lib/consortium/fold.ts,
-// and the same matching, E6 design check A9) over the climate's crops by the names Start shows (the
-// page language, English, the scientific name); best match first, then by shown name, `max` of them.
-type CropSearch = { search: ReturnType<typeof searchIndex>; byId: Map<PlantId, Taxon> };
-const cropSearches = new WeakMap<readonly Taxon[], CropSearch>();
-function cropSearch(list: readonly Taxon[], q: string, lang: string, skip: ReadonlySet<PlantId>, max = 8): Taxon[] {
-  let c = cropSearches.get(list);
-  if (!c) {
-    const own = list.filter((t) => t.role === 'crop');
-    c = { search: searchIndex(own.map((t) => ({ id: t.id, canonical: t.canonical_name, names: { en: t.names.en, [lang as Locale]: t.names[lang as Locale] } }))), byId: new Map(own.map((t) => [t.id, t])) };
-    cropSearches.set(list, c);
-  }
-  const byId = c.byId;
-  return c.search(q).filter((h) => !skip.has(h.id))
-    .sort((a, b) => a.score - b.score || nameOf(byId.get(a.id)!).localeCompare(nameOf(byId.get(b.id)!), lang)).slice(0, max).map((h) => byId.get(h.id)!);
-}
 
 // ---- the country line ----
 function CountryLine() {
@@ -136,56 +117,6 @@ function Climates() {
   );
 }
 
-// ---- Main crops ----
-function Crops({ zone }: { zone: ClimateZone }) {
-  const list = pool.value;
-  const lang = pageLang();
-  const chosen = crops.value;
-  const [q, setQ] = useState('');
-  const examples = useMemo(() => (list ? cropExamples(list) : []), [list]);
-  const byId = useMemo(() => new Map((list ?? []).map((t) => [t.id, t])), [list]);
-  const full = chosen.length >= MAX_CROPS;
-  const toggle = (id: PlantId) => {
-    if (chosen.includes(id)) {
-      crops.value = chosen.filter((x) => x !== id);
-      kept.value = kept.value.filter((x) => x !== id);
-    } else if (!full) {
-      crops.value = [...chosen, id];
-    }
-  };
-  const shown = [...chosen.map((id) => byId.get(id)).filter((t): t is Taxon => !!t), ...examples.filter((t) => !chosen.includes(t.id))];
-  const hits = list ? cropSearch(list, q, lang, new Set(chosen)) : [];
-  return (
-    <section class="ct-step ct-panel" aria-labelledby="ct-crops-h">
-      <h2 class="ct-step-title" id="ct-crops-h">{T('crops.question')}</h2>
-      <p class="ct-muted ct-step-lede">{T('crops.intro', { max: MAX_CROPS, climate: zoneName(zone) })}</p>
-      {!list ? <p class="status-line" aria-busy="true">{T('load.plants')}</p> : (
-        <>
-          <div class="ct-chips" role="group" aria-label={T('crops.forExample')}>
-            <span class="ct-muted ct-chips-label">{T('crops.forExample')}</span>
-            {shown.map((t) => (
-              <button type="button" class="ct-chip" aria-pressed={chosen.includes(t.id) ? 'true' : 'false'} disabled={!chosen.includes(t.id) && full} onClick={() => toggle(t.id)}>
-                {nameOf(t)} <i class="ct-sci">{t.canonical_name}</i>
-              </button>
-            ))}
-          </div>
-          <p class="ct-muted ct-crops-count" aria-live="polite">{full ? T('crops.limit', { max: MAX_CROPS }) : P('crops.count', chosen.length, { max: MAX_CROPS })}</p>
-          <div class="ct-crop-search">
-            <input type="search" value={q} aria-label={T('crops.search', { climate: zoneName(zone) })} placeholder={T('crops.search', { climate: zoneName(zone) })} disabled={full} onInput={(e) => setQ((e.currentTarget as HTMLInputElement).value)} />
-          </div>
-          {q.trim() && (
-            hits.length ? (
-              <ul class="ct-hits" aria-label={T('crops.results')}>
-                {hits.map((t) => <li><button type="button" class="ct-hit" onClick={() => { toggle(t.id); setQ(''); }}>{nameOf(t)} <i class="ct-sci">{t.canonical_name}</i></button></li>)}
-              </ul>
-            ) : <p class="ct-muted" role="status">{T('crops.noHit', { q: q.trim(), climate: zoneName(zone) })}</p>
-          )}
-        </>
-      )}
-    </section>
-  );
-}
-
 // ---- Your site ----
 function SiteQuestions() {
   const s = site.value;
@@ -262,7 +193,6 @@ function StartView() {
       {z && <PoolSlot zone={z} />}
       {z && hasList(z) && (
         <>
-          <Crops zone={z} />
           <SiteQuestions />
           <div class="ct-cta">
             {/* One rule for "can Suggest now" (PoolSlot suggestBlock): here only nothing-fits can block it, PoolSlot saying why. */}

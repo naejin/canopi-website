@@ -212,17 +212,6 @@ test('details: reasons per region, layer values in run order, sources cited, pla
   assert.ok(robinia.sources.griis);
 });
 
-test('cellCounts is the SQL oracle of the core matrix', async () => {
-  for (const c of expected.climates) {
-    const pool = await source.pool(c);
-    const m = core.buildMatrix(c, pool, [], core.UNSURE_SITE);
-    const counts = await source.cellCounts(c);
-    const total = counts.reduce((s, r) => s + r.n, 0);
-    assert.equal(total, m.rows.flatMap((r) => r.cells).reduce((s, cell) => s + cell.inList, 0), c);
-    for (const r of counts) assert.equal(m.rows[core.strata.indexOf(r.stratum)].cells[r.phase].inList, r.n, `${c} ${r.stratum} ${r.phase}`);
-  }
-});
-
 // ---- names and folded search (A6) ----
 
 test('names and search: folded (lower case, Latin, Greek and Cyrillic marks off, ß œ æ written out), word prefix, never LIKE', async () => {
@@ -274,7 +263,7 @@ const indexPath = new URL('src/data/consortium-index.json', ROOT);
 const index = existsSync(indexPath) ? JSON.parse(readFileSync(indexPath, 'utf8')) : null;
 const realFile = index && new URL(`public${index.files[0].url}`, ROOT);
 
-test('real install: opens with the index, every pool and image path, cell counts, and 9 plants with every answer unsure', { skip: !(realFile && existsSync(realFile)) && 'no real install' }, async () => {
+test('real install: opens with the index, every pool and image path, and 9 plants with every answer unsure', { skip: !(realFile && existsSync(realFile)) && 'no real install' }, async () => {
   const real = await openBytes(new Uint8Array(gunzipSync(readFileSync(realFile))), { releaseId: index.release_id, climates: index.climates });
   try {
     const src = createSqliteSource(real.db, { images: index.images });
@@ -283,12 +272,8 @@ test('real install: opens with the index, every pool and image path, cell counts
       const pool = await src.pool(c);
       assert.deepEqual(pool.map((t) => t.canonical_name).sort(), [...index.names[c]].sort(), c);
       for (const t of pool) if (t.image) assert.match(t.image.url, /^\/data\/consortium\/images\//);
-      const m = core.buildMatrix(c, pool, [], core.UNSURE_SITE);
-      for (const r of await src.cellCounts(c)) assert.equal(m.rows[core.strata.indexOf(r.stratum)].cells[r.phase].inList, r.n);
     }
     const temperate = await src.pool('Temperate');
-    const m = core.buildMatrix('Temperate', temperate, [], core.UNSURE_SITE);
-    assert.equal(m.rows[3].cells[0].empty, 'gap', 'real Temperate low × first 90 days is a data gap');
     const s = suggest(temperate, { site: core.UNSURE_SITE, interactions: await src.interactions('Temperate'), country: null, countryStatus: 'none' });
     assert.equal(s.members.length, 9, 'A7: Room unsure suggests 9');
     const names = await src.names('fr');
@@ -322,8 +307,6 @@ function reset() {
   store.climate.value = null;
   store.guests.value = {};
   store.members.value = [];
-  store.kept.value = [];
-  store.crops.value = [];
   store.removed.value = [];
   store.country.value = { code: null, source: null };
   store.site.value = { ...DEFAULT_SITE };
@@ -380,7 +363,6 @@ test('store: a guest whose list is still loading is never dropped silently; Sugg
   await store.loadPool('Temperate');
   store.guests.value = { [vitis]: 'Mediterranean' };
   store.members.value = [vitis];
-  store.kept.value = [vitis];
   assert.deepEqual(store.guestsPending.value, ['Mediterranean']);
   assert.deepEqual(store.missingMembers.value, { loading: [vitis], unlisted: [] });
   assert.equal(store.suggestMembers(), false);
@@ -390,7 +372,7 @@ test('store: a guest whose list is still loading is never dropped silently; Sugg
   assert.deepEqual(store.missingMembers.value, { loading: [], unlisted: [] });
   assert.deepEqual(store.memberTaxa.value[0].origin, { list: 'Mediterranean', kind: 'guest' });
   assert.equal(store.suggestMembers(), true);
-  assert.equal(store.members.value[0], vitis, 'the kept guest is a member of the suggestion');
+  assert.equal(store.members.value[0], vitis, 'the guest already there (the seed) is a member of the suggestion');
   assert.ok(store.members.value.length > 1);
   // An id not in its list once read is "unlisted", not loading.
   store.members.value = [...store.members.value, '00000000-f1c7-4000-8000-ffffffffffff'];

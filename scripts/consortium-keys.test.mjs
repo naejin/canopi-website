@@ -39,9 +39,11 @@ function namedKeys(src) {
 const named = namedKeys(island);
 // Keys the island holds in a table and passes to T later, each checked to be in the sources: the
 // layer values' labels (views/layers.ts), the load screens (App.tsx), the correction form's errors and
-// results (views/Correction.tsx).
+// results (views/Correction.tsx), and the toast store.ts chunkToast says when the marks' chunk fails
+// (its persistent line went with Matrix.tsx in PP-B commit 0a'; PP-C c2 restores it).
 const INDIRECT = [
   't.bloom', 't.fruit', 't.sowing', 't.wind',
+  'marks.unavailable',
   'load.tooOld', 'load.wasmBlocked', 'load.toolFailed', 'load.fetch', 'load.damaged', 'load.stale',
   'correction.fieldError', 'correction.proposedError', 'correction.unchanged', 'correction.tooLong', 'correction.emailError',
   'correction.consentError', 'correction.invalid', 'correction.failed', 'correction.refused', 'correction.offline',

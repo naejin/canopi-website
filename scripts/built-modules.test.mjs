@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const graphOf = (edges) => new Map(Object.entries(edges).map(([p, imports]) => [p, { code: '', imports }]));
-const noFeatures = { location: [], markProviders: [], future: [], pool: [], likely: [], native: [], range: [], details: [], sheets: [], later: [], suggest: [], matrix: [], palette: [], verdict: [] };
+const noFeatures = { location: [], markProviders: [], future: [], pool: [], likely: [], native: [], range: [], details: [], sheets: [], later: [], suggest: [], palette: [], verdict: [] };
 const none = { features: noFeatures, maplibre: [], maplibreCss: [], testHook: [] };
 const sets = ({ parts, location, maplibre }) => ({ parts, location, maplibre });
 const roles = (features, maplibre = []) => ({ ...none, features: { ...noFeatures, ...features }, maplibre });
@@ -55,13 +55,12 @@ test('chunkRoles: the lazy island parts by their entry module, in the one role l
   const r = chunkRoles(bundle);
   assert.deepEqual(r.features, { ...noFeatures, details: ['/_astro/Details.d.js'], sheets: ['/_astro/Add.a.js', '/_astro/Swap.b.js'], later: ['/_astro/later.c.js'], suggest: ['/_astro/suggest.e.js'] });
   assert.equal(r.lazy, undefined, 'one role list: no separate lazy table');
-  // PP-B commit 0: the matrix (Matrix and Actions), the palette page and the verdict rule, by their entry modules.
+  // PP-B commit 0: the palette page and the verdict rule, by their entry modules (the matrix role went in 0a').
   const ppb = chunkRoles({ ...bundle,
-    '_astro/Matrix.m.js': chunk('_astro/Matrix.m.js', `${root}/src/islands/consortium/views/Matrix.tsx`),
-    '_astro/Actions.a.js': chunk('_astro/Actions.a.js', `${root}/src/islands/consortium/views/Actions.tsx`),
     '_astro/Palette.p.js': chunk('_astro/Palette.p.js', `${root}/src/islands/consortium/views/palette/Palette.tsx`),
     '_astro/verdict.v.js': chunk('_astro/verdict.v.js', `${root}/src/lib/consortium/verdict.ts`) });
-  assert.deepEqual([ppb.features.matrix, ppb.features.palette, ppb.features.verdict], [['/_astro/Actions.a.js', '/_astro/Matrix.m.js'], ['/_astro/Palette.p.js'], ['/_astro/verdict.v.js']], 'the PP-B roles matrix, palette and verdict');
+  assert.deepEqual([ppb.features.palette, ppb.features.verdict], [['/_astro/Palette.p.js'], ['/_astro/verdict.v.js']], 'the PP-B roles palette and verdict');
+  assert.equal(ppb.features.matrix, undefined, 'no matrix role since PP-B commit 0a\'');
   assert.deepEqual(chunkRoles({ ...bundle, '_astro/test-hook.t.js': chunk('_astro/test-hook.t.js', `${root}/src/islands/consortium/test-hook.ts`) }).testHook, ['/_astro/test-hook.t.js'], 'the browser-test hook by its module');
 });
 

@@ -1,15 +1,15 @@
-// The one filter rule of the plant lists (E6 R2; design check §7.1 "Add/PlantList filter rule"): which
-// plants of a list Add shows (a cell or run of one layer, a job, "Show them anyway") and which members
-// the plant list's Layer / Stage / Job filters leave, plus the order of Add's rows. Pure functions
+// The one filter rule of the plant lists (E6 R2; design check §7.1, the filter rule of Add and the old plant list): which
+// plants of a list Add shows (a cell or run of one layer, a job, "Show them anyway"), plus the order of
+// Add's rows (the plant list's Layer / Stage / Job filters went with it in PP-B commit 0a'). Pure functions
 // over core types (ADR-1 layer rules: rules import the core only), so scripts/consortium-list-query.test.mjs
 // runs them in Node.
 import type { JobId, PhaseOrd, Site, Stratum, Taxon } from '../../../lib/consortium/index.ts';
 import { canopyOf, fits, jobsOf, misfitsBeside, phaseOrd } from '../../../lib/consortium/index.ts';
 
 // stratum: one layer, null any. from/to: a run of stages the plant grows in during any of (Add's cell
-// or run; the plant list's one stage as from = to), null any (a plant with no placement then passes).
+// or run), null any (a plant with no placement then passes).
 // job: one of its jobs, null any. site: the site answers a plant must fit beside the members' canopy
-// (the matrix's "N fit", core matrix.ts), null no fit check (the plant list, Add with no cell);
+// (core site.ts misfitsBeside), null no fit check (Add with no cell);
 // anyway: list the misfits too ("Show them anyway"). canopy: the members' taxa.
 export interface ListQuery {
   stratum: Stratum | null;
@@ -22,7 +22,7 @@ export interface ListQuery {
 }
 
 // The query as a test of one plant (the canopy computed once).
-export function listMatch(q: ListQuery): (t: Taxon) => boolean {
+function listMatch(q: ListQuery): (t: Taxon) => boolean {
   const canopy = q.site && !q.anyway ? canopyOf(q.canopy) : null;
   return (t) => {
     if (q.job && !jobsOf(t).includes(q.job)) return false;
@@ -39,12 +39,6 @@ export const listQuery = (pool: readonly Taxon[], q: ListQuery): Taxon[] => pool
 export interface AddFor { cell: { stratum: Stratum | null; from: PhaseOrd; to: PhaseOrd } | null; job: JobId | null; anyway: boolean }
 export const addQuery = ({ cell, job, anyway }: AddFor, site: Site, canopy: readonly Taxon[]): ListQuery =>
   ({ stratum: cell?.stratum ?? null, from: cell?.from ?? null, to: cell?.to ?? null, job, site: cell ? site : null, canopy, anyway });
-
-// The plant list's Layer / Stage / Job filters (mockup NOTES "All plants"): its layer, a stage it grows
-// in, one of its jobs; null filters nothing. No fit check: every member is listed.
-export interface ListFilters { layer: Stratum | null; stage: PhaseOrd | null; job: JobId | null }
-export const filtersQuery = (f: ListFilters): ListQuery =>
-  ({ stratum: f.layer, from: f.stage, to: f.stage, job: f.job, site: null, canopy: [], anyway: true });
 
 // Add's row order with no query: plants that ask first last, then the better known (named in more
 // languages), then by scientific name.

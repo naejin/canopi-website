@@ -3,13 +3,13 @@
 // choices" 2026-10-28): hidden on screen, the only part of the tool printed (print.css). Its head says
 // what the consortium is based on (climate, site, country, data release); then
 // - at 20 plants or fewer: the side view drawing of the chosen stage, then the table of plants;
-// - above 20: "At a glance" (plants per layer and stage), then the table; no drawing.
+// - above 20: the table only ("At a glance" read the matrix and went with it in PP-B commit 0a').
 // No control is printed. Rendered by views/Actions.tsx.
 //
 // The drawing is the side view's own (views/SideView.tsx SideDrawing), of the chosen stage (H6).
 import type { Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { jobsOf, phases, strata } from '../../../lib/consortium/index.ts';
-import { climate, country, crops, flags, guests, kept, matrix, memberTaxa, site, source, stage } from '../store.ts';
+import { jobsOf } from '../../../lib/consortium/index.ts';
+import { climate, country, flags, guests, memberTaxa, site, source, stage } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { page } from './kit/page.ts';
 import { basisLine, countryName, nameOf, phasePlain, phaseTerm, zoneName } from './kit/names.ts';
@@ -30,23 +30,6 @@ function flagWords(f: Flag, names: Map<PlantId, string>, code: string | null): s
   return T('print.flag.toxicity');
 }
 
-function Glance({ members }: { members: Taxon[] }) {
-  const m = matrix.value;
-  const count = (s: string, p: number) => m?.rows.find((r) => r.stratum === s)?.cells[p]?.members.length
-    ?? members.filter((t) => t.stratum?.value === s && t.phases && phases.indexOf(t.phases.start) <= p && phases.indexOf(t.phases.end) >= p).length;
-  return (
-    <table class="ct-print-glance">
-      <caption>{T('print.glance')}</caption>
-      <thead><tr><th scope="col">{T('print.col.layer')}</th>{phases.map((p) => <th scope="col">{T(`phase.${p}.plain`)}</th>)}</tr></thead>
-      <tbody>
-        {strata.map((s) => (
-          <tr><th scope="row">{T(`stratum.${s}`)}</th>{phases.map((_, i) => <td>{count(s, i) || '–'}</td>)}</tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-
 export function PrintSheet() {
   const members = memberTaxa.value;
   const lang = pageLang();
@@ -57,7 +40,6 @@ export function PrintSheet() {
   const code = country.value.code;
   const status = source.value && code ? (source.value.countries().get(code)?.invasiveChecked ? 'checked' : 'unchecked') : 'none';
   const release = source.value?.info().releaseId ?? '';
-  const keptSet = new Set(kept.value), cropSet = new Set(crops.value);
   const small = members.length <= PRINT_DRAWING_MAX;
   return (
     <section class="ct-print" aria-labelledby="ct-print-h">
@@ -70,7 +52,7 @@ export function PrintSheet() {
       </p>
       <p class="ct-print-basis">{T('page.hypothesis')}</p>
       {small && <p class="ct-print-basis ct-print-stage">{T('side.title', { stage: phasePlain(stage.value) })} · {phaseTerm(stage.value)}</p>}
-      {small ? <SideDrawing stage={stage.value} /> : <Glance members={members} />}
+      {small && <SideDrawing stage={stage.value} />}
       <table class="ct-print-table">
         <caption>{T('print.plants')}</caption>
         <thead>
@@ -84,7 +66,7 @@ export function PrintSheet() {
         </thead>
         <tbody>
           {members.map((t) => {
-            const marks = [cropSet.has(t.id) ? T('print.mainCrop') : keptSet.has(t.id) ? T('print.kept') : '', guests.value[t.id] ? T('print.fromList', { climate: zoneName(guests.value[t.id]!) }) : ''].filter(Boolean);
+            const marks = guests.value[t.id] ? [T('print.fromList', { climate: zoneName(guests.value[t.id]!) })] : [];
             const notes = (byPlant.get(t.id) ?? []).map((f) => flagWords(f, names, code));
             return (
               <tr>

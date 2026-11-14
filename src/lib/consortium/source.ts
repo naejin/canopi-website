@@ -1,8 +1,8 @@
 // PlantSource: the one way the core reads plants (frozen seam, design check §4). The website
 // implements it with SQL over the gzipped SQLite export (src/islands/consortium/data/sqlite-source.ts,
 // stream S1); the app can implement it over its own catalogue later. Plain records only: the core
-// computes the matrix, site fit and reason counts from pool(), so every source gets them free.
-import type { ClimateZone, Details, FactAt, FactKey, FactValues, Interaction, Labels, LayerValue, Locale, Placement, PlantId, SourceInfo, Stratum, Taxon } from './types.ts';
+// computes site fit, verdicts and reason counts from pool(), so every source gets them free.
+import type { ClimateZone, Details, FactAt, FactKey, FactValues, Interaction, Labels, LayerValue, Locale, Placement, PlantId, SourceInfo, Taxon } from './types.ts';
 
 export interface PlantSource {
   info(): SourceInfo;
@@ -21,8 +21,6 @@ export interface PlantSource {
   names(l: Locale): Promise<{ id: PlantId; canonical: string; names: Partial<Record<Locale, string>> }[]>;
   details(id: PlantId, c: ClimateZone, l: Locale): Promise<Details>;
   labels(l: Locale): Promise<Labels>;
-  // Plants per stratum and phase in c, straight from SQL: a test oracle for the core's matrix.
-  cellCounts(c: ClimateZone): Promise<{ stratum: Stratum; phase: number; n: number }[]>;
   // Plant palette seam (PP-B commit 0; body in PP-G with the `year` chunk): the month layer values
   // (bloom and ripening months) of the plants `ids` that apply in c, one query for a whole palette.
   layerValues(ids: readonly PlantId[], c: ClimateZone): Promise<Map<PlantId, LayerValue[]>>;

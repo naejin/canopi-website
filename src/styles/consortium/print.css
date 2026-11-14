@@ -3,7 +3,7 @@
    and every other view are left out, so no button, field or link is printed. Paper is white and the ink
    dark whatever the theme: the light palette on a white page (:root:root:has(.ct) outranks the
    dark-theme rules of tokens.css and base.css). At 20 plants or fewer the sheet holds the side view drawing and
-   the table; above 20, "At a glance" and the table. */
+   the table; above 20, the table only. */
 @media print {
   body:has(.ct-print) > :not(main), .grain::after { display: none !important; }
   /* Only once the print sheet is in the page (it loads after the matrix): a Ctrl+P before that, or
@@ -36,4 +36,51 @@
   .ct .ct-print-name { font-weight: 600; }
   .ct .ct-print-glance td { text-align: center; }
   .ct .ct-print-foot { margin-top: 10pt; font-size: 8.5pt; color: var(--text-muted); word-break: break-all; }
+}
+
+/* The side drawing (views/SideView.tsx SideDrawing), on paper only since PP-B commit 0a' deleted the
+   on-screen side view; outside @media print because the sheet is laid out on screen too (hidden).
+   Moved from matrix.css. Stratum colours only in rules whose selector names a stratum. */
+.ct .ct-sv-figure { margin: 0; }
+.ct .ct-sv-plot { position: relative; height: 340px; display: grid; grid-template-columns: 34px minmax(0, 1fr); padding-right: 8px; border-bottom: 2px solid var(--text-secondary); }
+.ct .ct-sv-scale { position: relative; font-size: 11.5px; color: var(--text-muted); }
+.ct .ct-sv-scale span { position: absolute; left: 0; transform: translateY(-50%); white-space: nowrap; }
+.ct .ct-sv-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.ct .ct-sv-svg svg { overflow: visible; }
+.ct .ct-sv-line { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 3 3; }
+.ct .ct-sv-svg g { fill: var(--s-none); stroke: var(--s-none-ink); stroke-linejoin: round; }
+.ct .ct-sv-nums { display: grid; margin: 6px 8px 0 34px; }
+.ct .ct-sv-nums span {
+  justify-self: center; font-size: 12px; font-weight: 600; width: min(20px, 100%); aspect-ratio: 1; border-radius: 50%;
+  border: 1.5px solid var(--text-secondary); display: grid; place-items: center; background: var(--surface);
+}
+.ct .ct-sv-mark { fill: var(--text-secondary); stroke: none; }
+.ct .ct-sv-mark.is-dashed { fill: none; stroke: var(--text-secondary); stroke-width: 1.5; stroke-dasharray: 3 2; }
+.ct .ct-sv-note { margin-top: 10px; font-size: 14px; color: var(--text-secondary); }
+.ct .ct-sv-key { margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 16px; font-size: 14px; list-style: none; padding: 0; }
+.ct .ct-sv-key li { display: flex; gap: 8px; align-items: baseline; }
+.ct .ct-sv-key li > span:last-child { flex: 1; min-width: 0; }
+.ct .ct-sv-key strong { font-weight: 600; }
+.ct .ct-sv-n { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--text-secondary); display: grid; place-items: center; font-size: 12px; font-weight: 600; }
+.ct .ct-sv-sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; background: var(--s-none); }
+.ct .ct-sv-svg g[data-stratum="emergent"] { fill: var(--s-emergent); stroke: var(--s-emergent-ink); }
+.ct .ct-sv-mark[data-stratum="emergent"] { stroke: var(--s-emergent-ink); }
+.ct .ct-sv-mark[data-stratum="emergent"]:not(.is-dashed) { fill: var(--s-emergent); }
+.ct .ct-sv-sw[data-stratum="emergent"] { background: var(--s-emergent); }
+.ct .ct-sv-svg g[data-stratum="high"] { fill: var(--s-high); stroke: var(--s-high-ink); }
+.ct .ct-sv-mark[data-stratum="high"] { stroke: var(--s-high-ink); }
+.ct .ct-sv-mark[data-stratum="high"]:not(.is-dashed) { fill: var(--s-high); }
+.ct .ct-sv-sw[data-stratum="high"] { background: var(--s-high); }
+.ct .ct-sv-svg g[data-stratum="medium"] { fill: var(--s-medium); stroke: var(--s-medium-ink); }
+.ct .ct-sv-mark[data-stratum="medium"] { stroke: var(--s-medium-ink); }
+.ct .ct-sv-mark[data-stratum="medium"]:not(.is-dashed) { fill: var(--s-medium); }
+.ct .ct-sv-sw[data-stratum="medium"] { background: var(--s-medium); }
+.ct .ct-sv-svg g[data-stratum="low"] { fill: var(--s-low); stroke: var(--s-low-ink); }
+.ct .ct-sv-mark[data-stratum="low"] { stroke: var(--s-low-ink); }
+.ct .ct-sv-mark[data-stratum="low"]:not(.is-dashed) { fill: var(--s-low); }
+.ct .ct-sv-sw[data-stratum="low"] { background: var(--s-low); }
+@media (max-width: 639px) {
+  .ct .ct-sv-plot { height: 260px; grid-template-columns: 30px minmax(0, 1fr); padding-right: 0; }
+  .ct .ct-sv-nums { margin: 6px 0 0 30px; }
+  .ct .ct-sv-nums span { font-size: 10.5px; }
 }

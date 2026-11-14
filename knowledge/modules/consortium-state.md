@@ -3,45 +3,45 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:53:30Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:10:50Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:24Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:03a26424e490c4b2
-    last_modified: 2026-11-14T10:20:58Z
+    digest: sha256:b6b3c4a07c8b9b9d
+    last_modified: 2026-11-14T11:39:20Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:57827d5b5b419c07
-    last_modified: 2026-11-14T10:27:19Z
+    digest: sha256:d11d0a245a854604
+    last_modified: 2026-11-14T11:39:47Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:3eec46d170600c05
-    last_modified: 2026-11-13T14:47:21Z
+    digest: sha256:40df8909c9e3e690
+    last_modified: 2026-11-14T11:47:18Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:71692851abfe9d07
-    last_modified: 2026-11-14T10:21:39Z
+    digest: sha256:5cc847af70dbb553
+    last_modified: 2026-11-14T11:40:16Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:c1a196208665309e
-    last_modified: 2026-11-14T10:22:12Z
+    digest: sha256:4b57cc74b77d753f
+    last_modified: 2026-11-14T11:40:16Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
     digest: sha256:cd2bd5da5bcdbfd5
-    last_modified: 2026-11-14T10:22:35Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:71240eecc1058a74
-    last_modified: 2026-11-13T12:46:47Z
+    digest: sha256:31a413ffec3ce0e4
+    last_modified: 2026-11-14T11:40:20Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -71,7 +71,7 @@ sources:
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
     digest: sha256:2f08c35425c5c8bd
-    last_modified: 2026-11-14T10:16:43Z
+    last_modified: 2026-11-14T10:56:09Z
 enforced_by:
   - scripts/consortium-memory.test.mjs
   - scripts/consortium-start.test.mjs
@@ -158,7 +158,7 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
   - v1–v4 are "older": the notice is said once and the save is removed, as v1–v3 were before.
   - newer and unreadable versions leave the save untouched.
 - The save record is `{ fragment, place, at, src, country? }`. `place` holds `l w q r h s`. Room and plot travel as the fragment's `m` and `z`. The country is kept for both the `link` and `location` sources.
-- `schema.ts` adds the fields `room`, `plot`, `spot`, `soil` and `period`, and marks `kept`, `crops` and `stage` deprecated (not written to v5).
+- `schema.ts` adds the fields `room`, `plot`, `spot`, `soil` and `period`, and marked `kept`, `crops` and `stage` deprecated (not written to v5); PP-B commit 0a' removed `kept` and `crops`, and `stage` is now an unsaved signal for print.
 - `site` stays a derived signal that is not saved.
 - `canopi-place` only seeds a new palette.
 - `history.state.pl` is carried by `persist.ts` and `arrival.ts`.

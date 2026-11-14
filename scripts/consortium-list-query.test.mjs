@@ -1,14 +1,14 @@
-// E6 stream R2 (design check §3 chunk 2, §7.1 "Add/PlantList filter rule"): one filter rule,
+// E6 stream R2 (design check §3 chunk 2, §7.1, the filter rule of Add and the old plant list): one filter rule,
 // src/islands/consortium/rules/list-query.ts, for Add's rows (a cell or run of one layer, a job,
-// "Show them anyway": the misfits beside the members' canopy left out unless anyway) and the plant
-// list's filters (layer, stage, job). Written failing in commit 0 (expected-fail, owner R2); R2 removed
-// the marker in the commit that added the module. The oracle below is the code before it, copied from
-// views/Add.tsx (base) and views/tracks.ts (matchesFilters), so the rule returns those results.
+// "Show them anyway": the misfits beside the members' canopy left out unless anyway). Written failing
+// in commit 0 (expected-fail, owner R2); R2 removed the marker in the commit that added the module. The
+// oracle below is the code before it, copied from views/Add.tsx (base), so the rule returns those
+// results. (The plant list's filters and their cases went with the plant list in PP-B commit 0a'.)
 //
 // The contract this test fixes (R2 may rename within its chunk, keeping the cases):
 //   listQuery(pool, { stratum, from, to, job, site, canopy, anyway }) -> Taxon[] in pool order
-//   - stratum/from/to: a cell or run (Add) or a layer and one stage (the list); null: any;
-//   - site: the site answers, or null for no fit filter (the plant list); canopy: the members' taxa.
+//   - stratum/from/to: a cell or run (Add); null: any;
+//   - site: the site answers, or null for no fit filter; canopy: the members' taxa.
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { canopyOf, fits, jobsOf, misfitsBeside, phaseOrd } from '../src/lib/consortium/index.ts';
@@ -45,8 +45,6 @@ function addBase(pool, { cell, job, anyway, site, canopy }) {
     return !misfitsBeside(t, site, c, fits(t, site)).length;
   });
 }
-const spans = (t, stage) => !!t.phases && phaseOrd(t.phases.start) <= stage && stage <= phaseOrd(t.phases.end);
-const listBase = (pool, { layer, stage, job }) => pool.filter((t) => (layer === null || t.stratum?.value === layer) && (stage === null || spans(t, stage)) && (job === null || jobsOf(t).includes(job)));
 
 const ADD_CASES = [
   { name: 'no cell, no job: every plant', cell: null, job: null, anyway: false, site: SITE, canopy: [] },
@@ -57,34 +55,21 @@ const ADD_CASES = [
   { name: 'a job with a cell', cell: { stratum: 'low', from: 0, to: 1 }, job: 'feeds_soil', anyway: false, site: SITE, canopy: [] },
   { name: 'a job alone', cell: null, job: 'feeds_you', anyway: false, site: SITE, canopy: [] },
 ];
-const LIST_CASES = [
-  { layer: null, stage: null, job: null },
-  { layer: 'low', stage: null, job: null },
-  { layer: null, stage: 5, job: null },
-  { layer: 'high', stage: 3, job: 'feeds_you' },
-];
 
-test('E6 list-query (R2 rules): one listQuery returns Add\'s and the plant list\'s current results on fixture cases', async () => {
+test('E6 list-query (R2 rules): one listQuery returns Add\'s current results on fixture cases', async () => {
   const { listQuery } = await import('../src/islands/consortium/rules/list-query.ts');
   const ids = (list) => list.map((t) => t.id);
   for (const c of ADD_CASES) {
     const got = listQuery(POOL, { stratum: c.cell?.stratum ?? null, from: c.cell?.from ?? null, to: c.cell?.to ?? null, job: c.job, site: c.cell ? c.site : null, canopy: c.canopy, anyway: c.anyway });
     assert.deepEqual(ids(got), ids(addBase(POOL, c)), `Add: ${c.name}`);
   }
-  for (const f of LIST_CASES) {
-    const got = listQuery(POOL, { stratum: f.layer, from: f.stage, to: f.stage, job: f.job, site: null, canopy: [], anyway: true });
-    assert.deepEqual(ids(got), ids(listBase(POOL, f)), `plant list: ${JSON.stringify(f)}`);
-  }
 });
 
-test('E6 list-query (R2 rules): Add\'s and the plant list\'s queries as the views build them, and Add\'s row order', async () => {
-  const { addOrder, addQuery, filtersQuery, listQuery } = await import('../src/islands/consortium/rules/list-query.ts');
+test('E6 list-query (R2 rules): Add\'s query as the view builds it, and Add\'s row order', async () => {
+  const { addOrder, addQuery, listQuery } = await import('../src/islands/consortium/rules/list-query.ts');
   const ids = (list) => list.map((t) => t.id);
   for (const c of ADD_CASES) {
     assert.deepEqual(ids(listQuery(POOL, addQuery({ cell: c.cell, job: c.job, anyway: c.anyway }, c.site, c.canopy))), ids(addBase(POOL, c)), `Add: ${c.name}`);
-  }
-  for (const f of LIST_CASES) {
-    assert.deepEqual(ids(listQuery(POOL, filtersQuery(f))), ids(listBase(POOL, f)), `plant list: ${JSON.stringify(f)}`);
   }
   // A job's stage gap: a run of stages in any layer (stratum null); a plant with no placement is out.
   assert.deepEqual(ids(listQuery(POOL, addQuery({ cell: { stratum: null, from: 0, to: 0 }, job: null, anyway: true }, SITE, []))), ids(POOL.filter((t) => t.phases && phaseOrd(t.phases.start) === 0)));
@@ -92,17 +77,4 @@ test('E6 list-query (R2 rules): Add\'s and the plant list\'s queries as the view
   const named = (id, names, canonical) => ({ t: { id, names, canonical_name: canonical }, asks: false });
   const rows = [{ ...named('a', { en: 'A' }, 'Zeta'), asks: true }, named('b', {}, 'Beta'), named('c', { en: 'C', fr: 'C' }, 'Gamma'), named('d', {}, 'Alpha')];
   assert.deepEqual(addOrder(rows).map((r) => r.t.id), ['c', 'd', 'b', 'a']);
-});
-
-// Moved from consortium-tracks.test.mjs (the plant list's filters left views/tracks.ts for this rule).
-test('E6 list-query (R2 rules): the plant list\'s filters: layer, a stage the plant grows in, and a job; null filters nothing', async () => {
-  const { filtersQuery, listMatch } = await import('../src/islands/consortium/rules/list-query.ts');
-  const passes = (t, f) => listMatch(filtersQuery(f))(t);
-  const fixer = plant('high', 'placenta_iii', 'secondary_iii', { functions: [{ function: 'nitrogen_fixer', method: 'curated', sources: [] }] });
-  const none = { layer: null, stage: null, job: null };
-  assert.ok(passes(fixer, none));
-  assert.ok(passes(fixer, { ...none, layer: 'high' }) && !passes(fixer, { ...none, layer: 'low' }));
-  assert.ok(passes(fixer, { ...none, stage: 4 }) && !passes(fixer, { ...none, stage: 1 }));
-  assert.ok(passes(fixer, { ...none, job: 'feeds_soil' }) && !passes(fixer, { ...none, job: 'mulch' }));
-  assert.ok(!passes(plant(null, null, null), { ...none, stage: 1 }), 'no placement: in no stage');
 });

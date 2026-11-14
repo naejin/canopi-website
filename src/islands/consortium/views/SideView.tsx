@@ -1,11 +1,12 @@
 /** @jsxImportSource preact */
-// The side view (mockup 03; owner row 2026-11-10: a slice of one phase column of the matrix;
-// coordinator row "v2 mockup choices" 2026-11-11: "Layer is light, not height", full size with a
-// dashed outline in a plant's first stage). One chosen stage (store.stage, shared with the phone
-// stepper and print): stage chips on desktop, the stepper on phones. Stratum colours appear only in
-// the drawing and its key (base.css --s-*, matrix.css rules naming a stratum).
+// The side drawing (mockup 03; owner row 2026-11-10: a slice of one stage; coordinator row "v2 mockup
+// choices" 2026-11-11: "Layer is light, not height", full size with a dashed outline in a plant's
+// first stage), for the print sheet only since PP-B commit 0a' deleted the on-screen side view and its
+// stage chips (inventory: "on-screen side view (print only)"); b2 draws it at the year step chosen in
+// Through the years (PP-B18). Stratum colours appear only in the drawing and its key (base.css --s-*,
+// print.css rules naming a stratum).
 //
-// SideDrawing is the figure and its numbered key with no control, for SideView and S4's print sheet:
+// SideDrawing is the figure and its numbered key with no control:
 // - up to 20 plants are silhouettes (draw.ts), one numbered column each; above 20 each plant is a
 //   thin mark at its true height;
 // - one SVG and one coordinate system for the scale lines (1, 5, 20 m), the silhouettes and the marks:
@@ -15,19 +16,16 @@
 //   narrowed (scaled in x only, its height kept): the first and last stay inside the plot, clear of
 //   the scale labels, and the others reach at most into half of each neighbouring column;
 // - the drawing is role=img named with every plant by layer; the key repeats each name with its layer
-//   word beside the swatch, so colour is never the only cue. Given `open`, a name is a button that
-//   opens the plant's details (S3, through store.sheet); the print sheet passes none.
+//   word beside the swatch, so colour is never the only cue.
 import { useLayoutEffect, useState } from 'preact/hooks';
 import type { PhaseOrd } from '../../../lib/consortium/index.ts';
 import { strata } from '../../../lib/consortium/index.ts';
-import { memberTaxa, pool, stage } from '../store.ts';
+import { memberTaxa, pool } from '../store.ts';
 import { T } from '../strings.ts';
-import { PHASE_ORDS } from './kit/phase.ts';
 import { MAX_SILHOUETTES, SCALE_LINES, lineTop, sidePlants, type SidePlant } from './side.ts';
 import { DASH, MIN_COL, PLOT_H, plantStrokes, reachOf } from './draw.ts';
-import { Explain, Marks, byName, openDetails } from './StageBar.tsx';
-import { layerName, nameOf, num, phasePlain, phaseTerm } from './kit/names.ts';
-import { StageStepper } from './StageStepper.tsx';
+import { Marks, byName } from './StageBar.tsx';
+import { layerName, nameOf, num, phasePlain } from './kit/names.ts';
 
 const pct = (x: number) => `${+x.toFixed(3)}%`;
 
@@ -63,7 +61,7 @@ function useSize() {
   return [ref, size] as const;
 }
 
-export function SideDrawing({ stage: s, open }: { stage: PhaseOrd; open?: (id: string) => void }) {
+export function SideDrawing({ stage: s }: { stage: PhaseOrd }) {
   const [svgRef, size] = useSize();
   const drawn = sidePlants(memberTaxa.value, s, pool.value ?? [], byName);
   if (drawn.length === 0) return <p class="ct-dim">{T('side.empty')}</p>;
@@ -104,9 +102,7 @@ export function SideDrawing({ stage: s, open }: { stage: PhaseOrd; open?: (id: s
             <span class="ct-sv-n" aria-hidden="true">{i + 1}</span>
             <span>
               <span class="ct-sv-sw" data-stratum={p.stratum} aria-hidden="true" />
-              {open
-                ? <button type="button" class="ct-link-button" aria-haspopup="dialog" onClick={() => open(p.taxon.id)}>{nameOf(p.taxon)}</button>
-                : <strong>{nameOf(p.taxon)}</strong>}{' '}
+              <strong>{nameOf(p.taxon)}</strong>{' '}
               <span class="ct-sc">{p.taxon.canonical_name}</span>{' '}
               <span class="ct-dim">· {layerName(p.stratum)} · {p.height !== null ? T('side.height', { m: num(p.height) }) : T('side.noHeight')}{p.first ? ` · ${T('side.first')}` : ''}</span>{' '}
               <Marks taxon={p.taxon} />
@@ -115,24 +111,5 @@ export function SideDrawing({ stage: s, open }: { stage: PhaseOrd; open?: (id: s
         ))}
       </ol>
     </>
-  );
-}
-
-export function SideView() {
-  const s = stage.value;
-  return (
-    <section class="ct-sv" aria-labelledby="ct-sv-h">
-      <h2 id="ct-sv-h">{T('side.title', { stage: phasePlain(s) })} <span class="ct-dim ct-sv-term">· {phaseTerm(s)}</span></h2>
-      <p class="ct-sv-layer"><strong>{T('side.layer')}.</strong> <Explain kind="layer" /></p>
-      <div class="ct-sv-phases" role="group" aria-label={T('phase.stage')}>
-        {PHASE_ORDS.map((p) => (
-          <button key={p} type="button" class="ct-stchip" aria-pressed={p === s} onClick={() => { stage.value = p; }}>
-            {phasePlain(p)} <span class="ct-chip-term">· {phaseTerm(p)}</span>
-          </button>
-        ))}
-      </div>
-      <div class="ct-sv-stepper"><StageStepper /></div>
-      <SideDrawing stage={s} open={openDetails} />
-    </section>
   );
 }

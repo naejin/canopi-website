@@ -198,9 +198,8 @@ export async function restore(fragment: string, { from, src = null, keep = false
 
 // A guide preset: the climate for this consortium only (never the shared site climate), and the
 // guide's plant: a member (plant-palette-architecture 8.3: a preset gives members == [id] and no save
-// until the reader acts), and, until b3 removes them, kept and a main crop when it is a food plant of
-// that list. The plant applies only if the reader has not acted while it was read (another card, a
-// crop: pre-push review 2).
+// until the reader acts; a new suggestion is built around it). The plant applies only if the reader
+// has not acted while it was read (another card: pre-push review 2).
 export async function applyPreset(climate: ClimateZone, plant: string | null): Promise<void> {
   store.climate.value = climate;
   if (!plant) return;
@@ -213,8 +212,6 @@ export async function applyPreset(climate: ClimateZone, plant: string | null): P
   // The guide's plant is the guide's choice, not the reader acting.
   quietly(() => batch(() => {
     store.members.value = [...new Set([...store.members.peek(), t.id])];
-    if (t.role === 'crop') store.crops.value = [t.id];
-    store.kept.value = [...new Set([...store.kept.peek(), t.id])];
     notices.value = { ...notices.peek(), guideKept: t.id };
   }));
 }

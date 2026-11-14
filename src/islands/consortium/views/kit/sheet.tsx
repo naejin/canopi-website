@@ -18,10 +18,15 @@ import { countryName, spanWords } from './names.ts';
 // chunk whose first fetch failed would stay failed for the page's life (Chromium's module map), and
 // every sheet with it. So a sheet chunk imports first-run modules only, already loaded. An object, not
 // re-exports: Rollup places a module by the code that reaches it, and a re-export or a bare import
-// leaves it in a chunk of its own (1.2 KB gzip moved to the first run).
+// leaves it in a chunk of its own (1.2 KB gzip moved to the first run). The search (data/search.ts
+// searchIndex and fold, which Add and Paste import) is held here since PP-B commit 0a' deleted Start's
+// crop search, which had kept it in the first run; Object.freeze keeps every property (Rollup drops
+// the properties of a plain object literal that no module reads, and Add and Paste read the search
+// from its module, not from here), so check-built-site's K3 rule finds no sheet chunk importing it.
 import { flagLines, unknownWords } from './flags.ts';
 import { addOrder, addQuery, listQuery } from '../../rules/list-query.ts';
-export const shared = { flagLines, unknownWords, addOrder, addQuery, listQuery };
+import { fold, searchIndex } from '../../data/search.ts';
+export const shared = Object.freeze({ flagLines, unknownWords, addOrder, addQuery, listQuery, searchIndex, fold });
 
 export { BACK, WARN } from './icons.tsx';
 

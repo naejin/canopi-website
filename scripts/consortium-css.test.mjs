@@ -132,3 +132,35 @@ test('the meaning tokens are defined in tokens.css for light and both dark block
   for (const t of ['emergent', 'high', 'medium', 'low', 'none', 'outline']) assert.match(blocks[0], new RegExp(`--light-${t}:`));
   for (const t of ['look', 'outside', 'fits', 'unknown']) assert.match(blocks[0], new RegExp(`--level-${t}:\\s*var\\(--`));
 });
+
+// Every ct-* class the island writes in a class attribute is styled by a sheet under src/styles/ (PP-B
+// commit 0a', when matrix.css went and its shared rules moved to shell.css and print.css), except the
+// hook-only names below: containers and rows that tests, focus.ts or print.css's element rules find,
+// never styled by class. A class added here needs a reason; a class that gains a rule leaves the list.
+const HOOK_ONLY = new Set([
+  'ct-add', 'ct-add-showall', 'ct-climates', 'ct-corr-current', 'ct-corr-sent', 'ct-country-note', 'ct-details', 'ct-future-plants',
+  'ct-load-failed', 'ct-location', 'ct-location-result', 'ct-location-row', 'ct-paste', 'ct-pool', 'ct-print-marks', 'ct-print-stage',
+  'ct-print-table', 'ct-share-location', 'ct-sv-plant', 'ct-swap', 'ct-toast-text',
+]);
+test('every ct-* class literal in the island is defined in a stylesheet, or listed as hook-only', () => {
+  const island = new URL('../src/islands/consortium/', import.meta.url);
+  const used = new Map();
+  for (const f of readdirSync(island, { recursive: true })) {
+    if (!/\.(ts|tsx)$/.test(f)) continue;
+    const text = readFileSync(new URL(f, island), 'utf8');
+    // class="…", class={…} (one level of nested braces: a template literal's ${…}); a name followed by
+    // ${ is a prefix built at run time and is not read.
+    for (const m of text.matchAll(/\bclass(?:Name)?=(?:"([^"]*)"|\{([^}]*(?:\{[^}]*\}[^}]*)*)\})/g)) {
+      for (const [c] of (m[1] ?? m[2]).matchAll(/\bct-[a-z0-9-]*[a-z0-9](?![\w$-])/g)) used.set(c, [...(used.get(c) ?? []), f]);
+    }
+  }
+  assert.ok(used.size > 100, `class literals found (${used.size})`);
+  const styles = new URL('../src/styles/', import.meta.url);
+  const defined = new Set();
+  for (const f of readdirSync(styles, { recursive: true })) {
+    if (!f.endsWith('.css')) continue;
+    for (const [, c] of readFileSync(new URL(f, styles), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/\.(ct-[a-z0-9-]+)/g)) defined.add(c);
+  }
+  assert.deepEqual([...used.keys()].filter((c) => !defined.has(c) && !HOOK_ONLY.has(c)).map((c) => `${c} (${[...new Set(used.get(c))].join(', ')})`), [], 'classes with no rule');
+  assert.deepEqual([...HOOK_ONLY].filter((c) => defined.has(c) || !used.has(c)), [], 'a hook-only name that gained a rule or left the island leaves the list');
+});

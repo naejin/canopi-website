@@ -159,12 +159,11 @@ export const ROLE_ENTRIES = {
   // E6 lazy island parts (design check A5, A6, A11; L1-L12)
   details: /\/src\/islands\/consortium\/views\/details\/Details\.tsx$/, // K3: the plant dialog
   sheets: /\/src\/islands\/consortium\/views\/(Add|Swap|Paste|Correction)\.tsx$/, // K3
-  later: /\/src\/islands\/consortium\/views\/later\.ts$/, // K3: the views after the matrix
+  later: /\/src\/islands\/consortium\/views\/later\.ts$/, // K3: the views after the first view
   suggest: /\/src\/lib\/consortium\/suggest\.ts$/, // R4: loadSuggest
-  // PP-B parts (plant-palette-slices, commit 0; F1a's structure and balance roles went with it):
-  // the matrix behind App.tsx's lazyPart (Matrix.tsx and Actions.tsx, two chunks, until b3 deletes
-  // them), the palette page (b2 gives it a chunk) and the verdict rule (core verdict-load.ts).
-  matrix: /\/src\/islands\/consortium\/views\/(Matrix|Actions)\.tsx$/,
+  // PP-B parts (plant-palette-slices, commit 0; F1a's structure and balance roles went with it, and
+  // commit 0a' deleted the matrix role with the matrix): the palette page (b2 gives it a chunk) and the
+  // verdict rule (core verdict-load.ts).
   palette: /\/src\/islands\/consortium\/views\/palette\/Palette\.tsx$/, // b2
   verdict: /\/src\/lib\/consortium\/verdict\.ts$/, // b2 writes the body
 };

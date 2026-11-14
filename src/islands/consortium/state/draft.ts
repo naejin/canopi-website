@@ -1,10 +1,10 @@
 // Start's draft and the reader's moves around it (stream S4; E6 S2 split it out of memory.ts): the
 // climate card and the country the reader picks, Change site (the consortium set aside, a draft
-// seeded from it), Back to your consortium, Start over and Start empty; and the Main crops examples.
+// seeded from it), Back to your consortium, Start over and Start empty.
 // The consortium and the draft are two states (persist.ts): the draft never changes the consortium or
 // the save.
 import { batch, computed, signal } from '@preact/signals';
-import type { ClimateZone, PlantId, Taxon } from '../../../lib/consortium/index.ts';
+import type { ClimateZone } from '../../../lib/consortium/index.ts';
 import { siteIdOf } from '../../../lib/consortium/index.ts';
 import * as store from '../store.ts';
 import { focusView } from '../focus.ts';
@@ -18,7 +18,7 @@ export const pickingCountry = signal(false);
 
 // The reader picks a climate on Start: the shared site climate is written (climate-ux; v1 setClimate).
 // With a consortium set aside, the draft follows the card: the consortium's own card seeds it from
-// the consortium again, another card starts it empty (its crops and plants are that card's).
+// the consortium again, another card starts it empty (its plants are that card's).
 export function chooseClimate(z: ClimateZone): void {
   const aside = store.view.peek() === 'start' ? own() : null;
   batch(() => {
@@ -63,7 +63,7 @@ export function startOver(): void {
 }
 
 // "Back to your consortium" from Start: the draft discarded, the consortium shown in its own climate
-// again, whatever card was chosen since "Change site", with its own site answers, country and stage
+// again, whatever card was chosen since "Change site", with its own site answers and country
 // (F1, R2-4, R4-3); the focus goes to the view (W4).
 export const canGoBack = computed(() => store.view.value === 'start' && store.setAside.value !== null);
 export function backToConsortium(): void {
@@ -88,31 +88,4 @@ export function startEmpty(): void {
     store.view.value = 'matrix';
     store.openSheet('search');
   });
-}
-
-// ---- ported from v1 crops.js: the Main crops examples ----
-
-// One-tap examples for "What do you mainly want to grow?" (owner row "Crop examples and guide 43",
-// 2026-10-29): a rule, not a hand-picked list. Among the climate's food plants (role crop), ranked by
-// the best known (named in the most languages), then the most edible, then by scientific name: the
-// same every time. Then picked for variety: at most one plant per genus, and each round takes the best
-// of a layer not yet shown, so the examples spread across the layers before a layer repeats. The
-// crops already chosen are left out.
-export function cropExamples(pool: readonly Taxon[], n = 4, chosen: readonly PlantId[] = []): Taxon[] {
-  const known = (t: Taxon) => Object.keys(t.names).length, skip = new Set(chosen);
-  const ranked = pool.filter((t) => t.role === 'crop' && !skip.has(t.id)).sort((a, b) =>
-    known(b) - known(a) || (b.traits.edibility_rating ?? 0) - (a.traits.edibility_rating ?? 0) || (a.canonical_name < b.canonical_name ? -1 : a.canonical_name > b.canonical_name ? 1 : 0));
-  const out: Taxon[] = [], genera = new Set<string>();
-  while (out.length < n) {
-    const layers = new Set<string>();
-    let took = false;
-    for (const t of ranked) {
-      if (out.length >= n) break;
-      const g = t.genus || t.canonical_name.split(' ')[0], s = t.stratum?.value ?? '';
-      if (out.includes(t) || genera.has(g) || layers.has(s)) continue;
-      out.push(t); genera.add(g); layers.add(s); took = true;
-    }
-    if (!took) break;
-  }
-  return out;
 }

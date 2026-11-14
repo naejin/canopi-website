@@ -3,7 +3,7 @@
 // patterns repo-relative, shared files apart.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { keyProblems, matches, outside, overlaps, ownersFiles, ownersProblems, readOwners } from './plan/owners.mjs';
 
@@ -49,6 +49,25 @@ test('PP-B: the importers of what a chunk deletes are owned in that chunk; b1b w
   // b1b ports the pool panel onto b2's verdict engine, so it runs after b2 (recheck 5).
   assert.ok(ppb.chunks[2].streams.b1b.needs.includes('b2'));
   for (const p of [`${v}pool/pool.tsx`, `${v}PoolSlot.tsx`]) assert.ok(owns(2, 'b1b', p) && !owns(1, 'b1a', p), p);
+});
+
+// Delete first (commit 0a' gate; plant-palette-slices section 2): the store exports the old screens read
+// are gone, and no file of the island reads them, by a named import or through a store namespace.
+test('PP-B 0a\': no src file reads a removed store export (matrix, toggleKeep, kept, crops, marksFailed)', async () => {
+  const removed = ['matrix', 'toggleKeep', 'kept', 'crops', 'marksFailed'];
+  const store = await import('../src/islands/consortium/store.ts');
+  assert.deepEqual(removed.filter((k) => k in store || k in (store.signals ?? {})), [], 'store.ts exports none of them');
+  const root = fileURLToPath(new URL('../src/', import.meta.url));
+  const offenders = [];
+  for (const f of readdirSync(root, { recursive: true })) {
+    if (!/\.(ts|tsx|astro|mjs|js)$/.test(f)) continue;
+    const text = readFileSync(root + f, 'utf8');
+    for (const m of text.matchAll(/import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*'[^']*\/store\.ts'/g)) {
+      for (const name of m[1].split(',').map((x) => x.trim().split(/\s+as\s+/)[0]).filter(Boolean)) if (removed.includes(name)) offenders.push(`${f}: imports ${name}`);
+    }
+    for (const m of text.matchAll(new RegExp(`\\bstore\\.(${removed.join('|')})\\b`, 'g'))) offenders.push(`${f}: store.${m[1]}`);
+  }
+  assert.deepEqual(offenders, []);
 });
 
 test('shared files: only the listed streams may change them, and no stream owns them outright', () => {

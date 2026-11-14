@@ -7,13 +7,13 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:27Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:29Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:11:06Z }
 sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:cd62373a66839519
-    last_modified: 2026-11-13T06:49:01Z
+    digest: sha256:a54f837af2a33c43
+    last_modified: 2026-11-14T11:12:40Z
   - id: readme
     resource: ../../README.md
     title: README.md
@@ -22,8 +22,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:26d25b93b11f82d7
-    last_modified: 2026-11-14T10:30:46Z
+    digest: sha256:0f3014353a94fa8d
+    last_modified: 2026-11-14T11:45:53Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -103,12 +103,12 @@ sources:
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
     digest: sha256:29cbaf3dbda18ec2
-    last_modified: 2026-11-14T10:31:30Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
-    digest: sha256:3ee88662d81a483e
-    last_modified: 2026-11-14T10:38:44Z
+    digest: sha256:278d03d94f6bfc36
+    last_modified: 2026-11-14T11:54:14Z
 enforced_by:
   - scripts/package.test.mjs
   - sgconfig.yml

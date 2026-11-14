@@ -1,8 +1,9 @@
 // What the consortium tool keeps and how it opens (src/islands/consortium/state/*.ts, split from memory.ts by E6 S2; stream S4;
 // design check §5, BT-7; owner row "Memory", 2026-10-27): the guarded storage, the save record, the
 // arrival order (link, guide preset, the last consortium, the shared site climate, else nothing),
-// the country at start (a guess is never written), the share state, and the pure parts ported from
-// v1 (guessCountry, cropExamples). The real crop examples are read from the installed export.
+// the country at start (a guess is never written), the share state, and the pure part ported from
+// v1 (guessCountry). The real data is read from the installed export (cropExamples and its cases went
+// with the Main crops picker in PP-B commit 0a').
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
@@ -17,7 +18,7 @@ const m = {
   ...(await import('../src/islands/consortium/state/draft.ts')),
   ...(await import('../src/islands/consortium/state/suggest-wait.ts')),
 };
-const { guarded, saveRecord, readRecord, oldRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, cropExamples, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
+const { guarded, saveRecord, readRecord, oldRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
 // Island state, all of it (the text checks below).
 const stateSrc = ['persist', 'restore', 'arrival', 'draft', 'suggest-wait', 'lookups', 'location']
   .map((f) => readFileSync(new URL(`../src/islands/consortium/state/${f}.ts`, import.meta.url), 'utf8')).join('\n');
@@ -136,8 +137,8 @@ test('the country at start: a link, the reader\'s choice ("-" is none), the save
 });
 
 const SUN_SPOT = { light: 'sun', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
-test('the share state never carries a guessed country, keeps crops to three and lists guests', () => {
-  const base = { climate: 'Temperate', room: 'small', plot: null, period: '1991-2020', spot: SUN_SPOT, soil: { from: 'map' }, members: ['a', 'b'], kept: ['a'], removed: ['c'], guests: { b: 'Tropical' }, crops: ['a', 'x', 'y', 'z'], stage: 3 };
+test('the share state never carries a guessed country and lists guests', () => {
+  const base = { climate: 'Temperate', room: 'small', plot: null, period: '1991-2020', spot: SUN_SPOT, soil: { from: 'map' }, members: ['a', 'b'], removed: ['c'], guests: { b: 'Tropical' } };
   const place = { place: true };
   assert.equal(shareState({ ...base, country: { code: 'US', source: 'guess' } }, place).country, null);
   assert.equal(shareState({ ...base, country: { code: 'FR', source: 'chosen' } }, place).country, 'FR');
@@ -149,8 +150,7 @@ test('the share state never carries a guessed country, keeps crops to three and 
   assert.deepEqual(shareState({ ...base, country: { code: 'FR', source: 'chosen' } }, place).spot, SUN_SPOT);
   const s = shareState({ ...base, country: { code: null, source: null } });
   assert.deepEqual(s.guests, [{ id: 'b', from: 'Tropical' }]);
-  assert.deepEqual(s.crops, ['a', 'x', 'y']);
-  assert.equal(s.stage, 3);
+  assert.deepEqual(Object.keys(s).filter((k) => ['kept', 'crops', 'stage'].includes(k)), [], 'no kept, crops or stage since PP-B commit 0a\'');
   assert.equal(shareUrl('https://projectcanopi.com/fr/consortium/?plant=Allium+cepa&climate=temperate#old', 'v=5&e=1'), 'https://projectcanopi.com/fr/consortium/#v=5&e=1', 'a preset query is used once and never shared');
 });
 
@@ -164,38 +164,18 @@ test('guessCountry: the one country of the time zone, else the languages\' regio
   assert.equal(guessCountry(['FR'], { zone: 'Europe/Paris', zonesOf: () => { throw new Error('no CLDR'); }, languages: [] }), null);
 });
 
-// The installed export (real data): the Temperate examples follow the owner's rule.
+// The installed export (real data).
 const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
 const realRaw = new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url))));
 const real = await openBytes(realRaw, { releaseId: index.release_id, climates: index.climates });
 const realSource = createSqliteSource(real.db, { images: {} });
-
-test('cropExamples on the real Temperate list: Onion, European chestnut, Sunflower, Bilberry (owner row 2026-10-29)', async () => {
-  const pool = await realSource.pool('Temperate');
-  const ex = cropExamples(pool);
-  assert.deepEqual(ex.map((t) => t.names.en ?? t.canonical_name), ['Onion', 'European chestnut', 'Sunflower', 'Bilberry']);
-  assert.ok(ex.every((t) => t.role === 'crop'), 'food plants only');
-  assert.equal(new Set(ex.map((t) => t.genus)).size, ex.length, 'one per genus');
-  assert.equal(new Set(ex.map((t) => t.stratum?.value)).size, ex.length, 'spread across the layers');
-  const without = cropExamples(pool, 4, [ex[0].id]);
-  assert.ok(!without.includes(ex[0]), 'a chosen crop leaves the examples');
-  assert.deepEqual(cropExamples(pool).map((t) => t.id), ex.map((t) => t.id), 'the same every time');
-});
-
-test('cropExamples on every installed climate: four food plants, one per genus', async () => {
-  for (const zone of index.climates) {
-    const ex = cropExamples(await realSource.pool(zone));
-    assert.equal(ex.length, 4, zone);
-    assert.equal(new Set(ex.map((t) => t.genus)).size, 4, zone);
-  }
-});
 
 test('a share state round-trips through the #v=5 link', async () => {
   const pool = await realSource.pool('Temperate');
   const ids = pool.slice(0, 9).map((t) => t.id);
   const spot = { light: 'part', water: 'wet', wind: 'unsure', ground: 'unsure', height: 'unsure' };
   const soil = { from: 'own', ph: null, word: 'acid', texture: null };
-  const state = shareState({ climate: 'Temperate', country: { code: 'FR', source: 'chosen' }, room: 'large', plot: 300, period: '2041-2070', spot, soil, members: ids, kept: [ids[0]], removed: [pool[20].id], guests: {}, crops: [ids[0]], stage: 2 }, { place: true });
+  const state = shareState({ climate: 'Temperate', country: { code: 'FR', source: 'chosen' }, room: 'large', plot: 300, period: '2041-2070', spot, soil, members: ids, removed: [pool[20].id], guests: {} }, { place: true });
   const known = { Temperate: pool.map((t) => t.id) };
   const back = decodeLink(encodeLink(state, known, { place: true }), known);
   assert.deepEqual(back.notice, { unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false });
@@ -204,7 +184,7 @@ test('a share state round-trips through the #v=5 link', async () => {
   assert.deepEqual(back.state.spot, spot);
   assert.deepEqual(back.state.soil, soil);
   assert.equal(back.state.country, 'FR');
-  assert.equal(back.state.stage, null, 'the stage is not in link v5');
+  assert.equal('stage' in back.state, false, 'the stage is not in link v5');
 });
 
 // ---- restore (rounds 2 and 3 of the S4 review), on the real data with a source whose reads can be
@@ -235,7 +215,7 @@ m.watchStore?.();
 const UNSURE = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
 const linkOf = async (zone, n, extra = {}) => {
   const ids = (await realSource.pool(zone)).map((t) => t.id);
-  return encodeLink({ climate: zone, country: null, site: UNSURE, members: ids.slice(0, n), kept: [], removed: [], guests: [], crops: [], stage: null, ...extra }, { [zone]: ids });
+  return encodeLink({ climate: zone, country: null, site: UNSURE, members: ids.slice(0, n), removed: [], guests: [], ...extra }, { [zone]: ids });
 };
 // A Temperate consortium on screen, nothing else read.
 async function shown() {
@@ -391,8 +371,6 @@ test('applyPreset: a card the reader picks while the guide\'s plant is read wins
   await shown();
   store.view.value = 'start';
   store.members.value = [];
-  store.crops.value = [];
-  store.kept.value = [];
   const crop = (await realSource.pool('Tropical')).find((t) => t.role === 'crop');
   delays.Tropical = 60;
   const p = m.applyPreset('Tropical', crop.canonical_name);
@@ -400,7 +378,7 @@ test('applyPreset: a card the reader picks while the guide\'s plant is read wins
   m.chooseClimate('Mediterranean');
   await p;
   assert.equal(store.climate.peek(), 'Mediterranean', 'the reader\'s card');
-  assert.deepEqual({ crops: store.crops.peek(), kept: store.kept.peek() }, { crops: [], kept: [] }, 'the guide\'s plant is not applied');
+  assert.deepEqual(store.members.peek(), [], 'the guide\'s plant is not applied');
   assert.equal(m.notices.peek().guideKept, null);
 });
 
@@ -409,7 +387,7 @@ test('applyPreset: a card the reader picks while the guide\'s plant is read wins
 // passes { place: true }). The save keeps it beside the fragment, never in it, so the address bar and
 // the save's fragment never carry it; since PP-B commit 0a a link's country is kept beside it too.
 test('a country from the location: never in a link or the address without the tick, saved on the device as "location"', () => {
-  const base = { climate: 'Temperate', room: 'small', plot: null, period: '1991-2020', spot: SUN_SPOT, soil: { from: 'map' }, members: ['a'], kept: [], removed: [], guests: {}, crops: [], stage: null };
+  const base = { climate: 'Temperate', room: 'small', plot: null, period: '1991-2020', spot: SUN_SPOT, soil: { from: 'map' }, members: ['a'], removed: [], guests: {} };
   const here = { code: 'FR', source: 'location' };
   assert.equal(shareState({ ...base, country: here }).country, null, 'no k= without the tick');
   assert.equal(shareState({ ...base, country: here }, { place: true }).country, 'FR', 'k= with the tick');
@@ -433,16 +411,16 @@ const sorted = (list) => [...list].sort();
 
 test('schema: each field declares its part once (snapshot, Undo, saved, link, watched, plant list)', () => {
   const L = schema.lists;
-  assert.deepEqual(sorted(L.snapshot), sorted(['members', 'kept', 'removed', 'crops', 'guests', 'view', 'setAside']), 'Undo puts these back');
-  assert.deepEqual(sorted(L.endsUndo), sorted(['climate', 'members', 'kept', 'removed', 'crops', 'guests']), 'a change to these ends the Undo offer');
+  assert.deepEqual(sorted(L.snapshot), sorted(['members', 'removed', 'guests', 'view', 'setAside']), 'Undo puts these back');
+  assert.deepEqual(sorted(L.endsUndo), sorted(['climate', 'members', 'removed', 'guests']), 'a change to these ends the Undo offer');
   // PP-B commit 0a: the place (room, plot, spot, soil) and the period replace the site answers; site is
-  // derived from them (store.ts), not saved. kept, crops and stage stay saved until b3 removes them.
-  const saved = ['climate', 'country', 'room', 'plot', 'spot', 'soil', 'period', 'members', 'kept', 'removed', 'guests', 'crops', 'stage'];
+  // derived from them (store.ts), not saved. Commit 0a' removed kept and crops; stage is unsaved (print).
+  const saved = ['climate', 'country', 'room', 'plot', 'spot', 'soil', 'period', 'members', 'removed', 'guests'];
   assert.deepEqual(sorted(L.saved), sorted(saved), 'the Consortium the save keeps and Change site sets aside');
   assert.deepEqual(sorted(Object.keys(CONSORTIUM_FIELDS)), sorted(saved), 'CONSORTIUM_FIELDS (the Consortium type) holds the saved fields');
   assert.deepEqual(sorted(L.reader), sorted([...saved, 'view']), 'a write to these is the reader acting');
   assert.deepEqual(sorted(L.save), sorted([...saved, 'view', 'setAside']), 'the save and the address follow these');
-  assert.deepEqual(sorted(L.plants), sorted(['members', 'kept', 'removed', 'guests', 'crops']));
+  assert.deepEqual(sorted(L.plants), sorted(['members', 'removed', 'guests']));
   for (const k of Object.keys(STATE_FIELDS)) assert.equal(store[k], schema.signals[k], `store.${k} is the schema's signal`);
 });
 
@@ -455,7 +433,7 @@ test('schema: store.ts and island state (state/*.ts) list no state field by hand
   const memSrc = stateSrc;
   const storeSrc = readFileSync(new URL('../src/islands/consortium/store.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(memSrc, /void \[store\./, 'watcher lists come from schema.lists');
-  assert.doesNotMatch(memSrc, /store\.(crops|kept|members)\.value = (s\.|same)/, 'the link and the draft write fields through the schema');
+  assert.doesNotMatch(memSrc, /store\.(members|removed|guests)\.value = (s\.|same)/, 'the link and the draft write fields through the schema');
   assert.doesNotMatch(storeSrc, /SNAP_KEYS = \[/, 'SNAP_KEYS comes from schema.lists');
   assert.doesNotMatch(storeSrc, /interface Snapshot \{/, 'Snapshot comes from the schema');
   assert.doesNotMatch(memSrc, /export interface ShareInput/, 'ShareInput comes from the schema');
@@ -505,10 +483,8 @@ async function blankShown() {
   store.spot.value = { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
   store.soil.value = { from: 'map' };
   store.period.value = '1991-2020';
-  store.kept.value = [];
   store.removed.value = [];
   store.guests.value = {};
-  store.crops.value = [];
   store.stage.value = 0;
   store.setAside.value = null;
   return pool;
@@ -521,8 +497,7 @@ const ACID = { from: 'own', ph: null, word: 'acid', texture: null };
 // field is a place answer (`place`), and a link's spot or soil applies only when it brings a place.
 // `saved` / `link`: the value read back when it differs from `want`; `fromSave`: where the save keeps
 // it when restore does not read it; `before`: a value set just before the restore, to show it is replaced
-// (or kept). kept, crops and stage are deprecated: not in link v5, so a restore empties kept and crops
-// and keeps the page's stage (b3 removes them).
+// (or kept). kept and crops went in PP-B commit 0a'; stage is not saved (print's, until PP-B18).
 const CASES = {
   climate: { change: async () => { const p = await store.loadPool('Mediterranean'); store.climate.value = 'Mediterranean'; store.members.value = p.slice(0, 4).map((t) => t.id); }, want: 'Mediterranean' },
   // A location's country is kept beside the save's fragment and read at start (countryAtStart); in a
@@ -538,11 +513,8 @@ const CASES = {
   soil: { change: () => { store.soil.value = { ...ACID }; }, want: ACID, place: true },
   period: { change: () => { store.period.value = '2041-2070'; }, want: '2041-2070' },
   members: { change: (p) => { store.members.value = p.slice(10, 14).map((t) => t.id); }, want: (p) => p.slice(10, 14).map((t) => t.id) },
-  kept: { change: (p) => { store.kept.value = [p[2].id]; }, want: (p) => [p[2].id], before: (p) => { store.kept.value = [p[3].id]; }, saved: [], link: [] },
   removed: { change: (p) => { store.removed.value = [p[30].id]; }, want: (p) => [p[30].id] },
   guests: { change: async () => { const g = (await store.loadPool('Tropical'))[5].id; store.members.value = [...store.members.peek(), g]; store.guests.value = { [g]: 'Tropical' }; }, want: async () => ({ [(await store.loadPool('Tropical'))[5].id]: 'Tropical' }) },
-  crops: { change: (p) => { store.crops.value = [p[1].id]; }, want: (p) => [p[1].id], before: (p) => { store.crops.value = [p[3].id]; }, saved: [], link: [] },
-  stage: { change: () => { store.stage.value = 4; }, want: 4, before: () => { store.stage.value = 2; }, saved: 2, link: 2 },
 };
 const valueOf = async (w, p) => (typeof w === 'function' ? w(p) : w);
 
@@ -580,8 +552,8 @@ for (const [k, c] of Object.entries(CASES)) {
 test('Undo puts back each snapshot field; the view only to or from Start', async () => {
   const pool = await blankShown();
   const ids = pool.slice(0, 3).map((t) => t.id);
-  const aside = { climate: 'Temperate', members: ids, kept: [], removed: [], guests: {}, crops: [], site: { ...UNSURE }, country: { code: null, source: null }, stage: 0 };
-  const values = { members: ids, kept: [ids[0]], removed: [ids[2]], crops: [ids[1]], guests: { [ids[1]]: 'Tropical' }, setAside: aside };
+  const aside = { climate: 'Temperate', members: ids, removed: [], guests: {}, site: { ...UNSURE }, country: { code: null, source: null } };
+  const values = { members: ids, removed: [ids[2]], guests: { [ids[1]]: 'Tropical' }, setAside: aside };
   for (const [k, v] of Object.entries(values)) {
     const before = schema.snapshot();
     store[k].value = v;
@@ -604,9 +576,7 @@ test('a change to any field that ends Undo hides the Undo toast', async () => {
   const changes = {
     climate: () => { store.climate.value = 'Mediterranean'; },
     members: (p) => { store.members.value = [p[40].id]; },
-    kept: (p) => { store.kept.value = [p[41].id]; },
     removed: (p) => { store.removed.value = [p[42].id]; },
-    crops: (p) => { store.crops.value = [p[43].id]; },
     guests: (p) => { store.guests.value = { [p[44].id]: 'Tropical' }; },
   };
   assert.deepEqual(sorted(Object.keys(changes)), sorted(schema.lists.endsUndo));
@@ -691,7 +661,7 @@ test('a link\'s o= is looked up through the location step the view hands in (res
   const before = restoreModule.provideLocationStep(async () => ({ settle: (how, saved) => { calls.push([how, saved, lookupsModule.lookups.peek()]); return new Promise((r) => { held = r; }); } }));
   try {
     const ids = (await realSource.pool('Mediterranean')).map((t) => t.id);
-    const link = encodeLink({ climate: 'Mediterranean', country: null, site: UNSURE, members: ids.slice(0, 3), kept: [], removed: [], guests: [], crops: [], stage: null }, { Mediterranean: ids }, { origin: { lat: 37.39, lon: -5.98 } });
+    const link = encodeLink({ climate: 'Mediterranean', country: null, site: UNSURE, members: ids.slice(0, 3), removed: [], guests: [] }, { Mediterranean: ids }, { origin: { lat: 37.39, lon: -5.98 } });
     assert.equal(await m.restore(link, { from: 'link', keep: true }), true);
     assert.equal(store.location.peek()?.source, 'link', 'the link\'s site, its lookup to come');
     await wait(0);

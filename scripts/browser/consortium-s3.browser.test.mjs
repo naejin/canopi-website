@@ -138,7 +138,7 @@ test('BT-5 (S3 details, offline): a correction sent offline says "Not sent" and 
   await page.close();
 });
 
-test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an invasive warning does not, Remove then Undo, Keep pins, "Add 2 plants", Paste offers Add anyway with a labelled chip', async (t) => {
+test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an invasive warning does not, Remove then Undo, "Add 2 plants", Paste offers Add anyway with a labelled chip', async (t) => {
   await behaviour(t, async (v) => {
     const page = await open({ ...v, data: 'fixture' });
     await start(page);
@@ -183,7 +183,7 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an 
     assert.equal(await findAx(page, { role: 'alertdialog' }, 800), null, 'an invasive warning does not ask');
     assert.ok(await isMember(page, 'Robinia pseudoacacia'), 'Robinia is added');
 
-    // Remove, then Undo; Keep shows the pin.
+    // Remove, then Undo (Keep and its pin went in PP-B commit 0a').
     const chip = await chipOf(page, names['Malus domestica']);
     await page.locator(aria('button', chip.name)).click();
     await page.locator(aria('button', 'Remove')).click();
@@ -191,15 +191,6 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict asks and an 
     assert.equal(await chipOf(page, names['Malus domestica']), undefined);
     await page.locator(aria('button', 'Undo')).click();
     assert.ok(await chipOf(page, names['Malus domestica']), 'Undo restores the plant');
-    await page.locator(aria('button', (await chipOf(page, names['Malus domestica'])).name)).click();
-    const keep = await findAx(page, { role: 'button', name: 'Keep' });
-    await page.locator(aria('button', 'Keep')).click();
-    const after = await findAx(page, { role: 'button', name: 'Keep' });
-    assert.equal(!!after?.pressed, !keep?.pressed, 'Keep toggles the pin');
-    if (!after?.pressed) await page.locator(aria('button', 'Keep')).click();
-    assert.ok(await findAx(page, { name: 'Kept' }), 'Keep shows the pin');
-    await page.keyboard.press('Escape');
-    await page.waitForFunction(() => !document.querySelector('dialog[open]'));
 
     // Add with two selected.
     await openBy(page, 'Add plants');
@@ -265,12 +256,10 @@ test('BT-6 (S3 review): Undo goes away when the consortium changes another way; 
   await page.locator(aria('button', 'Remove')).click();
   await closed(page);
   assert.ok(await has(page, aria('button', 'Undo')), 'Undo after Remove');
-  const other = (await axNodes(page)).find((n) => n.role === 'button' && / · /.test(n.name ?? '') && !n.name.startsWith(names['Castanea sativa']));
-  await page.locator(aria('button', other.name)).click();
-  await page.locator(aria('button', 'Keep')).click();
-  await page.keyboard.press('Escape');
-  await closed(page);
-  assert.equal(await has(page, aria('button', 'Undo'), 800), false, 'a pin made since hides Undo');
+  // Another plant taken out through the store (no toast of its own; the pin this pressed went with Keep
+  // in PP-B commit 0a'): a change to the members made since hides Undo.
+  await setStore(page, () => { const { store } = window.__ctTest; store.members.value = store.members.value.slice(1); });
+  assert.equal(await has(page, aria('button', 'Undo'), 800), false, 'a change made since hides Undo');
 
   // The page modulepreloads every chunk, so the hook makes the Swap chunk's import fail.
   await setStore(page, () => { const { store, openSheet, failSheets } = window.__ctTest; failSheets(); openSheet('swap', store.members.value[0]); });

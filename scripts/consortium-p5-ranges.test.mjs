@@ -357,17 +357,14 @@ const SMALL = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'small' 
 const fig = taxon({ id: 'fig', canonical_name: 'Ficus carica', traits: { height_m: { min: 3, max: 12 } } });
 const short = taxon({ id: 'short', canonical_name: 'Short tree', traits: { height_m: { min: 2, max: 5 } } });
 
-test('room: a plant taller than the room fits, with the height noted; it never makes a cell a misfit, a flag or an ask', () => {
+test('room: a plant taller than the room fits, with the height noted; it never makes a misfit, a flag or an ask', () => {
   const f = core.fits(fig, SMALL);
   assert.equal(f.verdict, 'fit');
   assert.deepEqual(f.misfits, []);
   assert.deepEqual(f.reasons, [{ key: 'room', verdict: 'fit', kind: 'wild_height', meters: 12, limit: 6 }]);
   assert.equal(core.tallerThanRoom(f), true);
   assert.equal(core.tallerThanRoom(core.fits(short, SMALL)), false);
-  const m = core.buildMatrix('Temperate', [fig], [], SMALL);
-  const cell = m.rows[0].cells[3];
-  assert.deepEqual([cell.empty, cell.fitting, cell.inList], [null, 1, 1], 'the emergent cell is free, with the fig counted in "N fit"');
-  assert.equal(m.rows.flatMap((r) => r.cells).some((x) => x.empty === 'misfit'), false, 'no cell "can\'t be filled" for the room');
+  // (Its matrix cell stayed free, counted in "N fit"; the matrix went in PP-B commit 0a'.)
   const flags = core.flagsOf([fig], { site: SMALL, interactions: [] });
   assert.equal(flags.some((x) => x.kind === 'misfit'), false, 'no misfit flag');
   // Light, soil and water still block.
@@ -378,8 +375,8 @@ test('room: the suggestion still prefers plants that fit the room naturally (a t
   const s = suggest([fig, short], { site: SMALL, interactions: [] });
   assert.deepEqual(s.members, ['short']);
   assert.equal(s.limit, SIZE_LIMIT.small);
-  // Kept by the reader, it stays.
-  assert.ok(suggest([fig, short], { site: SMALL, interactions: [], kept: ['fig'] }).members.includes('fig'));
+  // Already in the palette (the seed), it stays.
+  assert.ok(suggest([fig, short], { site: SMALL, interactions: [], seed: ['fig'] }).members.includes('fig'));
 });
 
 test('room: the height note ("Grows to 12 m: keep it pruned, or pick a smaller plant") on rows, Add and Details; marks load for a sized room', () => {

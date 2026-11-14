@@ -55,13 +55,12 @@ test('the host views mount every stream\'s slot, and PlantMarks names its surfac
   assert.match(start, /const pill = cardPill\(z\);/, 'S5c: the card\'s pill from PoolSlot (Ready, Needs your location, Not covered yet; hand-off H-S5c-5)');
   assert.match(start, /climateShown\.value;[\s\S]*data-proposed/, 'S5b: a proposed climate shows as proposed, not checked (review round 1, 6)');
   assert.match(view('later.ts'), /export \{ FutureSlot \} from '\.\/FutureSlot\.tsx';/, 'S5d: FutureSlot in the later chunk');
-  // Under the matrix's view, after Share, Print and Download, so they never move when it lands (hand-off branch).
+  // In the palette slot, after Share, Print and Download, so they never move when it lands (hand-off branch).
   assert.match(view('Actions.tsx'), /later\(\(\) => laterChunk\(\)\.then\(\(m\) => m\.FutureSlot\), \{ idle: true \}\)/, 'idle: no download before ct:first-view or the data ready');
-  assert.match(view('Actions.tsx'), /<ActionsView \/>\{v === 'matrix' && <future\.View \/>\}/, 'S5d: the panel after the actions, under the matrix view');
-  assert.doesNotMatch(view('Matrix.tsx') + view('PhoneMatrix.tsx'), /<FutureSlot \/>/, 'not above the actions');
+  assert.match(view('Actions.tsx'), /<ActionsView \/><future\.View \/>/, 'S5d: the panel after the actions (the matrix views above it went in PP-B commit 0a\')');
   assert.match(view('details/Details.tsx'), /<PlantMarks taxon=\{t\} surface="details" \/>/);
   assert.equal((view('Add.tsx').match(/<PlantMarks taxon=\{t\} surface="add" \/>/g) ?? []).length, 2);
-  assert.match(view('StageBar.tsx'), /<PlantMarks taxon=\{taxon\} surface=\{tight \? 'chip' : 'row'\} \/>/);
+  assert.match(view('StageBar.tsx'), /<PlantMarks taxon=\{taxon\} surface="row" \/>/);
   assert.match(view('PlantMarks.tsx'), /data-mark=\{m\.kind\} data-mark-state=\{m\.state\}/);
 });
 

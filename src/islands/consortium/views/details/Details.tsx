@@ -12,7 +12,7 @@
 // yield-gain field trials only (no companion folklore).
 import { useEffect, useRef, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
-import { closeSheet, openSheet, removeMember, taxonOf, toggleKeep } from '../../store.ts';
+import { closeSheet, openSheet, removeMember, taxonOf } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Details as PlantFacts, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
 import { TODAY_PERIOD, borrowedFrom, factAt, guestOf, jobsOf, pairings, phaseOrd, placementZone, siteIdOf, spanOf } from '../../../../lib/consortium/index.ts';
@@ -22,7 +22,7 @@ import { consortiumGuides } from '../../../../data/consortium-guides.ts';
 import { PlantMarks } from '../PlantMarks.tsx';
 import { Bar, shared, type Frame } from '../kit/sheet.tsx';
 import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from '../kit/names.ts';
-import { PIN, SPROUT, WARN } from '../kit/icons.tsx';
+import { WARN } from '../kit/icons.tsx';
 import { drafts, type CorrectionField } from '../kit/correction.ts';
 import { pageData } from '../kit/page.ts';
 import { later, retryable } from '../lazy.tsx';
@@ -145,8 +145,6 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   if (!t || !zone) return null;
 
   const member = store.members.value.includes(id);
-  const kept = store.kept.value.includes(id);
-  const crop = store.crops.value.includes(id);
   const flags = store.flagsOfPlant(t), scene = store.flagScene.value;
   const lines = flagLines(t, flags, scene, { low: true });
   const soft = [
@@ -190,8 +188,6 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
         <h2 id="ct-d-title" tabIndex={-1} data-autofocus>{nameOf(t)}</h2>
         <p><i class="ct-sci">{t.canonical_name}</i>{t.family && <span class="ct-muted"> · {t.family}</span>}</p>
         <p class="ct-marks">
-          {crop && <span class="ct-tag">{SPROUT}{T('mainCrop')}</span>}
-          {!crop && kept && <span class="ct-tag">{PIN}{T('keptTag')}</span>}
           {guest && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(guest) })}</span>}
           {lines.filter((l) => l.kind !== 'soft').length > 0 && <span class="ct-flag">{WARN}{P('details.warnCount', lines.filter((l) => l.kind !== 'soft').length)}</span>}
           <PlantMarks taxon={t} surface="details" />
@@ -208,12 +204,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
 
       {member && (
         <div class="ct-actions">
-          {crop
-            ? <span class="ct-tag ct-tag-large">{SPROUT}{T('details.cropNoSwap')}</span>
-            : <>
-                <button type="button" class="button button-secondary" aria-pressed={kept} onClick={() => toggleKeep(id)}>{PIN}{T('details.keep')}</button>
-                <button type="button" class="button button-secondary" onClick={() => openSheet('swap', id)}>{T('details.swap')}</button>
-              </>}
+          <button type="button" class="button button-secondary" onClick={() => openSheet('swap', id)}>{T('details.swap')}</button>
           <button type="button" class="button button-secondary" onClick={() => { closeSheet(); removeMember(id); }}>{T('details.remove')}</button>
         </div>
       )}

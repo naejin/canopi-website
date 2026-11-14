@@ -64,24 +64,6 @@ const CROP_CASES = [
 const cropsOf = (climate, lang) => realDb((db) => db.prepare(`SELECT p.id, p.canonical_name c,
   (SELECT name FROM plant_names n WHERE n.plant = p.plant AND n.locale = ?) l, (SELECT name FROM plant_names n WHERE n.plant = p.plant AND n.locale = 'en') en
   FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? AND x.role = 'crop'`).all(lang, climate));
-test('E6-1 (K1 kit): Start\'s crop search finds what Add\'s search finds for the same words: "sussholz" finds Süßholz, an unspaced CJK substring finds its crops @real-data', async () => {
-  for (const { lang, climate, q } of CROP_CASES) {
-    const crops = await cropsOf(climate, lang);
-    const byId = new Map(crops.map((r) => [String(r.id), r.c]));
-    const expected = searchIndex(crops.map((r) => ({ id: String(r.id), canonical: r.c, names: { ...(r.en ? { en: r.en } : {}), ...(r.l ? { [lang]: r.l } : {}) } })))(q).map((x) => byId.get(x.id));
-    assert.ok(expected.length, `the export has a ${climate} crop matching "${q}" in ${lang}`);
-    const page = await tool({ lang, ...DESKTOP });
-    await choose(page, climate);
-    await page.locator('.ct-crop-search input').fill(q);
-    await page.waitForFunction(() => !!document.querySelector('.ct-hits, .ct-crop-search ~ p[role="status"]'), { timeout: 4000 });
-    const hits = await page.$$eval('.ct-hits .ct-sci', (els) => els.map((e) => e.textContent.trim()));
-    await page.browserContext().close().catch(() => {});
-    assert.ok(hits.length, `Start finds no crop for "${q}" (${lang}, ${climate}); Add's search finds ${expected.join(', ')}`);
-    if (expected.length <= 8) assert.deepEqual([...hits].sort(), [...expected].sort(), `Start and Add, same hits for "${q}" (${lang})`);
-    else { assert.equal(hits.length, 8); for (const x of hits) assert.ok(expected.includes(x), `${x} is one of Add's hits for "${q}"`); }
-  }
-});
-
 // E6-2 (L5, A5): before the data is ready nothing lazy is fetched: no modulepreload link for any lazy
 // part (every chunk role: the sheets, the plant dialog, the views after the matrix, suggest, the P5
 // features, MapLibre), and no request for one, while the database download is held. The page's
@@ -370,23 +352,7 @@ test('E6-19 (B4 hand-off, chunk-5 exit fix round): in the test build, a test hoo
   } finally { await page.browserContext().close().catch(() => {}); }
 });
 
-// E6 hand-off C: the parts outside the sheets mend a chunk that failed once (views/lazy.tsx retryable),
-// as the sheets do: the later chunk's first request (the prefetch's, at the data ready) is answered 404,
-// and the Jobs tab still opens on the next use, not "did not load" until Reload.
-test('E6-24 (K3 hand-off C): the views after the matrix open on the next use after their chunk failed once', async () => {
-  const failed = [];
-  const page = await matrixPage({ setup: fail404Once(h.roles.later, failed) });
-  try {
-    for (const end = Date.now() + 5000; !failed.length && Date.now() < end;) await new Promise((r) => setTimeout(r, 50));
-    assert.equal(failed.length, 1, 'the later chunk\'s first request answered 404');
-    await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
-    await page.locator(aria('tab', 'Jobs')).click();
-    await page.waitForFunction(() => !!document.querySelector('#ct-panel-jobs .ct-jobs-view, #ct-panel-jobs [role="alert"]'), { timeout: 8000 }).catch(() => {});
-    assert.ok(await has(page, '#ct-panel-jobs .ct-jobs-view', 300), 'the Jobs view, not the failed line');
-  } finally { await page.browserContext().close().catch(() => {}); }
-});
-
-// ---- E6 hand-off review 1, 2: the later chunk's parts share one retry; an idle part waits for idle time ----
+// ---- E6 hand-off review 2: an idle part waits for idle time (review 1's shared retry went with Jobs in PP-B commit 0a') ----
 
 // Answers the first n requests for `urls` (any query, ?retry=k included) 404; log lists each request.
 const failFirst = (urls, n, log) => async (page) => {

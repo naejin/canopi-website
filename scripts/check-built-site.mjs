@@ -510,8 +510,7 @@ const ROLE_CAPS = {
   later: 8 * KB, // measured 7,831 B: the A14 max of 8 KB leaves 0.35 KB headroom
   suggest: 8 * KB, // set before R4's loadSuggest gave it a chunk (1.8 KB at the E6 hand-off build): A14 max
   // PP-B (plant-palette-slices "Budgets"): 12 KB each until measured; set to measured + 0.5 KB at the
-  // PP-B exit. matrix holds Matrix.tsx and Actions.tsx (each chunk capped) until b3 deletes the role.
-  matrix: 12 * KB, // each of its two chunks
+  // PP-B exit (the matrix role went with the matrix in commit 0a').
   palette: 12 * KB, // no chunk yet (b2)
   verdict: 12 * KB, // the stub until b2 writes the rule
 };
@@ -526,7 +525,6 @@ const roles = readChunkRoles(root);
 assert.deepEqual(roles.testHook, [], `the browser-test hook's chunk is in a production build (${roles.testHook.join(', ')}): build with npm run build`);
 assert.deepEqual(Object.keys(ROLE_CAPS).sort(), Object.keys(roles.features).sort(), 'every chunk role has a cap (ROLE_CAPS) and every cap a role');
 for (const kind of ['markProviders', 'future', 'details', 'later', 'range', 'suggest', 'pool', 'verdict']) assert.equal(roles.features[kind].length, 1, `one ${kind} chunk, found ${roles.features[kind].join(', ') || 'none'}`);
-assert.equal(roles.features.matrix.length, 2, `two matrix chunks (Matrix, Actions), found ${roles.features.matrix.join(', ') || 'none'}`);
 assert.equal(roles.features.sheets.length, 4, `four sheet chunks (Add, Swap, Paste, Correction), found ${roles.features.sheets.join(', ') || 'none'}`);
 const report = { firstRun: 0, firstRunList: [], costs: {}, location: 0, maplibre: 0, preloads: [] };
 for (const lang of locales) {
