@@ -891,6 +891,31 @@ test('PP-B47 (b2 review r2 print-1): beforeprint without print media mounts the 
   await done(page);
 });
 
+// r3-hash-1: a Back between two entries with the same address (a sheet's) fires popstate and no
+// hashchange; the page must not then swallow a later hashchange the reader makes to that address.
+failing('PP-B48 (b2 review r3 hash-1): a shared link, Details opened and closed with Back, a plant removed, then the same link pasted: the link opens again', { owner: 'b2', reason: /the pasted link opens again/ }, async () => {
+  const page = await tool({ width: 390, hash: await temperateLink() });
+  assert.ok(await onPage(page), 'the palette page');
+  await settled(page);
+  const link = await page.evaluate(() => location.hash);
+  const n = await page.evaluate(() => window.__ctTest.store.members.value.length);
+  await page.evaluate(() => window.__ctTest.store.hideToast());
+  await page.waitForSelector('.ct-chart .ct-chip[data-plant-id]', { timeout: 8000 });
+  await page.click('.ct-chart .ct-chip[data-plant-id]');
+  await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind === 'details', { timeout: 8000 });
+  await back(page);
+  await settled(page);
+  assert.equal(await sheetKind(page), null, 'Back closes Details');
+  assert.equal(await page.evaluate(() => location.hash), link, 'the address still holds the link');
+  await page.evaluate(() => window.__ctTest.store.removeMember(window.__ctTest.store.members.value[0]));
+  assert.ok(await page.waitForFunction((l) => window.__ctTest.store.members.value.length === l - 1, { timeout: 4000 }, n).then(() => true, () => false), 'one plant removed');
+  await settled(page);
+  assert.notEqual(await page.evaluate(() => location.hash), link, 'the address follows the edit');
+  await page.evaluate((l) => { location.hash = l; }, link);
+  assert.ok(await page.waitForFunction((l) => window.__ctTest.store.members.value.length === l, { timeout: 8000 }, n).then(() => true, () => false), `the pasted link opens again with its ${n} plants (kept ${await page.evaluate(() => window.__ctTest.store.members.value.length)})`);
+  await done(page);
+});
+
 // ---- scale (owner directive 2026-11-14: smooth to 200 plants), CPU throttled 4× through CDP ----
 // The shared 200-plant palette (scripts/palette-200.mjs), saved, reopened at 390 and 1280 px. Budgets:
 // navigation → Next step visible 2.5 s; one Add from the Next step → the page updated 300 ms; no long task
