@@ -5,7 +5,7 @@ description: "The consortium island's state layer under src/islands/consortium/s
 tags: [consortium, state]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:46:53Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:46:56Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:33Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
@@ -15,13 +15,13 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:af8a72c79d13c573
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:1afe77755f5cad27
+    last_modified: 2026-11-14T21:05:18Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:4d4b3e5befddbd34
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:37e1b11071730a71
+    last_modified: 2026-11-14T21:05:18Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
@@ -35,8 +35,8 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:3607cd88692db279
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:2277cf3363de4243
+    last_modified: 2026-11-14T21:05:18Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
@@ -70,8 +70,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:2f08c35425c5c8bd
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:877b71a79e071642
+    last_modified: 2026-11-14T21:28:50Z
 enforced_by:
   - scripts/consortium-memory.test.mjs
   - scripts/consortium-start.test.mjs

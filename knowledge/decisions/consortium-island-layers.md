@@ -5,18 +5,18 @@ description: The consortium island's layers L0-L4, the import rules dependency-c
 tags: [consortium, architecture]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:44Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:08Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:28Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:4c782bcf9945a6af
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:c030eb81ae8774ae
+    last_modified: 2026-11-14T21:28:50Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:fdbe406a5ad7fa67
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:877b71a79e071642
+    last_modified: 2026-11-14T21:28:50Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -55,18 +55,18 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:aff3ea767c6ea904
-    last_modified: 2026-11-14T14:41:58Z
+    digest: sha256:3677ffab554a9095
+    last_modified: 2026-11-14T21:28:50Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:23dd2fab9b74e166
-    last_modified: 2026-11-14T14:41:58Z
+    digest: sha256:9e33f71621450529
+    last_modified: 2026-11-14T21:28:50Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:1955a2aea66ffb33
-    last_modified: 2026-11-14T16:49:53Z
+    digest: sha256:1049f9dc00bc792a
+    last_modified: 2026-11-14T21:28:50Z
   - id: arch-json
     resource: ../../scripts/quality/baselines/arch.json
     title: scripts/quality/baselines/arch.json

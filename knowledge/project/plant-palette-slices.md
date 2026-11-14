@@ -6,7 +6,7 @@ tags: [consortium]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:56Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:05:58Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:30Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -136,8 +136,8 @@ sources:
   - id: plan-owners-test-mjs
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
-    digest: sha256:da06005f1e01d596
-    last_modified: 2026-11-14T15:16:44Z
+    digest: sha256:02ac6064d280aba6
+    last_modified: 2026-11-14T21:28:50Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
@@ -176,8 +176,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:812dd42f9ca5980d
-    last_modified: 2026-11-14T16:49:53Z
+    digest: sha256:56d00d4048591c6f
+    last_modified: 2026-11-14T21:28:50Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -241,8 +241,8 @@ sources:
   - id: futureslot-tsx
     resource: ../../src/islands/consortium/views/FutureSlot.tsx
     title: src/islands/consortium/views/FutureSlot.tsx
-    digest: sha256:1b16c071bd91fd73
-    last_modified: 2026-11-13T14:56:35Z
+    digest: sha256:0ae13573d9f7e790
+    last_modified: 2026-11-14T21:28:50Z
   - id: paste-tsx
     resource: ../../src/islands/consortium/views/Paste.tsx
     title: src/islands/consortium/views/Paste.tsx
@@ -256,8 +256,8 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:aff3ea767c6ea904
-    last_modified: 2026-11-14T14:41:58Z
+    digest: sha256:3677ffab554a9095
+    last_modified: 2026-11-14T21:28:50Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
@@ -266,8 +266,8 @@ sources:
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:23dd2fab9b74e166
-    last_modified: 2026-11-14T14:41:58Z
+    digest: sha256:9e33f71621450529
+    last_modified: 2026-11-14T21:28:50Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -316,8 +316,8 @@ sources:
   - id: index-ts-2
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:fdbe406a5ad7fa67
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:877b71a79e071642
+    last_modified: 2026-11-14T21:28:50Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -331,8 +331,8 @@ sources:
   - id: marks-ts
     resource: ../../src/lib/consortium/marks.ts
     title: src/lib/consortium/marks.ts
-    digest: sha256:216177344e1b7811
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:8a43c201f0c9b5c2
+    last_modified: 2026-11-14T21:28:50Z
   - id: matrix-ts
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts

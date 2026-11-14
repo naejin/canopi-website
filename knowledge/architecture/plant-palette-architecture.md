@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:40Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:15Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:05:31Z }
 sources:
@@ -92,8 +92,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:812dd42f9ca5980d
-    last_modified: 2026-11-14T16:49:53Z
+    digest: sha256:56d00d4048591c6f
+    last_modified: 2026-11-14T21:28:50Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -187,8 +187,8 @@ sources:
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
-    digest: sha256:aa4bfc685c30de03
-    last_modified: 2026-11-14T18:01:21Z
+    digest: sha256:72ff813b5dca1050
+    last_modified: 2026-11-14T21:28:50Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
@@ -202,8 +202,8 @@ sources:
   - id: futureslot-tsx
     resource: ../../src/islands/consortium/views/FutureSlot.tsx
     title: src/islands/consortium/views/FutureSlot.tsx
-    digest: sha256:1b16c071bd91fd73
-    last_modified: 2026-11-13T14:56:35Z
+    digest: sha256:0ae13573d9f7e790
+    last_modified: 2026-11-14T21:28:50Z
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
@@ -222,8 +222,8 @@ sources:
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
-    digest: sha256:09389a4dd2aadea2
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:75ccb83d8615591a
+    last_modified: 2026-11-14T21:28:50Z
   - id: sideview-tsx
     resource: ../../src/islands/consortium/views/SideView.tsx
     title: src/islands/consortium/views/SideView.tsx
@@ -272,8 +272,8 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:1955a2aea66ffb33
-    last_modified: 2026-11-14T16:49:53Z
+    digest: sha256:1049f9dc00bc792a
+    last_modified: 2026-11-14T21:28:50Z
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
@@ -327,8 +327,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:fdbe406a5ad7fa67
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:877b71a79e071642
+    last_modified: 2026-11-14T21:28:50Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -342,8 +342,8 @@ sources:
   - id: marks-ts
     resource: ../../src/lib/consortium/marks.ts
     title: src/lib/consortium/marks.ts
-    digest: sha256:216177344e1b7811
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:8a43c201f0c9b5c2
+    last_modified: 2026-11-14T21:28:50Z
   - id: matrix-ts
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
@@ -516,7 +516,7 @@ The core stays flat (no subfolder of `src/lib/consortium/`): whether the boundar
 | Filter and grouping of offered plants | `rules/find-query.ts` (PP-C) | `rules/list-query.ts:14-51` | rewrite on verdict levels and warnings |
 | Picture geometry | `rules/picture-*.ts`; `rules/months.ts` (`monthRuns`, `monthsText`, `scopeText` from `views/layers.ts:44,61`, moved by g1); `heightFrac`, `usualHeight` from `views/side.ts` to `rules/heights.ts` (b2, for print) | `views/tracks.ts`, `views/side.ts`, `views/layers.ts` | rules may not import views (L2) |
 | Names and numbers | `views/kit/names.ts` (gains `collatorFor`, `nameOrder` from `views/tracks.ts:18-30`), `format.ts:13` | `formatNumber` only; 14 `en.json` keys write a unit after a placeholder (`consortium.room.tall`, `side.metres`, `range.side.*`, `location.meansNear`, …) | PP-B commit 0 adds `formatLength`, `formatDepthCm`, `formatTemp`, `formatTempDiff` (a difference converts without +32) with Intl `style:'unit'`, `formatArea` (`formatNumber` + " m²"; Intl has no square-metre unit) and `parsePlotSize`; new keys take a preformatted `{len}`, `{area}`, `{depth}`, `{temp}` or `{tempDiff}`, and a policy check in `consortium-keys.test.mjs` bans a unit after a placeholder in new consortium keys; existing keys move when their stream rewrites them. Behaviour stays metric; imperial is not planned and the formatters are its single switch point |
-| Lazy loading and its failure line | `views/lazy.tsx` (`LoadFailed` `:62`, `retryable` `:148`) | same | keep; `balancePanel` (`:161`) deleted |
+| Lazy loading and its failure line | `views/lazy.tsx` (`LoadFailed` `:62`; the retryable import is core `retry-import.ts` `retryableImport` since the 2026-11-14 simplify pass) | same | keep; `balancePanel` (`:161`) deleted |
 | Search | `data/search.ts` `searchIndex` (`:27`) over `pool()` and `borrowed()` taxa; `readPool` (`sqlite-source.ts:152`) already loads names in every locale | same | Find reuses it (no `PlantSource` or SQL change) |
 
 ### 3.1 Place

@@ -5,7 +5,7 @@ description: One placement origin on guest and borrowed plants replaces three fi
 tags: [consortium, architecture]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:45Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:05:26Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:27Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -30,8 +30,8 @@ sources:
   - id: details-tsx
     resource: ../../src/islands/consortium/views/details/Details.tsx
     title: src/islands/consortium/views/details/Details.tsx
-    digest: sha256:a56126876f006e99
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:440656a8183511de
+    last_modified: 2026-11-14T21:28:50Z
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
   - id: placed-ts

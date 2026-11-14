@@ -2,7 +2,7 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:53Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:23Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:05:29Z }
 sources:
@@ -39,13 +39,13 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:812dd42f9ca5980d
-    last_modified: 2026-11-14T16:49:53Z
+    digest: sha256:56d00d4048591c6f
+    last_modified: 2026-11-14T21:28:50Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:1955a2aea66ffb33
-    last_modified: 2026-11-14T16:49:53Z
+    digest: sha256:1049f9dc00bc792a
+    last_modified: 2026-11-14T21:28:50Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
@@ -64,7 +64,7 @@ enforced_by:
 ## What it is
 
 The page the grower sees after the Place step (PP-B stream b2): one column, in its own chunk (role
-`palette`, `App.tsx` `lazyPart(retryable(...))`, cap 12 KB, built 5.2 KB).
+`palette`, `App.tsx` `lazyPart(retryableImport(...))`, cap 12 KB, built 5.2 KB).
 
 | Part | File | What it shows |
 |---|---|---|

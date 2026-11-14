@@ -8,13 +8,13 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:56Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:17Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:35Z }
 sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:d12beae5d87c0eb2
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:1efe6cbc4efc60de
+    last_modified: 2026-11-14T21:28:50Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -38,8 +38,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:fdbe406a5ad7fa67
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:877b71a79e071642
+    last_modified: 2026-11-14T21:28:50Z
 ---
 
 # Responsibility
