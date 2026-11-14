@@ -32,7 +32,7 @@ async function matrixPage(opts = {}) {
   await openCards(page);
   await page.locator(aria('radio', 'Temperate')).click();
   assert.equal(await loadState(page), 'ready');
-  await page.locator(aria('button', 'Suggest plants')).click();
+  await page.locator(aria('button', en['consortium.start.suggest'])).click();
   assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
   return page;
 }
@@ -340,6 +340,7 @@ test('E6-17 (B4 hand-off, done in the chunk-5 exit): in the test build, #ct-root
   assert.deepEqual(held, { busy: 'true', radios: 0 }, 'not rendered yet, and #ct-root says it is busy');
   await page.releaseHeld();
   assert.equal(await loadState(page), 'ready');
+  await openCards(page);
   assert.ok(await has(page, aria('radio', 'Temperate'), 4000), 'Start renders once the hook arrives');
   assert.equal(await page.evaluate(() => document.getElementById('ct-root').hasAttribute('aria-busy')), false, 'aria-busy goes with the render');
   await page.browserContext().close().catch(() => {});
@@ -422,7 +423,7 @@ test('E6-27 (K3 hand-off review 2): the idle future part whose prefetch failed s
     assert.equal(await loadState(page), 'ready');
     await atSite(page, 'lyon');
     await page.waitForFunction(() => !!window.__ctTest.store.rangeRule.value && !!window.__ctTest.store.pool.value, { timeout: 8000 });
-    await page.locator(aria('button', 'Suggest plants')).click();
+    await page.locator(aria('button', en['consortium.start.suggest'])).click();
     assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
     assert.ok(await waitFor(() => log.length >= 1, 5000), 'the later chunk\'s first request');
     // Another later part loading (Share; or a sheet chunk's prefetch already) gives it its chance.

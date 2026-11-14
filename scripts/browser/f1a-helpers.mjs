@@ -17,7 +17,8 @@ export async function siteAt(page, [lat, lon], label) {
 export async function suggestOn(page, zone, label = zone) {
   await choose(page, zone);
   await suggestReady(page);
-  await page.click('.ct-cta .button-primary');
+  // b1a's Place marks Suggest data-place-suggest (its ".ct-cta .button-primary" is "Show my palette").
+  await page.locator('[data-place-suggest]').click();
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), `Suggest placed plants (${label})`);
   return page;
 }

@@ -85,7 +85,7 @@ test('W8, W9, X4: bold is 600, CJK headings keep words whole, sheet and page cla
   await openCards(page);
   await page.locator(aria('radio', 'Temperate')).click();
   // (X5, Start's crop search without the sheet's search frame, went with that search in PP-B commit 0a'.)
-  await page.locator('[data-place-suggest], .ct-cta .button-primary').click();
+  await page.locator('[data-place-suggest]').click();
   await page.locator('#ct-root .ct-chart button[data-plant-id]').click();
   assert.ok(await findAx(page, { role: 'dialog' }));
   // The plant dialog's action row is the sheet's (X4): flex, not the page's actions grid.

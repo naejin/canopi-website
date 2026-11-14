@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T18:46:38Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:03Z }
 sources:
@@ -25,13 +25,13 @@ sources:
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:403cb0593e62df98
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:23dd2fab9b74e166
+    last_modified: 2026-11-14T14:41:58Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:4cb69b1de23bccb2
-    last_modified: 2026-11-13T14:25:59Z
+    digest: sha256:ef7536bd28f46910
+    last_modified: 2026-11-14T14:41:58Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json
@@ -42,6 +42,11 @@ sources:
     title: .github/workflows/nightly.yml
     digest: sha256:f461e1c971e04d97
     last_modified: 2026-11-13T03:21:28Z
+  - id: app-tsx
+    resource: ../../src/islands/consortium/App.tsx
+    title: src/islands/consortium/App.tsx
+    digest: sha256:812dd42f9ca5980d
+    last_modified: 2026-11-14T16:49:53Z
 enforced_by: [scripts/check-built-site.mjs, scripts/built-modules.test.mjs]
 ---
 
@@ -113,3 +118,5 @@ Coordinator row "F1a design-check choices" in [the decisions](/decisions/consort
   - The cap was not raised. It needs a coordinator row, or tracks' list helpers moved out of the later views (PlantList and Jobs, which chunk 0 does not own).
   - Commit 0a' deletes `tracks.ts` with the matrix and the `matrix` role (owner, 2026-11-14, "Delete first"; [user decisions](/decisions/consortium-user-decisions.md)), so the cap stays 8 KB and the first run and every role are re-measured after 0a'; `Actions` returns to the first run until b2 hosts it.
 - **Measured after 0a'** (gzip -9, 2026-11-14): first run 33.2 KB of 38 KB, with `Actions` back in it; later 5.3 of 8.0 KB (back under its cap with `tracks.ts` gone); details 6.3 of 6.7; sheets 5.7 of 6.3; location 11.2 of 11.8; markProviders 2.3 of 2.9; future 2.2 of 2.8; pool 0.8 of 1.4; range 1.1 of 1.6; suggest 1.8 of 8.0; verdict 0.2 of 12; palette none. The `matrix` role is deleted. No cap was raised.
+
+- **Measured after PP-B b2 chunk 1** (gzip -9, 2026-11-14): first run 35.0 KB of 38 KB (kit/fit.tsx held there through kit/sheet.tsx `shared`, which Add reads); palette 5.2 of 12.0 KB; verdict 2.3 of 12.0 KB; later 5.3 of 8.0; sheets 5.7 of 6.3; details 6.3 of 6.7. The palette page is a retryable part (`lazyPart(..., { retry: true, page: true })`); `page` keeps the later test faults off it.

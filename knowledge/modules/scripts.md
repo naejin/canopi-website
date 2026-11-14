@@ -5,7 +5,7 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:42Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:07:11Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:47Z }
@@ -19,12 +19,12 @@ sources:
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
     digest: sha256:75aa91ed85c6c17a
-    last_modified: 2026-11-14T15:15:38Z
+    last_modified: 2026-11-14T15:16:44Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:5e59fb05069323f7
-    last_modified: 2026-11-14T15:16:26Z
+    digest: sha256:6e75d976b1c5fab0
+    last_modified: 2026-11-14T19:58:39Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -162,6 +162,15 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 - Hero PNG originals stay outside git.
 
 F1a commit 0 adds three core tests written failing for the streams: `consortium-palette.test.mjs` (pal1/pal2: role groups, health summary, invasive tie), `consortium-balance.test.mjs` (bal2: the registry shape passes; the checks are marked) and `consortium-confidence.test.mjs` (conf1: the term table). It also adds six F1a browser specs (see [Consortium page](/modules/consortium-page.md)).
+
+## PP-B chunk-1 merge, b2 onto b1a (2026-11-14)
+
+What the browser specs assume since b1a's Place and b2's palette page meet:
+- **Suggest on Place** is pressed through `[data-place-suggest]` ("Start from a small suggested palette", `en['consortium.start.suggest']`) only. On b1a's Place `.ct-cta .button-primary` is "Show my palette" and comes first in the document, so a selector list that names both presses the wrong button.
+- **Words b1a renamed** are read from `en.json`: `consortium.start.suggest`, `consortium.start.back` ("Back to your palette"). "Start empty and search" went; seams-p2 T4 shows an empty palette with `[data-place-show]` instead.
+- **The climate cards** sit behind "No location? Choose a climate": `location-fixtures.mjs` `openCards(page)` before a card, `pickCard(page, value)` to pick one. `pickCard` scrolls the card into view with `behavior: 'instant'`, since the site scrolls smoothly and a click measured mid-scroll misses (P5-27b at 1280 px).
+- **The suggested palette's Undo toast** (PP-B3) stays at the bottom of the viewport, so a control scrolled to the bottom edge can sit under it. Specs centre such a control before they press it: s3 `pressSend` ("Send suggestion"), the s5d scenario radio.
+- **PP-B titles:** `browser-tests.test.mjs` accepts `PP-B<n>` with an optional letter for a variant (`PP-B48b`), as it does for `E6-<n>`.
 
 ## PP-B commit 0a (2026-11-14)
 

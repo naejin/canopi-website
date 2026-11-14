@@ -59,6 +59,9 @@ test('P5-18 (S5d future summary): at Seville on the Mediterranean list the panel
   // The scenario control: a real radio; SSP5-8.5 never puts fewer plants outside than SSP2-4.5.
   const outside = () => page.$$eval('[data-future-verdict="outside"]', (els) => els.length);
   const before = await outside();
+  // Centred first: at the bottom edge the radio can sit under the suggested palette's Undo toast
+  // (PP-B3), which a grower would scroll past.
+  await page.$eval('input[name="ct-scenario"][value="ssp585"]', (e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
   await page.click('input[name="ct-scenario"][value="ssp585"]');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.scenario.value === 'ssp585', { timeout: 5000 }).then(() => true, () => false), 'the radio writes store.scenario');
   assert.ok(await outside() >= before);

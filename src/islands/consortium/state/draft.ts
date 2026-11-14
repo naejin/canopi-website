@@ -58,27 +58,6 @@ export function changeSite(): void {
   });
 }
 
-// ---- one Undo for a move made on Place ----
-// The toast's Undo puts the palette back as it was (schema.snapshot); any later change to what Undo
-// covers (schema.lists.endsUndo) ends the offer, so Undo never puts a palette back over new work.
-// (store.ts keeps its own offerUndo private; this is the same rule for Place's moves.)
-let undoAfter: ReturnType<typeof schema.peek<(typeof schema.lists.endsUndo)[number]>> | null = null;
-let undoWatch = false;
-export function offerPlaceUndo(text: string, before: ReturnType<typeof schema.snapshot>): void {
-  if (!undoWatch) {
-    undoWatch = true;
-    effect(() => {
-      const now = schema.track(schema.lists.endsUndo);
-      const after = undoAfter;
-      if (!after || !schema.lists.endsUndo.some((k) => now[k] !== after[k])) return;
-      undoAfter = null;
-      if (store.toast.peek()?.undo) store.hideToast();
-    });
-  }
-  undoAfter = schema.peek(schema.lists.endsUndo);
-  store.showToast(text, () => { undoAfter = null; schema.restore(before); });
-}
-
 // Start over: the consortium goes, from the store, the save and the address; the climate, the
 // palette's place and the country stay. One Undo puts it back (with its save).
 export function startOver(): void {
@@ -93,7 +72,7 @@ export function startOver(): void {
     dropLinkLocation();
     notices.value = { ...NO_NOTICES };
   });
-  if (before.members.length || before.removed.length || Object.keys(before.guests).length) offerPlaceUndo(T('place.overDone'), before);
+  if (before.members.length || before.removed.length || Object.keys(before.guests).length) store.offerUndo(T('place.overDone'), before);
 }
 
 // ---- the arrival notices' answers (plant-palette-architecture 8.3) ----
@@ -191,7 +170,7 @@ export function showPalette(): void {
   store.view.value = 'matrix';
   focusView();
   const replaced = !!aside?.members.length && (aside.climate !== store.climate.peek() || JSON.stringify(aside.members) !== JSON.stringify(store.members.peek()));
-  if (replaced) offerPlaceUndo(T('place.asideReplaced'), before);
+  if (replaced) store.offerUndo(T('place.asideReplaced'), before);
 }
 
 // "Add a plant by name" on Place: the search sheet (S3); a plant added opens the palette (store.ts

@@ -684,7 +684,7 @@ const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.inc
 // the climate.
 const SNAP_KEYS = state.lists.endsUndo;
 let undoAfter: ReturnType<typeof state.peek<(typeof SNAP_KEYS)[number]>> | null = null;
-/** @public seam for b1a (state/draft.ts switches its offerPlaceUndo to it at the chunk-1 merge), which drops the tag. */
+// (Place's moves, in state/draft.ts and state/suggest-wait.ts, offer their Undo through it too.)
 export function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = []): void {
   undoAfter = state.peek(SNAP_KEYS);
   showToast(text, () => { undoAfter = null; state.restore(before); }, action, focus);

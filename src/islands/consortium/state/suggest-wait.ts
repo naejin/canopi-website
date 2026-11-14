@@ -7,7 +7,6 @@ import { P, T } from '../strings.ts';
 import { state as schema } from './schema.ts';
 import { adoptPending } from './persist.ts';
 import { lookups, unread } from './lookups.ts';
-import { offerPlaceUndo } from './draft.ts';
 
 // ---- the waiting Suggest ----
 
@@ -66,7 +65,7 @@ export function suggestPalette(): void {
 function placed(): void {
   const before = undoTo;
   undoTo = null;
-  if (before) offerPlaceUndo(P('place.suggested', store.members.peek().length), before);
+  if (before) store.offerUndo(P('place.suggested', store.members.peek().length), before);
 }
 
 // "Suggest plants": now when the plants are read, else once they are (§5 Loading).

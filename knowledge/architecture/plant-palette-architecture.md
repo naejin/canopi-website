@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:39Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T18:46:37Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:37Z }
 sources:
@@ -92,13 +92,13 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:5bf1dfad1494463b
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:812dd42f9ca5980d
+    last_modified: 2026-11-14T16:49:53Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
-    digest: sha256:7a882f57f3bb9d6b
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:885e0b933a3243fd
+    last_modified: 2026-11-14T14:41:58Z
   - id: search-ts
     resource: ../../src/islands/consortium/data/search.ts
     title: src/islands/consortium/data/search.ts
@@ -112,8 +112,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:dc512a822aa08263
-    last_modified: 2026-11-13T20:25:47Z
+    digest: sha256:5d59c89d38f93b0d
+    last_modified: 2026-11-14T16:49:53Z
   - id: format-ts
     resource: ../../src/islands/consortium/format.ts
     title: src/islands/consortium/format.ts
@@ -122,8 +122,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:ab45b5e62406d5b7
-    last_modified: 2026-11-13T14:46:32Z
+    digest: sha256:cbff125d8053baef
+    last_modified: 2026-11-14T18:43:41Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
@@ -147,8 +147,8 @@ sources:
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:00c47b7d18a045f1
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:ad8040288e389492
+    last_modified: 2026-11-14T18:46:01Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -172,13 +172,13 @@ sources:
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:5684543301efc5d0
-    last_modified: 2026-11-14T13:27:54Z
+    digest: sha256:914a0961338ae564
+    last_modified: 2026-11-14T18:46:01Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:d11d0a245a854604
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:7f2498d4ce545ed5
+    last_modified: 2026-11-14T18:46:01Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -187,13 +187,13 @@ sources:
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
-    digest: sha256:b28baf4eed1d35b0
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:aa4bfc685c30de03
+    last_modified: 2026-11-14T18:01:21Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
-    digest: sha256:f703c2bee528a850
-    last_modified: 2026-11-13T14:46:32Z
+    digest: sha256:32e2c238edfc7b5e
+    last_modified: 2026-11-14T16:49:53Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -227,8 +227,8 @@ sources:
   - id: sideview-tsx
     resource: ../../src/islands/consortium/views/SideView.tsx
     title: src/islands/consortium/views/SideView.tsx
-    digest: sha256:7eda8141dbfbca81
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:def097ed817ef1fe
+    last_modified: 2026-11-14T12:51:29Z
   - id: stagebar-tsx
     resource: ../../src/islands/consortium/views/StageBar.tsx
     title: src/islands/consortium/views/StageBar.tsx
@@ -242,8 +242,8 @@ sources:
   - id: toast-tsx
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
-    digest: sha256:e52168f47bb5dce0
-    last_modified: 2026-11-13T10:30:35Z
+    digest: sha256:385653ccb2aee61b
+    last_modified: 2026-11-14T14:41:58Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
@@ -272,8 +272,8 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:3b70a449e0863414
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:1955a2aea66ffb33
+    last_modified: 2026-11-14T16:49:53Z
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
@@ -282,8 +282,8 @@ sources:
   - id: side-ts
     resource: ../../src/islands/consortium/views/side.ts
     title: src/islands/consortium/views/side.ts
-    digest: sha256:5ba2eb0af05f06bd
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:be6befe2c0690925
+    last_modified: 2026-11-14T12:51:29Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -332,8 +332,8 @@ sources:
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
-    digest: sha256:ea2a468fa5385fb2
-    last_modified: 2026-11-11T04:31:48Z
+    digest: sha256:97b5290a800f6a3f
+    last_modified: 2026-11-14T12:46:39Z
   - id: mark-providers-ts
     resource: ../../src/lib/consortium/mark-providers.ts
     title: src/lib/consortium/mark-providers.ts
@@ -413,7 +413,7 @@ sources:
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:096df107f940cfdd
-    last_modified: 2026-11-14T15:16:26Z
+    last_modified: 2026-11-14T15:16:44Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -434,6 +434,26 @@ sources:
     title: src/styles/tokens.css
     digest: sha256:76772cb8c5c7cfaa
     last_modified: 2026-11-14T10:56:09Z
+  - id: picture-jobs-ts
+    resource: ../../src/islands/consortium/rules/picture-jobs.ts
+    title: src/islands/consortium/rules/picture-jobs.ts
+    digest: sha256:50dbb55c0096e0be
+    last_modified: 2026-11-14T18:01:21Z
+  - id: swap-tsx
+    resource: ../../src/islands/consortium/views/Swap.tsx
+    title: src/islands/consortium/views/Swap.tsx
+    digest: sha256:b408e136e7bfa3ac
+    last_modified: 2026-11-14T18:01:21Z
+  - id: nextstep-tsx
+    resource: ../../src/islands/consortium/views/palette/NextStep.tsx
+    title: src/islands/consortium/views/palette/NextStep.tsx
+    digest: sha256:6d1269112848c942
+    last_modified: 2026-11-14T18:01:21Z
+  - id: palette-tsx
+    resource: ../../src/islands/consortium/views/palette/Palette.tsx
+    title: src/islands/consortium/views/palette/Palette.tsx
+    digest: sha256:412fef8a80770ac5
+    last_modified: 2026-11-14T18:01:21Z
 ---
 
 Target architecture of the [Plant palette redesign](/project/consortium-v2-plan.md) (grower-first design approved by the owner on 2026-11-14). Pushes and streams: [Plant palette slices](/project/plant-palette-slices.md). Layer rules: [ADR-1](/decisions/consortium-island-layers.md); caps: [ADR-2](/decisions/consortium-chunk-budgets.md); owner answers: [user decisions](/decisions/consortium-user-decisions.md), rows of 2026-11-14.
@@ -812,7 +832,7 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 - **A link without a place** is judged against the open palette's `place`, else `canopi-place`, plus the device location: the location half works today (`restore.ts:52-58`). The link "brings a place" when it has `o` or at least one spot or soil answer that is not `unsure` (decided on the decoded state, not on keys present). `m` and `z` never count as bringing a place: they belong to the palette, are always in the link and the save, and a link's or save's `m` and `z` win. A `k` with no `o` and no answer other than `unsure` does not bring a place, and the reader's country is kept. Vectors: every answer `unsure`; only `m` and `z`; `k` alone; `k` with `l=sun`.
 - **Forget this location** runs today's `forget()` (`state/location.ts`) and also clears `canopi-place` and the open palette's `place`. **Start over** keeps the palette's `place`.
 - **A link that brings a place** (Arrivals board): it applies to that page only (`history.state.pl`, `location.source = 'link'`), with the notice "Use it" / "Use my own place"; `writeSave` keeps the save's own `place` until the reader chooses; "Use it" writes the link's spot and soil answers into the palette's `place`, its `o` into `canopi-location` through `state/location.ts` and its `k` through `state/draft.ts`, so they hold across reloads (coordinator row 2026-11-14: this reverses the [location module](/modules/consortium-location.md) rule that a link's `o=` is never saved over the reader's `canopi-location`). "Send the link to my computer" (P11) is `encodeLink(…, { origin, place: true })`, the grower's own link, and takes the same path. Unit tests: a palette edit keeps `l=sun`; "Use it" gives `l=shade` and the link's cell after reload; "Use my own place" restores the reader's own.
-- **Sheets and browser history** (inventory K7): b2 decides in its first commit, and records as a coordinator row, whether a full-screen sheet pushes `history.state.sheet` so the phone's Back closes it, or never does; changing it later reshapes `history.state` and the K7 tests. The deep-link letter is reserved (section 8.1 rule 5).
+- **Sheets and browser history** (inventory K7; coordinator decision 2026-11-14, built in b2 review r1, `store.ts` history block, `main.ts` popstate): a sheet (Details, Swap, Add, search, Paste) pushes one entry with the same address (`{ ...history.state, sheet: 'sheet' }`); Back closes it and keeps every edit, a second Back leaves the page; Forward never reopens a stale sheet; popstate closes the sheet, then `writeAddress(true)` rewrites the entry landed on synchronously (before the hashchange reads it); closing by its button calls `history.back()`. The step from Your place to Your palette pushes one entry (`watchSteps`), so Back returns to Place; a return visit's or a link's own opening pushes nothing (`arrivalOpensPalette`). The model (review r2 hist-1): `known` holds only the page's entries at or below the one shown; `historyMoved` drops the entries above the one landed on and keeps their Navigation API keys, and a Forward onto one of them is refused (`history.go` back to the entry shown, after the landed entry is rewritten with the current link), so Forward never shows a stale sheet or palette step. Every palette to Place change leaves the palette step's entry, and any sheet's above it, in one `history.go`: "Your place" through `leaveEntry('palette')`, and a change made outside history (Undo back to Place, Start over) through `watchSteps`; after that last move the landed entry takes the address as the change wrote it (`historyMoved` `force` false: no forced link, so an Undo to an empty Start leaves no palette in the address). The hashchange that follows a move the page handled stops in `main.ts` (told by the address it wrote), so `state/arrival.ts` never reads the address landed on as a link to restore (on Place it holds the set-aside palette's link, not the one shown). An entry asked for while the page's own Back is on its way waits for it (`pushWaiting`). A link opened in the tab ends those entries (`forgetEntries`). Not handled: a reload on a sheet entry (the page opens without the sheet; its Back stays on the page), and a guest added by Paste's one-tap Add on an open sheet is lost by Back after a reload, because `state/persist.ts` `writeAddress` replaces `history.state` and drops the `sheet` marker (review r2 hist-2, handed off: persist.ts is not b2's). Browser cases PP-B31 (K7), PP-B32 (Place step), PP-B40 (a sheet on a palette the reader made, then "Your place") and PP-B41 (Undo of a paste made on Place) in `consortium-pp-b2.browser.test.mjs`.
 - **Guide presets** (`?plant=&climate=`, `readPreset` `state.ts:279`, `applyPreset` `restore.ts:189-204`): the plant joins `members` inside the existing `quietly(batch())`; `guideKept` becomes `guidePlant`, and b1a replaces `consortium.start.guideKept` with a `consortium.place.` key that does not say "Kept". A preset gives `members == [id]` and no save until the reader acts.
 
 ### 8.4 The move to `/palette/` (PP-B commit 0)
@@ -830,8 +850,8 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 | Offline | page-level line "You are offline. What is loaded still works." from `navigator.onLine` and its events | — | b2 (`store.ts` `offline`, shown by `App.tsx`) |
 | Return visit | the palette page's placeholder, never the Place form (marker P2, inventory P42) | "could not be restored" lines (`state/restore.ts:20-22`) | b2 |
 | Any lazy chunk | one loading line in place | `LoadFailed` with Reload; next use fetches `?retry=n` (`views/lazy.tsx:62-148`); the rest stays usable; offline: "Needs a connection", a retry on `online`, never a reload | `views/lazy.tsx` (b2 in PP-B) |
-| `verdict` chunk fails | — | every fit line says "not checked", never "fits" (marker C6); holes computed without verdicts say so; Reload works (PP-B20, `block: { verdict: 404 }`) | b2, c2 |
-| Guest lists | holes `pending`, "Loading the other lists" (inventory L2) | the list is named as missing; its plants "not checked" (PP-B21) | b2 |
+| `verdict` chunk fails | — | every fit line says "not checked", never "fits" (marker C6); holes computed without verdicts say so; Retry in place fetches the chunk again under `?retry=n` (core `verdict-load.ts`, the URL read from the error); offline "Needs a connection", asked again on `online`, never a page reload (PP-B20, `block: { verdict: 404 }`) | b2, c2 |
+| Guest lists | holes `pending`, "Loading the other lists" (inventory L2) | the list is named as missing; its plants "not checked" (PP-B21); a palette of such plants only is never "empty" (PP-B44); removing a failed list's last plant takes it off `failedPools`, so the notice and "not checked" go, and the list is read afresh if a plant of it comes back (PP-B45) | b2 |
 | Location lookup | asking, refused, timed out, unavailable, sea, coast, polar, between two climates (D2, D9) | search offline or failed, map could not load (D4, D6) | b1a |
 | No location | Place leads with "Where is your place?" (skippable); the climate cards sit behind "No location? Choose a climate" (or "Not this climate? Choose another" once a location proposes one), in the DOM with `hidden`, open at once when a climate is chosen and no location is set on the page or kept on this device when the page opened (`restore.ts` `locationAtStart`), and then latched open, so a saved location's lookup never closes them (b1a review round 2, 1); the link says "Not this climate?" and the without-location line goes only once a climate is read from the location (its `lookup`), not for a location object alone; the focus moved to the checked, proposed or first card; "Use it" says "kept on this device" only when the link's cell and place were kept (else `place.usedLinkUnkept`); range factors `unknown`; the period switch and the climate picture say "needs your place" (today `views/FutureSlot.tsx:13` renders nothing) | — | b1a, e1 |
 | Soil tile | "Reading the soil map" | "The soil map has no value here" (sea, coast, ice: `types.ts:382-384`); answer stays `map`, `basis: 'none'`, soil factors `unknown` | f1 |
@@ -864,3 +884,21 @@ Files and messages that sit on growers' disks, in other repositories or in the a
 - **Delete first (owner, 2026-11-14; amendment after 0a):** the temporary `matrix` role and `lazyPart` of 0a are undone by commit 0a', which deletes the old screens (section 6 rows marked "commit 0a'"); the new page is built into the empty space. Between 0a' and b2's merge the branch has no palette view; per-commit gates are the lasting-layer tests, the type check and the ratchets ([slices](/project/plant-palette-slices.md) section 0).
 
 Section 8.1 as built (coordinator review of 0a): any `o` is snapped to its 0.1° cell centre on both encode and decode. `k` must be exactly two upper-case letters. When a key appears twice, the first one is read. Contract: `scripts/vectors/link-v5.json`.
+
+## As built in PP-B b2 review round 1 (2026-11-14)
+
+- **Arrival prefetch (perf-3):** a save, a link or a guide preset fetches the palette page's chunk (`PalettePage.prefetch()`) and the verdict chunk (`wantVerdict`) right after the first render, beside the database (PP-B30), not one after the other once it is open.
+- **Print on demand (perf-4):** the print sheet is mounted only while printing (`views/Actions.tsx` `PrintHost`: `beforeprint`, `afterprint` and `matchMedia('print')`; the print part loads idle). Side effect: p5-s5c P5-15, P5-17 and P5-26 found `[data-mark]` only in the hidden print sheet; no palette-page surface shows plant marks until b3's Your plants.
+- **Add for a hole (P1):** `SheetFor` carries the hole and its test `fits` (core `holes.ts` `fills`), handed by the palette page, so the sheet chunks never import `holes.ts` (E6-5d: sheets import first-run modules only); "See all N" and Add list the same plants (PP-B34).
+- **Next step:** best fillers are fits then unknown (3); fillers that need a second look sit under their own heading; Add focuses the Next step's title and the toast names the plant (PP-B33).
+- **Pictures at scale:** a job icon is one masked `<span>` (`kit/fit.tsx` `JobIcon`, masks in `palette-page.css`); chips show it in Through the years only (the jobs picture's lanes are the jobs) and name their job in `aria-label`; the drawing has no group per lane and a swatch for light lanes only; the key shows in Through the years. On a laptop the Next step stands beside the pictures.
+- **Scale (PP-B29, 4× CPU throttle, 2026-11-14):** 200 plants: Next step 2.6–4.5 s (2.4–3.1 s with the country guess stubbed, perf-1), Add 179–316 ms, DOM 374/459 (budgets 393/462), one or two long tasks of 220–420 ms after load (native compile, style and layout as the later chunks arrive). 10 plants: Next step 2.0–2.1 s stubbed, Add 89–141 ms, no long task. Load misses on fixed costs; the marker stays.
+
+## As built in PP-B b2 review round 2 (2026-11-14)
+
+- **Browser history (hist-1):** see section 8.3 "Sheets and browser history"; the history model lives in `store.ts` only (`historyMoved`, `leaveEntry`, `watchSteps`), `main.ts` only calls it.
+- **Swap (swap-1):** the outside-range group has its own fold: its first 7, then its own "Show all N", whatever the in-range list shows (PP-B42).
+- **Jobs picture colour (colour-1):** each band is drawn in its row's job (`lane` option `markJob`; the "No job recorded" row neutral), the job its lane head names with icon and word. Chosen over a neutral fill because the row's colour then repeats what the row already says in words, so colour is never alone and still ties a band to its row; the plant's main job stays in each chip's accessible name (`Picture.jobs`). Through the years keeps the main job with its key (PP-B43 and a unit case).
+- **Empty and first view (empty-1):** the Next step is "empty" only with no member (`store.members`); `ct:first-view` waits until no member's list is loading or failed (PP-B44; PP-B26 waits for the fit card itself).
+- **Actions offline (offline-1):** the Print or Download could-not-load line is `lazy.tsx` `LoadFailed` ("Needs a connection" offline, never Reload; the line clears on `online`) (PP-B46).
+- **Print (print-1, hardening):** PP-B47 dispatches `beforeprint` with no print media and counts the sheet's rows in the next microtask.

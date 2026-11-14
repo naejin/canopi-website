@@ -102,7 +102,7 @@ test('F1: after "Change site", choosing another climate is not saved over the co
     await page.locator(aria('button', 'Change site')).click();
     await openCards(page);
     await page.locator(aria('radio', 'Tropical')).click();
-    await page.locator(aria('button', 'Back to your consortium')).click();
+    await page.locator(aria('button', en['consortium.start.back'])).click();
     assert.ok(await has(page, aria('button', 'Share'), 4000));
     assert.equal(await linkOf(page), before, 'back in Temperate, the same consortium');
     await done(page);
@@ -120,13 +120,13 @@ test('F2: Undo after a list pasted from "Start over" goes back to Start and keep
     await page.locator(aria('button', 'Add 3 plants')).click();
     assert.ok(await has(page, aria('button', 'Share'), 5000), 'the pasted consortium');
     await page.locator(aria('button', 'Undo')).click();
-    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000), 'Undo goes back to Start');
+    assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000), 'Undo goes back to Start');
     await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 3000 }).catch(() => {});
     assert.notEqual((await focused(page)).tag, 'body', 'focus is not lost');
     assert.equal(await linkOf(page), '', 'no consortium in the address');
     await page.reload();
     assert.equal(await loadState(page), 'ready');
-    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000), 'a reload opens Start');
+    assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000), 'a reload opens Start');
     assert.ok(!(await has(page, aria('button', 'Share'), 800)), 'no empty consortium saved');
     await done(page);
   });
@@ -151,7 +151,7 @@ test('R2-1: a list pasted on Start under another climate starts that climate\'s 
     assert.equal((await memberIds(page)).length, 1, 'only the pasted plant: no Temperate member carried over');
     assert.match(await linkOf(page), /[#&]c=tropical/, 'under Tropical');
     await page.locator(aria('button', 'Undo')).click();
-    assert.ok(await has(page, aria('button', 'Back to your consortium'), 4000), 'Undo goes back to Start, the old consortium kept');
+    assert.ok(await has(page, aria('button', en['consortium.start.back']), 4000), 'Undo goes back to Start, the old consortium kept');
     assert.equal(await page.$eval('input[name="ct-climate"]:checked', (el) => el.value), 'tropical', 'the picked card stays picked');
     assert.equal(await savedFragment(page), before, 'the old consortium is saved again');
     await page.reload();
@@ -174,7 +174,7 @@ test('R2-2: Undo back to an empty Start leaves alone a save another tab wrote me
     const other = JSON.stringify({ fragment: 'v=4&c=tropical&l=unsure&s=unsure&w=unsure&m=unsure&a=', at: '2026-11-11T00:00:00.000Z', src: null });
     await page.evaluate((x) => localStorage.setItem('canopi-consortium', x), other);
     await page.locator(aria('button', 'Undo')).click();
-    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000));
     assert.equal(await saved(page), other, 'the other tab\'s save is untouched');
     await done(page);
   });
@@ -188,13 +188,13 @@ test('R2-3: Undo of a paste on a guide link\'s Start puts back the save of an ea
     assert.ok(earlier, 'an earlier visit saved its consortium');
     await page.goto(page.url().split('#')[0].split('?')[0] + '?climate=temperate', { waitUntil: 'domcontentloaded' });
     assert.equal(await loadState(page), 'ready');
-    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000), 'the guide link opens Start');
+    assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000), 'the guide link opens Start');
     await page.locator(aria('button', 'Paste a list')).click();
     await page.locator('#ct-paste-text').fill(names.join('\n'));
     await page.locator(aria('button', 'Add 1 plant')).click();
     assert.ok(await has(page, aria('button', 'Share'), 5000));
     await page.locator(aria('button', 'Undo')).click();
-    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000));
     assert.equal(await saved(page), earlier, 'the earlier save is back, as it was');
     await done(page);
   });
@@ -212,9 +212,9 @@ test('T2 (R3-3): Undo of a paste under another card, then Back, leaves the conso
     await page.locator(aria('button', 'Add 1 plant')).click();
     assert.ok(await has(page, aria('button', 'Share'), 5000));
     await page.locator(aria('button', 'Undo')).click();
-    assert.ok(await has(page, aria('button', 'Back to your consortium'), 4000));
+    assert.ok(await has(page, aria('button', en['consortium.start.back']), 4000));
     assert.equal(await savedFragment(page), before, 'Undo: the save is the consortium as before');
-    await page.locator(aria('button', 'Back to your consortium')).click();
+    await page.locator(aria('button', en['consortium.start.back'])).click();
     assert.ok(await has(page, aria('button', 'Share'), 4000));
     assert.equal(await linkOf(page), before, 'Back: the consortium as before, no Tropical crop');
     assert.equal(await savedFragment(page), before);
@@ -228,7 +228,7 @@ test('T3 (R3-1): a consortium the reader emptied stays empty, saved, through Cha
     await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
-    await page.locator(aria('button', 'Suggest plants')).click();
+    await page.locator(aria('button', en['consortium.start.suggest'])).click();
     assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000));
     await page.reload();
     assert.equal(await loadState(page), 'ready');
@@ -238,24 +238,24 @@ test('T3 (R3-1): a consortium the reader emptied stays empty, saved, through Cha
     const emptied = await savedFragment(page);
     assert.equal(param(emptied, 'a'), '', 'every member removed, saved so');
     await page.locator(aria('button', 'Change site')).click();
-    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000));
     assert.equal(await savedFragment(page), emptied, 'Change site does not bring the members back');
     await done(page);
   });
 });
 
-test('T4 (R3-1): Start empty under another card is the consortium: Change site keeps it saved', async (t) => {
+// "Start empty and search" went with b1a's Place (PP-B); its empty start is "Show my palette" with no
+// plants of the reader's own ([data-place-show]).
+test('T4 (R3-1): an empty palette shown under another card is the consortium: Change site keeps it saved', async (t) => {
   await behaviour(t, async (v) => {
     const page = await suggested(v);
     await changeSiteTo(page, 'Tropical');
-    await page.locator(aria('button', 'Start empty and search')).click();
-    await page.waitForSelector('dialog[open]', { timeout: 8000 });
-    await page.keyboard.press('Escape');
-    await page.waitForSelector('dialog[open]', { hidden: true, timeout: 4000 });
+    await page.locator('[data-place-show]').click();
+    assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
     const empty = await savedFragment(page);
     assert.deepEqual({ c: param(empty, 'c'), a: param(empty, 'a') }, { c: 'tropical', a: '' });
     await page.locator(aria('button', 'Change site')).click();
-    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000));
     assert.equal(await savedFragment(page), empty, 'not the Temperate consortium back');
     await done(page);
   });
@@ -271,7 +271,7 @@ test('M1 (R4-1): Undo of a paste on a fresh Start puts back the save another tab
     await otherTabSaves(page);
     await pasteOne(page, first.name);
     await page.locator(aria('button', 'Undo')).click();
-    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000));
     assert.equal(await saved(page), OTHER_TAB, 'the other tab\'s save is back');
     await done(page);
   });
@@ -283,11 +283,11 @@ test('M2 (R4-1): on a guide link\'s Start, Undo of a paste puts back the newer s
     const page = await suggested(v);
     await page.goto(page.url().split('#')[0].split('?')[0] + '?climate=temperate', { waitUntil: 'domcontentloaded' });
     assert.equal(await loadState(page), 'ready');
-    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000));
     await otherTabSaves(page);
     await pasteOne(page, first.name);
     await page.locator(aria('button', 'Undo')).click();
-    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000));
     assert.equal(await saved(page), OTHER_TAB);
     await done(page);
   });
@@ -298,7 +298,7 @@ test('M3 (R4-2): Start over leaves alone a save another tab wrote since', async 
     const page = await suggested(v);
     await otherTabSaves(page);
     await page.locator(aria('button', 'Start over')).click();
-    assert.ok(await has(page, aria('button', 'Suggest plants'), 4000));
+    assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000));
     assert.equal(await saved(page), OTHER_TAB);
     await done(page);
   });
@@ -311,13 +311,13 @@ test('D1 (R4-3): site answers changed in the draft are not saved until a commit;
     await changeSiteTo(page, 'Tropical');
     await page.locator('input[name="ct-site-water"]:not(:checked)').click();
     assert.equal(await savedFragment(page), before, 'the draft\'s answer is not saved');
-    await page.locator(aria('button', 'Back to your consortium')).click();
+    await page.locator(aria('button', en['consortium.start.back'])).click();
     assert.ok(await has(page, aria('button', 'Share'), 4000));
     assert.equal(await linkOf(page), before, 'Back: the consortium with its own answers');
     await changeSiteTo(page, 'Temperate');
     await page.locator('input[name="ct-site-water"]:not(:checked)').click();
     const water = await page.$eval('input[name="ct-site-water"]:checked', (el) => el.value);
-    await page.locator(aria('button', 'Suggest plants')).click();
+    await page.locator(aria('button', en['consortium.start.suggest'])).click();
     assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000));
     assert.equal(param(await savedPlace(page), 'w'), water, `Suggest commits the draft's answer (place ${await savedPlace(page)})`);
     await done(page);
@@ -331,7 +331,7 @@ test('pre-push 1: a guest removed from the consortium gives no "no longer in the
     await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
-    await page.locator(aria('button', 'Suggest plants')).click();
+    await page.locator(aria('button', en['consortium.start.suggest'])).click();
     assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000));
     await page.evaluate(async (name) => {
       const s = window.__ctTest.store;

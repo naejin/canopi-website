@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:41Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T18:46:38Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:34Z }
@@ -20,13 +20,13 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:ab45b5e62406d5b7
-    last_modified: 2026-11-13T14:46:32Z
+    digest: sha256:cbff125d8053baef
+    last_modified: 2026-11-14T18:43:41Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:d11d0a245a854604
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:7f2498d4ce545ed5
+    last_modified: 2026-11-14T18:46:01Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -35,13 +35,13 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:5bf1dfad1494463b
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:812dd42f9ca5980d
+    last_modified: 2026-11-14T16:49:53Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
-    digest: sha256:7a882f57f3bb9d6b
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:885e0b933a3243fd
+    last_modified: 2026-11-14T14:41:58Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
@@ -50,8 +50,8 @@ sources:
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:4cb69b1de23bccb2
-    last_modified: 2026-11-13T14:25:59Z
+    digest: sha256:ef7536bd28f46910
+    last_modified: 2026-11-14T14:41:58Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -86,7 +86,7 @@ sources:
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
     digest: sha256:75aa91ed85c6c17a
-    last_modified: 2026-11-14T15:15:38Z
+    last_modified: 2026-11-14T15:16:44Z
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
@@ -110,8 +110,8 @@ sources:
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
-    digest: sha256:b28baf4eed1d35b0
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:aa4bfc685c30de03
+    last_modified: 2026-11-14T18:01:21Z
   - id: share-tsx
     resource: ../../src/islands/consortium/views/Share.tsx
     title: src/islands/consortium/views/Share.tsx
@@ -120,13 +120,13 @@ sources:
   - id: printsheet-tsx
     resource: ../../src/islands/consortium/views/PrintSheet.tsx
     title: src/islands/consortium/views/PrintSheet.tsx
-    digest: sha256:90f49090ac15256f
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:9c445ca4ce660b16
+    last_modified: 2026-11-14T14:41:58Z
   - id: shell-css
     resource: ../../src/styles/consortium/shell.css
     title: src/styles/consortium/shell.css
-    digest: sha256:17f16a9045b89cbf
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:e00d688fb4ccf5e9
+    last_modified: 2026-11-14T14:41:58Z
   - id: print-css
     resource: ../../src/styles/consortium/print.css
     title: src/styles/consortium/print.css
@@ -150,8 +150,8 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:3b70a449e0863414
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:1955a2aea66ffb33
+    last_modified: 2026-11-14T16:49:53Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -160,8 +160,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:dc512a822aa08263
-    last_modified: 2026-11-13T20:25:47Z
+    digest: sha256:5d59c89d38f93b0d
+    last_modified: 2026-11-14T16:49:53Z
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
@@ -170,8 +170,8 @@ sources:
   - id: seams-helpers-mjs
     resource: ../../scripts/browser/seams-helpers.mjs
     title: scripts/browser/seams-helpers.mjs
-    digest: sha256:4f80e6872242e4b2
-    last_modified: 2026-11-14T15:15:38Z
+    digest: sha256:33893d6e2c968766
+    last_modified: 2026-11-14T18:45:16Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
@@ -250,8 +250,8 @@ sources:
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:403cb0593e62df98
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:23dd2fab9b74e166
+    last_modified: 2026-11-14T14:41:58Z
   - id: names-ts
     resource: ../../src/islands/consortium/views/kit/names.ts
     title: src/islands/consortium/views/kit/names.ts
@@ -280,8 +280,8 @@ sources:
   - id: consortium-seams-layout-browser-test-mjs
     resource: ../../scripts/browser/consortium-seams-layout.browser.test.mjs
     title: scripts/browser/consortium-seams-layout.browser.test.mjs
-    digest: sha256:56d011bbe551c41c
-    last_modified: 2026-11-14T15:15:38Z
+    digest: sha256:80a95e867bebdb6b
+    last_modified: 2026-11-14T18:45:16Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
@@ -315,13 +315,13 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:eac7a62f73ab6cc3
-    last_modified: 2026-11-13T09:54:42Z
+    digest: sha256:aff3ea767c6ea904
+    last_modified: 2026-11-14T14:41:58Z
   - id: e6-browser-test-mjs
     resource: ../../scripts/browser/consortium-e6.browser.test.mjs
     title: scripts/browser/consortium-e6.browser.test.mjs
-    digest: sha256:e3ea1098c790b226
-    last_modified: 2026-11-14T15:15:38Z
+    digest: sha256:8f9ed5e153011496
+    last_modified: 2026-11-14T18:45:16Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json
@@ -330,8 +330,8 @@ sources:
   - id: swap-tsx
     resource: ../../src/islands/consortium/views/Swap.tsx
     title: src/islands/consortium/views/Swap.tsx
-    digest: sha256:cfb8d53d79e94619
-    last_modified: 2026-11-13T15:18:17Z
+    digest: sha256:b408e136e7bfa3ac
+    last_modified: 2026-11-14T18:01:21Z
   - id: project-plant-palette-slices
     resource: /project/plant-palette-slices.md
   - id: phase-ts
@@ -476,3 +476,7 @@ F1a is superseded by the Plant palette redesign (owner, 2026-11-14): PP-B commit
 ## PP-B b1a: Place replaces Start (2026-11-14)
 
 `views/Start.tsx` moved to [views/place/Place.tsx](../../src/islands/consortium/views/place/Place.tsx) and was deleted. Place keeps the country line, the location slot, the climate cards and the pool slot, then: "How much room do you have?" (`roomValues` with `pots`, each answer's height limit through `formatLength`, never a count) with the optional plot size (`parsePlotSize`, `formatArea`); the grower's own plants (`[data-place-plants]`, chips with Remove, "Add a plant by name" opening the search sheet, Paste); today's light, soil and water ("Your spot", until PP-F); "Show my palette" (`[data-place-show]`) and "No plants in mind? Start from a small suggested palette" (`[data-place-suggest]`, one Undo). The Main crops picker and "Start empty and search" are gone from Place (`startEmpty` stays for the pool panel's nothing-fits line). Arrival lines live in one persistent `role=status` region (`[data-place-notice=…]`), and a second persistent status line carries the loading words (A25). Styles: [place.css](../../src/styles/consortium/place.css). Share gained the "Include my place" tick (`input[data-share-location]`), off by default.
+
+## Palette page (PP-B b2)
+
+After the Place step the island shows the palette page, its own chunk: see [Consortium palette page](/modules/consortium-palette-page.md). `App.tsx` renders the offline line (`.ct-offline`), Place or the placeholder while a return visit restores, the placeholder on the palette step until the plants are read, then the palette page and Actions. The sqlite wasm is preloaded with `crossorigin` (`astro.config.mjs` consortiumModulePreload; one wasm, checked at build).

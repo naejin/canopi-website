@@ -25,6 +25,8 @@
 .ct .ct-fillers li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 0; border-top: 1px solid var(--border); }
 .ct .ct-filler-name { flex: 1 1 12em; min-width: 0; overflow-wrap: anywhere; }
 .ct .ct-next-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+/* A long label wraps rather than scroll the page sideways ("Start from a small suggested palette" at 320 px). */
+.ct .ct-next-actions .button { white-space: normal; max-width: 100%; padding-block: 8px; text-align: center; }
 .ct .ct-other-holes ul { display: grid; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
 .ct .ct-other-holes summary { min-height: 40px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
 /* The warning mark at text size (details.css sizes it in the sheets only). */

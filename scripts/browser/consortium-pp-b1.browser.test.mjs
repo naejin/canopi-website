@@ -22,7 +22,6 @@ import { aria, en, h, has, realDb, suggestReady, useHarness } from './helpers.mj
 import { atSite, choose, tool } from './p5-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 import { liveLog, saidTwice, watchLiveRegions } from './f1a-helpers.mjs';
-import { failing } from '../expect-fail.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 
 useHarness();
@@ -218,7 +217,7 @@ test('PP-B5 (b1a reloads): three reloads keep the room and spot answers while th
   await reload('after Start over');
 });
 
-failing('PP-B5 (b1a shade answer; needs b2\'s verdict rule, owner b2 at the merge): a "shade" answer moves a sun-only plant to "needs a second look", and it stays after reload', { owner: 'b1a', reason: /no verdict for the sun-only plant|no "needs a second look" verdict/ }, async () => {
+test('PP-B5 (b1a shade answer): a "shade" answer moves a sun-only plant to "needs a second look", and it stays after reload', async () => {
   const page = await tool();
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');

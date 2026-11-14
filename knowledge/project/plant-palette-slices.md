@@ -4,15 +4,15 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:43Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:07:11Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:51Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
     title: scripts/plan/pp-b-owners.json
-    digest: sha256:6aa36407af22b433
-    last_modified: 2026-11-14T12:22:11Z
+    digest: sha256:fe5af03b3a8f801f
+    last_modified: 2026-11-14T16:49:53Z
   - id: f1a-owners-json
     resource: ../../scripts/plan/f1a-owners.json
     title: scripts/plan/f1a-owners.json
@@ -56,8 +56,8 @@ sources:
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:6c83ba538a6be488
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:2c99fd3247301a97
+    last_modified: 2026-11-14T18:47:50Z
   - id: consortium-f1a-a11y-browser-test-mjs
     resource: ../../scripts/browser/consortium-f1a-a11y.browser.test.mjs
     title: scripts/browser/consortium-f1a-a11y.browser.test.mjs
@@ -126,8 +126,8 @@ sources:
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
-    digest: sha256:842b6e18d2030121
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:47abc31dca156388
+    last_modified: 2026-11-14T14:41:58Z
   - id: consortium-palette-test-mjs
     resource: ../../scripts/consortium-palette.test.mjs
     title: scripts/consortium-palette.test.mjs
@@ -137,7 +137,7 @@ sources:
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
     digest: sha256:da06005f1e01d596
-    last_modified: 2026-11-14T15:16:26Z
+    last_modified: 2026-11-14T15:16:44Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
@@ -176,13 +176,13 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:5bf1dfad1494463b
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:812dd42f9ca5980d
+    last_modified: 2026-11-14T16:49:53Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
-    digest: sha256:7a882f57f3bb9d6b
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:885e0b933a3243fd
+    last_modified: 2026-11-14T14:41:58Z
   - id: search-ts
     resource: ../../src/islands/consortium/data/search.ts
     title: src/islands/consortium/data/search.ts
@@ -196,13 +196,13 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:dc512a822aa08263
-    last_modified: 2026-11-13T20:25:47Z
+    digest: sha256:5d59c89d38f93b0d
+    last_modified: 2026-11-14T16:49:53Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:ab45b5e62406d5b7
-    last_modified: 2026-11-13T14:46:32Z
+    digest: sha256:cbff125d8053baef
+    last_modified: 2026-11-14T18:43:41Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
@@ -226,13 +226,13 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:d11d0a245a854604
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:7f2498d4ce545ed5
+    last_modified: 2026-11-14T18:46:01Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
-    digest: sha256:f703c2bee528a850
-    last_modified: 2026-11-13T14:46:32Z
+    digest: sha256:32e2c238edfc7b5e
+    last_modified: 2026-11-14T16:49:53Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -256,8 +256,8 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:eac7a62f73ab6cc3
-    last_modified: 2026-11-13T09:54:42Z
+    digest: sha256:aff3ea767c6ea904
+    last_modified: 2026-11-14T14:41:58Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
@@ -266,8 +266,8 @@ sources:
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:403cb0593e62df98
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:23dd2fab9b74e166
+    last_modified: 2026-11-14T14:41:58Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -321,8 +321,8 @@ sources:
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
-    digest: sha256:ea2a468fa5385fb2
-    last_modified: 2026-11-11T04:31:48Z
+    digest: sha256:97b5290a800f6a3f
+    last_modified: 2026-11-14T12:46:39Z
   - id: mark-providers-ts
     resource: ../../src/lib/consortium/mark-providers.ts
     title: src/lib/consortium/mark-providers.ts
@@ -465,6 +465,7 @@ A stream never deletes a whole spec file: it empties it of its cases; main delet
   - **Not deleted, though old:** `views/Add.tsx`, `Paste.tsx`, `paste.ts`, `Swap.tsx`, `Sheets.tsx`, `kit/sheet.tsx` (rewritten in PP-C), `views/future/**` and `FutureSlot.tsx` (PP-E), `PoolSlot.tsx`, `views/pool/**` and `rules/suggest-block.ts` (b1b folds the count into Place), `views/details/**` (the new page opens Details), `Share.tsx`, `PrintSheet.tsx`, `side.ts`, `draw.ts` (print is kept: board `Print`, BT-8, d2 in PP-D), `PlantMarks.tsx`, `layers.ts`, `Correction.tsx`.
   - **Probe:** one `npm run build` and `node scripts/check-built-site.mjs` after 0a' measure the first run and every role; the `later` part is expected back under its 8 KB cap with `tracks.ts` gone, so no raise is recorded unless the measure says otherwise (budget rule).
   - **Built (0a', measured 2026-11-14):** first run 33.2 KB of 38 KB (`Actions` back in it); later 5.3/8.0 KB, details 6.3/6.7, sheets 5.7/6.3, location 11.2/11.8, future 2.2/2.8, suggest 1.8/8.0, verdict 0.2/12, palette none; no cap raised. `App.tsx` keeps the two keep-alive imports (`PlantMarks.tsx`, `StageBar.tsx`): without them the future part costs 3.1 KB of its 2.8 KB cap (one build). `kit/sheet.tsx` `shared` (now `Object.freeze`d) also holds `data/search.ts` (`searchIndex`, `fold`), which Start's crop search had kept in the first run: without it Add's chunk imports a `fold` chunk off the first run (K3). Browser after 0a': `consortium-pp-b2` (the four markers, PP-B18) and `-pp-b1` pass; `consortium-s3` (every case waits for the "Layers × stages" tab) and the `consortium-s4` exit walk-through wait for b2's palette page (risk accepted below); `consortium-s4` BT-7 and `consortium-p5-s5b` P5-1c still expect `#v=4` links (b1a's).
+  - **Chunk-1 merge (b1a then b2, measured 2026-11-14):** the island's first run is 39.5 KB of the 38 KB budget (`check-built-site.mjs` fails). Each stream alone stayed under it (b1a merged 36.0 KB, b2 alone 36.7 KB, from 33.2 KB after 0a'): b1a's Place (`views/place/Place.tsx` and the `state/` modules it imports statically) and b2's shell (`store.ts`, `main.ts`, `App.tsx`, `views/lazy.tsx`, `focus.ts`) add up; no lazy chunk shrank, so nothing moved into the first run by mistake. Whether to raise the budget or move part of Place off the first run is a coordinator row.
   - **Gates after 0a':** `npm run check`, `npm test` (with the `ct-*` class coverage case), `check:arch`, `check:dead`, `check:dup`; a `grep -rn` for each deleted name (`buildMatrix`, `plantsIn`, `startCell`, `cellCounts`, `toggleKeep`, `PhoneMatrix`, `StageStepper`, `PlantList`, `tracks.ts`, `keptTag`, `mainCrop`) finds none in `src/` and in main's chunk-0 files; the stream-owned specs that still name them (section 1b: `consortium-s1`, `-e6-r4`, `-p5-s5b`, `-p5-s5c`, the helpers) are exempt, each named in its stream's row (check deletion-8); `plan-owners.test.mjs` asserts no `src/` file reads a removed store export (`matrix`, `toggleKeep`, `kept`, `crops`, `marksFailed`).
 - **0b the move (built 2026-11-14, 6ff4f19 and 34e0d6e; 301 redirects kept the query and the fragment on wrangler dev, so no stub pages; the probe and the production `curl` check are in the runbook [CI and deploy gate](/runbooks/ci-and-deploy-gate.md); names: en Plant palette, fr Palette végétale, es Paleta vegetal, pt Paleta de plantas, it Palette vegetale, de Pflanzenpalette, nl Plantenpalet, ru Палитра растений, zh 植物搭配, ja 植栽パレット, ko 식물 팔레트, header word Palette/Paleta/Palet/Палитра/팔레트 or the whole name):** architecture 8.4, including the wrangler-dev probe and its stub-page fallback (stubs at `/consortium/` and `/<lang>/consortium/`, each pointing to `consortiumPath(lang)`; 302 considered until the production `curl` check passes), the 22 redirect lines, the page-head link check (`ConsortiumPage.astro:117`), the rename words in 11 locales, `privacy.tool.device` as owner-approved (below), and the harness, helpers, specs and checks that name the old path.
 - Commit-0 unit tests (in `scripts/consortium-link-v5.test.mjs`, plus `place.ts`'s `emptyPlace` and `siteFor` cases): `linkVersionStatus` table (incl. `null` → `absent`); `arrival()` with a v4 record gives the older line once and removes the save, with a v6 record keeps it; `readRecord` and `oldRecord` with v4, v5, v6 fragments, a fragment with no `v` and a save with no `v`; unreadable vectors (not a whole `v`; `e=1` with a malformed non-empty `a`; not for an empty `a`, unknown tokens or a cut); unknown key ignored (`…&e=1&zz=3`); per-key fallback (`m=huge` → `unsure`, `s=own.65.loam.ec2` → own, 6.5, loam); period vectors (`y=2041-2070`, `y=2071-2099` round-trip; `y=2011-2040`, `y=2055`, `y=1`, `y=` → today with the period notice; absent → today, no notice); `u=` with an unknown key → the newer line with plants restored; `k` gating (chosen + unticked → none; location + ticked → `k`; guess + ticked → none); spot grammar (`h=higher.650`, `w=irrigated`); a link whose answers are all `unsure` brings no place; `m` and `z` alone bring no place; `k` alone brings no place and keeps the reader's country.

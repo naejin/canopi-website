@@ -8,7 +8,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture, loadState, startHarness } from './harness.mjs';
-import { aria, axNodes, behaviour, englishName, findAx, fixtureDb, has } from './helpers.mjs';
+import { aria, axNodes, behaviour, en, englishName, findAx, fixtureDb, has } from './helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 
 let h;
@@ -51,7 +51,7 @@ async function start(page, climate = 'Temperate') {
   await openCards(page);
   await page.locator(aria('radio', climate)).click();
   assert.equal(await loadState(page), 'ready');
-  await page.locator(aria('button', 'Suggest plants')).click();
+  await page.locator(aria('button', en['consortium.start.suggest'])).click();
   assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
 }
 // Opens a sheet by its button: "Paste a list" on Start (Change site); "Add plants" through the store's
@@ -80,6 +80,12 @@ const isMember = (page, canonical) => hooked(page, (c) => window.__ctTest.store.
 const dropMember = (page, canonical) => hooked(page, (c) => { const { store } = window.__ctTest; const id = store.memberTaxa.value.find((t) => t.canonical_name === c)?.id; store.members.value = store.members.value.filter((y) => y !== id); }, canonical);
 const guestFrom = (page, canonical) => hooked(page, (c) => { const { store } = window.__ctTest; const t = store.memberTaxa.value.find((x) => x.canonical_name === c); return t ? store.guests.value[t.id] ?? null : null; }, canonical);
 
+// "Send suggestion", centred first: at the sheet's bottom edge it sits under the toast of the suggested
+// palette's Undo (PP-B3), which a grower would scroll past.
+async function pressSend(page) {
+  await page.$$eval('dialog[open] button[type="submit"]', (els) => els.find((b) => b.textContent.trim() === 'Send suggestion')?.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await page.locator(aria('button', 'Send suggestion')).click();
+}
 // Opens the correction form, picks the height, writes, consents and sends.
 async function sendCorrection(page, text) {
   await page.locator(aria('button', 'Suggest a correction')).click();
@@ -87,7 +93,7 @@ async function sendCorrection(page, text) {
   await page.select('dialog select', 'height_m');
   await page.locator('::-p-aria([role="textbox"])').fill(text);
   await page.locator(aria('checkbox', 'I agree my suggestion is published under CC BY-SA 4.0')).click();
-  await page.locator(aria('button', 'Send suggestion')).click();
+  await pressSend(page);
 }
 
 test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and credit, placement, warning, estimates, sources and a correction form posting the release id; Escape returns focus', async (t) => {
@@ -189,7 +195,7 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict and an invas
     await page.locator(aria('button', 'Change site')).click();
     await page.locator('[data-ct="country"] button[aria-expanded]').click();
     await page.select('#ct-country-select', 'FR');
-    await page.locator(aria('button', 'Back to your consortium')).click();
+    await page.locator(aria('button', en['consortium.start.back'])).click();
     await addPlant(page, names['Robinia pseudoacacia']);
     assert.equal(await findAx(page, { role: 'alertdialog' }, 800), null, 'an invasive warning does not ask');
     assert.ok(await isMember(page, 'Robinia pseudoacacia'), 'Robinia is added');
@@ -344,7 +350,7 @@ test('BT-5 (S3 review 2): after a send no draft is kept, even with the email fil
   await page.locator('::-p-aria([role="textbox"])').fill('The height looks wrong.');
   await page.type('dialog input[type="email"]', 'reader@example.org');
   await page.locator(aria('checkbox', 'I agree my suggestion is published under CC BY-SA 4.0')).click();
-  await page.locator(aria('button', 'Send suggestion')).click();
+  await pressSend(page);
   assert.ok(await findAx(page, { name: /^Thank you/ }), 'sent');
   await page.locator(aria('button', 'Suggest another')).click();
   await page.keyboard.press('Escape');

@@ -295,7 +295,7 @@ test('E6 specs: each "E6-n (<owner> …)" names an owner its file holds; each ma
 
 // PP-B (commit 0, plan "Plant palette redesign"; scripts/plan/pp-b-owners.json): each test of a PP-B
 // spec names its owner stream, one the owners file gives that file in some chunk ("F1a-Xn → PP-B (<owner>
-// …)" for a moved marker, "PP-B<n> (<owner> …)" for a stream's scenario); a marked spec's marker names
+// …)" for a moved marker, "PP-B<n> (<owner> …)" for a stream's scenario, "PP-B<n><letter>" for its variant); a marked spec's marker names
 // the owner of its title. The markers are counted (zero before a push to master).
 const PPB_FILES = files.filter((f) => f.startsWith('consortium-pp-b'));
 test('PP-B specs: each names an owner the owners file gives its file; each marker names the owner of its title', async () => {
@@ -308,7 +308,7 @@ test('PP-B specs: each names an owner the owners file gives its file; each marke
     const holders = owners.chunks.flatMap((c) => Object.entries(c.streams).filter(([, st]) => st.files.some((p) => matches(p, `scripts/browser/${file}`))).map(([name]) => name)).filter((n) => n !== 'main');
     assert.ok(holders.length, `the owners file gives ${file} to a stream`);
     for (const { title, marked: isMarked } of testsOf(read(file))) {
-      const owner = title.match(/^(?:F1a-[A-Z]\d+ → PP-B|PP-B\d+) \((\w+)\b/)?.[1];
+      const owner = title.match(/^(?:F1a-[A-Z]\d+ → PP-B|PP-B\d+[a-z]?) \((\w+)\b/)?.[1];
       assert.ok(owner && holders.includes(owner), `${file}: "${title}" names one of ${holders.join(', ')}: F1a-Xn → PP-B (<owner> …) or PP-Bn (<owner> …)`);
       if (isMarked) assert.ok(marked.some((m) => m.title === title && m.owner === owner), `"${title}": its marker names ${owner}`);
     }

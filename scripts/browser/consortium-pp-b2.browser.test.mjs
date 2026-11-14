@@ -20,7 +20,8 @@ const DISMISS = aria('button', en['consortium.dismiss']);
 const placed = async (page) => {
   await choose(page, 'Temperate');
   await suggestReady(page);
-  await page.click('[data-place-suggest], .ct-cta .button-primary'); // b1a's Place marks Suggest data-place-suggest
+  // Only [data-place-suggest]: on b1a's Place ".ct-cta .button-primary" is "Show my palette" (it comes first).
+  await page.locator('[data-place-suggest]').click(); // b1a's Place marks Suggest data-place-suggest
   await page.waitForFunction(() => window.__ctTest.store.members.value.length > 1, { timeout: 15_000 });
 };
 const frames = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
@@ -117,7 +118,7 @@ test('PP-B18 (b2 / BT-8 print, drawing; moved from S4 in commit 0a\'): ≤ 20 pl
     const small = await h.open('/palette/', { ...v, data: 'fixture' });
     await openCards(small);
     await small.locator(aria('radio', 'Temperate')).click();
-    await small.locator(aria('button', 'Suggest plants')).click();
+    await small.locator(aria('button', en['consortium.start.suggest'])).click();
     assert.ok(await has(small, aria('button', 'Share'), 8000), 'the result and its actions');
     await h.pdf(small);
     await small.waitForSelector('.ct-print', { timeout: 8000 }); // mounted for print (review r1 perf-4)

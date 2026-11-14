@@ -70,7 +70,7 @@ test('BT-1 (S1 data): on the real Temperate list with every site answer unsure, 
     await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
-    await page.locator('[data-place-suggest], .ct-cta .button-primary').click();
+    await page.locator('[data-place-suggest]').click();
     // Through the years shows every member at every width (one lane per light level; the phone shows one
     // time step, so each member's chip is read by id); each chip starts with the plant's name.
     await page.waitForSelector('#ct-root .ct-years [data-plant-id]');

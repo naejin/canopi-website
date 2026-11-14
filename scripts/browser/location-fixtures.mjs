@@ -78,6 +78,6 @@ export async function pickCard(page, value) {
   // Centred first: a card left at the bottom edge can sit under a fixed notice (a failed chunk's toast,
   // its close button over the card at 1280 px), which a grower would scroll past.
   const card = `input[name="ct-climate"][value="${value}"]`;
-  await page.$eval(card, (e) => e.scrollIntoView({ block: 'center' }));
+  await page.$eval(card, (e) => e.scrollIntoView({ block: 'center', behavior: 'instant' })); // not smooth: a click measured mid-scroll misses (seen at 1280 px)
   await page.click(card);
 }

@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:40Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T18:46:38Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:11:04Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T14:08:41Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:7601664a85fd6d88
-    last_modified: 2026-11-14T11:39:20Z
+    digest: sha256:096df107f940cfdd
+    last_modified: 2026-11-14T15:16:44Z
   - id: site-marks-ts
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
@@ -26,12 +26,12 @@ sources:
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
     digest: sha256:feb8e2ad064adef0
-    last_modified: 2026-11-14T11:38:45Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: details-tsx
     resource: ../../src/islands/consortium/views/details/Details.tsx
     title: src/islands/consortium/views/details/Details.tsx
     digest: sha256:a56126876f006e99
-    last_modified: 2026-11-14T11:40:54Z
+    last_modified: 2026-11-14T12:12:11Z
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
   - id: placed-ts
@@ -42,8 +42,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:d11d0a245a854604
-    last_modified: 2026-11-14T11:39:47Z
+    digest: sha256:7f2498d4ce545ed5
+    last_modified: 2026-11-14T18:46:01Z
   - id: taxon-of-test
     resource: ../../scripts/consortium-taxon-of.test.mjs
     title: scripts/consortium-taxon-of.test.mjs

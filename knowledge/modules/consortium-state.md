@@ -3,7 +3,7 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:42Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T18:46:39Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:36Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:d11d0a245a854604
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:7f2498d4ce545ed5
+    last_modified: 2026-11-14T18:46:01Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
@@ -40,13 +40,13 @@ sources:
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:00c47b7d18a045f1
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:ad8040288e389492
+    last_modified: 2026-11-14T18:46:01Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:5684543301efc5d0
-    last_modified: 2026-11-14T13:27:54Z
+    digest: sha256:914a0961338ae564
+    last_modified: 2026-11-14T18:46:01Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -60,8 +60,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:ab45b5e62406d5b7
-    last_modified: 2026-11-13T14:46:32Z
+    digest: sha256:cbff125d8053baef
+    last_modified: 2026-11-14T18:43:41Z
   - id: consortium-start-test-mjs
     resource: ../../scripts/consortium-start.test.mjs
     title: scripts/consortium-start.test.mjs
@@ -169,6 +169,10 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
 - **A link that brings a place** (`bringsPlace`) and differs from the reader's own (`samePlace`): `restore.ts` applies it to the page, sets `linkPlace` (persist.ts, `{ own }`: the reader's spot, soil and country just before) and `holdSave(true)`; persist() keeps writing the address but the save keeps the reader's own place until "Use it" (`draft.ts useLinkPlace`: the link's country becomes chosen, its cell the device location, `canopi-place` reseeded) or "Use my own place" (`useOwnPlace`), each ending with `release()`. A reader edit of spot or soil ends the notice too.
 - **Reload while it waits**: `writeAddress` puts `ask: 1` in `history.state` and a link's country as `k` in `pl`; `arrival()` returns `ask: true` and `startMemory()` restores with `ask` set to the reader's own place (the held save's `place`, else the seed, and the country chosen at start), so the notice comes back and the save stays held.
 - **Back or another link while it waits**: the reader's own spot, soil and country are put back before the next palette applies.
-- **One Undo for Place's moves**: `draft.ts offerPlaceUndo` (Start over: "Your palette was cleared; your place stays."; the suggested palette in `suggest-wait.ts`). store.ts keeps its own `offerUndo` private (b2 owns store.ts in chunk 1).
+- **One Undo for Place's moves**: through store.ts `offerUndo`, the same offer as Remove, Swap and Add (Start over: "Your palette was cleared; your place stays."; a set-aside palette replaced; the suggested palette in `suggest-wait.ts`). Since the chunk-1 merge draft.ts keeps no Undo of its own; the end of the offer is store.ts's effect, registered by `start()`.
 - **Guide preset over a save**: `savedInstead` keeps the save one press away ("Open my saved palette instead", `draft.ts openSavedInstead`); `notices.guidePlant` replaces `guideKept`.
 - **Forget** (`state/location.ts forget`) clears `canopi-location`, `canopi-place` and the palette's spot and soil.
+
+## Store seams added by PP-B b2 (chunk 1)
+
+`store.ts` gains, additively: `step` (place or palette), `yearStep`, `notNow`, `slow`, `opening`, `offline`, `failedPools` and `failedMembers` (a guest list that failed), `verdictFailed`, `wantVerdict()` (the palette page asks for the verdict chunk on mount; `store.start()` keeps its three effects), `holdToast` and the exported `offerUndo` (Place's moves in `state/draft.ts` and `state/suggest-wait.ts` use it since the chunk-1 merge). The toast timer reads `__ctTimeouts.toast` in the test build.

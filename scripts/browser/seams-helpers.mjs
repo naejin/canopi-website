@@ -42,7 +42,7 @@ export async function suggested(v, { room = null, light = null } = {}) {
   assert.equal(await loadState(page), 'ready');
   if (light) await page.locator(aria('radio', light)).click();
   if (room) await page.locator(aria('radio', room)).click();
-  await page.locator(aria('button', 'Suggest plants')).click();
+  await page.locator(aria('button', en['consortium.start.suggest'])).click();
   assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
   return page;
 }
