@@ -1,5 +1,5 @@
 {
-  "_comment": "Owners file of push PP-B (Plant palette redesign: one palette page, the /palette/ move and the honest states) of the Consortium v2 plan (knowledge/project/consortium-v2-plan.md section 'Plant palette redesign'; detail in knowledge/project/plant-palette-slices.md and knowledge/architecture/plant-palette-architecture.md). Supersedes scripts/plan/f1a-owners.json. Path -> stream per chunk: one owner per path per chunk; a path may change hands between chunks (store.ts main -> b2 -> b3 -> main; state/restore.ts main -> b1 -> b3). Patterns are repo-relative: '*' stays within a folder, '**' crosses folders. Chunks run in order; streams inside a chunk run in parallel (at most two building agents). Streams by feature: b1 your place, arriving and sharing; b2 the palette page and its shell; b3 your plants (after b2). 'shared' lists the locale files: each listed stream adds keys only under its own prefix and changes or deletes only the keys its edits name (owners.mjs check against the chunk base); the merge agent joins the blocks. Markers owned by later pushes are parked (removed from the tree in chunk 0, restored from 648baf2 by their owner), so the master zero-marker gate holds at the push. node scripts/plan/owners.mjs check <chunk> <stream> <base> --file scripts/plan/pp-b-owners.json fails a stream diff outside its rows. A file found needed mid-build is requested from the main agent, never taken.",
+  "_comment": "Owners file of push PP-B (Plant palette redesign: one palette page, the /palette/ move and the honest states) of the Consortium v2 plan (knowledge/project/consortium-v2-plan.md section 'Plant palette redesign'; detail in knowledge/project/plant-palette-slices.md and knowledge/architecture/plant-palette-architecture.md). Supersedes scripts/plan/f1a-owners.json. Path -> stream per chunk: one owner per path per chunk; a path may change hands between chunks (store.ts main -> b2 -> b3 -> main; state/restore.ts main -> b1a -> b3; App.tsx main -> b2 -> b3; views/place/** main -> b1a -> b1b). Patterns are repo-relative: '*' stays within a folder, '**' crosses folders. Chunks run in order; streams inside a chunk run in parallel (at most two building agents). Streams by feature: b1a your place, arriving and sharing (chunk 1); b2 the palette page and its shell (chunk 1); b1b the pool count into Place (chunk 2, needs b2's verdict engine); b3 your plants (chunk 2, after b2). Amended 2026-11-14 by the plan recheck (blockers 1 and 2: views/kit/sheet.tsx in chunk 0, b3 owns App.tsx, Palette.tsx, later.ts and later-chunk.ts) and the look-ahead check. 'shared' lists the locale files: each listed stream adds keys only under its own prefix and changes or deletes only the keys its edits name (owners.mjs check against the chunk base); the merge agent joins the blocks. Markers owned by later pushes, and PP-B markers that would fail for another reason after chunk 0, are parked (removed from the tree in chunk 0, listed in scripts/plan/parked-markers.json, restored from 648baf2 by their owner), so the master zero-marker gate holds at the push. node scripts/plan/owners.mjs check <chunk> <stream> <base> --file scripts/plan/pp-b-owners.json fails a stream diff outside its rows. A file found needed mid-build is requested from the main agent, never taken.",
   "step": "consortium-v2 Plant palette redesign, push PP-B",
   "branch": "pp/b",
   "shared": [
@@ -21,10 +21,11 @@
             "consortium.inConsortium",
             "privacy.tool.*",
             "privacy.correction.body",
-            "dataSources.tool.*"
+            "dataSources.tool.*",
+            "privacy.tool.device"
           ]
         },
-        "b1": {
+        "b1a": {
           "prefix": "consortium.place.",
           "edits": [
             "consortium.start.*",
@@ -47,7 +48,19 @@
             "consortium.loadingTool",
             "consortium.undo",
             "consortium.dismiss",
-            "consortium.jobsHeading"
+            "consortium.jobsHeading",
+            "consortium.line.*"
+          ]
+        },
+        "b1b": {
+          "prefix": "consortium.place.",
+          "edits": [
+            "consortium.start.*",
+            "consortium.range.pool.*",
+            "consortium.range.empty.*",
+            "consortium.range.needsSite*",
+            "consortium.range.unavailable*",
+            "consortium.block.*"
           ]
         },
         "b3": {
@@ -65,7 +78,7 @@
           ]
         }
       },
-      "rule": "the 11 flat locale files (pt in Brazilian Portuguese): a stream adds keys only under its prefix and changes or deletes only the existing keys its edits globs name; main's edits are the 'Plant palette' rename words (owner row 'Plant palette name'; consortium.download.* and what.plan.text keep the app's term) and the Balance keys it deletes; b1's privacy.location.link is the owner-approved replacement (decision row 2026-11-14); node scripts/plan/owners.mjs check fails any other key change against the chunk base; another key is requested from the main agent"
+      "rule": "the 11 flat locale files (pt in Brazilian Portuguese): a stream adds keys only under its prefix and changes or deletes only the existing keys its edits globs name; main's edits are the 'Plant palette' rename words (owner row 'Plant palette name'; consortium.download.* and what.plan.text keep the app's term) and the Balance keys it deletes; b1a's privacy.location.link is the owner-approved corrected text (decision row 'Plant palette plan check answers', 2026-11-14) and main's privacy.tool.device the owner-approved text of the same row, shipped in 0b; b2 also adds the shared verdict, hole and year words under consortium.line. (one text model, plant-palette-architecture section 3.2); b1b reuses b1a's prefix in chunk 2 for the pool count line and deletes the pool panel's keys; node scripts/plan/owners.mjs check fails any other key change against the chunk base; another key is requested from the main agent"
     }
   ],
   "chunks": [
@@ -74,7 +87,7 @@
       "streams": {
         "main": {
           "needs": [],
-          "duty": "commit 0 (main agent), in two commits before any stream. 0a seams: core types of the plant-palette-architecture concept sections 3.1-3.3 with empty-bodied place.ts, verdict.ts, verdict-line.ts, years.ts (phaseOrd moved from matrix.ts, spanOf from views/tracks.ts; views/kit/span.ts deleted), holes.ts, weigh.ts exported from index.ts (forward seams tagged @public with the stream that drops the tag); PlantSource.layerValues in source.ts with a stub in data/sqlite-source.ts; SitePeriod gains precipMm, dryMonths; 'pots' added to rooms; the whole link v5 codec, encodePlace and linkVersionStatus in state.ts with scripts/vectors/link-v5.json and scripts/consortium-link-v5.test.mjs (contract, coordinator-reviewed), used by persist.ts readRecord/oldRecord and restore.ts (v1-4 older: said once, save removed as for v1-3; newer and unreadable: save untouched); state fields room, plot, spot, soil, period and the place rule (link.put null unless o.place), site kept as a derived unsaved computed signal, kept/crops/stage marked deprecated (not written to v5); the canopi-place key and history.state.pl in persist.ts/arrival.ts; applyPreset adds the guide plant to members; store.ts: verdict role signals (verdictContext, verdictRule, memberVerdicts, poolVerdicts, countFits seam, an empty offline signal), withRule waits on the verdict chunk; views/place/Place.tsx re-exports Start and App.tsx imports it; App.tsx loads the matrix through lazyPart (role structure renamed matrix, entry Matrix.tsx with Actions, cap 12 KB); tracks.ts helpers moved to views/kit/phase.ts and names.ts with side.ts, SideView, StageBar, StageStepper repointed; Balance seams deleted (balance.ts, views/balance/**, balance.css and its import, BalanceCheck types, role balance, balancePanel, scripts/consortium-balance.test.mjs); roles palette and verdict with caps; ADR-1 rule L10 as warn (keys in scripts/quality/baselines/arch.json); install-consortium.mjs reads range_verdicts.json from the installed release (manifest sha256, git-ignored path; until then a stamped copy scripts/vectors/range-verdicts.json with a release-id test); empty page-level stylesheets palette-page.css, place.css, plants.css imported by ConsortiumPage.astro; the markers: the 20 PP-B markers moved into their stream's files (scripts/consortium-pp-b<n>.test.mjs, scripts/browser/consortium-pp-b<n>.browser.test.mjs, registered once in every shards.json list) and retitled with the new owner, the 11 PP-C markers parked (removed, restored from 648baf2 by their PP-C owner), the 8 dropped markers deleted, the f1a spec and unit files deleted; browser-tests.test.mjs SPEC_FILES and owner block, built-modules.test.mjs (no structure/balance), plan-owners.test.mjs. 0b the move to /palette/: pages, public/_redirects (22 lines), consortium-path.js, ConsortiumPage.astro (literals and the page-head link check: any fragment with v or a is a link), guide MDX links and TryConsortium, guides strings, PrivacyPage/DataSourcesPage words, harness fixture match, helpers, smoke, timing, the specs that open the old path, guides-consortium and built-links tests, check-built-site (x-default, checkHeader, checkLinks, redirect lines, no consortium/index.html), the URL-strings-only 'no /consortium/ left' test; probe on wrangler dev (query and fragment survive) else the stub-page fallback. Gate: npm run check, npm test, check:arch and check:dead pass after 0a and after 0b.",
+          "duty": "commit 0 (main agent), in two commits before any stream. 0a seams: core types of the plant-palette-architecture concept sections 3.1-3.3 with place.ts holding real bodies for emptyPlace, siteFor (today's light, soil and water answers passed to fits) and a minimal resolveSoil (basis 'none' for the map, 'pots' for pots) plus climateFor (passes the slot through; the only reader of lookup.periods, arch-rules grep line as warn) with their unit tests, empty-bodied verdict-load.ts (b2 writes the body), verdict.ts, verdict-line.ts, years.ts (phaseOrd moved from matrix.ts, spanOf from views/tracks.ts; views/kit/span.ts deleted and views/kit/sheet.tsx repointed to years.ts spanOf; yearsOf = first to last stage present), holes.ts, weigh.ts exported from index.ts (forward seams tagged @public with the stream that drops the tag); PlantSource.layerValues in source.ts with a stub in data/sqlite-source.ts; SitePeriod gains precipMm, dryMonths; 'pots' added to rooms; the whole link v5 codec, encodePlace (k from store.country, o from store.location) and linkVersionStatus (classifies v only; null a named status; older = v1-v4 only) in state.ts under the extension rule (unknown keys ignored, an unreadable value falls back for its key alone, u= reserved for requires keys, y = a PeriodId span string with LinkNotice.period, reserved letters), with scripts/vectors/link-v5.json in the shared vector envelope (conventions/palette-vectors) and scripts/consortium-link-v5.test.mjs (contract, coordinator-reviewed), used by persist.ts readRecord/oldRecord and restore.ts (v1-4 older: said once, save removed as for v1-3; newer and unreadable: save untouched); state fields room, plot, spot, soil, period and the place rule (link.put null unless o.place), site kept as a derived unsaved computed signal, kept/crops/stage marked deprecated (not written to v5); the save record { fragment, place, at, src, country? } (place = l w q r h s; room and plot are the fragment's m and z), canopi-place as the seed of a new palette only, and history.state.pl in persist.ts/arrival.ts; applyPreset adds the guide plant to members; store.ts: verdict role signals (verdictContext, verdictRule, memberVerdicts, poolVerdicts, countFits seam, an empty offline signal), withRule waits on the verdict chunk; views/place/Place.tsx re-exports Start and App.tsx imports it; App.tsx loads the matrix through lazyPart (role structure renamed matrix, entry Matrix.tsx with Actions, cap 12 KB); tracks.ts helpers moved to views/kit/phase.ts and names.ts with side.ts, SideView, StageBar, StageStepper and kit/sheet.tsx repointed; Balance seams deleted (balance.ts, views/balance/**, balance.css and its import, BalanceCheck types, role balance, balancePanel, scripts/consortium-balance.test.mjs); roles palette and verdict (12 KB) with caps; ADR-1 rule L10 as warn with index.ts allowed for named re-exports (index in pathNot, an arch-rules fixture), its keys written by ratchet.mjs arch --write (the merge agent rewrites the baseline at each chunk merge); the colour meaning block in src/styles/tokens.css (--role-*, --level-*, light-level tokens per the architecture's token table, light and dark, contrast checked) with consortium-css.test.mjs allowing --role-* and [data-job] and forbidding raw hex in consortium CSS and TSX (print.css excepted); format.ts formatLength, formatDepthCm, formatTemp, formatTempDiff, formatArea, parsePlotSize and the unit-after-placeholder policy check for new consortium keys in consortium-keys.test.mjs; the Line type and the fitLine, holeLine, yearsLine signatures in verdict-line.ts; harness.mjs database: 'hold' released by page.releaseHeld() (and timeouts.slow if the Still loading threshold needs it); install-consortium.mjs reads range_verdicts.json from the installed release (manifest sha256, git-ignored path; until then a stamped copy scripts/vectors/range-verdicts.json with a release-id test); empty page-level stylesheets palette-page.css, place.css, plants.css imported by ConsortiumPage.astro; the markers: the 7 PP-B markers A1, A2, S1, P2, P4, P12, P13 moved unchanged into their stream's files only if one capped run after 0a and after 0b shows each still fails for its stated reason (else parked like the rest); the 13 PP-B markers P1, P5, P6, P7, P8, P9, P10, P11, B1, B2, B4, B6, S2 parked and restored by their stream from 648baf2 with a reason rewritten against the new seam's empty state; every parked marker listed in scripts/plan/parked-markers.json (PP-C commit 0 asserts each restored or deleted; f1a-helpers.mjs stays until PP-C); the moved markers go into their stream's files (scripts/consortium-pp-b<n>.test.mjs, scripts/browser/consortium-pp-b<n>.browser.test.mjs, b1a and b1b sharing pp-b1, registered once in every shards.json list) and are retitled with the new owner, the 11 PP-C markers parked (removed, restored from 648baf2 by their PP-C owner), the 8 dropped markers deleted, the f1a spec and unit files deleted; browser-tests.test.mjs SPEC_FILES and owner block, s2 and s3 added to its low-minimum regex and its BT-coverage and s1-s4 naming checks loosened (a stream never deletes a whole spec file; main deletes emptied spec files at the chunk-3 exit), built-modules.test.mjs (no structure/balance), plan-owners.test.mjs. 0b the move to /palette/: pages, public/_redirects (22 lines), consortium-path.js, ConsortiumPage.astro (literals and the page-head link check: any fragment with v or a is a link), guide MDX links and TryConsortium, guides strings, PrivacyPage/DataSourcesPage words, harness fixture match, helpers, smoke, timing, the specs that open the old path, guides-consortium and built-links tests, check-built-site (x-default, checkHeader, checkLinks, redirect lines, no consortium/index.html), the URL-strings-only 'no /consortium/ left' test; probe on wrangler dev (query and fragment survive) else the stub-page fallback, stubs built at /consortium/ and /<lang>/consortium/ each pointing to consortiumPath(lang) (302 considered until the production curl check passes); privacy.tool.device EN and FR exactly as owner-approved 2026-11-14 (plan 'Privacy text shipped in PP-B'), the 9 other locales translated in 0b. Gate: npm run check, npm test, check:arch and check:dead pass after 0a and after 0b.",
           "files": [
             "src/lib/consortium/types.ts",
             "src/lib/consortium/state.ts",
@@ -175,7 +188,14 @@
             "scripts/quality/arch-rules.test.mjs",
             "scripts/quality/baselines/**",
             "CLAUDE.md",
-            "knowledge/**"
+            "knowledge/**",
+            "src/lib/consortium/verdict-load.ts",
+            "src/islands/consortium/views/kit/sheet.tsx",
+            "src/islands/consortium/format.ts",
+            "src/styles/tokens.css",
+            "scripts/consortium-css.test.mjs",
+            "scripts/consortium-keys.test.mjs",
+            "scripts/plan/parked-markers.json"
           ]
         }
       }
@@ -183,18 +203,16 @@
     {
       "chunk": 1,
       "streams": {
-        "b1": {
+        "b1a": {
           "needs": [
             "main"
           ],
-          "duty": "b1 Your place, arriving and sharing (PP-B): the Place form from views/Start.tsx (moved into views/place/ and deleted there; country line and climate cards kept as parts; start from own plants, 'Start from a small suggested palette' one link away, 'pots' offered), the location step inside Place, room words height only, optional plot size; arrival, restore, draft and persist behaviour: the link notices (older, newer, unreadable), 'Open my saved palette instead', 'Use it' / 'Use my own place' for a link that brings a place, Start over with one Undo, canopi-place read and written, 'Forget this location' clears it, guide preset adds the plant (consortium.start.guideKept replaced); Share.tsx: 'Include my place' tick (passes place: true; shown when a location or a spot answer exists), wording 'your spot answers' and privacy.location.link replaced with the owner-approved text in 11 locales; suggest.ts options lose crops and kept, invasive tie (markers P12, P13); the pool panel (pool.tsx, PoolSlot, suggest-block.ts) ported to poolVerdicts, its count folded into Place, then the pool role removed (role edit requested from the coordinator at the merge). Tests first: unit siteFor, emptyPlace, P12, P13, arrival() with v5 record, pl and canopi-place, readRecord/oldRecord v4/v5/v6, startOver then undo, preset members == [id] and no save, link-place notice (a)-(c), k gating vectors; browser P4, P7, P9 (Place regions), PP-B1 Kiambu line form through countFits, PP-B2 no location, PP-B3 suggested palette one Undo, PP-B4 v4 saved palette older line once, PP-B5 three reloads keep the place and the address holds none of k o l w q r h s, PP-B10 share tick off/on, PP-B11 Start over Undo, PP-B12 Open my saved palette instead, PP-B13 v=6 and unreadable links, PP-B14 guide link on /palette/. Asks b2 for any store.ts signal through the coordinator.",
+          "duty": "b1a Your place, arriving and sharing (PP-B, chunk 1): the Place form from views/Start.tsx (moved into views/place/ and deleted there; country line and climate cards kept as parts; start from own plants, 'Start from a small suggested palette' one link away, 'pots' offered; today's light, soil and water questions kept inside Place until PP-F replaces them (owner, 2026-11-14): light to spot.light, water to spot.water, a soil word to SoilAnswer {from:'own', word}, 'not sure' to {from:'map'}; the goal question is not built), the location step inside Place, room words height only, optional plot size; arrival, restore, draft and persist behaviour: the link notices (older, newer, unreadable, period), 'Open my saved palette instead', 'Use it' / 'Use my own place' for a link that brings a place ('Use it' writes the link's spot into the palette record's place, o into canopi-location through state/location.ts and k through draft.ts), Start over with one Undo (keeps the palette's place), canopi-place written on every place change and read only to seed a new palette, 'Forget this location' runs today's forget() and clears canopi-location, canopi-place and the record's place, guide preset adds the plant (consortium.start.guideKept replaced); Share.tsx: 'Include my place' tick (passes place: true; shown when a location or a spot answer exists), wording 'your spot answers' and privacy.location.link replaced with the owner-approved corrected text in 11 locales; suggest.ts options lose crops and kept, invasive tie (markers P12, P13); keeps the markStart() call when Start moves. Tests first: unit siteFor, emptyPlace (0a's bodies), P12, P13, arrival() with the v5 record { fragment, place, at, src, country? }, pl and canopi-place as seed, readRecord/oldRecord v4/v5/v6 and a save with no v, startOver then undo, preset members == [id] and no save, link-place notice (a)-(c), m and z never bring a place, k without o and all answers unsure brings no place and keeps the reader's country, k gating vectors; browser P4 (pots answer and Suggest height limit; the card height note is b3's), P9 (Place regions), PP-B2 no location, PP-B3 suggested palette one Undo, PP-B4 v4 saved palette older line once, PP-B5 three reloads keep room and spot answers (incl. a shade answer that moves a sun-only plant to needs a second look) while the address holds none of k o l w q r h s, PP-B10 share tick off/on, PP-B11 Start over Undo, PP-B12 Open my saved palette instead, PP-B13 v=6 and unreadable links, PP-B14 guide link on /palette/, PP-B19 Place at 320 px in en, de, ru and ja (nothing scrolls sideways). Asks b2 for any store.ts signal through the coordinator.",
           "files": [
             "src/islands/consortium/views/place/**",
             "src/islands/consortium/views/Start.tsx",
             "src/islands/consortium/views/location/**",
             "src/islands/consortium/views/LocationSlot.tsx",
-            "src/islands/consortium/views/pool/**",
-            "src/islands/consortium/views/PoolSlot.tsx",
             "src/islands/consortium/views/Share.tsx",
             "src/islands/consortium/state/draft.ts",
             "src/islands/consortium/state/arrival.ts",
@@ -203,10 +221,8 @@
             "src/islands/consortium/state/location.ts",
             "src/islands/consortium/state/lookups.ts",
             "src/islands/consortium/state/suggest-wait.ts",
-            "src/islands/consortium/rules/suggest-block.ts",
             "src/lib/consortium/place.ts",
             "src/lib/consortium/suggest.ts",
-            "src/lib/consortium/site-today.ts",
             "src/styles/consortium/place.css",
             "src/styles/consortium/p5/**",
             "scripts/consortium-pp-b1.test.mjs",
@@ -229,7 +245,7 @@
           "needs": [
             "main"
           ],
-          "duty": "b2 The palette page and its shell (PP-B): verdict.ts for today's climate, site fit and the room note, holdsBy on futureCheck, loadVerdictRule, fitLine in verdict-line.ts; years.ts; holes.ts kinds job and light with rank, not-judged and pending, fills predicate and fillers (holds map, warned set); jobGapsByPhase moved from jobs.ts; rules/picture-years.ts and picture-jobs.ts; views/palette Palette, NextStep, Years (phone: one time step at a time), JobsPicture, Placeholder (return visit, never the Place form); views/kit/chart.tsx with 'Show as a table' and kit/fit.tsx; header steps (Your place, Your palette, Planting plan); hosts Actions and FutureSlot under the page until PP-E; shell states: 'Still loading' after 5 s (data/load.ts slow callback read in main.ts), page-level offline line, toasts paused under pointer or focus with focus returned (focus.ts focusAfterToast body), ct:first-view on the palette page; palette-page.css. Tests first: unit verdicts.json (the 169 canopi-data vectors agree; Kiambu 324 of 515 as a vector), judgedPeriod, holdsBy vectors, holes.json (rank pairs, a job missing in years 3-15 is one hole, a 0-1 and 0.25-1 gap not-judged, nothing after 60, P11 pending), fillers groups and ranking, picture models with the same cells in the table form; browser A1, A2, S1, S2, P1, P2, P6, P8, PP-B6 Lyon own plants Next step, PP-B7 phone 390 px years stepper, PP-B8 Show as a table, PP-B15 slow database Still loading, PP-B16 offline line, PP-B17 toast waits under focus and returns focus.",
+          "duty": "b2 The palette page and its shell (PP-B): verdict.ts for today's climate, site fit and the room note, VerdictContext.canopy from canopyOf(members) (shade relief: no light factor under a taller member; member and pool verdicts recomputed when members change), holdsBy on futureCheck, loadVerdictRule in core verdict-load.ts (reaches verdict.ts only through import(), never caches a failed load, exported from index.ts), fitLine, holeLine, yearsLine bodies in verdict-line.ts under the consortium.line. keys; countFits (levels kept; borrowed lists keep every plant whose climate range includes the site); years.ts; holes.ts kinds job and light ranked by HOLE_ORDER, hole ids with a month-mask suffix, not-judged and pending, fills predicate and fillers (holds map, warned set); jobGapsByPhase moved from jobs.ts; rules/picture.ts (one picture model: title key, summary lines, columns, rows with state data / not-recorded / not-judged; tableOf; fold rule: at most PICTURE_LANE_MAX marks per lane with more and the hidden ids, the table lists every plant) and rules/change-summary.ts (changeSummary(before, after): Line[] announced through the polite status region), rules/picture-years.ts and picture-jobs.ts on it, scripts/picture-table.mjs (cell-equivalence helper every picture's unit test calls); views/palette Palette, NextStep, Years (phone: one time step at a time), JobsPicture, Placeholder (return visit, never the Place form); views/kit/chart.tsx with 'Show as a table' (SVG role=img named by the summary, no focusable control inside; every hole and 'opens Details' target an HTML button) and kit/fit.tsx; header steps (Your place, Your palette, Planting plan); hosts Actions and FutureSlot under the page until PP-E; shell states: 'Still loading' after 5 s (data/load.ts slow callback read in main.ts), page-level offline line, toasts paused under pointer or focus with focus returned (focus.ts focusAfterToast body), ct:first-view on the palette page; S1 and S2: the wasm preload in astro.config.mjs with a build check of href, crossorigin and a single wasm, the markStart body in views/kit/start-mark.ts; A2: live regions only in views/Sheets.tsx and views/kit/sheet.tsx (c1 rewrites them in PP-C); LoadFailed in lazy.tsx reads offline (shows 'Needs a connection', retries on online, never reloads); decides and records whether a full-screen sheet pushes history.state.sheet; palette-page.css. Tests first: unit DATA-1's range_verdicts.json run from the installed release (or the stamped copy with its release-id test, never copied into verdicts.json), verdicts.json in the shared envelope holding website cases only (shade relief: a sun spot with a taller member has no light factor, with no taller member look, a 'part' spot keeps the light factor), Kiambu 324 of 515 through countFits as a real-data unit test, judgedPeriod, holdsBy vectors, holes.json (rank pairs, a job missing in years 3-15 is one hole, a 0-1 and 0.25-1 gap not-judged, nothing after 60, P11 pending), fillers groups and ranking, picture models with the same cells in the table form through scripts/picture-table.mjs, a 200-plant fold vector ('pictures stay readable', moved from P5), changeSummary vectors; browser A1, A2, S1, P2 (moved) and S2, P1 (Next step opens Add through store.openSheet('add', null, {job, cell}); no hole filled by a suggestion is the Next step), P6, P8 (also over hole buttons and the changeSummary announcements), P11 (parked, restored with rewritten reasons), PP-B6 Lyon own plants Next step, PP-B7 phone 390 px years stepper, PP-B8 Show as a table, PP-B15 slow database Still loading, PP-B16 offline line, PP-B17 toast waits under focus and returns focus, PP-B20 the verdict chunk refused (block: { verdict: 404 }): fit lines say not checked, never fits, holes say they were computed without verdicts, Reload works, PP-B21 a guest list fails: the list is named as missing, its plants not checked, PP-B22 the palette page, header steps, pictures, tables and sheets at 320 px in en, de, ru and ja (replaces P5-27g and P5-27q). Owns the consortium.line. keys and the picture model; Find, Swap, Details, print and the period switch never write their own words for these.",
           "files": [
             "src/islands/consortium/store.ts",
             "src/islands/consortium/App.tsx",
@@ -253,7 +269,6 @@
             "src/lib/consortium/years.ts",
             "src/lib/consortium/holes.ts",
             "src/lib/consortium/jobs.ts",
-            "src/lib/consortium/marks.ts",
             "src/styles/consortium/palette-page.css",
             "src/styles/consortium/shell.css",
             "scripts/vectors/verdicts.json",
@@ -274,7 +289,16 @@
             "scripts/browser/consortium-commit0.browser.test.mjs",
             "scripts/browser/helpers.mjs",
             "scripts/browser/p5-helpers.mjs",
-            "scripts/browser/seams-helpers.mjs"
+            "scripts/browser/seams-helpers.mjs",
+            "src/lib/consortium/verdict-load.ts",
+            "src/islands/consortium/rules/picture.ts",
+            "src/islands/consortium/rules/change-summary.ts",
+            "astro.config.mjs",
+            "src/islands/consortium/views/kit/start-mark.ts",
+            "src/islands/consortium/views/Sheets.tsx",
+            "src/islands/consortium/views/kit/sheet.tsx",
+            "src/islands/consortium/views/lazy.tsx",
+            "scripts/picture-table.mjs"
           ]
         }
       }
@@ -282,12 +306,29 @@
     {
       "chunk": 2,
       "streams": {
+        "b1b": {
+          "needs": [
+            "main",
+            "b1a",
+            "b2"
+          ],
+          "duty": "b1b The pool count into Place (PP-B, chunk 2, after b2 merges: it needs b2's verdict engine): the countFits probe first (the same count as the pool panel for Kiambu before the panel goes; stop and report on a difference), the pool panel (pool.tsx, PoolSlot, suggest-block.ts) ported to poolVerdicts, its count folded into Place as the line '{n} of the {m} plants on the nearest lists fit your place today', then the pool panel and its keys removed (the pool role edit is requested from the coordinator at the merge); site-today.ts kept until the panel goes, then check:dead decides. Not store.ts (b3's in chunk 2; signals through the coordinator). Tests first: browser PP-B1 Kiambu: search, confirm the climate, the count line through countFits (figures from b2's real-data test), P7 (parked, restored: Suggest waits for the verdict chunk).",
+          "files": [
+            "src/islands/consortium/views/place/**",
+            "src/islands/consortium/views/pool/**",
+            "src/islands/consortium/views/PoolSlot.tsx",
+            "src/islands/consortium/rules/suggest-block.ts",
+            "src/lib/consortium/site-today.ts",
+            "scripts/consortium-pp-b1.test.mjs",
+            "scripts/browser/consortium-pp-b1.browser.test.mjs"
+          ]
+        },
         "b3": {
           "needs": [
             "main",
             "b2"
           ],
-          "duty": "b3 Your plants (PP-B, after b2 merges): views/palette YourPlants (each plant once, warnings first, full-grown width and height or 'No size recorded', '+ N more' at 200 plants, Remove) and Weigh with core weigh.ts (one family, water needs 'n of m recorded: not enough to judge'; estimate term on borrowed lists); toxicity levels: conflicts.ts raises Slight with its level, kit/flags.ts maps Slight to the warning token with 'Mildly toxic' and an icon and Moderate/Severe to the danger token, Details' :156 sentence removed; suggest.ts gain on open holes filled through holes.ts fills (replaces the matrix cell terms); print off the matrix and stage signals: side drawing at the year step chosen in Through the years, jobs and years tables replace 'At a glance', heightFrac/usualHeight moved to rules/heights.ts; deletes views/Matrix.tsx, PhoneMatrix, matrix-parts, tracks.ts, Jobs, PlantList, StageBar's matrix parts and StageStrip/cellName/plantLabel, matrix.css, the commit-0 palette.css, matrix.ts (buildMatrix, plantsIn, startCell, Matrix types) with PlantSource.cellCounts and their test cases, kept/crops/stage with their readers, toggleKeep and the Keep action, the matrix role and its ConsortiumPage/print reads. Tests first: unit P10 (rewritten), B1, B2, B4, size line, toxicity mapping, suggest gain counts open holes filled; browser P5, B6, PP-B9 Slight, Moderate and invasive plants listed first with words and icon, removed only by the grower, PP-B18 print side drawing at the chosen year step. Runs npm run check and check:dead after the deletions.",
+          "duty": "b3 Your plants (PP-B, chunk 2, after b2 merges): mounts YourPlants and Weigh in views/palette/Palette.tsx, removes the matrix lazyPart from App.tsx and the Jobs and PlantList re-exports from views/later.ts (later-chunk.ts follows); views/palette YourPlants (each plant once, warnings first, full-grown width and height or 'No size recorded', '+ N more' at 200 plants, Remove) and Weigh with core weigh.ts (one family, water needs 'n of m recorded: not enough to judge'; estimate term on borrowed lists); toxicity levels: conflicts.ts raises Slight with its level, kit/flags.ts maps Slight to the warning token with 'Mildly toxic' and an icon and Moderate/Severe to the danger token, Details' :156 sentence removed; suggest.ts gain on open holes filled through holes.ts fills (replaces the matrix cell terms); print off the matrix and stage signals: side drawing at the year step chosen in Through the years, jobs and years tables replace 'At a glance', heightFrac/usualHeight moved to rules/heights.ts; deletes views/Matrix.tsx, PhoneMatrix, matrix-parts, tracks.ts, Jobs, PlantList, StageBar's matrix parts and StageStrip/cellName/plantLabel, matrix.css, the commit-0 palette.css, matrix.ts (buildMatrix, plantsIn, startCell, Matrix types) with PlantSource.cellCounts and their test cases, kept/crops/stage with their readers, toggleKeep and the Keep action, the matrix role and its ConsortiumPage/print reads. Tests first: unit P10, B1, B2, B4 (parked, restored from 648baf2 with reasons rewritten against weigh.ts and YourPlants), size line, toxicity mapping, suggest gain counts open holes filled; browser P5 ('Your plants' folds to '+ N more', Remove; 'pictures stay readable' is b2's), B6, P4's card height note on YourPlants, PP-B9 Slight, Moderate and invasive plants listed first with words and icon, removed only by the grower, PP-B18 print side drawing at the chosen year step. Runs npm run check and check:dead after the deletions.",
           "files": [
             "src/islands/consortium/views/palette/YourPlants.tsx",
             "src/islands/consortium/views/palette/Weigh.tsx",
@@ -336,7 +377,11 @@
             "scripts/consortium-p5-ranges.test.mjs",
             "scripts/consortium-css.test.mjs",
             "scripts/browser/consortium-s2.browser.test.mjs",
-            "scripts/browser/consortium-s3.browser.test.mjs"
+            "scripts/browser/consortium-s3.browser.test.mjs",
+            "src/islands/consortium/App.tsx",
+            "src/islands/consortium/views/palette/Palette.tsx",
+            "src/islands/consortium/views/later.ts",
+            "src/islands/consortium/views/later-chunk.ts"
           ]
         }
       }
@@ -346,11 +391,12 @@
       "streams": {
         "main": {
           "needs": [
-            "b1",
+            "b1a",
             "b2",
+            "b1b",
             "b3"
           ],
-          "duty": "exit (main agent): caps to measured + 0.5 KB (a raise above a cap is a row in the plan's budget log and a coordinator row), FIRST_RUN_BUDGET to measured, the pool and matrix roles gone, shards rebalanced, axe page list and baselines (merge agent), L10 keys in arch.json, timing.json untouched unless a runner run, CLAUDE.md gotcha names /palette/, concepts (okf impact), zero expected-fail markers, boards compared at 390 and 1280 px light and dark.",
+          "duty": "exit (main agent): caps to measured + 0.5 KB (a raise above a cap is a row in the plan's budget log and a coordinator row), FIRST_RUN_BUDGET to measured, the pool and matrix roles gone, shards rebalanced, emptied spec files deleted (with browser-tests.test.mjs and shards.json in the same commit), axe page list and baselines (merge agent), L10 keys in arch.json, timing.json untouched unless a runner run, CLAUDE.md gotcha names /palette/, concepts (okf impact), zero expected-fail markers, boards compared at 320, 390 and 1280 px light and dark.",
           "files": [
             "scripts/check-built-site.mjs",
             "scripts/built-modules.mjs",
@@ -360,7 +406,10 @@
             ".dependency-cruiser.cjs",
             "scripts/browser/timing.json",
             "CLAUDE.md",
-            "knowledge/**"
+            "knowledge/**",
+            "scripts/browser-tests.test.mjs",
+            "scripts/browser/consortium-s2.browser.test.mjs",
+            "scripts/browser/consortium-s3.browser.test.mjs"
           ]
         }
       }

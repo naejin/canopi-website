@@ -26,6 +26,23 @@ test('a superseded owners file names the owners file that replaced it, and that 
   }
 });
 
+// Plan recheck 2026-11-14, blockers 1 and 2: a module a chunk deletes or repoints has every importer
+// owned in that chunk, or the stream cannot pass npm run check without touching a file it does not own.
+test('PP-B: the importers of what a chunk deletes are owned in that chunk; b1b waits for b2', () => {
+  const ppb = readOwners(ownersFiles().find((f) => f.endsWith('/pp-b-owners.json')));
+  const owns = (chunk, stream, path) => (ppb.chunks[chunk].streams[stream]?.files ?? []).some((f) => matches(f, path));
+  const v = 'src/islands/consortium/views/';
+  // Chunk 0 deletes views/kit/span.ts; kit/sheet.tsx imports spanOf from it.
+  for (const p of [`${v}kit/span.ts`, `${v}kit/sheet.tsx`]) assert.ok(owns(0, 'main', p), `chunk 0 main owns ${p}`);
+  // b3 deletes the matrix, Jobs and PlantList: App.tsx imports Matrix, later.ts re-exports Jobs and
+  // PlantList, and Palette.tsx mounts their replacements.
+  for (const p of ['src/islands/consortium/App.tsx', `${v}later.ts`, `${v}later-chunk.ts`, `${v}palette/Palette.tsx`, `${v}Matrix.tsx`, `${v}Jobs.tsx`, `${v}PlantList.tsx`])
+    assert.ok(owns(2, 'b3', p), `chunk 2 b3 owns ${p}`);
+  // b1b ports the pool panel onto b2's verdict engine, so it runs after b2 (recheck 5).
+  assert.ok(ppb.chunks[2].streams.b1b.needs.includes('b2'));
+  for (const p of [`${v}pool/pool.tsx`, `${v}PoolSlot.tsx`]) assert.ok(owns(2, 'b1b', p) && !owns(1, 'b1a', p), p);
+});
+
 test('shared files: only the listed streams may change them, and no stream owns them outright', () => {
   const owners = { shared: [{ files: ['src/i18n/translations/*.json'], streams: { A: { prefix: 'consortium.a.', edits: ['consortium.old.*'] } } }], chunks: [
     { chunk: 0, streams: { main: { needs: [], files: ['package.json'] } } },
