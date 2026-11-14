@@ -20,7 +20,7 @@ test('P1: SQLite-WASM opens the real install in headless Chrome on wrangler dev,
   const wasm = readdirSync(join(ROOT, h.dir, 'client', '_astro')).filter((f) => f.endsWith('.wasm'));
   assert.equal(wasm.length, 1, `one wasm in the build: ${wasm.join(', ')}`);
   assert.match(wasm[0], /^sqlite3\.[\w-]{8}\.wasm$/);
-  const page = await h.open('/consortium/');
+  const page = await h.open('/palette/');
   assert.equal(await loadState(page), 'ready');
   const { plants } = await countPlantsInPage(page);
   assert.equal(plants, await realDb((db) => db.prepare('SELECT count(*) n FROM plants').get().n));
@@ -41,7 +41,7 @@ test('P2: the wasm is served as application/wasm, and hashed files and the datab
 });
 
 test('P3: the database reaches the browser with its gzip magic and no content-encoding @real-data', async () => {
-  const page = await h.open('/consortium/');
+  const page = await h.open('/palette/');
   const seen = await page.evaluate(async (url) => {
     const res = await fetch(url);
     const bytes = new Uint8Array(await res.arrayBuffer());
@@ -54,7 +54,7 @@ test('P3: the database reaches the browser with its gzip magic and no content-en
 
 test('P6 / BT-9 JS-off: the title, lede, noscript guide link, release line and loading line are there @real-data', async (t) => {
   await behaviour(t, async (v) => {
-    const page = await h.open('/consortium/', { ...v, javaScript: false });
+    const page = await h.open('/palette/', { ...v, javaScript: false });
     const shell = await page.evaluate(() => ({
       title: document.querySelector('h1.tool-title')?.textContent,
       lede: document.querySelector('.tool-lede')?.textContent?.trim().length ?? 0,
@@ -72,7 +72,7 @@ test('P6 / BT-9 JS-off: the title, lede, noscript guide link, release line and l
 
 test('the island mounts with JavaScript on, the head does not move, and the fixture opens', async (t) => {
   await layoutVariants(t, async (v) => {
-    const page = await h.open('/consortium/', { ...v, data: 'fixture' });
+    const page = await h.open('/palette/', { ...v, data: 'fixture' });
     const before = await page.evaluate(() => document.querySelector('.tool-head').getBoundingClientRect().height);
     assert.equal(await loadState(page), 'ready');
     const after = await page.evaluate(() => document.querySelector('.tool-head').getBoundingClientRect().height);
@@ -98,7 +98,7 @@ test('R3-4, R4-4: a slow but steady download (80 KB/s, the wasm ~11 s against a 
   // 10 s at 80 KB/s (879 KB) still loads: no overall cap, as at 10 KB/s against the production 15 s.
   const STALL = 1500;
   const t0 = Date.now();
-  const page = await h.open('/consortium/', { width: 1280, data: 'fixture', timeouts: { stall: STALL }, setup: async (pg) => {
+  const page = await h.open('/palette/', { width: 1280, data: 'fixture', timeouts: { stall: STALL }, setup: async (pg) => {
     const cdp = await pg.createCDPSession();
     await cdp.send('Network.enable');
     await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
@@ -117,7 +117,7 @@ for (const [what, opts, screen, button] of [
 ]) {
   test(`R4-4: a stalled download of ${what} (no byte within the stall timer, 1 s here, 15 s in production) gives the failure screen with its button`, async () => {
     // The stall timer injected at 1 s (A5) rather than waited out at 15 s.
-    const page = await h.open('/consortium/', { width: 1280, data: 'fixture', timeouts: { stall: 1000 }, ...opts });
+    const page = await h.open('/palette/', { width: 1280, data: 'fixture', timeouts: { stall: 1000 }, ...opts });
     assert.equal(await loadState(page, 10_000), screen);
     if (opts.wasmFile) assert.equal(await page.$eval('[data-load-error] p', (el) => el.textContent.trim()), en['consortium.load.toolFailed']);
     assert.ok(await has(page, aria('button', en[button]), 500));
@@ -126,7 +126,7 @@ for (const [what, opts, screen, button] of [
 }
 
 test('pre-push 3: the island chunk failing to load replaces the loading line with "the tool did not load" and Reload', async () => {
-  const page = await h.open('/consortium/', { width: 1280, data: 'fixture', island: 404 });
+  const page = await h.open('/palette/', { width: 1280, data: 'fixture', island: 404 });
   assert.ok(await page.waitForSelector('#ct-root [role="alert"]', { timeout: 8000 }).then(() => true, () => false), 'an alert in place of the loading line');
   assert.equal(await page.$eval('#ct-root [role="alert"] p', (el) => el.textContent.trim()), en['consortium.load.toolFailed']);
   assert.ok(await has(page, aria('button', en['consortium.load.reload']), 500));
@@ -138,7 +138,7 @@ test('BT-9 load: each failure gives its §5 screen and button', async (t) => {
   for (const [what, opts, screen, button] of SCREENS) {
     await t.test(what, async (tt) => {
       await behaviour(tt, async (v) => {
-        const page = await h.open('/consortium/', { ...v, ...opts });
+        const page = await h.open('/palette/', { ...v, ...opts });
         assert.equal(await loadState(page), screen);
         const retry = await has(page, aria('button', en['consortium.load.retry']), 500);
         const reload = await has(page, aria('button', en['consortium.load.reload']), 500);

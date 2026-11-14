@@ -35,7 +35,7 @@ test('P5-23 (S5f privacy page in fr and ja): /fr/privacy/ and /ja/privacy/ name 
 });
 
 test('P5-24 (S5f footer link): every page\'s footer links to its locale\'s privacy page', async () => {
-  for (const [path, href] of [['/', '/privacy/'], ['/fr/consortium/', '/fr/privacy/'], ['/ja/data-sources/', '/ja/privacy/']]) {
+  for (const [path, href] of [['/', '/privacy/'], ['/fr/palette/', '/fr/privacy/'], ['/ja/data-sources/', '/ja/privacy/']]) {
     const page = await h.open(path);
     assert.ok(await page.$(`footer a[href="${href}"]`), `${path}: footer link to ${href}`);
   }

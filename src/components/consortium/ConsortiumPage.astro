@@ -1,5 +1,5 @@
 ---
-// The consortium design tool (beta, v2): /consortium/ and /<lang>/consortium/.
+// The consortium design tool (beta, v2): /palette/ and /<lang>/palette/ ("Plant palette"; the old /consortium/ paths 301 here, public/_redirects).
 // Astro renders the static shell (design check A1): the head (title, beta badge, lede, the beta note),
 // the noscript callout with its guide link, a loading line and the data release line. The tool is a
 // Preact island, src/islands/consortium/main.ts, mounted from the page script into #ct-root; it reads
@@ -12,7 +12,7 @@ import Header from '../Header.astro';
 import Footer from '../Footer.astro';
 import DonateDialog from '../DonateDialog.astro';
 import PageData from '../PageData.astro';
-import { t, localizedUrl, type Locale } from '../../i18n/utils';
+import { t, localizedUrl, consortiumPath, defaultLocale, type Locale } from '../../i18n/utils';
 import en from '../../i18n/translations/en.json';
 import { publishedGuides, slugOf } from '../../lib/guides';
 import { consortiumGuides, explainGuide } from '../../data/consortium-guides';
@@ -79,7 +79,7 @@ const data = {
   start: {
     zones: climates.map((id) => ({ id, label: t(`climate.${id}`, lang), places: t(`climate.${id}.places`, lang) })),
     contact,
-    site: new URL(localizedUrl('/consortium/', lang), 'https://projectcanopi.com').href,
+    site: new URL(consortiumPath(lang), 'https://projectcanopi.com').href,
   },
 };
 // #ct-climate (P5 commit 0): the canopi-climate base path and tile names per layer, for the location
@@ -93,12 +93,12 @@ const climate = climatePageData(climateIndex as Parameters<typeof climatePageDat
 setStrings(strings, lang);
 const betaNote = P('betaNote', index.climates.length);
 ---
-<Base title={`${tr('title')} · Canopi`} description={tr('description')} lang={lang} path="/consortium/">
+<Base title={`${tr('title')} · Canopi`} description={tr('description')} lang={lang} path={consortiumPath(defaultLocale)}>
   {/* Design check A2: the database (≤ 1 MB gzipped) starts downloading with the page; crossorigin
       so the island's same-origin fetch() reuses it. The island's chunks get modulepreload links
       after the build (astro.config.mjs). */}
   <link slot="head" rel="preload" href={db.url} as="fetch" crossorigin="anonymous" />
-  <Header lang={lang} path="/consortium/" current="consortium" />
+  <Header lang={lang} path={consortiumPath(defaultLocale)} current="consortium" />
   <main id="main" class="ct">
     <div class="wrap ct-wrap">
       <div class="tool-head" id="ct-head">
@@ -110,12 +110,13 @@ const betaNote = P('betaNote', index.climates.length);
         <div class="callout"><p>{tr('noscript')}</p>{guide && <p><a class="text-link" href={guide.url} hreflang={guide.lang !== lang ? guide.lang : undefined}>{tr('noscript.link')}</a></p>}</div>
       </noscript>
       {/* How the page opens, set before the first paint so nothing jumps when the island mounts:
-          "link" for a share link (#v=4…), "preset" for a guide's ?plant=&climate= (design check A5),
-          else "start". The island reads the address itself; this only marks the head. */}
+          "link" for a share link (any fragment with v or a: #v=5…, an older #v=3…, or a v1 #a=…),
+          "preset" for a guide's ?plant=&climate= (design check A5), else "start". The island reads the
+          address itself; this only marks the head. */}
       <script is:inline>(function () { try {
         var h = document.getElementById('ct-head');
         var hp = new URLSearchParams((location.hash || '').replace(/^#/, '')), q = new URLSearchParams(location.search);
-        var opens = hp.get('v') === '4' ? 'link' : q.has('plant') && q.has('climate') ? 'preset' : 'start';
+        var opens = hp.has('v') || hp.has('a') ? 'link' : q.has('plant') && q.has('climate') ? 'preset' : 'start';
         h.dataset.opens = opens;
       } catch (e) {} })();</script>
       <div id="ct-root" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>

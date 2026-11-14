@@ -27,7 +27,7 @@ const RELOAD = en['consortium.details.reload'];
 // The fixture tool, Temperate suggested through the controls, the matrix shown (as seams-helpers
 // suggested(), with harness options: block, setup).
 async function matrixPage(opts = {}) {
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', ...opts });
+  const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', ...opts });
   await page.locator(aria('radio', 'Temperate')).click();
   assert.equal(await loadState(page), 'ready');
   await page.locator(aria('button', 'Suggest plants')).click();
@@ -74,7 +74,7 @@ test('E6-2 (B4 build): before the data is ready, no lazy part (sheets, plant dia
   // testHook: the test build's hook, awaited before the first render (main.ts), so not a lazy part.
   const lazy = [...new Set(Object.entries(h.roles).filter(([k]) => k !== 'maplibreCss' && k !== 'testHook').flatMap(([, list]) => list))];
   const log = [];
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', database: 'stall', hook: true, setup: recordRequests(log) });
+  const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', database: 'stall', hook: true, setup: recordRequests(log) });
   await page.waitForFunction(() => performance.getEntriesByType('resource').some((e) => /\/_astro\/load\.[\w-]+\.js$/.test(e.name)), { timeout: 10_000 });
   await page.waitForNetworkIdle({ idleTime: 500, timeout: 10_000, concurrency: 1 }).catch(() => {});
   assert.notEqual(await loadState(page, 100), 'ready', 'the database is still held');
@@ -183,7 +183,7 @@ test('E6-4b (K3 lazy Details): a Details part whose import rejects closes the sh
 test('E6-5b (K3 lazy parts): on Start only, the data ready, the plant dialog and the sheets are fetched without the matrix; Paste a list opens with its content at once (L12)', async () => {
   assert.ok(h.roles.details.length && h.roles.sheets.length, 'roles details and sheets have chunks in this build');
   const log = [];
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', setup: recordRequests(log) });
+  const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', setup: recordRequests(log) });
   await page.locator(aria('radio', 'Temperate')).click();
   assert.equal(await loadState(page), 'ready');
   const lazy = [...h.roles.details, ...h.roles.sheets];
@@ -256,7 +256,7 @@ async function moduleClosure(roots) {
   return seen;
 }
 async function sharedOfSheets() {
-  const html = await (await fetch(`${h.url}/consortium/`)).text();
+  const html = await (await fetch(`${h.url}/palette/`)).text();
   const scripts = [...html.matchAll(/<script type="module" src="([^"]+)"/g)].map((m) => new URL(m[1], h.url).pathname);
   const entry = await (await fetch(h.url + scripts[0])).text();
   const island = [...entry.matchAll(/["']\.\/(main\.[\w-]+\.js)["']/g)].map((m) => `/_astro/${m[1]}`);
@@ -325,7 +325,7 @@ test('E6-3d (K3 lazy sheets): Add, search, Paste and Swap opened while the range
 // removes that line; nothing here depends on it).
 test('E6-17 (B4 hand-off, done in the chunk-5 exit): in the test build, #ct-root stays aria-busy until the island renders, the test hook\'s chunk held', async () => {
   assert.ok(h.roles.testHook?.length, 'role `testHook` has no chunk in this build (npm run build:browser-test)');
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { testHook: 'hold' } });
+  const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', hook: true, block: { testHook: 'hold' } });
   await page.waitForFunction(() => document.readyState !== 'loading', { timeout: 4000 });
   await new Promise((r) => setTimeout(r, 1000));
   const held = await page.evaluate(() => {
@@ -344,7 +344,7 @@ test('E6-17 (B4 hand-off, done in the chunk-5 exit): in the test build, #ct-root
 // E6 exit fix round: a hook chunk that fails ends the wait with a load error naming it, never a root
 // left busy (loadState would time out reading 'loading').
 test('E6-19 (B4 hand-off, chunk-5 exit fix round): in the test build, a test hook chunk that fails to load leaves #ct-root not busy, with a load error naming the hook', async () => {
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { testHook: 404 } });
+  const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', hook: true, block: { testHook: 404 } });
   try {
     assert.equal(await loadState(page, 8000), 'test-hook', 'loadState reads the hook\'s failure');
     assert.equal(await page.evaluate(() => document.getElementById('ct-root').hasAttribute('aria-busy')), false, 'aria-busy removed');
@@ -403,7 +403,7 @@ test('E6-27 (K3 hand-off review 2): the idle future part whose prefetch failed s
   const log = [];
   // The site set before Suggest, so the future part mounts once with the matrix and is not mounted
   // again (the pool reads null while the range rule loads).
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, setup: failFirst(h.roles.later, 1, log) });
+  const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', hook: true, setup: failFirst(h.roles.later, 1, log) });
   try {
     const seen = futureRequests(page);
     await page.locator(aria('radio', 'Temperate')).click();

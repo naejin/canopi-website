@@ -75,7 +75,7 @@ test('W7: the toast never covers a control', async (t) => {
 });
 
 test('W8, W9, X4, X5: bold is 600, CJK headings keep words whole, sheet and page classes do not leak', async (t) => {
-  const page = await h.open('/consortium/', { width: 1280, theme: 'light', data: 'fixture' });
+  const page = await h.open('/palette/', { width: 1280, theme: 'light', data: 'fixture' });
   // The island drawn first (the test build renders after its hook's chunk arrives).
   assert.equal(await loadState(page), 'ready');
   const weights = await page.$$eval('#ct-root strong, #ct-root b', (els) => [...new Set(els.map((e) => getComputedStyle(e).fontWeight))]);
@@ -95,7 +95,7 @@ test('W8, W9, X4, X5: bold is 600, CJK headings keep words whole, sheet and page
   assert.deepEqual(row, { d: 'flex', m: '0px' }, 'the sheet\'s action row');
   await done(page);
   for (const lang of ['ja', 'zh', 'ko']) {
-    const p = await h.open(`/${lang}/consortium/`, { width: 390, theme: 'light', data: 'fixture' });
+    const p = await h.open(`/${lang}/palette/`, { width: 390, theme: 'light', data: 'fixture' });
     const heads = await p.$$eval('h1, #ct-root h2', (els) => els.map((e) => { const s = getComputedStyle(e); return `${s.wordBreak}/${s.lineBreak}`; }));
     assert.ok(heads.length > 0);
     for (const s of heads) assert.match(s, /^keep-all\/|\/strict$/, `${lang}: headings keep words whole (${s})`);
@@ -193,7 +193,7 @@ test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gut
     const S = (k) => STRINGS[lang][`consortium.${k}`];
     for (const width of [320, 390]) {
       const at = `${lang} ${width} px`;
-      const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { width, data: 'fixture', mapTiles: 'stub' });
+      const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/palette/`, { width, data: 'fixture', mapTiles: 'stub' });
       const bad = [];
       // Start drawn first (the test build renders after its hook's chunk arrives).
       assert.ok(await has(page, 'input[name="ct-climate"][value="temperate"]', 20_000), `${at}: Start is drawn`);

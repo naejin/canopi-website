@@ -37,7 +37,7 @@ async function chipOf(page, name) {
 // The page, with the test hook.
 // The hook is compiled in only by npm run build:browser-test (CANOPI_BROWSER_TEST=1; never for production).
 async function open(opts) {
-  const page = await h.open('/consortium/', { ...opts, hook: true });
+  const page = await h.open('/palette/', { ...opts, hook: true });
   return page;
 }
 const hooked = async (page, fn, ...args) => {

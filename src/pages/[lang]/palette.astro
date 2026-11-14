@@ -2,7 +2,7 @@
 import ConsortiumPage from '../../components/consortium/ConsortiumPage.astro';
 import { locales, defaultLocale, type Locale } from '../../i18n/utils';
 
-// English is /consortium/ (src/pages/consortium.astro); every other locale, French included, is here.
+// English is /palette/ (src/pages/palette.astro); every other locale, French included, is here.
 export function getStaticPaths() {
   return locales.filter((lang) => lang !== defaultLocale).map((lang) => ({ params: { lang } }));
 }

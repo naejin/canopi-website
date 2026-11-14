@@ -35,7 +35,7 @@ export function cellIn(name) {
 
 // Start → a climate → (light) → (room) → Suggest, through the controls.
 export async function suggested(v, { room = null, light = null } = {}) {
-  const page = await h.open('/consortium/', { ...v, data: 'fixture' });
+  const page = await h.open('/palette/', { ...v, data: 'fixture' });
   await page.locator(aria('radio', 'Temperate')).click();
   assert.equal(await loadState(page), 'ready');
   if (light) await page.locator(aria('radio', light)).click();
@@ -108,7 +108,7 @@ export const focused = (page) => page.evaluate(() => {
 
 // The test hook, on a page opened before the island loads (F4, F5).
 export async function hookedPage(v) {
-  const page = await h.open('/consortium/', { ...v, data: 'fixture', hook: true });
+  const page = await h.open('/palette/', { ...v, data: 'fixture', hook: true });
   assert.ok(await page.waitForFunction(() => typeof window.__ctTest === 'object', { timeout: 20_000 }).then(() => true, () => false), 'a build:browser-test build');
   return page;
 }
@@ -137,7 +137,7 @@ export async function stableStart(lang, width) {
   // it a cold load, where the web fonts land at ~400 ms and shift the header at 960 px (CLS 0.014;
   // filed in the E1 report), which is not what this check is about. The hook is set by the harness
   // (hook: true) for both loads.
-  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/`, { width, mapTiles: 'stub', hook: true });
+  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/palette/`, { width, mapTiles: 'stub', hook: true });
   await page.emulateTimezone(zone);
   await page.evaluateOnNewDocument((langs, sels) => {
     Object.defineProperty(Navigator.prototype, 'languages', { get: () => langs, configurable: true });

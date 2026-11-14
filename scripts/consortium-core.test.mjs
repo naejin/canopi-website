@@ -383,9 +383,9 @@ test('state: a cut link opens what parses and says so; a long link is flagged; a
   // Long links are checked on the whole URL at share time, never on a link being read.
   assert.equal(LONG_LINK, 2000);
   const many = Array.from({ length: 400 }, (_, i) => idOf(0x10000000 + i * 0x1000));
-  const url = `https://projectcanopi.com/consortium/#${encodeLink(shareV5({ members: many }), { Temperate: many })}`;
+  const url = `https://projectcanopi.com/palette/#${encodeLink(shareV5({ members: many }), { Temperate: many })}`;
   assert.equal(isLongLink(url), true);
-  assert.equal(isLongLink(`https://projectcanopi.com/consortium/#${link}`), false);
+  assert.equal(isLongLink(`https://projectcanopi.com/palette/#${link}`), false);
   assert.ok(!('long' in decodeLink(url.split('#')[1], { Temperate: many }).notice));
   for (const v of ['3', '4']) {
     const old = decodeLink(`v=${v}&c=temperate&a=AAAAAA&e=1`, known());

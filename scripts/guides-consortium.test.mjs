@@ -99,26 +99,26 @@ const liveClimates = presetClimates(index);
 const holders = (plant) => liveClimates.filter((f) => f.names.has(plant));
 
 test('a preset without a climate links every beta climate that has the plant, once each, in the site climate order', () => {
-  const links = presetLinks('/consortium/', 'Zea mays', undefined, liveClimates);
+  const links = presetLinks('/palette/', 'Zea mays', undefined, liveClimates);
   const expected = siteClimates.filter((zone) => holders('Zea mays').some((f) => f.climate === zone));
   assert.ok(expected.length > 1, 'corn is in more than one climate');
   assert.deepEqual(links.map((link) => link.climate), expected);
-  assert.deepEqual(links.map((link) => link.href), expected.map((zone) => `/consortium/?plant=Zea+mays&climate=${zone}`));
+  assert.deepEqual(links.map((link) => link.href), expected.map((zone) => `/palette/?plant=Zea+mays&climate=${zone}`));
 });
 
 test('a preset with a climate links that climate only, in the French slug too', () => {
   const plant = [...liveClimates.find((f) => f.climate === 'tropical').names][0];
-  assert.deepEqual(presetLinks('/fr/consortium/', plant, 'tropical', liveClimates), [
-    { climate: 'tropical', href: `/fr/consortium/?${new URLSearchParams({ plant, climate: 'tropical' })}` },
+  assert.deepEqual(presetLinks('/fr/palette/', plant, 'tropical', liveClimates), [
+    { climate: 'tropical', href: `/fr/palette/?${new URLSearchParams({ plant, climate: 'tropical' })}` },
   ]);
 });
 
 test('a preset fails the build on an unknown climate, a plant outside that climate\'s list, or a plant in no list', () => {
   const inTemperateOnly = [...liveClimates.find((f) => f.climate === 'temperate').names].find((name) => holders(name).every((f) => f.climate === 'temperate'));
   assert.ok(inTemperateOnly, 'some plant is only in the temperate list');
-  assert.throws(() => presetLinks('/consortium/', 'Zea mays', 'polar', liveClimates), /not a climate/);
-  assert.throws(() => presetLinks('/consortium/', inTemperateOnly, 'tropical', liveClimates), /not in the tropical list/);
-  assert.throws(() => presetLinks('/consortium/', 'Plantus inventus', undefined, liveClimates), /in no consortium climate/);
+  assert.throws(() => presetLinks('/palette/', 'Zea mays', 'polar', liveClimates), /not a climate/);
+  assert.throws(() => presetLinks('/palette/', inTemperateOnly, 'tropical', liveClimates), /not in the tropical list/);
+  assert.throws(() => presetLinks('/palette/', 'Plantus inventus', undefined, liveClimates), /in no consortium climate/);
 });
 
 test('the link text names the plant and the climate it opens ("Corn · Temperate"), with no region', () => {
@@ -131,5 +131,9 @@ test('the link text names the plant and the climate it opens ("Corn · Temperate
     for (const f of liveClimates) assert.ok(site[`climate.${f.climate}`]?.trim(), `${lang}: climate.${f.climate}`);
   }
   assert.match(read('src/components/guides/TryConsortium.astro'), /gt\('consortium\.link', lang, \{ plant: name, climate: t\(`climate\.\$\{link\.climate\}`, lang\) \}\)/);
-  assert.match(JSON.parse(read('src/i18n/guides/fr.json'))['consortium.label'], /guilde/i, 'French says « guilde »');
+  // Owner row "Plant palette name": the guides name the tool as its page does (PP-B commit 0b).
+  for (const lang of ['en', 'fr']) {
+    const label = JSON.parse(read(`src/i18n/guides/${lang}.json`))['consortium.label'];
+    assert.ok(label.startsWith(JSON.parse(read(`src/i18n/translations/${lang}.json`))['consortium.title']), `guides/${lang}.json: the label starts with the tool's name`);
+  }
 });

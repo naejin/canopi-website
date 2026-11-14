@@ -361,7 +361,7 @@ export async function startHarness({ log = () => {}, dir } = {}) {
           page.thirdParty.push(url.href);
           return request.abort('blockedbyclient');
         }
-        if (fx && request.resourceType() === 'document' && url.origin === site.url && /\/consortium\/$/.test(url.pathname)) {
+        if (fx && request.resourceType() === 'document' && url.origin === site.url && /\/palette\/$/.test(url.pathname)) {
           const res = await fetch(url, { headers: { 'accept-language': 'en' }, signal: AbortSignal.timeout(10_000) });
           const countries = await fixtureCountries();
           const html = (await res.text()).replace(/(<script type="application\/json" id="ct-data">)([\s\S]*?)(<\/script>)/, (_, start, json, end) => {

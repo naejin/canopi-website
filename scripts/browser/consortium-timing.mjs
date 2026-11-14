@@ -106,7 +106,7 @@ async function main() {
   // The link: the first 9 Temperate plants of the installed export by id, site all "not sure".
   const ids = await realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
   const site = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
-  const PATH = `/consortium/#${encodeLink({ climate: 'Temperate', country: null, site, members: ids.slice(0, 9), kept: [], removed: [], guests: [], crops: [], stage: null }, { Temperate: ids })}`;
+  const PATH = `/palette/#${encodeLink({ climate: 'Temperate', country: null, site, members: ids.slice(0, 9), kept: [], removed: [], guests: [], crops: [], stage: null }, { Temperate: ids })}`;
 
   const h = await startHarness({ dir });
   const results = {};

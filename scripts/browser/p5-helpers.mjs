@@ -28,7 +28,7 @@ import { encodeLink } from '../../src/lib/consortium/state.ts';
 // stubbed for every spec (any other third-party request is aborted and listed in page.thirdParty);
 // hash is a link. Other options go to h.open (timeouts, block, setup, …).
 export async function tool({ lang = 'en', hook = true, width = 1280, mapTiles = 'stub', hash = '', ...opts } = {}) {
-  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/consortium/${hash}`, { width, mapTiles, hook, ...opts });
+  const page = await h.open(`${lang === 'en' ? '' : `/${lang}`}/palette/${hash}`, { width, mapTiles, hook, ...opts });
   assert.equal(await loadState(page), 'ready');
   if (hook) assert.ok(await page.waitForFunction(() => window.__ctTest?.store?.source.value, { timeout: 20_000 }).then(() => true, () => false), 'no test hook: build with npm run build:browser-test');
   return page;
@@ -116,7 +116,7 @@ export const search = async (page, q) => {
 // timeouts: the page's shortened waits (h.open timeouts: read, suggest, stall).
 export async function slowTiles(mode, { saved = null, geolocation = { lat: SITES.seville[0], lon: SITES.seville[1] }, timeouts = null } = {}) {
   if (mode !== 'never' && mode !== 'held') throw new Error(`slowTiles('never' | 'held'), got ${mode}`);
-  const page = await h.open('/consortium/', { hook: true, mapTiles: 'stub', geolocation, timeouts, setup: (pg) => pg.evaluateOnNewDocument((held, rec) => {
+  const page = await h.open('/palette/', { hook: true, mapTiles: 'stub', geolocation, timeouts, setup: (pg) => pg.evaluateOnNewDocument((held, rec) => {
       if (rec && !localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
       let open = null;
       const gate = held ? new Promise((r) => { open = r; }) : new Promise(() => {});
@@ -174,7 +174,7 @@ export const emptyMatrix = async (page) => {
 
 // A page with the reader's own saved location (Seville, geo) on this device, opened at `hash`.
 export async function withSavedSite(hash = '') {
-  const page = await h.open(`/consortium/${hash}`, { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((rec) => {
+  const page = await h.open(`/palette/${hash}`, { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((rec) => {
       if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
     }, JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' })) });
   await ready(page);
@@ -193,7 +193,7 @@ export const ownSite = (page) => page.waitForFunction((a, b) => { const l = wind
 // window.__confirmSeen: whether the location line's "Use …" ever showed.
 export async function savedOpening({ list = null } = {}) {
   const q = (await temperateLink()).slice(1);
-  const page = await h.open('/consortium/', { mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((save, rec, outcome) => {
+  const page = await h.open('/palette/', { mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((save, rec, outcome) => {
       if (!localStorage.getItem('canopi-consortium')) localStorage.setItem('canopi-consortium', save);
       if (!localStorage.getItem('canopi-location')) localStorage.setItem('canopi-location', rec);
       window.__confirmSeen = false;

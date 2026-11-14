@@ -94,7 +94,7 @@ failing('F1a-S1 → PP-B (b2 wasm preload, A24): the sqlite wasm is preloaded wi
 
 failing('F1a-P2 → PP-B (b2 return visit, A7): a saved consortium reopens on Palette with a Head placeholder while it restores; the Start form never shows', { owner: 'b2', reason: /return visit: / }, async () => {
   const save = JSON.stringify({ fragment: (await temperateLink()).slice(1), at: '2026-11-13T00:00:00.000Z', src: null });
-  const page = await h.open('/consortium/', { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((s) => {
+  const page = await h.open('/palette/', { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((s) => {
     if (!localStorage.getItem('canopi-consortium')) localStorage.setItem('canopi-consortium', s);
     window.__seen = { start: false, placeholder: false };
     new MutationObserver(() => {
@@ -113,7 +113,7 @@ failing('F1a-P2 → PP-B (b2 return visit, A7): a saved consortium reopens on Pa
 // print case; b2 rewrites "printed above the drawing" for the year step of Through the years (PP-B18).
 test('PP-B18 (b2 / BT-8 print, drawing; moved from S4 in commit 0a\'): ≤ 20 plants print the side view drawing', async (t) => {
   await layoutVariants(t, async (v) => {
-    const small = await h.open('/consortium/', { ...v, data: 'fixture' });
+    const small = await h.open('/palette/', { ...v, data: 'fixture' });
     await small.locator(aria('radio', 'Temperate')).click();
     await small.locator(aria('button', 'Suggest plants')).click();
     assert.ok(await has(small, aria('button', 'Share'), 8000), 'the result and its actions');

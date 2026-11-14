@@ -151,7 +151,7 @@ test('the share state never carries a guessed country and lists guests', () => {
   const s = shareState({ ...base, country: { code: null, source: null } });
   assert.deepEqual(s.guests, [{ id: 'b', from: 'Tropical' }]);
   assert.deepEqual(Object.keys(s).filter((k) => ['kept', 'crops', 'stage'].includes(k)), [], 'no kept, crops or stage since PP-B commit 0a\'');
-  assert.equal(shareUrl('https://projectcanopi.com/fr/consortium/?plant=Allium+cepa&climate=temperate#old', 'v=5&e=1'), 'https://projectcanopi.com/fr/consortium/#v=5&e=1', 'a preset query is used once and never shared');
+  assert.equal(shareUrl('https://projectcanopi.com/fr/palette/?plant=Allium+cepa&climate=temperate#old', 'v=5&e=1'), 'https://projectcanopi.com/fr/palette/#v=5&e=1', 'a preset query is used once and never shared');
 });
 
 test('guessCountry: the one country of the time zone, else the languages\' region; any region before the list is read', () => {

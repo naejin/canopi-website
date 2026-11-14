@@ -386,7 +386,7 @@ assert.ok(consortiumGuideSlugs.size > 10, 'consortium-guides.ts lists guide slug
     for (const word of ['__ctTest', '__ctViews', 'failSheets', '__ctTimeouts', '__ctFaults']) assert.ok(!text.includes(word), `_astro/${f}: the browser-test hook (${word}) is in a production build; build with npm run build, not build:browser-test`);
   }
 }
-// The consortium tool: one page per locale (/consortium/ in every language, French included), its alternates, and the installed plant data.
+// The consortium tool ("Plant palette"): one page per locale (/palette/ in every language, French included; PP-B commit 0b), its alternates, and the installed plant data.
 for (const lang of locales) {
   const path = consortiumPath(lang);
   const html = readFileSync(join(root, path, 'index.html'), 'utf8');
@@ -415,16 +415,35 @@ for (const lang of locales) {
   assert.ok(html.includes(`<p class="tool-lede">`) && html.includes('aria-busy="true"'), `${path}: lede and loading line`);
   assert.ok(currentLink(html.match(/<header\b[\s\S]*?<\/header>/)?.[0] ?? '', path), `${path}: the header marks the tool as the current page`);
   const alternates = [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => `${m[1]} ${m[2]}`).sort();
-  assert.deepEqual(alternates, [...locales.map((l) => `${l} https://projectcanopi.com${consortiumPath(l)}`), 'x-default https://projectcanopi.com/consortium/'].sort(), `${path}: hreflang`);
+  assert.deepEqual(alternates, [...locales.map((l) => `${l} https://projectcanopi.com${consortiumPath(l)}`), `x-default https://projectcanopi.com${consortiumPath('en')}`].sort(), `${path}: hreflang`);
   // prepush m3: its own links (the language menu, the noscript guide link, the contact anchor) lead to
   // built pages and ids; a language link to a redirect (/fr/consortium/) fails here.
-  checkHeader(html, lang, '/consortium/', path);
+  checkHeader(html, lang, consortiumPath('en'), path);
   checkLinks(html, path);
   for (const asset of assetLinks(html)) assert.ok(existsSync(join(root, asset)), `${path}: missing asset ${asset}`);
 }
-// Owner, 2026-10-29: French is /fr/consortium/ too; /fr/guilde/ was never published, so nothing builds it
+// PP-B commit 0b (plant-palette-architecture 8.4): the old /consortium/ addresses are 301 redirects in
+// _redirects, never a built page (never a stub page and a redirect on one path), out of the sitemap,
+// and linked from no built page (checkLinks above fails a link to a page that is not built).
+{
+  const lines = readFileSync(join(root, '_redirects'), 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+  const moved = locales.flatMap((l) => {
+    const from = l === 'en' ? '/consortium' : `/${l}/consortium`;
+    return [`${from} ${consortiumPath(l)} 301`, `${from}/ ${consortiumPath(l)} 301`];
+  });
+  assert.deepEqual(lines.filter((l) => /consortium/.test(l.split(/\s+/)[0])).sort(), moved.sort(), '_redirects: the 22 /consortium/ lines, each to consortiumPath(lang), written out per locale with no splat');
+  assert.equal(lines[0], '/app/:route /app/ 200', '_redirects: the Web Edition fallback stays first');
+  const sitemap = readFileSync(join(root, 'sitemap-0.xml'), 'utf8');
+  for (const l of locales) {
+    const old = l === 'en' ? 'consortium' : join(l, 'consortium');
+    assert.ok(!existsSync(join(root, old, 'index.html')), `/${old}/: no built page at the old address (the 301 answers there)`);
+    assert.ok(!sitemap.includes(`https://projectcanopi.com/${old}/<`), `/${old}/: not in the sitemap`);
+    assert.ok(sitemap.includes(`<loc>https://projectcanopi.com${consortiumPath(l)}</loc>`), `${consortiumPath(l)}: in the sitemap`);
+  }
+}
+// Owner, 2026-10-29: French has the same path as the others (now /fr/palette/); /fr/guilde/ was never published, so nothing builds it
 // and no built page links to it.
-assert.ok(!existsSync(join(root, 'fr', 'guilde')), 'no /fr/guilde/: French is /fr/consortium/');
+assert.ok(!existsSync(join(root, 'fr', 'guilde')), 'no /fr/guilde/: French is /fr/palette/');
 {
   const stack = [root], linking = [];
   while (stack.length) {

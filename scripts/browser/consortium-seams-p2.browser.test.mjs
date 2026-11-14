@@ -38,7 +38,7 @@ test('X3: a list pasted on Start shows its consortium with Share, saved: a reloa
   const plants = await temperate();
   const names = plants.slice(0, 3).map((p) => p.name);
   await behaviour(t, async (v) => {
-    const page = await h.open('/consortium/', { ...v, data: 'fixture' });
+    const page = await h.open('/palette/', { ...v, data: 'fixture' });
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await page.locator(aria('button', 'Paste a list')).click();
@@ -259,7 +259,7 @@ test('T4 (R3-1): Start empty under another card is the consortium: Change site k
 test('M1 (R4-1): Undo of a paste on a fresh Start puts back the save another tab wrote before the paste', async (t) => {
   const [first] = await temperate();
   await behaviour(t, async (v) => {
-    const page = await h.open('/consortium/', { ...v, data: 'fixture' });
+    const page = await h.open('/palette/', { ...v, data: 'fixture' });
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await otherTabSaves(page);
@@ -343,7 +343,7 @@ test('pre-push 1: a guest removed from the consortium gives no "no longer in the
 
 test('F3: Undo of a plant added in the Paste sheet keeps the focus in the sheet', async (t) => {
   await behaviour(t, async (v) => {
-    const page = await h.open('/consortium/', { ...v, data: 'fixture' });
+    const page = await h.open('/palette/', { ...v, data: 'fixture' });
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await page.locator(aria('button', 'Paste a list')).click();

@@ -29,9 +29,9 @@ const BUDGET_S = 120; // warn only (time ratchets never fail)
 const PAGES = [
   { name: 'home', path: '/' },
   { name: 'home fr', path: '/fr/' },
-  { name: 'consortium start', path: '/consortium/', ready: true },
-  { name: 'consortium matrix', path: '/consortium/', ready: true, matrix: true, phone: true },
-  { name: 'consortium fr start', path: '/fr/consortium/', ready: true },
+  { name: 'consortium start', path: '/palette/', ready: true },
+  { name: 'consortium matrix', path: '/palette/', ready: true, matrix: true, phone: true },
+  { name: 'consortium fr start', path: '/fr/palette/', ready: true },
   { name: 'guides', path: '/guides/' },
   { name: 'guide', path: '/guides/food-forest/' },
   { name: 'bibliography', path: '/bibliography/' },

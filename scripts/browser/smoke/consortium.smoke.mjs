@@ -12,7 +12,7 @@ import { aria, en, h, has, useHarness } from '../helpers.mjs';
 useHarness({ dir: BUILDS.production });
 
 test('smoke (dist/, no hook): the tool loads ready, Suggest fills the matrix, and no test hook ships', async () => {
-  const page = await h.open('/consortium/');
+  const page = await h.open('/palette/');
   assert.equal(await loadState(page), 'ready');
   await page.locator(aria('radio', 'Temperate')).click();
   await page.locator(aria('button', en['consortium.start.suggest'] ?? 'Suggest plants')).click();
