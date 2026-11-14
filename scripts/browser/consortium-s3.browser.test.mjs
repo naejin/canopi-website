@@ -392,3 +392,34 @@ test('BT-6 (S3 review 2): a toast moving into a sheet is not announced again; "A
   assert.ok(await isMember(page, 'Malus domestica') && await isMember(page, 'Castanea sativa'), 'both lines are added');
   await page.close();
 });
+
+// W4 (review paste-2): "Add anyway" leaves the list as the plant joins, so the focus moves on, never to
+// <body>: to the next row's "Add anyway", else the "Already in" heading. The toast hands it back there.
+test('BT-6 (S3 paste focus): Enter on "Add anyway" moves the focus to the next row\'s "Add anyway", then to the "Already in" heading, never to <body>', async () => {
+  const page = await open({ width: 1280, data: 'fixture' });
+  await start(page);
+  for (const c of ['Inga edulis', 'Musa acuminata']) if (await isMember(page, c)) await dropMember(page, c);
+  await openBy(page, 'Paste a list');
+  await page.locator('::-p-aria([role="textbox"])').fill('Inga edulis\nMusa acuminata');
+  assert.ok(await page.waitForFunction(() => document.querySelectorAll('dialog[open] [aria-labelledby="ct-p-other"] li button').length === 2, { timeout: 5000 }).then(() => true, () => false), 'two rows from another list');
+  const focused = () => page.evaluate(() => {
+    const a = document.activeElement;
+    return { body: !a || a === document.body, inSheet: !!a?.closest('dialog[open]'), tag: a?.tagName ?? null, text: a?.textContent?.trim() ?? '', describedby: a?.getAttribute('aria-describedby') ?? null };
+  });
+  const settle = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 50)))));
+  const second = await page.$eval('dialog[open] [aria-labelledby="ct-p-other"] li:nth-child(2) button', (b) => b.getAttribute('aria-describedby'));
+  await page.focus('dialog[open] [aria-labelledby="ct-p-other"] li:first-child button');
+  await page.keyboard.press('Enter');
+  await settle();
+  let at = await focused();
+  assert.ok(!at.body && at.inSheet, `the focus stays in the sheet (${JSON.stringify(at)})`);
+  assert.equal(at.describedby, second, `on the next row's "Add anyway" (${JSON.stringify(at)})`);
+  await page.keyboard.press('Enter');
+  await settle();
+  at = await focused();
+  assert.ok(!at.body && at.inSheet, `the focus stays in the sheet (${JSON.stringify(at)})`);
+  assert.equal(at.tag, 'H3', `on the "Already in" heading (${JSON.stringify(at)})`);
+  assert.match(at.text, /Already in/i);
+  assert.ok(await isMember(page, 'Inga edulis') && await isMember(page, 'Musa acuminata'), 'both joined');
+  await page.close();
+});

@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the import rules dependency-cruiser enforces (L1-L9, and L10 as warn since PP-B commit 0a) and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:04:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:16:51Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:04:30Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:16:47Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:fbe7e6bc276b4b1c
-    last_modified: 2026-11-14T21:48:58Z
+    digest: sha256:9ae316b55fe10c00
+    last_modified: 2026-11-14T22:12:57Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -31,7 +31,7 @@ sources:
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
     digest: sha256:0fada07f7575e635
-    last_modified: 2026-11-14T21:48:58Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
@@ -41,7 +41,7 @@ sources:
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
     digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-14T21:48:21Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: sgconfig-yml
     resource: ../../sgconfig.yml
     title: sgconfig.yml
@@ -61,7 +61,7 @@ sources:
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
     digest: sha256:1bbd681174e63de4
-    last_modified: 2026-11-14T21:47:12Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx

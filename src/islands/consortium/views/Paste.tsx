@@ -17,6 +17,7 @@ import type { ClimateZone, PlantId, Taxon } from '../../../lib/consortium/index.
 import { warns } from '../../../lib/consortium/index.ts';
 import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, readPaste } from './paste.ts';
 import { addMembers, closeSheet, flagsOfPlant } from '../store.ts';
+import { focusAfterAdd } from '../focus.ts';
 import { SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { nameOf, zoneName } from './kit/names.ts';
 const { flagLines } = shared; // first-run modules (kit/sheet.tsx shared)
@@ -75,7 +76,12 @@ export default function Paste({ Frame }: { Frame: Frame }) {
     closeSheet();
     addMembers(ids, from, { warned });
   };
-  const addGuest = (t: Taxon, from: ClimateZone) => addMembers([t.id], { [t.id]: from }, { warned: warns(flagsOfPlant(t)) ? [t.id] : [] });
+  // The row leaves for "Already in" as the plant joins, so the focus moves on (W4): to the next row's
+  // "Add anyway" (next: its plant), else the "Already in" heading, else the sheet's title.
+  const addGuest = (t: Taxon, from: ClimateZone, next?: Taxon) => {
+    addMembers([t.id], { [t.id]: from }, { warned: warns(flagsOfPlant(t)) ? [t.id] : [] });
+    focusAfterAdd(() => (next && document.querySelector<HTMLElement>(`button[aria-describedby="ct-p-o-${next.id}"]`)) || document.getElementById('ct-p-already'));
+  };
   const toggle = (id: PlantId) => setTicked((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const sci = (t: Taxon) => <i class="ct-sci">{t.canonical_name}</i>;
   const warnings = (t: Taxon) => {
@@ -151,14 +157,14 @@ export default function Paste({ Frame }: { Frame: Frame }) {
           <section aria-labelledby="ct-p-other">
             <h3 id="ct-p-other">{T('otherLists')}</h3>
             <ul class="ct-rows ct-paste-rows">
-              {result.other.map((o) => {
+              {result.other.map((o, i) => {
                 return (
                   <li class={warns(flagsOfPlant(o.taxon)) ? 'flagged' : ''}>
                     <span><strong>{o.name}</strong> → {nameOf(o.taxon)} {sci(o.taxon)}</span>
                     <span id={`ct-p-o-${o.taxon.id}`}>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate) })}</span>
                     {warnings(o.taxon)}
                     <button type="button" class="button button-secondary" aria-describedby={`ct-p-o-${o.taxon.id}`}
-                      onClick={() => addGuest(o.taxon, o.climate)}>{T('addAnyway')}</button>
+                      onClick={() => addGuest(o.taxon, o.climate, (result.other[i + 1] ?? result.other[i - 1])?.taxon)}>{T('addAnyway')}</button>
                   </li>
                 );
               })}
@@ -167,7 +173,7 @@ export default function Paste({ Frame }: { Frame: Frame }) {
         )}
         {result.already.length > 0 && (
           <section aria-labelledby="ct-p-already">
-            <h3 id="ct-p-already">{T('paste.g.already')}</h3>
+            <h3 id="ct-p-already" tabIndex={-1}>{T('paste.g.already')}</h3>
             <ul class="ct-rows ct-paste-rows">
               {result.already.map((a) => (
                 <li><span><strong>{a.name}</strong> → {nameOf(a.taxon)} {sci(a.taxon)}</span>

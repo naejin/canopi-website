@@ -46,13 +46,15 @@ export function focusPlant(id: PlantId | undefined): void {
 // toast goes while the focus is in it (or was lost to <body>): else the page title, never <body>
 // (architecture 9; A25, PP-B17).
 let opener: HTMLElement | null = null;
-// After a Next step's Add (its row and button leave as the plant joins): the Next step's title, which
-// every state of the card shows (its next hole, or none left), else the page title; the toast hands
-// the focus back there, not to the removed button (Focus board; slices b2 P8).
-export function focusNextStep(): void {
+// After an add whose control leaves as the plant joins: what find gives (within an open sheet, else the
+// sheet's title), and the toast hands the focus back there, not to the removed control.
+export function focusAfterAdd(find: () => HTMLElement | null): void {
   if (typeof document === 'undefined') return;
-  focusSoon(() => document.getElementById('ct-next-t') ?? viewHeading(), (el) => { opener = el; });
+  focusSoon(find, (el) => { opener = el; });
 }
+// After a Next step's Add: the Next step's title, which every state of the card shows (its next hole,
+// or none left), else the page title (Focus board; slices b2 P8).
+export const focusNextStep = (): void => focusAfterAdd(() => document.getElementById('ct-next-t') ?? viewHeading());
 export function noteToastOpener(): void {
   if (typeof document === 'undefined') return;
   const at = document.activeElement as HTMLElement | null;

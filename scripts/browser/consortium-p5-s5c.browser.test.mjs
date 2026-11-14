@@ -89,7 +89,23 @@ test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold ch
   assert.match(await text(page, '[data-mark-surface="details"][data-mark-state="annual"]') ?? '', /^An annual, re-sown each year: its winter cold is not checked\.$/);
 });
 
-test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range, and Add lists none until one is typed, which then says so in words and adds without asking @real-data', async () => {
+// Typed in the open Add sheet, a plant outside its range at the site: its row (found by name) has the
+// outside mark, says "outside" in words and has a tick; ticked and added, it joins with nothing asking
+// (inform, don't block; owner 2026-11-14).
+async function addTypedOutside(page, outside) {
+  await page.type('.ct-add .ct-search input', outside);
+  const row = '.ct-add .ct-rows li:has(.ct-sci)';
+  assert.ok(await page.waitForFunction((sel, name) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === name && li.querySelector('[data-mark="outside"]') && li.querySelector('input[type="checkbox"]')), { timeout: 10_000 }, row, outside).then(() => true, () => false), `${outside} is found by name, marked "outside", with a tick`);
+  assert.match(await page.evaluate((sel, name) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === name).textContent, row, outside), /outside/i, 'the row says "outside" in words');
+  await page.evaluate((sel, name) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === name).querySelector('input[type="checkbox"]').click(), row, outside);
+  assert.ok(await has(page, '.ct-add-bar .button-primary:not([disabled])', 5000), 'Add selected is on');
+  await page.click('.ct-add-bar .button-primary:not([disabled])');
+  assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'no confirm step');
+  const id = await page.evaluate((name) => window.__ctTest.store.pool.value.find((t) => t.canonical_name === name)?.id, outside);
+  assert.ok(await page.waitForFunction((x) => window.__ctTest.store.members.value.includes(x), { timeout: 5000 }, id).then(() => true, () => false), `${outside} joins the members`);
+}
+
+test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range, and Add lists none until one is typed, which then says so in words and joins when ticked and added, nothing asking @real-data', async () => {
   const page = await tool();
   const lookup = await atSite(page, 'seville');
   const outside = await pickRanged(OUTSIDE, lookup.climate.periods[0], 'Mediterranean');
@@ -101,13 +117,7 @@ test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant 
   assert.ok(await has(page, ADD_OPEN, 10_000) && await has(page, '.ct-add .ct-rows li', 10_000), 'the Add list');
   await page.click('.ct-add-showall').catch(() => {});
   assert.equal(await page.$('.ct-add [data-mark="outside"]'), null, 'Add without a query lists no plant outside its range');
-  await page.type('.ct-add .ct-search input', outside);
-  const row = '.ct-add .ct-rows li';
-  assert.ok(await page.waitForFunction((sel, name) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === name && li.querySelector('[data-mark="outside"]') && li.querySelector('button')), { timeout: 10_000 }, row, outside).then(() => true, () => false), `${outside} is found by name, marked "outside", with its Add`);
-  assert.match(await page.evaluate((sel, name) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === name).textContent, row, outside), /outside/i, 'the row says "outside" in words');
-  await page.evaluate((sel, name) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === name).querySelector('button').click(), row, outside);
-  await page.evaluate(() => new Promise((r) => setTimeout(r, 300)));
-  assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'Add never asks first (inform, don\'t block; owner 2026-11-14)');
+  await addTypedOutside(page, outside);
 });
 
 test('P5-14c (S5c matrix counts): a cell\'s "N fit" leaves out plants outside their range at the site, and counts them all again without a location', async () => {
@@ -243,20 +253,7 @@ test('P5-16 (S5c outside-range warning on add): typed in Add, a plant whose rang
   await choose(page, 'Mediterranean');
   await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; window.__ctTest.store.openSheet('add'); });
   assert.ok(await has(page, ADD_OPEN, 10_000), 'the Add sheet');
-  await page.type('.ct-add .ct-search input', outside);
-  const row = `.ct-add .ct-rows li:has(.ct-sci)`;
-  assert.ok(await page.waitForFunction((sel, name) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === name && li.querySelector('[data-mark="outside"]')), { timeout: 10_000 }, row, outside).then(() => true, () => false), `${outside}'s row shows "outside"`);
-  await page.evaluate((sel, name) => {
-    const li = [...document.querySelectorAll(sel)].find((x) => x.querySelector('.ct-sci')?.textContent === name);
-    (li.querySelector('input[type="checkbox"]') ?? li.querySelector('button')).click();
-  }, row, outside);
-  await page.evaluate(() => new Promise((r) => setTimeout(r, 100)));
-  assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'no confirm step');
-  const ask = await page.$('.ct-add-bar .button-primary:not([disabled])') ?? await page.$('.ct-add-bar .button-primary');
-  assert.ok(ask, 'Add selected');
-  await ask.click();
-  const id = await page.evaluate((name) => window.__ctTest.store.pool.value.find((t) => t.canonical_name === name)?.id, outside);
-  assert.ok(await page.waitForFunction((x) => window.__ctTest.store.members.value.includes(x), { timeout: 5000 }, id).then(() => true, () => false), `${outside} joins the members`);
+  await addTypedOutside(page, outside);
 });
 
 test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from the nearest list and labelled "estimate"', async () => {
