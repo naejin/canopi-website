@@ -75,18 +75,52 @@ test('PP-B3 (b1a status regions on Place, F1a-P9 restored, A25): from Place to t
   assert.deepEqual(saidTwice(live.said), [], 'each line is announced once per reader\'s event');
 });
 
-test('PP-B2 (b1a no location): with no location Place offers the climate cards, then the grower\'s own plants first', async () => {
+// Place first (owner drop 10; decision row 127 (4); boards Place, PlaceDesk, ClimateHand): the location
+// question comes first and can be skipped; the climate cards are one link away.
+const OPEN_CARDS = '[data-place-climates]';
+const cardsShown = (page) => page.evaluate(() => [...document.querySelectorAll('input[name="ct-climate"]')].some((r) => r.checkVisibility()));
+failing('PP-B2 (b1a no location, Place first): "Where is your place?" comes first; the climate cards sit behind "No location? Choose a climate", which opens them with what a grower without a location loses; then the grower\'s own plants', { owner: 'b1a', reason: /the climate cards show before the grower asks/ }, async () => {
   const page = await tool();
-  assert.ok(await has(page, aria('radio', 'Temperate'), 8000), 'the climate cards');
+  assert.ok(await has(page, 'input[data-location-search]', 8000), 'the location step');
+  await page.waitForSelector('input[name="ct-climate"]', { timeout: 8000 }).catch(() => {});
+  assert.equal(await cardsShown(page), false, 'the climate cards show before the grower asks for them');
+  assert.equal(await words(page, '#ct-loc-h'), 'Where is your place?');
+  assert.doesNotMatch(await words(page, '.ct-location .ct-step-lede'), /^Optional/, 'the location step is not called "Optional"');
+  assert.ok(await page.$eval('#ct-loc-h', (h, sel) => !!(h.compareDocumentPosition(document.querySelector(sel)) & Node.DOCUMENT_POSITION_FOLLOWING), OPEN_CARDS), 'the location question comes before the climate link');
+  assert.equal(await words(page, OPEN_CARDS), 'No location? Choose a climate');
+  await page.click(OPEN_CARDS);
+  assert.ok(await until(page, () => [...document.querySelectorAll('input[name="ct-climate"]')].some((r) => r.checkVisibility()), 4000), 'the link opens the cards');
+  assert.match(await words(page, '.ct-climates'), /Without a location you still get a palette/, 'what a grower without a location loses (ClimateHand)');
+  assert.doesNotMatch(W('start.climate.lede'), /needed/i, 'the climate is not the required first step');
   await page.locator(aria('radio', 'Temperate')).click();
   assert.ok(await has(page, '[data-place-plants]', 8000), 'no own-plants step on Place');
   assert.match(await words(page, '[data-place-plants]'), new RegExp(W('place.plants.lede').slice(0, 20)));
   assert.ok(await has(page, '[data-place-add]'), 'add a plant by name');
   assert.ok(await has(page, '[data-place-show]'), '"Show my palette"');
   assert.ok(await has(page, '[data-place-suggest]'), 'the suggested palette is one link away');
+  assert.equal(await cardsShown(page), true, 'the cards stay open once chosen');
   await page.click('[data-place-show]');
   assert.ok(await until(page, () => window.__ctTest.store.view.value !== 'start'), 'the palette opens with the grower\'s own plants (none yet)');
   assert.equal(await members(page), 0, 'nothing is chosen for the grower');
+});
+
+failing('PP-B2 (b1a place first with a location): with a location the cards stay hidden until "Not this climate? Choose another" is pressed', { owner: 'b1a', reason: /the climate cards show before the grower asks/ }, async () => {
+  const page = await tool();
+  await atSite(page, 'seville');
+  await page.evaluate(() => { window.__ctTest.store.proposedClimate.value = 'Mediterranean'; });
+  await page.waitForSelector('input[name="ct-climate"]', { timeout: 8000 }).catch(() => {});
+  assert.equal(await cardsShown(page), false, 'the climate cards show before the grower asks for them, with a location');
+  assert.equal(await words(page, OPEN_CARDS), 'Not this climate? Choose another');
+  await page.click(OPEN_CARDS);
+  assert.ok(await until(page, () => [...document.querySelectorAll('input[name="ct-climate"]')].some((r) => r.checkVisibility()), 4000), 'the link opens the cards');
+  assert.doesNotMatch(await words(page, '.ct-climates'), /Without a location/, 'with a location, no "without a location" line');
+});
+
+test('PP-B2 (b1a place first, a climate already chosen): with no location, a climate kept on this device leaves the cards open', async () => {
+  const page = await withStorage({ 'canopi-climate': 'temperate' });
+  assert.ok(await until(page, () => window.__ctTest.store.climate.value === 'Temperate', 8000), 'the kept climate');
+  assert.ok(await until(page, () => [...document.querySelectorAll('input[name="ct-climate"]')].some((r) => r.checkVisibility()), 4000), 'the cards were hidden although a climate was chosen and there is no location');
+  assert.equal(await page.$(OPEN_CARDS), null, 'no link to open what is open');
 });
 
 test('PP-B3 (b1a suggested palette): "Start from a small suggested palette" adds plants, and one Undo takes them all away', async () => {
@@ -138,7 +172,7 @@ test('PP-B5 (b1a reloads): three reloads keep the room and spot answers while th
   await reload('after Start over');
 });
 
-failing('PP-B5 (b1a shade answer, needs b2\'s verdicts): a "shade" answer moves a sun-only plant to "needs a second look", and it stays after reload', { owner: 'b1a', reason: /no verdict for the sun-only plant|no "needs a second look" verdict/ }, async () => {
+failing('PP-B5 (b1a shade answer; needs b2\'s verdict rule, owner b2 at the merge): a "shade" answer moves a sun-only plant to "needs a second look", and it stays after reload', { owner: 'b1a', reason: /no verdict for the sun-only plant|no "needs a second look" verdict/ }, async () => {
   const page = await tool();
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');
@@ -193,7 +227,7 @@ test('PP-B12 (b1a guide over a save): a guide link with a saved palette offers "
   assert.ok(await until(page, () => window.__ctTest.store.members.value.length === 4), 'the saved palette is back');
 });
 
-test('PP-B13 (b1a newer and unreadable links): v=6 and an unreadable link each say their line, the tool stays empty and the save untouched', async () => {
+failing('PP-B13 (b1a newer and unreadable links): v=6 and an unreadable link each say their line, the tool stays empty and the save untouched, and "Back to mine" opens the saved palette', { owner: 'b1a', reason: /no "Back to mine"/ }, async () => {
   const save = JSON.stringify({ fragment: await v5(3), place: '', at: '2026-11-13', src: null });
   for (const [hash, kind, key] of [['#v=6&c=temperate&a=abcdef&e=1', 'newer', 'place.newer'], ['#v=x5&c=temperate&a=abcdef&e=1', 'unreadable', 'place.unreadable']]) {
     const page = await withStorage({ 'canopi-consortium': save }, `/palette/${hash}`);
@@ -201,7 +235,35 @@ test('PP-B13 (b1a newer and unreadable links): v=6 and an unreadable link each s
     assert.match(await words(page, `[data-place-notice="${kind}"]`), new RegExp(W(key).slice(0, 24)));
     assert.equal(await members(page), 0, `${kind}: nothing restored`);
     assert.equal(await page.evaluate(() => localStorage.getItem('canopi-consortium')), save, `${kind}: the save untouched`);
+    assert.ok(await has(page, `[data-place-notice="${kind}"] [data-back-mine]`, 4000), `${kind}: no "Back to mine" for the saved palette`);
+    await page.click(`[data-place-notice="${kind}"] [data-back-mine]`);
+    assert.ok(await until(page, () => window.__ctTest.store.members.value.length === 3), `${kind}: "Back to mine" opens the saved palette`);
   }
+});
+
+// Keyboard and screen-reader growers (bugs-6; section 9 A25): the notice's button leaves the page with
+// its line, so the focus moves on (never to <body>) and the status line says what happened.
+failing('PP-B12 (b1a keyboard answers): Enter on "Use my own place" or "Open my saved palette instead" leaves the focus on the page and the status line says what happened', { owner: 'b1a', reason: /the focus fell to <body>/ }, async () => {
+  const focusOnBody = (page) => page.evaluate(() => !document.activeElement || document.activeElement === document.body);
+  const link = await v5(3, { spot: { light: 'shade', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' } }, { place: true });
+  const page = await tool({ hash: `#${link}` });
+  assert.ok(await has(page, '[data-use-own-place]', 15_000), 'no link-place notice');
+  await page.focus('[data-use-own-place]');
+  await page.keyboard.press('Enter');
+  assert.ok(await until(page, () => !document.querySelector('[data-use-own-place]'), 4000), 'the notice goes');
+  await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 2000 }).catch(() => {});
+  assert.equal(await focusOnBody(page), false, 'the focus fell to <body> after "Use my own place"');
+  assert.equal(await words(page, '.ct-place-status'), W('place.usedMine'), 'the status line says the grower\'s own place is back');
+
+  const fragment = await v5(4);
+  const guide = await withStorage({ 'canopi-consortium': JSON.stringify({ fragment, place: '', at: '2026-11-13', src: null }) }, `/palette/?plant=${encodeURIComponent(await temperateName(10))}&climate=temperate`);
+  assert.ok(await has(guide, '[data-open-saved]', 8000), 'no "Open my saved palette instead"');
+  await guide.focus('[data-open-saved]');
+  await guide.keyboard.press('Enter');
+  assert.ok(await until(guide, () => window.__ctTest.store.members.value.length === 4), 'the saved palette is back');
+  await guide.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 2000 }).catch(() => {});
+  assert.equal(await focusOnBody(guide), false, 'the focus fell to <body> after "Open my saved palette instead"');
+  assert.equal(await words(guide, '.ct-place-status'), W('place.openedSaved'));
 });
 
 test('PP-B14 (b1a guide link): ?plant=…&climate=… opens on /palette/ (also from the old /consortium/ address) with the plant as a member', async () => {

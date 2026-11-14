@@ -103,6 +103,12 @@ const SUN = { ...emptyPlace.spot, light: 'sun' };
 // A Temperate palette of n plants on screen with the reader's own place (full sun), saved.
 async function mine(n = 5) {
   kept.clear();
+  // As a fresh page: the save it last wrote is the empty storage's.
+  persist.openedWith(null);
+  // Nothing of an earlier test's arrival stays: its link-place notice, its held save, its saved-instead.
+  persist.linkPlace.value = null;
+  persist.holdSave(false);
+  restoreM.savedInstead.value = null;
   store.setSource(realSource);
   store.load.value = { status: 'ready', error: null };
   const pool = await store.loadPool('Temperate');
@@ -250,4 +256,211 @@ test('b1a Forget this location clears canopi-location, canopi-place and the pale
   assert.deepEqual(store.soil.peek(), { from: 'map' });
   assert.equal(saved()?.place, '', 'the save\'s place goes');
   assert.equal(store.room.peek(), 'small', 'the room is the palette\'s, kept');
+});
+
+// ---- review round 1 (b1a-review-r1: bugs-1 to bugs-5, bugs-7 to bugs-10) ----
+import { failing } from './expect-fail.mjs';
+
+// focus.ts waits two frames before it moves the focus; Node has no frames (and no document to focus).
+globalThis.requestAnimationFrame ??= () => 0;
+// The address bar and history.state for one test (Node has neither): writeAddress then runs as on a
+// page, so a reload or Back/Forward can be read back through arrival() and hashAction().
+function fakeAddress() {
+  const loc = { origin: 'https://projectcanopi.test', pathname: '/palette/', search: '', hash: '', get href() { return `${this.origin}${this.pathname}${this.search}${this.hash}`; }, reload() {} };
+  const hist = { state: null, replaceState(s, _t, url) { this.state = s === null ? null : JSON.parse(JSON.stringify(s)); const u = new URL(url); loc.hash = u.hash; loc.search = u.search; } };
+  globalThis.location = loc;
+  globalThis.history = hist;
+  return () => { delete globalThis.location; delete globalThis.history; };
+}
+// A location step whose lookups answer at once: the saved location is read back as it was kept, a
+// link's location stays as the link set it, and "Use it" keeps the link's cell (location.ts).
+const instantStep = () => restoreM.provideLocationStep(async () => ({
+  settle: async (how, text) => { if (how === 'saved' && text && !store.location.peek()) { const l = JSON.parse(text); store.location.value = { lat: l.lat, lon: l.lon, source: l.source, lookup: null }; } },
+  adopt: locationM.adoptLinkLocation,
+}));
+
+failing('b1a bugs-1: a link the reader has not acted on keeps their save held across a reload and Back/Forward', { owner: 'b1a', reason: /wrote over their save/ }, async () => {
+  const restoreAddress = fakeAddress();
+  try {
+    // A link that brings no place, and one whose place is the reader's own: neither shows the notice.
+    for (const [extra, opts] of [[{}, {}], [{ country: 'FR', spot: { ...SUN } }, { place: true }]]) {
+      await mine(5);
+      await wait(0);
+      const own = kept.get(STORE);
+      assert.ok(own, 'the reader has a save');
+      const link = await linkWith('Temperate', 3, extra, opts);
+      assert.equal(await restoreM.restore(link, { from: 'link' }), true);
+      await wait(0);
+      assert.equal(restoreM.linkPlace.peek(), null, 'no link-place notice for this link');
+      assert.equal(kept.get(STORE), own, 'opening the link wrote a save');
+      // A reload: the page reads its own address back (history.state) and opens it as the save.
+      const how = arrivalM.arrival({ hash: location.hash, search: '' }, saved(), null, history.state);
+      assert.equal(how.kind, 'saved');
+      assert.equal(await restoreM.restore(how.fragment, { from: 'saved', src: how.src, place: how.place, hold: how.hold }), true);
+      await wait(0);
+      assert.equal(kept.get(STORE), own, `a reload of a link the reader has not acted on wrote over their save (${JSON.stringify(extra)})`);
+      // Back/Forward to the same entry.
+      const act = arrivalM.hashAction(location.hash, history.state, null);
+      assert.equal(act.kind, 'saved');
+      assert.equal(await restoreM.restore(act.fragment, { from: 'saved', src: act.src, place: act.place, keep: true, hold: act.hold }), true);
+      await wait(0);
+      assert.equal(kept.get(STORE), own, `Back/Forward to a link the reader has not acted on wrote over their save (${JSON.stringify(extra)})`);
+      // The reader acts: the save follows, and the address is no longer held.
+      store.removeMember(store.members.peek()[0]);
+      await wait(0);
+      assert.notEqual(kept.get(STORE), own, 'a reader edit is saved');
+      assert.equal(history.state?.hold, undefined, 'the address still says held after the reader acted');
+    }
+  } finally { restoreAddress(); }
+});
+
+failing('b1a bugs-2: a link\'s country never stands for the reader\'s own (k=FR over a chosen KE)', { owner: 'b1a', reason: /the link's country/ }, async () => {
+  const KE = { code: 'KE', source: 'chosen' };
+  await mine(5);
+  // As startMemory opens a link that brings a place: the reader's own country worked out first, then
+  // the link's shown on the page.
+  persist.quietly(() => { store.country.value = { code: 'FR', source: 'link' }; });
+  const link = await linkWith('Temperate', 3, { country: 'FR', spot: { ...emptyPlace.spot, light: 'shade' } }, { place: true });
+  assert.equal(await restoreM.restore(link, { from: 'link', country: KE }), true);
+  assert.ok(restoreM.linkPlace.peek(), 'no link-place notice');
+  store.removeMember(store.members.peek()[0]);
+  await wait(0);
+  assert.equal(saved()?.src, 'chosen', 'the held save took the link\'s country');
+  draft.useOwnPlace();
+  assert.deepEqual(store.country.peek(), KE, '"Use my own place" gave back the link\'s country');
+  // A link whose only difference is its country asks too.
+  await mine(5);
+  persist.quietly(() => { store.country.value = { code: 'DE', source: 'link' }; });
+  const deLink = await linkWith('Temperate', 3, { country: 'DE', spot: { ...SUN } }, { place: true });
+  assert.equal(await restoreM.restore(deLink, { from: 'link', country: { code: 'FR', source: 'chosen' } }), true);
+  assert.ok(restoreM.linkPlace.peek(), 'a link that differs only by its country gave no notice: the link\'s country was taken as the reader\'s');
+});
+
+failing('b1a bugs-3: a link\'s cell is compared with the reader\'s own cell, and "Use my own place" brings their location back', { owner: 'b1a', reason: /no link-place notice for a link whose cell differs/ }, async () => {
+  const before = instantStep();
+  try {
+    const PARIS = { lat: 48.85, lon: 2.35, source: 'geo' };
+    // An o-only link (no spot answer) over a reader whose answers are all unsure.
+    await mine(5);
+    persist.quietly(() => { store.spot.value = { ...emptyPlace.spot }; });
+    kept.set(LOCATION_STORE, JSON.stringify(PARIS));
+    const seville = await linkWith('Temperate', 3, {}, { origin: { lat: 37.39, lon: -5.98 }, place: true });
+    assert.equal(await restoreM.restore(seville, { from: 'link' }), true);
+    assert.equal(store.location.peek()?.source, 'link');
+    assert.ok(restoreM.linkPlace.peek(), 'no link-place notice for a link whose cell differs from the reader\'s');
+    draft.useOwnPlace();
+    await wait(0);
+    const back = store.location.peek();
+    assert.ok(back && back.source === 'geo' && back.lat === PARIS.lat, `"Use my own place" did not bring the reader's location back (${JSON.stringify(back)})`);
+    // The same cell as the reader's own (a point inside it): no notice.
+    await mine(5);
+    persist.quietly(() => { store.spot.value = { ...emptyPlace.spot }; });
+    kept.set(LOCATION_STORE, JSON.stringify({ lat: 37.38, lon: -5.97, source: 'search' }));
+    assert.equal(await restoreM.restore(seville, { from: 'link' }), true);
+    assert.equal(restoreM.linkPlace.peek(), null, 'a link of the reader\'s own cell asked');
+  } finally { restoreM.provideLocationStep(before); store.location.value = null; }
+});
+
+failing('b1a bugs-4: a room or plot change while the notice waits seeds canopi-place with the reader\'s own spot, never the link\'s', { owner: 'b1a', reason: /the link's spot answers seeded/ }, async () => {
+  const before = await arriveWithPlace();
+  try {
+    assert.ok(restoreM.linkPlace.peek(), 'no link-place notice');
+    store.room.value = 'large';
+    await wait(0);
+    assert.match(kept.get(PLACE_STORE) ?? '', /m=large/, 'the room answer is the reader\'s');
+    assert.doesNotMatch(kept.get(PLACE_STORE) ?? '', /l=shade/, 'the link\'s spot answers seeded canopi-place (room)');
+    assert.match(kept.get(PLACE_STORE) ?? '', /l=sun/, 'the reader\'s own spot stays in the seed');
+    store.plot.value = 120;
+    await wait(0);
+    assert.match(kept.get(PLACE_STORE) ?? '', /z=120/);
+    assert.doesNotMatch(kept.get(PLACE_STORE) ?? '', /l=shade/, 'the link\'s spot answers seeded canopi-place (plot)');
+    assert.ok(restoreM.linkPlace.peek(), 'a room change is no answer to the notice');
+    // A spot answer the reader gives makes the shown place theirs: then it seeds.
+    store.spot.value = { ...store.spot.peek(), water: 'dry' };
+    await wait(0);
+    assert.match(kept.get(PLACE_STORE) ?? '', /l=shade/, 'a spot answer the reader gives seeds the place shown');
+  } finally { restoreM.provideLocationStep(before); store.location.value = null; }
+});
+
+failing('b1a bugs-5: Forget on Change site also clears the set-aside palette\'s place', { owner: 'b1a', reason: /the set-aside palette kept its place/ }, async () => {
+  await mine(5);
+  await wait(0);
+  assert.equal(saved()?.place, 'l=sun');
+  draft.changeSite();
+  locationM.forget();
+  await wait(0);
+  assert.equal(saved()?.place, '', 'the set-aside palette kept its place in the save');
+  draft.backToConsortium();
+  await wait(0);
+  assert.deepEqual(store.spot.peek(), emptyPlace.spot, 'the set-aside palette kept its place: Back brought the spot answers back');
+  assert.deepEqual(store.soil.peek(), { from: 'map' });
+  assert.equal(store.room.peek(), 'small', 'the room stays');
+  assert.equal(saved()?.place, '', 'the set-aside palette kept its place in the save after Back');
+});
+
+failing('b1a bugs-7: "Show my palette" after an emptied draft offers one Undo that gives the set-aside palette back', { owner: 'b1a', reason: /no Undo/ }, async () => {
+  const pool = await mine(5);
+  const before = store.members.peek();
+  draft.changeSite();
+  draft.chooseClimate('Mediterranean');
+  assert.equal(store.members.peek().length, 0, 'another card starts the draft empty');
+  draft.showPalette();
+  assert.ok(store.toast.peek()?.undo, 'no Undo after "Show my palette" replaced the set-aside palette');
+  store.toast.peek().undo();
+  assert.equal(store.view.peek(), 'start', 'Undo goes back to Place');
+  draft.backToConsortium();
+  assert.deepEqual(store.members.peek(), before, 'and the set-aside palette is there to go back to');
+  assert.equal(store.climate.peek(), 'Temperate');
+  void pool;
+});
+
+failing('b1a bugs-8: "Open my saved palette instead" goes once the grower works on the preset', { owner: 'b1a', reason: /still offered/ }, async () => {
+  const pool = await mine(5);
+  const save = saved();
+  persist.quietly(() => { store.view.value = 'start'; store.climate.value = null; store.members.value = []; store.removed.value = []; });
+  await wait(0);
+  restoreM.savedInstead.value = save;
+  await restoreM.applyPreset('Temperate', pool[3].canonical_name);
+  assert.ok(restoreM.savedInstead.peek(), 'offered after the preset');
+  store.members.value = [...store.members.peek(), pool[4].id];
+  await wait(0);
+  assert.equal(restoreM.savedInstead.peek(), null, '"Open my saved palette instead" still offered after the grower worked on the preset');
+});
+
+failing('b1a bugs-9: a reload while the notice waits keeps the link\'s cell, so "Use it" still adopts it', { owner: 'b1a', reason: /the link's cell was lost/ }, async () => {
+  const restoreAddress = fakeAddress();
+  let before = null;
+  try {
+    before = await arriveWithPlace();
+    assert.ok(restoreM.linkPlace.peek(), 'no link-place notice');
+    assert.equal(history.state?.ask, 1, 'the address says the notice waits');
+    // The reload: the page forgets its location; the address and history.state stay.
+    store.location.value = null;
+    const how = arrivalM.arrival({ hash: location.hash, search: '' }, saved(), null, history.state);
+    assert.equal(how.ask, true);
+    const ask = { spot: { ...SUN }, soil: { from: 'map' }, country: { code: 'FR', source: 'chosen' }, location: null };
+    assert.equal(await restoreM.restore(how.fragment, { from: 'saved', src: how.src, place: how.place, ask, hold: how.hold }), true);
+    assert.ok(restoreM.linkPlace.peek(), 'asked again after the reload');
+    assert.equal(store.location.peek()?.source, 'link', 'the link\'s cell was lost on reload');
+    await draft.useLinkPlace();
+    const loc = locationM.readLocation(kept.get(LOCATION_STORE) ?? null);
+    assert.ok(loc && Math.abs(loc.lat - 37.35) < 0.051, `the link's cell was lost: "Use it" kept ${kept.get(LOCATION_STORE)}`);
+  } finally { restoreAddress(); restoreM.provideLocationStep(before); store.location.value = null; }
+});
+
+failing('b1a bugs-10: "Use my own place" pressed while "Use it" is still working changes nothing half-way', { owner: 'b1a', reason: /half-way/ }, async () => {
+  const before = await arriveWithPlace();
+  const slow = restoreM.provideLocationStep(async () => { await wait(30); return { settle: async () => {}, adopt: locationM.adoptLinkLocation }; });
+  try {
+    assert.ok(restoreM.linkPlace.peek(), 'no link-place notice');
+    const using = draft.useLinkPlace();
+    draft.useOwnPlace();
+    await using;
+    await wait(0);
+    const chosen = kept.get(COUNTRY_STORE) ?? null;
+    assert.equal(chosen === null || chosen === store.country.peek().code, true, `half-way: the page shows ${store.country.peek().code} but the device keeps ${chosen}`);
+    const seed = kept.get(PLACE_STORE) ?? '';
+    const light = store.spot.peek().light;
+    assert.ok(seed === '' || seed.includes(`l=${light}`), `half-way: the page shows l=${light} but canopi-place holds ${seed}`);
+  } finally { restoreM.provideLocationStep(slow); restoreM.provideLocationStep(before); store.location.value = null; }
 });
