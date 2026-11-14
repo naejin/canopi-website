@@ -1,5 +1,5 @@
 // The consortium v2 core (src/lib/consortium/, stream S1 of P2): site fit, conflicts, jobs, the
-// strata × phases matrix, the suggestion and Swap alternatives, and the #v=4 share state, through the
+// strata × phases matrix, the suggestion and Swap alternatives, and the #v=5 share state, through the
 // core's public index. Plants come from two places: invented records made here for one rule at a
 // time, and the invented fixture database (scripts/fixtures/consortium-v2/export/) read through the
 // island's SQLite adapter, so the matrix is checked against the adapter's SQL cell counts.
@@ -383,30 +383,41 @@ test('alternatives: "Also fills" and "Leaves empty" are the cells a swap changes
 
 // ================= share state =================
 
-const shareState = (over = {}) => ({
-  climate: 'Temperate', country: 'FR', site: site({ light: 'sun', room: 'small' }), members: [], kept: [], removed: [], crops: [], guests: [], stage: null, ...over,
+// Link v5 (PP-B commit 0a): the place keys (k, o, the spot answers, the soil) only with the place tick;
+// kept, crops and stage are deprecated, never written (scripts/consortium-link-v5.test.mjs holds the contract).
+const V5_SPOT = { light: 'sun', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
+const shareV5 = (over = {}) => ({
+  climate: 'Temperate', country: 'FR', room: 'small', plot: null, period: '1991-2020', spot: V5_SPOT, soil: null,
+  members: [], removed: [], guests: [], kept: [], crops: [], stage: null, ...over,
 });
+const NO_NOTICE = { unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false };
+
 const known = (extra = {}) => ({ Temperate: ids(temperate), Tropical: ids(tropical), ...extra });
 
-test('state: #v=4 round-trips members, kept, removed, crops, guests, site, country and stage', () => {
+test('state: #v=5 round-trips members, removed, guests, room, country and the spot; kept, crops and stage are not written', () => {
   const inga = byName(tropical, 'Inga edulis').id;
-  const st = shareState({
+  const st = shareV5({
     members: [T('Castanea sativa').id, T('Allium cepa').id, inga, T('Malus domestica').id],
-    kept: [T('Castanea sativa').id, T('Allium cepa').id, inga],
-    crops: [T('Allium cepa').id],
     removed: [T('Juglans regia').id],
     guests: [{ id: inga, from: 'Tropical' }],
-    stage: 3,
   });
-  const link = encodeLink(st, known());
-  assert.equal(LINK_VERSION, 4);
-  assert.match(link, /^v=4&c=temperate&k=FR&l=sun&s=unsure&w=unsure&m=small&/);
-  assert.match(link, /&e=1$/);
+  const link = encodeLink(st, known(), { place: true });
+  assert.equal(LINK_VERSION, 5);
+  assert.match(link, /^v=5&c=temperate&m=small&a=/);
+  assert.match(link, /&k=FR&l=sun&e=1$/);
   assert.deepEqual(linkClimates(link), ['Temperate', 'Tropical']);
   const back = decodeLink(link, known());
-  assert.deepEqual(back.notice, { unknownCount: 0, cut: false, outdated: false });
+  assert.deepEqual(back.notice, NO_NOTICE);
   assert.deepEqual(back.state, st);
   assert.deepEqual(decodeLink('#' + link, known()).state, st, 'a leading # is read');
+  // The deprecated fields given to encodeLink leave the link unchanged and read back empty.
+  const old = { ...st, kept: [T('Castanea sativa').id, inga], crops: [T('Allium cepa').id], stage: 3 };
+  assert.equal(encodeLink(old, known(), { place: true }), link);
+  const deprecated = decodeLink(encodeLink(old, known(), { place: true }), known()).state;
+  assert.deepEqual([deprecated.kept, deprecated.crops, deprecated.stage], [[], [], null]);
+  // Without the tick the link is the public form: no country and no spot.
+  const pub = decodeLink(encodeLink(st, known()), known()).state;
+  assert.deepEqual([pub.country, pub.spot, pub.members], [null, null, st.members]);
 });
 
 test('state: tokens are 36 bits in 6 base64url characters, whole ids ("." + 22) on a clash', () => {
@@ -414,17 +425,17 @@ test('state: tokens are 36 bits in 6 base64url characters, whole ids ("." + 22) 
   assert.equal(tokenOf(id3, [id1, id2, id3]).length, 6);
   assert.match(tokenOf(id3, [id3]), /^[A-Za-z0-9_-]{6}$/);
   assert.match(tokenOf(id1, [id1, id2]), /^\.[A-Za-z0-9_-]{22}$/, 'id1 and id2 share their first 9 hex digits');
-  const st = shareState({ members: [id1, id2, id3] });
+  const st = shareV5({ members: [id1, id2, id3] });
   const back = decodeLink(encodeLink(st, { Temperate: [id1, id2, id3] }), { Temperate: [id1, id2, id3] });
   assert.deepEqual(back.state.members, [id1, id2, id3]);
   // The fixture's ids all share their first 36 bits: every one is written whole and still restores.
   const all = ids(temperate);
-  assert.deepEqual(decodeLink(encodeLink(shareState({ members: all }), known()), known()).state.members, all);
+  assert.deepEqual(decodeLink(encodeLink(shareV5({ members: all }), known()), known()).state.members, all);
 });
 
 test('state: an unknown plant is counted and left out; the rest is restored', () => {
   const gone = 'abcdef01-2345-4678-8000-000000000999';
-  const st = shareState({ members: [T('Castanea sativa').id, gone], kept: [gone] });
+  const st = shareV5({ members: [T('Castanea sativa').id, gone], kept: [gone] });
   const link = encodeLink(st, { Temperate: [...ids(temperate), gone] });
   const back = decodeLink(link, known());
   assert.deepEqual(back.state.members, [T('Castanea sativa').id]);
@@ -435,7 +446,7 @@ test('state: an unknown plant is counted and left out; the rest is restored', ()
 
 test('state: a cut link opens what parses and says so; a long link is flagged; an old version reads no plants', () => {
   const real = [0, 1, 2].map((i) => idOf(0x100 + i * 0x1000000));
-  const st = shareState({ members: real });
+  const st = shareV5({ members: real });
   const link = encodeLink(st, { Temperate: real });
   const cutAtEnd = link.replace(/&e=1$/, '');
   const a = decodeLink(cutAtEnd, { Temperate: real });
@@ -445,43 +456,48 @@ test('state: a cut link opens what parses and says so; a long link is flagged; a
   const b = decodeLink(midToken, { Temperate: real });
   assert.deepEqual(b.state.members, real.slice(0, 1));
   assert.equal(b.notice.cut, true);
-  assert.equal(b.state.site.room, 'small', 'the site keys before the cut are kept');
+  assert.equal(b.state.room, 'small', 'the keys before the cut are kept');
   // Long links are checked on the whole URL at share time, never on a link being read.
   assert.equal(LONG_LINK, 2000);
   const many = Array.from({ length: 400 }, (_, i) => idOf(0x10000000 + i * 0x1000));
-  const url = `https://projectcanopi.com/consortium/#${encodeLink(shareState({ members: many }), { Temperate: many })}`;
+  const url = `https://projectcanopi.com/consortium/#${encodeLink(shareV5({ members: many }), { Temperate: many })}`;
   assert.equal(isLongLink(url), true);
   assert.equal(isLongLink(`https://projectcanopi.com/consortium/#${link}`), false);
   assert.ok(!('long' in decodeLink(url.split('#')[1], { Temperate: many }).notice));
-  const old = decodeLink('v=3&c=temperate&a=AAAAAA&e=1', known());
-  assert.deepEqual(old.state.members, []);
-  assert.equal(old.state.climate, 'Temperate');
-  assert.equal(old.notice.outdated, true);
-  // No v key: read as this version, never "outdated".
-  const bare = decodeLink(link.replace(/^v=4&/, ''), { Temperate: real });
+  for (const v of ['3', '4']) {
+    const old = decodeLink(`v=${v}&c=temperate&a=AAAAAA&e=1`, known());
+    assert.deepEqual(old.state.members, [], `v=${v}`);
+    assert.equal(old.state.climate, 'Temperate', `v=${v}`);
+    assert.equal(old.notice.outdated, true, `v=${v}`);
+  }
+  // No v key with plants (v5, 8.2): unreadable, nothing restored, never "outdated".
+  const bare = decodeLink(link.replace(/^v=5&/, ''), { Temperate: real });
   assert.equal(bare.notice.outdated, false);
-  assert.deepEqual(bare.state.members, real);
+  assert.equal(bare.notice.unreadable, true);
+  assert.deepEqual(bare.state.members, []);
 });
 
 test('state: at most MAX_LINK_IDS tokens per key are read; malformed values fall back to "unsure"', () => {
   assert.equal(MAX_LINK_IDS, 2000);
   const tokens = 'AAAAAB'.repeat(MAX_LINK_IDS + 5);
-  const d = decodeLink(`v=4&c=temperate&a=${tokens}&e=1`, { Temperate: [] });
+  const d = decodeLink(`v=5&c=temperate&a=${tokens}&e=1`, { Temperate: [] });
   assert.ok(d.notice.unknownCount >= 1);
-  const e = decodeLink('v=4&c=nowhere&l=moon&m=castle&t=9&k=france&e=1', known());
+  const e = decodeLink('v=5&c=nowhere&l=moon&m=castle&t=9&k=france&e=1', known());
   assert.equal(e.state.climate, null);
-  assert.deepEqual(e.state.site, UNSURE_SITE);
+  assert.equal(e.state.room, 'unsure');
+  assert.equal(e.state.spot, null, 'an unknown light word reads as unsure, so no spot');
   assert.equal(e.state.stage, null);
   assert.equal(e.state.country, null);
 });
 
-test('state: Main crops past MAX_CROPS are ignored, not counted unknown', () => {
+test('state: v5 reads no Main crops (n is a reserved letter): crops stay empty, nothing counted unknown', () => {
   const five = [0, 1, 2, 3, 4].map((i) => idOf(0x300 + i * 0x1000000));
   const n = five.map((id) => tokenOf(id, five)).join('');
-  const d = decodeLink(`v=4&c=temperate&a=&n=${n}&e=1`, { Temperate: five });
+  const d = decodeLink(`v=5&c=temperate&a=&n=${n}&e=1`, { Temperate: five });
   assert.equal(MAX_CROPS, 3);
-  assert.deepEqual(d.state.crops, five.slice(0, 3));
+  assert.deepEqual(d.state.crops, []);
   assert.equal(d.notice.unknownCount, 0);
+  assert.deepEqual(d.notice, NO_NOTICE);
 });
 
 test('state: guide presets keep ?plant=&climate=', () => {

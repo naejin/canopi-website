@@ -56,26 +56,30 @@ test('guarded storage: works, and every call is caught when storage throws (§5 
   assert.equal(guarded(() => null).works(), false);
 });
 
+// Link v5 (PP-B commit 0a): the save record is { fragment, place, at, src, country? }; a v1–v4 fragment is
+// an older save (said once and removed), a newer or unreadable one is left alone.
 test('the save record round-trips with its country source and refuses anything else', () => {
-  const r = saveRecord('v=4&c=temperate&a=&e=1', '2026-11-11T00:00:00Z', 'link');
-  assert.deepEqual(readRecord(r), { fragment: 'v=4&c=temperate&a=&e=1', at: '2026-11-11T00:00:00Z', src: 'link' });
-  assert.equal(readRecord(saveRecord('v=4&c=temperate&a=&e=1', 'x', null)).src, null);
-  assert.equal(readRecord(JSON.stringify({ fragment: 'v=4&c=temperate&a=&e=1', at: 'x', src: 'weird' })).src, null, 'an unknown source reads as none');
-  for (const bad of [null, '', '{', 'null', '42', '{"q":"c=temperate","at":"x"}', '{"fragment":"","at":"x"}', JSON.stringify({ fragment: 'x'.repeat(30000), at: 'x' }), saveRecord('v=3&c=temperate&a=&e=1', 'x', null)]) assert.equal(readRecord(bad), null, String(bad).slice(0, 40));
+  const r = saveRecord('v=5&c=temperate&a=&e=1', '2026-11-11T00:00:00Z', 'link');
+  assert.deepEqual(readRecord(r), { fragment: 'v=5&c=temperate&a=&e=1', place: '', at: '2026-11-11T00:00:00Z', src: 'link' });
+  assert.equal(readRecord(saveRecord('v=5&c=temperate&a=&e=1', 'x', null)).src, null);
+  assert.equal(readRecord(JSON.stringify({ fragment: 'v=5&c=temperate&a=&e=1', at: 'x', src: 'weird' })).src, null, 'an unknown source reads as none');
+  assert.equal(readRecord(JSON.stringify({ fragment: 'v=5&c=temperate&a=&e=1', at: 'x', src: null })).place, '', 'a record without place reads with every answer unsure');
+  for (const bad of [null, '', '{', 'null', '42', '{"q":"c=temperate","at":"x"}', '{"fragment":"","at":"x"}', JSON.stringify({ fragment: 'x'.repeat(30000), at: 'x' }), saveRecord('v=3&c=temperate&a=&e=1', 'x', null), saveRecord('v=4&c=temperate&a=&e=1', 'x', null), saveRecord('v=6&c=temperate&a=&e=1', 'x', null)]) assert.equal(readRecord(bad), null, String(bad).slice(0, 40));
 });
 
-test('an older save is told apart from nothing saved (review 4): v1 {q, at, src} and a v≠4 fragment', () => {
+test('an older save is told apart from nothing saved (review 4): v1 {q, at, src} and a v1–v4 fragment', () => {
   assert.equal(oldRecord('{"q":"c=temperate&a=x","at":"2026-10-01","src":"chosen"}'), true);
   assert.equal(oldRecord(saveRecord('v=3&c=temperate&a=&e=1', 'x', null)), true);
-  for (const no of [null, '', '{', saveRecord('v=4&c=temperate&a=&e=1', 'x', 'chosen'), '42']) assert.equal(oldRecord(no), false, String(no));
+  assert.equal(oldRecord(saveRecord('v=4&c=temperate&a=&e=1', 'x', 'chosen')), true, 'a v4 save is older since link v5');
+  for (const no of [null, '', '{', saveRecord('v=5&c=temperate&a=&e=1', 'x', 'chosen'), saveRecord('v=6&c=temperate&a=&e=1', 'x', 'chosen'), '42']) assert.equal(oldRecord(no), false, String(no));
 });
 
 test('arrival: a link wins, then a guide preset, then an old query link, then the last consortium, then the site climate, else nothing', () => {
-  const saved = { fragment: 'v=4&c=tropical&a=&e=1', at: 'x', src: null };
-  assert.deepEqual(arrival({ hash: '#v=4&c=temperate&e=1', search: '?plant=Allium+cepa&climate=temperate' }, saved, 'arid'), { kind: 'link', fragment: 'v=4&c=temperate&e=1' });
-  assert.deepEqual(arrival({ hash: '#v=3&c=temperate', search: '' }, null, null).kind, 'link', 'an older link is still read as a link (decodeLink says outdated)');
+  const saved = { fragment: 'v=5&c=tropical&a=&e=1', place: '', at: 'x', src: null };
+  assert.deepEqual(arrival({ hash: '#v=5&c=temperate&e=1', search: '?plant=Allium+cepa&climate=temperate' }, saved, 'arid'), { kind: 'link', fragment: 'v=5&c=temperate&e=1' });
+  for (const v of ['3', '4']) assert.deepEqual(arrival({ hash: `#v=${v}&c=temperate`, search: '' }, null, null).kind, 'link', `an older link (v=${v}) is still read as a link (decodeLink says outdated)`);
   assert.deepEqual(arrival({ hash: '#main', search: '?plant=Allium+cepa&climate=temperate' }, saved, 'arid'), { kind: 'preset', climate: 'Temperate', plant: 'Allium cepa' });
-  assert.deepEqual(arrival({ hash: '', search: '?plant=Allium+cepa&climate=nowhere' }, saved, null), { kind: 'saved', fragment: saved.fragment, at: 'x', src: null }, 'a preset with no climate is no preset');
+  assert.deepEqual(arrival({ hash: '', search: '?plant=Allium+cepa&climate=nowhere' }, saved, null), { kind: 'saved', fragment: saved.fragment, at: 'x', src: null, place: '' }, 'a preset with no climate is no preset');
   assert.deepEqual(arrival({ hash: '', search: '?v=3&c=temperate&a=AbCdEf' }, saved, null), { kind: 'outdated' }, 'a v1 query link: the outdated notice, nothing restored (review 5)');
   assert.deepEqual(arrival({ hash: '', search: '?c=temperate&a=AbCdEf' }, null, null), { kind: 'outdated' });
   assert.deepEqual(arrival({ hash: '', search: '' }, null, 'mediterranean'), { kind: 'start', climate: 'Mediterranean' }, 'the shared site climate when the reader set one');
@@ -104,16 +108,16 @@ test('one zoneOf: the island reads climate ids with the core\'s (H15)', async ()
 });
 
 test('arrival: the page\'s own address after a reload is the save, not a shared link (review 1)', () => {
-  const own = { ct: 'v=4&c=temperate&k=FR&a=&e=1', src: 'chosen' };
-  assert.deepEqual(arrival({ hash: '#v=4&c=temperate&k=FR&a=&e=1', search: '' }, null, null, own), { kind: 'saved', fragment: own.ct, at: '', src: 'chosen' });
-  assert.deepEqual(arrival({ hash: '#v=4&c=temperate&k=DE&a=&e=1', search: '' }, null, null, own), { kind: 'link', fragment: 'v=4&c=temperate&k=DE&a=&e=1' }, 'another link in the address is a link');
-  assert.deepEqual(arrival({ hash: '#v=4&c=temperate&k=FR&a=&e=1', search: '' }, null, null, { ct: own.ct, src: 'link' }).src, 'link', 'a country first opened from a link stays labelled so');
-  assert.equal(arrival({ hash: '#v=4&c=temperate&a=&e=1', search: '' }, null, null, 'junk').kind, 'link');
+  const own = { ct: 'v=5&c=temperate&m=small&a=&e=1', src: 'chosen', pl: 'l=sun' };
+  assert.deepEqual(arrival({ hash: '#v=5&c=temperate&m=small&a=&e=1', search: '' }, null, null, own), { kind: 'saved', fragment: own.ct, at: '', src: 'chosen', place: 'l=sun' }, 'history.state.pl comes back as the place');
+  assert.deepEqual(arrival({ hash: '#v=5&c=temperate&m=large&a=&e=1', search: '' }, null, null, own), { kind: 'link', fragment: 'v=5&c=temperate&m=large&a=&e=1' }, 'another link in the address is a link');
+  assert.deepEqual(arrival({ hash: '#v=5&c=temperate&m=small&a=&e=1', search: '' }, null, null, { ct: own.ct, src: 'link' }).src, 'link', 'a country first opened from a link stays labelled so');
+  assert.equal(arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, null, null, 'junk').kind, 'link');
 });
 
 test('hashchange: own address (Back/Forward) is the save with its source; another link is a link; the shown one is ignored (round 2, 1)', () => {
-  const a = 'v=4&c=temperate&k=FR&a=&e=1', b = 'v=4&c=temperate&k=DE&a=&e=1';
-  assert.deepEqual(hashAction(`#${a}`, { ct: a, src: 'chosen' }, b), { kind: 'saved', fragment: a, src: 'chosen' }, 'Back to the reader\'s own consortium: never relabelled as a link\'s');
+  const a = 'v=5&c=temperate&m=small&a=&e=1', b = 'v=5&c=temperate&m=large&a=&e=1';
+  assert.deepEqual(hashAction(`#${a}`, { ct: a, src: 'chosen', pl: 'w=dry' }, b), { kind: 'saved', fragment: a, src: 'chosen', place: 'w=dry' }, 'Back to the reader\'s own consortium: never relabelled as a link\'s');
   assert.deepEqual(hashAction(`#${b}`, { ct: a, src: 'chosen' }, a), { kind: 'link', fragment: b });
   assert.deepEqual(hashAction(`#${b}`, null, a), { kind: 'link', fragment: b });
   assert.deepEqual(hashAction(`#${a}`, null, a), { kind: 'ignore' }, 'the address the page itself wrote');
@@ -131,16 +135,23 @@ test('the country at start: a link, the reader\'s choice ("-" is none), the save
   assert.deepEqual(countryAtStart({ link: null, pref: null, saved: null, guess: null }), { code: null, source: null });
 });
 
+const SUN_SPOT = { light: 'sun', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
 test('the share state never carries a guessed country, keeps crops to three and lists guests', () => {
-  const base = { climate: 'Temperate', site: { light: 'sun', soil: 'unsure', water: 'unsure', room: 'small' }, members: ['a', 'b'], kept: ['a'], removed: ['c'], guests: { b: 'Tropical' }, crops: ['a', 'x', 'y', 'z'], stage: 3 };
-  assert.equal(shareState({ ...base, country: { code: 'US', source: 'guess' } }).country, null);
-  assert.equal(shareState({ ...base, country: { code: 'FR', source: 'chosen' } }).country, 'FR');
-  assert.equal(shareState({ ...base, country: { code: 'FR', source: 'link' } }).country, 'FR');
+  const base = { climate: 'Temperate', room: 'small', plot: null, period: '1991-2020', spot: SUN_SPOT, soil: { from: 'map' }, members: ['a', 'b'], kept: ['a'], removed: ['c'], guests: { b: 'Tropical' }, crops: ['a', 'x', 'y', 'z'], stage: 3 };
+  const place = { place: true };
+  assert.equal(shareState({ ...base, country: { code: 'US', source: 'guess' } }, place).country, null);
+  assert.equal(shareState({ ...base, country: { code: 'FR', source: 'chosen' } }, place).country, 'FR');
+  assert.equal(shareState({ ...base, country: { code: 'FR', source: 'link' } }, place).country, 'FR');
+  assert.equal(shareState({ ...base, country: { code: 'FR', source: 'location' } }, place).country, 'FR');
+  // Link v5: without "Include my place" the share state holds no country, spot or soil (8.1).
+  const pub = shareState({ ...base, country: { code: 'FR', source: 'chosen' } });
+  assert.deepEqual([pub.country, pub.spot, pub.soil, pub.room], [null, null, null, 'small']);
+  assert.deepEqual(shareState({ ...base, country: { code: 'FR', source: 'chosen' } }, place).spot, SUN_SPOT);
   const s = shareState({ ...base, country: { code: null, source: null } });
   assert.deepEqual(s.guests, [{ id: 'b', from: 'Tropical' }]);
   assert.deepEqual(s.crops, ['a', 'x', 'y']);
   assert.equal(s.stage, 3);
-  assert.equal(shareUrl('https://projectcanopi.com/fr/consortium/?plant=Allium+cepa&climate=temperate#old', 'v=4&e=1'), 'https://projectcanopi.com/fr/consortium/#v=4&e=1', 'a preset query is used once and never shared');
+  assert.equal(shareUrl('https://projectcanopi.com/fr/consortium/?plant=Allium+cepa&climate=temperate#old', 'v=5&e=1'), 'https://projectcanopi.com/fr/consortium/#v=5&e=1', 'a preset query is used once and never shared');
 });
 
 test('guessCountry: the one country of the time zone, else the languages\' region; any region before the list is read', () => {
@@ -179,16 +190,21 @@ test('cropExamples on every installed climate: four food plants, one per genus',
   }
 });
 
-test('a share state round-trips through the #v=4 link', async () => {
+test('a share state round-trips through the #v=5 link', async () => {
   const pool = await realSource.pool('Temperate');
   const ids = pool.slice(0, 9).map((t) => t.id);
-  const state = shareState({ climate: 'Temperate', country: { code: 'FR', source: 'chosen' }, site: { light: 'part', soil: 'acid', water: 'wet', room: 'large' }, members: ids, kept: [ids[0]], removed: [pool[20].id], guests: {}, crops: [ids[0]], stage: 2 });
-  const back = decodeLink(encodeLink(state, { Temperate: pool.map((t) => t.id) }), { Temperate: pool.map((t) => t.id) });
-  assert.deepEqual(back.notice, { unknownCount: 0, cut: false, outdated: false });
+  const spot = { light: 'part', water: 'wet', wind: 'unsure', ground: 'unsure', height: 'unsure' };
+  const soil = { from: 'own', ph: null, word: 'acid', texture: null };
+  const state = shareState({ climate: 'Temperate', country: { code: 'FR', source: 'chosen' }, room: 'large', plot: 300, period: '2041-2070', spot, soil, members: ids, kept: [ids[0]], removed: [pool[20].id], guests: {}, crops: [ids[0]], stage: 2 }, { place: true });
+  const known = { Temperate: pool.map((t) => t.id) };
+  const back = decodeLink(encodeLink(state, known, { place: true }), known);
+  assert.deepEqual(back.notice, { unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false });
   assert.deepEqual(back.state.members, ids);
-  assert.deepEqual(back.state.site, state.site);
+  assert.deepEqual([back.state.room, back.state.plot, back.state.period], ['large', 300, '2041-2070']);
+  assert.deepEqual(back.state.spot, spot);
+  assert.deepEqual(back.state.soil, soil);
   assert.equal(back.state.country, 'FR');
-  assert.equal(back.state.stage, 2);
+  assert.equal(back.state.stage, null, 'the stage is not in link v5');
 });
 
 // ---- restore (rounds 2 and 3 of the S4 review), on the real data with a source whose reads can be
@@ -364,7 +380,7 @@ test('restore: a newer cut link cancels the older restore and keeps its notice (
   delays.Tropical = 40;
   const a = m.restore(link, { from: 'link' });
   await wait(5);
-  assert.equal(await m.restore('v=4&k=FR', { from: 'link' }), false);
+  assert.equal(await m.restore('v=5&k=FR', { from: 'link' }), false, 'a v5 link cut before its climate');
   assert.equal(await a, false);
   assert.equal(m.notices.peek().cut, true, 'the cut notice stays');
   assert.deepEqual(store.members.peek(), []);
@@ -389,19 +405,20 @@ test('applyPreset: a card the reader picks while the guide\'s plant is read wins
 });
 
 // P5 owner answer 5 (2026-11-11): a country from the location is labelled "from your location", saved on
-// the device, and written into a link only with the reader's "include my location" tick (S5b passes
-// { location: true } then). The save keeps it beside the fragment, never in it, so the address bar and
-// the save never carry it.
+// the device, and written into a link only with the reader's tick (link v5: "Include my place", which
+// passes { place: true }). The save keeps it beside the fragment, never in it, so the address bar and
+// the save's fragment never carry it; since PP-B commit 0a a link's country is kept beside it too.
 test('a country from the location: never in a link or the address without the tick, saved on the device as "location"', () => {
-  const base = { climate: 'Temperate', site: { light: 'sun', soil: 'unsure', water: 'unsure', room: 'small' }, members: ['a'], kept: [], removed: [], guests: {}, crops: [], stage: null };
+  const base = { climate: 'Temperate', room: 'small', plot: null, period: '1991-2020', spot: SUN_SPOT, soil: { from: 'map' }, members: ['a'], kept: [], removed: [], guests: {}, crops: [], stage: null };
   const here = { code: 'FR', source: 'location' };
   assert.equal(shareState({ ...base, country: here }).country, null, 'no k= without the tick');
-  assert.equal(shareState({ ...base, country: here }, { location: true }).country, 'FR', 'k= with the tick');
-  assert.equal(shareState({ ...base, country: { code: 'FR', source: 'chosen' } }, { location: true }).country, 'FR');
-  const r = saveRecord('v=4&c=temperate&a=&e=1', 'x', 'location', 'FR');
-  assert.deepEqual(readRecord(r), { fragment: 'v=4&c=temperate&a=&e=1', at: 'x', src: 'location', country: 'FR' });
-  assert.deepEqual(readRecord(saveRecord('v=4&c=temperate&a=&e=1', 'x', 'chosen')), { fragment: 'v=4&c=temperate&a=&e=1', at: 'x', src: 'chosen' }, 'only a location country is kept beside the fragment');
-  assert.equal(readRecord(JSON.stringify({ fragment: 'v=4&c=temperate&a=&e=1', at: 'x', src: 'location', country: 'nope' })).country, undefined, 'a malformed code is dropped');
+  assert.equal(shareState({ ...base, country: here }, { place: true }).country, 'FR', 'k= with the tick');
+  assert.equal(shareState({ ...base, country: { code: 'FR', source: 'chosen' } }, { place: true }).country, 'FR');
+  const r = saveRecord('v=5&c=temperate&a=&e=1', 'x', 'location', 'FR');
+  assert.deepEqual(readRecord(r), { fragment: 'v=5&c=temperate&a=&e=1', place: '', at: 'x', src: 'location', country: 'FR' });
+  assert.equal(readRecord(saveRecord('v=5&c=temperate&a=&e=1', 'x', 'link', 'DE')).country, 'DE', 'a link\'s country is kept beside the fragment too');
+  assert.deepEqual(readRecord(saveRecord('v=5&c=temperate&a=&e=1', 'x', 'chosen', 'FR')), { fragment: 'v=5&c=temperate&a=&e=1', place: '', at: 'x', src: 'chosen' }, 'a chosen country is not: canopi-country holds it');
+  assert.equal(readRecord(JSON.stringify({ fragment: 'v=5&c=temperate&a=&e=1', at: 'x', src: 'location', country: 'nope' })).country, undefined, 'a malformed code is dropped');
   assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'fr', savedFrom: 'location', guess: 'US' }), { code: 'FR', source: 'location' }, 'shown again as "from your location", never as chosen');
   assert.deepEqual(countryAtStart({ link: 'DE', pref: null, saved: 'fr', savedFrom: 'location', guess: 'US' }), { code: 'DE', source: 'link' }, 'a link\'s own country wins');
 });
@@ -418,7 +435,9 @@ test('schema: each field declares its part once (snapshot, Undo, saved, link, wa
   const L = schema.lists;
   assert.deepEqual(sorted(L.snapshot), sorted(['members', 'kept', 'removed', 'crops', 'guests', 'view', 'setAside']), 'Undo puts these back');
   assert.deepEqual(sorted(L.endsUndo), sorted(['climate', 'members', 'kept', 'removed', 'crops', 'guests']), 'a change to these ends the Undo offer');
-  const saved = ['climate', 'country', 'site', 'members', 'kept', 'removed', 'guests', 'crops', 'stage'];
+  // PP-B commit 0a: the place (room, plot, spot, soil) and the period replace the site answers; site is
+  // derived from them (store.ts), not saved. kept, crops and stage stay saved until b3 removes them.
+  const saved = ['climate', 'country', 'room', 'plot', 'spot', 'soil', 'period', 'members', 'kept', 'removed', 'guests', 'crops', 'stage'];
   assert.deepEqual(sorted(L.saved), sorted(saved), 'the Consortium the save keeps and Change site sets aside');
   assert.deepEqual(sorted(Object.keys(CONSORTIUM_FIELDS)), sorted(saved), 'CONSORTIUM_FIELDS (the Consortium type) holds the saved fields');
   assert.deepEqual(sorted(L.reader), sorted([...saved, 'view']), 'a write to these is the reader acting');
@@ -428,7 +447,7 @@ test('schema: each field declares its part once (snapshot, Undo, saved, link, wa
 });
 
 test('schema: the saved fields are exactly the ShareState the core link codec reads and writes', () => {
-  assert.deepEqual(sorted(schema.lists.saved), sorted(Object.keys(decodeLink('v=4&c=temperate&e=1', {}).state)),
+  assert.deepEqual(sorted(schema.lists.saved), sorted(Object.keys(decodeLink('v=5&c=temperate&e=1', {}).state)),
     'a field put into the link needs the core codec (lib/consortium/state.ts) to carry it');
 });
 
@@ -481,7 +500,11 @@ async function blankShown() {
   await store.loadPool('Tropical');
   await store.loadPool('Mediterranean');
   store.country.value = { code: null, source: null };
-  store.site.value = { ...UNSURE };
+  store.room.value = 'unsure';
+  store.plot.value = null;
+  store.spot.value = { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
+  store.soil.value = { from: 'map' };
+  store.period.value = '1991-2020';
   store.kept.value = [];
   store.removed.value = [];
   store.guests.value = {};
@@ -491,17 +514,35 @@ async function blankShown() {
   return pool;
 }
 const SITE = { light: 'part', soil: 'acid', water: 'wet', room: 'large' };
-// Per saved field: the change, and the value it reads back (from a link, `link`: a country is labelled so).
+const PART_WET = { light: 'part', water: 'wet', wind: 'unsure', ground: 'unsure', height: 'unsure' };
+const ACID = { from: 'own', ph: null, word: 'acid', texture: null };
+// Per saved field (link v5, PP-B commit 0a): the change and the value it reads back. A save restores
+// with its private place (the record's `place`); a link is written with "Include my place" when the
+// field is a place answer (`place`), and a link's spot or soil applies only when it brings a place.
+// `saved` / `link`: the value read back when it differs from `want`; `fromSave`: where the save keeps
+// it when restore does not read it; `before`: a value set just before the restore, to show it is replaced
+// (or kept). kept, crops and stage are deprecated: not in link v5, so a restore empties kept and crops
+// and keeps the page's stage (b3 removes them).
 const CASES = {
   climate: { change: async () => { const p = await store.loadPool('Mediterranean'); store.climate.value = 'Mediterranean'; store.members.value = p.slice(0, 4).map((t) => t.id); }, want: 'Mediterranean' },
-  country: { change: () => { store.country.value = { code: 'DE', source: 'chosen' }; }, want: { code: 'DE', source: 'chosen' }, link: { code: 'DE', source: 'link' } },
-  site: { change: () => { store.site.value = { ...SITE }; }, want: SITE },
+  // A location's country is kept beside the save's fragment and read at start (countryAtStart); in a
+  // link only with the tick, and applied only with a place (k alone keeps the reader's country, 8.3).
+  country: {
+    change: () => { store.country.value = { code: 'DE', source: 'location' }; store.spot.value = { ...PART_WET }; }, want: { code: 'DE', source: 'location' },
+    fromSave: (rec) => countryAtStart({ link: null, pref: null, saved: rec.country ?? null, savedFrom: rec.src, guess: null }),
+    place: true, link: { code: 'DE', source: 'link' },
+  },
+  room: { change: () => { store.room.value = 'large'; }, want: 'large' },
+  plot: { change: () => { store.plot.value = 300; }, want: 300 },
+  spot: { change: () => { store.spot.value = { ...PART_WET }; }, want: PART_WET, place: true },
+  soil: { change: () => { store.soil.value = { ...ACID }; }, want: ACID, place: true },
+  period: { change: () => { store.period.value = '2041-2070'; }, want: '2041-2070' },
   members: { change: (p) => { store.members.value = p.slice(10, 14).map((t) => t.id); }, want: (p) => p.slice(10, 14).map((t) => t.id) },
-  kept: { change: (p) => { store.kept.value = [p[2].id]; }, want: (p) => [p[2].id] },
+  kept: { change: (p) => { store.kept.value = [p[2].id]; }, want: (p) => [p[2].id], before: (p) => { store.kept.value = [p[3].id]; }, saved: [], link: [] },
   removed: { change: (p) => { store.removed.value = [p[30].id]; }, want: (p) => [p[30].id] },
   guests: { change: async () => { const g = (await store.loadPool('Tropical'))[5].id; store.members.value = [...store.members.peek(), g]; store.guests.value = { [g]: 'Tropical' }; }, want: async () => ({ [(await store.loadPool('Tropical'))[5].id]: 'Tropical' }) },
-  crops: { change: (p) => { store.crops.value = [p[1].id]; }, want: (p) => [p[1].id] },
-  stage: { change: () => { store.stage.value = 4; }, want: 4 },
+  crops: { change: (p) => { store.crops.value = [p[1].id]; }, want: (p) => [p[1].id], before: (p) => { store.crops.value = [p[3].id]; }, saved: [], link: [] },
+  stage: { change: () => { store.stage.value = 4; }, want: 4, before: () => { store.stage.value = 2; }, saved: 2, link: 2 },
 };
 const valueOf = async (w, p) => (typeof w === 'function' ? w(p) : w);
 
@@ -519,16 +560,18 @@ for (const [k, c] of Object.entries(CASES)) {
     assert.ok(rec, 'saved');
     await blankShown();
     assert.notDeepEqual(store[k].peek(), want, 'changed back before the restore');
-    assert.equal(await m.restore(rec.fragment, { from: 'saved', src: rec.src }), true);
-    assert.deepEqual(store[k].peek(), want);
+    await c.before?.(pool);
+    assert.equal(await m.restore(rec.fragment, { from: 'saved', src: rec.src, place: rec.place }), true);
+    assert.deepEqual(c.fromSave ? c.fromSave(rec) : store[k].peek(), 'saved' in c ? c.saved : want);
   });
   test(`link → restore keeps ${k}`, async () => {
     const pool = await blankShown();
     await c.change(pool);
-    const link = m.currentFragment();
-    assert.equal(m.shownFragment.value, link, 'Share shows the same link');
-    const want = await valueOf(c.link ?? c.want, pool);
+    assert.equal(m.shownFragment.value, m.currentFragment(), 'Share shows the same link');
+    const link = m.currentFragment(null, { place: !!c.place });
+    const want = await valueOf('link' in c ? c.link : c.want, pool);
     await blankShown();
+    await c.before?.(pool);
     assert.equal(await m.restore(link, { from: 'link' }), true);
     assert.deepEqual(store[k].peek(), want);
   });
@@ -577,27 +620,32 @@ test('a change to any field that ends Undo hides the Undo toast', async () => {
   store.hideToast();
 });
 
-// Saved data of today's visitors (written before the schema, 2026-11-12) still opens the same way.
+// Saved data and links of v4 (written before link v5, 2026-11-12) are an older version since PP-B
+// commit 0a (owner 2026-11-14): nothing restored, said once; a v4 save is removed (oldRecord), a v4
+// link names its climate on Start with the outdated notice.
 const TODAY_SAVE = '{"fragment":"v=4&c=temperate&k=FR&l=part&s=acid&w=wet&m=large&a=*dhUvw6*hMnoF4cGXxubT_4pfUIFAvOY&x=Tc-F92&n=dhUvw6&g=trIFAvOY&t=2&e=1","at":"2026-11-12T10:00:00.000Z","src":"chosen"}';
-const TODAY = {
-  climate: 'Temperate', site: SITE, stage: 2,
-  members: ['76152fc3-ac02-491f-9130-cc294c13730e', '84c9e817-8dda-434a-954e-73959c39abfd', '7065f1b9-b178-42fd-8c55-4517deae30e9', '4ffe297d-4c34-4da4-83c7-cb549dee5bd0', '20502f39-8694-4322-be9c-655dce7de501'],
-  kept: ['76152fc3-ac02-491f-9130-cc294c13730e', '84c9e817-8dda-434a-954e-73959c39abfd'],
-  removed: ['4dcf85f7-685c-4347-9489-280b6b08c99a'],
-  guests: { '20502f39-8694-4322-be9c-655dce7de501': 'Tropical' },
-  crops: ['76152fc3-ac02-491f-9130-cc294c13730e'],
-};
-for (const [from, country] of [['saved', { code: 'FR', source: 'chosen' }], ['link', { code: 'FR', source: 'link' }]]) {
-  test(`a ${from === 'saved' ? 'save' : '#v=4 link'} written before the schema opens as it did`, async () => {
-    await blankShown();
-    const rec = readRecord(TODAY_SAVE);
-    assert.ok(rec);
-    assert.equal(await m.restore(rec.fragment, { from, src: rec.src }), true);
-    for (const [k, v] of Object.entries({ ...TODAY, country })) assert.deepEqual(store[k].peek(), v, k);
-    assert.equal(store.view.peek(), 'matrix');
-    assert.equal(m.currentFragment(), rec.fragment, 'and writes the same link back');
-  });
-}
+test('a v4 save written before link v5 is an older save: not read back, told apart from nothing saved', async () => {
+  await blankShown();
+  assert.equal(readRecord(TODAY_SAVE), null);
+  assert.equal(oldRecord(TODAY_SAVE), true);
+  const before = store.members.peek();
+  m.notices.value = { ...m.notices.peek(), oldSave: false };
+  assert.equal(await m.restore(JSON.parse(TODAY_SAVE).fragment, { from: 'saved', src: 'chosen' }), false);
+  assert.equal(m.notices.peek().oldSave, true, 'the older-save line');
+  assert.deepEqual(store.members.peek(), before, 'nothing restored');
+});
+test('a #v=4 link written before link v5 opens nothing and says it is from an older version', async () => {
+  await blankShown();
+  store.view.value = 'start';
+  store.climate.value = null;
+  store.members.value = [];
+  m.notices.value = { ...m.notices.peek(), outdated: false };
+  assert.equal(await m.restore(JSON.parse(TODAY_SAVE).fragment, { from: 'link' }), false);
+  assert.equal(m.notices.peek().outdated, true);
+  assert.equal(store.climate.peek(), 'Temperate', 'the climate it names shows on Start');
+  assert.deepEqual(store.members.peek(), []);
+  assert.deepEqual(store.country.peek(), { code: null, source: null }, 'its k is not read');
+});
 
 // ---- E6 S2: the memory split (state/persist, restore, arrival, draft, suggest-wait, lookups; state/location) ----
 
@@ -614,7 +662,7 @@ test('the split: island state imports nothing under views/, statically or throug
 test('one country-source enum: the save keeps store.ts CountrySource without the guess; any other source reads as none', () => {
   for (const src of ['link', 'chosen', 'location']) assert.equal(persist.fromOf(src), src, src);
   for (const src of ['guess', 'weird', null, undefined, 1]) assert.equal(persist.fromOf(src), null, String(src));
-  assert.equal(readRecord(saveRecord('v=4&c=temperate&a=&e=1', 'x', 'location', 'ES')).country, 'ES', 'a location country beside the fragment');
+  assert.equal(readRecord(saveRecord('v=5&c=temperate&a=&e=1', 'x', 'location', 'ES')).country, 'ES', 'a location country beside the fragment');
 });
 
 test('one climate shown: the reader\'s choice, else a link\'s still opening, else the location\'s proposal (shown as proposed), else none', async () => {

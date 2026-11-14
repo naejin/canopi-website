@@ -195,7 +195,11 @@
             "src/styles/tokens.css",
             "scripts/consortium-css.test.mjs",
             "scripts/consortium-keys.test.mjs",
-            "scripts/plan/parked-markers.json"
+            "scripts/plan/parked-markers.json",
+            "scripts/consortium-core.test.mjs",
+            "scripts/consortium-memory.test.mjs",
+            "scripts/consortium-p5-seams-s5b.test.mjs",
+            "package.json"
           ]
         }
       }

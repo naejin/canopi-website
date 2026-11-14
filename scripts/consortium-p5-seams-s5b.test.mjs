@@ -65,24 +65,31 @@ test('site-climate siteClimate: polar, sea and coast have their own states', () 
   assert.equal(core.cellCentre(null), null);
 });
 
-test('state.ts o=: the cell centre only when given, just before e=1; v=4 decoders ignore it', () => {
-  const s = { climate: 'Mediterranean', country: 'ES', site: { light: 'sun', soil: 'unsure', water: 'unsure', room: 'unsure' }, members: [], kept: [], removed: [], guests: [], crops: [], stage: null };
+// Link v5 (PP-B commit 0a): `o` is a place key, written with "Include my place" (an origin given implies
+// the tick), after k and before the spot answers; any `o` read is snapped to its cell centre
+// (scripts/vectors/link-v5.json holds the contract cases).
+test('state.ts o=: the cell centre only when given, among the place keys; the decoder reads the same state', () => {
+  const s = { climate: 'Mediterranean', country: 'ES', room: 'unsure', plot: null, period: '1991-2020', spot: { light: 'sun', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' }, soil: null, members: [], removed: [], guests: [] };
   const plain = core.encodeLink(s, {});
-  assert.doesNotMatch(plain, /[&?]o=/);
+  assert.doesNotMatch(plain, /[&?](o|k|l)=/, 'the public form holds no place key');
   assert.equal(core.encodeLink(s, {}, { origin: null }), plain);
+  const placed = core.encodeLink(s, {}, { place: true });
+  assert.doesNotMatch(placed, /[&?]o=/, 'no origin given: no o');
   const withO = core.encodeLink(s, {}, { origin: { lat: 37.35, lon: -5.95 } });
-  assert.equal(withO, plain.replace(/&e=1$/, '&o=37.35,-5.95&e=1'), 'a literal comma, before the end key');
+  assert.equal(withO, placed.replace('&k=ES&', '&k=ES&o=37.35,-5.95&'), 'a literal comma, after k and before the spot answers');
+  assert.equal(core.encodeLink(s, {}, { origin: { lat: 37.35, lon: -5.95 }, place: false }), plain, 'the tick off: no o');
   assert.deepEqual(core.linkOrigin(withO), { lat: 37.35, lon: -5.95 });
-  assert.deepEqual(core.decodeLink(withO, {}), core.decodeLink(plain, {}), 'the decoder reads the same state');
-  assert.deepEqual(core.linkOrigin('v=4&c=temperate&o=37.35%2C-5.95&e=1'), { lat: 37.35, lon: -5.95 });
-  for (const bad of ['o=91,0', 'o=0,181', 'o=abc', 'o=1;2', 'o=', 'c=temperate']) assert.equal(core.linkOrigin(`v=4&${bad}&e=1`), null, bad);
+  assert.deepEqual(core.decodeLink(withO, {}), core.decodeLink(placed, {}), 'the decoder reads the same state');
+  assert.deepEqual(core.linkOrigin('v=5&c=temperate&o=37.35%2C-5.95&e=1'), { lat: 37.35, lon: -5.95 });
+  assert.deepEqual(core.linkOrigin('v=5&c=temperate&o=37.3891,-5.9845&e=1'), { lat: 37.35, lon: -5.95 }, 'a precise point is read as its cell centre');
+  for (const bad of ['o=91,0', 'o=0,181', 'o=abc', 'o=1;2', 'o=', 'c=temperate']) assert.equal(core.linkOrigin(`v=5&${bad}&e=1`), null, bad);
 });
 
 test('state/persist.ts and state/location.ts: a location country goes into a link only with the tick; the saved location record', async () => {
   const m = await import('../src/islands/consortium/state/persist.ts');
-  const input = { climate: 'Mediterranean', country: { code: 'ES', source: 'location' }, site: { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' }, members: [], kept: [], removed: [], guests: {}, crops: [], stage: null };
+  const input = { climate: 'Mediterranean', country: { code: 'ES', source: 'location' }, room: 'unsure', plot: null, period: '1991-2020', spot: { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' }, soil: { from: 'map' }, members: [], kept: [], removed: [], guests: {}, crops: [], stage: null };
   assert.equal(m.shareState(input).country, null);
-  assert.equal(m.shareState(input, { location: true }).country, 'ES');
+  assert.equal(m.shareState(input, { place: true }).country, 'ES', 'with "Include my place" (link v5)');
   const keep = await import('../src/islands/consortium/state/location.ts');
   const rec = keep.locationRecord({ lat: 37.3891, lon: -5.9845, source: 'geo' });
   assert.deepEqual(keep.readLocation(rec), { lat: 37.3891, lon: -5.9845, source: 'geo' });
@@ -164,14 +171,14 @@ test('review round 2 (1): a lookup\'s writes are quiet even in a batch: a restor
     store.source.value = null;
     store.country.value = { code: null, source: null };
     // A restore waiting for the plant source: in flight until it comes.
-    void m.restore('v=4&c=temperate&e=1', { from: 'link' });
+    void m.restore('v=5&c=temperate&e=1', { from: 'link' });
     assert.equal(m.restoring.peek(), true, 'the restore is in flight');
     // The bug: a quiet write inside a batch flushes after quietly() has reset, and counts as an action.
     batch(() => { keep.locationCountry('DE', false); });
     const counted = !m.restoring.peek();
     assert.equal(counted, true, 'reproduces: a quiet write inside batch() is counted (this is why siteFound exists)');
     store.country.value = { code: null, source: null };
-    void m.restore('v=4&c=temperate&e=1', { from: 'link' });
+    void m.restore('v=5&c=temperate&e=1', { from: 'link' });
     assert.equal(m.restoring.peek(), true);
     keep.siteFound(() => { store.location.value = { lat: 37.39, lon: -5.98, source: 'geo', lookup: null }; }, 'ES');
     assert.equal(m.restoring.peek(), true, 'siteFound: the site and its country written, the restore still in flight');
