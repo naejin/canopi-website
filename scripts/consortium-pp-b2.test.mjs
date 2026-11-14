@@ -257,7 +257,7 @@ const nameOf = (t) => t.canonical_name;
 const palette = ['tree_all', 'high_any', 'crop_early', 'crop_late'].map(hPlant);
 const pictureOf = (P, kind, members) => P[kind]({ members, holes: core.holes({ members, verdicts: null, pending: false }), nameOf });
 
-failing('PP-B (b2 pictures, 3.4): Through the years has a row per light level, bands in years, open holes in empty judged cells, and the table form has the same cells (P17)', { owner: 'b2', reason: /Cannot find module|picture/ }, async () => {
+test('PP-B (b2 pictures, 3.4): Through the years has a row per light level, bands in years, open holes in empty judged cells, and the table form has the same cells (P17)', async () => {
   const P = await pictures();
   const p = pictureOf(P, 'yearsPicture', palette);
   assert.deepEqual(p.rows.map((r) => r.key), ['emergent', 'high', 'medium', 'low']);
@@ -275,7 +275,7 @@ failing('PP-B (b2 pictures, 3.4): Through the years has a row per light level, b
   sameCells(bare, P.tableOf(bare));
 });
 
-failing('PP-B (b2 pictures, 3.4): the jobs picture has a row per job, a plant in each of its jobs, its job holes, and the same cells in its table', { owner: 'b2', reason: /Cannot find module|picture/ }, async () => {
+test('PP-B (b2 pictures, 3.4): the jobs picture has a row per job, a plant in each of its jobs, its job holes, and the same cells in its table', async () => {
   const P = await pictures();
   const p = pictureOf(P, 'jobsPicture', palette);
   assert.deepEqual(p.rows.map((r) => r.key), [...core.jobIds, 'none'], 'a row per job, then the plants with no job (High any), never dropped');
@@ -287,7 +287,7 @@ failing('PP-B (b2 pictures, 3.4): the jobs picture has a row per job, a plant in
   sameCells(p, P.tableOf(p));
 });
 
-failing('PP-B (b2 pictures stay readable, moved from P5): 200 plants on one light level draw at most PICTURE_LANE_MAX per lane, "+ n more" holds the rest, the table lists every plant', { owner: 'b2', reason: /Cannot find module|picture/ }, async () => {
+test('PP-B (b2 pictures stay readable, moved from P5): 200 plants on one light level draw at most PICTURE_LANE_MAX per lane, "+ n more" holds the rest, the table lists every plant', async () => {
   const P = await pictures();
   const many = Array.from({ length: 200 }, (_, i) => plantOf(`p${String(i).padStart(3, '0')}`, { name: `Plant ${String(i).padStart(3, '0')}`, role: i % 2 ? 'crop' : 'support', stratum: 'low', phase_start: 'placenta_i', phase_end: 'climax' }));
   for (const kind of ['yearsPicture', 'jobsPicture']) {
@@ -305,7 +305,7 @@ failing('PP-B (b2 pictures stay readable, moved from P5): 200 plants on one ligh
   }
 });
 
-failing('PP-B (b2 changeSummary, 3.4): nothing changed says nothing; a plant added says the plants and the holes that changed; another time step says its years first', { owner: 'b2', reason: /Cannot find module|changeSummary/ }, async () => {
+test('PP-B (b2 changeSummary, 3.4): nothing changed says nothing; a plant added says the plants and the holes that changed; another time step says its years first', async () => {
   const P = await pictures();
   const before = pictureOf(P, 'yearsPicture', palette);
   assert.deepEqual(P.changeSummary(before, before), []);

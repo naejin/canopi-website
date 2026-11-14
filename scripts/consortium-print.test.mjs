@@ -8,7 +8,8 @@ import assert from 'node:assert/strict';
 import { phases } from '../src/lib/consortium/index.ts';
 import { warningCounts } from '../src/islands/consortium/views/kit/phase.ts';
 import { nameOrder } from '../src/islands/consortium/views/kit/names.ts';
-import { FALLBACK_HEIGHT, LOG_MAX, MAX_SILHOUETTES, SCALE_LINES, heightFrac, lineTop, quantile, shapeOf, sidePlants, usualHeight } from '../src/islands/consortium/views/side.ts';
+import { MAX_SILHOUETTES, lineTop, shapeOf, sidePlants } from '../src/islands/consortium/views/side.ts';
+import { FALLBACK_HEIGHT, LOG_MAX, SCALE_LINES, heightFrac, quantile, usualHeight } from '../src/islands/consortium/rules/heights.ts';
 import { PLOT_H, blob, hash, plantStrokes, reachOf, topOf } from '../src/islands/consortium/views/draw.ts';
 
 const traits = (over = {}) => ({
