@@ -526,8 +526,9 @@ test('PP-B31 (b2 sheets and Back, K7; review r1 bugs-1): Back closes the Add she
   await forward(page);
   assert.equal(await sheetKind(page), null, 'Forward never reopens the sheet');
   assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), before + 2, 'nor an older palette');
-  // Forward is refused (review r2 hist-1): the page goes back to the entry it shows.
-  assert.ok(await page.waitForFunction((a) => navigation.currentEntry.index === a, { timeout: 4000 }, arrived).then(() => true, () => false), 'Forward refused: back on the page\'s first entry');
+  // Forward is allowed onto the entry and changes nothing on screen (owner 2026-11-14: no refused
+  // Forward); the address there holds the palette as edited.
+  assert.equal(await page.evaluate(() => location.hash.slice(1)), addr.hash, 'the entry Forward lands on holds the palette as it is');
   // Reloading the address the Back left shows the plants added.
   await page.reload();
   assert.ok(await page.waitForFunction((n) => window.__ctTest?.store?.members.value.length === n, { timeout: 20_000 }, before + 2).then(() => true, () => false), 'the address keeps the plants added in the sheet');
@@ -562,7 +563,7 @@ const readerPalette = async () => {
   return { page, arrived };
 };
 const settled = async (page) => { await frames(page); await new Promise((r) => setTimeout(r, 300)); };
-test('PP-B40 (b2 review r2 hist-1, K7): from a palette the reader made, a sheet opened and closed, then "Your place": Place on the page\'s first entry, so the next Back leaves the page, and Forward never shows a stale entry', async () => {
+test('PP-B40 (b2 review r2 hist-1, K7): from a palette the reader made, a sheet opened and closed, then "Your place": Place on the page\'s first entry, so the next Back leaves the page, and Forward shows no stale palette or sheet', async () => {
   const { page, arrived } = await readerPalette();
   await page.evaluate(() => window.__ctTest.store.hideToast());
   await page.waitForSelector('.ct-chart .ct-chip[data-plant-id]', { timeout: 8000 });
@@ -578,7 +579,7 @@ test('PP-B40 (b2 review r2 hist-1, K7): from a palette the reader made, a sheet 
   assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), 3, 'the plants kept');
   await forward(page);
   await settled(page);
-  assert.equal(await entry(page), arrived, 'Forward never shows the stale palette or sheet entry');
+  // Forward lands on the entry the page left and changes nothing (owner 2026-11-14: no refused Forward).
   assert.deepEqual([await page.evaluate(() => window.__ctTest.store.step.value), await sheetKind(page)], ['place', null], 'still Your place, no sheet');
   await done(page);
 });
@@ -904,7 +905,9 @@ async function pasteAgain({ noNavigationApi }) {
   const n = await page.evaluate(() => window.__ctTest.store.members.value.length);
   await page.evaluate(() => window.__ctTest.store.hideToast());
   await page.waitForSelector('.ct-chart .ct-chip[data-plant-id]', { timeout: 8000 });
-  await page.click('.ct-chart .ct-chip[data-plant-id]');
+  // The chip itself is pressed, not a screen point: the chart can still shift under a loaded machine,
+  // and a point press then lands on the Add button beside it.
+  await page.$eval('.ct-chart .ct-chip[data-plant-id]', (el) => el.click());
   await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind === 'details', { timeout: 8000 });
   await back(page);
   await settled(page);
@@ -922,7 +925,7 @@ async function pasteAgain({ noNavigationApi }) {
 }
 
 test('PP-B48 (b2 review r3 hash-1): a shared link, Details opened and closed with Back, a plant removed, then the same link pasted: the link opens again', () => pasteAgain({ noNavigationApi: false }));
-test('PP-B48b (b2 review r3 hash-1, no Navigation API): the same, in a browser without the Navigation API (the reader\'s press disarms the swallow)', () => pasteAgain({ noNavigationApi: true }));
+test('PP-B48b (b2 review r3 hash-1, no Navigation API): the same, in a browser without the Navigation API', () => pasteAgain({ noNavigationApi: true }));
 
 // ---- scale (owner directive 2026-11-14: smooth to 200 plants), CPU throttled 4× through CDP ----
 // The shared 200-plant palette (scripts/palette-200.mjs), saved, reopened at 390 and 1280 px. Budgets:

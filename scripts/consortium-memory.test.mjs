@@ -162,6 +162,11 @@ test('guessCountry: the one country of the time zone, else the languages\' regio
   assert.equal(guessCountry([], { languages: ['pt-BR'] }), 'BR');
   assert.equal(guessCountry([], { languages: ['not a tag', ''] }), null);
   assert.equal(guessCountry(['FR'], { zone: 'Europe/Paris', zonesOf: () => { throw new Error('no CLDR'); }, languages: [] }), null);
+  // The languages' own country is read first, so a matching zone needs one lookup, not every country's.
+  const asked = [];
+  const counted = (c) => { asked.push(c); return zonesOf(c); };
+  assert.equal(guessCountry(['US', 'DE', 'FR'], { zone: 'Europe/Paris', languages: ['fr-FR'], zonesOf: counted }), 'FR');
+  assert.deepEqual(asked, ['FR'], 'one lookup when the language\'s country holds the zone');
 });
 
 // The installed export (real data).

@@ -309,6 +309,10 @@ function replaced(to: string | null): void {
 
 // The address bar holds the consortium's link (replaceState, no history entry). Same address:
 // nothing written (browsers drop replaceState calls past a rate limit).
+// The fragment this page last wrote into the address bar ('' for none): a hashchange onto it is the
+// page's own (a Back landing on an entry main.ts just rewrote), never a link to open.
+let written = '';
+export const lastWritten = (): string => written;
 export function writeAddress(force = false): void {
   if (typeof location === 'undefined') return;
   const mine = own();
@@ -317,7 +321,11 @@ export function writeAddress(force = false): void {
   // history.state marks the address as the page's own, so a reload opens it as the save (review 1),
   // with this tab's place (pl: the save is shared by every tab; plant-palette-architecture 8.3).
   // ask: a link's place waits on the reader; hold: the save is held for a link they have not acted on.
-  const state = fragment ? { ct: fragment, src: countryFrom(mine?.country), pl: addressPlace(mine), ...(linkPlace.peek() ? { ask: 1 } : held ? { hold: 1 } : {}) } : null;
+  const ownState = fragment ? { ct: fragment, src: countryFrom(mine?.country), pl: addressPlace(mine), ...(linkPlace.peek() ? { ask: 1 } : held ? { hold: 1 } : {}) } : null;
+  // `pp`: the page's history entries up to this one (store.ts), kept through every rewrite and reload.
+  const pp = attempt(() => (history.state as { pp?: unknown } | null)?.pp);
+  const state = pp ? { ...(ownState ?? {}), pp } : ownState;
+  written = fragment ?? '';
   if (next !== location.href || JSON.stringify(attempt(() => history.state)) !== JSON.stringify(state)) attempt(() => history.replaceState(state, '', next));
 }
 

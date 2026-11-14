@@ -14,7 +14,7 @@ import { effect } from '@preact/signals';
 import { arrivalOpensPalette, forgetEntries, historyMoved, load, pushWaiting, opening, setPageClimates, setPageCountries, setSource, slow, start, view, wantVerdict, watchPools, watchSteps } from './store.ts';
 import { arrival, startMemory } from './state/arrival.ts';
 import { changeSite } from './state/draft.ts';
-import { currentFragment, memory, readRecord, STORE, writeAddress } from './state/persist.ts';
+import { currentFragment, lastWritten, memory, readRecord, STORE, writeAddress } from './state/persist.ts';
 import { provideLocationStep } from './state/restore.ts';
 import { loadLocationStep } from './views/location/load.ts';
 import { zoneOf } from '../../lib/consortium/index.ts';
@@ -98,54 +98,22 @@ if (root && data) {
   const fetchAhead = () => { if (ahead) { PalettePage.prefetch().catch(() => {}); wantVerdict(); } };
   // Back and Forward across the entries a sheet or the palette step pushed (store.historyMoved;
   // coordinator row 2026-11-14): the sheet closes or Place shows, then the entry landed on takes the
-  // current link at once, before the hashchange that follows reads it. Registered before the memory's
-  // own hashchange listener: a link opened in the tab (not the page's own address) ends those entries.
-  // The hashchange of such a move (entries whose addresses differ) is the page's own: it stops here,
-  // never reaching the memory's listener, which would read the address landed on as a link to
-  // restore (on Place it holds the set-aside palette's link, not the one shown: review r2 hist-1,
-  // an Undo back to Place leaving the palette step's entry). Told by the address written here.
-  // Only a move whose hashchange will come arms that (review r3 hash-1): a Back between two entries
-  // with the same address (a sheet's, pushed with the current href) fires popstate and no hashchange,
-  // and an address left armed would swallow the reader's own later hashchange to it (that link pasted
-  // after an edit rewrote the address in place). The browser fires hashchange when the fragment
-  // landed on differs from the one shown before the move; by popstate the address already holds the
-  // one landed on, so the one before is read at the Navigation API's navigate event (a traversal,
-  // the address not yet changed). Without the Navigation API the address before is unknown: every
-  // move arms it until the reader's next input in the page (below).
-  let moveAddress: string | null = null;
-  let shownBefore: string | null = null;
-  try {
-    (globalThis as { navigation?: EventTarget }).navigation?.addEventListener('navigate', (e) => {
-      if ((e as Event & { navigationType?: string }).navigationType === 'traverse') shownBefore = location.hash;
-    });
-  } catch { /* no Navigation API: shownBefore stays null */ }
-  // Where the address before is unknown, the reader's next press or key in the page disarms it: a
-  // move's own hashchange is queued with the traversal, before any later input, and the stale case
-  // needs an edit in the page (a press) before the paste.
-  const disarm = () => { moveAddress = null; };
-  addEventListener('pointerdown', disarm, { capture: true, passive: true });
-  addEventListener('keydown', disarm, { capture: true, passive: true });
+  // current link at once. The hashchange that may follow then lands on the address the page last
+  // wrote (persist.ts lastWritten) and stops here, before the memory's own listener (registered after
+  // this one) could read it as a link to open. Any other hashchange is the reader's: a link opened in
+  // the tab, which ends the page's entries.
   addEventListener('popstate', (e) => {
-    const before = shownBefore, landed = location.hash;
-    shownBefore = null;
-    // A link opened in the tab (pasted, or a same-page link) fires popstate before its hashchange,
-    // onto a new entry with a fragment and no state: not a move across the page's entries, since the
-    // page writes a state with every fragment it writes (persist.ts writeAddress; it writes no state
-    // only with no fragment: Start over, an Undo back to an empty palette, review r4 null-1). Without
-    // the Navigation API historyMoved would read it as a Back.
+    // A link opened in the tab fires popstate onto a new entry with a fragment and no state (the page
+    // writes a state with every fragment it writes); its hashchange opens it.
     if (e.state == null && location.hash.length > 1) return;
-    const moved = historyMoved();
-    if (!moved) return;
+    const moved = historyMoved(e.state);
     if (moved.place) changeSite();
     writeAddress(moved.force);
-    moveAddress = before === null || before !== landed ? location.hash : null;
     pushWaiting();
   });
   addEventListener('hashchange', (e) => {
-    const mine = moveAddress !== null && location.hash === moveAddress;
-    moveAddress = null;
-    if (mine) { e.stopImmediatePropagation(); return; }
     const f = location.hash.slice(1);
+    if (f === lastWritten()) { e.stopImmediatePropagation(); return; }
     if (f && f !== currentFragment()) forgetEntries();
   });
   // The database first: its loader chunk is on the way while the memory starts (the country guess).

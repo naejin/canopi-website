@@ -75,8 +75,8 @@ export function hashAction(hash: string, state: unknown, current: string | null)
 // The reader's country at start: a link's own (labelled "from the shared link"), else the reader's
 // choice on this device ('-' is "No country"), else a saved consortium's (a guess is never written;
 // a country that came from a link keeps that label), else the browser's guess, else none. guess is
-// called only when none of the others names a country: guessCountry walks every country's time zones
-// (about 0.4 s, 1.6 s on a slow phone) before the database opens (b2 review perf-1).
+// called only when none of the others names a country: guessCountry can walk every country's time
+// zones (about 0.4 s, 1.6 s on a slow phone) before the database opens (b2 review perf-1).
 export function countryAtStart({ link, pref, saved, savedFrom = null, guess }: { link: string | null; pref: string | null; saved: string | null; savedFrom?: CountryFrom; guess: () => string | null }): Country {
   const code = (c: string | null) => (c && /^[A-Za-z]{2}$/.test(c.trim()) ? c.trim().toUpperCase() : null);
   if (code(link)) return { code: code(link), source: 'link' };
@@ -100,17 +100,23 @@ const cldrZones = (c: string): string[] => {
 };
 export function guessCountry(codes: readonly string[], { zone, languages = [], zonesOf = cldrZones }: { zone?: string | null; languages?: readonly string[]; zonesOf?: (c: string) => string[] } = {}): string | null {
   const set = new Set(codes.map((c) => c.toUpperCase()));
-  if (zone && codes.length) {
-    const hits = codes.filter((c) => { try { return zonesOf(c).includes(zone); } catch { return false; } });
-    if (hits.length === 1) return hits[0].toUpperCase();
-  }
+  const regions: string[] = [];
   for (const l of languages) {
     try {
       const r = new Intl.Locale(l).maximize().region;
-      if (r && /^[A-Z]{2}$/i.test(r) && (!set.size || set.has(r.toUpperCase()))) return r.toUpperCase();
+      if (r && /^[A-Z]{2}$/i.test(r) && (!set.size || set.has(r.toUpperCase()))) regions.push(r.toUpperCase());
     } catch { /* not a language tag */ }
   }
-  return null;
+  const has = (c: string) => { try { return zonesOf(c).includes(zone!); } catch { return false; } };
+  if (zone && codes.length) {
+    // The languages' own countries first (one or two lookups): walking every country's zones costs
+    // about 0.5 s on the main thread (b2 load profile, 2026-11-14); the walk stays for the rest.
+    const near = regions.find((r) => set.has(r) && has(r));
+    if (near) return near;
+    const hits = codes.filter(has);
+    if (hits.length === 1) return hits[0].toUpperCase();
+  }
+  return regions[0] ?? null;
 }
 
 // ---- the place seed ----
