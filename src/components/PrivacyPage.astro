@@ -1,13 +1,15 @@
 ---
 // /privacy/ for one locale (P5 stream S5f; owner answer 4, "P5 owner answers" 2026-11-11): what the site,
-// the consortium tool, the contact form and the correction form send, to whom, and what stays on the
+// the consortium tool ("Plant palette" at /palette/), the contact form and the correction form send, to whom, and what stays on the
 // device. Each claim is grounded in the code it describes:
 // - hosting and logs: wrangler.jsonc (Cloudflare Workers, observability on, send_email to the owner's
 //   mailbox); Workers Logs keep request details for up to 7 days (WORKERS_LOGS, Cloudflare's docs);
 //   src/lib/contact.mjs and src/lib/correction.mjs log codes only, never content;
 // - storage on the device: src/layouts/Base.astro (theme, climate, the language offer in
 //   sessionStorage), src/components/guides/Checklist.astro, src/islands/consortium/state/persist.ts
-//   (consortium, country, site climate in localStorage; share links in the address's fragment);
+//   (the palette with its height limit, plot size and spot answers, the last spot answers that seed a
+//   new palette, country, location, site climate in localStorage; share links in the address's
+//   fragment; privacy.tool.device as owner-approved 2026-11-14, PP-B commit 0b);
 // - location, place search and map: the P5 design check §B and the owner's answers 4 and 5 (asked
 //   only on the reader's click; the precise point kept on the device; a link holds the 0.1° cell only
 //   with the reader's tick; Nominatim on Enter; OpenFreeMap only once the map opens); the climate

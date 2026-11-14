@@ -216,10 +216,11 @@ test('the consortium tool has one short header word and one full name per locale
     assert.ok(strings['learn.consortium.link'].startsWith(full), `${file}: the Learn link starts with the full name "${full}"`);
   }
   const strings = (lang) => JSON.parse(readFileSync(new URL(`${lang}.json`, root), 'utf8'));
-  assert.equal(strings('fr')['nav.consortium'], 'Guilde');
-  assert.equal(strings('en')['nav.consortium'], 'Consortium');
-  assert.equal(strings('fr')['nav.consortium.full'], 'Composer une guilde', 'the owner\'s French title');
-  assert.equal(strings('en')['nav.consortium.full'], 'Design a consortium', 'the owner\'s title');
+  // Owner row "Plant palette name" (2026-11-13): readers see "Plant palette" (PP-B commit 0b).
+  assert.equal(strings('fr')['nav.consortium'], 'Palette');
+  assert.equal(strings('en')['nav.consortium'], 'Palette');
+  assert.equal(strings('fr')['nav.consortium.full'], 'Palette végétale', 'the owner\'s French name');
+  assert.equal(strings('en')['nav.consortium.full'], 'Plant palette', 'the owner\'s name');
   // The header, the footer and the home section name the tool exactly as its own page's title does.
   for (const file of readdirSync(root).filter((name) => name.endsWith('.json'))) {
     const all = JSON.parse(readFileSync(new URL(file, root), 'utf8'));
