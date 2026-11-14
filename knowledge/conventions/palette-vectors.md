@@ -3,7 +3,7 @@ type: Convention
 title: Palette vector files
 description: Every JSON vector file of the Plant palette under scripts/vectors/ uses one envelope, modelled on canopi-data's range-verdict vectors, so the app's Rust code and canopi-data can run the same cases.
 tags: [consortium, tests, vectors]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:54:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:06:45Z }
 sources:
   - id: architecture-plant-palette-architecture
     resource: /architecture/plant-palette-architecture.md
@@ -12,18 +12,18 @@ sources:
   - id: link-v5-json
     resource: ../../scripts/vectors/link-v5.json
     title: scripts/vectors/link-v5.json
-    digest: sha256:265be2916c586b4e
-    last_modified: 2026-11-14T10:29:14Z
+    digest: sha256:284d7031eff5e113
+    last_modified: 2026-11-14T10:59:53Z
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
     digest: sha256:fbbd5cb7acd35672
-    last_modified: 2026-11-14T10:35:27Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: consortium-link-v5-test-mjs
     resource: ../../scripts/consortium-link-v5.test.mjs
     title: scripts/consortium-link-v5.test.mjs
-    digest: sha256:a891534f6b3154d5
-    last_modified: 2026-11-14T10:30:24Z
+    digest: sha256:da6bff4dfd200892
+    last_modified: 2026-11-14T11:00:10Z
 ---
 
 # Palette vector files
@@ -71,3 +71,5 @@ Modelled on canopi-data's `tests/vectors/range_verdicts.json` (sibling repositor
 - `scripts/vectors/range-verdicts.json` is the stamped copy of canopi-data's `range_verdicts.json` (release `r-60ea417b5a15c3aa`).
   - It stays in canopi-data's own shape, and `install-consortium.test.mjs` checks its sha and release id.
   - b2 reads it from the installed release once the installer carries it.
+
+`link-v5.json` holds 82 cases since the coordinator review of 0a. It adds the privacy snap for encode and decode (with hemisphere, edge and antimeridian points), malformed `o` and `k` values, duplicate keys (the first wins), the `g`/`x` round trip with unknown tokens counted, and the dropped `h` metres. Decode cases may also expect `origin` (the cell read) and `reencoded` (the decoded state written back with the place tick).

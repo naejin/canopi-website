@@ -8,7 +8,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
-const { decodeLink, encodeLink, linkVersionStatus, bringsPlace, zoneOf, siteIdOf, emptyPlace, siteFor, resolveSoil, climateFor, LINK_VERSION } = core;
+const { decodeLink, encodeLink, linkVersionStatus, linkOrigin, snapOrigin, isLongLink, bringsPlace, zoneOf, siteIdOf, emptyPlace, siteFor, resolveSoil, climateFor, LINK_VERSION } = core;
+const grid = await import('../src/lib/climate/grid.ts');
 const persist = await import('../src/islands/consortium/state/persist.ts');
 const { saveRecord, readRecord, oldRecord } = persist;
 const { arrival, placeOfSeed } = await import('../src/islands/consortium/state/arrival.ts');
@@ -96,8 +97,48 @@ for (const c of V.cases) {
     if (expect.notice) assert.deepEqual(noticeOf(d.notice), expect.notice);
     if (expect.state) assert.deepEqual(pick(wordsOf(d.state), Object.keys(expect.state)), expect.state);
     if ('brings_place' in expect) assert.equal(bringsPlace(input.link, d), expect.brings_place);
+    // origin: the cell the link brings, as its text (null: none); reencoded: the decoded state written
+    // back with the place tick and the cell read, so nothing the decoder dropped can come back.
+    const o = linkOrigin(input.link);
+    if ('origin' in expect) assert.equal(o && `${o.lat.toFixed(2)},${o.lon.toFixed(2)}`, expect.origin);
+    if (expect.reencoded) assert.equal(encodeLink(d.state, known, { origin: o, place: true }), expect.reencoded);
   });
 }
+
+// The core may not import the climate reader, so its cell snap is checked here against the reader's
+// own cell rule (src/lib/climate/grid.ts cellOf and centre, canopi-climate v0.2's 0.1° grid), on every
+// cell-edge kind and a sweep of points.
+test('link v5: an origin snaps to the centre of the climate grid\'s cell holding it', () => {
+  const g = { cellDeg: 0.1, tileCells: 100 };
+  const pts = [[45.764, 4.8357], [-33.8688, 151.2093], [40.7128, -74.006], [-22.9068, -43.1729], [45.7, 4.8], [0, 0], [-0.1, -0.1], [90, 180], [-90, -180], [10.01, 180], [48.9, 2.3], [-48.9, -2.3]];
+  for (let i = 0; i < 500; i++) pts.push([((i * 7919) % 18000) / 100 - 90, ((i * 104729) % 36000) / 100 - 180]);
+  for (const [lat, lon] of pts) {
+    const c = grid.cellOf(g, lat, lon);
+    const want = { lat: Math.round(grid.centerLat(g, c) * 100) / 100, lon: Math.round(grid.centerLon(g, c) * 100) / 100 };
+    assert.deepEqual(snapOrigin({ lat, lon }), want, `${lat},${lon}`);
+    assert.deepEqual(snapOrigin(want), want, `a centre is its own snap (${lat},${lon})`);
+  }
+  assert.equal(snapOrigin({ lat: 91, lon: 0 }), null);
+  assert.equal(snapOrigin({ lat: NaN, lon: 0 }), null);
+});
+
+// The two limits are not vectors: a link at MAX_LINK_IDS tokens is 12,000 characters, past what a
+// readable JSON case holds, so the Rust port tests them from these two descriptions.
+test('link v5: at most MAX_LINK_IDS tokens per key are read, the rest counted as unknown', () => {
+  const known = knownOf(['temperate']);
+  const filler = 'AAAAAA'; // a valid token no list knows
+  const d = decodeLink(`v=5&c=temperate&m=small&a=${filler.repeat(core.MAX_LINK_IDS)}obLD1O&e=1`, known);
+  assert.deepEqual(d.state.members, [], 'apple is token MAX_LINK_IDS + 1: not read');
+  assert.equal(d.notice.unknownCount, 2, 'the filler once and the one token past the cap');
+  assert.equal(d.notice.unreadable, false);
+  const e = decodeLink(`v=5&c=temperate&m=small&a=${filler.repeat(core.MAX_LINK_IDS - 1)}obLD1O&e=1`, known);
+  assert.deepEqual(wordsOf(e.state).members, ['apple'], 'token MAX_LINK_IDS is read');
+});
+test('link v5: a link is long past LONG_LINK characters of the whole address', () => {
+  assert.equal(core.LONG_LINK, 2000);
+  assert.equal(isLongLink('x'.repeat(core.LONG_LINK)), false);
+  assert.equal(isLongLink('x'.repeat(core.LONG_LINK + 1)), true);
+});
 
 test('link v5: an encoded place round-trips through decode', () => {
   for (const c of V.cases.filter((x) => x.input.state)) {

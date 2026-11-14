@@ -4,7 +4,7 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T10:53:29Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:06:43Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:46Z }
 sources:
@@ -12,22 +12,22 @@ sources:
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:eec01df763e8b398
-    last_modified: 2026-11-14T10:41:21Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
     digest: sha256:e1a451eee42a1ee5
-    last_modified: 2026-11-14T10:15:43Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
     digest: sha256:2f08c35425c5c8bd
-    last_modified: 2026-11-14T10:16:43Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: matrix-ts
     resource: ../../src/lib/consortium/matrix.ts
     title: src/lib/consortium/matrix.ts
     digest: sha256:1b7088eeb8448e53
-    last_modified: 2026-11-14T10:15:21Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
@@ -86,8 +86,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:8f8e239324c14251
-    last_modified: 2026-11-14T10:41:21Z
+    digest: sha256:7948c11860e62e4c
+    last_modified: 2026-11-14T10:58:57Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -207,7 +207,7 @@ sources:
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:8610c9279fbe06ae
-    last_modified: 2026-11-14T10:15:43Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
@@ -222,22 +222,22 @@ sources:
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
     digest: sha256:b664e3442aa10d97
-    last_modified: 2026-11-14T10:16:06Z
+    last_modified: 2026-11-14T10:56:09Z
   - id: link-v5-json
     resource: ../../scripts/vectors/link-v5.json
     title: scripts/vectors/link-v5.json
-    digest: sha256:265be2916c586b4e
-    last_modified: 2026-11-14T10:29:14Z
+    digest: sha256:284d7031eff5e113
+    last_modified: 2026-11-14T10:59:53Z
   - id: consortium-link-v5-test-mjs
     resource: ../../scripts/consortium-link-v5.test.mjs
     title: scripts/consortium-link-v5.test.mjs
-    digest: sha256:a891534f6b3154d5
-    last_modified: 2026-11-14T10:30:24Z
+    digest: sha256:da6bff4dfd200892
+    last_modified: 2026-11-14T11:00:10Z
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
     digest: sha256:fbbd5cb7acd35672
-    last_modified: 2026-11-14T10:35:27Z
+    last_modified: 2026-11-14T10:56:09Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs
@@ -366,3 +366,11 @@ This section supersedes the statements above where they disagree.
   - `PlantSource.layerValues` is stubbed in `sqlite-source.ts`.
 - **Balance deleted**: `balance.ts`, its types, `BalanceSlot`, `balance.css` and `scripts/consortium-balance.test.mjs` are gone, so the "F1a commit 0 seams" bullet on `balance.ts` above no longer holds.
 - **Range verdict vectors**: `scripts/vectors/range-verdicts.json` is a verbatim copy of canopi-data `tests/vectors/range_verdicts.json`. Its sha, schema and release id are checked against `src/data/consortium-index.json` in `install-consortium.test.mjs`.
+
+### Link v5 contract additions (coordinator review of 0a, 2026-11-14)
+
+- **`o` is always a cell centre.** `snapOrigin` in `state.ts` mirrors the climate grid's cell rule: 0.1° cells, rows counted from the north, columns from 180° W. A point on an edge belongs to the cell south or east of it, and longitudes wrap. `encodeLink` snaps the origin it is given, and `linkOrigin` snaps the `o` it reads, so re-encoding a link never carries a precise point. `consortium-link-v5.test.mjs` checks the snap against `src/lib/climate/grid.ts`.
+- **`k` is exactly two upper-case letters.** Anything else (`fr`, `ZZZ`, empty) reads as no country.
+- **Duplicate keys: the first is read.** `g` is the exception: it is read once per list, and a list given twice marks the link cut.
+- **Height metres are dropped.** `h=higher.650` reads as `higher` and is re-encoded as `h=higher` until CLIM-4.
+- **Limits are tests, not vectors.** `MAX_LINK_IDS` and `LONG_LINK` are tested in the test file, because a vector at the token cap would be 12,000 characters.

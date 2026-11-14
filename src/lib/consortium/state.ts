@@ -118,10 +118,27 @@ export function cellCentre(lookup: SiteLookup | null): LinkOrigin | null {
   const c = lookup?.climate;
   return c ? { lat: c.cellLat, lon: c.cellLon } : null;
 }
-// Written with a literal comma (URLSearchParams would escape it), at most 3 decimals: the 0.1° grid's
-// centres need 2.
-const originText = (o: LinkOrigin): string | null =>
-  Number.isFinite(o.lat) && Number.isFinite(o.lon) && Math.abs(o.lat) <= 90 && Math.abs(o.lon) <= 180 ? `${+o.lat.toFixed(3)},${+o.lon.toFixed(3)}` : null;
+// The climate grid's cell size in degrees (canopi-climate v0.2, src/lib/climate/grid.ts; the core may
+// not import the reader, so consortium-link-v5.test.mjs checks this snap against the reader's cellOf).
+const LINK_CELL_DEG = 0.1;
+const CELLS_LAT = 1800, CELLS_LON = 3600, SNAP_EPS = 1e-9;
+// The centre of the 0.1° cell holding a point, as the climate grid finds it (rows from the north, a
+// point on a row edge belongs to the cell south of it; columns from 180° W, a point on a column edge
+// to the cell east of it, longitudes wrapping), in hundredths of a degree so no binary rounding shows.
+// null for a latitude outside ±90 or a value not finite. A link only ever holds a cell centre: encode
+// snaps the origin it is given, decode snaps the `o` it reads (owner answer 5: never a precise point).
+export function snapOrigin(o: LinkOrigin): LinkOrigin | null {
+  if (!Number.isFinite(o.lat) || !Number.isFinite(o.lon) || Math.abs(o.lat) > 90) return null;
+  const row = Math.min(CELLS_LAT - 1, Math.max(0, Math.floor((90 - o.lat) / LINK_CELL_DEG + SNAP_EPS)));
+  const lon = (((o.lon + 180) % 360) + 360) % 360;
+  const col = Math.min(CELLS_LON - 1, Math.max(0, Math.floor(lon / LINK_CELL_DEG + SNAP_EPS)));
+  return { lat: (9000 - row * 10 - 5) / 100, lon: (col * 10 + 5 - 18000) / 100 };
+}
+// Written with a literal comma (URLSearchParams would escape it), two decimals: a cell centre needs no more.
+const originText = (o: LinkOrigin): string | null => {
+  const c = snapOrigin(o);
+  return c ? `${c.lat.toFixed(2)},${c.lon.toFixed(2)}` : null;
+};
 
 // Where a link version stands against this decoder (8.2), from `v` alone: 'current' (5), 'older'
 // (1 to 4: nothing restored, an older save said once and removed), 'newer' (above 5: nothing restored,
@@ -199,16 +216,19 @@ const plotOf = (v: number | null | undefined): number | null =>
 
 // The site location a link carries (`o=lat,lon`), or null when it has none or it is not a valid
 // coordinate. A link's `c` and place answers still win over anything derived from it.
+// Any point is read as the centre of its cell (snapOrigin), so a link written by hand with a precise
+// point never carries it further. The first `o` wins, as for every key read once.
 export function linkOrigin(link: string): LinkOrigin | null {
   const m = /^(-?\d{1,3}(?:\.\d{1,6})?),(-?\d{1,3}(?:\.\d{1,6})?)$/.exec(params(link).get('o')?.trim() ?? '');
   if (!m) return null;
   const lat = Number(m[1]), lon = Number(m[2]);
-  return Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon } : null;
+  return Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? snapOrigin({ lat, lon }) : null;
 }
 
 // The long-link check, on the whole URL the reader is about to share (never on a link being read).
 export const isLongLink = (url: string): boolean => url.length > LONG_LINK;
 
+// A key given twice: the first is read (URLSearchParams.get); `g` alone is read per list, a list twice cut.
 const params = (link: string) => new URLSearchParams(link.replace(/^[#?]/, ''));
 
 // The climates whose plants must be at hand before decodeLink: the chosen one, then each guest list.
@@ -289,7 +309,8 @@ export function decodeLink(link: string, known: KnownIds, place: string | null =
   const state = emptyState();
   const c = q.get('c');
   state.climate = c === null ? null : zoneOf(c);
-  const k = (q.get('k') ?? '').trim().toUpperCase();
+  // Two upper-case letters exactly, as encodePlace writes them; anything else (fr, ZZZ, empty) is no country.
+  const k = q.get('k') ?? '';
   state.country = COUNTRY.test(k) ? k : null;
   state.room = oneOf(roomValues, q.get('m')) ?? 'unsure';
   const z = q.get('z');
